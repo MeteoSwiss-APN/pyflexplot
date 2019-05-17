@@ -67,8 +67,8 @@ Ready to contribute? Here's how to set up `pyflexplot` for local development.
 3. Install your local copy into a virtualenv. This is how you set up your fork for local development::
 
     $ cd pyflexplot/
-    $ pipenv shell
-    $ pipenv install --dev
+    $ mkvirtualenv flexplot-dev
+    $ pip install -r requirements_dev_frozen.txt
 
     $ python setup.py develop # or
     $ pip install -e .
@@ -88,7 +88,7 @@ Ready to contribute? Here's how to set up `pyflexplot` for local development.
     $ pytest
     $ tox  # optional, currently only flake8 and Python 3.7 configured and thus not necessary
 
-   To get yapf, flake8 and tox, just pip install them into your virtualenv (``pipenv install --dev``).
+   To get yapf, flake8 and tox, just pip install them into your virtualenv (``pip install --dev``).
 
 6. Commit your changes and push your branch to GitHub::
 
@@ -157,14 +157,16 @@ Project Structure
      - Specifies the files and directories which will be added to the Pip package
    * - Makefile
      - Build file for cleaning, creating and releasing packages, for testing and linting code, and for creating the documentation
-   * - Pipefile
-     - Contains all pip packages used in the virtual environment for development (section ``dev-packages``) or needed by the library/application (section ``packages``). The packages listed in the section ``packages`` must be the same as in the file ``requirements.txt`` and the variable ``requirements`` in the file ``setup.py``. The file is used and managed by ``pipenv``.
    * - README.rst
      - Short documentation about the package. It lists features and contains a quick start.
    * - requirements.txt
      - Containts all pip packages needed by the library/application. The packages listed in this file must be the same as in the section ``packages`` of the file ``Pipefile`` and in the variable ``requirements`` in the file ``setup.py``
    * - requirements_dev.txt
      - Contains all pip packages used in the virtual environment for development. The packages listed must be the same as the ones in the section ``dev-packages`` in the file ``Pipefile``.
+   * - requirements_frozen.txt
+     - TODO
+   * - requirements_dev_frozen.txt
+     - TODO
    * - setup.cfg
      - Configuration file for different build tools such as bumpversion, bdist, flake8, pytest, and yapf
    * - setup.py
@@ -177,18 +179,22 @@ Managing dependencies
 
 Often projects make use of other libraries. Which libraries and their versions have to be listed in different places in the project:
 - variable requirements in setup.py (for example ``requirements = ['Click>=6.0', 'sh>=1.12.14']``)
-- requirements.txt (see `pip requirements file`_)
-- Pipefile (see section packages `example Pipefile`_)
+- requirements*.txt files (see `pip requirements file`_)
 
-Assure that the needed libraries and their versions listend in the 3 files are the same. Best practice
-is to list the minimal need version of a package. For projects which provides script or and application,
-versions can also been fixed (``==`` instead of ``>=``). Note that when you install or update packages
-with pipenv, it may adapt the Pipfile automatically. Check if you need to edit also the other 2 files.
+Assure that the needed libraries and their versions (where given) listend in these files are the same.
+The files requirements.txt and requirements_dev.txt should only contain packages which are directly
+used, but no further dependencies; and their versions should only be constrained (``<=``, ``>=``, ``==``)
+when absolutely necessary. When you install a new package, add it to requirements.txt if it is used by
+pyflexplot, or to requirements_dev.txt if it is only used in the development process. Whenever you
+add or update any package -- and you are positively sure that everything still works correctly -- don't
+forget to update requirements_frozen.txt and/or requirements_dev_frozen.txt, depending on whether the
+change affects the production environment or only the development environment, by redirecting the
+output of ``pip freeze``.
 
 .. _`pip requirements file`: https://pip.readthedocs.io/en/1.1/requirements.html
-.. _`example Pipefile`: https://pipenv.readthedocs.io/en/latest/basics/#example-pipfile-pipfile-lock
+
 How to provide executable scripts
---------------------------------
+---------------------------------
 
 By default, a single executable script called pyflexplot is provided. It is created
 when the package is installed. When you call it the main function in

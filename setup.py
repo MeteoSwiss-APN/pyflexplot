@@ -42,6 +42,7 @@ setup(
     keywords='pyflexplot',
     name='pyflexplot',
     packages=find_packages('src'),
+    package_dir={'': "src"},
     py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
     setup_requires=setup_requirements,
     test_suite='tests',
