@@ -160,13 +160,13 @@ Project Structure
    * - README.rst
      - Short documentation about the package. It lists features and contains a quick start.
    * - requirements.txt
-     - Containts all pip packages needed by the library/application. The packages listed in this file must be the same as in the section ``packages`` of the file ``Pipefile`` and in the variable ``requirements`` in the file ``setup.py``
+     - Contains all pip packages required in production, without their dependencies. Version numbers should only be restricted if absolutely necessary.
    * - requirements_dev.txt
-     - Contains all pip packages used in the virtual environment for development. The packages listed must be the same as the ones in the section ``dev-packages`` in the file ``Pipefile``.
+     - Contains additional pip packages required in the development process, without their dependencies. Version numbers should only be restricted if absolutely necessary.
    * - requirements_frozen.txt
-     - TODO
+     - Contains all pip packages required in production, including their dependencies. Version numbers must be fixed for all packages. Output of ``pip freeze``. The packages listed in this file must be the same as in the variable ``requirements`` in the file ``setup.py``
    * - requirements_dev_frozen.txt
-     - TODO
+     - Contains additional pip packages required in the development process, including their dependencies. Version numbers must be fixed for all packages. Output of ``pip freeze``. The packages listed in this file must be the same as in the variable ``requirements`` in the file ``setup.py``
    * - setup.cfg
      - Configuration file for different build tools such as bumpversion, bdist, flake8, pytest, and yapf
    * - setup.py
@@ -181,7 +181,7 @@ Often projects make use of other libraries. Which libraries and their versions h
 - variable requirements in setup.py (for example ``requirements = ['Click>=6.0', 'sh>=1.12.14']``)
 - requirements*.txt files (see `pip requirements file`_)
 
-Assure that the needed libraries and their versions (where given) listend in these files are the same.
+Ensure that the needed libraries and their versions (where given) listend in these files are the same.
 The files requirements.txt and requirements_dev.txt should only contain packages which are directly
 used, but no further dependencies; and their versions should only be constrained (``<=``, ``>=``, ``==``)
 when absolutely necessary. When you install a new package, add it to requirements.txt if it is used by

@@ -4,8 +4,6 @@
 """The setup script."""
 
 from setuptools import setup, find_packages
-from glob import glob
-from os.path import basename
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
