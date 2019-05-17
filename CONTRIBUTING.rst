@@ -69,7 +69,7 @@ Ready to contribute? Here's how to set up `pyflexplot` for local development.
     $ cd pyflexplot/
     $ pipenv shell
     $ pipenv install --dev
-    
+
     $ python setup.py develop # or
     $ pip install -e .
 
@@ -80,12 +80,12 @@ Ready to contribute? Here's how to set up `pyflexplot` for local development.
    Now you can make your changes locally.
 
 5. When you're done making changes, format them with yapf, check that your
-   changes pass the static code analyses with flake8 and the tests with py.test, including testing other Python versions
+   changes pass the static code analyses with flake8 and the tests with pytest, including testing other Python versions
    with tox::
 
     $ yapf -ir pyflexplot
     $ flake8 pyflexplot tests
-    $ py.test
+    $ pytest
     $ tox  # optional, currently only flake8 and Python 3.7 configured and thus not necessary
 
    To get yapf, flake8 and tox, just pip install them into your virtualenv (``pipenv install --dev``).
@@ -115,7 +115,7 @@ Tips
 
 To run a subset of tests::
 
-    $ py.test tests.test_pyflexplot
+    $ pytest tests.test_pyflexplot
 
 Deploying
 ---------
@@ -136,7 +136,7 @@ Project Structure
 .. list-table:: Structure
    :widths: 25 75
    :header-rows: 1
-   
+
    * - File / Directory
      - Description
    * - docs
@@ -158,7 +158,7 @@ Project Structure
    * - Makefile
      - Build file for cleaning, creating and releasing packages, for testing and linting code, and for creating the documentation
    * - Pipefile
-     - Contains all pip packages used in the virtual environment for development (section ``dev-packages``) or needed by the library/application (section ``packages``). The packages listed in the section ``packages`` must be the same as in the file ``requirements.txt`` and the variable ``requirements`` in the file ``setup.py``. The file is used and managed by ``pipenv``. 
+     - Contains all pip packages used in the virtual environment for development (section ``dev-packages``) or needed by the library/application (section ``packages``). The packages listed in the section ``packages`` must be the same as in the file ``requirements.txt`` and the variable ``requirements`` in the file ``setup.py``. The file is used and managed by ``pipenv``.
    * - README.rst
      - Short documentation about the package. It lists features and contains a quick start.
    * - requirements.txt
@@ -180,9 +180,9 @@ Often projects make use of other libraries. Which libraries and their versions h
 - requirements.txt (see `pip requirements file`_)
 - Pipefile (see section packages `example Pipefile`_)
 
-Assure that the needed libraries and their versions listend in the 3 files are the same. Best practice 
-is to list the minimal need version of a package. For projects which provides script or and application, 
-versions can also been fixed (``==`` instead of ``>=``). Note that when you install or update packages 
+Assure that the needed libraries and their versions listend in the 3 files are the same. Best practice
+is to list the minimal need version of a package. For projects which provides script or and application,
+versions can also been fixed (``==`` instead of ``>=``). Note that when you install or update packages
 with pipenv, it may adapt the Pipfile automatically. Check if you need to edit also the other 2 files.
 
 .. _`pip requirements file`: https://pip.readthedocs.io/en/1.1/requirements.html
@@ -190,20 +190,20 @@ with pipenv, it may adapt the Pipfile automatically. Check if you need to edit a
 How to provide executable scripts
 --------------------------------
 
-By default, a single executable script called pyflexplot is provided. It is created 
-when the package is installed. When you call it the main function in 
-``pyflexplot/cli.py`` is called. 
+By default, a single executable script called pyflexplot is provided. It is created
+when the package is installed. When you call it the main function in
+``src/pyflexplot/cli.py`` is called.
 
-How many scripts that are created, their names and which functions are called can be configured in the 
-``setup.py`` file. The function ``setup`` has a named argument called ``entry_point`` which is a 
+How many scripts that are created, their names and which functions are called can be configured in the
+``setup.py`` file. The function ``setup`` has a named argument called ``entry_point`` which is a
 dictionary with an element ``console_scripts``. The element is an array of string. For Example::
 
     entry_points={
         'console_scripts': [
             'pyflexplot=pyflexplot.cli:main',
     ],
-    
+
 When the package is installed, a executable script is created in the Python's bin folder with the name
-``pyflexplot``. If a user calls this script, the function ``main`` in the file 
-``pyflexplot/cli.py`` is called. If more scripts should be created, add further
+``pyflexplot``. If a user calls this script, the function ``main`` in the file
+``src/pyflexplot/cli.py`` is called. If more scripts should be created, add further
 entries to array ``console_scripts``.

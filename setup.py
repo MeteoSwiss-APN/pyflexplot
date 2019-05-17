@@ -4,6 +4,8 @@
 """The setup script."""
 
 from setuptools import setup, find_packages
+from glob import glob
+from os.path import basename
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -39,7 +41,8 @@ setup(
     include_package_data=True,
     keywords='pyflexplot',
     name='pyflexplot',
-    packages=find_packages(include=['pyflexplot']),
+    packages=find_packages('src'),
+    py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
