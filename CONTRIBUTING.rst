@@ -83,8 +83,8 @@ Ready to contribute? Here's how to set up `pyflexplot` for local development.
    changes pass the static code analyses with flake8 and the tests with pytest, including testing other Python versions
    with tox::
 
-    $ yapf -ir pyflexplot
-    $ flake8 pyflexplot tests
+    $ yapf -ir src
+    $ flake8 src tests
     $ pytest
     $ tox  # optional, currently only flake8 and Python 3.7 configured and thus not necessary
 
@@ -142,8 +142,8 @@ Project Structure
    * - docs
      - Directory containing the documentation
    * - tests
-     - Directory containing the tests. The directory structure in this folder is the same as in the source folder (pyflexplot). For each file in the source folder, there is a file with the same name, but, with the prefix ``text_``.
-   * - pyflexplot
+     - Directory containing the tests. The directory structure in this folder is the same as in the source folder (src). For each file in the source folder, there is a file with the same name, but, with the prefix ``text_``.
+   * - src
      - Source folder
    * - AUTHORS.rst
      - Contains information about the lead developer and contributors
