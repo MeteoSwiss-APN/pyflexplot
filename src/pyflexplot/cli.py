@@ -3,26 +3,36 @@
 import sys
 import click
 import logging
+from pprint import pformat
 
 from pyflexplot.utils import count_to_log_level
 
 __version__ = '0.1.0'
 
+CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
-@click.command()
+@click.group(context_settings=CONTEXT_SETTINGS)
 @click.option(
     '--dry-run',
     '-n',
     flag_value='dry_run',
     default=False,
-    help="Perform a trial run with no changes made")
+    help="Perform a trial run with no changes made",
+)
 @click.option(
     '--verbose',
     '-v',
     count=True,
-    help="Increase verbosity (specify multiple times for more)")
-@click.option('--version', '-V', is_flag=True, help="Print version")
-def main(*args, **kwargs):
+    help="Increase verbosity (specify multiple times for more)",
+)
+@click.option(
+    '--version',
+    '-V',
+    is_flag=True,
+    help="Print version",
+)
+@click.pass_context
+def cli(ctx, *args, **kwargs):
     """Console script for test_cli_project."""
 
     logging.basicConfig(level=count_to_log_level(kwargs['verbose']))
@@ -36,7 +46,7 @@ def main(*args, **kwargs):
         return 0
 
     if kwargs['dry_run']:
-        click.echo("Is dry run")
+        click.echo("TODO: Implement dry run!")
         return 0
 
     click.echo(
@@ -47,5 +57,16 @@ def main(*args, **kwargs):
     return 0
 
 
+@cli.command()
+@click.pass_context
+def foo(ctx):
+
+    ipython(globals(), locals())
+    click.echo("ctx:\n{}\n".format(pformat(ctx)))
+    #click.echo("{} args:\n{}\n".format(len(args), pformat(args)))
+    #click.echo("{} kwargs:\n{}\n".format(len(kwargs), pformat(kwargs)))
+
+    return 0
+
 if __name__ == "__main__":
-    sys.exit(main())  # pragma: no cover
+    sys.exit(cli())  # pragma: no cover

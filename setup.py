@@ -31,7 +31,7 @@ setup(
     description="Python FLEXPART Plotting contains Python scripts to plot FLEXPART output",
     entry_points={
         'console_scripts': [
-            'pyflexplot=pyflexplot.cli:main',
+            'pyflexplot=pyflexplot.cli:cli',
         ],
     },
     install_requires=requirements,
