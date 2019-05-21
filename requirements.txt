@@ -1,4 +1,5 @@
+cartopy # !! requires non-Python dependencies 'geos' and 'proj'; load modules or install!
 matplotlib
+netCDF4
 numpy
 scipy
-netCDF4
