@@ -1,15 +1,27 @@
 # -*- coding: utf-8 -*-
-"""Console script for pyflexplot."""
+"""
+Command line interface of pyflexplot.
+"""
 import sys
 import click
 import logging
 from pprint import pformat
 
-from pyflexplot.utils import count_to_log_level
+from .utils import count_to_log_level
+from .pyflexplot import FlexReader
+
+#SRU_DEV<
+try:
+    from .utils_dev import ipython
+except ImportError:
+    pass
+#SRU_DEV>
 
 __version__ = '0.1.0'
 
-CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
+CONTEXT_SETTINGS = dict(
+    help_option_names=["-h", "--help"],
+)
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.option(
@@ -31,9 +43,26 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     is_flag=True,
     help="Print version",
 )
+@click.option(
+    "--infile",
+    "-i",
+    help="Input file.",
+    type=click.Path(exists=True, readable=True),
+    required=True,
+)
+@click.option(
+    "--outfile",
+    "-o",
+    help="Output file.",
+    type=click.Path(writable=True),
+    required=True,
+)
 @click.pass_context
-def cli(ctx, *args, **kwargs):
+def cli(ctx, **kwargs):
     """Console script for test_cli_project."""
+
+    click.echo("Hi fellow PyFlexPlotter!")
+    click.echo("{} kwargs:\n{}\n".format(len(kwargs), pformat(kwargs)))
 
     logging.basicConfig(level=count_to_log_level(kwargs['verbose']))
 
@@ -45,21 +74,31 @@ def cli(ctx, *args, **kwargs):
         click.echo(__version__)
         return 0
 
-    if kwargs['dry_run']:
-        click.echo("TODO: Implement dry run!")
+    if kwargs.pop('dry_run'):
+        raise NotImplementedError("dry run")
         return 0
 
-    click.echo(
-        "Replace this message by putting your code into test_cli_project.cli.main"
-    )
-    click.echo("See click documentation at http://click.pocoo.org/")
+    # Ensure that ctx.obj exists and is a dict
+    ctx.ensure_object(dict)
+
+    # Store shared keyword arguments in ctx.obj
+    ctx.obj.update(kwargs)
 
     return 0
 
 
 @cli.command()
+@click.option(
+    "--varname",
+    help="Variable name.",
+    default="spec001",
+)
 @click.pass_context
-def foo(ctx):
+def foo(ctx, varname):
+
+    # Read input
+    infile = ctx.obj["infile"]
+    input = FlexReader().read(infile, varname)
 
     ipython(globals(), locals())
     click.echo("ctx:\n{}\n".format(pformat(ctx)))

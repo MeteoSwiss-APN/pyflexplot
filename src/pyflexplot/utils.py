@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Utils for the command line tool"""
+"""
+Utils for the command line tool.
+"""
 import logging
 
 
@@ -13,3 +15,5 @@ def count_to_log_level(count: int) -> int:
         return logging.INFO
     else:
         return logging.DEBUG
+
+
