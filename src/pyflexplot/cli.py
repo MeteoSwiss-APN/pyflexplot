@@ -61,13 +61,15 @@ def cli(ctx, **kwargs):
     """Console script for test_cli_project."""
 
     click.echo("Hi fellow PyFlexPlotter!")
-    click.echo("{} kwargs:\n{}\n".format(len(kwargs), pformat(kwargs)))
+    #click.echo("{} kwargs:\n{}\n".format(len(kwargs), pformat(kwargs)))
 
     logging.basicConfig(level=count_to_log_level(kwargs['verbose']))
 
+    #SRU_TMP< TODO Remove at some point!
     logging.warning("This is a warning.")
     logging.info("This is an info message.")
     logging.debug("This is a debug message.")
+    #SRU_TMP>
 
     if kwargs['version']:
         click.echo(__version__)
@@ -88,20 +90,44 @@ def cli(ctx, **kwargs):
 
 @cli.command()
 @click.option(
-    "--varname",
-    help="Variable name.",
-    default="spec001",
+    "--species-id",
+    "species_ids",
+    help="Species id to plot; plot all if none given.",
+    type=int,
+    multiple=True,
+)
+@click.option(
+    "--timestep-ind",
+    "timestep_inds",
+    help="Index of timestep to plot; plot all if none given.",
+    type=int,
+    multiple=True,
+)
+@click.option(
+    "--field-type",
+    "field_types",
+    help="Type of field to plot; plot all if none given.",
+    type=click.Choice(["3D", "WD", "DD"]),
+    multiple=True,
+)
+@click.option(
+    "--level-ind",
+    "level_inds",
+    help="Vertical level index (bottom-up) to plot; plot all if none given.",
+    type=int,
+    multiple=True,
 )
 @click.pass_context
-def foo(ctx, varname):
+def foo(ctx, **kwargs):
 
     # Read input
     infile = ctx.obj["infile"]
-    input = FlexReader(vars=[varname]).read(infile)
+    reader = FlexReader(**kwargs)
+    data = reader.read(infile)
 
     ipython(globals(), locals(), "foo")
 
-    click.echo("ctx:\n{}\n".format(pformat(ctx)))
+    #click.echo("ctx:\n{}\n".format(pformat(ctx)))
     #click.echo("{} args:\n{}\n".format(len(args), pformat(args)))
     #click.echo("{} kwargs:\n{}\n".format(len(kwargs), pformat(kwargs)))
 

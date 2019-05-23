@@ -4,6 +4,8 @@ Main module.
 """
 import logging
 import netCDF4 as nc4
+import copy
+import re
 
 #SRU_DEV<
 try:
@@ -16,9 +18,17 @@ except ImportError:
 class FlexReader:
     """Read FLEXPART output files."""
 
-    def __init__(self, vars=None):
+    def __init__(
+            self,
+            species_ids=None,
+            timestep_inds=None,
+            field_types=None,
+            level_inds=None):
 
-        self.vars = vars
+        self.species_ids = set(species_ids) if species_ids else None
+        self.timestep_inds = set(timestep_inds) if timestep_inds else None
+        self.field_types = set(field_types) if field_types else None
+        self.level_inds = set(level_inds) if level_inds else None
 
     def read(self, filename):
         """Read a FLEXPART NetCDF file and return it's contents.
@@ -83,18 +93,90 @@ class FlexReader:
         #   fptot           float   (numpoint, rlat, rlon)                          total footprint
         #
 
+        #SR_TMP<
+        if self.level_inds is not None:
+            raise NotImplementedError(f"levels: {self.level_inds}")
+        #SR_TMP>
+
+        spec_ids_todo = copy.copy(self.species_ids)
+        fld_typs_todo = copy.copy(self.field_types)
+
+        print("spec_ids_todo", spec_ids_todo)  #SRU_TMP
+        print("fld_typs_todo", fld_typs_todo)  #SRU_TMP
+
+        rx_var_name = re.compile(r'((?P<fld>[A-Z]{2})_)?spec(?P<id>[0-9]{3})')
         with nc4.Dataset(filename, 'r') as fi:
 
+            # Read basic data setup (grid etc.)
+            setup = {}
+            setup['rlon'] = fi.variables['rlon'][:]
+            setup['rlat'] = fi.variables['rlat'][:]
+            flex_data = FlexData(setup)
+
+            # Read particle fields
+            variables = {}
             for var_name, var in fi.variables.items():
-                print(var_name, var.dimensions)
+                if (var.dimensions[-2:]) != ('rlat', 'rlon'):
+                    # Skip non-field variables
+                    continue
 
-            print(fi.dimensions)
+                #SRU_TMP<
+                if var_name == 'fptot':
+                    #SRU Let's ignore fptot for now...
+                    continue
+                #SRU_TMP>
 
-            ipython(globals(), locals(), "FlexReader.read()")
+                # Parse var name for field type and species id
+                match = rx_var_name.match(var_name)
+                fld_typ = match.group('fld')
+                if fld_typ is None:
+                    fld_typ = '3D'
+                spec_id = int(match.group('id').lstrip('0'))
 
+                # Check whether to store the field
+                store_sid = spec_ids_todo is None or spec_id in spec_ids_todo
+                store_fld = fld_typs_todo is None or fld_typ in fld_typs_todo
+                if store_sid and store_fld:
+                    if spec_ids_todo is not None:
+                        spec_ids_todo.remove(spec_id)
+                    if fld_typs_todo is not None:
+                        fld_typs_todo.remove(fld_typ)
+                    # Add field to the data object
+                    var_attrs = {} #SRU_TMP
+                    flex_data.add_field(var[:], spec_id, fld_typ, var_attrs)
+                    print("STORE", var_name, fld_typ, spec_id)  #SRU_TMP
+
+                #ipython(globals(), locals(), "FlexReader.read()")
+
+        if spec_ids_todo:
+            raise Exception(f"invalid species ids: {spec_ids_todo}")
+        if fld_typs_todo:
+            raise Exception(f"invalid fld types: {fld_typs_todo}")
+
+        return flex_data
 
 class FlexData:
     """Hold FLEXPART output data."""
 
-    def __init__(self):
-        pass
+    def __init__(self, setup):
+        self._setup = setup
+
+        self._fields = {}
+        self._field_attrs = {}
+
+    def _key(self, species_id, field_type):
+        return species_id, field_type
+
+    def add_field(self, arr, species_id, field_type, attrs=None):
+        """Add a field array with optional attributes."""
+        key = self._key(species_id, field_type)
+        self._fields[key] = arr
+        self._field_attrs[key] = attrs
+
+    def field(self, species_id, field_type):
+        """Return a field."""
+        return self._fields[self._key(species_id, field_type)]
+
+    def field_attrs(self, species_id, field_type):
+        """Return field attributes."""
+        return self._field_attrs[self._key(species_id, field_type)]
