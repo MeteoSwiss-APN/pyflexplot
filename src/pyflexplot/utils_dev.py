@@ -37,5 +37,3 @@ def ipython(_globals_, _locals_, _msg_=None, _err_=66):
         IPython.embed(display_banner=None)
         if _err_ is not None:
             sys.exit(_err_)
-
-

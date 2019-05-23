@@ -19,9 +19,8 @@ except ImportError:
 
 __version__ = '0.1.0'
 
-CONTEXT_SETTINGS = dict(
-    help_option_names=["-h", "--help"],
-)
+CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"],)
+
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.option(
@@ -98,14 +97,16 @@ def foo(ctx, varname):
 
     # Read input
     infile = ctx.obj["infile"]
-    input = FlexReader().read(infile, varname)
+    input = FlexReader(vars=[varname]).read(infile)
 
-    ipython(globals(), locals())
+    ipython(globals(), locals(), "foo")
+
     click.echo("ctx:\n{}\n".format(pformat(ctx)))
     #click.echo("{} args:\n{}\n".format(len(args), pformat(args)))
     #click.echo("{} kwargs:\n{}\n".format(len(kwargs), pformat(kwargs)))
 
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(cli())  # pragma: no cover

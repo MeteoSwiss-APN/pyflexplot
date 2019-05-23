@@ -15,5 +15,3 @@ def count_to_log_level(count: int) -> int:
         return logging.INFO
     else:
         return logging.DEBUG
-
-
