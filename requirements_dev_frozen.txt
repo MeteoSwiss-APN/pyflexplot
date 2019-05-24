@@ -5,8 +5,11 @@ attrs==19.1.0
 Babel==2.6.0
 backcall==0.1.0
 bumpversion==0.5.3
+Cartopy==0.17.0
 certifi==2019.3.9
+cftime==1.0.3.4
 chardet==3.0.4
+clean==0.1.4
 Click==7.0
 coverage==4.5.3
 cycler==0.10.0
@@ -15,17 +18,21 @@ docutils==0.14
 entrypoints==0.3
 filelock==3.0.10
 flake8==3.7.7
+Flask==1.0.3
 idna==2.8
 imagesize==1.1.0
 ipython==7.5.0
 ipython-genutils==0.2.0
+itsdangerous==1.1.0
 jedi==0.13.3
 Jinja2==2.10.1
 kiwisolver==1.1.0
+lxml==4.3.3
 MarkupSafe==1.1.1
 matplotlib==3.0.3
 mccabe==0.6.1
 more-itertools==7.0.0
+netCDF4==1.5.1.2
 numpy==1.16.3
 packaging==19.0
 parso==0.4.0
@@ -38,9 +45,10 @@ ptyprocess==0.6.0
 py==1.8.0
 pycodestyle==2.5.0
 pyflakes==2.1.1
--e git+git@github.com:MeteoSwiss-APN/pyflexplot.git@339f54a366c535f7bfcb6a479d3656038ae2267a#egg=pyflexplot
+-e git+git@github.com:MeteoSwiss-APN/pyflexplot.git@b1dc87dd7da928fa3f2fdf8c7728cdf06da5ebcd#egg=pyflexplot
 Pygments==2.4.0
 pyparsing==2.4.0
+pyshp==2.1.0
 pytest==4.5.0
 pytest-runner==4.4
 python-dateutil==2.8.0
@@ -48,6 +56,7 @@ pytz==2019.1
 PyYAML==5.1
 requests==2.22.0
 scipy==1.2.1
+Shapely==1.6.4.post2
 six==1.12.0
 snowballstemmer==1.2.1
 Sphinx==2.0.1
@@ -64,4 +73,5 @@ urllib3==1.25.2
 virtualenv==16.6.0
 watchdog==0.9.0
 wcwidth==0.1.7
+Werkzeug==0.15.4
 yapf==0.27.0
