@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Utils for the command line tool"""
+"""
+Utils for the command line tool.
+"""
 import logging
 
 
