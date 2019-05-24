@@ -4,7 +4,7 @@ Command line interface of pyflexplot.
 """
 import sys
 import click
-import logging
+import logging as log
 from pprint import pformat
 
 from .utils import count_to_log_level
@@ -63,12 +63,12 @@ def cli(ctx, **kwargs):
     click.echo("Hi fellow PyFlexPlotter!")
     #click.echo("{} kwargs:\n{}\n".format(len(kwargs), pformat(kwargs)))
 
-    logging.basicConfig(level=count_to_log_level(kwargs['verbose']))
+    log.basicConfig(level=count_to_log_level(kwargs['verbose']))
 
     #SRU_TMP< TODO Remove at some point!
-    logging.warning("This is a warning.")
-    logging.info("This is an info message.")
-    logging.debug("This is a debug message.")
+    log.warning("This is a warning.")
+    log.info("This is an info message.")
+    log.debug("This is a debug message.")
     #SRU_TMP>
 
     if kwargs['version']:

@@ -2,7 +2,7 @@
 """
 Main module.
 """
-import logging
+import logging as log
 import netCDF4 as nc4
 import copy
 import re
@@ -98,31 +98,34 @@ class FlexReader:
             raise NotImplementedError(f"levels: {self.level_inds}")
         #SR_TMP>
 
-        spec_ids_todo = copy.copy(self.species_ids)
-        fld_typs_todo = copy.copy(self.field_types)
+        self._spec_ids_todo = copy.copy(self.species_ids)
+        self._fld_typs_todo = copy.copy(self.field_types)
 
-        print("spec_ids_todo", spec_ids_todo)  #SRU_TMP
-        print("fld_typs_todo", fld_typs_todo)  #SRU_TMP
+        log.debug(f"species ids to read: {self._spec_ids_todo}")
+        log.debug(f"field types to read: {self._fld_typs_todo}")
 
         rx_var_name = re.compile(r'((?P<fld>[A-Z]{2})_)?spec(?P<id>[0-9]{3})')
+
+        log.debug(f"open netcdf file {filename}")
         with nc4.Dataset(filename, 'r') as fi:
 
-            # Read basic data setup (grid etc.)
+            log.debug("read data setup (grid etc.)")
             setup = {}
             setup['rlon'] = fi.variables['rlon'][:]
             setup['rlat'] = fi.variables['rlat'][:]
             flex_data = FlexData(setup)
 
-            # Read particle fields
+            log.debug("read variables: particle fields")
             variables = {}
             for var_name, var in fi.variables.items():
                 if (var.dimensions[-2:]) != ('rlat', 'rlon'):
-                    # Skip non-field variables
+                    log.debug(f" - {var_name}: skip (non-field var)")
                     continue
 
                 #SRU_TMP<
                 if var_name == 'fptot':
                     #SRU Let's ignore fptot for now...
+                    log.debug(f" - {var_name}: skip !TMP!")
                     continue
                 #SRU_TMP>
 
@@ -132,28 +135,49 @@ class FlexReader:
                 if fld_typ is None:
                     fld_typ = '3D'
                 spec_id = int(match.group('id').lstrip('0'))
+                log.debug(f" - {var_name}: particle field")
 
-                # Check whether to store the field
-                store_sid = spec_ids_todo is None or spec_id in spec_ids_todo
-                store_fld = fld_typs_todo is None or fld_typ in fld_typs_todo
-                if store_sid and store_fld:
-                    if spec_ids_todo is not None:
-                        spec_ids_todo.remove(spec_id)
-                    if fld_typs_todo is not None:
-                        fld_typs_todo.remove(fld_typ)
-                    # Add field to the data object
-                    var_attrs = {} #SRU_TMP
+                if self._check_read_field(spec_id, fld_typ):
+                    log.debug("   - read the field")
+                    var_attrs = {}  #SRU_TMP
                     flex_data.add_field(var[:], spec_id, fld_typ, var_attrs)
-                    print("STORE", var_name, fld_typ, spec_id)  #SRU_TMP
 
                 #ipython(globals(), locals(), "FlexReader.read()")
 
-        if spec_ids_todo:
-            raise Exception(f"invalid species ids: {spec_ids_todo}")
-        if fld_typs_todo:
-            raise Exception(f"invalid fld types: {fld_typs_todo}")
+        if self._spec_ids_todo:
+            raise Exception(f"invalid species ids: {self._spec_ids_todo}")
+        if self._fld_typs_todo:
+            raise Exception(f"invalid field types: {self._fld_typs_todo}")
 
         return flex_data
+
+    def _check_read_field(self, spec_id, fld_typ):
+        """Check whether to read the current particle field."""
+
+        log.debug("    - consider reading field")
+
+        rd_sid = self._spec_ids_todo is None or spec_id in self._spec_ids_todo
+        log.debug(
+            f"      - species id: {spec_id:2}"
+            f" -> {'read' if rd_sid else 'skip'}")
+
+        rd_ftp = self._fld_typs_todo is None or fld_typ in self._fld_typs_todo
+        log.debug(
+            f"      - field type: {fld_typ:2}"
+            f" -> {'read' if rd_ftp else 'skip'}")
+
+        rd_tot = rd_sid and rd_ftp
+        log.debug(f"      - verdict: {'read' if rd_tot else 'skip'}")
+
+        if rd_tot:
+            # Update todo sets
+            if self._spec_ids_todo is not None:
+                self._spec_ids_todo.remove(spec_id)
+            if self._fld_typs_todo is not None:
+                self._fld_typs_todo.remove(fld_typ)
+
+        return rd_tot
+
 
 class FlexData:
     """Hold FLEXPART output data."""
