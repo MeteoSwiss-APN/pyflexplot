@@ -8,7 +8,7 @@ import logging as log
 from pprint import pformat
 
 from .utils import count_to_log_level
-from .pyflexplot import FlexReader
+from .pyflexplot import FlexFileReader
 
 #SRU_DEV<
 try:
@@ -22,41 +22,30 @@ __version__ = '0.1.0'
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"],)
 
 
+# yapf: disable
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.option(
-    '--dry-run',
-    '-n',
-    flag_value='dry_run',
-    default=False,
+    '--dry-run', '-n',
     help="Perform a trial run with no changes made",
-)
+    flag_value='dry_run', default=False)
 @click.option(
-    '--verbose',
-    '-v',
-    count=True,
+    '--verbose', '-v',
     help="Increase verbosity (specify multiple times for more)",
-)
+    count=True)
 @click.option(
-    '--version',
-    '-V',
-    is_flag=True,
+    '--version', '-V',
     help="Print version",
-)
+    is_flag=True)
 @click.option(
-    "--infile",
-    "-i",
+    "--infile", "-i",
     help="Input file.",
-    type=click.Path(exists=True, readable=True),
-    required=True,
-)
+    type=click.Path(exists=True, readable=True), required=True)
 @click.option(
-    "--outfile",
-    "-o",
+    "--outfile", "-o",
     help="Output file.",
-    type=click.Path(writable=True),
-    required=True,
-)
+    type=click.Path(writable=True), required=True)
 @click.pass_context
+# yapf: enable
 def cli(ctx, **kwargs):
     """Console script for test_cli_project."""
 
@@ -88,41 +77,39 @@ def cli(ctx, **kwargs):
     return 0
 
 
+# yapf: disable
 @cli.command()
 @click.option(
-    "--species-id",
-    "species_ids",
-    help="Species id to plot; plot all if none given.",
-    type=int,
-    multiple=True,
-)
+    "--age-class-ind", "age_class_inds",
+    help="Index of age class (zero-based) (default: all).",
+    type=int, multiple=True)
 @click.option(
-    "--timestep-ind",
-    "timestep_inds",
-    help="Index of timestep to plot; plot all if none given.",
-    type=int,
-    multiple=True,
-)
+    "--field-type", "field_types",
+    help="Type of field (default: all).",
+    type=click.Choice(["3D", "WD", "DD"]), multiple=True)
 @click.option(
-    "--field-type",
-    "field_types",
-    help="Type of field to plot; plot all if none given.",
-    type=click.Choice(["3D", "WD", "DD"]),
-    multiple=True,
-)
+    "--level-ind", "level_inds",
+    help="Index of vertical level (zero-based, bottom-up) (default: all).",
+    type=int, multiple=True)
 @click.option(
-    "--level-ind",
-    "level_inds",
-    help="Vertical level index (bottom-up) to plot; plot all if none given.",
-    type=int,
-    multiple=True,
-)
+    "--source-ind", "source_inds",
+    help="Point source indices (zero-based) (default: all).",
+    type=int, multiple=True)
+@click.option(
+    "--species-id", "species_ids",
+    help="Species id (default: all).",
+    type=int, multiple=True)
+@click.option(
+    "--time-ind", "time_inds",
+    help="Index of time (zero-based) (default: all).",
+    type=int, multiple=True)
 @click.pass_context
+# yapf: enable
 def foo(ctx, **kwargs):
 
     # Read input
     infile = ctx.obj["infile"]
-    reader = FlexReader(**kwargs)
+    reader = FlexFileReader(**kwargs)
     data = reader.read(infile)
 
     ipython(globals(), locals(), "foo")

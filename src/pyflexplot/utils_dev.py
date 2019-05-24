@@ -9,8 +9,14 @@ import IPython
 
 
 def ipython(
-        _globals_, _locals_, _msg_=None, _err_=66, _log_lvl_=log.INFO,
-        _colors_=True, _bg_='light', _edit_mode_='vi'):
+        _globals_,
+        _locals_,
+        _msg_=None,
+        _err_=66,
+        _log_lvl_=log.INFO,
+        _colors_=True,
+        _bg_='light',
+        _edit_mode_='vi'):
     """Drop into an iPython shell with all global and local variables.
 
     To pass the global and local variables, call with globals() and locals()
