@@ -3,6 +3,8 @@
 
 """The setup script."""
 
+import re
+
 from setuptools import setup, find_packages
 
 with open('README.rst') as readme_file:
@@ -11,7 +13,13 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['Click>=6.0', ]
+# Read dependencies from requirements file
+requirements = []
+with open('requirements.txt', 'r') as fi:
+    for line in fi.readlines():
+        line = re.sub(r'#.*', '', line).strip()
+        if line:
+            requirements.append(line)
 
 setup_requirements = ['pytest-runner', ]
 

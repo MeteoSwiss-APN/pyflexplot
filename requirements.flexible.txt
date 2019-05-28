@@ -1,5 +1,5 @@
-cartopy # !! requires non-Python dependencies 'geos' and 'proj'; load modules or install!
-click
+Cartopy # !! requires non-Python dependencies 'geos' and 'proj'; load modules or install!
+Click>=6.0
 matplotlib
 netCDF4
 numpy
