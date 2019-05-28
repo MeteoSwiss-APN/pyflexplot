@@ -1,21 +1,19 @@
 # -*- coding: utf-8 -*-
 """
-Command line interface of pyflexplot.
+Command line interface.
 """
-import sys
 import click
+import functools
 import logging as log
+import sys
+
 from pprint import pformat
 
+from .io import FlexFileReader
 from .utils import count_to_log_level
-from .pyflexplot import FlexFileReader
+from .plot import FlexPlotter
 
-#SRU_DEV<
-try:
-    from .utils_dev import ipython
-except ImportError:
-    pass
-#SRU_DEV>
+from .utils_dev import ipython  #SRU_DEV
 
 __version__ = '0.1.0'
 
@@ -37,28 +35,18 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"],)
     help="Print version",
     is_flag=True)
 @click.option(
-    "--infile", "-i",
-    help="Input file.",
-    type=click.Path(exists=True, readable=True), required=True)
-@click.option(
-    "--outfile", "-o",
-    help="Output file.",
-    type=click.Path(writable=True), required=True)
+    '--noplot',
+    help="Skip plotting (for debugging etc.)",
+    is_flag=True)
 @click.pass_context
 # yapf: enable
 def cli(ctx, **kwargs):
     """Console script for test_cli_project."""
 
     click.echo("Hi fellow PyFlexPlotter!")
-    #click.echo("{} kwargs:\n{}\n".format(len(kwargs), pformat(kwargs)))
+    #click.echo(f"{len(kwargs)} kwargs:\n{pformat(kwargs)}\n")
 
     log.basicConfig(level=count_to_log_level(kwargs['verbose']))
-
-    #SRU_TMP< TODO Remove at some point!
-    log.warning("This is a warning.")
-    log.info("This is an info message.")
-    log.debug("This is a debug message.")
-    #SRU_TMP>
 
     if kwargs['version']:
         click.echo(__version__)
@@ -77,46 +65,74 @@ def cli(ctx, **kwargs):
     return 0
 
 
+def common_options(f):
+    """Options common to all commands in the group.
+
+    Defining the common options this way instead of on the group
+    enables putting them after the command instead of before it.
+
+    src: https://stackoverflow.com/a/52147284
+    """
+    # yapf: disable
+    options = [
+        click.option(
+            "--infile", "-i", "in_file_path",
+            help="Input file path.",
+            type=click.Path(exists=True, readable=True), required=True),
+        click.option(
+            "--outfile", "-o", "out_file_path_fmt",
+            help=(
+                "Output file path. If multiple plots are to be created, e.g.,"
+                " for multiple fields or levels, ``outfile`` must contain"
+                " format keys for inserting all changing parameters"
+                " (example: ``plot_lvl-{level}.png`` for multiple levels)."),
+            type=click.Path(writable=True), required=True),
+    ]
+    # yapf: enable
+    return functools.reduce(lambda x, opt: opt(x), options, f)
+
+
 # yapf: disable
 @cli.command()
+@common_options
 @click.option(
-    "--age-class-ind", "age_class_inds",
+    "--age-class-ind", "age_inds",
     help="Index of age class (zero-based) (default: all).",
     type=int, multiple=True)
 @click.option(
-    "--field-type", "field_types",
-    help="Type of field (default: all).",
-    type=click.Choice(["3D", "WD", "DD"]), multiple=True)
+    "--release-point-ind", "relpt_inds",
+    help="Index of release point (zero-based) (default: all).",
+    type=int, multiple=True)
+@click.option(
+    "--time-ind", "time_inds",
+    help="Index of time (zero-based) (default: all).",
+    type=int, multiple=True)
 @click.option(
     "--level-ind", "level_inds",
     help="Index of vertical level (zero-based, bottom-up) (default: all).",
-    type=int, multiple=True)
-@click.option(
-    "--source-ind", "source_inds",
-    help="Point source indices (zero-based) (default: all).",
     type=int, multiple=True)
 @click.option(
     "--species-id", "species_ids",
     help="Species id (default: all).",
     type=int, multiple=True)
 @click.option(
-    "--time-ind", "time_inds",
-    help="Index of time (zero-based) (default: all).",
+    "--field-type", "field_types",
+    help="Type of field (default: all).",
+    type=click.Choice(["3D", "WD", "DD"]), multiple=True)
+@click.option(
+    "--source-ind", "source_inds",
+    help="Point source indices (zero-based) (default: all).",
     type=int, multiple=True)
 @click.pass_context
 # yapf: enable
-def foo(ctx, **kwargs):
+def concentration(ctx, in_file_path, out_file_path_fmt, **kwargs):
 
     # Read input
-    infile = ctx.obj["infile"]
-    reader = FlexFileReader(**kwargs)
-    data = reader.read(infile)
+    data = FlexFileReader(**kwargs).read(in_file_path)
 
-    ipython(globals(), locals(), "foo")
-
-    #click.echo("ctx:\n{}\n".format(pformat(ctx)))
-    #click.echo("{} args:\n{}\n".format(len(args), pformat(args)))
-    #click.echo("{} kwargs:\n{}\n".format(len(kwargs), pformat(kwargs)))
+    # Create plot
+    if not ctx.obj["noplot"]:
+        FlexPlotter('concentration').run(data, out_file_path_fmt)
 
     return 0
 
