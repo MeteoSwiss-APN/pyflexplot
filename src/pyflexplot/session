@@ -1,7 +1,9 @@
 
 #./__init__.py
 ./cli.py
-./pyflexplot.py
+./io.py
+./data.py
+./plot.py
 ./utils.py
 ./utils_dev.py
 

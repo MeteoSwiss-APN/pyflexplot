@@ -71,6 +71,7 @@ ReleasePoint = namedtuple(
 #   fptot           float   (numpoint, rlat, rlon)                          total footprint
 #
 
+
 class FlexFileReader:
     """Read FLEXPART output files.
 
@@ -276,8 +277,14 @@ class FlexFileReader:
                                 age_ind, relpt_ind, time_ind, level_ind)
                     else:
                         self._proc_fld2d(
-                            flex_data, var, species_id, field_type, age_ind,
-                            relpt_ind, time_ind, level_ind=None)
+                            flex_data,
+                            var,
+                            species_id,
+                            field_type,
+                            age_ind,
+                            relpt_ind,
+                            time_ind,
+                            level_ind=None)
 
     def _proc_fld2d(
             self, flex_data, var, species_id, field_type, age_ind, relpt_ind,
@@ -297,12 +304,10 @@ class FlexFileReader:
             # Skip it!
             return
         self._remove_todo(**kwargs)
- 
-        var_attrs = {
-            var.getncattr(attr) for attr in var.ncattrs()}
 
-        log.debug(
-            f"({age_ind}, {relpt_ind}, {time_ind}, {level_ind})")
+        var_attrs = {var.getncattr(attr) for attr in var.ncattrs()}
+
+        log.debug(f"({age_ind}, {relpt_ind}, {time_ind}, {level_ind})")
 
         # Compile indices to slice array
         if level_ind is None:
@@ -338,9 +343,7 @@ class FlexFileReader:
             else:
                 read[key] = todo is None or val in todo
             action = 'read' if read[key] else 'skip'
-            log.debug(
-                f"      - {key}: {val:2} -> {action}"
-                f" (todo: {todo})")
+            log.debug(f"      - {key}: {val:2} -> {action} (todo: {todo})")
 
         if not all(read.values()):
             # Not all variables are still 'todo' -> skip field
