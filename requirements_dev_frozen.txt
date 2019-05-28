@@ -42,7 +42,6 @@ ptyprocess==0.6.0
 py==1.8.0
 pycodestyle==2.5.0
 pyflakes==2.1.1
--e git+git@github.com:MeteoSwiss-APN/pyflexplot.git@2a7e7d13f00e18292f6c5daf6306b52e96404b68#egg=pyflexplot
 Pygments==2.4.2
 pyparsing==2.4.0
 pyshp==2.1.0
