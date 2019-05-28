@@ -2,7 +2,8 @@
 """
 Plots.
 """
-import cartopy
+import cartopy.crs as ccrs
+import cartopy.io.img_tiles as cimgt
 import logging as log
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -130,15 +131,42 @@ class FlexPlotConcentration:
 
     def _create(self):
         """Create the plot."""
-        self.fig, self.ax = plt.subplots()
+
+        #SR_TMP<
+        pollat = 43.0
+        pollon = -170.0
+        bbox = [0, 15, 40, 50]
+        #SR_TMP>
+
+        grid_rot = ccrs.RotatedPole(
+            pole_latitude=pollat,
+            pole_longitude=pollon,
+        )
+        #grid_std = ccrs.Geodetic()
+        grid_std = ccrs.EuroPP()
+
+        self.fig = plt.figure()
+        self.ax = plt.subplot(projection=grid_std)
+
+        #self.ax.coastlines()
+        self.ax.gridlines()
+
+        #self.ax.stock_img()
+        self.ax.add_image(cimgt.Stamen('terrain-background'), 5)
+
+        #self.ax.set_global()
+        self.ax.set_extent(bbox)
+
+        arr = np.where(self.field > 0, self.field, np.nan)
 
         p = self.ax.contourf(
             self.rlon,
             self.rlat,
-            self.field,
+            arr,
             locator=ticker.LogLocator(),
             levels=10**np.arange(5, 15.1),
             extend='both',
+            transform=grid_rot,
         )
 
         self.fig.colorbar(p)
