@@ -41,7 +41,10 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'],)
     is_flag=True)
 @click.option(
     '--open', 'open_cmd',
-    help="Shell command to open the first plot as soon as it is available.")
+    help=(
+        "Shell command to open the first plot as soon as it is available."
+        " The file path follows the command, unless explicitly set by"
+        " including the format key '{file_path}'."))
 @click.pass_context
 # yapf: enable
 def cli(ctx, **kwargs):
@@ -139,9 +142,28 @@ def concentration(ctx, in_file_path, out_file_path_fmt, **kwargs):
         for i, out_file_path in enumerate(
                 # Note: FlexPlotter.run yields the output file paths
                 FlexPlotter('concentration').run(data, out_file_path_fmt)):
+
             if ctx.obj['open_cmd'] and i == 0:
                 # Open the first file as soon as it's available
-                os.system(f"{ctx.obj['open_cmd']} {out_file_path} &")
+                open_plot(ctx.obj['open_cmd'], out_file_path)
+
+
+def open_plot(cmd, file_path):
+    """Open a plot file using a shell command."""
+
+    # If not yet included, insert output file path
+    if not '{file_path}' in cmd:
+        cmd += ' {file_path}'
+
+    # Ensure that the command is run in the background
+    if not cmd.rstrip().endswith('&'):
+        cmd += ' &'
+
+    # Format the command
+    cmd = cmd.format(file_path=file_path)
+
+    # Run the command
+    os.system(cmd)
 
     return 0
 
