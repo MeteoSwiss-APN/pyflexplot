@@ -80,7 +80,7 @@ class FlexPlotter:
             kwargs = {
                 'rlat': self.data.rlat,
                 'rlon': self.data.rlon,
-                'field': self.data.field(key),
+                'fld': self.data.field(key),
                 'attrs': {},  #SRU_TMP
             }
 
@@ -133,16 +133,26 @@ class FlexPlotConcentration:
     """FLEXPART plot of particle concentration at a certain level.
 
     Args:
-        TODO
+        rlat (ndarray[float]): Rotated latitude (1d).
+
+        rlon (ndarray[float]): Rotated longitude (1d).
+
+        fld (ndarray[float, float]): Concentration field (2d).
+
+        attrs (dict): Attributes from the FLEXPART NetCDF file
+            (gloabl, variable-specific, etc.).
+
+        conf (dict, optional): Plot configuration. Defaults to None.
 
     """
 
-    def __init__(self, rlat, rlon, field, attrs):
+    def __init__(self, rlat, rlon, fld, attrs, conf=None):
 
         self.rlat = rlat
         self.rlon = rlon
-        self.field = field
+        self.fld = np.where(fld > 0, fld, np.nan)
         self.attrs = attrs
+        self.conf = {} if conf is None else conf
 
         self._create()
 
@@ -159,32 +169,38 @@ class FlexPlotConcentration:
         #SRU_TMP>
         pollat = self.attrs['rotated_pole']['grid_north_pole_latitude']
         pollon = self.attrs['rotated_pole']['grid_north_pole_longitude']
-        bbox = [0.0, 17.0, 41.7, 50.6]
         contour_levels = 10**np.arange(-1, 9.1, 1)
+        clon = 180 + pollon
         #SRU_TMP>
 
-        # Define projections
+        # Projections of data and plot
         self.proj_data = ccrs.RotatedPole(
             pole_latitude=pollat,
             pole_longitude=pollon,
         )
-        self.proj_plot = ccrs.EuroPP()
+        #self.proj_plot = ccrs.EuroPP()
+        self.proj_plot = ccrs.TransverseMercator(central_longitude=clon)
 
+        # Compute 2d geographical lat/lon arrays
+        rlat2d, rlon2d = np.meshgrid(self.rlat, self.rlon)
+        self.lon2d, self.lat2d, _ = ccrs.PlateCarree().transform_points(
+            self.proj_data, rlat2d, rlon2d).T
+
+        # Initialize plot
         self.fig = plt.figure()
         self.ax = plt.subplot(projection=self.proj_plot)
 
-        self.ax.set_extent(bbox)
+        self.set_extent()
         self.ax.gridlines()
         #self.ax.coastlines()
 
         self.ax.add_image(cimgt.Stamen('terrain-background'), 5)
 
         # Plot particle concentration field
-        arr = np.where(self.field > 0, self.field, np.nan)
         p = self.ax.contourf(
             self.rlon,
             self.rlat,
-            arr,
+            self.fld,
             locator=ticker.LogLocator(),
             levels=contour_levels,
             extend='both',
@@ -193,6 +209,30 @@ class FlexPlotConcentration:
         self.fig.colorbar(p)
 
         self.add_data_domain_outline()
+
+    def set_extent(self):
+        """Set the extent of the plot (bounding box)."""
+
+        # Default: data domain
+        bbox = [self.rlon[0], self.rlon[-1], self.rlat[0], self.rlat[-1]]
+
+        # Get padding factor -- either a single number, or a (x, y) tuple
+        bbox_pad_rel = self.conf.get('bbox_pad_rel', 0.01)
+        try:
+            pad_fact_x, pad_fact_y = bbox_pad_rel
+        except TypeError:
+            pad_fact_x, pad_fact_y = [bbox_pad_rel]*2
+
+        # Add padding: grow (or shrink) bbox by a factor
+        dlon = bbox[1] - bbox[0]
+        dlat = bbox[3] - bbox[2]
+        padx = dlon*pad_fact_x
+        pady = dlon*pad_fact_y
+        bbox_pad = np.array([-padx, padx, -pady, pady])
+        bbox += bbox_pad
+
+        # Apply to plot
+        self.ax.set_extent(bbox, self.proj_data)
 
     def add_data_domain_outline(self):
         """Add domain outlines to plot."""
