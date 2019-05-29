@@ -5,6 +5,7 @@ Command line interface.
 import click
 import functools
 import logging as log
+import os
 import sys
 
 from pprint import pformat
@@ -17,27 +18,30 @@ from .utils_dev import ipython  #SRU_DEV
 
 __version__ = '0.1.0'
 
-CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"],)
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'],)
 
 
 # yapf: disable
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.option(
     '--dry-run', '-n',
-    help="Perform a trial run with no changes made",
+    help="Perform a trial run with no changes made.",
     flag_value='dry_run', default=False)
 @click.option(
     '--verbose', '-v',
-    help="Increase verbosity (specify multiple times for more)",
+    help="Increase verbosity (specify multiple times for more).",
     count=True)
 @click.option(
     '--version', '-V',
-    help="Print version",
+    help="Print version.",
     is_flag=True)
 @click.option(
     '--noplot',
-    help="Skip plotting (for debugging etc.)",
+    help="Skip plotting (for debugging etc.).",
     is_flag=True)
+@click.option(
+    '--open', 'open_cmd',
+    help="Shell command to open the first plot file after plotting.")
 @click.pass_context
 # yapf: enable
 def cli(ctx, **kwargs):
@@ -76,11 +80,11 @@ def common_options(f):
     # yapf: disable
     options = [
         click.option(
-            "--infile", "-i", "in_file_path",
+            '--infile', '-i', 'in_file_path',
             help="Input file path.",
             type=click.Path(exists=True, readable=True), required=True),
         click.option(
-            "--outfile", "-o", "out_file_path_fmt",
+            '--outfile', '-o', 'out_file_path_fmt',
             help=(
                 "Output file path. If multiple plots are to be created, e.g.,"
                 " for multiple fields or levels, ``outfile`` must contain"
@@ -96,31 +100,31 @@ def common_options(f):
 @cli.command()
 @common_options
 @click.option(
-    "--age-class-ind", "age_inds",
+    '--age-class-ind', 'age_inds',
     help="Index of age class (zero-based) (default: all).",
     type=int, multiple=True)
 @click.option(
-    "--release-point-ind", "relpt_inds",
+    '--release-point-ind', 'relpt_inds',
     help="Index of release point (zero-based) (default: all).",
     type=int, multiple=True)
 @click.option(
-    "--time-ind", "time_inds",
+    '--time-ind', 'time_inds',
     help="Index of time (zero-based) (default: all).",
     type=int, multiple=True)
 @click.option(
-    "--level-ind", "level_inds",
+    '--level-ind', 'level_inds',
     help="Index of vertical level (zero-based, bottom-up) (default: all).",
     type=int, multiple=True)
 @click.option(
-    "--species-id", "species_ids",
+    '--species-id', 'species_ids',
     help="Species id (default: all).",
     type=int, multiple=True)
 @click.option(
-    "--field-type", "field_types",
+    '--field-type', 'field_types',
     help="Type of field (default: all).",
-    type=click.Choice(["3D", "WD", "DD"]), multiple=True)
+    type=click.Choice(['3D', 'WD', 'DD']), multiple=True)
 @click.option(
-    "--source-ind", "source_inds",
+    '--source-ind', 'source_inds',
     help="Point source indices (zero-based) (default: all).",
     type=int, multiple=True)
 @click.pass_context
@@ -131,8 +135,11 @@ def concentration(ctx, in_file_path, out_file_path_fmt, **kwargs):
     data = FlexFileReader(**kwargs).read(in_file_path)
 
     # Create plot
-    if not ctx.obj["noplot"]:
-        FlexPlotter('concentration').run(data, out_file_path_fmt)
+    if not ctx.obj['noplot']:
+        paths = FlexPlotter('concentration').run(data, out_file_path_fmt)
+
+    if ctx.obj['open_cmd'] and paths:
+        os.system(f"{ctx.obj['open_cmd']} {paths[0]} &")
 
     return 0
 
