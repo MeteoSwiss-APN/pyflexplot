@@ -38,15 +38,16 @@ class FlexPlotter:
                 multiple files have the same name, but can be a plain
                 string if no variable assumes more than one value.
 
-        Returns:
-            list[str]: Output file paths.
+        Yields:
+            str: Output file paths.
 
         """
         self.data = data
         self.file_path_fmt = file_path_fmt
 
         if self.type_ == 'concentration':
-            return self._run_concentration()
+            for path in self._run_concentration():
+                yield path
         else:
             raise NotImplementedError(f"plot type '{self.type_}'")
 
@@ -85,9 +86,7 @@ class FlexPlotter:
 
             FlexPlotConcentration(**kwargs).save(file_path)
 
-            file_paths.append(file_path)
-
-        return file_paths
+            yield file_path
 
     def check_file_path_fmt(self, restrictions):
         """Check output file path for necessary variables format keys.
