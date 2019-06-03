@@ -1,1 +1,1 @@
-requirements.frozen.txt
+requirements.hard.txt
