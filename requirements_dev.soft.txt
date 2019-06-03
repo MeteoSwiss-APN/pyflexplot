@@ -1,4 +1,4 @@
--r requirements.txt
+-r requirements.soft.txt
 bumpversion
 coverage
 flake8
