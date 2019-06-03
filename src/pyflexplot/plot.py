@@ -167,24 +167,10 @@ class FlexPlotConcentration:
         #SRU_TMP>
 
         #SRU_TMP>
-        pollat = self.attrs['rotated_pole']['grid_north_pole_latitude']
-        pollon = self.attrs['rotated_pole']['grid_north_pole_longitude']
         contour_levels = 10**np.arange(-1, 9.1, 1)
-        clon = 180 + pollon
         #SRU_TMP>
 
-        # Projections of data and plot
-        self.proj_data = ccrs.RotatedPole(
-            pole_latitude=pollat,
-            pole_longitude=pollon,
-        )
-        #self.proj_plot = ccrs.EuroPP()
-        self.proj_plot = ccrs.TransverseMercator(central_longitude=clon)
-
-        # Compute 2d geographical lat/lon arrays
-        rlat2d, rlon2d = np.meshgrid(self.rlat, self.rlon)
-        self.lon2d, self.lat2d, _ = ccrs.PlateCarree().transform_points(
-            self.proj_data, rlat2d, rlon2d).T
+        self.prepare_projections()
 
         # Initialize plot
         self.fig = plt.figure()
@@ -209,6 +195,28 @@ class FlexPlotConcentration:
         self.fig.colorbar(p)
 
         self.add_data_domain_outline()
+
+    def prepare_projections(self):
+        """Prepare projections to transform the data for plotting."""
+
+        # Projection of input data: Rotated Pole
+        pollat = self.attrs['rotated_pole']['grid_north_pole_latitude']
+        pollon = self.attrs['rotated_pole']['grid_north_pole_longitude']
+        self.proj_data = ccrs.RotatedPole(
+            pole_latitude=pollat,
+            pole_longitude=pollon,
+        )
+
+        # Projection of plot
+        clon = 180 + pollon
+        #self.proj_plot = ccrs.EuroPP()
+        self.proj_plot = ccrs.TransverseMercator(central_longitude=clon)
+
+        # Geographical lat/lon arrays
+        self.proj_geo = ccrs.PlateCarree()
+        rlat2d, rlon2d = np.meshgrid(self.rlat, self.rlon)
+        self.lon2d, self.lat2d, _ = self.proj_geo.transform_points(
+            self.proj_data, rlat2d, rlon2d).T
 
     def set_extent(self):
         """Set the extent of the plot (bounding box)."""
