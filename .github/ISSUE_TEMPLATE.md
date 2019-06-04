@@ -1,4 +1,4 @@
-* Python FLEXPART Plotting version:
+* PyFlexPlot version:
 * Python version:
 * Operating System:
 

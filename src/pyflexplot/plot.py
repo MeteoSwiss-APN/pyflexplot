@@ -2,8 +2,7 @@
 """
 Plots.
 """
-import cartopy.crs as ccrs
-import cartopy.io.img_tiles as cimgt
+import cartopy
 import logging as log
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -173,14 +172,14 @@ class FlexPlotConcentration:
         self.prepare_projections()
 
         # Initialize plot
-        self.fig = plt.figure()
-        self.ax = plt.subplot(projection=self.proj_plot)
+        self.init_fig_axs()
 
         self.set_extent()
-        self.ax.gridlines()
-        #self.ax.coastlines()
+        gls = self.ax.gridlines(linestyle=':')
+        self.add_geography('50m')
+        #self.add_geography('10m')
 
-        self.ax.add_image(cimgt.Stamen('terrain-background'), 5)
+        #ipython(globals(), locals())
 
         # Plot particle concentration field
         p = self.ax.contourf(
@@ -192,7 +191,7 @@ class FlexPlotConcentration:
             extend='both',
             transform=self.proj_data,
         )
-        self.fig.colorbar(p)
+        #self.fig.colorbar(p)
 
         self.add_data_domain_outline()
 
@@ -202,21 +201,50 @@ class FlexPlotConcentration:
         # Projection of input data: Rotated Pole
         pollat = self.attrs['rotated_pole']['grid_north_pole_latitude']
         pollon = self.attrs['rotated_pole']['grid_north_pole_longitude']
-        self.proj_data = ccrs.RotatedPole(
+        self.proj_data = cartopy.crs.RotatedPole(
             pole_latitude=pollat,
             pole_longitude=pollon,
         )
 
         # Projection of plot
         clon = 180 + pollon
-        #self.proj_plot = ccrs.EuroPP()
-        self.proj_plot = ccrs.TransverseMercator(central_longitude=clon)
+        #self.proj_plot = cartopy.crs.EuroPP()
+        self.proj_plot = cartopy.crs.TransverseMercator(central_longitude=clon)
 
         # Geographical lat/lon arrays
-        self.proj_geo = ccrs.PlateCarree()
+        self.proj_geo = cartopy.crs.PlateCarree()
         rlat2d, rlon2d = np.meshgrid(self.rlat, self.rlon)
         self.lon2d, self.lat2d, _ = self.proj_geo.transform_points(
             self.proj_data, rlat2d, rlon2d).T
+
+    def init_fig_axs(self):
+        """Initialize figure and axes."""
+
+        self.fig = plt.figure(
+            #constrained_layout=True,
+        )
+
+        gs = self.fig.add_gridspec(
+            ncols=2,
+            nrows=3,
+            width_ratios=(8, 2),
+            height_ratios=(2, 4, 4),
+        )
+
+        self.axs = np.array([
+            self.fig.add_subplot(gs[1:, 0], projection=self.proj_plot),
+            self.fig.add_subplot(gs[0, :]),  # Top box
+            self.fig.add_subplot(gs[1, 1]),  # Middle-right box
+            self.fig.add_subplot(gs[2, 1]),  # Bottom-right box
+        ])
+        self.ax = self.axs[0]
+
+        for ax in self.axs[1:]:
+            ax.axis('off')
+
+        self.axs[1].text(0.5, 0.5, 'top')
+        self.axs[2].text(0.5, 0.5, 'middle-right')
+        self.axs[3].text(0.5, 0.5, 'bottom-right')
 
     def set_extent(self):
         """Set the extent of the plot (bounding box)."""
@@ -241,6 +269,27 @@ class FlexPlotConcentration:
 
         # Apply to plot
         self.ax.set_extent(bbox, self.proj_data)
+
+    def add_geography(self, scale):
+        """Add geographic elements: coasts, countries, colors, ...
+
+        Args:
+            scale (str): Spatial scale of elements, e.g., '10m', '50m'.
+
+        """
+
+        self.ax.coastlines(resolution=scale)
+
+        self.ax.background_patch.set_facecolor(cartopy.feature.COLORS['water'])
+
+        self.ax.add_feature(
+            cartopy.feature.NaturalEarthFeature(
+                category='cultural',
+                name='admin_0_countries_lakes',
+                scale=scale,
+                edgecolor='black',
+                facecolor='white',
+            ))
 
     def add_data_domain_outline(self):
         """Add domain outlines to plot."""
@@ -270,5 +319,5 @@ class FlexPlotConcentration:
                     f"Cannot derive format from extension '{ext}'"
                     f"derived from '{os.path.basename(file_path)}'")
             format = ext[1:]
-        self.fig.savefig(file_path, bbox_inches='tight')
+        self.fig.savefig(file_path)
         plt.close(self.fig)

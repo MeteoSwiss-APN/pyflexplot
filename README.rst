@@ -1,10 +1,10 @@
 ========================
-Python FLEXPART Plotting
+PyFlexPlot
 ========================
 
 
 
-Python FLEXPART Plotting contains Python scripts to plot FLEXPART output
+PyFlexPlot contains Python scripts to plot FLEXPART output
 
 
 

@@ -51,7 +51,7 @@ def ipython(
 
     print('\n----------\n')
     if _msg_ is not None:
-        print("\n{l}\n{m}\n{l}\n".format(l="*" * 60, m=_msg_))
+        print("\n{l}\n{m}\n{l}\n".format(l="*"*60, m=_msg_))
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=DeprecationWarning)

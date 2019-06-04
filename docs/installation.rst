@@ -8,13 +8,13 @@ Installation
 Stable release
 --------------
 
-To install Python FLEXPART Plotting, run this command in your terminal:
+To install PyFlexPlot, run this command in your terminal:
 
 .. code-block:: console
 
     $ pip install pyflexplot
 
-This is the preferred method to install Python FLEXPART Plotting, as it will always install the most recent stable release.
+This is the preferred method to install PyFlexPlot, as it will always install the most recent stable release.
 
 If you don't have `pip`_ installed, this `Python installation guide`_ can guide
 you through the process.
@@ -26,7 +26,7 @@ you through the process.
 From sources
 ------------
 
-The sources for Python FLEXPART Plotting can be downloaded from the `Github repo`_.
+The sources for PyFlexPlot can be downloaded from the `Github repo`_.
 
 Option 1
 ^^^^^^^^

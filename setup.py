@@ -25,6 +25,8 @@ setup_requirements = ['pytest-runner', ]
 
 test_requirements = ['pytest', ]
 
+packages = find_packages('src')
+
 setup(
     author="Stefan Ruedisuehli",
     author_email='stefan.ruedisuehli@env.ethz.ch',
@@ -36,7 +38,8 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
-    description="Python FLEXPART Plotting contains Python scripts to plot FLEXPART output",
+    description=(
+        "PyFlexPlot contains Python scripts to plot FLEXPART NetCDF output"),
     entry_points={
         'console_scripts': [
             'pyflexplot=pyflexplot.cli:cli',
@@ -47,7 +50,8 @@ setup(
     include_package_data=True,
     keywords='pyflexplot',
     name='pyflexplot',
-    package_dir={'': "src"},
+    packages=packages,
+    package_dir={package: f'src/{package}' for package in packages},
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,

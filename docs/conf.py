@@ -47,7 +47,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Python FLEXPART Plotting'
+project = u'PyFlexPlot'
 copyright = u"2019, Stefan Ruedisuehli"
 author = u"Stefan Ruedisuehli"
 
@@ -129,7 +129,7 @@ latex_elements = {
 # [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'pyflexplot.tex',
-     u'Python FLEXPART Plotting Documentation',
+     u'PyFlexPlot Documentation',
      u'Stefan Ruedisuehli', 'manual'),
 ]
 
@@ -140,7 +140,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     (master_doc, 'pyflexplot',
-     u'Python FLEXPART Plotting Documentation',
+     u'PyFlexPlot Documentation',
      [author], 1)
 ]
 
@@ -152,7 +152,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'pyflexplot',
-     u'Python FLEXPART Plotting Documentation',
+     u'PyFlexPlot Documentation',
      author,
      'pyflexplot',
      'One line description of project.',

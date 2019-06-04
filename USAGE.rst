@@ -2,6 +2,6 @@
 Usage
 =====
 
-To use Python FLEXPART Plotting in a project::
+To use PyFlexPlot in a project::
 
     import pyflexplot

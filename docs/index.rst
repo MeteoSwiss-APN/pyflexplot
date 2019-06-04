@@ -1,4 +1,4 @@
-Welcome to Python FLEXPART Plotting's documentation!
+Welcome to PyFlexPlot's documentation!
 ======================================
 
 .. toctree::

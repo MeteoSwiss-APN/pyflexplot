@@ -38,8 +38,8 @@ and "help wanted" is open to whoever wants to implement it.
 Write Documentation
 ~~~~~~~~~~~~~~~~~~~
 
-Python FLEXPART Plotting could always use more documentation, whether as part of the
-official Python FLEXPART Plotting docs, in docstrings, or even on the web in blog posts,
+PyFlexPlot could always use more documentation, whether as part of the
+official PyFlexPlot docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
 Submit Feedback
