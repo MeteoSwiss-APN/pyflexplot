@@ -25,10 +25,6 @@ setup_requirements = ['pytest-runner', ]
 
 test_requirements = ['pytest', ]
 
-packages = find_packages('src')
-package_dir = {'': 'src'}
-package_dir.update({package: f'src/{package}' for package in packages})
-
 setup(
     author="Stefan Ruedisuehli",
     author_email='stefan.ruedisuehli@env.ethz.ch',
@@ -52,8 +48,8 @@ setup(
     include_package_data=True,
     keywords='pyflexplot',
     name='pyflexplot',
-    packages=packages,
-    package_dir=package_dir,
+    packages=find_packages('src'),
+    package_dir={'': 'src'},
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
