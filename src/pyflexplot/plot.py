@@ -169,7 +169,7 @@ class FlexPlotConcentration:
         zorder_elements = [
             'map',
             'grid',
-            'particles'
+            'particles',
         ]
         d0, dz = 1, 1
         self.zorder = {e: d0 + i*dz for i, e in enumerate(zorder_elements)}
@@ -251,13 +251,14 @@ class FlexPlotConcentration:
         # Determine height of top box and width of right boxes
         w_box = 0.2*w_map
         #h_box = 0.2*h_map
-        h_box = w_box*fig_aspect #SRU_TMP
+        h_box = w_box*fig_aspect  #SRU_TMP
 
         # Add axes for text boxes (one on top, two to the right)
+        _adx = self.fig.add_axes
         self.axs_box = np.array([
-            self.fig.add_axes([x0_map, y0_map+h_map, w_map+w_box, h_box]),
-            self.fig.add_axes([x0_map+w_map, y0_map+h_map/2, w_box, h_map/2]),
-            self.fig.add_axes([x0_map+w_map, y0_map, w_box, h_map/2]),
+            _adx([x0_map, y0_map + h_map, w_map + w_box, h_box]),
+            _adx([x0_map + w_map, y0_map + h_map/2, w_box, h_map/2]),
+            _adx([x0_map + w_map, y0_map, w_box, h_map/2]),
         ])
 
         # Add boxes to axes
@@ -345,7 +346,7 @@ class FlexPlotConcentration:
             levels=contour_levels,
             extend='both',
             transform=self.proj_data,
-            zorder=self.zorder['particles']
+            zorder=self.zorder['particles'],
         )
         #self.fig.colorbar(p)
 
