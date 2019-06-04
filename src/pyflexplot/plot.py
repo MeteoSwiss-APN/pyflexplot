@@ -153,11 +153,6 @@ class FlexPlotConcentration:
         self.attrs = attrs
         self.conf = {} if conf is None else conf
 
-        self._create()
-
-    def _create(self):
-        """Create the plot."""
-
         #SRU_TMP< TODO Extract from NetCDF file
         self.attrs['rotated_pole'] = {
             'grid_north_pole_latitude': 43.0,
@@ -165,35 +160,53 @@ class FlexPlotConcentration:
         }
         #SRU_TMP>
 
-        #SRU_TMP>
-        contour_levels = 10**np.arange(-1, 9.1, 1)
-        #SRU_TMP>
+        self._create()
 
+    def _create(self):
+        """Create the plot, though neither show nor save it."""
+
+        # Determine zorder of plot elements, from low to high
+        zorder_elements = [
+            'map',
+            'grid',
+            'particles'
+        ]
+        d0, dz = 1, 1
+        self.zorder = {e: d0 + i*dz for i, e in enumerate(zorder_elements)}
+
+        # Map projections of input data and plot
         self.prepare_projections()
 
-        # Initialize plot
-        self.init_fig_axs()
-
-        self.set_extent()
-        gls = self.ax.gridlines(linestyle=':')
-        self.add_geography('50m')
+        # Prepare plot
+        self.fig = plt.figure(figsize=(12, 9))
+        self.ax_map = self.fig.add_subplot(projection=self.proj_plot)
+        self.ax_map.set_extent(self.padded_bbox(pad_rel=0.02), self.proj_data)
+        self.ax_map.gridlines(
+            linestyle=':',
+            linewidth=1,
+            color='black',
+            zorder=self.zorder['grid'],
+        )
+        self.map_add_geography('50m')
         #self.add_geography('10m')
-
-        #ipython(globals(), locals())
+        self.map_add_data_domain_outline()
 
         # Plot particle concentration field
-        p = self.ax.contourf(
-            self.rlon,
-            self.rlat,
-            self.fld,
-            locator=ticker.LogLocator(),
-            levels=contour_levels,
-            extend='both',
-            transform=self.proj_data,
-        )
-        #self.fig.colorbar(p)
+        self.map_add_particle_concentrations()
 
-        self.add_data_domain_outline()
+        self.fig_add_text_boxes()
+
+        # Add some sample text to boxes
+        texts = ['top', 'middle-right', 'bottom-right']
+        for ax, text in zip(self.axs_box, texts):
+            ax.text(
+                0.5,
+                0.5,
+                text,
+                transform=ax.transAxes,
+                horizontalalignment='center',
+                verticalalignment='top',
+            )
 
     def prepare_projections(self):
         """Prepare projections to transform the data for plotting."""
@@ -217,43 +230,57 @@ class FlexPlotConcentration:
         self.lon2d, self.lat2d, _ = self.proj_geo.transform_points(
             self.proj_data, rlat2d, rlon2d).T
 
-    def init_fig_axs(self):
-        """Initialize figure and axes."""
+    def fig_add_text_boxes(self):
+        """Add empty text boxes to figure around the map plot."""
 
-        self.fig = plt.figure(
-            #constrained_layout=True,
-        )
+        # Freeze the plot
+        self.fig.canvas.draw()
 
-        gs = self.fig.add_gridspec(
-            ncols=2,
-            nrows=3,
-            width_ratios=(8, 2),
-            height_ratios=(2, 4, 4),
-        )
+        # Obtain aspect ratio of figure
+        fig_pxs = self.fig.get_window_extent()
+        fig_aspect = fig_pxs.width/fig_pxs.height
 
-        self.axs = np.array([
-            self.fig.add_subplot(gs[1:, 0], projection=self.proj_plot),
-            self.fig.add_subplot(gs[0, :]),  # Top box
-            self.fig.add_subplot(gs[1, 1]),  # Middle-right box
-            self.fig.add_subplot(gs[2, 1]),  # Bottom-right box
+        # Get map dimensions in figure coordinates
+        _, _, w_map, h_map = self.ax_map.bbox.transformed(
+            self.fig.transFigure.inverted()).bounds
+
+        # Relocate the map close to the lower left corner
+        x0_map, y0_map = 0.05, 0.05
+        self.ax_map.set_position([x0_map, y0_map, w_map, h_map])
+
+        # Determine height of top box and width of right boxes
+        w_box = 0.2*w_map
+        #h_box = 0.2*h_map
+        h_box = w_box*fig_aspect #SRU_TMP
+
+        # Add axes for text boxes (one on top, two to the right)
+        self.axs_box = np.array([
+            self.fig.add_axes([x0_map, y0_map+h_map, w_map+w_box, h_box]),
+            self.fig.add_axes([x0_map+w_map, y0_map+h_map/2, w_box, h_map/2]),
+            self.fig.add_axes([x0_map+w_map, y0_map, w_box, h_map/2]),
         ])
-        self.ax = self.axs[0]
 
-        for ax in self.axs[1:]:
+        # Add boxes to axes
+        for ax in self.axs_box:
             ax.axis('off')
+            p = mpl.patches.Rectangle(
+                xy=(0.0, 0.0),
+                width=1.0,
+                height=1.0,
+                transform=ax.transAxes,
+                facecolor='white',
+                edgecolor='black',
+            )
+            ax.add_patch(p)
 
-        self.axs[1].text(0.5, 0.5, 'top')
-        self.axs[2].text(0.5, 0.5, 'middle-right')
-        self.axs[3].text(0.5, 0.5, 'bottom-right')
-
-    def set_extent(self):
-        """Set the extent of the plot (bounding box)."""
+    def padded_bbox(self, pad_rel=0.0):
+        """Compute the bounding box based on rlat/rlon with padding."""
 
         # Default: data domain
         bbox = [self.rlon[0], self.rlon[-1], self.rlat[0], self.rlat[-1]]
 
         # Get padding factor -- either a single number, or a (x, y) tuple
-        bbox_pad_rel = self.conf.get('bbox_pad_rel', 0.01)
+        bbox_pad_rel = self.conf.get('bbox_pad_rel', pad_rel)
         try:
             pad_fact_x, pad_fact_y = bbox_pad_rel
         except TypeError:
@@ -267,10 +294,9 @@ class FlexPlotConcentration:
         bbox_pad = np.array([-padx, padx, -pady, pady])
         bbox += bbox_pad
 
-        # Apply to plot
-        self.ax.set_extent(bbox, self.proj_data)
+        return bbox
 
-    def add_geography(self, scale):
+    def map_add_geography(self, scale):
         """Add geographic elements: coasts, countries, colors, ...
 
         Args:
@@ -278,34 +304,58 @@ class FlexPlotConcentration:
 
         """
 
-        self.ax.coastlines(resolution=scale)
+        self.ax_map.coastlines(resolution=scale)
 
-        self.ax.background_patch.set_facecolor(cartopy.feature.COLORS['water'])
+        self.ax_map.background_patch.set_facecolor(
+            cartopy.feature.COLORS['water'])
 
-        self.ax.add_feature(
+        self.ax_map.add_feature(
             cartopy.feature.NaturalEarthFeature(
                 category='cultural',
                 name='admin_0_countries_lakes',
                 scale=scale,
                 edgecolor='black',
                 facecolor='white',
-            ))
+            ),
+            zorder=self.zorder['map'],
+        )
 
-    def add_data_domain_outline(self):
-        """Add domain outlines to plot."""
+    def map_add_data_domain_outline(self):
+        """Add domain outlines to map plot."""
 
         lon0, lon1 = self.rlon[[0, -1]]
         lat0, lat1 = self.rlat[[0, -1]]
         xs = [lon0, lon1, lon1, lon0, lon0]
         ys = [lat0, lat0, lat1, lat1, lat0]
 
-        self.ax.plot(xs, ys, transform=self.proj_data, c='black', lw=1)
+        self.ax_map.plot(xs, ys, transform=self.proj_data, c='black', lw=1)
+
+    def map_add_particle_concentrations(self):
+        """Plot the particle concentrations onto the map."""
+
+        #SRU_TMP>
+        contour_levels = 10**np.arange(-1, 9.1, 1)
+        #SRU_TMP>
+
+        p = self.ax_map.contourf(
+            self.rlon,
+            self.rlat,
+            self.fld,
+            locator=ticker.LogLocator(),
+            levels=contour_levels,
+            extend='both',
+            transform=self.proj_data,
+            zorder=self.zorder['particles']
+        )
+        #self.fig.colorbar(p)
+
+        return p
 
     def save(self, file_path, format=None):
         """Save the plot to disk.
 
         Args:
-            file_path (str): Output file name, incl. path. 
+            file_path (str): Output file name, incl. path.
 
             format (str): Plot format (e.g., 'png', 'pdf'). Defaults to
                 None. If ``format`` is None, the plot format is derived
@@ -319,5 +369,11 @@ class FlexPlotConcentration:
                     f"Cannot derive format from extension '{ext}'"
                     f"derived from '{os.path.basename(file_path)}'")
             format = ext[1:]
-        self.fig.savefig(file_path)
+        self.fig.savefig(
+            file_path,
+            facecolor=self.fig.get_facecolor(),
+            edgecolor=self.fig.get_edgecolor(),
+            bbox_inches='tight',
+            pad_inches=0.2,
+        )
         plt.close(self.fig)
