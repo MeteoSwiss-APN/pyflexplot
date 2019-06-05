@@ -312,6 +312,22 @@ class FlexPlotConcentration:
 
         return p
 
+    def ax_dims_fig_coords(self, ax):
+        """Get the dimensions of an axes in figure coords."""
+        trans = self.fig.transFigure.inverted()
+        x, y, w, h = ax.bbox.transformed(trans).bounds
+        return w, h
+
+    def map_dims_fig_coords(self):
+        """Return the dimensions of the map plot in figure coords."""
+        return self.ax_dims_fig_coords(self.ax_map)
+
+    def map_dims_axes_coords(self, ax):
+        """Return the dimensions of the map plot in axes coords."""
+        trans = ax.transAxes.inverted()
+        x, y, w, h = self.ax_map.bbox.transformed(trans).bounds
+        return w, h
+
     def fig_add_text_boxes(self, h_rel=0.1, w_rel=0.25, pad_hor_rel=0.015):
         """Add empty text boxes to the figure around the map plot.
 
@@ -337,8 +353,7 @@ class FlexPlotConcentration:
         fig_aspect = fig_pxs.width/fig_pxs.height
 
         # Get map dimensions in figure coordinates
-        _, _, w_map, h_map = self.ax_map.bbox.transformed(
-            self.fig.transFigure.inverted()).bounds
+        w_map, h_map = self.map_dims_fig_coords()
 
         # Relocate the map close to the lower left corner
         x0_map, y0_map = 0.05, 0.05
@@ -387,6 +402,34 @@ class FlexPlotConcentration:
             )
             ax.add_patch(p)
 
+    def text_unit_distances(self, ax, unit_w_map_rel=0.01):
+        """Compute unit distances in x and y for text positioning.
+
+        To position text nicely inside a box, it is handy to have
+        unit distances of absolute length to work with that are
+        independent of the size of the box (i.e., axes). This method
+        computes such distances as a fraction of the width of the
+        map plot.
+
+        Because the distances are in Axes coordinates, they are
+        specific to a given axes.
+
+        Args:
+            ax (Axes): Axes to which text will be added.
+
+            unit_w_map_rel (float, optional): Fraction of the width
+                of the map plot that corresponds to one unit distance.
+                Defaults to 0.01.
+
+        """
+        w_map_fig, h_map_fig = self.map_dims_fig_coords()
+        w_box_fig, h_box_fig = self.ax_dims_fig_coords(ax)
+
+        dx = unit_w_map_rel*w_map_fig/w_box_fig
+        dy = unit_w_map_rel*w_map_fig/h_box_fig
+
+        return dx, dy
+
     def fill_text_boxes(self):
         """Add text etc. to the boxes around the map plot."""
         self.fill_box_top()
@@ -396,47 +439,44 @@ class FlexPlotConcentration:
     def fill_box_top(self):
         """Fill the box above the map plot."""
         ax = self.axs_box[0]
-
-        #SRU_TMP<
-        ax.text(
-            0.5,
-            0.5,
-            'top',
-            transform=ax.transAxes,
-            horizontalalignment='center',
-            verticalalignment='top',
-        )
-        #SRU_TMP>
+        dx, dy = self.text_unit_distances(ax)
+        self.box_label_ref_pos(ax)
 
     def fill_box_top_right(self):
         """Fill the box to the top-right of the map plot."""
         ax = self.axs_box[1]
-
-        #SRU_TMP<
-        ax.text(
-            0.5,
-            0.5,
-            'top-right',
-            transform=ax.transAxes,
-            horizontalalignment='center',
-            verticalalignment='top',
-        )
-        #SRU_TMP>
+        dx, dy = self.text_unit_distances(ax)
+        self.box_label_ref_pos(ax)
 
     def fill_box_bottom_right(self):
         """Fill the box to the bottom-right of the map plot."""
         ax = self.axs_box[2]
+        dx, dy = self.text_unit_distances(ax)
+        self.box_label_ref_pos(ax)
 
-        #SRU_TMP<
-        ax.text(
-            0.5,
-            0.5,
-            'bottom-right',
-            transform=ax.transAxes,
-            horizontalalignment='center',
-            verticalalignment='top',
-        )
-        #SRU_TMP>
+    def box_label_ref_pos(self, ax):
+        """Add sample text in reference positions (corners etc.).
+
+        Args:
+            ax (Axes): Axes to which to add the text.
+
+        """
+        dx, dy = self.text_unit_distances(ax)
+
+        def txt(x, y, **kwargs):
+            ax.text(x, y, transform=ax.transAxes, **kwargs)
+
+        # yapf: disable
+        txt(0.0 + dx, 0.0 + dy, ha='left',   va='bottom', s='bot left'  )
+        txt(0.0 + dx, 0.5,      ha='left',   va='center', s='mid left'  )
+        txt(0.0 + dx, 1.0 - dy, ha='left',   va='top',    s='top left'  )
+        txt(0.5,      0.0 + dy, ha='center', va='bottom', s='bot center')
+        txt(0.5,      0.5,      ha='center', va='center', s='mid center')
+        txt(0.5,      1.0 - dy, ha='center', va='top',    s='top center')
+        txt(1.0 - dx, 0.0 + dy, ha='right',  va='bottom', s='bot right' )
+        txt(1.0 - dx, 0.5,      ha='right',  va='center', s='mid right' )
+        txt(1.0 - dx, 1.0 - dy, va='top',    ha='right',  s='top right' )
+        # yapf: enable
 
     def save(self, file_path, format=None):
         """Save the plot to disk.
