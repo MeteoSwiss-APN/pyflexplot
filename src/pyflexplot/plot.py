@@ -167,129 +167,20 @@ class FlexPlotConcentration:
     def _create(self):
         """Create the plot, though neither show nor save it."""
 
-        # Determine zorder of plot elements, from low to high
-        zorder_elements = [
-            'map',
-            'grid',
-            'particles',
-        ]
-        d0, dz = 1, 1
-        self.zorder = {e: d0 + i*dz for i, e in enumerate(zorder_elements)}
-
-        # Map projections of input data and plot
-        self.prepare_projections()
-
         # Prepare plot
         self.fig = plt.figure(figsize=(12, 9))
-        self.ax_map = self.fig.add_subplot(projection=self.proj_plot)
-        self.ax_map.set_extent(
-            self.padded_bbox(pad_rel=0.01),
-            self.proj_data,
-        )
-        self.ax_map.gridlines(
-            linestyle=':',
-            linewidth=1,
-            color='black',
-            zorder=self.zorder['grid'],
-        )
-        self.map_add_geography('50m')
-        #self.add_geography('10m')
-        self.map_add_data_domain_outline()
+        pollat = self.attrs['rotated_pole']['grid_north_pole_latitude']
+        pollon = self.attrs['rotated_pole']['grid_north_pole_longitude']
+        self.ax_map = FlexAxesMapRotatedPole(
+            self.fig, self.rlat, self.rlon, pollat, pollon)
 
         # Plot particle concentration field
         self.map_add_particle_concentrations()
 
         # Add text boxes around plot
+        self.ax_ref = self.ax_map.ax  #SRU_TMP
         self.fig_add_text_boxes()
         self.fill_text_boxes()
-
-    def prepare_projections(self):
-        """Prepare projections to transform the data for plotting."""
-
-        # Projection of input data: Rotated Pole
-        pollat = self.attrs['rotated_pole']['grid_north_pole_latitude']
-        pollon = self.attrs['rotated_pole']['grid_north_pole_longitude']
-        self.proj_data = cartopy.crs.RotatedPole(
-            pole_latitude=pollat,
-            pole_longitude=pollon,
-        )
-
-        # Projection of plot
-        clon = 180 + pollon
-        #self.proj_plot = cartopy.crs.EuroPP()
-        self.proj_plot = cartopy.crs.TransverseMercator(central_longitude=clon)
-
-        # Geographical lat/lon arrays
-        self.proj_geo = cartopy.crs.PlateCarree()
-        rlat2d, rlon2d = np.meshgrid(self.rlat, self.rlon)
-        self.lon2d, self.lat2d, _ = self.proj_geo.transform_points(
-            self.proj_data, rlat2d, rlon2d).T
-
-    def padded_bbox(self, pad_rel=0.0):
-        """Compute the bounding box based on rlat/rlon with padding.
-
-        Args:
-            pad_rel (float, optional): Padding between the bounding box
-                of the data and that of the plot, specified as a
-                fraction of the extent of the bounding box of the data
-                in the respective direction (horizontal or vertical).
-                Can be negative. Defaults to 0.0.
-
-        """
-
-        # Default: data domain
-        bbox = [self.rlon[0], self.rlon[-1], self.rlat[0], self.rlat[-1]]
-
-        # Get padding factor -- either a single number, or a (x, y) tuple
-        bbox_pad_rel = self.conf.get('bbox_pad_rel', pad_rel)
-        try:
-            pad_fact_x, pad_fact_y = bbox_pad_rel
-        except TypeError:
-            pad_fact_x, pad_fact_y = [bbox_pad_rel]*2
-
-        # Add padding: grow (or shrink) bbox by a factor
-        dlon = bbox[1] - bbox[0]
-        dlat = bbox[3] - bbox[2]
-        padx = dlon*pad_fact_x
-        pady = dlon*pad_fact_y
-        bbox_pad = np.array([-padx, padx, -pady, pady])
-        bbox += bbox_pad
-
-        return bbox
-
-    def map_add_geography(self, scale):
-        """Add geographic elements: coasts, countries, colors, ...
-
-        Args:
-            scale (str): Spatial scale of elements, e.g., '10m', '50m'.
-
-        """
-
-        self.ax_map.coastlines(resolution=scale)
-
-        self.ax_map.background_patch.set_facecolor(
-            cartopy.feature.COLORS['water'])
-
-        self.ax_map.add_feature(
-            cartopy.feature.NaturalEarthFeature(
-                category='cultural',
-                name='admin_0_countries_lakes',
-                scale=scale,
-                edgecolor='black',
-                facecolor='white',
-            ),
-            zorder=self.zorder['map'],
-        )
-
-    def map_add_data_domain_outline(self):
-        """Add domain outlines to map plot."""
-
-        lon0, lon1 = self.rlon[[0, -1]]
-        lat0, lat1 = self.rlat[[0, -1]]
-        xs = [lon0, lon1, lon1, lon0, lon0]
-        ys = [lat0, lat0, lat1, lat1, lat0]
-
-        self.ax_map.plot(xs, ys, transform=self.proj_data, c='black', lw=1)
 
     def map_add_particle_concentrations(self):
         """Plot the particle concentrations onto the map."""
@@ -298,15 +189,11 @@ class FlexPlotConcentration:
         contour_levels = 10**np.arange(-1, 9.1, 1)
         #SRU_TMP>
 
-        p = self.ax_map.contourf(
-            self.rlon,
-            self.rlat,
+        p = self.ax_map.plot_contourf(
             self.fld,
             locator=ticker.LogLocator(),
             levels=contour_levels,
             extend='both',
-            transform=self.proj_data,
-            zorder=self.zorder['particles'],
         )
         #self.fig.colorbar(p)
 
@@ -320,12 +207,12 @@ class FlexPlotConcentration:
 
     def map_dims_fig_coords(self):
         """Return the dimensions of the map plot in figure coords."""
-        return self.ax_dims_fig_coords(self.ax_map)
+        return self.ax_dims_fig_coords(self.ax_ref)
 
     def map_dims_axes_coords(self, ax):
         """Return the dimensions of the map plot in axes coords."""
         trans = ax.transAxes.inverted()
-        x, y, w, h = self.ax_map.bbox.transformed(trans).bounds
+        x, y, w, h = self.ax_ref.bbox.transformed(trans).bounds
         return w, h
 
     def fig_add_text_boxes(self, h_rel=0.1, w_rel=0.25, pad_hor_rel=0.015):
@@ -357,7 +244,7 @@ class FlexPlotConcentration:
 
         # Relocate the map close to the lower left corner
         x0_map, y0_map = 0.05, 0.05
-        self.ax_map.set_position([x0_map, y0_map, w_map, h_map])
+        self.ax_ref.set_position([x0_map, y0_map, w_map, h_map])
 
         # Determine height of top box and width of right boxes
         w_box = w_rel*w_map
@@ -504,3 +391,169 @@ class FlexPlotConcentration:
             pad_inches=0.15,
         )
         plt.close(self.fig)
+
+
+class FlexAxesMapRotatedPole():
+    """Map plot axes for FLEXPART plot for rotated-pole data.
+
+    Args:
+        fig (Figure): Figure to which to map axes is added.
+
+        rlat (ndarray[float]): Rotated latitude coordinates.
+
+        rlon (ndarray[float]): Rotated longitude coordinates.
+
+        pollat (float): Latitude of rotated pole.
+
+        pollon (float): Longitude of rotated pole.
+
+        **conf: Various plot configuration parameters.
+
+    """
+
+    def __init__(self, fig, rlat, rlon, pollat, pollon, **conf):
+        self.fig = fig
+        self.rlat = rlat
+        self.rlon = rlon
+        self.conf = conf
+
+        # Determine zorder of unique plot elements, from low to high
+        zorders_const = [
+            'map',
+            'grid',
+            'fld',
+        ]
+        d0, dz = 1, 1
+        self.zorder = {e: d0 + i*dz for i, e in enumerate(zorders_const)}
+
+        self.prepare_projections(pollat, pollon)
+
+        self.ax = self.fig.add_subplot(projection=self.proj_plot)
+
+        self.ax.set_extent(
+            self.padded_bbox(pad_rel=0.01),
+            self.proj_data,
+        )
+
+        self.ax.gridlines(
+            linestyle=':',
+            linewidth=1,
+            color='black',
+            zorder=self.zorder['grid'],
+        )
+
+        self.add_geography('50m')
+        #self.add_geography('10m')
+
+        self.add_data_domain_outline()
+
+    def prepare_projections(self, pollat, pollon):
+        """Prepare projections to transform the data for plotting.
+
+        Args:
+            pollat (float): Lattitude of rorated pole.
+
+            pollon (float): Longitude of rotated pole.
+
+        """
+
+        # Projection of input data: Rotated Pole
+        self.proj_data = cartopy.crs.RotatedPole(
+            pole_latitude=pollat, pole_longitude=pollon)
+
+        # Projection of plot
+        clon = 180 + pollon
+        self.proj_plot = cartopy.crs.TransverseMercator(central_longitude=clon)
+
+        # Geographical lat/lon arrays
+        self.proj_geo = cartopy.crs.PlateCarree()
+        rlat2d, rlon2d = np.meshgrid(self.rlat, self.rlon)
+        self.lon2d, self.lat2d, _ = self.proj_geo.transform_points(
+            self.proj_data, rlat2d, rlon2d).T
+
+    def padded_bbox(self, pad_rel=0.0):
+        """Compute the bounding box based on rlat/rlon with padding.
+
+        Args:
+            pad_rel (float, optional): Padding between the bounding box
+                of the data and that of the plot, specified as a
+                fraction of the extent of the bounding box of the data
+                in the respective direction (horizontal or vertical).
+                Can be negative. Defaults to 0.0.
+
+        """
+        # Default: data domain
+        bbox = [self.rlon[0], self.rlon[-1], self.rlat[0], self.rlat[-1]]
+
+        # Get padding factor -- either a single number, or a (x, y) tuple
+        bbox_pad_rel = self.conf.get('bbox_pad_rel', pad_rel)
+        try:
+            pad_fact_x, pad_fact_y = bbox_pad_rel
+        except TypeError:
+            pad_fact_x, pad_fact_y = [bbox_pad_rel]*2
+
+        # Add padding: grow (or shrink) bbox by a factor
+        dlon = bbox[1] - bbox[0]
+        dlat = bbox[3] - bbox[2]
+        padx = dlon*pad_fact_x
+        pady = dlon*pad_fact_y
+        bbox_pad = np.array([-padx, padx, -pady, pady])
+        bbox += bbox_pad
+
+        return bbox
+
+    def add_geography(self, scale):
+        """Add geographic elements: coasts, countries, colors, ...
+
+        Args:
+            scale (str): Spatial scale of elements, e.g., '10m', '50m'.
+
+        """
+
+        self.ax.coastlines(resolution=scale)
+
+        self.ax.background_patch.set_facecolor(cartopy.feature.COLORS['water'])
+
+        self.ax.add_feature(
+            cartopy.feature.NaturalEarthFeature(
+                category='cultural',
+                name='admin_0_countries_lakes',
+                scale=scale,
+                edgecolor='black',
+                facecolor='white',
+            ),
+            zorder=self.zorder['map'],
+        )
+
+    def add_data_domain_outline(self):
+        """Add domain outlines to map plot."""
+
+        lon0, lon1 = self.rlon[[0, -1]]
+        lat0, lat1 = self.rlat[[0, -1]]
+        xs = [lon0, lon1, lon1, lon0, lon0]
+        ys = [lat0, lat0, lat1, lat1, lat0]
+
+        self.ax.plot(xs, ys, transform=self.proj_data, c='black', lw=1)
+
+    def plot_contourf(self, fld, **kwargs):
+        """Plot a color contour field on the map.
+
+        Args:
+            fld (ndarray[float, float]): Field to plot.
+
+            **kwargs: Arguments passed to ax.contourf().
+
+        Returns:
+            Plot handle.
+
+        """
+        p = self.ax.contourf(
+            self.rlon,
+            self.rlat,
+            fld,
+            transform=self.proj_data,
+            zorder=self.zorder['fld'],
+            **kwargs,
+        )
+
+        return p
