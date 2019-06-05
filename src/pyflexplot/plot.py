@@ -13,6 +13,8 @@ import re
 from matplotlib import ticker
 from .utils_dev import ipython  #SRU_DEV
 
+mpl.use('Agg')  # Prevent ``couldn't connect to display`` error
+
 
 class FlexPlotter:
     """Create one or more FLEXPLART plots of a certain type.
@@ -194,19 +196,9 @@ class FlexPlotConcentration:
         # Plot particle concentration field
         self.map_add_particle_concentrations()
 
+        # Add text boxes around plot
         self.fig_add_text_boxes()
-
-        # Add some sample text to boxes
-        texts = ['top', 'middle-right', 'bottom-right']
-        for ax, text in zip(self.axs_box, texts):
-            ax.text(
-                0.5,
-                0.5,
-                text,
-                transform=ax.transAxes,
-                horizontalalignment='center',
-                verticalalignment='top',
-            )
+        self.fill_text_boxes()
 
     def prepare_projections(self):
         """Prepare projections to transform the data for plotting."""
@@ -229,50 +221,6 @@ class FlexPlotConcentration:
         rlat2d, rlon2d = np.meshgrid(self.rlat, self.rlon)
         self.lon2d, self.lat2d, _ = self.proj_geo.transform_points(
             self.proj_data, rlat2d, rlon2d).T
-
-    def fig_add_text_boxes(self):
-        """Add empty text boxes to figure around the map plot."""
-
-        # Freeze the plot
-        self.fig.canvas.draw()
-
-        # Obtain aspect ratio of figure
-        fig_pxs = self.fig.get_window_extent()
-        fig_aspect = fig_pxs.width/fig_pxs.height
-
-        # Get map dimensions in figure coordinates
-        _, _, w_map, h_map = self.ax_map.bbox.transformed(
-            self.fig.transFigure.inverted()).bounds
-
-        # Relocate the map close to the lower left corner
-        x0_map, y0_map = 0.05, 0.05
-        self.ax_map.set_position([x0_map, y0_map, w_map, h_map])
-
-        # Determine height of top box and width of right boxes
-        w_box = 0.2*w_map
-        #h_box = 0.2*h_map
-        h_box = w_box*fig_aspect  #SRU_TMP
-
-        # Add axes for text boxes (one on top, two to the right)
-        _adx = self.fig.add_axes
-        self.axs_box = np.array([
-            _adx([x0_map, y0_map + h_map, w_map + w_box, h_box]),
-            _adx([x0_map + w_map, y0_map + h_map/2, w_box, h_map/2]),
-            _adx([x0_map + w_map, y0_map, w_box, h_map/2]),
-        ])
-
-        # Add boxes to axes
-        for ax in self.axs_box:
-            ax.axis('off')
-            p = mpl.patches.Rectangle(
-                xy=(0.0, 0.0),
-                width=1.0,
-                height=1.0,
-                transform=ax.transAxes,
-                facecolor='white',
-                edgecolor='black',
-            )
-            ax.add_patch(p)
 
     def padded_bbox(self, pad_rel=0.0):
         """Compute the bounding box based on rlat/rlon with padding."""
@@ -351,6 +299,101 @@ class FlexPlotConcentration:
         #self.fig.colorbar(p)
 
         return p
+
+    def fig_add_text_boxes(self):
+        """Add empty text boxes to the figure around the map plot."""
+
+        # Freeze the map plot in order to fix it's coordinates (bbox)
+        self.fig.canvas.draw()
+
+        # Obtain aspect ratio of figure
+        fig_pxs = self.fig.get_window_extent()
+        fig_aspect = fig_pxs.width/fig_pxs.height
+
+        # Get map dimensions in figure coordinates
+        _, _, w_map, h_map = self.ax_map.bbox.transformed(
+            self.fig.transFigure.inverted()).bounds
+
+        # Relocate the map close to the lower left corner
+        x0_map, y0_map = 0.05, 0.05
+        self.ax_map.set_position([x0_map, y0_map, w_map, h_map])
+
+        # Determine height of top box and width of right boxes
+        w_box = 0.2*w_map
+        #h_box = 0.2*h_map
+        h_box = w_box*fig_aspect  #SRU_TMP
+
+        # Add axes for text boxes (one on top, two to the right)
+        _adx = self.fig.add_axes
+        self.axs_box = np.array([
+            _adx([x0_map, y0_map + h_map, w_map + w_box, h_box]),
+            _adx([x0_map + w_map, y0_map + h_map/2, w_box, h_map/2]),
+            _adx([x0_map + w_map, y0_map, w_box, h_map/2]),
+        ])
+
+        # Add boxes to axes
+        for ax in self.axs_box:
+            ax.axis('off')
+            p = mpl.patches.Rectangle(
+                xy=(0.0, 0.0),
+                width=1.0,
+                height=1.0,
+                transform=ax.transAxes,
+                facecolor='white',
+                edgecolor='black',
+            )
+            ax.add_patch(p)
+
+    def fill_text_boxes(self):
+        """Add text etc. to the boxes around the map plot."""
+        self.fill_box_top()
+        self.fill_box_top_right()
+        self.fill_box_bottom_right()
+
+    def fill_box_top(self):
+        """Fill the box above the map plot."""
+        ax = self.axs_box[0]
+
+        #SRU_TMP<
+        ax.text(
+            0.5,
+            0.5,
+            'top',
+            transform=ax.transAxes,
+            horizontalalignment='center',
+            verticalalignment='top',
+        )
+        #SRU_TMP>
+
+    def fill_box_top_right(self):
+        """Fill the box to the top-right of the map plot."""
+        ax = self.axs_box[1]
+
+        #SRU_TMP<
+        ax.text(
+            0.5,
+            0.5,
+            'top-right',
+            transform=ax.transAxes,
+            horizontalalignment='center',
+            verticalalignment='top',
+        )
+        #SRU_TMP>
+
+    def fill_box_bottom_right(self):
+        """Fill the box to the bottom-right of the map plot."""
+        ax = self.axs_box[2]
+
+        #SRU_TMP<
+        ax.text(
+            0.5,
+            0.5,
+            'bottom-right',
+            transform=ax.transAxes,
+            horizontalalignment='center',
+            verticalalignment='top',
+        )
+        #SRU_TMP>
 
     def save(self, file_path, format=None):
         """Save the plot to disk.
