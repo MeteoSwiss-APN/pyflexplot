@@ -182,7 +182,10 @@ class FlexPlotConcentration:
         # Prepare plot
         self.fig = plt.figure(figsize=(12, 9))
         self.ax_map = self.fig.add_subplot(projection=self.proj_plot)
-        self.ax_map.set_extent(self.padded_bbox(pad_rel=0.02), self.proj_data)
+        self.ax_map.set_extent(
+            self.padded_bbox(pad_rel=0.01),
+            self.proj_data,
+        )
         self.ax_map.gridlines(
             linestyle=':',
             linewidth=1,
@@ -223,7 +226,16 @@ class FlexPlotConcentration:
             self.proj_data, rlat2d, rlon2d).T
 
     def padded_bbox(self, pad_rel=0.0):
-        """Compute the bounding box based on rlat/rlon with padding."""
+        """Compute the bounding box based on rlat/rlon with padding.
+
+        Args:
+            pad_rel (float, optional): Padding between the bounding box
+                of the data and that of the plot, specified as a
+                fraction of the extent of the bounding box of the data
+                in the respective direction (horizontal or vertical).
+                Can be negative. Defaults to 0.0.
+
+        """
 
         # Default: data domain
         bbox = [self.rlon[0], self.rlon[-1], self.rlat[0], self.rlat[-1]]
@@ -300,8 +312,22 @@ class FlexPlotConcentration:
 
         return p
 
-    def fig_add_text_boxes(self):
-        """Add empty text boxes to the figure around the map plot."""
+    def fig_add_text_boxes(self, h_rel=0.1, w_rel=0.25, pad_hor_rel=0.015):
+        """Add empty text boxes to the figure around the map plot.
+
+        Args:
+            h_rel (float, optional): Height of top box as a fraction of
+                the height of the map plot. Defaults to <TODO>.
+
+            w_rel (float, optional): Width of the right boxes as a
+                fraction of the width of the map plot. Default to <TODO>.
+
+            pad_hor_rel (float, optional): Padding between map plot and
+                the text boxes as a fraction of the map plot width. The
+                same absolute padding is used in the horizontal and
+                vertical direction. Defaults to <TODO>.
+
+        """
 
         # Freeze the map plot in order to fix it's coordinates (bbox)
         self.fig.canvas.draw()
@@ -319,16 +345,33 @@ class FlexPlotConcentration:
         self.ax_map.set_position([x0_map, y0_map, w_map, h_map])
 
         # Determine height of top box and width of right boxes
-        w_box = 0.2*w_map
-        #h_box = 0.2*h_map
-        h_box = w_box*fig_aspect  #SRU_TMP
+        w_box = w_rel*w_map
+        h_box = h_rel*h_map
+
+        # Determine padding between plot and boxes
+        pad_hor = pad_hor_rel*w_map
+        pad_ver = pad_hor*fig_aspect
 
         # Add axes for text boxes (one on top, two to the right)
-        _adx = self.fig.add_axes
         self.axs_box = np.array([
-            _adx([x0_map, y0_map + h_map, w_map + w_box, h_box]),
-            _adx([x0_map + w_map, y0_map + h_map/2, w_box, h_map/2]),
-            _adx([x0_map + w_map, y0_map, w_box, h_map/2]),
+            self.fig.add_axes([
+                x0_map,
+                y0_map + pad_ver + h_map,
+                w_map + pad_hor + w_box,
+                h_box,
+            ]),
+            self.fig.add_axes([
+                x0_map + pad_hor + w_map,
+                y0_map + pad_ver/2 + h_map/2,
+                w_box,
+                h_map/2 - pad_ver/2,
+            ]),
+            self.fig.add_axes([
+                x0_map + pad_hor + w_map,
+                y0_map,
+                w_box,
+                h_map/2 - pad_ver/2,
+            ]),
         ])
 
         # Add boxes to axes
@@ -418,6 +461,6 @@ class FlexPlotConcentration:
             facecolor=self.fig.get_facecolor(),
             edgecolor=self.fig.get_edgecolor(),
             bbox_inches='tight',
-            pad_inches=0.2,
+            pad_inches=0.15,
         )
         plt.close(self.fig)
