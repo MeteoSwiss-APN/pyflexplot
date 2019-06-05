@@ -19,12 +19,21 @@ mpl.use('Agg')  # Prevent ``couldn't connect to display`` error
 class FlexPlotter:
     """Create one or more FLEXPLART plots of a certain type.
 
-    Args:
-        type_ (str): Type of plot.
+    Attributes:
+        <TODO>
+
+    Methods:
+        <TODO>
 
     """
 
     def __init__(self, type_):
+        """Initialize instance of FlexPlotter.
+
+        Args:
+            type_ (str): Type of plot.
+ 
+        """
         self.type_ = type_
 
     def run(self, data, file_path_fmt):
@@ -133,22 +142,30 @@ class FlexPlotter:
 class FlexPlotConcentration:
     """FLEXPART plot of particle concentration at a certain level.
 
-    Args:
-        rlat (ndarray[float]): Rotated latitude (1d).
+    Attributes:
+        <TODO>
 
-        rlon (ndarray[float]): Rotated longitude (1d).
-
-        fld (ndarray[float, float]): Concentration field (2d).
-
-        attrs (dict): Attributes from the FLEXPART NetCDF file
-            (gloabl, variable-specific, etc.).
-
-        conf (dict, optional): Plot configuration. Defaults to None.
+    Methods:
+        <TODO>
 
     """
 
     def __init__(self, rlat, rlon, fld, attrs, conf=None):
+        """Initialize instance of FlexPlotConcentration.
 
+        Args:
+            rlat (ndarray[float]): Rotated latitude (1d).
+ 
+            rlon (ndarray[float]): Rotated longitude (1d).
+ 
+            fld (ndarray[float, float]): Concentration field (2d).
+ 
+            attrs (dict): Attributes from the FLEXPART NetCDF file
+                (gloabl, variable-specific, etc.).
+ 
+            conf (dict, optional): Plot configuration. Defaults to None.
+ 
+        """
         self.rlat = rlat
         self.rlon = rlon
         self.fld = np.where(fld > 0, fld, np.nan)
@@ -313,22 +330,31 @@ class FlexPlotConcentration:
 class FlexAxesMapRotatedPole():
     """Map plot axes for FLEXPART plot for rotated-pole data.
 
-    Args:
-        fig (Figure): Figure to which to map axes is added.
+    Attributes:
+        <TODO>
 
-        rlat (ndarray[float]): Rotated latitude coordinates.
-
-        rlon (ndarray[float]): Rotated longitude coordinates.
-
-        pollat (float): Latitude of rotated pole.
-
-        pollon (float): Longitude of rotated pole.
-
-        **conf: Various plot configuration parameters.
+    Methods:
+        <TODO>
 
     """
 
     def __init__(self, fig, rlat, rlon, pollat, pollon, **conf):
+        """Initialize instance of FlexAxesMapRotatedPole.
+
+        Args:
+            fig (Figure): Figure to which to map axes is added.
+ 
+            rlat (ndarray[float]): Rotated latitude coordinates.
+ 
+            rlon (ndarray[float]): Rotated longitude coordinates.
+ 
+            pollat (float): Latitude of rotated pole.
+ 
+            pollon (float): Longitude of rotated pole.
+ 
+            **conf: Various plot configuration parameters.
+ 
+        """
         self.fig = fig
         self.rlat = rlat
         self.rlon = rlon
@@ -479,16 +505,25 @@ class FlexAxesMapRotatedPole():
 class FlexAxesTextBox:
     """Text box axes for FLEXPART plot.
 
-    Args:
-        fig (Figure): Figure to which to add the text box axes.
+    Attributes:
+        <TODO>
 
-        ax_ref (Axis): Reference axes.
-
-        rect (list): Rectangle [left, bottom, width, height].
+    Methods:
+        <TODO>
 
     """
 
     def __init__(self, fig, ax_ref, rect):
+        """Initialize instance of FlexAxesTextBox.
+
+        Args:
+            fig (Figure): Figure to which to add the text box axes.
+ 
+            ax_ref (Axis): Reference axes.
+ 
+            rect (list): Rectangle [left, bottom, width, height].
+ 
+        """
 
         self.fig = fig
         self.ax_ref = ax_ref
