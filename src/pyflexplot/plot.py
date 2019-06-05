@@ -11,7 +11,7 @@ import os.path
 import re
 
 from matplotlib import ticker
-from .utils_dev import ipython  #SRU_DEV
+from .utils_dev import ipython  #SR_DEV
 
 mpl.use('Agg')  # Prevent ``couldn't connect to display`` error
 
@@ -82,7 +82,7 @@ class FlexPlotter:
                 'rlat': self.data.rlat,
                 'rlon': self.data.rlon,
                 'fld': self.data.field(key),
-                'attrs': {},  #SRU_TMP
+                'attrs': {},  #SR_TMP
             }
 
             FlexPlotConcentration(**kwargs).save(file_path)
@@ -155,12 +155,12 @@ class FlexPlotConcentration:
         self.attrs = attrs
         self.conf = {} if conf is None else conf
 
-        #SRU_TMP< TODO Extract from NetCDF file
+        #SR_TMP< TODO Extract from NetCDF file
         self.attrs['rotated_pole'] = {
             'grid_north_pole_latitude': 43.0,
             'grid_north_pole_longitude': -170.0,
         }
-        #SRU_TMP>
+        #SR_TMP>
 
         # Prepare plot
         self.fig = plt.figure(figsize=(12, 9))
@@ -179,9 +179,9 @@ class FlexPlotConcentration:
     def map_add_particle_concentrations(self):
         """Plot the particle concentrations onto the map."""
 
-        #SRU_TMP>
+        #SR_TMP>
         contour_levels = 10**np.arange(-1, 9.1, 1)
-        #SRU_TMP>
+        #SR_TMP>
 
         p = self.ax_map.plot_contourf(
             self.fld,
@@ -209,7 +209,7 @@ class FlexPlotConcentration:
                 vertical direction. Defaults to <TODO>.
 
         """
-        self.ax_ref = self.ax_map.ax  #SRU_TMP
+        self.ax_ref = self.ax_map.ax  #SR_TMP
 
         # Freeze the map plot in order to fix it's coordinates (bbox)
         self.fig.canvas.draw()
@@ -268,19 +268,19 @@ class FlexPlotConcentration:
         """Fill the box above the map plot."""
         box = self.axs_box[0]
 
-        box.add_sample_labels()  #SRU_TMP
+        box.add_sample_labels()  #SR_TMP
 
     def fill_box_top_right(self):
         """Fill the box to the top-right of the map plot."""
         box = self.axs_box[1]
 
-        box.add_sample_labels()  #SRU_TMP
+        box.add_sample_labels()  #SR_TMP
 
     def fill_box_bottom_right(self):
         """Fill the box to the bottom-right of the map plot."""
         box = self.axs_box[2]
 
-        box.add_sample_labels()  #SRU_TMP
+        box.add_sample_labels()  #SR_TMP
 
     def save(self, file_path, format=None):
         """Save the plot to disk.

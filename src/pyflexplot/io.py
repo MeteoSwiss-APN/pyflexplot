@@ -12,7 +12,7 @@ from copy import copy
 
 from .data import FlexData
 
-from .utils_dev import ipython  #SRU_DEV
+from .utils_dev import ipython  #SR_DEV
 
 ReleasePoint = namedtuple(
     'ReleasePoint',
@@ -149,7 +149,7 @@ class FlexFileReader:
         with nc4.Dataset(file_path, 'r') as fi:
 
             log.debug("read data setup (grid etc.)")
-            setup = {}  #SRU_TMP
+            setup = {}  #SR_TMP
             flex_data = FlexData(setup)
 
             # Grid
@@ -228,12 +228,12 @@ class FlexFileReader:
     def _process_fld_var(self, var, flex_data):
         """Check if field variable is to be read, and if so, read it."""
 
-        #SRU_TMP<
+        #SR_TMP<
         if var.name == 'fptot':
             #SRU Let's ignore fptot for now...
             log.debug(f" - {var.name:{self.wvar}} : !TMP! skip")
             return
-        #SRU_TMP>
+        #SR_TMP>
 
         # Parse var name for field type and species id
         match = self.rx_fld_var_name.match(var.name)
@@ -256,11 +256,11 @@ class FlexFileReader:
             level_inds = None
 
         # Get variable attributes
-        #SRU_TMP<
+        #SR_TMP<
         age_inds = np.arange(var.shape[0])
         relpt_inds = np.arange(var.shape[1])
         time_inds = np.arange(var.shape[2])
-        #SRU_TMP>
+        #SR_TMP>
 
         log.debug(f"age inds    : {age_inds}")
         log.debug(f"relpt inds  : {relpt_inds}")

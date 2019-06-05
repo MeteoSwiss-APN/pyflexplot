@@ -14,7 +14,7 @@ from .io import FlexFileReader
 from .utils import count_to_log_level
 from .plot import FlexPlotter
 
-from .utils_dev import ipython  #SRU_DEV
+from .utils_dev import ipython  #SR_DEV
 
 __version__ = '0.1.0'
 

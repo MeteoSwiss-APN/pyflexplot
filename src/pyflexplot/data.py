@@ -7,7 +7,7 @@ import numpy as np
 
 from collections import namedtuple
 
-from .utils_dev import ipython  #SRU_DEV
+from .utils_dev import ipython  #SR_DEV
 
 FieldKey = namedtuple(
     'FieldKey',
