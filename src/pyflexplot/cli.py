@@ -151,7 +151,7 @@ def concentration(ctx, in_file_path, out_file_path_fmt, **kwargs):
 def open_plot(cmd, file_path):
     """Open a plot file using a shell command."""
 
-    # If not yet included, insert output file path
+    # If not yet included, append the output file path
     if not '{file_path}' in cmd:
         cmd += ' {file_path}'
 
@@ -159,13 +159,9 @@ def open_plot(cmd, file_path):
     if not cmd.rstrip().endswith('&'):
         cmd += ' &'
 
-    # Format the command
-    cmd = cmd.format(file_path=file_path)
-
     # Run the command
+    cmd = cmd.format(file_path=file_path)
     os.system(cmd)
-
-    return 0
 
 
 if __name__ == "__main__":
