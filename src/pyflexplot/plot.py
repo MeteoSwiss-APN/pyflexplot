@@ -32,7 +32,7 @@ class FlexPlotter:
 
         Args:
             type_ (str): Type of plot.
- 
+
         """
         self.type_ = type_
 
@@ -155,16 +155,16 @@ class FlexPlotConcentration:
 
         Args:
             rlat (ndarray[float]): Rotated latitude (1d).
- 
+
             rlon (ndarray[float]): Rotated longitude (1d).
- 
+
             fld (ndarray[float, float]): Concentration field (2d).
- 
+
             attrs (dict): Attributes from the FLEXPART NetCDF file
                 (gloabl, variable-specific, etc.).
- 
+
             conf (dict, optional): Plot configuration. Defaults to None.
- 
+
         """
         self.rlat = rlat
         self.rlon = rlon
@@ -191,7 +191,9 @@ class FlexPlotConcentration:
 
         # Add text boxes around plot
         self.fig_add_text_boxes()
-        self.fill_text_boxes()
+        self.fill_box_top()
+        self.fill_box_top_right()
+        self.fill_box_bottom_right()
 
     def map_add_particle_concentrations(self):
         """Plot the particle concentrations onto the map."""
@@ -275,12 +277,6 @@ class FlexPlotConcentration:
                 ]),
         ])
 
-    def fill_text_boxes(self):
-        """Add text etc. to the boxes around the map plot."""
-        self.fill_box_top()
-        self.fill_box_top_right()
-        self.fill_box_bottom_right()
-
     def fill_box_top(self):
         """Fill the box above the map plot."""
         box = self.axs_box[0]
@@ -343,17 +339,17 @@ class FlexAxesMapRotatedPole():
 
         Args:
             fig (Figure): Figure to which to map axes is added.
- 
+
             rlat (ndarray[float]): Rotated latitude coordinates.
- 
+
             rlon (ndarray[float]): Rotated longitude coordinates.
- 
+
             pollat (float): Latitude of rotated pole.
- 
+
             pollon (float): Longitude of rotated pole.
- 
+
             **conf: Various plot configuration parameters.
- 
+
         """
         self.fig = fig
         self.rlat = rlat
@@ -518,11 +514,11 @@ class FlexAxesTextBox:
 
         Args:
             fig (Figure): Figure to which to add the text box axes.
- 
+
             ax_ref (Axis): Reference axes.
- 
+
             rect (list): Rectangle [left, bottom, width, height].
- 
+
         """
 
         self.fig = fig
@@ -568,24 +564,98 @@ class FlexAxesTextBox:
         self.dx = unit_w_map_rel*w_map_fig/w_box_fig
         self.dy = unit_w_map_rel*w_map_fig/h_box_fig
 
+    def text_rel(self, loc, s, dx=0.0, dy=0.0, **kwargs):
+        """Add text positioned relative to a reference location.
+
+        Args:
+            loc (int|str): Reference location. Can take one of three
+                formats: integer, short string, or long string.
+                Choices:
+
+                    int     short   long
+                    00      bl      bottom left
+                    01      bc      bottom center
+                    02      br      bottom right
+                    10      cl      center left
+                    11      cc      center
+                    12      cr      center right
+                    20      tl      top left
+                    21      tc      top center
+                    22      tr      top right
+
+            s (str): Text string.
+
+            dx (float, optional): Horizontal offset in number of unit
+                distances.  Can be negative. Defaults to 0.0.
+
+            dy (float, optional): Vertical offset in number of unit
+                distances.  Can be negative. Defaults to 0.0.
+
+            **kwargs: Formatting options passed to ax.text().
+
+        """
+        loc = str(loc)
+
+        # Split location into vertical and horizontal part
+        if len(loc) == 2:
+            loc0, loc1 = loc
+        elif loc == 'center':
+            loc0, loc1 = loc, loc
+        else:
+            loc0, loc1 = str.split(' ', 1)
+
+        # Evaluate vertical location component
+        if loc0 in ['0', 'b', 'bottom']:
+            y0 = 0.0 + self.dy
+            va = 'bottom'
+        elif loc0 in ['1', 'c', 'center']:
+            y0 = 0.5
+            va = 'center'
+        elif loc0 in ['2', 't', 'top']:
+            y0 = 1.0 - self.dy
+            va = 'top'
+        else:
+            raise ValueError(
+                f"location '{loc}': invalid vertical component '{loc0}'")
+
+        # Evaluate horizontal location component
+        if loc1 in ['0', 'l', 'left']:
+            x0 = 0.0 + self.dx
+            ha = 'left'
+        elif loc1 in ['1', 'c', 'center']:
+            x0 = 0.5
+            ha = 'center'
+        elif loc1 in ['2', 'r', 'right']:
+            x0 = 1.0 - self.dx
+            ha = 'right'
+        else:
+            raise ValueError(
+                f"location '{loc}': invalid horizontal component '{loc1}'")
+
+        # Add alignment parameters, unless specified in input kwargs
+        kwargs['ha'] = kwargs.get('horizontalalignment', kwargs.get('ha', ha))
+        kwargs['va'] = kwargs.get('verticalalignment', kwargs.get('va', va))
+
+        # Add text
+        self.ax.text(
+            x=x0 + dx*self.dx,
+            y=y0 + dy*self.dy,
+            s=s,
+            **kwargs,
+        )
+
     def add_sample_labels(self):
         """Add sample text labels in corners etc."""
-        dx, dy = self.dx, self.dy
-
-        def txt(x, y, **kwargs):
-            self.ax.text(x, y, transform=self.ax.transAxes, **kwargs)
-
-        # yapf: disable
-        txt(0.0 + dx, 0.0 + dy, ha='left',   va='bottom', s='bot left'  )
-        txt(0.0 + dx, 0.5,      ha='left',   va='center', s='mid left'  )
-        txt(0.0 + dx, 1.0 - dy, ha='left',   va='top',    s='top left'  )
-        txt(0.5,      0.0 + dy, ha='center', va='bottom', s='bot center')
-        txt(0.5,      0.5,      ha='center', va='center', s='mid center')
-        txt(0.5,      1.0 - dy, ha='center', va='top',    s='top center')
-        txt(1.0 - dx, 0.0 + dy, ha='right',  va='bottom', s='bot right' )
-        txt(1.0 - dx, 0.5,      ha='right',  va='center', s='mid right' )
-        txt(1.0 - dx, 1.0 - dy, va='top',    ha='right',  s='top right' )
-        # yapf: enable
+        kwargs = dict(fontsize=9)
+        self.text_rel('bl', 'bot. left', **kwargs)
+        self.text_rel('bc', 'bot. center', **kwargs)
+        self.text_rel('br', 'bot. right', **kwargs)
+        self.text_rel('cl', 'center left', **kwargs)
+        self.text_rel('cc', 'center', **kwargs)
+        self.text_rel('cr', 'center right', **kwargs)
+        self.text_rel('tl', 'top left', **kwargs)
+        self.text_rel('tc', 'top center', **kwargs)
+        self.text_rel('tr', 'top right', **kwargs)
 
 
 def ax_dims_fig_coords(fig, ax):
