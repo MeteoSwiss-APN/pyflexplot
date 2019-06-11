@@ -228,9 +228,8 @@ class FlexFileReader:
     def _process_fld_var(self, var, flex_data):
         """Check if field variable is to be read, and if so, read it."""
 
-        #SR_TMP<
+        #SR_TMP< Let's ignore fptot for now until we need it
         if var.name == 'fptot':
-            #SRU Let's ignore fptot for now...
             log.debug(f" - {var.name:{self.wvar}} : !TMP! skip")
             return
         #SR_TMP>

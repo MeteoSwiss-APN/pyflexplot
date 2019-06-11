@@ -179,6 +179,13 @@ class FlexPlotConcentration:
         }
         #SR_TMP>
 
+        self.levels = None
+        self.colors = None
+
+        self._run()
+
+    def _run(self):
+
         # Prepare plot
         self.fig = plt.figure(figsize=(12, 9))
         pollat = self.attrs['rotated_pole']['grid_north_pole_latitude']
@@ -199,18 +206,40 @@ class FlexPlotConcentration:
         """Plot the particle concentrations onto the map."""
 
         #SR_TMP>
-        contour_levels = 10**np.arange(-1, 9.1, 1)
+        levels_log10 = np.arange(-1, 9.1, 1)
+        cmap = 'terrain_r'
+        extend = 'max'
         #SR_TMP>
 
-        p = self.ax_map.plot_contourf(
-            self.fld,
-            locator=ticker.LogLocator(),
-            levels=contour_levels,
-            extend='both',
-        )
-        #self.fig.colorbar(p)
+        fld_log10 = np.log10(self.fld)
 
-        return p
+        if isinstance(cmap, str):
+            cmap = mpl.cm.get_cmap(cmap)
+
+        colors = cmap(np.linspace(0, 1, len(levels_log10) + 1))
+        cmap = mpl.colors.ListedColormap(colors[1:-1])
+        cmap.set_under(colors[0])
+        cmap.set_over(colors[-1])
+
+        handle = self.ax_map.plot_contourf(
+            fld_log10,
+            levels=levels_log10,
+            cmap=cmap,
+            extend=extend,
+        )
+
+        # Store some properties
+        self.levels = 10**levels_log10
+        self.extend = 'max'
+        self.colors = {
+            'none': colors[1:-1],
+            'min': colors[:-1],
+            'max': colors[1:],
+            'both': colors[:],
+        }[self.extend]
+        self.cmap = cmap
+
+        return handle
 
     def fig_add_text_boxes(self, h_rel=0.1, w_rel=0.25, pad_hor_rel=0.015):
         """Add empty text boxes to the figure around the map plot.
@@ -253,6 +282,7 @@ class FlexPlotConcentration:
         pad_ver = pad_hor*fig_aspect
 
         # Add axes for text boxes (one on top, two to the right)
+        h_rel_box_top = 0.4
         self.axs_box = np.array([
             FlexAxesTextBox(
                 self.fig, self.ax_map.ax, [
@@ -264,16 +294,16 @@ class FlexPlotConcentration:
             FlexAxesTextBox(
                 self.fig, self.ax_map.ax, [
                     x0_map + pad_hor + w_map,
-                    y0_map + pad_ver/2 + h_map/2,
+                    y0_map + 0.5*pad_ver + (1.0 - h_rel_box_top)*h_map,
                     w_box,
-                    h_map/2 - pad_ver/2,
+                    h_rel_box_top*h_map - 0.5*pad_ver,
                 ]),
             FlexAxesTextBox(
                 self.fig, self.ax_map.ax, [
                     x0_map + pad_hor + w_map,
                     y0_map,
                     w_box,
-                    h_map/2 - pad_ver/2,
+                    (1.0 - h_rel_box_top)*h_map - 0.5*pad_ver,
                 ]),
         ])
 
@@ -281,19 +311,143 @@ class FlexPlotConcentration:
         """Fill the box above the map plot."""
         box = self.axs_box[0]
 
-        box.add_sample_labels()  #SR_TMP
+        #SR_TMP< TODO obtain from NetCDF attributes
+        varname = 'Concentration'
+        level_str = '500 $\endash$ 2000 m AGL'
+        species = 'Cs-137'
+        timestep_fmtd = '2019-05-28 03:00 UTC'
+        release_site = 'Goesgen'
+        tz_str = 'T0 + 03:00 h'
+        #SR_TMP>
+
+        # Top left: variable and level
+        s = f"{varname} {level_str}"
+        box.text_rel('tl', s, size='xx-large')
+
+        # Top center: species
+        s = f"{species}"
+        box.text_rel('tc', s, size='xx-large')
+
+        # Top right: datetime
+        s = f"{timestep_fmtd}"
+        box.text_rel('tr', s, size='xx-large')
+
+        # Bottom left: release site
+        s = f"Release site: {release_site}"
+        box.text_rel('bl', s, size='large')
+
+        # Bottom right: time zone
+        s = f"{tz_str}"
+        box.text_rel('br', s, size='large')
 
     def fill_box_top_right(self):
         """Fill the box to the top-right of the map plot."""
         box = self.axs_box[1]
 
-        box.add_sample_labels()  #SR_TMP
+        #SR_TMP<
+        varname = 'Concentration'
+        unit_fmtd = 'Bq m$^-3$'
+        #SR_TMP>
+
+        # Box title
+        box.text_rel('tc', f"{varname} ({unit_fmtd})", size='large')
+
+        # Format level ranges (contour plot legend)
+        labels = []
+        fmt = '{:g}'
+        for lvls in zip(self.levels[:-1], self.levels[1:]):
+            label = "{:>6} - {:<6}".format(
+                *[fmt.format(lvl).strip() for lvl in lvls])
+            labels.append(label)
+        if self.extend in ('min', 'both'):
+            label = "{:>6} < {:<6}".format(
+                '',
+                fmt.format(self.levels[0]).strip())
+            labels.insert(0, label)
+        if self.extend in ('max', 'both'):
+            label = "{:>6} > {:<6}".format(
+                '',
+                fmt.format(self.levels[-1]).strip())
+            labels.append(label)
+        assert len(labels) == len(
+            self.colors), f'{len(labels)} != {len(self.colors)}'
+
+        # Add contour plot legend
+        box.text_block(
+            'bc',
+            dy0=2.0,
+            block=labels,
+            colors=self.colors,
+            #SR_TMP<
+            family='monospace',
+            weight='demibold',
+            #SR_TMP>
+        )
 
     def fill_box_bottom_right(self):
         """Fill the box to the bottom-right of the map plot."""
         box = self.axs_box[2]
 
-        box.add_sample_labels()  #SR_TMP
+        #SR_TMP<
+        lat_mins = (47, 22)
+        lat_frac = 47.37
+        lon_mins = (7, 58)
+        lon_frac = 7.97
+        height = 100
+        start_fmtd = "2019-05-28 00:00 UTC"
+        end_fmtd = "2019-05-28 08:00 UTC"
+        rate = 34722.2
+        mass = 1e9
+        substance_fmtd = 'Cs$\endash$137'
+        half_life = 30.0
+        depos_vel = 1.5e-3
+        sedim_vel = 0.0
+        wash_coeff = 7.0e-5
+        wash_exp = 0.8
+        #SR_TMP>
+
+        # Box title
+        box.text_rel('tc', 'Release', size='large')
+
+        lat_fmtd = (
+            f"{lat_mins[0]}$^\circ$ {lat_mins[1]}' N"
+            f" (={lat_frac}$^\circ$ N)")
+        lon_fmtd = (
+            f"{lon_mins[0]}$^\circ$ {lon_mins[1]}' E"
+            f" (={lon_frac}$^\circ$ E)")
+
+        info_blocks = [
+            [
+                ("Latitude:", lat_fmtd),
+                ("Longitude:", lon_fmtd),
+                ("Height:", f"{height} m AGL"),
+            ],
+            [
+                ("Start:", start_fmtd),
+                ("End:", end_fmtd),
+            ],
+            [
+                ("Rate:", f"{rate} Bq s$^{{-1}}$"),
+                ("Total Mass:", f"{mass} Bq"),
+            ],
+            [
+                ("Substance:", substance_fmtd),
+                ("Half-Life:", f"{half_life} years"),
+                ("Deposit. Vel.:", f"{depos_vel} m s$^{{-1}}$"),
+                ("Sediment. Vel.:", f"{sedim_vel} m s$^{{-1}}$"),
+                ("Washout Coeff.:", f"{wash_coeff} s$^{{-1}}$"),
+                ("Washout Exponent:", f"{wash_exp}"),
+            ],
+        ]
+
+        kwargs = {'size': 'small'}
+
+        # Add lines bottom-up (to take advantage of baseline alignment)
+        dy = 2.75
+        keys = [[k for k, v in b[::-1]] for b in info_blocks[::-1]]
+        vals = [[v for k, v in b[::-1]] for b in info_blocks[::-1]]
+        box.text_blocks('bl', dy0=dy, dy_line=dy, blocks=keys, **kwargs)
+        box.text_blocks('br', dy0=dy, dy_line=dy, blocks=vals, **kwargs)
 
     def save(self, file_path, format=None):
         """Save the plot to disk.
@@ -495,6 +649,10 @@ class FlexAxesMapRotatedPole():
             **kwargs,
         )
 
+        #SR_TMP<
+        #-self.fig.colorbar(p, orientation='horizontal')
+        #SR_TMP>
+
         return p
 
 
@@ -530,6 +688,14 @@ class FlexAxesTextBox:
         self.draw_box()
 
         self.compute_unit_distances()
+
+        # Text baseline (for debugging)
+        self._show_baseline = False
+        self._baseline_kwargs_default = {
+            'color': 'black',
+            'linewidth': 0.5,
+        }
+        self._baseline_kwargs = self._baseline_kwargs_default
 
     def draw_box(self, x=0.0, y=0.0, w=1.0, h=1.0, fc='white', ec='black'):
         """Draw a box onto the axes."""
@@ -607,12 +773,13 @@ class FlexAxesTextBox:
         # Evaluate vertical location component
         if loc0 in ['0', 'b', 'bottom']:
             y0 = 0.0 + self.dy
-            va = 'bottom'
+            va = 'baseline'
         elif loc0 in ['1', 'c', 'center']:
             y0 = 0.5
-            va = 'center'
+            va = 'center_baseline'
         elif loc0 in ['2', 't', 'top']:
             y0 = 1.0 - self.dy
+            #va = 'top_baseline'
             va = 'top'
         else:
             raise ValueError(
@@ -632,17 +799,133 @@ class FlexAxesTextBox:
             raise ValueError(
                 f"location '{loc}': invalid horizontal component '{loc1}'")
 
+        # Text position
+        x = x0 + dx*self.dx
+        y = y0 + dy*self.dy
+
         # Add alignment parameters, unless specified in input kwargs
         kwargs['ha'] = kwargs.get('horizontalalignment', kwargs.get('ha', ha))
         kwargs['va'] = kwargs.get('verticalalignment', kwargs.get('va', va))
 
+        if kwargs['va'] == 'top_baseline':
+            # SR_NOTE: [2019-06-11]
+            # Ideally, we would like to align text by a `top_baseline`,
+            # analogous to baseline and center_baseline, which does not
+            # depend on the height of the letters (e.g., '$^\circ$'
+            # lifts the top of the text, like 'g' at the bottom). This
+            # does not exist, however, and attempts to emulate it by
+            # determining the line height (e.g., draw an 'M') and then
+            # shifting y accordingly (with `baseline` alignment) were
+            # not successful.
+            raise NotImplementedError(f"verticalalignment='{kwargs['vs']}'")
+
         # Add text
-        self.ax.text(
-            x=x0 + dx*self.dx,
-            y=y0 + dy*self.dy,
-            s=s,
-            **kwargs,
-        )
+        self.ax.text(x=x, y=y, s=s, **kwargs)
+
+        if self._show_baseline:
+            # Draw a horizontal line at the text baseline
+            self.ax.axhline(y, **self._baseline_kwargs)
+
+    def text_block(self, loc, block, colors=None, **kwargs):
+        """Add a text block comprised of multiple lines.
+
+        Args:
+            loc (int|str): Reference location. For details see
+                ``FlexAxesTextBox.text_rel``.
+
+            block (list[str]): Text block.
+
+            colors (list[<color>], optional): Line-specific colors.
+                Defaults to None. If not None, must have same length
+                as ``block``. Omit individual lines with None.
+
+            **kwargs: Positioning and formatting options passed to
+                ``FlexAxesTextBox.text_blocks``.
+
+        """
+        self.text_blocks(loc, [block], colors=[colors], **kwargs)
+
+    def text_blocks(
+            self,
+            loc,
+            blocks,
+            *,
+            dy0=0.0,
+            dy_line=2.5,
+            dy_block=None,
+            colors=None,
+            **kwargs):
+        """Add multiple text blocks.
+
+        Args:
+            loc (int|str): Reference location. For details see
+                ``FlexAxesTextBox.text_rel``.
+
+            blocks (list[list[str]]): List of text blocks, each of
+                which constitutes a list of lines.
+
+            dy0 (float, optional): Initial vertical offset in number
+                of unit distances. Can be negative. Defaults to 0.0.
+
+            dy_line (float, optional): Incremental vertical offset
+                between lines. Can be negative. Defaults to 2.5.
+
+            dy_block (float, optional): Incremental vertical offset
+                between blocks of lines. Can be negative. Defaults to
+                ``dy_line``.
+
+            dx (float, optional): Horizontal offset in number
+                of unit distances. Can be negative. Defaults to 0.0.
+
+            colors (list[list[<color>]], optional): Line-specific
+                colors in each block. Defaults to None. If not None,
+                must have same shape as ``blocks``. Omit individual
+                blocks or lines in blocks with None.
+
+            **kwargs: Formatting options passed to ``ax.text``.
+
+        """
+        if dy_block is None:
+            dy_block = dy_line
+
+        # Fetch text color (fall-back if no line-specific color)
+        default_color = kwargs.pop('color', kwargs.pop('c', 'black'))
+
+        # Rename colors variable
+        colors_blocks = colors
+        del colors
+
+        # Prepare line colors
+        if colors_blocks is None:
+            colors_blocks = [None]*len(blocks)
+        elif len(colors_blocks) != len(blocks):
+            raise ValueError(
+                f"colors must have same length as blocks:"
+                f"  {len(colors)} != {len(blocks)}")
+        for i, block in enumerate(blocks):
+            if colors_blocks[i] is None:
+                colors_blocks[i] = [None]*len(block)
+            elif len(colors_blocks) != len(blocks):
+                ith = f"{i}{({1: 'st', 2: 'nd', 3: 'rd'}.get(i, 'th'))}"
+                raise ValueError(
+                    f"colors of {ith} block must have same length as block:"
+                    f"  {len(colors_blocks[i])} != {len(block)}")
+            for j in range(len(block)):
+                if colors_blocks[i][j] is None:
+                    colors_blocks[i][j] = default_color
+
+        dy = dy0
+        for i, block in enumerate(blocks):
+            for j, line in enumerate(block):
+                self.text_rel(
+                    loc,
+                    s=line,
+                    dy=dy,
+                    color=colors_blocks[i][j],
+                    **kwargs,
+                )
+                dy += dy_line
+            dy += dy_block
 
     def add_sample_labels(self):
         """Add sample text labels in corners etc."""
@@ -656,6 +939,20 @@ class FlexAxesTextBox:
         self.text_rel('tl', 'top left', **kwargs)
         self.text_rel('tc', 'top center', **kwargs)
         self.text_rel('tr', 'top right', **kwargs)
+
+    def show_baseline(self, val=True, **kwargs):
+        """Show the base line of a text command (for debugging).
+
+        Args:
+            val (bool, optional): Whether to show or hide the baseline.
+                Defaults to True.
+
+            **kwargs: Keyword arguments passed to ax.axhline().
+
+        """
+        self._show_baseline = val
+        self._baseline_kwargs = self._baseline_kwargs_default
+        self._baseline_kwargs.update(kwargs)
 
 
 def ax_dims_fig_coords(fig, ax):
