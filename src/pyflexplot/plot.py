@@ -351,28 +351,11 @@ class FlexPlotConcentration:
         unit_fmtd = 'Bq m$^-3$'
         #SR_TMP>
 
-        # Box title
+        # Add box title
         box.text_rel('tc', f"{varname} ({unit_fmtd})", size='large')
 
         # Format level ranges (contour plot legend)
-        labels = []
-        fmt = '{:g}'
-        for lvls in zip(self.levels[:-1], self.levels[1:]):
-            label = "{:>6} - {:<6}".format(
-                *[fmt.format(lvl).strip() for lvl in lvls])
-            labels.append(label)
-        if self.extend in ('min', 'both'):
-            label = "{:>6} < {:<6}".format(
-                '',
-                fmt.format(self.levels[0]).strip())
-            labels.insert(0, label)
-        if self.extend in ('max', 'both'):
-            label = "{:>6} > {:<6}".format(
-                '',
-                fmt.format(self.levels[-1]).strip())
-            labels.append(label)
-        assert len(labels) == len(
-            self.colors), f'{len(labels)} != {len(self.colors)}'
+        labels = self._format_level_ranges()
 
         # Add contour plot legend
         box.text_block(
@@ -385,6 +368,36 @@ class FlexPlotConcentration:
             weight='demibold',
             #SR_TMP>
         )
+
+    def _format_level_ranges(self):
+        """Format the levels ranges for the contour plot legend."""
+
+        def format_label(lvl0, lvl1):
+            def format_level(lvl):
+                return '' if lvl is None else f"{lvl:g}".strip()
+            return f"{format_level(lvl0):>6} > {format_level(lvl1):<6}"
+
+        labels = []
+
+        # 'Under' color
+        if self.extend in ('min', 'both'):
+            labels.append(format_label(None, self.levels[0]))
+
+        # Regular colors
+        for lvl0, lvl1 in zip(self.levels[:-1], self.levels[1:]):
+            labels.append(format_label(lvl0, lvl1))
+
+        # 'Over' color
+        if self.extend in ('max', 'both'):
+            labels.append(format_label(None, self.levels[-1]))
+
+        #SR_TMP<
+        assert (
+            len(labels) == len(self.colors),
+            f'{len(labels)} != {len(self.colors)}')
+        #SR_TMP>
+
+        return labels
 
     def fill_box_bottom_right(self):
         """Fill the box to the bottom-right of the map plot."""
@@ -408,7 +421,7 @@ class FlexPlotConcentration:
         wash_exp = 0.8
         #SR_TMP>
 
-        # Box title
+        # Add box title
         box.text_rel('tc', 'Release', size='large')
 
         lat_fmtd = (
