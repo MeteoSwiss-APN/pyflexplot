@@ -141,6 +141,33 @@ class FlexPlotter:
         return self.file_path_fmt.format(**key._asdict())
 
 
+#SR_TMP<
+class ColorStr:
+
+    def __init__(self, s, c):
+        self.s = s
+        self.c = c
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.s}, {self.c})"
+
+    def __str__(self):
+        return self.s
+
+    def split(self, *args, **kwargs):
+        return [
+            self.__class__(s, self.c)
+            for s in str.split(self.s, *args, **kwargs)
+        ]
+
+    def strip(self, *args, **kwargs):
+        s = str.strip(self.s, *args, **kwargs)
+        return self.__class__(s, self.c)
+
+
+#SR_TMP>
+
+
 class FlexPlotConcentration:
     """FLEXPART plot of particle concentration at a certain level.
 
@@ -357,24 +384,30 @@ class FlexPlotConcentration:
         # Format level ranges (contour plot legend)
         labels = self._format_level_ranges()
 
-        # Add contour plot legend
-        box.text_block(
-            'bc',
+        #SR_TMP<
+        color_labels = [ColorStr('###', c) for c in self.colors]
+        block = list(zip(color_labels, labels))
+        color_labels[0].split('X', 1)
+        #SR_TMP>
+
+        box.text_block_hfill(
+            'b',
+            block,
             dy0=2.0,
-            block=labels,
-            colors=self.colors,
-            #SR_TMP<
+            dy_line=2.5,
+            dx=2.0,
+            size='medium',
             family='monospace',
-            weight='demibold',
-            #SR_TMP>
         )
 
     def _format_level_ranges(self):
         """Format the levels ranges for the contour plot legend."""
 
         def format_label(lvl0, lvl1):
+
             def format_level(lvl):
                 return '' if lvl is None else f"{lvl:g}".strip()
+
             return f"{format_level(lvl0):>6} > {format_level(lvl1):<6}"
 
         labels = []
@@ -453,12 +486,7 @@ class FlexPlotConcentration:
         # Add lines bottom-up (to take advantage of baseline alignment)
         dy = 2.75
         box.text_blocks_hfill(
-            'b',
-            dy0=dy,
-            dy_line=dy,
-            blocks=info_blocks,
-            reverse=True,
-            size='small')
+            'b', dy_line=dy, blocks=info_blocks, reverse=True, size='small')
 
     def save(self, file_path, format=None):
         """Save the plot to disk.
@@ -741,7 +769,7 @@ class FlexAxesTextBox:
         self.dx = unit_w_map_rel*w_map_fig/w_box_fig
         self.dy = unit_w_map_rel*w_map_fig/h_box_fig
 
-    def text_rel(self, loc, s, dx=0.0, dy=0.0, **kwargs):
+    def text_rel(self, loc, s, dx=None, dy=None, **kwargs):
         """Add text positioned relative to a reference location.
 
         Args:
@@ -759,6 +787,10 @@ class FlexAxesTextBox:
             **kwargs: Formatting options passed to ax.text().
 
         """
+        if dx is None:
+            dx = 0.0
+        if dy is None:
+            dy = 0.0
 
         # Derive location variables from parameter
         loc = BoxLocation(loc)
@@ -786,6 +818,11 @@ class FlexAxesTextBox:
             # shifting y accordingly (with `baseline` alignment) were
             # not successful.
             raise NotImplementedError(f"verticalalignment='{kwargs['vs']}'")
+
+        #SR_TMP<
+        if isinstance(s, ColorStr):
+            kwargs['color'] = s.c
+        #SR_TMP>
 
         # Add text
         self.ax.text(x=x, y=y, s=s, **kwargs)
@@ -818,8 +855,8 @@ class FlexAxesTextBox:
             loc,
             blocks,
             *,
-            dy0=0.0,
-            dy_line=2.5,
+            dy0=None,
+            dy_line=None,
             dy_block=None,
             reverse=False,
             colors=None,
@@ -834,7 +871,8 @@ class FlexAxesTextBox:
                 which constitutes a list of lines.
 
             dy0 (float, optional): Initial vertical offset in number
-                of unit distances. Can be negative. Defaults to 0.0.
+                of unit distances. Can be negative. Defaults to
+                ``dy_line``.
 
             dy_line (float, optional): Incremental vertical offset
                 between lines. Can be negative. Defaults to 2.5.
@@ -859,6 +897,10 @@ class FlexAxesTextBox:
             **kwargs: Formatting options passed to ``ax.text``.
 
         """
+        if dy_line is None:
+            dy_line = 2.5
+        if dy0 is None:
+            dy0 = dy_line
         if dy_block is None:
             dy_block = dy_line
 
@@ -892,6 +934,7 @@ class FlexAxesTextBox:
             # Revert order of blocks and lines
             def revert(lsts):
                 return [[l for l in lst[::-1]] for lst in lsts[::-1]]
+
             blocks = revert(blocks)
             colors_blocks = revert(colors_blocks)
 
@@ -907,6 +950,13 @@ class FlexAxesTextBox:
                 )
                 dy += dy_line
             dy += dy_block
+
+    def text_block_hfill(self, loc_y, block, **kwargs):
+        """Single block of horizontally filled lines.
+
+        See ``FlexAxesTextBox.text_blocks_hfill`` for details.
+        """
+        self.text_blocks_hfill(loc_y, [block], **kwargs)
 
     def text_blocks_hfill(self, loc_y, blocks, **kwargs):
         """Add blocks of horizontally-filling lines.
@@ -979,9 +1029,12 @@ class FlexAxesTextBox:
                 blocks_l[-1].append(str_l)
                 blocks_r[-1].append(str_r)
 
+        dx_l = kwargs.pop('dx', None)
+        dx_r = None if dx_l is None else -dx_l
+
         # Add lines to box
-        self.text_blocks('bl', blocks_l, **kwargs)
-        self.text_blocks('br', blocks_r, **kwargs)
+        self.text_blocks('bl', blocks_l, dx=dx_l, **kwargs)
+        self.text_blocks('br', blocks_r, dx=dx_r, **kwargs)
 
     def add_sample_labels(self):
         """Add sample text labels in corners etc."""
