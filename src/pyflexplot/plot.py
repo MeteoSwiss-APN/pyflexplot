@@ -11,6 +11,8 @@ import os.path
 import re
 
 from matplotlib import ticker
+from textwrap import dedent
+
 from .utils_dev import ipython  #SR_DEV
 
 mpl.use('Agg')  # Prevent ``couldn't connect to display`` error
@@ -416,38 +418,34 @@ class FlexPlotConcentration:
             f"{lon_mins[0]}$^\circ$ {lon_mins[1]}' E"
             f" (={lon_frac}$^\circ$ E)")
 
-        info_blocks = [
-            [
-                ("Latitude:", lat_fmtd),
-                ("Longitude:", lon_fmtd),
-                ("Height:", f"{height} m AGL"),
-            ],
-            [
-                ("Start:", start_fmtd),
-                ("End:", end_fmtd),
-            ],
-            [
-                ("Rate:", f"{rate} Bq s$^{{-1}}$"),
-                ("Total Mass:", f"{mass} Bq"),
-            ],
-            [
-                ("Substance:", substance_fmtd),
-                ("Half-Life:", f"{half_life} years"),
-                ("Deposit. Vel.:", f"{depos_vel} m s$^{{-1}}$"),
-                ("Sediment. Vel.:", f"{sedim_vel} m s$^{{-1}}$"),
-                ("Washout Coeff.:", f"{wash_coeff} s$^{{-1}}$"),
-                ("Washout Exponent:", f"{wash_exp}"),
-            ],
-        ]
+        info_blocks = dedent(
+            f"""\
+            Latitude:\t{lat_fmtd}
+            Longitude:\t{lon_fmtd}
+            Height:\t{height} m AGL
 
-        kwargs = {'size': 'small'}
+            Start:\t{start_fmtd}
+            End:\t{end_fmtd}
+            Rate:\t{rate} Bq s$^{{-1}}$
+            Total Mass:\t{mass} Bq
+
+            Substance:\t{substance_fmtd}
+            Half-Life:\t{half_life} years
+            Deposit. Vel.:\t{depos_vel} m s$^{{-1}}$
+            Sediment. Vel.:\t{sedim_vel} m s$^{{-1}}$
+            Washout Coeff.:\t{wash_coeff} s$^{{-1}}$
+            Washout Exponent:\t{wash_exp}
+            """)
 
         # Add lines bottom-up (to take advantage of baseline alignment)
         dy = 2.75
-        keys = [[k for k, v in b[::-1]] for b in info_blocks[::-1]]
-        vals = [[v for k, v in b[::-1]] for b in info_blocks[::-1]]
-        box.text_blocks('bl', dy0=dy, dy_line=dy, blocks=keys, **kwargs)
-        box.text_blocks('br', dy0=dy, dy_line=dy, blocks=vals, **kwargs)
+        box.text_blocks_hfill(
+            'b',
+            dy0=dy,
+            dy_line=dy,
+            blocks=info_blocks,
+            reverse=True,
+            size='small')
 
     def save(self, file_path, format=None):
         """Save the plot to disk.
@@ -734,20 +732,8 @@ class FlexAxesTextBox:
         """Add text positioned relative to a reference location.
 
         Args:
-            loc (int|str): Reference location. Can take one of three
-                formats: integer, short string, or long string.
-                Choices:
-
-                    int     short   long
-                    00      bl      bottom left
-                    01      bc      bottom center
-                    02      br      bottom right
-                    10      cl      center left
-                    11      cc      center
-                    12      cr      center right
-                    20      tl      top left
-                    21      tc      top center
-                    22      tr      top right
+            loc (int|str): Reference location parameter used to
+                initialize an instance of ``BoxLocation``.
 
             s (str): Text string.
 
@@ -760,44 +746,13 @@ class FlexAxesTextBox:
             **kwargs: Formatting options passed to ax.text().
 
         """
-        loc = str(loc)
 
-        # Split location into vertical and horizontal part
-        if len(loc) == 2:
-            loc0, loc1 = loc
-        elif loc == 'center':
-            loc0, loc1 = loc, loc
-        else:
-            loc0, loc1 = str.split(' ', 1)
-
-        # Evaluate vertical location component
-        if loc0 in ['0', 'b', 'bottom']:
-            y0 = 0.0 + self.dy
-            va = 'baseline'
-        elif loc0 in ['1', 'c', 'center']:
-            y0 = 0.5
-            va = 'center_baseline'
-        elif loc0 in ['2', 't', 'top']:
-            y0 = 1.0 - self.dy
-            #va = 'top_baseline'
-            va = 'top'
-        else:
-            raise ValueError(
-                f"location '{loc}': invalid vertical component '{loc0}'")
-
-        # Evaluate horizontal location component
-        if loc1 in ['0', 'l', 'left']:
-            x0 = 0.0 + self.dx
-            ha = 'left'
-        elif loc1 in ['1', 'c', 'center']:
-            x0 = 0.5
-            ha = 'center'
-        elif loc1 in ['2', 'r', 'right']:
-            x0 = 1.0 - self.dx
-            ha = 'right'
-        else:
-            raise ValueError(
-                f"location '{loc}': invalid horizontal component '{loc1}'")
+        # Derive location variables from parameter
+        loc = BoxLocation(loc)
+        ha = loc.get_ha()
+        va = loc.get_va()
+        x0 = loc.get_x0(self.dx)
+        y0 = loc.get_y0(self.dy)
 
         # Text position
         x = x0 + dx*self.dx
@@ -853,6 +808,7 @@ class FlexAxesTextBox:
             dy0=0.0,
             dy_line=2.5,
             dy_block=None,
+            reverse=False,
             colors=None,
             **kwargs):
         """Add multiple text blocks.
@@ -876,6 +832,11 @@ class FlexAxesTextBox:
 
             dx (float, optional): Horizontal offset in number
                 of unit distances. Can be negative. Defaults to 0.0.
+
+            reverse (bool, optional): If True, revert the blocka and
+                line order. Defaults to False. Note that if line-
+                specific colors are passed, they must be in the same
+                order as the unreversed blocks.
 
             colors (list[list[<color>]], optional): Line-specific
                 colors in each block. Defaults to None. If not None,
@@ -914,6 +875,13 @@ class FlexAxesTextBox:
                 if colors_blocks[i][j] is None:
                     colors_blocks[i][j] = default_color
 
+        if reverse:
+            # Revert order of blocks and lines
+            def revert(lsts):
+                return [[l for l in lst[::-1]] for lst in lsts[::-1]]
+            blocks = revert(blocks)
+            colors_blocks = revert(colors_blocks)
+
         dy = dy0
         for i, block in enumerate(blocks):
             for j, line in enumerate(block):
@@ -926,6 +894,81 @@ class FlexAxesTextBox:
                 )
                 dy += dy_line
             dy += dy_block
+
+    def text_blocks_hfill(self, loc_y, blocks, **kwargs):
+        """Add blocks of horizontally-filling lines.
+
+        Lines are split at a tab character ('\t'), with the text before
+        the tab left-aligned, and the text after right-aligned.
+
+        Args:
+            locy (int|str): Vertical reference location. For details
+                see ``FlexAxesTextBox.text_rel`` (vertical component
+                only).
+
+            blocks (str | list[ str | list[ str | tuple]]):
+                Text blocks, each of which consists of lines, each of
+                which in turn consists of a left and right part.
+                Possible formats:
+
+                  - The blocks can be a multiline string, with empty
+                    lines separating the individual blocks; or a list.
+
+                  - In case of list blocks, each block can in turn
+                    constitute a multiline string, or a list of lines.
+
+                  - In case of a list block, each line can in turn
+                    constitute a string, or a two-element string tuple.
+
+                  - Lines represented by a string are split into a left
+                    and right part at the first tab character ('\t').
+
+            **kwargs: Location and formatting options passed to
+                ``FlexAxesTextBox.text_blocks``.
+        """
+
+        if isinstance(blocks, str):
+            # Whole blocks is a multiline string
+            blocks = blocks.strip().split('\n\n')
+
+        # Handle case where a multiblock string is embedded
+        # in a blocks list alongside string or list blocks
+        blocks_orig, blocks = blocks, []
+        for block in blocks_orig:
+            if isinstance(block, str):
+                # Possible multiblock string (if with empty line)
+                for subblock in block.strip().split('\n\n'):
+                    blocks.append(subblock)
+            else:
+                # List block
+                blocks.append(block)
+
+        # Separate left and right parts of lines
+        blocks_l, blocks_r = [], []
+        for block in blocks:
+
+            if isinstance(block, str):
+                # Turn multiline block into list block
+                block = block.strip().split('\n')
+
+            blocks_l.append([])
+            blocks_r.append([])
+            for line in block:
+
+                # Obtain left and right part of line
+                if isinstance(line, str):
+                    str_l, str_r = line.split('\t', 1)
+                elif len(line) == 2:
+                    str_l, str_r = line
+                else:
+                    raise ValueError(f"invalid line: {line}")
+
+                blocks_l[-1].append(str_l)
+                blocks_r[-1].append(str_r)
+
+        # Add lines to box
+        self.text_blocks('bl', blocks_l, **kwargs)
+        self.text_blocks('br', blocks_r, **kwargs)
 
     def add_sample_labels(self):
         """Add sample text labels in corners etc."""
@@ -953,6 +996,106 @@ class FlexAxesTextBox:
         self._show_baseline = val
         self._baseline_kwargs = self._baseline_kwargs_default
         self._baseline_kwargs.update(kwargs)
+
+
+class BoxLocation:
+    """Represents reference location inside a box on a 3x3 grid."""
+
+    def __init__(self, loc):
+        """Initialize an instance of BoxLocation.
+
+        Args:
+            loc (int|str): Location parameter. Takes one of three
+                formats: integer, short string, or long string.
+
+                Choices:
+
+                    int     short   long
+                    00      bl      bottom left
+                    01      bc      bottom center
+                    02      br      bottom right
+                    10      cl      center left
+                    11      cc      center
+                    12      cr      center right
+                    20      tl      top left
+                    21      tc      top center
+                    22      tr      top right
+
+        """
+        self.loc = loc
+        self.loc_y, self.loc_x = self._prepare_loc()
+
+    def _prepare_loc(self):
+        """Split and evaluate components of location parameter."""
+
+        loc = str(self.loc)
+
+        # Split location into vertical and horizontal part
+        if len(loc) == 2:
+            loc_y, loc_x = loc
+        elif loc == 'center':
+            loc_y, loc_x = loc, loc
+        else:
+            loc_y, loc_x = line.split(' ', 1)
+
+        # Evaluate location components
+        loc_y = self._eval_loc_vert(loc_y)
+        loc_x = self._eval_loc_horz(loc_x)
+
+        return loc_y, loc_x
+
+    def _eval_loc_vert(self, loc):
+        """Evaluate vertical location component."""
+        if loc in (0, '0', 'b', 'bottom'):
+            return 'b'
+        elif loc in (1, '1', 'c', 'center'):
+            return 'c'
+        elif loc in (2, '2', 't', 'top'):
+            return 't'
+        raise ValueError(f"invalid vertical location component '{loc}'")
+
+    def _eval_loc_horz(self, loc):
+        """Evaluate horizontal location component."""
+        if loc in (0, '0', 'l', 'left'):
+            return 'l'
+        elif loc in (1, '1', 'c', 'center'):
+            return 'c'
+        elif loc in (2, '2', 'r', 'right'):
+            return 'r'
+        raise ValueError(f"invalid horizontal location component '{loc}'")
+
+    def get_va(self):
+        """Derive the vertical alignment variable."""
+        return {
+            'b': 'baseline',
+            'c': 'center_baseline',
+            #'t': 'top_baseline',  # unfortunately nonexistent
+            't': 'top',
+        }[self.loc_y]
+
+    def get_ha(self):
+        """Derive the horizontal alignment variable."""
+        return {
+            'l': 'left',
+            'c': 'center',
+            'r': 'right',
+        }[self.loc_x]
+
+    def get_y0(self, dy):
+        """Derive the vertical baseline variable."""
+        return {
+            'b': 0.0 + dy,
+            'c': 0.5,
+            't': 1.0 - dy,
+        }[self.loc_y]
+
+    def get_x0(self, dx):
+        """Derive the horizontal baseline variable."""
+        return {
+            'l': 0.0 + dx,
+            'c': 0.5,
+            'r': 1.0 - dx,
+        }[self.loc_x]
 
 
 def ax_dims_fig_coords(fig, ax):
