@@ -425,9 +425,8 @@ class FlexPlotConcentration:
             labels.append(format_label(None, self.levels[-1]))
 
         #SR_TMP<
-        assert (
-            len(labels) == len(self.colors),
-            f'{len(labels)} != {len(self.colors)}')
+        assert len(labels) == len(self.colors), \
+            f'{len(labels)} != {len(self.colors)}'
         #SR_TMP>
 
         return labels
