@@ -1,7 +1,0 @@
-Cartopy # !! requires non-Python dependencies 'geos' and 'proj'; load modules or install
-Click>=6.0
-matplotlib
-pillow
-netCDF4
-numpy
-scipy

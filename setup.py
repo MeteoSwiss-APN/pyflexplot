@@ -13,16 +13,19 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-# Read dependencies from requirements file
-requirements = []
-with open('requirements.txt', 'r') as fi:
-    for line in fi.readlines():
-        line = re.sub(r'#.*', '', line).strip()
-        if line:
-            requirements.append(line)
-
-setup_requirements = ['pytest-runner', ]
-
+# Dependencies (as unversioned as possible)
+requirements = [
+    'Cartopy', # !! requires non-Python dependencies 'geos' and 'proj'; load modules or install
+    'Click>=6.0',
+    'matplotlib',
+    'pillow',
+    'netCDF4',
+    'numpy',
+    'scipy',
+]
+setup_requirements = [
+    'pytest-runner',
+]
 test_requirements = ['pytest', ]
 
 setup(
