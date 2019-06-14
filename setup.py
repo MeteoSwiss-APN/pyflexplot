@@ -3,8 +3,6 @@
 
 """The setup script."""
 
-import re
-
 from setuptools import setup, find_packages
 
 with open('README.rst') as readme_file:
@@ -13,7 +11,6 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-# Dependencies (as unversioned as possible)
 requirements = [
     'Cartopy', # !! requires non-Python dependencies 'geos' and 'proj'; load modules or install
     'Click>=6.0',
@@ -45,7 +42,7 @@ setup(
         "PyFlexPlot contains Python scripts to plot FLEXPART NetCDF output"),
     entry_points={
         'console_scripts': [
-            'pyflexplot=pyflexplot.cli:cli',
+            'pyflexplot=pyflexplot.cli:main',
         ],
     },
     install_requires=requirements,
@@ -53,8 +50,8 @@ setup(
     include_package_data=True,
     keywords='pyflexplot',
     name='pyflexplot',
-    packages=find_packages('src'),
-    package_dir={'': 'src'},
+    packages=find_packages('src'),  # collect names of packages in ``src/``
+    package_dir={'': 'src'},  # location of packages: ``src/<package>``
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,

@@ -1,10 +1,10 @@
-========================
+==========
 PyFlexPlot
-========================
+==========
 
 
 
-PyFlexPlot contains Python scripts to plot FLEXPART output
+PyFlexPlot is a plotting tool for FLEXPART dispersion modeling results.
 
 
 

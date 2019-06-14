@@ -47,7 +47,7 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'],)
         " including the format key '{file_path}'."))
 @click.pass_context
 # yapf: enable
-def cli(ctx, **kwargs):
+def main(ctx, **kwargs):
     """Console script for test_cli_project."""
 
     click.echo("Hi fellow PyFlexPlotter!")
@@ -100,7 +100,7 @@ def common_options(f):
 
 
 # yapf: disable
-@cli.command()
+@main.command()
 @common_options
 @click.option(
     '--age-class-ind', 'age_inds',
@@ -165,4 +165,4 @@ def open_plot(cmd, file_path):
 
 
 if __name__ == "__main__":
-    sys.exit(cli())  # pragma: no cover
+    sys.exit(main())  # pragma: no cover
