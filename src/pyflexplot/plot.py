@@ -351,23 +351,23 @@ class FlexPlotConcentration:
 
         # Top left: variable and level
         s = f"{varname} {level_str}"
-        box.text_rel('tl', s, size='xx-large')
+        box.text('tl', s, size='xx-large')
 
         # Top center: species
         s = f"{species}"
-        box.text_rel('tc', s, size='xx-large')
+        box.text('tc', s, size='xx-large')
 
         # Top right: datetime
         s = f"{timestep_fmtd}"
-        box.text_rel('tr', s, size='xx-large')
+        box.text('tr', s, size='xx-large')
 
         # Bottom left: release site
         s = f"Release site: {release_site}"
-        box.text_rel('bl', s, size='large')
+        box.text('bl', s, size='large')
 
         # Bottom right: time zone
         s = f"{tz_str}"
-        box.text_rel('br', s, size='large')
+        box.text('br', s, size='large')
 
     def fill_box_top_right(self):
         """Fill the box to the top-right of the map plot."""
@@ -379,7 +379,7 @@ class FlexPlotConcentration:
         #SR_TMP>
 
         # Add box title
-        box.text_rel('tc', f"{varname} ({unit_fmtd})", size='large')
+        box.text('tc', f"{varname} ({unit_fmtd})", size='large')
 
         # Format level ranges (contour plot legend)
         labels = self._format_level_ranges()
@@ -454,7 +454,7 @@ class FlexPlotConcentration:
         #SR_TMP>
 
         # Add box title
-        box.text_rel('tc', 'Release', size='large')
+        box.text('tc', 'Release', size='large')
 
         lat_fmtd = (
             f"{lat_mins[0]}$^\circ$ {lat_mins[1]}' N"
@@ -768,7 +768,7 @@ class FlexAxesTextBox:
         self.dx = unit_w_map_rel*w_map_fig/w_box_fig
         self.dy = unit_w_map_rel*w_map_fig/h_box_fig
 
-    def text_rel(self, loc, s, dx=None, dy=None, **kwargs):
+    def text(self, loc, s, dx=None, dy=None, **kwargs):
         """Add text positioned relative to a reference location.
 
         Args:
@@ -835,7 +835,7 @@ class FlexAxesTextBox:
 
         Args:
             loc (int|str): Reference location. For details see
-                ``FlexAxesTextBox.text_rel``.
+                ``FlexAxesTextBox.text``.
 
             block (list[str]): Text block.
 
@@ -864,7 +864,7 @@ class FlexAxesTextBox:
 
         Args:
             loc (int|str): Reference location. For details see
-                ``FlexAxesTextBox.text_rel``.
+                ``FlexAxesTextBox.text``.
 
             blocks (list[list[str]]): List of text blocks, each of
                 which constitutes a list of lines.
@@ -940,7 +940,7 @@ class FlexAxesTextBox:
         dy = dy0
         for i, block in enumerate(blocks):
             for j, line in enumerate(block):
-                self.text_rel(
+                self.text(
                     loc,
                     s=line,
                     dy=dy,
@@ -965,7 +965,7 @@ class FlexAxesTextBox:
 
         Args:
             locy (int|str): Vertical reference location. For details
-                see ``FlexAxesTextBox.text_rel`` (vertical component
+                see ``FlexAxesTextBox.text`` (vertical component
                 only).
 
             blocks (str | list[ str | list[ str | tuple]]):
@@ -1038,15 +1038,15 @@ class FlexAxesTextBox:
     def add_sample_labels(self):
         """Add sample text labels in corners etc."""
         kwargs = dict(fontsize=9)
-        self.text_rel('bl', 'bot. left', **kwargs)
-        self.text_rel('bc', 'bot. center', **kwargs)
-        self.text_rel('br', 'bot. right', **kwargs)
-        self.text_rel('cl', 'center left', **kwargs)
-        self.text_rel('cc', 'center', **kwargs)
-        self.text_rel('cr', 'center right', **kwargs)
-        self.text_rel('tl', 'top left', **kwargs)
-        self.text_rel('tc', 'top center', **kwargs)
-        self.text_rel('tr', 'top right', **kwargs)
+        self.text('bl', 'bot. left', **kwargs)
+        self.text('bc', 'bot. center', **kwargs)
+        self.text('br', 'bot. right', **kwargs)
+        self.text('cl', 'center left', **kwargs)
+        self.text('cc', 'center', **kwargs)
+        self.text('cr', 'center right', **kwargs)
+        self.text('tl', 'top left', **kwargs)
+        self.text('tc', 'top center', **kwargs)
+        self.text('tr', 'top right', **kwargs)
 
     def show_baseline(self, val=True, **kwargs):
         """Show the base line of a text command (for debugging).
