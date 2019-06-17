@@ -304,7 +304,7 @@ class FlexFileReader:
             return
         self._remove_todo(**kwargs)
 
-        var_attrs = {var.getncattr(attr) for attr in var.ncattrs()}
+        var_attrs = {attr: var.getncattr(attr) for attr in var.ncattrs()}
 
         log.debug(f"({age_ind}, {relpt_ind}, {time_ind}, {level_ind})")
 
@@ -314,9 +314,22 @@ class FlexFileReader:
         else:
             inds = (age_ind, relpt_ind, time_ind, level_ind)
 
+        fld = var[inds]
+
+        #SR_TMP< Fix unit and order of magnitude
+        if var_attrs['long_name'] in ['Cs-137', 'I-131a']:
+            if var_attrs['units'] == 'ng kg-1':
+                var_attrs['units'] = 'Bq m-3'
+                fld *= 1e-12
+            else:
+                raise NotImplementedError(
+                    f"species '{var_attrs['long_name']}':"
+                    f" unknown unit '{var_attrs['units']}'")
+        #SR_TMP>
+
         # Store array slice (horizontal 2d field)
         flex_data.add_field(
-            var[inds],
+            fld,
             var_attrs,
             age_ind=age_ind,
             relpt_ind=relpt_ind,

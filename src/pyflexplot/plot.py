@@ -201,19 +201,33 @@ class FlexPlotConcentration:
         self.attrs = attrs
         self.conf = {} if conf is None else conf
 
+        # Formatting arguments
+        self._max_marker_kwargs = {
+            'marker': '+',
+            'color': 'black',
+            'markersize': 10,
+            'markeredgewidth': 1.5,
+        }
+        self._site_marker_kwargs = {
+            'marker': '^',
+            'markeredgecolor': 'red',
+            'markerfacecolor': 'white',
+            'markersize': 7.5,
+            'markeredgewidth': 1.5,
+        }
+
+        self.levels = None
+
+        self._run()
+
+    def _run(self):
+
         #SR_TMP< TODO Extract from NetCDF file
         self.attrs['rotated_pole'] = {
             'grid_north_pole_latitude': 43.0,
             'grid_north_pole_longitude': -170.0,
         }
         #SR_TMP>
-
-        self.levels = None
-        self.colors = None
-
-        self._run()
-
-    def _run(self):
 
         # Prepare plot
         self.fig = plt.figure(figsize=(12, 9))
@@ -234,44 +248,59 @@ class FlexPlotConcentration:
     def map_add_particle_concentrations(self):
         """Plot the particle concentrations onto the map."""
 
+        # yapf: disable
+        # Colors for cmap
+        colors_base = np.array([
+            (255, 155, 255),
+            (224, 196, 172),
+            (221, 127, 215),
+            ( 99,   0, 255),
+            (100, 153, 199),
+            ( 93, 255,   2),
+            (199, 255,   0),
+            (255, 239,  57),
+            (200, 200, 200),
+        ], float)/255
+        # yapf: enable
+
         #SR_TMP>
-        levels_log10 = np.arange(-1, 9.1, 1)
-        cmap = 'terrain_r'
-        extend = 'max'
+        levels_log10 = np.arange(-9, -2+0.1, 1)
+        self.extend = 'max'
+        self.cmap = mpl.colors.LinearSegmentedColormap.from_list(
+            'concentration', colors_base)
+        self.colors = {
+            'none': colors_base[1:-1],
+            'min': colors_base[:-1],
+            'max': colors_base[1:],
+            'both': colors_base,
+        }[self.extend]
+        lon_site = 8.227778
+        lat_site = 47.552222
         #SR_TMP>
 
+        # Plot concentrations
         fld_log10 = np.log10(self.fld)
-
-        if isinstance(cmap, str):
-            cmap = mpl.cm.get_cmap(cmap)
-
-        colors = cmap(np.linspace(0, 1, len(levels_log10) + 1))
-        cmap = mpl.colors.ListedColormap(colors[1:-1])
-        cmap.set_under(colors[0])
-        cmap.set_over(colors[-1])
-
-        handle = self.ax_map.plot_contourf(
+        handle = self.ax_map.contourf(
             fld_log10,
             levels=levels_log10,
-            cmap=cmap,
-            extend=extend,
+            cmap=self.cmap,
+            extend=self.extend,
         )
+
+        # Mark maximum value
+        self.ax_map.mark_max(self.fld, **self._max_marker_kwargs)
+
+        # Site
+        self.ax_map.marker(lon_site, lat_site, **self._site_marker_kwargs)
 
         # Store some properties
         self.levels = 10**levels_log10
-        self.extend = 'max'
-        self.colors = {
-            'none': colors[1:-1],
-            'min': colors[:-1],
-            'max': colors[1:],
-            'both': colors[:],
-        }[self.extend]
-        self.cmap = cmap
 
         return handle
 
-    def fig_add_text_boxes(self, h_rel=0.1, w_rel=0.25, pad_hor_rel=0.015,
-            h_rel_box_top=0.45):
+    def fig_add_text_boxes(
+            self, h_rel=0.1, w_rel=0.25, pad_hor_rel=0.015,
+            h_rel_box_top=0.44):
         """Add empty text boxes to the figure around the map plot.
 
         Args:
@@ -379,7 +408,10 @@ class FlexPlotConcentration:
 
         #SR_TMP<
         varname = 'Concentration'
-        unit_fmtd = 'Bq m$^-3$'
+        unit_fmtd = 'Bq m$^{-3}$'
+        fld_max = np.nanmax(self.fld)
+        fld_max_fmtd = f"Max.: {fld_max:.2E} {unit_fmtd}"
+        release_site = 'Goesgen'
         #SR_TMP>
 
         # Add box title
@@ -389,80 +421,113 @@ class FlexPlotConcentration:
         labels = self._format_level_ranges()
 
         # Positioning parameters
-        dx = 2.0
-        dy_line = 2.5
-        dy0_labels = 6.0
-        dy0_boxes = dy0_labels - 0.3
+        dx = 1.2
+        dy_line = 3.0
+        dy0_labels = 8.0
+        w_box, h_box = 4, 2
+        dy0_boxes = dy0_labels - 0.4
 
-        # Add labels
+        # Add level labels
         box.text_block(
             'br',
             labels,
             dy0=dy0_labels,
             dy_line=dy_line,
             dx=-dx,
-            size='medium',
-            family='monospace',
+            reverse=True,
+            size='small',
+            #family='monospace',
         )
 
         # Add color boxes
-        color = self.colors[0]
         dy = dy0_boxes
-        for i, color in enumerate(self.colors):
+        for color in self.colors[::-1]:
             box.color_rect(
                 loc='bl',
                 fc=color,
                 ec='black',
                 dx=dx,
                 dy=dy,
-                w=4,
-                h=2,
+                w=w_box,
+                h=h_box,
                 lw=1.0,
             )
             dy += dy_line
+
+        # Spacing between colors and markers
+        dy_spacing_markers = 0.5*dy_line
+
+        # Add maximum value marker
+        dy_max = dy0_labels - dy_spacing_markers - dy_line
+        box.marker(
+            loc='bl',
+            dx=dx + 1.0,
+            dy=dy_max + 0.7,
+            **self._max_marker_kwargs,
+        )
+        box.text(
+            loc='bl',
+            s=fld_max_fmtd,
+            dx=5.5,
+            dy=dy_max,
+            size='small',
+        )
+
+        # Add release site marker
+        dy_site = dy0_labels - dy_spacing_markers - 2*dy_line
+        box.marker(
+            loc='bl',
+            dx=dx + 1.0,
+            dy=dy_site + 0.7,
+            **self._site_marker_kwargs,
+        )
+        box.text(
+            loc='bl',
+            s=f"Release Site: {release_site}",
+            dx=5.5,
+            dy=dy_site,
+            size='small',
+        )
 
     def _format_level_ranges(self):
         """Format the levels ranges for the contour plot legend."""
 
         labels = []
 
-        # 'Under' color
+        # Under range
         if self.extend in ('min', 'both'):
             labels.append(self._format_label(None, self.levels[0]))
 
-        # Regular colors
+        # In range
         for lvl0, lvl1 in zip(self.levels[:-1], self.levels[1:]):
             labels.append(self._format_label(lvl0, lvl1))
 
-        # 'Over' color
+        # Over range
         if self.extend in ('max', 'both'):
-            labels.append(self._format_label(None, self.levels[-1]))
+            labels.append(self._format_label(self.levels[-1], None))
 
         #SR_TMP<
-        assert len(labels) == len(self.colors), \
-            f'{len(labels)} != {len(self.colors)}'
+        _n = len(self.colors)
+        assert len(labels) == _n, f'{len(labels)} != {_n}'
         #SR_TMP>
 
         return labels
 
     def _format_label(self, lvl0, lvl1):
-
         def format_level(lvl):
-            return '' if lvl is None else f"{lvl:.5g}".strip()
-
+            return '' if lvl is None else f"{lvl:.0E}".strip()
         if lvl0 is not None and lvl1 is not None:
             op = '-'
             return f"{format_level(lvl0):>6} {op} {format_level(lvl1):<6}"
+        else:
+            if lvl0 is not None:
+                op = '>'
+                lvl = lvl0
+            elif lvl1 is not None:
+                op = '<'
+                lvl = lvl1
 
-        if lvl0 is not None:
-            op = '>'
-            lvl = lvl0
-        elif lvl1 is not None:
-            op = '<'
-            lvl = lvl1
-
-        return f"{op+' '+format_level(lvl):^15}"
-
+            return f"{op+' '+format_level(lvl):^15}"
 
     def fill_box_bottom_right(self):
         """Fill the box to the bottom-right of the map plot."""
@@ -586,6 +651,7 @@ class FlexAxesMapRotatedPole():
             'map',
             'grid',
             'fld',
+            'marker',
         ]
         d0, dz = 1, 1
         self.zorder = {e: d0 + i*dz for i, e in enumerate(zorders_const)}
@@ -599,12 +665,14 @@ class FlexAxesMapRotatedPole():
             self.proj_data,
         )
 
-        self.ax.gridlines(
+        gl = self.ax.gridlines(
             linestyle=':',
             linewidth=1,
             color='black',
             zorder=self.zorder['grid'],
         )
+        gl.xlocator = mpl.ticker.FixedLocator(np.arange(-2, 18.1, 2))
+        gl.ylocator = mpl.ticker.FixedLocator(np.arange(40, 52.1, 2))
 
         self.add_geography('50m')
         #self.add_geography('10m')
@@ -692,14 +760,14 @@ class FlexAxesMapRotatedPole():
     def add_data_domain_outline(self):
         """Add domain outlines to map plot."""
 
-        lon0, lon1 = self.rlon[[0, -1]]
-        lat0, lat1 = self.rlat[[0, -1]]
-        xs = [lon0, lon1, lon1, lon0, lon0]
-        ys = [lat0, lat0, lat1, lat1, lat0]
+        rlon0, rlon1 = self.rlon[[0, -1]]
+        rlat0, rlat1 = self.rlat[[0, -1]]
+        xs = [rlon0, rlon1, rlon1, rlon0, rlon0]
+        ys = [rlat0, rlat0, rlat1, rlat1, rlat0]
 
         self.ax.plot(xs, ys, transform=self.proj_data, c='black', lw=1)
 
-    def plot_contourf(self, fld, **kwargs):
+    def contourf(self, fld, **kwargs):
         """Plot a color contour field on the map.
 
         Args:
@@ -711,7 +779,7 @@ class FlexAxesMapRotatedPole():
             Plot handle.
 
         """
-        p = self.ax.contourf(
+        handle = self.ax.contourf(
             self.rlon,
             self.rlat,
             fld,
@@ -719,12 +787,32 @@ class FlexAxesMapRotatedPole():
             zorder=self.zorder['fld'],
             **kwargs,
         )
+        return handle
 
-        #SR_TMP<
-        #-self.fig.colorbar(p, orientation='horizontal')
-        #SR_TMP>
+    def marker(self, lon, lat, marker, **kwargs):
+        """Add a marker at a location in natural coordinates."""
+        rlon, rlat = self.proj_data.transform_point(lon, lat, self.proj_geo)
+        handle = self.marker_rot(rlon, rlat, marker, **kwargs)
+        return handle
 
-        return p
+    def marker_rot(self, rlon, rlat, marker, **kwargs):
+        """Add a marker at a location in rotated coordinates."""
+        handle = self.ax.plot(
+            rlon,
+            rlat,
+            marker=marker,
+            transform=self.proj_data,
+            zorder=self.zorder['marker'],
+            **kwargs,
+        )
+        return handle
+
+    def mark_max(self, fld, marker, **kwargs):
+        """Mark the location of the field maximum."""
+        jmax, imax = np.unravel_index(np.nanargmax(fld), fld.shape)
+        rlon, rlat = self.rlon[imax], self.rlat[jmax]
+        handle = self.marker_rot(rlon, rlat, marker, **kwargs)
+        return handle
 
 
 class FlexAxesTextBox:
@@ -761,7 +849,7 @@ class FlexAxesTextBox:
         self.compute_unit_distances()
 
         # Text baseline (for debugging)
-        self._show_baseline = False
+        self._show_baselines = False
         self._baseline_kwargs_default = {
             'color': 'black',
             'linewidth': 0.5,
@@ -811,29 +899,21 @@ class FlexAxesTextBox:
             s (str): Text string.
 
             dx (float, optional): Horizontal offset in number of unit
-                distances. Can be negative. Defaults to 0.0.
+                distances. Can be negative. Defaults to None.
 
             dy (float, optional): Vertical offset in number of unit
-                distances. Can be negative. Defaults to 0.0.
+                distances. Can be negative. Defaults to None.
 
             **kwargs: Formatting options passed to ax.text().
 
         """
-        if dx is None:
-            dx = 0.0
-        if dy is None:
-            dy = 0.0
 
         # Derive location variables from parameter
-        loc = BoxLocation(loc)
-        x0 = loc.get_x0(self.dx)
-        y0 = loc.get_y0(self.dy)
+        loc = BoxLocation(loc, self.dx, self.dy)
+        x = loc.get_x(dx)
+        y = loc.get_y(dy)
         ha = loc.get_ha()
         va = loc.get_va()
-
-        # Text position
-        x = x0 + dx*self.dx
-        y = y0 + dy*self.dy
 
         # Add alignment parameters, unless specified in input kwargs
         kwargs['ha'] = kwargs.get('horizontalalignment', kwargs.get('ha', ha))
@@ -859,7 +939,7 @@ class FlexAxesTextBox:
         # Add text
         self.ax.text(x=x, y=y, s=s, **kwargs)
 
-        if self._show_baseline:
+        if self._show_baselines:
             # Draw a horizontal line at the text baseline
             self.ax.axhline(y, **self._baseline_kwargs)
 
@@ -1081,7 +1161,7 @@ class FlexAxesTextBox:
         self.text('tc', 'top center', **kwargs)
         self.text('tr', 'top right', **kwargs)
 
-    def show_baseline(self, val=True, **kwargs):
+    def show_baselines(self, val=True, **kwargs):
         """Show the base line of a text command (for debugging).
 
         Args:
@@ -1091,7 +1171,7 @@ class FlexAxesTextBox:
             **kwargs: Keyword arguments passed to ax.axhline().
 
         """
-        self._show_baseline = val
+        self._show_baselines = val
         self._baseline_kwargs = self._baseline_kwargs_default
         self._baseline_kwargs.update(kwargs)
 
@@ -1108,10 +1188,10 @@ class FlexAxesTextBox:
             ec (<color>, optional): Edge color. Defaults to face color.
 
             dx (float, optional): Horizontal offset in number of unit
-                distances. Can be negative. Defaults to 0.0.
+                distances. Can be negative. Defaults to None.
 
             dy (float, optional): Vertical offset in number of unit
-                distances. Can be negative. Defaults to 0.0.
+                distances. Can be negative. Defaults to None.
 
             w (float, optional): Width in number of unit distances.
                 Defaults to <TODO>.
@@ -1125,19 +1205,11 @@ class FlexAxesTextBox:
         """
         if ec is None:
             ec = fc
-        if dx is None:
-            dx = 0.0
-        if dy is None:
-            dy = 0.0
 
         # Derive location variables from parameter
-        loc = BoxLocation(loc)
-        x0 = loc.get_x0(self.dx)
-        y0 = loc.get_y0(self.dy)
-
-        # Derive text position
-        x = x0 + dx*self.dx
-        y = y0 + dy*self.dy
+        loc = BoxLocation(loc, self.dx, self.dy)
+        x = loc.get_x(dx)
+        y = loc.get_y(dy)
 
         # Transform box dimensions to axes coordinates
         w = w*self.dx
@@ -1149,18 +1221,50 @@ class FlexAxesTextBox:
             w,
             h,
             fill=True,
-            transform=self.ax.transAxes,
             fc=fc,
             ec=ec,
             **kwargs,
         )
         self.ax.add_patch(p)
 
+        if self._show_baselines:
+            self.ax.axhline(y, **self._baseline_kwargs)
+
+    def marker(self, loc, marker, dx=None, dy=None, **kwargs):
+        """Add a marker symbol.
+
+        Args:
+            loc (int|str): Reference location parameter used to
+                initialize an instance of ``BoxLocation``.
+
+            marker (str|int|...) Marker style passed to ``mpl.plot``.
+                See ``matplotlib.markers`` for more information.
+
+            dx (float, optional): Horizontal offset in number of unit
+                distances. Can be negative. Defaults to None.
+
+            dy (float, optional): Vertical offset in number of unit
+                distances. Can be negative. Defaults to None.
+
+            **kwargs: Keyword arguments passed to ``mpl.plot``.
+
+        """
+
+        # Derive location variables from parameter
+        loc = BoxLocation(loc, self.dx, self.dy)
+        x = loc.get_x(dx)
+        y = loc.get_y(dy)
+
+        # Add marker
+        self.ax.plot([x], [y], marker=marker, **kwargs)
+
+        if self._show_baselines:
+            self.ax.axhline(y, **self._baseline_kwargs)
 
 class BoxLocation:
     """Represents reference location inside a box on a 3x3 grid."""
 
-    def __init__(self, loc):
+    def __init__(self, loc, dx, dy):
         """Initialize an instance of BoxLocation.
 
         Args:
@@ -1183,6 +1287,7 @@ class BoxLocation:
         """
         self.loc = loc
         self.loc_y, self.loc_x = self._prepare_loc()
+        self.dx, self.dy = dx, dy
 
     def _prepare_loc(self):
         """Split and evaluate components of location parameter."""
@@ -1240,21 +1345,33 @@ class BoxLocation:
             'r': 'right',
         }[self.loc_x]
 
-    def get_y0(self, dy):
+    def get_y0(self):
         """Derive the vertical baseline variable."""
         return {
-            'b': 0.0 + dy,
+            'b': 0.0 + self.dy,
             'c': 0.5,
-            't': 1.0 - dy,
+            't': 1.0 - self.dy,
         }[self.loc_y]
 
-    def get_x0(self, dx):
+    def get_x0(self):
         """Derive the horizontal baseline variable."""
         return {
-            'l': 0.0 + dx,
+            'l': 0.0 + self.dx,
             'c': 0.5,
-            'r': 1.0 - dx,
+            'r': 1.0 - self.dx,
         }[self.loc_x]
+
+    def get_x(self, dx=None):
+        """Derive the horizontal position."""
+        if dx is None:
+            dx = 0.0
+        return self.get_x0() + dx*self.dx
+
+    def get_y(self, dy=None):
+        """Derive the vertical position."""
+        if dy is None:
+            dy = 0.0
+        return self.get_y0() + dy*self.dy
 
 
 def ax_dims_fig_coords(fig, ax):
@@ -1262,3 +1379,16 @@ def ax_dims_fig_coords(fig, ax):
     trans = fig.transFigure.inverted()
     x, y, w, h = ax.bbox.transformed(trans).bounds
     return w, h
+
+
+def colors_from_cmap(cmap, n_levels, extend):
+    """Get colors from cmap for given no. levels and extend param."""
+    colors = cmap(np.linspace(0, 1, n_levels + 1))
+    if extend == 'both':
+        return colors
+    elif extend == 'min':
+        return colors[:-1]
+    elif extend == 'max':
+        return colors[1:]
+    else:
+        return colors[1:-1]
