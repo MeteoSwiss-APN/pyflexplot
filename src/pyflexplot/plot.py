@@ -270,7 +270,8 @@ class FlexPlotConcentration:
 
         return handle
 
-    def fig_add_text_boxes(self, h_rel=0.1, w_rel=0.25, pad_hor_rel=0.015):
+    def fig_add_text_boxes(self, h_rel=0.1, w_rel=0.25, pad_hor_rel=0.015,
+            h_rel_box_top=0.45):
         """Add empty text boxes to the figure around the map plot.
 
         Args:
@@ -284,6 +285,10 @@ class FlexPlotConcentration:
                 the text boxes as a fraction of the map plot width. The
                 same absolute padding is used in the horizontal and
                 vertical direction. Defaults to <TODO>.
+
+            h_rel_box_top (float, optional): Height of the top box on
+                the right-hand side of the plot as a fraction of the
+                combined height of both boxees. Defaults to <TODO>.
 
         """
         self.ax_ref = self.ax_map.ax  #SR_TMP
@@ -311,7 +316,6 @@ class FlexPlotConcentration:
         pad_ver = pad_hor*fig_aspect
 
         # Add axes for text boxes (one on top, two to the right)
-        h_rel_box_top = 0.4
         self.axs_box = np.array([
             FlexAxesTextBox(
                 self.fig, self.ax_map.ax, [
@@ -384,45 +388,55 @@ class FlexPlotConcentration:
         # Format level ranges (contour plot legend)
         labels = self._format_level_ranges()
 
-        #SR_TMP<
-        color_labels = [ColorStr('###', c) for c in self.colors]
-        block = list(zip(color_labels, labels))
-        color_labels[0].split('X', 1)
-        #SR_TMP>
+        # Positioning parameters
+        dx = 2.0
+        dy_line = 2.5
+        dy0_labels = 6.0
+        dy0_boxes = dy0_labels - 0.3
 
-        box.text_block_hfill(
-            'b',
-            block,
-            dy0=2.0,
-            dy_line=2.5,
-            dx=2.0,
+        # Add labels
+        box.text_block(
+            'br',
+            labels,
+            dy0=dy0_labels,
+            dy_line=dy_line,
+            dx=-dx,
             size='medium',
             family='monospace',
         )
 
+        # Add color boxes
+        color = self.colors[0]
+        dy = dy0_boxes
+        for i, color in enumerate(self.colors):
+            box.color_rect(
+                loc='bl',
+                fc=color,
+                ec='black',
+                dx=dx,
+                dy=dy,
+                w=4,
+                h=2,
+                lw=1.0,
+            )
+            dy += dy_line
+
     def _format_level_ranges(self):
         """Format the levels ranges for the contour plot legend."""
-
-        def format_label(lvl0, lvl1):
-
-            def format_level(lvl):
-                return '' if lvl is None else f"{lvl:g}".strip()
-
-            return f"{format_level(lvl0):>6} > {format_level(lvl1):<6}"
 
         labels = []
 
         # 'Under' color
         if self.extend in ('min', 'both'):
-            labels.append(format_label(None, self.levels[0]))
+            labels.append(self._format_label(None, self.levels[0]))
 
         # Regular colors
         for lvl0, lvl1 in zip(self.levels[:-1], self.levels[1:]):
-            labels.append(format_label(lvl0, lvl1))
+            labels.append(self._format_label(lvl0, lvl1))
 
         # 'Over' color
         if self.extend in ('max', 'both'):
-            labels.append(format_label(None, self.levels[-1]))
+            labels.append(self._format_label(None, self.levels[-1]))
 
         #SR_TMP<
         assert len(labels) == len(self.colors), \
@@ -430,6 +444,25 @@ class FlexPlotConcentration:
         #SR_TMP>
 
         return labels
+
+    def _format_label(self, lvl0, lvl1):
+
+        def format_level(lvl):
+            return '' if lvl is None else f"{lvl:.5g}".strip()
+
+        if lvl0 is not None and lvl1 is not None:
+            op = '-'
+            return f"{format_level(lvl0):>6} {op} {format_level(lvl1):<6}"
+
+        if lvl0 is not None:
+            op = '>'
+            lvl = lvl0
+        elif lvl1 is not None:
+            op = '<'
+            lvl = lvl1
+
+        return f"{op+' '+format_level(lvl):^15}"
+
 
     def fill_box_bottom_right(self):
         """Fill the box to the bottom-right of the map plot."""
@@ -778,10 +811,10 @@ class FlexAxesTextBox:
             s (str): Text string.
 
             dx (float, optional): Horizontal offset in number of unit
-                distances.  Can be negative. Defaults to 0.0.
+                distances. Can be negative. Defaults to 0.0.
 
             dy (float, optional): Vertical offset in number of unit
-                distances.  Can be negative. Defaults to 0.0.
+                distances. Can be negative. Defaults to 0.0.
 
             **kwargs: Formatting options passed to ax.text().
 
@@ -793,10 +826,10 @@ class FlexAxesTextBox:
 
         # Derive location variables from parameter
         loc = BoxLocation(loc)
-        ha = loc.get_ha()
-        va = loc.get_va()
         x0 = loc.get_x0(self.dx)
         y0 = loc.get_y0(self.dy)
+        ha = loc.get_ha()
+        va = loc.get_va()
 
         # Text position
         x = x0 + dx*self.dx
@@ -1035,7 +1068,7 @@ class FlexAxesTextBox:
         self.text_blocks('bl', blocks_l, dx=dx_l, **kwargs)
         self.text_blocks('br', blocks_r, dx=dx_r, **kwargs)
 
-    def add_sample_labels(self):
+    def sample_labels(self):
         """Add sample text labels in corners etc."""
         kwargs = dict(fontsize=9)
         self.text('bl', 'bot. left', **kwargs)
@@ -1061,6 +1094,67 @@ class FlexAxesTextBox:
         self._show_baseline = val
         self._baseline_kwargs = self._baseline_kwargs_default
         self._baseline_kwargs.update(kwargs)
+
+    def color_rect(
+            self, loc, fc, ec=None, dx=None, dy=None, w=3, h=2, **kwargs):
+        """Add a colored rectangle.
+
+        Args:
+            loc (int|str): Reference location parameter used to
+                initialize an instance of ``BoxLocation``.
+
+            fc (<color>): Face color.
+
+            ec (<color>, optional): Edge color. Defaults to face color.
+
+            dx (float, optional): Horizontal offset in number of unit
+                distances. Can be negative. Defaults to 0.0.
+
+            dy (float, optional): Vertical offset in number of unit
+                distances. Can be negative. Defaults to 0.0.
+
+            w (float, optional): Width in number of unit distances.
+                Defaults to <TODO>.
+
+            h (float, optional): Height in number of unit distances.
+                Defaults to <TODO>.
+
+            **kwargs: Keyword arguments passed to
+                ``matplotlib.patches.Rectangle``.
+
+        """
+        if ec is None:
+            ec = fc
+        if dx is None:
+            dx = 0.0
+        if dy is None:
+            dy = 0.0
+
+        # Derive location variables from parameter
+        loc = BoxLocation(loc)
+        x0 = loc.get_x0(self.dx)
+        y0 = loc.get_y0(self.dy)
+
+        # Derive text position
+        x = x0 + dx*self.dx
+        y = y0 + dy*self.dy
+
+        # Transform box dimensions to axes coordinates
+        w = w*self.dx
+        h = h*self.dy
+
+        # Draw rectangle
+        p = mpl.patches.Rectangle(
+            (x, y),
+            w,
+            h,
+            fill=True,
+            transform=self.ax.transAxes,
+            fc=fc,
+            ec=ec,
+            **kwargs,
+        )
+        self.ax.add_patch(p)
 
 
 class BoxLocation:
