@@ -274,8 +274,8 @@ class FlexPlotConcentration:
             'max': colors_base[1:],
             'both': colors_base,
         }[self.extend]
-        lon_site = 8.227778
-        lat_site = 47.552222
+        lon_site = 7.97
+        lat_site = 47.36
         #SR_TMP>
 
         # Plot concentrations
