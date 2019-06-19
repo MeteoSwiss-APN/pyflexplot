@@ -3,6 +3,7 @@
 Plots.
 """
 import cartopy
+import geopy.distance
 import logging as log
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -13,6 +14,7 @@ import re
 from matplotlib import ticker
 from textwrap import dedent
 
+from .utils import MaxIterationError
 from .utils_dev import ipython  #SR_DEV
 
 mpl.use('Agg')  # Prevent ``couldn't connect to display`` error
@@ -264,7 +266,7 @@ class FlexPlotConcentration:
         # yapf: enable
 
         #SR_TMP>
-        levels_log10 = np.arange(-9, -2+0.1, 1)
+        levels_log10 = np.arange(-9, -2 + 0.1, 1)
         self.extend = 'max'
         self.cmap = mpl.colors.LinearSegmentedColormap.from_list(
             'concentration', colors_base)
@@ -277,6 +279,10 @@ class FlexPlotConcentration:
         lon_site = 7.97
         lat_site = 47.36
         #SR_TMP>
+
+        # Add reference distance indicator (100 km)
+        ref_dist_km = 100.0
+        self.ax_map.add_ref_dist_indicator(0.064, 0.933, ref_dist_km, 'km')
 
         # Plot concentrations
         fld_log10 = np.log10(self.fld)
@@ -514,8 +520,10 @@ class FlexPlotConcentration:
         return labels
 
     def _format_label(self, lvl0, lvl1):
+
         def format_level(lvl):
             return '' if lvl is None else f"{lvl:.0E}".strip()
+
         if lvl0 is not None and lvl1 is not None:
             op = '-'
             return f"{format_level(lvl0):>6} {op} {format_level(lvl1):<6}"
@@ -813,6 +821,217 @@ class FlexAxesMapRotatedPole():
         rlon, rlat = self.rlon[imax], self.rlat[jmax]
         handle = self.marker_rot(rlon, rlat, marker, **kwargs)
         return handle
+
+    def transform_axes_to_geo(self, x, y):
+        """Transform axes coordinates to geographic coordinates."""
+
+        # Axes to display
+        xy_disp = self.ax.transAxes.transform((x, y))
+
+        # Display to data
+        x_data, y_data = self.ax.transData.inverted().transform(xy_disp)
+
+        # Data to geographic
+        xy_geo = self.proj_geo.transform_point(x_data, y_data, self.proj_plot)
+
+        return xy_geo
+
+    def add_ref_dist_indicator(self, x0, y0, dist, unit='km'):
+        """Add a reference distance indicator.
+
+        Args:
+            x0 (float): Horizontal location of starting point in axes
+                coordinates.
+
+            y0 (float): Vertical location of starting point in axes
+                coordinates.
+
+            dist (float): Distance in ``unit``.
+
+            unit (str, optional): Unit of ``dist``. Defaults to 'km'.
+
+        Returns:
+            float: Actual distance.
+
+        """
+
+        # Determine end point (axes coordinates)
+        x1, y1, _ = MapPlotGeoDist(self, unit).measure(x0, y0, dist, 'east')
+
+        # Draw line
+        self.ax.plot(
+            [x0, x1],
+            [y0, y1],
+            transform=self.ax.transAxes,
+            linestyle='-',
+            linewidth=2.0,
+            color='k',
+        )
+
+        # Add label
+        self.ax.text(
+            x=0.5*(x1 + x0),
+            y=0.5*(y1 + y0) + 0.01,
+            s=f"{dist:g} {unit}",
+            transform=self.ax.transAxes,
+            horizontalalignment='center',
+            fontsize='large',
+        )
+
+
+class MapPlotGeoDist:
+    """Measture geo. distance along a line on a map plot."""
+
+    def __init__(self, ax_map, unit='km', p=0.001):
+        """Initialize an instance of MapPlotGeoDist.
+
+        Args:
+            ax_map (FlexAxesMap*): Map plot object providing the
+                projections etc. [TODO reformulate!]
+
+            unit (str, optional): Unit of ``dist``. Defaults to 'km'.
+
+            p (float, optional): Required precision as a fraction of
+                ``dist``. Defaults to 0.001.
+
+        """
+        self.ax_map = ax_map
+        self.unit = unit
+        self.p = p
+
+    def reset(self, dist=None, dir=None):
+        self._set_dist(dist)
+        self._set_dir(dir)
+
+        self._step_ax_rel = 0.1
+
+    def _set_dist(self, dist):
+        """Check and set the target distance."""
+        self.dist = dist
+        if dist is not None:
+            if dist <= 0.0:
+                raise ValueError(f"dist not above zero: {dist}")
+
+    def _set_dir(self, dir):
+        """Check and set the direction."""
+        self.dir = dir
+        if dir is not None:
+            if dir == 'east':
+                self._dx_unit = 1
+                self._dy_unit = 0
+            else:
+                raise NotImplementedError(
+                    f"dir '{direction}' not among {dir_choices}")
+
+    def measure(self, x0, y0, dist, dir='east'):
+        """Measure geo. distance along a straight line on the plot."""
+        self.reset(dist=dist, dir=dir)
+
+        #SR_DBG<
+        debug = False
+        #SR_DBG>
+
+        step_ax_rel = 0.1
+        refine_quot = 3
+
+        dist0 = 0.0
+        x, y = x0, y0
+
+        iter_max = 99999
+        for iter_i in range(iter_max):
+
+            # Step away from point until target distance exceeded
+            path, dists = self._overstep(x, y, dist0, step_ax_rel)
+
+            # Select the largest distance
+            i_sel = -1
+            dist = dists[i_sel]
+            # Note: We could also check `dists[-2]` and return that
+            # if it were sufficiently close (based on the relative
+            # error) and closer to the targest dist than `dist[-1]`.
+
+            # Compute the relative error
+            err = abs(dist - self.dist)/self.dist
+            # Note: `abs` only necessary if `dist` could be `dist[-2]`
+
+            #SR_DBG<
+            if debug:
+                print(
+                    f"{iter_i:2d}"
+                    f" ({x0:.2f}, {y0:.2f})"
+                    f"--{{{dist0:6.2f} {self.unit}}}"
+                    f"->({x:.2f}, {y:.2f})"
+                    f"--{{{dists[-1] - dist0:6.2f} {self.unit}}}"
+                    f"->({path[-1][0]:.2f}, {path[-1][1]:.2f})"
+                    f" : {dist:6.2f} {self.unit}"
+                    f" : {err:10.5%}")
+            #SR_DBG>
+
+            if err < self.p:
+                # Error sufficiently small: We're done!
+                x1, y1 = path[i_sel]
+                break
+
+            dist0 = dists[-2]
+            x, y = path[-2]
+            step_ax_rel /= refine_quot
+
+        else:
+            raise MaxIterationError(iter_max)
+
+        return x1, y1, dist
+
+    def _overstep(self, x0_ax, y0_ax, dist0, step_ax_rel):
+        """Move stepwise until the target distance is exceeded."""
+
+        #SR_DBG<
+        debug = False
+        #SR_DBG>
+
+        # Transform starting point to geographical coordinates
+        x0_geo, y0_geo = self.ax_map.transform_axes_to_geo(x0_ax, y0_ax)
+
+        path_ax = [(x0_ax, y0_ax)]
+        dists = [dist0]
+
+        # Step away until target distance exceeded
+        dist = 0.0
+        x1_ax, y1_ax = x0_ax, y0_ax
+        while dist < self.dist - dist0:
+
+            # Move one step farther away from starting point
+            x1_ax += self._dx_unit*step_ax_rel
+            y1_ax += self._dy_unit*step_ax_rel
+
+            # Transform current point to gegographical coordinates
+            x1_geo, y1_geo = self.ax_map.transform_axes_to_geo(x1_ax, y1_ax)
+
+            # Compute geographical distance from starting point
+            dist = self.comp_dist(x0_geo, y0_geo, x1_geo, y1_geo)
+
+            path_ax.append((x1_ax, y1_ax))
+            dists.append(dist + dist0)
+
+            #SR_DBG<
+            if debug:
+                print(
+                    f"({x0_ax:.2f}, {y0_ax:.2f})"
+                    f"=({x1_geo:.2f}, {y1_geo:.2f})"
+                    f"--{{{dist:6.2f}"
+                    f"/{self.dist - dist0:6.2f} {self.unit}}}"
+                    f"->({x1_ax:.2f}, {y1_ax:.2f})"
+                    f"=({x1_geo:.2f}, {y1_geo:.2f})")
+            #SR_DBG>
+
+        return path_ax, dists
+
+    def comp_dist(self, lon0, lat0, lon1, lat1):
+        """Compute the great circle distance between two points."""
+        dist_obj = geopy.distance.great_circle((lat0, lon0), (lat1, lon1))
+        if self.unit == 'km':
+            return dist_obj.kilometers
+        else:
+            raise NotImplementedError(f"great circle distance in {self.unit}")
 
 
 class FlexAxesTextBox:
@@ -1260,6 +1479,7 @@ class FlexAxesTextBox:
 
         if self._show_baselines:
             self.ax.axhline(y, **self._baseline_kwargs)
+
 
 class BoxLocation:
     """Represents reference location inside a box on a 3x3 grid."""

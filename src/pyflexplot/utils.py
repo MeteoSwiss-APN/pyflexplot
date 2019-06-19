@@ -5,6 +5,11 @@ Utils for the command line tool.
 import logging
 
 
+class MaxIterationError(Exception):
+    """Maximum number of iterations of a loop exceeded."""
+    pass
+
+
 def count_to_log_level(count: int) -> int:
     """Map the occurence of the command line option verbose to the log level"""
     if count == 0:
