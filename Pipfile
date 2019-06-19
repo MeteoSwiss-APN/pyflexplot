@@ -18,6 +18,7 @@ Sphinx = "*"
 
 [packages]
 pyflexplot = {editable = true,path = "."}
+geopy = "*"
 
 [requires]
 python_version = "3.7"
