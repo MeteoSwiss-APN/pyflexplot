@@ -282,7 +282,7 @@ class FlexPlotConcentration:
 
         # Add reference distance indicator (100 km)
         ref_dist_km = 100.0
-        self.ax_map.add_ref_dist_indicator(0.064, 0.933, ref_dist_km, 'km')
+        self.ax_map.add_ref_dist_indicator(0.03, 0.9, ref_dist_km, 'km')
 
         # Plot concentrations
         fld_log10 = np.log10(self.fld)
@@ -669,7 +669,7 @@ class FlexAxesMapRotatedPole():
         self.ax = self.fig.add_subplot(projection=self.proj_plot)
 
         self.ax.set_extent(
-            self.padded_bbox(pad_rel=0.01),
+            self.padded_bbox(pad_rel=-0.01),
             self.proj_data,
         )
 
