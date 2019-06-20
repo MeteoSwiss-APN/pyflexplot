@@ -231,12 +231,22 @@ class FlexPlotConcentration:
         }
         #SR_TMP>
 
+        #SR_TMP<
+        map_conf = {
+            'bbox_pad_rel': -0.01,
+            'geogr_res': '10m',
+            #'geogr_res': '50m',
+            'ref_dist_x0': 0.046,
+            'ref_dist_y0': 0.96,
+        }
+        #SR_TMP>
+
         # Prepare plot
         self.fig = plt.figure(figsize=(12, 9))
         pollat = self.attrs['rotated_pole']['grid_north_pole_latitude']
         pollon = self.attrs['rotated_pole']['grid_north_pole_longitude']
-        self.ax_map = FlexAxesMapRotatedPole(
-            self.fig, self.rlat, self.rlon, pollat, pollon)
+        self.ax_map = AxesMapRotPole(
+            self.fig, self.rlat, self.rlon, pollat, pollon, **map_conf)
 
         # Plot particle concentration field
         self.map_add_particle_concentrations()
@@ -278,9 +288,8 @@ class FlexPlotConcentration:
         if self.extend in ['none', 'min']:
             self.colors.pop(-1)  # Remove `over`
 
-        # Add reference distance indicator (100 km)
-        ref_dist_km = 100.0
-        self.ax_map.add_ref_dist_indicator(0.046, 0.96, ref_dist_km, 'km')
+        # Add reference distance indicator
+        self.ax_map.add_ref_dist_indicator()
 
         # Plot concentrations
         fld_log10 = np.log10(self.fld)
@@ -357,7 +366,7 @@ class FlexPlotConcentration:
         # Add axes for text boxes (one on top, two to the right)
         self.axs_box = np.array([
             # Top
-            FlexAxesTextBox(
+            AxesTextBox(
                 self.fig, self.ax_map.ax, [
                     x0_map,
                     y0_map + pad_ver + h_map,
@@ -365,7 +374,7 @@ class FlexPlotConcentration:
                     h_box_t,
                 ]),
             # Right/top
-            FlexAxesTextBox(
+            AxesTextBox(
                 self.fig, self.ax_map.ax, [
                     x0_map + pad_hor + w_map,
                     y0_map + 0.5*pad_ver + (1.0 - h_rel_box_rt)*h_map,
@@ -373,7 +382,7 @@ class FlexPlotConcentration:
                     h_rel_box_rt*h_map - 0.5*pad_ver,
                 ]),
             # Right/bottom
-            FlexAxesTextBox(
+            AxesTextBox(
                 self.fig, self.ax_map.ax, [
                     x0_map + pad_hor + w_map,
                     y0_map,
@@ -381,7 +390,7 @@ class FlexPlotConcentration:
                     (1.0 - h_rel_box_rt)*h_map - 0.5*pad_ver,
                 ]),
             # Bottom
-            FlexAxesTextBox(
+            AxesTextBox(
                 self.fig,
                 self.ax_map.ax, [
                     x0_map,
@@ -616,15 +625,16 @@ class FlexPlotConcentration:
 
         #SR_TMP<
         cosmo = 'COSMO-1'
-        datetime_fmtd = '2019-05-28 00:00 UTC'
-        info_fmtd = f"FLEXPART based on {cosmo} {datetime_fmtd}"
+        simstart_fmtd = '2019-05-28 00:00 UTC'
         #SR_TMP>
 
-        # FLEXPART info
+        # FLEXPART/model info
+        info_fmtd = f"FLEXPART based on {cosmo} {simstart_fmtd}"
         box.text('tl', dx=-0.7, dy=0.5, s=info_fmtd, size='small')
 
         # MeteoSwiss Copyright
-        box.text('tr', dx=0.7, dy=0.5, s=u"\u00a9MeteoSwiss", size='small')
+        cpright_fmtd = u"\u00a9MeteoSwiss"
+        box.text('tr', dx=0.7, dy=0.5, s=cpright_fmtd, size='small')
 
     def save(self, file_path, format=None):
         """Save the plot to disk.
@@ -654,20 +664,80 @@ class FlexPlotConcentration:
         plt.close(self.fig)
 
 
-class FlexAxesMap:
+class AxesMap:
 
-    def __init__(self, fig, **conf):
-        """Initialize instance of FlexAxesMapRotatedPole.
+    def __init__(self, fig):
+        """Initialize instance of AxesMap.
 
         Args:
             fig (Figure): Figure to which to map axes is added.
         """
         self.fig = fig
-        self.conf = conf
 
 
-#SR_TODO Push non-rotated-pole specific code up into FlexAxesMap
-class FlexAxesMapRotatedPole(FlexAxesMap):
+class AxesConfMap:
+    pass
+
+
+class AxesConfMapRotPole(AxesConfMap):
+
+    def __init__(
+            self,
+            *,
+            bbox_pad_rel=0.01,
+            geogr_res='50m',
+            ref_dist=100,
+            ref_dist_unit='km',
+            ref_dist_dir='east',
+            ref_dist_x0=0.05,
+            ref_dist_y0=0.95,
+        ):
+        """
+
+        Kwargs:
+            bbox_pad_rel (float, optional): Relative padding applied
+                to the bounding box of the input data (derived from
+                rotated lat/lon), as a fraction of its size in both
+                directions. If positive/zero/negative, the shown map
+                is bigger/equal/smaller in size than the data domain.
+                Defaults to 0.01.
+
+            geogr_res (str, optional): Resolution of geographic map
+                elements.  Defaults to '50m'.
+
+            ref_dist (float, optional): Reference distance in
+                ``ref_dist_unit``. Defaults to 100.
+
+            ref_dist_unit (str, optional): Unit of reference distance
+                (``ref_dist``). Defaults to 'km'.
+
+            ref_dist_dir (str, optional): Direction in which the
+                reference distance indicator is drawn (starting from
+                (``ref_dist_x0``, ``ref_dist_y0``), relative to the
+                plot itself, NOT to the underlying map (so 'east'
+                means straight to the right, regardless of the
+                projection of the map plot). Defaults to 'east'.
+
+            ref_dist_x0 (float, optional): Horizontal starting point
+                of reference distance indicator in axes coordinates.
+                Defaults to 0.05.
+
+            ref_dist_y0 (float, optional): Vertical starting point
+                of reference distance indicator in axes coordinates.
+                Defaults to 0.95.
+
+        """
+        self.bbox_pad_rel = bbox_pad_rel
+        self.geogr_res = geogr_res
+        self.ref_dist = ref_dist
+        self.ref_dist_unit = ref_dist_unit
+        self.ref_dist_dir = ref_dist_dir
+        self.ref_dist_x0 = ref_dist_x0
+        self.ref_dist_y0 = ref_dist_y0
+
+
+#SR_TODO Push non-rotated-pole specific code up into AxesMap
+class AxesMapRotPole(AxesMap):
     """Map plot axes for FLEXPART plot for rotated-pole data.
 
     Attributes:
@@ -679,7 +749,7 @@ class FlexAxesMapRotatedPole(FlexAxesMap):
     """
 
     def __init__(self, fig, rlat, rlon, pollat, pollon, **conf):
-        """Initialize instance of FlexAxesMapRotatedPole.
+        """Initialize instance of AxesMapRotPole.
 
         Args:
             fig (Figure): Figure to which to map axes is added.
@@ -692,16 +762,14 @@ class FlexAxesMapRotatedPole(FlexAxesMap):
 
             pollon (float): Longitude of rotated pole.
 
-            **conf: Various plot configuration parameters.
+            **conf: Keyword arguments to create a configuration object
+                of type ``AxesConfMapRotPole``.
 
         """
-        super().__init__(fig, **conf)
+        self.fig = fig
         self.rlat = rlat
         self.rlon = rlon
-
-        #SR_TMP<
-        self.bbox_pad_rel = -0.01
-        #SR_TMP>
+        self.conf = AxesConfMapRotPole(**conf)
 
         # Determine zorder of unique plot elements, from low to high
         zorders_const = [
@@ -721,7 +789,7 @@ class FlexAxesMapRotatedPole(FlexAxesMap):
 
         # Set extent of map
         bbox = [self.rlon[0], self.rlon[-1], self.rlat[0], self.rlat[-1]]
-        bbox = pad_bbox(*bbox, pad_rel=self.bbox_pad_rel)
+        bbox = pad_bbox(*bbox, pad_rel=self.conf.bbox_pad_rel)
         self.ax.set_extent(bbox, self.proj_data)
 
         # Activate grid lines
@@ -735,8 +803,7 @@ class FlexAxesMapRotatedPole(FlexAxesMap):
         gl.ylocator = mpl.ticker.FixedLocator(np.arange(40, 52.1, 2))
 
         # Add geographical elements (coasts etc.)
-        self.add_geography('50m')
-        #self.add_geography('10m')
+        self.add_geography(self.conf.geogr_res)
 
         # Show data domain outline
         self.add_data_domain_outline()
@@ -859,27 +926,25 @@ class FlexAxesMapRotatedPole(FlexAxesMap):
 
         return xy_geo
 
-    def add_ref_dist_indicator(self, x0, y0, dist, unit='km'):
+    def add_ref_dist_indicator(self):
         """Add a reference distance indicator.
 
-        Args:
-            x0 (float): Horizontal location of starting point in axes
-                coordinates.
-
-            y0 (float): Vertical location of starting point in axes
-                coordinates.
-
-            dist (float): Distance in ``unit``.
-
-            unit (str, optional): Unit of ``dist``. Defaults to 'km'.
+        The configuration is obtained from an ``AxesConfMapRotPole``
+        instance.
 
         Returns:
-            float: Actual distance.
+            float: Actual distance within specified relative tolerance.
 
         """
+        # Obtain setup
+        dist = self.conf.ref_dist
+        unit = self.conf.ref_dist_unit
+        dir = self.conf.ref_dist_dir
+        x0 = self.conf.ref_dist_x0
+        y0 = self.conf.ref_dist_y0
 
         # Determine end point (axes coordinates)
-        x1, y1, _ = MapPlotGeoDist(self, unit).measure(x0, y0, dist, 'east')
+        x1, y1, _ = MapPlotGeoDist(self, unit).measure(x0, y0, dist, dir)
 
         # Draw line
         self.ax.plot(
@@ -950,7 +1015,7 @@ class MapPlotGeoDist:
         """Initialize an instance of MapPlotGeoDist.
 
         Args:
-            ax_map (FlexAxesMap*): Map plot object providing the
+            ax_map (AxesMap*): Map plot object providing the
                 projections etc. [TODO reformulate!]
 
             unit (str, optional): Unit of ``dist``. Defaults to 'km'.
@@ -1098,7 +1163,7 @@ class MapPlotGeoDist:
             raise NotImplementedError(f"great circle distance in {self.unit}")
 
 
-class FlexAxesTextBox:
+class AxesTextBox:
     """Text box axes for FLEXPART plot.
 
     Attributes:
@@ -1110,7 +1175,7 @@ class FlexAxesTextBox:
     """
 
     def __init__(self, fig, ax_ref, rect, show_border=True):
-        """Initialize instance of FlexAxesTextBox.
+        """Initialize instance of AxesTextBox.
 
         Args:
             fig (Figure): Figure to which to add the text box axes.
@@ -1236,7 +1301,7 @@ class FlexAxesTextBox:
 
         Args:
             loc (int|str): Reference location. For details see
-                ``FlexAxesTextBox.text``.
+                ``AxesTextBox.text``.
 
             block (list[str]): Text block.
 
@@ -1245,7 +1310,7 @@ class FlexAxesTextBox:
                 as ``block``. Omit individual lines with None.
 
             **kwargs: Positioning and formatting options passed to
-                ``FlexAxesTextBox.text_blocks``.
+                ``AxesTextBox.text_blocks``.
 
         """
         self.text_blocks(loc, [block], colors=[colors], **kwargs)
@@ -1265,7 +1330,7 @@ class FlexAxesTextBox:
 
         Args:
             loc (int|str): Reference location. For details see
-                ``FlexAxesTextBox.text``.
+                ``AxesTextBox.text``.
 
             blocks (list[list[str]]): List of text blocks, each of
                 which constitutes a list of lines.
@@ -1354,7 +1419,7 @@ class FlexAxesTextBox:
     def text_block_hfill(self, loc_y, block, **kwargs):
         """Single block of horizontally filled lines.
 
-        See ``FlexAxesTextBox.text_blocks_hfill`` for details.
+        See ``AxesTextBox.text_blocks_hfill`` for details.
         """
         self.text_blocks_hfill(loc_y, [block], **kwargs)
 
@@ -1366,7 +1431,7 @@ class FlexAxesTextBox:
 
         Args:
             locy (int|str): Vertical reference location. For details
-                see ``FlexAxesTextBox.text`` (vertical component
+                see ``AxesTextBox.text`` (vertical component
                 only).
 
             blocks (str | list[ str | list[ str | tuple]]):
@@ -1387,7 +1452,7 @@ class FlexAxesTextBox:
                     and right part at the first tab character ('\t').
 
             **kwargs: Location and formatting options passed to
-                ``FlexAxesTextBox.text_blocks``.
+                ``AxesTextBox.text_blocks``.
         """
 
         if isinstance(blocks, str):
