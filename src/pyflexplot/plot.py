@@ -262,15 +262,15 @@ class FlexPlotConcentration:
         # Define colors
         # yapf: disable
         self.colors = (np.array([
-            (255, 155, 255), # -> under
-            (224, 196, 172), # \
-            (221, 127, 215), # |
-            ( 99,   0, 255), # |
-            (100, 153, 199), #  > range
-            ( 93, 255,   2), # |
-            (199, 255,   0), # |
-            (255, 239,  57), # /
-            (200, 200, 200), # -> over
+            (255, 155, 255),  # -> under
+            (224, 196, 172),  # \
+            (221, 127, 215),  # |
+            ( 99,   0, 255),  # |
+            (100, 153, 199),  #  > range
+            ( 93, 255,   2),  # |
+            (199, 255,   0),  # |
+            (255, 239,  57),  # /
+            (200, 200, 200),  # -> over
         ], float)/255).tolist()
         # yapf: enable
         if self.extend in ['none', 'max']:
@@ -654,7 +654,20 @@ class FlexPlotConcentration:
         plt.close(self.fig)
 
 
-class FlexAxesMapRotatedPole():
+class FlexAxesMap:
+
+    def __init__(self, fig, **conf):
+        """Initialize instance of FlexAxesMapRotatedPole.
+
+        Args:
+            fig (Figure): Figure to which to map axes is added.
+        """
+        self.fig = fig
+        self.conf = conf
+
+
+#SR_TODO Push non-rotated-pole specific code up into FlexAxesMap
+class FlexAxesMapRotatedPole(FlexAxesMap):
     """Map plot axes for FLEXPART plot for rotated-pole data.
 
     Attributes:
@@ -682,10 +695,13 @@ class FlexAxesMapRotatedPole():
             **conf: Various plot configuration parameters.
 
         """
-        self.fig = fig
+        super().__init__(fig, **conf)
         self.rlat = rlat
         self.rlon = rlon
-        self.conf = conf
+
+        #SR_TMP<
+        self.bbox_pad_rel = -0.01
+        #SR_TMP>
 
         # Determine zorder of unique plot elements, from low to high
         zorders_const = [
@@ -697,15 +713,18 @@ class FlexAxesMapRotatedPole():
         d0, dz = 1, 1
         self.zorder = {e: d0 + i*dz for i, e in enumerate(zorders_const)}
 
+        # Prepare the map projections (input, plot, geographic)
         self.prepare_projections(pollat, pollon)
 
+        # Initialize plot
         self.ax = self.fig.add_subplot(projection=self.proj_plot)
 
-        self.ax.set_extent(
-            self.padded_bbox(pad_rel=-0.01),
-            self.proj_data,
-        )
+        # Set extent of map
+        bbox = [self.rlon[0], self.rlon[-1], self.rlat[0], self.rlat[-1]]
+        bbox = pad_bbox(*bbox, pad_rel=self.bbox_pad_rel)
+        self.ax.set_extent(bbox, self.proj_data)
 
+        # Activate grid lines
         gl = self.ax.gridlines(
             linestyle=':',
             linewidth=1,
@@ -715,9 +734,11 @@ class FlexAxesMapRotatedPole():
         gl.xlocator = mpl.ticker.FixedLocator(np.arange(-2, 18.1, 2))
         gl.ylocator = mpl.ticker.FixedLocator(np.arange(40, 52.1, 2))
 
+        # Add geographical elements (coasts etc.)
         self.add_geography('50m')
         #self.add_geography('10m')
 
+        # Show data domain outline
         self.add_data_domain_outline()
 
     def prepare_projections(self, pollat, pollon):
@@ -743,37 +764,6 @@ class FlexAxesMapRotatedPole():
         rlat2d, rlon2d = np.meshgrid(self.rlat, self.rlon)
         self.lon2d, self.lat2d, _ = self.proj_geo.transform_points(
             self.proj_data, rlat2d, rlon2d).T
-
-    def padded_bbox(self, pad_rel=0.0):
-        """Compute the bounding box based on rlat/rlon with padding.
-
-        Args:
-            pad_rel (float, optional): Padding between the bounding box
-                of the data and that of the plot, specified as a
-                fraction of the extent of the bounding box of the data
-                in the respective direction (horizontal or vertical).
-                Can be negative. Defaults to 0.0.
-
-        """
-        # Default: data domain
-        bbox = [self.rlon[0], self.rlon[-1], self.rlat[0], self.rlat[-1]]
-
-        # Get padding factor -- either a single number, or a (x, y) tuple
-        bbox_pad_rel = self.conf.get('bbox_pad_rel', pad_rel)
-        try:
-            pad_fact_x, pad_fact_y = bbox_pad_rel
-        except TypeError:
-            pad_fact_x, pad_fact_y = [bbox_pad_rel]*2
-
-        # Add padding: grow (or shrink) bbox by a factor
-        dlon = bbox[1] - bbox[0]
-        dlat = bbox[3] - bbox[2]
-        padx = dlon*pad_fact_x
-        pady = dlon*pad_fact_y
-        bbox_pad = np.array([-padx, padx, -pady, pady])
-        bbox += bbox_pad
-
-        return bbox
 
     def add_geography(self, scale):
         """Add geographic elements: coasts, countries, colors, ...
@@ -858,13 +848,13 @@ class FlexAxesMapRotatedPole():
     def transform_axes_to_geo(self, x, y):
         """Transform axes coordinates to geographic coordinates."""
 
-        # Axes to display
+        # Convert `Axes` to `Display`
         xy_disp = self.ax.transAxes.transform((x, y))
 
-        # Display to data
+        # Convert `Display` to `Data`
         x_data, y_data = self.ax.transData.inverted().transform(xy_disp)
 
-        # Data to geographic
+        # Convert `Data` to `Geographic`
         xy_geo = self.proj_geo.transform_point(x_data, y_data, self.proj_plot)
 
         return xy_geo
@@ -910,6 +900,47 @@ class FlexAxesMapRotatedPole():
             horizontalalignment='center',
             fontsize='large',
         )
+
+
+def pad_bbox(lon0, lon1, lat0, lat1, pad_rel):
+    """Add relative padding to a bounding box.
+
+    Args:
+        lon0 (float): Longitude of lower-left domain corner.
+
+        lon1 (float): Longitude of upper-right domain corner.
+
+        lat0 (float): Latitude of lower-left domain corner.
+
+        lat1 (float): Latitude of upper-right domain corner.
+
+        pad_rel (float): Relative padding applied to box defined
+            by the lower-left and upper-right domain corners, as a
+            fraction of the width/height of the box in the
+            horizontal/vertical. Can be negative.
+
+    Returns:
+        ndarray[float, n=4]: Padded bounding box comprised of the
+            following four elements: [lon0, lon1, lat0, lat1].
+
+    """
+
+    pad_fact_x, pad_fact_y = [pad_rel]*2
+
+    dlon = lon1 - lon0
+    dlat = lat1 - lat0
+
+    padx = dlon*pad_fact_x
+    pady = dlon*pad_fact_y
+
+    bbox = np.array([
+        lon0 - padx,
+        lon1 + padx,
+        lat0 - pady,
+        lat1 + pady,
+    ], float)
+
+    return bbox
 
 
 class MapPlotGeoDist:
