@@ -244,8 +244,9 @@ class FlexPlotConcentration:
         # Add text boxes around plot
         self.fig_add_text_boxes()
         self.fill_box_top()
-        self.fill_box_top_right()
-        self.fill_box_bottom_right()
+        self.fill_box_right_top()
+        self.fill_box_right_bottom()
+        self.fill_box_bottom()
 
     def map_add_particle_concentrations(self):
         """Plot the particle concentrations onto the map."""
@@ -305,15 +306,23 @@ class FlexPlotConcentration:
         return handle
 
     def fig_add_text_boxes(
-            self, h_rel=0.1, w_rel=0.25, pad_hor_rel=0.015,
-            h_rel_box_top=0.44):
+            self,
+            h_rel_t=0.1,
+            h_rel_b=0.03,
+            w_rel_r=0.25,
+            pad_hor_rel=0.015,
+            h_rel_box_rt=0.44):
         """Add empty text boxes to the figure around the map plot.
 
         Args:
-            h_rel (float, optional): Height of top box as a fraction of
-                the height of the map plot. Defaults to <TODO>.
+            h_rel_t (float, optional): Height of top box as a fraction
+                of the height of the map plot. Defaults to <TODO>.
 
-            w_rel (float, optional): Width of the right boxes as a
+            h_rel_b (float, optional): Height of bottom box as a
+                fraction of the height of the map plot. Defaults to
+                <TODO>.
+
+            w_rel_r (float, optional): Width of the right boxes as a
                 fraction of the width of the map plot. Default to <TODO>.
 
             pad_hor_rel (float, optional): Padding between map plot and
@@ -321,9 +330,9 @@ class FlexPlotConcentration:
                 same absolute padding is used in the horizontal and
                 vertical direction. Defaults to <TODO>.
 
-            h_rel_box_top (float, optional): Height of the top box on
-                the right-hand side of the plot as a fraction of the
-                combined height of both boxees. Defaults to <TODO>.
+            h_rel_box_rt (float, optional): Height of the top box to
+                the right of the map plot as a fraction of the combined
+                height of both right boxees. Defaults to <TODO>.
 
         """
         self.ax_ref = self.ax_map.ax  #SR_TMP
@@ -343,8 +352,9 @@ class FlexPlotConcentration:
         self.ax_ref.set_position([x0_map, y0_map, w_map, h_map])
 
         # Determine height of top box and width of right boxes
-        w_box = w_rel*w_map
-        h_box = h_rel*h_map
+        w_box = w_rel_r*w_map
+        h_box_t = h_rel_t*h_map
+        h_box_b = h_rel_b*h_map
 
         # Determine padding between plot and boxes
         pad_hor = pad_hor_rel*w_map
@@ -352,27 +362,40 @@ class FlexPlotConcentration:
 
         # Add axes for text boxes (one on top, two to the right)
         self.axs_box = np.array([
+            # Top
             FlexAxesTextBox(
                 self.fig, self.ax_map.ax, [
                     x0_map,
                     y0_map + pad_ver + h_map,
                     w_map + pad_hor + w_box,
-                    h_box,
+                    h_box_t,
                 ]),
+            # Right/top
             FlexAxesTextBox(
                 self.fig, self.ax_map.ax, [
                     x0_map + pad_hor + w_map,
-                    y0_map + 0.5*pad_ver + (1.0 - h_rel_box_top)*h_map,
+                    y0_map + 0.5*pad_ver + (1.0 - h_rel_box_rt)*h_map,
                     w_box,
-                    h_rel_box_top*h_map - 0.5*pad_ver,
+                    h_rel_box_rt*h_map - 0.5*pad_ver,
                 ]),
+            # Right/bottom
             FlexAxesTextBox(
                 self.fig, self.ax_map.ax, [
                     x0_map + pad_hor + w_map,
                     y0_map,
                     w_box,
-                    (1.0 - h_rel_box_top)*h_map - 0.5*pad_ver,
+                    (1.0 - h_rel_box_rt)*h_map - 0.5*pad_ver,
                 ]),
+            # Bottom
+            FlexAxesTextBox(
+                self.fig,
+                self.ax_map.ax, [
+                    x0_map,
+                    y0_map - h_box_b,
+                    w_map + pad_hor + w_box,
+                    h_box_b,
+                ],
+                show_border=False),
         ])
 
     def fill_box_top(self):
@@ -408,8 +431,8 @@ class FlexPlotConcentration:
         s = f"{tz_str}"
         box.text('br', s, size='large')
 
-    def fill_box_top_right(self):
-        """Fill the box to the top-right of the map plot."""
+    def fill_box_right_top(self):
+        """Fill the top box to the right of the map plot."""
         box = self.axs_box[1]
 
         #SR_TMP<
@@ -537,8 +560,8 @@ class FlexPlotConcentration:
 
             return f"{op+' '+format_level(lvl):^15}"
 
-    def fill_box_bottom_right(self):
-        """Fill the box to the bottom-right of the map plot."""
+    def fill_box_right_bottom(self):
+        """Fill the bottom box to the right of the map plot."""
         box = self.axs_box[2]
 
         #SR_TMP<
@@ -592,6 +615,22 @@ class FlexPlotConcentration:
         dy = 2.75
         box.text_blocks_hfill(
             'b', dy_line=dy, blocks=info_blocks, reverse=True, size='small')
+
+    def fill_box_bottom(self):
+        """Fill the box to the bottom of the map plot."""
+        box = self.axs_box[3]
+
+        #SR_TMP<
+        cosmo = 'COSMO-1'
+        datetime_fmtd = '2019-05-28 00:00 UTC'
+        info_fmtd = f"FLEXPART based on {cosmo} {datetime_fmtd}"
+        #SR_TMP>
+
+        # FLEXPART info
+        box.text('tl', dx=-0.7, dy=0.5, s=info_fmtd, size='small')
+
+        # MeteoSwiss Copyright
+        box.text('tr', dx=0.7, dy=0.5, s=u"\u00a9MeteoSwiss", size='small')
 
     def save(self, file_path, format=None):
         """Save the plot to disk.
@@ -1045,7 +1084,7 @@ class FlexAxesTextBox:
 
     """
 
-    def __init__(self, fig, ax_ref, rect):
+    def __init__(self, fig, ax_ref, rect, show_border=True):
         """Initialize instance of FlexAxesTextBox.
 
         Args:
@@ -1055,6 +1094,9 @@ class FlexAxesTextBox:
 
             rect (list): Rectangle [left, bottom, width, height].
 
+            show_border (bool, optional): Show the border of the box.
+                Default to True.
+
         """
 
         self.fig = fig
@@ -1063,11 +1105,13 @@ class FlexAxesTextBox:
         self.ax = self.fig.add_axes(rect)
         self.ax.axis('off')
 
-        self.draw_box()
+        if show_border:
+            self.draw_border()
 
         self.compute_unit_distances()
 
-        # Text baseline (for debugging)
+        # Text base line settings
+        # (line below text for debugging)
         self._show_baselines = False
         self._baseline_kwargs_default = {
             'color': 'black',
@@ -1075,7 +1119,7 @@ class FlexAxesTextBox:
         }
         self._baseline_kwargs = self._baseline_kwargs_default
 
-    def draw_box(self, x=0.0, y=0.0, w=1.0, h=1.0, fc='white', ec='black'):
+    def draw_border(self, x=0.0, y=0.0, w=1.0, h=1.0, fc='white', ec='black'):
         """Draw a box onto the axes."""
         self.ax.add_patch(
             mpl.patches.Rectangle(
