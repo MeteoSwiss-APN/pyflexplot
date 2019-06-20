@@ -251,35 +251,32 @@ class FlexPlotConcentration:
     def map_add_particle_concentrations(self):
         """Plot the particle concentrations onto the map."""
 
-        # yapf: disable
-        # Colors for cmap
-        colors_base = np.array([
-            (255, 155, 255),
-            (224, 196, 172),
-            (221, 127, 215),
-            ( 99,   0, 255),
-            (100, 153, 199),
-            ( 93, 255,   2),
-            (199, 255,   0),
-            (255, 239,  57),
-            (200, 200, 200),
-        ], float)/255
-        # yapf: enable
-
         #SR_TMP>
-        levels_log10 = np.arange(-9, -2 + 0.1, 1)
+        self.levels_log10 = np.arange(-9, -2 + 0.1, 1)
+        self.levels = 10**self.levels_log10
         self.extend = 'max'
-        self.cmap = mpl.colors.LinearSegmentedColormap.from_list(
-            'concentration', colors_base)
-        self.colors = {
-            'none': colors_base[1:-1],
-            'min': colors_base[:-1],
-            'max': colors_base[1:],
-            'both': colors_base,
-        }[self.extend]
         lon_site = 7.97
         lat_site = 47.36
         #SR_TMP>
+
+        # Define colors
+        # yapf: disable
+        self.colors = (np.array([
+            (255, 155, 255), # -> under
+            (224, 196, 172), # \
+            (221, 127, 215), # |
+            ( 99,   0, 255), # |
+            (100, 153, 199), #  > range
+            ( 93, 255,   2), # |
+            (199, 255,   0), # |
+            (255, 239,  57), # /
+            (200, 200, 200), # -> over
+        ], float)/255).tolist()
+        # yapf: enable
+        if self.extend in ['none', 'max']:
+            self.colors.pop(0)  # Remove `under`
+        if self.extend in ['none', 'min']:
+            self.colors.pop(-1)  # Remove `over`
 
         # Add reference distance indicator (100 km)
         ref_dist_km = 100.0
@@ -289,19 +286,16 @@ class FlexPlotConcentration:
         fld_log10 = np.log10(self.fld)
         handle = self.ax_map.contourf(
             fld_log10,
-            levels=levels_log10,
-            cmap=self.cmap,
+            levels=self.levels_log10,
+            colors=self.colors,
             extend=self.extend,
         )
 
-        # Mark maximum value
+        # Add marker at location of maximum value
         self.ax_map.mark_max(self.fld, **self._max_marker_kwargs)
 
-        # Site
+        # Add marker at release site
         self.ax_map.marker(lon_site, lat_site, **self._site_marker_kwargs)
-
-        # Store some properties
-        self.levels = 10**levels_log10
 
         return handle
 
