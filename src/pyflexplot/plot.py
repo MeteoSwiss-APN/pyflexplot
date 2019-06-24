@@ -208,10 +208,7 @@ class FlexAttrsBase:
 class FlexAttrsGrid(FlexAttrsBase):
     """Grid attributes."""
 
-    def __init__(
-        self,
-        north_pole_lat,
-        north_pole_lon):
+    def __init__(self, north_pole_lat, north_pole_lon):
         """Initialize instance of ``FlexAttrsGrid``.
 
         Kwargs:
@@ -228,11 +225,7 @@ class FlexAttrsGrid(FlexAttrsBase):
 class FlexAttrsRelease(FlexAttrsBase):
     """Release attributes."""
 
-    def __init__(
-        self,
-        site_lat,
-        site_lon,
-        site_name):
+    def __init__(self, site_lat, site_lon, site_name):
         """Initialize an instance of ``FlexAttrsRelease``.
 
         Kwargs:
@@ -252,10 +245,7 @@ class FlexAttrsRelease(FlexAttrsBase):
 class FlexAttrsVar(FlexAttrsBase):
     """Variable attributes."""
 
-    def __init__(
-        self,
-        name,
-        unit):
+    def __init__(self, name, unit):
         """Initialize an instance of ``FlexAttrsVar``.
 
         Kwargs:
@@ -271,8 +261,14 @@ class FlexAttrsVar(FlexAttrsBase):
 
     def unit_fmtd(self):
         """Auto-format the unit (e.g., 'm-3' -> 'm$^{-3}$')."""
-        return (self.unit
-            .replace('m-3', 'm$^{-3}$'))
+        old_new = [
+            ('m-2', 'm$^{-2}$'),
+            ('m-3', 'm$^{-3}$'),
+        ]
+        unit = self.unit
+        for old, new in old_new:
+            unit = unit.replace(old, new)
+        return unit
 
 
 class FlexAttrsCollection:
