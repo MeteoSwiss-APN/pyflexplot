@@ -3,6 +3,7 @@
 Plots.
 """
 import cartopy
+import datetime
 import geopy.distance
 import logging as log
 import matplotlib as mpl
@@ -11,10 +12,12 @@ import numpy as np
 import os.path
 import re
 
+from collections import namedtuple
 from matplotlib import ticker
 from textwrap import dedent
 
 from .utils import MaxIterationError
+from .utils import merge_dicts
 from .utils_dev import ipython  #SR_DEV
 
 mpl.use('Agg')  # Prevent ``couldn't connect to display`` error
@@ -95,7 +98,7 @@ class FlexPlotter:
                 'rlat': self.data.rlat,
                 'rlon': self.data.rlon,
                 'fld': self.data.field(key),
-                'attrs': {},  #SR_TMP
+                'attrs_raw': {},  #SR_TMP
             }
 
             FlexPlotConcentration(**kwargs).save(file_path)
@@ -170,6 +173,126 @@ class ColorStr:
 #SR_TMP>
 
 
+class FlexAttrsBase:
+    """Base class for FLEXPART attributes."""
+
+
+class FlexAttrsBase:
+    """Base class for attributes."""
+
+    def __init__(self):
+        self.attrs = {}
+
+    def __getattr__(self, name):
+        try:
+            return self.__dict__['attrs'][name]
+        except KeyError as e:
+            if str(e) == 'attrs' and name != 'attrs':
+                self._raise_missing_attrs()
+            raise AttributeError(
+                f"'{type(self).__name__}' has no attribute '{name}'")
+
+    def set(self, name, val):
+        try:
+            self.attrs[name] = val
+        except AttributeError:
+            self._raise_missing_attrs()
+
+    def _raise_missing_attrs(self):
+        cname = type(self).__name__
+        raise Exception(
+            f"'{cname}' has no attribute 'attrs' -- maybe forgot "
+            f"`super().__init__()` in `{cname}.__init__`?")
+
+
+class FlexAttrsGrid(FlexAttrsBase):
+    """Grid attributes."""
+
+    def __init__(
+        self,
+        north_pole_lat,
+        north_pole_lon):
+        """Initialize instance of ``FlexAttrsGrid``.
+
+        Kwargs:
+            north_pole_lat (float): Latitude of rotated north pole.
+
+            north_pole_lon (float): Longitude of rotated north pole.
+
+        """
+        super().__init__()
+        self.set('north_pole_lat', north_pole_lat)
+        self.set('north_pole_lon', north_pole_lon)
+
+
+class FlexAttrsRelease(FlexAttrsBase):
+    """Release attributes."""
+
+    def __init__(
+        self,
+        site_lat,
+        site_lon,
+        site_name):
+        """Initialize an instance of ``FlexAttrsRelease``.
+
+        Kwargs:
+            site_lat (float): Latitude of release site.
+
+            site_lon (float): Longitude of release site.
+
+            site_name (str): Name of release site.
+
+        """
+        super().__init__()
+        self.set('site_lat', site_lat)
+        self.set('site_lon', site_lon)
+        self.set('site_name', site_name)
+
+
+class FlexAttrsVar(FlexAttrsBase):
+    """Variable attributes."""
+
+    def __init__(
+        self,
+        name,
+        unit):
+        """Initialize an instance of ``FlexAttrsVar``.
+
+        Kwargs:
+            name (str): Name of variable.
+
+            unit (str): Unit of variable as a regular string
+                (e.g., 'm-3' for cubic meters).
+
+        """
+        super().__init__()
+        self.set('name', name)
+        self.set('unit', unit)
+
+    def unit_fmtd(self):
+        """Auto-format the unit (e.g., 'm-3' -> 'm$^{-3}$')."""
+        return (self.unit
+            .replace('m-3', 'm$^{-3}$'))
+
+
+class FlexAttrsCollection:
+    """Collection of FLEXPART attributes."""
+
+    def __init__(self, *, grid, release, var):
+        """Initialize an instance of ``FlexAttrsCollection``.
+
+        Kwargs:
+            grid (dict): Kwargs passed to ``FlexAttrsGrid``.
+
+            release (dict): Kwargs passed to ``FlexAttrsRelease``.
+
+            var (dict): Kwargs passed to ``FlexAttrsVar``.
+        """
+        self.grid = FlexAttrsGrid(**grid)
+        self.release = FlexAttrsRelease(**release)
+        self.var = FlexAttrsVar(**var)
+
+
 class FlexPlotConcentration:
     """FLEXPART plot of particle concentration at a certain level.
 
@@ -181,7 +304,7 @@ class FlexPlotConcentration:
 
     """
 
-    def __init__(self, rlat, rlon, fld, attrs, conf=None):
+    def __init__(self, rlat, rlon, fld, attrs_raw, conf=None):
         """Initialize instance of FlexPlotConcentration.
 
         Args:
@@ -191,7 +314,7 @@ class FlexPlotConcentration:
 
             fld (ndarray[float, float]): Concentration field (2d).
 
-            attrs (dict): Attributes from the FLEXPART NetCDF file
+            attrs_raw (dict): Attributes from the FLEXPART NetCDF file
                 (gloabl, variable-specific, etc.).
 
             conf (dict, optional): Plot configuration. Defaults to None.
@@ -200,8 +323,9 @@ class FlexPlotConcentration:
         self.rlat = rlat
         self.rlon = rlon
         self.fld = np.where(fld > 0, fld, np.nan)
-        self.attrs = attrs
         self.conf = {} if conf is None else conf
+
+        self.levels = None
 
         # Formatting arguments
         self._max_marker_kwargs = {
@@ -218,35 +342,43 @@ class FlexPlotConcentration:
             'markeredgewidth': 1.5,
         }
 
-        self.levels = None
-
-        self._run()
-
-    def _run(self):
-
-        #SR_TMP< TODO Extract from NetCDF file
-        self.attrs['rotated_pole'] = {
-            'grid_north_pole_latitude': 43.0,
-            'grid_north_pole_longitude': -170.0,
-        }
-        #SR_TMP>
-
-        #SR_TMP<
-        map_conf = {
+        # Map plot configuration
+        self.map_conf = {
             'bbox_pad_rel': -0.01,
             'geogr_res': '10m',
             #'geogr_res': '50m',
             'ref_dist_x0': 0.046,
             'ref_dist_y0': 0.96,
         }
+
+        #SR_TMP<
+        self.attrs = FlexAttrsCollection(
+            grid={
+                'north_pole_lat': 43.0,
+                'north_pole_lon': -170.0,
+            },
+            release={
+                'site_lat': 47.36,
+                'site_lon': 7.97,
+                'site_name': 'Goesgen',
+            },
+            var={
+                'name': 'Concentration',
+                'unit': 'Bq m-3',
+            },
+        )
         #SR_TMP>
+
+        self._run()
+
+    def _run(self):
 
         # Prepare plot
         self.fig = plt.figure(figsize=(12, 9))
-        pollat = self.attrs['rotated_pole']['grid_north_pole_latitude']
-        pollon = self.attrs['rotated_pole']['grid_north_pole_longitude']
+        pollat = self.attrs.grid.north_pole_lat
+        pollon = self.attrs.grid.north_pole_lon
         self.ax_map = AxesMapRotPole(
-            self.fig, self.rlat, self.rlon, pollat, pollon, **map_conf)
+            self.fig, self.rlat, self.rlon, pollat, pollon, **self.map_conf)
 
         # Plot particle concentration field
         self.map_add_particle_concentrations()
@@ -265,8 +397,6 @@ class FlexPlotConcentration:
         self.levels_log10 = np.arange(-9, -2 + 0.1, 1)
         self.levels = 10**self.levels_log10
         self.extend = 'max'
-        lon_site = 7.97
-        lat_site = 47.36
         #SR_TMP>
 
         # Define colors
@@ -304,7 +434,11 @@ class FlexPlotConcentration:
         self.ax_map.mark_max(self.fld, **self._max_marker_kwargs)
 
         # Add marker at release site
-        self.ax_map.marker(lon_site, lat_site, **self._site_marker_kwargs)
+        self.ax_map.marker(
+            self.attrs.release.site_lon,
+            self.attrs.release.site_lat,
+            **self._site_marker_kwargs,
+        )
 
         return handle
 
@@ -406,16 +540,22 @@ class FlexPlotConcentration:
         box = self.axs_box[0]
 
         #SR_TMP< TODO obtain from NetCDF attributes
-        varname = 'Concentration'
-        level_str = '500 $\endash$ 2000 m AGL'
+        level_range_fmtd = '500 $\endash$ 2000 m AGL'
         species = 'Cs-137'
-        timestep_fmtd = '2019-05-28 03:00 UTC'
-        release_site = 'Goesgen'
+        timestep = datetime.datetime(
+            year=2019,
+            month=5,
+            day=28,
+            hour=9,
+            minute=0,
+            tzinfo=datetime.timezone.utc,
+        )
+        timestep_fmtd = timestep.strftime('%Y-%m-%d %H:%M %Z')
         tz_str = 'T0 + 03:00 h'
         #SR_TMP>
 
         # Top left: variable and level
-        s = f"{varname} {level_str}"
+        s = f"{self.attrs.var.name} {level_range_fmtd}"
         box.text('tl', s, size='xx-large')
 
         # Top center: species
@@ -427,7 +567,7 @@ class FlexPlotConcentration:
         box.text('tr', s, size='xx-large')
 
         # Bottom left: release site
-        s = f"Release site: {release_site}"
+        s = f"Release site: {self.attrs.release.site_name}"
         box.text('bl', s, size='large')
 
         # Bottom right: time zone
@@ -439,15 +579,13 @@ class FlexPlotConcentration:
         box = self.axs_box[1]
 
         #SR_TMP<
-        varname = 'Concentration'
-        unit_fmtd = 'Bq m$^{-3}$'
         fld_max = np.nanmax(self.fld)
-        fld_max_fmtd = f"Max.: {fld_max:.2E} {unit_fmtd}"
-        release_site = 'Goesgen'
+        fld_max_fmtd = f"Max.: {fld_max:.2E} {self.attrs.var.unit_fmtd()}"
         #SR_TMP>
 
         # Add box title
-        box.text('tc', f"{varname} ({unit_fmtd})", size='large')
+        s = f"{self.attrs.var.name} ({self.attrs.var.unit_fmtd()})"
+        box.text('tc', s=s, size='large')
 
         # Format level ranges (contour plot legend)
         labels = self._format_level_ranges()
@@ -513,13 +651,8 @@ class FlexPlotConcentration:
             dy=dy_site + 0.7,
             **self._site_marker_kwargs,
         )
-        box.text(
-            loc='bl',
-            s=f"Release Site: {release_site}",
-            dx=5.5,
-            dy=dy_site,
-            size='small',
-        )
+        s = f"Release Site: {self.attrs.release.site_name}"
+        box.text(loc='bl', s=s, dx=5.5, dy=dy_site, size='small')
 
     def _format_level_ranges(self):
         """Format the levels ranges for the contour plot legend."""
@@ -691,7 +824,7 @@ class AxesConfMapRotPole(AxesConfMap):
             ref_dist_dir='east',
             ref_dist_x0=0.05,
             ref_dist_y0=0.95,
-        ):
+    ):
         """
 
         Kwargs:
