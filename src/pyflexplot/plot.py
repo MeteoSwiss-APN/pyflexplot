@@ -234,7 +234,7 @@ class FlexAttrsGrid(FlexAttrsBase):
 class FlexAttrsVariable(FlexAttrsBase):
     """Variable attributes."""
 
-    def __init__(self, *, name, unit, level_range, level_unit):
+    def __init__(self, *, name, unit, level_bottom, level_top, level_unit):
         """Initialize an instance of ``FlexAttrsVariable``.
 
         Kwargs:
@@ -243,7 +243,9 @@ class FlexAttrsVariable(FlexAttrsBase):
             unit (str): Unit of variable as a regular string
                 (e.g., 'm-3' for cubic meters).
 
-            level_range ((float, float)): Start and end level.
+            level_bottom (float): Bottom level.
+
+            level_top (float): Top level.
 
             level_unit (str): Unit in which levels are specified.
 
@@ -251,7 +253,8 @@ class FlexAttrsVariable(FlexAttrsBase):
         super().__init__()
         self.set('name', name)
         self.set('unit', unit)
-        self.set('level_range', level_range)
+        self.set('level_bottom', level_bottom)
+        self.set('level_top', level_top)
         self.set('level_unit', level_unit)
 
     def format_unit(self):
@@ -260,6 +263,13 @@ class FlexAttrsVariable(FlexAttrsBase):
     def format_name(self):
         return f'{self.name} ({self.format_unit()})'
 
+    def format_level_unit(self):
+        return self._format_unit(self.level_unit)
+
+    def format_level_range(self):
+        return (
+            f"{self.level_bottom:g}$\,\endash\,${self.level_top:g} "
+            f"{self.format_level_unit()}")
 
 class FlexAttrsRelease(FlexAttrsBase):
     """Release attributes."""
@@ -531,7 +541,8 @@ class FlexPlotConcentration:
             variable={
                 'name': 'Concentration',
                 'unit': 'Bq m-3',
-                'level_range': (500, 2000),
+                'level_bottom': 500,
+                'level_top': 2000,
                 'level_unit': 'm AGL',
             },
             species={
@@ -750,10 +761,9 @@ class FlexPlotConcentration:
         box = self.axs_box[0]
 
         # Top left: variable and level
-        _lvl0, _lvl1 = self.attrs.variable.level_range
-        _unit = self.attrs.variable.level_unit
-        level_range_fmtd = f"{_lvl0:g} $\endash$ {_lvl1:g} {_unit}"
-        s = f"{self.attrs.variable.name} {level_range_fmtd}"
+        s = (
+            f"{self.attrs.variable.name} "
+            f"{self.attrs.variable.format_level_range()}")
         box.text('tl', s, size='xx-large')
 
         # Top center: species
