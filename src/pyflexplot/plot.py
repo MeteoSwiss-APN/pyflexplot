@@ -190,7 +190,14 @@ class FlexAttrsBase:
             raise AttributeError(
                 f"'{type(self).__name__}' has no attribute '{name}'")
 
-    def set(self, name, val):
+    def set(self, name, val, type_=None):
+        if type_ is not None and not isinstance(val, type_):
+            try:
+                val = type_(val)
+            except TypeError:
+                raise ValueError(
+                    f"attribute '{name}': value '{val}' has wrong type: "
+                    f"expected '{type_.__name__}', got '{type(val).__name__}'")
         try:
             self.attrs[name] = val
         except AttributeError:
@@ -227,8 +234,8 @@ class FlexAttrsGrid(FlexAttrsBase):
 
         """
         super().__init__()
-        self.set('north_pole_lat', north_pole_lat)
-        self.set('north_pole_lon', north_pole_lon)
+        self.set('north_pole_lat', north_pole_lat, float)
+        self.set('north_pole_lon', north_pole_lon, float)
 
 
 class FlexAttrsVariable(FlexAttrsBase):
@@ -255,12 +262,12 @@ class FlexAttrsVariable(FlexAttrsBase):
 
         """
         super().__init__()
-        self.set('name', name)
-        self.set('unit', unit)
-        self.set('level_bottom', level_bottom)
-        self.set('level_bottom_unit', level_bottom_unit)
-        self.set('level_top', level_top)
-        self.set('level_top_unit', level_top_unit)
+        self.set('name', name, str)
+        self.set('unit', unit, str)
+        self.set('level_bottom', level_bottom, float)
+        self.set('level_bottom_unit', level_bottom_unit, str)
+        self.set('level_top', level_top, float)
+        self.set('level_top_unit', level_top_unit, str)
 
     def format_unit(self):
         return self._format_unit(self.unit)
@@ -320,16 +327,16 @@ class FlexAttrsRelease(FlexAttrsBase):
 
         """
         super().__init__()
-        self.set('site_lat', site_lat)
-        self.set('site_lon', site_lon)
-        self.set('site_name', site_name)
-        self.set('site_tz_name', site_tz_name)
-        self.set('height', height)
-        self.set('height_unit', height_unit)
-        self.set('rate', rate)
-        self.set('rate_unit', rate_unit)
-        self.set('mass', mass)
-        self.set('mass_unit', mass_unit)
+        self.set('site_lat', site_lat, float)
+        self.set('site_lon', site_lon, float)
+        self.set('site_name', site_name, str)
+        self.set('site_tz_name', site_tz_name, str)
+        self.set('height', height, float)
+        self.set('height_unit', height_unit, str)
+        self.set('rate', rate, float)
+        self.set('rate_unit', rate_unit, str)
+        self.set('mass', mass, float)
+        self.set('mass_unit', mass_unit, str)
 
     def format_height(self):
         return f'{self.height} {self.height_unit}'
@@ -379,16 +386,16 @@ class FlexAttrsSpecies(FlexAttrsBase):
 
         """
         super().__init__()
-        self.set('name', name)
-        self.set('half_life', half_life)
-        self.set('half_life_unit', half_life_unit)
-        self.set('deposit_velocity', deposit_velocity)
-        self.set('deposit_velocity_unit', deposit_velocity_unit)
-        self.set('sediment_velocity', sediment_velocity)
-        self.set('sediment_velocity_unit', sediment_velocity_unit)
-        self.set('washout_coeff', washout_coeff)
-        self.set('washout_coeff_unit', washout_coeff_unit)
-        self.set('washout_exponent', washout_exponent)
+        self.set('name', name, str)
+        self.set('half_life', half_life, float)
+        self.set('half_life_unit', half_life_unit, str)
+        self.set('deposit_velocity', deposit_velocity, float)
+        self.set('deposit_velocity_unit', deposit_velocity_unit, str)
+        self.set('sediment_velocity', sediment_velocity, float)
+        self.set('sediment_velocity_unit', sediment_velocity_unit, str)
+        self.set('washout_coeff', washout_coeff, float)
+        self.set('washout_coeff_unit', washout_coeff_unit, str)
+        self.set('washout_exponent', washout_exponent, float)
 
     def format_half_life_unit(self):
         return self._format_unit(self.half_life_unit)
@@ -436,10 +443,10 @@ class FlexAttrsSimulation(FlexAttrsBase):
 
         """
         super().__init__()
-        self.set('model_name', model_name)
-        self.set('start', start)
-        self.set('end', end)
-        self.set('now', now)
+        self.set('model_name', model_name, str)
+        self.set('start', start, datetime.datetime)
+        self.set('end', end, datetime.datetime)
+        self.set('now', now, datetime.datetime)
 
     def _format_dt(self, dt):
         """Format a datetime object to a string."""
