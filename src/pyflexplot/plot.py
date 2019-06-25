@@ -191,17 +191,69 @@ class FlexAttrsBase:
                 f"'{type(self).__name__}' has no attribute '{name}'")
 
     def set(self, name, val, type_=None):
+        """Set an attribute, optionally checking its type.
+
+        Args:
+            name (str or list[str]): Name of attribute. Can be a list
+                of multiple names if ``val`` is a list of values to be
+                distributed over multiple attributes (e.g., a number-
+                unit-pair).
+
+            val (object or list[object]): Value of attribute. If is a
+                list of multiple values and ``name`` is a list as well,
+                then the values are distributed over multiple values.
+
+            type_ (type or list[type], optional): Type of attribute.
+                If passed, ``val`` must either be an instance of or
+                convertible to it. If ``val`` is a list of multiple
+                values, a separate type can be passed for each.
+                Defaults to None.
+
+        """
+
+        if not isinstance(name, str):
+            # Handle multiple names
+            names, vals, types = self._prepare_multi_attrs(name, val, type_)
+            for name, val, type_ in zip(names, vals, types):
+                self.set(name, val, type_)
+
+        # Check type
         if type_ is not None and not isinstance(val, type_):
             try:
                 val = type_(val)
             except TypeError:
                 raise ValueError(
-                    f"attribute '{name}': value '{val}' has wrong type: "
+                    f"attr '{name}': value '{val}' has wrong type: "
                     f"expected '{type_.__name__}', got '{type(val).__name__}'")
+
+        # Set attribute
         try:
             self.attrs[name] = val
         except AttributeError:
             self._raise_missing_attrs()
+
+    def _prepare_multi_attrs(self, names, vals, types):
+
+        # Ensure that one value has been passed for each name
+        class UnequalLenError(Exception): pass
+        try:
+            if len(names) != len(vals):
+                raise UnequalLenError
+        except (TypeError, UnequalLenError):
+            raise ValueError(
+                f"attrs '{names}' ({len(names)}): "
+                f"need one value for each name: {vals}")
+
+        # Prepare types (same for all, or one for each)
+        if types is None or isinstance(types, type):
+            types = [types]*len(names)
+        elif len(types) != len(names):
+            raise ValueError(
+                f"attrs '{names}' ({len(names)}): "
+                f"need one type_ for all values, or one for each: "
+                f"{type_}")
+
+        return names, vals, types
 
     def _raise_missing_attrs(self):
         cname = type(self).__name__
@@ -242,8 +294,7 @@ class FlexAttrsVariable(FlexAttrsBase):
     """Variable attributes."""
 
     def __init__(
-            self, *, name, unit, level_bottom, level_bottom_unit, level_top,
-            level_top_unit):
+            self, *, name, unit, level_bot, level_top):
         """Initialize an instance of ``FlexAttrsVariable``.
 
         Kwargs:
@@ -252,7 +303,7 @@ class FlexAttrsVariable(FlexAttrsBase):
             unit (str): Unit of variable as a regular string
                 (e.g., 'm-3' for cubic meters).
 
-            level_bottom (float): Bottom level.
+            level_bot (float): Bottom level.
 
             level_top_unit (str): Unit of bottom level.
 
@@ -264,10 +315,8 @@ class FlexAttrsVariable(FlexAttrsBase):
         super().__init__()
         self.set('name', name, str)
         self.set('unit', unit, str)
-        self.set('level_bottom', level_bottom, float)
-        self.set('level_bottom_unit', level_bottom_unit, str)
-        self.set('level_top', level_top, float)
-        self.set('level_top_unit', level_top_unit, str)
+        self.set(['level_bot', 'level_bot_unit'], level_bot, [float, str])
+        self.set(['level_top', 'level_top_unit'], level_top, [float, str])
 
     def format_unit(self):
         return self._format_unit(self.unit)
@@ -275,14 +324,14 @@ class FlexAttrsVariable(FlexAttrsBase):
     def format_name(self):
         return f'{self.name} ({self.format_unit()})'
 
-    def format_level_bottom_unit(self):
-        return self._format_unit(self.level_bottom_unit)
+    def format_level_bot_unit(self):
+        return self._format_unit(self.level_bot_unit)
 
     def format_level_top_unit(self):
         return self._format_unit(self.level_top_unit)
 
     def format_level_unit(self):
-        unit_bottom = self.format_level_bottom_unit()
+        unit_bottom = self.format_level_bot_unit()
         unit_top = self.format_level_top_unit()
         if unit_bottom != unit_top:
             raise Exception(
@@ -292,7 +341,7 @@ class FlexAttrsVariable(FlexAttrsBase):
 
     def format_level_range(self):
         return (
-            f"{self.level_bottom:g}$\,\endash\,${self.level_top:g} "
+            f"{self.level_bot:g}$\,\endash\,${self.level_top:g} "
             f"{self.format_level_unit()}")
 
 
@@ -301,7 +350,7 @@ class FlexAttrsRelease(FlexAttrsBase):
 
     def __init__(
             self, *, site_lat, site_lon, site_name, site_tz_name, height,
-            height_unit, rate, rate_unit, mass, mass_unit):
+            rate, mass):
         """Initialize an instance of ``FlexAttrsRelease``.
 
         Kwargs:
@@ -313,17 +362,11 @@ class FlexAttrsRelease(FlexAttrsBase):
 
             site_tz_name (str): Name of time zone of release site.
 
-            height (float): Release height.
+            height ((float, str)): Release height (value and unit).
 
-            height_unit (str): Unit of release height.
+            rate ((float, str)): Release rate (value and unit).
 
-            rate (float): Release rate.
-
-            rate_unit (str): Unit of release rate.
-
-            mass (float): Release mass.
-
-            mass_unit (str): Unit of release mass.
+            mass ((float, str)): Release mass (value and unit).
 
         """
         super().__init__()
@@ -331,12 +374,9 @@ class FlexAttrsRelease(FlexAttrsBase):
         self.set('site_lon', site_lon, float)
         self.set('site_name', site_name, str)
         self.set('site_tz_name', site_tz_name, str)
-        self.set('height', height, float)
-        self.set('height_unit', height_unit, str)
-        self.set('rate', rate, float)
-        self.set('rate_unit', rate_unit, str)
-        self.set('mass', mass, float)
-        self.set('mass_unit', mass_unit, str)
+        self.set(['height', 'height_unit'], height, [float, str])
+        self.set(['rate', 'rate_unit'], rate, [float, str])
+        self.set(['mass', 'mass_unit'], mass, [float, str])
 
     def format_height(self):
         return f'{self.height} {self.height_unit}'
@@ -358,43 +398,33 @@ class FlexAttrsSpecies(FlexAttrsBase):
     """Species attributes."""
 
     def __init__(
-            self, *, name, half_life, half_life_unit, deposit_velocity,
-            deposit_velocity_unit, sediment_velocity, sediment_velocity_unit,
-            washout_coeff, washout_coeff_unit, washout_exponent):
+            self, *, name, half_life, deposit_vel, sediment_vel, washout_coeff,
+            washout_exponent):
         """Create an instance of ``FlexAttrsSpecies``.
 
         Kwargs:
             name (str): Species name.
 
-            half_life (float): <TODO>
+            half_life ((float, str)): Half life (value and unit).
 
-            half_life_unit (str): <TODO>
+            deposit_vel ((float, str)): Deposition velocity (value
+                and unit).
 
-            deposit_velocity (float): <TODO>
+            sediment_vel ((float, str)): Sedimentation velocity (value
+                and unit).
 
-            deposit_velocity_unit (str): <TODO>
-
-            sediment_velocity (float): <TODO>
-
-            sediment_velocity_unit (str): <TODO>
-
-            washout_coeff (float): <TODO>
-
-            washout_coeff_unit (str): <TODO>
+            washout_coeff ((float, str)): Washout coefficient (value
+                and unit).
 
             washout_exponent (float): <TODO>
 
         """
         super().__init__()
         self.set('name', name, str)
-        self.set('half_life', half_life, float)
-        self.set('half_life_unit', half_life_unit, str)
-        self.set('deposit_velocity', deposit_velocity, float)
-        self.set('deposit_velocity_unit', deposit_velocity_unit, str)
-        self.set('sediment_velocity', sediment_velocity, float)
-        self.set('sediment_velocity_unit', sediment_velocity_unit, str)
-        self.set('washout_coeff', washout_coeff, float)
-        self.set('washout_coeff_unit', washout_coeff_unit, str)
+        self.set(['half_life', 'half_life_unit'], half_life, [float, str])
+        self.set(['deposit_vel', 'deposit_vel_unit'], deposit_vel, [float, str])
+        self.set(['sediment_vel', 'sediment_vel_unit'], sediment_vel, [float, str])
+        self.set(['washout_coeff', 'washout_coeff_unit'], washout_coeff, [float, str])
         self.set('washout_exponent', washout_exponent, float)
 
     def format_half_life_unit(self):
@@ -403,21 +433,21 @@ class FlexAttrsSpecies(FlexAttrsBase):
     def format_half_life(self):
         return f'{self.half_life:g} {self.format_half_life_unit()}'
 
-    def format_deposit_velocity_unit(self):
-        return self._format_unit(self.deposit_velocity_unit)
+    def format_deposit_vel_unit(self):
+        return self._format_unit(self.deposit_vel_unit)
 
-    def format_deposit_velocity(self):
+    def format_deposit_vel(self):
         return (
-            f'{self.deposit_velocity:g} '
-            f'{self.format_deposit_velocity_unit()}')
+            f'{self.deposit_vel:g} '
+            f'{self.format_deposit_vel_unit()}')
 
-    def format_sediment_velocity_unit(self):
-        return self._format_unit(self.sediment_velocity_unit)
+    def format_sediment_vel_unit(self):
+        return self._format_unit(self.sediment_vel_unit)
 
-    def format_sediment_velocity(self):
+    def format_sediment_vel(self):
         return (
-            f'{self.sediment_velocity:g} '
-            f'{self.format_sediment_velocity_unit()}')
+            f'{self.sediment_vel:g} '
+            f'{self.format_sediment_vel_unit()}')
 
     def format_washout_coeff_unit(self):
         return self._format_unit(self.washout_coeff_unit)
@@ -556,31 +586,22 @@ class FlexPlotConcentration:
                 'site_lon': 7.97,
                 'site_name': 'Goesgen',
                 'site_tz_name': 'Europe/Zurich',
-                'height': 100,
-                'height_unit': 'm AGL',
-                'rate': 34722.2,
-                'rate_unit': 'Bq s-1',
-                'mass': 1e9,
-                'mass_unit': 'Bq',
+                'height': (100, 'm AGL'),
+                'rate': (34722.2, 'Bq s-1'),
+                'mass': (1e9, 'Bq'),
             },
             variable={
                 'name': 'Concentration',
                 'unit': 'Bq m-3',
-                'level_bottom': 500,
-                'level_bottom_unit': 'm AGL',
-                'level_top': 2000,
-                'level_top_unit': 'm AGL',
+                'level_bot': (500, 'm AGL'),
+                'level_top': (2000, 'm AGL'),
             },
             species={
                 'name': 'Cs-137',
-                'half_life': 30.0,
-                'half_life_unit': 'years',
-                'deposit_velocity': 1.5e-3,
-                'deposit_velocity_unit': 'm s-1',
-                'sediment_velocity': 0.0,
-                'sediment_velocity_unit': 'm s-1',
-                'washout_coeff': 7.0e-5,
-                'washout_coeff_unit': 's-1',
+                'half_life': (30.0, 'years'),
+                'deposit_vel': (1.5e-3, 'm s-1'),
+                'sediment_vel': (0.0, 'm s-1'),
+                'washout_coeff': (7.0e-5, 's-1'),
                 'washout_exponent': 0.8,
             },
             simulation={
@@ -965,8 +986,8 @@ class FlexPlotConcentration:
 
             Substance:\t{self.attrs.species.name}
             Half-Life:\t{self.attrs.species.format_half_life()}
-            Deposit. Vel.:\t{self.attrs.species.format_deposit_velocity()}
-            Sediment. Vel.:\t{self.attrs.species.format_sediment_velocity()}
+            Deposit. Vel.:\t{self.attrs.species.format_deposit_vel()}
+            Sediment. Vel.:\t{self.attrs.species.format_sediment_vel()}
             Washout Coeff.:\t{self.attrs.species.format_washout_coeff()}
             Washout Exponent:\t{self.attrs.species.washout_exponent}
             """)
@@ -1606,7 +1627,7 @@ class AxesTextBox:
         """Add text positioned relative to a reference location.
 
         Args:
-            loc (int|str): Reference location parameter used to
+            loc (int or str): Reference location parameter used to
                 initialize an instance of ``BoxLocation``.
 
             s (str): Text string.
@@ -1660,7 +1681,7 @@ class AxesTextBox:
         """Add a text block comprised of multiple lines.
 
         Args:
-            loc (int|str): Reference location. For details see
+            loc (int or str): Reference location. For details see
                 ``AxesTextBox.text``.
 
             block (list[str]): Text block.
@@ -1689,7 +1710,7 @@ class AxesTextBox:
         """Add multiple text blocks.
 
         Args:
-            loc (int|str): Reference location. For details see
+            loc (int or str): Reference location. For details see
                 ``AxesTextBox.text``.
 
             blocks (list[list[str]]): List of text blocks, each of
@@ -1790,14 +1811,14 @@ class AxesTextBox:
         the tab left-aligned, and the text after right-aligned.
 
         Args:
-            locy (int|str): Vertical reference location. For details
+            locy (int or str): Vertical reference location. For details
                 see ``AxesTextBox.text`` (vertical component
                 only).
 
-            blocks (str | list[ str | list[ str | tuple]]):
-                Text blocks, each of which consists of lines, each of
-                which in turn consists of a left and right part.
-                Possible formats:
+            blocks (str or list[str] or list[list[str]] or
+                list[list[tuple]]): Text blocks, each of which consists
+                of lines, each of which in turn consists of a left and
+                right part. Possible formats:
 
                   - The blocks can be a multiline string, with empty
                     lines separating the individual blocks; or a list.
@@ -1893,7 +1914,7 @@ class AxesTextBox:
         """Add a colored rectangle.
 
         Args:
-            loc (int|str): Reference location parameter used to
+            loc (int or str): Reference location parameter used to
                 initialize an instance of ``BoxLocation``.
 
             fc (<color>): Face color.
@@ -1947,10 +1968,10 @@ class AxesTextBox:
         """Add a marker symbol.
 
         Args:
-            loc (int|str): Reference location parameter used to
+            loc (int or str): Reference location parameter used to
                 initialize an instance of ``BoxLocation``.
 
-            marker (str|int|...) Marker style passed to ``mpl.plot``.
+            marker (str or int) Marker style passed to ``mpl.plot``.
                 See ``matplotlib.markers`` for more information.
 
             dx (float, optional): Horizontal offset in number of unit
@@ -1982,7 +2003,7 @@ class BoxLocation:
         """Initialize an instance of BoxLocation.
 
         Args:
-            loc (int|str): Location parameter. Takes one of three
+            loc (int or str): Location parameter. Takes one of three
                 formats: integer, short string, or long string.
 
                 Choices:
