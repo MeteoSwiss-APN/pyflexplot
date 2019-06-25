@@ -176,10 +176,6 @@ class ColorStr:
 
 
 class FlexAttrsBase:
-    """Base class for FLEXPART attributes."""
-
-
-class FlexAttrsBase:
     """Base class for attributes."""
 
     def __init__(self):
@@ -206,6 +202,17 @@ class FlexAttrsBase:
             f"'{cname}' has no attribute 'attrs' -- maybe forgot "
             f"`super().__init__()` in `{cname}.__init__`?")
 
+    def _format_unit(self, unit):
+        """Auto-format a unit by elevating superscripts etc."""
+        old_new = [
+            ('m-2', 'm$^{-2}$'),
+            ('m-3', 'm$^{-3}$'),
+            ('s-1', 's$^{-1}$'),
+        ]
+        for old, new in old_new:
+            unit = unit.replace(old, new)
+        return unit
+
 
 class FlexAttrsGrid(FlexAttrsBase):
     """Grid attributes."""
@@ -224,43 +231,11 @@ class FlexAttrsGrid(FlexAttrsBase):
         self.set('north_pole_lon', north_pole_lon)
 
 
-class FlexAttrsRelease(FlexAttrsBase):
-    """Release attributes."""
-
-    def __init__(self, *, site_lat, site_lon, site_name, site_tz_name, height, height_unit):
-        """Initialize an instance of ``FlexAttrsRelease``.
-
-        Kwargs:
-            site_lat (float): Latitude of release site.
-
-            site_lon (float): Longitude of release site.
-
-            site_name (str): Name of release site.
-
-            site_tz_name (str): Name of time zone of release site.
-
-            height (float): Release height.
-
-            height_unit (str): Unit of release height.
-
-        """
-        super().__init__()
-        self.set('site_lat', site_lat)
-        self.set('site_lon', site_lon)
-        self.set('site_name', site_name)
-        self.set('site_tz_name', site_tz_name)
-        self.set('height', height)
-        self.set('height_unit', height_unit)
-
-    def format_height(self):
-        return f'{self.height} {self.height_unit}'
-
-
-class FlexAttrsVar(FlexAttrsBase):
+class FlexAttrsVariable(FlexAttrsBase):
     """Variable attributes."""
 
     def __init__(self, *, name, unit, level_range, level_unit):
-        """Initialize an instance of ``FlexAttrsVar``.
+        """Initialize an instance of ``FlexAttrsVariable``.
 
         Kwargs:
             name (str): Name of variable.
@@ -280,22 +255,147 @@ class FlexAttrsVar(FlexAttrsBase):
         self.set('level_unit', level_unit)
 
     def format_unit(self):
-        """Auto-format the unit (e.g., 'm-3' -> 'm$^{-3}$')."""
-        old_new = [
-            ('m-2', 'm$^{-2}$'),
-            ('m-3', 'm$^{-3}$'),
-        ]
-        unit = self.unit
-        for old, new in old_new:
-            unit = unit.replace(old, new)
-        return unit
+        return self._format_unit(self.unit)
+
+    def format_name(self):
+        return f'{self.name} ({self.format_unit()})'
 
 
-class FlexAttrsSim(FlexAttrsBase):
+class FlexAttrsRelease(FlexAttrsBase):
+    """Release attributes."""
+
+    def __init__(
+            self, *, site_lat, site_lon, site_name, site_tz_name, height,
+            height_unit, rate, rate_unit, mass, mass_unit):
+        """Initialize an instance of ``FlexAttrsRelease``.
+
+        Kwargs:
+            site_lat (float): Latitude of release site.
+
+            site_lon (float): Longitude of release site.
+
+            site_name (str): Name of release site.
+
+            site_tz_name (str): Name of time zone of release site.
+
+            height (float): Release height.
+
+            height_unit (str): Unit of release height.
+
+            rate (float): Release rate.
+
+            rate_unit (str): Unit of release rate.
+
+            mass (float): Release mass.
+
+            mass_unit (str): Unit of release mass.
+
+        """
+        super().__init__()
+        self.set('site_lat', site_lat)
+        self.set('site_lon', site_lon)
+        self.set('site_name', site_name)
+        self.set('site_tz_name', site_tz_name)
+        self.set('height', height)
+        self.set('height_unit', height_unit)
+        self.set('rate', rate)
+        self.set('rate_unit', rate_unit)
+        self.set('mass', mass)
+        self.set('mass_unit', mass_unit)
+
+    def format_height(self):
+        return f'{self.height} {self.height_unit}'
+
+    def format_rate_unit(self):
+        return self._format_unit(self.rate_unit)
+
+    def format_rate(self):
+        return f'{self.rate:g} {self.format_rate_unit()}'
+
+    def format_mass_unit(self):
+        return self._format_unit(self.mass_unit)
+
+    def format_mass(self):
+        return f'{self.mass:g} {self.format_mass_unit()}'
+
+
+class FlexAttrsSpecies(FlexAttrsBase):
+    """Species attributes."""
+
+    def __init__(
+            self, *, name, half_life, half_life_unit, deposit_velocity,
+            deposit_velocity_unit, sediment_velocity, sediment_velocity_unit,
+            washout_coeff, washout_coeff_unit, washout_exponent):
+        """Create an instance of ``FlexAttrsSpecies``.
+
+        Kwargs:
+            name (str): Species name.
+
+            half_life (float): <TODO>
+
+            half_life_unit (str): <TODO>
+
+            deposit_velocity (float): <TODO>
+
+            deposit_velocity_unit (str): <TODO>
+
+            sediment_velocity (float): <TODO>
+
+            sediment_velocity_unit (str): <TODO>
+
+            washout_coeff (float): <TODO>
+
+            washout_coeff_unit (str): <TODO>
+
+            washout_exponent (float): <TODO>
+
+        """
+        super().__init__()
+        self.set('name', name)
+        self.set('half_life', half_life)
+        self.set('half_life_unit', half_life_unit)
+        self.set('deposit_velocity', deposit_velocity)
+        self.set('deposit_velocity_unit', deposit_velocity_unit)
+        self.set('sediment_velocity', sediment_velocity)
+        self.set('sediment_velocity_unit', sediment_velocity_unit)
+        self.set('washout_coeff', washout_coeff)
+        self.set('washout_coeff_unit', washout_coeff_unit)
+        self.set('washout_exponent', washout_exponent)
+
+    def format_half_life_unit(self):
+        return self._format_unit(self.half_life_unit)
+
+    def format_half_life(self):
+        return f'{self.half_life:g} {self.format_half_life_unit()}'
+
+    def format_deposit_velocity_unit(self):
+        return self._format_unit(self.deposit_velocity_unit)
+
+    def format_deposit_velocity(self):
+        return (
+            f'{self.deposit_velocity:g} '
+            f'{self.format_deposit_velocity_unit()}')
+
+    def format_sediment_velocity_unit(self):
+        return self._format_unit(self.sediment_velocity_unit)
+
+    def format_sediment_velocity(self):
+        return (
+            f'{self.sediment_velocity:g} '
+            f'{self.format_sediment_velocity_unit()}')
+
+    def format_washout_coeff_unit(self):
+        return self._format_unit(self.washout_coeff_unit)
+
+    def format_washout_coeff(self):
+        return f'{self.washout_coeff:g} {self.format_washout_coeff_unit()}'
+
+
+class FlexAttrsSimulation(FlexAttrsBase):
     """Simulation attributes."""
 
     def __init__(self, *, model_name, start, end, now):
-        """Create an instance of ``FlexAttrsSim``.
+        """Create an instance of ``FlexAttrsSimulation``.
 
         Kwargs:
             model_name (str): Name of the model.
@@ -330,23 +430,26 @@ class FlexAttrsSim(FlexAttrsBase):
 class FlexAttrsCollection:
     """Collection of FLEXPART attributes."""
 
-    def __init__(self, *, grid, release, var, sim):
+    def __init__(self, *, grid, variable, release, species, simulation):
         """Initialize an instance of ``FlexAttrsCollection``.
 
         Kwargs:
             grid (dict): Kwargs passed to ``FlexAttrsGrid``.
 
+            variable (dict): Kwargs passed to ``FlexAttrsVariable``.
+
             release (dict): Kwargs passed to ``FlexAttrsRelease``.
 
-            var (dict): Kwargs passed to ``FlexAttrsVar``.
+            species (dict): Kwargs passed to ``FlexAttrsSpecies``.
 
-            sim (dict): Kwargs passed to ``FlexAttrsSim``.
+            simulation (dict): Kwargs passed to ``FlexAttrsSimulation``.
 
         """
         self.grid = FlexAttrsGrid(**grid)
+        self.variable = FlexAttrsVariable(**variable)
         self.release = FlexAttrsRelease(**release)
-        self.var = FlexAttrsVar(**var)
-        self.sim = FlexAttrsSim(**sim)
+        self.species = FlexAttrsSpecies(**species)
+        self.simulation = FlexAttrsSimulation(**simulation)
 
 
 class FlexPlotConcentration:
@@ -420,16 +523,34 @@ class FlexPlotConcentration:
                 'site_tz_name': 'Europe/Zurich',
                 'height': 100,
                 'height_unit': 'm AGL',
+                'rate': 34722.2,
+                'rate_unit': 'Bq s-1',
+                'mass': 1e9,
+                'mass_unit': 'Bq',
             },
-            var={
+            variable={
                 'name': 'Concentration',
                 'unit': 'Bq m-3',
                 'level_range': (500, 2000),
                 'level_unit': 'm AGL',
             },
-            sim={
-                'model_name': 'COSMO-1',
-                'start': datetime.datetime(
+            species={
+                'name': 'Cs-137',
+                'half_life': 30.0,
+                'half_life_unit': 'years',
+                'deposit_velocity': 1.5e-3,
+                'deposit_velocity_unit': 'm s-1',
+                'sediment_velocity': 0.0,
+                'sediment_velocity_unit': 'm s-1',
+                'washout_coeff': 7.0e-5,
+                'washout_coeff_unit': 's-1',
+                'washout_exponent': 0.8,
+            },
+            simulation={
+                'model_name':
+                'COSMO-1',
+                'start':
+                datetime.datetime(
                     year=2019,
                     month=5,
                     day=28,
@@ -437,7 +558,8 @@ class FlexPlotConcentration:
                     minute=0,
                     tzinfo=datetime.timezone.utc,
                 ),
-                'end': datetime.datetime(
+                'end':
+                datetime.datetime(
                     year=2019,
                     month=5,
                     day=28,
@@ -445,7 +567,8 @@ class FlexPlotConcentration:
                     minute=0,
                     tzinfo=datetime.timezone.utc,
                 ),
-                'now': datetime.datetime(
+                'now':
+                datetime.datetime(
                     year=2019,
                     month=5,
                     day=28,
@@ -455,6 +578,12 @@ class FlexPlotConcentration:
                 ),
             },
         )
+        #SR_TMP>
+
+        #SR_TMP>
+        self.levels_log10 = np.arange(-9, -2 + 0.1, 1)
+        self.levels = 10**self.levels_log10
+        self.extend = 'max'
         #SR_TMP>
 
         self._run()
@@ -480,12 +609,6 @@ class FlexPlotConcentration:
 
     def map_add_particle_concentrations(self):
         """Plot the particle concentrations onto the map."""
-
-        #SR_TMP>
-        self.levels_log10 = np.arange(-9, -2 + 0.1, 1)
-        self.levels = 10**self.levels_log10
-        self.extend = 'max'
-        #SR_TMP>
 
         # Define colors
         # yapf: disable
@@ -560,7 +683,6 @@ class FlexPlotConcentration:
                 height of both right boxees. Defaults to <TODO>.
 
         """
-        self.ax_ref = self.ax_map.ax  #SR_TMP
 
         # Freeze the map plot in order to fix it's coordinates (bbox)
         self.fig.canvas.draw()
@@ -570,11 +692,11 @@ class FlexPlotConcentration:
         fig_aspect = fig_pxs.width/fig_pxs.height
 
         # Get map dimensions in figure coordinates
-        w_map, h_map = ax_dims_fig_coords(self.fig, self.ax_ref)
+        w_map, h_map = ax_dims_fig_coords(self.fig, self.ax_map.ax)
 
         # Relocate the map close to the lower left corner
         x0_map, y0_map = 0.05, 0.05
-        self.ax_ref.set_position([x0_map, y0_map, w_map, h_map])
+        self.ax_map.ax.set_position([x0_map, y0_map, w_map, h_map])
 
         # Determine height of top box and width of right boxes
         w_box = w_rel_r*w_map
@@ -627,23 +749,19 @@ class FlexPlotConcentration:
         """Fill the box above the map plot."""
         box = self.axs_box[0]
 
-        #SR_TMP< TODO obtain from NetCDF attributes
-        species = 'Cs-137'
-        #SR_TMP>
-
         # Top left: variable and level
-        _lvl0, _lvl1 = self.attrs.var.level_range
-        _unit = self.attrs.var.level_unit
+        _lvl0, _lvl1 = self.attrs.variable.level_range
+        _unit = self.attrs.variable.level_unit
         level_range_fmtd = f"{_lvl0:g} $\endash$ {_lvl1:g} {_unit}"
-        s = f"{self.attrs.var.name} {level_range_fmtd}"
+        s = f"{self.attrs.variable.name} {level_range_fmtd}"
         box.text('tl', s, size='xx-large')
 
         # Top center: species
-        s = f"{species}"
+        s = f"{self.attrs.species.name}"
         box.text('tc', s, size='xx-large')
 
         # Top right: datetime
-        timestep_fmtd = self.attrs.sim.format_now()
+        timestep_fmtd = self.attrs.simulation.format_now()
         s = f"{timestep_fmtd}"
         box.text('tr', s, size='xx-large')
 
@@ -653,7 +771,7 @@ class FlexPlotConcentration:
 
         # Bottom right: time zone
         tz = pytz.timezone(self.attrs.release.site_tz_name)
-        offset_str = self.attrs.sim.now.astimezone(tz).strftime('%z')
+        offset_str = self.attrs.simulation.now.astimezone(tz).strftime('%z')
         s = f"T$_{0}$ {offset_str[0:1]} {offset_str[1:3]}:{offset_str[3:5]}"
         box.text('br', s, size='large')
 
@@ -663,12 +781,13 @@ class FlexPlotConcentration:
 
         #SR_TMP<
         fld_max = np.nanmax(self.fld)
-        fld_max_fmtd = f"Max.: {fld_max:.2E} {self.attrs.var.format_unit()}"
+        fld_max_fmtd = f"Max.: {fld_max:.2E} {self.attrs.variable.format_unit()}"
         #SR_TMP>
 
         # Add box title
-        s = f"{self.attrs.var.name} ({self.attrs.var.format_unit()})"
-        box.text('tc', s=s, size='large')
+        s = f"{self.attrs.variable.format_name()}"
+        #box.text('tc', s=s, size='large')
+        box.text('tc', s=s, dy=1, size='large')  #SR_DBG
 
         # Format level ranges (contour plot legend)
         labels = self._format_level_ranges()
@@ -783,34 +902,19 @@ class FlexPlotConcentration:
         """Fill the bottom box to the right of the map plot."""
         box = self.axs_box[2]
 
-        #SR_TMP<
-        rate = 34722.2
-        rate_unit_fmtd = 'Bq s$^{{-1}}$'
-        mass = 1e9
-        mass_unit = 'Bq'
-        substance_fmtd = 'Cs$\endash$137'
-        half_life = 30.0
-        half_life_unit = 'years'
-        depos_vel = 1.5e-3
-        sedim_vel = 0.0
-        vel_unit_fmtd = 'm s$^{{-1}}$'
-        wash_coeff = 7.0e-5
-        wash_exp = 0.8
-        wash_unit_fmtd = 's$^{{-1}}$'
-        #SR_TMP>
-
         # Add box title
-        box.text('tc', 'Release', size='large')
+        #box.text('tc', 'Release', size='large')
+        box.text('tc', 'Release', dy=-1.5, size='large')
 
         # Release site coordinates
         lat = Degrees(self.attrs.release.site_lat)
         lat_fmtd = (
-            f"{lat.degs()}$^\circ$ {lat.mins()}' N"
-            f" (={lat.frac()}$^\circ$ N)")
+            f"{lat.degs()}$^\circ\,${lat.mins()}'$\,$N"
+            f" ({lat.frac()}$^\circ\,$N)")
         lon = Degrees(self.attrs.release.site_lon)
         lon_fmtd = (
-            f"{lon.degs()}$^\circ$ {lon.mins()}' E"
-            f" (={lon.frac()}$^\circ$ E)")
+            f"{lon.degs()}$^\circ\,${lon.mins()}'$\,$E"
+            f" ({lon.frac()}$^\circ\,$E)")
 
         info_blocks = dedent(
             f"""\
@@ -818,31 +922,37 @@ class FlexPlotConcentration:
             Longitude:\t{lon_fmtd}
             Height:\t{self.attrs.release.format_height()}
 
-            Start:\t{self.attrs.sim.format_start()}
-            End:\t{self.attrs.sim.format_end()}
-            Rate:\t{rate} {rate_unit_fmtd}
-            Total Mass:\t{mass} {mass_unit}
+            Start:\t{self.attrs.simulation.format_start()}
+            End:\t{self.attrs.simulation.format_end()}
+            Rate:\t{self.attrs.release.format_rate()}
+            Total Mass:\t{self.attrs.release.format_mass()}
 
-            Substance:\t{substance_fmtd}
-            Half-Life:\t{half_life} {half_life_unit}
-            Deposit. Vel.:\t{depos_vel} {vel_unit_fmtd}
-            Sediment. Vel.:\t{sedim_vel} {vel_unit_fmtd}
-            Washout Coeff.:\t{wash_coeff} {wash_unit_fmtd}
-            Washout Exponent:\t{wash_exp}
+            Substance:\t{self.attrs.species.name}
+            Half-Life:\t{self.attrs.species.format_half_life()}
+            Deposit. Vel.:\t{self.attrs.species.format_deposit_velocity()}
+            Sediment. Vel.:\t{self.attrs.species.format_sediment_velocity()}
+            Washout Coeff.:\t{self.attrs.species.format_washout_coeff()}
+            Washout Exponent:\t{self.attrs.species.washout_exponent}
             """)
 
         # Add lines bottom-up (to take advantage of baseline alignment)
-        dy = 2.75
+        dy0 = 3
+        dy = 2.5
         box.text_blocks_hfill(
-            'b', dy_line=dy, blocks=info_blocks, reverse=True, size='small')
+            'b',
+            dy0=dy0,
+            dy_line=dy,
+            blocks=info_blocks,
+            reverse=True,
+            size='small')
 
     def fill_box_bottom(self):
         """Fill the box to the bottom of the map plot."""
         box = self.axs_box[3]
 
         # FLEXPART/model info
-        _model = self.attrs.sim.model_name
-        _simstart_fmtd = self.attrs.sim.format_start()
+        _model = self.attrs.simulation.model_name
+        _simstart_fmtd = self.attrs.simulation.format_start()
         s = f"FLEXPART based on {_model} {_simstart_fmtd}"
         box.text('tl', dx=-0.7, dy=0.5, s=s, size='small')
 
