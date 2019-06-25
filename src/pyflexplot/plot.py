@@ -234,7 +234,9 @@ class FlexAttrsGrid(FlexAttrsBase):
 class FlexAttrsVariable(FlexAttrsBase):
     """Variable attributes."""
 
-    def __init__(self, *, name, unit, level_bottom, level_top, level_unit):
+    def __init__(
+            self, *, name, unit, level_bottom, level_bottom_unit, level_top,
+            level_top_unit):
         """Initialize an instance of ``FlexAttrsVariable``.
 
         Kwargs:
@@ -245,17 +247,20 @@ class FlexAttrsVariable(FlexAttrsBase):
 
             level_bottom (float): Bottom level.
 
+            level_top_unit (str): Unit of bottom level.
+
             level_top (float): Top level.
 
-            level_unit (str): Unit in which levels are specified.
+            level_top_unit (str): Unit of top level.
 
         """
         super().__init__()
         self.set('name', name)
         self.set('unit', unit)
         self.set('level_bottom', level_bottom)
+        self.set('level_bottom_unit', level_bottom_unit)
         self.set('level_top', level_top)
-        self.set('level_unit', level_unit)
+        self.set('level_top_unit', level_top_unit)
 
     def format_unit(self):
         return self._format_unit(self.unit)
@@ -263,13 +268,26 @@ class FlexAttrsVariable(FlexAttrsBase):
     def format_name(self):
         return f'{self.name} ({self.format_unit()})'
 
+    def format_level_bottom_unit(self):
+        return self._format_unit(self.level_bottom_unit)
+
+    def format_level_top_unit(self):
+        return self._format_unit(self.level_top_unit)
+
     def format_level_unit(self):
-        return self._format_unit(self.level_unit)
+        unit_bottom = self.format_level_bottom_unit()
+        unit_top = self.format_level_top_unit()
+        if unit_bottom != unit_top:
+            raise Exception(
+                f"bottom and top level units differ: "
+                f"'{unit_bottom}' != '{unit_top}'")
+        return unit_top
 
     def format_level_range(self):
         return (
             f"{self.level_bottom:g}$\,\endash\,${self.level_top:g} "
             f"{self.format_level_unit()}")
+
 
 class FlexAttrsRelease(FlexAttrsBase):
     """Release attributes."""
@@ -542,8 +560,9 @@ class FlexPlotConcentration:
                 'name': 'Concentration',
                 'unit': 'Bq m-3',
                 'level_bottom': 500,
+                'level_bottom_unit': 'm AGL',
                 'level_top': 2000,
-                'level_unit': 'm AGL',
+                'level_top_unit': 'm AGL',
             },
             species={
                 'name': 'Cs-137',
