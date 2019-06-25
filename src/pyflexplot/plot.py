@@ -10,12 +10,14 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import os.path
+import pytz
 import re
 
 from collections import namedtuple
 from matplotlib import ticker
 from textwrap import dedent
 
+from .utils import Degrees
 from .utils import MaxIterationError
 from .utils import merge_dicts
 from .utils_dev import ipython  #SR_DEV
@@ -208,7 +210,7 @@ class FlexAttrsBase:
 class FlexAttrsGrid(FlexAttrsBase):
     """Grid attributes."""
 
-    def __init__(self, north_pole_lat, north_pole_lon):
+    def __init__(self, *, north_pole_lat, north_pole_lon):
         """Initialize instance of ``FlexAttrsGrid``.
 
         Kwargs:
@@ -225,7 +227,7 @@ class FlexAttrsGrid(FlexAttrsBase):
 class FlexAttrsRelease(FlexAttrsBase):
     """Release attributes."""
 
-    def __init__(self, site_lat, site_lon, site_name):
+    def __init__(self, *, site_lat, site_lon, site_name, site_tz_name, height, height_unit):
         """Initialize an instance of ``FlexAttrsRelease``.
 
         Kwargs:
@@ -235,17 +237,29 @@ class FlexAttrsRelease(FlexAttrsBase):
 
             site_name (str): Name of release site.
 
+            site_tz_name (str): Name of time zone of release site.
+
+            height (float): Release height.
+
+            height_unit (str): Unit of release height.
+
         """
         super().__init__()
         self.set('site_lat', site_lat)
         self.set('site_lon', site_lon)
         self.set('site_name', site_name)
+        self.set('site_tz_name', site_tz_name)
+        self.set('height', height)
+        self.set('height_unit', height_unit)
+
+    def format_height(self):
+        return f'{self.height} {self.height_unit}'
 
 
 class FlexAttrsVar(FlexAttrsBase):
     """Variable attributes."""
 
-    def __init__(self, name, unit):
+    def __init__(self, *, name, unit, level_range, level_unit):
         """Initialize an instance of ``FlexAttrsVar``.
 
         Kwargs:
@@ -254,12 +268,18 @@ class FlexAttrsVar(FlexAttrsBase):
             unit (str): Unit of variable as a regular string
                 (e.g., 'm-3' for cubic meters).
 
+            level_range ((float, float)): Start and end level.
+
+            level_unit (str): Unit in which levels are specified.
+
         """
         super().__init__()
         self.set('name', name)
         self.set('unit', unit)
+        self.set('level_range', level_range)
+        self.set('level_unit', level_unit)
 
-    def unit_fmtd(self):
+    def format_unit(self):
         """Auto-format the unit (e.g., 'm-3' -> 'm$^{-3}$')."""
         old_new = [
             ('m-2', 'm$^{-2}$'),
@@ -271,10 +291,46 @@ class FlexAttrsVar(FlexAttrsBase):
         return unit
 
 
+class FlexAttrsSim(FlexAttrsBase):
+    """Simulation attributes."""
+
+    def __init__(self, *, model_name, start, end, now):
+        """Create an instance of ``FlexAttrsSim``.
+
+        Kwargs:
+            model_name (str): Name of the model.
+
+            start (datetime): Start of the simulation.
+
+            end (datetime): End of the simulation.
+
+            now (datetime): Current timestep.
+
+        """
+        super().__init__()
+        self.set('model_name', model_name)
+        self.set('start', start)
+        self.set('end', end)
+        self.set('now', now)
+
+    def _format_dt(self, dt):
+        """Format a datetime object to a string."""
+        return dt.strftime('%Y-%m-%d %H:%M %Z')
+
+    def format_start(self):
+        return self._format_dt(self.start)
+
+    def format_end(self):
+        return self._format_dt(self.end)
+
+    def format_now(self):
+        return self._format_dt(self.now)
+
+
 class FlexAttrsCollection:
     """Collection of FLEXPART attributes."""
 
-    def __init__(self, *, grid, release, var):
+    def __init__(self, *, grid, release, var, sim):
         """Initialize an instance of ``FlexAttrsCollection``.
 
         Kwargs:
@@ -283,10 +339,14 @@ class FlexAttrsCollection:
             release (dict): Kwargs passed to ``FlexAttrsRelease``.
 
             var (dict): Kwargs passed to ``FlexAttrsVar``.
+
+            sim (dict): Kwargs passed to ``FlexAttrsSim``.
+
         """
         self.grid = FlexAttrsGrid(**grid)
         self.release = FlexAttrsRelease(**release)
         self.var = FlexAttrsVar(**var)
+        self.sim = FlexAttrsSim(**sim)
 
 
 class FlexPlotConcentration:
@@ -354,13 +414,45 @@ class FlexPlotConcentration:
                 'north_pole_lon': -170.0,
             },
             release={
-                'site_lat': 47.36,
+                'site_lat': 47.37,
                 'site_lon': 7.97,
                 'site_name': 'Goesgen',
+                'site_tz_name': 'Europe/Zurich',
+                'height': 100,
+                'height_unit': 'm AGL',
             },
             var={
                 'name': 'Concentration',
                 'unit': 'Bq m-3',
+                'level_range': (500, 2000),
+                'level_unit': 'm AGL',
+            },
+            sim={
+                'model_name': 'COSMO-1',
+                'start': datetime.datetime(
+                    year=2019,
+                    month=5,
+                    day=28,
+                    hour=0,
+                    minute=0,
+                    tzinfo=datetime.timezone.utc,
+                ),
+                'end': datetime.datetime(
+                    year=2019,
+                    month=5,
+                    day=28,
+                    hour=8,
+                    minute=0,
+                    tzinfo=datetime.timezone.utc,
+                ),
+                'now': datetime.datetime(
+                    year=2019,
+                    month=5,
+                    day=28,
+                    hour=9,
+                    minute=0,
+                    tzinfo=datetime.timezone.utc,
+                ),
             },
         )
         #SR_TMP>
@@ -536,21 +628,13 @@ class FlexPlotConcentration:
         box = self.axs_box[0]
 
         #SR_TMP< TODO obtain from NetCDF attributes
-        level_range_fmtd = '500 $\endash$ 2000 m AGL'
         species = 'Cs-137'
-        timestep = datetime.datetime(
-            year=2019,
-            month=5,
-            day=28,
-            hour=9,
-            minute=0,
-            tzinfo=datetime.timezone.utc,
-        )
-        timestep_fmtd = timestep.strftime('%Y-%m-%d %H:%M %Z')
-        tz_str = 'T0 + 03:00 h'
         #SR_TMP>
 
         # Top left: variable and level
+        _lvl0, _lvl1 = self.attrs.var.level_range
+        _unit = self.attrs.var.level_unit
+        level_range_fmtd = f"{_lvl0:g} $\endash$ {_lvl1:g} {_unit}"
         s = f"{self.attrs.var.name} {level_range_fmtd}"
         box.text('tl', s, size='xx-large')
 
@@ -559,6 +643,7 @@ class FlexPlotConcentration:
         box.text('tc', s, size='xx-large')
 
         # Top right: datetime
+        timestep_fmtd = self.attrs.sim.format_now()
         s = f"{timestep_fmtd}"
         box.text('tr', s, size='xx-large')
 
@@ -567,7 +652,9 @@ class FlexPlotConcentration:
         box.text('bl', s, size='large')
 
         # Bottom right: time zone
-        s = f"{tz_str}"
+        tz = pytz.timezone(self.attrs.release.site_tz_name)
+        offset_str = self.attrs.sim.now.astimezone(tz).strftime('%z')
+        s = f"T$_{0}$ {offset_str[0:1]} {offset_str[1:3]}:{offset_str[3:5]}"
         box.text('br', s, size='large')
 
     def fill_box_right_top(self):
@@ -576,11 +663,11 @@ class FlexPlotConcentration:
 
         #SR_TMP<
         fld_max = np.nanmax(self.fld)
-        fld_max_fmtd = f"Max.: {fld_max:.2E} {self.attrs.var.unit_fmtd()}"
+        fld_max_fmtd = f"Max.: {fld_max:.2E} {self.attrs.var.format_unit()}"
         #SR_TMP>
 
         # Add box title
-        s = f"{self.attrs.var.name} ({self.attrs.var.unit_fmtd()})"
+        s = f"{self.attrs.var.name} ({self.attrs.var.format_unit()})"
         box.text('tc', s=s, size='large')
 
         # Format level ranges (contour plot legend)
@@ -697,49 +784,50 @@ class FlexPlotConcentration:
         box = self.axs_box[2]
 
         #SR_TMP<
-        lat_mins = (47, 22)
-        lat_frac = 47.37
-        lon_mins = (7, 58)
-        lon_frac = 7.97
-        height = 100
-        start_fmtd = "2019-05-28 00:00 UTC"
-        end_fmtd = "2019-05-28 08:00 UTC"
         rate = 34722.2
+        rate_unit_fmtd = 'Bq s$^{{-1}}$'
         mass = 1e9
+        mass_unit = 'Bq'
         substance_fmtd = 'Cs$\endash$137'
         half_life = 30.0
+        half_life_unit = 'years'
         depos_vel = 1.5e-3
         sedim_vel = 0.0
+        vel_unit_fmtd = 'm s$^{{-1}}$'
         wash_coeff = 7.0e-5
         wash_exp = 0.8
+        wash_unit_fmtd = 's$^{{-1}}$'
         #SR_TMP>
 
         # Add box title
         box.text('tc', 'Release', size='large')
 
+        # Release site coordinates
+        lat = Degrees(self.attrs.release.site_lat)
         lat_fmtd = (
-            f"{lat_mins[0]}$^\circ$ {lat_mins[1]}' N"
-            f" (={lat_frac}$^\circ$ N)")
+            f"{lat.degs()}$^\circ$ {lat.mins()}' N"
+            f" (={lat.frac()}$^\circ$ N)")
+        lon = Degrees(self.attrs.release.site_lon)
         lon_fmtd = (
-            f"{lon_mins[0]}$^\circ$ {lon_mins[1]}' E"
-            f" (={lon_frac}$^\circ$ E)")
+            f"{lon.degs()}$^\circ$ {lon.mins()}' E"
+            f" (={lon.frac()}$^\circ$ E)")
 
         info_blocks = dedent(
             f"""\
             Latitude:\t{lat_fmtd}
             Longitude:\t{lon_fmtd}
-            Height:\t{height} m AGL
+            Height:\t{self.attrs.release.format_height()}
 
-            Start:\t{start_fmtd}
-            End:\t{end_fmtd}
-            Rate:\t{rate} Bq s$^{{-1}}$
-            Total Mass:\t{mass} Bq
+            Start:\t{self.attrs.sim.format_start()}
+            End:\t{self.attrs.sim.format_end()}
+            Rate:\t{rate} {rate_unit_fmtd}
+            Total Mass:\t{mass} {mass_unit}
 
             Substance:\t{substance_fmtd}
-            Half-Life:\t{half_life} years
-            Deposit. Vel.:\t{depos_vel} m s$^{{-1}}$
-            Sediment. Vel.:\t{sedim_vel} m s$^{{-1}}$
-            Washout Coeff.:\t{wash_coeff} s$^{{-1}}$
+            Half-Life:\t{half_life} {half_life_unit}
+            Deposit. Vel.:\t{depos_vel} {vel_unit_fmtd}
+            Sediment. Vel.:\t{sedim_vel} {vel_unit_fmtd}
+            Washout Coeff.:\t{wash_coeff} {wash_unit_fmtd}
             Washout Exponent:\t{wash_exp}
             """)
 
@@ -752,14 +840,11 @@ class FlexPlotConcentration:
         """Fill the box to the bottom of the map plot."""
         box = self.axs_box[3]
 
-        #SR_TMP<
-        cosmo = 'COSMO-1'
-        simstart_fmtd = '2019-05-28 00:00 UTC'
-        #SR_TMP>
-
         # FLEXPART/model info
-        info_fmtd = f"FLEXPART based on {cosmo} {simstart_fmtd}"
-        box.text('tl', dx=-0.7, dy=0.5, s=info_fmtd, size='small')
+        _model = self.attrs.sim.model_name
+        _simstart_fmtd = self.attrs.sim.format_start()
+        s = f"FLEXPART based on {_model} {_simstart_fmtd}"
+        box.text('tl', dx=-0.7, dy=0.5, s=s, size='small')
 
         # MeteoSwiss Copyright
         cpright_fmtd = u"\u00a9MeteoSwiss"
