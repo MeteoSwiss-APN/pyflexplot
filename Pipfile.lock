@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "3c70f5bf00936259c6d349442ad16708584a6a0f5832786b04776661a4c2179c"
+            "sha256": "59d4eaeda7ea7380bead32fc929bb1e13e04a606ea73076e319b8ce46ede2644"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -66,20 +66,6 @@
                 "sha256:cd7b2d1018258d7247a71425e9f26463dfb444d411c39569972f4ce586b0c9d8"
             ],
             "version": "==0.10.0"
-        },
-        "geographiclib": {
-            "hashes": [
-                "sha256:635da648fce80a57b81b28875d103dacf7deb12a3f5f7387ba7d39c51e096533"
-            ],
-            "version": "==1.49"
-        },
-        "geopy": {
-            "hashes": [
-                "sha256:6239cbf4d8e8a10460c10cf2ae1949c9e9d011e9f25c4e49202734455cc5e884",
-                "sha256:9419bc90ee6231590c4ae7acf1cf126cefbd0736942da7a6a1436946e80830e2"
-            ],
-            "index": "pypi",
-            "version": "==1.20.0"
         },
         "kiwisolver": {
             "hashes": [
@@ -462,10 +448,10 @@
         },
         "jedi": {
             "hashes": [
-                "sha256:2bb0603e3506f708e792c7f4ad8fc2a7a9d9c2d292a358fbbd58da531695595b",
-                "sha256:2c6bcd9545c7d6440951b12b44d373479bf18123a401a52025cf98563fbd826c"
+                "sha256:49ccb782651bb6f7009810d17a3316f8867dde31654c750506970742e18b553d",
+                "sha256:79d0f6595f3846dffcbe667cc6dc821b96e5baa8add125176c31a3917eb19d58"
             ],
-            "version": "==0.13.3"
+            "version": "==0.14.0"
         },
         "jinja2": {
             "hashes": [
@@ -531,10 +517,10 @@
         },
         "parso": {
             "hashes": [
-                "sha256:17cc2d7a945eb42c3569d4564cdf49bde221bc2b552af3eca9c1aad517dcdd33",
-                "sha256:2e9574cb12e7112a87253e14e2c380ce312060269d04bd018478a3c92ea9a376"
+                "sha256:5052bb33be034cba784193e74b1cde6ebf29ae8b8c1e4ad94df0c4209bfc4826",
+                "sha256:db5881df1643bf3e66c097bfd8935cf03eae73f4cb61ae4433c9ea4fb6613446"
             ],
-            "version": "==0.4.0"
+            "version": "==0.5.0"
         },
         "pathtools": {
             "hashes": [

@@ -14,10 +14,12 @@ with open('HISTORY.rst') as history_file:
 requirements = [
     'Cartopy', # !! requires non-Python dependencies 'geos' and 'proj'; load modules or install
     'Click>=6.0',
+    'geopy',
     'matplotlib',
-    'pillow',
     'netCDF4',
     'numpy',
+    'pillow',
+    'pytz',
     'scipy',
 ]
 setup_requirements = [
