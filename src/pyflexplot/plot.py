@@ -14,6 +14,7 @@ import pytz
 import re
 
 from collections import namedtuple
+from copy import copy
 from matplotlib import ticker
 from textwrap import dedent
 
@@ -197,7 +198,9 @@ class FlexAttrsBase:
             name (str or list[str]): Name of attribute. Can be a list
                 of multiple names if ``val`` is a list of values to be
                 distributed over multiple attributes (e.g., a number-
-                unit-pair).
+                unit-pair). In lists, tilde ('~') can be used in all
+                but the first name to refer to the previous name in the
+                list (e.g., ``['velocity', '~_unit']``).
 
             val (object or list[object]): Value of attribute. If is a
                 list of multiple values and ``name`` is a list as well,
@@ -243,6 +246,15 @@ class FlexAttrsBase:
             raise ValueError(
                 f"attrs '{names}' ({len(names)}): "
                 f"need one value for each name: {vals}")
+
+        # Tilde-notation: insert previous name in place of '~'
+        for i, name in enumerate(copy(names)):
+            if '~' in name:
+                if i == 0:
+                    raise ValueError(
+                        f"'~' notation not possible in first name: "
+                        f"{names}")
+                names[i] = name.replace('~', names[i - 1])
 
         # Prepare types (same for all, or one for each)
         if types is None or isinstance(types, type):
@@ -303,20 +315,16 @@ class FlexAttrsVariable(FlexAttrsBase):
             unit (str): Unit of variable as a regular string
                 (e.g., 'm-3' for cubic meters).
 
-            level_bot (float): Bottom level.
+            level_bot ((float, str)): Bottom level (value and unit).
 
-            level_top_unit (str): Unit of bottom level.
-
-            level_top (float): Top level.
-
-            level_top_unit (str): Unit of top level.
+            level_top ((float, str)): Top level (value and unit).
 
         """
         super().__init__()
         self.set('name', name, str)
         self.set('unit', unit, str)
-        self.set(['level_bot', 'level_bot_unit'], level_bot, [float, str])
-        self.set(['level_top', 'level_top_unit'], level_top, [float, str])
+        self.set(['level_bot', '~_unit'], level_bot, [float, str])
+        self.set(['level_top', '~_unit'], level_top, [float, str])
 
     def format_unit(self):
         return self._format_unit(self.unit)
@@ -374,9 +382,9 @@ class FlexAttrsRelease(FlexAttrsBase):
         self.set('site_lon', site_lon, float)
         self.set('site_name', site_name, str)
         self.set('site_tz_name', site_tz_name, str)
-        self.set(['height', 'height_unit'], height, [float, str])
-        self.set(['rate', 'rate_unit'], rate, [float, str])
-        self.set(['mass', 'mass_unit'], mass, [float, str])
+        self.set(['height', '~_unit'], height, [float, str])
+        self.set(['rate', '~_unit'], rate, [float, str])
+        self.set(['mass', '~_unit'], mass, [float, str])
 
     def format_height(self):
         return f'{self.height} {self.height_unit}'
@@ -421,10 +429,10 @@ class FlexAttrsSpecies(FlexAttrsBase):
         """
         super().__init__()
         self.set('name', name, str)
-        self.set(['half_life', 'half_life_unit'], half_life, [float, str])
-        self.set(['deposit_vel', 'deposit_vel_unit'], deposit_vel, [float, str])
-        self.set(['sediment_vel', 'sediment_vel_unit'], sediment_vel, [float, str])
-        self.set(['washout_coeff', 'washout_coeff_unit'], washout_coeff, [float, str])
+        self.set(['half_life', '~_unit'], half_life, [float, str])
+        self.set(['deposit_vel', '~_unit'], deposit_vel, [float, str])
+        self.set(['sediment_vel', '~_unit'], sediment_vel, [float, str])
+        self.set(['washout_coeff', '~_unit'], washout_coeff, [float, str])
         self.set('washout_exponent', washout_exponent, float)
 
     def format_half_life_unit(self):
