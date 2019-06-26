@@ -105,8 +105,8 @@ def common_options(f):
 @common_options
 @click.option(
     '--time-ind', 'time_inds',
-    help="Index of time (zero-based) (default: all).",
-    type=int, multiple=True)
+    help="Index of time (zero-based).",
+    type=int, default=0, multiple=True)
 @click.option(
     '--age-class-ind', 'age_ind',
     help="Index of age class (zero-based).",
@@ -116,9 +116,9 @@ def common_options(f):
     help="Index of release point (zero-based).",
     type=int, default=0)
 @click.option(
-    '--level-ind', 'level_ind',
+    '--level-ind', 'level_inds',
     help="Index of vertical level (zero-based, bottom-up).",
-    type=int, default=0)
+    type=int, default=0, multiple=True)
 @click.option(
     '--species-id', 'species_id',
     help="Species id (default: all).",
@@ -129,12 +129,19 @@ def common_options(f):
     type=int, default=0)
 @click.pass_context
 # yapf: enable
-def concentration(ctx, in_file_path, out_file_path_fmt, time_inds, **kwargs):
+def concentration(ctx, in_file_path, out_file_path_fmt, time_inds, level_inds,
+        **kwargs):
 
     # Read input data
     kwargs['field_type'] = '3D'
     fields_specs = [
-        FlexFieldSpecs(time_ind=time_ind, **kwargs) for time_ind in time_inds
+        FlexFieldSpecs(
+            time_ind=time_ind,
+            level_ind=level_ind,
+            **kwargs,
+        )
+        for time_ind in time_inds
+        for level_ind in level_inds
     ]
     flex_data_lst = FlexFileRotPole(in_file_path).read(fields_specs)
 
