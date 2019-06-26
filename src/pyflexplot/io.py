@@ -18,13 +18,6 @@ from .data import FlexDataRotPole
 
 from .utils_dev import ipython  #SR_DEV
 
-ReleasePoint = namedtuple(
-    'ReleasePoint',
-    (
-        'name age_id kind lllat lllon urlat urlon'
-        ' zbot ztop start end n_parts ms_parts'),
-)
-
 #
 # grid_conc_20190514000000.nc
 # ---------------------------
@@ -230,6 +223,10 @@ class FlexFileRotPole:
         var_name = self._field_specs.var_name()
         ncattrs_field = ncattrs_vars[var_name]
 
+        # Collect release point information
+        release_point = ReleasePoint.from_file(
+            self._fi, self._field_specs.release_point_ind)
+
         raw = {}
 
         raw['grid'] = {}
@@ -294,7 +291,7 @@ class FlexFileRotPole:
         raw['simulation']['end'] = ts_end
         raw['simulation']['now'] = ts_now
 
-        #ipython(globals(), locals(), 'FlexFile._collect_attrs')
+        ipython(globals(), locals(), 'FlexFile._collect_attrs')
 
         return FlexAttrsCollection(**raw)
 
@@ -310,3 +307,143 @@ class FlexFileRotPole:
                     f"unknown unit '{ncattrs_var['units']}'")
 
     #SR_TMP>
+
+
+class ReleasePoint:
+    """Release point information."""
+
+    # Define the init arguments with target types
+    # Done here to avoid duplication
+    attr_types = {
+        'name': str,
+        'age_id': int,
+        'kind': str,
+        'lllat': float,
+        'lllon': float,
+        'urlat': float,
+        'urlon': float,
+        'zbot': float,
+        'ztop': float,
+        'start': int,
+        'end': int,
+        'n_parts': int,
+        'ms_parts': list,
+    }
+
+    def __init__(self, **kwargs):
+        """Create an instance of ``ReleasePoint``."""
+
+        # Keep track of passed keyword arguments
+        attr_keys_todo = [k for k in self.attr_types]
+
+        # Process keyword arguments
+        for key, val in kwargs.items():
+
+            # Check existence of argument while fetching target type
+            try:
+                type_ = self.attr_types[key]
+            except KeyError:
+                raise ValueError(f"unexpected argument {key}={val}")
+
+            # Cross valid argument off the todo list
+            attr_keys_todo.remove(key)
+
+            # Check type while converting to target type
+            try:
+                val = type_(val)
+            except TypeError:
+                raise ValueError(
+                    f"argument {key}={val} of type '{type(val).__name__}' "
+                    f"incompatible with expected type '{type_.__name__}'")
+
+            # Set as attribute
+            setattr(self, key, val)
+
+        # Check that all arguments have been passed
+        if attr_keys_todo:
+            n = len(attr_keys_todo)
+            raise ValueError(
+                f"missing {n} argument{'' if n == 1 else 's'}: "
+                f"{attr_keys_todo}")
+
+    def __iter__(self):
+        for key in self.attr_types:
+            yield key, getattr(self, key)
+
+    @classmethod
+    def from_file(cls, fi, i=None, var_name='RELCOM'):
+        """Read information on single release point from open file.
+
+        Args:
+            fi (netCDF4.Dataset): Open NetCDF file handle.
+
+            i (int, optional): Release point index. Mandatory if ``fi``
+                contains multiple release points. Defaults to None.
+
+            var_name (str, optional): Variable name of release point.
+                Defaults to 'RELCOM'.
+
+        Returns:
+            ReleasePoint: Release point object.
+
+        """
+        var = fi.variables[var_name]
+
+        # Check index against no. release point and set it if necessary
+        n = var.shape[0]
+        if n == 0:
+            raise ValueError(
+                f"file '{fi.name}': no release points ('{var_name}')")
+        elif n == 1:
+            if i is None:
+                i = 0
+        elif n > 1:
+            if i is None:
+                raise ValueError(
+                    f"file '{fi.name}': i is None despite {n} release points")
+        if i < 0 or i >= n:
+            raise ValueError(
+                f"file '{fi.name}': invalid index {i} for {n} release points")
+
+        kwargs = {}
+
+        # Name -- byte character array
+        kwargs['name'] = (
+            var[i][~var[i].mask].tostring().decode('utf-8').rstrip())
+
+        # Other attributes
+        key_pairs = [
+            ('age_id', 'LAGE'),
+            ('kind', 'RELKINDZ'),
+            ('lllat', 'RELLAT1'),
+            ('lllon', 'RELLNG1'),
+            ('urlat', 'RELLAT2'),
+            ('urlon', 'RELLNG2'),
+            ('zbot', 'RELZZ1'),
+            ('ztop', 'RELZZ2'),
+            ('start', 'RELSTART'),
+            ('end', 'RELEND'),
+            ('n_parts', 'RELPART'),
+            ('ms_parts', 'RELXMASS'),
+        ]
+        for key_out, key_in in key_pairs:
+            kwargs[key_out] = fi.variables[key_in][i].tolist()
+
+        return cls(**kwargs)
+
+    @classmethod
+    def from_file_multi(cls, fi, var_name='RELCOM'):
+        """Read information on multiple release points from open file.
+
+        Args:
+            fi (netCDF4.Dataset): Open NetCDF file handle.
+
+            var_name (str, optional): Variable name of release point.
+                Defaults to 'RELCOM'.
+
+        Returns:
+            list[ReleasePoint]: List of release points objects.
+
+        """
+        n = fi.variables[var_name].shape[0]
+        return [cls.from_file(fi, i, var_name) for i in range(n)]
