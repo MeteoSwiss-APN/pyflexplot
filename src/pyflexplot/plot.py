@@ -48,8 +48,7 @@ class FlexPlotter:
         """Create plots.
 
         Args:
-            data (FlexData): All necessary data (grid, fields, attrs)
-                required for the plot, read from a FLEXPART file.
+            data (<TODO>): <TODO>
 
             file_path_fmt (str): Format string of output file path.
                 Must contain all necessary format keys to avoid that
@@ -60,7 +59,7 @@ class FlexPlotter:
             str: Output file paths.
 
         """
-        self.data = data
+        self.data_lst = data if isinstance(data, (list, tuple)) else [data]
         self.file_path_fmt = file_path_fmt
 
         if self.type_ == 'concentration':
@@ -72,36 +71,20 @@ class FlexPlotter:
     def _run_concentration(self):
         """Create one or more concentration plots."""
 
-        # Check availability of required field type
-        field_type = '3D'
-        field_types_all = self.data.field_types()
-        if field_type not in field_types_all:
-            raise Exception(
-                f"missing field type '{field_type}' among {field_types_all}")
-
-        # Collect field keys
-        restrictions = {"field_types": [field_type]}
-        keys = self.data.field_keys(**restrictions)
-
-        # Check output file path for format keys
-        self.check_file_path_fmt(restrictions)
-
         # Create plots
         file_paths = []
-        _s = 's' if len(keys) > 1 else ''
-        print(f"create {len(keys)} concentration plot{_s}")
-        for i_key, key in enumerate(keys):
-            file_path = self.format_file_path(key)
-            _w = len(str(len(keys)))
-            print(f" {i_key+1:{_w}}/{len(keys)}  {file_path}")
-
-            attrs = self.data.get_attrs(key)
+        _s = 's' if len(self.data_lst) > 1 else ''
+        print(f"create {len(self.data_lst)} concentration plot{_s}")
+        for i_data, data in enumerate(self.data_lst):
+            file_path = self.format_file_path(data.field_specs)
+            _w = len(str(len(self.data_lst)))
+            print(f" {i_data+1:{_w}}/{len(self.data_lst)}  {file_path}")
 
             kwargs = {
-                'rlat': self.data.rlat,
-                'rlon': self.data.rlon,
-                'fld': self.data.field(key),
-                'attrs': attrs,
+                'rlat': data.rlat,
+                'rlon': data.rlon,
+                'fld': data.field,
+                'attrs': data.attrs,
             }
 
             FlexPlotConcentration(**kwargs).save(file_path)
@@ -135,45 +118,22 @@ class FlexPlotter:
         _check_file_path_fmt__core('age_ind')
         _check_file_path_fmt__core('relpt_ind')
         _check_file_path_fmt__core('time_ind')
-        _check_file_path_fmt__core('level_ind')
+        #-_check_file_path_fmt__core('level_ind')
         _check_file_path_fmt__core('species_id')
         _check_file_path_fmt__core('field_type')
 
-    def format_file_path(self, key):
-        """Create output file path for a given field key.
-
-        Args:
-            key (namedtuple): Field key.
-
-        """
-        return self.file_path_fmt.format(**key._asdict())
-
-
-#SR_TMP<
-class ColorStr:
-
-    def __init__(self, s, c):
-        self.s = s
-        self.c = c
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self.s}, {self.c})"
-
-    def __str__(self):
-        return self.s
-
-    def split(self, *args, **kwargs):
-        return [
-            self.__class__(s, self.c)
-            for s in str.split(self.s, *args, **kwargs)
+    def format_file_path(self, specs):
+        keys = [
+            'time_ind',
+            'age_ind',
+            'release_point_ind',
+            'level_ind',
+            'species_id',
+            'source_ind',
+            'field_type',
         ]
-
-    def strip(self, *args, **kwargs):
-        s = str.strip(self.s, *args, **kwargs)
-        return self.__class__(s, self.c)
-
-
-#SR_TMP>
+        return self.file_path_fmt.format(
+            **{k: getattr(specs, k) for k in keys})
 
 
 class FlexPlotConcentration:
@@ -1259,11 +1219,6 @@ class AxesTextBox:
             # shifting y accordingly (with `baseline` alignment) were
             # not successful.
             raise NotImplementedError(f"verticalalignment='{kwargs['vs']}'")
-
-        #SR_TMP<
-        if isinstance(s, ColorStr):
-            kwargs['color'] = s.c
-        #SR_TMP>
 
         # Add text
         self.ax.text(x=x, y=y, s=s, **kwargs)

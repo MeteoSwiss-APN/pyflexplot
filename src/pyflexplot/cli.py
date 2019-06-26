@@ -10,7 +10,9 @@ import sys
 
 from pprint import pformat
 
-from .io import FlexFileReader
+from .io import FlexFieldSpecs
+from .io import FlexFile
+#-from .io import FlexFileReader
 from .utils import count_to_log_level
 from .plot import FlexPlotter
 
@@ -103,46 +105,46 @@ def common_options(f):
 @main.command()
 @common_options
 @click.option(
-    '--age-class-ind', 'age_inds',
-    help="Index of age class (zero-based) (default: all).",
-    type=int, multiple=True)
-@click.option(
-    '--release-point-ind', 'relpt_inds',
-    help="Index of release point (zero-based) (default: all).",
-    type=int, multiple=True)
-@click.option(
     '--time-ind', 'time_inds',
     help="Index of time (zero-based) (default: all).",
     type=int, multiple=True)
 @click.option(
-    '--level-ind', 'level_inds',
-    help="Index of vertical level (zero-based, bottom-up) (default: all).",
-    type=int, multiple=True)
+    '--age-class-ind', 'age_ind',
+    help="Index of age class (zero-based).",
+    type=int, default=0)
 @click.option(
-    '--species-id', 'species_ids',
+    '--release-point-ind', 'release_point_ind',
+    help="Index of release point (zero-based).",
+    type=int, default=0)
+@click.option(
+    '--level-ind', 'level_ind',
+    help="Index of vertical level (zero-based, bottom-up).",
+    type=int, default=0)
+@click.option(
+    '--species-id', 'species_id',
     help="Species id (default: all).",
-    type=int, multiple=True)
+    type=int, default=0)
 @click.option(
-    '--field-type', 'field_types',
-    help="Type of field (default: all).",
-    type=click.Choice(['3D', 'WD', 'DD']), multiple=True)
-@click.option(
-    '--source-ind', 'source_inds',
-    help="Point source indices (zero-based) (default: all).",
-    type=int, multiple=True)
+    '--source-ind', 'source_ind',
+    help="Point source index (zero-based).",
+    type=int, default=0)
 @click.pass_context
 # yapf: enable
-def concentration(ctx, in_file_path, out_file_path_fmt, **kwargs):
+def concentration(ctx, in_file_path, out_file_path_fmt, time_inds, **kwargs):
 
-    # Read input
-    data = FlexFileReader(**kwargs).read(in_file_path)
+    # Read input data
+    kwargs['field_type'] = '3D'
+    fields_specs = [
+        FlexFieldSpecs(time_ind=time_ind, **kwargs) for time_ind in time_inds
+    ]
+    flex_data_lst = FlexFile(in_file_path).read(fields_specs)
 
     # Create plot
     if not ctx.obj['noplot']:
-        for i, out_file_path in enumerate(
-                # Note: FlexPlotter.run yields the output file paths
-                FlexPlotter('concentration').run(data, out_file_path_fmt)):
-
+        # Note: FlexPlotter.run yields the output file paths on-the-go
+        f = functools.partial(
+            FlexPlotter('concentration').run, flex_data_lst, out_file_path_fmt)
+        for i, out_file_path in enumerate(f()):
             if ctx.obj['open_cmd'] and i == 0:
                 # Open the first file as soon as it's available
                 open_plot(ctx.obj['open_cmd'], out_file_path)

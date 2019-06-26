@@ -2,15 +2,19 @@
 """
 Input/output.
 """
+import datetime
 import logging as log
 import netCDF4 as nc4
 import numpy as np
+import os
 import re
 
 from collections import namedtuple
 from copy import copy
 
-from .data import FlexData
+#from .data import FlexData
+from .data import FlexAttrsCollection
+from .data import FlexDataRotPole
 
 from .utils_dev import ipython  #SR_DEV
 
@@ -72,300 +76,211 @@ ReleasePoint = namedtuple(
 #
 
 
-class FlexFileReader:
-    """Read FLEXPART output files.
-
-    Kwargs:
-        TODO
-
-    """
-
-    # Width of variable names in debug output
-    wvar = 10
-
-    # Reg. expr. to extract field type and species id from variable name
-    rx_fld_var_name = re.compile(r'((?P<fld>[A-Z]{2})_)?spec(?P<id>[0-9]{3})')
+class FlexFieldSpecs:
+    """Specifications of FLEXPART field to be read from NetCDF file."""
 
     def __init__(
-            self,
-            *,
-            age_inds=None,
-            relpt_inds=None,
-            species_ids=None,
-            source_inds=None,
-            time_inds=None,
-            field_types=None,
-            level_inds=None):
-
-        def prep_attr(lst):
-            return set(lst) if lst else None
-
-        self.age_inds = prep_attr(age_inds)
-        self.relpt_inds = prep_attr(relpt_inds)
-        self.species_ids = prep_attr(species_ids)
-        self.time_inds = prep_attr(time_inds)
-        self.field_types = prep_attr(field_types)
-        self.level_inds = prep_attr(level_inds)
-
-    def read(self, file_path):
-        """Read a FLEXPART NetCDF file and return it's contents.
+            self, time_ind, age_ind, release_point_ind, level_ind, species_id,
+            source_ind, field_type):
+        """Create an instance of ``FlexFieldSpecs``.
 
         Args:
-            file_path (str): Input file.
-
-        Returns:
-            FlexData object with the file content.
+            <TODO>
 
         """
+        self.time_ind = int(time_ind)
+        self.age_ind = int(age_ind)
+        self.release_point_ind = int(release_point_ind)
+        self.level_ind = int(level_ind)
+        self.species_id = int(species_id)
+        self.source_ind = int(source_ind)
+        self.field_type = field_type.upper()
 
-        def prep_todo(vals):
-            if vals is None:
-                return None
-            return {v: False for v in vals}
+    def var_name(self):
+        """Derive variable name from specifications."""
+        var_name_base = f'spec{self.species_id:03d}'
+        prefix = {'3D': '', 'DD': 'DD_', 'WD': 'WD_'}[self.field_type]
+        return prefix + var_name_base
 
-        self._todo = {
-            'age_ind': prep_todo(self.age_inds),
-            'relpt_ind': prep_todo(self.relpt_inds),
-            'time_ind': prep_todo(self.time_inds),
-            'level_ind': prep_todo(self.level_inds),
-            'species_id': prep_todo(self.species_ids),
-            'field_type': prep_todo(self.field_types),
-        }
+    def dim_inds_nc(self):
+        """Derive indices along NetCDF dimensions."""
 
-        def set2str(lst):
-            if lst is None:
-                return 'None'
-            return ', '.join([str(i) for i in sorted(lst)])
+        inds = {}
 
-        log.debug("particle field selection criteria:")
-        log.debug(f" - age inds     : {set2str(self._todo['age_ind'])}")
-        log.debug(f" - relpt inds   : {set2str(self._todo['relpt_ind'])}")
-        log.debug(f" - time inds    : {set2str(self._todo['time_ind'])}")
-        log.debug(f" - levels inds  : {set2str(self._todo['level_ind'])}")
-        log.debug(f" - species ids  : {set2str(self._todo['species_id'])}")
-        log.debug(f" - field types  : {set2str(self._todo['field_type'])}")
+        inds['nageclass'] = self.age_ind
+        inds['numpoint'] = self.release_point_ind
+        inds['time'] = self.time_ind
 
-        log.debug(f"open netcdf file {file_path}")
-        with nc4.Dataset(file_path, 'r') as fi:
+        if self.field_type == '3D':
+            inds['level'] = self.level_ind
 
-            log.debug("read data setup (grid etc.)")
-            setup = {}  #SR_TMP
-            flex_data = FlexData(setup)
+        inds['rlat'] = slice(None)
+        inds['rlon'] = slice(None)
 
-            # Grid
-            flex_data.set_grid(
-                rlat=fi.variables['rlat'][:],
-                rlon=fi.variables['rlon'][:],
-            )
+        return inds
 
-            relpts = self._collect_release_points(fi)
 
-            time = fi.variables['time'][:]
-            self._levels_all = fi.variables['level'][:]
+class FlexFile:
+    """FLEXPART NetCDF file."""
 
-            #ipython(globals(), locals(), "FlexFileReader.read()")
+    def __init__(self, path):
+        """Create an instance of ``FlexFile``.
 
-            # Field variables
-            log.debug("read variables: particle fields")
-            for var in fi.variables.values():
-                if (var.dimensions[-2:]) != ('rlat', 'rlon'):
-                    log.debug(
-                        f" - {var.name:{self.wvar}} : skip (non-field var)")
-                    continue
-                self._process_fld_var(var, flex_data)
+        Args:
+            path (str): File path.
 
-        # Check that all 'todo' values have been processed
-        for name, vals in self._todo.items():
-            if vals is not None:
-                vals_false = {v for v, b in vals.items() if not b}
-                if vals_false:
-                    raise Exception(
-                        f"invalid {name.replace('_', ' ')}: {vals_false}")
+        """
+        self.path = path
+
+    def read(self, fields_specs):
+        flex_data_lst = []
+        with nc4.Dataset(self.path, 'r') as fi:
+            self.fi = fi
+            for field_specs in fields_specs:
+                self.field_specs = field_specs
+                flex_data = self._read()
+                flex_data_lst.append(flex_data)
+            del self.field_specs
+        return flex_data_lst
+
+    def _read(self):
+
+        # Grid coordinates
+        rlat = self.fi.variables['rlat'][:]
+        rlon = self.fi.variables['rlon'][:]
+
+        # Field
+        fld = self._read_field()
+
+        # Attributes
+        attrs = self._collect_attrs()
+
+        #SR_TMP<
+        self._fix_nc_data(fld, attrs)
+        #SR_TMP>
+
+        # Collect data
+        flex_data = FlexDataRotPole(rlat, rlon, fld, attrs, self.field_specs)
 
         return flex_data
 
-    def _collect_release_points(self, fi):
-        """Collect information about particle release points.
+    def _read_field(self):
 
-        Args:
-            fi (netCDF4.Dataset): NetCDF file handle.
+        # Select variable in file
+        var_name = self.field_specs.var_name()
+        var = self.fi.variables[var_name]
 
-        Returns:
-            list[ReleasePoint]: List of release points.
+        # Indices of field along NetCDF dimensions
+        dim_inds_nc = self.field_specs.dim_inds_nc()
 
-        """
-        relpts = []
-        n = fi.variables['RELCOM'].shape[0]
-        for ipt in range(n):
-            kwargs = {}
+        # Assemble indices for slicing
+        inds = [None]*len(var.dimensions)
+        for dim_name, dim_ind in dim_inds_nc.items():
+            ind = var.dimensions.index(dim_name)
+            inds[ind] = dim_ind
+        if None in inds:
+            raise Exception(
+                f"variable '{var_name}': could not resolve all indices!"
+                f"\ndim_inds   : {dim_inds_nc}"
+                f"\ndimensions : {var.dimensions}"
+                f"\ninds       : {inds}")
 
-            # Name -- byte character array
-            var = fi.variables['RELCOM'][ipt]
-            kwargs['name'] = var[~var.mask].tostring().decode('utf-8').rstrip()
-
-            # Other attributes
-            key_pairs = [
-                ('age_id', 'LAGE'),
-                ('kind', 'RELKINDZ'),
-                ('lllat', 'RELLAT1'),
-                ('lllon', 'RELLNG1'),
-                ('urlat', 'RELLAT2'),
-                ('urlon', 'RELLNG2'),
-                ('zbot', 'RELZZ1'),
-                ('ztop', 'RELZZ2'),
-                ('start', 'RELSTART'),
-                ('end', 'RELEND'),
-                ('n_parts', 'RELPART'),
-                ('ms_parts', 'RELXMASS'),
-            ]
-            for key_out, key_in in key_pairs:
-                kwargs[key_out] = fi.variables[key_in][ipt].tolist()
-
-            relpts.append(ReleasePoint(**kwargs))
-
-        return relpts
-
-    def _process_fld_var(self, var, flex_data):
-        """Check if field variable is to be read, and if so, read it."""
-
-        #SR_TMP< Let's ignore fptot for now until we need it
-        if var.name == 'fptot':
-            log.debug(f" - {var.name:{self.wvar}} : !TMP! skip")
-            return
-        #SR_TMP>
-
-        # Parse var name for field type and species id
-        match = self.rx_fld_var_name.match(var.name)
-        field_type = match.group('fld')
-        if field_type is None:
-            field_type = '3D'
-        species_id = int(match.group('id').lstrip('0'))
-        log.debug(f" - {var.name:{self.wvar}} : particle field")
-
-        # Determine levels to be read
-        if field_type == '3D':
-            if self.level_inds is not None:
-                level_inds = list(self.level_inds)
-                levels_sel = self._levels_all[level_inds]
-            else:
-                levels_sel = copy(self._levels_all)
-                level_inds = np.arange(len(levels_sel))
-        else:
-            levels_sel = None
-            level_inds = None
-
-        # Get variable attributes
-        #SR_TMP<
-        age_inds = np.arange(var.shape[0])
-        relpt_inds = np.arange(var.shape[1])
-        time_inds = np.arange(var.shape[2])
-        #SR_TMP>
-
-        log.debug(f"age inds    : {age_inds}")
-        log.debug(f"relpt inds  : {relpt_inds}")
-        log.debug(f"time inds   : {time_inds}")
-        log.debug(f"level inds  : {level_inds}")
-
-        for age_ind in age_inds:
-            for relpt_ind in relpt_inds:
-                for time_ind in time_inds:
-                    if level_inds is not None:
-                        for level_ind, level in zip(level_inds, levels_sel):
-                            self._proc_fld2d(
-                                flex_data, var, species_id, field_type,
-                                age_ind, relpt_ind, time_ind, level_ind)
-                    else:
-                        self._proc_fld2d(
-                            flex_data,
-                            var,
-                            species_id,
-                            field_type,
-                            age_ind,
-                            relpt_ind,
-                            time_ind,
-                            level_ind=None)
-
-    def _proc_fld2d(
-            self, flex_data, var, species_id, field_type, age_ind, relpt_ind,
-            time_ind, level_ind):
-
-        # Check whether to skip the field
-        kwargs = {
-            'species_id': species_id,
-            'field_type': field_type,
-            'age_ind': age_ind,
-            'relpt_ind': relpt_ind,
-            'time_ind': time_ind,
-            'level_ind': level_ind,
-        }
-        read_field = self._check_read_field(**kwargs)
-        if not read_field:
-            # Skip it!
-            return
-        self._remove_todo(**kwargs)
-
-        var_attrs = {attr: var.getncattr(attr) for attr in var.ncattrs()}
-
-        log.debug(f"({age_ind}, {relpt_ind}, {time_ind}, {level_ind})")
-
-        # Compile indices to slice array
-        if level_ind is None:
-            inds = (age_ind, relpt_ind, time_ind)
-        else:
-            inds = (age_ind, relpt_ind, time_ind, level_ind)
-
+        # Read field
         fld = var[inds]
 
-        #SR_TMP< Fix unit and order of magnitude
-        if var_attrs['long_name'] in ['Cs-137', 'I-131a']:
-            if var_attrs['units'] == 'ng kg-1':
-                var_attrs['units'] = 'Bq m-3'
+        return fld
+
+    def _collect_attrs(self):
+        """Collect attributes."""
+
+        # Collect all variables attributes
+        ncattrs_vars = {}
+        for var in self.fi.variables.values():
+            ncattrs_vars[var.name] = {
+                attr: var.getncattr(attr) for attr in var.ncattrs()
+            }
+
+        # Select attributes of field variable
+        var_name = self.field_specs.var_name()
+        ncattrs_field = ncattrs_vars[var_name]
+
+        raw = {}
+
+        raw['grid'] = {}
+        _lat = ncattrs_vars['rotated_pole']['grid_north_pole_latitude']
+        _lon = ncattrs_vars['rotated_pole']['grid_north_pole_longitude']
+        raw['grid']['north_pole_lat'] = _lat
+        raw['grid']['north_pole_lon'] = _lon
+
+        raw['release'] = {}
+        raw['release']['site_lat'] = 47.37  #SR_HC
+        raw['release']['site_lon'] = 7.97  #SR_HC
+        raw['release']['site_name'] = 'Goesgen'  #SR_HC
+        raw['release']['site_tz_name'] = 'Europe/Zurich'  #SR_HC
+        raw['release']['height'] = (100, 'm AGL')  #SR_HC
+        raw['release']['rate'] = (34722.2, 'Bq s-1')  #SR_HC
+        raw['release']['mass'] = (1e9, 'Bq')  #SR_HC
+
+        raw['variable'] = {}
+        raw['variable']['name'] = 'Concentration'  #SR_HC
+        raw['variable']['unit'] = ncattrs_field['units']
+        raw['variable']['level_bot'] = (500, 'm AGL')  #SR_HC
+        raw['variable']['level_top'] = (2000, 'm AGL')  #SR_HC
+
+        raw['species'] = {}
+        raw['species']['name'] = ncattrs_field['long_name']
+        raw['species']['half_life'] = (30.0, 'years')  #SR_HC
+        raw['species']['deposit_vel'] = (1.5e-3, 'm s-1')  #SR_HC
+        raw['species']['sediment_vel'] = (0.0, 'm s-1')  #SR_HC
+        raw['species']['washout_coeff'] = (7.0e-5, 's-1')  #SR_HC
+        raw['species']['washout_exponent'] = 0.8  #SR_HC
+
+        #SR_HC<
+        ts_start = datetime.datetime(
+            year=2019,
+            month=5,
+            day=28,
+            hour=0,
+            minute=0,
+            tzinfo=datetime.timezone.utc,
+        )
+        ts_end = datetime.datetime(
+            year=2019,
+            month=5,
+            day=28,
+            hour=8,
+            minute=0,
+            tzinfo=datetime.timezone.utc,
+        )
+        ts_now = datetime.datetime(
+            year=2019,
+            month=5,
+            day=28,
+            hour=9,
+            minute=0,
+            tzinfo=datetime.timezone.utc,
+        )
+        #SR_HC>
+
+        raw['simulation'] = {}
+        raw['simulation']['model_name'] = 'COSMO-1'  #SR_HC
+        raw['simulation']['start'] = ts_start
+        raw['simulation']['end'] = ts_end
+        raw['simulation']['now'] = ts_now
+
+        #ipython(globals(), locals(), 'FlexFile._collect_attrs')
+
+        return FlexAttrsCollection(**raw)
+
+    #SR_TMP<
+    def _fix_nc_data(self, fld, attrs):
+        if attrs.species.name in ['Cs-137', 'I-131a']:
+            if attrs.variable.unit == 'ng kg-1':
+                attrs.variable.unit = 'Bq m-3'
                 fld *= 1e-12
             else:
                 raise NotImplementedError(
-                    f"species '{var_attrs['long_name']}':"
-                    f" unknown unit '{var_attrs['units']}'")
-        #SR_TMP>
+                    f"species '{ncattrs_var['long_name']}': "
+                    f"unknown unit '{ncattrs_var['units']}'")
 
-        # Store array slice (horizontal 2d field)
-        flex_data.add_field(
-            fld,
-            var_attrs,
-            age_ind=age_ind,
-            relpt_ind=relpt_ind,
-            time_ind=time_ind,
-            level_ind=level_ind,
-            species_id=species_id,
-            field_type=field_type,
-        )
-
-    def _check_read_field(self, **kwargs):
-        """Check whether to read the current particle field."""
-        log.debug("    - consider reading field")
-
-        # For each variable, check whether it is still 'todo',
-        # meaning whether it is still in the repsective todo set.
-        read = {}
-        for key, val in sorted(kwargs.items()):
-            todo = self._todo[key]
-            val = kwargs[key]
-            if val is None:
-                read[key] = False
-                val = 'None'
-            else:
-                read[key] = todo is None or val in todo
-            action = 'read' if read[key] else 'skip'
-            log.debug(f"      - {key}: {val:2} -> {action} (todo: {todo})")
-
-        if not all(read.values()):
-            # Not all variables are still 'todo' -> skip field
-            return False
-
-        # All variables were still 'todo' -> read field
-        return True
-
-    def _remove_todo(self, **kwargs):
-        """Remove value of each variable from respective todo set."""
-        for name, key in kwargs.items():
-            if self._todo[name] is not None:
-                self._todo[name][key] = True
+    #SR_TMP>
