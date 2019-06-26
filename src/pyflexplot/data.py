@@ -16,6 +16,20 @@ class FlexDataRotPole:
     """FLEXPART data on rotated-pole grid."""
 
     def __init__(self, rlat, rlon, field, attrs, field_specs):
+        """Create an instance of ``FlexDataRotPole``.
+
+        Args:
+            rlat (ndarray[float]): Rotated latitude array (1D).
+
+            rlon (ndarray[float]): Rotated longitude array (1D).
+
+            field (ndarray[float, float]): Field array (2D).
+
+            attrs (FlexAttrsCollection): Attributes collection.
+
+            field_specs (FlexFieldSpecs): Input field specifications.
+
+        """
         self.rlat = rlat
         self.rlon = rlon
         self.field = field

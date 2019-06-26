@@ -120,11 +120,11 @@ class FlexFieldSpecs:
         return inds
 
 
-class FlexFile:
-    """FLEXPART NetCDF file."""
+class FlexFileRotPole:
+    """NetCDF file containing FLEXPART data on rotated-pole grid."""
 
     def __init__(self, path):
-        """Create an instance of ``FlexFile``.
+        """Create an instance of ``FlexFileRotPole``.
 
         Args:
             path (str): File path.
@@ -132,46 +132,72 @@ class FlexFile:
         """
         self.path = path
 
+        self.reset()
+
+    def reset(self):
+        self._fi = None
+        self._field_specs = None
+
     def read(self, fields_specs):
+        """Read one or more fields from a file from disc.
+
+        Args:
+            fields_specs (list[FlexFieldSpecs]): Specifications for
+                one or more input fields.
+
+        Returns:
+            list[FlexDataRotPole]: One data object for each field.
+
+        """
+        log.debug(f"read {self.path}")
         flex_data_lst = []
         with nc4.Dataset(self.path, 'r') as fi:
-            self.fi = fi
-            for field_specs in fields_specs:
-                self.field_specs = field_specs
+            self._fi = fi
+            n_specs = len(fields_specs)
+            log.debug(f"process {n_specs} field specs")
+            for i_specs, field_specs in enumerate(fields_specs):
+                log.debug(f"{i_specs + 1}/{n_specs}: {field_specs}")
+                self._field_specs = field_specs
                 flex_data = self._read()
                 flex_data_lst.append(flex_data)
-            del self.field_specs
+        self.reset()
         return flex_data_lst
 
     def _read(self):
+        """Core routine reading one field from an open file."""
 
         # Grid coordinates
-        rlat = self.fi.variables['rlat'][:]
-        rlon = self.fi.variables['rlon'][:]
+        log.debug("read grid")
+        rlat = self._fi.variables['rlat'][:]
+        rlon = self._fi.variables['rlon'][:]
 
         # Field
+        log.debug("read field")
         fld = self._read_field()
 
         # Attributes
+        log.debug("collect attributes")
         attrs = self._collect_attrs()
 
         #SR_TMP<
+        log.debug("fix nc data")
         self._fix_nc_data(fld, attrs)
         #SR_TMP>
 
         # Collect data
-        flex_data = FlexDataRotPole(rlat, rlon, fld, attrs, self.field_specs)
+        log.debug("create data object")
+        flex_data = FlexDataRotPole(rlat, rlon, fld, attrs, self._field_specs)
 
         return flex_data
 
     def _read_field(self):
 
         # Select variable in file
-        var_name = self.field_specs.var_name()
-        var = self.fi.variables[var_name]
+        var_name = self._field_specs.var_name()
+        var = self._fi.variables[var_name]
 
         # Indices of field along NetCDF dimensions
-        dim_inds_nc = self.field_specs.dim_inds_nc()
+        dim_inds_nc = self._field_specs.dim_inds_nc()
 
         # Assemble indices for slicing
         inds = [None]*len(var.dimensions)
@@ -195,13 +221,13 @@ class FlexFile:
 
         # Collect all variables attributes
         ncattrs_vars = {}
-        for var in self.fi.variables.values():
+        for var in self._fi.variables.values():
             ncattrs_vars[var.name] = {
                 attr: var.getncattr(attr) for attr in var.ncattrs()
             }
 
         # Select attributes of field variable
-        var_name = self.field_specs.var_name()
+        var_name = self._field_specs.var_name()
         ncattrs_field = ncattrs_vars[var_name]
 
         raw = {}

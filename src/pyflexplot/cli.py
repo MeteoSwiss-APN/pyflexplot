@@ -11,8 +11,7 @@ import sys
 from pprint import pformat
 
 from .io import FlexFieldSpecs
-from .io import FlexFile
-#-from .io import FlexFileReader
+from .io import FlexFileRotPole
 from .utils import count_to_log_level
 from .plot import FlexPlotter
 
@@ -137,7 +136,7 @@ def concentration(ctx, in_file_path, out_file_path_fmt, time_inds, **kwargs):
     fields_specs = [
         FlexFieldSpecs(time_ind=time_ind, **kwargs) for time_ind in time_inds
     ]
-    flex_data_lst = FlexFile(in_file_path).read(fields_specs)
+    flex_data_lst = FlexFileRotPole(in_file_path).read(fields_specs)
 
     # Create plot
     if not ctx.obj['noplot']:
