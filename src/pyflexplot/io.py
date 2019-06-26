@@ -12,6 +12,7 @@ import time
 
 from collections import namedtuple
 from copy import copy
+from pprint import pformat
 
 #from .data import FlexData
 from .data import FlexAttrsCollection
@@ -89,6 +90,12 @@ class FlexFieldSpecs:
         self.species_id = int(species_id)
         self.source_ind = int(source_ind)
         self.field_type = field_type.upper()
+
+    def __repr__(self):
+        return pformat(dict(self))
+
+    def __str__(self):
+        return f'{dict(self)}'
 
     def __iter__(self):
         for key, val in self.__dict__.items():
@@ -293,30 +300,36 @@ class FlexAttrsCollector:
         _ind = self.field_specs.release_point_ind
         release_point = ReleasePoint.from_file(self.fi, _ind)
 
-        release_lat = np.mean([release_point.lllat, release_point.urlat])
-        release_lon = np.mean([release_point.lllon, release_point.urlon])
-        release_height = np.mean([release_point.zbot, release_point.ztop])
+        site_lat = np.mean([release_point.lllat, release_point.urlat])
+        site_lon = np.mean([release_point.lllon, release_point.urlon])
+        site_name = release_point.name
 
-        release_rate = 34722.2  #SR_HC
-        release_mass = 1.0e9  #SR_HC
+        height = np.mean([release_point.zbot, release_point.ztop])
+        height_unit = 'm AGL'  #SR_HC
 
-        release_height_unit = 'm AGL'  #SR_HC
-        release_rate_unit = 'Bq s-1'  #SR_HC
-        release_mass_unit = 'Bq'  #SR_HC
+        assert len(release_point.ms_parts) == 1
+        mass = next(iter(release_point.ms_parts))
+        mass_unit = 'Bq'  #SR_HC
+
+        duration = release_point.end - release_point.start
+        duration_unit = 's'  #SR_HC
+
+        rate = mass/duration
+        rate_unit = f'{mass_unit} {duration_unit}-1'
 
         return {
-            'site_lat': release_lat,
-            'site_lon': release_lon,
-            'site_name': release_point.name,
-            'height': (release_height, release_height_unit),
-            'rate': (release_rate, release_rate_unit),
-            'mass': (release_mass, release_mass_unit),
+            'site_lat': site_lat,
+            'site_lon': site_lon,
+            'site_name': site_name,
+            'height': (height, height_unit),
+            'rate': (rate, rate_unit),
+            'mass': (mass, mass_unit),
         }
 
     def _run_variable(self):
         """Collect variable attributes."""
 
-        #SR_HC<
+        # Get variable name
         _type = self.field_specs.field_type
         try:
             var_name = {
@@ -324,7 +337,6 @@ class FlexAttrsCollector:
             }[_type]
         except KeyError:
             raise NotImplementedError(f"var_name of '{_type}' field")
-        #SR_HC>
 
         level_unit = 'm AGL'  #SR_HC
         _i = self.field_specs.level_ind
@@ -342,7 +354,7 @@ class FlexAttrsCollector:
     def _run_species(self):
         """Collect species attributes."""
 
-        #SR_HC<
+        # Get deposition and washout data
         _type = self.field_specs.field_type
         _name = self.field_var_name
         if _type == '3D':
@@ -351,9 +363,8 @@ class FlexAttrsCollector:
             washout_exponent = self.ncattrs_vars[f'WD_{_name}']['wetb']
         else:
             raise NotImplementedError(f"deposit_vel of '{_type}' field")
-        #SR_HC>
 
-        #SR_HC<
+        # Get half life information
         _name = self.ncattrs_field['long_name']
         try:
             half_life, half_life_unit = {
@@ -362,7 +373,6 @@ class FlexAttrsCollector:
             }[_name]
         except KeyError:
             raise NotImplementedError(f"half_life of '{_name}'")
-        #SR_HC>
 
         deposit_vel_unit = 'm s-1'  #SR_HC
         sediment_vel_unit = 'm s-1'  #SR_HC
@@ -495,6 +505,12 @@ class ReleasePoint:
             raise ValueError(
                 f"missing {n} argument{'' if n == 1 else 's'}: "
                 f"{attr_keys_todo}")
+
+    def __repr__(self):
+        return pformat(dict(self))
+
+    def __str__(self):
+        return f'{dict(self)}'
 
     def __iter__(self):
         for key in self.attr_types:
