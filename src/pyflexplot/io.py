@@ -176,7 +176,7 @@ class FlexFileRotPole:
 
         # Attributes
         log.debug("collect attributes")
-        attrs = self._collect_attrs()
+        attrs = FlexAttrsCollector(self._fi, self._field_specs).run()
 
         #SR_TMP<
         log.debug("fix nc data")
@@ -215,42 +215,85 @@ class FlexFileRotPole:
 
         return fld
 
-    def _collect_attrs(self):
-        """Collect attributes."""
+    #SR_TMP<
+    def _fix_nc_data(self, fld, attrs):
+        if attrs.species.name in ['Cs-137', 'I-131a']:
+            if attrs.variable.unit == 'ng kg-1':
+                attrs.variable.unit = 'Bq m-3'
+                fld *= 1e-12
+            else:
+                raise NotImplementedError(
+                    f"species '{ncattrs_var['long_name']}': "
+                    f"unknown unit '{ncattrs_var['units']}'")
+
+    #SR_TMP>
+
+
+class FlexAttrsCollector:
+    """Collect attributes for a field from an open NetCDF file."""
+
+    def __init__(self, fi, field_specs):
+        """Create an instance of ``FlexAttrsCollector``.
+
+        Args:
+            fi (netCDF4.Dataset): An open FLEXPART NetCDF file.
+
+            field_specs (FlexFieldSpecs): Input field specifications.
+
+        """
+        self.fi = fi
+        self.field_specs = field_specs
 
         # Collect all global attributes
-        ncattrs_global = {
-            attr: self._fi.getncattr(attr) for attr in self._fi.ncattrs()
+        self.ncattrs_global = {
+            attr: self.fi.getncattr(attr) for attr in self.fi.ncattrs()
         }
 
         # Collect all variables attributes
-        ncattrs_vars = {}
-        for var in self._fi.variables.values():
-            ncattrs_vars[var.name] = {
+        self.ncattrs_vars = {}
+        for var in self.fi.variables.values():
+            self.ncattrs_vars[var.name] = {
                 attr: var.getncattr(attr) for attr in var.ncattrs()
             }
 
         # Select attributes of field variable
-        var_name = self._field_specs.var_name()
-        ncattrs_field = ncattrs_vars[var_name]
+        self.field_var_name = self.field_specs.var_name()
+        self.ncattrs_field = self.ncattrs_vars[self.field_var_name]
 
-        # Collect release point information
-        _ind = self._field_specs.release_point_ind
-        release = ReleasePoint.from_file(self._fi, _ind)
+    def run(self):
+        """Collect attributes."""
 
-        attrs_raw = {}
+        attrs_raw = {
+            'grid': self._run_grid(),
+            'release': self._run_release(),
+            'variable': self._run_variable(),
+            'species': self._run_species(),
+            'simulation': self._run_simulation(),
+        }
 
-        np_lat = ncattrs_vars['rotated_pole']['grid_north_pole_latitude']
-        np_lon = ncattrs_vars['rotated_pole']['grid_north_pole_longitude']
+        #ipython(globals(), locals(), 'FlexFile._collect_attrs')
 
-        attrs_raw['grid'] = {
+        return FlexAttrsCollection(**attrs_raw)
+
+    def _run_grid(self):
+
+        np_lat = self.ncattrs_vars['rotated_pole']['grid_north_pole_latitude']
+        np_lon = self.ncattrs_vars['rotated_pole']['grid_north_pole_longitude']
+
+        return {
             'north_pole_lat': np_lat,
             'north_pole_lon': np_lon,
         }
 
-        release_lat = np.mean([release.lllat, release.urlat])
-        release_lon = np.mean([release.lllon, release.urlon])
-        release_height = np.mean([release.zbot, release.ztop])
+    def _run_release(self):
+
+        # Collect release point information
+        _ind = self.field_specs.release_point_ind
+        release_point = ReleasePoint.from_file(self.fi, _ind)
+
+        release_lat = np.mean([release_point.lllat, release_point.urlat])
+        release_lon = np.mean([release_point.lllon, release_point.urlon])
+        release_height = np.mean([release_point.zbot, release_point.ztop])
 
         release_rate = 34722.2  #SR_HC
         release_mass = 1.0e9  #SR_HC
@@ -259,48 +302,70 @@ class FlexFileRotPole:
         release_rate_unit = 'Bq s-1'  #SR_HC
         release_mass_unit = 'Bq'  #SR_HC
 
-        attrs_raw['release'] = {
+        return {
             'site_lat': release_lat,
             'site_lon': release_lon,
-            'site_name': release.name,
+            'site_name': release_point.name,
             'height': (release_height, release_height_unit),
             'rate': (release_rate, release_rate_unit),
             'mass': (release_mass, release_mass_unit),
         }
 
-        attrs_raw['variable'] = {
-            'name': 'Concentration',  #SR_HC
-            'unit': ncattrs_field['units'],
-            'level_bot': (500, 'm AGL'),  #SR_HC
-            'level_top': (2000, 'm AGL'),  #SR_HC
-        }
-
-        if self._field_specs.field_type == '3D':
-            deposit_vel = ncattrs_vars[f'DD_{var_name}']['dryvel']
-            washout_coeff = ncattrs_vars[f'WD_{var_name}']['weta']
-            washout_exponent = ncattrs_vars[f'WD_{var_name}']['wetb']
-        else:
-            raise NotImplementedError(
-                f"deposit_vel etc. for '{self._field_specs.field_type}' field")
+    def _run_variable(self):
 
         #SR_HC<
-        if ncattrs_field['long_name'] == 'Cs-137':
-            half_life = 30.17  #SR_HC
-            half_life_unit = 'years'  #SR_HC
-        elif ncattrs_field['long_name'] == 'I-131a':
-            half_life = 8.02  #SR_HC
-            half_life_unit = 'days'  #SR_HC
+        _type = self.field_specs.field_type
+        try:
+            var_name = {
+                '3D': 'Concentration',  #SR_HC
+            }[_type]
+        except KeyError:
+            raise NotImplementedError(f"var_name of '{_type}' field")
+        #SR_HC>
+
+        level_unit = 'm AGL'  #SR_HC
+        _i = self.field_specs.level_ind
+        _var = self.fi.variables['level']
+        level_bot = 0.0 if _i == 0 else float(_var[_i - 1])
+        level_top = float(_var[_i])
+
+        return {
+            'name': var_name,
+            'unit': self.ncattrs_field['units'],
+            'level_bot': (level_bot, level_unit),
+            'level_top': (level_top, level_unit),
+        }
+
+    def _run_species(self):
+
+        #SR_HC<
+        _type = self.field_specs.field_type
+        _name = self.field_var_name
+        if _type == '3D':
+            deposit_vel = self.ncattrs_vars[f'DD_{_name}']['dryvel']
+            washout_coeff = self.ncattrs_vars[f'WD_{_name}']['weta']
+            washout_exponent = self.ncattrs_vars[f'WD_{_name}']['wetb']
         else:
-            raise NotImplementedError(
-                f"half life of '{ncattrs_field['long_name']}'")
+            raise NotImplementedError(f"deposit_vel of '{_type}' field")
+        #SR_HC>
+
+        #SR_HC<
+        _name = self.ncattrs_field['long_name']
+        try:
+            half_life, half_life_unit = {
+                'Cs-137': (30.17, 'years'),  #SR_HC
+                'I-131a': (8.02, 'days'),  #SR_HC
+            }[_name]
+        except KeyError:
+            raise NotImplementedError(f"half_life of '{_name}'")
         #SR_HC>
 
         deposit_vel_unit = 'm s-1'  #SR_HC
         sediment_vel_unit = 'm s-1'  #SR_HC
         washout_coeff_unit = 's-1'  #SR_HC
 
-        attrs_raw['species'] = {
-            'name': ncattrs_field['long_name'],
+        return {
+            'name': self.ncattrs_field['long_name'],
             'half_life': (half_life, half_life_unit),
             'deposit_vel': (deposit_vel, deposit_vel_unit),
             'sediment_vel': (0.0, sediment_vel_unit),
@@ -308,17 +373,19 @@ class FlexFileRotPole:
             'washout_exponent': washout_exponent,
         }
 
+    def _run_simulation(self):
+
         # Start and end timesteps of simulation
         ts_start = datetime.datetime(
             *time.strptime(
-                ncattrs_global['ibdate'] + ncattrs_global['ibtime'],
+                self.ncattrs_global['ibdate'] + self.ncattrs_global['ibtime'],
                 '%Y%m%d%H%M%S',
             )[:6],
             tzinfo=datetime.timezone.utc,
         )
         ts_end = datetime.datetime(
             *time.strptime(
-                ncattrs_global['iedate'] + ncattrs_global['ietime'],
+                self.ncattrs_global['iedate'] + self.ncattrs_global['ietime'],
                 '%Y%m%d%H%M%S',
             )[:6],
             tzinfo=datetime.timezone.utc,
@@ -326,24 +393,21 @@ class FlexFileRotPole:
 
         model_name = 'COSMO-1'  #SR_HC
 
-        attrs_raw['simulation'] = {
+        return {
             'model_name': model_name,
             'start': ts_start,
             'end': ts_end,
             'now': self._get_timestep(),
         }
 
-        #ipython(globals(), locals(), 'FlexFile._collect_attrs')
-
-        return FlexAttrsCollection(**attrs_raw)
-
     def _get_timestep(self, i=None):
+        """Get the current timestep, or a specific one by index."""
 
         if i is None:
             # Default to timestep of current field
-            i = self._field_specs.time_ind
+            i = self.field_specs.time_ind
 
-        var = self._fi.variables['time']
+        var = self.fi.variables['time']
 
         # Obtain start from time unit
         rx = re.compile(
@@ -368,19 +432,6 @@ class FlexFileRotPole:
         now = start + delta
 
         return now
-
-    #SR_TMP<
-    def _fix_nc_data(self, fld, attrs):
-        if attrs.species.name in ['Cs-137', 'I-131a']:
-            if attrs.variable.unit == 'ng kg-1':
-                attrs.variable.unit = 'Bq m-3'
-                fld *= 1e-12
-            else:
-                raise NotImplementedError(
-                    f"species '{ncattrs_var['long_name']}': "
-                    f"unknown unit '{ncattrs_var['units']}'")
-
-    #SR_TMP>
 
 
 class ReleasePoint:
