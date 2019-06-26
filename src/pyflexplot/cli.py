@@ -106,43 +106,53 @@ def common_options(f):
 @click.option(
     '--time-ind', 'time_inds',
     help="Index of time (zero-based).",
-    type=int, default=0, multiple=True)
+    type=int, default=[0], multiple=True)
 @click.option(
-    '--age-class-ind', 'age_ind',
+    '--age-class-ind', 'age_inds',
     help="Index of age class (zero-based).",
-    type=int, default=0)
+    type=int, default=[0], multiple=True)
 @click.option(
-    '--release-point-ind', 'release_point_ind',
+    '--release-point-ind', 'release_point_inds',
     help="Index of release point (zero-based).",
-    type=int, default=0)
+    type=int, default=[0], multiple=True)
 @click.option(
     '--level-ind', 'level_inds',
     help="Index of vertical level (zero-based, bottom-up).",
-    type=int, default=0, multiple=True)
+    type=int, default=[0], multiple=True)
 @click.option(
-    '--species-id', 'species_id',
+    '--species-id', 'species_ids',
     help="Species id (default: all).",
-    type=int, default=0)
+    type=int, default=[0], multiple=True)
 @click.option(
-    '--source-ind', 'source_ind',
+    '--source-ind', 'source_inds',
     help="Point source index (zero-based).",
-    type=int, default=0)
+    type=int, default=[0], multiple=True)
 @click.pass_context
 # yapf: enable
-def concentration(ctx, in_file_path, out_file_path_fmt, time_inds, level_inds,
-        **kwargs):
+def concentration(
+        ctx, in_file_path, out_file_path_fmt, time_inds, age_inds,
+        release_point_inds, level_inds, species_ids, source_inds):
 
-    # Read input data
-    kwargs['field_type'] = '3D'
+    # Determine fields specifications (one for each eventual plot)
     fields_specs = [
         FlexFieldSpecs(
+            field_type='3d',
             time_ind=time_ind,
+            age_ind=age_ind,
+            release_point_ind=release_point_ind,
             level_ind=level_ind,
-            **kwargs,
+            species_id=species_id,
+            source_ind=source_ind,
         )
         for time_ind in time_inds
+        for age_ind in age_inds
+        for release_point_ind in release_point_inds
         for level_ind in level_inds
+        for species_id in species_ids
+        for source_ind in source_inds
     ]
+
+    # Read fields
     flex_data_lst = FlexFileRotPole(in_file_path).read(fields_specs)
 
     # Create plot
