@@ -89,6 +89,11 @@ class FlexFieldSpecs:
         self.source_ind = int(source_ind)
         self.field_type = field_type.upper()
 
+    def __iter__(self):
+        for key, val in self.__dict__.items():
+            if not key.startswith('_'):
+                yield key, val
+
     def var_name(self):
         """Derive variable name from specifications."""
         var_name_base = f'spec{self.species_id:03d}'
@@ -244,13 +249,20 @@ class FlexFileRotPole:
         release_lon = np.mean([release.lllon, release.urlon])
         release_height = np.mean([release.zbot, release.ztop])
 
+        release_rate = 34722.2  #SR_HC
+        release_mass = 1.0e9  #SR_HC
+
+        release_height_unit = 'm AGL'  #SR_HC
+        release_rate_unit = 'Bq s-1'  #SR_HC
+        release_mass_unit = 'Bq'  #SR_HC
+
         raw['release'] = {}
         raw['release']['site_lat'] = release_lat
         raw['release']['site_lon'] = release_lon
         raw['release']['site_name'] = release.name
-        raw['release']['height'] = (release_height, 'm AGL') #SR_HC
-        raw['release']['rate'] = (34722.2, 'Bq s-1')  #SR_HC
-        raw['release']['mass'] = (1e9, 'Bq')  #SR_HC
+        raw['release']['height'] = (release_height, release_height_unit)
+        raw['release']['rate'] = (release_rate, release_rate_unit)
+        raw['release']['mass'] = (release_mass, release_mass_unit)
 
         raw['variable'] = {}
         raw['variable']['name'] = 'Concentration'  #SR_HC
@@ -258,13 +270,24 @@ class FlexFileRotPole:
         raw['variable']['level_bot'] = (500, 'm AGL')  #SR_HC
         raw['variable']['level_top'] = (2000, 'm AGL')  #SR_HC
 
+        if self._field_specs.field_type == '3D':
+            deposit_vel = ncattrs_vars[f'DD_{var_name}']['dryvel']
+            washout_coeff = ncattrs_vars[f'WD_{var_name}']['weta']
+            washout_exponent = ncattrs_vars[f'WD_{var_name}']['weta']
+
+        half_life = 30.0  #SR_HC
+        half_life_unit = 'years'  #SR_HC
+        deposit_vel_unit = 'm s-1'  #SR_HC
+        sediment_vel_unit = 'm s-1'  #SR_HC
+        washout_coeff_unit = 's-1'  #SR_HC
+
         raw['species'] = {}
         raw['species']['name'] = ncattrs_field['long_name']
-        raw['species']['half_life'] = (30.0, 'years')  #SR_HC
-        raw['species']['deposit_vel'] = (1.5e-3, 'm s-1')  #SR_HC
-        raw['species']['sediment_vel'] = (0.0, 'm s-1')  #SR_HC
-        raw['species']['washout_coeff'] = (7.0e-5, 's-1')  #SR_HC
-        raw['species']['washout_exponent'] = 0.8  #SR_HC
+        raw['species']['half_life'] = (half_life, half_life_unit)
+        raw['species']['deposit_vel'] = (deposit_vel, deposit_vel_unit)
+        raw['species']['sediment_vel'] = (0.0, sediment_vel_unit)
+        raw['species']['washout_coeff'] = (washout_coeff, washout_coeff_unit)
+        raw['species']['washout_exponent'] = washout_exponent
 
 
         # Start and end timesteps of simulation
