@@ -120,8 +120,8 @@ class Degrees:
     def dms(self):
         """Return full degrees, minutes, and seconds (int)."""
         degs = self._frac
-        mins = degs % 1*60
-        secs = mins % 1*60
+        mins = degs%1*60
+        secs = mins%1*60
         return int(degs), int(mins), int(secs)
 
     def degs(self):

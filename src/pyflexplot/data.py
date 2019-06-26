@@ -218,9 +218,7 @@ class FlexAttrsVariable(FlexAttrsBase):
 class FlexAttrsRelease(FlexAttrsBase):
     """Release attributes."""
 
-    def __init__(
-            self, *, site_lat, site_lon, site_name, height, rate,
-            mass):
+    def __init__(self, *, site_lat, site_lon, site_name, height, rate, mass):
         """Initialize an instance of ``FlexAttrsRelease``.
 
         Kwargs:

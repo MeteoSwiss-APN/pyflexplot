@@ -220,7 +220,8 @@ class FlexFileRotPole:
 
         # Collect all global attributes
         ncattrs_global = {
-                attr: self._fi.getncattr(attr) for attr in self._fi.ncattrs()}
+            attr: self._fi.getncattr(attr) for attr in self._fi.ncattrs()
+        }
 
         # Collect all variables attributes
         ncattrs_vars = {}
@@ -278,9 +279,22 @@ class FlexFileRotPole:
             deposit_vel = ncattrs_vars[f'DD_{var_name}']['dryvel']
             washout_coeff = ncattrs_vars[f'WD_{var_name}']['weta']
             washout_exponent = ncattrs_vars[f'WD_{var_name}']['wetb']
+        else:
+            raise NotImplementedError(
+                f"deposit_vel etc. for '{self._field_specs.field_type}' field")
 
-        half_life = 30.0  #SR_HC
-        half_life_unit = 'years'  #SR_HC
+        #SR_HC<
+        if ncattrs_field['long_name'] == 'Cs-137':
+            half_life = 30.17  #SR_HC
+            half_life_unit = 'years'  #SR_HC
+        elif ncattrs_field['long_name'] == 'I-131a':
+            half_life = 8.02  #SR_HC
+            half_life_unit = 'days'  #SR_HC
+        else:
+            raise NotImplementedError(
+                f"half life of '{ncattrs_field['long_name']}'")
+        #SR_HC>
+
         deposit_vel_unit = 'm s-1'  #SR_HC
         sediment_vel_unit = 'm s-1'  #SR_HC
         washout_coeff_unit = 's-1'  #SR_HC
@@ -293,7 +307,6 @@ class FlexFileRotPole:
             'washout_coeff': (washout_coeff, washout_coeff_unit),
             'washout_exponent': washout_exponent,
         }
-
 
         # Start and end timesteps of simulation
         ts_start = datetime.datetime(
