@@ -19,7 +19,6 @@ requirements = [
     'netCDF4',
     'numpy',
     'pillow',
-    'pytz',
     'scipy',
 ]
 setup_requirements = [

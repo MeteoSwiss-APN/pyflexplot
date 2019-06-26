@@ -219,7 +219,7 @@ class FlexAttrsRelease(FlexAttrsBase):
     """Release attributes."""
 
     def __init__(
-            self, *, site_lat, site_lon, site_name, site_tz_name, height, rate,
+            self, *, site_lat, site_lon, site_name, height, rate,
             mass):
         """Initialize an instance of ``FlexAttrsRelease``.
 
@@ -229,8 +229,6 @@ class FlexAttrsRelease(FlexAttrsBase):
             site_lon (float): Longitude of release site.
 
             site_name (str): Name of release site.
-
-            site_tz_name (str): Name of time zone of release site.
 
             height ((float, str)): Release height (value and unit).
 
@@ -243,7 +241,6 @@ class FlexAttrsRelease(FlexAttrsBase):
         self.set('site_lat', site_lat, float)
         self.set('site_lon', site_lon, float)
         self.set('site_name', site_name, str)
-        self.set('site_tz_name', site_tz_name, str)
         self.set(['height', '~_unit'], height, [float, str])
         self.set(['rate', '~_unit'], rate, [float, str])
         self.set(['mass', '~_unit'], mass, [float, str])

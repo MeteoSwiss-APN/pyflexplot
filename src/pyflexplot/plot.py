@@ -9,7 +9,6 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import os.path
-import pytz
 import re
 
 from copy import copy
@@ -381,10 +380,11 @@ class FlexPlotConcentration:
         s = f"Release site: {self.attrs.release.site_name}"
         box.text('bl', s, size='large')
 
-        # Bottom right: time zone
-        tz = pytz.timezone(self.attrs.release.site_tz_name)
-        offset_str = self.attrs.simulation.now.astimezone(tz).strftime('%z')
-        s = f"T$_{0}$ {offset_str[0:1]} {offset_str[1:3]}:{offset_str[3:5]}"
+        # Bottom right: time into simulation
+        delta = self.attrs.simulation.now - self.attrs.simulation.start
+        hours = int(delta.total_seconds()/3600)
+        mins = int((delta.total_seconds()/3600)%1*60)
+        s = f"T$_{0}$ + {hours:02d}:{mins:02d} h"
         box.text('br', s, size='large')
 
     def fill_box_right_top(self):
@@ -522,11 +522,11 @@ class FlexPlotConcentration:
         lat = Degrees(self.attrs.release.site_lat)
         lat_fmtd = (
             f"{lat.degs()}$^\circ\,${lat.mins()}'$\,$N"
-            f" ({lat.frac()}$^\circ\,$N)")
+            f" ({lat.frac():.2f}$^\circ\,$N)")
         lon = Degrees(self.attrs.release.site_lon)
         lon_fmtd = (
             f"{lon.degs()}$^\circ\,${lon.mins()}'$\,$E"
-            f" ({lon.frac()}$^\circ\,$E)")
+            f" ({lon.frac():.2f}$^\circ\,$E)")
 
         info_blocks = dedent(
             f"""\

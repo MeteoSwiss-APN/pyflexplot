@@ -224,23 +224,27 @@ class FlexFileRotPole:
         ncattrs_field = ncattrs_vars[var_name]
 
         # Collect release point information
-        release_point = ReleasePoint.from_file(
-            self._fi, self._field_specs.release_point_ind)
+        _ind = self._field_specs.release_point_ind
+        release = ReleasePoint.from_file(self._fi, _ind)
 
         raw = {}
 
+        np_lat = ncattrs_vars['rotated_pole']['grid_north_pole_latitude']
+        np_lon = ncattrs_vars['rotated_pole']['grid_north_pole_longitude']
+
         raw['grid'] = {}
-        _lat = ncattrs_vars['rotated_pole']['grid_north_pole_latitude']
-        _lon = ncattrs_vars['rotated_pole']['grid_north_pole_longitude']
-        raw['grid']['north_pole_lat'] = _lat
-        raw['grid']['north_pole_lon'] = _lon
+        raw['grid']['north_pole_lat'] = np_lat
+        raw['grid']['north_pole_lon'] = np_lon
+
+        release_lat = np.mean([release.lllat, release.urlat])
+        release_lon = np.mean([release.lllon, release.urlon])
+        release_height = np.mean([release.zbot, release.ztop])
 
         raw['release'] = {}
-        raw['release']['site_lat'] = 47.37  #SR_HC
-        raw['release']['site_lon'] = 7.97  #SR_HC
-        raw['release']['site_name'] = 'Goesgen'  #SR_HC
-        raw['release']['site_tz_name'] = 'Europe/Zurich'  #SR_HC
-        raw['release']['height'] = (100, 'm AGL')  #SR_HC
+        raw['release']['site_lat'] = release_lat
+        raw['release']['site_lon'] = release_lon
+        raw['release']['site_name'] = release.name
+        raw['release']['height'] = (release_height, 'm AGL') #SR_HC
         raw['release']['rate'] = (34722.2, 'Bq s-1')  #SR_HC
         raw['release']['mass'] = (1e9, 'Bq')  #SR_HC
 
@@ -257,6 +261,8 @@ class FlexFileRotPole:
         raw['species']['sediment_vel'] = (0.0, 'm s-1')  #SR_HC
         raw['species']['washout_coeff'] = (7.0e-5, 's-1')  #SR_HC
         raw['species']['washout_exponent'] = 0.8  #SR_HC
+
+        ts_now = self._get_timestep()
 
         #SR_HC<
         ts_start = datetime.datetime(
@@ -275,14 +281,6 @@ class FlexFileRotPole:
             minute=0,
             tzinfo=datetime.timezone.utc,
         )
-        ts_now = datetime.datetime(
-            year=2019,
-            month=5,
-            day=28,
-            hour=9,
-            minute=0,
-            tzinfo=datetime.timezone.utc,
-        )
         #SR_HC>
 
         raw['simulation'] = {}
@@ -291,9 +289,41 @@ class FlexFileRotPole:
         raw['simulation']['end'] = ts_end
         raw['simulation']['now'] = ts_now
 
-        ipython(globals(), locals(), 'FlexFile._collect_attrs')
+        #ipython(globals(), locals(), 'FlexFile._collect_attrs')
 
         return FlexAttrsCollection(**raw)
+
+    def _get_timestep(self, i=None):
+
+        if i is None:
+            # Default to timestep of current field
+            i = self._field_specs.time_ind
+
+        var = self._fi.variables['time']
+
+        # Obtain start from time unit
+        rx = re.compile(
+            r'seconds since (?P<yyyy>[12][0-9][0-9][0-9])-(?P<mm>[01][0-9])-'
+            r'(?P<dd>[0-3][0-9]) (?P<HH>[0-2][0-9]):(?P<MM>[0-6][0-9])')
+        match = rx.match(var.units)
+        if not match:
+            raise Exception(f"cannot extract start from units '{var.units}'")
+        start = datetime.datetime(
+            int(match['yyyy']),
+            int(match['mm']),
+            int(match['dd']),
+            int(match['HH']),
+            int(match['MM']),
+            tzinfo=datetime.timezone.utc,
+        )
+
+        # Determine time since start
+        delta = datetime.timedelta(seconds=int(var[i]))
+
+        # Determine current timestep
+        now = start + delta
+
+        return now
 
     #SR_TMP<
     def _fix_nc_data(self, fld, attrs):
