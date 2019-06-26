@@ -391,10 +391,14 @@ class FlexPlotConcentration:
         """Fill the top box to the right of the map plot."""
         box = self.axs_box[1]
 
-        #SR_TMP<
-        fld_max = np.nanmax(self.fld)
-        fld_max_fmtd = f"Max.: {fld_max:.2E} {self.attrs.variable.format_unit()}"
-        #SR_TMP>
+        # Field maximum
+        fld_max_fmtd = 'Max.: '
+        if np.isnan(self.fld).all():
+            fld_max_fmtd += 'NaN'
+        else:
+            fld_max_fmtd += (
+                f'{np.nanmax(self.fld):.2E}'
+                f' {self.attrs.variable.format_unit()}')
 
         # Add box title
         s = f"{self.attrs.variable.format_name()}"
@@ -813,6 +817,9 @@ class AxesMapRotPole(AxesMap):
             Plot handle.
 
         """
+        if np.isnan(fld).all():
+            log.warning('skip contour plot (all-nan field)')
+            return
         handle = self.ax.contourf(
             self.rlon,
             self.rlat,
@@ -843,6 +850,9 @@ class AxesMapRotPole(AxesMap):
 
     def mark_max(self, fld, marker, **kwargs):
         """Mark the location of the field maximum."""
+        if np.isnan(fld).all():
+            log.warning('skip maximum marker (all-nan field)')
+            return
         jmax, imax = np.unravel_index(np.nanargmax(fld), fld.shape)
         rlon, rlat = self.rlon[imax], self.rlat[jmax]
         handle = self.marker_rot(rlon, rlat, marker, **kwargs)
