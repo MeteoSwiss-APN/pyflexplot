@@ -8,6 +8,7 @@ import netCDF4 as nc4
 import numpy as np
 import os
 import re
+import time
 
 from collections import namedtuple
 from copy import copy
@@ -236,14 +237,15 @@ class FlexFileRotPole:
         _ind = self._field_specs.release_point_ind
         release = ReleasePoint.from_file(self._fi, _ind)
 
-        raw = {}
+        attrs_raw = {}
 
         np_lat = ncattrs_vars['rotated_pole']['grid_north_pole_latitude']
         np_lon = ncattrs_vars['rotated_pole']['grid_north_pole_longitude']
 
-        raw['grid'] = {}
-        raw['grid']['north_pole_lat'] = np_lat
-        raw['grid']['north_pole_lon'] = np_lon
+        attrs_raw['grid'] = {
+            'north_pole_lat': np_lat,
+            'north_pole_lon': np_lon,
+        }
 
         release_lat = np.mean([release.lllat, release.urlat])
         release_lon = np.mean([release.lllon, release.urlon])
@@ -256,24 +258,26 @@ class FlexFileRotPole:
         release_rate_unit = 'Bq s-1'  #SR_HC
         release_mass_unit = 'Bq'  #SR_HC
 
-        raw['release'] = {}
-        raw['release']['site_lat'] = release_lat
-        raw['release']['site_lon'] = release_lon
-        raw['release']['site_name'] = release.name
-        raw['release']['height'] = (release_height, release_height_unit)
-        raw['release']['rate'] = (release_rate, release_rate_unit)
-        raw['release']['mass'] = (release_mass, release_mass_unit)
+        attrs_raw['release'] = {
+            'site_lat': release_lat,
+            'site_lon': release_lon,
+            'site_name': release.name,
+            'height': (release_height, release_height_unit),
+            'rate': (release_rate, release_rate_unit),
+            'mass': (release_mass, release_mass_unit),
+        }
 
-        raw['variable'] = {}
-        raw['variable']['name'] = 'Concentration'  #SR_HC
-        raw['variable']['unit'] = ncattrs_field['units']
-        raw['variable']['level_bot'] = (500, 'm AGL')  #SR_HC
-        raw['variable']['level_top'] = (2000, 'm AGL')  #SR_HC
+        attrs_raw['variable'] = {
+            'name': 'Concentration',  #SR_HC
+            'unit': ncattrs_field['units'],
+            'level_bot': (500, 'm AGL'),  #SR_HC
+            'level_top': (2000, 'm AGL'),  #SR_HC
+        }
 
         if self._field_specs.field_type == '3D':
             deposit_vel = ncattrs_vars[f'DD_{var_name}']['dryvel']
             washout_coeff = ncattrs_vars[f'WD_{var_name}']['weta']
-            washout_exponent = ncattrs_vars[f'WD_{var_name}']['weta']
+            washout_exponent = ncattrs_vars[f'WD_{var_name}']['wetb']
 
         half_life = 30.0  #SR_HC
         half_life_unit = 'years'  #SR_HC
@@ -281,30 +285,44 @@ class FlexFileRotPole:
         sediment_vel_unit = 'm s-1'  #SR_HC
         washout_coeff_unit = 's-1'  #SR_HC
 
-        raw['species'] = {}
-        raw['species']['name'] = ncattrs_field['long_name']
-        raw['species']['half_life'] = (half_life, half_life_unit)
-        raw['species']['deposit_vel'] = (deposit_vel, deposit_vel_unit)
-        raw['species']['sediment_vel'] = (0.0, sediment_vel_unit)
-        raw['species']['washout_coeff'] = (washout_coeff, washout_coeff_unit)
-        raw['species']['washout_exponent'] = washout_exponent
+        attrs_raw['species'] = {
+            'name': ncattrs_field['long_name'],
+            'half_life': (half_life, half_life_unit),
+            'deposit_vel': (deposit_vel, deposit_vel_unit),
+            'sediment_vel': (0.0, sediment_vel_unit),
+            'washout_coeff': (washout_coeff, washout_coeff_unit),
+            'washout_exponent': washout_exponent,
+        }
 
 
         # Start and end timesteps of simulation
-        ts_start_str = ncattrs_global['ibdate'] + ncattrs_global['ibtime']
-        ts_start = datetime.datetime.strptime(ts_start_str, '%Y%m%d%H%M%S')
-        ts_end_str = ncattrs_global['iedate'] + ncattrs_global['ietime']
-        ts_end = datetime.datetime.strptime(ts_end_str, '%Y%m%d%H%M%S')
+        ts_start = datetime.datetime(
+            *time.strptime(
+                ncattrs_global['ibdate'] + ncattrs_global['ibtime'],
+                '%Y%m%d%H%M%S',
+            )[:6],
+            tzinfo=datetime.timezone.utc,
+        )
+        ts_end = datetime.datetime(
+            *time.strptime(
+                ncattrs_global['iedate'] + ncattrs_global['ietime'],
+                '%Y%m%d%H%M%S',
+            )[:6],
+            tzinfo=datetime.timezone.utc,
+        )
 
-        raw['simulation'] = {}
-        raw['simulation']['model_name'] = 'COSMO-1'  #SR_HC
-        raw['simulation']['start'] = ts_start
-        raw['simulation']['end'] = ts_end
-        raw['simulation']['now'] = self._get_timestep()
+        model_name = 'COSMO-1'  #SR_HC
 
-        ipython(globals(), locals(), 'FlexFile._collect_attrs')
+        attrs_raw['simulation'] = {
+            'model_name': model_name,
+            'start': ts_start,
+            'end': ts_end,
+            'now': self._get_timestep(),
+        }
 
-        return FlexAttrsCollection(**raw)
+        #ipython(globals(), locals(), 'FlexFile._collect_attrs')
+
+        return FlexAttrsCollection(**attrs_raw)
 
     def _get_timestep(self, i=None):
 

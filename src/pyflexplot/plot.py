@@ -544,7 +544,7 @@ class FlexPlotConcentration:
             Deposit. Vel.:\t{self.attrs.species.format_deposit_vel()}
             Sediment. Vel.:\t{self.attrs.species.format_sediment_vel()}
             Washout Coeff.:\t{self.attrs.species.format_washout_coeff()}
-            Washout Exponent:\t{self.attrs.species.washout_exponent}
+            Washout Exponent:\t{self.attrs.species.washout_exponent:g}
             """)
 
         # Add lines bottom-up (to take advantage of baseline alignment)
