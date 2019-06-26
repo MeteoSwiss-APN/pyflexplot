@@ -276,6 +276,7 @@ class FlexAttrsCollector:
         return FlexAttrsCollection(**attrs_raw)
 
     def _run_grid(self):
+        """Collect grid attributes."""
 
         np_lat = self.ncattrs_vars['rotated_pole']['grid_north_pole_latitude']
         np_lon = self.ncattrs_vars['rotated_pole']['grid_north_pole_longitude']
@@ -286,6 +287,7 @@ class FlexAttrsCollector:
         }
 
     def _run_release(self):
+        """Collect release point attributes."""
 
         # Collect release point information
         _ind = self.field_specs.release_point_ind
@@ -312,6 +314,7 @@ class FlexAttrsCollector:
         }
 
     def _run_variable(self):
+        """Collect variable attributes."""
 
         #SR_HC<
         _type = self.field_specs.field_type
@@ -337,6 +340,7 @@ class FlexAttrsCollector:
         }
 
     def _run_species(self):
+        """Collect species attributes."""
 
         #SR_HC<
         _type = self.field_specs.field_type
@@ -374,6 +378,7 @@ class FlexAttrsCollector:
         }
 
     def _run_simulation(self):
+        """Collect simulation attributes."""
 
         # Start and end timesteps of simulation
         ts_start = datetime.datetime(
