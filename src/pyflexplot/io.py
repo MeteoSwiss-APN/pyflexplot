@@ -212,6 +212,10 @@ class FlexFileRotPole:
     def _collect_attrs(self):
         """Collect attributes."""
 
+        # Collect all global attributes
+        ncattrs_global = {
+                attr: self._fi.getncattr(attr) for attr in self._fi.ncattrs()}
+
         # Collect all variables attributes
         ncattrs_vars = {}
         for var in self._fi.variables.values():
@@ -262,34 +266,20 @@ class FlexFileRotPole:
         raw['species']['washout_coeff'] = (7.0e-5, 's-1')  #SR_HC
         raw['species']['washout_exponent'] = 0.8  #SR_HC
 
-        ts_now = self._get_timestep()
 
-        #SR_HC<
-        ts_start = datetime.datetime(
-            year=2019,
-            month=5,
-            day=28,
-            hour=0,
-            minute=0,
-            tzinfo=datetime.timezone.utc,
-        )
-        ts_end = datetime.datetime(
-            year=2019,
-            month=5,
-            day=28,
-            hour=8,
-            minute=0,
-            tzinfo=datetime.timezone.utc,
-        )
-        #SR_HC>
+        # Start and end timesteps of simulation
+        ts_start_str = ncattrs_global['ibdate'] + ncattrs_global['ibtime']
+        ts_start = datetime.datetime.strptime(ts_start_str, '%Y%m%d%H%M%S')
+        ts_end_str = ncattrs_global['iedate'] + ncattrs_global['ietime']
+        ts_end = datetime.datetime.strptime(ts_end_str, '%Y%m%d%H%M%S')
 
         raw['simulation'] = {}
         raw['simulation']['model_name'] = 'COSMO-1'  #SR_HC
         raw['simulation']['start'] = ts_start
         raw['simulation']['end'] = ts_end
-        raw['simulation']['now'] = ts_now
+        raw['simulation']['now'] = self._get_timestep()
 
-        #ipython(globals(), locals(), 'FlexFile._collect_attrs')
+        ipython(globals(), locals(), 'FlexFile._collect_attrs')
 
         return FlexAttrsCollection(**raw)
 
