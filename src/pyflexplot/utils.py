@@ -4,6 +4,8 @@ Utils for the command line tool.
 """
 import logging
 
+from .utils_dev import ipython  #SR_DEV
+
 
 class MaxIterationError(Exception):
     """Maximum number of iterations of a loop exceeded."""
@@ -135,3 +137,37 @@ class Degrees:
     def secs(self):
         """Return full seconds (int)."""
         return self.dms()[2]
+
+
+def check_array_indices(shape, inds):
+    """Check that slicing indices are consistent with array shape."""
+
+    def inds2str(inds):
+        """Convert indices to string, turning slices into '::' etc."""
+        strs = []
+        for ind in inds:
+            if isinstance(ind, slice):
+                strs.append(
+                    f"{'' if ind.start is None else ind.start}:"
+                    f"{'' if ind.stop is None else ind.stop}:"
+                    f"{'' if ind.step is None else ind.step}")
+            else:
+                strs.append(str(ind))
+        return f"[{', '.join(strs)}]"
+
+    if len(inds) > len(shape):
+        inds_str = inds2str(inds)
+        raise IndexError(f"too many indices for shape {shape}: {inds_str}")
+
+    for j, (n, i) in enumerate(zip(shape, inds)):
+        if isinstance(i, slice):
+            continue
+        elif i >= n:
+            e = f'{i} >= {n}'
+        elif i < -n:
+            e = f'{i} < -{n}'
+        else:
+            continue
+        inds_str = inds2str(inds)
+        raise IndexError(
+            f"index {j} of {inds_str} out of bounds for shape {shape}: {e}")

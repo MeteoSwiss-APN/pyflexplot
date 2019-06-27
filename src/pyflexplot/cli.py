@@ -74,7 +74,7 @@ def main(ctx, **kwargs):
 
 
 def common_options_global(f):
-    """Options common to all commands in the group.
+    """Common options of all commands in the group.
 
     Defining the common options this way instead of on the group
     enables putting them after the command instead of before it.
@@ -102,43 +102,64 @@ def common_options_global(f):
     return functools.reduce(lambda x, opt: opt(x), options, f)
 
 
+def common_options_dispersion_field(f):
+    """Common options of dispersion plots (field selection)."""
+    # yapf: disable
+    options = [
+        click.option(
+            '--time-ind', 'time_inds',
+            help="Index of time (zero-based). Format key: '{time_ind}'.",
+            type=int, default=[0], multiple=True),
+        click.option(
+            '--age-class-ind', 'age_inds',
+            help=("Index of age class (zero-based). Format key: "
+                "'{age_class_ind}'."),
+            type=int, default=[0], multiple=True),
+        click.option(
+            '--release-point-ind', 'rls_pt_inds',
+            help=("Index of release point (zero-based). Format key: "
+                "'{rls_pt_ind}'."),
+            type=int, default=[0], multiple=True),
+        click.option(
+            '--level-ind', 'level_inds',
+            help=(
+                "Index of vertical level (zero-based, bottom-up). "
+                "Format key: '{level_ind}'."),
+            type=int, default=[0], multiple=True),
+        click.option(
+            '--species-id', 'species_ids',
+            help="Species id (default: all). Format key: '{species_id}'.",
+            type=int, default=[0], multiple=True),
+        click.option(
+            '--source-ind', 'source_inds',
+            help=("Point source index (zero-based). Format key: "
+                "'{source_ind}'."),
+            type=int, default=[0], multiple=True),
+    ]
+    # yapf: enable
+    return functools.reduce(lambda x, opt: opt(x), options, f)
+
+
+def common_options_dispersion_various(f):
+    """Common options of dispersion plots (various)."""
+    # yapf: disable
+    options = [
+        click.option(
+            '--integrate',
+            help=("Integrate field over time. If set, '-int' is appended to "
+                "variable name (format key: '{variable}')."),
+            is_flag=True, default=False),
+    ]
+    # yapf: enable
+    return functools.reduce(lambda x, opt: opt(x), options, f)
+
+
 # yapf: disable
 @main.command()
 #
 @common_options_global
-#
-@click.option(
-    '--time-ind', 'time_inds',
-    help="Index of time (zero-based). Format key: '{time_ind}'.",
-    type=int, default=[0], multiple=True)
-@click.option(
-    '--age-class-ind', 'age_inds',
-    help="Index of age class (zero-based). Format key: '{age_class_ind}'.",
-    type=int, default=[0], multiple=True)
-@click.option(
-    '--release-point-ind', 'rls_pt_inds',
-    help="Index of release point (zero-based). Format key: '{rls_pt_ind}'.",
-    type=int, default=[0], multiple=True)
-@click.option(
-    '--level-ind', 'level_inds',
-    help=(
-        "Index of vertical level (zero-based, bottom-up). "
-        "Format key: '{level_ind}'."),
-    type=int, default=[0], multiple=True)
-@click.option(
-    '--species-id', 'species_ids',
-    help="Species id (default: all). Format key: '{species_id}'.",
-    type=int, default=[0], multiple=True)
-@click.option(
-    '--source-ind', 'source_inds',
-    help="Point source index (zero-based). Format key: '{source_ind}'.",
-    type=int, default=[0], multiple=True)
-#
-@click.option(
-    '--integrate',
-    help=("Integrate field over time. If set, '-int' is appended to variable "
-        "name (format key: '{variable}')."),
-    is_flag=True, default=False)
+@common_options_dispersion_field
+@common_options_dispersion_various
 #
 @click.pass_context
 # yapf: enable
@@ -148,26 +169,17 @@ def concentration(
 
     # Determine fields specifications (one for each eventual plot)
     # yapf: disable
-    fields_specs = [
-        FlexFieldSpecs(
-            #
-            field_type  = '3d',
-            integrate   = integrate,
-            #
-            time_ind    = time_ind,
-            age_ind     = age_ind,
-            rls_pt_ind  = rls_pt_ind,
-            level_ind   = level_ind,
-            species_id  = species_id,
-            source_ind  = source_ind,
-        )
-        for time_ind    in time_inds
-        for age_ind     in age_inds
-        for rls_pt_ind  in rls_pt_inds
-        for level_ind   in level_inds
-        for species_id  in species_ids
-        for source_ind  in source_inds
-    ]
+    fields_specs = FlexFieldSpecs.many(
+        field_type  = '3D',
+        integrate   = integrate,
+        #
+        time_inds   = time_inds,
+        age_inds    = age_inds,
+        rls_pt_inds = rls_pt_inds,
+        level_inds  = level_inds,
+        species_ids = species_ids,
+        source_inds = source_inds,
+    )
     #yapf: enable
 
     # Read fields
@@ -177,7 +189,10 @@ def concentration(
     if not ctx.obj['noplot']:
         # Note: FlexPlotter.run yields the output file paths on-the-go
         f = functools.partial(
-            FlexPlotter('concentration').run, flex_data_lst, out_file_path_fmt)
+            FlexPlotter.concentration,
+            flex_data_lst,
+            out_file_path_fmt,
+        )
         for i, out_file_path in enumerate(f()):
             if ctx.obj['open_cmd'] and i == 0:
                 # Open the first file as soon as it's available

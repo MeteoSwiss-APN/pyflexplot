@@ -3,6 +3,7 @@
 Input/output.
 """
 import datetime
+import itertools
 import logging as log
 import netCDF4 as nc4
 import numpy as np
@@ -14,9 +15,9 @@ from collections import namedtuple
 from copy import copy
 from pprint import pformat
 
-#from .data import FlexData
 from .data import FlexAttrsCollection
 from .data import FlexDataRotPole
+from .utils import check_array_indices
 
 from .utils_dev import ipython  #SR_DEV
 
@@ -91,6 +92,64 @@ class FlexFieldSpecs:
         self.source_ind = int(source_ind)
         self.field_type = field_type.upper()
         self.integrate = bool(integrate)
+
+    @classmethod
+    def many(cls, **kwargs):
+        """Create many instances of ``FlexFieldSpecs``.
+
+        Each of the arguments of ``__init__`` can be passed by the
+        original name with one value (e.g., ``time_ind=1``) or
+        pluralized with multiple values (e.g., ``time_inds=[1, 2]``).
+
+        One ``FlexFieldSpecs`` instance is created for each combination
+        of all input arguments.
+
+        """
+        keys_singular = [
+            'time_ind',
+            'age_ind',
+            'rls_pt_ind',
+            'level_ind',
+            'species_id',
+            'source_ind',
+            'field_type',
+            'integrate',
+        ]
+
+        vals_plural = []
+
+        for key_singular in keys_singular:
+            key_plural = f'{key_singular}s'
+
+            if key_plural in kwargs:
+                # Passed as plural
+                if key_singular in kwargs:
+                    # Error: passed as both plural and sigular
+                    raise ValueError(
+                        f"argument conflict: '{key_singular}', '{key_plural}'")
+                vals_plural.append([v for v in kwargs.pop(key_plural)])
+
+            elif key_singular in kwargs:
+                # Passed as sigular
+                vals_plural.append([kwargs.pop(key_singular)])
+
+            else:
+                # Not passed at all
+                raise ValueError(
+                    f"missing argument: '{key_singular}' or '{key_plural}'")
+
+        if kwargs:
+            # Passed too many arguments
+            raise ValueError(
+                f"{len(kwargs)} unexpected arguments: {sorted(kwargs)}")
+
+        # Create one specs per parameter combination
+        specs_lst = []
+        for vals in itertools.product(*vals_plural):
+            kwargs_i = {k: v for k, v in zip(keys_singular, vals)}
+            specs_lst.append(cls(**kwargs_i))
+
+        return specs_lst
 
     def __repr__(self):
         return pformat(dict(self))
@@ -221,12 +280,15 @@ class FlexFileRotPole:
                 f"\ndim_inds   : {dim_inds_nc}"
                 f"\ndimensions : {var.dimensions}"
                 f"\ninds       : {inds}")
+        log.debug(f"indices: {inds}")
+        check_array_indices(var.shape, inds)
 
         # Read field
+        log.debug(f"field variable shape: {var.shape}")
         fld = var[inds]
 
         if self._field_specs.integrate:
-            assert len(fld.shape) == 3 #SR_TMP
+            assert len(fld.shape) == 3  #SR_TMP
             fld = np.nansum(fld, axis=0)
 
         return fld
@@ -341,12 +403,14 @@ class FlexAttrsCollector:
         # Get variable name
         _key = (self.field_specs.field_type, self.field_specs.integrate)
         try:
+            # yapf: disable
             var_name = {
                 #('3D', False): 'Concentration',  #SR_HC
                 #('3D', True): 'Integr. Concentr.',  #SR_HC
                 ('3D', False): 'Activity',  #SR_HC
                 ('3D', True): 'Integr. Activity',  #SR_HC
             }[_key]
+            # yapf: enable
         except KeyError:
             raise NotImplementedError(f"var_name of '{_type}' field")
 

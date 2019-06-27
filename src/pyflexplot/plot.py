@@ -43,6 +43,10 @@ class FlexPlotter:
         """
         self.type_ = type_
 
+    @classmethod
+    def concentration(cls, *args, **kwargs):
+        return cls('concentration').run(*args, **kwargs)
+
     def run(self, data, file_path_fmt):
         """Create plots.
 
@@ -385,7 +389,8 @@ class FlexPlotConcentration:
         box.text('bl', s, size='large')
 
         # Bottom center: release site
-        s = f"Release site: {self.attrs.release.site_name}"
+        #s = f"Release site: {self.attrs.release.site_name}"
+        s = f"{self.attrs.release.site_name}"
         box.text('bc', s, size='large')
 
         # Bottom right: time into simulation
