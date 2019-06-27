@@ -75,8 +75,8 @@ class FlexFieldSpecs:
     """Specifications of FLEXPART field to be read from NetCDF file."""
 
     def __init__(
-            self, time_ind, age_ind, release_point_ind, level_ind, species_id,
-            source_ind, field_type):
+            self, time_ind, age_ind, rls_pt_ind, level_ind, species_id,
+            source_ind, field_type, integrate):
         """Create an instance of ``FlexFieldSpecs``.
 
         Args:
@@ -85,11 +85,12 @@ class FlexFieldSpecs:
         """
         self.time_ind = int(time_ind)
         self.age_ind = int(age_ind)
-        self.release_point_ind = int(release_point_ind)
+        self.rls_pt_ind = int(rls_pt_ind)
         self.level_ind = int(level_ind)
         self.species_id = int(species_id)
         self.source_ind = int(source_ind)
         self.field_type = field_type.upper()
+        self.integrate = bool(integrate)
 
     def __repr__(self):
         return pformat(dict(self))
@@ -114,8 +115,12 @@ class FlexFieldSpecs:
         inds = {}
 
         inds['nageclass'] = self.age_ind
-        inds['numpoint'] = self.release_point_ind
-        inds['time'] = self.time_ind
+        inds['numpoint'] = self.rls_pt_ind
+
+        if not self.integrate:
+            inds['time'] = self.time_ind
+        else:
+            inds['time'] = slice(None, self.time_ind + 1)
 
         if self.field_type == '3D':
             inds['level'] = self.level_ind
@@ -220,6 +225,10 @@ class FlexFileRotPole:
         # Read field
         fld = var[inds]
 
+        if self._field_specs.integrate:
+            assert len(fld.shape) == 3 #SR_TMP
+            fld = np.nansum(fld, axis=0)
+
         return fld
 
     #SR_TMP<
@@ -297,7 +306,7 @@ class FlexAttrsCollector:
         """Collect release point attributes."""
 
         # Collect release point information
-        _ind = self.field_specs.release_point_ind
+        _ind = self.field_specs.rls_pt_ind
         release_point = ReleasePoint.from_file(self.fi, _ind)
 
         site_lat = np.mean([release_point.lllat, release_point.urlat])
@@ -330,11 +339,12 @@ class FlexAttrsCollector:
         """Collect variable attributes."""
 
         # Get variable name
-        _type = self.field_specs.field_type
+        _key = (self.field_specs.field_type, self.field_specs.integrate)
         try:
             var_name = {
-                '3D': 'Concentration',  #SR_HC
-            }[_type]
+                ('3D', False): 'Concentration',  #SR_HC
+                ('3D', True): 'Integr. Concentr.',  #SR_HC
+            }[_key]
         except KeyError:
             raise NotImplementedError(f"var_name of '{_type}' field")
 

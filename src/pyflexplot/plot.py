@@ -125,14 +125,20 @@ class FlexPlotter:
         keys = [
             'time_ind',
             'age_ind',
-            'release_point_ind',
+            'rls_pt_ind',
             'level_ind',
             'species_id',
             'source_ind',
             'field_type',
         ]
-        return self.file_path_fmt.format(
-            **{k: getattr(specs, k) for k in keys})
+        kwargs = {k: getattr(specs, k) for k in keys}
+
+        plot_var = self.type_
+        if specs.integrate:
+            plot_var += '-int'
+        kwargs['variable'] = plot_var
+
+        return self.file_path_fmt.format(**kwargs)
 
 
 class FlexPlotConcentration:

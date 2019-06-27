@@ -73,7 +73,7 @@ def main(ctx, **kwargs):
     return 0
 
 
-def common_options(f):
+def common_options_global(f):
     """Options common to all commands in the group.
 
     Defining the common options this way instead of on the group
@@ -90,10 +90,12 @@ def common_options(f):
         click.option(
             '--outfile', '-o', 'out_file_path_fmt',
             help=(
-                "Output file path. If multiple plots are to be created, e.g.,"
-                " for multiple fields or levels, ``outfile`` must contain"
-                " format keys for inserting all changing parameters"
-                " (example: ``plot_lvl-{level}.png`` for multiple levels)."),
+                "Output file path. If multiple plots are to be created, "
+                "e.g., for multiple fields or levels, ``outfile`` must "
+                "contain format keys for inserting all changing parameters "
+                "(example: ``plot_lvl-{level}.png`` for multiple levels). "
+                "The format key for the plotted variable is '{variable}'. "
+                "See individual options for the respective format keys."),
             type=click.Path(writable=True), required=True),
     ]
     # yapf: enable
@@ -102,55 +104,71 @@ def common_options(f):
 
 # yapf: disable
 @main.command()
-@common_options
+#
+@common_options_global
+#
 @click.option(
     '--time-ind', 'time_inds',
-    help="Index of time (zero-based).",
+    help="Index of time (zero-based). Format key: '{time_ind}'.",
     type=int, default=[0], multiple=True)
 @click.option(
     '--age-class-ind', 'age_inds',
-    help="Index of age class (zero-based).",
+    help="Index of age class (zero-based). Format key: '{age_class_ind}'.",
     type=int, default=[0], multiple=True)
 @click.option(
-    '--release-point-ind', 'release_point_inds',
-    help="Index of release point (zero-based).",
+    '--release-point-ind', 'rls_pt_inds',
+    help="Index of release point (zero-based). Format key: '{rls_pt_ind}'.",
     type=int, default=[0], multiple=True)
 @click.option(
     '--level-ind', 'level_inds',
-    help="Index of vertical level (zero-based, bottom-up).",
+    help=(
+        "Index of vertical level (zero-based, bottom-up). "
+        "Format key: '{level_ind}'."),
     type=int, default=[0], multiple=True)
 @click.option(
     '--species-id', 'species_ids',
-    help="Species id (default: all).",
+    help="Species id (default: all). Format key: '{species_id}'.",
     type=int, default=[0], multiple=True)
 @click.option(
     '--source-ind', 'source_inds',
-    help="Point source index (zero-based).",
+    help="Point source index (zero-based). Format key: '{source_ind}'.",
     type=int, default=[0], multiple=True)
+#
+@click.option(
+    '--integrate',
+    help=("Integrate field over time. If set, '-int' is appended to variable "
+        "name (format key: '{variable}')."),
+    is_flag=True, default=False)
+#
 @click.pass_context
 # yapf: enable
 def concentration(
-        ctx, in_file_path, out_file_path_fmt, time_inds, age_inds,
-        release_point_inds, level_inds, species_ids, source_inds):
+        ctx, in_file_path, out_file_path_fmt, time_inds, age_inds, rls_pt_inds,
+        level_inds, species_ids, source_inds, integrate):
 
     # Determine fields specifications (one for each eventual plot)
+    # yapf: disable
     fields_specs = [
         FlexFieldSpecs(
-            field_type='3d',
-            time_ind=time_ind,
-            age_ind=age_ind,
-            release_point_ind=release_point_ind,
-            level_ind=level_ind,
-            species_id=species_id,
-            source_ind=source_ind,
+            #
+            field_type  = '3d',
+            integrate   = integrate,
+            #
+            time_ind    = time_ind,
+            age_ind     = age_ind,
+            rls_pt_ind  = rls_pt_ind,
+            level_ind   = level_ind,
+            species_id  = species_id,
+            source_ind  = source_ind,
         )
-        for time_ind in time_inds
-        for age_ind in age_inds
-        for release_point_ind in release_point_inds
-        for level_ind in level_inds
-        for species_id in species_ids
-        for source_ind in source_inds
+        for time_ind    in time_inds
+        for age_ind     in age_inds
+        for rls_pt_ind  in rls_pt_inds
+        for level_ind   in level_inds
+        for species_id  in species_ids
+        for source_ind  in source_inds
     ]
+    #yapf: enable
 
     # Read fields
     flex_data_lst = FlexFileRotPole(in_file_path).read(fields_specs)
