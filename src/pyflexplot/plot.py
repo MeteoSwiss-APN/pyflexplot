@@ -263,15 +263,15 @@ class FlexPlotConcentration:
             extend=self.extend,
         )
 
-        # Add marker at location of maximum value
-        self.ax_map.mark_max(self.fld, **self._max_marker_kwargs)
-
         # Add marker at release site
         self.ax_map.marker(
             self.attrs.release.site_lon,
             self.attrs.release.site_lat,
             **self._site_marker_kwargs,
         )
+
+        # Add marker at location of maximum value
+        self.ax_map.mark_max(self.fld, **self._max_marker_kwargs)
 
         return handle
 
