@@ -164,39 +164,41 @@ def common_options_dispersion_various(f):
 @click.pass_context
 # yapf: enable
 def concentration(
-        ctx, in_file_path, out_file_path_fmt, time_inds, age_inds, rls_pt_inds,
-        level_inds, species_ids, source_inds, integrate):
+        ctx, in_file_path, out_file_path_fmt, integrate, **kwargs_specs):
 
     # Determine fields specifications (one for each eventual plot)
-    # yapf: disable
-    fields_specs = FlexFieldSpecs.many(
-        field_type  = '3D',
-        integrate   = integrate,
-        #
-        time_inds   = time_inds,
-        age_inds    = age_inds,
-        rls_pt_inds = rls_pt_inds,
-        level_inds  = level_inds,
-        species_ids = species_ids,
-        source_inds = source_inds,
-    )
-    #yapf: enable
+    kwargs_specs['field_type'] = '3D'
+    kwargs_specs['integrate'] = integrate
+    fields_specs = FlexFieldSpecs.many(**kwargs_specs)
 
     # Read fields
     flex_data_lst = FlexFileRotPole(in_file_path).read(fields_specs)
 
-    # Create plot
-    if not ctx.obj['noplot']:
-        # Note: FlexPlotter.run yields the output file paths on-the-go
-        f = functools.partial(
-            FlexPlotter.concentration,
-            flex_data_lst,
-            out_file_path_fmt,
-        )
-        for i, out_file_path in enumerate(f()):
-            if ctx.obj['open_cmd'] and i == 0:
-                # Open the first file as soon as it's available
-                open_plot(ctx.obj['open_cmd'], out_file_path)
+    # Create plots
+    fct = functools.partial(
+        FlexPlotter.concentration, flex_data_lst, out_file_path_fmt)
+    create_plots(fct, ctx)
+
+
+def create_plots(fct, ctx):
+    """Create FLEXPART plots.
+
+    Args:
+        fct (callable): Callable that creates plots while yielding
+            the output file paths on-the-fly.
+
+        ctx (Context): Click context object.
+
+    """
+    if ctx.obj['noplot']:
+        return
+
+    # Note: FlexPlotter.run yields the output file paths on-the-go
+    for i, out_file_path in enumerate(fct()):
+
+        if ctx.obj['open_cmd'] and i == 0:
+            # Open the first file as soon as it's available
+            open_plot(ctx.obj['open_cmd'], out_file_path)
 
 
 def open_plot(cmd, file_path):
