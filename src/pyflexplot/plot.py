@@ -42,6 +42,14 @@ class FlexPlotter:
 
         """
         self.type_ = type_
+        sub_cls_lst = {
+            'concentration': FlexPlotterConcentration,
+            'deposition': FlexPlotterDeposition,
+        }
+        try:
+            self.sub_cls = sub_cls_lst[type_]
+        except KeyError:
+            raise ValueError(f"invalid plot type '{type_}'")
 
     @classmethod
     def concentration(cls, *args, **kwargs):
@@ -50,6 +58,20 @@ class FlexPlotter:
     @classmethod
     def deposition(cls, *args, **kwargs):
         return cls('deposition').run(*args, **kwargs)
+
+    def run(self, *args, **kwargs):
+        """Run specific plotter."""
+        p = self.sub_cls()
+        for path in self.sub_cls().run(*args, **kwargs):
+            yield path
+
+
+class FlexPlotterConcentration:
+
+    type_ = 'concentration'
+
+    def __init__(self):
+        pass
 
     def run(self, data, file_path_fmt):
         """Create plots.
@@ -66,26 +88,18 @@ class FlexPlotter:
             str: Output file paths.
 
         """
-        self.data_lst = data if isinstance(data, (list, tuple)) else [data]
         self.file_path_fmt = file_path_fmt
 
-        if self.type_ == 'concentration':
-            for path in self._run_concentration():
-                yield path
-        else:
-            raise NotImplementedError(f"plot type '{self.type_}'")
+        data_lst = data if isinstance(data, (list, tuple)) else [data]
 
-    def _run_concentration(self):
-        """Create one or more concentration plots."""
+        _s = 's' if len(data_lst) > 1 else ''
+        print(f"create {len(data_lst)} concentration plot{_s}")
 
-        # Create plots
-        file_paths = []
-        _s = 's' if len(self.data_lst) > 1 else ''
-        print(f"create {len(self.data_lst)} concentration plot{_s}")
-        for i_data, data in enumerate(self.data_lst):
+        # Create plots one-by-one
+        for i_data, data in enumerate(data_lst):
             file_path = self.format_file_path(data.field_specs)
-            _w = len(str(len(self.data_lst)))
-            print(f" {i_data+1:{_w}}/{len(self.data_lst)}  {file_path}")
+            _w = len(str(len(data_lst)))
+            print(f" {i_data+1:{_w}}/{len(data_lst)}  {file_path}")
 
             kwargs = {
                 'rlat': data.rlat,
@@ -97,37 +111,6 @@ class FlexPlotter:
             FlexPlotConcentration(**kwargs).save(file_path)
 
             yield file_path
-
-    def check_file_path_fmt(self, restrictions):
-        """Check output file path for necessary variables format keys.
-
-        If a variable (e.g., species id, level index) assumes multiple
-        values, the file path must contain a corresponding format key,
-        otherwise multiple output files will share the same name and
-        overwrite each other.
-
-        Args:
-            restrictions (dict): Restrictions to field keys, i.e.,
-                explicitly selected values of some variables.
-
-        """
-
-        def _check_file_path_fmt__core(name):
-            """Check if the file path contains a necessary variable."""
-            values = set(getattr(self.data, f'{name}s')(**restrictions))
-            rx = re.compile(r'\{' + name + r'(:.*)?\}')
-            if len(values) > 1 and not rx.search(self.file_path_fmt):
-                raise Exception(
-                    f"output file path '{self.file_path_fmt}' must contain"
-                    f" format key '{fmt_key}' to plot {len(values)} different"
-                    f" {name.replace('_', ' ')}s {sorted(values)}")
-
-        _check_file_path_fmt__core('age_ind')
-        _check_file_path_fmt__core('relpt_ind')
-        _check_file_path_fmt__core('time_ind')
-        #-_check_file_path_fmt__core('level_ind')
-        _check_file_path_fmt__core('species_id')
-        _check_file_path_fmt__core('field_type')
 
     def format_file_path(self, specs):
         keys = [
@@ -147,6 +130,12 @@ class FlexPlotter:
         kwargs['variable'] = plot_var
 
         return self.file_path_fmt.format(**kwargs)
+
+
+class FlexPlotterDeposition:
+
+    def __init__(self):
+        raise NotImplementedError(f'self.__class__.__name__')
 
 
 class FlexPlotConcentration:
