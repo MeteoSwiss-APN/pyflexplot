@@ -154,22 +154,18 @@ def common_options_dispersion_various(f):
     return functools.reduce(lambda x, opt: opt(x), options, f)
 
 
-# yapf: disable
 @main.command()
-#
 @common_options_global
 @common_options_dispersion_field
 @common_options_dispersion_various
-#
 @click.pass_context
-# yapf: enable
 def concentration(
         ctx, in_file_path, out_file_path_fmt, integrate, **kwargs_specs):
 
     # Determine fields specifications (one for each eventual plot)
     kwargs_specs['field_type'] = '3D'
     kwargs_specs['integrate'] = integrate
-    fields_specs = FlexFieldSpecs.many(**kwargs_specs)
+    fields_specs = FlexFieldSpecs.concentration().many(**kwargs_specs)
 
     # Read fields
     flex_data_lst = FlexFileRotPole(in_file_path).read(fields_specs)
@@ -177,6 +173,38 @@ def concentration(
     # Create plots
     fct = functools.partial(
         FlexPlotter.concentration, flex_data_lst, out_file_path_fmt)
+    create_plots(fct, ctx)
+
+
+@main.command()
+@common_options_global
+@common_options_dispersion_field
+@common_options_dispersion_various
+# yapf: disable
+@click.option(
+    '--deposition-type', 'deposit_types',
+    help=("Type of deposition. Part of plot variable (format key: "
+        "'{variable}')."),
+    type=click.Choice(['both', 'wet', 'dry']),
+    default='both', multiple=True)
+# yapf: enable
+
+@click.pass_context
+def deposition(
+        ctx, in_file_path, out_file_path_fmt, integrate, deposit_types,
+        **kwargs_specs):
+
+    # Determine fields specifications (one for each eventual plot)
+    kwargs_specs['field_type'] = '3D'
+    kwargs_specs['integrate'] = integrate
+    fields_specs = FlexFieldSpecs.deposition().many(**kwargs_specs)
+
+    # Read fields
+    flex_data_lst = FlexFileRotPole(in_file_path).read(fields_specs)
+
+    # Create plots
+    fct = functools.partial(
+        FlexPlotter.deposition, flex_data_lst, out_file_path_fmt)
     create_plots(fct, ctx)
 
 

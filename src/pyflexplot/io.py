@@ -18,6 +18,7 @@ from pprint import pformat
 from .data import FlexAttrsCollection
 from .data import FlexDataRotPole
 from .utils import check_array_indices
+from .utils import merge_dicts
 
 from .utils_dev import ipython  #SR_DEV
 
@@ -73,25 +74,51 @@ from .utils_dev import ipython  #SR_DEV
 
 
 class FlexFieldSpecs:
-    """Specifications of FLEXPART field to be read from NetCDF file."""
+    """FLEXPART field specifications."""
 
-    def __init__(
-            self, time_ind, age_ind, rls_pt_ind, level_ind, species_id,
-            source_ind, field_type, integrate):
+    key_types = {
+        'time_ind': int,
+        'age_ind': int,
+        'rls_pt_ind': int,
+        'level_ind': int,
+        'species_id': int,
+        'source_ind': int,
+        'field_type': str.upper,
+        'integrate': bool,
+    }
+
+    def __init__(self, **kwargs):
         """Create an instance of ``FlexFieldSpecs``.
 
         Args:
-            <TODO>
+            **kwargs: Arguments as specified in the class attribute
+                ``FlexFieldSpecs.key_types``. The keys correspond
+                to the argument's names, and the values specify a type
+                which the respective argument value must be compatible
+                with.
 
         """
-        self.time_ind = int(time_ind)
-        self.age_ind = int(age_ind)
-        self.rls_pt_ind = int(rls_pt_ind)
-        self.level_ind = int(level_ind)
-        self.species_id = int(species_id)
-        self.source_ind = int(source_ind)
-        self.field_type = field_type.upper()
-        self.integrate = bool(integrate)
+        for key, type_ in self.key_types.items():
+            try:
+                val = kwargs.pop(key)
+            except KeyError:
+                raise ValueError(f"missing argument '{key}'") from None
+            try:
+                setattr(self, key, type_(val))
+            except TypeError:
+                raise ValueError(
+                    f"argument '{key}': type '{type(val).__name__}' "
+                    f"incompatible with '{type_.__name__}'") from None
+        if kwargs:
+            raise ValueError(f"{len(kwargs)} unexpected arguments: {kwargs}")
+
+    @classmethod
+    def concentration(cls):
+        return FlexFieldSpecsConcentration
+
+    @classmethod
+    def deposition(cls):
+        return FlexFieldSpecsConcentration
 
     @classmethod
     def many(cls, **kwargs):
@@ -105,19 +132,8 @@ class FlexFieldSpecs:
         of all input arguments.
 
         """
-        keys_singular = [
-            'time_ind',
-            'age_ind',
-            'rls_pt_ind',
-            'level_ind',
-            'species_id',
-            'source_ind',
-            'field_type',
-            'integrate',
-        ]
-
+        keys_singular = sorted(cls.key_types.keys())
         vals_plural = []
-
         for key_singular in keys_singular:
             key_plural = f'{key_singular}s'
 
@@ -188,6 +204,20 @@ class FlexFieldSpecs:
         inds['rlon'] = slice(None)
 
         return inds
+
+
+class FlexFieldSpecsConcentration(FlexFieldSpecs):
+    """FLEXPART field specifications for concentration plots."""
+
+    pass
+
+
+class FlexFieldSpecsDeposition(FlexFieldSpecs):
+    """FLEXPART field specifications for deposition plots."""
+
+    key_types = merge_dicts([FlexFieldSpecs.key_types, {
+        'deposit_type': str,
+    }])
 
 
 class FlexFileRotPole:

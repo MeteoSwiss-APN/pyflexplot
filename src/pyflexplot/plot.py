@@ -47,6 +47,10 @@ class FlexPlotter:
     def concentration(cls, *args, **kwargs):
         return cls('concentration').run(*args, **kwargs)
 
+    @classmethod
+    def deposition(cls, *args, **kwargs):
+        return cls('deposition').run(*args, **kwargs)
+
     def run(self, data, file_path_fmt):
         """Create plots.
 
