@@ -367,10 +367,8 @@ class FlexPlotConcentration:
         """Fill the box above the map plot."""
         box = self.axs_box[0]
 
-        # Top left: variable and level
-        s = (
-            f"{self.attrs.variable.name} "
-            f"{self.attrs.variable.format_level_range()}")
+        # Top left: variable
+        s = f"{self.attrs.variable.name}"
         box.text('tl', s, size='xx-large')
 
         # Top center: species
@@ -382,9 +380,13 @@ class FlexPlotConcentration:
         s = f"{timestep_fmtd}"
         box.text('tr', s, size='xx-large')
 
-        # Bottom left: release site
-        s = f"Release site: {self.attrs.release.site_name}"
+        # Bottom left: level range
+        s = f"{self.attrs.variable.format_level_range()}"
         box.text('bl', s, size='large')
+
+        # Bottom center: release site
+        s = f"Release site: {self.attrs.release.site_name}"
+        box.text('bc', s, size='large')
 
         # Bottom right: time into simulation
         delta = self.attrs.simulation.now - self.attrs.simulation.start

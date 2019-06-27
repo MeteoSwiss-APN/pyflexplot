@@ -342,8 +342,10 @@ class FlexAttrsCollector:
         _key = (self.field_specs.field_type, self.field_specs.integrate)
         try:
             var_name = {
-                ('3D', False): 'Concentration',  #SR_HC
-                ('3D', True): 'Integr. Concentr.',  #SR_HC
+                #('3D', False): 'Concentration',  #SR_HC
+                #('3D', True): 'Integr. Concentr.',  #SR_HC
+                ('3D', False): 'Activity',  #SR_HC
+                ('3D', True): 'Integr. Activity',  #SR_HC
             }[_key]
         except KeyError:
             raise NotImplementedError(f"var_name of '{_type}' field")
