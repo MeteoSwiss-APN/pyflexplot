@@ -13,7 +13,7 @@ from pprint import pformat
 from .io import FlexFieldSpecs
 from .io import FlexFileRotPole
 from .utils import count_to_log_level
-from .plot import FlexPlotter
+from .flexplotter import FlexPlotter
 
 from .utils_dev import ipython  #SR_DEV
 
@@ -165,7 +165,7 @@ def concentration(
     # Determine fields specifications (one for each eventual plot)
     kwargs_specs['field_type'] = '3D'
     kwargs_specs['integrate'] = integrate
-    fields_specs = FlexFieldSpecs.concentration().many(**kwargs_specs)
+    fields_specs = FlexFieldSpecs.cls_concentration().many(**kwargs_specs)
 
     # Read fields
     flex_data_lst = FlexFileRotPole(in_file_path).read(fields_specs)
@@ -188,16 +188,14 @@ def concentration(
     type=click.Choice(['both', 'wet', 'dry']),
     default='both', multiple=True)
 # yapf: enable
-
 @click.pass_context
 def deposition(
-        ctx, in_file_path, out_file_path_fmt, integrate, deposit_types,
-        **kwargs_specs):
+        ctx, in_file_path, out_file_path_fmt, integrate, **kwargs_specs):
 
     # Determine fields specifications (one for each eventual plot)
     kwargs_specs['field_type'] = '3D'
     kwargs_specs['integrate'] = integrate
-    fields_specs = FlexFieldSpecs.deposition().many(**kwargs_specs)
+    fields_specs = FlexFieldSpecs.cls_deposition().many(**kwargs_specs)
 
     # Read fields
     flex_data_lst = FlexFileRotPole(in_file_path).read(fields_specs)

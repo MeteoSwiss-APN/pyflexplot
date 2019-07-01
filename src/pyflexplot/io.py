@@ -76,6 +76,7 @@ from .utils_dev import ipython  #SR_DEV
 class FlexFieldSpecs:
     """FLEXPART field specifications."""
 
+    # Keys with respective type
     key_types = {
         'time_ind': int,
         'age_ind': int,
@@ -86,6 +87,18 @@ class FlexFieldSpecs:
         'field_type': str.upper,
         'integrate': bool,
     }
+
+    @classmethod
+    def keys(cls):
+        return [k for k in cls.key_types]
+
+    @classmethod
+    def cls_concentration(cls):
+        return FlexFieldSpecsConcentration
+
+    @classmethod
+    def cls_deposition(cls):
+        return FlexFieldSpecsDeposition
 
     def __init__(self, **kwargs):
         """Create an instance of ``FlexFieldSpecs``.
@@ -111,14 +124,6 @@ class FlexFieldSpecs:
                     f"incompatible with '{type_.__name__}'") from None
         if kwargs:
             raise ValueError(f"{len(kwargs)} unexpected arguments: {kwargs}")
-
-    @classmethod
-    def concentration(cls):
-        return FlexFieldSpecsConcentration
-
-    @classmethod
-    def deposition(cls):
-        return FlexFieldSpecsConcentration
 
     @classmethod
     def many(cls, **kwargs):
@@ -172,6 +177,14 @@ class FlexFieldSpecs:
 
     def __str__(self):
         return f'{dict(self)}'
+
+    def __getitem__(self, key):
+        if key.startswith('_'):
+            raise ValueError(f"invalid key '{key}'")
+        try:
+            return self.__dict__[key]
+        except KeyError as e:
+            raise e from None
 
     def __iter__(self):
         for key, val in self.__dict__.items():
