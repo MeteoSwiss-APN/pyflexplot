@@ -4,6 +4,7 @@ import distutils.dir_util
 import pytest
 import os
 
+
 @pytest.fixture
 def datadir(tmpdir, request):
     """Return path to temporary directory containint test data.
@@ -21,4 +22,3 @@ def datadir(tmpdir, request):
         distutils.dir_util.copy_tree(test_dir, str(tmpdir))
 
     return tmpdir
-

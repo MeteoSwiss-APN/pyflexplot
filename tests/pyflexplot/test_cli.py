@@ -6,7 +6,6 @@ from click.testing import CliRunner
 
 from pyflexplot import cli
 
-
 #def test_command_line_interface():
 #    """Test the CLI."""
 #    runner = CliRunner()
