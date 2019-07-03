@@ -51,7 +51,7 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .pytest_cache
 
 yapf: ## reformat code to conform to standard
-	yapf -i -vv -r src
+	yapf -i -vv -r src tests
 
 lint: ## check style with flake8
 	flake8 src tests
