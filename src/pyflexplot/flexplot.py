@@ -272,38 +272,47 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
                 show_border=False),
         ])
 
-    def fill_box_top(self):
+    def fill_box_top(self, *, skip_pos=None):
         """Fill the box above the map plot."""
         box = self.axs_box[0]
 
-        # Top left: variable
-        s = f"{self.attrs.variable.long_name}"
-        box.text('tl', s, size='xx-large')
+        if skip_pos is None:
+            skip_pos = []
 
-        # Top center: species
-        s = f"{self.attrs.species.name}"
-        box.text('tc', s, size='xx-large')
+        if not 'tl' in skip_pos:
+            # Top left: variable
+            s = f"{self.attrs.variable.long_name}"
+            box.text('tl', s, size='xx-large')
 
-        # Top right: datetime
-        timestep_fmtd = self.attrs.simulation.format_now()
-        s = f"{timestep_fmtd}"
-        box.text('tr', s, size='xx-large')
+        if not 'tc' in skip_pos:
+            # Top center: species
+            s = f"{self.attrs.species.name}"
+            box.text('tc', s, size='xx-large')
 
-        # Bottom left: level range
-        s = f"{self.attrs.variable.format_level_range()}"
-        box.text('bl', s, size='large')
+        if not 'tr' in skip_pos:
+            # Top right: datetime
+            timestep_fmtd = self.attrs.simulation.format_now()
+            s = f"{timestep_fmtd}"
+            box.text('tr', s, size='xx-large')
 
-        # Bottom center: release site
-        #s = f"Release site: {self.attrs.release.site_name}"
-        s = f"{self.attrs.release.site_name}"
-        box.text('bc', s, size='large')
+        if not 'bl' in skip_pos:
+            # Bottom left: level range
+            s = f"{self.attrs.variable.format_level_range()}"
+            box.text('bl', s, size='large')
 
-        # Bottom right: time into simulation
-        delta = self.attrs.simulation.now - self.attrs.simulation.start
-        hours = int(delta.total_seconds()/3600)
-        mins = int((delta.total_seconds()/3600)%1*60)
-        s = f"T$_{0}$ + {hours:02d}:{mins:02d} h"
-        box.text('br', s, size='large')
+        if not 'br' in skip_pos:
+            # Bottom center: release site
+            #s = f"Release site: {self.attrs.release.site_name}"
+            s = f"{self.attrs.release.site_name}"
+            box.text('bc', s, size='large')
+
+        if not 'br' in skip_pos:
+            # Bottom right: time into simulation
+            delta = self.attrs.simulation.now - self.attrs.simulation.start
+            hours = int(delta.total_seconds()/3600)
+            mins = int((delta.total_seconds()/3600)%1*60)
+            s = f"T$_{0}$ + {hours:02d}:{mins:02d} h"
+            box.text('br', s, size='large')
 
     def fill_box_right_top(self):
         """Fill the top box to the right of the map plot."""
@@ -513,3 +522,6 @@ class FlexPlotDeposition(FlexPlotBase_Dispersion):
         """
         super().__init__(*args, **kwargs)
         self.create()
+
+    def fill_box_top(self):
+        super().fill_box_top(skip_pos=['bl'])

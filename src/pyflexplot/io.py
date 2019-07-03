@@ -22,55 +22,57 @@ from .utils import merge_dicts
 
 from .utils_dev import ipython  #SR_DEV
 
-#
-# grid_conc_20190514000000.nc
-# ---------------------------
-#
-# Dimensions:
-#   <name>          <size>      <description>
-#   time            11          time
-#   rlon            1158        rotated longitude
-#   rlat            774         rotated latitude
-#   level           3           vertical level
-#   numspec         2           species
-#   numpoint        1           release point
-#   nageclass       1           particla age class
-#   nchar           45          max. string length
-#
-# Variables (0) -- Dimensions etc.:
-#   <name>          <type>  <dimensions>    <description>
-#   rotated_pole    char    (,)             rotated pole lon/lat
-#   time            int     (time,)         seconds since 201905140000
-#   rlon            float   (rlon,)         rotated longitudes
-#   rlat            float   (rlat,)         rotated latitudes
-#   level           float   (level,)        height in meters
-#
-# Variables (1) -- Release points:
-#   <name>          <type>  <dimensions>        <description>
-#   RELCOM          char    (numpoint, nchar)   release point name
-#   RELLNG1         float   (numpoint,)         release longitude lower left
-#   RELLNG2         float   (numpoint,)         release latitude lower left
-#   RELLAT1         float   (numpoint,)         release longitude upper right
-#   RELLAT2         float   (numpoint,)         release latitude upper right
-#   RELZZ1          float   (numpoint,)         release height bottom
-#   RELZZ2          float   (numpoint,)         release height top
-#   RELKINDZ        int     (numpoint,)         release kind
-#   RELSTART        int     (numpoint,)         release start rel. to sim. start
-#   RELEND          int     (numpoint,)         release end rel. to sim. start
-#   RELPART         int     (numpoint,)         number of release particles
-#   RELXMASS        float   (numspec, numpoint) total release particle mass
-#   LAGE            int     (nageclass)         age class
-#
-# Variables (2) -- Particle fields:
-#   <name>          <type>  <dimensions>                                    <description>
-#   spec001         float   (nageclass, numpoint, time, level, rlat, rlon)  concentration of CS-137
-#   WD_spec001      float   (nageclass, numpoint, time, rlat, rlon)         wet deposition of CS-137
-#   DD_spec001      float   (nageclass, numpoint, time, rlat, rlon)         dry deposition of CS-137
-#   spec002         float   (nageclass, numpoint, time, level, rlat, rlon)  concentration of I-131a
-#   WD_spec002      float   (nageclass, numpoint, time, rlat, rlon)         wet deposition of I-131a
-#   DD_spec002      float   (nageclass, numpoint, time, rlat, rlon)         dry deposition of I-131a
-#   fptot           float   (numpoint, rlat, rlon)                          total footprint
-#
+def _nc_content():
+    """Content of NetCDF file; dummy function to fold the comment!"""
+    #
+    # grid_conc_20190514000000.nc
+    # ---------------------------
+    #
+    # Dimensions:
+    #   <name>          <size>      <description>
+    #   time            11          time
+    #   rlon            1158        rotated longitude
+    #   rlat            774         rotated latitude
+    #   level           3           vertical level
+    #   numspec         2           species
+    #   numpoint        1           release point
+    #   nageclass       1           particla age class
+    #   nchar           45          max. string length
+    #
+    # Variables (0) -- Dimensions etc.:
+    #   <name>          <type>  <dimensions>    <description>
+    #   rotated_pole    char    (,)             rotated pole lon/lat
+    #   time            int     (time,)         seconds since 201905140000
+    #   rlon            float   (rlon,)         rotated longitudes
+    #   rlat            float   (rlat,)         rotated latitudes
+    #   level           float   (level,)        height in meters
+    #
+    # Variables (1) -- Release points:
+    #   <name>          <type>  <dimensions>        <description>
+    #   RELCOM          char    (numpoint, nchar)   release point name
+    #   RELLNG1         float   (numpoint,)         release longitude lower left
+    #   RELLNG2         float   (numpoint,)         release latitude lower left
+    #   RELLAT1         float   (numpoint,)         release longitude upper right
+    #   RELLAT2         float   (numpoint,)         release latitude upper right
+    #   RELZZ1          float   (numpoint,)         release height bottom
+    #   RELZZ2          float   (numpoint,)         release height top
+    #   RELKINDZ        int     (numpoint,)         release kind
+    #   RELSTART        int     (numpoint,)         release start rel. to sim. start
+    #   RELEND          int     (numpoint,)         release end rel. to sim. start
+    #   RELPART         int     (numpoint,)         number of release particles
+    #   RELXMASS        float   (numspec, numpoint) total release particle mass
+    #   LAGE            int     (nageclass)         age class
+    #
+    # Variables (2) -- Particle fields:
+    #   <name>          <type>  <dimensions>                                    <description>
+    #   spec001         float   (nageclass, numpoint, time, level, rlat, rlon)  concentration of CS-137
+    #   WD_spec001      float   (nageclass, numpoint, time, rlat, rlon)         wet deposition of CS-137
+    #   DD_spec001      float   (nageclass, numpoint, time, rlat, rlon)         dry deposition of CS-137
+    #   spec002         float   (nageclass, numpoint, time, level, rlat, rlon)  concentration of I-131a
+    #   WD_spec002      float   (nageclass, numpoint, time, rlat, rlon)         wet deposition of I-131a
+    #   DD_spec002      float   (nageclass, numpoint, time, rlat, rlon)         dry deposition of I-131a
+    #   fptot           float   (numpoint, rlat, rlon)                          total footprint
+    #
 
 
 class FlexVarSpecs:
@@ -79,13 +81,11 @@ class FlexVarSpecs:
     # Keys with respective type
     _keys_w_type = {
         'species_id': int,
-        'prefix': lambda s: '' if not s else str(s).upper(),
         'integrate': bool,
         # Dimensions
         'time': int,
         'nageclass': int,
         'numpoint': int,
-        'level': int,
     }
 
     @classmethod
@@ -188,11 +188,9 @@ class FlexVarSpecs:
 
     def var_name(self):
         """Derive variable name from specifications."""
-        var_name_base = f'spec{self.species_id:03d}'
-        prefix = '' if not self.prefix else f'{self.prefix}_'
-        return prefix + var_name_base
+        raise NotImplementedError(f'{self.__class__.__name__}.var_name')
 
-    def dim_inds_nc(self):
+    def dim_inds_by_name(self):
         """Derive indices along NetCDF dimensions."""
 
         inds = {}
@@ -205,13 +203,41 @@ class FlexVarSpecs:
         else:
             inds['time'] = slice(None, self.time + 1)
 
-        if not self.prefix:
-            inds['level'] = self.level
-
         inds['rlat'] = slice(None)
         inds['rlon'] = slice(None)
 
         return inds
+
+
+class FlexVarSpecsConcentration(FlexVarSpecs):
+
+    _keys_w_type = {
+        **FlexVarSpecs._keys_w_type,
+        'level': int,
+    }
+
+    def var_name(self):
+        """Derive variable name from specifications."""
+        return f'spec{self.species_id:03d}'
+
+    def dim_inds_by_name(self):
+        """Derive indices along NetCDF dimensions."""
+        inds = super().dim_inds_by_name()
+        inds['level'] = self.level
+        return inds
+
+
+class FlexVarSpecsDeposition(FlexVarSpecs):
+
+    _keys_w_type = {
+        **FlexVarSpecs._keys_w_type,
+        'deposition': str,
+    }
+
+    def var_name(self):
+        """Derive variable name from specifications."""
+        prefix = {'wet': 'WD', 'dry': 'DD'}[self.deposition]
+        return f'{prefix}_spec{self.species_id:03d}'
 
 
 class FlexFileRotPole:
@@ -307,17 +333,17 @@ class FlexFileRotPole:
         var = self._fi.variables[var_name]
 
         # Indices of field along NetCDF dimensions
-        dim_inds_nc = self._field_specs.dim_inds_nc()
+        dim_inds_by_name = self._field_specs.dim_inds_by_name()
 
         # Assemble indices for slicing
         inds = [None]*len(var.dimensions)
-        for dim_name, dim_ind in dim_inds_nc.items():
+        for dim_name, dim_ind in dim_inds_by_name.items():
             ind = var.dimensions.index(dim_name)
             inds[ind] = dim_ind
         if None in inds:
             raise Exception(
                 f"variable '{var_name}': could not resolve all indices!"
-                f"\ndim_inds   : {dim_inds_nc}"
+                f"\ndim_inds   : {dim_inds_by_name}"
                 f"\ndimensions : {var.dimensions}"
                 f"\ninds       : {inds}")
         log.debug(f"indices: {inds}")
@@ -446,22 +472,30 @@ class FlexAttrsCollector:
         specs = self.field_specs
 
         # Variable name
-        if not specs.prefix:
+        if isinstance(specs, FlexVarSpecsConcentration):
             long_name = 'Activity'  #SR_HC
             short_name = 'Activity'  #SR_HC
-        elif specs.prefix in ['WD', 'DD']:
-            deposit_type = {'WD': 'Wet', 'DD': 'Dry'}[specs.prefix]  #SR_HC
-            long_name = f'{deposit_type} Surface Deposition'  #SR_HC
+        elif isinstance(specs, FlexVarSpecsDeposition):
+            _dep_type = specs.deposition.lower().capitalize()
+            long_name = f'{_dep_type} Surface Deposition'  #SR_HC
             short_name = f'Deposition'  #SR_HC
         if specs.integrate:
             long_name = f'Integr. {long_name}'
             short_name = f'Integr. {short_name}'
 
-        level_unit = 'm AGL'  #SR_HC
-        _i = self.field_specs.level
-        _var = self.fi.variables['level']
-        level_bot = 0.0 if _i == 0 else float(_var[_i - 1])
-        level_top = float(_var[_i])
+        try:
+            _i = self.field_specs.level
+        except AttributeError:
+            #SR_TMP<
+            level_unit = ''
+            level_bot = -1
+            level_top = -1
+            #SR_TMP>
+        else:
+            level_unit = 'm AGL'  #SR_HC
+            _var = self.fi.variables['level']
+            level_bot = 0.0 if _i == 0 else float(_var[_i - 1])
+            level_top = float(_var[_i])
 
         return {
             'long_name': long_name,
@@ -477,9 +511,9 @@ class FlexAttrsCollector:
         substance = self._get_substance()
 
         # Get deposition and washout data
-        if not self.field_specs.prefix:
+        if isinstance(self.field_specs, FlexVarSpecsConcentration):
             name_core = self.field_var_name
-        elif self.field_specs.prefix in ['DD', 'WD']:
+        elif isinstance(self.field_specs, FlexVarSpecsDeposition):
             name_core = self.field_var_name[3:]
         deposit_vel = self.ncattrs_vars[f'DD_{name_core}']['dryvel']
         washout_coeff = self.ncattrs_vars[f'WD_{name_core}']['weta']
@@ -492,7 +526,7 @@ class FlexAttrsCollector:
                 'I-131a': (8.02, 'days'),  #SR_HC
             }[substance]
         except KeyError:
-            raise NotImplementedError(f"half_life of '{_name}'")
+            raise NotImplementedError(f"half_life of '{substance}'")
 
         deposit_vel_unit = 'm s-1'  #SR_HC
         sediment_vel_unit = 'm s-1'  #SR_HC
@@ -509,12 +543,9 @@ class FlexAttrsCollector:
 
     def _get_substance(self):
         substance = self.ncattrs_field['long_name']
-        if not self.field_specs.prefix:
-            pass
-        elif self.field_specs.prefix == 'DD':
-            substance = substance.replace('_dry_deposition', '')  #SR_HC
-        elif self.field_specs.prefix == 'WD':
-            substance = substance.replace('_wet_deposition', '')  #SR_HC
+        if isinstance(self.field_specs, FlexVarSpecsDeposition):
+            substance = substance.replace(
+                f'_{self.field_specs.deposition}_deposition', '')  #SR_HC
         return substance
 
     def _collect_simulation_attrs(self):

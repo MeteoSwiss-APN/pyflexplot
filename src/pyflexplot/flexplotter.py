@@ -62,7 +62,6 @@ class FlexPlotter:
         'numpoint'  : 'rel_pt_ind',
         'level'     : 'level_ind',
         'species_id': 'species_id',
-        'prefix'    : 'prefix',
     }
     # yapf: enable
 
@@ -107,7 +106,9 @@ class FlexPlotter:
             yield file_path
 
     def format_file_path(self, specs):
-        kwargs = {f: getattr(specs, s) for s, f in self.specs_fmt_keys.items()}
+        kwargs = {f: getattr(specs, s)
+            for s, f in self.specs_fmt_keys.items()
+            if s in specs.specs()}
 
         plot_var = self.type_
         if specs.integrate:

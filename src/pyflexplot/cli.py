@@ -10,7 +10,8 @@ import sys
 
 from pprint import pformat
 
-from .io import FlexVarSpecs
+from .io import FlexVarSpecsConcentration
+from .io import FlexVarSpecsDeposition
 from .io import FlexFileRotPole
 from .utils import count_to_log_level
 from .flexplotter import FlexPlotter
@@ -121,12 +122,6 @@ def common_options_dispersion_field(f):
                 "'{rls_pt_ind}'."),
             type=int, default=[0], multiple=True),
         click.option(
-            '--level-ind', 'level_lst',
-            help=(
-                "Index of vertical level (zero-based, bottom-up). "
-                "Format key: '{level_ind}'."),
-            type=int, default=[0], multiple=True),
-        click.option(
             '--species-id', 'species_id_lst',
             help="Species id (default: all). Format key: '{species_id}'.",
             type=int, default=[0], multiple=True),
@@ -152,15 +147,22 @@ def common_options_dispersion_various(f):
 @main.command()
 @common_options_global
 @common_options_dispersion_field
+# yapf: disable
+@click.option(
+    '--level-ind', 'level_lst',
+    help=(
+        "Index of vertical level (zero-based, bottom-up). "
+        "Format key: '{level_ind}'."),
+    type=int, default=[0], multiple=True)
+# yapf: enable
 @common_options_dispersion_various
 @click.pass_context
 def concentration(
         ctx, in_file_path, out_file_path_fmt, integrate, **kwargs_specs):
 
     # Determine fields specifications (one for each eventual plot)
-    kwargs_specs['prefix'] = None
     kwargs_specs['integrate'] = integrate
-    fields_specs = FlexVarSpecs.multiple(**kwargs_specs)
+    fields_specs = FlexVarSpecsConcentration.multiple(**kwargs_specs)
 
     # Read fields
     flex_data_lst = FlexFileRotPole(in_file_path).read(fields_specs)
@@ -177,7 +179,7 @@ def concentration(
 @common_options_dispersion_various
 # yapf: disable
 @click.option(
-    '--deposition-type', 'deposit_type_lst',
+    '--deposition-type', 'deposition_lst',
     help=("Type of deposition. Part of plot variable (format key: "
         "'{variable}')."),
     type=click.Choice(['both', 'wet', 'dry']),
@@ -185,26 +187,11 @@ def concentration(
 # yapf: enable
 @click.pass_context
 def deposition(
-        ctx, in_file_path, out_file_path_fmt, integrate, deposit_type_lst,
-        **kwargs_specs):
-
-    prefix_lst = []
-    for deposit_type in deposit_type_lst:
-        #SR_TMP<
-        if deposit_type == 'both':
-            raise NotImplementedError("deposit_type='both'")
-        #SR_TMP>
-        prefix = {
-            'wet': 'WD',
-            'dry': 'DD',
-            'both': ('WD', 'DD')  #SR_TODO figure out how to specify this!
-        }[deposit_type]
-        prefix_lst.append(prefix)
-    kwargs_specs['prefix_lst'] = prefix_lst
+        ctx, in_file_path, out_file_path_fmt, integrate, **kwargs_specs):
 
     # Determine fields specifications (one for each eventual plot)
     kwargs_specs['integrate'] = integrate
-    fields_specs = FlexVarSpecs.multiple(**kwargs_specs)
+    fields_specs = FlexVarSpecsDeposition.multiple(**kwargs_specs)
 
     # Read fields
     flex_data_lst = FlexFileRotPole(in_file_path).read(fields_specs)
