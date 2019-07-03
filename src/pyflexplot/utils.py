@@ -29,7 +29,7 @@ def count_to_log_level(count: int) -> int:
         return logging.DEBUG
 
 
-def merge_dicts(dicts, unique_keys=True):
+def merge_dicts(*dicts, unique_keys=True):
     """Merge multiple dictionaries with or without shared keys.
 
     Args:

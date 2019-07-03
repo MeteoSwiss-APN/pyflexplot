@@ -83,7 +83,7 @@ class FlexFieldSpecs:
         'numpoint': int,
         'level': int,
         'species_id': int,
-        'prefix': lambda s: '' if not s else str(s).upper,
+        'prefix': lambda s: '' if not s else str(s).upper(),
         'integrate': bool,
     }
 
