@@ -9,7 +9,7 @@ import os
 
 from utils import datadir
 
-from pyflexplot.io import FlexFieldSpecs
+from pyflexplot.io import FlexVarSpecs
 from pyflexplot.io import FlexFileRotPole
 
 from pyflexplot.utils import merge_dicts
@@ -57,7 +57,7 @@ class TestReadFieldSimple:
         datafile = f'{datadir}/flexpart_cosmo1_case2.nc'
 
         # Initialize specifications
-        field_specs = FlexFieldSpecs(
+        field_specs = FlexVarSpecs(
             **merge_dicts(self.kwargs_specs_shared, kwargs_specs))
 
         # Read input data

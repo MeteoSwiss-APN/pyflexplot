@@ -73,7 +73,7 @@ from .utils_dev import ipython  #SR_DEV
 #
 
 
-class FlexFieldSpecs:
+class FlexVarSpecs:
     """FLEXPART field specifications."""
 
     # Keys with respective type
@@ -86,13 +86,16 @@ class FlexFieldSpecs:
         'prefix': lambda s: '' if not s else str(s).upper(),
         'integrate': bool,
     }
+    @classmethod
+    def keys(cls):
+        return [k for k in cls.key_types]
 
     def __init__(self, **kwargs):
-        """Create an instance of ``FlexFieldSpecs``.
+        """Create an instance of ``FlexVarSpecs``.
 
         Args:
             **kwargs: Arguments as specified in the class attribute
-                ``FlexFieldSpecs.key_types``. The keys correspond
+                ``FlexVarSpecs.key_types``. The keys correspond
                 to the argument's names, and the values specify a type
                 which the respective argument value must be compatible
                 with.
@@ -114,13 +117,13 @@ class FlexFieldSpecs:
 
     @classmethod
     def many(cls, **kwargs):
-        """Create many instances of ``FlexFieldSpecs``.
+        """Create many instances of ``FlexVarSpecs``.
 
         Each of the arguments of ``__init__`` can be passed by the
         original name with one value (e.g., ``time=1``) or
         pluralized with multiple values (e.g., ``time=[1, 2]``).
 
-        One ``FlexFieldSpecs`` instance is created for each combination
+        One ``FlexVarSpecs`` instance is created for each combination
         of all input arguments.
 
         """
@@ -228,21 +231,21 @@ class FlexFileRotPole:
         """Read one or more fields from a file from disc.
 
         Args:
-            fields_specs (FlexFieldSpecs or list[FlexFieldSpecs]):
+            fields_specs (FlexVarSpecs or list[FlexVarSpecs]):
                 Specifications for one or more input fields.
 
         Returns:
             FlexDataRotPole: Single data object; if ``fields_specs``
-                constitutes a single ``FlexFieldSpecs`` instance.
+                constitutes a single ``FlexVarSpecs`` instance.
 
             or
 
             list[FlexDataRotPole]: One data object for each field;
                 if ``fields_specs`` constitutes a list of
-                ``FlexFieldSpecs`` instances.
+                ``FlexVarSpecs`` instances.
 
         """
-        if isinstance(fields_specs, FlexFieldSpecs):
+        if isinstance(fields_specs, FlexVarSpecs):
             multiple = False
             fields_specs = [fields_specs]
         else:
@@ -351,7 +354,7 @@ class FlexAttrsCollector:
         Args:
             fi (netCDF4.Dataset): An open FLEXPART NetCDF file.
 
-            field_specs (FlexFieldSpecs): Input field specifications.
+            field_specs (FlexVarSpecs): Input field specifications.
 
         """
         self.fi = fi

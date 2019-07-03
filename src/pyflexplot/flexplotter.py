@@ -4,7 +4,7 @@ Plotters.
 """
 #import numpy as np
 
-from .io import FlexFieldSpecs
+from .io import FlexVarSpecs
 from .flexplot import FlexPlotConcentration
 from .flexplot import FlexPlotDeposition
 
@@ -40,7 +40,7 @@ class FlexPlotter:
             raise ValueError(f"no plot class defined for plot type '{type_}'")
 
         # Fetch specs keys
-        self.specs_keys = FlexFieldSpecs.key_types.keys()
+        self.specs_keys = FlexVarSpecs.keys()
 
     @classmethod
     def concentration(cls, *args, **kwargs):
@@ -55,15 +55,16 @@ class FlexPlotter:
         for path in self._run(*args, **kwargs):
             yield path
 
-    specs_keys = [
-        'time_ind',
-        'age_ind',
-        'rls_pt_ind',
-        'level_ind',
-        'species_id',
-        'source_ind',
-        'prefix',
-    ]
+    # yapf: disable
+    specs_fmt_keys = {
+        'time'      : 'time_ind',
+        'nageclass' : 'age_ind',
+        'numpoint'  : 'rel_pt_ind',
+        'level'     : 'level_ind',
+        'species_id': 'species_id',
+        'prefix'    : 'prefix',
+    }
+    # yapf: enable
 
     def run(self, data, file_path_fmt):
         """Create one or more plots.
@@ -106,7 +107,7 @@ class FlexPlotter:
             yield file_path
 
     def format_file_path(self, specs):
-        kwargs = {k: getattr(specs, k) for k in self.specs_keys}
+        kwargs = {f: getattr(specs, s) for s, f in self.specs_fmt_keys.items()}
 
         plot_var = self.type_
         if specs.integrate:

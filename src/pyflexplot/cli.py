@@ -10,7 +10,7 @@ import sys
 
 from pprint import pformat
 
-from .io import FlexFieldSpecs
+from .io import FlexVarSpecs
 from .io import FlexFileRotPole
 from .utils import count_to_log_level
 from .flexplotter import FlexPlotter
@@ -160,7 +160,7 @@ def concentration(
     # Determine fields specifications (one for each eventual plot)
     kwargs_specs['prefix'] = None
     kwargs_specs['integrate'] = integrate
-    fields_specs = FlexFieldSpecs.many(**kwargs_specs)
+    fields_specs = FlexVarSpecs.many(**kwargs_specs)
 
     # Read fields
     flex_data_lst = FlexFileRotPole(in_file_path).read(fields_specs)
@@ -204,7 +204,7 @@ def deposition(
 
     # Determine fields specifications (one for each eventual plot)
     kwargs_specs['integrate'] = integrate
-    fields_specs = FlexFieldSpecs.many(**kwargs_specs)
+    fields_specs = FlexVarSpecs.many(**kwargs_specs)
 
     # Read fields
     flex_data_lst = FlexFileRotPole(in_file_path).read(fields_specs)
