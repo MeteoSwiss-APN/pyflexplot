@@ -168,7 +168,7 @@ class FlexAttrsGrid(FlexAttrsBase):
 class FlexAttrsVariable(FlexAttrsBase):
     """Variable attributes."""
 
-    def __init__(self, *, name, unit, level_bot, level_top):
+    def __init__(self, *, long_name, short_name, unit, level_bot, level_top):
         """Initialize an instance of ``FlexAttrsVariable``.
 
         Kwargs:
@@ -183,7 +183,8 @@ class FlexAttrsVariable(FlexAttrsBase):
 
         """
         super().__init__()
-        self.set('name', name, str)
+        self.set('long_name', long_name, str)
+        self.set('short_name', short_name, str)
         self.set('unit', unit, str)
         self.set(['level_bot', '~_unit'], level_bot, [float, str])
         self.set(['level_top', '~_unit'], level_top, [float, str])
@@ -191,8 +192,8 @@ class FlexAttrsVariable(FlexAttrsBase):
     def format_unit(self):
         return self._format_unit(self.unit)
 
-    def format_name(self):
-        return f'{self.name} ({self.format_unit()})'
+    def format_short_name(self):
+        return f'{self.short_name} ({self.format_unit()})'
 
     def format_level_bot_unit(self):
         return self._format_unit(self.level_bot_unit)

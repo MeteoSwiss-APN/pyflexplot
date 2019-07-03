@@ -165,7 +165,7 @@ def concentration(
     # Determine fields specifications (one for each eventual plot)
     kwargs_specs['field_type'] = '3D'
     kwargs_specs['integrate'] = integrate
-    fields_specs = FlexFieldSpecs.cls_concentration().many(**kwargs_specs)
+    fields_specs = FlexFieldSpecs.many(**kwargs_specs)
 
     # Read fields
     flex_data_lst = FlexFileRotPole(in_file_path).read(fields_specs)
@@ -190,12 +190,26 @@ def concentration(
 # yapf: enable
 @click.pass_context
 def deposition(
-        ctx, in_file_path, out_file_path_fmt, integrate, **kwargs_specs):
+        ctx, in_file_path, out_file_path_fmt, integrate, deposit_types,
+        **kwargs_specs):
+
+    field_types = []
+    for deposit_type in deposit_types:
+        #SR_TMP<
+        if deposit_type == 'both':
+            raise NotImplementedError("deposit_type='both'")
+        #SR_TMP>
+        field_type = {
+            'wet': 'WD',
+            'dry': 'DD',
+            'both': ('WD', 'DD')  #SR_TODO figure out how to specify this!
+        }[deposit_type]
+        field_types.append(field_type)
+    kwargs_specs['field_types'] = field_types
 
     # Determine fields specifications (one for each eventual plot)
-    kwargs_specs['field_type'] = '3D'
     kwargs_specs['integrate'] = integrate
-    fields_specs = FlexFieldSpecs.cls_deposition().many(**kwargs_specs)
+    fields_specs = FlexFieldSpecs.many(**kwargs_specs)
 
     # Read fields
     flex_data_lst = FlexFileRotPole(in_file_path).read(fields_specs)

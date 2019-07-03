@@ -88,18 +88,6 @@ class FlexFieldSpecs:
         'integrate': bool,
     }
 
-    @classmethod
-    def keys(cls):
-        return [k for k in cls.key_types]
-
-    @classmethod
-    def cls_concentration(cls):
-        return FlexFieldSpecsConcentration
-
-    @classmethod
-    def cls_deposition(cls):
-        return FlexFieldSpecsDeposition
-
     def __init__(self, **kwargs):
         """Create an instance of ``FlexFieldSpecs``.
 
@@ -219,20 +207,6 @@ class FlexFieldSpecs:
         return inds
 
 
-class FlexFieldSpecsConcentration(FlexFieldSpecs):
-    """FLEXPART field specifications for concentration plots."""
-
-    pass
-
-
-class FlexFieldSpecsDeposition(FlexFieldSpecs):
-    """FLEXPART field specifications for deposition plots."""
-
-    key_types = merge_dicts([FlexFieldSpecs.key_types, {
-        'deposit_type': str,
-    }])
-
-
 class FlexFileRotPole:
     """NetCDF file containing FLEXPART data on rotated-pole grid."""
 
@@ -342,10 +316,13 @@ class FlexFileRotPole:
             if attrs.variable.unit == 'ng kg-1':
                 attrs.variable.unit = 'Bq m-3'
                 fld *= 1e-12
+            elif attrs.variable.unit == '1e-12 kg m-2':
+                attrs.variable.unit = 'Bq m-2'
+                fld *= 1e-12
             else:
                 raise NotImplementedError(
-                    f"species '{ncattrs_var['long_name']}': "
-                    f"unknown unit '{ncattrs_var['units']}'")
+                    f"species '{attrs.species.name}': "
+                    f"unknown unit '{attrs.variable.unit}'")
 
     #SR_TMP>
 
@@ -443,19 +420,19 @@ class FlexAttrsCollector:
     def _run_variable(self):
         """Collect variable attributes."""
 
-        # Get variable name
-        _key = (self.field_specs.field_type, self.field_specs.integrate)
-        try:
-            # yapf: disable
-            var_name = {
-                #('3D', False): 'Concentration',  #SR_HC
-                #('3D', True): 'Integr. Concentr.',  #SR_HC
-                ('3D', False): 'Activity',  #SR_HC
-                ('3D', True): 'Integr. Activity',  #SR_HC
-            }[_key]
-            # yapf: enable
-        except KeyError:
-            raise NotImplementedError(f"var_name of '{_type}' field")
+        specs = self.field_specs
+
+        # Variable name
+        if specs.field_type == '3D':
+            long_name = 'Activity'  #SR_HC
+            short_name = 'Activity'  #SR_HC
+        elif specs.field_type in ['WD', 'DD']:
+            deposit_type = {'WD': 'Wet', 'DD': 'Dry'}[specs.field_type]  #SR_HC
+            long_name = f'{deposit_type} Surface Deposition'  #SR_HC
+            short_name = f'Deposition'  #SR_HC
+        if specs.integrate:
+            long_name = f'Integr. {long_name}'
+            short_name = f'Integr. {short_name}'
 
         level_unit = 'm AGL'  #SR_HC
         _i = self.field_specs.level_ind
@@ -464,7 +441,8 @@ class FlexAttrsCollector:
         level_top = float(_var[_i])
 
         return {
-            'name': var_name,
+            'long_name': long_name,
+            'short_name': short_name,
             'unit': self.ncattrs_field['units'],
             'level_bot': (level_bot, level_unit),
             'level_top': (level_top, level_unit),
@@ -473,23 +451,23 @@ class FlexAttrsCollector:
     def _run_species(self):
         """Collect species attributes."""
 
+        substance = self._get_substance()
+
         # Get deposition and washout data
-        _type = self.field_specs.field_type
-        _name = self.field_var_name
-        if _type == '3D':
-            deposit_vel = self.ncattrs_vars[f'DD_{_name}']['dryvel']
-            washout_coeff = self.ncattrs_vars[f'WD_{_name}']['weta']
-            washout_exponent = self.ncattrs_vars[f'WD_{_name}']['wetb']
-        else:
-            raise NotImplementedError(f"deposit_vel of '{_type}' field")
+        if self.field_specs.field_type == '3D':
+            name_core = self.field_var_name
+        elif self.field_specs.field_type in ['DD', 'WD']:
+            name_core = self.field_var_name[3:]
+        deposit_vel = self.ncattrs_vars[f'DD_{name_core}']['dryvel']
+        washout_coeff = self.ncattrs_vars[f'WD_{name_core}']['weta']
+        washout_exponent = self.ncattrs_vars[f'WD_{name_core}']['wetb']
 
         # Get half life information
-        _name = self.ncattrs_field['long_name']
         try:
             half_life, half_life_unit = {
                 'Cs-137': (30.17, 'years'),  #SR_HC
                 'I-131a': (8.02, 'days'),  #SR_HC
-            }[_name]
+            }[substance]
         except KeyError:
             raise NotImplementedError(f"half_life of '{_name}'")
 
@@ -498,13 +476,23 @@ class FlexAttrsCollector:
         washout_coeff_unit = 's-1'  #SR_HC
 
         return {
-            'name': self.ncattrs_field['long_name'],
+            'name': substance,
             'half_life': (half_life, half_life_unit),
             'deposit_vel': (deposit_vel, deposit_vel_unit),
             'sediment_vel': (0.0, sediment_vel_unit),
             'washout_coeff': (washout_coeff, washout_coeff_unit),
             'washout_exponent': washout_exponent,
         }
+
+    def _get_substance(self):
+        substance = self.ncattrs_field['long_name']
+        if self.field_specs.field_type == '3D':
+            pass
+        elif self.field_specs.field_type == 'DD':
+            substance = substance.replace('_dry_deposition', '')  #SR_HC
+        elif self.field_specs.field_type == 'WD':
+            substance = substance.replace('_wet_deposition', '')  #SR_HC
+        return substance
 
     def _run_simulation(self):
         """Collect simulation attributes."""

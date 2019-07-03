@@ -16,19 +16,11 @@ from .utils import Degrees
 from .utils_dev import ipython  #SR_DEV
 
 
-class FlexPlotConcentration:
-    """FLEXPART plot of particle concentration at a certain level.
+class FlexPlotBase:
+    """Base class for FLEXPART plots."""
 
-    Attributes:
-        <TODO>
-
-    Methods:
-        <TODO>
-
-    """
-
-    def __init__(self, rlat, rlon, fld, attrs, conf=None):
-        """Initialize instance of FlexPlotConcentration.
+    def __init__(self, rlat, rlon, fld, attrs):
+        """Create an instance of ``FlexPlotBase``.
 
         Args:
             rlat (ndarray[float]): Rotated latitude (1d).
@@ -39,14 +31,61 @@ class FlexPlotConcentration:
 
             attrs (dict): Instance of ``FlexAttrsCollection``.
 
-            conf (dict, optional): Plot configuration. Defaults to None.
-
         """
         self.rlat = rlat
         self.rlon = rlon
         self.fld = np.where(fld > 0, fld, np.nan)
         self.attrs = attrs
-        self.conf = {} if conf is None else conf
+
+    def prepare_plot(self):
+
+        self.fig = plt.figure(figsize=self.figsize)
+
+        self.ax_map = AxesMapRotPole(
+            self.fig,
+            self.rlat,
+            self.rlon,
+            self.attrs.grid.north_pole_lat,
+            self.attrs.grid.north_pole_lon,
+            **self.map_conf,
+        )
+
+    def save(self, file_path, format=None):
+        """Save the plot to disk.
+
+        Args:
+            file_path (str): Output file name, incl. path.
+
+            format (str): Plot format (e.g., 'png', 'pdf'). Defaults to
+                None. If ``format`` is None, the plot format is derived
+                from the extension of ``file_path``.
+
+        """
+        if format is None:
+            ext = os.path.splitext(file_path)[1].lower()
+            if ext not in ['.pdf', '.png']:
+                raise ValueError(
+                    f"Cannot derive format from extension '{ext}'"
+                    f"derived from '{os.path.basename(file_path)}'")
+            format = ext[1:]
+
+        self.fig.savefig(
+            file_path,
+            facecolor=self.fig.get_facecolor(),
+            edgecolor=self.fig.get_edgecolor(),
+            bbox_inches='tight',
+            pad_inches=0.15,
+        )
+        plt.close(self.fig)
+
+
+class FlexPlotBase_Dispersion(FlexPlotBase):
+    """Base class for FLEXPART dispersion plots."""
+
+    figsize = (12, 9)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         # Formatting arguments
         self._max_marker_kwargs = {
@@ -79,19 +118,14 @@ class FlexPlotConcentration:
         self.levels = 10**self.levels_log10
         self.extend = 'max'
 
-        self._run()
-
-    def _run(self):
+    def create(self):
+        """Create plot."""
 
         # Prepare plot
-        self.fig = plt.figure(figsize=(12, 9))
-        pollat = self.attrs.grid.north_pole_lat
-        pollon = self.attrs.grid.north_pole_lon
-        self.ax_map = AxesMapRotPole(
-            self.fig, self.rlat, self.rlon, pollat, pollon, **self.map_conf)
+        self.prepare_plot()
 
         # Plot particle concentration field
-        self.map_add_particle_concentrations()
+        self.draw_map_plot()
 
         # Add text boxes around plot
         self.fig_add_text_boxes()
@@ -100,7 +134,7 @@ class FlexPlotConcentration:
         self.fill_box_right_bottom()
         self.fill_box_bottom()
 
-    def map_add_particle_concentrations(self):
+    def draw_map_plot(self):
         """Plot the particle concentrations onto the map."""
 
         # Define colors
@@ -243,7 +277,7 @@ class FlexPlotConcentration:
         box = self.axs_box[0]
 
         # Top left: variable
-        s = f"{self.attrs.variable.name}"
+        s = f"{self.attrs.variable.long_name}"
         box.text('tl', s, size='xx-large')
 
         # Top center: species
@@ -285,7 +319,7 @@ class FlexPlotConcentration:
                 f' {self.attrs.variable.format_unit()}')
 
         # Add box title
-        s = f"{self.attrs.variable.format_name()}"
+        s = f"{self.attrs.variable.format_short_name()}"
         #box.text('tc', s=s, size='large')
         box.text('tc', s=s, dy=1, size='large')  #SR_DBG
 
@@ -460,39 +494,22 @@ class FlexPlotConcentration:
         cpright_fmtd = u"\u00a9MeteoSwiss"
         box.text('tr', dx=0.7, dy=0.5, s=cpright_fmtd, size='small')
 
-    def save(self, file_path, format=None):
-        """Save the plot to disk.
 
-        Args:
-            file_path (str): Output file name, incl. path.
+class FlexPlotConcentration(FlexPlotBase_Dispersion):
+    """FLEXPART plot of particle concentration at a certain level."""
 
-            format (str): Plot format (e.g., 'png', 'pdf'). Defaults to
-                None. If ``format`` is None, the plot format is derived
-                from the extension of ``file_path``.
-
-        """
-        if format is None:
-            ext = os.path.splitext(file_path)[1].lower()
-            if ext not in ['.pdf', '.png']:
-                raise ValueError(
-                    f"Cannot derive format from extension '{ext}'"
-                    f"derived from '{os.path.basename(file_path)}'")
-            format = ext[1:]
-        self.fig.savefig(
-            file_path,
-            facecolor=self.fig.get_facecolor(),
-            edgecolor=self.fig.get_edgecolor(),
-            bbox_inches='tight',
-            pad_inches=0.15,
-        )
-        plt.close(self.fig)
+    def __init__(self, *args, **kwargs):
+        """Create an instance of ``FlexPlot``."""
+        super().__init__(*args, **kwargs)
+        self.create()
 
 
-class FlexPlotDeposition:
+class FlexPlotDeposition(FlexPlotBase_Dispersion):
     """ """
 
     def __init__(self, *args, **kwargs):
         """Create an instance of ``FlexPlotDeposition``.
 
         """
-        raise NotImplementedError(f'{self.__class__.__name__}')
+        super().__init__(*args, **kwargs)
+        self.create()
