@@ -107,21 +107,21 @@ def common_options_dispersion_field(f):
     # yapf: disable
     options = [
         click.option(
-            '--time-ind', 'time_ind_lst',
+            '--time-ind', 'time_lst',
             help="Index of time (zero-based). Format key: '{time_ind}'.",
             type=int, default=[0], multiple=True),
         click.option(
-            '--age-class-ind', 'age_ind_lst',
+            '--age-class-ind', 'nageclass_lst',
             help=("Index of age class (zero-based). Format key: "
                 "'{age_class_ind}'."),
             type=int, default=[0], multiple=True),
         click.option(
-            '--release-point-ind', 'rls_pt_ind_lst',
+            '--release-point-ind', 'numpoint_lst',
             help=("Index of release point (zero-based). Format key: "
                 "'{rls_pt_ind}'."),
             type=int, default=[0], multiple=True),
         click.option(
-            '--level-ind', 'level_ind_lst',
+            '--level-ind', 'level_lst',
             help=(
                 "Index of vertical level (zero-based, bottom-up). "
                 "Format key: '{level_ind}'."),
@@ -129,11 +129,6 @@ def common_options_dispersion_field(f):
         click.option(
             '--species-id', 'species_id_lst',
             help="Species id (default: all). Format key: '{species_id}'.",
-            type=int, default=[0], multiple=True),
-        click.option(
-            '--source-ind', 'source_ind_lst',
-            help=("Point source index (zero-based). Format key: "
-                "'{source_ind}'."),
             type=int, default=[0], multiple=True),
     ]
     # yapf: enable

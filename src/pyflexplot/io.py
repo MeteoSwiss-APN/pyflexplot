@@ -78,12 +78,11 @@ class FlexFieldSpecs:
 
     # Keys with respective type
     key_types = {
-        'time_ind': int,
-        'age_ind': int,
-        'rls_pt_ind': int,
-        'level_ind': int,
+        'time': int,
+        'nageclass': int,
+        'numpoint': int,
+        'level': int,
         'species_id': int,
-        'source_ind': int,
         'prefix': lambda s: '' if not s else str(s).upper,
         'integrate': bool,
     }
@@ -118,8 +117,8 @@ class FlexFieldSpecs:
         """Create many instances of ``FlexFieldSpecs``.
 
         Each of the arguments of ``__init__`` can be passed by the
-        original name with one value (e.g., ``time_ind=1``) or
-        pluralized with multiple values (e.g., ``time_inds=[1, 2]``).
+        original name with one value (e.g., ``time=1``) or
+        pluralized with multiple values (e.g., ``time=[1, 2]``).
 
         One ``FlexFieldSpecs`` instance is created for each combination
         of all input arguments.
@@ -190,16 +189,16 @@ class FlexFieldSpecs:
 
         inds = {}
 
-        inds['nageclass'] = self.age_ind
-        inds['numpoint'] = self.rls_pt_ind
+        inds['nageclass'] = self.nageclass
+        inds['numpoint'] = self.numpoint
 
         if not self.integrate:
-            inds['time'] = self.time_ind
+            inds['time'] = self.time
         else:
-            inds['time'] = slice(None, self.time_ind + 1)
+            inds['time'] = slice(None, self.time + 1)
 
         if not self.prefix:
-            inds['level'] = self.level_ind
+            inds['level'] = self.level
 
         inds['rlat'] = slice(None)
         inds['rlon'] = slice(None)
@@ -229,13 +228,25 @@ class FlexFileRotPole:
         """Read one or more fields from a file from disc.
 
         Args:
-            fields_specs (list[FlexFieldSpecs]): Specifications for
-                one or more input fields.
+            fields_specs (FlexFieldSpecs or list[FlexFieldSpecs]):
+                Specifications for one or more input fields.
 
         Returns:
-            list[FlexDataRotPole]: One data object for each field.
+            FlexDataRotPole: Single data object; if ``fields_specs``
+                constitutes a single ``FlexFieldSpecs`` instance.
+
+            or
+
+            list[FlexDataRotPole]: One data object for each field;
+                if ``fields_specs`` constitutes a list of
+                ``FlexFieldSpecs`` instances.
 
         """
+        if isinstance(fields_specs, FlexFieldSpecs):
+            multiple = False
+            fields_specs = [fields_specs]
+        else:
+            multiple = True
         log.debug(f"read {self.path}")
         flex_data_lst = []
         with nc4.Dataset(self.path, 'r') as fi:
@@ -248,7 +259,11 @@ class FlexFileRotPole:
                 flex_data = self._read()
                 flex_data_lst.append(flex_data)
         self.reset()
-        return flex_data_lst
+        if multiple:
+            return flex_data_lst
+        else:
+            assert len(flex_data_lst) == 1
+            return flex_data_lst[0]
 
     def _read(self):
         """Core routine reading one field from an open file."""
@@ -388,7 +403,7 @@ class FlexAttrsCollector:
         """Collect release point attributes."""
 
         # Collect release point information
-        _ind = self.field_specs.rls_pt_ind
+        _ind = self.field_specs.numpoint
         release_point = ReleasePoint.from_file(self.fi, _ind)
 
         site_lat = np.mean([release_point.lllat, release_point.urlat])
@@ -435,7 +450,7 @@ class FlexAttrsCollector:
             short_name = f'Integr. {short_name}'
 
         level_unit = 'm AGL'  #SR_HC
-        _i = self.field_specs.level_ind
+        _i = self.field_specs.level
         _var = self.fi.variables['level']
         level_bot = 0.0 if _i == 0 else float(_var[_i - 1])
         level_top = float(_var[_i])
@@ -527,7 +542,7 @@ class FlexAttrsCollector:
 
         if i is None:
             # Default to timestep of current field
-            i = self.field_specs.time_ind
+            i = self.field_specs.time
 
         var = self.fi.variables['time']
 
