@@ -62,7 +62,7 @@ class FlexPlotter:
         'level_ind',
         'species_id',
         'source_ind',
-        'field_type',
+        'prefix',
     ]
 
     def run(self, data, file_path_fmt):
@@ -113,4 +113,9 @@ class FlexPlotter:
             plot_var += '-int'
         kwargs['variable'] = plot_var
 
-        return self.file_path_fmt.format(**kwargs)
+        try:
+            file_path = self.file_path_fmt.format(**kwargs)
+        except KeyError as e:
+            raise  #SR_TMP TODO customize error message
+        else:
+            return file_path

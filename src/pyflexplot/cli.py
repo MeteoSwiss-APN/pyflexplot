@@ -107,31 +107,31 @@ def common_options_dispersion_field(f):
     # yapf: disable
     options = [
         click.option(
-            '--time-ind', 'time_inds',
+            '--time-ind', 'time_ind_lst',
             help="Index of time (zero-based). Format key: '{time_ind}'.",
             type=int, default=[0], multiple=True),
         click.option(
-            '--age-class-ind', 'age_inds',
+            '--age-class-ind', 'age_ind_lst',
             help=("Index of age class (zero-based). Format key: "
                 "'{age_class_ind}'."),
             type=int, default=[0], multiple=True),
         click.option(
-            '--release-point-ind', 'rls_pt_inds',
+            '--release-point-ind', 'rls_pt_ind_lst',
             help=("Index of release point (zero-based). Format key: "
                 "'{rls_pt_ind}'."),
             type=int, default=[0], multiple=True),
         click.option(
-            '--level-ind', 'level_inds',
+            '--level-ind', 'level_ind_lst',
             help=(
                 "Index of vertical level (zero-based, bottom-up). "
                 "Format key: '{level_ind}'."),
             type=int, default=[0], multiple=True),
         click.option(
-            '--species-id', 'species_ids',
+            '--species-id', 'species_id_lst',
             help="Species id (default: all). Format key: '{species_id}'.",
             type=int, default=[0], multiple=True),
         click.option(
-            '--source-ind', 'source_inds',
+            '--source-ind', 'source_ind_lst',
             help=("Point source index (zero-based). Format key: "
                 "'{source_ind}'."),
             type=int, default=[0], multiple=True),
@@ -163,7 +163,7 @@ def concentration(
         ctx, in_file_path, out_file_path_fmt, integrate, **kwargs_specs):
 
     # Determine fields specifications (one for each eventual plot)
-    kwargs_specs['field_type'] = '3D'
+    kwargs_specs['prefix'] = None
     kwargs_specs['integrate'] = integrate
     fields_specs = FlexFieldSpecs.many(**kwargs_specs)
 
@@ -182,7 +182,7 @@ def concentration(
 @common_options_dispersion_various
 # yapf: disable
 @click.option(
-    '--deposition-type', 'deposit_types',
+    '--deposition-type', 'deposit_type_lst',
     help=("Type of deposition. Part of plot variable (format key: "
         "'{variable}')."),
     type=click.Choice(['both', 'wet', 'dry']),
@@ -190,22 +190,22 @@ def concentration(
 # yapf: enable
 @click.pass_context
 def deposition(
-        ctx, in_file_path, out_file_path_fmt, integrate, deposit_types,
+        ctx, in_file_path, out_file_path_fmt, integrate, deposit_type_lst,
         **kwargs_specs):
 
-    field_types = []
-    for deposit_type in deposit_types:
+    prefixe_lst = []
+    for deposit_type in deposit_type_lst:
         #SR_TMP<
         if deposit_type == 'both':
             raise NotImplementedError("deposit_type='both'")
         #SR_TMP>
-        field_type = {
+        prefix = {
             'wet': 'WD',
             'dry': 'DD',
             'both': ('WD', 'DD')  #SR_TODO figure out how to specify this!
         }[deposit_type]
-        field_types.append(field_type)
-    kwargs_specs['field_types'] = field_types
+        prefixe_lst.append(prefix)
+    kwargs_specs['prefix_lst'] = prefixe_lst
 
     # Determine fields specifications (one for each eventual plot)
     kwargs_specs['integrate'] = integrate

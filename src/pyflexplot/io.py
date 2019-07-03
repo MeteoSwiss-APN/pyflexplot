@@ -84,7 +84,7 @@ class FlexFieldSpecs:
         'level_ind': int,
         'species_id': int,
         'source_ind': int,
-        'field_type': str.upper,
+        'prefix': lambda s: '' if not s else str(s).upper,
         'integrate': bool,
     }
 
@@ -128,7 +128,7 @@ class FlexFieldSpecs:
         keys_singular = sorted(cls.key_types.keys())
         vals_plural = []
         for key_singular in keys_singular:
-            key_plural = f'{key_singular}s'
+            key_plural = f'{key_singular}_lst'
 
             if key_plural in kwargs:
                 # Passed as plural
@@ -182,7 +182,7 @@ class FlexFieldSpecs:
     def var_name(self):
         """Derive variable name from specifications."""
         var_name_base = f'spec{self.species_id:03d}'
-        prefix = {'3D': '', 'DD': 'DD_', 'WD': 'WD_'}[self.field_type]
+        prefix = '' if not self.prefix else f'{self.prefix}_'
         return prefix + var_name_base
 
     def dim_inds_nc(self):
@@ -198,7 +198,7 @@ class FlexFieldSpecs:
         else:
             inds['time'] = slice(None, self.time_ind + 1)
 
-        if self.field_type == '3D':
+        if not self.prefix:
             inds['level'] = self.level_ind
 
         inds['rlat'] = slice(None)
@@ -362,18 +362,18 @@ class FlexAttrsCollector:
         """Collect attributes."""
 
         attrs_raw = {
-            'grid': self._run_grid(),
-            'release': self._run_release(),
-            'variable': self._run_variable(),
-            'species': self._run_species(),
-            'simulation': self._run_simulation(),
+            'grid': self._collect_grid_attrs(),
+            'release': self._collect_release_attrs(),
+            'variable': self._collect_variable_attrs(),
+            'species': self._collect_species_attrs(),
+            'simulation': self._collect_simulation_attrs(),
         }
 
         #ipython(globals(), locals(), 'FlexFile._collect_attrs')
 
         return FlexAttrsCollection(**attrs_raw)
 
-    def _run_grid(self):
+    def _collect_grid_attrs(self):
         """Collect grid attributes."""
 
         np_lat = self.ncattrs_vars['rotated_pole']['grid_north_pole_latitude']
@@ -384,7 +384,7 @@ class FlexAttrsCollector:
             'north_pole_lon': np_lon,
         }
 
-    def _run_release(self):
+    def _collect_release_attrs(self):
         """Collect release point attributes."""
 
         # Collect release point information
@@ -417,17 +417,17 @@ class FlexAttrsCollector:
             'mass': (mass, mass_unit),
         }
 
-    def _run_variable(self):
+    def _collect_variable_attrs(self):
         """Collect variable attributes."""
 
         specs = self.field_specs
 
         # Variable name
-        if specs.field_type == '3D':
+        if not specs.prefix:
             long_name = 'Activity'  #SR_HC
             short_name = 'Activity'  #SR_HC
-        elif specs.field_type in ['WD', 'DD']:
-            deposit_type = {'WD': 'Wet', 'DD': 'Dry'}[specs.field_type]  #SR_HC
+        elif specs.prefix in ['WD', 'DD']:
+            deposit_type = {'WD': 'Wet', 'DD': 'Dry'}[specs.prefix]  #SR_HC
             long_name = f'{deposit_type} Surface Deposition'  #SR_HC
             short_name = f'Deposition'  #SR_HC
         if specs.integrate:
@@ -448,15 +448,15 @@ class FlexAttrsCollector:
             'level_top': (level_top, level_unit),
         }
 
-    def _run_species(self):
+    def _collect_species_attrs(self):
         """Collect species attributes."""
 
         substance = self._get_substance()
 
         # Get deposition and washout data
-        if self.field_specs.field_type == '3D':
+        if not self.field_specs.prefix:
             name_core = self.field_var_name
-        elif self.field_specs.field_type in ['DD', 'WD']:
+        elif self.field_specs.prefix in ['DD', 'WD']:
             name_core = self.field_var_name[3:]
         deposit_vel = self.ncattrs_vars[f'DD_{name_core}']['dryvel']
         washout_coeff = self.ncattrs_vars[f'WD_{name_core}']['weta']
@@ -486,15 +486,15 @@ class FlexAttrsCollector:
 
     def _get_substance(self):
         substance = self.ncattrs_field['long_name']
-        if self.field_specs.field_type == '3D':
+        if not self.field_specs.prefix:
             pass
-        elif self.field_specs.field_type == 'DD':
+        elif self.field_specs.prefix == 'DD':
             substance = substance.replace('_dry_deposition', '')  #SR_HC
-        elif self.field_specs.field_type == 'WD':
+        elif self.field_specs.prefix == 'WD':
             substance = substance.replace('_wet_deposition', '')  #SR_HC
         return substance
 
-    def _run_simulation(self):
+    def _collect_simulation_attrs(self):
         """Collect simulation attributes."""
 
         # Start and end timesteps of simulation
