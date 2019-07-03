@@ -40,7 +40,7 @@ class FlexPlotter:
             raise ValueError(f"no plot class defined for plot type '{type_}'")
 
         # Fetch specs keys
-        self.specs_keys = FlexVarSpecs.keys()
+        self.specs_keys = FlexVarSpecs.specs()
 
     @classmethod
     def concentration(cls, *args, **kwargs):

@@ -44,7 +44,6 @@ class TestReadFieldSimple:
     @property
     def kwargs_specs_shared(self):
         return {
-            #'prefix':
             'integrate': False,
             'species_id': self.species_id,
             **self.dims,
@@ -52,12 +51,12 @@ class TestReadFieldSimple:
 
     #------------------------------------------------------------------
 
-    def run(self, datadir, var_name, **kwargs_specs):
+    def run(self, datadir, cls_var_specs, var_name, **kwargs_specs):
 
         datafile = f'{datadir}/flexpart_cosmo1_case2.nc'
 
         # Initialize specifications
-        field_specs = FlexVarSpecs(
+        field_specs = cls_var_specs(
             **merge_dicts(self.kwargs_specs_shared, kwargs_specs))
 
         # Read input data
@@ -76,16 +75,16 @@ class TestReadFieldSimple:
     def test_concentration(self, datadir):
         """Read concentration field."""
         var_name = f'spec{self.species_id:03d}'
-        self.run(datadir, var_name, prefix=None)
+        self.run(datadir, FlexVarSpecs, var_name, prefix=None)
 
     def test_deposition_dry(self, datadir):
         """Read dry deposition field."""
         var_name = f'DD_spec{self.species_id:03d}'
-        self.run(datadir, var_name, prefix='DD')
+        self.run(datadir, FlexVarSpecs, var_name, prefix='DD')
 
     def test_deposition_wet(self, datadir):
         """Read wet deposition field."""
         var_name = f'WD_spec{self.species_id:03d}'
-        self.run(datadir, var_name, prefix='WD')
+        self.run(datadir, FlexVarSpecs, var_name, prefix='WD')
 
     #ipython(globals(), locals())

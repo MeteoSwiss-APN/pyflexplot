@@ -160,7 +160,7 @@ def concentration(
     # Determine fields specifications (one for each eventual plot)
     kwargs_specs['prefix'] = None
     kwargs_specs['integrate'] = integrate
-    fields_specs = FlexVarSpecs.many(**kwargs_specs)
+    fields_specs = FlexVarSpecs.multiple(**kwargs_specs)
 
     # Read fields
     flex_data_lst = FlexFileRotPole(in_file_path).read(fields_specs)
@@ -188,7 +188,7 @@ def deposition(
         ctx, in_file_path, out_file_path_fmt, integrate, deposit_type_lst,
         **kwargs_specs):
 
-    prefixe_lst = []
+    prefix_lst = []
     for deposit_type in deposit_type_lst:
         #SR_TMP<
         if deposit_type == 'both':
@@ -199,12 +199,12 @@ def deposition(
             'dry': 'DD',
             'both': ('WD', 'DD')  #SR_TODO figure out how to specify this!
         }[deposit_type]
-        prefixe_lst.append(prefix)
-    kwargs_specs['prefix_lst'] = prefixe_lst
+        prefix_lst.append(prefix)
+    kwargs_specs['prefix_lst'] = prefix_lst
 
     # Determine fields specifications (one for each eventual plot)
     kwargs_specs['integrate'] = integrate
-    fields_specs = FlexVarSpecs.many(**kwargs_specs)
+    fields_specs = FlexVarSpecs.multiple(**kwargs_specs)
 
     # Read fields
     flex_data_lst = FlexFileRotPole(in_file_path).read(fields_specs)

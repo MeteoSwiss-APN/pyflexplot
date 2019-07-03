@@ -74,34 +74,39 @@ from .utils_dev import ipython  #SR_DEV
 
 
 class FlexVarSpecs:
-    """FLEXPART field specifications."""
+    """FLEXPART input variable specifications."""
 
     # Keys with respective type
-    key_types = {
+    _keys_w_type = {
+        'species_id': int,
+        'prefix': lambda s: '' if not s else str(s).upper(),
+        'integrate': bool,
+        # Dimensions
         'time': int,
         'nageclass': int,
         'numpoint': int,
         'level': int,
-        'species_id': int,
-        'prefix': lambda s: '' if not s else str(s).upper(),
-        'integrate': bool,
     }
+
     @classmethod
-    def keys(cls):
-        return [k for k in cls.key_types]
+    def specs(cls, types=False):
+        for k, v in cls._keys_w_type.items():
+            if types:
+                yield k, v
+            else:
+                yield k
 
     def __init__(self, **kwargs):
         """Create an instance of ``FlexVarSpecs``.
 
         Args:
-            **kwargs: Arguments as specified in the class attribute
-                ``FlexVarSpecs.key_types``. The keys correspond
-                to the argument's names, and the values specify a type
-                which the respective argument value must be compatible
-                with.
+            **kwargs: Arguments as in ``FlexVarSpecs.specs(types=True)``.
+                The keys correspond to the argument's names, and the
+                values specify a type which the respective argument
+                value must be compatible with.
 
         """
-        for key, type_ in self.key_types.items():
+        for key, type_ in self.specs(types=True):
             try:
                 val = kwargs.pop(key)
             except KeyError:
@@ -116,8 +121,8 @@ class FlexVarSpecs:
             raise ValueError(f"{len(kwargs)} unexpected arguments: {kwargs}")
 
     @classmethod
-    def many(cls, **kwargs):
-        """Create many instances of ``FlexVarSpecs``.
+    def multiple(cls, **kwargs):
+        """Create multiple instances of ``FlexVarSpecs``.
 
         Each of the arguments of ``__init__`` can be passed by the
         original name with one value (e.g., ``time=1``) or
@@ -127,7 +132,7 @@ class FlexVarSpecs:
         of all input arguments.
 
         """
-        keys_singular = sorted(cls.key_types.keys())
+        keys_singular = sorted(cls.specs())
         vals_plural = []
         for key_singular in keys_singular:
             key_plural = f'{key_singular}_lst'
@@ -231,18 +236,18 @@ class FlexFileRotPole:
         """Read one or more fields from a file from disc.
 
         Args:
-            fields_specs (FlexVarSpecs or list[FlexVarSpecs]):
+            fields_specs (FlexFieldSpecs or list[FlexFieldSpecs]):
                 Specifications for one or more input fields.
 
         Returns:
             FlexDataRotPole: Single data object; if ``fields_specs``
-                constitutes a single ``FlexVarSpecs`` instance.
+                constitutes a single ``FlexFieldSpecs`` instance.
 
             or
 
             list[FlexDataRotPole]: One data object for each field;
                 if ``fields_specs`` constitutes a list of
-                ``FlexVarSpecs`` instances.
+                ``FlexFieldSpecs`` instances.
 
         """
         if isinstance(fields_specs, FlexVarSpecs):
