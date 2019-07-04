@@ -12,18 +12,18 @@ from copy import copy, deepcopy
 from .utils_dev import ipython  #SR_DEV
 
 
-class FlexDataRotPole:
+class FlexFieldRotPole:
     """FLEXPART data on rotated-pole grid."""
 
-    def __init__(self, rlat, rlon, field, attrs, field_specs):
-        """Create an instance of ``FlexDataRotPole``.
+    def __init__(self, rlat, rlon, fld, attrs, field_specs):
+        """Create an instance of ``FlexFieldRotPole``.
 
         Args:
             rlat (ndarray[float]): Rotated latitude array (1D).
 
             rlon (ndarray[float]): Rotated longitude array (1D).
 
-            field (ndarray[float, float]): Field array (2D).
+            fld (ndarray[float, float]): Field array (2D).
 
             attrs (FlexAttrsCollection): Attributes collection.
 
@@ -32,7 +32,7 @@ class FlexDataRotPole:
         """
         self.rlat = rlat
         self.rlon = rlon
-        self.field = field
+        self.fld = fld
         self.attrs = attrs
         self.field_specs = field_specs
 
@@ -96,6 +96,36 @@ class FlexAttrsBase:
         except AttributeError:
             self._raise_missing_attrs()
 
+    def set_value_unit(self, val_name, val, unit, val_type):
+        """Set a (value, unit) attribute pair.
+
+        Args:
+            val_name (str): Name of the value attribute, from which
+                the name of the unit attribute is derived by appending
+                '_unit'.
+
+            val (<val_type> or (<val_type>, str)) Value compatible
+                with type ``val_type``, either only the value or a
+                (value, unit) tuple.
+
+            unit (str or None): Unit, only passed separately if ``val``
+                is not a (value, unit) tuple.
+
+            val_type (type): Type with ``val``.
+
+        """
+        try:
+            unit_in = unit
+            val, unit = val
+        except TypeError:
+            pass
+        else:
+            if unit_in is not None:
+                raise ValueError(
+                    f'val={val} constitutes a (value, unit) tuple, '
+                    f'so unit={unit} should be None!')
+        self.set([val_name, '~_unit'], (val, unit), [val_type, str])
+
     def _prepare_multi_attrs(self, names, vals, types):
 
         # Ensure that one value has been passed for each name
@@ -147,6 +177,47 @@ class FlexAttrsBase:
             unit = unit.replace(old, new)
         return unit
 
+    def __iter__(self):
+        for k, v in self.attrs.items():
+            yield k, v
+
+    def merge(self, others, replace=None):
+        """Create new instance by merging self and others.
+
+        Args:
+            others (list[FlexAttrsBase]): Other instances of the same
+                attributes class, to be merged with this one.
+
+            replace (dict, optional): Attributes to be replaced in the
+                merged instance. Must contain all attributes that
+                differ between any of the instances to be merged.
+                Defaults to '{}'.
+
+        Returns:
+            FlexAttrsBase: Merged instance derived from ``self`` and
+                ``others``. Note that no input instance is changed.
+
+        """
+        if replace is None:
+            replace = {}
+        kwargs = {}
+        for key, val0 in sorted(self.attrs.items()):
+            try:
+                kwargs[key] = replace[key]
+            except KeyError:
+                vals = set([val0] + [o.attrs[key] for o in others])
+                if len(vals) > 1:
+                    raise Exception(
+                        f"{len(others) + 1} {self.__class__.__name__} "
+                        f"instances contain {len(vals)} different "
+                        f"values for '{key}', but no replacement "
+                        f"value is passed: {sorted(vals)}")
+                kwargs[key] = next(iter(vals))
+        try:  #SR_DBG
+            return self.__class__(**kwargs)
+        except Exception as e:  #SR_DBG
+            ipython(globals(), locals(), e)  #SR_DBG
+
 
 class FlexAttrsGrid(FlexAttrsBase):
     """Grid attributes."""
@@ -168,7 +239,16 @@ class FlexAttrsGrid(FlexAttrsBase):
 class FlexAttrsVariable(FlexAttrsBase):
     """Variable attributes."""
 
-    def __init__(self, *, long_name, short_name, unit, level_bot, level_top):
+    def __init__(
+            self,
+            *,
+            long_name,
+            short_name,
+            unit,
+            level_bot,
+            level_top,
+            level_bot_unit=None,
+            level_top_unit=None):
         """Initialize an instance of ``FlexAttrsVariable``.
 
         Kwargs:
@@ -177,17 +257,27 @@ class FlexAttrsVariable(FlexAttrsBase):
             unit (str): Unit of variable as a regular string
                 (e.g., 'm-3' for cubic meters).
 
-            level_bot ((float, str)): Bottom level (value and unit).
+            level_bot (float or (float, str)): Bottom level, either
+                 only value or a (value, unit) tuple.
 
-            level_top ((float, str)): Top level (value and unit).
+            level_top (float or (float, str)): Top level, either only
+                 value or a (value, unit) tuple.
+
+            level_bot_unit (str, optional): Bottom level unit.
+                Obsolete if ``level_bot`` is a (value, unit) tuple.
+                Defaults to None.
+
+            level_top_unit (str, optional): Bottom level unit.
+                Obsolete if ``level_top`` is a (value, unit) tuple.
+                Defaults to None.
 
         """
         super().__init__()
         self.set('long_name', long_name, str)
         self.set('short_name', short_name, str)
         self.set('unit', unit, str)
-        self.set(['level_bot', '~_unit'], level_bot, [float, str])
-        self.set(['level_top', '~_unit'], level_top, [float, str])
+        self.set_value_unit('level_bot', level_bot, level_bot_unit, float)
+        self.set_value_unit('level_top', level_top, level_top_unit, float)
 
     def format_unit(self):
         return self._format_unit(self.unit)
@@ -212,14 +302,25 @@ class FlexAttrsVariable(FlexAttrsBase):
 
     def format_level_range(self):
         return (
-            f"{self.level_bot:g}$\,\endash\,${self.level_top:g} "
+            f"{self.level_bot:g}$\\,\\endash\\,${self.level_top:g} "
             f"{self.format_level_unit()}")
 
 
 class FlexAttrsRelease(FlexAttrsBase):
     """Release attributes."""
 
-    def __init__(self, *, site_lat, site_lon, site_name, height, rate, mass):
+    def __init__(
+            self,
+            *,
+            site_lat,
+            site_lon,
+            site_name,
+            height,
+            rate,
+            mass,
+            height_unit=None,
+            rate_unit=None,
+            mass_unit=None):
         """Initialize an instance of ``FlexAttrsRelease``.
 
         Kwargs:
@@ -229,20 +330,33 @@ class FlexAttrsRelease(FlexAttrsBase):
 
             site_name (str): Name of release site.
 
-            height ((float, str)): Release height (value and unit).
+            height (float or (float, str)): Release height, value or
+                (value, unit) tuple.
 
-            rate ((float, str)): Release rate (value and unit).
+            rate (float or (float, str)): Release rate, value or
+                (value, unit) tuple.
 
-            mass ((float, str)): Release mass (value and unit).
+            mass (float or (float, str)): Release mass, value or
+                (value, unit) tuple.
+
+            height_unit (str, optional): Release height unit. Obsolete
+                if ``height`` is a (value, unit) tuple. Defaults to
+                None.
+
+            rate_unit (str, optional): Release rate unit. Obsolete if
+                ``rate`` is a (value, unit) tuple. Defaults to None.
+
+            mass_unit (str, optional): Release mass unit. Obsolete if
+                ``mass`` is a (value, unit) tuple. Defaults to None.
 
         """
         super().__init__()
         self.set('site_lat', site_lat, float)
         self.set('site_lon', site_lon, float)
         self.set('site_name', site_name, str)
-        self.set(['height', '~_unit'], height, [float, str])
-        self.set(['rate', '~_unit'], rate, [float, str])
-        self.set(['mass', '~_unit'], mass, [float, str])
+        self.set_value_unit('height', height, height_unit, float)
+        self.set_value_unit('rate', rate, rate_unit, float)
+        self.set_value_unit('mass', mass, mass_unit, float)
 
     def format_height(self):
         return f'{self.height} {self.height_unit}'
@@ -264,33 +378,63 @@ class FlexAttrsSpecies(FlexAttrsBase):
     """Species attributes."""
 
     def __init__(
-            self, *, name, half_life, deposit_vel, sediment_vel, washout_coeff,
-            washout_exponent):
+            self,
+            *,
+            name,
+            half_life,
+            deposit_vel,
+            sediment_vel,
+            washout_coeff,
+            washout_exponent,
+            half_life_unit=None,
+            deposit_vel_unit=None,
+            sediment_vel_unit=None,
+            washout_coeff_unit=None):
         """Create an instance of ``FlexAttrsSpecies``.
 
         Kwargs:
             name (str): Species name.
 
-            half_life ((float, str)): Half life (value and unit).
+            half_life (float or (float, str)): Half life, value or
+                (value, unit) tuple.
 
-            deposit_vel ((float, str)): Deposition velocity (value
-                and unit).
+            deposit_vel (float or (float, str)): Deposition velocity,
+                value or (value, unit) tuple.
 
-            sediment_vel ((float, str)): Sedimentation velocity (value
-                and unit).
+            sediment_vel (float or (float, str)): Sedimentation
+                velocity, value or (value, unit) tuple.
 
-            washout_coeff ((float, str)): Washout coefficient (value
-                and unit).
+            washout_coeff (float or (float, str)): Washout coefficient,
+                value or (value, unit) tuple.
 
-            washout_exponent (float): <TODO>
+            washout_exponent (float): Washout exponent value.
+
+            half_life_unit (str, optional): Half life unit. Obsolete if
+                ``half_life`` is a (value, unit) tuple. Defaults to
+                None.
+
+            deposit_vel_unit (str, optional): Deposition velocity unit.
+                Obsolete if ``deposit_vel`` is a (value, unit) tuple.
+                Defaults to None.
+
+            sediment_vel_unit (str, optional): Sedimentation velocity
+                unit.  Obsolete if ``sediment_vel`` is a (value, unit)
+                tuple.  Defaults to None.
+
+            washout_coeff_unit (str, optional): Washout coefficient
+                unit.  Obsolete if ``washout_coeff`` is a (value, unit)
+                tuple.  Defaults to None.
 
         """
         super().__init__()
         self.set('name', name, str)
-        self.set(['half_life', '~_unit'], half_life, [float, str])
-        self.set(['deposit_vel', '~_unit'], deposit_vel, [float, str])
-        self.set(['sediment_vel', '~_unit'], sediment_vel, [float, str])
-        self.set(['washout_coeff', '~_unit'], washout_coeff, [float, str])
+        self.set_value_unit('half_life', half_life, half_life_unit, float)
+        self.set_value_unit(
+            'deposit_vel', deposit_vel, deposit_vel_unit, float)
+        self.set_value_unit(
+            'sediment_vel', sediment_vel, sediment_vel_unit, float)
+        self.set_value_unit(
+            'washout_coeff', washout_coeff, washout_coeff_unit, float)
         self.set('washout_exponent', washout_exponent, float)
 
     def format_half_life_unit(self):
@@ -377,3 +521,49 @@ class FlexAttrsCollection:
         self.release = FlexAttrsRelease(**release)
         self.species = FlexAttrsSpecies(**species)
         self.simulation = FlexAttrsSimulation(**simulation)
+
+    def merge(self, others, **replace):
+        """Create a new instance by merging this and others.
+
+        Args:
+            others (list[FlexAttrsCollection]): Other instances to be
+                merged with this.
+
+            **replace (dicts): Collections of attributes to be replaced
+                in the merged ``FlexAttrs*`` instances of the shared
+                collection instance. Must contain all attributes that
+                differ between any of the collections.
+
+        Returns:
+            FlexAttrsCollection: New attributes collection instance
+                derived from ``self`` and ``others``. Note that no
+                input collection is changed.
+
+        Example:
+            In this example, all attributes collection in a list are
+            merged and the variable and release site names replaced,
+            implying those differ between the collections. Wether that
+            is the case or not, all other attributes must be the same,
+            otherwise an error is issued.
+
+            attrs_coll = attrs_colls[0].merge(
+                attrs_colls[1:],
+                variable={
+                    'long_name': 'X Sum',
+                    'short_name': 'x_sum',
+                },
+                release={
+                    'site_name': 'source',
+                },
+            )
+
+        """
+        kwargs = {}
+        names = ['grid', 'variable', 'release', 'species', 'simulation']
+        for name in names:
+            kwargs[name] = dict(
+                getattr(self, name).merge(
+                    [getattr(o, name) for o in others],
+                    replace.get(name),
+                ))
+        return self.__class__(**kwargs)

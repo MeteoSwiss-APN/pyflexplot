@@ -7,6 +7,7 @@ Plotters.
 from .io import FlexVarSpecs
 from .flexplot import FlexPlotConcentration
 from .flexplot import FlexPlotDeposition
+from .utils_dev import ipython  #SR_DEV
 
 
 class FlexPlotter:
@@ -97,7 +98,7 @@ class FlexPlotter:
             kwargs = {
                 'rlat': data.rlat,
                 'rlon': data.rlon,
-                'fld': data.field,
+                'fld': data.fld,
                 'attrs': data.attrs,
             }
 
@@ -105,19 +106,26 @@ class FlexPlotter:
 
             yield file_path
 
-    def format_file_path(self, specs):
-        kwargs = {f: getattr(specs, s)
+    def format_file_path(self, field_specs):
+
+        var_specs = field_specs.var_specs(merge=True)
+
+        kwargs = {
+            f: getattr(var_specs, s)
             for s, f in self.specs_fmt_keys.items()
-            if s in specs.specs()}
+            if hasattr(var_specs, s)
+        }
 
         plot_var = self.type_
-        if specs.integrate:
+        if var_specs.integrate:
             plot_var += '-int'
         kwargs['variable'] = plot_var
 
         try:
             file_path = self.file_path_fmt.format(**kwargs)
         except KeyError as e:
-            raise  #SR_TMP TODO customize error message
+            raise KeyError(
+                f"cannot format '{self.file_path_fmt}': "
+                f"missing key '{e}' among {sorted(kwargs)}")
         else:
             return file_path

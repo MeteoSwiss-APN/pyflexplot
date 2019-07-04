@@ -12,15 +12,17 @@ import re
 import time
 
 from collections import namedtuple
-from copy import copy
+from copy import copy, deepcopy
 from pprint import pformat
 
 from .data import FlexAttrsCollection
-from .data import FlexDataRotPole
+from .data import FlexFieldRotPole
 from .utils import check_array_indices
 from .utils import merge_dicts
+from .utils import pformat_dictlike
 
 from .utils_dev import ipython  #SR_DEV
+
 
 def _nc_content():
     """Content of NetCDF file; dummy function to fold the comment!"""
@@ -118,7 +120,8 @@ class FlexVarSpecs:
                     f"argument '{key}': type '{type(val).__name__}' "
                     f"incompatible with '{type_.__name__}'") from None
         if kwargs:
-            raise ValueError(f"{len(kwargs)} unexpected arguments: {kwargs}")
+            raise ValueError(
+                f"{len(kwargs)} unexpected arguments: {sorted(kwargs)}")
 
     @classmethod
     def multiple(cls, **kwargs):
@@ -167,11 +170,25 @@ class FlexVarSpecs:
 
         return specs_lst
 
+    def merge(self, others):
+        attrs = {}
+        for key, val0 in sorted(self):
+            vals = set([val0] + [getattr(o, key) for o in others])
+            if len(vals) == 1:
+                attrs[key] = next(iter(vals))
+            else:
+                if key == 'deposition' and vals == set(['dry', 'wet']):
+                    attrs[key] = 'tot'
+                else:
+                    raise NotImplementedError(
+                        f"{self.__class__.__name__}.merge for '{key}'")
+        return self.__class__(**attrs)
+
     def __repr__(self):
-        return pformat(dict(self))
+        return pformat_dictlike(self)
 
     def __str__(self):
-        return f'{dict(self)}'
+        return pformat_dictlike(self)
 
     def __getitem__(self, key):
         if key.startswith('_'):
@@ -240,6 +257,162 @@ class FlexVarSpecsDeposition(FlexVarSpecs):
         return f'{prefix}_spec{self.species_id:03d}'
 
 
+class FlexFieldSpecs:
+    """FLEXPART field specifications."""
+
+    cls_var_specs = FlexVarSpecs
+
+    def __init__(self, var_specs_lst, op=np.nansum, var_attrs_replace=None):
+        """Create an instance of ``FlexFieldSpecs``.
+
+        Args:
+            var_specs_lst (list[dict]): Specifications dicts of input
+                variables, each of which is is used to create an
+                instance of ``FlexVarSpecs`` as specified by the class
+                attribute ``cls_var_specs``. Each ultimately yields a
+                2D slice of an input variable.
+
+            op (function or list[function], optional): Opterator(s) to
+                combine the input fields obtained based on the input
+                variable specifications. If multipe operators are
+                passed, their number must one smaller than that of the
+                specifications, and they are applied consecutively from
+                left to right without regard to operator precedence.
+                Must accept argument ``axis=0`` to only recude along
+                over the fields. Defaults to np.nansum.
+
+            var_attrs_replace (dict[str: dict], optional): Variable
+                attributes to be replaced. Necessary if multiple
+                specifications dicts are passed for all those
+                attributes that differ between the resulting attributes
+                collections. Defaults to '{}'.
+
+        """
+        # Create the specs instances
+        try:
+            iter(var_specs_lst)
+        except TypeError:
+            raise ValueError(
+                f"var_specs: type '{type(var_specs_lst).__name__}' "
+                f"not iterable") from None
+        else:
+            self.var_specs_lst = []
+            for i, kwargs_specs in enumerate(var_specs_lst):
+                try:
+                    var_specs = self.cls_var_specs(**kwargs_specs)
+                except Exception as e:
+                    raise ValueError(
+                        f"var_specs[{i}]: cannot create instance of "
+                        f"{self.cls_var_specs.__name__} from {kwargs_specs}: "
+                        f"{e.__class__.__name__}({e})") from None
+                else:
+                    self.var_specs_lst.append(var_specs)
+            del var_specs_lst
+        n_var_specs = len(self.var_specs_lst)
+
+        # Check and store the operator(s)
+        try:
+            n_ops = len(op)
+        except TypeError:
+            if not callable(op):
+                raise ValueError(f"op: {type(op).__name__} not callable")
+        else:
+            if n_ops != n_var_specs - 1:
+                raise ValueError(
+                    f"wrong number of operators passed in "
+                    f"{type(ops).__name__}: {n_ops} != {n_var_specs}")
+            for op_i in op:
+                if not callable(op_i):
+                    raise ValueError(f"op: {type(op_i).__name__} not callable")
+        if callable(op):
+            self.op = op
+            self.op_lst = None
+        else:
+            self.op = None
+            self.op_lst = op
+
+        self.op = op if callable(op) else None
+        self.op_lst = op if not callable(op) else None
+
+        if var_attrs_replace is None:
+            var_attrs_replace = {}
+        self.var_attrs_replace = var_attrs_replace
+
+    @classmethod
+    def multiple(cls, vars_specs):
+        var_specs_lst = cls.cls_var_specs.multiple(**vars_specs)
+        return [cls(dict(var_specs)) for var_specs in var_specs_lst]
+
+    def var_specs(self, merge=False):
+        """Return variable specifications, optionally merged."""
+        if not merge:
+            return deepcopy(self.var_specs_lst)
+        return self.var_specs_lst[0].merge(self.var_specs_lst[1:])
+
+
+class FlexFieldSpecsConcentration(FlexFieldSpecs):
+
+    cls_var_specs = FlexVarSpecsConcentration
+
+    def __init__(self, var_specs):
+        """Create an instance of ``FlexFieldSpecsConcentration``.
+
+        Args:
+            var_specs (dict): Specifications dict of input variable
+                used to create an instance of ``FlexVarSpecsConcentration``
+                as specified by the class attribute ``cls_var_specs``.
+        """
+        if not isinstance(var_specs, dict):
+            raise ValueError(
+                f"var_specs must be 'dict', not '{type(var_specs).__name__}'")
+        super().__init__([var_specs])
+
+
+class FlexFieldSpecsDeposition(FlexFieldSpecs):
+
+    cls_var_specs = FlexVarSpecsDeposition
+
+    def __init__(self, var_specs):
+        """Create an instance of ``FlexFieldSpecsDeposition``.
+
+        Args:
+            var_specs (dict): Specifications dict of input variable
+                used to create instance(s) of ``FlexVarSpecsDeposition``
+                as specified by the class attribute ``cls_var_specs``.
+
+        """
+        if not isinstance(var_specs, dict):
+            raise ValueError(
+                f"var_specs must be 'dict', not '{type(var_specs).__name__}'")
+        try:
+            deposit_mode = var_specs['deposition']
+        except KeyError as e:
+            raise ValueError(f"var_specs: missing key '{e}'") from None
+
+        kwargs = {}
+        if deposit_mode in ['wet', 'dry']:
+            var_specs_lst = [var_specs]
+
+        elif deposit_mode == 'tot':
+            var_specs_lst = [
+                {
+                    **var_specs, 'deposition': 'dry'
+                },
+                {
+                    **var_specs, 'deposition': 'wet'
+                },
+            ]
+            kwargs['op'] = np.nansum
+            kwargs['var_attrs_replace'] = {
+                'variable': {
+                    'long_name': 'Total Deposition',
+                    #'short_name': '
+                },
+            }
+
+        super().__init__(var_specs_lst, **kwargs)
+
+
 class FlexFileRotPole:
     """NetCDF file containing FLEXPART data on rotated-pole grid."""
 
@@ -256,84 +429,105 @@ class FlexFileRotPole:
 
     def reset(self):
         self._fi = None
-        self._field_specs = None
+        self._var_specs_curr = None
 
-    def read(self, fields_specs):
+    def read(self, field_specs):
         """Read one or more fields from a file from disc.
 
         Args:
-            fields_specs (FlexFieldSpecs or list[FlexFieldSpecs]):
+            field_specs (FlexFieldSpecs or list[FlexFieldSpecs]):
                 Specifications for one or more input fields.
 
         Returns:
-            FlexDataRotPole: Single data object; if ``fields_specs``
+            FlexFieldRotPole: Single data object; if ``field_specs``
                 constitutes a single ``FlexFieldSpecs`` instance.
 
             or
 
-            list[FlexDataRotPole]: One data object for each field;
-                if ``fields_specs`` constitutes a list of
+            list[FlexFieldRotPole]: One data object for each field;
+                if ``field_specs`` constitutes a list of
                 ``FlexFieldSpecs`` instances.
 
         """
-        if isinstance(fields_specs, FlexVarSpecs):
+        if isinstance(field_specs, FlexFieldSpecs):
             multiple = False
-            fields_specs = [fields_specs]
+            fld_specs_lst = [field_specs]
         else:
             multiple = True
+            fld_specs_lst = field_specs
+        del field_specs
+        n_fld_specs = len(fld_specs_lst)
+
         log.debug(f"read {self.path}")
         flex_data_lst = []
-        with nc4.Dataset(self.path, 'r') as fi:
-            self._fi = fi
-            n_specs = len(fields_specs)
-            log.debug(f"process {n_specs} field specs")
-            for i_specs, field_specs in enumerate(fields_specs):
-                log.debug(f"{i_specs + 1}/{n_specs}: {field_specs}")
-                self._field_specs = field_specs
-                flex_data = self._read()
-                flex_data_lst.append(flex_data)
+        with nc4.Dataset(self.path, 'r') as self._fi:
+
+            log.debug("read grid: rlat, rlon")
+            rlat = self._fi.variables['rlat'][:]
+            rlon = self._fi.variables['rlon'][:]
+
+            log.debug(f"process {n_fld_specs} field specs")
+            for i_fld_specs, fld_specs in enumerate(fld_specs_lst):
+                log.debug(f"{i_fld_specs + 1}/{n_fld_specs}: {fld_specs}")
+                fld, attrs = self._import_field(fld_specs)
+
+                # Collect data
+                log.debug("create data object")
+                flex_data_lst.append(
+                    FlexFieldRotPole(rlat, rlon, fld, attrs, fld_specs))
+
         self.reset()
+
+        # Return result(s)
         if multiple:
             return flex_data_lst
         else:
             assert len(flex_data_lst) == 1
             return flex_data_lst[0]
 
-    def _read(self):
-        """Core routine reading one field from an open file."""
+    def _import_field(self, fld_specs):
 
-        # Grid coordinates
-        log.debug("read grid")
-        rlat = self._fi.variables['rlat'][:]
-        rlon = self._fi.variables['rlon'][:]
+        # Read fields and attributes from var specifications
+        fld_lst = []
+        attrs_lst = []
+        for var_specs in fld_specs.var_specs_lst:
+            fld, attrs = self._read_flex_data(var_specs)
+            fld_lst.append(fld)
+            attrs_lst.append(attrs)
+
+        # Merge fields and attributes
+        fld = self._merge_fields(fld_lst, fld_specs)
+        attrs = attrs_lst[0].merge(
+            attrs_lst[1:], **fld_specs.var_attrs_replace)
+
+        return fld, attrs
+
+    def _read_flex_data(self, var_specs):
+        """Core routine reading one field from an open file."""
 
         # Field
         log.debug("read field")
-        fld = self._read_field()
+        fld = self._read_var(var_specs)
 
         # Attributes
         log.debug("collect attributes")
-        attrs = FlexAttrsCollector(self._fi, self._field_specs).run()
+        attrs = FlexAttrsCollector(self._fi, var_specs).run()
 
         #SR_TMP<
         log.debug("fix nc data")
         self._fix_nc_data(fld, attrs)
         #SR_TMP>
 
-        # Collect data
-        log.debug("create data object")
-        flex_data = FlexDataRotPole(rlat, rlon, fld, attrs, self._field_specs)
+        return fld, attrs
 
-        return flex_data
-
-    def _read_field(self):
+    def _read_var(self, var_specs):
 
         # Select variable in file
-        var_name = self._field_specs.var_name()
+        var_name = var_specs.var_name()
         var = self._fi.variables[var_name]
 
         # Indices of field along NetCDF dimensions
-        dim_inds_by_name = self._field_specs.dim_inds_by_name()
+        dim_inds_by_name = var_specs.dim_inds_by_name()
 
         # Assemble indices for slicing
         inds = [None]*len(var.dimensions)
@@ -353,10 +547,23 @@ class FlexFileRotPole:
         log.debug(f"field variable shape: {var.shape}")
         fld = var[inds]
 
-        if self._field_specs.integrate:
+        if var_specs.integrate:
             assert len(fld.shape) == 3  #SR_TMP
             fld = np.nansum(fld, axis=0)
 
+        return fld
+
+    def _merge_fields(self, fld_lst, fld_specs):
+
+        if fld_specs.op is not None:
+            # Single operator
+            return fld_specs.op(fld_lst, axis=0)
+
+        # Operator chain
+        fld = fld_lst[0]
+        for i, fld_i in enumerate(fld_list[1:]):
+            _op = fld_specs.op_lst[i]
+            fld = _op([fld, fld_i], axis=0)
         return fld
 
     #SR_TMP<
@@ -644,7 +851,7 @@ class ReleasePoint:
             try:
                 type_ = self.attr_types[key]
             except KeyError:
-                raise ValueError(f"unexpected argument {key}={val}")
+                raise ValueError(f"unexpected argument {key}='{val}'")
 
             # Cross valid argument off the todo list
             attr_keys_todo.remove(key)
@@ -668,10 +875,10 @@ class ReleasePoint:
                 f"{attr_keys_todo}")
 
     def __repr__(self):
-        return pformat(dict(self))
+        return pformat_dictlike(self)
 
     def __str__(self):
-        return f'{dict(self)}'
+        return pformat_dictlike(self)
 
     def __iter__(self):
         for key in self.attr_types:

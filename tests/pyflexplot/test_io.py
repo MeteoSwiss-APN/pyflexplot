@@ -9,8 +9,8 @@ import os
 
 from utils import datadir
 
-from pyflexplot.io import FlexVarSpecsConcentration
-from pyflexplot.io import FlexVarSpecsDeposition
+from pyflexplot.io import FlexFieldSpecsConcentration
+from pyflexplot.io import FlexFieldSpecsDeposition
 from pyflexplot.io import FlexFileRotPole
 
 from pyflexplot.utils import merge_dicts
@@ -29,17 +29,13 @@ class TestReadFieldSimple:
 
     #------------------------------------------------------------------
 
-    @property
-    def species_id(self):
-        return 2
+    species_id = 2
 
-    @property
-    def dims_shared(self):
-        return {
-            'nageclass': 0,
-            'numpoint': 0,
-            'time': 3,
-        }
+    dims_shared = {
+        'nageclass': 0,
+        'numpoint': 0,
+        'time': 3,
+    }
 
     @property
     def kwargs_specs_shared(self):
@@ -50,57 +46,74 @@ class TestReadFieldSimple:
 
     #------------------------------------------------------------------
 
-    def run(self, datadir, cls_var_specs, dims, var_name_ref, **kwargs_specs):
+    def run(self, datadir, cls_fld_specs, dims, var_names_ref, **kwargs_specs):
 
         datafile = f'{datadir}/flexpart_cosmo1_case2.nc'
 
         # Initialize specifications
-        field_specs = cls_var_specs(
-            **merge_dicts(self.kwargs_specs_shared, dims, kwargs_specs))
+        var_specs = merge_dicts(self.kwargs_specs_shared, dims, kwargs_specs)
+        fld_specs = cls_fld_specs(var_specs)
 
         # Read input data
         flex_file = FlexFileRotPole(datafile)
-        flex_data = flex_file.read(field_specs)
+        flex_data = flex_file.read(fld_specs)
 
         # Read reference field
-        fld_ref = read_nc_var(datafile, var_name_ref, dims)
+        fld_ref = np.nansum(
+            [read_nc_var(datafile, n, dims) for n in var_names_ref], axis=0)
         fld_ref *= 1e-12  #SR_TMP fix magnitude of input field
 
-        assert flex_data.field.shape == fld_ref.shape
-        assert np.allclose(flex_data.field, fld_ref)
+        assert flex_data.fld.shape == fld_ref.shape
+        assert np.allclose(flex_data.fld, fld_ref)
 
     #------------------------------------------------------------------
 
     def test_concentration(self, datadir):
         """Read concentration field."""
-        var_name_ref = f'spec{self.species_id:03d}'
+        var_names_ref = [f'spec{self.species_id:03d}']
         self.run(
             datadir,
-            FlexVarSpecsConcentration,
-            {**self.dims_shared, 'level': 1},
-            var_name_ref,
+            FlexFieldSpecsConcentration,
+            {
+                **self.dims_shared, 'level': 1
+            },
+            var_names_ref,
         )
 
     def test_deposition_dry(self, datadir):
         """Read dry deposition field."""
-        var_name_ref = f'DD_spec{self.species_id:03d}'
+        var_names_ref = [f'DD_spec{self.species_id:03d}']
         self.run(
             datadir,
-            FlexVarSpecsDeposition,
+            FlexFieldSpecsDeposition,
             self.dims_shared,
-            var_name_ref,
+            var_names_ref,
             deposition='dry',
         )
 
     def test_deposition_wet(self, datadir):
         """Read wet deposition field."""
-        var_name_ref = f'WD_spec{self.species_id:03d}'
+        var_names_ref = [f'WD_spec{self.species_id:03d}']
         self.run(
             datadir,
-            FlexVarSpecsDeposition,
+            FlexFieldSpecsDeposition,
             self.dims_shared,
-            var_name_ref,
+            var_names_ref,
             deposition='wet',
+        )
+
+    def test_deposition_tot(self, datadir):
+        """Read total deposition field."""
+        var_names_ref = [
+            f'WD_spec{self.species_id:03d}',
+            f'DD_spec{self.species_id:03d}',
+        ]
+        self.run(
+            datadir,
+            FlexFieldSpecsDeposition,
+            self.dims_shared,
+            var_names_ref,
+            deposition='tot',
         )
 
     #ipython(globals(), locals())

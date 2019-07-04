@@ -4,6 +4,8 @@ Utils for the command line tool.
 """
 import logging
 
+from pprint import pformat
+
 from .utils_dev import ipython  #SR_DEV
 
 
@@ -171,3 +173,17 @@ def check_array_indices(shape, inds):
         inds_str = inds2str(inds)
         raise IndexError(
             f"index {j} of {inds_str} out of bounds for shape {shape}: {e}")
+
+
+def pformat_dictlike(obj):
+    """Pretty-format a dict-like object."""
+
+    s = f'{obj.__class__.__name__}({pformat(dict(obj))})'
+
+    # Insert line breaks between braces and content
+    s = s.replace("({'", "({\n '").replace('})', ',\n)}')
+
+    # Increase indent
+    #s = s.replace('\n ', '\n  ')
+
+    return s
