@@ -161,10 +161,10 @@ def concentration(
         ctx, in_file_path, out_file_path_fmt, **vars_specs):
 
     # Determine fields specifications (one for each eventual plot)
-    fields_specs = FlexFieldSpecsConcentration.multiple(vars_specs)
+    field_specs_lst = FlexFieldSpecsConcentration.multiple(vars_specs)
 
     # Read fields
-    flex_data_lst = FlexFileRotPole(in_file_path).read(fields_specs)
+    flex_data_lst = FlexFileRotPole(in_file_path).read(field_specs_lst)
 
     # Create plots
     fct = functools.partial(
@@ -188,10 +188,10 @@ def concentration(
 def deposition(ctx, in_file_path, out_file_path_fmt, **vars_specs):
 
     # Determine fields specifications (one for each eventual plot)
-    fields_specs = FlexFieldSpecsDeposition.multiple(vars_specs)
+    field_specs_lst = FlexFieldSpecsDeposition.multiple(vars_specs)
 
     # Read fields
-    flex_data_lst = FlexFileRotPole(in_file_path).read(fields_specs)
+    flex_data_lst = FlexFileRotPole(in_file_path).read(field_specs_lst)
 
     # Create plots
     fct = functools.partial(

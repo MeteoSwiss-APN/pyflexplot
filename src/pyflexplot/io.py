@@ -184,6 +184,15 @@ class FlexVarSpecs:
                         f"{self.__class__.__name__}.merge for '{key}'")
         return self.__class__(**attrs)
 
+    def __hash__(self):
+        return hash(tuple(sorted(iter(self))))
+
+    def __lt__(self, other):
+        return hash(self) < hash(other)
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
     def __repr__(self):
         return pformat_dictlike(self)
 
@@ -338,15 +347,24 @@ class FlexFieldSpecs:
             var_attrs_replace = {}
         self.var_attrs_replace = var_attrs_replace
 
+    def __hash__(self):
+        return hash((
+            hash(tuple(sorted(self.var_specs_lst))),
+        ))
+
+    def __lt__(self, other):
+        return hash(self) < hash(other)
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
     @classmethod
     def multiple(cls, vars_specs):
         var_specs_lst = cls.cls_var_specs.multiple(**vars_specs)
         return [cls(dict(var_specs)) for var_specs in var_specs_lst]
 
-    def var_specs(self, merge=False):
-        """Return variable specifications, optionally merged."""
-        if not merge:
-            return deepcopy(self.var_specs_lst)
+    def var_specs_merged(self):
+        """Return merged variable specifications."""
         return self.var_specs_lst[0].merge(self.var_specs_lst[1:])
 
 

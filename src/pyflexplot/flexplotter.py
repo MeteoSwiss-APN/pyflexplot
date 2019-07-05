@@ -104,7 +104,7 @@ class FlexPlotter:
 
     def format_file_path(self, field_specs):
 
-        var_specs = field_specs.var_specs(merge=True)
+        var_specs = field_specs.var_specs_merged()
 
         kwargs = {
             f: getattr(var_specs, s)
