@@ -135,10 +135,10 @@ def common_options_dispersion_various(f):
     # yapf: disable
     options = [
         click.option(
-            '--integrate',
+            '--integrate/--no-integrate', 'integrate_lst',
             help=("Integrate field over time. If set, '-int' is appended to "
                 "variable name (format key: '{variable}')."),
-            is_flag=True, default=False),
+            is_flag=True, default=False, multiple=True),
     ]
     # yapf: enable
     return functools.reduce(lambda x, opt: opt(x), options, f)
@@ -158,10 +158,9 @@ def common_options_dispersion_various(f):
 @common_options_dispersion_various
 @click.pass_context
 def concentration(
-        ctx, in_file_path, out_file_path_fmt, integrate, **vars_specs):
+        ctx, in_file_path, out_file_path_fmt, **vars_specs):
 
     # Determine fields specifications (one for each eventual plot)
-    vars_specs['integrate'] = integrate
     fields_specs = FlexFieldSpecsConcentration.multiple(vars_specs)
 
     # Read fields
@@ -186,10 +185,9 @@ def concentration(
     default='both', multiple=True)
 # yapf: enable
 @click.pass_context
-def deposition(ctx, in_file_path, out_file_path_fmt, integrate, **vars_specs):
+def deposition(ctx, in_file_path, out_file_path_fmt, **vars_specs):
 
     # Determine fields specifications (one for each eventual plot)
-    vars_specs['integrate'] = integrate
     fields_specs = FlexFieldSpecsDeposition.multiple(vars_specs)
 
     # Read fields
