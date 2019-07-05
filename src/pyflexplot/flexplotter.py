@@ -82,13 +82,11 @@ class FlexPlotter:
         data_lst = field if isinstance(field, (list, tuple)) else [field]
 
         _s = 's' if len(data_lst) > 1 else ''
-        print(f"create {len(data_lst)} {self.type_} plot{_s}")
 
         # Create plots one-by-one
         for i_data, field in enumerate(data_lst):
             file_path = self.format_file_path(field.field_specs)
             _w = len(str(len(data_lst)))
-            print(f" {i_data+1:{_w}}/{len(data_lst)}  {file_path}")
 
             kwargs = {
                 'rlat': field.rlat,

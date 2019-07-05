@@ -404,15 +404,15 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
 
         # Under range
         if self.extend in ('min', 'both'):
-            labels.append(self._format_label(None, self.levels[0]))
+            labels.append(self._format_level_range(None, self.levels[0]))
 
         # In range
         for lvl0, lvl1 in zip(self.levels[:-1], self.levels[1:]):
-            labels.append(self._format_label(lvl0, lvl1))
+            labels.append(self._format_level_range(lvl0, lvl1))
 
         # Over range
         if self.extend in ('max', 'both'):
-            labels.append(self._format_label(self.levels[-1], None))
+            labels.append(self._format_level_range(self.levels[-1], None))
 
         #SR_TMP<
         _n = len(self.colors)
@@ -421,10 +421,18 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
 
         return labels
 
-    def _format_label(self, lvl0, lvl1):
+    def _format_level_range(self, lvl0, lvl1):
 
         def format_level(lvl):
-            return '' if lvl is None else f"{lvl:.0E}".strip()
+            if lvl is None:
+                return ''
+            fmtd = f'{lvl:.0E}'
+            n = len(fmtd)
+            ll = np.log10(lvl)
+            if ll >= - n + 2 and ll <= n - 1:
+                fmtd = f'{lvl:f}'[:n]
+                assert '1' in fmtd
+            return fmtd
 
         if lvl0 is not None and lvl1 is not None:
             op = '-'
@@ -516,9 +524,6 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
         )
 
         self.levels = 10**self.levels_log10
-
-        print(self.levels_log10)
-        print(self.levels)
 
 
 class FlexPlotConcentration(FlexPlotBase_Dispersion):
