@@ -348,9 +348,11 @@ class FlexFieldSpecs:
         self.var_attrs_replace = var_attrs_replace
 
     def __hash__(self):
+        # yapf: disable
         return hash((
             hash(tuple(sorted(self.var_specs_lst))),
         ))
+        # yapf: enable
 
     def __lt__(self, other):
         return hash(self) < hash(other)

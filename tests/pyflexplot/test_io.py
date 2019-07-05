@@ -27,13 +27,16 @@ def read_nc_var(path, var_name, dim_inds):
 
 
 class TestReadFieldSingle:
+    """Read a single 2D field from a FLEXPART NetCDF file."""
 
+    # Dimensions shared by all tests
     dims_shared = {
         'nageclass': 0,
         'numpoint': 0,
         'time': 3,
     }
 
+    # Variable specifications shared by all tests
     var_specs_shared = {
         'integrate': False,
         'species_id': 2,
@@ -43,14 +46,21 @@ class TestReadFieldSingle:
     def species_id(self):
         return self.var_specs_shared['species_id']
 
+    def datafile(self, datadir):
+        return f'{datadir}/flexpart_cosmo1_case2.nc'
+
     #------------------------------------------------------------------
 
-    def run(self, datadir, cls_fld_specs, dims, var_names_ref, **kwargs_specs):
+    def run(
+            self, datadir, cls_fld_specs, dims, var_names_ref,
+            var_specs_unshared):
+        """Run an individual test."""
 
-        datafile = f'{datadir}/flexpart_cosmo1_case2.nc'
+        datafile = self.datafile(datadir)
 
         # Initialize specifications
-        var_specs = merge_dicts(self.var_specs_shared, dims, kwargs_specs)
+        var_specs = merge_dicts(
+            self.var_specs_shared, dims, var_specs_unshared)
         fld_specs = cls_fld_specs(var_specs)
 
         # Read input data
@@ -77,6 +87,7 @@ class TestReadFieldSingle:
                 **self.dims_shared, 'level': 1
             },
             var_names_ref=[f'spec{self.species_id:03d}'],
+            var_specs_unshared={},
         )
 
     def test_deposition_dry(self, datadir):
@@ -86,7 +97,7 @@ class TestReadFieldSingle:
             FlexFieldSpecsDeposition,
             dims=self.dims_shared,
             var_names_ref=[f'DD_spec{self.species_id:03d}'],
-            deposition='dry',
+            var_specs_unshared={'deposition': 'dry'},
         )
 
     def test_deposition_wet(self, datadir):
@@ -96,7 +107,7 @@ class TestReadFieldSingle:
             FlexFieldSpecsDeposition,
             dims=self.dims_shared,
             var_names_ref=[f'WD_spec{self.species_id:03d}'],
-            deposition='wet',
+            var_specs_unshared={'deposition': 'wet'},
         )
 
     def test_deposition_tot(self, datadir):
@@ -109,60 +120,34 @@ class TestReadFieldSingle:
                 f'WD_spec{self.species_id:03d}',
                 f'DD_spec{self.species_id:03d}',
             ],
-            deposition='tot',
+            var_specs_unshared={'deposition': 'tot'},
         )
 
 
 class TestReadFieldMultiple:
+    """Read multiple 2D fields from a FLEXPART NetCDF file."""
 
-    dims_args_shared = {
+    # Dimensions arguments shared by all tests
+    dims_shared = {
         'nageclass': 0,
         'numpoint': 0,
         'time_lst': [0, 3, 4, 5, 9],
     }
 
-    var_specs_args_shared = {
+    # Variables specification arguments shared by all tests
+    var_specs_shared = {
         'integrate_lst': [False, True],
         'species_id_lst': [1, 2],
     }
 
     @property
-    def species_id(self):
-        return self.var_specs_shared['species_id']
+    def species_id_lst(self):
+        return self.var_specs_shared['species_id_lst']
+
+    def datafile(self, datadir):
+        return f'{datadir}/flexpart_cosmo1_case2.nc'
 
     #------------------------------------------------------------------
-
-    def test_field_specs_concentration(self):
-
-        # Create field specs
-        vars_specs = {
-            **self.dims_args_shared,
-            **self.var_specs_args_shared,
-            'level_lst': [0, 2],
-        }
-        field_specs_lst = FlexFieldSpecsConcentration.multiple(vars_specs)
-
-        # Create reference field specs
-        field_specs_lst_ref = self.create_field_specs_lst_ref(
-            FlexFieldSpecsConcentration, vars_specs)
-
-        assert sorted(field_specs_lst) == sorted(field_specs_lst_ref)
-
-    def test_field_specs_deposition(self):
-
-        # Create field specs
-        vars_specs = {
-            **self.dims_args_shared,
-            **self.var_specs_args_shared,
-            'deposition_lst': ['wet', 'dry', 'tot'],
-        }
-        field_specs_lst = FlexFieldSpecsDeposition.multiple(vars_specs)
-
-        # Create reference field specs
-        field_specs_lst_ref = self.create_field_specs_lst_ref(
-            FlexFieldSpecsDeposition, vars_specs)
-
-        assert sorted(field_specs_lst) == sorted(field_specs_lst_ref)
 
     def create_field_specs_lst_ref(self, cls_fld_specs, vars_specs):
 
@@ -181,10 +166,96 @@ class TestReadFieldMultiple:
 
     #------------------------------------------------------------------
 
-    def run(self, datadir, cls_fld_specs):
+    def test_field_specs_concentration(self):
 
-        datafile = f'{datadir}/flexpart_cosmo1_case2.nc'
+        # Create field specs
+        vars_specs = {
+            **self.dims_shared,
+            **self.var_specs_shared,
+            'level_lst': [0, 2],
+        }
+        field_specs_lst = FlexFieldSpecsConcentration.multiple(vars_specs)
+
+        # Create reference field specs
+        field_specs_lst_ref = self.create_field_specs_lst_ref(
+            FlexFieldSpecsConcentration, vars_specs)
+
+        assert sorted(field_specs_lst) == sorted(field_specs_lst_ref)
+
+    def test_field_specs_deposition(self):
+
+        # Create field specs
+        vars_specs = {
+            **self.dims_shared,
+            **self.var_specs_shared,
+            'deposition_lst': ['wet', 'dry', 'tot'],
+        }
+        field_specs_lst = FlexFieldSpecsDeposition.multiple(vars_specs)
+
+        # Create reference field specs
+        field_specs_lst_ref = self.create_field_specs_lst_ref(
+            FlexFieldSpecsDeposition, vars_specs)
+
+        assert sorted(field_specs_lst) == sorted(field_specs_lst_ref)
 
     #------------------------------------------------------------------
 
-    #def test_concentration(self, datadir):
+    def run(
+            self, datadir, cls_fld_specs, dims, var_names_lst_ref,
+            var_specs_unshared):
+
+        datafile = self.datafile(datadir)
+
+    #------------------------------------------------------------------
+
+    def test_concentration(self, datadir):
+        """Read concentration fields."""
+        self.run(
+            datadir,
+            FlexFieldSpecsConcentration,
+            dims={
+                **self.dims_shared,
+                'level_lst': [0, 2],
+            },
+            var_names_lst_ref=[[
+                f'spec{species_id:03d}',
+            ] for species_id in self.species_id_lst],
+            var_specs_unshared={},
+        )
+
+    def test_deposition_dry(self, datadir):
+        """Read dry deposition fields."""
+        self.run(
+            datadir,
+            FlexFieldSpecsDeposition,
+            dims=self.dims_shared,
+            var_names_lst_ref=[[
+                f'DD_spec{species_id:03d}',
+            ] for species_id in self.species_id_lst],
+            var_specs_unshared={'deposition': 'dry'},
+        )
+
+    def test_deposition_wet(self, datadir):
+        """Read wet deposition field."""
+        self.run(
+            datadir,
+            FlexFieldSpecsDeposition,
+            dims=self.dims_shared,
+            var_names_lst_ref=[[
+                f'WD_spec{species_id:03d}',
+            ] for species_id in self.species_id_lst],
+            var_specs_unshared={'deposition': 'wet'},
+        )
+
+    def test_deposition_tot(self, datadir):
+        """Read total deposition field."""
+        self.run(
+            datadir,
+            FlexFieldSpecsDeposition,
+            dims=self.dims_shared,
+            var_names_lst_ref=[[
+                f'WD_spec{species_id:03d}',
+                f'DD_spec{species_id:03d}',
+            ] for species_id in self.species_id_lst],
+            var_specs_unshared={'deposition': 'tot'},
+        )

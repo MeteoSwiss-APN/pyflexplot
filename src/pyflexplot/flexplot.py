@@ -429,8 +429,8 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             fmtd = f'{lvl:.0E}'
             n = len(fmtd)
             ll = np.log10(lvl)
-            if ll >= - n + 2 and ll <= n - 1:
-                fmtd = f'{lvl:f}'[:n]
+            if ll >= -n + 2 and ll <= n - 1:
+                fmtd = f'{lvl:f}' [:n]
                 assert '1' in fmtd
             return fmtd
 

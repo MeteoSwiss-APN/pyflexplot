@@ -157,8 +157,7 @@ def common_options_dispersion_various(f):
 # yapf: enable
 @common_options_dispersion_various
 @click.pass_context
-def concentration(
-        ctx, in_file_path, out_file_path_fmt, **vars_specs):
+def concentration(ctx, in_file_path, out_file_path_fmt, **vars_specs):
 
     # Determine fields specifications (one for each eventual plot)
     field_specs_lst = FlexFieldSpecsConcentration.multiple(vars_specs)
