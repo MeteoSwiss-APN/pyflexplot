@@ -469,12 +469,13 @@ class FlexFileRotPole:
             log.debug(f"process {n_fld_specs} field specs")
             for i_fld_specs, fld_specs in enumerate(fld_specs_lst):
                 log.debug(f"{i_fld_specs + 1}/{n_fld_specs}: {fld_specs}")
-                fld, attrs = self._import_field(fld_specs)
+                fld, attrs, time_stats = self._import_field(fld_specs)
 
                 # Collect data
                 log.debug("create data object")
                 flex_data_lst.append(
-                    FlexFieldRotPole(rlat, rlon, fld, attrs, fld_specs))
+                    FlexFieldRotPole(
+                        rlat, rlon, fld, attrs, fld_specs, time_stats))
 
         self.reset()
 
@@ -490,24 +491,27 @@ class FlexFileRotPole:
         # Read fields and attributes from var specifications
         fld_lst = []
         attrs_lst = []
+        time_stats_lst = []
         for var_specs in fld_specs.var_specs_lst:
-            fld, attrs = self._read_flex_data(var_specs)
+            fld, attrs, time_stats = self._read_flex_data(var_specs)
             fld_lst.append(fld)
             attrs_lst.append(attrs)
+            time_stats_lst.append(time_stats)
 
         # Merge fields and attributes
         fld = self._merge_fields(fld_lst, fld_specs)
         attrs = attrs_lst[0].merge(
             attrs_lst[1:], **fld_specs.var_attrs_replace)
+        time_stats = self._merge_time_stats(time_stats_lst, fld_specs)
 
-        return fld, attrs
+        return fld, attrs, time_stats
 
     def _read_flex_data(self, var_specs):
         """Core routine reading one field from an open file."""
 
         # Field
         log.debug("read field")
-        fld = self._read_var(var_specs)
+        fld, time_stats = self._read_var(var_specs)
 
         # Attributes
         log.debug("collect attributes")
@@ -515,10 +519,10 @@ class FlexFileRotPole:
 
         #SR_TMP<
         log.debug("fix nc data")
-        self._fix_nc_data(fld, attrs)
+        self._fix_nc_data(fld, attrs, time_stats)
         #SR_TMP>
 
-        return fld, attrs
+        return fld, attrs, time_stats
 
     def _read_var(self, var_specs):
 
@@ -547,11 +551,20 @@ class FlexFileRotPole:
         log.debug(f"field variable shape: {var.shape}")
         fld = var[inds]
 
+        # Extract some stats across all time steps
+        ind_time = var.dimensions.index('time')
+        inds_time = inds[:ind_time] + [slice(None)] + inds[ind_time + 1:]
+        time_stats = {
+            'mean': np.nanmean(var[inds_time]),
+            'median': np.nanmedian(var[inds_time]),
+            'max': np.nanmax(var[inds_time]),
+        }
+
         if var_specs.integrate:
             assert len(fld.shape) == 3  #SR_TMP
             fld = np.nansum(fld, axis=0)
 
-        return fld
+        return fld, time_stats
 
     def _merge_fields(self, fld_lst, fld_specs):
 
@@ -566,21 +579,49 @@ class FlexFileRotPole:
             fld = _op([fld, fld_i], axis=0)
         return fld
 
+    def _merge_time_stats(self, time_stats_lst, fld_specs):
+        if len(time_stats_lst) == 1:
+            return copy(next(iter(time_stats_lst)))
+        #SR_TMP< TODO proper implementation
+        if fld_specs.op is not None:
+            if fld_specs.op is np.nansum:
+                #SR This implementation is not very good!
+                #SR For instance, max values cannot be summed up!
+                time_stats = {}
+                for key in time_stats_lst[0].keys():
+                    vals = [s[key] for s in time_stats_lst]
+                    time_stats[key] = fld_specs.op(vals)
+                return time_stats
+            raise NotImplementedError('merge time stats for op != nansum')
+        raise NotImplementedError('merge time stats for multiple operators')
+        #SR_TMP>
+
     #SR_TMP<
-    def _fix_nc_data(self, fld, attrs):
+    def _fix_nc_data(self, fld, attrs, time_stats):
+
+        def scale_time_stats(fact):
+            for key, val in time_stats.items():
+                time_stats[key] = fact*val
+
         if attrs.species.name in ['Cs-137', 'I-131a']:
+
             if attrs.variable.unit == 'ng kg-1':
                 attrs.variable.unit = 'Bq m-3'
                 fld *= 1e-12
+                scale_time_stats(1e-12)
+
             elif attrs.variable.unit == '1e-12 kg m-2':
                 attrs.variable.unit = 'Bq m-2'
                 fld *= 1e-12
+                scale_time_stats(1e-12)
+
             else:
                 raise NotImplementedError(
                     f"species '{attrs.species.name}': "
                     f"unknown unit '{attrs.variable.unit}'")
-
-    #SR_TMP>
+        else:
+            raise NotImplementedError(f"species '{attrs.species.name}'")
+        #SR_TMP>
 
 
 class FlexAttrsCollector:

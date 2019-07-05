@@ -19,7 +19,7 @@ from .utils_dev import ipython  #SR_DEV
 class FlexPlotBase:
     """Base class for FLEXPART plots."""
 
-    def __init__(self, rlat, rlon, fld, attrs):
+    def __init__(self, rlat, rlon, fld, attrs, time_stats):
         """Create an instance of ``FlexPlotBase``.
 
         Args:
@@ -31,11 +31,14 @@ class FlexPlotBase:
 
             attrs (dict): Instance of ``FlexAttrsCollection``.
 
+            time_stats (dict): Some statistics across all time steps.
+
         """
         self.rlat = rlat
         self.rlon = rlon
         self.fld = np.where(fld > 0, fld, np.nan)
         self.attrs = attrs
+        self.time_stats = time_stats
 
     def prepare_plot(self):
 
@@ -111,12 +114,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             'ref_dist_y0': 0.96,
         }
 
-        # Contour levels
-        #SR_TMP< TODO un-hardcode (input parameter/derive from field)
-        self.levels_log10 = np.arange(-9, -2 + 0.1, 1)
-        #SR_TMP>
-        self.levels = 10**self.levels_log10
-        self.extend = 'max'
+        self.find_contour_levels(n=8, extend='max')
 
     def create(self):
         """Create plot."""
@@ -318,15 +316,6 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
         """Fill the top box to the right of the map plot."""
         box = self.axs_box[1]
 
-        # Field maximum
-        fld_max_fmtd = 'Max.: '
-        if np.isnan(self.fld).all():
-            fld_max_fmtd += 'NaN'
-        else:
-            fld_max_fmtd += (
-                f'{np.nanmax(self.fld):.2E}'
-                f' {self.attrs.variable.format_unit()}')
-
         # Add box title
         s = f"{self.attrs.variable.format_short_name()}"
         #box.text('tc', s=s, size='large')
@@ -351,7 +340,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             dx=-dx,
             reverse=True,
             size='small',
-            #family='monospace',
+            family='monospace',
         )
 
         # Add color boxes
@@ -371,6 +360,15 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
 
         # Spacing between colors and markers
         dy_spacing_markers = 0.5*dy_line
+
+        # Field maximum
+        fld_max_fmtd = 'Max.: '
+        if np.isnan(self.fld).all():
+            fld_max_fmtd += 'NaN'
+        else:
+            fld_max_fmtd += (
+                f'{np.nanmax(self.fld):.2E}'
+                f' {self.attrs.variable.format_unit()}')
 
         # Add maximum value marker
         dy_max = dy0_labels - dy_spacing_markers - dy_line
@@ -502,6 +500,25 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
         # MeteoSwiss Copyright
         cpright_fmtd = u"\u00a9MeteoSwiss"
         box.text('tr', dx=0.7, dy=0.5, s=cpright_fmtd, size='small')
+
+    def find_contour_levels(self, n, extend):
+
+        self.extend = extend
+
+        log10_max = int(np.log10(self.time_stats['max']))
+
+        log10_d = 1
+
+        self.levels_log10 = np.arange(
+            log10_max - (n - 1)*log10_d,
+            log10_max + 0.5*log10_d,
+            log10_d,
+        )
+
+        self.levels = 10**self.levels_log10
+
+        print(self.levels_log10)
+        print(self.levels)
 
 
 class FlexPlotConcentration(FlexPlotBase_Dispersion):

@@ -51,11 +51,6 @@ class FlexPlotter:
     def deposition(cls, *args, **kwargs):
         return cls('deposition').run(*args, **kwargs)
 
-    def run(self, *args, **kwargs):
-        """Run specific plotter."""
-        for path in self._run(*args, **kwargs):
-            yield path
-
     # yapf: disable
     specs_fmt_keys = {
         'time'      : 'time_ind',
@@ -66,11 +61,11 @@ class FlexPlotter:
     }
     # yapf: enable
 
-    def run(self, data, file_path_fmt):
+    def run(self, field, file_path_fmt):
         """Create one or more plots.
 
         Args:
-            data (FlexPlot*, list[FlexPlot*]): An instance or list of
+            field (FlexPlot*, list[FlexPlot*]): An instance or list of
                 instances of the plot class.
 
             file_path_fmt (str): Format string of output file path.
@@ -84,22 +79,23 @@ class FlexPlotter:
         """
         self.file_path_fmt = file_path_fmt
 
-        data_lst = data if isinstance(data, (list, tuple)) else [data]
+        data_lst = field if isinstance(field, (list, tuple)) else [field]
 
         _s = 's' if len(data_lst) > 1 else ''
         print(f"create {len(data_lst)} {self.type_} plot{_s}")
 
         # Create plots one-by-one
-        for i_data, data in enumerate(data_lst):
-            file_path = self.format_file_path(data.field_specs)
+        for i_data, field in enumerate(data_lst):
+            file_path = self.format_file_path(field.field_specs)
             _w = len(str(len(data_lst)))
             print(f" {i_data+1:{_w}}/{len(data_lst)}  {file_path}")
 
             kwargs = {
-                'rlat': data.rlat,
-                'rlon': data.rlon,
-                'fld': data.fld,
-                'attrs': data.attrs,
+                'rlat': field.rlat,
+                'rlon': field.rlon,
+                'fld': field.fld,
+                'attrs': field.attrs,
+                'time_stats': field.time_stats,
             }
 
             self.cls_plot(**kwargs).save(file_path)

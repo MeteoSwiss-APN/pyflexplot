@@ -186,8 +186,7 @@ def concentration(
     default='both', multiple=True)
 # yapf: enable
 @click.pass_context
-def deposition(
-        ctx, in_file_path, out_file_path_fmt, integrate, **vars_specs):
+def deposition(ctx, in_file_path, out_file_path_fmt, integrate, **vars_specs):
 
     # Determine fields specifications (one for each eventual plot)
     vars_specs['integrate'] = integrate

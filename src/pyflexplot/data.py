@@ -15,7 +15,7 @@ from .utils_dev import ipython  #SR_DEV
 class FlexFieldRotPole:
     """FLEXPART data on rotated-pole grid."""
 
-    def __init__(self, rlat, rlon, fld, attrs, field_specs):
+    def __init__(self, rlat, rlon, fld, attrs, field_specs, time_stats):
         """Create an instance of ``FlexFieldRotPole``.
 
         Args:
@@ -29,28 +29,46 @@ class FlexFieldRotPole:
 
             field_specs (FlexFieldSpecs): Input field specifications.
 
+            time_stats (dict): Some statistics across all time steps.
+
         """
         self.rlat = rlat
         self.rlon = rlon
         self.fld = fld
         self.attrs = attrs
         self.field_specs = field_specs
+        self.time_stats = time_stats
 
 
-class FlexAttrsBase:
+class FlexAttrs:
     """Base class for attributes."""
 
     def __init__(self):
-        self.attrs = {}
+        self.reset()
 
-    def __getattr__(self, name):
-        try:
-            return self.__dict__['attrs'][name]
-        except KeyError as e:
-            if str(e) == 'attrs' and name != 'attrs':
-                self._raise_missing_attrs()
-            raise AttributeError(
-                f"'{type(self).__name__}' has no attribute '{name}'")
+    def reset(self):
+        self.reset_names()
+
+    def reset_names(self):
+        if hasattr(self, 'names'):
+            try:
+                iter_names = iter(self.names)
+            except TypeError:
+                pass
+            for name in iter_names:
+                try:
+                    delattr(self, name)
+                except AttributeError:
+                    pass
+        self.__dict__['names'] = set()
+
+    def __setattr__(self, key, val):
+        if key.startswith('_') or key in self.names:
+            self.__dict__[key] = val
+        else:
+            raise ValueError(
+                f"invalid public attribute '{key}': "
+                f"not among {sorted(self.names)}")
 
     def set(self, name, val, type_=None):
         """Set an attribute, optionally checking its type.
@@ -90,11 +108,8 @@ class FlexAttrsBase:
                     f"attr '{name}': value '{val}' has wrong type: "
                     f"expected '{type_.__name__}', got '{type(val).__name__}'")
 
-        # Set attribute
-        try:
-            self.attrs[name] = val
-        except AttributeError:
-            self._raise_missing_attrs()
+        self.__dict__[name] = val
+        self.names.add(name)
 
     def set_value_unit(self, val_name, val, unit, val_type):
         """Set a (value, unit) attribute pair.
@@ -160,8 +175,6 @@ class FlexAttrsBase:
 
         return names, vals, types
 
-    def _raise_missing_attrs(self):
-        cname = type(self).__name__
         raise Exception(
             f"'{cname}' has no attribute 'attrs' -- maybe forgot "
             f"`super().__init__()` in `{cname}.__init__`?")
@@ -178,14 +191,14 @@ class FlexAttrsBase:
         return unit
 
     def __iter__(self):
-        for k, v in self.attrs.items():
-            yield k, v
+        for name in sorted(self.names):
+            yield name, getattr(self, name)
 
     def merge(self, others, replace=None):
         """Create new instance by merging self and others.
 
         Args:
-            others (list[FlexAttrsBase]): Other instances of the same
+            others (list[FlexAttrs]): Other instances of the same
                 attributes class, to be merged with this one.
 
             replace (dict, optional): Attributes to be replaced in the
@@ -194,18 +207,18 @@ class FlexAttrsBase:
                 Defaults to '{}'.
 
         Returns:
-            FlexAttrsBase: Merged instance derived from ``self`` and
+            FlexAttrs: Merged instance derived from ``self`` and
                 ``others``. Note that no input instance is changed.
 
         """
         if replace is None:
             replace = {}
         kwargs = {}
-        for key, val0 in sorted(self.attrs.items()):
+        for key, val0 in iter(self):
             try:
                 kwargs[key] = replace[key]
             except KeyError:
-                vals = set([val0] + [o.attrs[key] for o in others])
+                vals = set([val0] + [getattr(o, key) for o in others])
                 if len(vals) > 1:
                     raise Exception(
                         f"{len(others) + 1} {self.__class__.__name__} "
@@ -219,7 +232,7 @@ class FlexAttrsBase:
             ipython(globals(), locals(), e)  #SR_DBG
 
 
-class FlexAttrsGrid(FlexAttrsBase):
+class FlexAttrsGrid(FlexAttrs):
     """Grid attributes."""
 
     def __init__(self, *, north_pole_lat, north_pole_lon):
@@ -236,7 +249,7 @@ class FlexAttrsGrid(FlexAttrsBase):
         self.set('north_pole_lon', north_pole_lon, float)
 
 
-class FlexAttrsVariable(FlexAttrsBase):
+class FlexAttrsVariable(FlexAttrs):
     """Variable attributes."""
 
     def __init__(
@@ -306,7 +319,7 @@ class FlexAttrsVariable(FlexAttrsBase):
             f"{self.format_level_unit()}")
 
 
-class FlexAttrsRelease(FlexAttrsBase):
+class FlexAttrsRelease(FlexAttrs):
     """Release attributes."""
 
     def __init__(
@@ -374,7 +387,7 @@ class FlexAttrsRelease(FlexAttrsBase):
         return f'{self.mass:g} {self.format_mass_unit()}'
 
 
-class FlexAttrsSpecies(FlexAttrsBase):
+class FlexAttrsSpecies(FlexAttrs):
     """Species attributes."""
 
     def __init__(
@@ -462,7 +475,7 @@ class FlexAttrsSpecies(FlexAttrsBase):
         return f'{self.washout_coeff:g} {self.format_washout_coeff_unit()}'
 
 
-class FlexAttrsSimulation(FlexAttrsBase):
+class FlexAttrsSimulation(FlexAttrs):
     """Simulation attributes."""
 
     def __init__(self, *, model_name, start, end, now):
@@ -516,11 +529,34 @@ class FlexAttrsCollection:
             simulation (dict): Kwargs passed to ``FlexAttrsSimulation``.
 
         """
-        self.grid = FlexAttrsGrid(**grid)
-        self.variable = FlexAttrsVariable(**variable)
-        self.release = FlexAttrsRelease(**release)
-        self.species = FlexAttrsSpecies(**species)
-        self.simulation = FlexAttrsSimulation(**simulation)
+        self.reset()
+        self.add('grid', grid)
+        self.add('variable', variable)
+        self.add('release', release)
+        self.add('species', species)
+        self.add('simulation', simulation)
+
+    def reset(self):
+        FlexAttrs.reset_names(self)
+
+    def add(self, name, attrs):
+
+        if not isinstance(attrs, FlexAttrs):
+            cls_by_name = {
+                'grid': FlexAttrsGrid,
+                'variable': FlexAttrsVariable,
+                'release': FlexAttrsRelease,
+                'species': FlexAttrsSpecies,
+                'simulation': FlexAttrsSimulation,
+            }
+            try:
+                cls = cls_by_name[name]
+            except KeyError:
+                raise ValueError(f"missing FlexAttrs class for name '{name}'")
+            attrs = cls(**attrs)
+
+        setattr(self, name, attrs)
+        self.names.add(name)
 
     def merge(self, others, **replace):
         """Create a new instance by merging this and others.
@@ -559,11 +595,17 @@ class FlexAttrsCollection:
 
         """
         kwargs = {}
-        names = ['grid', 'variable', 'release', 'species', 'simulation']
-        for name in names:
+        for name in sorted(self.names):
             kwargs[name] = dict(
                 getattr(self, name).merge(
                     [getattr(o, name) for o in others],
                     replace.get(name),
                 ))
         return self.__class__(**kwargs)
+
+    def __iter__(self):
+        for name in sorted(self.names):
+            yield name, getattr(self, name)
+
+    def asdict(self):
+        return {name: dict(attrs) for name, attrs in self}

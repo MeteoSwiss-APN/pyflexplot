@@ -115,5 +115,3 @@ class TestReadFieldSimple:
             var_names_ref,
             deposition='tot',
         )
-
-    #ipython(globals(), locals())
