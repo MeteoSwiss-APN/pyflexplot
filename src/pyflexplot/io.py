@@ -296,42 +296,12 @@ class FlexFieldSpecs:
                 collections. Defaults to '{}'.
 
         """
-        # Create the specs instances
-        try:
-            iter(var_specs_lst)
-        except TypeError:
-            raise ValueError(
-                f"var_specs: type '{type(var_specs_lst).__name__}' "
-                f"not iterable") from None
-        else:
-            self.var_specs_lst = []
-            for i, kwargs_specs in enumerate(var_specs_lst):
-                try:
-                    var_specs = self.cls_var_specs(**kwargs_specs)
-                except Exception as e:
-                    raise ValueError(
-                        f"var_specs[{i}]: cannot create instance of "
-                        f"{self.cls_var_specs.__name__} from {kwargs_specs}: "
-                        f"{e.__class__.__name__}({e})") from None
-                else:
-                    self.var_specs_lst.append(var_specs)
-            del var_specs_lst
-        n_var_specs = len(self.var_specs_lst)
 
-        # Check and store the operator(s)
-        try:
-            n_ops = len(op)
-        except TypeError:
-            if not callable(op):
-                raise ValueError(f"op: {type(op).__name__} not callable")
-        else:
-            if n_ops != n_var_specs - 1:
-                raise ValueError(
-                    f"wrong number of operators passed in "
-                    f"{type(ops).__name__}: {n_ops} != {n_var_specs}")
-            for op_i in op:
-                if not callable(op_i):
-                    raise ValueError(f"op: {type(op_i).__name__} not callable")
+        # Create variable specifications objects
+        self.var_specs_lst = self.create_var_specs(var_specs_lst)
+
+        # Store operator(s)
+        self.check_op(op)
         if callable(op):
             self.op = op
             self.op_lst = None
@@ -339,12 +309,78 @@ class FlexFieldSpecs:
             self.op = None
             self.op_lst = op
 
-        self.op = op if callable(op) else None
-        self.op_lst = op if not callable(op) else None
-
+        # Store variable attributes
         if var_attrs_replace is None:
             var_attrs_replace = {}
         self.var_attrs_replace = var_attrs_replace
+
+
+    @classmethod
+    def create_var_specs(cls, var_specs_dct_lst):
+        """Create variable specifications objects from dicts."""
+        try:
+            iter(var_specs_dct_lst)
+        except TypeError:
+            raise ValueError(
+                f"var_specs: type '{type(var_specs_dct_lst).__name__}' "
+                f"not iterable") from None
+
+        var_specs_lst = []
+        for i, kwargs_specs in enumerate(var_specs_dct_lst):
+            try:
+                var_specs = cls.cls_var_specs(**kwargs_specs)
+            except Exception as e:
+                raise ValueError(
+                    f"var_specs[{i}]: cannot create instance of "
+                    f"{cls.cls_var_specs.__name__} from {kwargs_specs}: "
+                    f"{e.__class__.__name__}({e})") from None
+            else:
+                var_specs_lst.append(var_specs)
+
+        return var_specs_lst
+
+    def check_op(self, op):
+        """Check operator(s)."""
+        try:
+            n_ops = len(op)
+        except TypeError:
+            if not callable(op):
+                raise ValueError(f"op: {type(op).__name__} not callable")
+            return
+
+        n_var_specs = len(self.var_specs_lst)
+        if n_ops != n_var_specs - 1:
+            raise ValueError(
+                f"wrong number of operators passed in "
+                f"{type(ops).__name__}: {n_ops} != {n_var_specs}")
+        for op_i in op:
+            if not callable(op_i):
+                raise ValueError(f"op: {type(op_i).__name__} not callable")
+
+    def __repr__(self):
+        s = f"{self.__class__.__name__}(\n"
+
+        # Variables specifications
+        s += f"  var_specs: {len(self.var_specs_lst)}x\n"
+        for var_specs in self.var_specs_lst:
+            for line in str(var_specs).split('\n'):
+                s += f"    {line}\n"
+
+        # Operator(s)
+        if self.op is not None:
+            s += f"  op: {self.op.__name__}\n"
+        else:
+            s += f"  ops: {len(self.op_lst)}x\n"
+            for op in self.op_lst:
+                s += "f    {op.__name__}\n"
+
+        # Variable attributes replacements
+        s += f"  var_attrs_replace: {len(self.var_attrs_replace)}x\n"
+        for key, val in sorted(self.var_attrs_replace.items()):
+            s += f"    '{key}': {val}\n"
+
+        s += f")"
+        return s
 
     def __hash__(self):
         # yapf: disable
@@ -576,6 +612,7 @@ class FlexFileRotPole:
         time_stats = {
             'mean': np.nanmean(var[inds_time]),
             'median': np.nanmedian(var[inds_time]),
+            # -> UserWarning: Warning: 'partition' will ignore the 'mask' of the MaskedArray.
             'max': np.nanmax(var[inds_time]),
         }
 
@@ -626,12 +663,12 @@ class FlexFileRotPole:
 
             if attrs.variable.unit == 'ng kg-1':
                 attrs.variable.unit = 'Bq m-3'
-                fld *= 1e-12
+                fld[:] *= 1e-12
                 scale_time_stats(1e-12)
 
             elif attrs.variable.unit == '1e-12 kg m-2':
                 attrs.variable.unit = 'Bq m-2'
-                fld *= 1e-12
+                fld[:] *= 1e-12
                 scale_time_stats(1e-12)
 
             else:

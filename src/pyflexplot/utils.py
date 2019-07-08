@@ -2,7 +2,8 @@
 """
 Utils for the command line tool.
 """
-import logging
+import itertools
+import logging as log
 
 from pprint import pformat
 
@@ -22,13 +23,13 @@ class KeyConflictError(Exception):
 def count_to_log_level(count: int) -> int:
     """Map the occurence of the command line option verbose to the log level"""
     if count == 0:
-        return logging.ERROR
+        return log.ERROR
     elif count == 1:
-        return logging.WARNING
+        return log.WARNING
     elif count == 2:
-        return logging.INFO
+        return log.INFO
     else:
-        return logging.DEBUG
+        return log.DEBUG
 
 
 def merge_dicts(*dicts, unique_keys=True):
@@ -61,6 +62,32 @@ def merge_dicts(*dicts, unique_keys=True):
                     raise KeyConflictError(key)
                 merged[key] = val
     return merged
+
+
+def dict_mult_vals_product(dict_):
+    """Combine value lists in a dict in all possible ways.
+
+    Example:
+        in: {'foo_lst': [1, 2, 3], 'bar': 4, 'baz_lst': [5, 6]}
+
+        out: [
+                {'foo': 1, 'bar: 4, 'baz': 5},
+                {'foo': 2, 'bar: 4, 'baz': 5},
+                {'foo': 3, 'bar: 4, 'baz': 5},
+                {'foo': 1, 'bar: 4, 'baz': 6},
+                {'foo': 2, 'bar: 4, 'baz': 6},
+                {'foo': 3, 'bar: 4, 'baz': 6},
+            ]
+
+    TODOs:
+        Improve wording of short description of docstring.
+
+    """
+    keys, vals = [], []
+    for key, val in sorted(dict_.items()):
+        keys.append(key.replace('_lst', ''))
+        vals.append(val if key.endswith('_lst') else [val])
+    return [dict(zip(keys, vals_i)) for vals_i in itertools.product(*vals)]
 
 
 class Degrees:

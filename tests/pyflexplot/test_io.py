@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Tests for `pyflexplot/io.py` package."""
-import itertools
 import logging as log
 import netCDF4 as nc4
 import numpy as np
@@ -14,20 +13,24 @@ from pyflexplot.io import FlexFieldSpecsConcentration
 from pyflexplot.io import FlexFieldSpecsDeposition
 from pyflexplot.io import FlexFileRotPole
 
-from pyflexplot.utils_dev import ipython  #SR_DBG
+from pyflexplot.utils import dict_mult_vals_product
+
+from pyflexplot.utils_dev import ipython  #SR_DEV
 
 
 #SR_TMP<<<
 def fix_nc_fld(fld):
     """Fix field read directly from NetCDF file."""
-    fld *= 1e-12
+    fld[:] *= 1e-12
 
 
 def read_nc_var(path, var_name, dim_inds):
     with nc4.Dataset(path, 'r') as fi:
         var = fi.variables[var_name]
         inds = [dim_inds.get(d, slice(None)) for d in var.dimensions]
-        return var[inds]
+        fld = var[inds]
+        fix_nc_fld(fld)  #SR_TMP
+        return fld
 
 
 class TestReadFieldSingle:
@@ -50,7 +53,8 @@ class TestReadFieldSingle:
     def species_id(self):
         return self.var_specs_mult_shared['species_id']
 
-    def datafile(self, datadir):
+    @staticmethod
+    def datafile(datadir):
         return f'{datadir}/flexpart_cosmo1_case2.nc'
 
     #------------------------------------------------------------------
@@ -80,7 +84,6 @@ class TestReadFieldSingle:
             ],
             axis=0,
         )
-        fix_nc_fld(fld_ref)  #SR_TMP
 
         # Check array
         assert fld.shape == fld_ref.shape
@@ -132,32 +135,6 @@ class TestReadFieldSingle:
             ],
             var_specs_mult_unshared={'deposition': 'tot'},
         )
-
-
-def dict_mult_vals_product(dict_):
-    """Combine value lists in a dict in all possible ways.
-
-    Example:
-        in: {'foo_lst': [1, 2, 3], 'bar': 4, 'baz_lst': [5, 6]}
-
-        out: [
-                {'foo': 1, 'bar: 4, 'baz': 5},
-                {'foo': 2, 'bar: 4, 'baz': 5},
-                {'foo': 3, 'bar: 4, 'baz': 5},
-                {'foo': 1, 'bar: 4, 'baz': 6},
-                {'foo': 2, 'bar: 4, 'baz': 6},
-                {'foo': 3, 'bar: 4, 'baz': 6},
-            ]
-
-    TODOs:
-        Improve wording of short description of docstring.
-
-    """
-    keys, vals = [], []
-    for key, val in sorted(dict_.items()):
-        keys.append(key.replace('_lst', ''))
-        vals.append(val if key.endswith('_lst') else [val])
-    return [dict(zip(keys, vals_i)) for vals_i in itertools.product(*vals)]
 
 
 class TestFieldSpecsMultiple:
@@ -248,15 +225,16 @@ class TestReadFieldMultiple:
     def species_id(self):
         return self.var_specs_mult_shared['species_id']
 
-    def datafile(self, datadir):
+    @staticmethod
+    def datafile(datadir):
         return f'{datadir}/flexpart_cosmo1_case2.nc'
 
     #------------------------------------------------------------------
 
     def run(
-            self, datadir, cls_fld_specs, dims_mult, var_names_ref,
-            var_specs_mult_unshared):
-        """Run an individual test."""
+            self, *, separate, datafile, cls_fld_specs, dims_mult,
+            var_names_ref, var_specs_mult_unshared):
+        """Run an individual test, reading one field after another."""
 
         # Create field specifications list
         var_specs_mult = {
@@ -264,40 +242,62 @@ class TestReadFieldMultiple:
             **self.var_specs_mult_shared,
             **var_specs_mult_unshared,
         }
-        fld_specs_mult_lst = cls_fld_specs.multiple(var_specs_mult)
+        fld_specs_lst = cls_fld_specs.multiple(var_specs_mult)
+
+        dim_names = sorted([d.replace('_lst', '') for d in dims_mult.keys()])
+
+        if separate:
+            # Process field specifications one after another
+            for fld_specs in fld_specs_lst:
+                self._run_core(datafile, dim_names, var_names_ref, [fld_specs])
+        else:
+            self._run_core(datafile, dim_names, var_names_ref, fld_specs_lst)
+
+    @staticmethod
+    def _run_core(datafile, dim_names, var_names_ref, fld_specs_lst):
 
         # Read input fields
         flex_field_lst = (
-            FlexFileRotPole(self.datafile(datadir)).read(fld_specs_mult_lst))
-        flds = [flex_field.fld for flex_field in flex_field_lst]
+            FlexFileRotPole(datafile).read(fld_specs_lst))
+        flds = np.array([flex_field.fld for flex_field in flex_field_lst])
+
+        # Collect dimensions
+        dims_lst = []
+        for fld_specs in fld_specs_lst:
+            dims = {}
+            for name in dim_names:
+                var_specs = fld_specs.var_specs_merged()
+                if name == 'time' and var_specs['integrate']:
+                    dims[name] = slice(None, var_specs[name] + 1)
+                else:
+                    dims[name] = var_specs[name]
+            dims_lst.append(dims)
 
         # Read reference fields
-        dims_lst = dict_mult_vals_product(dims_mult)
         flds_ref = []
         for dims in dims_lst:
-            fld_ref = np.nansum(
-                [
-                    read_nc_var(self.datafile(datadir), var_name, dims)
-                    for var_name in var_names_ref
-                ],
-                axis=0,
-            )
-            fix_nc_fld(fld_ref)  #SR_TMP
-            flds_ref.append(fld_ref)
+            flds_ref_i = [
+                read_nc_var(datafile, var_name, dims)
+                for var_name in var_names_ref
+            ]
+            if isinstance(dims['time'], slice):
+                flds_ref_i = np.nansum(flds_ref_i, axis=1)
+            fld_ref_i = np.nansum(flds_ref_i, axis=0)
+            flds_ref.append(fld_ref_i)
+        flds_ref = np.array(flds_ref)
 
-        #flds = np.sort(flds, axis=0)
-        #flds_ref = np.sort(flds_ref, axis=0)
-
-        assert np.asarray(flds).shape == np.asarray(flds_ref).shape
-        np.testing.assert_allclose(flds, flds_ref, equal_nan=True)
+        assert flds.shape == flds_ref.shape
+        assert np.isclose(np.nanmean(flds), np.nanmean(flds_ref))
+        np.testing.assert_allclose(flds, flds_ref, equal_nan=True, rtol=1e-6)
 
     #------------------------------------------------------------------
 
-    def test_concentration(self, datadir):
-        """Read concentration fields."""
+    def run_concentration(self, datadir, *, separate):
+        """Read multiple concentration fields."""
         self.run(
-            datadir,
-            FlexFieldSpecsConcentration,
+            separate=separate,
+            datafile=self.datafile(datadir),
+            cls_fld_specs=FlexFieldSpecsConcentration,
             dims_mult={
                 **self.dims_shared,
                 'level_lst': [0, 2],
@@ -306,31 +306,58 @@ class TestReadFieldMultiple:
             var_specs_mult_unshared={},
         )
 
-    def test_deposition_dry(self, datadir):
+    def test_concentration_separate(self, datadir):
+        self.run_concentration(datadir, separate=True)
+
+    def test_concentration_together(self, datadir):
+        self.run_concentration(datadir, separate=False)
+
+    #------------------------------------------------------------------
+
+    def run_deposition_dry(self, datadir, *, separate):
         """Read dry deposition fields."""
         self.run(
-            datadir,
-            FlexFieldSpecsDeposition,
+            separate=separate,
+            datafile=self.datafile(datadir),
+            cls_fld_specs=FlexFieldSpecsDeposition,
             dims_mult=self.dims_shared,
             var_names_ref=[f'DD_spec{self.species_id:03d}'],
             var_specs_mult_unshared={'deposition': 'dry'},
         )
 
-    def test_deposition_wet(self, datadir):
+    def test_deposition_dry_separate(self, datadir):
+        self.run_deposition_dry(datadir, separate=True)
+
+    def test_deposition_dry_together(self, datadir):
+        self.run_deposition_dry(datadir, separate=False)
+
+    #------------------------------------------------------------------
+
+    def run_deposition_wet(self, datadir, *, separate):
         """Read wet deposition field."""
         self.run(
-            datadir,
-            FlexFieldSpecsDeposition,
+            separate=separate,
+            datafile=self.datafile(datadir),
+            cls_fld_specs=FlexFieldSpecsDeposition,
             dims_mult=self.dims_shared,
             var_names_ref=[f'WD_spec{self.species_id:03d}'],
             var_specs_mult_unshared={'deposition': 'wet'},
         )
 
-    def test_deposition_tot(self, datadir):
+    def test_deposition_wet_separate(self, datadir):
+        self.run_deposition_wet(datadir, separate=True)
+
+    def test_deposition_wet_together(self, datadir):
+        self.run_deposition_wet(datadir, separate=False)
+
+    #------------------------------------------------------------------
+
+    def run_deposition_tot(self, datadir, *, separate):
         """Read total deposition field."""
         self.run(
-            datadir,
-            FlexFieldSpecsDeposition,
+            separate=separate,
+            datafile=self.datafile(datadir),
+            cls_fld_specs=FlexFieldSpecsDeposition,
             dims_mult=self.dims_shared,
             var_names_ref=[
                 f'WD_spec{self.species_id:03d}',
@@ -338,3 +365,9 @@ class TestReadFieldMultiple:
             ],
             var_specs_mult_unshared={'deposition': 'tot'},
         )
+
+    def test_deposition_tot_separate(self, datadir):
+        self.run_deposition_tot(datadir, separate=True)
+
+    def test_deposition_tot_together(self, datadir):
+        self.run_deposition_tot(datadir, separate=False)
