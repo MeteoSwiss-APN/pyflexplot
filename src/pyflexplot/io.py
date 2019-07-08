@@ -18,7 +18,6 @@ from pprint import pformat
 from .data import FlexAttrsCollection
 from .data import FlexFieldRotPole
 from .utils import check_array_indices
-from .utils import merge_dicts
 from .utils import pformat_dictlike
 
 from .utils_dev import ipython  #SR_DEV
@@ -616,7 +615,7 @@ class FlexFileRotPole:
         raise NotImplementedError('merge time stats for multiple operators')
         #SR_TMP>
 
-    #SR_TMP<
+    #SR_TMP<<<
     def _fix_nc_data(self, fld, attrs, time_stats):
 
         def scale_time_stats(fact):
@@ -641,7 +640,6 @@ class FlexFileRotPole:
                     f"unknown unit '{attrs.variable.unit}'")
         else:
             raise NotImplementedError(f"species '{attrs.species.name}'")
-        #SR_TMP>
 
 
 class FlexAttrsCollector:
