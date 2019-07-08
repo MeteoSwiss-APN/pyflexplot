@@ -87,7 +87,7 @@ class TestReadFieldSingle:
 
         # Check array
         assert fld.shape == fld_ref.shape
-        np.testing.assert_allclose(fld, fld_ref, equal_nan=True)
+        np.testing.assert_allclose(fld, fld_ref, equal_nan=True, rtol=1e-6)
 
     #------------------------------------------------------------------
 
@@ -257,8 +257,7 @@ class TestReadFieldMultiple:
     def _run_core(datafile, dim_names, var_names_ref, fld_specs_lst):
 
         # Read input fields
-        flex_field_lst = (
-            FlexFileRotPole(datafile).read(fld_specs_lst))
+        flex_field_lst = (FlexFileRotPole(datafile).read(fld_specs_lst))
         flds = np.array([flex_field.fld for flex_field in flex_field_lst])
 
         # Collect dimensions

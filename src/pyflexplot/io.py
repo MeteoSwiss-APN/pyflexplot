@@ -19,6 +19,7 @@ from .data import FlexAttrsCollection
 from .data import FlexFieldRotPole
 from .utils import check_array_indices
 from .utils import pformat_dictlike
+from .utils import hash_slice
 
 from .utils_dev import ipython  #SR_DEV
 
@@ -223,13 +224,13 @@ class FlexVarSpecs:
         inds['nageclass'] = self.nageclass
         inds['numpoint'] = self.numpoint
 
-        if not self.integrate:
+        if not self.integrate or self.time == slice(None):
             inds['time'] = self.time
         else:
-            inds['time'] = slice(None, self.time + 1)
+            inds['time'] = hash_slice(None, self.time + 1)
 
-        inds['rlat'] = slice(None)
-        inds['rlon'] = slice(None)
+        inds['rlat'] = hash_slice(None)
+        inds['rlon'] = hash_slice(None)
 
         return inds
 
@@ -314,9 +315,7 @@ class FlexFieldSpecs:
             var_attrs_replace = {}
         self.var_attrs_replace = var_attrs_replace
 
-
-    @classmethod
-    def create_var_specs(cls, var_specs_dct_lst):
+    def create_var_specs(self, var_specs_dct_lst):
         """Create variable specifications objects from dicts."""
         try:
             iter(var_specs_dct_lst)
@@ -328,11 +327,11 @@ class FlexFieldSpecs:
         var_specs_lst = []
         for i, kwargs_specs in enumerate(var_specs_dct_lst):
             try:
-                var_specs = cls.cls_var_specs(**kwargs_specs)
+                var_specs = self.cls_var_specs(**kwargs_specs)
             except Exception as e:
                 raise ValueError(
                     f"var_specs[{i}]: cannot create instance of "
-                    f"{cls.cls_var_specs.__name__} from {kwargs_specs}: "
+                    f"{self.cls_var_specs.__name__} from {kwargs_specs}: "
                     f"{e.__class__.__name__}({e})") from None
             else:
                 var_specs_lst.append(var_specs)
@@ -486,32 +485,43 @@ class FlexFileRotPole:
         self._fi = None
         self._var_specs_curr = None
 
-    def read(self, field_specs):
+    def read(self, fld_specs):
         """Read one or more fields from a file from disc.
 
         Args:
-            field_specs (FlexFieldSpecs or list[FlexFieldSpecs]):
+            fld_specs (FlexFieldSpecs or list[FlexFieldSpecs]):
                 Specifications for one or more input fields.
 
         Returns:
-            FlexFieldRotPole: Single data object; if ``field_specs``
+            FlexFieldRotPole: Single data object; if ``fld_specs``
                 constitutes a single ``FlexFieldSpecs`` instance.
 
             or
 
             list[FlexFieldRotPole]: One data object for each field;
-                if ``field_specs`` constitutes a list of
-                ``FlexFieldSpecs`` instances.
+                if ``fld_specs`` constitutes a list of ``FlexFieldSpecs``
+                instances.
 
         """
-        if isinstance(field_specs, FlexFieldSpecs):
+        if isinstance(fld_specs, FlexFieldSpecs):
             multiple = False
-            fld_specs_lst = [field_specs]
+            fld_specs_lst = [fld_specs]
         else:
             multiple = True
-            fld_specs_lst = field_specs
-        del field_specs
+            fld_specs_lst = fld_specs
+        del fld_specs
         n_fld_specs = len(fld_specs_lst)
+
+        # Group field specifications objects such that all in one group
+        # only differ in time; collect the respective time indices; and
+        # merge the group into one field specifications instance with
+        # time dimension 'slice(None)'. This allows for each such group
+        # to first read and process all time steps (e.g., derive some
+        # statistics across all time steps), and subsequently extract
+        # the requested time steps using the separately stored indices.
+        fld_specs_time_lst, time_inds_lst = (
+            self.group_fld_specs_by_time(fld_specs_lst))
+        n_fst = len(fld_specs_time_lst)
 
         log.debug(f"read {self.path}")
         flex_data_lst = []
@@ -521,16 +531,49 @@ class FlexFileRotPole:
             rlat = self._fi.variables['rlat'][:]
             rlon = self._fi.variables['rlon'][:]
 
-            log.debug(f"process {n_fld_specs} field specs")
-            for i_fld_specs, fld_specs in enumerate(fld_specs_lst):
-                log.debug(f"{i_fld_specs + 1}/{n_fld_specs}: {fld_specs}")
-                fld, attrs, time_stats = self._import_field(fld_specs)
+            log.debug(f"process {n_fst} field specs groups")
+            for i_fst, (fld_specs_time, time_inds) in enumerate(
+                    zip(fld_specs_time_lst, time_inds_lst)):
+                log.debug(f"{i_fst + 1}/{n_fst}: {fld_specs_time}")
+                n_t = len(time_inds)
 
-                # Collect data
-                log.debug("create data object")
-                flex_data_lst.append(
-                    FlexFieldRotPole(
-                        rlat, rlon, fld, attrs, fld_specs, time_stats))
+                fld_time = self._import_field(fld_specs_time)
+                time_stats = self.collect_time_stats(fld_time)
+
+                log.debug(f"extract {n_fst} time steps")
+                for i_t, time_ind in enumerate(time_inds):
+                    log.debug(f"{i_t + 1}/{n_t}")
+
+                    # Create time-step-specific field specifications
+                    fld_specs = deepcopy(fld_specs_time)
+                    for var_specs in fld_specs.var_specs_lst:
+                        var_specs.time = time_ind
+
+                    # Extract field
+                    if fld_specs.var_specs_merged().integrate:
+                        fld = np.nansum(fld_time[slice(time_ind + 1)], axis=0)
+                    else:
+                        fld = fld_time[time_ind]
+
+                    # Collect attributes
+                    log.debug("collect attributes")
+                    attrs_lst = []
+                    for var_specs in fld_specs.var_specs_lst:
+                        attrs = FlexAttrsCollector(self._fi, var_specs).run()
+                        attrs_lst.append(attrs)
+                    attrs = attrs_lst[0].merge(
+                        attrs_lst[1:], **fld_specs.var_attrs_replace)
+
+                    #SR_TMP<
+                    log.debug("fix nc data")
+                    self._fix_nc_data(fld, attrs, time_stats)
+                    #SR_TMP>
+
+                    # Collect data
+                    log.debug("create data object")
+                    flex_data_lst.append(
+                        FlexFieldRotPole(
+                            rlat, rlon, fld, attrs, fld_specs, time_stats))
 
         self.reset()
 
@@ -541,43 +584,68 @@ class FlexFileRotPole:
             assert len(flex_data_lst) == 1
             return flex_data_lst[0]
 
+    def group_fld_specs_by_time(self, fld_specs_lst):
+        """Group specs that differ only in their time dimension."""
+
+        fld_specs_time_inds_by_hash = {}
+        for fld_specs in fld_specs_lst:
+            fld_specs_time = deepcopy(fld_specs)
+
+            # Extract time index and check its the same for all
+            time_ind = None
+            for var_specs in fld_specs_time.var_specs_lst:
+                if time_ind is None:
+                    time_ind = var_specs.time
+                elif var_specs.time != time_ind:
+                    raise Exception(
+                        f"{var_specs.__class__.__name__} instances of "
+                        f"{fld_spec_time.__class__.__name__} instance "
+                        f"differ in 'time' ({var_specs.time} != {time_ind}):"
+                        f"\n{fld_specs_time}")
+                var_specs.time = hash_slice(None)
+
+            # Store time-neutral fld specs alongside resp. time inds
+            key = hash(fld_specs_time)
+            if key not in fld_specs_time_inds_by_hash:
+                fld_specs_time_inds_by_hash[key] = (fld_specs_time, [])
+            if time_ind in fld_specs_time_inds_by_hash[key][1]:
+                raise Exception(
+                    f"duplicate time index {time_ind} in {fld_specs}")
+            fld_specs_time_inds_by_hash[key][1].append(time_ind)
+
+        # Regroup time-neutral fld specs and time inds into lists
+        fld_specs_time_lst, time_inds_lst = [], []
+        for _, (fld_specs_time,
+                time_inds) in sorted(fld_specs_time_inds_by_hash.items()):
+            fld_specs_time_lst.append(fld_specs_time)
+            time_inds_lst.append(time_inds)
+
+        return fld_specs_time_lst, time_inds_lst
+
+    def collect_time_stats(self, fld_time):
+        stats = {
+            'mean': np.nanmean(fld_time, axis=0),
+            'median': np.nanmedian(fld_time, axis=0),
+            'max': np.nanmax(fld_time, axis=0),
+        }
+        return stats
+
     def _import_field(self, fld_specs):
 
         # Read fields and attributes from var specifications
         fld_lst = []
-        attrs_lst = []
-        time_stats_lst = []
         for var_specs in fld_specs.var_specs_lst:
-            fld, attrs, time_stats = self._read_flex_data(var_specs)
+
+            # Field
+            log.debug("read field")
+            fld = self._read_var(var_specs)
+
             fld_lst.append(fld)
-            attrs_lst.append(attrs)
-            time_stats_lst.append(time_stats)
 
-        # Merge fields and attributes
+        # Merge fields
         fld = self._merge_fields(fld_lst, fld_specs)
-        attrs = attrs_lst[0].merge(
-            attrs_lst[1:], **fld_specs.var_attrs_replace)
-        time_stats = self._merge_time_stats(time_stats_lst, fld_specs)
 
-        return fld, attrs, time_stats
-
-    def _read_flex_data(self, var_specs):
-        """Core routine reading one field from an open file."""
-
-        # Field
-        log.debug("read field")
-        fld, time_stats = self._read_var(var_specs)
-
-        # Attributes
-        log.debug("collect attributes")
-        attrs = FlexAttrsCollector(self._fi, var_specs).run()
-
-        #SR_TMP<
-        log.debug("fix nc data")
-        self._fix_nc_data(fld, attrs, time_stats)
-        #SR_TMP>
-
-        return fld, attrs, time_stats
+        return fld
 
     def _read_var(self, var_specs):
 
@@ -599,6 +667,7 @@ class FlexFileRotPole:
                 f"\ndim_inds   : {dim_inds_by_name}"
                 f"\ndimensions : {var.dimensions}"
                 f"\ninds       : {inds}")
+        inds = hash_slice.to_slice(inds)
         log.debug(f"indices: {inds}")
         check_array_indices(var.shape, inds)
 
@@ -606,21 +675,7 @@ class FlexFileRotPole:
         log.debug(f"field variable shape: {var.shape}")
         fld = var[inds]
 
-        # Extract some stats across all time steps
-        ind_time = var.dimensions.index('time')
-        inds_time = inds[:ind_time] + [slice(None)] + inds[ind_time + 1:]
-        time_stats = {
-            'mean': np.nanmean(var[inds_time]),
-            'median': np.nanmedian(var[inds_time]),
-            # -> UserWarning: Warning: 'partition' will ignore the 'mask' of the MaskedArray.
-            'max': np.nanmax(var[inds_time]),
-        }
-
-        if var_specs.integrate:
-            assert len(fld.shape) == 3  #SR_TMP
-            fld = np.nansum(fld, axis=0)
-
-        return fld, time_stats
+        return fld
 
     def _merge_fields(self, fld_lst, fld_specs):
 
@@ -635,29 +690,12 @@ class FlexFileRotPole:
             fld = _op([fld, fld_i], axis=0)
         return fld
 
-    def _merge_time_stats(self, time_stats_lst, fld_specs):
-        if len(time_stats_lst) == 1:
-            return copy(next(iter(time_stats_lst)))
-        #SR_TMP< TODO proper implementation
-        if fld_specs.op is not None:
-            if fld_specs.op is np.nansum:
-                #SR This implementation is not very good!
-                #SR For instance, max values cannot be summed up!
-                time_stats = {}
-                for key in time_stats_lst[0].keys():
-                    vals = [s[key] for s in time_stats_lst]
-                    time_stats[key] = fld_specs.op(vals)
-                return time_stats
-            raise NotImplementedError('merge time stats for op != nansum')
-        raise NotImplementedError('merge time stats for multiple operators')
-        #SR_TMP>
-
     #SR_TMP<<<
     def _fix_nc_data(self, fld, attrs, time_stats):
 
         def scale_time_stats(fact):
             for key, val in time_stats.items():
-                time_stats[key] = fact*val
+                time_stats[key] = val*fact
 
         if attrs.species.name in ['Cs-137', 'I-131a']:
 
@@ -885,6 +923,10 @@ class FlexAttrsCollector:
         if i is None:
             # Default to timestep of current field
             i = self.field_specs.time
+
+        if not isinstance(i, int):
+            raise Exception(
+                f"expect type 'int', not '{type(i).__name__}': {i}")
 
         var = self.fi.variables['time']
 

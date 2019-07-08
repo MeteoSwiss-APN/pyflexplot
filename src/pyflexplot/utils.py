@@ -4,6 +4,7 @@ Utils for the command line tool.
 """
 import itertools
 import logging as log
+import numpy as np
 
 from pprint import pformat
 
@@ -170,6 +171,7 @@ class Degrees:
 
 def check_array_indices(shape, inds):
     """Check that slicing indices are consistent with array shape."""
+    inds = hash_slice.to_slice(inds)
 
     def inds2str(inds):
         """Convert indices to string, turning slices into '::' etc."""
@@ -214,3 +216,50 @@ def pformat_dictlike(obj):
     #s = s.replace('\n ', '\n  ')
 
     return s
+
+
+class hash_slice():
+    """Hashable wrapper class for built-in type 'slice'."""
+
+    def __init__(self, *args, **kwargs):
+        self.slice = slice(*args, **kwargs)
+
+    def __hash__(self):
+        return hash((self.slice.start, self.slice.stop, self.slice.step))
+
+    def __repr__(self):
+        return f'hash_{self.slice}'
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.slice == other.slice
+        elif isinstance(other, slice):
+            return self.slice == other
+        return False
+
+    @classmethod
+    def to_slice(cls, arg):
+        """Replace hash_slice instance(s) by slice instance(s).
+
+        Args:
+            arg (int or slice or hash_slice or list): Index, slice,
+                or list of indices/slices (can be nested).
+
+        """
+        try:
+            iter(arg)
+        except TypeError:
+            if isinstance(arg, (int, slice, np.ndarray)):
+                return arg
+            elif isinstance(arg, cls):
+                return arg.slice
+            else:
+                raise ValueError(f"unknown type '{type(arg).__name__}'")
+        else:
+            inds = [cls.to_slice(i) for i in arg]
+            try:
+                return type(arg)(inds)
+            except ValueError:
+                raise TypeError(
+                    f"cannot create instance of type '{type(arg).__name__}' "
+                    f"from list {inds}")
