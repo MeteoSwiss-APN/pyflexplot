@@ -44,6 +44,7 @@ setup(
     entry_points={
         'console_scripts': [
             'pyflexplot=pyflexplot.cli:main',
+            'crop-netcdf=tools.crop_netcdf:main',
         ],
     },
     install_requires=requirements,
