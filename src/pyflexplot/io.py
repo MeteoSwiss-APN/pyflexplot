@@ -92,7 +92,7 @@ class FlexVarSpecs:
 
     @classmethod
     def specs(cls, types=False):
-        for k, v in cls._keys_w_type.items():
+        for k, v in sorted(cls._keys_w_type.items()):
             if types:
                 yield k, v
             else:
@@ -185,7 +185,15 @@ class FlexVarSpecs:
         return self.__class__(**attrs)
 
     def __hash__(self):
-        return hash(tuple(sorted(iter(self))))
+        h, f = 0, 1
+        for key, val in sorted(iter(self)):
+            try:
+                h += int(val)*f
+            except (TypeError, ValueError):
+                continue
+            else:
+                f *= 10
+        return h
 
     def __lt__(self, other):
         return hash(self) < hash(other)
@@ -208,7 +216,7 @@ class FlexVarSpecs:
             raise e from None
 
     def __iter__(self):
-        for key, val in self.__dict__.items():
+        for key, val in sorted(self.__dict__.items()):
             if not key.startswith('_'):
                 yield key, val
 
@@ -383,9 +391,9 @@ class FlexFieldSpecs:
 
     def __hash__(self):
         # yapf: disable
-        return hash((
-            hash(tuple(sorted(self.var_specs_lst))),
-        ))
+        return sum([
+            sum([hash(vs) for vs in self.var_specs_lst]),
+        ])
         # yapf: enable
 
     def __lt__(self, other):
