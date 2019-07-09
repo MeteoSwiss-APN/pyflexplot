@@ -27,7 +27,12 @@ def fix_nc_fld(fld):
 def read_nc_var(path, var_name, dim_inds):
     with nc4.Dataset(path, 'r') as fi:
         var = fi.variables[var_name]
-        inds = [dim_inds.get(d, slice(None)) for d in var.dimensions]
+        inds = []
+        for name in var.dimensions:
+            if name in ['rlat', 'rlon']:
+                inds.append(slice(*dim_inds.get(name, [None])))
+            else:
+                inds.append(dim_inds.get(name, slice(None)))
         fld = var[inds]
         fix_nc_fld(fld)  #SR_TMP
         return fld

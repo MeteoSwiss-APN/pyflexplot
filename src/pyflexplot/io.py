@@ -19,7 +19,6 @@ from .data import FlexAttrsCollection
 from .data import FlexFieldRotPole
 from .utils import check_array_indices
 from .utils import pformat_dictlike
-from .utils import hash_slice
 
 from .utils_dev import ipython  #SR_DEV
 
@@ -98,16 +97,37 @@ class FlexVarSpecs:
             else:
                 yield k
 
-    def __init__(self, **kwargs):
+    def __init__(self, *, rlat=None, rlon=None, **kwargs):
         """Create an instance of ``FlexVarSpecs``.
 
         Args:
+            rlat (tuple, optional): Rotated latitude slice parameters,
+                passed to built-in ``slice``. Defaults to None.
+
+            rlon (tuple, optional): Rotated longitude slice parameters,
+                passed to built-in ``slice``. Defaults to None.
+
             **kwargs: Arguments as in ``FlexVarSpecs.specs(types=True)``.
                 The keys correspond to the argument's names, and the
                 values specify a type which the respective argument
                 value must be compatible with.
 
         """
+
+        def prepare_dim(dim):
+            if dim is None:
+                dim = (None,)
+            elif isinstance(dim, slice):
+                dim = (dim.start, dim.stop, dim.step)
+            try:
+                slice(*dim)
+            except ValueError:
+                raise
+            return dim
+
+        self.rlat = prepare_dim(rlat)
+        self.rlon = prepare_dim(rlon)
+
         for key, type_ in self.specs(types=True):
             try:
                 val = kwargs.pop(key)
@@ -124,7 +144,7 @@ class FlexVarSpecs:
                 f"{len(kwargs)} unexpected arguments: {sorted(kwargs)}")
 
     @classmethod
-    def multiple(cls, **kwargs):
+    def multiple(cls, *, rlat=slice(None), rlon=slice(None), **kwargs):
         """Create multiple instances of ``FlexVarSpecs``.
 
         Each of the arguments of ``__init__`` can be passed by the
@@ -166,7 +186,7 @@ class FlexVarSpecs:
         specs_lst = []
         for vals in itertools.product(*vals_plural):
             kwargs_i = {k: v for k, v in zip(keys_singular, vals)}
-            specs_lst.append(cls(**kwargs_i))
+            specs_lst.append(cls(rlat=rlat, rlon=rlon, **kwargs_i))
 
         return specs_lst
 
@@ -224,7 +244,7 @@ class FlexVarSpecs:
         """Derive variable name from specifications."""
         raise NotImplementedError(f'{self.__class__.__name__}.var_name')
 
-    def dim_inds_by_name(self):
+    def dim_inds_by_name(self, *, rlat=slice(None), rlon=slice(None)):
         """Derive indices along NetCDF dimensions."""
 
         inds = {}
@@ -235,10 +255,10 @@ class FlexVarSpecs:
         if not self.integrate or self.time == slice(None):
             inds['time'] = self.time
         else:
-            inds['time'] = hash_slice(None, self.time + 1)
+            inds['time'] = slice(None, self.time + 1)
 
-        inds['rlat'] = hash_slice(None)
-        inds['rlon'] = hash_slice(None)
+        inds['rlat'] = slice(*self.rlat)
+        inds['rlon'] = slice(*self.rlon)
 
         return inds
 
@@ -254,9 +274,9 @@ class FlexVarSpecsConcentration(FlexVarSpecs):
         """Derive variable name from specifications."""
         return f'spec{self.species_id:03d}'
 
-    def dim_inds_by_name(self):
+    def dim_inds_by_name(self, *args, **kwargs):
         """Derive indices along NetCDF dimensions."""
-        inds = super().dim_inds_by_name()
+        inds = super().dim_inds_by_name(*args, **kwargs)
         inds['level'] = self.level
         return inds
 
@@ -478,14 +498,20 @@ class FlexFieldSpecsDeposition(FlexFieldSpecs):
 class FlexFileRotPole:
     """NetCDF file containing FLEXPART data on rotated-pole grid."""
 
-    def __init__(self, path):
+    def __init__(self, path, cmd_open=nc4.Dataset):
         """Create an instance of ``FlexFileRotPole``.
 
         Args:
             path (str): File path.
 
+            cmd_open (function, optional): Function to open the input
+                file. Must support context manager interface, i.e.,
+                ``with cmd_open(path, mode) as f:``. Defaults to
+                netCDF4.Dataset.
+
         """
         self.path = path
+        self.cmd_open = cmd_open
 
         self.reset()
 
@@ -533,15 +559,12 @@ class FlexFileRotPole:
 
         log.debug(f"read {self.path}")
         flex_data_lst = []
-        with nc4.Dataset(self.path, 'r') as self._fi:
-
-            log.debug("read grid: rlat, rlon")
-            rlat = self._fi.variables['rlat'][:]
-            rlon = self._fi.variables['rlon'][:]
+        with self.cmd_open(self.path, 'r') as self._fi:
 
             log.debug(f"process {n_fst} field specs groups")
-            for i_fst, (fld_specs_time, time_inds) in enumerate(
-                    zip(fld_specs_time_lst, time_inds_lst)):
+            for i_fst, (fld_specs_time,
+                        time_inds) in enumerate(zip(fld_specs_time_lst,
+                                                    time_inds_lst)):
                 log.debug(f"{i_fst + 1}/{n_fst}: {fld_specs_time}")
                 n_t = len(time_inds)
 
@@ -577,6 +600,12 @@ class FlexFileRotPole:
                     self._fix_nc_data(fld, attrs, time_stats)
                     #SR_TMP>
 
+                    # Read grid variables
+                    inds_rlat = slice(*fld_specs.var_specs_merged()['rlat'])
+                    inds_rlon = slice(*fld_specs.var_specs_merged()['rlon'])
+                    rlat = self._fi.variables['rlat'][inds_rlat]
+                    rlon = self._fi.variables['rlon'][inds_rlon]
+
                     # Collect data
                     log.debug("create data object")
                     flex_data_lst.append(
@@ -610,7 +639,7 @@ class FlexFileRotPole:
                         f"{fld_spec_time.__class__.__name__} instance "
                         f"differ in 'time' ({var_specs.time} != {time_ind}):"
                         f"\n{fld_specs_time}")
-                var_specs.time = hash_slice(None)
+                var_specs.time = slice(None)
 
             # Store time-neutral fld specs alongside resp. time inds
             key = hash(fld_specs_time)
@@ -675,12 +704,13 @@ class FlexFileRotPole:
                 f"\ndim_inds   : {dim_inds_by_name}"
                 f"\ndimensions : {var.dimensions}"
                 f"\ninds       : {inds}")
-        inds = hash_slice.to_slice(inds)
+        inds = inds
         log.debug(f"indices: {inds}")
         check_array_indices(var.shape, inds)
 
         # Read field
-        log.debug(f"field variable shape: {var.shape}")
+        log.debug(f"shape: {var.shape}")
+        log.debug(f"indices: {inds}")
         fld = var[inds]
 
         return fld
