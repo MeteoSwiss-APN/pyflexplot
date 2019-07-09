@@ -661,9 +661,11 @@ class FlexFileRotPole:
 
     def collect_time_stats(self, fld_time):
         stats = {
-            'mean': np.nanmean(fld_time, axis=0),
-            'median': np.nanmedian(fld_time, axis=0),
-            'max': np.nanmax(fld_time, axis=0),
+            'mean': np.nanmean(fld_time),
+            'median': np.nanmedian(fld_time),
+            'mean_nz': np.nanmean(fld_time[fld_time > 0]),
+            'median_nz': np.nanmedian(fld_time[fld_time > 0]),
+            'max': np.nanmax(fld_time),
         }
         return stats
 

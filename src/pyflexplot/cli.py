@@ -42,11 +42,14 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'],)
     help="Skip plotting (for debugging etc.).",
     is_flag=True)
 @click.option(
-    '--open', 'open_cmd',
+    '--open-first', 'open_first_cmd',
     help=(
         "Shell command to open the first plot as soon as it is available."
         " The file path follows the command, unless explicitly set by"
         " including the format key '{file_path}'."))
+@click.option(
+    '--open-all', 'open_all_cmd',
+    help="Like --open-first, but for all plots.")
 @click.pass_context
 # yapf: enable
 def main(ctx, **kwargs):
@@ -138,7 +141,7 @@ def common_options_dispersion_various(f):
             '--integrate/--no-integrate', 'integrate_lst',
             help=("Integrate field over time. If set, '-int' is appended to "
                 "variable name (format key: '{variable}')."),
-            is_flag=True, default=False, multiple=True),
+            is_flag=True, default=[False], multiple=True),
     ]
     # yapf: enable
     return functools.reduce(lambda x, opt: opt(x), options, f)
@@ -160,10 +163,10 @@ def common_options_dispersion_various(f):
 def concentration(ctx, in_file_path, out_file_path_fmt, **vars_specs):
 
     # Determine fields specifications (one for each eventual plot)
-    field_specs_lst = FlexFieldSpecsConcentration.multiple(vars_specs)
+    fld_specs_lst = FlexFieldSpecsConcentration.multiple(vars_specs)
 
     # Read fields
-    flex_data_lst = FlexFileRotPole(in_file_path).read(field_specs_lst)
+    flex_data_lst = FlexFileRotPole(in_file_path).read(fld_specs_lst)
 
     # Create plots
     fct = functools.partial(
@@ -212,26 +215,32 @@ def create_plots(fct, ctx):
         return
 
     # Note: FlexPlotter.run yields the output file paths on-the-go
+    out_file_paths = []
     for i, out_file_path in enumerate(fct()):
+        out_file_paths.append(out_file_path)
 
-        if ctx.obj['open_cmd'] and i == 0:
+        if ctx.obj['open_first_cmd'] and i == 0:
             # Open the first file as soon as it's available
-            open_plot(ctx.obj['open_cmd'], out_file_path)
+            open_plots(ctx.obj['open_first_cmd'], [out_file_path])
+
+    if ctx.obj['open_all_cmd']:
+        # Open all plots
+        open_plots(ctx.obj['open_all_cmd'], out_file_paths)
 
 
-def open_plot(cmd, file_path):
+def open_plots(cmd, file_paths):
     """Open a plot file using a shell command."""
 
     # If not yet included, append the output file path
-    if not '{file_path}' in cmd:
-        cmd += ' {file_path}'
+    if '{file_paths}' not in cmd:
+        cmd += ' {file_paths}'
 
     # Ensure that the command is run in the background
     if not cmd.rstrip().endswith('&'):
         cmd += ' &'
 
     # Run the command
-    cmd = cmd.format(file_path=file_path)
+    cmd = cmd.format(file_paths=' '.join(file_paths))
     os.system(cmd)
 
 

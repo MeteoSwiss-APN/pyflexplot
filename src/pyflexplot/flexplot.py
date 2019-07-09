@@ -114,7 +114,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             'ref_dist_y0': 0.96,
         }
 
-        self.find_contour_levels(n=8, extend='max')
+        self.define_levels_and_colors(extend='max')
 
     def create(self):
         """Create plot."""
@@ -134,25 +134,6 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
 
     def draw_map_plot(self):
         """Plot the particle concentrations onto the map."""
-
-        # Define colors
-        # yapf: disable
-        self.colors = (np.array([
-            (255, 155, 255),  # -> under
-            (224, 196, 172),  # \
-            (221, 127, 215),  # |
-            ( 99,   0, 255),  # |
-            (100, 153, 199),  #  > range
-            ( 93, 255,   2),  # |
-            (199, 255,   0),  # |
-            (255, 239,  57),  # /
-            (200, 200, 200),  # -> over
-        ], float)/255).tolist()
-        # yapf: enable
-        if self.extend in ['none', 'max']:
-            self.colors.pop(0)  # Remove `under`
-        if self.extend in ['none', 'min']:
-            self.colors.pop(-1)  # Remove `over`
 
         # Add reference distance indicator
         self.ax_map.add_ref_dist_indicator()
@@ -184,7 +165,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             h_rel_b=0.03,
             w_rel_r=0.25,
             pad_hor_rel=0.015,
-            h_rel_box_rt=0.44):
+            h_rel_box_rt=0.46):
         """Add empty text boxes to the figure around the map plot.
 
         Args:
@@ -327,7 +308,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
         # Positioning parameters
         dx = 1.2
         dy_line = 3.0
-        dy0_labels = 8.0
+        dy0_labels = 7.5
         w_box, h_box = 4, 2
         dy0_boxes = dy0_labels - 0.4
 
@@ -485,7 +466,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             """)
 
         # Add lines bottom-up (to take advantage of baseline alignment)
-        dy0 = 3
+        dy0 = 2
         dy = 2.5
         box.text_blocks_hfill(
             'b',
@@ -509,20 +490,41 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
         cpright_fmtd = u"\u00a9MeteoSwiss"
         box.text('tr', dx=0.7, dy=0.5, s=cpright_fmtd, size='small')
 
-    def find_contour_levels(self, n, extend):
+    def define_levels_and_colors(self, extend):
 
         self.extend = extend
 
+        # Define colors
+        # yapf: disable
+        self.colors = (np.array([
+            (255, 155, 255),  # -> under
+            (224, 196, 172),  # \
+            (221, 127, 215),  # |
+            ( 99,   0, 255),  # |
+            (100, 153, 199),  #  > range
+            ( 34, 139,  34),  # |
+            ( 93, 255,   2),  # |
+            (199, 255,   0),  # |
+            (255, 239,  57),  # /
+            (200, 200, 200),  # -> over
+        ], float)/255).tolist()
+        # yapf: enable
+        if extend in ['none', 'max']:
+            self.colors.pop(0)  # Remove `under`
+        if extend in ['none', 'min']:
+            self.colors.pop(-1)  # Remove `over`
+
+        # Fetch maximum value over all time steps
         log10_max = int(np.log10(self.time_stats['max']))
 
+        # Define levels (logarithmic and linear)
         log10_d = 1
-
+        n = len(self.colors)
         self.levels_log10 = np.arange(
             log10_max - (n - 1)*log10_d,
             log10_max + 0.5*log10_d,
             log10_d,
         )
-
         self.levels = 10**self.levels_log10
 
 
