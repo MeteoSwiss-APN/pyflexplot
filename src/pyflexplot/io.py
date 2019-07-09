@@ -193,7 +193,12 @@ class FlexVarSpecs:
     def merge(self, others):
         attrs = {}
         for key, val0 in sorted(self):
-            vals = set([val0] + [getattr(o, key) for o in others])
+            vals = [val0]
+            for other in others:
+                val = getattr(other, key)
+                if val not in vals:
+                    vals.append(val)
+
             if len(vals) == 1:
                 attrs[key] = next(iter(vals))
             else:
@@ -431,6 +436,15 @@ class FlexFieldSpecs:
         """Return merged variable specifications."""
         return self.var_specs_lst[0].merge(self.var_specs_lst[1:])
 
+    def var_specs_shared(self, key):
+        """Return a varible specification, if it is shared by all."""
+        vals = [getattr(vs, key) for vs in self.var_specs_lst]
+        all_equal = all(v == vals[0] for v in vals[1:])
+        if not all_equal:
+            raise ValueError(
+                f"'{key}' differs among {len(self.var_specs_lst)} var stats: "
+                f"{vals}")
+        return next(iter(vals))
 
 class FlexFieldSpecsConcentration(FlexFieldSpecs):
 
@@ -569,7 +583,10 @@ class FlexFileRotPole:
                 n_t = len(time_inds)
 
                 fld_time = self._import_field(fld_specs_time)
-                time_stats = self.collect_time_stats(fld_time)
+                time_stats = self.collect_time_stats(
+                    fld_time,
+                    fld_specs_time.var_specs_shared('integrate'),
+                )
 
                 log.debug(f"extract {n_fst} time steps")
                 for i_t, time_ind in enumerate(time_inds):
@@ -581,7 +598,7 @@ class FlexFileRotPole:
                         var_specs.time = time_ind
 
                     # Extract field
-                    if fld_specs.var_specs_merged().integrate:
+                    if fld_specs.var_specs_shared('integrate'):
                         fld = np.nansum(fld_time[slice(time_ind + 1)], axis=0)
                     else:
                         fld = fld_time[time_ind]
@@ -597,12 +614,15 @@ class FlexFileRotPole:
 
                     #SR_TMP<
                     log.debug("fix nc data")
-                    self._fix_nc_data(fld, attrs, time_stats)
+                    if i_t == 0:
+                        self._fix_nc_data(fld, attrs, time_stats)
+                    else:
+                        self._fix_nc_data(fld, attrs)
                     #SR_TMP>
 
                     # Read grid variables
-                    inds_rlat = slice(*fld_specs.var_specs_merged()['rlat'])
-                    inds_rlon = slice(*fld_specs.var_specs_merged()['rlon'])
+                    inds_rlat = slice(*fld_specs.var_specs_shared('rlat'))
+                    inds_rlon = slice(*fld_specs.var_specs_shared('rlon'))
                     rlat = self._fi.variables['rlat'][inds_rlat]
                     rlon = self._fi.variables['rlon'][inds_rlon]
 
@@ -659,7 +679,9 @@ class FlexFileRotPole:
 
         return fld_specs_time_lst, time_inds_lst
 
-    def collect_time_stats(self, fld_time):
+    def collect_time_stats(self, fld_time, integrate):
+        if integrate:
+            fld_time = np.cumsum(fld_time, axis=0)
         stats = {
             'mean': np.nanmean(fld_time),
             'median': np.nanmedian(fld_time),
@@ -731,11 +753,12 @@ class FlexFileRotPole:
         return fld
 
     #SR_TMP<<<
-    def _fix_nc_data(self, fld, attrs, time_stats):
+    def _fix_nc_data(self, fld, attrs, time_stats=None):
 
         def scale_time_stats(fact):
-            for key, val in time_stats.items():
-                time_stats[key] = val*fact
+            if time_stats is not None:
+                for key, val in time_stats.items():
+                    time_stats[key] = val*fact
 
         if attrs.species.name in ['Cs-137', 'I-131a']:
 

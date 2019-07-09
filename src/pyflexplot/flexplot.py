@@ -515,7 +515,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             self.colors.pop(-1)  # Remove `over`
 
         # Fetch maximum value over all time steps
-        log10_max = int(np.log10(self.time_stats['max']))
+        log10_max = int(np.floor(np.log10(self.time_stats['max'])))
 
         # Define levels (logarithmic and linear)
         log10_d = 1
