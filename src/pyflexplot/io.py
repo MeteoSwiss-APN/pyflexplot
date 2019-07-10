@@ -202,7 +202,7 @@ class FlexVarSpecs:
             if len(vals) == 1:
                 attrs[key] = next(iter(vals))
             else:
-                if key == 'deposition' and vals == set(['dry', 'wet']):
+                if key == 'deposition' and set(vals) == set(['dry', 'wet']):
                     attrs[key] = 'tot'
                 else:
                     raise NotImplementedError(
@@ -477,32 +477,31 @@ class FlexFieldSpecsDeposition(FlexFieldSpecs):
                 as specified by the class attribute ``cls_var_specs``.
 
         """
-        if not isinstance(var_specs, dict):
-            raise ValueError(
-                f"var_specs must be 'dict', not '{type(var_specs).__name__}'")
+        if not isinstance(var_specs, self.cls_var_specs):
+            var_specs = self.cls_var_specs(**var_specs)
         try:
-            deposit_mode = var_specs['deposition']
+            deposit_mode = var_specs.deposition
         except KeyError as e:
             raise ValueError(f"var_specs: missing key '{e}'") from None
 
         kwargs = {}
         if deposit_mode in ['wet', 'dry']:
-            var_specs_lst = [var_specs]
+            var_specs_lst = [dict(var_specs)]
 
         elif deposit_mode == 'tot':
             var_specs_lst = [
                 {
-                    **var_specs, 'deposition': 'dry'
+                    **dict(var_specs), 'deposition': 'dry'
                 },
                 {
-                    **var_specs, 'deposition': 'wet'
+                    **dict(var_specs), 'deposition': 'wet'
                 },
             ]
             kwargs['op'] = np.nansum
+
             kwargs['var_attrs_replace'] = {
                 'variable': {
-                    'long_name': 'Total Deposition',
-                    #'short_name': '
+                    'long_name': FlexAttrsCollector.get_long_name(var_specs),
                 },
             }
 
@@ -737,6 +736,10 @@ class FlexFileRotPole:
         log.debug(f"indices: {inds}")
         fld = var[inds]
 
+        if isinstance(var_specs, FlexVarSpecsDeposition):
+            # Revert integration over time of deposition field
+            fld[1:] -= fld[:-1].copy()
+
         return fld
 
     def _merge_fields(self, fld_lst, fld_specs):
@@ -783,17 +786,17 @@ class FlexFileRotPole:
 class FlexAttrsCollector:
     """Collect attributes for a field from an open NetCDF file."""
 
-    def __init__(self, fi, field_specs):
+    def __init__(self, fi, var_specs):
         """Create an instance of ``FlexAttrsCollector``.
 
         Args:
             fi (netCDF4.Dataset): An open FLEXPART NetCDF file.
 
-            field_specs (FlexVarSpecs): Input field specifications.
+            var_specs (FlexVarSpecs): Input field specifications.
 
         """
         self.fi = fi
-        self.field_specs = field_specs
+        self.var_specs = var_specs
 
         # Collect all global attributes
         self.ncattrs_global = {
@@ -808,7 +811,7 @@ class FlexAttrsCollector:
             }
 
         # Select attributes of field variable
-        self.field_var_name = self.field_specs.var_name()
+        self.field_var_name = self.var_specs.var_name()
         self.ncattrs_field = self.ncattrs_vars[self.field_var_name]
 
     def run(self):
@@ -841,7 +844,7 @@ class FlexAttrsCollector:
         """Collect release point attributes."""
 
         # Collect release point information
-        _ind = self.field_specs.numpoint
+        _ind = self.var_specs.numpoint
         release_point = ReleasePoint.from_file(self.fi, _ind)
 
         site_lat = np.mean([release_point.lllat, release_point.urlat])
@@ -873,22 +876,16 @@ class FlexAttrsCollector:
     def _collect_variable_attrs(self):
         """Collect variable attributes."""
 
-        specs = self.field_specs
-
         # Variable name
-        if isinstance(specs, FlexVarSpecsConcentration):
-            long_name = 'Activity'  #SR_HC
-            short_name = 'Activity'  #SR_HC
-        elif isinstance(specs, FlexVarSpecsDeposition):
-            _dep_type = specs.deposition.lower().capitalize()
-            long_name = f'{_dep_type} Surface Deposition'  #SR_HC
+        if isinstance(self.var_specs, FlexVarSpecsConcentration):
+            long_name = self.get_long_name(self.var_specs)
+            short_name = 'Concentration'  #SR_HC
+        elif isinstance(self.var_specs, FlexVarSpecsDeposition):
+            long_name = self.get_long_name(self.var_specs)
             short_name = f'Deposition'  #SR_HC
-        if specs.integrate:
-            long_name = f'Integr. {long_name}'
-            short_name = f'Integr. {short_name}'
 
         try:
-            _i = self.field_specs.level
+            _i = self.var_specs.level
         except AttributeError:
             #SR_TMP<
             level_unit = ''
@@ -909,15 +906,32 @@ class FlexAttrsCollector:
             'level_top': (level_top, level_unit),
         }
 
+    #SR_HC<<<
+    @staticmethod
+    def get_long_name(var_specs):
+        """Return long variable name."""
+        if isinstance(var_specs, FlexVarSpecsConcentration):
+            return (
+                f'{"Integrated " if specs.integrate else ""}'
+                f'Activity Concentration')
+        elif isinstance(var_specs, FlexVarSpecsDeposition):
+            return (
+                f'{"Integrated" if var_specs.integrate else "Instantaneous"} '
+                f'{var_specs.deposition.lower().capitalize()} '
+                f'Surface Deposition')
+        else:
+            raise NotImplementedError(
+                f"var_specs of type '{type(var_specs).__name__}'")
+
     def _collect_species_attrs(self):
         """Collect species attributes."""
 
         substance = self._get_substance()
 
         # Get deposition and washout data
-        if isinstance(self.field_specs, FlexVarSpecsConcentration):
+        if isinstance(self.var_specs, FlexVarSpecsConcentration):
             name_core = self.field_var_name
-        elif isinstance(self.field_specs, FlexVarSpecsDeposition):
+        elif isinstance(self.var_specs, FlexVarSpecsDeposition):
             name_core = self.field_var_name[3:]
         deposit_vel = self.ncattrs_vars[f'DD_{name_core}']['dryvel']
         washout_coeff = self.ncattrs_vars[f'WD_{name_core}']['weta']
@@ -947,9 +961,9 @@ class FlexAttrsCollector:
 
     def _get_substance(self):
         substance = self.ncattrs_field['long_name']
-        if isinstance(self.field_specs, FlexVarSpecsDeposition):
+        if isinstance(self.var_specs, FlexVarSpecsDeposition):
             substance = substance.replace(
-                f'_{self.field_specs.deposition}_deposition', '')  #SR_HC
+                f'_{self.var_specs.deposition}_deposition', '')  #SR_HC
         return substance
 
     def _collect_simulation_attrs(self):
@@ -985,7 +999,7 @@ class FlexAttrsCollector:
 
         if i is None:
             # Default to timestep of current field
-            i = self.field_specs.time
+            i = self.var_specs.time
 
         if not isinstance(i, int):
             raise Exception(
