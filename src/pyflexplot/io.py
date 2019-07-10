@@ -827,8 +827,6 @@ class FlexAttrsCollector:
             'simulation': self._collect_simulation_attrs(),
         }
 
-        #ipython(globals(), locals(), 'FlexFile._collect_attrs')
-
         return FlexAttrsCollection(**attrs_raw)
 
     def _collect_grid_attrs(self):
@@ -912,15 +910,12 @@ class FlexAttrsCollector:
     @staticmethod
     def get_long_name(var_specs):
         """Return long variable name."""
+        #-integr = 'Integrated' if var_specs.integrate else 'Instantaneous'
         if isinstance(var_specs, FlexVarSpecsConcentration):
-            return (
-                f'{"Integrated " if var_specs.integrate else ""}'
-                f'Activity Concentration')
+            return f'Activity Concentration'#- ({integr})'
         elif isinstance(var_specs, FlexVarSpecsDeposition):
             dep = dict(wet='Wet', dry='Dry', tot='Total')[var_specs.deposition]
-            return (
-                f'{"Integrated" if var_specs.integrate else "Instantaneous"} '
-                f'{dep} Surface Deposition')
+            return f'{dep} Surface Deposition'#- ({integr})'
         else:
             raise NotImplementedError(
                 f"var_specs of type '{type(var_specs).__name__}'")
@@ -989,14 +984,17 @@ class FlexAttrsCollector:
 
         model_name = 'COSMO-1'  #SR_HC
 
+        ts_now, ts_integr_start = self._get_current_timestep_etc()
+
         return {
             'model_name': model_name,
             'start': ts_start,
             'end': ts_end,
-            'now': self._get_timestep(),
+            'now': ts_now,
+            'integr_start': ts_integr_start,
         }
 
-    def _get_timestep(self, i=None):
+    def _get_current_timestep_etc(self, i=None):
         """Get the current timestep, or a specific one by index."""
 
         if i is None:
@@ -1026,12 +1024,20 @@ class FlexAttrsCollector:
         )
 
         # Determine time since start
-        delta = datetime.timedelta(seconds=int(var[i]))
+        delta_tot = datetime.timedelta(seconds=int(var[i]))
 
         # Determine current timestep
-        now = start + delta
+        now = start + delta_tot
 
-        return now
+        # Determine start timestep of integration period
+        if self.var_specs.integrate:
+            delta_integr = delta_tot
+        else:
+            delta_prev = delta_tot/(i + 1)
+            delta_integr = delta_prev
+        ts_integr_start = now - delta_integr
+
+        return now, ts_integr_start
 
 
 class ReleasePoint:

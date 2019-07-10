@@ -275,8 +275,14 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             box.text('tr', s, size='xx-large')
 
         if not 'bl' in skip_pos:
-            # Bottom left: level range
-            s = f"{self.attrs.variable.format_level_range()}"
+            _sim = self.attrs.simulation
+            # Bottom left: integration time & level range
+            s = (
+                f"Since {_sim.format_integr_start(relative=True)} "
+                f"({_sim.format_integr_period()})")
+            lvl_range = self.attrs.variable.format_level_range()
+            if lvl_range:
+                s = f"{s} at {lvl_range}"
             box.text('bl', s, size='large')
 
         if not 'br' in skip_pos:
@@ -287,10 +293,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
 
         if not 'br' in skip_pos:
             # Bottom right: time into simulation
-            delta = self.attrs.simulation.now - self.attrs.simulation.start
-            hours = int(delta.total_seconds()/3600)
-            mins = int((delta.total_seconds()/3600)%1*60)
-            s = f"T$_{0}$ + {hours:02d}:{mins:02d} h"
+            s = self.attrs.simulation.format_now(relative=True)
             box.text('br', s, size='large')
 
     def fill_box_right_top(self):
@@ -546,6 +549,3 @@ class FlexPlotDeposition(FlexPlotBase_Dispersion):
         """
         super().__init__(*args, **kwargs)
         self.create()
-
-    def fill_box_top(self):
-        super().fill_box_top(skip_pos=['bl'])

@@ -314,6 +314,8 @@ class FlexAttrsVariable(FlexAttrs):
         return unit_top
 
     def format_level_range(self):
+        if (self.level_bot, self.level_top) == (-1, -1):
+            return None
         return (
             f"{self.level_bot:g}$\\,\\endash\\,${self.level_top:g} "
             f"{self.format_level_unit()}")
@@ -478,7 +480,7 @@ class FlexAttrsSpecies(FlexAttrs):
 class FlexAttrsSimulation(FlexAttrs):
     """Simulation attributes."""
 
-    def __init__(self, *, model_name, start, end, now):
+    def __init__(self, *, model_name, start, end, now, integr_start):
         """Create an instance of ``FlexAttrsSimulation``.
 
         Kwargs:
@@ -490,25 +492,46 @@ class FlexAttrsSimulation(FlexAttrs):
 
             now (datetime): Current timestep.
 
+            integr_start (datetime): Start of the integration period.
+
         """
         super().__init__()
         self.set('model_name', model_name, str)
         self.set('start', start, datetime.datetime)
         self.set('end', end, datetime.datetime)
         self.set('now', now, datetime.datetime)
+        self.set('integr_start', integr_start, datetime.datetime)
 
-    def _format_dt(self, dt):
+    def _format_dt(self, dt, relative):
         """Format a datetime object to a string."""
-        return dt.strftime('%Y-%m-%d %H:%M %Z')
+        if not relative:
+            return dt.strftime('%Y-%m-%d %H:%M %Z')
+        delta = dt - self.start
+        s = f"T$_{0}$"
+        if delta.total_seconds() > 0:
+            hours = int(delta.total_seconds()/3600)
+            mins = int((delta.total_seconds()/3600)%1*60)
+            s = f"{s}$\\,+\\,${hours:02d}:{mins:02d}$\\,$h"
+        return s
 
-    def format_start(self):
-        return self._format_dt(self.start)
+    def format_start(self, relative=False):
+        return self._format_dt(self.start, relative)
 
-    def format_end(self):
-        return self._format_dt(self.end)
+    def format_end(self, relative=False):
+        return self._format_dt(self.end, relative)
 
-    def format_now(self):
-        return self._format_dt(self.now)
+    def format_now(self, relative=False):
+        return self._format_dt(self.now, relative)
+
+    def format_integr_start(self, relative=False):
+        return self._format_dt(self.integr_start, relative)
+
+    @property
+    def integr_period(self):
+        return self.now - self.integr_start
+
+    def format_integr_period(self):
+        return f'{self.integr_period.total_seconds()/3600:g}$\\,$h'
 
 
 class FlexAttrsCollection:
