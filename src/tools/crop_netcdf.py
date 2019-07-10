@@ -51,8 +51,7 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'],)
     help="Name of rotated longitude dimension.",
     default='rlon',
 )
-def main(
-        in_file_path, out_file_path, **conf):
+def main(in_file_path, out_file_path, **conf):
 
     print()
     print(f"infile     : {in_file_path}")
@@ -73,6 +72,7 @@ def main(
 
 def prepare_slices(fi, conf):
     """Prepare rlon/rlat slices from input arguments."""
+
     def prepare_slice(name):
         start, stop, step = conf.pop(f'{name}_slice')
         n = len(fi.dimensions[conf[f'{name}_name']])
@@ -89,6 +89,7 @@ def prepare_slices(fi, conf):
         except ValueError:
             raise Exception(
                 f"{name}: invalid slice args: ({start}, {stop}, {step})")
+
     prepare_slice('rlon')
     prepare_slice('rlat')
 

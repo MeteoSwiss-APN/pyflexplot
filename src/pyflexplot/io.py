@@ -446,6 +446,7 @@ class FlexFieldSpecs:
                 f"{vals}")
         return next(iter(vals))
 
+
 class FlexFieldSpecsConcentration(FlexFieldSpecs):
 
     cls_var_specs = FlexVarSpecsConcentration
@@ -582,10 +583,7 @@ class FlexFileRotPole:
                 n_t = len(time_inds)
 
                 fld_time = self._import_field(fld_specs_time)
-                time_stats = self.collect_time_stats(
-                    fld_time,
-                    fld_specs_time.var_specs_shared('integrate'),
-                )
+                time_stats = self.collect_time_stats(fld_time)
 
                 log.debug(f"extract {n_fst} time steps")
                 for i_t, time_ind in enumerate(time_inds):
@@ -597,10 +595,7 @@ class FlexFileRotPole:
                         var_specs.time = time_ind
 
                     # Extract field
-                    if fld_specs.var_specs_shared('integrate'):
-                        fld = np.nansum(fld_time[slice(time_ind + 1)], axis=0)
-                    else:
-                        fld = fld_time[time_ind]
+                    fld = fld_time[time_ind]
 
                     # Collect attributes
                     log.debug("collect attributes")
@@ -614,6 +609,7 @@ class FlexFileRotPole:
                     #SR_TMP<
                     log.debug("fix nc data")
                     if i_t == 0:
+                        # Scale time_stats only once
                         self._fix_nc_data(fld, attrs, time_stats)
                     else:
                         self._fix_nc_data(fld, attrs)
@@ -678,9 +674,7 @@ class FlexFileRotPole:
 
         return fld_specs_time_lst, time_inds_lst
 
-    def collect_time_stats(self, fld_time, integrate):
-        if integrate:
-            fld_time = np.cumsum(fld_time, axis=0)
+    def collect_time_stats(self, fld_time):
         stats = {
             'mean': np.nanmean(fld_time),
             'median': np.nanmedian(fld_time),
@@ -736,9 +730,17 @@ class FlexFileRotPole:
         log.debug(f"indices: {inds}")
         fld = var[inds]
 
-        if isinstance(var_specs, FlexVarSpecsDeposition):
-            # Revert integration over time of deposition field
-            fld[1:] -= fld[:-1].copy()
+        if isinstance(var_specs, FlexVarSpecsConcentration):
+            if var_specs.integrate:
+                # Integrate over time
+                fld = np.cumsum(fld, axis=0)
+        elif isinstance(var_specs, FlexVarSpecsDeposition):
+            if not var_specs.integrate:
+                # Revert integration over time
+                fld[1:] -= fld[:-1].copy()
+        else:
+            raise NotImplementedError(
+                f"var_specs of type '{type(var_specs).__name__}'")
 
         return fld
 
@@ -912,13 +914,13 @@ class FlexAttrsCollector:
         """Return long variable name."""
         if isinstance(var_specs, FlexVarSpecsConcentration):
             return (
-                f'{"Integrated " if specs.integrate else ""}'
+                f'{"Integrated " if var_specs.integrate else ""}'
                 f'Activity Concentration')
         elif isinstance(var_specs, FlexVarSpecsDeposition):
+            dep = dict(wet='Wet', dry='Dry', tot='Total')[var_specs.deposition]
             return (
                 f'{"Integrated" if var_specs.integrate else "Instantaneous"} '
-                f'{var_specs.deposition.lower().capitalize()} '
-                f'Surface Deposition')
+                f'{dep} Surface Deposition')
         else:
             raise NotImplementedError(
                 f"var_specs of type '{type(var_specs).__name__}'")

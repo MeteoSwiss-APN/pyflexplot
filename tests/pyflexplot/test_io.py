@@ -24,17 +24,43 @@ def fix_nc_fld(fld):
     fld[:] *= 1e-12
 
 
-def read_nc_var(path, var_name, dim_inds):
+def read_nc_var(path, var_name, var_specs):
     with nc4.Dataset(path, 'r') as fi:
         var = fi.variables[var_name]
+
+        # Collect dimension indices
         inds = []
         for name in var.dimensions:
             if name in ['rlat', 'rlon']:
-                inds.append(slice(*dim_inds.get(name, [None])))
+                ind = slice(*getattr(var_specs, name, [None]))
+            elif name == 'time':
+                # Read all timesteps until the selected one
+                ind = slice(getattr(var_specs, name) + 1)
             else:
-                inds.append(dim_inds.get(name, slice(None)))
+                ind = getattr(var_specs, name, slice(None))
+            inds.append(ind)
+
+        # Read field
         fld = var[inds]
+        assert len(fld.shape) == 3
+
+        # Reduce time dimension
+        if isinstance(var_specs, FlexFieldSpecsConcentration.cls_var_specs):
+            if var_specs.integrate:
+                # Integrate concentration field over time
+                fld = np.cumsum(fld, axis=0)
+        elif isinstance(var_specs, FlexFieldSpecsDeposition.cls_var_specs):
+            if not var_specs.integrate:
+                # De-integrate deposition field over time
+                fld[1:] -= fld[:-1].copy()
+        else:
+            raise NotImplementedError(
+                f"var specs of type '{type(var_specs).__name__}'")
+        fld = fld[-1]
+
+        # Fix some issues with the input data
         fix_nc_fld(fld)  #SR_TMP
+
         return fld
 
 
@@ -70,12 +96,13 @@ class TestReadFieldSingle:
         """Run an individual test."""
 
         # Initialize specifications
-        var_specs = {
+        var_specs_dct = {
             **dims,
             **self.var_specs_mult_shared,
             **var_specs_mult_unshared,
         }
-        fld_specs = cls_fld_specs(var_specs)
+        fld_specs = cls_fld_specs(var_specs_dct)
+        var_specs = cls_fld_specs.cls_var_specs(**var_specs_dct)
 
         # Read input field
         flex_field = FlexFileRotPole(self.datafile(datadir)).read(fld_specs)
@@ -84,8 +111,11 @@ class TestReadFieldSingle:
         # Read reference field
         fld_ref = np.nansum(
             [
-                read_nc_var(self.datafile(datadir), var_name, dims)
-                for var_name in var_names_ref
+                read_nc_var(
+                    self.datafile(datadir),
+                    var_name,
+                    var_specs,
+                ) for var_name in var_names_ref
             ],
             axis=0,
         )
@@ -265,27 +295,16 @@ class TestReadFieldMultiple:
         flex_field_lst = (FlexFileRotPole(datafile).read(fld_specs_lst))
         flds = np.array([flex_field.fld for flex_field in flex_field_lst])
 
-        # Collect dimensions
-        dims_lst = []
-        for fld_specs in fld_specs_lst:
-            dims = {}
-            for name in dim_names:
-                var_specs = fld_specs.var_specs_merged()
-                if name == 'time' and var_specs['integrate']:
-                    dims[name] = slice(None, var_specs[name] + 1)
-                else:
-                    dims[name] = var_specs[name]
-            dims_lst.append(dims)
+        # Collect merged variables specifications
+        var_specs_lst = [fs.var_specs_merged() for fs in fld_specs_lst]
 
         # Read reference fields
         flds_ref = []
-        for dims in dims_lst:
+        for var_specs in var_specs_lst:
             flds_ref_i = [
-                read_nc_var(datafile, var_name, dims)
+                read_nc_var(datafile, var_name, var_specs)
                 for var_name in var_names_ref
             ]
-            if isinstance(dims['time'], slice):
-                flds_ref_i = np.nansum(flds_ref_i, axis=1)
             fld_ref_i = np.nansum(flds_ref_i, axis=0)
             flds_ref.append(fld_ref_i)
         flds_ref = np.array(flds_ref)
