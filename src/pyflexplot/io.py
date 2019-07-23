@@ -293,7 +293,7 @@ class FlexVarSpecsConcentration(FlexVarSpecs):
 
     _keys_w_type = {
         **FlexVarSpecs._keys_w_type,
-        'level': int,
+        'level': int_or_list,
     }
 
     def var_name(self):
@@ -331,6 +331,9 @@ class FlexFieldSpecs:
     """FLEXPART field specifications."""
 
     cls_var_specs = FlexVarSpecs
+
+    # Dimensions with optionally multiple values
+    dims_opt_mult_vals = ['species_id']
 
     def __init__(self, var_specs_lst, op=np.nansum, var_attrs_replace=None):
         """Create an instance of ``FlexFieldSpecs``.
@@ -380,21 +383,22 @@ class FlexFieldSpecs:
 
     def _prepare_var_specs_lst(self, var_specs_lst):
 
-        # Handle single and multiple species ids
-        key = 'species_id'
-        for var_specs in copy(var_specs_lst):
-            try:
-                iter(var_specs[key])
-            except TypeError:
-                pass
-            else:
-                species_ids = copy(var_specs[key])
-                var_specs[key] = species_ids.pop(0)
-                var_specs_lst_new = [deepcopy(var_specs) for _ in species_ids]
-                for var_specs_new, species_id in zip(
-                        var_specs_lst_new, species_ids):
-                    var_specs_new[key] = species_id
-                    var_specs_lst.append(var_specs_new)
+        # Handle dimensions with optionally multiple values
+        # Example: Sum over multiple species
+        for key in self.dims_opt_mult_vals:
+            for var_specs in copy(var_specs_lst):
+                try:
+                    iter(var_specs[key])
+                except TypeError:
+                    pass
+                else:
+                    vals = copy(var_specs[key])
+                    var_specs[key] = vals.pop(0)
+                    var_specs_lst_new = [deepcopy(var_specs) for _ in vals]
+                    for var_specs_new, val in zip(
+                            var_specs_lst_new, vals):
+                        var_specs_new[key] = val
+                        var_specs_lst.append(var_specs_new)
 
     def create_var_specs(self, var_specs_dct_lst):
         """Create variable specifications objects from dicts."""
@@ -498,6 +502,9 @@ class FlexFieldSpecs:
 class FlexFieldSpecsConcentration(FlexFieldSpecs):
 
     cls_var_specs = FlexVarSpecsConcentration
+
+    # Dimensions with optionally multiple values
+    dims_opt_mult_vals = FlexFieldSpecs.dims_opt_mult_vals + ['level']
 
     def __init__(self, var_specs):
         """Create an instance of ``FlexFieldSpecsConcentration``.

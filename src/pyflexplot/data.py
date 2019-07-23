@@ -333,11 +333,50 @@ class FlexAttrsVariable(FlexAttrs):
         return unit_top
 
     def format_level_range(self):
+
         if (self.level_bot, self.level_top) == (-1, -1):
             return None
-        return (
-            f"{self.level_bot:g}$\\,\\endash\\,${self.level_top:g} "
-            f"{self.format_level_unit()}")
+
+        def fmt(bot, top, unit_fmtd=self.format_level_unit()):
+            s = f"{bot:g}$\\,\\endash\\,${top:g}"
+            if unit_fmtd:
+                s += f" {unit_fmtd}"
+            return s
+
+        try:
+            # Single level range
+            return fmt(self.level_bot, self.level_top)
+        except TypeError:
+            pass
+        #-- Multiple level ranges
+
+        try:
+            bots = sorted(self.level_bot)
+            tops = sorted(self.level_top)
+        except TypeError:
+            raise  #SR_TMP TODO proper error message
+        else:
+            if len(bots) != len(tops):
+                raise Exception(
+                    f"inconsistent no. levels: {len(bots)} != {len(tops)}")
+            n = len(bots)
+
+        if n == 2:
+            if tops[0] == bots[1]:
+                return fmt(bots[0], tops[1])
+            else:
+                return (
+                    f"{fmt(bots[0], tops[0], None)} + {fmt(bots[1], tops[1])}")
+                raise NotImplementedError(f"2 non-continuous level ranges")
+
+        elif n == 3:
+            if tops[0] == bots[1] and tops[1] == bots[2]:
+                return fmt(bots[0], tops[2])
+            else:
+                raise NotImplementedError(f"3 non-continuous level ranges")
+
+        else:
+            raise NotImplementedError(f"{n} sets of levels")
 
 
 class FlexAttrsRelease(FlexAttrs):

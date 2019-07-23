@@ -211,7 +211,7 @@ def common_options_dispersion_various(f):
     help=(
         "Index of vertical level (zero-based, bottom-up). "
         "Format key: '{level_ind}'."),
-    type=int, default=[0], multiple=True)
+    type=INT_LIST_PLUS_SEP_UNIQ, default=[0], multiple=True)
 # yapf: enable
 @common_options_dispersion_various
 @click.pass_context
