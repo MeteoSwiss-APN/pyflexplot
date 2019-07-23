@@ -910,15 +910,20 @@ class FlexAttrsCollector:
     @staticmethod
     def get_long_name(var_specs):
         """Return long variable name."""
-        #-integr = 'Integrated' if var_specs.integrate else 'Instantaneous'
+
         if isinstance(var_specs, FlexVarSpecsConcentration):
             return f'Activity Concentration'
+
         elif isinstance(var_specs, FlexVarSpecsDeposition):
-            dep = dict(wet='Wet', dry='Dry', tot='Total')[var_specs.deposition]
-            return f'{dep} Surface Deposition'
-        else:
-            raise NotImplementedError(
-                f"var_specs of type '{type(var_specs).__name__}'")
+            type_ = {
+                'wet': 'Wet',
+                'dry': 'Dry',
+                'tot': 'Total',
+            }[var_specs.deposition]
+            return f'{type_} Surface Deposition'
+
+        raise NotImplementedError(
+            f"var_specs of type '{type(var_specs).__name__}'")
 
     def _collect_species_attrs(self):
         """Collect species attributes."""
@@ -967,18 +972,13 @@ class FlexAttrsCollector:
         """Collect simulation attributes."""
 
         # Start and end timesteps of simulation
+        _ga = self.ncattrs_global
         ts_start = datetime.datetime(
-            *time.strptime(
-                self.ncattrs_global['ibdate'] + self.ncattrs_global['ibtime'],
-                '%Y%m%d%H%M%S',
-            )[:6],
+            *time.strptime(_ga['ibdate'] + _ga['ibtime'], '%Y%m%d%H%M%S')[:6],
             tzinfo=datetime.timezone.utc,
         )
         ts_end = datetime.datetime(
-            *time.strptime(
-                self.ncattrs_global['iedate'] + self.ncattrs_global['ietime'],
-                '%Y%m%d%H%M%S',
-            )[:6],
+            *time.strptime(_ga['iedate'] + _ga['ietime'], '%Y%m%d%H%M%S')[:6],
             tzinfo=datetime.timezone.utc,
         )
 
@@ -1009,8 +1009,12 @@ class FlexAttrsCollector:
 
         # Obtain start from time unit
         rx = re.compile(
-            r'seconds since (?P<yyyy>[12][0-9][0-9][0-9])-(?P<mm>[01][0-9])-'
-            r'(?P<dd>[0-3][0-9]) (?P<HH>[0-2][0-9]):(?P<MM>[0-6][0-9])')
+            r'seconds since '
+            r'(?P<yyyy>[12][0-9][0-9][0-9])-'
+            r'(?P<mm>[01][0-9])-'
+            r'(?P<dd>[0-3][0-9]) '
+            r'(?P<HH>[0-2][0-9]):'
+            r'(?P<MM>[0-6][0-9])')
         match = rx.match(var.units)
         if not match:
             raise Exception(f"cannot extract start from units '{var.units}'")
