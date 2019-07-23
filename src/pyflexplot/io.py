@@ -912,10 +912,10 @@ class FlexAttrsCollector:
         """Return long variable name."""
         #-integr = 'Integrated' if var_specs.integrate else 'Instantaneous'
         if isinstance(var_specs, FlexVarSpecsConcentration):
-            return f'Activity Concentration'#- ({integr})'
+            return f'Activity Concentration'
         elif isinstance(var_specs, FlexVarSpecsDeposition):
             dep = dict(wet='Wet', dry='Dry', tot='Total')[var_specs.deposition]
-            return f'{dep} Surface Deposition'#- ({integr})'
+            return f'{dep} Surface Deposition'
         else:
             raise NotImplementedError(
                 f"var_specs of type '{type(var_specs).__name__}'")

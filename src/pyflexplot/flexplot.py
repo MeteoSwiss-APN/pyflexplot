@@ -278,8 +278,8 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             _sim = self.attrs.simulation
             # Bottom left: integration time & level range
             s = (
-                f"Since {_sim.format_integr_start(relative=True)} "
-                f"({_sim.format_integr_period()})")
+                f"{_sim.format_integr_period()} Sum "
+                f"(Since {_sim.format_integr_start(relative=True)})")
             lvl_range = self.attrs.variable.format_level_range()
             if lvl_range:
                 s = f"{s} at {lvl_range}"
