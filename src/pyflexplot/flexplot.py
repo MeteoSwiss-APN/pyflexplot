@@ -265,7 +265,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
 
         if not 'tc' in skip_pos:
             # Top center: species
-            s = f"{self.attrs.species.name}"
+            s = f"{self.attrs.species.format_name()}"
             box.text('tc', s, size='xx-large')
 
         if not 'tr' in skip_pos:
@@ -278,8 +278,8 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             _sim = self.attrs.simulation
             # Bottom left: integration time & level range
             s = (
-                f"{_sim.format_integr_period()} Sum "
-                f"(Since {_sim.format_integr_start(relative=True)})")
+                f"{_sim.format_integr_period()} sum "
+                f"(since {_sim.format_integr_start(relative=True)})")
             lvl_range = self.attrs.variable.format_level_range()
             if lvl_range:
                 s = f"{s} at {lvl_range}"
@@ -378,7 +378,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             dy=dy_site + 0.7,
             **self._site_marker_kwargs,
         )
-        s = f"Release Site: {self.attrs.release.site_name}"
+        s = f"Release site: {self.attrs.release.site_name}"
         box.text(loc='bl', s=s, dx=5.5, dy=dy_site, size='small')
 
     def _format_level_ranges(self):
@@ -458,14 +458,14 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             Start:\t{self.attrs.simulation.format_start()}
             End:\t{self.attrs.simulation.format_end()}
             Rate:\t{self.attrs.release.format_rate()}
-            Total Mass:\t{self.attrs.release.format_mass()}
+            Total mass:\t{self.attrs.release.format_mass()}
 
-            Substance:\t{self.attrs.species.name}
-            Half-Life:\t{self.attrs.species.format_half_life()}
-            Deposit. Vel.:\t{self.attrs.species.format_deposit_vel()}
-            Sediment. Vel.:\t{self.attrs.species.format_sediment_vel()}
-            Washout Coeff.:\t{self.attrs.species.format_washout_coeff()}
-            Washout Exponent:\t{self.attrs.species.washout_exponent:g}
+            Substance:\t{self.attrs.species.format_name()}
+            Half-life:\t{self.attrs.species.format_half_life()}
+            Deposit. vel.:\t{self.attrs.species.format_deposit_vel()}
+            Sediment. vel.:\t{self.attrs.species.format_sediment_vel()}
+            Washout coeff.:\t{self.attrs.species.format_washout_coeff()}
+            Washout exponent:\t{self.attrs.species.washout_exponent:g}
             """)
 
         # Add lines bottom-up (to take advantage of baseline alignment)

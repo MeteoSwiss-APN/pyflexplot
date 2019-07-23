@@ -106,22 +106,34 @@ class FlexPlotter:
 
         var_specs = field_specs.var_specs_merged()
 
-        kwargs = {
-            f: getattr(var_specs, s)
-            for s, f in self.specs_fmt_keys.items()
-            if hasattr(var_specs, s)
-        }
+        # Collect variable specifications
+        kwargs = {}
+        for specs_key, fmt_key in self.specs_fmt_keys.items():
+            try:
+                val = getattr(var_specs, specs_key)
+            except AttributeError:
+                pass
+            else:
+                try:
+                    iter(val)
+                except TypeError:
+                    pass
+                else:
+                    val = '+'.join([str(i) for i in val])
+            kwargs[fmt_key] = val
 
+        # Special case: integrated variable
         plot_var = self.type_
         if var_specs.integrate:
             plot_var += '-int'
         kwargs['variable'] = plot_var
 
+        # Format file path
         try:
             file_path = self.file_path_fmt.format(**kwargs)
-        except KeyError as e:
+        except (TypeError, KeyError) as e:
             raise KeyError(
-                f"cannot format '{self.file_path_fmt}': "
-                f"missing key '{e}' among {sorted(kwargs)}")
+                f"cannot format '{self.file_path_fmt}' with {kwargs}: "
+                f"{type(e).__name__}({e})")
         else:
             return file_path

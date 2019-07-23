@@ -70,7 +70,7 @@ class FlexAttrs:
                 f"invalid public attribute '{key}': "
                 f"not among {sorted(self.names)}")
 
-    def set(self, name, val, type_=None):
+    def set(self, name, val, type_=None, mult_vals_ok=False):
         """Set an attribute, optionally checking its type.
 
         Args:
@@ -84,6 +84,8 @@ class FlexAttrs:
             val (object or list[object]): Value of attribute. If is a
                 list of multiple values and ``name`` is a list as well,
                 then the values are distributed over multiple values.
+                If ``mult_vals_ok=True``, each value in turn is allowed
+                to be a list of multiple values.
 
             type_ (type or list[type], optional): Type of attribute.
                 If passed, ``val`` must either be an instance of or
@@ -91,27 +93,55 @@ class FlexAttrs:
                 values, a separate type can be passed for each.
                 Defaults to None.
 
+            mult_vals_ok (bool, optional): Whether each value is
+                allowed to be a list of multiple values. Defaults to
+                False.
+
         """
 
         if not isinstance(name, str):
             # Handle multiple names
             names, vals, types = self._prepare_multi_attrs(name, val, type_)
             for name, val, type_ in zip(names, vals, types):
-                self.set(name, val, type_)
+                self.set(name, val, type_, mult_vals_ok=True)
 
-        # Check type
+        # Check type(s) of value(s)
         if type_ is not None and not isinstance(val, type_):
+
+            # Check whether the value is a list of multiple values
             try:
-                val = type_(val)
+                iter(val)
             except TypeError:
-                raise ValueError(
-                    f"attr '{name}': value '{val}' has wrong type: "
-                    f"expected '{type_.__name__}', got '{type(val).__name__}'")
+                # There's only one value; check its type
+                try:
+                    val = type_(val)
+                except TypeError:
+                    raise ValueError(
+                        f"attr '{name}': value '{val}' has wrong type: "
+                        f"expected '{type_.__name__}', got "
+                        f"'{type(val).__name__}'")
+            else:
+                # There are multiple values
+                if mult_vals_ok:
+                    # That's OK; check types of values
+                    try:
+                        val = [type_(v) for v in val]
+                    except TypeError:
+                        raise ValueError(
+                            f"attr '{name}': one or more values in {val} "
+                            f"has wrong type: expected '{type_.__name__}', "
+                            f"got {[type(v).__name__ for v in val]}")
+                else:
+                    # That's not OK!
+                    raise ValueError(
+                        f"attr '{name}': expected single value, got list of "
+                        f"{len(val)}: {val}")
 
         self.__dict__[name] = val
         self.names.add(name)
 
-    def set_value_unit(self, val_name, val, unit, val_type):
+    def set_value_unit(
+            self, val_name, val, unit, val_type, mult_vals_ok=False):
         """Set a (value, unit) attribute pair.
 
         Args:
@@ -119,27 +149,24 @@ class FlexAttrs:
                 the name of the unit attribute is derived by appending
                 '_unit'.
 
-            val (<val_type> or (<val_type>, str)) Value compatible
-                with type ``val_type``, either only the value or a
-                (value, unit) tuple.
+            val (<val_type> or list[<val_type>]): Value(s) compatible
+                with type ``val_type``. A list of multiple values is
+                only allowed for ``mult_vals_ok=True``.
 
-            unit (str or None): Unit, only passed separately if ``val``
-                is not a (value, unit) tuple.
+            unit (str): Unit.
 
-            val_type (type): Type with ``val``.
+            val_type (type): Type compatible with ``val``.
+
+            mult_vals_ok (bool, optional): Whether a list of multiple
+                values is allowed for ``val``. Defaults to False.
 
         """
-        try:
-            unit_in = unit
-            val, unit = val
-        except TypeError:
-            pass
-        else:
-            if unit_in is not None:
-                raise ValueError(
-                    f'val={val} constitutes a (value, unit) tuple, '
-                    f'so unit={unit} should be None!')
-        self.set([val_name, '~_unit'], (val, unit), [val_type, str])
+        self.set(
+            [val_name, '~_unit'],
+            (val, unit),
+            [val_type, str],
+            mult_vals_ok=mult_vals_ok,
+        )
 
     def _prepare_multi_attrs(self, names, vals, types):
 
@@ -218,18 +245,16 @@ class FlexAttrs:
             try:
                 kwargs[key] = replace[key]
             except KeyError:
-                vals = set([val0] + [getattr(o, key) for o in others])
-                if len(vals) > 1:
-                    raise Exception(
-                        f"{len(others) + 1} {self.__class__.__name__} "
-                        f"instances contain {len(vals)} different "
-                        f"values for '{key}', but no replacement "
-                        f"value is passed: {sorted(vals)}")
-                kwargs[key] = next(iter(vals))
-        try:  #SR_DBG
-            return self.__class__(**kwargs)
-        except Exception as e:  #SR_DBG
-            ipython(globals(), locals(), e)  #SR_DBG
+                vals = [val0]
+                for other in others:
+                    val = getattr(other, key)
+                    if val not in vals:
+                        vals.append(val)
+                if len(vals) == 1:
+                    kwargs[key] = next(iter(vals))
+                else:
+                    kwargs[key] = tuple(vals)
+        return self.__class__(**kwargs)
 
 
 class FlexAttrsGrid(FlexAttrs):
@@ -259,9 +284,9 @@ class FlexAttrsVariable(FlexAttrs):
             short_name,
             unit,
             level_bot,
+            level_bot_unit,
             level_top,
-            level_bot_unit=None,
-            level_top_unit=None):
+            level_top_unit):
         """Initialize an instance of ``FlexAttrsVariable``.
 
         Kwargs:
@@ -270,19 +295,13 @@ class FlexAttrsVariable(FlexAttrs):
             unit (str): Unit of variable as a regular string
                 (e.g., 'm-3' for cubic meters).
 
-            level_bot (float or (float, str)): Bottom level, either
-                 only value or a (value, unit) tuple.
+            level_bot (float or list[float]): Bottom level value(s).
 
-            level_top (float or (float, str)): Top level, either only
-                 value or a (value, unit) tuple.
+            level_bot_unit (str): Bottom level unit.
 
-            level_bot_unit (str, optional): Bottom level unit.
-                Obsolete if ``level_bot`` is a (value, unit) tuple.
-                Defaults to None.
+            level_top (float or list[float]): Top level value(s).
 
-            level_top_unit (str, optional): Bottom level unit.
-                Obsolete if ``level_top`` is a (value, unit) tuple.
-                Defaults to None.
+            level_top_unit (str): Bottom level unit.
 
         """
         super().__init__()
@@ -331,11 +350,11 @@ class FlexAttrsRelease(FlexAttrs):
             site_lon,
             site_name,
             height,
+            height_unit,
             rate,
+            rate_unit,
             mass,
-            height_unit=None,
-            rate_unit=None,
-            mass_unit=None):
+            mass_unit):
         """Initialize an instance of ``FlexAttrsRelease``.
 
         Kwargs:
@@ -345,24 +364,17 @@ class FlexAttrsRelease(FlexAttrs):
 
             site_name (str): Name of release site.
 
-            height (float or (float, str)): Release height, value or
-                (value, unit) tuple.
+            height (float or list[float]): Release height value(s).
 
-            rate (float or (float, str)): Release rate, value or
-                (value, unit) tuple.
+            height_unit (str): Release height unit
 
-            mass (float or (float, str)): Release mass, value or
-                (value, unit) tuple.
+            rate (float or list[float]): Release rate value(s).
 
-            height_unit (str, optional): Release height unit. Obsolete
-                if ``height`` is a (value, unit) tuple. Defaults to
-                None.
+            rate_unit (str): Release rate unit.
 
-            rate_unit (str, optional): Release rate unit. Obsolete if
-                ``rate`` is a (value, unit) tuple. Defaults to None.
+            mass (float or list[float]): Release mass value(s).
 
-            mass_unit (str, optional): Release mass unit. Obsolete if
-                ``mass`` is a (value, unit) tuple. Defaults to None.
+            mass_unit (str): Release mass unit.
 
         """
         super().__init__()
@@ -397,53 +409,46 @@ class FlexAttrsSpecies(FlexAttrs):
             *,
             name,
             half_life,
+            half_life_unit,
             deposit_vel,
+            deposit_vel_unit,
             sediment_vel,
+            sediment_vel_unit,
             washout_coeff,
-            washout_exponent,
-            half_life_unit=None,
-            deposit_vel_unit=None,
-            sediment_vel_unit=None,
-            washout_coeff_unit=None):
+            washout_coeff_unit,
+            washout_exponent):
         """Create an instance of ``FlexAttrsSpecies``.
 
         Kwargs:
             name (str): Species name.
 
-            half_life (float or (float, str)): Half life, value or
-                (value, unit) tuple.
+            half_life (float or list[float]): Half life value(s).
 
-            deposit_vel (float or (float, str)): Deposition velocity,
-                value or (value, unit) tuple.
+            half_life_unit (str): Half life unit.
 
-            sediment_vel (float or (float, str)): Sedimentation
-                velocity, value or (value, unit) tuple.
+            deposit_vel (float or list[float]): Deposition velocity
+                value(s).
 
-            washout_coeff (float or (float, str)): Washout coefficient,
-                value or (value, unit) tuple.
+            deposit_vel_unit (str): Deposition velocity unit.
 
-            washout_exponent (float): Washout exponent value.
+            sediment_vel (float or list[float]): Sedimentation velocity
+                value(s).
 
-            half_life_unit (str, optional): Half life unit. Obsolete if
-                ``half_life`` is a (value, unit) tuple. Defaults to
-                None.
+            sediment_vel_unit (str): Sedimentation velocity unit.
 
-            deposit_vel_unit (str, optional): Deposition velocity unit.
-                Obsolete if ``deposit_vel`` is a (value, unit) tuple.
-                Defaults to None.
+            washout_coeff (float or list[float]): Washout coefficient
+                value(s).
 
-            sediment_vel_unit (str, optional): Sedimentation velocity
-                unit.  Obsolete if ``sediment_vel`` is a (value, unit)
-                tuple.  Defaults to None.
+            washout_coeff_unit (str): Washout coefficient unit.
 
-            washout_coeff_unit (str, optional): Washout coefficient
-                unit.  Obsolete if ``washout_coeff`` is a (value, unit)
-                tuple.  Defaults to None.
+            washout_exponent (float or list[float]): Washout exponent
+                value(s).
 
         """
         super().__init__()
-        self.set('name', name, str)
-        self.set_value_unit('half_life', half_life, half_life_unit, float)
+        self.set('name', name, str, mult_vals_ok=True)
+        self.set_value_unit(
+            'half_life', half_life, half_life_unit, float, mult_vals_ok=True)
         self.set_value_unit(
             'deposit_vel', deposit_vel, deposit_vel_unit, float)
         self.set_value_unit(
@@ -452,11 +457,27 @@ class FlexAttrsSpecies(FlexAttrs):
             'washout_coeff', washout_coeff, washout_coeff_unit, float)
         self.set('washout_exponent', washout_exponent, float)
 
+    def format_name(self):
+        if isinstance(self.name, str):
+            return self.name
+        return ' / '.join(self.name)
+
     def format_half_life_unit(self):
         return self._format_unit(self.half_life_unit)
 
     def format_half_life(self):
-        return f'{self.half_life:g} {self.format_half_life_unit()}'
+        def fmt(val, unit):
+            return f'{val:g} {self._format_unit(unit)}'
+        try:
+            iter(self.half_life)
+        except TypeError:
+            return fmt(self.half_life, self.half_life_unit)
+        else:
+            assert len(self.half_life) == len(self.half_life_unit)
+            s_lst = []
+            for val, unit in zip(self.half_life, self.half_life_unit):
+                s_lst.append(fmt(val, unit))
+            return ' / '.join(s_lst)
 
     def format_deposit_vel_unit(self):
         return self._format_unit(self.deposit_vel_unit)

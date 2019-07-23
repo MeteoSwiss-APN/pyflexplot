@@ -14,11 +14,13 @@ import time
 from collections import namedtuple
 from copy import copy, deepcopy
 from pprint import pformat
+from pprint import pprint  #SR_DEV
 
 from .data import FlexAttrsCollection
 from .data import FlexFieldRotPole
 from .utils import check_array_indices
 from .utils import pformat_dictlike
+from .utils import nested_dict_set
 
 from .utils_dev import ipython  #SR_DEV
 
@@ -76,12 +78,21 @@ def _nc_content():
     #
 
 
+def int_or_list(arg):
+    try:
+        iter(arg)
+    except TypeError:
+        return int(arg)
+    else:
+        return [int(a) for a in arg]
+
+
 class FlexVarSpecs:
     """FLEXPART input variable specifications."""
 
     # Keys with respective type
     _keys_w_type = {
-        'species_id': int,
+        'species_id': int_or_list,
         'integrate': bool,
         # Dimensions
         'time': int,
@@ -132,19 +143,19 @@ class FlexVarSpecs:
             try:
                 val = kwargs.pop(key)
             except KeyError:
-                raise ValueError(f"missing argument '{key}'") from None
+                raise ValueError(f"missing argument '{key}'")
             try:
                 setattr(self, key, type_(val))
             except TypeError:
                 raise ValueError(
                     f"argument '{key}': type '{type(val).__name__}' "
-                    f"incompatible with '{type_.__name__}'") from None
+                    f"incompatible with '{type_.__name__}'")
         if kwargs:
             raise ValueError(
                 f"{len(kwargs)} unexpected arguments: {sorted(kwargs)}")
 
     @classmethod
-    def multiple(cls, *, rlat=slice(None), rlon=slice(None), **kwargs):
+    def multiple(cls, *args, **kwargs):
         """Create multiple instances of ``FlexVarSpecs``.
 
         Each of the arguments of ``__init__`` can be passed by the
@@ -155,6 +166,15 @@ class FlexVarSpecs:
         of all input arguments.
 
         """
+        return cls._multiple_as_type(cls, *args, **kwargs)
+
+    @classmethod
+    def multiple_as_dict(cls, *args, **kwargs):
+        return cls._multiple_as_type(dict, *args, **kwargs)
+
+    @classmethod
+    def _multiple_as_type(
+            cls, type_, rlat=slice(None), rlon=slice(None), **kwargs):
         keys_singular = sorted(cls.specs())
         vals_plural = []
         for key_singular in keys_singular:
@@ -186,13 +206,15 @@ class FlexVarSpecs:
         specs_lst = []
         for vals in itertools.product(*vals_plural):
             kwargs_i = {k: v for k, v in zip(keys_singular, vals)}
-            specs_lst.append(cls(rlat=rlat, rlon=rlon, **kwargs_i))
+            specs = type_(rlat=rlat, rlon=rlon, **kwargs_i)
+            specs_lst.append(specs)
 
         return specs_lst
 
     def merge(self, others):
         attrs = {}
         for key, val0 in sorted(self):
+
             vals = [val0]
             for other in others:
                 val = getattr(other, key)
@@ -201,12 +223,11 @@ class FlexVarSpecs:
 
             if len(vals) == 1:
                 attrs[key] = next(iter(vals))
-            else:
-                if key == 'deposition' and set(vals) == set(['dry', 'wet']):
+            elif key == 'deposition' and set(vals) == set(['dry', 'wet']):
                     attrs[key] = 'tot'
-                else:
-                    raise NotImplementedError(
-                        f"{self.__class__.__name__}.merge for '{key}'")
+            else:
+                attrs[key] = vals
+
         return self.__class__(**attrs)
 
     def __hash__(self):
@@ -277,7 +298,14 @@ class FlexVarSpecsConcentration(FlexVarSpecs):
 
     def var_name(self):
         """Derive variable name from specifications."""
-        return f'spec{self.species_id:03d}'
+        def fmt(sid):
+            return f'spec{sid:03d}'
+        try:
+            iter(self.species_id)
+        except TypeError:
+            return fmt(self.species_id)
+        else:
+            return [fmt(sid) for sid in self.species_id]
 
     def dim_inds_by_name(self, *args, **kwargs):
         """Derive indices along NetCDF dimensions."""
@@ -331,6 +359,8 @@ class FlexFieldSpecs:
 
         """
 
+        self._prepare_var_specs_lst(var_specs_lst)
+
         # Create variable specifications objects
         self.var_specs_lst = self.create_var_specs(var_specs_lst)
 
@@ -347,6 +377,24 @@ class FlexFieldSpecs:
         if var_attrs_replace is None:
             var_attrs_replace = {}
         self.var_attrs_replace = var_attrs_replace
+
+    def _prepare_var_specs_lst(self, var_specs_lst):
+
+        # Handle single and multiple species ids
+        key = 'species_id'
+        for var_specs in copy(var_specs_lst):
+            try:
+                iter(var_specs[key])
+            except TypeError:
+                pass
+            else:
+                species_ids = copy(var_specs[key])
+                var_specs[key] = species_ids.pop(0)
+                var_specs_lst_new = [deepcopy(var_specs) for _ in species_ids]
+                for var_specs_new, species_id in zip(
+                        var_specs_lst_new, species_ids):
+                    var_specs_new[key] = species_id
+                    var_specs_lst.append(var_specs_new)
 
     def create_var_specs(self, var_specs_dct_lst):
         """Create variable specifications objects from dicts."""
@@ -429,8 +477,8 @@ class FlexFieldSpecs:
 
     @classmethod
     def multiple(cls, vars_specs):
-        var_specs_lst = cls.cls_var_specs.multiple(**vars_specs)
-        return [cls(dict(var_specs)) for var_specs in var_specs_lst]
+        var_specs_lst = cls.cls_var_specs.multiple_as_dict(**vars_specs)
+        return [cls(var_specs) for var_specs in var_specs_lst]
 
     def var_specs_merged(self):
         """Return merged variable specifications."""
@@ -478,33 +526,31 @@ class FlexFieldSpecsDeposition(FlexFieldSpecs):
                 as specified by the class attribute ``cls_var_specs``.
 
         """
-        if not isinstance(var_specs, self.cls_var_specs):
-            var_specs = self.cls_var_specs(**var_specs)
-        try:
-            deposit_mode = var_specs.deposition
-        except KeyError as e:
-            raise ValueError(f"var_specs: missing key '{e}'") from None
 
+        var_specs_lst = [dict(var_specs)]
         kwargs = {}
-        if deposit_mode in ['wet', 'dry']:
-            var_specs_lst = [dict(var_specs)]
 
-        elif deposit_mode == 'tot':
-            var_specs_lst = [
-                {
-                    **dict(var_specs), 'deposition': 'dry'
-                },
-                {
-                    **dict(var_specs), 'deposition': 'wet'
-                },
-            ]
-            kwargs['op'] = np.nansum
+        # Deposition mode
+        for var_specs in copy(var_specs_lst):
 
-            kwargs['var_attrs_replace'] = {
-                'variable': {
-                    'long_name': FlexAttrsCollector.get_long_name(var_specs),
-                },
-            }
+            if var_specs['deposition'] in ['wet', 'dry']:
+                pass
+
+            elif var_specs['deposition'] == 'tot':
+                var_specs_new = deepcopy(var_specs)
+                var_specs['deposition'] = 'wet'
+                var_specs_new['deposition'] = 'dry'
+                var_specs_lst.append(var_specs_new)
+                nested_dict_set(
+                    kwargs,
+                    ['var_attrs_replace', 'variable', 'long_name'],
+                    FlexAttrsCollector.get_long_name(
+                        var_specs, type_=self.cls_var_specs),
+                )
+
+            else:
+                raise NotImplementedError(
+                    f"deposition type '{var_specs['deposition']}'")
 
         super().__init__(var_specs_lst, **kwargs)
 
@@ -765,7 +811,15 @@ class FlexFileRotPole:
                 for key, val in time_stats.items():
                     time_stats[key] = val*fact
 
-        if attrs.species.name in ['Cs-137', 'I-131a']:
+        #SR_TMP< TODO more general solution to combined species
+        names = [
+            'Cs-137',
+            'I-131a',
+            ['Cs-137', 'I-131a'],
+            ['I-131a', 'Cs-137'],
+        ]
+        #SR_TMP>
+        if attrs.species.name in names:
 
             if attrs.variable.unit == 'ng kg-1':
                 attrs.variable.unit = 'Bq m-3'
@@ -868,9 +922,12 @@ class FlexAttrsCollector:
             'site_lat': site_lat,
             'site_lon': site_lon,
             'site_name': site_name,
-            'height': (height, height_unit),
-            'rate': (rate, rate_unit),
-            'mass': (mass, mass_unit),
+            'height': height,
+            'height_unit': height_unit,
+            'rate': rate,
+            'rate_unit': rate_unit,
+            'mass': mass,
+            'mass_unit': mass_unit,
         }
 
     def _collect_variable_attrs(self):
@@ -902,28 +959,38 @@ class FlexAttrsCollector:
             'long_name': long_name,
             'short_name': short_name,
             'unit': self.ncattrs_field['units'],
-            'level_bot': (level_bot, level_unit),
-            'level_top': (level_top, level_unit),
+            'level_bot': level_bot,
+            'level_bot_unit': level_unit,
+            'level_top': level_top,
+            'level_top_unit': level_unit,
         }
 
     #SR_HC<<<
     @staticmethod
-    def get_long_name(var_specs):
+    def get_long_name(var_specs, type_=None):
         """Return long variable name."""
 
-        if isinstance(var_specs, FlexVarSpecsConcentration):
+        type_base = FlexVarSpecs
+        if type_ is None:
+            type_ = type(var_specs)
+        if not issubclass(type_, type_base):
+            raise ValueError(
+                f"var_specs: invalid type {type_}: "
+                f"not a subclass of {type_base.__name__}!")
+
+        if type_ is FlexVarSpecsConcentration:
             return f'Activity Concentration'
 
-        elif isinstance(var_specs, FlexVarSpecsDeposition):
-            type_ = {
+        elif type_ is FlexVarSpecsDeposition:
+            dep_type = {
                 'wet': 'Wet',
                 'dry': 'Dry',
                 'tot': 'Total',
-            }[var_specs.deposition]
-            return f'{type_} Surface Deposition'
+            }[dict(var_specs)['deposition']]
+            return f'{dep_type} Surface Deposition'
 
         raise NotImplementedError(
-            f"var_specs of type '{type(var_specs).__name__}'")
+            f"var_specs of type '{type_.__name__}'")
 
     def _collect_species_attrs(self):
         """Collect species attributes."""
@@ -942,8 +1009,8 @@ class FlexAttrsCollector:
         # Get half life information
         try:
             half_life, half_life_unit = {
-                'Cs-137': (30.17, 'years'),  #SR_HC
-                'I-131a': (8.02, 'days'),  #SR_HC
+                'Cs-137': (30.17, 'y'),  #SR_HC
+                'I-131a': (8.02, 'd'),  #SR_HC
             }[substance]
         except KeyError:
             raise NotImplementedError(f"half_life of '{substance}'")
@@ -954,10 +1021,14 @@ class FlexAttrsCollector:
 
         return {
             'name': substance,
-            'half_life': (half_life, half_life_unit),
-            'deposit_vel': (deposit_vel, deposit_vel_unit),
-            'sediment_vel': (0.0, sediment_vel_unit),
-            'washout_coeff': (washout_coeff, washout_coeff_unit),
+            'half_life': half_life,
+            'half_life_unit': half_life_unit,
+            'deposit_vel': deposit_vel,
+            'deposit_vel_unit': deposit_vel_unit,
+            'sediment_vel': 0.0,
+            'sediment_vel_unit': sediment_vel_unit,
+            'washout_coeff': washout_coeff,
+            'washout_coeff_unit': washout_coeff_unit,
             'washout_exponent': washout_exponent,
         }
 

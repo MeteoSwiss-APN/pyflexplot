@@ -215,3 +215,25 @@ def pformat_dictlike(obj):
     #s = s.replace('\n ', '\n  ')
 
     return s
+
+
+def nested_dict_set(dct, keys, val):
+    """Set a value in a nested dict, creating subdicts if necessary.
+
+    Args:
+        dct (dict): Dictionary.
+
+        keys (list[<key>]): List of keys.
+
+        val (object): Value.
+
+    """
+    parent = dct
+    n = len(keys)
+    for i, key in enumerate(keys):
+        if i < n - 1:
+            if key not in parent:
+                parent[key] = {}
+            parent = parent[key]
+        else:
+            parent[key] = val

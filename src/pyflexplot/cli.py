@@ -23,6 +23,61 @@ __version__ = '0.1.0'
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'],)
 
 
+class CharSepListParamType(click.ParamType):
+    name = 'character-separated list'
+
+    def __init__(self, type_, separator, dupl_ok=False):
+        """Create an instance of ``CharSepListParamType``.
+
+        Args:
+            type_ (type): Type of list elements.
+
+            separator (str): Separator of list elements.
+
+            dupl_ok (bool, optional): Whether duplicate values are
+                allowed. Defaults to False.
+
+        Example:
+            Create type for comma-separated list of (unique) integers:
+
+            > INT_LIST_COMMA_SEP_UNIQ = CharSepListParamType(int, ',')
+
+        """
+        if isinstance(type_, float) and separator == '.':
+            raise ValueError(
+                f"invalid separator '{separator}' for type '{type_.__name__}'")
+
+        self.type_ = type_
+        self.separator = separator
+        self.dupl_ok = dupl_ok
+
+    def convert(self, value, param, ctx):
+        """Convert string to list of given type based on separator."""
+        values_str = value.split(self.separator)
+        values = []
+        for i, value_str in enumerate(values_str):
+            try:
+                value = self.type_(value_str)
+            except (ValueError, TypeError) as e:
+                self.fail(
+                    f"Invalid '{self.separator}'-separated list '{value}': "
+                    f"Value '{value_str}' ({i + 1}/{len(values_str)}) "
+                    f"incompatible with type '{self.type_.__name__}' "
+                    f"({type(e).__name__}: {e})")
+            else:
+                if not self.dupl_ok and value in values:
+                    self.fail(
+                        f"Invalid '{self.separator}'-separated list '{value}': "
+                        f"Value '{value_str}' ({i + 1}/{len(values_str)}) "
+                        f"not unique")
+                values.append(value)
+        return values
+
+
+INT_LIST_COMMA_SEP_UNIQ = CharSepListParamType(int, ',', dupl_ok=False)
+INT_LIST_PLUS_SEP_UNIQ = CharSepListParamType(int, '+', dupl_ok=False)
+
+
 # yapf: disable
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.option(
@@ -127,7 +182,7 @@ def common_options_dispersion_field(f):
         click.option(
             '--species-id', 'species_id_lst',
             help="Species id (default: all). Format key: '{species_id}'.",
-            type=int, default=[0], multiple=True),
+            type=INT_LIST_PLUS_SEP_UNIQ, default=[0], multiple=True),
     ]
     # yapf: enable
     return functools.reduce(lambda x, opt: opt(x), options, f)
