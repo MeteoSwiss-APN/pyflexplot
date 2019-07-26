@@ -176,7 +176,7 @@ class FlexAttrs:
     def _format_unit(self, unit):
         """Auto-format a unit by elevating superscripts etc."""
         if isinstance(unit, FlexAttr):  #SR_ATTR
-            unit = unit.value  #SR_ATTR
+            unit = unit.unit  #SR_ATTR
         old_new = [
             ('m-2', 'm$^{-2}$'),
             ('m-3', 'm$^{-3}$'),
@@ -263,23 +263,21 @@ class FlexAttrsVariable(FlexAttrs):
         self.set('long_name', long_name, str)
         self.set('short_name', short_name, str)
         self.set('unit', unit, str)
-        self.set('level_bot', level_bot, float)
-        self.set('level_bot_unit', level_bot_unit, str)
-        self.set('level_top', level_top, float)
-        self.set('level_top_unit', level_top_unit, str)
+        self.set('level_bot', level_bot, float, unit=level_bot_unit)
+        self.set('level_top', level_top, float, unit=level_top_unit)
 
     def format_unit(self):
-        return self._format_unit(self.unit)
+        return self._format_unit(self.unit.value)
 
     def format_short_name(self):
         #-return f'{self.short_name} ({self.format_unit()})'  #SR_ATTR
         return f'{self.short_name.value} ({self.format_unit()})'  #SR_ATTR
 
     def format_level_bot_unit(self):
-        return self._format_unit(self.level_bot_unit)
+        return self._format_unit(self.level_bot)
 
     def format_level_top_unit(self):
-        return self._format_unit(self.level_top_unit)
+        return self._format_unit(self.level_top)
 
     def format_level_unit(self):
         unit_bottom = self.format_level_bot_unit()
@@ -373,27 +371,24 @@ class FlexAttrsRelease(FlexAttrs):
         self.set('site_lat', site_lat, float)
         self.set('site_lon', site_lon, float)
         self.set('site_name', site_name, str)
-        self.set('height', height, float)
-        self.set('height_unit', height_unit, str)
-        self.set('rate', rate, float)
-        self.set('rate_unit', rate_unit, str)
-        self.set('mass', mass, float)
-        self.set('mass_unit', mass_unit, str)
+        self.set('height', height, float, unit=height_unit)
+        self.set('rate', rate, float, unit=rate_unit)
+        self.set('mass', mass, float, unit=mass_unit)
 
     def format_height(self):
         #-return f'{self.height} {self.height_unit}'  #SR_ATTR
-        return f'{self.height.value} {self.height_unit.value}'  #SR_ATTR
+        return f'{self.height.value} {self.height.unit}'  #SR_ATTR
 
     def format_rate_unit(self):
         #-return self._format_unit(self.rate_unit)  #SR_ATTR
-        return self._format_unit(self.rate_unit.value)  #SR_ATTR
+        return self._format_unit(self.rate)  #SR_ATTR
 
     def format_rate(self):
         #-return f'{self.rate:g} {self.format_rate_unit()}'  #SR_ATTR
         return f'{self.rate.value:g} {self.format_rate_unit()}'  #SR_ATTR
 
     def format_mass_unit(self):
-        return self._format_unit(self.mass_unit)
+        return self._format_unit(self.mass)
 
     def format_mass(self):
         #-return f'{self.mass:g} {self.format_mass_unit()}'  #SR_ATTR
@@ -438,13 +433,9 @@ class FlexAttrsSpecies(FlexAttrs):
         super().__init__()
         self.set('name', name, str)
         self.set('half_life', half_life, float, unit=half_life_unit)
-        #-self.set('half_life_unit', half_life_unit, str)
-        self.set('deposit_vel', deposit_vel, float)
-        self.set('deposit_vel_unit', deposit_vel_unit, str)
-        self.set('sediment_vel', sediment_vel, float)
-        self.set('sediment_vel_unit', sediment_vel_unit, str)
-        self.set('washout_coeff', washout_coeff, float)
-        self.set('washout_coeff_unit', washout_coeff_unit, str)
+        self.set('deposit_vel', deposit_vel, float, unit=deposit_vel_unit)
+        self.set('sediment_vel', sediment_vel, float, unit=sediment_vel_unit)
+        self.set('washout_coeff', washout_coeff, float, unit=washout_coeff_unit)
         self.set('washout_exponent', washout_exponent, float)
 
     def format_name(self, join='/'):
@@ -455,7 +446,7 @@ class FlexAttrsSpecies(FlexAttrs):
         return f' {join} '.join(name)
 
     def format_half_life_unit(self):
-        return self._format_unit(self.half_life.unit)
+        return self._format_unit(self.half_life)
 
     def format_half_life(self, join='/'):
 
@@ -479,7 +470,7 @@ class FlexAttrsSpecies(FlexAttrs):
             return f' {join} '.join(s_lst)
 
     def format_deposit_vel_unit(self):
-        return self._format_unit(self.deposit_vel_unit)
+        return self._format_unit(self.deposit_vel)
 
     def format_deposit_vel(self):
         #-return (f'{self.deposit_vel:g} ' f'{self.format_deposit_vel_unit()}')  #SR_ATTR
@@ -488,7 +479,7 @@ class FlexAttrsSpecies(FlexAttrs):
             f'{self.format_deposit_vel_unit()}')  #SR_ATTR
 
     def format_sediment_vel_unit(self):
-        return self._format_unit(self.sediment_vel_unit)
+        return self._format_unit(self.sediment_vel)
 
     def format_sediment_vel(self):
         #-return (f'{self.sediment_vel:g} ' f'{self.format_sediment_vel_unit()}')  #SR_ATTR
@@ -497,7 +488,7 @@ class FlexAttrsSpecies(FlexAttrs):
             f'{self.format_sediment_vel_unit()}')  #SR_ATTR
 
     def format_washout_coeff_unit(self):
-        return self._format_unit(self.washout_coeff_unit)
+        return self._format_unit(self.washout_coeff)
 
     def format_washout_coeff(self):
         #-return f'{self.washout_coeff:g} {self.format_washout_coeff_unit()}'  #SR_ATTR
