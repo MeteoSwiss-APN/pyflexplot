@@ -101,30 +101,16 @@ class FlexAttrs:
         self.reset()
 
     def reset(self):
-        self.reset_names()
+        #self.reset_names()
+        self._attrs = {}
 
-    def reset_names(self):
-        if hasattr(self, 'names'):
-            try:
-                iter_names = iter(self.names)
-            except TypeError:
-                pass
-            for name in iter_names:
-                try:
-                    delattr(self, name)
-                except AttributeError:
-                    pass
-        self.__dict__['names'] = set()
+    def __getattr__(self, name):
+        try:
+            return self._attrs[name]
+        except KeyError:
+            raise AttributeError(name) from None
 
-    def __setattr__(self, key, val):
-        if key.startswith('_') or key in self.names:
-            self.__dict__[key] = val
-        else:
-            raise ValueError(
-                f"invalid public attribute '{key}': "
-                f"not among {sorted(self.names)}")
-
-    def set(self, name, val, type_=None, mult_vals_ok=False):
+    def set(self, name, val, type_, mult_vals_ok=False):
         """Set an attribute, optionally checking its type.
 
         Args:
@@ -133,9 +119,7 @@ class FlexAttrs:
             val (object or list[object]): Value of attribute. Can be a
                 list of multiple values if ``mult_vals_ok=True``.
 
-            type_ (type or list[type], optional): Type of attribute.
-                If passed, ``val`` must be compatible with it. Defaults
-                to None.
+            type_ (type): Type of attribute.
 
             mult_vals_ok (bool, optional): Whether lists of multiple
                 values are allowed. Defaults to False.
@@ -145,15 +129,9 @@ class FlexAttrs:
         #SR_TMP<
         if not isinstance(val, FlexAttr):
             val = FlexAttr(name, val, type_)
-        if type_ is None:
-            raise NotImplementedError("type_ is None")
         #SR_TMP>
 
-        if not isinstance(name, str):
-            raise ValueError(f"name of type {type(name).__name__}")
-
-        self.__dict__[name] = val
-        self.names.add(name)
+        self._attrs[name] = val
 
     def _format_unit(self, unit):
         """Auto-format a unit by elevating superscripts etc."""
@@ -169,8 +147,8 @@ class FlexAttrs:
         return unit
 
     def __iter__(self):
-        for name in sorted(self.names):
-            yield name, getattr(self, name)
+        for name, attr in sorted(self._attrs.items()):
+            yield name, attr
 
     def merge(self, others, replace=None):
         """Create new instance by merging self and others.
@@ -579,7 +557,10 @@ class FlexAttrsCollection:
         self.add('simulation', simulation)
 
     def reset(self):
-        FlexAttrs.reset_names(self)
+        FlexAttrs.reset(self)  #SR_TMP
+
+    def __getattr__(self, name):
+        return FlexAttrs.__getattr__(self, name)  #SR_TMP
 
     def add(self, name, attrs):
 
@@ -597,8 +578,7 @@ class FlexAttrsCollection:
                 raise ValueError(f"missing FlexAttrs class for name '{name}'")
             attrs = cls(**attrs)
 
-        setattr(self, name, attrs)
-        self.names.add(name)
+        self._attrs[name] = attrs
 
     def merge(self, others, **replace):
         """Create a new instance by merging this and others.
@@ -637,17 +617,17 @@ class FlexAttrsCollection:
 
         """
         kwargs = {}
-        for name in sorted(self.names):
+        for name in sorted(self._attrs.keys()):
             kwargs[name] = dict(
-                getattr(self, name).merge(
-                    [getattr(o, name) for o in others],
+                self._attrs[name].merge(
+                    [o._attrs[name] for o in others],
                     replace.get(name),
                 ))
         return self.__class__(**kwargs)
 
     def __iter__(self):
-        for name in sorted(self.names):
-            yield name, getattr(self, name)
+        for name, attr in sorted(self._attrs.items()):
+            yield name, attr
 
     def asdict(self):
         return {name: dict(attrs) for name, attrs in self}
