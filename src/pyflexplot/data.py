@@ -9,6 +9,8 @@ import numpy as np
 from collections import namedtuple
 from copy import copy, deepcopy
 
+from .utils import isiterable
+
 from .utils_dev import ipython  #SR_DEV
 
 
@@ -38,6 +40,58 @@ class FlexFieldRotPole:
         self.attrs = attrs
         self.field_specs = field_specs
         self.time_stats = time_stats
+
+
+class FlexAttr:
+    """Individual attribute."""
+
+    def __init__(self, name, value, type_=None, unit=None):
+        self.name = name
+        self.type_ = type(value) if type_ is None else type_
+        self.unit = unit
+
+        #SR_TMP< TODO move support for multiple values out of FlexAttr
+        assert not isinstance(value, self.__class__)
+        value_in = value
+        values = value
+        if not isiterable(value, str_ok=False):
+            #SR_KEEP< TODO: remove TMP around it, but keep this
+            if isinstance(value, type_):
+                self.value = value
+            else:
+                try:
+                    self.value = type_(value)
+                except (TypeError, ValueError) as e:
+                    raise ValueError(
+                        f"value='{value}' of type '{type(value).__name__}' "
+                        f"incompatible with type_='{type_.__name__}' "
+                        f"({type(e).__name__}: {e})")
+            #SR_KEEP>
+        else:
+            values_in = copy(value)
+            self.value = []
+            for value in values_in:
+                #SR_TMP<
+                if isinstance(value, self.__class__):
+                    value = value.value
+                #SR_TMP>
+                if isinstance(value, type_):
+                    self.value.append(value)
+                else:
+                    try:
+                        value = type_(value)
+                    except (TypeError, ValueError) as e:
+                        raise ValueError(
+                            f"value='{value}' of type '{type(value).__name__}' "
+                            f"incompatible with type_='{type_.__name__}' "
+                            f"({type(e).__name__}: {e})")
+                    else:
+                        self.value.append(value)
+        #SR_TMP>
+
+    #SR_TMP<<<
+    def __eq__(self, other):
+        return self.value == other.value
 
 
 class FlexAttrs:
@@ -74,140 +128,37 @@ class FlexAttrs:
         """Set an attribute, optionally checking its type.
 
         Args:
-            name (str or list[str]): Name of attribute. Can be a list
-                of multiple names if ``val`` is a list of values to be
-                distributed over multiple attributes (e.g., a number-
-                unit-pair). In lists, tilde ('~') can be used in all
-                but the first name to be replace by the previous name
-                in the list (e.g., ``['velocity', '~_unit']``).
+            name (str): Name of attribute.
 
-            val (object or list[object]): Value of attribute. If is a
-                list of multiple values and ``name`` is a list as well,
-                then the values are distributed over multiple values.
-                If ``mult_vals_ok=True``, each value in turn is allowed
-                to be a list of multiple values.
+            val (object or list[object]): Value of attribute. Can be a
+                list of multiple values if ``mult_vals_ok=True``.
 
             type_ (type or list[type], optional): Type of attribute.
-                If passed, ``val`` must either be an instance of or
-                convertible to it. If ``val`` is a list of multiple
-                values, a separate type can be passed for each.
-                Defaults to None.
+                If passed, ``val`` must be compatible with it. Defaults
+                to None.
 
-            mult_vals_ok (bool, optional): Whether each value is
-                allowed to be a list of multiple values. Defaults to
-                False.
+            mult_vals_ok (bool, optional): Whether lists of multiple
+                values are allowed. Defaults to False.
 
         """
 
+        #SR_TMP<
+        if not isinstance(val, FlexAttr):
+            val = FlexAttr(name, val, type_)
+        if type_ is None:
+            raise NotImplementedError("type_ is None")
+        #SR_TMP>
+
         if not isinstance(name, str):
-            # Handle multiple names
-            names, vals, types = self._prepare_multi_attrs(name, val, type_)
-            for name, val, type_ in zip(names, vals, types):
-                self.set(name, val, type_, mult_vals_ok=True)
-
-        # Check type(s) of value(s)
-        if type_ is not None and not isinstance(val, type_):
-
-            # Check whether the value is a list of multiple values
-            try:
-                iter(val)
-            except TypeError:
-                # There's only one value; check its type
-                try:
-                    val = type_(val)
-                except TypeError:
-                    raise ValueError(
-                        f"attr '{name}': value '{val}' has wrong type: "
-                        f"expected '{type_.__name__}', got "
-                        f"'{type(val).__name__}'")
-            else:
-                # There are multiple values
-                if mult_vals_ok:
-                    # That's OK; check types of values
-                    try:
-                        val = [type_(v) for v in val]
-                    except TypeError:
-                        raise ValueError(
-                            f"attr '{name}': one or more values in {val} "
-                            f"has wrong type: expected '{type_.__name__}', "
-                            f"got {[type(v).__name__ for v in val]}")
-                else:
-                    # That's not OK!
-                    raise ValueError(
-                        f"attr '{name}': expected single value, got list of "
-                        f"{len(val)}: {val}")
+            raise ValueError(f"name of type {type(name).__name__}")
 
         self.__dict__[name] = val
         self.names.add(name)
 
-    def set_value_unit(
-            self, val_name, val, unit, val_type, mult_vals_ok=False):
-        """Set a (value, unit) attribute pair.
-
-        Args:
-            val_name (str): Name of the value attribute, from which
-                the name of the unit attribute is derived by appending
-                '_unit'.
-
-            val (<val_type> or list[<val_type>]): Value(s) compatible
-                with type ``val_type``. A list of multiple values is
-                only allowed for ``mult_vals_ok=True``.
-
-            unit (str): Unit.
-
-            val_type (type): Type compatible with ``val``.
-
-            mult_vals_ok (bool, optional): Whether a list of multiple
-                values is allowed for ``val``. Defaults to False.
-
-        """
-        self.set(
-            [val_name, '~_unit'],
-            (val, unit),
-            [val_type, str],
-            mult_vals_ok=mult_vals_ok,
-        )
-
-    def _prepare_multi_attrs(self, names, vals, types):
-
-        # Ensure that one value has been passed for each name
-        class UnequalLenError(Exception):
-            pass
-
-        try:
-            if len(names) != len(vals):
-                raise UnequalLenError
-        except (TypeError, UnequalLenError):
-            raise ValueError(
-                f"attrs '{names}' ({len(names)}): "
-                f"need one value for each name: {vals}")
-
-        # Tilde-notation: insert previous name in place of '~'
-        for i, name in enumerate(copy(names)):
-            if '~' in name:
-                if i == 0:
-                    raise ValueError(
-                        f"'~' notation not possible in first name: "
-                        f"{names}")
-                names[i] = name.replace('~', names[i - 1])
-
-        # Prepare types (same for all, or one for each)
-        if types is None or isinstance(types, type):
-            types = [types]*len(names)
-        elif len(types) != len(names):
-            raise ValueError(
-                f"attrs '{names}' ({len(names)}): "
-                f"need one type_ for all values, or one for each: "
-                f"{type_}")
-
-        return names, vals, types
-
-        raise Exception(
-            f"'{cname}' has no attribute 'attrs' -- maybe forgot "
-            f"`super().__init__()` in `{cname}.__init__`?")
-
     def _format_unit(self, unit):
         """Auto-format a unit by elevating superscripts etc."""
+        if isinstance(unit, FlexAttr):  #SR_ATTR
+            unit = unit.value  #SR_ATTR
         old_new = [
             ('m-2', 'm$^{-2}$'),
             ('m-3', 'm$^{-3}$'),
@@ -301,14 +252,17 @@ class FlexAttrsVariable(FlexAttrs):
         self.set('long_name', long_name, str)
         self.set('short_name', short_name, str)
         self.set('unit', unit, str)
-        self.set_value_unit('level_bot', level_bot, level_bot_unit, float)
-        self.set_value_unit('level_top', level_top, level_top_unit, float)
+        self.set('level_bot', level_bot, float)
+        self.set('level_bot_unit', level_bot_unit, str)
+        self.set('level_top', level_top, float)
+        self.set('level_top_unit', level_top_unit, str)
 
     def format_unit(self):
         return self._format_unit(self.unit)
 
     def format_short_name(self):
-        return f'{self.short_name} ({self.format_unit()})'
+        #-return f'{self.short_name} ({self.format_unit()})'  #SR_ATTR
+        return f'{self.short_name.value} ({self.format_unit()})'  #SR_ATTR
 
     def format_level_bot_unit(self):
         return self._format_unit(self.level_bot_unit)
@@ -327,7 +281,8 @@ class FlexAttrsVariable(FlexAttrs):
 
     def format_level_range(self):
 
-        if (self.level_bot, self.level_top) == (-1, -1):
+        #-if (self.level_bot, self.level_top) == (-1, -1):  #SR_ATTR
+        if (self.level_bot.value, self.level_top.value) == (-1, -1):  #SR_ATTR
             return None
 
         def fmt(bot, top, unit_fmtd=self.format_level_unit()):
@@ -338,14 +293,17 @@ class FlexAttrsVariable(FlexAttrs):
 
         try:
             # Single level range
-            return fmt(self.level_bot, self.level_top)
+            #-return fmt(self.level_bot, self.level_top)  #SR_ATTR
+            return fmt(self.level_bot.value, self.level_top.value)  #SR_ATTR
         except TypeError:
             pass
         #-- Multiple level ranges
 
         try:
-            bots = sorted(self.level_bot)
-            tops = sorted(self.level_top)
+            #-bots = sorted(self.level_bot)  #SR_ATTR
+            #-tops = sorted(self.level_top)  #SR_ATTR
+            bots = sorted(self.level_bot.value)  #SR_ATTR
+            tops = sorted(self.level_top.value)  #SR_ATTR
         except TypeError:
             raise  #SR_TMP TODO proper error message
         else:
@@ -404,24 +362,31 @@ class FlexAttrsRelease(FlexAttrs):
         self.set('site_lat', site_lat, float)
         self.set('site_lon', site_lon, float)
         self.set('site_name', site_name, str)
-        self.set_value_unit('height', height, height_unit, float)
-        self.set_value_unit('rate', rate, rate_unit, float)
-        self.set_value_unit('mass', mass, mass_unit, float)
+        self.set('height', height, float)
+        self.set('height_unit', height_unit, str)
+        self.set('rate', rate, float)
+        self.set('rate_unit', rate_unit, str)
+        self.set('mass', mass, float)
+        self.set('mass_unit', mass_unit, str)
 
     def format_height(self):
-        return f'{self.height} {self.height_unit}'
+        #-return f'{self.height} {self.height_unit}'  #SR_ATTR
+        return f'{self.height.value} {self.height_unit.value}'  #SR_ATTR
 
     def format_rate_unit(self):
-        return self._format_unit(self.rate_unit)
+        #-return self._format_unit(self.rate_unit)  #SR_ATTR
+        return self._format_unit(self.rate_unit.value)  #SR_ATTR
 
     def format_rate(self):
-        return f'{self.rate:g} {self.format_rate_unit()}'
+        #-return f'{self.rate:g} {self.format_rate_unit()}'  #SR_ATTR
+        return f'{self.rate.value:g} {self.format_rate_unit()}'  #SR_ATTR
 
     def format_mass_unit(self):
         return self._format_unit(self.mass_unit)
 
     def format_mass(self):
-        return f'{self.mass:g} {self.format_mass_unit()}'
+        #-return f'{self.mass:g} {self.format_mass_unit()}'  #SR_ATTR
+        return f'{self.mass.value:g} {self.format_mass_unit()}'  #SR_ATTR
 
 
 class FlexAttrsSpecies(FlexAttrs):
@@ -461,20 +426,22 @@ class FlexAttrsSpecies(FlexAttrs):
         """
         super().__init__()
         self.set('name', name, str, mult_vals_ok=True)
-        self.set_value_unit(
-            'half_life', half_life, half_life_unit, float, mult_vals_ok=True)
-        self.set_value_unit(
-            'deposit_vel', deposit_vel, deposit_vel_unit, float)
-        self.set_value_unit(
-            'sediment_vel', sediment_vel, sediment_vel_unit, float)
-        self.set_value_unit(
-            'washout_coeff', washout_coeff, washout_coeff_unit, float)
+        self.set('half_life', half_life, float, mult_vals_ok=True)
+        self.set('half_life_unit', half_life_unit, str, mult_vals_ok=True)
+        self.set('deposit_vel', deposit_vel, float)
+        self.set('deposit_vel_unit', deposit_vel_unit, str)
+        self.set('sediment_vel', sediment_vel, float)
+        self.set('sediment_vel_unit', sediment_vel_unit, str)
+        self.set('washout_coeff', washout_coeff, float)
+        self.set('washout_coeff_unit', washout_coeff_unit, str)
         self.set('washout_exponent', washout_exponent, float)
 
     def format_name(self, join='/'):
-        if isinstance(self.name, str):
-            return self.name
-        return f' {join} '.join(self.name)
+        #-name = self.name  #SR_ATTR
+        name = self.name.value  #SR_ATTR
+        if isinstance(name, str):
+            return name
+        return f' {join} '.join(name)
 
     def format_half_life_unit(self):
         return self._format_unit(self.half_life_unit)
@@ -484,14 +451,19 @@ class FlexAttrsSpecies(FlexAttrs):
         def fmt(val, unit):
             return f'{val:g} {self._format_unit(unit)}'
 
-        try:
-            iter(self.half_life)
-        except TypeError:
-            return fmt(self.half_life, self.half_life_unit)
+        #-if not isiterable(self.half_life):  #SR_ATTR
+        if not isiterable(self.half_life.value):  #SR_ATTR
+            #-return fmt(self.half_life, self.half_life_unit)  #SR_ATTR
+            return fmt(
+                self.half_life.value, self.half_life_unit.value)  #SR_ATTR
         else:
-            assert len(self.half_life) == len(self.half_life_unit)
+            #-assert len(self.half_life) == len(self.half_life_unit)  #SR_ATTR
+            assert len(self.half_life.value) == len(
+                self.half_life_unit.value)  #SR_ATTR
             s_lst = []
-            for val, unit in zip(self.half_life, self.half_life_unit):
+            #-for val, unit in zip(self.half_life, self.half_life_unit):  #SR_ATTR
+            for val, unit in zip(self.half_life.value,
+                                 self.half_life_unit.value):  #SR_ATTR
                 s_lst.append(fmt(val, unit))
             return f' {join} '.join(s_lst)
 
@@ -499,19 +471,26 @@ class FlexAttrsSpecies(FlexAttrs):
         return self._format_unit(self.deposit_vel_unit)
 
     def format_deposit_vel(self):
-        return (f'{self.deposit_vel:g} ' f'{self.format_deposit_vel_unit()}')
+        #-return (f'{self.deposit_vel:g} ' f'{self.format_deposit_vel_unit()}')  #SR_ATTR
+        return (
+            f'{self.deposit_vel.value:g} '
+            f'{self.format_deposit_vel_unit()}')  #SR_ATTR
 
     def format_sediment_vel_unit(self):
         return self._format_unit(self.sediment_vel_unit)
 
     def format_sediment_vel(self):
-        return (f'{self.sediment_vel:g} ' f'{self.format_sediment_vel_unit()}')
+        #-return (f'{self.sediment_vel:g} ' f'{self.format_sediment_vel_unit()}')  #SR_ATTR
+        return (
+            f'{self.sediment_vel.value:g} '
+            f'{self.format_sediment_vel_unit()}')  #SR_ATTR
 
     def format_washout_coeff_unit(self):
         return self._format_unit(self.washout_coeff_unit)
 
     def format_washout_coeff(self):
-        return f'{self.washout_coeff:g} {self.format_washout_coeff_unit()}'
+        #-return f'{self.washout_coeff:g} {self.format_washout_coeff_unit()}'  #SR_ATTR
+        return f'{self.washout_coeff.value:g} {self.format_washout_coeff_unit()}'  #SR_ATTR
 
 
 class FlexAttrsSimulation(FlexAttrs):
@@ -541,9 +520,11 @@ class FlexAttrsSimulation(FlexAttrs):
 
     def _format_dt(self, dt, relative):
         """Format a datetime object to a string."""
+        dt = dt.value  #SR_ATTR
         if not relative:
             return dt.strftime('%Y-%m-%d %H:%M %Z')
-        delta = dt - self.start
+        #-delta = dt - self.start  #SR_ATTR
+        delta = dt - self.start.value  #SR_ATTR
         s = f"T$_{0}$"
         if delta.total_seconds() > 0:
             hours = int(delta.total_seconds()/3600)
@@ -565,7 +546,8 @@ class FlexAttrsSimulation(FlexAttrs):
 
     @property
     def integr_period(self):
-        return self.now - self.integr_start
+        #-return self.now - self.integr_start  #SR_ATTR
+        return self.now.value - self.integr_start.value  #SR_ATTR
 
     def format_integr_period(self):
         return f'{self.integr_period.total_seconds()/3600:g}$\\,$h'

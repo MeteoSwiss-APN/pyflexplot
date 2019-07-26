@@ -134,8 +134,10 @@ class FlexPlotBase:
             self.fig,
             self.rlat,
             self.rlon,
-            self.attrs.grid.north_pole_lat,
-            self.attrs.grid.north_pole_lon,
+            #-self.attrs.grid.north_pole_lat,  #SR_ATTR
+            #-self.attrs.grid.north_pole_lon,  #SR_ATTR
+            self.attrs.grid.north_pole_lat.value,  #SR_ATTR
+            self.attrs.grid.north_pole_lon.value,  #SR_ATTR
             **self.map_conf,
         )
 
@@ -237,8 +239,10 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
 
         # Add marker at release site
         self.ax_map.marker(
-            self.attrs.release.site_lon,
-            self.attrs.release.site_lat,
+            #-self.attrs.release.site_lon,  #SR_ATTR
+            #-self.attrs.release.site_lat,  #SR_ATTR
+            self.attrs.release.site_lon.value,  #SR_ATTR
+            self.attrs.release.site_lat.value,  #SR_ATTR
             **self._site_marker_kwargs,
         )
 
@@ -348,17 +352,18 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
 
         if not 'tl' in skip_pos:
             # Top left: variable
-            s = f"{self.attrs.variable.long_name}"
+            #-s = f"{self.attrs.variable.long_name}"  #SR_ATTR
+            s = f"{self.attrs.variable.long_name.value}"  #SR_ATTR
             box.text('tl', s, size='xx-large')
 
         if not 'tc' in skip_pos:
             # Top center: species
-            s = f"{self.attrs.species.format_name(join='+')}"
+            s = f"{self.attrs.species.format_name(join='+')}"  #SR_ATTR
             box.text('tc', s, size='xx-large')
 
         if not 'tr' in skip_pos:
             # Top right: datetime
-            timestep_fmtd = self.attrs.simulation.format_now()
+            timestep_fmtd = self.attrs.simulation.format_now()  #SR_ATTR
             s = f"{timestep_fmtd}"
             box.text('tr', s, size='xx-large')
 
@@ -366,21 +371,22 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             _sim = self.attrs.simulation
             # Bottom left: integration time & level range
             s = (
-                f"{_sim.format_integr_period()} "
-                f"(since {_sim.format_integr_start(relative=True)})")
-            lvl_range = self.attrs.variable.format_level_range()
+                f"{_sim.format_integr_period()} "  #SR_ATTR
+                f"(since {_sim.format_integr_start(relative=True)})")  #SR_ATTR
+            lvl_range = self.attrs.variable.format_level_range()  #SR_ATTR
             if lvl_range:
                 s = f"{s} at {lvl_range}"
             box.text('bl', s, size='large')
 
         if not 'br' in skip_pos:
             # Bottom center: release site
-            s = f"{self.attrs.release.site_name}"
+            #-s = f"{self.attrs.release.site_name}"  #SR_ATTR
+            s = f"{self.attrs.release.site_name.value}"  #SR_ATTR
             box.text('bc', s, size='large')
 
         if not 'br' in skip_pos:
             # Bottom right: time into simulation
-            s = self.attrs.simulation.format_now(relative=True)
+            s = self.attrs.simulation.format_now(relative=True)  #SR_ATTR
             box.text('br', s, size='large')
 
     def fill_box_right_top(self):
@@ -388,7 +394,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
         box = self.axs_box[1]
 
         # Add box title
-        s = f"{self.attrs.variable.format_short_name()}"
+        s = f"{self.attrs.variable.format_short_name()}"  #SR_ATTR
         box.text('tc', s=s, dy=1, size='large')
 
         # Format level ranges (contour plot legend)
@@ -438,7 +444,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
         else:
             fld_max_fmtd += (
                 f'{np.nanmax(self.fld):.2E}'
-                f' {self.attrs.variable.format_unit()}')
+                f' {self.attrs.variable.format_unit()}')  #SR_ATTR
 
         # Add maximum value marker
         dy_max = dy0_labels - dy_spacing_markers - dy_line
@@ -464,7 +470,8 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             dy=dy_site + 0.7,
             **self._site_marker_kwargs,
         )
-        s = f"Release site: {self.attrs.release.site_name}"
+        #s = f"Release site: {self.attrs.release.site_name}"  #SR_ATTR
+        s = f"Release site: {self.attrs.release.site_name.value}"  #SR_ATTR
         box.text(loc='bl', s=s, dx=5.5, dy=dy_site, size='small')
 
     def _format_level_ranges(self):
@@ -526,20 +533,23 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
         box.text('tc', 'Release', dy=-1.5, size='large')
 
         # Release site coordinates
-        lat = Degrees(self.attrs.release.site_lat)
+        #-lat = Degrees(self.attrs.release.site_lat)  #SR_ATTR
+        lat = Degrees(self.attrs.release.site_lat.value)  #SR_ATTR
         lat_fmtd = (
             f"{lat.degs()}$^\circ\,${lat.mins()}'$\,$N"
             f" ({lat.frac():.2f}$^\circ\,$N)")
-        lon = Degrees(self.attrs.release.site_lon)
+        #-lon = Degrees(self.attrs.release.site_lon)  #SR_ATTR
+        lon = Degrees(self.attrs.release.site_lon.value)  #SR_ATTR
         lon_fmtd = (
             f"{lon.degs()}$^\circ\,${lon.mins()}'$\,$E"
             f" ({lon.frac():.2f}$^\circ\,$E)")
 
-        self.labels = FlexPlotLabelsDispersion_En() #SR_TMP
+        self.labels = FlexPlotLabelsDispersion_En()  #SR_TMP
         #self.labels = FlexPlotLabelsDispersion_De()  #SR_TMP
 
         lab = self.labels
         att = self.attrs
+        #SR_ATTR<
         info_blocks = dedent(
             f"""\
             {lab.lat}:\t{lat_fmtd}
@@ -556,8 +566,9 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             {lab.deposit_vel}:\t{att.species.format_deposit_vel()}
             {lab.sediment_vel}:\t{att.species.format_sediment_vel()}
             {lab.washout_coeff}:\t{att.species.format_washout_coeff()}
-            {lab.washout_exponent}:\t{att.species.washout_exponent:g}
+            {lab.washout_exponent}:\t{att.species.washout_exponent.value:g}
             """)
+        #SR_ATTR>
 
         # Add lines bottom-up (to take advantage of baseline alignment)
         dy0 = 2
@@ -575,8 +586,9 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
         box = self.axs_box[3]
 
         # FLEXPART/model info
-        _model = self.attrs.simulation.model_name
-        _simstart_fmtd = self.attrs.simulation.format_start()
+        #-_model = self.attrs.simulation.model_name  #SR_ATTR
+        _model = self.attrs.simulation.model_name.value  #SR_ATTR
+        _simstart_fmtd = self.attrs.simulation.format_start()  #SR_ATTR
         s = f"FLEXPART based on {_model} {_simstart_fmtd}"
         box.text('tl', dx=-0.7, dy=0.5, s=s, size='small')
 

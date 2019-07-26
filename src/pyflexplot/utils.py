@@ -237,3 +237,23 @@ def nested_dict_set(dct, keys, val):
             parent = parent[key]
         else:
             parent[key] = val
+
+
+def isiterable(obj, str_ok=True):
+    """Check whether an object is iterable.
+
+    Args:
+        obj (object): Object to check.
+
+        str_ok (bool, optional): Whether strings are considered
+            iterable. Defaults to True.
+
+    """
+    if isinstance(obj, str):
+        return str_ok
+    try:
+        iter(obj)
+    except TypeError:
+        return False
+    else:
+        return True

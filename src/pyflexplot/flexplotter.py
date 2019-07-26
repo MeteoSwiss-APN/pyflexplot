@@ -138,6 +138,12 @@ class FlexPlotter:
         plot_var = self.type_
         if var_specs.integrate:
             plot_var += '-int'
+        try:
+            dep_type = var_specs.deposition
+        except AttributeError:
+            pass
+        else:
+            plot_var = f'{dep_type}-{plot_var}'
         kwargs['variable'] = plot_var
 
         # Format file path
