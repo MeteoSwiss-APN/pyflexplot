@@ -278,15 +278,8 @@ class FlexAttrsVariable(FlexAttrs):
     """Variable attributes."""
 
     def __init__(
-            self,
-            *,
-            long_name,
-            short_name,
-            unit,
-            level_bot,
-            level_bot_unit,
-            level_top,
-            level_top_unit):
+            self, *, long_name, short_name, unit, level_bot, level_bot_unit,
+            level_top, level_top_unit):
         """Initialize an instance of ``FlexAttrsVariable``.
 
         Kwargs:
@@ -383,17 +376,8 @@ class FlexAttrsRelease(FlexAttrs):
     """Release attributes."""
 
     def __init__(
-            self,
-            *,
-            site_lat,
-            site_lon,
-            site_name,
-            height,
-            height_unit,
-            rate,
-            rate_unit,
-            mass,
-            mass_unit):
+            self, *, site_lat, site_lon, site_name, height, height_unit, rate,
+            rate_unit, mass, mass_unit):
         """Initialize an instance of ``FlexAttrsRelease``.
 
         Kwargs:
@@ -444,18 +428,9 @@ class FlexAttrsSpecies(FlexAttrs):
     """Species attributes."""
 
     def __init__(
-            self,
-            *,
-            name,
-            half_life,
-            half_life_unit,
-            deposit_vel,
-            deposit_vel_unit,
-            sediment_vel,
-            sediment_vel_unit,
-            washout_coeff,
-            washout_coeff_unit,
-            washout_exponent):
+            self, *, name, half_life, half_life_unit, deposit_vel,
+            deposit_vel_unit, sediment_vel, sediment_vel_unit, washout_coeff,
+            washout_coeff_unit, washout_exponent):
         """Create an instance of ``FlexAttrsSpecies``.
 
         Kwargs:
@@ -496,17 +471,19 @@ class FlexAttrsSpecies(FlexAttrs):
             'washout_coeff', washout_coeff, washout_coeff_unit, float)
         self.set('washout_exponent', washout_exponent, float)
 
-    def format_name(self):
+    def format_name(self, join='/'):
         if isinstance(self.name, str):
             return self.name
-        return ' / '.join(self.name)
+        return f' {join} '.join(self.name)
 
     def format_half_life_unit(self):
         return self._format_unit(self.half_life_unit)
 
-    def format_half_life(self):
+    def format_half_life(self, join='/'):
+
         def fmt(val, unit):
             return f'{val:g} {self._format_unit(unit)}'
+
         try:
             iter(self.half_life)
         except TypeError:
@@ -516,7 +493,7 @@ class FlexAttrsSpecies(FlexAttrs):
             s_lst = []
             for val, unit in zip(self.half_life, self.half_life_unit):
                 s_lst.append(fmt(val, unit))
-            return ' / '.join(s_lst)
+            return f' {join} '.join(s_lst)
 
     def format_deposit_vel_unit(self):
         return self._format_unit(self.deposit_vel_unit)

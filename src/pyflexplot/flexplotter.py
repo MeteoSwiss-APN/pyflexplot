@@ -7,6 +7,8 @@ Plotters.
 from .io import FlexVarSpecs
 from .flexplot import FlexPlotConcentration
 from .flexplot import FlexPlotDeposition
+from .flexplot import FlexPlotAffectedArea
+from .flexplot import FlexPlotAffectedAreaMono
 from .utils_dev import ipython  #SR_DEV
 
 
@@ -34,6 +36,8 @@ class FlexPlotter:
         cls_plot_by_type = {
             'concentration': FlexPlotConcentration,
             'deposition': FlexPlotDeposition,
+            'affected_area': FlexPlotAffectedArea,
+            'affected_area_mono': FlexPlotAffectedAreaMono,
         }
         try:
             self.cls_plot = cls_plot_by_type[type_]
@@ -50,6 +54,14 @@ class FlexPlotter:
     @classmethod
     def deposition(cls, *args, **kwargs):
         return cls('deposition').run(*args, **kwargs)
+
+    @classmethod
+    def affected_area(cls, *args, **kwargs):
+        return cls('affected_area').run(*args, **kwargs)
+
+    @classmethod
+    def affected_area_mono(cls, *args, **kwargs):
+        return cls('affected_area_mono').run(*args, **kwargs)
 
     # yapf: disable
     specs_fmt_keys = {

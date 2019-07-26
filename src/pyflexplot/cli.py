@@ -12,6 +12,7 @@ from pprint import pformat
 
 from .io import FlexFieldSpecsConcentration
 from .io import FlexFieldSpecsDeposition
+from .io import FlexFieldSpecsAffectedArea
 from .io import FlexFileRotPole
 from .utils import count_to_log_level
 from .flexplotter import FlexPlotter
@@ -20,19 +21,25 @@ from .utils_dev import ipython  #SR_DEV
 
 __version__ = '0.1.0'
 
-CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'],)
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+# Show default values of options by default
+click.option = functools.partial(click.option, show_default=True)
 
 
 class CharSepListParamType(click.ParamType):
-    name = 'character-separated list'
 
-    def __init__(self, type_, separator, dupl_ok=False):
+    def __init__(self, type_, separator, *, name=None, dupl_ok=False):
         """Create an instance of ``CharSepListParamType``.
 
         Args:
             type_ (type): Type of list elements.
 
             separator (str): Separator of list elements.
+
+            name (str, optional): Name of the type. If omitted, the
+                default name is derived from ``type_`` and ``separator``.
+                Defaults to None.
 
             dupl_ok (bool, optional): Whether duplicate values are
                 allowed. Defaults to False.
@@ -50,6 +57,10 @@ class CharSepListParamType(click.ParamType):
         self.type_ = type_
         self.separator = separator
         self.dupl_ok = dupl_ok
+        if name is not None:
+            self.name = name
+        else:
+            self.name = f"'{separator}'-separated {type_.__name__} list"
 
     def convert(self, value, param, ctx):
         """Convert string to list of given type based on separator."""
@@ -74,8 +85,10 @@ class CharSepListParamType(click.ParamType):
         return values
 
 
-INT_LIST_COMMA_SEP_UNIQ = CharSepListParamType(int, ',', dupl_ok=False)
-INT_LIST_PLUS_SEP_UNIQ = CharSepListParamType(int, '+', dupl_ok=False)
+INT_LIST_COMMA_SEP_UNIQ = CharSepListParamType(
+    int, ',', dupl_ok=False, name='integers (comma-separated)')
+INT_LIST_PLUS_SEP_UNIQ = CharSepListParamType(
+    int, '+', dupl_ok=False, name='integers (plus-separated)')
 
 
 # yapf: disable
@@ -161,7 +174,7 @@ def common_options_global(f):
     return functools.reduce(lambda x, opt: opt(x), options, f)
 
 
-def common_options_dispersion_field(f):
+def common_options_dispersion_input(f):
     """Common options of dispersion plots (field selection)."""
     # yapf: disable
     options = [
@@ -181,39 +194,57 @@ def common_options_dispersion_field(f):
             type=int, default=[0], multiple=True),
         click.option(
             '--species-id', 'species_id_lst',
-            help="Species id (default: all). Format key: '{species_id}'.",
+            help=(
+                "Species id(s) (default: 0). To sum up multiple species, "
+                "combine their ids with '+'. Format key: '{species_id}'."),
             type=INT_LIST_PLUS_SEP_UNIQ, default=[0], multiple=True),
     ]
     # yapf: enable
     return functools.reduce(lambda x, opt: opt(x), options, f)
 
 
-def common_options_dispersion_various(f):
-    """Common options of dispersion plots (various)."""
+def common_options_dispersion_preproc(f):
+    """Common options of dispersion plots (pre-processing)."""
     # yapf: disable
     options = [
         click.option(
             '--integrate/--no-integrate', 'integrate_lst',
-            help=("Integrate field over time. If set, '-int' is appended to "
-                "variable name (format key: '{variable}')."),
+            help=("Integrate field over time. If set, '-int' is "
+                "appended to variable name (format key: '{variable}')."),
             is_flag=True, default=[False], multiple=True),
     ]
     # yapf: enable
     return functools.reduce(lambda x, opt: opt(x), options, f)
 
 
-@main.command()
+def common_options_dispersion_deposition(f):
+    """Common options of dispersion plots (deposition)."""
+    # yapf: disable
+    options = [
+        click.option(
+            '--deposition-type', 'deposition_lst',
+            help=("Type of deposition. Part of plot variable (format "
+                "key: '{variable}')."),
+            type=click.Choice(['tot', 'wet', 'dry']),
+            default='tot', multiple=True)
+    ]
+    # yapf: enable
+    return functools.reduce(lambda x, opt: opt(x), options, f)
+
+
+@main.command(help="Activity concentration in the air.")
 @common_options_global
-@common_options_dispersion_field
+@common_options_dispersion_input
 # yapf: disable
 @click.option(
     '--level-ind', 'level_lst',
     help=(
-        "Index of vertical level (zero-based, bottom-up). "
-        "Format key: '{level_ind}'."),
+        "Index/indices of vertical level (zero-based, bottom-up). To sum up "
+        "multiple levels, combine their indices with '+'. Format key: "
+        "'{level_ind}'."),
     type=INT_LIST_PLUS_SEP_UNIQ, default=[0], multiple=True)
 # yapf: enable
-@common_options_dispersion_various
+@common_options_dispersion_preproc
 @click.pass_context
 def concentration(ctx, in_file_path, out_file_path_fmt, **vars_specs):
 
@@ -224,23 +255,15 @@ def concentration(ctx, in_file_path, out_file_path_fmt, **vars_specs):
     flex_data_lst = FlexFileRotPole(in_file_path).read(fld_specs_lst)
 
     # Create plots
-    fct = functools.partial(
-        FlexPlotter.concentration, flex_data_lst, out_file_path_fmt)
-    create_plots(fct, ctx)
+    create_plots(
+        ctx, FlexPlotter.concentration, [flex_data_lst, out_file_path_fmt])
 
 
-@main.command()
+@main.command(help="Surface deposition.")
 @common_options_global
-@common_options_dispersion_field
-@common_options_dispersion_various
-# yapf: disable
-@click.option(
-    '--deposition-type', 'deposition_lst',
-    help=("Type of deposition. Part of plot variable (format key: "
-        "'{variable}')."),
-    type=click.Choice(['tot', 'wet', 'dry']),
-    default='both', multiple=True)
-# yapf: enable
+@common_options_dispersion_input
+@common_options_dispersion_preproc
+@common_options_dispersion_deposition
 @click.pass_context
 def deposition(ctx, in_file_path, out_file_path_fmt, **vars_specs):
 
@@ -251,27 +274,65 @@ def deposition(ctx, in_file_path, out_file_path_fmt, **vars_specs):
     flex_data_lst = FlexFileRotPole(in_file_path).read(field_specs_lst)
 
     # Create plots
-    fct = functools.partial(
-        FlexPlotter.deposition, flex_data_lst, out_file_path_fmt)
-    create_plots(fct, ctx)
+    create_plots(
+        ctx, FlexPlotter.deposition, [flex_data_lst, out_file_path_fmt])
 
 
-def create_plots(fct, ctx):
+@main.command(
+    name='affected-area',
+    help="Area affected by surface deposition.",
+)
+@common_options_global
+@common_options_dispersion_input
+@common_options_dispersion_preproc
+@common_options_dispersion_deposition
+# yapf: disable
+@click.option(
+    '--mono/--no-mono',
+    help="Only use one threshold (monochromatic plot).",
+    is_flag=True, default=[False], multiple=True)
+# yapf: enable
+@click.pass_context
+def affected_area(ctx, in_file_path, out_file_path_fmt, mono, **vars_specs):
+
+    # Determine fields specifications (one for each eventual plot)
+    field_specs_lst = FlexFieldSpecsAffectedArea.multiple(vars_specs)
+
+    # Read fields
+    flex_data_lst = FlexFileRotPole(in_file_path).read(field_specs_lst)
+
+    # Create plots
+    fct = FlexPlotter.affected_area_mono if mono else FlexPlotter.affected_area
+    create_plots(ctx, fct, [flex_data_lst, out_file_path_fmt])
+
+
+def create_plots(ctx, fct, args=None, kwargs=None):
     """Create FLEXPART plots.
 
     Args:
+        ctx (Context): Click context object.
+
         fct (callable): Callable that creates plots while yielding
             the output file paths on-the-fly.
 
-        ctx (Context): Click context object.
+        args (list, optional): Positional arguments for ``fct``.
+            Defaults to [].
+
+        kwargs (dict, optional): Keyword arguments for ``fct``.
+            Defaults to {}.
 
     """
     if ctx.obj['noplot']:
         return
 
+    if args is None:
+        args = []
+    if kwargs is None:
+        kwargs = {}
+
     # Note: FlexPlotter.run yields the output file paths on-the-go
     out_file_paths = []
-    for i, out_file_path in enumerate(fct()):
+    for i, out_file_path in enumerate(fct(*args, **kwargs)):
         out_file_paths.append(out_file_path)
 
         if ctx.obj['open_first_cmd'] and i == 0:

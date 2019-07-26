@@ -86,6 +86,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
     """Base class for FLEXPART dispersion plots."""
 
     figsize = (12, 9)
+    extend = 'max'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -114,7 +115,8 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             'ref_dist_y0': 0.96,
         }
 
-        self.define_levels_and_colors(extend='max')
+        self.define_colors()
+        self.define_levels()
 
     def create(self):
         """Create plot."""
@@ -265,7 +267,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
 
         if not 'tc' in skip_pos:
             # Top center: species
-            s = f"{self.attrs.species.format_name()}"
+            s = f"{self.attrs.species.format_name(join='+')}"
             box.text('tc', s, size='xx-large')
 
         if not 'tr' in skip_pos:
@@ -278,7 +280,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             _sim = self.attrs.simulation
             # Bottom left: integration time & level range
             s = (
-                f"{_sim.format_integr_period()} sum "
+                f"{_sim.format_integr_period()} "
                 f"(since {_sim.format_integr_start(relative=True)})")
             lvl_range = self.attrs.variable.format_level_range()
             if lvl_range:
@@ -302,8 +304,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
 
         # Add box title
         s = f"{self.attrs.variable.format_short_name()}"
-        #box.text('tc', s=s, size='large')
-        box.text('tc', s=s, dy=1, size='large')  #SR_DBG
+        box.text('tc', s=s, dy=1, size='large')
 
         # Format level ranges (contour plot legend)
         labels = self._format_level_ranges()
@@ -493,9 +494,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
         cpright_fmtd = u"\u00a9MeteoSwiss"
         box.text('tr', dx=0.7, dy=0.5, s=cpright_fmtd, size='small')
 
-    def define_levels_and_colors(self, extend):
-
-        self.extend = extend
+    def define_colors(self):
 
         # Define colors
         # yapf: disable
@@ -512,23 +511,31 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             (200, 200, 200),  # -> over
         ], float)/255).tolist()
         # yapf: enable
-        if extend in ['none', 'max']:
+        if self.extend in ['none', 'max']:
             self.colors.pop(0)  # Remove `under`
-        if extend in ['none', 'min']:
+        if self.extend in ['none', 'min']:
             self.colors.pop(-1)  # Remove `over`
+
+    def define_levels(self, n=None):
+
+        if n is None:
+            n = len(self.colors)
 
         # Fetch maximum value over all time steps
         log10_max = int(np.floor(np.log10(self.time_stats['max'])))
 
         # Define levels (logarithmic and linear)
         log10_d = 1
-        n = len(self.colors)
-        self.levels_log10 = np.arange(
+        levels_log10 = np.arange(
             log10_max - (n - 1)*log10_d,
             log10_max + 0.5*log10_d,
             log10_d,
         )
-        self.levels = 10**self.levels_log10
+        self.levels = 10**levels_log10
+
+    @property
+    def levels_log10(self):
+        return np.log10(self.levels)
 
 
 class FlexPlotConcentration(FlexPlotBase_Dispersion):
@@ -541,7 +548,7 @@ class FlexPlotConcentration(FlexPlotBase_Dispersion):
 
 
 class FlexPlotDeposition(FlexPlotBase_Dispersion):
-    """ """
+    """FLEXPART plot of surface deposition."""
 
     def __init__(self, *args, **kwargs):
         """Create an instance of ``FlexPlotDeposition``.
@@ -549,3 +556,34 @@ class FlexPlotDeposition(FlexPlotBase_Dispersion):
         """
         super().__init__(*args, **kwargs)
         self.create()
+
+
+class FlexPlotAffectedArea(FlexPlotBase_Dispersion):
+    """FLEXPART plot of area affected by surface deposition."""
+
+    def __init__(self, *args, **kwargs):
+        """Create an instance of ``FlexPlotAffectedArea``.
+
+        """
+        super().__init__(*args, **kwargs)
+        self.create()
+
+
+class FlexPlotAffectedAreaMono(FlexPlotAffectedArea):
+    """FLEXPART plot of area affected by surface deposition (mono)."""
+
+    extend = 'none'
+
+    def __init__(self, *args, **kwargs):
+        """Create an instance of ``FlexPlotAffectedAreaMono``.
+
+        """
+        super().__init__(*args, **kwargs)
+        self.create()
+
+    def define_colors(self):
+        self.colors = (np.array([(200, 200, 200)])/255).tolist()
+
+    def define_levels(self):
+        super().define_levels(n=9)
+        self.levels = np.array([self.levels[0], np.inf])

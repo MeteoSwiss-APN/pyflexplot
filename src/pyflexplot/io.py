@@ -224,7 +224,7 @@ class FlexVarSpecs:
             if len(vals) == 1:
                 attrs[key] = next(iter(vals))
             elif key == 'deposition' and set(vals) == set(['dry', 'wet']):
-                    attrs[key] = 'tot'
+                attrs[key] = 'tot'
             else:
                 attrs[key] = vals
 
@@ -298,8 +298,10 @@ class FlexVarSpecsConcentration(FlexVarSpecs):
 
     def var_name(self):
         """Derive variable name from specifications."""
+
         def fmt(sid):
             return f'spec{sid:03d}'
+
         try:
             iter(self.species_id)
         except TypeError:
@@ -325,6 +327,11 @@ class FlexVarSpecsDeposition(FlexVarSpecs):
         """Derive variable name from specifications."""
         prefix = {'wet': 'WD', 'dry': 'DD'}[self.deposition]
         return f'{prefix}_spec{self.species_id:03d}'
+
+
+class FlexVarSpecsAffectedArea(FlexVarSpecsDeposition):
+
+    pass
 
 
 class FlexFieldSpecs:
@@ -395,8 +402,7 @@ class FlexFieldSpecs:
                     vals = copy(var_specs[key])
                     var_specs[key] = vals.pop(0)
                     var_specs_lst_new = [deepcopy(var_specs) for _ in vals]
-                    for var_specs_new, val in zip(
-                            var_specs_lst_new, vals):
+                    for var_specs_new, val in zip(var_specs_lst_new, vals):
                         var_specs_new[key] = val
                         var_specs_lst.append(var_specs_new)
 
@@ -544,22 +550,27 @@ class FlexFieldSpecsDeposition(FlexFieldSpecs):
                 pass
 
             elif var_specs['deposition'] == 'tot':
-                var_specs_new = deepcopy(var_specs)
-                var_specs['deposition'] = 'wet'
-                var_specs_new['deposition'] = 'dry'
-                var_specs_lst.append(var_specs_new)
                 nested_dict_set(
                     kwargs,
                     ['var_attrs_replace', 'variable', 'long_name'],
                     FlexAttrsCollector.get_long_name(
                         var_specs, type_=self.cls_var_specs),
                 )
+                var_specs_new = deepcopy(var_specs)
+                var_specs['deposition'] = 'wet'
+                var_specs_new['deposition'] = 'dry'
+                var_specs_lst.append(var_specs_new)
 
             else:
                 raise NotImplementedError(
                     f"deposition type '{var_specs['deposition']}'")
 
         super().__init__(var_specs_lst, **kwargs)
+
+
+class FlexFieldSpecsAffectedArea(FlexFieldSpecsDeposition):
+
+    cls_var_specs = FlexVarSpecsAffectedArea
 
 
 class FlexFileRotPole:
@@ -947,6 +958,9 @@ class FlexAttrsCollector:
         elif isinstance(self.var_specs, FlexVarSpecsDeposition):
             long_name = self.get_long_name(self.var_specs)
             short_name = f'Deposition'  #SR_HC
+        else:
+            raise NotImplementedError(
+                f"ar_specs of type {type(var_specs).__name__}")
 
         try:
             _i = self.var_specs.level
@@ -996,8 +1010,15 @@ class FlexAttrsCollector:
             }[dict(var_specs)['deposition']]
             return f'{dep_type} Surface Deposition'
 
-        raise NotImplementedError(
-            f"var_specs of type '{type_.__name__}'")
+        elif type_ is FlexVarSpecsAffectedArea:
+            dep_type = {
+                'wet': 'Wet',
+                'dry': 'Dry',
+                'tot': 'Total',
+            }[dict(var_specs)['deposition']]
+            return f'Affected Area ({dep_type} Deposition)'
+
+        raise NotImplementedError(f"var_specs of type '{type_.__name__}'")
 
     def _collect_species_attrs(self):
         """Collect species attributes."""
