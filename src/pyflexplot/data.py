@@ -151,6 +151,21 @@ class FlexAttr:
             unit=replace.get('unit', unit),
         )
 
+    def format_unit(self, unit=None):
+        """Auto-format the unit by elevating superscripts etc."""
+        if unit is None:
+            unit = self.unit
+        if isiterable(unit, str_ok=False):
+            return [self.format_unit(u) for u in unit]
+        old_new = [
+            ('m-2', 'm$^{-2}$'),
+            ('m-3', 'm$^{-3}$'),
+            ('s-1', 's$^{-1}$'),
+        ]
+        for old, new in old_new:
+            unit = unit.replace(old, new)
+        return unit
+
 
 class FlexAttrs:
     """Base class for attributes."""
@@ -172,19 +187,6 @@ class FlexAttrs:
         if not isinstance(val, FlexAttr):
             val = FlexAttr(name, val, type_, unit=unit)
         self._attrs[name] = val
-
-    def _format_unit(self, unit):
-        """Auto-format a unit by elevating superscripts etc."""
-        if isinstance(unit, FlexAttr):  #SR_ATTR
-            unit = unit.unit  #SR_ATTR
-        old_new = [
-            ('m-2', 'm$^{-2}$'),
-            ('m-3', 'm$^{-3}$'),
-            ('s-1', 's$^{-1}$'),
-        ]
-        for old, new in old_new:
-            unit = unit.replace(old, new)
-        return unit
 
     def __iter__(self):
         for name, attr in sorted(self._attrs.items()):
@@ -267,17 +269,16 @@ class FlexAttrsVariable(FlexAttrs):
         self.set('level_top', level_top, float, unit=level_top_unit)
 
     def format_unit(self):
-        return self._format_unit(self.unit.value)
+        return self.unit.format_unit(self.unit.value)
 
     def format_short_name(self):
-        #-return f'{self.short_name} ({self.format_unit()})'  #SR_ATTR
         return f'{self.short_name.value} ({self.format_unit()})'  #SR_ATTR
 
     def format_level_bot_unit(self):
-        return self._format_unit(self.level_bot)
+        return self.level_bot.format_unit()
 
     def format_level_top_unit(self):
-        return self._format_unit(self.level_top)
+        return self.level_top.format_unit()
 
     def format_level_unit(self):
         unit_bottom = self.format_level_bot_unit()
@@ -290,7 +291,6 @@ class FlexAttrsVariable(FlexAttrs):
 
     def format_level_range(self):
 
-        #-if (self.level_bot, self.level_top) == (-1, -1):  #SR_ATTR
         if (self.level_bot.value, self.level_top.value) == (-1, -1):  #SR_ATTR
             return None
 
@@ -302,15 +302,12 @@ class FlexAttrsVariable(FlexAttrs):
 
         try:
             # Single level range
-            #-return fmt(self.level_bot, self.level_top)  #SR_ATTR
             return fmt(self.level_bot.value, self.level_top.value)  #SR_ATTR
         except TypeError:
             pass
         #-- Multiple level ranges
 
         try:
-            #-bots = sorted(self.level_bot)  #SR_ATTR
-            #-tops = sorted(self.level_top)  #SR_ATTR
             bots = sorted(self.level_bot.value)  #SR_ATTR
             tops = sorted(self.level_top.value)  #SR_ATTR
         except TypeError:
@@ -376,22 +373,18 @@ class FlexAttrsRelease(FlexAttrs):
         self.set('mass', mass, float, unit=mass_unit)
 
     def format_height(self):
-        #-return f'{self.height} {self.height_unit}'  #SR_ATTR
         return f'{self.height.value} {self.height.unit}'  #SR_ATTR
 
     def format_rate_unit(self):
-        #-return self._format_unit(self.rate_unit)  #SR_ATTR
-        return self._format_unit(self.rate)  #SR_ATTR
+        return self.rate.format_unit()  #SR_ATTR
 
     def format_rate(self):
-        #-return f'{self.rate:g} {self.format_rate_unit()}'  #SR_ATTR
         return f'{self.rate.value:g} {self.format_rate_unit()}'  #SR_ATTR
 
     def format_mass_unit(self):
-        return self._format_unit(self.mass)
+        return self.mass.format_unit()
 
     def format_mass(self):
-        #-return f'{self.mass:g} {self.format_mass_unit()}'  #SR_ATTR
         return f'{self.mass.value:g} {self.format_mass_unit()}'  #SR_ATTR
 
 
@@ -439,59 +432,50 @@ class FlexAttrsSpecies(FlexAttrs):
         self.set('washout_exponent', washout_exponent, float)
 
     def format_name(self, join='/'):
-        #-name = self.name  #SR_ATTR
         name = self.name.value  #SR_ATTR
         if isinstance(name, str):
             return name
         return f' {join} '.join(name)
 
     def format_half_life_unit(self):
-        return self._format_unit(self.half_life)
+        return self.half_life.format_unit()
 
     def format_half_life(self, join='/'):
 
-        def fmt(val, unit):
-            return f'{val:g} {self._format_unit(unit)}'
+        def fmt(attr):
+            return f'{attr.value:g} {attr.format_unit()}'
 
-        #-if not isiterable(self.half_life):  #SR_ATTR
         if not isiterable(self.half_life.value):  #SR_ATTR
-            #-return fmt(self.half_life, self.half_life_unit)  #SR_ATTR
-            return fmt(
-                self.half_life.value, self.half_life.unit)  #SR_ATTR
+            return fmt(self.half_life)  #SR_ATTR
         else:
-            #-assert len(self.half_life) == len(self.half_life_unit)  #SR_ATTR
             assert len(self.half_life.value) == len(
                 self.half_life.unit)  #SR_ATTR
             s_lst = []
-            #-for val, unit in zip(self.half_life, self.half_life_unit):  #SR_ATTR
             for val, unit in zip(self.half_life.value,
-                                 self.half_life.unit):  #SR_ATTR
-                s_lst.append(fmt(val, unit))
+                                 self.half_life.format_unit()):  #SR_ATTR
+                s_lst.append(f'{val} {unit}')
             return f' {join} '.join(s_lst)
 
     def format_deposit_vel_unit(self):
-        return self._format_unit(self.deposit_vel)
+        return self.deposit_vel.format_unit()
 
     def format_deposit_vel(self):
-        #-return (f'{self.deposit_vel:g} ' f'{self.format_deposit_vel_unit()}')  #SR_ATTR
         return (
             f'{self.deposit_vel.value:g} '
             f'{self.format_deposit_vel_unit()}')  #SR_ATTR
 
     def format_sediment_vel_unit(self):
-        return self._format_unit(self.sediment_vel)
+        return self.sediment_vel.format_unit()
 
     def format_sediment_vel(self):
-        #-return (f'{self.sediment_vel:g} ' f'{self.format_sediment_vel_unit()}')  #SR_ATTR
         return (
             f'{self.sediment_vel.value:g} '
             f'{self.format_sediment_vel_unit()}')  #SR_ATTR
 
     def format_washout_coeff_unit(self):
-        return self._format_unit(self.washout_coeff)
+        return self.washout_coeff.format_unit()
 
     def format_washout_coeff(self):
-        #-return f'{self.washout_coeff:g} {self.format_washout_coeff_unit()}'  #SR_ATTR
         return f'{self.washout_coeff.value:g} {self.format_washout_coeff_unit()}'  #SR_ATTR
 
 
@@ -525,7 +509,6 @@ class FlexAttrsSimulation(FlexAttrs):
         dt = dt.value  #SR_ATTR
         if not relative:
             return dt.strftime('%Y-%m-%d %H:%M %Z')
-        #-delta = dt - self.start  #SR_ATTR
         delta = dt - self.start.value  #SR_ATTR
         s = f"T$_{0}$"
         if delta.total_seconds() > 0:
@@ -548,7 +531,6 @@ class FlexAttrsSimulation(FlexAttrs):
 
     @property
     def integr_period(self):
-        #-return self.now - self.integr_start  #SR_ATTR
         return self.now.value - self.integr_start.value  #SR_ATTR
 
     def format_integr_period(self):
