@@ -16,6 +16,92 @@ from .utils import Degrees
 from .utils_dev import ipython  #SR_DEV
 
 
+class FlexPlotLabels_Base:
+
+    def __init__(self):
+        if self.__class__.__name__.endswith(f'_Base'):
+            raise Exception(
+                f"{type(self).__name__} must be subclassed, not instatiated")
+
+    def __getattribute__(self, name):
+        """Intersept attribute access to format labels.
+
+        Attributes that do not start with an underscore are passed to
+        the method ``self.format_attr``, which can be overridden by
+        subclasses to format labels in a language-specific way.
+
+        Args:
+            name (str): Attribute name.
+
+        """
+        if name.startswith('_'):
+            return object.__getattribute__(self, name)
+        try:
+            val = object.__getattribute__(self, '__dict__')[name]
+        except KeyError:
+            try:
+                val = object.__getattribute__(type(self), '__dict__')[name]
+            except KeyError:
+                raise AttributeError(name) from None
+        return object.__getattribute__(self, 'format_attr')(name, val)
+
+    def format_attr(self, name, val):
+        """Override to format labels in a language-specific way."""
+        return val
+
+
+class FlexPlotLabelsDispersion_En(FlexPlotLabels_Base):
+    """FLEXPART plot labels in English."""
+
+    lat = 'Latitude'
+    lon = 'Longitude'
+    height = 'Height'
+
+    start = 'Start'
+    end = 'End'
+    rate = 'Rate'
+    total_mass = 'Total mass'
+
+    substance = 'Substance'
+    half_life = 'Half-life'
+    deposit_vel = 'Deposit. vel.'
+    sediment_vel = 'Sediment. vel.'
+    washout_coeff = 'Washout coeff.'
+    washout_exponent = 'Washout exponent'
+
+
+class FlexPlotLabelsDispersion_De(FlexPlotLabels_Base):
+    """Flexpart plot labels in German."""
+
+    def format_attr(self, name, val):
+        """Format an attribute."""
+
+        def umlaut(v):
+            return f'$\\mathrm{{\\ddot{v}}}$'
+
+        return val.format(
+            ae=umlaut('a'),
+            oe=umlaut('o'),
+            ue=umlaut('u'),
+        )
+
+    lat = 'Breite'
+    lon = 'L{ae}nge'
+    height = 'H{oe}he'
+
+    start = 'Start'
+    end = 'Ende'
+    rate = 'Rate'
+    total_mass = 'Totale Masse'
+
+    substance = 'Substanz'
+    half_life = 'Halbwertszeit'
+    deposit_vel = 'Deposit.-Geschw.'
+    sediment_vel = 'Sediment.-Geschw.'
+    washout_coeff = 'Auswaschkoeff.'
+    washout_exponent = 'Auswaschexponent'
+
+
 class FlexPlotBase:
     """Base class for FLEXPART plots."""
 
@@ -289,7 +375,6 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
 
         if not 'br' in skip_pos:
             # Bottom center: release site
-            #s = f"Release site: {self.attrs.release.site_name}"
             s = f"{self.attrs.release.site_name}"
             box.text('bc', s, size='large')
 
@@ -450,23 +535,28 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             f"{lon.degs()}$^\circ\,${lon.mins()}'$\,$E"
             f" ({lon.frac():.2f}$^\circ\,$E)")
 
+        self.labels = FlexPlotLabelsDispersion_En() #SR_TMP
+        #self.labels = FlexPlotLabelsDispersion_De()  #SR_TMP
+
+        lab = self.labels
+        att = self.attrs
         info_blocks = dedent(
             f"""\
-            Latitude:\t{lat_fmtd}
-            Longitude:\t{lon_fmtd}
-            Height:\t{self.attrs.release.format_height()}
+            {lab.lat}:\t{lat_fmtd}
+            {lab.lon}:\t{lon_fmtd}
+            {lab.height}:\t{att.release.format_height()}
 
-            Start:\t{self.attrs.simulation.format_start()}
-            End:\t{self.attrs.simulation.format_end()}
-            Rate:\t{self.attrs.release.format_rate()}
-            Total mass:\t{self.attrs.release.format_mass()}
+            {lab.start}:\t{att.simulation.format_start()}
+            {lab.end}:\t{att.simulation.format_end()}
+            {lab.rate}:\t{att.release.format_rate()}
+            {lab.total_mass}:\t{att.release.format_mass()}
 
-            Substance:\t{self.attrs.species.format_name()}
-            Half-life:\t{self.attrs.species.format_half_life()}
-            Deposit. vel.:\t{self.attrs.species.format_deposit_vel()}
-            Sediment. vel.:\t{self.attrs.species.format_sediment_vel()}
-            Washout coeff.:\t{self.attrs.species.format_washout_coeff()}
-            Washout exponent:\t{self.attrs.species.washout_exponent:g}
+            {lab.substance}:\t{att.species.format_name()}
+            {lab.half_life}:\t{att.species.format_half_life()}
+            {lab.deposit_vel}:\t{att.species.format_deposit_vel()}
+            {lab.sediment_vel}:\t{att.species.format_sediment_vel()}
+            {lab.washout_coeff}:\t{att.species.format_washout_coeff()}
+            {lab.washout_exponent}:\t{att.species.washout_exponent:g}
             """)
 
         # Add lines bottom-up (to take advantage of baseline alignment)
