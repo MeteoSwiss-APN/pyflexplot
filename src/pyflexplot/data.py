@@ -93,6 +93,64 @@ class FlexAttr:
     def __eq__(self, other):
         return self.value == other.value
 
+    def __repr__(self):
+        if isinstance(self.value, str):
+            value = f"'{self.value}'"
+        else:
+            value = str(self.value)
+        if self.unit is None:
+            unit = 'None'
+        else:
+            unit = f"'{self.unit}'"
+        return (
+            f"{type(self).__name__}("
+            f"name='{self.name}', "
+            f"value={value}, "
+            f"type_={self.type_.__name__}, "
+            f"unit={unit}"
+            f")")
+
+    def merge_with(self, others, replace=None):
+        if replace is None:
+            replace = {}
+
+        # Name and type must be the same for all
+        name = replace.get('name', self.name)
+        type_ = replace.get('type_', self.type_)
+
+        # Value and unit might differ
+        values_units = [(self.value, self.unit)]
+        values, units = [self.value], [self.unit]
+
+        # Collect values and units
+        for other in others:
+            if 'name' not in replace and other.name != name:
+                raise ValueError(f"names differ: {other.name} != {name}")
+            if 'name' not in replace and other.type_ != type_:
+                raise ValueError(f"types differ: {other.type_} != {type_}")
+
+            if (other.value, other.unit) not in values_units:
+                values_units.append((other.value, other.unit))
+                values.append(other.value)
+                units.append(other.unit)
+
+        # Reduce values and units
+        if len(units) == 1:
+            # One value, one unit
+            value = values[0]
+            unit = units[0]
+        else:
+            # Multiple values, one or equally many units
+            value = values
+            unit = units[0] if len(set(units)) == 1 else units
+
+        return self.__class__(
+            name=name,
+            type_=type_,
+            value=replace.get('value', value),
+            unit=replace.get('unit', unit),
+        )
+
 
 class FlexAttrs:
     """Base class for attributes."""
@@ -101,7 +159,6 @@ class FlexAttrs:
         self.reset()
 
     def reset(self):
-        #self.reset_names()
         self._attrs = {}
 
     def __getattr__(self, name):
@@ -110,27 +167,10 @@ class FlexAttrs:
         except KeyError:
             raise AttributeError(name) from None
 
-    def set(self, name, val, type_, mult_vals_ok=False):
-        """Set an attribute, optionally checking its type.
-
-        Args:
-            name (str): Name of attribute.
-
-            val (object or list[object]): Value of attribute. Can be a
-                list of multiple values if ``mult_vals_ok=True``.
-
-            type_ (type): Type of attribute.
-
-            mult_vals_ok (bool, optional): Whether lists of multiple
-                values are allowed. Defaults to False.
-
-        """
-
-        #SR_TMP<
+    #SR_TMP<<< TODO eliminate
+    def set(self, name, val, type_, unit=None):
         if not isinstance(val, FlexAttr):
-            val = FlexAttr(name, val, type_)
-        #SR_TMP>
-
+            val = FlexAttr(name, val, type_, unit=unit)
         self._attrs[name] = val
 
     def _format_unit(self, unit):
@@ -150,7 +190,7 @@ class FlexAttrs:
         for name, attr in sorted(self._attrs.items()):
             yield name, attr
 
-    def merge(self, others, replace=None):
+    def merge_with(self, others, replace=None):
         """Create new instance by merging self and others.
 
         Args:
@@ -170,19 +210,12 @@ class FlexAttrs:
         if replace is None:
             replace = {}
         kwargs = {}
-        for key, val0 in iter(self):
-            try:
-                kwargs[key] = replace[key]
-            except KeyError:
-                vals = [val0]
-                for other in others:
-                    val = getattr(other, key)
-                    if val not in vals:
-                        vals.append(val)
-                if len(vals) == 1:
-                    kwargs[key] = next(iter(vals))
-                else:
-                    kwargs[key] = tuple(vals)
+        for key, attr0 in iter(self):
+            attrs1 = [getattr(o, key) for o in others]
+            attr = attr0.merge_with(attrs1, replace=replace.get(key))
+            kwargs[key] = attr
+            if attr.unit is not None:
+                kwargs[f'{key}_unit'] = attr.unit
         return self.__class__(**kwargs)
 
 
@@ -403,9 +436,9 @@ class FlexAttrsSpecies(FlexAttrs):
 
         """
         super().__init__()
-        self.set('name', name, str, mult_vals_ok=True)
-        self.set('half_life', half_life, float, mult_vals_ok=True)
-        self.set('half_life_unit', half_life_unit, str, mult_vals_ok=True)
+        self.set('name', name, str)
+        self.set('half_life', half_life, float, unit=half_life_unit)
+        #-self.set('half_life_unit', half_life_unit, str)
         self.set('deposit_vel', deposit_vel, float)
         self.set('deposit_vel_unit', deposit_vel_unit, str)
         self.set('sediment_vel', sediment_vel, float)
@@ -422,7 +455,7 @@ class FlexAttrsSpecies(FlexAttrs):
         return f' {join} '.join(name)
 
     def format_half_life_unit(self):
-        return self._format_unit(self.half_life_unit)
+        return self._format_unit(self.half_life.unit)
 
     def format_half_life(self, join='/'):
 
@@ -433,15 +466,15 @@ class FlexAttrsSpecies(FlexAttrs):
         if not isiterable(self.half_life.value):  #SR_ATTR
             #-return fmt(self.half_life, self.half_life_unit)  #SR_ATTR
             return fmt(
-                self.half_life.value, self.half_life_unit.value)  #SR_ATTR
+                self.half_life.value, self.half_life.unit)  #SR_ATTR
         else:
             #-assert len(self.half_life) == len(self.half_life_unit)  #SR_ATTR
             assert len(self.half_life.value) == len(
-                self.half_life_unit.value)  #SR_ATTR
+                self.half_life.unit)  #SR_ATTR
             s_lst = []
             #-for val, unit in zip(self.half_life, self.half_life_unit):  #SR_ATTR
             for val, unit in zip(self.half_life.value,
-                                 self.half_life_unit.value):  #SR_ATTR
+                                 self.half_life.unit):  #SR_ATTR
                 s_lst.append(fmt(val, unit))
             return f' {join} '.join(s_lst)
 
@@ -557,10 +590,13 @@ class FlexAttrsCollection:
         self.add('simulation', simulation)
 
     def reset(self):
-        FlexAttrs.reset(self)  #SR_TMP
+        self._attrs = {}
 
     def __getattr__(self, name):
-        return FlexAttrs.__getattr__(self, name)  #SR_TMP
+        try:
+            return self._attrs[name]
+        except KeyError:
+            raise AttributeError(name) from None
 
     def add(self, name, attrs):
 
@@ -576,11 +612,16 @@ class FlexAttrsCollection:
                 cls = cls_by_name[name]
             except KeyError:
                 raise ValueError(f"missing FlexAttrs class for name '{name}'")
+            #SR_TMP<
+            for key, attr in [(k, v) for k, v in attrs.items()]:
+                if isinstance(attr, FlexAttr) and attr.unit is not None:
+                    attrs[f'{key}_unit'] = attr.unit
+            #SR_TMP>
             attrs = cls(**attrs)
 
         self._attrs[name] = attrs
 
-    def merge(self, others, **replace):
+    def merge_with(self, others, **replace):
         """Create a new instance by merging this and others.
 
         Args:
@@ -604,7 +645,7 @@ class FlexAttrsCollection:
             is the case or not, all other attributes must be the same,
             otherwise an error is issued.
 
-            attrs_coll = attrs_colls[0].merge(
+            attrs_coll = attrs_colls[0].merge_with(
                 attrs_colls[1:],
                 variable={
                     'long_name': 'X Sum',
@@ -619,7 +660,7 @@ class FlexAttrsCollection:
         kwargs = {}
         for name in sorted(self._attrs.keys()):
             kwargs[name] = dict(
-                self._attrs[name].merge(
+                self._attrs[name].merge_with(
                     [o._attrs[name] for o in others],
                     replace.get(name),
                 ))

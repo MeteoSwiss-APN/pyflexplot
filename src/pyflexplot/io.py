@@ -211,7 +211,7 @@ class FlexVarSpecs:
 
         return specs_lst
 
-    def merge(self, others):
+    def merge_with(self, others):
         attrs = {}
         for key, val0 in sorted(self):
 
@@ -342,7 +342,7 @@ class FlexFieldSpecs:
     # Dimensions with optionally multiple values
     dims_opt_mult_vals = ['species_id']
 
-    def __init__(self, var_specs_lst, op=np.nansum, var_attrs_replace=None):
+    def __init__(self, var_specs_lst, op=np.nansum, *, var_attrs_replace=None):
         """Create an instance of ``FlexFieldSpecs``.
 
         Args:
@@ -492,7 +492,7 @@ class FlexFieldSpecs:
 
     def var_specs_merged(self):
         """Return merged variable specifications."""
-        return self.var_specs_lst[0].merge(self.var_specs_lst[1:])
+        return self.var_specs_lst[0].merge_with(self.var_specs_lst[1:])
 
     def var_specs_shared(self, key):
         """Return a varible specification, if it is shared by all."""
@@ -552,7 +552,7 @@ class FlexFieldSpecsDeposition(FlexFieldSpecs):
             elif var_specs['deposition'] == 'tot':
                 nested_dict_set(
                     kwargs,
-                    ['var_attrs_replace', 'variable', 'long_name'],
+                    ['var_attrs_replace', 'variable', 'long_name', 'value'],
                     FlexAttrsCollector.get_long_name(
                         var_specs, type_=self.cls_var_specs),
                 )
@@ -667,7 +667,7 @@ class FlexFileRotPole:
                     for var_specs in fld_specs.var_specs_lst:
                         attrs = FlexAttrsCollector(self._fi, var_specs).run()
                         attrs_lst.append(attrs)
-                    attrs = attrs_lst[0].merge(
+                    attrs = attrs_lst[0].merge_with(
                         attrs_lst[1:], **fld_specs.var_attrs_replace)
 
                     #SR_TMP<
