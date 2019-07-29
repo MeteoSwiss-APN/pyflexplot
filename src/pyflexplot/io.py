@@ -597,7 +597,7 @@ class FlexFileRotPole:
         self._fi = None
         self._var_specs_curr = None
 
-    def read(self, fld_specs):
+    def read(self, fld_specs, lang='en'):
         """Read one or more fields from a file from disc.
 
         Args:
@@ -665,7 +665,8 @@ class FlexFileRotPole:
                     log.debug("collect attributes")
                     attrs_lst = []
                     for var_specs in fld_specs.var_specs_lst:
-                        attrs = FlexAttrsCollector(self._fi, var_specs).run()
+                        attrs = FlexAttrsCollector(self._fi, var_specs).run(
+                            lang=lang)
                         attrs_lst.append(attrs)
                     attrs = attrs_lst[0].merge_with(
                         attrs_lst[1:], **fld_specs.var_attrs_replace)
@@ -897,7 +898,7 @@ class FlexAttrsCollector:
         self.field_var_name = self.var_specs.var_name()
         self.ncattrs_field = self.ncattrs_vars[self.field_var_name]
 
-    def run(self):
+    def run(self, lang='en'):
         """Collect attributes."""
 
         attrs_raw = {
@@ -908,7 +909,7 @@ class FlexAttrsCollector:
             'simulation': self._collect_simulation_attrs(),
         }
 
-        return FlexAttrGroupCollection(**attrs_raw)
+        return FlexAttrGroupCollection(lang=lang, **attrs_raw)
 
     def _collect_grid_attrs(self):
         """Collect grid attributes."""

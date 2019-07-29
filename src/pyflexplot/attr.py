@@ -73,7 +73,6 @@ class FlexAttr:
         if replace is None:
             replace = {}
 
-        # Name and type must be the same for all
         name = replace.get('name', self.name)
         type_ = replace.get('type_', self.type_)
 
@@ -106,7 +105,12 @@ class FlexAttr:
         value = replace.get('value', value)
         unit = replace.get('unit', unit)
 
-        kwargs = {'name': name, 'type_': type_, 'value': value, 'unit': unit}
+        kwargs = {
+            'name': name,
+            'type_': type_,
+            'value': value,
+            'unit': unit,
+        }
         if isiterable(value, str_ok=False):
             return self.__class__.multiple(**kwargs)
         return self.__class__(**kwargs)
@@ -273,20 +277,26 @@ class FlexAttrDatetime(FlexAttr):
 class FlexAttrGroup:
     """Base class for attributes."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, lang='en', **kwargs):
         if type(self) is FlexAttrGroup:
             raise ValueError(
                 f"{type(self).__name__} should be subclassed, not instatiated")
-        self.reset()
+        self.reset(lang=lang)
 
-    def reset(self):
+    def reset(self, lang='en'):
         self._attrs = {}
+        self._lang = lang
+        self._set_labels()
 
     def __getattr__(self, name):
         try:
             return self._attrs[name]
         except KeyError:
             raise AttributeError(f"{type(self).__name__}.{name}")
+
+    def _set_labels(self):
+        fct = getattr(FlexPlotLabelsDispersion, self.group_name)
+        self._labels = fct(self._lang)
 
     #SR_TMP<<< TODO eliminate
     def set(self, name, value, type_, **kwargs):
@@ -326,15 +336,25 @@ class FlexAttrGroup:
                 ``others``. Note that no input instance is changed.
 
         """
+
         if replace is None:
             replace = {}
-        kwargs = {}
+
+        # Language
+        langs = sorted(set([self._lang] + [o._lang for o in others]))
+        if len(langs) == 1:
+            lang = next(iter(langs))
+        else:
+            raise Exception(f"multiple languages: {langs}")
+
+        kwargs = {'lang': lang}
         for key, attr0 in iter(self):
             attrs1 = [getattr(o, key) for o in others]
             attr = attr0.merge_with(attrs1, replace=replace.get(key))
             kwargs[key] = attr
             if attr.unit is not None:
                 kwargs[f'{key}_unit'] = attr.unit
+
         try:
             return self.__class__(**kwargs)
         except Exception as e:
@@ -347,7 +367,9 @@ class FlexAttrGroup:
 class FlexAttrGroupGrid(FlexAttrGroup):
     """Grid attributes."""
 
-    def __init__(self, *, north_pole_lat, north_pole_lon):
+    group_name = 'grid'
+
+    def __init__(self, *, north_pole_lat, north_pole_lon, **kwargs):
         """Initialize instance of ``FlexAttrGroupGrid``.
 
         Kwargs:
@@ -356,7 +378,7 @@ class FlexAttrGroupGrid(FlexAttrGroup):
             north_pole_lon (float): Longitude of rotated north pole.
 
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.set('north_pole_lat', north_pole_lat, float)
         self.set('north_pole_lon', north_pole_lon, float)
 
@@ -364,9 +386,13 @@ class FlexAttrGroupGrid(FlexAttrGroup):
 class FlexAttrGroupVariable(FlexAttrGroup):
     """Variable attributes."""
 
+    group_name = 'variable'
+
+    fct_labels_by_lang = {}
+
     def __init__(
             self, *, long_name, short_name, unit, level_bot, level_bot_unit,
-            level_top, level_top_unit):
+            level_top, level_top_unit, **kwargs):
         """Initialize an instance of ``FlexAttrGroupVariable``.
 
         Kwargs:
@@ -384,7 +410,7 @@ class FlexAttrGroupVariable(FlexAttrGroup):
             level_top_unit (str): Bottom level unit.
 
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.set('long_name', long_name, str)
         self.set('short_name', short_name, str)
         self.set('unit', unit, str)
@@ -450,9 +476,11 @@ class FlexAttrGroupVariable(FlexAttrGroup):
 class FlexAttrGroupRelease(FlexAttrGroup):
     """Release attributes."""
 
+    group_name = 'release'
+
     def __init__(
             self, *, lat, lon, site_name, height, height_unit, rate,
-            rate_unit, mass, mass_unit):
+            rate_unit, mass, mass_unit, **kwargs):
         """Initialize an instance of ``FlexAttrGroupRelease``.
 
         Kwargs:
@@ -475,7 +503,7 @@ class FlexAttrGroupRelease(FlexAttrGroup):
             mass_unit (str): Release mass unit.
 
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.set('lat', lat, float)
         self.set('lon', lon, float)
         self.set('site_name', site_name, str)
@@ -487,10 +515,12 @@ class FlexAttrGroupRelease(FlexAttrGroup):
 class FlexAttrGroupSpecies(FlexAttrGroup):
     """Species attributes."""
 
+    group_name = 'species'
+
     def __init__(
             self, *, name, half_life, half_life_unit, deposit_vel,
             deposit_vel_unit, sediment_vel, sediment_vel_unit, washout_coeff,
-            washout_coeff_unit, washout_exponent):
+            washout_coeff_unit, washout_exponent, **kwargs):
         """Create an instance of ``FlexAttrGroupSpecies``.
 
         Kwargs:
@@ -519,7 +549,7 @@ class FlexAttrGroupSpecies(FlexAttrGroup):
                 value(s).
 
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.set('name', name, str)
         self.set('half_life', half_life, float, unit=half_life_unit)
         self.set('deposit_vel', deposit_vel, float, unit=deposit_vel_unit)
@@ -532,7 +562,9 @@ class FlexAttrGroupSpecies(FlexAttrGroup):
 class FlexAttrGroupSimulation(FlexAttrGroup):
     """Simulation attributes."""
 
-    def __init__(self, *, model_name, start, end, now, integr_start):
+    group_name = 'simulation'
+
+    def __init__(self, *, model_name, start, end, now, integr_start, **kwargs):
         """Create an instance of ``FlexAttrGroupSimulation``.
 
         Kwargs:
@@ -547,7 +579,7 @@ class FlexAttrGroupSimulation(FlexAttrGroup):
             integr_start (datetime): Start of the integration period.
 
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.set('model_name', model_name, str)
         self.set('start', start, datetime.datetime, start=start)
         self.set('end', end, datetime.datetime, start=start)
@@ -565,7 +597,8 @@ class FlexAttrGroupSimulation(FlexAttrGroup):
 class FlexAttrGroupCollection:
     """Collection of FLEXPART attributes."""
 
-    def __init__(self, *, grid, variable, release, species, simulation):
+    def __init__(
+            self, *, grid, variable, release, species, simulation, lang='en'):
         """Initialize an instance of ``FlexAttrGroupCollection``.
 
         Kwargs:
@@ -580,6 +613,7 @@ class FlexAttrGroupCollection:
             simulation (dict): Kwargs passed to ``FlexAttrGroupSimulation``.
 
         """
+        self._lang = lang
         self.reset()
         self.add('grid', grid)
         self.add('variable', variable)
@@ -594,7 +628,7 @@ class FlexAttrGroupCollection:
         try:
             return self._attrs[name]
         except KeyError:
-            raise AttributeError(name) from None
+            raise AttributeError(f"{type(self).__name__}.{name}")
 
     def add(self, name, attrs):
 
@@ -616,7 +650,7 @@ class FlexAttrGroupCollection:
                 if isinstance(attr, FlexAttr) and attr.unit is not None:
                     attrs[f'{key}_unit'] = attr.unit
             #SR_TMP>
-            attrs = cls(**attrs)
+            attrs = cls(lang=self._lang, **attrs)
 
         self._attrs[name] = attrs
 
@@ -656,7 +690,7 @@ class FlexAttrGroupCollection:
             )
 
         """
-        kwargs = {}
+        kwargs = {'lang': self._lang}
         for name in sorted(self._attrs.keys()):
             kwargs[name] = dict(
                 self._attrs[name].merge_with(
@@ -671,3 +705,144 @@ class FlexAttrGroupCollection:
 
     def asdict(self):
         return {name: dict(attrs) for name, attrs in self}
+
+
+class FlexPlotLabels:
+
+    def __init__(self):
+        if self.__class__.__name__.endswith(f'_Base'):
+            raise Exception(
+                f"{type(self).__name__} must be subclassed, not instatiated")
+
+    def __getattribute__(self, name):
+        """Intersept attribute access to format labels.
+
+        Attributes that do not start with an underscore are passed to
+        the method ``self.format_attr``, which can be overridden by
+        subclasses to format labels in a language-specific way.
+
+        Args:
+            name (str): Attribute name.
+
+        """
+        if name.startswith('_'):
+            return object.__getattribute__(self, name)
+        try:
+            val = object.__getattribute__(self, '__dict__')[name]
+        except KeyError:
+            try:
+                val = object.__getattribute__(type(self), '__dict__')[name]
+            except KeyError:
+                raise AttributeError(name) from None
+        return object.__getattribute__(self, 'format_attr')(name, val)
+
+    def format_attr(self, name, val):
+        """Override to format labels in a language-specific way."""
+        return val
+
+
+class FlexPlotLabels_En(FlexPlotLabels):
+    pass
+
+
+class FlexPlotLabels_De(FlexPlotLabels):
+
+    def format_attr(self, name, val):
+        """Format an attribute."""
+
+        def umlaut(v):
+            return f'$\\mathrm{{\\ddot{v}}}$'
+
+        return val.format(
+            ae=umlaut('a'),
+            oe=umlaut('o'),
+            ue=umlaut('u'),
+        )
+
+
+class FlexPlotLabelsDispersionSimulation_En(FlexPlotLabels_En):
+    """FLEXPART dispersion plot labels in English (simulation)."""
+
+    start = 'Start'
+    end = 'End'
+
+
+class FlexPlotLabelsDispersionSimulation_De(FlexPlotLabels_De):
+    """Flexpart dispersion plot labels in German (simulation)."""
+
+    start = 'Start'
+    end = 'Ende'
+
+
+class FlexPlotLabelsDispersionRelease_En(FlexPlotLabels_En):
+    """FLEXPART dispersion plot labels in English (release)."""
+
+    lat = 'Latitude'
+    lon = 'Longitude'
+    height = 'Height'
+    rate = 'Rate'
+    mass = 'Total mass'
+
+
+class FlexPlotLabelsDispersionRelease_De(FlexPlotLabels_De):
+    """Flexpart dispersion plot labels in German (release)."""
+
+    lat = 'Breite'
+    lon = 'L{ae}nge'
+    height = 'H{oe}he'
+    rate = 'Rate'
+    mass = 'Totale Masse'
+
+
+class FlexPlotLabelsDispersionSpecies_En(FlexPlotLabels_En):
+    """FLEXPART dispersion plot labels in English (species)."""
+
+    name = 'Substance'
+    half_life = 'Half-life'
+    deposit_vel = 'Deposit. vel.'
+    sediment_vel = 'Sediment. vel.'
+    washout_coeff = 'Washout coeff.'
+    washout_exponent = 'Washout exponent'
+
+
+class FlexPlotLabelsDispersionSpecies_De(FlexPlotLabels_De):
+    """Flexpart dispersion plot labels in German (species)."""
+
+    name = 'Substanz'
+    half_life = 'Halbwertszeit'
+    deposit_vel = 'Deposit.-Geschw.'
+    sediment_vel = 'Sediment.-Geschw.'
+    washout_coeff = 'Auswaschkoeff.'
+    washout_exponent = 'Auswaschexponent'
+
+
+class FlexPlotLabelsDispersion:
+
+    @classmethod
+    def simulation(cls, lang):
+        return {
+            'en': FlexPlotLabelsDispersionSimulation_En,
+            'de': FlexPlotLabelsDispersionSimulation_De,
+        }[lang]()
+
+    @classmethod
+    def release(cls, lang):
+        return {
+            'en': FlexPlotLabelsDispersionRelease_En,
+            'de': FlexPlotLabelsDispersionRelease_De,
+        }[lang]()
+
+    @classmethod
+    def species(cls, lang):
+        return {
+            'en': FlexPlotLabelsDispersionSpecies_En,
+            'de': FlexPlotLabelsDispersionSpecies_De,
+        }[lang]()
+
+    @classmethod
+    def grid(cls, lang):
+        pass
+
+    @classmethod
+    def variable(cls, lang):
+        pass
