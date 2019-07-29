@@ -69,22 +69,21 @@ class FlexPlotLabels_De(FlexPlotLabels):
         )
 
 
-class FlexPlotLabelsDispersion_En(FlexPlotLabels_En):
-    pass
-
-
-class FlexPlotLabelsDispersion_De(FlexPlotLabels_De):
-    pass
-
-
-class FlexPlotLabelsDispersionSimulation_En(FlexPlotLabelsDispersion_En):
+class FlexPlotLabelsDispersionSimulation_En(FlexPlotLabels_En):
     """FLEXPART dispersion plot labels in English (simulation)."""
 
     start = 'Start'
     end = 'End'
 
 
-class FlexPlotLabelsDispersionRelease_En(FlexPlotLabelsDispersion_En):
+class FlexPlotLabelsDispersionSimulation_De(FlexPlotLabels_De):
+    """Flexpart dispersion plot labels in German (simulation)."""
+
+    start = 'Start'
+    end = 'Ende'
+
+
+class FlexPlotLabelsDispersionRelease_En(FlexPlotLabels_En):
     """FLEXPART dispersion plot labels in English (release)."""
 
     lat = 'Latitude'
@@ -94,7 +93,17 @@ class FlexPlotLabelsDispersionRelease_En(FlexPlotLabelsDispersion_En):
     mass = 'Total mass'
 
 
-class FlexPlotLabelsDispersionSpecies_En(FlexPlotLabelsDispersion_En):
+class FlexPlotLabelsDispersionRelease_De(FlexPlotLabels_De):
+    """Flexpart dispersion plot labels in German (release)."""
+
+    lat = 'Breite'
+    lon = 'L{ae}nge'
+    height = 'H{oe}he'
+    rate = 'Rate'
+    mass = 'Totale Masse'
+
+
+class FlexPlotLabelsDispersionSpecies_En(FlexPlotLabels_En):
     """FLEXPART dispersion plot labels in English (species)."""
 
     name = 'Substance'
@@ -105,24 +114,7 @@ class FlexPlotLabelsDispersionSpecies_En(FlexPlotLabelsDispersion_En):
     washout_exponent = 'Washout exponent'
 
 
-class FlexPlotLabelsDispersionSimulation_De(FlexPlotLabelsDispersion_De):
-    """Flexpart dispersion plot labels in German (simulation)."""
-
-    start = 'Start'
-    end = 'Ende'
-
-
-class FlexPlotLabelsDispersionRelease_De(FlexPlotLabelsDispersion_De):
-    """Flexpart dispersion plot labels in German (release)."""
-
-    lat = 'Breite'
-    lon = 'L{ae}nge'
-    height = 'H{oe}he'
-    rate = 'Rate'
-    mass = 'Totale Masse'
-
-
-class FlexPlotLabelsDispersionSpecies_De(FlexPlotLabelsDispersion_De):
+class FlexPlotLabelsDispersionSpecies_De(FlexPlotLabels_De):
     """Flexpart dispersion plot labels in German (species)."""
 
     name = 'Substanz'
