@@ -8,6 +8,7 @@ import numpy as np
 
 from collections import namedtuple
 from copy import copy, deepcopy
+from pprint import pformat
 
 from .utils import isiterable
 
@@ -27,7 +28,7 @@ class FlexFieldRotPole:
 
             fld (ndarray[float, float]): Field array (2D).
 
-            attrs (FlexAttrsCollection): Attributes collection.
+            attrs (FlexAttrGroupCollection): Attributes collection.
 
             field_specs (FlexFieldSpecs): Input field specifications.
 
@@ -50,44 +51,26 @@ class FlexAttr:
         self.type_ = type(value) if type_ is None else type_
         self.unit = unit
 
-        #SR_TMP< TODO move support for multiple values out of FlexAttr
-        assert not isinstance(value, self.__class__)
-        value_in = value
-        values = value
-        if not isiterable(value, str_ok=False):
-            #SR_KEEP< TODO: remove TMP around it, but keep this
-            if isinstance(value, type_):
-                self.value = value
-            else:
-                try:
-                    self.value = type_(value)
-                except (TypeError, ValueError) as e:
-                    raise ValueError(
-                        f"value='{value}' of type '{type(value).__name__}' "
-                        f"incompatible with type_='{type_.__name__}' "
-                        f"({type(e).__name__}: {e})")
-            #SR_KEEP>
-        else:
-            values_in = copy(value)
-            self.value = []
-            for value in values_in:
-                #SR_TMP<
-                if isinstance(value, self.__class__):
-                    value = value.value
-                #SR_TMP>
-                if isinstance(value, type_):
-                    self.value.append(value)
-                else:
-                    try:
-                        value = type_(value)
-                    except (TypeError, ValueError) as e:
-                        raise ValueError(
-                            f"value='{value}' of type '{type(value).__name__}' "
-                            f"incompatible with type_='{type_.__name__}' "
-                            f"({type(e).__name__}: {e})")
-                    else:
-                        self.value.append(value)
+        #SR_TMP<
+        assert not isinstance(value, self.__class__), f"value type {type(value).__name__}"
+        assert not isiterable(value, str_ok=False), f"iterable value: {value}"
         #SR_TMP>
+
+        # Ensure consistency of value and type_
+        if isinstance(value, type_):
+            self.value = value
+        else:
+            try:
+                self.value = type_(value)
+            except (TypeError, ValueError) as e:
+                raise ValueError(
+                    f"value='{value}' of type '{type(value).__name__}' "
+                    f"incompatible with type_='{type_.__name__}' "
+                    f"({type(e).__name__}: {e})")
+
+    @classmethod
+    def multiple(cls, *args, **kwargs):
+        return FlexAttrMult(*args, cls_attr=cls, **kwargs)
 
     #SR_TMP<<<
     def __eq__(self, other):
@@ -144,19 +127,18 @@ class FlexAttr:
             value = values
             unit = units[0] if len(set(units)) == 1 else units
 
-        return self.__class__(
-            name=name,
-            type_=type_,
-            value=replace.get('value', value),
-            unit=replace.get('unit', unit),
-        )
+        value = replace.get('value', value)
+        unit = replace.get('unit', unit)
+
+        kwargs = {'name': name, 'type_': type_, 'value': value, 'unit': unit}
+        if isiterable(value, str_ok=False):
+            return self.__class__.multiple(**kwargs)
+        return self.__class__(**kwargs)
 
     def format_unit(self, unit=None):
         """Auto-format the unit by elevating superscripts etc."""
         if unit is None:
             unit = self.unit
-        if isiterable(unit, str_ok=False):
-            return [self.format_unit(u) for u in unit]
         old_new = [
             ('m-2', 'm$^{-2}$'),
             ('m-3', 'm$^{-3}$'),
@@ -167,10 +149,74 @@ class FlexAttr:
         return unit
 
 
-class FlexAttrs:
+class FlexAttrMult(FlexAttr):
+
+    def __init__(self, name, value, type_=None, unit=None, cls_attr=FlexAttr):
+
+        self.name = name
+
+        if not isiterable(value, str_ok=False):
+            raise ValueError(f"value not iterable: {value}")
+
+        if not isiterable(unit):
+            unit = [unit for _ in value]
+
+        if len(unit) != len(value):
+            raise ValueError(
+                f"numbers of values and units differ: "
+                f"{len(value)} != {len(unit)}")
+
+        if type_ is None:
+            types = sorted(set([type(v) for v in value]))
+            if len(types) > 1:
+                raise ValueError(
+                    f"'type_' omitted when types of values differ: {types}")
+            type_ = next(iter(types))
+
+        self.type_ = type_
+
+        values, units = value, unit
+        del value, unit
+
+        # Initialize individual attributes
+        self._attr_lst = []
+        for value, unit in zip(values, units):
+            attr = cls_attr(name, value, type_=type_, unit=unit)
+            self._attr_lst.append(attr)
+
+    def __repr__(self):
+        s = f"{type(self).__name__}("
+        s += f"name='{self.name}', "
+        s += f"value={self.value}, "
+        s += f"type_={self.type_.__name__}, "
+        if isinstance(self.unit, str):
+            s += f"unit='{self.unit}')"
+        else:
+            s += f"unit={self.unit})"
+        return s
+
+    @property
+    def value(self):
+        return [a.value for a in self._attr_lst]
+
+    @property
+    def unit(self):
+        units = [a.unit for a in self._attr_lst]
+        if len(set(units)) == 1:
+            return units[0]
+        return units
+
+    def format_unit(self, unit=None):
+        return [a.format_unit(unit=unit) for a in self._attr_lst]
+
+
+class FlexAttrGroup:
     """Base class for attributes."""
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        if type(self) is FlexAttrGroup:
+            raise ValueError(
+                f"{type(self).__name__} should be subclassed, not instatiated")
         self.reset()
 
     def reset(self):
@@ -196,7 +242,7 @@ class FlexAttrs:
         """Create new instance by merging self and others.
 
         Args:
-            others (list[FlexAttrs]): Other instances of the same
+            others (list[FlexAttrGroup]): Other instances of the same
                 attributes class, to be merged with this one.
 
             replace (dict, optional): Attributes to be replaced in the
@@ -205,7 +251,7 @@ class FlexAttrs:
                 Defaults to '{}'.
 
         Returns:
-            FlexAttrs: Merged instance derived from ``self`` and
+            FlexAttrGroup: Merged instance derived from ``self`` and
                 ``others``. Note that no input instance is changed.
 
         """
@@ -218,14 +264,20 @@ class FlexAttrs:
             kwargs[key] = attr
             if attr.unit is not None:
                 kwargs[f'{key}_unit'] = attr.unit
-        return self.__class__(**kwargs)
+        try:
+            return self.__class__(**kwargs)
+        except Exception as e:
+            raise Exception(
+                f"error creating instance of {self.__class__.__name__} "
+                f"({type(e).__name__}: {e})\n\n{len(kwargs)} kwargs:"
+                f"\n{pformat(kwargs)}")
 
 
-class FlexAttrsGrid(FlexAttrs):
+class FlexAttrGroupGrid(FlexAttrGroup):
     """Grid attributes."""
 
     def __init__(self, *, north_pole_lat, north_pole_lon):
-        """Initialize instance of ``FlexAttrsGrid``.
+        """Initialize instance of ``FlexAttrGroupGrid``.
 
         Kwargs:
             north_pole_lat (float): Latitude of rotated north pole.
@@ -238,13 +290,13 @@ class FlexAttrsGrid(FlexAttrs):
         self.set('north_pole_lon', north_pole_lon, float)
 
 
-class FlexAttrsVariable(FlexAttrs):
+class FlexAttrGroupVariable(FlexAttrGroup):
     """Variable attributes."""
 
     def __init__(
             self, *, long_name, short_name, unit, level_bot, level_bot_unit,
             level_top, level_top_unit):
-        """Initialize an instance of ``FlexAttrsVariable``.
+        """Initialize an instance of ``FlexAttrGroupVariable``.
 
         Kwargs:
             name (str): Name of variable.
@@ -336,13 +388,13 @@ class FlexAttrsVariable(FlexAttrs):
             raise NotImplementedError(f"{n} sets of levels")
 
 
-class FlexAttrsRelease(FlexAttrs):
+class FlexAttrGroupRelease(FlexAttrGroup):
     """Release attributes."""
 
     def __init__(
             self, *, site_lat, site_lon, site_name, height, height_unit, rate,
             rate_unit, mass, mass_unit):
-        """Initialize an instance of ``FlexAttrsRelease``.
+        """Initialize an instance of ``FlexAttrGroupRelease``.
 
         Kwargs:
             site_lat (float): Latitude of release site.
@@ -388,14 +440,14 @@ class FlexAttrsRelease(FlexAttrs):
         return f'{self.mass.value:g} {self.format_mass_unit()}'  #SR_ATTR
 
 
-class FlexAttrsSpecies(FlexAttrs):
+class FlexAttrGroupSpecies(FlexAttrGroup):
     """Species attributes."""
 
     def __init__(
             self, *, name, half_life, half_life_unit, deposit_vel,
             deposit_vel_unit, sediment_vel, sediment_vel_unit, washout_coeff,
             washout_coeff_unit, washout_exponent):
-        """Create an instance of ``FlexAttrsSpecies``.
+        """Create an instance of ``FlexAttrGroupSpecies``.
 
         Kwargs:
             name (str): Species name.
@@ -428,7 +480,8 @@ class FlexAttrsSpecies(FlexAttrs):
         self.set('half_life', half_life, float, unit=half_life_unit)
         self.set('deposit_vel', deposit_vel, float, unit=deposit_vel_unit)
         self.set('sediment_vel', sediment_vel, float, unit=sediment_vel_unit)
-        self.set('washout_coeff', washout_coeff, float, unit=washout_coeff_unit)
+        self.set(
+            'washout_coeff', washout_coeff, float, unit=washout_coeff_unit)
         self.set('washout_exponent', washout_exponent, float)
 
     def format_name(self, join='/'):
@@ -451,8 +504,8 @@ class FlexAttrsSpecies(FlexAttrs):
             assert len(self.half_life.value) == len(
                 self.half_life.unit)  #SR_ATTR
             s_lst = []
-            for val, unit in zip(self.half_life.value,
-                                 self.half_life.format_unit()):  #SR_ATTR
+            for val, unit in zip(
+                    self.half_life.value, self.half_life.format_unit()):  #SR_ATTR
                 s_lst.append(f'{val} {unit}')
             return f' {join} '.join(s_lst)
 
@@ -479,11 +532,11 @@ class FlexAttrsSpecies(FlexAttrs):
         return f'{self.washout_coeff.value:g} {self.format_washout_coeff_unit()}'  #SR_ATTR
 
 
-class FlexAttrsSimulation(FlexAttrs):
+class FlexAttrGroupSimulation(FlexAttrGroup):
     """Simulation attributes."""
 
     def __init__(self, *, model_name, start, end, now, integr_start):
-        """Create an instance of ``FlexAttrsSimulation``.
+        """Create an instance of ``FlexAttrGroupSimulation``.
 
         Kwargs:
             model_name (str): Name of the model.
@@ -537,22 +590,22 @@ class FlexAttrsSimulation(FlexAttrs):
         return f'{self.integr_period.total_seconds()/3600:g}$\\,$h'
 
 
-class FlexAttrsCollection:
+class FlexAttrGroupCollection:
     """Collection of FLEXPART attributes."""
 
     def __init__(self, *, grid, variable, release, species, simulation):
-        """Initialize an instance of ``FlexAttrsCollection``.
+        """Initialize an instance of ``FlexAttrGroupCollection``.
 
         Kwargs:
-            grid (dict): Kwargs passed to ``FlexAttrsGrid``.
+            grid (dict): Kwargs passed to ``FlexAttrGroupGrid``.
 
-            variable (dict): Kwargs passed to ``FlexAttrsVariable``.
+            variable (dict): Kwargs passed to ``FlexAttrGroupVariable``.
 
-            release (dict): Kwargs passed to ``FlexAttrsRelease``.
+            release (dict): Kwargs passed to ``FlexAttrGroupRelease``.
 
-            species (dict): Kwargs passed to ``FlexAttrsSpecies``.
+            species (dict): Kwargs passed to ``FlexAttrGroupSpecies``.
 
-            simulation (dict): Kwargs passed to ``FlexAttrsSimulation``.
+            simulation (dict): Kwargs passed to ``FlexAttrGroupSimulation``.
 
         """
         self.reset()
@@ -573,18 +626,19 @@ class FlexAttrsCollection:
 
     def add(self, name, attrs):
 
-        if not isinstance(attrs, FlexAttrs):
+        if not isinstance(attrs, FlexAttrGroup):
             cls_by_name = {
-                'grid': FlexAttrsGrid,
-                'variable': FlexAttrsVariable,
-                'release': FlexAttrsRelease,
-                'species': FlexAttrsSpecies,
-                'simulation': FlexAttrsSimulation,
+                'grid': FlexAttrGroupGrid,
+                'variable': FlexAttrGroupVariable,
+                'release': FlexAttrGroupRelease,
+                'species': FlexAttrGroupSpecies,
+                'simulation': FlexAttrGroupSimulation,
             }
             try:
                 cls = cls_by_name[name]
             except KeyError:
-                raise ValueError(f"missing FlexAttrs class for name '{name}'")
+                raise ValueError(
+                    f"missing FlexAttrGroup class for name '{name}'")
             #SR_TMP<
             for key, attr in [(k, v) for k, v in attrs.items()]:
                 if isinstance(attr, FlexAttr) and attr.unit is not None:
@@ -598,16 +652,16 @@ class FlexAttrsCollection:
         """Create a new instance by merging this and others.
 
         Args:
-            others (list[FlexAttrsCollection]): Other instances to be
+            others (list[FlexAttrGroupCollection]): Other instances to be
                 merged with this.
 
             **replace (dicts): Collections of attributes to be replaced
-                in the merged ``FlexAttrs*`` instances of the shared
+                in the merged ``FlexAttrGroup*`` instances of the shared
                 collection instance. Must contain all attributes that
                 differ between any of the collections.
 
         Returns:
-            FlexAttrsCollection: New attributes collection instance
+            FlexAttrGroupCollection: New attributes collection instance
                 derived from ``self`` and ``others``. Note that no
                 input collection is changed.
 

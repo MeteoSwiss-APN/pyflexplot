@@ -16,7 +16,7 @@ from copy import copy, deepcopy
 from pprint import pformat
 from pprint import pprint  #SR_DEV
 
-from .data import FlexAttrsCollection
+from .data import FlexAttrGroupCollection
 from .data import FlexFieldRotPole
 from .utils import check_array_indices
 from .utils import pformat_dictlike
@@ -908,7 +908,7 @@ class FlexAttrsCollector:
             'simulation': self._collect_simulation_attrs(),
         }
 
-        return FlexAttrsCollection(**attrs_raw)
+        return FlexAttrGroupCollection(**attrs_raw)
 
     def _collect_grid_attrs(self):
         """Collect grid attributes."""

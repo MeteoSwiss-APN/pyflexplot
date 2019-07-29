@@ -115,7 +115,7 @@ class FlexPlotBase:
 
             fld (ndarray[float, float]): Concentration field (2d).
 
-            attrs (dict): Instance of ``FlexAttrsCollection``.
+            attrs (dict): Instance of ``FlexAttrGroupCollection``.
 
             time_stats (dict): Some statistics across all time steps.
 
