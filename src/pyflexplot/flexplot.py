@@ -358,7 +358,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
 
         if not 'tc' in skip_pos:
             # Top center: species
-            s = f"{self.attrs.species.format_name(join='+')}"  #SR_ATTR
+            s = f"{self.attrs.species.name.format(join=' + ')}"  #SR_ATTR
             box.text('tc', s, size='xx-large')
 
         if not 'tr' in skip_pos:
@@ -394,7 +394,8 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
         box = self.axs_box[1]
 
         # Add box title
-        s = f"{self.attrs.variable.format_short_name()}"  #SR_ATTR
+        s = f"{self.attrs.variable.short_name.format()}"  #SR_ATTR
+        s += f" ({self.attrs.variable.unit.format()})"  #SR_ATTR
         box.text('tc', s=s, dy=1, size='large')
 
         # Format level ranges (contour plot legend)
@@ -444,7 +445,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
         else:
             fld_max_fmtd += (
                 f'{np.nanmax(self.fld):.2E}'
-                f' {self.attrs.variable.format_unit()}')  #SR_ATTR
+                f' {self.attrs.variable.unit.value}')  #SR_ATTR
 
         # Add maximum value marker
         dy_max = dy0_labels - dy_spacing_markers - dy_line
@@ -554,19 +555,19 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             f"""\
             {lab.lat}:\t{lat_fmtd}
             {lab.lon}:\t{lon_fmtd}
-            {lab.height}:\t{att.release.format_height()}
+            {lab.height}:\t{att.release.height.format()}
 
             {lab.start}:\t{att.simulation.start.format()}
             {lab.end}:\t{att.simulation.end.format()}
-            {lab.rate}:\t{att.release.format_rate()}
-            {lab.total_mass}:\t{att.release.format_mass()}
+            {lab.rate}:\t{att.release.rate.format()}
+            {lab.total_mass}:\t{att.release.mass.format()}
 
-            {lab.substance}:\t{att.species.format_name()}
-            {lab.half_life}:\t{att.species.format_half_life()}
-            {lab.deposit_vel}:\t{att.species.format_deposit_vel()}
-            {lab.sediment_vel}:\t{att.species.format_sediment_vel()}
-            {lab.washout_coeff}:\t{att.species.format_washout_coeff()}
-            {lab.washout_exponent}:\t{att.species.washout_exponent.value:g}
+            {lab.substance}:\t{att.species.name.format()}
+            {lab.half_life}:\t{att.species.half_life.format()}
+            {lab.deposit_vel}:\t{att.species.deposit_vel.format()}
+            {lab.sediment_vel}:\t{att.species.sediment_vel.format()}
+            {lab.washout_coeff}:\t{att.species.washout_coeff.format()}
+            {lab.washout_exponent}:\t{att.species.washout_exponent.format()}
             """)
         #SR_ATTR>
 

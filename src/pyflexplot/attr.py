@@ -105,6 +105,17 @@ class FlexAttr:
             return self.__class__.multiple(**kwargs)
         return self.__class__(**kwargs)
 
+    def format(self, fmt=None, *, skip_unit=False, join=None):
+        if fmt is None:
+            if issubclass(self.type_, (float, int)):
+                fmt = 'g'
+            else:
+                fmt = ''
+        s = f'{{:{fmt}}}'.format(self.value)
+        if self.unit and not skip_unit:
+            s += f' {self.unit}'
+        return s
+
     def format_unit(self, unit=None):
         """Auto-format the unit by elevating superscripts etc."""
         if unit is None:
@@ -175,6 +186,9 @@ class FlexAttrMult(FlexAttr):
         if len(set(units)) == 1:
             return units[0]
         return units
+
+    def format(self, fmt=None, *, join=' / ', **kwargs):
+        return join.join([a.format(fmt, **kwargs) for a in self._attr_lst])
 
     def format_unit(self, unit=None):
         return [a.format_unit(unit=unit) for a in self._attr_lst]
@@ -356,21 +370,9 @@ class FlexAttrGroupVariable(FlexAttrGroup):
         self.set('level_bot', level_bot, float, unit=level_bot_unit)
         self.set('level_top', level_top, float, unit=level_top_unit)
 
-    def format_unit(self):
-        return self.unit.format_unit(self.unit.value)
-
-    def format_short_name(self):
-        return f'{self.short_name.value} ({self.format_unit()})'  #SR_ATTR
-
-    def format_level_bot_unit(self):
-        return self.level_bot.format_unit()
-
-    def format_level_top_unit(self):
-        return self.level_top.format_unit()
-
     def format_level_unit(self):
-        unit_bottom = self.format_level_bot_unit()
-        unit_top = self.format_level_top_unit()
+        unit_bottom = self.level_bot.format_unit()
+        unit_top = self.level_top.format_unit()
         if unit_bottom != unit_top:
             raise Exception(
                 f"bottom and top level units differ: "
@@ -460,21 +462,6 @@ class FlexAttrGroupRelease(FlexAttrGroup):
         self.set('rate', rate, float, unit=rate_unit)
         self.set('mass', mass, float, unit=mass_unit)
 
-    def format_height(self):
-        return f'{self.height.value} {self.height.unit}'  #SR_ATTR
-
-    def format_rate_unit(self):
-        return self.rate.format_unit()  #SR_ATTR
-
-    def format_rate(self):
-        return f'{self.rate.value:g} {self.format_rate_unit()}'  #SR_ATTR
-
-    def format_mass_unit(self):
-        return self.mass.format_unit()
-
-    def format_mass(self):
-        return f'{self.mass.value:g} {self.format_mass_unit()}'  #SR_ATTR
-
 
 class FlexAttrGroupSpecies(FlexAttrGroup):
     """Species attributes."""
@@ -519,53 +506,6 @@ class FlexAttrGroupSpecies(FlexAttrGroup):
         self.set(
             'washout_coeff', washout_coeff, float, unit=washout_coeff_unit)
         self.set('washout_exponent', washout_exponent, float)
-
-    def format_name(self, join='/'):
-        name = self.name.value  #SR_ATTR
-        if isinstance(name, str):
-            return name
-        return f' {join} '.join(name)
-
-    def format_half_life_unit(self):
-        return self.half_life.format_unit()
-
-    def format_half_life(self, join='/'):
-
-        def fmt(attr):
-            return f'{attr.value:g} {attr.format_unit()}'
-
-        if not isiterable(self.half_life.value):  #SR_ATTR
-            return fmt(self.half_life)  #SR_ATTR
-        else:
-            assert len(self.half_life.value) == len(
-                self.half_life.unit)  #SR_ATTR
-            s_lst = []
-            for val, unit in zip(self.half_life.value,
-                                 self.half_life.format_unit()):  #SR_ATTR
-                s_lst.append(f'{val} {unit}')
-            return f' {join} '.join(s_lst)
-
-    def format_deposit_vel_unit(self):
-        return self.deposit_vel.format_unit()
-
-    def format_deposit_vel(self):
-        return (
-            f'{self.deposit_vel.value:g} '
-            f'{self.format_deposit_vel_unit()}')  #SR_ATTR
-
-    def format_sediment_vel_unit(self):
-        return self.sediment_vel.format_unit()
-
-    def format_sediment_vel(self):
-        return (
-            f'{self.sediment_vel.value:g} '
-            f'{self.format_sediment_vel_unit()}')  #SR_ATTR
-
-    def format_washout_coeff_unit(self):
-        return self.washout_coeff.format_unit()
-
-    def format_washout_coeff(self):
-        return f'{self.washout_coeff.value:g} {self.format_washout_coeff_unit()}'  #SR_ATTR
 
 
 class FlexAttrGroupSimulation(FlexAttrGroup):
