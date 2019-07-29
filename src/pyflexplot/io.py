@@ -928,8 +928,8 @@ class FlexAttrsCollector:
         _ind = self.var_specs.numpoint
         release_point = ReleasePoint.from_file(self.fi, _ind)
 
-        site_lat = np.mean([release_point.lllat, release_point.urlat])
-        site_lon = np.mean([release_point.lllon, release_point.urlon])
+        lat = np.mean([release_point.lllat, release_point.urlat])
+        lon = np.mean([release_point.lllon, release_point.urlon])
         site_name = release_point.name
 
         height = np.mean([release_point.zbot, release_point.ztop])
@@ -946,8 +946,8 @@ class FlexAttrsCollector:
         rate_unit = f'{mass_unit} {duration_unit}-1'
 
         return {
-            'site_lat': site_lat,
-            'site_lon': site_lon,
+            'lat': lat,
+            'lon': lon,
             'site_name': site_name,
             'height': height,
             'height_unit': height_unit,

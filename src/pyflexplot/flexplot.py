@@ -16,7 +16,7 @@ from .utils import Degrees
 from .utils_dev import ipython  #SR_DEV
 
 
-class FlexPlotLabels_Base:
+class FlexPlotLabels:
 
     def __init__(self):
         if self.__class__.__name__.endswith(f'_Base'):
@@ -50,28 +50,11 @@ class FlexPlotLabels_Base:
         return val
 
 
-class FlexPlotLabelsDispersion_En(FlexPlotLabels_Base):
-    """FLEXPART plot labels in English."""
-
-    lat = 'Latitude'
-    lon = 'Longitude'
-    height = 'Height'
-
-    start = 'Start'
-    end = 'End'
-    rate = 'Rate'
-    total_mass = 'Total mass'
-
-    substance = 'Substance'
-    half_life = 'Half-life'
-    deposit_vel = 'Deposit. vel.'
-    sediment_vel = 'Sediment. vel.'
-    washout_coeff = 'Washout coeff.'
-    washout_exponent = 'Washout exponent'
+class FlexPlotLabels_En(FlexPlotLabels):
+    pass
 
 
-class FlexPlotLabelsDispersion_De(FlexPlotLabels_Base):
-    """Flexpart plot labels in German."""
+class FlexPlotLabels_De(FlexPlotLabels):
 
     def format_attr(self, name, val):
         """Format an attribute."""
@@ -85,21 +68,93 @@ class FlexPlotLabelsDispersion_De(FlexPlotLabels_Base):
             ue=umlaut('u'),
         )
 
-    lat = 'Breite'
-    lon = 'L{ae}nge'
-    height = 'H{oe}he'
+
+class FlexPlotLabelsDispersion_En(FlexPlotLabels_En):
+    pass
+
+
+class FlexPlotLabelsDispersion_De(FlexPlotLabels_De):
+    pass
+
+
+class FlexPlotLabelsDispersionSimulation_En(FlexPlotLabelsDispersion_En):
+    """FLEXPART dispersion plot labels in English (simulation)."""
+
+    start = 'Start'
+    end = 'End'
+
+
+class FlexPlotLabelsDispersionRelease_En(FlexPlotLabelsDispersion_En):
+    """FLEXPART dispersion plot labels in English (release)."""
+
+    lat = 'Latitude'
+    lon = 'Longitude'
+    height = 'Height'
+    rate = 'Rate'
+    mass = 'Total mass'
+
+
+class FlexPlotLabelsDispersionSpecies_En(FlexPlotLabelsDispersion_En):
+    """FLEXPART dispersion plot labels in English (species)."""
+
+    name = 'Substance'
+    half_life = 'Half-life'
+    deposit_vel = 'Deposit. vel.'
+    sediment_vel = 'Sediment. vel.'
+    washout_coeff = 'Washout coeff.'
+    washout_exponent = 'Washout exponent'
+
+
+class FlexPlotLabelsDispersionSimulation_De(FlexPlotLabelsDispersion_De):
+    """Flexpart dispersion plot labels in German (simulation)."""
 
     start = 'Start'
     end = 'Ende'
-    rate = 'Rate'
-    total_mass = 'Totale Masse'
 
-    substance = 'Substanz'
+
+class FlexPlotLabelsDispersionRelease_De(FlexPlotLabelsDispersion_De):
+    """Flexpart dispersion plot labels in German (release)."""
+
+    lat = 'Breite'
+    lon = 'L{ae}nge'
+    height = 'H{oe}he'
+    rate = 'Rate'
+    mass = 'Totale Masse'
+
+
+class FlexPlotLabelsDispersionSpecies_De(FlexPlotLabelsDispersion_De):
+    """Flexpart dispersion plot labels in German (species)."""
+
+    name = 'Substanz'
     half_life = 'Halbwertszeit'
     deposit_vel = 'Deposit.-Geschw.'
     sediment_vel = 'Sediment.-Geschw.'
     washout_coeff = 'Auswaschkoeff.'
     washout_exponent = 'Auswaschexponent'
+
+
+class FlexPlotLabelsDispersion:
+
+    cls_dct = {
+        ('simulation', 'en'): FlexPlotLabelsDispersionSimulation_En,
+        ('simulation', 'de'): FlexPlotLabelsDispersionSimulation_De,
+        ('release', 'en'): FlexPlotLabelsDispersionRelease_En,
+        ('release', 'de'): FlexPlotLabelsDispersionRelease_De,
+        ('species', 'en'): FlexPlotLabelsDispersionSpecies_En,
+        ('species', 'de'): FlexPlotLabelsDispersionSpecies_De,
+    }
+
+    @classmethod
+    def simulation(cls, lang):
+        return cls.cls_dct[('simulation', lang)]()
+
+    @classmethod
+    def release(cls, lang):
+        return cls.cls_dct[('release', lang)]()
+
+    @classmethod
+    def species(cls, lang):
+        return cls.cls_dct[('species', lang)]()
 
 
 class FlexPlotBase:
@@ -239,10 +294,10 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
 
         # Add marker at release site
         self.ax_map.marker(
-            #-self.attrs.release.site_lon,  #SR_ATTR
-            #-self.attrs.release.site_lat,  #SR_ATTR
-            self.attrs.release.site_lon.value,  #SR_ATTR
-            self.attrs.release.site_lat.value,  #SR_ATTR
+            #-self.attrs.release.lon,  #SR_ATTR
+            #-self.attrs.release.lat,  #SR_ATTR
+            self.attrs.release.lon.value,  #SR_ATTR
+            self.attrs.release.lat.value,  #SR_ATTR
             **self._site_marker_kwargs,
         )
 
@@ -534,40 +589,44 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
         box.text('tc', 'Release', dy=-1.5, size='large')
 
         # Release site coordinates
-        #-lat = Degrees(self.attrs.release.site_lat)  #SR_ATTR
-        lat = Degrees(self.attrs.release.site_lat.value)  #SR_ATTR
+        #-lat = Degrees(self.attrs.release.lat)  #SR_ATTR
+        lat = Degrees(self.attrs.release.lat.value)  #SR_ATTR
         lat_fmtd = (
             f"{lat.degs()}$^\circ\,${lat.mins()}'$\,$N"
             f" ({lat.frac():.2f}$^\circ\,$N)")
-        #-lon = Degrees(self.attrs.release.site_lon)  #SR_ATTR
-        lon = Degrees(self.attrs.release.site_lon.value)  #SR_ATTR
+        #-lon = Degrees(self.attrs.release.lon)  #SR_ATTR
+        lon = Degrees(self.attrs.release.lon.value)  #SR_ATTR
         lon_fmtd = (
             f"{lon.degs()}$^\circ\,${lon.mins()}'$\,$E"
             f" ({lon.frac():.2f}$^\circ\,$E)")
 
-        self.labels = FlexPlotLabelsDispersion_En()  #SR_TMP
-        #self.labels = FlexPlotLabelsDispersion_De()  #SR_TMP
+        #SR_TMP<
+        #lang = 'en'
+        lang = 'de'
+        self.attrs.simulation._labels = FlexPlotLabelsDispersion.simulation(lang)
+        self.attrs.release._labels = FlexPlotLabelsDispersion.release(lang)
+        self.attrs.species._labels = FlexPlotLabelsDispersion.species(lang)
+        #SR_TMP>
 
-        lab = self.labels
-        att = self.attrs
+        a = self.attrs
         #SR_ATTR<
         info_blocks = dedent(
             f"""\
-            {lab.lat}:\t{lat_fmtd}
-            {lab.lon}:\t{lon_fmtd}
-            {lab.height}:\t{att.release.height.format()}
+            {a.release.lat.label}:\t{lat_fmtd}
+            {a.release.lon.label}:\t{lon_fmtd}
+            {a.release.height.label}:\t{a.release.height.format()}
 
-            {lab.start}:\t{att.simulation.start.format()}
-            {lab.end}:\t{att.simulation.end.format()}
-            {lab.rate}:\t{att.release.rate.format()}
-            {lab.total_mass}:\t{att.release.mass.format()}
+            {a.simulation.start.label}:\t{a.simulation.start.format()}
+            {a.simulation.end.label}:\t{a.simulation.end.format()}
+            {a.release.rate.label}:\t{a.release.rate.format()}
+            {a.release.mass.label}:\t{a.release.mass.format()}
 
-            {lab.substance}:\t{att.species.name.format()}
-            {lab.half_life}:\t{att.species.half_life.format()}
-            {lab.deposit_vel}:\t{att.species.deposit_vel.format()}
-            {lab.sediment_vel}:\t{att.species.sediment_vel.format()}
-            {lab.washout_coeff}:\t{att.species.washout_coeff.format()}
-            {lab.washout_exponent}:\t{att.species.washout_exponent.format()}
+            {a.species.name.label}:\t{a.species.name.format()}
+            {a.species.half_life.label}:\t{a.species.half_life.format()}
+            {a.species.deposit_vel.label}:\t{a.species.deposit_vel.format()}
+            {a.species.sediment_vel.label}:\t{a.species.sediment_vel.format()}
+            {a.species.washout_coeff.label}:\t{a.species.washout_coeff.format()}
+            {a.species.washout_exponent.label}:\t{a.species.washout_exponent.format()}
             """)
         #SR_ATTR>
 

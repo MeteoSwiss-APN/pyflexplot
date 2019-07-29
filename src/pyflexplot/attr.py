@@ -15,10 +15,13 @@ from .utils_dev import ipython  #SR_DEV
 class FlexAttr:
     """Individual attribute."""
 
-    def __init__(self, name, value, type_=None, unit=None):
+    def __init__(self, name, value, type_=None, unit=None, group=None):
+
         self.name = name
         self.type_ = type(value) if type_ is None else type_
         self.unit = unit
+
+        self.set_group(group)
 
         #SR_TMP<
         assert not isinstance(
@@ -41,6 +44,9 @@ class FlexAttr:
     @classmethod
     def multiple(cls, *args, **kwargs):
         return FlexAttrMult(*args, cls_attr=cls, **kwargs)
+
+    def set_group(self, group):
+        self._group = group
 
     #SR_TMP<<<
     def __eq__(self, other):
@@ -129,6 +135,16 @@ class FlexAttr:
             unit = unit.replace(old, new)
         return unit
 
+    @property
+    def label(self):
+        labels = self._group._labels
+        try:
+            label = getattr(labels, self.name)
+        except AttributeError:
+            raise AttributeError(
+                f"{type(labels).__name__}.{self.name}")
+        return label
+
 
 class FlexAttrMult(FlexAttr):
 
@@ -197,7 +213,8 @@ class FlexAttrMult(FlexAttr):
 class FlexAttrDatetime(FlexAttr):
     """Individual datetime attribute."""
 
-    def __init__(self, name, value, unit=None, type_=None, start=None):
+    def __init__(
+            self, name, value, *, type_=None, start=None, **kwargs):
 
         if type_ is None:
             type_ = datetime.datetime
@@ -211,7 +228,7 @@ class FlexAttrDatetime(FlexAttr):
                 f"value has wrong type: expected '{type_.__name__}', "
                 f"got '{type(value).__name__}'")
 
-        super().__init__(name, value, type_=type_, unit=unit)
+        super().__init__(name, value, type_=type_, **kwargs)
 
         self.start = start.value if isinstance(start, FlexAttr) else start
 
@@ -269,20 +286,24 @@ class FlexAttrGroup:
         try:
             return self._attrs[name]
         except KeyError:
-            raise AttributeError(name) from None
+            raise AttributeError(f"{type(self).__name__}.{name}")
 
     #SR_TMP<<< TODO eliminate
     def set(self, name, value, type_, **kwargs):
-        if not isinstance(value, FlexAttr):
+        if isinstance(value, FlexAttr):
+            attr = value
+            attr.set_group(self)
+        else:
             cls = {datetime.datetime: FlexAttrDatetime}.get(type_, FlexAttr)
-            kwargs.update({'name': name, 'value': value, 'type_': type_})
+            kwargs.update(
+                {'name': name, 'value': value, 'type_': type_, 'group': self})
             try:
-                value = cls(**kwargs)
+                attr = cls(**kwargs)
             except Exception as e:
                 raise Exception(
                     f"error creating instance of {cls.__name__} "
                     f"({type(e).__name__}: {e})")
-        self._attrs[name] = value
+        self._attrs[name] = attr
 
     def __iter__(self):
         for name, attr in sorted(self._attrs.items()):
@@ -430,14 +451,14 @@ class FlexAttrGroupRelease(FlexAttrGroup):
     """Release attributes."""
 
     def __init__(
-            self, *, site_lat, site_lon, site_name, height, height_unit, rate,
+            self, *, lat, lon, site_name, height, height_unit, rate,
             rate_unit, mass, mass_unit):
         """Initialize an instance of ``FlexAttrGroupRelease``.
 
         Kwargs:
-            site_lat (float): Latitude of release site.
+            lat (float): Latitude of release site.
 
-            site_lon (float): Longitude of release site.
+            lon (float): Longitude of release site.
 
             site_name (str): Name of release site.
 
@@ -455,8 +476,8 @@ class FlexAttrGroupRelease(FlexAttrGroup):
 
         """
         super().__init__()
-        self.set('site_lat', site_lat, float)
-        self.set('site_lon', site_lon, float)
+        self.set('lat', lat, float)
+        self.set('lon', lon, float)
         self.set('site_name', site_name, str)
         self.set('height', height, float, unit=height_unit)
         self.set('rate', rate, float, unit=rate_unit)
