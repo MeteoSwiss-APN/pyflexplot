@@ -16,7 +16,7 @@ from copy import copy, deepcopy
 from pprint import pformat
 from pprint import pprint  #SR_DEV
 
-from .data import FlexAttrGroupCollection
+from .attr import FlexAttrGroupCollection
 from .data import FlexFieldRotPole
 from .utils import check_array_indices
 from .utils import pformat_dictlike
