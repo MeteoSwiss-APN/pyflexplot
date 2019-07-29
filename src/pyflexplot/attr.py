@@ -183,8 +183,14 @@ class FlexAttrMult(FlexAttr):
 class FlexAttrDatetime(FlexAttr):
     """Individual datetime attribute."""
 
-    def __init__(self, name, value, unit=None, start=None):
-        type_ = datetime.datetime
+    def __init__(self, name, value, unit=None, type_=None, start=None):
+
+        if type_ is None:
+            type_ = datetime.datetime
+
+        if type_ is not datetime.datetime:
+            raise ValueError(
+                f"invalid type_ '{type_.__name__}' (not datetime.datetime)")
 
         if not isinstance(value, type_):
             raise ValueError(
@@ -193,7 +199,22 @@ class FlexAttrDatetime(FlexAttr):
 
         super().__init__(name, value, type_=type_, unit=unit)
 
-        self.start = start
+        self.start = start.value if isinstance(start, FlexAttr) else start
+
+    def __repr__(self):
+        s = super().__repr__()
+        s = s[:-1] + f", start={self.start}" + s[-1]
+        return s
+
+    def merge_with(self, others, **kwargs):
+        attr = super().merge_with(others, **kwargs)
+        starts = sorted(set([self.start] + [o.start for o in others]))
+        if len(starts) != 1:
+            raise ValueError(
+                f"cannot merge with {len(others)} other instances of "
+                f"{type(self).__name__}: starts differ: {starts}")
+        attr.start = next(iter(starts))
+        return attr
 
     def format(self, relative=False):
         """Format a datetime object to a string."""
@@ -202,7 +223,9 @@ class FlexAttrDatetime(FlexAttr):
             return self.value.strftime('%Y-%m-%d %H:%M %Z')
 
         if self.start is None:
-            raise ValueError(f"relative formatting failed: missing start")
+            ipython(globals(), locals())
+            raise ValueError(
+                f"{self.name}: relative formatting failed: missing start")
 
         delta = self.value - self.start
 
@@ -235,10 +258,17 @@ class FlexAttrGroup:
             raise AttributeError(name) from None
 
     #SR_TMP<<< TODO eliminate
-    def set(self, name, val, type_, unit=None):
-        if not isinstance(val, FlexAttr):
-            val = FlexAttr(name, val, type_, unit=unit)
-        self._attrs[name] = val
+    def set(self, name, value, type_, **kwargs):
+        if not isinstance(value, FlexAttr):
+            cls = {datetime.datetime: FlexAttrDatetime}.get(type_, FlexAttr)
+            kwargs.update({'name': name, 'value': value, 'type_': type_})
+            try:
+                value = cls(**kwargs)
+            except Exception as e:
+                raise Exception(
+                    f"error creating instance of {cls.__name__} "
+                    f"({type(e).__name__}: {e})")
+        self._attrs[name] = value
 
     def __iter__(self):
         for name, attr in sorted(self._attrs.items()):
@@ -558,35 +588,10 @@ class FlexAttrGroupSimulation(FlexAttrGroup):
         """
         super().__init__()
         self.set('model_name', model_name, str)
-        self.set('start', start, datetime.datetime)
-        self.set('end', end, datetime.datetime)
-        self.set('now', now, datetime.datetime)
-        self.set('integr_start', integr_start, datetime.datetime)
-
-    def _format_dt(self, dt, relative):
-        """Format a datetime object to a string."""
-        dt = dt.value  #SR_ATTR
-        if not relative:
-            return dt.strftime('%Y-%m-%d %H:%M %Z')
-        delta = dt - self.start.value  #SR_ATTR
-        s = f"T$_{0}$"
-        if delta.total_seconds() > 0:
-            hours = int(delta.total_seconds()/3600)
-            mins = int((delta.total_seconds()/3600)%1*60)
-            s = f"{s}$\\,+\\,${hours:02d}:{mins:02d}$\\,$h"
-        return s
-
-    def format_start(self, relative=False):
-        return self._format_dt(self.start, relative)
-
-    def format_end(self, relative=False):
-        return self._format_dt(self.end, relative)
-
-    def format_now(self, relative=False):
-        return self._format_dt(self.now, relative)
-
-    def format_integr_start(self, relative=False):
-        return self._format_dt(self.integr_start, relative)
+        self.set('start', start, datetime.datetime, start=start)
+        self.set('end', end, datetime.datetime, start=start)
+        self.set('now', now, datetime.datetime, start=start)
+        self.set('integr_start', integr_start, datetime.datetime, start=start)
 
     @property
     def integr_period(self):

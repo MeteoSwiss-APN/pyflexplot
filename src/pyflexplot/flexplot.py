@@ -363,7 +363,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
 
         if not 'tr' in skip_pos:
             # Top right: datetime
-            timestep_fmtd = self.attrs.simulation.format_now()  #SR_ATTR
+            timestep_fmtd = self.attrs.simulation.now.format()  #SR_ATTR
             s = f"{timestep_fmtd}"
             box.text('tr', s, size='xx-large')
 
@@ -372,7 +372,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             # Bottom left: integration time & level range
             s = (
                 f"{_sim.format_integr_period()} "  #SR_ATTR
-                f"(since {_sim.format_integr_start(relative=True)})")  #SR_ATTR
+                f"(since {_sim.integr_start.format(relative=True)})")  #SR_ATTR
             lvl_range = self.attrs.variable.format_level_range()  #SR_ATTR
             if lvl_range:
                 s = f"{s} at {lvl_range}"
@@ -386,7 +386,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
 
         if not 'br' in skip_pos:
             # Bottom right: time into simulation
-            s = self.attrs.simulation.format_now(relative=True)  #SR_ATTR
+            s = self.attrs.simulation.now.format(relative=True)  #SR_ATTR
             box.text('br', s, size='large')
 
     def fill_box_right_top(self):
@@ -556,8 +556,8 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             {lab.lon}:\t{lon_fmtd}
             {lab.height}:\t{att.release.format_height()}
 
-            {lab.start}:\t{att.simulation.format_start()}
-            {lab.end}:\t{att.simulation.format_end()}
+            {lab.start}:\t{att.simulation.start.format()}
+            {lab.end}:\t{att.simulation.end.format()}
             {lab.rate}:\t{att.release.format_rate()}
             {lab.total_mass}:\t{att.release.format_mass()}
 
@@ -588,7 +588,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
         # FLEXPART/model info
         #-_model = self.attrs.simulation.model_name  #SR_ATTR
         _model = self.attrs.simulation.model_name.value  #SR_ATTR
-        _simstart_fmtd = self.attrs.simulation.format_start()  #SR_ATTR
+        _simstart_fmtd = self.attrs.simulation.start.format()  #SR_ATTR
         s = f"FLEXPART based on {_model} {_simstart_fmtd}"
         box.text('tl', dx=-0.7, dy=0.5, s=s, size='small')
 
