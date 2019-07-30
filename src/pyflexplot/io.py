@@ -343,7 +343,11 @@ class FlexFieldSpecs:
     dims_opt_mult_vals = ['species_id']
 
     def __init__(
-            self, var_specs_lst, op=np.nansum, *, var_attrs_replace=None,
+            self,
+            var_specs_lst,
+            op=np.nansum,
+            *,
+            var_attrs_replace=None,
             lang='en'):
         """Create an instance of ``FlexFieldSpecs``.
 

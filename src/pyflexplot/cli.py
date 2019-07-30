@@ -313,7 +313,8 @@ def affected_area(ctx, in_file_path, out_file_path_fmt, mono, **vars_specs):
     lang = ctx.obj['lang']
 
     # Determine fields specifications (one for each eventual plot)
-    field_specs_lst = FlexFieldSpecsAffectedArea.multiple(vars_specs, lang=lang)
+    field_specs_lst = FlexFieldSpecsAffectedArea.multiple(
+        vars_specs, lang=lang)
 
     # Read fields
     flex_data_lst = FlexFileRotPole(in_file_path).read(
