@@ -342,7 +342,9 @@ class FlexFieldSpecs:
     # Dimensions with optionally multiple values
     dims_opt_mult_vals = ['species_id']
 
-    def __init__(self, var_specs_lst, op=np.nansum, *, var_attrs_replace=None):
+    def __init__(
+            self, var_specs_lst, op=np.nansum, *, var_attrs_replace=None,
+            lang='en'):
         """Create an instance of ``FlexFieldSpecs``.
 
         Args:
@@ -367,6 +369,8 @@ class FlexFieldSpecs:
                 attributes that differ between the resulting attributes
                 collections. Defaults to '{}'.
 
+            lang (str, optional): Language, e.g., 'de' for German.
+                Defaults to 'en' (English).
         """
 
         self._prepare_var_specs_lst(var_specs_lst)
@@ -486,9 +490,20 @@ class FlexFieldSpecs:
         return hash(self) == hash(other)
 
     @classmethod
-    def multiple(cls, vars_specs):
+    def multiple(cls, vars_specs, lang='en'):
         var_specs_lst = cls.cls_var_specs.multiple_as_dict(**vars_specs)
-        return [cls(var_specs) for var_specs in var_specs_lst]
+        field_specs_lst = []
+        for var_specs in var_specs_lst:
+            try:
+                field_specs = cls(var_specs, lang=lang)
+            except Exception as e:
+                raise Exception(
+                    f"cannot initialize {cls.__name__} "
+                    f"({type(e).__name__}: {e})"
+                    f"\nvar_specs: {var_specs}")
+            else:
+                field_specs_lst.append(field_specs)
+        return field_specs_lst
 
     def var_specs_merged(self):
         """Return merged variable specifications."""
@@ -512,25 +527,27 @@ class FlexFieldSpecsConcentration(FlexFieldSpecs):
     # Dimensions with optionally multiple values
     dims_opt_mult_vals = FlexFieldSpecs.dims_opt_mult_vals + ['level']
 
-    def __init__(self, var_specs):
+    def __init__(self, var_specs, **kwargs):
         """Create an instance of ``FlexFieldSpecsConcentration``.
 
         Args:
             var_specs (dict): Specifications dict of input variable
                 used to create an instance of ``FlexVarSpecsConcentration``
                 as specified by the class attribute ``cls_var_specs``.
+
+            **kwargs: Keyword arguments passed to ``FlexFieldSpecs``.
         """
         if not isinstance(var_specs, dict):
             raise ValueError(
                 f"var_specs must be 'dict', not '{type(var_specs).__name__}'")
-        super().__init__([var_specs])
+        super().__init__([var_specs], **kwargs)
 
 
 class FlexFieldSpecsDeposition(FlexFieldSpecs):
 
     cls_var_specs = FlexVarSpecsDeposition
 
-    def __init__(self, var_specs):
+    def __init__(self, var_specs, lang='en', **kwargs):
         """Create an instance of ``FlexFieldSpecsDeposition``.
 
         Args:
@@ -538,10 +555,12 @@ class FlexFieldSpecsDeposition(FlexFieldSpecs):
                 used to create instance(s) of ``FlexVarSpecsDeposition``
                 as specified by the class attribute ``cls_var_specs``.
 
-        """
+            lang (str, optional): Language, e.g., 'de' for German.
+                Defaults to 'en' (English).
 
+            **kwargs: Keyword arguments passed to ``FlexFieldSpecs``.
+        """
         var_specs_lst = [dict(var_specs)]
-        kwargs = {}
 
         # Deposition mode
         for var_specs in copy(var_specs_lst):
@@ -554,7 +573,10 @@ class FlexFieldSpecsDeposition(FlexFieldSpecs):
                     kwargs,
                     ['var_attrs_replace', 'variable', 'long_name', 'value'],
                     FlexAttrsCollector.get_long_name(
-                        var_specs, type_=self.cls_var_specs),
+                        var_specs,
+                        type_=self.cls_var_specs,
+                        lang=lang,
+                    ),
                 )
                 var_specs_new = deepcopy(var_specs)
                 var_specs['deposition'] = 'wet'
@@ -665,8 +687,10 @@ class FlexFileRotPole:
                     log.debug("collect attributes")
                     attrs_lst = []
                     for var_specs in fld_specs.var_specs_lst:
-                        attrs = FlexAttrsCollector(self._fi, var_specs).run(
-                            lang=lang)
+                        attrs = FlexAttrsCollector(
+                            self._fi,
+                            var_specs,
+                        ).run(lang=lang)
                         attrs_lst.append(attrs)
                     attrs = attrs_lst[0].merge_with(
                         attrs_lst[1:], **fld_specs.var_attrs_replace)
@@ -901,17 +925,19 @@ class FlexAttrsCollector:
     def run(self, lang='en'):
         """Collect attributes."""
 
+        self.lang = lang
+
         attrs_raw = {
-            'grid': self._collect_grid_attrs(),
-            'release': self._collect_release_attrs(),
-            'variable': self._collect_variable_attrs(),
-            'species': self._collect_species_attrs(),
-            'simulation': self._collect_simulation_attrs(),
+            'grid': self.collect_grid_attrs(),
+            'release': self.collect_release_attrs(),
+            'variable': self.collect_variable_attrs(),
+            'species': self.collect_species_attrs(),
+            'simulation': self.collect_simulation_attrs(),
         }
 
         return FlexAttrGroupCollection(lang=lang, **attrs_raw)
 
-    def _collect_grid_attrs(self):
+    def collect_grid_attrs(self):
         """Collect grid attributes."""
 
         np_lat = self.ncattrs_vars['rotated_pole']['grid_north_pole_latitude']
@@ -922,7 +948,7 @@ class FlexAttrsCollector:
             'north_pole_lon': np_lon,
         }
 
-    def _collect_release_attrs(self):
+    def collect_release_attrs(self):
         """Collect release point attributes."""
 
         # Collect release point information
@@ -958,19 +984,25 @@ class FlexAttrsCollector:
             'mass_unit': mass_unit,
         }
 
-    def _collect_variable_attrs(self):
+    def collect_variable_attrs(self):
         """Collect variable attributes."""
 
         # Variable name
         if isinstance(self.var_specs, FlexVarSpecsConcentration):
-            long_name = self.get_long_name(self.var_specs)
-            short_name = 'Concentration'  #SR_HC
+            long_name = self.get_long_name(self.var_specs, lang=self.lang)
+            short_name = {
+                'en': 'Concentration',  #SR_HC
+                'de': 'Konzentration',  #SR_HC
+            }[self.lang]
         elif isinstance(self.var_specs, FlexVarSpecsDeposition):
-            long_name = self.get_long_name(self.var_specs)
-            short_name = f'Deposition'  #SR_HC
+            long_name = self.get_long_name(self.var_specs, lang=self.lang)
+            short_name = {
+                'en': f'Deposition',  #SR_HC
+                'de': f'Ablagerung',  #SR_HC
+            }[self.lang]
         else:
             raise NotImplementedError(
-                f"ar_specs of type {type(var_specs).__name__}")
+                f"var_specs of type {type(var_specs).__name__}")
 
         try:
             _i = self.var_specs.level
@@ -998,7 +1030,7 @@ class FlexAttrsCollector:
 
     #SR_HC<<<
     @staticmethod
-    def get_long_name(var_specs, type_=None):
+    def get_long_name(var_specs, *, type_=None, lang='en'):
         """Return long variable name."""
 
         type_base = FlexVarSpecs
@@ -1010,27 +1042,45 @@ class FlexAttrsCollector:
                 f"not a subclass of {type_base.__name__}!")
 
         if type_ is FlexVarSpecsConcentration:
-            return f'Activity Concentration'
+            return {
+                'en': 'Activity Concentration',
+                'de': r'Aktivit$\mathrm{\"a}$tskonzentration',
+            }[lang]
 
-        elif type_ is FlexVarSpecsDeposition:
-            dep_type = {
-                'wet': 'Wet',
-                'dry': 'Dry',
-                'tot': 'Total',
-            }[dict(var_specs)['deposition']]
-            return f'{dep_type} Surface Deposition'
+        else:
+            dep = dict(var_specs)['deposition']
 
-        elif type_ is FlexVarSpecsAffectedArea:
-            dep_type = {
-                'wet': 'Wet',
-                'dry': 'Dry',
-                'tot': 'Total',
-            }[dict(var_specs)['deposition']]
-            return f'Affected Area ({dep_type} Deposition)'
+            if lang == 'en':
+                dep_type = {
+                    'wet': 'Wet',
+                    'dry': 'Dry',
+                    'tot': 'Total',
+                }[dep]
+
+            elif lang == 'de':
+                dep_type = {
+                    'wet': 'Nass',
+                    'dry': 'Trocken',
+                    'tot': 'Total',
+                }[dep]
+
+            if type_ is FlexVarSpecsDeposition:
+                return {
+                    'en': f'{dep_type} Surface Deposition',
+                    'de': f'{dep_type}e Bodenablagerung',
+                }[lang]
+
+            elif type_ is FlexVarSpecsAffectedArea:
+                return {
+                    'en': f'Affected Area ({dep_type})',
+                    #'en': f'Affected Area ({dep_type} Deposition)',
+                    'de': f'Beaufschlagtes Gebiet ({dep_type})',
+                    #'de': f'Beaufschl. Gebiet ({dep_type}e Ablagerung)',
+                }[lang]
 
         raise NotImplementedError(f"var_specs of type '{type_.__name__}'")
 
-    def _collect_species_attrs(self):
+    def collect_species_attrs(self):
         """Collect species attributes."""
 
         substance = self._get_substance()
@@ -1077,7 +1127,7 @@ class FlexAttrsCollector:
                 f'_{self.var_specs.deposition}_deposition', '')  #SR_HC
         return substance
 
-    def _collect_simulation_attrs(self):
+    def collect_simulation_attrs(self):
         """Collect simulation attributes."""
 
         # Start and end timesteps of simulation

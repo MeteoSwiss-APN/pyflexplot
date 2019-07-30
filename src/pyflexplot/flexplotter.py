@@ -73,7 +73,7 @@ class FlexPlotter:
     }
     # yapf: enable
 
-    def run(self, field, file_path_fmt):
+    def run(self, field, file_path_fmt, lang):
         """Create one or more plots.
 
         Args:
@@ -108,6 +108,7 @@ class FlexPlotter:
                 'fld': field.fld,
                 'attrs': field.attrs,
                 'time_stats': field.time_stats,
+                'lang': lang,
             }
 
             self.cls_plot(**kwargs).save(file_path)

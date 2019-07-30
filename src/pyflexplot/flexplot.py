@@ -16,10 +16,145 @@ from .utils import Degrees
 from .utils_dev import ipython  #SR_DEV
 
 
+class FlexPlotLabels:
+
+    def __init__(self):
+        if self.__class__.__name__.endswith(f'_Base'):
+            raise Exception(
+                f"{type(self).__name__} must be subclassed, not instatiated")
+
+    def __getattribute__(self, name):
+        """Intersept attribute access to format labels.
+
+        Attributes that do not start with an underscore are passed to
+        the method ``self.format_attr``, which can be overridden by
+        subclasses to format labels in a language-specific way.
+
+        Args:
+            name (str): Attribute name.
+
+        """
+        if name.startswith('_'):
+            return object.__getattribute__(self, name)
+        try:
+            val = object.__getattribute__(self, '__dict__')[name]
+        except KeyError:
+            try:
+                val = object.__getattribute__(type(self), '__dict__')[name]
+            except KeyError:
+                raise AttributeError(name) from None
+        return object.__getattribute__(self, 'format_attr')(name, val)
+
+    def format_attr(self, name, val):
+        """Override to format labels in a language-specific way."""
+        return val
+
+
+class FlexPlotLabels_En(FlexPlotLabels):
+    pass
+
+
+class FlexPlotLabels_De(FlexPlotLabels):
+
+    def format_attr(self, name, val):
+        """Format an attribute."""
+
+        def umlaut(v):
+            return f'$\\mathrm{{\\ddot{v}}}$'
+
+        return val.format(
+            ae=umlaut('a'),
+            oe=umlaut('o'),
+            ue=umlaut('u'),
+        )
+
+
+class FlexPlotLabelsDispersionSimulation_En(FlexPlotLabels_En):
+    """FLEXPART dispersion plot labels in English (simulation)."""
+
+    start = 'Start'
+    end = 'End'
+    flexpart_based_on = 'FLEXPART based on'
+    copyright = u"\u00a9MeteoSwiss"
+
+
+class FlexPlotLabelsDispersionSimulation_De(FlexPlotLabels_De):
+    """Flexpart dispersion plot labels in German (simulation)."""
+
+    start = 'Start'
+    end = 'Ende'
+    flexpart_based_on = 'FLEXPART basierend auf'
+    copyright = u"\u00a9MeteoSchweiz"
+
+
+class FlexPlotLabelsDispersionRelease_En(FlexPlotLabels_En):
+    """FLEXPART dispersion plot labels in English (release)."""
+
+    lat = 'Latitude'
+    lon = 'Longitude'
+    height = 'Height'
+    rate = 'Rate'
+    mass = 'Total mass'
+    site_name = 'Release site'
+    max = 'Max.'
+
+
+class FlexPlotLabelsDispersionRelease_De(FlexPlotLabels_De):
+    """Flexpart dispersion plot labels in German (release)."""
+
+    lat = 'Breite'
+    lon = 'L{ae}nge'
+    height = 'H{oe}he'
+    rate = 'Rate'
+    mass = 'Totale Masse'
+    site_name = 'Austrittsort'
+    max = 'Max.'
+
+
+class FlexPlotLabelsDispersionSpecies_En(FlexPlotLabels_En):
+    """FLEXPART dispersion plot labels in English (species)."""
+
+    name = 'Substance'
+    half_life = 'Half-life'
+    deposit_vel = 'Deposit. vel.'
+    sediment_vel = 'Sediment. vel.'
+    washout_coeff = 'Washout coeff.'
+    washout_exponent = 'Washout exponent'
+
+
+class FlexPlotLabelsDispersionSpecies_De(FlexPlotLabels_De):
+    """Flexpart dispersion plot labels in German (species)."""
+
+    name = 'Substanz'
+    half_life = 'Halbwertszeit'
+    deposit_vel = 'Deposit.-Geschw.'
+    sediment_vel = 'Sediment.-Geschw.'
+    washout_coeff = 'Auswaschkoeff.'
+    washout_exponent = 'Auswaschexponent'
+
+
+class FlexPlotLabelsDispersion:
+
+    def __init__(self, lang):
+
+        if lang == 'en':
+            self.simulation = FlexPlotLabelsDispersionSimulation_En()
+            self.release = FlexPlotLabelsDispersionRelease_En()
+            self.species = FlexPlotLabelsDispersionSpecies_En()
+
+        elif lang == 'de':
+            self.simulation = FlexPlotLabelsDispersionSimulation_De()
+            self.release = FlexPlotLabelsDispersionRelease_De()
+            self.species = FlexPlotLabelsDispersionSpecies_De()
+
+        else:
+            raise ValueError(f"lang='{lang}'")
+
+
 class FlexPlotBase:
     """Base class for FLEXPART plots."""
 
-    def __init__(self, rlat, rlon, fld, attrs, time_stats):
+    def __init__(self, rlat, rlon, fld, attrs, time_stats, lang='en'):
         """Create an instance of ``FlexPlotBase``.
 
         Args:
@@ -29,16 +164,20 @@ class FlexPlotBase:
 
             fld (ndarray[float, float]): Concentration field (2d).
 
-            attrs (dict): Instance of ``FlexAttrGroupCollection``.
+            attrs (FlexAttrGroupCollection): Attributes read from file.
 
             time_stats (dict): Some statistics across all time steps.
 
+            lang (str, optional): Language, e.g., 'de' for German.
+                Defaults to 'en' (English).
         """
         self.rlat = rlat
         self.rlon = rlon
         self.fld = np.where(fld > 0, fld, np.nan)
         self.attrs = attrs
         self.time_stats = time_stats
+        self.lang = lang
+        self.labels = FlexPlotLabelsDispersion(lang)
 
     def prepare_plot(self):
 
@@ -266,7 +405,6 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
 
         if not 'tl' in skip_pos:
             # Top left: variable
-            #-s = f"{self.attrs.variable.long_name}"  #SR_ATTR
             s = f"{self.attrs.variable.long_name.value}"  #SR_ATTR
             box.text('tl', s, size='xx-large')
 
@@ -286,15 +424,15 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             # Bottom left: integration time & level range
             s = (
                 f"{_sim.format_integr_period()} "  #SR_ATTR
-                f"(since {_sim.integr_start.format(relative=True)})")  #SR_ATTR
+                f"({dict(en='since', de='seit')[self.lang]} "  #SR_ATTR
+                f"{_sim.integr_start.format(relative=True)})")  #SR_ATTR
             lvl_range = self.attrs.variable.format_level_range()  #SR_ATTR
             if lvl_range:
-                s = f"{s} at {lvl_range}"
+                s = f"{s} {dict(en='at', de='auf')[self.lang]} {lvl_range}"
             box.text('bl', s, size='large')
 
-        if not 'br' in skip_pos:
+        if not 'bc' in skip_pos:
             # Bottom center: release site
-            #-s = f"{self.attrs.release.site_name}"  #SR_ATTR
             s = f"{self.attrs.release.site_name.value}"  #SR_ATTR
             box.text('bc', s, size='large')
 
@@ -353,7 +491,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
         dy_spacing_markers = 0.5*dy_line
 
         # Field maximum
-        fld_max_fmtd = 'Max.: '
+        fld_max_fmtd = f'{self.labels.release.max}: '
         if np.isnan(self.fld).all():
             fld_max_fmtd += 'NaN'
         else:
@@ -385,8 +523,9 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             dy=dy_site + 0.7,
             **self._site_marker_kwargs,
         )
-        #s = f"Release site: {self.attrs.release.site_name}"  #SR_ATTR
-        s = f"Release site: {self.attrs.release.site_name.value}"  #SR_ATTR
+        s = (
+            f"{self.labels.release.site_name}: "  #SR_ATTR
+            f"{self.attrs.release.site_name.value}")  #SR_ATTR
         box.text(loc='bl', s=s, dx=5.5, dy=dy_site, size='small')
 
     def _format_level_ranges(self):
@@ -444,40 +583,40 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
         box = self.axs_box[2]
 
         # Add box title
-        #box.text('tc', 'Release', size='large')
-        box.text('tc', 'Release', dy=-1.5, size='large')
+        s = {'en': 'Release', 'de': 'Austritt'}[self.lang]
+        #box.text('tc', s, size='large')
+        box.text('tc', s, dy=-1.5, size='large')
 
         # Release site coordinates
-        #-lat = Degrees(self.attrs.release.lat)  #SR_ATTR
         lat = Degrees(self.attrs.release.lat.value)  #SR_ATTR
         lat_fmtd = (
             f"{lat.degs()}$^\circ\,${lat.mins()}'$\,$N"
             f" ({lat.frac():.2f}$^\circ\,$N)")
-        #-lon = Degrees(self.attrs.release.lon)  #SR_ATTR
         lon = Degrees(self.attrs.release.lon.value)  #SR_ATTR
         lon_fmtd = (
             f"{lon.degs()}$^\circ\,${lon.mins()}'$\,$E"
             f" ({lon.frac():.2f}$^\circ\,$E)")
 
+        l = self.labels
         a = self.attrs
         #SR_ATTR<
         info_blocks = dedent(
             f"""\
-            {a.release.lat.label}:\t{lat_fmtd}
-            {a.release.lon.label}:\t{lon_fmtd}
-            {a.release.height.label}:\t{a.release.height.format()}
+            {l.release.lat}:\t{lat_fmtd}
+            {l.release.lon}:\t{lon_fmtd}
+            {l.release.height}:\t{a.release.height.format()}
 
-            {a.simulation.start.label}:\t{a.simulation.start.format()}
-            {a.simulation.end.label}:\t{a.simulation.end.format()}
-            {a.release.rate.label}:\t{a.release.rate.format()}
-            {a.release.mass.label}:\t{a.release.mass.format()}
+            {l.simulation.start}:\t{a.simulation.start.format()}
+            {l.simulation.end}:\t{a.simulation.end.format()}
+            {l.release.rate}:\t{a.release.rate.format()}
+            {l.release.mass}:\t{a.release.mass.format()}
 
-            {a.species.name.label}:\t{a.species.name.format()}
-            {a.species.half_life.label}:\t{a.species.half_life.format()}
-            {a.species.deposit_vel.label}:\t{a.species.deposit_vel.format()}
-            {a.species.sediment_vel.label}:\t{a.species.sediment_vel.format()}
-            {a.species.washout_coeff.label}:\t{a.species.washout_coeff.format()}
-            {a.species.washout_exponent.label}:\t{a.species.washout_exponent.format()}
+            {l.species.name}:\t{a.species.name.format()}
+            {l.species.half_life}:\t{a.species.half_life.format()}
+            {l.species.deposit_vel}:\t{a.species.deposit_vel.format()}
+            {l.species.sediment_vel}:\t{a.species.sediment_vel.format()}
+            {l.species.washout_coeff}:\t{a.species.washout_coeff.format()}
+            {l.species.washout_exponent}:\t{a.species.washout_exponent.format()}
             """)
         #SR_ATTR>
 
@@ -497,14 +636,15 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
         box = self.axs_box[3]
 
         # FLEXPART/model info
-        #-_model = self.attrs.simulation.model_name  #SR_ATTR
         _model = self.attrs.simulation.model_name.value  #SR_ATTR
         _simstart_fmtd = self.attrs.simulation.start.format()  #SR_ATTR
-        s = f"FLEXPART based on {_model} {_simstart_fmtd}"
+        s = (
+            f"{self.labels.simulation.flexpart_based_on} {_model}, "
+            f"{_simstart_fmtd}")
         box.text('tl', dx=-0.7, dy=0.5, s=s, size='small')
 
         # MeteoSwiss Copyright
-        cpright_fmtd = u"\u00a9MeteoSwiss"
+        cpright_fmtd = self.labels.simulation.copyright
         box.text('tr', dx=0.7, dy=0.5, s=cpright_fmtd, size='small')
 
     def define_colors(self):

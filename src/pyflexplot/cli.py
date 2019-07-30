@@ -251,20 +251,21 @@ def common_options_dispersion_deposition(f):
 @common_options_dispersion_preproc
 @click.pass_context
 def concentration(ctx, in_file_path, out_file_path_fmt, **vars_specs):
+    lang = ctx.obj['lang']
 
     # Determine fields specifications (one for each eventual plot)
-    fld_specs_lst = FlexFieldSpecsConcentration.multiple(vars_specs)
+    fld_specs_lst = FlexFieldSpecsConcentration.multiple(vars_specs, lang=lang)
 
     # Read fields
     flex_data_lst = FlexFileRotPole(in_file_path).read(
-        fld_specs_lst, lang=ctx.obj['lang'])
+        fld_specs_lst, lang=lang)
 
     # Create plots
     create_plots(
         ctx,
         FlexPlotter.concentration,
         [flex_data_lst, out_file_path_fmt],
-        {},
+        {'lang': lang},
     )
 
 
@@ -275,20 +276,21 @@ def concentration(ctx, in_file_path, out_file_path_fmt, **vars_specs):
 @common_options_dispersion_deposition
 @click.pass_context
 def deposition(ctx, in_file_path, out_file_path_fmt, **vars_specs):
+    lang = ctx.obj['lang']
 
     # Determine fields specifications (one for each eventual plot)
-    field_specs_lst = FlexFieldSpecsDeposition.multiple(vars_specs)
+    field_specs_lst = FlexFieldSpecsDeposition.multiple(vars_specs, lang=lang)
 
     # Read fields
     flex_data_lst = FlexFileRotPole(in_file_path).read(
-        field_specs_lst, lang=ctx.obj['lang'])
+        field_specs_lst, lang=lang)
 
     # Create plots
     create_plots(
         ctx,
         FlexPlotter.deposition,
         [flex_data_lst, out_file_path_fmt],
-        {},
+        {'lang': lang},
     )
 
 
@@ -307,15 +309,15 @@ def deposition(ctx, in_file_path, out_file_path_fmt, **vars_specs):
     is_flag=True, default=[False], multiple=True)
 # yapf: enable
 @click.pass_context
-def affected_area(
-        ctx, in_file_path, out_file_path_fmt, mono, **vars_specs):
+def affected_area(ctx, in_file_path, out_file_path_fmt, mono, **vars_specs):
+    lang = ctx.obj['lang']
 
     # Determine fields specifications (one for each eventual plot)
-    field_specs_lst = FlexFieldSpecsAffectedArea.multiple(vars_specs)
+    field_specs_lst = FlexFieldSpecsAffectedArea.multiple(vars_specs, lang=lang)
 
     # Read fields
     flex_data_lst = FlexFileRotPole(in_file_path).read(
-        field_specs_lst, lang=ctx.obj['lang'])
+        field_specs_lst, lang=lang)
 
     # Create plots
     fct = FlexPlotter.affected_area_mono if mono else FlexPlotter.affected_area
@@ -323,7 +325,7 @@ def affected_area(
         ctx,
         fct,
         [flex_data_lst, out_file_path_fmt],
-        {},
+        {'lang': lang},
     )
 
 
