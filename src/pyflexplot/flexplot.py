@@ -441,7 +441,15 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
             s = self.attrs.simulation.now.format(relative=True)  #SR_ATTR
             box.text('br', s, size='large')
 
-    def fill_box_right_top(self):
+    def fill_box_right_top(
+            self,
+            dx=1.2,
+            dy_line=3.0,
+            dy0_labels=7.5,
+            w_box=4,
+            h_box=2,
+            dy0_boxes=7.1,
+            dy_spacing=0.0):
         """Fill the top box to the right of the map plot."""
         box = self.axs_box[1]
 
@@ -452,13 +460,6 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
 
         # Format level ranges (contour plot legend)
         labels = self._format_level_ranges()
-
-        # Positioning parameters
-        dx = 1.2
-        dy_line = 3.0
-        dy0_labels = 7.5
-        w_box, h_box = 4, 2
-        dy0_boxes = dy0_labels - 0.4
 
         # Add level labels
         box.text_block(
@@ -500,7 +501,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
                 f' {self.attrs.variable.unit.value}')  #SR_ATTR
 
         # Add maximum value marker
-        dy_max = dy0_labels - dy_spacing_markers - dy_line
+        dy_max = dy0_labels - dy_spacing - dy_spacing_markers - dy_line
         box.marker(
             loc='bl',
             dx=dx + 1.0,
@@ -516,7 +517,7 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
         )
 
         # Add release site marker
-        dy_site = dy0_labels - dy_spacing_markers - 2*dy_line
+        dy_site = dy0_labels - dy_spacing - dy_spacing_markers - 2*dy_line
         box.marker(
             loc='bl',
             dx=dx + 1.0,
@@ -740,3 +741,14 @@ class FlexPlotAffectedAreaMono(FlexPlotAffectedArea):
     def define_levels(self):
         super().define_levels(n=9)
         self.levels = np.array([self.levels[0], np.inf])
+
+    def fill_box_right_top(self):
+        super().fill_box_right_top(
+            dx=1.2,
+            dy_line=3.0,
+            dy0_labels=22.5,
+            w_box=4,
+            h_box=2,
+            dy0_boxes=22.1,
+            dy_spacing=12.0,
+        )
