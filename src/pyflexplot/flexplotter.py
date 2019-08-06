@@ -90,6 +90,7 @@ class FlexPlotter:
 
         """
         self.file_path_fmt = file_path_fmt
+        self.lang = lang
 
         data_lst = field if isinstance(field, (list, tuple)) else [field]
 
@@ -146,6 +147,9 @@ class FlexPlotter:
         else:
             plot_var = f'{dep_type}-{plot_var}'
         kwargs['variable'] = plot_var
+
+        # Language
+        kwargs['lang'] = self.lang
 
         # Format file path
         try:

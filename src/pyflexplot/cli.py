@@ -111,7 +111,7 @@ INT_LIST_PLUS_SEP_UNIQ = CharSepListParamType(
     is_flag=True)
 @click.option(
     '--lang',
-    help="Language.",
+    help="Language. Format key: '{lang}'.",
     type=click.Choice(['en', 'de']), default='en')
 @click.option(
     '--open-first', 'open_first_cmd',
