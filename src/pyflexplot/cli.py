@@ -242,7 +242,7 @@ class CLI(ClickGroup):
 class GlobalOptions(ClickOptionsGroup):
 
     @click_options
-    def in():
+    def input():
         return [
             click.option(
                 '--infile',
@@ -255,7 +255,7 @@ class GlobalOptions(ClickOptionsGroup):
         ]
 
     @click_options
-    def out():
+    def output():
         return [
             click.option(
                 '--outfile',
@@ -335,7 +335,7 @@ def open_plots(cmd, file_paths):
 class DispersionOptions(ClickOptionsGroup):
 
     @click_options
-    def in():
+    def input():
         """Common options of dispersion plots (field selection)."""
         return [
             click.option(
@@ -379,7 +379,7 @@ class DispersionOptions(ClickOptionsGroup):
         ]
 
     @click_options
-    def prep():
+    def preproc():
         """Common options of dispersion plots (pre-processing)."""
         return [
             click.option(
@@ -417,10 +417,10 @@ class Concentration(ClickCommand):
         name='concentration',
         help="Activity concentration in the air.",
     )
-    @GlobalOptions.in
-    @GlobalOptions.out
-    @DispersionOptions.in
-    @DispersionOptions.prep
+    @GlobalOptions.input
+    @GlobalOptions.output
+    @DispersionOptions.input
+    @DispersionOptions.preproc
     @options
     @click.pass_context
     def concentration(ctx, in_file_path, out_file_path_fmt, **vars_specs):
@@ -466,10 +466,10 @@ class Deposition(ClickCommand):
         name='deposition',
         help="Surface deposition.",
     )
-    @GlobalOptions.in
-    @GlobalOptions.out
-    @DispersionOptions.in
-    @DispersionOptions.prep
+    @GlobalOptions.input
+    @GlobalOptions.output
+    @DispersionOptions.input
+    @DispersionOptions.preproc
     @options
     @click.pass_context
     def deposition(ctx, in_file_path, out_file_path_fmt, **vars_specs):
@@ -511,10 +511,10 @@ class AffectedArea(ClickCommand):
         name='affected-area',
         help="Area affected by surface deposition.",
     )
-    @GlobalOptions.in
-    @GlobalOptions.out
-    @DispersionOptions.in
-    @DispersionOptions.prep
+    @GlobalOptions.input
+    @GlobalOptions.output
+    @DispersionOptions.input
+    @DispersionOptions.preproc
     @Deposition.options
     @options
     @click.pass_context
