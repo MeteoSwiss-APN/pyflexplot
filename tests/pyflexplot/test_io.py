@@ -64,8 +64,8 @@ def read_nc_var(path, var_name, var_specs):
         return fld
 
 
-class TestReadFieldSingle:
-    """Read a single 2D field from a FLEXPART NetCDF file."""
+class TestReadField_Single:
+    """Read one 2D field from a FLEXPART NetCDF file."""
 
     # Dimensions shared by all tests
     dims_shared = {
@@ -86,7 +86,7 @@ class TestReadFieldSingle:
 
     @staticmethod
     def datafile(datadir):
-        return f'{datadir}/flexpart_cosmo1_case2.nc'
+        return f'{datadir}/flexpart_cosmo-1_case2.nc'
 
     #------------------------------------------------------------------
 
@@ -172,7 +172,7 @@ class TestReadFieldSingle:
         )
 
 
-class TestFieldSpecsMultiple:
+class TestFieldSpecs_Multiple:
     """Create multiple field specifications."""
 
     # Dimensions arguments shared by all tests
@@ -240,7 +240,7 @@ class TestFieldSpecsMultiple:
         assert sorted(fld_specs_mult_lst) == sorted(fld_specs_mult_lst_ref)
 
 
-class TestReadFieldMultiple:
+class TestReadField_Multiple:
     """Read multiple 2D fields from a FLEXPART NetCDF file."""
 
     # Dimensions arguments shared by all tests
@@ -262,7 +262,7 @@ class TestReadFieldMultiple:
 
     @staticmethod
     def datafile(datadir):
-        return f'{datadir}/flexpart_cosmo1_case2.nc'
+        return f'{datadir}/flexpart_cosmo-1_case2.nc'
 
     #------------------------------------------------------------------
 
