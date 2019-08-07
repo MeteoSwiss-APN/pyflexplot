@@ -134,6 +134,63 @@ INT_LIST_PLUS_SEP_UNIQ = CharSepListParamType(
     int, '+', dupl_ok=False, name='integers (plus-separated)')
 
 
+def create_plots(ctx, fct, args=None, kwargs=None):
+    """Create FLEXPART plots.
+
+    Args:
+        ctx (Context): Click context object.
+
+        fct (callable): Callable that creates plots while yielding
+            the output file paths on-the-fly.
+
+        args (list, optional): Positional arguments for ``fct``.
+            Defaults to [].
+
+        kwargs (dict, optional): Keyword arguments for ``fct``.
+            Defaults to {}.
+
+    """
+    if ctx.obj['noplot']:
+        return
+
+    if args is None:
+        args = []
+    if kwargs is None:
+        kwargs = {}
+
+    # Note: FlexPlotter.run yields the output file paths on-the-go
+    out_file_paths = []
+    for i, out_file_path in enumerate(fct(*args, **kwargs)):
+        out_file_paths.append(out_file_path)
+
+        if ctx.obj['open_first_cmd'] and i == 0:
+            # Open the first file as soon as it's available
+            open_plots(ctx.obj['open_first_cmd'], [out_file_path])
+
+    if ctx.obj['open_all_cmd']:
+        # Open all plots
+        open_plots(ctx.obj['open_all_cmd'], out_file_paths)
+
+
+def open_plots(cmd, file_paths):
+    """Open a plot file using a shell command."""
+
+    # If not yet included, append the output file path
+    if '{file_paths}' not in cmd:
+        cmd += ' {file_paths}'
+
+    # Ensure that the command is run in the background
+    if not cmd.rstrip().endswith('&'):
+        cmd += ' &'
+
+    # Run the command
+    cmd = cmd.format(file_paths=' '.join(file_paths))
+    os.system(cmd)
+
+
+#======================================================================
+
+
 @click_options
 def options_main():
     return [
@@ -240,6 +297,11 @@ def common_options_global():
     ]
 
 
+#======================================================================
+# Dispersion
+#======================================================================
+
+
 @click_options
 def common_options_dispersion_input():
     """Common options of dispersion plots (field selection)."""
@@ -302,25 +364,13 @@ def common_options_dispersion_preproc():
     ]
 
 
-@click_options
-def common_options_dispersion_deposition():
-    """Common options of dispersion plots (deposition)."""
-    return [
-        click.option(
-            '--deposition-type',
-            'deposition_lst',
-            help=(
-                "Type of deposition. Part of plot variable (format "
-                "key: '{variable}')."),
-            type=click.Choice(['tot', 'wet', 'dry']),
-            default='tot',
-            multiple=True,
-        )
-    ]
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Concentration
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 @click_options
-def options_concentration():
+def options_dispersion_concentration():
     return [
         click.option(
             '--level-ind',
@@ -336,13 +386,18 @@ def options_concentration():
     ]
 
 
-@main.command(help="Activity concentration in the air.")
+@main.command(
+    name='concentration',
+    help="Activity concentration in the air.",
+)
 @common_options_global
 @common_options_dispersion_input
 @common_options_dispersion_preproc
-@options_concentration
+@options_dispersion_concentration
 @click.pass_context
-def concentration(ctx, in_file_path, out_file_path_fmt, **vars_specs):
+def dispersion_concentration(
+        ctx, in_file_path, out_file_path_fmt, **vars_specs):
+
     lang = ctx.obj['lang']
 
     # Determine fields specifications (one for each eventual plot)
@@ -361,13 +416,38 @@ def concentration(ctx, in_file_path, out_file_path_fmt, **vars_specs):
     )
 
 
-@main.command(help="Surface deposition.")
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Deposition
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+@click_options
+def common_options_dispersion_deposition():
+    """Common options of dispersion plots (deposition)."""
+    return [
+        click.option(
+            '--deposition-type',
+            'deposition_lst',
+            help=(
+                "Type of deposition. Part of plot variable (format "
+                "key: '{variable}')."),
+            type=click.Choice(['tot', 'wet', 'dry']),
+            default='tot',
+            multiple=True,
+        )
+    ]
+
+
+@main.command(
+    name='deposition',
+    help="Surface deposition.",
+)
 @common_options_global
 @common_options_dispersion_input
 @common_options_dispersion_preproc
 @common_options_dispersion_deposition
 @click.pass_context
-def deposition(ctx, in_file_path, out_file_path_fmt, **vars_specs):
+def dispersion_deposition(ctx, in_file_path, out_file_path_fmt, **vars_specs):
     lang = ctx.obj['lang']
 
     # Determine fields specifications (one for each eventual plot)
@@ -386,8 +466,11 @@ def deposition(ctx, in_file_path, out_file_path_fmt, **vars_specs):
     )
 
 
+#----------------------------------------------------------------------
+
+
 @click_options
-def options_affected_area():
+def options_dispersion_deposition_affected_area():
     return [
         click.option(
             '--mono/--no-mono',
@@ -407,9 +490,10 @@ def options_affected_area():
 @common_options_dispersion_input
 @common_options_dispersion_preproc
 @common_options_dispersion_deposition
-@options_affected_area
+@options_dispersion_deposition_affected_area
 @click.pass_context
-def affected_area(ctx, in_file_path, out_file_path_fmt, mono, **vars_specs):
+def dispersion_deposition_affected_area(
+        ctx, in_file_path, out_file_path_fmt, mono, **vars_specs):
     lang = ctx.obj['lang']
 
     # Determine fields specifications (one for each eventual plot)
@@ -428,60 +512,6 @@ def affected_area(ctx, in_file_path, out_file_path_fmt, mono, **vars_specs):
         [flex_data_lst, out_file_path_fmt],
         {'lang': lang},
     )
-
-
-def create_plots(ctx, fct, args=None, kwargs=None):
-    """Create FLEXPART plots.
-
-    Args:
-        ctx (Context): Click context object.
-
-        fct (callable): Callable that creates plots while yielding
-            the output file paths on-the-fly.
-
-        args (list, optional): Positional arguments for ``fct``.
-            Defaults to [].
-
-        kwargs (dict, optional): Keyword arguments for ``fct``.
-            Defaults to {}.
-
-    """
-    if ctx.obj['noplot']:
-        return
-
-    if args is None:
-        args = []
-    if kwargs is None:
-        kwargs = {}
-
-    # Note: FlexPlotter.run yields the output file paths on-the-go
-    out_file_paths = []
-    for i, out_file_path in enumerate(fct(*args, **kwargs)):
-        out_file_paths.append(out_file_path)
-
-        if ctx.obj['open_first_cmd'] and i == 0:
-            # Open the first file as soon as it's available
-            open_plots(ctx.obj['open_first_cmd'], [out_file_path])
-
-    if ctx.obj['open_all_cmd']:
-        # Open all plots
-        open_plots(ctx.obj['open_all_cmd'], out_file_paths)
-
-
-def open_plots(cmd, file_paths):
-    """Open a plot file using a shell command."""
-
-    # If not yet included, append the output file path
-    if '{file_paths}' not in cmd:
-        cmd += ' {file_paths}'
-
-    # Ensure that the command is run in the background
-    if not cmd.rstrip().endswith('&'):
-        cmd += ' &'
-
-    # Run the command
-    cmd = cmd.format(file_paths=' '.join(file_paths))
-    os.system(cmd)
 
 
 if __name__ == "__main__":
