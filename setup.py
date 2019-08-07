@@ -43,7 +43,7 @@ setup(
         "PyFlexPlot contains Python scripts to plot FLEXPART NetCDF output"),
     entry_points={
         'console_scripts': [
-            'pyflexplot=pyflexplot.cli:main',
+            'pyflexplot=pyflexplot.cli:CLI.cli',
             'crop-netcdf=tools.crop_netcdf:main',
         ],
     },
