@@ -255,6 +255,22 @@ class GlobalOptions(ClickOptionsGroup):
         ]
 
     @click_options
+    def input_ens():
+        return [
+            click.option(
+                '--infile',
+                '-i',
+                'in_file_path_lst',
+                help=(
+                    "Input file path format string, containing format key "
+                    "'{member}' for the ensemble member (00, 01, ..., 21)."),
+                type=click.Path(exists=True, readable=True),
+                required=True,
+                multiple=True,
+            ),
+        ]
+
+    @click_options
     def output():
         return [
             click.option(
@@ -539,6 +555,52 @@ class AffectedArea(ClickCommand):
         create_plots(
             ctx,
             fct,
+            [flex_data_lst, out_file_path_fmt],
+            {'lang': lang},
+        )
+
+
+#----------------------------------------------------------------------
+
+
+class EnsMeanConcentration(ClickCommand):
+
+    @click_options
+    def options():
+        return [
+        ]
+
+    @CLI.command(
+        name='ens-mean-concentration',
+        help="Ensemble mean concentration.",
+    )
+    @GlobalOptions.input_ens
+    @GlobalOptions.output
+    @DispersionOptions.input
+    @DispersionOptions.preproc
+    @Concentration.options
+    @options
+    @click.pass_context
+    def concentration(ctx, in_file_path_lst, out_file_path_fmt, **vars_specs):
+
+        #SR_TMP<
+        in_file_path = next(iter(in_file_path_lst))
+        #SR_TMP>
+
+        lang = ctx.obj['lang']
+
+        # Determine fields specifications (one for each eventual plot)
+        fld_specs_lst = FlexFieldSpecsConcentration.multiple(
+            vars_specs, lang=lang)
+
+        # Read fields
+        flex_data_lst = FlexFileRotPole(in_file_path).read(
+            fld_specs_lst, lang=lang)
+
+        # Create plots
+        create_plots(
+            ctx,
+            FlexPlotter.concentration,
             [flex_data_lst, out_file_path_fmt],
             {'lang': lang},
         )
