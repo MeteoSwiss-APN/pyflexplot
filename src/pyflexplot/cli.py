@@ -316,6 +316,9 @@ def open_plots(cmd, file_paths):
     os.system(cmd)
 
 
+#======================================================================
+
+
 class Dispersion(ClickCommand):
 
     @click_options
