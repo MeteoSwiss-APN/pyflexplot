@@ -136,39 +136,52 @@ INT_LIST_PLUS_SEP_UNIQ = CharSepListParamType(
 
 @click_options
 def options_main():
-    # yapf: disable
     return [
         click.option(
-            '--dry-run', '-n',
+            '--dry-run',
+            '-n',
             help="Perform a trial run with no changes made.",
-            flag_value='dry_run', default=False),
+            flag_value='dry_run',
+            default=False,
+        ),
         click.option(
-            '--verbose', '-v',
+            '--verbose',
+            '-v',
             help="Increase verbosity; specify multiple times for more.",
-            count=True),
+            count=True,
+        ),
         click.option(
-            '--version', '-V',
+            '--version',
+            '-V',
             help="Print version.",
-            is_flag=True),
+            is_flag=True,
+        ),
         click.option(
             '--noplot',
             help="Skip plotting (for debugging etc.).",
-            is_flag=True),
+            is_flag=True,
+        ),
         click.option(
             '--lang',
             help="Language. Format key: '{lang}'.",
-            type=click.Choice(['en', 'de']), default='en'),
+            type=click.Choice(['en', 'de']),
+            default='en',
+        ),
         click.option(
-            '--open-first', 'open_first_cmd',
+            '--open-first',
+            'open_first_cmd',
             help=(
                 "Shell command to open the first plot as soon as it is "
                 "available. The file path follows the command, unless "
-                "explicitly set by including the format key '{file_path}'.")),
+                "explicitly set by including the format key '{file_path}'."),
+        ),
         click.option(
-            '--open-all', 'open_all_cmd',
-            help="Like --open-first, but for all plots."),
+            '--open-all',
+            'open_all_cmd',
+            help="Like --open-first, but for all plots.",
+        ),
     ]
-    # yapf: enable
+
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 @options_main
@@ -201,14 +214,19 @@ def main(ctx, **kwargs):
 @click_options
 def common_options_global():
     """Common options of all commands."""
-    # yapf: disable
     return [
         click.option(
-            '--infile', '-i', 'in_file_path',
+            '--infile',
+            '-i',
+            'in_file_path',
             help="Input file path.",
-            type=click.Path(exists=True, readable=True), required=True),
+            type=click.Path(exists=True, readable=True),
+            required=True,
+        ),
         click.option(
-            '--outfile', '-o', 'out_file_path_fmt',
+            '--outfile',
+            '-o',
+            'out_file_path_fmt',
             help=(
                 "Output file path. If multiple plots are to be created, "
                 "e.g., for multiple fields or levels, ``outfile`` must "
@@ -216,82 +234,106 @@ def common_options_global():
                 "(example: ``plot_lvl-{level}.png`` for multiple levels). "
                 "The format key for the plotted variable is '{variable}'. "
                 "See individual options for the respective format keys."),
-            type=click.Path(writable=True), required=True),
+            type=click.Path(writable=True),
+            required=True,
+        ),
     ]
-    # yapf: enable
 
 
 @click_options
 def common_options_dispersion_input():
     """Common options of dispersion plots (field selection)."""
-    # yapf: disable
     return [
         click.option(
-            '--time-ind', 'time_lst',
+            '--time-ind',
+            'time_lst',
             help="Index of time (zero-based). Format key: '{time_ind}'.",
-            type=int, default=[0], multiple=True),
+            type=int,
+            default=[0],
+            multiple=True,
+        ),
         click.option(
-            '--age-class-ind', 'nageclass_lst',
-            help=("Index of age class (zero-based). Format key: "
+            '--age-class-ind',
+            'nageclass_lst',
+            help=(
+                "Index of age class (zero-based). Format key: "
                 "'{age_class_ind}'."),
-            type=int, default=[0], multiple=True),
+            type=int,
+            default=[0],
+            multiple=True,
+        ),
         click.option(
-            '--release-point-ind', 'numpoint_lst',
-            help=("Index of release point (zero-based). Format key: "
+            '--release-point-ind',
+            'numpoint_lst',
+            help=(
+                "Index of release point (zero-based). Format key: "
                 "'{rls_pt_ind}'."),
-            type=int, default=[0], multiple=True),
+            type=int,
+            default=[0],
+            multiple=True,
+        ),
         click.option(
-            '--species-id', 'species_id_lst',
+            '--species-id',
+            'species_id_lst',
             help=(
                 "Species id(s) (default: 0). To sum up multiple species, "
                 "combine their ids with '+'. Format key: '{species_id}'."),
-            type=INT_LIST_PLUS_SEP_UNIQ, default=[0], multiple=True),
+            type=INT_LIST_PLUS_SEP_UNIQ,
+            default=[0],
+            multiple=True,
+        ),
     ]
-    # yapf: enable
 
 
 @click_options
 def common_options_dispersion_preproc():
     """Common options of dispersion plots (pre-processing)."""
-    # yapf: disable
     return [
         click.option(
-            '--integrate/--no-integrate', 'integrate_lst',
-            help=("Integrate field over time. If set, '-int' is "
+            '--integrate/--no-integrate',
+            'integrate_lst',
+            help=(
+                "Integrate field over time. If set, '-int' is "
                 "appended to variable name (format key: '{variable}')."),
-            is_flag=True, default=[False], multiple=True),
+            is_flag=True,
+            default=[False],
+            multiple=True,
+        ),
     ]
-    # yapf: enable
 
 
 @click_options
 def common_options_dispersion_deposition():
     """Common options of dispersion plots (deposition)."""
-    # yapf: disable
     return [
         click.option(
-            '--deposition-type', 'deposition_lst',
-            help=("Type of deposition. Part of plot variable (format "
+            '--deposition-type',
+            'deposition_lst',
+            help=(
+                "Type of deposition. Part of plot variable (format "
                 "key: '{variable}')."),
             type=click.Choice(['tot', 'wet', 'dry']),
-            default='tot', multiple=True)
+            default='tot',
+            multiple=True,
+        )
     ]
-    # yapf: enable
 
 
 @click_options
 def options_concentration():
-    # yapf: disable
     return [
         click.option(
-            '--level-ind', 'level_lst',
+            '--level-ind',
+            'level_lst',
             help=(
                 "Index/indices of vertical level (zero-based, bottom-up). To sum "
                 "up multiple levels, combine their indices with '+'. Format key: "
                 "'{level_ind}'."),
-            type=INT_LIST_PLUS_SEP_UNIQ, default=[0], multiple=True),
+            type=INT_LIST_PLUS_SEP_UNIQ,
+            default=[0],
+            multiple=True,
+        ),
     ]
-    # yapf: enable
 
 
 @main.command(help="Activity concentration in the air.")
@@ -346,14 +388,15 @@ def deposition(ctx, in_file_path, out_file_path_fmt, **vars_specs):
 
 @click_options
 def options_affected_area():
-    # yapf: disable
     return [
         click.option(
             '--mono/--no-mono',
             help="Only use one threshold (monochromatic plot).",
-            is_flag=True, default=[False], multiple=True),
+            is_flag=True,
+            default=[False],
+            multiple=True,
+        ),
     ]
-    # yapf: enable
 
 
 @main.command(
