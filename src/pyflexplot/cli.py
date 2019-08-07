@@ -73,6 +73,11 @@ class ClickGroup:
         return CLI.cli.command(*args, **kwargs)
 
 
+class ClickOptionsGroup:
+
+    pass
+
+
 class ClickCommand:
 
     pass
@@ -148,8 +153,6 @@ INT_LIST_PLUS_SEP_UNIQ = CharSepListParamType(
 
 #======================================================================
 
-CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
-
 # Show default values of options by default
 click.option = functools.partial(click.option, show_default=True)
 
@@ -205,7 +208,10 @@ class CLI(ClickGroup):
             ),
         ]
 
-    @click.group(context_settings=CONTEXT_SETTINGS)
+    @click.group(
+        context_settings={
+            'help_option_names': ['-h', '--help'],  # Add short flag '-h'
+        },)
     @options
     @click.pass_context
     def cli(ctx, **kwargs):
@@ -232,8 +238,11 @@ class CLI(ClickGroup):
 
         return 0
 
+
+class GlobalOptions(ClickOptionsGroup):
+
     @click_options
-    def options_shared():
+    def io():
         """Common options of all commands."""
         return [
             click.option(
@@ -319,10 +328,10 @@ def open_plots(cmd, file_paths):
 #======================================================================
 
 
-class Dispersion(ClickCommand):
+class DispersionOptions(ClickOptionsGroup):
 
     @click_options
-    def options_input():
+    def input():
         """Common options of dispersion plots (field selection)."""
         return [
             click.option(
@@ -366,7 +375,7 @@ class Dispersion(ClickCommand):
         ]
 
     @click_options
-    def options_preproc():
+    def preproc():
         """Common options of dispersion plots (pre-processing)."""
         return [
             click.option(
@@ -404,9 +413,9 @@ class Concentration(ClickCommand):
         name='concentration',
         help="Activity concentration in the air.",
     )
-    @CLI.options_shared
-    @Dispersion.options_input
-    @Dispersion.options_preproc
+    @GlobalOptions.io
+    @DispersionOptions.input
+    @DispersionOptions.preproc
     @options
     @click.pass_context
     def concentration(ctx, in_file_path, out_file_path_fmt, **vars_specs):
@@ -452,9 +461,9 @@ class Deposition(ClickCommand):
         name='deposition',
         help="Surface deposition.",
     )
-    @CLI.options_shared
-    @Dispersion.options_input
-    @Dispersion.options_preproc
+    @GlobalOptions.io
+    @DispersionOptions.input
+    @DispersionOptions.preproc
     @options
     @click.pass_context
     def deposition(ctx, in_file_path, out_file_path_fmt, **vars_specs):
@@ -496,9 +505,9 @@ class AffectedArea(ClickCommand):
         name='affected-area',
         help="Area affected by surface deposition.",
     )
-    @CLI.options_shared
-    @Dispersion.options_input
-    @Dispersion.options_preproc
+    @GlobalOptions.io
+    @DispersionOptions.input
+    @DispersionOptions.preproc
     @Deposition.options
     @options
     @click.pass_context
