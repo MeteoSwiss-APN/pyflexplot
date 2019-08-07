@@ -242,8 +242,7 @@ class CLI(ClickGroup):
 class GlobalOptions(ClickOptionsGroup):
 
     @click_options
-    def io():
-        """Common options of all commands."""
+    def in():
         return [
             click.option(
                 '--infile',
@@ -253,6 +252,11 @@ class GlobalOptions(ClickOptionsGroup):
                 type=click.Path(exists=True, readable=True),
                 required=True,
             ),
+        ]
+
+    @click_options
+    def out():
+        return [
             click.option(
                 '--outfile',
                 '-o',
@@ -331,7 +335,7 @@ def open_plots(cmd, file_paths):
 class DispersionOptions(ClickOptionsGroup):
 
     @click_options
-    def input():
+    def in():
         """Common options of dispersion plots (field selection)."""
         return [
             click.option(
@@ -375,7 +379,7 @@ class DispersionOptions(ClickOptionsGroup):
         ]
 
     @click_options
-    def preproc():
+    def prep():
         """Common options of dispersion plots (pre-processing)."""
         return [
             click.option(
@@ -413,9 +417,10 @@ class Concentration(ClickCommand):
         name='concentration',
         help="Activity concentration in the air.",
     )
-    @GlobalOptions.io
-    @DispersionOptions.input
-    @DispersionOptions.preproc
+    @GlobalOptions.in
+    @GlobalOptions.out
+    @DispersionOptions.in
+    @DispersionOptions.prep
     @options
     @click.pass_context
     def concentration(ctx, in_file_path, out_file_path_fmt, **vars_specs):
@@ -461,9 +466,10 @@ class Deposition(ClickCommand):
         name='deposition',
         help="Surface deposition.",
     )
-    @GlobalOptions.io
-    @DispersionOptions.input
-    @DispersionOptions.preproc
+    @GlobalOptions.in
+    @GlobalOptions.out
+    @DispersionOptions.in
+    @DispersionOptions.prep
     @options
     @click.pass_context
     def deposition(ctx, in_file_path, out_file_path_fmt, **vars_specs):
@@ -505,9 +511,10 @@ class AffectedArea(ClickCommand):
         name='affected-area',
         help="Area affected by surface deposition.",
     )
-    @GlobalOptions.io
-    @DispersionOptions.input
-    @DispersionOptions.preproc
+    @GlobalOptions.in
+    @GlobalOptions.out
+    @DispersionOptions.in
+    @DispersionOptions.prep
     @Deposition.options
     @options
     @click.pass_context
