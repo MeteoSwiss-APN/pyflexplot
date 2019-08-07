@@ -122,8 +122,10 @@ class FlexAttr:
             else:
                 fmt = ''
         s = f'{{:{fmt}}}'.format(self.value)
+        if self.name == 'unit':
+            s = self.format_unit(unit=s)
         if self.unit and not skip_unit:
-            s += f' {self.unit}'
+            s += f' {self.format_unit()}'
         return s
 
     def format_unit(self, unit=None):

@@ -866,31 +866,23 @@ class FlexFileRotPole:
             ['I-131a', 'Cs-137'],
         ]
         #SR_TMP>
-        #-if attrs.species.name in names:  #SR_ATTR
         if attrs.species.name.value in names:  #SR_ATTR
 
-            #-if attrs.variable.unit == 'ng kg-1':  #SR_ATTR
             if attrs.variable.unit.value == 'ng kg-1':  #SR_ATTR
-                #-attrs.variable.unit = 'Bq m-3'  #SR_ATTR
                 attrs.variable.unit.value = 'Bq m-3'  #SR_ATTR
                 fld[:] *= 1e-12
                 scale_time_stats(1e-12)
 
-            #-elif attrs.variable.unit == '1e-12 kg m-2':  #SR_ATTR
             elif attrs.variable.unit.value == '1e-12 kg m-2':  #SR_ATTR
-                #-attrs.variable.unit = 'Bq m-2'  #SR_ATTR
                 attrs.variable.unit.value = 'Bq m-2'  #SR_ATTR
                 fld[:] *= 1e-12
                 scale_time_stats(1e-12)
 
             else:
                 raise NotImplementedError(
-                    #-f"species '{attrs.species.name}': "  #SR_ATTR
-                    #-f"unknown unit '{attrs.variable.unit}'")  #SR_ATTR
                     f"species '{attrs.species.name.value}': "  #SR_ATTR
                     f"unknown unit '{attrs.variable.unit.value}'")  #SR_ATTR
         else:
-            #-raise NotImplementedError(f"species '{attrs.species.name}'")  #SR_ATTR
             raise NotImplementedError(
                 f"species '{attrs.species.name.value}'")  #SR_ATTR
 
@@ -964,7 +956,10 @@ class FlexAttrsCollector:
         site_name = release_point.name
 
         height = np.mean([release_point.zbot, release_point.ztop])
-        height_unit = 'm AGL'  #SR_HC
+        height_unit = {
+            'en': 'm AGL',  #SR_HC
+            'de': r'm $\mathrm{\"u}$. G.',  #SR_HC
+        }[self.lang]
 
         assert len(release_point.ms_parts) == 1
         mass = next(iter(release_point.ms_parts))
@@ -1017,7 +1012,10 @@ class FlexAttrsCollector:
             level_top = -1
             #SR_TMP>
         else:
-            level_unit = 'm AGL'  #SR_HC
+            level_unit = {
+                'en': 'm AGL',  #SR_HC
+                'de': r'm $\mathrm{\"u}$. G.',  #SR_HC
+            }[self.lang]
             _var = self.fi.variables['level']
             level_bot = 0.0 if _i == 0 else float(_var[_i - 1])
             level_top = float(_var[_i])
@@ -1101,7 +1099,7 @@ class FlexAttrsCollector:
         # Get half life information
         try:
             half_life, half_life_unit = {
-                'Cs-137': (30.17, 'y'),  #SR_HC
+                'Cs-137': (30.17, 'a'),  #SR_HC
                 'I-131a': (8.02, 'd'),  #SR_HC
             }[substance]
         except KeyError:
