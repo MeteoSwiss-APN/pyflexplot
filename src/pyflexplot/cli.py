@@ -27,6 +27,49 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 click.option = functools.partial(click.option, show_default=True)
 
 
+def click_options(f_options):
+    """Define a list of click options shared by multiple commands.
+
+    Args:
+        f_options (function): Function returning a list of ``click.option``
+            objects.
+
+    Usage:
+        @click_options          # <== define options
+        def common_options():
+            return [click.option(...), click.option(...), ...]
+
+        @click.group
+        def main(...):
+            ...
+
+        @main.command
+        @common_options         # <== use options
+        def foo(...):
+            ...
+
+        @main.command
+        @common_options         # <== use options
+        def bar(...):
+            ...
+
+
+    Applications:
+        * Define options that are shared by multiple commands but are
+          passed after the respective command, instead of before as
+          group options (the native way to define shared options) are.
+
+        * Define options used only by a single group or command in a
+          function instead of as decorators, which allows them to be
+          folded by the editor more easily.
+
+    Source:
+        https://stackoverflow.com/a/52147284
+
+    """
+    return lambda f: functools.reduce(lambda x, opt: opt(x), f_options(), f)
+
+
 class CharSepListParamType(click.ParamType):
 
     def __init__(self, type_, separator, *, name=None, dupl_ok=False):
@@ -91,39 +134,45 @@ INT_LIST_PLUS_SEP_UNIQ = CharSepListParamType(
     int, '+', dupl_ok=False, name='integers (plus-separated)')
 
 
-# yapf: disable
+@click_options
+def options_main():
+    # yapf: disable
+    return [
+        click.option(
+            '--dry-run', '-n',
+            help="Perform a trial run with no changes made.",
+            flag_value='dry_run', default=False),
+        click.option(
+            '--verbose', '-v',
+            help="Increase verbosity; specify multiple times for more.",
+            count=True),
+        click.option(
+            '--version', '-V',
+            help="Print version.",
+            is_flag=True),
+        click.option(
+            '--noplot',
+            help="Skip plotting (for debugging etc.).",
+            is_flag=True),
+        click.option(
+            '--lang',
+            help="Language. Format key: '{lang}'.",
+            type=click.Choice(['en', 'de']), default='en'),
+        click.option(
+            '--open-first', 'open_first_cmd',
+            help=(
+                "Shell command to open the first plot as soon as it is "
+                "available. The file path follows the command, unless "
+                "explicitly set by including the format key '{file_path}'.")),
+        click.option(
+            '--open-all', 'open_all_cmd',
+            help="Like --open-first, but for all plots."),
+    ]
+    # yapf: enable
+
 @click.group(context_settings=CONTEXT_SETTINGS)
-@click.option(
-    '--dry-run', '-n',
-    help="Perform a trial run with no changes made.",
-    flag_value='dry_run', default=False)
-@click.option(
-    '--verbose', '-v',
-    help="Increase verbosity (specify multiple times for more).",
-    count=True)
-@click.option(
-    '--version', '-V',
-    help="Print version.",
-    is_flag=True)
-@click.option(
-    '--noplot',
-    help="Skip plotting (for debugging etc.).",
-    is_flag=True)
-@click.option(
-    '--lang',
-    help="Language. Format key: '{lang}'.",
-    type=click.Choice(['en', 'de']), default='en')
-@click.option(
-    '--open-first', 'open_first_cmd',
-    help=(
-        "Shell command to open the first plot as soon as it is available."
-        " The file path follows the command, unless explicitly set by"
-        " including the format key '{file_path}'."))
-@click.option(
-    '--open-all', 'open_all_cmd',
-    help="Like --open-first, but for all plots.")
+@options_main
 @click.pass_context
-# yapf: enable
 def main(ctx, **kwargs):
     """Console script for test_cli_project."""
 
@@ -149,16 +198,11 @@ def main(ctx, **kwargs):
     return 0
 
 
-def common_options_global(f):
-    """Common options of all commands in the group.
-
-    Defining the common options this way instead of on the group
-    enables putting them after the command instead of before it.
-
-    src: https://stackoverflow.com/a/52147284
-    """
+@click_options
+def common_options_global():
+    """Common options of all commands."""
     # yapf: disable
-    options = [
+    return [
         click.option(
             '--infile', '-i', 'in_file_path',
             help="Input file path.",
@@ -175,13 +219,13 @@ def common_options_global(f):
             type=click.Path(writable=True), required=True),
     ]
     # yapf: enable
-    return functools.reduce(lambda x, opt: opt(x), options, f)
 
 
-def common_options_dispersion_input(f):
+@click_options
+def common_options_dispersion_input():
     """Common options of dispersion plots (field selection)."""
     # yapf: disable
-    options = [
+    return [
         click.option(
             '--time-ind', 'time_lst',
             help="Index of time (zero-based). Format key: '{time_ind}'.",
@@ -204,13 +248,13 @@ def common_options_dispersion_input(f):
             type=INT_LIST_PLUS_SEP_UNIQ, default=[0], multiple=True),
     ]
     # yapf: enable
-    return functools.reduce(lambda x, opt: opt(x), options, f)
 
 
-def common_options_dispersion_preproc(f):
+@click_options
+def common_options_dispersion_preproc():
     """Common options of dispersion plots (pre-processing)."""
     # yapf: disable
-    options = [
+    return [
         click.option(
             '--integrate/--no-integrate', 'integrate_lst',
             help=("Integrate field over time. If set, '-int' is "
@@ -218,13 +262,13 @@ def common_options_dispersion_preproc(f):
             is_flag=True, default=[False], multiple=True),
     ]
     # yapf: enable
-    return functools.reduce(lambda x, opt: opt(x), options, f)
 
 
-def common_options_dispersion_deposition(f):
+@click_options
+def common_options_dispersion_deposition():
     """Common options of dispersion plots (deposition)."""
     # yapf: disable
-    options = [
+    return [
         click.option(
             '--deposition-type', 'deposition_lst',
             help=("Type of deposition. Part of plot variable (format "
@@ -233,22 +277,28 @@ def common_options_dispersion_deposition(f):
             default='tot', multiple=True)
     ]
     # yapf: enable
-    return functools.reduce(lambda x, opt: opt(x), options, f)
+
+
+@click_options
+def options_concentration():
+    # yapf: disable
+    return [
+        click.option(
+            '--level-ind', 'level_lst',
+            help=(
+                "Index/indices of vertical level (zero-based, bottom-up). To sum "
+                "up multiple levels, combine their indices with '+'. Format key: "
+                "'{level_ind}'."),
+            type=INT_LIST_PLUS_SEP_UNIQ, default=[0], multiple=True),
+    ]
+    # yapf: enable
 
 
 @main.command(help="Activity concentration in the air.")
 @common_options_global
 @common_options_dispersion_input
-# yapf: disable
-@click.option(
-    '--level-ind', 'level_lst',
-    help=(
-        "Index/indices of vertical level (zero-based, bottom-up). To sum up "
-        "multiple levels, combine their indices with '+'. Format key: "
-        "'{level_ind}'."),
-    type=INT_LIST_PLUS_SEP_UNIQ, default=[0], multiple=True)
-# yapf: enable
 @common_options_dispersion_preproc
+@options_concentration
 @click.pass_context
 def concentration(ctx, in_file_path, out_file_path_fmt, **vars_specs):
     lang = ctx.obj['lang']
@@ -294,6 +344,18 @@ def deposition(ctx, in_file_path, out_file_path_fmt, **vars_specs):
     )
 
 
+@click_options
+def options_affected_area():
+    # yapf: disable
+    return [
+        click.option(
+            '--mono/--no-mono',
+            help="Only use one threshold (monochromatic plot).",
+            is_flag=True, default=[False], multiple=True),
+    ]
+    # yapf: enable
+
+
 @main.command(
     name='affected-area',
     help="Area affected by surface deposition.",
@@ -302,12 +364,7 @@ def deposition(ctx, in_file_path, out_file_path_fmt, **vars_specs):
 @common_options_dispersion_input
 @common_options_dispersion_preproc
 @common_options_dispersion_deposition
-# yapf: disable
-@click.option(
-    '--mono/--no-mono',
-    help="Only use one threshold (monochromatic plot).",
-    is_flag=True, default=[False], multiple=True)
-# yapf: enable
+@options_affected_area
 @click.pass_context
 def affected_area(ctx, in_file_path, out_file_path_fmt, mono, **vars_specs):
     lang = ctx.obj['lang']
