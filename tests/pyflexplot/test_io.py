@@ -403,7 +403,7 @@ class TestReadFieldEnsemble_Single:
     dims_shared = {
         'nageclass': 0,
         'numpoint': 0,
-        'time': 3,
+        'time': 10,
     }
 
     # Variable specifications shared by all tests
@@ -417,13 +417,13 @@ class TestReadFieldEnsemble_Single:
         return self.var_specs_mult_shared['species_id']
 
     # Ensemble member ids
-    ens_mem_ids = [0, 1, 5, 10, 15, 20]
+    ens_member_ids = [0, 1, 5, 10, 15, 20]
 
     def datafile_fmt(self, datadir):
-        return f'{datadir}/grid_conc_20190727120000_{{mem_id:03d}}.nc'
+        return f'{datadir}/grid_conc_20190727120000_{{member_id:03d}}.nc'
 
-    def datafile(self, datadir, mem_id):
-        return self.datafile_fmt(datadir).format(mem_id)
+    def datafile(self, datadir, member_id):
+        return self.datafile_fmt(datadir).format(member_id=member_id)
 
     #------------------------------------------------------------------
 
@@ -442,24 +442,23 @@ class TestReadFieldEnsemble_Single:
         var_specs = cls_fld_specs.cls_var_specs(**var_specs_dct)
 
         # Read input fields
-        #+flex_field = FlexFileRotPole(self.datafile_fmt(datadir)).read_ens(
-        #+    self.ens_mem_ids, fld_specs)
-        #+fld = flex_field.fld
+        flex_field = FlexFileRotPole(self.datafile_fmt(datadir)).read_ens(
+            self.ens_member_ids, fld_specs)
+        fld = flex_field.fld
 
         # Read reference fields
         fld_ref = np.nansum(
             [
                 [
                     read_nc_var(
-                        self.datafile(datadir, mem_id),
+                        self.datafile(datadir, member_id),
                         var_name,
                         var_specs,
-                    ) for mem_id in self.ens_mem_ids
+                    ) for member_id in self.ens_member_ids
                 ] for var_name in var_names_ref
             ],
             axis=0,
         )
-        ipython(globals(), locals())
 
         # Check array
         assert fld.shape == fld_ref.shape

@@ -18,6 +18,7 @@ from pprint import pprint  #SR_DEV
 
 from .attr import FlexAttrGroupCollection
 from .data import FlexFieldRotPole
+from .data import FlexFieldEnsRotPole
 from .utils import check_array_indices
 from .utils import pformat_dictlike
 from .utils import nested_dict_set
@@ -602,6 +603,9 @@ class FlexFieldSpecsAffectedArea(FlexFieldSpecsDeposition):
 class FlexFileRotPole:
     """NetCDF file containing FLEXPART data on rotated-pole grid."""
 
+    cls_field = FlexFieldRotPole
+    cls_field_ens = FlexFieldEnsRotPole
+
     def __init__(self, path, cmd_open=nc4.Dataset):
         """Create an instance of ``FlexFileRotPole``.
 
@@ -625,7 +629,7 @@ class FlexFileRotPole:
         self._fld_specs_time_lst = None
         self._time_inds_lst = None
 
-    def read(self, fld_specs, lang='en'):
+    def read(self, fld_specs, lang='en', path=None):
         """Read one or more fields from a file from disc.
 
         Args:
@@ -646,6 +650,9 @@ class FlexFileRotPole:
 
         self.lang = lang
 
+        if path is None:
+            path = self.path
+
         if isinstance(fld_specs, FlexFieldSpecs):
             multiple = False
             fld_specs_lst = [fld_specs]
@@ -664,8 +671,8 @@ class FlexFileRotPole:
         self._fld_specs_time_lst, self._time_inds_lst = (
             self.group_fld_specs_by_time(fld_specs_lst))
 
-        log.debug(f"read {self.path}")
-        with self.cmd_open(self.path, 'r') as self.fi:
+        log.debug(f"read {path}")
+        with self.cmd_open(path, 'r') as self.fi:
             flex_field_lst = self._read_fi()
 
         self.reset()
@@ -700,6 +707,34 @@ class FlexFileRotPole:
                 flex_field_lst.append(flex_field)
 
         return flex_field_lst
+
+    def read_ens(self, member_ids, fld_specs, lang='en'):
+
+        #SR_TMP<
+        flex_field_lst = []
+        #SR_TMP>
+
+        for member_id in member_ids:
+            if all(k not in self.path for k in ['{member_id}', '{member_id:']):
+                raise Exception(
+                    "input file path missing format key '{member_id[:..]}': "
+                    f"{self.path}")
+            path = self.path.format(member_id=member_id)
+
+            #SR_TMP<
+            flex_field_i = self.read(fld_specs, lang=lang, path=path)
+            if not isinstance(flex_field_i, self.cls_field):
+                raise NotImplementedError(
+                    f"multiple fields ({len(flex_field_i)})")
+            flex_field_lst.append(flex_field_i)
+            #SR_TMP>
+
+        #ipython(globals(), locals(), f"{type(self).__name__}.read_ens")  #SR_DBG
+
+        #SR_TMP<
+        flex_field_ens = self.cls_field_ens.from_fields(flex_field_lst)
+        return flex_field_ens
+        #SR_TMP>
 
     def _read_flex_field(
             self, fld_specs_time, i_time, time_ind, fld_time, time_stats):
@@ -741,8 +776,8 @@ class FlexFileRotPole:
 
         # Collect data
         log.debug("create data object")
-        flex_field = FlexFieldRotPole(
-            rlat, rlon, fld, attrs, fld_specs, time_stats)
+        flex_field = self.cls_field(
+            fld, rlat, rlon, attrs, fld_specs, time_stats)
 
         return flex_field
 

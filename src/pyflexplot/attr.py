@@ -281,6 +281,9 @@ class FlexAttrGroup:
     def reset(self):
         self._attrs = {}
 
+    def __eq__(self, other):
+        return dict(self) == dict(other)
+
     def __getattr__(self, name):
         try:
             return self._attrs[name]
@@ -614,6 +617,9 @@ class FlexAttrGroupCollection:
 
     def reset(self):
         self._attrs = {}
+
+    def __eq__(self, other):
+        return dict(self) == dict(other)
 
     def __getattr__(self, name):
         try:
