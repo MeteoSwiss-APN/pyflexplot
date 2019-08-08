@@ -656,10 +656,8 @@ class FlexFileRotPole:
     def reset(self):
         self.fi = None
         self.lang = None
-        self._fld_specs_time_lst = None
-        self._time_inds_lst = None
 
-    def read(self, fld_specs, lang='en', file_path_lst=None):
+    def read(self, fld_specs, lang='en'):
         """Read one or more fields from a file from disc.
 
         Args:
@@ -668,10 +666,6 @@ class FlexFileRotPole:
 
             lang (str, optional): Language, e.g., 'de' for German.
                 Defaults to 'en' (English).
-
-            file_path_lst (list[str], optional): List of input file
-                paths, each of which is one member of an ensemble.
-                Defaults to ``self.file_path_lst``.
 
         Returns:
             FlexFieldRotPole: Single data object; if ``fld_specs``
@@ -686,9 +680,6 @@ class FlexFileRotPole:
         """
 
         self.lang = lang
-
-        if file_path_lst is None:
-            file_path_lst = self.file_path_lst
 
         if isinstance(fld_specs, FlexFieldSpecs):
             multiple = False
@@ -709,18 +700,18 @@ class FlexFileRotPole:
             self.group_fld_specs_by_time(fld_specs_lst))
 
         #SR_TMP<
-        flex_field_lst_lst = []
-        for file_path in file_path_lst:
-            log.debug(f"read {file_path}")
-            flex_field_lst = []
+        n_members = 1 if self.member_ids is None else len(self.member_ids)
+        flex_field_lst_per_member = [[] for _ in range(n_members)]
+        n_fst = len(self._fld_specs_time_lst)
+        log.debug(f"process {n_fst} field specs groups")
+        for i_fst, (fld_specs_time,
+                    time_inds) in enumerate(zip(self._fld_specs_time_lst,
+                                                self._time_inds_lst)):
+            log.debug(f"{i_fst + 1}/{n_fst}: {fld_specs_time}")
+            n_t = len(time_inds)
 
-            n_fst = len(self._fld_specs_time_lst)
-            log.debug(f"process {n_fst} field specs groups")
-            for i_fst, (fld_specs_time,
-                        time_inds) in enumerate(zip(self._fld_specs_time_lst,
-                                                    self._time_inds_lst)):
-                log.debug(f"{i_fst + 1}/{n_fst}: {fld_specs_time}")
-                n_t = len(time_inds)
+            for i_member, file_path in enumerate(self.file_path_lst):
+                log.debug(f"read {file_path}")
 
                 with self.cmd_open(file_path, 'r') as self.fi:
 
@@ -738,55 +729,51 @@ class FlexFileRotPole:
                             fld_time,
                             time_stats,
                         )
-                        flex_field_lst.append(flex_field)
-
-            self.reset()
-            flex_field_lst_lst.append(flex_field_lst)
-
-        assert len(flex_field_lst_lst) == 1
-        flex_field_lst = flex_field_lst_lst[0]
+                        flex_field_lst_per_member[i_member].append(flex_field)
         #SR_TMP>
 
-        # Return result(s)
-        if multiple:
-            return flex_field_lst
-        else:
-            assert len(flex_field_lst) == 1
-            return flex_field_lst[0]
+        # Return result field(s)
+        result = flex_field_lst_per_member
+        if not multiple:
+            # Only one field per member: get rid of fields dimension
+            result = [r[0] if len(r) == 1 else None for r in result]
+            if None in result:
+                raise Exception(f"None in result: {result}")
+        if len(flex_field_lst_per_member) == 1:
+            # Only one member; get rid of members dimension
+            result = result[0]
+        return result
 
     def read_ens(self, fld_specs, lang='en'):
 
         multiple = not isinstance(fld_specs, FlexFieldSpecs)
 
         #SR_TMP<
-        flex_field_lst = []
+        flex_field_lst_per_member = self.read(fld_specs, lang=lang)
+        if isinstance(flex_field_lst_per_member, self.cls_field):
+            flex_field_lst_per_member = [flex_field_lst_per_member]
+
+        #SR_TMP<
+        flex_field_lst_per_member = [
+            [ffl] if isinstance(ffl, self.cls_field) else ffl
+            for ffl in flex_field_lst_per_member]
         #SR_TMP>
 
-        for file_path in self.file_path_lst:
-
-            #SR_TMP<
-            flex_field_i = self.read(
-                fld_specs, lang=lang, file_path_lst=[file_path])
-            if isinstance(flex_field_i, self.cls_field):
-                flex_field_i = [flex_field_i]
-
-            if len(flex_field_lst) > 1:
-                if len(flex_field_i) != len(flex_field_lst[0]):
-                    raise Exception(
-                        f"number of fields differs between members: "
-                        f"{len(flex_field_i)} != "
-                        f"{len(flex_field_lst[0])}")
-
-            flex_field_lst.append(flex_field_i)
-            #SR_TMP>
+        # Check that all members have the same number of fields
+        n_fields_per_member = [len(ffl) for ffl in flex_field_lst_per_member]
+        if len(set(n_fields_per_member)) != 1:
+            raise Exception(
+                f"number of fields differs between members: "
+                f"{n_fields_per_member}")
+        #SR_TMP>
 
         #ipython(globals(), locals(), f"{type(self).__name__}.read_ens")  #SR_DBG
 
         #SR_TMP<
         flex_field_ens = []
-        n_ff = len(flex_field_lst[0])
+        n_ff = len(flex_field_lst_per_member[0])
         for i_ff in range(n_ff):
-            flex_field_i = [ffl[i_ff] for ffl in flex_field_lst]
+            flex_field_i = [ffl[i_ff] for ffl in flex_field_lst_per_member]
             flex_field_ens_i = self.cls_field_ens.from_fields(flex_field_i)
             flex_field_ens.append(flex_field_ens_i)
         #SR_TMP>
