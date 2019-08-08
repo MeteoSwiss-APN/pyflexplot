@@ -699,15 +699,20 @@ class FlexFileRotPole:
         self._fld_specs_time_lst, self._time_inds_lst = (
             self.group_fld_specs_by_time(fld_specs_lst))
 
-        n_mem = 1 if self.member_ids is None else len(self.member_ids)
-        n_time_lst = [len(inds) for inds in self._time_inds_lst]
-        if len(set(n_time_lst)) > 1:
-            raise Exception(f"number of timesteps differ: {n_time_lst}")
-        n_time = next(iter(n_time_lst))
+        # Prepare array for fields
         n_fst = len(self._fld_specs_time_lst)
-
         #SR_TMP<
-        flex_fields_arr = np.full([n_fst, n_time, n_mem], None, object)
+        n_time_sel_lst = [len(inds) for inds in self._time_inds_lst]
+        if len(set(n_time_sel_lst)) > 1:
+            raise Exception(
+                f"numbers of timesteps differ across members: "
+                f"{n_time_sel_lst}")
+        n_time_sel = next(iter(n_time_sel_lst))
+        #SR_TMP>
+        n_mem = 1 if self.member_ids is None else len(self.member_ids)
+        flex_fields_arr = np.full([n_fst, n_time_sel, n_mem], None, object)
+
+        # Collect fields
         log.debug(f"process {n_fst} field specs groups")
         for i_fst in range(n_fst):
             fld_specs_time = self._fld_specs_time_lst[i_fst]
@@ -715,14 +720,29 @@ class FlexFileRotPole:
             log.debug(f"{i_fst + 1}/{n_fst}: {fld_specs_time}")
             n_t = len(time_inds)
 
+            # 1st loop over members: read fields at all time steps
+            arr_mem_time = None
             for i_mem, file_path in enumerate(self.file_path_lst):
-                log.debug(f"read {file_path}")
-                with self.cmd_open(file_path, 'r') as self.fi:
 
+                log.debug(f"read {file_path} (fields)")
+                with self.cmd_open(file_path, 'r') as self.fi:
+                    log.debug(f"extract {n_fst} time steps")
                     fld_time = self._import_field(fld_specs_time)
                     time_stats = self.collect_time_stats(fld_time)
 
-                    log.debug(f"extract {n_fst} time steps")
+                    if arr_mem_time is None:
+                        _shape = [n_mem] + list(fld_time.shape)
+                        arr_mem_time = np.full(_shape, np.nan, np.float32)
+                    arr_mem_time[i_mem] = fld_time
+
+            #SR_TODO: Compute variable across members, and resp. time stats
+
+            # 2nd loop over members: extract time steps of interest
+            for i_mem, file_path in enumerate(self.file_path_lst):
+                fld_time = arr_mem_time[i_mem]
+
+                log.debug(f"read {file_path} (attributes)")
+                with self.cmd_open(file_path, 'r') as self.fi:
                     for i_time, time_ind in enumerate(time_inds):
                         log.debug(f"{i_time + 1}/{n_t}")
 
@@ -735,8 +755,8 @@ class FlexFileRotPole:
                         )
                         flex_fields_arr[i_fst, i_time, i_mem] = flex_field
 
-        flex_fields_lst = flex_fields_arr.reshape([n_fst*n_time,
-                                                   n_mem]).tolist()
+        flex_fields_arr = flex_fields_arr.reshape([n_fst*n_time_sel, n_mem])
+        flex_fields_lst = flex_fields_arr.tolist()
         #SR_TMP>
 
         # Return result field(s)
