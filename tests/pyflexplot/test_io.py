@@ -394,3 +394,87 @@ class TestReadField_Multiple:
 
     def test_deposition_tot_together(self, datadir):
         self.run_deposition_tot(datadir, separate=False)
+
+
+class TestReadFieldEnsemble_Single:
+    """Read one ensemble of 2D fields from FLEXPART NetCDF files."""
+
+    # Dimensions shared by all tests
+    dims_shared = {
+        'nageclass': 0,
+        'numpoint': 0,
+        'time': 3,
+    }
+
+    # Variable specifications shared by all tests
+    var_specs_mult_shared = {
+        'integrate': False,
+        'species_id': 2,
+    }
+
+    @property
+    def species_id(self):
+        return self.var_specs_mult_shared['species_id']
+
+    # Ensemble member ids
+    ens_mem_ids = [0, 1, 5, 10, 15, 20]
+
+    def datafile_fmt(self, datadir):
+        return f'{datadir}/grid_conc_20190727120000_{{mem_id:03d}}.nc'
+
+    def datafile(self, datadir, mem_id):
+        return self.datafile_fmt(datadir).format(mem_id)
+
+    #------------------------------------------------------------------
+
+    def run(
+            self, datadir, cls_fld_specs, dims, var_names_ref,
+            var_specs_mult_unshared):
+        """Run an individual test."""
+
+        # Initialize specifications
+        var_specs_dct = {
+            **dims,
+            **self.var_specs_mult_shared,
+            **var_specs_mult_unshared,
+        }
+        fld_specs = cls_fld_specs(var_specs_dct)
+        var_specs = cls_fld_specs.cls_var_specs(**var_specs_dct)
+
+        # Read input fields
+        #+flex_field = FlexFileRotPole(self.datafile_fmt(datadir)).read_ens(
+        #+    self.ens_mem_ids, fld_specs)
+        #+fld = flex_field.fld
+
+        # Read reference fields
+        fld_ref = np.nansum(
+            [
+                [
+                    read_nc_var(
+                        self.datafile(datadir, mem_id),
+                        var_name,
+                        var_specs,
+                    ) for mem_id in self.ens_mem_ids
+                ] for var_name in var_names_ref
+            ],
+            axis=0,
+        )
+        ipython(globals(), locals())
+
+        # Check array
+        assert fld.shape == fld_ref.shape
+        np.testing.assert_allclose(fld, fld_ref, equal_nan=True, rtol=1e-6)
+
+    #------------------------------------------------------------------
+
+    def test_concentration(self, datadir):
+        """Read concentration field."""
+        self.run(
+            datadir,
+            FlexFieldSpecsConcentration,
+            dims={
+                **self.dims_shared, 'level': 1
+            },
+            var_names_ref=[f'spec{self.species_id:03d}'],
+            var_specs_mult_unshared={},
+        )
