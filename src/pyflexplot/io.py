@@ -710,6 +710,8 @@ class FlexFileRotPole:
 
     def read_ens(self, member_ids, fld_specs, lang='en'):
 
+        multiple = not isinstance(fld_specs, FlexFieldSpecs)
+
         #SR_TMP<
         flex_field_lst = []
         #SR_TMP>
@@ -723,18 +725,37 @@ class FlexFileRotPole:
 
             #SR_TMP<
             flex_field_i = self.read(fld_specs, lang=lang, path=path)
-            if not isinstance(flex_field_i, self.cls_field):
-                raise NotImplementedError(
-                    f"multiple fields ({len(flex_field_i)})")
+            if isinstance(flex_field_i, self.cls_field):
+                flex_field_i = [flex_field_i]
+
+            if len(flex_field_lst) > 1:
+                if len(flex_field_i) != len(flex_field_lst[0]):
+                    raise Exception(
+                        f"number of fields differs between members: "
+                        f"{len(flex_field_i)} != "
+                        f"{len(flex_field_lst[0])}")
+
             flex_field_lst.append(flex_field_i)
             #SR_TMP>
 
         #ipython(globals(), locals(), f"{type(self).__name__}.read_ens")  #SR_DBG
 
         #SR_TMP<
-        flex_field_ens = self.cls_field_ens.from_fields(flex_field_lst)
-        return flex_field_ens
+        flex_field_ens = []
+        n_ff = len(flex_field_lst[0])
+        for i_ff in range(n_ff):
+            flex_field_i = [ffl[i_ff] for ffl in flex_field_lst]
+            flex_field_ens_i = self.cls_field_ens.from_fields(flex_field_i)
+            flex_field_ens.append(flex_field_ens_i)
         #SR_TMP>
+
+        if not multiple:
+            if len(flex_field_ens) > 1:
+                raise Exception(
+                    f"single field_specs, yet {len(flex_field_ens)} "
+                    f"fields: {fld_specs} -> {flex_field_ens}")
+            return next(iter(flex_field_ens))
+        return flex_field_ens
 
     def _read_flex_field(
             self, fld_specs_time, i_time, time_ind, fld_time, time_stats):

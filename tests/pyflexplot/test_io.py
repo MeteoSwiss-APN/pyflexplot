@@ -84,8 +84,7 @@ class TestReadField_Single:
     def species_id(self):
         return self.var_specs_mult_shared['species_id']
 
-    @staticmethod
-    def datafile(datadir):
+    def datafile(self, datadir):
         return f'{datadir}/flexpart_cosmo-1_case2.nc'
 
     #------------------------------------------------------------------
@@ -260,8 +259,7 @@ class TestReadField_Multiple:
     def species_id(self):
         return self.var_specs_mult_shared['species_id']
 
-    @staticmethod
-    def datafile(datadir):
+    def datafile(self, datadir):
         return f'{datadir}/flexpart_cosmo-1_case2.nc'
 
     #------------------------------------------------------------------
@@ -288,11 +286,10 @@ class TestReadField_Multiple:
         else:
             self._run_core(datafile, dim_names, var_names_ref, fld_specs_lst)
 
-    @staticmethod
-    def _run_core(datafile, dim_names, var_names_ref, fld_specs_lst):
+    def _run_core(self, datafile, dim_names, var_names_ref, fld_specs_lst):
 
         # Read input fields
-        flex_field_lst = (FlexFileRotPole(datafile).read(fld_specs_lst))
+        flex_field_lst = FlexFileRotPole(datafile).read(fld_specs_lst)
         flds = np.array([flex_field.fld for flex_field in flex_field_lst])
 
         # Collect merged variables specifications
@@ -422,8 +419,10 @@ class TestReadFieldEnsemble_Single:
     def datafile_fmt(self, datadir):
         return f'{datadir}/grid_conc_20190727120000_{{member_id:03d}}.nc'
 
-    def datafile(self, datadir, member_id):
-        return self.datafile_fmt(datadir).format(member_id=member_id)
+    def datafile(self, member_id, *, datadir=None, datafile_fmt=None):
+        if datafile_fmt is None:
+            datafile_fmt = self.datafile_fmt(datadir)
+        return datafile_fmt.format(member_id=member_id)
 
     #------------------------------------------------------------------
 
@@ -431,6 +430,8 @@ class TestReadFieldEnsemble_Single:
             self, datadir, cls_fld_specs, dims, var_names_ref,
             var_specs_mult_unshared):
         """Run an individual test."""
+
+        datafile_fmt = self.datafile_fmt(datadir)
 
         # Initialize specifications
         var_specs_dct = {
@@ -442,7 +443,7 @@ class TestReadFieldEnsemble_Single:
         var_specs = cls_fld_specs.cls_var_specs(**var_specs_dct)
 
         # Read input fields
-        flex_field = FlexFileRotPole(self.datafile_fmt(datadir)).read_ens(
+        flex_field = FlexFileRotPole(datafile_fmt).read_ens(
             self.ens_member_ids, fld_specs)
         fld = flex_field.fld
 
@@ -450,7 +451,7 @@ class TestReadFieldEnsemble_Single:
         fld_ref = np.nansum(
             [[
                 read_nc_var(
-                    self.datafile(datadir, member_id),
+                    self.datafile(member_id, datafile_fmt=datafile_fmt),
                     var_name,
                     var_specs,
                 ) for member_id in self.ens_member_ids
@@ -475,3 +476,111 @@ class TestReadFieldEnsemble_Single:
             var_names_ref=[f'spec{self.species_id:03d}'],
             var_specs_mult_unshared={},
         )
+
+
+class TestReadFieldEnsemble_Multiple:
+    """Read multiple 2D field ensembles from FLEXPART NetCDF files."""
+
+    # Dimensions arguments shared by all tests
+    dims_shared = {
+        'nageclass': 0,
+        'numpoint': 0,
+        'time_lst': [0, 3, 9],
+    }
+
+    # Variables specification arguments shared by all tests
+    var_specs_mult_shared = {
+        'integrate': True,
+        'species_id': 1,
+    }
+
+    @property
+    def species_id(self):
+        return self.var_specs_mult_shared['species_id']
+
+    # Ensemble member ids
+    ens_member_ids = [0, 1, 5, 10, 15, 20]
+
+    def datafile_fmt(self, datadir):
+        return f'{datadir}/grid_conc_20190727120000_{{member_id:03d}}.nc'
+
+    def datafile(self, member_id, *, datafile_fmt=None, datadir=None):
+        if datafile_fmt is None:
+            datafile_fmt = self.datafile_fmt(datadir)
+        return datafile_fmt.format(member_id=member_id)
+
+    #------------------------------------------------------------------
+
+    def run(
+            self, *, separate, datafile_fmt, cls_fld_specs, dims_mult,
+            var_names_ref, var_specs_mult_unshared):
+        """Run an individual test, reading one field after another."""
+
+        # Create field specifications list
+        var_specs_mult = {
+            **dims_mult,
+            **self.var_specs_mult_shared,
+            **var_specs_mult_unshared,
+        }
+        fld_specs_lst = cls_fld_specs.multiple(var_specs_mult)
+
+        dim_names = sorted([d.replace('_lst', '') for d in dims_mult.keys()])
+
+        if separate:
+            # Process field specifications one after another
+            for fld_specs in fld_specs_lst:
+                self._run_core(
+                    datafile_fmt, dim_names, var_names_ref, [fld_specs])
+        else:
+            self._run_core(
+                datafile_fmt, dim_names, var_names_ref, fld_specs_lst)
+
+    def _run_core(self, datafile_fmt, dim_names, var_names_ref, fld_specs_lst):
+
+        # Read input fields
+        flex_field_lst = FlexFileRotPole(datafile_fmt).read_ens(
+            self.ens_member_ids, fld_specs_lst)
+        flds = np.array([flex_field.fld for flex_field in flex_field_lst])
+
+        # Collect merged variables specifications
+        var_specs_lst = [fs.var_specs_merged() for fs in fld_specs_lst]
+
+        # Read reference fields
+        flds_ref = []
+        for var_specs in var_specs_lst:
+            flds_ref_i = [[
+                read_nc_var(
+                    self.datafile(member_id, datafile_fmt=datafile_fmt),
+                    var_name,
+                    var_specs,
+                ) for member_id in self.ens_member_ids
+            ] for var_name in var_names_ref]
+            fld_ref_i = np.nansum(flds_ref_i, axis=0)
+            flds_ref.append(fld_ref_i)
+        flds_ref = np.array(flds_ref)
+
+        assert flds.shape == flds_ref.shape
+        assert np.isclose(np.nanmean(flds), np.nanmean(flds_ref))
+        np.testing.assert_allclose(flds, flds_ref, equal_nan=True, rtol=1e-6)
+
+    #------------------------------------------------------------------
+
+    def run_deposition_tot(self, datadir, *, separate):
+        """Read total deposition field."""
+        self.run(
+            separate=separate,
+            datafile_fmt=self.datafile_fmt(datadir),
+            cls_fld_specs=FlexFieldSpecsDeposition,
+            dims_mult=self.dims_shared,
+            var_names_ref=[
+                f'WD_spec{self.species_id:03d}',
+                f'DD_spec{self.species_id:03d}',
+            ],
+            var_specs_mult_unshared={'deposition': 'tot'},
+        )
+
+    def test_deposition_tot_separate(self, datadir):
+        self.run_deposition_tot(datadir, separate=True)
+
+    def test_deposition_tot_together(self, datadir):
+        self.run_deposition_tot(datadir, separate=False)
