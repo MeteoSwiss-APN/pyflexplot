@@ -32,7 +32,7 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'],)
 @click.option(
     '--rlat',
     'rlat_slice',
-    help="Rotated latitude slice arguments. STOP is inclusive.",
+    help="Rotated latitude index slice arguments. STOP is exclusive.",
     type=(int, int, int),
     metavar='START STOP STEP',
     default=(0, -1, 1),
@@ -40,7 +40,7 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'],)
 @click.option(
     '--rlon',
     'rlon_slice',
-    help="Rotated longitude slice arguments. STOP is inclusive.",
+    help="Rotated longitude index slice arguments. STOP is exclusive.",
     type=(int, int, int),
     metavar='START STOP STEP',
     default=(0, -1, 1),
@@ -83,8 +83,6 @@ def prepare_slices(fi, conf):
         if stop == -1:
             stop = n
         elif 0 <= stop < n:
-            stop += 1
-        elif stop == n:
             pass
         else:
             raise Exception(f"{name}: stop out of bounds: {stop} > {n}")
