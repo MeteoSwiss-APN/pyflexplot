@@ -422,7 +422,7 @@ class FlexAttrGroupVariable(FlexAttrGroup):
 
     def format_level_range(self):
 
-        if (self.level_bot.value, self.level_top.value) == (-1, -1):  #SR_ATTR
+        if (self.level_bot.value, self.level_top.value) == (-1, -1):
             return None
 
         def fmt(bot, top, unit_fmtd=self.format_level_unit()):
@@ -433,14 +433,14 @@ class FlexAttrGroupVariable(FlexAttrGroup):
 
         try:
             # Single level range
-            return fmt(self.level_bot.value, self.level_top.value)  #SR_ATTR
+            return fmt(self.level_bot.value, self.level_top.value)
         except TypeError:
             pass
         #-- Multiple level ranges
 
         try:
-            bots = sorted(self.level_bot.value)  #SR_ATTR
-            tops = sorted(self.level_top.value)  #SR_ATTR
+            bots = sorted(self.level_bot.value)
+            tops = sorted(self.level_top.value)
         except TypeError:
             raise  #SR_TMP TODO proper error message
         else:
@@ -582,7 +582,7 @@ class FlexAttrGroupSimulation(FlexAttrGroup):
 
     @property
     def integr_period(self):
-        return self.now.value - self.integr_start.value  #SR_ATTR
+        return self.now.value - self.integr_start.value
 
     def format_integr_period(self):
         return f'{self.integr_period.total_seconds()/3600:g}$\\,$h'

@@ -448,15 +448,13 @@ class TestReadFieldEnsemble_Single:
 
         # Read reference fields
         fld_ref = np.nansum(
-            [
-                [
-                    read_nc_var(
-                        self.datafile(datadir, member_id),
-                        var_name,
-                        var_specs,
-                    ) for member_id in self.ens_member_ids
-                ] for var_name in var_names_ref
-            ],
+            [[
+                read_nc_var(
+                    self.datafile(datadir, member_id),
+                    var_name,
+                    var_specs,
+                ) for member_id in self.ens_member_ids
+            ] for var_name in var_names_ref],
             axis=0,
         )
 

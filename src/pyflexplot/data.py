@@ -42,8 +42,8 @@ class FlexFieldRotPole:
         """Check consistency of field, dimensions, etc."""
 
         # Check dimensionalities
-        for name, arr, ndim in [
-                ('fld', fld, ndim_fld), ('rlat', rlat, 1), ('rlon', rlon, 1)]:
+        for name, arr, ndim in [('fld', fld, ndim_fld), ('rlat', rlat, 1),
+                                ('rlon', rlon, 1)]:
             shape = arr.shape
             if len(shape) != ndim:
                 raise ValueError(

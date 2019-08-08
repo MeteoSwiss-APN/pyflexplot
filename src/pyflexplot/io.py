@@ -918,25 +918,24 @@ class FlexFileRotPole:
             ['I-131a', 'Cs-137'],
         ]
         #SR_TMP>
-        if attrs.species.name.value in names:  #SR_ATTR
+        if attrs.species.name.value in names:
 
-            if attrs.variable.unit.value == 'ng kg-1':  #SR_ATTR
-                attrs.variable.unit.value = 'Bq m-3'  #SR_ATTR
+            if attrs.variable.unit.value == 'ng kg-1':
+                attrs.variable.unit.value = 'Bq m-3'  #SR_HC
                 fld[:] *= 1e-12
                 scale_time_stats(1e-12)
 
-            elif attrs.variable.unit.value == '1e-12 kg m-2':  #SR_ATTR
-                attrs.variable.unit.value = 'Bq m-2'  #SR_ATTR
+            elif attrs.variable.unit.value == '1e-12 kg m-2':
+                attrs.variable.unit.value = 'Bq m-2'  #SR_HC
                 fld[:] *= 1e-12
                 scale_time_stats(1e-12)
 
             else:
                 raise NotImplementedError(
-                    f"species '{attrs.species.name.value}': "  #SR_ATTR
-                    f"unknown unit '{attrs.variable.unit.value}'")  #SR_ATTR
+                    f"species '{attrs.species.name.value}': "
+                    f"unknown unit '{attrs.variable.unit.value}'")
         else:
-            raise NotImplementedError(
-                f"species '{attrs.species.name.value}'")  #SR_ATTR
+            raise NotImplementedError(f"species '{attrs.species.name.value}'")
 
 
 class FlexAttrsCollector:

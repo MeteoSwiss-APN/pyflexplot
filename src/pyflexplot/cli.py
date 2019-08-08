@@ -567,8 +567,7 @@ class EnsMeanConcentration(ClickCommand):
 
     @click_options
     def options():
-        return [
-        ]
+        return []
 
     @CLI.command(
         name='ens-mean-concentration',
