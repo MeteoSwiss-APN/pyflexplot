@@ -699,20 +699,24 @@ class FlexFileRotPole:
         self._fld_specs_time_lst, self._time_inds_lst = (
             self.group_fld_specs_by_time(fld_specs_lst))
 
-        #SR_TMP<
-        n_members = 1 if self.member_ids is None else len(self.member_ids)
-        flex_field_lst_per_member = [[] for _ in range(n_members)]
+        n_mem = 1 if self.member_ids is None else len(self.member_ids)
+        n_time_lst = [len(inds) for inds in self._time_inds_lst]
+        if len(set(n_time_lst)) > 1:
+            raise Exception(f"number of timesteps differ: {n_time_lst}")
+        n_time = next(iter(n_time_lst))
         n_fst = len(self._fld_specs_time_lst)
+
+        #SR_TMP<
+        flex_fields_arr = np.full([n_fst, n_time, n_mem], None, object)
         log.debug(f"process {n_fst} field specs groups")
-        for i_fst, (fld_specs_time,
-                    time_inds) in enumerate(zip(self._fld_specs_time_lst,
-                                                self._time_inds_lst)):
+        for i_fst in range(n_fst):
+            fld_specs_time = self._fld_specs_time_lst[i_fst]
+            time_inds = self._time_inds_lst[i_fst]
             log.debug(f"{i_fst + 1}/{n_fst}: {fld_specs_time}")
             n_t = len(time_inds)
 
-            for i_member, file_path in enumerate(self.file_path_lst):
+            for i_mem, file_path in enumerate(self.file_path_lst):
                 log.debug(f"read {file_path}")
-
                 with self.cmd_open(file_path, 'r') as self.fi:
 
                     fld_time = self._import_field(fld_specs_time)
@@ -729,18 +733,23 @@ class FlexFileRotPole:
                             fld_time,
                             time_stats,
                         )
-                        flex_field_lst_per_member[i_member].append(flex_field)
+                        flex_fields_arr[i_fst, i_time, i_mem] = flex_field
+
+        flex_fields_lst = flex_fields_arr.reshape([n_fst*n_time,
+                                                   n_mem]).tolist()
         #SR_TMP>
 
         # Return result field(s)
-        result = flex_field_lst_per_member
-        if not multiple:
-            # Only one field per member: get rid of fields dimension
+        result = flex_fields_lst
+        if n_mem == 1:
+            # Only one member; remove members dimension
+            tmp = copy(result)  #SR_DBG
             result = [r[0] if len(r) == 1 else None for r in result]
             if None in result:
+                ipython(globals(), locals())
                 raise Exception(f"None in result: {result}")
-        if len(flex_field_lst_per_member) == 1:
-            # Only one member; get rid of members dimension
+        if not multiple:
+            # Only one field type specified: remove fields dimension
             result = result[0]
         return result
 
@@ -748,43 +757,40 @@ class FlexFileRotPole:
 
         multiple = not isinstance(fld_specs, FlexFieldSpecs)
 
-        #SR_TMP<
-        flex_field_lst_per_member = self.read(fld_specs, lang=lang)
-        if isinstance(flex_field_lst_per_member, self.cls_field):
-            flex_field_lst_per_member = [flex_field_lst_per_member]
+        flex_fields_lst = self.read(fld_specs, lang=lang)
 
         #SR_TMP<
-        flex_field_lst_per_member = [
-            [ffl] if isinstance(ffl, self.cls_field) else ffl
-            for ffl in flex_field_lst_per_member]
+        if not multiple:
+            # Restore specs dimension
+            flex_fields_lst = [flex_fields_lst]
+        # Restore member dimension if necessary
+        flex_fields_lst = [[ffl] if isinstance(ffl, self.cls_field) else ffl
+                           for ffl in flex_fields_lst]
         #SR_TMP>
 
         # Check that all members have the same number of fields
-        n_fields_per_member = [len(ffl) for ffl in flex_field_lst_per_member]
-        if len(set(n_fields_per_member)) != 1:
+        n_members_lst = [len(ffl) for ffl in flex_fields_lst]
+        if len(set(n_members_lst)) != 1:
             raise Exception(
-                f"number of fields differs between members: "
-                f"{n_fields_per_member}")
-        #SR_TMP>
+                f"number of members differs between fields: "
+                f"{n_members_lst}")
 
         #ipython(globals(), locals(), f"{type(self).__name__}.read_ens")  #SR_DBG
 
         #SR_TMP<
-        flex_field_ens = []
-        n_ff = len(flex_field_lst_per_member[0])
-        for i_ff in range(n_ff):
-            flex_field_i = [ffl[i_ff] for ffl in flex_field_lst_per_member]
-            flex_field_ens_i = self.cls_field_ens.from_fields(flex_field_i)
-            flex_field_ens.append(flex_field_ens_i)
+        flex_field_ens_lst = []
+        for flex_fields in flex_fields_lst:
+            flex_field_ens_lst.append(
+                self.cls_field_ens.from_fields(flex_fields))
         #SR_TMP>
 
         if not multiple:
-            if len(flex_field_ens) > 1:
+            if len(flex_field_ens_lst) > 1:
                 raise Exception(
-                    f"single field_specs, yet {len(flex_field_ens)} "
-                    f"fields: {fld_specs} -> {flex_field_ens}")
-            return next(iter(flex_field_ens))
-        return flex_field_ens
+                    f"single field_specs, yet {len(flex_field_ens_lst)} "
+                    f"fields: {fld_specs} -> {flex_field_ens_lst}")
+            return next(iter(flex_field_ens_lst))
+        return flex_field_ens_lst
 
     def _read_flex_field(
             self, fld_specs_time, i_time, time_ind, fld_time, time_stats):
