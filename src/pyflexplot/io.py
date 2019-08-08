@@ -709,15 +709,43 @@ class FlexFileRotPole:
             self.group_fld_specs_by_time(fld_specs_lst))
 
         #SR_TMP<
-        assert len(file_path_lst) == 1, f"{len(file_path_lst)} > 1 file paths"
-        file_path = file_path_lst[0]
+        flex_field_lst_lst = []
+        for file_path in file_path_lst:
+            log.debug(f"read {file_path}")
+            flex_field_lst = []
+
+            n_fst = len(self._fld_specs_time_lst)
+            log.debug(f"process {n_fst} field specs groups")
+            for i_fst, (fld_specs_time,
+                        time_inds) in enumerate(zip(self._fld_specs_time_lst,
+                                                    self._time_inds_lst)):
+                log.debug(f"{i_fst + 1}/{n_fst}: {fld_specs_time}")
+                n_t = len(time_inds)
+
+                with self.cmd_open(file_path, 'r') as self.fi:
+
+                    fld_time = self._import_field(fld_specs_time)
+                    time_stats = self.collect_time_stats(fld_time)
+
+                    log.debug(f"extract {n_fst} time steps")
+                    for i_time, time_ind in enumerate(time_inds):
+                        log.debug(f"{i_time + 1}/{n_t}")
+
+                        flex_field = self._read_flex_field(
+                            fld_specs_time,
+                            i_time,
+                            time_ind,
+                            fld_time,
+                            time_stats,
+                        )
+                        flex_field_lst.append(flex_field)
+
+            self.reset()
+            flex_field_lst_lst.append(flex_field_lst)
+
+        assert len(flex_field_lst_lst) == 1
+        flex_field_lst = flex_field_lst_lst[0]
         #SR_TMP>
-
-        log.debug(f"read {file_path}")
-        with self.cmd_open(file_path, 'r') as self.fi:
-            flex_field_lst = self._read_fi()
-
-        self.reset()
 
         # Return result(s)
         if multiple:
@@ -725,30 +753,6 @@ class FlexFileRotPole:
         else:
             assert len(flex_field_lst) == 1
             return flex_field_lst[0]
-
-    def _read_fi(self):
-
-        flex_field_lst = []
-
-        n_fst = len(self._fld_specs_time_lst)
-        log.debug(f"process {n_fst} field specs groups")
-        for i_fst, (fld_specs_time,
-                    time_inds) in enumerate(zip(self._fld_specs_time_lst,
-                                                self._time_inds_lst)):
-            log.debug(f"{i_fst + 1}/{n_fst}: {fld_specs_time}")
-            n_t = len(time_inds)
-
-            fld_time = self._import_field(fld_specs_time)
-            time_stats = self.collect_time_stats(fld_time)
-
-            log.debug(f"extract {n_fst} time steps")
-            for i_time, time_ind in enumerate(time_inds):
-                log.debug(f"{i_time + 1}/{n_t}")
-                flex_field = self._read_flex_field(
-                    fld_specs_time, i_time, time_ind, fld_time, time_stats)
-                flex_field_lst.append(flex_field)
-
-        return flex_field_lst
 
     def read_ens(self, fld_specs, lang='en'):
 
