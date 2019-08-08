@@ -3,11 +3,15 @@
 Crop fields in a NetCDF file.
 """
 import click
+import functools
 import netCDF4 as nc4
 
-from pyflexplot.utils import ipython
+from pyflexplot.utils import ipython  #SR_DEV
 
 __version__ = '0.1.0'
+
+# Show default values of options by default
+click.option = functools.partial(click.option, show_default=True)
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'],)
 
@@ -28,17 +32,17 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'],)
 @click.option(
     '--rlat',
     'rlat_slice',
-    help="Rotated latitude slice arguments. Stop is inclusive.",
+    help="Rotated latitude slice arguments. STOP is inclusive.",
     type=(int, int, int),
-    metavar=('start', 'stop', 'step'),
+    metavar='START STOP STEP',
     default=(0, -1, 1),
 )
 @click.option(
     '--rlon',
     'rlon_slice',
-    help="Rotated longitude slice arguments. Stop is inclusive.",
+    help="Rotated longitude slice arguments. STOP is inclusive.",
     type=(int, int, int),
-    metavar=('start', 'stop', 'step'),
+    metavar='START STOP STEP',
     default=(0, -1, 1),
 )
 @click.option(
