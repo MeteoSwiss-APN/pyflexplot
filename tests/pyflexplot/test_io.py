@@ -443,8 +443,10 @@ class TestReadFieldEnsemble_Single:
         var_specs = cls_fld_specs.cls_var_specs(**var_specs_dct)
 
         # Read input fields
-        flex_field = FlexFileRotPole(datafile_fmt).read_ens(
-            self.ens_member_ids, fld_specs)
+        flex_field = FlexFileRotPole(
+            datafile_fmt,
+            self.ens_member_ids,
+        ).read_ens(fld_specs)
         fld = flex_field.fld
 
         # Read reference fields
@@ -538,8 +540,10 @@ class TestReadFieldEnsemble_Multiple:
     def _run_core(self, datafile_fmt, dim_names, var_names_ref, fld_specs_lst):
 
         # Read input fields
-        flex_field_lst = FlexFileRotPole(datafile_fmt).read_ens(
-            self.ens_member_ids, fld_specs_lst)
+        flex_field_lst = FlexFileRotPole(
+            datafile_fmt,
+            self.ens_member_ids,
+        ).read_ens(fld_specs_lst)
         flds = np.array([flex_field.fld for flex_field in flex_field_lst])
 
         # Collect merged variables specifications

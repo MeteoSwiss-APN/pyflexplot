@@ -601,27 +601,57 @@ class FlexFieldSpecsAffectedArea(FlexFieldSpecsDeposition):
 
 
 class FlexFileRotPole:
-    """NetCDF file containing FLEXPART data on rotated-pole grid."""
+    """NetCDF file containing FLEXPART data on rotated-pole grid.
+
+    It represents a single input file for deterministic FLEXPART runs,
+    or an ensemble of input files for ensemble FLEXPART runs (one file
+    per ensemble member).
+
+    """
 
     cls_field = FlexFieldRotPole
     cls_field_ens = FlexFieldEnsRotPole
 
-    def __init__(self, path, cmd_open=nc4.Dataset):
+    def __init__(self, file_path, member_ids=None, *, cmd_open=nc4.Dataset):
         """Create an instance of ``FlexFileRotPole``.
 
         Args:
-            path (str): File path.
+            file_path (str): File path. If ``member_ids`` is passed,
+                the path must contain the format key '{member_ids[:0?d]}'.
+
+            member_ids (list[int], optional): Ensemble member ids which
+                are inserted into ``file_path``. Default to None.
 
             cmd_open (function, optional): Function to open the input
                 file. Must support context manager interface, i.e.,
-                ``with cmd_open(path, mode) as f:``. Defaults to
+                ``with cmd_open(file_path, mode) as f:``. Defaults to
                 netCDF4.Dataset.
 
         """
-        self.path = path
+        self.file_path_lst = self._prepare_file_path_lst(file_path, member_ids)
+        self.member_ids = member_ids
         self.cmd_open = cmd_open
 
         self.reset()
+
+    def _prepare_file_path_lst(self, file_path, member_ids):
+
+        fmt_keys = ['{member_id}', '{member_id:']
+        fmt_key_in_path = any(k in file_path for k in fmt_keys)
+
+        if member_ids is None:
+            if fmt_key_in_path:
+                raise ValueError(
+                    "input file path contains format key '{member_id[:0?d]}' "
+                    "but no member_ids have been passed")
+            return [file_path]
+
+        else:
+            if not fmt_key_in_path:
+                raise ValueError(
+                    "input file path missing format key '{member_id[:0?d]}': "
+                    f"{self.file_path}")
+            return [file_path.format(member_id=mid) for mid in member_ids]
 
     def reset(self):
         self.fi = None
@@ -629,12 +659,19 @@ class FlexFileRotPole:
         self._fld_specs_time_lst = None
         self._time_inds_lst = None
 
-    def read(self, fld_specs, lang='en', path=None):
+    def read(self, fld_specs, lang='en', file_path_lst=None):
         """Read one or more fields from a file from disc.
 
         Args:
             fld_specs (FlexFieldSpecs or list[FlexFieldSpecs]):
                 Specifications for one or more input fields.
+
+            lang (str, optional): Language, e.g., 'de' for German.
+                Defaults to 'en' (English).
+
+            file_path_lst (list[str], optional): List of input file
+                paths, each of which is one member of an ensemble.
+                Defaults to ``self.file_path_lst``.
 
         Returns:
             FlexFieldRotPole: Single data object; if ``fld_specs``
@@ -650,8 +687,8 @@ class FlexFileRotPole:
 
         self.lang = lang
 
-        if path is None:
-            path = self.path
+        if file_path_lst is None:
+            file_path_lst = self.file_path_lst
 
         if isinstance(fld_specs, FlexFieldSpecs):
             multiple = False
@@ -671,8 +708,13 @@ class FlexFileRotPole:
         self._fld_specs_time_lst, self._time_inds_lst = (
             self.group_fld_specs_by_time(fld_specs_lst))
 
-        log.debug(f"read {path}")
-        with self.cmd_open(path, 'r') as self.fi:
+        #SR_TMP<
+        assert len(file_path_lst) == 1, f"{len(file_path_lst)} > 1 file paths"
+        file_path = file_path_lst[0]
+        #SR_TMP>
+
+        log.debug(f"read {file_path}")
+        with self.cmd_open(file_path, 'r') as self.fi:
             flex_field_lst = self._read_fi()
 
         self.reset()
@@ -708,7 +750,7 @@ class FlexFileRotPole:
 
         return flex_field_lst
 
-    def read_ens(self, member_ids, fld_specs, lang='en'):
+    def read_ens(self, fld_specs, lang='en'):
 
         multiple = not isinstance(fld_specs, FlexFieldSpecs)
 
@@ -716,15 +758,11 @@ class FlexFileRotPole:
         flex_field_lst = []
         #SR_TMP>
 
-        for member_id in member_ids:
-            if all(k not in self.path for k in ['{member_id}', '{member_id:']):
-                raise Exception(
-                    "input file path missing format key '{member_id[:..]}': "
-                    f"{self.path}")
-            path = self.path.format(member_id=member_id)
+        for file_path in self.file_path_lst:
 
             #SR_TMP<
-            flex_field_i = self.read(fld_specs, lang=lang, path=path)
+            flex_field_i = self.read(
+                fld_specs, lang=lang, file_path_lst=[file_path])
             if isinstance(flex_field_i, self.cls_field):
                 flex_field_i = [flex_field_i]
 
