@@ -32,7 +32,7 @@ class AxesConfMap:
     pass
 
 
-class AxesConfMapRotPole(AxesConfMap):
+class AxesConfMap(AxesConfMap):
 
     def __init__(
             self,
@@ -90,7 +90,7 @@ class AxesConfMapRotPole(AxesConfMap):
 
 
 #SR_TODO Push non-rotated-pole specific code up into AxesMap
-class AxesMapRotPole(AxesMap):
+class AxesMap(AxesMap):
     """Map plot axes for FLEXPART plot for rotated-pole data.
 
     Attributes:
@@ -102,7 +102,7 @@ class AxesMapRotPole(AxesMap):
     """
 
     def __init__(self, fig, rlat, rlon, pollat, pollon, **conf):
-        """Initialize instance of AxesMapRotPole.
+        """Initialize instance of AxesMap.
 
         Args:
             fig (Figure): Figure to which to map axes is added.
@@ -116,13 +116,13 @@ class AxesMapRotPole(AxesMap):
             pollon (float): Longitude of rotated pole.
 
             **conf: Keyword arguments to create a configuration object
-                of type ``AxesConfMapRotPole``.
+                of type ``AxesConfMap``.
 
         """
         self.fig = fig
         self.rlat = rlat
         self.rlon = rlon
-        self.conf = AxesConfMapRotPole(**conf)
+        self.conf = AxesConfMap(**conf)
 
         # Determine zorder of unique plot elements, from low to high
         zorders_const = [
@@ -288,7 +288,7 @@ class AxesMapRotPole(AxesMap):
     def add_ref_dist_indicator(self):
         """Add a reference distance indicator.
 
-        The configuration is obtained from an ``AxesConfMapRotPole``
+        The configuration is obtained from an ``AxesConfMap``
         instance.
 
         Returns:

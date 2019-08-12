@@ -13,7 +13,7 @@ from pprint import pformat
 from .io import FlexFieldSpecsConcentration
 from .io import FlexFieldSpecsDeposition
 from .io import FlexFieldSpecsAffectedArea
-from .io import FlexFileRotPole
+from .io import FlexFile
 from .utils import count_to_log_level
 from .flexplotter import FlexPlotter
 
@@ -448,7 +448,7 @@ class Concentration(ClickCommand):
             vars_specs, lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFileRotPole(in_file_path).read(
+        flex_data_lst = FlexFile(in_file_path).read(
             fld_specs_lst, lang=lang)
 
         # Create plots
@@ -497,7 +497,7 @@ class Deposition(ClickCommand):
             vars_specs, lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFileRotPole(in_file_path).read(
+        flex_data_lst = FlexFile(in_file_path).read(
             field_specs_lst, lang=lang)
 
         # Create plots
@@ -544,7 +544,7 @@ class AffectedArea(ClickCommand):
             vars_specs, lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFileRotPole(in_file_path).read(
+        flex_data_lst = FlexFile(in_file_path).read(
             field_specs_lst, lang=lang)
 
         # Create plots
@@ -593,7 +593,7 @@ class EnsMeanConcentration(ClickCommand):
             vars_specs, lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFileRotPole(in_file_path).read(
+        flex_data_lst = FlexFile(in_file_path).read(
             fld_specs_lst, lang=lang)
 
         # Create plots

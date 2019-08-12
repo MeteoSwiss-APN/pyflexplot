@@ -17,8 +17,7 @@ from pprint import pformat
 from pprint import pprint  #SR_DEV
 
 from .attr import FlexAttrGroupCollection
-from .data import FlexFieldRotPole
-from .data import FlexFieldEnsRotPole
+from .data import FlexField
 from .utils import check_array_indices
 from .utils import pformat_dictlike
 from .utils import nested_dict_set
@@ -600,7 +599,7 @@ class FlexFieldSpecsAffectedArea(FlexFieldSpecsDeposition):
     cls_var_specs = FlexVarSpecsAffectedArea
 
 
-class FlexFileRotPole:
+class FlexFileBase:
     """NetCDF file containing FLEXPART data on rotated-pole grid.
 
     It represents a single input file for deterministic FLEXPART runs,
@@ -609,11 +608,12 @@ class FlexFileRotPole:
 
     """
 
-    cls_field = FlexFieldRotPole
-    cls_field_ens = FlexFieldEnsRotPole
+    cls_field = FlexField
+
+    choices_ens_var = ['mean']
 
     def __init__(self, file_path, member_ids=None, *, cmd_open=nc4.Dataset):
-        """Create an instance of ``FlexFileRotPole``.
+        """Create an instance of ``FlexFile``.
 
         Args:
             file_path (str): File path. If ``member_ids`` is passed,
@@ -631,6 +631,8 @@ class FlexFileRotPole:
         self.file_path_lst = self._prepare_file_path_lst(file_path, member_ids)
         self.member_ids = member_ids
         self.cmd_open = cmd_open
+
+        self.n_members = 1 if member_ids is None else len(member_ids)
 
         self.reset()
 
@@ -654,31 +656,90 @@ class FlexFileRotPole:
             return [file_path.format(member_id=mid) for mid in member_ids]
 
     def reset(self):
-        self.fi = None
         self.lang = None
+        self.fi = None
+        self.rlat = None
+        self.rlon = None
 
-    def read(self, fld_specs, lang='en'):
+        #SR_TMP< TODO don't cheat! _attrs_{all,none} are for checks only!
+        if hasattr(self, '_attrs_all'):
+            for attr in sorted(self.__dict__.keys()):
+                if attr in ['_attrs_all', '_attrs_none']:
+                    pass
+                elif attr not in self._attrs_all:
+                    del self.__dict__[attr]
+                elif attr in self._attrs_none:
+                    setattr(self, attr, None)
+        #SR_TMP>
+
+    #SR_DEV<<<
+    def _store_attrs(self):
+        """Store names of all attributes, and which are None."""
+        if '_attrs_all' in self.__dict__:
+            raise Exception("'_attrs_all' in self.__dict__")
+        if '_attrs_none' in self.__dict__:
+            raise Exception("'_attrs_none' in self.__dict__")
+        self._attrs_all = sorted(self.__dict__.keys())
+        self._attrs_none = [
+            a for a in self._attrs_all if getattr(self, a) is None]
+
+    #SR_DEV<<<
+    def _check_attrs(self):
+        """Check that attributes have been cleared up properly.
+
+        Checks:
+            * There are no attributes that should not be there.
+
+            * All attributes that should be None, are.
+
+        """
+        attrs_all = self.__dict__.pop('_attrs_all')
+        attrs_none = self.__dict__.pop('_attrs_none')
+
+        # Check that there are no unexpected attributes
+        attrs_unexp = [
+            a for a in self.__dict__.keys() if a not in attrs_all]
+        if attrs_unexp:
+            raise Exception(
+                f"{len(attrs_unexp)} unexpected attributes: {attrs_unexp}")
+
+        # Check that all attributes that should be None, are
+        attrs_nonone = [a for a in attrs_none if getattr(self, a) is not None]
+        if attrs_nonone:
+            raise Exception(
+                f"{len(attrs_nonone)} attributes should be None but are not: "
+                f"{attrs_nonone}")
+
+    def read(self, fld_specs, *, ens_var=None, lang='en'):
         """Read one or more fields from a file from disc.
 
         Args:
             fld_specs (FlexFieldSpecs or list[FlexFieldSpecs]):
                 Specifications for one or more input fields.
 
+            ens_var (str, optional): Name of ensemble variable, e.g.,
+                'mean'. See ``FlexField.choices_ens_var`` for the full
+                list. Mandatory in case of multiple ensemble members.
+                Defaults to None.
+
             lang (str, optional): Language, e.g., 'de' for German.
                 Defaults to 'en' (English).
 
         Returns:
-            FlexFieldRotPole: Single data object; if ``fld_specs``
+            FlexField: Single data object; if ``fld_specs``
                 constitutes a single ``FlexFieldSpecs`` instance.
 
             or
 
-            list[FlexFieldRotPole]: One data object for each field;
+            list[FlexField]: One data object for each field;
                 if ``fld_specs`` constitutes a list of ``FlexFieldSpecs``
                 instances.
 
         """
+        self._store_attrs()  #SR_DEV
 
+        # Set some attributes
+        self._set_ens_var(ens_var)
         self.lang = lang
 
         if isinstance(fld_specs, FlexFieldSpecs):
@@ -701,10 +762,9 @@ class FlexFileRotPole:
 
         # Prepare array for fields
         self.n_fld_specs = len(self._fld_specs_time_lst)
-        self.n_time_sel = self._determine_n_time_sel()
-        self.n_members = 1 if self.member_ids is None else len(self.member_ids)
+        self.n_reqtime = self._determine_n_reqtime()
         flex_fields_arr = np.full(
-            [self.n_fld_specs, self.n_time_sel, self.n_members], None, object)
+            [self.n_fld_specs, self.n_reqtime, self.n_members], None, object)
 
         # Collect fields
         log.debug(f"process {self.n_fld_specs} field specs groups")
@@ -718,28 +778,31 @@ class FlexFileRotPole:
             fld_time_mem, time_stats_raw_mem = self._read_fld_time_mem(
                 fld_specs_time)
 
-            #SR_TODO: Compute variable across members, and resp. time stats
+            # TODO:
+            #  * First, read attributes separately for each member
+            #  * Then, reduce the field along the members dimension
+            #  * Then, compute the time stats
+            #  * Then, select the time steps of interest
+            #  * At some point, also merge the attributes of the members
 
-            # 2nd loop over members: extract time steps of interest
+            _shape = [self.n_reqtime, self.n_members]
+            fld_specs_reqtime_arr = np.full([self.n_reqtime], None, object)
+            attrs_reqtime_mem_arr = np.full(_shape, None, object)
+
+            # Create time-step-specific field specifications
+            for i_reqtime, time_ind in enumerate(time_inds):
+                fld_specs = deepcopy(fld_specs_time)
+                for var_specs in fld_specs.var_specs_lst:
+                    var_specs.time = time_ind
+                fld_specs_reqtime_arr[i_reqtime] = fld_specs
+
+            # Collect attributes at requested time steps for all members
             for i_mem, file_path in enumerate(self.file_path_lst):
-                fld_time = fld_time_mem[i_mem]
-                time_stats_raw = time_stats_raw_mem[i_mem]
-
                 log.debug(f"read {file_path} (attributes)")
                 with self.cmd_open(file_path, 'r') as self.fi:
-                    for i_time, time_ind in enumerate(time_inds):
-                        log.debug(f"{i_time + 1}/{n_t}")
-
-                        # Create time-step-specific field specifications
-                        fld_specs = deepcopy(fld_specs_time)
-                        for var_specs in fld_specs.var_specs_lst:
-                            var_specs.time = time_ind
-
-                        # Extract field
-                        fld = fld_time[time_ind]
-
-                        # Collect attributes
-                        log.debug("collect attributes")
+                    for i_reqtime, time_ind in enumerate(time_inds):
+                        log.debug(f"{i_reqtime + 1}/{n_t}: collect attributes")
+                        fld_specs = fld_specs_reqtime_arr[i_reqtime]
                         attrs_lst = []
                         for var_specs in fld_specs.var_specs_lst:
                             attrs = FlexAttrsCollector(
@@ -749,31 +812,46 @@ class FlexFileRotPole:
                             attrs_lst.append(attrs)
                         attrs = attrs_lst[0].merge_with(
                             attrs_lst[1:], **fld_specs.var_attrs_replace)
+                        attrs_reqtime_mem_arr[i_reqtime, i_mem] = attrs
+                self.fi = None
 
-                        #SR_TMP<
-                        log.debug("fix nc data")
-                        if i_time == 0:
-                            # Scale time_stats only once
-                            self._fix_nc_data(fld, attrs, time_stats_raw)
-                        else:
-                            self._fix_nc_data(fld, attrs)
-                        #SR_TMP>
+            # Select fields at requested time steps for all members
+            for i_mem, file_path in enumerate(self.file_path_lst):
+                fld_time = fld_time_mem[i_mem]
+                time_stats_raw = time_stats_raw_mem[i_mem]
+                log.debug(f"select fields at requested time steps")
+                for i_reqtime, time_ind in enumerate(time_inds):
+                    log.debug(f"{i_reqtime + 1}/{n_t}")
 
-                        # Read grid variables
-                        inds_rlat = slice(*fld_specs.var_specs_shared('rlat'))
-                        inds_rlon = slice(*fld_specs.var_specs_shared('rlon'))
-                        rlat = self.fi.variables['rlat'][inds_rlat]
-                        rlon = self.fi.variables['rlon'][inds_rlon]
+                    fld_specs = fld_specs_reqtime_arr[i_reqtime]
+                    attrs = attrs_reqtime_mem_arr[i_reqtime, i_mem]
 
-                        # Collect data
-                        log.debug("create data object")
-                        flex_field = self.cls_field(
-                            fld, rlat, rlon, attrs, fld_specs, time_stats_raw)
+                    # Extract field
+                    fld = fld_time[time_ind]
 
-                        flex_fields_arr[i_fst, i_time, i_mem] = flex_field
+                    # Fix some known issues with the NetCDF input data
+                    log.debug("fix nc data")
+                    if i_reqtime == 0:
+                        # Scale time_stats only once
+                        self._fix_nc_data(fld, attrs, time_stats_raw)
+                    else:
+                        self._fix_nc_data(fld, attrs)
+
+                    # Collect data
+                    log.debug("create data object")
+                    flex_field = self.cls_field(
+                        fld,
+                        self.rlat,
+                        self.rlon,
+                        attrs,
+                        fld_specs,
+                        time_stats_raw,
+                    )
+
+                    flex_fields_arr[i_fst, i_reqtime, i_mem] = flex_field
 
         flex_fields_arr = flex_fields_arr.reshape(
-            [self.n_fld_specs*self.n_time_sel, self.n_members])
+            [self.n_fld_specs*self.n_reqtime, self.n_members])
         flex_fields_lst = flex_fields_arr.tolist()
         #SR_TMP>
 
@@ -789,72 +867,75 @@ class FlexFileRotPole:
         if not multiple:
             # Only one field type specified: remove fields dimension
             result = result[0]
+
+        self.reset()
+        self._check_attrs()  #SR_DEV
+
         return result
 
-    def _determine_n_time_sel(self):
+    def _set_ens_var(self, ens_var):
+
+        if ens_var is None:
+            if self.n_members > 1:
+                raise ValueError(
+                    f"require argument ens_var for {self.n_members} > 1 "
+                    f"ensemble members")
+
+        elif ens_var not in self.choices_ens_var:
+            raise ValueError(
+                f"unknown value '{ens_var}' for attribute ens_var; "
+                f"choices: {self.choices_ens_var}")
+
+        self.ens_var = ens_var
+
+    def _determine_n_reqtime(self):
         """Determine the number of selected time steps."""
-        n_time_sel_per_mem = [len(inds) for inds in self._time_inds_lst]
-        if len(set(n_time_sel_per_mem)) > 1:
+        n_reqtime_per_mem = [len(inds) for inds in self._time_inds_lst]
+        if len(set(n_reqtime_per_mem)) > 1:
             raise Exception(
                 f"numbers of timesteps differ across members: "
-                f"{n_time_sel_per_mem}")
-        return next(iter(n_time_sel_per_mem))
-
-    def read_ens(self, fld_specs, lang='en'):
-
-        multiple = not isinstance(fld_specs, FlexFieldSpecs)
-
-        flex_fields_lst = self.read(fld_specs, lang=lang)
-
-        #SR_TMP<
-        if not multiple:
-            # Restore specs dimension
-            flex_fields_lst = [flex_fields_lst]
-        # Restore member dimension if necessary
-        flex_fields_lst = [[ffl] if isinstance(ffl, self.cls_field) else ffl
-                           for ffl in flex_fields_lst]
-        #SR_TMP>
-
-        # Check that all members have the same number of fields
-        n_members_lst = [len(ffl) for ffl in flex_fields_lst]
-        if len(set(n_members_lst)) != 1:
-            raise Exception(
-                f"number of members differs between fields: "
-                f"{n_members_lst}")
-
-        #ipython(globals(), locals(), f"{type(self).__name__}.read_ens")  #SR_DBG
-
-        #SR_TMP<
-        flex_field_ens_lst = []
-        for flex_fields in flex_fields_lst:
-            flex_field_ens_lst.append(
-                self.cls_field_ens.from_fields(flex_fields))
-        #SR_TMP>
-
-        if not multiple:
-            if len(flex_field_ens_lst) > 1:
-                raise Exception(
-                    f"single field_specs, yet {len(flex_field_ens_lst)} "
-                    f"fields: {fld_specs} -> {flex_field_ens_lst}")
-            return next(iter(flex_field_ens_lst))
-        return flex_field_ens_lst
+                f"{n_reqtime_per_mem}")
+        return next(iter(n_reqtime_per_mem))
 
     def _read_fld_time_mem(self, fld_specs_time):
+        """Read field over all time steps for each member."""
+
         fld_time_mem = None
         time_stats_mem = []
+
         for i_mem, file_path in enumerate(self.file_path_lst):
 
             log.debug(f"read {file_path} (fields)")
             with self.cmd_open(file_path, 'r') as self.fi:
                 log.debug(f"extract {self.n_fld_specs} time steps")
+
+                # Read grid variables
+                _inds_rlat = slice(*fld_specs_time.var_specs_shared('rlat'))
+                _inds_rlon = slice(*fld_specs_time.var_specs_shared('rlon'))
+                rlat = self.fi.variables['rlat'][_inds_rlat]
+                rlon = self.fi.variables['rlon'][_inds_rlon]
+                if self.rlat is None:
+                    self.rlat = rlat
+                    self.rlon = rlon
+                else:
+                    if not (rlat == self.rlat).all():
+                        raise Exception("inconsistent rlat")
+                    if not (rlon == self.rlon).all():
+                        raise Exception("inconsistent rlon")
+
+                # Read field (all time steps)
                 fld_time = self._import_field(fld_specs_time)
 
+                # Store field for currentmember
                 if fld_time_mem is None:
                     _shape = [self.n_members] + list(fld_time.shape)
                     fld_time_mem = np.full(_shape, np.nan, np.float32)
                 fld_time_mem[i_mem] = fld_time
 
+                # Collect and store time stats for current member
                 time_stats_mem.append(self.collect_time_stats(fld_time))
+
+            self.fi = None
 
         return fld_time_mem, time_stats_mem
 
@@ -1013,6 +1094,22 @@ class FlexFileRotPole:
                     f"unknown unit '{attrs.variable.unit.value}'")
         else:
             raise NotImplementedError(f"species '{attrs.species.name.value}'")
+
+
+class FlexFileEnsMean(FlexFileBase):
+    """...ensemble mean..."""  #SR_TODO
+
+
+class FlexFile(FlexFileBase):
+    """Create instances of ``FlexFile*`` classes."""
+
+    @classmethod
+    def base(cls, *args, **kwargs):
+        return FlexFileBase(*args, **kwargs)
+
+    @classmethod
+    def ens_mean(cls, *args, **kwargs):
+        return FlexFileEnsMean(*args, **kwargs)
 
 
 class FlexAttrsCollector:

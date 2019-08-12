@@ -9,7 +9,7 @@ import os
 
 from textwrap import dedent
 
-from .plot import AxesMapRotPole
+from .plot import AxesMap
 from .plot import ax_dims_fig_coords
 from .plot import AxesTextBox
 from .utils import Degrees
@@ -183,7 +183,7 @@ class FlexPlotBase:
 
         self.fig = plt.figure(figsize=self.figsize)
 
-        self.ax_map = AxesMapRotPole(
+        self.ax_map = AxesMap(
             self.fig,
             self.rlat,
             self.rlon,

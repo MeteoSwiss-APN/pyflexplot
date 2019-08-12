@@ -11,7 +11,7 @@ from utils import datadir
 
 from pyflexplot.io import FlexFieldSpecsConcentration
 from pyflexplot.io import FlexFieldSpecsDeposition
-from pyflexplot.io import FlexFileRotPole
+from pyflexplot.io import FlexFile
 
 from pyflexplot.utils import dict_mult_vals_product
 
@@ -95,16 +95,16 @@ class TestReadField_Single:
         """Run an individual test."""
 
         # Initialize specifications
-        var_specs_dct = {
+        var_specs_raw = {
             **dims,
             **self.var_specs_mult_shared,
             **var_specs_mult_unshared,
         }
-        fld_specs = cls_fld_specs(var_specs_dct)
-        var_specs = cls_fld_specs.cls_var_specs(**var_specs_dct)
+        fld_specs = cls_fld_specs(var_specs_raw)
+        var_specs = cls_fld_specs.cls_var_specs(**var_specs_raw)
 
         # Read input field
-        flex_field = FlexFileRotPole(self.datafile(datadir)).read(fld_specs)
+        flex_field = FlexFile(self.datafile(datadir)).read(fld_specs)
         fld = flex_field.fld
 
         # Read reference field
@@ -289,7 +289,7 @@ class TestReadField_Multiple:
     def _run_core(self, datafile, dim_names, var_names_ref, fld_specs_lst):
 
         # Read input fields
-        flex_field_lst = FlexFileRotPole(datafile).read(fld_specs_lst)
+        flex_field_lst = FlexFile(datafile).read(fld_specs_lst)
         flds = np.array([flex_field.fld for flex_field in flex_field_lst])
 
         # Collect merged variables specifications
@@ -427,37 +427,40 @@ class TestReadFieldEnsemble_Single:
     #------------------------------------------------------------------
 
     def run(
-            self, datadir, cls_fld_specs, dims, var_names_ref,
-            var_specs_mult_unshared):
+            self, datadir, *, cls_fld_specs, dims, var_names_ref,
+            var_specs_mult_unshared, fct_reduce_mem):
         """Run an individual test."""
 
         datafile_fmt = self.datafile_fmt(datadir)
 
         # Initialize specifications
-        var_specs_dct = {
+        var_specs_raw = {
             **dims,
             **self.var_specs_mult_shared,
             **var_specs_mult_unshared,
         }
-        fld_specs = cls_fld_specs(var_specs_dct)
-        var_specs = cls_fld_specs.cls_var_specs(**var_specs_dct)
+        fld_specs = cls_fld_specs(var_specs_raw)
+        var_specs = cls_fld_specs.cls_var_specs(**var_specs_raw)
 
         # Read input fields
-        flex_field = FlexFileRotPole(
+        flex_field = FlexFile.ens_mean(
             datafile_fmt,
             self.ens_member_ids,
-        ).read_ens(fld_specs)
+        ).read(fld_specs, ens_var='mean')
         fld = flex_field.fld
 
         # Read reference fields
         fld_ref = np.nansum(
-            [[
-                read_nc_var(
-                    self.datafile(member_id, datafile_fmt=datafile_fmt),
-                    var_name,
-                    var_specs,
-                ) for member_id in self.ens_member_ids
-            ] for var_name in var_names_ref],
+            fct_reduce_mem(
+                [[
+                    read_nc_var(
+                        self.datafile(member_id, datafile_fmt=datafile_fmt),
+                        var_name,
+                        var_specs,
+                    ) for member_id in self.ens_member_ids
+                ] for var_name in var_names_ref],
+                axis=1,
+            ),
             axis=0,
         )
 
@@ -467,16 +470,17 @@ class TestReadFieldEnsemble_Single:
 
     #------------------------------------------------------------------
 
-    def test_concentration(self, datadir):
+    def test_ens_mean_concentration(self, datadir):
         """Read concentration field."""
         self.run(
             datadir,
-            FlexFieldSpecsConcentration,
+            cls_fld_specs=FlexFieldSpecsConcentration,
             dims={
                 **self.dims_shared, 'level': 1
             },
             var_names_ref=[f'spec{self.species_id:03d}'],
             var_specs_mult_unshared={},
+            fct_reduce_mem=np.nanmean,
         )
 
 
@@ -540,10 +544,10 @@ class TestReadFieldEnsemble_Multiple:
     def _run_core(self, datafile_fmt, dim_names, var_names_ref, fld_specs_lst):
 
         # Read input fields
-        flex_field_lst = FlexFileRotPole(
+        flex_field_lst = FlexFile(
             datafile_fmt,
             self.ens_member_ids,
-        ).read_ens(fld_specs_lst)
+        ).read(fld_specs_lst, ens_var='mean')
         flds = np.array([flex_field.fld for flex_field in flex_field_lst])
 
         # Collect merged variables specifications
