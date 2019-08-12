@@ -681,7 +681,8 @@ class FlexFileBase:
             raise Exception("'_attrs_none' in self.__dict__")
         self._attrs_all = sorted(self.__dict__.keys())
         self._attrs_none = [
-            a for a in self._attrs_all if getattr(self, a) is None]
+            a for a in self._attrs_all if getattr(self, a) is None
+        ]
 
     #SR_DEV<<<
     def _check_attrs(self):
@@ -697,8 +698,7 @@ class FlexFileBase:
         attrs_none = self.__dict__.pop('_attrs_none')
 
         # Check that there are no unexpected attributes
-        attrs_unexp = [
-            a for a in self.__dict__.keys() if a not in attrs_all]
+        attrs_unexp = [a for a in self.__dict__.keys() if a not in attrs_all]
         if attrs_unexp:
             raise Exception(
                 f"{len(attrs_unexp)} unexpected attributes: {attrs_unexp}")
@@ -763,8 +763,8 @@ class FlexFileBase:
         # Prepare array for fields
         self.n_fld_specs = len(self._fld_specs_time_lst)
         self.n_reqtime = self._determine_n_reqtime()
-        flex_fields_arr = np.full(
-            [self.n_fld_specs, self.n_reqtime, self.n_members], None, object)
+        _shape = [self.n_fld_specs, self.n_reqtime]
+        flex_fields_arr = np.full(_shape, None, object)
 
         # Collect fields
         log.debug(f"process {self.n_fld_specs} field specs groups")
@@ -775,8 +775,7 @@ class FlexFileBase:
             n_t = len(time_inds)
 
             # Read fields of all members at all time steps
-            fld_time_mem, time_stats_raw_mem = self._read_fld_time_mem(
-                fld_specs_time)
+            fld_time_mem = self._read_fld_time_mem(fld_specs_time)
 
             # TODO:
             #  * First, read attributes separately for each member
@@ -785,8 +784,8 @@ class FlexFileBase:
             #  * Then, select the time steps of interest
             #  * At some point, also merge the attributes of the members
 
-            _shape = [self.n_reqtime, self.n_members]
             fld_specs_reqtime_arr = np.full([self.n_reqtime], None, object)
+            _shape = [self.n_reqtime, self.n_members]
             attrs_reqtime_mem_arr = np.full(_shape, None, object)
 
             # Create time-step-specific field specifications
@@ -815,55 +814,54 @@ class FlexFileBase:
                         attrs_reqtime_mem_arr[i_reqtime, i_mem] = attrs
                 self.fi = None
 
+            # Reduce fields array along member dimension
+            # In other words: Compute single field from ensemble
+            fld_time = self._reduce_ensemble(fld_time_mem)
+
+            # Collect time stats
+            time_stats = self.collect_time_stats(fld_time)
+
+            # Merge attributes across members
+            attrs_reqtime_arr = self._merge_attrs_across_members(
+                attrs_reqtime_mem_arr)
+
             # Select fields at requested time steps for all members
-            for i_mem, file_path in enumerate(self.file_path_lst):
-                fld_time = fld_time_mem[i_mem]
-                time_stats_raw = time_stats_raw_mem[i_mem]
-                log.debug(f"select fields at requested time steps")
-                for i_reqtime, time_ind in enumerate(time_inds):
-                    log.debug(f"{i_reqtime + 1}/{n_t}")
+            log.debug(f"select fields at requested time steps")
+            for i_reqtime, time_ind in enumerate(time_inds):
+                log.debug(f"{i_reqtime + 1}/{n_t}")
 
-                    fld_specs = fld_specs_reqtime_arr[i_reqtime]
-                    attrs = attrs_reqtime_mem_arr[i_reqtime, i_mem]
+                fld_specs = fld_specs_reqtime_arr[i_reqtime]
+                attrs = attrs_reqtime_arr[i_reqtime]
 
-                    # Extract field
-                    fld = fld_time[time_ind]
+                # Extract field
+                fld = fld_time[time_ind]
 
-                    # Fix some known issues with the NetCDF input data
-                    log.debug("fix nc data")
-                    if i_reqtime == 0:
-                        # Scale time_stats only once
-                        self._fix_nc_data(fld, attrs, time_stats_raw)
-                    else:
-                        self._fix_nc_data(fld, attrs)
+                # Fix some known issues with the NetCDF input data
+                log.debug("fix nc data")
+                if i_reqtime == 0:
+                    # Scale time_stats only once
+                    self._fix_nc_data(fld, attrs, time_stats)
+                else:
+                    self._fix_nc_data(fld, attrs)
 
-                    # Collect data
-                    log.debug("create data object")
-                    flex_field = self.cls_field(
-                        fld,
-                        self.rlat,
-                        self.rlon,
-                        attrs,
-                        fld_specs,
-                        time_stats_raw,
-                    )
+                # Collect data
+                log.debug("create data object")
+                flex_field = self.cls_field(
+                    fld,
+                    self.rlat,
+                    self.rlon,
+                    attrs,
+                    fld_specs,
+                    time_stats,
+                )
 
-                    flex_fields_arr[i_fst, i_reqtime, i_mem] = flex_field
+                flex_fields_arr[i_fst, i_reqtime] = flex_field
 
-        flex_fields_arr = flex_fields_arr.reshape(
-            [self.n_fld_specs*self.n_reqtime, self.n_members])
-        flex_fields_lst = flex_fields_arr.tolist()
+        flex_fields_lst = flex_fields_arr.flatten().tolist()
         #SR_TMP>
 
         # Return result field(s)
         result = flex_fields_lst
-        if self.n_members == 1:
-            # Only one member; remove members dimension
-            tmp = copy(result)  #SR_DBG
-            result = [r[0] if len(r) == 1 else None for r in result]
-            if None in result:
-                ipython(globals(), locals())
-                raise Exception(f"None in result: {result}")
         if not multiple:
             # Only one field type specified: remove fields dimension
             result = result[0]
@@ -872,6 +870,16 @@ class FlexFileBase:
         self._check_attrs()  #SR_DEV
 
         return result
+
+    def _reduce_ensemble(self, fld_time_mem):
+        """Reduce the ensemble to a single field (time, rlat, rlon)."""
+        if self.n_members == 1:
+            fld_time = fld_time_mem[0]
+        elif self.ens_var == 'mean':
+            fld_time = np.nanmean(fld_time_mem, axis=0)
+        else:
+            raise NotImplementedError(f"ens_var '{self.ens_var}'")
+        return fld_time
 
     def _set_ens_var(self, ens_var):
 
@@ -901,7 +909,6 @@ class FlexFileBase:
         """Read field over all time steps for each member."""
 
         fld_time_mem = None
-        time_stats_mem = []
 
         for i_mem, file_path in enumerate(self.file_path_lst):
 
@@ -932,12 +939,9 @@ class FlexFileBase:
                     fld_time_mem = np.full(_shape, np.nan, np.float32)
                 fld_time_mem[i_mem] = fld_time
 
-                # Collect and store time stats for current member
-                time_stats_mem.append(self.collect_time_stats(fld_time))
-
             self.fi = None
 
-        return fld_time_mem, time_stats_mem
+        return fld_time_mem
 
     def group_fld_specs_by_time(self, fld_specs_lst):
         """Group specs that differ only in their time dimension."""
@@ -976,6 +980,17 @@ class FlexFileBase:
             time_inds_lst.append(time_inds)
 
         return fld_specs_time_lst, time_inds_lst
+
+    def _merge_attrs_across_members(self, attrs_reqtime_mem_arr):
+        attrs_reqtime_arr = attrs_reqtime_mem_arr[:, 0]
+        for i_mem in range(1, self.n_members):
+            for i_reqtime, attrs in enumerate(attrs_reqtime_mem_arr[:, i_mem]):
+                attrs_ref = attrs_reqtime_arr[i_reqtime]
+                if attrs != attrs_ref:
+                    raise Exception(
+                        f"attributes differ between members 0 and {i_mem}: "
+                        f"{attrs_ref} != {attrs}")
+        return attrs_reqtime_arr
 
     def collect_time_stats(self, fld_time):
         stats = {

@@ -448,8 +448,7 @@ class Concentration(ClickCommand):
             vars_specs, lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFile(in_file_path).read(
-            fld_specs_lst, lang=lang)
+        flex_data_lst = FlexFile(in_file_path).read(fld_specs_lst, lang=lang)
 
         # Create plots
         create_plots(
@@ -497,8 +496,7 @@ class Deposition(ClickCommand):
             vars_specs, lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFile(in_file_path).read(
-            field_specs_lst, lang=lang)
+        flex_data_lst = FlexFile(in_file_path).read(field_specs_lst, lang=lang)
 
         # Create plots
         create_plots(
@@ -544,8 +542,7 @@ class AffectedArea(ClickCommand):
             vars_specs, lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFile(in_file_path).read(
-            field_specs_lst, lang=lang)
+        flex_data_lst = FlexFile(in_file_path).read(field_specs_lst, lang=lang)
 
         # Create plots
         if mono:
@@ -593,8 +590,7 @@ class EnsMeanConcentration(ClickCommand):
             vars_specs, lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFile(in_file_path).read(
-            fld_specs_lst, lang=lang)
+        flex_data_lst = FlexFile(in_file_path).read(fld_specs_lst, lang=lang)
 
         # Create plots
         create_plots(
