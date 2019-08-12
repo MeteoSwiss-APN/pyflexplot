@@ -715,14 +715,15 @@ class FlexFileRotPole:
             n_t = len(time_inds)
 
             # Read fields of all members at all time steps
-            fld_mem_time, time_stats_raw = self._read_fld_mem_time(
+            fld_time_mem, time_stats_raw_mem = self._read_fld_time_mem(
                 fld_specs_time)
 
             #SR_TODO: Compute variable across members, and resp. time stats
 
             # 2nd loop over members: extract time steps of interest
             for i_mem, file_path in enumerate(self.file_path_lst):
-                fld_time = fld_mem_time[i_mem]
+                fld_time = fld_time_mem[i_mem]
+                time_stats_raw = time_stats_raw_mem[i_mem]
 
                 log.debug(f"read {file_path} (attributes)")
                 with self.cmd_open(file_path, 'r') as self.fi:
@@ -838,21 +839,24 @@ class FlexFileRotPole:
             return next(iter(flex_field_ens_lst))
         return flex_field_ens_lst
 
-    def _read_fld_mem_time(self, fld_specs_time):
-        fld_mem_time = None
+    def _read_fld_time_mem(self, fld_specs_time):
+        fld_time_mem = None
+        time_stats_mem = []
         for i_mem, file_path in enumerate(self.file_path_lst):
 
             log.debug(f"read {file_path} (fields)")
             with self.cmd_open(file_path, 'r') as self.fi:
                 log.debug(f"extract {self.n_fld_specs} time steps")
                 fld_time = self._import_field(fld_specs_time)
-                time_stats = self.collect_time_stats(fld_time)
 
-                if fld_mem_time is None:
+                if fld_time_mem is None:
                     _shape = [self.n_members] + list(fld_time.shape)
-                    fld_mem_time = np.full(_shape, np.nan, np.float32)
-                fld_mem_time[i_mem] = fld_time
-        return fld_mem_time, time_stats
+                    fld_time_mem = np.full(_shape, np.nan, np.float32)
+                fld_time_mem[i_mem] = fld_time
+
+                time_stats_mem.append(self.collect_time_stats(fld_time))
+
+        return fld_time_mem, time_stats_mem
 
     def group_fld_specs_by_time(self, fld_specs_lst):
         """Group specs that differ only in their time dimension."""
