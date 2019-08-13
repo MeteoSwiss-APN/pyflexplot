@@ -10,9 +10,7 @@ import sys
 
 from pprint import pformat
 
-from .io import FlexFieldSpecsConcentration
-from .io import FlexFieldSpecsDeposition
-from .io import FlexFieldSpecsAffectedArea
+from .io import FlexFieldSpecs
 from .io import FlexFileReader
 from .utils import count_to_log_level
 from .flexplotter import FlexPlotter
@@ -456,7 +454,7 @@ class Concentration(ClickCommand):
         lang = ctx.obj['lang']
 
         # Determine fields specifications (one for each eventual plot)
-        fld_specs_lst = FlexFieldSpecsConcentration.multiple(
+        fld_specs_lst = FlexFieldSpecs.Concentration.multiple(
             vars_specs, lang=lang)
 
         # Read fields
@@ -504,7 +502,7 @@ class Deposition(ClickCommand):
         lang = ctx.obj['lang']
 
         # Determine fields specifications (one for each eventual plot)
-        field_specs_lst = FlexFieldSpecsDeposition.multiple(
+        field_specs_lst = FlexFieldSpecs.Deposition.multiple(
             vars_specs, lang=lang)
 
         # Read fields
@@ -550,7 +548,7 @@ class AffectedArea(ClickCommand):
         lang = ctx.obj['lang']
 
         # Determine fields specifications (one for each eventual plot)
-        field_specs_lst = FlexFieldSpecsAffectedArea.multiple(
+        field_specs_lst = FlexFieldSpecs.AffectedArea.multiple(
             vars_specs, lang=lang)
 
         # Read fields
@@ -600,7 +598,7 @@ class EnsMeanConcentration(ClickCommand):
         lang = ctx.obj['lang']
 
         # Determine fields specifications (one for each eventual plot)
-        fld_specs_lst = FlexFieldSpecsConcentration.multiple(
+        fld_specs_lst = FlexFieldSpecs.Concentration.multiple(
             vars_specs, lang=lang)
 
         # Read fields

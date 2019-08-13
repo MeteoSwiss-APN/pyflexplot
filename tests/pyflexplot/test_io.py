@@ -9,8 +9,7 @@ import pytest
 
 from utils import datadir
 
-from pyflexplot.io import FlexFieldSpecsConcentration
-from pyflexplot.io import FlexFieldSpecsDeposition
+from pyflexplot.io import FlexFieldSpecs
 from pyflexplot.io import FlexFileReader
 
 from pyflexplot.utils import dict_mult_vals_product
@@ -45,11 +44,11 @@ def read_nc_var(path, var_name, var_specs):
         assert len(fld.shape) == 3
 
         # Reduce time dimension
-        if isinstance(var_specs, FlexFieldSpecsConcentration.cls_var_specs):
+        if isinstance(var_specs, FlexFieldSpecs.Concentration.cls_var_specs):
             if var_specs.integrate:
                 # Integrate concentration field over time
                 fld = np.cumsum(fld, axis=0)
-        elif isinstance(var_specs, FlexFieldSpecsDeposition.cls_var_specs):
+        elif isinstance(var_specs, FlexFieldSpecs.Deposition.cls_var_specs):
             if not var_specs.integrate:
                 # De-integrate deposition field over time
                 fld[1:] -= fld[:-1].copy()
@@ -129,7 +128,7 @@ class TestReadField_Single:
         """Read concentration field."""
         self.run(
             datadir,
-            FlexFieldSpecsConcentration,
+            FlexFieldSpecs.Concentration,
             dims={
                 **self.dims_shared, 'level': 1
             },
@@ -141,7 +140,7 @@ class TestReadField_Single:
         """Read dry deposition field."""
         self.run(
             datadir,
-            FlexFieldSpecsDeposition,
+            FlexFieldSpecs.Deposition,
             dims=self.dims_shared,
             var_names_ref=[f'DD_spec{self.species_id:03d}'],
             var_specs_mult_unshared={'deposition': 'dry'},
@@ -151,7 +150,7 @@ class TestReadField_Single:
         """Read wet deposition field."""
         self.run(
             datadir,
-            FlexFieldSpecsDeposition,
+            FlexFieldSpecs.Deposition,
             dims=self.dims_shared,
             var_names_ref=[f'WD_spec{self.species_id:03d}'],
             var_specs_mult_unshared={'deposition': 'wet'},
@@ -161,7 +160,7 @@ class TestReadField_Single:
         """Read total deposition field."""
         self.run(
             datadir,
-            FlexFieldSpecsDeposition,
+            FlexFieldSpecs.Deposition,
             dims=self.dims_shared,
             var_names_ref=[
                 f'WD_spec{self.species_id:03d}',
@@ -213,12 +212,12 @@ class TestFieldSpecs_Multiple:
             **self.var_specs_mult_shared,
             'level_lst': [0, 2],
         }
-        fld_specs_mult_lst = FlexFieldSpecsConcentration.multiple(
+        fld_specs_mult_lst = FlexFieldSpecs.Concentration.multiple(
             var_specs_mult)
 
         # Create reference field specifications list
         fld_specs_mult_lst_ref = self.create_fld_specs_mult_lst_ref(
-            FlexFieldSpecsConcentration, var_specs_mult)
+            FlexFieldSpecs.Concentration, var_specs_mult)
 
         assert sorted(fld_specs_mult_lst) == sorted(fld_specs_mult_lst_ref)
 
@@ -230,11 +229,11 @@ class TestFieldSpecs_Multiple:
             **self.var_specs_mult_shared,
             'deposition_lst': ['wet', 'dry', 'tot'],
         }
-        fld_specs_mult_lst = FlexFieldSpecsDeposition.multiple(var_specs_mult)
+        fld_specs_mult_lst = FlexFieldSpecs.Deposition.multiple(var_specs_mult)
 
         # Create reference field specifications list
         fld_specs_mult_lst_ref = self.create_fld_specs_mult_lst_ref(
-            FlexFieldSpecsDeposition, var_specs_mult)
+            FlexFieldSpecs.Deposition, var_specs_mult)
 
         assert sorted(fld_specs_mult_lst) == sorted(fld_specs_mult_lst_ref)
 
@@ -317,7 +316,7 @@ class TestReadField_Multiple:
         self.run(
             separate=separate,
             datafile=self.datafile(datadir),
-            cls_fld_specs=FlexFieldSpecsConcentration,
+            cls_fld_specs=FlexFieldSpecs.Concentration,
             dims_mult={
                 **self.dims_shared,
                 'level_lst': [0, 2],
@@ -339,7 +338,7 @@ class TestReadField_Multiple:
         self.run(
             separate=separate,
             datafile=self.datafile(datadir),
-            cls_fld_specs=FlexFieldSpecsDeposition,
+            cls_fld_specs=FlexFieldSpecs.Deposition,
             dims_mult=self.dims_shared,
             var_names_ref=[f'DD_spec{self.species_id:03d}'],
             var_specs_mult_unshared={'deposition': 'dry'},
@@ -358,7 +357,7 @@ class TestReadField_Multiple:
         self.run(
             separate=separate,
             datafile=self.datafile(datadir),
-            cls_fld_specs=FlexFieldSpecsDeposition,
+            cls_fld_specs=FlexFieldSpecs.Deposition,
             dims_mult=self.dims_shared,
             var_names_ref=[f'WD_spec{self.species_id:03d}'],
             var_specs_mult_unshared={'deposition': 'wet'},
@@ -377,7 +376,7 @@ class TestReadField_Multiple:
         self.run(
             separate=separate,
             datafile=self.datafile(datadir),
-            cls_fld_specs=FlexFieldSpecsDeposition,
+            cls_fld_specs=FlexFieldSpecs.Deposition,
             dims_mult=self.dims_shared,
             var_names_ref=[
                 f'WD_spec{self.species_id:03d}',
@@ -477,7 +476,7 @@ class TestReadFieldEnsemble_Single:
         """Read concentration field."""
         self.run(
             datadir,
-            cls_fld_specs=FlexFieldSpecsConcentration,
+            cls_fld_specs=FlexFieldSpecs.Concentration,
             dims={
                 **self.dims_shared, 'level': 1
             },
@@ -597,7 +596,7 @@ class TestReadFieldEnsemble_Multiple:
         self.run(
             separate=separate,
             datafile_fmt=self.datafile_fmt(datadir),
-            cls_fld_specs=FlexFieldSpecsDeposition,
+            cls_fld_specs=FlexFieldSpecs.Deposition,
             dims_mult=self.dims_shared,
             var_names_ref=[
                 f'WD_spec{self.species_id:03d}',

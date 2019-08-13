@@ -3,6 +3,7 @@
 ./cli.py
 ./io.py
 ./attr.py
+./specs.py
 ./data.py
 ./flexplotter.py
 ./flexplot.py
