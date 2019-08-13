@@ -13,7 +13,7 @@ from pprint import pformat
 from .io import FlexFieldSpecsConcentration
 from .io import FlexFieldSpecsDeposition
 from .io import FlexFieldSpecsAffectedArea
-from .io import FlexFile
+from .io import FlexFileReader
 from .utils import count_to_log_level
 from .flexplotter import FlexPlotter
 
@@ -460,7 +460,7 @@ class Concentration(ClickCommand):
             vars_specs, lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFile(in_file_path).read(fld_specs_lst, lang=lang)
+        flex_data_lst = FlexFileReader(in_file_path).run(fld_specs_lst, lang=lang)
 
         # Create plots
         create_plots(
@@ -508,7 +508,7 @@ class Deposition(ClickCommand):
             vars_specs, lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFile(in_file_path).read(field_specs_lst, lang=lang)
+        flex_data_lst = FlexFileReader(in_file_path).run(field_specs_lst, lang=lang)
 
         # Create plots
         create_plots(
@@ -554,7 +554,7 @@ class AffectedArea(ClickCommand):
             vars_specs, lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFile(in_file_path).read(field_specs_lst, lang=lang)
+        flex_data_lst = FlexFileReader(in_file_path).run(field_specs_lst, lang=lang)
 
         # Create plots
         if mono:
@@ -604,7 +604,7 @@ class EnsMeanConcentration(ClickCommand):
             vars_specs, lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFile(in_file_path, member_id_lst).read(
+        flex_data_lst = FlexFileReader(in_file_path, member_id_lst).run(
             fld_specs_lst, ens_var='mean', lang=lang)
 
         # Create plots

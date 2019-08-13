@@ -11,7 +11,7 @@ from utils import datadir
 
 from pyflexplot.io import FlexFieldSpecsConcentration
 from pyflexplot.io import FlexFieldSpecsDeposition
-from pyflexplot.io import FlexFile
+from pyflexplot.io import FlexFileReader
 
 from pyflexplot.utils import dict_mult_vals_product
 
@@ -104,7 +104,7 @@ class TestReadField_Single:
         var_specs = cls_fld_specs.cls_var_specs(**var_specs_raw)
 
         # Read input field
-        flex_field = FlexFile(self.datafile(datadir)).read(fld_specs)
+        flex_field = FlexFileReader(self.datafile(datadir)).run(fld_specs)
         fld = flex_field.fld
 
         # Read reference field
@@ -289,7 +289,7 @@ class TestReadField_Multiple:
     def _run_core(self, datafile, dim_names, var_names_ref, fld_specs_lst):
 
         # Read input fields
-        flex_field_lst = FlexFile(datafile).read(fld_specs_lst)
+        flex_field_lst = FlexFileReader(datafile).run(fld_specs_lst)
         flds = np.array([flex_field.fld for flex_field in flex_field_lst])
 
         # Collect merged variables specifications
@@ -443,10 +443,10 @@ class TestReadFieldEnsemble_Single:
         var_specs = cls_fld_specs.cls_var_specs(**var_specs_raw)
 
         # Read input fields
-        flex_field = FlexFile.ens_mean(
+        flex_field = FlexFileReader(
             datafile_fmt,
             self.ens_member_ids,
-        ).read(
+        ).run(
             fld_specs,
             ens_var=ens_var,
         )
@@ -552,10 +552,10 @@ class TestReadFieldEnsemble_Multiple:
             ens_var, fct_reduce_mem):
 
         # Read input fields
-        flex_field_lst = FlexFile(
+        flex_field_lst = FlexFileReader(
             datafile_fmt,
             self.ens_member_ids,
-        ).read(
+        ).run(
             fld_specs_lst,
             ens_var=ens_var,
         )

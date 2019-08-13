@@ -87,6 +87,11 @@ def int_or_list(arg):
         return [int(a) for a in arg]
 
 
+#======================================================================
+# Variable Specifications
+#======================================================================
+
+
 class FlexVarSpecs:
     """FLEXPART input variable specifications."""
 
@@ -332,6 +337,11 @@ class FlexVarSpecsDeposition(FlexVarSpecs):
 class FlexVarSpecsAffectedArea(FlexVarSpecsDeposition):
 
     pass
+
+
+#======================================================================
+# Field Specifications
+#======================================================================
 
 
 class FlexFieldSpecs:
@@ -599,8 +609,13 @@ class FlexFieldSpecsAffectedArea(FlexFieldSpecsDeposition):
     cls_var_specs = FlexVarSpecsAffectedArea
 
 
-class FlexFileBase:
-    """NetCDF file containing FLEXPART data on rotated-pole grid.
+#======================================================================
+# File Reader
+#======================================================================
+
+
+class FlexFileReader:
+    """Reader of NetCDF files containing FLEXPART data.
 
     It represents a single input file for deterministic FLEXPART runs,
     or an ensemble of input files for ensemble FLEXPART runs (one file
@@ -613,7 +628,7 @@ class FlexFileBase:
     choices_ens_var = ['mean', 'max']
 
     def __init__(self, file_path, member_ids=None, *, cmd_open=nc4.Dataset):
-        """Create an instance of ``FlexFile``.
+        """Create an instance of ``FlexFileReader``.
 
         Args:
             file_path (str): File path. If ``member_ids`` is passed,
@@ -710,7 +725,7 @@ class FlexFileBase:
                 f"{len(attrs_nonone)} attributes should be None but are not: "
                 f"{attrs_nonone}")
 
-    def read(self, fld_specs, *, ens_var=None, lang='en'):
+    def run(self, fld_specs, *, ens_var=None, lang='en'):
         """Read one or more fields from a file from disc.
 
         Args:
@@ -1125,22 +1140,6 @@ class FlexFileBase:
                     f"unknown unit '{attrs.variable.unit.value}'")
         else:
             raise NotImplementedError(f"species '{attrs.species.name.value}'")
-
-
-class FlexFileEnsMean(FlexFileBase):
-    """...ensemble mean..."""  #SR_TODO
-
-
-class FlexFile(FlexFileBase):
-    """Create instances of ``FlexFile*`` classes."""
-
-    @classmethod
-    def base(cls, *args, **kwargs):
-        return FlexFileBase(*args, **kwargs)
-
-    @classmethod
-    def ens_mean(cls, *args, **kwargs):
-        return FlexFileEnsMean(*args, **kwargs)
 
 
 class FlexAttrsCollector:
