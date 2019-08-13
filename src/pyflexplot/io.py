@@ -91,15 +91,12 @@ class FlexFileReader:
 
     choices_ens_var = ['mean', 'max']
 
-    def __init__(self, file_path, member_ids=None, *, cmd_open=nc4.Dataset):
+    def __init__(self, file_path, *, cmd_open=nc4.Dataset):
         """Create an instance of ``FlexFileReader``.
 
         Args:
-            file_path (str): File path. If ``member_ids`` is passed,
-                the path must contain the format key '{member_ids[:0?d]}'.
-
-            member_ids (list[int], optional): Ensemble member ids which
-                are inserted into ``file_path``. Default to None.
+            file_path (str): File path. In case of ensemble data, it
+                must contain the format key '{member_ids[:0?d]}'.
 
             cmd_open (function, optional): Function to open the input
                 file. Must support context manager interface, i.e.,
@@ -107,35 +104,15 @@ class FlexFileReader:
                 netCDF4.Dataset.
 
         """
-        self.file_path_lst = self._prepare_file_path_lst(file_path, member_ids)
-        self.member_ids = member_ids
+        self.file_path_fmt = file_path
         self.cmd_open = cmd_open
-
-        self.n_members = 1 if member_ids is None else len(member_ids)
 
         self.reset()
 
-    def _prepare_file_path_lst(self, file_path, member_ids):
-
-        fmt_keys = ['{member_id}', '{member_id:']
-        fmt_key_in_path = any(k in file_path for k in fmt_keys)
-
-        if member_ids is None:
-            if fmt_key_in_path:
-                raise ValueError(
-                    "input file path contains format key '{member_id[:0?d]}' "
-                    "but no member_ids have been passed")
-            return [file_path]
-
-        else:
-            if not fmt_key_in_path:
-                raise ValueError(
-                    "input file path missing format key '{member_id[:0?d]}': "
-                    f"{file_path}")
-            return [file_path.format(member_id=mid) for mid in member_ids]
-
     def reset(self):
         self.lang = None
+        self.n_members = None
+        self.file_path_lst = None
         self.fi = None
         self.rlat = None
         self.rlon = None
@@ -218,7 +195,7 @@ class FlexFileReader:
         self._store_attrs()  #SR_DEV
 
         # Set some attributes
-        self._set_ens_var(ens_var)
+        self.ens_var = ens_var
         self.lang = lang
 
         if isinstance(fld_specs, FlexFieldSpecs):
@@ -247,10 +224,17 @@ class FlexFileReader:
         # Collect fields
         log.debug(f"process {self.n_fld_specs} field specs groups")
         for i_fld_specs in range(self.n_fld_specs):
+
             fld_specs_time = self._fld_specs_time_lst[i_fld_specs]
             time_inds = self._time_inds_lst[i_fld_specs]
+
+            member_ids = fld_specs_time.member_ids
+            self.n_members = 1 if member_ids is None else len(member_ids)
+            self.file_path_lst = self._prepare_file_path_lst(member_ids)
+
             log.debug(
                 f"{i_fld_specs + 1}/{self.n_fld_specs}: {fld_specs_time}")
+
             flex_field_lst.extend(
                 self._create_fields_fld_specs(fld_specs_time, time_inds))
 
@@ -265,20 +249,25 @@ class FlexFileReader:
 
         return result
 
-    def _set_ens_var(self, ens_var):
+    def _prepare_file_path_lst(self, member_ids):
 
-        if ens_var is None:
-            if self.n_members > 1:
+        fmt_keys = ['{member_id}', '{member_id:']
+        fmt_key_in_path = any(k in self.file_path_fmt for k in fmt_keys)
+
+        if member_ids is None:
+            if fmt_key_in_path:
                 raise ValueError(
-                    f"require argument ens_var for {self.n_members} > 1 "
-                    f"ensemble members")
+                    "input file path contains format key '{member_id[:0?d]}' "
+                    "but no member_ids have been passed")
+            return [self.file_path_fmt]
 
-        elif ens_var not in self.choices_ens_var:
-            raise ValueError(
-                f"unknown value '{ens_var}' for attribute ens_var; "
-                f"choices: {self.choices_ens_var}")
-
-        self.ens_var = ens_var
+        else:
+            if not fmt_key_in_path:
+                raise ValueError(
+                    "input file path missing format key '{member_id[:0?d]}': "
+                    f"{self.file_path_fmt}")
+            return [
+                self.file_path_fmt.format(member_id=mid) for mid in member_ids]
 
     def _determine_n_reqtime(self):
         """Determine the number of selected time steps."""

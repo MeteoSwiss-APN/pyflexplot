@@ -306,8 +306,9 @@ class FlexFieldSpecs:
     def __init__(
             self,
             var_specs_lst,
-            op=np.nansum,
+            member_ids=None,
             *,
+            op=np.nansum,
             var_attrs_replace=None,
             lang='en'):
         """Create an instance of ``FlexFieldSpecs``.
@@ -318,6 +319,9 @@ class FlexFieldSpecs:
                 instance of ``FlexVarSpecs`` as specified by the class
                 attribute ``cls_var_specs``. Each ultimately yields a
                 2D slice of an input variable.
+
+            member_ids (list[int], optional): Ensemble member ids.
+                Defaults to None.
 
             op (function or list[function], optional): Opterator(s) to
                 combine the input fields obtained based on the input
@@ -342,6 +346,9 @@ class FlexFieldSpecs:
 
         # Create variable specifications objects
         self.var_specs_lst = self.create_var_specs(var_specs_lst)
+
+        # Ensemble member ids
+        self.member_ids = member_ids
 
         # Store operator(s)
         self.check_op(op)
@@ -455,12 +462,12 @@ class FlexFieldSpecs:
         return hash(self) == hash(other)
 
     @classmethod
-    def multiple(cls, vars_specs, lang='en'):
+    def multiple(cls, vars_specs, *args, lang='en'):
         var_specs_lst = cls.cls_var_specs.multiple_as_dict(**vars_specs)
         field_specs_lst = []
         for var_specs in var_specs_lst:
             try:
-                field_specs = cls(var_specs, lang=lang)
+                field_specs = cls(var_specs, *args, lang=lang)
             except Exception as e:
                 raise Exception(
                     f"cannot initialize {cls.__name__} "
@@ -492,7 +499,7 @@ class FlexFieldSpecs_Concentration(FlexFieldSpecs):
     # Dimensions with optionally multiple values
     dims_opt_mult_vals = FlexFieldSpecs.dims_opt_mult_vals + ['level']
 
-    def __init__(self, var_specs, **kwargs):
+    def __init__(self, var_specs, *args, **kwargs):
         """Create an instance of ``FlexFieldSpecs_Concentration``.
 
         Args:
@@ -505,7 +512,7 @@ class FlexFieldSpecs_Concentration(FlexFieldSpecs):
         if not isinstance(var_specs, dict):
             raise ValueError(
                 f"var_specs must be 'dict', not '{type(var_specs).__name__}'")
-        super().__init__([var_specs], **kwargs)
+        super().__init__([var_specs], *args, **kwargs)
 
 
 FlexFieldSpecs.Concentration = FlexFieldSpecs_Concentration
@@ -515,7 +522,7 @@ class FlexFieldSpecs_Deposition(FlexFieldSpecs):
 
     cls_var_specs = FlexVarSpecs_Deposition
 
-    def __init__(self, var_specs, lang='en', **kwargs):
+    def __init__(self, var_specs, *args, lang='en', **kwargs):
         """Create an instance of ``FlexFieldSpecs_Deposition``.
 
         Args:
@@ -555,7 +562,7 @@ class FlexFieldSpecs_Deposition(FlexFieldSpecs):
                 raise NotImplementedError(
                     f"deposition type '{var_specs['deposition']}'")
 
-        super().__init__(var_specs_lst, **kwargs)
+        super().__init__(var_specs_lst, *args, **kwargs)
 
 
 FlexFieldSpecs.Deposition = FlexFieldSpecs_Deposition
@@ -750,6 +757,8 @@ class FlexAttrsCollector:
                     'dry': 'Trocken',
                     'tot': 'Total',
                 }[dep]
+            else:
+                raise NotImplementedError(f"lang='{lang}'")
 
             if type_ is FlexVarSpecs.Deposition:
                 return {

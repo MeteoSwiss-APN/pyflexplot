@@ -413,7 +413,7 @@ class TestReadFieldEnsemble_Single:
         return self.var_specs_mult_shared['species_id']
 
     # Ensemble member ids
-    ens_member_ids = [0, 1, 5, 10, 15, 20]
+    member_ids = [0, 1, 5, 10, 15, 20]
 
     def datafile_fmt(self, datadir):
         return f'{datadir}/grid_conc_20190727120000_{{member_id:03d}}.nc'
@@ -438,17 +438,12 @@ class TestReadFieldEnsemble_Single:
             **self.var_specs_mult_shared,
             **var_specs_mult_unshared,
         }
-        fld_specs = cls_fld_specs(var_specs_raw)
+        fld_specs = cls_fld_specs(var_specs_raw, self.member_ids)
         var_specs = cls_fld_specs.cls_var_specs(**var_specs_raw)
 
         # Read input fields
-        flex_field = FlexFileReader(
-            datafile_fmt,
-            self.ens_member_ids,
-        ).run(
-            fld_specs,
-            ens_var=ens_var,
-        )
+        flex_field = FlexFileReader(datafile_fmt).run(
+            fld_specs, ens_var=ens_var)
         fld = flex_field.fld
 
         # Read reference fields
@@ -459,7 +454,7 @@ class TestReadFieldEnsemble_Single:
                         self.datafile(member_id, datafile_fmt=datafile_fmt),
                         var_name,
                         var_specs,
-                    ) for member_id in self.ens_member_ids
+                    ) for member_id in self.member_ids
                 ] for var_name in var_names_ref],
                 axis=0,
             ),
@@ -508,7 +503,7 @@ class TestReadFieldEnsemble_Multiple:
         return self.var_specs_mult_shared['species_id']
 
     # Ensemble member ids
-    ens_member_ids = [0, 1, 5, 10, 15, 20]
+    member_ids = [0, 1, 5, 10, 15, 20]
 
     def datafile_fmt(self, datadir):
         return f'{datadir}/grid_conc_20190727120000_{{member_id:03d}}.nc'
@@ -531,7 +526,7 @@ class TestReadFieldEnsemble_Multiple:
             **self.var_specs_mult_shared,
             **var_specs_mult_unshared,
         }
-        fld_specs_lst = cls_fld_specs.multiple(var_specs_mult)
+        fld_specs_lst = cls_fld_specs.multiple(var_specs_mult, self.member_ids)
 
         dim_names = sorted([d.replace('_lst', '') for d in dims_mult.keys()])
 
@@ -551,13 +546,8 @@ class TestReadFieldEnsemble_Multiple:
             ens_var, fct_reduce_mem):
 
         # Read input fields
-        flex_field_lst = FlexFileReader(
-            datafile_fmt,
-            self.ens_member_ids,
-        ).run(
-            fld_specs_lst,
-            ens_var=ens_var,
-        )
+        flex_field_lst = FlexFileReader(datafile_fmt).run(
+            fld_specs_lst, ens_var=ens_var)
         flds = np.array([flex_field.fld for flex_field in flex_field_lst])
 
         # Collect merged variables specifications
@@ -571,7 +561,7 @@ class TestReadFieldEnsemble_Multiple:
                     self.datafile(member_id, datafile_fmt=datafile_fmt),
                     var_name,
                     var_specs,
-                ) for member_id in self.ens_member_ids
+                ) for member_id in self.member_ids
             ] for var_name in var_names_ref]
             fld_ref_lst.append(
                 fct_reduce_mem(
