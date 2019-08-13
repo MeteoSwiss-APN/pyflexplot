@@ -610,7 +610,7 @@ class FlexFileBase:
 
     cls_field = FlexField
 
-    choices_ens_var = ['mean']
+    choices_ens_var = ['mean', 'max']
 
     def __init__(self, file_path, member_ids=None, *, cmd_open=nc4.Dataset):
         """Create an instance of ``FlexFile``.
@@ -881,6 +881,8 @@ class FlexFileBase:
             fld_time = fld_time_mem[0]
         elif self.ens_var == 'mean':
             fld_time = np.nanmean(fld_time_mem, axis=0)
+        elif self.ens_var == 'max':
+            fld_time = np.nanmax(fld_time_mem, axis=0)
         else:
             raise NotImplementedError(f"ens_var '{self.ens_var}'")
         return fld_time

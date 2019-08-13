@@ -428,7 +428,7 @@ class TestReadFieldEnsemble_Single:
 
     def run(
             self, datadir, *, cls_fld_specs, dims, var_names_ref,
-            var_specs_mult_unshared, fct_reduce_mem):
+            var_specs_mult_unshared, ens_var, fct_reduce_mem):
         """Run an individual test."""
 
         datafile_fmt = self.datafile_fmt(datadir)
@@ -448,13 +448,13 @@ class TestReadFieldEnsemble_Single:
             self.ens_member_ids,
         ).read(
             fld_specs,
-            ens_var='mean',
+            ens_var=ens_var,
         )
         fld = flex_field.fld
 
         # Read reference fields
-        fld_ref = np.nansum(
-            fct_reduce_mem(
+        fld_ref = fct_reduce_mem(
+            np.nansum(
                 [[
                     read_nc_var(
                         self.datafile(member_id, datafile_fmt=datafile_fmt),
@@ -462,7 +462,7 @@ class TestReadFieldEnsemble_Single:
                         var_specs,
                     ) for member_id in self.ens_member_ids
                 ] for var_name in var_names_ref],
-                axis=1,
+                axis=0,
             ),
             axis=0,
         )
@@ -483,6 +483,7 @@ class TestReadFieldEnsemble_Single:
             },
             var_names_ref=[f'spec{self.species_id:03d}'],
             var_specs_mult_unshared={},
+            ens_var='mean',
             fct_reduce_mem=np.nanmean,
         )
 
@@ -522,7 +523,7 @@ class TestReadFieldEnsemble_Multiple:
 
     def run(
             self, *, separate, datafile_fmt, cls_fld_specs, dims_mult,
-            var_names_ref, var_specs_mult_unshared, fct_reduce_mem):
+            var_names_ref, var_specs_mult_unshared, ens_var, fct_reduce_mem):
         """Run an individual test, reading one field after another."""
 
         # Create field specifications list
@@ -540,15 +541,15 @@ class TestReadFieldEnsemble_Multiple:
             for fld_specs in fld_specs_lst:
                 self._run_core(
                     datafile_fmt, dim_names, var_names_ref, [fld_specs],
-                    fct_reduce_mem)
+                    ens_var, fct_reduce_mem)
         else:
             self._run_core(
-                datafile_fmt, dim_names, var_names_ref, fld_specs_lst,
+                datafile_fmt, dim_names, var_names_ref, fld_specs_lst, ens_var,
                 fct_reduce_mem)
 
     def _run_core(
             self, datafile_fmt, dim_names, var_names_ref, fld_specs_lst,
-            fct_reduce_mem):
+            ens_var, fct_reduce_mem):
 
         # Read input fields
         flex_field_lst = FlexFile(
@@ -556,7 +557,7 @@ class TestReadFieldEnsemble_Multiple:
             self.ens_member_ids,
         ).read(
             fld_specs_lst,
-            ens_var='mean',
+            ens_var=ens_var,
         )
         flds = np.array([flex_field.fld for flex_field in flex_field_lst])
 
@@ -564,30 +565,35 @@ class TestReadFieldEnsemble_Multiple:
         var_specs_lst = [fs.var_specs_merged() for fs in fld_specs_lst]
 
         # Read reference fields
-        flds_ref = []
+        fld_ref_lst = []
         for var_specs in var_specs_lst:
-            flds_ref_i = fct_reduce_mem(
-                [[
-                    read_nc_var(
-                        self.datafile(member_id, datafile_fmt=datafile_fmt),
-                        var_name,
-                        var_specs,
-                    ) for member_id in self.ens_member_ids
-                ] for var_name in var_names_ref],
-                axis=1,
-            )
-            fld_ref_i = np.nansum(flds_ref_i, axis=0)
-            flds_ref.append(fld_ref_i)
-        flds_ref = np.array(flds_ref)
+            fld_ref_mem_time = [[
+                read_nc_var(
+                    self.datafile(member_id, datafile_fmt=datafile_fmt),
+                    var_name,
+                    var_specs,
+                ) for member_id in self.ens_member_ids
+            ] for var_name in var_names_ref]
+            fld_ref_lst.append(
+                fct_reduce_mem(
+                    np.nansum(fld_ref_mem_time, axis=0),
+                    axis=0,
+                ))
+        fld_ref_arr = np.array(fld_ref_lst)
 
-        assert flds.shape == flds_ref.shape
-        assert np.isclose(np.nanmean(flds), np.nanmean(flds_ref))
-        np.testing.assert_allclose(flds, flds_ref, equal_nan=True, rtol=1e-6)
+        assert flds.shape == fld_ref_arr.shape
+        assert np.isclose(np.nanmean(flds), np.nanmean(fld_ref_arr))
+        np.testing.assert_allclose(
+            flds, fld_ref_arr, equal_nan=True, rtol=1e-6)
 
     #------------------------------------------------------------------
 
-    def run_ens_mean_deposition_tot(self, datadir, *, separate):
+    def run_deposition_tot(self, datadir, ens_var, *, separate=False):
         """Read total deposition field."""
+        fct_reduce_mem = {
+            'mean': np.nanmean,
+            'max': np.nanmax,
+        }[ens_var]
         self.run(
             separate=separate,
             datafile_fmt=self.datafile_fmt(datadir),
@@ -598,11 +604,15 @@ class TestReadFieldEnsemble_Multiple:
                 f'DD_spec{self.species_id:03d}',
             ],
             var_specs_mult_unshared={'deposition': 'tot'},
-            fct_reduce_mem=np.nanmean,
+            ens_var=ens_var,
+            fct_reduce_mem=fct_reduce_mem,
         )
 
     def test_ens_mean_deposition_tot_separate(self, datadir):
-        self.run_ens_mean_deposition_tot(datadir, separate=True)
+        self.run_deposition_tot(datadir, 'mean', separate=True)
 
     def test_ens_mean_deposition_tot_together(self, datadir):
-        self.run_ens_mean_deposition_tot(datadir, separate=False)
+        self.run_deposition_tot(datadir, 'mean', separate=False)
+
+    def test_ens_max_deposition_tot(self, datadir):
+        self.run_deposition_tot(datadir, 'max')
