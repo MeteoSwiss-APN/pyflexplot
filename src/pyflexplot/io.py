@@ -758,7 +758,7 @@ class FlexFileBase:
         # statistics across all time steps), and subsequently extract
         # the requested time steps using the separately stored indices.
         self._fld_specs_time_lst, self._time_inds_lst = (
-            self.group_fld_specs_by_time(fld_specs_lst))
+            self._group_fld_specs_by_time(fld_specs_lst))
 
         # Prepare array for fields
         self.n_fld_specs = len(self._fld_specs_time_lst)
@@ -820,7 +820,7 @@ class FlexFileBase:
         fld_time = self._reduce_ensemble(fld_time_mem)
 
         # Collect time stats
-        time_stats = self.collect_time_stats(fld_time)
+        time_stats = self._collect_time_stats(fld_time)
 
         # Create time-step-specific field specifications
         fld_specs_reqtime = self._create_specs_reqtime(
@@ -835,8 +835,7 @@ class FlexFileBase:
 
         # Create fields at requested time steps for all members
         return self._create_fields_reqtime(
-            fld_specs_reqtime, attrs_reqtime, fld_time, time_inds,
-            time_stats)
+            fld_specs_reqtime, attrs_reqtime, fld_time, time_inds, time_stats)
 
     def _read_fld_time_mem(self, fld_specs_time):
         """Read field over all time steps for each member."""
@@ -920,7 +919,7 @@ class FlexFileBase:
             self.fi = None
         return attrs_reqtime_mem
 
-    def group_fld_specs_by_time(self, fld_specs_lst):
+    def _group_fld_specs_by_time(self, fld_specs_lst):
         """Group specs that differ only in their time dimension."""
 
         fld_specs_time_inds_by_hash = {}
@@ -1007,7 +1006,7 @@ class FlexFileBase:
             flex_field_lst.append(flex_field)
         return flex_field_lst
 
-    def collect_time_stats(self, fld_time):
+    def _collect_time_stats(self, fld_time):
         stats = {
             'mean': np.nanmean(fld_time),
             'median': np.nanmedian(fld_time),
