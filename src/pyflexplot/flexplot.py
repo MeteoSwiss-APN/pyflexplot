@@ -16,6 +16,11 @@ from .utils import Degrees
 from .utils_dev import ipython  #SR_DEV
 
 
+#======================================================================
+# Plot Labels
+#======================================================================
+
+
 class FlexPlotLabels:
 
     def __init__(self):
@@ -151,11 +156,18 @@ class FlexPlotLabelsDispersion:
             raise ValueError(f"lang='{lang}'")
 
 
-class FlexPlotBase:
+#======================================================================
+# Plots
+#======================================================================
+
+
+class FlexPlot:
     """Base class for FLEXPART plots."""
 
+    name = '__base__'
+
     def __init__(self, rlat, rlon, fld, attrs, time_stats, lang='en'):
-        """Create an instance of ``FlexPlotBase``.
+        """Create an instance of ``FlexPlot``.
 
         Args:
             rlat (ndarray[float]): Rotated latitude (1d).
@@ -221,9 +233,15 @@ class FlexPlotBase:
         plt.close(self.fig)
 
 
-class FlexPlotBase_Dispersion(FlexPlotBase):
+#----------------------------------------------------------------------
+# Deterministic Simulation
+#----------------------------------------------------------------------
+
+
+class FlexPlot_Dispersion(FlexPlot):
     """Base class for FLEXPART dispersion plots."""
 
+    name = '__base__dispersion__'
     figsize = (12, 9)
     extend = 'max'
 
@@ -690,8 +708,10 @@ class FlexPlotBase_Dispersion(FlexPlotBase):
         return np.log10(self.levels)
 
 
-class FlexPlotConcentration(FlexPlotBase_Dispersion):
+class FlexPlot_Concentration(FlexPlot_Dispersion):
     """FLEXPART plot of particle concentration at a certain level."""
+
+    name = 'concentration'
 
     def __init__(self, *args, **kwargs):
         """Create an instance of ``FlexPlot``."""
@@ -699,35 +719,40 @@ class FlexPlotConcentration(FlexPlotBase_Dispersion):
         self.create()
 
 
-class FlexPlotDeposition(FlexPlotBase_Dispersion):
+class FlexPlot_Deposition(FlexPlot_Dispersion):
     """FLEXPART plot of surface deposition."""
 
+    name = 'deposition'
+
     def __init__(self, *args, **kwargs):
-        """Create an instance of ``FlexPlotDeposition``.
+        """Create an instance of ``FlexPlot_Deposition``.
 
         """
         super().__init__(*args, **kwargs)
         self.create()
 
 
-class FlexPlotAffectedArea(FlexPlotBase_Dispersion):
+class FlexPlot_AffectedArea(FlexPlot_Dispersion):
     """FLEXPART plot of area affected by surface deposition."""
 
+    name = 'affected-area'
+
     def __init__(self, *args, **kwargs):
-        """Create an instance of ``FlexPlotAffectedArea``.
+        """Create an instance of ``FlexPlot_AffectedArea``.
 
         """
         super().__init__(*args, **kwargs)
         self.create()
 
 
-class FlexPlotAffectedAreaMono(FlexPlotAffectedArea):
+class FlexPlot_AffectedAreaMono(FlexPlot_AffectedArea):
     """FLEXPART plot of area affected by surface deposition (mono)."""
 
+    name = 'affected-area-mono'
     extend = 'none'
 
     def __init__(self, *args, **kwargs):
-        """Create an instance of ``FlexPlotAffectedAreaMono``.
+        """Create an instance of ``FlexPlot_AffectedAreaMono``.
 
         """
         super().__init__(*args, **kwargs)
@@ -750,3 +775,23 @@ class FlexPlotAffectedAreaMono(FlexPlotAffectedArea):
             dy0_boxes=22.1,
             dy_spacing=12.0,
         )
+
+
+FlexPlot.Dispersion = FlexPlot_Dispersion
+FlexPlot.Concentration = FlexPlot_Concentration
+FlexPlot.Deposition = FlexPlot_Deposition
+FlexPlot.AffectedArea = FlexPlot_AffectedArea
+FlexPlot.AffectedAreaMono = FlexPlot_AffectedAreaMono
+
+
+#----------------------------------------------------------------------
+# Ensemble Simulation
+#----------------------------------------------------------------------
+
+
+class FlexPlot_EnsMeanConcentration(FlexPlot_Concentration):
+
+    name = 'ens-mean-concentration'
+
+
+FlexPlot.EnsMeanConcentration = FlexPlot_EnsMeanConcentration

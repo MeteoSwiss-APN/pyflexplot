@@ -5,63 +5,14 @@ Plotters.
 #import numpy as np
 
 from .io import FlexVarSpecs
-from .flexplot import FlexPlotConcentration
-from .flexplot import FlexPlotDeposition
-from .flexplot import FlexPlotAffectedArea
-from .flexplot import FlexPlotAffectedAreaMono
+from .flexplot import FlexPlot
 from .utils_dev import ipython  #SR_DEV
 
 
 class FlexPlotter:
-    """Create one or more FLEXPLART plots of a certain type.
+    """Create one or more FLEXPLART plots of a certain type."""
 
-    Attributes:
-        <TODO>
-
-    Methods:
-        <TODO>
-
-    """
-
-    def __init__(self, type_):
-        """Initialize instance of FlexPlotter.
-
-        Args:
-            type_ (str): Type of plot.
-
-        """
-        self.type_ = type_
-
-        # Determine plot class
-        cls_plot_by_type = {
-            'concentration': FlexPlotConcentration,
-            'deposition': FlexPlotDeposition,
-            'affected_area': FlexPlotAffectedArea,
-            'affected_area_mono': FlexPlotAffectedAreaMono,
-        }
-        try:
-            self.cls_plot = cls_plot_by_type[type_]
-        except KeyError:
-            raise ValueError(f"no plot class defined for plot type '{type_}'")
-
-        # Fetch specs keys
-        self.specs_keys = FlexVarSpecs.specs()
-
-    @classmethod
-    def concentration(cls, *args, **kwargs):
-        return cls('concentration').run(*args, **kwargs)
-
-    @classmethod
-    def deposition(cls, *args, **kwargs):
-        return cls('deposition').run(*args, **kwargs)
-
-    @classmethod
-    def affected_area(cls, *args, **kwargs):
-        return cls('affected_area').run(*args, **kwargs)
-
-    @classmethod
-    def affected_area_mono(cls, *args, **kwargs):
-        return cls('affected_area_mono').run(*args, **kwargs)
+    cls_plot = None
 
     # yapf: disable
     specs_fmt_keys = {
@@ -95,7 +46,7 @@ class FlexPlotter:
         data_lst = field if isinstance(field, (list, tuple)) else [field]
 
         _s = 's' if len(data_lst) > 1 else ''
-        print(f"create {len(data_lst)} {self.type_} plot{_s}")
+        print(f"create {len(data_lst)} {self.cls_plot.name} plot{_s}")
 
         # Create plots one-by-one
         for i_data, field in enumerate(data_lst):
@@ -137,7 +88,7 @@ class FlexPlotter:
             kwargs[fmt_key] = val
 
         # Special case: integrated variable
-        plot_var = self.type_
+        plot_var = self.cls_plot.name
         if var_specs.integrate:
             plot_var += '-int'
         try:
@@ -186,3 +137,36 @@ class FlexPlotter:
                 f"{type(e).__name__}({e})")
         else:
             return file_path
+
+
+#----------------------------------------------------------------------
+
+
+class FlexPlotter_Concentration(FlexPlotter):
+    cls_plot = FlexPlot.Concentration
+
+
+class FlexPlotter_Deposition(FlexPlotter):
+    cls_plot = FlexPlot.Deposition
+
+
+class FlexPlotter_AffectedArea(FlexPlotter):
+    cls_plot = FlexPlot.AffectedArea
+
+
+class FlexPlotter_AffectedAreaMono(FlexPlotter):
+    cls_plot = FlexPlot.AffectedAreaMono
+
+
+class FlexPlotter_EnsMeanConcentration(FlexPlotter):
+    cls_plot = FlexPlot.EnsMeanConcentration
+
+
+#----------------------------------------------------------------------
+
+
+FlexPlotter.Concentration = FlexPlotter_Concentration
+FlexPlotter.Deposition = FlexPlotter_Deposition
+FlexPlotter.AffectedArea = FlexPlotter_AffectedArea
+FlexPlotter.AffectedAreaMono = FlexPlotter_AffectedAreaMono
+FlexPlotter.EnsMeanConcentration = FlexPlotter_EnsMeanConcentration

@@ -236,6 +236,9 @@ class FlexVarSpecs:
         return inds
 
 
+#----------------------------------------------------------------------
+
+
 class FlexVarSpecs_Concentration(FlexVarSpecs):
 
     _keys_w_type = {
@@ -263,9 +266,6 @@ class FlexVarSpecs_Concentration(FlexVarSpecs):
         return inds
 
 
-FlexVarSpecs.Concentration = FlexVarSpecs_Concentration
-
-
 class FlexVarSpecs_Deposition(FlexVarSpecs):
 
     _keys_w_type = {
@@ -279,14 +279,16 @@ class FlexVarSpecs_Deposition(FlexVarSpecs):
         return f'{prefix}_spec{self.species_id:03d}'
 
 
-FlexVarSpecs.Deposition = FlexVarSpecs_Deposition
-
-
 class FlexVarSpecs_AffectedArea(FlexVarSpecs_Deposition):
 
     pass
 
 
+#----------------------------------------------------------------------
+
+
+FlexVarSpecs.Concentration = FlexVarSpecs_Concentration
+FlexVarSpecs.Deposition = FlexVarSpecs_Deposition
 FlexVarSpecs.AffectedArea = FlexVarSpecs_AffectedArea
 
 
@@ -492,6 +494,9 @@ class FlexFieldSpecs:
         return next(iter(vals))
 
 
+#----------------------------------------------------------------------
+
+
 class FlexFieldSpecs_Concentration(FlexFieldSpecs):
 
     cls_var_specs = FlexVarSpecs_Concentration
@@ -513,9 +518,6 @@ class FlexFieldSpecs_Concentration(FlexFieldSpecs):
             raise ValueError(
                 f"var_specs must be 'dict', not '{type(var_specs).__name__}'")
         super().__init__([var_specs], *args, **kwargs)
-
-
-FlexFieldSpecs.Concentration = FlexFieldSpecs_Concentration
 
 
 class FlexFieldSpecs_Deposition(FlexFieldSpecs):
@@ -565,14 +567,16 @@ class FlexFieldSpecs_Deposition(FlexFieldSpecs):
         super().__init__(var_specs_lst, *args, **kwargs)
 
 
-FlexFieldSpecs.Deposition = FlexFieldSpecs_Deposition
-
-
 class FlexFieldSpecs_AffectedArea(FlexFieldSpecs_Deposition):
 
     cls_var_specs = FlexVarSpecs_AffectedArea
 
 
+#----------------------------------------------------------------------
+
+
+FlexFieldSpecs.Concentration = FlexFieldSpecs_Concentration
+FlexFieldSpecs.Deposition = FlexFieldSpecs_Deposition
 FlexFieldSpecs.AffectedArea = FlexFieldSpecs_AffectedArea
 
 

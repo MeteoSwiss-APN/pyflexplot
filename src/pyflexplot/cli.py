@@ -299,19 +299,18 @@ class GlobalOptions(ClickOptionsGroup):
         ]
 
 
-def create_plots(ctx, fct, args=None, kwargs=None):
+def create_plots(ctx, cls_plotter, args=None, kwargs=None):
     """Create FLEXPART plots.
 
     Args:
         ctx (Context): Click context object.
 
-        fct (callable): Callable that creates plots while yielding
-            the output file paths on-the-fly.
+        cls_plotter (type): Plotter class, derived from FlexPlotter.
 
-        args (list, optional): Positional arguments for ``fct``.
+        args (list, optional): Positional arguments for ``cls_plotter.run``.
             Defaults to [].
 
-        kwargs (dict, optional): Keyword arguments for ``fct``.
+        kwargs (dict, optional): Keyword arguments for ``cls_plotter.run``.
             Defaults to {}.
 
     """
@@ -324,9 +323,11 @@ def create_plots(ctx, fct, args=None, kwargs=None):
     if kwargs is None:
         kwargs = {}
 
+    plotter = cls_plotter()
+
     # Note: FlexPlotter.run yields the output file paths on-the-go
     out_file_paths = []
-    for i, out_file_path in enumerate(fct(*args, **kwargs)):
+    for i, out_file_path in enumerate(plotter.run(*args, **kwargs)):
         out_file_paths.append(out_file_path)
 
         if ctx.obj['open_first_cmd'] and i == 0:
@@ -462,7 +463,7 @@ class Concentration(ClickCommand):
         # Create plots
         create_plots(
             ctx,
-            FlexPlotter.concentration,
+            FlexPlotter.Concentration,
             [flex_data_lst, out_file_path_fmt],
             {'lang': lang},
         )
@@ -510,7 +511,7 @@ class Deposition(ClickCommand):
         # Create plots
         create_plots(
             ctx,
-            FlexPlotter.deposition,
+            FlexPlotter.Deposition,
             [flex_data_lst, out_file_path_fmt],
             {'lang': lang},
         )
@@ -555,9 +556,9 @@ class AffectedArea(ClickCommand):
 
         # Create plots
         if mono:
-            fct = FlexPlotter.affected_area_mono
+            fct = FlexPlotter.AffectedAreaMono
         else:
-            fct = FlexPlotter.affected_area
+            fct = FlexPlotter.AffectedArea
         create_plots(
             ctx,
             fct,
@@ -603,7 +604,7 @@ class EnsMeanConcentration(ClickCommand):
         # Create plots
         create_plots(
             ctx,
-            FlexPlotter.concentration,
+            FlexPlotter.EnsMeanConcentration,
             [flex_data_lst, out_file_path_fmt],
             {'lang': lang},
         )
