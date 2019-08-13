@@ -763,45 +763,37 @@ class FlexFileBase:
         # Prepare array for fields
         self.n_fld_specs = len(self._fld_specs_time_lst)
         self.n_reqtime = self._determine_n_reqtime()
-        _shape = [self.n_fld_specs, self.n_reqtime]
-        flex_fields_arr = np.full(_shape, None, object)
+        flex_field_lst = []
 
         # Collect fields
         log.debug(f"process {self.n_fld_specs} field specs groups")
-        for i_fst in range(self.n_fld_specs):
-            fld_specs_time = self._fld_specs_time_lst[i_fst]
-            time_inds = self._time_inds_lst[i_fst]
-            log.debug(f"{i_fst + 1}/{self.n_fld_specs}: {fld_specs_time}")
+        for i_fld_specs in range(self.n_fld_specs):
+            fld_specs_time = self._fld_specs_time_lst[i_fld_specs]
+            time_inds = self._time_inds_lst[i_fld_specs]
+            log.debug(
+                f"{i_fld_specs + 1}/{self.n_fld_specs}: {fld_specs_time}")
             n_t = len(time_inds)
 
             # Read fields of all members at all time steps
             fld_time_mem = self._read_fld_time_mem(fld_specs_time)
 
-            # TODO:
-            #  * First, read attributes separately for each member
-            #  * Then, reduce the field along the members dimension
-            #  * Then, compute the time stats
-            #  * Then, select the time steps of interest
-            #  * At some point, also merge the attributes of the members
-
-            fld_specs_reqtime_arr = np.full([self.n_reqtime], None, object)
-            _shape = [self.n_reqtime, self.n_members]
-            attrs_reqtime_mem_arr = np.full(_shape, None, object)
+            fld_specs_reqtime = np.full([self.n_reqtime], None)
 
             # Create time-step-specific field specifications
             for i_reqtime, time_ind in enumerate(time_inds):
                 fld_specs = deepcopy(fld_specs_time)
                 for var_specs in fld_specs.var_specs_lst:
                     var_specs.time = time_ind
-                fld_specs_reqtime_arr[i_reqtime] = fld_specs
+                fld_specs_reqtime[i_reqtime] = fld_specs
 
             # Collect attributes at requested time steps for all members
+            attrs_reqtime_mem = np.full([self.n_reqtime, self.n_members], None)
             for i_mem, file_path in enumerate(self.file_path_lst):
                 log.debug(f"read {file_path} (attributes)")
                 with self.cmd_open(file_path, 'r') as self.fi:
                     for i_reqtime, time_ind in enumerate(time_inds):
                         log.debug(f"{i_reqtime + 1}/{n_t}: collect attributes")
-                        fld_specs = fld_specs_reqtime_arr[i_reqtime]
+                        fld_specs = fld_specs_reqtime[i_reqtime]
                         attrs_lst = []
                         for var_specs in fld_specs.var_specs_lst:
                             attrs = FlexAttrsCollector(
@@ -811,7 +803,7 @@ class FlexFileBase:
                             attrs_lst.append(attrs)
                         attrs = attrs_lst[0].merge_with(
                             attrs_lst[1:], **fld_specs.var_attrs_replace)
-                        attrs_reqtime_mem_arr[i_reqtime, i_mem] = attrs
+                        attrs_reqtime_mem[i_reqtime, i_mem] = attrs
                 self.fi = None
 
             # Reduce fields array along member dimension
@@ -822,16 +814,15 @@ class FlexFileBase:
             time_stats = self.collect_time_stats(fld_time)
 
             # Merge attributes across members
-            attrs_reqtime_arr = self._merge_attrs_across_members(
-                attrs_reqtime_mem_arr)
+            attrs_reqtime = self._merge_attrs_across_members(attrs_reqtime_mem)
 
             # Select fields at requested time steps for all members
             log.debug(f"select fields at requested time steps")
             for i_reqtime, time_ind in enumerate(time_inds):
                 log.debug(f"{i_reqtime + 1}/{n_t}")
 
-                fld_specs = fld_specs_reqtime_arr[i_reqtime]
-                attrs = attrs_reqtime_arr[i_reqtime]
+                fld_specs = fld_specs_reqtime[i_reqtime]
+                attrs = attrs_reqtime[i_reqtime]
 
                 # Extract field
                 fld = fld_time[time_ind]
@@ -854,14 +845,10 @@ class FlexFileBase:
                     fld_specs,
                     time_stats,
                 )
-
-                flex_fields_arr[i_fst, i_reqtime] = flex_field
-
-        flex_fields_lst = flex_fields_arr.flatten().tolist()
-        #SR_TMP>
+                flex_field_lst.append(flex_field)
 
         # Return result field(s)
-        result = flex_fields_lst
+        result = flex_field_lst
         if not multiple:
             # Only one field type specified: remove fields dimension
             result = result[0]
@@ -981,16 +968,16 @@ class FlexFileBase:
 
         return fld_specs_time_lst, time_inds_lst
 
-    def _merge_attrs_across_members(self, attrs_reqtime_mem_arr):
-        attrs_reqtime_arr = attrs_reqtime_mem_arr[:, 0]
+    def _merge_attrs_across_members(self, attrs_reqtime_mem):
+        attrs_reqtime = attrs_reqtime_mem[:, 0]
         for i_mem in range(1, self.n_members):
-            for i_reqtime, attrs in enumerate(attrs_reqtime_mem_arr[:, i_mem]):
-                attrs_ref = attrs_reqtime_arr[i_reqtime]
+            for i_reqtime, attrs in enumerate(attrs_reqtime_mem[:, i_mem]):
+                attrs_ref = attrs_reqtime[i_reqtime]
                 if attrs != attrs_ref:
                     raise Exception(
                         f"attributes differ between members 0 and {i_mem}: "
                         f"{attrs_ref} != {attrs}")
-        return attrs_reqtime_arr
+        return attrs_reqtime
 
     def collect_time_stats(self, fld_time):
         stats = {
