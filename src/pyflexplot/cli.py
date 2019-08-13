@@ -256,16 +256,15 @@ class GlobalOptions(ClickOptionsGroup):
     def input_ensemble():
         return [
             click.option(
-                '--infile',
+                '--infile-fmt',
                 '-i',
-                'in_file_path_lst',
+                'in_file_path_fmt',
                 help=(
                     "Input file path format string, containing format key "
                     "'{member_id}' for the ensemble member. If the ids are "
                     "zero-padded, use, e.g., '{member_id:03d}'."),
                 type=click.Path(exists=False, readable=True),
                 required=True,
-                multiple=True,
             ),
             click.option(
                 '--member-id',
@@ -588,21 +587,17 @@ class EnsMeanConcentration(ClickCommand):
     @options
     @click.pass_context
     def concentration(
-            ctx, in_file_path_lst, out_file_path_fmt, member_id_lst,
+            ctx, in_file_path_fmt, out_file_path_fmt, member_id_lst,
             **vars_specs):
-
-        #SR_TMP<
-        in_file_path = next(iter(in_file_path_lst))
-        #SR_TMP>
 
         lang = ctx.obj['lang']
 
         # Determine fields specifications (one for each eventual plot)
         fld_specs_lst = FlexFieldSpecs.Concentration.multiple(
-            vars_specs, lang=lang)
+            vars_specs, member_id_lst, lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFileReader(in_file_path, member_id_lst).run(
+        flex_data_lst = FlexFileReader(in_file_path_fmt).run(
             fld_specs_lst, ens_var='mean', lang=lang)
 
         # Create plots
