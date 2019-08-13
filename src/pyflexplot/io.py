@@ -652,7 +652,7 @@ class FlexFileBase:
             if not fmt_key_in_path:
                 raise ValueError(
                     "input file path missing format key '{member_id[:0?d]}': "
-                    f"{self.file_path}")
+                    f"{file_path}")
             return [file_path.format(member_id=mid) for mid in member_ids]
 
     def reset(self):

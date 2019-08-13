@@ -242,7 +242,7 @@ class CLI(ClickGroup):
 class GlobalOptions(ClickOptionsGroup):
 
     @click_options
-    def input():
+    def input_deterministic():
         return [
             click.option(
                 '--infile',
@@ -255,7 +255,7 @@ class GlobalOptions(ClickOptionsGroup):
         ]
 
     @click_options
-    def input_ens():
+    def input_ensemble():
         return [
             click.option(
                 '--infile',
@@ -263,10 +263,22 @@ class GlobalOptions(ClickOptionsGroup):
                 'in_file_path_lst',
                 help=(
                     "Input file path format string, containing format key "
-                    "'{member}' for the ensemble member (00, 01, ..., 21)."),
-                type=click.Path(exists=True, readable=True),
+                    "'{member_id}' for the ensemble member. If the ids are "
+                    "zero-padded, use, e.g., '{member_id:03d}'."),
+                type=click.Path(exists=False, readable=True),
                 required=True,
                 multiple=True,
+            ),
+            click.option(
+                '--member-id',
+                '-m',
+                'member_id_lst',
+                help=(
+                    "ID of ensemble member. Repeat for multiple members. "
+                    "Input file format key: {member_id}."),
+                type=int,
+                multiple=True,
+                required=True,
             ),
         ]
 
@@ -433,7 +445,7 @@ class Concentration(ClickCommand):
         name='concentration',
         help="Activity concentration in the air.",
     )
-    @GlobalOptions.input
+    @GlobalOptions.input_deterministic
     @GlobalOptions.output
     @DispersionOptions.input
     @DispersionOptions.preproc
@@ -481,7 +493,7 @@ class Deposition(ClickCommand):
         name='deposition',
         help="Surface deposition.",
     )
-    @GlobalOptions.input
+    @GlobalOptions.input_deterministic
     @GlobalOptions.output
     @DispersionOptions.input
     @DispersionOptions.preproc
@@ -525,7 +537,7 @@ class AffectedArea(ClickCommand):
         name='affected-area',
         help="Area affected by surface deposition.",
     )
-    @GlobalOptions.input
+    @GlobalOptions.input_deterministic
     @GlobalOptions.output
     @DispersionOptions.input
     @DispersionOptions.preproc
@@ -570,14 +582,16 @@ class EnsMeanConcentration(ClickCommand):
         name='ens-mean-concentration',
         help="Ensemble mean concentration.",
     )
-    @GlobalOptions.input_ens
+    @GlobalOptions.input_ensemble
     @GlobalOptions.output
     @DispersionOptions.input
     @DispersionOptions.preproc
     @Concentration.options
     @options
     @click.pass_context
-    def concentration(ctx, in_file_path_lst, out_file_path_fmt, **vars_specs):
+    def concentration(
+            ctx, in_file_path_lst, out_file_path_fmt, member_id_lst,
+            **vars_specs):
 
         #SR_TMP<
         in_file_path = next(iter(in_file_path_lst))
@@ -590,7 +604,8 @@ class EnsMeanConcentration(ClickCommand):
             vars_specs, lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFile(in_file_path).read(fld_specs_lst, lang=lang)
+        flex_data_lst = FlexFile(in_file_path, member_id_lst).read(
+            fld_specs_lst, ens_var='mean', lang=lang)
 
         # Create plots
         create_plots(

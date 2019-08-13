@@ -151,6 +151,8 @@ class FlexPlotter:
         # Language
         kwargs['lang'] = self.lang
 
+        #ipython(globals(), locals(), f"{type(self).__name__}.format_file_path")
+
         # Format file path
         try:
             file_path = self.file_path_fmt.format(**kwargs)
