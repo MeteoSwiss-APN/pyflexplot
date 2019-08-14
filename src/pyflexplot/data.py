@@ -57,7 +57,7 @@ class FlexField:
                 f"{fld.shape} != {grid_shape}")
 
 
-def threshold_agreement(arr, thr, *, axis=None, eq_ok=False):
+def threshold_agreement(arr, thr, *, axis=None, eq_ok=False, dtype=None):
     """Count the members exceeding a threshold at each grid point.
 
     Args:
@@ -72,4 +72,11 @@ def threshold_agreement(arr, thr, *, axis=None, eq_ok=False):
             are counted as exceedences. Defaults to False.
 
     """
-    return np.count_nonzero(arr >= thr if eq_ok else arr > thr, axis=axis)
+    if arr is None:
+        raise ValueError('arr is None')
+    if thr is None:
+        raise ValueError('thr is None')
+    result = np.count_nonzero(arr >= thr if eq_ok else arr > thr, axis=axis)
+    if dtype is not None:
+        result = result.astype(dtype)
+    return result

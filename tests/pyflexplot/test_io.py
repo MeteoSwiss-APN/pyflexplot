@@ -43,6 +43,9 @@ def read_nc_var(path, var_name, var_specs):
         fld = var[inds]
         assert len(fld.shape) == 3
 
+        # Fix some issues with the input data
+        fix_nc_fld(fld)  #SR_TMP
+
         # Reduce time dimension
         if isinstance(var_specs, FlexFieldSpecs.Concentration.cls_var_specs):
             if var_specs.integrate:
@@ -56,9 +59,6 @@ def read_nc_var(path, var_name, var_specs):
             raise NotImplementedError(
                 f"var specs of type '{type(var_specs).__name__}'")
         fld = fld[-1]
-
-        # Fix some issues with the input data
-        fix_nc_fld(fld)  #SR_TMP
 
         return fld
 
@@ -505,7 +505,7 @@ class TestReadFieldEnsemble_Multiple:
     member_ids = [0, 1, 5, 10, 15, 20]
 
     # Thresholds for ensemble threshold agreement
-    agreement_threshold_concentration = None  #SR_TMP
+    agreement_threshold_concentration = 1e-7  #SR_TMP
     agreement_threshold_deposition_tot = None  #SR_TMP
 
     def datafile_fmt(self, datadir):
@@ -520,7 +520,8 @@ class TestReadFieldEnsemble_Multiple:
 
     def run(
             self, *, separate, datafile_fmt, cls_fld_specs, dims_mult,
-            var_names_ref, var_specs_mult_unshared, ens_var, fct_reduce_mem):
+            var_names_ref, var_specs_mult_unshared, ens_var, ens_var_setup,
+            fct_reduce_mem):
         """Run an individual test, reading one field after another."""
 
         # Create field specifications list
@@ -538,20 +539,20 @@ class TestReadFieldEnsemble_Multiple:
             for fld_specs in fld_specs_lst:
                 self._run_core(
                     datafile_fmt, dim_names, var_names_ref, [fld_specs],
-                    ens_var, fct_reduce_mem)
+                    ens_var, ens_var_setup, fct_reduce_mem)
         else:
             self._run_core(
                 datafile_fmt, dim_names, var_names_ref, fld_specs_lst, ens_var,
-                fct_reduce_mem)
+                ens_var_setup, fct_reduce_mem)
 
     def _run_core(
             self, datafile_fmt, dim_names, var_names_ref, fld_specs_lst,
-            ens_var, fct_reduce_mem):
+            ens_var, ens_var_setup, fct_reduce_mem):
 
         # Read input fields
         flex_field_lst = FlexFileReader(datafile_fmt).run(
-            fld_specs_lst, ens_var=ens_var)
-        flds = np.array([flex_field.fld for flex_field in flex_field_lst])
+            fld_specs_lst, ens_var=ens_var, ens_var_setup=ens_var_setup)
+        fld_arr = np.array([flex_field.fld for flex_field in flex_field_lst])
 
         # Collect merged variables specifications
         var_specs_lst = [fs.var_specs_merged() for fs in fld_specs_lst]
@@ -571,37 +572,50 @@ class TestReadFieldEnsemble_Multiple:
                     np.nansum(fld_ref_mem_time, axis=0),
                     axis=0,
                 ))
-        fld_ref_arr = np.array(fld_ref_lst)
+        fld_arr_ref = np.array(fld_ref_lst)
 
-        assert flds.shape == fld_ref_arr.shape
-        assert np.isclose(np.nanmean(flds), np.nanmean(fld_ref_arr))
+        assert fld_arr.shape == fld_arr_ref.shape
+        assert np.isclose(np.nanmean(fld_arr), np.nanmean(fld_arr_ref))
         np.testing.assert_allclose(
-            flds, fld_ref_arr, equal_nan=True, rtol=1e-6)
+            fld_arr, fld_arr_ref, equal_nan=True, rtol=1e-6)
 
     #------------------------------------------------------------------
     # Concentration
     #------------------------------------------------------------------
 
-    def run_concentration(self, datadir, ens_var, *, separate=False):
+    def run_concentration(
+            self,
+            datadir,
+            ens_var,
+            *,
+            separate=False,
+            cls_fld_specs=FlexFieldSpecs.Concentration):
         """Read ensemble concentration field."""
         # yapf: disable
         fct_reduce_mem = {
             'mean': np.nanmean,
             'max': np.nanmax,
-            'threshold-agreement': lambda a, x: threshold_agreement(
-                a, self.agreement_threshold_concentration, axis=x),
+            'threshold-agreement': (
+                lambda arr, axis: threshold_agreement(
+                    arr, self.agreement_threshold_concentration, axis=axis,
+                    dtype=arr.dtype)),
         }[ens_var]
+        ens_var_setup = {
+            'threshold-agreement': {
+                'thr': self.agreement_threshold_concentration},
+        }.get(ens_var)
         # yapf: enable
         self.run(
             separate=separate,
             datafile_fmt=self.datafile_fmt(datadir),
-            cls_fld_specs=FlexFieldSpecs.Concentration,
+            cls_fld_specs=cls_fld_specs,
             dims_mult={
                 **self.dims_shared, 'level': 1
             },
             var_names_ref=[f'spec{self.species_id:03d}'],
             var_specs_mult_unshared={},
             ens_var=ens_var,
+            ens_var_setup=ens_var_setup,
             fct_reduce_mem=fct_reduce_mem,
         )
 
@@ -609,7 +623,11 @@ class TestReadFieldEnsemble_Multiple:
         self.run_concentration(datadir, 'mean', separate=False)
 
     def test_ens_threshold_agreement_concentration(self, datadir):
-        self.run_concentration(datadir, 'threshold-agreement', separate=False)
+        self.run_concentration(
+            datadir,
+            'threshold-agreement',
+            separate=False,
+            cls_fld_specs=FlexFieldSpecs.EnsThresholdAgreementConcentration)
 
     #------------------------------------------------------------------
     # Deposition
@@ -621,6 +639,9 @@ class TestReadFieldEnsemble_Multiple:
             'mean': np.nanmean,
             'max': np.nanmax,
         }[ens_var]
+        ens_var_setup = {
+            # ...
+        }.get(ens_var)
         self.run(
             separate=separate,
             datafile_fmt=self.datafile_fmt(datadir),
@@ -632,6 +653,7 @@ class TestReadFieldEnsemble_Multiple:
             ],
             var_specs_mult_unshared={'deposition': 'tot'},
             ens_var=ens_var,
+            ens_var_setup=ens_var_setup,
             fct_reduce_mem=fct_reduce_mem,
         )
 

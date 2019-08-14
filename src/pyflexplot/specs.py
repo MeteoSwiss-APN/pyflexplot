@@ -785,7 +785,17 @@ class FlexAttrsCollector:
         elif type_ is FlexVarSpecs.EnsMeanConcentration:
             return {
                 'en': 'Ensemble-Mean Activity Concentration',
-                'de': r'Ensemblemittel-Aktivit$\mathrm{\"a}$tskonzentration',
+                'de': (
+                    r'Ensemblemittel der '
+                    r'Aktivit$\mathrm{\"a}$tskonzentration'),
+            }[lang]
+
+        elif type_ is FlexVarSpecs.EnsThresholdAgreementConcentration:
+            return {
+                'en': 'Ensemble Threshold Agreement of Activity Concentration',
+                'de': (
+                    r'Ensemblegrenzwert$\mathrm{\"u}$bereinstimmung '
+                    r'der Aktivit$\mathrm{\"a}$tskonzentration'),
             }[lang]
 
         elif issubclass(type_, FlexVarSpecs.Deposition):
@@ -822,17 +832,15 @@ class FlexAttrsCollector:
             elif type_ is FlexVarSpecs.AffectedArea:
                 return {
                     'en': f'Affected Area ({dep_type})',
-                    #'en': f'Affected Area ({dep_type} Deposition)',
                     'de': f'Beaufschlagtes Gebiet ({dep_type})',
-                    #'de': f'Beaufschl. Gebiet ({dep_type}e Ablagerung)',
                 }[lang]
 
             elif type_ is FlexVarSpecs.EnsMeanAffectedArea:
                 return {
                     'en': f'Ensemble-Mean Affected Area ({dep_type})',
-                    #'en': f'Ensemble-Mean Affected Area ({dep_type} Deposition)',
-                    'de': f'Ensemblemittel-Beaufschlagtes Gebiet ({dep_type})',
-                    #'de': f'Ensemblemittel-Beaufschl. Gebiet ({dep_type}e Ablagerung)',
+                    'de': (
+                        'Ensemblemittel des Beaufschlagtes Gebiets '
+                        f'({dep_type})'),
                 }[lang]
 
         raise NotImplementedError(f"var_specs of type '{type_.__name__}'")

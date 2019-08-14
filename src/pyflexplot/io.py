@@ -11,6 +11,7 @@ from pprint import pformat
 from pprint import pprint  #SR_DEV
 
 from .data import FlexField
+from .data import threshold_agreement
 from .specs import FlexAttrsCollector
 from .specs import FlexVarSpecs
 from .specs import FlexFieldSpecs
@@ -166,7 +167,7 @@ class FlexFileReader:
                 f"{len(attrs_nonone)} attributes should be None but are not: "
                 f"{attrs_nonone}")
 
-    def run(self, fld_specs, *, ens_var=None, lang='en'):
+    def run(self, fld_specs, *, ens_var=None, ens_var_setup=None, lang='en'):
         """Read one or more fields from a file from disc.
 
         Args:
@@ -177,6 +178,10 @@ class FlexFileReader:
                 'mean'. See ``FlexField.choices_ens_var`` for the full
                 list. Mandatory in case of multiple ensemble members.
                 Defaults to None.
+
+            ens_var_opts (dict, optional): Options that can/must be
+                passed alongside certain ensemble variables. Defaults
+                to {}.
 
             lang (str, optional): Language, e.g., 'de' for German.
                 Defaults to 'en' (English).
@@ -196,6 +201,7 @@ class FlexFileReader:
 
         # Set some attributes
         self.ens_var = ens_var
+        self.ens_var_setup = {} if ens_var_setup is None else ens_var_setup
         self.lang = lang
 
         if isinstance(fld_specs, FlexFieldSpecs):
@@ -352,6 +358,16 @@ class FlexFileReader:
             fld_time = np.nanmean(fld_time_mem, axis=0)
         elif self.ens_var == 'max':
             fld_time = np.nanmax(fld_time_mem, axis=0)
+        elif self.ens_var == 'threshold-agreement':
+            try:
+                thr = self.ens_var_setup['thr']
+            except KeyError:
+                raise Exception(
+                    f"ens_var '{self.ens_var}': must pass threshold as "
+                    f"dict element 'thr' in argument ens_var_setup to "
+                    f"{type(self).__name__}.run)")
+            fld_time = threshold_agreement(
+                fld_time_mem, thr, axis=0, dtype=fld_time_mem.dtype)
         else:
             raise NotImplementedError(f"ens_var '{self.ens_var}'")
         return fld_time
@@ -457,12 +473,8 @@ class FlexFileReader:
             fld = fld_time[time_ind]
 
             # Fix some known issues with the NetCDF input data
-            log.debug("fix nc data")
-            if i_reqtime == 0:
-                # Scale time_stats only once
-                self._fix_nc_data(fld, attrs, time_stats)
-            else:
-                self._fix_nc_data(fld, attrs)
+            log.debug("fix nc data: attrs")
+            self._fix_nc_attrs(fld, attrs)
 
             # Collect data
             log.debug("create data object")
@@ -533,6 +545,10 @@ class FlexFileReader:
         log.debug(f"indices: {inds}")
         fld = var[inds]
 
+        log.debug(f"fix nc data: variable {var.name}")
+        self._fix_nc_var(fld, var)
+
+        # Time integration
         if isinstance(var_specs, FlexVarSpecs.Concentration):
             if var_specs.integrate:
                 # Integrate over time
@@ -561,12 +577,36 @@ class FlexFileReader:
         return fld
 
     #SR_TMP<<<
-    def _fix_nc_data(self, fld, attrs, time_stats=None):
+    def _fix_nc_var(self, fld, var):
 
-        def scale_time_stats(fact):
-            if time_stats is not None:
-                for key, val in time_stats.items():
-                    time_stats[key] = val*fact
+        name = var.getncattr('long_name').split('_')[0]
+        unit = var.getncattr('units')
+
+        #SR_TMP< TODO more general solution to combined species
+        names = [
+            'Cs-137',
+            'I-131a',
+            ['Cs-137', 'I-131a'],
+            ['I-131a', 'Cs-137'],
+        ]
+        #SR_TMP>
+
+        if name in names:
+
+            if unit == 'ng kg-1':
+                fld[:] *= 1e-12
+
+            elif unit == '1e-12 kg m-2':
+                fld[:] *= 1e-12
+
+            else:
+                raise NotImplementedError(
+                    f"species '{name}': "
+                    f"unknown unit '{unit}'")
+        else:
+            raise NotImplementedError(f"species '{name}'")
+
+    def _fix_nc_attrs(self, fld, attrs):
 
         #SR_TMP< TODO more general solution to combined species
         names = [
@@ -580,13 +620,9 @@ class FlexFileReader:
 
             if attrs.variable.unit.value == 'ng kg-1':
                 attrs.variable.unit.value = 'Bq m-3'  #SR_HC
-                fld[:] *= 1e-12
-                scale_time_stats(1e-12)
 
             elif attrs.variable.unit.value == '1e-12 kg m-2':
                 attrs.variable.unit.value = 'Bq m-2'  #SR_HC
-                fld[:] *= 1e-12
-                scale_time_stats(1e-12)
 
             else:
                 raise NotImplementedError(
