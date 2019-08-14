@@ -317,10 +317,7 @@ class TestReadField_Multiple:
             separate=separate,
             datafile=self.datafile(datadir),
             cls_fld_specs=FlexFieldSpecs.Concentration,
-            dims_mult={
-                **self.dims_shared,
-                'level_lst': [0, 2],
-            },
+            dims_mult={**self.dims_shared, 'level_lst': [0, 2]},
             var_names_ref=[f'spec{self.species_id:03d}'],
             var_specs_mult_unshared={},
         )
@@ -576,9 +573,35 @@ class TestReadFieldEnsemble_Multiple:
             flds, fld_ref_arr, equal_nan=True, rtol=1e-6)
 
     #------------------------------------------------------------------
+    # Concentration
+    #------------------------------------------------------------------
+
+    def run_concentration(self, datadir, ens_var, *, separate=False):
+        """Read ensemble concentration field."""
+        fct_reduce_mem = {
+            'mean': np.nanmean,
+            'max': np.nanmax,
+        }[ens_var]
+        self.run(
+            separate=separate,
+            datafile_fmt=self.datafile_fmt(datadir),
+            cls_fld_specs=FlexFieldSpecs.Concentration,
+            dims_mult={**self.dims_shared, 'level': 1},
+            var_names_ref=[f'spec{self.species_id:03d}'],
+            var_specs_mult_unshared={},
+            ens_var=ens_var,
+            fct_reduce_mem=fct_reduce_mem,
+        )
+
+    def test_ens_mean_concentration(self, datadir):
+        self.run_concentration(datadir, 'mean', separate=False)
+
+    #------------------------------------------------------------------
+    # Deposition
+    #------------------------------------------------------------------
 
     def run_deposition_tot(self, datadir, ens_var, *, separate=False):
-        """Read total deposition field."""
+        """Read ensemble total deposition field."""
         fct_reduce_mem = {
             'mean': np.nanmean,
             'max': np.nanmax,
@@ -600,7 +623,7 @@ class TestReadFieldEnsemble_Multiple:
     def test_ens_mean_deposition_tot_separate(self, datadir):
         self.run_deposition_tot(datadir, 'mean', separate=True)
 
-    def test_ens_mean_deposition_tot_together(self, datadir):
+    def test_ens_mean_deposition_tot(self, datadir):
         self.run_deposition_tot(datadir, 'mean', separate=False)
 
     def test_ens_max_deposition_tot(self, datadir):
