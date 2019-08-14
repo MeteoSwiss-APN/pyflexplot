@@ -526,6 +526,7 @@ class AffectedArea(ClickCommand):
         return [
             click.option(
                 '--mono/--no-mono',
+                'mono_lst',
                 help="Only use one threshold (monochromatic plot).",
                 is_flag=True,
                 default=[False],
@@ -545,7 +546,7 @@ class AffectedArea(ClickCommand):
     @options
     @click.pass_context
     def affected_area(
-            ctx, in_file_path, out_file_path_fmt, mono, **vars_specs):
+            ctx, in_file_path, out_file_path_fmt, mono_lst, **vars_specs):
 
         lang = ctx.obj['lang']
 
@@ -558,16 +559,17 @@ class AffectedArea(ClickCommand):
             field_specs_lst, lang=lang)
 
         # Create plots
-        if mono:
-            fct = FlexPlotter.AffectedAreaMono
-        else:
-            fct = FlexPlotter.AffectedArea
-        create_plots(
-            ctx,
-            fct,
-            [flex_data_lst, out_file_path_fmt],
-            {'lang': lang},
-        )
+        for mono in mono_lst:
+            if mono:
+                fct = FlexPlotter.AffectedAreaMono
+            else:
+                fct = FlexPlotter.AffectedArea
+            create_plots(
+                ctx,
+                fct,
+                [flex_data_lst, out_file_path_fmt],
+                {'lang': lang},
+            )
 
 
 #----------------------------------------------------------------------
@@ -581,7 +583,7 @@ class EnsMeanConcentration(ClickCommand):
 
     @CLI.command(
         name='ens-mean-concentration',
-        help="Ensemble mean concentration.",
+        help="Ensemble-mean concentration.",
     )
     @GlobalOptions.input_ensemble
     @GlobalOptions.output
@@ -590,14 +592,14 @@ class EnsMeanConcentration(ClickCommand):
     @Concentration.options
     @options
     @click.pass_context
-    def concentration(
+    def end_mean_concentration(
             ctx, in_file_path_fmt, out_file_path_fmt, member_id_lst,
             **vars_specs):
 
         lang = ctx.obj['lang']
 
         # Determine fields specifications (one for each eventual plot)
-        fld_specs_lst = FlexFieldSpecs.Concentration.multiple(
+        fld_specs_lst = FlexFieldSpecs.EnsMeanConcentration.multiple(
             vars_specs, member_id_lst, lang=lang)
 
         # Read fields
@@ -611,6 +613,92 @@ class EnsMeanConcentration(ClickCommand):
             [flex_data_lst, out_file_path_fmt],
             {'lang': lang},
         )
+
+
+class EnsMeanDeposition(ClickCommand):
+
+    @click_options
+    def options():
+        return []
+
+    @CLI.command(
+        name='ens-mean-deposition',
+        help="Ensemble-mean deposition.",
+    )
+    @GlobalOptions.input_ensemble
+    @GlobalOptions.output
+    @DispersionOptions.input
+    @DispersionOptions.preproc
+    @Deposition.options
+    @options
+    @click.pass_context
+    def end_mean_deposition(
+            ctx, in_file_path_fmt, out_file_path_fmt, member_id_lst,
+            **vars_specs):
+
+        lang = ctx.obj['lang']
+
+        # Determine fields specifications (one for each eventual plot)
+        fld_specs_lst = FlexFieldSpecs.EnsMeanDeposition.multiple(
+            vars_specs, member_id_lst, lang=lang)
+
+        # Read fields
+        flex_data_lst = FlexFileReader(in_file_path_fmt).run(
+            fld_specs_lst, ens_var='mean', lang=lang)
+
+        # Create plots
+        create_plots(
+            ctx,
+            FlexPlotter.EnsMeanDeposition,
+            [flex_data_lst, out_file_path_fmt],
+            {'lang': lang},
+        )
+
+
+class EnsMeanAffectedArea(ClickCommand):
+
+    @click_options
+    def options():
+        return []
+
+    @CLI.command(
+        name='ens-mean-affected-area',
+        help="Ensemble-mean affected area.",
+    )
+    @GlobalOptions.input_ensemble
+    @GlobalOptions.output
+    @DispersionOptions.input
+    @DispersionOptions.preproc
+    @Deposition.options
+    @AffectedArea.options
+    @options
+    @click.pass_context
+    def end_mean_affected_area(
+            ctx, in_file_path_fmt, out_file_path_fmt, mono_lst, member_id_lst,
+            **vars_specs):
+
+        lang = ctx.obj['lang']
+
+        # Determine fields specifications (one for each eventual plot)
+        fld_specs_lst = FlexFieldSpecs.EnsMeanAffectedArea.multiple(
+            vars_specs, member_id_lst, lang=lang)
+
+        # Read fields
+        flex_data_lst = FlexFileReader(in_file_path_fmt).run(
+            fld_specs_lst, ens_var='mean', lang=lang)
+
+        # Create plots
+        for mono in mono_lst:
+            if mono:
+                fct = FlexPlotter.EnsMeanAffectedAreaMono
+            else:
+                fct = FlexPlotter.EnsMeanAffectedArea
+            create_plots(
+                ctx,
+                fct,
+                [flex_data_lst, out_file_path_fmt],
+                {'lang': lang},
+            )
 
 
 #======================================================================

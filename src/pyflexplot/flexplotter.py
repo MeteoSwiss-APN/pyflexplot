@@ -140,6 +140,8 @@ class FlexPlotter:
 
 
 #----------------------------------------------------------------------
+# Deterministic Simulation
+#----------------------------------------------------------------------
 
 
 class FlexPlotter_Concentration(FlexPlotter):
@@ -158,14 +160,37 @@ class FlexPlotter_AffectedAreaMono(FlexPlotter):
     cls_plot = FlexPlot.AffectedAreaMono
 
 
-class FlexPlotter_EnsMeanConcentration(FlexPlotter):
-    cls_plot = FlexPlot.EnsMeanConcentration
-
-
 #----------------------------------------------------------------------
 
 FlexPlotter.Concentration = FlexPlotter_Concentration
 FlexPlotter.Deposition = FlexPlotter_Deposition
 FlexPlotter.AffectedArea = FlexPlotter_AffectedArea
 FlexPlotter.AffectedAreaMono = FlexPlotter_AffectedAreaMono
+
+#----------------------------------------------------------------------
+# Ensemble Simulation
+#----------------------------------------------------------------------
+
+
+class FlexPlotter_EnsMeanConcentration(FlexPlotter):
+    cls_plot = FlexPlot.EnsMeanConcentration
+
+
+class FlexPlotter_EnsMeanDeposition(FlexPlotter):
+    cls_plot = FlexPlot.EnsMeanDeposition
+
+
+class FlexPlotter_EnsMeanAffectedArea(FlexPlotter):
+    cls_plot = FlexPlot.EnsMeanAffectedArea
+
+
+class FlexPlotter_EnsMeanAffectedAreaMono(FlexPlotter):
+    cls_plot = FlexPlot.EnsMeanAffectedAreaMono
+
+
+#----------------------------------------------------------------------
+
 FlexPlotter.EnsMeanConcentration = FlexPlotter_EnsMeanConcentration
+FlexPlotter.EnsMeanDeposition = FlexPlotter_EnsMeanDeposition
+FlexPlotter.EnsMeanAffectedArea = FlexPlotter_EnsMeanAffectedArea
+FlexPlotter.EnsMeanAffectedAreaMono = FlexPlotter_EnsMeanAffectedAreaMono

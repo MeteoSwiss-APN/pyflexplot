@@ -73,7 +73,7 @@ class FlexPlotLabels_De(FlexPlotLabels):
         )
 
 
-class FlexPlotLabelsDispersionSimulation_En(FlexPlotLabels_En):
+class FlexPlotLabels_Dispersion_Simulation_En(FlexPlotLabels_En):
     """FLEXPART dispersion plot labels in English (simulation)."""
 
     start = 'Start'
@@ -82,7 +82,7 @@ class FlexPlotLabelsDispersionSimulation_En(FlexPlotLabels_En):
     copyright = u"\u00a9MeteoSwiss"
 
 
-class FlexPlotLabelsDispersionSimulation_De(FlexPlotLabels_De):
+class FlexPlotLabels_Dispersion_Simulation_De(FlexPlotLabels_De):
     """Flexpart dispersion plot labels in German (simulation)."""
 
     start = 'Start'
@@ -91,7 +91,7 @@ class FlexPlotLabelsDispersionSimulation_De(FlexPlotLabels_De):
     copyright = u"\u00a9MeteoSchweiz"
 
 
-class FlexPlotLabelsDispersionRelease_En(FlexPlotLabels_En):
+class FlexPlotLabels_Dispersion_Release_En(FlexPlotLabels_En):
     """FLEXPART dispersion plot labels in English (release)."""
 
     lat = 'Latitude'
@@ -103,7 +103,7 @@ class FlexPlotLabelsDispersionRelease_En(FlexPlotLabels_En):
     max = 'Max.'
 
 
-class FlexPlotLabelsDispersionRelease_De(FlexPlotLabels_De):
+class FlexPlotLabels_Dispersion_Release_De(FlexPlotLabels_De):
     """Flexpart dispersion plot labels in German (release)."""
 
     lat = 'Breite'
@@ -115,7 +115,7 @@ class FlexPlotLabelsDispersionRelease_De(FlexPlotLabels_De):
     max = 'Max.'
 
 
-class FlexPlotLabelsDispersionSpecies_En(FlexPlotLabels_En):
+class FlexPlotLabels_Dispersion_Species_En(FlexPlotLabels_En):
     """FLEXPART dispersion plot labels in English (species)."""
 
     name = 'Substance'
@@ -126,7 +126,7 @@ class FlexPlotLabelsDispersionSpecies_En(FlexPlotLabels_En):
     washout_exponent = 'Washout exponent'
 
 
-class FlexPlotLabelsDispersionSpecies_De(FlexPlotLabels_De):
+class FlexPlotLabels_Dispersion_Species_De(FlexPlotLabels_De):
     """Flexpart dispersion plot labels in German (species)."""
 
     name = 'Substanz'
@@ -137,19 +137,19 @@ class FlexPlotLabelsDispersionSpecies_De(FlexPlotLabels_De):
     washout_exponent = 'Auswaschexponent'
 
 
-class FlexPlotLabelsDispersion:
+class FlexPlotLabels_Dispersion:
 
     def __init__(self, lang):
 
         if lang == 'en':
-            self.simulation = FlexPlotLabelsDispersionSimulation_En()
-            self.release = FlexPlotLabelsDispersionRelease_En()
-            self.species = FlexPlotLabelsDispersionSpecies_En()
+            self.simulation = FlexPlotLabels_Dispersion_Simulation_En()
+            self.release = FlexPlotLabels_Dispersion_Release_En()
+            self.species = FlexPlotLabels_Dispersion_Species_En()
 
         elif lang == 'de':
-            self.simulation = FlexPlotLabelsDispersionSimulation_De()
-            self.release = FlexPlotLabelsDispersionRelease_De()
-            self.species = FlexPlotLabelsDispersionSpecies_De()
+            self.simulation = FlexPlotLabels_Dispersion_Simulation_De()
+            self.release = FlexPlotLabels_Dispersion_Release_De()
+            self.species = FlexPlotLabels_Dispersion_Species_De()
 
         else:
             raise ValueError(f"lang='{lang}'")
@@ -188,7 +188,7 @@ class FlexPlot:
         self.attrs = attrs
         self.time_stats = time_stats
         self.lang = lang
-        self.labels = FlexPlotLabelsDispersion(lang)
+        self.labels = FlexPlotLabels_Dispersion(lang)
 
     def prepare_plot(self):
 
@@ -652,16 +652,19 @@ class FlexPlot_Dispersion(FlexPlot):
         box = self.axs_box[3]
 
         # FLEXPART/model info
-        _model = self.attrs.simulation.model_name.value
-        _simstart_fmtd = self.attrs.simulation.start.format()
-        s = (
-            f"{self.labels.simulation.flexpart_based_on} {_model}, "
-            f"{_simstart_fmtd}")
+        s = self._flexpart_model_info()
         box.text('tl', dx=-0.7, dy=0.5, s=s, size='small')
 
         # MeteoSwiss Copyright
         cpright_fmtd = self.labels.simulation.copyright
         box.text('tr', dx=0.7, dy=0.5, s=cpright_fmtd, size='small')
+
+    def _flexpart_model_info(self):
+        model = self.attrs.simulation.model_name.value
+        simstart_fmtd = self.attrs.simulation.start.format()
+        return (
+            f"{self.labels.simulation.flexpart_based_on} {model}, "
+            f"{simstart_fmtd}")
 
     def define_colors(self):
 
@@ -787,9 +790,38 @@ FlexPlot.AffectedAreaMono = FlexPlot_AffectedAreaMono
 #----------------------------------------------------------------------
 
 
-class FlexPlot_EnsMeanConcentration(FlexPlot_Concentration):
+class FlexPlotMixin_Ens:
+
+    def _flexpart_model_info(self):
+        model = self.attrs.simulation.model_name.value
+        simstart_fmtd = self.attrs.simulation.start.format()
+        return (
+            f"{self.labels.simulation.flexpart_based_on} {model} Ensemble, "
+            f"{simstart_fmtd} (??? Members: ???)")
+
+
+class FlexPlot_EnsMeanConcentration(FlexPlotMixin_Ens, FlexPlot_Concentration):
 
     name = 'ens-mean-concentration'
 
 
+class FlexPlot_EnsMeanDeposition(FlexPlotMixin_Ens, FlexPlot_Deposition):
+
+    name = 'ens-mean-deposition'
+
+
+class FlexPlot_EnsMeanAffectedArea(FlexPlotMixin_Ens, FlexPlot_AffectedArea):
+
+    name = 'ens-mean-affected-area'
+
+
+class FlexPlot_EnsMeanAffectedAreaMono(FlexPlotMixin_Ens,
+                                       FlexPlot_AffectedAreaMono):
+
+    name = 'ens-mean-affected-area-mono'
+
+
 FlexPlot.EnsMeanConcentration = FlexPlot_EnsMeanConcentration
+FlexPlot.EnsMeanDeposition = FlexPlot_EnsMeanDeposition
+FlexPlot.EnsMeanAffectedArea = FlexPlot_EnsMeanAffectedArea
+FlexPlot.EnsMeanAffectedAreaMono = FlexPlot_EnsMeanAffectedAreaMono

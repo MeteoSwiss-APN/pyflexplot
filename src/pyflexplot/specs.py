@@ -284,11 +284,26 @@ class FlexVarSpecs_AffectedArea(FlexVarSpecs_Deposition):
     pass
 
 
+class FlexVarSpecs_EnsMeanConcentration(FlexVarSpecs_Concentration):
+    pass
+
+
+class FlexVarSpecs_EnsMeanDeposition(FlexVarSpecs_Deposition):
+    pass
+
+
+class FlexVarSpecs_EnsMeanAffectedArea(FlexVarSpecs_AffectedArea):
+    pass
+
+
 #----------------------------------------------------------------------
 
 FlexVarSpecs.Concentration = FlexVarSpecs_Concentration
 FlexVarSpecs.Deposition = FlexVarSpecs_Deposition
 FlexVarSpecs.AffectedArea = FlexVarSpecs_AffectedArea
+FlexVarSpecs.EnsMeanConcentration = FlexVarSpecs_EnsMeanConcentration
+FlexVarSpecs.EnsMeanDeposition = FlexVarSpecs_EnsMeanDeposition
+FlexVarSpecs.EnsMeanAffectedArea = FlexVarSpecs_EnsMeanAffectedArea
 
 #======================================================================
 # Field Specifications
@@ -496,7 +511,6 @@ class FlexFieldSpecs:
 
 
 class FlexFieldSpecs_Concentration(FlexFieldSpecs):
-
     cls_var_specs = FlexVarSpecs_Concentration
 
     # Dimensions with optionally multiple values
@@ -519,7 +533,6 @@ class FlexFieldSpecs_Concentration(FlexFieldSpecs):
 
 
 class FlexFieldSpecs_Deposition(FlexFieldSpecs):
-
     cls_var_specs = FlexVarSpecs_Deposition
 
     def __init__(self, var_specs, *args, lang='en', **kwargs):
@@ -566,8 +579,19 @@ class FlexFieldSpecs_Deposition(FlexFieldSpecs):
 
 
 class FlexFieldSpecs_AffectedArea(FlexFieldSpecs_Deposition):
-
     cls_var_specs = FlexVarSpecs_AffectedArea
+
+
+class FlexFieldSpecs_EnsMeanConcentration(FlexFieldSpecs_Concentration):
+    cls_var_specs = FlexVarSpecs_EnsMeanConcentration
+
+
+class FlexFieldSpecs_EnsMeanDeposition(FlexFieldSpecs_Deposition):
+    cls_var_specs = FlexVarSpecs_EnsMeanDeposition
+
+
+class FlexFieldSpecs_EnsMeanAffectedArea(FlexFieldSpecs_AffectedArea):
+    cls_var_specs = FlexVarSpecs_EnsMeanAffectedArea
 
 
 #----------------------------------------------------------------------
@@ -575,6 +599,9 @@ class FlexFieldSpecs_AffectedArea(FlexFieldSpecs_Deposition):
 FlexFieldSpecs.Concentration = FlexFieldSpecs_Concentration
 FlexFieldSpecs.Deposition = FlexFieldSpecs_Deposition
 FlexFieldSpecs.AffectedArea = FlexFieldSpecs_AffectedArea
+FlexFieldSpecs.EnsMeanConcentration = FlexFieldSpecs_EnsMeanConcentration
+FlexFieldSpecs.EnsMeanDeposition = FlexFieldSpecs_EnsMeanDeposition
+FlexFieldSpecs.EnsMeanAffectedArea = FlexFieldSpecs_EnsMeanAffectedArea
 
 #======================================================================
 
@@ -741,7 +768,13 @@ class FlexAttrsCollector:
                 'de': r'Aktivit$\mathrm{\"a}$tskonzentration',
             }[lang]
 
-        else:
+        elif type_ is FlexVarSpecs.EnsMeanConcentration:
+            return {
+                'en': 'Ensemble-Mean Activity Concentration',
+                'de': r'Ensemblemittel-Aktivit$\mathrm{\"a}$tskonzentration',
+            }[lang]
+
+        elif issubclass(type_, FlexVarSpecs.Deposition):
             dep = dict(var_specs)['deposition']
 
             if lang == 'en':
@@ -766,12 +799,26 @@ class FlexAttrsCollector:
                     'de': f'{dep_type}e Bodenablagerung',
                 }[lang]
 
+            if type_ is FlexVarSpecs.EnsMeanDeposition:
+                return {
+                    'en': f'Ensemble-Mean {dep_type} Surface Deposition',
+                    'de': f'Ensemblemittel-{dep_type}e Bodenablagerung',
+                }[lang]
+
             elif type_ is FlexVarSpecs.AffectedArea:
                 return {
                     'en': f'Affected Area ({dep_type})',
                     #'en': f'Affected Area ({dep_type} Deposition)',
                     'de': f'Beaufschlagtes Gebiet ({dep_type})',
                     #'de': f'Beaufschl. Gebiet ({dep_type}e Ablagerung)',
+                }[lang]
+
+            elif type_ is FlexVarSpecs.EnsMeanAffectedArea:
+                return {
+                    'en': f'Ensemble-Mean Affected Area ({dep_type})',
+                    #'en': f'Ensemble-Mean Affected Area ({dep_type} Deposition)',
+                    'de': f'Ensemblemittel-Beaufschlagtes Gebiet ({dep_type})',
+                    #'de': f'Ensemblemittel-Beaufschl. Gebiet ({dep_type}e Ablagerung)',
                 }[lang]
 
         raise NotImplementedError(f"var_specs of type '{type_.__name__}'")
