@@ -286,11 +286,9 @@ class FlexVarSpecs_AffectedArea(FlexVarSpecs_Deposition):
 
 #----------------------------------------------------------------------
 
-
 FlexVarSpecs.Concentration = FlexVarSpecs_Concentration
 FlexVarSpecs.Deposition = FlexVarSpecs_Deposition
 FlexVarSpecs.AffectedArea = FlexVarSpecs_AffectedArea
-
 
 #======================================================================
 # Field Specifications
@@ -574,11 +572,9 @@ class FlexFieldSpecs_AffectedArea(FlexFieldSpecs_Deposition):
 
 #----------------------------------------------------------------------
 
-
 FlexFieldSpecs.Concentration = FlexFieldSpecs_Concentration
 FlexFieldSpecs.Deposition = FlexFieldSpecs_Deposition
 FlexFieldSpecs.AffectedArea = FlexFieldSpecs_AffectedArea
-
 
 #======================================================================
 

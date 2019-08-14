@@ -15,7 +15,6 @@ from .plot import AxesTextBox
 from .utils import Degrees
 from .utils_dev import ipython  #SR_DEV
 
-
 #======================================================================
 # Plot Labels
 #======================================================================
@@ -782,7 +781,6 @@ FlexPlot.Concentration = FlexPlot_Concentration
 FlexPlot.Deposition = FlexPlot_Deposition
 FlexPlot.AffectedArea = FlexPlot_AffectedArea
 FlexPlot.AffectedAreaMono = FlexPlot_AffectedAreaMono
-
 
 #----------------------------------------------------------------------
 # Ensemble Simulation

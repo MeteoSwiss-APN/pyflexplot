@@ -164,7 +164,6 @@ class FlexPlotter_EnsMeanConcentration(FlexPlotter):
 
 #----------------------------------------------------------------------
 
-
 FlexPlotter.Concentration = FlexPlotter_Concentration
 FlexPlotter.Deposition = FlexPlotter_Deposition
 FlexPlotter.AffectedArea = FlexPlotter_AffectedArea

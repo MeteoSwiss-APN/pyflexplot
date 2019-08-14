@@ -267,7 +267,8 @@ class FlexFileReader:
                     "input file path missing format key '{member_id[:0?d]}': "
                     f"{self.file_path_fmt}")
             return [
-                self.file_path_fmt.format(member_id=mid) for mid in member_ids]
+                self.file_path_fmt.format(member_id=mid) for mid in member_ids
+            ]
 
     def _determine_n_reqtime(self):
         """Determine the number of selected time steps."""
