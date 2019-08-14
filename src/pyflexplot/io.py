@@ -167,7 +167,7 @@ class FlexFileReader:
                 f"{len(attrs_nonone)} attributes should be None but are not: "
                 f"{attrs_nonone}")
 
-    def run(self, fld_specs, *, ens_var=None, ens_var_setup=None, lang='en'):
+    def run(self, fld_specs, *, lang='en'):
         """Read one or more fields from a file from disc.
 
         Args:
@@ -200,8 +200,6 @@ class FlexFileReader:
         self._store_attrs()  #SR_DEV
 
         # Set some attributes
-        self.ens_var = ens_var
-        self.ens_var_setup = {} if ens_var_setup is None else ens_var_setup
         self.lang = lang
 
         if isinstance(fld_specs, FlexFieldSpecs):
@@ -234,7 +232,7 @@ class FlexFileReader:
             fld_specs_time = self._fld_specs_time_lst[i_fld_specs]
             time_inds = self._time_inds_lst[i_fld_specs]
 
-            member_ids = fld_specs_time.member_ids
+            member_ids = getattr(fld_specs_time, 'member_ids', None)
             self.n_members = 1 if member_ids is None else len(member_ids)
             self.file_path_lst = self._prepare_file_path_lst(member_ids)
 
@@ -292,7 +290,7 @@ class FlexFileReader:
 
         # Reduce fields array along member dimension
         # In other words: Compute single field from ensemble
-        fld_time = self._reduce_ensemble(fld_time_mem)
+        fld_time = self._reduce_ensemble(fld_time_mem, fld_specs_time)
 
         # Collect time stats
         time_stats = self._collect_time_stats(fld_time)
@@ -350,26 +348,29 @@ class FlexFileReader:
 
         return fld_time_mem
 
-    def _reduce_ensemble(self, fld_time_mem):
+    def _reduce_ensemble(self, fld_time_mem, fld_specs_time):
         """Reduce the ensemble to a single field (time, rlat, rlon)."""
         if self.n_members == 1:
-            fld_time = fld_time_mem[0]
-        elif self.ens_var == 'mean':
+            return fld_time_mem[0]
+
+        ens_var = fld_specs_time.ens_var
+        ens_var_setup = getattr(fld_specs_time, 'ens_var_setup', {})
+
+        if ens_var == 'mean':
             fld_time = np.nanmean(fld_time_mem, axis=0)
-        elif self.ens_var == 'max':
+        elif ens_var == 'max':
             fld_time = np.nanmax(fld_time_mem, axis=0)
-        elif self.ens_var == 'threshold-agreement':
+        elif ens_var == 'threshold-agreement':
             try:
-                thr = self.ens_var_setup['thr']
+                thr = ens_var_setup['thr']
             except KeyError:
                 raise Exception(
-                    f"ens_var '{self.ens_var}': must pass threshold as "
-                    f"dict element 'thr' in argument ens_var_setup to "
-                    f"{type(self).__name__}.run)")
+                    f"'thr' missing in "
+                    f"{type(fld_specs_time).__name__}.ens_var_setup")
             fld_time = threshold_agreement(
                 fld_time_mem, thr, axis=0, dtype=fld_time_mem.dtype)
         else:
-            raise NotImplementedError(f"ens_var '{self.ens_var}'")
+            raise NotImplementedError(f"ens_var '{ens_var}'")
         return fld_time
 
     def _create_specs_reqtime(self, fld_specs_time, time_inds):

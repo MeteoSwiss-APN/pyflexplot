@@ -328,11 +328,11 @@ class FlexFieldSpecs:
     def __init__(
             self,
             var_specs_lst,
-            member_ids=None,
             *,
             op=np.nansum,
             var_attrs_replace=None,
-            lang='en'):
+            lang='en',
+            **addtl_attrs):
         """Create an instance of ``FlexFieldSpecs``.
 
         Args:
@@ -341,9 +341,6 @@ class FlexFieldSpecs:
                 instance of ``FlexVarSpecs`` as specified by the class
                 attribute ``cls_var_specs``. Each ultimately yields a
                 2D slice of an input variable.
-
-            member_ids (list[int], optional): Ensemble member ids.
-                Defaults to None.
 
             op (function or list[function], optional): Opterator(s) to
                 combine the input fields obtained based on the input
@@ -369,8 +366,8 @@ class FlexFieldSpecs:
         # Create variable specifications objects
         self.var_specs_lst = self.create_var_specs(var_specs_lst)
 
-        # Ensemble member ids
-        self.member_ids = member_ids
+        # Set additional attributes
+        self.set_addtl_attrs(**addtl_attrs)
 
         # Store operator(s)
         self.check_op(op)
@@ -385,6 +382,14 @@ class FlexFieldSpecs:
         if var_attrs_replace is None:
             var_attrs_replace = {}
         self.var_attrs_replace = var_attrs_replace
+
+    def set_addtl_attrs(self, **attrs):
+        """Set additional attributes."""
+        for attr, val in sorted(attrs.items()):
+            if hasattr(self, attr):
+                raise ValueError(
+                    f"attribute '{type(self).__name__}.{attr}' already exists")
+            setattr(self, attr, val)
 
     def _prepare_var_specs_lst(self, var_specs_lst):
 
@@ -484,12 +489,12 @@ class FlexFieldSpecs:
         return hash(self) == hash(other)
 
     @classmethod
-    def multiple(cls, vars_specs, *args, lang='en'):
+    def multiple(cls, vars_specs, *args, **kwargs):
         var_specs_lst = cls.cls_var_specs.multiple_as_dict(**vars_specs)
         field_specs_lst = []
         for var_specs in var_specs_lst:
             try:
-                field_specs = cls(var_specs, *args, lang=lang)
+                field_specs = cls(var_specs, *args, **kwargs)
             except Exception as e:
                 raise Exception(
                     f"cannot initialize {cls.__name__} "
@@ -589,15 +594,35 @@ class FlexFieldSpecs_AffectedArea(FlexFieldSpecs_Deposition):
     cls_var_specs = FlexVarSpecs_AffectedArea
 
 
-class FlexFieldSpecs_EnsMeanConcentration(FlexFieldSpecs_Concentration):
+#SR_TODO<<<
+#
+#  * Need to somehow check that 'member_ids' is passed as an argument
+#    when creating a FlexFieldSpecs_End* instance!
+#
+#  * Currently, 'member_ids' just ends up among additional attributes
+#    (**addtl_attrs), causing failure later if it is not present but
+#    expected, but no check during initialization is performed!
+#
+#  * I already tried out an approach (keyword FlexFieldsSpecsMixin_Ens),
+#    but it failed because some way it was passed to the original
+#    `FlexFieldSpecs.__init__` and the corresponding method setting
+#    (and checking) additional attributes, where 'member_id' is not
+#    expected...
+#
+
+
+class FlexFieldSpecs_EnsMeanConcentration(
+        FlexFieldSpecs_Concentration):
     cls_var_specs = FlexVarSpecs_EnsMeanConcentration
 
 
-class FlexFieldSpecs_EnsMeanDeposition(FlexFieldSpecs_Deposition):
+class FlexFieldSpecs_EnsMeanDeposition(
+        FlexFieldSpecs_Deposition):
     cls_var_specs = FlexVarSpecs_EnsMeanDeposition
 
 
-class FlexFieldSpecs_EnsMeanAffectedArea(FlexFieldSpecs_AffectedArea):
+class FlexFieldSpecs_EnsMeanAffectedArea(
+        FlexFieldSpecs_AffectedArea):
     cls_var_specs = FlexVarSpecs_EnsMeanAffectedArea
 
 

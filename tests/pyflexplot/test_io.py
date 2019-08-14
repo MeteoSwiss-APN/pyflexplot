@@ -437,12 +437,12 @@ class TestReadFieldEnsemble_Single:
             **self.var_specs_mult_shared,
             **var_specs_mult_unshared,
         }
-        fld_specs = cls_fld_specs(var_specs_raw, self.member_ids)
+        fld_specs = cls_fld_specs(
+            var_specs_raw, member_ids=self.member_ids, ens_var=ens_var)
         var_specs = cls_fld_specs.cls_var_specs(**var_specs_raw)
 
         # Read input fields
-        flex_field = FlexFileReader(datafile_fmt).run(
-            fld_specs, ens_var=ens_var)
+        flex_field = FlexFileReader(datafile_fmt).run(fld_specs)
         fld = flex_field.fld
 
         # Read reference fields
@@ -470,7 +470,7 @@ class TestReadFieldEnsemble_Single:
         """Read concentration field."""
         self.run(
             datadir,
-            cls_fld_specs=FlexFieldSpecs.Concentration,
+            cls_fld_specs=FlexFieldSpecs.EnsMeanConcentration,
             dims={
                 **self.dims_shared, 'level': 1
             },
@@ -530,7 +530,9 @@ class TestReadFieldEnsemble_Multiple:
             **self.var_specs_mult_shared,
             **var_specs_mult_unshared,
         }
-        fld_specs_lst = cls_fld_specs.multiple(var_specs_mult, self.member_ids)
+        fld_specs_lst = cls_fld_specs.multiple(
+            var_specs_mult, member_ids=self.member_ids, ens_var=ens_var,
+            ens_var_setup=ens_var_setup)
 
         dim_names = sorted([d.replace('_lst', '') for d in dims_mult.keys()])
 
@@ -539,19 +541,18 @@ class TestReadFieldEnsemble_Multiple:
             for fld_specs in fld_specs_lst:
                 self._run_core(
                     datafile_fmt, dim_names, var_names_ref, [fld_specs],
-                    ens_var, ens_var_setup, fct_reduce_mem)
+                    fct_reduce_mem)
         else:
             self._run_core(
-                datafile_fmt, dim_names, var_names_ref, fld_specs_lst, ens_var,
-                ens_var_setup, fct_reduce_mem)
+                datafile_fmt, dim_names, var_names_ref, fld_specs_lst,
+                fct_reduce_mem)
 
     def _run_core(
             self, datafile_fmt, dim_names, var_names_ref, fld_specs_lst,
-            ens_var, ens_var_setup, fct_reduce_mem):
+            fct_reduce_mem):
 
         # Read input fields
-        flex_field_lst = FlexFileReader(datafile_fmt).run(
-            fld_specs_lst, ens_var=ens_var, ens_var_setup=ens_var_setup)
+        flex_field_lst = FlexFileReader(datafile_fmt).run(fld_specs_lst)
         fld_arr = np.array([flex_field.fld for flex_field in flex_field_lst])
 
         # Collect merged variables specifications
