@@ -288,6 +288,11 @@ class FlexVarSpecs_EnsMeanConcentration(FlexVarSpecs_Concentration):
     pass
 
 
+class FlexVarSpecs_EnsThresholdAgreementConcentration(
+        FlexVarSpecs_Concentration):
+    pass
+
+
 class FlexVarSpecs_EnsMeanDeposition(FlexVarSpecs_Deposition):
     pass
 
@@ -304,6 +309,8 @@ FlexVarSpecs.AffectedArea = FlexVarSpecs_AffectedArea
 FlexVarSpecs.EnsMeanConcentration = FlexVarSpecs_EnsMeanConcentration
 FlexVarSpecs.EnsMeanDeposition = FlexVarSpecs_EnsMeanDeposition
 FlexVarSpecs.EnsMeanAffectedArea = FlexVarSpecs_EnsMeanAffectedArea
+FlexVarSpecs.EnsThresholdAgreementConcentration = (
+    FlexVarSpecs_EnsThresholdAgreementConcentration)
 
 #======================================================================
 # Field Specifications
@@ -594,6 +601,11 @@ class FlexFieldSpecs_EnsMeanAffectedArea(FlexFieldSpecs_AffectedArea):
     cls_var_specs = FlexVarSpecs_EnsMeanAffectedArea
 
 
+class FlexFieldSpecs_EnsThresholdAgreementConcentration(
+        FlexFieldSpecs_Concentration):
+    cls_var_specs = FlexVarSpecs_EnsThresholdAgreementConcentration
+
+
 #----------------------------------------------------------------------
 
 FlexFieldSpecs.Concentration = FlexFieldSpecs_Concentration
@@ -602,6 +614,8 @@ FlexFieldSpecs.AffectedArea = FlexFieldSpecs_AffectedArea
 FlexFieldSpecs.EnsMeanConcentration = FlexFieldSpecs_EnsMeanConcentration
 FlexFieldSpecs.EnsMeanDeposition = FlexFieldSpecs_EnsMeanDeposition
 FlexFieldSpecs.EnsMeanAffectedArea = FlexFieldSpecs_EnsMeanAffectedArea
+FlexFieldSpecs.EnsThresholdAgreementConcentration = (
+    FlexFieldSpecs_EnsThresholdAgreementConcentration)
 
 #======================================================================
 

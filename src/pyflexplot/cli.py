@@ -701,6 +701,47 @@ class EnsMeanAffectedArea(ClickCommand):
             )
 
 
+class EnsThresholdAgreement(ClickCommand):
+
+    @click_options
+    def options():
+        return []
+
+    @CLI.command(
+        name='ens-threshold-agreement-concentration',
+        help=(
+            "Ensemble threshold agreement of activity concentration "
+            "in the air."),
+    )
+    @GlobalOptions.input_ensemble
+    @GlobalOptions.output
+    @DispersionOptions.input
+    @DispersionOptions.preproc
+    @Concentration.options
+    @click.pass_context
+    def end_threshold_agreement_concentration(
+            ctx, in_file_path_fmt, out_file_path_fmt, member_id_lst,
+            **vars_specs):
+
+        lang = ctx.obj['lang']
+
+        # Determine fields specifications (one for each eventual plot)
+        _cls = FlexFieldSpecs.EnsThresholdAgreementConcentration
+        fld_specs_lst = _cls.multiple(vars_specs, member_id_lst, lang=lang)
+
+        # Read fields
+        flex_data_lst = FlexFileReader(in_file_path_fmt).run(
+            fld_specs_lst, ens_var='threshold-agreement', lang=lang)
+
+        # Create plots
+        create_plots(
+            ctx,
+            FlexPlotter.EnsThresholdAgreementConcentration,
+            [flex_data_lst, out_file_path_fmt],
+            {'lang': lang},
+        )
+
+
 #======================================================================
 
 if __name__ == "__main__":

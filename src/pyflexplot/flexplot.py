@@ -821,7 +821,15 @@ class FlexPlot_EnsMeanAffectedAreaMono(FlexPlotMixin_Ens,
     name = 'ens-mean-affected-area-mono'
 
 
+class FlexPlot_EnsThresholdAgreementConcentration(
+        FlexPlotMixin_Ens, FlexPlot_Concentration):
+
+    name = 'ens-threshold-agreement-concentration'
+
+
 FlexPlot.EnsMeanConcentration = FlexPlot_EnsMeanConcentration
 FlexPlot.EnsMeanDeposition = FlexPlot_EnsMeanDeposition
 FlexPlot.EnsMeanAffectedArea = FlexPlot_EnsMeanAffectedArea
 FlexPlot.EnsMeanAffectedAreaMono = FlexPlot_EnsMeanAffectedAreaMono
+FlexPlot.EnsThresholdAgreementConcentration = (
+    FlexPlot_EnsThresholdAgreementConcentration)
