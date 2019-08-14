@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Tests for `pyflexplot/utils.py` package."""
+"""Tests for module ``pyflexplot.utils`."""
 import pytest
 import logging
 from click.testing import CliRunner

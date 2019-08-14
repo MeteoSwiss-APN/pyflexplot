@@ -1,6 +1,6 @@
 ./test_cli.py
 ./test_io.py
-#./test_data.py
+./test_data.py
 #./test_flexplotter.py
 #./test_flexplot.py
 #./test_plot.py

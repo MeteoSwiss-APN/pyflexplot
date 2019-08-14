@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Tests for `pyflexplot/io.py` package."""
+"""Tests for module ``pyflexplot.io``."""
 import logging as log
 import netCDF4 as nc4
 import numpy as np
-import os
 import pytest
 
 from utils import datadir
@@ -12,6 +11,7 @@ from utils import datadir
 from pyflexplot.io import FlexFieldSpecs
 from pyflexplot.io import FlexFileReader
 
+from pyflexplot.data import threshold_agreement
 from pyflexplot.utils import dict_mult_vals_product
 
 from pyflexplot.utils_dev import ipython  #SR_DEV
@@ -317,7 +317,9 @@ class TestReadField_Multiple:
             separate=separate,
             datafile=self.datafile(datadir),
             cls_fld_specs=FlexFieldSpecs.Concentration,
-            dims_mult={**self.dims_shared, 'level_lst': [0, 2]},
+            dims_mult={
+                **self.dims_shared, 'level_lst': [0, 2]
+            },
             var_names_ref=[f'spec{self.species_id:03d}'],
             var_specs_mult_unshared={},
         )
@@ -502,6 +504,10 @@ class TestReadFieldEnsemble_Multiple:
     # Ensemble member ids
     member_ids = [0, 1, 5, 10, 15, 20]
 
+    # Thresholds for ensemble threshold agreement
+    agreement_threshold_concentration = None  #SR_TMP
+    agreement_threshold_deposition_tot = None  #SR_TMP
+
     def datafile_fmt(self, datadir):
         return f'{datadir}/grid_conc_20190727120000_{{member_id:03d}}.nc'
 
@@ -578,15 +584,21 @@ class TestReadFieldEnsemble_Multiple:
 
     def run_concentration(self, datadir, ens_var, *, separate=False):
         """Read ensemble concentration field."""
+        # yapf: disable
         fct_reduce_mem = {
             'mean': np.nanmean,
             'max': np.nanmax,
+            'threshold-agreement': lambda a, x: threshold_agreement(
+                a, self.agreement_threshold_concentration, axis=x),
         }[ens_var]
+        # yapf: enable
         self.run(
             separate=separate,
             datafile_fmt=self.datafile_fmt(datadir),
             cls_fld_specs=FlexFieldSpecs.Concentration,
-            dims_mult={**self.dims_shared, 'level': 1},
+            dims_mult={
+                **self.dims_shared, 'level': 1
+            },
             var_names_ref=[f'spec{self.species_id:03d}'],
             var_specs_mult_unshared={},
             ens_var=ens_var,
@@ -595,6 +607,9 @@ class TestReadFieldEnsemble_Multiple:
 
     def test_ens_mean_concentration(self, datadir):
         self.run_concentration(datadir, 'mean', separate=False)
+
+    def test_ens_threshold_agreement_concentration(self, datadir):
+        self.run_concentration(datadir, 'threshold-agreement', separate=False)
 
     #------------------------------------------------------------------
     # Deposition

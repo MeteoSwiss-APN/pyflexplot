@@ -55,3 +55,21 @@ class FlexField:
             raise ValueError(
                 f"shape of fld inconsistent with (rlat, rlon): "
                 f"{fld.shape} != {grid_shape}")
+
+
+def threshold_agreement(arr, thr, *, axis=None, eq_ok=False):
+    """Count the members exceeding a threshold at each grid point.
+
+    Args:
+        arr (np.ndarray[float]): Data array.
+
+        thr (float): Threshold to be exceeded.
+
+        axis (int, optional): Index of ensemble member axis, along
+            which the reduction is performed. Defaults to None.
+
+        eq_ok (bool, optional): Whether values equal to the threshold
+            are counted as exceedences. Defaults to False.
+
+    """
+    return np.count_nonzero(arr >= thr if eq_ok else arr > thr, axis=axis)

@@ -821,8 +821,8 @@ class FlexPlot_EnsMeanAffectedAreaMono(FlexPlotMixin_Ens,
     name = 'ens-mean-affected-area-mono'
 
 
-class FlexPlot_EnsThresholdAgreementConcentration(
-        FlexPlotMixin_Ens, FlexPlot_Concentration):
+class FlexPlot_EnsThresholdAgreementConcentration(FlexPlotMixin_Ens,
+                                                  FlexPlot_Concentration):
 
     name = 'ens-threshold-agreement-concentration'
 
