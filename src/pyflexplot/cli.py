@@ -583,7 +583,7 @@ class EnsMeanConcentration(ClickCommand):
 
     @CLI.command(
         name='ens-mean-concentration',
-        help="Ensemble-mean concentration.",
+        help="Ensemble-mean of activity concentration in the air.",
     )
     @GlobalOptions.input_ensemble
     @GlobalOptions.output
@@ -623,7 +623,7 @@ class EnsMeanDeposition(ClickCommand):
 
     @CLI.command(
         name='ens-mean-deposition',
-        help="Ensemble-mean deposition.",
+        help="Ensemble-mean of surface deposition.",
     )
     @GlobalOptions.input_ensemble
     @GlobalOptions.output
@@ -663,7 +663,7 @@ class EnsMeanAffectedArea(ClickCommand):
 
     @CLI.command(
         name='ens-mean-affected-area',
-        help="Ensemble-mean affected area.",
+        help="Ensemble-mean of area affected by surface deposition.",
     )
     @GlobalOptions.input_ensemble
     @GlobalOptions.output
