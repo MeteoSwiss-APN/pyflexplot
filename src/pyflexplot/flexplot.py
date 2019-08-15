@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+from copy import copy
 from textwrap import dedent
 
 from .plot import AxesMap
@@ -274,6 +275,8 @@ class FlexPlot_Dispersion(FlexPlot):
         self.define_colors()
         self.define_levels()
 
+        self.create()
+
     def create(self):
         """Create plot."""
 
@@ -297,13 +300,7 @@ class FlexPlot_Dispersion(FlexPlot):
         self.ax_map.add_ref_dist_indicator()
 
         # Plot concentrations
-        fld_log10 = np.log10(self.fld)
-        handle = self.ax_map.contourf(
-            fld_log10,
-            levels=self.levels_log10,
-            colors=self.colors,
-            extend=self.extend,
-        )
+        handle = self._draw_contours()
 
         # Add marker at release site
         self.ax_map.marker(
@@ -316,6 +313,14 @@ class FlexPlot_Dispersion(FlexPlot):
         self.ax_map.mark_max(self.fld, **self._max_marker_kwargs)
 
         return handle
+
+    def _draw_contours(self):
+        return self.ax_map.contourf(
+            np.log10(self.fld),
+            levels=self.levels_log10,
+            colors=self.colors,
+            extend=self.extend,
+        )
 
     def fig_add_text_boxes(
             self,
@@ -571,29 +576,32 @@ class FlexPlot_Dispersion(FlexPlot):
 
     def _format_level_range(self, lvl0, lvl1):
 
-        def format_level(lvl):
-            if lvl is None:
-                return ''
-            fmtd = f'{lvl:.0E}'
-            n = len(fmtd)
-            ll = np.log10(lvl)
-            if ll >= -n + 2 and ll <= n - 1:
-                fmtd = f'{lvl:f}' [:n]
-                assert '1' in fmtd
-            return fmtd
-
         if lvl0 is not None and lvl1 is not None:
+            # Closed range
             op = '-'
-            return f"{format_level(lvl0):>6} {op} {format_level(lvl1):<6}"
-        else:
-            if lvl0 is not None:
-                op = '>'
-                lvl = lvl0
-            elif lvl1 is not None:
-                op = '<'
-                lvl = lvl1
+            return (
+                f"{self._format_level(lvl0):>6} {op} "
+                f"{self._format_level(lvl1):<6}")
 
-            return f"{op+' '+format_level(lvl):^15}"
+        # Open-ended range
+        if lvl0 is not None:
+            op = '>'
+            lvl = lvl0
+        elif lvl1 is not None:
+            op = '<'
+            lvl = lvl1
+        return f"{op+' '+self._format_level(lvl):^15}"
+
+    def _format_level(self, lvl):
+        if lvl is None:
+            return ''
+        fmtd = f'{lvl:.0E}'
+        n = len(fmtd)
+        ll = np.log10(lvl)
+        if ll >= -n + 2 and ll <= n - 1:
+            fmtd = f'{lvl:f}' [:n]
+            assert '1' in fmtd
+        return fmtd
 
     def fill_box_right_bottom(self):
         """Fill the bottom box to the right of the map plot."""
@@ -715,23 +723,11 @@ class FlexPlot_Concentration(FlexPlot_Dispersion):
 
     name = 'concentration'
 
-    def __init__(self, *args, **kwargs):
-        """Create an instance of ``FlexPlot``."""
-        super().__init__(*args, **kwargs)
-        self.create()
-
 
 class FlexPlot_Deposition(FlexPlot_Dispersion):
     """FLEXPART plot of surface deposition."""
 
     name = 'deposition'
-
-    def __init__(self, *args, **kwargs):
-        """Create an instance of ``FlexPlot_Deposition``.
-
-        """
-        super().__init__(*args, **kwargs)
-        self.create()
 
 
 class FlexPlot_AffectedArea(FlexPlot_Dispersion):
@@ -739,26 +735,12 @@ class FlexPlot_AffectedArea(FlexPlot_Dispersion):
 
     name = 'affected-area'
 
-    def __init__(self, *args, **kwargs):
-        """Create an instance of ``FlexPlot_AffectedArea``.
-
-        """
-        super().__init__(*args, **kwargs)
-        self.create()
-
 
 class FlexPlot_AffectedAreaMono(FlexPlot_AffectedArea):
     """FLEXPART plot of area affected by surface deposition (mono)."""
 
     name = 'affected-area-mono'
     extend = 'none'
-
-    def __init__(self, *args, **kwargs):
-        """Create an instance of ``FlexPlot_AffectedAreaMono``.
-
-        """
-        super().__init__(*args, **kwargs)
-        self.create()
 
     def define_colors(self):
         self.colors = (np.array([(200, 200, 200)])/255).tolist()
@@ -790,7 +772,7 @@ FlexPlot.AffectedAreaMono = FlexPlot_AffectedAreaMono
 #----------------------------------------------------------------------
 
 
-class FlexPlotMixin_Ens:
+class FlexPlot_Ens:
 
     def _flexpart_model_info(self):
         model = self.attrs.simulation.model_name.value
@@ -800,32 +782,58 @@ class FlexPlotMixin_Ens:
             f"{simstart_fmtd} (??? Members: ???)")
 
 
-class FlexPlot_EnsMeanConcentration(FlexPlotMixin_Ens, FlexPlot_Concentration):
+class FlexPlot_EnsMeanConcentration(FlexPlot_Ens, FlexPlot_Concentration):
 
     name = 'ens-mean-concentration'
 
 
-class FlexPlot_EnsMeanDeposition(FlexPlotMixin_Ens, FlexPlot_Deposition):
+class FlexPlot_EnsMeanDeposition(FlexPlot_Ens, FlexPlot_Deposition):
 
     name = 'ens-mean-deposition'
 
 
-class FlexPlot_EnsMeanAffectedArea(FlexPlotMixin_Ens, FlexPlot_AffectedArea):
+class FlexPlot_EnsMeanAffectedArea(FlexPlot_Ens, FlexPlot_AffectedArea):
 
     name = 'ens-mean-affected-area'
 
 
-class FlexPlot_EnsMeanAffectedAreaMono(FlexPlotMixin_Ens,
+class FlexPlot_EnsMeanAffectedAreaMono(FlexPlot_Ens,
                                        FlexPlot_AffectedAreaMono):
 
     name = 'ens-mean-affected-area-mono'
 
 
-class FlexPlot_EnsThresholdAgreementConcentration(FlexPlotMixin_Ens,
+class FlexPlot_EnsThresholdAgreementConcentration(FlexPlot_Ens,
                                                   FlexPlot_Concentration):
 
     name = 'ens-threshold-agreement-concentration'
+    extend = 'min'
 
+    def define_levels(self):
+        n_max = 20  #SR_TMP
+        n_lvl = len(self.colors) - 1
+        d = 1
+        self.levels = np.arange(n_max - d*n_lvl, n_max + 1, d)
+
+    def _draw_contours(self):
+
+        # If upper end of range is closed, color areas beyond black
+        colors_plot = copy(self.colors)
+        if self.extend in ['none', 'min']:
+            colors_plot.append('black')
+            extend_plot = {'none': 'max', 'min': 'both'}[self.extend]
+        else:
+            extend_plot = self.extend
+
+        return self.ax_map.contourf(
+            self.fld,
+            levels=self.levels,
+            colors=colors_plot,
+            extend=extend_plot,
+        )
+
+    def _format_level(self, lvl):
+        return f'{lvl}'
 
 FlexPlot.EnsMeanConcentration = FlexPlot_EnsMeanConcentration
 FlexPlot.EnsMeanDeposition = FlexPlot_EnsMeanDeposition

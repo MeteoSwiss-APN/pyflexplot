@@ -613,11 +613,11 @@ class EnsMeanConcentration(ClickCommand):
 
         # Determine fields specifications (one for each eventual plot)
         fld_specs_lst = FlexFieldSpecs.EnsMeanConcentration.multiple(
-            vars_specs, member_ids=member_id_lst, lang=lang)
+            vars_specs, member_ids=member_id_lst, ens_var='mean', lang=lang)
 
         # Read fields
         flex_data_lst = FlexFileReader(in_file_path_fmt).run(
-            fld_specs_lst, ens_var='mean', lang=lang)
+            fld_specs_lst, lang=lang)
 
         # Create plots
         create_plots(
@@ -653,11 +653,11 @@ class EnsMeanDeposition(ClickCommand):
 
         # Determine fields specifications (one for each eventual plot)
         fld_specs_lst = FlexFieldSpecs.EnsMeanDeposition.multiple(
-            vars_specs, member_ids=member_id_lst, lang=lang)
+            vars_specs, member_ids=member_id_lst, ens_var='mean', lang=lang)
 
         # Read fields
         flex_data_lst = FlexFileReader(in_file_path_fmt).run(
-            fld_specs_lst, ens_var='mean', lang=lang)
+            fld_specs_lst, lang=lang)
 
         # Create plots
         create_plots(
@@ -694,11 +694,11 @@ class EnsMeanAffectedArea(ClickCommand):
 
         # Determine fields specifications (one for each eventual plot)
         fld_specs_lst = FlexFieldSpecs.EnsMeanAffectedArea.multiple(
-            vars_specs, member_ids=member_id_lst, lang=lang)
+            vars_specs, member_ids=member_id_lst, ens_var='mean', lang=lang)
 
         # Read fields
         flex_data_lst = FlexFileReader(in_file_path_fmt).run(
-            fld_specs_lst, ens_var='mean', lang=lang)
+            fld_specs_lst, lang=lang)
 
         # Create plots
         for mono in mono_lst:
@@ -721,13 +721,15 @@ class EnsThresholdAgreement(ClickCommand):
         return [
             click.option(
                 '--threshold',
-                'threshold_lst',
+                #'threshold_lst',
+                'threshold',
                 help=(
                     "Threshold to be exceeded. Pass 'auto' to derive "
                     "it automatically from the input field."),
                 type=FLOAT_OR_AUTO,
-                default=['auto'],
-                multiple=True,
+                #default=['auto'],
+                #multiple=True,
+                default='auto',
             ),
         ]
 
@@ -742,21 +744,29 @@ class EnsThresholdAgreement(ClickCommand):
     @DispersionOptions.input
     @DispersionOptions.preproc
     @Concentration.options
+    @options
     @click.pass_context
     def end_threshold_agreement_concentration(
             ctx, in_file_path_fmt, out_file_path_fmt, member_id_lst,
-            threshold_lst, **vars_specs):
+            threshold, **vars_specs):
 
         lang = ctx.obj['lang']
+
+        #SR_TMP<
+        if threshold == 'auto':
+            threshold = 0.0
+        #SR_TMP>
 
         # Determine fields specifications (one for each eventual plot)
         _cls = FlexFieldSpecs.EnsThresholdAgreementConcentration
         fld_specs_lst = _cls.multiple(
-            vars_specs, member_ids=member_id_lst, lang=lang)
+            vars_specs, member_ids=member_id_lst,
+            ens_var='threshold-agreement', ens_var_setup={'thr': threshold},
+            lang=lang)
 
         # Read fields
         flex_data_lst = FlexFileReader(in_file_path_fmt).run(
-            fld_specs_lst, ens_var='threshold-agreement', lang=lang)
+            fld_specs_lst, lang=lang)
 
         # Create plots
         create_plots(
