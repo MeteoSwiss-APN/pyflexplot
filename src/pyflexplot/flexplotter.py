@@ -4,7 +4,8 @@ Plotters.
 """
 #import numpy as np
 
-from .io import FlexVarSpecs
+from .specs import FlexVarSpecs
+from .specs import FlexFieldSpecs
 from .flexplot import FlexPlot
 from .utils_dev import ipython  #SR_DEV
 
@@ -103,28 +104,29 @@ class FlexPlotter:
         kwargs['lang'] = self.lang
 
         # Ensemble member ids
-        if field_specs.member_ids is None:
-            kwargs['member_ids'] = None
-        else:
-            member_ids_grouped = []
-            for i, member_id in enumerate(field_specs.member_ids):
-                if i == 0 or member_id - member_ids_grouped[-1][-1] > 1:
-                    member_ids_grouped.append([member_id])
-                else:
-                    member_ids_grouped[-1].append(member_id)
-            s = None
-            for member_ids in member_ids_grouped:
-                if len(member_ids) == 1:
-                    s_i = f'{member_ids[0]:d}'
-                elif len(member_ids) == 2:
-                    s_i = f'{member_ids[0]:d}+{member_ids[1]:d}'
-                else:
-                    s_i = f'{member_ids[0]:d}-{member_ids[-1]:d}'
-                if s is None:
-                    s = s_i
-                else:
-                    s += f'+{s_i}'
-            kwargs['member_ids'] = s
+        if isinstance(field_specs, FlexFieldSpecs.Ens):
+            if field_specs.member_ids is None:
+                kwargs['member_ids'] = None
+            else:
+                member_ids_grouped = []
+                for i, member_id in enumerate(field_specs.member_ids):
+                    if i == 0 or member_id - member_ids_grouped[-1][-1] > 1:
+                        member_ids_grouped.append([member_id])
+                    else:
+                        member_ids_grouped[-1].append(member_id)
+                s = None
+                for member_ids in member_ids_grouped:
+                    if len(member_ids) == 1:
+                        s_i = f'{member_ids[0]:d}'
+                    elif len(member_ids) == 2:
+                        s_i = f'{member_ids[0]:d}+{member_ids[1]:d}'
+                    else:
+                        s_i = f'{member_ids[0]:d}-{member_ids[-1]:d}'
+                    if s is None:
+                        s = s_i
+                    else:
+                        s += f'+{s_i}'
+                kwargs['member_ids'] = s
 
         #ipython(globals(), locals(), f"{type(self).__name__}.format_file_path")
 

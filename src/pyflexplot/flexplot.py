@@ -244,6 +244,13 @@ class FlexPlot_Dispersion(FlexPlot):
     name = '__base__dispersion__'
     figsize = (12, 9)
     extend = 'max'
+    level_range_style = \
+        'simple'  # 10-20
+        #'math'  # [10, 20)
+        #'down'  # < 20
+        #'up'  # >= 10
+        #'and'  # >= 10 & < 20
+        #'var'  # 10 <= v < 20
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -576,21 +583,42 @@ class FlexPlot_Dispersion(FlexPlot):
 
     def _format_level_range(self, lvl0, lvl1):
 
+        level_range_var = 'v'
+
         if lvl0 is not None and lvl1 is not None:
             # Closed range
-            op = '-'
-            return (
-                f"{self._format_level(lvl0):>6} {op} "
-                f"{self._format_level(lvl1):<6}")
+            lvl0_fmtd = self._format_level(lvl0)
+            lvl1_fmtd = self._format_level(lvl1)
+            if self.level_range_style == 'simple':
+                return f"{lvl0_fmtd:>6} - {lvl1_fmtd:<6}"
+            elif self.level_range_style == 'math':
+                return f"[{lvl0_fmtd:>}, {lvl1_fmtd:<})"
+            elif self.level_range_style == 'down':
+                return f"< {lvl1_fmtd:<}"
+            elif self.level_range_style == 'up':
+                return f"$\geq$ {lvl0_fmtd:<}"
+            elif self.level_range_style == 'and':
+                return f"$\geq$ {lvl0_fmtd:>} & < {lvl1_fmtd:<}"
+            elif self.level_range_style == 'var':
+                return (
+                    f"{lvl0_fmtd:>} $\leq$ {level_range_var} < {lvl1_fmtd:<}")
+            else:
+                raise Exception(
+                    f"unknown level range style '{self.level_range_style}'")
 
-        # Open-ended range
-        if lvl0 is not None:
-            op = '>'
-            lvl = lvl0
-        elif lvl1 is not None:
-            op = '<'
-            lvl = lvl1
-        return f"{op+' '+self._format_level(lvl):^15}"
+        else:
+            # Open-ended range
+            if lvl0 is not None:
+                op = '$\geq$'
+                lvl = lvl0
+            elif lvl1 is not None:
+                op = '<'
+                lvl = lvl1
+            lvl_fmtd = self._format_level(lvl)
+            s = f"{op+' '+lvl_fmtd:^15}"
+            if self.level_range_style == 'var':
+                s = f'{level_range_var} {s}'
+            return s
 
     def _format_level(self, lvl):
         if lvl is None:
