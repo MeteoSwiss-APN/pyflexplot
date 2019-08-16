@@ -4,13 +4,13 @@ Plotters.
 """
 #import numpy as np
 
-from .specs import FlexVarSpecs
-from .specs import FlexFieldSpecs
-from .flexplot import FlexPlot
+from .specs import VarSpecs
+from .specs import FieldSpecs
+from .flexplot import Plot
 from .utils_dev import ipython  #SR_DEV
 
 
-class FlexPlotter:
+class Plotter:
     """Create one or more FLEXPLART plots of a certain type."""
 
     cls_plot = None
@@ -29,7 +29,7 @@ class FlexPlotter:
         """Create one or more plots.
 
         Args:
-            field (FlexPlot*, list[FlexPlot*]): An instance or list of
+            field (Plot*, list[Plot*]): An instance or list of
                 instances of the plot class.
 
             file_path_fmt (str): Format string of output file path.
@@ -95,7 +95,7 @@ class FlexPlotter:
         kwargs['lang'] = self.lang
 
         # Ensemble member ids
-        if isinstance(field_specs, FlexFieldSpecs.Ens):
+        if isinstance(field_specs, FieldSpecs.Ens):
             if field_specs.member_ids is None:
                 kwargs['member_ids'] = None
             else:
@@ -137,58 +137,58 @@ class FlexPlotter:
 #----------------------------------------------------------------------
 
 
-class FlexPlotter_Concentration(FlexPlotter):
-    cls_plot = FlexPlot.Concentration
+class Plotter_Concentration(Plotter):
+    cls_plot = Plot.Concentration
 
 
-class FlexPlotter_Deposition(FlexPlotter):
-    cls_plot = FlexPlot.Deposition
+class Plotter_Deposition(Plotter):
+    cls_plot = Plot.Deposition
 
 
-class FlexPlotter_AffectedArea(FlexPlotter):
-    cls_plot = FlexPlot.AffectedArea
+class Plotter_AffectedArea(Plotter):
+    cls_plot = Plot.AffectedArea
 
 
-class FlexPlotter_AffectedAreaMono(FlexPlotter):
-    cls_plot = FlexPlot.AffectedAreaMono
+class Plotter_AffectedAreaMono(Plotter):
+    cls_plot = Plot.AffectedAreaMono
 
 
 #----------------------------------------------------------------------
 
-FlexPlotter.Concentration = FlexPlotter_Concentration
-FlexPlotter.Deposition = FlexPlotter_Deposition
-FlexPlotter.AffectedArea = FlexPlotter_AffectedArea
-FlexPlotter.AffectedAreaMono = FlexPlotter_AffectedAreaMono
+Plotter.Concentration = Plotter_Concentration
+Plotter.Deposition = Plotter_Deposition
+Plotter.AffectedArea = Plotter_AffectedArea
+Plotter.AffectedAreaMono = Plotter_AffectedAreaMono
 
 #----------------------------------------------------------------------
 # Ensemble Simulation
 #----------------------------------------------------------------------
 
 
-class FlexPlotter_EnsMean_Concentration(FlexPlotter):
-    cls_plot = FlexPlot.EnsMean_Concentration
+class Plotter_EnsMean_Concentration(Plotter):
+    cls_plot = Plot.EnsMean_Concentration
 
 
-class FlexPlotter_EnsMean_Deposition(FlexPlotter):
-    cls_plot = FlexPlot.EnsMean_Deposition
+class Plotter_EnsMean_Deposition(Plotter):
+    cls_plot = Plot.EnsMean_Deposition
 
 
-class FlexPlotter_EnsMeanAffectedArea(FlexPlotter):
-    cls_plot = FlexPlot.EnsMeanAffectedArea
+class Plotter_EnsMeanAffectedArea(Plotter):
+    cls_plot = Plot.EnsMeanAffectedArea
 
 
-class FlexPlotter_EnsMeanAffectedAreaMono(FlexPlotter):
-    cls_plot = FlexPlot.EnsMeanAffectedAreaMono
+class Plotter_EnsMeanAffectedAreaMono(Plotter):
+    cls_plot = Plot.EnsMeanAffectedAreaMono
 
 
-class FlexPlotter_EnsThrAgrmt_Concentration(FlexPlotter):
-    cls_plot = FlexPlot.EnsThrAgrmt_Concentration
+class Plotter_EnsThrAgrmt_Concentration(Plotter):
+    cls_plot = Plot.EnsThrAgrmt_Concentration
 
 
 #----------------------------------------------------------------------
 
-FlexPlotter.EnsMean_Concentration = FlexPlotter_EnsMean_Concentration
-FlexPlotter.EnsMean_Deposition = FlexPlotter_EnsMean_Deposition
-FlexPlotter.EnsMeanAffectedArea = FlexPlotter_EnsMeanAffectedArea
-FlexPlotter.EnsMeanAffectedAreaMono = FlexPlotter_EnsMeanAffectedAreaMono
-FlexPlotter.EnsThrAgrmt_Concentration = FlexPlotter_EnsThrAgrmt_Concentration
+Plotter.EnsMean_Concentration = Plotter_EnsMean_Concentration
+Plotter.EnsMean_Deposition = Plotter_EnsMean_Deposition
+Plotter.EnsMeanAffectedArea = Plotter_EnsMeanAffectedArea
+Plotter.EnsMeanAffectedAreaMono = Plotter_EnsMeanAffectedAreaMono
+Plotter.EnsThrAgrmt_Concentration = Plotter_EnsThrAgrmt_Concentration

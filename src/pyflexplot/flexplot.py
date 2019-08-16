@@ -21,7 +21,7 @@ from .utils_dev import ipython  #SR_DEV
 #======================================================================
 
 
-class FlexPlotLabels:
+class PlotLabels:
 
     def __init__(self):
         if self.__class__.__name__.endswith(f'_Base'):
@@ -55,11 +55,11 @@ class FlexPlotLabels:
         return val
 
 
-class FlexPlotLabels_En(FlexPlotLabels):
+class PlotLabels_En(PlotLabels):
     pass
 
 
-class FlexPlotLabels_De(FlexPlotLabels):
+class PlotLabels_De(PlotLabels):
 
     def format_attr(self, name, val):
         """Format an attribute."""
@@ -74,7 +74,7 @@ class FlexPlotLabels_De(FlexPlotLabels):
         )
 
 
-class FlexPlotLabels_Dispersion_Simulation_En(FlexPlotLabels_En):
+class PlotLabels_Dispersion_Simulation_En(PlotLabels_En):
     """FLEXPART dispersion plot labels in English (simulation)."""
 
     start = 'Start'
@@ -83,8 +83,8 @@ class FlexPlotLabels_Dispersion_Simulation_En(FlexPlotLabels_En):
     copyright = u"\u00a9MeteoSwiss"
 
 
-class FlexPlotLabels_Dispersion_Simulation_De(FlexPlotLabels_De):
-    """Flexpart dispersion plot labels in German (simulation)."""
+class PlotLabels_Dispersion_Simulation_De(PlotLabels_De):
+    """part dispersion plot labels in German (simulation)."""
 
     start = 'Start'
     end = 'Ende'
@@ -92,7 +92,7 @@ class FlexPlotLabels_Dispersion_Simulation_De(FlexPlotLabels_De):
     copyright = u"\u00a9MeteoSchweiz"
 
 
-class FlexPlotLabels_Dispersion_Release_En(FlexPlotLabels_En):
+class PlotLabels_Dispersion_Release_En(PlotLabels_En):
     """FLEXPART dispersion plot labels in English (release)."""
 
     lat = 'Latitude'
@@ -104,8 +104,8 @@ class FlexPlotLabels_Dispersion_Release_En(FlexPlotLabels_En):
     max = 'Max.'
 
 
-class FlexPlotLabels_Dispersion_Release_De(FlexPlotLabels_De):
-    """Flexpart dispersion plot labels in German (release)."""
+class PlotLabels_Dispersion_Release_De(PlotLabels_De):
+    """part dispersion plot labels in German (release)."""
 
     lat = 'Breite'
     lon = 'L{ae}nge'
@@ -116,7 +116,7 @@ class FlexPlotLabels_Dispersion_Release_De(FlexPlotLabels_De):
     max = 'Max.'
 
 
-class FlexPlotLabels_Dispersion_Species_En(FlexPlotLabels_En):
+class PlotLabels_Dispersion_Species_En(PlotLabels_En):
     """FLEXPART dispersion plot labels in English (species)."""
 
     name = 'Substance'
@@ -127,8 +127,8 @@ class FlexPlotLabels_Dispersion_Species_En(FlexPlotLabels_En):
     washout_exponent = 'Washout exponent'
 
 
-class FlexPlotLabels_Dispersion_Species_De(FlexPlotLabels_De):
-    """Flexpart dispersion plot labels in German (species)."""
+class PlotLabels_Dispersion_Species_De(PlotLabels_De):
+    """part dispersion plot labels in German (species)."""
 
     name = 'Substanz'
     half_life = 'Halbwertszeit'
@@ -138,19 +138,19 @@ class FlexPlotLabels_Dispersion_Species_De(FlexPlotLabels_De):
     washout_exponent = 'Auswaschexponent'
 
 
-class FlexPlotLabels_Dispersion:
+class PlotLabels_Dispersion:
 
     def __init__(self, lang):
 
         if lang == 'en':
-            self.simulation = FlexPlotLabels_Dispersion_Simulation_En()
-            self.release = FlexPlotLabels_Dispersion_Release_En()
-            self.species = FlexPlotLabels_Dispersion_Species_En()
+            self.simulation = PlotLabels_Dispersion_Simulation_En()
+            self.release = PlotLabels_Dispersion_Release_En()
+            self.species = PlotLabels_Dispersion_Species_En()
 
         elif lang == 'de':
-            self.simulation = FlexPlotLabels_Dispersion_Simulation_De()
-            self.release = FlexPlotLabels_Dispersion_Release_De()
-            self.species = FlexPlotLabels_Dispersion_Species_De()
+            self.simulation = PlotLabels_Dispersion_Simulation_De()
+            self.release = PlotLabels_Dispersion_Release_De()
+            self.species = PlotLabels_Dispersion_Species_De()
 
         else:
             raise ValueError(f"lang='{lang}'")
@@ -161,23 +161,23 @@ class FlexPlotLabels_Dispersion:
 #======================================================================
 
 
-class FlexPlot:
+class Plot:
     """Base class for FLEXPART plots."""
 
     name = '__base__'
 
     def __init__(self, field, lang='en'):
-        """Create an instance of ``FlexPlot``.
+        """Create an instance of ``Plot``.
 
         Args:
-            field (FlexField): FLEXPART field.
+            field (Field): FLEXPART field.
 
             lang (str, optional): Language, e.g., 'de' for German.
                 Defaults to 'en' (English).
         """
         self.field = field
         self.lang = lang
-        self.labels = FlexPlotLabels_Dispersion(lang)
+        self.labels = PlotLabels_Dispersion(lang)
 
     def prepare_plot(self):
 
@@ -226,7 +226,7 @@ class FlexPlot:
 #----------------------------------------------------------------------
 
 
-class FlexPlot_Dispersion(FlexPlot):
+class Plot_Dispersion(Plot):
     """Base class for FLEXPART dispersion plots."""
 
     name = '__base__dispersion__'
@@ -771,25 +771,25 @@ class FlexPlot_Dispersion(FlexPlot):
         return np.log10(self.levels)
 
 
-class FlexPlot_Concentration(FlexPlot_Dispersion):
+class Plot_Concentration(Plot_Dispersion):
     """FLEXPART plot of particle concentration at a certain level."""
 
     name = 'concentration'
 
 
-class FlexPlot_Deposition(FlexPlot_Dispersion):
+class Plot_Deposition(Plot_Dispersion):
     """FLEXPART plot of surface deposition."""
 
     name = 'deposition'
 
 
-class FlexPlot_AffectedArea(FlexPlot_Dispersion):
+class Plot_AffectedArea(Plot_Dispersion):
     """FLEXPART plot of area affected by surface deposition."""
 
     name = 'affected-area'
 
 
-class FlexPlot_AffectedAreaMono(FlexPlot_AffectedArea):
+class Plot_AffectedAreaMono(Plot_AffectedArea):
     """FLEXPART plot of area affected by surface deposition (mono)."""
 
     name = 'affected-area-mono'
@@ -814,18 +814,18 @@ class FlexPlot_AffectedAreaMono(FlexPlot_AffectedArea):
         )
 
 
-FlexPlot.Dispersion = FlexPlot_Dispersion
-FlexPlot.Concentration = FlexPlot_Concentration
-FlexPlot.Deposition = FlexPlot_Deposition
-FlexPlot.AffectedArea = FlexPlot_AffectedArea
-FlexPlot.AffectedAreaMono = FlexPlot_AffectedAreaMono
+Plot.Dispersion = Plot_Dispersion
+Plot.Concentration = Plot_Concentration
+Plot.Deposition = Plot_Deposition
+Plot.AffectedArea = Plot_AffectedArea
+Plot.AffectedAreaMono = Plot_AffectedAreaMono
 
 #----------------------------------------------------------------------
 # Ensemble Simulation
 #----------------------------------------------------------------------
 
 
-class FlexPlot_Ens:
+class Plot_Ens:
 
     def _flexpart_model_info(self):
         model = self.field.attrs.simulation.model_name.value
@@ -835,28 +835,28 @@ class FlexPlot_Ens:
             f"{simstart_fmtd} (??? Members: ???)")
 
 
-class FlexPlot_EnsMean_Concentration(FlexPlot_Ens, FlexPlot_Concentration):
+class Plot_EnsMean_Concentration(Plot_Ens, Plot_Concentration):
 
     name = 'ens-mean-concentration'
 
 
-class FlexPlot_EnsMean_Deposition(FlexPlot_Ens, FlexPlot_Deposition):
+class Plot_EnsMean_Deposition(Plot_Ens, Plot_Deposition):
 
     name = 'ens-mean-deposition'
 
 
-class FlexPlot_EnsMeanAffectedArea(FlexPlot_Ens, FlexPlot_AffectedArea):
+class Plot_EnsMeanAffectedArea(Plot_Ens, Plot_AffectedArea):
 
     name = 'ens-mean-affected-area'
 
 
-class FlexPlot_EnsMeanAffectedAreaMono(FlexPlot_Ens,
-                                       FlexPlot_AffectedAreaMono):
+class Plot_EnsMeanAffectedAreaMono(Plot_Ens,
+                                       Plot_AffectedAreaMono):
 
     name = 'ens-mean-affected-area-mono'
 
 
-class FlexPlot_EnsThrAgrmt_Concentration(FlexPlot_Ens, FlexPlot_Concentration):
+class Plot_EnsThrAgrmt_Concentration(Plot_Ens, Plot_Concentration):
 
     name = 'ens-threshold-agreement-concentration'
     extend = 'min'
@@ -895,8 +895,8 @@ class FlexPlot_EnsThrAgrmt_Concentration(FlexPlot_Ens, FlexPlot_Concentration):
         return f'{lvl}'
 
 
-FlexPlot.EnsMean_Concentration = FlexPlot_EnsMean_Concentration
-FlexPlot.EnsMean_Deposition = FlexPlot_EnsMean_Deposition
-FlexPlot.EnsMeanAffectedArea = FlexPlot_EnsMeanAffectedArea
-FlexPlot.EnsMeanAffectedAreaMono = FlexPlot_EnsMeanAffectedAreaMono
-FlexPlot.EnsThrAgrmt_Concentration = FlexPlot_EnsThrAgrmt_Concentration
+Plot.EnsMean_Concentration = Plot_EnsMean_Concentration
+Plot.EnsMean_Deposition = Plot_EnsMean_Deposition
+Plot.EnsMeanAffectedArea = Plot_EnsMeanAffectedArea
+Plot.EnsMeanAffectedAreaMono = Plot_EnsMeanAffectedAreaMono
+Plot.EnsThrAgrmt_Concentration = Plot_EnsThrAgrmt_Concentration

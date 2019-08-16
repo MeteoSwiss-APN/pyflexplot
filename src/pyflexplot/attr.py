@@ -12,7 +12,7 @@ from .utils import isiterable
 from .utils_dev import ipython  #SR_DEV
 
 
-class FlexAttr:
+class Attr:
     """Individual attribute."""
 
     def __init__(self, name, value, type_=None, unit=None, group=None):
@@ -43,7 +43,7 @@ class FlexAttr:
 
     @classmethod
     def multiple(cls, *args, **kwargs):
-        return FlexAttrMult(*args, cls_attr=cls, **kwargs)
+        return AttrMult(*args, cls_attr=cls, **kwargs)
 
     def set_group(self, group):
         self._group = group
@@ -142,9 +142,9 @@ class FlexAttr:
         return unit
 
 
-class FlexAttrMult(FlexAttr):
+class AttrMult(Attr):
 
-    def __init__(self, name, value, type_=None, unit=None, cls_attr=FlexAttr):
+    def __init__(self, name, value, type_=None, unit=None, cls_attr=Attr):
 
         self.name = name
 
@@ -210,7 +210,7 @@ class FlexAttrMult(FlexAttr):
         return units
 
 
-class FlexAttrDatetime(FlexAttr):
+class AttrDatetime(Attr):
     """Individual datetime attribute."""
 
     def __init__(self, name, value, *, type_=None, start=None, **kwargs):
@@ -229,7 +229,7 @@ class FlexAttrDatetime(FlexAttr):
 
         super().__init__(name, value, type_=type_, **kwargs)
 
-        self.start = start.value if isinstance(start, FlexAttr) else start
+        self.start = start.value if isinstance(start, Attr) else start
 
     def __repr__(self):
         s = super().__repr__()
@@ -268,11 +268,11 @@ class FlexAttrDatetime(FlexAttr):
         return s
 
 
-class FlexAttrGroup:
+class AttrGroup:
     """Base class for attributes."""
 
     def __init__(self, *args, lang='en', **kwargs):
-        if type(self) is FlexAttrGroup:
+        if type(self) is AttrGroup:
             raise ValueError(
                 f"{type(self).__name__} should be subclassed, not instatiated")
         self._lang = lang
@@ -292,11 +292,11 @@ class FlexAttrGroup:
 
     #SR_TMP<<< TODO eliminate
     def set(self, name, value, type_, **kwargs):
-        if isinstance(value, FlexAttr):
+        if isinstance(value, Attr):
             attr = value
             attr.set_group(self)
         else:
-            cls = {datetime.datetime: FlexAttrDatetime}.get(type_, FlexAttr)
+            cls = {datetime.datetime: AttrDatetime}.get(type_, Attr)
             kwargs.update({
                 'name': name,
                 'value': value,
@@ -319,7 +319,7 @@ class FlexAttrGroup:
         """Create new instance by merging self and others.
 
         Args:
-            others (list[FlexAttrGroup]): Other instances of the same
+            others (list[AttrGroup]): Other instances of the same
                 attributes class, to be merged with this one.
 
             replace (dict, optional): Attributes to be replaced in the
@@ -328,7 +328,7 @@ class FlexAttrGroup:
                 Defaults to '{}'.
 
         Returns:
-            FlexAttrGroup: Merged instance derived from ``self`` and
+            AttrGroup: Merged instance derived from ``self`` and
                 ``others``. Note that no input instance is changed.
 
         """
@@ -360,13 +360,13 @@ class FlexAttrGroup:
                 f"\n{pformat(kwargs)}")
 
 
-class FlexAttrGroupGrid(FlexAttrGroup):
+class AttrGroupGrid(AttrGroup):
     """Grid attributes."""
 
     group_name = 'grid'
 
     def __init__(self, *, north_pole_lat, north_pole_lon, **kwargs):
-        """Initialize instance of ``FlexAttrGroupGrid``.
+        """Initialize instance of ``AttrGroupGrid``.
 
         Kwargs:
             north_pole_lat (float): Latitude of rotated north pole.
@@ -379,7 +379,7 @@ class FlexAttrGroupGrid(FlexAttrGroup):
         self.set('north_pole_lon', north_pole_lon, float)
 
 
-class FlexAttrGroupVariable(FlexAttrGroup):
+class AttrGroupVariable(AttrGroup):
     """Variable attributes."""
 
     group_name = 'variable'
@@ -387,7 +387,7 @@ class FlexAttrGroupVariable(FlexAttrGroup):
     def __init__(
             self, *, long_name, short_name, unit, level_bot, level_bot_unit,
             level_top, level_top_unit, **kwargs):
-        """Initialize an instance of ``FlexAttrGroupVariable``.
+        """Initialize an instance of ``AttrGroupVariable``.
 
         Kwargs:
             name (str): Name of variable.
@@ -467,7 +467,7 @@ class FlexAttrGroupVariable(FlexAttrGroup):
             raise NotImplementedError(f"{n} sets of levels")
 
 
-class FlexAttrGroupRelease(FlexAttrGroup):
+class AttrGroupRelease(AttrGroup):
     """Release attributes."""
 
     group_name = 'release'
@@ -475,7 +475,7 @@ class FlexAttrGroupRelease(FlexAttrGroup):
     def __init__(
             self, *, lat, lon, site_name, height, height_unit, rate, rate_unit,
             mass, mass_unit, **kwargs):
-        """Initialize an instance of ``FlexAttrGroupRelease``.
+        """Initialize an instance of ``AttrGroupRelease``.
 
         Kwargs:
             lat (float): Latitude of release site.
@@ -506,7 +506,7 @@ class FlexAttrGroupRelease(FlexAttrGroup):
         self.set('mass', mass, float, unit=mass_unit)
 
 
-class FlexAttrGroupSpecies(FlexAttrGroup):
+class AttrGroupSpecies(AttrGroup):
     """Species attributes."""
 
     group_name = 'species'
@@ -515,7 +515,7 @@ class FlexAttrGroupSpecies(FlexAttrGroup):
             self, *, name, half_life, half_life_unit, deposit_vel,
             deposit_vel_unit, sediment_vel, sediment_vel_unit, washout_coeff,
             washout_coeff_unit, washout_exponent, **kwargs):
-        """Create an instance of ``FlexAttrGroupSpecies``.
+        """Create an instance of ``AttrGroupSpecies``.
 
         Kwargs:
             name (str): Species name.
@@ -553,13 +553,13 @@ class FlexAttrGroupSpecies(FlexAttrGroup):
         self.set('washout_exponent', washout_exponent, float)
 
 
-class FlexAttrGroupSimulation(FlexAttrGroup):
+class AttrGroupSimulation(AttrGroup):
     """Simulation attributes."""
 
     group_name = 'simulation'
 
     def __init__(self, *, model_name, start, end, now, integr_start, **kwargs):
-        """Create an instance of ``FlexAttrGroupSimulation``.
+        """Create an instance of ``AttrGroupSimulation``.
 
         Kwargs:
             model_name (str): Name of the model.
@@ -588,23 +588,23 @@ class FlexAttrGroupSimulation(FlexAttrGroup):
         return f'{self.integr_period.total_seconds()/3600:g}$\\,$h'
 
 
-class FlexAttrGroupCollection:
+class AttrGroupCollection:
     """Collection of FLEXPART attributes."""
 
     def __init__(
             self, *, grid, variable, release, species, simulation, lang='en'):
-        """Initialize an instance of ``FlexAttrGroupCollection``.
+        """Initialize an instance of ``AttrGroupCollection``.
 
         Kwargs:
-            grid (dict): Kwargs passed to ``FlexAttrGroupGrid``.
+            grid (dict): Kwargs passed to ``AttrGroupGrid``.
 
-            variable (dict): Kwargs passed to ``FlexAttrGroupVariable``.
+            variable (dict): Kwargs passed to ``AttrGroupVariable``.
 
-            release (dict): Kwargs passed to ``FlexAttrGroupRelease``.
+            release (dict): Kwargs passed to ``AttrGroupRelease``.
 
-            species (dict): Kwargs passed to ``FlexAttrGroupSpecies``.
+            species (dict): Kwargs passed to ``AttrGroupSpecies``.
 
-            simulation (dict): Kwargs passed to ``FlexAttrGroupSimulation``.
+            simulation (dict): Kwargs passed to ``AttrGroupSimulation``.
 
         """
         self._lang = lang
@@ -629,22 +629,22 @@ class FlexAttrGroupCollection:
 
     def add(self, name, attrs):
 
-        if not isinstance(attrs, FlexAttrGroup):
+        if not isinstance(attrs, AttrGroup):
             cls_by_name = {
-                'grid': FlexAttrGroupGrid,
-                'variable': FlexAttrGroupVariable,
-                'release': FlexAttrGroupRelease,
-                'species': FlexAttrGroupSpecies,
-                'simulation': FlexAttrGroupSimulation,
+                'grid': AttrGroupGrid,
+                'variable': AttrGroupVariable,
+                'release': AttrGroupRelease,
+                'species': AttrGroupSpecies,
+                'simulation': AttrGroupSimulation,
             }
             try:
                 cls = cls_by_name[name]
             except KeyError:
                 raise ValueError(
-                    f"missing FlexAttrGroup class for name '{name}'")
+                    f"missing AttrGroup class for name '{name}'")
             #SR_TMP<
             for key, attr in [(k, v) for k, v in attrs.items()]:
-                if isinstance(attr, FlexAttr) and attr.unit is not None:
+                if isinstance(attr, Attr) and attr.unit is not None:
                     attrs[f'{key}_unit'] = attr.unit
             #SR_TMP>
             attrs = cls(lang=self._lang, **attrs)
@@ -655,16 +655,16 @@ class FlexAttrGroupCollection:
         """Create a new instance by merging this and others.
 
         Args:
-            others (list[FlexAttrGroupCollection]): Other instances to be
+            others (list[AttrGroupCollection]): Other instances to be
                 merged with this.
 
             **replace (dicts): Collections of attributes to be replaced
-                in the merged ``FlexAttrGroup*`` instances of the shared
+                in the merged ``AttrGroup*`` instances of the shared
                 collection instance. Must contain all attributes that
                 differ between any of the collections.
 
         Returns:
-            FlexAttrGroupCollection: New attributes collection instance
+            AttrGroupCollection: New attributes collection instance
                 derived from ``self`` and ``others``. Note that no
                 input collection is changed.
 

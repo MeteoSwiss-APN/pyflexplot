@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Top-level package for PyFlexPlot."""
+"""Top-level package for PyPlot."""
 
 __author__ = """Stefan Ruedisuehli"""
 __email__ = 'stefan.ruedisuehli@env.ethz.ch'

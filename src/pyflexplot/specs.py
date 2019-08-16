@@ -13,7 +13,7 @@ from copy import copy, deepcopy
 from pprint import pformat
 from pprint import pprint  #SR_DEV
 
-from .attr import FlexAttrGroupCollection
+from .attr import AttrGroupCollection
 from .utils import pformat_dictlike
 from .utils import nested_dict_set
 
@@ -34,7 +34,7 @@ def int_or_list(arg):
 #======================================================================
 
 
-class FlexVarSpecs:
+class VarSpecs:
     """FLEXPART input variable specifications."""
 
     # Keys with respective type
@@ -56,7 +56,7 @@ class FlexVarSpecs:
                 yield k
 
     def __init__(self, *, rlat=None, rlon=None, **kwargs):
-        """Create an instance of ``FlexVarSpecs``.
+        """Create an instance of ``VarSpecs``.
 
         Args:
             rlat (tuple, optional): Rotated latitude slice parameters,
@@ -65,7 +65,7 @@ class FlexVarSpecs:
             rlon (tuple, optional): Rotated longitude slice parameters,
                 passed to built-in ``slice``. Defaults to None.
 
-            **kwargs: Arguments as in ``FlexVarSpecs.specs(types=True)``.
+            **kwargs: Arguments as in ``VarSpecs.specs(types=True)``.
                 The keys correspond to the argument's names, and the
                 values specify a type which the respective argument
                 value must be compatible with.
@@ -103,13 +103,13 @@ class FlexVarSpecs:
 
     @classmethod
     def multiple(cls, *args, **kwargs):
-        """Create multiple instances of ``FlexVarSpecs``.
+        """Create multiple instances of ``VarSpecs``.
 
         Each of the arguments of ``__init__`` can be passed by the
         original name with one value (e.g., ``time=1``) or
         pluralized with multiple values (e.g., ``time=[1, 2]``).
 
-        One ``FlexVarSpecs`` instance is created for each combination
+        One ``VarSpecs`` instance is created for each combination
         of all input arguments.
 
         """
@@ -239,10 +239,10 @@ class FlexVarSpecs:
 #----------------------------------------------------------------------
 
 
-class FlexVarSpecs_Concentration(FlexVarSpecs):
+class VarSpecs_Concentration(VarSpecs):
 
     _keys_w_type = {
-        **FlexVarSpecs._keys_w_type,
+        **VarSpecs._keys_w_type,
         'level': int_or_list,
     }
 
@@ -280,10 +280,10 @@ class FlexVarSpecs_Concentration(FlexVarSpecs):
         return inds
 
 
-class FlexVarSpecs_Deposition(FlexVarSpecs):
+class VarSpecs_Deposition(VarSpecs):
 
     _keys_w_type = {
-        **FlexVarSpecs._keys_w_type,
+        **VarSpecs._keys_w_type,
         'deposition': str,
     }
 
@@ -304,7 +304,7 @@ class FlexVarSpecs_Deposition(FlexVarSpecs):
             }
         else:
             raise NotImplementedError(f"lang='{lang}'")
-        return choices[var_specs.deposition]
+        return choices[dict(var_specs)['deposition']]
 
     @classmethod
     def long_name(cls, lang, var_specs):
@@ -327,7 +327,7 @@ class FlexVarSpecs_Deposition(FlexVarSpecs):
         return f'{prefix}_spec{self.species_id:03d}'
 
 
-class FlexVarSpecs_AffectedArea(FlexVarSpecs_Deposition):
+class VarSpecs_AffectedArea(VarSpecs_Deposition):
 
     @classmethod
     def long_name(cls, lang, var_specs):
@@ -338,7 +338,7 @@ class FlexVarSpecs_AffectedArea(FlexVarSpecs_Deposition):
         }[lang]
 
 
-class FlexVarSpecs_EnsMean_Concentration(FlexVarSpecs_Concentration):
+class VarSpecs_EnsMean_Concentration(VarSpecs_Concentration):
 
     @classmethod
     def long_name(cls, lang, var_specs):
@@ -348,7 +348,7 @@ class FlexVarSpecs_EnsMean_Concentration(FlexVarSpecs_Concentration):
         }[lang]
 
 
-class FlexVarSpecs_EnsThrAgrmt_Concentration(FlexVarSpecs_Concentration):
+class VarSpecs_EnsThrAgrmt_Concentration(VarSpecs_Concentration):
 
     @classmethod
     def long_name(cls, lang, var_specs):
@@ -370,7 +370,7 @@ class FlexVarSpecs_EnsThrAgrmt_Concentration(FlexVarSpecs_Concentration):
         }[lang]
 
 
-class FlexVarSpecs_EnsMean_Deposition(FlexVarSpecs_Deposition):
+class VarSpecs_EnsMean_Deposition(VarSpecs_Deposition):
 
     @classmethod
     def long_name(cls, lang, var_specs):
@@ -381,7 +381,7 @@ class FlexVarSpecs_EnsMean_Deposition(FlexVarSpecs_Deposition):
         }[lang]
 
 
-class FlexVarSpecs_EnsMeanAffectedArea(FlexVarSpecs_AffectedArea):
+class VarSpecs_EnsMeanAffectedArea(VarSpecs_AffectedArea):
 
     @classmethod
     def long_name(cls, lang, var_specs):
@@ -394,23 +394,23 @@ class FlexVarSpecs_EnsMeanAffectedArea(FlexVarSpecs_AffectedArea):
 
 #----------------------------------------------------------------------
 
-FlexVarSpecs.Concentration = FlexVarSpecs_Concentration
-FlexVarSpecs.Deposition = FlexVarSpecs_Deposition
-FlexVarSpecs.AffectedArea = FlexVarSpecs_AffectedArea
-FlexVarSpecs.EnsMean_Concentration = FlexVarSpecs_EnsMean_Concentration
-FlexVarSpecs.EnsMean_Deposition = FlexVarSpecs_EnsMean_Deposition
-FlexVarSpecs.EnsMeanAffectedArea = FlexVarSpecs_EnsMeanAffectedArea
-FlexVarSpecs.EnsThrAgrmt_Concentration = FlexVarSpecs_EnsThrAgrmt_Concentration
+VarSpecs.Concentration = VarSpecs_Concentration
+VarSpecs.Deposition = VarSpecs_Deposition
+VarSpecs.AffectedArea = VarSpecs_AffectedArea
+VarSpecs.EnsMean_Concentration = VarSpecs_EnsMean_Concentration
+VarSpecs.EnsMean_Deposition = VarSpecs_EnsMean_Deposition
+VarSpecs.EnsMeanAffectedArea = VarSpecs_EnsMeanAffectedArea
+VarSpecs.EnsThrAgrmt_Concentration = VarSpecs_EnsThrAgrmt_Concentration
 
 #======================================================================
 # Field Specifications
 #======================================================================
 
 
-class FlexFieldSpecs:
+class FieldSpecs:
     """FLEXPART field specifications."""
 
-    cls_var_specs = FlexVarSpecs
+    cls_var_specs = VarSpecs
 
     # Dimensions with optionally multiple values
     dims_opt_mult_vals = ['species_id']
@@ -423,12 +423,12 @@ class FlexFieldSpecs:
             var_attrs_replace=None,
             lang='en',
             **addtl_attrs):
-        """Create an instance of ``FlexFieldSpecs``.
+        """Create an instance of ``FieldSpecs``.
 
         Args:
             var_specs_lst (list[dict]): Specifications dicts of input
                 variables, each of which is is used to create an
-                instance of ``FlexVarSpecs`` as specified by the class
+                instance of ``VarSpecs`` as specified by the class
                 attribute ``cls_var_specs``. Each ultimately yields a
                 2D slice of an input variable.
 
@@ -612,21 +612,21 @@ class FlexFieldSpecs:
 #----------------------------------------------------------------------
 
 
-class FlexFieldSpecs_Concentration(FlexFieldSpecs):
-    cls_var_specs = FlexVarSpecs_Concentration
+class FieldSpecs_Concentration(FieldSpecs):
+    cls_var_specs = VarSpecs_Concentration
 
     # Dimensions with optionally multiple values
-    dims_opt_mult_vals = FlexFieldSpecs.dims_opt_mult_vals + ['level']
+    dims_opt_mult_vals = FieldSpecs.dims_opt_mult_vals + ['level']
 
     def __init__(self, var_specs, *args, **kwargs):
-        """Create an instance of ``FlexFieldSpecs_Concentration``.
+        """Create an instance of ``FieldSpecs_Concentration``.
 
         Args:
             var_specs (dict): Specifications dict of input variable
-                used to create an instance of ``FlexVarSpecs_Concentration``
+                used to create an instance of ``VarSpecs_Concentration``
                 as specified by the class attribute ``cls_var_specs``.
 
-            **kwargs: Keyword arguments passed to ``FlexFieldSpecs``.
+            **kwargs: Keyword arguments passed to ``FieldSpecs``.
         """
         if not isinstance(var_specs, dict):
             raise ValueError(
@@ -634,21 +634,21 @@ class FlexFieldSpecs_Concentration(FlexFieldSpecs):
         super().__init__([var_specs], *args, **kwargs)
 
 
-class FlexFieldSpecs_Deposition(FlexFieldSpecs):
-    cls_var_specs = FlexVarSpecs_Deposition
+class FieldSpecs_Deposition(FieldSpecs):
+    cls_var_specs = VarSpecs_Deposition
 
     def __init__(self, var_specs, *args, lang='en', **kwargs):
-        """Create an instance of ``FlexFieldSpecs_Deposition``.
+        """Create an instance of ``FieldSpecs_Deposition``.
 
         Args:
             var_specs (dict): Specifications dict of input variable
-                used to create instance(s) of ``FlexVarSpecs_Deposition``
+                used to create instance(s) of ``VarSpecs_Deposition``
                 as specified by the class attribute ``cls_var_specs``.
 
             lang (str, optional): Language, e.g., 'de' for German.
                 Defaults to 'en' (English).
 
-            **kwargs: Keyword arguments passed to ``FlexFieldSpecs``.
+            **kwargs: Keyword arguments passed to ``FieldSpecs``.
         """
         var_specs_lst = [dict(var_specs)]
 
@@ -662,7 +662,7 @@ class FlexFieldSpecs_Deposition(FlexFieldSpecs):
                 nested_dict_set(
                     kwargs,
                     ['var_attrs_replace', 'variable', 'long_name', 'value'],
-                    FlexAttrsCollector.get_long_name(
+                    AttrsCollector.get_long_name(
                         var_specs,
                         type_=self.cls_var_specs,
                         lang=lang,
@@ -680,59 +680,59 @@ class FlexFieldSpecs_Deposition(FlexFieldSpecs):
         super().__init__(var_specs_lst, *args, **kwargs)
 
 
-class FlexFieldSpecs_AffectedArea(FlexFieldSpecs_Deposition):
-    cls_var_specs = FlexVarSpecs_AffectedArea
+class FieldSpecs_AffectedArea(FieldSpecs_Deposition):
+    cls_var_specs = VarSpecs_AffectedArea
 
 
-class FlexFieldSpecs_Ens:
+class FieldSpecs_Ens:
     pass
 
 
-class FlexFieldSpecs_EnsMean_Concentration(FlexFieldSpecs_Ens,
-                                          FlexFieldSpecs_Concentration):
-    cls_var_specs = FlexVarSpecs_EnsMean_Concentration
+class FieldSpecs_EnsMean_Concentration(FieldSpecs_Ens,
+                                          FieldSpecs_Concentration):
+    cls_var_specs = VarSpecs_EnsMean_Concentration
 
 
-class FlexFieldSpecs_EnsMean_Deposition(FlexFieldSpecs_Ens,
-                                       FlexFieldSpecs_Deposition):
-    cls_var_specs = FlexVarSpecs_EnsMean_Deposition
+class FieldSpecs_EnsMean_Deposition(FieldSpecs_Ens,
+                                       FieldSpecs_Deposition):
+    cls_var_specs = VarSpecs_EnsMean_Deposition
 
 
-class FlexFieldSpecs_EnsMeanAffectedArea(FlexFieldSpecs_Ens,
-                                         FlexFieldSpecs_AffectedArea):
-    cls_var_specs = FlexVarSpecs_EnsMeanAffectedArea
+class FieldSpecs_EnsMeanAffectedArea(FieldSpecs_Ens,
+                                         FieldSpecs_AffectedArea):
+    cls_var_specs = VarSpecs_EnsMeanAffectedArea
 
 
-class FlexFieldSpecs_EnsThrAgrmt_Concentration(FlexFieldSpecs_Ens,
-                                              FlexFieldSpecs_Concentration):
-    cls_var_specs = FlexVarSpecs_EnsThrAgrmt_Concentration
+class FieldSpecs_EnsThrAgrmt_Concentration(FieldSpecs_Ens,
+                                              FieldSpecs_Concentration):
+    cls_var_specs = VarSpecs_EnsThrAgrmt_Concentration
 
 
 #----------------------------------------------------------------------
 
-FlexFieldSpecs.Concentration = FlexFieldSpecs_Concentration
-FlexFieldSpecs.Deposition = FlexFieldSpecs_Deposition
-FlexFieldSpecs.AffectedArea = FlexFieldSpecs_AffectedArea
-FlexFieldSpecs.Ens = FlexFieldSpecs_Ens
-FlexFieldSpecs.EnsMean_Concentration = FlexFieldSpecs_EnsMean_Concentration
-FlexFieldSpecs.EnsMean_Deposition = FlexFieldSpecs_EnsMean_Deposition
-FlexFieldSpecs.EnsMeanAffectedArea = FlexFieldSpecs_EnsMeanAffectedArea
-FlexFieldSpecs.EnsThrAgrmt_Concentration = (
-    FlexFieldSpecs_EnsThrAgrmt_Concentration)
+FieldSpecs.Concentration = FieldSpecs_Concentration
+FieldSpecs.Deposition = FieldSpecs_Deposition
+FieldSpecs.AffectedArea = FieldSpecs_AffectedArea
+FieldSpecs.Ens = FieldSpecs_Ens
+FieldSpecs.EnsMean_Concentration = FieldSpecs_EnsMean_Concentration
+FieldSpecs.EnsMean_Deposition = FieldSpecs_EnsMean_Deposition
+FieldSpecs.EnsMeanAffectedArea = FieldSpecs_EnsMeanAffectedArea
+FieldSpecs.EnsThrAgrmt_Concentration = (
+    FieldSpecs_EnsThrAgrmt_Concentration)
 
 #======================================================================
 
 
-class FlexAttrsCollector:
+class AttrsCollector:
     """Collect attributes for a field from an open NetCDF file."""
 
     def __init__(self, fi, var_specs):
-        """Create an instance of ``FlexAttrsCollector``.
+        """Create an instance of ``AttrsCollector``.
 
         Args:
             fi (netCDF4.Dataset): An open FLEXPART NetCDF file.
 
-            var_specs (FlexVarSpecs): Input field specifications.
+            var_specs (VarSpecs): Input field specifications.
 
         """
         self.fi = fi
@@ -767,7 +767,7 @@ class FlexAttrsCollector:
             'simulation': self.collect_simulation_attrs(),
         }
 
-        return FlexAttrGroupCollection(lang=lang, **attrs_raw)
+        return AttrGroupCollection(lang=lang, **attrs_raw)
 
     def collect_grid_attrs(self):
         """Collect grid attributes."""
@@ -858,13 +858,13 @@ class FlexAttrsCollector:
         """Return long variable name.
 
         Args:
-            var_specs (dict or FlexVarSpecs): Variable specifications.
-                Must be either an instance of ``FlexVarSpecs`` or
+            var_specs (dict or VarSpecs): Variable specifications.
+                Must be either an instance of ``VarSpecs`` or
                 (most likely) a subclass thereof, or convertible to
                 that. In the latter case, ``type_`` is mandatory.
 
             type_ (type, optional): Type to which ``var_specs`` is
-                converted. Must be ``FlexVarSpecs`` or one of its
+                converted. Must be ``VarSpecs`` or one of its
                 subclasses. Mandatory if ``var_specs`` is not an
                 instance of such a type. Defaults to None.
 
@@ -893,9 +893,9 @@ class FlexAttrsCollector:
         substance = self._get_substance()
 
         # Get deposition and washout data
-        if isinstance(self.var_specs, FlexVarSpecs.Concentration):
+        if isinstance(self.var_specs, VarSpecs.Concentration):
             name_core = self.field_var_name
-        elif isinstance(self.var_specs, FlexVarSpecs.Deposition):
+        elif isinstance(self.var_specs, VarSpecs.Deposition):
             name_core = self.field_var_name[3:]
         deposit_vel = self.ncattrs_vars[f'DD_{name_core}']['dryvel']
         washout_coeff = self.ncattrs_vars[f'WD_{name_core}']['weta']
@@ -929,7 +929,7 @@ class FlexAttrsCollector:
 
     def _get_substance(self):
         substance = self.ncattrs_field['long_name']
-        if isinstance(self.var_specs, FlexVarSpecs.Deposition):
+        if isinstance(self.var_specs, VarSpecs.Deposition):
             substance = substance.replace(
                 f'_{self.var_specs.deposition}_deposition', '')  #SR_HC
         return substance

@@ -10,11 +10,11 @@ from copy import copy, deepcopy
 from pprint import pformat
 from pprint import pprint  #SR_DEV
 
-from .data import FlexField
+from .data import Field
 from .data import threshold_agreement
-from .specs import FlexAttrsCollector
-from .specs import FlexVarSpecs
-from .specs import FlexFieldSpecs
+from .specs import AttrsCollector
+from .specs import VarSpecs
+from .specs import FieldSpecs
 from .utils import check_array_indices
 from .utils import pformat_dictlike
 
@@ -79,7 +79,7 @@ def _nc_content():
 #======================================================================
 
 
-class FlexFileReader:
+class FileReader:
     """Reader of NetCDF files containing FLEXPART data.
 
     It represents a single input file for deterministic FLEXPART runs,
@@ -88,12 +88,12 @@ class FlexFileReader:
 
     """
 
-    cls_field = FlexField
+    cls_field = Field
 
     choices_ens_var = ['mean', 'max']
 
     def __init__(self, file_path, *, cmd_open=nc4.Dataset):
-        """Create an instance of ``FlexFileReader``.
+        """Create an instance of ``FileReader``.
 
         Args:
             file_path (str): File path. In case of ensemble data, it
@@ -171,11 +171,11 @@ class FlexFileReader:
         """Read one or more fields from a file from disc.
 
         Args:
-            fld_specs (FlexFieldSpecs or list[FlexFieldSpecs]):
+            fld_specs (FieldSpecs or list[FieldSpecs]):
                 Specifications for one or more input fields.
 
             ens_var (str, optional): Name of ensemble variable, e.g.,
-                'mean'. See ``FlexField.choices_ens_var`` for the full
+                'mean'. See ``Field.choices_ens_var`` for the full
                 list. Mandatory in case of multiple ensemble members.
                 Defaults to None.
 
@@ -187,13 +187,13 @@ class FlexFileReader:
                 Defaults to 'en' (English).
 
         Returns:
-            FlexField: Single data object; if ``fld_specs``
-                constitutes a single ``FlexFieldSpecs`` instance.
+            Field: Single data object; if ``fld_specs``
+                constitutes a single ``FieldSpecs`` instance.
 
             or
 
-            list[FlexField]: One data object for each field;
-                if ``fld_specs`` constitutes a list of ``FlexFieldSpecs``
+            list[Field]: One data object for each field;
+                if ``fld_specs`` constitutes a list of ``FieldSpecs``
                 instances.
 
         """
@@ -202,7 +202,7 @@ class FlexFileReader:
         # Set some attributes
         self.lang = lang
 
-        if isinstance(fld_specs, FlexFieldSpecs):
+        if isinstance(fld_specs, FieldSpecs):
             multiple = False
             fld_specs_lst = [fld_specs]
         else:
@@ -396,7 +396,7 @@ class FlexFileReader:
                     fld_specs = fld_specs_reqtime[i_reqtime]
                     attrs_lst = []
                     for var_specs in fld_specs.var_specs_lst:
-                        attrs = FlexAttrsCollector(
+                        attrs = AttrsCollector(
                             self.fi,
                             var_specs,
                         ).run(lang=self.lang)
@@ -550,11 +550,11 @@ class FlexFileReader:
         self._fix_nc_var(fld, var)
 
         # Time integration
-        if isinstance(var_specs, FlexVarSpecs.Concentration):
+        if isinstance(var_specs, VarSpecs.Concentration):
             if var_specs.integrate:
                 # Integrate over time
                 fld = np.cumsum(fld, axis=0)
-        elif isinstance(var_specs, FlexVarSpecs.Deposition):
+        elif isinstance(var_specs, VarSpecs.Deposition):
             if not var_specs.integrate:
                 # Revert integration over time
                 fld[1:] -= fld[:-1].copy()

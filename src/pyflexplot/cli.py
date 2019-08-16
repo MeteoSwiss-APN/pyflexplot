@@ -10,10 +10,10 @@ import sys
 
 from pprint import pformat
 
-from .io import FlexFieldSpecs
-from .io import FlexFileReader
+from .io import FieldSpecs
+from .io import FileReader
 from .utils import count_to_log_level
-from .flexplotter import FlexPlotter
+from .flexplotter import Plotter
 
 from .utils_dev import ipython  #SR_DEV
 
@@ -231,7 +231,7 @@ class CLI(ClickGroup):
     def cli(ctx, **kwargs):
         """Point of entry."""
 
-        click.echo("Hi fellow PyFlexPlotter!")
+        click.echo("Hi fellow PyPlotter!")
         #click.echo(f"{len(kwargs)} kwargs:\n{pformat(kwargs)}\n")
 
         log.basicConfig(level=count_to_log_level(kwargs['verbose']))
@@ -321,7 +321,7 @@ def create_plots(ctx, cls_plotter, args=None, kwargs=None):
     Args:
         ctx (Context): Click context object.
 
-        cls_plotter (type): Plotter class, derived from FlexPlotter.
+        cls_plotter (type): Plotter class, derived from Plotter.
 
         args (list, optional): Positional arguments for ``cls_plotter.run``.
             Defaults to [].
@@ -341,7 +341,7 @@ def create_plots(ctx, cls_plotter, args=None, kwargs=None):
 
     plotter = cls_plotter()
 
-    # Note: FlexPlotter.run yields the output file paths on-the-go
+    # Note: Plotter.run yields the output file paths on-the-go
     out_file_paths = []
     for i, out_file_path in enumerate(plotter.run(*args, **kwargs)):
         out_file_paths.append(out_file_path)
@@ -470,17 +470,17 @@ class Concentration(ClickCommand):
         lang = ctx.obj['lang']
 
         # Determine fields specifications (one for each eventual plot)
-        fld_specs_lst = FlexFieldSpecs.Concentration.multiple(
+        fld_specs_lst = FieldSpecs.Concentration.multiple(
             vars_specs, lang=lang)
 
         # Read fields
-        flex_field_lst = FlexFileReader(in_file_path).run(
+        flex_field_lst = FileReader(in_file_path).run(
             fld_specs_lst, lang=lang)
 
         # Create plots
         create_plots(
             ctx,
-            FlexPlotter.Concentration,
+            Plotter.Concentration,
             [flex_field_lst, out_file_path_fmt],
             {'lang': lang},
         )
@@ -519,17 +519,17 @@ class Deposition(ClickCommand):
         lang = ctx.obj['lang']
 
         # Determine fields specifications (one for each eventual plot)
-        field_specs_lst = FlexFieldSpecs.Deposition.multiple(
+        field_specs_lst = FieldSpecs.Deposition.multiple(
             vars_specs, lang=lang)
 
         # Read fields
-        flex_field_lst = FlexFileReader(in_file_path).run(
+        flex_field_lst = FileReader(in_file_path).run(
             field_specs_lst, lang=lang)
 
         # Create plots
         create_plots(
             ctx,
-            FlexPlotter.Deposition,
+            Plotter.Deposition,
             [flex_field_lst, out_file_path_fmt],
             {'lang': lang},
         )
@@ -567,19 +567,19 @@ class AffectedArea(ClickCommand):
         lang = ctx.obj['lang']
 
         # Determine fields specifications (one for each eventual plot)
-        field_specs_lst = FlexFieldSpecs.AffectedArea.multiple(
+        field_specs_lst = FieldSpecs.AffectedArea.multiple(
             vars_specs, lang=lang)
 
         # Read fields
-        flex_field_lst = FlexFileReader(in_file_path).run(
+        flex_field_lst = FileReader(in_file_path).run(
             field_specs_lst, lang=lang)
 
         # Create plots
         for mono in mono_lst:
             if mono:
-                fct = FlexPlotter.AffectedAreaMono
+                fct = Plotter.AffectedAreaMono
             else:
-                fct = FlexPlotter.AffectedArea
+                fct = Plotter.AffectedArea
             create_plots(
                 ctx,
                 fct,
@@ -615,17 +615,17 @@ class EnsMean_Concentration(ClickCommand):
         lang = ctx.obj['lang']
 
         # Determine fields specifications (one for each eventual plot)
-        fld_specs_lst = FlexFieldSpecs.EnsMean_Concentration.multiple(
+        fld_specs_lst = FieldSpecs.EnsMean_Concentration.multiple(
             vars_specs, member_ids=member_id_lst, ens_var='mean', lang=lang)
 
         # Read fields
-        flex_field_lst = FlexFileReader(in_file_path_fmt).run(
+        flex_field_lst = FileReader(in_file_path_fmt).run(
             fld_specs_lst, lang=lang)
 
         # Create plots
         create_plots(
             ctx,
-            FlexPlotter.EnsMean_Concentration,
+            Plotter.EnsMean_Concentration,
             [flex_field_lst, out_file_path_fmt],
             {'lang': lang},
         )
@@ -655,17 +655,17 @@ class EnsMean_Deposition(ClickCommand):
         lang = ctx.obj['lang']
 
         # Determine fields specifications (one for each eventual plot)
-        fld_specs_lst = FlexFieldSpecs.EnsMean_Deposition.multiple(
+        fld_specs_lst = FieldSpecs.EnsMean_Deposition.multiple(
             vars_specs, member_ids=member_id_lst, ens_var='mean', lang=lang)
 
         # Read fields
-        flex_field_lst = FlexFileReader(in_file_path_fmt).run(
+        flex_field_lst = FileReader(in_file_path_fmt).run(
             fld_specs_lst, lang=lang)
 
         # Create plots
         create_plots(
             ctx,
-            FlexPlotter.EnsMean_Deposition,
+            Plotter.EnsMean_Deposition,
             [flex_field_lst, out_file_path_fmt],
             {'lang': lang},
         )
@@ -696,19 +696,19 @@ class EnsMeanAffectedArea(ClickCommand):
         lang = ctx.obj['lang']
 
         # Determine fields specifications (one for each eventual plot)
-        fld_specs_lst = FlexFieldSpecs.EnsMeanAffectedArea.multiple(
+        fld_specs_lst = FieldSpecs.EnsMeanAffectedArea.multiple(
             vars_specs, member_ids=member_id_lst, ens_var='mean', lang=lang)
 
         # Read fields
-        flex_field_lst = FlexFileReader(in_file_path_fmt).run(
+        flex_field_lst = FileReader(in_file_path_fmt).run(
             fld_specs_lst, lang=lang)
 
         # Create plots
         for mono in mono_lst:
             if mono:
-                fct = FlexPlotter.EnsMeanAffectedAreaMono
+                fct = Plotter.EnsMeanAffectedAreaMono
             else:
-                fct = FlexPlotter.EnsMeanAffectedArea
+                fct = Plotter.EnsMeanAffectedArea
             create_plots(
                 ctx,
                 fct,
@@ -761,7 +761,7 @@ class EnsThrAgrmt(ClickCommand):
         #SR_TMP>
 
         # Determine fields specifications (one for each eventual plot)
-        _cls = FlexFieldSpecs.EnsThrAgrmt_Concentration
+        _cls = FieldSpecs.EnsThrAgrmt_Concentration
         fld_specs_lst = _cls.multiple(
             vars_specs,
             member_ids=member_id_lst,
@@ -770,13 +770,13 @@ class EnsThrAgrmt(ClickCommand):
             lang=lang)
 
         # Read fields
-        flex_field_lst = FlexFileReader(in_file_path_fmt).run(
+        flex_field_lst = FileReader(in_file_path_fmt).run(
             fld_specs_lst, lang=lang)
 
         # Create plots
         create_plots(
             ctx,
-            FlexPlotter.EnsThrAgrmt_Concentration,
+            Plotter.EnsThrAgrmt_Concentration,
             [flex_field_lst, out_file_path_fmt],
             {'lang': lang},
         )

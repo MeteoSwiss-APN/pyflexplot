@@ -9,11 +9,11 @@ import numpy as np
 from .utils_dev import ipython  #SR_DEV
 
 
-class FlexField:
+class Field:
     """FLEXPART field on rotated-pole grid."""
 
     def __init__(self, fld, rlat, rlon, attrs, field_specs, time_stats):
-        """Create an instance of ``FlexField``.
+        """Create an instance of ``Field``.
 
         Args:
             fld (ndarray[float, float]): Field array (2D) with
@@ -23,9 +23,9 @@ class FlexField:
 
             rlon (ndarray[float]): Rotated longitude array (1D).
 
-            attrs (FlexAttrGroupCollection): Attributes collection.
+            attrs (AttrGroupCollection): Attributes collection.
 
-            field_specs (FlexFieldSpecs): Input field specifications.
+            field_specs (FieldSpecs): Input field specifications.
 
             time_stats (dict): Some statistics across all time steps.
 
