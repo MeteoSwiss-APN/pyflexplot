@@ -246,6 +246,20 @@ class FlexVarSpecs_Concentration(FlexVarSpecs):
         'level': int_or_list,
     }
 
+    @classmethod
+    def long_name(cls, lang, var_specs):
+        return {
+            'en': 'Activity Concentration',
+            'de': r'Aktivit$\mathrm{\"a}$tskonzentration',
+        }[lang]
+
+    @classmethod
+    def short_name(cls, lang, var_specs):
+        return {
+            'en': 'Concentration',
+            'de': 'Konzentration',
+        }[lang]
+
     def var_name(self):
         """Derive variable name from specifications."""
 
@@ -273,6 +287,40 @@ class FlexVarSpecs_Deposition(FlexVarSpecs):
         'deposition': str,
     }
 
+    @classmethod
+    def deposition_type_long_name(cls, lang, var_specs):
+        if lang == 'en':
+            choices = {
+                'wet': 'Wet',
+                'dry': 'Dry',
+                'tot': 'Total',
+            }
+
+        elif lang == 'de':
+            choices = {
+                'wet': 'Nass',
+                'dry': 'Trocken',
+                'tot': 'Total',
+            }
+        else:
+            raise NotImplementedError(f"lang='{lang}'")
+        return choices[var_specs.deposition]
+
+    @classmethod
+    def long_name(cls, lang, var_specs):
+        dep_type = cls.deposition_type_long_name(lang, var_specs)
+        return {
+            'en': f'{dep_type} Surface Deposition',
+            'de': f'{dep_type}e Bodenablagerung',
+        }[lang]
+
+    @classmethod
+    def short_name(cls, lang, var_specs):
+        return {
+            'en': f'Deposition',
+            'de': f'Ablagerung',
+        }[lang]
+
     def var_name(self):
         """Derive variable name from specifications."""
         prefix = {'wet': 'WD', 'dry': 'DD'}[self.deposition]
@@ -281,24 +329,59 @@ class FlexVarSpecs_Deposition(FlexVarSpecs):
 
 class FlexVarSpecs_AffectedArea(FlexVarSpecs_Deposition):
 
-    pass
+    @classmethod
+    def long_name(cls, lang, var_specs):
+        dep_type = cls.deposition_type_long_name(lang, var_specs)
+        return {
+            'en': f'Affected Area ({dep_type})',
+            'de': f'Beaufschlagtes Gebiet ({dep_type})',
+        }[lang]
 
 
 class FlexVarSpecs_EnsMeanConcentration(FlexVarSpecs_Concentration):
-    pass
+
+    @classmethod
+    def long_name(cls, lang, var_specs):
+        return {
+            'en': 'Ensemble-Mean Activity Concentration',
+            'de': r'Ensemblemittel der Aktivit$\mathrm{\"a}$tskonzentration',
+        }[lang]
 
 
 class FlexVarSpecs_EnsThresholdAgreementConcentration(
         FlexVarSpecs_Concentration):
-    pass
+
+    @classmethod
+    def long_name(cls, lang, var_specs):
+        s_de = (
+            r'Ensemblegrenzwert$\mathrm{\"u}$bereinstimmung '
+            r'der Aktivit$\mathrm{\"a}$tskonzentration')
+        return {
+            'en': 'Ensemble Threshold Agreement of Activity Concentration',
+            'de': s_de,
+        }[lang]
 
 
 class FlexVarSpecs_EnsMeanDeposition(FlexVarSpecs_Deposition):
-    pass
+
+    @classmethod
+    def long_name(cls, lang, var_specs):
+        dep_type = cls.deposition_type_long_name(lang, var_specs)
+        return {
+            'en': f'Ensemble-Mean {dep_type} Surface Deposition',
+            'de': f'Ensemblemittel-{dep_type}e Bodenablagerung',
+        }[lang]
 
 
 class FlexVarSpecs_EnsMeanAffectedArea(FlexVarSpecs_AffectedArea):
-    pass
+
+    @classmethod
+    def long_name(cls, lang, var_specs):
+        dep_type = cls.deposition_type_long_name(lang, var_specs)
+        return {
+            'en': f'Ensemble-Mean Affected Area ({dep_type})',
+            'de': f'Ensemblemittel des Beaufschlagtes Gebiets ({dep_type})',
+        }[lang]
 
 
 #----------------------------------------------------------------------
@@ -749,22 +832,9 @@ class FlexAttrsCollector:
     def collect_variable_attrs(self):
         """Collect variable attributes."""
 
-        # Variable name
-        if isinstance(self.var_specs, FlexVarSpecs.Concentration):
-            long_name = self.get_long_name(self.var_specs, lang=self.lang)
-            short_name = {
-                'en': 'Concentration',  #SR_HC
-                'de': 'Konzentration',  #SR_HC
-            }[self.lang]
-        elif isinstance(self.var_specs, FlexVarSpecs.Deposition):
-            long_name = self.get_long_name(self.var_specs, lang=self.lang)
-            short_name = {
-                'en': f'Deposition',  #SR_HC
-                'de': f'Ablagerung',  #SR_HC
-            }[self.lang]
-        else:
-            raise NotImplementedError(
-                f"var_specs of type {type(var_specs).__name__}")
+        # Variable names
+        long_name = self.get_long_name(self.var_specs, lang=self.lang)
+        short_name = self.get_short_name(self.var_specs, lang=self.lang)
 
         try:
             _i = self.var_specs.level
@@ -793,90 +863,39 @@ class FlexAttrsCollector:
             'level_top_unit': level_unit,
         }
 
-    #SR_HC<<<
     @staticmethod
     def get_long_name(var_specs, *, type_=None, lang='en'):
-        """Return long variable name."""
+        """Return long variable name.
 
-        type_base = FlexVarSpecs
+        Args:
+            var_specs (dict or FlexVarSpecs): Variable specifications.
+                Must be either an instance of ``FlexVarSpecs`` or
+                (most likely) a subclass thereof, or convertible to
+                that. In the latter case, ``type_`` is mandatory.
+
+            type_ (type, optional): Type to which ``var_specs`` is
+                converted. Must be ``FlexVarSpecs`` or one of its
+                subclasses. Mandatory if ``var_specs`` is not an
+                instance of such a type. Defaults to None.
+
+            lang (str, optional): Language, e.g., 'de' for German.
+                Defaults to 'en' (English).
+
+        """
         if type_ is None:
             type_ = type(var_specs)
-        if not issubclass(type_, type_base):
-            raise ValueError(
-                f"var_specs: invalid type {type_}: "
-                f"not a subclass of {type_base.__name__}!")
+        return type_.long_name(lang, var_specs)
 
-        if type_ is FlexVarSpecs.Concentration:
-            return {
-                'en': 'Activity Concentration',
-                'de': r'Aktivit$\mathrm{\"a}$tskonzentration',
-            }[lang]
+    @staticmethod
+    def get_short_name(var_specs, *, type_=None, lang='en'):
+        """Return short variable name.
 
-        elif type_ is FlexVarSpecs.EnsMeanConcentration:
-            return {
-                'en':
-                'Ensemble-Mean Activity Concentration',
-                'de': (
-                    r'Ensemblemittel der '
-                    r'Aktivit$\mathrm{\"a}$tskonzentration'),
-            }[lang]
+        Args: See ``get_long_name``.
 
-        elif type_ is FlexVarSpecs.EnsThresholdAgreementConcentration:
-            return {
-                'en':
-                'Ensemble Threshold Agreement of Activity Concentration',
-                'de': (
-                    r'Ensemblegrenzwert$\mathrm{\"u}$bereinstimmung '
-                    r'der Aktivit$\mathrm{\"a}$tskonzentration'),
-            }[lang]
-
-        elif issubclass(type_, FlexVarSpecs.Deposition):
-            dep = dict(var_specs)['deposition']
-
-            if lang == 'en':
-                dep_type = {
-                    'wet': 'Wet',
-                    'dry': 'Dry',
-                    'tot': 'Total',
-                }[dep]
-
-            elif lang == 'de':
-                dep_type = {
-                    'wet': 'Nass',
-                    'dry': 'Trocken',
-                    'tot': 'Total',
-                }[dep]
-            else:
-                raise NotImplementedError(f"lang='{lang}'")
-
-            if type_ is FlexVarSpecs.Deposition:
-                return {
-                    'en': f'{dep_type} Surface Deposition',
-                    'de': f'{dep_type}e Bodenablagerung',
-                }[lang]
-
-            if type_ is FlexVarSpecs.EnsMeanDeposition:
-                return {
-                    'en': f'Ensemble-Mean {dep_type} Surface Deposition',
-                    'de': f'Ensemblemittel-{dep_type}e Bodenablagerung',
-                }[lang]
-
-            elif type_ is FlexVarSpecs.AffectedArea:
-                return {
-                    'en': f'Affected Area ({dep_type})',
-                    'de': f'Beaufschlagtes Gebiet ({dep_type})',
-                }[lang]
-
-            elif type_ is FlexVarSpecs.EnsMeanAffectedArea:
-                return {
-                    'en':
-                    f'Ensemble-Mean Affected Area ({dep_type})',
-                    'de': (
-                        'Ensemblemittel des Beaufschlagtes Gebiets '
-                        f'({dep_type})'),
-                }[lang]
-
-        raise NotImplementedError(f"var_specs of type '{type_.__name__}'")
+        """
+        if type_ is None:
+            type_ = type(var_specs)
+        return type_.short_name(lang, var_specs)
 
     def collect_species_attrs(self):
         """Collect species attributes."""

@@ -433,18 +433,18 @@ class FlexPlot_Dispersion(FlexPlot):
         if not 'tl' in skip_pos:
             # Top left: variable
             s = f"{self.attrs.variable.long_name.value}"
-            box.text('tl', s, size='xx-large')
+            box.text('tl', s, size='x-large')
 
         if not 'tc' in skip_pos:
             # Top center: species
             s = f"{self.attrs.species.name.format(join=' + ')}"
-            box.text('tc', s, size='xx-large')
+            box.text('tc', s, size='x-large')
 
         if not 'tr' in skip_pos:
             # Top right: datetime
             timestep_fmtd = self.attrs.simulation.now.format()
             s = f"{timestep_fmtd}"
-            box.text('tr', s, size='xx-large')
+            box.text('tr', s, size='x-large')
 
         if not 'bl' in skip_pos:
             # Bottom left: integration time & level range
