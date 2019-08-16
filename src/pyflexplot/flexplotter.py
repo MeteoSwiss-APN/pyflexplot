@@ -181,8 +181,8 @@ class FlexPlotter_EnsMeanAffectedAreaMono(FlexPlotter):
     cls_plot = FlexPlot.EnsMeanAffectedAreaMono
 
 
-class FlexPlotter_EnsThresholdAgreementConcentration(FlexPlotter):
-    cls_plot = FlexPlot.EnsThresholdAgreementConcentration
+class FlexPlotter_EnsThrAgrmtConcentration(FlexPlotter):
+    cls_plot = FlexPlot.EnsThrAgrmtConcentration
 
 
 #----------------------------------------------------------------------
@@ -191,5 +191,4 @@ FlexPlotter.EnsMeanConcentration = FlexPlotter_EnsMeanConcentration
 FlexPlotter.EnsMeanDeposition = FlexPlotter_EnsMeanDeposition
 FlexPlotter.EnsMeanAffectedArea = FlexPlotter_EnsMeanAffectedArea
 FlexPlotter.EnsMeanAffectedAreaMono = FlexPlotter_EnsMeanAffectedAreaMono
-FlexPlotter.EnsThresholdAgreementConcentration = (
-    FlexPlotter_EnsThresholdAgreementConcentration)
+FlexPlotter.EnsThrAgrmtConcentration = FlexPlotter_EnsThrAgrmtConcentration

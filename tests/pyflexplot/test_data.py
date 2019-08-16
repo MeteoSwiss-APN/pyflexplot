@@ -10,7 +10,7 @@ from pyflexplot.data import threshold_agreement
 from pyflexplot.utils_dev import ipython  #SR_DEV
 
 
-class TestThresholdAgreement_2D:
+class TestThrAgrmt_2D:
     """Count number threshold exceedences along a 2D-array axis."""
 
     arr = np.array([
@@ -53,7 +53,7 @@ class TestThresholdAgreement_2D:
         assert (sol == ref).all()
 
 
-class TestThresholdAgreement_3D:
+class TestThrAgrmt_3D:
     """Count number threshold exceedences along a 3D-array axis."""
 
     arr = np.array([

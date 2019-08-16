@@ -717,7 +717,7 @@ class EnsMeanAffectedArea(ClickCommand):
             )
 
 
-class EnsThresholdAgreement(ClickCommand):
+class EnsThrAgrmt(ClickCommand):
 
     @click_options
     def options():
@@ -761,7 +761,7 @@ class EnsThresholdAgreement(ClickCommand):
         #SR_TMP>
 
         # Determine fields specifications (one for each eventual plot)
-        _cls = FlexFieldSpecs.EnsThresholdAgreementConcentration
+        _cls = FlexFieldSpecs.EnsThrAgrmtConcentration
         fld_specs_lst = _cls.multiple(
             vars_specs,
             member_ids=member_id_lst,
@@ -776,7 +776,7 @@ class EnsThresholdAgreement(ClickCommand):
         # Create plots
         create_plots(
             ctx,
-            FlexPlotter.EnsThresholdAgreementConcentration,
+            FlexPlotter.EnsThrAgrmtConcentration,
             [flex_field_lst, out_file_path_fmt],
             {'lang': lang},
         )

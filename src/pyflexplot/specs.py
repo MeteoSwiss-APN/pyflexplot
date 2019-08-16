@@ -348,8 +348,7 @@ class FlexVarSpecs_EnsMeanConcentration(FlexVarSpecs_Concentration):
         }[lang]
 
 
-class FlexVarSpecs_EnsThresholdAgreementConcentration(
-        FlexVarSpecs_Concentration):
+class FlexVarSpecs_EnsThrAgrmtConcentration(FlexVarSpecs_Concentration):
 
     @classmethod
     def long_name(cls, lang, var_specs):
@@ -399,8 +398,7 @@ FlexVarSpecs.AffectedArea = FlexVarSpecs_AffectedArea
 FlexVarSpecs.EnsMeanConcentration = FlexVarSpecs_EnsMeanConcentration
 FlexVarSpecs.EnsMeanDeposition = FlexVarSpecs_EnsMeanDeposition
 FlexVarSpecs.EnsMeanAffectedArea = FlexVarSpecs_EnsMeanAffectedArea
-FlexVarSpecs.EnsThresholdAgreementConcentration = (
-    FlexVarSpecs_EnsThresholdAgreementConcentration)
+FlexVarSpecs.EnsThrAgrmtConcentration = FlexVarSpecs_EnsThrAgrmtConcentration
 
 #======================================================================
 # Field Specifications
@@ -703,9 +701,9 @@ class FlexFieldSpecs_EnsMeanAffectedArea(FlexFieldSpecs_Ens,
     cls_var_specs = FlexVarSpecs_EnsMeanAffectedArea
 
 
-class FlexFieldSpecs_EnsThresholdAgreementConcentration(
-        FlexFieldSpecs_Ens, FlexFieldSpecs_Concentration):
-    cls_var_specs = FlexVarSpecs_EnsThresholdAgreementConcentration
+class FlexFieldSpecs_EnsThrAgrmtConcentration(FlexFieldSpecs_Ens,
+                                              FlexFieldSpecs_Concentration):
+    cls_var_specs = FlexVarSpecs_EnsThrAgrmtConcentration
 
 
 #----------------------------------------------------------------------
@@ -717,8 +715,8 @@ FlexFieldSpecs.Ens = FlexFieldSpecs_Ens
 FlexFieldSpecs.EnsMeanConcentration = FlexFieldSpecs_EnsMeanConcentration
 FlexFieldSpecs.EnsMeanDeposition = FlexFieldSpecs_EnsMeanDeposition
 FlexFieldSpecs.EnsMeanAffectedArea = FlexFieldSpecs_EnsMeanAffectedArea
-FlexFieldSpecs.EnsThresholdAgreementConcentration = (
-    FlexFieldSpecs_EnsThresholdAgreementConcentration)
+FlexFieldSpecs.EnsThrAgrmtConcentration = (
+    FlexFieldSpecs_EnsThrAgrmtConcentration)
 
 #======================================================================
 

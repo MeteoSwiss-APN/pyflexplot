@@ -630,7 +630,7 @@ class TestReadFieldEnsemble_Multiple:
             datadir,
             'threshold-agreement',
             separate=False,
-            cls_fld_specs=FlexFieldSpecs.EnsThresholdAgreementConcentration)
+            cls_fld_specs=FlexFieldSpecs.EnsThrAgrmtConcentration)
 
     #------------------------------------------------------------------
     # Deposition

@@ -854,8 +854,7 @@ class FlexPlot_EnsMeanAffectedAreaMono(FlexPlot_Ens,
     name = 'ens-mean-affected-area-mono'
 
 
-class FlexPlot_EnsThresholdAgreementConcentration(FlexPlot_Ens,
-                                                  FlexPlot_Concentration):
+class FlexPlot_EnsThrAgrmtConcentration(FlexPlot_Ens, FlexPlot_Concentration):
 
     name = 'ens-threshold-agreement-concentration'
     extend = 'min'
@@ -886,7 +885,7 @@ class FlexPlot_EnsThresholdAgreementConcentration(FlexPlot_Ens,
 
     def _format_legend_box_title(self):
         name = self.field.attrs.variable.short_name.format()
-        #thresh = 
+        #thresh =
         ipython(globals(), locals(), f'{type(self).__name__}._format_legend_box_title')
         return f"{name} $\geq$ {thresh}"
 
@@ -898,5 +897,4 @@ FlexPlot.EnsMeanConcentration = FlexPlot_EnsMeanConcentration
 FlexPlot.EnsMeanDeposition = FlexPlot_EnsMeanDeposition
 FlexPlot.EnsMeanAffectedArea = FlexPlot_EnsMeanAffectedArea
 FlexPlot.EnsMeanAffectedAreaMono = FlexPlot_EnsMeanAffectedAreaMono
-FlexPlot.EnsThresholdAgreementConcentration = (
-    FlexPlot_EnsThresholdAgreementConcentration)
+FlexPlot.EnsThrAgrmtConcentration = FlexPlot_EnsThrAgrmtConcentration
