@@ -83,6 +83,7 @@ class ClickCommand:
 
 #======================================================================
 
+
 class FloatOrStrParamType(click.ParamType):
     """Float or certain string."""
 
@@ -95,7 +96,9 @@ class FloatOrStrParamType(click.ParamType):
             return value
         return float(value)
 
+
 FLOAT_OR_AUTO = FloatOrStrParamType('auto')
+
 
 class CharSepListParamType(click.ParamType):
 
@@ -747,8 +750,8 @@ class EnsThresholdAgreement(ClickCommand):
     @options
     @click.pass_context
     def end_threshold_agreement_concentration(
-            ctx, in_file_path_fmt, out_file_path_fmt, member_id_lst,
-            threshold, **vars_specs):
+            ctx, in_file_path_fmt, out_file_path_fmt, member_id_lst, threshold,
+            **vars_specs):
 
         lang = ctx.obj['lang']
 
@@ -760,8 +763,10 @@ class EnsThresholdAgreement(ClickCommand):
         # Determine fields specifications (one for each eventual plot)
         _cls = FlexFieldSpecs.EnsThresholdAgreementConcentration
         fld_specs_lst = _cls.multiple(
-            vars_specs, member_ids=member_id_lst,
-            ens_var='threshold-agreement', ens_var_setup={'thr': threshold},
+            vars_specs,
+            member_ids=member_id_lst,
+            ens_var='threshold-agreement',
+            ens_var_setup={'thr': threshold},
             lang=lang)
 
         # Read fields

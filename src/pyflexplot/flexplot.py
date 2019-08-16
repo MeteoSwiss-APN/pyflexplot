@@ -244,13 +244,15 @@ class FlexPlot_Dispersion(FlexPlot):
     name = '__base__dispersion__'
     figsize = (12, 9)
     extend = 'max'
-    level_range_style = \
+    level_range_style = (
         'simple'  # 10-20
+        #'simple-int'
         #'math'  # [10, 20)
         #'down'  # < 20
         #'up'  # >= 10
         #'and'  # >= 10 & < 20
         #'var'  # 10 <= v < 20
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -557,22 +559,22 @@ class FlexPlot_Dispersion(FlexPlot):
             f"{self.attrs.release.site_name.value}")
         box.text(loc='bl', s=s, dx=5.5, dy=dy_site, size='small')
 
-    def _format_level_ranges(self):
+    def _format_level_ranges(self, n=15):
         """Format the levels ranges for the contour plot legend."""
 
         labels = []
 
         # Under range
         if self.extend in ('min', 'both'):
-            labels.append(self._format_level_range(None, self.levels[0]))
+            labels.append(self._format_level_range(None, self.levels[0], n))
 
         # In range
         for lvl0, lvl1 in zip(self.levels[:-1], self.levels[1:]):
-            labels.append(self._format_level_range(lvl0, lvl1))
+            labels.append(self._format_level_range(lvl0, lvl1, n))
 
         # Over range
         if self.extend in ('max', 'both'):
-            labels.append(self._format_level_range(self.levels[-1], None))
+            labels.append(self._format_level_range(self.levels[-1], None, n))
 
         #SR_TMP<
         _n = len(self.colors)
@@ -581,7 +583,7 @@ class FlexPlot_Dispersion(FlexPlot):
 
         return labels
 
-    def _format_level_range(self, lvl0, lvl1):
+    def _format_level_range(self, lvl0, lvl1, n):
 
         level_range_var = 'v'
 
@@ -590,17 +592,19 @@ class FlexPlot_Dispersion(FlexPlot):
             lvl0_fmtd = self._format_level(lvl0)
             lvl1_fmtd = self._format_level(lvl1)
             if self.level_range_style == 'simple':
-                return f"{lvl0_fmtd:>6} - {lvl1_fmtd:<6}"
+                label = f"{lvl0_fmtd:>6} - {lvl1_fmtd:<6}"
+            elif self.level_range_style == 'simple-int':
+                label = self._format_level_range_simple_int(lvl0, lvl1)
             elif self.level_range_style == 'math':
-                return f"[{lvl0_fmtd:>}, {lvl1_fmtd:<})"
+                label = f"[{lvl0_fmtd:>}, {lvl1_fmtd:<})"
             elif self.level_range_style == 'down':
-                return f"< {lvl1_fmtd:<}"
+                label = f"< {lvl1_fmtd:<}"
             elif self.level_range_style == 'up':
-                return f"$\geq$ {lvl0_fmtd:<}"
+                label = f"$\geq$ {lvl0_fmtd:<}"
             elif self.level_range_style == 'and':
-                return f"$\geq$ {lvl0_fmtd:>} & < {lvl1_fmtd:<}"
+                label = f"$\geq$ {lvl0_fmtd:>} & < {lvl1_fmtd:<}"
             elif self.level_range_style == 'var':
-                return (
+                label = (
                     f"{lvl0_fmtd:>} $\leq$ {level_range_var} < {lvl1_fmtd:<}")
             else:
                 raise Exception(
@@ -615,10 +619,36 @@ class FlexPlot_Dispersion(FlexPlot):
                 op = '<'
                 lvl = lvl1
             lvl_fmtd = self._format_level(lvl)
-            s = f"{op+' '+lvl_fmtd:^15}"
+            label = f"{op+' '+lvl_fmtd:^15}"
             if self.level_range_style == 'var':
-                s = f'{level_range_var} {s}'
-            return s
+                label = f'{level_range_var} {label}'
+
+        if n is not None:
+            label = f'{{label:^{n}}}'.format(label=label)
+
+        return label
+
+    def _format_level_range_simple_int(self, lvl0, lvl1):
+        if int(lvl0) != float(lvl0):
+            raise ValueError(
+                f"lvl0 is not an integer: {int(lvl0)} != {float(lvl0)}")
+        if int(lvl1) != float(lvl1):
+            raise ValueError(
+                f"lvl1 is not an integer: {int(lvl1)} != {float(lvl1)}")
+        dlvls = sorted(set((self.levels[1:] - self.levels[:-1]).tolist()))
+        if len(dlvls) != 1:
+            raise Exception(
+                f"varying level increments: {dlvls} (levels: {self.levels})")
+        dlvl = next(iter(dlvls))
+        if int(dlvl) != float(dlvl):
+            raise ValueError(
+                f"dlvl is not an integer: {int(dlvl)} != {float(dlvl)}")
+        lvl0_fmtd = self._format_level(lvl0)
+        lvl1 = lvl1 - dlvl
+        if lvl1 == lvl0:
+            return f"{lvl0_fmtd}"
+        lvl1_fmtd = self._format_level(lvl1)
+        return f"{lvl0_fmtd:>6} - {lvl1_fmtd:<6}"
 
     def _format_level(self, lvl):
         if lvl is None:
@@ -836,12 +866,13 @@ class FlexPlot_EnsThresholdAgreementConcentration(FlexPlot_Ens,
 
     name = 'ens-threshold-agreement-concentration'
     extend = 'min'
+    level_range_style = 'simple-int'  # 10-14 / 15-20
 
     def define_levels(self):
         n_max = 20  #SR_TMP
         n_lvl = len(self.colors) - 1
         d = 1
-        self.levels = np.arange(n_max - d*n_lvl, n_max + 1, d)
+        self.levels = np.arange(n_max - d*(n_lvl - 1), n_max + d + 1, d)
 
     def _draw_contours(self):
 
@@ -862,6 +893,7 @@ class FlexPlot_EnsThresholdAgreementConcentration(FlexPlot_Ens,
 
     def _format_level(self, lvl):
         return f'{lvl}'
+
 
 FlexPlot.EnsMeanConcentration = FlexPlot_EnsMeanConcentration
 FlexPlot.EnsMeanDeposition = FlexPlot_EnsMeanDeposition

@@ -531,7 +531,9 @@ class TestReadFieldEnsemble_Multiple:
             **var_specs_mult_unshared,
         }
         fld_specs_lst = cls_fld_specs.multiple(
-            var_specs_mult, member_ids=self.member_ids, ens_var=ens_var,
+            var_specs_mult,
+            member_ids=self.member_ids,
+            ens_var=ens_var,
             ens_var_setup=ens_var_setup)
 
         dim_names = sorted([d.replace('_lst', '') for d in dims_mult.keys()])

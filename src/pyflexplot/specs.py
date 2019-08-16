@@ -610,22 +610,23 @@ class FlexFieldSpecs_AffectedArea(FlexFieldSpecs_Deposition):
 #    expected...
 #
 
+
 class FlexFieldSpecs_Ens:
     pass
 
 
-class FlexFieldSpecs_EnsMeanConcentration(
-        FlexFieldSpecs_Ens, FlexFieldSpecs_Concentration):
+class FlexFieldSpecs_EnsMeanConcentration(FlexFieldSpecs_Ens,
+                                          FlexFieldSpecs_Concentration):
     cls_var_specs = FlexVarSpecs_EnsMeanConcentration
 
 
-class FlexFieldSpecs_EnsMeanDeposition(
-        FlexFieldSpecs_Ens, FlexFieldSpecs_Deposition):
+class FlexFieldSpecs_EnsMeanDeposition(FlexFieldSpecs_Ens,
+                                       FlexFieldSpecs_Deposition):
     cls_var_specs = FlexVarSpecs_EnsMeanDeposition
 
 
-class FlexFieldSpecs_EnsMeanAffectedArea(
-        FlexFieldSpecs_Ens, FlexFieldSpecs_AffectedArea):
+class FlexFieldSpecs_EnsMeanAffectedArea(FlexFieldSpecs_Ens,
+                                         FlexFieldSpecs_AffectedArea):
     cls_var_specs = FlexVarSpecs_EnsMeanAffectedArea
 
 
@@ -813,7 +814,8 @@ class FlexAttrsCollector:
 
         elif type_ is FlexVarSpecs.EnsMeanConcentration:
             return {
-                'en': 'Ensemble-Mean Activity Concentration',
+                'en':
+                'Ensemble-Mean Activity Concentration',
                 'de': (
                     r'Ensemblemittel der '
                     r'Aktivit$\mathrm{\"a}$tskonzentration'),
@@ -821,7 +823,8 @@ class FlexAttrsCollector:
 
         elif type_ is FlexVarSpecs.EnsThresholdAgreementConcentration:
             return {
-                'en': 'Ensemble Threshold Agreement of Activity Concentration',
+                'en':
+                'Ensemble Threshold Agreement of Activity Concentration',
                 'de': (
                     r'Ensemblegrenzwert$\mathrm{\"u}$bereinstimmung '
                     r'der Aktivit$\mathrm{\"a}$tskonzentration'),
@@ -866,7 +869,8 @@ class FlexAttrsCollector:
 
             elif type_ is FlexVarSpecs.EnsMeanAffectedArea:
                 return {
-                    'en': f'Ensemble-Mean Affected Area ({dep_type})',
+                    'en':
+                    f'Ensemble-Mean Affected Area ({dep_type})',
                     'de': (
                         'Ensemblemittel des Beaufschlagtes Gebiets '
                         f'({dep_type})'),
