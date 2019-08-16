@@ -474,14 +474,14 @@ class Concentration(ClickCommand):
             vars_specs, lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFileReader(in_file_path).run(
+        flex_field_lst = FlexFileReader(in_file_path).run(
             fld_specs_lst, lang=lang)
 
         # Create plots
         create_plots(
             ctx,
             FlexPlotter.Concentration,
-            [flex_data_lst, out_file_path_fmt],
+            [flex_field_lst, out_file_path_fmt],
             {'lang': lang},
         )
 
@@ -523,14 +523,14 @@ class Deposition(ClickCommand):
             vars_specs, lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFileReader(in_file_path).run(
+        flex_field_lst = FlexFileReader(in_file_path).run(
             field_specs_lst, lang=lang)
 
         # Create plots
         create_plots(
             ctx,
             FlexPlotter.Deposition,
-            [flex_data_lst, out_file_path_fmt],
+            [flex_field_lst, out_file_path_fmt],
             {'lang': lang},
         )
 
@@ -571,7 +571,7 @@ class AffectedArea(ClickCommand):
             vars_specs, lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFileReader(in_file_path).run(
+        flex_field_lst = FlexFileReader(in_file_path).run(
             field_specs_lst, lang=lang)
 
         # Create plots
@@ -583,7 +583,7 @@ class AffectedArea(ClickCommand):
             create_plots(
                 ctx,
                 fct,
-                [flex_data_lst, out_file_path_fmt],
+                [flex_field_lst, out_file_path_fmt],
                 {'lang': lang},
             )
 
@@ -619,14 +619,14 @@ class EnsMeanConcentration(ClickCommand):
             vars_specs, member_ids=member_id_lst, ens_var='mean', lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFileReader(in_file_path_fmt).run(
+        flex_field_lst = FlexFileReader(in_file_path_fmt).run(
             fld_specs_lst, lang=lang)
 
         # Create plots
         create_plots(
             ctx,
             FlexPlotter.EnsMeanConcentration,
-            [flex_data_lst, out_file_path_fmt],
+            [flex_field_lst, out_file_path_fmt],
             {'lang': lang},
         )
 
@@ -659,14 +659,14 @@ class EnsMeanDeposition(ClickCommand):
             vars_specs, member_ids=member_id_lst, ens_var='mean', lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFileReader(in_file_path_fmt).run(
+        flex_field_lst = FlexFileReader(in_file_path_fmt).run(
             fld_specs_lst, lang=lang)
 
         # Create plots
         create_plots(
             ctx,
             FlexPlotter.EnsMeanDeposition,
-            [flex_data_lst, out_file_path_fmt],
+            [flex_field_lst, out_file_path_fmt],
             {'lang': lang},
         )
 
@@ -700,7 +700,7 @@ class EnsMeanAffectedArea(ClickCommand):
             vars_specs, member_ids=member_id_lst, ens_var='mean', lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFileReader(in_file_path_fmt).run(
+        flex_field_lst = FlexFileReader(in_file_path_fmt).run(
             fld_specs_lst, lang=lang)
 
         # Create plots
@@ -712,7 +712,7 @@ class EnsMeanAffectedArea(ClickCommand):
             create_plots(
                 ctx,
                 fct,
-                [flex_data_lst, out_file_path_fmt],
+                [flex_field_lst, out_file_path_fmt],
                 {'lang': lang},
             )
 
@@ -770,14 +770,14 @@ class EnsThresholdAgreement(ClickCommand):
             lang=lang)
 
         # Read fields
-        flex_data_lst = FlexFileReader(in_file_path_fmt).run(
+        flex_field_lst = FlexFileReader(in_file_path_fmt).run(
             fld_specs_lst, lang=lang)
 
         # Create plots
         create_plots(
             ctx,
             FlexPlotter.EnsThresholdAgreementConcentration,
-            [flex_data_lst, out_file_path_fmt],
+            [flex_field_lst, out_file_path_fmt],
             {'lang': lang},
         )
 

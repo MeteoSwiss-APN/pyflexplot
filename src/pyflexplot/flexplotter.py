@@ -55,16 +55,7 @@ class FlexPlotter:
             _w = len(str(len(data_lst)))
             print(f" {i_data+1:{_w}}/{len(data_lst)}  {file_path}")
 
-            kwargs = {
-                'rlat': field.rlat,
-                'rlon': field.rlon,
-                'fld': field.fld,
-                'attrs': field.attrs,
-                'time_stats': field.time_stats,
-                'lang': lang,
-            }
-
-            self.cls_plot(**kwargs).save(file_path)
+            self.cls_plot(field, lang).save(file_path)
 
             yield file_path
 

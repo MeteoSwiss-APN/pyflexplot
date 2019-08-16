@@ -166,28 +166,16 @@ class FlexPlot:
 
     name = '__base__'
 
-    def __init__(self, rlat, rlon, fld, attrs, time_stats, lang='en'):
+    def __init__(self, field, lang='en'):
         """Create an instance of ``FlexPlot``.
 
         Args:
-            rlat (ndarray[float]): Rotated latitude (1d).
-
-            rlon (ndarray[float]): Rotated longitude (1d).
-
-            fld (ndarray[float, float]): Concentration field (2d).
-
-            attrs (FlexAttrGroupCollection): Attributes read from file.
-
-            time_stats (dict): Some statistics across all time steps.
+            field (FlexField): FLEXPART field.
 
             lang (str, optional): Language, e.g., 'de' for German.
                 Defaults to 'en' (English).
         """
-        self.rlat = rlat
-        self.rlon = rlon
-        self.fld = np.where(fld > 0, fld, np.nan)
-        self.attrs = attrs
-        self.time_stats = time_stats
+        self.field = field
         self.lang = lang
         self.labels = FlexPlotLabels_Dispersion(lang)
 
@@ -197,10 +185,10 @@ class FlexPlot:
 
         self.ax_map = AxesMap(
             self.fig,
-            self.rlat,
-            self.rlon,
-            self.attrs.grid.north_pole_lat.value,
-            self.attrs.grid.north_pole_lon.value,
+            self.field.rlat,
+            self.field.rlon,
+            self.field.attrs.grid.north_pole_lat.value,
+            self.field.attrs.grid.north_pole_lon.value,
             **self.map_conf,
         )
 
@@ -313,19 +301,20 @@ class FlexPlot_Dispersion(FlexPlot):
 
         # Add marker at release site
         self.ax_map.marker(
-            self.attrs.release.lon.value,
-            self.attrs.release.lat.value,
+            self.field.attrs.release.lon.value,
+            self.field.attrs.release.lat.value,
             **self._site_marker_kwargs,
         )
 
         # Add marker at location of maximum value
-        self.ax_map.mark_max(self.fld, **self._max_marker_kwargs)
+        self.ax_map.mark_max(self.field.fld, **self._max_marker_kwargs)
 
         return handle
 
     def _draw_contours(self):
+        fld = np.where(self.field.fld > 0, self.field.fld, np.nan)
         return self.ax_map.contourf(
-            np.log10(self.fld),
+            np.log10(fld),
             levels=self.levels_log10,
             colors=self.colors,
             extend=self.extend,
@@ -432,23 +421,23 @@ class FlexPlot_Dispersion(FlexPlot):
 
         if not 'tl' in skip_pos:
             # Top left: variable
-            s = f"{self.attrs.variable.long_name.value}"
+            s = f"{self.field.attrs.variable.long_name.value}"
             box.text('tl', s, size='x-large')
 
         if not 'tc' in skip_pos:
             # Top center: species
-            s = f"{self.attrs.species.name.format(join=' + ')}"
+            s = f"{self.field.attrs.species.name.format(join=' + ')}"
             box.text('tc', s, size='x-large')
 
         if not 'tr' in skip_pos:
             # Top right: datetime
-            timestep_fmtd = self.attrs.simulation.now.format()
+            timestep_fmtd = self.field.attrs.simulation.now.format()
             s = f"{timestep_fmtd}"
             box.text('tr', s, size='x-large')
 
         if not 'bl' in skip_pos:
             # Bottom left: integration time & level range
-            _sim = self.attrs.simulation
+            _sim = self.field.attrs.simulation
             if self.lang == 'en':
                 _sum, _since = 'Sum', 'since'
             elif self.lang == 'de':
@@ -456,19 +445,19 @@ class FlexPlot_Dispersion(FlexPlot):
             s = (
                 f"{_sim.format_integr_period()} {_sum} "
                 f"({_since} {_sim.integr_start.format(relative=True)})")
-            lvl_range = self.attrs.variable.format_level_range()
+            lvl_range = self.field.attrs.variable.format_level_range()
             if lvl_range:
                 s = f"{s}, {lvl_range}"
             box.text('bl', s, size='large')
 
         if not 'bc' in skip_pos:
             # Bottom center: release site
-            s = f"{self.attrs.release.site_name.value}"
+            s = f"{self.field.attrs.release.site_name.value}"
             box.text('bc', s, size='large')
 
         if not 'br' in skip_pos:
             # Bottom right: time into simulation
-            s = self.attrs.simulation.now.format(relative=True)
+            s = self.field.attrs.simulation.now.format(relative=True)
             box.text('br', s, size='large')
 
     def fill_box_right_top(
@@ -522,12 +511,12 @@ class FlexPlot_Dispersion(FlexPlot):
 
         # Field maximum
         fld_max_fmtd = f'{self.labels.release.max}: '
-        if np.isnan(self.fld).all():
+        if np.isnan(self.field.fld).all():
             fld_max_fmtd += 'NaN'
         else:
             fld_max_fmtd += (
-                f'{np.nanmax(self.fld):.2E}'
-                f' {self.attrs.variable.unit.format()}')
+                f'{np.nanmax(self.field.fld):.2E}'
+                f' {self.field.attrs.variable.unit.format()}')
 
         # Add maximum value marker
         dy_max = dy0_labels - dy_spacing - dy_spacing_markers - dy_line
@@ -555,12 +544,12 @@ class FlexPlot_Dispersion(FlexPlot):
         )
         s = (
             f"{self.labels.release.site_name}: "
-            f"{self.attrs.release.site_name.value}")
+            f"{self.field.attrs.release.site_name.value}")
         box.text(loc='bl', s=s, dx=5.5, dy=dy_site, size='small')
 
     def _format_legend_box_title(self):
-        s = f"{self.attrs.variable.short_name.format()}"
-        s += f" ({self.attrs.variable.unit.format()})"
+        s = f"{self.field.attrs.variable.short_name.format()}"
+        s += f" ({self.field.attrs.variable.unit.format()})"
         return s
 
     def _format_level_ranges(self, n=15):
@@ -675,18 +664,18 @@ class FlexPlot_Dispersion(FlexPlot):
         box.text('tc', s, dy=-1.5, size='large')
 
         # Release site coordinates
-        _lat = Degrees(self.attrs.release.lat.value)
+        _lat = Degrees(self.field.attrs.release.lat.value)
         lat_fmtd = (
             f"{_lat.degs()}$^\circ\,${_lat.mins()}'$\,$N"
             f" ({_lat.frac():.2f}$^\circ\,$N)")
-        _lon = Degrees(self.attrs.release.lon.value)
+        _lon = Degrees(self.field.attrs.release.lon.value)
         _east = {'en': 'E', 'de': 'O'}[self.lang]
         lon_fmtd = (
             f"{_lon.degs()}$^\circ\,${_lon.mins()}'$\,${_east}"
             f" ({_lon.frac():.2f}$^\circ\,${_east})")
 
         l = self.labels
-        a = self.attrs
+        a = self.field.attrs
         info_blocks = dedent(
             f"""\
             {l.release.lat}:\t{lat_fmtd}
@@ -730,8 +719,8 @@ class FlexPlot_Dispersion(FlexPlot):
         box.text('tr', dx=0.7, dy=0.5, s=cpright_fmtd, size='small')
 
     def _flexpart_model_info(self):
-        model = self.attrs.simulation.model_name.value
-        simstart_fmtd = self.attrs.simulation.start.format()
+        model = self.field.attrs.simulation.model_name.value
+        simstart_fmtd = self.field.attrs.simulation.start.format()
         return (
             f"{self.labels.simulation.flexpart_based_on} {model}, "
             f"{simstart_fmtd}")
@@ -764,7 +753,7 @@ class FlexPlot_Dispersion(FlexPlot):
             n = len(self.colors)
 
         # Fetch maximum value over all time steps
-        log10_max = int(np.floor(np.log10(self.time_stats['max'])))
+        log10_max = int(np.floor(np.log10(self.field.time_stats['max'])))
 
         # Define levels (logarithmic and linear)
         log10_d = 1
@@ -837,8 +826,8 @@ FlexPlot.AffectedAreaMono = FlexPlot_AffectedAreaMono
 class FlexPlot_Ens:
 
     def _flexpart_model_info(self):
-        model = self.attrs.simulation.model_name.value
-        simstart_fmtd = self.attrs.simulation.start.format()
+        model = self.field.attrs.simulation.model_name.value
+        simstart_fmtd = self.field.attrs.simulation.start.format()
         return (
             f"{self.labels.simulation.flexpart_based_on} {model} Ensemble, "
             f"{simstart_fmtd} (??? Members: ???)")
@@ -889,14 +878,14 @@ class FlexPlot_EnsThresholdAgreementConcentration(FlexPlot_Ens,
             extend_plot = self.extend
 
         return self.ax_map.contourf(
-            self.fld,
+            self.field.fld,
             levels=self.levels,
             colors=colors_plot,
             extend=extend_plot,
         )
 
     def _format_legend_box_title(self):
-        name = self.attrs.variable.short_name.format()
+        name = self.field.attrs.variable.short_name.format()
         #thresh = 
         ipython(globals(), locals(), f'{type(self).__name__}._format_legend_box_title')
         return f"{name} $\geq$ {thresh}"
