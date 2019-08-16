@@ -484,8 +484,7 @@ class FlexPlot_Dispersion(FlexPlot):
         box = self.axs_box[1]
 
         # Add box title
-        s = f"{self.attrs.variable.short_name.format()}"
-        s += f" ({self.attrs.variable.unit.format()})"
+        s = self._format_legend_box_title()
         box.text('tc', s=s, dy=1, size='large')
 
         # Format level ranges (contour plot legend)
@@ -558,6 +557,11 @@ class FlexPlot_Dispersion(FlexPlot):
             f"{self.labels.release.site_name}: "
             f"{self.attrs.release.site_name.value}")
         box.text(loc='bl', s=s, dx=5.5, dy=dy_site, size='small')
+
+    def _format_legend_box_title(self):
+        s = f"{self.attrs.variable.short_name.format()}"
+        s += f" ({self.attrs.variable.unit.format()})"
+        return s
 
     def _format_level_ranges(self, n=15):
         """Format the levels ranges for the contour plot legend."""
@@ -890,6 +894,12 @@ class FlexPlot_EnsThresholdAgreementConcentration(FlexPlot_Ens,
             colors=colors_plot,
             extend=extend_plot,
         )
+
+    def _format_legend_box_title(self):
+        name = self.attrs.variable.short_name.format()
+        #thresh = 
+        ipython(globals(), locals(), f'{type(self).__name__}._format_legend_box_title')
+        return f"{name} $\geq$ {thresh}"
 
     def _format_level(self, lvl):
         return f'{lvl}'

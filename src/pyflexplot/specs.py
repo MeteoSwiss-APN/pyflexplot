@@ -344,7 +344,7 @@ class FlexVarSpecs_EnsMeanConcentration(FlexVarSpecs_Concentration):
     def long_name(cls, lang, var_specs):
         return {
             'en': 'Ensemble-Mean Activity Concentration',
-            'de': r'Ensemblemittel der Aktivit$\mathrm{\"a}$tskonzentration',
+            'de': r'Ensemble-Mittel der Aktivit$\mathrm{\"a}$tskonzentration',
         }[lang]
 
 
@@ -354,11 +354,18 @@ class FlexVarSpecs_EnsThresholdAgreementConcentration(
     @classmethod
     def long_name(cls, lang, var_specs):
         s_de = (
-            r'Ensemblegrenzwert$\mathrm{\"u}$bereinstimmung '
+            r'Ensemble-Grenzwert$\mathrm{\"u}$bereinstimmung '
             r'der Aktivit$\mathrm{\"a}$tskonzentration')
         return {
             'en': 'Ensemble Threshold Agreement of Activity Concentration',
             'de': s_de,
+        }[lang]
+
+    @classmethod
+    def short_name(cls, lang, var_specs):
+        return {
+            'en': 'No. Members',
+            'de': 'Anz. Members',
         }[lang]
 
 
@@ -369,7 +376,7 @@ class FlexVarSpecs_EnsMeanDeposition(FlexVarSpecs_Deposition):
         dep_type = cls.deposition_type_long_name(lang, var_specs)
         return {
             'en': f'Ensemble-Mean {dep_type} Surface Deposition',
-            'de': f'Ensemblemittel-{dep_type}e Bodenablagerung',
+            'de': f'Ensemble-Mittel der {dep_type}en Bodenablagerung',
         }[lang]
 
 
@@ -380,7 +387,7 @@ class FlexVarSpecs_EnsMeanAffectedArea(FlexVarSpecs_AffectedArea):
         dep_type = cls.deposition_type_long_name(lang, var_specs)
         return {
             'en': f'Ensemble-Mean Affected Area ({dep_type})',
-            'de': f'Ensemblemittel des Beaufschlagtes Gebiets ({dep_type})',
+            'de': f'Ensemble-Mittel des Beaufschlagtes Gebiets ({dep_type})',
         }[lang]
 
 
@@ -675,23 +682,6 @@ class FlexFieldSpecs_Deposition(FlexFieldSpecs):
 
 class FlexFieldSpecs_AffectedArea(FlexFieldSpecs_Deposition):
     cls_var_specs = FlexVarSpecs_AffectedArea
-
-
-#SR_TODO<<<
-#
-#  * Need to somehow check that 'member_ids' is passed as an argument
-#    when creating a FlexFieldSpecs_End* instance!
-#
-#  * Currently, 'member_ids' just ends up among additional attributes
-#    (**addtl_attrs), causing failure later if it is not present but
-#    expected, but no check during initialization is performed!
-#
-#  * I already tried out an approach (keyword FlexFieldsSpecsMixin_Ens),
-#    but it failed because some way it was passed to the original
-#    `FlexFieldSpecs.__init__` and the corresponding method setting
-#    (and checking) additional attributes, where 'member_id' is not
-#    expected...
-#
 
 
 class FlexFieldSpecs_Ens:
