@@ -470,7 +470,7 @@ class TestReadFieldEnsemble_Single:
         """Read concentration field."""
         self.run(
             datadir,
-            cls_fld_specs=FlexFieldSpecs.EnsMeanConcentration,
+            cls_fld_specs=FlexFieldSpecs.EnsMean_Concentration,
             dims={
                 **self.dims_shared, 'level': 1
             },
@@ -630,7 +630,7 @@ class TestReadFieldEnsemble_Multiple:
             datadir,
             'threshold-agreement',
             separate=False,
-            cls_fld_specs=FlexFieldSpecs.EnsThrAgrmtConcentration)
+            cls_fld_specs=FlexFieldSpecs.EnsThrAgrmt_Concentration)
 
     #------------------------------------------------------------------
     # Deposition

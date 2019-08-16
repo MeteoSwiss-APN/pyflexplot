@@ -591,7 +591,7 @@ class AffectedArea(ClickCommand):
 #----------------------------------------------------------------------
 
 
-class EnsMeanConcentration(ClickCommand):
+class EnsMean_Concentration(ClickCommand):
 
     @click_options
     def options():
@@ -615,7 +615,7 @@ class EnsMeanConcentration(ClickCommand):
         lang = ctx.obj['lang']
 
         # Determine fields specifications (one for each eventual plot)
-        fld_specs_lst = FlexFieldSpecs.EnsMeanConcentration.multiple(
+        fld_specs_lst = FlexFieldSpecs.EnsMean_Concentration.multiple(
             vars_specs, member_ids=member_id_lst, ens_var='mean', lang=lang)
 
         # Read fields
@@ -625,13 +625,13 @@ class EnsMeanConcentration(ClickCommand):
         # Create plots
         create_plots(
             ctx,
-            FlexPlotter.EnsMeanConcentration,
+            FlexPlotter.EnsMean_Concentration,
             [flex_field_lst, out_file_path_fmt],
             {'lang': lang},
         )
 
 
-class EnsMeanDeposition(ClickCommand):
+class EnsMean_Deposition(ClickCommand):
 
     @click_options
     def options():
@@ -655,7 +655,7 @@ class EnsMeanDeposition(ClickCommand):
         lang = ctx.obj['lang']
 
         # Determine fields specifications (one for each eventual plot)
-        fld_specs_lst = FlexFieldSpecs.EnsMeanDeposition.multiple(
+        fld_specs_lst = FlexFieldSpecs.EnsMean_Deposition.multiple(
             vars_specs, member_ids=member_id_lst, ens_var='mean', lang=lang)
 
         # Read fields
@@ -665,7 +665,7 @@ class EnsMeanDeposition(ClickCommand):
         # Create plots
         create_plots(
             ctx,
-            FlexPlotter.EnsMeanDeposition,
+            FlexPlotter.EnsMean_Deposition,
             [flex_field_lst, out_file_path_fmt],
             {'lang': lang},
         )
@@ -761,7 +761,7 @@ class EnsThrAgrmt(ClickCommand):
         #SR_TMP>
 
         # Determine fields specifications (one for each eventual plot)
-        _cls = FlexFieldSpecs.EnsThrAgrmtConcentration
+        _cls = FlexFieldSpecs.EnsThrAgrmt_Concentration
         fld_specs_lst = _cls.multiple(
             vars_specs,
             member_ids=member_id_lst,
@@ -776,7 +776,7 @@ class EnsThrAgrmt(ClickCommand):
         # Create plots
         create_plots(
             ctx,
-            FlexPlotter.EnsThrAgrmtConcentration,
+            FlexPlotter.EnsThrAgrmt_Concentration,
             [flex_field_lst, out_file_path_fmt],
             {'lang': lang},
         )

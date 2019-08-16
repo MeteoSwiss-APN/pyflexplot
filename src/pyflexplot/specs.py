@@ -338,7 +338,7 @@ class FlexVarSpecs_AffectedArea(FlexVarSpecs_Deposition):
         }[lang]
 
 
-class FlexVarSpecs_EnsMeanConcentration(FlexVarSpecs_Concentration):
+class FlexVarSpecs_EnsMean_Concentration(FlexVarSpecs_Concentration):
 
     @classmethod
     def long_name(cls, lang, var_specs):
@@ -348,7 +348,7 @@ class FlexVarSpecs_EnsMeanConcentration(FlexVarSpecs_Concentration):
         }[lang]
 
 
-class FlexVarSpecs_EnsThrAgrmtConcentration(FlexVarSpecs_Concentration):
+class FlexVarSpecs_EnsThrAgrmt_Concentration(FlexVarSpecs_Concentration):
 
     @classmethod
     def long_name(cls, lang, var_specs):
@@ -363,12 +363,14 @@ class FlexVarSpecs_EnsThrAgrmtConcentration(FlexVarSpecs_Concentration):
     @classmethod
     def short_name(cls, lang, var_specs):
         return {
-            'en': 'No. Members',
-            'de': 'Anz. Members',
+            #'en': 'No. Members',
+            #'de': 'Anz. Members',
+            'en': 'Members',
+            'de': 'Members',
         }[lang]
 
 
-class FlexVarSpecs_EnsMeanDeposition(FlexVarSpecs_Deposition):
+class FlexVarSpecs_EnsMean_Deposition(FlexVarSpecs_Deposition):
 
     @classmethod
     def long_name(cls, lang, var_specs):
@@ -395,10 +397,10 @@ class FlexVarSpecs_EnsMeanAffectedArea(FlexVarSpecs_AffectedArea):
 FlexVarSpecs.Concentration = FlexVarSpecs_Concentration
 FlexVarSpecs.Deposition = FlexVarSpecs_Deposition
 FlexVarSpecs.AffectedArea = FlexVarSpecs_AffectedArea
-FlexVarSpecs.EnsMeanConcentration = FlexVarSpecs_EnsMeanConcentration
-FlexVarSpecs.EnsMeanDeposition = FlexVarSpecs_EnsMeanDeposition
+FlexVarSpecs.EnsMean_Concentration = FlexVarSpecs_EnsMean_Concentration
+FlexVarSpecs.EnsMean_Deposition = FlexVarSpecs_EnsMean_Deposition
 FlexVarSpecs.EnsMeanAffectedArea = FlexVarSpecs_EnsMeanAffectedArea
-FlexVarSpecs.EnsThrAgrmtConcentration = FlexVarSpecs_EnsThrAgrmtConcentration
+FlexVarSpecs.EnsThrAgrmt_Concentration = FlexVarSpecs_EnsThrAgrmt_Concentration
 
 #======================================================================
 # Field Specifications
@@ -686,14 +688,14 @@ class FlexFieldSpecs_Ens:
     pass
 
 
-class FlexFieldSpecs_EnsMeanConcentration(FlexFieldSpecs_Ens,
+class FlexFieldSpecs_EnsMean_Concentration(FlexFieldSpecs_Ens,
                                           FlexFieldSpecs_Concentration):
-    cls_var_specs = FlexVarSpecs_EnsMeanConcentration
+    cls_var_specs = FlexVarSpecs_EnsMean_Concentration
 
 
-class FlexFieldSpecs_EnsMeanDeposition(FlexFieldSpecs_Ens,
+class FlexFieldSpecs_EnsMean_Deposition(FlexFieldSpecs_Ens,
                                        FlexFieldSpecs_Deposition):
-    cls_var_specs = FlexVarSpecs_EnsMeanDeposition
+    cls_var_specs = FlexVarSpecs_EnsMean_Deposition
 
 
 class FlexFieldSpecs_EnsMeanAffectedArea(FlexFieldSpecs_Ens,
@@ -701,9 +703,9 @@ class FlexFieldSpecs_EnsMeanAffectedArea(FlexFieldSpecs_Ens,
     cls_var_specs = FlexVarSpecs_EnsMeanAffectedArea
 
 
-class FlexFieldSpecs_EnsThrAgrmtConcentration(FlexFieldSpecs_Ens,
+class FlexFieldSpecs_EnsThrAgrmt_Concentration(FlexFieldSpecs_Ens,
                                               FlexFieldSpecs_Concentration):
-    cls_var_specs = FlexVarSpecs_EnsThrAgrmtConcentration
+    cls_var_specs = FlexVarSpecs_EnsThrAgrmt_Concentration
 
 
 #----------------------------------------------------------------------
@@ -712,11 +714,11 @@ FlexFieldSpecs.Concentration = FlexFieldSpecs_Concentration
 FlexFieldSpecs.Deposition = FlexFieldSpecs_Deposition
 FlexFieldSpecs.AffectedArea = FlexFieldSpecs_AffectedArea
 FlexFieldSpecs.Ens = FlexFieldSpecs_Ens
-FlexFieldSpecs.EnsMeanConcentration = FlexFieldSpecs_EnsMeanConcentration
-FlexFieldSpecs.EnsMeanDeposition = FlexFieldSpecs_EnsMeanDeposition
+FlexFieldSpecs.EnsMean_Concentration = FlexFieldSpecs_EnsMean_Concentration
+FlexFieldSpecs.EnsMean_Deposition = FlexFieldSpecs_EnsMean_Deposition
 FlexFieldSpecs.EnsMeanAffectedArea = FlexFieldSpecs_EnsMeanAffectedArea
-FlexFieldSpecs.EnsThrAgrmtConcentration = (
-    FlexFieldSpecs_EnsThrAgrmtConcentration)
+FlexFieldSpecs.EnsThrAgrmt_Concentration = (
+    FlexFieldSpecs_EnsThrAgrmt_Concentration)
 
 #======================================================================
 

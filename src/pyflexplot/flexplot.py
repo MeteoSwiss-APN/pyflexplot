@@ -311,10 +311,12 @@ class FlexPlot_Dispersion(FlexPlot):
 
         return handle
 
+    def fld_nonzero(self):
+        return np.where(self.field.fld > 0, self.field.fld, np.nan)
+
     def _draw_contours(self):
-        fld = np.where(self.field.fld > 0, self.field.fld, np.nan)
         return self.ax_map.contourf(
-            np.log10(fld),
+            np.log10(self.fld_nonzero()),
             levels=self.levels_log10,
             colors=self.colors,
             extend=self.extend,
@@ -833,12 +835,12 @@ class FlexPlot_Ens:
             f"{simstart_fmtd} (??? Members: ???)")
 
 
-class FlexPlot_EnsMeanConcentration(FlexPlot_Ens, FlexPlot_Concentration):
+class FlexPlot_EnsMean_Concentration(FlexPlot_Ens, FlexPlot_Concentration):
 
     name = 'ens-mean-concentration'
 
 
-class FlexPlot_EnsMeanDeposition(FlexPlot_Ens, FlexPlot_Deposition):
+class FlexPlot_EnsMean_Deposition(FlexPlot_Ens, FlexPlot_Deposition):
 
     name = 'ens-mean-deposition'
 
@@ -854,7 +856,7 @@ class FlexPlot_EnsMeanAffectedAreaMono(FlexPlot_Ens,
     name = 'ens-mean-affected-area-mono'
 
 
-class FlexPlot_EnsThrAgrmtConcentration(FlexPlot_Ens, FlexPlot_Concentration):
+class FlexPlot_EnsThrAgrmt_Concentration(FlexPlot_Ens, FlexPlot_Concentration):
 
     name = 'ens-threshold-agreement-concentration'
     extend = 'min'
@@ -877,7 +879,7 @@ class FlexPlot_EnsThrAgrmtConcentration(FlexPlot_Ens, FlexPlot_Concentration):
             extend_plot = self.extend
 
         return self.ax_map.contourf(
-            self.field.fld,
+            self.fld_nonzero(),
             levels=self.levels,
             colors=colors_plot,
             extend=extend_plot,
@@ -885,16 +887,16 @@ class FlexPlot_EnsThrAgrmtConcentration(FlexPlot_Ens, FlexPlot_Concentration):
 
     def _format_legend_box_title(self):
         name = self.field.attrs.variable.short_name.format()
-        #thresh =
-        ipython(globals(), locals(), f'{type(self).__name__}._format_legend_box_title')
-        return f"{name} $\geq$ {thresh}"
+        thresh = self.field.field_specs.ens_var_setup['thr']
+        unit = self.field.attrs.variable.unit.format()
+        return f"{name} $\geq$ {thresh} {unit}"
 
     def _format_level(self, lvl):
         return f'{lvl}'
 
 
-FlexPlot.EnsMeanConcentration = FlexPlot_EnsMeanConcentration
-FlexPlot.EnsMeanDeposition = FlexPlot_EnsMeanDeposition
+FlexPlot.EnsMean_Concentration = FlexPlot_EnsMean_Concentration
+FlexPlot.EnsMean_Deposition = FlexPlot_EnsMean_Deposition
 FlexPlot.EnsMeanAffectedArea = FlexPlot_EnsMeanAffectedArea
 FlexPlot.EnsMeanAffectedAreaMono = FlexPlot_EnsMeanAffectedAreaMono
-FlexPlot.EnsThrAgrmtConcentration = FlexPlot_EnsThrAgrmtConcentration
+FlexPlot.EnsThrAgrmt_Concentration = FlexPlot_EnsThrAgrmt_Concentration
