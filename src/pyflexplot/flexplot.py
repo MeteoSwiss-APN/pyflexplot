@@ -595,12 +595,13 @@ class Plot_Dispersion(Plot):
             elif self.level_range_style == 'down':
                 label = f"< {lvl1_fmtd:<}"
             elif self.level_range_style == 'up':
-                label = f"$\geq$ {lvl0_fmtd:<}"
+                label = r'$\geq$' + f" {lvl0_fmtd:<}"
             elif self.level_range_style == 'and':
-                label = f"$\geq$ {lvl0_fmtd:>} & < {lvl1_fmtd:<}"
+                label = r'$\geq$' + f" {lvl0_fmtd:>} & < {lvl1_fmtd:<}"
             elif self.level_range_style == 'var':
                 label = (
-                    f"{lvl0_fmtd:>} $\leq$ {level_range_var} < {lvl1_fmtd:<}")
+                    f"{lvl0_fmtd:>} " + r'$\leq$' + f" {level_range_var} < "
+                    f"{lvl1_fmtd:<}")
             else:
                 raise Exception(
                     f"unknown level range style '{self.level_range_style}'")
@@ -608,7 +609,7 @@ class Plot_Dispersion(Plot):
         else:
             # Open-ended range
             if lvl0 is not None:
-                op = '$\geq$'
+                op = r'$\geq$'
                 lvl = lvl0
             elif lvl1 is not None:
                 op = '<'
@@ -668,13 +669,13 @@ class Plot_Dispersion(Plot):
         # Release site coordinates
         _lat = Degrees(self.field.attrs.release.lat.value)
         lat_fmtd = (
-            f"{_lat.degs()}$^\circ\,${_lat.mins()}'$\,$N"
-            f" ({_lat.frac():.2f}$^\circ\,$N)")
+            f"{_lat.degs()}" + r'$^\circ\,$' + f"{_lat.mins()}'" + r'$\,$N'
+            f" ({_lat.frac():.2f}" + r'$^\circ\,$N)')
         _lon = Degrees(self.field.attrs.release.lon.value)
         _east = {'en': 'E', 'de': 'O'}[self.lang]
         lon_fmtd = (
-            f"{_lon.degs()}$^\circ\,${_lon.mins()}'$\,${_east}"
-            f" ({_lon.frac():.2f}$^\circ\,${_east})")
+            f"{_lon.degs()}" + r'$^\circ\,$' + f"{_lon.mins()}'" + r'$\,$'
+            f"{_east} ({_lon.frac():.2f}" + r'$^\circ\,$' + f"{_east})")
 
         l = self.labels
         a = self.field.attrs
@@ -889,7 +890,7 @@ class Plot_EnsThrAgrmt_Concentration(Plot_Ens, Plot_Concentration):
         name = self.field.attrs.variable.short_name.format()
         thresh = self.field.field_specs.ens_var_setup['thr']
         unit = self.field.attrs.variable.unit.format()
-        return f"{name} $\geq$ {thresh} {unit}"
+        return f"{name} ("r'$\geq$'f" {thresh} {unit})"
 
     def _format_level(self, lvl):
         return f'{lvl}'
