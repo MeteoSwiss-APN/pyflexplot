@@ -272,7 +272,7 @@ class GlobalOptions(ClickOptionsGroup):
     def input_ensemble():
         return [
             click.option(
-                '--infile-fmt',
+                '--infile',
                 '-i',
                 'in_file_path_fmt',
                 help=(
@@ -737,7 +737,7 @@ class EnsThrAgrmt(ClickCommand):
         ]
 
     @CLI.command(
-        name='ens-threshold-agreement-concentration',
+        name='ens-thr-agrmt-concentration',
         help=(
             "Ensemble threshold agreement of activity concentration "
             "in the air."),
@@ -749,7 +749,7 @@ class EnsThrAgrmt(ClickCommand):
     @Concentration.options
     @options
     @click.pass_context
-    def end_threshold_agreement_concentration(
+    def ens_thr_agrmt_concentration(
             ctx, in_file_path_fmt, out_file_path_fmt, member_id_lst, threshold,
             **vars_specs):
 
