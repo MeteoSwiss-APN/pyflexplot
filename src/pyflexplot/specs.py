@@ -689,22 +689,20 @@ class FieldSpecs_Ens:
 
 
 class FieldSpecs_EnsMean_Concentration(FieldSpecs_Ens,
-                                          FieldSpecs_Concentration):
+                                       FieldSpecs_Concentration):
     cls_var_specs = VarSpecs_EnsMean_Concentration
 
 
-class FieldSpecs_EnsMean_Deposition(FieldSpecs_Ens,
-                                       FieldSpecs_Deposition):
+class FieldSpecs_EnsMean_Deposition(FieldSpecs_Ens, FieldSpecs_Deposition):
     cls_var_specs = VarSpecs_EnsMean_Deposition
 
 
-class FieldSpecs_EnsMeanAffectedArea(FieldSpecs_Ens,
-                                         FieldSpecs_AffectedArea):
+class FieldSpecs_EnsMeanAffectedArea(FieldSpecs_Ens, FieldSpecs_AffectedArea):
     cls_var_specs = VarSpecs_EnsMeanAffectedArea
 
 
 class FieldSpecs_EnsThrAgrmt_Concentration(FieldSpecs_Ens,
-                                              FieldSpecs_Concentration):
+                                           FieldSpecs_Concentration):
     cls_var_specs = VarSpecs_EnsThrAgrmt_Concentration
 
 
@@ -717,8 +715,7 @@ FieldSpecs.Ens = FieldSpecs_Ens
 FieldSpecs.EnsMean_Concentration = FieldSpecs_EnsMean_Concentration
 FieldSpecs.EnsMean_Deposition = FieldSpecs_EnsMean_Deposition
 FieldSpecs.EnsMeanAffectedArea = FieldSpecs_EnsMeanAffectedArea
-FieldSpecs.EnsThrAgrmt_Concentration = (
-    FieldSpecs_EnsThrAgrmt_Concentration)
+FieldSpecs.EnsThrAgrmt_Concentration = (FieldSpecs_EnsThrAgrmt_Concentration)
 
 #======================================================================
 

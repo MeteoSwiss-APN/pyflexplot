@@ -640,8 +640,7 @@ class AttrGroupCollection:
             try:
                 cls = cls_by_name[name]
             except KeyError:
-                raise ValueError(
-                    f"missing AttrGroup class for name '{name}'")
+                raise ValueError(f"missing AttrGroup class for name '{name}'")
             #SR_TMP<
             for key, attr in [(k, v) for k, v in attrs.items()]:
                 if isinstance(attr, Attr) and attr.unit is not None:

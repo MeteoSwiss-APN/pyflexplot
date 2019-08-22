@@ -474,8 +474,7 @@ class Concentration(ClickCommand):
             vars_specs, lang=lang)
 
         # Read fields
-        flex_field_lst = FileReader(in_file_path).run(
-            fld_specs_lst, lang=lang)
+        flex_field_lst = FileReader(in_file_path).run(fld_specs_lst, lang=lang)
 
         # Create plots
         create_plots(
@@ -519,8 +518,7 @@ class Deposition(ClickCommand):
         lang = ctx.obj['lang']
 
         # Determine fields specifications (one for each eventual plot)
-        field_specs_lst = FieldSpecs.Deposition.multiple(
-            vars_specs, lang=lang)
+        field_specs_lst = FieldSpecs.Deposition.multiple(vars_specs, lang=lang)
 
         # Read fields
         flex_field_lst = FileReader(in_file_path).run(

@@ -233,13 +233,14 @@ class Plot_Dispersion(Plot):
     figsize = (12, 9)
     extend = 'max'
     level_range_style = 'simple'
-        # simple        : 10-15 / 15-20
-        # simple-int    : 10-14 / 15-19
-        #'math'         : [10, 20)
-        #'down'         : < 15 /  < 20
-        #'up'           : >= 10 / >= 15
-        #'and'          : >= 10 & < 15 / >= 15 & < 20
-        #'var'          : 10 <= v < 15 / 15 <= v < 20
+
+    # simple        : 10-15 / 15-20
+    # simple-int    : 10-14 / 15-19
+    #'math'         : [10, 20)
+    #'down'         : < 15 /  < 20
+    #'up'           : >= 10 / >= 15
+    #'and'          : >= 10 & < 15 / >= 15 & < 20
+    #'var'          : 10 <= v < 15 / 15 <= v < 20
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -926,7 +927,7 @@ class Plot_EnsThrAgrmt_Concentration(Plot_Ens, Plot_Concentration):
         name = self.field.attrs.variable.short_name.format()
         thresh = self.field.field_specs.ens_var_setup['thr']
         unit = self.field.attrs.variable.unit.format()
-        return f"{name} ("r'$\geq$'f" {thresh} {unit})"
+        return f"{name} (" r'$\geq$' f" {thresh} {unit})"
 
     def _format_level(self, lvl):
         return f'{lvl}'

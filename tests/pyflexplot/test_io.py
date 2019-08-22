@@ -212,8 +212,7 @@ class TestFieldSpecs_Multiple:
             **self.var_specs_mult_shared,
             'level_lst': [0, 2],
         }
-        fld_specs_mult_lst = FieldSpecs.Concentration.multiple(
-            var_specs_mult)
+        fld_specs_mult_lst = FieldSpecs.Concentration.multiple(var_specs_mult)
 
         # Create reference field specifications list
         fld_specs_mult_lst_ref = self.create_fld_specs_mult_lst_ref(
