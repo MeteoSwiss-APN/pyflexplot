@@ -343,8 +343,8 @@ class VarSpecs_EnsMean_Concentration(VarSpecs_Concentration):
     @classmethod
     def long_name(cls, lang, var_specs):
         return {
-            'en': 'Ensemble-Mean Activity Concentration',
-            'de': r'Ensemble-Mittel der Aktivit$\mathrm{\"a}$tskonzentration',
+            'en': 'Activity Concentration\nEnsemble-Mean',
+            'de': r'Aktivit$\mathrm{\"a}$tskonzentration\nEnsemble-Mittel',
         }[lang]
 
 
@@ -353,10 +353,10 @@ class VarSpecs_EnsThrAgrmt_Concentration(VarSpecs_Concentration):
     @classmethod
     def long_name(cls, lang, var_specs):
         s_de = (
-            r'Ensemble-Grenzwert$\mathrm{\"u}$bereinstimmung '
-            r'der Aktivit$\mathrm{\"a}$tskonzentration')
+            r'der\nAktivit$\mathrm{\"a}$tskonzentration\n'
+            r'Ensemble-Grenzwert$\mathrm{\"u}$bereinstimmung')
         return {
-            'en': 'Ensemble Threshold Agreement of Activity Concentration',
+            'en': 'Activity Concentration\nEnsemble Threshold Agreement',
             'de': s_de,
         }[lang]
 

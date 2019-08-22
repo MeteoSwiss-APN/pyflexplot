@@ -232,15 +232,14 @@ class Plot_Dispersion(Plot):
     name = '__base__dispersion__'
     figsize = (12, 9)
     extend = 'max'
-    level_range_style = (
-        'simple'  # 10-20
-        #'simple-int'
-        #'math'  # [10, 20)
-        #'down'  # < 20
-        #'up'  # >= 10
-        #'and'  # >= 10 & < 20
-        #'var'  # 10 <= v < 20
-    )
+    level_range_style = 'simple'
+        # simple        : 10-15 / 15-20
+        # simple-int    : 10-14 / 15-19
+        #'math'         : [10, 20)
+        #'down'         : < 15 /  < 20
+        #'up'           : >= 10 / >= 15
+        #'and'          : >= 10 & < 15 / >= 15 & < 20
+        #'var'          : 10 <= v < 15 / 15 <= v < 20
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -290,6 +289,9 @@ class Plot_Dispersion(Plot):
         self.fill_box_right_bottom()
         self.fill_box_bottom()
 
+    def fld_nonzero(self):
+        return np.where(self.field.fld > 0, self.field.fld, np.nan)
+
     def draw_map_plot(self):
         """Plot the particle concentrations onto the map."""
 
@@ -311,9 +313,6 @@ class Plot_Dispersion(Plot):
 
         return handle
 
-    def fld_nonzero(self):
-        return np.where(self.field.fld > 0, self.field.fld, np.nan)
-
     def _draw_contours(self):
         return self.ax_map.contourf(
             np.log10(self.fld_nonzero()),
@@ -322,13 +321,19 @@ class Plot_Dispersion(Plot):
             extend=self.extend,
         )
 
-    def fig_add_text_boxes(
-            self,
-            h_rel_t=0.1,
-            h_rel_b=0.03,
-            w_rel_r=0.25,
-            pad_hor_rel=0.015,
-            h_rel_box_rt=0.46):
+    #==================================================================
+    # Text Boxes
+    #==================================================================
+
+    text_box_setup = {
+        'h_rel_t': 0.1,
+        'h_rel_b': 0.03,
+        'w_rel_r': 0.25,
+        'pad_hor_rel': 0.015,
+        'h_rel_box_rt': 0.46,
+    }
+
+    def fig_add_text_boxes(self):
         """Add empty text boxes to the figure around the map plot.
 
         Args:
@@ -352,6 +357,12 @@ class Plot_Dispersion(Plot):
                 height of both right boxees. Defaults to <TODO>.
 
         """
+
+        h_rel_t = self.text_box_setup['h_rel_t']
+        h_rel_b = self.text_box_setup['h_rel_b']
+        w_rel_r = self.text_box_setup['w_rel_r']
+        pad_hor_rel = self.text_box_setup['pad_hor_rel']
+        h_rel_box_rt = self.text_box_setup['h_rel_box_rt']
 
         # Freeze the map plot in order to fix it's coordinates (bbox)
         self.fig.canvas.draw()
@@ -414,6 +425,10 @@ class Plot_Dispersion(Plot):
                 show_border=False),
         ])
 
+    #------------------------------------------------------------------
+    # Top
+    #------------------------------------------------------------------
+
     def fill_box_top(self, *, skip_pos=None):
         """Fill the box above the map plot."""
         box = self.axs_box[0]
@@ -461,6 +476,10 @@ class Plot_Dispersion(Plot):
             # Bottom right: time into simulation
             s = self.field.attrs.simulation.now.format(relative=True)
             box.text('br', s, size='large')
+
+    #------------------------------------------------------------------
+    # Right/Top
+    #------------------------------------------------------------------
 
     def fill_box_right_top(
             self,
@@ -657,6 +676,10 @@ class Plot_Dispersion(Plot):
             assert '1' in fmtd
         return fmtd
 
+    #------------------------------------------------------------------
+    # Right/Bottom
+    #------------------------------------------------------------------
+
     def fill_box_right_bottom(self):
         """Fill the bottom box to the right of the map plot."""
         box = self.axs_box[2]
@@ -709,6 +732,10 @@ class Plot_Dispersion(Plot):
             reverse=True,
             size='small')
 
+    #------------------------------------------------------------------
+    # Bottom
+    #------------------------------------------------------------------
+
     def fill_box_bottom(self):
         """Fill the box to the bottom of the map plot."""
         box = self.axs_box[3]
@@ -727,6 +754,8 @@ class Plot_Dispersion(Plot):
         return (
             f"{self.labels.simulation.flexpart_based_on} {model}, "
             f"{simstart_fmtd}")
+
+    #==================================================================
 
     def define_colors(self):
 
@@ -828,6 +857,14 @@ Plot.AffectedAreaMono = Plot_AffectedAreaMono
 
 class Plot_Ens:
 
+    text_box_setup = {
+        'h_rel_t': 0.12,
+        'h_rel_b': 0.03,
+        'w_rel_r': 0.25,
+        'pad_hor_rel': 0.015,
+        'h_rel_box_rt': 0.46,
+    }
+
     def _flexpart_model_info(self):
         model = self.field.attrs.simulation.model_name.value
         simstart_fmtd = self.field.attrs.simulation.start.format()
@@ -851,8 +888,7 @@ class Plot_EnsMeanAffectedArea(Plot_Ens, Plot_AffectedArea):
     name = 'ens-mean-affected-area'
 
 
-class Plot_EnsMeanAffectedAreaMono(Plot_Ens,
-                                       Plot_AffectedAreaMono):
+class Plot_EnsMeanAffectedAreaMono(Plot_Ens, Plot_AffectedAreaMono):
 
     name = 'ens-mean-affected-area-mono'
 
@@ -866,7 +902,7 @@ class Plot_EnsThrAgrmt_Concentration(Plot_Ens, Plot_Concentration):
     def define_levels(self):
         n_max = 20  #SR_TMP
         n_lvl = len(self.colors) - 1
-        d = 1
+        d = 2
         self.levels = np.arange(n_max - d*(n_lvl - 1), n_max + d + 1, d)
 
     def _draw_contours(self):
