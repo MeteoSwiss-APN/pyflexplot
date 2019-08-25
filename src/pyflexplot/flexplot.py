@@ -221,11 +221,6 @@ class Plot:
         plt.close(self.fig)
 
 
-#----------------------------------------------------------------------
-# Deterministic Simulation
-#----------------------------------------------------------------------
-
-
 class Plot_Dispersion(Plot):
     """Base class for FLEXPART dispersion plots."""
 
@@ -431,11 +426,18 @@ class Plot_Dispersion(Plot):
     #------------------------------------------------------------------
 
     def fill_box_top(self, *, skip_pos=None):
-        """Fill the box above the map plot."""
+        """Fill the box above the map plot.
+
+        Args:
+            skip_pos (set, optional): Positions (e.g., 'tl' for top-left;
+                see ``pyflexplot.plot.BoxLocation`` for all options) to
+                be skipped. Defaults to ``{}``.
+
+        """
         box = self.axs_box[0]
 
         if skip_pos is None:
-            skip_pos = []
+            skip_pos = {}
 
         if not 'tl' in skip_pos:
             # Top left: variable
@@ -477,6 +479,8 @@ class Plot_Dispersion(Plot):
             # Bottom right: time into simulation
             s = self.field.attrs.simulation.now.format(relative=True)
             box.text('br', s, size='large')
+
+        return box
 
     #------------------------------------------------------------------
     # Right/Top
@@ -802,6 +806,11 @@ class Plot_Dispersion(Plot):
         return np.log10(self.levels)
 
 
+#----------------------------------------------------------------------
+# Deterministic Simulation
+#----------------------------------------------------------------------
+
+
 class Plot_Concentration(Plot_Dispersion):
     """FLEXPART plot of particle concentration at a certain level."""
 
@@ -865,6 +874,23 @@ class Plot_Ens:
         'pad_hor_rel': 0.015,
         'h_rel_box_rt': 0.46,
     }
+
+    def fill_box_top(self, *, skip_pos=None):
+
+        skip_pos_parent = {'tl'}
+        if skip_pos is None:
+            skip_pos = {}
+        else:
+            skip_pos_parent.update(set(skip_pos))
+
+        box = super().fill_box_top(skip_pos=skip_pos_parent)
+
+        if not 'tl' in skip_pos:
+            # Top left: variable
+            s = f"{self.field.attrs.variable.long_name.value}"
+            #+box.text('tl', s, size='x-large')
+            box.text('ml', s, size='x-large')
+
 
     def _flexpart_model_info(self):
         model = self.field.attrs.simulation.model_name.value

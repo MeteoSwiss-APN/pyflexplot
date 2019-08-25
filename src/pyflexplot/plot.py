@@ -985,9 +985,9 @@ class BoxLocation:
                     00      bl      bottom left
                     01      bc      bottom center
                     02      br      bottom right
-                    10      cl      center left
-                    11      cc      center
-                    12      cr      center right
+                    10      ml      middle left
+                    11      mc      middle
+                    12      mr      middle right
                     20      tl      top left
                     21      tc      top center
                     22      tr      top right
@@ -1020,8 +1020,8 @@ class BoxLocation:
         """Evaluate vertical location component."""
         if loc in (0, '0', 'b', 'bottom'):
             return 'b'
-        elif loc in (1, '1', 'c', 'center'):
-            return 'c'
+        elif loc in (1, '1', 'm', 'middle'):
+            return 'm'
         elif loc in (2, '2', 't', 'top'):
             return 't'
         raise ValueError(f"invalid vertical location component '{loc}'")
@@ -1040,7 +1040,7 @@ class BoxLocation:
         """Derive the vertical alignment variable."""
         return {
             'b': 'baseline',
-            'c': 'center_baseline',
+            'm': 'center_baseline',
             #'t': 'top_baseline',  # unfortunately nonexistent
             't': 'top',
         }[self.loc_y]
@@ -1057,7 +1057,7 @@ class BoxLocation:
         """Derive the vertical baseline variable."""
         return {
             'b': 0.0 + self.dy,
-            'c': 0.5,
+            'm': 0.5,
             't': 1.0 - self.dy,
         }[self.loc_y]
 
