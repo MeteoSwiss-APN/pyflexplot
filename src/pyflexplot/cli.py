@@ -343,6 +343,7 @@ class CLI(ClickGroup):
 
 
 class GlobalOptions(ClickOptionsGroup):
+    """Options shared by all types of plots."""
 
     @click_options
     def input():
@@ -399,7 +400,6 @@ class GlobalOptions(ClickOptionsGroup):
 
     @click_options
     def preproc():
-        """Common pre-processing options of dispersion plots."""
         return [
             click.option(
                 '--integrate/--no-integrate',
@@ -482,6 +482,17 @@ class ConcentrationOptions(ClickOptionsGroup):
             ),
         ]
 
+    @click_options
+    def plot():
+        return [
+            click.option(
+                '--plot-var',
+                help="What variable to plot/how to plot the input variable.",
+                type=click.Choice(['auto']),
+                default='auto',
+            )
+        ]
+
 
 class DepositionOptions(ClickOptionsGroup):
 
@@ -501,6 +512,21 @@ class DepositionOptions(ClickOptionsGroup):
             )
         ]
 
+    @click_options
+    def plot():
+        return [
+            click.option(
+                '--plot-var',
+                help="What variable to plot/how to plot the input variable.",
+                type=click.Choice([
+                    'auto',
+                    'affected_area',
+                    'affected_area_mono',
+                ]),
+                default='auto',
+            )
+        ]
+
 
 #======================================================================
 
@@ -515,10 +541,11 @@ class DepositionOptions(ClickOptionsGroup):
 @EnsembleOptions.input
 @EnsembleOptions.plot
 @ConcentrationOptions.input
+@ConcentrationOptions.plot
 @click.pass_context
 def concentration(
         ctx, in_file_path_raw, out_file_path_raw, ens_member_id_lst,
-        ens_var, **vars_specs):
+        plot_var, ens_var, **vars_specs):
 
     #SR_TMP<
     var_in = 'concentration'
@@ -545,73 +572,16 @@ def concentration(
 @EnsembleOptions.input
 @EnsembleOptions.plot
 @DepositionOptions.input
+@DepositionOptions.plot
 @click.pass_context
 def deposition(
         ctx, in_file_path_raw, out_file_path_raw, ens_member_id_lst,
-        ens_var, **vars_specs):
+        plot_var, ens_var, **vars_specs):
 
     #SR_TMP<
-    var_in = 'deposition'
-    #SR_TMP>
-
-    create_plots(
-        ctx,
-        var_in,
-        vars_specs,
-        ens_var,
-        ens_member_id_lst,
-        in_file_path_raw,
-        out_file_path_raw,
-    )
-
-
-@CLI.command(
-    name='affected-area',
-    help="Area affected by surface deposition.",
-)
-@GlobalOptions.input
-@GlobalOptions.preproc
-@GlobalOptions.output
-@EnsembleOptions.input
-@EnsembleOptions.plot
-@DepositionOptions.input
-@click.pass_context
-def affected_area(
-        ctx, in_file_path_raw, out_file_path_raw, ens_member_id_lst,
-        ens_var, **vars_specs):
-
-    #SR_TMP<
-    var_in = 'affected_area'
-    #SR_TMP>
-
-    create_plots(
-        ctx,
-        var_in,
-        vars_specs,
-        ens_var,
-        ens_member_id_lst,
-        in_file_path_raw,
-        out_file_path_raw,
-    )
-
-
-@CLI.command(
-    name='affected-area-mono',
-    help="Area affected by surface deposition (monochromatic).",
-)
-@GlobalOptions.input
-@GlobalOptions.preproc
-@GlobalOptions.output
-@EnsembleOptions.input
-@EnsembleOptions.plot
-@DepositionOptions.input
-@click.pass_context
-def affected_area(
-        ctx, in_file_path_raw, out_file_path_raw, ens_member_id_lst,
-        ens_var, **vars_specs):
-
-    #SR_TMP<
-    var_in = 'affected_area_mono'
+    var_in = {
+        'auto': 'deposition',
+    }.get(plot_var, plot_var)
     #SR_TMP>
 
     create_plots(
