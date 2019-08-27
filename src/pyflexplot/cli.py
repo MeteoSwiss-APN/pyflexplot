@@ -65,20 +65,17 @@ def click_options(f_options):
     return lambda f: functools.reduce(lambda x, opt: opt(x), f_options(), f)
 
 
-class ClickGroup:
-
-    def command(*args, **kwargs):
-        return CLI.cli.command(*args, **kwargs)
-
-
 class ClickOptionsGroup:
-
     pass
 
 
-class ClickCommand:
+# Show default values of options by default
+click.option = functools.partial(click.option, show_default=True)
 
-    pass
+
+context_settings = {
+    'help_option_names': ['-h', '--help'],  # Add short flag '-h'
+}
 
 
 #======================================================================
@@ -167,9 +164,10 @@ INT_LIST_PLUS_SEP_UNIQ = CharSepListParamType(
 
 #======================================================================
 
+
 def create_plots(
-        ctx, var_in, vars_specs, ens_var, ens_member_id_lst, in_file_path_raw,
-        out_file_path_raw):
+        *, ctx, var_in, ens_var, ens_member_id_lst, in_file_path_raw,
+        out_file_path_raw, **vars_specs):
     """Read and plot FLEXPART data.
 
     Args:
@@ -254,16 +252,15 @@ def open_plots(cmd, file_paths):
     cmd = cmd.format(file_paths=' '.join(file_paths))
     os.system(cmd)
 
+
 #======================================================================
 
-# Show default values of options by default
-click.option = functools.partial(click.option, show_default=True)
 
-
-class CLI(ClickGroup):
+class GlobalOptions(ClickOptionsGroup):
+    """Options shared by all types of plots."""
 
     @click_options
-    def options():
+    def execution():
         return [
             click.option(
                 '--dry-run',
@@ -310,40 +307,6 @@ class CLI(ClickGroup):
                 help="Like --open-first, but for all plots.",
             ),
         ]
-
-    @click.group(
-        context_settings={
-            'help_option_names': ['-h', '--help'],  # Add short flag '-h'
-        },)
-    @options
-    @click.pass_context
-    def cli(ctx, **kwargs):
-        """Point of entry."""
-
-        click.echo("Hi fellow PyPlotter!")
-        #click.echo(f"{len(kwargs)} kwargs:\n{pformat(kwargs)}\n")
-
-        log.basicConfig(level=count_to_log_level(kwargs['verbose']))
-
-        if kwargs['version']:
-            click.echo(__version__)
-            return 0
-
-        if kwargs.pop('dry_run'):
-            raise NotImplementedError("dry run")
-            return 0
-
-        # Ensure that ctx.obj exists and is a dict
-        ctx.ensure_object(dict)
-
-        # Store shared keyword arguments in ctx.obj
-        ctx.obj.update(kwargs)
-
-        return 0
-
-
-class GlobalOptions(ClickOptionsGroup):
-    """Options shared by all types of plots."""
 
     @click_options
     def input():
@@ -448,6 +411,7 @@ class EnsembleOptions(ClickOptionsGroup):
                     "must contain file format key '{member_id}'."),
                 type=int,
                 multiple=True,
+                required=True,
             ),
         ]
 
@@ -460,6 +424,7 @@ class EnsembleOptions(ClickOptionsGroup):
                     "Ensemble variable to plot. Requires ensemble simulation "
                     "data."),
                 type=click.Choice(['mean', 'max', 'thr_agrmt']),
+                required=True,
             )
         ]
 
@@ -531,9 +496,81 @@ class DepositionOptions(ClickOptionsGroup):
 #======================================================================
 
 
-@CLI.command(
+@click.group(context_settings=context_settings)
+@GlobalOptions.execution
+@click.pass_context
+def cli(ctx, **kwargs):
+    """Point of entry."""
+
+    click.echo("Hi fellow PyPlotter!")
+    #click.echo(f"{len(kwargs)} kwargs:\n{pformat(kwargs)}\n")
+
+    log.basicConfig(level=count_to_log_level(kwargs['verbose']))
+
+    if kwargs['version']:
+        click.echo(__version__)
+        return 0
+
+    if kwargs.pop('dry_run'):
+        raise NotImplementedError("dry run")
+        return 0
+
+    # Ensure that ctx.obj exists and is a dict
+    ctx.ensure_object(dict)
+
+    # Store shared keyword arguments in ctx.obj
+    ctx.obj.update(kwargs)
+
+    return 0
+
+
+#======================================================================
+
+
+@click.group()
+def deterministic():
+    return 0
+cli.add_command(deterministic)
+
+@click.group()
+def ensemble():
+    return 0
+
+cli.add_command(ensemble)
+
+@deterministic.command(
     name='concentration',
-    help="Activity concentration in the air.",
+    help="Activity concentration; deterministic simulation data.",
+)
+@GlobalOptions.input
+@GlobalOptions.preproc
+@GlobalOptions.output
+@ConcentrationOptions.input
+@ConcentrationOptions.plot
+@click.pass_context
+def deterministic_concentration(ctx, plot_var, **kwargs):
+    var_in = 'concentration'
+    create_plots(ctx=ctx, var_in=var_in, **kwargs)
+
+
+@deterministic.command(
+    name='deposition',
+    help="Surface deposition; deterministic simulation data.",
+)
+@GlobalOptions.input
+@GlobalOptions.preproc
+@GlobalOptions.output
+@DepositionOptions.input
+@DepositionOptions.plot
+@click.pass_context
+def deterministic_deposition(ctx, plot_var, **kwargs):
+    var_in = {'auto': 'deposition'}.get(plot_var, plot_var)
+    create_plots(ctx=ctx, var_in=var_in, **kwargs)
+
+
+@ensemble.command(
+    name='concentration',
+    help="Activity concentration; ensemble simulation data.",
 )
 @GlobalOptions.input
 @GlobalOptions.preproc
@@ -543,28 +580,14 @@ class DepositionOptions(ClickOptionsGroup):
 @ConcentrationOptions.input
 @ConcentrationOptions.plot
 @click.pass_context
-def concentration(
-        ctx, in_file_path_raw, out_file_path_raw, ens_member_id_lst,
-        plot_var, ens_var, **vars_specs):
-
-    #SR_TMP<
+def ensemble_concentration(ctx, plot_var, **kwargs):
     var_in = 'concentration'
-    #SR_TMP>
-
-    create_plots(
-        ctx,
-        var_in,
-        vars_specs,
-        ens_var,
-        ens_member_id_lst,
-        in_file_path_raw,
-        out_file_path_raw,
-    )
+    create_plots(ctx=ctx, var_in=var_in, **kwargs)
 
 
-@CLI.command(
+@ensemble.command(
     name='deposition',
-    help="Surface deposition.",
+    help="Surface deposition; ensemble simulation data.",
 )
 @GlobalOptions.input
 @GlobalOptions.preproc
@@ -574,28 +597,12 @@ def concentration(
 @DepositionOptions.input
 @DepositionOptions.plot
 @click.pass_context
-def deposition(
-        ctx, in_file_path_raw, out_file_path_raw, ens_member_id_lst,
-        plot_var, ens_var, **vars_specs):
-
-    #SR_TMP<
-    var_in = {
-        'auto': 'deposition',
-    }.get(plot_var, plot_var)
-    #SR_TMP>
-
-    create_plots(
-        ctx,
-        var_in,
-        vars_specs,
-        ens_var,
-        ens_member_id_lst,
-        in_file_path_raw,
-        out_file_path_raw,
-    )
+def ensemble_deposition(ctx, plot_var, **kwargs):
+    var_in = {'auto': 'deposition'}.get(plot_var, plot_var)
+    create_plots(ctx=ctx, var_in=var_in, **kwargs)
 
 
 #======================================================================
 
 if __name__ == "__main__":
-    sys.exit(CLI.main())  # pragma: no cover
+    sys.exit(cli())  # pragma: no cover
