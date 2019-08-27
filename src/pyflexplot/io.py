@@ -233,7 +233,7 @@ class FileReader:
             time_inds = self._time_inds_lst[i_fld_specs]
 
             member_ids = getattr(fld_specs_time, 'member_ids', None)
-            self.n_members = 1 if member_ids is None else len(member_ids)
+            self.n_members = 1 if not member_ids else len(member_ids)
             self.file_path_lst = self._prepare_file_path_lst(member_ids)
 
             log.debug(
@@ -258,7 +258,7 @@ class FileReader:
         fmt_keys = ['{member_id}', '{member_id:']
         fmt_key_in_path = any(k in self.file_path_fmt for k in fmt_keys)
 
-        if member_ids is None:
+        if not member_ids:
             if fmt_key_in_path:
                 raise ValueError(
                     "input file path contains format key '{member_id[:0?d]}' "
@@ -360,7 +360,7 @@ class FileReader:
             fld_time = np.nanmean(fld_time_mem, axis=0)
         elif ens_var == 'max':
             fld_time = np.nanmax(fld_time_mem, axis=0)
-        elif ens_var == 'threshold-agreement':
+        elif ens_var == 'thr_agrmt':
             try:
                 thr = ens_var_setup['thr']
             except KeyError:

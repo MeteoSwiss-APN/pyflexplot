@@ -15,6 +15,12 @@ class Plotter:
 
     cls_plot = None
 
+    subclasses = {}
+
+    @classmethod
+    def subclass(cls, name):
+        return cls.subclasses[name]
+
     # yapf: disable
     specs_fmt_keys = {
         'time'      : 'time_ind',
@@ -25,7 +31,7 @@ class Plotter:
     }
     # yapf: enable
 
-    def run(self, field, file_path_fmt, lang):
+    def run(self, field, file_path_fmt, *, lang='en', **kwargs_plot):
         """Create one or more plots.
 
         Args:
@@ -36,6 +42,12 @@ class Plotter:
                 Must contain all necessary format keys to avoid that
                 multiple files have the same name, but can be a plain
                 string if no variable assumes more than one value.
+
+            lang (str, optional): Language, e.g., 'de' for German.
+                Defaults to 'en' (English).
+
+            **kwargs_plot: Keyword arguments used to instatiate the
+                plot instance.
 
         Yields:
             str: Output file paths.
@@ -55,7 +67,7 @@ class Plotter:
             _w = len(str(len(data_lst)))
             print(f" {i_data+1:{_w}}/{len(data_lst)}  {file_path}")
 
-            self.cls_plot(field, lang).save(file_path)
+            self.cls_plot(field, lang=lang, **kwargs_plot).save(file_path)
 
             yield file_path
 
@@ -95,8 +107,8 @@ class Plotter:
         kwargs['lang'] = self.lang
 
         # Ensemble member ids
-        if isinstance(field_specs, FieldSpecs.Ens):
-            if field_specs.member_ids is None:
+        if isinstance(field_specs, FieldSpecs.subclass('ens')):
+            if not field_specs.member_ids:
                 kwargs['member_ids'] = None
             else:
                 member_ids_grouped = []
@@ -138,27 +150,30 @@ class Plotter:
 
 
 class Plotter_Concentration(Plotter):
-    cls_plot = Plot.Concentration
+    cls_plot = Plot.subclass('concentration')
 
 
 class Plotter_Deposition(Plotter):
-    cls_plot = Plot.Deposition
+    cls_plot = Plot.subclass('deposition')
 
 
 class Plotter_AffectedArea(Plotter):
-    cls_plot = Plot.AffectedArea
+    cls_plot = Plot.subclass('affected_area')
 
 
 class Plotter_AffectedAreaMono(Plotter):
-    cls_plot = Plot.AffectedAreaMono
+    cls_plot = Plot.subclass('affected_area_mono')
 
 
 #----------------------------------------------------------------------
 
-Plotter.Concentration = Plotter_Concentration
-Plotter.Deposition = Plotter_Deposition
-Plotter.AffectedArea = Plotter_AffectedArea
-Plotter.AffectedAreaMono = Plotter_AffectedAreaMono
+Plotter.subclasses.update({
+    'concentration': Plotter_Concentration,
+    'deposition': Plotter_Deposition,
+    'deposition': Plotter_Deposition,
+    'affected_area': Plotter_AffectedArea,
+    'affected_area_mono': Plotter_AffectedAreaMono,
+})
 
 #----------------------------------------------------------------------
 # Ensemble Simulation
@@ -166,29 +181,38 @@ Plotter.AffectedAreaMono = Plotter_AffectedAreaMono
 
 
 class Plotter_EnsMean_Concentration(Plotter):
-    cls_plot = Plot.EnsMean_Concentration
+    cls_plot = Plot.subclass('ens_mean_concentration')
 
 
 class Plotter_EnsMean_Deposition(Plotter):
-    cls_plot = Plot.EnsMean_Deposition
+    cls_plot = Plot.subclass('ens_mean_deposition')
 
 
-class Plotter_EnsMeanAffectedArea(Plotter):
-    cls_plot = Plot.EnsMeanAffectedArea
+class Plotter_EnsMean_AffectedArea(Plotter):
+    cls_plot = Plot.subclass('ens_mean_affected_area')
 
 
-class Plotter_EnsMeanAffectedAreaMono(Plotter):
-    cls_plot = Plot.EnsMeanAffectedAreaMono
+class Plotter_EnsMean_AffectedAreaMono(Plotter):
+    cls_plot = Plot.subclass('ens_mean_affected_area_mono')
 
 
 class Plotter_EnsThrAgrmt_Concentration(Plotter):
-    cls_plot = Plot.EnsThrAgrmt_Concentration
+    cls_plot = Plot.subclass('ens_thr_agrmt_concentration')
 
 
 #----------------------------------------------------------------------
 
-Plotter.EnsMean_Concentration = Plotter_EnsMean_Concentration
-Plotter.EnsMean_Deposition = Plotter_EnsMean_Deposition
-Plotter.EnsMeanAffectedArea = Plotter_EnsMeanAffectedArea
-Plotter.EnsMeanAffectedAreaMono = Plotter_EnsMeanAffectedAreaMono
-Plotter.EnsThrAgrmt_Concentration = Plotter_EnsThrAgrmt_Concentration
+#SR_TMP< TODO cleaner solution (separate input and ensemble variable)
+Plotter.subclasses.update({
+    'ens_mean_concentration':
+    Plotter_EnsMean_Concentration,
+    'ens_mean_deposition':
+    Plotter_EnsMean_Deposition,
+    'ens_mean_affected_area':
+    Plotter_EnsMean_AffectedArea,
+    'ens_mean_affected_area_mono':
+    Plotter_EnsMean_AffectedAreaMono,
+    'ens_thr_agrmt_concentration':
+    Plotter_EnsThrAgrmt_Concentration,
+})
+#SR_TMP>

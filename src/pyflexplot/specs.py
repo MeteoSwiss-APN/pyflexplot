@@ -348,6 +348,28 @@ class VarSpecs_EnsMean_Concentration(VarSpecs_Concentration):
         }[lang]
 
 
+class VarSpecs_EnsMean_Deposition(VarSpecs_Deposition):
+
+    @classmethod
+    def long_name(cls, lang, var_specs):
+        dep_type = cls.deposition_type_long_name(lang, var_specs)
+        return {
+            'en': f'Ensemble-Mean {dep_type} Surface Deposition',
+            'de': f'Ensemble-Mittel der {dep_type}en Bodenablagerung',
+        }[lang]
+
+
+class VarSpecs_EnsMean_AffectedArea(VarSpecs_AffectedArea):
+
+    @classmethod
+    def long_name(cls, lang, var_specs):
+        dep_type = cls.deposition_type_long_name(lang, var_specs)
+        return {
+            'en': f'Ensemble-Mean Affected Area ({dep_type})',
+            'de': f'Ensemble-Mittel des Beaufschlagtes Gebiets ({dep_type})',
+        }[lang]
+
+
 class VarSpecs_EnsThrAgrmt_Concentration(VarSpecs_Concentration):
 
     @classmethod
@@ -370,28 +392,6 @@ class VarSpecs_EnsThrAgrmt_Concentration(VarSpecs_Concentration):
         }[lang]
 
 
-class VarSpecs_EnsMean_Deposition(VarSpecs_Deposition):
-
-    @classmethod
-    def long_name(cls, lang, var_specs):
-        dep_type = cls.deposition_type_long_name(lang, var_specs)
-        return {
-            'en': f'Ensemble-Mean {dep_type} Surface Deposition',
-            'de': f'Ensemble-Mittel der {dep_type}en Bodenablagerung',
-        }[lang]
-
-
-class VarSpecs_EnsMeanAffectedArea(VarSpecs_AffectedArea):
-
-    @classmethod
-    def long_name(cls, lang, var_specs):
-        dep_type = cls.deposition_type_long_name(lang, var_specs)
-        return {
-            'en': f'Ensemble-Mean Affected Area ({dep_type})',
-            'de': f'Ensemble-Mittel des Beaufschlagtes Gebiets ({dep_type})',
-        }[lang]
-
-
 #----------------------------------------------------------------------
 
 VarSpecs.Concentration = VarSpecs_Concentration
@@ -399,7 +399,7 @@ VarSpecs.Deposition = VarSpecs_Deposition
 VarSpecs.AffectedArea = VarSpecs_AffectedArea
 VarSpecs.EnsMean_Concentration = VarSpecs_EnsMean_Concentration
 VarSpecs.EnsMean_Deposition = VarSpecs_EnsMean_Deposition
-VarSpecs.EnsMeanAffectedArea = VarSpecs_EnsMeanAffectedArea
+VarSpecs.EnsMeanAffectedArea = VarSpecs_EnsMean_AffectedArea
 VarSpecs.EnsThrAgrmt_Concentration = VarSpecs_EnsThrAgrmt_Concentration
 
 #======================================================================
@@ -414,6 +414,14 @@ class FieldSpecs:
 
     # Dimensions with optionally multiple values
     dims_opt_mult_vals = ['species_id']
+
+    # Derived classes (add manually after defining them)
+    subclasses = {}
+
+    @classmethod
+    def subclass(cls, name):
+        """Get a subclass by name."""
+        return cls.subclasses[name]
 
     def __init__(
             self,
@@ -697,8 +705,8 @@ class FieldSpecs_EnsMean_Deposition(FieldSpecs_Ens, FieldSpecs_Deposition):
     cls_var_specs = VarSpecs_EnsMean_Deposition
 
 
-class FieldSpecs_EnsMeanAffectedArea(FieldSpecs_Ens, FieldSpecs_AffectedArea):
-    cls_var_specs = VarSpecs_EnsMeanAffectedArea
+class FieldSpecs_EnsMean_AffectedArea(FieldSpecs_Ens, FieldSpecs_AffectedArea):
+    cls_var_specs = VarSpecs_EnsMean_AffectedArea
 
 
 class FieldSpecs_EnsThrAgrmt_Concentration(FieldSpecs_Ens,
@@ -708,14 +716,27 @@ class FieldSpecs_EnsThrAgrmt_Concentration(FieldSpecs_Ens,
 
 #----------------------------------------------------------------------
 
-FieldSpecs.Concentration = FieldSpecs_Concentration
-FieldSpecs.Deposition = FieldSpecs_Deposition
-FieldSpecs.AffectedArea = FieldSpecs_AffectedArea
-FieldSpecs.Ens = FieldSpecs_Ens
-FieldSpecs.EnsMean_Concentration = FieldSpecs_EnsMean_Concentration
-FieldSpecs.EnsMean_Deposition = FieldSpecs_EnsMean_Deposition
-FieldSpecs.EnsMeanAffectedArea = FieldSpecs_EnsMeanAffectedArea
-FieldSpecs.EnsThrAgrmt_Concentration = (FieldSpecs_EnsThrAgrmt_Concentration)
+FieldSpecs.subclasses.update({
+    'concentration': FieldSpecs_Concentration,
+    'deposition': FieldSpecs_Deposition,
+    'affected_area': FieldSpecs_AffectedArea,
+    'affected_area_mono': FieldSpecs_AffectedArea,
+})
+
+FieldSpecs.subclasses.update({
+    'ens':
+    FieldSpecs_Ens,
+    'ens_mean_concentration':
+    FieldSpecs_EnsMean_Concentration,
+    'ens_mean_deposition':
+    FieldSpecs_EnsMean_Deposition,
+    'ens_mean_affected_area':
+    FieldSpecs_EnsMean_AffectedArea,
+    'ens_mean_affected_area_mono':
+    FieldSpecs_EnsMean_AffectedArea,
+    'ens_thr_agrmt_concentration':
+    FieldSpecs_EnsThrAgrmt_Concentration,
+})
 
 #======================================================================
 

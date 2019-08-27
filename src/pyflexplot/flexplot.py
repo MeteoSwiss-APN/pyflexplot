@@ -166,6 +166,12 @@ class Plot:
 
     name = '__base__'
 
+    subclasses = {}
+
+    @classmethod
+    def subclass(cls, name):
+        return cls.subclasses[name]
+
     def __init__(self, field, lang='en'):
         """Create an instance of ``Plot``.
 
@@ -854,11 +860,13 @@ class Plot_AffectedAreaMono(Plot_AffectedArea):
         )
 
 
-Plot.Dispersion = Plot_Dispersion
-Plot.Concentration = Plot_Concentration
-Plot.Deposition = Plot_Deposition
-Plot.AffectedArea = Plot_AffectedArea
-Plot.AffectedAreaMono = Plot_AffectedAreaMono
+Plot.subclasses.update({
+    'dispersion': Plot_Dispersion,
+    'concentration': Plot_Concentration,
+    'deposition': Plot_Deposition,
+    'affected_area': Plot_AffectedArea,
+    'affected_area_mono': Plot_AffectedAreaMono,
+})
 
 #----------------------------------------------------------------------
 # Ensemble Simulation
@@ -885,12 +893,12 @@ class Plot_Ens:
 
         box = super().fill_box_top(skip_pos=skip_pos_parent)
 
+        #SR_TMP< TODO separate input and ensemble variables
         if not 'tl' in skip_pos:
             # Top left: variable
             s = f"{self.field.attrs.variable.long_name.value}"
-            #+box.text('tl', s, size='x-large')
-            box.text('ml', s, size='x-large')
-
+            box.text('tl', s, size='x-large')
+        #SR_TMP>
 
     def _flexpart_model_info(self):
         model = self.field.attrs.simulation.model_name.value
@@ -959,8 +967,15 @@ class Plot_EnsThrAgrmt_Concentration(Plot_Ens, Plot_Concentration):
         return f'{lvl}'
 
 
-Plot.EnsMean_Concentration = Plot_EnsMean_Concentration
-Plot.EnsMean_Deposition = Plot_EnsMean_Deposition
-Plot.EnsMeanAffectedArea = Plot_EnsMeanAffectedArea
-Plot.EnsMeanAffectedAreaMono = Plot_EnsMeanAffectedAreaMono
-Plot.EnsThrAgrmt_Concentration = Plot_EnsThrAgrmt_Concentration
+Plot.subclasses.update({
+    'ens_mean_concentration':
+    Plot_EnsMean_Concentration,
+    'ens_mean_deposition':
+    Plot_EnsMean_Deposition,
+    'ens_mean_affected_area':
+    Plot_EnsMeanAffectedArea,
+    'ens_mean_affected_area_mono':
+    Plot_EnsMeanAffectedAreaMono,
+    'ens_thr_agrmt_concentration':
+    Plot_EnsThrAgrmt_Concentration,
+})

@@ -256,130 +256,30 @@ class CLI(ClickGroup):
 class GlobalOptions(ClickOptionsGroup):
 
     @click_options
-    def input_deterministic():
+    def input():
         return [
             click.option(
                 '--infile',
                 '-i',
-                'in_file_path',
-                help="Input file path.",
-                type=click.Path(exists=True, readable=True),
-                required=True,
-            ),
-        ]
-
-    @click_options
-    def input_ensemble():
-        return [
-            click.option(
-                '--infile',
-                '-i',
-                'in_file_path_fmt',
+                'in_file_path_raw',
                 help=(
-                    "Input file path format string, containing format key "
-                    "'{member_id}' for the ensemble member. If the ids are "
-                    "zero-padded, use, e.g., '{member_id:03d}'."),
-                type=click.Path(exists=False, readable=True),
+                    "Input file path. If --ens-member-id is passed (ensemble "
+                    "simulation data), the path must contain the format key "
+                    "'{member_id}' (zero-padding: e.g., '{member_id:03d}')."),
+                type=str,
                 required=True,
             ),
             click.option(
-                '--member-id',
+                '--ens-member-id',
                 '-m',
-                'member_id_lst',
+                'ens_member_id_lst',
                 help=(
-                    "ID of ensemble member. Repeat for multiple members. "
-                    "Input file format key: {member_id}."),
+                    "Ensemble member id. Repeat for multiple members. Omit "
+                    "for deterministic simulation data. If passed, --infile "
+                    "must contain file format key '{member_id}'."),
                 type=int,
                 multiple=True,
-                required=True,
             ),
-        ]
-
-    @click_options
-    def output():
-        return [
-            click.option(
-                '--outfile',
-                '-o',
-                'out_file_path_fmt',
-                help=(
-                    "Output file path. If multiple plots are to be created, "
-                    "e.g., for multiple fields or levels, ``outfile`` must "
-                    "contain format keys for inserting all changing parameters "
-                    "(example: ``plot_lvl-{level}.png`` for multiple levels). "
-                    "The format key for the plotted variable is '{variable}'. "
-                    "See individual options for the respective format keys."),
-                type=click.Path(writable=True),
-                required=True,
-            ),
-        ]
-
-
-def create_plots(ctx, cls_plotter, args=None, kwargs=None):
-    """Create FLEXPART plots.
-
-    Args:
-        ctx (Context): Click context object.
-
-        cls_plotter (type): Plotter class, derived from Plotter.
-
-        args (list, optional): Positional arguments for ``cls_plotter.run``.
-            Defaults to [].
-
-        kwargs (dict, optional): Keyword arguments for ``cls_plotter.run``.
-            Defaults to {}.
-
-    """
-
-    if ctx.obj['noplot']:
-        return
-
-    if args is None:
-        args = []
-    if kwargs is None:
-        kwargs = {}
-
-    plotter = cls_plotter()
-
-    # Note: Plotter.run yields the output file paths on-the-go
-    out_file_paths = []
-    for i, out_file_path in enumerate(plotter.run(*args, **kwargs)):
-        out_file_paths.append(out_file_path)
-
-        if ctx.obj['open_first_cmd'] and i == 0:
-            # Open the first file as soon as it's available
-            open_plots(ctx.obj['open_first_cmd'], [out_file_path])
-
-    if ctx.obj['open_all_cmd']:
-        # Open all plots
-        open_plots(ctx.obj['open_all_cmd'], out_file_paths)
-
-
-def open_plots(cmd, file_paths):
-    """Open a plot file using a shell command."""
-
-    # If not yet included, append the output file path
-    if '{file_paths}' not in cmd:
-        cmd += ' {file_paths}'
-
-    # Ensure that the command is run in the background
-    if not cmd.rstrip().endswith('&'):
-        cmd += ' &'
-
-    # Run the command
-    cmd = cmd.format(file_paths=' '.join(file_paths))
-    os.system(cmd)
-
-
-#======================================================================
-
-
-class DispersionOptions(ClickOptionsGroup):
-
-    @click_options
-    def input():
-        """Common options of dispersion plots (field selection)."""
-        return [
             click.option(
                 '--time-ind',
                 'time_lst',
@@ -422,7 +322,7 @@ class DispersionOptions(ClickOptionsGroup):
 
     @click_options
     def preproc():
-        """Common options of dispersion plots (pre-processing)."""
+        """Common pre-processing options of dispersion plots."""
         return [
             click.option(
                 '--integrate/--no-integrate',
@@ -435,6 +335,128 @@ class DispersionOptions(ClickOptionsGroup):
                 multiple=True,
             ),
         ]
+
+    @click_options
+    def plot():
+        return [
+            click.option(
+                '--ens-var',
+                help=(
+                    "Ensemble variable to plot. Requires ensemble simulation "
+                    "data."),
+                type=click.Choice(['mean', 'max', 'thr_agrmt']),
+            )
+        ]
+
+    @click_options
+    def output():
+        return [
+            click.option(
+                '--outfile',
+                '-o',
+                'out_file_path_raw',
+                help=(
+                    "Output file path. If multiple plots are to be created, "
+                    "e.g., for multiple fields or levels, ``outfile`` must "
+                    "contain format keys for inserting all changing parameters "
+                    "(example: ``plot_lvl-{level}.png`` for multiple levels). "
+                    "The format key for the plotted variable is '{variable}'. "
+                    "See individual options for the respective format keys."),
+                type=click.Path(writable=True),
+                required=True,
+            ),
+        ]
+
+
+def create_plots(
+        ctx, var_in, vars_specs, ens_var, ens_member_id_lst, in_file_path_raw,
+        out_file_path_raw):
+    """Read and plot FLEXPART data.
+
+    Args:
+        TODO
+
+    """
+
+    #SR_TMP< TODO find cleaner solution
+    if ens_var is None:
+        cls_name = f'{var_in}'
+        ens_var_setup = None
+    else:
+        cls_name = f'ens_{ens_var}_{var_in}'
+        ens_var_setup = {
+            'thr_agrmt': {
+                'thr': 1e-9
+            },  #SR_TMP  #SR_HC
+        }.get(ens_var)
+    #SR_TMP>
+
+    field_lst = read_fields(
+        ctx, cls_name, vars_specs, ens_member_id_lst, ens_var, ens_var_setup,
+        in_file_path_raw)
+
+    if ctx.obj['noplot']:
+        return
+
+    # Prepare plotter
+    plotter = Plotter.subclass(cls_name)()
+    args = [field_lst, out_file_path_raw]
+    kwargs = {'lang': ctx.obj['lang']}
+    fct_plot = lambda: plotter.run(*args, **kwargs)
+
+    # Note: Plotter.run yields the output file paths on-the-go
+    out_file_paths = []
+    for i, out_file_path in enumerate(fct_plot()):
+        out_file_paths.append(out_file_path)
+
+        if ctx.obj['open_first_cmd'] and i == 0:
+            # Open the first file as soon as it's available
+            open_plots(ctx.obj['open_first_cmd'], [out_file_path])
+
+    if ctx.obj['open_all_cmd']:
+        # Open all plots
+        open_plots(ctx.obj['open_all_cmd'], out_file_paths)
+
+
+def read_fields(
+        ctx, cls_name, vars_specs, ens_member_id_lst, ens_var, ens_var_setup,
+        in_file_path_raw):
+
+    # Determine fields specifications (one for each eventual plot)
+    fld_specs_lst = FieldSpecs.subclass(cls_name).multiple(
+        vars_specs,
+        member_ids=ens_member_id_lst,
+        ens_var=ens_var,
+        ens_var_setup=ens_var_setup,
+        lang=ctx.obj['lang'],
+    )
+
+    # Read fields
+    field_lst = FileReader(in_file_path_raw).run(
+        fld_specs_lst,
+        lang=ctx.obj['lang'],
+    )
+
+    return field_lst
+
+
+def open_plots(cmd, file_paths):
+    """Open a plot file using a shell command."""
+
+    # If not yet included, append the output file path
+    if '{file_paths}' not in cmd:
+        cmd += ' {file_paths}'
+
+    # Ensure that the command is run in the background
+    if not cmd.rstrip().endswith('&'):
+        cmd += ' &'
+
+    # Run the command
+    cmd = cmd.format(file_paths=' '.join(file_paths))
+    os.system(cmd)
+
+
+#======================================================================
 
 
 class Concentration(ClickCommand):
@@ -459,29 +481,28 @@ class Concentration(ClickCommand):
         name='concentration',
         help="Activity concentration in the air.",
     )
-    @GlobalOptions.input_deterministic
+    @GlobalOptions.input
+    @GlobalOptions.preproc
+    @GlobalOptions.plot
     @GlobalOptions.output
-    @DispersionOptions.input
-    @DispersionOptions.preproc
     @options
     @click.pass_context
-    def concentration(ctx, in_file_path, out_file_path_fmt, **vars_specs):
+    def concentration(
+            ctx, in_file_path_raw, out_file_path_raw, ens_member_id_lst,
+            ens_var, **vars_specs):
 
-        lang = ctx.obj['lang']
+        #SR_TMP<
+        var_in = 'concentration'
+        #SR_TMP>
 
-        # Determine fields specifications (one for each eventual plot)
-        fld_specs_lst = FieldSpecs.Concentration.multiple(
-            vars_specs, lang=lang)
-
-        # Read fields
-        flex_field_lst = FileReader(in_file_path).run(fld_specs_lst, lang=lang)
-
-        # Create plots
         create_plots(
             ctx,
-            Plotter.Concentration,
-            [flex_field_lst, out_file_path_fmt],
-            {'lang': lang},
+            var_in,
+            vars_specs,
+            ens_var,
+            ens_member_id_lst,
+            in_file_path_raw,
+            out_file_path_raw,
         )
 
 
@@ -507,276 +528,84 @@ class Deposition(ClickCommand):
         name='deposition',
         help="Surface deposition.",
     )
-    @GlobalOptions.input_deterministic
+    @GlobalOptions.input
+    @GlobalOptions.preproc
+    @GlobalOptions.plot
     @GlobalOptions.output
-    @DispersionOptions.input
-    @DispersionOptions.preproc
     @options
     @click.pass_context
-    def deposition(ctx, in_file_path, out_file_path_fmt, **vars_specs):
+    def deposition(
+            ctx, in_file_path_raw, out_file_path_raw, ens_member_id_lst,
+            ens_var, **vars_specs):
 
-        lang = ctx.obj['lang']
+        #SR_TMP<
+        var_in = 'deposition'
+        #SR_TMP>
 
-        # Determine fields specifications (one for each eventual plot)
-        field_specs_lst = FieldSpecs.Deposition.multiple(vars_specs, lang=lang)
-
-        # Read fields
-        flex_field_lst = FileReader(in_file_path).run(
-            field_specs_lst, lang=lang)
-
-        # Create plots
         create_plots(
             ctx,
-            Plotter.Deposition,
-            [flex_field_lst, out_file_path_fmt],
-            {'lang': lang},
+            var_in,
+            vars_specs,
+            ens_var,
+            ens_member_id_lst,
+            in_file_path_raw,
+            out_file_path_raw,
         )
-
-
-class AffectedArea(ClickCommand):
-
-    @click_options
-    def options():
-        return [
-            click.option(
-                '--mono/--no-mono',
-                'mono_lst',
-                help="Only use one threshold (monochromatic plot).",
-                is_flag=True,
-                default=[False],
-                multiple=True,
-            ),
-        ]
 
     @CLI.command(
         name='affected-area',
         help="Area affected by surface deposition.",
     )
-    @GlobalOptions.input_deterministic
+    @GlobalOptions.input
+    @GlobalOptions.preproc
+    @GlobalOptions.plot
     @GlobalOptions.output
-    @DispersionOptions.input
-    @DispersionOptions.preproc
-    @Deposition.options
     @options
     @click.pass_context
     def affected_area(
-            ctx, in_file_path, out_file_path_fmt, mono_lst, **vars_specs):
-
-        lang = ctx.obj['lang']
-
-        # Determine fields specifications (one for each eventual plot)
-        field_specs_lst = FieldSpecs.AffectedArea.multiple(
-            vars_specs, lang=lang)
-
-        # Read fields
-        flex_field_lst = FileReader(in_file_path).run(
-            field_specs_lst, lang=lang)
-
-        # Create plots
-        for mono in mono_lst:
-            if mono:
-                fct = Plotter.AffectedAreaMono
-            else:
-                fct = Plotter.AffectedArea
-            create_plots(
-                ctx,
-                fct,
-                [flex_field_lst, out_file_path_fmt],
-                {'lang': lang},
-            )
-
-
-#----------------------------------------------------------------------
-
-
-class EnsMean_Concentration(ClickCommand):
-
-    @click_options
-    def options():
-        return []
-
-    @CLI.command(
-        name='ens-mean-concentration',
-        help="Ensemble-mean of activity concentration in the air.",
-    )
-    @GlobalOptions.input_ensemble
-    @GlobalOptions.output
-    @DispersionOptions.input
-    @DispersionOptions.preproc
-    @Concentration.options
-    @options
-    @click.pass_context
-    def end_mean_concentration(
-            ctx, in_file_path_fmt, out_file_path_fmt, member_id_lst,
-            **vars_specs):
-
-        lang = ctx.obj['lang']
-
-        # Determine fields specifications (one for each eventual plot)
-        fld_specs_lst = FieldSpecs.EnsMean_Concentration.multiple(
-            vars_specs, member_ids=member_id_lst, ens_var='mean', lang=lang)
-
-        # Read fields
-        flex_field_lst = FileReader(in_file_path_fmt).run(
-            fld_specs_lst, lang=lang)
-
-        # Create plots
-        create_plots(
-            ctx,
-            Plotter.EnsMean_Concentration,
-            [flex_field_lst, out_file_path_fmt],
-            {'lang': lang},
-        )
-
-
-class EnsMean_Deposition(ClickCommand):
-
-    @click_options
-    def options():
-        return []
-
-    @CLI.command(
-        name='ens-mean-deposition',
-        help="Ensemble-mean of surface deposition.",
-    )
-    @GlobalOptions.input_ensemble
-    @GlobalOptions.output
-    @DispersionOptions.input
-    @DispersionOptions.preproc
-    @Deposition.options
-    @options
-    @click.pass_context
-    def end_mean_deposition(
-            ctx, in_file_path_fmt, out_file_path_fmt, member_id_lst,
-            **vars_specs):
-
-        lang = ctx.obj['lang']
-
-        # Determine fields specifications (one for each eventual plot)
-        fld_specs_lst = FieldSpecs.EnsMean_Deposition.multiple(
-            vars_specs, member_ids=member_id_lst, ens_var='mean', lang=lang)
-
-        # Read fields
-        flex_field_lst = FileReader(in_file_path_fmt).run(
-            fld_specs_lst, lang=lang)
-
-        # Create plots
-        create_plots(
-            ctx,
-            Plotter.EnsMean_Deposition,
-            [flex_field_lst, out_file_path_fmt],
-            {'lang': lang},
-        )
-
-
-class EnsMeanAffectedArea(ClickCommand):
-
-    @click_options
-    def options():
-        return []
-
-    @CLI.command(
-        name='ens-mean-affected-area',
-        help="Ensemble-mean of area affected by surface deposition.",
-    )
-    @GlobalOptions.input_ensemble
-    @GlobalOptions.output
-    @DispersionOptions.input
-    @DispersionOptions.preproc
-    @Deposition.options
-    @AffectedArea.options
-    @options
-    @click.pass_context
-    def end_mean_affected_area(
-            ctx, in_file_path_fmt, out_file_path_fmt, mono_lst, member_id_lst,
-            **vars_specs):
-
-        lang = ctx.obj['lang']
-
-        # Determine fields specifications (one for each eventual plot)
-        fld_specs_lst = FieldSpecs.EnsMeanAffectedArea.multiple(
-            vars_specs, member_ids=member_id_lst, ens_var='mean', lang=lang)
-
-        # Read fields
-        flex_field_lst = FileReader(in_file_path_fmt).run(
-            fld_specs_lst, lang=lang)
-
-        # Create plots
-        for mono in mono_lst:
-            if mono:
-                fct = Plotter.EnsMeanAffectedAreaMono
-            else:
-                fct = Plotter.EnsMeanAffectedArea
-            create_plots(
-                ctx,
-                fct,
-                [flex_field_lst, out_file_path_fmt],
-                {'lang': lang},
-            )
-
-
-class EnsThrAgrmt(ClickCommand):
-
-    @click_options
-    def options():
-        return [
-            click.option(
-                '--threshold',
-                #'threshold_lst',
-                'threshold',
-                help=(
-                    "Threshold to be exceeded. Pass 'auto' to derive "
-                    "it automatically from the input field."),
-                type=FLOAT_OR_AUTO,
-                #default=['auto'],
-                #multiple=True,
-                default='auto',
-            ),
-        ]
-
-    @CLI.command(
-        name='ens-thr-agrmt-concentration',
-        help=(
-            "Ensemble threshold agreement of activity concentration "
-            "in the air."),
-    )
-    @GlobalOptions.input_ensemble
-    @GlobalOptions.output
-    @DispersionOptions.input
-    @DispersionOptions.preproc
-    @Concentration.options
-    @options
-    @click.pass_context
-    def ens_thr_agrmt_concentration(
-            ctx, in_file_path_fmt, out_file_path_fmt, member_id_lst, threshold,
-            **vars_specs):
-
-        lang = ctx.obj['lang']
+            ctx, in_file_path_raw, out_file_path_raw, ens_member_id_lst,
+            ens_var, **vars_specs):
 
         #SR_TMP<
-        if threshold == 'auto':
-            threshold = 0.0
+        var_in = 'affected_area'
         #SR_TMP>
 
-        # Determine fields specifications (one for each eventual plot)
-        _cls = FieldSpecs.EnsThrAgrmt_Concentration
-        fld_specs_lst = _cls.multiple(
-            vars_specs,
-            member_ids=member_id_lst,
-            ens_var='threshold-agreement',
-            ens_var_setup={'thr': threshold},
-            lang=lang)
-
-        # Read fields
-        flex_field_lst = FileReader(in_file_path_fmt).run(
-            fld_specs_lst, lang=lang)
-
-        # Create plots
         create_plots(
             ctx,
-            Plotter.EnsThrAgrmt_Concentration,
-            [flex_field_lst, out_file_path_fmt],
-            {'lang': lang},
+            var_in,
+            vars_specs,
+            ens_var,
+            ens_member_id_lst,
+            in_file_path_raw,
+            out_file_path_raw,
+        )
+
+    @CLI.command(
+        name='affected-area-mono',
+        help="Area affected by surface deposition (monochromatic).",
+    )
+    @GlobalOptions.input
+    @GlobalOptions.preproc
+    @GlobalOptions.plot
+    @GlobalOptions.output
+    @options
+    @click.pass_context
+    def affected_area(
+            ctx, in_file_path_raw, out_file_path_raw, ens_member_id_lst,
+            ens_var, **vars_specs):
+
+        #SR_TMP<
+        var_in = 'affected_area_mono'
+        #SR_TMP>
+
+        create_plots(
+            ctx,
+            var_in,
+            vars_specs,
+            ens_var,
+            ens_member_id_lst,
+            in_file_path_raw,
+            out_file_path_raw,
         )
 
 
