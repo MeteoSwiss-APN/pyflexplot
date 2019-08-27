@@ -167,6 +167,95 @@ INT_LIST_PLUS_SEP_UNIQ = CharSepListParamType(
 
 #======================================================================
 
+def create_plots(
+        ctx, var_in, vars_specs, ens_var, ens_member_id_lst, in_file_path_raw,
+        out_file_path_raw):
+    """Read and plot FLEXPART data.
+
+    Args:
+        TODO
+
+    """
+
+    #SR_TMP< TODO find cleaner solution
+    if ens_var is None:
+        cls_name = f'{var_in}'
+        ens_var_setup = None
+    else:
+        cls_name = f'ens_{ens_var}_{var_in}'
+        ens_var_setup = {
+            'thr_agrmt': {
+                'thr': 1e-9
+            },  #SR_TMP  #SR_HC
+        }.get(ens_var)
+    #SR_TMP>
+
+    field_lst = read_fields(
+        ctx, cls_name, vars_specs, ens_member_id_lst, ens_var, ens_var_setup,
+        in_file_path_raw)
+
+    if ctx.obj['noplot']:
+        return
+
+    # Prepare plotter
+    plotter = Plotter.subclass(cls_name)()
+    args = [field_lst, out_file_path_raw]
+    kwargs = {'lang': ctx.obj['lang']}
+    fct_plot = lambda: plotter.run(*args, **kwargs)
+
+    # Note: Plotter.run yields the output file paths on-the-go
+    out_file_paths = []
+    for i, out_file_path in enumerate(fct_plot()):
+        out_file_paths.append(out_file_path)
+
+        if ctx.obj['open_first_cmd'] and i == 0:
+            # Open the first file as soon as it's available
+            open_plots(ctx.obj['open_first_cmd'], [out_file_path])
+
+    if ctx.obj['open_all_cmd']:
+        # Open all plots
+        open_plots(ctx.obj['open_all_cmd'], out_file_paths)
+
+
+def read_fields(
+        ctx, cls_name, vars_specs, ens_member_id_lst, ens_var, ens_var_setup,
+        in_file_path_raw):
+
+    # Determine fields specifications (one for each eventual plot)
+    fld_specs_lst = FieldSpecs.subclass(cls_name).multiple(
+        vars_specs,
+        member_ids=ens_member_id_lst,
+        ens_var=ens_var,
+        ens_var_setup=ens_var_setup,
+        lang=ctx.obj['lang'],
+    )
+
+    # Read fields
+    field_lst = FileReader(in_file_path_raw).run(
+        fld_specs_lst,
+        lang=ctx.obj['lang'],
+    )
+
+    return field_lst
+
+
+def open_plots(cmd, file_paths):
+    """Open a plot file using a shell command."""
+
+    # If not yet included, append the output file path
+    if '{file_paths}' not in cmd:
+        cmd += ' {file_paths}'
+
+    # Ensure that the command is run in the background
+    if not cmd.rstrip().endswith('&'):
+        cmd += ' &'
+
+    # Run the command
+    cmd = cmd.format(file_paths=' '.join(file_paths))
+    os.system(cmd)
+
+#======================================================================
+
 # Show default values of options by default
 click.option = functools.partial(click.option, show_default=True)
 
@@ -263,22 +352,10 @@ class GlobalOptions(ClickOptionsGroup):
                 '-i',
                 'in_file_path_raw',
                 help=(
-                    "Input file path. If --ens-member-id is passed (ensemble "
-                    "simulation data), the path must contain the format key "
-                    "'{member_id}' (zero-padding: e.g., '{member_id:03d}')."),
+                    "Input file path. Might contain format keys, for instance "
+                    "in case of ensemble simulation data."),
                 type=str,
                 required=True,
-            ),
-            click.option(
-                '--ens-member-id',
-                '-m',
-                'ens_member_id_lst',
-                help=(
-                    "Ensemble member id. Repeat for multiple members. Omit "
-                    "for deterministic simulation data. If passed, --infile "
-                    "must contain file format key '{member_id}'."),
-                type=int,
-                multiple=True,
             ),
             click.option(
                 '--time-ind',
@@ -337,18 +414,6 @@ class GlobalOptions(ClickOptionsGroup):
         ]
 
     @click_options
-    def plot():
-        return [
-            click.option(
-                '--ens-var',
-                help=(
-                    "Ensemble variable to plot. Requires ensemble simulation "
-                    "data."),
-                type=click.Choice(['mean', 'max', 'thr_agrmt']),
-            )
-        ]
-
-    @click_options
     def output():
         return [
             click.option(
@@ -368,101 +433,41 @@ class GlobalOptions(ClickOptionsGroup):
         ]
 
 
-def create_plots(
-        ctx, var_in, vars_specs, ens_var, ens_member_id_lst, in_file_path_raw,
-        out_file_path_raw):
-    """Read and plot FLEXPART data.
-
-    Args:
-        TODO
-
-    """
-
-    #SR_TMP< TODO find cleaner solution
-    if ens_var is None:
-        cls_name = f'{var_in}'
-        ens_var_setup = None
-    else:
-        cls_name = f'ens_{ens_var}_{var_in}'
-        ens_var_setup = {
-            'thr_agrmt': {
-                'thr': 1e-9
-            },  #SR_TMP  #SR_HC
-        }.get(ens_var)
-    #SR_TMP>
-
-    field_lst = read_fields(
-        ctx, cls_name, vars_specs, ens_member_id_lst, ens_var, ens_var_setup,
-        in_file_path_raw)
-
-    if ctx.obj['noplot']:
-        return
-
-    # Prepare plotter
-    plotter = Plotter.subclass(cls_name)()
-    args = [field_lst, out_file_path_raw]
-    kwargs = {'lang': ctx.obj['lang']}
-    fct_plot = lambda: plotter.run(*args, **kwargs)
-
-    # Note: Plotter.run yields the output file paths on-the-go
-    out_file_paths = []
-    for i, out_file_path in enumerate(fct_plot()):
-        out_file_paths.append(out_file_path)
-
-        if ctx.obj['open_first_cmd'] and i == 0:
-            # Open the first file as soon as it's available
-            open_plots(ctx.obj['open_first_cmd'], [out_file_path])
-
-    if ctx.obj['open_all_cmd']:
-        # Open all plots
-        open_plots(ctx.obj['open_all_cmd'], out_file_paths)
-
-
-def read_fields(
-        ctx, cls_name, vars_specs, ens_member_id_lst, ens_var, ens_var_setup,
-        in_file_path_raw):
-
-    # Determine fields specifications (one for each eventual plot)
-    fld_specs_lst = FieldSpecs.subclass(cls_name).multiple(
-        vars_specs,
-        member_ids=ens_member_id_lst,
-        ens_var=ens_var,
-        ens_var_setup=ens_var_setup,
-        lang=ctx.obj['lang'],
-    )
-
-    # Read fields
-    field_lst = FileReader(in_file_path_raw).run(
-        fld_specs_lst,
-        lang=ctx.obj['lang'],
-    )
-
-    return field_lst
-
-
-def open_plots(cmd, file_paths):
-    """Open a plot file using a shell command."""
-
-    # If not yet included, append the output file path
-    if '{file_paths}' not in cmd:
-        cmd += ' {file_paths}'
-
-    # Ensure that the command is run in the background
-    if not cmd.rstrip().endswith('&'):
-        cmd += ' &'
-
-    # Run the command
-    cmd = cmd.format(file_paths=' '.join(file_paths))
-    os.system(cmd)
-
-
-#======================================================================
-
-
-class Concentration(ClickCommand):
+class EnsembleOptions(ClickOptionsGroup):
 
     @click_options
-    def options():
+    def input():
+        return [
+            click.option(
+                '--ens-member-id',
+                '-m',
+                'ens_member_id_lst',
+                help=(
+                    "Ensemble member id. Repeat for multiple members. Omit "
+                    "for deterministic simulation data. If passed, --infile "
+                    "must contain file format key '{member_id}'."),
+                type=int,
+                multiple=True,
+            ),
+        ]
+
+    @click_options
+    def plot():
+        return [
+            click.option(
+                '--ens-var',
+                help=(
+                    "Ensemble variable to plot. Requires ensemble simulation "
+                    "data."),
+                type=click.Choice(['mean', 'max', 'thr_agrmt']),
+            )
+        ]
+
+
+class ConcentrationOptions(ClickOptionsGroup):
+
+    @click_options
+    def input():
         return [
             click.option(
                 '--level-ind',
@@ -477,39 +482,11 @@ class Concentration(ClickCommand):
             ),
         ]
 
-    @CLI.command(
-        name='concentration',
-        help="Activity concentration in the air.",
-    )
-    @GlobalOptions.input
-    @GlobalOptions.preproc
-    @GlobalOptions.plot
-    @GlobalOptions.output
-    @options
-    @click.pass_context
-    def concentration(
-            ctx, in_file_path_raw, out_file_path_raw, ens_member_id_lst,
-            ens_var, **vars_specs):
 
-        #SR_TMP<
-        var_in = 'concentration'
-        #SR_TMP>
-
-        create_plots(
-            ctx,
-            var_in,
-            vars_specs,
-            ens_var,
-            ens_member_id_lst,
-            in_file_path_raw,
-            out_file_path_raw,
-        )
-
-
-class Deposition(ClickCommand):
+class DepositionOptions(ClickOptionsGroup):
 
     @click_options
-    def options():
+    def input():
         """Common options of dispersion plots (deposition)."""
         return [
             click.option(
@@ -524,89 +501,128 @@ class Deposition(ClickCommand):
             )
         ]
 
-    @CLI.command(
-        name='deposition',
-        help="Surface deposition.",
+
+#======================================================================
+
+
+@CLI.command(
+    name='concentration',
+    help="Activity concentration in the air.",
+)
+@GlobalOptions.input
+@GlobalOptions.preproc
+@GlobalOptions.output
+@EnsembleOptions.input
+@EnsembleOptions.plot
+@ConcentrationOptions.input
+@click.pass_context
+def concentration(
+        ctx, in_file_path_raw, out_file_path_raw, ens_member_id_lst,
+        ens_var, **vars_specs):
+
+    #SR_TMP<
+    var_in = 'concentration'
+    #SR_TMP>
+
+    create_plots(
+        ctx,
+        var_in,
+        vars_specs,
+        ens_var,
+        ens_member_id_lst,
+        in_file_path_raw,
+        out_file_path_raw,
     )
-    @GlobalOptions.input
-    @GlobalOptions.preproc
-    @GlobalOptions.plot
-    @GlobalOptions.output
-    @options
-    @click.pass_context
-    def deposition(
-            ctx, in_file_path_raw, out_file_path_raw, ens_member_id_lst,
-            ens_var, **vars_specs):
 
-        #SR_TMP<
-        var_in = 'deposition'
-        #SR_TMP>
 
-        create_plots(
-            ctx,
-            var_in,
-            vars_specs,
-            ens_var,
-            ens_member_id_lst,
-            in_file_path_raw,
-            out_file_path_raw,
-        )
+@CLI.command(
+    name='deposition',
+    help="Surface deposition.",
+)
+@GlobalOptions.input
+@GlobalOptions.preproc
+@GlobalOptions.output
+@EnsembleOptions.input
+@EnsembleOptions.plot
+@DepositionOptions.input
+@click.pass_context
+def deposition(
+        ctx, in_file_path_raw, out_file_path_raw, ens_member_id_lst,
+        ens_var, **vars_specs):
 
-    @CLI.command(
-        name='affected-area',
-        help="Area affected by surface deposition.",
+    #SR_TMP<
+    var_in = 'deposition'
+    #SR_TMP>
+
+    create_plots(
+        ctx,
+        var_in,
+        vars_specs,
+        ens_var,
+        ens_member_id_lst,
+        in_file_path_raw,
+        out_file_path_raw,
     )
-    @GlobalOptions.input
-    @GlobalOptions.preproc
-    @GlobalOptions.plot
-    @GlobalOptions.output
-    @options
-    @click.pass_context
-    def affected_area(
-            ctx, in_file_path_raw, out_file_path_raw, ens_member_id_lst,
-            ens_var, **vars_specs):
 
-        #SR_TMP<
-        var_in = 'affected_area'
-        #SR_TMP>
 
-        create_plots(
-            ctx,
-            var_in,
-            vars_specs,
-            ens_var,
-            ens_member_id_lst,
-            in_file_path_raw,
-            out_file_path_raw,
-        )
+@CLI.command(
+    name='affected-area',
+    help="Area affected by surface deposition.",
+)
+@GlobalOptions.input
+@GlobalOptions.preproc
+@GlobalOptions.output
+@EnsembleOptions.input
+@EnsembleOptions.plot
+@DepositionOptions.input
+@click.pass_context
+def affected_area(
+        ctx, in_file_path_raw, out_file_path_raw, ens_member_id_lst,
+        ens_var, **vars_specs):
 
-    @CLI.command(
-        name='affected-area-mono',
-        help="Area affected by surface deposition (monochromatic).",
+    #SR_TMP<
+    var_in = 'affected_area'
+    #SR_TMP>
+
+    create_plots(
+        ctx,
+        var_in,
+        vars_specs,
+        ens_var,
+        ens_member_id_lst,
+        in_file_path_raw,
+        out_file_path_raw,
     )
-    @GlobalOptions.input
-    @GlobalOptions.preproc
-    @GlobalOptions.plot
-    @GlobalOptions.output
-    @options
-    @click.pass_context
-    def affected_area(
-            ctx, in_file_path_raw, out_file_path_raw, ens_member_id_lst,
-            ens_var, **vars_specs):
 
-        #SR_TMP<
-        var_in = 'affected_area_mono'
-        #SR_TMP>
 
-        create_plots(
-            ctx,
-            var_in,
-            vars_specs,
-            ens_var,
-            ens_member_id_lst,
-            in_file_path_raw,
-            out_file_path_raw,
-        )
+@CLI.command(
+    name='affected-area-mono',
+    help="Area affected by surface deposition (monochromatic).",
+)
+@GlobalOptions.input
+@GlobalOptions.preproc
+@GlobalOptions.output
+@EnsembleOptions.input
+@EnsembleOptions.plot
+@DepositionOptions.input
+@click.pass_context
+def affected_area(
+        ctx, in_file_path_raw, out_file_path_raw, ens_member_id_lst,
+        ens_var, **vars_specs):
+
+    #SR_TMP<
+    var_in = 'affected_area_mono'
+    #SR_TMP>
+
+    create_plots(
+        ctx,
+        var_in,
+        vars_specs,
+        ens_var,
+        ens_member_id_lst,
+        in_file_path_raw,
+        out_file_path_raw,
+    )
 
 
 #======================================================================
