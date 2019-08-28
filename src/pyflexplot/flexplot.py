@@ -234,6 +234,10 @@ class Plot_Dispersion(Plot):
     figsize = (12, 9)
     extend = 'max'
     level_range_style = 'simple'
+    draw_colors = True
+    draw_contours = False
+    mark_field_max = True
+    mark_release_site = True
 
     # simple        : 10-15 / 15-20
     # simple-int    : 10-14 / 15-19
@@ -301,27 +305,45 @@ class Plot_Dispersion(Plot):
         self.ax_map.add_ref_dist_indicator()
 
         # Plot concentrations
-        handle = self._draw_contours()
+        h_con = self._draw_colors_contours()
 
-        # Add marker at release site
-        self.ax_map.marker(
-            self.field.attrs.release.lon.value,
-            self.field.attrs.release.lat.value,
-            **self._site_marker_kwargs,
-        )
+        if self.mark_release_site:
+            # Add marker at release site
+            self.ax_map.marker(
+                self.field.attrs.release.lon.value,
+                self.field.attrs.release.lat.value,
+                **self._site_marker_kwargs,
+            )
 
-        # Add marker at location of maximum value
-        self.ax_map.mark_max(self.field.fld, **self._max_marker_kwargs)
+        if self.mark_field_max:
+            # Add marker at location of maximum value
+            self.ax_map.mark_field_max(
+                self.field.fld, **self._max_marker_kwargs)
 
-        return handle
+        return h_con
 
-    def _draw_contours(self):
-        return self.ax_map.contourf(
-            np.log10(self.fld_nonzero()),
-            levels=self.levels_log10,
-            colors=self.colors,
-            extend=self.extend,
-        )
+    def _draw_colors_contours(self):
+
+        if not self.draw_colors:
+            h_col = None
+        else:
+            h_col = self.ax_map.contourf(
+                np.log10(self.fld_nonzero()),
+                levels=self.levels_log10,
+                colors=self.colors,
+                extend=self.extend,
+            )
+
+        if not self.draw_contours:
+            h_con = None
+        else:
+            h_con = self.ax_map.contour(
+                np.log10(self.fld_nonzero()),
+                levels=self.levels_log10,
+                colors='black',
+                linewidths=1,
+            )
+            return (h_col, h_con)
 
     #==================================================================
     # Text Boxes
@@ -542,42 +564,46 @@ class Plot_Dispersion(Plot):
         dy_spacing_markers = 0.5*dy_line
 
         # Field maximum
-        fld_max_fmtd = f'{self.labels.release.max}: '
-        if np.isnan(self.field.fld).all():
-            fld_max_fmtd += 'NaN'
-        else:
-            fld_max_fmtd += (
-                f'{np.nanmax(self.field.fld):.2E}'
-                f' {self.field.attrs.variable.unit.format()}')
+        if self.mark_field_max:
 
-        # Add maximum value marker
-        dy_max = dy0_labels - dy_spacing - dy_spacing_markers - dy_line
-        box.marker(
-            loc='bl',
-            dx=dx + 1.0,
-            dy=dy_max + 0.7,
-            **self._max_marker_kwargs,
-        )
-        box.text(
-            loc='bl',
-            s=fld_max_fmtd,
-            dx=5.5,
-            dy=dy_max,
-            size='small',
-        )
+            # Add maximum value marker
+            dy_max = dy0_labels - dy_spacing - dy_spacing_markers - dy_line
+            box.marker(
+                loc='bl',
+                dx=dx + 1.0,
+                dy=dy_max + 0.7,
+                **self._max_marker_kwargs,
+            )
 
-        # Add release site marker
-        dy_site = dy0_labels - dy_spacing - dy_spacing_markers - 2*dy_line
-        box.marker(
-            loc='bl',
-            dx=dx + 1.0,
-            dy=dy_site + 0.7,
-            **self._site_marker_kwargs,
-        )
-        s = (
-            f"{self.labels.release.site_name}: "
-            f"{self.field.attrs.release.site_name.value}")
-        box.text(loc='bl', s=s, dx=5.5, dy=dy_site, size='small')
+            # Add text
+            fld_max_fmtd = f'{self.labels.release.max}: '
+            if np.isnan(self.field.fld).all():
+                fld_max_fmtd += 'NaN'
+            else:
+                fld_max_fmtd += (
+                    f'{np.nanmax(self.field.fld):.2E}'
+                    f' {self.field.attrs.variable.unit.format()}')
+            box.text(
+                loc='bl',
+                s=fld_max_fmtd,
+                dx=5.5,
+                dy=dy_max,
+                size='small',
+            )
+
+        if self.mark_release_site:
+            # Add release site marker
+            dy_site = dy0_labels - dy_spacing - dy_spacing_markers - 2*dy_line
+            box.marker(
+                loc='bl',
+                dx=dx + 1.0,
+                dy=dy_site + 0.7,
+                **self._site_marker_kwargs,
+            )
+            s = (
+                f"{self.labels.release.site_name}: "
+                f"{self.field.attrs.release.site_name.value}")
+            box.text(loc='bl', s=s, dx=5.5, dy=dy_site, size='small')
 
     def _format_legend_box_title(self):
         s = f"{self.field.attrs.variable.short_name.format()}"
@@ -655,12 +681,16 @@ class Plot_Dispersion(Plot):
         return label
 
     def _format_level_range_simple_int(self, lvl0, lvl1):
+
+        # Check input types
         if int(lvl0) != float(lvl0):
             raise ValueError(
                 f"lvl0 is not an integer: {int(lvl0)} != {float(lvl0)}")
         if int(lvl1) != float(lvl1):
             raise ValueError(
                 f"lvl1 is not an integer: {int(lvl1)} != {float(lvl1)}")
+
+        # Determine level increment
         dlvls = sorted(set((self.levels[1:] - self.levels[:-1]).tolist()))
         if len(dlvls) != 1:
             raise Exception(
@@ -669,8 +699,9 @@ class Plot_Dispersion(Plot):
         if int(dlvl) != float(dlvl):
             raise ValueError(
                 f"dlvl is not an integer: {int(dlvl)} != {float(dlvl)}")
+
         lvl0_fmtd = self._format_level(lvl0)
-        lvl1 = lvl1 - dlvl
+        lvl1 = lvl1 - 1
         if lvl1 == lvl0:
             return f"{lvl0_fmtd}"
         lvl1_fmtd = self._format_level(lvl1)
@@ -905,7 +936,8 @@ class Plot_Ens:
         simstart_fmtd = self.field.attrs.simulation.start.format()
         return (
             f"{self.labels.simulation.flexpart_based_on} {model} Ensemble, "
-            f"{simstart_fmtd} (??? Members: ???)")
+            #+f"{simstart_fmtd} (??? Members: ???)")
+            f"{simstart_fmtd} (21 Members: 000-020)")
 
 
 class Plot_EnsMean_Concentration(Plot_Ens, Plot_Concentration):
@@ -933,14 +965,22 @@ class Plot_EnsThrAgrmt_Concentration(Plot_Ens, Plot_Concentration):
     name = 'ens-threshold-agreement-concentration'
     extend = 'min'
     level_range_style = 'simple-int'  # 10-14 / 15-20
+    mark_field_max = False
+
+    def define_colors(self):
+        super().define_colors()
+        #self.colors[0] = np.array([0.9, 0.9, 0.9])
+        self.colors = self.colors[2:]
+        #SR_TMP< SR_HC
+        #SR_TMP>
 
     def define_levels(self):
-        n_max = 20  #SR_TMP
+        n_max = 20  #SR_TMP SR_HC
         n_lvl = len(self.colors) - 1
-        d = 2
-        self.levels = np.arange(n_max - d*(n_lvl - 1), n_max + d + 1, d)
+        d = 3
+        self.levels = np.arange(n_max - d*n_lvl, n_max + d, d) + 1
 
-    def _draw_contours(self):
+    def _draw_colors_contours(self):
 
         # If upper end of range is closed, color areas beyond black
         colors_plot = copy(self.colors)
@@ -950,18 +990,35 @@ class Plot_EnsThrAgrmt_Concentration(Plot_Ens, Plot_Concentration):
         else:
             extend_plot = self.extend
 
-        return self.ax_map.contourf(
-            self.fld_nonzero(),
-            levels=self.levels,
-            colors=colors_plot,
-            extend=extend_plot,
-        )
+        if not self.draw_colors:
+            h_col = None
+        else:
+            h_col = self.ax_map.contourf(
+                self.fld_nonzero(),
+                levels=self.levels,
+                colors=colors_plot,
+                extend=extend_plot,
+            )
+
+        if not self.draw_contours:
+            h_con = None
+        else:
+            h_con = self.ax_map.contour(
+                self.fld_nonzero(),
+                levels=self.levels,
+                colors='black',
+                linewidths=1,
+            )
+
+        return (h_col, h_con)
 
     def _format_legend_box_title(self):
+        no = {'en': 'No.', 'de': 'Anz.'}[self.lang]
         name = self.field.attrs.variable.short_name.format()
         thresh = self.field.field_specs.ens_var_setup['thr']
         unit = self.field.attrs.variable.unit.format()
-        return f"{name} (" r'$\geq$' f" {thresh} {unit})"
+        geq = r'$\geq$'
+        return f"{no} {name}\n({geq} {thresh} {unit})"
 
     def _format_level(self, lvl):
         return f'{lvl}'

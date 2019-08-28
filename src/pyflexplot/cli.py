@@ -72,11 +72,9 @@ class ClickOptionsGroup:
 # Show default values of options by default
 click.option = functools.partial(click.option, show_default=True)
 
-
 context_settings = {
     'help_option_names': ['-h', '--help'],  # Add short flag '-h'
 }
-
 
 #======================================================================
 
@@ -472,7 +470,7 @@ class DepositionOptions(ClickOptionsGroup):
                     "Type of deposition. Part of plot variable (format "
                     "key: '{variable}')."),
                 type=click.Choice(['tot', 'wet', 'dry']),
-                default='tot',
+                default=['tot'],
                 multiple=True,
             )
         ]
@@ -530,13 +528,18 @@ def cli(ctx, **kwargs):
 @click.group()
 def deterministic():
     return 0
+
+
 cli.add_command(deterministic)
+
 
 @click.group()
 def ensemble():
     return 0
 
+
 cli.add_command(ensemble)
+
 
 @deterministic.command(
     name='concentration',
