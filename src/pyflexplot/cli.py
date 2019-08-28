@@ -472,7 +472,7 @@ class DepositionOptions(ClickOptionsGroup):
                     "Type of deposition. Part of plot variable (format "
                     "key: '{variable}')."),
                 type=click.Choice(['tot', 'wet', 'dry']),
-                default='tot',
+                default=['tot'],
                 multiple=True,
             )
         ]

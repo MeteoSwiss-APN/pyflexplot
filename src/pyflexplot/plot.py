@@ -218,8 +218,8 @@ class AxesMap(AxesMap):
 
         self.ax.plot(xs, ys, transform=self.proj_data, c='black', lw=1)
 
-    def contourf(self, fld, **kwargs):
-        """Plot a color contour field on the map.
+    def contour(self, fld, **kwargs):
+        """Plot a contour field on the map.
 
         Args:
             fld (ndarray[float, float]): Field to plot.
@@ -233,6 +233,33 @@ class AxesMap(AxesMap):
         if np.isnan(fld).all():
             log.warning('skip contour plot (all-nan field)')
             return
+
+        handle = self.ax.contour(
+            self.rlon,
+            self.rlat,
+            fld,
+            transform=self.proj_data,
+            zorder=self.zorder['fld'],
+            **kwargs,
+        )
+        return handle
+
+    def contourf(self, fld, **kwargs):
+        """Plot a filled-contour field on the map.
+
+        Args:
+            fld (ndarray[float, float]): Field to plot.
+
+            **kwargs: Arguments passed to ax.contourf().
+
+        Returns:
+            Plot handle.
+
+        """
+        if np.isnan(fld).all():
+            log.warning('skip filled contour plot (all-nan field)')
+            return
+
         handle = self.ax.contourf(
             self.rlon,
             self.rlat,
