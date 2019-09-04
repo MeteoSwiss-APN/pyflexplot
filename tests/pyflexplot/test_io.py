@@ -47,11 +47,13 @@ def read_nc_var(path, var_name, var_specs):
         fix_nc_fld(fld)  #SR_TMP
 
         # Reduce time dimension
-        if isinstance(var_specs, FieldSpecs.Concentration.cls_var_specs):
+        if isinstance(
+                var_specs, FieldSpecs.subclass('concentration').cls_var_specs):
             if var_specs.integrate:
                 # Integrate concentration field over time
                 fld = np.cumsum(fld, axis=0)
-        elif isinstance(var_specs, FieldSpecs.Deposition.cls_var_specs):
+        elif isinstance(
+                var_specs, FieldSpecs.subclass('deposition').cls_var_specs):
             if not var_specs.integrate:
                 # De-integrate deposition field over time
                 fld[1:] -= fld[:-1].copy()
@@ -128,7 +130,7 @@ class TestReadField_Single:
         """Read concentration field."""
         self.run(
             datadir,
-            FieldSpecs.Concentration,
+            FieldSpecs.subclass('concentration'),
             dims={
                 **self.dims_shared, 'level': 1
             },
@@ -140,7 +142,7 @@ class TestReadField_Single:
         """Read dry deposition field."""
         self.run(
             datadir,
-            FieldSpecs.Deposition,
+            FieldSpecs.subclass('deposition'),
             dims=self.dims_shared,
             var_names_ref=[f'DD_spec{self.species_id:03d}'],
             var_specs_mult_unshared={'deposition': 'dry'},
@@ -150,7 +152,7 @@ class TestReadField_Single:
         """Read wet deposition field."""
         self.run(
             datadir,
-            FieldSpecs.Deposition,
+            FieldSpecs.subclass('deposition'),
             dims=self.dims_shared,
             var_names_ref=[f'WD_spec{self.species_id:03d}'],
             var_specs_mult_unshared={'deposition': 'wet'},
@@ -160,7 +162,7 @@ class TestReadField_Single:
         """Read total deposition field."""
         self.run(
             datadir,
-            FieldSpecs.Deposition,
+            FieldSpecs.subclass('deposition'),
             dims=self.dims_shared,
             var_names_ref=[
                 f'WD_spec{self.species_id:03d}',
@@ -212,11 +214,12 @@ class TestFieldSpecs_Multiple:
             **self.var_specs_mult_shared,
             'level_lst': [0, 2],
         }
-        fld_specs_mult_lst = FieldSpecs.Concentration.multiple(var_specs_mult)
+        fld_specs_mult_lst = FieldSpecs.subclass('concentration').multiple(
+            var_specs_mult)
 
         # Create reference field specifications list
         fld_specs_mult_lst_ref = self.create_fld_specs_mult_lst_ref(
-            FieldSpecs.Concentration, var_specs_mult)
+            FieldSpecs.subclass('concentration'), var_specs_mult)
 
         assert sorted(fld_specs_mult_lst) == sorted(fld_specs_mult_lst_ref)
 
@@ -228,11 +231,12 @@ class TestFieldSpecs_Multiple:
             **self.var_specs_mult_shared,
             'deposition_lst': ['wet', 'dry', 'tot'],
         }
-        fld_specs_mult_lst = FieldSpecs.Deposition.multiple(var_specs_mult)
+        fld_specs_mult_lst = FieldSpecs.subclass('deposition').multiple(
+            var_specs_mult)
 
         # Create reference field specifications list
         fld_specs_mult_lst_ref = self.create_fld_specs_mult_lst_ref(
-            FieldSpecs.Deposition, var_specs_mult)
+            FieldSpecs.subclass('deposition'), var_specs_mult)
 
         assert sorted(fld_specs_mult_lst) == sorted(fld_specs_mult_lst_ref)
 
@@ -315,7 +319,7 @@ class TestReadField_Multiple:
         self.run(
             separate=separate,
             datafile=self.datafile(datadir),
-            cls_fld_specs=FieldSpecs.Concentration,
+            cls_fld_specs=FieldSpecs.subclass('concentration'),
             dims_mult={
                 **self.dims_shared, 'level_lst': [0, 2]
             },
@@ -336,7 +340,7 @@ class TestReadField_Multiple:
         self.run(
             separate=separate,
             datafile=self.datafile(datadir),
-            cls_fld_specs=FieldSpecs.Deposition,
+            cls_fld_specs=FieldSpecs.subclass('deposition'),
             dims_mult=self.dims_shared,
             var_names_ref=[f'DD_spec{self.species_id:03d}'],
             var_specs_mult_unshared={'deposition': 'dry'},
@@ -355,7 +359,7 @@ class TestReadField_Multiple:
         self.run(
             separate=separate,
             datafile=self.datafile(datadir),
-            cls_fld_specs=FieldSpecs.Deposition,
+            cls_fld_specs=FieldSpecs.subclass('deposition'),
             dims_mult=self.dims_shared,
             var_names_ref=[f'WD_spec{self.species_id:03d}'],
             var_specs_mult_unshared={'deposition': 'wet'},
@@ -374,7 +378,7 @@ class TestReadField_Multiple:
         self.run(
             separate=separate,
             datafile=self.datafile(datadir),
-            cls_fld_specs=FieldSpecs.Deposition,
+            cls_fld_specs=FieldSpecs.subclass('deposition'),
             dims_mult=self.dims_shared,
             var_names_ref=[
                 f'WD_spec{self.species_id:03d}',
@@ -469,7 +473,7 @@ class TestReadFieldEnsemble_Single:
         """Read concentration field."""
         self.run(
             datadir,
-            cls_fld_specs=FieldSpecs.EnsMean_Concentration,
+            cls_fld_specs=FieldSpecs.subclass('ens_mean_concentration'),
             dims={
                 **self.dims_shared, 'level': 1
             },
@@ -591,19 +595,19 @@ class TestReadFieldEnsemble_Multiple:
             ens_var,
             *,
             separate=False,
-            cls_fld_specs=FieldSpecs.Concentration):
+            cls_fld_specs=FieldSpecs.subclass('concentration')):
         """Read ensemble concentration field."""
         # yapf: disable
         fct_reduce_mem = {
             'mean': np.nanmean,
             'max': np.nanmax,
-            'threshold-agreement': (
+            'thr_agrmt': (
                 lambda arr, axis: threshold_agreement(
                     arr, self.agreement_threshold_concentration, axis=axis,
                     dtype=arr.dtype)),
         }[ens_var]
         ens_var_setup = {
-            'threshold-agreement': {
+            'thr_agrmt': {
                 'thr': self.agreement_threshold_concentration},
         }.get(ens_var)
         # yapf: enable
@@ -627,9 +631,9 @@ class TestReadFieldEnsemble_Multiple:
     def test_ens_threshold_agreement_concentration(self, datadir):
         self.run_concentration(
             datadir,
-            'threshold-agreement',
+            'thr_agrmt',
             separate=False,
-            cls_fld_specs=FieldSpecs.EnsThrAgrmt_Concentration)
+            cls_fld_specs=FieldSpecs.subclass('ens_thr_agrmt_concentration'))
 
     #------------------------------------------------------------------
     # Deposition
@@ -647,7 +651,7 @@ class TestReadFieldEnsemble_Multiple:
         self.run(
             separate=separate,
             datafile_fmt=self.datafile_fmt(datadir),
-            cls_fld_specs=FieldSpecs.Deposition,
+            cls_fld_specs=FieldSpecs.subclass('deposition'),
             dims_mult=self.dims_shared,
             var_names_ref=[
                 f'WD_spec{self.species_id:03d}',
