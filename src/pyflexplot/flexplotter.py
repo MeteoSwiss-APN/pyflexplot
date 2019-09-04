@@ -7,19 +7,14 @@ Plotters.
 from .specs import VarSpecs
 from .specs import FieldSpecs
 from .flexplot import Plot
+from .utils import ParentClass
 from .utils_dev import ipython  #SR_DEV
 
 
-class Plotter:
+class Plotter(ParentClass):
     """Create one or more FLEXPLART plots of a certain type."""
 
     cls_plot = None
-
-    subclasses = {}
-
-    @classmethod
-    def subclass(cls, name):
-        return cls.subclasses[name]
 
     # yapf: disable
     specs_fmt_keys = {
@@ -150,30 +145,24 @@ class Plotter:
 
 
 class Plotter_Concentration(Plotter):
+    name = 'concentration'
     cls_plot = Plot.subclass('concentration')
 
 
 class Plotter_Deposition(Plotter):
+    name = 'deposition'
     cls_plot = Plot.subclass('deposition')
 
 
 class Plotter_AffectedArea(Plotter):
+    name = 'affected_area'
     cls_plot = Plot.subclass('affected_area')
 
 
 class Plotter_AffectedAreaMono(Plotter):
+    name = 'affected_area_mono'
     cls_plot = Plot.subclass('affected_area_mono')
 
-
-#----------------------------------------------------------------------
-
-Plotter.subclasses.update({
-    'concentration': Plotter_Concentration,
-    'deposition': Plotter_Deposition,
-    'deposition': Plotter_Deposition,
-    'affected_area': Plotter_AffectedArea,
-    'affected_area_mono': Plotter_AffectedAreaMono,
-})
 
 #----------------------------------------------------------------------
 # Ensemble Simulation
@@ -181,44 +170,33 @@ Plotter.subclasses.update({
 
 
 class Plotter_EnsMean_Concentration(Plotter):
+    name = 'ens_mean_concentration'
     cls_plot = Plot.subclass('ens_mean_concentration')
 
 
 class Plotter_EnsMean_Deposition(Plotter):
+    name = 'ens_mean_deposition'
     cls_plot = Plot.subclass('ens_mean_deposition')
 
 
 class Plotter_EnsMean_AffectedArea(Plotter):
+    name = 'ens_mean_affected_area'
     cls_plot = Plot.subclass('ens_mean_affected_area')
 
 
 class Plotter_EnsMean_AffectedAreaMono(Plotter):
+    name = 'ens_mean_affected_area_mono'
     cls_plot = Plot.subclass('ens_mean_affected_area_mono')
 
 
 class Plotter_EnsThrAgrmt_Concentration(Plotter):
+    name = 'ens_thr_agrmt_concentration'
     cls_plot = Plot.subclass('ens_thr_agrmt_concentration')
 
 
 class Plotter_EnsThrAgrmt_Deposition(Plotter):
+    name = 'ens_thr_agrmt_deposition'
     cls_plot = Plot.subclass('ens_thr_agrmt_deposition')
 
 
 #----------------------------------------------------------------------
-
-#SR_TMP< TODO cleaner solution (separate input and ensemble variable)
-Plotter.subclasses.update({
-    'ens_mean_concentration':
-    Plotter_EnsMean_Concentration,
-    'ens_mean_deposition':
-    Plotter_EnsMean_Deposition,
-    'ens_mean_affected_area':
-    Plotter_EnsMean_AffectedArea,
-    'ens_mean_affected_area_mono':
-    Plotter_EnsMean_AffectedAreaMono,
-    'ens_thr_agrmt_concentration':
-    Plotter_EnsThrAgrmt_Concentration,
-    'ens_thr_agrmt_deposition':
-    Plotter_EnsThrAgrmt_Deposition,
-})
-#SR_TMP>

@@ -14,6 +14,7 @@ from .plot import AxesMap
 from .plot import ax_dims_fig_coords
 from .plot import AxesTextBox
 from .utils import Degrees
+from .utils import ParentClass
 from .utils_dev import ipython  #SR_DEV
 
 #======================================================================
@@ -161,16 +162,10 @@ class PlotLabels_Dispersion:
 #======================================================================
 
 
-class Plot:
+class Plot(ParentClass):
     """Base class for FLEXPART plots."""
 
     name = '__base__'
-
-    subclasses = {}
-
-    @classmethod
-    def subclass(cls, name):
-        return cls.subclasses[name]
 
     def __init__(self, field, lang='en'):
         """Create an instance of ``Plot``.
@@ -863,13 +858,13 @@ class Plot_Deposition(Plot_Dispersion):
 class Plot_AffectedArea(Plot_Dispersion):
     """FLEXPART plot of area affected by surface deposition."""
 
-    name = 'affected-area'
+    name = 'affected_area'
 
 
 class Plot_AffectedAreaMono(Plot_AffectedArea):
     """FLEXPART plot of area affected by surface deposition (mono)."""
 
-    name = 'affected-area-mono'
+    name = 'affected_area_mono'
     extend = 'none'
 
     def define_colors(self):
@@ -891,20 +886,13 @@ class Plot_AffectedAreaMono(Plot_AffectedArea):
         )
 
 
-Plot.subclasses.update({
-    'dispersion': Plot_Dispersion,
-    'concentration': Plot_Concentration,
-    'deposition': Plot_Deposition,
-    'affected_area': Plot_AffectedArea,
-    'affected_area_mono': Plot_AffectedAreaMono,
-})
-
 #----------------------------------------------------------------------
 # Ensemble Simulation
 #----------------------------------------------------------------------
 
 
-class Plot_Ens:
+class Plot_Ens(Plot):
+    name = 'ens'
 
     text_box_setup = {
         'h_rel_t': 0.12,
@@ -941,19 +929,19 @@ class Plot_Ens:
 
 
 class Plot_EnsMean_Concentration(Plot_Ens, Plot_Concentration):
-    name = 'ens-mean-concentration'
+    name = 'ens_mean_concentration'
 
 
 class Plot_EnsMean_Deposition(Plot_Ens, Plot_Deposition):
-    name = 'ens-mean-deposition'
+    name = 'ens_mean_deposition'
 
 
 class Plot_EnsMeanAffectedArea(Plot_Ens, Plot_AffectedArea):
-    name = 'ens-mean-affected-area'
+    name = 'ens_mean_affected_area'
 
 
 class Plot_EnsMeanAffectedAreaMono(Plot_Ens, Plot_AffectedAreaMono):
-    name = 'ens-mean-affected-area-mono'
+    name = 'ens_mean_affected_area_mono'
 
 
 class Plot_EnsThrAgrmt(Plot_Ens):
@@ -1018,24 +1006,11 @@ class Plot_EnsThrAgrmt(Plot_Ens):
 
 
 class Plot_EnsThrAgrmt_Concentration(Plot_EnsThrAgrmt, Plot_Concentration):
-    name = 'ens-threshold-agreement-concentration'
+    name = 'ens_thr_agrmt_concentration'
 
 
 class Plot_EnsThrAgrmt_Deposition(Plot_EnsThrAgrmt, Plot_Deposition):
-    name = 'ens-threshold-agreement-deposition'
+    name = 'ens_thr_agrmt_deposition'
 
 
-Plot.subclasses.update({
-    'ens_mean_concentration':
-    Plot_EnsMean_Concentration,
-    'ens_mean_deposition':
-    Plot_EnsMean_Deposition,
-    'ens_mean_affected_area':
-    Plot_EnsMeanAffectedArea,
-    'ens_mean_affected_area_mono':
-    Plot_EnsMeanAffectedAreaMono,
-    'ens_thr_agrmt_concentration':
-    Plot_EnsThrAgrmt_Concentration,
-    'ens_thr_agrmt_deposition':
-    Plot_EnsThrAgrmt_Deposition,
-})
+#----------------------------------------------------------------------

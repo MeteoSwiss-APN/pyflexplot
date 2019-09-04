@@ -14,6 +14,7 @@ from pprint import pformat
 from pprint import pprint  #SR_DEV
 
 from .attr import AttrGroupCollection
+from .utils import ParentClass
 from .utils import pformat_dictlike
 from .utils import nested_dict_set
 
@@ -34,7 +35,7 @@ def int_or_list(arg):
 #======================================================================
 
 
-class VarSpecs:
+class VarSpecs(ParentClass):
     """FLEXPART input variable specifications."""
 
     # Keys with respective type
@@ -240,6 +241,7 @@ class VarSpecs:
 
 
 class VarSpecs_Concentration(VarSpecs):
+    name = 'concentration'
 
     _keys_w_type = {
         **VarSpecs._keys_w_type,
@@ -281,6 +283,7 @@ class VarSpecs_Concentration(VarSpecs):
 
 
 class VarSpecs_Deposition(VarSpecs):
+    name = 'deposition'
 
     _keys_w_type = {
         **VarSpecs._keys_w_type,
@@ -328,6 +331,7 @@ class VarSpecs_Deposition(VarSpecs):
 
 
 class VarSpecs_AffectedArea(VarSpecs_Deposition):
+    name = 'affected_area'
 
     @classmethod
     def long_name(cls, lang, var_specs):
@@ -339,6 +343,7 @@ class VarSpecs_AffectedArea(VarSpecs_Deposition):
 
 
 class VarSpecs_EnsMean_Concentration(VarSpecs_Concentration):
+    name = 'ens_mean_concentration'
 
     @classmethod
     def long_name(cls, lang, var_specs):
@@ -349,6 +354,7 @@ class VarSpecs_EnsMean_Concentration(VarSpecs_Concentration):
 
 
 class VarSpecs_EnsMean_Deposition(VarSpecs_Deposition):
+    name = 'ens_mean_deposition'
 
     @classmethod
     def long_name(cls, lang, var_specs):
@@ -360,6 +366,7 @@ class VarSpecs_EnsMean_Deposition(VarSpecs_Deposition):
 
 
 class VarSpecs_EnsMean_AffectedArea(VarSpecs_AffectedArea):
+    name = 'ens_mean_affected_area'
 
     @classmethod
     def long_name(cls, lang, var_specs):
@@ -393,49 +400,31 @@ class VarSpecs_EnsThrAgrmt:
 
 class VarSpecs_EnsThrAgrmt_Concentration(
         VarSpecs_EnsThrAgrmt, VarSpecs_Concentration):
-    pass
+    name = 'ens_thr_agrmt_concentration'
 
 
 class VarSpecs_EnsThrAgrmt_Deposition(
         VarSpecs_EnsThrAgrmt, VarSpecs_Deposition):
-    pass
+    name = 'ens_thr_agrmt_deposition'
 
 
 class VarSpecs_EnsThrAgrmt_AffectedArea(
         VarSpecs_EnsThrAgrmt, VarSpecs_AffectedArea):
-    pass
+    name = 'ens_thr_agrmt_affected_area'
 
-
-#----------------------------------------------------------------------
-
-VarSpecs.Concentration = VarSpecs_Concentration
-VarSpecs.Deposition = VarSpecs_Deposition
-VarSpecs.AffectedArea = VarSpecs_AffectedArea
-VarSpecs.EnsMean_Concentration = VarSpecs_EnsMean_Concentration
-VarSpecs.EnsMean_Deposition = VarSpecs_EnsMean_Deposition
-VarSpecs.EnsMeanAffectedArea = VarSpecs_EnsMean_AffectedArea
-VarSpecs.EnsThrAgrmt_Concentration = VarSpecs_EnsThrAgrmt_Concentration
 
 #======================================================================
 # Field Specifications
 #======================================================================
 
 
-class FieldSpecs:
+class FieldSpecs(ParentClass):
     """FLEXPART field specifications."""
 
     cls_var_specs = VarSpecs
 
     # Dimensions with optionally multiple values
     dims_opt_mult_vals = ['species_id']
-
-    # Derived classes (add manually after defining them)
-    subclasses = {}
-
-    @classmethod
-    def subclass(cls, name):
-        """Get a subclass by name."""
-        return cls.subclasses[name]
 
     def __init__(
             self,
@@ -635,7 +624,8 @@ class FieldSpecs:
 
 
 class FieldSpecs_Concentration(FieldSpecs):
-    cls_var_specs = VarSpecs_Concentration
+    name = 'concentration'
+    cls_var_specs = VarSpecs.subclass('concentration')
 
     # Dimensions with optionally multiple values
     dims_opt_mult_vals = FieldSpecs.dims_opt_mult_vals + ['level']
@@ -657,7 +647,8 @@ class FieldSpecs_Concentration(FieldSpecs):
 
 
 class FieldSpecs_Deposition(FieldSpecs):
-    cls_var_specs = VarSpecs_Deposition
+    name = 'deposition'
+    cls_var_specs = VarSpecs.subclass('deposition')
 
     def __init__(self, var_specs, *args, lang='en', **kwargs):
         """Create an instance of ``FieldSpecs_Deposition``.
@@ -703,69 +694,40 @@ class FieldSpecs_Deposition(FieldSpecs):
 
 
 class FieldSpecs_AffectedArea(FieldSpecs_Deposition):
-    cls_var_specs = VarSpecs_AffectedArea
+    name = 'affected_area'
+    cls_var_specs = VarSpecs.subclass('affected_area')
 
 
-class FieldSpecs_Ens:
-    pass
+class FieldSpecs_Ens(FieldSpecs):
+    name = 'ens'
 
 
 class FieldSpecs_EnsMean_Concentration(FieldSpecs_Ens,
                                        FieldSpecs_Concentration):
-    cls_var_specs = VarSpecs_EnsMean_Concentration
+    name = 'ens_mean_concentration'
+    cls_var_specs = VarSpecs.subclass('ens_mean_concentration')
 
 
 class FieldSpecs_EnsMean_Deposition(FieldSpecs_Ens, FieldSpecs_Deposition):
-    cls_var_specs = VarSpecs_EnsMean_Deposition
+    name = 'ens_mean_deposition'
+    cls_var_specs = VarSpecs.subclass('ens_mean_deposition')
 
 
 class FieldSpecs_EnsMean_AffectedArea(FieldSpecs_Ens, FieldSpecs_AffectedArea):
-    cls_var_specs = VarSpecs_EnsMean_AffectedArea
+    name = 'ens_mean_affected_area'
+    cls_var_specs = VarSpecs.subclass('ens_mean_affected_area')
 
 
 class FieldSpecs_EnsThrAgrmt_Concentration(FieldSpecs_Ens,
                                            FieldSpecs_Concentration):
-    cls_var_specs = VarSpecs_EnsThrAgrmt_Concentration
+    name = 'ens_thr_agrmt_concentration'
+    cls_var_specs = VarSpecs.subclass('ens_thr_agrmt_concentration')
 
 
 class FieldSpecs_EnsThrAgrmt_Deposition(FieldSpecs_Ens, FieldSpecs_Deposition):
-    cls_var_specs = VarSpecs_EnsThrAgrmt_Deposition
+    name = 'ens_thr_agrmt_deposition'
+    cls_var_specs = VarSpecs.subclass('ens_thr_agrmt_deposition')
 
-
-class FieldSpecs_EnsThrAgrmt_AffectedArea(
-        FieldSpecs_Ens, FieldSpecs_AffectedArea):
-    cls_var_specs = VarSpecs_EnsThrAgrmt_AffectedArea
-
-
-#----------------------------------------------------------------------
-
-FieldSpecs.subclasses.update({
-    'concentration': FieldSpecs_Concentration,
-    'deposition': FieldSpecs_Deposition,
-    'affected_area': FieldSpecs_AffectedArea,
-    'affected_area_mono': FieldSpecs_AffectedArea,
-})
-
-FieldSpecs.subclasses.update({
-    'ens':
-    FieldSpecs_Ens,
-    'ens_mean_concentration':
-    FieldSpecs_EnsMean_Concentration,
-    'ens_mean_deposition':
-    FieldSpecs_EnsMean_Deposition,
-    'ens_mean_affected_area':
-    FieldSpecs_EnsMean_AffectedArea,
-    'ens_mean_affected_area_mono':
-    FieldSpecs_EnsMean_AffectedArea,
-    'ens_thr_agrmt_concentration':
-    FieldSpecs_EnsThrAgrmt_Concentration,
-    'ens_thr_agrmt_deposition':
-    FieldSpecs_EnsThrAgrmt_Deposition,
-    'ens_thr_agrmt_affected_area':
-    FieldSpecs_EnsThrAgrmt_AffectedArea,
-    'ens_thr_agrmt_affected_area_mono':
-    FieldSpecs_EnsThrAgrmt_AffectedArea,
-})
 
 #======================================================================
 
@@ -940,9 +902,9 @@ class AttrsCollector:
         substance = self._get_substance()
 
         # Get deposition and washout data
-        if isinstance(self.var_specs, VarSpecs.Concentration):
+        if isinstance(self.var_specs, VarSpecs.subclass('concentration')):
             name_core = self.field_var_name
-        elif isinstance(self.var_specs, VarSpecs.Deposition):
+        elif isinstance(self.var_specs, VarSpecs.subclass('deposition')):
             name_core = self.field_var_name[3:]
         deposit_vel = self.ncattrs_vars[f'DD_{name_core}']['dryvel']
         washout_coeff = self.ncattrs_vars[f'WD_{name_core}']['weta']
@@ -976,7 +938,7 @@ class AttrsCollector:
 
     def _get_substance(self):
         substance = self.ncattrs_field['long_name']
-        if isinstance(self.var_specs, VarSpecs.Deposition):
+        if isinstance(self.var_specs, VarSpecs.subclass('deposition')):
             substance = substance.replace(
                 f'_{self.var_specs.deposition}_deposition', '')  #SR_HC
         return substance

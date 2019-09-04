@@ -11,6 +11,38 @@ from pprint import pformat
 from .utils_dev import ipython  #SR_DEV
 
 
+class ParentClass:
+    """Enable easy access to subclasses via their 'name' attribute."""
+
+    @classmethod
+    def subclass(cls, name):
+        """Find a subclass by name."""
+        subclasses_by_name = cls.subclasses_by_name()
+        try:
+            return subclasses_by_name[name]
+        except KeyError:
+            raise ValueError(
+                f"class '{cls.__name__}' has no subclass '{name}'; "
+                f"options: {sorted(subclasses_by_name)}")
+
+    @classmethod
+    def subclasses_by_name(cls, unique=True):
+        """Recursively collect named subclasses by 'name' attribute."""
+        result = {}
+        for sub_cls in cls.__subclasses__():
+            try:
+                name = sub_cls.name
+            except AttributeError:
+                continue
+            if name is None:
+                continue
+            if unique and result.get(name) is sub_cls:
+                raise Exception(f"duplicate class name '{name}'")
+            result[name] = sub_cls
+            result.update(sub_cls.subclasses_by_name())
+        return result
+
+
 class MaxIterationError(Exception):
     """Maximum number of iterations of a loop exceeded."""
     pass

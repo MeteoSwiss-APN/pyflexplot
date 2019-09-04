@@ -550,11 +550,11 @@ class FileReader:
         self._fix_nc_var(fld, var)
 
         # Time integration
-        if isinstance(var_specs, VarSpecs.Concentration):
+        if isinstance(var_specs, VarSpecs.subclass('concentration')):
             if var_specs.integrate:
                 # Integrate over time
                 fld = np.cumsum(fld, axis=0)
-        elif isinstance(var_specs, VarSpecs.Deposition):
+        elif isinstance(var_specs, VarSpecs.subclass('deposition')):
             if not var_specs.integrate:
                 # Revert integration over time
                 fld[1:] -= fld[:-1].copy()
