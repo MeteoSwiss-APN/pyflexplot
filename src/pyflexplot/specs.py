@@ -370,17 +370,16 @@ class VarSpecs_EnsMean_AffectedArea(VarSpecs_AffectedArea):
         }[lang]
 
 
-class VarSpecs_EnsThrAgrmt_Concentration(VarSpecs_Concentration):
+class VarSpecs_EnsThrAgrmt:
 
     @classmethod
     def long_name(cls, lang, var_specs):
-        s_de = (
-            r'der\nAktivit$\mathrm{\"a}$tskonzentration\n'
-            r'Ensemble-Grenzwert$\mathrm{\"u}$bereinstimmung')
-        return {
-            'en': 'Activity Concentration\nEnsemble Threshold Agreement',
-            'de': s_de,
+        long_name_super = super().long_name(lang, var_specs)
+        long_name_base = {
+            'en': 'Ensemble Threshold Agreement of\n',
+            'de': r'Ensemble-Grenzwert$\mathrm{\"u}$bereinstimmung der\n',
         }[lang]
+        return long_name_base + long_name_super
 
     @classmethod
     def short_name(cls, lang, var_specs):
@@ -390,6 +389,21 @@ class VarSpecs_EnsThrAgrmt_Concentration(VarSpecs_Concentration):
             'en': 'Members',
             'de': 'Members',
         }[lang]
+
+
+class VarSpecs_EnsThrAgrmt_Concentration(
+        VarSpecs_EnsThrAgrmt, VarSpecs_Concentration):
+    pass
+
+
+class VarSpecs_EnsThrAgrmt_Deposition(
+        VarSpecs_EnsThrAgrmt, VarSpecs_Deposition):
+    pass
+
+
+class VarSpecs_EnsThrAgrmt_AffectedArea(
+        VarSpecs_EnsThrAgrmt, VarSpecs_AffectedArea):
+    pass
 
 
 #----------------------------------------------------------------------
@@ -714,6 +728,15 @@ class FieldSpecs_EnsThrAgrmt_Concentration(FieldSpecs_Ens,
     cls_var_specs = VarSpecs_EnsThrAgrmt_Concentration
 
 
+class FieldSpecs_EnsThrAgrmt_Deposition(FieldSpecs_Ens, FieldSpecs_Deposition):
+    cls_var_specs = VarSpecs_EnsThrAgrmt_Deposition
+
+
+class FieldSpecs_EnsThrAgrmt_AffectedArea(
+        FieldSpecs_Ens, FieldSpecs_AffectedArea):
+    cls_var_specs = VarSpecs_EnsThrAgrmt_AffectedArea
+
+
 #----------------------------------------------------------------------
 
 FieldSpecs.subclasses.update({
@@ -736,6 +759,12 @@ FieldSpecs.subclasses.update({
     FieldSpecs_EnsMean_AffectedArea,
     'ens_thr_agrmt_concentration':
     FieldSpecs_EnsThrAgrmt_Concentration,
+    'ens_thr_agrmt_deposition':
+    FieldSpecs_EnsThrAgrmt_Deposition,
+    'ens_thr_agrmt_affected_area':
+    FieldSpecs_EnsThrAgrmt_AffectedArea,
+    'ens_thr_agrmt_affected_area_mono':
+    FieldSpecs_EnsThrAgrmt_AffectedArea,
 })
 
 #======================================================================

@@ -317,7 +317,7 @@ class Plot_Dispersion(Plot):
 
         if self.mark_field_max:
             # Add marker at location of maximum value
-            self.ax_map.mark_field_max(
+            self.ax_map.mark_max(
                 self.field.fld, **self._max_marker_kwargs)
 
         return h_con
@@ -941,37 +941,30 @@ class Plot_Ens:
 
 
 class Plot_EnsMean_Concentration(Plot_Ens, Plot_Concentration):
-
     name = 'ens-mean-concentration'
 
 
 class Plot_EnsMean_Deposition(Plot_Ens, Plot_Deposition):
-
     name = 'ens-mean-deposition'
 
 
 class Plot_EnsMeanAffectedArea(Plot_Ens, Plot_AffectedArea):
-
     name = 'ens-mean-affected-area'
 
 
 class Plot_EnsMeanAffectedAreaMono(Plot_Ens, Plot_AffectedAreaMono):
-
     name = 'ens-mean-affected-area-mono'
 
 
-class Plot_EnsThrAgrmt_Concentration(Plot_Ens, Plot_Concentration):
-
-    name = 'ens-threshold-agreement-concentration'
+class Plot_EnsThrAgrmt(Plot_Ens):
     extend = 'min'
     level_range_style = 'simple-int'  # 10-14 / 15-20
     mark_field_max = False
 
     def define_colors(self):
-        super().define_colors()
-        #self.colors[0] = np.array([0.9, 0.9, 0.9])
+        #SR_TMP< TODO cleaner solution
+        Plot_Dispersion.define_colors(self)
         self.colors = self.colors[2:]
-        #SR_TMP< SR_HC
         #SR_TMP>
 
     def define_levels(self):
@@ -1024,6 +1017,14 @@ class Plot_EnsThrAgrmt_Concentration(Plot_Ens, Plot_Concentration):
         return f'{lvl}'
 
 
+class Plot_EnsThrAgrmt_Concentration(Plot_EnsThrAgrmt, Plot_Concentration):
+    name = 'ens-threshold-agreement-concentration'
+
+
+class Plot_EnsThrAgrmt_Deposition(Plot_EnsThrAgrmt, Plot_Deposition):
+    name = 'ens-threshold-agreement-deposition'
+
+
 Plot.subclasses.update({
     'ens_mean_concentration':
     Plot_EnsMean_Concentration,
@@ -1035,4 +1036,6 @@ Plot.subclasses.update({
     Plot_EnsMeanAffectedAreaMono,
     'ens_thr_agrmt_concentration':
     Plot_EnsThrAgrmt_Concentration,
+    'ens_thr_agrmt_deposition':
+    Plot_EnsThrAgrmt_Deposition,
 })

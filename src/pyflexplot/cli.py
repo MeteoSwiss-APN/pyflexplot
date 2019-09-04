@@ -19,6 +19,11 @@ from .utils_dev import ipython  #SR_DEV
 
 __version__ = '0.1.0'
 
+# To debug segmentation fault, uncomment the following lines
+# and prepend the program call with PYTHONFAULTHANDLER=1
+#+ import faulthandler
+#+ faulthandler.enable()
+
 #======================================================================
 
 
@@ -155,17 +160,15 @@ class CharSepListParamType(click.ParamType):
         return values
 
 
-INT_LIST_COMMA_SEP_UNIQ = CharSepListParamType(
-    int, ',', dupl_ok=False, name='integers (comma-separated)')
-INT_LIST_PLUS_SEP_UNIQ = CharSepListParamType(
-    int, '+', dupl_ok=False, name='integers (plus-separated)')
+INT_LIST_COMMA_SEP_UNIQ = CharSepListParamType(int, ',', dupl_ok=False)
+INT_LIST_PLUS_SEP_UNIQ = CharSepListParamType(int, '+', dupl_ok=False)
 
 #======================================================================
 
 
 def create_plots(
-        *, ctx, var_in, ens_var, ens_member_id_lst, in_file_path_raw,
-        out_file_path_raw, **vars_specs):
+        *, ctx, var_in, in_file_path_raw, out_file_path_raw, ens_var=None,
+        ens_member_id_lst=None, **vars_specs):
     """Read and plot FLEXPART data.
 
     Args:
@@ -354,7 +357,7 @@ class GlobalOptions(ClickOptionsGroup):
                     "Species id(s) (default: 0). To sum up multiple species, "
                     "combine their ids with '+'. Format key: '{species_id}'."),
                 type=INT_LIST_PLUS_SEP_UNIQ,
-                default=[0],
+                default=['1'],
                 multiple=True,
             ),
         ]
@@ -440,7 +443,7 @@ class ConcentrationOptions(ClickOptionsGroup):
                     "To sum up multiple levels, combine their indices with "
                     "'+'. Format key: '{level_ind}'."),
                 type=INT_LIST_PLUS_SEP_UNIQ,
-                default=[0],
+                default=['0'],
                 multiple=True,
             ),
         ]
@@ -453,7 +456,7 @@ class ConcentrationOptions(ClickOptionsGroup):
                 help="What variable to plot/how to plot the input variable.",
                 type=click.Choice(['auto']),
                 default='auto',
-            )
+            ),
         ]
 
 
@@ -476,7 +479,7 @@ class DepositionOptions(ClickOptionsGroup):
         ]
 
     @click_options
-    def plot():
+    def plot_deterministic():
         return [
             click.option(
                 '--plot-var',
@@ -485,6 +488,19 @@ class DepositionOptions(ClickOptionsGroup):
                     'auto',
                     'affected_area',
                     'affected_area_mono',
+                ]),
+                default='auto',
+            )
+        ]
+
+    @click_options
+    def plot_ensemble():
+        return [
+            click.option(
+                '--plot-var',
+                help="What variable to plot/how to plot the input variable.",
+                type=click.Choice([
+                    'auto',
                 ]),
                 default='auto',
             )
@@ -564,7 +580,7 @@ def deterministic_concentration(ctx, plot_var, **kwargs):
 @GlobalOptions.preproc
 @GlobalOptions.output
 @DepositionOptions.input
-@DepositionOptions.plot
+@DepositionOptions.plot_deterministic
 @click.pass_context
 def deterministic_deposition(ctx, plot_var, **kwargs):
     var_in = {'auto': 'deposition'}.get(plot_var, plot_var)
@@ -598,7 +614,7 @@ def ensemble_concentration(ctx, plot_var, **kwargs):
 @EnsembleOptions.input
 @EnsembleOptions.plot
 @DepositionOptions.input
-@DepositionOptions.plot
+@DepositionOptions.plot_ensemble
 @click.pass_context
 def ensemble_deposition(ctx, plot_var, **kwargs):
     var_in = {'auto': 'deposition'}.get(plot_var, plot_var)

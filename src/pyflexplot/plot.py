@@ -17,22 +17,7 @@ from .utils_dev import ipython  #SR_DEV
 mpl.use('Agg')  # Prevent ``couldn't connect to display`` error
 
 
-class AxesMap:
-
-    def __init__(self, fig):
-        """Initialize instance of AxesMap.
-
-        Args:
-            fig (Figure): Figure to which to map axes is added.
-        """
-        self.fig = fig
-
-
 class AxesConfMap:
-    pass
-
-
-class AxesConfMap(AxesConfMap):
 
     def __init__(
             self,
@@ -90,7 +75,7 @@ class AxesConfMap(AxesConfMap):
 
 
 #SR_TODO Push non-rotated-pole specific code up into AxesMap
-class AxesMap(AxesMap):
+class AxesMap:
     """Map plot axes for FLEXPART plot for rotated-pole data.
 
     Attributes:

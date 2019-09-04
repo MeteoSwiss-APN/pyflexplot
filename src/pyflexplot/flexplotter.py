@@ -200,6 +200,10 @@ class Plotter_EnsThrAgrmt_Concentration(Plotter):
     cls_plot = Plot.subclass('ens_thr_agrmt_concentration')
 
 
+class Plotter_EnsThrAgrmt_Deposition(Plotter):
+    cls_plot = Plot.subclass('ens_thr_agrmt_deposition')
+
+
 #----------------------------------------------------------------------
 
 #SR_TMP< TODO cleaner solution (separate input and ensemble variable)
@@ -214,5 +218,7 @@ Plotter.subclasses.update({
     Plotter_EnsMean_AffectedAreaMono,
     'ens_thr_agrmt_concentration':
     Plotter_EnsThrAgrmt_Concentration,
+    'ens_thr_agrmt_deposition':
+    Plotter_EnsThrAgrmt_Deposition,
 })
 #SR_TMP>
