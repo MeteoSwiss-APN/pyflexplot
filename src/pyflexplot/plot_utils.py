@@ -6,6 +6,7 @@ import cartopy
 import geopy.distance
 import logging as log
 import matplotlib as mpl
+import matplotlib.patches
 import matplotlib.ticker
 import numpy as np
 
@@ -538,6 +539,10 @@ class AxesTextBox:
             'linewidth': 0.5,
         }
         self._baseline_kwargs = self._baseline_kwargs_default
+
+    def summarize(self):
+        """Summarize the text box to a JSON dict."""
+        return summarize_axes_text_box(self)
 
     def draw_border(self, x=0.0, y=0.0, w=1.0, h=1.0, fc='white', ec='black'):
         """Draw a box onto the axes."""
@@ -1112,3 +1117,50 @@ def colors_from_cmap(cmap, n_levels, extend):
         return colors[1:]
     else:
         return colors[1:-1]
+
+#----------------------------------------------------------------------
+
+def summarize_mpl_figure(obj):
+    """Summarize a matplotlib ``Figure`` instance in a dict."""
+    data = {
+        'type': type(obj).__name__,
+        #SR_TODO if necessary, add option for shallow summary (avoid loops)
+        'axes': [summarize_mpl_axes(a) for a in obj.get_axes()],
+        'bbox': summarize_mpl_bbox(obj.bbox),
+        'dpi': obj.dpi,
+    }
+    return data
+
+
+def summarize_mpl_axes(obj):
+    """Summarize a matplotlib ``Axes`` instance in a dict."""
+    data = {
+        'type': type(obj).__name__,
+        'bbox': summarize_mpl_bbox(obj.bbox),
+    }
+    return data
+
+
+def summarize_mpl_bbox(obj):
+    """Summarize a matplotlib ``Bbox`` instance in a dict."""
+    data = {
+        'type': type(obj).__name__,
+        'bounds': obj.bounds,
+    }
+    return data
+
+
+def summarize_axes_text_box(obj):
+    """Summarize an ``AxesTextBox`` instance in a dict."""
+    data = {}
+
+    data['type'] = type(obj).__name__
+
+    data['content'] = {}
+    #data['content'] = ['
+
+    data['fig'] = summarize_mpl_figure(obj.fig)
+    data['ax_ref'] = summarize_mpl_axes(obj.ax_ref)
+
+    ipython(globals(), locals(), f"summarize_axes_text_box")
+    return data
