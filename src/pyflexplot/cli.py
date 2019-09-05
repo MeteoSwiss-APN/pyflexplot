@@ -13,7 +13,7 @@ from pprint import pformat
 from .io import FieldSpecs
 from .io import FileReader
 from .utils import count_to_log_level
-from .flexplotter import Plotter
+from .plotter import Plotter
 
 from .utils_dev import ipython  #SR_DEV
 

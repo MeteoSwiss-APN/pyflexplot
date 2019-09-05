@@ -5,9 +5,9 @@
 ./attr.py
 ./specs.py
 ./data.py
-./flexplotter.py
-./flexplot.py
+./plotter.py
 ./plot.py
+./plot_utils.py
 ./utils.py
 ./utils_dev.py
 
