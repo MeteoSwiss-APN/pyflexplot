@@ -501,7 +501,7 @@ class TextElement:
         """Create an instance of ``TextElement``.
 
         Args:
-            box (AxesTextBox): Parent text box axes.
+            box (TextBoxAxes): Parent text box axes.
 
             x (float): Position in the horizontal.
 
@@ -530,7 +530,7 @@ class ColorRectElement:
         """Create an instance of ``BolorBoxElement``.
 
         Args:
-            box (AxesTextBox): Parent text box axes.
+            box (TextBoxAxes): Parent text box axes.
 
             x (float): Position in the horizontal.
 
@@ -577,7 +577,7 @@ class MarkerElement:
         """Create an instance of ``MarkerElement``.
 
         Args:
-            box (AxesTextBox): Parent text box axes.
+            box (TextBoxAxes): Parent text box axes.
 
             x (float): Position in the horizontal.
 
@@ -605,7 +605,7 @@ class HLineElement:
         """Create an instance of ``HLineElement``.
 
         Args:
-            box (AxesTextBox): Parent text box axes.
+            box (TextBoxAxes): Parent text box axes.
 
             y (float): Position in the vertical.
 
@@ -623,11 +623,11 @@ class HLineElement:
         self._box.ax.axhline(self._y, color=self._c, linewidth=self._lw)
 
 
-class AxesTextBox:
+class TextBoxAxes:
     """Text box axes for FLEXPART plot."""
 
     def __init__(self, fig, ax_ref, rect, show_border=True):
-        """Initialize instance of AxesTextBox.
+        """Initialize instance of TextBoxAxes.
 
         Args:
             fig (Figure): Figure to which to add the text box axes.
@@ -756,7 +756,7 @@ class AxesTextBox:
 
         Args:
             loc (int or str): Reference location. For details see
-                ``AxesTextBox.text``.
+                ``TextBoxAxes.text``.
 
             block (list[str]): Text block.
 
@@ -765,7 +765,7 @@ class AxesTextBox:
                 as ``block``. Omit individual lines with None.
 
             **kwargs: Positioning and formatting options passed to
-                ``AxesTextBox.text_blocks``.
+                ``TextBoxAxes.text_blocks``.
 
         """
         self.text_blocks(loc, [block], colors=[colors], **kwargs)
@@ -785,7 +785,7 @@ class AxesTextBox:
 
         Args:
             loc (int or str): Reference location. For details see
-                ``AxesTextBox.text``.
+                ``TextBoxAxes.text``.
 
             blocks (list[list[str]]): List of text blocks, each of
                 which constitutes a list of lines.
@@ -874,7 +874,7 @@ class AxesTextBox:
     def text_block_hfill(self, loc_y, block, **kwargs):
         """Single block of horizontally filled lines.
 
-        See ``AxesTextBox.text_blocks_hfill`` for details.
+        See ``TextBoxAxes.text_blocks_hfill`` for details.
         """
         self.text_blocks_hfill(loc_y, [block], **kwargs)
 
@@ -886,7 +886,7 @@ class AxesTextBox:
 
         Args:
             locy (int or str): Vertical reference location. For details
-                see ``AxesTextBox.text`` (vertical component
+                see ``TextBoxAxes.text`` (vertical component
                 only).
 
             blocks (str or list[str] or list[list[str]] or
@@ -907,7 +907,7 @@ class AxesTextBox:
                     and right part at the first tab character ('\t').
 
             **kwargs: Location and formatting options passed to
-                ``AxesTextBox.text_blocks``.
+                ``TextBoxAxes.text_blocks``.
         """
 
         if isinstance(blocks, str):
@@ -1271,7 +1271,7 @@ def summarize_mpl_bbox(obj):
 
 
 def summarize_axes_text_box(obj):
-    """Summarize an ``AxesTextBox`` instance in a dict."""
+    """Summarize an ``TextBoxAxes`` instance in a dict."""
     data = {}
 
     data['type'] = type(obj).__name__

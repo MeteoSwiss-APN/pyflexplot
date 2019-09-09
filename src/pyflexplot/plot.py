@@ -12,7 +12,7 @@ from textwrap import dedent
 
 from .plot_utils import AxesMap
 from .plot_utils import ax_dims_fig_coords
-from .plot_utils import AxesTextBox
+from .plot_utils import TextBoxAxes
 from .utils import Degrees
 from .utils import ParentClass
 from .utils_dev import ipython  #SR_DEV
@@ -409,7 +409,7 @@ class Plot_Dispersion(Plot):
         # Add axes for text boxes (one on top, two to the right)
         self.boxes = np.array([
             # Top
-            AxesTextBox(
+            TextBoxAxes(
                 self.fig, self.ax_map.ax, [
                     x0_map,
                     y0_map + pad_ver + h_map,
@@ -417,7 +417,7 @@ class Plot_Dispersion(Plot):
                     h_box_t,
                 ]),
             # Right/top
-            AxesTextBox(
+            TextBoxAxes(
                 self.fig, self.ax_map.ax, [
                     x0_map + pad_hor + w_map,
                     y0_map + 0.5*pad_ver + (1.0 - h_rel_box_rt)*h_map,
@@ -425,7 +425,7 @@ class Plot_Dispersion(Plot):
                     h_rel_box_rt*h_map - 0.5*pad_ver,
                 ]),
             # Right/bottom
-            AxesTextBox(
+            TextBoxAxes(
                 self.fig, self.ax_map.ax, [
                     x0_map + pad_hor + w_map,
                     y0_map,
@@ -433,7 +433,7 @@ class Plot_Dispersion(Plot):
                     (1.0 - h_rel_box_rt)*h_map - 0.5*pad_ver,
                 ]),
             # Bottom
-            AxesTextBox(
+            TextBoxAxes(
                 self.fig,
                 self.ax_map.ax, [
                     x0_map,
