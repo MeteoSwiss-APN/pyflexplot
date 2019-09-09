@@ -498,6 +498,7 @@ class MapPlotGeoDist:
 # Text Box Elements
 #======================================================================
 
+
 class TextBoxElement:
     """Base class for elements in text box."""
 
@@ -653,6 +654,7 @@ class TextBoxElement_HLine(TextBoxElement):
 # Text Box
 #======================================================================
 
+
 class TextBoxAxes:
     """Text box axes for FLEXPART plot."""
 
@@ -779,7 +781,8 @@ class TextBoxAxes:
             raise NotImplementedError(f"verticalalignment='{kwargs['vs']}'")
 
         # Add text
-        self.elements.append(TextBoxElement_Text(self, x=x, y=y, s=s, **kwargs))
+        self.elements.append(
+            TextBoxElement_Text(self, x=x, y=y, s=s, **kwargs))
 
         if self._show_baselines:
             # Draw a horizontal line at the text baseline
@@ -1059,7 +1062,8 @@ class TextBoxAxes:
 
         # Define rectangle
         self.elements.append(
-            TextBoxElement_ColorRect(self, x=x, y=y, w=w, h=h, fc=fc, ec=ec, **kwargs))
+            TextBoxElement_ColorRect(
+                self, x=x, y=y, w=w, h=h, fc=fc, ec=ec, **kwargs))
 
         if self._show_baselines:
             self.elements.append(TextBoxElement_HLine(self, y=y))
@@ -1098,6 +1102,7 @@ class TextBoxAxes:
 
 
 #======================================================================
+
 
 class BoxLocation:
     """Represents reference location inside a box on a 3x3 grid."""
