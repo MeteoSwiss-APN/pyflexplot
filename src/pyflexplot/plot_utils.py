@@ -494,11 +494,31 @@ class MapPlotGeoDist:
             raise NotImplementedError(f"great circle distance in {self.unit}")
 
 
-class TextElement:
+#======================================================================
+# Text Box Elements
+#======================================================================
+
+class TextBoxElement:
+    """Base class for elements in text box."""
+
+    def __init__(self, *args, **kwargs):
+        raise Exception(f"{type(self).__name__} must be subclassed")
+
+    def summarize(self):
+        data = {}
+        data['type'] = type(self).__name__
+        for attr in self._summarizable_attrs:
+            data[attr] = getattr(self, attr)
+        return data
+
+
+class TextBoxElement_Text(TextBoxElement):
     """Text element in text box."""
 
+    _summarizable_attrs = ['x', 'y', 's', 'kwargs']
+
     def __init__(self, box, *, x, y, s, **kwargs):
-        """Create an instance of ``TextElement``.
+        """Create an instance of ``TextBoxElement_Text``.
 
         Args:
             box (TextBoxAxes): Parent text box axes.
@@ -512,22 +532,24 @@ class TextElement:
             **kwargs: Additional keyword arguments for ``ax.text``.
 
         """
-        self._box = box
-        self._x = x
-        self._y = y
-        self._s = s
-        self._kwargs = kwargs
+        self.box = box
+        self.x = x
+        self.y = y
+        self.s = s
+        self.kwargs = kwargs
 
     def draw(self):
         """Draw text element onto text bot axes."""
-        self._box.ax.text(x=self._x, y=self._y, s=self._s, **self._kwargs)
+        self.box.ax.text(x=self.x, y=self.y, s=self.s, **self.kwargs)
 
 
-class ColorRectElement:
+class TextBoxElement_ColorRect(TextBoxElement):
     """A colored box element inside a text box axes."""
 
+    _summarizable_attrs = ['x', 'y', 'w', 'h', 'fc', 'ex', 'kwargs']
+
     def __init__(self, box, *, x, y, w, h, fc, ec, **kwargs):
-        """Create an instance of ``BolorBoxElement``.
+        """Create an instance of ``TextBoxElement_BolorBox``.
 
         Args:
             box (TextBoxAxes): Parent text box axes.
@@ -548,33 +570,35 @@ class ColorRectElement:
                 ``mpl.patches.Rectangle``.
 
         """
-        self._box = box
-        self._x = x
-        self._y = y
-        self._w = w
-        self._h = h
-        self._fc = fc
-        self._ec = ec
-        self._kwargs = kwargs
+        self.box = box
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+        self.fc = fc
+        self.ec = ec
+        self.kwargs = kwargs
 
     def draw(self):
         p = mpl.patches.Rectangle(
-            (self._x, self._y),
-            self._w,
-            self._h,
+            (self.x, self.y),
+            self.w,
+            self.h,
             fill=True,
-            fc=self._fc,
-            ec=self._ec,
-            **self._kwargs,
+            fc=self.fc,
+            ec=self.ec,
+            **self.kwargs,
         )
-        self._box.ax.add_patch(p)
+        self.box.ax.add_patch(p)
 
 
-class MarkerElement:
+class TextBoxElement_Marker(TextBoxElement):
     """A marker element in a text box axes."""
 
+    _summarizable_attrs = ['x', 'y', 'm', 'kwargs']
+
     def __init__(self, box, *, x, y, m, **kwargs):
-        """Create an instance of ``MarkerElement``.
+        """Create an instance of ``TextBoxElement_Marker``.
 
         Args:
             box (TextBoxAxes): Parent text box axes.
@@ -588,21 +612,23 @@ class MarkerElement:
             **kwargs: Additional keyword arguments for ``ax.plot``.
 
         """
-        self._box = box
-        self._x = x
-        self._y = y
-        self._m = m
-        self._kwargs = kwargs
+        self.box = box
+        self.x = x
+        self.y = y
+        self.m = m
+        self.kwargs = kwargs
 
     def draw(self):
-        self._box.ax.plot([self._x], [self._y], marker=self._m, **self._kwargs)
+        self.box.ax.plot([self.x], [self.y], marker=self.m, **self.kwargs)
 
 
-class HLineElement:
+class TextBoxElement_HLine(TextBoxElement):
     """Horizontal line in a text box axes."""
 
+    _summarizable_attrs = ['y', 'c', 'lw']
+
     def __init__(self, box, *, y, c='k', lw=1.0):
-        """Create an instance of ``HLineElement``.
+        """Create an instance of ``TextBoxElement_HLine``.
 
         Args:
             box (TextBoxAxes): Parent text box axes.
@@ -614,17 +640,24 @@ class HLineElement:
             lw (float, optional): Line width. Defaults to 1.0.
 
         """
-        self._box = box
-        self._y = y
-        self._c = c
-        self._lw = lw
+        self.box = box
+        self.y = y
+        self.c = c
+        self.lw = lw
 
     def draw(self):
-        self._box.ax.axhline(self._y, color=self._c, linewidth=self._lw)
+        self.box.ax.axhline(self.y, color=self.c, linewidth=self.lw)
 
+
+#======================================================================
+# Text Box
+#======================================================================
 
 class TextBoxAxes:
     """Text box axes for FLEXPART plot."""
+
+    # Show text base line (useful for debugging)
+    _show_baselines = False
 
     def __init__(self, fig, ax_ref, rect, show_border=True):
         """Initialize instance of TextBoxAxes.
@@ -640,21 +673,17 @@ class TextBoxAxes:
                 Default to True.
 
         """
-
         self.fig = fig
         self.ax_ref = ax_ref
-
-        self.ax = self.fig.add_axes(rect)
-        self.ax.axis('off')
-
+        self.rect = rect
         self.show_border = show_border
+        self._prepare()
 
+    def _prepare(self):
+        self.elements = []
+        self.ax = self.fig.add_axes(self.rect)
+        self.ax.axis('off')
         self.compute_unit_distances()
-
-        # Text base line settings (line below text, for debugging)
-        self._show_baselines = False
-
-        self._elements = []
 
     def draw(self):
         """Draw the defined text boxes onto the plot axes."""
@@ -667,7 +696,12 @@ class TextBoxAxes:
 
     def summarize(self):
         """Summarize the text box to a JSON dict."""
-        return summarize_axes_text_box(self)
+        data = {}
+        data['type'] = type(self).__name__
+        data['elements'] = [e.summarize() for e in self.elements]
+        data['fig'] = summarize_mpl_figure(self.fig)
+        data['ax_ref'] = summarize_mpl_axes(self.ax_ref)
+        return data
 
     def draw_border(self, x=0.0, y=0.0, w=1.0, h=1.0, fc='white', ec='black'):
         """Draw a box onto the axes."""
@@ -745,11 +779,11 @@ class TextBoxAxes:
             raise NotImplementedError(f"verticalalignment='{kwargs['vs']}'")
 
         # Add text
-        self._elements.append(TextElement(self, x=x, y=y, s=s, **kwargs))
+        self.elements.append(TextBoxElement_Text(self, x=x, y=y, s=s, **kwargs))
 
         if self._show_baselines:
             # Draw a horizontal line at the text baseline
-            self._elements.append(HLineElement(self, y=y))
+            self.elements.append(TextBoxElement_HLine(self, y=y))
 
     def text_block(self, loc, block, colors=None, **kwargs):
         """Add a text block comprised of multiple lines.
@@ -1024,11 +1058,11 @@ class TextBoxAxes:
         h = h*self.dy
 
         # Define rectangle
-        self._elements.append(
-            ColorRectElement(self, x=x, y=y, w=w, h=h, fc=fc, ec=ec, **kwargs))
+        self.elements.append(
+            TextBoxElement_ColorRect(self, x=x, y=y, w=w, h=h, fc=fc, ec=ec, **kwargs))
 
         if self._show_baselines:
-            self._elements.append(HLineElement(self, y=y))
+            self.elements.append(TextBoxElement_HLine(self, y=y))
 
     def marker(self, loc, marker, dx=None, dy=None, **kwargs):
         """Add a marker symbol.
@@ -1056,12 +1090,14 @@ class TextBoxAxes:
         y = loc.get_y(dy)
 
         # Add marker
-        self._elements.append(
-            MarkerElement(self, x=x, y=y, m=marker, **kwargs))
+        self.elements.append(
+            TextBoxElement_Marker(self, x=x, y=y, m=marker, **kwargs))
 
         if self._show_baselines:
-            self._elements.append(HLineElement(self, y=y))
+            self.elements.append(TextBoxElement_HLine(self, y=y))
 
+
+#======================================================================
 
 class BoxLocation:
     """Represents reference location inside a box on a 3x3 grid."""
@@ -1237,7 +1273,7 @@ def colors_from_cmap(cmap, n_levels, extend):
         return colors[1:-1]
 
 
-#----------------------------------------------------------------------
+#======================================================================
 
 
 def summarize_mpl_figure(obj):
@@ -1267,19 +1303,4 @@ def summarize_mpl_bbox(obj):
         'type': type(obj).__name__,
         'bounds': obj.bounds,
     }
-    return data
-
-
-def summarize_axes_text_box(obj):
-    """Summarize an ``TextBoxAxes`` instance in a dict."""
-    data = {}
-
-    data['type'] = type(obj).__name__
-
-    data['content'] = {}
-    #data['content'] = ['
-
-    data['fig'] = summarize_mpl_figure(obj.fig)
-    data['ax_ref'] = summarize_mpl_axes(obj.ax_ref)
-
     return data
