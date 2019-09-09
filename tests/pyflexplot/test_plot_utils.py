@@ -26,4 +26,4 @@ class TestAxesTextBox_Serialize:
 
         sol = {}
 
-        assert res == sol
+        assert res['type'] == 'AxesTextBox'

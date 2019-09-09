@@ -289,6 +289,7 @@ class Plot_Dispersion(Plot):
         self.fill_box_right_top()
         self.fill_box_right_bottom()
         self.fill_box_bottom()
+        self.draw_boxes()
 
     def fld_nonzero(self):
         return np.where(self.field.fld > 0, self.field.fld, np.nan)
@@ -312,8 +313,7 @@ class Plot_Dispersion(Plot):
 
         if self.mark_field_max:
             # Add marker at location of maximum value
-            self.ax_map.mark_max(
-                self.field.fld, **self._max_marker_kwargs)
+            self.ax_map.mark_max(self.field.fld, **self._max_marker_kwargs)
 
         return h_con
 
@@ -407,7 +407,7 @@ class Plot_Dispersion(Plot):
         pad_ver = pad_hor*fig_aspect
 
         # Add axes for text boxes (one on top, two to the right)
-        self.axs_box = np.array([
+        self.boxes = np.array([
             # Top
             AxesTextBox(
                 self.fig, self.ax_map.ax, [
@@ -444,6 +444,10 @@ class Plot_Dispersion(Plot):
                 show_border=False),
         ])
 
+    def draw_boxes(self):
+        for box in self.boxes:
+            box.draw()
+
     #------------------------------------------------------------------
     # Top
     #------------------------------------------------------------------
@@ -457,7 +461,7 @@ class Plot_Dispersion(Plot):
                 be skipped. Defaults to ``{}``.
 
         """
-        box = self.axs_box[0]
+        box = self.boxes[0]
 
         if skip_pos is None:
             skip_pos = {}
@@ -519,7 +523,7 @@ class Plot_Dispersion(Plot):
             dy0_boxes=7.1,
             dy_spacing=0.0):
         """Fill the top box to the right of the map plot."""
-        box = self.axs_box[1]
+        box = self.boxes[1]
 
         # Add box title
         s = self._format_legend_box_title()
@@ -719,7 +723,7 @@ class Plot_Dispersion(Plot):
 
     def fill_box_right_bottom(self):
         """Fill the bottom box to the right of the map plot."""
-        box = self.axs_box[2]
+        box = self.boxes[2]
 
         # Add box title
         s = {'en': 'Release', 'de': 'Austritt'}[self.lang]
@@ -775,7 +779,7 @@ class Plot_Dispersion(Plot):
 
     def fill_box_bottom(self):
         """Fill the box to the bottom of the map plot."""
-        box = self.axs_box[3]
+        box = self.boxes[3]
 
         # FLEXPART/model info
         s = self._flexpart_model_info()

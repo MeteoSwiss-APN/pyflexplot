@@ -398,18 +398,18 @@ class VarSpecs_EnsThrAgrmt:
         }[lang]
 
 
-class VarSpecs_EnsThrAgrmt_Concentration(
-        VarSpecs_EnsThrAgrmt, VarSpecs_Concentration):
+class VarSpecs_EnsThrAgrmt_Concentration(VarSpecs_EnsThrAgrmt,
+                                         VarSpecs_Concentration):
     name = 'ens_thr_agrmt_concentration'
 
 
-class VarSpecs_EnsThrAgrmt_Deposition(
-        VarSpecs_EnsThrAgrmt, VarSpecs_Deposition):
+class VarSpecs_EnsThrAgrmt_Deposition(VarSpecs_EnsThrAgrmt,
+                                      VarSpecs_Deposition):
     name = 'ens_thr_agrmt_deposition'
 
 
-class VarSpecs_EnsThrAgrmt_AffectedArea(
-        VarSpecs_EnsThrAgrmt, VarSpecs_AffectedArea):
+class VarSpecs_EnsThrAgrmt_AffectedArea(VarSpecs_EnsThrAgrmt,
+                                        VarSpecs_AffectedArea):
     name = 'ens_thr_agrmt_affected_area'
 
 

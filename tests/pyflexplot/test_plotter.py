@@ -6,4 +6,3 @@ import numpy as np
 import pytest
 
 from pyflexplot.utils_dev import ipython  #SR_DEV
-

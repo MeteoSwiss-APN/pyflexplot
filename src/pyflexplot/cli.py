@@ -167,8 +167,14 @@ INT_LIST_PLUS_SEP_UNIQ = CharSepListParamType(int, '+', dupl_ok=False)
 
 
 def create_plots(
-        *, ctx, var_in, in_file_path_raw, out_file_path_raw, ens_var=None,
-        ens_member_id_lst=None, **vars_specs):
+        *,
+        ctx,
+        var_in,
+        in_file_path_raw,
+        out_file_path_raw,
+        ens_var=None,
+        ens_member_id_lst=None,
+        **vars_specs):
     """Read and plot FLEXPART data.
 
     Args:
