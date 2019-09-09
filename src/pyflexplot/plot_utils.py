@@ -547,7 +547,7 @@ class TextBoxElement_Text(TextBoxElement):
 class TextBoxElement_ColorRect(TextBoxElement):
     """A colored box element inside a text box axes."""
 
-    _summarizable_attrs = ['x', 'y', 'w', 'h', 'fc', 'ex', 'kwargs']
+    _summarizable_attrs = ['x', 'y', 'w', 'h', 'fc', 'ec', 'kwargs']
 
     def __init__(self, box, *, x, y, w, h, fc, ec, **kwargs):
         """Create an instance of ``TextBoxElement_BolorBox``.

@@ -68,15 +68,16 @@ def get_dict_element(dict_, key, name='dict', exception_type=ValueError):
 class TestAxesTextBox_Summarize:
     """Summarize all relevant information about an ``TextBoxAxes``."""
 
-    fig, ax_ref = plt.subplots()
+    def create_text_box(self):
+        self.fig, self.ax_ref = plt.subplots()
+        self.rect_lbwh = [1, 1, 3, 2]
+        self.box = TextBoxAxes(self.fig, self.ax_ref, self.rect_lbwh)
+        return self.box
 
     def test_single_line(self):
-
-        rect_lbwh = [1, 1, 3, 2]
-        box = TextBoxAxes(self.fig, self.ax_ref, rect_lbwh)
+        box = self.create_text_box()
         box.text('bl', 'lower-left')
         res = box.summarize()
-
         sol = {
             'type': 'TextBoxAxes',
             'elements': [{
@@ -84,24 +85,39 @@ class TestAxesTextBox_Summarize:
                 's': 'lower-left',
             },]
         }
-
         assert_summary_dict_is_subdict(superdict=res, subdict=sol)
 
     def test_text_block(self):
-
-        rect_lbwh = [1, 1, 3, 2]
-        box = TextBoxAxes(self.fig, self.ax_ref, rect_lbwh)
-        txt = [('foo', 'bar'), ('hello', 'world')]
-        box.text_block('mc', txt)
-
+        box = self.create_text_box()
+        box.text_block('mc', [('foo', 'bar'), ('hello', 'world')])
         res = box.summarize()
-
         sol = {
-            'type': 'TextBoxAxes',
+            'type':
+                'TextBoxAxes',
             'elements': [
-                {'type': 'TextBoxElement_Text', 's': ('foo', 'bar')},
-                {'type': 'TextBoxElement_Text', 's': ('hello', 'world')},
+                {
+                    'type': 'TextBoxElement_Text',
+                    's': ('foo', 'bar')
+                },
+                {
+                    'type': 'TextBoxElement_Text',
+                    's': ('hello', 'world')
+                },
             ]
         }
+        assert_summary_dict_is_subdict(superdict=res, subdict=sol)
 
+    def test_color_rect(self):
+        box = self.create_text_box()
+        box.color_rect('tr', 'red', 'black')
+        res = box.summarize()
+        sol = {
+            'type':
+                'TextBoxAxes',
+            'elements': [{
+                'type': 'TextBoxElement_ColorRect',
+                'fc': 'red',
+                'ec': 'black',
+            }]
+        }
         assert_summary_dict_is_subdict(superdict=res, subdict=sol)
