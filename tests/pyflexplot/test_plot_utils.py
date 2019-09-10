@@ -65,7 +65,7 @@ def get_dict_element(dict_, key, name='dict', exception_type=ValueError):
 #======================================================================
 
 
-class TestAxesTextBox_Summarize:
+class Test_TextBoxAxes_Summarize:
     """Summarize all relevant information about an ``TextBoxAxes``."""
 
     def create_text_box(self):
@@ -83,7 +83,7 @@ class TestAxesTextBox_Summarize:
             'elements': [{
                 'type': 'TextBoxElement_Text',
                 's': 'lower-left',
-            },]
+            }]
         }
         assert_summary_dict_is_subdict(superdict=res, subdict=sol)
 
@@ -97,11 +97,11 @@ class TestAxesTextBox_Summarize:
             'elements': [
                 {
                     'type': 'TextBoxElement_Text',
-                    's': ('foo', 'bar')
+                    's': ('foo', 'bar'),
                 },
                 {
                     'type': 'TextBoxElement_Text',
-                    's': ('hello', 'world')
+                    's': ('hello', 'world'),
                 },
             ]
         }

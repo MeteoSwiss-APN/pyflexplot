@@ -516,17 +516,15 @@ class TextBoxElement:
 class TextBoxElement_Text(TextBoxElement):
     """Text element in text box."""
 
-    _summarizable_attrs = ['x', 'y', 's', 'kwargs']
+    _summarizable_attrs = ['loc', 's', 'kwargs']
 
-    def __init__(self, box, *, x, y, s, **kwargs):
+    def __init__(self, box, loc, *, s, **kwargs):
         """Create an instance of ``TextBoxElement_Text``.
 
         Args:
-            box (TextBoxAxes): Parent text box axes.
+            box (TextBoxAxes): Parent text box.
 
-            x (float): Position in the horizontal.
-
-            y (float): Position in the vertical.
+            loc (BoxLocation): Location in parent text box.
 
             s (str): Text.
 
@@ -534,10 +532,31 @@ class TextBoxElement_Text(TextBoxElement):
 
         """
         self.box = box
-        self.x = x
-        self.y = y
+        self.loc = loc
         self.s = s
         self.kwargs = kwargs
+
+        #SR_TMP< TODO consider removing this
+        # Add alignment parameters, unless specified in input kwargs
+        self.kwargs['ha'] = self.kwargs.get(
+            'horizontalalignment', self.kwargs.get('ha', self.loc.ha))
+        self.kwargs['va'] = self.kwargs.get(
+            'verticalalignment', self.kwargs.get('va', self.loc.va))
+        #SR_TMP>
+
+        #SR_TMP<
+        if kwargs['va'] == 'top_baseline':
+            # SR_NOTE: [2019-06-11]
+            # Ideally, we would like to align text by a `top_baseline`,
+            # analogous to baseline and center_baseline, which does not
+            # depend on the height of the letters (e.g., '$^\circ$'
+            # lifts the top of the text, like 'g' at the bottom). This
+            # does not exist, however, and attempts to emulate it by
+            # determining the line height (e.g., draw an 'M') and then
+            # shifting y accordingly (with `baseline` alignment) were
+            # not successful.
+            raise NotImplementedError(f"verticalalignment='{kwargs['vs']}'")
+        #SR_TMP>
 
     def draw(self):
         """Draw text element onto text bot axes."""
@@ -547,21 +566,19 @@ class TextBoxElement_Text(TextBoxElement):
 class TextBoxElement_ColorRect(TextBoxElement):
     """A colored box element inside a text box axes."""
 
-    _summarizable_attrs = ['x', 'y', 'w', 'h', 'fc', 'ec', 'kwargs']
+    _summarizable_attrs = ['loc', 'w', 'h', 'fc', 'ec', 'kwargs']
 
-    def __init__(self, box, *, x, y, w, h, fc, ec, **kwargs):
+    def __init__(self, box, loc, *, w, h, fc, ec, **kwargs):
         """Create an instance of ``TextBoxElement_BolorBox``.
 
         Args:
-            box (TextBoxAxes): Parent text box axes.
+            box (TextBoxAxes): Parent text box.
 
-            x (float): Position in the horizontal.
+            loc (BoxLocation): Location in parent text box.
 
-            y (float): Position in the vertical.
+            w (float): Width (box coordinates).
 
-            w (float): Width.
-
-            h (float): Height.
+            h (float): Height (box coordinates).
 
             fc (<color>): Face color.
 
@@ -572,8 +589,7 @@ class TextBoxElement_ColorRect(TextBoxElement):
 
         """
         self.box = box
-        self.x = x
-        self.y = y
+        self.loc = loc
         self.w = w
         self.h = h
         self.fc = fc
@@ -582,9 +598,9 @@ class TextBoxElement_ColorRect(TextBoxElement):
 
     def draw(self):
         p = mpl.patches.Rectangle(
-            (self.x, self.y),
-            self.w,
-            self.h,
+            (self.loc.x, self.loc.y),
+            self.w*self.loc.dx0,
+            self.h*self.loc.dy0,
             fill=True,
             fc=self.fc,
             ec=self.ec,
@@ -596,17 +612,15 @@ class TextBoxElement_ColorRect(TextBoxElement):
 class TextBoxElement_Marker(TextBoxElement):
     """A marker element in a text box axes."""
 
-    _summarizable_attrs = ['x', 'y', 'm', 'kwargs']
+    _summarizable_attrs = ['loc', 'm', 'kwargs']
 
-    def __init__(self, box, *, x, y, m, **kwargs):
+    def __init__(self, box, loc, *, m, **kwargs):
         """Create an instance of ``TextBoxElement_Marker``.
 
         Args:
-            box (TextBoxAxes): Parent text box axes.
+            box (TextBoxAxes): Parent text box.
 
-            x (float): Position in the horizontal.
-
-            y (float): Position in the vertical.
+            loc (BoxLocation): Position in parent text box.
 
             m (str or int): Marker type.
 
@@ -614,27 +628,28 @@ class TextBoxElement_Marker(TextBoxElement):
 
         """
         self.box = box
-        self.x = x
-        self.y = y
+        self.loc = loc
         self.m = m
         self.kwargs = kwargs
 
     def draw(self):
-        self.box.ax.plot([self.x], [self.y], marker=self.m, **self.kwargs)
+        self.box.ax.plot([self.loc.x], [self.loc.y],
+                         marker=self.m,
+                         **self.kwargs)
 
 
 class TextBoxElement_HLine(TextBoxElement):
     """Horizontal line in a text box axes."""
 
-    _summarizable_attrs = ['y', 'c', 'lw']
+    _summarizable_attrs = ['loc', 'c', 'lw']
 
-    def __init__(self, box, *, y, c='k', lw=1.0):
+    def __init__(self, box, loc, *, c='k', lw=1.0):
         """Create an instance of ``TextBoxElement_HLine``.
 
         Args:
-            box (TextBoxAxes): Parent text box axes.
+            box (TextBoxAxes): Parent text box.
 
-            y (float): Position in the vertical.
+            loc (BoxLocation): Location in parent text box.
 
             c (<color>, optional): Line color. Defaults to 'k' (black).
 
@@ -642,12 +657,12 @@ class TextBoxElement_HLine(TextBoxElement):
 
         """
         self.box = box
-        self.y = y
+        self.loc = loc
         self.c = c
         self.lw = lw
 
     def draw(self):
-        self.box.ax.axhline(self.y, color=self.c, linewidth=self.lw)
+        self.box.ax.axhline(self.loc.y, color=self.c, linewidth=self.lw)
 
 
 #======================================================================
@@ -679,9 +694,7 @@ class TextBoxAxes:
         self.ax_ref = ax_ref
         self.rect = rect
         self.show_border = show_border
-        self._prepare()
 
-    def _prepare(self):
         self.elements = []
         self.ax = self.fig.add_axes(self.rect)
         self.ax.axis('off')
@@ -693,7 +706,7 @@ class TextBoxAxes:
         if self.show_border:
             self.draw_border()
 
-        for element in self._elements:
+        for element in self.elements:
             element.draw()
 
     def summarize(self):
@@ -735,8 +748,8 @@ class TextBoxAxes:
         w_map_fig, _ = ax_dims_fig_coords(self.fig, self.ax_ref)
         w_box_fig, h_box_fig = ax_dims_fig_coords(self.fig, self.ax)
 
-        self.dx = unit_w_map_rel*w_map_fig/w_box_fig
-        self.dy = unit_w_map_rel*w_map_fig/h_box_fig
+        self.dx0 = unit_w_map_rel*w_map_fig/w_box_fig
+        self.dy0 = unit_w_map_rel*w_map_fig/h_box_fig
 
     def text(self, loc, s, dx=None, dy=None, **kwargs):
         """Add text positioned relative to a reference location.
@@ -756,37 +769,10 @@ class TextBoxAxes:
             **kwargs: Formatting options passed to ax.text().
 
         """
-
-        # Derive location variables from parameter
-        loc = BoxLocation(loc, self.dx, self.dy)
-        x = loc.get_x(dx)
-        y = loc.get_y(dy)
-        ha = loc.get_ha()
-        va = loc.get_va()
-
-        # Add alignment parameters, unless specified in input kwargs
-        kwargs['ha'] = kwargs.get('horizontalalignment', kwargs.get('ha', ha))
-        kwargs['va'] = kwargs.get('verticalalignment', kwargs.get('va', va))
-
-        if kwargs['va'] == 'top_baseline':
-            # SR_NOTE: [2019-06-11]
-            # Ideally, we would like to align text by a `top_baseline`,
-            # analogous to baseline and center_baseline, which does not
-            # depend on the height of the letters (e.g., '$^\circ$'
-            # lifts the top of the text, like 'g' at the bottom). This
-            # does not exist, however, and attempts to emulate it by
-            # determining the line height (e.g., draw an 'M') and then
-            # shifting y accordingly (with `baseline` alignment) were
-            # not successful.
-            raise NotImplementedError(f"verticalalignment='{kwargs['vs']}'")
-
-        # Add text
-        self.elements.append(
-            TextBoxElement_Text(self, x=x, y=y, s=s, **kwargs))
-
+        loc = BoxLocation(loc, self.dx0, self.dy0, dx, dy)
+        self.elements.append(TextBoxElement_Text(self, loc=loc, s=s, **kwargs))
         if self._show_baselines:
-            # Draw a horizontal line at the text baseline
-            self.elements.append(TextBoxElement_HLine(self, y=y))
+            self.elements.append(TextBoxElement_HLine(self, loc))
 
     def text_block(self, loc, block, colors=None, **kwargs):
         """Add a text block comprised of multiple lines.
@@ -1050,23 +1036,12 @@ class TextBoxAxes:
         """
         if ec is None:
             ec = fc
-
-        # Derive location variables from parameter
-        loc = BoxLocation(loc, self.dx, self.dy)
-        x = loc.get_x(dx)
-        y = loc.get_y(dy)
-
-        # Transform box dimensions to axes coordinates
-        w = w*self.dx
-        h = h*self.dy
-
-        # Define rectangle
+        loc = BoxLocation(loc, self.dx0, self.dy0, dx, dy)
         self.elements.append(
             TextBoxElement_ColorRect(
-                self, x=x, y=y, w=w, h=h, fc=fc, ec=ec, **kwargs))
-
+                self, loc, w=w, h=h, fc=fc, ec=ec, **kwargs))
         if self._show_baselines:
-            self.elements.append(TextBoxElement_HLine(self, y=y))
+            self.elements.append(TextBoxElement_HLine(self, loc))
 
     def marker(self, loc, marker, dx=None, dy=None, **kwargs):
         """Add a marker symbol.
@@ -1087,18 +1062,11 @@ class TextBoxAxes:
             **kwargs: Keyword arguments passed to ``mpl.plot``.
 
         """
-
-        # Derive location variables from parameter
-        loc = BoxLocation(loc, self.dx, self.dy)
-        x = loc.get_x(dx)
-        y = loc.get_y(dy)
-
-        # Add marker
+        loc = BoxLocation(loc, self.dx0, self.dy0, dx, dy)
         self.elements.append(
-            TextBoxElement_Marker(self, x=x, y=y, m=marker, **kwargs))
-
+            TextBoxElement_Marker(self, loc, m=marker, **kwargs))
         if self._show_baselines:
-            self.elements.append(TextBoxElement_HLine(self, y=y))
+            self.elements.append(TextBoxElement_HLine(self, loc))
 
 
 #======================================================================
@@ -1107,7 +1075,7 @@ class TextBoxAxes:
 class BoxLocation:
     """Represents reference location inside a box on a 3x3 grid."""
 
-    def __init__(self, loc, dx, dy):
+    def __init__(self, loc, dx0, dy0, dx=None, dy=None):
         """Initialize an instance of BoxLocation.
 
         Args:
@@ -1127,15 +1095,26 @@ class BoxLocation:
                     21      tc      top center
                     22      tr      top right
 
-        """
-        self.loc = loc
-        self.loc_y, self.loc_x = self._prepare_loc()
-        self.dx, self.dy = dx, dy
+            dx0 (float): Horizontal baseline offset.
 
-    def _prepare_loc(self):
+            dy0 (float): Vertical baseline offset.
+
+            dx (float, optional): Horizontal offset. Defaults to 0.0.
+
+            dx (float, optional): Vertical offset. Defaults to 0.0.
+
+        """
+        self.dx0 = dx0
+        self.dy0 = dy0
+        self.dx = 0.0 if dx is None else dx
+        self.dy = 0.0 if dy is None else dy
+
+        self._determine_loc_components(loc)
+
+    def _determine_loc_components(self, loc):
         """Split and evaluate components of location parameter."""
 
-        loc = str(self.loc)
+        loc = str(loc)
 
         # Split location into vertical and horizontal part
         if len(loc) == 2:
@@ -1146,13 +1125,11 @@ class BoxLocation:
             loc_y, loc_x = line.split(' ', 1)
 
         # Evaluate location components
-        loc_y = self._eval_loc_vert(loc_y)
-        loc_x = self._eval_loc_horz(loc_x)
+        self.loc_y = self._standardize_loc_y(loc_y)
+        self.loc_x = self._standardize_loc_x(loc_x)
 
-        return loc_y, loc_x
-
-    def _eval_loc_vert(self, loc):
-        """Evaluate vertical location component."""
+    def _standardize_loc_y(self, loc):
+        """Standardize vertical location component."""
         if loc in (0, '0', 'b', 'bottom'):
             return 'b'
         elif loc in (1, '1', 'm', 'middle'):
@@ -1161,8 +1138,8 @@ class BoxLocation:
             return 't'
         raise ValueError(f"invalid vertical location component '{loc}'")
 
-    def _eval_loc_horz(self, loc):
-        """Evaluate horizontal location component."""
+    def _standardize_loc_x(self, loc):
+        """Standardize horizontal location component."""
         if loc in (0, '0', 'l', 'left'):
             return 'l'
         elif loc in (1, '1', 'c', 'center'):
@@ -1171,8 +1148,9 @@ class BoxLocation:
             return 'r'
         raise ValueError(f"invalid horizontal location component '{loc}'")
 
-    def get_va(self):
-        """Derive the vertical alignment variable."""
+    @property
+    def va(self):
+        """Vertical alignment variable."""
         return {
             'b': 'baseline',
             'm': 'center_baseline',
@@ -1180,41 +1158,42 @@ class BoxLocation:
             't': 'top',
         }[self.loc_y]
 
-    def get_ha(self):
-        """Derive the horizontal alignment variable."""
+    @property
+    def ha(self):
+        """Horizontal alignment variable."""
         return {
             'l': 'left',
             'c': 'center',
             'r': 'right',
         }[self.loc_x]
 
-    def get_y0(self):
-        """Derive the vertical baseline variable."""
+    @property
+    def y0(self):
+        """Vertical baseline position."""
         return {
-            'b': 0.0 + self.dy,
+            'b': 0.0 + self.dy0,
             'm': 0.5,
-            't': 1.0 - self.dy,
+            't': 1.0 - self.dy0,
         }[self.loc_y]
 
-    def get_x0(self):
-        """Derive the horizontal baseline variable."""
+    @property
+    def x0(self):
+        """Horizontal baseline position."""
         return {
-            'l': 0.0 + self.dx,
+            'l': 0.0 + self.dx0,
             'c': 0.5,
-            'r': 1.0 - self.dx,
+            'r': 1.0 - self.dx0,
         }[self.loc_x]
 
-    def get_x(self, dx=None):
-        """Derive the horizontal position."""
-        if dx is None:
-            dx = 0.0
-        return self.get_x0() + dx*self.dx
+    @property
+    def x(self):
+        """Horizontal position."""
+        return self.x0 + self.dx*self.dx0
 
-    def get_y(self, dy=None):
-        """Derive the vertical position."""
-        if dy is None:
-            dy = 0.0
-        return self.get_y0() + dy*self.dy
+    @property
+    def y(self):
+        """Vertical position."""
+        return self.y0 + self.dy*self.dy0
 
 
 def pad_bbox(lon0, lon1, lat0, lat1, pad_rel):
