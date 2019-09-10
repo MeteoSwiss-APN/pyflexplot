@@ -221,6 +221,13 @@ class Plot(ParentClass):
         )
         plt.close(self.fig)
 
+    def summarize(self):
+        data = {}
+        data['type'] = type(self).__name__
+        data['name'] = self.name
+        data['field'] = self.field.summarize()
+        return data
+
 
 class Plot_Dispersion(Plot):
     """Base class for FLEXPART dispersion plots."""
@@ -290,6 +297,11 @@ class Plot_Dispersion(Plot):
         self.fill_box_right_bottom()
         self.fill_box_bottom()
         self.draw_boxes()
+
+    def summarize(self):
+        data = super().summarize()
+        # ...  SR_TODO
+        return data
 
     def fld_nonzero(self):
         return np.where(self.field.fld > 0, self.field.fld, np.nan)
@@ -407,7 +419,7 @@ class Plot_Dispersion(Plot):
         pad_ver = pad_hor*fig_aspect
 
         # Add axes for text boxes (one on top, two to the right)
-        self.boxes = np.array([
+        self.boxes = [
             # Top
             TextBoxAxes(
                 self.fig, self.ax_map.ax, [
@@ -442,7 +454,7 @@ class Plot_Dispersion(Plot):
                     h_box_b,
                 ],
                 show_border=False),
-        ])
+        ]
 
     def draw_boxes(self):
         for box in self.boxes:

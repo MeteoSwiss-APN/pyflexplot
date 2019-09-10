@@ -13,6 +13,7 @@ import numpy as np
 from copy import copy
 
 from .utils import MaxIterationError
+from .utils import Summarizable
 from .utils_dev import ipython  #SR_DEV
 
 mpl.use('Agg')  # Prevent ``couldn't connect to display`` error
@@ -499,30 +500,6 @@ class MapPlotGeoDist:
 #======================================================================
 
 
-class Summarizable:
-
-    def __init__(self, *args, **kwargs):
-        raise Exception(f"{type(self).__name__} must be subclassed")
-
-    @property
-    def summarizable_attrs(self):
-        raise Exception(
-            f"`summarizable_attrs` must be an attribute of subclasses of "
-            f"{type(self).__name__}")
-
-    def summarize(self):
-        data = {}
-        data['type'] = type(self).__name__
-        for attr in self.summarizable_attrs:
-            val = getattr(self, attr)
-            try:
-                val = val.summarize()
-            except AttributeError:
-                pass
-            data[attr] = val
-        return data
-
-
 class TextBoxElement(Summarizable):
     """Base class for elements in text box."""
 
@@ -577,7 +554,7 @@ class TextBoxElement_Text(TextBoxElement):
 
     def draw(self):
         """Draw text element onto text bot axes."""
-        self.box.ax.text(x=self.x, y=self.y, s=self.s, **self.kwargs)
+        self.box.ax.text(x=self.loc.x, y=self.loc.y, s=self.s, **self.kwargs)
 
 
 class TextBoxElement_ColorRect(TextBoxElement):

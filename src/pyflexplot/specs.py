@@ -15,6 +15,7 @@ from pprint import pprint  #SR_DEV
 
 from .attr import AttrGroupCollection
 from .utils import ParentClass
+from .utils import Summarizable
 from .utils import pformat_dictlike
 from .utils import nested_dict_set
 
@@ -35,8 +36,10 @@ def int_or_list(arg):
 #======================================================================
 
 
-class VarSpecs(ParentClass):
+class VarSpecs(Summarizable, ParentClass):
     """FLEXPART input variable specifications."""
+
+    summarizable_attrs = []  #SR_TODO
 
     # Keys with respective type
     _keys_w_type = {
@@ -418,10 +421,12 @@ class VarSpecs_EnsThrAgrmt_AffectedArea(VarSpecs_EnsThrAgrmt,
 #======================================================================
 
 
-class FieldSpecs(ParentClass):
+class FieldSpecs(Summarizable, ParentClass):
     """FLEXPART field specifications."""
 
     cls_var_specs = VarSpecs
+
+    summarizable_attrs = []  #SR_TODO
 
     # Dimensions with optionally multiple values
     dims_opt_mult_vals = ['species_id']

@@ -6,10 +6,12 @@ import datetime
 import logging as log
 import numpy as np
 
+from .utils import Summarizable
+
 from .utils_dev import ipython  #SR_DEV
 
 
-class Field:
+class Field(Summarizable):
     """FLEXPART field on rotated-pole grid."""
 
     def __init__(self, fld, rlat, rlon, attrs, field_specs, time_stats):
@@ -55,6 +57,38 @@ class Field:
             raise ValueError(
                 f"shape of fld inconsistent with (rlat, rlon): "
                 f"{fld.shape} != {grid_shape}")
+
+    summarizable_attrs = ['attrs', 'field_specs', 'time_stats']
+
+    def summarize(self):
+        data = super().summarize()
+        data['fld'] = {
+            'dtype': self.fld.dtype.__name__,
+            'shape': self.fld.shape,
+            'nanmin': np.nanmin(self.fld),
+            'nanmean': np.nanmean(self.fld),
+            'nanmedian': np.nanmedian(self.fld),
+            'nanmax': np.nanmax(self.fld),
+            'nanmin_nonzero': np.nanmin(self.fld[self.fld != 0]),
+            'nanmean_nonzero': np.nanmean(self.fld[self.fld != 0]),
+            'nanmedian_nonzero': np.nanmedian(self.fld[self.fld != 0]),
+            'nanmax_nonzero': np.nanmax(self.fld[self.fld != 0]),
+            'n_nan': np.count_nonzero(np.isnan(fld)),
+            'n_zero': np.count_nonzero(fld == 0),
+        }
+        data['rlat'] = {
+            'dtype': self.rlat.dtype.__name__,
+            'shape': self.rlat.shape,
+            'min': self.rlat.min(),
+            'max': self.rlat.max(),
+        }
+        data['rlon'] = {
+            'dtype': self.rlon.dtype.__name__,
+            'shape': self.rlon.shape,
+            'min': self.rlon.min(),
+            'max': self.rlon.max(),
+        }
+        return data
 
 
 def threshold_agreement(arr, thr, *, axis=None, eq_ok=False, dtype=None):

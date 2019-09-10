@@ -106,7 +106,8 @@ class Test_TextBoxAxes_Summarize:
         res = box.summarize(**self.kwargs_summarize)
         sol = {
             **self.sol_base,
-            'show_border': False,
+            'show_border':
+                False,
             'elements': [{
                 'type': 'TextBoxElement_Text',
                 's': 'lower-left',
@@ -127,7 +128,8 @@ class Test_TextBoxAxes_Summarize:
         res = box.summarize(**self.kwargs_summarize)
         sol = {
             **self.sol_base,
-            'show_border': True,
+            'show_border':
+                True,
             'elements': [
                 {
                     'type': 'TextBoxElement_Text',
@@ -147,7 +149,8 @@ class Test_TextBoxAxes_Summarize:
         res = box.summarize(**self.kwargs_summarize)
         sol = {
             **self.sol_base,
-            'show_border': True,
+            'show_border':
+                True,
             'elements': [{
                 'type': 'TextBoxElement_ColorRect',
                 'fc': 'red',

@@ -43,6 +43,30 @@ class ParentClass:
         return result
 
 
+class Summarizable:
+
+    def __init__(self, *args, **kwargs):
+        raise Exception(f"{type(self).__name__} must be subclassed")
+
+    @property
+    def summarizable_attrs(self):
+        raise Exception(
+            f"`summarizable_attrs` must be an attribute of subclasses of "
+            f"{type(self).__name__}")
+
+    def summarize(self):
+        data = {}
+        data['type'] = type(self).__name__
+        for attr in self.summarizable_attrs:
+            val = getattr(self, attr)
+            try:
+                val = val.summarize()
+            except AttributeError:
+                pass
+            data[attr] = val
+        return data
+
+
 class MaxIterationError(Exception):
     """Maximum number of iterations of a loop exceeded."""
     pass
