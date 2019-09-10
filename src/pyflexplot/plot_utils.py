@@ -499,24 +499,41 @@ class MapPlotGeoDist:
 #======================================================================
 
 
-class TextBoxElement:
+class Summarizable:
+
+    def __init__(self, *args, **kwargs):
+        raise Exception(f"{type(self).__name__} must be subclassed")
+
+    @property
+    def summarizable_attrs(self):
+        raise Exception(
+            f"`summarizable_attrs` must be an attribute of subclasses of "
+            f"{type(self).__name__}")
+
+    def summarize(self):
+        data = {}
+        data['type'] = type(self).__name__
+        for attr in self.summarizable_attrs:
+            val = getattr(self, attr)
+            try:
+                val = val.summarize()
+            except AttributeError:
+                pass
+            data[attr] = val
+        return data
+
+
+class TextBoxElement(Summarizable):
     """Base class for elements in text box."""
 
     def __init__(self, *args, **kwargs):
         raise Exception(f"{type(self).__name__} must be subclassed")
 
-    def summarize(self):
-        data = {}
-        data['type'] = type(self).__name__
-        for attr in self._summarizable_attrs:
-            data[attr] = getattr(self, attr)
-        return data
-
 
 class TextBoxElement_Text(TextBoxElement):
     """Text element in text box."""
 
-    _summarizable_attrs = ['loc', 's', 'kwargs']
+    summarizable_attrs = ['loc', 's', 'kwargs']
 
     def __init__(self, box, loc, *, s, **kwargs):
         """Create an instance of ``TextBoxElement_Text``.
@@ -566,7 +583,7 @@ class TextBoxElement_Text(TextBoxElement):
 class TextBoxElement_ColorRect(TextBoxElement):
     """A colored box element inside a text box axes."""
 
-    _summarizable_attrs = ['loc', 'w', 'h', 'fc', 'ec', 'kwargs']
+    summarizable_attrs = ['loc', 'w', 'h', 'fc', 'ec', 'kwargs']
 
     def __init__(self, box, loc, *, w, h, fc, ec, **kwargs):
         """Create an instance of ``TextBoxElement_BolorBox``.
@@ -612,7 +629,7 @@ class TextBoxElement_ColorRect(TextBoxElement):
 class TextBoxElement_Marker(TextBoxElement):
     """A marker element in a text box axes."""
 
-    _summarizable_attrs = ['loc', 'm', 'kwargs']
+    summarizable_attrs = ['loc', 'm', 'kwargs']
 
     def __init__(self, box, loc, *, m, **kwargs):
         """Create an instance of ``TextBoxElement_Marker``.
@@ -641,7 +658,7 @@ class TextBoxElement_Marker(TextBoxElement):
 class TextBoxElement_HLine(TextBoxElement):
     """Horizontal line in a text box axes."""
 
-    _summarizable_attrs = ['loc', 'c', 'lw']
+    summarizable_attrs = ['loc', 'c', 'lw']
 
     def __init__(self, box, loc, *, c='k', lw=1.0):
         """Create an instance of ``TextBoxElement_HLine``.
@@ -666,11 +683,11 @@ class TextBoxElement_HLine(TextBoxElement):
 
 
 #======================================================================
-# Text Box
+# Text Boxes
 #======================================================================
 
 
-class TextBoxAxes:
+class TextBoxAxes(Summarizable):
     """Text box axes for FLEXPART plot."""
 
     # Show text base line (useful for debugging)
@@ -700,36 +717,6 @@ class TextBoxAxes:
         self.ax.axis('off')
         self.compute_unit_distances()
 
-    def draw(self):
-        """Draw the defined text boxes onto the plot axes."""
-
-        if self.show_border:
-            self.draw_border()
-
-        for element in self.elements:
-            element.draw()
-
-    def summarize(self):
-        """Summarize the text box to a JSON dict."""
-        data = {}
-        data['type'] = type(self).__name__
-        data['elements'] = [e.summarize() for e in self.elements]
-        data['fig'] = summarize_mpl_figure(self.fig)
-        data['ax_ref'] = summarize_mpl_axes(self.ax_ref)
-        return data
-
-    def draw_border(self, x=0.0, y=0.0, w=1.0, h=1.0, fc='white', ec='black'):
-        """Draw a box onto the axes."""
-        self.ax.add_patch(
-            mpl.patches.Rectangle(
-                xy=(x, y),
-                width=w,
-                height=h,
-                transform=self.ax.transAxes,
-                fc=fc,
-                ec=ec,
-            ))
-
     def compute_unit_distances(self, unit_w_map_rel=0.01):
         """Compute unit distances in x and y for text positioning.
 
@@ -750,6 +737,37 @@ class TextBoxAxes:
 
         self.dx0 = unit_w_map_rel*w_map_fig/w_box_fig
         self.dy0 = unit_w_map_rel*w_map_fig/h_box_fig
+
+    def draw(self):
+        """Draw the defined text boxes onto the plot axes."""
+
+        if self.show_border:
+            self.draw_border()
+
+        for element in self.elements:
+            element.draw()
+
+    summarizable_attrs = ['rect', 'show_border', 'dx0', 'dy0']
+
+    def summarize(self):
+        """Summarize the text box to a JSON dict."""
+        data = super().summarize()
+        data['elements'] = [e.summarize() for e in self.elements]
+        data['fig'] = summarize_mpl_figure(self.fig)
+        data['ax_ref'] = summarize_mpl_axes(self.ax_ref)
+        return data
+
+    def draw_border(self, x=0.0, y=0.0, w=1.0, h=1.0, fc='white', ec='black'):
+        """Draw a box onto the axes."""
+        self.ax.add_patch(
+            mpl.patches.Rectangle(
+                xy=(x, y),
+                width=w,
+                height=h,
+                transform=self.ax.transAxes,
+                fc=fc,
+                ec=ec,
+            ))
 
     def text(self, loc, s, dx=None, dy=None, **kwargs):
         """Add text positioned relative to a reference location.
@@ -1069,11 +1087,12 @@ class TextBoxAxes:
             self.elements.append(TextBoxElement_HLine(self, loc))
 
 
-#======================================================================
-
-
-class BoxLocation:
+class BoxLocation(Summarizable):
     """Represents reference location inside a box on a 3x3 grid."""
+
+    summarizable_attrs = [
+        'dx0', 'dy0', 'dx', 'dy', 'x0', 'y0', 'x', 'y', 'va', 'ha'
+    ]
 
     def __init__(self, loc, dx0, dy0, dx=None, dy=None):
         """Initialize an instance of BoxLocation.
