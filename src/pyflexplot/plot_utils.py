@@ -749,12 +749,14 @@ class TextBoxAxes(Summarizable):
 
     summarizable_attrs = ['rect', 'show_border', 'dx0', 'dy0']
 
-    def summarize(self):
+    def summarize(self, include_fig=False, include_ax_ref=False):
         """Summarize the text box to a JSON dict."""
         data = super().summarize()
         data['elements'] = [e.summarize() for e in self.elements]
-        data['fig'] = summarize_mpl_figure(self.fig)
-        data['ax_ref'] = summarize_mpl_axes(self.ax_ref)
+        if include_fig:
+            data['fig'] = summarize_mpl_figure(self.fig)
+        if include_ax_ref:
+            data['ax_ref'] = summarize_mpl_axes(self.ax_ref)
         return data
 
     def draw_border(self, x=0.0, y=0.0, w=1.0, h=1.0, fc='white', ec='black'):

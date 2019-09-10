@@ -74,6 +74,8 @@ class Test_TextBoxAxes_Summarize:
         self.box = TextBoxAxes(self.fig, self.ax_ref, self.rect_lbwh, **kwargs)
         return self.box
 
+    kwargs_summarize = {'include_fig': True}
+
     sol_base = {
         'type': 'TextBoxAxes',
         'rect': [1.0, 1.0, 3.0, 2.0],
@@ -101,7 +103,7 @@ class Test_TextBoxAxes_Summarize:
     def test_text_line(self):
         box = self.create_text_box(show_border=False)
         box.text('bl', 'lower-left', dx=1.6, dy=0.8)
-        res = box.summarize()
+        res = box.summarize(**self.kwargs_summarize)
         sol = {
             **self.sol_base,
             'show_border': False,
@@ -122,7 +124,7 @@ class Test_TextBoxAxes_Summarize:
     def test_text_block(self):
         box = self.create_text_box()
         box.text_block('mc', [('foo', 'bar'), ('hello', 'world')])
-        res = box.summarize()
+        res = box.summarize(**self.kwargs_summarize)
         sol = {
             **self.sol_base,
             'show_border': True,
@@ -142,7 +144,7 @@ class Test_TextBoxAxes_Summarize:
     def test_color_rect(self):
         box = self.create_text_box(show_border=True)
         box.color_rect('tr', 'red', 'black')
-        res = box.summarize()
+        res = box.summarize(**self.kwargs_summarize)
         sol = {
             **self.sol_base,
             'show_border': True,
