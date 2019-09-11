@@ -6,12 +6,14 @@ import os
 
 from pyflexplot.utils import isiterable
 
+from pyflexplot.utils_dev import ipython  #SR_DEV
+
 #======================================================================
 
 
 @pytest.fixture
-def datadir(tmpdir, request):
-    """Return path to temporary directory containint test data.
+def datadir_rel(tmpdir, request):
+    """Return path to temporary data directory named like test file.
 
     Pytest fixture to find a data folder with the same name as the test
     module and -- if found -- mirror it to a temporary directory, which
@@ -19,12 +21,20 @@ def datadir(tmpdir, request):
 
     Adapted from `https://stackoverflow.com/a/29631801`.
     """
-    filename = request.module.__file__
-    test_dir, _ = os.path.splitext(filename)
+    test_file_path = request.module.__file__
+    test_dir_path, _ = os.path.splitext(test_file_path)
+    if os.path.isdir(test_dir_path):
+        distutils.dir_util.copy_tree(test_dir_path, str(tmpdir))
+    return tmpdir
 
-    if os.path.isdir(test_dir):
-        distutils.dir_util.copy_tree(test_dir, str(tmpdir))
 
+@pytest.fixture
+def datadir(tmpdir, request):
+    """Return path to temporary directory named 'data'."""
+    test_file_path = request.module.__file__
+    test_dir_path = f'{os.path.dirname(test_file_path)}/data'
+    if os.path.isdir(test_dir_path):
+        distutils.dir_util.copy_tree(test_dir_path, str(tmpdir))
     return tmpdir
 
 
@@ -33,6 +43,12 @@ def datadir(tmpdir, request):
 
 def assert_summary_dict_is_subdict(subdict, superdict):
     """Check that one summary dict is a subdict of another."""
+    if not isinstance(subdict, dict):
+        raise AssertionError(
+            f"subdict is not a dict, but of type {type(subdict).__name__}")
+    if not isinstance(superdict, dict):
+        raise AssertionError(
+            f"superdict is not a dict, but of type {type(superdict).__name__}")
     for key, val_sub in subdict.items():
         val_super = get_dict_element(
             superdict, key, 'superdict', AssertionError)
