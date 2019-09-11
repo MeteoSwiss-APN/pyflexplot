@@ -40,7 +40,7 @@ class Test_PlotDispersion_Summarize:
             release=SimpleNamespace(
                 lon=attr('release.lon', 8.0),
                 lat=attr('release.lat', 47.0),
-                site_name=attr('release.site_name', 'Goesgen'),
+                site_name=attr('release.site_name'),
                 height=attr('release.height'),
                 rate=attr('release.rate'),
                 mass=attr('release.mass'),
@@ -80,40 +80,120 @@ class Test_PlotDispersion_Summarize:
 
     #------------------------------------------------------------------
 
-    def test_FOO(self):
+    def test(self):
 
         field = self.create_dummy_field()
-        plot = DispersionPlot(field)
+        plot = DispersionPlot(field, dpi=100, figsize=(12, 9), lang='de')
         res = plot.summarize()
 
         sol = {
             'type': 'DispersionPlot',
+            'dpi': 100.0,
+            'figsize': (12.0, 9.0),
+            'lang': 'de',
+            'extend': 'max',
+            'level_range_style': 'simple',
+            'draw_colors': True,
+            'draw_contours': False,
+            'mark_field_max': True,
+            'mark_release_site': True,
+            'text_box_setup': {
+                'h_rel_t': 0.1,
+                'h_rel_b': 0.03,
+                'w_rel_r': 0.25,
+                'pad_hor_rel': 0.015,
+                'h_rel_box_rt': 0.46,
+            },
+            'labels': {},
+            'ax_map': {
+                'type': 'AxesMap',
+            },
+            'boxes': [
+                {
+                    'type':
+                        'TextBoxAxes',
+                    'elements': [
+                        {
+                            'type': 'TextBoxElement_Text',
+                            's': 'variable.long_name',
+                            'loc': {
+                                'loc': 'tl'
+                            },
+                        },
+                        {
+                            'type': 'TextBoxElement_Text',
+                            's': 'species.name.format',
+                            'loc': {
+                                'loc': 'tc'
+                            },
+                        },
+                        {
+                            'type': 'TextBoxElement_Text',
+                            's': 'simulation.now.format',
+                            'loc': {
+                                'loc': 'tr'
+                            },
+                        },
+                        {
+                            'type': 'TextBoxElement_Text',
+                            #'s': '...',
+                            'loc': {
+                                'loc': 'bl'
+                            },
+                        },
+                        {
+                            'type': 'TextBoxElement_Text',
+                            's': 'release.site_name',
+                            'loc': {
+                                'loc': 'bc'
+                            },
+                        },
+                        {
+                            'type': 'TextBoxElement_Text',
+                            's': 'simulation.now.format',
+                            'loc': {
+                                'loc': 'br'
+                            },
+                        },
+                    ],
+                },
+                {
+                    'type': 'TextBoxAxes'
+                },
+                {
+                    'type': 'TextBoxAxes'
+                },
+                {
+                    'type': 'TextBoxAxes'
+                },
+            ],
             'fig': {
                 'type':
                     'Figure',
                 'dpi':
                     100.0,
-                'bbox': {},
+                'bbox': {
+                    'type': 'TransformedBbox',
+                    'bounds': (0.0, 0.0, 1200.0, 900.0),
+                },
                 'axes': [
                     {
-                        'type': 'GeoAxesSubplot',
+                        'type': 'GeoAxesSubplot'
                     },
                     {
-                        'type': 'Axes',
+                        'type': 'Axes'
                     },
                     {
-                        'type': 'Axes',
+                        'type': 'Axes'
                     },
                     {
-                        'type': 'Axes',
+                        'type': 'Axes'
                     },
                     {
-                        'type': 'Axes',
+                        'type': 'Axes'
                     },
                 ]
             },
         }
 
         assert_summary_dict_is_subdict(superdict=res, subdict=sol)
-
-        ipython(globals(), locals())  #SR_DBG

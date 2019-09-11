@@ -29,22 +29,26 @@ def ipython(
     To display a message when dropping into the iPython shell, pass a
     string after the error code.
 
-    Examples
-    --------
-    >>> ipython(globals(), locals(), "I'm here!")
+    Args:
+        TODO
+
+    Example:
+        >>> ipython(globals(), locals(), "I'm here!")
 
     """
     log.getLogger().setLevel(_log_lvl_)
 
-    _kwargs_ = {'display_banner': None, 'editing_mode': _edit_mode_}
-
+    _config_ = {
+        'display_banner': None,
+        'editing_mode': _edit_mode_,
+    }
     if _colors_:
         if _bg_ == 'light':
-            _kwargs_['colors'] = 'LightBG'
+            _config_['colors'] = 'LightBG'
         elif _bg_ == 'dark':
-            _kwargs_['colors'] = 'Linux'
+            _config_['colors'] = 'Linux'
         else:
-            _kwargs_['colors'] = _colors_
+            _config_['colors'] = _colors_
 
     globals().update(_globals_)
     locals().update(_locals_)
@@ -56,8 +60,7 @@ def ipython(
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
         warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
-        import IPython
-        IPython.embed(**_kwargs_)
+        IPython.embed(**_config_)
 
     if _err_ is not None:
         sys.exit(_err_)

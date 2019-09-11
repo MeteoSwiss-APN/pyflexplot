@@ -44,6 +44,7 @@ class ParentClass:
 
 
 class SummarizableClass:
+    """Summarize important class attributes into a dict."""
 
     def __init__(self, *args, **kwargs):
         raise Exception(f"{type(self).__name__} must be subclassed")
@@ -84,13 +85,39 @@ class SummarizableClass:
         if skip is not None:
             attrs = [a for a in attrs if a not in skip]
         for attr in attrs:
-            val = getattr(self, attr)
-            try:
-                val = val.summarize()
-            except AttributeError:
-                pass
-            data[attr] = val
+            data[attr] = self._summarize_obj(getattr(self, attr))
         return data
+
+    def _summarize_obj(self, obj):
+
+        # Summarizable object?
+        try:
+            data = obj.summarize()
+        except AttributeError:
+            pass
+        else:
+            return self._summarize_obj(data)
+
+        # Dict-like object?
+        try:
+            items = obj.items()
+        except AttributeError:
+            pass
+        else:
+            for key, val in items:
+                obj[key] = self._summarize_obj(val)
+            return obj
+
+        # List-like object?
+        if isiterable(obj, str_ok=False):
+            type_ = type(obj)
+            data = []
+            for item in obj:
+                data.append(self._summarize_obj(item))
+            return type_(data)
+
+        # Giving up!
+        return obj
 
 
 class MaxIterationError(Exception):

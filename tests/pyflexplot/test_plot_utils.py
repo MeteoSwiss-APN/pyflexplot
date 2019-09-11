@@ -27,7 +27,7 @@ class Test_TextBoxAxes_Summarize:
         self.box = TextBoxAxes(self.fig, self.ax_ref, self.rect_lbwh, **kwargs)
         return self.box
 
-    kwargs_summarize = {'include_fig': True}
+    kwargs_summarize = {'add': ['fig']}
 
     sol_base = {
         'type': 'TextBoxAxes',

@@ -13,6 +13,7 @@ from textwrap import dedent
 from .plot_utils import AxesMap
 from .plot_utils import ax_dims_fig_coords
 from .plot_utils import TextBoxAxes
+from .utils import SummarizableClass
 from .plot_utils import SummarizablePlotClass
 from .utils import Degrees
 from .utils import ParentClass
@@ -23,7 +24,9 @@ from .utils_dev import ipython  #SR_DEV
 #======================================================================
 
 
-class PlotLabels:
+class PlotLabels(SummarizableClass):
+
+    summarizable_attrs = []  #SR_TODO
 
     def __init__(self):
         if self.__class__.__name__.endswith(f'_Base'):
@@ -76,7 +79,7 @@ class PlotLabels_De(PlotLabels):
         )
 
 
-class PlotLabels_Dispersion_Simulation_En(PlotLabels_En):
+class DispersionPlotLabels_Simulation_En(PlotLabels_En):
     """FLEXPART dispersion plot labels in English (simulation)."""
 
     start = 'Start'
@@ -85,7 +88,7 @@ class PlotLabels_Dispersion_Simulation_En(PlotLabels_En):
     copyright = u"\u00a9MeteoSwiss"
 
 
-class PlotLabels_Dispersion_Simulation_De(PlotLabels_De):
+class DispersionPlotLabels_Simulation_De(PlotLabels_De):
     """part dispersion plot labels in German (simulation)."""
 
     start = 'Start'
@@ -94,7 +97,7 @@ class PlotLabels_Dispersion_Simulation_De(PlotLabels_De):
     copyright = u"\u00a9MeteoSchweiz"
 
 
-class PlotLabels_Dispersion_Release_En(PlotLabels_En):
+class DispersionPlotLabels_Release_En(PlotLabels_En):
     """FLEXPART dispersion plot labels in English (release)."""
 
     lat = 'Latitude'
@@ -106,7 +109,7 @@ class PlotLabels_Dispersion_Release_En(PlotLabels_En):
     max = 'Max.'
 
 
-class PlotLabels_Dispersion_Release_De(PlotLabels_De):
+class DispersionPlotLabels_Release_De(PlotLabels_De):
     """part dispersion plot labels in German (release)."""
 
     lat = 'Breite'
@@ -118,7 +121,7 @@ class PlotLabels_Dispersion_Release_De(PlotLabels_De):
     max = 'Max.'
 
 
-class PlotLabels_Dispersion_Species_En(PlotLabels_En):
+class DispersionPlotLabels_Species_En(PlotLabels_En):
     """FLEXPART dispersion plot labels in English (species)."""
 
     name = 'Substance'
@@ -129,7 +132,7 @@ class PlotLabels_Dispersion_Species_En(PlotLabels_En):
     washout_exponent = 'Washout exponent'
 
 
-class PlotLabels_Dispersion_Species_De(PlotLabels_De):
+class DispersionPlotLabels_Species_De(PlotLabels_De):
     """part dispersion plot labels in German (species)."""
 
     name = 'Substanz'
@@ -140,19 +143,21 @@ class PlotLabels_Dispersion_Species_De(PlotLabels_De):
     washout_exponent = 'Auswaschexponent'
 
 
-class PlotLabels_Dispersion:
+class DispersionPlotLabels(SummarizableClass):
+
+    summarizable_attrs = []  #SR_TODO
 
     def __init__(self, lang):
 
         if lang == 'en':
-            self.simulation = PlotLabels_Dispersion_Simulation_En()
-            self.release = PlotLabels_Dispersion_Release_En()
-            self.species = PlotLabels_Dispersion_Species_En()
+            self.simulation = DispersionPlotLabels_Simulation_En()
+            self.release = DispersionPlotLabels_Release_En()
+            self.species = DispersionPlotLabels_Species_En()
 
         elif lang == 'de':
-            self.simulation = PlotLabels_Dispersion_Simulation_De()
-            self.release = PlotLabels_Dispersion_Release_De()
-            self.species = PlotLabels_Dispersion_Species_De()
+            self.simulation = DispersionPlotLabels_Simulation_De()
+            self.release = DispersionPlotLabels_Release_De()
+            self.species = DispersionPlotLabels_Species_De()
 
         else:
             raise ValueError(f"lang='{lang}'")
@@ -167,21 +172,24 @@ class Plot(SummarizablePlotClass, ParentClass):
     """Base class for FLEXPART plots."""
 
     name = '__base__'
-
+    summarizable_attrs = ['name', 'field', 'dpi', 'figsize', 'fig', 'ax_map']
     map_conf = {}
 
-    def __init__(self, field, lang='en'):
+    def __init__(self, field, *, dpi=None, figsize=None):
         """Create an instance of ``Plot``.
 
         Args:
             field (Field): FLEXPART field.
 
-            lang (str, optional): Language, e.g., 'de' for German.
-                Defaults to 'en' (English).
+            dpi (float, optional): Plot resolution (dots per inch).
+                Defaults to 100.0.
+
+            figsize (tuple[float, float], optional): Figure size in
+                inches. Defaults to (12.0, 9.0).
         """
         self.field = field
-        self.lang = lang
-        self.labels = PlotLabels_Dispersion(lang)
+        self.dpi = dpi or 100.0
+        self.figsize = figsize or (12.0, 9.0)
 
     def prepare_plot(self):
 
@@ -224,8 +232,6 @@ class Plot(SummarizablePlotClass, ParentClass):
         )
         plt.close(self.fig)
 
-    summarizable_attrs = ['name', 'field', 'fig', 'ax_map']
-
     def summarize(self, *args, **kwargs):
         data = super().summarize(*args, **kwargs)
         return data
@@ -235,14 +241,28 @@ class DispersionPlot(Plot):
     """Base class for FLEXPART dispersion plots."""
 
     name = '__base__dispersion__'
-    figsize = (12, 9)
     extend = 'max'
     level_range_style = 'simple'
     draw_colors = True
     draw_contours = False
     mark_field_max = True
     mark_release_site = True
+    text_box_setup = {
+        'h_rel_t': 0.1,
+        'h_rel_b': 0.03,
+        'w_rel_r': 0.25,
+        'pad_hor_rel': 0.015,
+        'h_rel_box_rt': 0.46,
+    }
+    summarizable_attrs = Plot.summarizable_attrs + [
+        'lang', 'labels', 'extend', 'level_range_style', 'draw_colors',
+        'draw_contours', 'mark_field_max', 'mark_release_site',
+        'text_box_setup', 'boxes'
+    ]
 
+    #
+    # level_range_style options:
+    #
     # simple        : 10-15 / 15-20
     # simple-int    : 10-14 / 15-19
     #'math'         : [10, 20)
@@ -250,9 +270,25 @@ class DispersionPlot(Plot):
     #'up'           : >= 10 / >= 15
     #'and'          : >= 10 & < 15 / >= 15 & < 20
     #'var'          : 10 <= v < 15 / 15 <= v < 20
+    #
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, lang=None, **kwargs):
+        """Create an instance of ``DispersionPlot``.
+
+        Args:
+            *args: Additional positional arguments passed to
+                ``Plot.__init__``.
+
+            lang (str, optional): Language, e.g., 'de' for German.
+                Defaults to 'en' (English).
+
+            **kwargs: Additional keyword arguments passed to
+                ``Plot.__init__``.
+        """
         super().__init__(*args, **kwargs)
+        self.lang = lang or 'en'
+
+        self.labels = DispersionPlotLabels(lang)
 
         # Formatting arguments
         self._max_marker_kwargs = {
@@ -358,14 +394,6 @@ class DispersionPlot(Plot):
     #==================================================================
     # Text Boxes
     #==================================================================
-
-    text_box_setup = {
-        'h_rel_t': 0.1,
-        'h_rel_b': 0.03,
-        'w_rel_r': 0.25,
-        'pad_hor_rel': 0.015,
-        'h_rel_box_rt': 0.46,
-    }
 
     def fig_add_text_boxes(self):
         """Add empty text boxes to the figure around the map plot.

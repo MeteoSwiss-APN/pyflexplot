@@ -293,4 +293,3 @@ class TestReadFieldEnsemble_Multiple:
 
     def test_ens_max_deposition_tot(self, datadir):
         self.run_deposition_tot(datadir, 'max')
-

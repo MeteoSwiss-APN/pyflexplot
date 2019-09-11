@@ -76,7 +76,12 @@ def summarize_mpl_bbox(obj):
 #======================================================================
 
 
-class AxesConfMap:
+class AxesConfMap(SummarizableClass):
+
+    summarizable_attrs = [
+        'bbox_pad_rel', 'geogr_res', 'ref_dist', 'ref_dist_unit',
+        'ref_dist_dir', 'ref_dist_x0', 'ref_dist_y0'
+    ]
 
     def __init__(
             self,
@@ -87,8 +92,7 @@ class AxesConfMap:
             ref_dist_unit='km',
             ref_dist_dir='east',
             ref_dist_x0=0.05,
-            ref_dist_y0=0.95,
-    ):
+            ref_dist_y0=0.95):
         """
 
         Kwargs:
@@ -134,16 +138,10 @@ class AxesConfMap:
 
 
 #SR_TODO Push non-rotated-pole specific code up into AxesMap
-class AxesMap:
-    """Map plot axes for FLEXPART plot for rotated-pole data.
+class AxesMap(SummarizablePlotClass):
+    """Map plot axes for FLEXPART plot for rotated-pole data."""
 
-    Attributes:
-        <TODO>
-
-    Methods:
-        <TODO>
-
-    """
+    summarizable_attrs = []  #SR_TMP
 
     def __init__(self, fig, rlat, rlon, pollat, pollon, **conf):
         """Initialize instance of AxesMap.
@@ -1123,7 +1121,8 @@ class BoxLocation(SummarizablePlotClass):
     """Represents reference location inside a box on a 3x3 grid."""
 
     summarizable_attrs = [
-        'dx0', 'dy0', 'dx', 'dy', 'x0', 'y0', 'x', 'y', 'va', 'ha'
+        'loc', 'loc_y', 'loc_x', 'dx0', 'dy0', 'dx', 'dy', 'x0', 'y0', 'x',
+        'y', 'va', 'ha'
     ]
 
     def __init__(self, loc, dx0, dy0, dx=None, dy=None):
@@ -1178,6 +1177,7 @@ class BoxLocation(SummarizablePlotClass):
         # Evaluate location components
         self.loc_y = self._standardize_loc_y(loc_y)
         self.loc_x = self._standardize_loc_x(loc_x)
+        self.loc = f'{self.loc_y}{self.loc_x}'
 
     def _standardize_loc_y(self, loc):
         """Standardize vertical location component."""
