@@ -6,3 +6,4 @@
 ./test_plot_utils.py
 ./test_utils.py
 #./test_utils_dev.py
+./utils.py

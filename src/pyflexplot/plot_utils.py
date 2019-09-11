@@ -13,10 +13,67 @@ import numpy as np
 from copy import copy
 
 from .utils import MaxIterationError
-from .utils import Summarizable
+from .utils import SummarizableClass
 from .utils_dev import ipython  #SR_DEV
 
 mpl.use('Agg')  # Prevent ``couldn't connect to display`` error
+
+#======================================================================
+# Summarize Plot-Related Classes
+#======================================================================
+
+
+class SummarizablePlotClass(SummarizableClass):
+    """Extend SummarizableClass with plotting-related functionality."""
+
+    def summarize(self, *, add=None, skip=None):
+        data = super().summarize(add=add, skip=skip)
+        cls_fig = mpl.figure.Figure
+        cls_axs = mpl.axes.Axes
+        cls_bbox = (mpl.transforms.Bbox, mpl.transforms.TransformedBbox)
+        for key, val in data.items():
+            if isinstance(val, cls_fig):
+                data[key] = summarize_mpl_figure(val)
+            elif isinstance(val, cls_axs):
+                data[key] = summarize_mpl_axes(val)
+            elif isinstance(val, cls_bbox):
+                data[key] = summarize_mpl_bbox(val)
+        return data
+
+
+def summarize_mpl_figure(obj):
+    """Summarize a matplotlib ``Figure`` instance in a dict."""
+    data = {
+        'type': type(obj).__name__,
+        #SR_TODO if necessary, add option for shallow summary (avoid loops)
+        'axes': [summarize_mpl_axes(a) for a in obj.get_axes()],
+        'bbox': summarize_mpl_bbox(obj.bbox),
+        'dpi': obj.dpi,
+    }
+    return data
+
+
+def summarize_mpl_axes(obj):
+    """Summarize a matplotlib ``Axes`` instance in a dict."""
+    data = {
+        'type': type(obj).__name__,
+        'bbox': summarize_mpl_bbox(obj.bbox),
+    }
+    return data
+
+
+def summarize_mpl_bbox(obj):
+    """Summarize a matplotlib ``Bbox`` instance in a dict."""
+    data = {
+        'type': type(obj).__name__,
+        'bounds': obj.bounds,
+    }
+    return data
+
+
+#======================================================================
+# Map Plot Axes
+#======================================================================
 
 
 class AxesConfMap:
@@ -500,7 +557,7 @@ class MapPlotGeoDist:
 #======================================================================
 
 
-class TextBoxElement(Summarizable):
+class TextBoxElement(SummarizablePlotClass):
     """Base class for elements in text box."""
 
     def __init__(self, *args, **kwargs):
@@ -664,7 +721,7 @@ class TextBoxElement_HLine(TextBoxElement):
 #======================================================================
 
 
-class TextBoxAxes(Summarizable):
+class TextBoxAxes(SummarizablePlotClass):
     """Text box axes for FLEXPART plot."""
 
     # Show text base line (useful for debugging)
@@ -726,14 +783,10 @@ class TextBoxAxes(Summarizable):
 
     summarizable_attrs = ['rect', 'show_border', 'dx0', 'dy0']
 
-    def summarize(self, include_fig=False, include_ax_ref=False):
+    def summarize(self, *, add=None, skip=None):
         """Summarize the text box to a JSON dict."""
-        data = super().summarize()
+        data = super().summarize(add=add, skip=skip)
         data['elements'] = [e.summarize() for e in self.elements]
-        if include_fig:
-            data['fig'] = summarize_mpl_figure(self.fig)
-        if include_ax_ref:
-            data['ax_ref'] = summarize_mpl_axes(self.ax_ref)
         return data
 
     def draw_border(self, x=0.0, y=0.0, w=1.0, h=1.0, fc='white', ec='black'):
@@ -1066,7 +1119,7 @@ class TextBoxAxes(Summarizable):
             self.elements.append(TextBoxElement_HLine(self, loc))
 
 
-class BoxLocation(Summarizable):
+class BoxLocation(SummarizablePlotClass):
     """Represents reference location inside a box on a 3x3 grid."""
 
     summarizable_attrs = [
@@ -1253,36 +1306,3 @@ def colors_from_cmap(cmap, n_levels, extend):
         return colors[1:]
     else:
         return colors[1:-1]
-
-
-#======================================================================
-
-
-def summarize_mpl_figure(obj):
-    """Summarize a matplotlib ``Figure`` instance in a dict."""
-    data = {
-        'type': type(obj).__name__,
-        #SR_TODO if necessary, add option for shallow summary (avoid loops)
-        'axes': [summarize_mpl_axes(a) for a in obj.get_axes()],
-        'bbox': summarize_mpl_bbox(obj.bbox),
-        'dpi': obj.dpi,
-    }
-    return data
-
-
-def summarize_mpl_axes(obj):
-    """Summarize a matplotlib ``Axes`` instance in a dict."""
-    data = {
-        'type': type(obj).__name__,
-        'bbox': summarize_mpl_bbox(obj.bbox),
-    }
-    return data
-
-
-def summarize_mpl_bbox(obj):
-    """Summarize a matplotlib ``Bbox`` instance in a dict."""
-    data = {
-        'type': type(obj).__name__,
-        'bounds': obj.bounds,
-    }
-    return data

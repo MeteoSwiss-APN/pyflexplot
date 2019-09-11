@@ -13,6 +13,7 @@ from textwrap import dedent
 from .plot_utils import AxesMap
 from .plot_utils import ax_dims_fig_coords
 from .plot_utils import TextBoxAxes
+from .plot_utils import SummarizablePlotClass
 from .utils import Degrees
 from .utils import ParentClass
 from .utils_dev import ipython  #SR_DEV
@@ -162,10 +163,12 @@ class PlotLabels_Dispersion:
 #======================================================================
 
 
-class Plot(ParentClass):
+class Plot(SummarizablePlotClass, ParentClass):
     """Base class for FLEXPART plots."""
 
     name = '__base__'
+
+    map_conf = {}
 
     def __init__(self, field, lang='en'):
         """Create an instance of ``Plot``.
@@ -221,15 +224,14 @@ class Plot(ParentClass):
         )
         plt.close(self.fig)
 
-    def summarize(self):
-        data = {}
-        data['type'] = type(self).__name__
-        data['name'] = self.name
-        data['field'] = self.field.summarize()
+    summarizable_attrs = ['name', 'field', 'fig', 'ax_map']
+
+    def summarize(self, *args, **kwargs):
+        data = super().summarize(*args, **kwargs)
         return data
 
 
-class Plot_Dispersion(Plot):
+class DispersionPlot(Plot):
     """Base class for FLEXPART dispersion plots."""
 
     name = '__base__dispersion__'
@@ -269,6 +271,7 @@ class Plot_Dispersion(Plot):
 
         # Map plot configuration
         self.map_conf = {
+            **super().map_conf,
             'bbox_pad_rel': -0.01,
             'geogr_res': '10m',
             #'geogr_res': '50m',
@@ -298,8 +301,8 @@ class Plot_Dispersion(Plot):
         self.fill_box_bottom()
         self.draw_boxes()
 
-    def summarize(self):
-        data = super().summarize()
+    def summarize(self, *args, **kwargs):
+        data = super().summarize(*args, **kwargs)
         # ...  SR_TODO
         return data
 
@@ -859,19 +862,19 @@ class Plot_Dispersion(Plot):
 #----------------------------------------------------------------------
 
 
-class Plot_Concentration(Plot_Dispersion):
+class Plot_Concentration(DispersionPlot):
     """FLEXPART plot of particle concentration at a certain level."""
 
     name = 'concentration'
 
 
-class Plot_Deposition(Plot_Dispersion):
+class Plot_Deposition(DispersionPlot):
     """FLEXPART plot of surface deposition."""
 
     name = 'deposition'
 
 
-class Plot_AffectedArea(Plot_Dispersion):
+class Plot_AffectedArea(DispersionPlot):
     """FLEXPART plot of area affected by surface deposition."""
 
     name = 'affected_area'
@@ -967,7 +970,7 @@ class Plot_EnsThrAgrmt(Plot_Ens):
 
     def define_colors(self):
         #SR_TMP< TODO cleaner solution
-        Plot_Dispersion.define_colors(self)
+        DispersionPlot.define_colors(self)
         self.colors = self.colors[2:]
         #SR_TMP>
 

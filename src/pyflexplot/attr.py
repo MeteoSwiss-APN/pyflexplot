@@ -8,12 +8,12 @@ import logging as log
 from pprint import pformat
 
 from .utils import isiterable
-from .utils import Summarizable
+from .utils import SummarizableClass
 
 from .utils_dev import ipython  #SR_DEV
 
 
-class Attr(Summarizable):
+class Attr(SummarizableClass):
     """Individual attribute."""
 
     def __init__(self, name, value, type_=None, unit=None, group=None):

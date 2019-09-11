@@ -6,9 +6,11 @@ import numpy as np
 import pytest
 from types import SimpleNamespace
 
-from pyflexplot.plot import Plot_Dispersion
+from pyflexplot.plot import DispersionPlot
 
 from pyflexplot.utils_dev import ipython  #SR_DEV
+
+from utils import assert_summary_dict_is_subdict
 
 
 class Test_PlotDispersion_Summarize:
@@ -76,10 +78,42 @@ class Test_PlotDispersion_Summarize:
             summarize=lambda: {},
         )
 
+    #------------------------------------------------------------------
+
     def test_FOO(self):
 
         field = self.create_dummy_field()
-        plot = Plot_Dispersion(field)
+        plot = DispersionPlot(field)
         res = plot.summarize()
 
-        #ipython(globals(), locals())
+        sol = {
+            'type': 'DispersionPlot',
+            'fig': {
+                'type':
+                    'Figure',
+                'dpi':
+                    100.0,
+                'bbox': {},
+                'axes': [
+                    {
+                        'type': 'GeoAxesSubplot',
+                    },
+                    {
+                        'type': 'Axes',
+                    },
+                    {
+                        'type': 'Axes',
+                    },
+                    {
+                        'type': 'Axes',
+                    },
+                    {
+                        'type': 'Axes',
+                    },
+                ]
+            },
+        }
+
+        assert_summary_dict_is_subdict(superdict=res, subdict=sol)
+
+        ipython(globals(), locals())  #SR_DBG

@@ -43,7 +43,7 @@ class ParentClass:
         return result
 
 
-class Summarizable:
+class SummarizableClass:
 
     def __init__(self, *args, **kwargs):
         raise Exception(f"{type(self).__name__} must be subclassed")
@@ -54,10 +54,36 @@ class Summarizable:
             f"`summarizable_attrs` must be an attribute of subclasses of "
             f"{type(self).__name__}")
 
-    def summarize(self):
+    def summarize(self, *, add=None, skip=None):
+        """Collect all attributes in ``summarizable_attrs`` in a dict.
+
+        Subclasses must define the property ``summarizable_attrs``,
+        comprising a list of attribute names to be collected.
+
+        If attribute values possess a ``summarize`` method themselves,
+        the output of that is collected, otherwise the direct values.
+
+        Args:
+            add (list, optional): Additional attributes to be collected.
+                Defaults to None.
+
+            skip (list, optional): Attributes to skip during collection.
+                Defaults to None.
+
+        Returns:
+            dict: Dictionary containing the collected attributes and
+                their values.
+
+        """
         data = {}
-        data['type'] = type(self).__name__
-        for attr in self.summarizable_attrs:
+        if skip is None or 'type' not in skip:
+            data['type'] = type(self).__name__
+        attrs = list(self.summarizable_attrs)
+        if add is not None:
+            attrs += [a for a in add if a not in attrs]
+        if skip is not None:
+            attrs = [a for a in attrs if a not in skip]
+        for attr in attrs:
             val = getattr(self, attr)
             try:
                 val = val.summarize()

@@ -19,8 +19,7 @@ from .utils_dev import ipython  #SR_DEV
 
 __version__ = '0.1.0'
 
-# To debug segmentation fault, uncomment the following lines
-# and prepend the program call with PYTHONFAULTHANDLER=1
+# Uncomment to debug segmentation fault and set PYTHONFAULTHANDLER=1
 #+ import faulthandler
 #+ faulthandler.enable()
 

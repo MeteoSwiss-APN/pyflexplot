@@ -6,12 +6,12 @@ import datetime
 import logging as log
 import numpy as np
 
-from .utils import Summarizable
+from .utils import SummarizableClass
 
 from .utils_dev import ipython  #SR_DEV
 
 
-class Field(Summarizable):
+class Field(SummarizableClass):
     """FLEXPART field on rotated-pole grid."""
 
     def __init__(self, fld, rlat, rlon, attrs, field_specs, time_stats):
@@ -60,8 +60,8 @@ class Field(Summarizable):
 
     summarizable_attrs = ['attrs', 'field_specs', 'time_stats']
 
-    def summarize(self):
-        data = super().summarize()
+    def summarize(self, *args, **kwargs):
+        data = super().summarize(*args, **kwargs)
         data['fld'] = {
             'dtype': self.fld.dtype.__name__,
             'shape': self.fld.shape,
