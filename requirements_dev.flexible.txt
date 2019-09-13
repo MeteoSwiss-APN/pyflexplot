@@ -1,0 +1,11 @@
+bumpversion
+coverage
+flake8
+ipython
+pluggy
+pytest
+pytest-runner
+tox
+watchdog
+yapf
+Sphinx
