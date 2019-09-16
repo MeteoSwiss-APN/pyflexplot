@@ -345,6 +345,10 @@ class VarSpecs_AffectedArea(VarSpecs_Deposition):
         }[lang]
 
 
+class Varspecs_AffectedAreaMono(VarSpecs_AffectedArea):
+    name = 'affected_area_mono'
+
+
 class VarSpecs_EnsMean_Concentration(VarSpecs_Concentration):
     name = 'ens_mean_concentration'
 
@@ -701,6 +705,10 @@ class FieldSpecs_Deposition(FieldSpecs):
 class FieldSpecs_AffectedArea(FieldSpecs_Deposition):
     name = 'affected_area'
     cls_var_specs = VarSpecs.subclass('affected_area')
+
+
+class FieldSpecs_AffectedAreaMono(FieldSpecs_AffectedArea):
+    name = 'affected_area_mono'
 
 
 class FieldSpecs_Ens(FieldSpecs):

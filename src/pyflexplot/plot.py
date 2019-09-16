@@ -241,8 +241,9 @@ class DispersionPlot(Plot):
     """Base class for FLEXPART dispersion plots."""
 
     name = '__base__dispersion__'
+    cmap = 'flexplot'
     extend = 'max'
-    level_range_style = 'simple'
+    n_levels = 9
     draw_colors = True
     draw_contours = False
     mark_field_max = True
@@ -254,23 +255,22 @@ class DispersionPlot(Plot):
         'pad_hor_rel': 0.015,
         'h_rel_box_rt': 0.46,
     }
+    level_range_style = 'simple'
+    # options:
+    # - 'simple'     : 10-15 / 15-20
+    # - 'simple-int' : 10-14 / 15-19
+    # - 'math'       : [10, 20)
+    # - 'down'       : < 15 /  < 20
+    # - 'up'         : >= 10 / >= 15
+    # - 'and'        : >= 10 & < 15 / >= 15 & < 20
+    # - 'var'        : 10 <= v < 15 / 15 <= v < 20
+    #
+
     summarizable_attrs = Plot.summarizable_attrs + [
         'lang', 'labels', 'extend', 'level_range_style', 'draw_colors',
         'draw_contours', 'mark_field_max', 'mark_release_site',
         'text_box_setup', 'boxes'
     ]
-
-    #
-    # level_range_style options:
-    #
-    # simple        : 10-15 / 15-20
-    # simple-int    : 10-14 / 15-19
-    #'math'         : [10, 20)
-    #'down'         : < 15 /  < 20
-    #'up'           : >= 10 / >= 15
-    #'and'          : >= 10 & < 15 / >= 15 & < 20
-    #'var'          : 10 <= v < 15 / 15 <= v < 20
-    #
 
     def __init__(self, *args, lang=None, **kwargs):
         """Create an instance of ``DispersionPlot``.
@@ -557,16 +557,16 @@ class DispersionPlot(Plot):
     #------------------------------------------------------------------
 
     def fill_box_right_top(
-            self,
-            dx=1.2,
-            dy_line=3.0,
-            dy0_labels=7.5,
-            w_box=4,
-            h_box=2,
-            dy0_boxes=7.1,
-            dy_spacing=0.0):
+            self, dx=1.2, dy_line=3.0, dy0_markers=0.5, w_box=4, h_box=2):
         """Fill the top box to the right of the map plot."""
         box = self.boxes[1]
+
+        # Vertical position of legend (depending on number of levels)
+        _f = (
+            self.n_levels + int(self.extend in ['min', 'both']) +
+            int(self.extend in ['max', 'both']))
+        dy0_labels = 23 - 1.5*_f
+        dy0_boxes = dy0_labels - 0.2*h_box
 
         # Add box title
         s = self._format_legend_box_title()
@@ -602,14 +602,11 @@ class DispersionPlot(Plot):
             )
             dy += dy_line
 
-        # Spacing between colors and markers
-        dy_spacing_markers = 0.5*dy_line
-
         # Field maximum
         if self.mark_field_max:
 
             # Add maximum value marker
-            dy_max = dy0_labels - dy_spacing - dy_spacing_markers - dy_line
+            dy_max = dy0_markers + dy_line
             box.marker(
                 loc='bl',
                 dx=dx + 1.0,
@@ -635,7 +632,7 @@ class DispersionPlot(Plot):
 
         if self.mark_release_site:
             # Add release site marker
-            dy_site = dy0_labels - dy_spacing - dy_spacing_markers - 2*dy_line
+            dy_site = dy0_markers
             box.marker(
                 loc='bl',
                 dx=dx + 1.0,
@@ -842,47 +839,77 @@ class DispersionPlot(Plot):
     #==================================================================
 
     def define_colors(self):
+        if self.cmap == 'flexplot':
+            self.colors = colors_flexplot(self.n_levels, self.extend)
+        else:
+            cmap = mpl.cm.get_cmap(self.cmap)
+            colors_core = [
+                cmap(i/(self.n_levels - 1)) for i in range(self.n_levels)
+            ]
 
-        # Define colors
-        # yapf: disable
-        self.colors = (np.array([
-            (255, 155, 255),  # -> under
-            (224, 196, 172),  # \
-            (221, 127, 215),  # |
-            ( 99,   0, 255),  # |
-            (100, 153, 199),  #  > range
-            ( 34, 139,  34),  # |
-            ( 93, 255,   2),  # |
-            (199, 255,   0),  # |
-            (255, 239,  57),  # /
-            (200, 200, 200),  # -> over
-        ], float)/255).tolist()
-        # yapf: enable
-        if self.extend in ['none', 'max']:
-            self.colors.pop(0)  # Remove `under`
-        if self.extend in ['none', 'min']:
-            self.colors.pop(-1)  # Remove `over`
+    def define_levels(self):
+        self.levels = self.auto_levels_log10()
 
-    def define_levels(self, n=None):
-
-        if n is None:
-            n = len(self.colors)
-
-        # Fetch maximum value over all time steps
-        log10_max = int(np.floor(np.log10(self.field.time_stats['max'])))
-
-        # Define levels (logarithmic and linear)
+    def auto_levels_log10(self, n_levels=None, val_max=None):
+        if n_levels is None:
+            n_levels = self.n_levels
+        if val_max is None:
+            val_max = self.field.time_stats['max']
+        log10_max = int(np.floor(np.log10(val_max)))
         log10_d = 1
         levels_log10 = np.arange(
-            log10_max - (n - 1)*log10_d,
+            log10_max - (n_levels - 1)*log10_d,
             log10_max + 0.5*log10_d,
             log10_d,
         )
-        self.levels = 10**levels_log10
+        return 10**levels_log10
 
     @property
     def levels_log10(self):
         return np.log10(self.levels)
+
+
+def colors_flexplot(n_levels, extend):
+
+    #color_under = [i/255.0 for i in (255, 155, 255)]
+    color_under = [i/255.0 for i in (200, 200, 200)]
+    color_over = [i/255.0 for i in (200, 200, 200)]
+
+    # yapf: disable
+    colors_core_8 = (np.array([
+        (224, 196, 172),  #
+        (221, 127, 215),  #
+        ( 99,   0, 255),  #
+        (100, 153, 199),  #
+        ( 34, 139,  34),  #
+        ( 93, 255,   2),  #
+        (199, 255,   0),  #
+        (255, 239,  57),  #
+    ], float)/255).tolist()
+    # yapf: enable
+    colors_core_7 = [colors_core_8[i] for i in (0, 1, 2, 3, 5, 6, 7)]
+    colors_core_6 = [colors_core_8[i] for i in (1, 2, 3, 4, 5, 7)]
+    colors_core_5 = [colors_core_8[i] for i in (1, 2, 4, 5, 7)]
+
+    try:
+        colors_core = {
+            6: colors_core_5,
+            7: colors_core_6,
+            8: colors_core_7,
+            9: colors_core_8,
+        }[n_levels]
+    except KeyError:
+        raise ValueError(f"n_levels={n_levels}")
+
+    if extend == 'none':
+        return colors_core
+    elif extend == 'min':
+        return [color_under] + colors_core
+    elif extend == 'max':
+        return colors_core + [color_over]
+    elif extend == 'both':
+        return [color_under] + colors_core + [color_over]
+    raise ValueError(f"extend='{extend}'")
 
 
 #----------------------------------------------------------------------
@@ -894,12 +921,14 @@ class Plot_Concentration(DispersionPlot):
     """FLEXPART plot of particle concentration at a certain level."""
 
     name = 'concentration'
+    n_levels = 8
 
 
 class Plot_Deposition(DispersionPlot):
     """FLEXPART plot of surface deposition."""
 
     name = 'deposition'
+    n_levels = 9
 
 
 class Plot_AffectedArea(DispersionPlot):
@@ -913,24 +942,17 @@ class Plot_AffectedAreaMono(Plot_AffectedArea):
 
     name = 'affected_area_mono'
     extend = 'none'
+    n_levels = 1
 
     def define_colors(self):
         self.colors = (np.array([(200, 200, 200)])/255).tolist()
 
     def define_levels(self):
-        super().define_levels(n=9)
-        self.levels = np.array([self.levels[0], np.inf])
+        levels = self.auto_levels_log10(n_levels=9)
+        self.levels = np.array([levels[0], np.inf])
 
     def fill_box_right_top(self):
-        super().fill_box_right_top(
-            dx=1.2,
-            dy_line=3.0,
-            dy0_labels=22.5,
-            w_box=4,
-            h_box=2,
-            dy0_boxes=22.1,
-            dy_spacing=12.0,
-        )
+        super().fill_box_right_top()
 
 
 #----------------------------------------------------------------------
@@ -992,21 +1014,20 @@ class Plot_EnsMeanAffectedAreaMono(Plot_Ens, Plot_AffectedAreaMono):
 
 
 class Plot_EnsThrAgrmt(Plot_Ens):
+    name = 'ens_thr_agrmt'
+
+    n_levels = 6
+    d_level = 2
     extend = 'min'
     level_range_style = 'simple-int'  # 10-14 / 15-20
     mark_field_max = False
 
-    def define_colors(self):
-        #SR_TMP< TODO cleaner solution
-        DispersionPlot.define_colors(self)
-        self.colors = self.colors[2:]
-        #SR_TMP>
-
     def define_levels(self):
         n_max = 20  #SR_TMP SR_HC
-        n_lvl = len(self.colors) - 1
-        d = 3
-        self.levels = np.arange(n_max - d*n_lvl, n_max + d, d) + 1
+        d = self.d_level
+        self.levels = np.arange(
+            n_max - self.d_level*
+            (self.n_levels - 1), n_max + self.d_level, self.d_level) + 1
 
     def _draw_colors_contours(self):
 
