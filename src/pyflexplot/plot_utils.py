@@ -16,8 +16,6 @@ from .utils import MaxIterationError
 from .utils import SummarizableClass
 from .utils_dev import ipython  #SR_DEV
 
-mpl.use('Agg')  # Prevent ``couldn't connect to display`` error
-
 #======================================================================
 # Summarize Plot-Related Classes
 #======================================================================
@@ -609,7 +607,13 @@ class TextBoxElement_Text(TextBoxElement):
 
     def draw(self):
         """Draw text element onto text bot axes."""
-        self.box.ax.text(x=self.loc.x, y=self.loc.y, s=self.s, **self.kwargs)
+        s = self.s
+        if self.s[-1] == ' ':
+            # Preserve trailing whitespace by replacing the last space
+            # by a visible symbol ('open box'-symbol below baseline)
+            s = s[:-1] + u'\u2423'  #SR_TMP
+        s = f"'{s}'"  #SR_DBG
+        self.box.ax.text(x=self.loc.x, y=self.loc.y, s=s, **self.kwargs)
 
 
 class TextBoxElement_ColorRect(TextBoxElement):

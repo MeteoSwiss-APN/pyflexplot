@@ -427,7 +427,7 @@ class AttrGroupVariable(AttrGroup):
             return None
 
         def fmt(bot, top, unit_fmtd=self.format_level_unit()):
-            s = f"{bot:g}$\\,\\endash\\,${top:g}"
+            s = f"{bot:g}" + r'$\,-\,$' + f"{top:g}"
             if unit_fmtd:
                 s += f" {unit_fmtd}"
             return s

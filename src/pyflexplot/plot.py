@@ -16,6 +16,7 @@ from .plot_utils import TextBoxAxes
 from .utils import SummarizableClass
 from .plot_utils import SummarizablePlotClass
 from .utils import Degrees
+from .utils import format_level_ranges
 from .utils import ParentClass
 from .utils_dev import ipython  #SR_DEV
 
@@ -260,8 +261,8 @@ class DispersionPlot(Plot):
     # - 'simple'     : 10-15 / 15-20
     # - 'simple-int' : 10-14 / 15-19
     # - 'math'       : [10, 20)
-    # - 'down'       : < 15 /  < 20
     # - 'up'         : >= 10 / >= 15
+    # - 'down'       : < 15 /  < 20
     # - 'and'        : >= 10 & < 15 / >= 15 & < 20
     # - 'var'        : 10 <= v < 15 / 15 <= v < 20
     #
@@ -577,7 +578,13 @@ class DispersionPlot(Plot):
         box.text('tc', s=s, dy=1, size='large')
 
         # Format level ranges (contour plot legend)
-        labels = self._format_level_ranges()
+        widths = (5, 3, 5)  #SR_TMP
+        labels = format_level_ranges(
+            style=self.level_range_style,
+            widths=widths,
+            extend=self.extend,
+            levels=self.levels,
+        )
 
         # Add level labels
         box.text_block(
@@ -660,114 +667,6 @@ class DispersionPlot(Plot):
         s = f"{self.field.attrs.variable.short_name.format()}"
         s += f" ({self.field.attrs.variable.unit.format()})"
         return s
-
-    def _format_level_ranges(self, n=15):
-        """Format the levels ranges for the contour plot legend."""
-
-        labels = []
-
-        # Under range
-        if self.extend in ('min', 'both'):
-            labels.append(self._format_level_range(None, self.levels[0], n))
-
-        # In range
-        for lvl0, lvl1 in zip(self.levels[:-1], self.levels[1:]):
-            labels.append(self._format_level_range(lvl0, lvl1, n))
-
-        # Over range
-        if self.extend in ('max', 'both'):
-            labels.append(self._format_level_range(self.levels[-1], None, n))
-
-        #SR_TMP<
-        _n = len(self.colors)
-        assert len(labels) == _n, f'{len(labels)} != {_n}'
-        #SR_TMP>
-
-        return labels
-
-    def _format_level_range(self, lvl0, lvl1, n):
-
-        level_range_var = 'v'
-
-        if lvl0 is not None and lvl1 is not None:
-            # Closed range
-            lvl0_fmtd = self._format_level(lvl0)
-            lvl1_fmtd = self._format_level(lvl1)
-            if self.level_range_style == 'simple':
-                label = f"{lvl0_fmtd:>6} - {lvl1_fmtd:<6}"
-            elif self.level_range_style == 'simple-int':
-                label = self._format_level_range_simple_int(lvl0, lvl1)
-            elif self.level_range_style == 'math':
-                label = f"[{lvl0_fmtd:>}, {lvl1_fmtd:<})"
-            elif self.level_range_style == 'down':
-                label = f"< {lvl1_fmtd:<}"
-            elif self.level_range_style == 'up':
-                label = r'$\geq$' + f" {lvl0_fmtd:<}"
-            elif self.level_range_style == 'and':
-                label = r'$\geq$' + f" {lvl0_fmtd:>} & < {lvl1_fmtd:<}"
-            elif self.level_range_style == 'var':
-                label = (
-                    f"{lvl0_fmtd:>} " + r'$\leq$' + f" {level_range_var} < "
-                    f"{lvl1_fmtd:<}")
-            else:
-                raise Exception(
-                    f"unknown level range style '{self.level_range_style}'")
-
-        else:
-            # Open-ended range
-            if lvl0 is not None:
-                op = r'$\geq$'
-                lvl = lvl0
-            elif lvl1 is not None:
-                op = '<'
-                lvl = lvl1
-            lvl_fmtd = self._format_level(lvl)
-            label = f"{op+' '+lvl_fmtd:^15}"
-            if self.level_range_style == 'var':
-                label = f'{level_range_var} {label}'
-
-        if n is not None:
-            label = f'{{label:^{n}}}'.format(label=label)
-
-        return label
-
-    def _format_level_range_simple_int(self, lvl0, lvl1):
-
-        # Check input types
-        if int(lvl0) != float(lvl0):
-            raise ValueError(
-                f"lvl0 is not an integer: {int(lvl0)} != {float(lvl0)}")
-        if int(lvl1) != float(lvl1):
-            raise ValueError(
-                f"lvl1 is not an integer: {int(lvl1)} != {float(lvl1)}")
-
-        # Determine level increment
-        dlvls = sorted(set((self.levels[1:] - self.levels[:-1]).tolist()))
-        if len(dlvls) != 1:
-            raise Exception(
-                f"varying level increments: {dlvls} (levels: {self.levels})")
-        dlvl = next(iter(dlvls))
-        if int(dlvl) != float(dlvl):
-            raise ValueError(
-                f"dlvl is not an integer: {int(dlvl)} != {float(dlvl)}")
-
-        lvl0_fmtd = self._format_level(lvl0)
-        lvl1 = lvl1 - 1
-        if lvl1 == lvl0:
-            return f"{lvl0_fmtd}"
-        lvl1_fmtd = self._format_level(lvl1)
-        return f"{lvl0_fmtd:>6} - {lvl1_fmtd:<6}"
-
-    def _format_level(self, lvl):
-        if lvl is None:
-            return ''
-        fmtd = f'{lvl:.0E}'
-        n = len(fmtd)
-        ll = np.log10(lvl)
-        if ll >= -n + 2 and ll <= n - 1:
-            fmtd = f'{lvl:f}' [:n]
-            assert '1' in fmtd
-        return fmtd
 
     #------------------------------------------------------------------
     # Right/Bottom
