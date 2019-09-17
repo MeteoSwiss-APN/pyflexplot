@@ -561,6 +561,10 @@ class DispersionPlot(Plot):
         """Fill the top box to the right of the map plot."""
         box = self.boxes[1]
 
+        #--------------------------------------------------------------
+        # Color boxes (legend)
+        #--------------------------------------------------------------
+
         # Vertical position of legend (depending on number of levels)
         _f = (
             self.n_levels + int(self.extend in ['min', 'both']) +
@@ -602,19 +606,41 @@ class DispersionPlot(Plot):
             )
             dy += dy_line
 
-        # Field maximum
-        if self.mark_field_max:
+        #--------------------------------------------------------------
+        # Markers
+        #--------------------------------------------------------------
 
-            # Add maximum value marker
-            dy_max = dy0_markers + dy_line
+        n_markers = self.mark_release_site + self.mark_field_max
+
+        dy0_marker_i = dy0_markers + (2 - n_markers)*dy_line/2
+
+        # Release site marker
+        if self.mark_release_site:
+            dy_site_label = dy0_marker_i
+            dy0_marker_i += dy_line
+            dy_site_marker = dy_site_label + 0.7
             box.marker(
                 loc='bl',
                 dx=dx + 1.0,
-                dy=dy_max + 0.7,
+                dy=dy_site_marker,
+                **self._site_marker_kwargs,
+            )
+            s = (
+                f"{self.labels.release.site_name}: "
+                f"{self.field.attrs.release.site_name.value}")
+            box.text(loc='bl', s=s, dx=5.5, dy=dy_site_label, size='small')
+
+        # Field maximum marker
+        if self.mark_field_max:
+            dy_max_label = dy0_marker_i
+            dy0_marker_i += dy_line
+            dy_max_marker = dy_max_label + 0.7
+            box.marker(
+                loc='bl',
+                dx=dx + 1.0,
+                dy=dy_max_marker,
                 **self._max_marker_kwargs,
             )
-
-            # Add text
             fld_max_fmtd = f'{self.labels.release.max}: '
             if np.isnan(self.field.fld).all():
                 fld_max_fmtd += 'NaN'
@@ -626,23 +652,9 @@ class DispersionPlot(Plot):
                 loc='bl',
                 s=fld_max_fmtd,
                 dx=5.5,
-                dy=dy_max,
+                dy=dy_max_label,
                 size='small',
             )
-
-        if self.mark_release_site:
-            # Add release site marker
-            dy_site = dy0_markers
-            box.marker(
-                loc='bl',
-                dx=dx + 1.0,
-                dy=dy_site + 0.7,
-                **self._site_marker_kwargs,
-            )
-            s = (
-                f"{self.labels.release.site_name}: "
-                f"{self.field.attrs.release.site_name.value}")
-            box.text(loc='bl', s=s, dx=5.5, dy=dy_site, size='small')
 
     def _format_legend_box_title(self):
         s = f"{self.field.attrs.variable.short_name.format()}"
