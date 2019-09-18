@@ -259,6 +259,7 @@ class DispersionPlot(Plot):
         'h_rel_box_rt': 0.45,
     }
     level_range_style = 'base'  # see ``format_level_ranges``
+    reverse_legend = False  #SR_TMP TODO make CLI argument
 
     summarizable_attrs = Plot.summarizable_attrs + [
         'lang', 'labels', 'extend', 'level_range_style', 'draw_colors',
@@ -548,9 +549,6 @@ class DispersionPlot(Plot):
 
         if not 'br' in skip_pos:
             # Bottom right: time into simulation
-            #_dur = self.field.attrs.simulation.format_integr_period()
-            #t0 = r'$\mathrm{T}_\mathrm{0}$'
-            #s = f"Simulation time since {t0}: {_dur}"  #SR_TMP
             _now_rel = self.field.attrs.simulation.now.format(relative=True)
             s = f"{_now_rel}"
             box.text('br', s, size='large')
@@ -595,14 +593,17 @@ class DispersionPlot(Plot):
             dy0=dy0_labels,
             dy_line=dy_line,
             dx=-dx,
-            reverse=True,
+            reverse=self.reverse_legend,
             size='small',
             family='monospace',
         )
 
         # Add color boxes
+        colors = self.colors
+        if self.reverse_legend:
+            colors = colors[::-1]
         dy = dy0_boxes
-        for color in self.colors[::-1]:
+        for color in colors:
             box.color_rect(
                 loc='bl',
                 fc=color,

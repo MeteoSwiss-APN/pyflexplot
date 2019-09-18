@@ -171,9 +171,10 @@ def create_plots(
         var_in,
         in_file_path_raw,
         out_file_path_raw,
+        vars_specs,
         ens_var=None,
         ens_member_id_lst=None,
-        **vars_specs):
+        **kwargs):
     """Read and plot FLEXPART data.
 
     Args:
@@ -329,7 +330,7 @@ class GlobalOptions(ClickOptionsGroup):
             ),
             click.option(
                 '--time-ind',
-                'time_lst',
+                'vars_specs__time_lst',
                 help="Index of time (zero-based). Format key: '{time_ind}'.",
                 type=int,
                 default=[0],
@@ -337,7 +338,7 @@ class GlobalOptions(ClickOptionsGroup):
             ),
             click.option(
                 '--age-class-ind',
-                'nageclass_lst',
+                'vars_specs__nageclass_lst',
                 help=(
                     "Index of age class (zero-based). Format key: "
                     "'{age_class_ind}'."),
@@ -347,7 +348,7 @@ class GlobalOptions(ClickOptionsGroup):
             ),
             click.option(
                 '--release-point-ind',
-                'numpoint_lst',
+                'vars_specs__numpoint_lst',
                 help=(
                     "Index of release point (zero-based). Format key: "
                     "'{rls_pt_ind}'."),
@@ -357,7 +358,7 @@ class GlobalOptions(ClickOptionsGroup):
             ),
             click.option(
                 '--species-id',
-                'species_id_lst',
+                'vars_specs__species_id_lst',
                 help=(
                     "Species id(s) (default: 0). To sum up multiple species, "
                     "combine their ids with '+'. Format key: '{species_id}'."),
@@ -372,13 +373,27 @@ class GlobalOptions(ClickOptionsGroup):
         return [
             click.option(
                 '--integrate/--no-integrate',
-                'integrate_lst',
+                'vars_specs__integrate_lst',
                 help=(
                     "Integrate field over time. If set, '-int' is "
                     "appended to variable name (format key: '{variable}')."),
                 is_flag=True,
                 default=[False],
                 multiple=True,
+            ),
+        ]
+
+    @click_options
+    def plot():
+        return [
+            click.option(
+                '--reverse-legend/--no-reverse-legend',
+                help=(
+                    "Reverse the order of the level ranges and corresponding "
+                    "colors in the plot legend such that the levels increase "
+                    "from top to bottom instead of decreasing."),
+                is_flag=True,
+                default=False,
             ),
         ]
 
@@ -442,7 +457,7 @@ class ConcentrationOptions(ClickOptionsGroup):
         return [
             click.option(
                 '--level-ind',
-                'level_lst',
+                'vars_specs__level_lst',
                 help=(
                     "Index/indices of vertical level (zero-based, bottom-up). "
                     "To sum up multiple levels, combine their indices with "
@@ -473,7 +488,7 @@ class DepositionOptions(ClickOptionsGroup):
         return [
             click.option(
                 '--deposition-type',
-                'deposition_lst',
+                'vars_specs__deposition_lst',
                 help=(
                     "Type of deposition. Part of plot variable (format "
                     "key: '{variable}')."),
@@ -562,16 +577,56 @@ def ensemble():
 cli.add_command(ensemble)
 
 
+def collect_kwargs(prefix, group_name=None):
+    """Collect all keyword arguments whose name starts with a prefix.
+
+    All keyword arguments '<name>__foo', '<name>__bar', etc. are
+    collected and put in a dictionary as 'foo', 'bar', etc., which
+    is passed on as a keyword argument '<name>'.
+
+    Usage example:
+
+        @collect_kwargs('test', 'kwargs_test')
+        def test(arg1, kwargs_test):
+            print(kwargs_test)
+
+        test(arg1='foo', test__arg2='bar', test__arg3='baz')
+
+        > {'arg2': 'bar', 'arg3': 'baz'}
+
+    """
+    if group_name is None:
+        group_name = prefix
+    prefix = f'{prefix}__'
+    def decorator(f):
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            if group_name in kwargs:
+                raise ValueError(
+                    f"keyword argument '{group_name}' already present")
+            group = {}
+            for key in [k for k in kwargs]:
+                if key.startswith(prefix):
+                    new_key = key[len(prefix):]
+                    group[new_key] = kwargs.pop(key)
+            kwargs[group_name] = group
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
 @deterministic.command(
     name='concentration',
     help="Activity concentration; deterministic simulation data.",
 )
 @GlobalOptions.input
-@GlobalOptions.preproc
 @GlobalOptions.output
+@GlobalOptions.preproc
+@GlobalOptions.plot
 @ConcentrationOptions.input
 @ConcentrationOptions.plot
 @click.pass_context
+@collect_kwargs('vars_specs')
 def deterministic_concentration(ctx, plot_var, **kwargs):
     var_in = 'concentration'
     create_plots(ctx=ctx, var_in=var_in, **kwargs)
@@ -582,13 +637,15 @@ def deterministic_concentration(ctx, plot_var, **kwargs):
     help="Surface deposition; deterministic simulation data.",
 )
 @GlobalOptions.input
-@GlobalOptions.preproc
 @GlobalOptions.output
+@GlobalOptions.preproc
+@GlobalOptions.plot
 @DepositionOptions.input
 @DepositionOptions.plot_deterministic
 @click.pass_context
+@collect_kwargs('vars_specs')
 def deterministic_deposition(ctx, plot_var, **kwargs):
-    var_in = {'auto': 'deposition'}.get(plot_var, plot_var)
+    var_in = 'deposition' if plot_var == 'auto' else plot_var
     create_plots(ctx=ctx, var_in=var_in, **kwargs)
 
 
@@ -597,13 +654,15 @@ def deterministic_deposition(ctx, plot_var, **kwargs):
     help="Activity concentration; ensemble simulation data.",
 )
 @GlobalOptions.input
-@GlobalOptions.preproc
 @GlobalOptions.output
+@GlobalOptions.preproc
+@GlobalOptions.plot
 @EnsembleOptions.input
 @EnsembleOptions.plot
 @ConcentrationOptions.input
 @ConcentrationOptions.plot
 @click.pass_context
+@collect_kwargs('vars_specs')
 def ensemble_concentration(ctx, plot_var, **kwargs):
     var_in = 'concentration'
     create_plots(ctx=ctx, var_in=var_in, **kwargs)
@@ -614,13 +673,15 @@ def ensemble_concentration(ctx, plot_var, **kwargs):
     help="Surface deposition; ensemble simulation data.",
 )
 @GlobalOptions.input
-@GlobalOptions.preproc
 @GlobalOptions.output
+@GlobalOptions.preproc
+@GlobalOptions.plot
 @EnsembleOptions.input
 @EnsembleOptions.plot
 @DepositionOptions.input
 @DepositionOptions.plot_ensemble
 @click.pass_context
+@collect_kwargs('vars_specs')
 def ensemble_deposition(ctx, plot_var, **kwargs):
     var_in = {'auto': 'deposition'}.get(plot_var, plot_var)
     create_plots(ctx=ctx, var_in=var_in, **kwargs)
