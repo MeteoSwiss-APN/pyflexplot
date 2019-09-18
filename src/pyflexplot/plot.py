@@ -256,7 +256,7 @@ class DispersionPlot(Plot):
         'pad_hor_rel': 0.015,
         'h_rel_box_rt': 0.46,
     }
-    level_range_style = 'simple'  # see ``format_level_ranges``
+    level_range_style = 'base'  # see ``format_level_ranges``
 
     summarizable_attrs = Plot.summarizable_attrs + [
         'lang', 'labels', 'extend', 'level_range_style', 'draw_colors',
@@ -569,11 +569,9 @@ class DispersionPlot(Plot):
         box.text('tc', s=s, dy=1, size='large')
 
         # Format level ranges (contour plot legend)
-        widths = (5, 3, 5)  #SR_TMP
         labels = format_level_ranges(
             levels=self.levels,
             style=self.level_range_style,
-            widths=widths,
             extend=self.extend,
         )
 
@@ -921,7 +919,7 @@ class Plot_EnsThrAgrmt(Plot_Ens):
     n_levels = 6
     d_level = 2
     extend = 'min'
-    level_range_style = 'simple-int'  # 10-14 / 15-20
+    level_range_style = 'int'  # see ``format_level_ranges``
     mark_field_max = False
 
     def define_levels(self):

@@ -612,7 +612,7 @@ class TextBoxElement_Text(TextBoxElement):
             # Preserve trailing whitespace by replacing the last space
             # by a visible symbol ('open box'-symbol below baseline)
             s = s[:-1] + u'\u2423'  #SR_TMP
-        s = f"'{s}'"  #SR_DBG
+        #s = f"'{s}'"  #SR_DBG
         self.box.ax.text(x=self.loc.x, y=self.loc.y, s=s, **self.kwargs)
 
 
