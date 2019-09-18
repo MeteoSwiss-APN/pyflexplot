@@ -92,7 +92,7 @@ class Test_PlotDispersion_Summarize:
             'figsize': (12.0, 9.0),
             'lang': 'de',
             'extend': 'max',
-            'level_range_style': 'simple',
+            'level_range_style': 'base',
             'draw_colors': True,
             'draw_contours': False,
             'mark_field_max': True,
