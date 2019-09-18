@@ -73,17 +73,17 @@ class PlotLabels_De(PlotLabels):
         def umlaut(v):
             return f'$\\mathrm{{\\ddot{v}}}$'
 
-        return val.format(
-            ae=umlaut('a'),
-            oe=umlaut('o'),
-            ue=umlaut('u'),
-        )
+        val = val.replace('{ae}', umlaut('a'))
+        val = val.replace('{oe}', umlaut('o'))
+        val = val.replace('{ue}', umlaut('u'))
+
+        return val
 
 
 class DispersionPlotLabels_Simulation_En(PlotLabels_En):
     """FLEXPART dispersion plot labels in English (simulation)."""
 
-    start = 'Start'
+    start = r'Start ($\mathrm{T_0}$)'
     end = 'End'
     flexpart_based_on = 'FLEXPART based on'
     copyright = u"\u00a9MeteoSwiss"
@@ -92,7 +92,7 @@ class DispersionPlotLabels_Simulation_En(PlotLabels_En):
 class DispersionPlotLabels_Simulation_De(PlotLabels_De):
     """part dispersion plot labels in German (simulation)."""
 
-    start = 'Start'
+    start = r'Start ($\mathrm{T_0}$)'
     end = 'Ende'
     flexpart_based_on = 'FLEXPART basierend auf'
     copyright = u"\u00a9MeteoSchweiz"
@@ -106,7 +106,8 @@ class DispersionPlotLabels_Release_En(PlotLabels_En):
     height = 'Height'
     rate = 'Rate'
     mass = 'Total mass'
-    site_name = 'Release site'
+    site = 'Site'
+    site_long = 'Release site'
     max = 'Max.'
 
 
@@ -118,7 +119,8 @@ class DispersionPlotLabels_Release_De(PlotLabels_De):
     height = 'H{oe}he'
     rate = 'Rate'
     mass = 'Totale Masse'
-    site_name = 'Austrittsort'
+    site = 'Ort'
+    site_long = 'Austrittsort'
     max = 'Max.'
 
 
@@ -254,7 +256,7 @@ class DispersionPlot(Plot):
         'h_rel_b': 0.03,
         'w_rel_r': 0.25,
         'pad_hor_rel': 0.015,
-        'h_rel_box_rt': 0.46,
+        'h_rel_box_rt': 0.45,
     }
     level_range_style = 'base'  # see ``format_level_ranges``
 
@@ -503,13 +505,40 @@ class DispersionPlot(Plot):
 
         if not 'tl' in skip_pos:
             # Top left: variable
-            s = f"{self.field.attrs.variable.long_name.value}"
+            s = self.field.attrs.variable.long_name.value
+            _lvl = self.field.attrs.variable.format_level_range()
+            if _lvl:
+                _at = {'en': 'at', 'de': 'auf'}[self.lang]
+                s += f" {_at} {_lvl}"
             box.text('tl', s, size='x-large')
+
+        if not 'bl' in skip_pos:
+            # Bottom left: integration time & level range
+            _sim = self.field.attrs.simulation
+            if self.lang == 'en':
+                _sum = 'sum'
+                _over = 'over'
+                _since = 'since'
+            elif self.lang == 'de':
+                _sum = 'Summe'
+                _over = r'$\"u$ber'
+                _since = 'seit'
+            #s = f"{_sim.format_integr_period()} {_sum}"
+            s = f"{_sum.capitalize()} {_over} {_sim.format_integr_period()}"
+            s += f" ({_since} {_sim.integr_start.format(relative=True)})"
+            box.text('bl', s, size='large')
+
+        dx_center = 0
 
         if not 'tc' in skip_pos:
             # Top center: species
             s = f"{self.field.attrs.species.name.format(join=' + ')}"
-            box.text('tc', s, size='x-large')
+            box.text('tc', s, dx=dx_center, size='x-large')
+
+        if not 'bc' in skip_pos:
+            # Bottom center: release site
+            s = f"{self.field.attrs.release.site_name.value}"
+            box.text('bc', s, dx=dx_center, size='large')
 
         if not 'tr' in skip_pos:
             # Top right: datetime
@@ -517,29 +546,13 @@ class DispersionPlot(Plot):
             s = f"{timestep_fmtd}"
             box.text('tr', s, size='x-large')
 
-        if not 'bl' in skip_pos:
-            # Bottom left: integration time & level range
-            _sim = self.field.attrs.simulation
-            if self.lang == 'en':
-                _sum, _since = 'Sum', 'since'
-            elif self.lang == 'de':
-                _sum, _since = r'Summe', 'seit'
-            s = (
-                f"{_sim.format_integr_period()} {_sum} "
-                f"({_since} {_sim.integr_start.format(relative=True)})")
-            lvl_range = self.field.attrs.variable.format_level_range()
-            if lvl_range:
-                s = f"{s}, {lvl_range}"
-            box.text('bl', s, size='large')
-
-        if not 'bc' in skip_pos:
-            # Bottom center: release site
-            s = f"{self.field.attrs.release.site_name.value}"
-            box.text('bc', s, size='large')
-
         if not 'br' in skip_pos:
             # Bottom right: time into simulation
-            s = self.field.attrs.simulation.now.format(relative=True)
+            #_dur = self.field.attrs.simulation.format_integr_period()
+            #t0 = r'$\mathrm{T}_\mathrm{0}$'
+            #s = f"Simulation time since {t0}: {_dur}"  #SR_TMP
+            _now_rel = self.field.attrs.simulation.now.format(relative=True)
+            s = f"{_now_rel}"
             box.text('br', s, size='large')
 
         return box
@@ -549,7 +562,7 @@ class DispersionPlot(Plot):
     #------------------------------------------------------------------
 
     def fill_box_right_top(
-            self, dx=1.2, dy_line=3.0, dy0_markers=0.5, w_box=4, h_box=2):
+            self, dx=1.2, dy_line=3.0, dy0_markers=0.25, w_box=4, h_box=2):
         """Fill the top box to the right of the map plot."""
         box = self.boxes[1]
 
@@ -561,12 +574,12 @@ class DispersionPlot(Plot):
         _f = (
             self.n_levels + int(self.extend in ['min', 'both']) +
             int(self.extend in ['max', 'both']))
-        dy0_labels = 23 - 1.5*_f
+        dy0_labels = 22.5 - 1.5*_f
         dy0_boxes = dy0_labels - 0.2*h_box
 
         # Add box title
         s = self._format_legend_box_title()
-        box.text('tc', s=s, dy=1, size='large')
+        box.text('tc', s=s, dy=1.5, size='large')
 
         # Format level ranges (contour plot legend)
         labels = format_level_ranges(
@@ -621,9 +634,8 @@ class DispersionPlot(Plot):
                 dy=dy_site_marker,
                 **self._site_marker_kwargs,
             )
-            s = (
-                f"{self.labels.release.site_name}: "
-                f"{self.field.attrs.release.site_name.value}")
+            s = f"{self.labels.release.site_long}"
+            #s += f": {self.field.attrs.release.site_name.value}")
             box.text(loc='bl', s=s, dx=5.5, dy=dy_site_label, size='small')
 
         # Field maximum marker
@@ -668,7 +680,7 @@ class DispersionPlot(Plot):
         # Add box title
         s = {'en': 'Release', 'de': 'Austritt'}[self.lang]
         #box.text('tc', s, size='large')
-        box.text('tc', s, dy=-1.5, size='large')
+        box.text('tc', s, dy=-1.0, size='large')
 
         # Release site coordinates
         _lat = Degrees(self.field.attrs.release.lat.value)
@@ -685,6 +697,7 @@ class DispersionPlot(Plot):
         a = self.field.attrs
         info_blocks = dedent(
             f"""\
+            {l.release.site}:\t{a.release.site_name.format()}
             {l.release.lat}:\t{lat_fmtd}
             {l.release.lon}:\t{lon_fmtd}
             {l.release.height}:\t{a.release.height.format()}
@@ -703,7 +716,7 @@ class DispersionPlot(Plot):
             """)
 
         # Add lines bottom-up (to take advantage of baseline alignment)
-        dy0 = 2
+        dy0 = 1.5
         dy = 2.5
         box.text_blocks_hfill(
             'b',
@@ -850,9 +863,6 @@ class Plot_AffectedAreaMono(Plot_AffectedArea):
     def define_levels(self):
         levels = self.auto_levels_log10(n_levels=9)
         self.levels = np.array([levels[0], np.inf])
-
-    def fill_box_right_top(self):
-        super().fill_box_right_top()
 
 
 #----------------------------------------------------------------------

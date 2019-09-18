@@ -102,7 +102,7 @@ class Test_PlotDispersion_Summarize:
                 'h_rel_b': 0.03,
                 'w_rel_r': 0.25,
                 'pad_hor_rel': 0.015,
-                'h_rel_box_rt': 0.46,
+                'h_rel_box_rt': 0.45,
             },
             'labels': {},
             'ax_map': {
@@ -115,23 +115,9 @@ class Test_PlotDispersion_Summarize:
                     'elements': [
                         {
                             'type': 'TextBoxElement_Text',
-                            's': 'variable.long_name',
+                            #'s': ...
                             'loc': {
                                 'loc': 'tl'
-                            },
-                        },
-                        {
-                            'type': 'TextBoxElement_Text',
-                            's': 'species.name.format',
-                            'loc': {
-                                'loc': 'tc'
-                            },
-                        },
-                        {
-                            'type': 'TextBoxElement_Text',
-                            's': 'simulation.now.format',
-                            'loc': {
-                                'loc': 'tr'
                             },
                         },
                         {
@@ -143,9 +129,23 @@ class Test_PlotDispersion_Summarize:
                         },
                         {
                             'type': 'TextBoxElement_Text',
+                            #'s': ...
+                            'loc': {
+                                'loc': 'tc'
+                            },
+                        },
+                        {
+                            'type': 'TextBoxElement_Text',
                             's': 'release.site_name',
                             'loc': {
                                 'loc': 'bc'
+                            },
+                        },
+                        {
+                            'type': 'TextBoxElement_Text',
+                            's': 'simulation.now.format',
+                            'loc': {
+                                'loc': 'tr'
                             },
                         },
                         {

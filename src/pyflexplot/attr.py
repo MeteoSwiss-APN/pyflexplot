@@ -427,7 +427,7 @@ class AttrGroupVariable(AttrGroup):
             return None
 
         def fmt(bot, top, unit_fmtd=self.format_level_unit()):
-            s = f"{bot:g}" + r'$\,-\,$' + f"{top:g}"
+            s = f"{bot:g}" + r'$-$' + f"{top:g}"
             if unit_fmtd:
                 s += f" {unit_fmtd}"
             return s
@@ -581,12 +581,9 @@ class AttrGroupSimulation(AttrGroup):
         self.set('now', now, datetime.datetime, start=start)
         self.set('integr_start', integr_start, datetime.datetime, start=start)
 
-    @property
-    def integr_period(self):
-        return self.now.value - self.integr_start.value
-
     def format_integr_period(self):
-        return f'{self.integr_period.total_seconds()/3600:g}$\\,$h'
+        integr_period = self.now.value - self.integr_start.value
+        return f'{integr_period.total_seconds()/3600:g}$\\,$h'
 
 
 class AttrGroupCollection:

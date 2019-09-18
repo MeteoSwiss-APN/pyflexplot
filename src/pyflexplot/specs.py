@@ -812,6 +812,7 @@ class AttrsCollector:
         lat = np.mean([release_point.lllat, release_point.urlat])
         lon = np.mean([release_point.lllon, release_point.urlon])
         site_name = release_point.name
+        site_name = {'Goesgen': r'G$\mathrm{\"o}$sgen'}.get(site_name)
 
         height = np.mean([release_point.zbot, release_point.ztop])
         height_unit = {

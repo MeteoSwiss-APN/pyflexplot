@@ -388,7 +388,8 @@ def isiterable(obj, str_ok=True):
 #======================================================================
 
 
-def format_level_ranges(levels, style=None, widths=None, extend=None, **kwargs):
+def format_level_ranges(
+        levels, style=None, widths=None, extend=None, **kwargs):
     """Format a list of level ranges in a certain style.
 
     Args:
