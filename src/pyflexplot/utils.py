@@ -11,7 +11,6 @@ from pprint import pformat
 
 from .utils_dev import ipython  #SR_DEV
 
-
 #======================================================================
 # Exceptions
 #======================================================================
@@ -140,6 +139,7 @@ class SummarizableClass:
 
 
 #======================================================================
+
 
 class Degrees:
     """Degrees, useful for instance to convert between notations."""
@@ -388,8 +388,47 @@ def isiterable(obj, str_ok=True):
 #======================================================================
 
 
-def format_level_ranges(style, widths, extend, levels, **kwargs):
-    cls = {
+def format_level_ranges(levels, style, widths, extend, **kwargs):
+    """Format a list of level ranges in a certain style.
+
+    Args:
+        levels (list[float]): Levels between the ranges.
+
+        style (str): Formatting style (options and examples below).
+
+        widths (tuple[int, int, int]): Tuple with the character widths
+            of, respectively, the left ('lower-than'), center
+            (operator), and right ('greater-than') parts of the ranges.
+
+        extend (str): Whether the range is closed ('none'), open at the
+            lower ('min') or the upper ('max') end, or both ('both').
+            Same as the ``extend`` keyword of, e.g., matplotlib's
+            ``contourf`` function.
+
+        **kwargs: Additional style-specific keyword arguments used to
+            initialize the respective formatter class.
+            individual formatter classes for details.
+
+    Returns:
+        list[str]: List of formatted level range strings, each of which
+            represents the range between two successive ``levels``.
+            Depending on ``extend``, the number of strings is equal to
+            ('min' or 'max'), one smaller ('none'), or one greater
+            ('both') than the number of ``levels``.
+
+    Styles:
+         ``style``  | example return
+        ------------+-----------------------------------------------
+         simple     | '< 10.0', '10.0-20.0', '>= 20.0'
+         simple-int | '< 10', '10-19', '>= 20'
+         math       | '(-inf, 10.0)', '[10.0, 20.0)', '[20.0, inf)'
+         up         | '< 10.0', '>= 10.0', '>= 20.0'
+         down       | '< 10.0'  '< 20.0', '>= 20.0'
+         and        | '< 10.0', '>= 10.0 & < 20.0' '>= 20.0'
+         var        | '10.0 > v', '10.0 <= v < 20.0' 'v >= 20'
+
+    """
+    formatters = {
         'simple': LevelRangeFormatter_Simple,
         'simple-int': LevelRangeFormatter_SimpleInt,
         'math': LevelRangeFormatter_Math,
@@ -397,8 +436,15 @@ def format_level_ranges(style, widths, extend, levels, **kwargs):
         'down': LevelRangeFormatter_Down,
         'and': LevelRangeFormatter_And,
         'var': LevelRangeFormatter_Var,
-    }.get(style, LevelRangeFormatter)  #SR_TMP
-    return cls(style, widths, extend, **kwargs).format_multiple(levels)
+    }
+    try:
+        cls = formatters[style]
+    except AttributeError:
+        raise ValueError(
+            f"unknown style '{style}'; options: {sorted(formatters)}")
+    else:
+        formatter = cls(style, widths, extend, **kwargs)
+    return formatter.format_multiple(levels)
 
 
 class LevelRangeFormatter:
@@ -411,7 +457,6 @@ class LevelRangeFormatter:
         self.extend = extend
         self.rstrip_zeros = rstrip_zeros
         self.var = var  #SR_TMP specific to style='var'
-
 
     def _check_widths(self, widths):
         try:
@@ -450,7 +495,10 @@ class LevelRangeFormatter:
             lvl0 = -np.inf
         if lvl1 is None:
             lvl1 = np.inf
-        return f"{{:{wl}.1e}}{{:^{wc + 2}}}{{:{wr}.1e}}".format(lvl0, r'$-$', lvl1)
+        label_l = f"{{:>{wl}.1e}}".format(lvl0)
+        label_c = f"{{:^{wc + 2}}}".format(r'$-$')
+        label_r = f"{{:<{wr}.1e}}".format(lvl1)
+        return f"{label_l}{label_c}{label_r}"
 
     #SR_TMP<<<
     def _format_level(self, lvl):
@@ -576,11 +624,11 @@ class LevelRangeFormatter_Up(LevelRangeFormatter):
         if lvl0 is None:
             lvl0 = np.inf
         lvl0_fmtd = self._format_level(lvl0)
-        return  f"$\geq$ {lvl0_fmtd:<}"
+        return f"$\geq$ {lvl0_fmtd:<}"
         label_l = ' '*wl
         label_c = f"{{:^{wc + 4}}}".format(r'$\geq$')
         label_r = f"{{:<{wr}}}".format(self._format_level(lvl0))
-        return f"{label_c}{label_r}"
+        return f"{label_l}{label_c}{label_r}"
 
 
 class LevelRangeFormatter_Down(LevelRangeFormatter):
@@ -608,6 +656,7 @@ class LevelRangeFormatter_And(LevelRangeFormatter):
         label_r = f"$<$ {{:>{wl - 3}}}".format(self._format_level(lvl1))
         return f"{label_l}{label_c}{label_r}"
 
+
 class LevelRangeFormatter_Var(LevelRangeFormatter):
 
     def _format_core(self, lvl0, lvl1):
@@ -618,6 +667,9 @@ class LevelRangeFormatter_Var(LevelRangeFormatter):
             lvl1 = np.inf
         lvl0_fmtd = self._format_level(lvl0)
         lvl1_fmtd = self._format_level(lvl1)
-        return (
-            f"{lvl0_fmtd:>} " + r'$\leq$' +
-            f" {self.var} < " + f"{lvl1_fmtd:<}")
+        unit_fmtd = r'$\leq$ ' + self.var + ' $<$'
+        wc_tex = wc + len(unit_fmtd) - 3*2 - len(self.var)
+        label_l = f"{{:>{wl}}} ".format(lvl0_fmtd)
+        label_c = f"{{:^{wc_tex}}}".format(unit_fmtd)
+        label_r = f"{{:<{wr}}}".format(lvl1_fmtd)
+        return f"{label_l}{label_c}{label_r}"
