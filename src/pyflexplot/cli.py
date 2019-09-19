@@ -13,6 +13,7 @@ from pprint import pformat
 from .io import FieldSpecs
 from .io import FileReader
 from .utils import count_to_log_level
+from .utils import group_kwargs
 from .plotter import Plotter
 
 from .utils_dev import ipython  #SR_DEV
@@ -577,44 +578,6 @@ def ensemble():
 cli.add_command(ensemble)
 
 
-def collect_kwargs(prefix, group_name=None):
-    """Collect all keyword arguments whose name starts with a prefix.
-
-    All keyword arguments '<name>__foo', '<name>__bar', etc. are
-    collected and put in a dictionary as 'foo', 'bar', etc., which
-    is passed on as a keyword argument '<name>'.
-
-    Usage example:
-
-        @collect_kwargs('test', 'kwargs_test')
-        def test(arg1, kwargs_test):
-            print(kwargs_test)
-
-        test(arg1='foo', test__arg2='bar', test__arg3='baz')
-
-        > {'arg2': 'bar', 'arg3': 'baz'}
-
-    """
-    if group_name is None:
-        group_name = prefix
-    prefix = f'{prefix}__'
-    def decorator(f):
-        @functools.wraps(f)
-        def wrapper(*args, **kwargs):
-            if group_name in kwargs:
-                raise ValueError(
-                    f"keyword argument '{group_name}' already present")
-            group = {}
-            for key in [k for k in kwargs]:
-                if key.startswith(prefix):
-                    new_key = key[len(prefix):]
-                    group[new_key] = kwargs.pop(key)
-            kwargs[group_name] = group
-            return f(*args, **kwargs)
-        return wrapper
-    return decorator
-
-
 @deterministic.command(
     name='concentration',
     help="Activity concentration; deterministic simulation data.",
@@ -626,7 +589,7 @@ def collect_kwargs(prefix, group_name=None):
 @ConcentrationOptions.input
 @ConcentrationOptions.plot
 @click.pass_context
-@collect_kwargs('vars_specs')
+@group_kwargs('vars_specs')
 def deterministic_concentration(ctx, plot_var, **kwargs):
     var_in = 'concentration'
     create_plots(ctx=ctx, var_in=var_in, **kwargs)
@@ -643,7 +606,7 @@ def deterministic_concentration(ctx, plot_var, **kwargs):
 @DepositionOptions.input
 @DepositionOptions.plot_deterministic
 @click.pass_context
-@collect_kwargs('vars_specs')
+@group_kwargs('vars_specs')
 def deterministic_deposition(ctx, plot_var, **kwargs):
     var_in = 'deposition' if plot_var == 'auto' else plot_var
     create_plots(ctx=ctx, var_in=var_in, **kwargs)
@@ -662,7 +625,7 @@ def deterministic_deposition(ctx, plot_var, **kwargs):
 @ConcentrationOptions.input
 @ConcentrationOptions.plot
 @click.pass_context
-@collect_kwargs('vars_specs')
+@group_kwargs('vars_specs')
 def ensemble_concentration(ctx, plot_var, **kwargs):
     var_in = 'concentration'
     create_plots(ctx=ctx, var_in=var_in, **kwargs)
@@ -681,7 +644,7 @@ def ensemble_concentration(ctx, plot_var, **kwargs):
 @DepositionOptions.input
 @DepositionOptions.plot_ensemble
 @click.pass_context
-@collect_kwargs('vars_specs')
+@group_kwargs('vars_specs')
 def ensemble_deposition(ctx, plot_var, **kwargs):
     var_in = {'auto': 'deposition'}.get(plot_var, plot_var)
     create_plots(ctx=ctx, var_in=var_in, **kwargs)
