@@ -16,6 +16,7 @@ from .plot_utils import TextBoxAxes
 from .utils import SummarizableClass
 from .plot_utils import SummarizablePlotClass
 from .utils import Degrees
+from .utils import format_float
 from .utils import format_level_ranges
 from .utils import ParentClass
 from .utils_dev import ipython  #SR_DEV
@@ -565,10 +566,10 @@ class DispersionPlot(Plot):
         box = self.boxes[1]
 
         dx_box = -10
-        dx_label = 10
+        dx_label = -1
 
         dx_marker = dx_box + 0.5*w_box
-        dx_marker_label = dx_box + 1.25*w_box
+        dx_marker_label = dx_label
 
         #--------------------------------------------------------------
         # Color boxes (legend)
@@ -601,7 +602,7 @@ class DispersionPlot(Plot):
             dy_line=dy_line,
             dx=dx_label,
             reverse=self.reverse_legend,
-            ha='right',
+            ha='left',
             size='small',
             family='monospace',
         )
@@ -664,16 +665,18 @@ class DispersionPlot(Plot):
                 dy=dy_max_marker,
                 **self._max_marker_kwargs,
             )
-            fld_max_fmtd = f'{self.labels.release.max}: '
+            s = f'{self.labels.release.max}: '
             if np.isnan(self.field.fld).all():
-                fld_max_fmtd += 'NaN'
+                s += 'NaN'
             else:
-                fld_max_fmtd += (
-                    f'{np.nanmax(self.field.fld):.2E}'
-                    f' {self.field.attrs.variable.unit.format()}')
+                s += format_float(
+                    np.nanmax(self.field.fld),
+                    fmt_e0='{f:.3E}',
+                    fmt_f1='{f:,.2f}')
+                #s += f' {self.field.attrs.variable.unit.format()}'
             box.text(
                 loc='bc',
-                s=fld_max_fmtd,
+                s=s,
                 dx=dx_marker_label,
                 dy=dy_marker_label_max,
                 ha='left',

@@ -444,6 +444,106 @@ def group_kwargs(name, name_out=None, separator=None):
 #======================================================================
 
 
+def format_float(f, fmt_e0=None, fmt_f0=None, fmt_e1=None, fmt_f1=None):
+    """Auto-format a float to floating-point or exponential notation.
+
+    Very small and very large numbers are formatted in exponential
+    notation. Numbers close enough to zero that they can be written
+    in floating point format without exceeding the width of the
+    exponential format are written in the former.
+
+    Args:
+        f (float): Number to format.
+
+        fmt_e0 (str, optional): Exponential-notation format string
+            used to create the string that is compared to that produced
+            with ``fmt_f0`` to decide the appropriate notation.
+            Defaults to '{f:e}'.
+
+        fmt_f0 (str, optional): Floating-point notation format string
+            used to create the string that is compared to that produced
+            with ``fmt_e0`` to decide the appropriate notation.
+            Defaults to '{f:f}'.
+
+        fmt_e1 (str, optional): Exponential-notation format string
+            used to create the return string if exponential notation
+            has been found to be appropriate. Defaults to ``fmt_e0``.
+
+        fmt_f1 (str, optional): Floating-point notation format string
+            used to create the return string if floating point notation
+            has been found to be appropriate. Defaults to '{f:f}' with
+            the resulting string trimmed to the length of that produced
+            with ``fmt_e0``.
+
+    Algorithm:
+        * Format ``f`` in both exponential notation with ``fmt_e0`` and
+          in floating point notation with ``fmt_f0``, resulting in the
+          string ``fe0`` and ``ff0``, respectively.
+
+        * Trim ``ff0`` to the length of ``fe0``, resulting in ``ff0t``.
+
+        * If ``ff0t`` is a valid floating point number, then floating
+          point notation is the notation of choice. Criteria:
+
+            * For numbers > 1.0, the following elements are preserved:
+                * the leading minus sign, if the number is negative;
+                * all integer digits;
+                * the period; and
+                * at least one fractional digit.
+
+            * For numbers < 1.0, the following elements are preserved:
+                * the leading minus sign, if the number is negative;
+                * one zero integer digit;
+                * the period; and
+                * at least one non-zero fractional digit (provided the
+                  number is non-zero).
+
+        * Otherwise, exponential notation is the notation of choice.
+
+        * Finally, ``f`` is formatted with ``fmt_f1`` or ``fmt_e1``,
+          depending on whether floating point or exponential notation,
+          respectively, has been determined as the notation of choice.
+
+    """
+    try:
+        float(f)
+    except (ValueError, TypeError):
+        raise ValueError(
+            f"f='{f}' of type {type(f).__name__} not float-compatible")
+
+    rx_e = re.compile(r'^{f:[0-9,]*\.?[0-9]*[eE]}$')
+    rx_f = re.compile(r'^{f:[0-9,]*\.?[0-9]*f}$')
+    for name in ['fmt_e0', 'fmt_f0', 'fmt_e1', 'fmt_f1']:
+        fmt = locals()[name]
+        if fmt is not None:
+            if not rx_e.match(fmt) and not rx_f.match(fmt):
+                raise ValueError(f"invalid format string: {name}='{fmt}'")
+
+    if fmt_e0 is None:
+        fmt_e0 = '{f:e}'
+    if fmt_f0 is None:
+        fmt_f0 = '{f:f}'
+
+    fe0 = fmt_e0.format(f=f)
+    ff0 = fmt_f0.format(f=f)
+    n = len(fe0)
+    ff0t = ff0[:n]
+
+    if f >= 1.0:
+        rxs = r'^' + str(int(f)) + r'\.[0-9]+$'
+        float_ok = bool(re.match(rxs, ff0t))
+    else:
+        float_ok = (f == 0.0) or (float(ff0t) != 0.0)
+
+    if float_ok:
+        if fmt_f1 is not None:
+            return fmt_f1.format(f=f)
+        return ff0t
+    if fmt_e1 is not None:
+        return fmt_e1.format(f=f)
+    return fe0
+
+
 def format_level_ranges(
         levels, style=None, widths=None, extend=None, **kwargs):
     """Format a list of level ranges in a certain style.
@@ -587,14 +687,7 @@ class LevelRangeFormatter:
         return f"{label_l}{label_c}{label_r}"
 
     def _format_level(self, lvl):
-        if lvl is None:
-            raise ValueError(f"lvl is None")
-        fmtd = f'{lvl:.0E}'
-        n = len(fmtd)
-        ll = np.log10(lvl)
-        if ll >= -(n - 2) and ll <= n - 3:
-            fmtd = f'{lvl:f}' [:n]
-        return fmtd
+        return format_float(lvl, '{f:.0E}')
 
 
 class LevelRangeFormatter_Int(LevelRangeFormatter):
