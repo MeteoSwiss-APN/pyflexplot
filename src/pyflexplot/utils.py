@@ -592,7 +592,7 @@ class LevelRangeFormatter:
         fmtd = f'{lvl:.0E}'
         n = len(fmtd)
         ll = np.log10(lvl)
-        if ll >= -n + 2 and ll <= n - 1:
+        if ll >= -(n - 2) and ll <= n - 3:
             fmtd = f'{lvl:f}' [:n]
         return fmtd
 
