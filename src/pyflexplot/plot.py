@@ -260,6 +260,7 @@ class DispersionPlot(Plot):
         'h_rel_box_rt': 0.45,
     }
     level_range_style = 'base'  # see ``format_level_ranges``
+    level_ranges_align = 'center'
     reverse_legend = False  #SR_TMP TODO make CLI argument
 
     summarizable_attrs = Plot.summarizable_attrs + [
@@ -523,7 +524,7 @@ class DispersionPlot(Plot):
                 _since = 'since'
             elif self.lang == 'de':
                 _sum = 'Summe'
-                _over = r'$\"u$ber'
+                _over = r'$\mathrm{\"u}$ber'
                 _since = 'seit'
             #s = f"{_sim.format_integr_period()} {_sum}"
             s = f"{_sum.capitalize()} {_over} {_sim.format_integr_period()}"
@@ -565,8 +566,11 @@ class DispersionPlot(Plot):
         """Fill the top box to the right of the map plot."""
         box = self.boxes[1]
 
+        #font_size = 'small'
+        font_size = 'medium'
+
         dx_box = -10
-        dx_label = -1
+        dx_label = -3
 
         dx_marker = dx_box + 0.5*w_box
         dx_marker_label = dx_label
@@ -591,7 +595,8 @@ class DispersionPlot(Plot):
             levels=self.levels,
             style=self.level_range_style,
             extend=self.extend,
-            rstrip_zeros=False,
+            rstrip_zeros=True,
+            align=self.level_ranges_align,
         )
 
         # Add level labels
@@ -603,7 +608,7 @@ class DispersionPlot(Plot):
             dx=dx_label,
             reverse=self.reverse_legend,
             ha='left',
-            size='small',
+            size=font_size,
             family='monospace',
         )
 
@@ -651,7 +656,7 @@ class DispersionPlot(Plot):
                 dx=dx_marker_label,
                 dy=dy_site_label,
                 ha='left',
-                size='small',
+                size=font_size,
             )
 
         # Field maximum marker
@@ -672,7 +677,7 @@ class DispersionPlot(Plot):
                 s += format_float(
                     np.nanmax(self.field.fld),
                     fmt_e0='{f:.3E}',
-                    fmt_f1='{f:,.2f}')
+                    fmt_f1='{f:,.3f}')
                 #s += f' {self.field.attrs.variable.unit.format()}'
             box.text(
                 loc='bc',
@@ -680,7 +685,7 @@ class DispersionPlot(Plot):
                 dx=dx_marker_label,
                 dy=dy_marker_label_max,
                 ha='left',
-                size='small',
+                size=font_size,
             )
 
     def _format_legend_box_title(self):
@@ -949,6 +954,7 @@ class Plot_EnsThrAgrmt(Plot_Ens):
     d_level = 2
     extend = 'min'
     level_range_style = 'int'  # see ``format_level_ranges``
+    level_ranges_align = 'left'
     mark_field_max = False
 
     def define_levels(self):

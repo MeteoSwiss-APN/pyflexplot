@@ -817,7 +817,7 @@ class AttrsCollector:
         height = np.mean([release_point.zbot, release_point.ztop])
         height_unit = {
             'en': 'm AGL',  #SR_HC
-            'de': r'm $\mathrm{\"u}$. G.',  #SR_HC
+            'de': r'm $\mathrm{\"u}$.G.',  #SR_HC
         }[self.lang]
 
         assert len(release_point.ms_parts) == 1
@@ -860,7 +860,7 @@ class AttrsCollector:
         else:
             level_unit = {
                 'en': 'm AGL',  #SR_HC
-                'de': r'm $\mathrm{\"u}$. G.',  #SR_HC
+                'de': r'm $\mathrm{\"u}$.G.',  #SR_HC
             }[self.lang]
             _var = self.fi.variables['level']
             level_bot = 0.0 if _i == 0 else float(_var[_i - 1])

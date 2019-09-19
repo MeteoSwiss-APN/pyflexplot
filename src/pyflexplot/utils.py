@@ -8,6 +8,7 @@ import logging as log
 import numpy as np
 import re
 
+from collections import namedtuple
 from pprint import pformat
 
 from .utils_dev import ipython  #SR_DEV
@@ -545,7 +546,7 @@ def format_float(f, fmt_e0=None, fmt_f0=None, fmt_e1=None, fmt_f1=None):
 
 
 def format_level_ranges(
-        levels, style=None, widths=None, extend=None, **kwargs):
+        levels, style=None, widths=None, extend=None, align=None, **kwargs):
     """Format a list of level ranges in a certain style.
 
     Args:
@@ -564,6 +565,14 @@ def format_level_ranges(
             open at the lower ('min') or the upper ('max') end, or both
             ('both').  Same as the ``extend`` keyword of, e.g.,
             ``matplotlib.pyplot.contourf``. Defaults to 'none'.
+
+        align (str, optional): Horizontal alignment of the left and
+            right components (the center component with the operator
+            is always center-aligned). Options: 'left' (both components
+            left- aligned), 'right' (both components right-aligned),
+            'center', (left/right component right/left-aligned), and
+            'edges' (left/right component left/right-aligned). Defaults
+            to 'center'.
 
         **kwargs: Additional style-specific keyword arguments used to
             initialize the respective formatter class.
@@ -594,6 +603,14 @@ def format_level_ranges(
         style = 'base'
     if extend is None:
         extend = 'none'
+    if align is None:
+        align = 'center'
+    else:
+        align_choices = ['left', 'right', 'center', 'edges']
+        if align not in align_choices:
+            raise ValueError(
+                f"invalid value '{align}' of argument align; "
+                f"must be one of {','.join(align_choices)}")
     formatters = {
         'base': LevelRangeFormatter,
         'int': LevelRangeFormatter_Int,
@@ -609,21 +626,33 @@ def format_level_ranges(
         raise ValueError(
             f"unknown style '{style}'; options: {sorted(formatters)}")
     else:
-        formatter = cls(style=style, widths=widths, extend=extend, **kwargs)
+        formatter = cls(
+            style=style, widths=widths, extend=extend, align=align, **kwargs)
     return formatter.format_multiple(levels)
 
 
 class LevelRangeFormatter:
     """Format level ranges, e.g., for legends of color contour plots."""
 
-    def __init__(self, style, widths=None, extend='none', rstrip_zeros=False):
-        self.style = style  #SR_TMP
+    def __init__(
+            self,
+            style,
+            widths=None,
+            extend='none',
+            align='center',
+            rstrip_zeros=False):
+        """Create an instance of ``LevelRangeFormatter``.
+
+        Args: See ``format_level_ranges``.
+
+        """
         if widths is None:
             widths = (5, 3, 5)
         else:
             self._check_widths(widths)
         self.widths = widths
         self.extend = extend
+        self.align = align
         self.rstrip_zeros = rstrip_zeros
 
     def _check_widths(self, widths):
@@ -633,24 +662,46 @@ class LevelRangeFormatter:
             raise ValueError(f"widths is not a tree-int tuple: {widths}")
 
     def format_multiple(self, levels):
-        labels = []
+        ss = []
         if self.extend in ('min', 'both'):
-            labels.append(self.format(None, levels[0]))
+            ss.append(self.format(None, levels[0]))
         for lvl0, lvl1 in zip(levels[:-1], levels[1:]):
-            labels.append(self.format(lvl0, lvl1))
+            ss.append(self.format(lvl0, lvl1))
         if self.extend in ('max', 'both'):
-            labels.append(self.format(levels[-1], None))
-        return labels
+            ss.append(self.format(levels[-1], None))
+        return ss
 
     def format(self, lvl0, lvl1):
-        label = self._format_core(lvl0, lvl1)
-        if self.rstrip_zeros:
-            rx_str = r'(?<!\.)0\b(?!\.)'
-            while re.search(rx_str, label):
-                label = re.sub(rx_str, ' ', label)
-        return label
+        cs = self._format_components(lvl0, lvl1)
 
-    def _format_core(self, lvl0, lvl1):
+        s_l = cs.l.s
+        s_c = cs.c.s
+        s_r = cs.r.s
+
+        dc = '^'
+        dl, dr = dict(
+            left='<<', right='>>', center='><', edges='<>')[self.align]
+
+        if self.rstrip_zeros:
+
+            def rstrip_zeros(s):
+                rx_str = r'(?<!\.)0\b(?!\.)'
+                while re.search(rx_str, s):
+                    s = re.sub(rx_str, '', s)
+                return s
+
+            s_l = rstrip_zeros(s_l)
+            s_r = rstrip_zeros(s_r)
+
+        wl, wc, wr = self.widths
+
+        s_l = f"{{:{dl}{wl + cs.l.ntex}}}".format(s_l)
+        s_c = f"{{:{dc}{wc + cs.c.ntex}}}".format(s_c)
+        s_r = f"{{:{dr}{wr + cs.r.ntex}}}".format(s_r)
+
+        return f"{s_l}{s_c}{s_r}"
+
+    def _format_components(self, lvl0, lvl1):
         if (lvl0, lvl1) == (None, None):
             raise ValueError(f"both levels are None")
         elif lvl0 is None:
@@ -661,15 +712,14 @@ class LevelRangeFormatter:
             return self._format_closed(lvl0, lvl1)
 
     def _format_closed(self, lvl0, lvl1):
-        wl, wc, wr = self.widths
         lvl0_fmtd = self._format_level(lvl0)
         lvl1_fmtd = self._format_level(lvl1)
         op_fmtd = r'$\tt -$'
-        wc_fmtd = wc + len(op_fmtd) - 1
-        label_l = f"{{:>{wl}}}".format(lvl0_fmtd)
-        label_c = f"{{:^{wc_fmtd}}}".format(op_fmtd)
-        label_r = f"{{:<{wr}}}".format(lvl1_fmtd)
-        return f"{label_l}{label_c}{label_r}"
+        ntex_c = len(op_fmtd) - 1
+        s_l = lvl0_fmtd
+        s_c = op_fmtd
+        s_r = lvl1_fmtd
+        return self._Components(s_l, (s_c, ntex_c), s_r)
 
     def _format_open_left(self, lvl):
         return self._format_open_core(lvl, r'$\tt <$')
@@ -679,15 +729,42 @@ class LevelRangeFormatter:
 
     def _format_open_core(self, lvl, op, *, len_op=1):
         lvl_fmtd = self._format_level(lvl)
-        wl, wc, wr = self.widths
-        wc_tex = wc + len(op) - len_op
-        label_l = ' '*wl
-        label_c = f"{{:^{wc_tex}}}".format(op)
-        label_r = f"{{:<{wr}}}".format(lvl_fmtd)
-        return f"{label_l}{label_c}{label_r}"
+        ntex_c = len(op) - len_op
+        s_c = op
+        s_r = lvl_fmtd
+        return self._Components('', (s_c, ntex_c), s_r)
 
     def _format_level(self, lvl):
         return format_float(lvl, '{f:.0E}')
+
+    @classmethod
+    def _Component(cls, s, n=None):
+        """Auxiliary type for passing results between methods."""
+        if n is None:
+            n = len(s)
+        Component = namedtuple('component', 's ntex')
+        return Component(s, n)
+
+    @classmethod
+    def _Components(cls, left, center, right):
+        """Auxiliary type for passing results between methods."""
+        Components = namedtuple('components', 'l c r')
+
+        def create_component(name, arg):
+            if isinstance(arg, str):
+                return cls._Component(arg, 0)
+            try:
+                return cls._Component(*arg)
+            except Exception as e:
+                raise ValueError(
+                    f"cannot create {name} Component "
+                    f"from {type(arg).__name__} {arg}")
+
+        return Components(
+            create_component('left', left),
+            create_component('center', center),
+            create_component('right', right),
+        )
 
 
 class LevelRangeFormatter_Int(LevelRangeFormatter):
@@ -700,20 +777,18 @@ class LevelRangeFormatter_Int(LevelRangeFormatter):
         kwargs['rstrip_zeros'] = False
         super().__init__(*args, widths=widths, **kwargs)
 
-    def _format_core(self, lvl0, lvl1):
-        wl, wc, wr = self.widths
+    def _format_components(self, lvl0, lvl1):
         if lvl1 is not None:
             lvl1 = lvl1 - 1
             if lvl0 == lvl1:
-                label_r = f"{{:<{wr}}}".format(self._format_level(lvl1))
-                return f"{' '*(wl + wc)}{label_r}"
-        return super()._format_core(lvl0, lvl1)
+                return self._Components('', '', self._format_level(lvl1))
+        return super()._format_components(lvl0, lvl1)
 
     def _format_level(self, lvl):
         if int(lvl) != float(lvl):
             log.warning(
                 f"{type(self).__name__}._format_level: not an int: {lvl}")
-        return int(lvl)
+        return str(lvl)
 
 
 class LevelRangeFormatter_Math(LevelRangeFormatter):
@@ -723,27 +798,12 @@ class LevelRangeFormatter_Math(LevelRangeFormatter):
             widths = (6, 2, 6)
         super().__init__(*args, widths=widths, **kwargs)
 
-    def _format_core(self, lvl0, lvl1):
-        label_l = self._format_l(lvl0)
-        label_c = self._format_c()
-        label_r = self._format_r(lvl1)
-        return f"{label_l}{label_c}{label_r}"
-
-    def _format_l(self, lvl):
-        wl, wc, wr = self.widths
-        if lvl is not None:
-            return f"[{{:>{wl}}}".format(self._format_level(lvl))
-        return f"({{:>{wl}}}".format('-inf')
-
-    def _format_r(self, lvl):
-        wl, wc, wr = self.widths
-        if lvl is not None:
-            return f"{{:<{wr}}})".format(self._format_level(lvl))
-        return f"{{:<{wr}}})".format('inf')
-
-    def _format_c(self):
-        wl, wc, wr = self.widths
-        return f"{{:<{wc}}}".format(',')
+    def _format_components(self, lvl0, lvl1):
+        return self._Components(
+            '-inf' if lvl0 is None else f"[{self._format_level(lvl0)}",
+            ',',
+            'inf' if lvl1 is None else f"{self._format_level(lvl1)})",
+        )
 
 
 class LevelRangeFormatter_Up(LevelRangeFormatter):
@@ -754,14 +814,12 @@ class LevelRangeFormatter_Up(LevelRangeFormatter):
         super().__init__(*args, widths=widths, **kwargs)
 
     def _format_closed(self, lvl0, lvl1):
-        wl, wc, wr = self.widths
         lvl0_fmtd = self._format_level(lvl0)
         op_fmtd = r'$\tt \geq$'
-        wc_tex = wc + len(op_fmtd) - 1
-        label_l = ' '*wl
-        label_c = f"{{:<{wc_tex}}}".format(op_fmtd)
-        label_r = f"{{:<{wr}}}".format(self._format_level(lvl0))
-        return f"{label_l}{label_c}{label_r}"
+        ntex_c = len(op_fmtd) - 1
+        s_c = op_fmtd
+        s_r = self._format_level(lvl0)
+        return self._Components('', (s_c, ntex_c), s_r)
 
 
 class LevelRangeFormatter_Down(LevelRangeFormatter):
@@ -772,13 +830,11 @@ class LevelRangeFormatter_Down(LevelRangeFormatter):
         super().__init__(*args, widths=widths, **kwargs)
 
     def _format_closed(self, lvl0, lvl1):
-        wl, wc, wr = self.widths
         op_fmtd = r'$\tt <$'
-        wc_tex = wc + len(op_fmtd) - 1
-        label_l = ' '*wl
-        label_c = f"{{:<{wc_tex}}}".format(op_fmtd)
-        label_r = f"{{:<{wr}}}".format(self._format_level(lvl1))
-        return f"{label_l}{label_c}{label_r}"
+        ntex_c = len(op_fmtd) - 1
+        s_c = op_fmtd
+        s_r = self._format_level(lvl1)
+        return self._Components('', (s_c, ntex_c), s_r)
 
 
 class LevelRangeFormatter_And(LevelRangeFormatter):
@@ -789,43 +845,36 @@ class LevelRangeFormatter_And(LevelRangeFormatter):
         super().__init__(*args, widths=widths, **kwargs)
 
     def _format_closed(self, lvl0, lvl1):
-        wl, wc, wr = self.widths
 
         op0_fmtd = r'$\tt \geq$'
         lvl0_fmtd = f"{op0_fmtd} {self._format_level(lvl0)}"
-        wl_tex = wl + len(op0_fmtd) - 1
+        ntex_l = len(op0_fmtd) - 1
+
+        op_fmtd = r'$\tt &$'
+        ntex_c = len(op_fmtd) - 1
 
         op1_fmtd = r'$<$ '
         lvl1_fmtd = op1_fmtd + self._format_level(lvl1)
-        wr_tex = wr + len(op1_fmtd) - 1
+        ntex_r = len(op1_fmtd) - 1
 
-        op_fmtd = r'$\tt &$'
-        wc_tex = wc + len(op_fmtd) - 1
-
-        label_l = f"{{:<{wl_tex}}}".format(lvl0_fmtd)
-        label_c = f"{{:^{wc_tex}}}".format(op_fmtc)
-        label_r = f"{{:>{wr_tex}}}".format(lvl1_fmtd)
-        return f"{label_l}{label_c}{label_r}"
+        s_l = lvl0_fmtd
+        s_c = op_fmtd
+        s_r = lvl1_fmtd
+        return self._Components((s_l, ntex_l), (s_c, ntex_c), (s_r, ntex_r))
 
     def _format_open_left(self, lvl):
-        wl, wc, wr = self.widths
         op1_fmtd = r'\tt $<$'
         lvl_fmtd = f"{op1_fmtd} {self._format_level(lvl)}"
-        wr_tex = wr + len(op0_fmtd) - 1
-        label_l = ' '*wl
-        label_c = ' '*wc
-        label_r = f"{{:>{wr_tex}}}".format(lvl1_fmtd)
-        return f"{label_l}{label_c}{label_r}"
+        ntex_r = len(op0_fmtd) - 1
+        s_r = lvl1_fmtd
+        return self._Components('', '', (s_r, ntex_r))
 
     def _format_open_right(self, lvl):
-        wl, wc, wr = self.widths
         op0_fmtd = r'$\tt \geq$'
         lvl_fmtd = f"{op0_fmtd} {self._format_level(lvl)}"
-        wl_tex = wl + len(op0_fmtd) - 1
-        label_l = f"{{:<{wl_tex}}}".format(lvl_fmtd)
-        label_c = ' '*wc
-        label_r = ' '*wr
-        return f"{label_l}{label_c}{label_r}"
+        ntex_l = len(op0_fmtd) - 1
+        s_l = lvl_fmtd
+        return self._Components((s_l, ntex_l), '', '')
 
 
 class LevelRangeFormatter_Var(LevelRangeFormatter):
@@ -837,35 +886,30 @@ class LevelRangeFormatter_Var(LevelRangeFormatter):
         self.var = var
 
     def _format_closed(self, lvl0, lvl1):
-        wl, wc, wr = self.widths
         op0 = r'$\tt \leq$'
-        op1 = '$\tt <$'
+        op1 = r'$\tt <$'
         op_fmtd = f"{op0} {self.var} {op1}"
-        wc_tex = wc + len(op0) + len(op1) - 2
-        label_l = f"{{:>{wl}}} ".format(self._format_level(lvl0))
-        label_c = f"{{:^{wc_tex}}}".format(op_fmtd)
-        label_r = f"{{:<{wr}}}".format(self._format_level(lvl1))
-        return f"{label_l}{label_c}{label_r}"
+        ntex_c = len(op0) + len(op1) - 2
+        s_l = self._format_level(lvl0)
+        s_c = op_fmtd
+        s_r = self._format_level(lvl1)
+        return self._Components(s_l, (s_c, ntex_c), s_r)
 
     def _format_open_right(self, lvl):
-        wl, wc, wr = self.widths
         op0 = r'$\tt \leq$'
-        op1 = ' '
+        op1 = ''
         op_fmtd = f"{op0} {self.var} {op1}"
-        wc_tex = wc + len(op0) + len(op1) - 2
-        label_l = f"{{:>{wl}}} ".format(self._format_level(lvl))
-        label_c = f"{{:^{wc_tex}}}".format(op_fmtd)
-        label_r = ' '*wr
-        return f"{label_l}{label_c}{label_r}"
+        ntex_c = len(op0) + len(op1) - 2
+        s_l = self._format_level(lvl)
+        s_c = op_fmtd
+        return self._Components(s_l, (s_c, ntex_c), '')
 
     def _format_open_left(self, lvl):
         lvl_fmtd = self._format_level(lvl)
-        wl, wc, wr = self.widths
         op0 = ' '
         op1 = '$\tt <$'
         op_fmtd = f"{op0} {self.var} {op1}"
-        wc_tex = wc + len(op0) + len(op1) - 2
-        label_l = ' '*wl
-        label_c = f"{{:^{wc_tex}}}".format(op_fmtd)
-        label_r = f"{{:>{wr}}}".format(self._format_level(lvl))
-        return f"{label_l}{label_c}{label_r}"
+        ntex_c = len(op0) + len(op1) - 2
+        s_c = op_fmtd
+        s_r = self._format_level(lvl)
+        return self._Commponents('', (s_c, ntex_c), s_r)
