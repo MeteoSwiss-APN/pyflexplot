@@ -560,9 +560,15 @@ class DispersionPlot(Plot):
     #------------------------------------------------------------------
 
     def fill_box_right_top(
-            self, dx=1.2, dy_line=3.0, dy0_markers=0.25, w_box=4, h_box=2):
+            self, dy_line=3.0, dy0_markers=0.25, w_box=4, h_box=2):
         """Fill the top box to the right of the map plot."""
         box = self.boxes[1]
+
+        dx_box = -10
+        dx_label = 10
+
+        dx_marker = dx_box + 0.5*w_box
+        dx_marker_label = dx_box + 1.25*w_box
 
         #--------------------------------------------------------------
         # Color boxes (legend)
@@ -584,16 +590,18 @@ class DispersionPlot(Plot):
             levels=self.levels,
             style=self.level_range_style,
             extend=self.extend,
+            rstrip_zeros=False,
         )
 
         # Add level labels
         box.text_block(
-            'br',
+            'bc',
             labels,
             dy0=dy0_labels,
             dy_line=dy_line,
-            dx=-dx,
+            dx=dx_label,
             reverse=self.reverse_legend,
+            ha='right',
             size='small',
             family='monospace',
         )
@@ -605,13 +613,14 @@ class DispersionPlot(Plot):
         dy = dy0_boxes
         for color in colors:
             box.color_rect(
-                loc='bl',
-                fc=color,
-                ec='black',
-                dx=dx,
+                loc='bc',
+                x_anker='left',
+                dx=dx_box,
                 dy=dy,
                 w=w_box,
                 h=h_box,
+                fc=color,
+                ec='black',
                 lw=1.0,
             )
             dy += dy_line
@@ -621,7 +630,6 @@ class DispersionPlot(Plot):
         #--------------------------------------------------------------
 
         n_markers = self.mark_release_site + self.mark_field_max
-
         dy0_marker_i = dy0_markers + (2 - n_markers)*dy_line/2
 
         # Release site marker
@@ -630,23 +638,29 @@ class DispersionPlot(Plot):
             dy0_marker_i += dy_line
             dy_site_marker = dy_site_label + 0.7
             box.marker(
-                loc='bl',
-                dx=dx + 1.0,
+                loc='bc',
+                dx=dx_marker,
                 dy=dy_site_marker,
                 **self._site_marker_kwargs,
             )
-            s = f"{self.labels.release.site_long}"
-            #s += f": {self.field.attrs.release.site_name.value}")
-            box.text(loc='bl', s=s, dx=5.5, dy=dy_site_label, size='small')
+            s = self.labels.release.site_long
+            box.text(
+                loc='bc',
+                s=s,
+                dx=dx_marker_label,
+                dy=dy_site_label,
+                ha='left',
+                size='small',
+            )
 
         # Field maximum marker
         if self.mark_field_max:
-            dy_max_label = dy0_marker_i
+            dy_marker_label_max = dy0_marker_i
             dy0_marker_i += dy_line
-            dy_max_marker = dy_max_label + 0.7
+            dy_max_marker = dy_marker_label_max + 0.7
             box.marker(
-                loc='bl',
-                dx=dx + 1.0,
+                loc='bc',
+                dx=dx_marker,
                 dy=dy_max_marker,
                 **self._max_marker_kwargs,
             )
@@ -658,10 +672,11 @@ class DispersionPlot(Plot):
                     f'{np.nanmax(self.field.fld):.2E}'
                     f' {self.field.attrs.variable.unit.format()}')
             box.text(
-                loc='bl',
+                loc='bc',
                 s=fld_max_fmtd,
-                dx=5.5,
-                dy=dy_max_label,
+                dx=dx_marker_label,
+                dy=dy_marker_label_max,
+                ha='left',
                 size='small',
             )
 

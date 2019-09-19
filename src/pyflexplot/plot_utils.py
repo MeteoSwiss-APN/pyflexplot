@@ -563,9 +563,20 @@ class TextBoxElement(SummarizablePlotClass):
 class TextBoxElement_Text(TextBoxElement):
     """Text element in text box."""
 
-    summarizable_attrs = ['loc', 's', 'kwargs']
+    summarizable_attrs = [
+        'loc', 's', 'replace_edge_spaces', 'edge_spaces_replacement_char',
+        'kwargs'
+    ]
 
-    def __init__(self, box, loc, *, s, **kwargs):
+    def __init__(
+            self,
+            box,
+            loc,
+            *,
+            s,
+            replace_edge_spaces=False,
+            edge_spaces_replacement_char=u'\u2423',
+            **kwargs):
         """Create an instance of ``TextBoxElement_Text``.
 
         Args:
@@ -575,12 +586,25 @@ class TextBoxElement_Text(TextBoxElement):
 
             s (str): Text.
 
+            replace_edge_spaces (bool): Replace the first and/and last
+                character in ``s`` by ``edge_spaces_replacement_char``
+                if it is a space. This can be useful for debugging, as
+                trailing spaces may be dropped during rendering.
+                Defaults to False.
+
+            edge_spaces_replacement_char (str): Replacement character
+                for space if ``edge_spaces_replacement_char == True``.
+                Defaults to u'\u2423' (the 'open-box' character below
+                the text baseline that commonly represents a space).
+
             **kwargs: Additional keyword arguments for ``ax.text``.
 
         """
         self.box = box
         self.loc = loc
         self.s = s
+        self.replace_edge_spaces = replace_edge_spaces
+        self.edge_spaces_replacement_char = edge_spaces_replacement_char
         self.kwargs = kwargs
 
         #SR_TMP< TODO consider removing this
@@ -608,20 +632,26 @@ class TextBoxElement_Text(TextBoxElement):
     def draw(self):
         """Draw text element onto text bot axes."""
         s = self.s
-        if self.s[-1] == ' ':
-            # Preserve trailing whitespace by replacing the last space
-            # by a visible symbol ('open box'-symbol below baseline)
-            s = s[:-1] + u'\u2423'  #SR_TMP
-        #s = f"'{s}'"  #SR_DBG
+
+        if self.replace_edge_spaces:
+            # Preserve trailing whitespace by replacing the first and
+            # last space by a visible character
+            if self.edge_spaces_replacement_char == ' ':
+                raise Exception("edge_spaces_replacement_char == ' '")
+            if self.s[0] == ' ':
+                s = self.edge_spaces_replacement_char + s[1:]
+            if self.s[-1] == ' ':
+                s = s[:-1] + self.edge_spaces_replacement_char
+
         self.box.ax.text(x=self.loc.x, y=self.loc.y, s=s, **self.kwargs)
 
 
 class TextBoxElement_ColorRect(TextBoxElement):
     """A colored box element inside a text box axes."""
 
-    summarizable_attrs = ['loc', 'w', 'h', 'fc', 'ec', 'kwargs']
+    summarizable_attrs = ['loc', 'w', 'h', 'fc', 'ec', 'x_anker', 'kwargs']
 
-    def __init__(self, box, loc, *, w, h, fc, ec, **kwargs):
+    def __init__(self, box, loc, *, w, h, fc, ec, x_anker=None, **kwargs):
         """Create an instance of ``TextBoxElement_BolorBox``.
 
         Args:
@@ -633,9 +663,14 @@ class TextBoxElement_ColorRect(TextBoxElement):
 
             h (float): Height (box coordinates).
 
-            fc (<color>): Face color.
+            fc (str or typle[float]): Face color.
 
-            ec (<color>): Edge color.
+            ec (str or typle[float]): Edge color.
+
+            x_anker (str): Horizontal anker. Options: 'l' or 'left';
+                'c' or 'center'; 'r' or 'right'; and None, in which
+                case it is derived from the horizontal location in
+                ``loc``. Defaults to None.
 
             **kwargs: Additional keyword arguments for
                 ``mpl.patches.Rectangle``.
@@ -647,13 +682,31 @@ class TextBoxElement_ColorRect(TextBoxElement):
         self.h = h
         self.fc = fc
         self.ec = ec
+        self.x_anker = x_anker
         self.kwargs = kwargs
 
     def draw(self):
+        x = self.loc.x
+        y = self.loc.y
+        w = self.w*self.loc.dx0
+        h = self.h*self.loc.dy0
+
+        # Adjust horizontal position
+        if self.x_anker in ['l', 'left']:
+            pass
+        elif self.x_anker in ['c', 'center']:
+            x -= 0.5*w
+        elif self.x_anker in ['r', 'right']:
+            x -= w
+        elif self.x_anker is None:
+            x -= w*{'l': 0.0, 'c': 0.5, 'r': 1.0}[self.loc.loc_x]
+        else:
+            raise Exception(f"invalid x_anker '{self.x_anker}'")
+
         p = mpl.patches.Rectangle(
-            (self.loc.x, self.loc.y),
-            self.w*self.loc.dx0,
-            self.h*self.loc.dy0,
+            xy=(x, y),
+            width=w,
+            height=h,
             fill=True,
             fc=self.fc,
             ec=self.ec,
@@ -1066,7 +1119,7 @@ class TextBoxAxes(SummarizablePlotClass):
             loc (int or str): Reference location parameter used to
                 initialize an instance of ``BoxLocation``.
 
-            fc (<color>): Face color.
+            fc (str or typle[float]): Face color.
 
             ec (<color>, optional): Edge color. Defaults to face color.
 

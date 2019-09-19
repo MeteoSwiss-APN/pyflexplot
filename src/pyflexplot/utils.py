@@ -420,7 +420,9 @@ def group_kwargs(name, name_out=None, separator=None):
     if separator is None:
         separator = '__'
     prefix = f'{name}{separator}'
+
     def decorator(f):
+
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             if name_out in kwargs:
@@ -433,7 +435,9 @@ def group_kwargs(name, name_out=None, separator=None):
                     group[new_key] = kwargs.pop(key)
             kwargs[name_out] = group
             return f(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -512,7 +516,7 @@ def format_level_ranges(
 class LevelRangeFormatter:
     """Format level ranges, e.g., for legends of color contour plots."""
 
-    def __init__(self, style, widths=None, extend='none', rstrip_zeros=True):
+    def __init__(self, style, widths=None, extend='none', rstrip_zeros=False):
         self.style = style  #SR_TMP
         if widths is None:
             widths = (5, 3, 5)
