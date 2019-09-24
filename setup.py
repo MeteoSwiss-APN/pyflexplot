@@ -12,6 +12,7 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
+    'attrs',
     'Cartopy', # !! requires non-Python dependencies 'geos' and 'proj'; load modules or install
     'Click>=6.0',
     'geopy',
