@@ -179,7 +179,7 @@ class Plot(SummarizablePlotClass, ParentClass):
     summarizable_attrs = ['name', 'field', 'dpi', 'figsize', 'fig', 'ax_map']
     map_conf = {}
 
-    def __init__(self, field, *, dpi=None, figsize=None):
+    def __init__(self, field, *, dpi=None, figsize=None, scale_field=None):
         """Create an instance of ``Plot``.
 
         Args:
@@ -194,6 +194,9 @@ class Plot(SummarizablePlotClass, ParentClass):
         self.field = field
         self.dpi = dpi or 100.0
         self.figsize = figsize or (12.0, 9.0)
+        self.scale_field = scale_field
+
+        self.field.scale(scale_field)
 
     def prepare_plot(self):
 
@@ -261,15 +264,14 @@ class DispersionPlot(Plot):
     }
     level_range_style = 'base'  # see ``format_level_ranges``
     level_ranges_align = 'center'
-    reverse_legend = False  #SR_TMP TODO make CLI argument
 
     summarizable_attrs = Plot.summarizable_attrs + [
         'lang', 'labels', 'extend', 'level_range_style', 'draw_colors',
         'draw_contours', 'mark_field_max', 'mark_release_site',
-        'text_box_setup', 'boxes'
+        'text_box_setup', 'boxes', 'reverse_legend',
     ]
 
-    def __init__(self, *args, lang=None, **kwargs):
+    def __init__(self, *args, lang=None, reverse_legend=False, **kwargs):
         """Create an instance of ``DispersionPlot``.
 
         Args:
@@ -284,6 +286,7 @@ class DispersionPlot(Plot):
         """
         super().__init__(*args, **kwargs)
         self.lang = lang or 'en'
+        self.reverse_legend = reverse_legend or False
 
         self.labels = DispersionPlotLabels(lang)
 
@@ -367,11 +370,13 @@ class DispersionPlot(Plot):
 
     def _draw_colors_contours(self):
 
+        field = np.log10(self.fld_nonzero())
+
         if not self.draw_colors:
             h_col = None
         else:
             h_col = self.ax_map.contourf(
-                np.log10(self.fld_nonzero()),
+                field,
                 levels=self.levels_log10,
                 colors=self.colors,
                 extend=self.extend,
@@ -381,7 +386,7 @@ class DispersionPlot(Plot):
             h_con = None
         else:
             h_con = self.ax_map.contour(
-                np.log10(self.fld_nonzero()),
+                field,
                 levels=self.levels_log10,
                 colors='black',
                 linewidths=1,
@@ -518,17 +523,18 @@ class DispersionPlot(Plot):
         if not 'bl' in skip_pos:
             # Bottom left: integration time & level range
             _sim = self.field.attrs.simulation
+            _itype = self.field.attrs.simulation.integr_type.value
             if self.lang == 'en':
-                _sum = 'sum'
-                _over = 'over'
+                _over = 'over last'
                 _since = 'since'
             elif self.lang == 'de':
-                _sum = 'Summe'
-                _over = r'$\mathrm{\"u}$ber'
+                _itype = {'sum': 'Summe', 'mean': 'Mittel'}[_itype]
+                _over = r'$\mathrm{\"u}$ber letzte'
                 _since = 'seit'
-            #s = f"{_sim.format_integr_period()} {_sum}"
-            s = f"{_sum.capitalize()} {_over} {_sim.format_integr_period()}"
+            s = f"{_itype.capitalize()} {_over} {_sim.format_integr_period()}"
             s += f" ({_since} {_sim.integr_start.format(relative=True)})"
+            if self.scale_field is not None:
+                s += f" ({self.scale_field}x)"
             box.text('bl', s, size='large')
 
         dx_center = 0
@@ -974,11 +980,13 @@ class Plot_EnsThrAgrmt(Plot_Ens):
         else:
             extend_plot = self.extend
 
+        field = self.fld_nonzero()
+
         if not self.draw_colors:
             h_col = None
         else:
             h_col = self.ax_map.contourf(
-                self.fld_nonzero(),
+                field,
                 levels=self.levels,
                 colors=colors_plot,
                 extend=extend_plot,
@@ -988,7 +996,7 @@ class Plot_EnsThrAgrmt(Plot_Ens):
             h_con = None
         else:
             h_con = self.ax_map.contour(
-                self.fld_nonzero(),
+                field,
                 levels=self.levels,
                 colors='black',
                 linewidths=1,

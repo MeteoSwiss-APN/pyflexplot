@@ -528,7 +528,7 @@ def format_float(f, fmt_e0=None, fmt_f0=None, fmt_e1=None, fmt_f1=None):
     n = len(fe0)
     ff0t = ff0[:n]
 
-    if f >= 1.0:
+    if f != np.inf and f >= 1.0:
         rxs = r'^' + str(int(f)) + r'\.[0-9]+$'
         float_ok = bool(re.match(rxs, ff0t))
     else:

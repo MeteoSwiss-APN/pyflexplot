@@ -37,6 +37,7 @@ class Field(SummarizableClass):
         self.attrs = attrs
         self.field_specs = field_specs
         self.time_stats = time_stats
+        self.scale_fact = 1.0
 
     def _check_args(self, fld, rlat, rlon, *, ndim_fld=2):
         """Check consistency of field, dimensions, etc."""
@@ -87,6 +88,14 @@ class Field(SummarizableClass):
             'max': self.rlon.max(),
         }
         return data
+
+    def scale(self, fact):
+        if fact is None:
+            return
+        self.scale_fact *= fact
+        self.fld = self.fld*fact
+        for key in self.time_stats:
+            self.time_stats[key] *= fact
 
 
 def threshold_agreement(arr, thr, *, axis=None, eq_ok=False, dtype=None):
