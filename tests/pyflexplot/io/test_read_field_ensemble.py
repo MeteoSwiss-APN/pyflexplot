@@ -144,7 +144,7 @@ class TestReadFieldEnsemble_Multiple:
     def run(
             self, *, separate, datafile_fmt, cls_fld_specs, dims_mult,
             var_names_ref, var_specs_mult_unshared, ens_var, ens_var_setup,
-            fct_reduce_mem):
+            fct_reduce_mem, scale_fld_ref=1.0):
         """Run an individual test, reading one field after another."""
 
         # Create field specifications list
@@ -166,15 +166,15 @@ class TestReadFieldEnsemble_Multiple:
             for fld_specs in fld_specs_lst:
                 self._run_core(
                     datafile_fmt, dim_names, var_names_ref, [fld_specs],
-                    fct_reduce_mem)
+                    fct_reduce_mem, scale_fld_ref)
         else:
             self._run_core(
                 datafile_fmt, dim_names, var_names_ref, fld_specs_lst,
-                fct_reduce_mem)
+                fct_reduce_mem, scale_fld_ref)
 
     def _run_core(
             self, datafile_fmt, dim_names, var_names_ref, fld_specs_lst,
-            fct_reduce_mem):
+            fct_reduce_mem, scale_fld_ref):
 
         # Read input fields
         flex_field_lst = FileReader(datafile_fmt).run(fld_specs_lst)
@@ -191,7 +191,7 @@ class TestReadFieldEnsemble_Multiple:
                     self.datafile(member_id, datafile_fmt=datafile_fmt),
                     var_name,
                     var_specs,
-                ) for member_id in self.member_ids
+                )*scale_fld_ref for member_id in self.member_ids
             ] for var_name in var_names_ref]
             fld_ref_lst.append(
                 fct_reduce_mem(
@@ -215,7 +215,8 @@ class TestReadFieldEnsemble_Multiple:
             ens_var,
             *,
             separate=False,
-            cls_fld_specs=FieldSpecs.subclass('concentration')):
+            cls_fld_specs=FieldSpecs.subclass('concentration'),
+            scale_fld_ref=1.0):
         """Read ensemble concentration field."""
         # yapf: disable
         fct_reduce_mem = {
@@ -243,17 +244,20 @@ class TestReadFieldEnsemble_Multiple:
             ens_var=ens_var,
             ens_var_setup=ens_var_setup,
             fct_reduce_mem=fct_reduce_mem,
+            scale_fld_ref=scale_fld_ref,
         )
 
     def test_ens_mean_concentration(self, datadir):
-        self.run_concentration(datadir, 'mean', separate=False)
+        self.run_concentration(datadir, 'mean', separate=False,
+                               scale_fld_ref=3)
 
     def test_ens_threshold_agreement_concentration(self, datadir):
         self.run_concentration(
             datadir,
             'thr_agrmt',
             separate=False,
-            cls_fld_specs=FieldSpecs.subclass('ens_thr_agrmt_concentration'))
+            cls_fld_specs=FieldSpecs.subclass('ens_thr_agrmt_concentration'),
+            scale_fld_ref=3.0)
 
     #------------------------------------------------------------------
     # Deposition

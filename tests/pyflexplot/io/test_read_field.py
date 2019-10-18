@@ -37,9 +37,8 @@ class TestReadField_Single:
 
     #------------------------------------------------------------------
 
-    def run(
-            self, datadir, cls_fld_specs, dims, var_names_ref,
-            var_specs_mult_unshared):
+    def run(self, *, datadir, cls_fld_specs, dims, var_names_ref,
+            var_specs_mult_unshared, scale_fld_ref=1.0):
         """Run an individual test."""
 
         # Initialize specifications
@@ -65,7 +64,7 @@ class TestReadField_Single:
                 ) for var_name in var_names_ref
             ],
             axis=0,
-        )
+        )*scale_fld_ref
 
         # Check array
         assert fld.shape == fld_ref.shape
@@ -76,8 +75,8 @@ class TestReadField_Single:
     def test_concentration(self, datadir):
         """Read concentration field."""
         self.run(
-            datadir,
-            FieldSpecs.subclass('concentration'),
+            datadir=datadir,
+            cls_fld_specs=FieldSpecs.subclass('concentration'),
             dims={
                 **self.dims_shared, 'level': 1
             },
@@ -88,34 +87,37 @@ class TestReadField_Single:
     def test_deposition_dry(self, datadir):
         """Read dry deposition field."""
         self.run(
-            datadir,
-            FieldSpecs.subclass('deposition'),
+            datadir=datadir,
+            cls_fld_specs=FieldSpecs.subclass('deposition'),
             dims=self.dims_shared,
             var_names_ref=[f'DD_spec{self.species_id:03d}'],
             var_specs_mult_unshared={'deposition': 'dry'},
+            scale_fld_ref=1/3,
         )
 
     def test_deposition_wet(self, datadir):
         """Read wet deposition field."""
         self.run(
-            datadir,
-            FieldSpecs.subclass('deposition'),
+            datadir=datadir,
+            cls_fld_specs=FieldSpecs.subclass('deposition'),
             dims=self.dims_shared,
             var_names_ref=[f'WD_spec{self.species_id:03d}'],
             var_specs_mult_unshared={'deposition': 'wet'},
+            scale_fld_ref=1/3,
         )
 
     def test_deposition_tot(self, datadir):
         """Read total deposition field."""
         self.run(
-            datadir,
-            FieldSpecs.subclass('deposition'),
+            datadir=datadir,
+            cls_fld_specs=FieldSpecs.subclass('deposition'),
             dims=self.dims_shared,
             var_names_ref=[
                 f'WD_spec{self.species_id:03d}',
                 f'DD_spec{self.species_id:03d}',
             ],
             var_specs_mult_unshared={'deposition': 'tot'},
+            scale_fld_ref=1/3,
         )
 
 
@@ -146,7 +148,7 @@ class TestReadField_Multiple:
 
     def run(
             self, *, separate, datafile, cls_fld_specs, dims_mult,
-            var_names_ref, var_specs_mult_unshared):
+            var_names_ref, var_specs_mult_unshared, scale_fld_ref=1.0):
         """Run an individual test, reading one field after another."""
 
         # Create field specifications list
@@ -162,11 +164,14 @@ class TestReadField_Multiple:
         if separate:
             # Process field specifications one after another
             for fld_specs in fld_specs_lst:
-                self._run_core(datafile, dim_names, var_names_ref, [fld_specs])
+                self._run_core(datafile, dim_names, var_names_ref, [fld_specs],
+                               scale_fld_ref)
         else:
-            self._run_core(datafile, dim_names, var_names_ref, fld_specs_lst)
+            self._run_core(datafile, dim_names, var_names_ref, fld_specs_lst,
+                           scale_fld_ref)
 
-    def _run_core(self, datafile, dim_names, var_names_ref, fld_specs_lst):
+    def _run_core(self, datafile, dim_names, var_names_ref, fld_specs_lst,
+                  scale_fld_ref):
 
         # Read input fields
         flex_field_lst = FileReader(datafile).run(fld_specs_lst)
@@ -184,10 +189,10 @@ class TestReadField_Multiple:
             ]
             fld_ref_i = np.nansum(flds_ref_i, axis=0)
             flds_ref.append(fld_ref_i)
-        flds_ref = np.array(flds_ref)
+        flds_ref = np.array(flds_ref)*scale_fld_ref
 
         assert flds.shape == flds_ref.shape
-        assert np.isclose(np.nanmean(flds), np.nanmean(flds_ref))
+        assert np.isclose(np.nanmean(flds), np.nanmean(flds_ref), rtol=1e-6)
         np.testing.assert_allclose(flds, flds_ref, equal_nan=True, rtol=1e-6)
 
     #------------------------------------------------------------------
@@ -203,6 +208,7 @@ class TestReadField_Multiple:
             },
             var_names_ref=[f'spec{self.species_id:03d}'],
             var_specs_mult_unshared={},
+            scale_fld_ref=3.0,
         )
 
     def test_concentration_separate(self, datadir):

@@ -123,7 +123,7 @@ class VarSpecs(SummarizableClass, ParentClass):
 
     @classmethod
     def _multiple_as_type(
-            cls, type_, rlat=slice(None), rlon=slice(None), **kwargs):
+            cls, type_, rlat=None, rlon=None, **kwargs):
         keys_singular = sorted(cls.specs())
         vals_plural = []
         for key_singular in keys_singular:
@@ -218,7 +218,7 @@ class VarSpecs(SummarizableClass, ParentClass):
         """Derive variable name from specifications."""
         raise NotImplementedError(f'{self.__class__.__name__}.var_name')
 
-    def dim_inds_by_name(self, *, rlat=slice(None), rlon=slice(None)):
+    def dim_inds_by_name(self, *, rlat=None, rlon=None):
         """Derive indices along NetCDF dimensions."""
 
         inds = {}
@@ -981,9 +981,9 @@ class AttrsCollector:
         ts_now, ts_integr_start = self._get_current_timestep_etc()
 
         # Type of integration (or, rather, reduction)
-        if self.var_specs.name == 'concentration':
+        if isinstance(self.var_specs, VarSpecs.subclass('concentration')):
             integr_type = 'sum' if self.var_specs.integrate else 'mean'
-        elif self.var_specs.name in ['deposition', 'affected_area']:
+        elif isinstance(self.var_specs, VarSpecs.subclass('deposition')):
             integr_type = 'accum' if self.var_specs.integrate else 'mean'
         else:
             raise NotImplementedError(

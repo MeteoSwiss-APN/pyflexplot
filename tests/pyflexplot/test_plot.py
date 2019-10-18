@@ -61,6 +61,7 @@ class Test_PlotDispersion_Summarize:
                 now=attr('simulation.now'),
                 format_integr_period=f_fmt('simulation.format_integr_period'),
                 integr_start=attr('simulation.integr_start'),
+                integr_type=attr('mean'),
                 start=attr('simulation.start'),
                 end=attr('simulation.end'),
                 model_name=attr('simulation.model_name')),
@@ -74,6 +75,7 @@ class Test_PlotDispersion_Summarize:
             rlon=np.arange(-6.0, 3.1, 1.0),
             attrs=self.create_dummy_attrs(),
             summarize=lambda: {},
+            scale=lambda f: None,
         )
 
     #------------------------------------------------------------------
