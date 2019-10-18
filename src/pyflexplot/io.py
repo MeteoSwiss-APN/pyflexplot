@@ -641,6 +641,7 @@ class FileReader:
 
             new_unit = 'Bq'  #SR_HC
 
+<<<<<<< HEAD
             # Integration type
             if attrs.simulation.integr_type.value == 'mean':
                 pass
@@ -650,6 +651,20 @@ class FileReader:
                 raise NotImplementedError(
                     f"species '{attrs.species.name.value}': "
                     f"integration type '{attrs.simulation.integr_type.value}'")
+||||||| merged common ancestors
+            elif attrs.variable.unit.value == '1e-12 kg m-2':
+                attrs.variable.unit.value = 'Bq m-2'  #SR_HC
+=======
+            # Integration type
+            if attrs.simulation.integr_type.value == 'mean':
+                pass
+            elif attrs.simulation.integr_type.value == 'sum':
+                new_unit += ' h'
+            else:
+                raise NotImplementedError(
+                    f"species '{attrs.species.name.value}': "
+                    f"integration type '{attrs.variable.integr_type.value}'")
+>>>>>>> 4cc3b833445d191ee12ca9683785525517e31313
 
             # Original unit
             if attrs.variable.unit.value == 'ng kg-1':
