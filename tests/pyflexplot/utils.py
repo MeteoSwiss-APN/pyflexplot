@@ -6,8 +6,6 @@ import os
 
 from pyflexplot.utils import isiterable
 
-from pyflexplot.utils_dev import ipython  #SR_DEV
-
 #======================================================================
 
 

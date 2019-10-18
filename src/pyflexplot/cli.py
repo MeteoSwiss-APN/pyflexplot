@@ -16,7 +16,6 @@ from .utils import count_to_log_level
 from .utils import group_kwargs
 from .plotter import Plotter
 
-from .utils_dev import ipython  #SR_DEV
 
 __version__ = '0.1.0'
 

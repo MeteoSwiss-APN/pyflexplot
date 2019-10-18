@@ -11,8 +11,6 @@ from pyflexplot.io import FileReader
 
 from pyflexplot.data import threshold_agreement
 
-from pyflexplot.utils_dev import ipython  #SR_DEV
-
 from io_utils import read_nc_var
 
 

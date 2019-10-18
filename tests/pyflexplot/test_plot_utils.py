@@ -11,8 +11,6 @@ from pprint import pformat
 
 from pyflexplot.plot_utils import TextBoxAxes
 
-from pyflexplot.utils_dev import ipython  #SR_DEV
-
 from utils import assert_summary_dict_is_subdict
 
 #======================================================================

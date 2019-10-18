@@ -19,7 +19,7 @@ from .utils import Degrees
 from .utils import format_float
 from .utils import format_level_ranges
 from .utils import ParentClass
-from .utils_dev import ipython  #SR_DEV
+
 
 #======================================================================
 # Plot Labels

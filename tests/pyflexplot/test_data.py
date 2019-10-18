@@ -7,8 +7,6 @@ import pytest
 
 from pyflexplot.data import threshold_agreement
 
-from pyflexplot.utils_dev import ipython  #SR_DEV
-
 
 class TestThrAgrmt_2D:
     """Count number threshold exceedences along a 2D-array axis."""

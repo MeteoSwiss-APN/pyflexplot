@@ -11,8 +11,6 @@ import re
 from collections import namedtuple
 from pprint import pformat
 
-from .utils_dev import ipython  #SR_DEV
-
 #======================================================================
 # Exceptions
 #======================================================================

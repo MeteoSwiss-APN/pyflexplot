@@ -8,8 +8,6 @@ from types import SimpleNamespace
 
 from pyflexplot.plot import DispersionPlot
 
-from pyflexplot.utils_dev import ipython  #SR_DEV
-
 from utils import assert_summary_dict_is_subdict
 
 

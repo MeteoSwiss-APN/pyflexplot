@@ -8,8 +8,6 @@ import numpy as np
 
 from .utils import SummarizableClass
 
-from .utils_dev import ipython  #SR_DEV
-
 
 class Field(SummarizableClass):
     """FLEXPART field on rotated-pole grid."""

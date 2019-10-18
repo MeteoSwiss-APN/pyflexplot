@@ -19,8 +19,6 @@ from .utils import SummarizableClass
 from .utils import pformat_dictlike
 from .utils import nested_dict_set
 
-from .utils_dev import ipython  #SR_DEV
-
 
 def int_or_list(arg):
     try:

@@ -8,7 +8,6 @@ from .specs import VarSpecs
 from .specs import FieldSpecs
 from .plot import Plot
 from .utils import ParentClass
-from .utils_dev import ipython  #SR_DEV
 
 
 class Plotter(ParentClass):

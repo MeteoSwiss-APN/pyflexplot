@@ -10,8 +10,6 @@ from pprint import pformat
 from .utils import isiterable
 from .utils import SummarizableClass
 
-from .utils_dev import ipython  #SR_DEV
-
 
 class Attr(SummarizableClass):
     """Individual attribute."""

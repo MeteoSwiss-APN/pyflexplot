@@ -14,7 +14,6 @@ from copy import copy
 
 from .utils import MaxIterationError
 from .utils import SummarizableClass
-from .utils_dev import ipython  #SR_DEV
 
 #======================================================================
 # Summarize Plot-Related Classes

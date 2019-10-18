@@ -6,8 +6,6 @@ import numpy as np
 
 from pyflexplot.io import FieldSpecs
 
-from pyflexplot.utils_dev import ipython  #SR_DEV
-
 
 #SR_TMP<<<
 def fix_nc_fld(fld):

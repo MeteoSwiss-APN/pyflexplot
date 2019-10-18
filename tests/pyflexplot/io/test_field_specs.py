@@ -7,8 +7,6 @@ from pyflexplot.io import FieldSpecs
 
 from pyflexplot.utils import dict_mult_vals_product
 
-from pyflexplot.utils_dev import ipython  #SR_DEV
-
 
 class TestFieldSpecs_Multiple:
     """Create multiple field specifications."""

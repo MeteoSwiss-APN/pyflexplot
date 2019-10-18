@@ -18,8 +18,6 @@ from .specs import FieldSpecs
 from .utils import check_array_indices
 from .utils import pformat_dictlike
 
-from .utils_dev import ipython  #SR_DEV
-
 
 def _nc_content():
     """Content of NetCDF file; dummy function to fold the comment!"""

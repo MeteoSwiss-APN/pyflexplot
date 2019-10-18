@@ -6,8 +6,6 @@ import click
 import functools
 import netCDF4 as nc4
 
-from pyflexplot.utils import ipython  #SR_DEV
-
 __version__ = '0.1.0'
 
 # Show default values of options by default
