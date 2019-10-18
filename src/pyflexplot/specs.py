@@ -180,14 +180,13 @@ class VarSpecs(SummarizableClass, ParentClass):
         return self.__class__(**attrs)
 
     def __hash__(self):
-        h, f = 0, 1
+        h = 0
         for key, val in sorted(iter(self)):
-            try:
-                h += int(val)*f
-            except (TypeError, ValueError):
-                continue
+            if isinstance(val, slice):
+                h += hash((val.start, val.stop, val.step))
             else:
-                f *= 10
+                h += hash(val)
+            h *= 10
         return h
 
     def __lt__(self, other):
@@ -251,6 +250,11 @@ class VarSpecs_Concentration(VarSpecs):
 
     @classmethod
     def long_name(cls, lang, var_specs):
+        if var_specs.integrate:
+            return {
+                'en': 'Integr. Activity Concentr.',
+                'de': r'Integr. Aktivit$\mathrm{\"a}$tskonzentr.',
+            }[lang]
         return {
             'en': 'Activity Concentration',
             'de': r'Aktivit$\mathrm{\"a}$tskonzentration',
@@ -258,10 +262,10 @@ class VarSpecs_Concentration(VarSpecs):
 
     @classmethod
     def short_name(cls, lang, var_specs):
-        return {
-            'en': 'Concentration',
-            'de': 'Konzentration',
-        }[lang]
+        s = ''
+        if var_specs.integrate:
+            return {'en': 'Int. Concentr.', 'de': 'Int. Konzentr.'}[lang]
+        return {'en': 'Concentration', 'de': 'Konzentration'}[lang]
 
     def var_name(self):
         """Derive variable name from specifications."""
@@ -336,10 +340,13 @@ class VarSpecs_AffectedArea(VarSpecs_Deposition):
 
     @classmethod
     def long_name(cls, lang, var_specs):
-        dep_type = cls.deposition_type_long_name(lang, var_specs)
+        #dep_type = cls.deposition_type_long_name(lang, var_specs)
+        dep_name = VarSpecs_Deposition.long_name(lang, var_specs)
+        if lang == 'de':
+            dep_name = dep_name.replace('ablagerung', 'abl.')
         return {
-            'en': f'Affected Area ({dep_type})',
-            'de': f'Beaufschlagtes Gebiet ({dep_type})',
+            'en': f'Affected Area ({dep_name})',
+            'de': f'Beaufschlagtes Gebiet ({dep_name})',
         }[lang]
 
 
@@ -584,11 +591,7 @@ class FieldSpecs(SummarizableClass, ParentClass):
         return s
 
     def __hash__(self):
-        # yapf: disable
-        return sum([
-            sum([hash(vs) for vs in self.var_specs_lst]),
-        ])
-        # yapf: enable
+        return sum([sum([hash(vs) for vs in self.var_specs_lst])])
 
     def __lt__(self, other):
         return hash(self) < hash(other)
@@ -847,6 +850,9 @@ class AttrsCollector:
         long_name = self.get_long_name(self.var_specs, lang=self.lang)
         short_name = self.get_short_name(self.var_specs, lang=self.lang)
 
+        # Variable unit
+        unit = self.ncattrs_field['units']
+
         try:
             _i = self.var_specs.level
         except AttributeError:
@@ -867,7 +873,7 @@ class AttrsCollector:
         return {
             'long_name': long_name,
             'short_name': short_name,
-            'unit': self.ncattrs_field['units'],
+            'unit': unit,
             'level_bot': level_bot,
             'level_bot_unit': level_unit,
             'level_top': level_top,
@@ -958,6 +964,8 @@ class AttrsCollector:
     def collect_simulation_attrs(self):
         """Collect simulation attributes."""
 
+        model_name = 'COSMO-1'  #SR_HC
+
         # Start and end timesteps of simulation
         _ga = self.ncattrs_global
         ts_start = datetime.datetime(
@@ -969,9 +977,17 @@ class AttrsCollector:
             tzinfo=datetime.timezone.utc,
         )
 
-        model_name = 'COSMO-1'  #SR_HC
-
+        # Current time step and start time step of current integration period
         ts_now, ts_integr_start = self._get_current_timestep_etc()
+
+        # Type of integration (or, rather, reduction)
+        if self.var_specs.name == 'concentration':
+            integr_type = 'sum' if self.var_specs.integrate else 'mean'
+        elif self.var_specs.name in ['deposition', 'affected_area']:
+            integr_type = 'accum' if self.var_specs.integrate else 'mean'
+        else:
+            raise NotImplementedError(
+                f"no integration type specified for '{self.var_specs.name}'")
 
         return {
             'model_name': model_name,
@@ -979,6 +995,7 @@ class AttrsCollector:
             'end': ts_end,
             'now': ts_now,
             'integr_start': ts_integr_start,
+            'integr_type': integr_type,
         }
 
     def _get_current_timestep_etc(self, i=None):

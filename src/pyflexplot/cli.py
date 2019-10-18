@@ -202,10 +202,13 @@ def create_plots(
     if ctx.obj['noplot']:
         return
 
+    # Transfer some global options
+    for key in ['lang', 'scale_field']:
+        kwargs[key] = ctx.obj[key]
+
     # Prepare plotter
     plotter = Plotter.subclass(cls_name)()
     args = [field_lst, out_file_path_raw]
-    kwargs = {'lang': ctx.obj['lang']}
     fct_plot = lambda: plotter.run(*args, **kwargs)
 
     # Note: Plotter.run yields the output file paths on-the-go
@@ -268,6 +271,7 @@ class GlobalOptions(ClickOptionsGroup):
 
     @click_options
     def execution():
+        """Options passed before any command."""
         return [
             click.option(
                 '--dry-run',
@@ -312,6 +316,13 @@ class GlobalOptions(ClickOptionsGroup):
                 '--open-all',
                 'open_all_cmd',
                 help="Like --open-first, but for all plots.",
+            ),
+            click.option(
+                '--scale',
+                'scale_field',
+                help="Scale field before plotting. Useful for debugging.",
+                type=float,
+                default=None,
             ),
         ]
 

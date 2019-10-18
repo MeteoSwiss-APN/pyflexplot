@@ -557,7 +557,8 @@ class AttrGroupSimulation(AttrGroup):
 
     group_name = 'simulation'
 
-    def __init__(self, *, model_name, start, end, now, integr_start, **kwargs):
+    def __init__(self, *, model_name, start, end, now, integr_start,
+                 integr_type, **kwargs):
         """Create an instance of ``AttrGroupSimulation``.
 
         Kwargs:
@@ -571,6 +572,8 @@ class AttrGroupSimulation(AttrGroup):
 
             integr_start (datetime): Start of the integration period.
 
+            integr_type (str): Type of integration (or reduction).
+
         """
         super().__init__(**kwargs)
         self.set('model_name', model_name, str)
@@ -578,6 +581,7 @@ class AttrGroupSimulation(AttrGroup):
         self.set('end', end, datetime.datetime, start=start)
         self.set('now', now, datetime.datetime, start=start)
         self.set('integr_start', integr_start, datetime.datetime, start=start)
+        self.set('integr_type', integr_type, str)
 
     def format_integr_period(self):
         integr_period = self.now.value - self.integr_start.value

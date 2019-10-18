@@ -431,7 +431,8 @@ class FileReader:
                 fld_specs_time_inds_by_hash[key] = (fld_specs_time, [])
             if time_ind in fld_specs_time_inds_by_hash[key][1]:
                 raise Exception(
-                    f"duplicate time index {time_ind} in {fld_specs}")
+                    f"duplicate time index {time_ind} in fld_specs:\n"
+                    f"{fld_specs}")
             fld_specs_time_inds_by_hash[key][1].append(time_ind)
 
         # Regroup time-neutral fld specs and time inds into lists
@@ -548,19 +549,40 @@ class FileReader:
         self._fix_nc_var(fld, var)
 
         # Time integration
+        fld = self._time_integrations(fld, var_specs)
+
+        return fld
+
+    def _time_integrations(self, fld, var_specs):
+
+        dt_hr = self._time_resolution()
+
         if isinstance(var_specs, VarSpecs.subclass('concentration')):
             if var_specs.integrate:
                 # Integrate over time
-                fld = np.cumsum(fld, axis=0)
+                fld = np.cumsum(fld, axis=0)*dt_hr
+
         elif isinstance(var_specs, VarSpecs.subclass('deposition')):
             if not var_specs.integrate:
                 # Revert integration over time
-                fld[1:] -= fld[:-1].copy()
+                fld[1:] = (fld[1:] - fld[:-1])/dt_hr
+
         else:
             raise NotImplementedError(
                 f"var_specs of type '{type(var_specs).__name__}'")
 
         return fld
+
+    def _time_resolution(self):
+        """Determine time resolution of input data."""
+        time = self.fi.variables['time']
+        dts = set(time[1:] - time[:-1])
+        if len(dts) > 1:
+            raise Exception(
+                f"Non-uniform time resolution: {sorted(dts)} ({time})")
+        dt_min = next(iter(dts))
+        dt_hr = dt_min/3600.0
+        return dt_hr
 
     def _merge_fields(self, fld_lst, fld_specs):
 
@@ -617,15 +639,28 @@ class FileReader:
         #SR_TMP>
         if attrs.species.name.value in names:
 
-            if attrs.variable.unit.value == 'ng kg-1':
-                attrs.variable.unit.value = 'Bq m-3'  #SR_HC
+            new_unit = 'Bq'  #SR_HC
 
-            elif attrs.variable.unit.value == '1e-12 kg m-2':
-                attrs.variable.unit.value = 'Bq m-2'  #SR_HC
-
+            # Integration type
+            if attrs.simulation.integr_type.value == 'mean':
+                pass
+            elif attrs.simulation.integr_type.value in ['sum', 'accum']:
+                new_unit += ' h'
             else:
                 raise NotImplementedError(
                     f"species '{attrs.species.name.value}': "
-                    f"unknown unit '{attrs.variable.unit.value}'")
+                    f"integration type '{attrs.simulation.integr_type.value}'")
+
+            # Original unit
+            if attrs.variable.unit.value == 'ng kg-1':
+                new_unit += ' m-3'  #SR_HC
+            elif attrs.variable.unit.value == '1e-12 kg m-2':
+                new_unit += ' m-2'  #SR_HC
+            else:
+                raise NotImplementedError(
+                    f"species '{attrs.species.name.value}': "
+                    f"unit '{attrs.variable.unit.value}'")
+
+            attrs.variable.unit.value = new_unit
         else:
             raise NotImplementedError(f"species '{attrs.species.name.value}'")
