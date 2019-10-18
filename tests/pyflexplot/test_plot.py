@@ -64,7 +64,8 @@ class Test_PlotDispersion_Summarize:
                 integr_type=attr('mean'),
                 start=attr('simulation.start'),
                 end=attr('simulation.end'),
-                model_name=attr('simulation.model_name')),
+                model_name=attr('simulation.model_name'),
+            ),
         )
 
     def create_dummy_field(self):
