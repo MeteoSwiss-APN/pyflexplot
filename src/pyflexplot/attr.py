@@ -557,8 +557,9 @@ class AttrGroupSimulation(AttrGroup):
 
     group_name = 'simulation'
 
-    def __init__(self, *, model_name, start, end, now, integr_start,
-                 integr_type, **kwargs):
+    def __init__(
+            self, *, model_name, start, end, now, integr_start, integr_type,
+            **kwargs):
         """Create an instance of ``AttrGroupSimulation``.
 
         Kwargs:

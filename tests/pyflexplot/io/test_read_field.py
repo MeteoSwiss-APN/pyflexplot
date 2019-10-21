@@ -37,8 +37,15 @@ class TestReadField_Single:
 
     #------------------------------------------------------------------
 
-    def run(self, *, datadir, cls_fld_specs, dims, var_names_ref,
-            var_specs_mult_unshared, scale_fld_ref=1.0):
+    def run(
+            self,
+            *,
+            datadir,
+            cls_fld_specs,
+            dims,
+            var_names_ref,
+            var_specs_mult_unshared,
+            scale_fld_ref=1.0):
         """Run an individual test."""
 
         # Initialize specifications
@@ -147,8 +154,15 @@ class TestReadField_Multiple:
     #------------------------------------------------------------------
 
     def run(
-            self, *, separate, datafile, cls_fld_specs, dims_mult,
-            var_names_ref, var_specs_mult_unshared, scale_fld_ref=1.0):
+            self,
+            *,
+            separate,
+            datafile,
+            cls_fld_specs,
+            dims_mult,
+            var_names_ref,
+            var_specs_mult_unshared,
+            scale_fld_ref=1.0):
         """Run an individual test, reading one field after another."""
 
         # Create field specifications list
@@ -164,14 +178,17 @@ class TestReadField_Multiple:
         if separate:
             # Process field specifications one after another
             for fld_specs in fld_specs_lst:
-                self._run_core(datafile, dim_names, var_names_ref, [fld_specs],
-                               scale_fld_ref)
+                self._run_core(
+                    datafile, dim_names, var_names_ref, [fld_specs],
+                    scale_fld_ref)
         else:
-            self._run_core(datafile, dim_names, var_names_ref, fld_specs_lst,
-                           scale_fld_ref)
+            self._run_core(
+                datafile, dim_names, var_names_ref, fld_specs_lst,
+                scale_fld_ref)
 
-    def _run_core(self, datafile, dim_names, var_names_ref, fld_specs_lst,
-                  scale_fld_ref):
+    def _run_core(
+            self, datafile, dim_names, var_names_ref, fld_specs_lst,
+            scale_fld_ref):
 
         # Read input fields
         flex_field_lst = FileReader(datafile).run(fld_specs_lst)

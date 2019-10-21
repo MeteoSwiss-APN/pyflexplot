@@ -87,6 +87,72 @@ class Test_PlotDispersion_Summarize:
         plot = DispersionPlot(field, dpi=100, figsize=(12, 9), lang='de')
         res = plot.summarize()
 
+        sol_boxes_top = [
+            {
+                'type': 'TextBoxElement_Text',
+                #SR_TMP< TODO un-hardcode 'auf'
+                's': 'variable.long_name auf variable.format_level_range',
+                #SR_TMP>
+                'loc': {
+                    'loc': 'tl'
+                },
+            },
+            {
+                'type': 'TextBoxElement_Text',
+                #SR_TMP< TODO un-hardcode 'Gemittelt' etc.
+                's': (
+                    r'Gemittelt $\mathrm{\"u}$ber '
+                    r'simulation.format_integr_period '
+                    r'(seit simulation.integr_start.format)'),
+                #SR_TMP>
+                'loc': {
+                    'loc': 'bl'
+                },
+            },
+            {
+                'type': 'TextBoxElement_Text',
+                's': 'species.name.format',
+                'loc': {
+                    'loc': 'tc'
+                },
+            },
+            {
+                'type': 'TextBoxElement_Text',
+                's': 'release.site_name',
+                'loc': {
+                    'loc': 'bc'
+                },
+            },
+            {
+                'type': 'TextBoxElement_Text',
+                's': 'simulation.now.format',
+                'loc': {
+                    'loc': 'tr'
+                },
+            },
+            {
+                'type': 'TextBoxElement_Text',
+                's': 'simulation.now.format',
+                'loc': {
+                    'loc': 'br'
+                },
+            },
+        ]
+        sol_boxes = [
+            {
+                'type': 'TextBoxAxes',
+                'elements': sol_boxes_top,
+            },
+            {
+                'type': 'TextBoxAxes'
+            },
+            {
+                'type': 'TextBoxAxes'
+            },
+            {
+                'type': 'TextBoxAxes'
+            },
+        ]
         sol = {
             'type': 'DispersionPlot',
             'dpi': 100.0,
@@ -109,65 +175,7 @@ class Test_PlotDispersion_Summarize:
             'ax_map': {
                 'type': 'AxesMap',
             },
-            'boxes': [
-                {
-                    'type':
-                        'TextBoxAxes',
-                    'elements': [
-                        {
-                            'type': 'TextBoxElement_Text',
-                            #'s': ...
-                            'loc': {
-                                'loc': 'tl'
-                            },
-                        },
-                        {
-                            'type': 'TextBoxElement_Text',
-                            #'s': '...',
-                            'loc': {
-                                'loc': 'bl'
-                            },
-                        },
-                        {
-                            'type': 'TextBoxElement_Text',
-                            #'s': ...
-                            'loc': {
-                                'loc': 'tc'
-                            },
-                        },
-                        {
-                            'type': 'TextBoxElement_Text',
-                            's': 'release.site_name',
-                            'loc': {
-                                'loc': 'bc'
-                            },
-                        },
-                        {
-                            'type': 'TextBoxElement_Text',
-                            's': 'simulation.now.format',
-                            'loc': {
-                                'loc': 'tr'
-                            },
-                        },
-                        {
-                            'type': 'TextBoxElement_Text',
-                            's': 'simulation.now.format',
-                            'loc': {
-                                'loc': 'br'
-                            },
-                        },
-                    ],
-                },
-                {
-                    'type': 'TextBoxAxes'
-                },
-                {
-                    'type': 'TextBoxAxes'
-                },
-                {
-                    'type': 'TextBoxAxes'
-                },
-            ],
+            'boxes': sol_boxes,
             'fig': {
                 'type':
                     'Figure',

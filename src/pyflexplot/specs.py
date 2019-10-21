@@ -122,8 +122,7 @@ class VarSpecs(SummarizableClass, ParentClass):
         return cls._multiple_as_type(dict, *args, **kwargs)
 
     @classmethod
-    def _multiple_as_type(
-            cls, type_, rlat=None, rlon=None, **kwargs):
+    def _multiple_as_type(cls, type_, rlat=None, rlon=None, **kwargs):
         keys_singular = sorted(cls.specs())
         vals_plural = []
         for key_singular in keys_singular:

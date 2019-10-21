@@ -142,9 +142,18 @@ class TestReadFieldEnsemble_Multiple:
     #------------------------------------------------------------------
 
     def run(
-            self, *, separate, datafile_fmt, cls_fld_specs, dims_mult,
-            var_names_ref, var_specs_mult_unshared, ens_var, ens_var_setup,
-            fct_reduce_mem, scale_fld_ref=1.0):
+            self,
+            *,
+            separate,
+            datafile_fmt,
+            cls_fld_specs,
+            dims_mult,
+            var_names_ref,
+            var_specs_mult_unshared,
+            ens_var,
+            ens_var_setup,
+            fct_reduce_mem,
+            scale_fld_ref=1.0):
         """Run an individual test, reading one field after another."""
 
         # Create field specifications list
@@ -248,8 +257,8 @@ class TestReadFieldEnsemble_Multiple:
         )
 
     def test_ens_mean_concentration(self, datadir):
-        self.run_concentration(datadir, 'mean', separate=False,
-                               scale_fld_ref=3)
+        self.run_concentration(
+            datadir, 'mean', separate=False, scale_fld_ref=3)
 
     def test_ens_threshold_agreement_concentration(self, datadir):
         self.run_concentration(

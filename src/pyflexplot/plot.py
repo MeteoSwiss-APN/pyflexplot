@@ -20,7 +20,6 @@ from .utils import format_float
 from .utils import format_level_ranges
 from .utils import ParentClass
 
-
 #======================================================================
 # Plot Labels
 #======================================================================
@@ -266,9 +265,17 @@ class DispersionPlot(Plot):
     level_ranges_align = 'center'
 
     summarizable_attrs = Plot.summarizable_attrs + [
-        'lang', 'labels', 'extend', 'level_range_style', 'draw_colors',
-        'draw_contours', 'mark_field_max', 'mark_release_site',
-        'text_box_setup', 'boxes', 'reverse_legend',
+        'lang',
+        'labels',
+        'extend',
+        'level_range_style',
+        'draw_colors',
+        'draw_contours',
+        'mark_field_max',
+        'mark_release_site',
+        'text_box_setup',
+        'boxes',
+        'reverse_legend',
     ]
 
     def __init__(self, *args, lang=None, reverse_legend=False, **kwargs):
