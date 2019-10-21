@@ -74,6 +74,11 @@ class Test_Context:
         assert str(self.w.ctx('time')) == 'um'
         assert str(self.w.ctx('level')) == 'auf'
 
+    def test_pseudo_contexts(self):
+        assert str(self.w.en.ctx('place')) == 'at'
+        assert str(self.w.en.ctx('time')) == 'at'
+        assert str(self.w.en.ctx('level')) == 'at'
+
 
 class Test_Creation:
     """Test creation of a ``Word`` instance."""
@@ -86,17 +91,17 @@ class Test_Creation:
         with pytest.raises(ValueError):
             Word('train')
 
-    def test_noname(self):
+    def test_pass_noname(self):
         Word(en='train', de='Zug')
 
-    def test_fail_noname(self):
+    def test_pass_fail_noname(self):
         with pytest.raises(ValueError):
             Word(en='high school', de='Mittelschule')
 
-    def test_name_implicit(self):
+    def test_pass_name_implicit(self):
         Word('high_school', en='high school', de='Mittelschule')
 
-    def test_name_explicit(self):
+    def test_pass_name_explicit(self):
         Word(name='high_school', en='high school', de='Mittelschule')
 
     def test_fail_name_implicit(self):
@@ -106,3 +111,8 @@ class Test_Creation:
     def test_fail_name_explicit(self):
         with pytest.raises(ValueError):
             Word(name='0', en='zero', de='Null')
+
+    def test_fail_inconsistent_contexts(self):
+        with pytest.raises(ValueError):
+            Word(en={'foo': 'bar', 'hello': 'world'},
+                 de={'bar': 'baz', 'hello': 'world'})

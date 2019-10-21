@@ -46,12 +46,31 @@ class Word:
         if not isinstance(self.name, str) or not self.name.isidentifier():
             raise ValueError(f"invalid name: {name}")
 
-        self._langs = {}
+        # Check words and collect contexts
+        ctxs = None
         for lang, word in langs.items():
             if lang in self.__dict__:
                 raise ValueError(f"invalid language specifier: {lang}")
             if isinstance(word, str):
-                word = dict(default=word)
+                pass
+            elif not isinstance(word, dict):
+                raise ValueError(
+                    f"word must be string or dict, not "
+                    f"{type(word).__name__}: {word}")
+            elif ctxs is None:
+                ctxs = list(word.keys())
+            elif set(ctxs) != set(word.keys()):
+                raise ValueError(
+                    f"word {self.name} in {lang}: inconsistent contexts: "
+                    f"set({ctxs}) != set({list(word.keys())})")
+        if ctxs is None:
+            ctxs = ['default']
+
+        # Define words with consistent contexts
+        self._langs = {}
+        for lang, word in langs.items():
+            if isinstance(word, str):
+                word = {ctx: word for ctx in ctxs}
             self._langs[lang] = WordVariants(lang, **word)
 
         if default is None:
