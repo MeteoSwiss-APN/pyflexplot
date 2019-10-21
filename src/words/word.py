@@ -9,29 +9,29 @@ __version__ = '0.1.0'
 class Word:
     """A word in one or more languages."""
 
-    def __init__(self, key=None, *, default=None, **langs):
+    def __init__(self, name=None, *, default=None, **langs):
         """Create an instance of ``Word``.
 
         Args:
-            key (str, optional): Key to refer to the object in the code.
-                Must be a valid Python variable name, i.e., not contain
-                any spaces, dashes, etc. Defaults to the value of the
-                first element in ``**langs``, unless that contains
-                invalid characters, in which case a ``ValueError`` is
-                raised.
+            name (str, optional): Key to refer to the object in the
+                code.  Must be a valid Python variable name, i.e., not
+                contain any spaces, dashes, etc. Defaults to the value
+                of the first element in ``**langs``, unless that
+                contains invalid characters, in which case a ``ValueError``
+                is raised.
 
             default (str, optional): Default language. Defaults to the
                 first key in ``langs``.
 
             **langs (dict of str: str or (dict of str: str)): The word
                 in different languages. The values are either strings
-                for simple words, or dicts with context-specific variants
-                of the word. In the latter case, the first entry is the
-                default context.
+                for simple words, or dicts with context-specific
+                variants of the word. In the latter case, the first
+                entry is the default context.
         
         Example:
             >>> w = Word('high_school', en='high school', de='Mittelschule')
-            >>> w.key
+            >>> w.name
             'high_school'
             >>> str(w)
             'high school'
@@ -42,9 +42,9 @@ class Word:
         if not langs:
             raise ValueError('must pass the word in at least one language')
 
-        self.key = key or next(iter(langs.values()))
-        if not isinstance(self.key, str) or not self.key.isidentifier():
-            raise ValueError(f"invalid key: {key}")
+        self.name = name or next(iter(langs.values()))
+        if not isinstance(self.name, str) or not self.name.isidentifier():
+            raise ValueError(f"invalid name: {name}")
 
         self._langs = {}
         for lang, word in langs.items():
@@ -71,14 +71,14 @@ class Word:
             return self._langs[lang]
         except KeyError:
             raise ValueError(
-                f"word '{self.key}' not defined in language '{lang}', "
+                f"word '{self.name}' not defined in language '{lang}', "
                 f"only in {self.langs}")
 
     def ctx(self, *args, **kwargs):
         return self.in_(self.default).ctx(*args, **kwargs)
 
-    def __getattr__(self, key):
-        return self.in_(key)
+    def __getattr__(self, name):
+        return self.in_(name)
 
     def __str__(self):
         return str(self.in_(self.default))
@@ -86,7 +86,7 @@ class Word:
     def __repr__(self):
         s_langs = ', '.join([f"{k}={repr(v)}" for k, v in self._langs.items()])
         return (
-            f"{type(self).__name__}({self.key}, {s_langs}, "
+            f"{type(self).__name__}({self.name}, {s_langs}, "
             f"default='{self.default}')")
 
     @property

@@ -44,8 +44,8 @@ class Test_Simple:
         assert self.w.in_('de') == self.w.de
         assert self.w.langs == ['en', 'de']
 
-    def test_key(self):
-        assert self.w.key == 'high_school'
+    def test_name(self):
+        assert self.w.name == 'high_school'
 
     def test_default(self):
         assert self.w.default == 'en'
@@ -86,16 +86,23 @@ class Test_Creation:
         with pytest.raises(ValueError):
             Word('train')
 
-    def test_nokey(self):
+    def test_noname(self):
         Word(en='train', de='Zug')
 
-    def test_fail_nokey(self):
+    def test_fail_noname(self):
         with pytest.raises(ValueError):
             Word(en='high school', de='Mittelschule')
 
-    def test_key(self):
+    def test_name_implicit(self):
         Word('high_school', en='high school', de='Mittelschule')
 
-    def test_fail_key(self):
+    def test_name_explicit(self):
+        Word(name='high_school', en='high school', de='Mittelschule')
+
+    def test_fail_name_implicit(self):
         with pytest.raises(ValueError):
             Word('0', en='zero', de='Null')
+
+    def test_fail_name_explicit(self):
+        with pytest.raises(ValueError):
+            Word(name='0', en='zero', de='Null')
