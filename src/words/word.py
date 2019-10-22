@@ -21,9 +21,9 @@ class Word:
                 contains invalid characters, in which case a ``ValueError``
                 is raised.
 
-            default (str, optional): Default language. Defaults to the
-                first key in ``langs``, unless it is overridden by
-                ``default_query``.
+            default (str, optional): Default language.  Overridden by
+                ``default_query`` if the latter is not None. Defaults
+                to the first key in ``langs``.
 
             default_query (callable, optional): Function to query the
                 default language. Overrides ``default``. Defaults to
@@ -34,7 +34,7 @@ class Word:
                 for simple words, or dicts with context-specific
                 variants of the word. In the latter case, the first
                 entry is the default context.
-        
+
         Example:
             >>> w = Word('high_school', en='high school', de='Mittelschule')
             >>> w.name
@@ -82,8 +82,17 @@ class Word:
         self.set_default(default, default_query)
 
     def set_default(self, lang=None, query=None):
-        """Set the default language, either hard-coded or queriable."""
+        """Set the default language, either hard-coded or queriable.
 
+        Args:
+            lang (str, None): Default language. Overridden by ``query``
+                if the latter is not None. Defaults to the first key in
+                ``Word.langs``.
+
+            query (callable, None): Function to query the default
+                language. Overrides ``default``. Defaults to None.
+
+        """
         if lang is None:
             lang = next(iter(self.langs))
         elif lang not in self.langs:
@@ -167,7 +176,7 @@ class WordVariants:
 
         Args:
             name (str): Name of the context (one of ``self.ctxs``).
-        
+
         """
         try:
             return self._variants[name]
