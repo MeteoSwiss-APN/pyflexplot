@@ -6,6 +6,7 @@ Tests for class ``Word`` in module ``words.word``.
 
 import pytest
 
+from attr import attrs, attrib
 from words import Word
 
 
@@ -80,6 +81,55 @@ class Test_Context:
         assert str(self.w.en.ctx('level')) == 'at'
 
 
+@attrs
+class AttrHolder:
+    _val = attrib(default=None)
+
+    def set(self, val):
+        self._val = val
+
+    def get(self):
+        return self._val
+
+
+class Test_QueryDefault:
+    """Test querying the default language on-the-fly."""
+
+    w = Word(en='train', de='Zug')
+
+    def test_noquery(self):
+        """Pass hard-coded default language."""
+        self.w.set_default(lang='de', query=None)
+        assert str(self.w) == 'Zug'
+        self.w.set_default(lang='en', query=None)
+        assert str(self.w) == 'train'
+
+    def test_query_hardcoded(self):
+        """Query default language from hard-coded lamba."""
+        self.w.set_default(lang=None, query=lambda: 'en')
+        assert str(self.w) == 'train'
+        self.w.set_default(lang=None, query=lambda: 'de')
+        assert str(self.w) == 'Zug'
+
+    def test_query_dynamic(self):
+        """Query default language dynamically from external object."""
+        default = AttrHolder()
+        self.w.set_default(lang=None, query=default.get)
+        default.set('de')
+        self.w.set_default(lang=None, query=lambda: 'de')
+        default.set('en')
+        self.w.set_default(lang=None, query=lambda: 'en')
+
+    def test_query_dynamic_precedence(self):
+        """Ensure precedence of query over hard-coded default."""
+        default = AttrHolder()
+        self.w.set_default(lang='de', query=default.get)
+        default.set('de')
+        self.w.set_default(lang=None, query=lambda: 'de')
+        default.set('en')
+        self.w.set_default(lang=None, query=lambda: 'en')
+
+
 class Test_Creation:
     """Test creation of a ``Word`` instance."""
 
@@ -114,5 +164,12 @@ class Test_Creation:
 
     def test_fail_inconsistent_contexts(self):
         with pytest.raises(ValueError):
-            Word(en={'foo': 'bar', 'hello': 'world'},
-                 de={'bar': 'baz', 'hello': 'world'})
+            Word(
+                en={
+                    'foo': 'bar',
+                    'hello': 'world'
+                },
+                de={
+                    'bar': 'baz',
+                    'hello': 'world'
+                })

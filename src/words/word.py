@@ -9,7 +9,8 @@ __version__ = '0.1.0'
 class Word:
     """A word in one or more languages."""
 
-    def __init__(self, name=None, *, default=None, **langs):
+    def __init__(
+            self, name=None, *, default=None, default_query=None, **langs):
         """Create an instance of ``Word``.
 
         Args:
@@ -21,7 +22,12 @@ class Word:
                 is raised.
 
             default (str, optional): Default language. Defaults to the
-                first key in ``langs``.
+                first key in ``langs``, unless it is overridden by
+                ``default_query``.
+
+            default_query (callable, optional): Function to query the
+                default language. Overrides ``default``. Defaults to
+                None.
 
             **langs (dict of str: str or (dict of str: str)): The word
                 in different languages. The values are either strings
@@ -73,16 +79,29 @@ class Word:
                 word = {ctx: word for ctx in ctxs}
             self._langs[lang] = WordVariants(lang, **word)
 
-        if default is None:
-            default = next(iter(langs))
-        self.set_default(default)
+        self.set_default(default, default_query)
 
-    def set_default(self, lang):
-        """Set the default language."""
-        if lang not in self.langs:
+    def set_default(self, lang=None, query=None):
+        """Set the default language, either hard-coded or queriable."""
+
+        if lang is None:
+            lang = next(iter(self.langs))
+        elif lang not in self.langs:
             raise ValueError(
                 f"invalid default language: {lang} (not among {self.langs})")
-        self.default = lang
+        self._default = lang
+
+        if query is not None and not callable(query):
+            raise ValueError(
+                f"query of type {type(query).__name__} not callable")
+        self._default_query = query
+
+    @property
+    def default(self):
+        """Get the default language."""
+        if self._default_query is not None:
+            return self._default_query()
+        return self._default
 
     def in_(self, lang):
         """Get word in a certain language."""
