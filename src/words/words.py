@@ -78,4 +78,9 @@ class Words:
         try:
             return self._words[name]
         except KeyError:
-            raise ValueError(f"unknown word: {name}")
+            s = f"unknown word: {name}"
+            if f'{name}_' in type(self).__dict__:
+                s = (
+                    f"{s}; are you meaning to call "
+                    f"`{type(self).__name__}.{name}_`?")
+            raise ValueError(s)

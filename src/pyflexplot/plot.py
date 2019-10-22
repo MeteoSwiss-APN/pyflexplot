@@ -9,6 +9,7 @@ import os
 
 from copy import copy
 from textwrap import dedent
+from words import Words
 
 from .plot_utils import AxesMap
 from .plot_utils import ax_dims_fig_coords
@@ -25,16 +26,56 @@ from .utils import ParentClass
 #======================================================================
 
 
+# yapf: disable
+symbols = Words(
+    copyright   = {'': u'\u00a9'},
+    ae          = {'': r'$\mathrm{\"a}$'},
+    oe          = {'': r'$\mathrm{\"o}$'},
+    ue          = {'': r'$\mathrm{\"u}$'},
+    t0          = {'': r'$\mathrm{T_0}$'},
+)
+# yapf: enable
+
+# yapf: disable
+plot_label_words = Words(
+#
+based_on            = dict(en='based on',           de='basierend auf'),
+deposit_vel         = dict(en='deposit. vel.',      de='Deposit.-Geschw.'),
+end                 = dict(en='end',                de='Ende'),
+half_life           = dict(en='half-life',          de='Halbwertszeit'),
+height              = dict(en='height',             de='H{symbols.oe}he'),
+latitude            = dict(en='latitude',           de='Breite'),
+longitude           = dict(en='longitude',          de='L{symbols.ae}nge'),
+max                 = dict(en='max.',               de='max.'),
+mch                 = dict(en='MeteoSwiss',         de='MeteoSchweiz'),
+rate                = dict(en='rate',               de='Rate'),
+release_site        = dict(en='release site',       de='Austrittsort'),
+sediment_vel        = dict(en='sediment. vel.',     de='Sediment.-Geschw.'),
+site                = dict(en='site',               de='Ort'),
+start               = dict(en='start',              de='Start'),
+substance           = dict(en='substance',          de='Substanz'),
+total_mass          = dict(en='total mass',         de='Totale Masse'),
+washout_coeff       = dict(en='washout coeff.',     de='Auswaschkoeff.'),
+washout_exponent    = dict(en='washout exponent',   de='Auswaschexponent'),
+)
+# yapf: enable
+
 class PlotLabels(SummarizableClass):
 
     summarizable_attrs = []  #SR_TODO
 
-    def __init__(self):
+    def __init__(self, lang, words):
+
         if self.__class__.__name__.endswith(f'_Base'):
             raise Exception(
                 f"{type(self).__name__} must be subclassed, not instatiated")
 
-    def __getattribute__(self, name):
+        self.lang = lang
+        self.words = words
+
+        self.words.set_default_(lang)
+
+    def __getattr__(self, name):
         """Intersept attribute access to format labels.
 
         Attributes that do not start with an underscore are passed to
@@ -57,93 +98,49 @@ class PlotLabels(SummarizableClass):
         return object.__getattribute__(self, 'format_attr')(name, val)
 
     def format_attr(self, name, val):
-        """Override to format labels in a language-specific way."""
         return val
 
+    @classmethod
+    def simulation(cls, *args, **kwargs):
+        self = cls(*args, **kwargs)
+        w = self.words
 
-class PlotLabels_En(PlotLabels):
-    pass
+        self.start = f'{str(w.start).upper()} ({symbols.t0})'
+        self.end = str(w.end).upper()
+        self.flexpart_based_on = 'FLEXPART {str(w.based_on)}'
+        self.copyright = f'{str(symbols.copyright)}{str(w.mch)}'
 
+        return self
 
-class PlotLabels_De(PlotLabels):
+    @classmethod
+    def release(cls, *args, **kwargs):
+        self = cls(*args, **kwargs)
+        w = self.words
 
-    def format_attr(self, name, val):
-        """Format an attribute."""
+        self.lat = str(w.latitude).upper()
+        self.lon = str(w.longitude).upper()
+        self.height = str(w.height).upper()
+        self.rate = str(w.rate).upper()
+        self.mass = str(w.total_mass).upper()
+        self.site = str(w.site).upper()
+        self.site_long = str(w.release_site).upper()
+        self.max = str(w.max).upper()
 
-        def umlaut(v):
-            return f'$\\mathrm{{\\ddot{v}}}$'
+        return self
 
-        val = val.replace('{ae}', umlaut('a'))
-        val = val.replace('{oe}', umlaut('o'))
-        val = val.replace('{ue}', umlaut('u'))
+    @classmethod
+    def species(cls, *args, **kwargs):
+        self = cls(*args, **kwargs)
+        w = self.words
 
-        return val
+        self.name = str(w.substance)
+        self.half_life = str(w.half_life)
+        self.deposit_vel = str(w.deposit_vel)
+        self.sediment_vel = str(w.sediment_vel)
+        self.washout_coeff = str(w.washout_coeff)
+        self.washout_exponent = str(w.washout_exponent)
 
-
-class DispersionPlotLabels_Simulation_En(PlotLabels_En):
-    """FLEXPART dispersion plot labels in English (simulation)."""
-
-    start = r'Start ($\mathrm{T_0}$)'
-    end = 'End'
-    flexpart_based_on = 'FLEXPART based on'
-    copyright = u"\u00a9MeteoSwiss"
-
-
-class DispersionPlotLabels_Simulation_De(PlotLabels_De):
-    """part dispersion plot labels in German (simulation)."""
-
-    start = r'Start ($\mathrm{T_0}$)'
-    end = 'Ende'
-    flexpart_based_on = 'FLEXPART basierend auf'
-    copyright = u"\u00a9MeteoSchweiz"
-
-
-class DispersionPlotLabels_Release_En(PlotLabels_En):
-    """FLEXPART dispersion plot labels in English (release)."""
-
-    lat = 'Latitude'
-    lon = 'Longitude'
-    height = 'Height'
-    rate = 'Rate'
-    mass = 'Total mass'
-    site = 'Site'
-    site_long = 'Release site'
-    max = 'Max.'
-
-
-class DispersionPlotLabels_Release_De(PlotLabels_De):
-    """part dispersion plot labels in German (release)."""
-
-    lat = 'Breite'
-    lon = 'L{ae}nge'
-    height = 'H{oe}he'
-    rate = 'Rate'
-    mass = 'Totale Masse'
-    site = 'Ort'
-    site_long = 'Austrittsort'
-    max = 'Max.'
-
-
-class DispersionPlotLabels_Species_En(PlotLabels_En):
-    """FLEXPART dispersion plot labels in English (species)."""
-
-    name = 'Substance'
-    half_life = 'Half-life'
-    deposit_vel = 'Deposit. vel.'
-    sediment_vel = 'Sediment. vel.'
-    washout_coeff = 'Washout coeff.'
-    washout_exponent = 'Washout exponent'
-
-
-class DispersionPlotLabels_Species_De(PlotLabels_De):
-    """part dispersion plot labels in German (species)."""
-
-    name = 'Substanz'
-    half_life = 'Halbwertszeit'
-    deposit_vel = 'Deposit.-Geschw.'
-    sediment_vel = 'Sediment.-Geschw.'
-    washout_coeff = 'Auswaschkoeff.'
-    washout_exponent = 'Auswaschexponent'
+        return self
 
 
 class DispersionPlotLabels(SummarizableClass):
@@ -152,18 +149,9 @@ class DispersionPlotLabels(SummarizableClass):
 
     def __init__(self, lang):
 
-        if lang == 'en':
-            self.simulation = DispersionPlotLabels_Simulation_En()
-            self.release = DispersionPlotLabels_Release_En()
-            self.species = DispersionPlotLabels_Species_En()
-
-        elif lang == 'de':
-            self.simulation = DispersionPlotLabels_Simulation_De()
-            self.release = DispersionPlotLabels_Release_De()
-            self.species = DispersionPlotLabels_Species_De()
-
-        else:
-            raise ValueError(f"lang='{lang}'")
+        self.simulation = PlotLabels.simulation(lang, plot_label_words)
+        self.release = PlotLabels.release(lang, plot_label_words)
+        self.species = PlotLabels.species(lang, plot_label_words)
 
 
 #======================================================================
@@ -541,9 +529,9 @@ class DispersionPlot(Plot):
                 ue = r'$\mathrm{\"u}$'
                 ae = r'$\mathrm{\"a}$'
                 s = {
-                    'sum': f'Aufsummiert {ue}ber',
-                    'mean': f'Gemittelt {ue}ber',
-                    'accum': f'Akkumuliert w{ae}hrend'
+                    'sum': f'Aufsummiert {symbols.ue}ber',
+                    'mean': f'Gemittelt {symbols.ue}ber',
+                    'accum': f'Akkumuliert w{symbols.ae}hrend'
                 }[itype]
                 since = 'seit'
             sim = self.field.attrs.simulation

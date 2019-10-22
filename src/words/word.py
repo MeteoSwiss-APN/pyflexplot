@@ -178,6 +178,8 @@ class WordVariants:
             name (str): Name of the context (one of ``self.ctxs``).
 
         """
+        if name is None:
+            name = self.default
         try:
             return self._variants[name]
         except KeyError:
@@ -186,6 +188,9 @@ class WordVariants:
     def ctxs(self):
         """List of contexts."""
         return list(self._variants)
+
+    def s(self):
+        return str(self)
 
     def __str__(self):
         return self.ctx(self.default)
