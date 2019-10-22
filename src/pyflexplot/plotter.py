@@ -57,7 +57,7 @@ class Plotter(ParentClass):
 
         # Create plots one-by-one
         for i_data, field in enumerate(data_lst):
-            file_path = self.format_file_path(field.field_specs)
+            file_path = self.fmt_file_path(field.field_specs)
             _w = len(str(len(data_lst)))
             print(f" {i_data+1:{_w}}/{len(data_lst)}  {file_path}")
 
@@ -65,7 +65,7 @@ class Plotter(ParentClass):
 
             yield file_path
 
-    def format_file_path(self, field_specs):
+    def fmt_file_path(self, field_specs):
 
         var_specs = field_specs.var_specs_merged()
 
@@ -125,7 +125,7 @@ class Plotter(ParentClass):
                         s += f'+{s_i}'
                 kwargs['member_ids'] = s
 
-        #ipython(globals(), locals(), f"{type(self).__name__}.format_file_path")
+        #ipython(globals(), locals(), f"{type(self).__name__}.fmt_file_path")
 
         # Format file path
         try:

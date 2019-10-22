@@ -122,12 +122,12 @@ class Attr(SummarizableClass):
                 fmt = ''
         s = f'{{:{fmt}}}'.format(self.value)
         if self.name == 'unit':
-            s = self.format_unit(unit=s)
+            s = self.fmt_unit(unit=s)
         if self.unit and not skip_unit:
-            s += f' {self.format_unit()}'
+            s += f' {self.fmt_unit()}'
         return s
 
-    def format_unit(self, unit=None):
+    def fmt_unit(self, unit=None):
         """Auto-format the unit by elevating superscripts etc."""
         if unit is None:
             unit = self.unit
@@ -202,8 +202,8 @@ class AttrMult(Attr):
     def format(self, fmt=None, *, join=' / ', **kwargs):
         return join.join([a.format(fmt, **kwargs) for a in self._attr_lst])
 
-    def format_unit(self, unit=None):
-        units = [a.format_unit(unit=unit) for a in self._attr_lst]
+    def fmt_unit(self, unit=None):
+        units = [a.fmt_unit(unit=unit) for a in self._attr_lst]
         if len(set(units)) == 1:
             return next(iter(units))
         return units
@@ -410,21 +410,21 @@ class AttrGroupVariable(AttrGroup):
         self.set('level_bot', level_bot, float, unit=level_bot_unit)
         self.set('level_top', level_top, float, unit=level_top_unit)
 
-    def format_level_unit(self):
-        unit_bottom = self.level_bot.format_unit()
-        unit_top = self.level_top.format_unit()
+    def fmt_level_unit(self):
+        unit_bottom = self.level_bot.fmt_unit()
+        unit_top = self.level_top.fmt_unit()
         if unit_bottom != unit_top:
             raise Exception(
                 f"bottom and top level units differ: "
                 f"'{unit_bottom}' != '{unit_top}'")
         return unit_top
 
-    def format_level_range(self):
+    def fmt_level_range(self):
 
         if (self.level_bot.value, self.level_top.value) == (-1, -1):
             return None
 
-        def fmt(bot, top, unit_fmtd=self.format_level_unit()):
+        def fmt(bot, top, unit_fmtd=self.fmt_level_unit()):
             s = f"{bot:g}" + r'$-$' + f"{top:g}"
             if unit_fmtd:
                 s += f" {unit_fmtd}"
@@ -584,7 +584,7 @@ class AttrGroupSimulation(AttrGroup):
         self.set('integr_start', integr_start, datetime.datetime, start=start)
         self.set('integr_type', integr_type, str)
 
-    def format_integr_period(self):
+    def fmt_integr_period(self):
         integr_period = self.now.value - self.integr_start.value
         return f'{integr_period.total_seconds()/3600:g}$\\,$h'
 

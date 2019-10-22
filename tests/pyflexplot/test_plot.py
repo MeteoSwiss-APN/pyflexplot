@@ -23,50 +23,54 @@ class Test_PlotDispersion_Summarize:
             return fmt
 
         def attr(name, value=None):
+            # yapf: disable
             return SimpleNamespace(
-                value=name if value is None else value,
-                unit=f'{name}.unit',
-                format=f_fmt(f'{name}.format'),
+                value   = name if value is None else value,
+                unit    = f'{name}.unit',
+                format  = f_fmt(f'{name}.format'),
             )
+            # yapf: enable
 
+        # yapf: disable
         return SimpleNamespace(
             summarize=lambda: {},
             grid=SimpleNamespace(
-                north_pole_lat=attr('grid.north_pole_lat', 43.0),
-                north_pole_lon=attr('grid.north_pole_lat', -170.0),
+                north_pole_lat      = attr('grid.north_pole_lat', 43.0),
+                north_pole_lon      = attr('grid.north_pole_lat', -170.0),
             ),
             release=SimpleNamespace(
-                lon=attr('release.lon', 8.0),
-                lat=attr('release.lat', 47.0),
-                site_name=attr('release.site_name'),
-                height=attr('release.height'),
-                rate=attr('release.rate'),
-                mass=attr('release.mass'),
+                lon                 = attr('release.lon', 8.0),
+                lat                 = attr('release.lat', 47.0),
+                site_name           = attr('release.site_name'),
+                height              = attr('release.height'),
+                rate                = attr('release.rate'),
+                mass                = attr('release.mass'),
             ),
             variable=SimpleNamespace(
-                long_name=attr('variable.long_name'),
-                format_level_range=f_fmt('variable.format_level_range'),
-                short_name=attr('variable.short_name'),
-                unit=attr('variable.unit'),
+                long_name           = attr('variable.long_name'),
+                fmt_level_range     = f_fmt('variable.fmt_level_range'),
+                short_name          = attr('variable.short_name'),
+                unit                = attr('variable.unit'),
             ),
             species=SimpleNamespace(
-                name=attr('species.name'),
-                half_life=attr('species.half_life'),
-                deposit_vel=attr('species.deposit_vel'),
-                sediment_vel=attr('species.sediment_vel'),
-                washout_coeff=attr('species.washout_coeff'),
-                washout_exponent=attr('species.washout_coeff'),
+                name                = attr('species.name'),
+                half_life           = attr('species.half_life'),
+                deposit_vel         = attr('species.deposit_vel'),
+                sediment_vel        = attr('species.sediment_vel'),
+                washout_coeff       = attr('species.washout_coeff'),
+                washout_exponent    = attr('species.washout_coeff'),
             ),
             simulation=SimpleNamespace(
-                now=attr('simulation.now'),
-                format_integr_period=f_fmt('simulation.format_integr_period'),
-                integr_start=attr('simulation.integr_start'),
-                integr_type=attr('mean'),
-                start=attr('simulation.start'),
-                end=attr('simulation.end'),
-                model_name=attr('simulation.model_name'),
+                now                 = attr('simulation.now'),
+                fmt_integr_period   = f_fmt('simulation.fmt_integr_period'),
+                integr_start        = attr('simulation.integr_start'),
+                integr_type         = attr('mean'),
+                start               = attr('simulation.start'),
+                end                 = attr('simulation.end'),
+                model_name          = attr('simulation.model_name'),
             ),
         )
+        # yapf: enable
 
     def create_dummy_field(self):
         return SimpleNamespace(
@@ -91,7 +95,7 @@ class Test_PlotDispersion_Summarize:
             {
                 'type': 'TextBoxElement_Text',
                 #SR_TMP< TODO un-hardcode 'auf'
-                's': 'variable.long_name auf variable.format_level_range',
+                's': 'variable.long_name auf variable.fmt_level_range',
                 #SR_TMP>
                 'loc': {
                     'loc': 'tl'
@@ -102,7 +106,7 @@ class Test_PlotDispersion_Summarize:
                 #SR_TMP< TODO un-hardcode 'Gemittelt' etc.
                 's': (
                     r'Gemittelt $\mathrm{\"u}$ber '
-                    r'simulation.format_integr_period '
+                    r'simulation.fmt_integr_period '
                     r'(seit simulation.integr_start.format)'),
                 #SR_TMP>
                 'loc': {

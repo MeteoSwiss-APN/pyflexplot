@@ -18,8 +18,8 @@ from .plot_utils import TextBoxAxes
 from .utils import SummarizableClass
 from .plot_utils import SummarizablePlotClass
 from .utils import Degrees
-from .utils import format_float
-from .utils import format_level_ranges
+from .utils import fmt_float
+from .utils import fmt_level_ranges
 from .utils import ParentClass
 
 #======================================================================
@@ -67,37 +67,41 @@ class DispersionPlotLabels(SummarizableClass):
 
     summarizable_attrs = []  #SR_TODO
 
-    def __init__(self, lang):
+    def __init__(self, lang, words):
 
-        w = plot_label_words
+        w = words
         w.set_default_(lang)
 
+        # yapf: disable
+
         self.simulation = SimpleNamespace(
-            start=f'{str(w.start).capitalize()} ({symbols.t0})',
-            end=str(w.end).capitalize(),
-            flexpart_based_on=f'{str(w.flexpart)} {str(w.based_on)}',
-            copyright=f'{str(symbols.copyright)}{str(w.mch)}',
+            start             = f'{str(w.start).capitalize()} ({symbols.t0})',
+            end               = str(w.end).capitalize(),
+            flexpart_based_on = f'{str(w.flexpart)} {str(w.based_on)}',
+            copyright         = f'{str(symbols.copyright)}{str(w.mch)}',
         )
 
         self.release = SimpleNamespace(
-            lat=str(w.latitude).capitalize(),
-            lon=str(w.longitude).capitalize(),
-            height=str(w.height).capitalize(),
-            rate=str(w.rate).capitalize(),
-            mass=str(w.total_mass).capitalize(),
-            site=str(w.site).capitalize(),
-            site_long=str(w.release_site).capitalize(),
-            max=str(w.max).capitalize(),
+            lat               = str(w.latitude    ).capitalize(),
+            lon               = str(w.longitude   ).capitalize(),
+            height            = str(w.height      ).capitalize(),
+            rate              = str(w.rate        ).capitalize(),
+            mass              = str(w.total_mass  ).capitalize(),
+            site              = str(w.site        ).capitalize(),
+            site_long         = str(w.release_site).capitalize(),
+            max               = str(w.max         ).capitalize(),
         )
 
         self.species = SimpleNamespace(
-            name=str(w.substance).capitalize(),
-            half_life=str(w.half_life).capitalize(),
-            deposit_vel=str(w.deposit_vel).capitalize(),
-            sediment_vel=str(w.sediment_vel).capitalize(),
-            washout_coeff=str(w.washout_coeff).capitalize(),
-            washout_exponent=str(w.washout_exponent).capitalize(),
+            name              = str(w.substance       ).capitalize(),
+            half_life         = str(w.half_life       ).capitalize(),
+            deposit_vel       = str(w.deposit_vel     ).capitalize(),
+            sediment_vel      = str(w.sediment_vel    ).capitalize(),
+            washout_coeff     = str(w.washout_coeff   ).capitalize(),
+            washout_exponent  = str(w.washout_exponent).capitalize(),
         )
+
+        # yapf: enable
 
 
 #======================================================================
@@ -195,7 +199,7 @@ class DispersionPlot(Plot):
         'pad_hor_rel': 0.015,
         'h_rel_box_rt': 0.45,
     }
-    level_range_style = 'base'  # see ``format_level_ranges``
+    level_range_style = 'base'  # see ``fmt_level_ranges``
     level_ranges_align = 'center'
 
     summarizable_attrs = Plot.summarizable_attrs + [
@@ -229,7 +233,9 @@ class DispersionPlot(Plot):
         self.lang = lang or 'en'
         self.reverse_legend = reverse_legend or False
 
-        self.labels = DispersionPlotLabels(lang)
+        words = plot_label_words  #SR_TMP
+
+        self.labels = DispersionPlotLabels(lang, words)
 
         # Formatting arguments
         self._max_marker_kwargs = {
@@ -455,7 +461,7 @@ class DispersionPlot(Plot):
         if not 'tl' in skip_pos:
             # Top left: variable
             s = self.field.attrs.variable.long_name.value
-            _lvl = self.field.attrs.variable.format_level_range()
+            _lvl = self.field.attrs.variable.fmt_level_range()
             if _lvl:
                 _at = {'en': 'at', 'de': 'auf'}[self.lang]
                 s += f" {_at} {_lvl}"
@@ -482,7 +488,7 @@ class DispersionPlot(Plot):
                 since = 'seit'
             sim = self.field.attrs.simulation
             start = sim.integr_start.format(relative=True)
-            s += f" {sim.format_integr_period()} ({since} {start})"
+            s += f" {sim.fmt_integr_period()} ({since} {start})"
             if self.scale_field is not None:
                 s += f" ({self.scale_field}x)"
             box.text('bl', s, size='large')
@@ -547,7 +553,7 @@ class DispersionPlot(Plot):
         box.text('tc', s=s, dy=1.5, size='large')
 
         # Format level ranges (contour plot legend)
-        labels = format_level_ranges(
+        labels = fmt_level_ranges(
             levels=self.levels,
             style=self.level_range_style,
             extend=self.extend,
@@ -630,7 +636,7 @@ class DispersionPlot(Plot):
             if np.isnan(self.field.fld).all():
                 s += 'NaN'
             else:
-                s += format_float(
+                s += fmt_float(
                     np.nanmax(self.field.fld),
                     fmt_e0='{f:.3E}',
                     fmt_f1='{f:,.3f}')
@@ -909,7 +915,7 @@ class Plot_EnsThrAgrmt(Plot_Ens):
     n_levels = 6
     d_level = 2
     extend = 'min'
-    level_range_style = 'int'  # see ``format_level_ranges``
+    level_range_style = 'int'  # see ``fmt_level_ranges``
     level_ranges_align = 'left'
     mark_field_max = False
 

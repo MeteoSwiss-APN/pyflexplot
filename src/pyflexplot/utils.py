@@ -443,7 +443,7 @@ def group_kwargs(name, name_out=None, separator=None):
 #======================================================================
 
 
-def format_float(f, fmt_e0=None, fmt_f0=None, fmt_e1=None, fmt_f1=None):
+def fmt_float(f, fmt_e0=None, fmt_f0=None, fmt_e1=None, fmt_f1=None):
     """Auto-format a float to floating-point or exponential notation.
 
     Very small and very large numbers are formatted in exponential
@@ -543,7 +543,7 @@ def format_float(f, fmt_e0=None, fmt_f0=None, fmt_e1=None, fmt_f1=None):
     return fe0
 
 
-def format_level_ranges(
+def fmt_level_ranges(
         levels, style=None, widths=None, extend=None, align=None, **kwargs):
     """Format a list of level ranges in a certain style.
 
@@ -626,7 +626,7 @@ def format_level_ranges(
     else:
         formatter = cls(
             style=style, widths=widths, extend=extend, align=align, **kwargs)
-    return formatter.format_multiple(levels)
+    return formatter.fmt_multiple(levels)
 
 
 class LevelRangeFormatter:
@@ -641,7 +641,7 @@ class LevelRangeFormatter:
             rstrip_zeros=False):
         """Create an instance of ``LevelRangeFormatter``.
 
-        Args: See ``format_level_ranges``.
+        Args: See ``fmt_level_ranges``.
 
         """
         if widths is None:
@@ -659,7 +659,7 @@ class LevelRangeFormatter:
         except (ValueError, TypeError):
             raise ValueError(f"widths is not a tree-int tuple: {widths}")
 
-    def format_multiple(self, levels):
+    def fmt_multiple(self, levels):
         ss = []
         if self.extend in ('min', 'both'):
             ss.append(self.format(None, levels[0]))
@@ -733,7 +733,7 @@ class LevelRangeFormatter:
         return self._Components('', (s_c, ntex_c), s_r)
 
     def _format_level(self, lvl):
-        return format_float(lvl, '{f:.0E}')
+        return fmt_float(lvl, '{f:.0E}')
 
     @classmethod
     def _Component(cls, s, n=None):
