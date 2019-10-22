@@ -9,6 +9,7 @@ import os
 
 from copy import copy
 from textwrap import dedent
+from types import SimpleNamespace
 from words import Words
 
 from .plot_utils import AxesMap
@@ -60,88 +61,6 @@ washout_exponent    = dict(en='washout exponent',   de='Auswaschexponent'),
 )
 # yapf: enable
 
-class PlotLabels(SummarizableClass):
-
-    summarizable_attrs = []  #SR_TODO
-
-    def __init__(self, lang, words):
-
-        if self.__class__.__name__.endswith(f'_Base'):
-            raise Exception(
-                f"{type(self).__name__} must be subclassed, not instatiated")
-
-        self.lang = lang
-        self.words = words
-
-        self.words.set_default_(lang)
-
-    def __getattr__(self, name):
-        """Intersept attribute access to format labels.
-
-        Attributes that do not start with an underscore are passed to
-        the method ``self.format_attr``, which can be overridden by
-        subclasses to format labels in a language-specific way.
-
-        Args:
-            name (str): Attribute name.
-
-        """
-        if name.startswith('_'):
-            return object.__getattribute__(self, name)
-        try:
-            val = object.__getattribute__(self, '__dict__')[name]
-        except KeyError:
-            try:
-                val = object.__getattribute__(type(self), '__dict__')[name]
-            except KeyError:
-                raise AttributeError(name) from None
-        return object.__getattribute__(self, 'format_attr')(name, val)
-
-    def format_attr(self, name, val):
-        return val
-
-    @classmethod
-    def simulation(cls, *args, **kwargs):
-        self = cls(*args, **kwargs)
-        w = self.words
-
-        self.start = f'{str(w.start).upper()} ({symbols.t0})'
-        self.end = str(w.end).upper()
-        self.flexpart_based_on = 'FLEXPART {str(w.based_on)}'
-        self.copyright = f'{str(symbols.copyright)}{str(w.mch)}'
-
-        return self
-
-    @classmethod
-    def release(cls, *args, **kwargs):
-        self = cls(*args, **kwargs)
-        w = self.words
-
-        self.lat = str(w.latitude).upper()
-        self.lon = str(w.longitude).upper()
-        self.height = str(w.height).upper()
-        self.rate = str(w.rate).upper()
-        self.mass = str(w.total_mass).upper()
-        self.site = str(w.site).upper()
-        self.site_long = str(w.release_site).upper()
-        self.max = str(w.max).upper()
-
-        return self
-
-    @classmethod
-    def species(cls, *args, **kwargs):
-        self = cls(*args, **kwargs)
-        w = self.words
-
-        self.name = str(w.substance)
-        self.half_life = str(w.half_life)
-        self.deposit_vel = str(w.deposit_vel)
-        self.sediment_vel = str(w.sediment_vel)
-        self.washout_coeff = str(w.washout_coeff)
-        self.washout_exponent = str(w.washout_exponent)
-
-        return self
-
 
 class DispersionPlotLabels(SummarizableClass):
 
@@ -149,9 +68,35 @@ class DispersionPlotLabels(SummarizableClass):
 
     def __init__(self, lang):
 
-        self.simulation = PlotLabels.simulation(lang, plot_label_words)
-        self.release = PlotLabels.release(lang, plot_label_words)
-        self.species = PlotLabels.species(lang, plot_label_words)
+        w = plot_label_words
+        w.set_default_(lang)
+
+        self.simulation = SimpleNamespace(
+            start=f'{str(w.start).upper()} ({symbols.t0})',
+            end=str(w.end).upper(),
+            flexpart_based_on='FLEXPART {str(w.based_on)}',
+            copyright=f'{str(symbols.copyright)}{str(w.mch)}',
+        )
+
+        self.release = SimpleNamespace(
+            lat=str(w.latitude).upper(),
+            lon=str(w.longitude).upper(),
+            height=str(w.height).upper(),
+            rate=str(w.rate).upper(),
+            mass=str(w.total_mass).upper(),
+            site=str(w.site).upper(),
+            site_long=str(w.release_site).upper(),
+            max=str(w.max).upper(),
+        )
+
+        self.species = SimpleNamespace(
+            name=str(w.substance),
+            half_life=str(w.half_life),
+            deposit_vel=str(w.deposit_vel),
+            sediment_vel=str(w.sediment_vel),
+            washout_coeff=str(w.washout_coeff),
+            washout_exponent=str(w.washout_exponent),
+        )
 
 
 #======================================================================
