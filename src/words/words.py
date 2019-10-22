@@ -48,18 +48,17 @@ class Words:
                 raise ValueError(
                     f"invalid default language '{default_}': "
                     f"not in {langs}")
-            self._words[name] = Word(name, default=default_, **word)
+            self._words[name] = Word(
+                name, default_query=lambda: self.default_, **word)
         self._langs_ = langs
-        self.set_default(default_)
+        self.set_default_(default_)
 
-    def set_default(self, lang):
+    def set_default_(self, lang):
         """Change default language recursively for all words."""
         if lang not in self.langs_:
             raise ValueError(
                 f"unknown language '{lang}': not among {self.langs_}")
         self._default_ = lang
-        for word in self._words.values():
-            word.set_default(lang)
 
     @property
     def default_(self):

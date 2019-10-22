@@ -60,6 +60,6 @@ class Test_Complex:
     def test_change_default(self):
         assert self.ws.default_ == 'de'
         assert str(self.ws.train) == 'Zug'
-        self.ws.set_default('en')
+        self.ws.set_default_('en')
         assert self.ws.default_ == 'en'
         assert str(self.ws.train) == 'train'
