@@ -43,11 +43,12 @@ plot_label_words = Words(
 based_on            = dict(en='based on',           de='basierend auf'),
 deposit_vel         = dict(en='deposit. vel.',      de='Deposit.-Geschw.'),
 end                 = dict(en='end',                de='Ende'),
+flexpart            = dict(en='FLEXPART',           de='FLEXPART'),
 half_life           = dict(en='half-life',          de='Halbwertszeit'),
-height              = dict(en='height',             de='H{symbols.oe}he'),
+height              = dict(en='height',             de=f'H{symbols.oe}he'),
 latitude            = dict(en='latitude',           de='Breite'),
-longitude           = dict(en='longitude',          de='L{symbols.ae}nge'),
-max                 = dict(en='max.',               de='max.'),
+longitude           = dict(en='longitude',          de=f'L{symbols.ae}nge'),
+max                 = dict(en='max.',               de='Max.'),
 mch                 = dict(en='MeteoSwiss',         de='MeteoSchweiz'),
 rate                = dict(en='rate',               de='Rate'),
 release_site        = dict(en='release site',       de='Austrittsort'),
@@ -72,30 +73,30 @@ class DispersionPlotLabels(SummarizableClass):
         w.set_default_(lang)
 
         self.simulation = SimpleNamespace(
-            start=f'{str(w.start).upper()} ({symbols.t0})',
-            end=str(w.end).upper(),
-            flexpart_based_on='FLEXPART {str(w.based_on)}',
+            start=f'{str(w.start).capitalize()} ({symbols.t0})',
+            end=str(w.end).capitalize(),
+            flexpart_based_on=f'{str(w.flexpart)} {str(w.based_on)}',
             copyright=f'{str(symbols.copyright)}{str(w.mch)}',
         )
 
         self.release = SimpleNamespace(
-            lat=str(w.latitude).upper(),
-            lon=str(w.longitude).upper(),
-            height=str(w.height).upper(),
-            rate=str(w.rate).upper(),
-            mass=str(w.total_mass).upper(),
-            site=str(w.site).upper(),
-            site_long=str(w.release_site).upper(),
-            max=str(w.max).upper(),
+            lat=str(w.latitude).capitalize(),
+            lon=str(w.longitude).capitalize(),
+            height=str(w.height).capitalize(),
+            rate=str(w.rate).capitalize(),
+            mass=str(w.total_mass).capitalize(),
+            site=str(w.site).capitalize(),
+            site_long=str(w.release_site).capitalize(),
+            max=str(w.max).capitalize(),
         )
 
         self.species = SimpleNamespace(
-            name=str(w.substance),
-            half_life=str(w.half_life),
-            deposit_vel=str(w.deposit_vel),
-            sediment_vel=str(w.sediment_vel),
-            washout_coeff=str(w.washout_coeff),
-            washout_exponent=str(w.washout_exponent),
+            name=str(w.substance).capitalize(),
+            half_life=str(w.half_life).capitalize(),
+            deposit_vel=str(w.deposit_vel).capitalize(),
+            sediment_vel=str(w.sediment_vel).capitalize(),
+            washout_coeff=str(w.washout_coeff).capitalize(),
+            washout_exponent=str(w.washout_exponent).capitalize(),
         )
 
 
