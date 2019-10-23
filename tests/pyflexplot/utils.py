@@ -39,27 +39,33 @@ def datadir(tmpdir, request):
 #======================================================================
 
 
-def assert_summary_dict_is_subdict(subdict, superdict):
+def assert_summary_dict_is_subdict(
+        subdict, superdict, subname='sub', supername='super'):
     """Check that one summary dict is a subdict of another."""
     if not isinstance(subdict, dict):
         raise AssertionError(
-            f"subdict is not a dict, but of type {type(subdict).__name__}")
+            f"subdict '{subname}' is not a dict, but of type "
+            f"{type(subdict).__name__}")
     if not isinstance(superdict, dict):
         raise AssertionError(
-            f"superdict is not a dict, but of type {type(superdict).__name__}")
+            f"superdict '{subpername}' is not a dict, but of type "
+            f"{type(superdict).__name__}")
     for key, val_sub in subdict.items():
         val_super = get_dict_element(
             superdict, key, 'superdict', AssertionError)
-        assert_summary_dict_element_is_subelement(val_sub, val_super)
+        assert_summary_dict_element_is_subelement(
+            val_sub, val_super, subname, supername)
 
 
-def assert_summary_dict_element_is_subelement(obj_sub, obj_super):
+def assert_summary_dict_element_is_subelement(
+        obj_sub, obj_super, name_sub='sub', name_super='super'):
 
     if obj_sub == obj_super:
         return
 
     elif isinstance(obj_sub, dict):
-        assert_summary_dict_is_subdict(obj_sub, obj_super)
+        assert_summary_dict_is_subdict(
+            obj_sub, obj_super, name_sub, name_super)
 
     elif isiterable(obj_sub, str_ok=False):
 
@@ -70,13 +76,17 @@ def assert_summary_dict_element_is_subelement(obj_sub, obj_super):
         if len(obj_sub) != len(obj_super):
             raise AssertionError(
                 f"iterable elements differ in size: {len(obj_sub)} != "
-                f"{len(obj_super)}\n\nsuper:\n{obj_super}\n\nsub:\n{obj_sub}")
+                f"{len(obj_super)}\n\n{name_super}:\n{obj_super}"
+                f"\n\n{name_sub}:\n{obj_sub}")
 
         for subobj_sub, subobj_super in zip(obj_sub, obj_super):
-            assert_summary_dict_element_is_subelement(subobj_sub, subobj_super)
+            assert_summary_dict_element_is_subelement(
+                subobj_sub, subobj_super, name_sub, name_super)
 
     else:
-        raise AssertionError(f"elements differ: {obj_sub} != {obj_super}")
+        raise AssertionError(
+            f"elements differ:\n{name_sub}:\n{obj_sub}\n"
+            f"{name_super}:\n{obj_super}'")
 
 
 def get_dict_element(dict_, key, name='dict', exception_type=ValueError):

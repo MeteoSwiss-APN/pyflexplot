@@ -26,8 +26,8 @@ from .utils import ParentClass
 # Plot Labels
 #======================================================================
 
-
 # yapf: disable
+
 symbols = Words(
     copyright   = {'': u'\u00a9'},
     ae          = {'': r'$\mathrm{\"a}$'},
@@ -35,31 +35,38 @@ symbols = Words(
     ue          = {'': r'$\mathrm{\"u}$'},
     t0          = {'': r'$\mathrm{T_0}$'},
 )
-# yapf: enable
 
-# yapf: disable
+e, d = 'en', 'de'
 plot_label_words = Words(
 #
-based_on            = dict(en='based on',           de='basierend auf'),
-deposit_vel         = dict(en='deposit. vel.',      de='Deposit.-Geschw.'),
-end                 = dict(en='end',                de='Ende'),
-flexpart            = dict(en='FLEXPART',           de='FLEXPART'),
-half_life           = dict(en='half-life',          de='Halbwertszeit'),
-height              = dict(en='height',             de=f'H{symbols.oe}he'),
-latitude            = dict(en='latitude',           de='Breite'),
-longitude           = dict(en='longitude',          de=f'L{symbols.ae}nge'),
-max                 = dict(en='max.',               de='Max.'),
-mch                 = dict(en='MeteoSwiss',         de='MeteoSchweiz'),
-rate                = dict(en='rate',               de='Rate'),
-release_site        = dict(en='release site',       de='Austrittsort'),
-sediment_vel        = dict(en='sediment. vel.',     de='Sediment.-Geschw.'),
-site                = dict(en='site',               de='Ort'),
-start               = dict(en='start',              de='Start'),
-substance           = dict(en='substance',          de='Substanz'),
-total_mass          = dict(en='total mass',         de='Totale Masse'),
-washout_coeff       = dict(en='washout coeff.',     de='Auswaschkoeff.'),
-washout_exponent    = dict(en='washout exponent',   de='Auswaschexponent'),
+at                = {e: 'at',                 d: {'level' : 'auf',
+                                                'place' : 'bei',
+                                                'time'  : 'um'}},
+accumulated_over  = {e: 'accumulated_over',   d: 'akkumuliert {symbols.ue}ber'},
+averaged_over     = {e: 'averaged over',      d: 'gemittelt {symbols.ue}ber'},
+based_on          = {e: 'based on',           d: 'basierend auf'},
+deposit_vel       = {e: 'deposit. vel.',      d: 'Deposit.-Geschw.'},
+end               = {e: 'end',                d: 'Ende'},
+flexpart          = {e: 'FLEXPART',           d: 'FLEXPART'},
+half_life         = {e: 'half-life',          d: 'Halbwertszeit'},
+height            = {e: 'height',             d: f'H{symbols.oe}he'},
+latitude          = {e: 'latitude',           d: 'Breite'},
+longitude         = {e: 'longitude',          d: f'L{symbols.ae}nge'},
+max               = {e: 'max.',               d: 'Max.'},
+mch               = {e: 'MeteoSwiss',         d: 'MeteoSchweiz'},
+rate              = {e: 'rate',               d: 'Rate'},
+release_site      = {e: 'release site',       d: 'Austrittsort'},
+sediment_vel      = {e: 'sediment. vel.',     d: 'Sediment.-Geschw.'},
+since             = {e: 'since',              d: 'seit'},
+site              = {e: 'site',               d: 'Ort'},
+start             = {e: 'start',              d: 'Start'},
+substance         = {e: 'substance',          d: 'Substanz'},
+summed_up_over    = {e: 'summed up over',     d: 'aufsummiert {symbols.ue}ber'},
+total_mass        = {e: 'total mass',         d: 'Totale Masse'},
+washout_coeff     = {e: 'washout coeff.',     d: 'Auswaschkoeff.'},
+washout_exponent  = {e: 'washout exponent',   d: 'Auswaschexponent'},
 )
+
 # yapf: enable
 
 
@@ -68,6 +75,8 @@ class DispersionPlotLabels(SummarizableClass):
     summarizable_attrs = []  #SR_TODO
 
     def __init__(self, lang, words):
+
+        self.words = words
 
         w = words
         w.set_default_(lang)
@@ -216,7 +225,9 @@ class DispersionPlot(Plot):
         'reverse_legend',
     ]
 
-    def __init__(self, *args, lang=None, reverse_legend=False, **kwargs):
+    def __init__(
+            self, field, *, lang=None, labels=None, reverse_legend=False,
+            **kwargs):
         """Create an instance of ``DispersionPlot``.
 
         Args:
@@ -229,13 +240,14 @@ class DispersionPlot(Plot):
             **kwargs: Additional keyword arguments passed to
                 ``Plot.__init__``.
         """
-        super().__init__(*args, **kwargs)
+        super().__init__(field, **kwargs)
         self.lang = lang or 'en'
         self.reverse_legend = reverse_legend or False
 
-        words = plot_label_words  #SR_TMP
-
-        self.labels = DispersionPlotLabels(lang, words)
+        if labels is None:
+            words = plot_label_words  #SR_TMP
+            labels = DispersionPlotLabels(lang, words)
+        self.labels = labels
 
         # Formatting arguments
         self._max_marker_kwargs = {
@@ -463,29 +475,18 @@ class DispersionPlot(Plot):
             s = self.field.attrs.variable.long_name.value
             _lvl = self.field.attrs.variable.fmt_level_range()
             if _lvl:
-                _at = {'en': 'at', 'de': 'auf'}[self.lang]
-                s += f" {_at} {_lvl}"
+                s += f" {self.labels.words.at.ctx('level')} {_lvl}"
             box.text('tl', s, size='x-large')
 
         if not 'bl' in skip_pos:
             # Bottom left: integration time & level range
             itype = self.field.attrs.simulation.integr_type.value
-            if self.lang == 'en':
-                s = {
-                    'sum': 'Summed up over',
-                    'mean': 'Averaged over',
-                    'accum': 'Accumulated over',
-                }[itype]
-                since = 'since'
-            elif self.lang == 'de':
-                ue = r'$\mathrm{\"u}$'
-                ae = r'$\mathrm{\"a}$'
-                s = {
-                    'sum': f'Aufsummiert {symbols.ue}ber',
-                    'mean': f'Gemittelt {symbols.ue}ber',
-                    'accum': f'Akkumuliert w{symbols.ae}hrend'
-                }[itype]
-                since = 'seit'
+            s = {
+                'sum': str(self.labels.words.summed_up_over).capitalize(),
+                'mean': str(self.labels.words.averaged_over).capitalize(),
+                'accum': str(self.labels.words.accumulated_over).capitalize(),
+            }[itype]
+            since = str(self.labels.words.since)
             sim = self.field.attrs.simulation
             start = sim.integr_start.format(relative=True)
             s += f" {sim.fmt_integr_period()} ({since} {start})"

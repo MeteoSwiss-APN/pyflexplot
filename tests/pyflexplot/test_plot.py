@@ -4,143 +4,194 @@
 import logging as log
 import numpy as np
 import pytest
+
 from types import SimpleNamespace
 
 from pyflexplot.plot import DispersionPlot
 
 from utils import assert_summary_dict_is_subdict
 
+AE = r'$\mathrm{\"a}$'
+OE = r'$\mathrm{\"o}$'
+UE = r'$\mathrm{\"u}$'
+
+
+class DummyWord:
+
+    def __init__(self, name, parent):
+        self._name = name
+        self._lang = None
+        self._parent = parent
+
+    @property
+    def lang(self):
+        return self._parent.lang_
+
+    def __str__(self):
+        return f"words.{self._name}[{self.lang or ''}]"
+
+    def ctx(self, ctx):
+        return f"{str(self)[:-1]}/{ctx}]"
+
+
+class DummyWords:
+
+    def __init__(self, words, lang='en'):
+        for word in words:
+            setattr(self, word, DummyWord(word, self))
+        self.lang_ = None
+        self.lang_ = lang
+
+    def set_default_(self, lang):
+        self.lang_ = lang
+
+
+class DummyAttr:
+
+    def __init__(self, name, value, lang):
+        name = f'{name}[{lang}]'
+        self._name = name
+        self.value = value or name
+        self.lang = lang
+        self.unit = f'{name}.unit'
+
+    def format(self, *args, **kwargs):
+        return f'{self._name}.format'
+
 
 class Test_PlotDispersion_Summarize:
 
-    def create_dummy_attrs(self):
+    def create_dummy_attrs(self, lang):
 
-        def f_fmt(name):
+        # Note: Some values must be passed, otherwise plotting fails
 
-            def fmt(*args, **kwargs):
-                return f'{name}'
-
-            return fmt
-
-        def attr(name, value=None):
-            # yapf: disable
-            return SimpleNamespace(
-                value   = name if value is None else value,
-                unit    = f'{name}.unit',
-                format  = f_fmt(f'{name}.format'),
-            )
-            # yapf: enable
+        DA = lambda name, value=None: DummyAttr(name, value, lang=lang)
+        fm = lambda name, value=None: DA(name, value).format
 
         # yapf: disable
+
         return SimpleNamespace(
             summarize=lambda: {},
+
             grid=SimpleNamespace(
-                north_pole_lat      = attr('grid.north_pole_lat', 43.0),
-                north_pole_lon      = attr('grid.north_pole_lat', -170.0),
+                north_pole_lat      = DA('grid.north_pole_lat', 43.0),
+                north_pole_lon      = DA('grid.north_pole_lat', -170),
             ),
             release=SimpleNamespace(
-                lon                 = attr('release.lon', 8.0),
-                lat                 = attr('release.lat', 47.0),
-                site_name           = attr('release.site_name'),
-                height              = attr('release.height'),
-                rate                = attr('release.rate'),
-                mass                = attr('release.mass'),
+                lon                 = DA('release.lon', 8.0),
+                lat                 = DA('release.lat', 47.0),
+                site_name           = DA('release.site_name'),
+                height              = DA('release.height'),
+                rate                = DA('release.rate'),
+                mass                = DA('release.mass'),
             ),
             variable=SimpleNamespace(
-                long_name           = attr('variable.long_name'),
-                fmt_level_range     = f_fmt('variable.fmt_level_range'),
-                short_name          = attr('variable.short_name'),
-                unit                = attr('variable.unit'),
+                long_name           = DA('variable.long_name'),
+                fmt_level_range     = fm('variable.fmt_level_range'),
+                short_name          = DA('variable.short_name'),
+                unit                = DA('variable.unit'),
             ),
             species=SimpleNamespace(
-                name                = attr('species.name'),
-                half_life           = attr('species.half_life'),
-                deposit_vel         = attr('species.deposit_vel'),
-                sediment_vel        = attr('species.sediment_vel'),
-                washout_coeff       = attr('species.washout_coeff'),
-                washout_exponent    = attr('species.washout_coeff'),
+                name                = DA('species.name'),
+                half_life           = DA('species.half_life'),
+                deposit_vel         = DA('species.deposit_vel'),
+                sediment_vel        = DA('species.sediment_vel'),
+                washout_coeff       = DA('species.washout_coeff'),
+                washout_exponent    = DA('species.washout_coeff'),
             ),
             simulation=SimpleNamespace(
-                now                 = attr('simulation.now'),
-                fmt_integr_period   = f_fmt('simulation.fmt_integr_period'),
-                integr_start        = attr('simulation.integr_start'),
-                integr_type         = attr('mean'),
-                start               = attr('simulation.start'),
-                end                 = attr('simulation.end'),
-                model_name          = attr('simulation.model_name'),
+                now                 = DA('simulation.now'),
+                fmt_integr_period   = fm('simulation.fmt_integr_period'),
+                integr_start        = DA('simulation.integr_start'),
+                integr_type         = DA('simulation.integr_type', 'mean'),
+                start               = DA('simulation.start'),
+                end                 = DA('simulation.end'),
+                model_name          = DA('simulation.model_name'),
             ),
         )
         # yapf: enable
 
-    def create_dummy_field(self):
+    def create_dummy_field(self, attrs):
         return SimpleNamespace(
             time_stats={'max': 15},
             fld=np.array([[i]*10 for i in range(10)], np.float32),
             rlat=np.arange(-5.0, 4.1, 1.0),
             rlon=np.arange(-6.0, 3.1, 1.0),
-            attrs=self.create_dummy_attrs(),
+            attrs=attrs,
             summarize=lambda: {},
             scale=lambda f: None,
         )
 
+    def create_dummy_words(self):
+
+        return DummyWords([
+            'accumulated_over',
+            'at',
+            'averaged_over',
+            'based_on',
+            'deposit_vel',
+            'end',
+            'flexpart',
+            'half_life',
+            'height',
+            'latitude',
+            'longitude',
+            'max',
+            'mch',
+            'rate',
+            'release_site',
+            'sediment_vel',
+            'since',
+            'site',
+            'start',
+            'substance',
+            'summed_up_over',
+            'total_mass',
+            'washout_coeff',
+            'washout_exponent',
+        ])
+
+    def create_dummy_labels(self, lang):
+        dummy_words = self.create_dummy_words()
+        from pyflexplot.plot import DispersionPlotLabels  #SR_TMP
+        return DispersionPlotLabels(lang, dummy_words)  #SR_TMP
+
     #------------------------------------------------------------------
 
     def test(self):
+        lang = 'de'
 
-        field = self.create_dummy_field()
-        plot = DispersionPlot(field, dpi=100, figsize=(12, 9), lang='de')
+        attrs = self.create_dummy_attrs(lang)
+        field = self.create_dummy_field(attrs)
+        labels = self.create_dummy_labels(lang)
+        plot = DispersionPlot(
+            field, dpi=100, figsize=(12, 9), lang=lang, labels=labels)
         res = plot.summarize()
 
+        box = lambda loc, s: {
+            'type': 'TextBoxElement_Text',
+            'loc': {
+                'loc': loc
+            },
+            's': s
+        }
+
         sol_boxes_top = [
-            {
-                'type': 'TextBoxElement_Text',
-                #SR_TMP< TODO un-hardcode 'auf'
-                's': 'variable.long_name auf variable.fmt_level_range',
-                #SR_TMP>
-                'loc': {
-                    'loc': 'tl'
-                },
-            },
-            {
-                'type': 'TextBoxElement_Text',
-                #SR_TMP< TODO un-hardcode 'Gemittelt' etc.
-                's': (
-                    r'Gemittelt $\mathrm{\"u}$ber '
-                    r'simulation.fmt_integr_period '
-                    r'(seit simulation.integr_start.format)'),
-                #SR_TMP>
-                'loc': {
-                    'loc': 'bl'
-                },
-            },
-            {
-                'type': 'TextBoxElement_Text',
-                's': 'species.name.format',
-                'loc': {
-                    'loc': 'tc'
-                },
-            },
-            {
-                'type': 'TextBoxElement_Text',
-                's': 'release.site_name',
-                'loc': {
-                    'loc': 'bc'
-                },
-            },
-            {
-                'type': 'TextBoxElement_Text',
-                's': 'simulation.now.format',
-                'loc': {
-                    'loc': 'tr'
-                },
-            },
-            {
-                'type': 'TextBoxElement_Text',
-                's': 'simulation.now.format',
-                'loc': {
-                    'loc': 'br'
-                },
-            },
+            box(
+                'tl', (
+                    f'variable.long_name[{lang}] words.at[{lang}/level] '
+                    f'variable.fmt_level_range[{lang}].format')),
+            box(
+                'bl',
+                (
+                    f'Words.averaged_over[{lang}] '  #SR_TMP< TODO proper capitalization
+                    f'simulation.fmt_integr_period[{lang}].format '
+                    f'(words.since[{lang}] '
+                    f'simulation.integr_start[{lang}].format)')),
+            box('tc', f'species.name[{lang}].format'),
+            box('bc', f'release.site_name[{lang}]'),
+            box('tr', f'simulation.now[{lang}].format'),
+            box('br', f'simulation.now[{lang}].format'),
         ]
         sol_boxes = [
             {
@@ -209,4 +260,5 @@ class Test_PlotDispersion_Summarize:
             },
         }
 
-        assert_summary_dict_is_subdict(superdict=res, subdict=sol)
+        assert_summary_dict_is_subdict(
+            superdict=res, subdict=sol, supername='result', subname='solution')
