@@ -28,15 +28,16 @@ class DummyWord:
         return self._parent.lang_
 
     def __str__(self):
-        return f"words.{self._name}[{self.lang or ''}]"
+        return f"{self._parent._name}.{self._name}[{self.lang or ''}]"
 
     def ctx(self, ctx):
-        return f"{str(self)[:-1]}/{ctx}]"
+        return f"{str(self)[:-1]}|{ctx}]"
 
 
 class DummyWords:
 
-    def __init__(self, words, lang='en'):
+    def __init__(self, name, words, lang=None):
+        self._name = name
         for word in words:
             setattr(self, word, DummyWord(word, self))
         self.lang_ = None
@@ -97,7 +98,7 @@ class Test_PlotDispersion_Summarize:
                 deposit_vel         = DA('species.deposit_vel'),
                 sediment_vel        = DA('species.sediment_vel'),
                 washout_coeff       = DA('species.washout_coeff'),
-                washout_exponent    = DA('species.washout_coeff'),
+                washout_exponent    = DA('species.washout_exponent'),
             ),
             simulation=SimpleNamespace(
                 now                 = DA('simulation.now'),
@@ -124,31 +125,44 @@ class Test_PlotDispersion_Summarize:
 
     def create_dummy_words(self):
 
-        return DummyWords([
-            'accumulated_over',
-            'at',
-            'averaged_over',
-            'based_on',
-            'deposit_vel',
-            'end',
-            'flexpart',
-            'half_life',
-            'height',
-            'latitude',
-            'longitude',
-            'max',
-            'mch',
-            'rate',
-            'release_site',
-            'sediment_vel',
-            'since',
-            'site',
-            'start',
-            'substance',
-            'summed_up_over',
-            'total_mass',
-            'washout_coeff',
-            'washout_exponent',
+        w = DummyWords(
+            'words', [
+                'accumulated_over',
+                'at',
+                'averaged_over',
+                'based_on',
+                'deposit_vel',
+                'end',
+                'flexpart',
+                'half_life',
+                'height',
+                'latitude',
+                'longitude',
+                'max',
+                'mch',
+                'rate',
+                'release_site',
+                'sediment_vel',
+                'since',
+                'site',
+                'start',
+                'substance',
+                'summed_up_over',
+                'total_mass',
+                'washout_coeff',
+                'washout_exponent',
+            ])
+        w.symbols = self.create_dummy_symbols()
+        return w
+
+    def create_dummy_symbols(self):
+
+        return DummyWords('symbols', [
+            'ae',
+            'copyright',
+            'oe',
+            't0',
+            'ue',
         ])
 
     def create_dummy_labels(self, lang):
@@ -177,51 +191,95 @@ class Test_PlotDispersion_Summarize:
 
         # yapf: disable
         sol_boxes = [
-            # Top box
-            {'type': 'TextBoxAxes', 'elements': [
-                txt('tl',(f'variable.long_name[{lang}] '
-                          f'words.at[{lang}/level] '
-                          f'variable.fmt_level_range[{lang}].format')),
-                txt('bl',(f'Words.averaged_over[{lang}] '  #SR_TMP< TODO proper capitalization
-                          f'simulation.fmt_integr_period[{lang}].format '
-                          f'(words.since[{lang}] '
-                          f'simulation.integr_start[{lang}].format)')),
-                txt('tc', f'species.name[{lang}].format'),
-                txt('bc', f'release.site_name[{lang}]'),
-                txt('tr', f'simulation.now[{lang}].format'),
-                txt('br', f'simulation.now[{lang}].format'),
-            ]},
-            # Right-top box
-            {'type': 'TextBoxAxes', 'elements': [
-                txt('tc', (f'variable.short_name[{lang}].format '
-                           f'(variable.unit[{lang}].format)')),
-                txt('bc', IgnoredElement('level range #0')),
-                txt('bc', IgnoredElement('level range #1')),
-                txt('bc', IgnoredElement('level range #2')),
-                txt('bc', IgnoredElement('level range #3')),
-                txt('bc', IgnoredElement('level range #4')),
-                txt('bc', IgnoredElement('level range #5')),
-                txt('bc', IgnoredElement('level range #6')),
-                txt('bc', IgnoredElement('level range #7')),
-                txt('bc', IgnoredElement('level range #8')),
-                col('bc', IgnoredElement('face color #0')),
-                col('bc', IgnoredElement('face color #1')),
-                col('bc', IgnoredElement('face color #2')),
-                col('bc', IgnoredElement('face color #3')),
-                col('bc', IgnoredElement('face color #4')),
-                col('bc', IgnoredElement('face color #5')),
-                col('bc', IgnoredElement('face color #6')),
-                col('bc', IgnoredElement('face color #7')),
-                col('bc', IgnoredElement('face color #8')),
-                mkr('bc', IgnoredElement('marker #0')),
-                txt('bc', IgnoredElement('marker label #0')),
-                mkr('bc', IgnoredElement('marker #1')),
-                txt('bc', IgnoredElement('marker label #1')),
-            ]},
-            # Right-bottom box
-            {'type': 'TextBoxAxes'},
-            # Bottom box
-            {'type': 'TextBoxAxes'},
+            {
+                'type': 'TextBoxAxes',
+                'name': 'top',
+                'elements': [
+                    txt('tl',(f'variable.long_name[{lang}] '
+                              f'words.at[{lang}|level] '
+                              f'variable.fmt_level_range[{lang}].format')),
+                    txt('bl',(f'Words.averaged_over[{lang}] '  #SR_TMP TODO proper capitalization
+                              f'simulation.fmt_integr_period[{lang}].format '
+                              f'(words.since[{lang}] '
+                              f'simulation.integr_start[{lang}].format)')),
+                    txt('tc', f'species.name[{lang}].format'),
+                    txt('bc', f'release.site_name[{lang}]'),
+                    txt('tr', f'simulation.now[{lang}].format'),
+                    txt('br', f'simulation.now[{lang}].format'),
+                ],
+            },
+            {
+                'type': 'TextBoxAxes',
+                'name': 'right/top',
+                'elements': [
+                    txt('tc', (f'variable.short_name[{lang}].format '
+                               f'(variable.unit[{lang}].format)')),
+                    txt('bc', IgnoredElement('level range #0')),
+                    txt('bc', IgnoredElement('level range #1')),
+                    txt('bc', IgnoredElement('level range #2')),
+                    txt('bc', IgnoredElement('level range #3')),
+                    txt('bc', IgnoredElement('level range #4')),
+                    txt('bc', IgnoredElement('level range #5')),
+                    txt('bc', IgnoredElement('level range #6')),
+                    txt('bc', IgnoredElement('level range #7')),
+                    txt('bc', IgnoredElement('level range #8')),
+                    col('bc', IgnoredElement('face color #0')),
+                    col('bc', IgnoredElement('face color #1')),
+                    col('bc', IgnoredElement('face color #2')),
+                    col('bc', IgnoredElement('face color #3')),
+                    col('bc', IgnoredElement('face color #4')),
+                    col('bc', IgnoredElement('face color #5')),
+                    col('bc', IgnoredElement('face color #6')),
+                    col('bc', IgnoredElement('face color #7')),
+                    col('bc', IgnoredElement('face color #8')),
+                    mkr('bc', IgnoredElement('marker #0')),
+                    txt('bc', IgnoredElement('marker label #0')),
+                    mkr('bc', IgnoredElement('marker #1')),
+                    txt('bc', IgnoredElement('marker label #1')),
+                ],
+            },
+            {
+                'type': 'TextBoxAxes',
+                'name': 'right/bottom',
+                'elements': [
+                    #SR_TMP< TODO 'Words...' -> 'words...[capitalized]' or so
+                    txt('tc', f'Austritt'),
+                    txt('bl', f'Words.washout_exponent[{lang}]:'),
+                    txt('bl', f'Words.washout_coeff[{lang}]:'),
+                    txt('bl', f'Words.sediment_vel[{lang}]:'),
+                    txt('bl', f'Words.deposit_vel[{lang}]:'),
+                    txt('bl', f'Words.half_life[{lang}]:'),
+                    txt('bl', f'Words.substance[{lang}]:'),
+                    txt('bl', f'Words.total_mass[{lang}]:'),
+                    txt('bl', f'Words.rate[{lang}]:'),
+                    txt('bl', f'Words.end[{lang}]:'),
+                    txt('bl', f'Words.start[{lang}] (symbols.t0[]):'),
+                    txt('bl', f'Words.height[{lang}]:'),
+                    txt('bl', f'Words.longitude[{lang}]:'),
+                    txt('bl', f'Words.latitude[{lang}]:'),
+                    txt('bl', f'Words.site[{lang}]:'),
+                    #SR_TMP>
+                    txt('br', f'species.washout_exponent[{lang}].format'),
+                    txt('br', f'species.washout_coeff[{lang}].format'),
+                    txt('br', f'species.sediment_vel[{lang}].format'),
+                    txt('br', f'species.deposit_vel[{lang}].format'),
+                    txt('br', f'species.half_life[{lang}].format'),
+                    txt('br', f'species.name[{lang}].format'),
+                    txt('br', f'release.mass[{lang}].format'),
+                    txt('br', f'release.rate[{lang}].format'),
+                    txt('br', f'simulation.end[{lang}].format'),
+                    txt('br', f'simulation.start[{lang}].format'),
+                    txt('br', f'release.height[{lang}].format'),
+                    txt('br', IgnoredElement('release longitude')),
+                    txt('br', IgnoredElement('release latitude')),
+                    txt('br', f'release.site_name[{lang}].format'),
+                ],
+            },
+            {
+                'type': 'TextBoxAxes',
+                'name': 'bottom',
+                'elements': IgnoredElement('elements'),
+            },
         ]
         sol = {
             'type': 'DispersionPlot',

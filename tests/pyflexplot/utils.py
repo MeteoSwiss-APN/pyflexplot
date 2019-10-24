@@ -85,7 +85,11 @@ def assert_summary_dict_is_subdict(
 
 
 def assert_summary_dict_element_is_subelement(
-        obj_sub, obj_super, name_sub='sub', name_super='super', i_list=None,
+        obj_sub,
+        obj_super,
+        name_sub='sub',
+        name_super='super',
+        i_list=None,
         i_dict=None):
 
     if ignored(obj_sub) or ignored(obj_super):
@@ -117,12 +121,18 @@ def assert_summary_dict_element_is_subelement(
         if len(obj_sub) != len(obj_super):
             raise AssertionError(
                 f"iterable elements {s_i}differ in size: "
-                "{len(obj_sub)} != {len(obj_super)}"
-                f"\n\n{name_super}:\n{obj_super}\n\n{name_sub}:\n{obj_sub}")
+                f"{len(obj_sub)} != {len(obj_super)}"
+                f"\n\n{name_super}:\n{pformat(obj_super)}"
+                f"\n\n{name_sub}:\n{pformat(obj_sub)}")
 
-        for i, (subobj_sub, subobj_super) in enumerate(zip(obj_sub, obj_super)):
+        for i, (subobj_sub, subobj_super) in enumerate(zip(obj_sub,
+                                                           obj_super)):
             assert_summary_dict_element_is_subelement(
-                subobj_sub, subobj_super, name_sub, name_super, i_list=i,
+                subobj_sub,
+                subobj_super,
+                name_sub,
+                name_super,
+                i_list=i,
                 i_dict=i_dict)
 
     else:

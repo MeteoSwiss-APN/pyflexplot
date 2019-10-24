@@ -781,7 +781,7 @@ class TextBoxAxes(SummarizablePlotClass):
     # Show text base line (useful for debugging)
     _show_baselines = False
 
-    def __init__(self, fig, ax_ref, rect, show_border=True):
+    def __init__(self, fig, ax_ref, rect, name=None, show_border=True):
         """Initialize instance of TextBoxAxes.
 
         Args:
@@ -798,6 +798,7 @@ class TextBoxAxes(SummarizablePlotClass):
         self.fig = fig
         self.ax_ref = ax_ref
         self.rect = rect
+        self.name = name
         self.show_border = show_border
 
         self.elements = []
@@ -835,7 +836,7 @@ class TextBoxAxes(SummarizablePlotClass):
         for element in self.elements:
             element.draw()
 
-    summarizable_attrs = ['rect', 'show_border', 'dx0', 'dy0']
+    summarizable_attrs = ['name', 'rect', 'show_border', 'dx0', 'dy0']
 
     def summarize(self, *, add=None, skip=None):
         """Summarize the text box to a JSON dict."""

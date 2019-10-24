@@ -29,11 +29,11 @@ from .utils import ParentClass
 # yapf: disable
 
 symbols = Words(
-    copyright   = {'': u'\u00a9'},
     ae          = {'': r'$\mathrm{\"a}$'},
+    copyright   = {'': u'\u00a9'},
     oe          = {'': r'$\mathrm{\"o}$'},
-    ue          = {'': r'$\mathrm{\"u}$'},
     t0          = {'': r'$\mathrm{T_0}$'},
+    ue          = {'': r'$\mathrm{\"u}$'},
 )
 
 e, d = 'en', 'de'
@@ -67,6 +67,8 @@ washout_coeff     = {e: 'washout coeff.',     d: 'Auswaschkoeff.'},
 washout_exponent  = {e: 'washout exponent',   d: 'Auswaschexponent'},
 )
 
+plot_label_words.symbols = symbols  #SR_TMP
+
 # yapf: enable
 
 
@@ -78,16 +80,17 @@ class DispersionPlotLabels(SummarizableClass):
 
         self.words = words
 
-        w = words
+        w = self.words
         w.set_default_(lang)
+        s = self.words.symbols
 
         # yapf: disable
 
         self.simulation = SimpleNamespace(
-            start             = f'{str(w.start).capitalize()} ({symbols.t0})',
+            start             = f'{str(w.start).capitalize()} ({s.t0})',
             end               = str(w.end).capitalize(),
             flexpart_based_on = f'{str(w.flexpart)} {str(w.based_on)}',
-            copyright         = f'{str(symbols.copyright)}{str(w.mch)}',
+            copyright         = f'{str(s.copyright)}{str(w.mch)}',
         )
 
         self.release = SimpleNamespace(
@@ -414,7 +417,10 @@ class DispersionPlot(Plot):
         self.boxes = [
             # Top
             TextBoxAxes(
-                self.fig, self.ax_map.ax, [
+                name='top',
+                fig=self.fig,
+                ax_ref=self.ax_map.ax,
+                rect=[
                     x0_map,
                     y0_map + pad_ver + h_map,
                     w_map + pad_hor + w_box,
@@ -422,7 +428,10 @@ class DispersionPlot(Plot):
                 ]),
             # Right/top
             TextBoxAxes(
-                self.fig, self.ax_map.ax, [
+                name='right/top',
+                fig=self.fig,
+                ax_ref=self.ax_map.ax,
+                rect=[
                     x0_map + pad_hor + w_map,
                     y0_map + 0.5*pad_ver + (1.0 - h_rel_box_rt)*h_map,
                     w_box,
@@ -430,7 +439,10 @@ class DispersionPlot(Plot):
                 ]),
             # Right/bottom
             TextBoxAxes(
-                self.fig, self.ax_map.ax, [
+                name='right/bottom',
+                fig=self.fig,
+                ax_ref=self.ax_map.ax,
+                rect=[
                     x0_map + pad_hor + w_map,
                     y0_map,
                     w_box,
@@ -438,8 +450,10 @@ class DispersionPlot(Plot):
                 ]),
             # Bottom
             TextBoxAxes(
-                self.fig,
-                self.ax_map.ax, [
+                name='bottom',
+                fig=self.fig,
+                ax_ref=self.ax_map.ax,
+                rect=[
                     x0_map,
                     y0_map - h_box_b,
                     w_map + pad_hor + w_box,
