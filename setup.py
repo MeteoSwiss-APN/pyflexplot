@@ -19,7 +19,7 @@ requirements = [
     'matplotlib',
     'netCDF4',
     'numpy',
-    'pillow',
+    'pillow>=6.2.0',
     'scipy',
 ]
 setup_requirements = [

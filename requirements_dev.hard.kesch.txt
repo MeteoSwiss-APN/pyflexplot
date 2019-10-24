@@ -39,14 +39,14 @@ parso==0.5.1
 pathtools==0.1.2
 pexpect==4.7.0
 pickleshare==0.7.5
-Pillow==6.1.0
+Pillow==6.2.1
 pluggy==0.13.0
 prompt-toolkit==2.0.9
 ptyprocess==0.6.0
 py==1.8.0
 pycodestyle==2.5.0
 pyflakes==2.1.1
--e git+git@github.com:MeteoSwiss-APN/pyflexplot.git@fec3bc7339f1e1c24b2a50b4c250e3c8924c4f04#egg=pyflexplot
+-e git+git@github.com:MeteoSwiss-APN/pyflexplot.git@fc4f36e8ae9e81b55c229b2a3cec2b18f833061f#egg=pyflexplot
 Pygments==2.4.2
 pyparsing==2.4.2
 pyshp==2.1.0
