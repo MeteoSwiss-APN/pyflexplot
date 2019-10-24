@@ -40,8 +40,8 @@ e, d = 'en', 'de'
 plot_label_words = Words(
 #
 at                = {e: 'at',                 d: {'level' : 'auf',
-                                                'place' : 'bei',
-                                                'time'  : 'um'}},
+                                                  'place' : 'bei',
+                                                  'time'  : 'um'}},
 accumulated_over  = {e: 'accumulated_over',   d: 'akkumuliert {symbols.ue}ber'},
 averaged_over     = {e: 'averaged over',      d: 'gemittelt {symbols.ue}ber'},
 based_on          = {e: 'based on',           d: 'basierend auf'},

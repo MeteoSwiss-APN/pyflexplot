@@ -9,7 +9,7 @@ from types import SimpleNamespace
 
 from pyflexplot.plot import DispersionPlot
 
-from utils import assert_summary_dict_is_subdict
+from utils import assert_summary_dict_is_subdict, IgnoredElement
 
 AE = r'$\mathrm{\"a}$'
 OE = r'$\mathrm{\"o}$'
@@ -168,45 +168,60 @@ class Test_PlotDispersion_Summarize:
             field, dpi=100, figsize=(12, 9), lang=lang, labels=labels)
         res = plot.summarize()
 
-        box = lambda loc, s: {
-            'type': 'TextBoxElement_Text',
-            'loc': {
-                'loc': loc
-            },
-            's': s
-        }
+        txt = lambda l, s, **kwargs: dict(
+            type='TextBoxElement_Text', loc={'loc': l}, s=s, **kwargs)
+        col = lambda l, fc, **kwargs: dict(
+            type='TextBoxElement_ColorRect', loc={'loc': l}, fc=fc, **kwargs)
+        mkr = lambda l, m, **kwargs: dict(
+            type='TextBoxElement_Marker', loc={'loc': l}, m=m, **kwargs)
 
-        sol_boxes_top = [
-            box(
-                'tl', (
-                    f'variable.long_name[{lang}] words.at[{lang}/level] '
-                    f'variable.fmt_level_range[{lang}].format')),
-            box(
-                'bl',
-                (
-                    f'Words.averaged_over[{lang}] '  #SR_TMP< TODO proper capitalization
-                    f'simulation.fmt_integr_period[{lang}].format '
-                    f'(words.since[{lang}] '
-                    f'simulation.integr_start[{lang}].format)')),
-            box('tc', f'species.name[{lang}].format'),
-            box('bc', f'release.site_name[{lang}]'),
-            box('tr', f'simulation.now[{lang}].format'),
-            box('br', f'simulation.now[{lang}].format'),
-        ]
+        # yapf: disable
         sol_boxes = [
-            {
-                'type': 'TextBoxAxes',
-                'elements': sol_boxes_top,
-            },
-            {
-                'type': 'TextBoxAxes'
-            },
-            {
-                'type': 'TextBoxAxes'
-            },
-            {
-                'type': 'TextBoxAxes'
-            },
+            # Top box
+            {'type': 'TextBoxAxes', 'elements': [
+                txt('tl',(f'variable.long_name[{lang}] '
+                          f'words.at[{lang}/level] '
+                          f'variable.fmt_level_range[{lang}].format')),
+                txt('bl',(f'Words.averaged_over[{lang}] '  #SR_TMP< TODO proper capitalization
+                          f'simulation.fmt_integr_period[{lang}].format '
+                          f'(words.since[{lang}] '
+                          f'simulation.integr_start[{lang}].format)')),
+                txt('tc', f'species.name[{lang}].format'),
+                txt('bc', f'release.site_name[{lang}]'),
+                txt('tr', f'simulation.now[{lang}].format'),
+                txt('br', f'simulation.now[{lang}].format'),
+            ]},
+            # Right-top box
+            {'type': 'TextBoxAxes', 'elements': [
+                txt('tc', (f'variable.short_name[{lang}].format '
+                           f'(variable.unit[{lang}].format)')),
+                txt('bc', IgnoredElement('level range #0')),
+                txt('bc', IgnoredElement('level range #1')),
+                txt('bc', IgnoredElement('level range #2')),
+                txt('bc', IgnoredElement('level range #3')),
+                txt('bc', IgnoredElement('level range #4')),
+                txt('bc', IgnoredElement('level range #5')),
+                txt('bc', IgnoredElement('level range #6')),
+                txt('bc', IgnoredElement('level range #7')),
+                txt('bc', IgnoredElement('level range #8')),
+                col('bc', IgnoredElement('face color #0')),
+                col('bc', IgnoredElement('face color #1')),
+                col('bc', IgnoredElement('face color #2')),
+                col('bc', IgnoredElement('face color #3')),
+                col('bc', IgnoredElement('face color #4')),
+                col('bc', IgnoredElement('face color #5')),
+                col('bc', IgnoredElement('face color #6')),
+                col('bc', IgnoredElement('face color #7')),
+                col('bc', IgnoredElement('face color #8')),
+                mkr('bc', IgnoredElement('marker #0')),
+                txt('bc', IgnoredElement('marker label #0')),
+                mkr('bc', IgnoredElement('marker #1')),
+                txt('bc', IgnoredElement('marker label #1')),
+            ]},
+            # Right-bottom box
+            {'type': 'TextBoxAxes'},
+            # Bottom box
+            {'type': 'TextBoxAxes'},
         ]
         sol = {
             'type': 'DispersionPlot',
@@ -232,33 +247,22 @@ class Test_PlotDispersion_Summarize:
             },
             'boxes': sol_boxes,
             'fig': {
-                'type':
-                    'Figure',
-                'dpi':
-                    100.0,
+                'type': 'Figure',
+                'dpi': 100.0,
                 'bbox': {
                     'type': 'TransformedBbox',
                     'bounds': (0.0, 0.0, 1200.0, 900.0),
                 },
                 'axes': [
-                    {
-                        'type': 'GeoAxesSubplot'
-                    },
-                    {
-                        'type': 'Axes'
-                    },
-                    {
-                        'type': 'Axes'
-                    },
-                    {
-                        'type': 'Axes'
-                    },
-                    {
-                        'type': 'Axes'
-                    },
+                    {'type': 'GeoAxesSubplot'},
+                    {'type': 'Axes'},
+                    {'type': 'Axes'},
+                    {'type': 'Axes'},
+                    {'type': 'Axes'},
                 ]
             },
         }
+        # yapf: enable
 
         assert_summary_dict_is_subdict(
             superdict=res, subdict=sol, supername='result', subname='solution')
