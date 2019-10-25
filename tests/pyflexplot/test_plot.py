@@ -9,7 +9,8 @@ from types import SimpleNamespace
 
 from pyflexplot.plot import DispersionPlot
 
-from utils import assert_summary_dict_is_subdict, IgnoredElement
+from utils import assert_summary_dict_is_subdict
+from utils import IgnoredElement, UnequalElement
 
 #----------------------------------------------------------------------
 # Classes for dummy input data
@@ -205,18 +206,71 @@ def create_res(lang, _cache={}):
 # Run tests
 #----------------------------------------------------------------------
 
-def _test_full(lang):
-    res = create_res(lang)
-    sol = create_sol(lang, base_attrs=True, dim_attrs=True, labels=True,
-                     ax_map=True, boxes=True, boxes_text=True, fig=True)
-    assert_summary_dict_is_subdict(
-        superdict=res, subdict=sol, supername='result', subname='solution')
+class CreateTests:
+    """Decorator to test a given results set in multiple languages.
 
-def test_full_en():
-    _test_full('en')
+    Each test is run for all combinations of ``langs`` (languages) and
+    ``invs`` (whether to run an inverse test; see below).
 
-def test_full_de():
-    _test_full('de')
+    By default (langs=['en', 'de], invs=[False, True]), four tests are
+    created for the given argument setup:
+        - a regular test (inv=False) in English (lang='en'),
+        - an inverted test (inv=True) in English (lang='en'),
+        - a regular test (inv=False) in German (lang='de'), and
+        - an inverted test (inv=True) in German (lang='de').
+
+    In an inverse test, the values of the tested attributes are
+    replaced by instances of ``UnequalElement``, which always return
+    False in comparisons. This means that for the test to pass, the
+    result must differ from the solution. This ensures that the regular
+    tests pass because of successful comparisons.
+
+    """
+
+    langs = ['en', 'de']
+    #+invs = [False, True]
+    invs = [False]  #SR_TODO implement inverted tests
+    args = ['base_attrs', 'dim_attrs', 'labels', 'ax_map', 'boxes',
+            'boxes_text', 'fig']
+
+    def __init__(self, langs=None, invs=None, args=None):
+        if langs:
+            self.langs = langs
+        if invs:
+            self.invs = invs
+        if args:
+            self.args = args
+
+    def __call__(outer_self, cls):
+        for inv in outer_self.invs:
+            for lang in outer_self.langs:
+                def f(inner_self, lang=lang, invalidate=inv):
+                    outer_self.run_test(
+                        inner_self,
+                        lang=lang,
+                        invalidate=invalidate)
+                setattr(cls, f"test_{lang}{'_inv' if inv else ''}", f)
+        return cls
+
+    def run_test(outer_self, inner_self, lang, invalidate):
+        assert not invalidate
+        res = create_res(lang)
+        kwargs = {s: getattr(inner_self, s, False) for s in outer_self.args}
+        sol = create_sol(lang, **kwargs)
+        assert_summary_dict_is_subdict(
+            superdict=res, subdict=sol, supername='result', subname='solution')
+
+
+@CreateTests()
+class Test_Full:
+    base_attrs=True
+    dim_attrs=True
+    labels=True
+    ax_map=True
+    boxes=True
+    boxes_text=True
+    fig=True
+
 
 #----------------------------------------------------------------------
 # Create solutions
@@ -230,8 +284,8 @@ class Solution:
     def __init__(self, lang):
         self.lang = lang
 
-    def create(self, base_attrs=False, dim_attrs=False, labels=False,
-               ax_map=False, boxes=False, boxes_text=False, fig=False):
+    def create(self, *, base_attrs, dim_attrs, labels, ax_map, boxes,
+               boxes_text, fig):
         sol = {}
         if base_attrs:
             sol.update(self.base_attrs())

@@ -56,6 +56,26 @@ class IgnoredElement:
         return s
 
 
+class UnequalElement:
+    """Element that is not equal to any other.
+
+    Useful to ensure that a test fails for wrong data.
+
+    """
+
+    def __init__(self, description=None):
+        self.description = description
+
+    def __str__(self):
+        s = type(self).__name__
+        if self.description:
+            s += f': {self.description}'
+        return s
+
+    def __eq__(self, other):
+        return False
+
+
 def ignored(obj):
     return isinstance(obj, IgnoredElement)
 
