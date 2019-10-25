@@ -55,6 +55,7 @@ longitude         = {e: 'longitude',          d: f'L{symbols.ae}nge'},
 max               = {e: 'max.',               d: 'Max.'},
 mch               = {e: 'MeteoSwiss',         d: 'MeteoSchweiz'},
 rate              = {e: 'rate',               d: 'Rate'},
+release           = {e: 'release',            d: 'Austritt'},
 release_site      = {e: 'release site',       d: 'Austrittsort'},
 sediment_vel      = {e: 'sediment. vel.',     d: 'Sediment.-Geschw.'},
 since             = {e: 'since',              d: 'seit'},
@@ -679,7 +680,7 @@ class DispersionPlot(Plot):
         box = self.boxes[2]
 
         # Add box title
-        s = {'en': 'Release', 'de': 'Austritt'}[self.lang]
+        s = str(self.labels.words.release).capitalize()
         #box.text('tc', s, size='large')
         box.text('tc', s, dy=-1.0, size='large')
 
