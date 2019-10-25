@@ -16,6 +16,7 @@ from utils import IgnoredElement, UnequalElement
 # Classes for dummy input data
 #----------------------------------------------------------------------
 
+
 class DummyWord:
 
     def __init__(self, name, parent):
@@ -67,6 +68,7 @@ class DummyAttr:
 # Prepare test data
 #----------------------------------------------------------------------
 
+
 def create_dummy_attrs(lang):
 
     # Note: Some values must be passed, otherwise plotting fails
@@ -117,6 +119,7 @@ def create_dummy_attrs(lang):
     )
     # yapf: enable
 
+
 def create_dummy_field(attrs):
     return SimpleNamespace(
         time_stats={'max': 15},
@@ -127,6 +130,7 @@ def create_dummy_field(attrs):
         summarize=lambda: {},
         scale=lambda f: None,
     )
+
 
 def create_dummy_words():
 
@@ -161,6 +165,7 @@ def create_dummy_words():
     w.symbols = create_dummy_symbols()
     return w
 
+
 def create_dummy_symbols():
 
     return DummyWords('symbols', [
@@ -171,14 +176,17 @@ def create_dummy_symbols():
         'ue',
     ])
 
+
 def create_dummy_labels(lang):
     dummy_words = create_dummy_words()
     from pyflexplot.plot import DispersionPlotLabels
     return DispersionPlotLabels(lang, dummy_words)
 
+
 #----------------------------------------------------------------------
 # Create result
 #----------------------------------------------------------------------
+
 
 def create_res(lang, _cache={}):
     """Create test result once, then return it from cache.
@@ -202,9 +210,11 @@ def create_res(lang, _cache={}):
         _cache[lang] = plot.summarize()
     return _cache[lang]
 
+
 #----------------------------------------------------------------------
 # Run tests
 #----------------------------------------------------------------------
+
 
 class CreateTests:
     """Decorator to test a given results set in multiple languages.
@@ -228,10 +238,11 @@ class CreateTests:
     """
 
     langs = ['en', 'de']
-    #+invs = [False, True]
-    invs = [False]  #SR_TODO implement inverted tests
-    args = ['base_attrs', 'dim_attrs', 'labels', 'ax_map', 'boxes',
-            'boxes_text', 'fig']
+    invs = [False, True]
+    args = [
+        'base_attrs', 'dim_attrs', 'labels', 'ax_map', 'boxes', 'boxes_text',
+        'fig'
+    ]
 
     def __init__(self, langs=None, invs=None, args=None):
         if langs:
@@ -244,48 +255,96 @@ class CreateTests:
     def __call__(outer_self, cls):
         for inv in outer_self.invs:
             for lang in outer_self.langs:
-                def f(inner_self, lang=lang, invalidate=inv):
+
+                def f(inner_self, lang=lang, inverted=inv):
                     outer_self.run_test(
-                        inner_self,
-                        lang=lang,
-                        invalidate=invalidate)
+                        inner_self, lang=lang, inverted=inverted)
+
                 setattr(cls, f"test_{lang}{'_inv' if inv else ''}", f)
         return cls
 
-    def run_test(outer_self, inner_self, lang, invalidate):
-        assert not invalidate
+    def run_test(outer_self, inner_self, lang, inverted):
         res = create_res(lang)
         kwargs = {s: getattr(inner_self, s, False) for s in outer_self.args}
-        sol = create_sol(lang, **kwargs)
-        assert_summary_dict_is_subdict(
-            superdict=res, subdict=sol, supername='result', subname='solution')
+        sol = create_sol(lang, inverted=inverted, **kwargs)
+        try:
+            assert_summary_dict_is_subdict(
+                superdict=res,
+                subdict=sol,
+                supername='result',
+                subname='solution')
+        except AssertionError:
+            if inverted:
+                return
+            raise
+        else:
+            if inverted:
+                raise AssertionError(f"inverted test passed")
+
+
+#----------------------------------------------------------------------
+
+
+@CreateTests()
+class Test_BaseAttrs:
+    base_attrs = True
+
+
+@CreateTests()
+class Test_DimAttrs:
+    dim_attrs = True
+
+
+@CreateTests()
+class Test_Labels:
+    labels = True
+
+
+@CreateTests()
+class Test_Boxes:
+    boxes = True
+
+
+@CreateTests()
+class Test_BoxesText:
+    boxes = True
+    boxes_text = True
+
+
+@CreateTests()
+class Test_Fig:
+    fig = True
 
 
 @CreateTests()
 class Test_Full:
-    base_attrs=True
-    dim_attrs=True
-    labels=True
-    ax_map=True
-    boxes=True
-    boxes_text=True
-    fig=True
+    base_attrs = True
+    dim_attrs = True
+    labels = True
+    ax_map = True
+    boxes = True
+    boxes_text = True
+    fig = True
 
 
 #----------------------------------------------------------------------
 # Create solutions
 #----------------------------------------------------------------------
 
-def create_sol(lang, **kwargs):
-    return Solution(lang).create(**kwargs)
+
+def create_sol(lang, inverted, **kwargs):
+    return Solution(lang, inverted).create(**kwargs)
+
 
 class Solution:
 
-    def __init__(self, lang):
+    def __init__(self, lang, inverted):
         self.lang = lang
+        self.inverted = inverted
 
-    def create(self, *, base_attrs, dim_attrs, labels, ax_map, boxes,
-               boxes_text, fig):
+    def create(
+            self, *, base_attrs, dim_attrs, labels, ax_map, boxes, boxes_text,
+            fig):
         sol = {}
         if base_attrs:
             sol.update(self.base_attrs())
@@ -296,57 +355,77 @@ class Solution:
         if ax_map:
             sol.update(self.ax_map())
         if boxes:
-            sol.update(self.boxes())
+            sol.update(self.boxes(check_text=boxes_text))
         if fig:
             sol.update(self.fig())
         return sol
 
+    def element(self, e):
+        if self.inverted:
+            return UnequalElement(str(e))
+        return e
+
     def base_attrs(self):
+        e = self.element
         base_attrs = {
-            'type': 'DispersionPlot',
-            'lang': self.lang,
-            'extend': 'max',
-            'level_range_style': 'base',
-            'draw_colors': True,
-            'draw_contours': False,
-            'mark_field_max': True,
-            'mark_release_site': True,
+            'type': e('DispersionPlot'),
+            'lang': e(self.lang),
+            'extend': e('max'),
+            'level_range_style': e('base'),
+            'draw_colors': e(True),
+            'draw_contours': e(False),
+            'mark_field_max': e(True),
+            'mark_release_site': e(True),
         }
         return base_attrs
 
     def dim_attrs(self):
+        e = self.element
         dim_attrs = {
-            'dpi': 100.0,
-            'figsize': (12.0, 9.0),
+            'dpi': e(100.0),
+            'figsize': e((12.0, 9.0)),
             'text_box_setup': {
-                'h_rel_t': 0.1,
-                'h_rel_b': 0.03,
-                'w_rel_r': 0.25,
-                'pad_hor_rel': 0.015,
-                'h_rel_box_rt': 0.45,
+                'h_rel_t': e(0.1),
+                'h_rel_b': e(0.03),
+                'w_rel_r': e(0.25),
+                'pad_hor_rel': e(0.015),
+                'h_rel_box_rt': e(0.45),
             },
         }
         return dim_attrs
 
     def labels(self):
-        labels = {}
+        e = self.element
+        labels = e({})  #SR_TMP
         return {'labels': labels}
 
     def ax_map(self):
+        e = self.element
         ax_map = {
-            'type': 'AxesMap',
+            'type': e('AxesMap'),
         }
         return {'ax_map': ax_map}
 
     def boxes(self, check_text=True):
         # yapf: disable
 
+        if not check_text:
+            # Outer elements set up to fail in inverted test
+            # Inner elements (text strings etc.) always ignored
+            e1 = self.element
+            e2 = IgnoredElement
+        else:
+            # Outer elements NOT set up to fail in inverted test
+            # Inner elements set up to fail in inverted test
+            e1 = lambda x: x
+            e2 = self.element
+
         def txt(loc, s, **kwargs):
             """Shortcut for text box element."""
             return {
                 'type': 'TextBoxElement_Text',
                 'loc': {'loc': loc},
-                's': s if check_text else SkipElement(s),
+                's': e2(s),
                 **kwargs}
 
         def col(loc, fc, **kwargs):
@@ -354,7 +433,7 @@ class Solution:
             return {
                 'type': 'TextBoxElement_ColorRect',
                 'loc': {'loc': loc},
-                'fc': fc,
+                'fc': e2(fc),
                 **kwargs}
 
         def mkr(loc, m, **kwargs):
@@ -362,7 +441,7 @@ class Solution:
             return {
                 'type': 'TextBoxElement_Marker',
                 'loc': {'loc': loc},
-                'm': m,
+                'm': e2(m),
                 **kwargs}
 
         sl = f'[{self.lang}]'
@@ -370,8 +449,8 @@ class Solution:
         boxes = [
             {
                 'type': 'TextBoxAxes',
-                'name': 'top',
-                'elements': [
+                'name': e1('top'),
+                'elements': e1([
                     txt('tl', f'<variable.long_name{sl}> '
                               f'<words.at[{self.lang}|level]> '
                               f'<variable.fmt_level_range{sl}.format>') ,
@@ -383,12 +462,12 @@ class Solution:
                     txt('bc', f'<release.site_name{sl}>'),
                     txt('tr', f'<simulation.now{sl}.format>'),
                     txt('br', f'<simulation.now{sl}.format>'),
-                ],
+                ]),
             },
             {
                 'type': 'TextBoxAxes',
-                'name': 'right/top',
-                'elements': [
+                'name': e1('right/top'),
+                'elements': e1([
                     txt('tc', (f'<variable.short_name{sl}.format> '
                                f'(<variable.unit{sl}.format>)')),
                     txt('bc', IgnoredElement('level range #0')),
@@ -413,12 +492,12 @@ class Solution:
                     txt('bc', IgnoredElement('marker label #0')),
                     mkr('bc', IgnoredElement('marker #1')),
                     txt('bc', IgnoredElement('marker label #1')),
-                ],
+                ]),
             },
             {
                 'type': 'TextBoxAxes',
-                'name': 'right/bottom',
-                'elements': [
+                'name': e1('right/bottom'),
+                'elements': e1([
                     txt('tc', f'<words.release{sl}>'),
                     txt('bl', f'<words.washout_exponent{sl}>:'),
                     txt('bl', f'<words.washout_coeff{sl}>:'),
@@ -448,31 +527,32 @@ class Solution:
                     txt('br', IgnoredElement('release longitude')),
                     txt('br', IgnoredElement('release latitude')),
                     txt('br', f'<release.site_name{sl}.format>'),
-                ],
+                ]),
             },
             {
                 'type': 'TextBoxAxes',
-                'name': 'bottom',
-                'elements': [
+                'name': e1('bottom'),
+                'elements': e1([
                     txt('tl', f'<words.flexpart{sl}> '
                               f'<words.based_on{sl}> '
                               f'<simulation.model_name{sl}>, '
                               f'<simulation.start{sl}.format>'),
                     txt('tr', f'<symbols.copyright><words.mch{sl}>'),
-                ],
+                ]),
             },
         ]
         # yapf: enable
         return {'boxes': boxes}
 
     def fig(self):
+        e = self.element
         # yapf: disable
         fig = {
             'type': 'Figure',
-            'dpi': 100.0,
+            'dpi': e(100.0),
             'bbox': {
                 'type': 'TransformedBbox',
-                'bounds': (0.0, 0.0, 1200.0, 900.0),
+                'bounds': e((0.0, 0.0, 1200.0, 900.0)),
             },
             'axes': [
                 {
