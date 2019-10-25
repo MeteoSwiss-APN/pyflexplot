@@ -11,7 +11,6 @@ from pyflexplot.plot import DispersionPlot
 
 from utils import assert_summary_dict_is_subdict, IgnoredElement
 
-
 #----------------------------------------------------------------------
 # Classes for dummy input data
 #----------------------------------------------------------------------
@@ -209,7 +208,7 @@ def create_res(lang, _cache={}):
 def _test_full(lang):
     res = create_res(lang)
     sol = create_sol(lang, base_attrs=True, dim_attrs=True, labels=True,
-                     ax_map=True, boxes=True, fig=True)
+                     ax_map=True, boxes=True, boxes_text=True, fig=True)
     assert_summary_dict_is_subdict(
         superdict=res, subdict=sol, supername='result', subname='solution')
 
@@ -223,211 +222,221 @@ def test_full_de():
 # Create solutions
 #----------------------------------------------------------------------
 
-def create_sol(lang, base_attrs=False, dim_attrs=False, labels=False,
-               ax_map=False, boxes=False, fig=False):
-    sol = {}
-    if base_attrs:
-        sol.update(create_sol_base_attrs(lang))
-    if dim_attrs:
-        sol.update(create_sol_dim_attrs())
-    if labels:
-        sol.update(create_sol_labels())
-    if ax_map:
-        sol.update(create_sol_ax_map())
-    if boxes:
-        sol.update(create_sol_boxes(lang))
-    if fig:
-        sol.update(create_sol_fig())
-    return sol
+def create_sol(lang, **kwargs):
+    return Solution(lang).create(**kwargs)
 
-def create_sol_base_attrs(lang):
-    base_attrs = {
-        'type': 'DispersionPlot',
-        'lang': lang,
-        'extend': 'max',
-        'level_range_style': 'base',
-        'draw_colors': True,
-        'draw_contours': False,
-        'mark_field_max': True,
-        'mark_release_site': True,
-    }
-    return base_attrs
+class Solution:
 
-def create_sol_dim_attrs():
-    dim_attrs = {
-        'dpi': 100.0,
-        'figsize': (12.0, 9.0),
-        'text_box_setup': {
-            'h_rel_t': 0.1,
-            'h_rel_b': 0.03,
-            'w_rel_r': 0.25,
-            'pad_hor_rel': 0.015,
-            'h_rel_box_rt': 0.45,
-        },
-    }
-    return dim_attrs
+    def __init__(self, lang):
+        self.lang = lang
 
-def create_sol_labels():
-    labels = {}
-    return {'labels': labels}
+    def create(self, base_attrs=False, dim_attrs=False, labels=False,
+               ax_map=False, boxes=False, boxes_text=False, fig=False):
+        sol = {}
+        if base_attrs:
+            sol.update(self.base_attrs())
+        if dim_attrs:
+            sol.update(self.dim_attrs())
+        if labels:
+            sol.update(self.labels())
+        if ax_map:
+            sol.update(self.ax_map())
+        if boxes:
+            sol.update(self.boxes())
+        if fig:
+            sol.update(self.fig())
+        return sol
 
-def create_sol_ax_map():
-    ax_map = {
-        'type': 'AxesMap',
-    }
-    return {'ax_map': ax_map}
+    def base_attrs(self):
+        base_attrs = {
+            'type': 'DispersionPlot',
+            'lang': self.lang,
+            'extend': 'max',
+            'level_range_style': 'base',
+            'draw_colors': True,
+            'draw_contours': False,
+            'mark_field_max': True,
+            'mark_release_site': True,
+        }
+        return base_attrs
 
-def create_sol_boxes(lang, check_text=True):
-    # yapf: disable
+    def dim_attrs(self):
+        dim_attrs = {
+            'dpi': 100.0,
+            'figsize': (12.0, 9.0),
+            'text_box_setup': {
+                'h_rel_t': 0.1,
+                'h_rel_b': 0.03,
+                'w_rel_r': 0.25,
+                'pad_hor_rel': 0.015,
+                'h_rel_box_rt': 0.45,
+            },
+        }
+        return dim_attrs
 
-    def txt(loc, s, **kwargs):
-        """Shortcut for text box element."""
-        return {
-            'type': 'TextBoxElement_Text',
-            'loc': {'loc': loc},
-            's': s if check_text else SkipElement(s),
-            **kwargs}
+    def labels(self):
+        labels = {}
+        return {'labels': labels}
 
-    def col(loc, fc, **kwargs):
-        """Shortcut for color rect element."""
-        return {
-            'type': 'TextBoxElement_ColorRect',
-            'loc': {'loc': loc},
-            'fc': fc,
-            **kwargs}
+    def ax_map(self):
+        ax_map = {
+            'type': 'AxesMap',
+        }
+        return {'ax_map': ax_map}
 
-    def mkr(loc, m, **kwargs):
-        """Shortcut for marker element."""
-        return {
-            'type': 'TextBoxElement_Marker',
-            'loc': {'loc': loc},
-            'm': m,
-            **kwargs}
+    def boxes(self, check_text=True):
+        # yapf: disable
 
-    boxes = [
-        {
-            'type': 'TextBoxAxes',
-            'name': 'top',
-            'elements': [
-                txt('tl', f'<variable.long_name[{lang}]> '
-                          f'<words.at[{lang}|level]> '
-                          f'<variable.fmt_level_range[{lang}].format>') ,
-                txt('bl', f'<words.averaged_over[{lang}]> '
-                          f'<simulation.fmt_integr_period[{lang}].format> '
-                          f'(<words.since[{lang}]> '
-                          f'<simulation.integr_start[{lang}].format>)') ,
-                txt('tc', f'<species.name[{lang}].format>'),
-                txt('bc', f'<release.site_name[{lang}]>'),
-                txt('tr', f'<simulation.now[{lang}].format>'),
-                txt('br', f'<simulation.now[{lang}].format>'),
-            ],
-        },
-        {
-            'type': 'TextBoxAxes',
-            'name': 'right/top',
-            'elements': [
-                txt('tc', (f'<variable.short_name[{lang}].format> '
-                           f'(<variable.unit[{lang}].format>)')),
-                txt('bc', IgnoredElement('level range #0')),
-                txt('bc', IgnoredElement('level range #1')),
-                txt('bc', IgnoredElement('level range #2')),
-                txt('bc', IgnoredElement('level range #3')),
-                txt('bc', IgnoredElement('level range #4')),
-                txt('bc', IgnoredElement('level range #5')),
-                txt('bc', IgnoredElement('level range #6')),
-                txt('bc', IgnoredElement('level range #7')),
-                txt('bc', IgnoredElement('level range #8')),
-                col('bc', IgnoredElement('face color #0')),
-                col('bc', IgnoredElement('face color #1')),
-                col('bc', IgnoredElement('face color #2')),
-                col('bc', IgnoredElement('face color #3')),
-                col('bc', IgnoredElement('face color #4')),
-                col('bc', IgnoredElement('face color #5')),
-                col('bc', IgnoredElement('face color #6')),
-                col('bc', IgnoredElement('face color #7')),
-                col('bc', IgnoredElement('face color #8')),
-                mkr('bc', IgnoredElement('marker #0')),
-                txt('bc', IgnoredElement('marker label #0')),
-                mkr('bc', IgnoredElement('marker #1')),
-                txt('bc', IgnoredElement('marker label #1')),
-            ],
-        },
-        {
-            'type': 'TextBoxAxes',
-            'name': 'right/bottom',
-            'elements': [
-                txt('tc', f'<words.release[{lang}]>'),
-                txt('bl', f'<words.washout_exponent[{lang}]>:'),
-                txt('bl', f'<words.washout_coeff[{lang}]>:'),
-                txt('bl', f'<words.sediment_vel[{lang}]>:'),
-                txt('bl', f'<words.deposit_vel[{lang}]>:'),
-                txt('bl', f'<words.half_life[{lang}]>:'),
-                txt('bl', f'<words.substance[{lang}]>:'),
-                txt('bl', f'<words.total_mass[{lang}]>:'),
-                txt('bl', f'<words.rate[{lang}]>:'),
-                txt('bl', f'<words.end[{lang}]>:'),
-                txt('bl', f'<words.start[{lang}]> (<symbols.t0>):'),
-                txt('bl', f'<words.height[{lang}]>:'),
-                txt('bl', f'<words.longitude[{lang}]>:'),
-                txt('bl', f'<words.latitude[{lang}]>:'),
-                txt('bl', f'<words.site[{lang}]>:'),
-                txt('br', f'<species.washout_exponent[{lang}].format>'),
-                txt('br', f'<species.washout_coeff[{lang}].format>'),
-                txt('br', f'<species.sediment_vel[{lang}].format>'),
-                txt('br', f'<species.deposit_vel[{lang}].format>'),
-                txt('br', f'<species.half_life[{lang}].format>'),
-                txt('br', f'<species.name[{lang}].format>'),
-                txt('br', f'<release.mass[{lang}].format>'),
-                txt('br', f'<release.rate[{lang}].format>'),
-                txt('br', f'<simulation.end[{lang}].format>'),
-                txt('br', f'<simulation.start[{lang}].format>'),
-                txt('br', f'<release.height[{lang}].format>'),
-                txt('br', IgnoredElement('release longitude')),
-                txt('br', IgnoredElement('release latitude')),
-                txt('br', f'<release.site_name[{lang}].format>'),
-            ],
-        },
-        {
-            'type': 'TextBoxAxes',
-            'name': 'bottom',
-            'elements': [
-                txt('tl', f'<words.flexpart[{lang}]> '
-                          f'<words.based_on[{lang}]> '
-                          f'<simulation.model_name[{lang}]>, '
-                          f'<simulation.start[{lang}].format>'),
-                txt('tr', f'<symbols.copyright><words.mch[{lang}]>'),
-            ],
-        },
-    ]
-    # yapf: enable
-    return {'boxes': boxes}
+        def txt(loc, s, **kwargs):
+            """Shortcut for text box element."""
+            return {
+                'type': 'TextBoxElement_Text',
+                'loc': {'loc': loc},
+                's': s if check_text else SkipElement(s),
+                **kwargs}
 
-def create_sol_fig():
-    # yapf: disable
-    fig = {
-        'type': 'Figure',
-        'dpi': 100.0,
-        'bbox': {
-            'type': 'TransformedBbox',
-            'bounds': (0.0, 0.0, 1200.0, 900.0),
-        },
-        'axes': [
+        def col(loc, fc, **kwargs):
+            """Shortcut for color rect element."""
+            return {
+                'type': 'TextBoxElement_ColorRect',
+                'loc': {'loc': loc},
+                'fc': fc,
+                **kwargs}
+
+        def mkr(loc, m, **kwargs):
+            """Shortcut for marker element."""
+            return {
+                'type': 'TextBoxElement_Marker',
+                'loc': {'loc': loc},
+                'm': m,
+                **kwargs}
+
+        sl = f'[{self.lang}]'
+
+        boxes = [
             {
-                'type': 'GeoAxesSubplot'
+                'type': 'TextBoxAxes',
+                'name': 'top',
+                'elements': [
+                    txt('tl', f'<variable.long_name{sl}> '
+                              f'<words.at[{self.lang}|level]> '
+                              f'<variable.fmt_level_range{sl}.format>') ,
+                    txt('bl', f'<words.averaged_over{sl}> '
+                              f'<simulation.fmt_integr_period{sl}.format> '
+                              f'(<words.since{sl}> '
+                              f'<simulation.integr_start{sl}.format>)') ,
+                    txt('tc', f'<species.name{sl}.format>'),
+                    txt('bc', f'<release.site_name{sl}>'),
+                    txt('tr', f'<simulation.now{sl}.format>'),
+                    txt('br', f'<simulation.now{sl}.format>'),
+                ],
             },
             {
-                'type': 'Axes'
+                'type': 'TextBoxAxes',
+                'name': 'right/top',
+                'elements': [
+                    txt('tc', (f'<variable.short_name{sl}.format> '
+                               f'(<variable.unit{sl}.format>)')),
+                    txt('bc', IgnoredElement('level range #0')),
+                    txt('bc', IgnoredElement('level range #1')),
+                    txt('bc', IgnoredElement('level range #2')),
+                    txt('bc', IgnoredElement('level range #3')),
+                    txt('bc', IgnoredElement('level range #4')),
+                    txt('bc', IgnoredElement('level range #5')),
+                    txt('bc', IgnoredElement('level range #6')),
+                    txt('bc', IgnoredElement('level range #7')),
+                    txt('bc', IgnoredElement('level range #8')),
+                    col('bc', IgnoredElement('face color #0')),
+                    col('bc', IgnoredElement('face color #1')),
+                    col('bc', IgnoredElement('face color #2')),
+                    col('bc', IgnoredElement('face color #3')),
+                    col('bc', IgnoredElement('face color #4')),
+                    col('bc', IgnoredElement('face color #5')),
+                    col('bc', IgnoredElement('face color #6')),
+                    col('bc', IgnoredElement('face color #7')),
+                    col('bc', IgnoredElement('face color #8')),
+                    mkr('bc', IgnoredElement('marker #0')),
+                    txt('bc', IgnoredElement('marker label #0')),
+                    mkr('bc', IgnoredElement('marker #1')),
+                    txt('bc', IgnoredElement('marker label #1')),
+                ],
             },
             {
-                'type': 'Axes'
+                'type': 'TextBoxAxes',
+                'name': 'right/bottom',
+                'elements': [
+                    txt('tc', f'<words.release{sl}>'),
+                    txt('bl', f'<words.washout_exponent{sl}>:'),
+                    txt('bl', f'<words.washout_coeff{sl}>:'),
+                    txt('bl', f'<words.sediment_vel{sl}>:'),
+                    txt('bl', f'<words.deposit_vel{sl}>:'),
+                    txt('bl', f'<words.half_life{sl}>:'),
+                    txt('bl', f'<words.substance{sl}>:'),
+                    txt('bl', f'<words.total_mass{sl}>:'),
+                    txt('bl', f'<words.rate{sl}>:'),
+                    txt('bl', f'<words.end{sl}>:'),
+                    txt('bl', f'<words.start{sl}> (<symbols.t0>):'),
+                    txt('bl', f'<words.height{sl}>:'),
+                    txt('bl', f'<words.longitude{sl}>:'),
+                    txt('bl', f'<words.latitude{sl}>:'),
+                    txt('bl', f'<words.site{sl}>:'),
+                    txt('br', f'<species.washout_exponent{sl}.format>'),
+                    txt('br', f'<species.washout_coeff{sl}.format>'),
+                    txt('br', f'<species.sediment_vel{sl}.format>'),
+                    txt('br', f'<species.deposit_vel{sl}.format>'),
+                    txt('br', f'<species.half_life{sl}.format>'),
+                    txt('br', f'<species.name{sl}.format>'),
+                    txt('br', f'<release.mass{sl}.format>'),
+                    txt('br', f'<release.rate{sl}.format>'),
+                    txt('br', f'<simulation.end{sl}.format>'),
+                    txt('br', f'<simulation.start{sl}.format>'),
+                    txt('br', f'<release.height{sl}.format>'),
+                    txt('br', IgnoredElement('release longitude')),
+                    txt('br', IgnoredElement('release latitude')),
+                    txt('br', f'<release.site_name{sl}.format>'),
+                ],
             },
             {
-                'type': 'Axes'
-            },
-            {
-                'type': 'Axes'
+                'type': 'TextBoxAxes',
+                'name': 'bottom',
+                'elements': [
+                    txt('tl', f'<words.flexpart{sl}> '
+                              f'<words.based_on{sl}> '
+                              f'<simulation.model_name{sl}>, '
+                              f'<simulation.start{sl}.format>'),
+                    txt('tr', f'<symbols.copyright><words.mch{sl}>'),
+                ],
             },
         ]
-    }
-    # yapf: enable
-    return {'fig': fig}
+        # yapf: enable
+        return {'boxes': boxes}
+
+    def fig(self):
+        # yapf: disable
+        fig = {
+            'type': 'Figure',
+            'dpi': 100.0,
+            'bbox': {
+                'type': 'TransformedBbox',
+                'bounds': (0.0, 0.0, 1200.0, 900.0),
+            },
+            'axes': [
+                {
+                    'type': 'GeoAxesSubplot'
+                },
+                {
+                    'type': 'Axes'
+                },
+                {
+                    'type': 'Axes'
+                },
+                {
+                    'type': 'Axes'
+                },
+                {
+                    'type': 'Axes'
+                },
+            ]
+        }
+        # yapf: enable
+        return {'fig': fig}
