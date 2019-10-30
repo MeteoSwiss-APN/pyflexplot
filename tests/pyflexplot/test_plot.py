@@ -241,7 +241,7 @@ class CreateTests:
     invs = [False, True]
     args = [
         'base_attrs', 'dim_attrs', 'labels', 'ax_map', 'boxes', 'boxes_text',
-        'fig'
+        'fig', 'field'
     ]
 
     def __init__(self, langs=None, invs=None, args=None):
@@ -317,6 +317,11 @@ class Test_Fig:
 
 
 @CreateTests()
+class Test_Field:
+    field = True
+
+
+@CreateTests()
 class Test_Full:
     base_attrs = True
     dim_attrs = True
@@ -325,6 +330,7 @@ class Test_Full:
     boxes = True
     boxes_text = True
     fig = True
+    field = True
 
 
 #----------------------------------------------------------------------
@@ -344,7 +350,7 @@ class Solution:
 
     def create(
             self, *, base_attrs, dim_attrs, labels, ax_map, boxes, boxes_text,
-            fig):
+            fig, field):
         sol = {}
         if base_attrs:
             sol.update(self.base_attrs())
@@ -358,6 +364,8 @@ class Solution:
             sol.update(self.boxes(check_text=boxes_text))
         if fig:
             sol.update(self.fig())
+        if field:
+            sol.update(self.field())
         return sol
 
     def element(self, e):
@@ -367,7 +375,7 @@ class Solution:
 
     def base_attrs(self):
         e = self.element
-        base_attrs = {
+        jdat = {
             'type': e('DispersionPlot'),
             'lang': e(self.lang),
             'extend': e('max'),
@@ -377,11 +385,11 @@ class Solution:
             'mark_field_max': e(True),
             'mark_release_site': e(True),
         }
-        return base_attrs
+        return jdat
 
     def dim_attrs(self):
         e = self.element
-        dim_attrs = {
+        jdat = {
             'dpi': e(100.0),
             'figsize': e((12.0, 9.0)),
             'text_box_setup': {
@@ -392,19 +400,19 @@ class Solution:
                 'h_rel_box_rt': e(0.45),
             },
         }
-        return dim_attrs
+        return jdat
 
     def labels(self):
         e = self.element
-        labels = e({})  #SR_TMP
-        return {'labels': labels}
+        jdat = e({})  #SR_TMP
+        return {'labels': jdat}
 
     def ax_map(self):
         e = self.element
-        ax_map = {
+        jdat = {
             'type': e('AxesMap'),
         }
-        return {'ax_map': ax_map}
+        return {'ax_map': jdat}
 
     def boxes(self, check_text=True):
         # yapf: disable
@@ -446,7 +454,7 @@ class Solution:
 
         sl = f'[{self.lang}]'
 
-        boxes = [
+        jdat = [
             {
                 'type': 'TextBoxAxes',
                 'name': e1('top'),
@@ -542,12 +550,12 @@ class Solution:
             },
         ]
         # yapf: enable
-        return {'boxes': boxes}
+        return {'boxes': jdat}
 
     def fig(self):
         e = self.element
         # yapf: disable
-        fig = {
+        jdat = {
             'type': 'Figure',
             'dpi': e(100.0),
             'bbox': {
@@ -573,4 +581,9 @@ class Solution:
             ]
         }
         # yapf: enable
-        return {'fig': fig}
+        return {'fig': jdat}
+
+    def field(self):
+        e = self.element
+        jdat = e({})  #SR_TMP
+        return {'field': jdat}
