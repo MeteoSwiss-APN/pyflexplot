@@ -9,3 +9,4 @@
 ./plot_utils.py
 ./utils.py
 ./utils_dev.py
+./words.py

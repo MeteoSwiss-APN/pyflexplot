@@ -10,67 +10,21 @@ import os
 from copy import copy
 from textwrap import dedent
 from types import SimpleNamespace
-from words import Words
 
 from .plot_utils import AxesMap
 from .plot_utils import ax_dims_fig_coords
-from .plot_utils import TextBoxAxes
-from .utils import SummarizableClass
 from .plot_utils import SummarizablePlotClass
+from .plot_utils import TextBoxAxes
 from .utils import Degrees
 from .utils import fmt_float
 from .utils import fmt_level_ranges
 from .utils import ParentClass
+from .utils import SummarizableClass
+from .words import symbols, words
 
 #======================================================================
 # Plot Labels
 #======================================================================
-
-# yapf: disable
-
-symbols = Words(
-    ae          = {'': r'$\mathrm{\"a}$'},
-    copyright   = {'': u'\u00a9'},
-    oe          = {'': r'$\mathrm{\"o}$'},
-    t0          = {'': r'$\mathrm{T_0}$'},
-    ue          = {'': r'$\mathrm{\"u}$'},
-)
-
-e, d = 'en', 'de'
-plot_label_words = Words(
-#
-at                = {e: 'at',                 d: {'level' : 'auf',
-                                                  'place' : 'bei',
-                                                  'time'  : 'um'}},
-accumulated_over  = {e: 'accumulated_over',   d: 'akkumuliert {symbols.ue}ber'},
-averaged_over     = {e: 'averaged over',      d: 'gemittelt {symbols.ue}ber'},
-based_on          = {e: 'based on',           d: 'basierend auf'},
-deposit_vel       = {e: 'deposit. vel.',      d: 'Deposit.-Geschw.'},
-end               = {e: 'end',                d: 'Ende'},
-flexpart          = {e: 'FLEXPART',           d: 'FLEXPART'},
-half_life         = {e: 'half-life',          d: 'Halbwertszeit'},
-height            = {e: 'height',             d: f'H{symbols.oe}he'},
-latitude          = {e: 'latitude',           d: 'Breite'},
-longitude         = {e: 'longitude',          d: f'L{symbols.ae}nge'},
-max               = {e: 'max.',               d: 'Max.'},
-mch               = {e: 'MeteoSwiss',         d: 'MeteoSchweiz'},
-rate              = {e: 'rate',               d: 'Rate'},
-release           = {e: 'release',            d: 'Austritt'},
-release_site      = {e: 'release site',       d: 'Austrittsort'},
-sediment_vel      = {e: 'sediment. vel.',     d: 'Sediment.-Geschw.'},
-since             = {e: 'since',              d: 'seit'},
-site              = {e: 'site',               d: 'Ort'},
-start             = {e: 'start',              d: 'Start'},
-substance         = {e: 'substance',          d: 'Substanz'},
-summed_up_over    = {e: 'summed up over',     d: 'aufsummiert {symbols.ue}ber'},
-total_mass        = {e: 'total mass',         d: 'Totale Masse'},
-washout_coeff     = {e: 'washout coeff.',     d: 'Auswaschkoeff.'},
-washout_exponent  = {e: 'washout exponent',   d: 'Auswaschexponent'},
-)
-
-plot_label_words.symbols = symbols  #SR_TMP
-
-# yapf: enable
 
 
 class DispersionPlotLabels(SummarizableClass):
@@ -249,7 +203,7 @@ class DispersionPlot(Plot):
         self.reverse_legend = reverse_legend or False
 
         if labels is None:
-            words = plot_label_words  #SR_TMP
+            words = words  #SR_TMP
             labels = DispersionPlotLabels(lang, words)
         self.labels = labels
 
@@ -518,7 +472,8 @@ class DispersionPlot(Plot):
 
         if not 'bc' in skip_pos:
             # Bottom center: release site
-            s = f"{self.field.attrs.release.site_name.value}"
+            s = (f"{str(self.labels.words.release_site).capitalize()}: "
+                f"{self.field.attrs.release.site_name.value}")
             box.text('bc', s, dx=dx_center, size='large')
 
         if not 'tr' in skip_pos:
