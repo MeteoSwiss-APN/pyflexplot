@@ -5,7 +5,7 @@ Utils.
 import re
 
 
-def to_varname(s):
+def to_varname(s, lower=True):
     """Reformat a string to a valid Python variable name."""
 
     err = f"cannot convert '{s}' to varname"
@@ -29,5 +29,8 @@ def to_varname(s):
         raise ValueError(f"{err}: '{v}' starts with number")
     if not re.match(r'^[a-zA-Z0-9_]*$', v):
         raise ValueError(f"{err}: '{v}' contains invalid characters")
+
+    if lower:
+        v = v.lower()
 
     return v

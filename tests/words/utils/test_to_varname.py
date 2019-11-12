@@ -56,3 +56,14 @@ def test_fail_leading_number_concealed():
     with pytest.raises(ValueError):
         to_varname('@#1foo')
 
+# Optionally, all letters can be lowercased
+
+def test_lower_default():
+    assert to_varname(' Hello! ') != to_varname(' Hello! ', lower=False)
+    assert to_varname(' Hello! ') == to_varname(' Hello! ', lower=True)
+
+def test_lower_false():
+    assert to_varname(' Hello World! ', lower=False) == '_Hello_World_'
+
+def test_lower_true():
+    assert to_varname(' Hello World! ', lower=True) == '_hello_world_'
