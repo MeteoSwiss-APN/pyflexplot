@@ -2,6 +2,7 @@
 """
 Word.
 """
+from .utils import to_varname
 
 
 class Word:
@@ -13,11 +14,10 @@ class Word:
 
         Args:
             name (str, optional): Key to refer to the object in the
-                code.  Must be a valid Python variable name, i.e., not
-                contain any spaces, dashes, etc. Defaults to the value
-                of the first element in ``**langs``, unless that
-                contains invalid characters, in which case a ``ValueError``
-                is raised.
+                code. Defaults to the first word defined in ``**langs``.
+                If necessary, it is transformed into a valid Python
+                variable name by replacing all spaces and dashes by
+                underscores and dropping all other special characters.
 
             default (str, optional): Default language.  Overridden by
                 ``default_query`` if the latter is not None. Defaults
@@ -34,50 +34,64 @@ class Word:
                 entry is the default context.
 
         Example:
-            >>> w = Word('high_school', en='high school', de='Mittelschule')
-            >>> w.name
-            'high_school'
-            >>> str(w)
-            'high school'
-            >>> w.de
-            'Mittelschule'
+            >>> w = Word(en='high school', de='Mittelschule')
+            >>> w.name, str(w), w.de
+            ('high_school', 'high school', 'Mittelschule')
 
         """
-        if not langs:
-            raise ValueError('must pass the word in at least one language')
+        self._check_langs(langs)
 
-        self.name = name or next(iter(langs.values()))
-        if not isinstance(self.name, str) or not self.name.isidentifier():
-            raise ValueError(f"invalid name: {name}")
+        # Set name of word (valid Python variable name)
+        if name is None:
+            name = next(iter(langs.values()))
+            if isinstance(name, dict):
+                name = next(iter(name.values()))
+        self.name = to_varname(name)
 
-        # Check words and collect contexts
-        ctxs = None
-        for lang, word in langs.items():
-            if lang in self.__dict__:
-                raise ValueError(f"invalid language specifier: {lang}")
-            if isinstance(word, str):
-                pass
-            elif not isinstance(word, dict):
-                raise ValueError(
-                    f"word must be string or dict, not "
-                    f"{type(word).__name__}: {word}")
-            elif ctxs is None:
-                ctxs = list(word.keys())
-            elif set(ctxs) != set(word.keys()):
-                raise ValueError(
-                    f"word {self.name} in {lang}: inconsistent contexts: "
-                    f"set({ctxs}) != set({list(word.keys())})")
-        if ctxs is None:
-            ctxs = ['default']
+        ctxs = self._collect_contexts(langs)
 
         # Define words with consistent contexts
         self._langs = {}
         for lang, word in langs.items():
             if isinstance(word, str):
-                word = {ctx: word for ctx in ctxs}
+                word = {'*': word}
+            elif set(word.keys()) != set(ctxs) and '*' not in word:
+                raise ValueError(
+                    f"word 'self.name' in '{lang}' must either be defined "
+                    f"for all contexts {ctxs}, or for default context '*'")
             self._langs[lang] = WordVariants(lang, **word)
 
         self.set_default(default, default_query)
+
+    def _check_langs(self, langs):
+        """Check validity of languages and words."""
+
+        if not langs:
+            raise ValueError('must pass the word in at least one language')
+
+        for lang, word in langs.items():
+
+            if lang in self.__dict__:
+                # Name clash between language and class attribute
+                raise ValueError(f"invalid language specifier: {lang}")
+
+            if not isinstance(word, (str, dict)):
+                # Wrong word type
+                raise ValueError(
+                    f"word must be of type str or dict, not "
+                    f"{type(word).__name__}: {word}")
+
+            if not word:
+                # Undefined word
+                raise ValueError(
+                    f"empty word passed in language '{lang}': {word}")
+
+    def _collect_contexts(self, langs):
+        ctxs = []
+        for lang, word in langs.items():
+            if not isinstance(word, str):
+                ctxs += [ctx for ctx in word.keys() if ctx not in ctxs]
+        return ctxs
 
     def set_default(self, lang=None, query=None):
         """Set the default language, either hard-coded or queriable.
@@ -181,7 +195,7 @@ class WordVariants:
         try:
             return self._variants[name]
         except KeyError:
-            raise ValueError(f"invalid context specifier: {name}")
+            return self._variants['*']
 
     def ctxs(self):
         """List of contexts."""

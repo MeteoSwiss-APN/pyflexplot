@@ -1,4 +1,5 @@
-test_word.py
-test_word_variants.py
+word/test_main.py
+word/test_variants.py
 test_words.py
 utils/test_to_varname.py
+utils.py
