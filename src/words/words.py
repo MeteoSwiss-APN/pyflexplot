@@ -9,14 +9,14 @@ from .word import Word
 class Words:
     """A collection of words in different languages."""
 
-    def __init__(self, name_=None, *, default_=None, **words):
+    def __init__(self, name_=None, *, default_lang=None, **words):
         """Create an instance of ``Words``.
 
         Args:
             name_ (str, optional): Name of the words collection.
                 Defaults to None.
 
-            default_ (str, optional): Default language. Defaults to
+            default_lang (str, optional): Default language. Defaults to
                 the first language in which the first word is defined.
 
             **words (dict of str: dict): Words. The keys constitute the
@@ -40,28 +40,28 @@ class Words:
                 raise ValueError(
                     f"word '{name}' not defined in all necessary languages: "
                     f"set({langs}) != set({langs})")
-            if default_ is None:
-                default_ = next(iter(langs))
-            elif default_ not in langs:
+            if default_lang is None:
+                default_lang = next(iter(langs))
+            elif default_lang not in langs:
                 raise ValueError(
-                    f"invalid default language '{default_}': "
+                    f"invalid default language '{default_lang}': "
                     f"not in {langs}")
             self._words[name] = Word(
-                name, default_query=lambda: self.default_, **word)
+                name, default_lang_query=lambda: self.default_lang, **word)
         self._langs_ = langs
-        self.set_default_(default_)
+        self.set_default_lang(default_lang)
 
-    def set_default_(self, lang):
+    def set_default_lang(self, lang):
         """Change default language recursively for all words."""
         if lang not in self.langs_:
             raise ValueError(
                 f"unknown language '{lang}': not among {self.langs_}")
-        self._default_ = lang
+        self._default_lang = lang
 
     @property
-    def default_(self):
+    def default_lang(self):
         """Return the default language."""
-        return self._default_
+        return self._default_lang
 
     @property
     def langs_(self):

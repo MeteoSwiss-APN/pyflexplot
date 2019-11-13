@@ -33,7 +33,7 @@ class Test_Complex:
     """Test all functionality for a more complex set of words."""
 
     ws = Words(
-        default_='de',
+        default_lang='de',
         train={
             'en': 'train',
             'de': 'Zug',
@@ -49,8 +49,7 @@ class Test_Complex:
                 'time': 'um',
                 'level': 'auf',
             },
-        },
-    )
+        })
 
     def test_default(self):
         assert self.ws.train == 'Zug'
@@ -58,8 +57,8 @@ class Test_Complex:
         assert self.ws.at == 'bei'
 
     def test_change_default(self):
-        assert self.ws.default_ == 'de'
+        assert self.ws.default_lang == 'de'
         assert self.ws.train == 'Zug'
-        self.ws.set_default_('en')
-        assert self.ws.default_ == 'en'
+        self.ws.set_default_lang('en')
+        assert self.ws.default_lang == 'en'
         assert self.ws.train == 'train'

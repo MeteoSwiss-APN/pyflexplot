@@ -20,7 +20,7 @@ class Test_Basic:
     w = property_word(en='train', de='Zug')
 
     def test_str_default(self):
-        assert self.w.default == 'en'
+        assert self.w.default_lang == 'en'
         assert self.w == 'train'
 
     def test_lang_method(self):
@@ -41,7 +41,7 @@ class Test_Simple:
     w = property_word('high_school', en='high school', de='Mittelschule')
 
     def test_basics(self):
-        assert self.w.default == 'en'
+        assert self.w.default_lang == 'en'
         assert self.w == 'high school'
         assert self.w.en == 'high school'
         assert self.w.de == 'Mittelschule'
@@ -54,10 +54,10 @@ class Test_Simple:
 
     def test_default(self):
         w = self.w
-        assert w.default == 'en'
+        assert w.default_lang == 'en'
         assert w == 'high school'
-        w.set_default('de')
-        assert w.default == 'de'
+        w.set_default_lang('de')
+        assert w.default_lang == 'de'
         assert w == 'Mittelschule'
 
 
@@ -65,7 +65,7 @@ class Test_Context_OneMany:
     """A word depending on context in one language."""
 
     w = property_word(
-        en='at', de=dict(place='bei', time='um', level='auf'), default='de')
+        en='at', de=dict(place='bei', time='um', level='auf'), default_lang='de')
 
     def test_name(self):
         assert self.w.name == 'at'
@@ -161,38 +161,38 @@ class Test_QueryDefault:
     def test_noquery(self):
         """Pass hard-coded default language."""
         w = self.w
-        w.set_default(lang='de', query=None)
+        w.set_default_lang(lang='de', query=None)
         assert w == 'Zug'
-        w.set_default(lang='en', query=None)
+        w.set_default_lang(lang='en', query=None)
         assert w == 'train'
 
     def test_query_hardcoded(self):
         """Query default language from hard-coded lamba."""
         w = self.w
-        w.set_default(lang=None, query=lambda: 'en')
+        w.set_default_lang(lang=None, query=lambda: 'en')
         assert w == 'train'
-        w.set_default(lang=None, query=lambda: 'de')
+        w.set_default_lang(lang=None, query=lambda: 'de')
         assert w == 'Zug'
 
     def test_query_dynamic(self):
         """Query default language dynamically from external object."""
         w = self.w
         default = AttrHolder()
-        w.set_default(lang=None, query=default.get)
+        w.set_default_lang(lang=None, query=default.get)
         default.set('de')
-        w.set_default(lang=None, query=lambda: 'de')
+        w.set_default_lang(lang=None, query=lambda: 'de')
         default.set('en')
-        w.set_default(lang=None, query=lambda: 'en')
+        w.set_default_lang(lang=None, query=lambda: 'en')
 
     def test_query_dynamic_precedence(self):
         """Ensure precedence of query over hard-coded default."""
         w = self.w
         default = AttrHolder()
-        w.set_default(lang='de', query=default.get)
+        w.set_default_lang(lang='de', query=default.get)
         default.set('de')
-        w.set_default(lang=None, query=lambda: 'de')
+        w.set_default_lang(lang=None, query=lambda: 'de')
         default.set('en')
-        w.set_default(lang=None, query=lambda: 'en')
+        w.set_default_lang(lang=None, query=lambda: 'en')
 
 
 class Test_Creation:
