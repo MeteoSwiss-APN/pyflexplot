@@ -11,7 +11,6 @@ from words import Word
 
 from utils import property_obj
 
-
 property_word = functools.partial(property_obj, Word)
 
 
@@ -25,8 +24,8 @@ class Test_Basic:
         assert self.w == 'train'
 
     def test_lang_method(self):
-        assert self.w.in_('en') == 'train'
-        assert self.w.in_('de') == 'Zug'
+        assert self.w.get('en') == 'train'
+        assert self.w.get('de') == 'Zug'
 
     def test_lang_property(self):
         assert self.w.en == 'train'
@@ -46,8 +45,8 @@ class Test_Simple:
         assert self.w == 'high school'
         assert self.w.en == 'high school'
         assert self.w.de == 'Mittelschule'
-        assert self.w.in_('en') == self.w.en
-        assert self.w.in_('de') == self.w.de
+        assert self.w.get('en') == self.w.en
+        assert self.w.get('de') == self.w.de
         assert self.w.langs == ['en', 'de']
 
     def test_name(self):
@@ -66,9 +65,7 @@ class Test_Context_OneMany:
     """A word depending on context in one language."""
 
     w = property_word(
-        en='at',
-        de=dict(place='bei', time='um', level='auf'),
-        default='de')
+        en='at', de=dict(place='bei', time='um', level='auf'), default='de')
 
     def test_name(self):
         assert self.w.name == 'at'
@@ -95,9 +92,11 @@ class Test_Context_OneMany:
 class Test_Context_ManyMany_Same:
     """A word depending on the same contexts in two languages."""
 
+    # yapf: disable
     w = property_word(
         en={'m': 'Mr.', 'f': 'Ms.'},
         de={'m': 'Herr', 'f': 'Frau'})
+    # yapf: enable
 
     def test_name(self):
         assert self.w.name == 'mr'
@@ -120,9 +119,11 @@ class Test_Context_ManyMany_Diff:
         with pytest.raises(ValueError):
             Word(en={'abbr': 'int.'}, de={'abbr': 'int.', 'f': 'integrierte'})
 
+    # yapf: disable
     w = property_word(
         en={'*': 'integrated', 'abbr': 'int.'},
         de={'*': 'integriert', 'abbr': 'int.', 'f': 'integrierte'})
+    # yapf: enable
 
     def test_default_context(self):
         assert self.w.en == 'integrated'
@@ -139,6 +140,7 @@ class Test_Context_ManyMany_Diff:
 
     def test_unshared_context_undefined(self):
         assert self.w.en.ctx('f') == self.w.en.ctx('*')
+
 
 @attrs
 class AttrHolder:

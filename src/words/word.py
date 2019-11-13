@@ -93,6 +93,8 @@ class Word:
                 ctxs += [ctx for ctx in word.keys() if ctx not in ctxs]
         return ctxs
 
+    #------------------------------------------------------------------
+
     def set_default(self, lang=None, query=None):
         """Set the default language, either hard-coded or queriable.
 
@@ -124,7 +126,11 @@ class Word:
             return self._default_query()
         return self._default
 
+    #SR_TMP<<<
     def in_(self, lang):
+        raise Exception(f'{type(self).__name__} method in_ replaced by get')
+
+    def get(self, lang):
         """Get word in a certain language."""
         try:
             return self._langs[lang]
@@ -134,13 +140,20 @@ class Word:
                 f"only in {self.langs}")
 
     def ctx(self, *args, **kwargs):
-        return self.in_(self.default).ctx(*args, **kwargs)
+        return self.get(self.default).ctx(*args, **kwargs)
+
+    @property
+    def langs(self):
+        """List of languages the word is defined in."""
+        return list(self._langs.keys())
+
+    #------------------------------------------------------------------
 
     def __getattr__(self, name):
-        return self.in_(name)
+        return self.get(name)
 
     def __str__(self):
-        return str(self.in_(self.default))
+        return str(self.get(self.default))
 
     def __repr__(self):
         s_langs = ', '.join([f"{k}={repr(v)}" for k, v in self._langs.items()])
@@ -151,10 +164,9 @@ class Word:
     def __eq__(self, other):
         return str(self) == str(other)
 
-    @property
-    def langs(self):
-        """List of languages the word is defined in."""
-        return list(self._langs.keys())
+    def __getitem__(self, key):
+        lang = key
+        return self.get(lang)
 
 
 class WordVariants:

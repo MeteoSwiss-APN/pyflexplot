@@ -4,6 +4,7 @@
 Some testing utils.
 """
 
+
 def property_obj(cls, *args, **kwargs):
     """Define a class property creating a given object on-the-fly.
 
@@ -29,6 +30,8 @@ def property_obj(cls, *args, **kwargs):
         ...     w = property_word(en='train', de='Zug')
 
     """
+
     def create_obj(self):
         return cls(*args, **kwargs)
+
     return property(create_obj)
