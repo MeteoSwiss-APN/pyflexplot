@@ -21,12 +21,12 @@ class Test_Basic:
     )
 
     def test_default(self):
-        assert str(self.ws.train) == 'train'
-        assert str(self.ws.high_school) == 'high school'
+        assert self.ws.train == 'train'
+        assert self.ws.high_school == 'high school'
 
     def test_langs(self):
-        assert str(self.ws.train.de) == 'Zug'
-        assert str(self.ws.high_school.de) == 'Mittelschule'
+        assert self.ws.train.de == 'Zug'
+        assert self.ws.high_school.de == 'Mittelschule'
 
 
 class Test_Complex:
@@ -53,13 +53,13 @@ class Test_Complex:
     )
 
     def test_default(self):
-        assert str(self.ws.train) == 'Zug'
-        assert str(self.ws.high_school) == 'Mittelschule'
-        assert str(self.ws.at) == 'bei'
+        assert self.ws.train == 'Zug'
+        assert self.ws.high_school == 'Mittelschule'
+        assert self.ws.at == 'bei'
 
     def test_change_default(self):
         assert self.ws.default_ == 'de'
-        assert str(self.ws.train) == 'Zug'
+        assert self.ws.train == 'Zug'
         self.ws.set_default_('en')
         assert self.ws.default_ == 'en'
-        assert str(self.ws.train) == 'train'
+        assert self.ws.train == 'train'

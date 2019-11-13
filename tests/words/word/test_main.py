@@ -22,15 +22,15 @@ class Test_Basic:
 
     def test_str_default(self):
         assert self.w.default == 'en'
-        assert str(self.w) == 'train'
+        assert self.w == 'train'
 
     def test_lang_method(self):
-        assert str(self.w.in_('en')) == 'train'
-        assert str(self.w.in_('de')) == 'Zug'
+        assert self.w.in_('en') == 'train'
+        assert self.w.in_('de') == 'Zug'
 
     def test_lang_property(self):
-        assert str(self.w.en) == 'train'
-        assert str(self.w.de) == 'Zug'
+        assert self.w.en == 'train'
+        assert self.w.de == 'Zug'
 
     def test_langs(self):
         assert self.w.langs == ['en', 'de']
@@ -43,11 +43,11 @@ class Test_Simple:
 
     def test_basics(self):
         assert self.w.default == 'en'
-        assert str(self.w) == 'high school'
-        assert str(self.w.en) == 'high school'
-        assert str(self.w.de) == 'Mittelschule'
-        assert str(self.w.in_('en')) == str(self.w.en)
-        assert str(self.w.in_('de')) == str(self.w.de)
+        assert self.w == 'high school'
+        assert self.w.en == 'high school'
+        assert self.w.de == 'Mittelschule'
+        assert self.w.in_('en') == self.w.en
+        assert self.w.in_('de') == self.w.de
         assert self.w.langs == ['en', 'de']
 
     def test_name(self):
@@ -56,10 +56,10 @@ class Test_Simple:
     def test_default(self):
         w = self.w
         assert w.default == 'en'
-        assert str(w) == 'high school'
+        assert w == 'high school'
         w.set_default('de')
         assert w.default == 'de'
-        assert str(w) == 'Mittelschule'
+        assert w == 'Mittelschule'
 
 
 class Test_Context_OneMany:
@@ -71,25 +71,25 @@ class Test_Context_OneMany:
         default='de')
 
     def test_name(self):
-        assert str(self.w.name) == 'at'
+        assert self.w.name == 'at'
 
     def test_default_context(self):
-        assert str(self.w) == 'bei'
+        assert self.w == 'bei'
 
     def test_explicit_contexts_explicit_lang(self):
-        assert str(self.w.de.ctx('place')) == 'bei'
-        assert str(self.w.de.ctx('time')) == 'um'
-        assert str(self.w.de.ctx('level')) == 'auf'
+        assert self.w.de.ctx('place') == 'bei'
+        assert self.w.de.ctx('time') == 'um'
+        assert self.w.de.ctx('level') == 'auf'
 
     def test_explicit_contexts_default_lang(self):
-        assert str(self.w.ctx('place')) == 'bei'
-        assert str(self.w.ctx('time')) == 'um'
-        assert str(self.w.ctx('level')) == 'auf'
+        assert self.w.ctx('place') == 'bei'
+        assert self.w.ctx('time') == 'um'
+        assert self.w.ctx('level') == 'auf'
 
     def test_explicit_contexts_other_lang(self):
-        assert str(self.w.en.ctx('place')) == 'at'
-        assert str(self.w.en.ctx('time')) == 'at'
-        assert str(self.w.en.ctx('level')) == 'at'
+        assert self.w.en.ctx('place') == 'at'
+        assert self.w.en.ctx('time') == 'at'
+        assert self.w.en.ctx('level') == 'at'
 
 
 class Test_Context_ManyMany_Same:
@@ -100,17 +100,17 @@ class Test_Context_ManyMany_Same:
         de={'m': 'Herr', 'f': 'Frau'})
 
     def test_name(self):
-        assert str(self.w.name) == 'mr'
+        assert self.w.name == 'mr'
 
     def test_default_context(self):
-        assert str(self.w.en) == 'Mr.'
-        assert str(self.w.de) == 'Herr'
+        assert self.w.en == 'Mr.'
+        assert self.w.de == 'Herr'
 
     def test_explicit_contexts(self):
-        assert str(self.w.en.ctx('m')) == 'Mr.'
-        assert str(self.w.en.ctx('f')) == 'Ms.'
-        assert str(self.w.de.ctx('m')) == 'Herr'
-        assert str(self.w.de.ctx('f')) == 'Frau'
+        assert self.w.en.ctx('m') == 'Mr.'
+        assert self.w.en.ctx('f') == 'Ms.'
+        assert self.w.de.ctx('m') == 'Herr'
+        assert self.w.de.ctx('f') == 'Frau'
 
 
 class Test_Context_ManyMany_Diff:
@@ -125,20 +125,20 @@ class Test_Context_ManyMany_Diff:
         de={'*': 'integriert', 'abbr': 'int.', 'f': 'integrierte'})
 
     def test_default_context(self):
-        assert str(self.w.en) == 'integrated'
-        assert str(self.w.de) == 'integriert'
+        assert self.w.en == 'integrated'
+        assert self.w.de == 'integriert'
 
     def test_shared_contexts(self):
-        assert str(self.w.en.ctx('*')) == 'integrated'
-        assert str(self.w.de.ctx('*')) == 'integriert'
-        assert str(self.w.en.ctx('abbr')) == 'int.'
-        assert str(self.w.de.ctx('abbr')) == 'int.'
+        assert self.w.en.ctx('*') == 'integrated'
+        assert self.w.de.ctx('*') == 'integriert'
+        assert self.w.en.ctx('abbr') == 'int.'
+        assert self.w.de.ctx('abbr') == 'int.'
 
     def test_unshared_context_defined(self):
-        assert str(self.w.de.ctx('f')) == 'integrierte'
+        assert self.w.de.ctx('f') == 'integrierte'
 
     def test_unshared_context_undefined(self):
-        assert str(self.w.en.ctx('f')) == str(self.w.en.ctx('*'))
+        assert self.w.en.ctx('f') == self.w.en.ctx('*')
 
 @attrs
 class AttrHolder:
@@ -160,17 +160,17 @@ class Test_QueryDefault:
         """Pass hard-coded default language."""
         w = self.w
         w.set_default(lang='de', query=None)
-        assert str(w) == 'Zug'
+        assert w == 'Zug'
         w.set_default(lang='en', query=None)
-        assert str(w) == 'train'
+        assert w == 'train'
 
     def test_query_hardcoded(self):
         """Query default language from hard-coded lamba."""
         w = self.w
         w.set_default(lang=None, query=lambda: 'en')
-        assert str(w) == 'train'
+        assert w == 'train'
         w.set_default(lang=None, query=lambda: 'de')
-        assert str(w) == 'Zug'
+        assert w == 'Zug'
 
     def test_query_dynamic(self):
         """Query default language dynamically from external object."""

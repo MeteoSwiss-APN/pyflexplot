@@ -148,6 +148,9 @@ class Word:
             f"{type(self).__name__}({self.name}, {s_langs}, "
             f"default='{self.default}')")
 
+    def __eq__(self, other):
+        return str(self) == str(other)
+
     @property
     def langs(self):
         """List of languages the word is defined in."""
@@ -211,3 +214,6 @@ class WordVariants:
         s_variants = ', '.join(
             [f"{k}={repr(v)}" for k, v in self._variants.items()])
         return f"{type(self).__name__}(lang_='{self.lang}', {s_variants})"
+
+    def __eq__(self, other):
+        return str(self) == str(other)

@@ -10,17 +10,17 @@ from words.word import WordVariants
 
 
 def test_single_nolang():
-    wf = WordVariants(default='train')
-    assert wf.lang is None
-    assert str(wf) == 'train'
-    assert wf.default == 'default'
+    w = WordVariants(default='train')
+    assert w.lang is None
+    assert w == 'train'
+    assert w.default == 'default'
 
 
 def test_single_lang():
-    wf = WordVariants(foo='Zug', lang_='de')
-    assert wf.lang == 'de'
-    assert str(wf) == 'Zug'
-    assert wf.default == 'foo'
+    w = WordVariants(foo='Zug', lang_='de')
+    assert w.lang == 'de'
+    assert w == 'Zug'
+    assert w.default == 'foo'
 
 
 def test_multiple():
