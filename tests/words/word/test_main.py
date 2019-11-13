@@ -24,8 +24,8 @@ class Test_Basic:
         assert self.w == 'train'
 
     def test_lang_method(self):
-        assert self.w.get('en') == 'train'
-        assert self.w.get('de') == 'Zug'
+        assert self.w.get_in('en') == 'train'
+        assert self.w.get_in('de') == 'Zug'
 
     def test_lang_property(self):
         assert self.w.en == 'train'
@@ -45,8 +45,8 @@ class Test_Simple:
         assert self.w == 'high school'
         assert self.w.en == 'high school'
         assert self.w.de == 'Mittelschule'
-        assert self.w.get('en') == self.w.en
-        assert self.w.get('de') == self.w.de
+        assert self.w.get_in('en') == self.w.en
+        assert self.w.get_in('de') == self.w.de
         assert self.w.langs == ['en', 'de']
 
     def test_name(self):

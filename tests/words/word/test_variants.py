@@ -3,7 +3,6 @@
 """
 Tests for class ``ContextWord`` in module ``words.word``.
 """
-
 import pytest
 
 from words.word import ContextWord

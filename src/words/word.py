@@ -131,8 +131,10 @@ class Word:
     def in_(self, lang):
         raise Exception(f'{type(self).__name__} method in_ replaced by get')
 
-    def get(self, lang):
+    def get_in(self, lang):
         """Get word in a certain language."""
+        if lang is None:
+            lang = self.default_lang
         try:
             return self._langs[lang]
         except KeyError:
@@ -141,7 +143,7 @@ class Word:
                 f"only in {self.langs}")
 
     def ctx(self, *args, **kwargs):
-        return self.get(self.default_lang).ctx(*args, **kwargs)
+        return self.get_in(self.default_lang).ctx(*args, **kwargs)
 
     @property
     def langs(self):
@@ -150,11 +152,11 @@ class Word:
 
     #------------------------------------------------------------------
 
-    def __getattr__(self, name):
-        return self.get(name)
+    def __getattr__(self, lang):
+        return self.get_in(lang)
 
     def __str__(self):
-        return str(self.get(self.default_lang))
+        return str(self.get_in(self.default_lang))
 
     def __repr__(self):
         s_langs = ', '.join([f"{k}={repr(v)}" for k, v in self._langs.items()])
@@ -167,10 +169,10 @@ class Word:
 
     def __getitem__(self, key):
         lang = key
-        return self.get(lang)
+        return self.get_in(lang)
 
 
-class ContextWord:
+class ContextWord(Word):
     """One or more variants of a word in a specific language."""
 
     def __init__(self, lang=None, *, default_context=None, **variants):

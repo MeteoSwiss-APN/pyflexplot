@@ -53,28 +53,16 @@ class Words:
 
     def set_default_lang(self, lang):
         """Change default language recursively for all words."""
-        if lang not in self.langs_:
+        if lang not in self.langs:
             raise ValueError(
-                f"unknown language '{lang}': not among {self.langs_}")
+                f"unknown language '{lang}': not among {self.langs}")
         self._default_lang = lang
 
-    @property
-    def default_lang(self):
-        """Return the default language."""
-        return self._default_lang
+    #------------------------------------------------------------------
 
-    @property
-    def langs_(self):
-        """Return the languages the words are defined in."""
-        return [lang for lang in self._langs_]
-
-    def __repr__(self):
-        s_name = f' ({self.name})' if self.name else ''
-        return f'{len(self._words)} Words{s_name}: {self._words}'
-
-    def __getattr__(self, name):
+    def get(self, name, lang=None, ctx=None):
         try:
-            return self._words[name]
+            word = self._words[name]
         except KeyError:
             s = f"unknown word: {name}"
             if f'{name}_' in type(self).__dict__:
@@ -82,3 +70,72 @@ class Words:
                     f"{s}; are you meaning to call "
                     f"`{type(self).__name__}.{name}_`?")
             raise ValueError(s)
+        if lang is not None:
+            word = word.get_in(lang)
+        if ctx is not None:
+            word = word.ctx(ctx)
+        return word
+
+    @property
+    def default_lang(self):
+        """Return the default language."""
+        return self._default_lang
+
+    @property
+    def langs(self):
+        """Return the languages the words are defined in."""
+        return [lang for lang in self._langs_]
+
+    #------------------------------------------------------------------
+
+    def __repr__(self):
+        s_name = f' ({self.name})' if self.name else ''
+        return f'{len(self._words)} Words{s_name}: {self._words}'
+
+    #SR_TMP<<<
+    def __getattr__(self, name):
+        #+raise Exception(f'{type(self).__name__} method in_ replaced by get')
+        return self.get(name)
+
+    def __getitem__(self, key):
+
+        name, lang, ctx = None, None, None
+
+        if isinstance(key, str):
+            # Single str element
+            name = key
+
+        elif not isinstance(key, tuple):
+            # Error: Key neither str nor tuple
+            raise ValueError(
+                f"'{type(self).__name__}' object only subscriptable by one "
+                f"or more objects of type 'str', not '{type(key).__name__}'")
+
+        elif any(not isinstance(i, (str, type(None))) for i in key):
+            # Error: Not all key tuple elements are str
+            types = []
+            for element in key:
+                if not isinstance(element, str) and type(element) not in types:
+                    types.append(type(element))
+            if len(types) == 1:
+                s_types = f"'{next(iter(types)).__name__}'"
+            else:
+                s_types = "[{}]".format(
+                    ', '.join([f"'{t.__name__}'" for t in types]))
+            raise ValueError(
+                f"'{type(self).__name__}' object only subscriptable by one "
+                f"or more objects of type 'str' or None, not {s_types}")
+
+        elif len(key) == 2:
+            # Tuple with two elements
+            name, lang = key
+
+        elif len(key) == 3:
+            # Tuple with three elements
+            name, lang, ctx = key
+
+        else:
+            # Error: Tuple with unexpected number of elements
+            raise NotImplementedError(f"{len(key)} elements")
+
+        return self.get(name, lang, ctx)
