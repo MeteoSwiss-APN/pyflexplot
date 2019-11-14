@@ -127,10 +127,6 @@ class Word:
             return self._default_lang_query()
         return self._default_lang
 
-    #SR_TMP<<<
-    def in_(self, lang):
-        raise Exception(f'{type(self).__name__} method in_ replaced by get')
-
     def get_in(self, lang):
         """Get word in a certain language."""
         if lang is None:
