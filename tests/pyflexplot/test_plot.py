@@ -7,10 +7,10 @@ import pytest
 
 from types import SimpleNamespace
 
-from srutils import isiterable
 from srutils.testing import assert_summary_dict_is_subdict
 from srutils.testing import IgnoredElement
 from srutils.testing import UnequalElement
+from srutils.various import isiterable
 from words import Word, Words
 
 from pyflexplot.plot import DispersionPlot

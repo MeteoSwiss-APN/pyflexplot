@@ -1,3 +1,7 @@
 __init__.py
-main.py
+various.py
+
+dict.py
+geo.py
+str.py
 testing.py

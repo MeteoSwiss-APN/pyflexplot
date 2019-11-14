@@ -5,7 +5,7 @@ import pytest
 
 from pyflexplot.io import FieldSpecs
 
-from srutils import dict_mult_vals_product
+from srutils.dict import dict_mult_vals_product
 
 
 class TestFieldSpecs_Multiple:

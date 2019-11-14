@@ -4,7 +4,7 @@
 Some testing utils.
 """
 
-from . import isiterable
+from .various import isiterable
 
 
 #======================================================================

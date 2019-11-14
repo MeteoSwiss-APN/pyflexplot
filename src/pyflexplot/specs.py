@@ -13,8 +13,8 @@ from copy import copy, deepcopy
 from pprint import pformat
 from pprint import pprint  #SR_DEV
 
-from srutils import nested_dict_set
-from srutils import pformat_dictlike
+from srutils.dict import nested_dict_set
+from srutils.dict import pformat_dictlike
 
 from .attr import AttrGroupCollection
 from .utils import ParentClass

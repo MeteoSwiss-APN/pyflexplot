@@ -10,7 +10,7 @@ import sys
 
 from pprint import pformat
 
-from srutils import group_kwargs
+from srutils.various import group_kwargs
 
 from .io import FieldSpecs
 from .io import FileReader

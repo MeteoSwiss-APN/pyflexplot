@@ -10,8 +10,8 @@ from copy import copy, deepcopy
 from pprint import pformat
 from pprint import pprint  #SR_DEV
 
-from srutils import check_array_indices
-from srutils import pformat_dictlike
+from srutils.dict import pformat_dictlike
+from srutils.various import check_array_indices
 
 from .data import Field
 from .data import threshold_agreement

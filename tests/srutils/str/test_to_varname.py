@@ -5,7 +5,7 @@ Tests for function ``to_varname`` in module ``srutils``.
 """
 import pytest
 
-from srutils import to_varname
+from srutils.str import to_varname
 
 
 def test_unchanged():

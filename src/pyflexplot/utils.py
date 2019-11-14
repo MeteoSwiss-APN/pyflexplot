@@ -8,7 +8,7 @@ import re
 
 from collections import namedtuple
 
-from srutils import isiterable
+from srutils.various import isiterable
 
 
 #======================================================================

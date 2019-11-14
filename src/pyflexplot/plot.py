@@ -11,7 +11,7 @@ from copy import copy
 from textwrap import dedent
 from types import SimpleNamespace
 
-from srutils import Degrees
+from srutils.geo import Degrees
 
 from .plot_utils import AxesMap
 from .plot_utils import ax_dims_fig_coords

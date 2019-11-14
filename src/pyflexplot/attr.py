@@ -7,7 +7,7 @@ import logging as log
 
 from pprint import pformat
 
-from srutils import isiterable
+from srutils.various import isiterable
 
 from .utils import SummarizableClass
 

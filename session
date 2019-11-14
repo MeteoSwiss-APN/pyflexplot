@@ -6,6 +6,8 @@
 ----
 < tests/words/session
 -----
-< tests/test_utils/session
+< src/srutils/session
 ------
+< tests/srutils/session
+-------
 < src/tools/session

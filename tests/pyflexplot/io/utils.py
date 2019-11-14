@@ -8,7 +8,8 @@ import os
 
 from pprint import pformat
 
-from srutils import isiterable
+from srutils.various import isiterable
+
 
 #======================================================================
 
