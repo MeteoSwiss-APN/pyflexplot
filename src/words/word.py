@@ -148,6 +148,36 @@ class Word:
 
     #------------------------------------------------------------------
 
+    @property
+    def s(self):
+        return str(self)
+
+    def cap(self, all=False):
+        """Capitalize the first letter of the first or of each word.
+
+        Already capitalized words are retained as such, in contrast to
+        ``str.capitalize()``.
+
+        Args:
+            all (bool, optional): Whether to capitalize all words.
+
+        """
+        if all:
+            return str(self).title()
+        start, rest = str(self).split(' ', 1)
+        return f"{start.capitalize()} {rest}"
+
+    @property
+    def c(self):
+        """Shorthand to capitalize the first word."""
+        return self.cap(all=False)
+
+    @property
+    def C(self):
+        return self.cap(all=True)
+
+    #------------------------------------------------------------------
+
     def __str__(self):
         return str(self.get_in(self.default_lang))
 
@@ -210,9 +240,6 @@ class ContextWord(Word):
     def ctxs(self):
         """List of contexts."""
         return list(self._variants)
-
-    def s(self):
-        return str(self)
 
     def __str__(self):
         return self.ctx(self.default_context)
