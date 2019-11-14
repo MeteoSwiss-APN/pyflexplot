@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Tests for functions etc. in module ``words.utils``.
+Tests for function ``to_varname`` in module ``srutils``.
 """
 import pytest
 
-from words.utils import to_varname
+from srutils import to_varname
 
 
 def test_unchanged():

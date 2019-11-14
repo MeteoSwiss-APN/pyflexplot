@@ -2,7 +2,7 @@
 """
 Word.
 """
-from .utils import to_varname
+from srutils import to_varname
 
 
 class Word:
