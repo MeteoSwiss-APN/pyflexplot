@@ -9,9 +9,11 @@ import matplotlib.pyplot as plt
 
 from pprint import pformat
 
+from srutils import isiterable
+from srutils.testing import assert_summary_dict_is_subdict
+
 from pyflexplot.plot_utils import TextBoxAxes
 
-from utils import assert_summary_dict_is_subdict
 
 #======================================================================
 

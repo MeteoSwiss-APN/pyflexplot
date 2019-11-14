@@ -10,10 +10,11 @@ import sys
 
 from pprint import pformat
 
+from srutils import group_kwargs
+
 from .io import FieldSpecs
 from .io import FileReader
 from .utils import count_to_log_level
-from .utils import group_kwargs
 from .plotter import Plotter
 
 # Uncomment to debug segmentation fault and set PYTHONFAULTHANDLER=1

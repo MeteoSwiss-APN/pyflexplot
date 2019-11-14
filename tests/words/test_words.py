@@ -6,7 +6,7 @@ import pytest
 
 from words import Words
 
-from utils import property_obj
+from srutils.testing import property_obj
 
 property_words = functools.partial(property_obj, Words)
 

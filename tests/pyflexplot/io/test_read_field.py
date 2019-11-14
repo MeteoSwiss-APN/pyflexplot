@@ -4,12 +4,14 @@
 import numpy as np
 import pytest
 
-from utils import datadir
-
 from pyflexplot.io import FieldSpecs
 from pyflexplot.io import FileReader
 
+from utils import datadir
 from io_utils import read_nc_var
+
+
+#======================================================================
 
 
 class TestReadField_Single:

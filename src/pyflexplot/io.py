@@ -10,13 +10,14 @@ from copy import copy, deepcopy
 from pprint import pformat
 from pprint import pprint  #SR_DEV
 
+from srutils import check_array_indices
+from srutils import pformat_dictlike
+
 from .data import Field
 from .data import threshold_agreement
 from .specs import AttrsCollector
 from .specs import VarSpecs
 from .specs import FieldSpecs
-from .utils import check_array_indices
-from .utils import pformat_dictlike
 
 
 def _nc_content():

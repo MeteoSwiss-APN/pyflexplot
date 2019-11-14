@@ -152,9 +152,6 @@ class Word:
 
     #------------------------------------------------------------------
 
-    def __getattr__(self, lang):
-        return self.get_in(lang)
-
     def __str__(self):
         return str(self.get_in(self.default_lang))
 

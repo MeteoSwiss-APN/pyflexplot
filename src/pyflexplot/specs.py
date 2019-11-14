@@ -13,11 +13,13 @@ from copy import copy, deepcopy
 from pprint import pformat
 from pprint import pprint  #SR_DEV
 
+from srutils import nested_dict_set
+from srutils import pformat_dictlike
+
 from .attr import AttrGroupCollection
 from .utils import ParentClass
 from .utils import SummarizableClass
-from .utils import pformat_dictlike
-from .utils import nested_dict_set
+from .words import words
 
 
 def int_or_list(arg):
@@ -250,21 +252,19 @@ class VarSpecs_Concentration(VarSpecs):
     @classmethod
     def long_name(cls, lang, var_specs):
         if var_specs.integrate:
-            return {
-                'en': 'Integr. Activity Concentr.',
-                'de': r'Integr. Aktivit$\mathrm{\"a}$tskonzentr.',
-            }[lang]
-        return {
-            'en': 'Activity Concentration',
-            'de': r'Aktivit$\mathrm{\"a}$tskonzentration',
-        }[lang]
+            return str(words['activity_concentr', lang]).capitalize()
+        return str(words['activity_concentration', lang]).capitalize()
 
     @classmethod
     def short_name(cls, lang, var_specs):
         s = ''
         if var_specs.integrate:
-            return {'en': 'Int. Concentr.', 'de': 'Int. Konzentr.'}[lang]
-        return {'en': 'Concentration', 'de': 'Konzentration'}[lang]
+            return (
+                f"{str(words['integrated', lang, 'abbr']).capitalize()} "
+                f"{str(words['concentration', lang, 'abbr']).capitalize()}")
+        return (
+            f"{str(words['integrated', lang, 'f']).capitalize()} "
+            f"{str(words['concentration', lang]).capitalize()}")
 
     def var_name(self):
         """Derive variable name from specifications."""
@@ -316,17 +316,13 @@ class VarSpecs_Deposition(VarSpecs):
     @classmethod
     def long_name(cls, lang, var_specs):
         dep_type = cls.deposition_type_long_name(lang, var_specs)
-        return {
-            'en': f'{dep_type} Surface Deposition',
-            'de': f'{dep_type}e Bodenablagerung',
-        }[lang]
+        return (
+            f'[{dep_type}] '
+            f"{str(words['surface_deposition', lang]).capitalize()}")
 
     @classmethod
     def short_name(cls, lang, var_specs):
-        return {
-            'en': f'Deposition',
-            'de': f'Ablagerung',
-        }[lang]
+        return f"{words['deposition', lang]}"
 
     def var_name(self):
         """Derive variable name from specifications."""
@@ -339,14 +335,10 @@ class VarSpecs_AffectedArea(VarSpecs_Deposition):
 
     @classmethod
     def long_name(cls, lang, var_specs):
-        #dep_type = cls.deposition_type_long_name(lang, var_specs)
         dep_name = VarSpecs_Deposition.long_name(lang, var_specs)
-        if lang == 'de':
-            dep_name = dep_name.replace('ablagerung', 'abl.')
-        return {
-            'en': f'Affected Area ({dep_name})',
-            'de': f'Beaufschlagtes Gebiet ({dep_name})',
-        }[lang]
+        return (
+            f"{str(words['affected_area', lang]).capitalize()} "
+            f'({dep_name})')
 
 
 class Varspecs_AffectedAreaMono(VarSpecs_AffectedArea):

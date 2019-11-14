@@ -9,11 +9,13 @@ from .word import Word
 class Words:
     """A collection of words in different languages."""
 
-    def __init__(self, name_=None, *, default_lang=None, **words):
+    cls_word = Word
+
+    def __init__(self, name=None, *, default_lang=None, **words):
         """Create an instance of ``Words``.
 
         Args:
-            name_ (str, optional): Name of the words collection.
+            name (str, optional): Name of the words collection.
                 Defaults to None.
 
             default_lang (str, optional): Default language. Defaults to
@@ -25,7 +27,7 @@ class Words:
                 in the same languages.
 
         """
-        self.name_ = name_
+        self.name = name
 
         langs = None
         self._words = {}
@@ -46,7 +48,7 @@ class Words:
                 raise ValueError(
                     f"invalid default language '{default_lang}': "
                     f"not in {langs}")
-            self._words[name] = Word(
+            self._words[name] = self.cls_word(
                 name, default_lang_query=lambda: self.default_lang, **word)
         self._langs_ = langs
         self.set_default_lang(default_lang)
@@ -91,11 +93,6 @@ class Words:
     def __repr__(self):
         s_name = f' ({self.name})' if self.name else ''
         return f'{len(self._words)} Words{s_name}: {self._words}'
-
-    #SR_TMP<<<
-    def __getattr__(self, name):
-        #+raise Exception(f'{type(self).__name__} method in_ replaced by get')
-        return self.get(name)
 
     def __getitem__(self, key):
 

@@ -11,11 +11,12 @@ from copy import copy
 from textwrap import dedent
 from types import SimpleNamespace
 
+from srutils import Degrees
+
 from .plot_utils import AxesMap
 from .plot_utils import ax_dims_fig_coords
 from .plot_utils import SummarizablePlotClass
 from .plot_utils import TextBoxAxes
-from .utils import Degrees
 from .utils import fmt_float
 from .utils import fmt_level_ranges
 from .utils import ParentClass
@@ -36,36 +37,36 @@ class DispersionPlotLabels(SummarizableClass):
         self.words = words
 
         w = self.words
-        w.set_default_(lang)
+        w.set_default_lang(lang)
         s = self.words.symbols
 
         # yapf: disable
 
         self.simulation = SimpleNamespace(
-            start             = f'{str(w.start).capitalize()} ({s.t0})',
-            end               = str(w.end).capitalize(),
-            flexpart_based_on = f'{str(w.flexpart)} {str(w.based_on)}',
-            copyright         = f'{str(s.copyright)}{str(w.mch)}',
+            start             = f"{str(w['start']).capitalize()} ({s['t0']})",
+            end               = str(w['end']).capitalize(),
+            flexpart_based_on = f"{str(w['flexpart'])} {str(w['based_on'])}",
+            copyright         = f"{str(s['copyright'])}{str(w['mch'])}",
         )
 
         self.release = SimpleNamespace(
-            lat               = str(w.latitude    ).capitalize(),
-            lon               = str(w.longitude   ).capitalize(),
-            height            = str(w.height      ).capitalize(),
-            rate              = str(w.rate        ).capitalize(),
-            mass              = str(w.total_mass  ).capitalize(),
-            site              = str(w.site        ).capitalize(),
-            site_long         = str(w.release_site).capitalize(),
-            max               = str(w.max         ).capitalize(),
+            lat               = str(w['latitude'    ]).capitalize(),
+            lon               = str(w['longitude'   ]).capitalize(),
+            height            = str(w['height'      ]).capitalize(),
+            rate              = str(w['rate'        ]).capitalize(),
+            mass              = str(w['total_mass'  ]).capitalize(),
+            site              = str(w['site'        ]).capitalize(),
+            site_long         = str(w['release_site']).capitalize(),
+            max               = str(w['max'         ]).capitalize(),
         )
 
         self.species = SimpleNamespace(
-            name              = str(w.substance       ).capitalize(),
-            half_life         = str(w.half_life       ).capitalize(),
-            deposit_vel       = str(w.deposit_vel     ).capitalize(),
-            sediment_vel      = str(w.sediment_vel    ).capitalize(),
-            washout_coeff     = str(w.washout_coeff   ).capitalize(),
-            washout_exponent  = str(w.washout_exponent).capitalize(),
+            name              = str(w['substance'       ]).capitalize(),
+            half_life         = str(w['half_life'       ]).capitalize(),
+            deposit_vel       = str(w['deposit_vel'     ]).capitalize(),
+            sediment_vel      = str(w['sediment_vel'    ]).capitalize(),
+            washout_coeff     = str(w['washout_coeff'   ]).capitalize(),
+            washout_exponent  = str(w['washout_exponent']).capitalize(),
         )
 
         # yapf: enable
@@ -203,7 +204,6 @@ class DispersionPlot(Plot):
         self.reverse_legend = reverse_legend or False
 
         if labels is None:
-            words = words  #SR_TMP
             labels = DispersionPlotLabels(lang, words)
         self.labels = labels
 
@@ -444,18 +444,18 @@ class DispersionPlot(Plot):
             s = self.field.attrs.variable.long_name.value
             _lvl = self.field.attrs.variable.fmt_level_range()
             if _lvl:
-                s += f" {self.labels.words.at.ctx('level')} {_lvl}"
+                s += f" {self.labels.words['at'].ctx('level')} {_lvl}"
             box.text('tl', s, size='x-large')
 
         if not 'bl' in skip_pos:
             # Bottom left: integration time & level range
             itype = self.field.attrs.simulation.integr_type.value
             s = {
-                'sum': str(self.labels.words.summed_up_over).capitalize(),
-                'mean': str(self.labels.words.averaged_over).capitalize(),
-                'accum': str(self.labels.words.accumulated_over).capitalize(),
+                'sum': str(self.labels.words['summed_up_over']).capitalize(),
+                'mean': str(self.labels.words['averaged_over']).capitalize(),
+                'accum': str(self.labels.words['accumulated_over']).capitalize(),
             }[itype]
-            since = str(self.labels.words.since)
+            since = str(self.labels.words['since'])
             sim = self.field.attrs.simulation
             start = sim.integr_start.format(relative=True)
             s += f" {sim.fmt_integr_period()} ({since} {start})"
@@ -472,7 +472,7 @@ class DispersionPlot(Plot):
 
         if not 'bc' in skip_pos:
             # Bottom center: release site
-            s = (f"{str(self.labels.words.release_site).capitalize()}: "
+            s = (f"{str(self.labels.words['release_site']).capitalize()}: "
                 f"{self.field.attrs.release.site_name.value}")
             box.text('bc', s, dx=dx_center, size='large')
 
@@ -635,7 +635,7 @@ class DispersionPlot(Plot):
         box = self.boxes[2]
 
         # Add box title
-        s = str(self.labels.words.release).capitalize()
+        s = str(self.labels.words['release']).capitalize()
         #box.text('tc', s, size='large')
         box.text('tc', s, dy=-1.0, size='large')
 

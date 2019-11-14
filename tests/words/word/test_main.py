@@ -9,7 +9,7 @@ import pytest
 from attr import attrs, attrib
 from words import Word
 
-from utils import property_obj
+from srutils.testing import property_obj
 
 property_word = functools.partial(property_obj, Word)
 
@@ -27,9 +27,9 @@ class Test_Basic:
         assert self.w.get_in('en') == 'train'
         assert self.w.get_in('de') == 'Zug'
 
-    def test_lang_property(self):
-        assert self.w.en == 'train'
-        assert self.w.de == 'Zug'
+    def test_lang_brackets(self):
+        assert self.w['en'] == 'train'
+        assert self.w['de'] == 'Zug'
 
     def test_langs(self):
         assert self.w.langs == ['en', 'de']
@@ -43,10 +43,10 @@ class Test_Simple:
     def test_basics(self):
         assert self.w.default_lang == 'en'
         assert self.w == 'high school'
-        assert self.w.en == 'high school'
-        assert self.w.de == 'Mittelschule'
-        assert self.w.get_in('en') == self.w.en
-        assert self.w.get_in('de') == self.w.de
+        assert self.w.get_in('en') == 'high school'
+        assert self.w.get_in('de') == 'Mittelschule'
+        assert self.w['en'] == 'high school'
+        assert self.w['de'] == 'Mittelschule'
         assert self.w.langs == ['en', 'de']
 
     def test_name(self):
@@ -74,9 +74,9 @@ class Test_Context_OneMany:
         assert self.w == 'bei'
 
     def test_explicit_contexts_explicit_lang(self):
-        assert self.w.de.ctx('place') == 'bei'
-        assert self.w.de.ctx('time') == 'um'
-        assert self.w.de.ctx('level') == 'auf'
+        assert self.w['de'].ctx('place') == 'bei'
+        assert self.w['de'].ctx('time') == 'um'
+        assert self.w['de'].ctx('level') == 'auf'
 
     def test_explicit_contexts_default_lang(self):
         assert self.w.ctx('place') == 'bei'
@@ -84,9 +84,9 @@ class Test_Context_OneMany:
         assert self.w.ctx('level') == 'auf'
 
     def test_explicit_contexts_other_lang(self):
-        assert self.w.en.ctx('place') == 'at'
-        assert self.w.en.ctx('time') == 'at'
-        assert self.w.en.ctx('level') == 'at'
+        assert self.w['en'].ctx('place') == 'at'
+        assert self.w['en'].ctx('time') == 'at'
+        assert self.w['en'].ctx('level') == 'at'
 
 
 class Test_Context_ManyMany_Same:
@@ -102,14 +102,14 @@ class Test_Context_ManyMany_Same:
         assert self.w.name == 'mr'
 
     def test_default_context(self):
-        assert self.w.en == 'Mr.'
-        assert self.w.de == 'Herr'
+        assert self.w['en'] == 'Mr.'
+        assert self.w['de'] == 'Herr'
 
     def test_explicit_contexts(self):
-        assert self.w.en.ctx('m') == 'Mr.'
-        assert self.w.en.ctx('f') == 'Ms.'
-        assert self.w.de.ctx('m') == 'Herr'
-        assert self.w.de.ctx('f') == 'Frau'
+        assert self.w['en'].ctx('m') == 'Mr.'
+        assert self.w['en'].ctx('f') == 'Ms.'
+        assert self.w['de'].ctx('m') == 'Herr'
+        assert self.w['de'].ctx('f') == 'Frau'
 
 
 class Test_Context_ManyMany_Diff:
@@ -126,20 +126,20 @@ class Test_Context_ManyMany_Diff:
     # yapf: enable
 
     def test_default_context(self):
-        assert self.w.en == 'integrated'
-        assert self.w.de == 'integriert'
+        assert self.w['en'] == 'integrated'
+        assert self.w['de'] == 'integriert'
 
     def test_shared_contexts(self):
-        assert self.w.en.ctx('*') == 'integrated'
-        assert self.w.de.ctx('*') == 'integriert'
-        assert self.w.en.ctx('abbr') == 'int.'
-        assert self.w.de.ctx('abbr') == 'int.'
+        assert self.w['en'].ctx('*') == 'integrated'
+        assert self.w['de'].ctx('*') == 'integriert'
+        assert self.w['en'].ctx('abbr') == 'int.'
+        assert self.w['de'].ctx('abbr') == 'int.'
 
     def test_unshared_context_defined(self):
-        assert self.w.de.ctx('f') == 'integrierte'
+        assert self.w['de'].ctx('f') == 'integrierte'
 
     def test_unshared_context_undefined(self):
-        assert self.w.en.ctx('f') == self.w.en.ctx('*')
+        assert self.w['en'].ctx('f') == self.w['en'].ctx('*')
 
 
 @attrs

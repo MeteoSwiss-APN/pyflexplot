@@ -1,43 +1,45 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Utilities for testing.
+Some testing utils.
 """
-import distutils.dir_util
-import pytest
-import os
 
-from pprint import pformat
+from . import isiterable
 
-from pyflexplot.utils import isiterable
 
 #======================================================================
 
 
-@pytest.fixture
-def datadir_rel(tmpdir, request):
-    """Return path to temporary data directory named like test file.
+def property_obj(cls, *args, **kwargs):
+    """Define a class property creating a given object on-the-fly.
 
-    Pytest fixture to find a data folder with the same name as the test
-    module and -- if found -- mirror it to a temporary directory, which
-    allows the tests to use the data files freely, even in parallel.
+    The purpose of creating the object on-the-fly in a property method
+    is to isolate any errors during instatiation in the test methods
+    using the property. This prevents the whole test suite from being
+    aborted, as it would if the object were defined as a simple class
+    attribute and it's instatiation failed -- instead, only the tests
+    attempting to use the object will fail.
 
-    Adapted from `https://stackoverflow.com/a/29631801`.
+    And yes, this is indeed merely a convenience function to save two
+    lines of code wherever it is used. :-)
+
+    Usage:
+        The following class definitions are equivalent:
+
+        >>> class C1:
+        ...     @property
+        ...     def w(self):
+        ...         return Word(en='train', de='Zug')
+
+        >>> class C2:
+        ...     w = property_word(en='train', de='Zug')
+
     """
-    test_file_path = request.module.__file__
-    test_dir_path, _ = os.path.splitext(test_file_path)
-    if os.path.isdir(test_dir_path):
-        distutils.dir_util.copy_tree(test_dir_path, str(tmpdir))
-    return tmpdir
 
+    def create_obj(self):
+        return cls(*args, **kwargs)
 
-@pytest.fixture
-def datadir(tmpdir, request):
-    """Return path to temporary directory named 'data'."""
-    test_file_path = request.module.__file__
-    test_dir_path = f'{os.path.dirname(test_file_path)}/data'
-    if os.path.isdir(test_dir_path):
-        distutils.dir_util.copy_tree(test_dir_path, str(tmpdir))
-    return tmpdir
+    return property(create_obj)
 
 
 #======================================================================
@@ -78,6 +80,9 @@ class UnequalElement:
 
 def ignored(obj):
     return isinstance(obj, IgnoredElement)
+
+
+#======================================================================
 
 
 def assert_summary_dict_is_subdict(

@@ -7,51 +7,53 @@ import pytest
 
 from types import SimpleNamespace
 
+from srutils import isiterable
+from srutils.testing import assert_summary_dict_is_subdict
+from srutils.testing import IgnoredElement
+from srutils.testing import UnequalElement
+from words import Word, Words
+
 from pyflexplot.plot import DispersionPlot
 
-from utils import assert_summary_dict_is_subdict
-from utils import IgnoredElement, UnequalElement
-
-#----------------------------------------------------------------------
+#======================================================================
 # Classes for dummy input data
-#----------------------------------------------------------------------
+#======================================================================
 
 
-class DummyWord:
-
-    def __init__(self, name, parent):
-        self._name = name
-        self._lang = None
-        self._parent = parent
-
-    @property
-    def lang(self):
-        return self._parent.lang_
+class DummyWord(Word):
+    """Wrapper for ``Word`` class for testing."""
 
     def __str__(self):
-        s = f'{self._parent._name}.{self._name}'
-        if self.lang:
-            s += f'[{self.lang}]'
+        s = f'{self._parent.name}.{self.name}'
+        if self._lang:
+            s += f'[{self._lang}]'
         return f'<{s}>'
 
-    def ctx(self, ctx):
-        return f'<{str(self)[1:-1]}[{ctx}]>'.replace(r'][', '|')
+    @property
+    def _lang(self):
+        return self._parent._lang
+
+    def ctx(self, name):
+        return f'<{str(self)[1:-1]}[{name}]>'.replace(r'][', '|')
 
 
-class DummyWords:
+class DummyWords(Words):
+    """Wrapper for ``Words`` class for testing."""
 
-    def __init__(self, name, words, lang=None):
-        self._name = name
-        for word in words:
-            setattr(self, word, DummyWord(word, self))
-        self.lang_ = None
-        self.lang_ = lang
+    cls_word = DummyWord
 
-    def set_default_(self, lang):
-        self.lang_ = lang
+    @classmethod
+    def create(cls, name, lang, words):
+        self = cls(name=name, default_lang=lang,
+                   **{w: {'en': w, 'de': w} for w in words})
+        self._lang = lang
+        for word in self._words.values():
+            word._parent = self
+        return self
 
 
 class DummyAttr:
+    """Replacement for ``Attr`` class for testing."""
 
     def __init__(self, name, value, lang):
         name = f'<{name}[{lang}]>'
@@ -64,9 +66,9 @@ class DummyAttr:
         return f'<{self._name[1:-1]}.format>'
 
 
-#----------------------------------------------------------------------
+#======================================================================
 # Prepare test data
-#----------------------------------------------------------------------
+#======================================================================
 
 
 def create_dummy_attrs(lang):
@@ -132,10 +134,10 @@ def create_dummy_field(attrs):
     )
 
 
-def create_dummy_words():
+def create_dummy_words(lang):
 
-    w = DummyWords(
-        'words', [
+    w = DummyWords.create(
+        'words', lang, [
             'accumulated_over',
             'at',
             'averaged_over',
@@ -168,7 +170,7 @@ def create_dummy_words():
 
 def create_dummy_symbols():
 
-    return DummyWords('symbols', [
+    return DummyWords.create('symbols', None, [
         'ae',
         'copyright',
         'oe',
@@ -178,14 +180,14 @@ def create_dummy_symbols():
 
 
 def create_dummy_labels(lang):
-    dummy_words = create_dummy_words()
+    dummy_words = create_dummy_words(lang)
     from pyflexplot.plot import DispersionPlotLabels
     return DispersionPlotLabels(lang, dummy_words)
 
 
-#----------------------------------------------------------------------
+#======================================================================
 # Create result
-#----------------------------------------------------------------------
+#======================================================================
 
 
 def create_res(lang, _cache={}):
@@ -211,9 +213,9 @@ def create_res(lang, _cache={}):
     return _cache[lang]
 
 
-#----------------------------------------------------------------------
+#======================================================================
 # Run tests
-#----------------------------------------------------------------------
+#======================================================================
 
 
 class CreateTests:
@@ -282,7 +284,7 @@ class CreateTests:
                 raise AssertionError(f"inverted test passed")
 
 
-#----------------------------------------------------------------------
+#======================================================================
 
 
 @CreateTests()
@@ -333,9 +335,9 @@ class Test_Full:
     field = True
 
 
-#----------------------------------------------------------------------
+#======================================================================
 # Create solutions
-#----------------------------------------------------------------------
+#======================================================================
 
 
 def create_sol(lang, inverted, **kwargs):
@@ -467,7 +469,8 @@ class Solution:
                               f'(<words.since{sl}> '
                               f'<simulation.integr_start{sl}.format>)') ,
                     txt('tc', f'<species.name{sl}.format>'),
-                    txt('bc', f'<release.site_name{sl}>'),
+                    txt('bc', f'<words.release_site{sl}>: '
+                              f'<release.site_name{sl}>'),
                     txt('tr', f'<simulation.now{sl}.format>'),
                     txt('br', f'<simulation.now{sl}.format>'),
                 ]),

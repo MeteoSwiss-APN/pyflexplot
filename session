@@ -3,7 +3,8 @@
 < tests/pyflexplot/session
 ---
 < src/words/session
-----
 < tests/words/session
+----
+< tests/test_utils/session
 -----
 < src/tools/session

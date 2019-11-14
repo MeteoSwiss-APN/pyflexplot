@@ -9,6 +9,3 @@
 ./test_plotter.py
 ./test_plot.py
 ./test_plot_utils.py
-./test_utils.py
-
-./utils.py
