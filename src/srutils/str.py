@@ -80,7 +80,8 @@ def titlecase(s, preserve=True):
     words_input = s.split(' ')
     words_title = (
         [capitalize(words_input[0])] +
-        [w if w in lower else capitalize(w) for w in words_input[1:-1]] +
-        [capitalize(words_input[-1])])
+        [w if w in lower else capitalize(w) for w in words_input[1:-1]])
+    if len(words_input) >= 2:
+        words_title += [capitalize(words_input[-1])]
 
     return ' '.join(words_title)

@@ -43,30 +43,30 @@ class DispersionPlotLabels(SummarizableClass):
         # yapf: disable
 
         self.simulation = SimpleNamespace(
-            start             = f"{str(w['start']).capitalize()} ({s['t0']})",
-            end               = str(w['end']).capitalize(),
-            flexpart_based_on = f"{str(w['flexpart'])} {str(w['based_on'])}",
-            copyright         = f"{str(s['copyright'])}{str(w['mch'])}",
+            start             = f"{w['start'].t} ({s['t0']})",
+            end               = w['end'].t,
+            flexpart_based_on = f"{w['flexpart'].t} {w['based_on'].t}",
+            copyright         = f"{s['copyright'].t}{w['mch'].t}",
         )
 
         self.release = SimpleNamespace(
-            lat               = str(w['latitude'    ]).capitalize(),
-            lon               = str(w['longitude'   ]).capitalize(),
-            height            = str(w['height'      ]).capitalize(),
-            rate              = str(w['rate'        ]).capitalize(),
-            mass              = str(w['total_mass'  ]).capitalize(),
-            site              = str(w['site'        ]).capitalize(),
-            site_long         = str(w['release_site']).capitalize(),
-            max               = str(w['max'         ]).capitalize(),
+            lat               = w['latitude'    ].t,
+            lon               = w['longitude'   ].t,
+            height            = w['height'      ].t,
+            rate              = w['rate'        ].t,
+            mass              = w['total_mass'  ].t,
+            site              = w['site'        ].t,
+            site_long         = w['release_site'].t,
+            max               = w['max'         ].t,
         )
 
         self.species = SimpleNamespace(
-            name              = str(w['substance'       ]).capitalize(),
-            half_life         = str(w['half_life'       ]).capitalize(),
-            deposit_vel       = str(w['deposit_vel'     ]).capitalize(),
-            sediment_vel      = str(w['sediment_vel'    ]).capitalize(),
-            washout_coeff     = str(w['washout_coeff'   ]).capitalize(),
-            washout_exponent  = str(w['washout_exponent']).capitalize(),
+            name              = w['substance'       ].t,
+            half_life         = w['half_life'       ].t,
+            deposit_vel       = w['deposit_vel'     ].t,
+            sediment_vel      = w['sediment_vel'    ].t,
+            washout_coeff     = w['washout_coeff'   ].t,
+            washout_exponent  = w['washout_exponent'].t,
         )
 
         # yapf: enable
@@ -451,14 +451,11 @@ class DispersionPlot(Plot):
             # Bottom left: integration time & level range
             itype = self.field.attrs.simulation.integr_type.value
             s = {
-                'sum':
-                    str(self.labels.words['summed_up_over']).capitalize(),
-                'mean':
-                    str(self.labels.words['averaged_over']).capitalize(),
-                'accum':
-                    str(self.labels.words['accumulated_over']).capitalize(),
+                'sum': self.labels.words['summed_up_over'].t,
+                'mean': self.labels.words['averaged_over'].t,
+                'accum': self.labels.words['accumulated_over'].t,
             }[itype]
-            since = str(self.labels.words['since'])
+            since = self.labels.words['since'].t
             sim = self.field.attrs.simulation
             start = sim.integr_start.format(relative=True)
             s += f" {sim.fmt_integr_period()} ({since} {start})"
@@ -476,7 +473,7 @@ class DispersionPlot(Plot):
         if not 'bc' in skip_pos:
             # Bottom center: release site
             s = (
-                f"{str(self.labels.words['release_site']).capitalize()}: "
+                f"{self.labels.words['release_site'].t}: "
                 f"{self.field.attrs.release.site_name.value}")
             box.text('bc', s, dx=dx_center, size='large')
 
@@ -639,7 +636,7 @@ class DispersionPlot(Plot):
         box = self.boxes[2]
 
         # Add box title
-        s = str(self.labels.words['release']).capitalize()
+        s = self.labels.words['release'].t
         #box.text('tc', s, size='large')
         box.text('tc', s, dy=-1.0, size='large')
 

@@ -252,19 +252,19 @@ class VarSpecs_Concentration(VarSpecs):
     @classmethod
     def long_name(cls, lang, var_specs):
         if var_specs.integrate:
-            return str(words['activity_concentr', lang]).capitalize()
-        return str(words['activity_concentration', lang]).capitalize()
+            return words['activity_concentr', lang].t
+        return words['activity_concentration', lang].t
 
     @classmethod
     def short_name(cls, lang, var_specs):
         s = ''
         if var_specs.integrate:
             return (
-                f"{str(words['integrated', lang, 'abbr']).capitalize()} "
-                f"{str(words['concentration', lang, 'abbr']).capitalize()}")
+                f"{words['integrated', lang, 'abbr'].t} "
+                f"{words['concentration', lang, 'abbr'].t}")
         return (
-            f"{str(words['integrated', lang, 'f']).capitalize()} "
-            f"{str(words['concentration', lang]).capitalize()}")
+            f"{words['integrated', lang, 'f'].t} "
+            f"{words['concentration', lang].t}")
 
     def var_name(self):
         """Derive variable name from specifications."""
@@ -318,11 +318,11 @@ class VarSpecs_Deposition(VarSpecs):
         dep_type = cls.deposition_type_long_name(lang, var_specs)
         return (
             f'[{dep_type}] '
-            f"{str(words['surface_deposition', lang]).capitalize()}")
+            f"{words['surface_deposition', lang].t}")
 
     @classmethod
     def short_name(cls, lang, var_specs):
-        return f"{words['deposition', lang]}"
+        return words['deposition', lang].s
 
     def var_name(self):
         """Derive variable name from specifications."""
@@ -337,7 +337,7 @@ class VarSpecs_AffectedArea(VarSpecs_Deposition):
     def long_name(cls, lang, var_specs):
         dep_name = VarSpecs_Deposition.long_name(lang, var_specs)
         return (
-            f"{str(words['affected_area', lang]).capitalize()} "
+            f"{words['affected_area', lang].t} "
             f'({dep_name})')
 
 
