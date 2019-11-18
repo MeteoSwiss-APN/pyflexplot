@@ -7,5 +7,5 @@
 
 ./test_data.py
 ./test_plotter.py
-./test_plot.py
+./test_plot_summarize.py
 ./test_plot_utils.py

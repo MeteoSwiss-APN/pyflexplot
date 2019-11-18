@@ -1,6 +1,38 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Tests for module ``pyflexplot.plot``."""
+"""
+Test summarizing plots as defined in ``pyflexplot.plot``.
+
+Plots can be summarized into dicts, which can be used to test that all
+plot elements are in the right place with the right content etc.
+
+(Summarization is similar to serialization, but without the ability to
+reconstruct the objects from the summary.)
+
+In this module, the summary dict of one plot type is thoroughly tested
+to ensure that summarization works as expected. In order to isolate
+this process as best as possible, several classes used to define labels
+etc. are mocked: ``Word``, ``Words``, ``Attr``.
+
+While the mocks allows us to inject dummy strings as labels etc. and
+makes the tests independent of the exact formation of those, the tests
+are still dependent on the structure of ``DispersionPlot``, i.e., what
+elements there are and where they go.
+
+Not every failure thus implies that summarization is broken! There
+might just have been minor adjustments to the plot layout.
+
+The tests are organized in such a way that a comprehensive reference
+summary dict is constructed near the bottom, and each test compares a
+subset of it against the respective part(s) of the summary dict
+obtained from the tested plot class.
+
+All tests come in pairs: For each positive test (check that elements
+present in both the result and solution summary dicts match) there is
+a negative test that ensures failure in case of wrong content. This
+prevents false positive, i.e., passing tests because of missing
+elements in either dict.
+"""
 import logging as log
 import numpy as np
 import pytest
