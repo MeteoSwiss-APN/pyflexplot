@@ -2,8 +2,9 @@
 """
 Word.
 """
+from srutils.str import capitalize
+from srutils.str import titlecase
 from srutils.str import to_varname
-
 
 class Word:
     """A word in one or more languages."""
@@ -148,11 +149,7 @@ class Word:
 
     #------------------------------------------------------------------
 
-    @property
-    def s(self):
-        return str(self)
-
-    def cap(self, all=False):
+    def capital(self, all=False, preserve=True):
         """Capitalize the first letter of the first or of each word.
 
         Already capitalized words are retained as such, in contrast to
@@ -160,21 +157,44 @@ class Word:
 
         Args:
             all (bool, optional): Whether to capitalize all words.
+                Defaults to False.
+
+            preserve (bool, optional): Whether to preserve capitalized
+                letters. Defaults to True.
 
         """
+        s = str(self)
+        if not preserve:
+            s = s.lower()
         if all:
-            return str(self).title()
-        start, rest = str(self).split(' ', 1)
-        return f"{start.capitalize()} {rest}"
+            return ' '.join([capitalize(w) for w in s.split(' ')])
+        start, rest = s.split(' ', 1)
+        return f'{capitalize(start)} {rest}'
+
+    def title(self, preserve=True):
+        if self.lang == 'de':
+            return self.capital(all=False, preserve=preserve)
+        elif self.lang == 'en':
+            return titlecase(self, preserve=preserve)
+
+    #------------------------------------------------------------------
+
+    @property
+    def s(self):
+        return str(self)
 
     @property
     def c(self):
         """Shorthand to capitalize the first word."""
-        return self.cap(all=False)
+        return self.capital(all=False, preserve=True)
 
     @property
     def C(self):
-        return self.cap(all=True)
+        return self.capital(all=True, preserve=True)
+
+    @property
+    def t(self):
+        return self.title(preserve=True)
 
     #------------------------------------------------------------------
 
