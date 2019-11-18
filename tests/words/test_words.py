@@ -30,8 +30,20 @@ class Test_Basic:
         assert self.ws.get('high_school') == 'high school'
 
     def test_langs(self):
+        assert self.ws.get('train').get_in('en') == 'train'
+        assert self.ws.get('high_school').get_in('en') == 'high school'
         assert self.ws.get('train').get_in('de') == 'Zug'
         assert self.ws.get('high_school').get_in('de') == 'Mittelschule'
+
+    def test_format(self):
+        assert self.ws.get('high_school').get_in('en').s == 'high school'
+        assert self.ws.get('high_school').get_in('en').c == 'High school'
+        assert self.ws.get('high_school').get_in('en').C == 'High School'
+        assert self.ws.get('high_school').get_in('en').t == 'High School'
+        assert self.ws.get('high_school').get_in('de').s == 'Mittelschule'
+        assert self.ws.get('high_school').get_in('de').c == 'Mittelschule'
+        assert self.ws.get('high_school').get_in('de').C == 'Mittelschule'
+        assert self.ws.get('high_school').get_in('de').t == 'Mittelschule'
 
 
 class Test_Basic_BracketsInterface:
@@ -56,8 +68,20 @@ class Test_Basic_BracketsInterface:
         assert self.ws['high_school'].get_in('de') == 'Mittelschule'
 
     def test_lang_bracket(self):
+        assert self.ws['train', 'en'] == 'train'
         assert self.ws['train', 'de'] == 'Zug'
+        assert self.ws['high_school', 'en'] == 'high school'
         assert self.ws['high_school', 'de'] == 'Mittelschule'
+
+    def test_format(self):
+        assert self.ws['high_school', 'en'].s == 'high school'
+        assert self.ws['high_school', 'de'].s == 'Mittelschule'
+        assert self.ws['high_school', 'en'].c == 'High school'
+        assert self.ws['high_school', 'de'].c == 'Mittelschule'
+        assert self.ws['high_school', 'en'].C == 'High School'
+        assert self.ws['high_school', 'de'].C == 'Mittelschule'
+        assert self.ws['high_school', 'en'].t == 'High School'
+        assert self.ws['high_school', 'de'].t == 'Mittelschule'
 
 
 class Test_ContextDependent_OneToMany:
@@ -278,3 +302,13 @@ class Test_ContextDependent_ManyToMany_BracketInterface:
         assert self.ws['integrated', 'en', 'f'] == 'integrated'
         assert self.ws.get('integrated')['en'].ctx('*') == 'integrated'
         assert self.ws.get('integrated')['en'].ctx('f') == 'integrated'
+
+    def test_format(self):
+        assert self.ws['integrated', 'en', '*'].s == 'integrated'
+        assert self.ws['integrated', 'en', 'f'].s == 'integrated'
+        assert self.ws['integrated', 'en', '*'].c == 'Integrated'
+        assert self.ws['integrated', 'en', 'f'].c == 'Integrated'
+        assert self.ws['integrated', 'en', '*'].C == 'Integrated'
+        assert self.ws['integrated', 'en', 'f'].C == 'Integrated'
+        assert self.ws['integrated', 'en', '*'].t == 'Integrated'
+        assert self.ws['integrated', 'en', 'f'].t == 'Integrated'

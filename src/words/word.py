@@ -173,13 +173,13 @@ class Word:
             s = s.lower()
         if all:
             return ' '.join([capitalize(w) for w in s.split(' ')])
-        start, rest = s.split(' ', 1)
-        return f'{capitalize(start)} {rest}'
+        words = s.split(' ')
+        return ' '.join([capitalize(words[0])] + words[1:])
 
     def title(self, preserve=True):
-        if self.lang == 'de':
+        if self.default_lang == 'de':
             return self.capital(all=False, preserve=preserve)
-        elif self.lang == 'en':
+        elif self.default_lang == 'en':
             return titlecase(self, preserve=preserve)
 
     #------------------------------------------------------------------
@@ -240,6 +240,8 @@ class ContextWord(Word):
 
         """
         self.lang = lang
+        self._default_lang = lang
+        self._default_lang_query = None
 
         self._variants = {}
         for ctx, word in variants.items():
@@ -248,26 +250,32 @@ class ContextWord(Word):
             self._variants[ctx] = word
         self.default_context = next(iter(self._variants))
 
-    def ctx(self, name):
+    def ctx(self, name, as_str=False):
         """Return the variant of the word in a specific context.
 
         Args:
             name (str): Name of the context (one of ``self.ctxs``).
 
+            as_str (bool, optional): Return string. Defaults to False.
+
         """
         if name is None:
             name = self.default_context
         try:
-            return self._variants[name]
+            word = self._variants[name]
         except KeyError:
-            return self._variants['*']
+            word = self._variants['*']
+        lang = self.lang or 'None'
+        if as_str:
+            return word
+        return Word(**{lang: word})
 
     def ctxs(self):
         """List of contexts."""
-        return list(self._variants)
+        return list(self._variants.keys())
 
     def __str__(self):
-        return self.ctx(self.default_context)
+        return str(self.ctx(self.default_context, as_str=True))
 
     def __repr__(self):
         s_variants = ', '.join(
