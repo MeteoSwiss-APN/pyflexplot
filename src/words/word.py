@@ -6,11 +6,16 @@ from srutils.str import capitalize
 from srutils.str import titlecase
 from srutils.str import to_varname
 
+
 class Word:
     """A word in one or more languages."""
 
     def __init__(
-            self, name=None, *, default_lang=None, default_lang_query=None,
+            self,
+            name=None,
+            *,
+            default_lang=None,
+            default_lang_query=None,
             **langs):
         """Create an instance of ``Word``.
 

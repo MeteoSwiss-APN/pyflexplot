@@ -6,7 +6,6 @@ Some testing utils.
 
 from .various import isiterable
 
-
 #======================================================================
 
 

@@ -14,7 +14,6 @@ from srutils.various import isiterable
 
 from pyflexplot.plot_utils import TextBoxAxes
 
-
 #======================================================================
 
 

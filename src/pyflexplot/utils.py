@@ -10,7 +10,6 @@ from collections import namedtuple
 
 from srutils.various import isiterable
 
-
 #======================================================================
 # Exceptions
 #======================================================================

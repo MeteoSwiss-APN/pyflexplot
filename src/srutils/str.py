@@ -4,7 +4,6 @@ String utilities.
 """
 import re
 
-
 #======================================================================
 
 
@@ -68,8 +67,9 @@ def titlecase(s, preserve=True):
     # Words not to be capitalized
     # src: https://stackoverflow.com/a/35018815
     lower = [
-        'the', 'a', 'an', 'as', 'at', 'but', 'by', 'for', 'in', 'of','off',
-        'on', 'per', 'to', 'up', 'via', 'and', 'nor', 'or', 'so', 'yet']
+        'the', 'a', 'an', 'as', 'at', 'but', 'by', 'for', 'in', 'of', 'off',
+        'on', 'per', 'to', 'up', 'via', 'and', 'nor', 'or', 'so', 'yet'
+    ]
     # Note: This is a rather simplistic implementation.
     # A more sophisticated implementation could be guided by, for instance:
     # https://titlecaseconverter.com/words-to-capitalize/?style=AP,APA,CMOS,MLA,NYT,WP

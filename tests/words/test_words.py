@@ -10,6 +10,7 @@ from srutils.testing import property_obj
 
 property_words = functools.partial(property_obj, Words)
 
+
 class Test_Basic:
     """Test for simple words."""
 
@@ -111,6 +112,7 @@ class Test_ContextDependent_OneToMany:
         assert self.ws.get('at', 'en', 'place') == 'at'
         assert self.ws.get('at', 'en', 'level') == 'at'
 
+
 class Test_ContextDependent_OneToMany_BracketInterface:
     """Test bracket interface for one-to-many context-dep. words."""
 
@@ -154,6 +156,7 @@ class Test_ContextDependent_OneToMany_BracketInterface:
         assert self.ws['at', 'en'].ctx('level') == 'at'
         assert self.ws['at', 'en', 'level'] == 'at'
         assert self.ws.get('at')['en'].ctx('level') == 'at'
+
 
 class Test_ContextDependent_ManyToMany:
     """Test words with context-dependency in both languages."""
@@ -219,6 +222,7 @@ class Test_ContextDependent_ManyToMany:
         assert self.ws.get('integrated', 'en', '*') == 'integrated'
         assert self.ws.get('integrated', 'en', 'f') == 'integrated'
         assert self.ws.get('integrated', 'en', 'abbr') == 'int.'
+
 
 class Test_ContextDependent_ManyToMany_BracketInterface:
     """Test bracket interface for many-to-many context-dep. words."""

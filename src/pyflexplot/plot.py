@@ -451,9 +451,12 @@ class DispersionPlot(Plot):
             # Bottom left: integration time & level range
             itype = self.field.attrs.simulation.integr_type.value
             s = {
-                'sum': str(self.labels.words['summed_up_over']).capitalize(),
-                'mean': str(self.labels.words['averaged_over']).capitalize(),
-                'accum': str(self.labels.words['accumulated_over']).capitalize(),
+                'sum':
+                    str(self.labels.words['summed_up_over']).capitalize(),
+                'mean':
+                    str(self.labels.words['averaged_over']).capitalize(),
+                'accum':
+                    str(self.labels.words['accumulated_over']).capitalize(),
             }[itype]
             since = str(self.labels.words['since'])
             sim = self.field.attrs.simulation
@@ -472,7 +475,8 @@ class DispersionPlot(Plot):
 
         if not 'bc' in skip_pos:
             # Bottom center: release site
-            s = (f"{str(self.labels.words['release_site']).capitalize()}: "
+            s = (
+                f"{str(self.labels.words['release_site']).capitalize()}: "
                 f"{self.field.attrs.release.site_name.value}")
             box.text('bc', s, dx=dx_center, size='large')
 

@@ -44,8 +44,13 @@ class DummyWords(Words):
 
     @classmethod
     def create(cls, name, lang, words):
-        self = cls(name=name, default_lang=lang,
-                   **{w: {'en': w, 'de': w} for w in words})
+        self = cls(
+            name=name,
+            default_lang=lang,
+            **{w: {
+                'en': w,
+                'de': w
+            } for w in words})
         self._lang = lang
         for word in self._words.values():
             word._parent = self
@@ -170,13 +175,14 @@ def create_dummy_words(lang):
 
 def create_dummy_symbols():
 
-    return DummyWords.create('symbols', None, [
-        'ae',
-        'copyright',
-        'oe',
-        't0',
-        'ue',
-    ])
+    return DummyWords.create(
+        'symbols', None, [
+            'ae',
+            'copyright',
+            'oe',
+            't0',
+            'ue',
+        ])
 
 
 def create_dummy_labels(lang):

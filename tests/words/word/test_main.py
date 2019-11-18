@@ -65,7 +65,9 @@ class Test_Context_OneMany:
     """A word depending on context in one language."""
 
     w = property_word(
-        en='at', de=dict(place='bei', time='um', level='auf'), default_lang='de')
+        en='at',
+        de=dict(place='bei', time='um', level='auf'),
+        default_lang='de')
 
     def test_name(self):
         assert self.w.name == 'at'
