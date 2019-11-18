@@ -62,7 +62,7 @@ class Field(SummarizableClass):
     def summarize(self, *args, **kwargs):
         data = super().summarize(*args, **kwargs)
         data['fld'] = {
-            'dtype': self.fld.dtype.__name__,
+            'dtype': str(self.fld.dtype),
             'shape': self.fld.shape,
             'nanmin': np.nanmin(self.fld),
             'nanmean': np.nanmean(self.fld),
@@ -72,17 +72,17 @@ class Field(SummarizableClass):
             'nanmean_nonzero': np.nanmean(self.fld[self.fld != 0]),
             'nanmedian_nonzero': np.nanmedian(self.fld[self.fld != 0]),
             'nanmax_nonzero': np.nanmax(self.fld[self.fld != 0]),
-            'n_nan': np.count_nonzero(np.isnan(fld)),
-            'n_zero': np.count_nonzero(fld == 0),
+            'n_nan': np.count_nonzero(np.isnan(self.fld)),
+            'n_zero': np.count_nonzero(self.fld == 0),
         }
         data['rlat'] = {
-            'dtype': self.rlat.dtype.__name__,
+            'dtype': str(self.rlat.dtype),
             'shape': self.rlat.shape,
             'min': self.rlat.min(),
             'max': self.rlat.max(),
         }
         data['rlon'] = {
-            'dtype': self.rlon.dtype.__name__,
+            'dtype': str(self.rlon.dtype),
             'shape': self.rlon.shape,
             'min': self.rlon.min(),
             'max': self.rlon.max(),

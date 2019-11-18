@@ -316,9 +316,7 @@ class VarSpecs_Deposition(VarSpecs):
     @classmethod
     def long_name(cls, lang, var_specs):
         dep_type = cls.deposition_type_long_name(lang, var_specs)
-        return (
-            f'[{dep_type}] '
-            f"{words['surface_deposition', lang].t}")
+        return (f'[{dep_type}] ' f"{words['surface_deposition', lang].t}")
 
     @classmethod
     def short_name(cls, lang, var_specs):
@@ -336,9 +334,7 @@ class VarSpecs_AffectedArea(VarSpecs_Deposition):
     @classmethod
     def long_name(cls, lang, var_specs):
         dep_name = VarSpecs_Deposition.long_name(lang, var_specs)
-        return (
-            f"{words['affected_area', lang].t} "
-            f'({dep_name})')
+        return (f"{words['affected_area', lang].t} " f'({dep_name})')
 
 
 class Varspecs_AffectedAreaMono(VarSpecs_AffectedArea):

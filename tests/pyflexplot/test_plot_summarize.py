@@ -32,7 +32,14 @@ present in both the result and solution summary dicts match) there is
 a negative test that ensures failure in case of wrong content. This
 prevents false positive, i.e., passing tests because of missing
 elements in either dict.
+
+Some dict elements are explicitly ignored in comparisons by aid of
+``IgnoredElement``. This allows us to test, for instance that the
+correct number of lebend labels are present without testing for the
+labels themselves, or to avoid hard-coding lat/lon coordinates in the
+solution.
 """
+import functools
 import logging as log
 import numpy as np
 import pytest
@@ -45,6 +52,7 @@ from srutils.testing import UnequalElement
 from srutils.various import isiterable
 from words import Word, Words
 
+from pyflexplot.data import Field
 from pyflexplot.plot import DispersionPlot
 
 #======================================================================
@@ -160,15 +168,15 @@ def create_dummy_attrs(lang):
 
 
 def create_dummy_field(attrs):
-    return SimpleNamespace(
-        time_stats={'max': 15},
+    dummy_field = Field(
         fld=np.array([[i]*10 for i in range(10)], np.float32),
         rlat=np.arange(-5.0, 4.1, 1.0),
         rlon=np.arange(-6.0, 3.1, 1.0),
         attrs=attrs,
-        summarize=lambda: {},
-        scale=lambda f: None,
+        field_specs=None,
+        time_stats={'max': 15},
     )
+    return dummy_field
 
 
 def create_dummy_words(lang):
@@ -605,19 +613,24 @@ class Solution:
             },
             'axes': [
                 {
-                    'type': 'GeoAxesSubplot'
+                    'type': 'GeoAxesSubplot',
+                    'bbox': IgnoredElement('axes[0]::bbox'),
                 },
                 {
-                    'type': 'Axes'
+                    'type': 'Axes',
+                    'bbox': IgnoredElement('axes[1]::bbox'),
                 },
                 {
-                    'type': 'Axes'
+                    'type': 'Axes',
+                    'bbox': IgnoredElement('axes[2]::bbox'),
                 },
                 {
-                    'type': 'Axes'
+                    'type': 'Axes',
+                    'bbox': IgnoredElement('axes[3]::bbox'),
                 },
                 {
-                    'type': 'Axes'
+                    'type': 'Axes',
+                    'bbox': IgnoredElement('axes[4]::bbox'),
                 },
             ]
         }
@@ -626,5 +639,38 @@ class Solution:
 
     def field(self):
         e = self.element
-        jdat = e({})  #SR_TMP
+        jdat = {
+            'type': 'Field',
+            'attrs': {},  #SR_TMP
+            'field_specs': None,  #SR_TMP
+            'time_stats': {
+                'max': e(15),
+            },
+            'fld': {
+                'dtype': 'float32',
+                'shape': e((10, 10)),
+                'nanmin': e(0.0),
+                'nanmean': e(4.5),
+                'nanmedian': e(4.5),
+                'nanmax': e(9.0),
+                'nanmin_nonzero': e(1.0),
+                'nanmean_nonzero': e(5.0),
+                'nanmedian_nonzero': e(5.0),
+                'nanmax_nonzero': e(9.0),
+                'n_nan': e(0),
+                'n_zero': e(10),
+            },
+            'rlat': {
+                'dtype': 'float64',
+                'shape': e((10,)),
+                'min': e(-5.0),
+                'max': e(4.0),
+            },
+            'rlon': {
+                'dtype': 'float64',
+                'shape': e((10,)),
+                'min': e(-6.0),
+                'max': e(3.0),
+            },
+        }
         return {'field': jdat}
