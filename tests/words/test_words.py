@@ -5,6 +5,7 @@ import functools
 import pytest
 
 from words import Words
+from words.exceptions import MissingWordError
 
 from srutils.testing import property_obj
 
@@ -312,3 +313,50 @@ class Test_ContextDependent_ManyToMany_BracketInterface:
         assert self.ws['integrated', 'en', 'f'].C == 'Integrated'
         assert self.ws['integrated', 'en', '*'].t == 'Integrated'
         assert self.ws['integrated', 'en', 'f'].t == 'Integrated'
+
+
+class Test_Interface:
+
+    sol = {
+        ('train', 'en', None): 'train',
+        ('train', 'de', None): 'Zug',
+        ('at', 'en', 'place'): 'at',
+        ('at', 'de', 'place'): 'bei',
+        ('at', 'en', 'time'): 'at',
+        ('at', 'de', 'time'): 'um',
+        ('at', 'en', 'level'): 'at',
+        ('at', 'de', 'level'): 'auf',
+    }
+
+    def check_ws(self, ws):
+        for (name, lang, ctx), s in self.sol.items():
+            assert ws[name, lang, ctx].s == s
+
+    def test_fail(self):
+        """Ensure that ``_test_ws`` fails with wrong input."""
+        ws = Words()
+        with pytest.raises(MissingWordError):
+            self.check_ws(ws)
+
+    def test_init(self):
+        ws = Words(
+            train={
+                'en': 'train',
+                'de': 'Zug'
+            },
+            at={
+                'en': 'at',
+                'de': {
+                    'place': 'bei',
+                    'time': 'um',
+                    'level': 'auf'
+                }
+            },
+        )
+        self.check_ws(ws)
+
+    def test_add_explicit_name(self):
+        ws = Words()
+        ws.add('train', en='train', de='Zug')
+        ws.add('at', en='at', de={'place': 'bei', 'time': 'um', 'level': 'auf'})
+        self.check_ws(ws)

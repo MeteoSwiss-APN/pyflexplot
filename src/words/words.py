@@ -2,8 +2,12 @@
 """
 Words.
 """
-
 from .word import Word
+from .exceptions import MissingWordError
+from .exceptions import MissingLanguageError
+
+
+#======================================================================
 
 
 class Words:
@@ -11,7 +15,7 @@ class Words:
 
     cls_word = Word
 
-    def __init__(self, name=None, *, default_lang=None, **words):
+    def __init__(self, name=None, *, default_lang=None, **words_langs):
         """Create an instance of ``Words``.
 
         Args:
@@ -29,35 +33,42 @@ class Words:
         """
         self.name = name
 
-        langs = None
+        self._langs = None
         self._words = {}
-        for name, word in words.items():
+        for name, word_langs in words_langs.items():
             try:
-                langs_i = list(word.keys())
-            except AttributeError:
+                {**word_langs}
+            except TypeError:
                 raise ValueError(f"word {name} not a dict: {word}")
-            if langs is None:
-                langs = langs_i
-            elif set(langs) != set(langs):
-                raise ValueError(
-                    f"word '{name}' not defined in all necessary languages: "
-                    f"set({langs}) != set({langs})")
+            else:
+                self.add(name, **word_langs)
+
             if default_lang is None:
-                default_lang = next(iter(langs))
-            elif default_lang not in langs:
-                raise ValueError(
-                    f"invalid default language '{default_lang}': "
-                    f"not in {langs}")
-            self._words[name] = self.cls_word(
-                name, default_lang_query=lambda: self.default_lang, **word)
-        self._langs_ = langs
+                default_lang = next(iter(self._langs))
+
         self.set_default_lang(default_lang)
+
+    #------------------------------------------------------------------
+
+    def add(self, name=None, **word_langs):
+        """Add a word."""
+
+        langs = list(word_langs.keys())
+
+        if self._langs is None:
+            self._langs = langs
+        elif set(langs) != set(self._langs):
+            raise ValueError(
+                f"word '{name}' not defined in all necessary languages: "
+                f"set({langs}) != set({self._langs})")
+
+        self._words[name] = self.cls_word(
+            name, default_lang_query=lambda: self.default_lang, **word_langs)
 
     def set_default_lang(self, lang):
         """Change default language recursively for all words."""
-        if lang not in self.langs:
-            raise ValueError(
-                f"unknown language '{lang}': not among {self.langs}")
+        if lang and lang not in self.langs:
+            raise MissingLanguageError(f"{lang} not in {self.langs}")
         self._default_lang = lang
 
     #------------------------------------------------------------------
@@ -66,12 +77,7 @@ class Words:
         try:
             word = self._words[name]
         except KeyError:
-            s = f"unknown word: {name}"
-            if f'{name}_' in type(self).__dict__:
-                s = (
-                    f"{s}; are you meaning to call "
-                    f"`{type(self).__name__}.{name}_`?")
-            raise ValueError(s)
+            raise MissingWordError(name)
         if lang is not None:
             word = word.get_in(lang)
         if ctx is not None:
@@ -86,7 +92,9 @@ class Words:
     @property
     def langs(self):
         """Return the languages the words are defined in."""
-        return [lang for lang in self._langs_]
+        if not self._langs:
+            return []
+        return [lang for lang in self._langs]
 
     #------------------------------------------------------------------
 
