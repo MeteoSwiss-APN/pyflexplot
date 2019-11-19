@@ -251,9 +251,8 @@ class VarSpecs_Concentration(VarSpecs):
 
     @classmethod
     def long_name(cls, lang, var_specs):
-        if var_specs.integrate:
-            return words['activity_concentr', lang].t
-        return words['activity_concentration', lang].t
+        ctx = 'abbr' if var_specs.integrate else '*'
+        return words['activity_concentration', lang, ctx].t
 
     @classmethod
     def short_name(cls, lang, var_specs):
@@ -296,21 +295,11 @@ class VarSpecs_Deposition(VarSpecs):
 
     @classmethod
     def deposition_type_long_name(cls, lang, var_specs):
-        if lang == 'en':
-            choices = {
-                'wet': 'Wet',
-                'dry': 'Dry',
-                'tot': 'Total',
-            }
-
-        elif lang == 'de':
-            choices = {
-                'wet': 'Nass',
-                'dry': 'Trocken',
-                'tot': 'Total',
-            }
-        else:
-            raise NotImplementedError(f"lang='{lang}'")
+        choices = {
+            'wet': words['wet', lang].t,
+            'dry': words['dry', lang].t,
+            'tot': words['total', lang].t,
+        }
         return choices[dict(var_specs)['deposition']]
 
     @classmethod
@@ -346,10 +335,9 @@ class VarSpecs_EnsMean_Concentration(VarSpecs_Concentration):
 
     @classmethod
     def long_name(cls, lang, var_specs):
-        return {
-            'en': 'Activity Concentration\nEnsemble-Mean',
-            'de': r'Aktivit$\mathrm{\"a}$tskonzentration\nEnsemble-Mittel',
-        }[lang]
+        return (
+            f"{words['activity_concentration', lang].t}\n"
+            f"{words['ensemble_mean', lang]}")
 
 
 class VarSpecs_EnsMean_Deposition(VarSpecs_Deposition):
@@ -358,10 +346,9 @@ class VarSpecs_EnsMean_Deposition(VarSpecs_Deposition):
     @classmethod
     def long_name(cls, lang, var_specs):
         dep_type = cls.deposition_type_long_name(lang, var_specs)
-        return {
-            'en': f'Ensemble-Mean {dep_type} Surface Deposition',
-            'de': f'Ensemble-Mittel der {dep_type}en Bodenablagerung',
-        }[lang]
+        return (
+            f"{words['ensemble_mean', lang].t} {dep_type} "
+            f"{words['surface_deposition'].t}")
 
 
 class VarSpecs_EnsMean_AffectedArea(VarSpecs_AffectedArea):
@@ -370,10 +357,9 @@ class VarSpecs_EnsMean_AffectedArea(VarSpecs_AffectedArea):
     @classmethod
     def long_name(cls, lang, var_specs):
         dep_type = cls.deposition_type_long_name(lang, var_specs)
-        return {
-            'en': f'Ensemble-Mean Affected Area ({dep_type})',
-            'de': f'Ensemble-Mittel des Beaufschlagtes Gebiets ({dep_type})',
-        }[lang]
+        return (
+            f"{words['ensemble_mean', lang].t} "
+            f"{words['affected_area', lang].t} ({dep_type})")
 
 
 class VarSpecs_EnsThrAgrmt:
@@ -381,20 +367,15 @@ class VarSpecs_EnsThrAgrmt:
     @classmethod
     def long_name(cls, lang, var_specs):
         long_name_super = super().long_name(lang, var_specs)
-        long_name_base = {
-            'en': 'Ensemble Threshold Agreement of\n',
-            'de': r'Ensemble-Grenzwert$\mathrm{\"u}$bereinstimmung der\n',
-        }[lang]
+        long_name_base = (
+            f"{words['ensemble'].t}{dict(en=' ', de='-')[lang]}"
+            f"{words['threshold_agreement'].t} "
+            f"{dict(en='of', de='der')[lang]}")  #SR_TMP
         return long_name_base + long_name_super
 
     @classmethod
     def short_name(cls, lang, var_specs):
-        return {
-            #'en': 'No. Members',
-            #'de': 'Anz. Members',
-            'en': 'Members',
-            'de': 'Members',
-        }[lang]
+        return 'Members'
 
 
 class VarSpecs_EnsThrAgrmt_Concentration(VarSpecs_EnsThrAgrmt,
@@ -803,10 +784,7 @@ class AttrsCollector:
         site_name = {'Goesgen': r'G$\mathrm{\"o}$sgen'}.get(site_name)
 
         height = np.mean([release_point.zbot, release_point.ztop])
-        height_unit = {
-            'en': 'm AGL',  #SR_HC
-            'de': r'm $\mathrm{\"u}$.G.',  #SR_HC
-        }[self.lang]
+        height_unit = words['m_agl', self.lang]
 
         assert len(release_point.ms_parts) == 1
         mass = next(iter(release_point.ms_parts))
@@ -849,10 +827,7 @@ class AttrsCollector:
             level_top = -1
             #SR_TMP>
         else:
-            level_unit = {
-                'en': 'm AGL',  #SR_HC
-                'de': r'm $\mathrm{\"u}$.G.',  #SR_HC
-            }[self.lang]
+            level_unit = words['m_agl', self.lang]
             _var = self.fi.variables['level']
             level_bot = 0.0 if _i == 0 else float(_var[_i - 1])
             level_top = float(_var[_i])
