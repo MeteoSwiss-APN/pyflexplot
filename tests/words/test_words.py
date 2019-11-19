@@ -315,7 +315,7 @@ class Test_ContextDependent_ManyToMany_BracketInterface:
         assert self.ws['integrated', 'en', 'f'].t == 'Integrated'
 
 
-class Test_Interface:
+class Test_Interface_AddWords:
 
     sol = {
         ('train', 'en', None): 'train',
@@ -356,7 +356,20 @@ class Test_Interface:
         self.check_ws(ws)
 
     def test_add_explicit_name(self):
+        """Use ``Words.add`` with  names specified explicitly."""
         ws = Words()
         ws.add('train', en='train', de='Zug')
         ws.add('at', en='at', de={'place': 'bei', 'time': 'um', 'level': 'auf'})
         self.check_ws(ws)
+
+    def test_add_implicit_name(self):
+        """Use ``Words.add`` with names derived from first variant."""
+        ws = Words()
+        ws.add(en='train', de='Zug')
+        ws.add(en='at', de={'place': 'bei', 'time': 'um', 'level': 'auf'})
+        self.check_ws(ws)
+
+class Test_Interface_Various:
+
+    def test_init_empty_with_default_lang(self):
+        ws = Words(default_lang='en')

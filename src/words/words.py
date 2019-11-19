@@ -35,13 +35,13 @@ class Words:
 
         self._langs = None
         self._words = {}
-        for name, word_langs in words_langs.items():
+        for word_name, word_langs in words_langs.items():
             try:
                 {**word_langs}
             except TypeError:
-                raise ValueError(f"word {name} not a dict: {word}")
-            else:
-                self.add(name, **word_langs)
+                raise ValueError(
+                    f"word '{word_name}' not a dict: {word_langs}")
+            self.add(word_name, **word_langs)
 
             if default_lang is None:
                 default_lang = next(iter(self._langs))
@@ -52,6 +52,21 @@ class Words:
 
     def add(self, name=None, **word_langs):
         """Add a word."""
+
+        if name is None:
+            name = next(iter(word_langs.values()))
+            if not isinstance(name, str):
+                try:
+                    name = next(iter(name.values()))
+                except Exception:
+                    raise ValueError(
+                        f"cannot derive name of {word_langs} from {name} "
+                        f"of type {type(name).__name__}: neither a string "
+                        f"nor a non-empty dict")
+
+        if not isinstance(name, str):
+            raise ValueError(
+                f"argument `name`: expect type str, got {type(name).__name__}")
 
         langs = list(word_langs.keys())
 
@@ -67,7 +82,7 @@ class Words:
 
     def set_default_lang(self, lang):
         """Change default language recursively for all words."""
-        if lang and lang not in self.langs:
+        if lang and self.langs and lang not in self.langs:
             raise MissingLanguageError(f"{lang} not in {self.langs}")
         self._default_lang = lang
 
