@@ -64,7 +64,7 @@ class DispersionPlotLabels(SummarizableClass):
             name              = w['substance'       ].t,
             half_life         = w['half_life'       ].t,
             deposit_vel       = w['deposit_vel'     ].t,
-            sediment_vel      = w['sediment_vel'    ].t,
+            sediment_vel      = w['sedimentation_velocity'].ctx('abbr').t,
             washout_coeff     = w['washout_coeff'   ].t,
             washout_exponent  = w['washout_exponent'].t,
         )
@@ -668,7 +668,7 @@ class DispersionPlot(Plot):
             {l.species.name}:\t{a.species.name.format()}
             {l.species.half_life}:\t{a.species.half_life.format()}
             {l.species.deposit_vel}:\t{a.species.deposit_vel.format()}
-            {l.species.sediment_vel}:\t{a.species.sediment_vel.format()}
+            {l.species.sedimentation_velocity}:\t{a.species.sedimentation_velocity.format()}
             {l.species.washout_coeff}:\t{a.species.washout_coeff.format()}
             {l.species.washout_exponent}:\t{a.species.washout_exponent.format()}
             """)

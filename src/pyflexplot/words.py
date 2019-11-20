@@ -7,89 +7,131 @@ from words import Words
 # yapf: disable
 
 symbols = Words(
-    ae          = {'': r'$\mathrm{\"a}$'},
-    copyright   = {'': u'\u00a9'},
-    oe          = {'': r'$\mathrm{\"o}$'},
-    t0          = {'': r'$\mathrm{T_0}$'},
-    ue          = {'': r'$\mathrm{\"u}$'},
+    ae          = r'$\mathrm{\"a}$',
+    copyright   = u'\u00a9',
+    oe          = r'$\mathrm{\"o}$',
+    t0          = r'$\mathrm{T_0}$',
+    ue          = r'$\mathrm{\"u}$',
 )
 
-e, d = 'en', 'de'
 s = symbols
-words = Words(
+words = Words(default_lang='en')
 # A
-accumulated_over        = { e: 'accumulated over',
-                            d: f'akkumuliert {s["ue"]}ber'},
-concentration           = { e: {'*': 'concentration', 'abbr': 'concentr.'},
-                            d: {'*': 'Konzentration', 'abbr': 'Konzentr.'}},
-activity_concentration  = { e: 'activity concentration',d: f'Aktivit{s["ae"]}tskonzentration'},
-activity_concentr       = { e: 'activity concentr.',    d: f'Aktivit{s["ae"]}tskonzentr.'},
-affected_area           = { e: 'affected area',         d: 'Beaufschlagtes Gebiet'},
-at                      = { e: 'at',
-                            d: {'level': 'auf', 'place': 'bei', 'time' : 'um'}},
-averaged_over           = { e: 'averaged over',         d: f'gemittelt {s["ue"]}ber'},
+words.add('accumulated_over',       en='accumulated over',
+                                    de=f'akkumuliert {s["ue"]}ber')
+words.add('concentration',          en={'*': 'concentration',
+                                        'abbr': 'concentr.'},
+                                    de={'*': 'Konzentration',
+                                        'abbr': 'Konzentr.'})
+words.add('activity_concentration', en='activity concentration',
+                                    de=f'Aktivit{s["ae"]}tskonzentration')
+words.add('activity_concentr',      en='activity concentr.',
+                                    de=f'Aktivit{s["ae"]}tskonzentr.')
+words.add('affected_area',          en='affected area',
+                                    de='Beaufschlagtes Gebiet')
+words.add('at',                     en='at',
+                                    de={'level': 'auf',
+                                        'place': 'bei',
+                                        'time' : 'um'})
+words.add('averaged_over',          en='averaged over',
+                                    de=f'gemittelt {s["ue"]}ber')
 # B
-based_on                = { e: 'based on',              d: 'basierend auf'},
+words.add('based_on',               en='based on',
+                                    de='basierend auf')
 # C
 # D
-deposit_vel             = { e: 'deposit. vel.',         d: 'Deposit.-Geschw.'},
-deposition              = { e: 'deposition',            d: 'Deposition'},
-dry                     = { e: 'dry',                   d: 'trocken'},
+words.add('deposit_vel',            en='deposit. vel.',
+                                    de='Deposit.-Geschw.')
+words.add('deposition',             en='deposition',
+                                    de='Deposition')
+words.add('dry',                    en='dry',
+                                    de='trocken')
 # E
-end                     = { e: 'end',                   d: 'Ende'},
-ensemble                = { e: 'ensemble',              d: 'Ensemble'},
-ensemble_mean           = { e: 'ensemble mean',         d: 'Ensemble-Mittel'},
+words.add('end',                    en='end',
+                                    de='Ende')
+words.add('ensemble',               en='ensemble',
+                                    de='Ensemble')
+words.add('ensemble_mean',          en='ensemble mean',
+                                    de='Ensemble-Mittel')
 # F
-flexpart                = { e: 'FLEXPART',              d: 'FLEXPART'},
+words.add('flexpart',               en='FLEXPART',
+                                    de='FLEXPART')
 # G
 # H
-half_life               = { e: 'half-life',             d: 'Halbwertszeit'},
-height                  = { e: 'height',                d: f'H{s["oe"]}he'},
+words.add('half_life',              en='half-life',
+                                    de='Halbwertszeit')
+words.add('height',                 en='height',
+                                    de=f'H{s["oe"]}he')
 # I
-integrated              = { e: {'*': 'integrated', 'abbr': 'int.'},
-                            d: {'*': 'integriert', 'abbr': 'int.',
-                                'm': 'integrierter', 'f': 'integrierte',
-                                'n': 'integriertes'}},
+words.add('integrated',             en={'*': 'integrated',
+                                        'abbr': 'int.'},
+                                    de={'*': 'integriert',
+                                        'abbr':'int.',
+                                        'm': 'integrierter',
+                                        'f': 'integrierte',
+                                        'n': 'integriertes'})
 # J
 # K
 # L
-latitude                = { e: 'latitude',              d: 'Breite'},
-longitude               = { e: 'longitude',             d: f'L{s["ae"]}nge'},
+words.add('latitude',               en='latitude',
+                                    de='Breite')
+words.add('longitude',              en='longitude',
+                                    de=f'L{s["ae"]}nge')
 # M
-m_agl                   = { e: 'm AGL',                 d: f'm {s["ue"]}.G.'},
-max                     = { e: 'max.',                  d: 'Max.'},
-mch                     = { e: 'MeteoSwiss',            d: 'MeteoSchweiz'},
+words.add('m_agl',                  en='m AGL',
+                                    de=f'm {s["ue"]}.G.')
+words.add('max',                    en='max.',
+                                    de='Max.')
+words.add('mch',                    en='MeteoSwiss',
+                                    de='MeteoSchweiz')
 # N
 # O
 # P
 # Q
 # R
-rate                    = { e: 'rate',                  d: 'Rate'},
-release                 = { e: 'release',               d: 'Freisetzung'},
-release_site            = { e: 'release site',          d: 'Abgabeort'},
+words.add('rate',                   en='rate',
+                                    de='Rate')
+words.add('release',                en='release',
+                                    de='Freisetzung')
+words.add('release_site',           en='release site',
+                                    de='Abgabeort')
 # S
-sediment_vel            = { e: 'sediment. vel.',        d: 'Sediment.-Geschw.'},
-since                   = { e: 'since',                 d: 'seit'},
-site                    = { e: 'site',                  d: 'Ort'},
-start                   = { e: 'start',                 d: 'Start'},
-substance               = { e: 'substance',             d: 'Substanz'},
-summed_up_over          = { e: 'summed up over',        d: f'aufsummiert {s["ue"]}ber'},
-surface_deposition      = { e: 'surface deposition',    d: 'Bodendeposition'},
+words.add(                          en={'*': 'sedimentation velocity',
+                                        'abbr': 'sediment. vel.'},
+                                    de={'*': 'Sedimentiergeschwindigkeit',
+                                        'abbr': 'Sediment.-Geschw.'})
+words.add('since',                  en='since',
+                                    de='seit')
+words.add('site',                   en='site',
+                                    de='Ort')
+words.add('start',                  en='start',
+                                    de='Start')
+words.add('substance',              en='substance',
+                                    de='Substanz')
+words.add('summed_up_over',         en='summed up over',
+                                    de=f'aufsummiert {s["ue"]}ber')
+words.add('surface_deposition',     en='surface deposition',
+                                    de='Bodendeposition')
 # T
-threshold_agreement     = { e: 'threshold agreement',   d: f'Grenzwert{s["ue"]}bereinstimmung'},
-total                   = { e: 'total',
-                            d: {'*': 'total', 'm': 'totaler', 'f': 'totale'}},
-total_mass              = { e: 'total mass',            d: 'Totale Masse'},
+words.add('threshold_agreement',    en='threshold agreement',
+                                    de=f'Grenzwert{s["ue"]}bereinstimmung')
+words.add('total',                  en='total',
+                                    de={'*': 'total',
+                                        'm': 'totaler',
+                                        'f': 'totale'})
+words.add('total_mass',             en='total mass',
+                                    de='Totale Masse')
 # U
 # V
 # W
-washout_coeff           = { e: 'washout coeff.',        d: 'Auswaschkoeff.'},
-washout_exponent        = { e: 'washout exponent',      d: 'Auswaschexponent'},
-wet                     = { e: 'wet',                   d: 'nass'},
+words.add('washout_coeff',          en='washout coeff.',
+                                    de='Auswaschkoeff.')
+words.add('washout_exponent',       en='washout exponent',
+                                    de='Auswaschexponent')
+words.add('wet',                    en='wet', de='nass')
 # X
 # Y
 # Z
-)
 
 words.symbols = symbols  #SR_TMP
 

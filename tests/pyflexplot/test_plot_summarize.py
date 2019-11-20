@@ -63,10 +63,20 @@ from pyflexplot.plot import DispersionPlot
 class DummyWord(Word):
     """Wrapper for ``Word`` class for testing."""
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._curr_ctx = None
+
     def __str__(self):
         s = f'{self._parent.name}.{self.name}'
+        details = []
         if self._lang:
-            s += f'[{self._lang}]'
+            details.append(self._lang)
+        if self._curr_ctx:
+            details.append(self._curr_ctx)
+            self._curr_ctx = None
+        if details:
+            s += f"[{'|'.join(details)}]"
         return f'<{s}>'
 
     @property
@@ -74,7 +84,9 @@ class DummyWord(Word):
         return self._parent._lang
 
     def ctx(self, name):
-        return f'<{str(self)[1:-1]}[{name}]>'.replace(r'][', '|')
+        self._curr_ctx = name
+        return self
+        #-return f'<{str(self)[1:-1]}[{name}]>'.replace(r'][', '|')
 
 
 class DummyWords(Words):
@@ -129,39 +141,39 @@ def create_dummy_attrs(lang):
         summarize=lambda: {},
 
         grid=SimpleNamespace(
-            north_pole_lat      = DA('grid.north_pole_lat', 43.0),
-            north_pole_lon      = DA('grid.north_pole_lat', -170),
+            north_pole_lat          = DA('grid.north_pole_lat', 43.0),
+            north_pole_lon          = DA('grid.north_pole_lat', -170),
         ),
         release=SimpleNamespace(
-            lon                 = DA('release.lon', 8.0),
-            lat                 = DA('release.lat', 47.0),
-            site_name           = DA('release.site_name'),
-            height              = DA('release.height'),
-            rate                = DA('release.rate'),
-            mass                = DA('release.mass'),
+            lon                     = DA('release.lon', 8.0),
+            lat                     = DA('release.lat', 47.0),
+            site_name               = DA('release.site_name'),
+            height                  = DA('release.height'),
+            rate                    = DA('release.rate'),
+            mass                    = DA('release.mass'),
         ),
         variable=SimpleNamespace(
-            long_name           = DA('variable.long_name'),
-            fmt_level_range     = fm('variable.fmt_level_range'),
-            short_name          = DA('variable.short_name'),
-            unit                = DA('variable.unit'),
+            long_name               = DA('variable.long_name'),
+            fmt_level_range         = fm('variable.fmt_level_range'),
+            short_name              = DA('variable.short_name'),
+            unit                    = DA('variable.unit'),
         ),
         species=SimpleNamespace(
-            name                = DA('species.name'),
-            half_life           = DA('species.half_life'),
-            deposit_vel         = DA('species.deposit_vel'),
-            sediment_vel        = DA('species.sediment_vel'),
-            washout_coeff       = DA('species.washout_coeff'),
-            washout_exponent    = DA('species.washout_exponent'),
+            name                    = DA('species.name'),
+            half_life               = DA('species.half_life'),
+            deposit_vel             = DA('species.deposit_vel'),
+            sedimentation_velocity  = DA('species.sedimentation_velocity'),
+            washout_coeff           = DA('species.washout_coeff'),
+            washout_exponent        = DA('species.washout_exponent'),
         ),
         simulation=SimpleNamespace(
-            now                 = DA('simulation.now'),
-            fmt_integr_period   = fm('simulation.fmt_integr_period'),
-            integr_start        = DA('simulation.integr_start'),
-            integr_type         = DA('simulation.integr_type', 'mean'),
-            start               = DA('simulation.start'),
-            end                 = DA('simulation.end'),
-            model_name          = DA('simulation.model_name'),
+            now                     = DA('simulation.now'),
+            fmt_integr_period       = fm('simulation.fmt_integr_period'),
+            integr_start            = DA('simulation.integr_start'),
+            integr_type             = DA('simulation.integr_type', 'mean'),
+            start                   = DA('simulation.start'),
+            end                     = DA('simulation.end'),
+            model_name              = DA('simulation.model_name'),
         ),
     )
     # yapf: enable
@@ -199,7 +211,7 @@ def create_dummy_words(lang):
             'rate',
             'release',
             'release_site',
-            'sediment_vel',
+            'sedimentation_velocity',
             'since',
             'site',
             'start',
@@ -558,7 +570,7 @@ class Solution:
                     txt('tc', f'<words.release{sl}>'),
                     txt('bl', f'<words.washout_exponent{sl}>:'),
                     txt('bl', f'<words.washout_coeff{sl}>:'),
-                    txt('bl', f'<words.sediment_vel{sl}>:'),
+                    txt('bl', f'<words.sedimentation_velocity{sl}>:'),
                     txt('bl', f'<words.deposit_vel{sl}>:'),
                     txt('bl', f'<words.half_life{sl}>:'),
                     txt('bl', f'<words.substance{sl}>:'),
@@ -572,7 +584,7 @@ class Solution:
                     txt('bl', f'<words.site{sl}>:'),
                     txt('br', f'<species.washout_exponent{sl}.format>'),
                     txt('br', f'<species.washout_coeff{sl}.format>'),
-                    txt('br', f'<species.sediment_vel{sl}.format>'),
+                    txt('br', f'<species.sedimentation_velocity{sl}.format>'),
                     txt('br', f'<species.deposit_vel{sl}.format>'),
                     txt('br', f'<species.half_life{sl}.format>'),
                     txt('br', f'<species.name{sl}.format>'),
