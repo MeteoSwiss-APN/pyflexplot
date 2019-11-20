@@ -7,7 +7,9 @@ import functools
 import pytest
 
 from attr import attrs, attrib
+
 from words import Word
+from words.word import ContextWord
 
 from srutils.testing import property_obj
 
@@ -59,6 +61,27 @@ class Test_Simple:
         w.set_default_lang('de')
         assert w.default_lang == 'de'
         assert w == 'Mittelschule'
+
+
+class Test_ContextWord:
+
+    def test_single_nolang(self):
+        w = ContextWord(default_context='foo', foo='bar')
+        assert w.lang is None
+        assert w == 'bar'
+        assert w.default_context == 'foo'
+
+    def test_single_lang(self):
+        w = ContextWord(foo='Zug', lang='de')
+        assert w.lang == 'de'
+        assert w == 'Zug'
+        assert w.default_context == 'foo'
+
+    def test_multiple(self):
+        wf = ContextWord('de', place='bei', time='um', level='auf')
+        assert wf.ctx('place') == 'bei'
+        assert wf.ctx('time') == 'um'
+        assert wf.ctx('level') == 'auf'
 
 
 class Test_Context_OneMany:

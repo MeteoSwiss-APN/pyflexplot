@@ -16,7 +16,7 @@ class Word:
             *,
             default_lang=None,
             default_lang_query=None,
-            **langs):
+            **translations):
         """Create an instance of ``Word``.
 
         Args:
@@ -34,7 +34,7 @@ class Word:
                 the default language. Overrides ``default_lang``.
                 Defaults to None.
 
-            **langs (dict of str: str or (dict of str: str)): The word
+            **translations (dict of str: str or (dict of str: str)): The word
                 in different languages. The values are either strings
                 for simple words, or dicts with context-specific
                 variants of the word. In the latter case, the first
@@ -46,37 +46,39 @@ class Word:
             ('high_school', 'high school', 'Mittelschule')
 
         """
-        self._check_langs(langs)
+        self.name = None
+        self._translations = {}
+
+        self._check_langs(translations)
 
         # Set name of word (valid Python variable name)
         if name is None:
-            name = next(iter(langs.values()))
+            name = next(iter(translations.values()))
             if isinstance(name, dict):
                 name = next(iter(name.values()))
         self.name = to_varname(name)
 
-        ctxs = self._collect_contexts(langs)
+        ctxs = self._collect_contexts(translations)
 
         # Define words with consistent contexts
-        self._langs = {}
-        for lang, word in langs.items():
+        for lang, word in translations.items():
             if isinstance(word, str):
                 word = {'*': word}
             elif set(word.keys()) != set(ctxs) and '*' not in word:
                 raise ValueError(
                     f"word 'self.name' in '{lang}' must either be defined "
                     f"for all contexts {ctxs}, or for default context '*'")
-            self._langs[lang] = ContextWord(lang, **word)
+            self._translations[lang] = ContextWord(lang, **word)
 
         self.set_default_lang(lang=default_lang, query=default_lang_query)
 
-    def _check_langs(self, langs):
+    def _check_langs(self, translations):
         """Check validity of languages and words."""
 
-        if not langs:
+        if not translations:
             raise ValueError('must pass the word in at least one language')
 
-        for lang, word in langs.items():
+        for lang, word in translations.items():
 
             if lang in self.__dict__:
                 # Name clash between language and class attribute
@@ -93,9 +95,9 @@ class Word:
                 raise ValueError(
                     f"empty word passed in language '{lang}': {word}")
 
-    def _collect_contexts(self, langs):
+    def _collect_contexts(self, translations):
         ctxs = []
-        for lang, word in langs.items():
+        for lang, word in translations.items():
             if not isinstance(word, str):
                 ctxs += [ctx for ctx in word.keys() if ctx not in ctxs]
         return ctxs
@@ -138,7 +140,7 @@ class Word:
         if lang is None:
             lang = self.default_lang
         try:
-            return self._langs[lang]
+            return self._translations[lang]
         except KeyError:
             raise ValueError(
                 f"word '{self.name}' not defined in language '{lang}', "
@@ -150,7 +152,7 @@ class Word:
     @property
     def langs(self):
         """List of languages the word is defined in."""
-        return list(self._langs.keys())
+        return list(self._translations.keys())
 
     #------------------------------------------------------------------
 
@@ -207,7 +209,8 @@ class Word:
         return str(self.get_in(self.default_lang))
 
     def __repr__(self):
-        s_langs = ', '.join([f"{k}={repr(v)}" for k, v in self._langs.items()])
+        s_langs = ', '.join([
+            f"{l}={repr(v)}" for l, v in self._translations.items()])
         return (
             f"{type(self).__name__}({self.name}, {s_langs}, "
             f"default_lang='{self.default_lang}')")

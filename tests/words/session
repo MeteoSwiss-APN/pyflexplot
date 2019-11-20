@@ -1,3 +1,4 @@
-word/test_main.py
-word/test_contexts.py
+test_word.py
 test_words.py
+test_format.py
+test_test.py

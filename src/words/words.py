@@ -2,6 +2,8 @@
 """
 Words.
 """
+from srutils.str import to_varname
+
 from .word import Word
 from .exceptions import MissingWordError
 from .exceptions import MissingLanguageError
@@ -52,21 +54,7 @@ class Words:
 
     def add(self, name=None, **word_langs):
         """Add a word."""
-
-        if name is None:
-            name = next(iter(word_langs.values()))
-            if not isinstance(name, str):
-                try:
-                    name = next(iter(name.values()))
-                except Exception:
-                    raise ValueError(
-                        f"cannot derive name of {word_langs} from {name} "
-                        f"of type {type(name).__name__}: neither a string "
-                        f"nor a non-empty dict")
-
-        if not isinstance(name, str):
-            raise ValueError(
-                f"argument `name`: expect type str, got {type(name).__name__}")
+        name = self._prepare_word_name(name, word_langs)
 
         langs = list(word_langs.keys())
 
@@ -79,6 +67,26 @@ class Words:
 
         self._words[name] = self.cls_word(
             name, default_lang_query=lambda: self.default_lang, **word_langs)
+
+    def _prepare_word_name(self, name, word_langs):
+
+        if name is None:
+            name = next(iter(word_langs.values()))
+            if not isinstance(name, str):
+                try:
+                    name = next(iter(name.values()))
+                except Exception:
+                    raise ValueError(
+                        f"cannot derive name of {word_langs} from {name} "
+                        f"of type {type(name).__name__}: neither a string "
+                        f"nor a non-empty dict")
+            name = to_varname(name)
+
+        if not isinstance(name, str):
+            raise ValueError(
+                f"argument `name`: expect type str, got {type(name).__name__}")
+
+        return name
 
     def set_default_lang(self, lang):
         """Change default language recursively for all words."""

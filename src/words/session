@@ -2,3 +2,4 @@ __init__.py
 word.py
 words.py
 exceptions.py
+test.py

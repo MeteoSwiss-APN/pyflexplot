@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Tests for module ``words.word``."""
+"""
+Tests for module ``words.word``.
+"""
 import functools
 import pytest
 
