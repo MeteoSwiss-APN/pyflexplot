@@ -64,7 +64,7 @@ def titlecase(s, preserve=True):
             letters. Defaults to True.
 
     """
-    # Words not to be capitalized
+    # TranslatedWords not to be capitalized
     # src: https://stackoverflow.com/a/35018815
     lower = [
         'the', 'a', 'an', 'as', 'at', 'but', 'by', 'for', 'in', 'of', 'off',

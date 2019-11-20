@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Test formatting methods of ``Word`` class.
+Test formatting methods of ``TranslatedWord`` class.
 """
 import pytest
 
-from words import Word
+from words import TranslatedWord
 
 
 def test_string():
-    w = Word(en='hello world', de='Hallo Welt')
+    w = TranslatedWord(en='hello world', de='Hallo Welt')
     assert w['en'].s == w['en']
     assert w['de'].s == w['de']
     assert isinstance(w['en'].s, str)
@@ -17,7 +17,7 @@ def test_string():
 
 
 def test_capitalize_method():
-    w = Word(en='the quick brown FOX', de='der flinke braune FUCHS')
+    w = TranslatedWord(en='the quick brown FOX', de='der flinke braune FUCHS')
     assert w['en'].capital() == 'The quick brown FOX'
     assert w['en'].capital(all=False) == 'The quick brown FOX'
     assert w['en'].capital(all=True) == 'The Quick Brown FOX'
@@ -39,7 +39,7 @@ def test_capitalize_method():
 
 
 def test_capitalize_property():
-    w = Word(en='the quick brown fox', de='der flinke braune Fuchs')
+    w = TranslatedWord(en='the quick brown fox', de='der flinke braune Fuchs')
     assert w['en'].c == 'The quick brown fox'
     assert w['en'].C == 'The Quick Brown Fox'
     assert w['de'].c == 'Der flinke braune Fuchs'
@@ -51,7 +51,7 @@ def test_capitalize_property():
 
 
 def test_title_method():
-    w = Word(
+    w = TranslatedWord(
         en='the VITAMINS are IN my fresh california raisins',
         de='Die Vitamine sind in meinen frischen Kalifornischen Rosinen')
     assert w['en'].title() == 'The VITAMINS Are IN My Fresh California Raisins'
@@ -68,7 +68,7 @@ def test_title_method():
 
 
 def test_title_property():
-    w = Word(
+    w = TranslatedWord(
         en='the VITAMINS are IN my fresh california raisins',
         de='Die Vitamine sind in meinen frischen Kalifornischen Rosinen')
     assert w['en'].t == 'The VITAMINS Are IN My Fresh California Raisins'

@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Word.
+TranslatedWord.
 """
 from srutils.str import capitalize
 from srutils.str import titlecase
 from srutils.str import to_varname
 
 
-class Word:
+class TranslatedWord:
     """A word in one or more languages."""
 
     def __init__(
@@ -17,7 +17,7 @@ class Word:
             default_lang=None,
             default_lang_query=None,
             **translations):
-        """Create an instance of ``Word``.
+        """Create an instance of ``TranslatedWord``.
 
         Args:
             name (str, optional): Key to refer to the object in the
@@ -34,14 +34,14 @@ class Word:
                 the default language. Overrides ``default_lang``.
                 Defaults to None.
 
-            **translations (dict of str: str or (dict of str: str)): The word
-                in different languages. The values are either strings
-                for simple words, or dicts with context-specific
-                variants of the word. In the latter case, the first
-                entry is the default context.
+            **translations (dict of str: str or (dict of str: str)):
+                The word in different languages. The values are either
+                strings for simple words, or dicts with context-
+                specific variants of the word. In the latter case, the
+                first entry is the default context.
 
         Example:
-            >>> w = Word(en='high school', de='Mittelschule')
+            >>> w = TranslatedWord(en='high school', de='Mittelschule')
             >>> w.name, str(w), w.de
             ('high_school', 'high school', 'Mittelschule')
 
@@ -110,7 +110,7 @@ class Word:
         Args:
             lang (str, None): Default language. Overridden by ``query``
                 if the latter is not None. Defaults to the first key in
-                ``Word.langs``.
+                ``TranslatedWord.langs``.
 
             query (callable, None): Function to query the default
                 language. Overrides ``default``. Defaults to None.
@@ -223,7 +223,7 @@ class Word:
         return self.get_in(lang)
 
 
-class ContextWord(Word):
+class ContextWord(TranslatedWord):
     """One or more variants of a word in a specific language."""
 
     def __init__(self, lang=None, *, default_context=None, **variants):
@@ -271,7 +271,7 @@ class ContextWord(Word):
         lang = self.lang or 'None'
         if as_str:
             return word
-        return Word(**{lang: word})
+        return TranslatedWord(**{lang: word})
 
     def ctxs(self):
         """List of contexts."""

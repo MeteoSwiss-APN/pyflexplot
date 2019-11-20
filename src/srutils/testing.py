@@ -28,7 +28,7 @@ def property_obj(cls, *args, **kwargs):
         >>> class C1:
         ...     @property
         ...     def w(self):
-        ...         return Word(en='train', de='Zug')
+        ...         return TranslatedWord(en='train', de='Zug')
 
         >>> class C2:
         ...     w = property_word(en='train', de='Zug')

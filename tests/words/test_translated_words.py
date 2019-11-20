@@ -6,12 +6,12 @@ Tests for module ``words.word``.
 import functools
 import pytest
 
-from words import Words
+from words import TranslatedWords
 from words.exceptions import MissingWordError
 
 from srutils.testing import property_obj
 
-property_words = functools.partial(property_obj, Words)
+property_words = functools.partial(property_obj, TranslatedWords)
 
 
 class Test_Basic:
@@ -336,12 +336,12 @@ class Test_Interface_AddWords:
 
     def test_fail(self):
         """Ensure that ``_test_ws`` fails with wrong input."""
-        ws = Words()
+        ws = TranslatedWords()
         with pytest.raises(MissingWordError):
             self.check_ws(ws)
 
     def test_init(self):
-        ws = Words(
+        ws = TranslatedWords(
             train={
                 'en': 'train',
                 'de': 'Zug'
@@ -358,15 +358,15 @@ class Test_Interface_AddWords:
         self.check_ws(ws)
 
     def test_add_explicit_name(self):
-        """Use ``Words.add`` with  names specified explicitly."""
-        ws = Words()
+        """Use ``TranslatedWords.add`` with  names specified explicitly."""
+        ws = TranslatedWords()
         ws.add('train', en='train', de='Zug')
         ws.add('at', en='at', de={'place': 'bei', 'time': 'um', 'level': 'auf'})
         self.check_ws(ws)
 
     def test_add_implicit_name(self):
-        """Use ``Words.add`` with names derived from first variant."""
-        ws = Words()
+        """Use ``TranslatedWords.add`` with names derived from first variant."""
+        ws = TranslatedWords()
         ws.add(en='train', de='Zug')
         ws.add(en='at', de={'place': 'bei', 'time': 'um', 'level': 'auf'})
         self.check_ws(ws)
@@ -374,4 +374,4 @@ class Test_Interface_AddWords:
 class Test_Interface_Various:
 
     def test_init_empty_with_default_lang(self):
-        ws = Words(default_lang='en')
+        ws = TranslatedWords(default_lang='en')

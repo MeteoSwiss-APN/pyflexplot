@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Wrappers for ``Word`` and ``Words`` with testing-friendly interface.
+Wrappers for ``TranslatedWord`` and ``TranslatedWords`` with testing-friendly interface.
 """
-from .word import Word
-from .words import Words
+from .word import TranslatedWord
+from .words import TranslatedWords
 
-class TestWord(Word):
+class TranslatedTestWord(TranslatedWord):
     pass
 
-class TestWords(Words):
+class TranslatedTestWords(TranslatedWords):
 
-    cls_word = TestWord
+    cls_word = TranslatedTestWord
 
     def __init__(self, raw_words, langs=None):
         if langs is None:

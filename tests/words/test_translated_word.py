@@ -1,19 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Tests for class ``Word`` in module ``words.word``.
+Tests for class ``TranslatedWord`` in module ``words.word``.
 """
 import functools
 import pytest
 
 from attr import attrs, attrib
 
-from words import Word
+from words import TranslatedWord
 from words.word import ContextWord
 
 from srutils.testing import property_obj
 
-property_word = functools.partial(property_obj, Word)
+property_word = functools.partial(property_obj, TranslatedWord)
 
 
 class Test_Basic:
@@ -142,7 +142,7 @@ class Test_Context_ManyMany_Diff:
 
     def test_fail_no_default_context(self):
         with pytest.raises(ValueError):
-            Word(en={'abbr': 'int.'}, de={'abbr': 'int.', 'f': 'integrierte'})
+            TranslatedWord(en={'abbr': 'int.'}, de={'abbr': 'int.', 'f': 'integrierte'})
 
     # yapf: disable
     w = property_word(
@@ -221,36 +221,36 @@ class Test_QueryDefault:
 
 
 class Test_Creation:
-    """Creation of a ``Word`` instance."""
+    """Creation of a ``TranslatedWord`` instance."""
 
     def test_fail_noargs(self):
         with pytest.raises(ValueError):
-            Word()
+            TranslatedWord()
 
     def test_fail_nolangs(self):
         with pytest.raises(ValueError):
-            Word('train')
+            TranslatedWord('train')
 
     def test_pass_noname(self):
-        Word(en='train', de='Zug')
+        TranslatedWord(en='train', de='Zug')
 
     def test_pass_name_implicit(self):
-        Word('high_school', en='high school', de='Mittelschule')
+        TranslatedWord('high_school', en='high school', de='Mittelschule')
 
     def test_pass_name_explicit(self):
-        Word(name='high_school', en='high school', de='Mittelschule')
+        TranslatedWord(name='high_school', en='high school', de='Mittelschule')
 
     def test_fail_name_implicit(self):
         with pytest.raises(ValueError):
-            Word('0', en='zero', de='Null')
+            TranslatedWord('0', en='zero', de='Null')
 
     def test_fail_name_explicit(self):
         with pytest.raises(ValueError):
-            Word(name='0', en='zero', de='Null')
+            TranslatedWord(name='0', en='zero', de='Null')
 
     def test_fail_inconsistent_contexts(self):
         with pytest.raises(ValueError):
-            Word(
+            TranslatedWord(
                 en={
                     'foo': 'bar',
                     'hello': 'world'

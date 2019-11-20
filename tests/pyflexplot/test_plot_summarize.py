@@ -12,7 +12,7 @@ reconstruct the objects from the summary.)
 In this module, the summary dict of one plot type is thoroughly tested
 to ensure that summarization works as expected. In order to isolate
 this process as best as possible, several classes used to define labels
-etc. are mocked: ``Word``, ``Words``, ``Attr``.
+etc. are mocked: ``TranslatedWord``, ``TranslatedWords``, ``Attr``.
 
 While the mocks allows us to inject dummy strings as labels etc. and
 makes the tests independent of the exact formation of those, the tests
@@ -50,7 +50,7 @@ from srutils.testing import assert_summary_dict_is_subdict
 from srutils.testing import IgnoredElement
 from srutils.testing import UnequalElement
 from srutils.various import isiterable
-from words import Word, Words
+from words import TranslatedWord, TranslatedWords
 
 from pyflexplot.data import Field
 from pyflexplot.plot import DispersionPlot
@@ -60,8 +60,8 @@ from pyflexplot.plot import DispersionPlot
 #======================================================================
 
 
-class DummyWord(Word):
-    """Wrapper for ``Word`` class for testing."""
+class DummyWord(TranslatedWord):
+    """Wrapper for ``TranslatedWord`` class for testing."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -89,8 +89,8 @@ class DummyWord(Word):
         #-return f'<{str(self)[1:-1]}[{name}]>'.replace(r'][', '|')
 
 
-class DummyWords(Words):
-    """Wrapper for ``Words`` class for testing."""
+class DummyWords(TranslatedWords):
+    """Wrapper for ``TranslatedWords`` class for testing."""
 
     cls_word = DummyWord
 

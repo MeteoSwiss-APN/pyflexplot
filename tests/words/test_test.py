@@ -5,13 +5,13 @@ Tests for module ``words.testing``.
 """
 import functools
 
-from words.test import TestWord
-from words.test import TestWords
+from words.test import TranslatedTestWord
+from words.test import TranslatedTestWords
 
 from srutils.testing import property_obj
 
-property_word = functools.partial(property_obj, TestWord)
-property_words = functools.partial(property_obj, TestWord)
+property_word = functools.partial(property_obj, TranslatedTestWord)
+property_words = functools.partial(property_obj, TranslatedTestWord)
 
 
 class _Test_Basic():

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Words.
+TranslatedWords.
 """
-from words import Words
+from words import TranslatedWords
 
 # yapf: disable
 
-symbols = Words(
+symbols = TranslatedWords(
     ae          = r'$\mathrm{\"a}$',
     copyright   = u'\u00a9',
     oe          = r'$\mathrm{\"o}$',
@@ -15,7 +15,7 @@ symbols = Words(
 )
 
 s = symbols
-words = Words(default_lang='en')
+words = TranslatedWords(default_lang='en')
 # A
 words.add('accumulated_over',       en='accumulated over',
                                     de=f'akkumuliert {s["ue"]}ber')

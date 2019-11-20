@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Words.
+TranslatedWords.
 """
 from srutils.str import to_varname
 
-from .word import Word
+from .word import TranslatedWord
 from .exceptions import MissingWordError
 from .exceptions import MissingLanguageError
 
@@ -12,13 +12,13 @@ from .exceptions import MissingLanguageError
 #======================================================================
 
 
-class Words:
+class TranslatedWords:
     """A collection of words in different languages."""
 
-    cls_word = Word
+    cls_word = TranslatedWord
 
     def __init__(self, name=None, *, default_lang=None, **words_langs):
-        """Create an instance of ``Words``.
+        """Create an instance of ``TranslatedWords``.
 
         Args:
             name (str, optional): Name of the words collection.
@@ -27,7 +27,7 @@ class Words:
             default_lang (str, optional): Default language. Defaults to
                 the first language in which the first word is defined.
 
-            **words (dict of str: dict): Words. The keys constitute the
+            **words (dict of str: dict): TranslatedWords. The keys constitute the
                 names of the words, and each value the definition of a
                 word in one or more language. All words must be defined
                 in the same languages.
@@ -123,7 +123,7 @@ class Words:
 
     def __repr__(self):
         s_name = f' ({self.name})' if self.name else ''
-        return f'{len(self._words)} Words{s_name}: {self._words}'
+        return f'{len(self._words)} TranslatedWords{s_name}: {self._words}'
 
     def __getitem__(self, key):
 
