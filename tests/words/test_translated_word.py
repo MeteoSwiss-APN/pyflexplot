@@ -13,13 +13,13 @@ from words.word import ContextWord
 
 from srutils.testing import property_obj
 
-property_word = functools.partial(property_obj, TranslatedWord)
+p_TranslatedWord = functools.partial(property_obj, TranslatedWord)
 
 
 class Test_Basic:
     """Basic behavior of a simple word."""
 
-    w = property_word(en='train', de='Zug')
+    w = p_TranslatedWord(en='train', de='Zug')
 
     def test_str_default(self):
         assert self.w.default_lang == 'en'
@@ -40,7 +40,7 @@ class Test_Basic:
 class Test_Simple:
     """All behavior of a simple word."""
 
-    w = property_word('high_school', en='high school', de='Mittelschule')
+    w = p_TranslatedWord('high_school', en='high school', de='Mittelschule')
 
     def test_basics(self):
         assert self.w.default_lang == 'en'
@@ -87,7 +87,7 @@ class Test_ContextWord:
 class Test_Context_OneMany:
     """A word depending on context in one language."""
 
-    w = property_word(
+    w = p_TranslatedWord(
         en='at',
         de=dict(place='bei', time='um', level='auf'),
         default_lang='de')
@@ -118,13 +118,13 @@ class Test_Context_ManyMany_Same:
     """A word depending on the same contexts in two languages."""
 
     # yapf: disable
-    w = property_word(
+    w = p_TranslatedWord(
         en={'m': 'Mr.', 'f': 'Ms.'},
         de={'m': 'Herr', 'f': 'Frau'})
     # yapf: enable
 
-    def test_name(self):
-        assert self.w.name == 'mr'
+    def test_auto_name(self):
+        assert self.w.name == 'mr_'
 
     def test_default_context(self):
         assert self.w['en'] == 'Mr.'
@@ -145,7 +145,7 @@ class Test_Context_ManyMany_Diff:
             TranslatedWord(en={'abbr': 'int.'}, de={'abbr': 'int.', 'f': 'integrierte'})
 
     # yapf: disable
-    w = property_word(
+    w = p_TranslatedWord(
         en={'*': 'integrated', 'abbr': 'int.'},
         de={'*': 'integriert', 'abbr': 'int.', 'f': 'integrierte'})
     # yapf: enable
@@ -181,7 +181,7 @@ class AttrHolder:
 class Test_QueryDefault:
     """Querying the default language on-the-fly."""
 
-    w = property_word(en='train', de='Zug')
+    w = p_TranslatedWord(en='train', de='Zug')
 
     def test_noquery(self):
         """Pass hard-coded default language."""

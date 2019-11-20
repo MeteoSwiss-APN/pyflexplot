@@ -46,45 +46,24 @@ def test_multiple_dashes():
     assert to_varname('-foo--bar-baz---') == '_foo__bar_baz___'
 
 
-# Numbers are retained, unless in the beginning
+# So are leading numbers
+
+
+def test_leading_number():
+    assert to_varname('1foo') == '_foo'
+    assert to_varname(' 1foo') == '_1foo'
 
 
 def test_numbers():
     assert to_varname('foo1bar2baz3') == 'foo1bar2baz3'
 
 
-def test_fail_leading_number():
-    with pytest.raises(ValueError):
-        to_varname('1foo')
-
-
-# Other special chars are dropped
+# So are all other special characters
 
 
 def test_periods():
-    assert to_varname('foo. bar.baz.') == 'foo_barbaz'
+    assert to_varname('foo. bar.baz.') == 'foo__bar_baz_'
 
 
 def test_various():
-    assert to_varname('#foo@ +bar/-baz 123$') == 'foo_bar_baz_123'
-
-
-def test_fail_leading_number_concealed():
-    with pytest.raises(ValueError):
-        to_varname('@#1foo')
-
-
-# Optionally, all letters can be lowercased
-
-
-def test_lower_default():
-    assert to_varname(' Hello! ') != to_varname(' Hello! ', lower=False)
-    assert to_varname(' Hello! ') == to_varname(' Hello! ', lower=True)
-
-
-def test_lower_false():
-    assert to_varname(' Hello World! ', lower=False) == '_Hello_World_'
-
-
-def test_lower_true():
-    assert to_varname(' Hello World! ', lower=True) == '_hello_world_'
+    assert to_varname('#foo@ +bar/-baz 123$') == '_foo___bar__baz_123_'

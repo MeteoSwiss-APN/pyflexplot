@@ -7,35 +7,53 @@ import re
 #======================================================================
 
 
-def to_varname(s, lower=True):
+def to_varname(s):
     """Reformat a string to a valid Python variable name."""
 
-    err = f"cannot convert '{s}' to varname"
+    def error(msg):
+        raise ValueError(f"cannot convert '{s}' to varname: {msg}")
 
     # Check input is valid string
     try:
         v = str(s)
     except Exception as e:
-        raise ValueError(f"{err}: not valid string")
+        error("not valid string")
     if not v:
-        raise ValueError(f"{err}: is empty")
+        error("is empty")
 
-    # Turn spaces and dashes into underscores
-    v = re.sub(r'[ -]', '_', v)
+    # Turn all spaces and special characters into underscores
+    v = re.sub(r'[^a-zA-Z0-9]', '_', v)
 
-    # Drop all other special characters
-    v = re.sub(r'[^a-zA-Z0-9_]', '', v)
+    # Turn leading number into underscore
+    v = re.sub(r'^[0-9]', '_', v)
 
     # Check validity
-    if re.match(r'^[0-9]', v):
-        raise ValueError(f"{err}: '{v}' starts with number")
-    if not re.match(r'^[a-zA-Z0-9_]*$', v):
-        raise ValueError(f"{err}: '{v}' contains invalid characters")
-
-    if lower:
-        v = v.lower()
+    try:
+        check_is_valid_varname(v)
+    except ValueError as e:
+        error(str(e))
 
     return v
+
+
+def check_is_valid_varname(s):
+    """Raise ``ValueError`` if ``s`` is not a valid variable name."""
+
+    if re.match(r'^[0-9]', s):
+        raise ValueError(f"starts with number")
+
+    if not re.match(r'^[a-zA-Z0-9_]*$', s):
+        raise ValueError(f"contains invalid characters")
+
+
+def is_valid_varname(s):
+    """Check if ``s`` is a valid variable name."""
+    try:
+        check_is_valid_varname(s)
+    except ValueError:
+        return False
+    else:
+        return True
 
 
 def capitalize(s, preserve=True):

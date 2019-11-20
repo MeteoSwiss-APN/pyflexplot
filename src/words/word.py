@@ -5,6 +5,93 @@ TranslatedWord.
 from srutils.str import capitalize
 from srutils.str import titlecase
 from srutils.str import to_varname
+from srutils.str import check_is_valid_varname
+
+
+class Word:
+    """An individual word."""
+
+    def __init__(self, s, **attrs):
+        """Create an instance of ``Word``.
+
+        Args:
+            s (str): The word as a string.
+
+            lang (str, optional): Language in which the word is given.
+                Defaults to None.
+
+            ctx (str, optional): Context in which the word is valid.
+                Defaults to None.
+
+        """
+        if not isinstance(s, str):
+            raise ValueError(f"type of s is {type(s).__name__}, not str")
+
+        self.s = s
+        for name, val in attrs.items():
+            if hasattr(self, name):
+                raise ValueError(
+                    f"attr '{name}' clashes with existing attribute "
+                    f"{type(self)}.{name}")
+            setattr(self, name, val)
+
+    def __eq__(self, other):
+        return str(self) == str(other)
+
+    def __str__(self):
+        return self.s
+
+    #------------------------------------------------------------------
+
+    def capital(self, *, all=False, preserve=True):
+        """Capitalize the first letter of the first or of each word.
+
+        Already capitalized words are retained as such, in contrast to
+        ``str.capitalize()``.
+
+        Args:
+            all (bool, optional): Whether to capitalize all words.
+                Defaults to False.
+
+            preserve (bool, optional): Whether to preserve capitalized
+                letters. Defaults to True.
+
+        """
+        s = self.s
+        if not preserve:
+            s = s.lower()
+        if all:
+            return ' '.join([capitalize(w) for w in s.split(' ')])
+        words = s.split(' ')
+        return ' '.join([capitalize(words[0])] + words[1:])
+
+    def title(self, *, preserve=True):
+        if not hasattr(self, 'lang'):
+            raise AttributeError(
+                f"{type(self).__name__}.title requires attribute 'lang'; "
+                f"not among {self.attrs}")
+        if self.lang == 'en':
+            return titlecase(self.s, preserve=preserve)
+        elif self.lang == 'de':
+            return self.capital(all=False, preserve=preserve)
+        else:
+            raise NotImplementedError(
+                f"{type(self)}.title in language '{self.lang}'")
+
+    #------------------------------------------------------------------
+
+    @property
+    def c(self):
+        """Shorthand to capitalize the first word."""
+        return self.capital(all=False, preserve=True)
+
+    @property
+    def C(self):
+        return self.capital(all=True, preserve=True)
+
+    @property
+    def t(self):
+        return self.title(preserve=True)
 
 
 class TranslatedWord:
@@ -56,18 +143,29 @@ class TranslatedWord:
             name = next(iter(translations.values()))
             if isinstance(name, dict):
                 name = next(iter(name.values()))
-        self.name = to_varname(name)
+            name = to_varname(name).lower()
+        else:
+            check_is_valid_varname(name)
+        self.name = name
 
         ctxs = self._collect_contexts(translations)
 
         # Define words with consistent contexts
         for lang, word in translations.items():
             if isinstance(word, str):
+                word = Word(word, lang=lang)
+            if isinstance(word, Word):
                 word = {'*': word}
-            elif set(word.keys()) != set(ctxs) and '*' not in word:
+            elif isinstance(word, dict):
+                if set(word.keys()) != set(ctxs) and '*' not in word:
+                    raise ValueError(
+                        f"word '{self.name}' in language '{lang}' must either "
+                        f"be defined for all contexts {ctxs}, or for default "
+                        f"context '*'")
+            else:
                 raise ValueError(
-                    f"word 'self.name' in '{lang}' must either be defined "
-                    f"for all contexts {ctxs}, or for default context '*'")
+                    f"word '{self.name}' in language '{lang}' has "
+                    f"unexpected type {type(word).__name__}")
             self._translations[lang] = ContextWord(lang, **word)
 
         self.set_default_lang(lang=default_lang, query=default_lang_query)
@@ -84,7 +182,7 @@ class TranslatedWord:
                 # Name clash between language and class attribute
                 raise ValueError(f"invalid language specifier: {lang}")
 
-            if not isinstance(word, (str, dict)):
+            if not isinstance(word, (Word, str, dict)):
                 # Wrong word type
                 raise ValueError(
                     f"word must be of type str or dict, not "
@@ -98,7 +196,11 @@ class TranslatedWord:
     def _collect_contexts(self, translations):
         ctxs = []
         for lang, word in translations.items():
-            if not isinstance(word, str):
+            try:
+                {**word}
+            except TypeError:
+                pass
+            else:
                 ctxs += [ctx for ctx in word.keys() if ctx not in ctxs]
         return ctxs
 
@@ -135,6 +237,10 @@ class TranslatedWord:
             return self._default_lang_query()
         return self._default_lang
 
+    def get(self):
+        """Get word in default language."""
+        return self.get_in(None)
+
     def get_in(self, lang):
         """Get word in a certain language."""
         if lang is None:
@@ -156,57 +262,10 @@ class TranslatedWord:
 
     #------------------------------------------------------------------
 
-    def capital(self, all=False, preserve=True):
-        """Capitalize the first letter of the first or of each word.
-
-        Already capitalized words are retained as such, in contrast to
-        ``str.capitalize()``.
-
-        Args:
-            all (bool, optional): Whether to capitalize all words.
-                Defaults to False.
-
-            preserve (bool, optional): Whether to preserve capitalized
-                letters. Defaults to True.
-
-        """
-        s = str(self)
-        if not preserve:
-            s = s.lower()
-        if all:
-            return ' '.join([capitalize(w) for w in s.split(' ')])
-        words = s.split(' ')
-        return ' '.join([capitalize(words[0])] + words[1:])
-
-    def title(self, preserve=True):
-        if self.default_lang == 'de':
-            return self.capital(all=False, preserve=preserve)
-        elif self.default_lang == 'en':
-            return titlecase(self, preserve=preserve)
-
-    #------------------------------------------------------------------
-
-    @property
-    def s(self):
-        return str(self)
-
-    @property
-    def c(self):
-        """Shorthand to capitalize the first word."""
-        return self.capital(all=False, preserve=True)
-
-    @property
-    def C(self):
-        return self.capital(all=True, preserve=True)
-
-    @property
-    def t(self):
-        return self.title(preserve=True)
-
-    #------------------------------------------------------------------
-
     def __str__(self):
-        return str(self.get_in(self.default_lang))
+        w = self.get().get()
+        assert isinstance(w, Word)  #SR_TMP
+        return w.s
 
     def __repr__(self):
         s_langs = ', '.join([
@@ -220,10 +279,12 @@ class TranslatedWord:
 
     def __getitem__(self, key):
         lang = key
+        if lang is None:
+            lang = self.default_lang
         return self.get_in(lang)
 
 
-class ContextWord(TranslatedWord):
+class ContextWord:
     """One or more variants of a word in a specific language."""
 
     def __init__(self, lang=None, *, default_context=None, **variants):
@@ -243,15 +304,21 @@ class ContextWord(TranslatedWord):
 
         """
         self.lang = lang
-        self._default_lang = lang
-        self._default_lang_query = None
+        #self._default_lang = lang
+        #self._default_lang_query = None
 
         self._variants = {}
         for ctx, word in variants.items():
-            if not isinstance(word, str):
+            if not isinstance(word, (Word, str)):
                 raise ValueError(f"invalid word: {word}")
+            if not isinstance(word, Word):
+                word = Word(word, lang=lang, ctx=ctx)
             self._variants[ctx] = word
         self.default_context = next(iter(self._variants))
+
+    def get(self):
+        """Return word in default context."""
+        return self.ctx(None)
 
     def ctx(self, name, as_str=False):
         """Return the variant of the word in a specific context.
@@ -264,13 +331,14 @@ class ContextWord(TranslatedWord):
         """
         if name is None:
             name = self.default_context
-        try:
-            word = self._variants[name]
-        except KeyError:
-            word = self._variants['*']
-        lang = self.lang or 'None'
+        elif name not in self._variants:
+            name = '*'
+        word = self._variants[name]
         if as_str:
+            assert isinstance(word, Word)  #SR_TMP
             return word
+        return word  #SR_TMP
+        lang = self.lang or 'None'
         return TranslatedWord(**{lang: word})
 
     def ctxs(self):
@@ -278,7 +346,9 @@ class ContextWord(TranslatedWord):
         return list(self._variants.keys())
 
     def __str__(self):
-        return str(self.ctx(self.default_context, as_str=True))
+        w = self.ctx(self.default_context, as_str=True)
+        assert isinstance(w, Word)  #SR_TMP
+        return w.s
 
     def __repr__(self):
         s_variants = ', '.join(
@@ -287,3 +357,22 @@ class ContextWord(TranslatedWord):
 
     def __eq__(self, other):
         return str(self) == str(other)
+
+    #SR_TMP<
+    @property
+    def s(self):
+        return str(self)
+    def capital(self, **kwargs):
+        return self.get().capital(**kwargs)
+    def title(self, **kwargs):
+        return self.get().title(**kwargs)
+    @property
+    def c(self):
+        return self.get().c
+    @property
+    def C(self):
+        return self.get().C
+    @property
+    def t(self):
+        return self.get().t
+    #SR_TMP>

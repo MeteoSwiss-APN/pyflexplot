@@ -72,9 +72,9 @@ class TranslatedWords:
 
         if name is None:
             name = next(iter(word_langs.values()))
-            if not isinstance(name, str):
+            if isinstance(name, dict):
                 try:
-                    name = next(iter(name.values()))
+                    name = str(next(iter(name.values())))
                 except Exception:
                     raise ValueError(
                         f"cannot derive name of {word_langs} from {name} "
@@ -96,16 +96,19 @@ class TranslatedWords:
 
     #------------------------------------------------------------------
 
-    def get(self, name, lang=None, ctx=None):
+    def get(self, name, lang=None, ctx=None, *, chainable=True):
+
         try:
             word = self._words[name]
         except KeyError:
             raise MissingWordError(name)
-        if lang is not None:
-            word = word.get_in(lang)
-        if ctx is not None:
-            word = word.ctx(ctx)
-        return word
+
+        if chainable:
+            if lang is None and ctx is None:
+                return word
+            elif ctx is None:
+                return word.get_in(lang)
+        return word.get_in(lang).ctx(ctx)
 
     @property
     def default_lang(self):
@@ -126,44 +129,10 @@ class TranslatedWords:
         return f'{len(self._words)} TranslatedWords{s_name}: {self._words}'
 
     def __getitem__(self, key):
-
         name, lang, ctx = None, None, None
-
-        if isinstance(key, str):
-            # Single str element
-            name = key
-
-        elif not isinstance(key, tuple):
-            # Error: Key neither str nor tuple
-            raise ValueError(
-                f"'{type(self).__name__}' object only subscriptable by one "
-                f"or more objects of type 'str', not '{type(key).__name__}'")
-
-        elif any(not isinstance(i, (str, type(None))) for i in key):
-            # Error: Not all key tuple elements are str
-            types = []
-            for element in key:
-                if not isinstance(element, str) and type(element) not in types:
-                    types.append(type(element))
-            if len(types) == 1:
-                s_types = f"'{next(iter(types)).__name__}'"
-            else:
-                s_types = "[{}]".format(
-                    ', '.join([f"'{t.__name__}'" for t in types]))
-            raise ValueError(
-                f"'{type(self).__name__}' object only subscriptable by one "
-                f"or more objects of type 'str' or None, not {s_types}")
-
-        elif len(key) == 2:
-            # Tuple with two elements
-            name, lang = key
-
-        elif len(key) == 3:
-            # Tuple with three elements
-            name, lang, ctx = key
-
-        else:
-            # Error: Tuple with unexpected number of elements
-            raise NotImplementedError(f"{len(key)} elements")
-
-        return self.get(name, lang, ctx)
+        if not isinstance(key, tuple):
+            key = (key,)
+        elif len(key) not in [1, 2, 3]:
+            raise KeyError(
+                f"wrong number of key elements: {len(key)} not in [1, 2, 3]")
+        return self.get(*key, chainable=False)
