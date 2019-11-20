@@ -18,15 +18,16 @@ class Test_Basic:
     """Test for simple words."""
 
     ws = p_TranslatedWords(
-        train={
-            'en': 'train',
-            'de': 'Zug',
-        },
-        high_school={
-            'en': 'high school',
-            'de': 'Mittelschule',
-        },
-    )
+        'words', {
+            'train': {
+                'en': 'train',
+                'de': 'Zug',
+            },
+            'high_school': {
+                'en': 'high school',
+                'de': 'Mittelschule',
+            },
+        })
 
     def test_default(self):
         assert self.ws.get('train') == 'train'
@@ -83,14 +84,15 @@ class Test_ContextDependent_OneToMany:
     """Test words with context-dependency in one language."""
 
     ws = p_TranslatedWords(
-        default_lang='de',
-        at={
+        'words',
+        {'at': {
             'en': 'at',
             'de': {
                 'place': 'bei',
                 'level': 'auf',
             },
-        })
+        }},
+        default_lang='de')
 
     def test_change_default_lang(self):
         ws = self.ws
@@ -157,18 +159,20 @@ class Test_ContextDependent_ManyToMany:
     """Test words with context-dependency in both languages."""
 
     ws = p_TranslatedWords(
-        default_lang='de',
-        integrated={
-            'en': {
-                '*': 'integrated',
-                'abbr': 'int.',
-            },
-            'de': {
-                'f': 'integrierte',
-                '*': 'integriert',
-                'abbr': 'int.',
-            },
-        })
+        'words', {
+            'integrated': {
+                'en': {
+                    '*': 'integrated',
+                    'abbr': 'int.',
+                },
+                'de': {
+                    'f': 'integrierte',
+                    '*': 'integriert',
+                    'abbr': 'int.',
+                },
+            }
+        },
+        default_lang='de')
 
     def test_change_default_lang(self):
         ws = self.ws
@@ -271,42 +275,49 @@ class Test_Interface_AddWords:
 
     def test_fail(self):
         """Ensure that ``_test_ws`` fails with wrong input."""
-        ws = TranslatedWords()
+        ws = TranslatedWords('words')
         with pytest.raises(MissingWordError):
             self.check_ws(ws)
 
     def test_init(self):
         ws = TranslatedWords(
-            train={
-                'en': 'train',
-                'de': 'Zug'
-            },
-            at={
-                'en': 'at',
-                'de': {
-                    'place': 'bei',
-                    'time': 'um',
-                    'level': 'auf'
-                }
-            },
-        )
+            'words', {
+                'train': {
+                    'en': 'train',
+                    'de': 'Zug'
+                },
+                'at': {
+                    'en': 'at',
+                    'de': {
+                        'place': 'bei',
+                        'time': 'um',
+                        'level': 'auf'
+                    }
+                },
+            })
         self.check_ws(ws)
 
     def test_add_explicit_name(self):
         """Use ``TranslatedWords.add`` with  names specified explicitly."""
-        ws = TranslatedWords()
+        ws = TranslatedWords('words')
         ws.add('train', en='train', de='Zug')
-        ws.add('at', en='at', de={'place': 'bei', 'time': 'um', 'level': 'auf'})
+        ws.add(
+            'at', en='at', de={
+                'place': 'bei',
+                'time': 'um',
+                'level': 'auf'
+            })
         self.check_ws(ws)
 
     def test_add_implicit_name(self):
         """Use ``TranslatedWords.add`` with names derived from first variant."""
-        ws = TranslatedWords()
+        ws = TranslatedWords('name')
         ws.add(en='train', de='Zug')
         ws.add(en='at', de={'place': 'bei', 'time': 'um', 'level': 'auf'})
         self.check_ws(ws)
 
+
 class Test_Interface_Various:
 
     def test_init_empty_with_default_lang(self):
-        ws = TranslatedWords(default_lang='en')
+        ws = TranslatedWords('name', default_lang='en')

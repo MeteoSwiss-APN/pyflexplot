@@ -8,7 +8,6 @@ from .word import TranslatedWord
 from .exceptions import MissingWordError
 from .exceptions import MissingLanguageError
 
-
 #======================================================================
 
 
@@ -17,23 +16,27 @@ class TranslatedWords:
 
     cls_word = TranslatedWord
 
-    def __init__(self, name=None, *, default_lang=None, **words_langs):
+    def __init__(self, name, words_langs=None, *, default_lang=None):
         """Create an instance of ``TranslatedWords``.
 
         Args:
             name (str, optional): Name of the words collection.
                 Defaults to None.
 
+            words_langs (dict of str: dict, optional): Words in one or
+                more languages. The dict keys constitute the names of
+                the words, and each value the definition of a word in
+                one or more language. All words must be defined in the
+                same languages. Defaults to None.
+
             default_lang (str, optional): Default language. Defaults to
                 the first language in which the first word is defined.
 
-            **words (dict of str: dict): TranslatedWords. The keys constitute the
-                names of the words, and each value the definition of a
-                word in one or more language. All words must be defined
-                in the same languages.
-
         """
         self.name = name
+
+        if words_langs is None:
+            words_langs = {}
 
         self._langs = None
         self._words = {}
@@ -136,3 +139,13 @@ class TranslatedWords:
             raise KeyError(
                 f"wrong number of key elements: {len(key)} not in [1, 2, 3]")
         return self.get(*key, chainable=False)
+
+
+class Words(TranslatedWords):  #SR_TMP TODO remove parent
+
+    def __init__(self, name, words):
+        #SR_TMP<
+        lang = 'None'
+        words_langs = {name: {lang: word} for name, word in words.items()}
+        super().__init__(name, words_langs, default_lang=lang)
+        #SR_TMP>

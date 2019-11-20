@@ -5,8 +5,10 @@ Wrappers for ``TranslatedWord`` and ``TranslatedWords`` with testing-friendly in
 from .word import TranslatedWord
 from .words import TranslatedWords
 
+
 class TranslatedTestWord(TranslatedWord):
     pass
+
 
 class TranslatedTestWords(TranslatedWords):
 

@@ -50,7 +50,10 @@ from srutils.testing import assert_summary_dict_is_subdict
 from srutils.testing import IgnoredElement
 from srutils.testing import UnequalElement
 from srutils.various import isiterable
-from words import TranslatedWord, TranslatedWords
+from words import Word
+from words import Words
+from words import TranslatedWord
+from words import TranslatedWords
 
 from pyflexplot.data import Field
 from pyflexplot.plot import DispersionPlot
@@ -60,24 +63,55 @@ from pyflexplot.plot import DispersionPlot
 #======================================================================
 
 
-class DummyWord(TranslatedWord):
+def dummy__str__(parent, word, lang, ctx):
+    details = []
+    if str(lang) != 'None':
+        details.append(lang)
+    if str(ctx) != 'None':
+        details.append(ctx)
+    if details:
+        s_details = f"[{'|'.join(details)}]"
+    else:
+        s_details = ''
+    return f'<{parent}.{word}{s_details}>'
+
+
+class Dummy_Word(Word):
+
+    def __str__(self):
+        try:
+            ctx = self.ctx
+        except AttributeError:
+            ctx = self._parent._pop_curr_ctx()
+        return dummy__str__(self._parent._parent.name, self.s, self.lang, ctx)
+
+
+class Dummy_TranslatedWord(TranslatedWord):
     """Wrapper for ``TranslatedWord`` class for testing."""
+
+    @property
+    def cls_word(self):
+
+        class Wrapped_Dummy_Word(Dummy_Word):
+            _parent = self
+
+        return Wrapped_Dummy_Word
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._curr_ctx = None
 
     def __str__(self):
-        s = f'{self._parent.name}.{self.name}'
-        details = []
-        if self._lang:
-            details.append(self._lang)
-        if self._curr_ctx:
-            details.append(self._curr_ctx)
-            self._curr_ctx = None
-        if details:
-            s += f"[{'|'.join(details)}]"
-        return f'<{s}>'
+        ctx = self._pop_curr_ctx()
+        return dummy__str__(self._parent.name, self.name, self._lang, ctx)
+
+    def _pop_curr_ctx(self):
+        ctx = self._curr_ctx
+        self._curr_ctx = None
+        return ctx
+
+    def s(self):
+        return str(self)
 
     @property
     def _lang(self):
@@ -86,30 +120,49 @@ class DummyWord(TranslatedWord):
     def ctx(self, name):
         self._curr_ctx = name
         return self
-        #-return f'<{str(self)[1:-1]}[{name}]>'.replace(r'][', '|')
 
 
-class DummyWords(TranslatedWords):
-    """Wrapper for ``TranslatedWords`` class for testing."""
+class Dummy_Words(Words):
 
-    cls_word = DummyWord
+    @property
+    def cls_word(self):
+
+        class Wrapped_Dummy_TranslatedWord(Dummy_TranslatedWord):
+            _parent = self
+
+        return Wrapped_Dummy_TranslatedWord
 
     @classmethod
-    def create(cls, name, lang, words):
-        self = cls(
-            name=name,
-            default_lang=lang,
-            **{w: {
-                'en': w,
-                'de': w
-            } for w in words})
-        self._lang = lang
-        for word in self._words.values():
-            word._parent = self
+    def create(cls, name, words):
+        self = cls(name, {word: word for word in words})
         return self
 
 
-class DummyAttr:
+class Dummy_TranslatedWords(TranslatedWords):
+    """Wrapper for ``TranslatedWords`` class for testing."""
+
+    @property
+    def cls_word(self):
+
+        class Wrapped_Dummy_TranslatedWord(Dummy_TranslatedWord):
+            _parent = self
+
+        return Wrapped_Dummy_TranslatedWord
+
+    @classmethod
+    def create(cls, name, lang, words):
+        words_langs = {w: {'en': w, 'de': w} for w in words}
+        self = cls(name, words_langs, default_lang=lang)
+        self._lang = lang
+        return self
+
+    def get(self, name, lang=None, ctx=None, **kwargs):
+        word = super().get(name, chainable=True)
+        word._curr_ctx = ctx
+        return super().get(name, lang, ctx, **kwargs)
+
+
+class Dummy_Attr:
     """Replacement for ``Attr`` class for testing."""
 
     def __init__(self, name, value, lang):
@@ -132,7 +185,7 @@ def create_dummy_attrs(lang):
 
     # Note: Some values must be passed, otherwise plotting fails
 
-    DA = lambda name, value=None: DummyAttr(name, value, lang=lang)
+    DA = lambda name, value=None: Dummy_Attr(name, value, lang=lang)
     fm = lambda name, value=None: DA(name, value).format
 
     # yapf: disable
@@ -162,7 +215,7 @@ def create_dummy_attrs(lang):
             name                    = DA('species.name'),
             half_life               = DA('species.half_life'),
             deposit_vel             = DA('species.deposit_vel'),
-            sedimentation_velocity  = DA('species.sedimentation_velocity'),
+            sediment_vel  = DA('species.sediment_vel'),
             washout_coeff           = DA('species.washout_coeff'),
             washout_exponent        = DA('species.washout_exponent'),
         ),
@@ -193,7 +246,7 @@ def create_dummy_field(attrs):
 
 def create_dummy_words(lang):
 
-    w = DummyWords.create(
+    w = Dummy_TranslatedWords.create(
         'words', lang, [
             'accumulated_over',
             'at',
@@ -211,7 +264,7 @@ def create_dummy_words(lang):
             'rate',
             'release',
             'release_site',
-            'sedimentation_velocity',
+            'sediment_vel',
             'since',
             'site',
             'start',
@@ -227,8 +280,8 @@ def create_dummy_words(lang):
 
 def create_dummy_symbols():
 
-    return DummyWords.create(
-        'symbols', None, [
+    return Dummy_Words.create(
+        'symbols', [
             'ae',
             'copyright',
             'oe',
@@ -570,7 +623,7 @@ class Solution:
                     txt('tc', f'<words.release{sl}>'),
                     txt('bl', f'<words.washout_exponent{sl}>:'),
                     txt('bl', f'<words.washout_coeff{sl}>:'),
-                    txt('bl', f'<words.sedimentation_velocity{sl}>:'),
+                    txt('bl', f'<words.sediment_vel{sl[:-1]}|abbr]>:'),
                     txt('bl', f'<words.deposit_vel{sl}>:'),
                     txt('bl', f'<words.half_life{sl}>:'),
                     txt('bl', f'<words.substance{sl}>:'),
@@ -584,7 +637,7 @@ class Solution:
                     txt('bl', f'<words.site{sl}>:'),
                     txt('br', f'<species.washout_exponent{sl}.format>'),
                     txt('br', f'<species.washout_coeff{sl}.format>'),
-                    txt('br', f'<species.sedimentation_velocity{sl}.format>'),
+                    txt('br', f'<species.sediment_vel{sl}.format>'),
                     txt('br', f'<species.deposit_vel{sl}.format>'),
                     txt('br', f'<species.half_life{sl}.format>'),
                     txt('br', f'<species.name{sl}.format>'),

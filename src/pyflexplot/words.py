@@ -2,20 +2,21 @@
 """
 TranslatedWords.
 """
+from words import Words
 from words import TranslatedWords
 
 # yapf: disable
 
-symbols = TranslatedWords(
-    ae          = r'$\mathrm{\"a}$',
-    copyright   = u'\u00a9',
-    oe          = r'$\mathrm{\"o}$',
-    t0          = r'$\mathrm{T_0}$',
-    ue          = r'$\mathrm{\"u}$',
-)
+symbols = Words('symbols', {
+    'ae'        : r'$\mathrm{\"a}$',
+    'copyright' : u'\u00a9',
+    'oe'        : r'$\mathrm{\"o}$',
+    't0'        : r'$\mathrm{T_0}$',
+    'ue'        : r'$\mathrm{\"u}$',
+})
 
 s = symbols
-words = TranslatedWords(default_lang='en')
+words = TranslatedWords('words', {}, default_lang='en')
 # A
 words.add('accumulated_over',       en='accumulated over',
                                     de=f'akkumuliert {s["ue"]}ber')
@@ -66,7 +67,7 @@ words.add('height',                 en='height',
 words.add('integrated',             en={'*': 'integrated',
                                         'abbr': 'int.'},
                                     de={'*': 'integriert',
-                                        'abbr':'int.',
+                                        'abbr': 'int.',
                                         'm': 'integrierter',
                                         'f': 'integrierte',
                                         'n': 'integriertes'})

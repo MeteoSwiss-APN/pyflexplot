@@ -57,7 +57,7 @@ class Word:
                 letters. Defaults to True.
 
         """
-        s = self.s
+        s = str(self)
         if not preserve:
             s = s.lower()
         if all:
@@ -68,15 +68,16 @@ class Word:
     def title(self, *, preserve=True):
         if not hasattr(self, 'lang'):
             raise AttributeError(
-                f"{type(self).__name__}.title requires attribute 'lang'; "
-                f"not among {self.attrs}")
+                f"{type(self).__name__} '{self.s}': method `title` requires "
+                f"attribute 'lang': not not among {self.attrs}")
         if self.lang == 'en':
-            return titlecase(self.s, preserve=preserve)
+            return titlecase(str(self), preserve=preserve)
         elif self.lang == 'de':
             return self.capital(all=False, preserve=preserve)
         else:
             raise NotImplementedError(
-                f"{type(self)}.title in language '{self.lang}'")
+                f"{type(self).__name__} '{self.s}' in language '{self.lang}': "
+                f"method `title`")
 
     #------------------------------------------------------------------
 
@@ -96,6 +97,8 @@ class Word:
 
 class TranslatedWord:
     """A word in one or more languages."""
+
+    cls_word = Word
 
     def __init__(
             self,
@@ -153,7 +156,7 @@ class TranslatedWord:
         # Define words with consistent contexts
         for lang, word in translations.items():
             if isinstance(word, str):
-                word = Word(word, lang=lang)
+                word = self.cls_word(word, lang=lang)
             if isinstance(word, Word):
                 word = {'*': word}
             elif isinstance(word, dict):
@@ -268,8 +271,8 @@ class TranslatedWord:
         return w.s
 
     def __repr__(self):
-        s_langs = ', '.join([
-            f"{l}={repr(v)}" for l, v in self._translations.items()])
+        s_langs = ', '.join(
+            [f"{l}={repr(v)}" for l, v in self._translations.items()])
         return (
             f"{type(self).__name__}({self.name}, {s_langs}, "
             f"default_lang='{self.default_lang}')")
@@ -286,6 +289,8 @@ class TranslatedWord:
 
 class ContextWord:
     """One or more variants of a word in a specific language."""
+
+    cls_word = Word
 
     def __init__(self, lang=None, *, default_context=None, **variants):
         """Create an instance of ``ContextWord``.
@@ -312,7 +317,7 @@ class ContextWord:
             if not isinstance(word, (Word, str)):
                 raise ValueError(f"invalid word: {word}")
             if not isinstance(word, Word):
-                word = Word(word, lang=lang, ctx=ctx)
+                word = self.cls_word(word, lang=lang, ctx=ctx)
             self._variants[ctx] = word
         self.default_context = next(iter(self._variants))
 
@@ -362,17 +367,23 @@ class ContextWord:
     @property
     def s(self):
         return str(self)
+
     def capital(self, **kwargs):
         return self.get().capital(**kwargs)
+
     def title(self, **kwargs):
         return self.get().title(**kwargs)
+
     @property
     def c(self):
         return self.get().c
+
     @property
     def C(self):
         return self.get().C
+
     @property
     def t(self):
         return self.get().t
+
     #SR_TMP>

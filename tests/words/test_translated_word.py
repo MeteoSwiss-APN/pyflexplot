@@ -142,7 +142,11 @@ class Test_Context_ManyMany_Diff:
 
     def test_fail_no_default_context(self):
         with pytest.raises(ValueError):
-            TranslatedWord(en={'abbr': 'int.'}, de={'abbr': 'int.', 'f': 'integrierte'})
+            TranslatedWord(
+                en={'abbr': 'int.'}, de={
+                    'abbr': 'int.',
+                    'f': 'integrierte'
+                })
 
     # yapf: disable
     w = p_TranslatedWord(
