@@ -5,33 +5,68 @@ String utilities.
 import re
 
 
-def to_varname(s):
-    """Reformat a string to a valid Python variable name."""
+def to_varname(s, filter_invalid=None):
+    """Reformat a string to a valid Python variable name.
+
+    Valid characters are all letters, underscores, and numbers (except as the 
+    first characters). All other characters must either be converted to one of
+    the former, or removed altogether. By default, they are all converted to
+    underscores.
+
+    Args:
+        s (str): String to be reformatted.
+
+        filter_invalid (callable, optional): A function applied to each invalid
+            character to replace it by a valid one. Defaults to None.
+
+            Example: Replace all dashes and spaces by underscores and remove
+            all other invalid characters, pass the following:
+
+            ``filter_special=lambda c: "_" if c in "- " else ""``
+ 
+    """
 
     def error(msg):
         raise ValueError(f"cannot convert '{s}' to varname: {msg}")
 
     # Check input is valid string
     try:
-        v = str(s)
+        s = str(s)
     except Exception as e:
         error("not valid string")
-    if not v:
+    if not s:
         error("is empty")
 
-    # Turn all spaces and special characters into underscores
-    v = re.sub(r"[^a-zA-Z0-9]", "_", v)
+    if filter_invalid is None:
+        # Default filter function
+        filter_invalid = lambda c: "_"
 
-    # Turn leading number into underscore
-    v = re.sub(r"^[0-9]", "_", v)
+    def filter(ch):
+        """Apply ``filter_invalid`` to character ``ch``."""
+        err = f"filtering '{ch}' with function {filter_invalid} failed"
+        try:
+            chf = filter_invalid(ch)
+        except Exception as e:
+            error(f"{err}: {type(e).__name__}('{e}')")
+        if chf != str(chf):
+            error(f"{err}: type {type(chf).__name__} of '{chf}' not str or equivalent")
+        return str(chf)
+
+    # Filter all characters, ignoring potential leading numbers
+    rx_valid = re.compile("[a-zA-Z0-9_]")
+    varname = "".join([c if rx_valid.match(c) else filter(c) for c in s])
+
+    # Handle leading number (if necessary)
+    if varname[0] in "0123456789":
+        varname = filter(varname[0]) + varname[1:]
 
     # Check validity
     try:
-        check_is_valid_varname(v)
+        check_is_valid_varname(varname)
     except ValueError as e:
         error(str(e))
 
-    return v
+    return varname
 
 
 def check_is_valid_varname(s):
