@@ -53,9 +53,7 @@ class TranslatedWords:
     def add(self, name=None, **word_langs):
         """Add a word."""
         name = self._prepare_word_name(name, word_langs)
-
         langs = list(word_langs.keys())
-
         if self._langs is None:
             self._langs = langs
         elif set(langs) != set(self._langs):
@@ -63,10 +61,11 @@ class TranslatedWords:
                 f"word '{name}' not defined in all necessary languages: set({langs}) "
                 f"!= set({self._langs})"
             )
-
-        self._words[name] = self.cls_word(
+        word = self.cls_word(
             name, default_lang_query=lambda: self.default_lang, **word_langs
         )
+        self._words[name] = word
+        return word
 
     def _prepare_word_name(self, name, word_langs):
 
@@ -80,7 +79,9 @@ class TranslatedWords:
                         f"cannot derive name of {word_langs} from {name} of type "
                         f"{type(name).__name__}: neither a string nor a non-empty dict"
                     )
-            name = to_varname(name)
+            name = to_varname(
+                name, filter_invalid=lambda c: "_" if c in "- " else ""
+            ).lower()
 
         if not isinstance(name, str):
             raise ValueError(

@@ -43,7 +43,7 @@ class DispersionPlotLabels(SummarizableClass):
             start=f"{w['start'].t} ({s['t0']})",
             end=w["end"].t,
             flexpart_based_on=f"{w['flexpart'].t} {w['based_on'].t}",
-            copyright=f"{s['copyright']}{w['mch'].t}",
+            copyright=f"{s['copyright']}{w['meteoswiss'].t}",
         )
 
         self.release = SimpleNamespace(
@@ -60,8 +60,8 @@ class DispersionPlotLabels(SummarizableClass):
         self.species = SimpleNamespace(
             name=w["substance"].t,
             half_life=w["half_life"].t,
-            deposit_vel=w["deposit_vel"].t,
-            sediment_vel=w["sediment_vel", None, "abbr"].t,
+            deposit_vel=w["deposition_velocity", None, "abbr"].t,
+            sediment_vel=w["sedimentation_velocity", None, "abbr"].t,
             washout_coeff=w["washout_coeff"].t,
             washout_exponent=w["washout_exponent"].t,
         )
@@ -616,8 +616,13 @@ class DispersionPlot(Plot):
         _lon = Degrees(self.field.attrs.release.lon.value)
         _east = {"en": "E", "de": "O"}[self.lang]
         lon_fmtd = (
-            f"{_lon.degs()}" + r"$^\circ\,$" + f"{_lon.mins()}'" + r"$\,$" +
-            f"{_east} ({_lon.frac():.2f}" + r"$^\circ\,$" + f"{_east})"
+            f"{_lon.degs()}"
+            + r"$^\circ\,$"
+            + f"{_lon.mins()}'"
+            + r"$\,$"
+            + f"{_east} ({_lon.frac():.2f}"
+            + r"$^\circ\,$"
+            + f"{_east})"
         )
 
         l = self.labels
