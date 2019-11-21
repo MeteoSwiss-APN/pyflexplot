@@ -2,7 +2,7 @@
 """
 Plotters.
 """
-#import numpy as np
+# import numpy as np
 
 from .specs import VarSpecs
 from .specs import FieldSpecs
@@ -15,33 +15,31 @@ class Plotter(ParentClass):
 
     cls_plot = None
 
-    # yapf: disable
     specs_fmt_keys = {
-        'time'      : 'time_ind',
-        'nageclass' : 'age_ind',
-        'numpoint'  : 'rel_pt_ind',
-        'level'     : 'level_ind',
-        'species_id': 'species_id',
+        "time": "time_ind",
+        "nageclass": "age_ind",
+        "numpoint": "rel_pt_ind",
+        "level": "level_ind",
+        "species_id": "species_id",
     }
-    # yapf: enable
 
-    def run(self, field, file_path_fmt, *, lang='en', **kwargs_plot):
+    def run(self, field, file_path_fmt, *, lang="en", **kwargs_plot):
         """Create one or more plots.
 
         Args:
-            field (Plot*, list[Plot*]): An instance or list of
-                instances of the plot class.
+            field (Plot*, list[Plot*]): An instance or list of instances of the
+                plot class.
 
-            file_path_fmt (str): Format string of output file path.
-                Must contain all necessary format keys to avoid that
-                multiple files have the same name, but can be a plain
-                string if no variable assumes more than one value.
+            file_path_fmt (str): Format string of output file path. Must
+                contain all necessary format keys to avoid that multiple files
+                have the same name, but can be a plain string if no variable
+                assumes more than one value.
 
-            lang (str, optional): Language, e.g., 'de' for German.
-                Defaults to 'en' (English).
+            lang (str, optional): Language, e.g., 'de' for German. Defaults to
+                'en' (English).
 
-            **kwargs_plot: Keyword arguments used to instatiate the
-                plot instance.
+            **kwargs_plot: Keyword arguments used to instatiate the plot
+                instance.
 
         Yields:
             str: Output file paths.
@@ -52,7 +50,7 @@ class Plotter(ParentClass):
 
         data_lst = field if isinstance(field, (list, tuple)) else [field]
 
-        _s = 's' if len(data_lst) > 1 else ''
+        _s = "s" if len(data_lst) > 1 else ""
         print(f"create {len(data_lst)} {self.cls_plot.name} plot{_s}")
 
         # Create plots one-by-one
@@ -82,28 +80,28 @@ class Plotter(ParentClass):
                 except TypeError:
                     pass
                 else:
-                    val = '+'.join([str(i) for i in val])
+                    val = "+".join([str(i) for i in val])
             kwargs[fmt_key] = val
 
         # Special case: integrated variable
         plot_var = self.cls_plot.name
         if var_specs.integrate:
-            plot_var += '-int'
+            plot_var += "-int"
         try:
             dep_type = var_specs.deposition
         except AttributeError:
             pass
         else:
-            plot_var = f'{dep_type}-{plot_var}'
-        kwargs['variable'] = plot_var
+            plot_var = f"{dep_type}-{plot_var}"
+        kwargs["variable"] = plot_var
 
         # Language
-        kwargs['lang'] = self.lang
+        kwargs["lang"] = self.lang
 
         # Ensemble member ids
-        if isinstance(field_specs, FieldSpecs.subclass('ens')):
+        if isinstance(field_specs, FieldSpecs.subclass("ens")):
             if not field_specs.member_ids:
-                kwargs['member_ids'] = None
+                kwargs["member_ids"] = None
             else:
                 member_ids_grouped = []
                 for i, member_id in enumerate(field_specs.member_ids):
@@ -114,18 +112,18 @@ class Plotter(ParentClass):
                 s = None
                 for member_ids in member_ids_grouped:
                     if len(member_ids) == 1:
-                        s_i = f'{member_ids[0]:d}'
+                        s_i = f"{member_ids[0]:d}"
                     elif len(member_ids) == 2:
-                        s_i = f'{member_ids[0]:d}+{member_ids[1]:d}'
+                        s_i = f"{member_ids[0]:d}+{member_ids[1]:d}"
                     else:
-                        s_i = f'{member_ids[0]:d}-{member_ids[-1]:d}'
+                        s_i = f"{member_ids[0]:d}-{member_ids[-1]:d}"
                     if s is None:
                         s = s_i
                     else:
-                        s += f'+{s_i}'
-                kwargs['member_ids'] = s
+                        s += f"+{s_i}"
+                kwargs["member_ids"] = s
 
-        #ipython(globals(), locals(), f"{type(self).__name__}.fmt_file_path")
+        # ipython(globals(), locals(), f"{type(self).__name__}.fmt_file_path")
 
         # Format file path
         try:
@@ -133,69 +131,63 @@ class Plotter(ParentClass):
         except (TypeError, KeyError) as e:
             raise KeyError(
                 f"cannot format '{self.file_path_fmt}' with {kwargs}: "
-                f"{type(e).__name__}({e})")
+                f"{type(e).__name__}({e})"
+            )
         else:
             return file_path
 
 
-#----------------------------------------------------------------------
 # Deterministic Simulation
-#----------------------------------------------------------------------
 
 
 class Plotter_Concentration(Plotter):
-    name = 'concentration'
-    cls_plot = Plot.subclass('concentration')
+    name = "concentration"
+    cls_plot = Plot.subclass("concentration")
 
 
 class Plotter_Deposition(Plotter):
-    name = 'deposition'
-    cls_plot = Plot.subclass('deposition')
+    name = "deposition"
+    cls_plot = Plot.subclass("deposition")
 
 
 class Plotter_AffectedArea(Plotter):
-    name = 'affected_area'
-    cls_plot = Plot.subclass('affected_area')
+    name = "affected_area"
+    cls_plot = Plot.subclass("affected_area")
 
 
 class Plotter_AffectedAreaMono(Plotter):
-    name = 'affected_area_mono'
-    cls_plot = Plot.subclass('affected_area_mono')
+    name = "affected_area_mono"
+    cls_plot = Plot.subclass("affected_area_mono")
 
 
-#----------------------------------------------------------------------
 # Ensemble Simulation
-#----------------------------------------------------------------------
 
 
 class Plotter_EnsMean_Concentration(Plotter):
-    name = 'ens_mean_concentration'
-    cls_plot = Plot.subclass('ens_mean_concentration')
+    name = "ens_mean_concentration"
+    cls_plot = Plot.subclass("ens_mean_concentration")
 
 
 class Plotter_EnsMean_Deposition(Plotter):
-    name = 'ens_mean_deposition'
-    cls_plot = Plot.subclass('ens_mean_deposition')
+    name = "ens_mean_deposition"
+    cls_plot = Plot.subclass("ens_mean_deposition")
 
 
 class Plotter_EnsMean_AffectedArea(Plotter):
-    name = 'ens_mean_affected_area'
-    cls_plot = Plot.subclass('ens_mean_affected_area')
+    name = "ens_mean_affected_area"
+    cls_plot = Plot.subclass("ens_mean_affected_area")
 
 
 class Plotter_EnsMean_AffectedAreaMono(Plotter):
-    name = 'ens_mean_affected_area_mono'
-    cls_plot = Plot.subclass('ens_mean_affected_area_mono')
+    name = "ens_mean_affected_area_mono"
+    cls_plot = Plot.subclass("ens_mean_affected_area_mono")
 
 
 class Plotter_EnsThrAgrmt_Concentration(Plotter):
-    name = 'ens_thr_agrmt_concentration'
-    cls_plot = Plot.subclass('ens_thr_agrmt_concentration')
+    name = "ens_thr_agrmt_concentration"
+    cls_plot = Plot.subclass("ens_thr_agrmt_concentration")
 
 
 class Plotter_EnsThrAgrmt_Deposition(Plotter):
-    name = 'ens_thr_agrmt_deposition'
-    cls_plot = Plot.subclass('ens_thr_agrmt_deposition')
-
-
-#----------------------------------------------------------------------
+    name = "ens_thr_agrmt_deposition"
+    cls_plot = Plot.subclass("ens_thr_agrmt_deposition")

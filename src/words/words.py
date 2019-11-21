@@ -8,8 +8,6 @@ from .word import TranslatedWord
 from .exceptions import MissingWordError
 from .exceptions import MissingLanguageError
 
-#======================================================================
-
 
 class TranslatedWords:
     """A collection of words in different languages."""
@@ -20,17 +18,17 @@ class TranslatedWords:
         """Create an instance of ``TranslatedWords``.
 
         Args:
-            name (str, optional): Name of the words collection.
-                Defaults to None.
+            name (str, optional): Name of the words collection. Defaults to
+                None.
 
-            words_langs (dict of str: dict, optional): Words in one or
-                more languages. The dict keys constitute the names of
-                the words, and each value the definition of a word in
-                one or more language. All words must be defined in the
-                same languages. Defaults to None.
+            words_langs (dict of str: dict, optional): Words in one or more
+                languages. The dict keys constitute the names of the words, and
+                each value the definition of a word in one or more language.
+                All words must be defined in the same languages. Defaults to
+                None.
 
-            default_lang (str, optional): Default language. Defaults to
-                the first language in which the first word is defined.
+            default_lang (str, optional): Default language. Defaults to the
+                first language in which the first word is defined.
 
         """
         self.name = name
@@ -44,16 +42,13 @@ class TranslatedWords:
             try:
                 {**word_langs}
             except TypeError:
-                raise ValueError(
-                    f"word '{word_name}' not a dict: {word_langs}")
+                raise ValueError(f"word '{word_name}' not a dict: {word_langs}")
             self.add(word_name, **word_langs)
 
             if default_lang is None:
                 default_lang = next(iter(self._langs))
 
         self.set_default_lang(default_lang)
-
-    #------------------------------------------------------------------
 
     def add(self, name=None, **word_langs):
         """Add a word."""
@@ -65,11 +60,13 @@ class TranslatedWords:
             self._langs = langs
         elif set(langs) != set(self._langs):
             raise ValueError(
-                f"word '{name}' not defined in all necessary languages: "
-                f"set({langs}) != set({self._langs})")
+                f"word '{name}' not defined in all necessary languages: set({langs}) "
+                f"!= set({self._langs})"
+            )
 
         self._words[name] = self.cls_word(
-            name, default_lang_query=lambda: self.default_lang, **word_langs)
+            name, default_lang_query=lambda: self.default_lang, **word_langs
+        )
 
     def _prepare_word_name(self, name, word_langs):
 
@@ -80,14 +77,15 @@ class TranslatedWords:
                     name = str(next(iter(name.values())))
                 except Exception:
                     raise ValueError(
-                        f"cannot derive name of {word_langs} from {name} "
-                        f"of type {type(name).__name__}: neither a string "
-                        f"nor a non-empty dict")
+                        f"cannot derive name of {word_langs} from {name} of type "
+                        f"{type(name).__name__}: neither a string nor a non-empty dict"
+                    )
             name = to_varname(name)
 
         if not isinstance(name, str):
             raise ValueError(
-                f"argument `name`: expect type str, got {type(name).__name__}")
+                f"argument `name`: expect type str, got {type(name).__name__}"
+            )
 
         return name
 
@@ -96,8 +94,6 @@ class TranslatedWords:
         if lang and self.langs and lang not in self.langs:
             raise MissingLanguageError(f"{lang} not in {self.langs}")
         self._default_lang = lang
-
-    #------------------------------------------------------------------
 
     def get(self, name, lang=None, ctx=None, *, chainable=True):
 
@@ -125,27 +121,23 @@ class TranslatedWords:
             return []
         return [lang for lang in self._langs]
 
-    #------------------------------------------------------------------
-
     def __repr__(self):
-        s_name = f' ({self.name})' if self.name else ''
-        return f'{len(self._words)} TranslatedWords{s_name}: {self._words}'
+        s_name = f" ({self.name})" if self.name else ""
+        return f"{len(self._words)} TranslatedWords{s_name}: {self._words}"
 
     def __getitem__(self, key):
         name, lang, ctx = None, None, None
         if not isinstance(key, tuple):
             key = (key,)
         elif len(key) not in [1, 2, 3]:
-            raise KeyError(
-                f"wrong number of key elements: {len(key)} not in [1, 2, 3]")
+            raise KeyError(f"wrong number of key elements: {len(key)} not in [1, 2, 3]")
         return self.get(*key, chainable=False)
 
 
-class Words(TranslatedWords):  #SR_TMP TODO remove parent
-
+class Words(TranslatedWords):  # SR_TMP TODO remove parent
     def __init__(self, name, words):
-        #SR_TMP<
-        lang = 'None'
+        # SR_TMP <
+        lang = "None"
         words_langs = {name: {lang: word} for name, word in words.items()}
         super().__init__(name, words_langs, default_lang=lang)
-        #SR_TMP>
+        # SR_TMP >

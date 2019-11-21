@@ -3,41 +3,39 @@
 """
 Test summarizing plots as defined in ``pyflexplot.plot``.
 
-Plots can be summarized into dicts, which can be used to test that all
-plot elements are in the right place with the right content etc.
+Plots can be summarized into dicts, which can be used to test that all plot
+elements are in the right place with the right content etc.
 
 (Summarization is similar to serialization, but without the ability to
 reconstruct the objects from the summary.)
 
-In this module, the summary dict of one plot type is thoroughly tested
-to ensure that summarization works as expected. In order to isolate
-this process as best as possible, several classes used to define labels
-etc. are mocked: ``TranslatedWord``, ``TranslatedWords``, ``Attr``.
+In this module, the summary dict of one plot type is thoroughly tested to
+ensure that summarization works as expected. In order to isolate this process
+as best as possible, several classes used to define labels etc. are mocked:
+``TranslatedWord``, ``TranslatedWords``, ``Attr``.
 
-While the mocks allows us to inject dummy strings as labels etc. and
-makes the tests independent of the exact formation of those, the tests
-are still dependent on the structure of ``DispersionPlot``, i.e., what
-elements there are and where they go.
+While the mocks allows us to inject dummy strings as labels etc. and makes the
+tests independent of the exact formation of those, the tests are still
+dependent on the structure of ``DispersionPlot``, i.e., what elements there are
+and where they go.
 
-Not every failure thus implies that summarization is broken! There
-might just have been minor adjustments to the plot layout.
+Not every failure thus implies that summarization is broken! There might just
+have been minor adjustments to the plot layout.
 
-The tests are organized in such a way that a comprehensive reference
-summary dict is constructed near the bottom, and each test compares a
-subset of it against the respective part(s) of the summary dict
-obtained from the tested plot class.
+The tests are organized in such a way that a comprehensive reference summary
+dict is constructed near the bottom, and each test compares a subset of it
+against the respective part(s) of the summary dict obtained from the tested
+plot class.
 
-All tests come in pairs: For each positive test (check that elements
-present in both the result and solution summary dicts match) there is
-a negative test that ensures failure in case of wrong content. This
-prevents false positive, i.e., passing tests because of missing
-elements in either dict.
+All tests come in pairs: For each positive test (check that elements present in
+both the result and solution summary dicts match) there is a negative test that
+ensures failure in case of wrong content. This prevents false positive, i.e.,
+passing tests because of missing elements in either dict.
 
 Some dict elements are explicitly ignored in comparisons by aid of
-``IgnoredElement``. This allows us to test, for instance that the
-correct number of lebend labels are present without testing for the
-labels themselves, or to avoid hard-coding lat/lon coordinates in the
-solution.
+``IgnoredElement``. This allows us to test, for instance that the correct
+number of lebend labels are present without testing for the labels themselves,
+or to avoid hard-coding lat/lon coordinates in the solution.
 """
 import functools
 import logging as log
@@ -58,26 +56,24 @@ from words import TranslatedWords
 from pyflexplot.data import Field
 from pyflexplot.plot import DispersionPlot
 
-#======================================================================
+
 # Classes for dummy input data
-#======================================================================
 
 
 def dummy__str__(parent, word, lang, ctx):
     details = []
-    if str(lang) != 'None':
+    if str(lang) != "None":
         details.append(lang)
-    if str(ctx) != 'None':
+    if str(ctx) != "None":
         details.append(ctx)
     if details:
         s_details = f"[{'|'.join(details)}]"
     else:
-        s_details = ''
-    return f'<{parent}.{word}{s_details}>'
+        s_details = ""
+    return f"<{parent}.{word}{s_details}>"
 
 
 class Dummy_Word(Word):
-
     def __str__(self):
         try:
             ctx = self.ctx
@@ -91,7 +87,6 @@ class Dummy_TranslatedWord(TranslatedWord):
 
     @property
     def cls_word(self):
-
         class Wrapped_Dummy_Word(Dummy_Word):
             _parent = self
 
@@ -123,10 +118,8 @@ class Dummy_TranslatedWord(TranslatedWord):
 
 
 class Dummy_Words(Words):
-
     @property
     def cls_word(self):
-
         class Wrapped_Dummy_TranslatedWord(Dummy_TranslatedWord):
             _parent = self
 
@@ -143,7 +136,6 @@ class Dummy_TranslatedWords(TranslatedWords):
 
     @property
     def cls_word(self):
-
         class Wrapped_Dummy_TranslatedWord(Dummy_TranslatedWord):
             _parent = self
 
@@ -151,7 +143,7 @@ class Dummy_TranslatedWords(TranslatedWords):
 
     @classmethod
     def create(cls, name, lang, words):
-        words_langs = {w: {'en': w, 'de': w} for w in words}
+        words_langs = {w: {"en": w, "de": w} for w in words}
         self = cls(name, words_langs, default_lang=lang)
         self._lang = lang
         return self
@@ -166,19 +158,17 @@ class Dummy_Attr:
     """Replacement for ``Attr`` class for testing."""
 
     def __init__(self, name, value, lang):
-        name = f'<{name}[{lang}]>'
+        name = f"<{name}[{lang}]>"
         self._name = name
         self.value = value or name
         self.lang = lang
-        self.unit = f'{name}.unit'
+        self.unit = f"{name}.unit"
 
     def format(self, *args, **kwargs):
-        return f'<{self._name[1:-1]}.format>'
+        return f"<{self._name[1:-1]}.format>"
 
 
-#======================================================================
 # Prepare test data
-#======================================================================
 
 
 def create_dummy_attrs(lang):
@@ -188,58 +178,54 @@ def create_dummy_attrs(lang):
     DA = lambda name, value=None: Dummy_Attr(name, value, lang=lang)
     fm = lambda name, value=None: DA(name, value).format
 
-    # yapf: disable
-
     return SimpleNamespace(
         summarize=lambda: {},
-
         grid=SimpleNamespace(
-            north_pole_lat          = DA('grid.north_pole_lat', 43.0),
-            north_pole_lon          = DA('grid.north_pole_lat', -170),
+            north_pole_lat=DA("grid.north_pole_lat", 43.0),
+            north_pole_lon=DA("grid.north_pole_lat", -170),
         ),
         release=SimpleNamespace(
-            lon                     = DA('release.lon', 8.0),
-            lat                     = DA('release.lat', 47.0),
-            site_name               = DA('release.site_name'),
-            height                  = DA('release.height'),
-            rate                    = DA('release.rate'),
-            mass                    = DA('release.mass'),
+            lon=DA("release.lon", 8.0),
+            lat=DA("release.lat", 47.0),
+            site_name=DA("release.site_name"),
+            height=DA("release.height"),
+            rate=DA("release.rate"),
+            mass=DA("release.mass"),
         ),
         variable=SimpleNamespace(
-            long_name               = DA('variable.long_name'),
-            fmt_level_range         = fm('variable.fmt_level_range'),
-            short_name              = DA('variable.short_name'),
-            unit                    = DA('variable.unit'),
+            long_name=DA("variable.long_name"),
+            fmt_level_range=fm("variable.fmt_level_range"),
+            short_name=DA("variable.short_name"),
+            unit=DA("variable.unit"),
         ),
         species=SimpleNamespace(
-            name                    = DA('species.name'),
-            half_life               = DA('species.half_life'),
-            deposit_vel             = DA('species.deposit_vel'),
-            sediment_vel  = DA('species.sediment_vel'),
-            washout_coeff           = DA('species.washout_coeff'),
-            washout_exponent        = DA('species.washout_exponent'),
+            name=DA("species.name"),
+            half_life=DA("species.half_life"),
+            deposit_vel=DA("species.deposit_vel"),
+            sediment_vel=DA("species.sediment_vel"),
+            washout_coeff=DA("species.washout_coeff"),
+            washout_exponent=DA("species.washout_exponent"),
         ),
         simulation=SimpleNamespace(
-            now                     = DA('simulation.now'),
-            fmt_integr_period       = fm('simulation.fmt_integr_period'),
-            integr_start            = DA('simulation.integr_start'),
-            integr_type             = DA('simulation.integr_type', 'mean'),
-            start                   = DA('simulation.start'),
-            end                     = DA('simulation.end'),
-            model_name              = DA('simulation.model_name'),
+            now=DA("simulation.now"),
+            fmt_integr_period=fm("simulation.fmt_integr_period"),
+            integr_start=DA("simulation.integr_start"),
+            integr_type=DA("simulation.integr_type", "mean"),
+            start=DA("simulation.start"),
+            end=DA("simulation.end"),
+            model_name=DA("simulation.model_name"),
         ),
     )
-    # yapf: enable
 
 
 def create_dummy_field(attrs):
     dummy_field = Field(
-        fld=np.array([[i]*10 for i in range(10)], np.float32),
+        fld=np.array([[i] * 10 for i in range(10)], np.float32),
         rlat=np.arange(-5.0, 4.1, 1.0),
         rlon=np.arange(-6.0, 3.1, 1.0),
         attrs=attrs,
         field_specs=None,
-        time_stats={'max': 15},
+        time_stats={"max": 15},
     )
     return dummy_field
 
@@ -247,114 +233,111 @@ def create_dummy_field(attrs):
 def create_dummy_words(lang):
 
     w = Dummy_TranslatedWords.create(
-        'words', lang, [
-            'accumulated_over',
-            'at',
-            'averaged_over',
-            'based_on',
-            'deposit_vel',
-            'end',
-            'flexpart',
-            'half_life',
-            'height',
-            'latitude',
-            'longitude',
-            'max',
-            'mch',
-            'rate',
-            'release',
-            'release_site',
-            'sediment_vel',
-            'since',
-            'site',
-            'start',
-            'substance',
-            'summed_up_over',
-            'total_mass',
-            'washout_coeff',
-            'washout_exponent',
-        ])
+        "words",
+        lang,
+        [
+            "accumulated_over",
+            "at",
+            "averaged_over",
+            "based_on",
+            "deposit_vel",
+            "end",
+            "flexpart",
+            "half_life",
+            "height",
+            "latitude",
+            "longitude",
+            "max",
+            "mch",
+            "rate",
+            "release",
+            "release_site",
+            "sediment_vel",
+            "since",
+            "site",
+            "start",
+            "substance",
+            "summed_up_over",
+            "total_mass",
+            "washout_coeff",
+            "washout_exponent",
+        ],
+    )
     w.symbols = create_dummy_symbols()
     return w
 
 
 def create_dummy_symbols():
 
-    return Dummy_Words.create(
-        'symbols', [
-            'ae',
-            'copyright',
-            'oe',
-            't0',
-            'ue',
-        ])
+    return Dummy_Words.create("symbols", ["ae", "copyright", "oe", "t0", "ue",])
 
 
 def create_dummy_labels(lang):
     dummy_words = create_dummy_words(lang)
     from pyflexplot.plot import DispersionPlotLabels
+
     return DispersionPlotLabels(lang, dummy_words)
 
 
-#======================================================================
 # Create result
-#======================================================================
 
 
 def create_res(lang, _cache={}):
     """Create test result once, then return it from cache.
 
-    Based on mostly dummy input data (defined above), a dispersion plot
-    object is created and summarized into a dict. The same result dict
-    is used in all test, but compared against solution dicts of varying
-    detail. Each solution dict constitutes a subset of the results dict.
+    Based on mostly dummy input data (defined above), a dispersion plot object
+    is created and summarized into a dict. The same result dict is used in all
+    test, but compared against solution dicts of varying detail. Each solution
+    dict constitutes a subset of the results dict.
 
-    A test passes if all elements in the solution dict are present and
-    equal in the results dict, while all other elements in the results
-    dict are ignored.
+    A test passes if all elements in the solution dict are present and equal in
+    the results dict, while all other elements in the results dict are ignored.
 
     """
     if lang not in _cache:
         attrs = create_dummy_attrs(lang)
         field = create_dummy_field(attrs)
         labels = create_dummy_labels(lang)
-        plot = DispersionPlot(
-            field, dpi=100, figsize=(12, 9), lang=lang, labels=labels)
+        plot = DispersionPlot(field, dpi=100, figsize=(12, 9), lang=lang, labels=labels)
         _cache[lang] = plot.summarize()
     return _cache[lang]
 
 
-#======================================================================
 # Run tests
-#======================================================================
 
 
 class CreateTests:
     """Decorator to test a given results set in multiple languages.
 
-    Each test is run for all combinations of ``langs`` (languages) and
-    ``invs`` (whether to run an inverse test; see below).
+    Each test is run for all combinations of ``langs`` (languages) and ``invs``
+    (whether to run an inverse test; see below).
 
-    By default (langs=['en', 'de], invs=[False, True]), four tests are
-    created for the given argument setup:
+    By default (langs=['en', 'de], invs=[False, True]), four tests are created
+    for the given argument setup:
         - a regular test (inv=False) in English (lang='en'),
         - an inverted test (inv=True) in English (lang='en'),
         - a regular test (inv=False) in German (lang='de'), and
         - an inverted test (inv=True) in German (lang='de').
 
-    In an inverse test, the values of the tested attributes are
-    replaced by instances of ``UnequalElement``, which always return
-    False in comparisons. This means that for the test to pass, the
-    result must differ from the solution. This ensures that the regular
-    tests pass because of successful comparisons.
+    In an inverse test, the values of the tested attributes are replaced by
+    instances of ``UnequalElement``, which always return False in comparisons.
+    This means that for the test to pass, the result must differ from the
+    solution. This ensures that the regular tests pass because of successful
+    comparisons.
 
     """
 
-    langs = ['en', 'de']
+    langs = ["en", "de"]
     invs = [False, True]
     args = [
-        'base_attrs', 'dim_attrs', 'labels', 'ax_map', 'boxes', 'boxes_text',
-        'fig', 'field'
+        "base_attrs",
+        "dim_attrs",
+        "labels",
+        "ax_map",
+        "boxes",
+        "boxes_text",
+        "fig",
+        "field",
     ]
 
     def __init__(self, langs=None, invs=None, args=None):
@@ -370,8 +353,7 @@ class CreateTests:
             for lang in outer_self.langs:
 
                 def f(inner_self, lang=lang, inverted=inv):
-                    outer_self.run_test(
-                        inner_self, lang=lang, inverted=inverted)
+                    outer_self.run_test(inner_self, lang=lang, inverted=inverted)
 
                 setattr(cls, f"test_{lang}{'_inv' if inv else ''}", f)
         return cls
@@ -382,10 +364,8 @@ class CreateTests:
         sol = create_sol(lang, inverted=inverted, **kwargs)
         try:
             assert_summary_dict_is_subdict(
-                superdict=res,
-                subdict=sol,
-                supername='result',
-                subname='solution')
+                superdict=res, subdict=sol, supername="result", subname="solution"
+            )
         except AssertionError:
             if inverted:
                 return
@@ -393,9 +373,6 @@ class CreateTests:
         else:
             if inverted:
                 raise AssertionError(f"inverted test passed")
-
-
-#======================================================================
 
 
 @CreateTests()
@@ -446,9 +423,7 @@ class Test_Full:
     field = True
 
 
-#======================================================================
 # Create solutions
-#======================================================================
 
 
 def create_sol(lang, inverted, **kwargs):
@@ -456,14 +431,13 @@ def create_sol(lang, inverted, **kwargs):
 
 
 class Solution:
-
     def __init__(self, lang, inverted):
         self.lang = lang
         self.inverted = inverted
 
     def create(
-            self, *, base_attrs, dim_attrs, labels, ax_map, boxes, boxes_text,
-            fig, field):
+        self, *, base_attrs, dim_attrs, labels, ax_map, boxes, boxes_text, fig, field
+    ):
         sol = {}
         if base_attrs:
             sol.update(self.base_attrs())
@@ -489,46 +463,45 @@ class Solution:
     def base_attrs(self):
         e = self.element
         jdat = {
-            'type': e('DispersionPlot'),
-            'lang': e(self.lang),
-            'extend': e('max'),
-            'level_range_style': e('base'),
-            'draw_colors': e(True),
-            'draw_contours': e(False),
-            'mark_field_max': e(True),
-            'mark_release_site': e(True),
+            "type": e("DispersionPlot"),
+            "lang": e(self.lang),
+            "extend": e("max"),
+            "level_range_style": e("base"),
+            "draw_colors": e(True),
+            "draw_contours": e(False),
+            "mark_field_max": e(True),
+            "mark_release_site": e(True),
         }
         return jdat
 
     def dim_attrs(self):
         e = self.element
         jdat = {
-            'dpi': e(100.0),
-            'figsize': e((12.0, 9.0)),
-            'text_box_setup': {
-                'h_rel_t': e(0.1),
-                'h_rel_b': e(0.03),
-                'w_rel_r': e(0.25),
-                'pad_hor_rel': e(0.015),
-                'h_rel_box_rt': e(0.45),
+            "dpi": e(100.0),
+            "figsize": e((12.0, 9.0)),
+            "text_box_setup": {
+                "h_rel_t": e(0.1),
+                "h_rel_b": e(0.03),
+                "w_rel_r": e(0.25),
+                "pad_hor_rel": e(0.015),
+                "h_rel_box_rt": e(0.45),
             },
         }
         return jdat
 
     def labels(self):
         e = self.element
-        jdat = e({})  #SR_TMP
-        return {'labels': jdat}
+        jdat = e({})  # SR_TMP
+        return {"labels": jdat}
 
     def ax_map(self):
         e = self.element
         jdat = {
-            'type': e('AxesMap'),
+            "type": e("AxesMap"),
         }
-        return {'ax_map': jdat}
+        return {"ax_map": jdat}
 
     def boxes(self, check_text=True):
-        # yapf: disable
 
         if not check_text:
             # Outer elements set up to fail in inverted test
@@ -544,198 +517,202 @@ class Solution:
         def txt(loc, s, **kwargs):
             """Shortcut for text box element."""
             return {
-                'type': 'TextBoxElement_Text',
-                'loc': {'loc': loc},
-                's': e2(s),
-                **kwargs}
+                "type": "TextBoxElement_Text",
+                "loc": {"loc": loc},
+                "s": e2(s),
+                **kwargs,
+            }
 
         def col(loc, fc, **kwargs):
             """Shortcut for color rect element."""
             return {
-                'type': 'TextBoxElement_ColorRect',
-                'loc': {'loc': loc},
-                'fc': e2(fc),
-                **kwargs}
+                "type": "TextBoxElement_ColorRect",
+                "loc": {"loc": loc},
+                "fc": e2(fc),
+                **kwargs,
+            }
 
         def mkr(loc, m, **kwargs):
             """Shortcut for marker element."""
             return {
-                'type': 'TextBoxElement_Marker',
-                'loc': {'loc': loc},
-                'm': e2(m),
-                **kwargs}
+                "type": "TextBoxElement_Marker",
+                "loc": {"loc": loc},
+                "m": e2(m),
+                **kwargs,
+            }
 
-        sl = f'[{self.lang}]'
+        sl = f"[{self.lang}]"
 
         jdat = [
             {
-                'type': 'TextBoxAxes',
-                'name': e1('top'),
-                'elements': e1([
-                    txt('tl', f'<variable.long_name{sl}> '
-                              f'<words.at[{self.lang}|level]> '
-                              f'<variable.fmt_level_range{sl}.format>') ,
-                    txt('bl', f'<words.averaged_over{sl}> '
-                              f'<simulation.fmt_integr_period{sl}.format> '
-                              f'(<words.since{sl}> '
-                              f'<simulation.integr_start{sl}.format>)') ,
-                    txt('tc', f'<species.name{sl}.format>'),
-                    txt('bc', f'<words.release_site{sl}>: '
-                              f'<release.site_name{sl}>'),
-                    txt('tr', f'<simulation.now{sl}.format>'),
-                    txt('br', f'<simulation.now{sl}.format>'),
-                ]),
+                "type": "TextBoxAxes",
+                "name": e1("top"),
+                "elements": e1(
+                    [
+                        txt(
+                            "tl",
+                            f"<variable.long_name{sl}> <words.at[{self.lang}|level]> "
+                            f"<variable.fmt_level_range{sl}.format>",
+                        ),
+                        txt(
+                            "bl",
+                            f"<words.averaged_over{sl}> "
+                            f"<simulation.fmt_integr_period{sl}.format> "
+                            f"(<words.since{sl}> <simulation.integr_start{sl}.format>)",
+                        ),
+                        txt("tc", f"<species.name{sl}.format>"),
+                        txt("bc", f"<words.release_site{sl}>: <release.site_name{sl}>"),
+                        txt("tr", f"<simulation.now{sl}.format>"),
+                        txt("br", f"<simulation.now{sl}.format>"),
+                    ]
+                ),
             },
             {
-                'type': 'TextBoxAxes',
-                'name': e1('right/top'),
-                'elements': e1([
-                    txt('tc', (f'<variable.short_name{sl}.format> '
-                               f'(<variable.unit{sl}.format>)')),
-                    txt('bc', IgnoredElement('level range #0')),
-                    txt('bc', IgnoredElement('level range #1')),
-                    txt('bc', IgnoredElement('level range #2')),
-                    txt('bc', IgnoredElement('level range #3')),
-                    txt('bc', IgnoredElement('level range #4')),
-                    txt('bc', IgnoredElement('level range #5')),
-                    txt('bc', IgnoredElement('level range #6')),
-                    txt('bc', IgnoredElement('level range #7')),
-                    txt('bc', IgnoredElement('level range #8')),
-                    col('bc', IgnoredElement('face color #0')),
-                    col('bc', IgnoredElement('face color #1')),
-                    col('bc', IgnoredElement('face color #2')),
-                    col('bc', IgnoredElement('face color #3')),
-                    col('bc', IgnoredElement('face color #4')),
-                    col('bc', IgnoredElement('face color #5')),
-                    col('bc', IgnoredElement('face color #6')),
-                    col('bc', IgnoredElement('face color #7')),
-                    col('bc', IgnoredElement('face color #8')),
-                    mkr('bc', IgnoredElement('marker #0')),
-                    txt('bc', IgnoredElement('marker label #0')),
-                    mkr('bc', IgnoredElement('marker #1')),
-                    txt('bc', IgnoredElement('marker label #1')),
-                ]),
+                "type": "TextBoxAxes",
+                "name": e1("right/top"),
+                "elements": e1(
+                    [
+                        txt(
+                            "tc",
+                            (
+                                f"<variable.short_name{sl}.format> "
+                                f"(<variable.unit{sl}.format>)"
+                            ),
+                        ),
+                        txt("bc", IgnoredElement("level range #0")),
+                        txt("bc", IgnoredElement("level range #1")),
+                        txt("bc", IgnoredElement("level range #2")),
+                        txt("bc", IgnoredElement("level range #3")),
+                        txt("bc", IgnoredElement("level range #4")),
+                        txt("bc", IgnoredElement("level range #5")),
+                        txt("bc", IgnoredElement("level range #6")),
+                        txt("bc", IgnoredElement("level range #7")),
+                        txt("bc", IgnoredElement("level range #8")),
+                        col("bc", IgnoredElement("face color #0")),
+                        col("bc", IgnoredElement("face color #1")),
+                        col("bc", IgnoredElement("face color #2")),
+                        col("bc", IgnoredElement("face color #3")),
+                        col("bc", IgnoredElement("face color #4")),
+                        col("bc", IgnoredElement("face color #5")),
+                        col("bc", IgnoredElement("face color #6")),
+                        col("bc", IgnoredElement("face color #7")),
+                        col("bc", IgnoredElement("face color #8")),
+                        mkr("bc", IgnoredElement("marker #0")),
+                        txt("bc", IgnoredElement("marker label #0")),
+                        mkr("bc", IgnoredElement("marker #1")),
+                        txt("bc", IgnoredElement("marker label #1")),
+                    ]
+                ),
             },
             {
-                'type': 'TextBoxAxes',
-                'name': e1('right/bottom'),
-                'elements': e1([
-                    txt('tc', f'<words.release{sl}>'),
-                    txt('bl', f'<words.washout_exponent{sl}>:'),
-                    txt('bl', f'<words.washout_coeff{sl}>:'),
-                    txt('bl', f'<words.sediment_vel{sl[:-1]}|abbr]>:'),
-                    txt('bl', f'<words.deposit_vel{sl}>:'),
-                    txt('bl', f'<words.half_life{sl}>:'),
-                    txt('bl', f'<words.substance{sl}>:'),
-                    txt('bl', f'<words.total_mass{sl}>:'),
-                    txt('bl', f'<words.rate{sl}>:'),
-                    txt('bl', f'<words.end{sl}>:'),
-                    txt('bl', f'<words.start{sl}> (<symbols.t0>):'),
-                    txt('bl', f'<words.height{sl}>:'),
-                    txt('bl', f'<words.longitude{sl}>:'),
-                    txt('bl', f'<words.latitude{sl}>:'),
-                    txt('bl', f'<words.site{sl}>:'),
-                    txt('br', f'<species.washout_exponent{sl}.format>'),
-                    txt('br', f'<species.washout_coeff{sl}.format>'),
-                    txt('br', f'<species.sediment_vel{sl}.format>'),
-                    txt('br', f'<species.deposit_vel{sl}.format>'),
-                    txt('br', f'<species.half_life{sl}.format>'),
-                    txt('br', f'<species.name{sl}.format>'),
-                    txt('br', f'<release.mass{sl}.format>'),
-                    txt('br', f'<release.rate{sl}.format>'),
-                    txt('br', f'<simulation.end{sl}.format>'),
-                    txt('br', f'<simulation.start{sl}.format>'),
-                    txt('br', f'<release.height{sl}.format>'),
-                    txt('br', IgnoredElement('release longitude')),
-                    txt('br', IgnoredElement('release latitude')),
-                    txt('br', f'<release.site_name{sl}.format>'),
-                ]),
+                "type": "TextBoxAxes",
+                "name": e1("right/bottom"),
+                "elements": e1(
+                    [
+                        txt("tc", f"<words.release{sl}>"),
+                        txt("bl", f"<words.washout_exponent{sl}>:"),
+                        txt("bl", f"<words.washout_coeff{sl}>:"),
+                        txt("bl", f"<words.sediment_vel{sl[:-1]}|abbr]>:"),
+                        txt("bl", f"<words.deposit_vel{sl}>:"),
+                        txt("bl", f"<words.half_life{sl}>:"),
+                        txt("bl", f"<words.substance{sl}>:"),
+                        txt("bl", f"<words.total_mass{sl}>:"),
+                        txt("bl", f"<words.rate{sl}>:"),
+                        txt("bl", f"<words.end{sl}>:"),
+                        txt("bl", f"<words.start{sl}> (<symbols.t0>):"),
+                        txt("bl", f"<words.height{sl}>:"),
+                        txt("bl", f"<words.longitude{sl}>:"),
+                        txt("bl", f"<words.latitude{sl}>:"),
+                        txt("bl", f"<words.site{sl}>:"),
+                        txt("br", f"<species.washout_exponent{sl}.format>"),
+                        txt("br", f"<species.washout_coeff{sl}.format>"),
+                        txt("br", f"<species.sediment_vel{sl}.format>"),
+                        txt("br", f"<species.deposit_vel{sl}.format>"),
+                        txt("br", f"<species.half_life{sl}.format>"),
+                        txt("br", f"<species.name{sl}.format>"),
+                        txt("br", f"<release.mass{sl}.format>"),
+                        txt("br", f"<release.rate{sl}.format>"),
+                        txt("br", f"<simulation.end{sl}.format>"),
+                        txt("br", f"<simulation.start{sl}.format>"),
+                        txt("br", f"<release.height{sl}.format>"),
+                        txt("br", IgnoredElement("release longitude")),
+                        txt("br", IgnoredElement("release latitude")),
+                        txt("br", f"<release.site_name{sl}.format>"),
+                    ]
+                ),
             },
             {
-                'type': 'TextBoxAxes',
-                'name': e1('bottom'),
-                'elements': e1([
-                    txt('tl', f'<words.flexpart{sl}> '
-                              f'<words.based_on{sl}> '
-                              f'<simulation.model_name{sl}>, '
-                              f'<simulation.start{sl}.format>'),
-                    txt('tr', f'<symbols.copyright><words.mch{sl}>'),
-                ]),
+                "type": "TextBoxAxes",
+                "name": e1("bottom"),
+                "elements": e1(
+                    [
+                        txt(
+                            "tl",
+                            f"<words.flexpart{sl}> <words.based_on{sl}> "
+                            f"<simulation.model_name{sl}>, "
+                            f"<simulation.start{sl}.format>",
+                        ),
+                        txt("tr", f"<symbols.copyright><words.mch{sl}>"),
+                    ]
+                ),
             },
         ]
-        # yapf: enable
-        return {'boxes': jdat}
+
+        return {"boxes": jdat}
 
     def fig(self):
         e = self.element
-        # yapf: disable
+
         jdat = {
-            'type': 'Figure',
-            'dpi': e(100.0),
-            'bbox': {
-                'type': 'TransformedBbox',
-                'bounds': e((0.0, 0.0, 1200.0, 900.0)),
+            "type": "Figure",
+            "dpi": e(100.0),
+            "bbox": {
+                "type": "TransformedBbox",
+                "bounds": e((0.0, 0.0, 1200.0, 900.0)),
             },
-            'axes': [
-                {
-                    'type': 'GeoAxesSubplot',
-                    'bbox': IgnoredElement('axes[0]::bbox'),
-                },
-                {
-                    'type': 'Axes',
-                    'bbox': IgnoredElement('axes[1]::bbox'),
-                },
-                {
-                    'type': 'Axes',
-                    'bbox': IgnoredElement('axes[2]::bbox'),
-                },
-                {
-                    'type': 'Axes',
-                    'bbox': IgnoredElement('axes[3]::bbox'),
-                },
-                {
-                    'type': 'Axes',
-                    'bbox': IgnoredElement('axes[4]::bbox'),
-                },
-            ]
+            "axes": [
+                {"type": "GeoAxesSubplot", "bbox": IgnoredElement("axes[0]::bbox"),},
+                {"type": "Axes", "bbox": IgnoredElement("axes[1]::bbox"),},
+                {"type": "Axes", "bbox": IgnoredElement("axes[2]::bbox"),},
+                {"type": "Axes", "bbox": IgnoredElement("axes[3]::bbox"),},
+                {"type": "Axes", "bbox": IgnoredElement("axes[4]::bbox"),},
+            ],
         }
-        # yapf: enable
-        return {'fig': jdat}
+
+        return {"fig": jdat}
 
     def field(self):
         e = self.element
         jdat = {
-            'type': 'Field',
-            'attrs': {},  #SR_TMP
-            'field_specs': None,  #SR_TMP
-            'time_stats': {
-                'max': e(15),
+            "type": "Field",
+            "attrs": {},  # SR_TMP
+            "field_specs": None,  # SR_TMP
+            "time_stats": {"max": e(15),},
+            "fld": {
+                "dtype": "float32",
+                "shape": e((10, 10)),
+                "nanmin": e(0.0),
+                "nanmean": e(4.5),
+                "nanmedian": e(4.5),
+                "nanmax": e(9.0),
+                "nanmin_nonzero": e(1.0),
+                "nanmean_nonzero": e(5.0),
+                "nanmedian_nonzero": e(5.0),
+                "nanmax_nonzero": e(9.0),
+                "n_nan": e(0),
+                "n_zero": e(10),
             },
-            'fld': {
-                'dtype': 'float32',
-                'shape': e((10, 10)),
-                'nanmin': e(0.0),
-                'nanmean': e(4.5),
-                'nanmedian': e(4.5),
-                'nanmax': e(9.0),
-                'nanmin_nonzero': e(1.0),
-                'nanmean_nonzero': e(5.0),
-                'nanmedian_nonzero': e(5.0),
-                'nanmax_nonzero': e(9.0),
-                'n_nan': e(0),
-                'n_zero': e(10),
+            "rlat": {
+                "dtype": "float64",
+                "shape": e((10,)),
+                "min": e(-5.0),
+                "max": e(4.0),
             },
-            'rlat': {
-                'dtype': 'float64',
-                'shape': e((10,)),
-                'min': e(-5.0),
-                'max': e(4.0),
-            },
-            'rlon': {
-                'dtype': 'float64',
-                'shape': e((10,)),
-                'min': e(-6.0),
-                'max': e(3.0),
+            "rlon": {
+                "dtype": "float64",
+                "shape": e((10,)),
+                "min": e(-6.0),
+                "max": e(3.0),
             },
         }
-        return {'field': jdat}
+        return {"field": jdat}

@@ -1,10 +1,7 @@
-./test_cli.py
-
 ./io/test_field_specs.py
 ./io/test_read_field.py
 ./io/test_read_field_ensemble.py
 ./io/io_utils.py
-
 ./test_data.py
 ./test_plotter.py
 ./test_plot_summarize.py

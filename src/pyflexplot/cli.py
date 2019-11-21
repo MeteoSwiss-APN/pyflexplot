@@ -18,10 +18,8 @@ from .utils import count_to_log_level
 from .plotter import Plotter
 
 # Uncomment to debug segmentation fault and set PYTHONFAULTHANDLER=1
-#+ import faulthandler
-#+ faulthandler.enable()
-
-#======================================================================
+# + import faulthandler
+# + faulthandler.enable()
 
 
 def click_options(f_options):
@@ -52,13 +50,13 @@ def click_options(f_options):
 
 
     Applications:
-        * Define options that are shared by multiple commands but are
-          passed after the respective command, instead of before as
-          group options (the native way to define shared options) are.
+        Define options that are shared by multiple commands but are passed
+        after the respective command, instead of before as group options (the
+        native way to define shared options) are.
 
-        * Define options used only by a single group or command in a
-          function instead of as decorators, which allows them to be
-          folded by the editor more easily.
+        Define options used only by a single group or command in a function
+        instead of as decorators, which allows them to be folded by the editor
+        more easily.
 
     Source:
         https://stackoverflow.com/a/52147284
@@ -75,10 +73,8 @@ class ClickOptionsGroup:
 click.option = functools.partial(click.option, show_default=True)
 
 context_settings = {
-    'help_option_names': ['-h', '--help'],  # Add short flag '-h'
+    "help_option_names": ["-h", "--help"],  # Add short flag '-h'
 }
-
-#======================================================================
 
 
 class FloatOrStrParamType(click.ParamType):
@@ -94,11 +90,10 @@ class FloatOrStrParamType(click.ParamType):
         return float(value)
 
 
-FLOAT_OR_AUTO = FloatOrStrParamType('auto')
+FLOAT_OR_AUTO = FloatOrStrParamType("auto")
 
 
 class CharSepListParamType(click.ParamType):
-
     def __init__(self, type_, separator, *, name=None, dupl_ok=False):
         """Create an instance of ``CharSepListParamType``.
 
@@ -107,12 +102,12 @@ class CharSepListParamType(click.ParamType):
 
             separator (str): Separator of list elements.
 
-            name (str, optional): Name of the type. If omitted, the
-                default name is derived from ``type_`` and ``separator``.
-                Defaults to None.
+            name (str, optional): Name of the type. If omitted, the default
+                name is derived from ``type_`` and ``separator``. Defaults to
+                None.
 
-            dupl_ok (bool, optional): Whether duplicate values are
-                allowed. Defaults to False.
+            dupl_ok (bool, optional): Whether duplicate values are allowed.
+                Defaults to False.
 
         Example:
             Create type for comma-separated list of (unique) integers:
@@ -120,10 +115,10 @@ class CharSepListParamType(click.ParamType):
             > INT_LIST_COMMA_SEP_UNIQ = CharSepListParamType(int, ',')
 
         """
-        if isinstance(type_, float) and separator == '.':
+        if isinstance(type_, float) and separator == ".":
             raise ValueError(
-                f"invalid separator '{separator}' for type "
-                f"'{type_.__name__}'")
+                f"invalid separator '{separator}' for type " f"'{type_.__name__}'"
+            )
 
         self.type_ = type_
         self.separator = separator
@@ -145,34 +140,35 @@ class CharSepListParamType(click.ParamType):
                     f"Invalid '{self.separator}'-separated list '{value}': "
                     f"Value '{value_str}' ({i + 1}/{len(values_str)}) "
                     f"incompatible with type '{self.type_.__name__}' "
-                    f"({type(e).__name__}: {e})")
+                    f"({type(e).__name__}: {e})"
+                )
             else:
                 if not self.dupl_ok and value in values:
                     n = len(values_str)
                     self.fail(
                         f"Invalid '{self.separator}'-separated list "
                         f"'{value}': Value '{value_str}' ({i + 1}/{n}) "
-                        f"not unique")
+                        f"not unique"
+                    )
                 values.append(value)
         return values
 
 
-INT_LIST_COMMA_SEP_UNIQ = CharSepListParamType(int, ',', dupl_ok=False)
-INT_LIST_PLUS_SEP_UNIQ = CharSepListParamType(int, '+', dupl_ok=False)
-
-#======================================================================
+INT_LIST_COMMA_SEP_UNIQ = CharSepListParamType(int, ",", dupl_ok=False)
+INT_LIST_PLUS_SEP_UNIQ = CharSepListParamType(int, "+", dupl_ok=False)
 
 
 def create_plots(
-        *,
-        ctx,
-        var_in,
-        in_file_path_raw,
-        out_file_path_raw,
-        vars_specs,
-        ens_var=None,
-        ens_member_id_lst=None,
-        **kwargs):
+    *,
+    ctx,
+    var_in,
+    in_file_path_raw,
+    out_file_path_raw,
+    vars_specs,
+    ens_var=None,
+    ens_member_id_lst=None,
+    **kwargs,
+):
     """Read and plot FLEXPART data.
 
     Args:
@@ -180,28 +176,30 @@ def create_plots(
 
     """
 
-    #SR_TMP< TODO find cleaner solution
+    # SR_TMP < TODO find cleaner solution
     if ens_var is None:
-        cls_name = f'{var_in}'
+        cls_name = f"{var_in}"
         ens_var_setup = None
     else:
-        cls_name = f'ens_{ens_var}_{var_in}'
-        ens_var_setup = {
-            'thr_agrmt': {
-                'thr': 1e-9
-            },  #SR_TMP  #SR_HC
-        }.get(ens_var)
-    #SR_TMP>
+        cls_name = f"ens_{ens_var}_{var_in}"
+        ens_var_setup = {"thr_agrmt": {"thr": 1e-9},}.get(ens_var)  # SR_TMP  #SR_HC
+    # SR_TMP >
 
     field_lst = read_fields(
-        ctx, cls_name, vars_specs, ens_member_id_lst, ens_var, ens_var_setup,
-        in_file_path_raw)
+        ctx,
+        cls_name,
+        vars_specs,
+        ens_member_id_lst,
+        ens_var,
+        ens_var_setup,
+        in_file_path_raw,
+    )
 
-    if ctx.obj['noplot']:
+    if ctx.obj["noplot"]:
         return
 
     # Transfer some global options
-    for key in ['lang', 'scale_field']:
+    for key in ["lang", "scale_field"]:
         kwargs[key] = ctx.obj[key]
 
     # Prepare plotter
@@ -214,18 +212,24 @@ def create_plots(
     for i, out_file_path in enumerate(fct_plot()):
         out_file_paths.append(out_file_path)
 
-        if ctx.obj['open_first_cmd'] and i == 0:
+        if ctx.obj["open_first_cmd"] and i == 0:
             # Open the first file as soon as it's available
-            open_plots(ctx.obj['open_first_cmd'], [out_file_path])
+            open_plots(ctx.obj["open_first_cmd"], [out_file_path])
 
-    if ctx.obj['open_all_cmd']:
+    if ctx.obj["open_all_cmd"]:
         # Open all plots
-        open_plots(ctx.obj['open_all_cmd'], out_file_paths)
+        open_plots(ctx.obj["open_all_cmd"], out_file_paths)
 
 
 def read_fields(
-        ctx, cls_name, vars_specs, ens_member_id_lst, ens_var, ens_var_setup,
-        in_file_path_raw):
+    ctx,
+    cls_name,
+    vars_specs,
+    ens_member_id_lst,
+    ens_var,
+    ens_var_setup,
+    in_file_path_raw,
+):
 
     # Determine fields specifications (one for each eventual plot)
     fld_specs_lst = FieldSpecs.subclass(cls_name).multiple(
@@ -233,14 +237,11 @@ def read_fields(
         member_ids=ens_member_id_lst,
         ens_var=ens_var,
         ens_var_setup=ens_var_setup,
-        lang=ctx.obj['lang'],
+        lang=ctx.obj["lang"],
     )
 
     # Read fields
-    field_lst = FileReader(in_file_path_raw).run(
-        fld_specs_lst,
-        lang=ctx.obj['lang'],
-    )
+    field_lst = FileReader(in_file_path_raw).run(fld_specs_lst, lang=ctx.obj["lang"],)
 
     return field_lst
 
@@ -249,19 +250,16 @@ def open_plots(cmd, file_paths):
     """Open a plot file using a shell command."""
 
     # If not yet included, append the output file path
-    if '{file_paths}' not in cmd:
-        cmd += ' {file_paths}'
+    if "{file_paths}" not in cmd:
+        cmd += " {file_paths}"
 
     # Ensure that the command is run in the background
-    if not cmd.rstrip().endswith('&'):
-        cmd += ' &'
+    if not cmd.rstrip().endswith("&"):
+        cmd += " &"
 
     # Run the command
-    cmd = cmd.format(file_paths=' '.join(file_paths))
+    cmd = cmd.format(file_paths=" ".join(file_paths))
     os.system(cmd)
-
-
-#======================================================================
 
 
 class GlobalOptions(ClickOptionsGroup):
@@ -272,52 +270,45 @@ class GlobalOptions(ClickOptionsGroup):
         """Options passed before any command."""
         return [
             click.option(
-                '--dry-run',
-                '-n',
+                "--dry-run",
+                "-n",
                 help="Perform a trial run with no changes made.",
-                flag_value='dry_run',
+                flag_value="dry_run",
                 default=False,
             ),
             click.option(
-                '--verbose',
-                '-v',
+                "--verbose",
+                "-v",
                 help="Increase verbosity; specify multiple times for more.",
                 count=True,
             ),
+            click.option("--version", "-V", help="Print version.", is_flag=True,),
             click.option(
-                '--version',
-                '-V',
-                help="Print version.",
-                is_flag=True,
+                "--noplot", help="Skip plotting (for debugging etc.).", is_flag=True,
             ),
             click.option(
-                '--noplot',
-                help="Skip plotting (for debugging etc.).",
-                is_flag=True,
-            ),
-            click.option(
-                '--lang',
+                "--lang",
                 help="Language. Format key: '{lang}'.",
-                type=click.Choice(['en', 'de']),
-                default='en',
+                type=click.Choice(["en", "de"]),
+                default="en",
             ),
             click.option(
-                '--open-first',
-                'open_first_cmd',
+                "--open-first",
+                "open_first_cmd",
                 help=(
-                    "Shell command to open the first plot as soon as it is "
-                    "available. The file path follows the command, unless "
-                    "explicitly set by including the format key '{file_path}'."
+                    "Shell command to open the first plot as soon as it is available. "
+                    "The file path follows the command, unless explicitly set by "
+                    "including the format key '{file_path}'."
                 ),
             ),
             click.option(
-                '--open-all',
-                'open_all_cmd',
+                "--open-all",
+                "open_all_cmd",
                 help="Like --open-first, but for all plots.",
             ),
             click.option(
-                '--scale',
-                'scale_field',
+                "--scale",
+                "scale_field",
                 help="Scale field before plotting. Useful for debugging.",
                 type=float,
                 default=None,
@@ -328,51 +319,49 @@ class GlobalOptions(ClickOptionsGroup):
     def input():
         return [
             click.option(
-                '--infile',
-                '-i',
-                'in_file_path_raw',
+                "--infile",
+                "-i",
+                "in_file_path_raw",
                 help=(
-                    "Input file path. Might contain format keys, for instance "
-                    "in case of ensemble simulation data."),
+                    "Input file path. Might contain format keys, for instance in case "
+                    "of ensemble simulation data."
+                ),
                 type=str,
                 required=True,
             ),
             click.option(
-                '--time-ind',
-                'vars_specs__time_lst',
+                "--time-ind",
+                "vars_specs__time_lst",
                 help="Index of time (zero-based). Format key: '{time_ind}'.",
                 type=int,
                 default=[0],
                 multiple=True,
             ),
             click.option(
-                '--age-class-ind',
-                'vars_specs__nageclass_lst',
-                help=(
-                    "Index of age class (zero-based). Format key: "
-                    "'{age_class_ind}'."),
+                "--age-class-ind",
+                "vars_specs__nageclass_lst",
+                help="Index of age class (zero-based). Format key: '{age_class_ind}'.",
                 type=int,
                 default=[0],
                 multiple=True,
             ),
             click.option(
-                '--release-point-ind',
-                'vars_specs__numpoint_lst',
-                help=(
-                    "Index of release point (zero-based). Format key: "
-                    "'{rls_pt_ind}'."),
+                "--release-point-ind",
+                "vars_specs__numpoint_lst",
+                help="Index of release point (zero-based). Format key: '{rls_pt_ind}'.",
                 type=int,
                 default=[0],
                 multiple=True,
             ),
             click.option(
-                '--species-id',
-                'vars_specs__species_id_lst',
+                "--species-id",
+                "vars_specs__species_id_lst",
                 help=(
-                    "Species id(s) (default: 0). To sum up multiple species, "
-                    "combine their ids with '+'. Format key: '{species_id}'."),
+                    "Species id(s) (default: 0). To sum up multiple species, combine "
+                    "their ids with '+'. Format key: '{species_id}'."
+                ),
                 type=INT_LIST_PLUS_SEP_UNIQ,
-                default=['1'],
+                default=["1"],
                 multiple=True,
             ),
         ]
@@ -381,11 +370,12 @@ class GlobalOptions(ClickOptionsGroup):
     def preproc():
         return [
             click.option(
-                '--integrate/--no-integrate',
-                'vars_specs__integrate_lst',
+                "--integrate/--no-integrate",
+                "vars_specs__integrate_lst",
                 help=(
-                    "Integrate field over time. If set, '-int' is "
-                    "appended to variable name (format key: '{variable}')."),
+                    "Integrate field over time. If set, '-int' is appended to variable "
+                    "name (format key: '{variable}')."
+                ),
                 is_flag=True,
                 default=[False],
                 multiple=True,
@@ -396,11 +386,12 @@ class GlobalOptions(ClickOptionsGroup):
     def plot():
         return [
             click.option(
-                '--reverse-legend/--no-reverse-legend',
+                "--reverse-legend/--no-reverse-legend",
                 help=(
-                    "Reverse the order of the level ranges and corresponding "
-                    "colors in the plot legend such that the levels increase "
-                    "from top to bottom instead of decreasing."),
+                    "Reverse the order of the level ranges and corresponding colors in "
+                    "the plot legend such that the levels increase from top to bottom "
+                    "instead of decreasing."
+                ),
                 is_flag=True,
                 default=False,
             ),
@@ -410,16 +401,17 @@ class GlobalOptions(ClickOptionsGroup):
     def output():
         return [
             click.option(
-                '--outfile',
-                '-o',
-                'out_file_path_raw',
+                "--outfile",
+                "-o",
+                "out_file_path_raw",
                 help=(
-                    "Output file path. If multiple plots are to be created, "
-                    "e.g., for multiple fields or levels, ``outfile`` must "
-                    "contain format keys for inserting all changing parameters "
-                    "(example: ``plot_lvl-{level}.png`` for multiple levels). "
-                    "The format key for the plotted variable is '{variable}'. "
-                    "See individual options for the respective format keys."),
+                    "Output file path. If multiple plots are to be created, e.g., for "
+                    "multiple fields or levels, ``outfile`` must contain format keys "
+                    "for inserting all changing parameters (example: "
+                    "``plot_lvl-{level}.png`` for multiple levels). The format key for "
+                    "the plotted variable is '{variable}'. See individual options for "
+                    "the respective format keys."
+                ),
                 type=click.Path(writable=True),
                 required=True,
             ),
@@ -427,18 +419,18 @@ class GlobalOptions(ClickOptionsGroup):
 
 
 class EnsembleOptions(ClickOptionsGroup):
-
     @click_options
     def input():
         return [
             click.option(
-                '--ens-member-id',
-                '-m',
-                'ens_member_id_lst',
+                "--ens-member-id",
+                "-m",
+                "ens_member_id_lst",
                 help=(
-                    "Ensemble member id. Repeat for multiple members. Omit "
-                    "for deterministic simulation data. If passed, --infile "
-                    "must contain file format key '{member_id}'."),
+                    "Ensemble member id. Repeat for multiple members. Omit for "
+                    "deterministic simulation data. If passed, --infile must contain "
+                    "file format key '{member_id}'."
+                ),
                 type=int,
                 multiple=True,
                 required=True,
@@ -449,30 +441,28 @@ class EnsembleOptions(ClickOptionsGroup):
     def plot():
         return [
             click.option(
-                '--ens-var',
-                help=(
-                    "Ensemble variable to plot. Requires ensemble simulation "
-                    "data."),
-                type=click.Choice(['mean', 'max', 'thr_agrmt']),
+                "--ens-var",
+                help="Ensemble variable to plot. Requires ensemble simulation data.",
+                type=click.Choice(["mean", "max", "thr_agrmt"]),
                 required=True,
             )
         ]
 
 
 class ConcentrationOptions(ClickOptionsGroup):
-
     @click_options
     def input():
         return [
             click.option(
-                '--level-ind',
-                'vars_specs__level_lst',
+                "--level-ind",
+                "vars_specs__level_lst",
                 help=(
-                    "Index/indices of vertical level (zero-based, bottom-up). "
-                    "To sum up multiple levels, combine their indices with "
-                    "'+'. Format key: '{level_ind}'."),
+                    "Index/indices of vertical level (zero-based, bottom-up). To sum "
+                    "up multiple levels, combine their indices with '+'. Format key: "
+                    "'{level_ind}'."
+                ),
                 type=INT_LIST_PLUS_SEP_UNIQ,
-                default=['0'],
+                default=["0"],
                 multiple=True,
             ),
         ]
@@ -481,28 +471,28 @@ class ConcentrationOptions(ClickOptionsGroup):
     def plot():
         return [
             click.option(
-                '--plot-var',
+                "--plot-var",
                 help="What variable to plot/how to plot the input variable.",
-                type=click.Choice(['auto']),
-                default='auto',
+                type=click.Choice(["auto"]),
+                default="auto",
             ),
         ]
 
 
 class DepositionOptions(ClickOptionsGroup):
-
     @click_options
     def input():
         """Common options of dispersion plots (deposition)."""
         return [
             click.option(
-                '--deposition-type',
-                'vars_specs__deposition_lst',
+                "--deposition-type",
+                "vars_specs__deposition_lst",
                 help=(
-                    "Type of deposition. Part of plot variable (format "
-                    "key: '{variable}')."),
-                type=click.Choice(['tot', 'wet', 'dry']),
-                default=['tot'],
+                    "Type of deposition. Part of plot variable (format key: "
+                    "'{variable}')."
+                ),
+                type=click.Choice(["tot", "wet", "dry"]),
+                default=["tot"],
                 multiple=True,
             )
         ]
@@ -511,14 +501,10 @@ class DepositionOptions(ClickOptionsGroup):
     def plot_deterministic():
         return [
             click.option(
-                '--plot-var',
+                "--plot-var",
                 help="What variable to plot/how to plot the input variable.",
-                type=click.Choice([
-                    'auto',
-                    'affected_area',
-                    'affected_area_mono',
-                ]),
-                default='auto',
+                type=click.Choice(["auto", "affected_area", "affected_area_mono",]),
+                default="auto",
             )
         ]
 
@@ -526,17 +512,12 @@ class DepositionOptions(ClickOptionsGroup):
     def plot_ensemble():
         return [
             click.option(
-                '--plot-var',
+                "--plot-var",
                 help="What variable to plot/how to plot the input variable.",
-                type=click.Choice([
-                    'auto',
-                ]),
-                default='auto',
+                type=click.Choice(["auto",]),
+                default="auto",
             )
         ]
-
-
-#======================================================================
 
 
 @click.group(context_settings=context_settings)
@@ -546,15 +527,15 @@ def cli(ctx, **kwargs):
     """Point of entry."""
 
     click.echo("Hi fellow PyPlotter!")
-    #click.echo(f"{len(kwargs)} kwargs:\n{pformat(kwargs)}\n")
+    # click.echo(f"{len(kwargs)} kwargs:\n{pformat(kwargs)}\n")
 
-    log.basicConfig(level=count_to_log_level(kwargs['verbose']))
+    log.basicConfig(level=count_to_log_level(kwargs["verbose"]))
 
-    if kwargs['version']:
+    if kwargs["version"]:
         click.echo(__version__)
         return 0
 
-    if kwargs.pop('dry_run'):
+    if kwargs.pop("dry_run"):
         raise NotImplementedError("dry run")
         return 0
 
@@ -565,9 +546,6 @@ def cli(ctx, **kwargs):
     ctx.obj.update(kwargs)
 
     return 0
-
-
-#======================================================================
 
 
 @click.group()
@@ -587,8 +565,7 @@ cli.add_command(ensemble)
 
 
 @deterministic.command(
-    name='concentration',
-    help="Activity concentration; deterministic simulation data.",
+    name="concentration", help="Activity concentration; deterministic simulation data.",
 )
 @GlobalOptions.input
 @GlobalOptions.output
@@ -597,15 +574,14 @@ cli.add_command(ensemble)
 @ConcentrationOptions.input
 @ConcentrationOptions.plot
 @click.pass_context
-@group_kwargs('vars_specs')
+@group_kwargs("vars_specs")
 def deterministic_concentration(ctx, plot_var, **kwargs):
-    var_in = 'concentration'
+    var_in = "concentration"
     create_plots(ctx=ctx, var_in=var_in, **kwargs)
 
 
 @deterministic.command(
-    name='deposition',
-    help="Surface deposition; deterministic simulation data.",
+    name="deposition", help="Surface deposition; deterministic simulation data.",
 )
 @GlobalOptions.input
 @GlobalOptions.output
@@ -614,15 +590,14 @@ def deterministic_concentration(ctx, plot_var, **kwargs):
 @DepositionOptions.input
 @DepositionOptions.plot_deterministic
 @click.pass_context
-@group_kwargs('vars_specs')
+@group_kwargs("vars_specs")
 def deterministic_deposition(ctx, plot_var, **kwargs):
-    var_in = 'deposition' if plot_var == 'auto' else plot_var
+    var_in = "deposition" if plot_var == "auto" else plot_var
     create_plots(ctx=ctx, var_in=var_in, **kwargs)
 
 
 @ensemble.command(
-    name='concentration',
-    help="Activity concentration; ensemble simulation data.",
+    name="concentration", help="Activity concentration; ensemble simulation data.",
 )
 @GlobalOptions.input
 @GlobalOptions.output
@@ -633,15 +608,14 @@ def deterministic_deposition(ctx, plot_var, **kwargs):
 @ConcentrationOptions.input
 @ConcentrationOptions.plot
 @click.pass_context
-@group_kwargs('vars_specs')
+@group_kwargs("vars_specs")
 def ensemble_concentration(ctx, plot_var, **kwargs):
-    var_in = 'concentration'
+    var_in = "concentration"
     create_plots(ctx=ctx, var_in=var_in, **kwargs)
 
 
 @ensemble.command(
-    name='deposition',
-    help="Surface deposition; ensemble simulation data.",
+    name="deposition", help="Surface deposition; ensemble simulation data.",
 )
 @GlobalOptions.input
 @GlobalOptions.output
@@ -652,13 +626,11 @@ def ensemble_concentration(ctx, plot_var, **kwargs):
 @DepositionOptions.input
 @DepositionOptions.plot_ensemble
 @click.pass_context
-@group_kwargs('vars_specs')
+@group_kwargs("vars_specs")
 def ensemble_deposition(ctx, plot_var, **kwargs):
-    var_in = {'auto': 'deposition'}.get(plot_var, plot_var)
+    var_in = {"auto": "deposition"}.get(plot_var, plot_var)
     create_plots(ctx=ctx, var_in=var_in, **kwargs)
 
-
-#======================================================================
 
 if __name__ == "__main__":
     sys.exit(cli())  # pragma: no cover

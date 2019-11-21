@@ -23,11 +23,12 @@ class Attr(SummarizableClass):
 
         self.set_group(group)
 
-        #SR_TMP<
+        # SR_TMP <
         assert not isinstance(
-            value, self.__class__), f"value type {type(value).__name__}"
+            value, self.__class__
+        ), f"value type {type(value).__name__}"
         assert not isiterable(value, str_ok=False), f"iterable value: {value}"
-        #SR_TMP>
+        # SR_TMP >
 
         # Ensure consistency of value and type_
         if isinstance(value, type_):
@@ -37,9 +38,9 @@ class Attr(SummarizableClass):
                 self.value = type_(value)
             except (TypeError, ValueError) as e:
                 raise ValueError(
-                    f"value='{value}' of type '{type(value).__name__}' "
-                    f"incompatible with type_='{type_.__name__}' "
-                    f"({type(e).__name__}: {e})")
+                    f"value='{value}' of type '{type(value).__name__}' incompatible "
+                    f"with type_='{type_.__name__}' ({type(e).__name__}: {e})"
+                )
 
     @classmethod
     def multiple(cls, *args, **kwargs):
@@ -48,7 +49,7 @@ class Attr(SummarizableClass):
     def set_group(self, group):
         self._group = group
 
-    #SR_TMP<<<
+    # SR_TMP <<<
     def __eq__(self, other):
         return self.value == other.value
 
@@ -58,23 +59,28 @@ class Attr(SummarizableClass):
         else:
             value = str(self.value)
         if self.unit is None:
-            unit = 'None'
+            unit = "None"
         else:
             unit = f"'{self.unit}'"
         return (
             f"{type(self).__name__}("
-            f"name='{self.name}', "
-            f"value={value}, "
-            f"type_={self.type_.__name__}, "
-            f"unit={unit}"
-            f")")
+            + ", ".join(
+                [
+                    f"name='{self.name}'",
+                    f"value={value}",
+                    f"type_={self.type_.__name__}",
+                    f"unit={unit}",
+                ]
+            )
+            + f")"
+        )
 
     def merge_with(self, others, replace=None):
         if replace is None:
             replace = {}
 
-        name = replace.get('name', self.name)
-        type_ = replace.get('type_', self.type_)
+        name = replace.get("name", self.name)
+        type_ = replace.get("type_", self.type_)
 
         # Value and unit might differ
         values_units = [(self.value, self.unit)]
@@ -82,9 +88,9 @@ class Attr(SummarizableClass):
 
         # Collect values and units
         for other in others:
-            if 'name' not in replace and other.name != name:
+            if "name" not in replace and other.name != name:
                 raise ValueError(f"names differ: {other.name} != {name}")
-            if 'name' not in replace and other.type_ != type_:
+            if "name" not in replace and other.type_ != type_:
                 raise ValueError(f"types differ: {other.type_} != {type_}")
 
             if (other.value, other.unit) not in values_units:
@@ -102,14 +108,14 @@ class Attr(SummarizableClass):
             value = values
             unit = units[0] if len(set(units)) == 1 else units
 
-        value = replace.get('value', value)
-        unit = replace.get('unit', unit)
+        value = replace.get("value", value)
+        unit = replace.get("unit", unit)
 
         kwargs = {
-            'name': name,
-            'type_': type_,
-            'value': value,
-            'unit': unit,
+            "name": name,
+            "type_": type_,
+            "value": value,
+            "unit": unit,
         }
         if isiterable(value, str_ok=False):
             return self.__class__.multiple(**kwargs)
@@ -118,14 +124,14 @@ class Attr(SummarizableClass):
     def format(self, fmt=None, *, skip_unit=False, join=None):
         if fmt is None:
             if issubclass(self.type_, (float, int)):
-                fmt = 'g'
+                fmt = "g"
             else:
-                fmt = ''
-        s = f'{{:{fmt}}}'.format(self.value)
-        if self.name == 'unit':
+                fmt = ""
+        s = f"{{:{fmt}}}".format(self.value)
+        if self.name == "unit":
             s = self.fmt_unit(unit=s)
         if self.unit and not skip_unit:
-            s += f' {self.fmt_unit()}'
+            s += f" {self.fmt_unit()}"
         return s
 
     def fmt_unit(self, unit=None):
@@ -133,9 +139,9 @@ class Attr(SummarizableClass):
         if unit is None:
             unit = self.unit
         old_new = [
-            ('m-2', 'm$^{-2}$'),
-            ('m-3', 'm$^{-3}$'),
-            ('s-1', 's$^{-1}$'),
+            ("m-2", "m$^{-2}$"),
+            ("m-3", "m$^{-3}$"),
+            ("s-1", "s$^{-1}$"),
         ]
         for old, new in old_new:
             unit = unit.replace(old, new)
@@ -143,7 +149,6 @@ class Attr(SummarizableClass):
 
 
 class AttrMult(Attr):
-
     def __init__(self, name, value, type_=None, unit=None, cls_attr=Attr):
 
         self.name = name
@@ -158,13 +163,15 @@ class AttrMult(Attr):
             raise ValueError(
                 f"numbers of values and units differ: "
                 f"{len(value)} != {len(unit)}"
-                f"\nvalue: {value}\nunit: {unit}")
+                f"\nvalue: {value}\nunit: {unit}"
+            )
 
         if type_ is None:
             types = sorted(set([type(v) for v in value]))
             if len(types) > 1:
                 raise ValueError(
-                    f"'type_' omitted when types of values differ: {types}")
+                    f"'type_' omitted when types of values differ: {types}"
+                )
             type_ = next(iter(types))
 
         self.type_ = type_
@@ -200,7 +207,7 @@ class AttrMult(Attr):
             return units[0]
         return units
 
-    def format(self, fmt=None, *, join=' / ', **kwargs):
+    def format(self, fmt=None, *, join=" / ", **kwargs):
         return join.join([a.format(fmt, **kwargs) for a in self._attr_lst])
 
     def fmt_unit(self, unit=None):
@@ -220,12 +227,14 @@ class AttrDatetime(Attr):
 
         if type_ is not datetime.datetime:
             raise ValueError(
-                f"invalid type_ '{type_.__name__}' (not datetime.datetime)")
+                f"invalid type_ '{type_.__name__}' (not datetime.datetime)"
+            )
 
         if not isinstance(value, type_):
             raise ValueError(
-                f"value has wrong type: expected '{type_.__name__}', "
-                f"got '{type(value).__name__}'")
+                f"value has wrong type: expected '{type_.__name__}', got "
+                f"'{type(value).__name__}'"
+            )
 
         super().__init__(name, value, type_=type_, **kwargs)
 
@@ -242,7 +251,8 @@ class AttrDatetime(Attr):
         if len(starts) != 1:
             raise ValueError(
                 f"cannot merge with {len(others)} other instances of "
-                f"{type(self).__name__}: starts differ: {starts}")
+                f"{type(self).__name__}: starts differ: {starts}"
+            )
         attr.start = next(iter(starts))
         return attr
 
@@ -250,19 +260,18 @@ class AttrDatetime(Attr):
         """Format a datetime object to a string."""
 
         if not relative:
-            return self.value.strftime('%Y-%m-%d %H:%M %Z')
+            return self.value.strftime("%Y-%m-%d %H:%M %Z")
 
         if self.start is None:
-            raise ValueError(
-                f"{self.name}: relative formatting failed: missing start")
+            raise ValueError(f"{self.name}: relative formatting failed: missing start")
 
         delta = self.value - self.start
 
         s = f"T$_{0}$"
 
         if delta.total_seconds() > 0:
-            hours = int(delta.total_seconds()/3600)
-            mins = int((delta.total_seconds()/3600)%1*60)
+            hours = int(delta.total_seconds() / 3600)
+            mins = int((delta.total_seconds() / 3600) % 1 * 60)
             s = f"{s}$\\,+\\,${hours:02d}:{mins:02d}$\\,$h"
 
         return s
@@ -271,10 +280,11 @@ class AttrDatetime(Attr):
 class AttrGroup:
     """Base class for attributes."""
 
-    def __init__(self, *args, lang='en', **kwargs):
+    def __init__(self, *args, lang="en", **kwargs):
         if type(self) is AttrGroup:
             raise ValueError(
-                f"{type(self).__name__} should be subclassed, not instatiated")
+                f"{type(self).__name__} should be subclassed, not instatiated"
+            )
         self._lang = lang
         self.reset()
 
@@ -290,25 +300,21 @@ class AttrGroup:
         except KeyError:
             raise AttributeError(f"{type(self).__name__}.{name}")
 
-    #SR_TMP<<< TODO eliminate
+    # SR_TMP <<< TODO eliminate
     def set(self, name, value, type_, **kwargs):
         if isinstance(value, Attr):
             attr = value
             attr.set_group(self)
         else:
             cls = {datetime.datetime: AttrDatetime}.get(type_, Attr)
-            kwargs.update({
-                'name': name,
-                'value': value,
-                'type_': type_,
-                'group': self
-            })
+            kwargs.update({"name": name, "value": value, "type_": type_, "group": self})
             try:
                 attr = cls(**kwargs)
             except Exception as e:
                 raise Exception(
                     f"error creating instance of {cls.__name__} "
-                    f"({type(e).__name__}: {e})")
+                    f"({type(e).__name__}: {e})"
+                )
         self._attrs[name] = attr
 
     def __iter__(self):
@@ -319,17 +325,16 @@ class AttrGroup:
         """Create new instance by merging self and others.
 
         Args:
-            others (list[AttrGroup]): Other instances of the same
-                attributes class, to be merged with this one.
+            others (list[AttrGroup]): Other instances of the same attributes
+                class, to be merged with this one.
 
-            replace (dict, optional): Attributes to be replaced in the
-                merged instance. Must contain all attributes that
-                differ between any of the instances to be merged.
-                Defaults to '{}'.
+            replace (dict, optional): Attributes to be replaced in the merged
+                instance. Must contain all attributes that differ between any
+                of the instances to be merged. Defaults to '{}'.
 
         Returns:
-            AttrGroup: Merged instance derived from ``self`` and
-                ``others``. Note that no input instance is changed.
+            AttrGroup: Merged instance derived from ``self`` and ``others``.
+                Note that no input instance is changed.
 
         """
 
@@ -343,27 +348,27 @@ class AttrGroup:
         else:
             raise Exception(f"multiple languages: {langs}")
 
-        kwargs = {'lang': lang}
+        kwargs = {"lang": lang}
         for key, attr0 in iter(self):
             attrs1 = [getattr(o, key) for o in others]
             attr = attr0.merge_with(attrs1, replace=replace.get(key))
             kwargs[key] = attr
             if attr.unit is not None:
-                kwargs[f'{key}_unit'] = attr.unit
+                kwargs[f"{key}_unit"] = attr.unit
 
         try:
             return self.__class__(**kwargs)
         except Exception as e:
             raise Exception(
                 f"error creating instance of {self.__class__.__name__} "
-                f"({type(e).__name__}: {e})\n\n{len(kwargs)} kwargs:"
-                f"\n{pformat(kwargs)}")
+                f"({type(e).__name__}: {e})\n\n{len(kwargs)} kwargs:\n{pformat(kwargs)}"
+            )
 
 
 class AttrGroupGrid(AttrGroup):
     """Grid attributes."""
 
-    group_name = 'grid'
+    group_name = "grid"
 
     def __init__(self, *, north_pole_lat, north_pole_lon, **kwargs):
         """Initialize instance of ``AttrGroupGrid``.
@@ -375,25 +380,34 @@ class AttrGroupGrid(AttrGroup):
 
         """
         super().__init__(**kwargs)
-        self.set('north_pole_lat', north_pole_lat, float)
-        self.set('north_pole_lon', north_pole_lon, float)
+        self.set("north_pole_lat", north_pole_lat, float)
+        self.set("north_pole_lon", north_pole_lon, float)
 
 
 class AttrGroupVariable(AttrGroup):
     """Variable attributes."""
 
-    group_name = 'variable'
+    group_name = "variable"
 
     def __init__(
-            self, *, long_name, short_name, unit, level_bot, level_bot_unit,
-            level_top, level_top_unit, **kwargs):
+        self,
+        *,
+        long_name,
+        short_name,
+        unit,
+        level_bot,
+        level_bot_unit,
+        level_top,
+        level_top_unit,
+        **kwargs,
+    ):
         """Initialize an instance of ``AttrGroupVariable``.
 
         Kwargs:
             name (str): Name of variable.
 
-            unit (str): Unit of variable as a regular string
-                (e.g., 'm-3' for cubic meters).
+            unit (str): Unit of variable as a regular string (e.g., 'm-3' for
+                cubic meters).
 
             level_bot (float or list[float]): Bottom level value(s).
 
@@ -405,19 +419,19 @@ class AttrGroupVariable(AttrGroup):
 
         """
         super().__init__(**kwargs)
-        self.set('long_name', long_name, str)
-        self.set('short_name', short_name, str)
-        self.set('unit', unit, str)
-        self.set('level_bot', level_bot, float, unit=level_bot_unit)
-        self.set('level_top', level_top, float, unit=level_top_unit)
+        self.set("long_name", long_name, str)
+        self.set("short_name", short_name, str)
+        self.set("unit", unit, str)
+        self.set("level_bot", level_bot, float, unit=level_bot_unit)
+        self.set("level_top", level_top, float, unit=level_top_unit)
 
     def fmt_level_unit(self):
         unit_bottom = self.level_bot.fmt_unit()
         unit_top = self.level_top.fmt_unit()
         if unit_bottom != unit_top:
             raise Exception(
-                f"bottom and top level units differ: "
-                f"'{unit_bottom}' != '{unit_top}'")
+                f"bottom and top level units differ: '{unit_bottom}' != '{unit_top}'"
+            )
         return unit_top
 
     def fmt_level_range(self):
@@ -426,7 +440,7 @@ class AttrGroupVariable(AttrGroup):
             return None
 
         def fmt(bot, top, unit_fmtd=self.fmt_level_unit()):
-            s = f"{bot:g}" + r'$-$' + f"{top:g}"
+            s = f"{bot:g}" + r"$-$" + f"{top:g}"
             if unit_fmtd:
                 s += f" {unit_fmtd}"
             return s
@@ -436,25 +450,23 @@ class AttrGroupVariable(AttrGroup):
             return fmt(self.level_bot.value, self.level_top.value)
         except TypeError:
             pass
-        #-- Multiple level ranges
+        # -- Multiple level ranges
 
         try:
             bots = sorted(self.level_bot.value)
             tops = sorted(self.level_top.value)
         except TypeError:
-            raise  #SR_TMP TODO proper error message
+            raise  # SR_TMP TODO proper error message
         else:
             if len(bots) != len(tops):
-                raise Exception(
-                    f"inconsistent no. levels: {len(bots)} != {len(tops)}")
+                raise Exception(f"inconsistent no. levels: {len(bots)} != {len(tops)}")
             n = len(bots)
 
         if n == 2:
             if tops[0] == bots[1]:
                 return fmt(bots[0], tops[1])
             else:
-                return (
-                    f"{fmt(bots[0], tops[0], None)} + {fmt(bots[1], tops[1])}")
+                return f"{fmt(bots[0], tops[0], None)} + {fmt(bots[1], tops[1])}"
                 raise NotImplementedError(f"2 non-continuous level ranges")
 
         elif n == 3:
@@ -470,11 +482,22 @@ class AttrGroupVariable(AttrGroup):
 class AttrGroupRelease(AttrGroup):
     """Release attributes."""
 
-    group_name = 'release'
+    group_name = "release"
 
     def __init__(
-            self, *, lat, lon, site_name, height, height_unit, rate, rate_unit,
-            mass, mass_unit, **kwargs):
+        self,
+        *,
+        lat,
+        lon,
+        site_name,
+        height,
+        height_unit,
+        rate,
+        rate_unit,
+        mass,
+        mass_unit,
+        **kwargs,
+    ):
         """Initialize an instance of ``AttrGroupRelease``.
 
         Kwargs:
@@ -498,23 +521,34 @@ class AttrGroupRelease(AttrGroup):
 
         """
         super().__init__(**kwargs)
-        self.set('lat', lat, float)
-        self.set('lon', lon, float)
-        self.set('site_name', site_name, str)
-        self.set('height', height, float, unit=height_unit)
-        self.set('rate', rate, float, unit=rate_unit)
-        self.set('mass', mass, float, unit=mass_unit)
+        self.set("lat", lat, float)
+        self.set("lon", lon, float)
+        self.set("site_name", site_name, str)
+        self.set("height", height, float, unit=height_unit)
+        self.set("rate", rate, float, unit=rate_unit)
+        self.set("mass", mass, float, unit=mass_unit)
 
 
 class AttrGroupSpecies(AttrGroup):
     """Species attributes."""
 
-    group_name = 'species'
+    group_name = "species"
 
     def __init__(
-            self, *, name, half_life, half_life_unit, deposit_vel,
-            deposit_vel_unit, sediment_vel, sediment_vel_unit, washout_coeff,
-            washout_coeff_unit, washout_exponent, **kwargs):
+        self,
+        *,
+        name,
+        half_life,
+        half_life_unit,
+        deposit_vel,
+        deposit_vel_unit,
+        sediment_vel,
+        sediment_vel_unit,
+        washout_coeff,
+        washout_coeff_unit,
+        washout_exponent,
+        **kwargs,
+    ):
         """Create an instance of ``AttrGroupSpecies``.
 
         Kwargs:
@@ -524,8 +558,7 @@ class AttrGroupSpecies(AttrGroup):
 
             half_life_unit (str): Half life unit.
 
-            deposit_vel (float or list[float]): Deposition velocity
-                value(s).
+            deposit_vel (float or list[float]): Deposition velocity value(s).
 
             deposit_vel_unit (str): Deposition velocity unit.
 
@@ -534,33 +567,30 @@ class AttrGroupSpecies(AttrGroup):
 
             sediment_vel_unit (str): Sedimentation velocity unit.
 
-            washout_coeff (float or list[float]): Washout coefficient
-                value(s).
+            washout_coeff (float or list[float]): Washout coefficient value(s).
 
             washout_coeff_unit (str): Washout coefficient unit.
 
-            washout_exponent (float or list[float]): Washout exponent
-                value(s).
+            washout_exponent (float or list[float]): Washout exponent value(s).
 
         """
         super().__init__(**kwargs)
-        self.set('name', name, str)
-        self.set('half_life', half_life, float, unit=half_life_unit)
-        self.set('deposit_vel', deposit_vel, float, unit=deposit_vel_unit)
-        self.set('sediment_vel', sediment_vel, float, unit=sediment_vel_unit)
-        self.set(
-            'washout_coeff', washout_coeff, float, unit=washout_coeff_unit)
-        self.set('washout_exponent', washout_exponent, float)
+        self.set("name", name, str)
+        self.set("half_life", half_life, float, unit=half_life_unit)
+        self.set("deposit_vel", deposit_vel, float, unit=deposit_vel_unit)
+        self.set("sediment_vel", sediment_vel, float, unit=sediment_vel_unit)
+        self.set("washout_coeff", washout_coeff, float, unit=washout_coeff_unit)
+        self.set("washout_exponent", washout_exponent, float)
 
 
 class AttrGroupSimulation(AttrGroup):
     """Simulation attributes."""
 
-    group_name = 'simulation'
+    group_name = "simulation"
 
     def __init__(
-            self, *, model_name, start, end, now, integr_start, integr_type,
-            **kwargs):
+        self, *, model_name, start, end, now, integr_start, integr_type, **kwargs
+    ):
         """Create an instance of ``AttrGroupSimulation``.
 
         Kwargs:
@@ -578,23 +608,22 @@ class AttrGroupSimulation(AttrGroup):
 
         """
         super().__init__(**kwargs)
-        self.set('model_name', model_name, str)
-        self.set('start', start, datetime.datetime, start=start)
-        self.set('end', end, datetime.datetime, start=start)
-        self.set('now', now, datetime.datetime, start=start)
-        self.set('integr_start', integr_start, datetime.datetime, start=start)
-        self.set('integr_type', integr_type, str)
+        self.set("model_name", model_name, str)
+        self.set("start", start, datetime.datetime, start=start)
+        self.set("end", end, datetime.datetime, start=start)
+        self.set("now", now, datetime.datetime, start=start)
+        self.set("integr_start", integr_start, datetime.datetime, start=start)
+        self.set("integr_type", integr_type, str)
 
     def fmt_integr_period(self):
         integr_period = self.now.value - self.integr_start.value
-        return f'{integr_period.total_seconds()/3600:g}$\\,$h'
+        return f"{integr_period.total_seconds()/3600:g}$\\,$h"
 
 
 class AttrGroupCollection:
     """Collection of FLEXPART attributes."""
 
-    def __init__(
-            self, *, grid, variable, release, species, simulation, lang='en'):
+    def __init__(self, *, grid, variable, release, species, simulation, lang="en"):
         """Initialize an instance of ``AttrGroupCollection``.
 
         Kwargs:
@@ -611,11 +640,11 @@ class AttrGroupCollection:
         """
         self._lang = lang
         self.reset()
-        self.add('grid', grid)
-        self.add('variable', variable)
-        self.add('release', release)
-        self.add('species', species)
-        self.add('simulation', simulation)
+        self.add("grid", grid)
+        self.add("variable", variable)
+        self.add("release", release)
+        self.add("species", species)
+        self.add("simulation", simulation)
 
     def reset(self):
         self._attrs = {}
@@ -633,21 +662,21 @@ class AttrGroupCollection:
 
         if not isinstance(attrs, AttrGroup):
             cls_by_name = {
-                'grid': AttrGroupGrid,
-                'variable': AttrGroupVariable,
-                'release': AttrGroupRelease,
-                'species': AttrGroupSpecies,
-                'simulation': AttrGroupSimulation,
+                "grid": AttrGroupGrid,
+                "variable": AttrGroupVariable,
+                "release": AttrGroupRelease,
+                "species": AttrGroupSpecies,
+                "simulation": AttrGroupSimulation,
             }
             try:
                 cls = cls_by_name[name]
             except KeyError:
                 raise ValueError(f"missing AttrGroup class for name '{name}'")
-            #SR_TMP<
+            # SR_TMP <
             for key, attr in [(k, v) for k, v in attrs.items()]:
                 if isinstance(attr, Attr) and attr.unit is not None:
-                    attrs[f'{key}_unit'] = attr.unit
-            #SR_TMP>
+                    attrs[f"{key}_unit"] = attr.unit
+            # SR_TMP >
             attrs = cls(lang=self._lang, **attrs)
 
         self._attrs[name] = attrs
@@ -656,25 +685,24 @@ class AttrGroupCollection:
         """Create a new instance by merging this and others.
 
         Args:
-            others (list[AttrGroupCollection]): Other instances to be
-                merged with this.
+            others (list[AttrGroupCollection]): Other instances to be merged
+                with this.
 
-            **replace (dicts): Collections of attributes to be replaced
-                in the merged ``AttrGroup*`` instances of the shared
-                collection instance. Must contain all attributes that
-                differ between any of the collections.
+            **replace (dicts): Collections of attributes to be replaced in the
+                merged ``AttrGroup*`` instances of the shared collection
+                instance. Must contain all attributes that differ between any
+                of the collections.
 
         Returns:
-            AttrGroupCollection: New attributes collection instance
-                derived from ``self`` and ``others``. Note that no
-                input collection is changed.
+            AttrGroupCollection: New attributes collection instance derived
+                from ``self`` and ``others``. Note that no input collection is
+                changed.
 
         Example:
-            In this example, all attributes collection in a list are
-            merged and the variable and release site names replaced,
-            implying those differ between the collections. Wether that
-            is the case or not, all other attributes must be the same,
-            otherwise an error is issued.
+            In this example, all attributes collection in a list are merged and
+            the variable and release site names replaced, implying those differ
+            between the collections. Wether that is the case or not, all other
+            attributes must be the same, otherwise an error is issued.
 
             attrs_coll = attrs_colls[0].merge_with(
                 attrs_colls[1:],
@@ -688,13 +716,13 @@ class AttrGroupCollection:
             )
 
         """
-        kwargs = {'lang': self._lang}
+        kwargs = {"lang": self._lang}
         for name in sorted(self._attrs.keys()):
             kwargs[name] = dict(
                 self._attrs[name].merge_with(
-                    [o._attrs[name] for o in others],
-                    replace.get(name),
-                ))
+                    [o._attrs[name] for o in others], replace.get(name),
+                )
+            )
         return self.__class__(**kwargs)
 
     def __iter__(self):

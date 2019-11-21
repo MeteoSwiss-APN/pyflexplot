@@ -10,8 +10,6 @@ from pprint import pformat
 
 from srutils.various import isiterable
 
-#======================================================================
-
 
 @pytest.fixture
 def datadir_rel(tmpdir, request):
@@ -34,7 +32,7 @@ def datadir_rel(tmpdir, request):
 def datadir(tmpdir, request):
     """Return path to temporary directory named 'data'."""
     test_file_path = request.module.__file__
-    test_dir_path = f'{os.path.dirname(test_file_path)}/data'
+    test_dir_path = f"{os.path.dirname(test_file_path)}/data"
     if os.path.isdir(test_dir_path):
         distutils.dir_util.copy_tree(test_dir_path, str(tmpdir))
     return tmpdir

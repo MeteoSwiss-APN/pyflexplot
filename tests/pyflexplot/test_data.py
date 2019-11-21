@@ -11,12 +11,14 @@ from pyflexplot.data import threshold_agreement
 class TestThrAgrmt_2D:
     """Count number threshold exceedences along a 2D-array axis."""
 
-    arr = np.array([
-        [3, 5, 6, 0, 1, 0, 3, 5],
-        [6, 3, 4, 4, 4, 1, 6, 9],
-        [2, 1, 4, 2, 6, 8, 4, 2],
-        [9, 6, 7, 5, 7, 3, 1, 3],
-    ])
+    arr = np.array(
+        [
+            [3, 5, 6, 0, 1, 0, 3, 5],
+            [6, 3, 4, 4, 4, 1, 6, 9],
+            [2, 1, 4, 2, 6, 8, 4, 2],
+            [9, 6, 7, 5, 7, 3, 1, 3],
+        ]
+    )
 
     thr = 5
 
@@ -54,11 +56,13 @@ class TestThrAgrmt_2D:
 class TestThrAgrmt_3D:
     """Count number threshold exceedences along a 3D-array axis."""
 
-    arr = np.array([
-        [[5, 2, 8], [0, 5, 0], [2, 1, 2], [9, 5, 2], [2, 0, 2]],
-        [[5, 6, 7], [0, 0, 1], [2, 1, 9], [4, 5, 2], [0, 3, 9]],
-        [[5, 6, 9], [1, 3, 8], [5, 3, 1], [3, 3, 3], [5, 3, 7]],
-    ])
+    arr = np.array(
+        [
+            [[5, 2, 8], [0, 5, 0], [2, 1, 2], [9, 5, 2], [2, 0, 2]],
+            [[5, 6, 7], [0, 0, 1], [2, 1, 9], [4, 5, 2], [0, 3, 9]],
+            [[5, 6, 9], [1, 3, 8], [5, 3, 1], [3, 3, 3], [5, 3, 7]],
+        ]
+    )
 
     thr = 3
 

@@ -8,7 +8,7 @@ import numpy as np
 
 from copy import copy, deepcopy
 from pprint import pformat
-from pprint import pprint  #SR_DEV
+from pprint import pprint  # SR_DEV
 
 from srutils.dict import pformat_dictlike
 from srutils.various import check_array_indices
@@ -73,35 +73,32 @@ def _nc_content():
     #
 
 
-#======================================================================
 # File Reader
-#======================================================================
 
 
 class FileReader:
     """Reader of NetCDF files containing FLEXPART data.
 
-    It represents a single input file for deterministic FLEXPART runs,
-    or an ensemble of input files for ensemble FLEXPART runs (one file
-    per ensemble member).
+    It represents a single input file for deterministic FLEXPART runs, or an
+    ensemble of input files for ensemble FLEXPART runs (one file per ensemble
+    member).
 
     """
 
     cls_field = Field
 
-    choices_ens_var = ['mean', 'max']
+    choices_ens_var = ["mean", "max"]
 
     def __init__(self, file_path, *, cmd_open=nc4.Dataset):
         """Create an instance of ``FileReader``.
 
         Args:
-            file_path (str): File path. In case of ensemble data, it
-                must contain the format key '{member_ids[:0?d]}'.
+            file_path (str): File path. In case of ensemble data, it must
+                contain the format key '{member_ids[:0?d]}'.
 
-            cmd_open (function, optional): Function to open the input
-                file. Must support context manager interface, i.e.,
-                ``with cmd_open(file_path, mode) as f:``. Defaults to
-                netCDF4.Dataset.
+            cmd_open (function, optional): Function to open the input file.
+                Must support context manager interface, i.e., ``with
+                cmd_open(file_path, mode) as f:``. Defaults to netCDF4.Dataset.
 
         """
         self.file_path_fmt = file_path
@@ -117,86 +114,81 @@ class FileReader:
         self.rlat = None
         self.rlon = None
 
-        #SR_TMP< TODO don't cheat! _attrs_{all,none} are for checks only!
-        if hasattr(self, '_attrs_all'):
+        # SR_TMP < TODO don't cheat! _attrs_{all,none} are for checks only!
+        if hasattr(self, "_attrs_all"):
             for attr in sorted(self.__dict__.keys()):
-                if attr in ['_attrs_all', '_attrs_none']:
+                if attr in ["_attrs_all", "_attrs_none"]:
                     pass
                 elif attr not in self._attrs_all:
                     del self.__dict__[attr]
                 elif attr in self._attrs_none:
                     setattr(self, attr, None)
-        #SR_TMP>
+        # SR_TMP >
 
-    #SR_DEV<<<
+    # SR_DEV <<<
     def _store_attrs(self):
         """Store names of all attributes, and which are None."""
-        if '_attrs_all' in self.__dict__:
+        if "_attrs_all" in self.__dict__:
             raise Exception("'_attrs_all' in self.__dict__")
-        if '_attrs_none' in self.__dict__:
+        if "_attrs_none" in self.__dict__:
             raise Exception("'_attrs_none' in self.__dict__")
         self._attrs_all = sorted(self.__dict__.keys())
-        self._attrs_none = [
-            a for a in self._attrs_all if getattr(self, a) is None
-        ]
+        self._attrs_none = [a for a in self._attrs_all if getattr(self, a) is None]
 
-    #SR_DEV<<<
+    # SR_DEV <<<
     def _check_attrs(self):
         """Check that attributes have been cleared up properly.
 
         Checks:
-            * There are no attributes that should not be there.
+            There are no attributes that should not be there.
 
-            * All attributes that should be None, are.
+            All attributes that should be None, are.
 
         """
-        attrs_all = self.__dict__.pop('_attrs_all')
-        attrs_none = self.__dict__.pop('_attrs_none')
+        attrs_all = self.__dict__.pop("_attrs_all")
+        attrs_none = self.__dict__.pop("_attrs_none")
 
         # Check that there are no unexpected attributes
         attrs_unexp = [a for a in self.__dict__.keys() if a not in attrs_all]
         if attrs_unexp:
-            raise Exception(
-                f"{len(attrs_unexp)} unexpected attributes: {attrs_unexp}")
+            raise Exception(f"{len(attrs_unexp)} unexpected attributes: {attrs_unexp}")
 
         # Check that all attributes that should be None, are
         attrs_nonone = [a for a in attrs_none if getattr(self, a) is not None]
         if attrs_nonone:
             raise Exception(
                 f"{len(attrs_nonone)} attributes should be None but are not: "
-                f"{attrs_nonone}")
+                f"{attrs_nonone}"
+            )
 
-    def run(self, fld_specs, *, lang='en'):
+    def run(self, fld_specs, *, lang="en"):
         """Read one or more fields from a file from disc.
 
         Args:
-            fld_specs (FieldSpecs or list[FieldSpecs]):
-                Specifications for one or more input fields.
+            fld_specs (FieldSpecs or list[FieldSpecs]): Specifications for one
+                or more input fields.
 
-            ens_var (str, optional): Name of ensemble variable, e.g.,
-                'mean'. See ``Field.choices_ens_var`` for the full
-                list. Mandatory in case of multiple ensemble members.
-                Defaults to None.
+            ens_var (str, optional): Name of ensemble variable, e.g., 'mean'.
+                See ``Field.choices_ens_var`` for the full list. Mandatory in
+                case of multiple ensemble members. Defaults to None.
 
-            ens_var_opts (dict, optional): Options that can/must be
-                passed alongside certain ensemble variables. Defaults
-                to {}.
+            ens_var_opts (dict, optional): Options that can/must be passed
+                alongside certain ensemble variables. Defaults to {}.
 
-            lang (str, optional): Language, e.g., 'de' for German.
-                Defaults to 'en' (English).
+            lang (str, optional): Language, e.g., 'de' for German. Defaults to
+                'en' (English).
 
         Returns:
-            Field: Single data object; if ``fld_specs``
-                constitutes a single ``FieldSpecs`` instance.
+            Field: Single data object; if ``fld_specs`` constitutes a single
+            ``FieldSpecs`` instance.
 
             or
 
-            list[Field]: One data object for each field;
-                if ``fld_specs`` constitutes a list of ``FieldSpecs``
-                instances.
+            list[Field]: One data object for each field; if ``fld_specs``
+                constitutes a list of ``FieldSpecs`` instances.
 
         """
-        self._store_attrs()  #SR_DEV
+        self._store_attrs()  # SR_DEV
 
         # Set some attributes
         self.lang = lang
@@ -209,15 +201,16 @@ class FileReader:
             fld_specs_lst = fld_specs
         del fld_specs
 
-        # Group field specifications objects such that all in one group
-        # only differ in time; collect the respective time indices; and
-        # merge the group into one field specifications instance with
-        # time dimension 'slice(None)'. This allows for each such group
-        # to first read and process all time steps (e.g., derive some
-        # statistics across all time steps), and subsequently extract
-        # the requested time steps using the separately stored indices.
-        self._fld_specs_time_lst, self._time_inds_lst = (
-            self._group_fld_specs_by_time(fld_specs_lst))
+        # Group field specifications objects such that all in one group only
+        # differ in time; collect the respective time indices; and merge the
+        # group into one field specifications instance with # time dimension
+        # 'slice(None)'. This allows for each such group to first read and
+        # process all time steps (e.g., derive some statistics across all time
+        # steps), and subsequently extract the requested time steps using the
+        # separately stored indices.
+        self._fld_specs_time_lst, self._time_inds_lst = self._group_fld_specs_by_time(
+            fld_specs_lst
+        )
 
         # Prepare array for fields
         self.n_fld_specs = len(self._fld_specs_time_lst)
@@ -231,15 +224,15 @@ class FileReader:
             fld_specs_time = self._fld_specs_time_lst[i_fld_specs]
             time_inds = self._time_inds_lst[i_fld_specs]
 
-            member_ids = getattr(fld_specs_time, 'member_ids', None)
+            member_ids = getattr(fld_specs_time, "member_ids", None)
             self.n_members = 1 if not member_ids else len(member_ids)
             self.file_path_lst = self._prepare_file_path_lst(member_ids)
 
-            log.debug(
-                f"{i_fld_specs + 1}/{self.n_fld_specs}: {fld_specs_time}")
+            log.debug(f"{i_fld_specs + 1}/{self.n_fld_specs}: {fld_specs_time}")
 
             flex_field_lst.extend(
-                self._create_fields_fld_specs(fld_specs_time, time_inds))
+                self._create_fields_fld_specs(fld_specs_time, time_inds)
+            )
 
         # Return result field(s)
         result = flex_field_lst
@@ -248,38 +241,38 @@ class FileReader:
             result = result[0]
 
         self.reset()
-        self._check_attrs()  #SR_DEV
+        self._check_attrs()  # SR_DEV
 
         return result
 
     def _prepare_file_path_lst(self, member_ids):
 
-        fmt_keys = ['{member_id}', '{member_id:']
+        fmt_keys = ["{member_id}", "{member_id:"]
         fmt_key_in_path = any(k in self.file_path_fmt for k in fmt_keys)
 
         if not member_ids:
             if fmt_key_in_path:
                 raise ValueError(
-                    "input file path contains format key '{member_id[:0?d]}' "
-                    "but no member_ids have been passed")
+                    "input file path contains format key '{member_id[:0?d]}' but no "
+                    "member_ids have been passed"
+                )
             return [self.file_path_fmt]
 
         else:
             if not fmt_key_in_path:
                 raise ValueError(
                     "input file path missing format key '{member_id[:0?d]}': "
-                    f"{self.file_path_fmt}")
-            return [
-                self.file_path_fmt.format(member_id=mid) for mid in member_ids
-            ]
+                    f"{self.file_path_fmt}"
+                )
+            return [self.file_path_fmt.format(member_id=mid) for mid in member_ids]
 
     def _determine_n_reqtime(self):
         """Determine the number of selected time steps."""
         n_reqtime_per_mem = [len(inds) for inds in self._time_inds_lst]
         if len(set(n_reqtime_per_mem)) > 1:
             raise Exception(
-                f"numbers of timesteps differ across members: "
-                f"{n_reqtime_per_mem}")
+                f"numbers of timesteps differ across members: " f"{n_reqtime_per_mem}"
+            )
         return next(iter(n_reqtime_per_mem))
 
     def _create_fields_fld_specs(self, fld_specs_time, time_inds):
@@ -295,19 +288,20 @@ class FileReader:
         time_stats = self._collect_time_stats(fld_time)
 
         # Create time-step-specific field specifications
-        fld_specs_reqtime = self._create_specs_reqtime(
-            fld_specs_time, time_inds)
+        fld_specs_reqtime = self._create_specs_reqtime(fld_specs_time, time_inds)
 
         # Collect attributes at requested time steps for all members
         attrs_reqtime_mem = self._collect_attrs_reqtime_mem(
-            fld_specs_reqtime, time_inds)
+            fld_specs_reqtime, time_inds
+        )
 
         # Merge attributes across members
         attrs_reqtime = self._merge_attrs_across_members(attrs_reqtime_mem)
 
         # Create fields at requested time steps for all members
         return self._create_fields_reqtime(
-            fld_specs_reqtime, attrs_reqtime, fld_time, time_inds, time_stats)
+            fld_specs_reqtime, attrs_reqtime, fld_time, time_inds, time_stats
+        )
 
     def _read_fld_time_mem(self, fld_specs_time):
         """Read field over all time steps for each member."""
@@ -317,14 +311,14 @@ class FileReader:
         for i_mem, file_path in enumerate(self.file_path_lst):
 
             log.debug(f"read {file_path} (fields)")
-            with self.cmd_open(file_path, 'r') as self.fi:
+            with self.cmd_open(file_path, "r") as self.fi:
                 log.debug(f"extract {self.n_fld_specs} time steps")
 
                 # Read grid variables
-                _inds_rlat = slice(*fld_specs_time.var_specs_shared('rlat'))
-                _inds_rlon = slice(*fld_specs_time.var_specs_shared('rlon'))
-                rlat = self.fi.variables['rlat'][_inds_rlat]
-                rlon = self.fi.variables['rlon'][_inds_rlon]
+                _inds_rlat = slice(*fld_specs_time.var_specs_shared("rlat"))
+                _inds_rlon = slice(*fld_specs_time.var_specs_shared("rlon"))
+                rlat = self.fi.variables["rlat"][_inds_rlat]
+                rlon = self.fi.variables["rlon"][_inds_rlon]
                 if self.rlat is None:
                     self.rlat = rlat
                     self.rlon = rlon
@@ -353,21 +347,23 @@ class FileReader:
             return fld_time_mem[0]
 
         ens_var = fld_specs_time.ens_var
-        ens_var_setup = getattr(fld_specs_time, 'ens_var_setup', {})
+        ens_var_setup = getattr(fld_specs_time, "ens_var_setup", {})
 
-        if ens_var == 'mean':
+        if ens_var == "mean":
             fld_time = np.nanmean(fld_time_mem, axis=0)
-        elif ens_var == 'max':
+        elif ens_var == "max":
             fld_time = np.nanmax(fld_time_mem, axis=0)
-        elif ens_var == 'thr_agrmt':
+        elif ens_var == "thr_agrmt":
             try:
-                thr = ens_var_setup['thr']
+                thr = ens_var_setup["thr"]
             except KeyError:
                 raise Exception(
                     f"'thr' missing in "
-                    f"{type(fld_specs_time).__name__}.ens_var_setup")
+                    f"{type(fld_specs_time).__name__}.ens_var_setup"
+                )
             fld_time = threshold_agreement(
-                fld_time_mem, thr, axis=0, dtype=fld_time_mem.dtype)
+                fld_time_mem, thr, axis=0, dtype=fld_time_mem.dtype
+            )
         else:
             raise NotImplementedError(f"ens_var '{ens_var}'")
         return fld_time
@@ -387,21 +383,17 @@ class FileReader:
         attrs_reqtime_mem = np.full([self.n_reqtime, self.n_members], None)
         for i_mem, file_path in enumerate(self.file_path_lst):
             log.debug(f"read {file_path} (attributes)")
-            with self.cmd_open(file_path, 'r') as self.fi:
+            with self.cmd_open(file_path, "r") as self.fi:
                 for i_reqtime, time_ind in enumerate(time_inds):
-                    log.debug(
-                        f"{i_reqtime + 1}/{len(time_inds)}: collect attributes"
-                    )
+                    log.debug(f"{i_reqtime + 1}/{len(time_inds)}: collect attributes")
                     fld_specs = fld_specs_reqtime[i_reqtime]
                     attrs_lst = []
                     for var_specs in fld_specs.var_specs_lst:
-                        attrs = AttrsCollector(
-                            self.fi,
-                            var_specs,
-                        ).run(lang=self.lang)
+                        attrs = AttrsCollector(self.fi, var_specs,).run(lang=self.lang)
                         attrs_lst.append(attrs)
                     attrs = attrs_lst[0].merge_with(
-                        attrs_lst[1:], **fld_specs.var_attrs_replace)
+                        attrs_lst[1:], **fld_specs.var_attrs_replace
+                    )
                     attrs_reqtime_mem[i_reqtime, i_mem] = attrs
             self.fi = None
         return attrs_reqtime_mem
@@ -421,9 +413,9 @@ class FileReader:
                 elif var_specs.time != time_ind:
                     raise Exception(
                         f"{var_specs.__class__.__name__} instances of "
-                        f"{fld_spec_time.__class__.__name__} instance "
-                        f"differ in 'time' ({var_specs.time} != {time_ind}):"
-                        f"\n{fld_specs_time}")
+                        f"{fld_spec_time.__class__.__name__} instance differ in 'time' "
+                        f"({var_specs.time} != {time_ind}):\n{fld_specs_time}"
+                    )
                 var_specs.time = slice(None)
 
             # Store time-neutral fld specs alongside resp. time inds
@@ -432,14 +424,15 @@ class FileReader:
                 fld_specs_time_inds_by_hash[key] = (fld_specs_time, [])
             if time_ind in fld_specs_time_inds_by_hash[key][1]:
                 raise Exception(
-                    f"duplicate time index {time_ind} in fld_specs:\n"
-                    f"{fld_specs}")
+                    f"duplicate time index {time_ind} in fld_specs:\n" f"{fld_specs}"
+                )
             fld_specs_time_inds_by_hash[key][1].append(time_ind)
 
         # Regroup time-neutral fld specs and time inds into lists
         fld_specs_time_lst, time_inds_lst = [], []
-        for _, (fld_specs_time,
-                time_inds) in sorted(fld_specs_time_inds_by_hash.items()):
+        for _, (fld_specs_time, time_inds) in sorted(
+            fld_specs_time_inds_by_hash.items()
+        ):
             fld_specs_time_lst.append(fld_specs_time)
             time_inds_lst.append(time_inds)
 
@@ -452,13 +445,14 @@ class FileReader:
                 attrs_ref = attrs_reqtime[i_reqtime]
                 if attrs != attrs_ref:
                     raise Exception(
-                        f"attributes differ between members 0 and {i_mem}: "
-                        f"{attrs_ref} != {attrs}")
+                        f"attributes differ between members 0 and {i_mem}: {attrs_ref} "
+                        f"!= {attrs}"
+                    )
         return attrs_reqtime
 
     def _create_fields_reqtime(
-            self, fld_specs_reqtime, attrs_reqtime, fld_time, time_inds,
-            time_stats):
+        self, fld_specs_reqtime, attrs_reqtime, fld_time, time_inds, time_stats
+    ):
         """Create fields at requested time steps for all members."""
 
         log.debug(f"select fields at requested time steps")
@@ -480,23 +474,18 @@ class FileReader:
             # Collect data
             log.debug("create data object")
             flex_field = self.cls_field(
-                fld,
-                self.rlat,
-                self.rlon,
-                attrs,
-                fld_specs,
-                time_stats,
+                fld, self.rlat, self.rlon, attrs, fld_specs, time_stats,
             )
             flex_field_lst.append(flex_field)
         return flex_field_lst
 
     def _collect_time_stats(self, fld_time):
         stats = {
-            'mean': np.nanmean(fld_time),
-            'median': np.nanmedian(fld_time),
-            'mean_nz': np.nanmean(fld_time[fld_time > 0]),
-            'median_nz': np.nanmedian(fld_time[fld_time > 0]),
-            'max': np.nanmax(fld_time),
+            "mean": np.nanmean(fld_time),
+            "median": np.nanmedian(fld_time),
+            "mean_nz": np.nanmean(fld_time[fld_time > 0]),
+            "median_nz": np.nanmedian(fld_time[fld_time > 0]),
+            "max": np.nanmax(fld_time),
         }
         return stats
 
@@ -527,7 +516,7 @@ class FileReader:
         dim_inds_by_name = var_specs.dim_inds_by_name()
 
         # Assemble indices for slicing
-        inds = [None]*len(var.dimensions)
+        inds = [None] * len(var.dimensions)
         for dim_name, dim_ind in dim_inds_by_name.items():
             ind = var.dimensions.index(dim_name)
             inds[ind] = dim_ind
@@ -536,7 +525,8 @@ class FileReader:
                 f"variable '{var_name}': could not resolve all indices!"
                 f"\ndim_inds   : {dim_inds_by_name}"
                 f"\ndimensions : {var.dimensions}"
-                f"\ninds       : {inds}")
+                f"\ninds       : {inds}"
+            )
         inds = inds
         log.debug(f"indices: {inds}")
         check_array_indices(var.shape, inds)
@@ -558,31 +548,29 @@ class FileReader:
 
         dt_hr = self._time_resolution()
 
-        if isinstance(var_specs, VarSpecs.subclass('concentration')):
+        if isinstance(var_specs, VarSpecs.subclass("concentration")):
             if var_specs.integrate:
                 # Integrate over time
-                fld = np.cumsum(fld, axis=0)*dt_hr
+                fld = np.cumsum(fld, axis=0) * dt_hr
 
-        elif isinstance(var_specs, VarSpecs.subclass('deposition')):
+        elif isinstance(var_specs, VarSpecs.subclass("deposition")):
             if not var_specs.integrate:
                 # Revert integration over time
-                fld[1:] = (fld[1:] - fld[:-1])/dt_hr
+                fld[1:] = (fld[1:] - fld[:-1]) / dt_hr
 
         else:
-            raise NotImplementedError(
-                f"var_specs of type '{type(var_specs).__name__}'")
+            raise NotImplementedError(f"var_specs of type '{type(var_specs).__name__}'")
 
         return fld
 
     def _time_resolution(self):
         """Determine time resolution of input data."""
-        time = self.fi.variables['time']
+        time = self.fi.variables["time"]
         dts = set(time[1:] - time[:-1])
         if len(dts) > 1:
-            raise Exception(
-                f"Non-uniform time resolution: {sorted(dts)} ({time})")
+            raise Exception(f"Non-uniform time resolution: {sorted(dts)} ({time})")
         dt_min = next(iter(dts))
-        dt_hr = dt_min/3600.0
+        dt_hr = dt_min / 3600.0
         return dt_hr
 
     def _merge_fields(self, fld_lst, fld_specs):
@@ -598,69 +586,71 @@ class FileReader:
             fld = _op([fld, fld_i], axis=0)
         return fld
 
-    #SR_TMP<<<
+    # SR_TMP <<<
     def _fix_nc_var(self, fld, var):
 
-        name = var.getncattr('long_name').split('_')[0]
-        unit = var.getncattr('units')
+        name = var.getncattr("long_name").split("_")[0]
+        unit = var.getncattr("units")
 
-        #SR_TMP< TODO more general solution to combined species
+        # SR_TMP < TODO more general solution to combined species
         names = [
-            'Cs-137',
-            'I-131a',
-            ['Cs-137', 'I-131a'],
-            ['I-131a', 'Cs-137'],
+            "Cs-137",
+            "I-131a",
+            ["Cs-137", "I-131a"],
+            ["I-131a", "Cs-137"],
         ]
-        #SR_TMP>
+        # SR_TMP >
 
         if name in names:
 
-            if unit == 'ng kg-1':
+            if unit == "ng kg-1":
                 fld[:] *= 1e-12
 
-            elif unit == '1e-12 kg m-2':
+            elif unit == "1e-12 kg m-2":
                 fld[:] *= 1e-12
 
             else:
                 raise NotImplementedError(
-                    f"species '{name}': "
-                    f"unknown unit '{unit}'")
+                    f"species '{name}': " f"unknown unit '{unit}'"
+                )
         else:
             raise NotImplementedError(f"species '{name}'")
 
     def _fix_nc_attrs(self, fld, attrs):
 
-        #SR_TMP< TODO more general solution to combined species
+        # SR_TMP < TODO more general solution to combined species
         names = [
-            'Cs-137',
-            'I-131a',
-            ['Cs-137', 'I-131a'],
-            ['I-131a', 'Cs-137'],
+            "Cs-137",
+            "I-131a",
+            ["Cs-137", "I-131a"],
+            ["I-131a", "Cs-137"],
         ]
-        #SR_TMP>
+        # SR_TMP >
         if attrs.species.name.value in names:
 
-            new_unit = 'Bq'  #SR_HC
+            new_unit = "Bq"  # SR_HC
 
             # Integration type
-            if attrs.simulation.integr_type.value == 'mean':
+            if attrs.simulation.integr_type.value == "mean":
                 pass
-            elif attrs.simulation.integr_type.value in ['sum', 'accum']:
-                new_unit += ' h'
+            elif attrs.simulation.integr_type.value in ["sum", "accum"]:
+                new_unit += " h"
             else:
                 raise NotImplementedError(
                     f"species '{attrs.species.name.value}': "
-                    f"integration type '{attrs.simulation.integr_type.value}'")
+                    f"integration type '{attrs.simulation.integr_type.value}'"
+                )
 
             # Original unit
-            if attrs.variable.unit.value == 'ng kg-1':
-                new_unit += ' m-3'  #SR_HC
-            elif attrs.variable.unit.value == '1e-12 kg m-2':
-                new_unit += ' m-2'  #SR_HC
+            if attrs.variable.unit.value == "ng kg-1":
+                new_unit += " m-3"  # SR_HC
+            elif attrs.variable.unit.value == "1e-12 kg m-2":
+                new_unit += " m-2"  # SR_HC
             else:
                 raise NotImplementedError(
                     f"species '{attrs.species.name.value}': "
-                    f"unit '{attrs.variable.unit.value}'")
+                    f"unit '{attrs.variable.unit.value}'"
+                )
 
             attrs.variable.unit.value = new_unit
         else:

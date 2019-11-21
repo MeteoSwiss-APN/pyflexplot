@@ -3,8 +3,6 @@
 Geometric/geographic utilities.
 """
 
-#======================================================================
-
 
 class Degrees:
     """Degrees, useful for instance to convert between notations."""
@@ -32,7 +30,7 @@ class Degrees:
 
         # Check for `(degs,)`
         try:
-            degs, = deg
+            (degs,) = deg
         except TypeError:
             pass
         else:
@@ -45,7 +43,7 @@ class Degrees:
         except TypeError:
             pass
         else:
-            self._frac = float(deg[0]) + deg[1]/60.0
+            self._frac = float(deg[0]) + deg[1] / 60.0
             return
 
         # Check for `(degs, mins, secs)`
@@ -54,11 +52,11 @@ class Degrees:
         except TypeError:
             pass
         else:
-            self._frac = float(deg[0]) + deg[1]/60.0 + deg[2]/3600.0
+            self._frac = float(deg[0]) + deg[1] / 60.0 + deg[2] / 3600.0
 
         raise ValueError(
-            f"invalid deg='{deg}'; "
-            f"must be `float` or `(degs, [mins, [secs, ]])`")
+            f"invalid deg='{deg}'; " f"must be `float` or `(degs, [mins, [secs, ]])`"
+        )
 
     def frac(self):
         """Return degrees as a fraction."""
@@ -67,8 +65,8 @@ class Degrees:
     def dms(self):
         """Return full degrees, minutes, and seconds (int)."""
         degs = self._frac
-        mins = degs%1*60
-        secs = mins%1*60
+        mins = degs % 1 * 60
+        secs = mins % 1 * 60
         return int(degs), int(mins), int(secs)
 
     def degs(self):

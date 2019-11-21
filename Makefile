@@ -50,8 +50,9 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
 
-yapf: ## reformat code to conform to standard
-	yapf -i -vv -r src tests
+format: ## reformat code to conform to standard
+	# yapf -i -vv -r src tests
+	black src tests # --skip-string-normalization
 
 lint: ## check style with flake8
 	flake8 src tests

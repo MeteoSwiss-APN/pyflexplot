@@ -14,11 +14,11 @@ property_word = functools.partial(property_obj, TranslatedTestWord)
 property_words = functools.partial(property_obj, TranslatedTestWord)
 
 
-class _Test_Basic():
+class _Test_Basic:
 
-    ws = property_words(['foo', 'bar', 'baz'])
+    ws = property_words(["foo", "bar", "baz"])
 
     def test_all_implicit(self):
-        assert self.ws['foo'] == 'foo'
-        assert self.ws['bar'] == 'bar'
-        assert self.ws['baz'] == 'baz'
+        assert self.ws["foo"] == "foo"
+        assert self.ws["bar"] == "bar"
+        assert self.ws["baz"] == "baz"

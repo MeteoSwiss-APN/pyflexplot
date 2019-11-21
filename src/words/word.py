@@ -17,11 +17,11 @@ class Word:
         Args:
             s (str): The word as a string.
 
-            lang (str, optional): Language in which the word is given.
-                Defaults to None.
+            lang (str, optional): Language in which the word is given. Defaults
+                to None.
 
-            ctx (str, optional): Context in which the word is valid.
-                Defaults to None.
+            ctx (str, optional): Context in which the word is valid. Defaults
+                to None.
 
         """
         if not isinstance(s, str):
@@ -31,8 +31,8 @@ class Word:
         for name, val in attrs.items():
             if hasattr(self, name):
                 raise ValueError(
-                    f"attr '{name}' clashes with existing attribute "
-                    f"{type(self)}.{name}")
+                    f"attr '{name}' clashes with existing attribute {type(self)}.{name}"
+                )
             setattr(self, name, val)
 
     def __eq__(self, other):
@@ -41,8 +41,6 @@ class Word:
     def __str__(self):
         return self.s
 
-    #------------------------------------------------------------------
-
     def capital(self, *, all=False, preserve=True):
         """Capitalize the first letter of the first or of each word.
 
@@ -50,36 +48,36 @@ class Word:
         ``str.capitalize()``.
 
         Args:
-            all (bool, optional): Whether to capitalize all words.
-                Defaults to False.
+            all (bool, optional): Whether to capitalize all words. Defaults to
+                False.
 
-            preserve (bool, optional): Whether to preserve capitalized
-                letters. Defaults to True.
+            preserve (bool, optional): Whether to preserve capitalized letters.
+                Defaults to True.
 
         """
         s = str(self)
         if not preserve:
             s = s.lower()
         if all:
-            return ' '.join([capitalize(w) for w in s.split(' ')])
-        words = s.split(' ')
-        return ' '.join([capitalize(words[0])] + words[1:])
+            return " ".join([capitalize(w) for w in s.split(" ")])
+        words = s.split(" ")
+        return " ".join([capitalize(words[0])] + words[1:])
 
     def title(self, *, preserve=True):
-        if not hasattr(self, 'lang'):
+        if not hasattr(self, "lang"):
             raise AttributeError(
-                f"{type(self).__name__} '{self.s}': method `title` requires "
-                f"attribute 'lang': not not among {self.attrs}")
-        if self.lang == 'en':
+                f"{type(self).__name__} '{self.s}': method `title` requires attribute "
+                f"'lang': not not among {self.attrs}"
+            )
+        if self.lang == "en":
             return titlecase(str(self), preserve=preserve)
-        elif self.lang == 'de':
+        elif self.lang == "de":
             return self.capital(all=False, preserve=preserve)
         else:
             raise NotImplementedError(
-                f"{type(self).__name__} '{self.s}' in language '{self.lang}': "
-                f"method `title`")
-
-    #------------------------------------------------------------------
+                f"{type(self).__name__} '{self.s}' in language '{self.lang}': method "
+                f"`title`"
+            )
 
     @property
     def c(self):
@@ -101,34 +99,29 @@ class TranslatedWord:
     cls_word = Word
 
     def __init__(
-            self,
-            name=None,
-            *,
-            default_lang=None,
-            default_lang_query=None,
-            **translations):
+        self, name=None, *, default_lang=None, default_lang_query=None, **translations
+    ):
         """Create an instance of ``TranslatedWord``.
 
         Args:
-            name (str, optional): Key to refer to the object in the
-                code. Defaults to the first word defined in ``**langs``.
-                If necessary, it is transformed into a valid Python
-                variable name by replacing all spaces and dashes by
-                underscores and dropping all other special characters.
+            name (str, optional): Key to refer to the object in the code.
+                Defaults to the first word defined in ``**langs``. If
+                necessary, it is transformed into a valid Python variable name
+                by replacing all spaces and dashes by underscores and dropping
+                all other special characters.
 
-            default_lang (str, optional): Default language.  Overridden
-                by ``default_lang_query`` if the latter is not None.
-                Defaults to the first key in ``langs``.
+            default_lang (str, optional): Default language. Overridden by
+                ``default_lang_query`` if the latter is not None. Defaults to
+                the first key in ``langs``.
 
-            default_lang_query (callable, optional): Function to query
-                the default language. Overrides ``default_lang``.
-                Defaults to None.
+            default_lang_query (callable, optional): Function to query the
+                default language. Overrides ``default_lang``. Defaults to None.
 
-            **translations (dict of str: str or (dict of str: str)):
-                The word in different languages. The values are either
-                strings for simple words, or dicts with context-
-                specific variants of the word. In the latter case, the
-                first entry is the default context.
+            **translations (dict of str: str or (dict of str: str)): The word
+                in different languages. The values are either strings for
+                simple words, or dicts with context-specific variants of the
+                word. In the latter case, the first entry is the default
+                context.
 
         Example:
             >>> w = TranslatedWord(en='high school', de='Mittelschule')
@@ -158,17 +151,19 @@ class TranslatedWord:
             if isinstance(word, str):
                 word = self.cls_word(word, lang=lang)
             if isinstance(word, Word):
-                word = {'*': word}
+                word = {"*": word}
             elif isinstance(word, dict):
-                if set(word.keys()) != set(ctxs) and '*' not in word:
+                if set(word.keys()) != set(ctxs) and "*" not in word:
                     raise ValueError(
                         f"word '{self.name}' in language '{lang}' must either "
                         f"be defined for all contexts {ctxs}, or for default "
-                        f"context '*'")
+                        f"context '*'"
+                    )
             else:
                 raise ValueError(
                     f"word '{self.name}' in language '{lang}' has "
-                    f"unexpected type {type(word).__name__}")
+                    f"unexpected type {type(word).__name__}"
+                )
             self._translations[lang] = ContextWord(lang, **word)
 
         self.set_default_lang(lang=default_lang, query=default_lang_query)
@@ -177,7 +172,7 @@ class TranslatedWord:
         """Check validity of languages and words."""
 
         if not translations:
-            raise ValueError('must pass the word in at least one language')
+            raise ValueError("must pass the word in at least one language")
 
         for lang, word in translations.items():
 
@@ -189,12 +184,12 @@ class TranslatedWord:
                 # Wrong word type
                 raise ValueError(
                     f"word must be of type str or dict, not "
-                    f"{type(word).__name__}: {word}")
+                    f"{type(word).__name__}: {word}"
+                )
 
             if not word:
                 # Undefined word
-                raise ValueError(
-                    f"empty word passed in language '{lang}': {word}")
+                raise ValueError(f"empty word passed in language '{lang}': {word}")
 
     def _collect_contexts(self, translations):
         ctxs = []
@@ -207,30 +202,28 @@ class TranslatedWord:
                 ctxs += [ctx for ctx in word.keys() if ctx not in ctxs]
         return ctxs
 
-    #------------------------------------------------------------------
-
     def set_default_lang(self, lang=None, query=None):
         """Set the default language, either hard-coded or queriable.
 
         Args:
-            lang (str, None): Default language. Overridden by ``query``
-                if the latter is not None. Defaults to the first key in
+            lang (str, None): Default language. Overridden by ``query`` if the
+                latter is not None. Defaults to the first key in
                 ``TranslatedWord.langs``.
 
-            query (callable, None): Function to query the default
-                language. Overrides ``default``. Defaults to None.
+            query (callable, None): Function to query the default language.
+                Overrides ``default``. Defaults to None.
 
         """
         if lang is None:
             lang = next(iter(self.langs))
         elif lang not in self.langs:
             raise ValueError(
-                f"invalid default language: {lang} (not among {self.langs})")
+                f"invalid default language: {lang} (not among {self.langs})"
+            )
         self._default_lang = lang
 
         if query is not None and not callable(query):
-            raise ValueError(
-                f"query of type {type(query).__name__} not callable")
+            raise ValueError(f"query of type {type(query).__name__} not callable")
         self._default_lang_query = query
 
     @property
@@ -252,8 +245,9 @@ class TranslatedWord:
             return self._translations[lang]
         except KeyError:
             raise ValueError(
-                f"word '{self.name}' not defined in language '{lang}', "
-                f"only in {self.langs}")
+                f"word '{self.name}' not defined in language '{lang}', only in "
+                f"{self.langs}"
+            )
 
     def ctx(self, *args, **kwargs):
         return self.get_in(self.default_lang).ctx(*args, **kwargs)
@@ -263,19 +257,17 @@ class TranslatedWord:
         """List of languages the word is defined in."""
         return list(self._translations.keys())
 
-    #------------------------------------------------------------------
-
     def __str__(self):
         w = self.get().get()
-        assert isinstance(w, Word)  #SR_TMP
+        assert isinstance(w, Word)  # SR_TMP
         return w.s
 
     def __repr__(self):
-        s_langs = ', '.join(
-            [f"{l}={repr(v)}" for l, v in self._translations.items()])
+        s_langs = ", ".join([f"{l}={repr(v)}" for l, v in self._translations.items()])
         return (
             f"{type(self).__name__}({self.name}, {s_langs}, "
-            f"default_lang='{self.default_lang}')")
+            f"default_lang='{self.default_lang}')"
+        )
 
     def __eq__(self, other):
         return str(self) == str(other)
@@ -296,21 +288,21 @@ class ContextWord:
         """Create an instance of ``ContextWord``.
 
         Args:
-            lang (str, optional): Language. Defaults to None.
-                Argument name ends with underscore to avoid conflict
-                with possible context specifier 'lang'.
+            lang (str, optional): Language. Defaults to None. Argument name
+                ends with underscore to avoid conflict with possible context
+                specifier 'lang'.
 
             default_context (str, optional): Default context specifier.
                 Defaults to the first key in ``variants``.
 
-            **variants (dict of str: str): One or more variants of a
-                word. The keys constitute context specifiers, the
-                values the respective word.
+            **variants (dict of str: str): One or more variants of a word. The
+                keys constitute context specifiers, the values the respective
+                word.
 
         """
         self.lang = lang
-        #self._default_lang = lang
-        #self._default_lang_query = None
+        # self._default_lang = lang
+        # self._default_lang_query = None
 
         self._variants = {}
         for ctx, word in variants.items():
@@ -337,13 +329,13 @@ class ContextWord:
         if name is None:
             name = self.default_context
         elif name not in self._variants:
-            name = '*'
+            name = "*"
         word = self._variants[name]
         if as_str:
-            assert isinstance(word, Word)  #SR_TMP
+            assert isinstance(word, Word)  # SR_TMP
             return word
-        return word  #SR_TMP
-        lang = self.lang or 'None'
+        return word  # SR_TMP
+        lang = self.lang or "None"
         return TranslatedWord(**{lang: word})
 
     def ctxs(self):
@@ -352,18 +344,18 @@ class ContextWord:
 
     def __str__(self):
         w = self.ctx(self.default_context, as_str=True)
-        assert isinstance(w, Word)  #SR_TMP
+        assert isinstance(w, Word)  # SR_TMP
         return w.s
 
     def __repr__(self):
-        s_variants = ', '.join(
-            [f"{k}={repr(v)}" for k, v in self._variants.items()])
+        s_variants = ", ".join([f"{k}={repr(v)}" for k, v in self._variants.items()])
         return f"{type(self).__name__}(lang='{self.lang}', {s_variants})"
 
     def __eq__(self, other):
         return str(self) == str(other)
 
-    #SR_TMP<
+    # SR_TMP <
+
     @property
     def s(self):
         return str(self)
@@ -386,4 +378,4 @@ class ContextWord:
     def t(self):
         return self.get().t
 
-    #SR_TMP>
+    # SR_TMP >
