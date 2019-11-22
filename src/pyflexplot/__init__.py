@@ -11,7 +11,7 @@ import os.path
 import cartopy
 
 dir = os.path.dirname(os.path.abspath(__file__))
-cartopy_dir = os.path.abspath(f"{dir}/../../cartopy_data")
+cartopy_dir = os.path.abspath(f"{dir}/cartopy_data")
 cartopy.config["pre_existing_data_dir"] = cartopy_dir
 
 # Set matplotlib backend

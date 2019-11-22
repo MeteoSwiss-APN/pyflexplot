@@ -165,9 +165,10 @@ class AxesMap(SummarizablePlotClass):
 
         # Determine zorder of unique plot elements, from low to high
         zorders_const = [
-            "map",
-            "grid",
+            "geo_lower",
             "fld",
+            "geo_upper",
+            "grid",
             "marker",
         ]
         d0, dz = 1, 1
@@ -223,28 +224,66 @@ class AxesMap(SummarizablePlotClass):
             self.proj_data, rlat2d, rlon2d
         ).T
 
-    def add_geography(self, scale):
+    def add_geography(self, map_scale):
         """Add geographic elements: coasts, countries, colors, ...
 
         Args:
-            scale (str): Spatial scale of elements, e.g., '10m', '50m'.
+            map_scale (str): Spatial scale of map elements, e.g., '10m', '50m'.
 
         """
 
-        self.ax.coastlines(resolution=scale)
+        #water_color = cartopy.feature.COLORS["water"]
+        water_color = "lightskyblue"
 
-        self.ax.background_patch.set_facecolor(cartopy.feature.COLORS["water"])
+        self.ax.coastlines(resolution=map_scale)
 
-        self.ax.add_feature(
-            cartopy.feature.NaturalEarthFeature(
-                category="cultural",
-                name="admin_0_countries_lakes",
-                scale=scale,
-                edgecolor="black",
-                facecolor="white",
-            ),
-            zorder=self.zorder["map"],
-        )
+        self.ax.background_patch.set_facecolor(water_color)
+
+        def add_countries_lakes(zorder_key):
+            facecolor = {"geo_lower": "white", "geo_upper": (0, 0, 0, 0)}[zorder_key]
+            linewidth = {"geo_lower": 1, "geo_upper": 1/3}[zorder_key]
+            self.ax.add_feature(
+                cartopy.feature.NaturalEarthFeature(
+                    category="cultural",
+                    name="admin_0_countries_lakes",
+                    scale=map_scale,
+                    edgecolor="black",
+                    facecolor=facecolor,
+                    linewidth=linewidth,
+                ),
+                zorder=self.zorder[zorder_key],
+            )
+
+        def add_rivers(zorder_key, minor_europe=False):
+            linewidth = {"geo_lower": 1, "geo_upper": 2/3}[zorder_key]
+            self.ax.add_feature(
+                cartopy.feature.NaturalEarthFeature(
+                    category="physical",
+                    name="rivers_lake_centerlines",
+                    scale=map_scale,
+                    edgecolor=water_color,
+                    facecolor=(0, 0, 0, 0),
+                    linewidth=linewidth,
+                ),
+                zorder=self.zorder[zorder_key],
+            )
+            if minor_europe and map_scale == '10m':
+                self.ax.add_feature(
+                    cartopy.feature.NaturalEarthFeature(
+                        category="physical",
+                        name="rivers_europe",
+                        scale=map_scale,
+                        edgecolor=water_color,
+                        facecolor=(0, 0, 0, 0),
+                        linewidth=linewidth/2,
+                    ),
+                    zorder=self.zorder[zorder_key],
+                )
+
+        add_countries_lakes("geo_lower")
+        add_rivers("geo_lower")
+        add_countries_lakes("geo_upper")
+        #add_rivers("geo_upper")
 
     def add_data_domain_outline(self):
         """Add domain outlines to map plot."""

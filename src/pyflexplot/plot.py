@@ -617,7 +617,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
         a = self.field.attrs
         info_blocks = dedent(
             f"""\
-            {l.release.site_long}:\t{a.release.site_name.format()}
+            {l.release.site}:\t{a.release.site_name.format()}
             {l.release.lat}:\t{lat_fmtd}
             {l.release.lon}:\t{lon_fmtd}
             {l.release.height}:\t{a.release.height.format()}
@@ -828,7 +828,7 @@ class DispersionPlot_1(DispersionPlot_0):
         if not "bc" in skip_pos:
             # Bottom center: release site
             s = (
-                f"{self.labels.words['release_site'].t}: "
+                f"{self.labels.words['site'].t}: "
                 f"{self.field.attrs.release.site_name.value}"
             )
             box.text("bc", s, size="large")
