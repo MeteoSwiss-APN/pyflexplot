@@ -143,7 +143,8 @@ class Plot(SummarizablePlotClass, ParentClass):
         return data
 
 
-class DispersionPlot(Plot):
+# SR_TMP class DispersionPlot(Plot):
+class DispersionPlot_0(Plot):  # SR_TMP
     """Base class for FLEXPART dispersion plots."""
 
     name = "__base__dispersion__"
@@ -239,11 +240,7 @@ class DispersionPlot(Plot):
         self.draw_map_plot()
 
         # Add text boxes around plot
-        self.fig_add_text_boxes()
-        self.fill_box_top()
-        self.fill_box_right_top()
-        self.fill_box_right_bottom()
-        self.fill_box_bottom()
+        self.add_text_boxes()
         self.draw_boxes()
 
     def summarize(self, *args, **kwargs):
@@ -296,9 +293,12 @@ class DispersionPlot(Plot):
             )
             return (h_col, h_con)
 
-    # Text Boxes
+    def draw_boxes(self):
+        for fill_box, box in self.boxes.items():
+            fill_box(box)
+            box.draw()
 
-    def fig_add_text_boxes(self):
+    def add_text_boxes(self):
         """Add empty text boxes to the figure around the map plot.
 
         Args:
@@ -352,9 +352,8 @@ class DispersionPlot(Plot):
         pad_ver = pad_hor * fig_aspect
 
         # Add axes for text boxes (one on top, two to the right)
-        self.boxes = [
-            # Top
-            TextBoxAxes(
+        self.boxes = {
+            self.fill_box_top: TextBoxAxes(
                 name="top",
                 fig=self.fig,
                 ax_ref=self.ax_map.ax,
@@ -365,8 +364,7 @@ class DispersionPlot(Plot):
                     h_box_t,
                 ],
             ),
-            # Right/top
-            TextBoxAxes(
+            self.fill_box_right_top: TextBoxAxes(
                 name="right/top",
                 fig=self.fig,
                 ax_ref=self.ax_map.ax,
@@ -377,8 +375,7 @@ class DispersionPlot(Plot):
                     h_rel_box_rt * h_map - 0.5 * pad_ver,
                 ],
             ),
-            # Right/bottom
-            TextBoxAxes(
+            self.fill_box_right_bottom: TextBoxAxes(
                 name="right/bottom",
                 fig=self.fig,
                 ax_ref=self.ax_map.ax,
@@ -389,32 +386,26 @@ class DispersionPlot(Plot):
                     (1.0 - h_rel_box_rt) * h_map - 0.5 * pad_ver,
                 ],
             ),
-            # Bottom
-            TextBoxAxes(
+            self.fill_box_bottom: TextBoxAxes(
                 name="bottom",
                 fig=self.fig,
                 ax_ref=self.ax_map.ax,
                 rect=[x0_map, y0_map - h_box_b, w_map + pad_hor + w_box, h_box_b,],
                 show_border=False,
             ),
-        ]
+        }
 
-    def draw_boxes(self):
-        for box in self.boxes:
-            box.draw()
-
-    # Top
-
-    def fill_box_top(self, *, skip_pos=None):
+    def fill_box_top(self, box, *, skip_pos=None):
         """Fill the box above the map plot.
 
         Args:
+            box (TextBoxAxes): The box to fill.
+
             skip_pos (set, optional): Positions (e.g., 'tl' for top-left; see
                 ``pyflexplot.plot.BoxLocation`` for all options) to be skipped.
                 Defaults to ``{}``.
 
         """
-        box = self.boxes[0]
 
         if skip_pos is None:
             skip_pos = {}
@@ -447,8 +438,11 @@ class DispersionPlot(Plot):
 
         if not "tc" in skip_pos:
             # Top center: species
-            s = f"{self.field.attrs.species.name.format(join=' + ')}"
-            box.text("tc", s, dx=dx_center, size="x-large")
+            s = (
+                f"{self.labels.words['substance'].t}: "
+                f"{self.field.attrs.species.name.format(join=' + ')}"
+            )
+            box.text("tc", s, dx=dx_center, size="large")
 
         if not "bc" in skip_pos:
             # Bottom center: release site
@@ -462,7 +456,7 @@ class DispersionPlot(Plot):
             # Top right: datetime
             timestep_fmtd = self.field.attrs.simulation.now.format()
             s = f"{timestep_fmtd}"
-            box.text("tr", s, size="x-large")
+            box.text("tr", s, size="large")
 
         if not "br" in skip_pos:
             # Bottom right: time into simulation
@@ -472,11 +466,8 @@ class DispersionPlot(Plot):
 
         return box
 
-    # Right/Top
-
-    def fill_box_right_top(self, dy_line=3.0, dy0_markers=0.25, w_box=4, h_box=2):
+    def fill_box_right_top(self, box,  dy_line=3.0, dy0_markers=0.25, w_box=4, h_box=2):
         """Fill the top box to the right of the map plot."""
-        box = self.boxes[1]
 
         # font_size = 'small'
         font_size = "medium"
@@ -596,11 +587,8 @@ class DispersionPlot(Plot):
         s += f" ({self.field.attrs.variable.unit.format()})"
         return s
 
-    # Right/Bottom
-
-    def fill_box_right_bottom(self):
+    def fill_box_right_bottom(self, box):
         """Fill the bottom box to the right of the map plot."""
-        box = self.boxes[2]
 
         # Add box title
         s = self.labels.words["release"].t
@@ -629,7 +617,7 @@ class DispersionPlot(Plot):
         a = self.field.attrs
         info_blocks = dedent(
             f"""\
-            {l.release.site}:\t{a.release.site_name.format()}
+            {l.release.site_long}:\t{a.release.site_name.format()}
             {l.release.lat}:\t{lat_fmtd}
             {l.release.lon}:\t{lon_fmtd}
             {l.release.height}:\t{a.release.height.format()}
@@ -655,11 +643,8 @@ class DispersionPlot(Plot):
             "b", dy0=dy0, dy_line=dy, blocks=info_blocks, reverse=True, size="small"
         )
 
-    # Bottom
-
-    def fill_box_bottom(self):
+    def fill_box_bottom(self, box):
         """Fill the box to the bottom of the map plot."""
-        box = self.boxes[3]
 
         # FLEXPART/model info
         s = self._flexpart_model_info()
@@ -699,6 +684,159 @@ class DispersionPlot(Plot):
     @property
     def levels_log10(self):
         return np.log10(self.levels)
+
+
+# SR_TMP <
+class DispersionPlot_1(DispersionPlot_0):
+    def add_text_boxes(self):
+        h_rel_t = self.text_box_setup["h_rel_t"]
+        h_rel_b = self.text_box_setup["h_rel_b"]
+        w_rel_r = self.text_box_setup["w_rel_r"]
+        pad_hor_rel = self.text_box_setup["pad_hor_rel"]
+        h_rel_box_rt = self.text_box_setup["h_rel_box_rt"]
+
+        # Freeze the map plot in order to fix it's coordinates (bbox)
+        self.fig.canvas.draw()
+
+        # Obtain aspect ratio of figure
+        fig_pxs = self.fig.get_window_extent()
+        fig_aspect = fig_pxs.width / fig_pxs.height
+
+        # Get map dimensions in figure coordinates
+        w_map, h_map = ax_dims_fig_coords(self.fig, self.ax_map.ax)
+
+        # Relocate the map close to the lower left corner
+        x0_map, y0_map = 0.05, 0.05
+        self.ax_map.ax.set_position([x0_map, y0_map, w_map, h_map])
+
+        # Determine height of top box and width of right boxes
+        w_box = w_rel_r * w_map
+        h_box_t = h_rel_t * h_map
+        h_box_b = h_rel_b * h_map
+
+        # Determine padding between plot and boxes
+        pad_hor = pad_hor_rel * w_map
+        pad_ver = pad_hor * fig_aspect
+
+        # Add axes for text boxes (one on top, two to the right)
+        self.boxes = {
+            self.fill_box_top_left: TextBoxAxes(
+                name="top/left",
+                fig=self.fig,
+                ax_ref=self.ax_map.ax,
+                rect=[x0_map, y0_map + pad_ver + h_map, w_map, h_box_t,],
+            ),
+            self.fill_box_top_right: TextBoxAxes(
+                name="top/right",
+                fig=self.fig,
+                ax_ref=self.ax_map.ax,
+                rect=[
+                    x0_map + w_map + pad_hor,
+                    y0_map + pad_ver + h_map,
+                    w_box,
+                    h_box_t,
+                ],
+            ),
+            self.fill_box_right_top: TextBoxAxes(
+                name="right/top",
+                fig=self.fig,
+                ax_ref=self.ax_map.ax,
+                rect=[
+                    x0_map + pad_hor + w_map,
+                    y0_map + 0.5 * pad_ver + (1.0 - h_rel_box_rt) * h_map,
+                    w_box,
+                    h_rel_box_rt * h_map - 0.5 * pad_ver,
+                ],
+            ),
+            self.fill_box_right_bottom: TextBoxAxes(
+                name="right/bottom",
+                fig=self.fig,
+                ax_ref=self.ax_map.ax,
+                rect=[
+                    x0_map + pad_hor + w_map,
+                    y0_map,
+                    w_box,
+                    (1.0 - h_rel_box_rt) * h_map - 0.5 * pad_ver,
+                ],
+            ),
+            self.fill_box_bottom: TextBoxAxes(
+                name="bottom",
+                fig=self.fig,
+                ax_ref=self.ax_map.ax,
+                rect=[x0_map, y0_map - h_box_b, w_map + pad_hor + w_box, h_box_b,],
+                show_border=False,
+            ),
+        }
+
+    def fill_box_top_left(self, box, *, skip_pos=None):
+        """Fill the box above the map plot."""
+
+        if skip_pos is None:
+            skip_pos = {}
+
+        if not "tl" in skip_pos:
+            # Top left: variable
+            s = self.field.attrs.variable.long_name.value
+            _lvl = self.field.attrs.variable.fmt_level_range()
+            if _lvl:
+                s += f" {self.labels.words['at', None, 'level']} {_lvl}"
+            box.text("tl", s, size="x-large")
+
+        if not "bl" in skip_pos:
+            # Bottom left: integration time & level range
+            itype = self.field.attrs.simulation.integr_type.value
+            s = {
+                "sum": self.labels.words["summed_up_over"].t,
+                "mean": self.labels.words["averaged_over"].t,
+                "accum": self.labels.words["accumulated_over"].t,
+            }[itype]
+            since = self.labels.words["since"].t
+            sim = self.field.attrs.simulation
+            start = sim.integr_start.format(relative=True)
+            s += f" {sim.fmt_integr_period()} ({since} {start})"
+            if self.scale_field is not None:
+                s += f" ({self.scale_field}x)"
+            box.text("bl", s, size="large")
+
+        if not "tr" in skip_pos:
+            # Top right: datetime
+            timestep_fmtd = self.field.attrs.simulation.now.format()
+            s = f"{timestep_fmtd}"
+            box.text("tr", s, size="large")
+
+        if not "br" in skip_pos:
+            # Bottom right: time into simulation
+            _now_rel = self.field.attrs.simulation.now.format(relative=True)
+            s = f"{_now_rel}"
+            box.text("br", s, size="large")
+
+        return box
+
+    def fill_box_top_right(self, box, *, skip_pos=None):
+        """Fill the box to the top-right of the map plot."""
+
+        if skip_pos is None:
+            skip_pos = []
+
+        if not "tc" in skip_pos:
+            # Top center: species
+            s = (
+                f"{self.field.attrs.species.name.format(join=' + ')}"
+            )
+            box.text("tc", s, size="large")
+
+        if not "bc" in skip_pos:
+            # Bottom center: release site
+            s = (
+                f"{self.labels.words['release_site'].t}: "
+                f"{self.field.attrs.release.site_name.value}"
+            )
+            box.text("bc", s, size="large")
+
+        return box
+
+DispersionPlot = DispersionPlot_1
+# SR_TMP >
 
 
 def colors_flexplot(n_levels, extend):
@@ -801,7 +939,7 @@ class Plot_Ens(Plot):
         "h_rel_box_rt": 0.46,
     }
 
-    def fill_box_top(self, *, skip_pos=None):
+    def fill_box_top(self, box, *, skip_pos=None):
 
         skip_pos_parent = {"tl"}
         if skip_pos is None:
@@ -809,7 +947,7 @@ class Plot_Ens(Plot):
         else:
             skip_pos_parent.update(set(skip_pos))
 
-        box = super().fill_box_top(skip_pos=skip_pos_parent)
+        box = super().fill_box_top(box, skip_pos=skip_pos_parent)
 
         # SR_TMP < TODO separate input and ensemble variables
         if not "tl" in skip_pos:
@@ -817,6 +955,8 @@ class Plot_Ens(Plot):
             s = f"{self.field.attrs.variable.long_name.value}"
             box.text("tl", s, size="x-large")
         # SR_TMP >
+
+        return box
 
     def _flexpart_model_info(self):
         model = self.field.attrs.simulation.model_name.value

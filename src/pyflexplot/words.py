@@ -26,7 +26,10 @@ words.add(
 )
 words.add(
     en={"*": "activity concentration", "abbr": "activity concentr."},
-    de={"*": f'Aktivit{s["ae"]}tskonzentration', "abbr": 'Aktivit{s["ae"]}tskonzentr.'},
+    de={
+        "*": f'Aktivit{s["ae"]}tskonzentration',
+        "abbr": f'Aktivit{s["ae"]}tskonzentr.',
+    },
 )
 words.add(en="affected area", de="Beaufschlagtes Gebiet")
 words.add(en="at", de={"level": "auf", "place": "bei", "time": "um"})
@@ -89,7 +92,10 @@ words.add(en="site", de="Ort")
 words.add(en="start", de="Start")
 words.add(en="substance", de="Substanz")
 words.add(en="summed up over", de=f'aufsummiert {s["ue"]}ber')
-words.add(en="surface deposition", de="Bodendeposition")
+words.add(
+    en={"*": "surface deposition", "abbr": "surface dep."},
+    de={"*": "Bodendeposition", "abbr": "Bodendep."},
+)
 # T
 words.add(
     en="threshold agreement", de=f'Grenzwert{s["ue"]}bereinstimmung',

@@ -258,9 +258,7 @@ class VarSpecs_Concentration(VarSpecs):
                 f"{words['integrated', lang, 'abbr'].t} "
                 f"{words['concentration', lang, 'abbr'].t}"
             )
-        return (
-            f"{words['integrated', lang, 'f'].t} " f"{words['concentration', lang].t}"
-        )
+        return words["concentration", lang].t
 
     def var_name(self):
         """Derive variable name from specifications."""
@@ -291,18 +289,16 @@ class VarSpecs_Deposition(VarSpecs):
     }
 
     @classmethod
-    def deposition_type_long_name(cls, lang, var_specs):
-        choices = {
-            "wet": words["wet", lang].t,
-            "dry": words["dry", lang].t,
-            "tot": words["total", lang].t,
-        }
-        return choices[dict(var_specs)["deposition"]]
+    def deposition_type(cls, lang, var_specs):
+        type_ = dict(var_specs)["deposition"]
+        word = "total" if type_ == "tot" else type_
+        return words[word, lang, "f"].t
 
     @classmethod
-    def long_name(cls, lang, var_specs):
-        dep_type = cls.deposition_type_long_name(lang, var_specs)
-        return f"[{dep_type}] " f"{words['surface_deposition', lang].t}"
+    def long_name(cls, lang, var_specs, abbr=False):
+        dep_type = cls.deposition_type(lang, var_specs)
+        ctx = "abbr" if abbr else "*"
+        return f"{dep_type} " f"{words['surface_deposition', lang, ctx].t}"
 
     @classmethod
     def short_name(cls, lang, var_specs):
@@ -319,7 +315,7 @@ class VarSpecs_AffectedArea(VarSpecs_Deposition):
 
     @classmethod
     def long_name(cls, lang, var_specs):
-        dep_name = VarSpecs_Deposition.long_name(lang, var_specs)
+        dep_name = VarSpecs_Deposition.long_name(lang, var_specs, abbr=True)
         return f"{words['affected_area', lang].t} " f"({dep_name})"
 
 
@@ -343,7 +339,7 @@ class VarSpecs_EnsMean_Deposition(VarSpecs_Deposition):
 
     @classmethod
     def long_name(cls, lang, var_specs):
-        dep_type = cls.deposition_type_long_name(lang, var_specs)
+        dep_type = cls.deposition_type(lang, var_specs)
         return (
             f"{words['ensemble_mean', lang].t} {dep_type} "
             f"{words['surface_deposition'].t}"
@@ -355,7 +351,7 @@ class VarSpecs_EnsMean_AffectedArea(VarSpecs_AffectedArea):
 
     @classmethod
     def long_name(cls, lang, var_specs):
-        dep_type = cls.deposition_type_long_name(lang, var_specs)
+        dep_type = cls.deposition_type(lang, var_specs)
         return (
             f"{words['ensemble_mean', lang].t} {words['affected_area', lang].t} "
             f"({dep_type})"
