@@ -14,7 +14,7 @@ from types import SimpleNamespace
 from srutils.geo import Degrees
 
 from .plot_utils import AxesMap
-from .plot_utils import ax_dims_fig_coords
+from .plot_utils import ax_w_h_in_fig_coords
 from .plot_utils import SummarizablePlotClass
 from .plot_utils import TextBoxAxes
 from .utils import fmt_float
@@ -336,7 +336,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
         fig_aspect = fig_pxs.width / fig_pxs.height
 
         # Get map dimensions in figure coordinates
-        w_map, h_map = ax_dims_fig_coords(self.fig, self.ax_map.ax)
+        w_map, h_map = ax_w_h_in_fig_coords(self.fig, self.ax_map.ax)
 
         # Relocate the map close to the lower left corner
         x0_map, y0_map = 0.05, 0.05
@@ -466,7 +466,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
 
         return box
 
-    def fill_box_right_top(self, box,  dy_line=3.0, dy0_markers=0.25, w_box=4, h_box=2):
+    def fill_box_right_top(self, box, dy_line=3.0, dy0_markers=0.25, w_box=4, h_box=2):
         """Fill the top box to the right of the map plot."""
 
         # font_size = 'small'
@@ -703,7 +703,7 @@ class DispersionPlot_1(DispersionPlot_0):
         fig_aspect = fig_pxs.width / fig_pxs.height
 
         # Get map dimensions in figure coordinates
-        w_map, h_map = ax_dims_fig_coords(self.fig, self.ax_map.ax)
+        w_map, h_map = ax_w_h_in_fig_coords(self.fig, self.ax_map.ax)
 
         # Relocate the map close to the lower left corner
         x0_map, y0_map = 0.05, 0.05
@@ -820,9 +820,7 @@ class DispersionPlot_1(DispersionPlot_0):
 
         if not "tc" in skip_pos:
             # Top center: species
-            s = (
-                f"{self.field.attrs.species.name.format(join=' + ')}"
-            )
+            s = f"{self.field.attrs.species.name.format(join=' + ')}"
             box.text("tc", s, size="large")
 
         if not "bc" in skip_pos:
@@ -831,9 +829,11 @@ class DispersionPlot_1(DispersionPlot_0):
                 f"{self.labels.words['site'].t}: "
                 f"{self.field.attrs.release.site_name.value}"
             )
-            box.text("bc", s, size="large")
+            s, size = box.fit_text(s, "large", n_shrink_max=1)
+            box.text("bc", s, size=size)
 
         return box
+
 
 DispersionPlot = DispersionPlot_1
 # SR_TMP >

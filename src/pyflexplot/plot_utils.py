@@ -232,7 +232,7 @@ class AxesMap(SummarizablePlotClass):
 
         """
 
-        #water_color = cartopy.feature.COLORS["water"]
+        # water_color = cartopy.feature.COLORS["water"]
         water_color = "lightskyblue"
 
         self.ax.coastlines(resolution=map_scale)
@@ -241,7 +241,7 @@ class AxesMap(SummarizablePlotClass):
 
         def add_countries_lakes(zorder_key):
             facecolor = {"geo_lower": "white", "geo_upper": (0, 0, 0, 0)}[zorder_key]
-            linewidth = {"geo_lower": 1, "geo_upper": 1/3}[zorder_key]
+            linewidth = {"geo_lower": 1, "geo_upper": 1 / 3}[zorder_key]
             self.ax.add_feature(
                 cartopy.feature.NaturalEarthFeature(
                     category="cultural",
@@ -255,7 +255,7 @@ class AxesMap(SummarizablePlotClass):
             )
 
         def add_rivers(zorder_key, minor_europe=False):
-            linewidth = {"geo_lower": 1, "geo_upper": 2/3}[zorder_key]
+            linewidth = {"geo_lower": 1, "geo_upper": 2 / 3}[zorder_key]
             self.ax.add_feature(
                 cartopy.feature.NaturalEarthFeature(
                     category="physical",
@@ -267,7 +267,7 @@ class AxesMap(SummarizablePlotClass):
                 ),
                 zorder=self.zorder[zorder_key],
             )
-            if minor_europe and map_scale == '10m':
+            if minor_europe and map_scale == "10m":
                 self.ax.add_feature(
                     cartopy.feature.NaturalEarthFeature(
                         category="physical",
@@ -275,7 +275,7 @@ class AxesMap(SummarizablePlotClass):
                         scale=map_scale,
                         edgecolor=water_color,
                         facecolor=(0, 0, 0, 0),
-                        linewidth=linewidth/2,
+                        linewidth=linewidth / 2,
                     ),
                     zorder=self.zorder[zorder_key],
                 )
@@ -283,7 +283,7 @@ class AxesMap(SummarizablePlotClass):
         add_countries_lakes("geo_lower")
         add_rivers("geo_lower")
         add_countries_lakes("geo_upper")
-        #add_rivers("geo_upper")
+        # add_rivers("geo_upper")
 
     def add_data_domain_outline(self):
         """Add domain outlines to map plot."""
@@ -855,8 +855,8 @@ class TextBoxAxes(SummarizablePlotClass):
                 plot that corresponds to one unit distance. Defaults to 0.01.
 
         """
-        w_map_fig, _ = ax_dims_fig_coords(self.fig, self.ax_ref)
-        w_box_fig, h_box_fig = ax_dims_fig_coords(self.fig, self.ax)
+        w_map_fig, _ = ax_w_h_in_fig_coords(self.fig, self.ax_ref)
+        w_box_fig, h_box_fig = ax_w_h_in_fig_coords(self.fig, self.ax)
 
         self.dx0 = unit_w_map_rel * w_map_fig / w_box_fig
         self.dy0 = unit_w_map_rel * w_map_fig / h_box_fig
@@ -895,11 +895,11 @@ class TextBoxAxes(SummarizablePlotClass):
 
             s (str): Text string.
 
-            dx (float, optional): Horizontal offset in number of unit
-                distances. Can be negative. Defaults to None.
+            dx (float, optional): Horizontal offset in unit distances. May be
+                negative. Defaults to None.
 
-            dy (float, optional): Vertical offset in number of unit distances.
-                Can be negative. Defaults to None.
+            dy (float, optional): Vertical offset in unit distances. May be
+                negative. Defaults to None.
 
             **kwargs: Formatting options passed to ax.text().
 
@@ -949,8 +949,8 @@ class TextBoxAxes(SummarizablePlotClass):
             blocks (list[list[str]]): List of text blocks, each of which
                 constitutes a list of lines.
 
-            dy0 (float, optional): Initial vertical offset in number of unit
-                distances. Can be negative. Defaults to ``dy_line``.
+            dy0 (float, optional): Initial vertical offset in unit distances.
+                May be negative. Defaults to ``dy_line``.
 
             dy_line (float, optional): Incremental vertical offset between
                 lines. Can be negative. Defaults to 2.5.
@@ -958,8 +958,8 @@ class TextBoxAxes(SummarizablePlotClass):
             dy_block (float, optional): Incremental vertical offset between
                 blocks of lines. Can be negative. Defaults to ``dy_line``.
 
-            dx (float, optional): Horizontal offset in number of unit
-                distances. Can be negative. Defaults to 0.0.
+            dx (float, optional): Horizontal offset in unit distances. May be
+                negative. Defaults to 0.0.
 
             reverse (bool, optional): If True, revert the block and line order.
                 Defaults to False. Note that if line-specific colors are
@@ -1134,7 +1134,7 @@ class TextBoxAxes(SummarizablePlotClass):
         self._baseline_kwargs = self._baseline_kwargs_default
         self._baseline_kwargs.update(kwargs)
 
-    def color_rect(self, loc, fc, ec=None, dx=None, dy=None, w=3, h=2, **kwargs):
+    def color_rect(self, loc, fc, ec=None, dx=None, dy=None, w=3.0, h=2.0, **kwargs):
         """Add a colored rectangle.
 
         Args:
@@ -1145,17 +1145,15 @@ class TextBoxAxes(SummarizablePlotClass):
 
             ec (<color>, optional): Edge color. Defaults to face color.
 
-            dx (float, optional): Horizontal offset in number of unit
-                distances. Can be negative. Defaults to None.
+            dx (float, optional): Horizontal offset in unit distances. May be
+                negative. Defaults to None.
 
-            dy (float, optional): Vertical offset in number of unit distances.
-                Can be negative. Defaults to None.
+            dy (float, optional): Vertical offset in unit distances. May be
+                negative. Defaults to None.
 
-            w (float, optional): Width in number of unit distances. Defaults
-                to <TODO>.
+            w (float, optional): Width in unit distances. Defaults to 3.0.
 
-            h (float, optional): Height in number of unit distances. Defaults
-                to <TODO>.
+            h (float, optional): Height in unit distances. Defaults to 2.0.
 
             **kwargs: Keyword arguments passed to
                 ``matplotlib.patches.Rectangle``.
@@ -1180,11 +1178,11 @@ class TextBoxAxes(SummarizablePlotClass):
             marker (str or int) Marker style passed to ``mpl.plot``. See
                 ``matplotlib.markers`` for more information.
 
-            dx (float, optional): Horizontal offset in number of unit
-                distances. Can be negative. Defaults to None.
+            dx (float, optional): Horizontal offset in unit distances. May be
+                negative. Defaults to None.
 
-            dy (float, optional): Vertical offset in number of unit distances.
-                Can be negative. Defaults to None.
+            dy (float, optional): Vertical offset in unit distances. May be
+                negative. Defaults to None.
 
             **kwargs: Keyword arguments passed to ``mpl.plot``.
 
@@ -1194,9 +1192,106 @@ class TextBoxAxes(SummarizablePlotClass):
         if self._show_baselines:
             self.elements.append(TextBoxElement_HLine(self, loc))
 
+    def fit_text(self, s, size, n_shrink_max=None, pad_rel=None, dots=".."):
+        """Fit a text string into the box by shrinking and/or truncation.
+
+        Args:
+            s (str): Text string to fit into the box.
+
+            size (str): Initial font size (e.g., "medium", "x-large").
+
+            n_shrink_max (int, optional): Maximum number of times the font size
+                can be reduced before the string is truncated. If it is None or
+                negative, the font size is reduced all the way to "xx-small"
+                if necessary. Defaults to None.
+
+            pad_rel (float, optional): Total horizontal padding as a fraction
+                of the box width. Defaults to twice the default horizontal
+                offset ``2 * self.dx0``.
+
+            dots (str, optional): String replacing the end of the retained part
+                of ``s`` in case it must be truncated. Defaults to "..".
+
+        """
+        sizes = [
+            "xx-small",
+            "x-small",
+            "small",
+            "medium",
+            "large",
+            "x-large",
+            "xx-large",
+        ]
+        if size not in sizes:
+            raise ValueError(f"unknown font size '{size}'; must be one of {sizes}")
+
+        if n_shrink_max is not None:
+            try:
+                n_shrink_max = int(n_shrink_max)
+            except ValueError:
+                raise ValueError(
+                    f"n_shrink_max of type {type(n_shink_max).__name__} not "
+                    f"int-compatible: {n_shrink_max}")
+            if n_shrink_max < 0:
+                n_shrink_max = None
+
+        if pad_rel is None:
+            pad_rel = 2 * self.dx0
+
+        w_rel_max = 1.0 - pad_rel
+
+        def w_rel(s, size):
+            """Returns the width of a string as a fraction of the box width."""
+
+            # Determine width of text in display coordinates
+            # src: https://stackoverflow.com/a/36959454
+            renderer = self.fig.canvas.get_renderer()
+            txt = self.ax.text(0, 0, s, size=size)
+            w_disp = txt.get_window_extent(renderer=renderer).width
+
+            # Remove the text again from the axes
+            self.ax.texts.pop()
+
+            return w_disp / self.ax.bbox.width
+
+        class MinFontSizeReachedError(Exception):
+            """Font size cannot be reduced further."""
+            pass
+
+        def shrink(size, _n=[0]):
+            """Shrink the relative font size by one increment."""
+            i = sizes.index(size)
+            if i == 0 or (n_shrink_max is not None and _n[0] >= n_shrink_max):
+                raise MinFontSizeReachedError(size)
+            size = sizes[i - 1]
+            _n[0] += 1
+            return size
+
+        class MinStrLenReachedError(Exception):
+            """String cannot be further truncated."""
+            pass
+
+        def truncate(s, _n=[0]):
+            """Truncate a string by one character, ending it with ``dots``."""
+            if len(s) <= len(dots):
+                raise MinStrLenReachedError(s)
+            _n[0] += 1
+            return s[:-(len(dots) + 1)] + dots
+
+        while len(s) >= len(dots) and w_rel(s, size) > w_rel_max:
+            try:
+                size = shrink(size)
+            except MinFontSizeReachedError:
+                try:
+                    s = truncate(s)
+                except MinStrLenReachedError:
+                    break
+
+        return s, size
+
 
 class BoxLocation(SummarizablePlotClass):
-    """Represents reference location inside a box on a 3x3 grid."""
+    """A reference location (like bottom-left) inside a box on a 3x3 grid."""
 
     summarizable_attrs = [
         "loc",
@@ -1234,19 +1329,21 @@ class BoxLocation(SummarizablePlotClass):
                     21      tc      top center
                     22      tr      top right
 
-            dx0 (float): Horizontal baseline offset.
+            dx0 (float): Horizontal unit distance.
 
-            dy0 (float): Vertical baseline offset.
+            dy0 (float): Vertical unit distance.
 
-            dx (float, optional): Horizontal offset. Defaults to 0.0.
+            dx (float, optional): Horizontal offset in unit distances. Defaults
+                to 0.0.
 
-            dx (float, optional): Vertical offset. Defaults to 0.0.
+            dx (float, optional): Vertical offset in unit distances. Defaults
+                to 0.0.
 
         """
         self.dx0 = dx0
         self.dy0 = dy0
-        self.dx = 0.0 if dx is None else dx
-        self.dy = 0.0 if dy is None else dy
+        self.dx = dx or 0.0
+        self.dy = dy or 0.0
 
         self._determine_loc_components(loc)
 
@@ -1359,7 +1456,7 @@ def pad_bbox(lon0, lon1, lat0, lat1, pad_rel):
     return bbox
 
 
-def ax_dims_fig_coords(fig, ax):
+def ax_w_h_in_fig_coords(fig, ax):
     """Get the dimensions of an axes in figure coords."""
     trans = fig.transFigure.inverted()
     x, y, w, h = ax.bbox.transformed(trans).bounds
