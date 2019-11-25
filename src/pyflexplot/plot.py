@@ -686,7 +686,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
         return np.log10(self.levels)
 
 
-# SR_TMP <
+# SR_TMP < TODO merge back into DispersionPlot[_0] once new layout accepted
 class DispersionPlot_1(DispersionPlot_0):
     def add_text_boxes(self):
         h_rel_t = self.text_box_setup["h_rel_t"]
@@ -829,6 +829,7 @@ class DispersionPlot_1(DispersionPlot_0):
                 f"{self.labels.words['site'].t}: "
                 f"{self.field.attrs.release.site_name.value}"
             )
+            # Shrink/truncate very long release site names to fit into the box
             s, size = box.fit_text(s, "large", n_shrink_max=1)
             box.text("bc", s, size=size)
 

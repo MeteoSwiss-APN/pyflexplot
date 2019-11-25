@@ -140,6 +140,9 @@ class AxesMap(SummarizablePlotClass):
 
     summarizable_attrs = []  # SR_TMP
 
+    # water_color = cartopy.feature.COLORS["water"]
+    water_color = "lightskyblue"
+
     def __init__(self, fig, rlat, rlon, pollat, pollon, **conf):
         """Initialize instance of AxesMap.
 
@@ -165,6 +168,7 @@ class AxesMap(SummarizablePlotClass):
 
         # Determine zorder of unique plot elements, from low to high
         zorders_const = [
+            "lowest",
             "geo_lower",
             "fld",
             "geo_upper",
@@ -193,7 +197,7 @@ class AxesMap(SummarizablePlotClass):
         gl.ylocator = mpl.ticker.FixedLocator(np.arange(40, 52.1, 2))
 
         # Add geographical elements (coasts etc.)
-        self.add_geography(self.conf.geogr_res)
+        self.add_geography()
 
         # Show data domain outline
         self.add_data_domain_outline()
@@ -224,76 +228,124 @@ class AxesMap(SummarizablePlotClass):
             self.proj_data, rlat2d, rlon2d
         ).T
 
-    def add_geography(self, map_scale):
+    def add_data_domain_outline(self):
+        """Add domain outlines to map plot."""
+        rlon0, rlon1 = self.rlon[[0, -1]]
+        rlat0, rlat1 = self.rlat[[0, -1]]
+        xs = [rlon0, rlon1, rlon1, rlon0, rlon0]
+        ys = [rlat0, rlat0, rlat1, rlat1, rlat0]
+        self.ax.plot(xs, ys, transform=self.proj_data, c="black", lw=1)
+
+    def add_geography(self):
         """Add geographic elements: coasts, countries, colors, ...
 
         Args:
             map_scale (str): Spatial scale of map elements, e.g., '10m', '50m'.
 
         """
+        self.ax.coastlines(resolution=self.conf.geogr_res)
+        self.ax.background_patch.set_facecolor(self.water_color)
+        self.add_countries_lakes("lowest")
+        self.add_rivers("lowest")
+        self.add_countries_lakes("geo_upper")
+        # self.add_rivers("geo_upper")
+        self.add_cities()
 
-        # water_color = cartopy.feature.COLORS["water"]
-        water_color = "lightskyblue"
+    def add_countries_lakes(self, zorder_key):
+        facecolor = "white" if zorder_key == "lowest" else "none"
+        linewidth = 1 if zorder_key == "lowest" else 1 / 3
+        self.ax.add_feature(
+            cartopy.feature.NaturalEarthFeature(
+                category="cultural",
+                name="admin_0_countries_lakes",
+                scale=self.conf.geogr_res,
+                edgecolor="black",
+                facecolor=facecolor,
+                linewidth=linewidth,
+            ),
+            zorder=self.zorder[zorder_key],
+        )
 
-        self.ax.coastlines(resolution=map_scale)
-
-        self.ax.background_patch.set_facecolor(water_color)
-
-        def add_countries_lakes(zorder_key):
-            facecolor = {"geo_lower": "white", "geo_upper": (0, 0, 0, 0)}[zorder_key]
-            linewidth = {"geo_lower": 1, "geo_upper": 1 / 3}[zorder_key]
-            self.ax.add_feature(
-                cartopy.feature.NaturalEarthFeature(
-                    category="cultural",
-                    name="admin_0_countries_lakes",
-                    scale=map_scale,
-                    edgecolor="black",
-                    facecolor=facecolor,
-                    linewidth=linewidth,
-                ),
-                zorder=self.zorder[zorder_key],
-            )
-
-        def add_rivers(zorder_key, minor_europe=False):
-            linewidth = {"geo_lower": 1, "geo_upper": 2 / 3}[zorder_key]
+    def add_rivers(self, zorder_key, minor_europe=False):
+        linewidth = {"lowest": 1, "geo_lower": 1, "geo_upper": 2 / 3}[zorder_key]
+        self.ax.add_feature(
+            cartopy.feature.NaturalEarthFeature(
+                category="physical",
+                name="rivers_lake_centerlines",
+                scale=self.conf.geogr_res,
+                edgecolor=self.water_color,
+                facecolor=(0, 0, 0, 0),
+                linewidth=linewidth,
+            ),
+            zorder=self.zorder[zorder_key],
+        )
+        if minor_europe and self.conf.geogr_res == "10m":
             self.ax.add_feature(
                 cartopy.feature.NaturalEarthFeature(
                     category="physical",
-                    name="rivers_lake_centerlines",
-                    scale=map_scale,
-                    edgecolor=water_color,
+                    name="rivers_europe",
+                    scale=self.conf.geogr_res,
+                    edgecolor=self.water_color,
                     facecolor=(0, 0, 0, 0),
-                    linewidth=linewidth,
+                    linewidth=linewidth / 2,
                 ),
                 zorder=self.zorder[zorder_key],
             )
-            if minor_europe and map_scale == "10m":
-                self.ax.add_feature(
-                    cartopy.feature.NaturalEarthFeature(
-                        category="physical",
-                        name="rivers_europe",
-                        scale=map_scale,
-                        edgecolor=water_color,
-                        facecolor=(0, 0, 0, 0),
-                        linewidth=linewidth / 2,
-                    ),
-                    zorder=self.zorder[zorder_key],
+
+    def add_cities(self, map_scale="50m", min_population=300_000):
+        """Add major cities, incl. all capitals."""
+
+        def point_in_domain(p_lon, p_lat):
+            """Check if a point is inside the domain."""
+            p_rlon, p_rlat = self.proj_data.transform_point(p_lon, p_lat, self.proj_geo)
+            return (
+                self.rlon[0] <= p_rlon <= self.rlon[-1]
+                and self.rlat[0] <= p_rlat <= self.rlat[-1]
+            )
+
+        def city_of_interest(pt):
+            """Check if a city fulfils certain importance criteria."""
+            if pt.attributes["FEATURECLA"].startswith("Admin-0 capital"):
+                return True
+            else:
+                if not min_population:
+                    return True
+                return pt.attributes["GN_POP"] > min_population
+
+        # src: https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-populated-places/lk
+        pts = cartopy.io.shapereader.Reader(
+            cartopy.io.shapereader.natural_earth(
+                category="cultural", name="populated_places", resolution=map_scale,
+            )
+        ).records()
+        for pt in pts:
+            x, y = pt.geometry.x, pt.geometry.y
+            if point_in_domain(x, y) and city_of_interest(pt):
+                self.marker(
+                    x,
+                    y,
+                    marker="o",
+                    color="black",
+                    fillstyle="none",
+                    markeredgewidth=1,
+                    markersize=3,
+                    zorder=self.zorder["geo_upper"],
                 )
-
-        add_countries_lakes("geo_lower")
-        add_rivers("geo_lower")
-        add_countries_lakes("geo_upper")
-        # add_rivers("geo_upper")
-
-    def add_data_domain_outline(self):
-        """Add domain outlines to map plot."""
-
-        rlon0, rlon1 = self.rlon[[0, -1]]
-        rlat0, rlat1 = self.rlat[[0, -1]]
-        xs = [rlon0, rlon1, rlon1, rlon0, rlon0]
-        ys = [rlat0, rlat0, rlat1, rlat1, rlat0]
-
-        self.ax.plot(xs, ys, transform=self.proj_data, c="black", lw=1)
+                name = pt.attributes["name_en"]
+                # # SR_DBG <
+                # print(
+                #     "{:20s}\t{}\t{}\t{}\t{}".format(
+                #         name,
+                #         *[
+                #             pt.attributes[k]
+                #             for k in ["POP_MIN", "POP_MAX", "GN_POP", "FEATURECLA"]
+                #         ],
+                #     )
+                # )
+                # # SR_DBG >
+                self.text(
+                    x, y, name, (0.01, 0), va="center", size="small", clip_on=True
+                )
 
     def contour(self, fld, **kwargs):
         """Plot a contour field on the map.
@@ -347,21 +399,55 @@ class AxesMap(SummarizablePlotClass):
         )
         return handle
 
-    def marker(self, lon, lat, marker, **kwargs):
+    def marker(self, lon, lat, marker, *, zorder=None, **kwargs):
         """Add a marker at a location in natural coordinates."""
         rlon, rlat = self.proj_data.transform_point(lon, lat, self.proj_geo)
-        handle = self.marker_rot(rlon, rlat, marker, **kwargs)
+        handle = self.marker_rot(rlon, rlat, marker, zorder=zorder, **kwargs)
         return handle
 
-    def marker_rot(self, rlon, rlat, marker, **kwargs):
+    def marker_rot(self, rlon, rlat, marker, *, zorder=None, **kwargs):
         """Add a marker at a location in rotated coordinates."""
+        if zorder is None:
+            zorder = self.zorder["marker"]
         handle = self.ax.plot(
             rlon,
             rlat,
             marker=marker,
             transform=self.proj_data,
-            zorder=self.zorder["marker"],
+            zorder=zorder,
             **kwargs,
+        )
+        return handle
+
+    def text(self, lon, lat, s, offset_ax=None, *, zorder=None, **kwargs):
+        """Add text at a geographical point.
+
+        Args:
+            lon (float): Point longitude.
+
+            lat (float): Point latitude.
+
+            s (str): Text string.
+
+            offset_ax (tuple[float], optional): Horizontal and vertical offset
+                in Axes coordinates. Defaults to None.
+
+            dy (float, optional): Vertical offset in unit distances. Defaults
+                to None.
+
+            zorder (int, optional): Vertical order. Defaults to "geo_lower".
+
+            **kwargs: Additional keyword arguments for ``ax.text``.
+
+        """
+        if zorder is None:
+            zorder = self.zorder["geo_lower"]
+        x, y = self.transform_geo_to_axes(lon, lat)
+        if offset_ax is not None:
+            x += offset_ax[0]
+            y += offset_ax[1]
+        handle = self.ax.text(
+            x, y, s, zorder=zorder, transform=self.ax.transAxes, **kwargs
         )
         return handle
 
@@ -378,16 +464,30 @@ class AxesMap(SummarizablePlotClass):
     def transform_axes_to_geo(self, x, y):
         """Transform axes coordinates to geographic coordinates."""
 
-        # Convert `Axes` to `Display`
+        # Axes -> Display
         xy_disp = self.ax.transAxes.transform((x, y))
 
-        # Convert `Display` to `Data`
+        # Display -> Data
         x_data, y_data = self.ax.transData.inverted().transform(xy_disp)
 
-        # Convert `Data` to `Geographic`
+        # Data -> Geo
         xy_geo = self.proj_geo.transform_point(x_data, y_data, self.proj_plot)
 
         return xy_geo
+
+    def transform_geo_to_axes(self, x, y):
+        """Transform geographic coordinates to axes coordinates."""
+
+        # Geo -> Data
+        xy_data = self.proj_plot.transform_point(x, y, self.proj_geo)
+
+        # Data -> Display
+        xy_disp = self.ax.transData.transform(xy_data)
+
+        # Display -> Axes
+        xy_ax = self.ax.transAxes.inverted().transform(xy_disp)
+
+        return xy_ax
 
     def add_ref_dist_indicator(self):
         """Add a reference distance indicator.
@@ -1231,7 +1331,8 @@ class TextBoxAxes(SummarizablePlotClass):
             except ValueError:
                 raise ValueError(
                     f"n_shrink_max of type {type(n_shink_max).__name__} not "
-                    f"int-compatible: {n_shrink_max}")
+                    f"int-compatible: {n_shrink_max}"
+                )
             if n_shrink_max < 0:
                 n_shrink_max = None
 
@@ -1256,6 +1357,7 @@ class TextBoxAxes(SummarizablePlotClass):
 
         class MinFontSizeReachedError(Exception):
             """Font size cannot be reduced further."""
+
             pass
 
         def shrink(size, _n=[0]):
@@ -1269,6 +1371,7 @@ class TextBoxAxes(SummarizablePlotClass):
 
         class MinStrLenReachedError(Exception):
             """String cannot be further truncated."""
+
             pass
 
         def truncate(s, _n=[0]):
@@ -1276,7 +1379,7 @@ class TextBoxAxes(SummarizablePlotClass):
             if len(s) <= len(dots):
                 raise MinStrLenReachedError(s)
             _n[0] += 1
-            return s[:-(len(dots) + 1)] + dots
+            return s[: -(len(dots) + 1)] + dots
 
         while len(s) >= len(dots) and w_rel(s, size) > w_rel_max:
             try:

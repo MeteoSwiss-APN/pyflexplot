@@ -302,7 +302,7 @@ class VarSpecs_Deposition(VarSpecs):
 
     @classmethod
     def short_name(cls, lang, var_specs):
-        return words["deposition", lang].s
+        return words["deposition", lang].t
 
     def var_name(self):
         """Derive variable name from specifications."""
