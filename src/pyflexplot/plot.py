@@ -13,7 +13,7 @@ from types import SimpleNamespace
 
 from srutils.geo import Degrees
 
-from .plot_utils import AxesMap
+from .plot_utils import MapAxesRotatedPole
 from .plot_utils import ax_w_h_in_fig_coords
 from .plot_utils import SummarizablePlotClass
 from .plot_utils import TextBoxAxes
@@ -100,7 +100,7 @@ class Plot(SummarizablePlotClass, ParentClass):
 
         self.fig = plt.figure(figsize=self.figsize)
 
-        self.ax_map = AxesMap(
+        self.ax_map = MapAxesRotatedPole(
             self.fig,
             self.field.rlat,
             self.field.rlon,

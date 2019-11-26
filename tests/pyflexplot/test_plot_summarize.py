@@ -497,7 +497,7 @@ class Solution:
     def ax_map(self):
         e = self.element
         jdat = {
-            "type": e("AxesMap"),
+            "type": e("MapAxesRotatedPole"),
         }
         return {"ax_map": jdat}
 

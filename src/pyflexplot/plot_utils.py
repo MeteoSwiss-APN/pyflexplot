@@ -136,8 +136,8 @@ class AxesConfMap(SummarizableClass):
         self.ref_dist_y0 = ref_dist_y0
 
 
-# SR_TODO Push non-rotated-pole specific code up into AxesMap
-class AxesMap(SummarizablePlotClass):
+# SR_TODO Push non-rotated-pole specific code up into MapAxesRotatedPole
+class MapAxesRotatedPole(SummarizablePlotClass):
     """Map plot axes for FLEXPART plot for rotated-pole data."""
 
     summarizable_attrs = []  # SR_TMP
@@ -146,7 +146,7 @@ class AxesMap(SummarizablePlotClass):
     water_color = "lightskyblue"
 
     def __init__(self, fig, rlat, rlon, pollat, pollon, **conf):
-        """Initialize instance of AxesMap.
+        """Initialize instance of MapAxesRotatedPole.
 
         Args:
             fig (Figure): Figure to which to map axes is added.
@@ -184,16 +184,17 @@ class AxesMap(SummarizablePlotClass):
         self.prepare_projections(pollat, pollon)
 
         # Initialize plot
-        self.ax = self.fig.add_subplot(projection=self.proj_plot)
+        self.ax = self.fig.add_subplot(projection=self.proj_map)
 
         # Set extent of map
-        bbox_rot = [self.rlon[0], self.rlon[-1], self.rlat[0], self.rlat[-1]]
-        bbox_geo = self.bbox_transform_rot_to_geo(bbox_rot)
-        bbox_axs = self.bbox_transform_geo_to_axes(bbox_geo)
-        bbox_axs = bbox_zoom(bbox_axs, self.conf.zoom_fact)
-        bbox_geo = self.bbox_transform_axes_to_geo(bbox_axs)
-        bbox_rot = self.bbox_transform_geo_to_rot(bbox_geo)
-        self.ax.set_extent(bbox_rot, self.proj_data)
+        # bbox_rot = [self.rlon[0], self.rlon[-1], self.rlat[0], self.rlat[-1]]
+        bbox = (
+            MapAxesBoundingBox(self, "data", rlon[0], rlon[-1], rlat[0], rlat[-1])
+            .to_axes()
+            .zoom(self.conf.zoom_fact)
+            .to_data()
+        )
+        self.ax.set_extent(bbox, self.proj_data)
 
         # Activate grid lines
         gl = self.ax.gridlines(
@@ -225,7 +226,7 @@ class AxesMap(SummarizablePlotClass):
 
         # Projection of plot
         clon = 180 + pollon
-        self.proj_plot = cartopy.crs.TransverseMercator(central_longitude=clon)
+        self.proj_map = cartopy.crs.TransverseMercator(central_longitude=clon)
 
         # Geographical lat/lon arrays
         self.proj_geo = cartopy.crs.PlateCarree()
@@ -448,7 +449,7 @@ class AxesMap(SummarizablePlotClass):
         """
         if zorder is None:
             zorder = self.zorder["geo_lower"]
-        x, y = self.transform_geo_to_axes(lon, lat)
+        x, y = self.transform_xy_geo_to_axes(lon, lat)
         if offset_ax is not None:
             x += offset_ax[0]
             y += offset_ax[1]
@@ -467,70 +468,15 @@ class AxesMap(SummarizablePlotClass):
         handle = self.marker_rot(rlon, rlat, marker, **kwargs)
         return handle
 
-    def bbox_transform_rot_to_geo(self, bbox):
-        bbox = np.asarray(bbox)
-        return np.concatenate(
-            self.proj_geo.transform_points(self.proj_data, bbox[:2], bbox[2:])[:, :2].T
+    def transform_xy_axes_to_geo(self, x, y):
+        return transform_xy_axes_to_geo(
+            x, y, self.ax.transAxes, self.ax.transData, self.proj_geo, self.proj_map,
         )
 
-    def bbox_transform_geo_to_axes(self, bbox):
-        return np.concatenate(self.transform_geo_to_axes(bbox[:2], bbox[2:]))
-
-    def bbox_transform_axes_to_geo(self, bbox):
-        return np.concatenate(self.transform_axes_to_geo(bbox[:2], bbox[2:]))
-
-    def bbox_transform_geo_to_rot(self, bbox):
-        return np.concatenate(
-            self.proj_data.transform_points(self.proj_geo, bbox[:2], bbox[2:])[:, :2].T
+    def transform_xy_geo_to_axes(self, x, y):
+        return transform_xy_geo_to_axes(
+            x, y, self.proj_map, self.proj_geo, self.ax.transData, self.ax.transAxes,
         )
-
-    def transform_axes_to_geo(self, x, y):
-        """Transform axes coordinates to geographic coordinates."""
-
-        if isiterable(x) or isiterable(y):
-            self._check_equivalent_iterables(x, y)
-            return tuple(
-                np.array([self.transform_axes_to_geo(xi, yi) for xi, yi in zip(x, y)]).T
-            )
-
-        # Axes -> Display
-        xy_disp = self.ax.transAxes.transform((x, y))
-
-        # Display -> Plot
-        x_data, y_data = self.ax.transData.inverted().transform(xy_disp)
-
-        # Plot -> Geo
-        xy_geo = self.proj_geo.transform_point(x_data, y_data, self.proj_plot)
-
-        return xy_geo
-
-    def transform_geo_to_axes(self, x, y):
-        """Transform geographic coordinates to axes coordinates."""
-
-        if isiterable(x) or isiterable(y):
-            self._check_equivalent_iterables(x, y)
-            return tuple(
-                np.array([self.transform_geo_to_axes(xi, yi) for xi, yi in zip(x, y)]).T
-            )
-
-        # Geo -> Plot
-        xy_plot = self.proj_plot.transform_point(x, y, self.proj_geo)
-
-        # Plot -> Display
-        xy_disp = self.ax.transData.transform(xy_plot)
-
-        # Display -> Axes
-        xy_ax = self.ax.transAxes.inverted().transform(xy_disp)
-
-        return xy_ax
-
-    def _check_equivalent_iterables(self, x, y):
-        if isiterable(x) and not isiterable(y):
-            raise ValueError(f"x is iterable but y is not: x={x}, y={y}")
-        if isiterable(y) and not isiterable(x):
-            raise ValueError(f"y is iterable but x is not: x={x}, y={y}")
-        if len(x) != len(y):
-            raise ValueError(f"x and y differ in length: {len(x)} != {len(y)}")
 
     def add_ref_dist_indicator(self):
         """Add a reference distance indicator.
@@ -572,6 +518,60 @@ class AxesMap(SummarizablePlotClass):
         )
 
 
+def transform_xy_geo_to_axes(x, y, proj_map, proj_geo, transData, transAxes):
+    """Transform geographic coordinates to axes coordinates."""
+
+    if isiterable(x) or isiterable(y):
+        check_equivalent_iterables(x, y)
+        f = lambda xi, yi: transform_xy_geo_to_axes(
+            xi, yi, proj_map, proj_geo, transData, transAxes
+        )
+        return tuple(np.array([f(xi, yi) for xi, yi in zip(x, y)]).T)
+
+    # Geo -> Plot
+    xy_plt = proj_map.transform_point(x, y, proj_geo)
+
+    # Plot -> Display
+    xy_dis = transData.transform(xy_plt)
+
+    # Display -> Axes
+    xy_axs = transAxes.inverted().transform(xy_dis)
+
+    return xy_axs
+
+
+def transform_xy_axes_to_geo(x, y, transAxes, transData, proj_geo, proj_map):
+    """Transform axes coordinates to geographic coordinates."""
+
+    if isiterable(x) or isiterable(y):
+        check_equivalent_iterables(x, y)
+        f = lambda xi, yi: (
+            transform_xy_axes_to_geo(xi, yi, transAxes, transData, proj_geo, proj_map)
+        )
+        return tuple(np.array([f(xi, yi) for xi, yi in zip(x, y)]).T)
+
+    # Axes -> Display
+    xy_dis = transAxes.transform((x, y))
+
+    # Display -> Plot
+    x_plt, y_plt = transData.inverted().transform(xy_dis)
+
+    # Plot -> Geo
+    xy_geo = proj_geo.transform_point(x_plt, y_plt, proj_map)
+
+    return xy_geo
+
+
+def check_equivalent_iterables(x, y):
+    """Check that x and y are iterables of the same size."""
+    if isiterable(x) and not isiterable(y):
+        raise ValueError(f"x is iterable but y is not: x={x}, y={y}")
+    if isiterable(y) and not isiterable(x):
+        raise ValueError(f"y is iterable but x is not: x={x}, y={y}")
+    if len(x) != len(y):
+        raise ValueError(f"x and y differ in length: {len(x)} != {len(y)}")
+
+
 class MapPlotGeoDist:
     """Measture geographic distance along a line on a map plot."""
 
@@ -579,7 +579,7 @@ class MapPlotGeoDist:
         """Initialize an instance of MapPlotGeoDist.
 
         Args:
-            ax_map (AxesMap*): Map plot object providing the projections etc.
+            ax_map (MapAxesRotatedPole*): Map plot object providing the projections etc.
                 [TODO reformulate!]
 
             unit (str, optional): Unit of ``dist``. Defaults to 'km'.
@@ -682,7 +682,7 @@ class MapPlotGeoDist:
         # SR_DBG >
 
         # Transform starting point to geographical coordinates
-        x0_geo, y0_geo = self.ax_map.transform_axes_to_geo(x0_ax, y0_ax)
+        x0_geo, y0_geo = self.ax_map.transform_xy_axes_to_geo(x0_ax, y0_ax)
 
         path_ax = [(x0_ax, y0_ax)]
         dists = [dist0]
@@ -697,7 +697,7 @@ class MapPlotGeoDist:
             y1_ax += self._dy_unit * step_ax_rel
 
             # Transform current point to gegographical coordinates
-            x1_geo, y1_geo = self.ax_map.transform_axes_to_geo(x1_ax, y1_ax)
+            x1_geo, y1_geo = self.ax_map.transform_xy_axes_to_geo(x1_ax, y1_ax)
 
             # Compute geographical distance from starting point
             dist = self.comp_dist(x0_geo, y0_geo, x1_geo, y1_geo)
@@ -1436,6 +1436,194 @@ class TextBoxAxes(SummarizablePlotClass):
         return s, size
 
 
+class MapAxesBoundingBox:
+    """Bounding box of a ``MapAxes``."""
+
+    def __init__(self, map_axes, coord_type, lon0, lon1, lat0, lat1):
+        """Create an instance of ``MapAxesBoundingBox``.
+
+        Args:
+            map_axes (MapAxes): Parent map axes object.
+
+            coord_type (str): Coordinates type.
+
+            rlon0 (float): Rotated longitude of south-western corner.
+
+            rlon1 (float): Rotated longitude of north-eastern corner.
+
+            rlat0 (float): Rotated latitude of south-western corner.
+
+            rlat1 (float): Rotated latitude of north-eastern corner.
+
+        """
+        # SR_TMP <
+        self.coord_types = ["data", "geo"]
+        # SR_TMP >
+        self.map_axes = map_axes
+        self.set(coord_type, lon0, lon1, lat0, lat1)
+
+    @property
+    def coord_type(self):
+        return self._curr_coord_type
+
+    def __iter__(self):
+        """Iterate over the rotated corner coordinates."""
+        yield self._curr_lon0
+        yield self._curr_lon1
+        yield self._curr_lat0
+        yield self._curr_lat1
+
+    def __len__(self):
+        return len(list(iter(self)))
+
+    def __getitem__(self, idx):
+        return list(iter(self))[idx]
+
+    def set(self, coord_type, lon0, lon1, lat0, lat1):
+        self._curr_coord_type = coord_type
+        self._curr_lon0 = lon0
+        self._curr_lon1 = lon1
+        self._curr_lat0 = lat0
+        self._curr_lat1 = lat1
+
+    def to_data(self):
+        if self.coord_type == "geo":
+            coords = np.concatenate(
+                self._proj_data.transform_points(self._proj_geo, self.lon, self.lat)[
+                    :, :2
+                ].T
+            )
+        elif self.coord_type == "axes":
+            return self.to_geo().to_data()
+        else:
+            self._error("to_data")
+        self.set("data", *coords)
+        return self
+
+    def to_geo(self):
+        if self.coord_type == "data":
+            coords = np.concatenate(
+                self._proj_geo.transform_points(self._proj_data, self.lon, self.lat)[
+                    :, :2
+                ].T
+            )
+        elif self.coord_type == "axes":
+            coords = np.concatenate(
+                transform_xy_axes_to_geo(
+                    self.lon,
+                    self.lat,
+                    self._transAxes,
+                    self._transData,
+                    self._proj_geo,
+                    self._proj_map,
+                )
+            )
+        else:
+            self._error("to_geo")
+        self.set("geo", *coords)
+        return self
+
+    def to_axes(self):
+        if self.coord_type == "geo":
+            coords = np.concatenate(
+                transform_xy_geo_to_axes(
+                    self.lon,
+                    self.lat,
+                    self._proj_map,
+                    self._proj_geo,
+                    self._transData,
+                    self._transAxes,
+                )
+            )
+        elif self.coord_type == "data":
+            return self.to_geo().to_axes()
+        else:
+            self._error("to_axes")
+        self.set("axes", *coords)
+        return self
+
+    def _error(self, method):
+        raise NotImplementedError(
+            f"{type(self).__name__}.{method} from '{self.coord_type}'"
+        )
+
+    def zoom(self, fact, center=None):
+        coords = bbox_zoom(self, fact, center=center)
+        self.set(self.coord_type, *coords)
+        return self
+
+    @property
+    def lon(self):
+        return np.asarray(self)[:2]
+
+    @property
+    def lat(self):
+        return np.asarray(self)[2:]
+
+    @property
+    def _proj_data(self):
+        return self.map_axes.proj_data
+
+    @property
+    def _proj_geo(self):
+        return self.map_axes.proj_geo
+
+    @property
+    def _proj_map(self):
+        return self.map_axes.proj_map
+
+    @property
+    def _transAxes(self):
+        return self.map_axes.ax.transAxes
+
+    @property
+    def _transData(self):
+        return self.map_axes.ax.transData
+
+
+def bbox_zoom(bbox, fact, center=None):
+    """Add relative padding to a bounding box.
+
+    Args:
+        bbox (ndarray[float, n=4]): Bounding box (lon0, lon1, lat0, lat1).
+
+        fact (float): Zoom factor, > 1.0 to zoom in, < 1.0 to zoom out.
+
+        center (ndarray[float, n=2], optional): Center point of zoomed bbox.
+            Defaults to center of ``bbox``.
+
+    Returns:
+        ndarray[float, n=4]: Zoomed bounding box.
+
+    """
+
+    lon0, lon1, lat0, lat1 = bbox
+
+    dlon = lon1 - lon0
+    dlat = lat1 - lat0
+
+    if center is None:
+        clon = lon0 + 0.5 * dlon
+        clat = lat0 + 0.5 * dlat
+    else:
+        clon, clat = center
+
+    dlon_zm = dlon / fact
+    dlat_zm = dlat / fact
+
+    bbox = np.array(
+        [
+            clon - 0.5 * dlon_zm,
+            clon + 0.5 * dlon_zm,
+            clat - 0.5 * dlat_zm,
+            clat + 0.5 * dlat_zm,
+        ],
+        float,
+    )
+
+    return bbox
+
+
 class BoxLocation(SummarizablePlotClass):
     """A reference location (like bottom-left) inside a box on a 3x3 grid."""
 
@@ -1565,49 +1753,6 @@ class BoxLocation(SummarizablePlotClass):
     def y(self):
         """Vertical position."""
         return self.y0 + self.dy * self.dy0
-
-
-def bbox_zoom(bbox, fact, center=None):
-    """Add relative padding to a bounding box.
-
-    Args:
-        bbox (ndarray[float, n=4]): Bounding box (lon0, lon1, lat0, lat1).
-
-        fact (float): Zoom factor, > 1.0 to zoom in, < 1.0 to zoom out.
-
-        center (ndarray[float, n=2], optional): Center point of zoomed bbox.
-            Defaults to center of ``bbox``.
-
-    Returns:
-        ndarray[float, n=4]: Zoomed bounding box.
-
-    """
-
-    lon0, lon1, lat0, lat1 = bbox
-
-    dlon = lon1 - lon0
-    dlat = lat1 - lat0
-
-    if center is None:
-        clon = lon0 + 0.5 * dlon
-        clat = lat0 + 0.5 * dlat
-    else:
-        clon, clat = center
-
-    dlon_zm = dlon / fact
-    dlat_zm = dlat / fact
-
-    bbox = np.array(
-        [
-            clon - 0.5 * dlon_zm,
-            clon + 0.5 * dlon_zm,
-            clat - 0.5 * dlat_zm,
-            clat + 0.5 * dlat_zm,
-        ],
-        float,
-    )
-
-    return bbox
 
 
 def ax_w_h_in_fig_coords(fig, ax):

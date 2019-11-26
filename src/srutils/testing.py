@@ -3,6 +3,7 @@
 """
 Some testing utils.
 """
+from pprint import pformat
 
 from .various import isiterable
 
