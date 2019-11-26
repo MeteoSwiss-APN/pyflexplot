@@ -12,6 +12,8 @@ import numpy as np
 
 from copy import copy
 
+from srutils.various import isiterable
+
 from .utils import MaxIterationError
 from .utils import SummarizableClass
 
@@ -73,7 +75,7 @@ def summarize_mpl_bbox(obj):
 class AxesConfMap(SummarizableClass):
 
     summarizable_attrs = [
-        "bbox_pad_rel",
+        "zoom_fact",
         "geogr_res",
         "ref_dist",
         "ref_dist_unit",
@@ -85,7 +87,7 @@ class AxesConfMap(SummarizableClass):
     def __init__(
         self,
         *,
-        bbox_pad_rel=0.01,
+        zoom_fact=0.01,
         geogr_res="50m",
         ref_dist=100,
         ref_dist_unit="km",
@@ -96,7 +98,7 @@ class AxesConfMap(SummarizableClass):
         """
 
         Kwargs:
-            bbox_pad_rel (float, optional): Relative padding applied to the
+            zoom_fact (float, optional): Relative padding applied to the
                 bounding box of the input data (derived from rotated lat/lon),
                 as a fraction of its size in both directions. If positive/zero/
                 negative, the shown map is bigger/equal/smaller in size than
@@ -125,7 +127,7 @@ class AxesConfMap(SummarizableClass):
                 distance indicator in axes coordinates. Defaults to 0.95.
 
         """
-        self.bbox_pad_rel = bbox_pad_rel
+        self.zoom_fact = zoom_fact
         self.geogr_res = geogr_res
         self.ref_dist = ref_dist
         self.ref_dist_unit = ref_dist_unit
@@ -185,16 +187,20 @@ class AxesMap(SummarizablePlotClass):
         self.ax = self.fig.add_subplot(projection=self.proj_plot)
 
         # Set extent of map
-        bbox = [self.rlon[0], self.rlon[-1], self.rlat[0], self.rlat[-1]]
-        bbox = pad_bbox(*bbox, pad_rel=self.conf.bbox_pad_rel)
-        self.ax.set_extent(bbox, self.proj_data)
+        bbox_rot = [self.rlon[0], self.rlon[-1], self.rlat[0], self.rlat[-1]]
+        bbox_geo = self.bbox_transform_rot_to_geo(bbox_rot)
+        bbox_axs = self.bbox_transform_geo_to_axes(bbox_geo)
+        bbox_axs = bbox_zoom(bbox_axs, self.conf.zoom_fact)
+        bbox_geo = self.bbox_transform_axes_to_geo(bbox_axs)
+        bbox_rot = self.bbox_transform_geo_to_rot(bbox_geo)
+        self.ax.set_extent(bbox_rot, self.proj_data)
 
         # Activate grid lines
         gl = self.ax.gridlines(
             linestyle=":", linewidth=1, color="black", zorder=self.zorder["grid"],
         )
-        gl.xlocator = mpl.ticker.FixedLocator(np.arange(-2, 18.1, 2))
-        gl.ylocator = mpl.ticker.FixedLocator(np.arange(40, 52.1, 2))
+        gl.xlocator = mpl.ticker.FixedLocator(np.arange(-180, 180.1, 2))
+        gl.ylocator = mpl.ticker.FixedLocator(np.arange(-90, 90.1, 2))
 
         # Add geographical elements (coasts etc.)
         self.add_geography()
@@ -461,16 +467,39 @@ class AxesMap(SummarizablePlotClass):
         handle = self.marker_rot(rlon, rlat, marker, **kwargs)
         return handle
 
+    def bbox_transform_rot_to_geo(self, bbox):
+        bbox = np.asarray(bbox)
+        return np.concatenate(
+            self.proj_geo.transform_points(self.proj_data, bbox[:2], bbox[2:])[:, :2].T
+        )
+
+    def bbox_transform_geo_to_axes(self, bbox):
+        return np.concatenate(self.transform_geo_to_axes(bbox[:2], bbox[2:]))
+
+    def bbox_transform_axes_to_geo(self, bbox):
+        return np.concatenate(self.transform_axes_to_geo(bbox[:2], bbox[2:]))
+
+    def bbox_transform_geo_to_rot(self, bbox):
+        return np.concatenate(
+            self.proj_data.transform_points(self.proj_geo, bbox[:2], bbox[2:])[:, :2].T
+        )
+
     def transform_axes_to_geo(self, x, y):
         """Transform axes coordinates to geographic coordinates."""
+
+        if isiterable(x) or isiterable(y):
+            self._check_equivalent_iterables(x, y)
+            return tuple(
+                np.array([self.transform_axes_to_geo(xi, yi) for xi, yi in zip(x, y)]).T
+            )
 
         # Axes -> Display
         xy_disp = self.ax.transAxes.transform((x, y))
 
-        # Display -> Data
+        # Display -> Plot
         x_data, y_data = self.ax.transData.inverted().transform(xy_disp)
 
-        # Data -> Geo
+        # Plot -> Geo
         xy_geo = self.proj_geo.transform_point(x_data, y_data, self.proj_plot)
 
         return xy_geo
@@ -478,16 +507,30 @@ class AxesMap(SummarizablePlotClass):
     def transform_geo_to_axes(self, x, y):
         """Transform geographic coordinates to axes coordinates."""
 
-        # Geo -> Data
-        xy_data = self.proj_plot.transform_point(x, y, self.proj_geo)
+        if isiterable(x) or isiterable(y):
+            self._check_equivalent_iterables(x, y)
+            return tuple(
+                np.array([self.transform_geo_to_axes(xi, yi) for xi, yi in zip(x, y)]).T
+            )
 
-        # Data -> Display
-        xy_disp = self.ax.transData.transform(xy_data)
+        # Geo -> Plot
+        xy_plot = self.proj_plot.transform_point(x, y, self.proj_geo)
+
+        # Plot -> Display
+        xy_disp = self.ax.transData.transform(xy_plot)
 
         # Display -> Axes
         xy_ax = self.ax.transAxes.inverted().transform(xy_disp)
 
         return xy_ax
+
+    def _check_equivalent_iterables(self, x, y):
+        if isiterable(x) and not isiterable(y):
+            raise ValueError(f"x is iterable but y is not: x={x}, y={y}")
+        if isiterable(y) and not isiterable(x):
+            raise ValueError(f"y is iterable but x is not: x={x}, y={y}")
+        if len(x) != len(y):
+            raise ValueError(f"x and y differ in length: {len(x)} != {len(y)}")
 
     def add_ref_dist_indicator(self):
         """Add a reference distance indicator.
@@ -530,7 +573,7 @@ class AxesMap(SummarizablePlotClass):
 
 
 class MapPlotGeoDist:
-    """Measture geo. distance along a line on a map plot."""
+    """Measture geographic distance along a line on a map plot."""
 
     def __init__(self, ax_map, unit="km", p=0.001):
         """Initialize an instance of MapPlotGeoDist.
@@ -1524,37 +1567,45 @@ class BoxLocation(SummarizablePlotClass):
         return self.y0 + self.dy * self.dy0
 
 
-def pad_bbox(lon0, lon1, lat0, lat1, pad_rel):
+def bbox_zoom(bbox, fact, center=None):
     """Add relative padding to a bounding box.
 
     Args:
-        lon0 (float): Longitude of lower-left domain corner.
+        bbox (ndarray[float, n=4]): Bounding box (lon0, lon1, lat0, lat1).
 
-        lon1 (float): Longitude of upper-right domain corner.
+        fact (float): Zoom factor, > 1.0 to zoom in, < 1.0 to zoom out.
 
-        lat0 (float): Latitude of lower-left domain corner.
-
-        lat1 (float): Latitude of upper-right domain corner.
-
-        pad_rel (float): Relative padding applied to box defined by the lower-
-            left and upper-right domain corners, as a fraction of the width/
-            height of the box in the horizontal/vertical. Can be negative.
+        center (ndarray[float, n=2], optional): Center point of zoomed bbox.
+            Defaults to center of ``bbox``.
 
     Returns:
-        ndarray[float, n=4]: Padded bounding box comprised of the following
-            four elements: [lon0, lon1, lat0, lat1].
+        ndarray[float, n=4]: Zoomed bounding box.
 
     """
 
-    pad_fact_x, pad_fact_y = [pad_rel] * 2
+    lon0, lon1, lat0, lat1 = bbox
 
     dlon = lon1 - lon0
     dlat = lat1 - lat0
 
-    padx = dlon * pad_fact_x
-    pady = dlon * pad_fact_y
+    if center is None:
+        clon = lon0 + 0.5 * dlon
+        clat = lat0 + 0.5 * dlat
+    else:
+        clon, clat = center
 
-    bbox = np.array([lon0 - padx, lon1 + padx, lat0 - pady, lat1 + pady,], float)
+    dlon_zm = dlon / fact
+    dlat_zm = dlat / fact
+
+    bbox = np.array(
+        [
+            clon - 0.5 * dlon_zm,
+            clon + 0.5 * dlon_zm,
+            clat - 0.5 * dlat_zm,
+            clat + 0.5 * dlat_zm,
+        ],
+        float,
+    )
 
     return bbox
 

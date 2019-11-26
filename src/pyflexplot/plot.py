@@ -218,7 +218,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
         # Map plot configuration
         self.map_conf = {
             **super().map_conf,
-            "bbox_pad_rel": -0.01,
+            "zoom_fact": 1.0,
             "geogr_res": "10m",
             #'geogr_res': '50m',
             "ref_dist_x0": 0.046,
