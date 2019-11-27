@@ -248,17 +248,17 @@ class VarSpecs_Concentration(VarSpecs):
     @classmethod
     def long_name(cls, lang, var_specs):
         ctx = "abbr" if var_specs.integrate else "*"
-        return words["activity_concentration", lang, ctx].t
+        return words["activity_concentration", lang, ctx].s
 
     @classmethod
     def short_name(cls, lang, var_specs):
         s = ""
         if var_specs.integrate:
             return (
-                f"{words['integrated', lang, 'abbr'].t} "
-                f"{words['concentration', lang, 'abbr'].t}"
+                f"{words['integrated', lang, 'abbr'].s} "
+                f"{words['concentration', lang, 'abbr'].s}"
             )
-        return words["concentration", lang].t
+        return words["concentration", lang].s
 
     def var_name(self):
         """Derive variable name from specifications."""
@@ -292,17 +292,17 @@ class VarSpecs_Deposition(VarSpecs):
     def deposition_type(cls, lang, var_specs):
         type_ = dict(var_specs)["deposition"]
         word = "total" if type_ == "tot" else type_
-        return words[word, lang, "f"].t
+        return words[word, lang, "f"].s
 
     @classmethod
     def long_name(cls, lang, var_specs, abbr=False):
         dep_type = cls.deposition_type(lang, var_specs)
         ctx = "abbr" if abbr else "*"
-        return f"{dep_type} " f"{words['surface_deposition', lang, ctx].t}"
+        return f"{dep_type} " f"{words['surface_deposition', lang, ctx].s}"
 
     @classmethod
     def short_name(cls, lang, var_specs):
-        return words["deposition", lang].t
+        return words["deposition", lang].s
 
     def var_name(self):
         """Derive variable name from specifications."""
@@ -316,7 +316,7 @@ class VarSpecs_AffectedArea(VarSpecs_Deposition):
     @classmethod
     def long_name(cls, lang, var_specs):
         dep_name = VarSpecs_Deposition.long_name(lang, var_specs, abbr=True)
-        return f"{words['affected_area', lang].t} " f"({dep_name})"
+        return f"{words['affected_area', lang].s} " f"({dep_name})"
 
 
 class Varspecs_AffectedAreaMono(VarSpecs_AffectedArea):
@@ -329,8 +329,8 @@ class VarSpecs_EnsMean_Concentration(VarSpecs_Concentration):
     @classmethod
     def long_name(cls, lang, var_specs):
         return (
-            f"{words['activity_concentration', lang].t}\n"
-            f"{words['ensemble_mean', lang].t}"
+            f"{words['activity_concentration', lang].s}\n"
+            f"{words['ensemble_mean', lang].s}"
         )
 
 
@@ -341,8 +341,8 @@ class VarSpecs_EnsMean_Deposition(VarSpecs_Deposition):
     def long_name(cls, lang, var_specs):
         dep_type = cls.deposition_type(lang, var_specs)
         return (
-            f"{words['ensemble_mean', lang].t} {dep_type} "
-            f"{words['surface_deposition'].t}"
+            f"{words['ensemble_mean', lang].s} {dep_type} "
+            f"{words['surface_deposition'].s}"
         )
 
 
@@ -353,7 +353,7 @@ class VarSpecs_EnsMean_AffectedArea(VarSpecs_AffectedArea):
     def long_name(cls, lang, var_specs):
         dep_type = cls.deposition_type(lang, var_specs)
         return (
-            f"{words['ensemble_mean', lang].t} {words['affected_area', lang].t} "
+            f"{words['ensemble_mean', lang].s} {words['affected_area', lang].s} "
             f"({dep_type})"
         )
 
@@ -364,8 +364,8 @@ class VarSpecs_EnsThrAgrmt:
         long_name_super = super().long_name(lang, var_specs)
         long_name_base = (
             # SR_TMP <
-            f"{words['ensemble'].t}{dict(en=' ', de='-')[lang]}"
-            f"{words['threshold_agreement'].t} {dict(en='of', de='der')[lang]}"
+            f"{words['ensemble'].s}{dict(en=' ', de='-')[lang]}"
+            f"{words['threshold_agreement'].s} {dict(en='of', de='der')[lang]}"
             # SR_TMP >
         )
         return long_name_base + long_name_super
