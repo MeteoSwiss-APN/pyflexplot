@@ -597,24 +597,15 @@ class DispersionPlot_0(Plot):  # SR_TMP
 
         # Release site coordinates
         lat = Degrees(self.field.attrs.release.site_lat.value)
-        site_lat_fmtd = (
-            f"{lat.degs()}"
-            r"$^\circ\,$"
-            f"{lat.mins()}'"
-            r"$\,$N"
-            f" ({lat.frac():.2f}"
-            r"$^\circ\,$N)"
-        )
         lon = Degrees(self.field.attrs.release.site_lon.value)
-        east = {"en": "E", "de": "O"}[self.lang]
+        deg_ = f"{symbols['deg']}{symbols['short_space']}"
+        _N = f"{symbols['short_space']}{words['north', None, 'abbr']}"
+        _E = f"{symbols['short_space']}{words['east', None, 'abbr']}"
+        site_lat_fmtd = (
+            f"{lat.degs()}{deg_}{lat.mins()}'{_N} ({lat.frac():.2f}{words['degN']})"
+        )
         site_lon_fmtd = (
-            f"{lon.degs()}"
-            r"$^\circ\,$"
-            f"{lon.mins()}'"
-            r"$\,$"
-            f"{east} ({lon.frac():.2f}"
-            r"$^\circ\,$"
-            f"{east})"
+            f"{lon.degs()}{deg_}{lon.mins()}'{_E} ({lon.frac():.2f}{words['degE']})"
         )
 
         l = self.labels
@@ -1044,7 +1035,7 @@ class Plot_EnsThrAgrmt(Plot_Ens):
         return (h_col, h_con)
 
     def _format_legend_box_title(self):
-        no = {"en": "No.", "de": "Anz."}[self.lang]
+        no = words['number_of', None, 'abbr'].t
         name = self.field.attrs.variable.short_name.format()
         thresh = self.field.field_specs.ens_var_setup["thr"]
         unit = self.field.attrs.variable.unit.format()

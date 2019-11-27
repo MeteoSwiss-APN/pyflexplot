@@ -10,8 +10,10 @@ symbols = Words(
     {
         "ae": r"$\mathrm{\"a}$",
         "copyright": "\u00a9",
+        "deg": r"$^\circ$",
         "oe": r"$\mathrm{\"o}$",
         "t0": r"$\mathrm{T_0}$",
+        "short_space": r"$\,$",
         "ue": r"$\mathrm{\"u}$",
     },
 )
@@ -38,6 +40,11 @@ words.add(en="averaged over", de=f'gemittelt {s["ue"]}ber')
 words.add(en="based on", de="basierend auf")
 # C
 # D
+deg_ = f"{s['deg']}{s['short_space']}"
+words.add("degE", en=f"{deg_}E", de=f"{deg_}O")
+words.add("degN", en=f"{deg_}N", de=f"{deg_}N")
+words.add("degS", en=f"{deg_}S", de=f"{deg_}S")
+words.add("degW", en=f"{deg_}W", de=f"{deg_}W")
 words.add(
     en={"*": "deposition velocity", "abbr": "deposit. vel."},
     de={"*": "Depositionsgeschwindigkeit", "abbr": "Deposit.-Geschw."},
@@ -45,6 +52,7 @@ words.add(
 words.add(en="deposition", de="Deposition")
 words.add(en="dry", de="trocken")
 # E
+words.add(en={"*": "east", "abbr": "E"}, de={"*": "Ost", "abbr": "O"})
 words.add(en="end", de="Ende")
 words.add(en="ensemble", de="Ensemble")
 words.add(en="ensemble mean", de="Ensemble-Mittel")
@@ -75,6 +83,8 @@ words.add(en="m AGL", de=f'm {s["ue"]}.G.')
 words.add(en="max.", de="Max.")
 words.add(en="MeteoSwiss", de="MeteoSchweiz")
 # N
+words.add(en={"*": "north", "abbr": "N"}, de={"*": "Norden", "abbr": "N"})
+words.add(en={"*": "number of", "abbr": "no."}, de={"*": "Anzahl", "abbr": "Anz."})
 # O
 # P
 # Q
@@ -90,6 +100,7 @@ words.add(
 )
 words.add(en="since", de="seit")
 words.add(en="site", de="Ort")
+words.add(en={"*": "south", "abbr": "S"}, de={"*": "S{s['ue']}den", "abbr": "S"})
 words.add(en="start", de="Start")
 words.add(en="substance", de="Substanz")
 words.add(en="summed up over", de=f'aufsummiert {s["ue"]}ber')
@@ -99,7 +110,7 @@ words.add(
 )
 # T
 words.add(
-    en="threshold agreement", de=f'Grenzwert{s["ue"]}bereinstimmung',
+    en="threshold agreement", de=f"Grenzwert{s['ue']}bereinstimmung",
 )
 words.add(en="total", de={"*": "total", "m": "totaler", "f": "totale"})
 words.add(en="total mass", de="Totale Masse")
@@ -108,6 +119,7 @@ words.add(en="total mass", de="Totale Masse")
 # W
 words.add(en="washout coeff.", de="Auswaschkoeff.")
 words.add(en="washout exponent", de="Auswaschexponent")
+words.add(en={"*": "west", "abbr": "W"}, de={"*": "Westen", "abbr": "W"})
 words.add(en="wet", de="nass")
 # X
 # Y
