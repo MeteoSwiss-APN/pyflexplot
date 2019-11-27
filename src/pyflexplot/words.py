@@ -82,6 +82,7 @@ words.add(en="MeteoSwiss", de="MeteoSchweiz")
 words.add(en="rate", de="Rate")
 words.add(en="release", de="Freisetzung")
 words.add(en="release site", de="Abgabeort")
+words.add(en="release start", de="Freisetzungsbeginn")
 # S
 words.add(
     en={"*": "sedimentation velocity", "abbr": "sediment. vel."},

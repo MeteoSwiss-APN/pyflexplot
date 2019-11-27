@@ -40,15 +40,15 @@ class DispersionPlotLabels(SummarizableClass):
         s = self.words.symbols
 
         self.simulation = SimpleNamespace(
-            start=f"{w['start'].t} ({s['t0']})",
-            end=w["end"].t,
             flexpart_based_on=f"{w['flexpart'].t} {w['based_on'].t}",
             copyright=f"{s['copyright']}{w['meteoswiss'].t}",
         )
 
         self.release = SimpleNamespace(
-            lat=w["latitude"].t,
-            lon=w["longitude"].t,
+            start=f"{w['start'].t}",
+            end=w["end"].t,
+            site_lat=w["latitude"].t,
+            site_lon=w["longitude"].t,
             height=w["height"].t,
             rate=w["rate"].t,
             mass=w["total_mass"].t,
@@ -263,8 +263,8 @@ class DispersionPlot_0(Plot):  # SR_TMP
         if self.mark_release_site:
             # Add marker at release site
             self.ax_map.marker(
-                self.field.attrs.release.lon.value,
-                self.field.attrs.release.lat.value,
+                self.field.attrs.release.site_lon.value,
+                self.field.attrs.release.site_lat.value,
                 **self._site_marker_kwargs,
             )
 
@@ -428,8 +428,8 @@ class DispersionPlot_0(Plot):  # SR_TMP
             }[itype]
             since = self.labels.words["since"].t
             sim = self.field.attrs.simulation
-            start = sim.integr_start.format(relative=True)
-            s += f" {sim.fmt_integr_period()} ({since} {start})"
+            start = sim.integr_start.format(rel=True)
+            s += f" {sim.fmt_integr_period()} ({since} +{start})"
             if self.scale_field is not None:
                 s += f" ({self.scale_field}x)"
             box.text("bl", s, size="large")
@@ -460,7 +460,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
 
         if not "br" in skip_pos:
             # Bottom right: time into simulation
-            _now_rel = self.field.attrs.simulation.now.format(relative=True)
+            _now_rel = self.field.attrs.simulation.now.format(rel=True)
             s = f"{_now_rel}"
             box.text("br", s, size="large")
 
@@ -596,21 +596,25 @@ class DispersionPlot_0(Plot):  # SR_TMP
         box.text("tc", s, dy=-1.0, size="large")
 
         # Release site coordinates
-        _lat = Degrees(self.field.attrs.release.lat.value)
-        lat_fmtd = (
-            f"{_lat.degs()}" + r"$^\circ\,$" + f"{_lat.mins()}'" + r"$\,$N"
-            f" ({_lat.frac():.2f}" + r"$^\circ\,$N)"
+        lat = Degrees(self.field.attrs.release.site_lat.value)
+        site_lat_fmtd = (
+            f"{lat.degs()}"
+            r"$^\circ\,$"
+            f"{lat.mins()}'"
+            r"$\,$N"
+            f" ({lat.frac():.2f}"
+            r"$^\circ\,$N)"
         )
-        _lon = Degrees(self.field.attrs.release.lon.value)
-        _east = {"en": "E", "de": "O"}[self.lang]
-        lon_fmtd = (
-            f"{_lon.degs()}"
-            + r"$^\circ\,$"
-            + f"{_lon.mins()}'"
-            + r"$\,$"
-            + f"{_east} ({_lon.frac():.2f}"
-            + r"$^\circ\,$"
-            + f"{_east})"
+        lon = Degrees(self.field.attrs.release.site_lon.value)
+        east = {"en": "E", "de": "O"}[self.lang]
+        site_lon_fmtd = (
+            f"{lon.degs()}"
+            r"$^\circ\,$"
+            f"{lon.mins()}'"
+            r"$\,$"
+            f"{east} ({lon.frac():.2f}"
+            r"$^\circ\,$"
+            f"{east})"
         )
 
         l = self.labels
@@ -618,12 +622,12 @@ class DispersionPlot_0(Plot):  # SR_TMP
         info_blocks = dedent(
             f"""\
             {l.release.site}:\t{a.release.site_name.format()}
-            {l.release.lat}:\t{lat_fmtd}
-            {l.release.lon}:\t{lon_fmtd}
+            {l.release.site_lat}:\t{site_lat_fmtd}
+            {l.release.site_lon}:\t{site_lon_fmtd}
             {l.release.height}:\t{a.release.height.format()}
 
-            {l.simulation.start}:\t{a.simulation.start.format()}
-            {l.simulation.end}:\t{a.simulation.end.format()}
+            {l.release.start}:\t{a.release.start.format()}
+            {l.release.end}:\t{a.release.end.format()}
             {l.release.rate}:\t{a.release.rate.format()}
             {l.release.mass}:\t{a.release.mass.format()}
 
@@ -792,22 +796,26 @@ class DispersionPlot_1(DispersionPlot_0):
             }[itype]
             since = self.labels.words["since"].t
             sim = self.field.attrs.simulation
-            start = sim.integr_start.format(relative=True)
-            s += f" {sim.fmt_integr_period()} ({since} {start})"
+            start = sim.integr_start.format(rel=True)
+            s += f" {sim.fmt_integr_period()} ({since} +{start})"
             if self.scale_field is not None:
                 s += f" ({self.scale_field}x)"
             box.text("bl", s, size="large")
 
         if not "tr" in skip_pos:
             # Top right: datetime
-            timestep_fmtd = self.field.attrs.simulation.now.format()
-            s = f"{timestep_fmtd}"
+            ts = self.field.attrs.simulation.now
+            s = f"{ts.format(rel=False)} (+{ts.format(rel=True)})"
             box.text("tr", s, size="large")
 
         if not "br" in skip_pos:
             # Bottom right: time into simulation
-            _now_rel = self.field.attrs.simulation.now.format(relative=True)
-            s = f"{_now_rel}"
+            time = self.field.attrs.simulation.now.format(
+                rel=True, rel_start=self.field.attrs.release.start.value,
+            )
+            since = self.labels.words["since"].t
+            release_start = self.labels.words["release_start"].t
+            s = f"{time} {since} {release_start}"
             box.text("br", s, size="large")
 
         return box

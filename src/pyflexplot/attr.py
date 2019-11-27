@@ -10,6 +10,7 @@ from pprint import pformat
 from srutils.various import isiterable
 
 from .utils import SummarizableClass
+from .words import symbols
 
 
 class Attr(SummarizableClass):
@@ -256,25 +257,22 @@ class AttrDatetime(Attr):
         attr.start = next(iter(starts))
         return attr
 
-    def format(self, relative=False):
+    def format(self, rel=False, rel_start=None, rel_neg_ok=True):
         """Format a datetime object to a string."""
-
-        if not relative:
+        if not rel:
             return self.value.strftime("%Y-%m-%d %H:%M %Z")
-
-        if self.start is None:
-            raise ValueError(f"{self.name}: relative formatting failed: missing start")
-
-        delta = self.value - self.start
-
-        s = f"T$_{0}$"
-
-        if delta.total_seconds() > 0:
-            hours = int(delta.total_seconds() / 3600)
-            mins = int((delta.total_seconds() / 3600) % 1 * 60)
-            s = f"{s}$\\,+\\,${hours:02d}:{mins:02d}$\\,$h"
-
-        return s
+        if rel_start is None:
+            if self.start is None:
+                raise ValueError(
+                    f"{self.name}: relative formatting failed: missing start"
+                )
+            rel_start = self.start
+        seconds = (self.value - rel_start).total_seconds()
+        if not rel_neg_ok and seconds < 0:
+            seconds = -seconds
+        hours = int(seconds / 3600)
+        mins = int((seconds / 3600) % 1 * 60)
+        return f"{hours:02d}:{mins:02d}$\\,$h"
 
 
 class AttrGroup:
@@ -487,8 +485,10 @@ class AttrGroupRelease(AttrGroup):
     def __init__(
         self,
         *,
-        lat,
-        lon,
+        start,
+        end,
+        site_lat,
+        site_lon,
         site_name,
         height,
         height_unit,
@@ -501,9 +501,13 @@ class AttrGroupRelease(AttrGroup):
         """Initialize an instance of ``AttrGroupRelease``.
 
         Kwargs:
-            lat (float): Latitude of release site.
+            start (datetime): Start of the release.
 
-            lon (float): Longitude of release site.
+            end (datetime): End of the release.
+
+            site_lat (float): Latitude of release site.
+
+            site_lon (float): Longitude of release site.
 
             site_name (str): Name of release site.
 
@@ -521,8 +525,10 @@ class AttrGroupRelease(AttrGroup):
 
         """
         super().__init__(**kwargs)
-        self.set("lat", lat, float)
-        self.set("lon", lon, float)
+        self.set("start", start, datetime.datetime, start=start)
+        self.set("end", end, datetime.datetime, start=start)
+        self.set("site_lat", site_lat, float)
+        self.set("site_lon", site_lon, float)
         self.set("site_name", site_name, str)
         self.set("height", height, float, unit=height_unit)
         self.set("rate", rate, float, unit=rate_unit)

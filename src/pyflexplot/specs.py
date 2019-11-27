@@ -739,181 +739,16 @@ class AttrsCollector:
 
         self.lang = lang
 
-        attrs_raw = {
-            "grid": self.collect_grid_attrs(),
-            "release": self.collect_release_attrs(),
-            "variable": self.collect_variable_attrs(),
-            "species": self.collect_species_attrs(),
-            "simulation": self.collect_simulation_attrs(),
-        }
+        attrs = {}
+        attrs["simulation"] = self.collect_simulation_attrs(attrs)
+        attrs["grid"] = self.collect_grid_attrs(attrs)
+        attrs["release"] = self.collect_release_attrs(attrs)
+        attrs["species"] = self.collect_species_attrs(attrs)
+        attrs["variable"] = self.collect_variable_attrs(attrs)
 
-        return AttrGroupCollection(lang=lang, **attrs_raw)
+        return AttrGroupCollection(lang=lang, **attrs)
 
-    def collect_grid_attrs(self):
-        """Collect grid attributes."""
-
-        np_lat = self.ncattrs_vars["rotated_pole"]["grid_north_pole_latitude"]
-        np_lon = self.ncattrs_vars["rotated_pole"]["grid_north_pole_longitude"]
-
-        return {
-            "north_pole_lat": np_lat,
-            "north_pole_lon": np_lon,
-        }
-
-    def collect_release_attrs(self):
-        """Collect release point attributes."""
-
-        # Collect release point information
-        _ind = self.var_specs.numpoint
-        release_point = ReleasePoint.from_file(self.fi, _ind)
-
-        lat = np.mean([release_point.lllat, release_point.urlat])
-        lon = np.mean([release_point.lllon, release_point.urlon])
-        site_name = release_point.name
-        site_name = {"Goesgen": r"G$\mathrm{\"o}$sgen"}.get(site_name)
-
-        height = np.mean([release_point.zbot, release_point.ztop])
-        height_unit = words["m_agl", self.lang].s
-
-        assert len(release_point.ms_parts) == 1
-        mass = next(iter(release_point.ms_parts))
-        mass_unit = "Bq"  # SR_HC
-
-        duration = release_point.end - release_point.start
-        duration_unit = "s"  # SR_HC
-
-        rate = mass / duration
-        rate_unit = f"{mass_unit} {duration_unit}-1"
-
-        return {
-            "lat": lat,
-            "lon": lon,
-            "site_name": site_name,
-            "height": height,
-            "height_unit": height_unit,
-            "rate": rate,
-            "rate_unit": rate_unit,
-            "mass": mass,
-            "mass_unit": mass_unit,
-        }
-
-    def collect_variable_attrs(self):
-        """Collect variable attributes."""
-
-        # Variable names
-        long_name = self.get_long_name(self.var_specs, lang=self.lang)
-        short_name = self.get_short_name(self.var_specs, lang=self.lang)
-
-        # Variable unit
-        unit = self.ncattrs_field["units"]
-
-        try:
-            _i = self.var_specs.level
-        except AttributeError:
-            # SR_TMP <
-            level_unit = ""
-            level_bot = -1
-            level_top = -1
-            # SR_TMP >
-        else:
-            level_unit = words["m_agl", self.lang].s
-            _var = self.fi.variables["level"]
-            level_bot = 0.0 if _i == 0 else float(_var[_i - 1])
-            level_top = float(_var[_i])
-
-        return {
-            "long_name": long_name,
-            "short_name": short_name,
-            "unit": unit,
-            "level_bot": level_bot,
-            "level_bot_unit": level_unit,
-            "level_top": level_top,
-            "level_top_unit": level_unit,
-        }
-
-    @staticmethod
-    def get_long_name(var_specs, *, type_=None, lang="en"):
-        """Return long variable name.
-
-        Args:
-            var_specs (dict or VarSpecs): Variable specifications. Must be
-                either an instance of ``VarSpecs`` or (most likely) a subclass
-                thereof, or convertible to that. In the latter case, ``type_``
-                is mandatory.
-
-            type_ (type, optional): Type to which ``var_specs`` is converted.
-                Must be ``VarSpecs`` or one of its subclasses. Mandatory if
-                ``var_specs`` is not an instance of such a type. Defaults to
-                None.
-
-            lang (str, optional): Language, e.g., 'de' for German. Defaults to
-                'en' (English).
-
-        """
-        if type_ is None:
-            type_ = type(var_specs)
-        return type_.long_name(lang, var_specs)
-
-    @staticmethod
-    def get_short_name(var_specs, *, type_=None, lang="en"):
-        """Return short variable name.
-
-        Args: See ``get_long_name``.
-
-        """
-        if type_ is None:
-            type_ = type(var_specs)
-        return type_.short_name(lang, var_specs)
-
-    def collect_species_attrs(self):
-        """Collect species attributes."""
-
-        substance = self._get_substance()
-
-        # Get deposition and washout data
-        if isinstance(self.var_specs, VarSpecs.subclass("concentration")):
-            name_core = self.field_var_name
-        elif isinstance(self.var_specs, VarSpecs.subclass("deposition")):
-            name_core = self.field_var_name[3:]
-        deposit_vel = self.ncattrs_vars[f"DD_{name_core}"]["dryvel"]
-        washout_coeff = self.ncattrs_vars[f"WD_{name_core}"]["weta"]
-        washout_exponent = self.ncattrs_vars[f"WD_{name_core}"]["wetb"]
-
-        # Get half life information
-        try:
-            half_life, half_life_unit = {
-                "Cs-137": (30.17, "a"),  # SR_HC
-                "I-131a": (8.02, "d"),  # SR_HC
-            }[substance]
-        except KeyError:
-            raise NotImplementedError(f"half_life of '{substance}'")
-
-        deposit_vel_unit = "m s-1"  # SR_HC
-        sediment_vel_unit = "m s-1"  # SR_HC
-        washout_coeff_unit = "s-1"  # SR_HC
-
-        return {
-            "name": substance,
-            "half_life": half_life,
-            "half_life_unit": half_life_unit,
-            "deposit_vel": deposit_vel,
-            "deposit_vel_unit": deposit_vel_unit,
-            "sediment_vel": 0.0,
-            "sediment_vel_unit": sediment_vel_unit,
-            "washout_coeff": washout_coeff,
-            "washout_coeff_unit": washout_coeff_unit,
-            "washout_exponent": washout_exponent,
-        }
-
-    def _get_substance(self):
-        substance = self.ncattrs_field["long_name"]
-        if isinstance(self.var_specs, VarSpecs.subclass("deposition")):
-            substance = substance.replace(
-                f"_{self.var_specs.deposition}_deposition", ""
-            )  # SR_HC
-        return substance
-
-    def collect_simulation_attrs(self):
+    def collect_simulation_attrs(self, attrs):
         """Collect simulation attributes."""
 
         model_name = "COSMO-1"  # SR_HC
@@ -1000,6 +835,176 @@ class AttrsCollector:
 
         return now, ts_integr_start
 
+    def collect_grid_attrs(self, attrs):
+        """Collect grid attributes."""
+
+        np_lat = self.ncattrs_vars["rotated_pole"]["grid_north_pole_latitude"]
+        np_lon = self.ncattrs_vars["rotated_pole"]["grid_north_pole_longitude"]
+
+        return {
+            "north_pole_lat": np_lat,
+            "north_pole_lon": np_lon,
+        }
+
+    def collect_release_attrs(self, attrs):
+        """Collect release point attributes."""
+
+        # Collect release point information
+        _ind = self.var_specs.numpoint
+        release_point = ReleasePoint.from_file(self.fi, _ind)
+
+        sim_start = attrs["simulation"]["start"]
+        start = sim_start + datetime.timedelta(seconds=release_point.rel_start)
+        end = sim_start + datetime.timedelta(seconds=release_point.rel_end)
+
+        site_lat = np.mean([release_point.lllat, release_point.urlat])
+        site_lon = np.mean([release_point.lllon, release_point.urlon])
+        site_name = release_point.name
+        site_name = {"Goesgen": r"G$\mathrm{\"o}$sgen"}.get(site_name)
+
+        height = np.mean([release_point.zbot, release_point.ztop])
+        height_unit = words["m_agl", self.lang].s
+
+        assert len(release_point.ms_parts) == 1
+        mass = next(iter(release_point.ms_parts))
+        mass_unit = "Bq"  # SR_HC
+
+        duration = release_point.rel_end - release_point.rel_start
+        duration_unit = "s"  # SR_HC
+
+        rate = mass / duration
+        rate_unit = f"{mass_unit} {duration_unit}-1"
+
+        return {
+            "start": start,
+            "end": end,
+            "site_lat": site_lat,
+            "site_lon": site_lon,
+            "site_name": site_name,
+            "height": height,
+            "height_unit": height_unit,
+            "rate": rate,
+            "rate_unit": rate_unit,
+            "mass": mass,
+            "mass_unit": mass_unit,
+        }
+
+    def collect_variable_attrs(self, attrs):
+        """Collect variable attributes."""
+
+        # Variable names
+        long_name = self.get_long_name(self.var_specs, lang=self.lang)
+        short_name = self.get_short_name(self.var_specs, lang=self.lang)
+
+        # Variable unit
+        unit = self.ncattrs_field["units"]
+
+        try:
+            _i = self.var_specs.level
+        except AttributeError:
+            # SR_TMP <
+            level_unit = ""
+            level_bot = -1
+            level_top = -1
+            # SR_TMP >
+        else:
+            level_unit = words["m_agl", self.lang].s
+            _var = self.fi.variables["level"]
+            level_bot = 0.0 if _i == 0 else float(_var[_i - 1])
+            level_top = float(_var[_i])
+
+        return {
+            "long_name": long_name,
+            "short_name": short_name,
+            "unit": unit,
+            "level_bot": level_bot,
+            "level_bot_unit": level_unit,
+            "level_top": level_top,
+            "level_top_unit": level_unit,
+        }
+
+    @staticmethod
+    def get_long_name(var_specs, *, type_=None, lang="en"):
+        """Return long variable name.
+
+        Args:
+            var_specs (dict or VarSpecs): Variable specifications. Must be
+                either an instance of ``VarSpecs`` or (most likely) a subclass
+                thereof, or convertible to that. In the latter case, ``type_``
+                is mandatory.
+
+            type_ (type, optional): Type to which ``var_specs`` is converted.
+                Must be ``VarSpecs`` or one of its subclasses. Mandatory if
+                ``var_specs`` is not an instance of such a type. Defaults to
+                None.
+
+            lang (str, optional): Language, e.g., 'de' for German. Defaults to
+                'en' (English).
+
+        """
+        if type_ is None:
+            type_ = type(var_specs)
+        return type_.long_name(lang, var_specs)
+
+    @staticmethod
+    def get_short_name(var_specs, *, type_=None, lang="en"):
+        """Return short variable name.
+
+        Args: See ``get_long_name``.
+
+        """
+        if type_ is None:
+            type_ = type(var_specs)
+        return type_.short_name(lang, var_specs)
+
+    def collect_species_attrs(self, attrs):
+        """Collect species attributes."""
+
+        substance = self._get_substance()
+
+        # Get deposition and washout data
+        if isinstance(self.var_specs, VarSpecs.subclass("concentration")):
+            name_core = self.field_var_name
+        elif isinstance(self.var_specs, VarSpecs.subclass("deposition")):
+            name_core = self.field_var_name[3:]
+        deposit_vel = self.ncattrs_vars[f"DD_{name_core}"]["dryvel"]
+        washout_coeff = self.ncattrs_vars[f"WD_{name_core}"]["weta"]
+        washout_exponent = self.ncattrs_vars[f"WD_{name_core}"]["wetb"]
+
+        # Get half life information
+        try:
+            half_life, half_life_unit = {
+                "Cs-137": (30.17, "a"),  # SR_HC
+                "I-131a": (8.02, "d"),  # SR_HC
+            }[substance]
+        except KeyError:
+            raise NotImplementedError(f"half_life of '{substance}'")
+
+        deposit_vel_unit = "m s-1"  # SR_HC
+        sediment_vel_unit = "m s-1"  # SR_HC
+        washout_coeff_unit = "s-1"  # SR_HC
+
+        return {
+            "name": substance,
+            "half_life": half_life,
+            "half_life_unit": half_life_unit,
+            "deposit_vel": deposit_vel,
+            "deposit_vel_unit": deposit_vel_unit,
+            "sediment_vel": 0.0,
+            "sediment_vel_unit": sediment_vel_unit,
+            "washout_coeff": washout_coeff,
+            "washout_coeff_unit": washout_coeff_unit,
+            "washout_exponent": washout_exponent,
+        }
+
+    def _get_substance(self):
+        substance = self.ncattrs_field["long_name"]
+        if isinstance(self.var_specs, VarSpecs.subclass("deposition")):
+            substance = substance.replace(
+                f"_{self.var_specs.deposition}_deposition", ""
+            )  # SR_HC
+        return substance
+
 
 class ReleasePoint:
     """Release point information."""
@@ -1016,8 +1021,8 @@ class ReleasePoint:
         "urlon": float,
         "zbot": float,
         "ztop": float,
-        "start": int,
-        "end": int,
+        "rel_start": int,
+        "rel_end": int,
         "n_parts": int,
         "ms_parts": list,
     }
@@ -1120,8 +1125,8 @@ class ReleasePoint:
             ("urlon", "RELLNG2"),
             ("zbot", "RELZZ1"),
             ("ztop", "RELZZ2"),
-            ("start", "RELSTART"),
-            ("end", "RELEND"),
+            ("rel_start", "RELSTART"),
+            ("rel_end", "RELEND"),
             ("n_parts", "RELPART"),
             ("ms_parts", "RELXMASS"),
         ]
