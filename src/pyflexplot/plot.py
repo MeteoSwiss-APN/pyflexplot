@@ -9,7 +9,6 @@ import os
 
 from copy import copy
 from textwrap import dedent
-from types import SimpleNamespace
 
 from srutils.geo import Degrees
 from words import Words
@@ -28,56 +27,107 @@ from .words import symbols, words
 # Plot Labels
 
 
+# SR_TMP TODO Turn this class into some more adequate type (simple dict?)
 class DispersionPlotLabels(SummarizableClass):
 
     summarizable_attrs = []  # SR_TODO
 
-    def __init__(self, lang, words):
+    def __init__(self, lang, words, attrs):
 
         self.words = words
 
-        w = self.words
+        w = words
+        s = words.symbols
+        a = attrs
+
         w.set_default_lang(lang)
-        s = self.words.symbols
+
+        groups = {}
+
+        # Top-left box
+        level = a.variable.fmt_level_range()
+        s_level = f" {w['at', None, 'level']} {level}" if level else ""
+        integr_op = w[
+            {
+                "sum": "summed_up_over",
+                "mean": "averaged_over",
+                "accum": "accumulated_over",
+            }[a.simulation.integr_type.value]
+        ].s
+        ts = a.simulation.now
+        time_rels = a.simulation.now.format(rel=True, rel_start=a.release.start.value)
+        period = a.simulation.fmt_integr_period()
+        start = a.simulation.integr_start.format(rel=True)
+        groups["top_left"] = {
+            "variable": f"{a.variable.long_name.value}{s_level}",
+            "period": f"{integr_op} {period} ({w['since']} +{start})",
+            "timestep": f"{ts.format(rel=False)} (+{ts.format(rel=True)})",
+            "time_since_release_start": f"{time_rels} {w['since']} {w['release_start']}",
+        }
+
+        # Top-right box
+        groups["top_right"] = {
+            "species": f"{a.species.name.format(join=' + ')}",
+            "site": f"{w['site']}: {a.release.site_name.value}",
+        }
 
         # Right-top box
-        self.right_top = SimpleNamespace(
-            # title = TODO pull up method `_format_legend_box_title`
-            release_site = w["release_site"].s,
-            max = w["max"].s,
-        )
+        groups["right_top"] = {
+            # "title": TODO pull up method `_format_legend_box_title`
+            "release_site": w["release_site"].s,
+            "max": w["max"].s,
+        }
 
         # Right-bottom box
         deg_ = f"{symbols['deg']}{symbols['short_space']}"
-        _N = f"{symbols['short_space']}{words['north', None, 'abbr']}"
-        _E = f"{symbols['short_space']}{words['east', None, 'abbr']}"
-        self.right_bottom = SimpleNamespace(
-            title = w["release"].t,
-            start = w['start'].s,
-            end = w["end"].s,
-            latitude = w["latitude"].s,
-            longitude = w["longitude"].s,
-            lat_deg_fmt = f"{{d}}{deg_}{{m}}'{_N} ({{f:.2f}}{words['degN']})",
-            lon_deg_fmt = f"{{d}}{deg_}{{m}}'{_E} ({{f:.2f}}{words['degE']})",
-            height = w["height"].s,
-            rate = w["rate"].s,
-            mass = w["total_mass"].s,
-            site = w["site"].s,
-            release_site = w["release_site"].s,
-            max = w["max"].s,
-            name = w["substance"].s,
-            half_life = w["half_life"].s,
-            deposit_vel = w["deposition_velocity", None, "abbr"].s,
-            sediment_vel = w["sedimentation_velocity", None, "abbr"].s,
-            washout_coeff = w["washout_coeff"].s,
-            washout_exponent = w["washout_exponent"].s,
-        )
+        _N = f"{symbols['short_space']}{w['north', None, 'abbr']}"
+        _E = f"{symbols['short_space']}{w['east', None, 'abbr']}"
+        groups["right_bottom"] = {
+            "title": w["release"].t,
+            "start": w["start"].s,
+            "end": w["end"].s,
+            "latitude": w["latitude"].s,
+            "longitude": w["longitude"].s,
+            "lat_deg_fmt": f"{{d}}{deg_}{{m}}'{_N} ({{f:.2f}}{w['degN']})",
+            "lon_deg_fmt": f"{{d}}{deg_}{{m}}'{_E} ({{f:.2f}}{w['degE']})",
+            "height": w["height"].s,
+            "rate": w["rate"].s,
+            "mass": w["total_mass"].s,
+            "site": w["site"].s,
+            "release_site": w["release_site"].s,
+            "max": w["max"].s,
+            "name": w["substance"].s,
+            "half_life": w["half_life"].s,
+            "deposit_vel": w["deposition_velocity", None, "abbr"].s,
+            "sediment_vel": w["sedimentation_velocity", None, "abbr"].s,
+            "washout_coeff": w["washout_coeff"].s,
+            "washout_exponent": w["washout_exponent"].s,
+        }
 
         # Bottom box
-        self.bottom = SimpleNamespace(
-            model_info_fmt = f"{w['flexpart'].s} {w['based_on'].s} {{model}}, {{start}}",
-            copyright = f"{s['copyright']}{w['meteoswiss'].s}",
+        model = a.simulation.model_name.value
+        n_members = 21  # SR_TMP SR_HC TODO un-hardcode
+        member_ids = "{:03d}-{:03d}".format(0, 20)  # SR_TMP SR_HC TODO un-hardcode
+        model_ens = (
+            model
+            + (f"{w['ensemble']} ({n_members} {w['member', None, 'pl']}: {member_ids}"),
         )
+        start = a.simulation.start.format()
+        model_info_fmt = f"{w['flexpart']} {w['based_on']} {model}, {start}"
+        groups["bottom"] = {
+            "model_info_det": model_info_fmt.format(m=model),
+            "model_info_ens": model_info_fmt.format(m=model_ens),
+            "copyright": f"{s['copyright']}{w['meteoswiss']}",
+        }
+
+        # Format all labels (hacky!)
+        for group_name, group in groups.items():
+            setattr(self, group_name, group)  # SR_TMP
+            for name, s in group.items():
+                if isinstance(s, str):
+                    group[name] = " ".join(
+                        [s.split(" ")[0].capitalize()] + s.split(" ")[1:]
+                    )
 
 
 # Plots
@@ -210,7 +260,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
         self.reverse_legend = reverse_legend or False
 
         if labels is None:
-            labels = DispersionPlotLabels(lang, words)
+            labels = DispersionPlotLabels(lang, words, field.attrs)
         self.labels = labels
 
         # Formatting arguments
@@ -420,27 +470,31 @@ class DispersionPlot_0(Plot):  # SR_TMP
 
         """
 
+        a = self.field.attrs
+        l = self.labels
+        w = self.labels.words
+
         if skip_pos is None:
             skip_pos = {}
 
         if not "tl" in skip_pos:
             # Top left: variable
-            s = self.field.attrs.variable.long_name.value
-            _lvl = self.field.attrs.variable.fmt_level_range()
+            s = a.variable.long_name.value
+            _lvl = a.variable.fmt_level_range()
             if _lvl:
-                s += f" {self.labels.words['at', None, 'level']} {_lvl}"
+                s += f" {w['at', None, 'level']} {_lvl}"
             box.text("tl", s, size="x-large")
 
         if not "bl" in skip_pos:
             # Bottom left: integration time & level range
-            itype = self.field.attrs.simulation.integr_type.value
+            itype = a.simulation.integr_type.value
             s = {
-                "sum": self.labels.words["summed_up_over"].s,
-                "mean": self.labels.words["averaged_over"].s,
-                "accum": self.labels.words["accumulated_over"].s,
+                "sum": w["summed_up_over"].s,
+                "mean": w["averaged_over"].s,
+                "accum": w["accumulated_over"].s,
             }[itype]
-            since = self.labels.words["since"].s
-            sim = self.field.attrs.simulation
+            since = w["since"].s
+            sim = a.simulation
             start = sim.integr_start.format(rel=True)
             s += f" {sim.fmt_integr_period()} ({since} +{start})"
             if self.scale_field is not None:
@@ -451,29 +505,23 @@ class DispersionPlot_0(Plot):  # SR_TMP
 
         if not "tc" in skip_pos:
             # Top center: species
-            s = (
-                f"{self.labels.words['substance'].s}: "
-                f"{self.field.attrs.species.name.format(join=' + ')}"
-            )
+            s = f"{w['substance']}: {a.species.name.format(join=' + ')}"
             box.text("tc", s, dx=dx_center, size="large")
 
         if not "bc" in skip_pos:
             # Bottom center: release site
-            s = (
-                f"{self.labels.words['release_site'].s}: "
-                f"{self.field.attrs.release.site_name.value}"
-            )
+            s = f"{l['w']['release_site']}: {a.release.site_name.value}"
             box.text("bc", s, dx=dx_center, size="large")
 
         if not "tr" in skip_pos:
             # Top right: datetime
-            timestep_fmtd = self.field.attrs.simulation.now.format()
+            timestep_fmtd = a.simulation.now.format()
             s = f"{timestep_fmtd}"
             box.text("tr", s, size="large")
 
         if not "br" in skip_pos:
             # Bottom right: time into simulation
-            _now_rel = self.field.attrs.simulation.now.format(rel=True)
+            _now_rel = a.simulation.now.format(rel=True)
             s = f"{_now_rel}"
             box.text("br", s, size="large")
 
@@ -481,6 +529,8 @@ class DispersionPlot_0(Plot):  # SR_TMP
 
     def fill_box_right_top(self, box, dy_line=3.0, dy0_markers=0.25, w_box=4, h_box=2):
         """Fill the top box to the right of the map plot."""
+
+        labels = self.labels.right_top
 
         # font_size = 'small'
         font_size = "medium"
@@ -560,7 +610,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
             box.marker(
                 loc="bc", dx=dx_marker, dy=dy_site_marker, **self._site_marker_kwargs,
             )
-            s = self.labels.right_top.release_site
+            s = labels["release_site"]
             box.text(
                 loc="bc",
                 s=s,
@@ -578,14 +628,13 @@ class DispersionPlot_0(Plot):  # SR_TMP
             box.marker(
                 loc="bc", dx=dx_marker, dy=dy_max_marker, **self._max_marker_kwargs,
             )
-            s = f"{self.labels.right_top.max}: "
+            s = f"{labels['max']}: "
             if np.isnan(self.field.fld).all():
                 s += "NaN"
             else:
                 s += fmt_float(
                     np.nanmax(self.field.fld), fmt_e0="{f:.3E}", fmt_f1="{f:,.3f}"
                 )
-                # s += f' {self.field.attrs.variable.unit.format()}'
             box.text(
                 loc="bc",
                 s=s,
@@ -597,9 +646,8 @@ class DispersionPlot_0(Plot):  # SR_TMP
 
     # SR_TODO move into Labels class
     def _format_legend_box_title(self):
-        s = f"{self.field.attrs.variable.short_name.format()}"
-        s += f" ({self.field.attrs.variable.unit.format()})"
-        return s
+        a = self.field.attrs
+        return f"{a.variable.short_name.format()} ({a.variable.unit.format()})"
 
     def fill_box_right_bottom(self, box):
         """Fill the bottom box to the right of the map plot."""
@@ -608,33 +656,33 @@ class DispersionPlot_0(Plot):  # SR_TMP
         a = self.field.attrs
 
         # Box title
-        # box.text('tc', l.title, size='large')
-        box.text("tc", l.title, dy=-1.0, size="large")
+        # box.text('tc', l['title'], size='large')
+        box.text("tc", l["title"], dy=-1.0, size="large")
 
         # Release site coordinates
-        lat = Degrees(self.field.attrs.release.site_lat.value)
-        lon = Degrees(self.field.attrs.release.site_lon.value)
-        lat_deg = l.lat_deg_fmt.format(d=lat.degs(), m=lat.mins(), f=lat.frac())
-        lon_deg = l.lon_deg_fmt.format(d=lon.degs(), m=lon.mins(), f=lon.frac())
+        lat = Degrees(a.release.site_lat.value)
+        lon = Degrees(a.release.site_lon.value)
+        lat_deg = l["lat_deg_fmt"].format(d=lat.degs(), m=lat.mins(), f=lat.frac())
+        lon_deg = l["lon_deg_fmt"].format(d=lon.degs(), m=lon.mins(), f=lon.frac())
 
         info_blocks = dedent(
             f"""\
-            {l.site}:\t{a.release.site_name.format()}
-            {l.latitude}:\t{lat_deg}
-            {l.longitude}:\t{lon_deg}
-            {l.height}:\t{a.release.height.format()}
+            {l['site']}:\t{a.release.site_name.format()}
+            {l['latitude']}:\t{lat_deg}
+            {l['longitude']}:\t{lon_deg}
+            {l['height']}:\t{a.release.height.format()}
 
-            {l.start}:\t{a.release.start.format()}
-            {l.end}:\t{a.release.end.format()}
-            {l.rate}:\t{a.release.rate.format()}
-            {l.mass}:\t{a.release.mass.format()}
+            {l['start']}:\t{a.release.start.format()}
+            {l['end']}:\t{a.release.end.format()}
+            {l['rate']}:\t{a.release.rate.format()}
+            {l['mass']}:\t{a.release.mass.format()}
 
-            {l.name}:\t{a.species.name.format()}
-            {l.half_life}:\t{a.species.half_life.format()}
-            {l.deposit_vel}:\t{a.species.deposit_vel.format()}
-            {l.sediment_vel}:\t{a.species.sediment_vel.format()}
-            {l.washout_coeff}:\t{a.species.washout_coeff.format()}
-            {l.washout_exponent}:\t{a.species.washout_exponent.format()}
+            {l['name']}:\t{a.species.name.format()}
+            {l['half_life']}:\t{a.species.half_life.format()}
+            {l['deposit_vel']}:\t{a.species.deposit_vel.format()}
+            {l['sediment_vel']}:\t{a.species.sediment_vel.format()}
+            {l['washout_coeff']}:\t{a.species.washout_coeff.format()}
+            {l['washout_exponent']}:\t{a.species.washout_exponent.format()}
             """
         )
 
@@ -648,20 +696,18 @@ class DispersionPlot_0(Plot):  # SR_TMP
     def fill_box_bottom(self, box):
         """Fill the box to the bottom of the map plot."""
 
+        labels = self.labels.bottom
+
         # FLEXPART/model info
         s = self._model_info()  # SR_TODO move into Labels class
         box.text("tl", dx=-0.7, dy=0.5, s=s, size="small")
 
         # MeteoSwiss Copyright
-        s = self.labels.bottom.copyright
-        box.text("tr", dx=0.7, dy=0.5, s=s, size="small")
+        box.text("tr", dx=0.7, dy=0.5, s=labels["copyright"], size="small")
 
     # SR_TODO move this into Labels class
     def _model_info(self):
-        return self.labels.bottom.model_info_fmt.format(
-            model=self.field.attrs.simulation.model_name.value,
-            start=self.field.attrs.simulation.start.format(),
-        )
+        return self.labels.bottom["model_info_det"]
 
     def define_colors(self):
         if self.cmap == "flexplot":
@@ -775,70 +821,47 @@ class DispersionPlot_1(DispersionPlot_0):
     def fill_box_top_left(self, box, *, skip_pos=None):
         """Fill the box above the map plot."""
 
+        labels = self.labels.top_left
+
         if skip_pos is None:
             skip_pos = {}
 
+        # Top-left: Variable name etc.
         if not "tl" in skip_pos:
-            # Top left: variable
-            s = self.field.attrs.variable.long_name.value
-            _lvl = self.field.attrs.variable.fmt_level_range()
-            if _lvl:
-                s += f" {self.labels.words['at', None, 'level']} {_lvl}"
-            box.text("tl", s, size="x-large")
+            box.text("tl", labels["variable"], size="x-large")
 
+        # Bottom-left: Integration time etc.
         if not "bl" in skip_pos:
-            # Bottom left: integration time & level range
-            itype = self.field.attrs.simulation.integr_type.value
-            s = {
-                "sum": self.labels.words["summed_up_over"].s,
-                "mean": self.labels.words["averaged_over"].s,
-                "accum": self.labels.words["accumulated_over"].s,
-            }[itype]
-            since = self.labels.words["since"].s
-            sim = self.field.attrs.simulation
-            start = sim.integr_start.format(rel=True)
-            s += f" {sim.fmt_integr_period()} ({since} +{start})"
+            s = labels["period"]
             if self.scale_field is not None:
                 s += f" ({self.scale_field}x)"
             box.text("bl", s, size="large")
 
+        # Top-right: Time step
         if not "tr" in skip_pos:
-            # Top right: datetime
-            ts = self.field.attrs.simulation.now
-            s = f"{ts.format(rel=False)} (+{ts.format(rel=True)})"
-            box.text("tr", s, size="large")
+            box.text("tr", labels["timestep"], size="large")
 
+        # Bottom-right: Time since release start
         if not "br" in skip_pos:
-            # Bottom right: time into simulation
-            time = self.field.attrs.simulation.now.format(
-                rel=True, rel_start=self.field.attrs.release.start.value,
-            )
-            since = self.labels.words["since"].s
-            release_start = self.labels.words["release_start"].s
-            s = f"{time} {since} {release_start}"
-            box.text("br", s, size="large")
+            box.text("br", labels["time_since_release_start"], size="large")
 
         return box
 
     def fill_box_top_right(self, box, *, skip_pos=None):
         """Fill the box to the top-right of the map plot."""
 
+        labels = self.labels.top_right
+
         if skip_pos is None:
             skip_pos = []
 
         if not "tc" in skip_pos:
             # Top center: species
-            s = f"{self.field.attrs.species.name.format(join=' + ')}"
-            box.text("tc", s, size="large")
+            box.text("tc", labels["species"], size="large")
 
         if not "bc" in skip_pos:
-            # Bottom center: release site
-            s = (
-                f"{self.labels.words['site'].s}: "
-                f"{self.field.attrs.release.site_name.value}"
-            )
-            # Shrink/truncate very long release site names to fit into the box
-            s, size = box.fit_text(s, "large", n_shrink_max=1)
+            # Bottom center: release site (shrunk/truncated to fit box)
+            s, size = box.fit_text(labels["site"], "large", n_shrink_max=1)
             box.text("bc", s, size=size)
 
         return box
@@ -948,32 +971,9 @@ class Plot_Ens(Plot):
         "h_rel_box_rt": 0.46,
     }
 
-    def fill_box_top(self, box, *, skip_pos=None):
-
-        skip_pos_parent = {"tl"}
-        if skip_pos is None:
-            skip_pos = {}
-        else:
-            skip_pos_parent.update(set(skip_pos))
-
-        box = super().fill_box_top(box, skip_pos=skip_pos_parent)
-
-        # SR_TMP < TODO separate input and ensemble variables
-        if not "tl" in skip_pos:
-            # Top left: variable
-            s = f"{self.field.attrs.variable.long_name.value}"
-            box.text("tl", s, size="x-large")
-        # SR_TMP >
-
-        return box
-
     # SR_TODO move this into Labels class
     def _model_info(self):
-        members = "(21 Members: 000-020)"
-        return self.labels.bottom.model_info_fmt.format(
-            model=f"{self.field.attrs.simulation.model_name.value} Ensemble",
-            start=self.field.attrs.simulation.start.format(),
-        ) + f" {members}"
+        return self.labels.bottom["model_info_ens"]
 
 
 class Plot_EnsMean_Concentration(Plot_Ens, Plot_Concentration):
@@ -995,7 +995,7 @@ class Plot_EnsMeanAffectedAreaMono(Plot_Ens, Plot_AffectedAreaMono):
 class Plot_EnsThrAgrmt(Plot_Ens):
     name = "ens_thr_agrmt"
 
-    n_levels = 6
+    n_levels = 7
     d_level = 2
     extend = "min"
     level_range_style = "int"  # see ``fmt_level_ranges``
@@ -1044,12 +1044,14 @@ class Plot_EnsThrAgrmt(Plot_Ens):
 
     # SR_TODO move into Labels class
     def _format_legend_box_title(self):
-        no = words['number_of', None, 'abbr'].s
-        name = self.field.attrs.variable.short_name.format()
-        thresh = self.field.field_specs.ens_var_setup["thr"]
-        unit = self.field.attrs.variable.unit.format()
-        geq = r"$\geq$"
-        return f"{no} {name}\n({geq} {thresh} {unit})"
+        w = self.labels.words
+        s = self.labels.words.symbols
+        a = self.field.attrs
+        thr = self.field.field_specs.ens_var_setup["thr"]
+        return (
+            f"{w['number_of', None, 'abbr'].c} {a.variable.short_name.format()}\n"
+            f"({s['geq']} {thr} {a.variable.unit.format()})"
+        )
 
     def _format_level(self, lvl):
         return f"{lvl}"

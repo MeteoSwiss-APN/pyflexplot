@@ -365,7 +365,7 @@ class VarSpecs_EnsThrAgrmt:
         long_name_base = (
             # SR_TMP <
             f"{words['ensemble'].s}{dict(en=' ', de='-')[lang]}"
-            f"{words['threshold_agreement'].s} {dict(en='of', de='der')[lang]}"
+            f"{words['threshold_agreement'].s} {dict(en='of', de='der')[lang]} "
             # SR_TMP >
         )
         return long_name_base + long_name_super

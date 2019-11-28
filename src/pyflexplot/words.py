@@ -11,6 +11,7 @@ symbols = Words(
         "ae": r"$\mathrm{\"a}$",
         "copyright": "\u00a9",
         "deg": r"$^\circ$",
+        "geq": r"$\geq$",
         "oe": r"$\mathrm{\"o}$",
         "t0": r"$\mathrm{T_0}$",
         "short_space": r"$\,$",
@@ -81,6 +82,7 @@ words.add(en="longitude", de=f'L{s["ae"]}nge')
 # M
 words.add(en="m AGL", de=f'm {s["ue"]}.G.')
 words.add(en="max.", de="Max.")
+words.add(en={"*": "member", "pl": "members"}, de={"*": "Member", "pl": "Members"})
 words.add(en="MeteoSwiss", de="MeteoSchweiz")
 # N
 words.add(en={"*": "north", "abbr": "N"}, de={"*": "Norden", "abbr": "N"})
