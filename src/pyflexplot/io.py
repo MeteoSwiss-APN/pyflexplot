@@ -13,9 +13,9 @@ from pprint import pprint  # SR_DEV
 from srutils.dict import pformat_dictlike
 from srutils.various import check_array_indices
 
+from .attr import AttrsCollector
 from .data import Field
 from .data import threshold_agreement
-from .specs import AttrsCollector
 from .specs import VarSpecs
 from .specs import FieldSpecs
 
