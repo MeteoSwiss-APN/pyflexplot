@@ -5,7 +5,7 @@ TranslatedWords.
 from words import Words
 from words import TranslatedWords
 
-symbols = Words(
+SYMBOLS = Words(
     "symbols",
     {
         "ae": r"$\mathrm{\"a}$",
@@ -18,53 +18,55 @@ symbols = Words(
         "ue": r"$\mathrm{\"u}$",
     },
 )
+s = SYMBOLS
 
-s = symbols
-words = TranslatedWords("words", {}, default_lang="en")
+WORDS = TranslatedWords("words", {}, default_lang="en")
+WORDS.symbols = SYMBOLS
+
 # A
-words.add(en="accumulated over", de=f'akkumuliert {s["ue"]}ber')
-words.add(
+WORDS.add(en="accumulated over", de=f'akkumuliert {s["ue"]}ber')
+WORDS.add(
     en={"*": "concentration", "abbr": "concentr."},
     de={"*": "Konzentration", "abbr": "Konzentr."},
 )
-words.add(
+WORDS.add(
     en={"*": "activity concentration", "abbr": "activity concentr."},
     de={
         "*": f'Aktivit{s["ae"]}tskonzentration',
         "abbr": f'Aktivit{s["ae"]}tskonzentr.',
     },
 )
-words.add(en="affected area", de="Beaufschlagtes Gebiet")
-words.add(en="at", de={"level": "auf", "place": "bei", "time": "um"})
-words.add(en="averaged over", de=f'gemittelt {s["ue"]}ber')
+WORDS.add(en="affected area", de="Beaufschlagtes Gebiet")
+WORDS.add(en="at", de={"level": "auf", "place": "bei", "time": "um"})
+WORDS.add(en="averaged over", de=f'gemittelt {s["ue"]}ber')
 # B
-words.add(en="based on", de="basierend auf")
+WORDS.add(en="based on", de="basierend auf")
 # C
 # D
 deg_ = f"{s['deg']}{s['short_space']}"
-words.add("degE", en=f"{deg_}E", de=f"{deg_}O")
-words.add("degN", en=f"{deg_}N", de=f"{deg_}N")
-words.add("degS", en=f"{deg_}S", de=f"{deg_}S")
-words.add("degW", en=f"{deg_}W", de=f"{deg_}W")
-words.add(
+WORDS.add("degE", en=f"{deg_}E", de=f"{deg_}O")
+WORDS.add("degN", en=f"{deg_}N", de=f"{deg_}N")
+WORDS.add("degS", en=f"{deg_}S", de=f"{deg_}S")
+WORDS.add("degW", en=f"{deg_}W", de=f"{deg_}W")
+WORDS.add(
     en={"*": "deposition velocity", "abbr": "deposit. vel."},
     de={"*": "Depositionsgeschwindigkeit", "abbr": "Deposit.-Geschw."},
 )
-words.add(en="deposition", de="Deposition")
-words.add(en="dry", de="trocken")
+WORDS.add(en="deposition", de="Deposition")
+WORDS.add(en="dry", de="trocken")
 # E
-words.add(en={"*": "east", "abbr": "E"}, de={"*": "Ost", "abbr": "O"})
-words.add(en="end", de="Ende")
-words.add(en="ensemble", de="Ensemble")
-words.add(en="ensemble mean", de="Ensemble-Mittel")
+WORDS.add(en={"*": "east", "abbr": "E"}, de={"*": "Ost", "abbr": "O"})
+WORDS.add(en="end", de="Ende")
+WORDS.add(en="ensemble", de="Ensemble")
+WORDS.add(en="ensemble mean", de="Ensemble-Mittel")
 # F
-words.add(en="FLEXPART", de="FLEXPART")
+WORDS.add(en="FLEXPART", de="FLEXPART")
 # G
 # H
-words.add(en="half-life", de="Halbwertszeit")
-words.add(en="height", de=f'H{s["oe"]}he')
+WORDS.add(en="half-life", de="Halbwertszeit")
+WORDS.add(en="height", de=f'H{s["oe"]}he')
 # I
-words.add(
+WORDS.add(
     en={"*": "integrated", "abbr": "int."},
     de={
         "*": "integriert",
@@ -77,54 +79,52 @@ words.add(
 # J
 # K
 # L
-words.add(en="latitude", de="Breite")
-words.add(en="longitude", de=f'L{s["ae"]}nge')
+WORDS.add(en="latitude", de="Breite")
+WORDS.add(en="longitude", de=f'L{s["ae"]}nge')
 # M
-words.add(en="m AGL", de=f'm {s["ue"]}.G.')
-words.add(en="max.", de="Max.")
-words.add(en={"*": "member", "pl": "members"}, de={"*": "Member", "pl": "Members"})
-words.add(en="MeteoSwiss", de="MeteoSchweiz")
+WORDS.add(en="m AGL", de=f'm {s["ue"]}.G.')
+WORDS.add(en="max.", de="Max.")
+WORDS.add(en={"*": "member", "pl": "members"}, de={"*": "Member", "pl": "Members"})
+WORDS.add(en="MeteoSwiss", de="MeteoSchweiz")
 # N
-words.add(en={"*": "north", "abbr": "N"}, de={"*": "Norden", "abbr": "N"})
-words.add(en={"*": "number of", "abbr": "no."}, de={"*": "Anzahl", "abbr": "Anz."})
+WORDS.add(en={"*": "north", "abbr": "N"}, de={"*": "Norden", "abbr": "N"})
+WORDS.add(en={"*": "number of", "abbr": "no."}, de={"*": "Anzahl", "abbr": "Anz."})
 # O
 # P
 # Q
 # R
-words.add(en="rate", de="Rate")
-words.add(en="release", de="Freisetzung")
-words.add(en="release site", de="Abgabeort")
-words.add(en="release start", de="Freisetzungsbeginn")
+WORDS.add(en="rate", de="Rate")
+WORDS.add(en="release", de="Freisetzung")
+WORDS.add(en="release site", de="Abgabeort")
+WORDS.add(en="release start", de="Freisetzungsbeginn")
 # S
-words.add(
+WORDS.add(
     en={"*": "sedimentation velocity", "abbr": "sediment. vel."},
     de={"*": "Sedimentiergeschwindigkeit", "abbr": "Sediment.-Geschw."},
 )
-words.add(en="since", de="seit")
-words.add(en="site", de="Ort")
-words.add(en={"*": "south", "abbr": "S"}, de={"*": "S{s['ue']}den", "abbr": "S"})
-words.add(en="start", de="Start")
-words.add(en="substance", de="Substanz")
-words.add(en="summed up over", de=f'aufsummiert {s["ue"]}ber')
-words.add(
+WORDS.add(en="since", de="seit")
+WORDS.add(en="site", de="Ort")
+WORDS.add(en={"*": "south", "abbr": "S"}, de={"*": "S{s['ue']}den", "abbr": "S"})
+WORDS.add(en="start", de="Start")
+WORDS.add(en="substance", de="Substanz")
+WORDS.add(en="summed up over", de=f'aufsummiert {s["ue"]}ber')
+WORDS.add(
     en={"*": "surface deposition", "abbr": "surface dep."},
     de={"*": "Bodendeposition", "abbr": "Bodendep."},
 )
 # T
-words.add(
+WORDS.add(
     en="threshold agreement", de=f"Grenzwert{s['ue']}bereinstimmung",
 )
-words.add(en="total", de={"*": "total", "m": "totaler", "f": "totale"})
-words.add(en="total mass", de="Totale Masse")
+WORDS.add(en="total", de={"*": "total", "m": "totaler", "f": "totale"})
+WORDS.add(en="total mass", de="Totale Masse")
 # U
 # V
 # W
-words.add(en="washout coeff.", de="Auswaschkoeff.")
-words.add(en="washout exponent", de="Auswaschexponent")
-words.add(en={"*": "west", "abbr": "W"}, de={"*": "Westen", "abbr": "W"})
-words.add(en="wet", de="nass")
+WORDS.add(en="washout coeff.", de="Auswaschkoeff.")
+WORDS.add(en="washout exponent", de="Auswaschexponent")
+WORDS.add(en={"*": "west", "abbr": "W"}, de={"*": "Westen", "abbr": "W"})
+WORDS.add(en="wet", de="nass")
 # X
 # Y
 # Z
-
-words.symbols = symbols  # SR_TMP

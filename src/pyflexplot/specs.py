@@ -13,7 +13,7 @@ from srutils.dict import pformat_dictlike
 
 from .utils import ParentClass
 from .utils import SummarizableClass
-from .words import words
+from .words import WORDS
 
 
 def int_or_list(arg):
@@ -242,17 +242,17 @@ class VarSpecs_Concentration(VarSpecs):
     @classmethod
     def long_name(cls, lang, var_specs):
         ctx = "abbr" if var_specs.integrate else "*"
-        return words["activity_concentration", lang, ctx].s
+        return WORDS["activity_concentration", lang, ctx].s
 
     @classmethod
     def short_name(cls, lang, var_specs):
         s = ""
         if var_specs.integrate:
             return (
-                f"{words['integrated', lang, 'abbr'].s} "
-                f"{words['concentration', lang, 'abbr'].s}"
+                f"{WORDS['integrated', lang, 'abbr'].s} "
+                f"{WORDS['concentration', lang, 'abbr'].s}"
             )
-        return words["concentration", lang].s
+        return WORDS["concentration", lang].s
 
     def var_name(self):
         """Derive variable name from specifications."""
@@ -286,17 +286,17 @@ class VarSpecs_Deposition(VarSpecs):
     def deposition_type(cls, lang, var_specs):
         type_ = dict(var_specs)["deposition"]
         word = "total" if type_ == "tot" else type_
-        return words[word, lang, "f"].s
+        return WORDS[word, lang, "f"].s
 
     @classmethod
     def long_name(cls, lang, var_specs, abbr=False):
         dep_type = cls.deposition_type(lang, var_specs)
         ctx = "abbr" if abbr else "*"
-        return f"{dep_type} " f"{words['surface_deposition', lang, ctx].s}"
+        return f"{dep_type} " f"{WORDS['surface_deposition', lang, ctx].s}"
 
     @classmethod
     def short_name(cls, lang, var_specs):
-        return words["deposition", lang].s
+        return WORDS["deposition", lang].s
 
     def var_name(self):
         """Derive variable name from specifications."""
@@ -310,7 +310,7 @@ class VarSpecs_AffectedArea(VarSpecs_Deposition):
     @classmethod
     def long_name(cls, lang, var_specs):
         dep_name = VarSpecs_Deposition.long_name(lang, var_specs, abbr=True)
-        return f"{words['affected_area', lang].s} " f"({dep_name})"
+        return f"{WORDS['affected_area', lang].s} " f"({dep_name})"
 
 
 class Varspecs_AffectedAreaMono(VarSpecs_AffectedArea):
@@ -323,8 +323,8 @@ class VarSpecs_EnsMean_Concentration(VarSpecs_Concentration):
     @classmethod
     def long_name(cls, lang, var_specs):
         return (
-            f"{words['activity_concentration', lang].s}\n"
-            f"{words['ensemble_mean', lang].s}"
+            f"{WORDS['activity_concentration', lang].s}\n"
+            f"{WORDS['ensemble_mean', lang].s}"
         )
 
 
@@ -335,8 +335,8 @@ class VarSpecs_EnsMean_Deposition(VarSpecs_Deposition):
     def long_name(cls, lang, var_specs):
         dep_type = cls.deposition_type(lang, var_specs)
         return (
-            f"{words['ensemble_mean', lang].s} {dep_type} "
-            f"{words['surface_deposition'].s}"
+            f"{WORDS['ensemble_mean', lang].s} {dep_type} "
+            f"{WORDS['surface_deposition'].s}"
         )
 
 
@@ -347,7 +347,7 @@ class VarSpecs_EnsMean_AffectedArea(VarSpecs_AffectedArea):
     def long_name(cls, lang, var_specs):
         dep_type = cls.deposition_type(lang, var_specs)
         return (
-            f"{words['ensemble_mean', lang].s} {words['affected_area', lang].s} "
+            f"{WORDS['ensemble_mean', lang].s} {WORDS['affected_area', lang].s} "
             f"({dep_type})"
         )
 
@@ -358,8 +358,8 @@ class VarSpecs_EnsThrAgrmt:
         long_name_super = super().long_name(lang, var_specs)
         long_name_base = (
             # SR_TMP <
-            f"{words['ensemble'].s}{dict(en=' ', de='-')[lang]}"
-            f"{words['threshold_agreement'].s} {dict(en='of', de='der')[lang]} "
+            f"{WORDS['ensemble'].s}{dict(en=' ', de='-')[lang]}"
+            f"{WORDS['threshold_agreement'].s} {dict(en='of', de='der')[lang]} "
             # SR_TMP >
         )
         return long_name_base + long_name_super

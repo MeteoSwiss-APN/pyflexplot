@@ -11,7 +11,6 @@ from copy import copy
 from textwrap import dedent
 
 from srutils.geo import Degrees
-from words import Words
 
 from .plot_utils import MapAxesRotatedPole
 from .plot_utils import ax_w_h_in_fig_coords
@@ -21,7 +20,7 @@ from .utils import fmt_float
 from .utils import fmt_level_ranges
 from .utils import ParentClass
 from .utils import SummarizableClass
-from .words import symbols, words
+from .words import WORDS
 
 
 # Plot Labels
@@ -79,9 +78,9 @@ class DispersionPlotLabels(SummarizableClass):
         }
 
         # Right-bottom box
-        deg_ = f"{symbols['deg']}{symbols['short_space']}"
-        _N = f"{symbols['short_space']}{w['north', None, 'abbr']}"
-        _E = f"{symbols['short_space']}{w['east', None, 'abbr']}"
+        deg_ = f"{w.symbols['deg']}{w.symbols['short_space']}"
+        _N = f"{w.symbols['short_space']}{w['north', None, 'abbr']}"
+        _E = f"{w.symbols['short_space']}{w['east', None, 'abbr']}"
         groups["right_bottom"] = {
             "title": w["release"].t,
             "start": w["start"].s,
@@ -260,7 +259,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
         self.reverse_legend = reverse_legend or False
 
         if labels is None:
-            labels = DispersionPlotLabels(lang, words, field.attrs)
+            labels = DispersionPlotLabels(lang, WORDS, field.attrs)
         self.labels = labels
 
         # Formatting arguments
