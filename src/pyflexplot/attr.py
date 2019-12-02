@@ -933,8 +933,8 @@ class AttrsCollector:
         """Collect variable attributes."""
 
         # Variable names
-        long_name = self.get_long_name(self.var_specs, lang=self.lang)
-        short_name = self.get_short_name(self.var_specs, lang=self.lang)
+        long_name = self.var_specs.long_name(self.lang)
+        short_name = self.var_specs.short_name(self.lang)
 
         # Variable unit
         unit = self.ncattrs_field["units"]
@@ -962,40 +962,6 @@ class AttrsCollector:
             "level_top": level_top,
             "level_top_unit": level_unit,
         }
-
-    @staticmethod
-    def get_long_name(var_specs, *, type_=None, lang="en"):
-        """Return long variable name.
-
-        Args:
-            var_specs (dict or VarSpecs): Variable specifications. Must be
-                either an instance of ``VarSpecs`` or (most likely) a subclass
-                thereof, or convertible to that. In the latter case, ``type_``
-                is mandatory.
-
-            type_ (type, optional): Type to which ``var_specs`` is converted.
-                Must be ``VarSpecs`` or one of its subclasses. Mandatory if
-                ``var_specs`` is not an instance of such a type. Defaults to
-                None.
-
-            lang (str, optional): Language, e.g., 'de' for German. Defaults to
-                'en' (English).
-
-        """
-        if type_ is None:
-            type_ = type(var_specs)
-        return type_.long_name(lang, var_specs)
-
-    @staticmethod
-    def get_short_name(var_specs, *, type_=None, lang="en"):
-        """Return short variable name.
-
-        Args: See ``get_long_name``.
-
-        """
-        if type_ is None:
-            type_ = type(var_specs)
-        return type_.short_name(lang, var_specs)
 
     def collect_species_attrs(self, attrs):
         """Collect species attributes."""
@@ -1176,7 +1142,7 @@ class ReleasePoint:
         return cls(**kwargs)
 
     @classmethod
-    def from_file_multi(cls, fi, var_name="RELCOM"):
+    def multiple_from_file(cls, fi, var_name="RELCOM"):
         """Read information on multiple release points from open file.
 
         Args:

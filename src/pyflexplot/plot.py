@@ -1048,7 +1048,7 @@ class Plot_EnsThrAgrmt(Plot_Ens):
         a = self.field.attrs
         thr = self.field.field_specs.ens_var_setup["thr"]
         return (
-            f"{w['number_of', None, 'abbr'].c} {a.variable.short_name.format()}\n"
+            f"{a.variable.short_name.format()}\n"
             f"({s['geq']} {thr} {a.variable.unit.format()})"
         )
 

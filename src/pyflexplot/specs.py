@@ -109,14 +109,6 @@ class VarSpecs(SummarizableClass, ParentClass):
         arguments.
 
         """
-        return cls._multiple_as_type(cls, *args, **kwargs)
-
-    @classmethod
-    def multiple_as_dict(cls, *args, **kwargs):
-        return cls._multiple_as_type(dict, *args, **kwargs)
-
-    @classmethod
-    def _multiple_as_type(cls, type_, rlat=None, rlon=None, **kwargs):
         keys_singular = sorted(cls.specs())
         vals_plural = []
         for key_singular in keys_singular:
@@ -149,7 +141,7 @@ class VarSpecs(SummarizableClass, ParentClass):
         specs_lst = []
         for vals in itertools.product(*vals_plural):
             kwargs_i = {k: v for k, v in zip(keys_singular, vals)}
-            specs = type_(rlat=rlat, rlon=rlon, **kwargs_i)
+            specs = cls(rlat=kwargs.get("rlat"), rlon=kwargs.get("rlon"), **kwargs_i)
             specs_lst.append(specs)
 
         return specs_lst
@@ -203,6 +195,11 @@ class VarSpecs(SummarizableClass, ParentClass):
         except KeyError as e:
             raise e from None
 
+    def __setitem__(self, key, val):
+        if key.startswith("_") or key not in self.__dict__:
+            raise ValueError(f"invalid key '{key}'")
+        self.__dict__[key] = val
+
     def __iter__(self):
         for key, val in sorted(self.__dict__.items()):
             if not key.startswith("_"):
@@ -239,15 +236,13 @@ class VarSpecs_Concentration(VarSpecs):
         "level": int_or_list,
     }
 
-    @classmethod
-    def long_name(cls, lang, var_specs):
-        ctx = "abbr" if var_specs.integrate else "*"
+    def long_name(self, lang):
+        ctx = "abbr" if self.integrate else "*"
         return WORDS["activity_concentration", lang, ctx].s
 
-    @classmethod
-    def short_name(cls, lang, var_specs):
+    def short_name(self, lang):
         s = ""
-        if var_specs.integrate:
+        if self.integrate:
             return (
                 f"{WORDS['integrated', lang, 'abbr'].s} "
                 f"{WORDS['concentration', lang, 'abbr'].s}"
@@ -282,20 +277,18 @@ class VarSpecs_Deposition(VarSpecs):
         "deposition": str,
     }
 
-    @classmethod
-    def deposition_type(cls, lang, var_specs):
-        type_ = dict(var_specs)["deposition"]
+    def deposition_type(self, lang):
+        type_ = self["deposition"]
         word = "total" if type_ == "tot" else type_
         return WORDS[word, lang, "f"].s
 
-    @classmethod
-    def long_name(cls, lang, var_specs, abbr=False):
-        dep_type = cls.deposition_type(lang, var_specs)
+    def long_name(self, lang, abbr=False):
         ctx = "abbr" if abbr else "*"
-        return f"{dep_type} " f"{WORDS['surface_deposition', lang, ctx].s}"
+        return (
+            f"{self.deposition_type(lang)} {WORDS['surface_deposition', lang, ctx].s}"
+        )
 
-    @classmethod
-    def short_name(cls, lang, var_specs):
+    def short_name(self, lang):
         return WORDS["deposition", lang].s
 
     def var_name(self):
@@ -307,9 +300,8 @@ class VarSpecs_Deposition(VarSpecs):
 class VarSpecs_AffectedArea(VarSpecs_Deposition):
     name = "affected_area"
 
-    @classmethod
-    def long_name(cls, lang, var_specs):
-        dep_name = VarSpecs_Deposition.long_name(lang, var_specs, abbr=True)
+    def long_name(self, lang):
+        dep_name = super().long_name(lang)
         return f"{WORDS['affected_area', lang].s} " f"({dep_name})"
 
 
@@ -320,8 +312,7 @@ class Varspecs_AffectedAreaMono(VarSpecs_AffectedArea):
 class VarSpecs_EnsMean_Concentration(VarSpecs_Concentration):
     name = "ens_mean_concentration"
 
-    @classmethod
-    def long_name(cls, lang, var_specs):
+    def long_name(self, lang):
         return (
             f"{WORDS['activity_concentration', lang].s}\n"
             f"{WORDS['ensemble_mean', lang].s}"
@@ -331,11 +322,9 @@ class VarSpecs_EnsMean_Concentration(VarSpecs_Concentration):
 class VarSpecs_EnsMean_Deposition(VarSpecs_Deposition):
     name = "ens_mean_deposition"
 
-    @classmethod
-    def long_name(cls, lang, var_specs):
-        dep_type = cls.deposition_type(lang, var_specs)
+    def long_name(self, lang):
         return (
-            f"{WORDS['ensemble_mean', lang].s} {dep_type} "
+            f"{WORDS['ensemble_mean', lang].s} {self.deposition_type(lang)} "
             f"{WORDS['surface_deposition'].s}"
         )
 
@@ -343,30 +332,24 @@ class VarSpecs_EnsMean_Deposition(VarSpecs_Deposition):
 class VarSpecs_EnsMean_AffectedArea(VarSpecs_AffectedArea):
     name = "ens_mean_affected_area"
 
-    @classmethod
-    def long_name(cls, lang, var_specs):
-        dep_type = cls.deposition_type(lang, var_specs)
+    def long_name(self, lang):
         return (
             f"{WORDS['ensemble_mean', lang].s} {WORDS['affected_area', lang].s} "
-            f"({dep_type})"
+            f"({self.deposition_type(lang)})"
         )
 
 
 class VarSpecs_EnsThrAgrmt:
-    @classmethod
-    def long_name(cls, lang, var_specs):
-        long_name_super = super().long_name(lang, var_specs)
-        long_name_base = (
-            # SR_TMP <
+    def long_name(self, lang):
+        # SR_TMP <<<
+        of = dict(en='of', de='der')[lang]
+        return (
             f"{WORDS['ensemble'].s}{dict(en=' ', de='-')[lang]}"
-            f"{WORDS['threshold_agreement'].s} {dict(en='of', de='der')[lang]} "
-            # SR_TMP >
+            f"{WORDS['threshold_agreement'].s} {of} {super().long_name(lang)}"
         )
-        return long_name_base + long_name_super
 
-    @classmethod
-    def short_name(cls, lang, var_specs):
-        return "Members"
+    def short_name(cls, lang):
+        return f"{WORDS['number_of', None, 'abbr'].c} {WORDS['member', None, 'pl'].s}"
 
 
 class VarSpecs_EnsThrAgrmt_Concentration(VarSpecs_EnsThrAgrmt, VarSpecs_Concentration):
@@ -429,10 +412,8 @@ class FieldSpecs(SummarizableClass, ParentClass):
                 'en' (English).
         """
 
-        self._prepare_var_specs_lst(var_specs_lst)
-
         # Create variable specifications objects
-        self.var_specs_lst = self.create_var_specs(var_specs_lst)
+        self.var_specs_lst = self._prepare_var_specs_lst(var_specs_lst)
 
         # Set additional attributes
         self.set_addtl_attrs(**addtl_attrs)
@@ -462,6 +443,13 @@ class FieldSpecs(SummarizableClass, ParentClass):
 
     def _prepare_var_specs_lst(self, var_specs_lst):
 
+        try:
+            iter(var_specs_lst)
+        except TypeError:
+            raise ValueError(
+                f"var_specs: type '{type(var_specs_lst).__name__}' not iterable"
+            ) from None
+
         # Handle dimensions with optionally multiple values
         # Example: Sum over multiple species
         for key in self.dims_opt_mult_vals:
@@ -477,28 +465,6 @@ class FieldSpecs(SummarizableClass, ParentClass):
                     for var_specs_new, val in zip(var_specs_lst_new, vals):
                         var_specs_new[key] = val
                         var_specs_lst.append(var_specs_new)
-
-    def create_var_specs(self, var_specs_dct_lst):
-        """Create variable specifications objects from dicts."""
-        try:
-            iter(var_specs_dct_lst)
-        except TypeError:
-            raise ValueError(
-                f"var_specs: type '{type(var_specs_dct_lst).__name__}' not iterable"
-            ) from None
-
-        var_specs_lst = []
-        for i, kwargs_specs in enumerate(var_specs_dct_lst):
-            try:
-                var_specs = self.cls_var_specs(**kwargs_specs)
-            except Exception as e:
-                raise ValueError(
-                    f"var_specs[{i}]: cannot create instance of "
-                    f"{self.cls_var_specs.__name__} from {kwargs_specs}: "
-                    f"{e.__class__.__name__}({e})"
-                ) from None
-            else:
-                var_specs_lst.append(var_specs)
 
         return var_specs_lst
 
@@ -557,7 +523,7 @@ class FieldSpecs(SummarizableClass, ParentClass):
 
     @classmethod
     def multiple(cls, vars_specs, *args, **kwargs):
-        var_specs_lst = cls.cls_var_specs.multiple_as_dict(**vars_specs)
+        var_specs_lst = cls.cls_var_specs.multiple(**dict(vars_specs))
         field_specs_lst = []
         for var_specs in var_specs_lst:
             try:
@@ -598,17 +564,13 @@ class FieldSpecs_Concentration(FieldSpecs):
         """Create an instance of ``FieldSpecs_Concentration``.
 
         Args:
-            var_specs (dict): Specifications dict of input variable used to
-                create an instance of ``VarSpecs_Concentration`` as specified
-                by the class attribute ``cls_var_specs``.
+            var_specs (dict-like): Specifications dict of input variable used
+                to create an instance of ``VarSpecs_Concentration`` as
+                specified by the class attribute ``cls_var_specs``.
 
             **kwargs: Keyword arguments passed to ``FieldSpecs``.
 
         """
-        if not isinstance(var_specs, dict):
-            raise ValueError(
-                f"var_specs must be 'dict', not '{type(var_specs).__name__}'"
-            )
         super().__init__([var_specs], *args, **kwargs)
 
 
@@ -630,29 +592,28 @@ class FieldSpecs_Deposition(FieldSpecs):
             **kwargs: Keyword arguments passed to ``FieldSpecs``.
 
         """
-        var_specs_lst = [dict(var_specs)]
+        var_specs_lst = [var_specs]
 
         # Deposition mode
-        for var_specs in copy(var_specs_lst):
+        if var_specs["deposition"] in ["wet", "dry"]:
+            pass
 
-            if var_specs["deposition"] in ["wet", "dry"]:
-                pass
+        elif var_specs["deposition"] == "tot":
+            long_name = var_specs.long_name(lang)
+            nested_dict_set(
+                kwargs,
+                ["var_attrs_replace", "variable", "long_name", "value"],
+                long_name,
+            )
+            var_specs_new = deepcopy(var_specs)
+            var_specs["deposition"] = "wet"
+            var_specs_new["deposition"] = "dry"
+            var_specs_lst.append(var_specs_new)
 
-            elif var_specs["deposition"] == "tot":
-                nested_dict_set(
-                    kwargs,
-                    ["var_attrs_replace", "variable", "long_name", "value"],
-                    self.cls_var_specs.long_name(lang, var_specs),
-                )
-                var_specs_new = deepcopy(var_specs)
-                var_specs["deposition"] = "wet"
-                var_specs_new["deposition"] = "dry"
-                var_specs_lst.append(var_specs_new)
-
-            else:
-                raise NotImplementedError(
-                    f"deposition type '{var_specs['deposition']}'"
-                )
+        else:
+            raise NotImplementedError(
+                f"deposition type '{var_specs['deposition']}'"
+            )
 
         super().__init__(var_specs_lst, *args, **kwargs)
 
