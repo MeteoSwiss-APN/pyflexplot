@@ -126,7 +126,7 @@ class Attr(SummarizableClass):
             return self.__class__.multiple(**kwargs)
         return self.__class__(**kwargs)
 
-    def format(self, fmt=None, *, skip_unit=False, join=None):
+    def format(self, fmt=None, *, escape_format=False, skip_unit=False, join=None):
         if fmt is None:
             if issubclass(self.type_, (float, int)):
                 fmt = "g"
@@ -137,6 +137,8 @@ class Attr(SummarizableClass):
             s = self.fmt_unit(unit=s)
         if self.unit and not skip_unit:
             s += f" {self.fmt_unit()}"
+        if escape_format:
+            s = s.replace("{", "{{").replace("}", "}}")
         return s
 
     def fmt_unit(self, unit=None):

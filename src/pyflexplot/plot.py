@@ -71,8 +71,12 @@ class DispersionPlotLabels(SummarizableClass):
         }
 
         # Right-top box
+        name = a.variable.short_name.format()
+        unit = a.variable.unit.format()
+        unit_escaped = a.variable.unit.format(escape_format=True)
         groups["right_top"] = {
-            # "title": TODO pull up method `_format_legend_box_title`
+            "title": f"{name} ({unit})",
+            "title_thr_agrmt_fmt": f"{name}\n({s['geq']} {{thr}} {unit_escaped})",
             "release_site": w["release_site"].s,
             "max": w["max"].s,
         }
@@ -552,7 +556,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
         dy0_boxes = dy0_labels - 0.2 * h_box
 
         # Box title
-        s = self._format_legend_box_title()
+        s = self._format_legend_box_title(labels)
         box.text("tc", s=s, dy=1.5, size="large")
 
         # Format level ranges (contour plot legend)
@@ -644,9 +648,8 @@ class DispersionPlot_0(Plot):  # SR_TMP
             )
 
     # SR_TODO move into Labels class
-    def _format_legend_box_title(self):
-        a = self.field.attrs
-        return f"{a.variable.short_name.format()} ({a.variable.unit.format()})"
+    def _format_legend_box_title(self, labels):
+        return labels["title"]
 
     def fill_box_right_bottom(self, box):
         """Fill the bottom box to the right of the map plot."""
@@ -1042,17 +1045,13 @@ class Plot_EnsThrAgrmt(Plot_Ens):
         return (h_col, h_con)
 
     # SR_TODO move into Labels class
-    def _format_legend_box_title(self):
-        w = self.labels.words
-        s = self.labels.words.symbols
-        a = self.field.attrs
+    def _format_legend_box_title(self, labels):
         thr = self.field.field_specs.ens_var_setup["thr"]
-        return (
-            f"{a.variable.short_name.format()}\n"
-            f"({s['geq']} {thr} {a.variable.unit.format()})"
-        )
+        return labels["title_thr_agrmt_fmt"].format(thr=thr)
 
+    # SR_TODO remove if not triggered
     def _format_level(self, lvl):
+        raise Exception(f"{type(self).__name__}._format_level used after all!")
         return f"{lvl}"
 
 

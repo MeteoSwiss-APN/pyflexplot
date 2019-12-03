@@ -227,6 +227,15 @@ class VarSpecs(SummarizableClass, ParentClass):
 
         return inds
 
+    def long_name(self, *args, **kwargs):
+        raise NotImplementedError(f"{type(self).__name__}.long_name: override it!")
+
+    def short_name(self, *args, **kwargs):
+        raise NotImplementedError(f"{type(self).__name__}.short_name: override it!")
+
+    def var_name(self, *args, **kwargs):
+        raise NotImplementedError(f"{type(self).__name__}.var_name: override it!")
+
 
 class VarSpecs_Concentration(VarSpecs):
     name = "concentration"
