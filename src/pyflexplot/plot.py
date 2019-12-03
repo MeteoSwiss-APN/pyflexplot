@@ -171,7 +171,7 @@ class Plot(SummarizablePlotClass, ParentClass):
             self.field.rlon,
             self.field.attrs.grid.north_pole_lat.value,
             self.field.attrs.grid.north_pole_lon.value,
-            **self.map_conf,
+            **{"lw_frame": self.lw_frame, **self.map_conf},
         )
 
     def save(self, file_path, format=None):
@@ -229,6 +229,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
     }
     level_range_style = "base"  # see ``format_level_ranges``
     level_ranges_align = "center"
+    lw_frame = 1.0
 
     summarizable_attrs = Plot.summarizable_attrs + [
         "lang",
@@ -283,7 +284,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
         # Map plot configuration
         self.map_conf = {
             **super().map_conf,
-            "zoom_fact": 1.0,
+            "zoom_fact": 1.02,
             "geogr_res": "10m",
             #'geogr_res': '50m',
         }
@@ -361,6 +362,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
             fill_box(box)
             box.draw()
 
+    # SR_TODO move parameter descriptions from docstring to where they belong!
     def add_text_boxes(self):
         """Add empty text boxes to the figure around the map plot.
 
@@ -426,6 +428,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
                     w_map + pad_hor + w_box,
                     h_box_t,
                 ],
+                lw_frame=self.lw_frame,
             ),
             self.fill_box_right_top: TextBoxAxes(
                 name="right/top",
@@ -437,6 +440,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
                     w_box,
                     h_rel_box_rt * h_map - 0.5 * pad_ver,
                 ],
+                lw_frame=self.lw_frame,
             ),
             self.fill_box_right_bottom: TextBoxAxes(
                 name="right/bottom",
@@ -448,13 +452,14 @@ class DispersionPlot_0(Plot):  # SR_TMP
                     w_box,
                     (1.0 - h_rel_box_rt) * h_map - 0.5 * pad_ver,
                 ],
+                lw_frame=self.lw_frame,
             ),
             self.fill_box_bottom: TextBoxAxes(
                 name="bottom",
                 fig=self.fig,
                 ax_ref=self.ax_map.ax,
                 rect=[x0_map, y0_map - h_box_b, w_map + pad_hor + w_box, h_box_b,],
-                show_border=False,
+                lw_frame=0.0,
             ),
         }
 
@@ -774,6 +779,7 @@ class DispersionPlot_1(DispersionPlot_0):
                 fig=self.fig,
                 ax_ref=self.ax_map.ax,
                 rect=[x0_map, y0_map + pad_ver + h_map, w_map, h_box_t,],
+                lw_frame=self.lw_frame,
             ),
             self.fill_box_top_right: TextBoxAxes(
                 name="top/right",
@@ -785,6 +791,7 @@ class DispersionPlot_1(DispersionPlot_0):
                     w_box,
                     h_box_t,
                 ],
+                lw_frame=self.lw_frame,
             ),
             self.fill_box_right_top: TextBoxAxes(
                 name="right/top",
@@ -796,6 +803,7 @@ class DispersionPlot_1(DispersionPlot_0):
                     w_box,
                     h_rel_box_rt * h_map - 0.5 * pad_ver,
                 ],
+                lw_frame=self.lw_frame,
             ),
             self.fill_box_right_bottom: TextBoxAxes(
                 name="right/bottom",
@@ -807,13 +815,14 @@ class DispersionPlot_1(DispersionPlot_0):
                     w_box,
                     (1.0 - h_rel_box_rt) * h_map - 0.5 * pad_ver,
                 ],
+                lw_frame=self.lw_frame,
             ),
             self.fill_box_bottom: TextBoxAxes(
                 name="bottom",
                 fig=self.fig,
                 ax_ref=self.ax_map.ax,
                 rect=[x0_map, y0_map - h_box_b, w_map + pad_hor + w_box, h_box_b,],
-                show_border=False,
+                lw_frame=None,
             ),
         }
 

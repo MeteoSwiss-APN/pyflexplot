@@ -75,6 +75,7 @@ def summarize_mpl_bbox(obj):
 class AxesConfMap(SummarizableClass):
 
     summarizable_attrs = [
+        "lw_frame",
         "zoom_fact",
         "geogr_res",
         "ref_dist",
@@ -84,6 +85,7 @@ class AxesConfMap(SummarizableClass):
     def __init__(
         self,
         *,
+        lw_frame=1.0,
         zoom_fact=0.01,
         geogr_res="50m",
         ref_dist=100,
@@ -93,6 +95,8 @@ class AxesConfMap(SummarizableClass):
         """
 
         Kwargs:
+            lw_frame (float, optional): Line width of frames. Defaults to 1.0.
+
             zoom_fact (float, optional): Relative padding applied to the
                 bounding box of the input data (derived from rotated lat/lon),
                 as a fraction of its size in both directions. If positive/zero/
@@ -113,6 +117,7 @@ class AxesConfMap(SummarizableClass):
                 "top-left", "top-right", "bottom-left", "bottom-right".
                 Defaults to "bottom-left".
         """
+        self.lw_frame = lw_frame
         self.zoom_fact = zoom_fact
         self.geogr_res = geogr_res
         self.ref_dist = ref_dist
@@ -160,7 +165,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
             "geo_upper",
             "grid",
             "marker",
-            "top",
+            "frames",
         ]
         d0, dz = 1, 1
         self.zorder = {e: d0 + i * dz for i, e in enumerate(zorders_const)}
@@ -189,6 +194,21 @@ class MapAxesRotatedPole(SummarizablePlotClass):
 
         # Show data domain outline
         # self.add_data_domain_outline()
+
+        # Redraw plot frame on top of all other elements
+        self.ax.add_patch(
+            mpl.patches.Rectangle(
+                xy=(0, 0),
+                width=1,
+                height=1,
+                transform=self.ax.transAxes,
+                zorder=self.zorder["frames"],
+                facecolor="none",
+                edgecolor="black",
+                linewidth=self.conf.lw_frame,
+                clip_on=False,
+            ),
+        )
 
     def prepare_projections(self, pollat, pollon):
         """Prepare projections to transform the data for plotting.
@@ -519,7 +539,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
                 width=w_box,
                 height=h_box,
                 transform=self.ax.transAxes,
-                zorder=self.zorder["top"],
+                zorder=self.zorder["grid"],
                 fill=True,
                 facecolor="white",
                 edgecolor="black",
@@ -532,7 +552,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
             [x0_line, x1_line],
             [y_line] * 2,
             transform=self.ax.transAxes,
-            zorder=self.zorder["top"],
+            zorder=self.zorder["grid"],
             linestyle="-",
             linewidth=2.0,
             color="k",
@@ -546,7 +566,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
             y=y_text,
             s=f"{dist:g} {unit}",
             transform=self.ax.transAxes,
-            zorder=self.zorder["top"],
+            zorder=self.zorder["grid"],
             ha="center",
             va="top",
             fontsize="large",
@@ -1004,7 +1024,7 @@ class TextBoxAxes(SummarizablePlotClass):
     # Show text base line (useful for debugging)
     _show_baselines = False
 
-    def __init__(self, fig, ax_ref, rect, name=None, show_border=True):
+    def __init__(self, fig, ax_ref, rect, name=None, lw_frame=1.0, ec="black", fc="none"):
         """Initialize instance of TextBoxAxes.
 
         Args:
@@ -1014,15 +1034,21 @@ class TextBoxAxes(SummarizablePlotClass):
 
             rect (list): Rectangle [left, bottom, width, height].
 
-            show_border (bool, optional): Show the border of the box. Default
-                to True.
+            lw_frame (float, optional): Line width of frame around box. Frame
+                is omitted if ``lw_frame`` is None. Defaults to 1.0.
+
+            ec (str, optional): Edge color. Defaults to "black".
+
+            fc (str, optional): Face color. Defaults to "none".
 
         """
         self.fig = fig
         self.ax_ref = ax_ref
         self.rect = rect
         self.name = name
-        self.show_border = show_border
+        self.lw_frame = lw_frame
+        self.ec = ec
+        self.fc = fc
 
         self.elements = []
         self.ax = self.fig.add_axes(self.rect)
@@ -1051,27 +1077,32 @@ class TextBoxAxes(SummarizablePlotClass):
     def draw(self):
         """Draw the defined text boxes onto the plot axes."""
 
-        if self.show_border:
-            self.draw_border()
+        # Create box without frame
+        p = mpl.patches.Rectangle(
+            xy=(0, 0),
+            width=1,
+            height=1,
+            transform=self.ax.transAxes,
+            facecolor=self.fc,
+            edgecolor="none",
+            clip_on=False,
+        )
+        self.ax.add_patch(p)
+
+        if self.lw_frame and self.lw_frame != "none":
+            # Enable frame around box
+            p.set(edgecolor=self.ec, linewidth=self.lw_frame)
 
         for element in self.elements:
             element.draw()
 
-    summarizable_attrs = ["name", "rect", "show_border", "dx0", "dy0"]
+    summarizable_attrs = ["name", "rect", "lw_frame", "dx0", "dy0"]
 
     def summarize(self, *, add=None, skip=None):
         """Summarize the text box to a JSON dict."""
         data = super().summarize(add=add, skip=skip)
         data["elements"] = [e.summarize() for e in self.elements]
         return data
-
-    def draw_border(self, x=0.0, y=0.0, w=1.0, h=1.0, fc="white", ec="black"):
-        """Draw a box onto the axes."""
-        self.ax.add_patch(
-            mpl.patches.Rectangle(
-                xy=(x, y), width=w, height=h, transform=self.ax.transAxes, fc=fc, ec=ec,
-            )
-        )
 
     def text(self, loc, s, dx=None, dy=None, **kwargs):
         """Add text positioned relative to a reference location.
