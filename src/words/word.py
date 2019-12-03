@@ -41,6 +41,9 @@ class Word:
     def __str__(self):
         return self.s
 
+    def __hash__(self):
+        return hash(str(self))
+
     def capital(self, *, all=False, preserve=True):
         """Capitalize the first letter of the first or of each word.
 

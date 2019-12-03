@@ -247,7 +247,7 @@ def fmt_float(f, fmt_e0=None, fmt_f0=None, fmt_e1=None, fmt_f1=None):
     return fe0
 
 
-def fmt_level_ranges(
+def format_level_ranges(
     levels, style=None, widths=None, extend=None, align=None, **kwargs
 ):
     """Format a list of level ranges in a certain style.
@@ -341,7 +341,7 @@ class LevelRangeFormatter:
     ):
         """Create an instance of ``LevelRangeFormatter``.
 
-        Args: See ``fmt_level_ranges``.
+        Args: See ``format_level_ranges``.
 
         """
         if widths is None:
@@ -399,11 +399,13 @@ class LevelRangeFormatter:
         return f"{s_l}{s_c}{s_r}"
 
     def _format_components(self, lvl0, lvl1):
-        if (lvl0, lvl1) == (None, None):
-            raise ValueError(f"both levels are None")
-        elif lvl0 is None:
+        open_left = lvl0 in (None, np.inf)
+        open_right = lvl1 in (None, np.inf)
+        if open_left and open_right:
+            raise ValueError(f"range open at both ends")
+        elif open_left:
             return self._format_open_left(lvl1)
-        elif lvl1 is None:
+        elif open_right:
             return self._format_open_right(lvl0)
         else:
             return self._format_closed(lvl0, lvl1)

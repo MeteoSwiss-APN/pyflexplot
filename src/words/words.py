@@ -2,6 +2,8 @@
 """
 TranslatedWords.
 """
+from pprint import pformat
+
 from srutils.str import to_varname
 
 from .word import TranslatedWord
@@ -125,6 +127,14 @@ class TranslatedWords:
     def __repr__(self):
         s_name = f" ({self.name})" if self.name else ""
         return f"{len(self._words)} TranslatedWords{s_name}: {self._words}"
+
+    def __eq__(self, other):
+        if type(self) is not type(other):
+            return False
+        return self._words == other._words
+
+    def __hash__(self):
+        return hash(pformat(self._words))
 
     def __getitem__(self, key):
         name, lang, ctx = None, None, None

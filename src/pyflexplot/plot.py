@@ -17,7 +17,7 @@ from .plot_utils import ax_w_h_in_fig_coords
 from .plot_utils import SummarizablePlotClass
 from .plot_utils import TextBoxAxes
 from .utils import fmt_float
-from .utils import fmt_level_ranges
+from .utils import format_level_ranges
 from .utils import ParentClass
 from .utils import SummarizableClass
 from .words import WORDS
@@ -228,7 +228,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
         "pad_hor_rel": 0.015,
         "h_rel_box_rt": 0.45,
     }
-    level_range_style = "base"  # see ``fmt_level_ranges``
+    level_range_style = "base"  # see ``format_level_ranges``
     level_ranges_align = "center"
 
     summarizable_attrs = Plot.summarizable_attrs + [
@@ -560,7 +560,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
         box.text("tc", s=s, dy=1.5, size="large")
 
         # Format level ranges (contour plot legend)
-        legend_labels = fmt_level_ranges(
+        legend_labels = format_level_ranges(
             levels=self.levels,
             style=self.level_range_style,
             extend=self.extend,
@@ -1000,7 +1000,7 @@ class Plot_EnsThrAgrmt(Plot_Ens):
     n_levels = 7
     d_level = 2
     extend = "min"
-    level_range_style = "int"  # see ``fmt_level_ranges``
+    level_range_style = "int"  # see ``format_level_ranges``
     level_ranges_align = "left"
     mark_field_max = False
 

@@ -51,7 +51,7 @@ class VarSpecs(SummarizableClass, ParentClass):
             else:
                 yield k
 
-    def __init__(self, *, rlat=None, rlon=None, **kwargs):
+    def __init__(self, *, rlat=None, rlon=None, words=None, lang=None, **kwargs):
         """Create an instance of ``VarSpecs``.
 
         Args:
@@ -60,6 +60,11 @@ class VarSpecs(SummarizableClass, ParentClass):
 
             rlon (tuple, optional): Rotated longitude slice parameters, passed
                 to built-in ``slice``. Defaults to None.
+
+            words (Words, optional): Word translations. Defaults to ``WORDS``.
+
+            lang (str, optional): Language, e.g., 'de' for German. Defaults to
+                'en' (English).
 
             **kwargs: Arguments as in ``VarSpecs.specs(types=True)``. The keys
                 correspond to the argument's names, and the values specify a
@@ -82,20 +87,11 @@ class VarSpecs(SummarizableClass, ParentClass):
         self.rlat = prepare_dim(rlat)
         self.rlon = prepare_dim(rlon)
 
-        for key, type_ in self.specs(types=True):
-            try:
-                val = kwargs.pop(key)
-            except KeyError:
-                raise ValueError(f"missing argument '{key}'")
-            try:
-                setattr(self, key, type_(val))
-            except TypeError:
-                raise ValueError(
-                    f"argument '{key}': type '{type(val).__name__}' incompatible with "
-                    f"'{type_.__name__}'"
-                )
-        if kwargs:
-            raise ValueError(f"{len(kwargs)} unexpected arguments: {sorted(kwargs)}")
+        self._words = words or WORDS
+        self._lang = lang or "en"
+        self._words.set_default_lang(self._lang)
+
+        self._set_attrs(kwargs)
 
     @classmethod
     def multiple(cls, *args, **kwargs):
@@ -133,20 +129,49 @@ class VarSpecs(SummarizableClass, ParentClass):
                     f"missing argument: '{key_singular}' or '{key_plural}'"
                 )
 
-        if kwargs:
-            # Passed too many arguments
-            raise ValueError(f"{len(kwargs)} unexpected arguments: {sorted(kwargs)}")
-
         # Create one specs per parameter combination
         specs_lst = []
         for vals in itertools.product(*vals_plural):
             kwargs_i = {k: v for k, v in zip(keys_singular, vals)}
-            specs = cls(rlat=kwargs.get("rlat"), rlon=kwargs.get("rlon"), **kwargs_i)
+            specs = cls(
+                rlat=kwargs.get("rlat"), rlon=kwargs.get("rlon"), **kwargs_i, **kwargs,
+            )
             specs_lst.append(specs)
 
         return specs_lst
 
+    def _set_attrs(self, kwargs):
+        for key, type_ in self.specs(types=True):
+            try:
+                val = kwargs.pop(key)
+            except KeyError:
+                raise ValueError(f"missing argument '{key}'")
+            try:
+                setattr(self, key, type_(val))
+            except TypeError:
+                raise ValueError(
+                    f"argument '{key}': type '{type(val).__name__}' incompatible with "
+                    f"'{type_.__name__}'"
+                )
+        if kwargs:
+            raise ValueError(f"{len(kwargs)} unexpected arguments: {sorted(kwargs)}")
+
     def merge_with(self, others):
+
+        # Words and language
+        for other in others:
+            if other._lang != self._lang:
+                raise Exception(
+                    f"merge of {other} with {self} failed: languages differ: "
+                    f"{other._lang} != {self._lang}"
+                )
+            if other._words != self._words:
+                raise Exception(
+                    f"merge of {other} with {self} failed: words differ: "
+                    f"{other._words} != {self._words}"
+                )
+
+        # Attributes
         attrs = {}
         for key, val0 in sorted(self):
 
@@ -163,7 +188,7 @@ class VarSpecs(SummarizableClass, ParentClass):
             else:
                 attrs[key] = vals
 
-        return self.__class__(**attrs)
+        return self.__class__(words=self._words, lang=self._lang, **attrs)
 
     def __hash__(self):
         h = 0
@@ -247,16 +272,16 @@ class VarSpecs_Concentration(VarSpecs):
 
     def long_name(self, lang):
         ctx = "abbr" if self.integrate else "*"
-        return WORDS["activity_concentration", lang, ctx].s
+        return self._words["activity_concentration"].s
 
     def short_name(self, lang):
         s = ""
         if self.integrate:
             return (
-                f"{WORDS['integrated', lang, 'abbr'].s} "
-                f"{WORDS['concentration', lang, 'abbr'].s}"
+                f"{self._words['integrated', None, 'abbr']} "
+                f"{self._words['concentration', None, 'abbr']}"
             )
-        return WORDS["concentration", lang].s
+        return self._words["concentration"].s
 
     def var_name(self):
         """Derive variable name from specifications."""
@@ -286,19 +311,16 @@ class VarSpecs_Deposition(VarSpecs):
         "deposition": str,
     }
 
-    def deposition_type(self, lang):
+    def deposition_type(self):
         type_ = self["deposition"]
         word = "total" if type_ == "tot" else type_
-        return WORDS[word, lang, "f"].s
+        return self._words[word, None, "f"].s
 
-    def long_name(self, lang, abbr=False):
-        ctx = "abbr" if abbr else "*"
-        return (
-            f"{self.deposition_type(lang)} {WORDS['surface_deposition', lang, ctx].s}"
-        )
+    def long_name(self, lang):
+        return f"{self.deposition_type()} {self._words['surface_deposition']}"
 
     def short_name(self, lang):
-        return WORDS["deposition", lang].s
+        return self._words["deposition"].s
 
     def var_name(self):
         """Derive variable name from specifications."""
@@ -311,7 +333,7 @@ class VarSpecs_AffectedArea(VarSpecs_Deposition):
 
     def long_name(self, lang):
         dep_name = super().long_name(lang)
-        return f"{WORDS['affected_area', lang].s} " f"({dep_name})"
+        return f"{self._words['affected_area']} " f"({dep_name})"
 
 
 class Varspecs_AffectedAreaMono(VarSpecs_AffectedArea):
@@ -323,8 +345,8 @@ class VarSpecs_EnsMean_Concentration(VarSpecs_Concentration):
 
     def long_name(self, lang):
         return (
-            f"{WORDS['activity_concentration', lang].s}\n"
-            f"{WORDS['ensemble_mean', lang].s}"
+            f"{self._words['activity_concentration']}\n"
+            f"{self._words['ensemble_mean']}"
         )
 
 
@@ -333,8 +355,8 @@ class VarSpecs_EnsMean_Deposition(VarSpecs_Deposition):
 
     def long_name(self, lang):
         return (
-            f"{WORDS['ensemble_mean', lang].s} {self.deposition_type(lang)} "
-            f"{WORDS['surface_deposition'].s}"
+            f"{self._words['ensemble_mean']} {self.deposition_type()} "
+            f"{self._words['surface_deposition']}"
         )
 
 
@@ -343,22 +365,26 @@ class VarSpecs_EnsMean_AffectedArea(VarSpecs_AffectedArea):
 
     def long_name(self, lang):
         return (
-            f"{WORDS['ensemble_mean', lang].s} {WORDS['affected_area', lang].s} "
-            f"({self.deposition_type(lang)})"
+            f"{self._words['ensemble_mean']} {self._words['affected_area']} "
+            f"({self.deposition_type()})"
         )
 
 
 class VarSpecs_EnsThrAgrmt:
     def long_name(self, lang):
         # SR_TMP <<<
+        lang = self._words.default_lang
         of = dict(en='of', de='der')[lang]
         return (
-            f"{WORDS['ensemble'].s}{dict(en=' ', de='-')[lang]}"
-            f"{WORDS['threshold_agreement'].s} {of} {super().long_name(lang)}"
+            f"{self._words['ensemble']}{dict(en=' ', de='-')[lang]}"
+            f"{self._words['threshold_agreement']} {of} {super().long_name(lang)}"
         )
 
-    def short_name(cls, lang):
-        return f"{WORDS['number_of', None, 'abbr'].c} {WORDS['member', None, 'pl'].s}"
+    def short_name(self, lang):
+        return (
+            f"{self._words['number_of', None, 'abbr'].c} "
+            f"{self._words['member', None, 'pl']}"
+        )
 
 
 class VarSpecs_EnsThrAgrmt_Concentration(VarSpecs_EnsThrAgrmt, VarSpecs_Concentration):
@@ -532,15 +558,16 @@ class FieldSpecs(SummarizableClass, ParentClass):
 
     @classmethod
     def multiple(cls, vars_specs, *args, **kwargs):
-        var_specs_lst = cls.cls_var_specs.multiple(**dict(vars_specs))
+        var_specs_lst = cls.cls_var_specs.multiple(
+            words=kwargs.get("words"), lang=kwargs.get(f"lang"), **dict(vars_specs),
+        )
         field_specs_lst = []
         for var_specs in var_specs_lst:
             try:
                 field_specs = cls(var_specs, *args, **kwargs)
             except Exception as e:
                 raise Exception(
-                    f"cannot initialize {cls.__name__} "
-                    f"({type(e).__name__}: {e})"
+                    f"cannot initialize {cls.__name__} ({type(e).__name__}: {e})"
                     f"\nvar_specs: {var_specs}"
                 )
             else:
@@ -587,7 +614,7 @@ class FieldSpecs_Deposition(FieldSpecs):
     name = "deposition"
     cls_var_specs = VarSpecs.subclass("deposition")
 
-    def __init__(self, var_specs, *args, lang="en", **kwargs):
+    def __init__(self, var_specs, *args, lang=None, **kwargs):
         """Create an instance of ``FieldSpecs_Deposition``.
 
         Args:
@@ -601,6 +628,8 @@ class FieldSpecs_Deposition(FieldSpecs):
             **kwargs: Keyword arguments passed to ``FieldSpecs``.
 
         """
+        lang = lang or "en"
+
         var_specs_lst = [var_specs]
 
         # Deposition mode
