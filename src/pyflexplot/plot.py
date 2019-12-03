@@ -128,9 +128,8 @@ class DispersionPlotLabels(SummarizableClass):
             setattr(self, group_name, group)  # SR_TMP
             for name, s in group.items():
                 if isinstance(s, str):
-                    group[name] = " ".join(
-                        [s.split(" ")[0].capitalize()] + s.split(" ")[1:]
-                    )
+                    # Capitalize first letter only (even if it's a space!)
+                    group[name] = list(s)[0].capitalize() + s[1:]
 
 
 # Plots
