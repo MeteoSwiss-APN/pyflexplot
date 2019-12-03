@@ -79,9 +79,6 @@ class AxesConfMap(SummarizableClass):
         "geogr_res",
         "ref_dist",
         "ref_dist_unit",
-        "ref_dist_dir",
-        "ref_dist_x0",
-        "ref_dist_y0",
     ]
 
     def __init__(
@@ -91,9 +88,7 @@ class AxesConfMap(SummarizableClass):
         geogr_res="50m",
         ref_dist=100,
         ref_dist_unit="km",
-        ref_dist_dir="east",
-        ref_dist_x0=0.05,
-        ref_dist_y0=0.95,
+        ref_dist_pos="bottom-left",
     ):
         """
 
@@ -113,27 +108,16 @@ class AxesConfMap(SummarizableClass):
             ref_dist_unit (str, optional): Unit of reference distance
                 (``ref_dist``). Defaults to 'km'.
 
-            ref_dist_dir (str, optional): Direction in which the reference
-                distance indicator is drawn (starting from (``ref_dist_x0``,
-                ``ref_dist_y0``), relative to the plot itself, NOT to the
-                underlying map (so 'east' means straight to the right, no
-                matter the projection of the map plot). Defaults to 'east'.
-
-            ref_dist_x0 (float, optional): Horizontal starting point of
-                reference distance indicator in axes coordinates. Defaults to
-                0.05.
-
-            ref_dist_y0 (float, optional): Vertical starting point of reference
-                distance indicator in axes coordinates. Defaults to 0.95.
-
+            ref_dist_pos (str, optional): Position of reference distance
+                indicator box (one of the corners of the plot). Options:
+                "top-left", "top-right", "bottom-left", "bottom-right".
+                Defaults to "bottom-left".
         """
         self.zoom_fact = zoom_fact
         self.geogr_res = geogr_res
         self.ref_dist = ref_dist
         self.ref_dist_unit = ref_dist_unit
-        self.ref_dist_dir = ref_dist_dir
-        self.ref_dist_x0 = ref_dist_x0
-        self.ref_dist_y0 = ref_dist_y0
+        self.ref_dist_pos = ref_dist_pos
 
 
 # SR_TODO Push non-rotated-pole specific code up into MapAxesRotatedPole
@@ -176,6 +160,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
             "geo_upper",
             "grid",
             "marker",
+            "top",
         ]
         d0, dz = 1, 1
         self.zorder = {e: d0 + i * dz for i, e in enumerate(zorders_const)}
@@ -187,13 +172,9 @@ class MapAxesRotatedPole(SummarizablePlotClass):
         self.ax = self.fig.add_subplot(projection=self.proj_map)
 
         # Set extent of map
-        # bbox_rot = [self.rlon[0], self.rlon[-1], self.rlat[0], self.rlat[-1]]
-        bbox = (
-            MapAxesBoundingBox(self, "data", rlon[0], rlon[-1], rlat[0], rlat[-1])
-            .to_axes()
-            .zoom(self.conf.zoom_fact)
-            .to_data()
-        )
+        edges = [self.rlon[0], self.rlon[-1], self.rlat[0], self.rlat[-1]]
+        f = self.conf.zoom_fact
+        bbox = MapAxesBoundingBox(self, "data", *edges).to_axes().zoom(f).to_data()
         self.ax.set_extent(bbox, self.proj_data)
 
         # Activate grid lines
@@ -207,7 +188,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
         self.add_geography()
 
         # Show data domain outline
-        self.add_data_domain_outline()
+        # self.add_data_domain_outline()
 
     def prepare_projections(self, pollat, pollon):
         """Prepare projections to transform the data for plotting.
@@ -490,30 +471,84 @@ class MapAxesRotatedPole(SummarizablePlotClass):
         # Obtain setup
         dist = self.conf.ref_dist
         unit = self.conf.ref_dist_unit
-        dir = self.conf.ref_dist_dir
-        x0 = self.conf.ref_dist_x0
-        y0 = self.conf.ref_dist_y0
+        pos = self.conf.ref_dist_pos
 
-        # Determine end point (axes coordinates)
-        x1, y1, _ = MapPlotGeoDist(self, unit).measure(x0, y0, dist, dir)
+        # Position-independent box parameters
+        h_box = 0.06
+        xpad_box = 0.2 * h_box
+        ypad_box = 0.2 * h_box
+
+        pos_y, pos_x = pos.split("-")
+
+        # Parameters dependent on vertical box position
+        if pos_y == "top":
+            y1_box = 1.0
+            y0_box = y1_box - h_box
+        elif pos_y == "bottom":
+            y0_box = 0.0
+            y1_box = y0_box + h_box
+        else:
+            raise ValueError(f"invalid y-position '{pos_y}'")
+        y_line = y0_box + ypad_box
+
+        def measure_horiz_dist(x0, direction):
+            x1, _, _ = MapPlotGeoDist(self, unit).measure(x0, y_line, dist, direction)
+            return x1
+
+        # Parameters dependent on horizontal box position
+        if pos_x == "left":
+            x0_box = 0.0
+            x0_line = x0_box + xpad_box
+            x1_line = measure_horiz_dist(x0_line, "east")
+        elif pos_x == "right":
+            x1_box = 1.0
+            x1_line = x1_box - xpad_box
+            x0_line = measure_horiz_dist(x1_line, "west")
+        else:
+            raise ValueError(f"invalid x-position '{pos_x}'")
+        w_box = x1_line - x0_line + 2 * xpad_box
+        if pos_x == "left":
+            x1_box = x0_box + w_box
+        elif pos_x == "right":
+            x0_box = x1_box - w_box
+
+        # Draw box
+        self.ax.add_patch(
+            mpl.patches.Rectangle(
+                xy=(x0_box, y0_box),
+                width=w_box,
+                height=h_box,
+                transform=self.ax.transAxes,
+                zorder=self.zorder["top"],
+                fill=True,
+                facecolor="white",
+                edgecolor="black",
+                linewidth=1,
+            )
+        )
 
         # Draw line
         self.ax.plot(
-            [x0, x1],
-            [y0, y1],
+            [x0_line, x1_line],
+            [y_line] * 2,
             transform=self.ax.transAxes,
+            zorder=self.zorder["top"],
             linestyle="-",
             linewidth=2.0,
             color="k",
         )
 
         # Add label
+        x_text = x0_box + 0.5 * w_box
+        y_text = y1_box - ypad_box
         self.ax.text(
-            x=0.5 * (x1 + x0),
-            y=0.5 * (y1 + y0) + 0.01,
+            x=x_text,
+            y=y_text,
             s=f"{dist:g} {unit}",
             transform=self.ax.transAxes,
-            horizontalalignment="center",
+            zorder=self.zorder["top"],
+            ha="center",
+            va="top",
             fontsize="large",
         )
 
@@ -605,15 +640,24 @@ class MapPlotGeoDist:
             if dist <= 0.0:
                 raise ValueError(f"dist not above zero: {dist}")
 
-    def _set_dir(self, dir):
+    def _set_dir(self, direction):
         """Check and set the direction."""
-        self.dir = dir
-        if dir is not None:
-            if dir == "east":
+        if direction is not None:
+            if direction in "east":
                 self._dx_unit = 1
                 self._dy_unit = 0
+            elif direction in "west":
+                self._dx_unit = -1
+                self._dy_unit = 0
+            elif direction in "north":
+                self._dx_unit = 0
+                self._dy_unit = 1
+            elif direction in "south":
+                self._dx_unit = 0
+                self._dy_unit = -1
             else:
-                raise NotImplementedError(f"dir '{direction}' not among {dir_choices}")
+                raise NotImplementedError(f"direction='{direction}'")
+        self.direction = direction
 
     def measure(self, x0, y0, dist, dir="east"):
         """Measure geo. distance along a straight line on the plot."""

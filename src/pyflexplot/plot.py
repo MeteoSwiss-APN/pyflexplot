@@ -287,8 +287,6 @@ class DispersionPlot_0(Plot):  # SR_TMP
             "zoom_fact": 1.0,
             "geogr_res": "10m",
             #'geogr_res': '50m',
-            "ref_dist_x0": 0.046,
-            "ref_dist_y0": 0.96,
         }
 
         self.define_colors()

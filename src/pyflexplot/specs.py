@@ -374,7 +374,7 @@ class VarSpecs_EnsThrAgrmt:
     def long_name(self, lang):
         # SR_TMP <<<
         lang = self._words.default_lang
-        of = dict(en='of', de='der')[lang]
+        of = dict(en="of", de="der")[lang]
         return (
             f"{self._words['ensemble']}{dict(en=' ', de='-')[lang]}"
             f"{self._words['threshold_agreement']} {of} {super().long_name(lang)}"
@@ -649,9 +649,7 @@ class FieldSpecs_Deposition(FieldSpecs):
             var_specs_lst.append(var_specs_new)
 
         else:
-            raise NotImplementedError(
-                f"deposition type '{var_specs['deposition']}'"
-            )
+            raise NotImplementedError(f"deposition type '{var_specs['deposition']}'")
 
         super().__init__(var_specs_lst, *args, **kwargs)
 
