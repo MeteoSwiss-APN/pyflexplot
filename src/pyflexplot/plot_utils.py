@@ -3,6 +3,7 @@
 Plots.
 """
 import cartopy
+import functools
 import geopy.distance
 import logging as log
 import matplotlib as mpl
@@ -10,12 +11,18 @@ import matplotlib.patches
 import matplotlib.ticker
 import numpy as np
 
+from attr import attrs, attrib
 from copy import copy
 
 from srutils.various import isiterable
 
 from .utils import MaxIterationError
 from .utils import SummarizableClass
+from .utils import summarizable
+
+
+def kwattrib(*args, **kwargs):
+    return attrib(*args, kw_only=True, **kwargs)
 
 
 # Summarize Plot-Related Classes
@@ -72,57 +79,49 @@ def summarize_mpl_bbox(obj):
 # Map Plot Axes
 
 
-class AxesConfMap(SummarizableClass):
+@summarizable
+@attrs
+class MapAxesConf:
+    """Configuration of ``MapAxesPlot``.
 
-    summarizable_attrs = [
-        "lw_frame",
-        "zoom_fact",
-        "geogr_res",
-        "ref_dist",
-        "ref_dist_unit",
-    ]
+    Kwattrs:
+        geogr_res (str, optional): Resolution of geographic map elements.
+            Defaults to '50m'.
 
-    def __init__(
-        self,
-        *,
-        lw_frame=1.0,
-        zoom_fact=0.01,
-        geogr_res="50m",
-        ref_dist=100,
-        ref_dist_unit="km",
-        ref_dist_pos="bottom-left",
-    ):
-        """
+        lw_frame (float, optional): Line width of frames. Defaults to 1.0.
 
-        Kwargs:
-            lw_frame (float, optional): Line width of frames. Defaults to 1.0.
+        ref_dist (float, optional): Reference distance in ``ref_dist_unit``.
+            Defaults to 100.
 
-            zoom_fact (float, optional): Relative padding applied to the
-                bounding box of the input data (derived from rotated lat/lon),
-                as a fraction of its size in both directions. If positive/zero/
-                negative, the shown map is bigger/equal/smaller in size than
-                the data domain. Defaults to 0.01.
+        ref_dist_pos (str, optional): Position of reference distance indicator
+            box (corners of the plot). Options: "top-left", "top-right",
+            "bottom-left", "bottom-right". Defaults to "bottom-left".
 
-            geogr_res (str, optional): Resolution of geographic map elements.
-                Defaults to '50m'.
+        ref_dist_unit (str, optional): Unit of reference distance ``ref_dist``.
+            Defaults to 'km'.
 
-            ref_dist (float, optional): Reference distance in
-                ``ref_dist_unit``. Defaults to 100.
+        zoom_fact (float, optional): Zoom factor. Use values above/below 1.0
+            to zoom in/out. Defaults to 1.0.
 
-            ref_dist_unit (str, optional): Unit of reference distance
-                (``ref_dist``). Defaults to 'km'.
+    """
 
-            ref_dist_pos (str, optional): Position of reference distance
-                indicator box (one of the corners of the plot). Options:
-                "top-left", "top-right", "bottom-left", "bottom-right".
-                Defaults to "bottom-left".
-        """
-        self.lw_frame = lw_frame
-        self.zoom_fact = zoom_fact
-        self.geogr_res = geogr_res
-        self.ref_dist = ref_dist
-        self.ref_dist_unit = ref_dist_unit
-        self.ref_dist_pos = ref_dist_pos
+    geogr_res = kwattrib("50m")
+    lw_frame = kwattrib(1.0)
+    ref_dist = kwattrib(100)
+    ref_dist_pos = kwattrib("bottom-left")
+    ref_dist_unit = kwattrib("km")
+    zoom_fact = kwattrib(1.0)
+
+
+@attrs
+class MapAxesConf_Cosmo1(MapAxesConf):
+    geogr_res = kwattrib("10m")
+    zoom_fact = kwattrib(1.02)
+
+
+@attrs
+class MapAxesConf_Cosmo1_CH(MapAxesConf_Cosmo1):
+    zoom_fact = kwattrib(1.3)  # SR_TODO
 
 
 # SR_TODO Push non-rotated-pole specific code up into MapAxesRotatedPole
@@ -134,7 +133,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
     # water_color = cartopy.feature.COLORS["water"]
     water_color = "lightskyblue"
 
-    def __init__(self, fig, rlat, rlon, pollat, pollon, **conf):
+    def __init__(self, fig, rlat, rlon, pollat, pollon, conf):
         """Initialize instance of MapAxesRotatedPole.
 
         Args:
@@ -148,14 +147,13 @@ class MapAxesRotatedPole(SummarizablePlotClass):
 
             pollon (float): Longitude of rotated pole.
 
-            **conf: Keyword arguments to create a configuration object of type
-                ``AxesConfMap``.
+            conf (MapAxesConf): Map axes configuration.
 
         """
         self.fig = fig
         self.rlat = rlat
         self.rlon = rlon
-        self.conf = AxesConfMap(**conf)
+        self.conf = conf
 
         # Determine zorder of unique plot elements, from low to high
         zorders_const = [
@@ -483,7 +481,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
     def add_ref_dist_indicator(self):
         """Add a reference distance indicator.
 
-        The configuration is obtained from an ``AxesConfMap`` instance.
+        The configuration is obtained from an ``MapAxesConf`` instance.
 
         Returns:
             float: Actual distance within specified relative tolerance.
@@ -684,10 +682,6 @@ class MapPlotGeoDist:
         """Measure geo. distance along a straight line on the plot."""
         self.reset(dist=dist, dir=dir)
 
-        # SR_DBG <
-        debug = False
-        # SR_DBG >
-
         step_ax_rel = 0.1
         refine_quot = 3
 
@@ -711,19 +705,18 @@ class MapPlotGeoDist:
             err = abs(dist - self.dist) / self.dist
             # Note: `abs` only necessary if `dist` could be `dist[-2]`
 
-            # SR_DBG <
-            if debug:
-                print(
-                    f"{iter_i:2d}"
-                    f" ({x0:.2f}, {y0:.2f})"
-                    f"--{{{dist0:6.2f} {self.unit}}}"
-                    f"->({x:.2f}, {y:.2f})"
-                    f"--{{{dists[-1] - dist0:6.2f} {self.unit}}}"
-                    f"->({path[-1][0]:.2f}, {path[-1][1]:.2f})"
-                    f" : {dist:6.2f} {self.unit}"
-                    f" : {err:10.5%}"
-                )
-            # SR_DBG >
+            # # SR_DBG <
+            # print(
+            #     f"{iter_i:2d}"
+            #     f" ({x0:.2f}, {y0:.2f})"
+            #     f"--{{{dist0:6.2f} {self.unit}}}"
+            #     f"->({x:.2f}, {y:.2f})"
+            #     f"--{{{dists[-1] - dist0:6.2f} {self.unit}}}"
+            #     f"->({path[-1][0]:.2f}, {path[-1][1]:.2f})"
+            #     f" : {dist:6.2f} {self.unit}"
+            #     f" : {err:10.5%}"
+            # )
+            # # SR_DBG >
 
             if err < self.p:
                 # Error sufficiently small: We're done!
@@ -1025,7 +1018,9 @@ class TextBoxAxes(SummarizablePlotClass):
     # Show text base line (useful for debugging)
     _show_baselines = False
 
-    def __init__(self, fig, ax_ref, rect, name=None, lw_frame=1.0, ec="black", fc="none"):
+    def __init__(
+        self, fig, ax_ref, rect, name=None, lw_frame=1.0, ec="black", fc="none"
+    ):
         """Initialize instance of TextBoxAxes.
 
         Args:

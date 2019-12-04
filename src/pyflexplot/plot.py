@@ -12,8 +12,10 @@ from textwrap import dedent
 
 from srutils.geo import Degrees
 
-from .plot_utils import MapAxesRotatedPole
 from .plot_utils import ax_w_h_in_fig_coords
+from .plot_utils import MapAxesRotatedPole
+from .plot_utils import MapAxesConf_Cosmo1
+from .plot_utils import MapAxesConf_Cosmo1_CH
 from .plot_utils import SummarizablePlotClass
 from .plot_utils import TextBoxAxes
 from .utils import fmt_float
@@ -140,7 +142,7 @@ class Plot(SummarizablePlotClass, ParentClass):
 
     name = "__base__"
     summarizable_attrs = ["name", "field", "dpi", "figsize", "fig", "ax_map"]
-    map_conf = {}
+    cls_map_conf = MapAxesConf_Cosmo1
 
     def __init__(self, field, *, dpi=None, figsize=None, scale_field=None):
         """Create an instance of ``Plot``.
@@ -158,7 +160,6 @@ class Plot(SummarizablePlotClass, ParentClass):
         self.dpi = dpi or 100.0
         self.figsize = figsize or (12.0, 9.0)
         self.scale_field = scale_field
-
         self.field.scale(scale_field)
 
     def prepare_plot(self):
@@ -171,7 +172,7 @@ class Plot(SummarizablePlotClass, ParentClass):
             self.field.rlon,
             self.field.attrs.grid.north_pole_lat.value,
             self.field.attrs.grid.north_pole_lon.value,
-            **{"lw_frame": self.lw_frame, **self.map_conf},
+            self.cls_map_conf(),
         )
 
     def save(self, file_path, format=None):
@@ -279,14 +280,6 @@ class DispersionPlot_0(Plot):  # SR_TMP
             "markerfacecolor": "white",
             "markersize": 7.5,
             "markeredgewidth": 1.5,
-        }
-
-        # Map plot configuration
-        self.map_conf = {
-            **super().map_conf,
-            "zoom_fact": 1.02,
-            "geogr_res": "10m",
-            #'geogr_res': '50m',
         }
 
         self.define_colors()

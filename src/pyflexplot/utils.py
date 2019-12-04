@@ -59,6 +59,78 @@ class ParentClass:
         return result
 
 
+def default_summarize_method(self, *, add=None, skip=None):
+    """Collect all attributes in ``summarizable_attrs`` in a dict.
+
+    Subclasses must define the property ``summarizable_attrs``, comprising
+    a list of attribute names to be collected.
+
+    If attribute values possess a ``summarize`` method themselves, the
+    output of that is collected, otherwise the direct values.
+
+    Args:
+        add (list, optional): Additional attributes to be collected.
+            Defaults to None.
+
+        skip (list, optional): Attributes to skip during collection.
+            Defaults to None.
+
+    Returns:
+        dict: Dictionary containing the collected attributes and their
+            values.
+
+    """
+
+    def summarize_obj(obj):
+
+        # Summarizable object?
+        try:
+            data = obj.summarize()
+        except AttributeError:
+            pass
+        else:
+            return summarize_obj(data)
+
+        # Dict-like object?
+        try:
+            items = obj.items()
+        except AttributeError:
+            pass
+        else:
+            for key, val in items:
+                obj[key] = summarize_obj(val)
+            return obj
+
+        # List-like object?
+        if isiterable(obj, str_ok=False):
+            type_ = type(obj)
+            data = []
+            for item in obj:
+                data.append(summarize_obj(item))
+            return type_(data)
+
+        # Giving up!
+        return obj
+
+    data = {}
+
+    if skip is None or "type" not in skip:
+        data["type"] = type(self).__name__
+
+    attrs = list(self.summarizable_attrs)
+
+    if add is not None:
+        attrs += [a for a in add if a not in attrs]
+
+    if skip is not None:
+        attrs = [a for a in attrs if a not in skip]
+
+    for attr in attrs:
+        data[attr] = self._summarize_obj(getattr(self, attr))
+
+    return data
+
+
 class SummarizableClass:
     """Summarize important class attributes into a dict."""
 
@@ -72,69 +144,38 @@ class SummarizableClass:
             f"{type(self).__name__}"
         )
 
-    def summarize(self, *, add=None, skip=None):
-        """Collect all attributes in ``summarizable_attrs`` in a dict.
+    summarize = default_summarize_method
 
-        Subclasses must define the property ``summarizable_attrs``, comprising
-        a list of attribute names to be collected.
 
-        If attribute values possess a ``summarize`` method themselves, the
-        output of that is collected, otherwise the direct values.
+def summarizable(cls, attrs=None, method=None):
+    """Decorator to make a class summarizable."""
 
-        Args:
-            add (list, optional): Additional attributes to be collected.
-                Defaults to None.
+    def is_attrs_class(cls):
+        """Determine whether a class has been defined with ``@attr.attrs``."""
+        return hasattr(cls, "__attrs_attrs__")
 
-            skip (list, optional): Attributes to skip during collection.
-                Defaults to None.
+    if attrs is not None:
+        # Turn attrs from a non-str iterator into a list
+        if not isiterable(attrs, str_ok=False):
+            raise ValueError(f"attrs of type {type(attrs).__name__} is not iterable")
+        attrs = [a for a in attrs]
+    else:
+        if not is_attrs_class(cls):
+            raise ValueError(f"must pass attrs for non-attrs class {cls.__name__}")
+        attrs = []
 
-        Returns:
-            dict: Dictionary containing the collected attributes and their
-                values.
+    if method is not None:
+        method = default_summarize_method
 
-        """
-        data = {}
-        if skip is None or "type" not in skip:
-            data["type"] = type(self).__name__
-        attrs = list(self.summarizable_attrs)
-        if add is not None:
-            attrs += [a for a in add if a not in attrs]
-        if skip is not None:
-            attrs = [a for a in attrs if a not in skip]
-        for attr in attrs:
-            data[attr] = self._summarize_obj(getattr(self, attr))
-        return data
+    if is_attrs_class(cls):
+        # Collect attributes defined with ``attr.attrib``
+        attrs = [a.name for a in cls.__attrs_attrs__] + attrs
 
-    def _summarize_obj(self, obj):
+    # Extend class
+    setattr(cls, "summarizable_attrs", attrs)
+    setattr(cls, "summarize", method)
 
-        # Summarizable object?
-        try:
-            data = obj.summarize()
-        except AttributeError:
-            pass
-        else:
-            return self._summarize_obj(data)
-
-        # Dict-like object?
-        try:
-            items = obj.items()
-        except AttributeError:
-            pass
-        else:
-            for key, val in items:
-                obj[key] = self._summarize_obj(val)
-            return obj
-
-        # List-like object?
-        if isiterable(obj, str_ok=False):
-            type_ = type(obj)
-            data = []
-            for item in obj:
-                data.append(self._summarize_obj(item))
-            return type_(data)
-
-        # Giving up!
-        return obj
+    return cls
 
 
 def count_to_log_level(count: int) -> int:
