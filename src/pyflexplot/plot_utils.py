@@ -175,6 +175,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
 
         # Initialize plot
         self.ax = self.fig.add_subplot(projection=self.proj_map)
+        self.ax.outline_patch.set_edgecolor("none")
 
         # Set extent of map
         edges = [self.rlon[0], self.rlon[-1], self.rlat[0], self.rlat[-1]]
@@ -192,7 +193,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
         # Add geographical elements (coasts etc.)
         self.add_geography()
 
-        # Show data domain outline
+        # # Show data domain outline
         # self.add_data_domain_outline()
 
         # Redraw plot frame on top of all other elements
