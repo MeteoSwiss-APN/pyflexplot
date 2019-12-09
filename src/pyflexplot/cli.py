@@ -182,7 +182,7 @@ def create_plots(
         ens_var_setup = None
     else:
         cls_name = f"ens_{ens_var}_{var_in}"
-        ens_var_setup = {"thr_agrmt": {"thr": 1e-9},}.get(ens_var)  # SR_TMP  #SR_HC
+        ens_var_setup = {"thr_agrmt": {"thr": 1e-9},}.get(ens_var)  # SR_TMP SR_HC
     # SR_TMP >
 
     field_lst = read_fields(
@@ -199,7 +199,7 @@ def create_plots(
         return
 
     # Transfer some global options
-    for key in ["lang", "scale_field"]:
+    for key in ["lang", "scale_fact"]:
         kwargs[key] = ctx.obj[key]
 
     # Prepare plotter
@@ -250,15 +250,15 @@ def open_plots(cmd, file_paths):
     """Open a plot file using a shell command."""
 
     # If not yet included, append the output file path
-    if "{file_paths}" not in cmd:
-        cmd += " {file_paths}"
+    if "{file}" not in cmd:
+        cmd += " {file}"
 
     # Ensure that the command is run in the background
     if not cmd.rstrip().endswith("&"):
         cmd += " &"
 
     # Run the command
-    cmd = cmd.format(file_paths=" ".join(file_paths))
+    cmd = cmd.format(file=" ".join(file_paths))
     os.system(cmd)
 
 
@@ -297,8 +297,11 @@ class GlobalOptions(ClickOptionsGroup):
                 "open_first_cmd",
                 help=(
                     "Shell command to open the first plot as soon as it is available. "
-                    "The file path follows the command, unless explicitly set by "
-                    "including the format key '{file_path}'."
+                    "The file path is appended to the command, unless explicitly "
+                    "embedded with the format key '{file}', which allows one to use "
+                    "more complex commands than simple application names (example: "
+                    "'eog {file} >/dev/null 2>&1' instead of 'eog' to silence the "
+                    "application 'eog')."
                 ),
             ),
             click.option(
@@ -308,7 +311,7 @@ class GlobalOptions(ClickOptionsGroup):
             ),
             click.option(
                 "--scale",
-                "scale_field",
+                "scale_fact",
                 help="Scale field before plotting. Useful for debugging.",
                 type=float,
                 default=None,
@@ -323,8 +326,9 @@ class GlobalOptions(ClickOptionsGroup):
                 "-i",
                 "in_file_path_raw",
                 help=(
-                    "Input file path. Might contain format keys, for instance in case "
-                    "of ensemble simulation data."
+                    "Input file path. May contain format keys to embed parameters such "
+                    "as the member id of ensemble simulation output (see respective "
+                    "options for the key names)."
                 ),
                 type=str,
                 required=True,
@@ -373,8 +377,9 @@ class GlobalOptions(ClickOptionsGroup):
                 "--integrate/--no-integrate",
                 "vars_specs__integrate_lst",
                 help=(
-                    "Integrate field over time. If set, '-int' is appended to variable "
-                    "name (format key: '{variable}')."
+                    "Integrate field over time. If set, the variable name that may be "
+                    "embedded in the plot path with the format key '{variable}' is "
+                    "extended by '-int'."
                 ),
                 is_flag=True,
                 default=[False],
@@ -385,6 +390,16 @@ class GlobalOptions(ClickOptionsGroup):
     @click_options
     def plot():
         return [
+            click.option(
+                "--domain",
+                help=(
+                    "Plot domain. Defaults to 'data', which derives the domain size "
+                    "from the input data. Use the format key '{domain}' to embed the "
+                    "domain name in the plot file path."
+                ),
+                type=click.Choice(["auto", "ch"]),
+                default="auto",
+            ),
             click.option(
                 "--reverse-legend/--no-reverse-legend",
                 help=(
@@ -428,8 +443,8 @@ class EnsembleOptions(ClickOptionsGroup):
                 "ens_member_id_lst",
                 help=(
                     "Ensemble member id. Repeat for multiple members. Omit for "
-                    "deterministic simulation data. If passed, --infile must contain "
-                    "file format key '{member_id}'."
+                    "deterministic simulation data. Use the format key '{member_id}' "
+                    "to embed the member id(s) in the plot file path."
                 ),
                 type=int,
                 multiple=True,
@@ -488,8 +503,8 @@ class DepositionOptions(ClickOptionsGroup):
                 "--deposition-type",
                 "vars_specs__deposition_lst",
                 help=(
-                    "Type of deposition. Part of plot variable (format key: "
-                    "'{variable}')."
+                    "Type of deposition. Part of the plot variable name that may be "
+                    "embedded in the plot file path with the format key '{variable}'."
                 ),
                 type=click.Choice(["tot", "wet", "dry"]),
                 default=["tot"],
@@ -526,7 +541,7 @@ class DepositionOptions(ClickOptionsGroup):
 def cli(ctx, **kwargs):
     """Point of entry."""
 
-    click.echo("Hi fellow PyPlotter!")
+    click.echo("Welcome fellow PyFlexPlotter!")
     # click.echo(f"{len(kwargs)} kwargs:\n{pformat(kwargs)}\n")
 
     log.basicConfig(level=count_to_log_level(kwargs["verbose"]))

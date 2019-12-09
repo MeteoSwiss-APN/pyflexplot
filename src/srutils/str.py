@@ -8,7 +8,7 @@ import re
 def to_varname(s, filter_invalid=None):
     """Reformat a string to a valid Python variable name.
 
-    Valid characters are all letters, underscores, and numbers (except as the 
+    Valid characters are all letters, underscores, and numbers (except as the
     first characters). All other characters must either be converted to one of
     the former, or removed altogether. By default, they are all converted to
     underscores.
@@ -23,7 +23,7 @@ def to_varname(s, filter_invalid=None):
             all other invalid characters, pass the following:
 
             ``filter_special=lambda c: "_" if c in "- " else ""``
- 
+
     """
 
     def error(msg):

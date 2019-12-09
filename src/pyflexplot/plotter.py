@@ -7,6 +7,8 @@ Plotters.
 from .specs import VarSpecs
 from .specs import FieldSpecs
 from .plot import Plot
+from .plot_utils import MapAxesConf_Cosmo1
+from .plot_utils import MapAxesConf_Cosmo1_CH
 from .utils import ParentClass
 
 
@@ -23,7 +25,7 @@ class Plotter(ParentClass):
         "species_id": "species_id",
     }
 
-    def run(self, field, file_path_fmt, *, lang="en", **kwargs_plot):
+    def run(self, field, file_path_fmt, *, domain="auto", lang="en", **kwargs_plot):
         """Create one or more plots.
 
         Args:
@@ -53,22 +55,35 @@ class Plotter(ParentClass):
         _s = "s" if len(data_lst) > 1 else ""
         print(f"create {len(data_lst)} {self.cls_plot.name} plot{_s}")
 
+        # SR_TMP < TODO Find less hard-coded solution
+        if domain == "auto":
+            domain = "cosmo1"
+        if domain == "cosmo1":
+            map_conf = MapAxesConf_Cosmo1()
+        elif domain == "ch":
+            map_conf = MapAxesConf_Cosmo1_CH()
+        else:
+            raise ValueError(f"unknown domain '{domain}'")
+        # SR_TMP >
+
         # Create plots one-by-one
         for i_data, field in enumerate(data_lst):
-            file_path = self.fmt_file_path(field.field_specs)
+            file_path = self.fmt_file_path(field.field_specs, domain)
             _w = len(str(len(data_lst)))
             print(f" {i_data+1:{_w}}/{len(data_lst)}  {file_path}")
 
-            self.cls_plot(field, lang=lang, **kwargs_plot).save(file_path)
+            self.cls_plot(field, map_conf=map_conf, lang=lang, **kwargs_plot).save(
+                file_path
+            )
 
             yield file_path
 
-    def fmt_file_path(self, field_specs):
+    def fmt_file_path(self, field_specs, domain):
 
         var_specs = field_specs.var_specs_merged()
 
         # Collect variable specifications
-        kwargs = {}
+        kwargs = {"domain": domain}
         for specs_key, fmt_key in self.specs_fmt_keys.items():
             try:
                 val = getattr(var_specs, specs_key)
@@ -122,8 +137,6 @@ class Plotter(ParentClass):
                     else:
                         s += f"+{s_i}"
                 kwargs["member_ids"] = s
-
-        # ipython(globals(), locals(), f"{type(self).__name__}.fmt_file_path")
 
         # Format file path
         try:

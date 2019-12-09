@@ -14,8 +14,6 @@ from srutils.geo import Degrees
 
 from .plot_utils import ax_w_h_in_fig_coords
 from .plot_utils import MapAxesRotatedPole
-from .plot_utils import MapAxesConf_Cosmo1
-from .plot_utils import MapAxesConf_Cosmo1_CH
 from .plot_utils import SummarizablePlotClass
 from .plot_utils import TextBoxAxes
 from .utils import fmt_float
@@ -141,26 +139,39 @@ class Plot(SummarizablePlotClass, ParentClass):
     """Base class for FLEXPART plots."""
 
     name = "__base__"
-    summarizable_attrs = ["name", "field", "dpi", "figsize", "fig", "ax_map"]
-    cls_map_conf = MapAxesConf_Cosmo1
+    summarizable_attrs = [
+        "name",
+        "field",
+        "map_conf",
+        "dpi",
+        "figsize",
+        "fig",
+        "ax_map",
+    ]
 
-    def __init__(self, field, *, dpi=None, figsize=None, scale_field=None):
+    def __init__(self, field, map_conf, *, dpi=None, figsize=None, scale_fact=None):
         """Create an instance of ``Plot``.
 
         Args:
-            field (Field): FLEXPART field.
+            field (Field): Data field.
+
+            map_conf (MapAxesConf): Map plot configuration object.
 
             dpi (float, optional): Plot resolution (dots per inch). Defaults to
                 100.0.
 
             figsize (tuple[float, float], optional): Figure size in inches.
                 Defaults to (12.0, 9.0).
+
+            scale_fact (float, optional): Scale factor applied to field.
+                Defaults to 1.0.
         """
         self.field = field
+        self.map_conf = map_conf
         self.dpi = dpi or 100.0
         self.figsize = figsize or (12.0, 9.0)
-        self.scale_field = scale_field
-        self.field.scale(scale_field)
+        self.scale_fact = scale_fact
+        self.field.scale(scale_fact)
 
     def prepare_plot(self):
 
@@ -172,7 +183,7 @@ class Plot(SummarizablePlotClass, ParentClass):
             self.field.rlon,
             self.field.attrs.grid.north_pole_lat.value,
             self.field.attrs.grid.north_pole_lon.value,
-            self.cls_map_conf(),
+            self.map_conf,
         )
 
     def save(self, file_path, format=None):
@@ -463,7 +474,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
             box (TextBoxAxes): The box to fill.
 
             skip_pos (set, optional): Positions (e.g., 'tl' for top-left; see
-                ``pyflexplot.plot.BoxLocation`` for all options) to be skipped.
+                ``pyflexplot.plot.TextBoxLocation`` for all options) to be skipped.
                 Defaults to ``{}``.
 
         """
@@ -495,8 +506,8 @@ class DispersionPlot_0(Plot):  # SR_TMP
             sim = a.simulation
             start = sim.integr_start.format(rel=True)
             s += f" {sim.fmt_integr_period()} ({since} +{start})"
-            if self.scale_field is not None:
-                s += f" ({self.scale_field}x)"
+            if self.scale_fact is not None:
+                s += f" ({self.scale_fact}x)"
             box.text("bl", s, size="large")
 
         dx_center = 0
@@ -567,7 +578,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
         box.text_block(
             "bc",
             legend_labels,
-            dy0=dy0_labels,
+            dy_unit=dy0_labels,
             dy_line=dy_line,
             dx=dx_label,
             reverse=self.reverse_legend,
@@ -684,10 +695,15 @@ class DispersionPlot_0(Plot):  # SR_TMP
         )
 
         # Add lines bottom-up (to take advantage of baseline alignment)
-        dy0 = 1.5
+        dy_unit = 1.5
         dy = 2.5
         box.text_blocks_hfill(
-            "b", dy0=dy0, dy_line=dy, blocks=info_blocks, reverse=True, size="small"
+            "b",
+            dy_unit=dy_unit,
+            dy_line=dy,
+            blocks=info_blocks,
+            reverse=True,
+            size="small",
         )
 
     def fill_box_bottom(self, box):
@@ -765,57 +781,54 @@ class DispersionPlot_1(DispersionPlot_0):
         pad_hor = pad_hor_rel * w_map
         pad_ver = pad_hor * fig_aspect
 
+        text_box_conf = {
+            "fig": self.fig,
+            "ax_ref": self.ax_map.ax,
+            "f_pad": 1.2,
+            "lw_frame": self.lw_frame,
+        }
+
         # Axes for text boxes (one on top, two to the right)
         self.boxes = {
             self.fill_box_top_left: TextBoxAxes(
                 name="top/left",
-                fig=self.fig,
-                ax_ref=self.ax_map.ax,
                 rect=[x0_map, y0_map + pad_ver + h_map, w_map, h_box_t,],
-                lw_frame=self.lw_frame,
+                **text_box_conf,
             ),
             self.fill_box_top_right: TextBoxAxes(
                 name="top/right",
-                fig=self.fig,
-                ax_ref=self.ax_map.ax,
                 rect=[
                     x0_map + w_map + pad_hor,
                     y0_map + pad_ver + h_map,
                     w_box,
                     h_box_t,
                 ],
-                lw_frame=self.lw_frame,
+                **text_box_conf,
             ),
             self.fill_box_right_top: TextBoxAxes(
                 name="right/top",
-                fig=self.fig,
-                ax_ref=self.ax_map.ax,
                 rect=[
                     x0_map + pad_hor + w_map,
                     y0_map + 0.5 * pad_ver + (1.0 - h_rel_box_rt) * h_map,
                     w_box,
                     h_rel_box_rt * h_map - 0.5 * pad_ver,
                 ],
-                lw_frame=self.lw_frame,
+                **text_box_conf,
             ),
             self.fill_box_right_bottom: TextBoxAxes(
                 name="right/bottom",
-                fig=self.fig,
-                ax_ref=self.ax_map.ax,
                 rect=[
                     x0_map + pad_hor + w_map,
                     y0_map,
                     w_box,
                     (1.0 - h_rel_box_rt) * h_map - 0.5 * pad_ver,
                 ],
-                lw_frame=self.lw_frame,
+                **text_box_conf,
             ),
             self.fill_box_bottom: TextBoxAxes(
                 name="bottom",
-                fig=self.fig,
-                ax_ref=self.ax_map.ax,
                 rect=[x0_map, y0_map - h_box_b, w_map + pad_hor + w_box, h_box_b,],
-                lw_frame=None,
+                **{**text_box_conf, "lw_frame": None},
             ),
         }
 
@@ -834,8 +847,8 @@ class DispersionPlot_1(DispersionPlot_0):
         # Bottom-left: Integration time etc.
         if not "bl" in skip_pos:
             s = labels["period"]
-            if self.scale_field is not None:
-                s += f" ({self.scale_field}x)"
+            if self.scale_fact is not None:
+                s += f" ({self.scale_fact}x)"
             box.text("bl", s, size="large")
 
         # Top-right: Time step

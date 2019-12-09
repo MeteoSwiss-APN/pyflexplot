@@ -58,7 +58,7 @@ class Test_TextBoxAxes_Summarize:
                     "type": "TextBoxElement_Text",
                     "s": "lower-left",
                     "loc": {
-                        "type": "BoxLocation",
+                        "type": "TextBoxLocation",
                         "va": "baseline",
                         "ha": "left",
                         "dx": 1.6,

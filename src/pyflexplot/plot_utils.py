@@ -85,10 +85,19 @@ class MapAxesConf:
     """Configuration of ``MapAxesPlot``.
 
     Kwattrs:
-        geogr_res (str, optional): Resolution of geographic map elements.
+        geo_res (str, optional): Resolution of geographic map elements.
             Defaults to '50m'.
 
+        geo_res_cities (str, optional): Scale for cities shown on map.
+            Defaults to ``geo_res``.
+
+        geo_res_rivers (str, optional): Scale for rivers shown on map.
+            Defaults to ``geo_res``.
+
         lw_frame (float, optional): Line width of frames. Defaults to 1.0.
+
+        min_city_pop (int, optional): Minimum population of cities shown.
+            Defaults to 0.
 
         ref_dist (float, optional): Reference distance in ``ref_dist_unit``.
             Defaults to 100.
@@ -100,28 +109,53 @@ class MapAxesConf:
         ref_dist_unit (str, optional): Unit of reference distance ``ref_dist``.
             Defaults to 'km'.
 
+        rel_offset (tuple[float, float], optional): Relative offset in x and y
+            direction as a fraction of the respective domain extent. Defaults
+            to (0.0, 0.0).
+
         zoom_fact (float, optional): Zoom factor. Use values above/below 1.0
             to zoom in/out. Defaults to 1.0.
 
     """
 
-    geogr_res = kwattrib("50m")
+    geo_res = kwattrib("50m")
+    geo_res_cities = kwattrib(None)
+    geo_res_rivers = kwattrib(None)
     lw_frame = kwattrib(1.0)
+    min_city_pop = kwattrib(0)
     ref_dist = kwattrib(100)
     ref_dist_pos = kwattrib("bottom-left")
     ref_dist_unit = kwattrib("km")
+    rel_offset = kwattrib((0.0, 0.0))
     zoom_fact = kwattrib(1.0)
+
+    def __attrs_post_init__(self):
+        if self.geo_res_cities is None:
+            self.geo_res_cities = self.geo_res
+        if self.geo_res_rivers is None:
+            self.geo_res_rivers = self.geo_res
 
 
 @attrs
 class MapAxesConf_Cosmo1(MapAxesConf):
-    geogr_res = kwattrib("10m")
+    geo_res = kwattrib("10m")
+    geo_res_cities = kwattrib("50m")
+    geo_res_rivers = kwattrib("50m")
     zoom_fact = kwattrib(1.02)
+    min_city_pop = kwattrib(300_000)
 
 
 @attrs
 class MapAxesConf_Cosmo1_CH(MapAxesConf_Cosmo1):
-    zoom_fact = kwattrib(1.3)  # SR_TODO
+    geo_res_cities = kwattrib("10m")
+    geo_res_rivers = kwattrib("10m")
+    min_city_pop = kwattrib(0)
+    ref_dist = kwattrib(25)
+    # SR_TODO Determine the model from the data! (e.g., COSMO-1 v. COSMO-2 v. COSMO-E)
+    # rel_offset = kwattrib((0.037, 0.106))  # suitable for ensemble (i.e., COSMO-2?)
+    # zoom_fact = kwattrib(3.2)  # suitable for ensemble (i.e., COSMO-2?)
+    rel_offset = kwattrib((-0.02, 0.045))
+    zoom_fact = kwattrib(3.6)
 
 
 # SR_TODO Push non-rotated-pole specific code up into MapAxesRotatedPole
@@ -177,8 +211,12 @@ class MapAxesRotatedPole(SummarizablePlotClass):
 
         # Set extent of map
         edges = [self.rlon[0], self.rlon[-1], self.rlat[0], self.rlat[-1]]
-        f = self.conf.zoom_fact
-        bbox = MapAxesBoundingBox(self, "data", *edges).to_axes().zoom(f).to_data()
+        bbox = (
+            MapAxesBoundingBox(self, "data", *edges)
+            .to_axes()
+            .zoom(self.conf.zoom_fact, self.conf.rel_offset)
+            .to_data()
+        )
         self.ax.set_extent(bbox, self.proj_data)
 
         # Activate grid lines
@@ -245,17 +283,12 @@ class MapAxesRotatedPole(SummarizablePlotClass):
 
     def add_geography(self):
         """Add geographic elements: coasts, countries, colors, ...
-
-        Args:
-            map_scale (str): Spatial scale of map elements, e.g., '10m', '50m'.
-
         """
-        self.ax.coastlines(resolution=self.conf.geogr_res)
+        self.ax.coastlines(resolution=self.conf.geo_res)
         self.ax.background_patch.set_facecolor(self.water_color)
         self.add_countries_lakes("lowest")
         self.add_rivers("lowest")
         self.add_countries_lakes("geo_upper")
-        # self.add_rivers("geo_upper")
         self.add_cities()
 
     def add_countries_lakes(self, zorder_key):
@@ -265,7 +298,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
             cartopy.feature.NaturalEarthFeature(
                 category="cultural",
                 name="admin_0_countries_lakes",
-                scale=self.conf.geogr_res,
+                scale=self.conf.geo_res,
                 edgecolor="black",
                 facecolor=facecolor,
                 linewidth=linewidth,
@@ -273,33 +306,33 @@ class MapAxesRotatedPole(SummarizablePlotClass):
             zorder=self.zorder[zorder_key],
         )
 
-    def add_rivers(self, zorder_key, minor_europe=False):
+    def add_rivers(self, zorder_key):
         linewidth = {"lowest": 1, "geo_lower": 1, "geo_upper": 2 / 3}[zorder_key]
         self.ax.add_feature(
             cartopy.feature.NaturalEarthFeature(
                 category="physical",
                 name="rivers_lake_centerlines",
-                scale=self.conf.geogr_res,
+                scale=self.conf.geo_res,
                 edgecolor=self.water_color,
                 facecolor=(0, 0, 0, 0),
                 linewidth=linewidth,
             ),
             zorder=self.zorder[zorder_key],
         )
-        if minor_europe and self.conf.geogr_res == "10m":
+        if self.conf.geo_res_rivers == "10m":
             self.ax.add_feature(
                 cartopy.feature.NaturalEarthFeature(
                     category="physical",
                     name="rivers_europe",
-                    scale=self.conf.geogr_res,
+                    scale=self.conf.geo_res,
                     edgecolor=self.water_color,
                     facecolor=(0, 0, 0, 0),
-                    linewidth=linewidth / 2,
+                    linewidth=linewidth,
                 ),
                 zorder=self.zorder[zorder_key],
             )
 
-    def add_cities(self, map_scale="50m", min_population=300_000):
+    def add_cities(self):
         """Add major cities, incl. all capitals."""
 
         def point_in_domain(p_lon, p_lat):
@@ -314,15 +347,16 @@ class MapAxesRotatedPole(SummarizablePlotClass):
             """Check if a city fulfils certain importance criteria."""
             if pt.attributes["FEATURECLA"].startswith("Admin-0 capital"):
                 return True
-            else:
-                if not min_population:
-                    return True
-                return pt.attributes["GN_POP"] > min_population
+            elif self.conf.min_city_pop:
+                return pt.attributes["GN_POP"] > self.conf.min_city_pop
+            return True
 
         # src: https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-populated-places/lk
         pts = cartopy.io.shapereader.Reader(
             cartopy.io.shapereader.natural_earth(
-                category="cultural", name="populated_places", resolution=map_scale,
+                category="cultural",
+                name="populated_places",
+                resolution=self.conf.geo_res_cities,
             )
         ).records()
         for pt in pts:
@@ -426,7 +460,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
         )
         return handle
 
-    def text(self, lon, lat, s, offset_ax=None, *, zorder=None, **kwargs):
+    def text(self, lon, lat, s, xy_offset_axs=None, *, zorder=None, **kwargs):
         """Add text at a geographical point.
 
         Args:
@@ -436,8 +470,8 @@ class MapAxesRotatedPole(SummarizablePlotClass):
 
             s (str): Text string.
 
-            offset_ax (tuple[float], optional): Horizontal and vertical offset
-                in Axes coordinates. Defaults to None.
+            xy_offset_axs (tuple[float], optional): Horizontal and vertical
+                offset in Axes coordinates. Defaults to None.
 
             dy (float, optional): Vertical offset in unit distances. Defaults
                 to None.
@@ -450,9 +484,9 @@ class MapAxesRotatedPole(SummarizablePlotClass):
         if zorder is None:
             zorder = self.zorder["geo_lower"]
         x, y = self.transform_xy_geo_to_axes(lon, lat)
-        if offset_ax is not None:
-            x += offset_ax[0]
-            y += offset_ax[1]
+        if xy_offset_axs is not None:
+            x += xy_offset_axs[0]
+            y += xy_offset_axs[1]
         handle = self.ax.text(
             x, y, s, zorder=zorder, transform=self.ax.transAxes, **kwargs
         )
@@ -822,7 +856,7 @@ class TextBoxElement_Text(TextBoxElement):
         Args:
             box (TextBoxAxes): Parent text box.
 
-            loc (BoxLocation): Location in parent text box.
+            loc (TextBoxLocation): Location in parent text box.
 
             s (str): Text.
 
@@ -898,7 +932,7 @@ class TextBoxElement_ColorRect(TextBoxElement):
         Args:
             box (TextBoxAxes): Parent text box.
 
-            loc (BoxLocation): Location in parent text box.
+            loc (TextBoxLocation): Location in parent text box.
 
             w (float): Width (box coordinates).
 
@@ -928,8 +962,8 @@ class TextBoxElement_ColorRect(TextBoxElement):
     def draw(self):
         x = self.loc.x
         y = self.loc.y
-        w = self.w * self.loc.dx0
-        h = self.h * self.loc.dy0
+        w = self.w * self.loc.dx_unit
+        h = self.h * self.loc.dy_unit
 
         # Adjust horizontal position
         if self.x_anker in ["l", "left"]:
@@ -966,7 +1000,7 @@ class TextBoxElement_Marker(TextBoxElement):
         Args:
             box (TextBoxAxes): Parent text box.
 
-            loc (BoxLocation): Position in parent text box.
+            loc (TextBoxLocation): Position in parent text box.
 
             m (str or int): Marker type.
 
@@ -993,7 +1027,7 @@ class TextBoxElement_HLine(TextBoxElement):
         Args:
             box (TextBoxAxes): Parent text box.
 
-            loc (BoxLocation): Location in parent text box.
+            loc (TextBoxLocation): Location in parent text box.
 
             c (<color>, optional): Line color. Defaults to 'k' (black).
 
@@ -1019,7 +1053,15 @@ class TextBoxAxes(SummarizablePlotClass):
     _show_baselines = False
 
     def __init__(
-        self, fig, ax_ref, rect, name=None, lw_frame=1.0, ec="black", fc="none"
+        self,
+        fig,
+        ax_ref,
+        rect,
+        name=None,
+        lw_frame=1.0,
+        ec="black",
+        fc="none",
+        f_pad=None,
     ):
         """Initialize instance of TextBoxAxes.
 
@@ -1037,6 +1079,10 @@ class TextBoxAxes(SummarizablePlotClass):
 
             fc (str, optional): Face color. Defaults to "none".
 
+            f_pad (float or tuple[float, float], optional): Padding of text box
+                elements in unit distances, either one value in both directions
+                or separate values in the x and y direction. Defaults to 1.0.
+
         """
         self.fig = fig
         self.ax_ref = ax_ref
@@ -1049,9 +1095,10 @@ class TextBoxAxes(SummarizablePlotClass):
         self.elements = []
         self.ax = self.fig.add_axes(self.rect)
         self.ax.axis("off")
-        self.compute_unit_distances()
+        self._set_unit_distances()
+        self._set_pad(1.0 if f_pad is None else f_pad)
 
-    def compute_unit_distances(self, unit_w_map_rel=0.01):
+    def _set_unit_distances(self, unit_w_map_rel=0.01):
         """Compute unit distances in x and y for text positioning.
 
         To position text nicely inside a box, it is handy to have unit
@@ -1067,8 +1114,26 @@ class TextBoxAxes(SummarizablePlotClass):
         w_map_fig, _ = ax_w_h_in_fig_coords(self.fig, self.ax_ref)
         w_box_fig, h_box_fig = ax_w_h_in_fig_coords(self.fig, self.ax)
 
-        self.dx0 = unit_w_map_rel * w_map_fig / w_box_fig
-        self.dy0 = unit_w_map_rel * w_map_fig / h_box_fig
+        self.dx_unit = unit_w_map_rel * w_map_fig / w_box_fig
+        self.dy_unit = unit_w_map_rel * w_map_fig / h_box_fig
+
+    def _set_pad(self, f_pad):
+        """Set padding in x and y direction."""
+
+        if not isiterable(f_pad, str_ok=False):
+            try:
+                f_pad_x = float(f_pad)
+                f_pad_y = float(f_pad)
+            except Exception as e:
+                raise ValueError(f"f_pad is not a float nor a pair of floats: {f_pad}")
+        else:
+            try:
+                f_pad_x, f_pad_y = [float(i) for i in f_pad]
+            except Exception as e:
+                raise ValueError(f"f_pad is not a float nor a pair of floats: {f_pad}")
+
+        self.pad_x = f_pad_x * self.dx_unit
+        self.pad_y = f_pad_y * self.dy_unit
 
     def draw(self):
         """Draw the defined text boxes onto the plot axes."""
@@ -1092,7 +1157,7 @@ class TextBoxAxes(SummarizablePlotClass):
         for element in self.elements:
             element.draw()
 
-    summarizable_attrs = ["name", "rect", "lw_frame", "dx0", "dy0"]
+    summarizable_attrs = ["name", "rect", "lw_frame", "dx_unit", "dy_unit"]
 
     def summarize(self, *, add=None, skip=None):
         """Summarize the text box to a JSON dict."""
@@ -1100,25 +1165,25 @@ class TextBoxAxes(SummarizablePlotClass):
         data["elements"] = [e.summarize() for e in self.elements]
         return data
 
-    def text(self, loc, s, dx=None, dy=None, **kwargs):
+    def text(self, loc, s, dx=0.0, dy=0.0, **kwargs):
         """Add text positioned relative to a reference location.
 
         Args:
             loc (int or str): Reference location parameter used to initialize
-                an instance of ``BoxLocation``.
+                an instance of ``TextBoxLocation``.
 
             s (str): Text string.
 
             dx (float, optional): Horizontal offset in unit distances. May be
-                negative. Defaults to None.
+                negative. Defaults to 0.0.
 
             dy (float, optional): Vertical offset in unit distances. May be
-                negative. Defaults to None.
+                negative. Defaults to 0.0.
 
             **kwargs: Formatting options passed to ax.text().
 
         """
-        loc = BoxLocation(loc, self.dx0, self.dy0, dx, dy)
+        loc = TextBoxLocation(self, loc, dx, dy)
         self.elements.append(TextBoxElement_Text(self, loc=loc, s=s, **kwargs))
         if self._show_baselines:
             self.elements.append(TextBoxElement_HLine(self, loc))
@@ -1147,7 +1212,7 @@ class TextBoxAxes(SummarizablePlotClass):
         loc,
         blocks,
         *,
-        dy0=None,
+        dy_unit=None,
         dy_line=None,
         dy_block=None,
         reverse=False,
@@ -1163,7 +1228,7 @@ class TextBoxAxes(SummarizablePlotClass):
             blocks (list[list[str]]): List of text blocks, each of which
                 constitutes a list of lines.
 
-            dy0 (float, optional): Initial vertical offset in unit distances.
+            dy_unit (float, optional): Initial vertical offset in unit distances.
                 May be negative. Defaults to ``dy_line``.
 
             dy_line (float, optional): Incremental vertical offset between
@@ -1190,8 +1255,8 @@ class TextBoxAxes(SummarizablePlotClass):
         """
         if dy_line is None:
             dy_line = 2.5
-        if dy0 is None:
-            dy0 = dy_line
+        if dy_unit is None:
+            dy_unit = dy_line
         if dy_block is None:
             dy_block = dy_line
 
@@ -1231,7 +1296,7 @@ class TextBoxAxes(SummarizablePlotClass):
             blocks = revert(blocks)
             colors_blocks = revert(colors_blocks)
 
-        dy = dy0
+        dy = dy_unit
         for i, block in enumerate(blocks):
             for j, line in enumerate(block):
                 self.text(loc, s=line, dy=dy, color=colors_blocks[i][j], **kwargs)
@@ -1348,22 +1413,22 @@ class TextBoxAxes(SummarizablePlotClass):
         self._baseline_kwargs = self._baseline_kwargs_default
         self._baseline_kwargs.update(kwargs)
 
-    def color_rect(self, loc, fc, ec=None, dx=None, dy=None, w=3.0, h=2.0, **kwargs):
+    def color_rect(self, loc, fc, ec=None, dx=0.0, dy=0.0, w=3.0, h=2.0, **kwargs):
         """Add a colored rectangle.
 
         Args:
             loc (int or str): Reference location parameter used to initialize
-                an instance of ``BoxLocation``.
+                an instance of ``TextBoxLocation``.
 
             fc (str or typle[float]): Face color.
 
             ec (<color>, optional): Edge color. Defaults to face color.
 
             dx (float, optional): Horizontal offset in unit distances. May be
-                negative. Defaults to None.
+                negative. Defaults to 0.0.
 
             dy (float, optional): Vertical offset in unit distances. May be
-                negative. Defaults to None.
+                negative. Defaults to 0.0.
 
             w (float, optional): Width in unit distances. Defaults to 3.0.
 
@@ -1375,33 +1440,33 @@ class TextBoxAxes(SummarizablePlotClass):
         """
         if ec is None:
             ec = fc
-        loc = BoxLocation(loc, self.dx0, self.dy0, dx, dy)
+        loc = TextBoxLocation(self, loc, dx, dy)
         self.elements.append(
             TextBoxElement_ColorRect(self, loc, w=w, h=h, fc=fc, ec=ec, **kwargs)
         )
         if self._show_baselines:
             self.elements.append(TextBoxElement_HLine(self, loc))
 
-    def marker(self, loc, marker, dx=None, dy=None, **kwargs):
+    def marker(self, loc, marker, dx=0.0, dy=0.0, **kwargs):
         """Add a marker symbol.
 
         Args:
             loc (int or str): Reference location parameter used to initialize
-                an instance of ``BoxLocation``.
+                an instance of ``TextBoxLocation``.
 
             marker (str or int) Marker style passed to ``mpl.plot``. See
                 ``matplotlib.markers`` for more information.
 
             dx (float, optional): Horizontal offset in unit distances. May be
-                negative. Defaults to None.
+                negative. Defaults to 0.0.
 
             dy (float, optional): Vertical offset in unit distances. May be
-                negative. Defaults to None.
+                negative. Defaults to 0.0.
 
             **kwargs: Keyword arguments passed to ``mpl.plot``.
 
         """
-        loc = BoxLocation(loc, self.dx0, self.dy0, dx, dy)
+        loc = TextBoxLocation(self, loc, dx, dy)
         self.elements.append(TextBoxElement_Marker(self, loc, m=marker, **kwargs))
         if self._show_baselines:
             self.elements.append(TextBoxElement_HLine(self, loc))
@@ -1421,7 +1486,7 @@ class TextBoxAxes(SummarizablePlotClass):
 
             pad_rel (float, optional): Total horizontal padding as a fraction
                 of the box width. Defaults to twice the default horizontal
-                offset ``2 * self.dx0``.
+                offset ``2 * self.dx_unit``.
 
             dots (str, optional): String replacing the end of the retained part
                 of ``s`` in case it must be truncated. Defaults to "..".
@@ -1451,7 +1516,7 @@ class TextBoxAxes(SummarizablePlotClass):
                 n_shrink_max = None
 
         if pad_rel is None:
-            pad_rel = 2 * self.dx0
+            pad_rel = 2 * self.dx_unit
 
         w_rel_max = 1.0 - pad_rel
 
@@ -1618,8 +1683,47 @@ class MapAxesBoundingBox:
             f"{type(self).__name__}.{method} from '{self.coord_type}'"
         )
 
-    def zoom(self, fact, center=None):
-        coords = bbox_zoom(self, fact, center=center)
+    def zoom(self, fact, rel_offset):
+        """Zoom into or out of the domain.
+
+        Args:
+            fact (float): Zoom factor, > 1.0 to zoom in, < 1.0 to zoom out.
+
+            rel_offset (tuple[float, float], optional): Relative offset in x
+                and y direction as a fraction of the respective domain extent.
+                Defaults to (0.0, 0.0).
+
+        Returns:
+            ndarray[float, n=4]: Zoomed bounding box.
+
+        """
+        try:
+            rel_x_offset, rel_y_offset = [float(i) for i in rel_offset]
+        except Exception:
+            raise ValueError(
+                f"rel_offset expected to be a pair of floats, not {rel_offset}"
+            )
+        lon0, lon1, lat0, lat1 = iter(self)
+
+        dlon = lon1 - lon0
+        dlat = lat1 - lat0
+
+        clon = lon0 + (0.5 + rel_x_offset) * dlon
+        clat = lat0 + (0.5 + rel_y_offset) * dlat
+
+        dlon_zm = dlon / fact
+        dlat_zm = dlat / fact
+
+        coords = np.array(
+            [
+                clon - 0.5 * dlon_zm,
+                clon + 0.5 * dlon_zm,
+                clat - 0.5 * dlat_zm,
+                clat + 0.5 * dlat_zm,
+            ],
+            float,
+        )
+
         self.set(self.coord_type, *coords)
         return self
 
@@ -1652,58 +1756,15 @@ class MapAxesBoundingBox:
         return self.map_axes.ax.transData
 
 
-def bbox_zoom(bbox, fact, center=None):
-    """Add relative padding to a bounding box.
-
-    Args:
-        bbox (ndarray[float, n=4]): Bounding box (lon0, lon1, lat0, lat1).
-
-        fact (float): Zoom factor, > 1.0 to zoom in, < 1.0 to zoom out.
-
-        center (ndarray[float, n=2], optional): Center point of zoomed bbox.
-            Defaults to center of ``bbox``.
-
-    Returns:
-        ndarray[float, n=4]: Zoomed bounding box.
-
-    """
-
-    lon0, lon1, lat0, lat1 = bbox
-
-    dlon = lon1 - lon0
-    dlat = lat1 - lat0
-
-    if center is None:
-        clon = lon0 + 0.5 * dlon
-        clat = lat0 + 0.5 * dlat
-    else:
-        clon, clat = center
-
-    dlon_zm = dlon / fact
-    dlat_zm = dlat / fact
-
-    bbox = np.array(
-        [
-            clon - 0.5 * dlon_zm,
-            clon + 0.5 * dlon_zm,
-            clat - 0.5 * dlat_zm,
-            clat + 0.5 * dlat_zm,
-        ],
-        float,
-    )
-
-    return bbox
-
-
-class BoxLocation(SummarizablePlotClass):
+class TextBoxLocation(SummarizablePlotClass):
     """A reference location (like bottom-left) inside a box on a 3x3 grid."""
 
     summarizable_attrs = [
         "loc",
         "loc_y",
         "loc_x",
-        "dx0",
-        "dy0",
+        "dx_unit",
+        "dy_unit",
         "dx",
         "dy",
         "x0",
@@ -1714,10 +1775,12 @@ class BoxLocation(SummarizablePlotClass):
         "ha",
     ]
 
-    def __init__(self, loc, dx0, dy0, dx=None, dy=None):
-        """Initialize an instance of BoxLocation.
+    def __init__(self, parent, loc, dx=None, dy=None):
+        """Initialize an instance of TextBoxLocation.
 
         Args:
+            parent (TextBoxAxes): Parent text box axes.
+
             loc (int or str): Location parameter. Takes one of three formats:
                 integer, short string, or long string.
 
@@ -1734,10 +1797,6 @@ class BoxLocation(SummarizablePlotClass):
                     21      tc      top center
                     22      tr      top right
 
-            dx0 (float): Horizontal unit distance.
-
-            dy0 (float): Vertical unit distance.
-
             dx (float, optional): Horizontal offset in unit distances. Defaults
                 to 0.0.
 
@@ -1745,12 +1804,15 @@ class BoxLocation(SummarizablePlotClass):
                 to 0.0.
 
         """
-        self.dx0 = dx0
-        self.dy0 = dy0
         self.dx = dx or 0.0
         self.dy = dy or 0.0
 
         self._determine_loc_components(loc)
+
+        self.dx_unit = parent.dx_unit
+        self.dy_unit = parent.dy_unit
+        self.pad_x = parent.pad_x
+        self.pad_y = parent.pad_y
 
     def _determine_loc_components(self, loc):
         """Split and evaluate components of location parameter."""
@@ -1793,12 +1855,7 @@ class BoxLocation(SummarizablePlotClass):
     @property
     def va(self):
         """Vertical alignment variable."""
-        return {
-            "b": "baseline",
-            "m": "center_baseline",
-            #'t': 'top_baseline',  # unfortunately nonexistent
-            "t": "top",
-        }[self.loc_y]
+        return {"b": "baseline", "m": "center_baseline", "t": "top"}[self.loc_y]
 
     @property
     def ha(self):
@@ -1808,22 +1865,40 @@ class BoxLocation(SummarizablePlotClass):
     @property
     def y0(self):
         """Vertical baseline position."""
-        return {"b": 0.0 + self.dy0, "m": 0.5, "t": 1.0 - self.dy0,}[self.loc_y]
+        if self.loc_y == "b":
+            return 0.0 + self.pad_y
+        elif self.loc_y == "m":
+            return 0.5
+        elif self.loc_y == "t":
+            return 1.0 - self.pad_y
+        else:
+            raise Exception(
+                f"invalid {type(self).__name__} instance attr loc_y: '{self.loc_y}'"
+            )
 
     @property
     def x0(self):
         """Horizontal baseline position."""
-        return {"l": 0.0 + self.dx0, "c": 0.5, "r": 1.0 - self.dx0,}[self.loc_x]
+        if self.loc_x == "l":
+            return 0.0 + self.pad_x
+        elif self.loc_x == "c":
+            return 0.5
+        elif self.loc_x == "r":
+            return 1.0 - self.pad_x
+        else:
+            raise Exception(
+                f"invalid {type(self).__name__} instance attr loc_x: '{self.loc_x}'"
+            )
 
     @property
     def x(self):
         """Horizontal position."""
-        return self.x0 + self.dx * self.dx0
+        return self.x0 + self.dx * self.dx_unit
 
     @property
     def y(self):
         """Vertical position."""
-        return self.y0 + self.dy * self.dy0
+        return self.y0 + self.dy * self.dy_unit
 
 
 def ax_w_h_in_fig_coords(fig, ax):
