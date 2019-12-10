@@ -2,6 +2,7 @@
 """
 Plots.
 """
+import attr
 import cartopy
 import functools
 import geopy.distance
@@ -23,9 +24,6 @@ from .utils import summarizable
 
 def kwattrib(*args, **kwargs):
     return attrib(*args, kw_only=True, **kwargs)
-
-
-# Summarize Plot-Related Classes
 
 
 class SummarizablePlotClass(SummarizableClass):
@@ -76,9 +74,6 @@ def summarize_mpl_bbox(obj):
     return data
 
 
-# Map Plot Axes
-
-
 @summarizable
 @attrs
 class MapAxesConf:
@@ -102,16 +97,11 @@ class MapAxesConf:
         min_city_pop (int, optional): Minimum population of cities shown.
             Defaults to 0.
 
-        ref_dist (float, optional): Reference distance in ``ref_dist_unit``.
-            Defaults to 100.
+        ref_dist_conf (RefDistIndConf): Reference distance indicator
+            configuration. Defaults to ``RefDistIndConf()``.
 
-        ref_dist_pos (str, optional): Position of reference distance indicator
-            box (corners of the plot). Options: "tl" (top-left), "tr"
-            (top-right), ""bl" (bottom-left), "br" (bottom-right). Defaults to
-            "bl".
-
-        ref_dist_unit (str, optional): Unit of reference distance ``ref_dist``.
-            Defaults to 'km'.
+        ref_dist_on (bool, optional): Whether to add a reference distance
+            indicator. Defaults to True.
 
         rel_offset (tuple[float, float], optional): Relative offset in x and y
             direction as a fraction of the respective domain extent. Defaults
@@ -128,9 +118,8 @@ class MapAxesConf:
     lang = kwattrib("en")
     lw_frame = kwattrib(1.0)
     min_city_pop = kwattrib(0)
-    ref_dist = kwattrib(100)
-    ref_dist_pos = kwattrib("bl")
-    ref_dist_unit = kwattrib("km")
+    ref_dist_conf = kwattrib(attr.Factory(lambda: RefDistIndConf()))
+    ref_dist_on = kwattrib(True)
     rel_offset = kwattrib((0.0, 0.0))
     zoom_fact = kwattrib(1.0)
 
@@ -155,12 +144,37 @@ class MapAxesConf_Cosmo1_CH(MapAxesConf_Cosmo1):
     geo_res_cities = kwattrib("10m")
     geo_res_rivers = kwattrib("10m")
     min_city_pop = kwattrib(0)
-    ref_dist = kwattrib(25)
     # SR_TODO Determine the model from the data! (e.g., COSMO-1 v. COSMO-2 v. COSMO-E)
     # rel_offset = kwattrib((0.037, 0.106))  # suitable for ensemble (i.e., COSMO-2?)
     # zoom_fact = kwattrib(3.2)  # suitable for ensemble (i.e., COSMO-2?)
     rel_offset = kwattrib((-0.02, 0.045))
     zoom_fact = kwattrib(3.6)
+
+    def __attrs_post_init__(self):
+        super().__attrs_post_init__()
+        self.ref_dist_conf.dist = 25
+
+
+@summarizable
+@attrs
+class RefDistIndConf:
+    """Configuration of ``ReferenceDistanceIndicator``.
+
+    Kwattrs:
+        dist (float, optional): Reference distance in ``unit``. Defaults to 100.
+
+        pos (str, optional): Position of reference distance indicator box
+            (corners of the plot). Options: "tl" (top-left), "tr" (top-right),
+            ""bl" (bottom-left), "br" (bottom-right). Defaults to "bl".
+
+        unit (str, optional): Unit of reference distance ``val``. Defaults to
+            'km'.
+
+    """
+
+    dist = kwattrib(100)
+    pos = kwattrib("bl")
+    unit = kwattrib("km")
 
 
 # SR_TODO Push non-rotated-pole specific code up into MapAxesRotatedPole
@@ -230,6 +244,17 @@ class MapAxesRotatedPole(SummarizablePlotClass):
         )
         gl.xlocator = mpl.ticker.FixedLocator(np.arange(-180, 180.1, 2))
         gl.ylocator = mpl.ticker.FixedLocator(np.arange(-90, 90.1, 2))
+
+        # Reference distance indicator
+        if not self.conf.ref_dist_on:
+            self.ref_dist_box = None
+        else:
+            self.ref_dist_box = ReferenceDistanceIndicator(
+                ax=self.ax,
+                axes_to_geo=self._transform_xy_axes_to_geo,
+                conf=self.conf.ref_dist_conf,
+                zorder=self.zorder["grid"],
+            )
 
         # Add geographical elements (coasts etc.)
         self.add_geography()
@@ -340,21 +365,36 @@ class MapAxesRotatedPole(SummarizablePlotClass):
     def add_cities(self):
         """Add major cities, incl. all capitals."""
 
-        def point_in_domain(p_lon, p_lat):
+        def is_visible(city):
             """Check if a point is inside the domain."""
-            p_rlon, p_rlat = self.proj_data.transform_point(p_lon, p_lat, self.proj_geo)
-            return (
-                self.rlon[0] <= p_rlon <= self.rlon[-1]
-                and self.rlat[0] <= p_rlat <= self.rlat[-1]
+
+            plon, plat = city.geometry.x, city.geometry.y
+
+            def is_in_box(x, y, x0, x1, y0, y1):
+                return x0 <= x <= x1 and y0 <= y <= y1
+
+            # In domain
+            prlon, prlat = self.proj_data.transform_point(plon, plat, self.proj_geo)
+            in_domain = is_in_box(
+                prlon, prlat, self.rlon[0], self.rlon[-1], self.rlat[0], self.rlat[-1],
             )
 
-        def is_city_of_interest(city):
+            # Not behind reference distance indicator box
+            pxa, pya = self._transform_xy_geo_to_axes(plon, plat)
+            rdb = self.ref_dist_box
+            behind_rdb = is_in_box(
+                pxa, pya, rdb.x0_box, rdb.x1_box, rdb.y0_box, rdb.y1_box,
+            )
+
+            return in_domain and not behind_rdb
+
+        def is_of_interest(city):
             """Check if a city fulfils certain importance criteria."""
             is_capital = city.attributes["FEATURECLA"].startswith("Admin-0 capital")
             is_large = city.attributes["GN_POP"] > self.conf.min_city_pop
             return is_capital or is_large
 
-        def get_city_name(city):
+        def get_name(city):
             """Fetch city name in current language, hand-correcting some."""
             return city.attributes[f"name_{self.conf.lang}"].replace(
                 "Freiburg im Üechtland", "Freiburg"
@@ -371,7 +411,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
 
         for city in cities:
             x, y = city.geometry.x, city.geometry.y
-            if point_in_domain(x, y) and is_city_of_interest(city):
+            if is_visible(city) and is_of_interest(city):
                 self.marker(
                     x,
                     y,
@@ -382,7 +422,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
                     markersize=3,
                     zorder=self.zorder["geo_upper"],
                 )
-                name = get_city_name(city)
+                name = get_name(city)
                 self.text(
                     x, y, name, (0.01, 0), va="center", size="small", clip_on=True,
                 )
@@ -501,17 +541,6 @@ class MapAxesRotatedPole(SummarizablePlotClass):
         handle = self.marker_rot(rlon, rlat, marker, **kwargs)
         return handle
 
-    def reference_distance_indicator(self):
-        """Add a reference distance indicator."""
-        self.ref_dist_ind = MapPlotReferenceDistanceIndicator(
-            ax=self.ax,
-            axes_to_geo=self._transform_xy_axes_to_geo,
-            dist=self.conf.ref_dist,
-            unit=self.conf.ref_dist_unit,
-            pos=self.conf.ref_dist_pos,
-            zorder=self.zorder["grid"],
-        )
-
     # SR_TODO create tranformator class
 
     def _transform_xy_axes_to_geo(self, x, y):
@@ -525,23 +554,22 @@ class MapAxesRotatedPole(SummarizablePlotClass):
         )
 
 
-class MapPlotReferenceDistanceIndicator:
+class ReferenceDistanceIndicator:
     """Reference distance indicator on a map plot."""
 
-    def __init__(self, ax, axes_to_geo, dist, unit, pos, zorder):
-        """Create an instance of ``MapPlotReferenceDistanceIndicator``.
+    def __init__(self, ax, axes_to_geo, conf, zorder):
+        """Create an instance of ``ReferenceDistanceIndicator``.
 
 
         """
-        self.dist = dist
-        self.unit = unit
+        self.conf = conf
 
         # Position in the plot (one of the corners)
         pos_choices = ["tl", "bl", "br", "tr"]
-        if pos not in pos_choices:
+        if conf.pos not in pos_choices:
             s_choices = ", ".join([f"'{p}'" for p in pos_choices])
-            raise ValueError(f"invalid position '{pos}' (choices: {s_choices}")
-        self.pos_y, self.pos_x = pos
+            raise ValueError(f"invalid position '{conf.pos}' (choices: {s_choices}")
+        self.pos_y, self.pos_x = conf.pos
 
         self.h_box = 0.06
         self.xpad_box = 0.2 * self.h_box
@@ -592,7 +620,7 @@ class MapPlotReferenceDistanceIndicator:
         ax.text(
             x=self.x_text,
             y=self.y_text,
-            s=f"{self.dist:g} {self.unit}",
+            s=f"{self.conf.dist:g} {self.conf.unit}",
             transform=ax.transAxes,
             zorder=zorder,
             ha="center",
@@ -631,8 +659,8 @@ class MapPlotReferenceDistanceIndicator:
             self.x0_box = self.x1_box - self.w_box
 
     def _calc_horiz_dist(self, x0, direction, axes_to_geo):
-        calc = MapDistanceCalculator(axes_to_geo, self.unit)
-        x1, _, _ = calc.run(x0, self.y_line, self.dist, direction)
+        calc = MapDistanceCalculator(axes_to_geo, self.conf.unit)
+        x1, _, _ = calc.run(x0, self.y_line, self.conf.dist, direction)
         return x1
 
 
@@ -820,9 +848,6 @@ class MapDistanceCalculator:
             return dist_obj.kilometers
         else:
             raise NotImplementedError(f"great circle distance in {self.unit}")
-
-
-# Text Box Elements
 
 
 class TextBoxElement(SummarizablePlotClass):
@@ -1043,9 +1068,6 @@ class TextBoxElement_HLine(TextBoxElement):
 
     def draw(self):
         self.box.ax.axhline(self.loc.y, color=self.c, linewidth=self.lw)
-
-
-# Text Boxes
 
 
 class TextBoxAxes(SummarizablePlotClass):
