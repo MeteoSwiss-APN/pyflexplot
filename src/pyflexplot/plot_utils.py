@@ -316,12 +316,13 @@ class MapAxesRotatedPole(SummarizablePlotClass):
         """
         self.ax.coastlines(resolution=self.conf.geo_res)
         self.ax.background_patch.set_facecolor(self.water_color)
-        self.add_countries_lakes("lowest")
+        self.add_countries("lowest")
+        self.add_lakes("lowest")
         self.add_rivers("lowest")
-        self.add_countries_lakes("geo_upper")
+        self.add_countries("geo_upper")
         self.add_cities()
 
-    def add_countries_lakes(self, zorder_key):
+    def add_countries(self, zorder_key):
         facecolor = "white" if zorder_key == "lowest" else "none"
         linewidth = 1 if zorder_key == "lowest" else 1 / 3
         self.ax.add_feature(
@@ -332,6 +333,28 @@ class MapAxesRotatedPole(SummarizablePlotClass):
                 edgecolor="black",
                 facecolor=facecolor,
                 linewidth=linewidth,
+            ),
+            zorder=self.zorder[zorder_key],
+        )
+
+    def add_lakes(self, zorder_key):
+        self.ax.add_feature(
+            cartopy.feature.NaturalEarthFeature(
+                category="physical",
+                name="lakes",
+                scale=self.conf.geo_res,
+                edgecolor="none",
+                facecolor=self.water_color,
+            ),
+            zorder=self.zorder[zorder_key],
+        )
+        self.ax.add_feature(
+            cartopy.feature.NaturalEarthFeature(
+                category="physical",
+                name="lakes_europe",
+                scale=self.conf.geo_res,
+                edgecolor="none",
+                facecolor=self.water_color,
             ),
             zorder=self.zorder[zorder_key],
         )
