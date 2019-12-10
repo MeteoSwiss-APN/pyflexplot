@@ -323,7 +323,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
         """Plot the particle concentrations onto the map."""
 
         # Reference distance indicator
-        self.ax_map.add_ref_dist_indicator()
+        self.ax_map.reference_distance_indicator()
 
         # Plot concentrations
         h_con = self._draw_colors_contours()

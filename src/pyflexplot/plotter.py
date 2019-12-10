@@ -59,9 +59,9 @@ class Plotter(ParentClass):
         if domain == "auto":
             domain = "cosmo1"
         if domain == "cosmo1":
-            map_conf = MapAxesConf_Cosmo1()
+            map_conf = MapAxesConf_Cosmo1(lang=lang)
         elif domain == "ch":
-            map_conf = MapAxesConf_Cosmo1_CH()
+            map_conf = MapAxesConf_Cosmo1_CH(lang=lang)
         else:
             raise ValueError(f"unknown domain '{domain}'")
         # SR_TMP >

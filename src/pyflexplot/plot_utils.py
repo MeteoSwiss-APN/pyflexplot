@@ -94,6 +94,9 @@ class MapAxesConf:
         geo_res_rivers (str, optional): Scale for rivers shown on map.
             Defaults to ``geo_res``.
 
+        lang (str, optional): Language, e.g., 'de' for German. Defaults to 'en'
+            (English).
+
         lw_frame (float, optional): Line width of frames. Defaults to 1.0.
 
         min_city_pop (int, optional): Minimum population of cities shown.
@@ -103,8 +106,9 @@ class MapAxesConf:
             Defaults to 100.
 
         ref_dist_pos (str, optional): Position of reference distance indicator
-            box (corners of the plot). Options: "top-left", "top-right",
-            "bottom-left", "bottom-right". Defaults to "bottom-left".
+            box (corners of the plot). Options: "tl" (top-left), "tr"
+            (top-right), ""bl" (bottom-left), "br" (bottom-right). Defaults to
+            "bl".
 
         ref_dist_unit (str, optional): Unit of reference distance ``ref_dist``.
             Defaults to 'km'.
@@ -121,10 +125,11 @@ class MapAxesConf:
     geo_res = kwattrib("50m")
     geo_res_cities = kwattrib(None)
     geo_res_rivers = kwattrib(None)
+    lang = kwattrib("en")
     lw_frame = kwattrib(1.0)
     min_city_pop = kwattrib(0)
     ref_dist = kwattrib(100)
-    ref_dist_pos = kwattrib("bottom-left")
+    ref_dist_pos = kwattrib("bl")
     ref_dist_unit = kwattrib("km")
     rel_offset = kwattrib((0.0, 0.0))
     zoom_fact = kwattrib(1.0)
@@ -343,25 +348,30 @@ class MapAxesRotatedPole(SummarizablePlotClass):
                 and self.rlat[0] <= p_rlat <= self.rlat[-1]
             )
 
-        def city_of_interest(pt):
+        def is_city_of_interest(city):
             """Check if a city fulfils certain importance criteria."""
-            if pt.attributes["FEATURECLA"].startswith("Admin-0 capital"):
-                return True
-            elif self.conf.min_city_pop:
-                return pt.attributes["GN_POP"] > self.conf.min_city_pop
-            return True
+            is_capital = city.attributes["FEATURECLA"].startswith("Admin-0 capital")
+            is_large = city.attributes["GN_POP"] > self.conf.min_city_pop
+            return is_capital or is_large
+
+        def get_city_name(city):
+            """Fetch city name in current language, hand-correcting some."""
+            return city.attributes[f"name_{self.conf.lang}"].replace(
+                "Freiburg im Üechtland", "Freiburg"
+            )
 
         # src: https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-populated-places/lk
-        pts = cartopy.io.shapereader.Reader(
+        cities = cartopy.io.shapereader.Reader(
             cartopy.io.shapereader.natural_earth(
                 category="cultural",
                 name="populated_places",
                 resolution=self.conf.geo_res_cities,
             )
         ).records()
-        for pt in pts:
-            x, y = pt.geometry.x, pt.geometry.y
-            if point_in_domain(x, y) and city_of_interest(pt):
+
+        for city in cities:
+            x, y = city.geometry.x, city.geometry.y
+            if point_in_domain(x, y) and is_city_of_interest(city):
                 self.marker(
                     x,
                     y,
@@ -372,20 +382,9 @@ class MapAxesRotatedPole(SummarizablePlotClass):
                     markersize=3,
                     zorder=self.zorder["geo_upper"],
                 )
-                name = pt.attributes["name_en"]
-                # # SR_DBG <
-                # print(
-                #     "{:20s}\t{}\t{}\t{}\t{}".format(
-                #         name,
-                #         *[
-                #             pt.attributes[k]
-                #             for k in ["POP_MIN", "POP_MAX", "GN_POP", "FEATURECLA"]
-                #         ],
-                #     )
-                # )
-                # # SR_DBG >
+                name = get_city_name(city)
                 self.text(
-                    x, y, name, (0.01, 0), va="center", size="small", clip_on=True
+                    x, y, name, (0.01, 0), va="center", size="small", clip_on=True,
                 )
 
     def contour(self, fld, **kwargs):
@@ -483,7 +482,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
         """
         if zorder is None:
             zorder = self.zorder["geo_lower"]
-        x, y = self.transform_xy_geo_to_axes(lon, lat)
+        x, y = self._transform_xy_geo_to_axes(lon, lat)
         if xy_offset_axs is not None:
             x += xy_offset_axs[0]
             y += xy_offset_axs[1]
@@ -502,77 +501,75 @@ class MapAxesRotatedPole(SummarizablePlotClass):
         handle = self.marker_rot(rlon, rlat, marker, **kwargs)
         return handle
 
-    def transform_xy_axes_to_geo(self, x, y):
+    def reference_distance_indicator(self):
+        """Add a reference distance indicator."""
+        self.ref_dist_ind = MapPlotReferenceDistanceIndicator(
+            ax=self.ax,
+            axes_to_geo=self._transform_xy_axes_to_geo,
+            dist=self.conf.ref_dist,
+            unit=self.conf.ref_dist_unit,
+            pos=self.conf.ref_dist_pos,
+            zorder=self.zorder["grid"],
+        )
+
+    # SR_TODO create tranformator class
+
+    def _transform_xy_axes_to_geo(self, x, y):
         return transform_xy_axes_to_geo(
             x, y, self.ax.transAxes, self.ax.transData, self.proj_geo, self.proj_map,
         )
 
-    def transform_xy_geo_to_axes(self, x, y):
+    def _transform_xy_geo_to_axes(self, x, y):
         return transform_xy_geo_to_axes(
             x, y, self.proj_map, self.proj_geo, self.ax.transData, self.ax.transAxes,
         )
 
-    def add_ref_dist_indicator(self):
-        """Add a reference distance indicator.
 
-        The configuration is obtained from an ``MapAxesConf`` instance.
+class MapPlotReferenceDistanceIndicator:
+    """Reference distance indicator on a map plot."""
 
-        Returns:
-            float: Actual distance within specified relative tolerance.
+    def __init__(self, ax, axes_to_geo, dist, unit, pos, zorder):
+        """Create an instance of ``MapPlotReferenceDistanceIndicator``.
+
 
         """
-        # Obtain setup
-        dist = self.conf.ref_dist
-        unit = self.conf.ref_dist_unit
-        pos = self.conf.ref_dist_pos
+        self.dist = dist
+        self.unit = unit
 
-        # Position-independent box parameters
-        h_box = 0.06
-        xpad_box = 0.2 * h_box
-        ypad_box = 0.2 * h_box
+        # Position in the plot (one of the corners)
+        pos_choices = ["tl", "bl", "br", "tr"]
+        if pos not in pos_choices:
+            s_choices = ", ".join([f"'{p}'" for p in pos_choices])
+            raise ValueError(f"invalid position '{pos}' (choices: {s_choices}")
+        self.pos_y, self.pos_x = pos
 
-        pos_y, pos_x = pos.split("-")
+        self.h_box = 0.06
+        self.xpad_box = 0.2 * self.h_box
+        self.ypad_box = 0.2 * self.h_box
 
-        # Parameters dependent on vertical box position
-        if pos_y == "top":
-            y1_box = 1.0
-            y0_box = y1_box - h_box
-        elif pos_y == "bottom":
-            y0_box = 0.0
-            y1_box = y0_box + h_box
-        else:
-            raise ValueError(f"invalid y-position '{pos_y}'")
-        y_line = y0_box + ypad_box
+        self._calc_box_y_params()
+        self._calc_box_x_params(axes_to_geo)
 
-        def measure_horiz_dist(x0, direction):
-            x1, _, _ = MapPlotGeoDist(self, unit).measure(x0, y_line, dist, direction)
-            return x1
+        self._add_to(ax, zorder)
 
-        # Parameters dependent on horizontal box position
-        if pos_x == "left":
-            x0_box = 0.0
-            x0_line = x0_box + xpad_box
-            x1_line = measure_horiz_dist(x0_line, "east")
-        elif pos_x == "right":
-            x1_box = 1.0
-            x1_line = x1_box - xpad_box
-            x0_line = measure_horiz_dist(x1_line, "west")
-        else:
-            raise ValueError(f"invalid x-position '{pos_x}'")
-        w_box = x1_line - x0_line + 2 * xpad_box
-        if pos_x == "left":
-            x1_box = x0_box + w_box
-        elif pos_x == "right":
-            x0_box = x1_box - w_box
+    @property
+    def x_text(self):
+        return self.x0_box + 0.5 * self.w_box
+
+    @property
+    def y_text(self):
+        return self.y1_box - self.ypad_box
+
+    def _add_to(self, ax, zorder):
 
         # Draw box
-        self.ax.add_patch(
+        ax.add_patch(
             mpl.patches.Rectangle(
-                xy=(x0_box, y0_box),
-                width=w_box,
-                height=h_box,
-                transform=self.ax.transAxes,
-                zorder=self.zorder["grid"],
+                xy=(self.x0_box, self.y0_box),
+                width=self.w_box,
+                height=self.h_box,
+                transform=ax.transAxes,
+                zorder=zorder,
                 fill=True,
                 facecolor="white",
                 edgecolor="black",
@@ -581,29 +578,62 @@ class MapAxesRotatedPole(SummarizablePlotClass):
         )
 
         # Draw line
-        self.ax.plot(
-            [x0_line, x1_line],
-            [y_line] * 2,
-            transform=self.ax.transAxes,
-            zorder=self.zorder["grid"],
+        ax.plot(
+            [self.x0_line, self.x1_line],
+            [self.y_line] * 2,
+            transform=ax.transAxes,
+            zorder=zorder,
             linestyle="-",
             linewidth=2.0,
             color="k",
         )
 
         # Add label
-        x_text = x0_box + 0.5 * w_box
-        y_text = y1_box - ypad_box
-        self.ax.text(
-            x=x_text,
-            y=y_text,
-            s=f"{dist:g} {unit}",
-            transform=self.ax.transAxes,
-            zorder=self.zorder["grid"],
+        ax.text(
+            x=self.x_text,
+            y=self.y_text,
+            s=f"{self.dist:g} {self.unit}",
+            transform=ax.transAxes,
+            zorder=zorder,
             ha="center",
             va="top",
             fontsize="large",
         )
+
+    def _calc_box_y_params(self):
+        if self.pos_y == "t":
+            self.y1_box = 1.0
+            self.y0_box = self.y1_box - self.h_box
+        elif self.pos_y == "b":
+            self.y0_box = 0.0
+            self.y1_box = self.y0_box + self.h_box
+        else:
+            raise ValueError(f"invalid y-position '{self.pos_y}'")
+        self.y_line = self.y0_box + self.ypad_box
+
+    def _calc_box_x_params(self, axes_to_geo):
+        if self.pos_x == "l":
+            self.x0_box = 0.0
+            self.x0_line = self.x0_box + self.xpad_box
+            self.x1_line = self._calc_horiz_dist(self.x0_line, "east", axes_to_geo)
+        elif self.pos_x == "r":
+            self.x1_box = 1.0
+            self.x1_line = self.x1_box - self.xpad_box
+            self.x0_line = self._calc_horiz_dist(self.x1_line, "west", axes_to_geo)
+        else:
+            raise ValueError(f"invalid x-position '{pos_x}'")
+
+        self.w_box = self.x1_line - self.x0_line + 2 * self.xpad_box
+
+        if self.pos_x == "l":
+            self.x1_box = self.x0_box + self.w_box
+        elif self.pos_x == "r":
+            self.x0_box = self.x1_box - self.w_box
+
+    def _calc_horiz_dist(self, x0, direction, axes_to_geo):
+        calc = MapDistanceCalculator(axes_to_geo, self.unit)
+        x1, _, _ = calc.run(x0, self.y_line, self.dist, direction)
+        return x1
 
 
 def transform_xy_geo_to_axes(x, y, proj_map, proj_geo, transData, transAxes):
@@ -660,15 +690,16 @@ def check_equivalent_iterables(x, y):
         raise ValueError(f"x and y differ in length: {len(x)} != {len(y)}")
 
 
-class MapPlotGeoDist:
-    """Measture geographic distance along a line on a map plot."""
+class MapDistanceCalculator:
+    """Calculate geographic distance along a line on a map plot."""
 
-    def __init__(self, ax_map, unit="km", p=0.001):
-        """Initialize an instance of MapPlotGeoDist.
+    def __init__(self, axes_to_geo, unit="km", p=0.001):
+        """Initialize an instance of MapDistanceCalculator.
 
         Args:
-            ax_map (MapAxesRotatedPole*): Map plot object providing the projections etc.
-                [TODO reformulate!]
+            axes_to_geo (callable): Function to transform a point
+                (x, y) from axes coordinates to geographic coordinates (x, y
+                may be arrays).
 
             unit (str, optional): Unit of ``dist``. Defaults to 'km'.
 
@@ -676,7 +707,7 @@ class MapPlotGeoDist:
                 Defaults to 0.001.
 
         """
-        self.ax_map = ax_map
+        self.axes_to_geo = axes_to_geo
         self.unit = unit
         self.p = p
 
@@ -712,7 +743,7 @@ class MapPlotGeoDist:
                 raise NotImplementedError(f"direction='{direction}'")
         self.direction = direction
 
-    def measure(self, x0, y0, dist, dir="east"):
+    def run(self, x0, y0, dist, dir="east"):
         """Measure geo. distance along a straight line on the plot."""
         self.reset(dist=dist, dir=dir)
 
@@ -739,19 +770,6 @@ class MapPlotGeoDist:
             err = abs(dist - self.dist) / self.dist
             # Note: `abs` only necessary if `dist` could be `dist[-2]`
 
-            # # SR_DBG <
-            # print(
-            #     f"{iter_i:2d}"
-            #     f" ({x0:.2f}, {y0:.2f})"
-            #     f"--{{{dist0:6.2f} {self.unit}}}"
-            #     f"->({x:.2f}, {y:.2f})"
-            #     f"--{{{dists[-1] - dist0:6.2f} {self.unit}}}"
-            #     f"->({path[-1][0]:.2f}, {path[-1][1]:.2f})"
-            #     f" : {dist:6.2f} {self.unit}"
-            #     f" : {err:10.5%}"
-            # )
-            # # SR_DBG >
-
             if err < self.p:
                 # Error sufficiently small: We're done!
                 x1, y1 = path[i_sel]
@@ -769,12 +787,8 @@ class MapPlotGeoDist:
     def _overstep(self, x0_ax, y0_ax, dist0, step_ax_rel):
         """Move stepwise until the target distance is exceeded."""
 
-        # SR_DBG <
-        debug = False
-        # SR_DBG >
-
         # Transform starting point to geographical coordinates
-        x0_geo, y0_geo = self.ax_map.transform_xy_axes_to_geo(x0_ax, y0_ax)
+        x0_geo, y0_geo = self.axes_to_geo(x0_ax, y0_ax)
 
         path_ax = [(x0_ax, y0_ax)]
         dists = [dist0]
@@ -789,25 +803,13 @@ class MapPlotGeoDist:
             y1_ax += self._dy_unit * step_ax_rel
 
             # Transform current point to gegographical coordinates
-            x1_geo, y1_geo = self.ax_map.transform_xy_axes_to_geo(x1_ax, y1_ax)
+            x1_geo, y1_geo = self.axes_to_geo(x1_ax, y1_ax)
 
             # Compute geographical distance from starting point
             dist = self.comp_dist(x0_geo, y0_geo, x1_geo, y1_geo)
 
             path_ax.append((x1_ax, y1_ax))
             dists.append(dist + dist0)
-
-            # SR_DBG <
-            if debug:
-                print(
-                    f"({x0_ax:.2f}, {y0_ax:.2f})"
-                    f"=({x1_geo:.2f}, {y1_geo:.2f})"
-                    f"--{{{dist:6.2f}"
-                    f"/{self.dist - dist0:6.2f} {self.unit}}}"
-                    f"->({x1_ax:.2f}, {y1_ax:.2f})"
-                    f"=({x1_geo:.2f}, {y1_geo:.2f})"
-                )
-            # SR_DBG >
 
         return path_ax, dists
 
