@@ -107,7 +107,7 @@ WORDS.add(en="site", de="Ort")
 WORDS.add(en={"*": "south", "abbr": "S"}, de={"*": "S{s['ue']}den", "abbr": "S"})
 WORDS.add(en="start", de="Start")
 WORDS.add(en="substance", de="Substanz")
-WORDS.add(en="summed up over", de=f'aufsummiert {s["ue"]}ber')
+WORDS.add(en="summed over", de=f'aufsummiert {s["ue"]}ber')
 WORDS.add(
     en={"*": "surface deposition", "abbr": "surface dep."},
     de={"*": "Bodendeposition", "abbr": "Bodendep."},

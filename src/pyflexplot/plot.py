@@ -48,7 +48,7 @@ class DispersionPlotLabels(SummarizableClass):
         s_level = f" {w['at', None, 'level']} {level}" if level else ""
         integr_op = w[
             {
-                "sum": "summed_up_over",
+                "sum": "summed_over",
                 "mean": "averaged_over",
                 "accum": "accumulated_over",
             }[a.simulation.integr_type.value]
@@ -495,7 +495,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
             # Bottom left: integration time & level range
             itype = a.simulation.integr_type.value
             s = {
-                "sum": w["summed_up_over"].s,
+                "sum": w["summed_over"].s,
                 "mean": w["averaged_over"].s,
                 "accum": w["accumulated_over"].s,
             }[itype]
