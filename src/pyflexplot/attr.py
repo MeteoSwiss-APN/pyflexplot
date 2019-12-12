@@ -29,9 +29,7 @@ class Attr(SummarizableClass):
         self.set_group(group)
 
         # SR_TMP <
-        assert not isinstance(
-            value, self.__class__
-        ), f"value type {type(value).__name__}"
+        assert not isinstance(value, type(self)), f"value type {type(value).__name__}"
         assert not isiterable(value, str_ok=False), f"iterable value: {value}"
         # SR_TMP >
 
@@ -123,8 +121,8 @@ class Attr(SummarizableClass):
             "unit": unit,
         }
         if isiterable(value, str_ok=False):
-            return self.__class__.multiple(**kwargs)
-        return self.__class__(**kwargs)
+            return type(self).multiple(**kwargs)
+        return type(self)(**kwargs)
 
     def format(self, fmt=None, *, escape_format=False, skip_unit=False, join=None):
         if fmt is None:
@@ -361,10 +359,10 @@ class AttrGroup:
                 kwargs[f"{key}_unit"] = attr.unit
 
         try:
-            return self.__class__(**kwargs)
+            return type(self)(**kwargs)
         except Exception as e:
             raise Exception(
-                f"error creating instance of {self.__class__.__name__} "
+                f"error creating instance of {type(self).__name__} "
                 f"({type(e).__name__}: {e})\n\n{len(kwargs)} kwargs:\n{pformat(kwargs)}"
             )
 
@@ -735,7 +733,7 @@ class AttrGroupCollection:
                     [o._attrs[name] for o in others], replace.get(name),
                 )
             )
-        return self.__class__(**kwargs)
+        return type(self)(**kwargs)
 
     def __iter__(self):
         for name, attr in sorted(self._attrs.items()):
@@ -810,9 +808,9 @@ class AttrsCollector:
         ts_now, ts_integr_start = self._get_current_timestep_etc()
 
         # Type of integration (or, rather, reduction)
-        if isinstance(self.var_specs, VarSpecs.subclass("concentration")):
+        if self.var_specs.issubcls("concentration"):  # SR_TMP
             integr_type = "sum" if self.var_specs.integrate else "mean"
-        elif isinstance(self.var_specs, VarSpecs.subclass("deposition")):
+        elif self.var_specs.issubcls("deposition"):  # SR_TMP
             integr_type = "accum" if self.var_specs.integrate else "mean"
         else:
             raise NotImplementedError(
@@ -935,8 +933,8 @@ class AttrsCollector:
         """Collect variable attributes."""
 
         # Variable names
-        long_name = self.var_specs.long_name(self.lang)
-        short_name = self.var_specs.short_name(self.lang)
+        long_name = self.var_specs.long_name()
+        short_name = self.var_specs.short_name()
 
         # Variable unit
         unit = self.ncattrs_field["units"]
@@ -971,9 +969,9 @@ class AttrsCollector:
         substance = self._get_substance()
 
         # Get deposition and washout data
-        if isinstance(self.var_specs, VarSpecs.subclass("concentration")):
+        if self.var_specs.issubcls("concentration"):  # SR_TMP
             name_core = self.field_var_name
-        elif isinstance(self.var_specs, VarSpecs.subclass("deposition")):
+        elif self.var_specs.issubcls("deposition"):  # SR_TMP
             name_core = self.field_var_name[3:]
         deposit_vel = self.ncattrs_vars[f"DD_{name_core}"]["dryvel"]
         washout_coeff = self.ncattrs_vars[f"WD_{name_core}"]["weta"]
@@ -1007,7 +1005,7 @@ class AttrsCollector:
 
     def _get_substance(self):
         substance = self.ncattrs_field["long_name"]
-        if isinstance(self.var_specs, VarSpecs.subclass("deposition")):
+        if self.var_specs.issubcls("deposition"):  # SR_TMP
             substance = substance.replace(
                 f"_{self.var_specs.deposition}_deposition", ""
             )  # SR_HC

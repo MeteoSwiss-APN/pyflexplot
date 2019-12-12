@@ -30,14 +30,14 @@ class ParentClass:
     """Enable easy access to subclasses via their 'name' attribute."""
 
     @classmethod
-    def subclass(cls, name):
-        """Find a subclass by name."""
+    def subcls(cls, name):
+        """Find a subcls by name."""
         subclasses_by_name = cls.subclasses_by_name()
         try:
             return subclasses_by_name[name]
         except KeyError:
             raise ValueError(
-                f"class '{cls.__name__}' has no subclass '{name}'; options: "
+                f"class '{cls.__name__}' has no subcls '{name}'; options: "
                 f"{sorted(subclasses_by_name)}"
             )
 
@@ -47,7 +47,8 @@ class ParentClass:
         result = {}
         for sub_cls in cls.__subclasses__():
             try:
-                name = sub_cls.name
+                # name = sub_cls.name
+                name = sub_cls.name.split(":")[-1]  # SR_TMP
             except AttributeError:
                 continue
             if name is None:
@@ -126,7 +127,7 @@ def default_summarize_method(self, *, add=None, skip=None):
         attrs = [a for a in attrs if a not in skip]
 
     for attr in attrs:
-        data[attr] = self._summarize_obj(getattr(self, attr))
+        data[attr] = summarize_obj(getattr(self, attr))
 
     return data
 

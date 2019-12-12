@@ -79,7 +79,7 @@ class TestReadField_Single:
         """Read concentration field."""
         self.run(
             datadir=datadir,
-            cls_fld_specs=FieldSpecs.subclass("concentration"),
+            cls_fld_specs=FieldSpecs.subcls("concentration"),
             dims={**self.dims_shared, "level": 1},
             var_names_ref=[f"spec{self.species_id:03d}"],
             var_specs_mult_unshared={},
@@ -89,7 +89,7 @@ class TestReadField_Single:
         """Read dry deposition field."""
         self.run(
             datadir=datadir,
-            cls_fld_specs=FieldSpecs.subclass("deposition"),
+            cls_fld_specs=FieldSpecs.subcls("deposition"),
             dims=self.dims_shared,
             var_names_ref=[f"DD_spec{self.species_id:03d}"],
             var_specs_mult_unshared={"deposition": "dry"},
@@ -100,7 +100,7 @@ class TestReadField_Single:
         """Read wet deposition field."""
         self.run(
             datadir=datadir,
-            cls_fld_specs=FieldSpecs.subclass("deposition"),
+            cls_fld_specs=FieldSpecs.subcls("deposition"),
             dims=self.dims_shared,
             var_names_ref=[f"WD_spec{self.species_id:03d}"],
             var_specs_mult_unshared={"deposition": "wet"},
@@ -111,7 +111,7 @@ class TestReadField_Single:
         """Read total deposition field."""
         self.run(
             datadir=datadir,
-            cls_fld_specs=FieldSpecs.subclass("deposition"),
+            cls_fld_specs=FieldSpecs.subcls("deposition"),
             dims=self.dims_shared,
             var_names_ref=[
                 f"WD_spec{self.species_id:03d}",
@@ -209,7 +209,7 @@ class TestReadField_Multiple:
         self.run(
             separate=separate,
             datafile=self.datafile(datadir),
-            cls_fld_specs=FieldSpecs.subclass("concentration"),
+            cls_fld_specs=FieldSpecs.subcls("concentration"),
             dims_mult={**self.dims_shared, "level_lst": [0, 2]},
             var_names_ref=[f"spec{self.species_id:03d}"],
             var_specs_mult_unshared={},
@@ -227,7 +227,7 @@ class TestReadField_Multiple:
         self.run(
             separate=separate,
             datafile=self.datafile(datadir),
-            cls_fld_specs=FieldSpecs.subclass("deposition"),
+            cls_fld_specs=FieldSpecs.subcls("deposition"),
             dims_mult=self.dims_shared,
             var_names_ref=[f"DD_spec{self.species_id:03d}"],
             var_specs_mult_unshared={"deposition": "dry"},
@@ -244,7 +244,7 @@ class TestReadField_Multiple:
         self.run(
             separate=separate,
             datafile=self.datafile(datadir),
-            cls_fld_specs=FieldSpecs.subclass("deposition"),
+            cls_fld_specs=FieldSpecs.subcls("deposition"),
             dims_mult=self.dims_shared,
             var_names_ref=[f"WD_spec{self.species_id:03d}"],
             var_specs_mult_unshared={"deposition": "wet"},
@@ -261,7 +261,7 @@ class TestReadField_Multiple:
         self.run(
             separate=separate,
             datafile=self.datafile(datadir),
-            cls_fld_specs=FieldSpecs.subclass("deposition"),
+            cls_fld_specs=FieldSpecs.subcls("deposition"),
             dims_mult=self.dims_shared,
             var_names_ref=[
                 f"WD_spec{self.species_id:03d}",

@@ -8,8 +8,10 @@ import numpy as np
 
 from copy import copy, deepcopy
 
+from srutils.dict import dict_mult_vals_product
 from srutils.dict import nested_dict_set
 from srutils.dict import pformat_dictlike
+from srutils.various import isiterable
 
 from .utils import ParentClass
 from .utils import SummarizableClass
@@ -34,27 +36,32 @@ class VarSpecs(SummarizableClass, ParentClass):
     summarizable_attrs = []  # SR_TODO
 
     # Keys with respective type
-    _keys_w_type = {
-        "species_id": int_or_list,
-        "integrate": bool,
-        # Dimensions
-        "time": int,
-        "nageclass": int,
-        "numpoint": int,
+    specs_type_default = {
+        "species_id": (int_or_list, None),
+        "integrate": (bool, None),
+        "time": (int, None),
+        "nageclass": (int, None),
+        "numpoint": (int, None),
     }
 
-    @classmethod
-    def specs(cls, types=False):
-        for k, v in sorted(cls._keys_w_type.items()):
-            if types:
-                yield k, v
-            else:
-                yield k
+    # SR_TMP <<<
+    def issubcls(self, name):
+        return name in self.name.split(":")
 
-    def __init__(self, *, rlat=None, rlon=None, words=None, lang=None, **kwargs):
+    # @classmethod
+    # def subcls(cls, name):
+    #     raise DeprecationWarning(f"{cls.__name__}.subcls")
+
+    def __init__(self, name, var_specs_dct, *, rlat=None, rlon=None, words, lang):
         """Create an instance of ``VarSpecs``.
 
         Args:
+            name (str): Name.
+
+            var_specs_dct (dict): Variable specification dict comprised of only
+                single-object elements (see ``VarSpecs.create`` for more
+                information on single- vs. multi-object elements).
+
             rlat (tuple, optional): Rotated latitude slice parameters, passed
                 to built-in ``slice``. Defaults to None.
 
@@ -66,12 +73,9 @@ class VarSpecs(SummarizableClass, ParentClass):
             lang (str, optional): Language, e.g., 'de' for German. Defaults to
                 'en' (English).
 
-            **kwargs: Arguments as in ``VarSpecs.specs(types=True)``. The keys
-                correspond to the argument's names, and the values specify a
-                type which the respective argument value must be compatible
-                with.
-
         """
+        assert name in self.name  # SR_TMP
+        self.name = name
 
         def prepare_dim(dim):
             if dim is None:
@@ -91,70 +95,89 @@ class VarSpecs(SummarizableClass, ParentClass):
         self._lang = lang or "en"
         self._words.set_default_lang(self._lang)
 
-        self._set_attrs(kwargs)
+        self._set_attrs(var_specs_dct)
+
+    def _set_attrs(self, var_specs_dct):
+        var_specs_dct_todo = {k: v for k, v in var_specs_dct.items()}
+        for key, (type_, default) in self.specs_type_default.items():
+            try:
+                val = var_specs_dct_todo.pop(key)
+            except KeyError:
+                val = default
+            # SR_DBG < TODO remove or replace by proper check
+            assert not isiterable(
+                val, str_ok=False
+            ), f"{type(self).__name__}: {val} is iterable"  # SR_DBG
+            # SR_DBG >
+            if val is not None:
+                try:
+                    val = type_(val)
+                except TypeError:
+                    raise ValueError(
+                        f"argument '{key}': type '{type(val).__name__}' incompatible "
+                        f"with '{type_.__name__}'"
+                    )
+            setattr(self, key, val)
+        if var_specs_dct_todo:
+            raise ValueError(
+                f"{len(var_specs_dct_todo)} unexpected arguments: "
+                f"{sorted(var_specs_dct_todo)}"
+            )
 
     @classmethod
-    def multiple(cls, *args, **kwargs):
-        """Create multiple instances of ``VarSpecs``.
+    def create(cls, name, var_specs_dct, **kwargs):
+        """Create one or more instances of ``VarSpecs``.
 
-        Each of the arguments of ``__init__`` can be passed by the original
-        name with one value (e.g., ``time=1``) or pluralized with multiple
-        values (e.g., ``time=[1, 2]``).
+        In general, the values of the specification dict ``var_specs_dct`` are
+        single objects (usually a number or strings); these are single-object
+        elements of the dict. ``VarSpecs`` objects are created from
+        specification dicts comprised of only such single-object elements.
 
-        One ``VarSpecs`` instance is created for each combination of all input
-        arguments.
+        However, there may also be multi-object elements, the key of which ends
+        in "_lst", and the value of which is a list of multiple objects. (This
+        is effectively a shorthand to specify multiple specification dicts in
+        one.)
+
+        To expand such a specification dict with multi-object elements into
+        multiple dicts comprised only of single-object elements, all unique
+        combinations of the objects in these lists are determined.
+
+        From each single-object-value-only specification dict a ``VarSpecs``
+        object is created.
+
+        Args:
+            name (str): Name.
+
+            var_specs_dct (dict): Variable specification dict (see above).
+
+            **kwargs: Additional keyword arguments used to create the
+                individual ``VarSpecs`` objects.
+
+        Returns:
+            list[VarSpecs]: One or move ``VarSpecs`` objects.
+
+        Examples:
+            var_specs_dct == {"foo": 1, "bar": 2}
+            # -> [VarSpecs(foo=1, bar=1)]
+
+            var_specs_dct == {"foo": [1, 2], "bar": 3}
+            # -> [VarSpecs(foo=1, bar=3), VarSpecs(foo=2, bar=3)]
+
+            var_specs_dct == {"foo": [1, 2], "bar": [3, 4], "baz": "hi"}
+            # -> [VarSpecs(foo=1, bar=3, baz="hi"),
+                  VarSpecs(foo=1, bar=4, baz="hi"),
+                  VarSpecs(foo=2, bar=3, baz="hi"),
+                  VarSpecs(foo=2, bar=4, baz="hi")]
 
         """
-        keys_singular = sorted(cls.specs())
-        vals_plural = []
-        for key_singular in keys_singular:
-            key_plural = f"{key_singular}_lst"
-
-            if key_plural in kwargs:
-                # Passed as plural
-                if key_singular in kwargs:
-                    # Error: passed as both plural and sigular
-                    raise ValueError(
-                        f"argument conflict: '{key_singular}', '{key_plural}'"
-                    )
-                vals_plural.append([v for v in kwargs.pop(key_plural)])
-
-            elif key_singular in kwargs:
-                # Passed as sigular
-                vals_plural.append([kwargs.pop(key_singular)])
-
-            else:
-                # Not passed at all
-                raise ValueError(
-                    f"missing argument: '{key_singular}' or '{key_plural}'"
-                )
-
-        # Create one specs per parameter combination
-        specs_lst = []
-        for vals in itertools.product(*vals_plural):
-            kwargs_i = {k: v for k, v in zip(keys_singular, vals)}
-            specs = cls(
-                rlat=kwargs.get("rlat"), rlon=kwargs.get("rlon"), **kwargs_i, **kwargs,
-            )
-            specs_lst.append(specs)
-
-        return specs_lst
-
-    def _set_attrs(self, kwargs):
-        for key, type_ in self.specs(types=True):
-            try:
-                val = kwargs.pop(key)
-            except KeyError:
-                raise ValueError(f"missing argument '{key}'")
-            try:
-                setattr(self, key, type_(val))
-            except TypeError:
-                raise ValueError(
-                    f"argument '{key}': type '{type(val).__name__}' incompatible with "
-                    f"'{type_.__name__}'"
-                )
-        if kwargs:
-            raise ValueError(f"{len(kwargs)} unexpected arguments: {sorted(kwargs)}")
+        cls = cls.subcls(name)  # SR_TMP
+        breakpoint()
+        foo = dict_mult_vals_product(var_specs_dct)
+        # TODO write tests for VarSpecs for the enhanced use case of multiple
+        #      objects as value in the specs dict which should NOT be turned
+        #      into separate FieldSpec objects down the road, but kept into
+        #      multi-var FieldSpec objects! Somehow distinguish this!
+        return [cls(name, d, **kwargs) for d in dict_mult_vals_product(var_specs_dct)]
 
     def merge_with(self, others):
 
@@ -188,15 +211,16 @@ class VarSpecs(SummarizableClass, ParentClass):
             else:
                 attrs[key] = vals
 
-        return self.__class__(words=self._words, lang=self._lang, **attrs)
+        return type(self)(words=self._words, lang=self._lang, **attrs)
 
     def __hash__(self):
         h = 0
         for key, val in sorted(iter(self)):
             if isinstance(val, slice):
-                h += hash((val.start, val.stop, val.step))
-            else:
-                h += hash(val)
+                val = (val.start, val.stop, val.step)
+            elif isiterable(val, str_ok=False):
+                val = tuple(val)
+            h += hash(val)
             h *= 10
         return h
 
@@ -232,7 +256,7 @@ class VarSpecs(SummarizableClass, ParentClass):
 
     def var_name(self):
         """Derive variable name from specifications."""
-        raise NotImplementedError(f"{self.__class__.__name__}.var_name")
+        raise NotImplementedError(f"{type(self).__name__}.var_name")
 
     def dim_inds_by_name(self, *, rlat=None, rlon=None):
         """Derive indices along NetCDF dimensions."""
@@ -265,16 +289,16 @@ class VarSpecs(SummarizableClass, ParentClass):
 class VarSpecs_Concentration(VarSpecs):
     name = "concentration"
 
-    _keys_w_type = {
-        **VarSpecs._keys_w_type,
-        "level": int_or_list,
+    specs_type_default = {
+        **VarSpecs.specs_type_default,
+        "level": (int_or_list, None),
     }
 
-    def long_name(self, lang):
+    def long_name(self):
         ctx = "abbr" if self.integrate else "*"
         return self._words["activity_concentration"].s
 
-    def short_name(self, lang):
+    def short_name(self):
         s = ""
         if self.integrate:
             return (
@@ -306,9 +330,9 @@ class VarSpecs_Concentration(VarSpecs):
 class VarSpecs_Deposition(VarSpecs):
     name = "deposition"
 
-    _keys_w_type = {
-        **VarSpecs._keys_w_type,
-        "deposition": str,
+    specs_type_default = {
+        **VarSpecs.specs_type_default,
+        "deposition": (str, None),
     }
 
     def deposition_type(self):
@@ -316,10 +340,10 @@ class VarSpecs_Deposition(VarSpecs):
         word = "total" if type_ == "tot" else type_
         return self._words[word, None, "f"].s
 
-    def long_name(self, lang):
+    def long_name(self):
         return f"{self.deposition_type()} {self._words['surface_deposition']}"
 
-    def short_name(self, lang):
+    def short_name(self):
         return self._words["deposition"].s
 
     def var_name(self):
@@ -329,21 +353,21 @@ class VarSpecs_Deposition(VarSpecs):
 
 
 class VarSpecs_AffectedArea(VarSpecs_Deposition):
-    name = "affected_area"
+    name = "deposition:affected_area"
 
-    def long_name(self, lang):
-        dep_name = super().long_name(lang)
+    def long_name(self):
+        dep_name = super().long_name()
         return f"{self._words['affected_area']} " f"({dep_name})"
 
 
 class Varspecs_AffectedAreaMono(VarSpecs_AffectedArea):
-    name = "affected_area_mono"
+    name = "deposition:affected_area:affected_area_mono"
 
 
 class VarSpecs_EnsMean_Concentration(VarSpecs_Concentration):
-    name = "ens_mean_concentration"
+    name = "concentration:ens_mean_concentration"
 
-    def long_name(self, lang):
+    def long_name(self):
         return (
             f"{self._words['activity_concentration']}\n"
             f"{self._words['ensemble_mean']}"
@@ -351,9 +375,9 @@ class VarSpecs_EnsMean_Concentration(VarSpecs_Concentration):
 
 
 class VarSpecs_EnsMean_Deposition(VarSpecs_Deposition):
-    name = "ens_mean_deposition"
+    name = "deposition:ens_mean_deposition"
 
-    def long_name(self, lang):
+    def long_name(self):
         return (
             f"{self._words['ensemble_mean']} {self.deposition_type()} "
             f"{self._words['surface_deposition']}"
@@ -361,9 +385,9 @@ class VarSpecs_EnsMean_Deposition(VarSpecs_Deposition):
 
 
 class VarSpecs_EnsMean_AffectedArea(VarSpecs_AffectedArea):
-    name = "ens_mean_affected_area"
+    name = "deposition:affected_area:ens_mean_affected_area"
 
-    def long_name(self, lang):
+    def long_name(self):
         return (
             f"{self._words['ensemble_mean']} {self._words['affected_area']} "
             f"({self.deposition_type()})"
@@ -371,16 +395,16 @@ class VarSpecs_EnsMean_AffectedArea(VarSpecs_AffectedArea):
 
 
 class VarSpecs_EnsThrAgrmt:
-    def long_name(self, lang):
+    def long_name(self):
         # SR_TMP <<<
         lang = self._words.default_lang
         of = dict(en="of", de="der")[lang]
         return (
             f"{self._words['ensemble']}{dict(en=' ', de='-')[lang]}"
-            f"{self._words['threshold_agreement']} {of} {super().long_name(lang)}"
+            f"{self._words['threshold_agreement']} {of} {super().long_name()}"
         )
 
-    def short_name(self, lang):
+    def short_name(self):
         return (
             f"{self._words['number_of', None, 'abbr'].c} "
             f"{self._words['member', None, 'pl']}"
@@ -388,24 +412,22 @@ class VarSpecs_EnsThrAgrmt:
 
 
 class VarSpecs_EnsThrAgrmt_Concentration(VarSpecs_EnsThrAgrmt, VarSpecs_Concentration):
-    name = "ens_thr_agrmt_concentration"
+    name = "concentration:ens_thr_agrmt_concentration"
 
 
 class VarSpecs_EnsThrAgrmt_Deposition(VarSpecs_EnsThrAgrmt, VarSpecs_Deposition):
-    name = "ens_thr_agrmt_deposition"
+    name = "deposition:ens_thr_agrmt_deposition"
 
 
 class VarSpecs_EnsThrAgrmt_AffectedArea(VarSpecs_EnsThrAgrmt, VarSpecs_AffectedArea):
-    name = "ens_thr_agrmt_affected_area"
+    name = "deposition:affected_area:ens_thr_agrmt_affected_area"
 
 
 # Field Specifications
 
 
-class FieldSpecs(SummarizableClass, ParentClass):
+class FieldSpecs(SummarizableClass):
     """FLEXPART field specifications."""
-
-    cls_var_specs = VarSpecs
 
     summarizable_attrs = []  # SR_TODO
 
@@ -413,30 +435,31 @@ class FieldSpecs(SummarizableClass, ParentClass):
     dims_opt_mult_vals = ["species_id"]
 
     def __init__(
-        self,
-        var_specs_lst,
-        *,
-        op=np.nansum,
-        var_attrs_replace=None,
-        lang="en",
-        **addtl_attrs,
+        self, name, var_specs_lst, *, op=np.nansum, var_attrs_replace=None, lang="en",
     ):
         """Create an instance of ``FieldSpecs``.
 
         Args:
-            var_specs_lst (list[dict]): Specifications dicts of input
-                variables, each of which is is used to create an instance of
-                ``VarSpecs`` as specified by the class attribute
-                ``cls_var_specs``. Each ultimately yields a 2D slice of an
-                input variable.
+            name (str): Name.
 
-            op (function or list[function], optional): Opterator(s) to combine
-                the input fields obtained based on the input variable
-                specifications. If multipe operators are passed, their number
-                must one smaller than that of the specifications, and they are
-                applied consecutively from left to right without regard to
-                operator precedence. Must accept argument ``axis=0`` to only
-                recude along over the fields. Defaults to np.nansum.
+            var_specs_lst (list[VarSpecs]): Specifications of one or more input
+                variables used to subsequently create a plot field.
+
+            op (function or list[function], optional): Opterator(s) used to
+                combine input fields read based on ``var_specs_lst``. Must
+                accept argument ``axis=0`` to only recude along over the
+                fields.
+
+                If a single operator is passed, it is used to sequentially
+                combine one field after the other, in the same order as the
+                corresponding specifications (``var_specs_lst``).
+
+                If a list of operators has been passed, then it's length must
+                be one smaller than that of ``var_specs_lst``, such that each
+                operator is used between two subsequent fields (again in the
+                same order as the corresponding specifications).
+
+                Defaults to np.nansum.
 
             var_attrs_replace (dict[str: dict], optional): Variable attributes
                 to be replaced. Necessary if multiple specifications dicts are
@@ -446,12 +469,16 @@ class FieldSpecs(SummarizableClass, ParentClass):
             lang (str, optional): Language, e.g., 'de' for German. Defaults to
                 'en' (English).
         """
+        self.name = name
+
+        # SR_TMP <
+        assert not isinstance(var_specs_lst, VarSpecs)
+        assert isiterable(var_specs_lst, str_ok=False)
+        assert isinstance(next(iter(var_specs_lst)), VarSpecs)
+        # SR_TMP >
 
         # Create variable specifications objects
         self.var_specs_lst = self._prepare_var_specs_lst(var_specs_lst)
-
-        # Set additional attributes
-        self.set_addtl_attrs(**addtl_attrs)
 
         # Store operator(s)
         self.check_op(op)
@@ -461,6 +488,14 @@ class FieldSpecs(SummarizableClass, ParentClass):
         else:
             self.op = None
             self.op_lst = op
+
+        # SR_TMP < SR_TODO remove var_attrs_replace if this is not triggered!
+        if var_attrs_replace is not None:
+            raise Exception(
+                f"{type(self).__name__}: var_attrs_replace is not None: "
+                f"{var_attrs_replace}"
+            )
+        # SR_TMP >
 
         # Store variable attributes
         if var_attrs_replace is None:
@@ -489,11 +524,8 @@ class FieldSpecs(SummarizableClass, ParentClass):
         # Example: Sum over multiple species
         for key in self.dims_opt_mult_vals:
             for var_specs in copy(var_specs_lst):
-                try:
-                    iter(var_specs[key])
-                except TypeError:
-                    pass
-                else:
+                assert isinstance(var_specs, VarSpecs)  # SR_TMP
+                if not isiterable(var_specs, str_ok=False):
                     vals = copy(var_specs[key])
                     var_specs[key] = vals.pop(0)
                     var_specs_lst_new = [deepcopy(var_specs) for _ in vals]
@@ -523,7 +555,7 @@ class FieldSpecs(SummarizableClass, ParentClass):
                 raise ValueError(f"op: {type(op_i).__name__} not callable")
 
     def __repr__(self):
-        s = f"{self.__class__.__name__}(\n"
+        s = f"{type(self).__name__}(\n"
 
         # Variables specifications
         s += f"  var_specs: {len(self.var_specs_lst)}x\n"
@@ -556,24 +588,6 @@ class FieldSpecs(SummarizableClass, ParentClass):
     def __eq__(self, other):
         return hash(self) == hash(other)
 
-    @classmethod
-    def multiple(cls, vars_specs, *args, **kwargs):
-        var_specs_lst = cls.cls_var_specs.multiple(
-            words=kwargs.get("words"), lang=kwargs.get(f"lang"), **dict(vars_specs),
-        )
-        field_specs_lst = []
-        for var_specs in var_specs_lst:
-            try:
-                field_specs = cls(var_specs, *args, **kwargs)
-            except Exception as e:
-                raise Exception(
-                    f"cannot initialize {cls.__name__} ({type(e).__name__}: {e})"
-                    f"\nvar_specs: {var_specs}"
-                )
-            else:
-                field_specs_lst.append(field_specs)
-        return field_specs_lst
-
     def var_specs_merged(self):
         """Return merged variable specifications."""
         return self.var_specs_lst[0].merge_with(self.var_specs_lst[1:])
@@ -591,43 +605,20 @@ class FieldSpecs(SummarizableClass, ParentClass):
 
 class FieldSpecs_Concentration(FieldSpecs):
     name = "concentration"
-    cls_var_specs = VarSpecs.subclass("concentration")
 
     # Dimensions with optionally multiple values
     dims_opt_mult_vals = FieldSpecs.dims_opt_mult_vals + ["level"]
 
     def __init__(self, var_specs, *args, **kwargs):
-        """Create an instance of ``FieldSpecs_Concentration``.
-
-        Args:
-            var_specs (dict-like): Specifications dict of input variable used
-                to create an instance of ``VarSpecs_Concentration`` as
-                specified by the class attribute ``cls_var_specs``.
-
-            **kwargs: Keyword arguments passed to ``FieldSpecs``.
-
-        """
+        """Create an instance of ``FieldSpecs_Concentration``."""
         super().__init__([var_specs], *args, **kwargs)
 
 
 class FieldSpecs_Deposition(FieldSpecs):
     name = "deposition"
-    cls_var_specs = VarSpecs.subclass("deposition")
 
     def __init__(self, var_specs, *args, lang=None, **kwargs):
-        """Create an instance of ``FieldSpecs_Deposition``.
-
-        Args:
-            var_specs (dict): Specifications dict of input variable used to
-                create instance(s) of ``VarSpecs_Deposition`` as specified by
-                the class attribute ``cls_var_specs``.
-
-            lang (str, optional): Language, e.g., 'de' for German. Defaults to
-                'en' (English).
-
-            **kwargs: Keyword arguments passed to ``FieldSpecs``.
-
-        """
+        """Create an instance of ``FieldSpecs_Deposition``."""
         lang = lang or "en"
 
         var_specs_lst = [var_specs]
@@ -637,7 +628,7 @@ class FieldSpecs_Deposition(FieldSpecs):
             pass
 
         elif var_specs["deposition"] == "tot":
-            long_name = var_specs.long_name(lang)
+            long_name = var_specs.long_name()
             nested_dict_set(
                 kwargs,
                 ["var_attrs_replace", "variable", "long_name", "value"],
@@ -656,7 +647,6 @@ class FieldSpecs_Deposition(FieldSpecs):
 
 class FieldSpecs_AffectedArea(FieldSpecs_Deposition):
     name = "affected_area"
-    cls_var_specs = VarSpecs.subclass("affected_area")
 
 
 class FieldSpecs_AffectedAreaMono(FieldSpecs_AffectedArea):
@@ -669,24 +659,19 @@ class FieldSpecs_Ens(FieldSpecs):
 
 class FieldSpecs_EnsMean_Concentration(FieldSpecs_Ens, FieldSpecs_Concentration):
     name = "ens_mean_concentration"
-    cls_var_specs = VarSpecs.subclass("ens_mean_concentration")
 
 
 class FieldSpecs_EnsMean_Deposition(FieldSpecs_Ens, FieldSpecs_Deposition):
     name = "ens_mean_deposition"
-    cls_var_specs = VarSpecs.subclass("ens_mean_deposition")
 
 
 class FieldSpecs_EnsMean_AffectedArea(FieldSpecs_Ens, FieldSpecs_AffectedArea):
     name = "ens_mean_affected_area"
-    cls_var_specs = VarSpecs.subclass("ens_mean_affected_area")
 
 
 class FieldSpecs_EnsThrAgrmt_Concentration(FieldSpecs_Ens, FieldSpecs_Concentration):
     name = "ens_thr_agrmt_concentration"
-    cls_var_specs = VarSpecs.subclass("ens_thr_agrmt_concentration")
 
 
 class FieldSpecs_EnsThrAgrmt_Deposition(FieldSpecs_Ens, FieldSpecs_Deposition):
     name = "ens_thr_agrmt_deposition"
-    cls_var_specs = VarSpecs.subclass("ens_thr_agrmt_deposition")

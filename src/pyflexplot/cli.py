@@ -10,10 +10,12 @@ import sys
 
 from pprint import pformat
 
+from srutils.dict import dict_mult_vals_product
 from srutils.various import group_kwargs
 
-from .io import FieldSpecs
 from .io import FileReader
+from .specs import FieldSpecs
+from .specs import VarSpecs
 from .utils import count_to_log_level
 from .plotter import Plotter
 
@@ -164,7 +166,7 @@ def create_plots(
     var_in,
     in_file_path_raw,
     out_file_path_raw,
-    vars_specs,
+    var_specs_raw,
     ens_var=None,
     ens_member_id_lst=None,
     **kwargs,
@@ -176,6 +178,8 @@ def create_plots(
 
     """
 
+    lang = ctx.obj["lang"]
+
     # SR_TMP < TODO find cleaner solution
     if ens_var is None:
         cls_name = f"{var_in}"
@@ -185,14 +189,19 @@ def create_plots(
         ens_var_setup = {"thr_agrmt": {"thr": 1e-9},}.get(ens_var)  # SR_TMP SR_HC
     # SR_TMP >
 
+    # Create var specs objects
+    foo = dict_mult_vals_product(var_specs_raw)
+    breakpoint()
+    var_specs_lst = VarSpecs.create(cls_name, var_specs_dct, lang=lang, words=None)
+
     field_lst = read_fields(
-        ctx,
-        cls_name,
-        vars_specs,
-        ens_member_id_lst,
-        ens_var,
-        ens_var_setup,
-        in_file_path_raw,
+        cls_name=cls_name,
+        var_specs_lst=var_specs_lst,
+        ens_member_id_lst=ens_member_id_lst,
+        ens_var=ens_var,
+        ens_var_setup=ens_var_setup,
+        in_file_path_raw=in_file_path_raw,
+        lang=lang,
     )
 
     if ctx.obj["noplot"]:
@@ -203,7 +212,7 @@ def create_plots(
         kwargs[key] = ctx.obj[key]
 
     # Prepare plotter
-    plotter = Plotter.subclass(cls_name)()
+    plotter = Plotter(cls_name)
     args = [field_lst, out_file_path_raw]
     fct_plot = lambda: plotter.run(*args, **kwargs)
 
@@ -222,26 +231,30 @@ def create_plots(
 
 
 def read_fields(
-    ctx,
+    *,
+    in_file_path_raw,
     cls_name,
-    vars_specs,
+    var_specs_lst,
+    lang,
     ens_member_id_lst,
     ens_var,
     ens_var_setup,
-    in_file_path_raw,
 ):
+    """TODO"""
+
+    kwargs = {"lang": lang}
+    if ens_member_id_lst is not None:
+        kwargs["member_ids"] = ens_member_id_lst
+    if ens_var is not None:
+        kwargs["ens_var"] = ens_var
+    if ens_var_setup is not None:
+        kwargs["ens_var_setup"] = ens_var_setup
 
     # Determine fields specifications (one for each eventual plot)
-    fld_specs_lst = FieldSpecs.subclass(cls_name).multiple(
-        vars_specs,
-        member_ids=ens_member_id_lst,
-        ens_var=ens_var,
-        ens_var_setup=ens_var_setup,
-        lang=ctx.obj["lang"],
-    )
+    fld_specs_lst = [FieldSpecs(cls_name, [vs], **kwargs) for vs in var_specs_lst]
 
     # Read fields
-    field_lst = FileReader(in_file_path_raw).run(fld_specs_lst, lang=ctx.obj["lang"],)
+    field_lst = FileReader(in_file_path_raw).run(fld_specs_lst, lang=lang)
 
     return field_lst
 
@@ -335,7 +348,7 @@ class GlobalOptions(ClickOptionsGroup):
             ),
             click.option(
                 "--time-ind",
-                "vars_specs__time_lst",
+                "var_specs_raw__time_lst",
                 help="Index of time (zero-based). Format key: '{time_ind}'.",
                 type=int,
                 default=[0],
@@ -343,7 +356,7 @@ class GlobalOptions(ClickOptionsGroup):
             ),
             click.option(
                 "--age-class-ind",
-                "vars_specs__nageclass_lst",
+                "var_specs_raw__nageclass_lst",
                 help="Index of age class (zero-based). Format key: '{age_class_ind}'.",
                 type=int,
                 default=[0],
@@ -351,7 +364,7 @@ class GlobalOptions(ClickOptionsGroup):
             ),
             click.option(
                 "--release-point-ind",
-                "vars_specs__numpoint_lst",
+                "var_specs_raw__numpoint_lst",
                 help="Index of release point (zero-based). Format key: '{rls_pt_ind}'.",
                 type=int,
                 default=[0],
@@ -359,7 +372,7 @@ class GlobalOptions(ClickOptionsGroup):
             ),
             click.option(
                 "--species-id",
-                "vars_specs__species_id_lst",
+                "var_specs_raw__species_id_lst",
                 help=(
                     "Species id(s) (default: 0). To sum up multiple species, combine "
                     "their ids with '+'. Format key: '{species_id}'."
@@ -375,7 +388,7 @@ class GlobalOptions(ClickOptionsGroup):
         return [
             click.option(
                 "--integrate/--no-integrate",
-                "vars_specs__integrate_lst",
+                "var_specs_raw__integrate_lst",
                 help=(
                     "Integrate field over time. If set, the variable name that may be "
                     "embedded in the plot path with the format key '{variable}' is "
@@ -470,7 +483,7 @@ class ConcentrationOptions(ClickOptionsGroup):
         return [
             click.option(
                 "--level-ind",
-                "vars_specs__level_lst",
+                "var_specs_raw__level_lst",
                 help=(
                     "Index/indices of vertical level (zero-based, bottom-up). To sum "
                     "up multiple levels, combine their indices with '+'. Format key: "
@@ -501,7 +514,7 @@ class DepositionOptions(ClickOptionsGroup):
         return [
             click.option(
                 "--deposition-type",
-                "vars_specs__deposition_lst",
+                "var_specs_raw__deposition_lst",
                 help=(
                     "Type of deposition. Part of the plot variable name that may be "
                     "embedded in the plot file path with the format key '{variable}'."
@@ -589,7 +602,7 @@ cli.add_command(ensemble)
 @ConcentrationOptions.input
 @ConcentrationOptions.plot
 @click.pass_context
-@group_kwargs("vars_specs")
+@group_kwargs("var_specs_raw")
 def deterministic_concentration(ctx, plot_var, **kwargs):
     var_in = "concentration"
     create_plots(ctx=ctx, var_in=var_in, **kwargs)
@@ -605,7 +618,7 @@ def deterministic_concentration(ctx, plot_var, **kwargs):
 @DepositionOptions.input
 @DepositionOptions.plot_deterministic
 @click.pass_context
-@group_kwargs("vars_specs")
+@group_kwargs("var_specs_raw")
 def deterministic_deposition(ctx, plot_var, **kwargs):
     var_in = "deposition" if plot_var == "auto" else plot_var
     create_plots(ctx=ctx, var_in=var_in, **kwargs)
@@ -623,7 +636,7 @@ def deterministic_deposition(ctx, plot_var, **kwargs):
 @ConcentrationOptions.input
 @ConcentrationOptions.plot
 @click.pass_context
-@group_kwargs("vars_specs")
+@group_kwargs("var_specs_raw")
 def ensemble_concentration(ctx, plot_var, **kwargs):
     var_in = "concentration"
     create_plots(ctx=ctx, var_in=var_in, **kwargs)
@@ -641,7 +654,7 @@ def ensemble_concentration(ctx, plot_var, **kwargs):
 @DepositionOptions.input
 @DepositionOptions.plot_ensemble
 @click.pass_context
-@group_kwargs("vars_specs")
+@group_kwargs("var_specs_raw")
 def ensemble_deposition(ctx, plot_var, **kwargs):
     var_in = {"auto": "deposition"}.get(plot_var, plot_var)
     create_plots(ctx=ctx, var_in=var_in, **kwargs)

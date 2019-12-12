@@ -5,6 +5,8 @@ Dictionary utilities.
 import itertools
 from pprint import pformat
 
+from .various import isiterable
+
 
 def merge_dicts(*dicts, unique_keys=True):
     """Merge multiple dictionaries with or without shared keys.
@@ -38,8 +40,14 @@ def merge_dicts(*dicts, unique_keys=True):
     return merged
 
 
-def dict_mult_vals_product(dict_):
-    """Combine value lists in a dict in all possible ways.
+def dict_mult_vals_product(dct, lst_sfx="_lst", allowed_iterables=None):
+    """Create multiple dicts by building all combinations of all list elements.
+
+    Args:
+        dct (dict): Dictionary with list elements to be combined.
+
+        lst_sfc (str, optional): Suffix of key of list elements. Removed from
+            the key names in the output dictionaries. Defaults to "_lst".
 
     Example:
         in: {'foo_lst': [1, 2, 3], 'bar': 4, 'baz_lst': [5, 6]}
@@ -57,10 +65,26 @@ def dict_mult_vals_product(dict_):
         Improve wording of short description of docstring.
 
     """
+    if allowed_iterables is None:
+        allowed_iterables = []
+    elif isinstance(allowed_iterables, type):
+        allowed_iterables = [allowed_iterables]
     keys, vals = [], []
-    for key, val in sorted(dict_.items()):
-        keys.append(key.replace("_lst", ""))
-        vals.append(val if key.endswith("_lst") else [val])
+    for key, val in dct.items():
+        if isiterable(val, str_ok=False):
+            if key.endswith(lst_sfx):
+                key = key[: -len(lst_sfx)]
+            elif type(val) not in allowed_iterables:
+                s_val = f"'{val}'" if isinstance(val, str) else str(val)
+                raise Exception(
+                    f"{s_val} is iterable, but key '{key}' ends not in '{lst_sfx}' "
+                    f"and type {type(val).__name__} is not among allowed iterables "
+                    f"({', '.join([t.__name__ for t in allowed_iterables])})"
+                )
+        else:
+            val = [val]
+        keys.append(key)
+        vals.append(val)
     return [dict(zip(keys, vals_i)) for vals_i in itertools.product(*vals)]
 
 
@@ -89,7 +113,7 @@ def nested_dict_set(dct, keys, val):
 def pformat_dictlike(obj):
     """Pretty-format a dict-like object."""
 
-    s = f"{obj.__class__.__name__}({pformat(dict(obj))})"
+    s = f"{type(obj).__name__}({pformat(dict(obj))})"
 
     # Insert line breaks between braces and content
     s = s.replace("({'", "({\n '").replace("})", ",\n)}")

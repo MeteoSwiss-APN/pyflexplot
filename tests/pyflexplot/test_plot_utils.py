@@ -47,12 +47,11 @@ class Test_TextBoxAxes_Summarize:
     }
 
     def test_text_line(self):
-        box = self.create_text_box(show_border=False)
+        box = self.create_text_box()
         box.text("bl", "lower-left", dx=1.6, dy=0.8)
         res = box.summarize(**self.kwargs_summarize)
         sol = {
             **self.sol_base,
-            "show_border": False,
             "elements": [
                 {
                     "type": "TextBoxElement_Text",
@@ -75,7 +74,6 @@ class Test_TextBoxAxes_Summarize:
         res = box.summarize(**self.kwargs_summarize)
         sol = {
             **self.sol_base,
-            "show_border": True,
             "elements": [
                 {"type": "TextBoxElement_Text", "s": ("foo", "bar"),},
                 {"type": "TextBoxElement_Text", "s": ("hello", "world"),},
@@ -84,12 +82,11 @@ class Test_TextBoxAxes_Summarize:
         assert_summary_dict_is_subdict(superdict=res, subdict=sol)
 
     def test_color_rect(self):
-        box = self.create_text_box(show_border=True)
+        box = self.create_text_box()
         box.color_rect("tr", "red", "black")
         res = box.summarize(**self.kwargs_summarize)
         sol = {
             **self.sol_base,
-            "show_border": True,
             "elements": [
                 {"type": "TextBoxElement_ColorRect", "fc": "red", "ec": "black",}
             ],

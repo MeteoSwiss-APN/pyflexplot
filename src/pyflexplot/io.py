@@ -412,8 +412,8 @@ class FileReader:
                     time_ind = var_specs.time
                 elif var_specs.time != time_ind:
                     raise Exception(
-                        f"{var_specs.__class__.__name__} instances of "
-                        f"{fld_spec_time.__class__.__name__} instance differ in 'time' "
+                        f"{type(var_specs).__name__} instances of "
+                        f"{type(fld_spec_time).__name__} instance differ in 'time' "
                         f"({var_specs.time} != {time_ind}):\n{fld_specs_time}"
                     )
                 var_specs.time = slice(None)
@@ -548,12 +548,12 @@ class FileReader:
 
         dt_hr = self._time_resolution()
 
-        if isinstance(var_specs, VarSpecs.subclass("concentration")):
+        if var_specs.issubcls("concentration"):  # SR_TMP
             if var_specs.integrate:
                 # Integrate over time
                 fld = np.cumsum(fld, axis=0) * dt_hr
 
-        elif isinstance(var_specs, VarSpecs.subclass("deposition")):
+        elif var_specs.subcls("deposition"):  # SR_TMP
             if not var_specs.integrate:
                 # Revert integration over time
                 fld[1:] = (fld[1:] - fld[:-1]) / dt_hr

@@ -15,8 +15,6 @@ from .utils import ParentClass
 class Plotter(ParentClass):
     """Create one or more FLEXPLART plots of a certain type."""
 
-    cls_plot = None
-
     specs_fmt_keys = {
         "time": "time_ind",
         "nageclass": "age_ind",
@@ -25,10 +23,14 @@ class Plotter(ParentClass):
         "species_id": "species_id",
     }
 
-    def run(self, field, file_path_fmt, *, domain="auto", lang="en", **kwargs_plot):
+    def run(
+        self, name, field, file_path_fmt, *, domain="auto", lang="en", **kwargs_plot
+    ):
         """Create one or more plots.
 
         Args:
+            name (str): Name.
+
             field (Plot*, list[Plot*]): An instance or list of instances of the
                 plot class.
 
@@ -47,13 +49,14 @@ class Plotter(ParentClass):
             str: Output file paths.
 
         """
+        self.name = name
         self.file_path_fmt = file_path_fmt
         self.lang = lang
 
         data_lst = field if isinstance(field, (list, tuple)) else [field]
 
         _s = "s" if len(data_lst) > 1 else ""
-        print(f"create {len(data_lst)} {self.cls_plot.name} plot{_s}")
+        print(f"create {len(data_lst)} {self.name} plot{_s}")
 
         # SR_TMP < TODO Find less hard-coded solution
         if domain == "auto":
@@ -72,9 +75,9 @@ class Plotter(ParentClass):
             _w = len(str(len(data_lst)))
             print(f" {i_data+1:{_w}}/{len(data_lst)}  {file_path}")
 
-            self.cls_plot(field, map_conf=map_conf, lang=lang, **kwargs_plot).save(
-                file_path
-            )
+            Plot.subcls(self.name)(
+                field, map_conf=map_conf, lang=lang, **kwargs_plot
+            ).save(file_path)
 
             yield file_path
 
@@ -114,7 +117,7 @@ class Plotter(ParentClass):
         kwargs["lang"] = self.lang
 
         # Ensemble member ids
-        if isinstance(field_specs, FieldSpecs.subclass("ens")):
+        if isinstance(field_specs, FieldSpecs.subcls("ens")):
             if not field_specs.member_ids:
                 kwargs["member_ids"] = None
             else:
@@ -148,59 +151,3 @@ class Plotter(ParentClass):
             )
         else:
             return file_path
-
-
-# Deterministic Simulation
-
-
-class Plotter_Concentration(Plotter):
-    name = "concentration"
-    cls_plot = Plot.subclass("concentration")
-
-
-class Plotter_Deposition(Plotter):
-    name = "deposition"
-    cls_plot = Plot.subclass("deposition")
-
-
-class Plotter_AffectedArea(Plotter):
-    name = "affected_area"
-    cls_plot = Plot.subclass("affected_area")
-
-
-class Plotter_AffectedAreaMono(Plotter):
-    name = "affected_area_mono"
-    cls_plot = Plot.subclass("affected_area_mono")
-
-
-# Ensemble Simulation
-
-
-class Plotter_EnsMean_Concentration(Plotter):
-    name = "ens_mean_concentration"
-    cls_plot = Plot.subclass("ens_mean_concentration")
-
-
-class Plotter_EnsMean_Deposition(Plotter):
-    name = "ens_mean_deposition"
-    cls_plot = Plot.subclass("ens_mean_deposition")
-
-
-class Plotter_EnsMean_AffectedArea(Plotter):
-    name = "ens_mean_affected_area"
-    cls_plot = Plot.subclass("ens_mean_affected_area")
-
-
-class Plotter_EnsMean_AffectedAreaMono(Plotter):
-    name = "ens_mean_affected_area_mono"
-    cls_plot = Plot.subclass("ens_mean_affected_area_mono")
-
-
-class Plotter_EnsThrAgrmt_Concentration(Plotter):
-    name = "ens_thr_agrmt_concentration"
-    cls_plot = Plot.subclass("ens_thr_agrmt_concentration")
-
-
-class Plotter_EnsThrAgrmt_Deposition(Plotter):
-    name = "ens_thr_agrmt_deposition"
-    cls_plot = Plot.subclass("ens_thr_agrmt_deposition")
