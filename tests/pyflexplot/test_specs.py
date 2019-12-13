@@ -70,10 +70,10 @@ def check_var_specs_lst_mult(var_specs_lst, conf):
     the test has failed.
 
     """
-    var_specs_dct_lst_todo = dict_mult_vals_product(conf.var_specs_dct)
+    var_specs_dct_lst = dict_mult_vals_product(conf.var_specs_dct)
     for var_specs in var_specs_lst:
         exn = None
-        for var_specs_dct in var_specs_dct_lst_todo.copy():
+        for var_specs_dct in var_specs_dct_lst:
             subconf = conf.derive(var_specs_dct=var_specs_dct)
             try:
                 check_var_specs(var_specs, subconf)
@@ -81,12 +81,10 @@ def check_var_specs_lst_mult(var_specs_lst, conf):
                 exn = e
                 continue
             else:
-                var_specs_dct_lst_todo.remove(var_specs_dct)
                 break
         else:
             raise AssertionError(
-                f"no matching solution found for {var_specs} among "
-                f"{var_specs_dct_lst_todo}"
+                f"no matching solution found for {var_specs} among {var_specs_dct_lst}"
             ) from exn
 
 
@@ -96,7 +94,7 @@ def check_var_specs(var_specs, conf):
     # Check validity of test data
     mismatches = [k for k in conf.var_specs_dct if k not in dict(var_specs)]
     if mismatches:
-        # NOT AssertionError! The test data is broken, NOT what is tested!
+        # Test data is broken, NOT the tested code, so NOT AssertionError!
         raise ValueError(f"invalid solution: key mismatches: {mismatches}")
 
     assert type(var_specs).__name__ == conf.type_name  # SR_TMP
@@ -122,6 +120,9 @@ class _ConfBase:
         return type(self)(**data)
 
 
+# VarSpecs
+
+
 @dataclass(frozen=True)
 class Conf_CreateVarSpecs(_ConfBase):
     name: str
@@ -129,14 +130,6 @@ class Conf_CreateVarSpecs(_ConfBase):
     var_specs_dct: dict
     kwargs: dict
     var_specs_subdct_fail: dict
-
-
-@dataclass(frozen=True)
-class Conf_CreateFieldSpecs(_ConfBase):
-    name: str
-    type_name: str
-    var_specs_dct_base: dict
-    var_specs_kwargs: dict
 
 
 class _TestBase_CreateVarSpecs_SingleObjDct:
@@ -255,6 +248,17 @@ class Test_CreateVarSpecs_MultObjDct_Deposition(_TestBase_CreateVarSpecs_MultObj
         kwargs={"rlon": None, "rlat": None, "lang": None, "words": None},
         var_specs_subdct_fail={"time_lst": [3, 4], "species_id": 0},
     )
+
+
+# FieldSpecs
+
+
+@dataclass(frozen=True)
+class Conf_CreateFieldSpecs(_ConfBase):
+    name: str
+    type_name: str
+    var_specs_dct_base: dict
+    var_specs_kwargs: dict
 
 
 class Test_FieldSpecs_Create_Concentration:

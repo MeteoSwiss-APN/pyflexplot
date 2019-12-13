@@ -166,10 +166,40 @@ class VarSpecs(SummarizableClass, ParentClass):
 
         """
         cls = cls.subcls(name)  # SR_TMP
-        var_specs_dct_lst = dict_mult_vals_product(var_specs_dct)
-        var_specs_lst = [cls(name, d, **kwargs) for d in var_specs_dct_lst]
-        # breakpoint(header=f"{cls.__name__}.create")
-        return var_specs_lst
+
+        def create_obj(specs):
+            return cls(name, specs, **kwargs)
+
+        def create_var_specs_lst_rec(dct, list_ok=False):
+            """Recursively create var specs objects from a multi-object dict.
+
+            Example:
+                {"foo": [[1, 2], [3, 4]], "bar": 5}
+                # -> [[VarSpecs(foo=1, bar=5), VarSpecs(foo=2, bar=5)],
+                      [VarSpecs(foo=3, bar=5), VarSpecs(foo=4, bar=5)]]
+
+            """
+            allowed = list if list_ok else None
+            dct_lst = dict_mult_vals_product(dct, allowed_iterables=allowed)
+            if len(dct_lst) == 1:
+                # Specs dict not resolved further, so create specs object!
+                obj = create_obj(next(iter(dct_lst)))
+                return [obj]
+            result = []
+            for dct_i in dct_lst:
+                dct_lst_i = create_var_specs_lst_rec(dct_i, list_ok=True)
+                if len(dct_lst_i) == 1:
+                    # Specs dict not resolved further, so create specs object!
+                    obj = create_obj(next(iter(dct_lst)))
+                    result.append(obj)
+                else:
+                    result.append(dct_lst_i)
+            return result
+
+        # + return create_var_specs_lst_rec(var_specs_dct)
+        var_specs_nested = create_var_specs_lst_rec(var_specs_dct)
+        # breakpoint(header=f"{cls.__name__}.create")  # SR_DBG
+        return var_specs_nested
 
     def merge_with(self, others):
 
