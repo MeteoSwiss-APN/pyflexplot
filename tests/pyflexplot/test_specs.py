@@ -74,8 +74,9 @@ def check_var_specs_lst_mult(var_specs_lst, conf):
     for var_specs in var_specs_lst:
         exn = None
         for var_specs_dct in var_specs_dct_lst_todo.copy():
+            subconf = conf.derive(var_specs_dct=var_specs_dct)
             try:
-                check_var_specs(conf.name, conf.type_name, var_specs, var_specs_dct)
+                check_var_specs(var_specs, subconf)
             except AssertionError as e:
                 exn = e
                 continue
@@ -89,18 +90,24 @@ def check_var_specs_lst_mult(var_specs_lst, conf):
             ) from exn
 
 
-def check_var_specs(name, type_name, var_specs, var_specs_dct):
+def check_var_specs(var_specs, conf):
     """Compare a var specs object with a var specs dict."""
 
-    assert type(var_specs).__name__ == type_name  # SR_TMP
+    # Check validity of test data
+    mismatches = [k for k in conf.var_specs_dct if k not in dict(var_specs)]
+    if mismatches:
+        # NOT AssertionError! The test data is broken, NOT what is tested!
+        raise ValueError(f"invalid solution: key mismatches: {mismatches}")
 
-    sol = set(var_specs_dct.items())
+    assert type(var_specs).__name__ == conf.type_name  # SR_TMP
+
+    sol = set(conf.var_specs_dct.items())
     res = set(dict(var_specs).items())
     assert sol.issubset(res)
 
     sol = {
-        **var_specs_dct,
-        "name": name,
+        **conf.var_specs_dct,
+        "name": conf.name,
         "rlon": (None,),
         "rlat": (None,),
     }
@@ -110,9 +117,9 @@ def check_var_specs(name, type_name, var_specs, var_specs_dct):
 
 class _ConfBase:
     def derive(self, **kwargs):
-        fields = self.__dataclass_fields__
-        fields.update(kwargs)
-        return type(self)(**fields)
+        data = {k: getattr(self, k) for k in self.__dataclass_fields__}
+        data.update(kwargs)
+        return type(self)(**data)
 
 
 @dataclass(frozen=True)
@@ -121,6 +128,7 @@ class Conf_CreateVarSpecs(_ConfBase):
     type_name: str
     var_specs_dct: dict
     kwargs: dict
+    var_specs_subdct_fail: dict
 
 
 @dataclass(frozen=True)
@@ -131,9 +139,33 @@ class Conf_CreateFieldSpecs(_ConfBase):
     var_specs_kwargs: dict
 
 
-class Test_CreateVarSpecs_SingleObjDct_Concentration:
-    """Create a variable specification object for concentration."""
+class _TestBase_CreateVarSpecs_SingleObjDct:
+    """Create a single variable specification object."""
 
+    def test(self):
+        var_specs_lst = VarSpecs.create(
+            self.c.name, self.c.var_specs_dct, **self.c.kwargs
+        )
+        assert_is_list_like(var_specs_lst, len_=1, children=VarSpecs)
+        var_specs = next(iter(var_specs_lst))
+        check_var_specs(var_specs, self.c)
+
+    def test_fail(self):
+        var_specs_lst = VarSpecs.create(
+            self.c.name, self.c.var_specs_dct, **self.c.kwargs,
+        )
+        assert_is_list_like(var_specs_lst, len_=1, children=VarSpecs)
+        var_specs = next(iter(var_specs_lst))
+        conf = self.c.derive(
+            var_specs_dct={**self.c.var_specs_dct, **self.c.var_specs_subdct_fail},
+        )
+        with pytest.raises(AssertionError):
+            check_var_specs(var_specs, conf)
+
+
+class Test_CreateVarSpecs_SingleObjDct_Concentration(
+    _TestBase_CreateVarSpecs_SingleObjDct
+):
     c = Conf_CreateVarSpecs(
         name="concentration",
         type_name="VarSpecs_Concentration",  # SR_TMP
@@ -146,20 +178,13 @@ class Test_CreateVarSpecs_SingleObjDct_Concentration:
             "level": 1,
         },
         kwargs={"rlon": None, "rlat": None, "lang": None, "words": None},
+        var_specs_subdct_fail={"time": 4, "level": 0},
     )
 
-    def test(self):
-        var_specs_lst = VarSpecs.create(
-            self.c.name, self.c.var_specs_dct, **self.c.kwargs
-        )
-        assert_is_list_like(var_specs_lst, len_=1, children=VarSpecs)
-        var_specs = next(iter(var_specs_lst))
-        check_var_specs(self.c.name, self.c.type_name, var_specs, self.c.var_specs_dct)
 
-
-class Test_CreateVarSpecs_SingleObjDct_Deposition:
-    """Create a variable specification object for deposition."""
-
+class Test_CreateVarSpecs_SingleObjDct_Deposition(
+    _TestBase_CreateVarSpecs_SingleObjDct
+):
     c = Conf_CreateVarSpecs(
         name="deposition",
         type_name="VarSpecs_Deposition",  # SR_TMP
@@ -172,33 +197,12 @@ class Test_CreateVarSpecs_SingleObjDct_Deposition:
             "deposition": "tot",
         },
         kwargs={"rlon": None, "rlat": None, "lang": None, "words": None},
+        var_specs_subdct_fail={"time": 4, "species_id": 0},
     )
 
-    def test_(self):
-        var_specs_lst = VarSpecs.create(
-            self.c.name, self.c.var_specs_dct, **self.c.kwargs
-        )
-        assert_is_list_like(var_specs_lst, len_=1, children=VarSpecs)
-        var_specs = next(iter(var_specs_lst))
-        check_var_specs(self.c.name, self.c.type_name, var_specs, self.c.var_specs_dct)
 
-
-class Test_CreateVarSpecs_MultObjDct_Concentration:
-    """Create multiple variable specification objects for concentration."""
-
-    c = Conf_CreateVarSpecs(
-        name="concentration",
-        type_name="VarSpecs_Concentration",  # SR_TMP
-        var_specs_dct={
-            "nageclass": 0,
-            "numpoint": 0,
-            "time_lst": [1, 3],
-            "integrate": False,
-            "species_id_lst": [1, 2],
-            "level": 1,
-        },
-        kwargs={"rlon": None, "rlat": None, "lang": None, "words": None},
-    )
+class _TestBase_CreateVarSpecs_MultObjDct:
+    """Create multiple variable specification objects."""
 
     def test(self):
         var_specs_lst = VarSpecs.create(
@@ -211,12 +215,46 @@ class Test_CreateVarSpecs_MultObjDct_Concentration:
         var_specs_lst = VarSpecs.create(
             self.c.name, self.c.var_specs_dct, **self.c.kwargs,
         )
-        assert_is_list_like(var_specs_lst, children=VarSpecs)
+        assert_is_list_like(var_specs_lst, len_=4, children=VarSpecs)
         conf = self.c.derive(
-            var_specs_dct={**self.c.var_specs_dct, "time_lst": [3, 4], "level": 0}
+            var_specs_dct={**self.c.var_specs_dct, **self.c.var_specs_subdct_fail},
         )
         with pytest.raises(AssertionError):
             check_var_specs_lst_mult(var_specs_lst, conf)
+
+
+class Test_CreateVarSpecs_MultObjDct_Concentration(_TestBase_CreateVarSpecs_MultObjDct):
+    c = Conf_CreateVarSpecs(
+        name="concentration",
+        type_name="VarSpecs_Concentration",  # SR_TMP
+        var_specs_dct={
+            "nageclass": 0,
+            "numpoint": 0,
+            "time_lst": [1, 3],
+            "integrate": False,
+            "species_id_lst": [1, 2],
+            "level": 1,
+        },
+        kwargs={"rlon": None, "rlat": None, "lang": None, "words": None},
+        var_specs_subdct_fail={"time_lst": [3, 4], "level": 0},
+    )
+
+
+class Test_CreateVarSpecs_MultObjDct_Deposition(_TestBase_CreateVarSpecs_MultObjDct):
+    c = Conf_CreateVarSpecs(
+        name="deposition",
+        type_name="VarSpecs_Deposition",  # SR_TMP
+        var_specs_dct={
+            "nageclass": 0,
+            "numpoint": 0,
+            "time_lst": [1, 3],
+            "integrate": False,
+            "species_id_lst": [1, 2],
+            "deposition": "tot",
+        },
+        kwargs={"rlon": None, "rlat": None, "lang": None, "words": None},
+        var_specs_subdct_fail={"time_lst": [3, 4], "species_id": 0},
+    )
 
 
 class Test_FieldSpecs_Create_Concentration:
