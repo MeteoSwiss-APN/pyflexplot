@@ -104,11 +104,6 @@ class VarSpecs(SummarizableClass, ParentClass):
                 val = var_specs_dct_todo.pop(key)
             except KeyError:
                 val = default
-            # SR_DBG < TODO remove or replace by proper check
-            assert not isiterable(
-                val, str_ok=False
-            ), f"{type(self).__name__}: {val} is iterable"  # SR_DBG
-            # SR_DBG >
             if val is not None:
                 try:
                     val = type_(val)
@@ -171,13 +166,10 @@ class VarSpecs(SummarizableClass, ParentClass):
 
         """
         cls = cls.subcls(name)  # SR_TMP
-        breakpoint()
-        foo = dict_mult_vals_product(var_specs_dct)
-        # TODO write tests for VarSpecs for the enhanced use case of multiple
-        #      objects as value in the specs dict which should NOT be turned
-        #      into separate FieldSpec objects down the road, but kept into
-        #      multi-var FieldSpec objects! Somehow distinguish this!
-        return [cls(name, d, **kwargs) for d in dict_mult_vals_product(var_specs_dct)]
+        var_specs_dct_lst = dict_mult_vals_product(var_specs_dct)
+        var_specs_lst = [cls(name, d, **kwargs) for d in var_specs_dct_lst]
+        # breakpoint(header=f"{cls.__name__}.create")
+        return var_specs_lst
 
     def merge_with(self, others):
 

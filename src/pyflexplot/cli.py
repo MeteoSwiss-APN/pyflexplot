@@ -190,9 +190,7 @@ def create_plots(
     # SR_TMP >
 
     # Create var specs objects
-    foo = dict_mult_vals_product(var_specs_raw)
-    breakpoint()
-    var_specs_lst = VarSpecs.create(cls_name, var_specs_dct, lang=lang, words=None)
+    var_specs_lst = VarSpecs.create(cls_name, var_specs_raw, lang=lang, words=None)
 
     field_lst = read_fields(
         cls_name=cls_name,

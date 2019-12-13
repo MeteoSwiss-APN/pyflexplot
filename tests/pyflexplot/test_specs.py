@@ -3,6 +3,8 @@
 """Tests for module ``pyflexplot.io``."""
 import pytest
 
+from dataclasses import dataclass
+
 from pyflexplot.io import FieldSpecs
 from pyflexplot.io import VarSpecs
 
@@ -50,7 +52,7 @@ def assert_is_list_like(obj, *, len_=None, not_=None, children=None, f_children=
             assert f_children(sub_obj)
 
 
-def check_var_specs_lst_mult(name, type_name, var_specs_lst, var_specs_dct):
+def check_var_specs_lst_mult(var_specs_lst, conf):
     """Check a list of var specs objs against its's specification dict.
 
     The specification dict contains elements with multiple values, which
@@ -68,12 +70,12 @@ def check_var_specs_lst_mult(name, type_name, var_specs_lst, var_specs_dct):
     the test has failed.
 
     """
-    var_specs_dct_lst_todo = dict_mult_vals_product(var_specs_dct)
+    var_specs_dct_lst_todo = dict_mult_vals_product(conf.var_specs_dct)
     for var_specs in var_specs_lst:
         exn = None
         for var_specs_dct in var_specs_dct_lst_todo.copy():
             try:
-                check_var_specs(name, type_name, var_specs, var_specs_dct)
+                check_var_specs(conf.name, conf.type_name, var_specs, var_specs_dct)
             except AssertionError as e:
                 exn = e
                 continue
@@ -82,7 +84,7 @@ def check_var_specs_lst_mult(name, type_name, var_specs_lst, var_specs_dct):
                 break
         else:
             raise AssertionError(
-                f"no matching solution found for {var_specs_dct} among "
+                f"no matching solution found for {var_specs} among "
                 f"{var_specs_dct_lst_todo}"
             ) from exn
 
@@ -106,251 +108,258 @@ def check_var_specs(name, type_name, var_specs, var_specs_dct):
     assert sol == res
 
 
-class Test_VarSpecs_CreateFromSingleObjDct_Concentration:
+class _ConfBase:
+    def derive(self, **kwargs):
+        fields = self.__dataclass_fields__
+        fields.update(kwargs)
+        return type(self)(**fields)
+
+
+@dataclass(frozen=True)
+class Conf_CreateVarSpecs(_ConfBase):
+    name: str
+    type_name: str
+    var_specs_dct: dict
+    kwargs: dict
+
+
+@dataclass(frozen=True)
+class Conf_CreateFieldSpecs(_ConfBase):
+    name: str
+    type_name: str
+    var_specs_dct_base: dict
+    var_specs_kwargs: dict
+
+
+class Test_CreateVarSpecs_SingleObjDct_Concentration:
     """Create a variable specification object for concentration."""
 
-    name = "concentration"
-    type_name = "VarSpecs_Concentration"  # SR_TMP
-    var_specs_dct = {
-        "nageclass": 0,
-        "numpoint": 0,
-        "time": 3,
-        "integrate": False,
-        "species_id": 2,
-        "level": 1,
-    }
-    kwargs = {"rlon": None, "rlat": None, "lang": None, "words": None}
+    c = Conf_CreateVarSpecs(
+        name="concentration",
+        type_name="VarSpecs_Concentration",  # SR_TMP
+        var_specs_dct={
+            "nageclass": 0,
+            "numpoint": 0,
+            "time": 3,
+            "integrate": False,
+            "species_id": 2,
+            "level": 1,
+        },
+        kwargs={"rlon": None, "rlat": None, "lang": None, "words": None},
+    )
 
     def test(self):
-        var_specs_lst = VarSpecs.create(self.name, self.var_specs_dct, **self.kwargs)
+        var_specs_lst = VarSpecs.create(
+            self.c.name, self.c.var_specs_dct, **self.c.kwargs
+        )
         assert_is_list_like(var_specs_lst, len_=1, children=VarSpecs)
         var_specs = next(iter(var_specs_lst))
-        check_var_specs(self.name, self.type_name, var_specs, self.var_specs_dct)
+        check_var_specs(self.c.name, self.c.type_name, var_specs, self.c.var_specs_dct)
 
 
-class Test_VarSpecs_CreateFromSingleObjDct_Deposition:
+class Test_CreateVarSpecs_SingleObjDct_Deposition:
     """Create a variable specification object for deposition."""
 
-    name = "deposition"
-    type_name = "VarSpecs_Deposition"  # SR_TMP
-    var_specs_dct = {
-        "nageclass": 0,
-        "numpoint": 0,
-        "time": 3,
-        "integrate": False,
-        "species_id": 2,
-        "deposition": "tot",
-    }
-    kwargs = {"rlon": None, "rlat": None, "lang": None, "words": None}
+    c = Conf_CreateVarSpecs(
+        name="deposition",
+        type_name="VarSpecs_Deposition",  # SR_TMP
+        var_specs_dct={
+            "nageclass": 0,
+            "numpoint": 0,
+            "time": 3,
+            "integrate": False,
+            "species_id": 2,
+            "deposition": "tot",
+        },
+        kwargs={"rlon": None, "rlat": None, "lang": None, "words": None},
+    )
 
-    def test(self):
-        var_specs_lst = VarSpecs.create(self.name, self.var_specs_dct, **self.kwargs)
+    def test_(self):
+        var_specs_lst = VarSpecs.create(
+            self.c.name, self.c.var_specs_dct, **self.c.kwargs
+        )
         assert_is_list_like(var_specs_lst, len_=1, children=VarSpecs)
         var_specs = next(iter(var_specs_lst))
-        check_var_specs(self.name, self.type_name, var_specs, self.var_specs_dct)
+        check_var_specs(self.c.name, self.c.type_name, var_specs, self.c.var_specs_dct)
 
 
-class Test_VarSpecs_CreateFromMultObjDct_Concentration:
+class Test_CreateVarSpecs_MultObjDct_Concentration:
     """Create multiple variable specification objects for concentration."""
 
-    name = "concentration"
-    type_name = "VarSpecs_Concentration"  # SR_TMP
-    var_specs_dct = {
-        "nageclass": 0,
-        "numpoint": 0,
-        "time_lst": [1, 3],
-        "integrate": False,
-        "species_id_lst": [1, 2],
-        "level": 1,
-    }
-    kwargs = {"rlon": None, "rlat": None, "lang": None, "words": None}
+    c = Conf_CreateVarSpecs(
+        name="concentration",
+        type_name="VarSpecs_Concentration",  # SR_TMP
+        var_specs_dct={
+            "nageclass": 0,
+            "numpoint": 0,
+            "time_lst": [1, 3],
+            "integrate": False,
+            "species_id_lst": [1, 2],
+            "level": 1,
+        },
+        kwargs={"rlon": None, "rlat": None, "lang": None, "words": None},
+    )
 
     def test(self):
-        var_specs_lst = VarSpecs.create(self.name, self.var_specs_dct, **self.kwargs)
-        assert_is_list_like(var_specs_lst, len_=4, children=VarSpecs)
-        check_var_specs_lst_mult(
-            self.name, self.type_name, var_specs_lst, self.var_specs_dct
+        var_specs_lst = VarSpecs.create(
+            self.c.name, self.c.var_specs_dct, **self.c.kwargs,
         )
+        assert_is_list_like(var_specs_lst, len_=4, children=VarSpecs)
+        check_var_specs_lst_mult(var_specs_lst, self.c)
 
     def test_fail(self):
-        var_specs_lst = VarSpecs.create(self.name, self.var_specs_dct, **self.kwargs)
-        assert_is_list_like(var_specs_lst, children=VarSpecs)
-        var_specs_dct = {**self.var_specs_dct, "time_lst": [3, 4], "level": 0}
-        with pytest.raises(AssertionError):
-            check_var_specs_lst_mult(
-                self.name, self.type_name, var_specs_lst, var_specs_dct
-            )
-
-
-class Test_VarSpecs_CreateFromMultObjDct_Deposition:
-    """Create multiple variable specification objects for deposition."""
-
-    name = "deposition"
-    type_name = "VarSpecs_Deposition"  # SR_TMP
-    var_specs_dct = {
-        "nageclass": 0,
-        "numpoint": 0,
-        "time_lst": [1, 3],
-        "integrate": False,
-        "species_id_lst": [1, 2],
-        "deposition": "tot",
-    }
-    kwargs = {"rlon": None, "rlat": None, "lang": None, "words": None}
-
-    def test(self):
-        var_specs_lst = VarSpecs.create(self.name, self.var_specs_dct, **self.kwargs)
-        assert_is_list_like(var_specs_lst, len_=4, children=VarSpecs)
-        check_var_specs_lst_mult(
-            self.name, self.type_name, var_specs_lst, self.var_specs_dct
+        var_specs_lst = VarSpecs.create(
+            self.c.name, self.c.var_specs_dct, **self.c.kwargs,
         )
-
-    def test_fail(self):
-        var_specs_lst = VarSpecs.create(self.name, self.var_specs_dct, **self.kwargs)
         assert_is_list_like(var_specs_lst, children=VarSpecs)
-        var_specs_dct = {**self.var_specs_dct, "time_lst": [3, 4], "integrate": True}
+        conf = self.c.derive(
+            var_specs_dct={**self.c.var_specs_dct, "time_lst": [3, 4], "level": 0}
+        )
         with pytest.raises(AssertionError):
-            check_var_specs_lst_mult(
-                self.name, self.type_name, var_specs_lst, var_specs_dct
-            )
+            check_var_specs_lst_mult(var_specs_lst, conf)
 
 
 class Test_FieldSpecs_Create_Concentration:
 
-    name = "concentration"
-    type_name = "FieldSpecs_Concentration"  # SR_TMP
-    var_specs_dct_base = {
-        "nageclass": 0,
-        "numpoint": 0,
-        "time": 1,
-        "integrate": False,
-    }
-    var_specs_kwargs = {"rlon": None, "rlat": None, "lang": None, "words": None}
+    c = Conf_CreateFieldSpecs(
+        name="concentration",
+        type_name="FieldSpecs_Concentration",  # SR_TMP
+        var_specs_dct_base={
+            "nageclass": 0,
+            "numpoint": 0,
+            "time": 1,
+            "integrate": False,
+        },
+        var_specs_kwargs={"rlon": None, "rlat": None, "lang": None, "words": None},
+    )
 
     def test_single_var_specs_one_fld_one_var(self):
         """Single-value-only var specs, for one field, made of one var."""
         var_specs_dct = {
-            **self.var_specs_dct_base,
+            **self.c.var_specs_dct_base,
             "species_id": 1,
             "level": 0,
         }
         var_specs_lst = VarSpecs.create(
-            self.name, var_specs_dct, **self.var_specs_kwargs,
+            self.c.name, var_specs_dct, **self.c.var_specs_kwargs,
         )
         assert_is_list_like(var_specs_lst, len_=1, children=VarSpecs)
         fld_specs_lst = [
-            FieldSpecs(self.name, [var_specs]) for var_specs in var_specs_lst
+            FieldSpecs(self.c.name, [var_specs]) for var_specs in var_specs_lst
         ]
         assert_is_list_like(fld_specs_lst, len_=1, children=FieldSpecs)
 
         fld_specs = next(iter(fld_specs_lst))
-        assert fld_specs.name == self.name
+        assert fld_specs.name == self.c.name
         assert len(fld_specs.var_specs_lst) == 1
 
     def test_mult_var_specs_many_flds_one_var_each(self):
         """Multi-value var specs, for multiple fields, made of one var each."""
         var_specs_dct = {
-            **self.var_specs_dct_base,
+            **self.c.var_specs_dct_base,
             "species_id_lst": [1, 2],
             "level_lst": [0, 1],
         }
         var_specs_lst = VarSpecs.create(
-            self.name, var_specs_dct, **self.var_specs_kwargs,
+            self.c.name, var_specs_dct, **self.c.var_specs_kwargs,
         )
         assert_is_list_like(var_specs_lst, len_=4, children=VarSpecs)
         fld_specs_lst = [
-            FieldSpecs(self.name, [var_specs]) for var_specs in var_specs_lst
+            FieldSpecs(self.c.name, [var_specs]) for var_specs in var_specs_lst
         ]
         assert_is_list_like(fld_specs_lst, len_=4, children=FieldSpecs)
 
         for fld_specs in fld_specs_lst:
-            assert fld_specs.name == self.name
+            assert fld_specs.name == self.c.name
             assert len(fld_specs.var_specs_lst) == 1
 
     def test_mult_var_specs_one_fld_many_vars(self):
         """Multi-value var specs, for one field, made of multiple vars."""
         var_specs_dct = {
-            **self.var_specs_dct_base,
+            **self.c.var_specs_dct_base,
             "species_id_lst": [1, 2],
             "level_lst": [0, 1],
         }
         var_specs_lst = VarSpecs.create(
-            self.name, var_specs_dct, **self.var_specs_kwargs,
+            self.c.name, var_specs_dct, **self.c.var_specs_kwargs,
         )
         assert_is_list_like(var_specs_lst, len_=4, children=VarSpecs)
-        fld_specs_lst = [FieldSpecs(self.name, var_specs_lst)]
+        fld_specs_lst = [FieldSpecs(self.c.name, var_specs_lst)]
         assert_is_list_like(fld_specs_lst, len_=1, children=FieldSpecs)
 
         fld_specs = next(iter(fld_specs_lst))
-        assert fld_specs.name == self.name
+        assert fld_specs.name == self.c.name
         assert len(fld_specs.var_specs_lst) == 4
 
 
 class Test_FieldSpecs_Create_Deposition:
 
-    name = "deposition"
-    type_name = "FieldSpecs_Deposition"  # SR_TMP
-    var_specs_dct_base = {
-        "nageclass": 0,
-        "numpoint": 0,
-        "integrate": False,
-        "deposition": "tot",
-    }
-    var_specs_kwargs = {"rlon": None, "rlat": None, "lang": None, "words": None}
+    c = Conf_CreateFieldSpecs(
+        name="deposition",
+        type_name="FieldSpecs_Deposition",  # SR_TMP
+        var_specs_dct_base={
+            "nageclass": 0,
+            "numpoint": 0,
+            "integrate": False,
+            "deposition": "tot",
+        },
+        var_specs_kwargs={"rlon": None, "rlat": None, "lang": None, "words": None},
+    )
 
     def test_single_var_specs_one_fld_one_var(self):
         """Single-value-only var specs, for one field, made of one var."""
         var_specs_dct = {
-            **self.var_specs_dct_base,
+            **self.c.var_specs_dct_base,
             "time": 1,
             "species_id": 1,
         }
         var_specs_lst = VarSpecs.create(
-            self.name, var_specs_dct, **self.var_specs_kwargs,
+            self.c.name, var_specs_dct, **self.c.var_specs_kwargs,
         )
         assert_is_list_like(var_specs_lst, len_=1, children=VarSpecs)
         fld_specs_lst = [
-            FieldSpecs(self.name, [var_specs]) for var_specs in var_specs_lst
+            FieldSpecs(self.c.name, [var_specs]) for var_specs in var_specs_lst
         ]
         assert_is_list_like(fld_specs_lst, len_=1, children=FieldSpecs)
 
         fld_specs = next(iter(fld_specs_lst))
-        assert fld_specs.name == self.name
+        assert fld_specs.name == self.c.name
         assert len(fld_specs.var_specs_lst) == 1
 
     def test_mult_var_specs_many_flds_one_var_each(self):
         """Multi-value var specs, for multiple fields, made of one var each."""
         var_specs_dct = {
-            **self.var_specs_dct_base,
+            **self.c.var_specs_dct_base,
             "time_lst": [0, 1, 2],
             "species_id_lst": [1, 2],
         }
         var_specs_lst = VarSpecs.create(
-            self.name, var_specs_dct, **self.var_specs_kwargs,
+            self.c.name, var_specs_dct, **self.c.var_specs_kwargs,
         )
         assert_is_list_like(var_specs_lst, len_=6, children=VarSpecs)
         fld_specs_lst = [
-            FieldSpecs(self.name, [var_specs]) for var_specs in var_specs_lst
+            FieldSpecs(self.c.name, [var_specs]) for var_specs in var_specs_lst
         ]
         assert_is_list_like(fld_specs_lst, len_=6, children=FieldSpecs)
 
         for fld_specs in fld_specs_lst:
-            assert fld_specs.name == self.name
+            assert fld_specs.name == self.c.name
             assert len(fld_specs.var_specs_lst) == 1
 
     def test_mult_var_specs_one_fld_many_vars(self):
         """Multi-value var specs, for one field, made of multiple vars."""
         var_specs_dct = {
-            **self.var_specs_dct_base,
+            **self.c.var_specs_dct_base,
             "time_lst": [0, 1, 2],
             "species_id_lst": [1, 2],
         }
         var_specs_lst = VarSpecs.create(
-            self.name, var_specs_dct, **self.var_specs_kwargs,
+            self.c.name, var_specs_dct, **self.c.var_specs_kwargs,
         )
         assert_is_list_like(var_specs_lst, len_=6, children=VarSpecs)
-        fld_specs_lst = [FieldSpecs(self.name, var_specs_lst)]
+        fld_specs_lst = [FieldSpecs(self.c.name, var_specs_lst)]
         assert_is_list_like(fld_specs_lst, len_=1, children=FieldSpecs)
 
         fld_specs = next(iter(fld_specs_lst))
-        assert fld_specs.name == self.name
+        assert fld_specs.name == self.c.name
         assert len(fld_specs.var_specs_lst) == 6
