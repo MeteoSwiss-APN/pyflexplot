@@ -172,7 +172,16 @@ class TestConfBase:
         return type(self)(**data)
 
 
-def assert_is_list_like(obj, *, len_=None, not_=None, children=None, f_children=None):
+def assert_is_list_like(obj, *args, **kwargs):
+    try:
+        is_list_like(obj, *args, **kwargs)
+    except Exception as e:
+        raise AssertionError(f"obj is not list-like", obj, args, kwargs, e)
+
+
+def is_list_like(
+    obj, *, len_=None, not_=None, children=None, f_children=None, raise_=False,
+):
     """Assert that an object is list-like, with optional additional checks.
 
     Args:
@@ -189,19 +198,50 @@ def assert_is_list_like(obj, *, len_=None, not_=None, children=None, f_children=
         f_children (callable, optional): Function used in assert with each
             element in ``obj``. Defaults to None.
 
+        raise_ (bool, optional): Raise an exception instead of returning False.
+            Defaults to False.
+
     """
-    assert isiterable(obj, str_ok=False)
+
+    def return_or_raise(*args, **kwargs):
+        if not raise_:
+            return False
+        kwargs = {
+            "obj": obj,
+            "len_": len_,
+            "not_": not_,
+            "children": children,
+            "f_children": f_children,
+            "raise_": raise_,
+            **kwargs,
+        }
+        raise Exception(*args, **kwargs)
+
+    if not isiterable(obj, str_ok=False):
+        return_or_raise(f"obj of type {type(obj).__name__} is not iterable")
 
     if len_ is not None:
-        assert len(obj) == len_
+        if len(obj) != len_:
+            return_or_raise(f"obj has wrong length {len(obj)}")
 
     if not_ is not None:
-        assert not isinstance(obj, not_)
+        if isinstance(obj, not_):
+            return_or_raise(f"obj has unexpected type {type(obj).__name__}")
 
     if children is not None:
-        for sub_obj in obj:
-            assert isinstance(sub_obj, children)
+        for idx, child in enumerate(obj):
+            if not isinstance(child, children):
+                return_or_raise(
+                    f"child has unexpected type {type(child).__name__}",
+                    child=child,
+                    idx=idx,
+                )
 
     if f_children is not None:
-        for sub_obj in obj:
-            assert f_children(sub_obj)
+        for idx, child in enumerate(obj):
+            if not f_children(child):
+                return_or_raise(
+                    f"f_children returns False for child", child=child, idx=idx
+                )
+
+    return True

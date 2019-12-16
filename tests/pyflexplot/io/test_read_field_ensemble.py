@@ -48,7 +48,7 @@ class TestReadFieldEnsemble_Single:
         self,
         datadir,
         *,
-        cls_fld_specs,
+        name,
         dims,
         var_names_ref,
         var_specs_mult_unshared,
@@ -65,10 +65,10 @@ class TestReadFieldEnsemble_Single:
             **self.var_specs_mult_shared,
             **var_specs_mult_unshared,
         }
-        fld_specs = cls_fld_specs(
-            var_specs_raw, member_ids=self.member_ids, ens_var=ens_var
+        fld_specs = FieldSpecs(
+            name, var_specs_raw, member_ids=self.member_ids, ens_var=ens_var
         )
-        var_specs = cls_fld_specs.cls_var_specs(**var_specs_raw)
+        var_specs = VarSpecs(name, **var_specs_raw)
 
         # Read input fields
         flex_field = FileReader(datafile_fmt).run(fld_specs)
@@ -101,7 +101,7 @@ class TestReadFieldEnsemble_Single:
         """Read concentration field."""
         self.run(
             datadir,
-            cls_fld_specs=FieldSpecs.subcls("ens_mean_concentration"),
+            name="ens_mean_concentration",
             dims={**self.dims_shared, "level": 1},
             var_names_ref=[f"spec{self.species_id:03d}"],
             var_specs_mult_unshared={},
@@ -150,7 +150,7 @@ class TestReadFieldEnsemble_Multiple:
         *,
         separate,
         datafile_fmt,
-        cls_fld_specs,
+        name,
         dims_mult,
         var_names_ref,
         var_specs_mult_unshared,
@@ -167,7 +167,8 @@ class TestReadFieldEnsemble_Multiple:
             **self.var_specs_mult_shared,
             **var_specs_mult_unshared,
         }
-        fld_specs_lst = cls_fld_specs.multiple(
+        fld_specs_lst = FieldSpecs.multiple(
+            name,
             var_specs_mult,
             member_ids=self.member_ids,
             ens_var=ens_var,
@@ -246,7 +247,7 @@ class TestReadFieldEnsemble_Multiple:
         ens_var,
         *,
         separate=False,
-        cls_fld_specs=FieldSpecs.subcls("concentration"),
+        name="concentration",
         scale_fld_ref=1.0,
     ):
         """Read ensemble concentration field."""
@@ -270,7 +271,7 @@ class TestReadFieldEnsemble_Multiple:
         self.run(
             separate=separate,
             datafile_fmt=self.datafile_fmt(datadir),
-            cls_fld_specs=cls_fld_specs,
+            name=name,
             dims_mult={**self.dims_shared, "level": 1},
             var_names_ref=[f"spec{self.species_id:03d}"],
             var_specs_mult_unshared={},
@@ -288,7 +289,7 @@ class TestReadFieldEnsemble_Multiple:
             datadir,
             "thr_agrmt",
             separate=False,
-            cls_fld_specs=FieldSpecs.subcls("ens_thr_agrmt_concentration"),
+            name="ens_thr_agrmt_concentration",
             scale_fld_ref=3.0,
         )
 
@@ -303,7 +304,7 @@ class TestReadFieldEnsemble_Multiple:
         self.run(
             separate=separate,
             datafile_fmt=self.datafile_fmt(datadir),
-            cls_fld_specs=FieldSpecs.subcls("deposition"),
+            name="deposition",
             dims_mult=self.dims_shared,
             var_names_ref=[
                 f"WD_spec{self.species_id:03d}",

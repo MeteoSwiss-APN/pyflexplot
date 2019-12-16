@@ -8,22 +8,31 @@ from dataclasses import dataclass
 from pyflexplot.io import VarSpecs
 from pyflexplot.io import FieldSpecs
 
+from srutils.testing import is_list_like
 from srutils.testing import assert_is_list_like
-from srutils.testing import TestConfBase
+from srutils.testing import TestConfBase as _TestConf
 from srutils.various import isiterable
 
 
+def check_var_specs_lst_lst(var_specs_lst_lst, len_=None):
+    assert_is_list_like(
+        var_specs_lst_lst,
+        len_=len_,
+        f_children=lambda obj: is_list_like(obj, children=VarSpecs),
+    )
+
+
 @dataclass(frozen=True)
-class Conf_CreateFieldSpecs(TestConfBase):
+class Conf_Create(_TestConf):
     name: str
     type_name: str
     var_specs_dct_base: dict
     var_specs_kwargs: dict
 
 
-class Test_FieldSpecs_Create_Concentration:
+class Test_Create_Concentration:
 
-    c = Conf_CreateFieldSpecs(
+    c = Conf_Create(
         name="concentration",
         type_name="FieldSpecs_Concentration",  # SR_TMP
         var_specs_dct_base={
@@ -42,12 +51,13 @@ class Test_FieldSpecs_Create_Concentration:
             "species_id": 1,
             "level": 0,
         }
-        var_specs_lst = VarSpecs.create(
+        var_specs_lst_lst = VarSpecs.create(
             self.c.name, var_specs_dct, **self.c.var_specs_kwargs,
         )
-        assert_is_list_like(var_specs_lst, len_=1, children=VarSpecs)
+        check_var_specs_lst_lst(var_specs_lst_lst, len_=1)
         fld_specs_lst = [
-            FieldSpecs(self.c.name, [var_specs]) for var_specs in var_specs_lst
+            FieldSpecs(self.c.name, var_specs_lst)
+            for var_specs_lst in var_specs_lst_lst
         ]
         assert_is_list_like(fld_specs_lst, len_=1, children=FieldSpecs)
 
@@ -59,15 +69,16 @@ class Test_FieldSpecs_Create_Concentration:
         """Multi-value var specs, for multiple fields, made of one var each."""
         var_specs_dct = {
             **self.c.var_specs_dct_base,
-            "species_id_lst": [1, 2],
-            "level_lst": [0, 1],
+            "species_id": [1, 2],
+            "level": [0, 1],
         }
-        var_specs_lst = VarSpecs.create(
+        var_specs_lst_lst = VarSpecs.create(
             self.c.name, var_specs_dct, **self.c.var_specs_kwargs,
         )
-        assert_is_list_like(var_specs_lst, len_=4, children=VarSpecs)
+        check_var_specs_lst_lst(var_specs_lst_lst, len_=4)
         fld_specs_lst = [
-            FieldSpecs(self.c.name, [var_specs]) for var_specs in var_specs_lst
+            FieldSpecs(self.c.name, var_specs_lst)
+            for var_specs_lst in var_specs_lst_lst
         ]
         assert_is_list_like(fld_specs_lst, len_=4, children=FieldSpecs)
 
@@ -79,14 +90,17 @@ class Test_FieldSpecs_Create_Concentration:
         """Multi-value var specs, for one field, made of multiple vars."""
         var_specs_dct = {
             **self.c.var_specs_dct_base,
-            "species_id_lst": [1, 2],
-            "level_lst": [0, 1],
+            "species_id": (1, 2),
+            "level": (0, 1),
         }
-        var_specs_lst = VarSpecs.create(
+        var_specs_lst_lst = VarSpecs.create(
             self.c.name, var_specs_dct, **self.c.var_specs_kwargs,
         )
-        assert_is_list_like(var_specs_lst, len_=4, children=VarSpecs)
-        fld_specs_lst = [FieldSpecs(self.c.name, var_specs_lst)]
+        check_var_specs_lst_lst(var_specs_lst_lst, len_=1)
+        fld_specs_lst = [
+            FieldSpecs(self.c.name, var_specs_lst)
+            for var_specs_lst in var_specs_lst_lst
+        ]
         assert_is_list_like(fld_specs_lst, len_=1, children=FieldSpecs)
 
         fld_specs = next(iter(fld_specs_lst))
@@ -94,9 +108,9 @@ class Test_FieldSpecs_Create_Concentration:
         assert len(fld_specs.var_specs_lst) == 4
 
 
-class Test_FieldSpecs_Create_Deposition:
+class Test_Create_Deposition:
 
-    c = Conf_CreateFieldSpecs(
+    c = Conf_Create(
         name="deposition",
         type_name="FieldSpecs_Deposition",  # SR_TMP
         var_specs_dct_base={
@@ -115,12 +129,13 @@ class Test_FieldSpecs_Create_Deposition:
             "time": 1,
             "species_id": 1,
         }
-        var_specs_lst = VarSpecs.create(
+        var_specs_lst_lst = VarSpecs.create(
             self.c.name, var_specs_dct, **self.c.var_specs_kwargs,
         )
-        assert_is_list_like(var_specs_lst, len_=1, children=VarSpecs)
+        check_var_specs_lst_lst(var_specs_lst_lst, len_=1)
         fld_specs_lst = [
-            FieldSpecs(self.c.name, [var_specs]) for var_specs in var_specs_lst
+            FieldSpecs(self.c.name, var_specs_lst)
+            for var_specs_lst in var_specs_lst_lst
         ]
         assert_is_list_like(fld_specs_lst, len_=1, children=FieldSpecs)
 
@@ -132,15 +147,16 @@ class Test_FieldSpecs_Create_Deposition:
         """Multi-value var specs, for multiple fields, made of one var each."""
         var_specs_dct = {
             **self.c.var_specs_dct_base,
-            "time_lst": [0, 1, 2],
-            "species_id_lst": [1, 2],
+            "time": [0, 1, 2],
+            "species_id": [1, 2],
         }
-        var_specs_lst = VarSpecs.create(
+        var_specs_lst_lst = VarSpecs.create(
             self.c.name, var_specs_dct, **self.c.var_specs_kwargs,
         )
-        assert_is_list_like(var_specs_lst, len_=6, children=VarSpecs)
+        check_var_specs_lst_lst(var_specs_lst_lst, len_=6)
         fld_specs_lst = [
-            FieldSpecs(self.c.name, [var_specs]) for var_specs in var_specs_lst
+            FieldSpecs(self.c.name, var_specs_lst)
+            for var_specs_lst in var_specs_lst_lst
         ]
         assert_is_list_like(fld_specs_lst, len_=6, children=FieldSpecs)
 
@@ -152,14 +168,17 @@ class Test_FieldSpecs_Create_Deposition:
         """Multi-value var specs, for one field, made of multiple vars."""
         var_specs_dct = {
             **self.c.var_specs_dct_base,
-            "time_lst": [0, 1, 2],
-            "species_id_lst": [1, 2],
+            "time": (0, 1, 2),
+            "species_id": (1, 2),
         }
-        var_specs_lst = VarSpecs.create(
+        var_specs_lst_lst = VarSpecs.create(
             self.c.name, var_specs_dct, **self.c.var_specs_kwargs,
         )
-        assert_is_list_like(var_specs_lst, len_=6, children=VarSpecs)
-        fld_specs_lst = [FieldSpecs(self.c.name, var_specs_lst)]
+        check_var_specs_lst_lst(var_specs_lst_lst, len_=1)
+        fld_specs_lst = [
+            FieldSpecs(self.c.name, var_specs_lst)
+            for var_specs_lst in var_specs_lst_lst
+        ]
         assert_is_list_like(fld_specs_lst, len_=1, children=FieldSpecs)
 
         fld_specs = next(iter(fld_specs_lst))

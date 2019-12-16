@@ -38,7 +38,7 @@ class TestReadField_Single:
         self,
         *,
         datadir,
-        cls_fld_specs,
+        name,
         dims,
         var_names_ref,
         var_specs_mult_unshared,
@@ -52,8 +52,8 @@ class TestReadField_Single:
             **self.var_specs_mult_shared,
             **var_specs_mult_unshared,
         }
-        fld_specs = cls_fld_specs(var_specs_raw)
-        var_specs = cls_fld_specs.cls_var_specs(**var_specs_raw)
+        fld_specs = FieldSpecs(name, var_specs_raw)
+        var_specs = VarSpecs(name, **var_specs_raw)
 
         # Read input field
         flex_field = FileReader(self.datafile(datadir)).run(fld_specs)
@@ -79,7 +79,7 @@ class TestReadField_Single:
         """Read concentration field."""
         self.run(
             datadir=datadir,
-            cls_fld_specs=FieldSpecs.subcls("concentration"),
+            name="concentration",
             dims={**self.dims_shared, "level": 1},
             var_names_ref=[f"spec{self.species_id:03d}"],
             var_specs_mult_unshared={},
@@ -89,7 +89,7 @@ class TestReadField_Single:
         """Read dry deposition field."""
         self.run(
             datadir=datadir,
-            cls_fld_specs=FieldSpecs.subcls("deposition"),
+            name="deposition",
             dims=self.dims_shared,
             var_names_ref=[f"DD_spec{self.species_id:03d}"],
             var_specs_mult_unshared={"deposition": "dry"},
@@ -100,7 +100,7 @@ class TestReadField_Single:
         """Read wet deposition field."""
         self.run(
             datadir=datadir,
-            cls_fld_specs=FieldSpecs.subcls("deposition"),
+            name="deposition",
             dims=self.dims_shared,
             var_names_ref=[f"WD_spec{self.species_id:03d}"],
             var_specs_mult_unshared={"deposition": "wet"},
@@ -111,7 +111,7 @@ class TestReadField_Single:
         """Read total deposition field."""
         self.run(
             datadir=datadir,
-            cls_fld_specs=FieldSpecs.subcls("deposition"),
+            name="deposition",
             dims=self.dims_shared,
             var_names_ref=[
                 f"WD_spec{self.species_id:03d}",
@@ -150,7 +150,7 @@ class TestReadField_Multiple:
         *,
         separate,
         datafile,
-        cls_fld_specs,
+        name,
         dims_mult,
         var_names_ref,
         var_specs_mult_unshared,
@@ -164,7 +164,7 @@ class TestReadField_Multiple:
             **self.var_specs_mult_shared,
             **var_specs_mult_unshared,
         }
-        fld_specs_lst = cls_fld_specs.multiple(var_specs_mult)
+        fld_specs_lst = FieldSpecs.multiple(name, var_specs_mult)
 
         dim_names = sorted([d.replace("_lst", "") for d in dims_mult.keys()])
 
@@ -209,7 +209,7 @@ class TestReadField_Multiple:
         self.run(
             separate=separate,
             datafile=self.datafile(datadir),
-            cls_fld_specs=FieldSpecs.subcls("concentration"),
+            name="concentration",
             dims_mult={**self.dims_shared, "level_lst": [0, 2]},
             var_names_ref=[f"spec{self.species_id:03d}"],
             var_specs_mult_unshared={},
@@ -227,7 +227,7 @@ class TestReadField_Multiple:
         self.run(
             separate=separate,
             datafile=self.datafile(datadir),
-            cls_fld_specs=FieldSpecs.subcls("deposition"),
+            name="deposition",
             dims_mult=self.dims_shared,
             var_names_ref=[f"DD_spec{self.species_id:03d}"],
             var_specs_mult_unshared={"deposition": "dry"},
@@ -244,7 +244,7 @@ class TestReadField_Multiple:
         self.run(
             separate=separate,
             datafile=self.datafile(datadir),
-            cls_fld_specs=FieldSpecs.subcls("deposition"),
+            name="deposition",
             dims_mult=self.dims_shared,
             var_names_ref=[f"WD_spec{self.species_id:03d}"],
             var_specs_mult_unshared={"deposition": "wet"},
@@ -261,7 +261,7 @@ class TestReadField_Multiple:
         self.run(
             separate=separate,
             datafile=self.datafile(datadir),
-            cls_fld_specs=FieldSpecs.subcls("deposition"),
+            name="deposition",
             dims_mult=self.dims_shared,
             var_names_ref=[
                 f"WD_spec{self.species_id:03d}",
