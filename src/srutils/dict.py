@@ -40,48 +40,86 @@ def merge_dicts(*dicts, unique_keys=True):
     return merged
 
 
-def dict_mult_vals_product(dct, lst_sfx="_lst", allowed_iterables=None):
+def decompress_dict_multivals(dct, depth):
+    """Combine dict with some nested list values into object-value dicts.
+
+    Args:
+        dct (dict): Specifications dict.
+
+        depth (int): Depth to which nested list values are resolved.
+
+    Example:
+        >>> f = decompress_dict_multivals
+        >>> d = {
+                "a": [1, [3, 4]],
+                "b": 5,
+            }
+        >>> f(d, depth=3)
+        [
+            [[{"a": 1, "b": 5}]],
+            [[{"a": 3, "b": 5}, {"a": 4, "b": 5}]]
+        ]
+
+    """
+    if not isinstance(depth, int) or depth <= 0:
+        raise ValueError(f"depth must be a positive integer", depth)
+
+    def run_rec(dct, depth, _curr_depth=1):
+        """Run recursively."""
+        dct_lst = dict_mult_vals_product(dct)
+        if len(dct_lst) == 1 or _curr_depth == depth:
+            for _ in range(depth - _curr_depth):
+                # Nest further until target depth reached
+                dct_lst = [dct_lst]
+            result = dct_lst
+        else:
+            result = []
+            for dct_i in dct_lst:
+                obj = run_rec(dct_i, depth, _curr_depth + 1)
+                result.append(obj)
+        return result
+
+    return run_rec(dct, depth)
+
+
+def dict_mult_vals_product(dct, cls_expand=list, f_expand=None):
     """Create multiple dicts by building all combinations of all list elements.
 
     Args:
         dct (dict): Dictionary with list elements to be combined.
 
-        lst_sfc (str, optional): Suffix of key of list elements. Removed from
-            the key names in the output dictionaries. Defaults to "_lst".
+        cls_expand (type or list[type], optional): One or more types, instances
+            of which will be expanded. Overridden by ``f_expand``. Defaults to
+            list.
+
+        f_expand (callable, optional): Function to evaluate whether an object
+            is expandable. Trivial example (equivalent to ``cls_expand=lst``):
+            ``lambda obj: isinstance(obj, lst)``. Overrides ``cls_expand``.
+            Defaults to None.
 
     Example:
-        in: {'foo_lst': [1, 2, 3], 'bar': 4, 'baz_lst': [5, 6]}
+        in: {'foo': [1, 2, 3], 'bar': (4, 5), 'baz': [6, 7]}
 
         out: [
-                {'foo': 1, 'bar: 4, 'baz': 5},
-                {'foo': 2, 'bar: 4, 'baz': 5},
-                {'foo': 3, 'bar: 4, 'baz': 5},
-                {'foo': 1, 'bar: 4, 'baz': 6},
-                {'foo': 2, 'bar: 4, 'baz': 6},
-                {'foo': 3, 'bar: 4, 'baz': 6},
+                {'foo': 1, 'bar: (4, 5), 'baz': 6},
+                {'foo': 2, 'bar: (4, 5), 'baz': 6},
+                {'foo': 3, 'bar: (4, 5), 'baz': 6},
+                {'foo': 1, 'bar: (4, 5), 'baz': 7},
+                {'foo': 2, 'bar: (4, 5), 'baz': 7},
+                {'foo': 3, 'bar: (4, 5), 'baz': 7},
             ]
 
     TODOs:
         Improve wording of short description of docstring.
 
     """
-    if allowed_iterables is None:
-        allowed_iterables = []
-    elif isinstance(allowed_iterables, type):
-        allowed_iterables = [allowed_iterables]
+    if isinstance(cls_expand, type):
+        cls_expand = [cls_expand]
+    if f_expand is None:
+        f_expand = lambda obj: any(isinstance(obj, t) for t in cls_expand)
     keys, vals = [], []
     for key, val in dct.items():
-        if isiterable(val, str_ok=False):
-            if key.endswith(lst_sfx):
-                key = key[: -len(lst_sfx)]
-            elif type(val) not in allowed_iterables:
-                s_val = f"'{val}'" if isinstance(val, str) else str(val)
-                raise Exception(
-                    f"{s_val} is iterable, but key '{key}' ends not in '{lst_sfx}' "
-                    f"and type {type(val).__name__} is not among allowed iterables "
-                    f"({', '.join([t.__name__ for t in allowed_iterables])})"
-                )
-        else:
+        if not f_expand(val):
             val = [val]
         keys.append(key)
         vals.append(val)
@@ -110,15 +148,17 @@ def nested_dict_set(dct, keys, val):
             parent[key] = val
 
 
-def pformat_dictlike(obj):
-    """Pretty-format a dict-like object."""
-
-    s = f"{type(obj).__name__}({pformat(dict(obj))})"
-
-    # Insert line breaks between braces and content
-    s = s.replace("({'", "({\n '").replace("})", ",\n)}")
-
-    # Increase indent
-    # s = s.replace('\n ', '\n  ')
-
-    return s
+def format_dictlike(obj, multiline=False, indent=1):
+    """Format a dict-like object to a string."""
+    if not multiline:
+        indent = 0
+    try:
+        s = pformat(dict(obj), indent=indent, sort_dicts=False)[1:-1]
+    except TypeError as e:
+        # Option 'sort_dicts' only available in Python3.8+
+        s = pformat(dict(obj), indent=indent)[1:-1]
+    if multiline:
+        s = "\n{s}\n"
+    else:
+        s = s.replace("\n", " ")
+    return f"{type(obj).__name__}({s})"

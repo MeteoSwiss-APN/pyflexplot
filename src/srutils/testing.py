@@ -3,6 +3,7 @@
 """
 Some testing utils.
 """
+from dataclasses import dataclass
 from pprint import pformat
 
 from .various import isiterable
@@ -161,3 +162,46 @@ def get_dict_element(dict_, key, name="dict", exception_type=ValueError):
     except TypeError:
         err = f"{name} has wrong type: {type(dict_)}"
     raise exception_type(f"{err}\n\n{name}:\n{pformat(dict_)}")
+
+
+@dataclass(frozen=True)
+class TestConfBase:
+    def derive(self, **kwargs):
+        data = {k: getattr(self, k) for k in self.__dataclass_fields__}
+        data.update(kwargs)
+        return type(self)(**data)
+
+
+def assert_is_list_like(obj, *, len_=None, not_=None, children=None, f_children=None):
+    """Assert that an object is list-like, with optional additional checks.
+
+    Args:
+        obj (type): Presumably list-like object.
+
+        len_ (int, optional): Length of list-like object. Defaults to None.
+
+        not_ (type or list[type], optional): Type(s) that ``obj`` must not be
+            an instance of. Defaults to None.
+
+        children (type or list[type], optional): Type(s) that the elements in
+            ``obj`` must be an instance of. Defaults to None.
+
+        f_children (callable, optional): Function used in assert with each
+            element in ``obj``. Defaults to None.
+
+    """
+    assert isiterable(obj, str_ok=False)
+
+    if len_ is not None:
+        assert len(obj) == len_
+
+    if not_ is not None:
+        assert not isinstance(obj, not_)
+
+    if children is not None:
+        for sub_obj in obj:
+            assert isinstance(sub_obj, children)
+
+    if f_children is not None:
+        for sub_obj in obj:
+            assert f_children(sub_obj)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Tests for function ``to_varname`` in module ``srutils``.
+Tests for function ``srutils.str.to_varname``.
 """
 import pytest
 
