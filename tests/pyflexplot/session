@@ -1,7 +1,8 @@
 ./io/test_read_field.py
 ./io/test_read_field_ensemble.py
 ./io/io_utils.py
-./test_specs.py
+./test_var_specs.py
+./test_field_specs.py
 ./test_data.py
 ./test_plotter.py
 ./test_plot_summarize.py

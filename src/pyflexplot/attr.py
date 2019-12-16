@@ -1071,10 +1071,10 @@ class ReleasePoint:
             )
 
     def __repr__(self):
-        return pformat_dictlike(self)
+        return format_dictlike(self)
 
     def __str__(self):
-        return pformat_dictlike(self)
+        return format_dictlike(self)
 
     def __iter__(self):
         for key in self.attr_types:

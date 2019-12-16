@@ -10,7 +10,6 @@ import sys
 
 from pprint import pformat
 
-from srutils.dict import dict_mult_vals_product
 from srutils.various import group_kwargs
 
 from .io import FileReader
@@ -158,6 +157,28 @@ class CharSepListParamType(click.ParamType):
 
 INT_LIST_COMMA_SEP_UNIQ = CharSepListParamType(int, ",", dupl_ok=False)
 INT_LIST_PLUS_SEP_UNIQ = CharSepListParamType(int, "+", dupl_ok=False)
+
+
+#
+# TODO
+#
+# - Eliminate subcommands (e.g., "deterministic concentration")
+#   -> Instead, use flags, e.g., --[no-]ens or --sim-type or whatnot
+#
+# - Collect all pased options in a dict and pass it as **options
+#
+# - In the CLI functions of the plots, catch all necessary options explicitly
+#   -> Catch all unnecessary options as **kwargs and show warnings for those
+#
+# - For ALL options, default to "everything available", e.g., all species etc.
+#
+# - Turn the input and output files from options into arguments (no flags)
+#
+# - Check for duplicate outfiles and number those, e.g., plot-1.png, plot-2.png
+#
+# - Add flag --unique-plots or so to abort if there are duplicate outfiles
+#   -> To prevent accidental *-i.png (potential pitfall)
+#
 
 
 def create_plots(

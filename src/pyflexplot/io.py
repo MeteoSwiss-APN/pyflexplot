@@ -10,7 +10,7 @@ from copy import copy, deepcopy
 from pprint import pformat
 from pprint import pprint  # SR_DEV
 
-from srutils.dict import pformat_dictlike
+from srutils.dict import format_dictlike
 from srutils.various import check_array_indices
 
 from .attr import AttrsCollector
