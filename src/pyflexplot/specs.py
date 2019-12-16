@@ -8,9 +8,9 @@ import numpy as np
 
 from copy import copy, deepcopy
 
-from srutils.dict import dict_mult_vals_product
+from srutils.dict import decompress_dict_multivals
 from srutils.dict import nested_dict_set
-from srutils.dict import pformat_dictlike
+from srutils.dict import format_dictlike
 from srutils.various import isiterable
 
 from .utils import ParentClass
@@ -123,22 +123,30 @@ class VarSpecs(SummarizableClass, ParentClass):
     def create(cls, name, var_specs_dct, **kwargs):
         """Create one or more instances of ``VarSpecs``.
 
-        In general, the values of the specification dict ``var_specs_dct`` are
-        single objects (usually a number or strings); these are single-object
-        elements of the dict. ``VarSpecs`` objects are created from
-        specification dicts comprised of only such single-object elements.
+        The values of the specification dict elements may be
 
-        However, there may also be multi-object elements, the key of which ends
-        in "_lst", and the value of which is a list of multiple objects. (This
-        is effectively a shorthand to specify multiple specification dicts in
-        one.)
+            - a single value, e.g., ``{"a": 0}``;
 
-        To expand such a specification dict with multi-object elements into
-        multiple dicts comprised only of single-object elements, all unique
-        combinations of the objects in these lists are determined.
+            - a tuple of values, e.g., ``{"a": (0, 1)``; or
 
-        From each single-object-value-only specification dict a ``VarSpecs``
-        object is created.
+            - a list of values and/or value tuples, e.g., ``{"a": [0, 1]}``,
+                ``{"a": [0, (1, 2)]}``, or ``{"a": [(0, 1), (2, 3)]}``.
+
+        Both tuple and list values constitute a shorthand to specify multiple
+        specification dicts at once, and are expanded into multiple dicts
+        with only single-value elements by combining all tuple/list elements.
+
+        The difference between tuple and list values is that value tuples
+        specify the input for an individual plot (e.g., multiple time steps
+        to integrate over), while value lists specify input for separate plots
+        (e.g., multiple time steps that are plotted separately).
+
+        After this expansion, all dicts only comprise single-value elements,
+        and each is used to create a ``VarSpecs`` object.
+
+        The ``VarSpecs`` objects are returned in a nested list, whereby the
+        outer nest corresponds to the list values (separate plots), and the
+        inner nest to the tuple values (separate input fields per plot).
 
         Args:
             name (str): Name.
@@ -149,57 +157,49 @@ class VarSpecs(SummarizableClass, ParentClass):
                 individual ``VarSpecs`` objects.
 
         Returns:
-            list[VarSpecs]: One or move ``VarSpecs`` objects.
+            list[list[VarSpecs]]: Nested list of ``VarSpecs`` object(s).
 
         Examples:
-            var_specs_dct == {"foo": 1, "bar": 2}
-            # -> [VarSpecs(foo=1, bar=1)]
+            >>> f = lambda dct: VarSpecs.create("test", dct)
 
-            var_specs_dct == {"foo": [1, 2], "bar": 3}
-            # -> [VarSpecs(foo=1, bar=3), VarSpecs(foo=2, bar=3)]
+            >>> f({"a": 1, "b": 2})
+            [[VarSpecs(a=1, b=1)]]
 
-            var_specs_dct == {"foo": [1, 2], "bar": [3, 4], "baz": "hi"}
-            # -> [VarSpecs(foo=1, bar=3, baz="hi"),
-                  VarSpecs(foo=1, bar=4, baz="hi"),
-                  VarSpecs(foo=2, bar=3, baz="hi"),
-                  VarSpecs(foo=2, bar=4, baz="hi")]
+            >>> f({"a": (1, 2), "b": 3})
+            [[VarSpecs(a=1, b=3), VarSpecs(a=2, b=3)]]
+
+            >>> f({"a": [1, 2], "b": 3})
+            [[VarSpecs(a=1, b=3)], [VarSpecs(a=2, b=3)]]
+
+            >>> f({"a": [1, (2, 3)], "b": 4})
+            [[VarSpecs(a=1, b=4)], [VarSpecs(a=2, b=4), VarSpecs(a=3, b=4)]]
+
+            >>> f({"a": [1, 2], "b": [3, (4, 5)], "c": "hi"})
+            [
+                [VarSpecs(a=1, b=3, c="hi")],
+                [VarSpecs(a=1, b=4, c="hi"), VarSpecs(a=1, b=5, c="hi")],
+                [VarSpecs(a=2, b=3, c="hi")],
+                [VarSpecs(a=2, b=4, c="hi"), VarSpecs(a=2, b=5, c="hi")],
+            ]
 
         """
         cls = cls.subcls(name)  # SR_TMP
+        var_specs_dct_lst_outer = decompress_dict_multivals(
+            var_specs_dct, depth=1, cls_expand=list,
+        )
+        var_specs_dct_lst_lst = [
+            decompress_dict_multivals(dct, depth=1, cls_expand=tuple)
+            for dct in var_specs_dct_lst_outer
+        ]
 
-        def create_obj(specs):
-            return cls(name, specs, **kwargs)
+        def create_objs_rec(obj):
+            if isinstance(obj, dict):
+                return cls(name, obj, **kwargs)
+            elif isinstance(obj, list):
+                return [create_objs_rec(i) for i in obj]
+            raise ValueError(f"obj of type {type(obj).__name__}")
 
-        def create_var_specs_lst_rec(dct, list_ok=False):
-            """Recursively create var specs objects from a multi-object dict.
-
-            Example:
-                {"foo": [[1, 2], [3, 4]], "bar": 5}
-                # -> [[VarSpecs(foo=1, bar=5), VarSpecs(foo=2, bar=5)],
-                      [VarSpecs(foo=3, bar=5), VarSpecs(foo=4, bar=5)]]
-
-            """
-            allowed = list if list_ok else None
-            dct_lst = dict_mult_vals_product(dct, allowed_iterables=allowed)
-            if len(dct_lst) == 1:
-                # Specs dict not resolved further, so create specs object!
-                obj = create_obj(next(iter(dct_lst)))
-                return [obj]
-            result = []
-            for dct_i in dct_lst:
-                dct_lst_i = create_var_specs_lst_rec(dct_i, list_ok=True)
-                if len(dct_lst_i) == 1:
-                    # Specs dict not resolved further, so create specs object!
-                    obj = create_obj(next(iter(dct_lst)))
-                    result.append(obj)
-                else:
-                    result.append(dct_lst_i)
-            return result
-
-        # + return create_var_specs_lst_rec(var_specs_dct)
-        var_specs_nested = create_var_specs_lst_rec(var_specs_dct)
-        # breakpoint(header=f"{cls.__name__}.create")  # SR_DBG
-        return var_specs_nested
+        return create_objs_rec(var_specs_dct_lst_lst)
 
     def merge_with(self, others):
 
@@ -253,10 +253,10 @@ class VarSpecs(SummarizableClass, ParentClass):
         return hash(self) == hash(other)
 
     def __repr__(self):
-        return pformat_dictlike(self)
+        return format_dictlike(self)
 
     def __str__(self):
-        return pformat_dictlike(self)
+        return format_dictlike(self)
 
     def __getitem__(self, key):
         if key.startswith("_"):

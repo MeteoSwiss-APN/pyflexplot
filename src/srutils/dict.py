@@ -40,13 +40,25 @@ def merge_dicts(*dicts, unique_keys=True):
     return merged
 
 
-def decompress_dict_multivals(dct, depth):
+def decompress_dict_multivals(dct, depth, cls_expand=(list, tuple), f_expand=None, flatten=False):
     """Combine dict with some nested list values into object-value dicts.
 
     Args:
         dct (dict): Specifications dict.
 
         depth (int): Depth to which nested list values are resolved.
+
+        cls_expand (type or list[type], optional): One or more types, instances
+            of which will be expanded. Overridden by ``f_expand``. Defaults to
+            (list, tuple).
+
+        f_expand (callable, optional): Function to evaluate whether an object
+            is expandable. Trivial example (equivalent to ``cls_expand=lst``):
+            ``lambda obj: isinstance(obj, lst)``. Overrides ``cls_expand``.
+            Defaults to None.
+
+        flatten (bool, optional): Flatten the nested results list. Defaults to
+            False.
 
     Example:
         >>> f = decompress_dict_multivals
@@ -66,7 +78,7 @@ def decompress_dict_multivals(dct, depth):
 
     def run_rec(dct, depth, _curr_depth=1):
         """Run recursively."""
-        dct_lst = dict_mult_vals_product(dct)
+        dct_lst = _dict_mult_vals_product(dct, cls_expand=cls_expand, f_expand=f_expand)
         if len(dct_lst) == 1 or _curr_depth == depth:
             for _ in range(depth - _curr_depth):
                 # Nest further until target depth reached
@@ -79,40 +91,23 @@ def decompress_dict_multivals(dct, depth):
                 result.append(obj)
         return result
 
-    return run_rec(dct, depth)
+    res = run_rec(dct, depth)
+
+    def flatten_rec(lst):
+        if not isinstance(lst, list):
+            return [lst]
+        flat = []
+        for obj in lst:
+            flat.extend(flatten_rec(obj))
+        return flat
+
+    if flatten:
+        res = flatten_rec(res)
+
+    return res
 
 
-def dict_mult_vals_product(dct, cls_expand=list, f_expand=None):
-    """Create multiple dicts by building all combinations of all list elements.
-
-    Args:
-        dct (dict): Dictionary with list elements to be combined.
-
-        cls_expand (type or list[type], optional): One or more types, instances
-            of which will be expanded. Overridden by ``f_expand``. Defaults to
-            list.
-
-        f_expand (callable, optional): Function to evaluate whether an object
-            is expandable. Trivial example (equivalent to ``cls_expand=lst``):
-            ``lambda obj: isinstance(obj, lst)``. Overrides ``cls_expand``.
-            Defaults to None.
-
-    Example:
-        in: {'foo': [1, 2, 3], 'bar': (4, 5), 'baz': [6, 7]}
-
-        out: [
-                {'foo': 1, 'bar: (4, 5), 'baz': 6},
-                {'foo': 2, 'bar: (4, 5), 'baz': 6},
-                {'foo': 3, 'bar: (4, 5), 'baz': 6},
-                {'foo': 1, 'bar: (4, 5), 'baz': 7},
-                {'foo': 2, 'bar: (4, 5), 'baz': 7},
-                {'foo': 3, 'bar: (4, 5), 'baz': 7},
-            ]
-
-    TODOs:
-        Improve wording of short description of docstring.
-
-    """
+def _dict_mult_vals_product(dct, cls_expand=list, f_expand=None):
     if isinstance(cls_expand, type):
         cls_expand = [cls_expand]
     if f_expand is None:
