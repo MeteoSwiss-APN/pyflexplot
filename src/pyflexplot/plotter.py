@@ -3,6 +3,9 @@
 Plotters.
 """
 # import numpy as np
+import re
+
+from srutils.various import isiterable
 
 from .specs import VarSpecs
 from .specs import FieldSpecs
@@ -93,13 +96,7 @@ class Plotter:
             except AttributeError:
                 pass
             else:
-                try:
-                    iter(val)
-                except TypeError:
-                    pass
-                else:
-                    val = "+".join([str(i) for i in val])
-            kwargs[fmt_key] = val
+                kwargs[fmt_key] = val
 
         # Special case: integrated variable
         plot_var = self.name
@@ -142,13 +139,31 @@ class Plotter:
                         s += f"+{s_i}"
                 kwargs["member_ids"] = s
 
-        # Format file path
-        try:
-            file_path = self.file_path_fmt.format(**kwargs)
-        except (TypeError, KeyError) as e:
-            raise KeyError(
-                f"cannot format '{self.file_path_fmt}' with {kwargs}: "
-                f"{type(e).__name__}({e})"
-            )
-        else:
-            return file_path
+        # Format the file path
+        # Don't use str.format in order to handle multival elements
+        file_path = self.file_path_fmt
+        for key, val in kwargs.items():
+            if not isiterable(val, str_ok=False):
+                val = [val]
+
+            n = len(val)
+
+            # Iterate over relevant format keys
+            rxs = r"{" + key + r"(:[^}]*)?}"
+            for m in re.finditer(rxs, file_path):
+
+                # Obtain format specifier (if there is one)
+                try:
+                    f = m.group(1)
+                except IndexError:
+                    f = None
+                if not f:
+                    f = ""
+
+                # Format the string that replaces this format key in the path
+                s = "+".join([f"{{{f}}}".format(v) for v in val])
+
+                # Replace format key in the path by the just formatted string
+                file_path = file_path[: m.span()[0]] + s + file_path[m.span()[1] :]
+
+        return file_path
