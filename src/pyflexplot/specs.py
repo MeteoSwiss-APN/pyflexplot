@@ -18,6 +18,13 @@ from .utils import SummarizableClass
 from .words import WORDS
 
 
+#
+# TODO
+#
+# - Add class ``MultiVarSpecs`` or so to represent multiple ``VarSpecs`` objects
+#
+
+
 def int_or_list(arg):
     try:
         iter(arg)
@@ -25,9 +32,6 @@ def int_or_list(arg):
         return int(arg)
     else:
         return [int(a) for a in arg]
-
-
-# Variable Specifications
 
 
 class VarSpecs(SummarizableClass, ParentClass):
@@ -116,7 +120,7 @@ class VarSpecs(SummarizableClass, ParentClass):
         if var_specs_dct_todo:
             raise ValueError(
                 f"{len(var_specs_dct_todo)} unexpected arguments: "
-                f"{sorted(var_specs_dct_todo)}"
+                f"{var_specs_dct_todo}"
             )
 
     @classmethod
@@ -217,8 +221,10 @@ class VarSpecs(SummarizableClass, ParentClass):
                 )
 
         # Attributes
-        attrs = {}
-        for key, val0 in sorted(self):
+        var_specs_dct = {}
+        for key, val0 in iter(self):
+            if key in ["name", "rlat", "rlon"]:
+                continue
 
             vals = [val0]
             for other in others:
@@ -227,17 +233,24 @@ class VarSpecs(SummarizableClass, ParentClass):
                     vals.append(val)
 
             if len(vals) == 1:
-                attrs[key] = next(iter(vals))
+                var_specs_dct[key] = next(iter(vals))
             elif key == "deposition" and set(vals) == set(["dry", "wet"]):
-                attrs[key] = "tot"
+                var_specs_dct[key] = "tot"
             else:
-                attrs[key] = vals
+                var_specs_dct[key] = vals
 
-        return type(self)(words=self._words, lang=self._lang, **attrs)
+        return type(self)(
+            self.name,
+            var_specs_dct,
+            rlat=self.rlat,
+            rlon=self.rlon,
+            words=self._words,
+            lang=self._lang,
+        )
 
     def __hash__(self):
         h = 0
-        for key, val in sorted(iter(self)):
+        for key, val in iter(self):
             if isinstance(val, slice):
                 val = (val.start, val.stop, val.step)
             elif isiterable(val, str_ok=False):
@@ -272,7 +285,7 @@ class VarSpecs(SummarizableClass, ParentClass):
         self.__dict__[key] = val
 
     def __iter__(self):
-        for key, val in sorted(self.__dict__.items()):
+        for key, val in self.__dict__.items():
             if not key.startswith("_"):
                 yield key, val
 
@@ -445,13 +458,10 @@ class VarSpecs_EnsThrAgrmt_AffectedArea(VarSpecs_EnsThrAgrmt, VarSpecs_AffectedA
     name = "deposition:affected_area:ens_thr_agrmt_affected_area"
 
 
-# Field Specifications
-
-
 class FieldSpecs(SummarizableClass):
     """FLEXPART field specifications."""
 
-    summarizable_attrs = []  # SR_TODO
+    summarizable_attrs = []  # SR_TODO fill!
 
     # Dimensions with optionally multiple values
     dims_opt_mult_vals = ["species_id"]
@@ -526,7 +536,7 @@ class FieldSpecs(SummarizableClass):
 
     def set_addtl_attrs(self, **attrs):
         """Set additional attributes."""
-        for attr, val in sorted(attrs.items()):
+        for attr, val in attrs.items():
             if hasattr(self, attr):
                 raise ValueError(
                     f"attribute '{type(self).__name__}.{attr}' already exists"
@@ -595,7 +605,7 @@ class FieldSpecs(SummarizableClass):
 
         # Variable attributes replacements
         s += f"  var_attrs_replace: {len(self.var_attrs_replace)}x\n"
-        for key, val in sorted(self.var_attrs_replace.items()):
+        for key, val in self.var_attrs_replace.items():
             s += f"    '{key}': {val}\n"
 
         s += f")"

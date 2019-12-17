@@ -116,7 +116,7 @@ class FileReader:
 
         # SR_TMP < TODO don't cheat! _attrs_{all,none} are for checks only!
         if hasattr(self, "_attrs_all"):
-            for attr in sorted(self.__dict__.keys()):
+            for attr in self.__dict__.keys():
                 if attr in ["_attrs_all", "_attrs_none"]:
                     pass
                 elif attr not in self._attrs_all:
@@ -132,7 +132,7 @@ class FileReader:
             raise Exception("'_attrs_all' in self.__dict__")
         if "_attrs_none" in self.__dict__:
             raise Exception("'_attrs_none' in self.__dict__")
-        self._attrs_all = sorted(self.__dict__.keys())
+        self._attrs_all = self.__dict__.keys()
         self._attrs_none = [a for a in self._attrs_all if getattr(self, a) is None]
 
     # SR_DEV <<<
@@ -413,7 +413,7 @@ class FileReader:
                 elif var_specs.time != time_ind:
                     raise Exception(
                         f"{type(var_specs).__name__} instances of "
-                        f"{type(fld_spec_time).__name__} instance differ in 'time' "
+                        f"{type(fld_specs_time).__name__} instance differ in 'time' "
                         f"({var_specs.time} != {time_ind}):\n{fld_specs_time}"
                     )
                 var_specs.time = slice(None)
@@ -430,9 +430,7 @@ class FileReader:
 
         # Regroup time-neutral fld specs and time inds into lists
         fld_specs_time_lst, time_inds_lst = [], []
-        for _, (fld_specs_time, time_inds) in sorted(
-            fld_specs_time_inds_by_hash.items()
-        ):
+        for _, (fld_specs_time, time_inds) in fld_specs_time_inds_by_hash.items():
             fld_specs_time_lst.append(fld_specs_time)
             time_inds_lst.append(time_inds)
 
@@ -553,7 +551,7 @@ class FileReader:
                 # Integrate over time
                 fld = np.cumsum(fld, axis=0) * dt_hr
 
-        elif var_specs.subcls("deposition"):  # SR_TMP
+        elif var_specs.issubcls("deposition"):  # SR_TMP
             if not var_specs.integrate:
                 # Revert integration over time
                 fld[1:] = (fld[1:] - fld[:-1]) / dt_hr

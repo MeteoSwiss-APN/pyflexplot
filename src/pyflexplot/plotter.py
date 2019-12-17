@@ -83,13 +83,13 @@ class Plotter(ParentClass):
 
     def fmt_file_path(self, field_specs, domain):
 
-        var_specs = field_specs.var_specs_merged()
+        var_specs_dct = field_specs.var_specs_merged()
 
         # Collect variable specifications
         kwargs = {"domain": domain}
         for specs_key, fmt_key in self.specs_fmt_keys.items():
             try:
-                val = getattr(var_specs, specs_key)
+                val = getattr(var_specs_dct, specs_key)
             except AttributeError:
                 pass
             else:
@@ -103,10 +103,10 @@ class Plotter(ParentClass):
 
         # Special case: integrated variable
         plot_var = self.cls_plot.name
-        if var_specs.integrate:
+        if var_specs_dct.integrate:
             plot_var += "-int"
         try:
-            dep_type = var_specs.deposition
+            dep_type = var_specs_dct.deposition
         except AttributeError:
             pass
         else:
