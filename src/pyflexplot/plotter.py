@@ -12,7 +12,7 @@ from .plot_utils import MapAxesConf_Cosmo1_CH
 from .utils import ParentClass
 
 
-class Plotter(ParentClass):
+class Plotter:
     """Create one or more FLEXPLART plots of a certain type."""
 
     specs_fmt_keys = {
@@ -102,7 +102,7 @@ class Plotter(ParentClass):
             kwargs[fmt_key] = val
 
         # Special case: integrated variable
-        plot_var = self.cls_plot.name
+        plot_var = self.name
         if var_specs_dct.integrate:
             plot_var += "-int"
         try:
@@ -117,7 +117,8 @@ class Plotter(ParentClass):
         kwargs["lang"] = self.lang
 
         # Ensemble member ids
-        if isinstance(field_specs, FieldSpecs.subcls("ens")):
+        # if field_specs.issubcls("ens"):
+        if "ens" in self.name:  # SR_TMP
             if not field_specs.member_ids:
                 kwargs["member_ids"] = None
             else:

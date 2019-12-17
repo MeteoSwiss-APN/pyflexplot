@@ -210,12 +210,13 @@ def create_plots(
         ens_var_setup = {"thr_agrmt": {"thr": 1e-9},}.get(ens_var)  # SR_TMP SR_HC
     # SR_TMP >
 
-    # Create var specs objects
-    var_specs_lst = VarSpecs.create(cls_name, var_specs_raw, lang=lang, words=None)
+    # Create variable specification objects
+    var_specs_dct = prep_var_specs_dct(var_specs_raw)
+    var_specs_lst_lst = VarSpecs.create(cls_name, var_specs_dct, lang=lang, words=None)
 
     field_lst = read_fields(
         cls_name=cls_name,
-        var_specs_lst=var_specs_lst,
+        var_specs_lst_lst=var_specs_lst_lst,
         ens_member_id_lst=ens_member_id_lst,
         ens_var=ens_var,
         ens_var_setup=ens_var_setup,
@@ -227,13 +228,11 @@ def create_plots(
         return
 
     # Transfer some global options
-    for key in ["lang", "scale_fact"]:
-        kwargs[key] = ctx.obj[key]
+    kwargs = {key: ctx.obj[key] for key in ["lang", "scale_fact"]}
 
     # Prepare plotter
-    plotter = Plotter(cls_name)
-    args = [field_lst, out_file_path_raw]
-    fct_plot = lambda: plotter.run(*args, **kwargs)
+    plotter = Plotter()
+    fct_plot = lambda: plotter.run(cls_name, field_lst, out_file_path_raw, **kwargs)
 
     # Note: Plotter.run yields the output file paths on-the-go
     out_file_paths = []
@@ -249,11 +248,33 @@ def create_plots(
         open_plots(ctx.obj["open_all_cmd"], out_file_paths)
 
 
+def prep_var_specs_dct(var_specs_raw):
+    """Prepare the variable specifications dict from the raw CLI input.
+
+    Example:
+        >>> prep_var_specs_dct({"a_lst": ([0], [1, 2])})
+        {"a": [0, (1, 2)]}
+
+    """
+    var_specs_dct = {}
+    for key, val in var_specs_raw.items():
+        if key.endswith("_lst"):
+            key = key[: -len("_lst")]
+        if isinstance(val, tuple):
+            val = [tuple(e) if isinstance(e, list) else e for e in val]
+        else:
+            raise Exception(f"invalid value type {type(val).__name__}")
+        if len(val) == 1:
+            val = next(iter(val))
+        var_specs_dct[key] = val
+    return var_specs_dct
+
+
 def read_fields(
     *,
     in_file_path_raw,
     cls_name,
-    var_specs_lst,
+    var_specs_lst_lst,
     lang,
     ens_member_id_lst,
     ens_var,
@@ -261,16 +282,19 @@ def read_fields(
 ):
     """TODO"""
 
-    kwargs = {"lang": lang}
+    attrs = {"lang": lang}
     if ens_member_id_lst is not None:
-        kwargs["member_ids"] = ens_member_id_lst
+        attrs["member_ids"] = ens_member_id_lst
     if ens_var is not None:
-        kwargs["ens_var"] = ens_var
+        attrs["ens_var"] = ens_var
     if ens_var_setup is not None:
-        kwargs["ens_var_setup"] = ens_var_setup
+        attrs["ens_var_setup"] = ens_var_setup
 
     # Determine fields specifications (one for each eventual plot)
-    fld_specs_lst = [FieldSpecs(cls_name, [vs], **kwargs) for vs in var_specs_lst]
+    fld_specs_lst = [
+        FieldSpecs(cls_name, var_specs_lst, attrs)
+        for var_specs_lst in var_specs_lst_lst
+    ]
 
     # Read fields
     field_lst = FileReader(in_file_path_raw).run(fld_specs_lst, lang=lang)
