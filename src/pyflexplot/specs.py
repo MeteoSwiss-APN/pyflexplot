@@ -52,9 +52,9 @@ class VarSpecs(SummarizableClass, ParentClass):
     def issubcls(self, name):
         return name in self.name.split(":")
 
-    # @classmethod
-    # def subcls(cls, name):
-    #     raise DeprecationWarning(f"{cls.__name__}.subcls")
+    # + @classmethod
+    # + def subcls(cls, name):
+    # +     raise DeprecationWarning(f"{cls.__name__}.subcls")
 
     def __init__(self, name, var_specs_dct, *, rlat=None, rlon=None, words, lang):
         """Create an instance of ``VarSpecs``.
@@ -467,7 +467,14 @@ class FieldSpecs(SummarizableClass):
     dims_opt_mult_vals = ["species_id"]
 
     def __init__(
-        self, name, var_specs_lst, *, op=np.nansum, var_attrs_replace=None, lang="en",
+        self,
+        name,
+        var_specs_lst,
+        attrs=None,
+        *,
+        op=np.nansum,
+        var_attrs_replace=None,
+        lang="en",
     ):
         """Create an instance of ``FieldSpecs``.
 
@@ -477,6 +484,10 @@ class FieldSpecs(SummarizableClass):
             var_specs_lst (list[VarSpecs]): Specifications of one or more input
                 variables used to subsequently create a plot field.
 
+            attrs (dict[str], optional): Additional arbitrary attributes.
+                Defaults to None.
+
+        Kwargs:
             op (function or list[function], optional): Opterator(s) used to
                 combine input fields read based on ``var_specs_lst``. Must
                 accept argument ``axis=0`` to only recude along over the
@@ -509,6 +520,8 @@ class FieldSpecs(SummarizableClass):
         assert isinstance(next(iter(var_specs_lst)), VarSpecs)
         # SR_TMP >
 
+        self.set_attrs(attrs)
+
         # Create variable specifications objects
         self.var_specs_lst = self._prepare_var_specs_lst(var_specs_lst)
 
@@ -534,8 +547,10 @@ class FieldSpecs(SummarizableClass):
             var_attrs_replace = {}
         self.var_attrs_replace = var_attrs_replace
 
-    def set_addtl_attrs(self, **attrs):
-        """Set additional attributes."""
+    def set_attrs(self, attrs):
+        """Set instance attributes."""
+        if attrs is None:
+            return
         for attr, val in attrs.items():
             if hasattr(self, attr):
                 raise ValueError(

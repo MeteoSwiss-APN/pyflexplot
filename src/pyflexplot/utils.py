@@ -47,15 +47,21 @@ class ParentClass:
         result = {}
         for sub_cls in cls.__subclasses__():
             try:
-                # name = sub_cls.name
-                name = sub_cls.name.split(":")[-1]  # SR_TMP
+                name = sub_cls.name
             except AttributeError:
                 continue
+
             if name is None:
                 continue
+
             if unique and result.get(name) is sub_cls:
                 raise Exception(f"duplicate class name '{name}'")
-            result[name] = sub_cls
+
+            # result[name] = sub_cls
+            for n in range(name.count(":") + 1):
+                subname = sub_cls.name.split(":", n)[-1]
+                result[subname] = sub_cls
+
             result.update(sub_cls.subclasses_by_name())
         return result
 

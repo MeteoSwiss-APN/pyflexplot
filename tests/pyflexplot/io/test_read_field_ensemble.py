@@ -4,8 +4,9 @@
 import numpy as np
 import pytest
 
-from pyflexplot.io import FieldSpecs
 from pyflexplot.io import FileReader
+from pyflexplot.specs import VarSpecs
+from pyflexplot.specs import FieldSpecs
 
 from pyflexplot.data import threshold_agreement
 
@@ -60,15 +61,24 @@ class TestReadFieldEnsemble_Single:
         datafile_fmt = self.datafile_fmt(datadir)
 
         # Initialize specifications
-        var_specs_raw = {
+        var_specs_dct = {
             **dims,
             **self.var_specs_mult_shared,
             **var_specs_mult_unshared,
         }
-        fld_specs = FieldSpecs(
-            name, var_specs_raw, member_ids=self.member_ids, ens_var=ens_var
-        )
-        var_specs = VarSpecs(name, **var_specs_raw)
+        var_specs_lst_lst = VarSpecs.create(name, var_specs_dct, lang=None, words=None)
+        assert len(var_specs_lst_lst) == 1
+        var_specs_lst = next(iter(var_specs_lst_lst))
+        attrs = {
+            "member_ids": self.member_ids,
+            "ens_var": ens_var,
+        }
+        fld_specs = FieldSpecs(name, var_specs_lst, attrs)
+
+        # SR_TMP <
+        assert len(var_specs_lst) == 1
+        var_specs = next(iter(var_specs_lst))
+        # SR_TMP >
 
         # Read input fields
         flex_field = FileReader(datafile_fmt).run(fld_specs)
@@ -101,7 +111,7 @@ class TestReadFieldEnsemble_Single:
         """Read concentration field."""
         self.run(
             datadir,
-            name="ens_mean_concentration",
+            name="concentration:ens_mean_concentration",
             dims={**self.dims_shared, "level": 1},
             var_names_ref=[f"spec{self.species_id:03d}"],
             var_specs_mult_unshared={},
@@ -117,7 +127,7 @@ class TestReadFieldEnsemble_Multiple:
     dims_shared = {
         "nageclass": 0,
         "numpoint": 0,
-        "time_lst": [0, 3, 9],
+        "time": [0, 3, 9],
     }
 
     # Variables specification arguments shared by all tests
@@ -162,20 +172,23 @@ class TestReadFieldEnsemble_Multiple:
         """Run an individual test, reading one field after another."""
 
         # Create field specifications list
-        var_specs_mult = {
+        var_specs_dct = {
             **dims_mult,
             **self.var_specs_mult_shared,
             **var_specs_mult_unshared,
         }
-        fld_specs_lst = FieldSpecs.multiple(
-            name,
-            var_specs_mult,
-            member_ids=self.member_ids,
-            ens_var=ens_var,
-            ens_var_setup=ens_var_setup,
-        )
+        var_specs_lst_lst = VarSpecs.create(name, var_specs_dct, lang=None, words=None)
+        attrs = {
+            "member_ids": self.member_ids,
+            "ens_var": ens_var,
+            "ens_var_setup": ens_var_setup,
+        }
+        fld_specs_lst = [
+            FieldSpecs(name, var_specs_lst, attrs)
+            for var_specs_lst in var_specs_lst_lst
+        ]
 
-        dim_names = sorted([d.replace("_lst", "") for d in dims_mult.keys()])
+        dim_names = list(dims_mult.keys())
 
         if separate:
             # Process field specifications one after another
@@ -231,7 +244,7 @@ class TestReadFieldEnsemble_Multiple:
                 for var_name in var_names_ref
             ]
             fld_ref_lst.append(
-                fct_reduce_mem(np.nansum(fld_ref_mem_time, axis=0), axis=0,)
+                fct_reduce_mem(np.nansum(fld_ref_mem_time, axis=0), axis=0)
             )
         fld_arr_ref = np.array(fld_ref_lst)
 
@@ -289,7 +302,7 @@ class TestReadFieldEnsemble_Multiple:
             datadir,
             "thr_agrmt",
             separate=False,
-            name="ens_thr_agrmt_concentration",
+            name="concentration:ens_thr_agrmt_concentration",
             scale_fld_ref=3.0,
         )
 
@@ -310,7 +323,7 @@ class TestReadFieldEnsemble_Multiple:
                 f"WD_spec{self.species_id:03d}",
                 f"DD_spec{self.species_id:03d}",
             ],
-            var_specs_mult_unshared={"deposition": "tot"},
+            var_specs_mult_unshared={"deposition": ("wet", "dry")},
             ens_var=ens_var,
             ens_var_setup=ens_var_setup,
             fct_reduce_mem=fct_reduce_mem,
