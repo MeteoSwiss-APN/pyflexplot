@@ -78,25 +78,11 @@ context_settings = {
 }
 
 
-class FloatOrStrParamType(click.ParamType):
-    """Float or certain string."""
+class CharacterSeparatedList(click.ParamType):
+    """List of elements of a given type separated by a given character."""
 
-    def __init__(self, str_lst):
-        self.str_lst = str_lst
-
-    def convert(self, value, param, ctx):
-        """Convert string to float, unless it is among ``str_lst``."""
-        if value in self.str_lst:
-            return value
-        return float(value)
-
-
-FLOAT_OR_AUTO = FloatOrStrParamType("auto")
-
-
-class CharSepListParamType(click.ParamType):
-    def __init__(self, type_, separator, *, name=None, dupl_ok=False):
-        """Create an instance of ``CharSepListParamType``.
+    def __init__(self, type_, separator, *, name=None, unique=False):
+        """Create an instance of ``CharacterSeparatedList``.
 
         Args:
             type_ (type): Type of list elements.
@@ -107,13 +93,13 @@ class CharSepListParamType(click.ParamType):
                 name is derived from ``type_`` and ``separator``. Defaults to
                 None.
 
-            dupl_ok (bool, optional): Whether duplicate values are allowed.
+            unique (bool, optional): Whether the list elements must be unique.
                 Defaults to False.
 
         Example:
             Create type for comma-separated list of (unique) integers:
 
-            > INT_LIST_COMMA_SEP_UNIQ = CharSepListParamType(int, ',')
+            > comma_separated_list_of_unique_ints = CharacterSeparatedList(int, ',')
 
         """
         if isinstance(type_, float) and separator == ".":
@@ -123,14 +109,14 @@ class CharSepListParamType(click.ParamType):
 
         self.type_ = type_
         self.separator = separator
-        self.dupl_ok = dupl_ok
+        self.unique = unique
         if name is not None:
             self.name = name
         else:
             self.name = f"'{separator}'-separated {type_.__name__} list"
 
     def convert(self, value, param, ctx):
-        """Convert string to list of given type based on separator."""
+        """Convert a string to a list of ``type_`` elements."""
         values_str = value.split(self.separator)
         values = []
         for i, value_str in enumerate(values_str):
@@ -144,7 +130,7 @@ class CharSepListParamType(click.ParamType):
                     f"({type(e).__name__}: {e})"
                 )
             else:
-                if not self.dupl_ok and value in values:
+                if self.unique and value in values:
                     n = len(values_str)
                     self.fail(
                         f"Invalid '{self.separator}'-separated list "
@@ -155,8 +141,64 @@ class CharSepListParamType(click.ParamType):
         return values
 
 
-INT_LIST_COMMA_SEP_UNIQ = CharSepListParamType(int, ",", dupl_ok=False)
-INT_LIST_PLUS_SEP_UNIQ = CharSepListParamType(int, "+", dupl_ok=False)
+comma_separated_list_of_unique_ints = CharacterSeparatedList(int, ",", unique=True)
+plus_separated_list_of_unique_ints = CharacterSeparatedList(int, "+", unique=True)
+
+
+class CombinationChoices(click.ParamType):
+    """Choices that can also be combined."""
+
+    def __init__(self, base_choices, combination_choices):
+        """Create instance of ``CombinationChoices``.
+
+        Args:
+            base_choices (list[str]): Base choices.
+
+            combination_choices (dict[str, list[str]]): Derived choices
+                constituting combinations of multiple base choices.
+
+        """
+        self.base_choices = base_choices
+        self.combination_choices = combination_choices
+        self._check_combination_choices()
+
+    def convert(self, value, param, ctx):
+        """Check that a string is among the given choices or combinations."""
+        if value in self.base_choices:
+            return value
+        try:
+            return self.combination_choices[value]
+        except KeyError:
+            choices = self.base_choices + list(self.combination_choices)
+            s_choices = ", ".join([f"'{s}'" for s in choices])
+            self.fail(f"wrong choice '{value}': must be one of {s_choices}")
+
+    def _check_combination_choices(self):
+        for choice, combination in self.combination_choices.items():
+            if choice in self.base_choices:
+                raise ValueError(
+                    "combination choice is already a base choice",
+                    choice=choice,
+                    base_choices=self.base_choices,
+                )
+            try:
+                it = iter(combination)
+            except TypeError:
+                raise ValueError(
+                    "combination choice is defined as non-iterable "
+                    f"{type(combination).__name__} object",
+                    choice=choice,
+                    combination=combination,
+                )
+            else:
+                for element in it:
+                    if element not in self.base_choices:
+                        raise ValueError(
+                            "combination choice element is not a base choice",
+                            choice=choice,
+                            element=element,
+                            base_choices=self.base_choices,
+                        )
 
 
 #
@@ -420,7 +462,7 @@ class GlobalOptions(ClickOptionsGroup):
                     "Species id(s) (default: 0). To sum up multiple species, combine "
                     "their ids with '+'. Format key: '{species_id}'."
                 ),
-                type=INT_LIST_PLUS_SEP_UNIQ,
+                type=plus_separated_list_of_unique_ints,
                 default=["1"],
                 multiple=True,
             ),
@@ -532,7 +574,7 @@ class ConcentrationOptions(ClickOptionsGroup):
                     "up multiple levels, combine their indices with '+'. Format key: "
                     "'{level_ind}'."
                 ),
-                type=INT_LIST_PLUS_SEP_UNIQ,
+                type=plus_separated_list_of_unique_ints,
                 default=["0"],
                 multiple=True,
             ),
@@ -562,7 +604,7 @@ class DepositionOptions(ClickOptionsGroup):
                     "Type of deposition. Part of the plot variable name that may be "
                     "embedded in the plot file path with the format key '{variable}'."
                 ),
-                type=click.Choice(["tot", "wet", "dry"]),
+                type=CombinationChoices(["wet", "dry"], {"tot": ("wet", "dry")}),
                 default=["tot"],
                 multiple=True,
             )
