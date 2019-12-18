@@ -34,6 +34,8 @@ class VarSpecs(SummarizableClass, ParentClass):
 
     summarizable_attrs = []  # SR_TODO
 
+    name = None
+
     # Keys with respective type
     specs_type_default = {
         "species_id": (int_or_list, None),
@@ -52,7 +54,9 @@ class VarSpecs(SummarizableClass, ParentClass):
     # + def subcls(cls, name):
     # +     raise DeprecationWarning(f"{cls.__name__}.subcls")
 
-    def __init__(self, name, var_specs_dct, *, rlat=None, rlon=None, words, lang):
+    def __init__(
+        self, name, var_specs_dct, *, rlat=None, rlon=None, words=None, lang=None,
+    ):
         """Create an instance of ``VarSpecs``.
 
         Args:
@@ -74,7 +78,7 @@ class VarSpecs(SummarizableClass, ParentClass):
                 'en' (English).
 
         """
-        assert name in self.name  # SR_TMP
+        assert name in type(self).name  # SR_TMP
         self.name = name
 
         def prepare_dim(dim):
@@ -231,7 +235,7 @@ class VarSpecs(SummarizableClass, ParentClass):
             if len(vals) == 1:
                 var_specs_dct[key] = next(iter(vals))
             elif key == "deposition" and set(vals) == set(["dry", "wet"]):
-                var_specs_dct[key] = "tot"
+                var_specs_dct[key] = tuple(vals)
             else:
                 var_specs_dct[key] = vals
 
@@ -366,6 +370,14 @@ class VarSpecs_Deposition(VarSpecs):
         "deposition": (str, None),
     }
 
+    def __init__(self, name, var_specs_dct, *args, **kwargs):
+        dep = var_specs_dct["deposition"]
+        if dep not in ["wet", "dry"] and set(dep) != {"wet", "dry"}:
+            raise ValueError(
+                f"invalid deposition type '{dep}'", var_specs_dct,
+            )
+        super().__init__(name, var_specs_dct, *args, **kwargs)
+
     def deposition_type(self):
         type_ = self["deposition"]
         word = "total" if type_ == "tot" else type_
@@ -463,8 +475,10 @@ class MultiVarSpecs:
         self.var_specs_lst = var_specs_lst
 
     @classmethod
-    def create(cls, name, *args, **kwargs):
-        var_specs_lst_lst = VarSpecs.create(name, *args, **kwargs)
+    def create(cls, name, var_specs_dct, *args, **kwargs):
+        if var_specs_dct.get("deposition") == "tot":
+            var_specs_dct["deposition"] = ("wet", "dry")
+        var_specs_lst_lst = VarSpecs.create(name, var_specs_dct, *args, **kwargs)
         return [cls(name, var_specs_lst) for var_specs_lst in var_specs_lst_lst]
 
     def __iter__(self):
