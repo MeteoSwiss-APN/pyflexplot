@@ -7,12 +7,12 @@ import re
 
 from srutils.various import isiterable
 
-from .specs import VarSpecs
-from .specs import FieldSpecs
+from .field_specs import FieldSpecs
 from .plot import Plot
 from .plot_utils import MapAxesConf_Cosmo1
 from .plot_utils import MapAxesConf_Cosmo1_CH
 from .utils import ParentClass
+from .var_specs import VarSpecs
 
 
 class Plotter:

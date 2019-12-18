@@ -12,11 +12,11 @@ from pprint import pformat
 
 from srutils.various import group_kwargs
 
+from .field_specs import FieldSpecs
 from .io import FileReader
-from .specs import FieldSpecs
-from .specs import VarSpecs
-from .utils import count_to_log_level
 from .plotter import Plotter
+from .utils import count_to_log_level
+from .var_specs import MultiVarSpecs
 
 # Uncomment to debug segmentation fault and set PYTHONFAULTHANDLER=1
 # + import faulthandler
@@ -254,11 +254,13 @@ def create_plots(
 
     # Create variable specification objects
     var_specs_dct = prep_var_specs_dct(var_specs_raw)
-    var_specs_lst_lst = VarSpecs.create(cls_name, var_specs_dct, lang=lang, words=None)
+    multi_var_specs_lst = MultiVarSpecs.create(
+        cls_name, var_specs_dct, lang=lang, words=None,
+    )
 
     field_lst = read_fields(
         cls_name=cls_name,
-        var_specs_lst_lst=var_specs_lst_lst,
+        multi_var_specs_lst=multi_var_specs_lst,
         ens_member_id_lst=ens_member_id_lst,
         ens_var=ens_var,
         ens_var_setup=ens_var_setup,
@@ -316,7 +318,7 @@ def read_fields(
     *,
     in_file_path_raw,
     cls_name,
-    var_specs_lst_lst,
+    multi_var_specs_lst,
     lang,
     ens_member_id_lst,
     ens_var,
@@ -334,8 +336,8 @@ def read_fields(
 
     # Determine fields specifications (one for each eventual plot)
     fld_specs_lst = [
-        FieldSpecs(cls_name, var_specs_lst, attrs)
-        for var_specs_lst in var_specs_lst_lst
+        FieldSpecs(cls_name, multi_var_specs, attrs)
+        for multi_var_specs in multi_var_specs_lst
     ]
 
     # Read fields

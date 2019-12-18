@@ -12,8 +12,8 @@ from pprint import pformat
 
 from srutils.various import isiterable
 
-from .specs import VarSpecs
 from .utils import SummarizableClass
+from .var_specs import VarSpecs
 from .words import WORDS
 
 

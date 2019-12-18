@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Input specifications.
+Field specifications.
 """
 import logging as log
 import numpy as np
@@ -11,7 +11,7 @@ from srutils.dict import nested_dict_set
 from srutils.various import isiterable
 
 from .utils import SummarizableClass
-from .var_specs import VarSpecs
+from .var_specs import MultiVarSpecs
 
 
 class FieldSpecs(SummarizableClass):
@@ -25,7 +25,7 @@ class FieldSpecs(SummarizableClass):
     def __init__(
         self,
         name,
-        var_specs_lst,
+        multi_var_specs,
         attrs=None,
         *,
         op=np.nansum,
@@ -37,24 +37,24 @@ class FieldSpecs(SummarizableClass):
         Args:
             name (str): Name.
 
-            var_specs_lst (list[VarSpecs]): Specifications of one or more input
-                variables used to subsequently create a plot field.
+            multi_var_specs (MultiVarSpecs): Specifications of one or more
+                input variables used to subsequently create a plot field.
 
             attrs (dict[str], optional): Additional arbitrary attributes.
                 Defaults to None.
 
         Kwargs:
             op (function or list[function], optional): Opterator(s) used to
-                combine input fields read based on ``var_specs_lst``. Must
+                combine input fields read based on ``multi_var_specs``. Must
                 accept argument ``axis=0`` to only recude along over the
                 fields.
 
                 If a single operator is passed, it is used to sequentially
                 combine one field after the other, in the same order as the
-                corresponding specifications (``var_specs_lst``).
+                corresponding specifications (``multi_var_specs``).
 
                 If a list of operators has been passed, then it's length must
-                be one smaller than that of ``var_specs_lst``, such that each
+                be one smaller than that of ``multi_var_specs``, such that each
                 operator is used between two subsequent fields (again in the
                 same order as the corresponding specifications).
 
@@ -71,15 +71,11 @@ class FieldSpecs(SummarizableClass):
         self.name = name
 
         # SR_TMP <
-        assert not isinstance(var_specs_lst, VarSpecs)
-        assert isiterable(var_specs_lst, str_ok=False)
-        assert isinstance(next(iter(var_specs_lst)), VarSpecs)
+        assert isinstance(multi_var_specs, MultiVarSpecs)
         # SR_TMP >
+        self.multi_var_specs = multi_var_specs
 
         self.set_attrs(attrs)
-
-        # Create variable specifications objects
-        self.var_specs_lst = self._prepare_var_specs_lst(var_specs_lst)
 
         # Store operator(s)
         self.check_op(op)
@@ -114,30 +110,6 @@ class FieldSpecs(SummarizableClass):
                 )
             setattr(self, attr, val)
 
-    def _prepare_var_specs_lst(self, var_specs_lst):
-
-        try:
-            iter(var_specs_lst)
-        except TypeError:
-            raise ValueError(
-                f"var_specs: type '{type(var_specs_lst).__name__}' not iterable"
-            ) from None
-
-        # Handle dimensions with optionally multiple values
-        # Example: Sum over multiple species
-        for key in self.dims_opt_mult_vals:
-            for var_specs in copy(var_specs_lst):
-                assert isinstance(var_specs, VarSpecs)  # SR_TMP
-                if not isiterable(var_specs, str_ok=False):
-                    vals = copy(var_specs[key])
-                    var_specs[key] = vals.pop(0)
-                    var_specs_lst_new = [deepcopy(var_specs) for _ in vals]
-                    for var_specs_new, val in zip(var_specs_lst_new, vals):
-                        var_specs_new[key] = val
-                        var_specs_lst.append(var_specs_new)
-
-        return var_specs_lst
-
     def check_op(self, op):
         """Check operator(s)."""
         try:
@@ -147,7 +119,7 @@ class FieldSpecs(SummarizableClass):
                 raise ValueError(f"op: {type(op).__name__} not callable")
             return
 
-        n_var_specs = len(self.var_specs_lst)
+        n_var_specs = len(self.multi_var_specs)
         if n_ops != n_var_specs - 1:
             raise ValueError(
                 f"wrong number of operators passed in {type(ops).__name__}: {n_ops} != "
@@ -161,8 +133,8 @@ class FieldSpecs(SummarizableClass):
         s = f"{type(self).__name__}(\n"
 
         # Variables specifications
-        s += f"  var_specs: {len(self.var_specs_lst)}x\n"
-        for var_specs in self.var_specs_lst:
+        s += f"  var_specs: {len(self.multi_var_specs)}x\n"
+        for var_specs in self.multi_var_specs:
             for line in str(var_specs).split("\n"):
                 s += f"    {line}\n"
 
@@ -183,7 +155,7 @@ class FieldSpecs(SummarizableClass):
         return s
 
     def __hash__(self):
-        return sum([sum([hash(vs) for vs in self.var_specs_lst])])
+        return sum([sum([hash(vs) for vs in self.multi_var_specs])])
 
     def __lt__(self, other):
         return hash(self) < hash(other)
@@ -193,15 +165,15 @@ class FieldSpecs(SummarizableClass):
 
     def var_specs_merged(self):
         """Return merged variable specifications."""
-        return self.var_specs_lst[0].merge_with(self.var_specs_lst[1:])
+        return list(self.multi_var_specs)[0].merge_with(list(self.multi_var_specs)[1:])
 
     def var_specs_shared(self, key):
         """Return a varible specification, if it is shared by all."""
-        vals = [getattr(vs, key) for vs in self.var_specs_lst]
+        vals = [getattr(vs, key) for vs in self.multi_var_specs]
         all_equal = all(v == vals[0] for v in vals[1:])
         if not all_equal:
             raise ValueError(
-                f"'{key}' differs among {len(self.var_specs_lst)} var stats: {vals}"
+                f"'{key}' differs among {len(self.multi_var_specs)} var stats: {vals}"
             )
         return next(iter(vals))
 

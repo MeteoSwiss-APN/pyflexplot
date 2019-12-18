@@ -5,8 +5,8 @@ import numpy as np
 import pytest
 
 from pyflexplot.io import FileReader
-from pyflexplot.specs import VarSpecs
-from pyflexplot.specs import FieldSpecs
+from pyflexplot.field_specs import FieldSpecs
+from pyflexplot.var_specs import MultiVarSpecs
 
 from pyflexplot.data import threshold_agreement
 
@@ -66,18 +66,20 @@ class TestReadFieldEnsemble_Single:
             **self.var_specs_mult_shared,
             **var_specs_mult_unshared,
         }
-        var_specs_lst_lst = VarSpecs.create(name, var_specs_dct, lang=None, words=None)
-        assert len(var_specs_lst_lst) == 1
-        var_specs_lst = next(iter(var_specs_lst_lst))
+        multi_var_specs_lst = MultiVarSpecs.create(
+            name, var_specs_dct, lang=None, words=None,
+        )
+        assert len(multi_var_specs_lst) == 1
+        multi_var_specs = next(iter(multi_var_specs_lst))
         attrs = {
             "member_ids": self.member_ids,
             "ens_var": ens_var,
         }
-        fld_specs = FieldSpecs(name, var_specs_lst, attrs)
+        fld_specs = FieldSpecs(name, multi_var_specs, attrs)
 
         # SR_TMP <
-        assert len(var_specs_lst) == 1
-        var_specs = next(iter(var_specs_lst))
+        assert len(multi_var_specs) == 1
+        var_specs = next(iter(multi_var_specs))
         # SR_TMP >
 
         # Read input fields
@@ -177,15 +179,17 @@ class TestReadFieldEnsemble_Multiple:
             **self.var_specs_mult_shared,
             **var_specs_mult_unshared,
         }
-        var_specs_lst_lst = VarSpecs.create(name, var_specs_dct, lang=None, words=None)
+        multi_var_specs_lst = MultiVarSpecs.create(
+            name, var_specs_dct, lang=None, words=None,
+        )
         attrs = {
             "member_ids": self.member_ids,
             "ens_var": ens_var,
             "ens_var_setup": ens_var_setup,
         }
         fld_specs_lst = [
-            FieldSpecs(name, var_specs_lst, attrs)
-            for var_specs_lst in var_specs_lst_lst
+            FieldSpecs(name, multi_var_specs, attrs)
+            for multi_var_specs in multi_var_specs_lst
         ]
 
         dim_names = list(dims_mult.keys())

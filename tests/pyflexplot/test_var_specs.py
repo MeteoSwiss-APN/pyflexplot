@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Tests for module ``pyflexplot.specs``."""
+"""Tests for module ``pyflexplot.var_specs``."""
 import pytest
 
 from dataclasses import dataclass
 
-from pyflexplot.io import VarSpecs
+from pyflexplot.var_specs import VarSpecs
 
 from srutils.dict import decompress_dict_multivals
 from srutils.testing import assert_is_list_like

@@ -4,7 +4,7 @@
 import netCDF4 as nc4
 import numpy as np
 
-from pyflexplot.io import FieldSpecs
+from pyflexplot.field_specs import FieldSpecs
 
 
 # SR_TMP <<<

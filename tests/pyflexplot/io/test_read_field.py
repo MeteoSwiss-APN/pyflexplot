@@ -5,8 +5,8 @@ import numpy as np
 import pytest
 
 from pyflexplot.io import FileReader
-from pyflexplot.specs import VarSpecs
-from pyflexplot.specs import FieldSpecs
+from pyflexplot.field_specs import FieldSpecs
+from pyflexplot.var_specs import MultiVarSpecs
 
 from utils import datadir
 from io_utils import read_nc_var
@@ -64,16 +64,14 @@ class Test_ReadField_Single:
             **self.var_specs_mult_shared,
             **var_specs_mult_unshared,
         }
-        var_specs_lst_lst = VarSpecs.create(name, var_specs_dct, lang=None, words=None)
-        assert len(var_specs_lst_lst) == 1
-        var_specs_lst = next(iter(var_specs_lst_lst))
+        multi_var_specs_lst = MultiVarSpecs.create(
+            name, var_specs_dct, lang=None, words=None,
+        )
+        assert len(multi_var_specs_lst) == 1
+        multi_var_specs = next(iter(multi_var_specs_lst))
 
         # Initialize field specifications
-        fld_specs_lst = [
-            FieldSpecs(name, var_specs_lst) for var_specs_lst in var_specs_lst_lst
-        ]
-        assert len(fld_specs_lst) == 1
-        fld_specs = next(iter(fld_specs_lst))
+        fld_specs = FieldSpecs(name, multi_var_specs)
 
         # Read input field
         flex_field = FileReader(self.datafile(datadir)).run(fld_specs)
@@ -88,7 +86,7 @@ class Test_ReadField_Single:
                         get_var_name_ref(var_specs, var_names_ref),
                         var_specs,
                     )
-                    for var_specs in var_specs_lst
+                    for var_specs in multi_var_specs
                 ],
                 axis=0,
             )
@@ -187,9 +185,11 @@ class Test_ReadField_Multiple:
             **self.var_specs_mult_shared,
             **var_specs_mult_unshared,
         }
-        var_specs_lst_lst = VarSpecs.create(name, var_specs_dct, lang=None, words=None)
+        multi_var_specs_lst = MultiVarSpecs.create(
+            name, var_specs_dct, lang=None, words=None,
+        )
         fld_specs_lst = [
-            FieldSpecs(name, var_specs_lst) for var_specs_lst in var_specs_lst_lst
+            FieldSpecs(name, multi_var_specs) for multi_var_specs in multi_var_specs_lst
         ]
 
         dim_names = list(dims_mult.keys())
@@ -208,7 +208,7 @@ class Test_ReadField_Multiple:
 
         # Read reference fields
         fld_ref = None
-        for var_specs in fld_specs.var_specs_lst:
+        for var_specs in fld_specs.multi_var_specs:
             flds_ref_i = [
                 read_nc_var(
                     datafile, get_var_name_ref(var_specs, var_names_ref), var_specs,

@@ -2,7 +2,8 @@ __init__.py
 cli.py
 io.py
 attr.py
-specs.py
+var_specs.py
+field_specs.py
 data.py
 plotter.py
 plot.py

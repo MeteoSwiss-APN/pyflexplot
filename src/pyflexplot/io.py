@@ -16,8 +16,8 @@ from srutils.various import check_array_indices
 from .attr import AttrsCollector
 from .data import Field
 from .data import threshold_agreement
-from .specs import VarSpecs
-from .specs import FieldSpecs
+from .field_specs import FieldSpecs
+from .var_specs import VarSpecs
 
 
 def _nc_content():
@@ -373,7 +373,7 @@ class FileReader:
         fld_specs_reqtime = np.full([self.n_reqtime], None)
         for i_reqtime, time_ind in enumerate(time_inds):
             fld_specs = deepcopy(fld_specs_time)
-            for var_specs in fld_specs.var_specs_lst:
+            for var_specs in fld_specs.multi_var_specs:
                 var_specs.time = time_ind
             fld_specs_reqtime[i_reqtime] = fld_specs
         return fld_specs_reqtime
@@ -388,7 +388,7 @@ class FileReader:
                     log.debug(f"{i_reqtime + 1}/{len(time_inds)}: collect attributes")
                     fld_specs = fld_specs_reqtime[i_reqtime]
                     attrs_lst = []
-                    for var_specs in fld_specs.var_specs_lst:
+                    for var_specs in fld_specs.multi_var_specs:
                         attrs = AttrsCollector(self.fi, var_specs,).run(lang=self.lang)
                         attrs_lst.append(attrs)
                     attrs = attrs_lst[0].merge_with(
@@ -407,7 +407,7 @@ class FileReader:
 
             # Extract time index and check its the same for all
             time_ind = None
-            for var_specs in fld_specs_time.var_specs_lst:
+            for var_specs in fld_specs_time.multi_var_specs:
                 if time_ind is None:
                     time_ind = var_specs.time
                 elif var_specs.time != time_ind:
@@ -491,7 +491,7 @@ class FileReader:
 
         # Read fields and attributes from var specifications
         fld_lst = []
-        for var_specs in fld_specs.var_specs_lst:
+        for var_specs in fld_specs.multi_var_specs:
 
             # Field
             log.debug("read field")
