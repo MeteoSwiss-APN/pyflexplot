@@ -259,11 +259,22 @@ class Conf_Multi(_TestConf):
 class _Test_Multi:
     """Test ``MultiVarSpecs``."""
 
-    def test_create(self):
-        var_specs_lst_lst = VarSpecs.create(self.c.name, self.c.dct)
+    def test_create(self, conf=None):
+
+        # Create reference VarSpecs objects (nested list)
+        dct = self.c.dct.copy()
+        if dct.get("deposition") == "tot":
+            # VarSpecs doesn't unterstand "tot" by itself
+            dct["deposition"] = ("wet", "dry")
+        conf = self.c.derive(dct=dct)
+        var_specs_lst_lst = VarSpecs.create(conf.name, conf.dct)
         assert len(var_specs_lst_lst) == self.c.n
-        mult_var_specs_lst = MultiVarSpecs.create(self.c.name, self.c.dct)
-        assert len(mult_var_specs_lst) == self.c.n
+
+        # Create MultVarSpecs objects
+        multi_var_specs_lst = MultiVarSpecs.create(self.c.name, self.c.dct)
+        assert len(multi_var_specs_lst) == self.c.n
+
+        # Compare VarSpecs objects in MultVarSpecs objects to reference ones
         sol = [
             var_specs
             for var_specs_lst in var_specs_lst_lst
@@ -271,8 +282,8 @@ class _Test_Multi:
         ]
         res = [
             var_specs
-            for mult_var_specs in mult_var_specs_lst
-            for var_specs in mult_var_specs
+            for multi_var_specs in multi_var_specs_lst
+            for var_specs in multi_var_specs
         ]
         assert len(res) == len(sol)
         assert res == sol
@@ -293,7 +304,7 @@ class Test_Multi_Concentration(_Test_Multi):
     )
 
 
-class Test_Multi_Deposition(_Test_Multi):
+class Test_Multi_DepositionDry(_Test_Multi):
     c = Conf_Multi(
         name="deposition",
         dct={
@@ -306,3 +317,42 @@ class Test_Multi_Deposition(_Test_Multi):
         },
         n=4,
     )
+
+
+class Test_Multi_DepositionTot(_Test_Multi):
+    c = Conf_Multi(
+        name="deposition",
+        dct={
+            "nageclass": 0,
+            "numpoint": 0,
+            "time": [1, 3],
+            "integrate": False,
+            "species_id": [(1,), (1, 2)],
+            "deposition": "tot",
+        },
+        n=4,
+    )
+
+    def test_tot_vs_wet_dry(self):
+        """Check that deposition type "tot" is equivalent to ("wet", "dry")."""
+
+        # Deposition type "tot"
+        conf0 = self.c.derive(dct={**self.c.dct, "time": 0, "species_id": 0})
+        mvs0_lst = MultiVarSpecs.create(conf0.name, conf0.dct)
+        assert len(mvs0_lst) == 1
+        mvs0 = next(iter(mvs0_lst))
+
+        # Deposition type ("wet", "dry")
+        conf1 = conf0.derive(dct={**conf0.dct, "deposition": ("wet", "dry")})
+        mvs1_lst = MultiVarSpecs.create(conf1.name, conf1.dct)
+        assert len(mvs1_lst) == 1
+        mvs1 = next(iter(mvs1_lst))
+        assert mvs1 == mvs0  # ("wet", "dry") == "tot"
+
+        # Deposition type "wet"
+        conf2 = conf0.derive(dct={**conf0.dct, "deposition": "wet"})
+        mvs2_lst = MultiVarSpecs.create(conf2.name, conf2.dct)
+        assert len(mvs2_lst) == 1
+        mvs2 = next(iter(mvs2_lst))
+        assert mvs2 != mvs0  # "tot" != "wet"
+        assert mvs2 != mvs1  # "tot" != ("wet", "dry")

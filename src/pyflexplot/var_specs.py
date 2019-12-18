@@ -4,6 +4,9 @@ Input variable specifications.
 """
 import logging as log
 
+from dataclasses import dataclass
+from typing import List
+
 from srutils.dict import decompress_dict_multivals
 from srutils.dict import format_dictlike
 from srutils.various import isiterable
@@ -467,12 +470,12 @@ class VarSpecs_EnsThrAgrmt_AffectedArea(VarSpecs_EnsThrAgrmt, VarSpecs_AffectedA
     name = "deposition:affected_area:ens_thr_agrmt_affected_area"
 
 
+@dataclass
 class MultiVarSpecs:
     """Hold multiple ``VarSpecs`` objects."""
 
-    def __init__(self, name, var_specs_lst):
-        self.name = name
-        self.var_specs_lst = var_specs_lst
+    name: str
+    var_specs_lst: List[VarSpecs]
 
     @classmethod
     def create(cls, name, var_specs_dct, *args, **kwargs):
