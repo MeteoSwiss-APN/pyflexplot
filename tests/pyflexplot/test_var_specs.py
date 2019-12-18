@@ -256,7 +256,7 @@ class Conf_Multi(_TestConf):
     n: int
 
 
-class _Test_Multi:
+class _Test_MultiVarSpecs:
     """Test ``MultiVarSpecs``."""
 
     def test_create(self, conf=None):
@@ -289,7 +289,7 @@ class _Test_Multi:
         assert res == sol
 
 
-class Test_Multi_Concentration(_Test_Multi):
+class Test_MultiVarSpecs_Concentration(_Test_MultiVarSpecs):
     c = Conf_Multi(
         name="concentration",
         dct={
@@ -304,7 +304,7 @@ class Test_Multi_Concentration(_Test_Multi):
     )
 
 
-class Test_Multi_DepositionDry(_Test_Multi):
+class Test_MultiVarSpecs_DepositionDry(_Test_MultiVarSpecs):
     c = Conf_Multi(
         name="deposition",
         dct={
@@ -319,40 +319,94 @@ class Test_Multi_DepositionDry(_Test_Multi):
     )
 
 
-class Test_Multi_DepositionTot(_Test_Multi):
+class Test_MultiVarSpecs_DepositionTot(_Test_MultiVarSpecs):
     c = Conf_Multi(
         name="deposition",
         dct={
             "nageclass": 0,
             "numpoint": 0,
-            "time": [1, 3],
+            "time": 3,
             "integrate": False,
-            "species_id": [(1,), (1, 2)],
+            "species_id": 2,
             "deposition": "tot",
         },
-        n=4,
+        n=1,
     )
 
     def test_tot_vs_wet_dry(self):
         """Check that deposition type "tot" is equivalent to ("wet", "dry")."""
 
         # Deposition type "tot"
-        conf0 = self.c.derive(dct={**self.c.dct, "time": 0, "species_id": 0})
-        mvs0_lst = MultiVarSpecs.create(conf0.name, conf0.dct)
+        mvs0_lst = MultiVarSpecs.create(self.c.name, self.c.dct)
         assert len(mvs0_lst) == 1
         mvs0 = next(iter(mvs0_lst))
 
         # Deposition type ("wet", "dry")
-        conf1 = conf0.derive(dct={**conf0.dct, "deposition": ("wet", "dry")})
+        conf1 = self.c.derive(dct={**self.c.dct, "deposition": ("wet", "dry")})
         mvs1_lst = MultiVarSpecs.create(conf1.name, conf1.dct)
         assert len(mvs1_lst) == 1
         mvs1 = next(iter(mvs1_lst))
         assert mvs1 == mvs0  # ("wet", "dry") == "tot"
 
         # Deposition type "wet"
-        conf2 = conf0.derive(dct={**conf0.dct, "deposition": "wet"})
+        conf2 = self.c.derive(dct={**self.c.dct, "deposition": "wet"})
         mvs2_lst = MultiVarSpecs.create(conf2.name, conf2.dct)
         assert len(mvs2_lst) == 1
         mvs2 = next(iter(mvs2_lst))
         assert mvs2 != mvs0  # "tot" != "wet"
         assert mvs2 != mvs1  # "tot" != ("wet", "dry")
+
+
+class Test_MultiVarSpecs_Interface:
+    c = Conf_Multi(
+        name = "deposition",
+        dct={
+            "nageclass": 0,
+            "numpoint": 0,
+            "time": 3,
+            "integrate": False,
+            "species_id": 2,
+            "deposition": "tot",
+        },
+        n=1,
+    )
+
+    def create_multi_var_specs(self):
+        mvs_lst = MultiVarSpecs.create(self.c.name, self.c.dct)
+        assert len(mvs_lst) == 1
+        mvs = next(iter(mvs_lst))
+        assert len(list(mvs)) == 2
+        return mvs
+
+    def test_var_specs(self):
+        multi_var_specs = self.create_multi_var_specs()
+        var_specs_lst = list(multi_var_specs)
+
+        # Check that there are separate VarSpecs for "wet" and "dry"
+        assert_is_list_like(var_specs_lst, len_=2, children=VarSpecs)
+        assert len(var_specs_lst) == 2
+        sol = {"wet", "dry"}
+        res = {vs.deposition for vs in var_specs_lst}
+        assert res == sol
+
+        # Check that apart from "deposition", the two are identical
+        # We need to neutralize a few elements that we expect to differ or
+        # that are (at the moment still) added during creation of VarSpecs
+        neutral = {"name": None, "deposition": None, "rlat": None, "rlon": None}
+        sol = {**self.c.dct, **neutral}
+        res1 = {**dict(var_specs_lst[0]), **neutral}
+        res2 = {**dict(var_specs_lst[1]), **neutral}
+        assert res1 == sol
+        assert res2 == sol
+        assert res1 == res2
+
+    def test_compressed_var_specs(self):
+        multi_var_specs = self.create_multi_var_specs()
+        var_specs_dct = multi_var_specs.compressed_var_specs()
+        assert isinstance(var_specs_dct, dict)
+        # SR_TMP< TODO remove rlon/rlat etc. from dict in VarSpecs
+        # + assert var_specs_dct == selc.c.dct
+        sol = set(self.c.dct.items())
+        res = set(var_specs_dct.items())
+        assert res.issuperset(sol)
+        # SR_TMP>

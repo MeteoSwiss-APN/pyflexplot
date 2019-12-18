@@ -479,6 +479,7 @@ class MultiVarSpecs:
 
     @classmethod
     def create(cls, name, var_specs_dct, *args, **kwargs):
+        var_specs_dct = var_specs_dct.copy()
         if var_specs_dct.get("deposition") == "tot":
             var_specs_dct["deposition"] = ("wet", "dry")
         var_specs_lst_lst = VarSpecs.create(name, var_specs_dct, *args, **kwargs)
@@ -489,3 +490,15 @@ class MultiVarSpecs:
 
     def __len__(self):
         return len(self.var_specs_lst)
+
+    def compressed_var_specs(self):
+        dct = {k: [v] for k, v in dict(list(self)[0]).items()}
+        for vs in list(self)[1:]:
+            for key, val in dict(vs).items():
+                if val not in dct[key]:
+                    dct[key] = dct[key] + [val]
+        for key, val in dct.items():
+            if key == "deposition" and set(val) == {"dry", "wet"}:
+                val = ["tot"]
+            dct[key] = next(iter(val)) if len(val) == 1 else tuple(val)
+        return dct
