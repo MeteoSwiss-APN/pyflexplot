@@ -18,7 +18,7 @@ from .plotter import Plotter
 from .utils import count_to_log_level
 from .var_specs import MultiVarSpecs
 
-# Uncomment to debug segmentation fault and set PYTHONFAULTHANDLER=1
+# To debug segmentation fault, uncomment and run with PYTHONFAULTHANDLER=1
 # + import faulthandler
 # + faulthandler.enable()
 
@@ -477,9 +477,8 @@ class GlobalOptions(ClickOptionsGroup):
                 "--integrate/--no-integrate",
                 "var_specs_raw__integrate_lst",
                 help=(
-                    "Integrate field over time. If set, the variable name that may be "
-                    "embedded in the plot path with the format key '{variable}' is "
-                    "extended by '-int'."
+                    "Integrate field over time. Use the format key '{integrate}' to "
+                    "embed '[no-]int' in the plot file path."
                 ),
                 is_flag=True,
                 default=[False],

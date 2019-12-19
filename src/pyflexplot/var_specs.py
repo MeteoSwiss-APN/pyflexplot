@@ -403,7 +403,7 @@ class VarSpecs_AffectedArea(VarSpecs_Deposition):
 
     def long_name(self):
         dep_name = super().long_name()
-        raise Exception(f"{type(self).__name__}.long_name")
+        # raise Exception(f"{type(self).__name__}.long_name")  # SR_DBG
         return f"{self._words['affected_area']} " f"({dep_name})"
 
 

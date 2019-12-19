@@ -24,6 +24,7 @@ class Plotter:
         "numpoint": "rel_pt_ind",
         "level": "level_ind",
         "species_id": "species_id",
+        "integrate": "integrate",
     }
 
     def run(
@@ -86,28 +87,35 @@ class Plotter:
 
     def fmt_file_path(self, field_specs, domain):
 
-        var_specs_dct = field_specs.var_specs_merged()
+        var_specs_dct = field_specs.multi_var_specs.compressed_var_specs()
 
         # Collect variable specifications
         kwargs = {"domain": domain}
         for specs_key, fmt_key in self.specs_fmt_keys.items():
             try:
-                val = getattr(var_specs_dct, specs_key)
-            except AttributeError:
+                val = var_specs_dct[specs_key]
+            except KeyError:
                 pass
             else:
+                if specs_key == "integrate":
+                    val = "int" if val else "no-int"
                 kwargs[fmt_key] = val
 
-        # Special case: integrated variable
+        # Variable name
         plot_var = self.name
-        if var_specs_dct.integrate:
-            plot_var += "-int"
         try:
-            dep_type = var_specs_dct.deposition
-        except AttributeError:
+            dep_type = var_specs_dct["deposition"]
+        except KeyError:
             pass
         else:
-            plot_var = f"{dep_type}-{plot_var}"
+            if self.name == "deposition":
+                plot_var = f"{dep_type}-{plot_var}"
+            elif self.name.startswith("affected_area"):
+                plot_var = f"{plot_var}_{dep_type}-deposition"
+            else:
+                raise NotImplementedError(
+                    f"plot_var for deposition-based variable {plot_var}"
+                )
         kwargs["variable"] = plot_var
 
         # Language

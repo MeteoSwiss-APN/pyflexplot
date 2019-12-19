@@ -359,7 +359,7 @@ class Test_MultiVarSpecs_DepositionTot(_Test_MultiVarSpecs):
 
 class Test_MultiVarSpecs_Interface:
     c = Conf_Multi(
-        name = "deposition",
+        name="deposition",
         dct={
             "nageclass": 0,
             "numpoint": 0,

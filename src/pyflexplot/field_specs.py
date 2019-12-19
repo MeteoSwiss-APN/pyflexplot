@@ -163,12 +163,10 @@ class FieldSpecs(SummarizableClass):
     def __eq__(self, other):
         return hash(self) == hash(other)
 
-    def var_specs_merged(self):
-        """Return merged variable specifications."""
-        return list(self.multi_var_specs)[0].merge_with(list(self.multi_var_specs)[1:])
-
+    # SR_TMP TODO get rid of this
     def var_specs_shared(self, key):
         """Return a varible specification, if it is shared by all."""
+        assert key in ["rlat", "rlon"]  # SR_TMP restrict to only current use
         vals = [getattr(vs, key) for vs in self.multi_var_specs]
         all_equal = all(v == vals[0] for v in vals[1:])
         if not all_equal:
