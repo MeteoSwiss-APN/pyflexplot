@@ -383,7 +383,7 @@ class VarSpecs_Deposition(VarSpecs):
 
     def deposition_type(self):
         type_ = self["deposition"]
-        word = "total" if type_ == "tot" else type_
+        word = {"tot": "total"}.get(type_, type_)
         return self._words[word, None, "f"].s
 
     def long_name(self):
@@ -407,7 +407,7 @@ class VarSpecs_AffectedArea(VarSpecs_Deposition):
         return f"{self._words['affected_area']} " f"({dep_name})"
 
 
-class Varspecs_AffectedAreaMono(VarSpecs_AffectedArea):
+class VarSpecs_AffectedAreaMono(VarSpecs_AffectedArea):
     name = "deposition:affected_area:affected_area_mono"
 
 

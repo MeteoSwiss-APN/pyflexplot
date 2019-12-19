@@ -53,7 +53,7 @@ WORDS.add(
     de={"*": "Depositionsgeschwindigkeit", "abbr": "Deposit.-Geschw."},
 )
 WORDS.add(en="deposition", de="Deposition")
-WORDS.add(en="dry", de="trocken")
+WORDS.add(en="dry", de={"*": "trocken", "f": "trockene"})
 # E
 WORDS.add(en={"*": "east", "abbr": "E"}, de={"*": "Ost", "abbr": "O"})
 WORDS.add(en="end", de="Ende")
@@ -124,7 +124,7 @@ WORDS.add(en="total mass", de="Totale Masse")
 WORDS.add(en="washout coeff.", de="Auswaschkoeff.")
 WORDS.add(en="washout exponent", de="Auswaschexponent")
 WORDS.add(en={"*": "west", "abbr": "W"}, de={"*": "Westen", "abbr": "W"})
-WORDS.add(en="wet", de="nass")
+WORDS.add(en="wet", de={"*": "nass", "f": "nasse"})
 # X
 # Y
 # Z

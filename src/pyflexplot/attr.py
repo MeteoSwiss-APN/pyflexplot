@@ -104,12 +104,28 @@ class Attr(SummarizableClass):
         # Reduce values and units
         if len(units) == 1:
             # One value, one unit
-            value = values[0]
-            unit = units[0]
+            value = next(iter(values))
+            unit = next(iter(units))
         else:
             # Multiple values, one or equally many units
+            # SR_TMP<
+            if self.name == "long_name":
+                name0 = next(iter(values))
+                if name0.lower().startswith("beaufschlagtes gebiet"):
+                    values = name0.replace("nasse", "totale").replace(
+                        "trockene", "totale"
+                    )
+                elif name0.lower().startswith("affected area"):
+                    values = name0.replace("wet", "total").replace("dry", "total")
+                elif name0.lower().endswith("bodendeposition"):
+                    values = name0.replace("nasse", "totale").replace(
+                        "trockene", "totale"
+                    )
+                elif name0.lower().endswith("surface deposition"):
+                    values = name0.replace("wet", "total").replace("dry", "total")
+            # SR_TMP>
             value = values
-            unit = units[0] if len(set(units)) == 1 else units
+            unit = next(iter(units)) if len(set(units)) == 1 else units
 
         value = replace.get("value", value)
         unit = replace.get("unit", unit)
