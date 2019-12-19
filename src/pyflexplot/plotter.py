@@ -87,7 +87,7 @@ class Plotter:
 
     def fmt_file_path(self, field_specs, domain):
 
-        var_specs_dct = field_specs.multi_var_specs.compressed_var_specs()
+        var_specs_dct = field_specs.multi_var_specs.compressed_dct()
 
         # Collect variable specifications
         kwargs = {"domain": domain}
@@ -110,11 +110,13 @@ class Plotter:
         else:
             if self.name == "deposition":
                 plot_var = f"{dep_type}-{plot_var}"
-            elif self.name.startswith("affected_area"):
+            elif self.name.startswith("affected_area") or self.name.startswith(
+                "ens_thr_agrmt"
+            ):
                 plot_var = f"{plot_var}_{dep_type}-deposition"
             else:
                 raise NotImplementedError(
-                    f"plot_var for deposition-based variable {plot_var}"
+                    f"plot_var for deposition-based variable '{plot_var}'"
                 )
         kwargs["variable"] = plot_var
 

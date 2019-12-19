@@ -375,7 +375,7 @@ class VarSpecs_Deposition(VarSpecs):
 
     def __init__(self, name, var_specs_dct, *args, **kwargs):
         dep = var_specs_dct["deposition"]
-        if dep not in ["wet", "dry"] and set(dep) != {"wet", "dry"}:
+        if dep and dep not in ["wet", "dry"] and set(dep) != {"wet", "dry"}:
             raise ValueError(
                 f"invalid deposition type '{dep}'", var_specs_dct,
             )
@@ -491,7 +491,28 @@ class MultiVarSpecs:
     def __len__(self):
         return len(self.var_specs_lst)
 
-    def compressed_var_specs(self):
+    def shared(self):
+        dct = self.shared_dct()
+        # SR_TMP <
+        if dct.get("deposition") == "tot":
+            dct["deposition"] = None
+        # SR_TMP >
+        return next(iter(next(iter(VarSpecs.create(self.name, dct)))))
+
+    def shared_dct(self):
+        skipped = ["name", "rlat", "rlon"]  # SR_TMP TODO remove from dct
+        dct = {}
+        for key, val in self.compressed_dct().items():
+            # SR_TMP <
+            if key in skipped:
+                continue
+            # SR_TMP >
+            if isinstance(val, tuple):
+                val = None
+            dct[key] = val
+        return dct
+
+    def compressed_dct(self):
         dct = {k: [v] for k, v in dict(list(self)[0]).items()}
         for vs in list(self)[1:]:
             for key, val in dict(vs).items():

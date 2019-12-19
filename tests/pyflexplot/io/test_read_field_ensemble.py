@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Tests for module ``pyflexplot.io``."""
+import functools
 import numpy as np
 import pytest
 
@@ -194,35 +195,29 @@ class TestReadFieldEnsemble_Multiple:
 
         dim_names = list(dims_mult.keys())
 
+        run_core = functools.partial(
+            self._run_core,
+            datafile_fmt,
+            dim_names,
+            var_names_ref,
+            fct_reduce_mem,
+            scale_fld_ref,
+        )
         if separate:
             # Process field specifications one after another
             for fld_specs in fld_specs_lst:
-                self._run_core(
-                    datafile_fmt,
-                    dim_names,
-                    var_names_ref,
-                    [fld_specs],
-                    fct_reduce_mem,
-                    scale_fld_ref,
-                )
+                run_core([fld_specs])
         else:
-            self._run_core(
-                datafile_fmt,
-                dim_names,
-                var_names_ref,
-                fld_specs_lst,
-                fct_reduce_mem,
-                scale_fld_ref,
-            )
+            run_core(fld_specs_lst)
 
     def _run_core(
         self,
         datafile_fmt,
         dim_names,
         var_names_ref,
-        fld_specs_lst,
         fct_reduce_mem,
         scale_fld_ref,
+        fld_specs_lst,
     ):
 
         # Read input fields
@@ -230,7 +225,7 @@ class TestReadFieldEnsemble_Multiple:
         fld_arr = np.array([flex_field.fld for flex_field in flex_field_lst])
 
         # Collect merged variables specifications
-        var_specs_lst = [fs.var_specs_merged() for fs in fld_specs_lst]
+        var_specs_lst = [fs.multi_var_specs.shared() for fs in fld_specs_lst]
 
         # Read reference fields
         fld_ref_lst = []

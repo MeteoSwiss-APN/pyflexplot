@@ -402,7 +402,7 @@ class Test_MultiVarSpecs_Interface:
 
     def test_compressed_var_specs(self):
         multi_var_specs = self.create_multi_var_specs()
-        var_specs_dct = multi_var_specs.compressed_var_specs()
+        var_specs_dct = multi_var_specs.compressed_dct()
         assert isinstance(var_specs_dct, dict)
         # SR_TMP< TODO remove rlon/rlat etc. from dict in VarSpecs
         # + assert var_specs_dct == selc.c.dct
