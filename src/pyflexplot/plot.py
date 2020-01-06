@@ -221,7 +221,7 @@ class Plot(SummarizablePlotClass, ParentClass):
 
 
 # SR_TMP class DispersionPlot(Plot):
-class DispersionPlot_0(Plot):  # SR_TMP
+class DispersionPlot_old(Plot):  # SR_TMP
     """Base class for FLEXPART dispersion plots."""
 
     name = "__base__dispersion__"
@@ -747,7 +747,7 @@ class DispersionPlot_0(Plot):  # SR_TMP
 
 
 # SR_TMP < TODO merge back into DispersionPlot[_0] once new layout accepted
-class DispersionPlot_1(DispersionPlot_0):
+class DispersionPlot(DispersionPlot_old):
     def add_text_boxes(self):
         h_rel_t = self.text_box_setup["h_rel_t"]
         h_rel_b = self.text_box_setup["h_rel_b"]
@@ -756,7 +756,11 @@ class DispersionPlot_1(DispersionPlot_0):
         h_rel_box_rt = self.text_box_setup["h_rel_box_rt"]
 
         # Freeze the map plot in order to fix it's coordinates (bbox)
-        self.fig.canvas.draw()
+        try:
+            self.fig.canvas.draw()
+        except Exception as e:
+            # Avoid long library tracebacks (matplotlib/cartopy/urllib/...)
+            raise RuntimeError(e)
 
         # Obtain aspect ratio of figure
         fig_pxs = self.fig.get_window_extent()
@@ -878,7 +882,6 @@ class DispersionPlot_1(DispersionPlot_0):
         return box
 
 
-DispersionPlot = DispersionPlot_1
 # SR_TMP >
 
 

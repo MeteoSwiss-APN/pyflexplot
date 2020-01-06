@@ -5,8 +5,14 @@ Some testing utils.
 """
 from dataclasses import dataclass
 from pprint import pformat
+from typing import Optional
 
+from .str import str_or_none
 from .various import isiterable
+
+
+class CheckFailedError(Exception):
+    pass
 
 
 def property_obj(cls, *args, **kwargs):
@@ -41,34 +47,24 @@ def property_obj(cls, *args, **kwargs):
     return property(create_obj)
 
 
+@dataclass(frozen=True)
 class IgnoredElement:
     """Element that is ignored in comparisons."""
 
-    def __init__(self, description=None):
-        self.description = description
+    description: Optional[str] = None
 
-    def __str__(self):
-        s = type(self).__name__
-        if self.description:
-            s += f": {self.description}"
-        return s
+    def __repr__(self):
+        return f"{type(self).__name__}({str_or_none(self.description)})"
 
 
+@dataclass(frozen=True)
 class UnequalElement:
-    """Element that is not equal to any other.
+    """Element unequal to any other; useful for force-fail tests."""
 
-    Useful to ensure that a test fails for wrong data.
+    description: Optional[str] = None
 
-    """
-
-    def __init__(self, description=None):
-        self.description = description
-
-    def __str__(self):
-        s = type(self).__name__
-        if self.description:
-            s += f": {self.description}"
-        return s
+    def __repr__(self):
+        return f"{type(self).__name__}({str_or_none(self.description)})"
 
     def __eq__(self, other):
         return False
@@ -78,8 +74,8 @@ def ignored(obj):
     return isinstance(obj, IgnoredElement)
 
 
-def assert_summary_dict_is_subdict(
-    subdict, superdict, subname="sub", supername="super", i_list=None
+def check_summary_dict_is_subdict(
+    subdict, superdict, subname="sub", supername="super", idx_list=None
 ):
     """Check that one summary dict is a subdict of another."""
 
@@ -87,69 +83,90 @@ def assert_summary_dict_is_subdict(
         return
 
     if not isinstance(subdict, dict):
-        raise AssertionError(
-            f"subdict '{subname}' is not a dict, but of type {type(subdict).__name__}"
+        raise CheckFailedError(
+            f"subdict `{subname}` is not a dict, but a {type(subdict).__name__}",
+            {"subdict": subdict},
         )
 
     if not isinstance(superdict, dict):
-        raise AssertionError(
-            f"superdict '{subpername}' is not a dict, but of type "
-            f"{type(superdict).__name__}"
+        raise CheckFailedError(
+            f"`superdict` ('{supername}') is a {type(superdict).__name__}, not a dict",
+            {"superdict": superdict},
         )
 
-    for i, (key, val_sub) in enumerate(subdict.items()):
-        val_super = get_dict_element(superdict, key, "superdict", AssertionError)
-        assert_summary_dict_element_is_subelement(
-            val_sub, val_super, subname, supername, i_dict=i, i_list=i_list
+    for idx, (key, val_sub) in enumerate(subdict.items()):
+        val_super = get_dict_element(superdict, key, "superdict", CheckFailedError)
+        check_summary_dict_element_is_subelement(
+            val_sub, val_super, subname, supername, idx_dict=idx, idx_list=idx_list
         )
 
 
-def assert_summary_dict_element_is_subelement(
-    obj_sub, obj_super, name_sub="sub", name_super="super", i_list=None, i_dict=None
+def check_summary_dict_element_is_subelement(
+    obj_sub,
+    obj_super,
+    name_sub="sub",
+    name_super="super",
+    idx_list=None,
+    idx_dict=None,
 ):
 
     if ignored(obj_sub) or ignored(obj_super):
         return
 
-    if (i_list, i_dict) == (None, None):
-        s_i = ""
-    elif i_dict is None:
-        s_i = f"(list[{i_list}]) "
-    elif i_list is None:
-        s_i = f"(dict[{i_dict}]) "
-    else:
-        s_i = f"(list[{i_list}], dict[{i_dict}]) "
-
     if obj_sub == obj_super:
         return
 
-    elif isinstance(obj_sub, dict):
-        assert_summary_dict_is_subdict(
-            obj_sub, obj_super, name_sub, name_super, i_list=i_list
+    # Collect objects passed to exceptions
+    err_objs = {
+        "name_super": name_super,
+        "obj_super": obj_super,
+        "name_sub": name_sub,
+        "obj_sub": obj_sub,
+        "idx_list": idx_list,
+        "idx_dict": idx_dict,
+    }
+
+    # Check types
+    t_super, t_sub = type(obj_super), type(obj_sub)
+    if not isinstance(obj_sub, t_super) and not isinstance(obj_super, t_sub):
+        raise CheckFailedError(
+            f"incompatible types {t_super.__name__} and {t_sub.__name__} "
+            f"(neither is an instance of the other)",
+            {**err_objs, "t_super": t_super, "t_sub": t_sub},
+        )
+
+    if isinstance(obj_sub, dict):
+        # Compare dicts
+        check_summary_dict_is_subdict(
+            obj_sub, obj_super, name_sub, name_super, idx_list=idx_list
         )
 
     elif isiterable(obj_sub, str_ok=False):
+        # Compare other (non-str) iterables
 
         if not isiterable(obj_super, str_ok=False):
-            raise AssertionError(
-                f"superdict element {s_i}not iterable:" f"\n\n{pformat(obj_super)}"
+            raise CheckFailedError(f"superdict element not iterable", err_objs)
+
+        n_sub, n_super = len(obj_sub), len(obj_super)
+        if n_sub != n_super:
+            raise CheckFailedError(
+                f"iterable elements differ in size: {n_sub} != {n_super}",
+                {**err_objs, "n_super": n_super, "n_sub": n_sub},
             )
 
-        if len(obj_sub) != len(obj_super):
-            raise AssertionError(
-                f"iterable elements {s_i}differ in size: {len(obj_sub)} != "
-                f"{len(obj_super)}\n\n{name_super}:\n{pformat(obj_super)}\n\n"
-                f"{name_sub}:\n{pformat(obj_sub)}"
-            )
-
-        for i, (subobj_sub, subobj_super) in enumerate(zip(obj_sub, obj_super)):
-            assert_summary_dict_element_is_subelement(
-                subobj_sub, subobj_super, name_sub, name_super, i_list=i, i_dict=i_dict
+        for idx, (subobj_sub, subobj_super) in enumerate(zip(obj_sub, obj_super)):
+            check_summary_dict_element_is_subelement(
+                subobj_sub,
+                subobj_super,
+                name_sub,
+                name_super,
+                idx_list=idx,
+                idx_dict=idx_dict,
             )
 
     else:
-        raise AssertionError(
-            f"elements {s_i}differ:\n{name_sub}:\n{obj_sub}\n{name_super}:\n{obj_super}"
+        raise CheckFailedError(
+            f"elements differ ('{name_sub}' vs. '{name_super}')", err_objs,
         )
 
 
@@ -161,7 +178,10 @@ def get_dict_element(dict_, key, name="dict", exception_type=ValueError):
         err = f"key missing in {name}: {key}"
     except TypeError:
         err = f"{name} has wrong type: {type(dict_)}"
-    raise exception_type(f"{err}\n\n{name}:\n{pformat(dict_)}")
+    lines = pformat(dict_).split("\n")
+    if len(lines) > 10:
+        lines = lines[:5] + ["..."] + lines[-5:]
+    raise exception_type(err, {"name": name, "key": key, "dict_": dict_})
 
 
 @dataclass(frozen=True)
@@ -172,15 +192,12 @@ class TestConfBase:
         return type(self)(**data)
 
 
-def assert_is_list_like(obj, *args, **kwargs):
-    try:
-        is_list_like(obj, *args, **kwargs)
-    except Exception as e:
-        raise AssertionError(f"obj is not list-like", obj, args, kwargs, e)
+def check_is_list_like(obj, *args, **kwargs):
+    is_list_like(obj, *args, raise_=CheckFailedError, **kwargs)
 
 
 def is_list_like(
-    obj, *, len_=None, not_=None, children=None, f_children=None, raise_=False,
+    obj, *, len_=None, not_=None, t_children=None, f_children=None, raise_=False,
 ):
     """Assert that an object is list-like, with optional additional checks.
 
@@ -192,7 +209,7 @@ def is_list_like(
         not_ (type or list[type], optional): Type(s) that ``obj`` must not be
             an instance of. Defaults to None.
 
-        children (type or list[type], optional): Type(s) that the elements in
+        t_children (type or list[type], optional): Type(s) that the elements in
             ``obj`` must be an instance of. Defaults to None.
 
         f_children (callable, optional): Function used in assert with each
@@ -203,22 +220,24 @@ def is_list_like(
 
     """
 
-    def return_or_raise(*args, **kwargs):
+    def return_or_raise(msg, kwargs=None):
         if not raise_:
             return False
+        if kwargs is None:
+            kwargs = {}
         kwargs = {
             "obj": obj,
             "len_": len_,
             "not_": not_,
-            "children": children,
+            "t_children": t_children,
             "f_children": f_children,
             "raise_": raise_,
             **kwargs,
         }
-        raise Exception(*args, **kwargs)
+        raise Exception(msg, kwargs)
 
     if not isiterable(obj, str_ok=False):
-        return_or_raise(f"obj of type {type(obj).__name__} is not iterable")
+        return_or_raise(f"{type(obj).__name__} instance `obj` is not iterable")
 
     if len_ is not None:
         if len(obj) != len_:
@@ -228,20 +247,19 @@ def is_list_like(
         if isinstance(obj, not_):
             return_or_raise(f"obj has unexpected type {type(obj).__name__}")
 
-    if children is not None:
+    if t_children is not None:
         for idx, child in enumerate(obj):
-            if not isinstance(child, children):
+            if not isinstance(child, t_children):
                 return_or_raise(
                     f"child has unexpected type {type(child).__name__}",
-                    child=child,
-                    idx=idx,
+                    {"child": child, "idx": idx},
                 )
 
     if f_children is not None:
         for idx, child in enumerate(obj):
             if not f_children(child):
                 return_or_raise(
-                    f"f_children returns False for child", child=child, idx=idx
+                    f"f_children returns False for child", {"child": child, "idx": idx},
                 )
 
     return True

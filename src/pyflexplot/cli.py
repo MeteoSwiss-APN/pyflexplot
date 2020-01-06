@@ -207,7 +207,7 @@ class CombinationChoices(click.ParamType):
 # - Eliminate subcommands (e.g., "deterministic concentration")
 #   -> Instead, use flags, e.g., --[no-]ens or --sim-type or whatnot
 #
-# - Collect all pased options in a dict and pass it as **options
+# - Collect all passed options in a dict and pass it on as **options
 #
 # - In the CLI functions of the plots, catch all necessary options explicitly
 #   -> Catch all unnecessary options as **kwargs and show warnings for those

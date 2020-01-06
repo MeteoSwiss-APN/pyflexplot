@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 from pprint import pformat
 
-from srutils.testing import assert_summary_dict_is_subdict
+from srutils.testing import check_summary_dict_is_subdict
 from srutils.various import isiterable
 
 from pyflexplot.plot_utils import TextBoxAxes
@@ -66,7 +66,7 @@ class Test_TextBoxAxes_Summarize:
                 }
             ],
         }
-        assert_summary_dict_is_subdict(superdict=res, subdict=sol)
+        check_summary_dict_is_subdict(superdict=res, subdict=sol)
 
     def test_text_block(self):
         box = self.create_text_box()
@@ -79,7 +79,7 @@ class Test_TextBoxAxes_Summarize:
                 {"type": "TextBoxElement_Text", "s": ("hello", "world"),},
             ],
         }
-        assert_summary_dict_is_subdict(superdict=res, subdict=sol)
+        check_summary_dict_is_subdict(superdict=res, subdict=sol)
 
     def test_color_rect(self):
         box = self.create_text_box()
@@ -91,4 +91,4 @@ class Test_TextBoxAxes_Summarize:
                 {"type": "TextBoxElement_ColorRect", "fc": "red", "ec": "black",}
             ],
         }
-        assert_summary_dict_is_subdict(superdict=res, subdict=sol)
+        check_summary_dict_is_subdict(superdict=res, subdict=sol)

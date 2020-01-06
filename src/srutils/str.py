@@ -5,6 +5,12 @@ String utilities.
 import re
 
 
+def str_or_none(s, q="'", *, none="None"):
+    if s is None:
+        return none
+    return f"{q}{s}{q}"
+
+
 def to_varname(s, filter_invalid=None):
     """Reformat a string to a valid Python variable name.
 
@@ -155,3 +161,16 @@ def titlecase(s, preserve=True):
         words_title += [capitalize(words_input[-1])]
 
     return " ".join(words_title)
+
+
+def ordinal(i):
+    """Format an integer as an ordinal number."""
+    if abs(i) % 10 == 1:
+        sfx = {11: "th"}.get(abs(i) % 100, "st")
+    elif abs(i) % 10 == 2:
+        sfx = {12: "th"}.get(abs(i) % 100, "nd")
+    elif abs(i) % 10 == 3:
+        sfx = {13: "th"}.get(abs(i) % 100, "rd")
+    else:
+        sfx = "th"
+    return f"{i}{sfx}"

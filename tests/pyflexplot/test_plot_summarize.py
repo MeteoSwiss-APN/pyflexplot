@@ -44,14 +44,15 @@ import pytest
 
 from types import SimpleNamespace
 
-from srutils.testing import assert_summary_dict_is_subdict
+from srutils.testing import CheckFailedError
+from srutils.testing import check_summary_dict_is_subdict
 from srutils.testing import IgnoredElement
-from srutils.testing import UnequalElement
 from srutils.various import isiterable
-from words import Word
-from words import Words
+from srutils.testing import UnequalElement
 from words import TranslatedWord
 from words import TranslatedWords
+from words import Word
+from words import Words
 
 from pyflexplot.data import Field
 from pyflexplot.plot import DispersionPlot
@@ -79,7 +80,7 @@ class Dummy_Word(Word):
             ctx = self.ctx
         except AttributeError:
             ctx = self._parent._pop_curr_ctx()
-        return dummy__str__(self._parent._parent.name, self.s, self.lang, ctx)
+        return dummy__str__(self._parent._parent.name, self._s, self.lang, ctx)
 
 
 class Dummy_TranslatedWord(TranslatedWord):
@@ -164,6 +165,9 @@ class Dummy_Attr:
         self.lang = lang
         self.unit = f"{name}.unit"
 
+    # def __str__(self):
+    #     return self._name
+
     def format(self, *args, **kwargs):
         return f"<{self._name[1:-1]}.format>"
 
@@ -185,35 +189,37 @@ def create_dummy_attrs(lang):
             north_pole_lon=DA("grid.north_pole_lat", -170),
         ),
         release=SimpleNamespace(
-            lon=DA("release.lon", 8.0),
-            lat=DA("release.lat", 47.0),
-            site_name=DA("release.site_name"),
             height=DA("release.height"),
-            rate=DA("release.rate"),
             mass=DA("release.mass"),
+            rate=DA("release.rate"),
+            start=DA("release.start"),
+            end=DA("release.end"),
+            site_lat=DA("release.site_lat", 47.0),
+            site_lon=DA("release.site_lon", 8.0),
+            site_name=DA("release.site_name"),
         ),
-        variable=SimpleNamespace(
-            long_name=DA("variable.long_name"),
-            fmt_level_range=fm("variable.fmt_level_range"),
-            short_name=DA("variable.short_name"),
-            unit=DA("variable.unit"),
+        simulation=SimpleNamespace(
+            end=DA("simulation.end"),
+            fmt_integr_period=fm("simulation.fmt_integr_period"),
+            integr_start=DA("simulation.integr_start"),
+            integr_type=DA("simulation.integr_type", "mean"),
+            model_name=DA("simulation.model_name"),
+            now=DA("simulation.now"),
+            start=DA("simulation.start"),
         ),
         species=SimpleNamespace(
-            name=DA("species.name"),
-            half_life=DA("species.half_life"),
             deposit_vel=DA("species.deposit_vel"),
+            half_life=DA("species.half_life"),
+            name=DA("species.name"),
             sediment_vel=DA("species.sediment_vel"),
             washout_coeff=DA("species.washout_coeff"),
             washout_exponent=DA("species.washout_exponent"),
         ),
-        simulation=SimpleNamespace(
-            now=DA("simulation.now"),
-            fmt_integr_period=fm("simulation.fmt_integr_period"),
-            integr_start=DA("simulation.integr_start"),
-            integr_type=DA("simulation.integr_type", "mean"),
-            start=DA("simulation.start"),
-            end=DA("simulation.end"),
-            model_name=DA("simulation.model_name"),
+        variable=SimpleNamespace(
+            fmt_level_range=fm("variable.fmt_level_range"),
+            long_name=DA("variable.long_name"),
+            short_name=DA("variable.short_name"),
+            unit=DA("variable.unit"),
         ),
     )
 
@@ -240,18 +246,25 @@ def create_dummy_words(lang):
             "at",
             "averaged_over",
             "based_on",
+            "degE",
+            "degN",
             "deposition_velocity",
+            "east",
             "end",
+            "ensemble",
             "flexpart",
             "half_life",
             "height",
             "latitude",
             "longitude",
             "max",
+            "member",
             "meteoswiss",
+            "north",
             "rate",
             "release",
             "release_site",
+            "release_start",
             "sedimentation_velocity",
             "since",
             "site",
@@ -269,14 +282,31 @@ def create_dummy_words(lang):
 
 def create_dummy_symbols():
 
-    return Dummy_Words.create("symbols", ["ae", "copyright", "oe", "t0", "ue",])
+    return Dummy_Words.create(
+        "symbols", ["ae", "copyright", "deg", "geq", "oe", "ue", "short_space", "t0"]
+    )
 
 
-def create_dummy_labels(lang):
+def create_dummy_labels(lang, attrs):
     dummy_words = create_dummy_words(lang)
     from pyflexplot.plot import DispersionPlotLabels
 
-    return DispersionPlotLabels(lang, dummy_words)
+    return DispersionPlotLabels(lang, dummy_words, attrs)
+
+
+def create_dummy_map_conf(lang):
+    return SimpleNamespace(
+        zoom_fact=1.0,
+        rel_offset=(0, 0),
+        ref_dist_on=True,
+        ref_dist_conf=SimpleNamespace(pos="bl", unit="km", dist=100),
+        geo_res="10m",
+        geo_res_rivers="50m",
+        geo_res_cities="50m",
+        min_city_pop=0,
+        lang=lang,
+        lw_frame=1,
+    )
 
 
 # Create result
@@ -297,8 +327,11 @@ def create_res(lang, _cache={}):
     if lang not in _cache:
         attrs = create_dummy_attrs(lang)
         field = create_dummy_field(attrs)
-        labels = create_dummy_labels(lang)
-        plot = DispersionPlot(field, dpi=100, figsize=(12, 9), lang=lang, labels=labels)
+        labels = create_dummy_labels(lang, attrs)
+        map_conf = create_dummy_map_conf(lang)
+        plot = DispersionPlot(
+            field, map_conf=map_conf, dpi=100, figsize=(12, 9), lang=lang, labels=labels
+        )
         _cache[lang] = plot.summarize()
     return _cache[lang]
 
@@ -363,13 +396,13 @@ class CreateTests:
         kwargs = {s: getattr(inner_self, s, False) for s in outer_self.args}
         sol = create_sol(lang, inverted=inverted, **kwargs)
         try:
-            assert_summary_dict_is_subdict(
+            check_summary_dict_is_subdict(
                 superdict=res, subdict=sol, supername="result", subname="solution"
             )
-        except AssertionError:
+        except CheckFailedError as e:
             if inverted:
                 return
-            raise
+            raise AssertionError(e.args[0], *e.args[1:]) from e
         else:
             if inverted:
                 raise AssertionError(f"inverted test passed")
@@ -543,120 +576,136 @@ class Solution:
 
         sl = f"[{self.lang}]"
 
-        jdat = [
-            {
-                "type": "TextBoxAxes",
-                "name": e1("top"),
-                "elements": e1(
-                    [
-                        txt(
-                            "tl",
-                            f"<variable.long_name{sl}> <words.at[{self.lang}|level]> "
-                            f"<variable.fmt_level_range{sl}.format>",
-                        ),
-                        txt(
-                            "bl",
-                            f"<words.averaged_over{sl}> "
-                            f"<simulation.fmt_integr_period{sl}.format> "
-                            f"(<words.since{sl}> <simulation.integr_start{sl}.format>)",
-                        ),
-                        txt("tc", f"<species.name{sl}.format>"),
-                        txt("bc", f"<words.release_site{sl}>: <release.site_name{sl}>"),
-                        txt("tr", f"<simulation.now{sl}.format>"),
-                        txt("br", f"<simulation.now{sl}.format>"),
-                    ]
-                ),
-            },
-            {
-                "type": "TextBoxAxes",
-                "name": e1("right/top"),
-                "elements": e1(
-                    [
-                        txt(
-                            "tc",
-                            (
-                                f"<variable.short_name{sl}.format> "
-                                f"(<variable.unit{sl}.format>)"
-                            ),
-                        ),
-                        txt("bc", IgnoredElement("level range #0")),
-                        txt("bc", IgnoredElement("level range #1")),
-                        txt("bc", IgnoredElement("level range #2")),
-                        txt("bc", IgnoredElement("level range #3")),
-                        txt("bc", IgnoredElement("level range #4")),
-                        txt("bc", IgnoredElement("level range #5")),
-                        txt("bc", IgnoredElement("level range #6")),
-                        txt("bc", IgnoredElement("level range #7")),
-                        txt("bc", IgnoredElement("level range #8")),
-                        col("bc", IgnoredElement("face color #0")),
-                        col("bc", IgnoredElement("face color #1")),
-                        col("bc", IgnoredElement("face color #2")),
-                        col("bc", IgnoredElement("face color #3")),
-                        col("bc", IgnoredElement("face color #4")),
-                        col("bc", IgnoredElement("face color #5")),
-                        col("bc", IgnoredElement("face color #6")),
-                        col("bc", IgnoredElement("face color #7")),
-                        col("bc", IgnoredElement("face color #8")),
-                        mkr("bc", IgnoredElement("marker #0")),
-                        txt("bc", IgnoredElement("marker label #0")),
-                        mkr("bc", IgnoredElement("marker #1")),
-                        txt("bc", IgnoredElement("marker label #1")),
-                    ]
-                ),
-            },
-            {
-                "type": "TextBoxAxes",
-                "name": e1("right/bottom"),
-                "elements": e1(
-                    [
-                        txt("tc", f"<words.release{sl}>"),
-                        txt("bl", f"<words.washout_exponent{sl}>:"),
-                        txt("bl", f"<words.washout_coeff{sl}>:"),
-                        txt("bl", f"<words.sedimentation_velocity{sl[:-1]}|abbr]>:"),
-                        txt("bl", f"<words.deposition_velocity{sl[:-1]}|abbr]>:"),
-                        txt("bl", f"<words.half_life{sl}>:"),
-                        txt("bl", f"<words.substance{sl}>:"),
-                        txt("bl", f"<words.total_mass{sl}>:"),
-                        txt("bl", f"<words.rate{sl}>:"),
-                        txt("bl", f"<words.end{sl}>:"),
-                        txt("bl", f"<words.start{sl}> (<symbols.t0>):"),
-                        txt("bl", f"<words.height{sl}>:"),
-                        txt("bl", f"<words.longitude{sl}>:"),
-                        txt("bl", f"<words.latitude{sl}>:"),
-                        txt("bl", f"<words.site{sl}>:"),
-                        txt("br", f"<species.washout_exponent{sl}.format>"),
-                        txt("br", f"<species.washout_coeff{sl}.format>"),
-                        txt("br", f"<species.sediment_vel{sl}.format>"),
-                        txt("br", f"<species.deposit_vel{sl}.format>"),
-                        txt("br", f"<species.half_life{sl}.format>"),
-                        txt("br", f"<species.name{sl}.format>"),
-                        txt("br", f"<release.mass{sl}.format>"),
-                        txt("br", f"<release.rate{sl}.format>"),
-                        txt("br", f"<simulation.end{sl}.format>"),
-                        txt("br", f"<simulation.start{sl}.format>"),
-                        txt("br", f"<release.height{sl}.format>"),
-                        txt("br", IgnoredElement("release longitude")),
-                        txt("br", IgnoredElement("release latitude")),
-                        txt("br", f"<release.site_name{sl}.format>"),
-                    ]
-                ),
-            },
-            {
-                "type": "TextBoxAxes",
-                "name": e1("bottom"),
-                "elements": e1(
-                    [
-                        txt(
-                            "tl",
-                            f"<words.flexpart{sl}> <words.based_on{sl}> "
-                            f"<simulation.model_name{sl}>, "
-                            f"<simulation.start{sl}.format>",
-                        ),
-                        txt("tr", f"<symbols.copyright><words.meteoswiss{sl}>"),
-                    ]
-                ),
-            },
-        ]
+        box_top_left = {
+            "type": "TextBoxAxes",
+            "name": e1("top/left"),
+            "elements": e1(
+                [
+                    txt(
+                        "tl",
+                        f"<variable.long_name{sl}> <words.at[{self.lang}|level]> "
+                        f"<variable.fmt_level_range{sl}.format>",
+                    ),
+                    txt(
+                        "bl",
+                        f"<words.averaged_over{sl}> "
+                        f"<simulation.fmt_integr_period{sl}.format> (<words.since{sl}> "
+                        f"+<simulation.integr_start{sl}.format>)",
+                    ),
+                    txt(
+                        "tr",
+                        f"<simulation.now{sl}.format> (+<simulation.now{sl}.format>)",
+                    ),
+                    txt(
+                        "br",
+                        f"<simulation.now{sl}.format> <words.since{sl}> "
+                        f"<words.release_start{sl}>",
+                    ),
+                ]
+            ),
+        }
+        box_top_right = {
+            "type": "TextBoxAxes",
+            "name": e1("top/right"),
+            "elements": e1(
+                [
+                    txt("tc", f"<species.name{sl}.format>"),
+                    txt("bc", IgnoredElement("release site (may be truncated")),
+                ]
+            ),
+        }
+        box_right_top = {
+            "type": "TextBoxAxes",
+            "name": e1("right/top"),
+            "elements": e1(
+                [
+                    txt(
+                        "tc",
+                        f"<variable.short_name{sl}.format> (<variable.unit{sl}.format>)",
+                    ),
+                    txt("bc", IgnoredElement("level range #0")),
+                    txt("bc", IgnoredElement("level range #1")),
+                    txt("bc", IgnoredElement("level range #2")),
+                    txt("bc", IgnoredElement("level range #3")),
+                    txt("bc", IgnoredElement("level range #4")),
+                    txt("bc", IgnoredElement("level range #5")),
+                    txt("bc", IgnoredElement("level range #6")),
+                    txt("bc", IgnoredElement("level range #7")),
+                    txt("bc", IgnoredElement("level range #8")),
+                    col("bc", IgnoredElement("face color #0")),
+                    col("bc", IgnoredElement("face color #1")),
+                    col("bc", IgnoredElement("face color #2")),
+                    col("bc", IgnoredElement("face color #3")),
+                    col("bc", IgnoredElement("face color #4")),
+                    col("bc", IgnoredElement("face color #5")),
+                    col("bc", IgnoredElement("face color #6")),
+                    col("bc", IgnoredElement("face color #7")),
+                    col("bc", IgnoredElement("face color #8")),
+                    mkr("bc", IgnoredElement("marker #0")),
+                    txt("bc", IgnoredElement("marker label #0")),
+                    mkr("bc", IgnoredElement("marker #1")),
+                    txt("bc", IgnoredElement("marker label #1")),
+                ]
+            ),
+        }
+        box_right_bottom = {
+            "type": "TextBoxAxes",
+            "name": e1("right/bottom"),
+            "elements": e1(
+                [
+                    txt("tc", f"<words.release{sl}>"),
+                    txt("bl", f"<words.washout_exponent{sl}>:"),
+                    txt("bl", f"<words.washout_coeff{sl}>:"),
+                    txt("bl", f"<words.sedimentation_velocity{sl[:-1]}|abbr]>:"),
+                    txt("bl", f"<words.deposition_velocity{sl[:-1]}|abbr]>:"),
+                    txt("bl", f"<words.half_life{sl}>:"),
+                    txt("bl", f"<words.substance{sl}>:"),
+                    txt("bl", f"<words.total_mass{sl}>:"),
+                    txt("bl", f"<words.rate{sl}>:"),
+                    txt("bl", f"<words.end{sl}>:"),
+                    txt("bl", f"<words.start{sl}>:"),
+                    txt("bl", f"<words.height{sl}>:"),
+                    txt("bl", f"<words.longitude{sl}>:"),
+                    txt("bl", f"<words.latitude{sl}>:"),
+                    txt("bl", f"<words.site{sl}>:"),
+                    txt("br", f"<species.washout_exponent{sl}.format>"),
+                    txt("br", f"<species.washout_coeff{sl}.format>"),
+                    txt("br", f"<species.sediment_vel{sl}.format>"),
+                    txt("br", f"<species.deposit_vel{sl}.format>"),
+                    txt("br", f"<species.half_life{sl}.format>"),
+                    txt("br", f"<species.name{sl}.format>"),
+                    txt("br", f"<release.mass{sl}.format>"),
+                    txt("br", f"<release.rate{sl}.format>"),
+                    txt("br", f"<release.end{sl}.format>"),
+                    txt("br", f"<release.start{sl}.format>"),
+                    txt("br", f"<release.height{sl}.format>"),
+                    txt("br", IgnoredElement("release longitude")),
+                    txt("br", IgnoredElement("release latitude")),
+                    txt("br", f"<release.site_name{sl}.format>"),
+                ]
+            ),
+        }
+        box_bottom = {
+            "type": "TextBoxAxes",
+            "name": e1("bottom"),
+            "elements": e1(
+                [
+                    txt(
+                        "tl",
+                        f"<words.flexpart{sl}> <words.based_on{sl}> "
+                        f"<simulation.model_name{sl}>, <simulation.start{sl}.format>",
+                    ),
+                    txt("tr", f"<symbols.copyright><words.meteoswiss{sl}>"),
+                ]
+            ),
+        }
+        jdat = {
+            "method:DispersionPlot.fill_box_top_left": box_top_left,
+            "method:DispersionPlot.fill_box_top_right": box_top_right,
+            "method:DispersionPlot.fill_box_right_top": box_right_top,
+            "method:DispersionPlot.fill_box_right_bottom": box_right_bottom,
+            "method:DispersionPlot.fill_box_bottom": box_bottom,
+        }
 
         return {"boxes": jdat}
 
@@ -671,11 +720,12 @@ class Solution:
                 "bounds": e((0.0, 0.0, 1200.0, 900.0)),
             },
             "axes": [
-                {"type": "GeoAxesSubplot", "bbox": IgnoredElement("axes[0]::bbox"),},
-                {"type": "Axes", "bbox": IgnoredElement("axes[1]::bbox"),},
-                {"type": "Axes", "bbox": IgnoredElement("axes[2]::bbox"),},
-                {"type": "Axes", "bbox": IgnoredElement("axes[3]::bbox"),},
-                {"type": "Axes", "bbox": IgnoredElement("axes[4]::bbox"),},
+                {"type": "GeoAxesSubplot", "bbox": IgnoredElement("axes[0]::bbox")},
+                {"type": "Axes", "bbox": IgnoredElement("axes[1]::bbox")},
+                {"type": "Axes", "bbox": IgnoredElement("axes[2]::bbox")},
+                {"type": "Axes", "bbox": IgnoredElement("axes[3]::bbox")},
+                {"type": "Axes", "bbox": IgnoredElement("axes[4]::bbox")},
+                {"type": "Axes", "bbox": IgnoredElement("axes[5]::bbox")},
             ],
         }
 

@@ -104,9 +104,7 @@ def default_summarize_method(self, *, add=None, skip=None):
         except AttributeError:
             pass
         else:
-            for key, val in items:
-                obj[key] = summarize_obj(val)
-            return obj
+            return {summarize_obj(key): summarize_obj(val) for key, val in items}
 
         # List-like object?
         if isiterable(obj, str_ok=False):
@@ -116,7 +114,21 @@ def default_summarize_method(self, *, add=None, skip=None):
                 data.append(summarize_obj(item))
             return type_(data)
 
-        # Giving up!
+        # Named object (e.g., function/method)?
+        try:
+            name = obj.__name__
+        except AttributeError:
+            pass
+        else:
+            try:
+                obj_self = obj.__self__
+            except AttributeError:
+                pass
+            else:
+                name = f"{obj_self.__class__.__name__}.{name}"
+            return f"{type(obj).__name__}:{name}"
+
+        # Giving up, store as is!
         return obj
 
     data = {}

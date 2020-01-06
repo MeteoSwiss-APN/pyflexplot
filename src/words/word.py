@@ -27,7 +27,7 @@ class Word:
         if not isinstance(s, str):
             raise ValueError(f"type of s is {type(s).__name__}, not str")
 
-        self.s = s
+        self._s = s
         for name, val in attrs.items():
             if hasattr(self, name):
                 raise ValueError(
@@ -39,7 +39,7 @@ class Word:
         return str(self) == str(other)
 
     def __str__(self):
-        return self.s
+        return self._s
 
     def __hash__(self):
         return hash(str(self))
@@ -69,7 +69,7 @@ class Word:
     def title(self, *, preserve=True):
         if not hasattr(self, "lang"):
             raise AttributeError(
-                f"{type(self).__name__} '{self.s}': method `title` requires attribute "
+                f"{type(self).__name__} '{self}': method `title` requires attribute "
                 f"'lang': not not among {self.attrs}"
             )
         if self.lang == "en":
@@ -78,9 +78,13 @@ class Word:
             return self.capital(all=False, preserve=preserve)
         else:
             raise NotImplementedError(
-                f"{type(self).__name__} '{self.s}' in language '{self.lang}': method "
+                f"{type(self).__name__} '{self}' in language '{self.lang}': method "
                 f"`title`"
             )
+
+    @property
+    def s(self):
+        return str(self)
 
     @property
     def c(self):

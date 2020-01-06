@@ -9,7 +9,7 @@ from pyflexplot.var_specs import MultiVarSpecs
 from pyflexplot.var_specs import VarSpecs
 
 from srutils.dict import decompress_dict_multivals
-from srutils.testing import assert_is_list_like
+from srutils.testing import check_is_list_like
 from srutils.testing import TestConfBase as _TestConf
 from srutils.various import isiterable
 
@@ -26,7 +26,7 @@ def check_var_specs_lst_lst(var_specs_lst_lst, conf):
     the test has failed.
 
     """
-    assert_is_list_like(
+    check_is_list_like(
         var_specs_lst_lst, len_=conf.n, f_children=isiterable,
     )
     for var_specs_lst in var_specs_lst_lst:
@@ -34,7 +34,7 @@ def check_var_specs_lst_lst(var_specs_lst_lst, conf):
 
 
 def check_var_specs_lst_unordered(var_specs_lst, conf):
-    assert_is_list_like(var_specs_lst, children=VarSpecs)
+    check_is_list_like(var_specs_lst, t_children=VarSpecs)
     var_specs_dct_lst = decompress_dict_multivals(conf.dct, 2, flatten=True)
     for var_specs in var_specs_lst:
         exception = None
@@ -91,10 +91,10 @@ class _Test_Create_SingleObjDct:
 
     def test(self):
         var_specs_lst_lst = VarSpecs.create(self.c.name, self.c.dct)
-        assert_is_list_like(var_specs_lst_lst, len_=1, children=list)
+        check_is_list_like(var_specs_lst_lst, len_=1, t_children=list)
         var_specs_lst = next(iter(var_specs_lst_lst))
-        assert_is_list_like(
-            var_specs_lst, len_=self.c.n, children=VarSpecs,
+        check_is_list_like(
+            var_specs_lst, len_=self.c.n, t_children=VarSpecs,
         )
         var_specs = next(iter(var_specs_lst))
         check_var_specs(var_specs, self.c)
@@ -383,7 +383,7 @@ class Test_MultiVarSpecs_Interface:
         var_specs_lst = list(multi_var_specs)
 
         # Check that there are separate VarSpecs for "wet" and "dry"
-        assert_is_list_like(var_specs_lst, len_=2, children=VarSpecs)
+        check_is_list_like(var_specs_lst, len_=2, t_children=VarSpecs)
         assert len(var_specs_lst) == 2
         sol = {"wet", "dry"}
         res = {vs.deposition for vs in var_specs_lst}

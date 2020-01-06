@@ -9,13 +9,13 @@ from pyflexplot.field_specs import FieldSpecs
 from pyflexplot.var_specs import MultiVarSpecs
 
 from srutils.testing import is_list_like
-from srutils.testing import assert_is_list_like
+from srutils.testing import check_is_list_like
 from srutils.testing import TestConfBase as _TestConf
 from srutils.various import isiterable
 
 
 def check_multi_var_specs_lst(multi_var_specs_lst, len_=None):
-    assert_is_list_like(multi_var_specs_lst, len_=len_, children=MultiVarSpecs)
+    check_is_list_like(multi_var_specs_lst, len_=len_, t_children=MultiVarSpecs)
 
 
 @dataclass(frozen=True)
@@ -48,7 +48,7 @@ class Test_Create_Concentration:
             FieldSpecs(self.c.name, multi_var_specs)
             for multi_var_specs in multi_var_specs_lst
         ]
-        assert_is_list_like(fld_specs_lst, len_=self.c.n_vs, children=FieldSpecs)
+        check_is_list_like(fld_specs_lst, len_=self.c.n_vs, t_children=FieldSpecs)
 
         fld_specs = next(iter(fld_specs_lst))
         assert fld_specs.name == self.c.name
@@ -67,7 +67,7 @@ class Test_Create_Concentration:
             FieldSpecs(self.c.name, multi_var_specs)
             for multi_var_specs in multi_var_specs_lst
         ]
-        assert_is_list_like(fld_specs_lst, len_=4, children=FieldSpecs)
+        check_is_list_like(fld_specs_lst, len_=4, t_children=FieldSpecs)
 
         for fld_specs in fld_specs_lst:
             assert fld_specs.name == self.c.name
@@ -86,7 +86,7 @@ class Test_Create_Concentration:
             FieldSpecs(self.c.name, multi_var_specs)
             for multi_var_specs in multi_var_specs_lst
         ]
-        assert_is_list_like(fld_specs_lst, len_=1, children=FieldSpecs)
+        check_is_list_like(fld_specs_lst, len_=1, t_children=FieldSpecs)
 
         fld_specs = next(iter(fld_specs_lst))
         assert fld_specs.name == self.c.name
@@ -117,12 +117,13 @@ class Test_Create_Deposition:
         multi_var_specs_lst = MultiVarSpecs.create(
             self.c.name, {**var_specs_dct, "deposition": ("wet", "dry")},
         )
-        check_multi_var_specs_lst(multi_var_specs_lst, len_=self.c.n_vs)
+        check_multi_var_specs_lst(multi_var_specs_lst, len_=1)
+        multi_var_specs = next(iter(multi_var_specs_lst))
         fld_specs_lst = [
             FieldSpecs(self.c.name, multi_var_specs)
             for multi_var_specs in multi_var_specs_lst
         ]
-        assert_is_list_like(fld_specs_lst, len_=1, children=FieldSpecs)
+        check_is_list_like(fld_specs_lst, len_=1, t_children=FieldSpecs)
 
         fld_specs = next(iter(fld_specs_lst))
         assert fld_specs.name == self.c.name
@@ -135,14 +136,16 @@ class Test_Create_Deposition:
             "time": [0, 1, 2],
             "species_id": [1, 2],
         }
-        n_vs = self.c.n_vs * 6
+        n = 6
+        n_vs = self.c.n_vs * n
         multi_var_specs_lst = MultiVarSpecs.create(self.c.name, vs_dct)
-        check_multi_var_specs_lst(multi_var_specs_lst, len_=n_vs)
+        check_multi_var_specs_lst(multi_var_specs_lst, len_=n)
+        multi_var_specs = next(iter(multi_var_specs_lst))
         fld_specs_lst = [
             FieldSpecs(self.c.name, multi_var_specs)
             for multi_var_specs in multi_var_specs_lst
         ]
-        assert_is_list_like(fld_specs_lst, len_=n_vs, children=FieldSpecs)
+        check_is_list_like(fld_specs_lst, len_=n, t_children=FieldSpecs)
 
         for fld_specs in fld_specs_lst:
             assert fld_specs.name == self.c.name
@@ -157,13 +160,8 @@ class Test_Create_Deposition:
         }
         n_vs = self.c.n_vs * 6
         multi_var_specs_lst = MultiVarSpecs.create(self.c.name, vs_dct)
-        check_multi_var_specs_lst(multi_var_specs_lst, len_=n_vs)
-        fld_specs_lst = [
-            FieldSpecs(self.c.name, multi_var_specs)
-            for multi_var_specs in multi_var_specs_lst
-        ]
-        assert_is_list_like(fld_specs_lst, len_=n_vs, children=FieldSpecs)
-
-        fld_specs = next(iter(fld_specs_lst))
+        check_multi_var_specs_lst(multi_var_specs_lst, len_=1)
+        multi_var_specs = next(iter(multi_var_specs_lst))
+        fld_specs = FieldSpecs(self.c.name, multi_var_specs)
         assert fld_specs.name == self.c.name
         assert len(fld_specs.multi_var_specs) == n_vs
