@@ -12,6 +12,7 @@ from pprint import pformat
 
 from srutils.various import group_kwargs
 
+from . import __version__
 from .field_specs import FieldSpecs
 from .io import FileReader
 from .plotter import Plotter
@@ -31,7 +32,7 @@ def click_options(f_options):
             objects.
 
     Example:
-        > @click_options          # <== define options
+        > @click_options          # <= define options
         > def common_options():
         >     return [click.option(...), click.option(...), ...]
 
@@ -40,12 +41,12 @@ def click_options(f_options):
         >     ...
 
         > @CLI.command
-        > @common_options         # <== use options
+        > @common_options         # <= use options
         > def foo(...):
         >     ...
 
         > @CLI.command
-        > @common_options         # <== use options
+        > @common_options         # <= use options
         > def bar(...):
         >     ...
 
@@ -74,7 +75,7 @@ class ClickOptionsGroup:
 click.option = functools.partial(click.option, show_default=True)
 
 context_settings = {
-    "help_option_names": ["-h", "--help"],  # Add short flag '-h'
+
 }
 
 
@@ -371,9 +372,8 @@ class GlobalOptions(ClickOptionsGroup):
         return [
             click.option(
                 "--dry-run",
-                "-n",
                 help="Perform a trial run with no changes made.",
-                flag_value="dry_run",
+                is_flag=True,
                 default=False,
             ),
             click.option(
@@ -382,7 +382,6 @@ class GlobalOptions(ClickOptionsGroup):
                 help="Increase verbosity; specify multiple times for more.",
                 count=True,
             ),
-            click.option("--version", "-V", help="Print version.", is_flag=True,),
             click.option(
                 "--noplot", help="Skip plotting (for debugging etc.).", is_flag=True,
             ),
@@ -634,24 +633,24 @@ class DepositionOptions(ClickOptionsGroup):
         ]
 
 
-@click.group(context_settings=context_settings)
+@click.group(
+    context_settings={"help_option_names": ["-h", "--help"]},
+    no_args_is_help=True,
+)
 @GlobalOptions.execution
+@click.version_option(__version__, "--version", "-V", message="%(version)s")
 @click.pass_context
 def cli(ctx, **kwargs):
-    """Point of entry."""
+    """Create FLEXPART dispersion plots."""
 
     click.echo("Welcome fellow PyFlexPlotter!")
-    # click.echo(f"{len(kwargs)} kwargs:\n{pformat(kwargs)}\n")
 
     log.basicConfig(level=count_to_log_level(kwargs["verbose"]))
 
-    if kwargs["version"]:
-        click.echo(__version__)
-        return 0
-
+    breakpoint()
     if kwargs.pop("dry_run"):
         raise NotImplementedError("dry run")
-        return 0
+        ctx.exit(0)
 
     # Ensure that ctx.obj exists and is a dict
     ctx.ensure_object(dict)
@@ -659,7 +658,7 @@ def cli(ctx, **kwargs):
     # Store shared keyword arguments in ctx.obj
     ctx.obj.update(kwargs)
 
-    return 0
+    ctx.exit(0)
 
 
 @click.group()
