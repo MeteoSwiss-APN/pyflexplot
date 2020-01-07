@@ -363,6 +363,13 @@ def open_plots(cmd, file_paths):
     os.system(cmd)
 
 
+def not_implemented(msg):
+    def f(ctx, param, value):
+        if value:
+            click.echo(f"not implemented: {msg}")
+            ctx.exit(1)
+    return f
+
 class GlobalOptions(ClickOptionsGroup):
     """Options shared by all types of plots."""
 
@@ -375,6 +382,10 @@ class GlobalOptions(ClickOptionsGroup):
                 help="Perform a trial run with no changes made.",
                 is_flag=True,
                 default=False,
+                # SR_TMP <
+                is_eager=True,
+                callback=not_implemented("--dry-run"),
+                # SR_TMP >
             ),
             click.option(
                 "--verbose",
@@ -647,18 +658,13 @@ def cli(ctx, **kwargs):
 
     log.basicConfig(level=count_to_log_level(kwargs["verbose"]))
 
-    breakpoint()
-    if kwargs.pop("dry_run"):
-        raise NotImplementedError("dry run")
-        ctx.exit(0)
-
     # Ensure that ctx.obj exists and is a dict
     ctx.ensure_object(dict)
 
     # Store shared keyword arguments in ctx.obj
     ctx.obj.update(kwargs)
 
-    ctx.exit(0)
+    return 0
 
 
 @click.group()
