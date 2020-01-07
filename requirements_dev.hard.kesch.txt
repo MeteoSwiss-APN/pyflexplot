@@ -6,7 +6,7 @@ attrs==19.3.0
 Babel==2.7.0
 backcall==0.1.0
 black==19.10b0
-bumpversion==0.5.3
+bump2version==0.5.11
 Cartopy==0.17.0
 certifi==2019.9.11
 cftime==1.0.4.2
@@ -49,7 +49,7 @@ ptyprocess==0.6.0
 py==1.8.0
 pycodestyle==2.5.0
 pyflakes==2.1.1
--e git+git@github.com:MeteoSwiss-APN/pyflexplot.git@1173ce614c7996dab9b98b7cc2622f71aaca2f49#egg=pyflexplot
+-e git+git@github.com:MeteoSwiss-APN/pyflexplot.git@9c39ca1578c0cb424fa5459fbe1c0a0167431570#egg=pyflexplot
 Pygments==2.4.2
 pyparsing==2.4.5
 pyshp==2.1.0

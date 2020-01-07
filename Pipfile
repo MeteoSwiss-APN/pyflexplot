@@ -5,7 +5,7 @@ verify_ssl = true
 
 [dev-packages]
 black = "*"
-bumpversion = "*"
+bump2version = "*"
 coverage = "*"
 flake8 = "*"
 ipython = "*"

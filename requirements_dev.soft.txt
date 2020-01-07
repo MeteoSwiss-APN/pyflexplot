@@ -1,5 +1,5 @@
 black
-bumpversion
+bump2version
 coverage
 flake8
 future-breakpoint # for Python<3.7
