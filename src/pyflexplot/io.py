@@ -516,12 +516,15 @@ class FileReader:
         # Assemble indices for slicing
         idxs = [None] * len(var.dimensions)
         for dim_name, dim_idx in dim_idxs_by_name.items():
+            # Get the index of the dimension for this variable
             try:
                 idx = var.dimensions.index(dim_name)
             except ValueError:
+                # Potential issue: Dimension not among the variable dimensions!
                 if dim_idx in (None, 0):
                     continue
                 else:
+                    # Index along the missing dimension cannot be non-trivial!
                     raise Exception(
                         f"dimension '{dim_name}' with non-zero index {dim_idx} missing",
                         {
@@ -532,14 +535,35 @@ class FileReader:
                             "var_name": var_name,
                         },
                     )
+
+            # Check that the index along the dimension is valid
+            if dim_idx is None:
+                raise Exception(
+                    f"dimension #{idx} '{dim_name}' is None",
+                    {
+                        "dim_idx": dim_idx,
+                        "dim_name": dim_name,
+                        "fi.filepath": self.fi.filepath(),
+                        "idx": idx,
+                    },
+                )
+
             idxs[idx] = dim_idx
-        if None in idxs:
+
+        # Check that all variable dimensions have been identified
+        try:
+            idx = idxs.index(None)
+        except ValueError:
+            # All good!
+            pass
+        else:
             raise Exception(
-                f"variable '{var_name}': could not resolve all indices",
+                f"unknown variable dimension #{idx} '{var.dimensions[idx]}'",
                 {
                     "dim_idxs_by_name": dim_idxs_by_name,
                     "idxs": idxs,
                     "var.dimensions": var.dimensions,
+                    "var_name": var_name,
                 },
             )
         idxs = idxs
