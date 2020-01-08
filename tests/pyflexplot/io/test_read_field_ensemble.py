@@ -39,7 +39,7 @@ class TestReadFieldEnsemble_Single:
     member_ids = [0, 1, 5, 10, 15, 20]
 
     def datafile_fmt(self, datadir):
-        return f"{datadir}/grid_conc_20190727120000_{{member_id:03d}}.nc"
+        return f"{datadir}/flexpart_cosmo-2e_20190727120_{{member_id:03d}}.nc"
 
     def datafile(self, member_id, *, datadir=None, datafile_fmt=None):
         if datafile_fmt is None:
@@ -151,7 +151,7 @@ class TestReadFieldEnsemble_Multiple:
     agreement_threshold_deposition_tot = None  # SR_TMP
 
     def datafile_fmt(self, datadir):
-        return f"{datadir}/grid_conc_20190727120000_{{member_id:03d}}.nc"
+        return f"{datadir}/flexpart_cosmo-2e_20190727120_{{member_id:03d}}.nc"
 
     def datafile(self, member_id, *, datafile_fmt=None, datadir=None):
         if datafile_fmt is None:

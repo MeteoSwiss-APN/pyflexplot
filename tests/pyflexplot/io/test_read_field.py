@@ -44,7 +44,7 @@ class Test_ReadField_Single:
         return self.var_specs_mult_shared["species_id"]
 
     def datafile(self, datadir):
-        return f"{datadir}/flexpart_cosmo-1_case2.nc"
+        return f"{datadir}/flexpart_cosmo-1_2019052800.nc"
 
     def run(
         self,
@@ -165,7 +165,7 @@ class Test_ReadField_Multiple:
         return self.var_specs_mult_shared["species_id"]
 
     def datafile(self, datadir):
-        return f"{datadir}/flexpart_cosmo-1_case2.nc"
+        return f"{datadir}/flexpart_cosmo-1_2019052800.nc"
 
     def run(
         self,
