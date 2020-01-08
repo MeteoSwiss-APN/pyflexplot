@@ -46,6 +46,7 @@ class VarSpecs(SummarizableClass, ParentClass):
         "time": (int, None),
         "nageclass": (int, None),
         "numpoint": (int, None),
+        "noutrel": (int, None),
     }
 
     # SR_TMP TODO eventually eliminate
@@ -303,6 +304,7 @@ class VarSpecs(SummarizableClass, ParentClass):
 
         inds["nageclass"] = self.nageclass
         inds["numpoint"] = self.numpoint
+        inds["noutrel"] = self.noutrel
 
         if not self.integrate or self.time == slice(None):
             inds["time"] = self.time

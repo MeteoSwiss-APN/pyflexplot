@@ -112,6 +112,7 @@ class Test_Create_SingleObjDct_Concentration(_Test_Create_SingleObjDct):
         type_name="VarSpecs_Concentration",  # SR_TMP
         dct={
             "nageclass": 0,
+            "noutrel": 0,
             "numpoint": 0,
             "time": 3,
             "integrate": False,
@@ -129,6 +130,7 @@ class Test_Create_SingleObjDct_Deposition(_Test_Create_SingleObjDct):
         type_name="VarSpecs_Deposition",  # SR_TMP
         dct={
             "nageclass": 0,
+            "noutrel": 0,
             "numpoint": 0,
             "time": 3,
             "integrate": False,
@@ -167,6 +169,7 @@ class Test_Create_MultiObjDct_Concentration(_Test_Create_MultiObjDct):
         type_name="VarSpecs_Concentration",  # SR_TMP
         dct={
             "nageclass": 0,
+            "noutrel": 0,
             "numpoint": 0,
             "time": [1, 3],
             "integrate": False,
@@ -184,6 +187,7 @@ class Test_Create_MultiObjDct_Deposition(_Test_Create_MultiObjDct):
         type_name="VarSpecs_Deposition",  # SR_TMP
         dct={
             "nageclass": 0,
+            "noutrel": 0,
             "numpoint": 0,
             "time": [1, 3],
             "integrate": False,
@@ -221,6 +225,7 @@ class Test_Create_MultiObjDctNested_Concentration(_Test_Create_MultiObjDctNested
         type_name="VarSpecs_Concentration",  # SR_TMP
         dct={
             "nageclass": 0,
+            "noutrel": 0,
             "numpoint": 0,
             "time": [1, 3],
             "integrate": False,
@@ -238,6 +243,7 @@ class Test_Create_MultiObjDctNested_Deposition(_Test_Create_MultiObjDctNested):
         type_name="VarSpecs_Deposition",  # SR_TMP
         dct={
             "nageclass": 0,
+            "noutrel": 0,
             "numpoint": 0,
             "time": [1, 3],
             "integrate": False,
@@ -294,6 +300,7 @@ class Test_MultiVarSpecs_Concentration(_Test_MultiVarSpecs):
         name="concentration",
         dct={
             "nageclass": 0,
+            "noutrel": 0,
             "numpoint": 0,
             "time": [1, 3],
             "integrate": False,
@@ -309,6 +316,7 @@ class Test_MultiVarSpecs_DepositionDry(_Test_MultiVarSpecs):
         name="deposition",
         dct={
             "nageclass": 0,
+            "noutrel": 0,
             "numpoint": 0,
             "time": [1, 3],
             "integrate": False,
@@ -324,6 +332,7 @@ class Test_MultiVarSpecs_DepositionTot(_Test_MultiVarSpecs):
         name="deposition",
         dct={
             "nageclass": 0,
+            "noutrel": 0,
             "numpoint": 0,
             "time": 3,
             "integrate": False,
@@ -362,6 +371,7 @@ class Test_MultiVarSpecs_Interface:
         name="deposition",
         dct={
             "nageclass": 0,
+            "noutrel": 0,
             "numpoint": 0,
             "time": 3,
             "integrate": False,

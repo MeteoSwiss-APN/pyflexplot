@@ -458,6 +458,14 @@ class GlobalOptions(ClickOptionsGroup):
                 multiple=True,
             ),
             click.option(
+                "--nout-rel-ind",
+                "var_specs_raw__noutrel_lst",
+                help="Index of noutrel (zero-based). Format key: '{noutrel_ind}'.",
+                type=int,
+                default=[0],
+                multiple=True,
+            ),
+            click.option(
                 "--release-point-ind",
                 "var_specs_raw__numpoint_lst",
                 help="Index of release point (zero-based). Format key: '{rls_pt_ind}'.",

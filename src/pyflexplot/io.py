@@ -519,16 +519,19 @@ class FileReader:
             try:
                 idx = var.dimensions.index(dim_name)
             except ValueError:
-                raise Exception(
-                    f"dimension '{dim_name}' missing",
-                    {
-                        "dim_idx": dim_idx,
-                        "dim_name": dim_name,
-                        "fi.filepath": self.fi.filepath(),
-                        "var.dimensions": var.dimensions,
-                        "var_name": var_name,
-                    },
-                )
+                if dim_idx in (None, 0):
+                    continue
+                else:
+                    raise Exception(
+                        f"dimension '{dim_name}' with non-zero index {dim_idx} missing",
+                        {
+                            "dim_idx": dim_idx,
+                            "dim_name": dim_name,
+                            "fi.filepath": self.fi.filepath(),
+                            "var.dimensions": var.dimensions,
+                            "var_name": var_name,
+                        },
+                    )
             idxs[idx] = dim_idx
         if None in idxs:
             raise Exception(
