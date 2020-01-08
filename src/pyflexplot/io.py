@@ -511,28 +511,42 @@ class FileReader:
         var = self.fi.variables[var_name]
 
         # Indices of field along NetCDF dimensions
-        dim_inds_by_name = var_specs.dim_inds_by_name()
+        dim_idxs_by_name = var_specs.dim_inds_by_name()
 
         # Assemble indices for slicing
-        inds = [None] * len(var.dimensions)
-        for dim_name, dim_ind in dim_inds_by_name.items():
-            ind = var.dimensions.index(dim_name)
-            inds[ind] = dim_ind
-        if None in inds:
+        idxs = [None] * len(var.dimensions)
+        for dim_name, dim_idx in dim_idxs_by_name.items():
+            try:
+                idx = var.dimensions.index(dim_name)
+            except ValueError:
+                raise Exception(
+                    f"dimension '{dim_name}' missing",
+                    {
+                        "dim_idx": dim_idx,
+                        "dim_name": dim_name,
+                        "fi.filepath": self.fi.filepath(),
+                        "var.dimensions": var.dimensions,
+                        "var_name": var_name,
+                    },
+                )
+            idxs[idx] = dim_idx
+        if None in idxs:
             raise Exception(
-                f"variable '{var_name}': could not resolve all indices!"
-                f"\ndim_inds   : {dim_inds_by_name}"
-                f"\ndimensions : {var.dimensions}"
-                f"\ninds       : {inds}"
+                f"variable '{var_name}': could not resolve all indices",
+                {
+                    "dim_idxs_by_name": dim_idxs_by_name,
+                    "idxs": idxs,
+                    "var.dimensions": var.dimensions,
+                },
             )
-        inds = inds
-        log.debug(f"indices: {inds}")
-        check_array_indices(var.shape, inds)
+        idxs = idxs
+        log.debug(f"indices: {idxs}")
+        check_array_indices(var.shape, idxs)
 
         # Read field
         log.debug(f"shape: {var.shape}")
-        log.debug(f"indices: {inds}")
-        fld = var[inds]
+        log.debug(f"indices: {idxs}")
+        fld = var[idxs]
 
         log.debug(f"fix nc data: variable {var.name}")
         self._fix_nc_var(fld, var)

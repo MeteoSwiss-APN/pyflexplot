@@ -103,7 +103,6 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
             var_names_ref=[f"spec002"],
             var_specs_dct={
                 "nageclass": 0,
-                "numpoint": 0,
                 "time": 3,
                 "level": 1,
                 "integrate": False,
@@ -116,7 +115,6 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
             var_names_ref=[f"WD_spec001", f"DD_spec001",],
             var_specs_dct={
                 "nageclass": 0,
-                "numpoint": 0,
                 "time": 3,
                 "integrate": False,
                 "species_id": 1,
@@ -228,7 +226,6 @@ def test_single(datadir, conf):
             var_names_ref=[f"spec001"],
             var_specs_dct={
                 "nageclass": 0,
-                "numpoint": 0,
                 "time": [0, 3, 9],
                 "level": [0, 2],
                 "integrate": True,
@@ -242,7 +239,6 @@ def test_single(datadir, conf):
             var_names_ref=[f"WD_spec001", f"DD_spec001"],
             var_specs_dct={
                 "nageclass": 0,
-                "numpoint": 0,
                 "time": [0, 3, 9],
                 "integrate": True,
                 "species_id": 1,
