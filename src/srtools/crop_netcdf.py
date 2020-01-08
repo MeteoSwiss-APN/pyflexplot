@@ -45,14 +45,14 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"],)
 )
 def main(in_file_path, out_file_path, **conf):
 
-    print()
-    print(f"infile     : {in_file_path}")
-    print(f"outfile    : {out_file_path}")
-    print(f"rlat_name  : {conf['rlat_name']}")
-    print(f"rlon_name  : {conf['rlon_name']}")
-    print(f"rlat_slice : ({', '.join([str(f) for f in conf['rlat_slice']])})")
-    print(f"rlon_slice : ({', '.join([str(f) for f in conf['rlon_slice']])})")
-    print()
+    click.echo()
+    click.echo(f"infile     : {in_file_path}")
+    click.echo(f"outfile    : {out_file_path}")
+    click.echo(f"rlat_name  : {conf['rlat_name']}")
+    click.echo(f"rlon_name  : {conf['rlon_name']}")
+    click.echo(f"rlat_slice : ({', '.join([str(f) for f in conf['rlat_slice']])})")
+    click.echo(f"rlon_slice : ({', '.join([str(f) for f in conf['rlon_slice']])})")
+    click.echo()
 
     with nc4.Dataset(in_file_path, "r") as fi, nc4.Dataset(out_file_path, "w") as fo:
         prepare_slices(fi, conf)
