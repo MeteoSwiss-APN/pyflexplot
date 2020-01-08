@@ -74,10 +74,6 @@ class ClickOptionsGroup:
 # Show default values of options by default
 click.option = functools.partial(click.option, show_default=True)
 
-context_settings = {
-
-}
-
 
 class CharacterSeparatedList(click.ParamType):
     """List of elements of a given type separated by a given character."""
@@ -368,7 +364,9 @@ def not_implemented(msg):
         if value:
             click.echo(f"not implemented: {msg}")
             ctx.exit(1)
+
     return f
+
 
 class GlobalOptions(ClickOptionsGroup):
     """Options shared by all types of plots."""
@@ -645,8 +643,7 @@ class DepositionOptions(ClickOptionsGroup):
 
 
 @click.group(
-    context_settings={"help_option_names": ["-h", "--help"]},
-    no_args_is_help=True,
+    context_settings={"help_option_names": ["-h", "--help"]}, no_args_is_help=True,
 )
 @GlobalOptions.execution
 @click.version_option(__version__, "--version", "-V", message="%(version)s")
