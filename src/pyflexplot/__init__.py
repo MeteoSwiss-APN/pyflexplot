@@ -7,6 +7,7 @@ __version__ = "0.1.1"
 
 import sys
 import os.path
+import matplotlib
 
 try:
     import cartopy
@@ -20,12 +21,14 @@ except ImportError as e:
     print(msg, file=sys.stderr)
     sys.exit(1)
 
+__all__ = []
+
 # Point cartopy to storerd offline data
-dir = os.path.dirname(os.path.abspath(__file__))
-cartopy_dir = os.path.abspath(f"{dir}/cartopy_data")
-cartopy.config["pre_existing_data_dir"] = cartopy_dir
+here = os.path.dirname(os.path.abspath(__file__))
+data_dir = os.path.abspath(f"{here}/data")
+if not os.path.isdir(data_dir):
+    raise Exception(f"data directory missing: {data_dir}")
+cartopy.config["pre_existing_data_dir"] = data_dir
 
 # Set matplotlib backend
-import matplotlib
-
 matplotlib.use("Agg")

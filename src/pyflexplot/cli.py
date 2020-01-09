@@ -8,8 +8,6 @@ import logging as log
 import os
 import sys
 
-from pprint import pformat
-
 from srutils.various import group_kwargs
 
 from . import __version__
@@ -246,7 +244,7 @@ def create_plots(
         ens_var_setup = None
     else:
         cls_name = f"ens_{ens_var}_{var_in}"
-        ens_var_setup = {"thr_agrmt": {"thr": 1e-9},}.get(ens_var)  # SR_TMP SR_HC
+        ens_var_setup = {"thr_agrmt": {"thr": 1e-9}}.get(ens_var)  # SR_TMP SR_HC
     # SR_TMP >
 
     # Create variable specification objects
@@ -273,7 +271,9 @@ def create_plots(
 
     # Prepare plotter
     plotter = Plotter()
-    fct_plot = lambda: plotter.run(cls_name, field_lst, out_file_path_raw, **kwargs)
+
+    def fct_plot():
+        return plotter.run(cls_name, field_lst, out_file_path_raw, **kwargs)
 
     # Note: Plotter.run yields the output file paths on-the-go
     out_file_paths = []
@@ -633,7 +633,7 @@ class DepositionOptions(ClickOptionsGroup):
             click.option(
                 "--plot-var",
                 help="What variable to plot/how to plot the input variable.",
-                type=click.Choice(["auto", "affected_area", "affected_area_mono",]),
+                type=click.Choice(["auto", "affected_area", "affected_area_mono"]),
                 default="auto",
             )
         ]
@@ -644,7 +644,7 @@ class DepositionOptions(ClickOptionsGroup):
             click.option(
                 "--plot-var",
                 help="What variable to plot/how to plot the input variable.",
-                type=click.Choice(["auto",]),
+                type=click.Choice(["auto"]),
                 default="auto",
             )
         ]

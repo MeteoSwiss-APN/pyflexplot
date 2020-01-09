@@ -21,18 +21,20 @@ def datadir_rel(tmpdir, request):
 
     Adapted from `https://stackoverflow.com/a/29631801`.
     """
-    test_file_path = request.module.__file__
-    test_dir_path, _ = os.path.splitext(test_file_path)
-    if os.path.isdir(test_dir_path):
-        distutils.dir_util.copy_tree(test_dir_path, str(tmpdir))
+    file = request.module.__file__
+    dir, _ = os.path.splitext(file)
+    if os.path.isdir(dir_rel):
+        distutils.dir_util.copy_tree(dir, str(tmpdir))
     return tmpdir
 
 
 @pytest.fixture
 def datadir(tmpdir, request):
-    """Return path to temporary directory named 'data'."""
-    test_file_path = request.module.__file__
-    test_dir_path = f"{os.path.dirname(test_file_path)}/data"
-    if os.path.isdir(test_dir_path):
-        distutils.dir_util.copy_tree(test_dir_path, str(tmpdir))
+    """Return path to temporary data directory."""
+    file = request.module.__file__
+    dir, _ = os.path.splitext(file)
+    data_root = os.path.abspath(f"{os.path.abspath(dir)}/../../../../data")
+    data_dir = f"{data_root}/pyflexplot/io/reduced"
+    if os.path.isdir(data_dir):
+        distutils.dir_util.copy_tree(data_dir, str(tmpdir))
     return tmpdir

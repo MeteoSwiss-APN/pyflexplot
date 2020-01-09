@@ -3,17 +3,16 @@
 Attributes.
 """
 import datetime
-import logging as log
 import numpy as np
 import re
 import time
 
 from pprint import pformat
 
+from srutils.dict import format_dictlike
 from srutils.various import isiterable
 
 from .utils import SummarizableClass
-from .var_specs import VarSpecs
 from .words import WORDS
 
 

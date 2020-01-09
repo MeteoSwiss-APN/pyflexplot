@@ -423,7 +423,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
                 "Freiburg im Üechtland", "Freiburg"
             )
 
-        # src: https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-populated-places/lk
+        # src: https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-populated-places/lk  # noqa
         cities = cartopy.io.shapereader.Reader(
             cartopy.io.shapereader.natural_earth(
                 category="cultural",

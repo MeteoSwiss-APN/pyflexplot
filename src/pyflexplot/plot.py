@@ -61,7 +61,9 @@ class DispersionPlotLabels(SummarizableClass):
             "variable": f"{a.variable.long_name.value}{s_level}",
             "period": f"{integr_op} {period} ({w['since']} +{start})",
             "timestep": f"{ts.format(rel=False)} (+{ts.format(rel=True)})",
-            "time_since_release_start": f"{time_rels} {w['since']} {w['release_start']}",
+            "time_since_release_start": (
+                f"{time_rels} {w['since']} {w['release_start']}"
+            ),
         }
 
         # Top-right box
