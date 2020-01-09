@@ -1,0 +1,10 @@
+black
+bump2version
+# coverage
+# flake8
+ipython
+# pluggy
+pytest
+# Sphinx
+# tox
+# watchdog
