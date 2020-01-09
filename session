@@ -1,13 +1,15 @@
 < src/pyflexplot/session
 --
-< tests/pyflexplot/session
+< tests/fast/pyflexplot/session
+< tests/medium/pyflexplot/session
+< tests/slow/pyflexplot/session
 ---
 < src/words/session
 ----
-< tests/words/session
+< tests/fast/words/session
 -----
 < src/srutils/session
 ------
-< tests/srutils/session
+< tests/fast/srutils/session
 -------
 < src/srtools/session
