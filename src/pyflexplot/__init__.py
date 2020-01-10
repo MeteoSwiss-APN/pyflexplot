@@ -11,13 +11,17 @@ import matplotlib
 
 try:
     import cartopy
-except ImportError as e:
+except Exception as e:
     if "libproj" in str(e):
-        msg = f"cannot import 'cartopy': external dependency 'proj' missing ({e})"
+        dep = "proj"
     if "libgeos" in str(e):
-        msg = f"cannot import 'cartopy': expernal dependency 'geos' missing ({e})"
+        dep = "geos"
     else:
         raise
+    msg = (
+        f"Cannot import 'cartopy': missing external dependency '{dep}'! -- "
+        f'{type(e).__name__}("{e}")'
+    )
     print(msg, file=sys.stderr)
     sys.exit(1)
 

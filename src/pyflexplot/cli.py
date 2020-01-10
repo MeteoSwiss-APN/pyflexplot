@@ -143,6 +143,8 @@ plus_separated_list_of_unique_ints = CharacterSeparatedList(int, "+", unique=Tru
 class CombinationChoices(click.ParamType):
     """Choices that can also be combined."""
 
+    name = "choice"
+
     def __init__(self, base_choices, combination_choices):
         """Create instance of ``CombinationChoices``.
 
@@ -156,6 +158,10 @@ class CombinationChoices(click.ParamType):
         self.base_choices = base_choices
         self.combination_choices = combination_choices
         self._check_combination_choices()
+
+    def get_metavar(self, param):
+        choices = list(self.base_choices) + list(self.combination_choices)
+        return f"[{'|'.join(choices)}]"
 
     def convert(self, value, param, ctx):
         """Check that a string is among the given choices or combinations."""
