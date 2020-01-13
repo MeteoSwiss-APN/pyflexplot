@@ -23,7 +23,8 @@ from .var_specs import MultiVarSpecs
 
 
 def click_options(f_options):
-    """Define a list of click options that can be shared by multiple commands.
+    """
+    Define a list of click options that can be shared by multiple commands.
 
     Args:
         f_options (function): Function returning a list of ``click.option``
@@ -74,7 +75,9 @@ click.option = functools.partial(click.option, show_default=True)
 
 
 class CharacterSeparatedList(click.ParamType):
-    """List of elements of a given type separated by a given character."""
+    """
+    List of elements of a given type separated by a given character.
+    """
 
     def __init__(self, type_, separator, *, name=None, unique=False):
         """Create an instance of ``CharacterSeparatedList``.
@@ -142,7 +145,9 @@ plus_separated_list_of_unique_ints = CharacterSeparatedList(int, "+", unique=Tru
 
 
 class DerivChoice(click.ParamType):
-    """Choices from which additional choices can be derived."""
+    """
+    Choices from which additional choices can be derived.
+    """
 
     name = "choice"
 
@@ -227,7 +232,7 @@ class DerivChoice(click.ParamType):
 def create_plots(
     *,
     ctx,
-    in_file_path_raw,
+    in_file_path_raw_lst,
     out_file_path_raw,
     var_specs_raw,
     field,
@@ -237,7 +242,8 @@ def create_plots(
     lang,
     **kwargs,
 ):
-    """Read and plot FLEXPART data.
+    """
+    Read and plot FLEXPART data.
 
     Args:
         TODO
@@ -282,7 +288,7 @@ def create_plots(
         multi_var_specs_lst=multi_var_specs_lst,
         ens_member_id_lst=ens_member_id_lst,
         ens_var_setup=ens_var_setup,
-        in_file_path_raw=in_file_path_raw,
+        in_file_path_raw_lst=in_file_path_raw_lst,
         lang=lang,
         **kwargs
     )
@@ -311,7 +317,8 @@ def create_plots(
 
 
 def prep_var_specs_dct(var_specs_raw):
-    """Prepare the variable specifications dict from the raw CLI input.
+    """
+    Prepare the variable specifications dict from the raw CLI input.
 
     Example:
         >>> prep_var_specs_dct({"a_lst": ([0], [1, 2])})
@@ -336,7 +343,7 @@ def read_fields(
     *,
     simulation_type,
     plot_type,
-    in_file_path_raw,
+    in_file_path_raw_lst,
     cls_name,
     multi_var_specs_lst,
     lang,
@@ -344,7 +351,9 @@ def read_fields(
     ens_var_setup,
     **kwargs,
 ):
-    """TODO"""
+    """
+    TODO
+    """
 
     attrs = {"lang": lang}
 
@@ -363,13 +372,17 @@ def read_fields(
     ]
 
     # Read fields
-    field_lst = FileReader(in_file_path_raw).run(fld_specs_lst, lang=lang)
+    field_lst = []
+    for in_file_path_raw in in_file_path_raw_lst:
+        field_lst.extend(FileReader(in_file_path_raw).run(fld_specs_lst, lang=lang))
 
     return field_lst
 
 
 def open_plots(cmd, file_paths):
-    """Open a plot file using a shell command."""
+    """
+    Open a plot file using a shell command.
+    """
 
     # If not yet included, append the output file path
     if "{file}" not in cmd:
@@ -394,7 +407,9 @@ def not_implemented(msg):
 
 
 class GlobalOptions(ClickOptionsGroup):
-    """Options shared by all types of plots."""
+    """
+    Options shared by all types of plots.
+    """
 
     @click_options
     def execution():
@@ -446,18 +461,6 @@ class GlobalOptions(ClickOptionsGroup):
     @click_options
     def input():
         return [
-            click.option(
-                "--infile",
-                "-i",
-                "in_file_path_raw",
-                help=(
-                    "Input file path. May contain format keys to embed parameters such "
-                    "as the member id of ensemble simulation output (see respective "
-                    "options for the key names)."
-                ),
-                type=str,
-                required=True,
-            ),
             click.option(
                 "--time-ind",
                 "var_specs_raw__time_lst",
@@ -514,7 +517,7 @@ class GlobalOptions(ClickOptionsGroup):
                 multiple=True,
             ),
             click.option(
-                "--ens-member-id",
+                "--member-id",
                 "-m",
                 "ens_member_id_lst",
                 help=(
@@ -623,49 +626,51 @@ class GlobalOptions(ClickOptionsGroup):
             ),
         ]
 
-    @click_options
-    def output():
-        return [
-            click.option(
-                "--outfile",
-                "-o",
-                "out_file_path_raw",
-                help=(
-                    "Output file path. If multiple plots are to be created, e.g., for "
-                    "multiple fields or levels, ``outfile`` must contain format keys "
-                    "for inserting all changing parameters (example: "
-                    "``plot_lvl-{level}.png`` for multiple levels). The format key for "
-                    "the plotted variable is '{variable}'. See individual options for "
-                    "the respective format keys."
-                ),
-                type=click.Path(writable=True),
-                required=True,
-            ),
-        ]
 
-
-class EnsembleOptions(ClickOptionsGroup):
-    @click_options
-    def plot():
-        return []
-
-
-@click.group(
-    invoke_without_command=True,
-    no_args_is_help=True,
+@click.command(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 @click.version_option(__version__, "--version", "-V", message="%(version)s")
+@click.argument(
+    "in_file_path_raw_lst",
+    metavar="INFILE(S)",
+    type=str,
+    nargs=-1,
+    required=True,
+)
+@click.argument(
+    "out_file_path_raw",
+    metavar="OUTFILE",
+    type=str,
+    required=True,
+)
 @GlobalOptions.execution
 @GlobalOptions.input
-@GlobalOptions.output
 @GlobalOptions.preproc
 @GlobalOptions.plot
 @click.pass_context
 @group_kwargs("exe")
 @group_kwargs("var_specs_raw")
 def cli(ctx, exe, **kwargs):
-    """Create FLEXPART dispersion plots."""
+    """
+    Read NetCDF output of a deterministic or ensemble ``FLEXPART`` dispersion
+    simulation from INFILE(S) to create the plot OUTFILE.
+
+    Both INFILE(S) and OUTFILE may contain format keys that are replaced by
+    values derived from options and/or the input data, which allows one to
+    specify multipe input and/or output files with a single string. The syntax
+    is that of Python format strings, with the variable name wrapped in curly
+    braces.
+
+    Example:
+
+    \b
+    $ pyflexplot "ens_mem{member_id:03}.nc" "ens_spc-{species_id:02}.png" \\
+    >   --member-id={1..10} --species-id={0,1} ...
+    # input  : ens_mem001.nc, ens_mem002.nc, ...,  ens_mem010.nc
+    # output : ens_spc00.png, ens_spc01.png
+
+    """
 
     click.echo("Welcome fellow PyFlexPlotter!")
 
