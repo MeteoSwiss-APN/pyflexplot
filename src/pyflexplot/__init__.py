@@ -3,7 +3,7 @@
 
 __author__ = """Stefan Ruedisuehli"""
 __email__ = "stefan.ruedisuehli@env.ethz.ch"
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 import sys
 import os.path
