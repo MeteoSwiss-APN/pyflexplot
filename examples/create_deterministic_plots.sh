@@ -11,13 +11,18 @@ outfile_fmt="${dest}/test_case1_{variable}_species-{species_id}_level-{level_ind
 for lang in en de; do
 for domain in auto ch; do
 
-pyflexplot --lang=${lang} deterministic concentration --domain=${domain} -i "${infile}" -o "${outfile_fmt}" --species-id=2 --level-ind=0 --time-ind=3 --no-integrate
+flags=(
+    -i "${infile}"
+    -o "${outfile_fmt}"
+    --lang="${lang}"
+    --simulation-type="deterministic"
+    --domain="${domain}"
+)
 
-pyflexplot --lang=${lang} deterministic concentration --domain=${domain} -i "${infile}" -o "${outfile_fmt}" --species-id=1 --level-ind=0 --time-ind=10 --integrate
-
-pyflexplot --lang=${lang} deterministic deposition --domain=${domain} -i "${infile}" -o "${outfile_fmt}" --species-id=2 --deposition-type=tot --time-ind=3 --integrate
-
-pyflexplot --lang=${lang} deterministic deposition --domain=${domain} -i "${infile}" -o "${outfile_fmt}" --plot-var=affected_area_mono --species-id=1+2 --deposition-type=tot --time-ind=10 --integrate
+pyflexplot "${flags[@]}" --field=concentration --plot-var=auto               --species-id=2   --time-ind=3  --no-integrate --level-ind=0
+pyflexplot "${flags[@]}" --field=concentration --plot-var=auto               --species-id=1   --time-ind=10 --integrate    --level-ind=0
+pyflexplot "${flags[@]}" --field=deposition    --plot-var=auto               --species-id=2   --time-ind=3  --integrate    --deposition-type=tot
+pyflexplot "${flags[@]}" --field=deposition    --plot-var=affected_area_mono --species-id=1+2 --time-ind=10 --integrate    --deposition-type=tot
 
 done
 done

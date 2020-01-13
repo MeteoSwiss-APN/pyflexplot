@@ -23,7 +23,7 @@ from .var_specs import MultiVarSpecs
 
 
 def click_options(f_options):
-    """Define a list of click options shared by multiple commands.
+    """Define a list of click options that can be shared by multiple commands.
 
     Args:
         f_options (function): Function returning a list of ``click.option``
@@ -50,7 +50,7 @@ def click_options(f_options):
 
 
     Applications:
-        Define options that are shared by multiple commands but are passed
+        Define options that to be shared by multiple commands but are passed
         after the respective command, instead of before as group options (the
         native way to define shared options) are.
 
@@ -108,7 +108,8 @@ class CharacterSeparatedList(click.ParamType):
         if name is not None:
             self.name = name
         else:
-            self.name = f"'{separator}'-separated {type_.__name__} list"
+            s = f"{type_.__name__}{separator}" * 2
+            self.name = f"{s}..."
 
     def convert(self, value, param, ctx):
         """Convert a string to a list of ``type_`` elements."""
@@ -140,27 +141,27 @@ comma_separated_list_of_unique_ints = CharacterSeparatedList(int, ",", unique=Tr
 plus_separated_list_of_unique_ints = CharacterSeparatedList(int, "+", unique=True)
 
 
-class CombinationChoices(click.ParamType):
-    """Choices that can also be combined."""
+class DerivChoice(click.ParamType):
+    """Choices from which additional choices can be derived."""
 
     name = "choice"
 
-    def __init__(self, base_choices, combination_choices):
-        """Create instance of ``CombinationChoices``.
+    def __init__(self, base_choices, derived_choices):
+        """Create instance of ``DerivChoice``.
 
         Args:
             base_choices (list[str]): Base choices.
 
-            combination_choices (dict[str, list[str]]): Derived choices
+            derived_choices (dict[str, list[str]]): Derived choices
                 constituting combinations of multiple base choices.
 
         """
         self.base_choices = base_choices
-        self.combination_choices = combination_choices
-        self._check_combination_choices()
+        self.derived_choices = derived_choices
+        self._check_derived_choices()
 
     def get_metavar(self, param):
-        choices = list(self.base_choices) + list(self.combination_choices)
+        choices = list(self.base_choices) + list(self.derived_choices)
         return f"[{'|'.join(choices)}]"
 
     def convert(self, value, param, ctx):
@@ -168,35 +169,37 @@ class CombinationChoices(click.ParamType):
         if value in self.base_choices:
             return value
         try:
-            return self.combination_choices[value]
+            return self.derived_choices[value]
         except KeyError:
-            choices = self.base_choices + list(self.combination_choices)
+            choices = self.base_choices + list(self.derived_choices)
             s_choices = ", ".join([f"'{s}'" for s in choices])
             self.fail(f"wrong choice '{value}': must be one of {s_choices}")
 
-    def _check_combination_choices(self):
-        for choice, combination in self.combination_choices.items():
-            if choice in self.base_choices:
+    def _check_derived_choices(self):
+        for name, derived_choice in self.derived_choices.items():
+            if name in self.base_choices:
                 raise ValueError(
-                    "combination choice is already a base choice",
-                    choice=choice,
+                    "derived choice is already a base choice",
+                    name=name,
                     base_choices=self.base_choices,
                 )
+            if isinstance(derived_choice, str):
+                derived_choice = [derived_choice]
             try:
-                it = iter(combination)
+                it = iter(derived_choice)
             except TypeError:
                 raise ValueError(
-                    "combination choice is defined as non-iterable "
-                    f"{type(combination).__name__} object",
-                    choice=choice,
-                    combination=combination,
+                    "derived choice is defined as non-iterable "
+                    f"{type(derived_choice).__name__} object",
+                    name=name,
+                    derived_choice=derived_choice,
                 )
             else:
                 for element in it:
                     if element not in self.base_choices:
                         raise ValueError(
-                            "combination choice element is not a base choice",
-                            choice=choice,
+                            "derived choice element is not a base choice",
+                            name=name,
                             element=element,
                             base_choices=self.base_choices,
                         )
@@ -204,9 +207,6 @@ class CombinationChoices(click.ParamType):
 
 #
 # TODO
-#
-# - Eliminate subcommands (e.g., "deterministic concentration")
-#   -> Instead, use flags, e.g., --[no-]ens or --sim-type or whatnot
 #
 # - Collect all passed options in a dict and pass it on as **options
 #
@@ -227,12 +227,14 @@ class CombinationChoices(click.ParamType):
 def create_plots(
     *,
     ctx,
-    var_in,
     in_file_path_raw,
     out_file_path_raw,
     var_specs_raw,
-    ens_var=None,
+    field,
+    plot_type,
+    simulation_type,
     ens_member_id_lst=None,
+    lang,
     **kwargs,
 ):
     """Read and plot FLEXPART data.
@@ -242,15 +244,29 @@ def create_plots(
 
     """
 
-    lang = ctx.obj["lang"]
+    # SR_TMP <
+    if plot_type == "auto":
+        plot_type = field
+    # SR_TMP >
+
+    # SR_TMP <
+    if field == "concentration":
+        var_specs_raw.pop("deposition_lst", None)
+    elif field == "deposition":
+        var_specs_raw.pop("level_lst", None)
+    else:
+        raise NotImplementedError(f"field='{field}'")
+    # SR_TMP >
 
     # SR_TMP < TODO find cleaner solution
-    if ens_var is None:
-        cls_name = f"{var_in}"
+    if simulation_type == "deterministic":
+        cls_name = f"{field}"
         ens_var_setup = None
+    elif simulation_type == "ensemble":
+        cls_name = f"{plot_type}_{field}"
+        ens_var_setup = {"thr": 1e-9} if plot_type == "ens_thr_agrmt" else {}
     else:
-        cls_name = f"ens_{ens_var}_{var_in}"
-        ens_var_setup = {"thr_agrmt": {"thr": 1e-9}}.get(ens_var)  # SR_TMP SR_HC
+        raise NotImplementedError(f"simulation_type='{simulation_type}'")
     # SR_TMP >
 
     # Create variable specification objects
@@ -260,20 +276,19 @@ def create_plots(
     )
 
     field_lst = read_fields(
+        simulation_type=simulation_type,
+        plot_type=plot_type,
         cls_name=cls_name,
         multi_var_specs_lst=multi_var_specs_lst,
         ens_member_id_lst=ens_member_id_lst,
-        ens_var=ens_var,
         ens_var_setup=ens_var_setup,
         in_file_path_raw=in_file_path_raw,
         lang=lang,
+        **kwargs
     )
 
-    if ctx.obj["noplot"]:
+    if ctx.obj["no_plot"]:
         return
-
-    # Transfer some global options
-    kwargs = {key: ctx.obj[key] for key in ["lang", "scale_fact"]}
 
     # Prepare plotter
     plotter = Plotter()
@@ -319,22 +334,26 @@ def prep_var_specs_dct(var_specs_raw):
 
 def read_fields(
     *,
+    simulation_type,
+    plot_type,
     in_file_path_raw,
     cls_name,
     multi_var_specs_lst,
     lang,
     ens_member_id_lst,
-    ens_var,
     ens_var_setup,
+    **kwargs,
 ):
     """TODO"""
 
     attrs = {"lang": lang}
-    if ens_member_id_lst is not None:
-        attrs["member_ids"] = ens_member_id_lst
-    if ens_var is not None:
-        attrs["ens_var"] = ens_var
-    if ens_var_setup is not None:
+
+    # SR_TMP <<< TODO clean this up
+    if simulation_type == "ensemble":
+        if ens_member_id_lst is not None:
+            attrs["member_ids"] = ens_member_id_lst
+        assert plot_type.startswith("ens")
+        attrs["ens_var"] = plot_type
         attrs["ens_var_setup"] = ens_var_setup
 
     # Determine fields specifications (one for each eventual plot)
@@ -379,10 +398,11 @@ class GlobalOptions(ClickOptionsGroup):
 
     @click_options
     def execution():
-        """Options passed before any command."""
+        """Options to be passed before any command."""
         return [
             click.option(
                 "--dry-run",
+                "exe__dry_run",
                 help="Perform a trial run with no changes made.",
                 is_flag=True,
                 default=False,
@@ -394,21 +414,19 @@ class GlobalOptions(ClickOptionsGroup):
             click.option(
                 "--verbose",
                 "-v",
+                "exe__verbose",
                 help="Increase verbosity; specify multiple times for more.",
                 count=True,
             ),
             click.option(
-                "--noplot", help="Skip plotting (for debugging etc.).", is_flag=True,
-            ),
-            click.option(
-                "--lang",
-                help="Language. Format key: '{lang}'.",
-                type=click.Choice(["en", "de"]),
-                default="en",
+                "--no-plot",
+                "exe__no_plot",
+                help="Skip plotting (for debugging etc.).",
+                is_flag=True,
             ),
             click.option(
                 "--open-first",
-                "open_first_cmd",
+                "exe__open_first_cmd",
                 help=(
                     "Shell command to open the first plot as soon as it is available. "
                     "The file path is appended to the command, unless explicitly "
@@ -420,15 +438,8 @@ class GlobalOptions(ClickOptionsGroup):
             ),
             click.option(
                 "--open-all",
-                "open_all_cmd",
+                "exe__open_all_cmd",
                 help="Like --open-first, but for all plots.",
-            ),
-            click.option(
-                "--scale",
-                "scale_fact",
-                help="Scale field before plotting. Useful for debugging.",
-                type=float,
-                default=None,
             ),
         ]
 
@@ -490,6 +501,41 @@ class GlobalOptions(ClickOptionsGroup):
                 default=["1"],
                 multiple=True,
             ),
+            click.option(
+                "--level-ind",
+                "var_specs_raw__level_lst",
+                help=(
+                    "Index/indices of vertical level (zero-based, bottom-up). To sum "
+                    "up multiple levels, combine their indices with '+'. Format key: "
+                    "'{level_ind}'."
+                ),
+                type=plus_separated_list_of_unique_ints,
+                default=["0"],
+                multiple=True,
+            ),
+            click.option(
+                "--ens-member-id",
+                "-m",
+                "ens_member_id_lst",
+                help=(
+                    "Ensemble member id. Repeat for multiple members. Omit for "
+                    "deterministic simulation data. Use the format key '{member_id}' "
+                    "to embed the member id(s) in the plot file path."
+                ),
+                type=int,
+                multiple=True,
+            ),
+            click.option(
+                "--deposition-type",
+                "var_specs_raw__deposition_lst",
+                help=(
+                    "Type of deposition. Part of the plot variable name that may be "
+                    "embedded in the plot file path with the format key '{variable}'."
+                ),
+                type=DerivChoice(["wet", "dry"], {"tot": ("wet", "dry")}),
+                default=["tot"],
+                multiple=True,
+            ),
         ]
 
     @click_options
@@ -506,11 +552,55 @@ class GlobalOptions(ClickOptionsGroup):
                 default=[False],
                 multiple=True,
             ),
+            click.option(
+                "--scale",
+                "scale_fact",
+                help="Scale field before plotting. Useful for debugging.",
+                type=float,
+                default=None,
+            ),
         ]
 
     @click_options
     def plot():
         return [
+            # SR_TMP <
+            click.option(
+                "--field",
+                help="Input field to be plotted.",
+                type=click.Choice(["concentration", "deposition"]),
+                required=True,
+            ),
+            click.option(
+                "--simulation-type",
+                help="Type of simulation.",
+                type=click.Choice(["deterministic", "ensemble"]),
+                required=True,
+            ),
+            click.option(
+                "--plot-type",
+                help="Type of plot.",
+                type=click.Choice(
+                    [
+                        "auto",
+                        "affected_area",
+                        "affected_area_mono",
+                        "ens_mean",
+                        "ens_max",
+                        "ens_thr_agrmt",
+                    ]
+                ),
+                default="auto",
+                required=True,
+            ),
+            # SR_TMP >
+            click.option(
+                "--lang",
+                "lang",
+                help="Language. Format key: '{lang}'.",
+                type=click.Choice(["en", "de"]),
+                default="en",
+            ),
             click.option(
                 "--domain",
                 help=(
@@ -556,210 +646,41 @@ class GlobalOptions(ClickOptionsGroup):
 
 class EnsembleOptions(ClickOptionsGroup):
     @click_options
-    def input():
-        return [
-            click.option(
-                "--ens-member-id",
-                "-m",
-                "ens_member_id_lst",
-                help=(
-                    "Ensemble member id. Repeat for multiple members. Omit for "
-                    "deterministic simulation data. Use the format key '{member_id}' "
-                    "to embed the member id(s) in the plot file path."
-                ),
-                type=int,
-                multiple=True,
-                required=True,
-            ),
-        ]
-
-    @click_options
     def plot():
-        return [
-            click.option(
-                "--ens-var",
-                help="Ensemble variable to plot. Requires ensemble simulation data.",
-                type=click.Choice(["mean", "max", "thr_agrmt"]),
-                required=True,
-            )
-        ]
-
-
-class ConcentrationOptions(ClickOptionsGroup):
-    @click_options
-    def input():
-        return [
-            click.option(
-                "--level-ind",
-                "var_specs_raw__level_lst",
-                help=(
-                    "Index/indices of vertical level (zero-based, bottom-up). To sum "
-                    "up multiple levels, combine their indices with '+'. Format key: "
-                    "'{level_ind}'."
-                ),
-                type=plus_separated_list_of_unique_ints,
-                default=["0"],
-                multiple=True,
-            ),
-        ]
-
-    @click_options
-    def plot():
-        return [
-            click.option(
-                "--plot-var",
-                help="What variable to plot/how to plot the input variable.",
-                type=click.Choice(["auto"]),
-                default="auto",
-            ),
-        ]
-
-
-class DepositionOptions(ClickOptionsGroup):
-    @click_options
-    def input():
-        """Common options of dispersion plots (deposition)."""
-        return [
-            click.option(
-                "--deposition-type",
-                "var_specs_raw__deposition_lst",
-                help=(
-                    "Type of deposition. Part of the plot variable name that may be "
-                    "embedded in the plot file path with the format key '{variable}'."
-                ),
-                type=CombinationChoices(["wet", "dry"], {"tot": ("wet", "dry")}),
-                default=["tot"],
-                multiple=True,
-            )
-        ]
-
-    @click_options
-    def plot_deterministic():
-        return [
-            click.option(
-                "--plot-var",
-                help="What variable to plot/how to plot the input variable.",
-                type=click.Choice(["auto", "affected_area", "affected_area_mono"]),
-                default="auto",
-            )
-        ]
-
-    @click_options
-    def plot_ensemble():
-        return [
-            click.option(
-                "--plot-var",
-                help="What variable to plot/how to plot the input variable.",
-                type=click.Choice(["auto"]),
-                default="auto",
-            )
-        ]
+        return []
 
 
 @click.group(
-    context_settings={"help_option_names": ["-h", "--help"]}, no_args_is_help=True,
+    invoke_without_command=True,
+    no_args_is_help=True,
+    context_settings={"help_option_names": ["-h", "--help"]},
 )
-@GlobalOptions.execution
 @click.version_option(__version__, "--version", "-V", message="%(version)s")
+@GlobalOptions.execution
+@GlobalOptions.input
+@GlobalOptions.output
+@GlobalOptions.preproc
+@GlobalOptions.plot
 @click.pass_context
-def cli(ctx, **kwargs):
+@group_kwargs("exe")
+@group_kwargs("var_specs_raw")
+def cli(ctx, exe, **kwargs):
     """Create FLEXPART dispersion plots."""
 
     click.echo("Welcome fellow PyFlexPlotter!")
 
-    log.basicConfig(level=count_to_log_level(kwargs["verbose"]))
+    log.basicConfig(level=count_to_log_level(exe["verbose"]))
 
     # Ensure that ctx.obj exists and is a dict
     ctx.ensure_object(dict)
 
     # Store shared keyword arguments in ctx.obj
-    ctx.obj.update(kwargs)
+    ctx.obj.update(exe)
+
+    # Create plots
+    create_plots(ctx=ctx, **kwargs)
 
     return 0
-
-
-@click.group()
-def deterministic():
-    return 0
-
-
-cli.add_command(deterministic)
-
-
-@click.group()
-def ensemble():
-    return 0
-
-
-cli.add_command(ensemble)
-
-
-@deterministic.command(
-    name="concentration", help="Activity concentration; deterministic simulation data.",
-)
-@GlobalOptions.input
-@GlobalOptions.output
-@GlobalOptions.preproc
-@GlobalOptions.plot
-@ConcentrationOptions.input
-@ConcentrationOptions.plot
-@click.pass_context
-@group_kwargs("var_specs_raw")
-def deterministic_concentration(ctx, plot_var, **kwargs):
-    var_in = "concentration"
-    create_plots(ctx=ctx, var_in=var_in, **kwargs)
-
-
-@deterministic.command(
-    name="deposition", help="Surface deposition; deterministic simulation data.",
-)
-@GlobalOptions.input
-@GlobalOptions.output
-@GlobalOptions.preproc
-@GlobalOptions.plot
-@DepositionOptions.input
-@DepositionOptions.plot_deterministic
-@click.pass_context
-@group_kwargs("var_specs_raw")
-def deterministic_deposition(ctx, plot_var, **kwargs):
-    var_in = "deposition" if plot_var == "auto" else plot_var
-    create_plots(ctx=ctx, var_in=var_in, **kwargs)
-
-
-@ensemble.command(
-    name="concentration", help="Activity concentration; ensemble simulation data.",
-)
-@GlobalOptions.input
-@GlobalOptions.output
-@GlobalOptions.preproc
-@GlobalOptions.plot
-@EnsembleOptions.input
-@EnsembleOptions.plot
-@ConcentrationOptions.input
-@ConcentrationOptions.plot
-@click.pass_context
-@group_kwargs("var_specs_raw")
-def ensemble_concentration(ctx, plot_var, **kwargs):
-    var_in = "concentration"
-    create_plots(ctx=ctx, var_in=var_in, **kwargs)
-
-
-@ensemble.command(
-    name="deposition", help="Surface deposition; ensemble simulation data.",
-)
-@GlobalOptions.input
-@GlobalOptions.output
-@GlobalOptions.preproc
-@GlobalOptions.plot
-@EnsembleOptions.input
-@EnsembleOptions.plot
-@DepositionOptions.input
-@DepositionOptions.plot_ensemble
-@click.pass_context
-@group_kwargs("var_specs_raw")
-def ensemble_deposition(ctx, plot_var, **kwargs):
-    var_in = {"auto": "deposition"}.get(plot_var, plot_var)
-    create_plots(ctx=ctx, var_in=var_in, **kwargs)
 
 
 if __name__ == "__main__":
