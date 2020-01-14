@@ -8,10 +8,12 @@ from textwrap import dedent
 
 
 def show_example(ctx, param, value):
-    if value == "naz-det-sh":
+    if value is None:
+        return
+    elif value == "naz-det-sh":
         naz_det_sh()
     else:
-        raise NotImplementedError(f"example '{value}'")
+        raise NotImplementedError(f"example={value}")
     ctx.exit(0)
 
 
@@ -49,10 +51,10 @@ def naz_det_sh():
             --domain="${domain}"
         )
 
-        pyflexplot "${args[@]}" --field=concentration --plot-var=auto               --species-id=2   --time-ind=3  --no-integrate --level-ind=0
-        pyflexplot "${args[@]}" --field=concentration --plot-var=auto               --species-id=1   --time-ind=10 --integrate    --level-ind=0
-        pyflexplot "${args[@]}" --field=deposition    --plot-var=auto               --species-id=2   --time-ind=3  --integrate    --deposition-type=tot
-        pyflexplot "${args[@]}" --field=deposition    --plot-var=affected_area_mono --species-id=1+2 --time-ind=10 --integrate    --deposition-type=tot
+        pyflexplot "${args[@]}" --field=concentration --plot-type=auto               --species-id=2   --time-ind=3  --no-integrate --level-ind=0
+        pyflexplot "${args[@]}" --field=concentration --plot-type=auto               --species-id=1   --time-ind=10 --integrate    --level-ind=0
+        pyflexplot "${args[@]}" --field=deposition    --plot-type=auto               --species-id=2   --time-ind=3  --integrate    --deposition-type=tot
+        pyflexplot "${args[@]}" --field=deposition    --plot-type=affected_area_mono --species-id=1+2 --time-ind=10 --integrate    --deposition-type=tot
 
         done
         done"""

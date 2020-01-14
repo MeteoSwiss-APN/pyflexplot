@@ -462,7 +462,7 @@ class GlobalOptions(ClickOptionsGroup):
                 help="Example commands.",
                 type=click.Choice(["naz-det-sh"]),
                 callback=show_example,
-                is_eager=True,
+                expose_value=False,
             ),
         ]
 
