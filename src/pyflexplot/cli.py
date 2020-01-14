@@ -10,8 +10,9 @@ import sys
 
 from srutils.various import group_kwargs
 
-from . import __version__
+from .examples import show_example
 from .field_specs import FieldSpecs
+from . import __version__
 from .io import FileReader
 from .plotter import Plotter
 from .utils import count_to_log_level
@@ -290,7 +291,7 @@ def create_plots(
         ens_var_setup=ens_var_setup,
         in_file_path_raw_lst=in_file_path_raw_lst,
         lang=lang,
-        **kwargs
+        **kwargs,
     )
 
     if ctx.obj["no_plot"]:
@@ -455,6 +456,13 @@ class GlobalOptions(ClickOptionsGroup):
                 "--open-all",
                 "exe__open_all_cmd",
                 help="Like --open-first, but for all plots.",
+            ),
+            click.option(
+                "--example",
+                help="Example commands.",
+                type=click.Choice(["naz-det-sh"]),
+                callback=show_example,
+                is_eager=True,
             ),
         ]
 
@@ -627,22 +635,13 @@ class GlobalOptions(ClickOptionsGroup):
         ]
 
 
-@click.command(
-    context_settings={"help_option_names": ["-h", "--help"]},
-)
+@click.command(context_settings={"help_option_names": ["-h", "--help"]},)
 @click.version_option(__version__, "--version", "-V", message="%(version)s")
 @click.argument(
-    "in_file_path_raw_lst",
-    metavar="INFILE(S)",
-    type=str,
-    nargs=-1,
-    required=True,
+    "in_file_path_raw_lst", metavar="INFILE(S)", type=str, nargs=-1, required=True,
 )
 @click.argument(
-    "out_file_path_raw",
-    metavar="OUTFILE",
-    type=str,
-    required=True,
+    "out_file_path_raw", metavar="OUTFILE", type=str, required=True,
 )
 @GlobalOptions.execution
 @GlobalOptions.input
