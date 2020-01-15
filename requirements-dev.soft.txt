@@ -1,12 +1,11 @@
 -e .
 black
 bump2version
-# coverage
 flake8
 flake8-black
 ipython
+isort
 # pluggy
-pytest
 # Sphinx
 tox
 # watchdog
