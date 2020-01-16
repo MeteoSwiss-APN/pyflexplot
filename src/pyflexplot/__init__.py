@@ -5,7 +5,7 @@ Top-level package for PyFlexPlot.
 
 __author__ = """Stefan Ruedisuehli"""
 __email__ = "stefan.ruedisuehli@env.ethz.ch"
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 
 import sys
 import os.path
