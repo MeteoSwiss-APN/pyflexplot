@@ -1,0 +1,22 @@
+attrs==19.3.0
+Cartopy===0.17.1.dev237-
+cftime==1.0.4.2
+Click==7.0
+click-config-file==0.5.0
+configobj==5.0.6
+cycler==0.10.0
+Cython==0.29.14
+geographiclib==1.50
+geopy==1.20.0
+kiwisolver==1.1.0
+matplotlib==3.1.2
+netCDF4==1.5.3
+numpy==1.18.1
+Pillow==7.0.0
+-e git+git@github.com:MeteoSwiss-APN/pyflexplot.git@9b5e22af13d3c819de6e25114b55dd57346efee8#egg=pyflexplot
+pyparsing==2.4.6
+pyshp==2.1.0
+python-dateutil==2.8.1
+scipy==1.4.1
+Shapely==1.7b1
+six==1.14.0
