@@ -362,27 +362,6 @@ class MapAxesRotatedPole(SummarizablePlotClass):
     def add_rivers(self, zorder_key):
         linewidth = {"lowest": 1, "geo_lower": 1, "geo_upper": 2 / 3}[zorder_key]
 
-        # SR_DBG <<< TODO remove once bugfix in Cartopy master
-        def try_add_rivers(name, rivers):
-            """Check if rivers are valid, and if so, add them."""
-            from warnings import warn
-            try:
-                rivers.geometries()
-            except:
-                warn(
-                    f"cannot add {name} rivers (shapely issue with "
-                    "'rivers_lake_centerline); pending bugfix: "
-                    "https://github.com/SciTools/cartopy/pull/1411; workaround: use "
-                    "https://github.com/shevawen/cartopy/tree/patch-1"
-                )
-            else:
-                warn(
-                    f"successfully added {name} rivers; "
-                    "TODO: remove workaround and pin minimum Cartopy version!"
-                )
-                self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
-        # SR_DBG >
-
         major_rivers = cartopy.feature.NaturalEarthFeature(
             category="physical",
             name="rivers_lake_centerlines",
@@ -391,8 +370,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
             facecolor=(0, 0, 0, 0),
             linewidth=linewidth,
         )
-        # SR_DBG< TODO remove once bugfix in Cartopy master
-        try_add_rivers("major", major_rivers)
+        # SR_DBG < TODO revert once bugfix in Cartopy master
         # self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
         # SR_DBG >
 
@@ -405,7 +383,30 @@ class MapAxesRotatedPole(SummarizablePlotClass):
                 facecolor=(0, 0, 0, 0),
                 linewidth=linewidth,
             )
-            self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
+            # SR_DBG < TODO revert once bugfix in Cartopy master
+            # self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
+            # SR_DBG >
+
+        # SR_DBG <<< TODO remove once bugfix in Cartopy master
+        from warnings import warn
+        try:
+            major_rivers.geometries()
+        except:
+            warn(
+                f"cannot add major rivers due to shapely issue with "
+                "'rivers_lake_centerline; pending bugfix: "
+                "https://github.com/SciTools/cartopy/pull/1411; workaround: use "
+                "https://github.com/shevawen/cartopy/tree/patch-1"
+            )
+        else:
+            warn(
+                f"successfully added major rivers; "
+                "TODO: remove workaround and pin minimum Cartopy version!"
+            )
+            self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
+            if self.conf.geo_res_rivers == "10m":
+                self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
+        # SR_DBG >
 
     def add_cities(self):
         """Add major cities, incl. all capitals."""
