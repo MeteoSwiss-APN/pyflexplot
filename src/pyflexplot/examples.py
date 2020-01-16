@@ -22,7 +22,7 @@ def naz_det_sh():
     s = """\
         #!/bin/bash
 
-        data="/scratch/ruestefa/flexpart_visualization/test/data"
+        data="/scratch/ruestefa/shared/flexpart_visualization/test/data"
         infile="${data}/cosmo-1_2019052800.nc"
 
         dest="./png"
