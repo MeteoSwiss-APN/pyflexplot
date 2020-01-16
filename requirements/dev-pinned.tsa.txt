@@ -28,6 +28,7 @@ geographiclib==1.50
 geopy==1.20.0
 idna==2.8
 importlib-metadata==1.4.0
+ipdb==0.12.3
 ipython==7.5.0
 ipython-genutils==0.2.0
 isort==4.3.21
@@ -60,7 +61,7 @@ ptyprocess==0.6.0
 py==1.8.1
 pycodestyle==2.5.0
 pyflakes==2.1.1
--e git+git@github.com:MeteoSwiss-APN/pyflexplot.git@ed875f33288c3459225c47a63b1cbfff55dbb2a3#egg=pyflexplot
+-e git+git@github.com:MeteoSwiss-APN/pyflexplot.git@9c24c0bcd9fb84be3d8e1ed61fb68f6ce3957d7d#egg=pyflexplot
 Pygments==2.4.2
 pyparsing==2.4.5
 pyshp==2.1.0

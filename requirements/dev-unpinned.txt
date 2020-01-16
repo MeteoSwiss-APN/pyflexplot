@@ -3,6 +3,7 @@ black
 bump2version
 flake8
 flake8-black
+ipdb
 ipython
 isort
 pytest
