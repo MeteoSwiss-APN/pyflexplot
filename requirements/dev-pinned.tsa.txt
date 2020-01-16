@@ -14,6 +14,7 @@ Click==7.0
 click-config-file==0.5.0
 configobj==5.0.6
 cookiecutter==1.6.0
+coverage==5.0.3
 cycler==0.10.0
 Cython==0.29.14
 decorator==4.4.0
@@ -59,10 +60,12 @@ ptyprocess==0.6.0
 py==1.8.1
 pycodestyle==2.5.0
 pyflakes==2.1.1
--e git+git@github.com:MeteoSwiss-APN/pyflexplot.git@d1ee84fbfadd58e00f5c14480273e8594e029f04#egg=pyflexplot
+-e git+git@github.com:MeteoSwiss-APN/pyflexplot.git@ed875f33288c3459225c47a63b1cbfff55dbb2a3#egg=pyflexplot
 Pygments==2.4.2
 pyparsing==2.4.5
 pyshp==2.1.0
+pytest==5.3.2
+pytest-cov==2.8.1
 python-dateutil==2.8.0
 pytz==2019.3
 regex==2020.1.8

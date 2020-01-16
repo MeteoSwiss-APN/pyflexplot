@@ -5,6 +5,8 @@ flake8
 flake8-black
 ipython
 isort
+pytest
+pytest-cov
 # pluggy
 # Sphinx
 tox
