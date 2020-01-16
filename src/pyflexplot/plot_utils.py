@@ -365,19 +365,19 @@ class MapAxesRotatedPole(SummarizablePlotClass):
         # SR_DBG <<< TODO remove once bugfix in Cartopy master
         def try_add_rivers(name, rivers):
             """Check if rivers are valid, and if so, add them."""
-            from textwrap import dedent
+            from warnings import warn
             try:
                 rivers.geometries()
             except:
-                print(
-                    f"warning: cannot add {name} rivers (shapely issue with "
+                warn(
+                    f"cannot add {name} rivers (shapely issue with "
                     "'rivers_lake_centerline); pending bugfix: "
                     "https://github.com/SciTools/cartopy/pull/1411; workaround: use "
                     "https://github.com/shevawen/cartopy/tree/patch-1"
                 )
             else:
-                print(
-                    f"warning: successfully added {rivers}; "
+                warn(
+                    f"successfully added {name} rivers; "
                     "TODO: remove workaround and pin minimum Cartopy version!"
                 )
                 self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
@@ -405,10 +405,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
                 facecolor=(0, 0, 0, 0),
                 linewidth=linewidth,
             )
-            # SR_DBG < TODO remove once bugfix in Cartopy master
-            try_add_rivers("minor", minor_rivers)
-            # self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
-            # SR_DBG >
+            self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
 
     def add_cities(self):
         """Add major cities, incl. all capitals."""
