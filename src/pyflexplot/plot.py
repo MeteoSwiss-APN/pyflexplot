@@ -397,7 +397,11 @@ class DispersionPlot_old(Plot):  # SR_TMP
         h_rel_box_rt = self.text_box_setup["h_rel_box_rt"]
 
         # Freeze the map plot in order to fix it's coordinates (bbox)
-        self.fig.canvas.draw()
+        try:
+            self.fig.canvas.draw()
+        except Exception as e:
+            # Avoid long library tracebacks (matplotlib/cartopy/urllib/...)
+            raise RuntimeError(e)
 
         # Obtain aspect ratio of figure
         fig_pxs = self.fig.get_window_extent()

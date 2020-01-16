@@ -361,29 +361,54 @@ class MapAxesRotatedPole(SummarizablePlotClass):
 
     def add_rivers(self, zorder_key):
         linewidth = {"lowest": 1, "geo_lower": 1, "geo_upper": 2 / 3}[zorder_key]
-        self.ax.add_feature(
-            cartopy.feature.NaturalEarthFeature(
+
+        # SR_DBG <<< TODO remove once bugfix in Cartopy master
+        def try_add_rivers(name, rivers):
+            """Check if rivers are valid, and if so, add them."""
+            from textwrap import dedent
+            try:
+                rivers.geometries()
+            except:
+                print(
+                    f"warning: cannot add {name} rivers (shapely issue with "
+                    "'rivers_lake_centerline); pending bugfix: "
+                    "https://github.com/SciTools/cartopy/pull/1411; workaround: use "
+                    "https://github.com/shevawen/cartopy/tree/patch-1"
+                )
+            else:
+                print(
+                    f"warning: successfully added {rivers}; "
+                    "TODO: remove workaround and pin minimum Cartopy version!"
+                )
+                self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
+        # SR_DBG >
+
+        major_rivers = cartopy.feature.NaturalEarthFeature(
+            category="physical",
+            name="rivers_lake_centerlines",
+            scale=self.conf.geo_res,
+            edgecolor=self.water_color,
+            facecolor=(0, 0, 0, 0),
+            linewidth=linewidth,
+        )
+        # SR_DBG< TODO remove once bugfix in Cartopy master
+        try_add_rivers("major", major_rivers)
+        # self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
+        # SR_DBG >
+
+        if self.conf.geo_res_rivers == "10m":
+            minor_rivers = cartopy.feature.NaturalEarthFeature(
                 category="physical",
-                name="rivers_lake_centerlines",
+                name="rivers_europe",
                 scale=self.conf.geo_res,
                 edgecolor=self.water_color,
                 facecolor=(0, 0, 0, 0),
                 linewidth=linewidth,
-            ),
-            zorder=self.zorder[zorder_key],
-        )
-        if self.conf.geo_res_rivers == "10m":
-            self.ax.add_feature(
-                cartopy.feature.NaturalEarthFeature(
-                    category="physical",
-                    name="rivers_europe",
-                    scale=self.conf.geo_res,
-                    edgecolor=self.water_color,
-                    facecolor=(0, 0, 0, 0),
-                    linewidth=linewidth,
-                ),
-                zorder=self.zorder[zorder_key],
             )
+            # SR_DBG < TODO remove once bugfix in Cartopy master
+            try_add_rivers("minor", minor_rivers)
+            # self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
+            # SR_DBG >
 
     def add_cities(self):
         """Add major cities, incl. all capitals."""

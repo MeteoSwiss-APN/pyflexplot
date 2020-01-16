@@ -282,7 +282,7 @@ class GlobalOptions(ClickOptionsGroup):
                 ),
             ),
             click.option(
-                "--open-all",
+                "--open",
                 "exe__open_all_cmd",
                 help="Like --open-first, but for all plots.",
             ),
