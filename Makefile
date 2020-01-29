@@ -83,12 +83,12 @@ clean-test: ## remove test and coverage artifacts
 
 install: ## install the package (non-editable)
 	# python -m pip install -r requirements/setup.txt
-	python setup.py install
+	python -m pip install .
 
 install-pinned: ## install the package (non-editable)
 	# python -m pip install -r requirements/setup.txt
 	python -m pip install -r requirements/run-pinned.txt
-	python setup.py install
+	python -m pip install .
 
 install-dev: install ## install the package (editable) and the development dependencies
 	python -m pip install -r requirements/dev-unpinned.txt
@@ -99,15 +99,16 @@ install-dev: install ## install the package (editable) and the development depen
 
 venv: ## create a virtual environment; options: VENV_DIR=venv, VENV_NAME=pyflexplot
 	python -m venv ${VENV_DIR} --prompt='${VENV_NAME}'
+	${VENV_DIR}/bin/python -m pip install -U pip
 
 venv-install: venv ## install the package (non-editable) into a virtual environment; options: VENV_DIR=venv, VENV_NAME=pyflexplot
 	# ${VENV_DIR}/bin/python -m pip install -r requirements/setup.txt
-	${VENV_DIR}/bin/python setup.py install
+	${VENV_DIR}/bin/python -m pip install .
 
 venv-install-pinned: venv ## install the package (non-editable) into a virtual environment with pinned dependencies; options: VENV_DIR=venv, VENV_NAME=pyflexplot
 	# ${VENV_DIR}/bin/python -m pip install -r requirements/setup.txt
 	${VENV_DIR}/bin/python -m pip install -r requirements/run-pinned.txt
-	${VENV_DIR}/bin/python setup.py install
+	${VENV_DIR}/bin/python -m pip install .
 
 venv-install-dev: venv-install ## install the package (editable) and the development dependencies into a virtual environment; options: VENV_DIR=venv, VENV_NAME=pyflexplot
 	${VENV_DIR}/bin/python -m pip install -r requirements/dev-unpinned.txt
@@ -168,17 +169,5 @@ test-all: ## run tests on all specified Python versions with tox
 
 # servedocs: docs ## compile the docs watching for changes
 # 	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
-
-#==============================================================================
-# Release
-#==============================================================================
-
-# release: dist ## package and upload a release
-# 	twine upload dist/*
-
-# dist: clean ## builds source and wheel package
-# 	python setup.py sdist
-# 	python setup.py bdist_wheel
-# 	\ls -l dist
 
 #==============================================================================
