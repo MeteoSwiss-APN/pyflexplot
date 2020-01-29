@@ -4,56 +4,59 @@
 The setup script.
 """
 
-import subprocess
-import sys
-import warnings
-
 from setuptools import setup
+from setuptools import find_packages
 
-def read_requirements(path):
-    """
-    Read a requirements file line-by-line, stripping away '#'-comments.
-    """
-    try:
-        with open(path) as fi:
-            requirements = []
-            for line in fi.readlines():
-                line = line.strip().split("#", 1)[0]
-                if line:
-                    requirements.append(line)
-    except IOError as e:
-        warnings.warn(
-            f"cannot read requirements from {setup_requirements_file} "
-            f"({type(e).__name__}: {str(e)})"
-        )
-    else:
-        return requirements
+def read_file(path):
+    with open(path, "r") as f:
+        return "\n".join([l.strip() for l in f.readlines()])
 
-def pip_install(packages, args=None, *, ordered=False):
-    """
-    Install a list of packages by calling `python -m pip install ...`.
+description_files = ["README.rst", "HISTORY.rst"]
 
-    Args:
-        packages (list[str]): List of packages.
+metadata = {
+    "name": "pyflexplot",
+    "version": "0.4.0",
+    "description": "PyFlexPlot visualizes FLEXPART particle dispersion simulations.",
+    "long_description": "\n\n".join([read_file(f) for f in description_files]),
+    "author": "Stefan Ruedisuehli",
+    "author_email": "stefan.ruedisuehli@env.ethz.ch",
+    "url": "https://github.com/ruestefa/pyflexplot",
+    "keywords": "NWP dispersion ensemble modeling FLEXPART visualization",
+    "classifiers": [
+        "Development Status :: 2 - Pre-Alpha",
+        "Intended Audience :: Developers",
+        "Natural Language :: English",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
+    ],
+}
 
-        args (list[str], optional): Additional arguments for `pip install`.
-            Defaults to [].
+python = ">=3.7"
 
-        ordered (bool, optional): Whether to preserve the package order by
-            installing them in sequence or all at once. Defaults to False.
+dependencies = [
+    "attrs",
+    "cartopy @ git+ssh://git@github.com/MeteoSwiss-APN/cartopy.git",
+    "Click >= 6.0",
+    "click-config-file",
+    "geopy",
+    "matplotlib",
+    "netCDF4",
+    "numpy",
+    "pillow >= 6.2.0",
+    "scipy",
+]
 
-    """
-    if args is None:
-        args = []
-    args = [sys.executable, "-m", "pip", "install"] + args
-    if not ordered:
-        packages = [s for ss in packages for s in ss.split()]
-        subprocess.check_call(args + packages)
-    else:
-        for package in packages:
-            subprocess.check_call(args + package.split())
+scripts = [
+    'pyflexplot=pyflexplot.cli:cli',
+    'crop-netcdf=tools.crop_netcdf:main',
+]
 
-# Install setup requirements specified in file with pip
-pip_install(read_requirements("requirements/setup-ordered.txt"), ordered=True)
-
-setup()
+setup(
+    python_requires=python,
+    install_requires=dependencies,
+    entry_points={"console_scripts": scripts},
+    packages=find_packages("src"),
+    package_dir={"": "src"},
+    include_package_data=True,
+    **metadata,
+)

@@ -7,7 +7,7 @@ SHELL := /bin/bash
 # Helper Functions
 #==============================================================================
 
-define BROWSER_PYSCRIPT
+define browser_py
 import os, webbrowser, sys
 
 try:
@@ -15,22 +15,22 @@ try:
 except:
 	from urllib.request import pathname2url
 
-webbrowser.open("file://" + pathname2url(os.path.abspath(sys.argv[1])))
+webbrowser.open(f"file://{pathname2url(os.path.abspath(sys.argv[1]))}")
 endef
-export BROWSER_PYSCRIPT
+export browser_py
 
 #==============================================================================
 
-define PRINT_HELP_PYSCRIPT
+define print_help_py
 import re, sys
 
 for line in sys.stdin:
-	match = re.match(r'^([a-zA-Z_-]+):.*?## (.*)$$', line)
+	match = re.match(r"^([a-zA-Z_-]+):.*?## (.*)$$", line)
 	if match:
 		target, help = match.groups()
-		print("%-20s %s" % (target, help))
+		print(f"{target:20s} {help}))
 endef
-export PRINT_HELP_PYSCRIPT
+export print_help_py
 
 #==============================================================================
 # Options
@@ -43,14 +43,14 @@ VENV_NAME ?= pyflexplot
 # Parameters
 #==============================================================================
 
-BROWSER := python -c "$$BROWSER_PYSCRIPT"
+BROWSER := python -c "$$browser_py"
 
 #==============================================================================
 # Help
 #==============================================================================
 
 help:
-	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
+	@python -c "$$print_help_py" < $(MAKEFILE_LIST)
 
 #==============================================================================
 # Cleanup
@@ -101,16 +101,16 @@ venv: ## create a virtual environment; options: VENV_DIR=venv, VENV_NAME=pyflexp
 	python -m venv ${VENV_DIR} --prompt='${VENV_NAME}'
 	${VENV_DIR}/bin/python -m pip install -U pip
 
-venv-install: venv ## install the package (non-editable) into a virtual environment; options: VENV_DIR=venv, VENV_NAME=pyflexplot
+venv-install: venv ## install the package (non-editable); options: VENV_DIR=venv, VENV_NAME=pyflexplot
 	# ${VENV_DIR}/bin/python -m pip install -r requirements/setup.txt
 	${VENV_DIR}/bin/python -m pip install .
 
-venv-install-pinned: venv ## install the package (non-editable) into a virtual environment with pinned dependencies; options: VENV_DIR=venv, VENV_NAME=pyflexplot
+venv-install-pinned: venv ## install the package (non-editable) with pinned dependencies; options: VENV_DIR=venv, VENV_NAME=pyflexplot
 	# ${VENV_DIR}/bin/python -m pip install -r requirements/setup.txt
 	${VENV_DIR}/bin/python -m pip install -r requirements/run-pinned.txt
 	${VENV_DIR}/bin/python -m pip install .
 
-venv-install-dev: venv-install ## install the package (editable) and the development dependencies into a virtual environment; options: VENV_DIR=venv, VENV_NAME=pyflexplot
+venv-install-dev: venv-install ## install the package (editable) and the development dependencies; options: VENV_DIR=venv, VENV_NAME=pyflexplot
 	${VENV_DIR}/bin/python -m pip install -r requirements/dev-unpinned.txt
 
 #==============================================================================
@@ -141,8 +141,8 @@ lint: ## check the code style
 # Testing
 #==============================================================================
 
-test: ## run tests quickly with the default Python version
-	pytest -r s
+test: ## run all tests with the default Python version
+	python -m pytest
 
 coverage: ## check code coverage of tests
 	coverage run --source src -m pytest
