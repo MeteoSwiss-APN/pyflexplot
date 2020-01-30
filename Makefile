@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 .PHONY: clean-all clean-test clean-pyc clean-build clean-venv
-.PHONY: venv install install-pinned install-test install-test-pinned install-dev
+.PHONY: venv install install-edit install-pinned install-test install-test-pinned install-dev
 .PHONY: test test-cov test-cov-html test-all
 .PHONY: docs help
 .DEFAULT_GOAL := help
@@ -89,29 +89,6 @@ endef
 export PRINT_HELP_PY
 
 #==============================================================================
-# Python script: Find local packages in venvs site_packages
-#==============================================================================
-
-define COV_SITE_PACKAGES_PY
-import glob
-import os
-import site
-
-flag="--cov="
-
-paths = site.getsitepackages()
-assert len(paths) == 1
-path = os.path.relpath(next(iter(paths)))
-assert not path.startswith("../")
-
-packages = [s.split("/")[1] for s in glob.glob("src/*/__init__.py")]
-
-print(" ".join([f"{flag}{path}/{package}" for package in packages]))
-endef
-export COV_SITE_PACKAGES_PY
-cov_site_packages = ${PREFIX}python -c "$$COV_SITE_PACKAGES_PY"
-
-#==============================================================================
 # Python script: Open browser
 #==============================================================================
 
@@ -141,20 +118,20 @@ help:
 # Cleanup
 #==============================================================================
 
-clean-all: clean-build clean-pyc clean-test clean-venv #CMD Remove all build, test, coverage and Python artifacts.
+clean-all: clean-venv clean-test clean-build clean-pyc #CMD Remove all build, test, coverage and Python artifacts.
 
 clean-build: #CMD Remove build artifacts.
 	\rm -rf "build/"
 	\rm -rf "dist/"
 	\rm -rf ".eggs/"
-	@\find . -not -path './venv*' -and -not -path './ENV*' -name '*.egg' -exec echo "rm -f '{}'" \; -exec \rm -f "{}" \;
-	@\find . -not -path './venv*' -and -not -path './ENV*' -name '*.egg' -exec echo "rm -f '{}'" \; -exec \rm -f "{}" \;
+	@\rm -ff $(\find . -not -path './venv*' -and -not -path './ENV*' -name '*.egg' -exec echo "rm -ff '{}'" \;)
+	@\rm -ff $(\find . -not -path './venv*' -and -not -path './ENV*' -name '*.egg' -exec echo "rm -ff '{}'" \;)
 
 clean-pyc: #CMD Remove Python file artifacts.
-	@\find . -not -path './venv*' -and -not -path './ENV*' -name '*.pyc' -exec echo "rm -f '{}'" \; -exec \rm -f "{}" \;
-	@\find . -not -path './venv*' -and -not -path './ENV*' -name '*.pyo' -exec echo "rm -f '{}'" \; -exec \rm -f "{}" \;
-	@\find . -not -path './venv*' -and -not -path './ENV*' -name '*~' -exec echo "rm -f '{}'" \; -exec \rm -f "{}" \;
-	@\find . -not -path './venv*' -and -not -path './ENV*' -name '__pycache__' -exec echo "rm -rf '{}'" \; -exec \rm -rf "{}" \; 2>/dev/null
+	@\rm -rf $(\find . -not -path './venv*' -and -not -path './ENV*' -name '*.pyc'       -exec echo "rm -rf '{}'" \;)
+	@\rm -rf $(\find . -not -path './venv*' -and -not -path './ENV*' -name '*.pyo'       -exec echo "rm -rf '{}'" \;)
+	@\rm -rf $(\find . -not -path './venv*' -and -not -path './ENV*' -name '*~'          -exec echo "rm -rf '{}'" \;)
+	@\rm -rf $(\find . -not -path './venv*' -and -not -path './ENV*' -name '__pycache__' -exec echo "rm -rf '{}'" \;)
 
 clean-test: #CMD Remove test and coverage artifacts.
 	\rm -rf ".tox/"
@@ -186,8 +163,8 @@ endif
 install: venv #CMD Install the package with unpinned runtime dependencies.
 	${PREFIX}python -m pip install .
 
-install-test: install #CMD Install the package with unpinned runtime and testing dependencies.
-	${PREFIX}python -m pip install -r requirements/test-unpinned.txt
+install-edit: venv #CMD Install the package as editable with unpinned runtime dependencies.
+	${PREFIX}python -m pip install -e .
 
 install-pinned: venv #CMD Install the package with pinned runtime dependencies.
 	${PREFIX}python -m pip install -r requirements/run-pinned.txt
@@ -195,11 +172,12 @@ install-pinned: venv #CMD Install the package with pinned runtime dependencies.
 
 install-test-pinned: venv #CMD Install the package with pinned runtime and testing dependencies.
 	${PREFIX}python -m pip install -r requirements/test-pinned.txt
-	${PREFIX}python -m pip install .
-
-install-dev: venv #CMD Install the package as editable with unpinned runtime,\ntesting, and development dependencies.
 	${PREFIX}python -m pip install -e .
+
+install-test: install-edit #CMD Install the package with unpinned runtime and testing dependencies.
 	${PREFIX}python -m pip install -r requirements/test-unpinned.txt
+
+install-dev: install-test #CMD Install the package as editable with unpinned runtime,\ntesting, and development dependencies.
 	${PREFIX}python -m pip install -r requirements/dev-unpinned.txt
 
 #==============================================================================
@@ -234,7 +212,7 @@ test: install-test #CMD Run all tests with the default Python version.
 	${PREFIX}pytest
 
 test-cov: install-test #CMD Check code coverage of tests.
-	${PREFIX}pytest $$(${cov_site_packages})
+	${PREFIX}pytest --cov=src
 
 test-cov-html: install-test #CMD Check code coverage of tests and show results in browser.
 	${PREFIX}pytest --cov=src --cov-report=html
