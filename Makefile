@@ -1,21 +1,37 @@
 SHELL := /bin/bash
 
-.PHONY: clean-all clean-test clean-pyc clean-build clean-venv venv venv-install venv-install-pinned venv-install-dev docs help
+.PHONY: clean-all clean-test clean-pyc clean-build clean-venv
+.PHONY: venv install install-pinned install-test install-test-pinned install-dev
+.PHONY: test test-cov test-cov-html test-all
+.PHONY: docs help
 .DEFAULT_GOAL := help
 
 #==============================================================================
 # Options
 #==============================================================================
 
+IGNORE_VENV ?= 0#OPT Don't create and/or use a virtual environment.
 VENV_DIR ?= venv#OPT Path to virtual environment to be created and/or used.
 VENV_NAME ?= pyflexplot#OPT Name of virtual environment if one is created.
 
 #------------------------------------------------------------------------------
 
-prefix = ${VENV_DIR}/bin/#
+PREFIX_VENV = ${VENV_DIR}/bin/#
+export PREVIX_VENV
+
+ifneq (${IGNORE_VENV}, 0)
+PREFIX ?=#
+else
+ifeq (${VIRTUAL_ENV},)
+PREFIX =#
+else
+PREFIX = ${PREFIX_VENV}
+endif
+endif
+export PREFIX
 
 #==============================================================================
-# Function: Print Help
+# Python script: Print help
 #==============================================================================
 
 define PRINT_HELP_PY
@@ -23,40 +39,40 @@ import re
 import sys
 
 def parse_makefile(lines):
-	options = {}
-	commands = {}
-	rx_opt = re.compile(
-		r"^(?P<name>[A-Z_]+) *\?= *(?P<value>[^ ]*) *(#OPT (?P<help>.*))? *$$"
-	)
-	rx_cmd = re.compile(
-		r"^(?P<name>[a-zA-Z_-]+):.*?#CMD (?P<help>.*) *$$"
-	)
-	for line in lines:
-		match_opt = rx_opt.match(line)
-		match_cmd = rx_cmd.match(line)
-		if match_opt:
-			m = match_opt
-			help = m.group("help").split(r"\n")
-			options[m.group("name")] = (m.group("value"), help)
-		elif match_cmd:
-			m = match_cmd
-			commands[m.group("name")] = m.group("help").split(r"\n")
-	return options, commands
+    options = {}
+    commands = {}
+    rx_opt = re.compile(
+        r"^(?P<name>[A-Z_]+) *\?= *(?P<value>[^ ]*) *#OPT (?P<help>.*)? *$$"
+    )
+    rx_cmd = re.compile(
+        r"^(?P<name>[a-zA-Z_-]+):.*?#CMD (?P<help>.*) *$$"
+    )
+    for line in lines:
+        match_opt = rx_opt.match(line)
+        match_cmd = rx_cmd.match(line)
+        if match_opt:
+            m = match_opt
+            help = m.group("help").split(r"\n")
+            options[m.group("name")] = (m.group("value"), help)
+        elif match_cmd:
+            m = match_cmd
+            commands[m.group("name")] = m.group("help").split(r"\n")
+    return options, commands
 
 def format_options(items):
-	s = ""
-	for name, (value, help) in items.items():
-		name_value = f"{name}={value}"
-		for idx, line in enumerate(help):
-			s += f"  {name_value if idx == 0 else '':25s} {line}\n"
-	return s.rstrip()
+    s = ""
+    for name, (value, help) in items.items():
+        name_value = f"{name}={value}"
+        for idx, line in enumerate(help):
+            s += f"  {name_value if idx == 0 else '':25s} {line}\n"
+    return s.rstrip()
 
 def format_commands(items):
-	s = ""
-	for name, help in items.items():
-		for idx, line in enumerate(help):
-			s += f"  {name if idx == 0 else '':25s} {line}\n"
-	return s.rstrip()
+    s = ""
+    for name, help in items.items():
+        for idx, line in enumerate(help):
+            s += f"  {name if idx == 0 else '':25s} {line}\n"
+    return s.rstrip()
 
 options, commands = parse_makefile(sys.stdin)
 
@@ -73,21 +89,46 @@ endef
 export PRINT_HELP_PY
 
 #==============================================================================
-# Function: Open Browser
+# Python script: Find local packages in venvs site_packages
+#==============================================================================
+
+define COV_SITE_PACKAGES_PY
+import glob
+import os
+import site
+
+flag="--cov="
+
+paths = site.getsitepackages()
+assert len(paths) == 1
+path = os.path.relpath(next(iter(paths)))
+assert not path.startswith("../")
+
+packages = [s.split("/")[1] for s in glob.glob("src/*/__init__.py")]
+
+print(" ".join([f"{flag}{path}/{package}" for package in packages]))
+endef
+export COV_SITE_PACKAGES_PY
+cov_site_packages = ${PREFIX}python -c "$$COV_SITE_PACKAGES_PY"
+
+#==============================================================================
+# Python script: Open browser
 #==============================================================================
 
 define BROWSER_PY
-import os, webbrowser, sys
+import os
+import sys
+import webbrowser
 
 try:
-	from urllib import pathname2url
+    from urllib import pathname2url
 except:
-	from urllib.request import pathname2url
+    from urllib.request import pathname2url
 
 webbrowser.open(f"file://{pathname2url(os.path.abspath(sys.argv[1]))}")
 endef
 export BROWSER_PY
-browser := python -c "$$BROWSER_PY"
+browser = ${PREFIX}python -c "$$BROWSER_PY"
 
 #==============================================================================
 # Help
@@ -121,47 +162,52 @@ clean-test: #CMD Remove test and coverage artifacts.
 	\rm -rf "htmlcov/"
 	\rm -rf ".pytest_cache"
 
-clean-venv: #CMD Remove virtual environment.\nOptions: VENV_DIR
+clean-venv: #CMD Remove virtual environment.
 	\rm -rf "${VENV_DIR}"
-
-#==============================================================================
-# Installation
-#==============================================================================
-
-install: #CMD Install the package with unpinned runtime dependencies.
-	python -m pip install .
-
-install-pinned: #CMD Install the package with pinned runtime dependencies.
-	python -m pip install -r requirements/run-pinned.txt
-	python -m pip install .
-
-install-dev: install #CMD Install the package as editable with unpinned runtime\nand development dependencies.
-	python -m pip install -r requirements/dev-unpinned.txt
 
 #==============================================================================
 # Virtual Environments
 #==============================================================================
 
-venv: #CMD Create a virtual environment.\nOptions: VENV_DIR, VENV_NAME
+venv: #CMD Create a virtual environment.
+ifeq (${IGNORE_VENV}, 0)
+	$(eval PREFIX = ${PREFIX_VENV})
+	export PREFIX
+ifeq (${VIRTUAL_ENV},)
 	python -m venv ${VENV_DIR} --prompt='${VENV_NAME}'
-	${prefix}python -m pip install -U pip
+	${PREFIX}python -m pip install -U pip
+endif
+endif
 
-venv-install: venv #CMD Install the package with unpinned runtime dependencies.\nOptions: VENV_DIR, VENV_NAME
-	${prefix}python -m pip install .
+#==============================================================================
+# Installation
+#==============================================================================
 
-venv-install-pinned: venv #CMD Install the package with pinned runtime dependencies.\nOptions: VENV_DIR, VENV_NAME
-	${prefix}python -m pip install -r requirements/run-pinned.txt
-	${prefix}python -m pip install .
+install: venv #CMD Install the package with unpinned runtime dependencies.
+	${PREFIX}python -m pip install .
 
-venv-install-dev: venv-install #CMD Install the package as editable with unpinned runtime\nand development dependencies.\nOptions: VENV_DIR, VENV_NAME
-	${prefix}python -m pip install -r requirements/dev-unpinned.txt
+install-test: install #CMD Install the package with unpinned runtime and testing dependencies.
+	${PREFIX}python -m pip install -r requirements/test-unpinned.txt
+
+install-pinned: venv #CMD Install the package with pinned runtime dependencies.
+	${PREFIX}python -m pip install -r requirements/run-pinned.txt
+	${PREFIX}python -m pip install .
+
+install-test-pinned: venv #CMD Install the package with pinned runtime and testing dependencies.
+	${PREFIX}python -m pip install -r requirements/test-pinned.txt
+	${PREFIX}python -m pip install .
+
+install-dev: venv #CMD Install the package as editable with unpinned runtime,\ntesting, and development dependencies.
+	${PREFIX}python -m pip install -e .
+	${PREFIX}python -m pip install -r requirements/test-unpinned.txt
+	${PREFIX}python -m pip install -r requirements/dev-unpinned.txt
 
 #==============================================================================
 # Git
 #==============================================================================
 
 git: clean #CMD Initialize a git repository and make initial commit.
-ifeq ($(shell git tag >/dev/null 2>&1 && echo 0 || echo 1),0)
+ifeq ($(shell git tag >/dev/null 2>&1 && echo 0 || echo 1), 0)
 	@echo "git already initialized"
 else
 	git init
@@ -184,19 +230,18 @@ lint: #CMD Check the code style.
 # Testing
 #==============================================================================
 
-test: #CMD Run all tests with the default Python version.
-	python -m pytest
+test: install-test #CMD Run all tests with the default Python version.
+	${PREFIX}pytest
 
-coverage: #CMD Check code coverage of tests.
-	coverage run --source src -m pytest
-	coverage report -m
+test-cov: install-test #CMD Check code coverage of tests.
+	${PREFIX}pytest $$(${cov_site_packages})
 
-coverage-html: coverage #CMD Check code coverage of tests and show results in browser.
-	coverage html
-	$(browser) htmlcov/index.html
+test-cov-html: install-test #CMD Check code coverage of tests and show results in browser.
+	${PREFIX}pytest --cov=src --cov-report=html
+	${browser} htmlcov/index.html
 
-test-all: #CMD Run tests on all specified Python versions with tox.
-	tox
+test-all: install-test #CMD Run tests on all specified Python versions with tox.
+	${PREFIX}tox
 
 #==============================================================================
 # Documentation
@@ -208,7 +253,7 @@ test-all: #CMD Run tests on all specified Python versions with tox.
 # 	sphinx-apidoc -o docs/ src/pyflexplot
 # 	$(MAKE) -C docs clean
 # 	$(MAKE) -C docs html
-# 	$(browser) docs/_build/html/index.html
+# 	${browser} docs/_build/html/index.html
 
 # servedocs: docs #CMD Compile the docs watching for changes.
 # 	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
