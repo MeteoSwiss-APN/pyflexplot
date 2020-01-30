@@ -46,6 +46,9 @@ dependencies = [
     "scipy",
 ]
 
+# Add shapely (dependency of Cartopy) to build it from source
+dependencies.append("shapely @ git+ssh://git@github.com/Toblerity/shapely.git")
+
 scripts = [
     'pyflexplot=pyflexplot.cli:cli',
     'crop-netcdf=tools.crop_netcdf:main',
