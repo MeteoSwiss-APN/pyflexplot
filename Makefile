@@ -11,6 +11,7 @@ SHELL := /bin/bash
 #==============================================================================
 
 IGNORE_VENV ?= 0#OPT Don't create and/or use a virtual environment.
+INSTALL ?= 1#OPT Always ensure that dependencies etc. are installed
 VENV_DIR ?= venv#OPT Path to virtual environment to be created and/or used.
 VENV_NAME ?= pyflexplot#OPT Name of virtual environment if one is created.
 
@@ -149,10 +150,12 @@ clean-venv: #CMD Remove virtual environment.
 venv: #CMD Create a virtual environment.
 ifeq (${IGNORE_VENV}, 0)
 	$(eval PREFIX = ${PREFIX_VENV})
-	export PREFIX
+	@export PREFIX
 ifeq (${VIRTUAL_ENV},)
+ifneq (${INSTALL}, 0)
 	python -m venv ${VENV_DIR} --prompt='${VENV_NAME}'
 	${PREFIX}python -m pip install -U pip
+endif
 endif
 endif
 
@@ -161,30 +164,42 @@ endif
 #==============================================================================
 
 install: venv #CMD Install the package with unpinned runtime dependencies.
+ifneq (${INSTALL}, 0)
 	${PREFIX}python -m pip install .
+endif
 
 install-edit: venv #CMD Install the package as editable with unpinned runtime dependencies.
+ifneq (${INSTALL}, 0)
 	${PREFIX}python -m pip install -e .
+endif
 
 install-pinned: venv #CMD Install the package with pinned runtime dependencies.
+ifneq (${INSTALL}, 0)
 	${PREFIX}python -m pip install -r requirements/run-pinned.txt
 	${PREFIX}python -m pip install .
+endif
 
 install-test-pinned: venv #CMD Install the package with pinned runtime and testing dependencies.
+ifneq (${INSTALL}, 0)
 	${PREFIX}python -m pip install -r requirements/test-pinned.txt
 	${PREFIX}python -m pip install -e .
+endif
 
 install-test: install-edit #CMD Install the package with unpinned runtime and testing dependencies.
+ifneq (${INSTALL}, 0)
 	${PREFIX}python -m pip install -r requirements/test-unpinned.txt
+endif
 
 install-dev: install-test #CMD Install the package as editable with unpinned runtime,\ntesting, and development dependencies.
+ifneq (${INSTALL}, 0)
 	${PREFIX}python -m pip install -r requirements/dev-unpinned.txt
+endif
 
 #==============================================================================
-# Git
+# Version control
 #==============================================================================
 
-git: clean #CMD Initialize a git repository and make initial commit.
+git: clean-all #CMD Initialize a git repository and make initial commit.
 ifeq ($(shell git tag >/dev/null 2>&1 && echo 0 || echo 1), 0)
 	@echo "git already initialized"
 else
@@ -195,7 +210,29 @@ else
 endif
 
 #==============================================================================
-# Formatting & Linting
+# Versioning
+#==============================================================================
+
+bump-patch: install-dev #CMD Increment patch component of version number (x.y.Z), incl. git commit and tag
+	${PREFIX}bumpversion patch
+
+bump-minor: install-dev #CMD Increment minor component of version number (x.Y.z), incl. git commit and tag
+	${PREFIX}bumpversion minor
+
+bump-major: install-dev #CMD Increment minor component of version number (X.y.z), incl. git commit and tag
+	${PREFIX}bumpversion major
+
+bump-patch-dry: install-dev #CMD Increment patch component of version number (x.y.Z), without git commit and tag
+	${PREFIX}bumpversion patch --no-commit --no-tag
+
+bump-minor-dry: install-dev #CMD Increment minor component of version number (x.Y.z), without git commit and tag
+	${PREFIX}bumpversion minor --no-commit --no-tag
+
+bump-major-dry: install-dev #CMD Increment minor component of version number (X.y.z), without git commit and tag
+	${PREFIX}bumpversion major --no-commit --no-tag
+
+#==============================================================================
+# Formatting and linting
 #==============================================================================
 
 format: #CMD Reformat the code to conform with standards like PEP 8.
