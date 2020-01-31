@@ -47,7 +47,7 @@ dependencies = [
 ]
 
 # Uncomment to build shapely from source (dependency of Cartopy etc.)
-# dependencies.append("shapely @ git+ssh://git@github.com/Toblerity/shapely.git")
+dependencies.append("shapely @ git+ssh://git@github.com/Toblerity/shapely.git")
 
 scripts = [
     'pyflexplot=pyflexplot.cli:cli',
