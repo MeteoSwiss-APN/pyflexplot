@@ -11,6 +11,7 @@ import matplotlib as mpl
 import matplotlib.patches
 import matplotlib.ticker
 import numpy as np
+import warnings
 
 from attr import attrs, attrib
 from copy import copy
@@ -294,7 +295,15 @@ class MapAxesRotatedPole(SummarizablePlotClass):
 
         # Projection of plot
         clon = 180 + pollon
-        self.proj_map = cartopy.crs.TransverseMercator(central_longitude=clon)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message=(
+                    "The default value for the *approx* keyword argument to "
+                    "TransverseMercator will change from True to False after 0.1"
+                ),
+            )
+            self.proj_map = cartopy.crs.TransverseMercator(central_longitude=clon)
 
         # Geographical lat/lon arrays
         self.proj_geo = cartopy.crs.PlateCarree()

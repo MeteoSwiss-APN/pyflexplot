@@ -43,6 +43,7 @@ dependencies = [
     "numpy",
     "pillow >= 6.2.0",
     "scipy",
+    "tomlkit",
 ]
 
 # Build shapely from source (dependency of Cartopy)

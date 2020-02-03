@@ -34,18 +34,6 @@ click.option = functools.partial(click.option, show_default=True)
 plus_sep_list_of_unique_ints = CharSepList(int, "+", unique=True)
 
 
-#
-# TODO
-#
-# - Collect all passed options in a dict and pass it on as **options
-#
-# - In the CLI functions of the plots, catch all necessary options explicitly
-#   -> Catch all unnecessary options as **kwargs and show warnings for those
-#
-# - For ALL options, default to "everything available", e.g., all species etc.
-#
-
-
 def not_implemented(msg):
     def f(ctx, param, value):
         if value:
@@ -323,64 +311,22 @@ def create_plots(ctx, conf):
     """
 
     # SR_TMP <
-    var_specs_raw = {
-        "time_lst": conf["in"]["time_lst"],
-        "nageclass_lst": conf["in"]["nageclass_lst"],
-        "noutrel_lst": conf["in"]["noutrel_lst"],
-        "numpoint_lst": conf["in"]["numpoint_lst"],
-        "species_id_lst": conf["in"]["species_id_lst"],
-        "level_lst": conf["in"]["level_lst"],
-        "deposition_lst": conf["in"]["deposition_lst"],
-        "integrate_lst": conf["prep"]["integrate_lst"],
-    }
-    # SR_TMP >
-
-    # SR_TMP <
     if conf["plt"]["plot_type"] == "auto":
         conf["plt"]["plot_type"] = conf["plt"]["field"]
     # SR_TMP >
 
-    # SR_TMP <
-    if conf["plt"]["field"] == "concentration":
-        var_specs_raw.pop("deposition_lst", None)
-    elif conf["plt"]["field"] == "deposition":
-        var_specs_raw.pop("level_lst", None)
-    else:
-        raise NotImplementedError(f"field='{conf['plt']['field']}'")
-    # SR_TMP >
-
-    # SR_TMP < TODO find cleaner solution
-    if conf["plt"]["simulation_type"] == "deterministic":
-        cls_name = f"{conf['plt']['field']}"
-        ens_var_setup = None
-    elif conf["plt"]["simulation_type"] == "ensemble":
-        cls_name = f"{conf['plt']['plot_type']}_{conf['plt']['field']}"
-        ens_var_setup = (
-            {"thr": 1e-9} if conf["plt"]["plot_type"] == "ens_thr_agrmt" else {}
-        )
-    else:
-        raise NotImplementedError(f"simulation_type='{conf['plt']['simulation_type']}'")
-    # SR_TMP >
-
-    # Create variable specification objects
-    var_specs_dct = prep_var_specs_dct(var_specs_raw)
-    multi_var_specs_lst = MultiVarSpecs.create(
-        cls_name, var_specs_dct, lang=conf["plt"]["lang"], words=None,
-    )
-
-    field_lst = read_fields(
-        simulation_type=conf["plt"]["simulation_type"],
-        plot_type=conf["plt"]["plot_type"],
-        cls_name=cls_name,
-        multi_var_specs_lst=multi_var_specs_lst,
-        ens_member_id_lst=conf["in"]["ens_member_id_lst"],
-        ens_var_setup=ens_var_setup,
-        in_file_path_raw_lst=conf["in"]["in_file_path_raw_lst"],
-        lang=conf["plt"]["lang"],
-    )
-
     if ctx.obj["no_plot"]:
         return
+
+    field = conf["plt"]["field"]
+    simulation_type = conf["plt"]["simulation_type"]
+    if simulation_type == "deterministic":
+        cls_name = f"{field}"
+    elif simulation_type == "ensemble":
+        cls_name = f"{plot_type}_{field}"
+
+    # Read input fields
+    field_lst = read_fields(cls_name, conf)
 
     # Prepare plotter
     plotter = Plotter()
@@ -407,15 +353,27 @@ def create_plots(ctx, conf):
         open_plots(ctx.obj["open_all_cmd"], out_file_paths)
 
 
-def prep_var_specs_dct(var_specs_raw):
+def prep_var_specs_dct(conf):
     """
     Prepare the variable specifications dict from the raw CLI input.
-
-    Example:
-        >>> prep_var_specs_dct({"a_lst": ([0], [1, 2])})
-        {"a": [0, (1, 2)]}
-
     """
+
+    var_specs_raw = {
+        "time_lst": conf["in"]["time_lst"],
+        "nageclass_lst": conf["in"]["nageclass_lst"],
+        "noutrel_lst": conf["in"]["noutrel_lst"],
+        "numpoint_lst": conf["in"]["numpoint_lst"],
+        "species_id_lst": conf["in"]["species_id_lst"],
+        "integrate_lst": conf["prep"]["integrate_lst"],
+    }
+
+    if conf["plt"]["field"] == "concentration":
+        var_specs_raw["level_lst"] = conf["in"]["level_lst"]
+    elif conf["plt"]["field"] == "deposition":
+        var_specs_raw["deposition_lst"] = conf["in"]["deposition_lst"]
+    else:
+        raise NotImplementedError(f"field='{conf['plt']['field']}'")
+
     var_specs_dct = {}
     for key, val in var_specs_raw.items():
         if key.endswith("_lst"):
@@ -430,21 +388,29 @@ def prep_var_specs_dct(var_specs_raw):
     return var_specs_dct
 
 
-def read_fields(
-    *,
-    simulation_type,
-    plot_type,
-    in_file_path_raw_lst,
-    cls_name,
-    multi_var_specs_lst,
-    lang,
-    ens_member_id_lst,
-    ens_var_setup,
-    **kwargs,
-):
+def read_fields(cls_name, conf):
     """
     TODO
     """
+
+    # SR_TMP <
+    simulation_type = conf["plt"]["simulation_type"]
+    in_file_path_raw_lst = conf["in"]["in_file_path_raw_lst"]
+    ens_member_id_lst = conf["in"]["ens_member_id_lst"]
+    lang = conf["plt"]["lang"]
+    plot_type = conf["plt"]["plot_type"]
+    field = conf["plt"]["field"]
+    # SR_TMP >
+
+    # SR_TMP < TODO find cleaner solution
+    if simulation_type == "ensemble":
+        if plot_type == "ens_thr_agrmt":
+            ens_var_setup = {"thr": 1e-9}
+        else:
+            ens_var_setup = {}
+    else:
+        ens_var_setup = None
+    # SR_TMP >
 
     attrs = {"lang": lang}
 
@@ -455,6 +421,12 @@ def read_fields(
         assert plot_type.startswith("ens")
         attrs["ens_var"] = plot_type
         attrs["ens_var_setup"] = ens_var_setup
+
+    # Create variable specification objects
+    var_specs_dct = prep_var_specs_dct(conf)
+    multi_var_specs_lst = MultiVarSpecs.create(
+        cls_name, var_specs_dct, lang=lang, words=None,
+    )
 
     # Determine fields specifications (one for each eventual plot)
     fld_specs_lst = [
