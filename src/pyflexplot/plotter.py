@@ -27,6 +27,9 @@ class Plotter:
         "integrate": "integrate",
     }
 
+    def __init__(self):
+        self.file_paths = []
+
     def run(
         self, name, field, file_path_fmt, *, domain="auto", lang="en", **kwargs_plot
     ):
@@ -176,4 +179,40 @@ class Plotter:
                 # Replace format key in the path by the just formatted string
                 file_path = file_path[: m.span()[0]] + s + file_path[m.span()[1] :]
 
+        # Add number if file path not unique
+        file_path = self.ensure_unique_path(file_path)
+
         return file_path
+
+    def ensure_unique_path(self, path):
+        """If file path has been used before, add/increment trailing number."""
+        while path in self.file_paths:
+            path = self.derive_unique_path(path)
+        self.file_paths.append(path)
+        return path
+
+    @staticmethod
+    def derive_unique_path(path):
+        """Add/increment a trailing number to a file path."""
+
+        # Extract suffix
+        if path.endswith(".png"):
+            suffix = ".png"
+        else:
+            raise NotImplementedError(f"unknown suffix: {path}")
+        path_base = path[: -len(suffix)]
+
+        # Reuse existing numbering if present
+        match = re.search(r"-(?P<i>[0-9]+)$", path_base)
+        if match:
+            i = int(match.group("i")) + 1
+            w = len(match.group("i"))
+            path_base = path_base[: -w - 1]
+        else:
+            i = 1
+            w = 1
+
+        # Add numbering and suffix
+        path = f"{path_base}-{{i:0{w}}}{suffix}".format(i=i)
+
+        return path

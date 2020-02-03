@@ -365,7 +365,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
         # SR_DBG <
         # Note:
         #  - Bug in Cartopy with recent shapefiles triggers errors (NULL geometry)
-        #  - Issue fixed in a branch but pull request still pending   
+        #  - Issue fixed in a branch but pull request still pending
         #       -> Branch: https://github.com/shevawen/cartopy/tree/patch-1
         #       -> PR: https://github.com/SciTools/cartopy/pull/1411
         #  - Fixed it in our fork MeteoSwiss-APN/cartopy
@@ -401,6 +401,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
 
         # SR_DBG <<< TODO remove once bugfix in Cartopy master
         from warnings import warn
+
         try:
             major_rivers.geometries()
         except:

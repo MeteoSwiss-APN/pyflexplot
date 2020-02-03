@@ -6,9 +6,8 @@ import click
 import functools
 import logging as log
 import os
+import re
 import sys
-
-from click_config_file import configuration_option
 
 from srutils.click import click_options
 from srutils.click import CharSepList
@@ -28,10 +27,6 @@ from .var_specs import MultiVarSpecs
 # faulthandler.enable()
 
 
-class ClickOptionsGroup:
-    pass
-
-
 # Show default values of options by default
 click.option = functools.partial(click.option, show_default=True)
 
@@ -49,13 +44,6 @@ plus_sep_list_of_unique_ints = CharSepList(int, "+", unique=True)
 #   -> Catch all unnecessary options as **kwargs and show warnings for those
 #
 # - For ALL options, default to "everything available", e.g., all species etc.
-#
-# - Turn the input and output files from options into arguments (no flags)
-#
-# - Check for duplicate outfiles and number those, e.g., plot-1.png, plot-2.png
-#
-# - Add flag --unique-plots or so to abort if there are duplicate outfiles
-#   -> To prevent accidental *-i.png (potential pitfall)
 #
 
 
@@ -135,7 +123,6 @@ def create_plots(
     # Note: Plotter.run yields the output file paths on-the-go
     out_file_paths = []
     for i, out_file_path in enumerate(fct_plot()):
-        out_file_paths.append(out_file_path)
 
         if ctx.obj["open_first_cmd"] and i == 0:
             # Open the first file as soon as it's available
@@ -236,7 +223,7 @@ def not_implemented(msg):
     return f
 
 
-class GlobalOptions(ClickOptionsGroup):
+class GlobalOptions:
     """
     Options shared by all types of plots.
     """
@@ -431,7 +418,6 @@ class GlobalOptions(ClickOptionsGroup):
                     ]
                 ),
                 default="auto",
-                required=True,
             ),
             # SR_TMP >
             click.option(

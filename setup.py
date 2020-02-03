@@ -37,7 +37,6 @@ dependencies = [
     "attrs",
     "cartopy @ git+ssh://git@github.com/MeteoSwiss-APN/cartopy.git",
     "Click >= 6.0",
-    "click-config-file",
     "geopy",
     "matplotlib",
     "netCDF4",
@@ -46,7 +45,7 @@ dependencies = [
     "scipy",
 ]
 
-# Uncomment to build shapely from source (dependency of Cartopy etc.)
+# Build shapely from source (dependency of Cartopy)
 dependencies.append("shapely @ git+ssh://git@github.com/Toblerity/shapely.git")
 
 scripts = [
