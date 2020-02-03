@@ -58,10 +58,10 @@ def not_implemented(msg):
 @click.command(context_settings={"help_option_names": ["-h", "--help"]},)
 @click.version_option(__version__, "--version", "-V", message="%(version)s")
 @click.argument(
-    "in_file_path_raw_lst", metavar="INFILE(S)", type=str, nargs=-1, required=True,
+    "in__in_file_path_raw_lst", metavar="INFILE(S)", type=str, nargs=-1, required=True,
 )
 @click.argument(
-    "out_file_path_raw", metavar="OUTFILE", type=str, required=True,
+    "out__out_file_path_raw", metavar="OUTFILE", type=str, required=True,
 )
 # --- Execution
 @click.option(
@@ -112,7 +112,7 @@ def not_implemented(msg):
 # --- Input
 @click.option(
     "--time-ind",
-    "var_specs_raw__time_lst",
+    "in__time_lst",
     help="Index of time (zero-based). Format key: '{time_ind}'.",
     type=int,
     default=[0],
@@ -120,7 +120,7 @@ def not_implemented(msg):
 )
 @click.option(
     "--age-class-ind",
-    "var_specs_raw__nageclass_lst",
+    "in__nageclass_lst",
     help="Index of age class (zero-based). Format key: '{age_class_ind}'.",
     type=int,
     default=[0],
@@ -128,7 +128,7 @@ def not_implemented(msg):
 )
 @click.option(
     "--nout-rel-ind",
-    "var_specs_raw__noutrel_lst",
+    "in__noutrel_lst",
     help="Index of noutrel (zero-based). Format key: '{noutrel_ind}'.",
     type=int,
     default=[0],
@@ -136,7 +136,7 @@ def not_implemented(msg):
 )
 @click.option(
     "--release-point-ind",
-    "var_specs_raw__numpoint_lst",
+    "in__numpoint_lst",
     help="Index of release point (zero-based). Format key: '{rls_pt_ind}'.",
     type=int,
     default=[0],
@@ -144,7 +144,7 @@ def not_implemented(msg):
 )
 @click.option(
     "--species-id",
-    "var_specs_raw__species_id_lst",
+    "in__species_id_lst",
     help=(
         "Species id(s) (default: 0). To sum up multiple species, combine "
         "their ids with '+'. Format key: '{species_id}'."
@@ -155,7 +155,7 @@ def not_implemented(msg):
 )
 @click.option(
     "--level-ind",
-    "var_specs_raw__level_lst",
+    "in__level_lst",
     help=(
         "Index/indices of vertical level (zero-based, bottom-up). To sum up "
         "multiple levels, combine their indices with '+'. Format key: "
@@ -166,20 +166,8 @@ def not_implemented(msg):
     multiple=True,
 )
 @click.option(
-    "--member-id",
-    "-m",
-    "ens_member_id_lst",
-    help=(
-        "Ensemble member id. Repeat for multiple members. Omit for "
-        "deterministic simulation data. Use the format key '{member_id}' to "
-        "embed the member id(s) in the plot file path."
-    ),
-    type=int,
-    multiple=True,
-)
-@click.option(
     "--deposition-type",
-    "var_specs_raw__deposition_lst",
+    "in__deposition_lst",
     help=(
         "Type of deposition. Part of the plot variable name that may be "
         "embedded in the plot file path with the format key '{variable}'."
@@ -188,10 +176,22 @@ def not_implemented(msg):
     default=["tot"],
     multiple=True,
 )
+@click.option(
+    "--member-id",
+    "-m",
+    "in__ens_member_id_lst",
+    help=(
+        "Ensemble member id. Repeat for multiple members. Omit for "
+        "deterministic simulation data. Use the format key '{member_id}' to "
+        "embed the member id(s) in the plot file path."
+    ),
+    type=int,
+    multiple=True,
+)
 # --- Preproc
 @click.option(
     "--integrate/--no-integrate",
-    "var_specs_raw__integrate_lst",
+    "prep__integrate_lst",
     help=(
         "Integrate field over time. Use the format key '{integrate}' to embed "
         "'[no-]int' in the plot file path."
@@ -202,7 +202,7 @@ def not_implemented(msg):
 )
 @click.option(
     "--scale",
-    "scale_fact",
+    "prep__scale_fact",
     help="Scale field before plotting. Useful for debugging.",
     type=float,
     default=None,
@@ -211,18 +211,21 @@ def not_implemented(msg):
 # SR_TMP <
 @click.option(
     "--field",
+    "plt__field",
     help="Input field to be plotted.",
     type=click.Choice(["concentration", "deposition"]),
     required=True,
 )
 @click.option(
     "--simulation-type",
+    "plt__simulation_type",
     help="Type of simulation.",
     type=click.Choice(["deterministic", "ensemble"]),
     required=True,
 )
 @click.option(
     "--plot-type",
+    "plt__plot_type",
     help="Type of plot.",
     type=click.Choice(
         [
@@ -239,13 +242,14 @@ def not_implemented(msg):
 # SR_TMP >
 @click.option(
     "--lang",
-    "lang",
+    "plt__lang",
     help="Language. Format key: '{lang}'.",
     type=click.Choice(["en", "de"]),
     default="en",
 )
 @click.option(
     "--domain",
+    "plt__domain",
     help=(
         "Plot domain. Defaults to 'data', which derives the domain size from "
         "the input data. Use the format key '{domain}' to embed the domain "
@@ -256,6 +260,7 @@ def not_implemented(msg):
 )
 @click.option(
     "--reverse-legend/--no-reverse-legend",
+    "plt__reverse_legend",
     help=(
         "Reverse the order of the level ranges and corresponding colors in "
         "the plot legend such that the levels increase from top to bottom "
@@ -266,9 +271,12 @@ def not_implemented(msg):
 )
 # ---
 @click.pass_context
+@group_kwargs("in")
+@group_kwargs("out")
 @group_kwargs("exe")
-@group_kwargs("var_specs_raw")
-def cli(ctx, exe, **kwargs):
+@group_kwargs("prep")
+@group_kwargs("plt")
+def cli(ctx, **conf):
     """
     Read NetCDF output of a deterministic or ensemble ``FLEXPART`` dispersion
     simulation from INFILE(S) to create the plot OUTFILE.
@@ -291,33 +299,21 @@ def cli(ctx, exe, **kwargs):
 
     click.echo("Welcome fellow PyFlexPlotter!")
 
-    log.basicConfig(level=count_to_log_level(exe["verbose"]))
+    log.basicConfig(level=count_to_log_level(conf["exe"]["verbose"]))
 
     # Ensure that ctx.obj exists and is a dict
     ctx.ensure_object(dict)
 
     # Store shared keyword arguments in ctx.obj
-    ctx.obj.update(exe)
+    ctx.obj.update(conf["exe"])
 
     # Create plots
-    create_plots(ctx=ctx, **kwargs)
+    create_plots(ctx, conf)
 
     return 0
 
 
-def create_plots(
-    *,
-    ctx,
-    in_file_path_raw_lst,
-    out_file_path_raw,
-    var_specs_raw,
-    field,
-    plot_type,
-    simulation_type,
-    ens_member_id_lst=None,
-    lang,
-    **kwargs,
-):
+def create_plots(ctx, conf):
     """
     Read and plot FLEXPART data.
 
@@ -327,46 +323,60 @@ def create_plots(
     """
 
     # SR_TMP <
-    if plot_type == "auto":
-        plot_type = field
+    var_specs_raw = {
+        "time_lst": conf["in"]["time_lst"],
+        "nageclass_lst": conf["in"]["nageclass_lst"],
+        "noutrel_lst": conf["in"]["noutrel_lst"],
+        "numpoint_lst": conf["in"]["numpoint_lst"],
+        "species_id_lst": conf["in"]["species_id_lst"],
+        "level_lst": conf["in"]["level_lst"],
+        "deposition_lst": conf["in"]["deposition_lst"],
+        "integrate_lst": conf["prep"]["integrate_lst"],
+    }
     # SR_TMP >
 
     # SR_TMP <
-    if field == "concentration":
+    if conf["plt"]["plot_type"] == "auto":
+        conf["plt"]["plot_type"] = conf["plt"]["field"]
+    # SR_TMP >
+
+    # SR_TMP <
+    if conf["plt"]["field"] == "concentration":
         var_specs_raw.pop("deposition_lst", None)
-    elif field == "deposition":
+    elif conf["plt"]["field"] == "deposition":
         var_specs_raw.pop("level_lst", None)
     else:
-        raise NotImplementedError(f"field='{field}'")
+        raise NotImplementedError(f"field='{conf['plt']['field']}'")
     # SR_TMP >
 
     # SR_TMP < TODO find cleaner solution
-    if simulation_type == "deterministic":
-        cls_name = f"{field}"
+    if conf["plt"]["simulation_type"] == "deterministic":
+        cls_name = f"{conf['plt']['field']}"
         ens_var_setup = None
-    elif simulation_type == "ensemble":
-        cls_name = f"{plot_type}_{field}"
-        ens_var_setup = {"thr": 1e-9} if plot_type == "ens_thr_agrmt" else {}
+    elif conf["plt"]["simulation_type"] == "ensemble":
+        cls_name = f"{conf['plt']['plot_type']}_{conf['plt']['field']}"
+        ens_var_setup = (
+            {"thr": 1e-9} if conf["plt"]["plot_type"] == "ens_thr_agrmt" else {}
+        )
     else:
-        raise NotImplementedError(f"simulation_type='{simulation_type}'")
+        raise NotImplementedError(f"simulation_type='{conf['plt']['simulation_type']}'")
     # SR_TMP >
 
     # Create variable specification objects
     var_specs_dct = prep_var_specs_dct(var_specs_raw)
     multi_var_specs_lst = MultiVarSpecs.create(
-        cls_name, var_specs_dct, lang=lang, words=None,
+        cls_name, var_specs_dct, lang=conf["plt"]["lang"], words=None,
     )
 
     field_lst = read_fields(
-        simulation_type=simulation_type,
-        plot_type=plot_type,
+        simulation_type=conf["plt"]["simulation_type"],
+        plot_type=conf["plt"]["plot_type"],
         cls_name=cls_name,
         multi_var_specs_lst=multi_var_specs_lst,
-        ens_member_id_lst=ens_member_id_lst,
+        ens_member_id_lst=conf["in"]["ens_member_id_lst"],
         ens_var_setup=ens_var_setup,
-        in_file_path_raw_lst=in_file_path_raw_lst,
-        lang=lang,
-        **kwargs,
+        in_file_path_raw_lst=conf["in"]["in_file_path_raw_lst"],
+        lang=conf["plt"]["lang"],
     )
 
     if ctx.obj["no_plot"]:
@@ -376,11 +386,17 @@ def create_plots(
     plotter = Plotter()
 
     def fct_plot():
-        return plotter.run(cls_name, field_lst, out_file_path_raw, **kwargs)
+        return plotter.run(
+            cls_name,
+            field_lst,
+            conf["out"]["out_file_path_raw"],
+            scale_fact=conf["prep"]["scale_fact"],
+        )
 
     # Note: Plotter.run yields the output file paths on-the-go
     out_file_paths = []
     for i, out_file_path in enumerate(fct_plot()):
+        out_file_paths.append(out_file_path)
 
         if ctx.obj["open_first_cmd"] and i == 0:
             # Open the first file as soon as it's available
