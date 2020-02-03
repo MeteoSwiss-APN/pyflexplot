@@ -46,10 +46,10 @@ def not_implemented(msg):
 @click.command(context_settings={"help_option_names": ["-h", "--help"]},)
 @click.version_option(__version__, "--version", "-V", message="%(version)s")
 @click.argument(
-    "in__in_file_path_raw_lst", metavar="INFILE(S)", type=str, nargs=-1, required=True,
+    "in__file_path_raw_lst", metavar="INFILE(S)", type=str, nargs=-1, required=True,
 )
 @click.argument(
-    "out__out_file_path_raw", metavar="OUTFILE", type=str, required=True,
+    "out__file_path_raw", metavar="OUTFILE", type=str, required=True,
 )
 # --- Execution
 @click.option(
@@ -71,24 +71,18 @@ def not_implemented(msg):
     count=True,
 )
 @click.option(
-    "--no-plot",
-    "exe__no_plot",
-    help="Skip plotting (for debugging etc.).",
-    is_flag=True,
-)
-@click.option(
     "--open-first",
     "exe__open_first_cmd",
     help=(
-        "Shell command to open the first plot as soon as it is available. The "
-        "file path is appended to the command, unless explicitly embedded "
-        "with the format key '{file}', which allows one to use more complex "
-        "commands than simple application names (example: 'eog {file} "
-        ">/dev/null 2>&1' instead of 'eog' to silence the application 'eog')."
+        "Shell command to open the first plot as soon as it is available. The file "
+        "path is appended to the command, unless explicitly embedded with the format "
+        "key '{file}', which allows one to use more complex commands than simple "
+        "application names (example: 'eog {file} >/dev/null 2>&1' instead of 'eog' to "
+        "silence the application 'eog')."
     ),
 )
 @click.option(
-    "--open", "exe__open_all_cmd", help="Like --open-first, but for all plots.",
+    "--open-all", "exe__open_all_cmd", help="Like --open-first, but for all plots.",
 )
 @click.option(
     "--example",
@@ -134,8 +128,8 @@ def not_implemented(msg):
     "--species-id",
     "in__species_id_lst",
     help=(
-        "Species id(s) (default: 0). To sum up multiple species, combine "
-        "their ids with '+'. Format key: '{species_id}'."
+        "Species id(s) (default: 0). To sum up multiple species, combine their ids "
+        "with '+'. Format key: '{species_id}'."
     ),
     type=plus_sep_list_of_unique_ints,
     default=["1"],
@@ -145,9 +139,8 @@ def not_implemented(msg):
     "--level-ind",
     "in__level_lst",
     help=(
-        "Index/indices of vertical level (zero-based, bottom-up). To sum up "
-        "multiple levels, combine their indices with '+'. Format key: "
-        "'{level_ind}'."
+        "Index/indices of vertical level (zero-based, bottom-up). To sum up multiple "
+        "levels, combine their indices with '+'. Format key: '{level_ind}'."
     ),
     type=plus_sep_list_of_unique_ints,
     default=["0"],
@@ -157,8 +150,8 @@ def not_implemented(msg):
     "--deposition-type",
     "in__deposition_lst",
     help=(
-        "Type of deposition. Part of the plot variable name that may be "
-        "embedded in the plot file path with the format key '{variable}'."
+        "Type of deposition. Part of the plot variable name that may be embedded in "
+        "the plot file path with the format key '{variable}'."
     ),
     type=DerivChoice(["wet", "dry"], {"tot": ("wet", "dry")}),
     default=["tot"],
@@ -169,9 +162,9 @@ def not_implemented(msg):
     "-m",
     "in__ens_member_id_lst",
     help=(
-        "Ensemble member id. Repeat for multiple members. Omit for "
-        "deterministic simulation data. Use the format key '{member_id}' to "
-        "embed the member id(s) in the plot file path."
+        "Ensemble member id. Repeat for multiple members. Omit for deterministic "
+        "simulation data. Use the format key '{member_id}' to embed the member id(s) "
+        "in the plot file path."
     ),
     type=int,
     multiple=True,
@@ -239,9 +232,9 @@ def not_implemented(msg):
     "--domain",
     "plt__domain",
     help=(
-        "Plot domain. Defaults to 'data', which derives the domain size from "
-        "the input data. Use the format key '{domain}' to embed the domain "
-        "name in the plot file path."
+        "Plot domain. Defaults to 'data', which derives the domain size from the input "
+        "data. Use the format key '{domain}' to embed the domain name in the plot file "
+        "path."
     ),
     type=click.Choice(["auto", "ch"]),
     default="auto",
@@ -250,9 +243,8 @@ def not_implemented(msg):
     "--reverse-legend/--no-reverse-legend",
     "plt__reverse_legend",
     help=(
-        "Reverse the order of the level ranges and corresponding colors in "
-        "the plot legend such that the levels increase from top to bottom "
-        "instead of decreasing."
+        "Reverse the order of the level ranges and corresponding colors in the plot "
+        "legend such that the levels increase from top to bottom instead of decreasing."
     ),
     is_flag=True,
     default=False,
@@ -304,10 +296,6 @@ def cli(ctx, **conf):
 def create_plots(ctx, conf):
     """
     Read and plot FLEXPART data.
-
-    Args:
-        TODO
-
     """
 
     # SR_TMP <
@@ -315,15 +303,12 @@ def create_plots(ctx, conf):
         conf["plt"]["plot_type"] = conf["plt"]["field"]
     # SR_TMP >
 
-    if ctx.obj["no_plot"]:
-        return
-
     field = conf["plt"]["field"]
     simulation_type = conf["plt"]["simulation_type"]
     if simulation_type == "deterministic":
         cls_name = f"{field}"
     elif simulation_type == "ensemble":
-        cls_name = f"{plot_type}_{field}"
+        cls_name = f"{conf['plt']['plot_type']}_{field}"
 
     # Read input fields
     field_lst = read_fields(cls_name, conf)
@@ -335,7 +320,7 @@ def create_plots(ctx, conf):
         return plotter.run(
             cls_name,
             field_lst,
-            conf["out"]["out_file_path_raw"],
+            conf["out"]["file_path_raw"],
             scale_fact=conf["prep"]["scale_fact"],
         )
 
@@ -367,12 +352,13 @@ def prep_var_specs_dct(conf):
         "integrate_lst": conf["prep"]["integrate_lst"],
     }
 
-    if conf["plt"]["field"] == "concentration":
+    field = conf["plt"]["field"]
+    if field == "concentration":
         var_specs_raw["level_lst"] = conf["in"]["level_lst"]
-    elif conf["plt"]["field"] == "deposition":
+    elif field == "deposition":
         var_specs_raw["deposition_lst"] = conf["in"]["deposition_lst"]
     else:
-        raise NotImplementedError(f"field='{conf['plt']['field']}'")
+        raise NotImplementedError(f"field='{field}'")
 
     var_specs_dct = {}
     for key, val in var_specs_raw.items():
@@ -385,6 +371,7 @@ def prep_var_specs_dct(conf):
         if len(val) == 1:
             val = next(iter(val))
         var_specs_dct[key] = val
+
     return var_specs_dct
 
 
@@ -395,11 +382,8 @@ def read_fields(cls_name, conf):
 
     # SR_TMP <
     simulation_type = conf["plt"]["simulation_type"]
-    in_file_path_raw_lst = conf["in"]["in_file_path_raw_lst"]
-    ens_member_id_lst = conf["in"]["ens_member_id_lst"]
     lang = conf["plt"]["lang"]
     plot_type = conf["plt"]["plot_type"]
-    field = conf["plt"]["field"]
     # SR_TMP >
 
     # SR_TMP < TODO find cleaner solution
@@ -412,14 +396,13 @@ def read_fields(cls_name, conf):
         ens_var_setup = None
     # SR_TMP >
 
-    attrs = {"lang": lang}
-
     # SR_TMP <<< TODO clean this up
+    attrs = {"lang": lang}
     if simulation_type == "ensemble":
-        if ens_member_id_lst is not None:
-            attrs["member_ids"] = ens_member_id_lst
-        assert plot_type.startswith("ens")
-        attrs["ens_var"] = plot_type
+        if conf["in"]["ens_member_id_lst"] is not None:
+            attrs["member_ids"] = conf["in"]["ens_member_id_lst"]
+        assert plot_type.startswith("ens_"), plot_type
+        attrs["ens_var"] = plot_type[4:]
         attrs["ens_var_setup"] = ens_var_setup
 
     # Create variable specification objects
@@ -436,7 +419,7 @@ def read_fields(cls_name, conf):
 
     # Read fields
     field_lst = []
-    for in_file_path_raw in in_file_path_raw_lst:
+    for in_file_path_raw in conf["in"]["file_path_raw_lst"]:
         field_lst.extend(FileReader(in_file_path_raw).run(fld_specs_lst, lang=lang))
 
     return field_lst

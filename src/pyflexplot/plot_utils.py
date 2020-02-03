@@ -296,13 +296,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
         # Projection of plot
         clon = 180 + pollon
         with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                message=(
-                    "The default value for the *approx* keyword argument to "
-                    "TransverseMercator will change from True to False after 0.1"
-                ),
-            )
+            warnings.simplefilter("ignore")
             self.proj_map = cartopy.crs.TransverseMercator(central_longitude=clon)
 
         # Geographical lat/lon arrays
