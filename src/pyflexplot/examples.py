@@ -45,16 +45,16 @@ def naz_det_sh():
         for domain in ${domains[@]}; do
 
         args=(
-            "${infile}"
+            --infile="${infile}"
             --lang="${lang}"
             --simulation-type="deterministic"
             --domain="${domain}"
         )
 
-        pyflexplot "${args[@]}" "${outfile_con_fmt}" --field=concentration --plot-type=auto               --species-id=2   --time-ind=3  --no-integrate --level-ind=0
-        pyflexplot "${args[@]}" "${outfile_con_fmt}" --field=concentration --plot-type=auto               --species-id=1   --time-ind=10 --integrate    --level-ind=0
-        pyflexplot "${args[@]}" "${outfile_dep_fmt}" --field=deposition    --plot-type=auto               --species-id=2   --time-ind=3  --integrate    --deposition-type=tot
-        pyflexplot "${args[@]}" "${outfile_dep_fmt}" --field=deposition    --plot-type=affected_area_mono --species-id=1+2 --time-ind=10 --integrate    --deposition-type=tot
+        pyflexplot "${args[@]}" --outfile="${outfile_con_fmt}" --field=concentration --plot-type=auto               --species-id=2   --time-ind=3  --no-integrate --level-ind=0
+        pyflexplot "${args[@]}" --outfile="${outfile_con_fmt}" --field=concentration --plot-type=auto               --species-id=1   --time-ind=10 --integrate    --level-ind=0
+        pyflexplot "${args[@]}" --outfile="${outfile_dep_fmt}" --field=deposition    --plot-type=auto               --species-id=2   --time-ind=3  --integrate    --deposition-type=tot
+        pyflexplot "${args[@]}" --outfile="${outfile_dep_fmt}" --field=deposition    --plot-type=affected_area_mono --species-id=1+2 --time-ind=10 --integrate    --deposition-type=tot
 
         done
         done"""
