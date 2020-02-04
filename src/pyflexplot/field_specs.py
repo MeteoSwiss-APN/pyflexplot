@@ -30,7 +30,6 @@ class FieldSpecs(SummarizableClass):
         *,
         op=np.nansum,
         var_attrs_replace=None,
-        lang="en",
     ):
         """Create an instance of ``FieldSpecs``.
 
@@ -64,9 +63,6 @@ class FieldSpecs(SummarizableClass):
                 to be replaced. Necessary if multiple specifications dicts are
                 passed for all those attributes that differ between the
                 resulting attributes collections. Defaults to '{}'.
-
-            lang (str, optional): Language, e.g., 'de' for German. Defaults to
-                'en' (English).
         """
         self.name = name
 

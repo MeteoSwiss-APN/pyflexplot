@@ -297,12 +297,12 @@ class AttrDatetime(Attr):
 class AttrGroup:
     """Base class for attributes."""
 
-    def __init__(self, *args, lang="en", **kwargs):
+    def __init__(self, *args, lang=None, **kwargs):
         if type(self) is AttrGroup:
             raise ValueError(
                 f"{type(self).__name__} should be subclassed, not instatiated"
             )
-        self._lang = lang
+        self._lang = lang or "en"
         self.reset()
 
     def reset(self):
@@ -648,7 +648,7 @@ class AttrGroupSimulation(AttrGroup):
 class AttrGroupCollection:
     """Collection of FLEXPART attributes."""
 
-    def __init__(self, *, grid, variable, release, species, simulation, lang="en"):
+    def __init__(self, *, grid, variable, release, species, simulation, lang=None):
         """Initialize an instance of ``AttrGroupCollection``.
 
         Kwargs:
@@ -663,7 +663,7 @@ class AttrGroupCollection:
             simulation (dict): Kwargs passed to ``AttrGroupSimulation``.
 
         """
-        self._lang = lang
+        self._lang = lang or "en"
         self.reset()
         self.add("grid", grid)
         self.add("variable", variable)
@@ -789,10 +789,10 @@ class AttrsCollector:
         self.field_var_name = self.var_specs.var_name()
         self.ncattrs_field = self.ncattrs_vars[self.field_var_name]
 
-    def run(self, lang="en"):
+    def run(self, lang=None):
         """Collect attributes."""
 
-        self.lang = lang
+        self.lang = lang or "en"
 
         attrs = {}
         attrs["simulation"] = self.collect_simulation_attrs(attrs)

@@ -31,7 +31,7 @@ class Plotter:
         self.file_paths = []
 
     def run(
-        self, name, field, file_path_fmt, *, domain="auto", lang="en", **kwargs_plot
+        self, name, field, file_path_fmt, *, domain=None, lang=None, **kwargs_plot
     ):
         """Create one or more plots.
 
@@ -58,7 +58,8 @@ class Plotter:
         """
         self.name = name
         self.file_path_fmt = file_path_fmt
-        self.lang = lang
+        self.domain = domain or "auto"
+        self.lang = lang or "en"
 
         data_lst = field if isinstance(field, (list, tuple)) else [field]
 
@@ -66,19 +67,19 @@ class Plotter:
         print(f"create {len(data_lst)} {self.name} plot{_s}")
 
         # SR_TMP < TODO Find less hard-coded solution
-        if domain == "auto":
-            domain = "cosmo1"
-        if domain == "cosmo1":
+        if self.domain == "auto":
+            self.domain = "cosmo1"
+        if self.domain == "cosmo1":
             map_conf = MapAxesConf_Cosmo1(lang=lang)
-        elif domain == "ch":
+        elif self.domain == "ch":
             map_conf = MapAxesConf_Cosmo1_CH(lang=lang)
         else:
-            raise ValueError(f"unknown domain '{domain}'")
+            raise ValueError(f"unknown domain '{self.domain}'")
         # SR_TMP >
 
         # Create plots one-by-one
         for i_data, field in enumerate(data_lst):
-            file_path = self.fmt_file_path(field.field_specs, domain)
+            file_path = self.fmt_file_path(field.field_specs)
             _w = len(str(len(data_lst)))
             print(f" {i_data+1:{_w}}/{len(data_lst)}  {file_path}")
 
@@ -88,12 +89,12 @@ class Plotter:
 
             yield file_path
 
-    def fmt_file_path(self, field_specs, domain):
+    def fmt_file_path(self, field_specs):
 
         var_specs_dct = field_specs.multi_var_specs.compressed_dct()
 
         # Collect variable specifications
-        kwargs = {"domain": domain}
+        kwargs = {"domain": self.domain}
         for specs_key, fmt_key in self.specs_fmt_keys.items():
             try:
                 val = var_specs_dct[specs_key]

@@ -108,7 +108,7 @@ class FileReader:
                 f"{attrs_nonone}"
             )
 
-    def run(self, fld_specs, *, lang="en"):
+    def run(self, fld_specs, *, lang=None):
         """Read one or more fields from a file from disc.
 
         Args:
@@ -138,7 +138,7 @@ class FileReader:
         self._store_attrs()  # SR_DEV
 
         # Set some attributes
-        self.lang = lang
+        self.lang = lang or "en"
 
         if isinstance(fld_specs, FieldSpecs):
             multiple = False

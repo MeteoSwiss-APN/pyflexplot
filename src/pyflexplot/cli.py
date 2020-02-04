@@ -306,7 +306,7 @@ def cli(ctx, config_file, **conf_raw):
         conf_raw["plot_type"] = config.plot_type
         #
         conf_raw["domain"] = config.domain or "auto"
-        conf_raw["lang"] = config.lang
+        conf_raw["lang"] = config.lang or "en"
         #
         conf_raw["age_class_idxs"] = config.age_class_idxs
         conf_raw["deposition_types"] = config.deposition_types
@@ -508,7 +508,7 @@ def read_fields(cls_name, conf_raw):
 
     # Determine fields specifications (one for each eventual plot)
     fld_specs_lst = [
-        FieldSpecs(cls_name, multi_var_specs, attrs, lang=lang)
+        FieldSpecs(cls_name, multi_var_specs, attrs)
         for multi_var_specs in multi_var_specs_lst
     ]
 
