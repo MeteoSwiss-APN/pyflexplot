@@ -905,8 +905,8 @@ class AttrsCollector:
         """Collect release point attributes."""
 
         # Collect release point information
-        _ind = self.var_specs.numpoint
-        release_point = ReleasePoint.from_file(self.fi, _ind)
+        _idx = self.var_specs.numpoint
+        release_point = ReleasePoint.from_file(self.fi, _idx)
 
         sim_start = attrs["simulation"]["start"]
         start = sim_start + datetime.timedelta(seconds=release_point.rel_start)

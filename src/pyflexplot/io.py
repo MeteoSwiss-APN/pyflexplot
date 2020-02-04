@@ -169,7 +169,7 @@ class FileReader:
         for i_fld_specs in range(self.n_fld_specs):
 
             fld_specs_time = self._fld_specs_time_lst[i_fld_specs]
-            time_inds = self._time_inds_lst[i_fld_specs]
+            time_idxs = self._time_inds_lst[i_fld_specs]
 
             member_ids = getattr(fld_specs_time, "member_ids", None)
             self.n_members = 1 if not member_ids else len(member_ids)
@@ -178,7 +178,7 @@ class FileReader:
             log.debug(f"{i_fld_specs + 1}/{self.n_fld_specs}: {fld_specs_time}")
 
             flex_field_lst.extend(
-                self._create_fields_fld_specs(fld_specs_time, time_inds)
+                self._create_fields_fld_specs(fld_specs_time, time_idxs)
             )
 
         # Return result field(s)
@@ -222,7 +222,7 @@ class FileReader:
             )
         return next(iter(n_reqtime_per_mem))
 
-    def _create_fields_fld_specs(self, fld_specs_time, time_inds):
+    def _create_fields_fld_specs(self, fld_specs_time, time_idxs):
 
         # Read fields of all members at all time steps
         fld_time_mem = self._read_fld_time_mem(fld_specs_time)
@@ -235,11 +235,11 @@ class FileReader:
         time_stats = self._collect_time_stats(fld_time)
 
         # Create time-step-specific field specifications
-        fld_specs_reqtime = self._create_specs_reqtime(fld_specs_time, time_inds)
+        fld_specs_reqtime = self._create_specs_reqtime(fld_specs_time, time_idxs)
 
         # Collect attributes at requested time steps for all members
         attrs_reqtime_mem = self._collect_attrs_reqtime_mem(
-            fld_specs_reqtime, time_inds
+            fld_specs_reqtime, time_idxs
         )
 
         # Merge attributes across members
@@ -247,7 +247,7 @@ class FileReader:
 
         # Create fields at requested time steps for all members
         return self._create_fields_reqtime(
-            fld_specs_reqtime, attrs_reqtime, fld_time, time_inds, time_stats
+            fld_specs_reqtime, attrs_reqtime, fld_time, time_idxs, time_stats
         )
 
     def _read_fld_time_mem(self, fld_specs_time):
@@ -315,24 +315,24 @@ class FileReader:
             raise NotImplementedError(f"ens_var '{ens_var}'")
         return fld_time
 
-    def _create_specs_reqtime(self, fld_specs_time, time_inds):
+    def _create_specs_reqtime(self, fld_specs_time, time_idxs):
         """Create time-step-specific field specifications."""
         fld_specs_reqtime = np.full([self.n_reqtime], None)
-        for i_reqtime, time_ind in enumerate(time_inds):
+        for i_reqtime, time_idx in enumerate(time_idxs):
             fld_specs = deepcopy(fld_specs_time)
             for var_specs in fld_specs.multi_var_specs:
-                var_specs.time = time_ind
+                var_specs.time = time_idx
             fld_specs_reqtime[i_reqtime] = fld_specs
         return fld_specs_reqtime
 
-    def _collect_attrs_reqtime_mem(self, fld_specs_reqtime, time_inds):
+    def _collect_attrs_reqtime_mem(self, fld_specs_reqtime, time_idxs):
         """Collect attributes at requested time steps for all members."""
         attrs_reqtime_mem = np.full([self.n_reqtime, self.n_members], None)
         for i_mem, file_path in enumerate(self.file_path_lst):
             log.debug(f"read {file_path} (attributes)")
             with self.cmd_open(file_path, "r") as self.fi:
-                for i_reqtime, time_ind in enumerate(time_inds):
-                    log.debug(f"{i_reqtime + 1}/{len(time_inds)}: collect attributes")
+                for i_reqtime, time_idx in enumerate(time_idxs):
+                    log.debug(f"{i_reqtime + 1}/{len(time_idxs)}: collect attributes")
                     fld_specs = fld_specs_reqtime[i_reqtime]
                     attrs_lst = []
                     for var_specs in fld_specs.multi_var_specs:
@@ -353,15 +353,15 @@ class FileReader:
             fld_specs_time = deepcopy(fld_specs)
 
             # Extract time index and check its the same for all
-            time_ind = None
+            time_idx = None
             for var_specs in fld_specs_time.multi_var_specs:
-                if time_ind is None:
-                    time_ind = var_specs.time
-                elif var_specs.time != time_ind:
+                if time_idx is None:
+                    time_idx = var_specs.time
+                elif var_specs.time != time_idx:
                     raise Exception(
                         f"{type(var_specs).__name__} instances of "
                         f"{type(fld_specs_time).__name__} instance differ in 'time' "
-                        f"({var_specs.time} != {time_ind}):\n{fld_specs_time}"
+                        f"({var_specs.time} != {time_idx}):\n{fld_specs_time}"
                     )
                 var_specs.time = slice(None)
 
@@ -369,17 +369,17 @@ class FileReader:
             key = hash(fld_specs_time)
             if key not in fld_specs_time_inds_by_hash:
                 fld_specs_time_inds_by_hash[key] = (fld_specs_time, [])
-            if time_ind in fld_specs_time_inds_by_hash[key][1]:
+            if time_idx in fld_specs_time_inds_by_hash[key][1]:
                 raise Exception(
-                    f"duplicate time index {time_ind} in fld_specs:\n" f"{fld_specs}"
+                    f"duplicate time index {time_idx} in fld_specs:\n" f"{fld_specs}"
                 )
-            fld_specs_time_inds_by_hash[key][1].append(time_ind)
+            fld_specs_time_inds_by_hash[key][1].append(time_idx)
 
         # Regroup time-neutral fld specs and time inds into lists
         fld_specs_time_lst, time_inds_lst = [], []
-        for _, (fld_specs_time, time_inds) in fld_specs_time_inds_by_hash.items():
+        for _, (fld_specs_time, time_idxs) in fld_specs_time_inds_by_hash.items():
             fld_specs_time_lst.append(fld_specs_time)
-            time_inds_lst.append(time_inds)
+            time_inds_lst.append(time_idxs)
 
         return fld_specs_time_lst, time_inds_lst
 
@@ -396,21 +396,21 @@ class FileReader:
         return attrs_reqtime
 
     def _create_fields_reqtime(
-        self, fld_specs_reqtime, attrs_reqtime, fld_time, time_inds, time_stats
+        self, fld_specs_reqtime, attrs_reqtime, fld_time, time_idxs, time_stats
     ):
         """Create fields at requested time steps for all members."""
 
         log.debug(f"select fields at requested time steps")
 
         flex_field_lst = []
-        for i_reqtime, time_ind in enumerate(time_inds):
-            log.debug(f"{i_reqtime + 1}/{len(time_inds)}")
+        for i_reqtime, time_idx in enumerate(time_idxs):
+            log.debug(f"{i_reqtime + 1}/{len(time_idxs)}")
 
             fld_specs = fld_specs_reqtime[i_reqtime]
             attrs = attrs_reqtime[i_reqtime]
 
             # Extract field
-            fld = fld_time[time_ind]
+            fld = fld_time[time_idx]
 
             # Fix some known issues with the NetCDF input data
             log.debug("fix nc data: attrs")

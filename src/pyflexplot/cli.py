@@ -15,6 +15,7 @@ import warnings
 from dataclasses import dataclass
 from typing import List
 from typing import Optional
+from typing import Union
 
 from srutils.click import CharSepList
 from srutils.click import DerivChoice
@@ -107,68 +108,61 @@ def not_implemented(msg):
     "--config", "config_file", help="Configuration file (TOML).", type=click.File("r"),
 )
 @click.option(
-    "--time-ind",
-    "time_lst",
-    help="Index of time (zero-based). Format key: '{time_ind}'.",
+    "--time-idx",
+    "time_idxs",
+    help="Index of time (zero-based). Format key: '{time_idx}'.",
     type=int,
-    default=[0],
     multiple=True,
 )
 @click.option(
-    "--age-class-ind",
-    "nageclass_lst",
-    help="Index of age class (zero-based). Format key: '{age_class_ind}'.",
+    "--age-class-idx",
+    "age_class_idxs",
+    help="Index of age class (zero-based). Format key: '{age_class_idx}'.",
     type=int,
-    default=[0],
     multiple=True,
 )
 @click.option(
-    "--nout-rel-ind",
-    "noutrel_lst",
-    help="Index of noutrel (zero-based). Format key: '{noutrel_ind}'.",
+    "--nout-rel-idx",
+    "nout_rel_idxs",
+    help="Index of noutrel (zero-based). Format key: '{noutrel_idx}'.",
     type=int,
-    default=[0],
     multiple=True,
 )
 @click.option(
-    "--release-point-ind",
-    "numpoint_lst",
-    help="Index of release point (zero-based). Format key: '{rls_pt_ind}'.",
+    "--release-point-idx",
+    "release_point_idxs",
+    help="Index of release point (zero-based). Format key: '{rls_pt_idx}'.",
     type=int,
-    default=[0],
     multiple=True,
 )
 @click.option(
     "--species-id",
-    "species_id_lst",
+    "species_ids",
     help=(
         "Species id(s) (default: 0). To sum up multiple species, combine their ids "
         "with '+'. Format key: '{species_id}'."
     ),
     type=plus_sep_list_of_unique_ints,
-    default=["1"],
     multiple=True,
 )
 @click.option(
-    "--level-ind",
-    "level_lst",
+    "--level-idx",
+    "level_idxs",
     help=(
         "Index/indices of vertical level (zero-based, bottom-up). To sum up multiple "
-        "levels, combine their indices with '+'. Format key: '{level_ind}'."
+        "levels, combine their indices with '+'. Format key: '{level_idx}'."
     ),
     type=plus_sep_list_of_unique_ints,
-    default=["0"],
     multiple=True,
 )
 @click.option(
     "--deposition-type",
-    "deposition_lst",
+    "deposition_types",
     help=(
         "Type of deposition. Part of the plot variable name that may be embedded in "
         "the plot file path with the format key '{variable}'."
     ),
     type=DerivChoice(["wet", "dry"], {"tot": ("wet", "dry")}),
-    default=["tot"],
     multiple=True,
 )
 @click.option(
@@ -209,14 +203,12 @@ def not_implemented(msg):
     "field",
     help="Input field to be plotted.",
     type=click.Choice(["concentration", "deposition"]),
-    required=True,
 )
 @click.option(
     "--simulation-type",
     "simulation_type",
     help="Type of simulation.",
     type=click.Choice(["deterministic", "ensemble"]),
-    required=True,
 )
 @click.option(
     "--plot-type",
@@ -240,7 +232,6 @@ def not_implemented(msg):
     "lang",
     help="Language. Format key: '{lang}'.",
     type=click.Choice(["en", "de"]),
-    default="en",
 )
 @click.option(
     "--domain",
@@ -295,10 +286,11 @@ def cli(ctx, config_file, **conf_raw):
 
     # Remove empty arguments
     for key, val in conf_raw.copy().items():
-        if isiterable(val, str_ok=False) and not val or val is None:
+        if val is None or (isiterable(val, str_ok=False) and not val):
             del conf_raw[key]
 
     # Read config file
+    # SR_TODO Write classmethod to instatiate Conf from config file AND CLI
     if config_file is None:
         config = None
     else:
@@ -308,7 +300,28 @@ def cli(ctx, config_file, **conf_raw):
         # SR_TMP < TODO eliminate
         conf_raw["infiles"] = config.infiles
         conf_raw["outfile"] = config.outfile
+        conf_raw["member_ids"] = config.member_ids
+        #
+        conf_raw["field"] = config.field
+        conf_raw["simulation_type"] = config.simulation_type
+        #
+        conf_raw["lang"] = config.lang
+        #
+        conf_raw["age_class_idxs"] = config.age_class_idxs
+        conf_raw["deposition_types"] = config.deposition_types
+        conf_raw["level_idxs"] = config.level_idxs
+        conf_raw["nout_rel_idxs"] = config.nout_rel_idxs
+        conf_raw["release_point_idxs"] = config.release_point_idxs
+        conf_raw["species_ids"] = config.species_ids
+        conf_raw["time_idxs"] = config.time_idxs
         # SR_TMP >
+
+    # SR_TMP <
+    mandatory_args = ["field", "simulation_type"]
+    for arg in mandatory_args:
+        if not conf_raw.get(arg):
+            raise Exception(f"argument missing: {arg}")
+    # SR_TMP >
 
     # Create plots
     create_plots(conf_raw)
@@ -318,13 +331,28 @@ def cli(ctx, config_file, **conf_raw):
 
 @dataclass
 class Config:
+    #
     infiles: Optional[List[str]] = None
+    member_ids: Optional[List[int]] = None
     outfile: Optional[str] = None
+    #
+    field: Optional[str] = None
+    simulation_type: Optional[str] = None
+    #
+    lang: Optional[str] = None
+    #
+    age_class_idxs: Optional[List[int]] = None
+    deposition_types: Optional[str] = None
+    level_idxs: Optional[Union[List[int], List[List[int]]]] = None
+    nout_rel_idxs: Optional[List[int]] = None
+    release_point_idxs: Optional[List[int]] = None
+    species_ids: Optional[Union[List[int], List[List[int]]]] = None
+    time_idxs: Optional[List[int]] = None
 
     def update(self, dct):
         for key, val in dct.items():
             if not hasattr(self, key):
-                warnings.warn("{type(self).__name__}.update: unknown key: {key}")
+                warnings.warn(f"{type(self).__name__}.update: unknown key: {key}")
             else:
                 setattr(self, key, val)
 
@@ -338,7 +366,11 @@ class Config:
                 f"error parsing TOML file {file.name} ({type(e).__name__}: {e})"
             )
         # SR_TMP <
-        unknown_keys = [k for k in data.keys() if k not in ["plot"]]
+        required_keys = ["plot"]
+        optional_keys = []
+        unknown_keys = [
+            k for k in data.keys() if k not in required_keys + optional_keys
+        ]
         if unknown_keys:
             raise NotImplementedError(
                 f"{len(unknown_keys)} unknown section(s) in {file.name}", unknown_keys,
@@ -376,6 +408,7 @@ def create_plots(conf_raw):
             cls_name,
             field_lst,
             conf_raw["outfile"],
+            lang=conf_raw["lang"],
             scale_fact=conf_raw.get("scale_fact"),
         )
 
@@ -399,19 +432,19 @@ def prep_var_specs_dct(conf_raw):
     """
 
     var_specs_raw = {
-        "time_lst": conf_raw["time_lst"],
-        "nageclass_lst": conf_raw["nageclass_lst"],
-        "noutrel_lst": conf_raw["noutrel_lst"],
-        "numpoint_lst": conf_raw["numpoint_lst"],
-        "species_id_lst": conf_raw["species_id_lst"],
-        "integrate_lst": conf_raw["integrate_lst"],
+        "time_lst": conf_raw.get("time_idxs") or (0,),
+        "nageclass_lst": conf_raw.get("age_class_idxs") or (0,),
+        "noutrel_lst": conf_raw.get("nout_rel_idxs") or (0,),
+        "numpoint_lst": conf_raw.get("release_point_idxs") or (0,),
+        "species_id_lst": conf_raw.get("species_ids") or (1,),
+        "integrate_lst": conf_raw.get("integrate_lst") or (0,),
     }
 
     field = conf_raw["field"]
     if field == "concentration":
-        var_specs_raw["level_lst"] = conf_raw["level_lst"]
+        var_specs_raw["level_lst"] = conf_raw.get("level_idxs") or (0,)
     elif field == "deposition":
-        var_specs_raw["deposition_lst"] = conf_raw["deposition_lst"]
+        var_specs_raw["deposition_lst"] = conf_raw.get("deposition_types") or ("tot",)
     else:
         raise NotImplementedError(f"field='{field}'")
 
@@ -468,7 +501,7 @@ def read_fields(cls_name, conf_raw):
 
     # Determine fields specifications (one for each eventual plot)
     fld_specs_lst = [
-        FieldSpecs(cls_name, multi_var_specs, attrs)
+        FieldSpecs(cls_name, multi_var_specs, attrs, lang=lang)
         for multi_var_specs in multi_var_specs_lst
     ]
 

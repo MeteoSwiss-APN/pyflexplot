@@ -19,10 +19,10 @@ class Plotter:
     """Create one or more FLEXPLART plots of a certain type."""
 
     specs_fmt_keys = {
-        "time": "time_ind",
-        "nageclass": "age_ind",
-        "numpoint": "rel_pt_ind",
-        "level": "level_ind",
+        "time": "time_idx",
+        "nageclass": "age_idx",
+        "numpoint": "rel_pt_idx",
+        "level": "level_idx",
         "species_id": "species_id",
         "integrate": "integrate",
     }
