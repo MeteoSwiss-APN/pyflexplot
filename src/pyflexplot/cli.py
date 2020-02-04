@@ -3,7 +3,6 @@
 Command line interface.
 """
 import click
-import dataclasses
 import functools
 import logging as log
 import os
@@ -13,6 +12,8 @@ import tomlkit
 import warnings
 
 from dataclasses import dataclass
+from dataclasses import field
+from textwrap import dedent
 from typing import List
 from typing import Optional
 from typing import Union
@@ -53,17 +54,6 @@ def not_implemented(msg):
 
 @click.command(context_settings={"help_option_names": ["-h", "--help"]},)
 @click.version_option(__version__, "--version", "-V", message="%(version)s")
-@click.option(
-    "--infile",
-    "infiles",
-    help="Input file path(s). May contain format keys.",
-    type=str,
-    multiple=True,
-)
-@click.option(
-    "--outfile", help="Output file path. May contain format keys", type=str,
-)
-# --- Execution
 @click.option(
     "--dry-run",
     "dry_run",
@@ -108,55 +98,10 @@ def not_implemented(msg):
     "--config", "config_file", help="Configuration file (TOML).", type=click.File("r"),
 )
 @click.option(
-    "--time-idx",
+    "--time",
     "time_idx",
     help="Index of time (zero-based). Format key: '{time_idx}'.",
     type=int,
-)
-@click.option(
-    "--age-class-idx",
-    "age_class_idx",
-    help="Index of age class (zero-based). Format key: '{age_class_idx}'.",
-    type=int,
-)
-@click.option(
-    "--nout-rel-idx",
-    "nout_rel_idx",
-    help="Index of noutrel (zero-based). Format key: '{noutrel_idx}'.",
-    type=int,
-)
-@click.option(
-    "--release-point-idx",
-    "release_point_idx",
-    help="Index of release point (zero-based). Format key: '{rls_pt_idx}'.",
-    type=int,
-)
-@click.option(
-    "--species-id",
-    "species_id",
-    help=(
-        "Species id(s) (default: 0). To sum up multiple species, combine their ids "
-        "with '+'. Format key: '{species_id}'."
-    ),
-    type=plus_sep_list_of_unique_ints,
-)
-@click.option(
-    "--level-idx",
-    "level_idx",
-    help=(
-        "Index/indices of vertical level (zero-based, bottom-up). To sum up multiple "
-        "levels, combine their indices with '+'. Format key: '{level_idx}'."
-    ),
-    type=plus_sep_list_of_unique_ints,
-)
-@click.option(
-    "--deposition-type",
-    "deposition_type",
-    help=(
-        "Type of deposition. Part of the plot variable name that may be embedded in "
-        "the plot file path with the format key '{variable}'."
-    ),
-    type=DerivChoice(["wet", "dry"], {"tot": ("wet", "dry")}),
 )
 @click.option(
     "--member-id",
@@ -170,18 +115,6 @@ def not_implemented(msg):
     type=int,
     multiple=True,
 )
-# --- Preproc
-@click.option(
-    "--integrate/--no-integrate",
-    "integrate_lst",
-    help=(
-        "Integrate field over time. Use the format key '{integrate}' to embed "
-        "'[no-]int' in the plot file path."
-    ),
-    is_flag=True,
-    default=[False],
-    multiple=True,
-)
 @click.option(
     "--scale",
     "scale_fact",
@@ -189,52 +122,11 @@ def not_implemented(msg):
     type=float,
     default=None,
 )
-# --- Plot
-# SR_TMP <
-@click.option(
-    "--field",
-    "field",
-    help="Input field to be plotted.",
-    type=click.Choice(["concentration", "deposition"]),
-)
-@click.option(
-    "--simulation-type",
-    "simulation_type",
-    help="Type of simulation.",
-    type=click.Choice(["deterministic", "ensemble"]),
-)
-@click.option(
-    "--plot-type",
-    "plot_type",
-    help="Type of plot.",
-    type=click.Choice(
-        [
-            "auto",
-            "affected_area",
-            "affected_area_mono",
-            "ens_mean",
-            "ens_max",
-            "ens_thr_agrmt",
-        ]
-    ),
-    default="auto",
-)
-# SR_TMP >
 @click.option(
     "--lang",
     "lang",
-    help="Language. Format key: '{lang}'.",
+    help="Language. Use the format key '{lang}' to embed it into the plot file path.",
     type=click.Choice(["en", "de"]),
-)
-@click.option(
-    "--domain",
-    "domain",
-    help=(
-        "Plot domain. Defaults to 'data', which derives the domain size from the input "
-        "data. Use the format key '{domain}' to embed the domain name in the plot file "
-        "path."
-    ),
-    type=click.Choice(["auto", "ch"]),
 )
 @click.option(
     "--reverse-legend/--no-reverse-legend",
@@ -294,7 +186,7 @@ def cli(ctx, config_file, **conf_raw):
         conf_raw["member_ids"] = config.member_ids
         conf_raw["outfile"] = config.outfile
         #
-        conf_raw["field"] = config.field
+        conf_raw["variable"] = config.variable
         conf_raw["simulation_type"] = config.simulation_type
         conf_raw["plot_type"] = config.plot_type
         #
@@ -313,7 +205,7 @@ def cli(ctx, config_file, **conf_raw):
         # SR_TMP >
 
     # SR_TMP <
-    mandatory_args = ["field", "simulation_type"]
+    mandatory_args = ["variable", "simulation_type"]
     for arg in mandatory_args:
         if not conf_raw.get(arg):
             raise Exception(f"argument missing: {arg}")
@@ -328,26 +220,126 @@ def cli(ctx, config_file, **conf_raw):
 @dataclass
 class Config:
     #
-    infiles: Optional[List[str]] = None
-    member_ids: Optional[List[int]] = None
-    outfile: Optional[str] = None
+    infiles: Optional[List[str]] = field(
+        default=None,
+        metadata={"help": "Input file path(s). Main contain format keys."},
+    )
+    member_ids: Optional[List[int]] = field(
+        default=None,
+        metadata={
+            "help": "List of ensemble member ids. Omit for deterministic simulations "
+            "Use the format key '{member_id}' to embed the member id(s) in ``infiles`` "
+            "or ``outfile``."
+        },
+    )
+    outfile: Optional[str] = field(
+        default=None, metadata={"help": "Output file path. May contain format keys."},
+    )
     #
-    field: Optional[str] = None
-    simulation_type: Optional[str] = None
-    plot_type: Optional[str] = None
+    variable: Optional[str] = field(
+        default="concentration",
+        metadata={
+            "help": "Input variable to be plotted.",
+            "choices": ["concentration", "deposition"],
+        },
+    )
+    simulation_type: Optional[str] = field(
+        default="deterministic",
+        metadata={
+            "help": "Type of the simulation.",
+            "choices": ["deterministic", "ensemble"],
+        },
+    )
+    plot_type: Optional[str] = field(
+        default="auto",
+        metadata={
+            "help": "Plot type.",
+            "choices": [
+                "auto",
+                "affected_area",
+                "affected_area_mono",
+                "ens_mean",
+                "ens_max",
+                "ens_thr_agrmt",
+            ],
+        },
+    )
     #
-    domain: Optional[str] = None
-    lang: Optional[str] = None
+    domain: Optional[str] = field(
+        default="auto",
+        metadata={
+            "help": "Plot domain. Defaults to 'data', which derives the domain size "
+            "from the input data. Use the format key '{domain}' to embed the domain "
+            "name in the plot file path.",
+            "choices": ["auto", "ch"],
+        },
+    )
+    lang: Optional[str] = field(
+        default="en",
+        metadata={
+            "help": "Language. Use the format key '{lang}' to embed it into the plot "
+            "file path.",
+            "choices": ["en", "de"],
+        },
+    )
     #
-    age_class_idx: Optional[int] = None
-    deposition_type: Optional[str] = None
-    level_idx: Optional[Union[int, List[int]]] = None
-    nout_rel_idx: Optional[int] = None
-    release_point_idx: Optional[int] = None
-    species_id: Optional[Union[int, List[int]]] = None
-    time_idx: Optional[int] = None
-    #
-    integrate: Optional[bool] = None
+    age_class_idx: Optional[int] = field(
+        default=0,
+        metadata={
+            "help": "Index of age class (zero-based). Use the format key "
+            "'{age_class_idx}' to embed it into the output file path.",
+        },
+    )
+    deposition_type: Optional[str] = field(
+        default="tot",
+        metadata={
+            "help": "Type of deposition. Part of the plot variable name that may be "
+            "embedded in the plot file path with the format key '{variable}'.",
+            "choices": ["tot", "wet", "dry"],
+        },
+    )
+    integrate: Optional[bool] = field(
+        default=False,
+        metadata={
+            "help": "Integrate field over time. Use the format key '{integrate}' to "
+            "embed '[no-]int' in the plot file path."
+        },
+    )
+    level_idx: Optional[Union[int, List[int]]] = field(
+        default=0,
+        metadata={
+            "help": "Index/indices of vertical level (zero-based, bottom-up). To sum "
+            "up multiple levels, combine their indices with '+'. Format key: "
+            "'{level_idx}'.",
+        },
+    )
+    nout_rel_idx: Optional[int] = field(
+        default=0,
+        metadata={
+            "help": "Index of noutrel (zero-based). Format key: '{noutrel_idx}'.",
+        },
+    )
+    release_point_idx: Optional[int] = field(
+        default=0,
+        metadata={
+            "help": "Index of release point (zero-based). Format key: '{rls_pt_idx}'."
+        },
+    )
+    species_id: Optional[Union[int, List[int]]] = field(
+        default=1,
+        metadata={
+            "help": "Species id(s) (default: 0). To sum up multiple species, combine "
+            "their ids with '+'. Format key: '{species_id}'.",
+        },
+    )
+    time_idx: Optional[int] = field(
+        default=0,
+        metadata={"help": "Index of time (zero-based). Format key: '{time_idx}'."},
+    )
+
+    def __post__init__(self):
+        if self.deposition_type == "tot":
+            self.deposition_type = ["dry", "wet"]
 
     def update(self, dct):
         for key, val in dct.items():
@@ -380,6 +372,12 @@ class Config:
         return obj
 
 
+Config.__doc__ = dedent(
+    """\
+    """
+)
+
+
 def create_plots(conf_raw):
     """
     Read and plot FLEXPART data.
@@ -387,15 +385,16 @@ def create_plots(conf_raw):
 
     # SR_TMP <
     if conf_raw["plot_type"] == "auto":
-        conf_raw["plot_type"] = conf_raw["field"]
+        conf_raw["plot_type"] = conf_raw["variable"]
     # SR_TMP >
 
-    field = conf_raw["field"]
+    variable = conf_raw["variable"]
     simulation_type = conf_raw["simulation_type"]
+    plot_type = conf_raw["plot_type"]
     if simulation_type == "deterministic":
-        cls_name = f"{field}"
+        cls_name = f"{variable}"
     elif simulation_type == "ensemble":
-        cls_name = f"{conf_raw['plt']['plot_type']}_{field}"
+        cls_name = f"{plot_type}_{variable}"
 
     # Read input fields
     field_lst = read_fields(cls_name, conf_raw)
@@ -432,21 +431,21 @@ def prep_var_specs_dct(conf_raw):
     """
 
     var_specs_raw = {
-        "time_lst": (conf_raw.get("time_idx") or 0,),
-        "nageclass_lst": (conf_raw.get("age_class_idx") or 0,),
-        "noutrel_lst": (conf_raw.get("nout_rel_idx") or 0,),
-        "numpoint_lst": (conf_raw.get("release_point_idx") or 0,),
-        "species_id_lst": (conf_raw.get("species_id") or 1,),
-        "integrate_lst": (conf_raw.get("integrate") or False,),
+        "time_lst": (conf_raw.get("time_idx"),),
+        "nageclass_lst": (conf_raw.get("age_class_idx"),),
+        "noutrel_lst": (conf_raw.get("nout_rel_idx"),),
+        "numpoint_lst": (conf_raw.get("release_point_idx"),),
+        "species_id_lst": (conf_raw.get("species_id"),),
+        "integrate_lst": (conf_raw.get("integrate"),),
     }
 
-    field = conf_raw["field"]
-    if field == "concentration":
-        var_specs_raw["level_lst"] = (conf_raw.get("level_idx") or 0,)
-    elif field == "deposition":
-        var_specs_raw["deposition_lst"] = (conf_raw.get("deposition_type") or "tot",)
+    variable = conf_raw["variable"]
+    if variable == "concentration":
+        var_specs_raw["level_lst"] = (conf_raw.get("level_idx"),)
+    elif variable == "deposition":
+        var_specs_raw["deposition_lst"] = (conf_raw.get("deposition_type"),)
     else:
-        raise NotImplementedError(f"field='{field}'")
+        raise NotImplementedError(f"variable='{variable}'")
 
     var_specs_dct = {}
     for key, val in var_specs_raw.items():

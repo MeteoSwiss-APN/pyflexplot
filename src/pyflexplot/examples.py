@@ -51,7 +51,7 @@ def naz_det_sh():
         lang = "'${lang}'"
         domain = "'${domain}'"
         simulation_type = "'deterministic'"
-        field = "concentration"
+        variable = "concentration"
         plot_type = "auto"
         level_idx = 0
         time_idx = 3
@@ -67,7 +67,7 @@ def naz_det_sh():
         lang = "'${lang}'"
         domain = "'${domain}'"
         simulation_type = "'deterministic'"
-        field = "concentration"
+        variable = "concentration"
         plot_type = "auto"
         level_idx = 0
         time_idx = 10
@@ -83,7 +83,7 @@ def naz_det_sh():
         lang = "'${lang}'"
         domain = "'${domain}'"
         simulation_type = "'deterministic'"
-        field = "deposition"
+        variable = "deposition"
         deposition_type = "tot"
         plot_type = "auto"
         level_idx = 0
@@ -100,7 +100,7 @@ def naz_det_sh():
         lang = "'${lang}'"
         domain = "'${domain}'"
         simulation_type = "'deterministic'"
-        field = "deposition"
+        variable = "deposition"
         plot_type = "affected_area_mono"
         level_idx = 0
         time_idx = 10

@@ -30,9 +30,7 @@ class Plotter:
     def __init__(self):
         self.file_paths = []
 
-    def run(
-        self, name, field, file_path_fmt, *, domain=None, lang=None, **kwargs_plot
-    ):
+    def run(self, name, field, file_path_fmt, *, domain=None, lang=None, **kwargs_plot):
         """Create one or more plots.
 
         Args:
