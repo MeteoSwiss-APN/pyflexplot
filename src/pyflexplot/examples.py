@@ -53,10 +53,10 @@ def naz_det_sh():
         simulation_type = "'deterministic'"
         field = "concentration"
         plot_type = "auto"
-        level_idxs = [0]
-        time_idxs = [3]
-        species_ids = [2]
-        integrates = [false]
+        level_idx = 0
+        time_idx = 3
+        species_id = 2
+        integrate = false
         '
         pyflexplot --config=<(echo -e "${config_toml}")
 
@@ -69,10 +69,10 @@ def naz_det_sh():
         simulation_type = "'deterministic'"
         field = "concentration"
         plot_type = "auto"
-        level_idxs = [0]
-        time_idxs = [10]
-        species_ids = [1]
-        integrates = [true]
+        level_idx = 0
+        time_idx = 10
+        species_id = 1
+        integrate = true
         '
         pyflexplot --config=<(echo -e "${config_toml}")
 
@@ -84,12 +84,12 @@ def naz_det_sh():
         domain = "'${domain}'"
         simulation_type = "'deterministic'"
         field = "deposition"
-        deposition_types = ["tot"]
+        deposition_type = "tot"
         plot_type = "auto"
-        level_idxs = [0]
-        time_idxs = [3]
-        species_ids = [2]
-        integrates = [true]
+        level_idx = 0
+        time_idx = 3
+        species_id = 2
+        integrate = true
         '
         pyflexplot --config=<(echo -e "${config_toml}")
 
@@ -102,10 +102,10 @@ def naz_det_sh():
         simulation_type = "'deterministic'"
         field = "deposition"
         plot_type = "affected_area_mono"
-        level_idxs = [0]
-        time_idxs = [10]
-        species_ids = [[1, 2]]
-        integrates = [true]
+        level_idx = 0
+        time_idx = 10
+        species_id = [1, 2]
+        integrate = true
         '
         pyflexplot --config=<(echo -e "${config_toml}")
 

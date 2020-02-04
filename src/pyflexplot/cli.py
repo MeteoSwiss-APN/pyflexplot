@@ -109,61 +109,54 @@ def not_implemented(msg):
 )
 @click.option(
     "--time-idx",
-    "time_idxs",
+    "time_idx",
     help="Index of time (zero-based). Format key: '{time_idx}'.",
     type=int,
-    multiple=True,
 )
 @click.option(
     "--age-class-idx",
-    "age_class_idxs",
+    "age_class_idx",
     help="Index of age class (zero-based). Format key: '{age_class_idx}'.",
     type=int,
-    multiple=True,
 )
 @click.option(
     "--nout-rel-idx",
-    "nout_rel_idxs",
+    "nout_rel_idx",
     help="Index of noutrel (zero-based). Format key: '{noutrel_idx}'.",
     type=int,
-    multiple=True,
 )
 @click.option(
     "--release-point-idx",
-    "release_point_idxs",
+    "release_point_idx",
     help="Index of release point (zero-based). Format key: '{rls_pt_idx}'.",
     type=int,
-    multiple=True,
 )
 @click.option(
     "--species-id",
-    "species_ids",
+    "species_id",
     help=(
         "Species id(s) (default: 0). To sum up multiple species, combine their ids "
         "with '+'. Format key: '{species_id}'."
     ),
     type=plus_sep_list_of_unique_ints,
-    multiple=True,
 )
 @click.option(
     "--level-idx",
-    "level_idxs",
+    "level_idx",
     help=(
         "Index/indices of vertical level (zero-based, bottom-up). To sum up multiple "
         "levels, combine their indices with '+'. Format key: '{level_idx}'."
     ),
     type=plus_sep_list_of_unique_ints,
-    multiple=True,
 )
 @click.option(
     "--deposition-type",
-    "deposition_types",
+    "deposition_type",
     help=(
         "Type of deposition. Part of the plot variable name that may be embedded in "
         "the plot file path with the format key '{variable}'."
     ),
     type=DerivChoice(["wet", "dry"], {"tot": ("wet", "dry")}),
-    multiple=True,
 )
 @click.option(
     "--member-id",
@@ -308,15 +301,15 @@ def cli(ctx, config_file, **conf_raw):
         conf_raw["domain"] = config.domain or "auto"
         conf_raw["lang"] = config.lang or "en"
         #
-        conf_raw["age_class_idxs"] = config.age_class_idxs
-        conf_raw["deposition_types"] = config.deposition_types
-        conf_raw["level_idxs"] = config.level_idxs
-        conf_raw["nout_rel_idxs"] = config.nout_rel_idxs
-        conf_raw["release_point_idxs"] = config.release_point_idxs
-        conf_raw["species_ids"] = config.species_ids
-        conf_raw["time_idxs"] = config.time_idxs
+        conf_raw["age_class_idx"] = config.age_class_idx
+        conf_raw["deposition_type"] = config.deposition_type
+        conf_raw["level_idx"] = config.level_idx
+        conf_raw["nout_rel_idx"] = config.nout_rel_idx
+        conf_raw["release_point_idx"] = config.release_point_idx
+        conf_raw["species_id"] = config.species_id
+        conf_raw["time_idx"] = config.time_idx
         #
-        conf_raw["integrates"] = config.integrates
+        conf_raw["integrate"] = config.integrate
         # SR_TMP >
 
     # SR_TMP <
@@ -346,15 +339,15 @@ class Config:
     domain: Optional[str] = None
     lang: Optional[str] = None
     #
-    age_class_idxs: Optional[List[int]] = None
-    deposition_types: Optional[List[str]] = None
-    level_idxs: Optional[Union[List[int], List[List[int]]]] = None
-    nout_rel_idxs: Optional[List[int]] = None
-    release_point_idxs: Optional[List[int]] = None
-    species_ids: Optional[Union[List[int], List[List[int]]]] = None
-    time_idxs: Optional[List[int]] = None
+    age_class_idx: Optional[int] = None
+    deposition_type: Optional[str] = None
+    level_idx: Optional[Union[int, List[int]]] = None
+    nout_rel_idx: Optional[int] = None
+    release_point_idx: Optional[int] = None
+    species_id: Optional[Union[int, List[int]]] = None
+    time_idx: Optional[int] = None
     #
-    integrates: Optional[List[bool]] = None
+    integrate: Optional[bool] = None
 
     def update(self, dct):
         for key, val in dct.items():
@@ -439,19 +432,19 @@ def prep_var_specs_dct(conf_raw):
     """
 
     var_specs_raw = {
-        "time_lst": conf_raw.get("time_idxs") or (0,),
-        "nageclass_lst": conf_raw.get("age_class_idxs") or (0,),
-        "noutrel_lst": conf_raw.get("nout_rel_idxs") or (0,),
-        "numpoint_lst": conf_raw.get("release_point_idxs") or (0,),
-        "species_id_lst": conf_raw.get("species_ids") or (1,),
-        "integrate_lst": conf_raw.get("integrates") or (False,),
+        "time_lst": (conf_raw.get("time_idx") or 0,),
+        "nageclass_lst": (conf_raw.get("age_class_idx") or 0,),
+        "noutrel_lst": (conf_raw.get("nout_rel_idx") or 0,),
+        "numpoint_lst": (conf_raw.get("release_point_idx") or 0,),
+        "species_id_lst": (conf_raw.get("species_id") or 1,),
+        "integrate_lst": (conf_raw.get("integrate") or False,),
     }
 
     field = conf_raw["field"]
     if field == "concentration":
-        var_specs_raw["level_lst"] = conf_raw.get("level_idxs") or (0,)
+        var_specs_raw["level_lst"] = (conf_raw.get("level_idx") or 0,)
     elif field == "deposition":
-        var_specs_raw["deposition_lst"] = conf_raw.get("deposition_types") or ("tot",)
+        var_specs_raw["deposition_lst"] = (conf_raw.get("deposition_type") or "tot",)
     else:
         raise NotImplementedError(f"field='{field}'")
 
