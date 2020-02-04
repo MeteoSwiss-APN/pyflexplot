@@ -242,7 +242,6 @@ def not_implemented(msg):
         "path."
     ),
     type=click.Choice(["auto", "ch"]),
-    default="auto",
 )
 @click.option(
     "--reverse-legend/--no-reverse-legend",
@@ -299,12 +298,14 @@ def cli(ctx, config_file, **conf_raw):
 
         # SR_TMP < TODO eliminate
         conf_raw["infiles"] = config.infiles
-        conf_raw["outfile"] = config.outfile
         conf_raw["member_ids"] = config.member_ids
+        conf_raw["outfile"] = config.outfile
         #
         conf_raw["field"] = config.field
         conf_raw["simulation_type"] = config.simulation_type
+        conf_raw["plot_type"] = config.plot_type
         #
+        conf_raw["domain"] = config.domain or "auto"
         conf_raw["lang"] = config.lang
         #
         conf_raw["age_class_idxs"] = config.age_class_idxs
@@ -314,6 +315,8 @@ def cli(ctx, config_file, **conf_raw):
         conf_raw["release_point_idxs"] = config.release_point_idxs
         conf_raw["species_ids"] = config.species_ids
         conf_raw["time_idxs"] = config.time_idxs
+        #
+        conf_raw["integrates"] = config.integrates
         # SR_TMP >
 
     # SR_TMP <
@@ -338,16 +341,20 @@ class Config:
     #
     field: Optional[str] = None
     simulation_type: Optional[str] = None
+    plot_type: Optional[str] = None
     #
+    domain: Optional[str] = None
     lang: Optional[str] = None
     #
     age_class_idxs: Optional[List[int]] = None
-    deposition_types: Optional[str] = None
+    deposition_types: Optional[List[str]] = None
     level_idxs: Optional[Union[List[int], List[List[int]]]] = None
     nout_rel_idxs: Optional[List[int]] = None
     release_point_idxs: Optional[List[int]] = None
     species_ids: Optional[Union[List[int], List[List[int]]]] = None
     time_idxs: Optional[List[int]] = None
+    #
+    integrates: Optional[List[bool]] = None
 
     def update(self, dct):
         for key, val in dct.items():
@@ -437,7 +444,7 @@ def prep_var_specs_dct(conf_raw):
         "noutrel_lst": conf_raw.get("nout_rel_idxs") or (0,),
         "numpoint_lst": conf_raw.get("release_point_idxs") or (0,),
         "species_id_lst": conf_raw.get("species_ids") or (1,),
-        "integrate_lst": conf_raw.get("integrate_lst") or (0,),
+        "integrate_lst": conf_raw.get("integrates") or (False,),
     }
 
     field = conf_raw["field"]
@@ -452,10 +459,10 @@ def prep_var_specs_dct(conf_raw):
     for key, val in var_specs_raw.items():
         if key.endswith("_lst"):
             key = key[: -len("_lst")]
-        if isinstance(val, tuple):
+        if isinstance(val, (tuple, list)):
             val = [tuple(e) if isinstance(e, list) else e for e in val]
         else:
-            raise Exception(f"invalid value type {type(val).__name__}")
+            raise Exception(f"invalid value type {type(val).__name__}", key)
         if len(val) == 1:
             val = next(iter(val))
         var_specs_dct[key] = val

@@ -44,17 +44,70 @@ def naz_det_sh():
         for lang in ${langs[@]}; do
         for domain in ${domains[@]}; do
 
-        args=(
-            --infile="${infile}"
-            --lang="${lang}"
-            --simulation-type="deterministic"
-            --domain="${domain}"
-        )
+        config_toml='
+        [plot]
+        infiles = ["'${infile}'"]
+        outfile = "'${outfile_con_fmt}'"
+        lang = "'${lang}'"
+        domain = "'${domain}'"
+        simulation_type = "'deterministic'"
+        field = "concentration"
+        plot_type = "auto"
+        level_idxs = [0]
+        time_idxs = [3]
+        species_ids = [2]
+        integrates = [false]
+        '
+        pyflexplot --config=<(echo -e "${config_toml}")
 
-        pyflexplot "${args[@]}" --outfile="${outfile_con_fmt}" --field=concentration --plot-type=auto               --species-id=2   --time-idx=3  --no-integrate --level-idx=0
-        pyflexplot "${args[@]}" --outfile="${outfile_con_fmt}" --field=concentration --plot-type=auto               --species-id=1   --time-idx=10 --integrate    --level-idx=0
-        pyflexplot "${args[@]}" --outfile="${outfile_dep_fmt}" --field=deposition    --plot-type=auto               --species-id=2   --time-idx=3  --integrate    --deposition-type=tot
-        pyflexplot "${args[@]}" --outfile="${outfile_dep_fmt}" --field=deposition    --plot-type=affected_area_mono --species-id=1+2 --time-idx=10 --integrate    --deposition-type=tot
+        config_toml='
+        [plot]
+        infiles = ["'${infile}'"]
+        outfile = "'${outfile_con_fmt}'"
+        lang = "'${lang}'"
+        domain = "'${domain}'"
+        simulation_type = "'deterministic'"
+        field = "concentration"
+        plot_type = "auto"
+        level_idxs = [0]
+        time_idxs = [10]
+        species_ids = [1]
+        integrates = [true]
+        '
+        pyflexplot --config=<(echo -e "${config_toml}")
+
+        config_toml='
+        [plot]
+        infiles = ["'${infile}'"]
+        outfile = "'${outfile_dep_fmt}'"
+        lang = "'${lang}'"
+        domain = "'${domain}'"
+        simulation_type = "'deterministic'"
+        field = "deposition"
+        deposition_types = ["tot"]
+        plot_type = "auto"
+        level_idxs = [0]
+        time_idxs = [3]
+        species_ids = [2]
+        integrates = [true]
+        '
+        pyflexplot --config=<(echo -e "${config_toml}")
+
+        config_toml='
+        [plot]
+        infiles = ["'${infile}'"]
+        outfile = "'${outfile_dep_fmt}'"
+        lang = "'${lang}'"
+        domain = "'${domain}'"
+        simulation_type = "'deterministic'"
+        field = "deposition"
+        plot_type = "affected_area_mono"
+        level_idxs = [0]
+        time_idxs = [10]
+        species_ids = [[1, 2]]
+        integrates = [true]
+        '
+        pyflexplot --config=<(echo -e "${config_toml}")
 
         done
         done"""
