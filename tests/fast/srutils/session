@@ -1,4 +1,2 @@
-dict/test_decompress_multival.py
-dict/test_decompress_nested.py
-dict/test_flatten_nested.py
+< dict/session
 str/test_to_varname.py

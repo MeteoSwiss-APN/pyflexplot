@@ -221,5 +221,44 @@ def flatten_nested_dict(dct, *, retain_depth=False, tie_breaker=None):
     return run_rec(dct, retain_depth=retain_depth)
 
 
+def linearize_nested_dict(dct):
+    """
+    Convert a nested dict with N branches into N linearly nested dicts.
+
+    Args:
+        dct (dict): Nested dict.
+    """
+
+    def run_rec(dct):
+
+        def separate_subdicts(dct):
+            subdicts, elements = {}, {}
+            for key, val in dct.items():
+                if isinstance(val, dict):
+                    subdicts[key] = val
+                else:
+                    elements[key] = val
+            return subdicts, elements
+
+        def linearize_subdicts(subdicts, elements):
+            if not subdicts:
+                return [elements]
+            linears = []
+            for key, val in subdicts.items():
+                for sublinear in run_rec(val):
+                    linears.append({**elements, key: sublinear})
+            return linears
+
+        return linearize_subdicts(*separate_subdicts(dct))
+
+    return run_rec(dct)
+
+
 def decompress_nested_dict(dct):
-    return dct
+    """
+    Convert a nested dict with N branches into N unnested dicts.
+
+    Args:
+        dct (dict): Nested dict.
+    """
+    return [flatten_nested_dict(d) for d in linearize_nested_dict(dct)]
