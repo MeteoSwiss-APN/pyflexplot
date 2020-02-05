@@ -13,7 +13,7 @@ SHELL := /bin/bash
 
 ECHO_PREFIX ?= \nMAKE: #OPT Prefix of command echos
 IGNORE_VENV ?= 0#OPT Don't create and/or use a virtual environment.
-INSTALL ?= 1#OPT Always ensure that dependencies etc. are installed
+INSTALL ?= 0#OPT Whether to install project and dependencies if necessary.
 VENV_DIR ?= venv#OPT Path to virtual environment to be created and/or used.
 VENV_NAME ?= pyflexplot#OPT Name of virtual environment if one is created.
 
@@ -259,11 +259,11 @@ bump-major-dry: install-dev #CMD Bump minor component of version number (X.y.z),
 # Formatting and linting
 #==============================================================================
 
-format: #CMD Reformat the code to conform with standards like PEP 8.
+format: install-dev #CMD Reformat the code to conform with standards like PEP 8.
 	@echo -e "${ECHO_PREFIX}reformatting the code"
 	${PREFIX}black src tests
 
-lint: #CMD Check the code style.
+lint: install-dev #CMD Check the code style.
 	@echo -e "${ECHO_PREFIX}checking the code style (linting)"
 	${PREFIX}flake8 src tests
 
