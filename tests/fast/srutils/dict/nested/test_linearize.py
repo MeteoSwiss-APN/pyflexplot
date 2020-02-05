@@ -25,16 +25,14 @@ def test_linear(dct, sol):
 @pytest.mark.parametrize(
     "dct, sol",
     [
-        (
-            {"foo": {"a": 1}, "bar": {"a": 2}},
-            [{"foo": {"a": 1}}, {"bar": {"a": 2}}],
-        ),
+        ({"foo": {"a": 1}, "bar": {"a": 2}}, [{"foo": {"a": 1}}, {"bar": {"a": 2}}],),
         (
             {"a": 1, "foo": {"b": 2}, "bar": {"b": 3}},
             [{"a": 1, "foo": {"b": 2}}, {"a": 1, "bar": {"b": 3}}],
         ),
         (
-            {   "a": 1,
+            {
+                "a": 1,
                 "b": 2,
                 "foo": {"c": 3, "bar": {"a": 4, "d": 5}, "baz": {"d": 6}},
                 "bar": {"d": 7},

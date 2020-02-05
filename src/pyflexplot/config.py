@@ -136,10 +136,12 @@ class Config:
         if self.deposition_type == "tot":
             self.deposition_type = ["dry", "wet"]
 
-    def update(self, dct):
+    def update(self, dct, skip_none=False):
         for key, val in dct.items():
             if not hasattr(self, key):
                 warnings.warn(f"{type(self).__name__}.update: unknown key: {key}")
+            elif skip_none and val is None:
+                continue
             else:
                 setattr(self, key, val)
 

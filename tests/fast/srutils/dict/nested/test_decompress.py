@@ -17,7 +17,8 @@ from srutils.dict import decompress_nested_dict
         #
         ({"a": 1, "foo": {"a": 1}}, [{"a": 1}]),
         (
-            {   "a": 1,
+            {
+                "a": 1,
                 "b": 2,
                 "foo": {"c": 3, "bar": {"a": 4, "d": 5}, "baz": {"d": 6}},
                 "bar": {"d": 7},

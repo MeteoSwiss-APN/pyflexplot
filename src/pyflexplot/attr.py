@@ -841,15 +841,15 @@ class AttrsCollector:
             "integr_type": integr_type,
         }
 
-    def _get_current_timestep_etc(self, i=None):
+    def _get_current_timestep_etc(self, idx=None):
         """Get the current timestep, or a specific one by index."""
 
-        if i is None:
+        if idx is None:
             # Default to timestep of current field
-            i = self.var_specs.time
+            idx = self.var_specs.time
 
-        if not isinstance(i, int):
-            raise Exception(f"expect type 'int', not '{type(i).__name__}': {i}")
+        if not isinstance(idx, int):
+            raise Exception(f"expect type 'int', not '{type(idx).__name__}': {idx}")
 
         var = self.fi.variables["time"]
 
@@ -875,7 +875,7 @@ class AttrsCollector:
         )
 
         # Determine time since start
-        delta_tot = datetime.timedelta(seconds=int(var[i]))
+        delta_tot = datetime.timedelta(seconds=int(var[idx]))
 
         # Determine current timestep
         now = start + delta_tot
@@ -884,7 +884,7 @@ class AttrsCollector:
         if self.var_specs.integrate:
             delta_integr = delta_tot
         else:
-            delta_prev = delta_tot / (i + 1)
+            delta_prev = delta_tot / (idx + 1)
             delta_integr = delta_prev
         ts_integr_start = now - delta_integr
 

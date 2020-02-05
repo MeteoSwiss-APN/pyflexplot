@@ -10,6 +10,7 @@ import re
 import sys
 
 from srutils.click import CharSepList
+from srutils.various import group_kwargs
 from srutils.various import isiterable
 
 from .config import Config
@@ -86,18 +87,22 @@ def not_implemented(msg):
 )
 # --- Input
 @click.option(
-    "--config", "config_file", help="Configuration file (TOML).", type=click.File("r"),
+    "--config",
+    "config_file",
+    help="Configuration file (TOML).",
+    type=click.File("r"),
+    required=True,
 )
 @click.option(
     "--time",
-    "time_idx",
+    "config_cli__time_idx",
     help="Index of time (zero-based). Format key: '{time_idx}'.",
     type=int,
 )
 @click.option(
     "--member-id",
     "-m",
-    "ens_member_id_lst",
+    "config_cli__ens_member_id_lst",
     help=(
         "Ensemble member id. Repeat for multiple members. Omit for deterministic "
         "simulation data. Use the format key '{member_id}' to embed the member id(s) "
@@ -107,17 +112,17 @@ def not_implemented(msg):
     multiple=True,
 )
 @click.option(
+    "--lang",
+    "config_cli__lang",
+    help="Language. Use the format key '{lang}' to embed it into the plot file path.",
+    type=click.Choice(["en", "de"]),
+)
+@click.option(
     "--scale",
     "scale_fact",
     help="Scale field before plotting. Useful for debugging.",
     type=float,
     default=None,
-)
-@click.option(
-    "--lang",
-    "lang",
-    help="Language. Use the format key '{lang}' to embed it into the plot file path.",
-    type=click.Choice(["en", "de"]),
 )
 @click.option(
     "--reverse-legend/--no-reverse-legend",
@@ -130,8 +135,9 @@ def not_implemented(msg):
     default=False,
 )
 # ---
+@group_kwargs("config_cli")
 @click.pass_context
-def cli(ctx, config_file, **conf_raw):
+def cli(ctx, config_file, config_cli, **cli_args):
     """
     Read NetCDF output of a deterministic or ensemble ``FLEXPART`` dispersion
     simulation from INFILE(S) to create the plot OUTFILE.
@@ -154,80 +160,45 @@ def cli(ctx, config_file, **conf_raw):
 
     click.echo("Welcome fellow PyFlexPlotter!")
 
-    log.basicConfig(level=count_to_log_level(conf_raw["verbose"]))
+    log.basicConfig(level=count_to_log_level(cli_args["verbose"]))
 
     # Ensure that ctx.obj exists and is a dict
     ctx.ensure_object(dict)
 
-    # Remove empty arguments
-    for key, val in conf_raw.copy().items():
-        if val is None or (isiterable(val, str_ok=False) and not val):
-            del conf_raw[key]
-
     # Read config file
-    # SR_TODO Write classmethod to instatiate Conf from config file AND CLI
-    if config_file is None:
-        config = None
-    else:
-        config = Config.from_file(config_file)
-        config.update(conf_raw)
-
-        # SR_TMP < TODO eliminate
-        conf_raw["infiles"] = config.infiles
-        conf_raw["member_ids"] = config.member_ids
-        conf_raw["outfile"] = config.outfile
-        #
-        conf_raw["variable"] = config.variable
-        conf_raw["simulation_type"] = config.simulation_type
-        conf_raw["plot_type"] = config.plot_type
-        #
-        conf_raw["domain"] = config.domain or "auto"
-        conf_raw["lang"] = config.lang or "en"
-        #
-        conf_raw["age_class_idx"] = config.age_class_idx
-        conf_raw["deposition_type"] = config.deposition_type
-        conf_raw["level_idx"] = config.level_idx
-        conf_raw["nout_rel_idx"] = config.nout_rel_idx
-        conf_raw["release_point_idx"] = config.release_point_idx
-        conf_raw["species_id"] = config.species_id
-        conf_raw["time_idx"] = config.time_idx
-        #
-        conf_raw["integrate"] = config.integrate
-        # SR_TMP >
+    config = Config.from_file(config_file)
+    config.update(config_cli, skip_none=True)
 
     # SR_TMP <
-    mandatory_args = ["variable", "simulation_type"]
-    for arg in mandatory_args:
-        if not conf_raw.get(arg):
+    required_args = ["variable", "simulation_type"]
+    for arg in required_args:
+        if getattr(config, arg) is None:
             raise Exception(f"argument missing: {arg}")
     # SR_TMP >
 
     # Create plots
-    create_plots(conf_raw)
+    create_plots(config, cli_args)
 
     return 0
 
 
-def create_plots(conf_raw):
+def create_plots(config, cli_args):
     """
     Read and plot FLEXPART data.
     """
 
     # SR_TMP <
-    if conf_raw["plot_type"] == "auto":
-        conf_raw["plot_type"] = conf_raw["variable"]
+    if config.plot_type == "auto":
+        config.plot_type = config.variable
     # SR_TMP >
 
-    variable = conf_raw["variable"]
-    simulation_type = conf_raw["simulation_type"]
-    plot_type = conf_raw["plot_type"]
-    if simulation_type == "deterministic":
-        cls_name = f"{variable}"
-    elif simulation_type == "ensemble":
-        cls_name = f"{plot_type}_{variable}"
+    if config.simulation_type == "deterministic":
+        cls_name = f"{config.variable}"
+    elif config.simulation_type == "ensemble":
+        cls_name = f"{config.plot_type}_{config.variable}"
 
     # Read input fields
-    field_lst = read_fields(cls_name, conf_raw)
+    field_lst = read_fields(cls_name, config)
 
     # Prepare plotter
     plotter = Plotter()
@@ -236,9 +207,9 @@ def create_plots(conf_raw):
         return plotter.run(
             cls_name,
             field_lst,
-            conf_raw["outfile"],
-            lang=conf_raw["lang"],
-            scale_fact=conf_raw.get("scale_fact"),
+            config.outfile,
+            lang=config.lang,
+            scale_fact=cli_args["scale_fact"],
         )
 
     # Note: Plotter.run yields the output file paths on-the-go
@@ -246,36 +217,35 @@ def create_plots(conf_raw):
     for i, out_file_path in enumerate(fct_plot()):
         out_file_paths.append(out_file_path)
 
-        if conf_raw.get("open_first_cmd") and i == 0:
+        if cli_args["open_first_cmd"] and i == 0:
             # Open the first file as soon as it's available
-            open_plots(conf_raw["open_first_cmd"], [out_file_path])
+            open_plots(cli_args["open_first_cmd"], [out_file_path])
 
-    if conf_raw.get("open_all_cmd"):
+    if cli_args["open_all_cmd"]:
         # Open all plots
-        open_plots(conf_raw["open_all_cmd"], out_file_paths)
+        open_plots(cli_args["open_all_cmd"], out_file_paths)
 
 
-def prep_var_specs_dct(conf_raw):
+def prep_var_specs_dct(config):
     """
     Prepare the variable specifications dict from the raw CLI input.
     """
 
     var_specs_raw = {
-        "time_lst": (conf_raw.get("time_idx"),),
-        "nageclass_lst": (conf_raw.get("age_class_idx"),),
-        "noutrel_lst": (conf_raw.get("nout_rel_idx"),),
-        "numpoint_lst": (conf_raw.get("release_point_idx"),),
-        "species_id_lst": (conf_raw.get("species_id"),),
-        "integrate_lst": (conf_raw.get("integrate"),),
+        "time_lst": (config.time_idx,),
+        "nageclass_lst": (config.age_class_idx,),
+        "noutrel_lst": (config.nout_rel_idx,),
+        "numpoint_lst": (config.release_point_idx,),
+        "species_id_lst": (config.species_id,),
+        "integrate_lst": (config.integrate,),
     }
 
-    variable = conf_raw["variable"]
-    if variable == "concentration":
-        var_specs_raw["level_lst"] = (conf_raw.get("level_idx"),)
-    elif variable == "deposition":
-        var_specs_raw["deposition_lst"] = (conf_raw.get("deposition_type"),)
+    if config.variable == "concentration":
+        var_specs_raw["level_lst"] = (config.level_idx,)
+    elif config.variable == "deposition":
+        var_specs_raw["deposition_lst"] = (config.deposition_type,)
     else:
-        raise NotImplementedError(f"variable='{variable}'")
+        raise NotImplementedError(f"variable='{config.variable}'")
 
     var_specs_dct = {}
     for key, val in var_specs_raw.items():
@@ -292,20 +262,14 @@ def prep_var_specs_dct(conf_raw):
     return var_specs_dct
 
 
-def read_fields(cls_name, conf_raw):
+def read_fields(cls_name, config):
     """
     TODO
     """
 
-    # SR_TMP <
-    simulation_type = conf_raw["simulation_type"]
-    lang = conf_raw["lang"]
-    plot_type = conf_raw["plot_type"]
-    # SR_TMP >
-
     # SR_TMP < TODO find cleaner solution
-    if simulation_type == "ensemble":
-        if plot_type == "ens_thr_agrmt":
+    if config.simulation_type == "ensemble":
+        if config.plot_type == "ens_thr_agrmt":
             ens_var_setup = {"thr": 1e-9}
         else:
             ens_var_setup = {}
@@ -314,18 +278,18 @@ def read_fields(cls_name, conf_raw):
     # SR_TMP >
 
     # SR_TMP <<< TODO clean this up
-    attrs = {"lang": lang}
-    if simulation_type == "ensemble":
-        if conf_raw["ens_member_id_lst"] is not None:
-            attrs["member_ids"] = conf_raw["ens_member_id_lst"]
-        assert plot_type.startswith("ens_"), plot_type
-        attrs["ens_var"] = plot_type[4:]
+    attrs = {"lang": config.lang}
+    if config.simulation_type == "ensemble":
+        if config.member_ids is not None:
+            attrs["member_ids"] = config.member_ids
+        assert config.plot_type.startswith("ens_"), config.plot_type
+        attrs["ens_var"] = config.plot_type[4:]
         attrs["ens_var_setup"] = ens_var_setup
 
     # Create variable specification objects
-    var_specs_dct = prep_var_specs_dct(conf_raw)
+    var_specs_dct = prep_var_specs_dct(config)
     multi_var_specs_lst = MultiVarSpecs.create(
-        cls_name, var_specs_dct, lang=lang, words=None,
+        cls_name, var_specs_dct, lang=config.lang, words=None,
     )
 
     # Determine fields specifications (one for each eventual plot)
@@ -336,8 +300,8 @@ def read_fields(cls_name, conf_raw):
 
     # Read fields
     field_lst = []
-    for raw_path in conf_raw["infiles"]:
-        field_lst.extend(FileReader(raw_path).run(fld_specs_lst, lang=lang))
+    for raw_path in config.infiles:
+        field_lst.extend(FileReader(raw_path).run(fld_specs_lst, lang=config.lang))
 
     return field_lst
 

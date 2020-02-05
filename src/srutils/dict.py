@@ -182,6 +182,7 @@ def flatten_nested_dict(dct, *, retain_depth=False, tie_breaker=None):
     Examples:
         TODO
     """
+
     def run_rec(dct, *, retain_depth, curr_depth=0):
         def collect_children(dct):
             children = []
@@ -230,7 +231,6 @@ def linearize_nested_dict(dct):
     """
 
     def run_rec(dct):
-
         def separate_subdicts(dct):
             subdicts, elements = {}, {}
             for key, val in dct.items():
