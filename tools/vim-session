@@ -1,15 +1,22 @@
-#!/bin/bash
+#!/bin/bash -e
 
 SESSION_FILE_DEFAULT="./session"
+
+DBG=false
 
 main()
 {
     local session_files=("${@}")
     [ ${#session_files[@]} -eq 0 ] && session_files=("${SESSION_FILE_DEFAULT}")
 
-    local vim_files=($(parse_session_files "${session_files[@]}"))
+    local vim_files
+    vim_files=(
+        $(parse_session_files "${session_files[@]}" || return ${?})
+    ) || return ${?}
 
-    TERM=screen-256color vim -- "${vim_files[@]}" || return ${?}
+    local cmd
+    cmd="TERM=screen-256color vim -- $(echo "${vim_files[@]}")" || return ${?}
+    ${DBG} && echo "${cmd}" >&2 || eval ${cmd}
 
     return 0
 }
@@ -20,10 +27,12 @@ main()
 parse_session_files()
 {
     local files=("${@}")
+    ${DBG} && echo "parse_session_files"
+    ${DBG} && echo "| files: ${files[@]}"
     local file
     for file in "${files[@]}"
     do
-        parse_session_file "${file}"
+        parse_session_file "${file}" || return ${?}
     done
     return 0
 }
@@ -34,19 +43,24 @@ parse_session_files()
 parse_session_file()
 {
     local file="${1}"
-    local path="${2}"
-    local sub_file
-    local sub_path
+    ${DBG} && echo "parse_session_file" >&2
+    ${DBG} && echo "| file: ${file}" >&2
+    [ ! -f "${file}" ] && { echo "no such file: '${file}'" >&2; return 1; }
+    local root="$(realpath --relative-to="." "$(dirname ${file})")"
+    ${DBG} && echo "> root: ${root}" >&2
+    ${DBG} && echo "> read lines from ${file}" >&2
     local line
     while read line
     do
+        ${DBG} && echo "  '${line}'" >&2
+        line="$(echo ${line})"  # strip whitespace
         if [ "${line:0:1}" == '<' ]
         then
-            sub_file="$(echo "${line:1}" | sed 's/^ \+//')"
-            sub_path="$(dirname "${sub_file}")"
-            parse_session_file "${sub_file}" "${sub_path}"
+            local sub_file="${root}/$(echo ${line:1})"  # strip whitespace
+            ${DBG} && echo "  - sub_file: ${sub_file}" >&2
+            parse_session_file "${sub_file}" "${root}/$(dirname "${sub_file}")" || return ${?}
         else
-            parse_session_line "${line}" "${path}"
+            parse_session_line "${line}" "${root}" || return ${?}
         fi
     done < "${file}"
     return 0
@@ -58,11 +72,13 @@ parse_session_file()
 parse_session_line()
 {
     local line="${1}"
-    local path="${2}"
+    local root="${2}"
+    ${DBG} && echo "parse_session_line" >&2
+    ${DBG} && echo "| line: ${line}" >&2
+    ${DBG} && echo "| root: ${root}" >&2
     line="$(echo "${line}" | sed -e 's/^ \+//' -e 's/#.*$//')"
     [ "${line}" == '' ] && return 0
-    [ "${path}" == '' ] && path='.'
-    local file="$(echo "${path}/${line}" | sed -e 's@\./@@' -e 's@/./@/@g')"
+    local file="$(echo "${root}/${line}" | sed -e 's@\./@@' -e 's@/./@/@g')"
     echo "${file}"
     return 0
 }
