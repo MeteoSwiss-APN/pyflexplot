@@ -11,6 +11,22 @@ from .exceptions import KeyConflictError
 from .various import isiterable
 
 
+def format_dictlike(obj, multiline=False, indent=1):
+    """Format a dict-like object to a string."""
+    if not multiline:
+        indent = 0
+    try:
+        s = pformat(dict(obj), indent=indent, sort_dicts=False)[1:-1]
+    except TypeError as e:
+        # Option 'sort_dicts' only available in Python3.8+
+        s = pformat(dict(obj), indent=indent)[1:-1]
+    if multiline:
+        s = "\n{s}\n"
+    else:
+        s = s.replace("\n", " ")
+    return f"{type(obj).__name__}({s})"
+
+
 def merge_dicts(*dicts, unique_keys=True):
     """Merge multiple dictionaries with or without shared keys.
 
@@ -81,9 +97,22 @@ def decompress_multival_dict(
     if not isinstance(depth, int) or depth <= 0:
         raise ValueError(f"depth must be a positive integer", depth)
 
+    def dict_mult_vals_product(dct, cls_expand=list, f_expand=None):
+        if isinstance(cls_expand, type):
+            cls_expand = [cls_expand]
+        if f_expand is None:
+            f_expand = lambda obj: any(isinstance(obj, t) for t in cls_expand)
+        keys, vals = [], []
+        for key, val in dct.items():
+            if not f_expand(val):
+                val = [val]
+            keys.append(key)
+            vals.append(val)
+        return [dict(zip(keys, vals_i)) for vals_i in itertools.product(*vals)]
+
     def run_rec(dct, depth, curr_depth=1):
         """Run recursively."""
-        dct_lst = _dict_mult_vals_product(dct, cls_expand=cls_expand, f_expand=f_expand)
+        dct_lst = dict_mult_vals_product(dct, cls_expand=cls_expand, f_expand=f_expand)
         if len(dct_lst) == 1 or curr_depth == depth:
             for _ in range(depth - curr_depth):
                 # Nest further until target depth reached
@@ -112,20 +141,6 @@ def decompress_multival_dict(
     return res
 
 
-def _dict_mult_vals_product(dct, cls_expand=list, f_expand=None):
-    if isinstance(cls_expand, type):
-        cls_expand = [cls_expand]
-    if f_expand is None:
-        f_expand = lambda obj: any(isinstance(obj, t) for t in cls_expand)
-    keys, vals = [], []
-    for key, val in dct.items():
-        if not f_expand(val):
-            val = [val]
-        keys.append(key)
-        vals.append(val)
-    return [dict(zip(keys, vals_i)) for vals_i in itertools.product(*vals)]
-
-
 def nested_dict_set(dct, keys, val):
     """Set a value in a nested dict, creating subdicts if necessary.
 
@@ -146,26 +161,6 @@ def nested_dict_set(dct, keys, val):
             parent = parent[key]
         else:
             parent[key] = val
-
-
-def format_dictlike(obj, multiline=False, indent=1):
-    """Format a dict-like object to a string."""
-    if not multiline:
-        indent = 0
-    try:
-        s = pformat(dict(obj), indent=indent, sort_dicts=False)[1:-1]
-    except TypeError as e:
-        # Option 'sort_dicts' only available in Python3.8+
-        s = pformat(dict(obj), indent=indent)[1:-1]
-    if multiline:
-        s = "\n{s}\n"
-    else:
-        s = s.replace("\n", " ")
-    return f"{type(obj).__name__}({s})"
-
-
-def flatten_nested_dict(dct, **kwargs):
-    return NestedDictFlattener(**kwargs).run(dct)
 
 
 def flatten_nested_dict(dct, *, retain_depth=False, tie_breaker=None):
@@ -224,3 +219,7 @@ def flatten_nested_dict(dct, *, retain_depth=False, tie_breaker=None):
         return flat
 
     return run_rec(dct, retain_depth=retain_depth)
+
+
+def decompress_nested_dict(dct):
+    return dct
