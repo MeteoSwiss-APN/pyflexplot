@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pyflexplot.var_specs import MultiVarSpecs
 from pyflexplot.var_specs import VarSpecs
 
-from srutils.dict import decompress_dict_multivals
+from srutils.dict import decompress_multival_dict
 from srutils.testing import check_is_list_like
 from srutils.testing import TestConfBase as _TestConf
 from srutils.various import isiterable
@@ -35,7 +35,7 @@ def check_var_specs_lst_lst(var_specs_lst_lst, conf):
 
 def check_var_specs_lst_unordered(var_specs_lst, conf):
     check_is_list_like(var_specs_lst, t_children=VarSpecs)
-    var_specs_dct_lst = decompress_dict_multivals(conf.dct, 2, flatten=True)
+    var_specs_dct_lst = decompress_multival_dict(conf.dct, 2, flatten=True)
     for var_specs in var_specs_lst:
         exception = None
         for var_specs_dct in var_specs_dct_lst:

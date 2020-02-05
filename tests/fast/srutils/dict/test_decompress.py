@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Tests for function ``srutils.dict.decompress_dict_multivals``.
+Tests for function ``srutils.dict.decompress_multival_dict``.
 """
 import pytest
 
-from srutils.dict import decompress_dict_multivals
+from srutils.dict import decompress_multival_dict
 
 
 def assert_dict_lists_equal(res, sol):
@@ -27,7 +27,7 @@ T = True
 def test_singval(depth, sol):
     """Only single-value dict elements."""
     dct = {"a": 1, "b": 2}
-    res = decompress_dict_multivals(dct, depth=depth)
+    res = decompress_multival_dict(dct, depth=depth)
     assert_dict_lists_equal(res, sol)
 
 
@@ -43,7 +43,7 @@ def test_singval(depth, sol):
 def test_multival_sing_shallow(depth, sol):
     """Single multi-value element (simple list)."""
     dct = {"a": [1, 2], "b": 3}
-    res = decompress_dict_multivals(dct, depth=depth)
+    res = decompress_multival_dict(dct, depth=depth)
     assert_dict_lists_equal(res, sol)
 
 
@@ -77,7 +77,7 @@ def test_multival_sing_shallow(depth, sol):
 def test_multival_mult_shallow(depth, sol):
     """Multiple shallow multi-value dict elements (simple lists)."""
     dct = {"a": [1, 2], "b": 3, "c": [4, 5, 6]}
-    res = decompress_dict_multivals(dct, depth=depth)
+    res = decompress_multival_dict(dct, depth=depth)
     assert_dict_lists_equal(res, sol)
 
 
@@ -93,7 +93,7 @@ def test_multival_mult_shallow(depth, sol):
 def test_multival_sing_deep(depth, sol):
     """Single deep multi-value dict elements (nested lists)."""
     dct = {"a": [[1, 2], 3], "b": 4}
-    res = decompress_dict_multivals(dct, depth=depth)
+    res = decompress_multival_dict(dct, depth=depth)
     assert_dict_lists_equal(res, sol)
 
 
@@ -142,5 +142,5 @@ def test_multival_sing_deep(depth, sol):
 def test_multival_mult_deep(depth, sol):
     """Multiple deep multi-value dict elements (nestsed lists)."""
     dct = {"a": [[1, 2], [3]], "b": 4, "c": [5, [6, 7]]}
-    res = decompress_dict_multivals(dct, depth=depth)
+    res = decompress_multival_dict(dct, depth=depth)
     assert_dict_lists_equal(res, sol)

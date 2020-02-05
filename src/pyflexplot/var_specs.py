@@ -7,7 +7,7 @@ import logging as log
 from dataclasses import dataclass
 from typing import List
 
-from srutils.dict import decompress_dict_multivals
+from srutils.dict import decompress_multival_dict
 from srutils.dict import format_dictlike
 from srutils.various import isiterable
 
@@ -192,11 +192,11 @@ class VarSpecs(SummarizableClass, ParentClass):
 
         """
         cls = cls.subcls(name)  # SR_TMP
-        var_specs_dct_lst_outer = decompress_dict_multivals(
+        var_specs_dct_lst_outer = decompress_multival_dict(
             var_specs_dct, depth=1, cls_expand=list,
         )
         var_specs_dct_lst_lst = [
-            decompress_dict_multivals(dct, depth=1, cls_expand=tuple)
+            decompress_multival_dict(dct, depth=1, cls_expand=tuple)
             for dct in var_specs_dct_lst_outer
         ]
 

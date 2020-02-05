@@ -43,7 +43,7 @@ def merge_dicts(*dicts, unique_keys=True):
     return merged
 
 
-def decompress_dict_multivals(
+def decompress_multival_dict(
     dct, depth, cls_expand=(list, tuple), f_expand=None, flatten=False
 ):
     """Combine dict with some nested list values into object-value dicts.
@@ -66,7 +66,7 @@ def decompress_dict_multivals(
             False.
 
     Example:
-        >>> f = decompress_dict_multivals
+        >>> f = decompress_multival_dict
         >>> d = {
                 "a": [1, [3, 4]],
                 "b": 5,
