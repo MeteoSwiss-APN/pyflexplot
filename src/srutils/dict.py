@@ -3,8 +3,11 @@
 Dictionary utilities.
 """
 import itertools
+
+from copy import deepcopy
 from pprint import pformat
 
+from .exceptions import KeyConflictError
 from .various import isiterable
 
 
@@ -159,3 +162,62 @@ def format_dictlike(obj, multiline=False, indent=1):
     else:
         s = s.replace("\n", " ")
     return f"{type(obj).__name__}({s})"
+
+
+def flatten_dict(dct, **kwargs):
+    return NestedDictFlattener(**kwargs).run(dct)
+
+
+class NestedDictFlattener:
+    def __init__(self, *, retain_depth=False):
+        self.retain_depth = retain_depth
+
+    def run(self, dct):
+        self._curr_depth = -1
+        flat = self._run_rec(dct)
+        if not self.retain_depth:
+            flat = self._remove_depth(flat)
+        return flat
+
+    def _run_rec(self, dct):
+        self._curr_depth += 1
+        flat = self._merge_children(self._collect_children(dct))
+        self._curr_depth -= 1
+        return flat
+
+    def _collect_children(self, dct):
+        """
+        TODO
+        """
+        children = []
+        for key, val in dct.items():
+            if isinstance(val, dict):
+                child = self._run_rec(val)
+            else:
+                child = {key: (self._curr_depth, val)}
+            children.append(child)
+        return children
+
+    def _merge_children(self, children):
+        """
+        TODO
+        """
+        flat = {}
+        for child in children:
+            for key, (depth, val) in child.items():
+                if key in flat:
+                    depth_flat, _ = flat[key]
+                    if depth_flat > depth:
+                        continue
+                    elif depth_flat == depth:
+                        raise KeyConflictError(
+                            f"key conflict at depth {depth}: '{key}'"
+                        )
+                flat[key] = (depth, val)
+        return flat
+
+    def _remove_depth(self, dct):
+        """
+        TODO
+        """
+        return {k: v for k, (d, v) in dct.items()}

@@ -1,2 +1,3 @@
 dict/test_decompress.py
+dict/test_flatten.py
 str/test_to_varname.py

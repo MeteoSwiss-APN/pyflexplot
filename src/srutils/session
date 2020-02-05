@@ -1,6 +1,7 @@
 __init__.py
 click.py
 dict.py
+exceptions.py
 geo.py
 str.py
 testing.py
