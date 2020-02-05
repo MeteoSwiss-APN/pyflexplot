@@ -36,6 +36,42 @@ endif
 endif
 export PREFIX
 
+#
+# Targets conditional on ${INSTALL}.
+#
+# Use these to specify the respective targets for post-installation targets
+# like ``test``, for which installation is optionally activated with INSTALL=1.
+#
+# Note that for interdependencies between venv/installation targets -- like
+# of ``install`` on ``venv``, or if ``install-dev`` on ``install-test`` -- the
+# targets are hard-coded w/o these variables, such that they are always executed
+# regardless of ${INSTALL}.
+#
+ifeq (${INSTALL}, 0)
+	_VENV :=
+	_INSTALL :=
+	_INSTALL_EDIT :=
+	_INSTALL_TEST :=
+	_INSTALL_DEV :=
+	_INSTALL_PINNED :=
+	_INSTALL_TEST_PINNED :=
+else
+	_VENV := venv
+	_INSTALL := install
+	_INSTALL_EDIT := install-edit
+	_INSTALL_TEST := install-test
+	_INSTALL_DEV := install-dev
+	_INSTALL_PINNED := install-pinned
+	_INSTALL_TEST_PINNED := install-test-pinned
+endif
+export _VENV
+export _INSTALL
+export _INSTALL_EDIT
+export _INSTALL_TEST
+export _INSTALL_DEV
+export _INSTALL_PINNED
+export _INSTALL_TEST_PINNED
+
 #==============================================================================
 # Python script: Print help
 #==============================================================================
@@ -175,42 +211,30 @@ endif
 #==============================================================================
 
 install: venv #CMD Install the package with unpinned runtime dependencies.
-ifneq (${INSTALL}, 0)
 	@echo -e "${ECHO_PREFIX}installing the package"
 	${PREFIX}python -m pip install .
-endif
 
 install-edit: venv #CMD Install the package as editable with unpinned runtime dependencies.
-ifneq (${INSTALL}, 0)
 	@echo -e "${ECHO_PREFIX}installing the package as editable"
 	${PREFIX}python -m pip install -e .
-endif
 
 install-pinned: venv #CMD Install the package with pinned runtime dependencies.
-ifneq (${INSTALL}, 0)
 	@echo -e "${ECHO_PREFIX}installing the package with pinned dependencies"
 	${PREFIX}python -m pip install -r requirements/run-pinned.txt
 	${PREFIX}python -m pip install .
-endif
 
 install-test-pinned: venv #CMD Install the package with pinned runtime and testing dependencies.
-ifneq (${INSTALL}, 0)
 	@echo -e "${ECHO_PREFIX}installing the package as editable with pinned testing dependencies"
 	${PREFIX}python -m pip install -r requirements/test-pinned.txt
 	${PREFIX}python -m pip install -e .
-endif
 
 install-test: install-edit #CMD Install the package with unpinned runtime and testing dependencies.
-ifneq (${INSTALL}, 0)
 	@echo -e "${ECHO_PREFIX}installing the package with testing dependencies"
 	${PREFIX}python -m pip install -r requirements/test-unpinned.txt
-endif
 
 install-dev: install-test #CMD Install the package as editable with unpinned runtime,\ntesting, and development dependencies.
-ifneq (${INSTALL}, 0)
 	@echo -e "${ECHO_PREFIX}installing the package as editable with testing and development dependencies"
 	${PREFIX}python -m pip install -r requirements/dev-unpinned.txt
-endif
 
 #==============================================================================
 # Version control
@@ -231,27 +255,27 @@ endif
 # Versioning
 #==============================================================================
 
-bump-patch: install-dev #CMD Bump patch component of version number (x.y.Z), incl. git commit and tag
+bump-patch: ${_INSTALL_DEV} #CMD Bump patch component of version number (x.y.Z), incl. git commit and tag
 	@echo -e "${ECHO_PREFIX}bumping version number: increment patch component"
 	${PREFIX}bumpversion patch
 
-bump-minor: install-dev #CMD Bump minor component of version number (x.Y.z), incl. git commit and tag
+bump-minor: ${_INSTALL_DEV} #CMD Bump minor component of version number (x.Y.z), incl. git commit and tag
 	@echo -e "${ECHO_PREFIX}bumping version number: increment minor component"
 	${PREFIX}bumpversion minor
 
-bump-major: install-dev #CMD Bump minor component of version number (X.y.z), incl. git commit and tag
+bump-major: ${_INSTALL_DEV} #CMD Bump minor component of version number (X.y.z), incl. git commit and tag
 	@echo -e "${ECHO_PREFIX}bumping version number: increment major component"
 	${PREFIX}bumpversion major
 
-bump-patch-dry: install-dev #CMD Bump patch component of version number (x.y.Z), without git commit and tag
+bump-patch-dry: ${_INSTALL_DEV} #CMD Bump patch component of version number (x.y.Z), without git commit and tag
 	@echo -e "${ECHO_PREFIX}bumping version number: increment patch component (dry run)"
 	${PREFIX}bumpversion patch --no-commit --no-tag
 
-bump-minor-dry: install-dev #CMD Bump minor component of version number (x.Y.z), without git commit and tag
+bump-minor-dry: ${_INSTALL_DEV} #CMD Bump minor component of version number (x.Y.z), without git commit and tag
 	@echo -e "${ECHO_PREFIX}bumping version number: increment minor component (dry run)"
 	${PREFIX}bumpversion minor --no-commit --no-tag
 
-bump-major-dry: install-dev #CMD Bump minor component of version number (X.y.z), without git commit and tag
+bump-major-dry: ${_INSTALL_DEV} #CMD Bump minor component of version number (X.y.z), without git commit and tag
 	@echo -e "${ECHO_PREFIX}bumping version number: increment major component (dry run)"
 	${PREFIX}bumpversion major --no-commit --no-tag
 
@@ -259,11 +283,11 @@ bump-major-dry: install-dev #CMD Bump minor component of version number (X.y.z),
 # Formatting and linting
 #==============================================================================
 
-format: install-dev #CMD Reformat the code to conform with standards like PEP 8.
+format: ${_INSTALL_DEV} #CMD Reformat the code to conform with standards like PEP 8.
 	@echo -e "${ECHO_PREFIX}reformatting the code"
 	${PREFIX}black src tests
 
-lint: install-dev #CMD Check the code style.
+lint: ${_INSTALL_DEV} #CMD Check the code style.
 	@echo -e "${ECHO_PREFIX}checking the code style (linting)"
 	${PREFIX}flake8 src tests
 
@@ -271,20 +295,20 @@ lint: install-dev #CMD Check the code style.
 # Testing
 #==============================================================================
 
-test: install-test #CMD Run all tests with the default Python version.
+test: ${_INSTALL_TEST} #CMD Run all tests with the default Python version.
 	@echo -e "${ECHO_PREFIX}running tests"
 	${PREFIX}pytest
 
-test-cov: install-test #CMD Check code coverage of tests.
+test-cov: ${_INSTALL_TEST} #CMD Check code coverage of tests.
 	@echo -e "${ECHO_PREFIX}running tests with coverage check"
 	${PREFIX}pytest --cov=src
 
-test-cov-html: install-test #CMD Check code coverage of tests and show results in browser.
+test-cov-html: ${_INSTALL_TEST} #CMD Check code coverage of tests and show results in browser.
 	@echo -e "${ECHO_PREFIX}running tests with coverage check and browser report"
 	${PREFIX}pytest --cov=src --cov-report=html
 	${browser} htmlcov/index.html
 
-test-all: install-test #CMD Run tests on all specified Python versions with tox.
+test-all: ${_INSTALL_TEST} #CMD Run tests on all specified Python versions with tox.
 	@echo -e "${ECHO_PREFIX}running tests in isolated environments"
 	${PREFIX}tox
 
@@ -292,7 +316,7 @@ test-all: install-test #CMD Run tests on all specified Python versions with tox.
 # Documentation
 #==============================================================================
 
-# docs: install-dev #CMD Generate HTML documentation, including API docs.
+# docs: ${_INSTALL_DEV} #CMD Generate HTML documentation, including API docs.
 #	@echo -e "${ECHO_PREFIX}generating HTML documentation"
 # 	\rm -f docs/{{ cookiecutter.project_slug }}.rst
 # 	\rm -f docs/modules.rst
