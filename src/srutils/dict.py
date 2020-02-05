@@ -81,18 +81,18 @@ def decompress_multival_dict(
     if not isinstance(depth, int) or depth <= 0:
         raise ValueError(f"depth must be a positive integer", depth)
 
-    def run_rec(dct, depth, _curr_depth=1):
+    def run_rec(dct, depth, curr_depth=1):
         """Run recursively."""
         dct_lst = _dict_mult_vals_product(dct, cls_expand=cls_expand, f_expand=f_expand)
-        if len(dct_lst) == 1 or _curr_depth == depth:
-            for _ in range(depth - _curr_depth):
+        if len(dct_lst) == 1 or curr_depth == depth:
+            for _ in range(depth - curr_depth):
                 # Nest further until target depth reached
                 dct_lst = [dct_lst]
             result = dct_lst
         else:
             result = []
             for dct_i in dct_lst:
-                obj = run_rec(dct_i, depth, _curr_depth + 1)
+                obj = run_rec(dct_i, depth, curr_depth + 1)
                 result.append(obj)
         return result
 
@@ -164,60 +164,63 @@ def format_dictlike(obj, multiline=False, indent=1):
     return f"{type(obj).__name__}({s})"
 
 
-def flatten_dict(dct, **kwargs):
+def flatten_nested_dict(dct, **kwargs):
     return NestedDictFlattener(**kwargs).run(dct)
 
 
-class NestedDictFlattener:
-    def __init__(self, *, retain_depth=False):
-        self.retain_depth = retain_depth
+def flatten_nested_dict(dct, *, retain_depth=False, tie_breaker=None):
+    """
+    Flatten a nested dict by updating inward-out.
 
-    def run(self, dct):
-        self._curr_depth = -1
-        flat = self._run_rec(dct)
-        if not self.retain_depth:
-            flat = self._remove_depth(flat)
+    Args:
+        dct (dict): Nested dict.
+
+        retain_depth (bool, optional): If true, dicts values constitute two-
+            element tuples comprised of the nesting depth which the value
+            originates from and the value itself. Defaults to False.
+
+        tie_breaker (callable, optional): Function to determine which of two
+            values with the same key at the same nesting depth has precedence.
+            If omitted, an exception is raised in case of identical keys at the
+            same nesting depth. Defaults to None.
+
+    Examples:
+        TODO
+    """
+    def run_rec(dct, *, retain_depth, curr_depth=0):
+        def collect_children(dct):
+            children = []
+            for key, val in dct.items():
+                if isinstance(val, dict):
+                    child = run_rec(val, retain_depth=True, curr_depth=curr_depth + 1)
+                else:
+                    child = {key: (curr_depth, val)}
+                children.append(child)
+            return children
+
+        def merge_children(children):
+            flat = {}
+            for child in children:
+                for key, (depth, val) in child.items():
+                    if key in flat:
+                        depth_flat, _ = flat[key]
+                        if depth_flat > depth:
+                            continue
+                        elif depth_flat == depth:
+                            if tie_breaker is None:
+                                raise KeyConflictError(
+                                    f"key conflict at depth {depth}: '{key}'"
+                                )
+                            else:
+                                raise NotImplementedError(
+                                    f"tie_breaker is not None", tie_breaker,
+                                )
+                    flat[key] = (depth, val)
+            return flat
+
+        flat = merge_children(collect_children(dct))
+        if not retain_depth:
+            flat = {k: v for k, (d, v) in flat.items()}
         return flat
 
-    def _run_rec(self, dct):
-        self._curr_depth += 1
-        flat = self._merge_children(self._collect_children(dct))
-        self._curr_depth -= 1
-        return flat
-
-    def _collect_children(self, dct):
-        """
-        TODO
-        """
-        children = []
-        for key, val in dct.items():
-            if isinstance(val, dict):
-                child = self._run_rec(val)
-            else:
-                child = {key: (self._curr_depth, val)}
-            children.append(child)
-        return children
-
-    def _merge_children(self, children):
-        """
-        TODO
-        """
-        flat = {}
-        for child in children:
-            for key, (depth, val) in child.items():
-                if key in flat:
-                    depth_flat, _ = flat[key]
-                    if depth_flat > depth:
-                        continue
-                    elif depth_flat == depth:
-                        raise KeyConflictError(
-                            f"key conflict at depth {depth}: '{key}'"
-                        )
-                flat[key] = (depth, val)
-        return flat
-
-    def _remove_depth(self, dct):
-        """
-        TODO
-        """
-        return {k: v for k, (d, v) in dct.items()}
+    return run_rec(dct, retain_depth=retain_depth)

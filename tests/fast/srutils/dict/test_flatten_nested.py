@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Tests for function ``srutils.dict.flatten_dict``.
+Tests for function ``srutils.dict.flatten_nested_dict``.
 """
 import pytest
 
-from srutils.dict import flatten_dict
+from srutils.dict import flatten_nested_dict
 from srutils.exceptions import KeyConflictError
 
 
@@ -97,7 +97,7 @@ def test_linear_nesting(dct, sol):
 
     In case of conflicting keys, the value at the deeper nesting level wins.
     """
-    assert flatten_dict(dct) == sol
+    assert flatten_nested_dict(dct) == sol
 
 
 @pytest.mark.parametrize(
@@ -113,7 +113,7 @@ def test_branched_notie(dct, sol):
     """
     Branched nesting without a tie breaker.
     """
-    assert flatten_dict(dct) == sol
+    assert flatten_nested_dict(dct) == sol
 
 
 @pytest.mark.parametrize(
@@ -124,4 +124,4 @@ def test_branched_notie_fail(dct, sol):
     Failure without tie breaker in case of key conflict at same nesting level.
     """
     with pytest.raises(sol):
-        flatten_dict(dct)
+        flatten_nested_dict(dct)

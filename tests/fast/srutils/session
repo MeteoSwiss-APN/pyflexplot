@@ -1,3 +1,4 @@
-dict/test_decompress.py
-dict/test_flatten.py
+dict/test_decompress_multival.py
+dict/test_decompress_nested.py
+dict/test_flatten_nested.py
 str/test_to_varname.py
