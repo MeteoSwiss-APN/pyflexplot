@@ -1,6 +1,7 @@
 __init__.py
 attr.py
 cli.py
+config.py
 data.py
 examples.py
 field_specs.py

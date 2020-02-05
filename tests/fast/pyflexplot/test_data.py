@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Tests for module ``pyflexplot.data``."""
-import logging as log
 import numpy as np
 import pytest
 
