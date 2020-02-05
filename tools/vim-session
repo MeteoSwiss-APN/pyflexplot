@@ -1,0 +1,70 @@
+#!/bin/bash
+
+SESSION_FILE_DEFAULT="./session"
+
+main()
+{
+    local session_files=("${@}")
+    [ ${#session_files[@]} -eq 0 ] && session_files=("${SESSION_FILE_DEFAULT}")
+
+    local vim_files=($(parse_session_files "${session_files[@]}"))
+
+    TERM=screen-256color vim -- "${vim_files[@]}" || return ${?}
+
+    return 0
+}
+
+#
+# Parse multiple sessions files for file paths.
+#
+parse_session_files()
+{
+    local files=("${@}")
+    local file
+    for file in "${files[@]}"
+    do
+        parse_session_file "${file}"
+    done
+    return 0
+}
+
+#
+# Parse single sessions file (possibly nested) for file paths.
+#
+parse_session_file()
+{
+    local file="${1}"
+    local path="${2}"
+    local sub_file
+    local sub_path
+    local line
+    while read line
+    do
+        if [ "${line:0:1}" == '<' ]
+        then
+            sub_file="$(echo "${line:1}" | sed 's/^ \+//')"
+            sub_path="$(dirname "${sub_file}")"
+            parse_session_file "${sub_file}" "${sub_path}"
+        else
+            parse_session_line "${line}" "${path}"
+        fi
+    done < "${file}"
+    return 0
+}
+
+#
+# Parse a line in a sessions file for file paths.
+#
+parse_session_line()
+{
+    local line="${1}"
+    local path="${2}"
+    line="$(echo "${line}" | sed -e 's/^ \+//' -e 's/#.*$//')"
+    [ "${line}" == '' ] && return 0
+    [ "${path}" == '' ] && path='.'
+    local file="$(echo "${path}/${line}" | sed -e 's@\./@@' -e 's@/./@/@g')"
+    echo "${file}"
+    return 0
+}
+
+main "$@"
