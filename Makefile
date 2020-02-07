@@ -198,11 +198,9 @@ ifeq (${IGNORE_VENV}, 0)
 	$(eval PREFIX = ${PREFIX_VENV})
 	@export PREFIX
 ifeq (${VIRTUAL_ENV},)
-ifneq (${INSTALL}, 0)
 	@echo -e "${ECHO_PREFIX}creating virtual environment '${VENV_NAME}' at '${VENV_DIR}'"
 	python -m venv ${VENV_DIR} --prompt='${VENV_NAME}'
 	${PREFIX}python -m pip install -U pip
-endif
 endif
 endif
 
