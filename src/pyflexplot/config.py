@@ -160,16 +160,8 @@ class ConfigFile:
             data = tomlkit.parse(s)
         except Exception as e:
             raise Exception(f"error parsing TOML file {path} ({type(e).__name__}: {e})")
-        # SR_TMP <
-        required_keys = ["plot"]
-        optional_keys = []
-        unknown_keys = [
-            k for k in data.keys() if k not in required_keys + optional_keys
-        ]
-        if unknown_keys:
-            raise NotImplementedError(
-                f"{len(unknown_keys)} unknown section(s) in {file.name}", unknown_keys,
-            )
-        # SR_TMP >
-        obj = Config(**data["plot"])
-        return obj
+        configs = {}
+        for name, block in data.items():
+            config = Config(**block)
+            configs[name] = config
+        return configs

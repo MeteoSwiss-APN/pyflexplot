@@ -40,10 +40,50 @@ def read_tmp_config_file(tmp_path, content):
     return ConfigFile(tmp_file).read()
 
 
-def test_read_single_plot_empty(tmp_path):
-    """Read file wit single empty plot definition."""
+def test_read_single_empty_section(tmp_path):
+    """Read config file with single empty section."""
     content = """\
         [plot]
         """
-    config = read_tmp_config_file(tmp_path, content)
+    named_configs = read_tmp_config_file(tmp_path, content)
+    assert len(named_configs) == 1
+    config = next(iter(named_configs.values()))
     assert config.asdict() == DEFAULT_CONFIG
+
+def test_read_single_empty_renamed_section(tmp_path):
+    """Read config file with single empty section with arbitrary name."""
+    content = """\
+        [foobar]
+        """
+    named_configs = read_tmp_config_file(tmp_path, content)
+    assert len(named_configs) == 1
+    config = next(iter(named_configs.values()))
+    assert config.asdict() == DEFAULT_CONFIG
+
+def test_read_single_section(tmp_path):
+    """Read config file with single non-empty section."""
+    content = """\
+        [plot]
+        variable = "deposition"
+        lang = "de"
+        """
+    named_configs = read_tmp_config_file(tmp_path, content)
+    assert len(named_configs) == 1
+    config = next(iter(named_configs.values()))
+    assert config.asdict() != DEFAULT_CONFIG
+    sol = {**DEFAULT_CONFIG, "variable": "deposition", "lang": "de"}
+    assert config.asdict() == sol
+
+def test_read_multiple_parallel_empty_sections(tmp_path):
+    """Read config file with multiple parallel empty sections."""
+    content = """\
+        [plot1]
+
+        [plot2]
+        """
+    named_configs = read_tmp_config_file(tmp_path, content)
+    assert len(named_configs) == 2
+    names, configs = zip(*named_configs.items())
+    config_dicts = [c.asdict() for c in configs]
+    assert names == ("plot1", "plot2")
+    assert config_dicts == [DEFAULT_CONFIG]*2
