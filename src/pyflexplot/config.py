@@ -145,15 +145,21 @@ class Config:
             else:
                 setattr(self, key, val)
 
-    @classmethod
-    def from_file(cls, file):
-        s = file.read()
+    def asdict(self):
+        return {attr: getattr(self, attr) for attr in self.__dataclass_fields__}
+
+
+class ConfigFile:
+    def __init__(self, path):
+        self.path = path
+
+    def read(self):
+        with open(self.path, "r") as f:
+            s = f.read()
         try:
             data = tomlkit.parse(s)
         except Exception as e:
-            raise Exception(
-                f"error parsing TOML file {file.name} ({type(e).__name__}: {e})"
-            )
+            raise Exception(f"error parsing TOML file {path} ({type(e).__name__}: {e})")
         # SR_TMP <
         required_keys = ["plot"]
         optional_keys = []
@@ -165,5 +171,5 @@ class Config:
                 f"{len(unknown_keys)} unknown section(s) in {file.name}", unknown_keys,
             )
         # SR_TMP >
-        obj = cls(**data["plot"])
+        obj = Config(**data["plot"])
         return obj

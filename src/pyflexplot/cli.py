@@ -88,9 +88,9 @@ def not_implemented(msg):
 # --- Input
 @click.option(
     "--config",
-    "config_file",
-    help="Configuration file (TOML).",
-    type=click.File("r"),
+    "config_file_path",
+    help="Configuration file path (TOML).",
+    type=click.Path(exists=True, readable=True, allow_dash=True),
     required=True,
 )
 @click.option(
@@ -166,7 +166,7 @@ def cli(ctx, config_file, config_cli, **cli_args):
     ctx.ensure_object(dict)
 
     # Read config file
-    config = Config.from_file(config_file)
+    config = ConfigFile(config_file_path).read()
     config.update(config_cli, skip_none=True)
 
     # SR_TMP <
