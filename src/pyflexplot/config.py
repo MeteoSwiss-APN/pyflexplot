@@ -11,6 +11,8 @@ from typing import List
 from typing import Optional
 from typing import Union
 
+from srutils.dict import decompress_nested_dict
+
 
 @dataclass
 class Config:
@@ -157,9 +159,11 @@ class ConfigFile:
         with open(self.path, "r") as f:
             s = f.read()
         try:
-            data = tomlkit.parse(s)
+            raw_data = tomlkit.parse(s)
         except Exception as e:
             raise Exception(f"error parsing TOML file {path} ({type(e).__name__}: {e})")
+        data = decompress_nested_dict(raw_data, retain_keys=True)
+        breakpoint()
         configs = {}
         for name, block in data.items():
             config = Config(**block)

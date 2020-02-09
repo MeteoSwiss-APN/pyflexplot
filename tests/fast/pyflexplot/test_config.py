@@ -46,9 +46,8 @@ def test_read_single_empty_section(tmp_path):
         [plot]
         """
     named_configs = read_tmp_config_file(tmp_path, content)
-    assert len(named_configs) == 1
-    config = next(iter(named_configs.values()))
-    assert config.asdict() == DEFAULT_CONFIG
+    assert named_configs == {"plot": DEFAULT_CONFIG}
+
 
 def test_read_single_empty_renamed_section(tmp_path):
     """Read config file with single empty section with arbitrary name."""
@@ -56,9 +55,8 @@ def test_read_single_empty_renamed_section(tmp_path):
         [foobar]
         """
     named_configs = read_tmp_config_file(tmp_path, content)
-    assert len(named_configs) == 1
-    config = next(iter(named_configs.values()))
-    assert config.asdict() == DEFAULT_CONFIG
+    assert named_configs == {"foobar": DEFAULT_CONFIG}
+
 
 def test_read_single_section(tmp_path):
     """Read config file with single non-empty section."""
@@ -74,6 +72,7 @@ def test_read_single_section(tmp_path):
     sol = {**DEFAULT_CONFIG, "variable": "deposition", "lang": "de"}
     assert config.asdict() == sol
 
+
 def test_read_multiple_parallel_empty_sections(tmp_path):
     """Read config file with multiple parallel empty sections."""
     content = """\
@@ -82,8 +81,17 @@ def test_read_multiple_parallel_empty_sections(tmp_path):
         [plot2]
         """
     named_configs = read_tmp_config_file(tmp_path, content)
-    assert len(named_configs) == 2
-    names, configs = zip(*named_configs.items())
-    config_dicts = [c.asdict() for c in configs]
-    assert names == ("plot1", "plot2")
-    assert config_dicts == [DEFAULT_CONFIG]*2
+    assert list(named_configs) == ["plot1", "plot2"]
+    config_dicts = [c.asdict() for c in named_configs.values()]
+    assert config_dicts == [DEFAULT_CONFIG] * 2
+
+
+def test_read_two_nested_empty_sections(tmp_path):
+    """Read config file with two nested empty sections."""
+    content = """\
+        [base]
+
+        [base.plot]
+        """
+    named_configs = read_tmp_config_file(tmp_path, content)
+    assert named_configs == {"plot": DEFAULT_CONFIG}

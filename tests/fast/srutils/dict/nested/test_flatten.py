@@ -125,3 +125,36 @@ def test_branched_notie_fail(dct, sol):
     """
     with pytest.raises(sol):
         flatten_nested_dict(dct)
+
+
+def test_retain_keys():
+    dct = {"a": 1, "b": 2, "foo": {"c": 3, "bar": {"a": 4, "c": 5, "d": 6}}}
+    sol = {
+        "a": {"value": 4, "keys": ("foo", "bar")},
+        "b": {"value": 2, "keys": tuple()},
+        "c": {"value": 5, "keys": ("foo", "bar")},
+        "d": {"value": 6, "keys": ("foo", "bar")},
+    }
+    assert flatten_nested_dict(dct, retain_keys=True) == sol
+
+
+def test_retain_depth():
+    dct = {"a": 1, "b": 2, "foo": {"c": 3, "bar": {"a": 4, "c": 5, "d": 6}}}
+    sol = {
+        "a": {"value": 4, "depth": 2},
+        "b": {"value": 2, "depth": 0},
+        "c": {"value": 5, "depth": 2},
+        "d": {"value": 6, "depth": 2},
+    }
+    assert flatten_nested_dict(dct, retain_depth=True) == sol
+
+
+def test_retain_depth_and_keys():
+    dct = {"a": 1, "b": 2, "foo": {"c": 3, "bar": {"a": 4, "c": 5, "d": 6}}}
+    sol = {
+        "a": {"value": 4, "depth": 2, "keys": ("foo", "bar")},
+        "b": {"value": 2, "depth": 0, "keys": tuple()},
+        "c": {"value": 5, "depth": 2, "keys": ("foo", "bar")},
+        "d": {"value": 6, "depth": 2, "keys": ("foo", "bar")},
+    }
+    assert flatten_nested_dict(dct, retain_depth=True, retain_keys=True) == sol

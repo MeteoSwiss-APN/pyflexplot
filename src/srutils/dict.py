@@ -163,46 +163,60 @@ def nested_dict_set(dct, keys, val):
             parent[key] = val
 
 
-def flatten_nested_dict(dct, *, retain_depth=False, tie_breaker=None):
+def flatten_nested_dict(
+    dct, *, retain_keys=False, retain_depth=False, tie_breaker=None
+):
     """
     Flatten a nested dict by updating inward-out.
 
     Args:
         dct (dict): Nested dict.
 
-        retain_depth (bool, optional): If true, dicts values constitute two-
-            element tuples comprised of the nesting depth which the value
-            originates from and the value itself. Defaults to False.
+        retain_keys (bool, optional): Whether to retain the keys of the nested
+            dicts.  If true, each value of the flattened dict constitutes a
+            dict with a tuple of keys as "keys" and the actual value as
+            "value". Defaults to False.
+
+        retain_depth (bool, optional): Whether to retain the nesting depth.
+            If true, each value of the flattened dict constitutes a dict with
+            the nesting depth as "depth" and the actual value as "value".
+            Defaults to False.
 
         tie_breaker (callable, optional): Function to determine which of two
             values with the same key at the same nesting depth has precedence.
             If omitted, an exception is raised in case of identical keys at the
             same nesting depth. Defaults to None.
 
-    Examples:
-        TODO
     """
 
-    def run_rec(dct, *, retain_depth, curr_depth=0):
+    def run_rec(dct, *, retain_keys, retain_depth, curr_depth=0):
         def collect_children(dct):
             children = []
             for key, val in dct.items():
                 if isinstance(val, dict):
-                    child = run_rec(val, retain_depth=True, curr_depth=curr_depth + 1)
+                    subchildren = run_rec(
+                        val,
+                        retain_keys=True,
+                        retain_depth=True,
+                        curr_depth=curr_depth + 1,
+                    )
+                    for subchild in subchildren.values():
+                        subchild["keys"] = tuple([key] + list(subchild["keys"]))
+                    children.append(subchildren)
                 else:
-                    child = {key: (curr_depth, val)}
-                children.append(child)
+                    child = {key: {"keys": tuple(), "depth": curr_depth, "value": val}}
+                    children.append(child)
             return children
 
         def merge_children(children):
             flat = {}
             for child in children:
-                for key, (depth, val) in child.items():
+                for key, val in child.items():
                     if key in flat:
-                        depth_flat, _ = flat[key]
-                        if depth_flat > depth:
+                        val_flat = flat[key]
+                        if val_flat["depth"] > val["depth"]:
                             continue
-                        elif depth_flat == depth:
+                        elif val_flat["depth"] == val["depth"]:
                             if tie_breaker is None:
                                 raise KeyConflictError(
                                     f"key conflict at depth {depth}: '{key}'"
@@ -211,15 +225,23 @@ def flatten_nested_dict(dct, *, retain_depth=False, tie_breaker=None):
                                 raise NotImplementedError(
                                     f"tie_breaker is not None", tie_breaker,
                                 )
-                    flat[key] = (depth, val)
+                    flat[key] = val
             return flat
 
         flat = merge_children(collect_children(dct))
-        if not retain_depth:
-            flat = {k: v for k, (d, v) in flat.items()}
+
+        if not all([retain_keys, retain_depth]):
+            for key, val in flat.copy().items():
+                if not retain_keys and not retain_depth:
+                    flat[key] = val["value"]
+                elif not retain_keys:
+                    del val["keys"]
+                elif not retain_depth:
+                    del val["depth"]
+
         return flat
 
-    return run_rec(dct, retain_depth=retain_depth)
+    return run_rec(dct, retain_keys=retain_keys, retain_depth=retain_depth)
 
 
 def linearize_nested_dict(dct):
@@ -254,11 +276,17 @@ def linearize_nested_dict(dct):
     return run_rec(dct)
 
 
-def decompress_nested_dict(dct):
+def decompress_nested_dict(dct, retain_keys=False):
     """
     Convert a nested dict with N branches into N unnested dicts.
 
     Args:
         dct (dict): Nested dict.
+
+        retain_keys (bool, optional): Whether to retain the keys of the nested
+            dicts as a tuple. Defaults to False.
     """
-    return [flatten_nested_dict(d) for d in linearize_nested_dict(dct)]
+    return [
+        flatten_nested_dict(d, retain_keys=retain_keys)
+        for d in linearize_nested_dict(dct)
+    ]
