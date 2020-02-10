@@ -342,7 +342,7 @@ def linearize_nested_dict(dct, match_end=None):
     return apply_match_end(run_rec(dct))
 
 
-def decompress_nested_dict(dct, return_paths=False):
+def decompress_nested_dict(dct, return_paths=False, match_end=None):
     """
     Convert a nested dict with N branches into N unnested dicts.
 
@@ -351,9 +351,13 @@ def decompress_nested_dict(dct, return_paths=False):
 
         return_paths (bool, optional): Whether to return the path of each value
             in the nested dicts as a separate dict. Defaults to False.
+
+        match_end (callable, optional): Function to match intermediate points.
+            See docstring of ``linearize_nested_dict`` for details. Defaults
+            to None.
     """
     values, paths = [], []
-    for dct_lin in linearize_nested_dict(dct):
+    for dct_lin in linearize_nested_dict(dct, match_end=match_end):
         result = flatten_nested_dict(dct_lin, return_paths=return_paths)
         if not return_paths:
             values.append(result)

@@ -43,15 +43,86 @@ def test_return_paths():
         "bar": {"d": 7},
     }
     sol_values = [
-        {"a": 4, "b": 2, "c": 3, "d": 5,},
-        {"a": 1, "b": 2, "c": 3, "d": 6,},
-        {"a": 1, "b": 2, "d": 7,},
+        {"a": 4, "b": 2, "c": 3, "d": 5},
+        {"a": 1, "b": 2, "c": 3, "d": 6},
+        {"a": 1, "b": 2, "d": 7},
     ]
     sol_paths = [
-        {"a": ("foo", "bar"), "b": (), "c": ("foo",), "d": ("foo", "bar"),},
-        {"a": (), "b": (), "c": ("foo",), "d": ("foo", "baz"),},
-        {"a": (), "b": (), "d": ("bar",),},
+        {"a": ("foo", "bar"), "b": (), "c": ("foo",), "d": ("foo", "bar")},
+        {"a": (), "b": (), "c": ("foo",), "d": ("foo", "baz")},
+        {"a": (), "b": (), "d": ("bar",)},
     ]
     values, paths = decompress_nested_dict(dct, return_paths=True)
     assert values == sol_values
     assert paths == sol_paths
+
+
+class Test_MatchEnd:
+
+    dct = {
+        "_zz": {
+            "a": 1,
+            "b": 2,
+            "yy": {"c": 3, "xx": {"d": 4}},
+            "_xx": {"c": 5, "d": 6, "ww": {"e": 7}, "vv": {"e": 8, "uu": {"a": 9}}},
+        },
+    }
+
+    sol_control = [
+        {"a": 1, "b": 2, "c": 3, "d": 4},
+        {"a": 1, "b": 2, "c": 5, "d": 6, "e": 7},
+        {"a": 9, "b": 2, "c": 5, "d": 6, "e": 8},
+    ]
+
+    sol_match = [
+        {"a": 1, "b": 2, "c": 3},
+        {"a": 1, "b": 2, "c": 3, "d": 4},
+        {"a": 1, "b": 2, "c": 5, "d": 6, "e": 7},
+        {"a": 1, "b": 2, "c": 5, "d": 6, "e": 8},
+        {"a": 9, "b": 2, "c": 5, "d": 6, "e": 8},
+    ]
+
+    sol_paths = [
+        {"a": ("_zz",), "b": ("_zz",), "c": ("_zz", "yy")},
+        {"a": ("_zz",), "b": ("_zz",), "c": ("_zz", "yy"), "d": ("_zz", "yy", "xx")},
+        {
+            "a": ("_zz",),
+            "b": ("_zz",),
+            "c": ("_zz", "_xx"),
+            "d": ("_zz", "_xx"),
+            "e": ("_zz", "_xx", "ww"),
+        },
+        {
+            "a": ("_zz",),
+            "b": ("_zz",),
+            "c": ("_zz", "_xx"),
+            "d": ("_zz", "_xx"),
+            "e": ("_zz", "_xx", "vv"),
+        },
+        {
+            "a": ("_zz", "_xx", "vv", "uu"),
+            "b": ("_zz",),
+            "c": ("_zz", "_xx"),
+            "d": ("_zz", "_xx"),
+            "e": ("_zz", "_xx", "vv"),
+        },
+    ]
+
+    @staticmethod
+    def match_end(key):
+        return not key.startswith("_")
+
+    def test_control(self):
+        res = decompress_nested_dict(self.dct, match_end=None)
+        assert res == self.sol_control
+
+    def test_match_end(self):
+        res = decompress_nested_dict(self.dct, match_end=self.match_end)
+        assert res == self.sol_match
+
+    def test_return_paths(self):
+        res_values, res_paths = decompress_nested_dict(
+            self.dct, match_end=self.match_end, return_paths=True,
+        )
+        assert res_values == self.sol_match
+        assert res_paths == self.sol_paths
