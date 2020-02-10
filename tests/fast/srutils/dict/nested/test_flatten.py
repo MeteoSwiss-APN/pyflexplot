@@ -131,9 +131,9 @@ class TestRetainPathsDepths:
     """Retain the path and/or depth for all values as separate dicts."""
 
     dct = {"a": 1, "b": 2, "foo": {"c": 3, "bar": {"a": 4, "c": 5, "d": 6}}}
-    values = { "a": 4, "b": 2, "c": 5, "d": 6 }
+    values = {"a": 4, "b": 2, "c": 5, "d": 6}
     paths = {"a": ("foo", "bar"), "b": (), "c": ("foo", "bar"), "d": ("foo", "bar")}
-    depths = { "a": 2, "b": 0, "c": 2, "d": 2 }
+    depths = {"a": 2, "b": 0, "c": 2, "d": 2}
 
     def test_paths(self):
         res = flatten_nested_dict(self.dct, retain_path=True)

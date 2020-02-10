@@ -97,3 +97,27 @@ def test_read_two_nested_empty_sections(tmp_path):
     configs = read_tmp_config_file(tmp_path, content)
     assert len(configs) == 1
     assert configs[0].asdict() == DEFAULT_CONFIG
+
+
+def test_read_multiple_nested_sections(tmp_path):
+    """Read config file with two nested non-empty sections."""
+    content = """\
+        [base]
+        infiles = "file.nc"
+        lang = "de"
+
+        [base.con]
+        variable = "concentration"
+
+        [base.dep]
+        variable = "deposition"
+        deposition_type = "tot"
+
+        [base.dep.wet]
+        deposition_type = "wet"
+
+        [base.dep.wet.en]
+        lang = "de"
+        """
+    configs = read_tmp_config_file(tmp_path, content)
+    assert len(configs) == 0

@@ -191,7 +191,6 @@ def flatten_nested_dict(
     """
 
     def run_rec(dct, *, curr_depth=0):
-
         def collect_children(dct):
             children = []
             for key, val in dct.items():
@@ -245,36 +244,102 @@ def flatten_nested_dict(
         return values
 
 
-def linearize_nested_dict(dct):
+def linearize_nested_dict(dct, match_end=None):
     """
     Convert a nested dict with N branches into N linearly nested dicts.
 
     Args:
         dct (dict): Nested dict.
+
+        match_end (callable, optional): Function to match intermediate points.
+            If the key of a nested dict matches, then an additional linear
+            dict is created which ends at this level, containing all non-dict
+            elements in the dict with the matching key, but excluding any
+            further nested dicts. Defaults to None.
     """
 
     def run_rec(dct):
         def separate_subdicts(dct):
-            subdicts, elements = {}, {}
+            subdcts, elements = {}, {}
             for key, val in dct.items():
                 if isinstance(val, dict):
-                    subdicts[key] = val
+                    subdcts[key] = val
                 else:
                     elements[key] = val
-            return subdicts, elements
+            return subdcts, elements
 
-        def linearize_subdicts(subdicts, elements):
-            if not subdicts:
+        def linearize_subdicts(subdcts, elements):
+            if not subdcts:
                 return [elements]
             linears = []
-            for key, val in subdicts.items():
+            for key, val in subdcts.items():
                 for sublinear in run_rec(val):
                     linears.append({**elements, key: sublinear})
             return linears
 
         return linearize_subdicts(*separate_subdicts(dct))
 
-    return run_rec(dct)
+    def apply_match_end(dcts):
+        """
+        Create a sub-branch copy up to each subdict key matching the criterion.
+
+        The criterion is given by ``match_end`` and may be a check whether the
+        key starts with an underscore. If so, each linear nested dict is
+        traversed, and every time such a key (of a further nested dict) is
+        encountered, a copy is made from the part of the branch that has
+        already been traversed. This copy branch includes all non-dict elements
+        of the dict with the matching key, but no further-nested dict elements.
+        """
+
+        if match_end is None:
+            return dcts
+
+        def _core_rec(result, dct, subdct=None, curr_key=None, active=None, head=None):
+
+            # Initialize/check subdict
+            if subdct is None:
+                subdct = dct
+            elif not isinstance(subdct, dict):
+                return subdct
+
+            # Initialize/check active branch and head dict
+            if active is None:
+                active = {}
+                head = active
+            elif not isinstance(head, dict):
+                raise ValueError("head not a dict", head)
+
+            # Transfer non-dict elements to head
+            for key, val in subdct.items():
+                if not isinstance(val, dict):
+                    head[key] = val
+
+            # Copy the active branch if the current key matches the criterion
+            if curr_key is not None and match_end(curr_key):
+                if active not in result:
+                    result.append(deepcopy(active))
+
+            # Process the dict-elements recursively
+            done = True
+            for key, val in subdct.items():
+                if isinstance(val, dict):
+                    new_head = {}
+                    head[key] = new_head
+                    _core_rec(result, dct, val, key, active, new_head)
+                    done = False
+
+            if done:
+                # End of current branch reached!
+                if active not in result:
+                    result.append(active)
+
+        result = []
+        for dct in dcts:
+            _core_rec(result, dct)
+
+        return result
+
+    return apply_match_end(run_rec(dct))
 
 
 def decompress_nested_dict(dct, retain_path=False):

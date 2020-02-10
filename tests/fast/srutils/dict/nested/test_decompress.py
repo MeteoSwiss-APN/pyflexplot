@@ -43,42 +43,14 @@ def test_retain_paths():
         "bar": {"d": 7},
     }
     sol_values = [
-        {
-            "a": 4,
-            "b": 2,
-            "c": 3,
-            "d": 5,
-        },
-        {
-            "a": 1,
-            "b": 2,
-            "c": 3,
-            "d": 6,
-        },
-        {
-            "a": 1,
-            "b": 2,
-            "d": 7,
-        },
+        {"a": 4, "b": 2, "c": 3, "d": 5,},
+        {"a": 1, "b": 2, "c": 3, "d": 6,},
+        {"a": 1, "b": 2, "d": 7,},
     ]
     sol_paths = [
-        {
-            "a": ("foo", "bar"),
-            "b": (),
-            "c": ("foo",),
-            "d": ("foo", "bar"),
-        },
-        {
-            "a": (),
-            "b": (),
-            "c": ("foo",),
-            "d": ("foo", "baz"),
-        },
-        {
-            "a": (),
-            "b": (),
-            "d": ("bar",),
-        },
+        {"a": ("foo", "bar"), "b": (), "c": ("foo",), "d": ("foo", "bar"),},
+        {"a": (), "b": (), "c": ("foo",), "d": ("foo", "baz"),},
+        {"a": (), "b": (), "d": ("bar",),},
     ]
     values, paths = decompress_nested_dict(dct, retain_path=True)
     assert values == sol_values

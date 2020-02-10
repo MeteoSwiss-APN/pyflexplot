@@ -47,3 +47,58 @@ def test_linear(dct, sol):
 )
 def test_branched(dct, sol):
     assert linearize_nested_dict(dct) == sol
+
+
+class Test_MatchEnd:
+    """
+    Create a separate branch ending at each key matching a criterion.
+    """
+
+    dct = {
+        "_u": {
+            "a": 1,
+            "v": {
+                "b": 2,
+                "_w": {"c": 3, "x": {"d": 4}, "y": {"a": 5, "d": 6}},
+                "x": {"c": 7, "y": {"d": 8}},
+            },
+            "_w": {"b": 9, "x": {"d": 10}, "y": {"z": {"a": 11, "e": 12}}},
+        }
+    }
+
+    sol_control = [
+        {"_u": {"a": 1, "v": {"b": 2, "_w": {"c": 3, "x": {"d": 4}}}}},  # 1
+        {"_u": {"a": 1, "v": {"b": 2, "_w": {"c": 3, "y": {"a": 5, "d": 6}}}}},  # 2
+        {"_u": {"a": 1, "v": {"b": 2, "x": {"c": 7, "y": {"d": 8}}}}},  # 4
+        {"_u": {"a": 1, "_w": {"b": 9, "x": {"d": 10}}}},  # 5
+        {"_u": {"a": 1, "_w": {"b": 9, "y": {"z": {"a": 11, "e": 12}}}}},  # 7
+    ]
+
+    sol_match = [
+        {"_u": {"a": 1, "v": {"b": 2}}},  # 0
+        {"_u": {"a": 1, "v": {"b": 2, "_w": {"c": 3, "x": {"d": 4}}}}},  # 1
+        {"_u": {"a": 1, "v": {"b": 2, "_w": {"c": 3, "y": {"a": 5, "d": 6}}}}},  # 2
+        {"_u": {"a": 1, "v": {"b": 2, "x": {"c": 7}}}},  # 3
+        {"_u": {"a": 1, "v": {"b": 2, "x": {"c": 7, "y": {"d": 8}}}}},  # 4
+        {"_u": {"a": 1, "_w": {"b": 9, "x": {"d": 10}}}},  # 5
+        {"_u": {"a": 1, "_w": {"b": 9, "y": {}}}},  # 6
+        {"_u": {"a": 1, "_w": {"b": 9, "y": {"z": {"a": 11, "e": 12}}}}},  # 7
+    ]
+
+    @staticmethod
+    def match_end(key):
+        return not key.startswith("_")
+
+    def test_control(self):
+        """
+        Control test w/o matching function, returning only complete branches.
+        """
+        res = linearize_nested_dict(self.dct, match_end=None)
+        assert res == self.sol_control
+
+    def test_match(self):
+        """
+        Return an additional partial branch for each key not starting with "_".
+        """
+        res = linearize_nested_dict(self.dct, match_end=self.match_end)
+        assert res == self.sol_match
