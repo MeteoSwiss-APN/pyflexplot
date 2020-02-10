@@ -127,8 +127,8 @@ def test_branched_notie_fail(dct, sol):
         flatten_nested_dict(dct)
 
 
-class TestRetainPathsDepths:
-    """Retain the path and/or depth for all values as separate dicts."""
+class TestReturnPathsDepths:
+    """Return the path and/or depth for all values as separate dicts."""
 
     dct = {"a": 1, "b": 2, "foo": {"c": 3, "bar": {"a": 4, "c": 5, "d": 6}}}
     values = {"a": 4, "b": 2, "c": 5, "d": 6}
@@ -136,17 +136,17 @@ class TestRetainPathsDepths:
     depths = {"a": 2, "b": 0, "c": 2, "d": 2}
 
     def test_paths(self):
-        res = flatten_nested_dict(self.dct, retain_path=True)
+        res = flatten_nested_dict(self.dct, return_paths=True)
         assert res.values == self.values
         assert res.paths == self.paths
 
     def test_depth(self):
-        res = flatten_nested_dict(self.dct, retain_depth=True)
+        res = flatten_nested_dict(self.dct, return_depths=True)
         assert res.values == self.values
         assert res.depths == self.depths
 
-    def test_retain_path_and_depth(self):
-        res = flatten_nested_dict(self.dct, retain_path=True, retain_depth=True)
+    def test_return_path_and_depth(self):
+        res = flatten_nested_dict(self.dct, return_paths=True, return_depths=True)
         assert res.values == self.values
         assert res.paths == self.paths
         assert res.depths == self.depths

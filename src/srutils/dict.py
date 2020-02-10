@@ -165,7 +165,7 @@ def nested_dict_set(dct, keys, val):
 
 
 def flatten_nested_dict(
-    dct, *, retain_path=False, retain_depth=False, tie_breaker=None
+    dct, *, return_paths=False, return_depths=False, tie_breaker=None
 ):
     """
     Flatten a nested dict by updating inward-out.
@@ -173,12 +173,12 @@ def flatten_nested_dict(
     Args:
         dct (dict): Nested dict.
 
-        retain_path (bool, optional): Whether to retain the key path of each
+        return_paths (bool, optional): Whether to return the key path of each
             value in the nested dicts. If true, the values and paths are
             returned as separate dicts in a named tuple (as "values" and
             "paths", respectively). Defaults to False.
 
-        retain_depth (bool, optional): Whether to retain the nesting depth of
+        return_depths (bool, optional): Whether to return the nesting depth of
             each value in the nested dicts. If true, the values and depths are
             returned as separate dicts in a named tuple (as "values" and
             "depths", respectively). Defaults to False.
@@ -234,11 +234,11 @@ def flatten_nested_dict(
         paths[key] = val["path"]
         depths[key] = val["depth"]
 
-    if retain_path and retain_depth:
+    if return_paths and return_depths:
         return namedtuple("result", "values paths depths")(values, paths, depths)
-    elif retain_path:
+    elif return_paths:
         return namedtuple("result", "values paths")(values, paths)
-    elif retain_depth:
+    elif return_depths:
         return namedtuple("result", "values depths")(values, depths)
     else:
         return values
@@ -342,24 +342,24 @@ def linearize_nested_dict(dct, match_end=None):
     return apply_match_end(run_rec(dct))
 
 
-def decompress_nested_dict(dct, retain_path=False):
+def decompress_nested_dict(dct, return_paths=False):
     """
     Convert a nested dict with N branches into N unnested dicts.
 
     Args:
         dct (dict): Nested dict.
 
-        retain_path (bool, optional): Whether to retain the path of each value
+        return_paths (bool, optional): Whether to return the path of each value
             in the nested dicts as a separate dict. Defaults to False.
     """
     values, paths = [], []
     for dct_lin in linearize_nested_dict(dct):
-        result = flatten_nested_dict(dct_lin, retain_path=retain_path)
-        if not retain_path:
+        result = flatten_nested_dict(dct_lin, return_paths=return_paths)
+        if not return_paths:
             values.append(result)
         else:
             values.append(result.values)
             paths.append(result.paths)
-    if retain_path:
+    if return_paths:
         return values, paths
     return values

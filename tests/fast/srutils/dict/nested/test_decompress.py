@@ -35,7 +35,7 @@ def test(dct, sol):
     assert decompress_nested_dict(dct) == sol
 
 
-def test_retain_paths():
+def test_return_paths():
     dct = {
         "a": 1,
         "b": 2,
@@ -52,6 +52,6 @@ def test_retain_paths():
         {"a": (), "b": (), "c": ("foo",), "d": ("foo", "baz"),},
         {"a": (), "b": (), "d": ("bar",),},
     ]
-    values, paths = decompress_nested_dict(dct, retain_path=True)
+    values, paths = decompress_nested_dict(dct, return_paths=True)
     assert values == sol_values
     assert paths == sol_paths
