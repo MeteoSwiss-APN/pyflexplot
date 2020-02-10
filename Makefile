@@ -3,7 +3,7 @@ SHELL := /bin/bash
 .PHONY: clean-all clean-test clean-pyc clean-build clean-venv
 .PHONY: venv install install-edit install-pinned install-test install-test-pinned install-dev
 .PHONY: bump-major bump-minor bump-patch bump-major-dry bump-minor-dry bump-patch-dry
-.PHONY: test test-cov test-cov-html test-all
+.PHONY: test test-fast test-cov test-cov-html test-all
 .PHONY: docs help
 .DEFAULT_GOAL := help
 
@@ -293,9 +293,13 @@ lint: ${_INSTALL_DEV} #CMD Check the code style.
 # Testing
 #==============================================================================
 
-test: ${_INSTALL_TEST} #CMD Run all tests with the default Python version.
+test: ${_INSTALL_TEST} #CMD Run all tests.
 	@echo -e "${ECHO_PREFIX}running tests"
 	${PREFIX}pytest
+
+test-fast: ${_INSTALL_TEST} #CMD Run fast tests.
+	@echo -e "${ECHO_PREFIX}running tests"
+	${PREFIX}pytest tests/fast
 
 test-cov: ${_INSTALL_TEST} #CMD Check code coverage of tests.
 	@echo -e "${ECHO_PREFIX}running tests with coverage check"
