@@ -90,9 +90,9 @@ def test_read_multiple_parallel_empty_sections(tmp_path):
 def test_read_two_nested_empty_sections(tmp_path):
     """Read config file with two nested empty sections."""
     content = """\
-        [base]
+        [_base]
 
-        [base.plot]
+        [_base.plot]
         """
     configs = read_tmp_config_file(tmp_path, content)
     assert len(configs) == 1
@@ -102,22 +102,36 @@ def test_read_two_nested_empty_sections(tmp_path):
 def test_read_multiple_nested_sections(tmp_path):
     """Read config file with two nested non-empty sections."""
     content = """\
-        [base]
+        [_base]
         infiles = "file.nc"
         lang = "de"
 
-        [base.con]
+        [_base.con]
         variable = "concentration"
 
-        [base.dep]
+        [_base._dep]
         variable = "deposition"
+
+        [_base._dep.tot]
         deposition_type = "tot"
 
-        [base.dep.wet]
+        [_base._dep.wet]
         deposition_type = "wet"
 
-        [base.dep.wet.en]
-        lang = "de"
+        [_base._dep.wet.en]
+        lang = "en"
         """
+    sol_base = {
+        "infiles": "file.nc",
+        "lang": "de",
+    }
+    sol_specific = [
+        {"variable": "concentration"},
+        {"variable": "deposition", "deposition_type": "tot"},
+        {"variable": "deposition", "deposition_type": "wet"},
+        {"variable": "deposition", "deposition_type": "wet", "lang": "en"},
+    ]
+    sol = [{**DEFAULT_CONFIG, **sol_base, **d} for d in sol_specific]
     configs = read_tmp_config_file(tmp_path, content)
-    assert len(configs) == 0
+    res = [c.asdict() for c in configs]
+    assert res == sol

@@ -162,6 +162,8 @@ class ConfigFile:
             raw_data = tomlkit.parse(s)
         except Exception as e:
             raise Exception(f"error parsing TOML file {path} ({type(e).__name__}: {e})")
-        values, paths = decompress_nested_dict(raw_data, retain_path=True)
+        values, paths = decompress_nested_dict(
+            raw_data, match_end=lambda key: not key.startswith("_"), return_paths=True,
+        )
         configs = [Config(**d) for d in values]
         return configs
