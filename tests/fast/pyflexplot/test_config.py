@@ -45,8 +45,9 @@ def test_read_single_empty_section(tmp_path):
     content = """\
         [plot]
         """
-    named_configs = read_tmp_config_file(tmp_path, content)
-    assert named_configs == {"plot": DEFAULT_CONFIG}
+    configs = read_tmp_config_file(tmp_path, content)
+    assert len(configs) == 1
+    assert configs[0].asdict() == DEFAULT_CONFIG
 
 
 def test_read_single_empty_renamed_section(tmp_path):
@@ -54,8 +55,9 @@ def test_read_single_empty_renamed_section(tmp_path):
     content = """\
         [foobar]
         """
-    named_configs = read_tmp_config_file(tmp_path, content)
-    assert named_configs == {"foobar": DEFAULT_CONFIG}
+    configs = read_tmp_config_file(tmp_path, content)
+    assert len(configs) == 1
+    assert configs[0].asdict() == DEFAULT_CONFIG
 
 
 def test_read_single_section(tmp_path):
@@ -65,12 +67,11 @@ def test_read_single_section(tmp_path):
         variable = "deposition"
         lang = "de"
         """
-    named_configs = read_tmp_config_file(tmp_path, content)
-    assert len(named_configs) == 1
-    config = next(iter(named_configs.values()))
-    assert config.asdict() != DEFAULT_CONFIG
+    configs = read_tmp_config_file(tmp_path, content)
+    assert len(configs) == 1
+    assert configs[0].asdict() != DEFAULT_CONFIG
     sol = {**DEFAULT_CONFIG, "variable": "deposition", "lang": "de"}
-    assert config.asdict() == sol
+    assert configs[0].asdict() == sol
 
 
 def test_read_multiple_parallel_empty_sections(tmp_path):
@@ -80,9 +81,9 @@ def test_read_multiple_parallel_empty_sections(tmp_path):
 
         [plot2]
         """
-    named_configs = read_tmp_config_file(tmp_path, content)
-    assert list(named_configs) == ["plot1", "plot2"]
-    config_dicts = [c.asdict() for c in named_configs.values()]
+    configs = read_tmp_config_file(tmp_path, content)
+    assert len(configs) == 2
+    config_dicts = [c.asdict() for c in configs]
     assert config_dicts == [DEFAULT_CONFIG] * 2
 
 
@@ -93,5 +94,6 @@ def test_read_two_nested_empty_sections(tmp_path):
 
         [base.plot]
         """
-    named_configs = read_tmp_config_file(tmp_path, content)
-    assert named_configs == {"plot": DEFAULT_CONFIG}
+    configs = read_tmp_config_file(tmp_path, content)
+    assert len(configs) == 1
+    assert configs[0].asdict() == DEFAULT_CONFIG
