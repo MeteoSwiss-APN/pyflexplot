@@ -13,7 +13,7 @@ from srutils.click import CharSepList
 from srutils.various import group_kwargs
 from srutils.various import isiterable
 
-from .config import Config
+from .config import ConfigFile
 from .examples import show_example
 from .field_specs import FieldSpecs
 from . import __version__
@@ -137,7 +137,7 @@ def not_implemented(msg):
 # ---
 @group_kwargs("config_cli")
 @click.pass_context
-def cli(ctx, config_file, config_cli, **cli_args):
+def cli(ctx, config_file_path, config_cli, **cli_args):
     """
     Read NetCDF output of a deterministic or ensemble ``FLEXPART`` dispersion
     simulation from INFILE(S) to create the plot OUTFILE.
@@ -166,18 +166,23 @@ def cli(ctx, config_file, config_cli, **cli_args):
     ctx.ensure_object(dict)
 
     # Read config file
-    config = ConfigFile(config_file_path).read()
-    config.update(config_cli, skip_none=True)
+    configs = ConfigFile(config_file_path).read()
+    for config in configs:
+        config.update(config_cli, skip_none=True)
 
     # SR_TMP <
     required_args = ["variable", "simulation_type"]
     for arg in required_args:
-        if getattr(config, arg) is None:
+        if getattr(configs[0], arg) is None:
             raise Exception(f"argument missing: {arg}")
     # SR_TMP >
 
     # Create plots
-    create_plots(config, cli_args)
+    # SR_TMP <
+    # + create_plots(configs, cli_args)
+    for config in configs:
+        create_plots(config, cli_args)
+    # SR_TMP >
 
     return 0
 

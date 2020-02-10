@@ -31,84 +31,77 @@ def naz_det_sh():
         outfile_con_fmt="${dest}/test_case1_{variable}_species-{species_id}_level-{level_idx}_time-{time_idx:02d}_domain-{domain}_{lang}.png"
         outfile_dep_fmt="${dest}/test_case1_{variable}_species-{species_id}_time-{time_idx:02d}_domain-{domain}_{lang}.png"
 
-        langs=(
-            de
-            en
-        )
-
-        domains=(
-            auto
-            ch
-        )
-
-        for lang in ${langs[@]}; do
-        for domain in ${domains[@]}; do
-
         config_toml='
-        [plot]
+
+        [_base]
         infiles = ["'${infile}'"]
-        outfile = "'${outfile_con_fmt}'"
-        lang = "'${lang}'"
-        domain = "'${domain}'"
-        simulation_type = "'deterministic'"
-        variable = "concentration"
+        lang = "en"
+        domain = "auto"
+        simulation_type = "deterministic"
         plot_type = "auto"
         level_idx = 0
-        time_idx = 3
         species_id = 2
-        integrate = false
-        '
-        pyflexplot --config=<(echo -e "${config_toml}")
+        time_idx = 3
 
-        config_toml='
-        [plot]
-        infiles = ["'${infile}'"]
+        [_base.conc]
         outfile = "'${outfile_con_fmt}'"
-        lang = "'${lang}'"
-        domain = "'${domain}'"
-        simulation_type = "'deterministic'"
         variable = "concentration"
-        plot_type = "auto"
-        level_idx = 0
+        integrate = false
+
+        [_base.conc.de]
+        lang = "de"
+
+        [_base.conc.ch]
+        domain = "ch"
+
+        [_base.conc.ch.de]
+        lang = "de"
+
+        [_base.conc.int]
         time_idx = 10
         species_id = 1
         integrate = true
-        '
-        pyflexplot --config=<(echo -e "${config_toml}")
 
-        config_toml='
-        [plot]
-        infiles = ["'${infile}'"]
+        [_base.conc.int.de]
+        lang = "de"
+
+        [_base.conc.int.ch]
+        domain = "ch"
+
+        [_base.conc.int.ch.de]
+        lang = "de"
+
+        [_base.depos]
         outfile = "'${outfile_dep_fmt}'"
-        lang = "'${lang}'"
-        domain = "'${domain}'"
-        simulation_type = "'deterministic'"
         variable = "deposition"
         deposition_type = "tot"
-        plot_type = "auto"
-        level_idx = 0
-        time_idx = 3
-        species_id = 2
         integrate = true
-        '
-        pyflexplot --config=<(echo -e "${config_toml}")
 
-        config_toml='
-        [plot]
-        infiles = ["'${infile}'"]
-        outfile = "'${outfile_dep_fmt}'"
-        lang = "'${lang}'"
-        domain = "'${domain}'"
-        simulation_type = "'deterministic'"
-        variable = "deposition"
+        [_base.depos.de]
+        lang = "de"
+
+        [_base.depos.ch]
+        domain = "ch"
+
+        [_base.depos.ch.de]
+        lang = "de"
+
+        [_base.depos.affect]
         plot_type = "affected_area_mono"
-        level_idx = 0
         time_idx = 10
         species_id = [1, 2]
-        integrate = true
+
+        [_base.depos.affect.de]
+        lang = "de"
+
+        [_base.depos.affect.ch]
+        domain = "ch"
+
+        [_base.depos.affect.ch.de]
+        lang = "de"
         '
+
         pyflexplot --config=<(echo -e "${config_toml}")
 
-        done
-        done"""
+        """
     click.echo(dedent(s))
