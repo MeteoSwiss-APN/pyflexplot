@@ -6,6 +6,7 @@ import itertools
 
 from copy import deepcopy
 from pprint import pformat
+from collections import namedtuple
 
 from .exceptions import KeyConflictError
 from .various import isiterable
@@ -164,7 +165,7 @@ def nested_dict_set(dct, keys, val):
 
 
 def flatten_nested_dict(
-    dct, *, retain_keys=False, retain_depth=False, tie_breaker=None
+    dct, *, retain_path=False, retain_depth=False, tie_breaker=None
 ):
     """
     Flatten a nested dict by updating inward-out.
@@ -172,15 +173,15 @@ def flatten_nested_dict(
     Args:
         dct (dict): Nested dict.
 
-        retain_keys (bool, optional): Whether to retain the keys of the nested
-            dicts.  If true, each value of the flattened dict constitutes a
-            dict with a tuple of keys as "keys" and the actual value as
-            "value". Defaults to False.
+        retain_path (bool, optional): Whether to retain the key path of each
+            value in the nested dicts. If true, the values and paths are
+            returned as separate dicts in a named tuple (as "values" and
+            "paths", respectively). Defaults to False.
 
-        retain_depth (bool, optional): Whether to retain the nesting depth.
-            If true, each value of the flattened dict constitutes a dict with
-            the nesting depth as "depth" and the actual value as "value".
-            Defaults to False.
+        retain_depth (bool, optional): Whether to retain the nesting depth of
+            each value in the nested dicts. If true, the values and depths are
+            returned as separate dicts in a named tuple (as "values" and
+            "depths", respectively). Defaults to False.
 
         tie_breaker (callable, optional): Function to determine which of two
             values with the same key at the same nesting depth has precedence.
@@ -189,22 +190,18 @@ def flatten_nested_dict(
 
     """
 
-    def run_rec(dct, *, retain_keys, retain_depth, curr_depth=0):
+    def run_rec(dct, *, curr_depth=0):
+
         def collect_children(dct):
             children = []
             for key, val in dct.items():
                 if isinstance(val, dict):
-                    subchildren = run_rec(
-                        val,
-                        retain_keys=True,
-                        retain_depth=True,
-                        curr_depth=curr_depth + 1,
-                    )
+                    subchildren = run_rec(val, curr_depth=curr_depth + 1)
                     for subchild in subchildren.values():
-                        subchild["keys"] = tuple([key] + list(subchild["keys"]))
+                        subchild["path"] = tuple([key] + list(subchild["path"]))
                     children.append(subchildren)
                 else:
-                    child = {key: {"keys": tuple(), "depth": curr_depth, "value": val}}
+                    child = {key: {"path": tuple(), "depth": curr_depth, "value": val}}
                     children.append(child)
             return children
 
@@ -228,20 +225,24 @@ def flatten_nested_dict(
                     flat[key] = val
             return flat
 
-        flat = merge_children(collect_children(dct))
+        return merge_children(collect_children(dct))
 
-        if not all([retain_keys, retain_depth]):
-            for key, val in flat.copy().items():
-                if not retain_keys and not retain_depth:
-                    flat[key] = val["value"]
-                elif not retain_keys:
-                    del val["keys"]
-                elif not retain_depth:
-                    del val["depth"]
+    flat = run_rec(dct)
 
-        return flat
+    values, paths, depths = {}, {}, {}
+    for key, val in flat.items():
+        values[key] = val["value"]
+        paths[key] = val["path"]
+        depths[key] = val["depth"]
 
-    return run_rec(dct, retain_keys=retain_keys, retain_depth=retain_depth)
+    if retain_path and retain_depth:
+        return namedtuple("result", "values paths depths")(values, paths, depths)
+    elif retain_path:
+        return namedtuple("result", "values paths")(values, paths)
+    elif retain_depth:
+        return namedtuple("result", "values depths")(values, depths)
+    else:
+        return values
 
 
 def linearize_nested_dict(dct):
@@ -276,17 +277,24 @@ def linearize_nested_dict(dct):
     return run_rec(dct)
 
 
-def decompress_nested_dict(dct, retain_keys=False):
+def decompress_nested_dict(dct, retain_path=False):
     """
     Convert a nested dict with N branches into N unnested dicts.
 
     Args:
         dct (dict): Nested dict.
 
-        retain_keys (bool, optional): Whether to retain the keys of the nested
-            dicts as a tuple. Defaults to False.
+        retain_path (bool, optional): Whether to retain the path of each value
+            in the nested dicts as a separate dict. Defaults to False.
     """
-    return [
-        flatten_nested_dict(d, retain_keys=retain_keys)
-        for d in linearize_nested_dict(dct)
-    ]
+    values, paths = [], []
+    for dct_lin in linearize_nested_dict(dct):
+        result = flatten_nested_dict(dct_lin, retain_path=retain_path)
+        if not retain_path:
+            values.append(result)
+        else:
+            values.append(result.values)
+            paths.append(result.paths)
+    if retain_path:
+        return values, paths
+    return values

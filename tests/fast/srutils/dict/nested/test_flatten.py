@@ -127,34 +127,26 @@ def test_branched_notie_fail(dct, sol):
         flatten_nested_dict(dct)
 
 
-def test_retain_keys():
+class TestRetainPathsDepths:
+    """Retain the path and/or depth for all values as separate dicts."""
+
     dct = {"a": 1, "b": 2, "foo": {"c": 3, "bar": {"a": 4, "c": 5, "d": 6}}}
-    sol = {
-        "a": {"value": 4, "keys": ("foo", "bar")},
-        "b": {"value": 2, "keys": tuple()},
-        "c": {"value": 5, "keys": ("foo", "bar")},
-        "d": {"value": 6, "keys": ("foo", "bar")},
-    }
-    assert flatten_nested_dict(dct, retain_keys=True) == sol
+    values = { "a": 4, "b": 2, "c": 5, "d": 6 }
+    paths = {"a": ("foo", "bar"), "b": (), "c": ("foo", "bar"), "d": ("foo", "bar")}
+    depths = { "a": 2, "b": 0, "c": 2, "d": 2 }
 
+    def test_paths(self):
+        res = flatten_nested_dict(self.dct, retain_path=True)
+        assert res.values == self.values
+        assert res.paths == self.paths
 
-def test_retain_depth():
-    dct = {"a": 1, "b": 2, "foo": {"c": 3, "bar": {"a": 4, "c": 5, "d": 6}}}
-    sol = {
-        "a": {"value": 4, "depth": 2},
-        "b": {"value": 2, "depth": 0},
-        "c": {"value": 5, "depth": 2},
-        "d": {"value": 6, "depth": 2},
-    }
-    assert flatten_nested_dict(dct, retain_depth=True) == sol
+    def test_depth(self):
+        res = flatten_nested_dict(self.dct, retain_depth=True)
+        assert res.values == self.values
+        assert res.depths == self.depths
 
-
-def test_retain_depth_and_keys():
-    dct = {"a": 1, "b": 2, "foo": {"c": 3, "bar": {"a": 4, "c": 5, "d": 6}}}
-    sol = {
-        "a": {"value": 4, "depth": 2, "keys": ("foo", "bar")},
-        "b": {"value": 2, "depth": 0, "keys": tuple()},
-        "c": {"value": 5, "depth": 2, "keys": ("foo", "bar")},
-        "d": {"value": 6, "depth": 2, "keys": ("foo", "bar")},
-    }
-    assert flatten_nested_dict(dct, retain_depth=True, retain_keys=True) == sol
+    def test_retain_path_and_depth(self):
+        res = flatten_nested_dict(self.dct, retain_path=True, retain_depth=True)
+        assert res.values == self.values
+        assert res.paths == self.paths
+        assert res.depths == self.depths

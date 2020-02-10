@@ -35,30 +35,51 @@ def test(dct, sol):
     assert decompress_nested_dict(dct) == sol
 
 
-def test_retain_keys():
+def test_retain_paths():
     dct = {
         "a": 1,
         "b": 2,
         "foo": {"c": 3, "bar": {"a": 4, "d": 5}, "baz": {"d": 6}},
         "bar": {"d": 7},
     }
-    sol = [
+    sol_values = [
         {
-            "a": {"value": 4, "keys": ("foo", "bar")},
-            "b": {"value": 2, "keys": tuple()},
-            "c": {"value": 3, "keys": ("foo",)},
-            "d": {"value": 5, "keys": ("foo", "bar")},
+            "a": 4,
+            "b": 2,
+            "c": 3,
+            "d": 5,
         },
         {
-            "a": {"value": 1, "keys": tuple()},
-            "b": {"value": 2, "keys": tuple()},
-            "c": {"value": 3, "keys": ("foo",)},
-            "d": {"value": 6, "keys": ("foo", "baz")},
+            "a": 1,
+            "b": 2,
+            "c": 3,
+            "d": 6,
         },
         {
-            "a": {"value": 1, "keys": tuple()},
-            "b": {"value": 2, "keys": tuple()},
-            "d": {"value": 7, "keys": ("bar",)},
+            "a": 1,
+            "b": 2,
+            "d": 7,
         },
     ]
-    assert decompress_nested_dict(dct, retain_keys=True) == sol
+    sol_paths = [
+        {
+            "a": ("foo", "bar"),
+            "b": (),
+            "c": ("foo",),
+            "d": ("foo", "bar"),
+        },
+        {
+            "a": (),
+            "b": (),
+            "c": ("foo",),
+            "d": ("foo", "baz"),
+        },
+        {
+            "a": (),
+            "b": (),
+            "d": ("bar",),
+        },
+    ]
+    values, paths = decompress_nested_dict(dct, retain_path=True)
+    assert values == sol_values
+    assert paths == sol_paths
