@@ -43,7 +43,7 @@ def naz_det_toml():
         time_idx = 3
 
         [_base.concentration]
-        outfile = "./png/test_case1_{variable}_species-{species_id}_level-{level_idx}_time-{time_idx:02d}_domain-{domain}_{lang}.png"
+        outfile = "test_case1_{variable}_species-{species_id}_level-{level_idx}_time-{time_idx:02d}_domain-{domain}_{lang}.png"
         variable = "concentration"
         integrate = false
 
@@ -71,7 +71,7 @@ def naz_det_toml():
         lang = "de"
 
         [_base.deposition]
-        outfile = "./png/test_case1_{variable}_species-{species_id}_time-{time_idx:02d}_domain-{domain}_{lang}.png"
+        outfile = "test_case1_{variable}_species-{species_id}_time-{time_idx:02d}_domain-{domain}_{lang}.png"
         variable = "deposition"
         deposition_type = "tot"
         integrate = true
