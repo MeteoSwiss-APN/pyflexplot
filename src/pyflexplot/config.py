@@ -15,10 +15,9 @@ from typing import Union
 from srutils.dict import decompress_nested_dict
 
 
-@dataclass
+@dataclass(frozen=True)
 class Config:
-    #
-    infiles: Optional[Union[List[str],str]] = field(
+    infiles: Optional[List[str]] = field(
         default=None,
         metadata={"help": "Input file path(s). Main contain format keys."},
     )
@@ -135,11 +134,17 @@ class Config:
         metadata={"help": "Index of time (zero-based). Format key: '{time_idx}'."},
     )
 
-    def __post__init__(self):
+    def __post__init_post_parse__(self):
         if isinstance(self.infiles, str):
             self.infiles = [self.infiles]
         if self.deposition_type == "tot":
             self.deposition_type = ["dry", "wet"]
+
+    @classmethod
+    def as_config(cls, obj):
+        if isinstance(obj, cls):
+            return obj
+        return cls(**obj)
 
     def update(self, dct, skip_none=False):
         for key, val in dct.items():
@@ -150,25 +155,54 @@ class Config:
             else:
                 setattr(self, key, val)
 
-    def asdict(self):
+    def as_dict(self):
         return dataclasses.asdict(self)
+
+    def __len__(self):
+        return len(self.as_dict())
 
     def __eq__(self, other):
         try:
-            other_asdict = dataclasses.asdict(other)
+            other_as_dict = dataclasses.asdict(other)
         except TypeError:
             try:
-                other_asdict = dict(other)
+                other_as_dict = dict(other)
             except TypeError:
                 return False
-        return dataclasses.asdict(self) == other_asdict
+        return self.as_dict() == other_as_dict
+
+
+class ConfigSet:
+    """
+    A set of ``Config`` objects.
+    """
+
+    def __init__(self, configs):
+        self._configs = [Config.as_config(obj) for obj in configs]
+
+    def __len__(self):
+        return len(self._configs)
+
+    def __iter__(self):
+        for config in self._configs:
+            yield config
+
+    def __eq__(self, other):
+        return [c.as_dict() for c in self._configs] == other
 
 
 class ConfigFile:
+    """
+    Configuration file to be read from and/or written to disk.
+    """
+
     def __init__(self, path):
         self.path = path
 
     def read(self):
+        """
+        Read the configuration from a text file (TOML format).
+        """
         with open(self.path, "r") as f:
             s = f.read()
         try:
@@ -178,5 +212,11 @@ class ConfigFile:
         values, paths = decompress_nested_dict(
             raw_data, match_end=lambda key: not key.startswith("_"), return_paths=True,
         )
-        configs = [Config(**d) for d in values]
+        configs = ConfigSet(values)
         return configs
+
+    def write(self, *args, **kwargs):
+        """
+        Write the configuration to a text file (TOML format).
+        """
+        raise NotImplementedError(f"{type(self).__name__}.write")

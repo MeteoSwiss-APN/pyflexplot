@@ -4,8 +4,6 @@ Input variable specifications.
 """
 import logging as log
 
-from pydantic.dataclasses import dataclass
-# from dataclasses import dataclass  # SR_TMP
 from typing import List
 
 from srutils.dict import decompress_multival_dict
@@ -25,7 +23,7 @@ def int_or_list(arg):
     else:
         return [int(a) for a in arg]
 
-#@dataclass
+
 class VarSpecs(SummarizableClass, ParentClass):
     """FLEXPART input variable specifications."""
 

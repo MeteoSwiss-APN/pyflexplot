@@ -7,6 +7,7 @@ from textwrap import dedent
 
 from pyflexplot.config import Config
 from pyflexplot.config import ConfigFile
+from pyflexplot.config import ConfigSet
 
 
 DEFAULT_CONFIG = {
@@ -46,8 +47,7 @@ def test_read_single_empty_section(tmp_path):
         [plot]
         """
     configs = read_tmp_config_file(tmp_path, content)
-    assert len(configs) == 1
-    assert configs[0] == DEFAULT_CONFIG
+    assert configs == [DEFAULT_CONFIG]
 
 
 def test_read_single_empty_renamed_section(tmp_path):
@@ -56,8 +56,7 @@ def test_read_single_empty_renamed_section(tmp_path):
         [foobar]
         """
     configs = read_tmp_config_file(tmp_path, content)
-    assert len(configs) == 1
-    assert configs[0] == DEFAULT_CONFIG
+    assert configs == [DEFAULT_CONFIG]
 
 
 def test_read_single_section(tmp_path):
@@ -69,9 +68,9 @@ def test_read_single_section(tmp_path):
         """
     configs = read_tmp_config_file(tmp_path, content)
     assert len(configs) == 1
-    assert configs[0] != DEFAULT_CONFIG
-    sol = {**DEFAULT_CONFIG, "variable": "deposition", "lang": "de"}
-    assert configs[0] == sol
+    assert configs != [DEFAULT_CONFIG]
+    sol = [{**DEFAULT_CONFIG, "variable": "deposition", "lang": "de"}]
+    assert configs == sol
 
 
 def test_read_multiple_parallel_empty_sections(tmp_path):
@@ -82,7 +81,6 @@ def test_read_multiple_parallel_empty_sections(tmp_path):
         [plot2]
         """
     configs = read_tmp_config_file(tmp_path, content)
-    assert len(configs) == 2
     assert configs == [DEFAULT_CONFIG] * 2
 
 
@@ -94,15 +92,14 @@ def test_read_two_nested_empty_sections(tmp_path):
         [_base.plot]
         """
     configs = read_tmp_config_file(tmp_path, content)
-    assert len(configs) == 1
-    assert configs[0] == DEFAULT_CONFIG
+    assert configs == [DEFAULT_CONFIG]
 
 
 def test_read_multiple_nested_sections(tmp_path):
     """Read config file with two nested non-empty sections."""
     content = """\
         [_base]
-        infiles = "file.nc"
+        infiles = ["file.nc"]
         lang = "de"
 
         [_base.con]
@@ -121,7 +118,7 @@ def test_read_multiple_nested_sections(tmp_path):
         lang = "en"
         """
     sol_base = {
-        "infiles": "file.nc",
+        "infiles": ["file.nc"],
         "lang": "de",
     }
     sol_specific = [
@@ -133,3 +130,33 @@ def test_read_multiple_nested_sections(tmp_path):
     sol = [{**DEFAULT_CONFIG, **sol_base, **d} for d in sol_specific]
     configs = read_tmp_config_file(tmp_path, content)
     assert configs == sol
+
+
+class Test_ConfigSet:
+    def create_partial_dicts(self):
+        return [
+            {"infiles": ["foo.nc"], "variable": "concentration", "domain": "ch"},
+            {"infiles": ["bar.nc"], "variable": "deposition", "lang": "de"},
+            {"age_class_idx": 1, "nout_rel_idx": 5, "release_point_idx": 3},
+        ]
+
+    def create_complete_dicts(self):
+        return [{**DEFAULT_CONFIG, **dct} for dct in self.create_partial_dicts()]
+
+    def create_configs(self):
+        return [Config(**dct) for dct in self.create_partial_dicts()]
+
+    def test_dicts_configs(self):
+        """
+        Check the dicts and Config objects used in the ConfigSet tests.
+        """
+        assert self.create_configs() == self.create_complete_dicts()
+
+    def test_create_empty(self):
+        configs = ConfigSet([])
+        assert len(configs) == 0
+
+    def test_from_configs(self):
+        partial_dicts = self.create_partial_dicts()
+        configs = ConfigSet(partial_dicts)
+        assert len(configs) == len(partial_dicts)

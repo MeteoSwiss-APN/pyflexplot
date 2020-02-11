@@ -50,7 +50,7 @@ def property_obj(cls, *args, **kwargs):
 class IgnoredElement:
     """Element that is ignored in comparisons."""
 
-    def __init__(self, description = None):
+    def __init__(self, description=None):
         self.description = description
 
     def __repr__(self):
@@ -60,7 +60,7 @@ class IgnoredElement:
 class UnequalElement:
     """Element unequal to any other; useful for force-fail tests."""
 
-    def __init__(self, description = None):
+    def __init__(self, description=None):
         self.description = description
 
     def __repr__(self):
