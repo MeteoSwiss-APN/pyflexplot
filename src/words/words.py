@@ -39,7 +39,7 @@ class TranslatedWords:
             words_langs = {}
 
         self._langs = None
-        self._words = {}
+        self.words = {}
         for word_name, word_langs in words_langs.items():
             try:
                 {**word_langs}
@@ -66,7 +66,7 @@ class TranslatedWords:
         word = self.cls_word(
             name, default_lang_query=lambda: self.default_lang, **word_langs
         )
-        self._words[name] = word
+        self.words[name] = word
         return word
 
     def _prepare_word_name(self, name, word_langs):
@@ -101,7 +101,7 @@ class TranslatedWords:
     def get(self, name, lang=None, ctx=None, *, chainable=True):
 
         try:
-            word = self._words[name]
+            word = self.words[name]
         except KeyError:
             raise MissingWordError(name)
 
@@ -126,15 +126,15 @@ class TranslatedWords:
 
     def __repr__(self):
         s_name = f" ({self.name})" if self.name else ""
-        return f"{len(self._words)} TranslatedWords{s_name}: {self._words}"
+        return f"{len(self.words)} TranslatedWords{s_name}: {self.words}"
 
     def __eq__(self, other):
         if type(self) is not type(other):
             return False
-        return self._words == other._words
+        return self.words == other.words
 
     def __hash__(self):
-        return hash(pformat(self._words))
+        return hash(pformat(self.words))
 
     def __getitem__(self, key):
         name, lang, ctx = None, None, None

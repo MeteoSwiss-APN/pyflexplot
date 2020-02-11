@@ -4,8 +4,12 @@
 import numpy as np
 import pytest
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from pydantic.dataclasses import dataclass
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 from pyflexplot.io import FileReader
 from pyflexplot.field_specs import FieldSpecs
@@ -26,13 +30,14 @@ def get_var_name_ref(var_specs, var_names_ref):
     raise NotImplementedError(f"{var_specs}")
 
 
-@dataclass(frozen=True)
+# @dataclass(frozen=True)
+@dataclass
 class Conf:
     datafilename: str
     name: str
     var_names_ref: List[str]
     var_specs_dct: Dict[str, Any]
-    scale_fld_ref: Optional[int] = 1.0
+    scale_fld_ref: Optional[float] = 1.0
 
 
 datafilename1 = "flexpart_cosmo-1_2019052800.nc"

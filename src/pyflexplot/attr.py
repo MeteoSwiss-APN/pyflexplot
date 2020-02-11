@@ -302,7 +302,7 @@ class AttrGroup:
             raise ValueError(
                 f"{type(self).__name__} should be subclassed, not instatiated"
             )
-        self._lang = lang or "en"
+        self.lang = lang or "en"
         self.reset()
 
     def reset(self):
@@ -359,7 +359,7 @@ class AttrGroup:
             replace = {}
 
         # Language
-        langs = sorted(set([self._lang] + [o._lang for o in others]))
+        langs = sorted(set([self.lang] + [o.lang for o in others]))
         if len(langs) == 1:
             lang = next(iter(langs))
         else:
@@ -663,7 +663,7 @@ class AttrGroupCollection:
             simulation (dict): Kwargs passed to ``AttrGroupSimulation``.
 
         """
-        self._lang = lang or "en"
+        self.lang = lang or "en"
         self.reset()
         self.add("grid", grid)
         self.add("variable", variable)
@@ -702,7 +702,7 @@ class AttrGroupCollection:
                 if isinstance(attr, Attr) and attr.unit is not None:
                     attrs[f"{key}_unit"] = attr.unit
             # SR_TMP >
-            attrs = cls(lang=self._lang, **attrs)
+            attrs = cls(lang=self.lang, **attrs)
 
         self._attrs[name] = attrs
 
@@ -741,7 +741,7 @@ class AttrGroupCollection:
             )
 
         """
-        kwargs = {"lang": self._lang}
+        kwargs = {"lang": self.lang}
         for name in sorted(self._attrs.keys()):
             kwargs[name] = dict(
                 self._attrs[name].merge_with(

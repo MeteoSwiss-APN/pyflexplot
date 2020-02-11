@@ -6,7 +6,8 @@ import logging as log
 import netCDF4 as nc4
 import numpy as np
 
-from copy import copy, deepcopy
+from copy import copy
+from copy import deepcopy
 from pprint import pformat
 from pprint import pprint  # SR_DEV
 

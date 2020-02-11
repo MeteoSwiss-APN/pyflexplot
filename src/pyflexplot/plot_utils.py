@@ -13,7 +13,8 @@ import matplotlib.ticker
 import numpy as np
 import warnings
 
-from attr import attrs, attrib
+from attr import attrs
+from attr import attrib
 from copy import copy
 
 from srutils.various import isiterable

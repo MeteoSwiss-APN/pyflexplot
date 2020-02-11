@@ -99,7 +99,7 @@ class Dummy_TranslatedWord(TranslatedWord):
 
     def __str__(self):
         ctx = self._pop_curr_ctx()
-        return dummy__str__(self._parent.name, self.name, self._lang, ctx)
+        return dummy__str__(self._parent.name, self.name, self.lang, ctx)
 
     def _pop_curr_ctx(self):
         ctx = self._curr_ctx
@@ -110,8 +110,8 @@ class Dummy_TranslatedWord(TranslatedWord):
         return str(self)
 
     @property
-    def _lang(self):
-        return self._parent._lang
+    def lang(self):
+        return self._parent.lang
 
     def ctx(self, name):
         self._curr_ctx = name
@@ -146,7 +146,7 @@ class Dummy_TranslatedWords(TranslatedWords):
     def create(cls, name, lang, words):
         words_langs = {w: {"en": w, "de": w} for w in words}
         self = cls(name, words_langs, default_lang=lang)
-        self._lang = lang
+        self.lang = lang
         return self
 
     def get(self, name, lang=None, ctx=None, **kwargs):

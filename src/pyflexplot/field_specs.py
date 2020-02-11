@@ -5,7 +5,8 @@ Field specifications.
 import logging as log
 import numpy as np
 
-from copy import copy, deepcopy
+from copy import copy
+from copy import deepcopy
 
 from srutils.dict import nested_dict_set
 from srutils.various import isiterable

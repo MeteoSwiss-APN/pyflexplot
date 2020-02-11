@@ -3,7 +3,7 @@
 """Tests for module ``pyflexplot.var_specs``."""
 import pytest
 
-from dataclasses import dataclass
+from pydantic.dataclasses import dataclass
 
 from pyflexplot.var_specs import MultiVarSpecs
 from pyflexplot.var_specs import VarSpecs

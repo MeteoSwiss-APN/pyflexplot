@@ -6,7 +6,8 @@ Tests for class ``TranslatedWord`` in module ``words.word``.
 import functools
 import pytest
 
-from attr import attrs, attrib
+from attr import attrs
+from attr import attrib
 
 from words import TranslatedWord
 from words.word import ContextWord

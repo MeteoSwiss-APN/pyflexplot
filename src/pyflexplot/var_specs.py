@@ -4,7 +4,8 @@ Input variable specifications.
 """
 import logging as log
 
-from dataclasses import dataclass
+from pydantic.dataclasses import dataclass
+# from dataclasses import dataclass  # SR_TMP
 from typing import List
 
 from srutils.dict import decompress_multival_dict
@@ -16,13 +17,6 @@ from .utils import SummarizableClass
 from .words import WORDS
 
 
-#
-# TODO
-#
-# - Add class ``MultiVarSpecs`` or so to represent multiple ``VarSpecs`` objects
-#
-
-
 def int_or_list(arg):
     try:
         iter(arg)
@@ -31,7 +25,7 @@ def int_or_list(arg):
     else:
         return [int(a) for a in arg]
 
-
+#@dataclass
 class VarSpecs(SummarizableClass, ParentClass):
     """FLEXPART input variable specifications."""
 
@@ -472,12 +466,12 @@ class VarSpecs_EnsThrAgrmt_AffectedArea(VarSpecs_EnsThrAgrmt, VarSpecs_AffectedA
     name = "deposition:affected_area:ens_thr_agrmt_affected_area"
 
 
-@dataclass
 class MultiVarSpecs:
     """Hold multiple ``VarSpecs`` objects."""
 
-    name: str
-    var_specs_lst: List[VarSpecs]
+    def __init__(self, name, var_specs_lst):
+        self.name = name
+        self.var_specs_lst = var_specs_lst
 
     @classmethod
     def create(cls, name, var_specs_dct, *args, **kwargs):
@@ -486,6 +480,11 @@ class MultiVarSpecs:
             var_specs_dct["deposition"] = ("wet", "dry")
         var_specs_lst_lst = VarSpecs.create(name, var_specs_dct, *args, **kwargs)
         return [cls(name, var_specs_lst) for var_specs_lst in var_specs_lst_lst]
+
+    def __eq__(self, other):
+        if isinstance(other, type(self)) or isinstance(self, type(other)):
+            return self.name == other.name and self.var_specs_lst == other.var_specs_lst
+        return False
 
     def __iter__(self):
         return iter(self.var_specs_lst)

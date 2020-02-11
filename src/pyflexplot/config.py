@@ -6,8 +6,8 @@ import dataclasses
 import tomlkit
 import warnings
 
-from dataclasses import dataclass
 from dataclasses import field
+from pydantic.dataclasses import dataclass
 from typing import List
 from typing import Optional
 from typing import Union
@@ -18,7 +18,7 @@ from srutils.dict import decompress_nested_dict
 @dataclass
 class Config:
     #
-    infiles: Optional[List[str]] = field(
+    infiles: Optional[Union[List[str],str]] = field(
         default=None,
         metadata={"help": "Input file path(s). Main contain format keys."},
     )
@@ -136,6 +136,8 @@ class Config:
     )
 
     def __post__init__(self):
+        if isinstance(self.infiles, str):
+            self.infiles = [self.infiles]
         if self.deposition_type == "tot":
             self.deposition_type = ["dry", "wet"]
 

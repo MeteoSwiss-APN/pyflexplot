@@ -3,7 +3,7 @@
 """
 Some testing utils.
 """
-from dataclasses import dataclass
+from pydantic.dataclasses import dataclass
 from pprint import pformat
 from typing import Optional
 
@@ -47,21 +47,21 @@ def property_obj(cls, *args, **kwargs):
     return property(create_obj)
 
 
-@dataclass(frozen=True)
 class IgnoredElement:
     """Element that is ignored in comparisons."""
 
-    description: Optional[str] = None
+    def __init__(self, description = None):
+        self.description = description
 
     def __repr__(self):
         return f"{type(self).__name__}({str_or_none(self.description)})"
 
 
-@dataclass(frozen=True)
 class UnequalElement:
     """Element unequal to any other; useful for force-fail tests."""
 
-    description: Optional[str] = None
+    def __init__(self, description = None):
+        self.description = description
 
     def __repr__(self):
         return f"{type(self).__name__}({str_or_none(self.description)})"
