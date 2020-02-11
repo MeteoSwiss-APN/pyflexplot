@@ -42,6 +42,7 @@ dependencies = [
     "netCDF4",
     "numpy",
     "pillow >= 6.2.0",
+    "pydantic",
     "scipy",
     "tomlkit",
 ]
