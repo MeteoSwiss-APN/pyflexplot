@@ -31,7 +31,7 @@ DEFAULT_CONFIG = {
 
 def test_default_config_dict():
     """Check the default configuration dict."""
-    assert Config().asdict() == DEFAULT_CONFIG
+    assert Config() == DEFAULT_CONFIG
 
 
 def read_tmp_config_file(tmp_path, content):
@@ -47,7 +47,7 @@ def test_read_single_empty_section(tmp_path):
         """
     configs = read_tmp_config_file(tmp_path, content)
     assert len(configs) == 1
-    assert configs[0].asdict() == DEFAULT_CONFIG
+    assert configs[0] == DEFAULT_CONFIG
 
 
 def test_read_single_empty_renamed_section(tmp_path):
@@ -57,7 +57,7 @@ def test_read_single_empty_renamed_section(tmp_path):
         """
     configs = read_tmp_config_file(tmp_path, content)
     assert len(configs) == 1
-    assert configs[0].asdict() == DEFAULT_CONFIG
+    assert configs[0] == DEFAULT_CONFIG
 
 
 def test_read_single_section(tmp_path):
@@ -69,9 +69,9 @@ def test_read_single_section(tmp_path):
         """
     configs = read_tmp_config_file(tmp_path, content)
     assert len(configs) == 1
-    assert configs[0].asdict() != DEFAULT_CONFIG
+    assert configs[0] != DEFAULT_CONFIG
     sol = {**DEFAULT_CONFIG, "variable": "deposition", "lang": "de"}
-    assert configs[0].asdict() == sol
+    assert configs[0] == sol
 
 
 def test_read_multiple_parallel_empty_sections(tmp_path):
@@ -83,8 +83,7 @@ def test_read_multiple_parallel_empty_sections(tmp_path):
         """
     configs = read_tmp_config_file(tmp_path, content)
     assert len(configs) == 2
-    config_dicts = [c.asdict() for c in configs]
-    assert config_dicts == [DEFAULT_CONFIG] * 2
+    assert configs == [DEFAULT_CONFIG] * 2
 
 
 def test_read_two_nested_empty_sections(tmp_path):
@@ -96,7 +95,7 @@ def test_read_two_nested_empty_sections(tmp_path):
         """
     configs = read_tmp_config_file(tmp_path, content)
     assert len(configs) == 1
-    assert configs[0].asdict() == DEFAULT_CONFIG
+    assert configs[0] == DEFAULT_CONFIG
 
 
 def test_read_multiple_nested_sections(tmp_path):
@@ -133,5 +132,4 @@ def test_read_multiple_nested_sections(tmp_path):
     ]
     sol = [{**DEFAULT_CONFIG, **sol_base, **d} for d in sol_specific]
     configs = read_tmp_config_file(tmp_path, content)
-    res = [c.asdict() for c in configs]
-    assert res == sol
+    assert configs == sol

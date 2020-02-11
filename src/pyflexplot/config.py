@@ -2,6 +2,7 @@
 """
 Configuration and configuration file.
 """
+import dataclasses
 import tomlkit
 import warnings
 
@@ -148,7 +149,17 @@ class Config:
                 setattr(self, key, val)
 
     def asdict(self):
-        return {attr: getattr(self, attr) for attr in self.__dataclass_fields__}
+        return dataclasses.asdict(self)
+
+    def __eq__(self, other):
+        try:
+            other_asdict = dataclasses.asdict(other)
+        except TypeError:
+            try:
+                other_asdict = dict(other)
+            except TypeError:
+                return False
+        return dataclasses.asdict(self) == other_asdict
 
 
 class ConfigFile:
