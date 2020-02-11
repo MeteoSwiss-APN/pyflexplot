@@ -14,7 +14,7 @@ from srutils.various import group_kwargs
 from srutils.various import isiterable
 
 from .config import ConfigFile
-from .examples import show_example
+from .examples import print_example
 from .field_specs import FieldSpecs
 from . import __version__
 from .io import FileReader
@@ -81,8 +81,8 @@ def not_implemented(msg):
 @click.option(
     "--example",
     help="Example commands.",
-    type=click.Choice(["naz-det-sh"]),
-    callback=show_example,
+    type=click.Choice(["naz_det_toml", "naz_det_sh"]),
+    callback=print_example,
     expose_value=False,
 )
 # --- Input

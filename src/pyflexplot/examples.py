@@ -7,34 +7,33 @@ import click
 from textwrap import dedent
 
 
-def show_example(ctx, param, value):
+def print_example(ctx, param, value):
     if value is None:
         return
-    elif value == "naz-det-sh":
-        naz_det_sh()
-    else:
+    choices = {
+        "naz_det_toml": naz_det_toml,
+        "naz_det_sh": naz_det_sh,
+    }
+    try:
+        choice = choices[value]
+    except AttributeError:
         raise NotImplementedError(f"example={value}")
+    else:
+        choice()
     ctx.exit(0)
 
 
-def naz_det_sh():
-    """Bash scripts with deterministic NAZ plots."""
+def naz_det_toml():
+    """
+    TOML config file to create deterministic NAZ plots.
+    """
     s = """\
-        #!/bin/bash
-
-        data="/scratch/ruestefa/shared/flexpart_visualization/test/data"
-        infile="${data}/cosmo-1_2019052800.nc"
-
-        dest="./png"
-        mkdir -pv "${dest}"
-
-        outfile_con_fmt="${dest}/test_case1_{variable}_species-{species_id}_level-{level_idx}_time-{time_idx:02d}_domain-{domain}_{lang}.png"
-        outfile_dep_fmt="${dest}/test_case1_{variable}_species-{species_id}_time-{time_idx:02d}_domain-{domain}_{lang}.png"
-
-        config_toml='
+        # PyFlexPlot config file to create deterministic NAZ plots
 
         [_base]
-        infiles = ["'${infile}'"]
+        infiles = [
+            "/scratch/ruestefa/shared/flexpart_visualization/test/data/cosmo-1_2019052800.nc",
+        ]
         lang = "en"
         domain = "auto"
         simulation_type = "deterministic"
@@ -43,65 +42,74 @@ def naz_det_sh():
         species_id = 2
         time_idx = 3
 
-        [_base.conc]
-        outfile = "'${outfile_con_fmt}'"
+        [_base.concentration]
+        outfile = "./png/test_case1_{variable}_species-{species_id}_level-{level_idx}_time-{time_idx:02d}_domain-{domain}_{lang}.png"
         variable = "concentration"
         integrate = false
 
-        [_base.conc.de]
+        [_base.concentration.lang_de]
         lang = "de"
 
-        [_base.conc.ch]
+        [_base.concentration.domain_ch]
         domain = "ch"
 
-        [_base.conc.ch.de]
+        [_base.concentration.domain_ch.lang_de]
         lang = "de"
 
-        [_base.conc.int]
+        [_base.concentration.integrated]
         time_idx = 10
         species_id = 1
         integrate = true
 
-        [_base.conc.int.de]
+        [_base.concentration.integrated.lang_de]
         lang = "de"
 
-        [_base.conc.int.ch]
+        [_base.concentration.integrated.domain_ch]
         domain = "ch"
 
-        [_base.conc.int.ch.de]
+        [_base.concentration.integrated.domain_ch.lang_de]
         lang = "de"
 
-        [_base.depos]
-        outfile = "'${outfile_dep_fmt}'"
+        [_base.deposition]
+        outfile = "./png/test_case1_{variable}_species-{species_id}_time-{time_idx:02d}_domain-{domain}_{lang}.png"
         variable = "deposition"
         deposition_type = "tot"
         integrate = true
 
-        [_base.depos.de]
+        [_base.deposition.lang_de]
         lang = "de"
 
-        [_base.depos.ch]
+        [_base.deposition.domain_ch]
         domain = "ch"
 
-        [_base.depos.ch.de]
+        [_base.deposition.domain_ch.lang_de]
         lang = "de"
 
-        [_base.depos.affect]
+        [_base.deposition.affected_area]
         plot_type = "affected_area_mono"
         time_idx = 10
         species_id = [1, 2]
 
-        [_base.depos.affect.de]
+        [_base.deposition.affected_area.lang_de]
         lang = "de"
 
-        [_base.depos.affect.ch]
+        [_base.deposition.affected_area.domain_ch]
         domain = "ch"
 
-        [_base.depos.affect.ch.de]
+        [_base.deposition.affected_area.domain_ch.lang_de]
         lang = "de"
-        '
+        """
+    click.echo(dedent(s))
 
-        pyflexplot --config=<(echo -e "${config_toml}")
 
+def naz_det_sh():
+    """
+    Bash script to create deterministic NAZ plots.
+    """
+    s = """\
+        #!/bin/bash
+
+        # Create deterministic NAZ plots
+        pyflexplot --config=<(pyflexplot --example=naz_det_toml)
         """
     click.echo(dedent(s))
