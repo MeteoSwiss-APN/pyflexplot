@@ -9,16 +9,18 @@ repos:
     rev: stable
     hooks:
     -   id: black
+        args: [src, tests]
 -   repo: https://github.com/pre-commit/mirrors-isort
     rev: ''
     hooks:
     -   id: isort
--   repo: https://github.com/PyCQA/flake8
-    rev: 3.7.9
-    hooks:
-    -   id: flake8
--   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: ''
-    hooks:
-    -   id: mypy
-        args: [--no-strict-optional, --ignore-missing-imports]
+        args: [--recursive, src, tests]
+# -   repo: https://github.com/PyCQA/flake8
+#     rev: 3.7.9
+#     hooks:
+#     -   id: flake8
+# -   repo: https://github.com/pre-commit/mirrors-mypy
+#     rev: ''
+#     hooks:
+#     -   id: mypy
+#         args: [--no-strict-optional, --ignore-missing-imports]
