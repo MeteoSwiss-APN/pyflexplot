@@ -23,8 +23,8 @@ class Test_Basic:
     ws = p_TranslatedWords(
         "words",
         {
-            "train": {"en": "train", "de": "Zug",},
-            "high_school": {"en": "high school", "de": "Mittelschule",},
+            "train": {"en": "train", "de": "Zug"},
+            "high_school": {"en": "high school", "de": "Mittelschule"},
         },
     )
 
@@ -84,7 +84,7 @@ class Test_ContextDependent_OneToMany:
 
     ws = p_TranslatedWords(
         "words",
-        {"at": {"en": "at", "de": {"place": "bei", "level": "auf",},}},
+        {"at": {"en": "at", "de": {"place": "bei", "level": "auf"}}},
         default_lang="de",
     )
 
@@ -156,8 +156,8 @@ class Test_ContextDependent_ManyToMany:
         "words",
         {
             "integrated": {
-                "en": {"*": "integrated", "abbr": "int.",},
-                "de": {"f": "integrierte", "*": "integriert", "abbr": "int.",},
+                "en": {"*": "integrated", "abbr": "int."},
+                "de": {"f": "integrierte", "*": "integriert", "abbr": "int."},
             }
         },
         default_lang="de",
@@ -298,4 +298,4 @@ class Test_Interface_AddWords:
 
 class Test_Interface_Various:
     def test_init_empty_with_default_lang(self):
-        ws = TranslatedWords("name", default_lang="en")
+        TranslatedWords("name", default_lang="en")

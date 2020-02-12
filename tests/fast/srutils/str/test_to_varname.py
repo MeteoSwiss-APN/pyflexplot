@@ -70,17 +70,17 @@ class Test_FilterInvalid:
             return to_varname(s, filter_invalid=f)
 
         def test_drop_all(self):
-            f = lambda c: ""
+            f = lambda c: ""  # noqa:E731
             assert self.run(" hello world! ", f) == "helloworld"
             assert self.run("1-foo_2-bar@baz66_+", f) == "foo_2barbaz66_"
 
         def test_keep_spaces_dashes(self):
-            f = lambda c: "_" if c in "- " else ""
+            f = lambda c: "_" if c in "- " else ""  # noqa:E731
             assert self.run(" hello world ", f) == "_hello_world_"
             assert self.run("1-foo_2-bar@baz66_+", f) == "_foo_2_barbaz66_"
 
         def test_keep_leading_number(self):
-            f = lambda c: "_" if c in "0123456789" else ""
+            f = lambda c: "_" if c in "0123456789" else ""  # noqa:E731
             assert self.run(" hello world ", f) == "helloworld"
             assert self.run("1-foo_2-bar@baz66_+", f) == "_foo_2barbaz66_"
 

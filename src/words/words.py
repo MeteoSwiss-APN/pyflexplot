@@ -140,7 +140,6 @@ class TranslatedWords:
         return hash(pformat(self.words))
 
     def __getitem__(self, key):
-        name, lang, ctx = None, None, None
         if not isinstance(key, tuple):
             key = (key,)
         elif len(key) not in [1, 2, 3]:

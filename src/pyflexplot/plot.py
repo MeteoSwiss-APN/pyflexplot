@@ -3,12 +3,12 @@
 Plots.
 """
 # Standard library
-import logging as log
 import os
 from copy import copy
 from textwrap import dedent
 
 # Third-party
+import matplotlib as mpl
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -468,7 +468,7 @@ class DispersionPlot_old(Plot):  # SR_TMP
                 name="bottom",
                 fig=self.fig,
                 ax_ref=self.ax_map.ax,
-                rect=[x0_map, y0_map - h_box_b, w_map + pad_hor + w_box, h_box_b,],
+                rect=[x0_map, y0_map - h_box_b, w_map + pad_hor + w_box, h_box_b],
                 lw_frame=0.0,
             ),
         }
@@ -486,13 +486,13 @@ class DispersionPlot_old(Plot):  # SR_TMP
         """
 
         a = self.field.attrs
-        l = self.labels
+        l = self.labels  # noqa:E741
         w = self.labels.words
 
         if skip_pos is None:
             skip_pos = {}
 
-        if not "tl" in skip_pos:
+        if "tl" not in skip_pos:
             # Top left: variable
             s = a.variable.long_name.value
             _lvl = a.variable.fmt_level_range()
@@ -500,7 +500,7 @@ class DispersionPlot_old(Plot):  # SR_TMP
                 s += f" {w['at', None, 'level']} {_lvl}"
             box.text("tl", s, size="x-large")
 
-        if not "bl" in skip_pos:
+        if "bl" not in skip_pos:
             # Bottom left: integration time & level range
             itype = a.simulation.integr_type.value
             s = {
@@ -518,23 +518,23 @@ class DispersionPlot_old(Plot):  # SR_TMP
 
         dx_center = 0
 
-        if not "tc" in skip_pos:
+        if "tc" not in skip_pos:
             # Top center: species
             s = f"{w['substance']}: {a.species.name.format(join=' + ')}"
             box.text("tc", s, dx=dx_center, size="large")
 
-        if not "bc" in skip_pos:
+        if "bc" not in skip_pos:
             # Bottom center: release site
             s = f"{l['w']['release_site']}: {a.release.site_name.value}"
             box.text("bc", s, dx=dx_center, size="large")
 
-        if not "tr" in skip_pos:
+        if "tr" not in skip_pos:
             # Top right: datetime
             timestep_fmtd = a.simulation.now.format()
             s = f"{timestep_fmtd}"
             box.text("tr", s, size="large")
 
-        if not "br" in skip_pos:
+        if "br" not in skip_pos:
             # Bottom right: time into simulation
             _now_rel = a.simulation.now.format(rel=True)
             s = f"{_now_rel}"
@@ -666,7 +666,7 @@ class DispersionPlot_old(Plot):  # SR_TMP
     def fill_box_right_bottom(self, box):
         """Fill the bottom box to the right of the map plot."""
 
-        l = self.labels.right_bottom
+        l = self.labels.right_bottom  # noqa:E741
         a = self.field.attrs
 
         # Box title
@@ -733,7 +733,7 @@ class DispersionPlot_old(Plot):  # SR_TMP
             self.colors = colors_flexplot(self.n_levels, self.extend)
         else:
             cmap = mpl.cm.get_cmap(self.cmap)
-            colors_core = [cmap(i / (self.n_levels - 1)) for i in range(self.n_levels)]
+            self.colors = [cmap(i / (self.n_levels - 1)) for i in range(self.n_levels)]
 
     def define_levels(self):
         self.levels = self.auto_levels_log10()
@@ -802,7 +802,7 @@ class DispersionPlot(DispersionPlot_old):
         self.boxes = {
             self.fill_box_top_left: TextBoxAxes(
                 name="top/left",
-                rect=[x0_map, y0_map + pad_ver + h_map, w_map, h_box_t,],
+                rect=[x0_map, y0_map + pad_ver + h_map, w_map, h_box_t],
                 **text_box_conf,
             ),
             self.fill_box_top_right: TextBoxAxes(
@@ -837,7 +837,7 @@ class DispersionPlot(DispersionPlot_old):
             ),
             self.fill_box_bottom: TextBoxAxes(
                 name="bottom",
-                rect=[x0_map, y0_map - h_box_b, w_map + pad_hor + w_box, h_box_b,],
+                rect=[x0_map, y0_map - h_box_b, w_map + pad_hor + w_box, h_box_b],
                 **{**text_box_conf, "lw_frame": None},
             ),
         }
@@ -851,22 +851,22 @@ class DispersionPlot(DispersionPlot_old):
             skip_pos = {}
 
         # Top-left: Variable name etc.
-        if not "tl" in skip_pos:
+        if "tl" not in skip_pos:
             box.text("tl", labels["variable"], size="x-large")
 
         # Bottom-left: Integration time etc.
-        if not "bl" in skip_pos:
+        if "bl" not in skip_pos:
             s = labels["period"]
             if self.scale_fact is not None:
                 s += f" ({self.scale_fact}x)"
             box.text("bl", s, size="large")
 
         # Top-right: Time step
-        if not "tr" in skip_pos:
+        if "tr" not in skip_pos:
             box.text("tr", labels["timestep"], size="large")
 
         # Bottom-right: Time since release start
-        if not "br" in skip_pos:
+        if "br" not in skip_pos:
             box.text("br", labels["time_since_release_start"], size="large")
 
         return box
@@ -879,11 +879,11 @@ class DispersionPlot(DispersionPlot_old):
         if skip_pos is None:
             skip_pos = []
 
-        if not "tc" in skip_pos:
+        if "tc" not in skip_pos:
             # Top center: species
             box.text("tc", labels["species"], size="large")
 
-        if not "bc" in skip_pos:
+        if "bc" not in skip_pos:
             # Bottom center: release site (shrunk/truncated to fit box)
             s, size = box.fit_text(labels["site"], "large", n_shrink_max=1)
             box.text("bc", s, size=size)
@@ -1027,7 +1027,6 @@ class Plot_EnsThrAgrmt(Plot_Ens):
 
     def define_levels(self):
         n_max = 20  # SR_TMP SR_HC
-        d = self.d_level
         self.levels = (
             np.arange(
                 n_max - self.d_level * (self.n_levels - 1),

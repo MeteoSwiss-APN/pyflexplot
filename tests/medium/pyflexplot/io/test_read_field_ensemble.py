@@ -6,7 +6,6 @@ import functools
 
 # Third-party
 import numpy as np
-import pytest
 
 # First-party
 from pyflexplot.data import threshold_agreement
@@ -15,7 +14,7 @@ from pyflexplot.io import FileReader
 from pyflexplot.var_specs import MultiVarSpecs
 
 from io_utils import read_nc_var  # isort:skip
-from utils import datadir  # isort:skip
+from utils import datadir  # noqa:F401 isort:skip
 
 
 class TestReadFieldEnsemble_Single:
@@ -41,17 +40,17 @@ class TestReadFieldEnsemble_Single:
     # Ensemble member ids
     member_ids = [0, 1, 5, 10, 15, 20]
 
-    def datafile_fmt(self, datadir):
+    def datafile_fmt(self, datadir):  # noqa:F811
         return f"{datadir}/flexpart_cosmo-2e_20190727120_{{member_id:03d}}.nc"
 
-    def datafile(self, member_id, *, datadir=None, datafile_fmt=None):
+    def datafile(self, member_id, *, datadir=None, datafile_fmt=None):  # noqa:F811
         if datafile_fmt is None:
             datafile_fmt = self.datafile_fmt(datadir)
         return datafile_fmt.format(member_id=member_id)
 
     def run(
         self,
-        datadir,
+        datadir,  # noqa:F811
         *,
         name,
         dims,
@@ -113,7 +112,7 @@ class TestReadFieldEnsemble_Single:
         assert fld.shape == fld_ref.shape
         np.testing.assert_allclose(fld, fld_ref, equal_nan=True, rtol=1e-6)
 
-    def test_ens_mean_concentration(self, datadir):
+    def test_ens_mean_concentration(self, datadir):  # noqa:F811
         """Read concentration field."""
         self.run(
             datadir,
@@ -153,10 +152,10 @@ class TestReadFieldEnsemble_Multiple:
     agreement_threshold_concentration = 1e-7  # SR_TMP
     agreement_threshold_deposition_tot = None  # SR_TMP
 
-    def datafile_fmt(self, datadir):
+    def datafile_fmt(self, datadir):  # noqa:F811
         return f"{datadir}/flexpart_cosmo-2e_20190727120_{{member_id:03d}}.nc"
 
-    def datafile(self, member_id, *, datafile_fmt=None, datadir=None):
+    def datafile(self, member_id, *, datafile_fmt=None, datadir=None):  # noqa:F811
         if datafile_fmt is None:
             datafile_fmt = self.datafile_fmt(datadir)
         return datafile_fmt.format(member_id=member_id)
@@ -258,7 +257,7 @@ class TestReadFieldEnsemble_Multiple:
 
     def run_concentration(
         self,
-        datadir,
+        datadir,  # noqa:F811
         ens_var,
         *,
         separate=False,
@@ -296,10 +295,10 @@ class TestReadFieldEnsemble_Multiple:
             scale_fld_ref=scale_fld_ref,
         )
 
-    def test_ens_mean_concentration(self, datadir):
+    def test_ens_mean_concentration(self, datadir):  # noqa:F811
         self.run_concentration(datadir, "mean", separate=False, scale_fld_ref=3)
 
-    def test_ens_threshold_agreement_concentration(self, datadir):
+    def test_ens_threshold_agreement_concentration(self, datadir):  # noqa:F811
         self.run_concentration(
             datadir,
             "thr_agrmt",
@@ -310,9 +309,9 @@ class TestReadFieldEnsemble_Multiple:
 
     # Deposition
 
-    def run_deposition_tot(self, datadir, ens_var, *, separate=False):
+    def run_deposition_tot(self, datadir, ens_var, *, separate=False):  # noqa:F811
         """Read ensemble total deposition field."""
-        fct_reduce_mem = {"mean": np.nanmean, "max": np.nanmax,}[ens_var]
+        fct_reduce_mem = {"mean": np.nanmean, "max": np.nanmax}[ens_var]
         ens_var_setup = {
             # ...
         }.get(ens_var)
@@ -331,11 +330,11 @@ class TestReadFieldEnsemble_Multiple:
             fct_reduce_mem=fct_reduce_mem,
         )
 
-    def test_ens_mean_deposition_tot_separate(self, datadir):
+    def test_ens_mean_deposition_tot_separate(self, datadir):  # noqa:F811
         self.run_deposition_tot(datadir, "mean", separate=True)
 
-    def test_ens_mean_deposition_tot(self, datadir):
+    def test_ens_mean_deposition_tot(self, datadir):  # noqa:F811
         self.run_deposition_tot(datadir, "mean", separate=False)
 
-    def test_ens_max_deposition_tot(self, datadir):
+    def test_ens_max_deposition_tot(self, datadir):  # noqa:F811
         self.run_deposition_tot(datadir, "max")

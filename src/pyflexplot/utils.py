@@ -520,7 +520,7 @@ class LevelRangeFormatter:
                 return cls._Component(arg, 0)
             try:
                 return cls._Component(*arg)
-            except Exception as e:
+            except Exception:
                 raise ValueError(
                     f"cannot create {name} Component "
                     f"from {type(arg).__name__} {arg}"
@@ -576,7 +576,6 @@ class LevelRangeFormatter_Up(LevelRangeFormatter):
         super().__init__(*args, widths=widths, **kwargs)
 
     def _format_closed(self, lvl0, lvl1):
-        lvl0_fmtd = self._format_level(lvl0)
         op_fmtd = r"$\tt \geq$"
         ntex_c = len(op_fmtd) - 1
         s_c = op_fmtd
@@ -623,10 +622,10 @@ class LevelRangeFormatter_And(LevelRangeFormatter):
         return self._Components((s_l, ntex_l), (s_c, ntex_c), (s_r, ntex_r))
 
     def _format_open_left(self, lvl):
-        op1_fmtd = r"\tt $<$"
-        lvl_fmtd = f"{op1_fmtd} {self._format_level(lvl)}"
-        ntex_r = len(op0_fmtd) - 1
-        s_r = lvl1_fmtd
+        op_fmtd = r"\tt $<$"
+        lvl_fmtd = f"{op_fmtd} {self._format_level(lvl)}"
+        ntex_r = len(op_fmtd) - 1
+        s_r = lvl_fmtd
         return self._Components("", "", (s_r, ntex_r))
 
     def _format_open_right(self, lvl):
@@ -664,7 +663,6 @@ class LevelRangeFormatter_Var(LevelRangeFormatter):
         return self._Components(s_l, (s_c, ntex_c), "")
 
     def _format_open_left(self, lvl):
-        lvl_fmtd = self._format_level(lvl)
         op0 = " "
         op1 = "$\tt <$"
         op_fmtd = f"{op0} {self.var} {op1}"

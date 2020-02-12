@@ -3,8 +3,6 @@
 Field specifications.
 """
 # Standard library
-import logging as log
-from copy import copy
 from copy import deepcopy
 
 # Third-party
@@ -12,7 +10,6 @@ import numpy as np
 
 # First-party
 from srutils.dict import nested_dict_set
-from srutils.various import isiterable
 
 # Local
 from .utils import SummarizableClass
@@ -123,8 +120,8 @@ class FieldSpecs(SummarizableClass):
         n_var_specs = len(self.multi_var_specs)
         if n_ops != n_var_specs - 1:
             raise ValueError(
-                f"wrong number of operators passed in {type(ops).__name__}: {n_ops} != "
-                f"{n_var_specs}"
+                f"wrong number of operators passed in {type(self).__name__}: "
+                f"{n_ops} != {n_var_specs}"
             )
         for op_i in op:
             if not callable(op_i):

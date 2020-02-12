@@ -6,7 +6,6 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Tuple
 
 # Third-party
 import numpy as np
@@ -19,7 +18,7 @@ from pyflexplot.io import FileReader
 from pyflexplot.var_specs import MultiVarSpecs
 
 from io_utils import read_nc_var  # isort:skip
-from utils import datadir  # isort:skip
+from utils import datadir  # noqa:F401 isort:skip
 
 
 def get_var_name_ref(var_specs, var_names_ref):
@@ -93,7 +92,7 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
         Conf(
             datafilename=datafilename1,
             name="deposition",
-            var_names_ref=[f"WD_spec002", f"DD_spec002",],
+            var_names_ref=[f"WD_spec002", f"DD_spec002"],
             var_specs_dct={
                 "nageclass": 0,
                 "numpoint": 0,
@@ -120,7 +119,7 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
         Conf(
             datafilename=datafilename2,
             name="deposition",
-            var_names_ref=[f"WD_spec001", f"DD_spec001",],
+            var_names_ref=[f"WD_spec001", f"DD_spec001"],
             var_specs_dct={
                 "nageclass": 0,
                 "noutrel": 0,
@@ -133,7 +132,7 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
         ),
     ],
 )
-def test_single(datadir, conf):
+def test_single(datadir, conf):  # noqa:F811
     """Read a single field."""
 
     datafile = f"{datadir}/{conf.datafilename}"
@@ -258,7 +257,7 @@ def test_single(datadir, conf):
         ),
     ],
 )
-def test_multiple(datadir, conf):
+def test_multiple(datadir, conf):  # noqa:F811
     """Read multiple fields."""
 
     datafile = f"{datadir}/{conf.datafilename}"

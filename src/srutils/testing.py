@@ -5,7 +5,6 @@ Some testing utils.
 """
 # Standard library
 from pprint import pformat
-from typing import Optional
 
 # Third-party
 from pydantic.dataclasses import dataclass as pydantic_dataclass

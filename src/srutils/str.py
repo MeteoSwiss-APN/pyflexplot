@@ -39,14 +39,16 @@ def to_varname(s, filter_invalid=None):
     # Check input is valid string
     try:
         s = str(s)
-    except Exception as e:
+    except Exception:
         error("not valid string")
     if not s:
         error("is empty")
 
+    def filter_invalid_default(c):
+        return "_"
+
     if filter_invalid is None:
-        # Default filter function
-        filter_invalid = lambda c: "_"
+        filter_invalid = filter_invalid_default
 
     def filter(ch):
         """Apply ``filter_invalid`` to character ``ch``."""

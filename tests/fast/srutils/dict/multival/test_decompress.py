@@ -24,7 +24,7 @@ T = True
 
 @pytest.mark.parametrize(
     "depth,sol",
-    [(1, [{"a": 1, "b": 2}]), (2, [[{"a": 1, "b": 2}]]), (3, [[[{"a": 1, "b": 2}]]]),],
+    [(1, [{"a": 1, "b": 2}]), (2, [[{"a": 1, "b": 2}]]), (3, [[[{"a": 1, "b": 2}]]])],
 )
 def test_singval(depth, sol):
     """Only single-value dict elements."""
@@ -121,8 +121,8 @@ def test_multival_sing_deep(depth, sol):
                     {"a": 2, "b": 4, "c": 6},
                     {"a": 2, "b": 4, "c": 7},
                 ],
-                [{"a": 3, "b": 4, "c": 5},],
-                [{"a": 3, "b": 4, "c": 6}, {"a": 3, "b": 4, "c": 7},],
+                [{"a": 3, "b": 4, "c": 5}],
+                [{"a": 3, "b": 4, "c": 6}, {"a": 3, "b": 4, "c": 7}],
             ],
         ),
         (

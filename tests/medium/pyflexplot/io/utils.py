@@ -5,13 +5,9 @@ Utilities for testing.
 # Standard library
 import distutils.dir_util
 import os
-from pprint import pformat
 
 # Third-party
 import pytest
-
-# First-party
-from srutils.various import isiterable
 
 
 @pytest.fixture
@@ -26,7 +22,7 @@ def datadir_rel(tmpdir, request):
     """
     file = request.module.__file__
     dir, _ = os.path.splitext(file)
-    if os.path.isdir(dir_rel):
+    if os.path.isdir(dir):
         distutils.dir_util.copy_tree(dir, str(tmpdir))
     return tmpdir
 

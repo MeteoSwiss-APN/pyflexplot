@@ -144,9 +144,7 @@ class Test_Create_SingleObjDct_Deposition(_Test_Create_SingleObjDct):
     def test_tot_fail(self):
         """Creation of ``ValSpecs`` with deposition type "tot" fails."""
         with pytest.raises(ValueError):
-            var_specs_dry = VarSpecs.create(
-                self.c.name, {**self.c.dct, "deposition": "tot"},
-            )
+            VarSpecs.create(self.c.name, {**self.c.dct, "deposition": "tot"})
 
 
 class _Test_Create_MultiObjDct:

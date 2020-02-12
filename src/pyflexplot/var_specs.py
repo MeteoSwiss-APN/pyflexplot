@@ -2,10 +2,6 @@
 """
 Input variable specifications.
 """
-# Standard library
-import logging as log
-from typing import List
-
 # First-party
 from srutils.dict import decompress_multival_dict
 from srutils.dict import format_dictlike
@@ -287,10 +283,6 @@ class VarSpecs(SummarizableClass, ParentClass):
             if not key.startswith("_"):
                 yield key, val
 
-    def var_name(self):
-        """Derive variable name from specifications."""
-        raise NotImplementedError(f"{type(self).__name__}.var_name")
-
     def dim_inds_by_name(self, *, rlat=None, rlon=None):
         """Derive indices along NetCDF dimensions."""
 
@@ -330,10 +322,9 @@ class VarSpecs_Concentration(VarSpecs):
 
     def long_name(self):
         ctx = "abbr" if self.integrate else "*"
-        return self._words["activity_concentration"].s
+        return self._words["activity_concentration", None, ctx].s
 
     def short_name(self):
-        s = ""
         if self.integrate:
             return (
                 f"{self._words['integrated', None, 'abbr']} "

@@ -8,7 +8,6 @@ import pytest
 
 # First-party
 from srutils.dict import flatten_nested_dict
-from srutils.exceptions import KeyConflictError
 
 
 @pytest.mark.parametrize(
@@ -119,7 +118,7 @@ def test_branched_notie(dct, sol):
 
 
 @pytest.mark.parametrize(
-    "dct, sol", [({"foo": {"a": 1}, "bar": {"a": 2}}, Exception),],
+    "dct, sol", [({"foo": {"a": 1}, "bar": {"a": 2}}, Exception)],
 )
 def test_branched_notie_fail(dct, sol):
     """

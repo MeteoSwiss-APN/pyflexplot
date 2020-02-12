@@ -10,7 +10,6 @@ from pprint import pformat
 
 # Local
 from .exceptions import KeyConflictError
-from .various import isiterable
 
 
 def format_dictlike(obj, multiline=False, indent=1):
@@ -19,7 +18,7 @@ def format_dictlike(obj, multiline=False, indent=1):
         indent = 0
     try:
         s = pformat(dict(obj), indent=indent, sort_dicts=False)[1:-1]
-    except TypeError as e:
+    except TypeError:
         # Option 'sort_dicts' only available in Python3.8+
         s = pformat(dict(obj), indent=indent)[1:-1]
     if multiline:
@@ -102,8 +101,13 @@ def decompress_multival_dict(
     def dict_mult_vals_product(dct, cls_expand=list, f_expand=None):
         if isinstance(cls_expand, type):
             cls_expand = [cls_expand]
+
+        def f_expand_default(obj):
+            return any(isinstance(obj, t) for t in cls_expand)
+
         if f_expand is None:
-            f_expand = lambda obj: any(isinstance(obj, t) for t in cls_expand)
+            f_expand = f_expand_default
+
         keys, vals = [], []
         for key, val in dct.items():
             if not f_expand(val):
@@ -216,7 +220,7 @@ def flatten_nested_dict(
                         elif val_flat["depth"] == val["depth"]:
                             if tie_breaker is None:
                                 raise KeyConflictError(
-                                    f"key conflict at depth {depth}: '{key}'"
+                                    f"key conflict at depth {val_flat['depth']}", key,
                                 )
                             else:
                                 raise NotImplementedError(

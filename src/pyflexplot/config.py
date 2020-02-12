@@ -5,7 +5,6 @@ Configuration and configuration file.
 # Standard library
 import dataclasses
 import warnings
-from dataclasses import field
 from typing import List
 from typing import Optional
 from typing import Union
@@ -172,7 +171,9 @@ class ConfigFile:
         try:
             raw_data = tomlkit.parse(s)
         except Exception as e:
-            raise Exception(f"error parsing TOML file {path} ({type(e).__name__}: {e})")
+            raise Exception(
+                f"error parsing TOML file {self.path} ({type(e).__name__}: {e})"
+            )
         values, paths = decompress_nested_dict(
             raw_data, match_end=lambda key: not key.startswith("_"), return_paths=True,
         )

@@ -4,6 +4,7 @@ Crop fields in a NetCDF file.
 """
 # Standard library
 import functools
+import sys
 
 # Third-party
 import click
@@ -123,7 +124,7 @@ def transfer_dimension(
     # Transfer corresponding variable
     try:
         var = fi.variables[dim.name]
-    except KeyError as e:
+    except KeyError:
         # There's none; that's fine
         pass
     else:
@@ -154,7 +155,7 @@ def transfer_variable(
         inds = []
         for dim_name in var.dimensions:
             inds.append(
-                {rlat_name: rlat_slice, rlon_name: rlon_slice,}.get(
+                {rlat_name: rlat_slice, rlon_name: rlon_slice}.get(
                     dim_name, slice(None),
                 )
             )

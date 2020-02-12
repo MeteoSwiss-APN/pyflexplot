@@ -1,20 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Tests for module ``pyflexplot.plot_utils``."""
-# Standard library
-import logging as log
-from pprint import pformat
-
 # Third-party
-import matplotlib as mpl
-import numpy as np
-import pytest
 from matplotlib import pyplot as plt
 
 # First-party
 from pyflexplot.plot_utils import TextBoxAxes
 from srutils.testing import check_summary_dict_is_subdict
-from srutils.various import isiterable
 
 
 class Test_TextBoxAxes_Summarize:
@@ -34,7 +26,7 @@ class Test_TextBoxAxes_Summarize:
         "fig": {
             "type": "Figure",
             "dpi": 100,
-            "bbox": {"type": "TransformedBbox", "bounds": (0.0, 0.0, 100.0, 100.0),},
+            "bbox": {"type": "TransformedBbox", "bounds": (0.0, 0.0, 100.0, 100.0)},
             "axes": [
                 {"type": "AxesSubplot"},
                 {
@@ -77,8 +69,8 @@ class Test_TextBoxAxes_Summarize:
         sol = {
             **self.sol_base,
             "elements": [
-                {"type": "TextBoxElement_Text", "s": ("foo", "bar"),},
-                {"type": "TextBoxElement_Text", "s": ("hello", "world"),},
+                {"type": "TextBoxElement_Text", "s": ("foo", "bar")},
+                {"type": "TextBoxElement_Text", "s": ("hello", "world")},
             ],
         }
         check_summary_dict_is_subdict(superdict=res, subdict=sol)
@@ -90,7 +82,7 @@ class Test_TextBoxAxes_Summarize:
         sol = {
             **self.sol_base,
             "elements": [
-                {"type": "TextBoxElement_ColorRect", "fc": "red", "ec": "black",}
+                {"type": "TextBoxElement_ColorRect", "fc": "red", "ec": "black"}
             ],
         }
         check_summary_dict_is_subdict(superdict=res, subdict=sol)

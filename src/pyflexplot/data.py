@@ -2,10 +2,6 @@
 """
 Data structures.
 """
-# Standard library
-import datetime
-import logging as log
-
 # Third-party
 import numpy as np
 

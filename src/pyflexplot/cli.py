@@ -6,7 +6,6 @@ Command line interface.
 import functools
 import logging as log
 import os
-import re
 import sys
 
 # Third-party
@@ -15,7 +14,6 @@ import click
 # First-party
 from srutils.click import CharSepList
 from srutils.various import group_kwargs
-from srutils.various import isiterable
 
 # Local
 from . import __version__

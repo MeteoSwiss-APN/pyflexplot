@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """Tests for module ``pyflexplot.field_specs``."""
 # Third-party
-import pytest
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 # First-party
@@ -10,8 +9,6 @@ from pyflexplot.field_specs import FieldSpecs
 from pyflexplot.var_specs import MultiVarSpecs
 from srutils.testing import TestConfBase as _TestConf
 from srutils.testing import check_is_list_like
-from srutils.testing import is_list_like
-from srutils.various import isiterable
 
 
 def check_multi_var_specs_lst(multi_var_specs_lst, len_=None):
@@ -118,7 +115,6 @@ class Test_Create_Deposition:
             self.c.name, {**var_specs_dct, "deposition": ("wet", "dry")},
         )
         check_multi_var_specs_lst(multi_var_specs_lst, len_=1)
-        multi_var_specs = next(iter(multi_var_specs_lst))
         fld_specs_lst = [
             FieldSpecs(self.c.name, multi_var_specs)
             for multi_var_specs in multi_var_specs_lst
@@ -137,10 +133,8 @@ class Test_Create_Deposition:
             "species_id": [1, 2],
         }
         n = 6
-        n_vs = self.c.n_vs * n
         multi_var_specs_lst = MultiVarSpecs.create(self.c.name, vs_dct)
         check_multi_var_specs_lst(multi_var_specs_lst, len_=n)
-        multi_var_specs = next(iter(multi_var_specs_lst))
         fld_specs_lst = [
             FieldSpecs(self.c.name, multi_var_specs)
             for multi_var_specs in multi_var_specs_lst

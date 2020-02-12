@@ -100,7 +100,7 @@ def naz_det_toml():
 
         [_base.deposition.affected_area.domain_ch.lang_de]
         lang = "de"
-        """
+        """  # noqa:E501
     click.echo(dedent(s))
 
 

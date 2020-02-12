@@ -9,7 +9,6 @@ import functools
 # First-party
 from srutils.testing import property_obj
 from words.test import TranslatedTestWord
-from words.test import TranslatedTestWords
 
 property_word = functools.partial(property_obj, TranslatedTestWord)
 property_words = functools.partial(property_obj, TranslatedTestWord)

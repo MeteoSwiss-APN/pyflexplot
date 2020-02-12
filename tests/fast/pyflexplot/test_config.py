@@ -4,9 +4,6 @@
 # Standard library
 from textwrap import dedent
 
-# Third-party
-import pytest
-
 # First-party
 from pyflexplot.config import Config
 from pyflexplot.config import ConfigFile

@@ -5,9 +5,6 @@
 import netCDF4 as nc4
 import numpy as np
 
-# First-party
-from pyflexplot.field_specs import FieldSpecs
-
 
 # SR_TMP <<<
 def fix_nc_fld(fld):

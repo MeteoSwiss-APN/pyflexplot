@@ -3,10 +3,8 @@
 Plots.
 """
 # Standard library
-import functools
 import logging as log
 import warnings
-from copy import copy
 from dataclasses import field
 from typing import Optional
 from typing import Tuple
@@ -162,7 +160,7 @@ class MapAxesConf_Cosmo1_CH(MapAxesConf_Cosmo1):
     geo_res_rivers: str = "10m"
     min_city_pop: int = 0
     # SR_TODO Determine the model from the data! (e.g., COSMO-1 v. COSMO-2 v. COSMO-E)
-    # rel_offset: Tuple[float] = (0.037, 0.106)  # suitable for ensemble (i.e., COSMO-2?)
+    # rel_offset: Tuple[float] = (0.037, 0.106)  # suitable for ensemble (COSMO-2?)
     # zoom_fact: float = 3.2  # suitable for ensemble (i.e., COSMO-2?)
     rel_offset: Tuple[float] = (-0.02, 0.045)
     zoom_fact: float = 3.6
@@ -399,7 +397,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
         # SR_DBG <<< TODO remove once bugfix in Cartopy master
         try:
             major_rivers.geometries()
-        except:
+        except Exception:
             warnings.warn(
                 f"cannot add major rivers due to shapely issue with "
                 "'rivers_lake_centerline; pending bugfix: "
@@ -703,7 +701,7 @@ class ReferenceDistanceIndicator:
             self.x1_line = self.x1_box - self.xpad_box
             self.x0_line = self._calc_horiz_dist(self.x1_line, "west", axes_to_geo)
         else:
-            raise ValueError(f"invalid x-position '{pos_x}'")
+            raise ValueError(f"invalid x-position '{self.pos_x}'")
 
         self.w_box = self.x1_line - self.x0_line + 2 * self.xpad_box
 
@@ -723,9 +721,12 @@ def transform_xy_geo_to_axes(x, y, proj_map, proj_geo, transData, transAxes):
 
     if isiterable(x) or isiterable(y):
         check_equivalent_iterables(x, y)
-        f = lambda xi, yi: transform_xy_geo_to_axes(
-            xi, yi, proj_map, proj_geo, transData, transAxes
-        )
+
+        def f(xi, yi):
+            return transform_xy_geo_to_axes(
+                xi, yi, proj_map, proj_geo, transData, transAxes
+            )
+
         return tuple(np.array([f(xi, yi) for xi, yi in zip(x, y)]).T)
 
     # Geo -> Plot
@@ -745,9 +746,12 @@ def transform_xy_axes_to_geo(x, y, transAxes, transData, proj_geo, proj_map):
 
     if isiterable(x) or isiterable(y):
         check_equivalent_iterables(x, y)
-        f = lambda xi, yi: (
-            transform_xy_axes_to_geo(xi, yi, transAxes, transData, proj_geo, proj_map)
-        )
+
+        def f(xi, yi):
+            return transform_xy_axes_to_geo(
+                xi, yi, transAxes, transData, proj_geo, proj_map
+            )
+
         return tuple(np.array([f(xi, yi) for xi, yi in zip(x, y)]).T)
 
     # Axes -> Display
@@ -1202,12 +1206,12 @@ class TextBoxAxes(SummarizablePlotClass):
             try:
                 f_pad_x = float(f_pad)
                 f_pad_y = float(f_pad)
-            except Exception as e:
+            except Exception:
                 raise ValueError(f"f_pad is not a float nor a pair of floats: {f_pad}")
         else:
             try:
                 f_pad_x, f_pad_y = [float(i) for i in f_pad]
-            except Exception as e:
+            except Exception:
                 raise ValueError(f"f_pad is not a float nor a pair of floats: {f_pad}")
 
         self.pad_x = f_pad_x * self.dx_unit
@@ -1351,7 +1355,7 @@ class TextBoxAxes(SummarizablePlotClass):
         elif len(colors_blocks) != len(blocks):
             raise ValueError(
                 f"colors must have same length as blocks:"
-                f"  {len(colors)} != {len(blocks)}"
+                f"  {len(colors_blocks)} != {len(blocks)}"
             )
         for i, block in enumerate(blocks):
             if colors_blocks[i] is None:
@@ -1587,7 +1591,7 @@ class TextBoxAxes(SummarizablePlotClass):
                 n_shrink_max = int(n_shrink_max)
             except ValueError:
                 raise ValueError(
-                    f"n_shrink_max of type {type(n_shink_max).__name__} not "
+                    f"n_shrink_max of type {type(n_shrink_max).__name__} not "
                     f"int-compatible: {n_shrink_max}"
                 )
             if n_shrink_max < 0:
@@ -1903,7 +1907,7 @@ class TextBoxLocation(SummarizablePlotClass):
         elif loc == "center":
             loc_y, loc_x = loc, loc
         else:
-            loc_y, loc_x = line.split(" ", 1)
+            loc_y, loc_x = loc.split(" ", 1)
 
         # Evaluate location components
         self.loc_y = self._standardize_loc_y(loc_y)
@@ -1938,7 +1942,7 @@ class TextBoxLocation(SummarizablePlotClass):
     @property
     def ha(self):
         """Horizontal alignment variable."""
-        return {"l": "left", "c": "center", "r": "right",}[self.loc_x]
+        return {"l": "left", "c": "center", "r": "right"}[self.loc_x]
 
     @property
     def y0(self):

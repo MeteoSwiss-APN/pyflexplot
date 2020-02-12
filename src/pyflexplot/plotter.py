@@ -10,12 +10,9 @@ import re
 from srutils.various import isiterable
 
 # Local
-from .field_specs import FieldSpecs
 from .plot import Plot
 from .plot_utils import MapAxesConf_Cosmo1
 from .plot_utils import MapAxesConf_Cosmo1_CH
-from .utils import ParentClass
-from .var_specs import VarSpecs
 
 
 class Plotter:
@@ -160,8 +157,6 @@ class Plotter:
         for key, val in kwargs.items():
             if not isiterable(val, str_ok=False):
                 val = [val]
-
-            n = len(val)
 
             # Iterate over relevant format keys
             rxs = r"{" + key + r"(:[^}]*)?}"

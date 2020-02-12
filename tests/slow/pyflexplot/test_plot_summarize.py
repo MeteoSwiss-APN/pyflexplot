@@ -38,13 +38,10 @@ number of lebend labels are present without testing for the labels themselves,
 or to avoid hard-coding lat/lon coordinates in the solution.
 """
 # Standard library
-import functools
-import logging as log
 from types import SimpleNamespace
 
 # Third-party
 import numpy as np
-import pytest
 
 # First-party
 from pyflexplot.data import Field
@@ -53,7 +50,6 @@ from srutils.testing import CheckFailedError
 from srutils.testing import IgnoredElement
 from srutils.testing import UnequalElement
 from srutils.testing import check_summary_dict_is_subdict
-from srutils.various import isiterable
 from words import TranslatedWord
 from words import TranslatedWords
 from words import Word
@@ -180,8 +176,11 @@ def create_dummy_attrs(lang):
 
     # Note: Some values must be passed, otherwise plotting fails
 
-    DA = lambda name, value=None: Dummy_Attr(name, value, lang=lang)
-    fm = lambda name, value=None: DA(name, value).format
+    def DA(name, value=None):
+        return Dummy_Attr(name, value, lang=lang)
+
+    def fm(name, value=None):
+        return DA(name, value).format
 
     return SimpleNamespace(
         summarize=lambda: {},
@@ -545,7 +544,7 @@ class Solution:
         else:
             # Outer elements NOT set up to fail in inverted test
             # Inner elements set up to fail in inverted test
-            e1 = lambda x: x
+            e1 = lambda x: x  # noqa:E731
             e2 = self.element
 
         def txt(loc, s, **kwargs):
@@ -622,7 +621,8 @@ class Solution:
                 [
                     txt(
                         "tc",
-                        f"<variable.short_name{sl}.format> (<variable.unit{sl}.format>)",
+                        f"<variable.short_name{sl}.format> "
+                        f"(<variable.unit{sl}.format>)",
                     ),
                     txt("bc", IgnoredElement("level range #0")),
                     txt("bc", IgnoredElement("level range #1")),
@@ -738,7 +738,7 @@ class Solution:
             "type": "Field",
             "attrs": {},  # SR_TMP
             "field_specs": None,  # SR_TMP
-            "time_stats": {"max": e(15),},
+            "time_stats": {"max": e(15)},
             "fld": {
                 "dtype": "float32",
                 "shape": e((10, 10)),

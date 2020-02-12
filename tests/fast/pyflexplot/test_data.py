@@ -3,7 +3,6 @@
 """Tests for module ``pyflexplot.data``."""
 # Third-party
 import numpy as np
-import pytest
 
 # First-party
 from pyflexplot.data import threshold_agreement
@@ -70,6 +69,7 @@ class TestThrAgrmt_3D:
     def test_default(self):
         sol = threshold_agreement(self.arr, self.thr)
         ref = 19
+        assert ref == sol
 
     def test_ax0(self):
         sol = threshold_agreement(self.arr, self.thr, axis=0)
