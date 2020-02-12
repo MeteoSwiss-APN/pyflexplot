@@ -3,7 +3,7 @@
 """Tests for module ``pyflexplot.var_specs``."""
 import pytest
 
-from pydantic.dataclasses import dataclass
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 from pyflexplot.var_specs import MultiVarSpecs
 from pyflexplot.var_specs import VarSpecs
@@ -77,7 +77,7 @@ def check_var_specs(var_specs, conf):
     assert sol == res
 
 
-@dataclass(frozen=True)
+@pydantic_dataclass(frozen=True)
 class Conf_Create(_TestConf):
     name: str
     type_name: str  # SR_TMP
@@ -255,7 +255,7 @@ class Test_Create_MultiObjDctNested_Deposition(_Test_Create_MultiObjDctNested):
     )
 
 
-@dataclass(frozen=True)
+@pydantic_dataclass(frozen=True)
 class Conf_Multi(_TestConf):
     name: str
     dct: dict

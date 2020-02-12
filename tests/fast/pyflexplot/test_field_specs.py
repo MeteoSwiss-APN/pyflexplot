@@ -3,7 +3,7 @@
 """Tests for module ``pyflexplot.field_specs``."""
 import pytest
 
-from pydantic.dataclasses import dataclass
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 from pyflexplot.field_specs import FieldSpecs
 from pyflexplot.var_specs import MultiVarSpecs
@@ -18,7 +18,7 @@ def check_multi_var_specs_lst(multi_var_specs_lst, len_=None):
     check_is_list_like(multi_var_specs_lst, len_=len_, t_children=MultiVarSpecs)
 
 
-@dataclass(frozen=True)
+@pydantic_dataclass(frozen=True)
 class Conf_Create(_TestConf):
     name: str
     type_name: str

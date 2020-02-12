@@ -3,7 +3,7 @@
 """
 Some testing utils.
 """
-from pydantic.dataclasses import dataclass
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pprint import pformat
 from typing import Optional
 
@@ -184,7 +184,7 @@ def get_dict_element(dict_, key, name="dict", exception_type=ValueError):
     raise exception_type(err, {"name": name, "key": key, "dict_": dict_})
 
 
-@dataclass(frozen=True)
+@pydantic_dataclass(frozen=True)
 class TestConfBase:
     def derive(self, **kwargs):
         data = {k: getattr(self, k) for k in self.__dataclass_fields__}

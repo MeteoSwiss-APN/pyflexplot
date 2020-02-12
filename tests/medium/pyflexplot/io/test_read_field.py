@@ -4,7 +4,7 @@
 import numpy as np
 import pytest
 
-from pydantic.dataclasses import dataclass
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 from typing import Any
 from typing import Dict
 from typing import List
@@ -30,8 +30,7 @@ def get_var_name_ref(var_specs, var_names_ref):
     raise NotImplementedError(f"{var_specs}")
 
 
-# @dataclass(frozen=True)
-@dataclass
+@pydantic_dataclass
 class Conf:
     datafilename: str
     name: str
