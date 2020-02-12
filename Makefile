@@ -306,14 +306,18 @@ code-format: ${_INSTALL_DEV}
 	@${PREFIX}pre-commit run isort -v --all-files || :  # Ignore non-zero return code
 	@${PREFIX}pre-commit run black -v --all-files || :  # Ignore non-zero return code
 
-.PHONY: code-check #CMD Check the code for correctness and good practice.
-code-check: ${_INSTALL_DEV}
-	@echo -e "${ECHO_PREFIX}checking the code"
+.PHONY: code-lint #CMD Check the code for correctness.
+code-lint: ${_INSTALL_DEV}
+	@echo -e "${ECHO_PREFIX}checking the code correctness"
 	@${PREFIX}pre-commit run flake8 -v --all-files
+
+.PHONY: code-type #CMD Perform static type analysis based on type hints.
+code-type: ${_INSTALL_DEV}
+	@echo -e "${ECHO_PREFIX}checking static types"
 	@${PREFIX}pre-commit run mypy -v --all-files
 
 .PHONY: code #CMD Format and check the code.
-code: code-format code-check
+code: code-format code-lint code-type
 
 #==============================================================================
 # Testing
