@@ -233,6 +233,7 @@ install-test: install-edit #CMD Install the package with unpinned runtime and te
 install-dev: install-test #CMD Install the package as editable with unpinned runtime,\ntesting, and development dependencies.
 	@echo -e "${ECHO_PREFIX}installing the package as editable with testing and development dependencies"
 	${PREFIX}python -m pip install -r requirements/dev-unpinned.txt
+	${PREFIX}pre-commit install
 
 #==============================================================================
 # Version control
