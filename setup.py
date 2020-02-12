@@ -34,7 +34,6 @@ metadata = {
 python = ">=3.7"
 
 dependencies = [
-    "attrs",
     "cartopy @ git+ssh://git@github.com/MeteoSwiss-APN/cartopy.git",
     "Click >= 6.0",
     "geopy",

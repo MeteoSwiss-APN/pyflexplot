@@ -2,7 +2,6 @@
 """
 Plots.
 """
-import attr
 import cartopy
 import functools
 import geopy.distance
@@ -13,19 +12,17 @@ import matplotlib.ticker
 import numpy as np
 import warnings
 
-from attr import attrs
-from attr import attrib
 from copy import copy
+from dataclasses import field
+from pydantic.dataclasses import dataclass as pydantic_dataclass
+from typing import Optional
+from typing import Tuple
 
 from srutils.various import isiterable
 
 from .utils import MaxIterationError
 from .utils import SummarizableClass
 from .utils import summarizable
-
-
-def kwattrib(*args, **kwargs):
-    return attrib(*args, kw_only=True, **kwargs)
 
 
 class SummarizablePlotClass(SummarizableClass):
@@ -77,106 +74,98 @@ def summarize_mpl_bbox(obj):
 
 
 @summarizable
-@attrs
-class MapAxesConf:
-    """Configuration of ``MapAxesPlot``.
+@pydantic_dataclass
+class RefDistIndConf:
+    """
+    Configuration of ``ReferenceDistanceIndicator``.
 
-    Kwattrs:
-        geo_res (str, optional): Resolution of geographic map elements.
-            Defaults to '50m'.
+    Args:
+        dist: Reference distance in ``unit``.
 
-        geo_res_cities (str, optional): Scale for cities shown on map.
-            Defaults to ``geo_res``.
+        pos: Position of reference distance indicator box (corners of the
+            plot). Options: "tl" (top-left), "tr" (top-right), "bl"
+            (bottom-left), "br" (bottom-right).
 
-        geo_res_rivers (str, optional): Scale for rivers shown on map.
-            Defaults to ``geo_res``.
-
-        lang (str, optional): Language, e.g., 'de' for German. Defaults to 'en'
-            (English).
-
-        lw_frame (float, optional): Line width of frames. Defaults to 1.0.
-
-        min_city_pop (int, optional): Minimum population of cities shown.
-            Defaults to 0.
-
-        ref_dist_conf (RefDistIndConf): Reference distance indicator
-            configuration. Defaults to ``RefDistIndConf()``.
-
-        ref_dist_on (bool, optional): Whether to add a reference distance
-            indicator. Defaults to True.
-
-        rel_offset (tuple[float, float], optional): Relative offset in x and y
-            direction as a fraction of the respective domain extent. Defaults
-            to (0.0, 0.0).
-
-        zoom_fact (float, optional): Zoom factor. Use values above/below 1.0
-            to zoom in/out. Defaults to 1.0.
+        unit: Unit of reference distance ``val``.
 
     """
 
-    geo_res = kwattrib("50m")
-    geo_res_cities = kwattrib(None)
-    geo_res_rivers = kwattrib(None)
-    lang = kwattrib("en")
-    lw_frame = kwattrib(1.0)
-    min_city_pop = kwattrib(0)
-    ref_dist_conf = kwattrib(attr.Factory(lambda: RefDistIndConf()))
-    ref_dist_on = kwattrib(True)
-    rel_offset = kwattrib((0.0, 0.0))
-    zoom_fact = kwattrib(1.0)
+    dist: int = 100
+    pos: str = "bl"
+    unit: str = "km"
 
-    def __attrs_post_init__(self):
+
+@summarizable
+@pydantic_dataclass
+class MapAxesConf:
+    """
+    Configuration of ``MapAxesPlot``.
+
+    Args:
+        geo_res: Resolution of geographic map elements.
+
+        geo_res_cities: Scale for cities shown on map. Defaults to ``geo_res``.
+
+        geo_res_rivers: Scale for rivers shown on map. Defaults to ``geo_res``.
+
+        lang: Language ('en' for English, 'de' for German).
+
+        lw_frame: Line width of frames.
+
+        min_city_pop: Minimum population of cities shown.
+
+        ref_dist_conf: Reference distance indicator configuration.
+
+        ref_dist_on: Whether to add a reference distance indicator.
+
+        rel_offset: Relative offset in x and y direction as a fraction of the
+            respective domain extent.
+
+        zoom_fact: Zoom factor. Use values above/below 1.0 to zoom in/out.
+
+    """
+
+    geo_res: str = "50m"
+    geo_res_cities: Optional[str] = None
+    geo_res_rivers: Optional[str] = None
+    lang: str = "en"
+    lw_frame: float = 1.0
+    min_city_pop: int = 0
+    ref_dist_conf: RefDistIndConf = field(default_factory=RefDistIndConf)
+    ref_dist_on: bool = True
+    rel_offset: Tuple[float] = (0.0, 0.0)
+    zoom_fact: float = 1.0
+
+    def __post_init_post_parse__(self):
         if self.geo_res_cities is None:
             self.geo_res_cities = self.geo_res
         if self.geo_res_rivers is None:
             self.geo_res_rivers = self.geo_res
 
 
-@attrs
+@pydantic_dataclass
 class MapAxesConf_Cosmo1(MapAxesConf):
-    geo_res = kwattrib("10m")
-    geo_res_cities = kwattrib("50m")
-    geo_res_rivers = kwattrib("50m")
-    zoom_fact = kwattrib(1.02)
-    min_city_pop = kwattrib(300_000)
+    geo_res: str = "10m"
+    geo_res_cities: str = "50m"
+    geo_res_rivers: str = "50m"
+    zoom_fact: float = 1.02
+    min_city_pop: int = 300_000
 
 
-@attrs
+@pydantic_dataclass
 class MapAxesConf_Cosmo1_CH(MapAxesConf_Cosmo1):
-    geo_res_cities = kwattrib("10m")
-    geo_res_rivers = kwattrib("10m")
-    min_city_pop = kwattrib(0)
+    geo_res_cities: str = "10m"
+    geo_res_rivers: str = "10m"
+    min_city_pop: int = 0
     # SR_TODO Determine the model from the data! (e.g., COSMO-1 v. COSMO-2 v. COSMO-E)
-    # rel_offset = kwattrib((0.037, 0.106))  # suitable for ensemble (i.e., COSMO-2?)
-    # zoom_fact = kwattrib(3.2)  # suitable for ensemble (i.e., COSMO-2?)
-    rel_offset = kwattrib((-0.02, 0.045))
-    zoom_fact = kwattrib(3.6)
+    # rel_offset: Tuple[float] = (0.037, 0.106)  # suitable for ensemble (i.e., COSMO-2?)
+    # zoom_fact: float = 3.2  # suitable for ensemble (i.e., COSMO-2?)
+    rel_offset: Tuple[float] = (-0.02, 0.045)
+    zoom_fact: float = 3.6
 
-    def __attrs_post_init__(self):
+    def __post_init_post_parse__(self):
         super().__attrs_post_init__()
         self.ref_dist_conf.dist = 25
-
-
-@summarizable
-@attrs
-class RefDistIndConf:
-    """Configuration of ``ReferenceDistanceIndicator``.
-
-    Kwattrs:
-        dist (float, optional): Reference distance in ``unit``. Defaults to 100.
-
-        pos (str, optional): Position of reference distance indicator box
-            (corners of the plot). Options: "tl" (top-left), "tr" (top-right),
-            ""bl" (bottom-left), "br" (bottom-right). Defaults to "bl".
-
-        unit (str, optional): Unit of reference distance ``val``. Defaults to
-            'km'.
-
-    """
-
-    dist = kwattrib(100)
-    pos = kwattrib("bl")
-    unit = kwattrib("km")
 
 
 # SR_TODO Push non-rotated-pole specific code up into MapAxesRotatedPole

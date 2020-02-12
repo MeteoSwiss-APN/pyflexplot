@@ -6,8 +6,8 @@ Tests for class ``TranslatedWord`` in module ``words.word``.
 import functools
 import pytest
 
-from attr import attrs
-from attr import attrib
+from dataclasses import dataclass
+from typing import Any
 
 from words import TranslatedWord
 from words.word import ContextWord
@@ -161,9 +161,9 @@ class Test_Context_ManyMany_Diff:
         assert self.w["en"].ctx("f") == self.w["en"].ctx("*")
 
 
-@attrs
+@dataclass
 class AttrHolder:
-    _val = attrib(default=None)
+    _val: Any = None
 
     def set(self, val):
         self._val = val

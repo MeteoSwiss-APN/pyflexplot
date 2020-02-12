@@ -7,6 +7,7 @@ import numpy as np
 import re
 
 from collections import namedtuple
+from dataclasses import is_dataclass
 
 from srutils.various import isiterable
 
@@ -179,7 +180,7 @@ def summarizable(cls, attrs=None, method=None):
             raise ValueError(f"attrs of type {type(attrs).__name__} is not iterable")
         attrs = [a for a in attrs]
     else:
-        if not is_attrs_class(cls):
+        if not is_attrs_class(cls) and not is_dataclass(cls):
             raise ValueError(f"must pass attrs for non-attrs class {cls.__name__}")
         attrs = []
 
@@ -189,6 +190,9 @@ def summarizable(cls, attrs=None, method=None):
     if is_attrs_class(cls):
         # Collect attributes defined with ``attr.attrib``
         attrs = [a.name for a in cls.__attrs_attrs__] + attrs
+    elif is_dataclass(cls):
+        # Collect dataclass fields
+        attrs = [f for f in cls.__dataclass_fields__] + attrs
 
     # Extend class
     setattr(cls, "summarizable_attrs", attrs)

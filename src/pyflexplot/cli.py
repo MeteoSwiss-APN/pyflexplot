@@ -173,7 +173,7 @@ def cli(ctx, config_file_path, config_cli, **cli_args):
     # SR_TMP <
     required_args = ["variable", "simulation_type"]
     for arg in required_args:
-        if getattr(configs[0], arg) is None:
+        if getattr(next(iter(configs)), arg) is None:
             raise Exception(f"argument missing: {arg}")
     # SR_TMP >
 
@@ -191,11 +191,6 @@ def create_plots(config, cli_args):
     """
     Read and plot FLEXPART data.
     """
-
-    # SR_TMP <
-    if config.plot_type == "auto":
-        config.plot_type = config.variable
-    # SR_TMP >
 
     if config.simulation_type == "deterministic":
         cls_name = f"{config.variable}"
