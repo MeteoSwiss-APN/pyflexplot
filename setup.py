@@ -3,13 +3,15 @@
 """
 The setup script.
 """
-
-from setuptools import setup
+# Third-party
 from setuptools import find_packages
+from setuptools import setup
+
 
 def read_file(path):
     with open(path, "r") as f:
         return "\n".join([l.strip() for l in f.readlines()])
+
 
 description_files = ["README.rst", "HISTORY.rst"]
 
@@ -50,8 +52,8 @@ dependencies = [
 dependencies.append("shapely @ git+ssh://git@github.com/Toblerity/shapely.git")
 
 scripts = [
-    'pyflexplot=pyflexplot.cli:cli',
-    'crop-netcdf=tools.crop_netcdf:main',
+    "pyflexplot=pyflexplot.cli:cli",
+    "crop-netcdf=tools.crop_netcdf:main",
 ]
 
 setup(

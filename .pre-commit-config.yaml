@@ -9,12 +9,12 @@ repos:
     rev: ''
     hooks:
     -   id: black
-        files: '(src|tests)/(.*/)*.*.py'
+        files: '(.*\.py|(src|tests|docs)/(.*/)*.*\.py)'
 -   repo: https://github.com/timothycrosley/isort
     rev: ''
     hooks:
     -   id: isort
-        files: '(src|tests)/(.*/)*.*.py'
+        files: '(.*\.py|(src|tests|docs)/(.*/)*.*\.py)'
 # -   repo: https://github.com/PyCQA/flake8
 #     rev: 3.7.9
 #     hooks:
