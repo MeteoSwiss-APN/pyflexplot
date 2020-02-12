@@ -303,14 +303,14 @@ bump-major-dry: ${_INSTALL_DEV}
 .PHONY: code-format #CMD Format the code to conform with standards like PEP 8.
 code-format: ${_INSTALL_DEV}
 	@echo -e "${ECHO_PREFIX}reformatting the code"
-	${PREFIX}isort --recursive src tests
-	${PREFIX}black src tests
+	@${PREFIX}pre-commit run isort -v --all-files || :  # Ignore non-zero return code
+	@${PREFIX}pre-commit run black -v --all-files || :  # Ignore non-zero return code
 
 .PHONY: code-check #CMD Check the code for correctness and good practice.
 code-check: ${_INSTALL_DEV}
 	@echo -e "${ECHO_PREFIX}checking the code"
-	${PREFIX}flake8 src tests
-	${PREFIX}mypy src tests
+	@${PREFIX}pre-commit run flake8 -v --all-files
+	@${PREFIX}pre-commit run mypy -v --all-files
 
 .PHONY: code #CMD Format and check the code.
 code: code-format code-check
