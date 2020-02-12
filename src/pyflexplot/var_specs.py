@@ -2,14 +2,16 @@
 """
 Input variable specifications.
 """
+# Standard library
 import logging as log
-
 from typing import List
 
+# First-party
 from srutils.dict import decompress_multival_dict
 from srutils.dict import format_dictlike
 from srutils.various import isiterable
 
+# Local
 from .utils import ParentClass
 from .utils import SummarizableClass
 from .words import WORDS

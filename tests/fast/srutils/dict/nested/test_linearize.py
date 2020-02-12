@@ -3,8 +3,10 @@
 """
 Tests for function ``srutils.dict.linearize_nested_dict``.
 """
+# Third-party
 import pytest
 
+# First-party
 from srutils.dict import linearize_nested_dict
 
 

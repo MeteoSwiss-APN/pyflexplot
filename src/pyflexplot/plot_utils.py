@@ -2,24 +2,28 @@
 """
 Plots.
 """
-import cartopy
+# Standard library
 import functools
-import geopy.distance
 import logging as log
+import warnings
+from copy import copy
+from dataclasses import field
+from typing import Optional
+from typing import Tuple
+
+# Third-party
+import cartopy
+import geopy.distance
 import matplotlib as mpl
 import matplotlib.patches
 import matplotlib.ticker
 import numpy as np
-import warnings
-
-from copy import copy
-from dataclasses import field
 from pydantic.dataclasses import dataclass as pydantic_dataclass
-from typing import Optional
-from typing import Tuple
 
+# First-party
 from srutils.various import isiterable
 
+# Local
 from .utils import MaxIterationError
 from .utils import SummarizableClass
 from .utils import summarizable
@@ -393,19 +397,17 @@ class MapAxesRotatedPole(SummarizablePlotClass):
             # SR_DBG >
 
         # SR_DBG <<< TODO remove once bugfix in Cartopy master
-        from warnings import warn
-
         try:
             major_rivers.geometries()
         except:
-            warn(
+            warnings.warn(
                 f"cannot add major rivers due to shapely issue with "
                 "'rivers_lake_centerline; pending bugfix: "
                 "https://github.com/SciTools/cartopy/pull/1411; workaround: use "
                 "https://github.com/shevawen/cartopy/tree/patch-1"
             )
         else:
-            warn(
+            warnings.warn(
                 f"successfully added major rivers; "
                 "TODO: remove workaround and pin minimum Cartopy version!"
             )

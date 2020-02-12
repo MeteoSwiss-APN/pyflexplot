@@ -3,10 +3,14 @@
 """
 Some testing utils.
 """
-from pydantic.dataclasses import dataclass as pydantic_dataclass
+# Standard library
 from pprint import pformat
 from typing import Optional
 
+# Third-party
+from pydantic.dataclasses import dataclass as pydantic_dataclass
+
+# Local
 from .str import str_or_none
 from .various import isiterable
 

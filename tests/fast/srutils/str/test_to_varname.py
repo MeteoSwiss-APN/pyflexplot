@@ -3,8 +3,10 @@
 """
 Tests for function ``srutils.str.to_varname``.
 """
+# Third-party
 import pytest
 
+# First-party
 from srutils.str import to_varname
 
 

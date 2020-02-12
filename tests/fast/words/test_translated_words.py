@@ -3,13 +3,16 @@
 """
 Tests for module ``words.word``.
 """
+# Standard library
 import functools
+
+# Third-party
 import pytest
 
+# First-party
+from srutils.testing import property_obj
 from words import TranslatedWords
 from words.exceptions import MissingWordError
-
-from srutils.testing import property_obj
 
 p_TranslatedWords = functools.partial(property_obj, TranslatedWords)
 

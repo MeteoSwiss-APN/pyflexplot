@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Tests for module ``pyflexplot.data``."""
+# Third-party
 import numpy as np
 import pytest
 
+# First-party
 from pyflexplot.data import threshold_agreement
 
 

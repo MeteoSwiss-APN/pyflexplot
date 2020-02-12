@@ -6,15 +6,15 @@ repos:
     -   id: end-of-file-fixer
     -   id: trailing-whitespace
 -   repo: https://github.com/psf/black
-    rev: stable
+    rev: ''
     hooks:
     -   id: black
-        args: [src, tests]
--   repo: https://github.com/pre-commit/mirrors-isort
+        files: '(src|tests)/(.*/)*.*.py'
+-   repo: https://github.com/timothycrosley/isort
     rev: ''
     hooks:
     -   id: isort
-        args: [--recursive, src, tests]
+        files: '(src|tests)/(.*/)*.*.py'
 # -   repo: https://github.com/PyCQA/flake8
 #     rev: 3.7.9
 #     hooks:

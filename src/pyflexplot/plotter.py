@@ -2,11 +2,14 @@
 """
 Plotters.
 """
+# Standard library
 # import numpy as np
 import re
 
+# First-party
 from srutils.various import isiterable
 
+# Local
 from .field_specs import FieldSpecs
 from .plot import Plot
 from .plot_utils import MapAxesConf_Cosmo1

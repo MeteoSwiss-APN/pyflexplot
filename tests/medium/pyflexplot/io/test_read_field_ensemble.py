@@ -1,18 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Tests for module ``pyflexplot.io``."""
+# Standard library
 import functools
+
+# Third-party
 import numpy as np
 import pytest
 
-from pyflexplot.io import FileReader
+# First-party
+from pyflexplot.data import threshold_agreement
 from pyflexplot.field_specs import FieldSpecs
+from pyflexplot.io import FileReader
 from pyflexplot.var_specs import MultiVarSpecs
 
-from pyflexplot.data import threshold_agreement
-
-from utils import datadir
-from io_utils import read_nc_var
+from io_utils import read_nc_var  # isort:skip
+from utils import datadir  # isort:skip
 
 
 class TestReadFieldEnsemble_Single:

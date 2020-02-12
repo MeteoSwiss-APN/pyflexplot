@@ -1,22 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Tests for module ``pyflexplot.io``."""
-import numpy as np
-import pytest
-
-from pydantic.dataclasses import dataclass as pydantic_dataclass
+# Standard library
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
 
-from pyflexplot.io import FileReader
+# Third-party
+import numpy as np
+import pytest
+from pydantic.dataclasses import dataclass as pydantic_dataclass
+
+# First-party
 from pyflexplot.field_specs import FieldSpecs
+from pyflexplot.io import FileReader
 from pyflexplot.var_specs import MultiVarSpecs
 
-from utils import datadir
-from io_utils import read_nc_var
+from io_utils import read_nc_var  # isort:skip
+from utils import datadir  # isort:skip
 
 
 def get_var_name_ref(var_specs, var_names_ref):

@@ -2,10 +2,11 @@
 """
 TranslatedWord.
 """
+# First-party
 from srutils.str import capitalize
+from srutils.str import check_is_valid_varname
 from srutils.str import titlecase
 from srutils.str import to_varname
-from srutils.str import check_is_valid_varname
 
 
 class Word:

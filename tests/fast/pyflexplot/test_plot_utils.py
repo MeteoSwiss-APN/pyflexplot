@@ -1,18 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Tests for module ``pyflexplot.plot_utils``."""
+# Standard library
 import logging as log
-import numpy as np
-import pytest
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-
 from pprint import pformat
 
+# Third-party
+import matplotlib as mpl
+import numpy as np
+import pytest
+from matplotlib import pyplot as plt
+
+# First-party
+from pyflexplot.plot_utils import TextBoxAxes
 from srutils.testing import check_summary_dict_is_subdict
 from srutils.various import isiterable
-
-from pyflexplot.plot_utils import TextBoxAxes
 
 
 class Test_TextBoxAxes_Summarize:

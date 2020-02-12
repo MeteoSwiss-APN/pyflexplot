@@ -2,24 +2,27 @@
 """
 Input/output.
 """
+# Standard library
 import logging as log
-import netCDF4 as nc4
-import numpy as np
-
 from copy import copy
 from copy import deepcopy
 from pprint import pformat
 from pprint import pprint  # SR_DEV
 
+# Third-party
+import netCDF4 as nc4
+import numpy as np
+
+# First-party
 from srutils.dict import format_dictlike
 from srutils.various import check_array_indices
 
+# Local
 from .attr import AttrsCollector
 from .data import Field
 from .data import threshold_agreement
 from .field_specs import FieldSpecs
 from .var_specs import VarSpecs
-
 
 # File Reader
 

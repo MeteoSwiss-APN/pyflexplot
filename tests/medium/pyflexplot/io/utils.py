@@ -2,12 +2,15 @@
 """
 Utilities for testing.
 """
+# Standard library
 import distutils.dir_util
-import pytest
 import os
-
 from pprint import pformat
 
+# Third-party
+import pytest
+
+# First-party
 from srutils.various import isiterable
 
 

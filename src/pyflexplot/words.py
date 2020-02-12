@@ -2,8 +2,9 @@
 """
 TranslatedWords.
 """
-from words import Words
+# First-party
 from words import TranslatedWords
+from words import Words
 
 SYMBOLS = Words(
     "symbols",

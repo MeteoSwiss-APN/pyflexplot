@@ -2,15 +2,17 @@
 """
 Utils for the command line tool.
 """
+# Standard library
 import logging as log
-import numpy as np
 import re
-
 from collections import namedtuple
 from dataclasses import is_dataclass
 
-from srutils.various import isiterable
+# Third-party
+import numpy as np
 
+# First-party
+from srutils.various import isiterable
 
 # Exceptions
 

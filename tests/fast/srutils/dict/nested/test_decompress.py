@@ -3,8 +3,10 @@
 """
 Tests for function ``srutils.dict.decompress_nested_dict``.
 """
+# Third-party
 import pytest
 
+# First-party
 from srutils.dict import decompress_nested_dict
 
 

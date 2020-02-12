@@ -2,6 +2,7 @@
 """
 Wrappers for ``TranslatedWord`` and ``TranslatedWords`` with testing-friendly interface.
 """
+# Local
 from .word import TranslatedWord
 from .words import TranslatedWords
 

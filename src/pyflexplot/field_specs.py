@@ -2,15 +2,19 @@
 """
 Field specifications.
 """
+# Standard library
 import logging as log
-import numpy as np
-
 from copy import copy
 from copy import deepcopy
 
+# Third-party
+import numpy as np
+
+# First-party
 from srutils.dict import nested_dict_set
 from srutils.various import isiterable
 
+# Local
 from .utils import SummarizableClass
 from .var_specs import MultiVarSpecs
 

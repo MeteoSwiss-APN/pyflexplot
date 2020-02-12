@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Tests for module ``pyflexplot.config``."""
-import pytest
-
+# Standard library
 from textwrap import dedent
 
+# Third-party
+import pytest
+
+# First-party
 from pyflexplot.config import Config
 from pyflexplot.config import ConfigFile
 from pyflexplot.config import ConfigSet
-
 
 DEFAULT_CONFIG = {
     "infiles": None,

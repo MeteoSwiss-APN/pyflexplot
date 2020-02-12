@@ -2,13 +2,16 @@
 """
 TranslatedWords.
 """
+# Standard library
 from pprint import pformat
 
+# First-party
 from srutils.str import to_varname
 
-from .word import TranslatedWord
-from .exceptions import MissingWordError
+# Local
 from .exceptions import MissingLanguageError
+from .exceptions import MissingWordError
+from .word import TranslatedWord
 
 
 class TranslatedWords:

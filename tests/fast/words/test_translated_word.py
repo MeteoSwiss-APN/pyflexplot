@@ -3,16 +3,18 @@
 """
 Tests for class ``TranslatedWord`` in module ``words.word``.
 """
+# Standard library
 import functools
-import pytest
-
 from dataclasses import dataclass
 from typing import Any
 
+# Third-party
+import pytest
+
+# First-party
+from srutils.testing import property_obj
 from words import TranslatedWord
 from words.word import ContextWord
-
-from srutils.testing import property_obj
 
 p_TranslatedWord = functools.partial(property_obj, TranslatedWord)
 

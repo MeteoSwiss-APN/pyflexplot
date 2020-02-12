@@ -2,8 +2,11 @@
 """
 Crop fields in a NetCDF file.
 """
-import click
+# Standard library
 import functools
+
+# Third-party
+import click
 import netCDF4 as nc4
 
 __version__ = "0.1.0"

@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Tests for module ``pyflexplot.var_specs``."""
+# Third-party
 import pytest
-
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 
+# First-party
 from pyflexplot.var_specs import MultiVarSpecs
 from pyflexplot.var_specs import VarSpecs
-
 from srutils.dict import decompress_multival_dict
-from srutils.testing import check_is_list_like
 from srutils.testing import TestConfBase as _TestConf
+from srutils.testing import check_is_list_like
 from srutils.various import isiterable
 
 

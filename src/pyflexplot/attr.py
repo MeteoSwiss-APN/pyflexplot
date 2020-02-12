@@ -2,16 +2,20 @@
 """
 Attributes.
 """
+# Standard library
 import datetime
-import numpy as np
 import re
 import time
-
 from pprint import pformat
 
+# Third-party
+import numpy as np
+
+# First-party
 from srutils.dict import format_dictlike
 from srutils.various import isiterable
 
+# Local
 from .utils import SummarizableClass
 from .words import WORDS
 

@@ -2,8 +2,11 @@
 """
 Click utilities.
 """
-import click
+# Standard library
 import functools
+
+# Third-party
+import click
 
 
 def click_options(f_options):

@@ -2,26 +2,29 @@
 """
 Plots.
 """
+# Standard library
 import logging as log
-import matplotlib.pyplot as plt
-import numpy as np
 import os
-
 from copy import copy
 from textwrap import dedent
 
+# Third-party
+import numpy as np
+from matplotlib import pyplot as plt
+
+# First-party
 from srutils.geo import Degrees
 
-from .plot_utils import ax_w_h_in_fig_coords
+# Local
 from .plot_utils import MapAxesRotatedPole
 from .plot_utils import SummarizablePlotClass
 from .plot_utils import TextBoxAxes
-from .utils import fmt_float
-from .utils import format_level_ranges
+from .plot_utils import ax_w_h_in_fig_coords
 from .utils import ParentClass
 from .utils import SummarizableClass
+from .utils import fmt_float
+from .utils import format_level_ranges
 from .words import WORDS
-
 
 # Plot Labels
 

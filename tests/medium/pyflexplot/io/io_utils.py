@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Tests for module ``pyflexplot.io``."""
+# Third-party
 import netCDF4 as nc4
 import numpy as np
 
+# First-party
 from pyflexplot.field_specs import FieldSpecs
 
 

@@ -2,12 +2,13 @@
 """
 Dictionary utilities.
 """
+# Standard library
 import itertools
-
+from collections import namedtuple
 from copy import deepcopy
 from pprint import pformat
-from collections import namedtuple
 
+# Local
 from .exceptions import KeyConflictError
 from .various import isiterable
 

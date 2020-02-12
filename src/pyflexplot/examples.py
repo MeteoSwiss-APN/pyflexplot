@@ -2,9 +2,11 @@
 """
 Command examples.
 """
-import click
-
+# Standard library
 from textwrap import dedent
+
+# Third-party
+import click
 
 
 def print_example(ctx, param, value):

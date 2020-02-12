@@ -37,26 +37,27 @@ Some dict elements are explicitly ignored in comparisons by aid of
 number of lebend labels are present without testing for the labels themselves,
 or to avoid hard-coding lat/lon coordinates in the solution.
 """
+# Standard library
 import functools
 import logging as log
+from types import SimpleNamespace
+
+# Third-party
 import numpy as np
 import pytest
 
-from types import SimpleNamespace
-
+# First-party
+from pyflexplot.data import Field
+from pyflexplot.plot import DispersionPlot
 from srutils.testing import CheckFailedError
-from srutils.testing import check_summary_dict_is_subdict
 from srutils.testing import IgnoredElement
-from srutils.various import isiterable
 from srutils.testing import UnequalElement
+from srutils.testing import check_summary_dict_is_subdict
+from srutils.various import isiterable
 from words import TranslatedWord
 from words import TranslatedWords
 from words import Word
 from words import Words
-
-from pyflexplot.data import Field
-from pyflexplot.plot import DispersionPlot
-
 
 # Classes for dummy input data
 
@@ -289,7 +290,7 @@ def create_dummy_symbols():
 
 def create_dummy_labels(lang, attrs):
     dummy_words = create_dummy_words(lang)
-    from pyflexplot.plot import DispersionPlotLabels
+    from pyflexplot.plot import DispersionPlotLabels  # isort:skip
 
     return DispersionPlotLabels(lang, dummy_words, attrs)
 

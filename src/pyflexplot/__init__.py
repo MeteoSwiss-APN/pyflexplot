@@ -7,12 +7,15 @@ __author__ = """Stefan Ruedisuehli"""
 __email__ = "stefan.ruedisuehli@env.ethz.ch"
 __version__ = "0.6.1"
 
-import sys
+# Standard library
 import os.path
+import sys
+
+# Third-party
 import matplotlib
 
 try:
-    import cartopy
+    import cartopy  # isort:skip
 except Exception as e:
     if "libproj" in str(e):
         dep = "proj"

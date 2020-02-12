@@ -2,16 +2,19 @@
 """
 Configuration and configuration file.
 """
+# Standard library
 import dataclasses
-import tomlkit
 import warnings
-
 from dataclasses import field
-from pydantic.dataclasses import dataclass as pydantic_dataclass
 from typing import List
 from typing import Optional
 from typing import Union
 
+# Third-party
+import tomlkit
+from pydantic.dataclasses import dataclass as pydantic_dataclass
+
+# First-party
 from srutils.dict import decompress_nested_dict
 
 

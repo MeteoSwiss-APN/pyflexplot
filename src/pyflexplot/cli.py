@@ -2,21 +2,26 @@
 """
 Command line interface.
 """
-import click
+# Standard library
 import functools
 import logging as log
 import os
 import re
 import sys
 
+# Third-party
+import click
+
+# First-party
 from srutils.click import CharSepList
 from srutils.various import group_kwargs
 from srutils.various import isiterable
 
+# Local
+from . import __version__
 from .config import ConfigFile
 from .examples import print_example
 from .field_specs import FieldSpecs
-from . import __version__
 from .io import FileReader
 from .plotter import Plotter
 from .utils import count_to_log_level

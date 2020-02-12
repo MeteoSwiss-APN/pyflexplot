@@ -3,8 +3,10 @@
 """
 Tests for function ``srutils.dict.flatten_nested_dict``.
 """
+# Third-party
 import pytest
 
+# First-party
 from srutils.dict import flatten_nested_dict
 from srutils.exceptions import KeyConflictError
 

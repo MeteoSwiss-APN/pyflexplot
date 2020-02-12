@@ -3,8 +3,10 @@
 """
 Test formatting methods of ``TranslatedWord`` class.
 """
+# Third-party
 import pytest
 
+# First-party
 from words import TranslatedWord
 
 

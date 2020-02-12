@@ -2,6 +2,7 @@
 """
 String utilities.
 """
+# Standard library
 import re
 
 
