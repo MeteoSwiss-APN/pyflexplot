@@ -1,4 +1,6 @@
-flake8
+# flake8
+# pylama
+# pylama_pylint
 pytest
 pytest-cov
 pytest-mypy
