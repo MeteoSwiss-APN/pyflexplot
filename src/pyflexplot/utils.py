@@ -69,8 +69,15 @@ class ParentClass:
         return result
 
 
-def default_summarize_method(self, *, add=None, skip=None):
-    """Collect all attributes in ``summarizable_attrs`` in a dict.
+class NotSummarizableError(Exception):
+    """
+    Object could not be summarized.
+    """
+
+
+class Summarizer:
+    """
+    Collect specified attributes of an object in a dict.
 
     Subclasses must define the property ``summarizable_attrs``, comprising
     a list of attribute names to be collected.
@@ -78,46 +85,97 @@ def default_summarize_method(self, *, add=None, skip=None):
     If attribute values possess a ``summarize`` method themselves, the
     output of that is collected, otherwise the direct values.
 
-    Args:
-        add (list, optional): Additional attributes to be collected.
-            Defaults to None.
-
-        skip (list, optional): Attributes to skip during collection.
-            Defaults to None.
-
-    Returns:
-        dict: Dictionary containing the collected attributes and their
-            values.
-
     """
 
-    def summarize_obj(obj):
+    def run(self, obj, *, add=None, skip=None):
+        """
+        Summarize ``obj`` attributes in ``obj.summarizable_attrs`` in a dict.
 
-        # Summarizable object?
+        Args:
+            add (list, optional): Additional attributes to be collected.
+                Defaults to None.
+
+            skip (list, optional): Attributes to skip during collection.
+                Defaults to None.
+
+        Returns:
+            dict: Dictionary containing the collected attributes and their
+                values.
+
+        """
+        data = {}
+
+        if skip is None or "type" not in skip:
+            data["type"] = type(obj).__name__
+
+        attrs = list(obj.summarizable_attrs)
+
+        if add is not None:
+            attrs += [a for a in add if a not in attrs]
+
+        if skip is not None:
+            attrs = [a for a in attrs if a not in skip]
+
+        for attr in attrs:
+            data[attr] = self._summarize(getattr(obj, attr))
+
+        return data
+
+    def _summarize(self, obj):
+        """
+        Try to summarize the object in various ways.
+        """
+        methods = [
+            self._try_summarizable,
+            self._try_dict_like,
+            self._try_list_like,
+            self._try_named,
+        ]
+        for method in methods:
+            try:
+                return method(obj)
+            except NotSummarizableError:
+                continue
+        return obj
+
+    def _try_summarizable(self, obj):
+        """
+        Summarizable object?
+        """
         try:
             data = obj.summarize()
         except AttributeError:
-            pass
+            raise NotSummarizableError("summarizable", obj)
         else:
-            return summarize_obj(data)
+            return self._summarize(data)
 
-        # Dict-like object?
+    def _try_dict_like(self, obj):
+        """
+        Dict-like object?
+        """
         try:
             items = obj.items()
         except AttributeError:
-            pass
+            raise NotSummarizableError("dict-like", obj)
         else:
-            return {summarize_obj(key): summarize_obj(val) for key, val in items}
+            return {self._summarize(key): self._summarize(val) for key, val in items}
 
-        # List-like object?
-        if isiterable(obj, str_ok=False):
-            type_ = type(obj)
-            data = []
-            for item in obj:
-                data.append(summarize_obj(item))
-            return type_(data)
+    def _try_list_like(self, obj):
+        """
+        List-like object?
+        """
+        if not isiterable(obj, str_ok=False):
+            raise NotSummarizableError("list-like", obj)
+        type_ = type(obj)
+        data = []
+        for item in obj:
+            data.append(self._summarize(item))
+        return type_(data)
 
-        # Named object (e.g., function/method)?
+    def _try_named(self, obj):
+        """
+        Named object (e.g., function/method)?
+        """
         try:
             name = obj.__name__
         except AttributeError:
@@ -130,31 +188,17 @@ def default_summarize_method(self, *, add=None, skip=None):
             else:
                 name = f"{obj_self.__class__.__name__}.{name}"
             return f"{type(obj).__name__}:{name}"
+        raise NotSummarizableError("named", obj)
 
-        # Giving up, store as is!
-        return obj
 
-    data = {}
-
-    if skip is None or "type" not in skip:
-        data["type"] = type(self).__name__
-
-    attrs = list(self.summarizable_attrs)
-
-    if add is not None:
-        attrs += [a for a in add if a not in attrs]
-
-    if skip is not None:
-        attrs = [a for a in attrs if a not in skip]
-
-    for attr in attrs:
-        data[attr] = summarize_obj(getattr(self, attr))
-
-    return data
+def default_summarize_method(obj, **kwargs):
+    return Summarizer().run(obj, **kwargs)
 
 
 class SummarizableClass:
-    """Summarize important class attributes into a dict."""
+    """
+    Summarize important class attributes into a dict.
+    """
 
     def __init__(self, *args, **kwargs):
         raise Exception(f"{type(self).__name__} must be subclassed")
@@ -213,6 +257,12 @@ def count_to_log_level(count: int) -> int:
         return log.INFO
     else:
         return log.DEBUG
+
+
+def check_float_ok(f, ff0t):
+    if f != np.inf and f >= 1.0:
+        return bool(re.match(f"^{int(f)}" + r"\.[0-9]+$", ff0t))
+    return (f == 0.0) or (float(ff0t) != 0.0)
 
 
 def fmt_float(f, fmt_e0=None, fmt_f0=None, fmt_e1=None, fmt_f1=None):
@@ -275,18 +325,14 @@ def fmt_float(f, fmt_e0=None, fmt_f0=None, fmt_e1=None, fmt_f1=None):
           been determined as the notation of choice.
 
     """
-    try:
-        float(f)
-    except (ValueError, TypeError):
-        raise ValueError(f"f='{f}' of type {type(f).__name__} not float-compatible")
+    f = float(f)
 
     rx_e = re.compile(r"^{f:[0-9,]*\.?[0-9]*[eE]}$")
     rx_f = re.compile(r"^{f:[0-9,]*\.?[0-9]*f}$")
-    for name in ["fmt_e0", "fmt_f0", "fmt_e1", "fmt_f1"]:
-        fmt = locals()[name]
+    for fmt in [fmt_e0, fmt_f0, fmt_e1, fmt_f1]:
         if fmt is not None:
             if not rx_e.match(fmt) and not rx_f.match(fmt):
-                raise ValueError(f"invalid format string: {name}='{fmt}'")
+                raise ValueError(f"invalid format string: '{fmt}'", fmt)
 
     if fmt_e0 is None:
         fmt_e0 = "{f:e}"
@@ -295,22 +341,18 @@ def fmt_float(f, fmt_e0=None, fmt_f0=None, fmt_e1=None, fmt_f1=None):
 
     fe0 = fmt_e0.format(f=f)
     ff0 = fmt_f0.format(f=f)
+
     n = len(fe0)
     ff0t = ff0[:n]
 
-    if f != np.inf and f >= 1.0:
-        rxs = r"^" + str(int(f)) + r"\.[0-9]+$"
-        float_ok = bool(re.match(rxs, ff0t))
-    else:
-        float_ok = (f == 0.0) or (float(ff0t) != 0.0)
-
-    if float_ok:
+    if check_float_ok(f, ff0t):
         if fmt_f1 is not None:
             return fmt_f1.format(f=f)
         return ff0t
-    if fmt_e1 is not None:
+    elif fmt_e1 is not None:
         return fmt_e1.format(f=f)
-    return fe0
+    else:
+        return fe0
 
 
 def format_level_ranges(

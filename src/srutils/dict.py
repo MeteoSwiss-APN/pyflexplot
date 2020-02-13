@@ -6,7 +6,12 @@ Dictionary utilities.
 import itertools
 from collections import namedtuple
 from copy import deepcopy
+from dataclasses import dataclass
+from dataclasses import field
 from pprint import pformat
+from typing import Any
+from typing import Dict
+from typing import Optional
 
 # Local
 from .exceptions import KeyConflictError
@@ -98,27 +103,9 @@ def decompress_multival_dict(
     if not isinstance(depth, int) or depth <= 0:
         raise ValueError(f"depth must be a positive integer", depth)
 
-    def dict_mult_vals_product(dct, cls_expand=list, f_expand=None):
-        if isinstance(cls_expand, type):
-            cls_expand = [cls_expand]
-
-        def f_expand_default(obj):
-            return any(isinstance(obj, t) for t in cls_expand)
-
-        if f_expand is None:
-            f_expand = f_expand_default
-
-        keys, vals = [], []
-        for key, val in dct.items():
-            if not f_expand(val):
-                val = [val]
-            keys.append(key)
-            vals.append(val)
-        return [dict(zip(keys, vals_i)) for vals_i in itertools.product(*vals)]
-
-    def run_rec(dct, depth, curr_depth=1):
+    def _run_rec(dct, depth, curr_depth=1):
         """Run recursively."""
-        dct_lst = dict_mult_vals_product(dct, cls_expand=cls_expand, f_expand=f_expand)
+        dct_lst = _dict_mult_vals_product(dct, cls_expand=cls_expand, f_expand=f_expand)
         if len(dct_lst) == 1 or curr_depth == depth:
             for _ in range(depth - curr_depth):
                 # Nest further until target depth reached
@@ -127,24 +114,44 @@ def decompress_multival_dict(
         else:
             result = []
             for dct_i in dct_lst:
-                obj = run_rec(dct_i, depth, curr_depth + 1)
+                obj = _run_rec(dct_i, depth, curr_depth + 1)
                 result.append(obj)
         return result
 
-    res = run_rec(dct, depth)
+    res = _run_rec(dct, depth)
 
-    def flatten_rec(lst):
+    def _flatten_rec(lst):
         if not isinstance(lst, list):
             return [lst]
         flat = []
         for obj in lst:
-            flat.extend(flatten_rec(obj))
+            flat.extend(_flatten_rec(obj))
         return flat
 
     if flatten:
-        res = flatten_rec(res)
+        res = _flatten_rec(res)
 
     return res
+
+
+def _dict_mult_vals_product(dct, cls_expand=list, f_expand=None):
+    if isinstance(cls_expand, type):
+        cls_expand = [cls_expand]
+
+    def f_expand_default(obj):
+        return any(isinstance(obj, t) for t in cls_expand)
+
+    if f_expand is None:
+        f_expand = f_expand_default
+
+    keys, vals = [], []
+    for key, val in dct.items():
+        if not f_expand(val):
+            val = [val]
+        keys.append(key)
+        vals.append(val)
+
+    return [dict(zip(keys, vals_i)) for vals_i in itertools.product(*vals)]
 
 
 def nested_dict_set(dct, keys, val):
@@ -209,27 +216,7 @@ def flatten_nested_dict(
                     children.append(child)
             return children
 
-        def merge_children(children):
-            flat = {}
-            for child in children:
-                for key, val in child.items():
-                    if key in flat:
-                        val_flat = flat[key]
-                        if val_flat["depth"] > val["depth"]:
-                            continue
-                        elif val_flat["depth"] == val["depth"]:
-                            if tie_breaker is None:
-                                raise KeyConflictError(
-                                    f"key conflict at depth {val_flat['depth']}", key,
-                                )
-                            else:
-                                raise NotImplementedError(
-                                    f"tie_breaker is not None", tie_breaker,
-                                )
-                    flat[key] = val
-            return flat
-
-        return merge_children(collect_children(dct))
+        return _merge_children(collect_children(dct))
 
     flat = run_rec(dct)
 
@@ -249,6 +236,26 @@ def flatten_nested_dict(
         return values
 
 
+def _merge_children(children):
+    flat = {}
+    for child in children:
+        for key, val in child.items():
+            if key in flat:
+                val_flat = flat[key]
+                if val_flat["depth"] > val["depth"]:
+                    continue
+                elif val_flat["depth"] == val["depth"]:
+                    if tie_breaker is None:
+                        raise KeyConflictError(
+                            f"key conflict at depth {val_flat['depth']}", key,
+                        )
+                    raise NotImplementedError(
+                        f"tie_breaker is not None", tie_breaker,
+                    )
+            flat[key] = val
+    return flat
+
+
 def linearize_nested_dict(dct, match_end=None):
     """
     Convert a nested dict with N branches into N linearly nested dicts.
@@ -263,7 +270,7 @@ def linearize_nested_dict(dct, match_end=None):
             further nested dicts. Defaults to None.
     """
 
-    def run_rec(dct):
+    def _run_rec(dct):
         def separate_subdicts(dct):
             subdcts, elements = {}, {}
             for key, val in dct.items():
@@ -278,73 +285,79 @@ def linearize_nested_dict(dct, match_end=None):
                 return [elements]
             linears = []
             for key, val in subdcts.items():
-                for sublinear in run_rec(val):
+                for sublinear in _run_rec(val):
                     linears.append({**elements, key: sublinear})
             return linears
 
         return linearize_subdicts(*separate_subdicts(dct))
 
-    def apply_match_end(dcts):
+    return _apply_match_end(_run_rec(dct), match_end)
+
+
+@dataclass
+class _State:
+    subdct: Dict[str, Any]
+    curr_key: str = None
+    active: Dict[str, Any] = field(default_factory=dict)
+    head: Optional[Dict[str, any]] = None
+
+    def __post_init__(self):
+        if self.head is None:
+            self.head = self.active
+
+    def nondict_to_head(self):
         """
-        Create a sub-branch copy up to each subdict key matching the criterion.
-
-        The criterion is given by ``match_end`` and may be a check whether the
-        key starts with an underscore. If so, each linear nested dict is
-        traversed, and every time such a key (of a further nested dict) is
-        encountered, a copy is made from the part of the branch that has
-        already been traversed. This copy branch includes all non-dict elements
-        of the dict with the matching key, but no further-nested dict elements.
+        Copy non-dict elements from subdct to head.
         """
+        for key, val in self.subdct.items():
+            if not isinstance(val, dict):
+                self.head[key] = val
 
-        if match_end is None:
-            return dcts
 
-        def _core_rec(result, dct, subdct=None, curr_key=None, active=None, head=None):
+def _apply_match_end(dcts, match_end):
+    """
+    Create a sub-branch copy up to each subdict key matching the criterion.
 
-            # Initialize/check subdict
-            if subdct is None:
-                subdct = dct
-            elif not isinstance(subdct, dict):
-                return subdct
+    The criterion is given by ``match_end`` and may be a check whether the
+    key starts with an underscore. If so, each linear nested dict is
+    traversed, and every time such a key (of a further nested dict) is
+    encountered, a copy is made from the part of the branch that has
+    already been traversed. This copy branch includes all non-dict elements
+    of the dict with the matching key, but no further-nested dict elements.
+    """
 
-            # Initialize/check active branch and head dict
-            if active is None:
-                active = {}
-                head = active
-            elif not isinstance(head, dict):
-                raise ValueError("head not a dict", head)
+    if match_end is None:
+        return dcts
 
-            # Transfer non-dict elements to head
-            for key, val in subdct.items():
-                if not isinstance(val, dict):
-                    head[key] = val
+    def _core_rec(result, dct, state=None):
 
-            # Copy the active branch if the current key matches the criterion
-            if curr_key is not None and match_end(curr_key):
-                if active not in result:
-                    result.append(deepcopy(active))
+        if state is None:
+            state = _State(dct)
 
-            # Process the dict-elements recursively
-            done = True
-            for key, val in subdct.items():
-                if isinstance(val, dict):
-                    new_head = {}
-                    head[key] = new_head
-                    _core_rec(result, dct, val, key, active, new_head)
-                    done = False
+        state.nondict_to_head()
 
-            if done:
-                # End of current branch reached!
-                if active not in result:
-                    result.append(active)
+        if state.curr_key is not None and match_end(state.curr_key):
+            if state.active not in result:
+                result.append(deepcopy(state.active))
 
-        result = []
-        for dct in dcts:
-            _core_rec(result, dct)
+        done = True
+        for key, val in state.subdct.items():
+            if isinstance(val, dict):
+                new_head = {}
+                state.head[key] = new_head
+                state.head = new_head
+                state.curr_key = key
+                state.subdct = val
+                _core_rec(result, dct, state)
+                done = False
+        if done and state.active not in result:
+            result.append(state.active)
 
-        return result
+    result = []
+    for dct in dcts:
+        _core_rec(result, dct)
 
-    return apply_match_end(run_rec(dct))
+    return result
 
 
 def decompress_nested_dict(dct, return_paths=False, match_end=None):

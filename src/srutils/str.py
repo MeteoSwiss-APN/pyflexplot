@@ -33,48 +33,40 @@ def to_varname(s, filter_invalid=None):
 
     """
 
-    def error(msg):
-        raise ValueError(f"cannot convert '{s}' to varname: {msg}")
-
     # Check input is valid string
-    try:
-        s = str(s)
-    except Exception:
-        error("not valid string")
     if not s:
-        error("is empty")
-
-    def filter_invalid_default(c):
-        return "_"
+        raise ValueError("s is empty", s)
+    s = str(s)
 
     if filter_invalid is None:
-        filter_invalid = filter_invalid_default
 
-    def filter(ch):
-        """Apply ``filter_invalid`` to character ``ch``."""
-        err = f"filtering '{ch}' with function {filter_invalid} failed"
-        try:
-            chf = filter_invalid(ch)
-        except Exception as e:
-            error(f"{err}: {type(e).__name__}('{e}')")
-        if chf != str(chf):
-            error(f"{err}: type {type(chf).__name__} of '{chf}' not str or equivalent")
-        return str(chf)
+        def filter_invalid(s):
+            return "_"
 
     # Filter all characters, ignoring potential leading numbers
-    rx_valid = re.compile("[a-zA-Z0-9_]")
-    varname = "".join([c if rx_valid.match(c) else filter(c) for c in s])
+    varname = _filter_s(s, filter_invalid)
 
     # Handle leading number (if necessary)
     if varname[0] in "0123456789":
-        varname = filter(varname[0]) + varname[1:]
+        varname = filter_invalid(varname[0]) + varname[1:]
 
-    # Check validity
-    try:
-        check_is_valid_varname(varname)
-    except ValueError as e:
-        error(str(e))
+    check_is_valid_varname(varname)
+    return varname
 
+
+def _filter_s(s, filter_invalid):
+    rx_valid = re.compile("[a-zA-Z0-9_]")
+    varname = ""
+    for c in s:
+        if not rx_valid.match(c):
+            try:
+                c = filter_invalid(c)
+            except TypeError as e:
+                raise ValueError(f"invalid filter", e, filter_invalid, c)
+            else:
+                if not isinstance(c, str):
+                    raise ValueError("filter must return str", c, filter_invalid, c)
+        varname += c
     return varname
 
 

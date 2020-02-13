@@ -199,6 +199,14 @@ def check_is_list_like(obj, *args, **kwargs):
     is_list_like(obj, *args, raise_=CheckFailedError, **kwargs)
 
 
+def return_or_raise(msg, kwargs=None):
+    if not raise_:
+        return False
+    if kwargs is None:
+        kwargs = {}
+    raise Exception(msg, kwargs)
+
+
 def is_list_like(
     obj, *, len_=None, not_=None, t_children=None, f_children=None, raise_=False,
 ):
@@ -223,46 +231,45 @@ def is_list_like(
 
     """
 
-    def return_or_raise(msg, kwargs=None):
-        if not raise_:
-            return False
-        if kwargs is None:
-            kwargs = {}
-        kwargs = {
-            "obj": obj,
-            "len_": len_,
-            "not_": not_,
-            "t_children": t_children,
-            "f_children": f_children,
-            "raise_": raise_,
-            **kwargs,
-        }
-        raise Exception(msg, kwargs)
+    kwargs = {
+        "obj": obj,
+        "len_": len_,
+        "not_": not_,
+        "t_children": t_children,
+        "f_children": f_children,
+        "raise_": raise_,
+    }
 
     if not isiterable(obj, str_ok=False):
-        return_or_raise(f"{type(obj).__name__} instance `obj` is not iterable")
+        return_or_raise(f"{type(obj).__name__} instance `obj` is not iterable", kwargs)
 
     if len_ is not None:
         if len(obj) != len_:
-            return_or_raise(f"obj has wrong length {len(obj)}")
+            return_or_raise(f"obj has wrong length {len(obj)}", kwargs)
 
     if not_ is not None:
         if isinstance(obj, not_):
-            return_or_raise(f"obj has unexpected type {type(obj).__name__}")
+            return_or_raise(f"obj has unexpected type {type(obj).__name__}", kwargs)
+
+    _check_children(obj, t_children, f_children, kwargs)
+
+    return True
+
+
+def _check_children(obj, t_children, f_children, kwargs):
 
     if t_children is not None:
         for idx, child in enumerate(obj):
             if not isinstance(child, t_children):
                 return_or_raise(
                     f"child has unexpected type {type(child).__name__}",
-                    {"child": child, "idx": idx},
+                    {**kwargs, "child": child, "idx": idx},
                 )
 
     if f_children is not None:
         for idx, child in enumerate(obj):
             if not f_children(child):
                 return_or_raise(
-                    f"f_children returns False for child", {"child": child, "idx": idx},
+                    f"f_children returns False for child",
+                    {**kwargs, "child": child, "idx": idx},
                 )
-
-    return True
