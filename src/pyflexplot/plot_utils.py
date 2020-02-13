@@ -1154,6 +1154,8 @@ class TextBoxAxes(SummarizablePlotClass):
 
             rect (list): Rectangle [left, bottom, width, height].
 
+            name (list, optional): Name. Defaults to None.
+
             lw_frame (float, optional): Line width of frame around box. Frame
                 is omitted if ``lw_frame`` is None. Defaults to 1.0.
 
@@ -1390,23 +1392,32 @@ class TextBoxAxes(SummarizablePlotClass):
     def text_block_hfill(self, loc_y, block, **kwargs):
         """Single block of horizontally filled lines.
 
-        See ``TextBoxAxes.text_blocks_hfill`` for details.
+        Args:
+            loc_y (int or str): Vertical reference location. For details see
+                ``TextBoxAxes.text`` (vertical component only).
+
+            block (str or list[str] or ...): Text block. See docstring of
+                method ``text_blocks_hfill`` for details.
+
+            **kwargs: Additional keyword arguments passed on to method
+                ``text_blocks_hfill``.
+
         """
         self.text_blocks_hfill(loc_y, [block], **kwargs)
 
     def text_blocks_hfill(self, loc_y, blocks, **kwargs):
-        """Add blocks of horizontally-filling lines.
+        r"""Add blocks of horizontally-filling lines.
 
         Lines are split at a tab character ('\t'), with the text before the tab
         left-aligned, and the text after right-aligned.
 
         Args:
-            locy (int or str): Vertical reference location. For details see
+            loc_y (int or str): Vertical reference location. For details see
                 ``TextBoxAxes.text`` (vertical component only).
 
-            blocks (str or list[str] or list[list[str]] or list[list[tuple]]):
-                Text blocks, each of which consists of lines, each of which in
-                turn consists of a left and right part. Possible formats:
+            blocks (str or list[str] or ...): Text blocks, each of which
+                consists of lines, each of which in turn consists of a left and
+                right part. Possible formats:
 
                  - The blocks can be a multiline string, with empty lines
                    separating the individual blocks; or a list.
@@ -1422,6 +1433,7 @@ class TextBoxAxes(SummarizablePlotClass):
 
             **kwargs: Location and formatting options passed to
                 ``TextBoxAxes.text_blocks``.
+
         """
 
         if isinstance(blocks, str):
@@ -1538,7 +1550,7 @@ class TextBoxAxes(SummarizablePlotClass):
             loc (int or str): Reference location parameter used to initialize
                 an instance of ``TextBoxLocation``.
 
-            marker (str or int) Marker style passed to ``mpl.plot``. See
+            marker (str or int): Marker style passed to ``mpl.plot``. See
                 ``matplotlib.markers`` for more information.
 
             dx (float, optional): Horizontal offset in unit distances. May be
@@ -1683,13 +1695,13 @@ class MapAxesBoundingBox:
 
             coord_type (str): Coordinates type.
 
-            rlon0 (float): Rotated longitude of south-western corner.
+            lon0 (float): Longitude of south-western corner.
 
-            rlon1 (float): Rotated longitude of north-eastern corner.
+            lon1 (float): Longitude of north-eastern corner.
 
-            rlat0 (float): Rotated latitude of south-western corner.
+            lat0 (float): Latitude of south-western corner.
 
-            rlat1 (float): Rotated latitude of north-eastern corner.
+            lat1 (float): Latitude of north-eastern corner.
 
         """
         # SR_TMP <
@@ -1900,7 +1912,7 @@ class TextBoxLocation(SummarizablePlotClass):
             dx (float, optional): Horizontal offset in unit distances. Defaults
                 to 0.0.
 
-            dx (float, optional): Vertical offset in unit distances. Defaults
+            dy (float, optional): Vertical offset in unit distances. Defaults
                 to 0.0.
 
         """

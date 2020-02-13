@@ -268,6 +268,7 @@ def linearize_nested_dict(dct, match_end=None):
             dict is created which ends at this level, containing all non-dict
             elements in the dict with the matching key, but excluding any
             further nested dicts. Defaults to None.
+
     """
 
     def _run_rec(dct):
@@ -373,6 +374,7 @@ def decompress_nested_dict(dct, return_paths=False, match_end=None):
         match_end (callable, optional): Function to match intermediate points.
             See docstring of ``linearize_nested_dict`` for details. Defaults
             to None.
+
     """
     values, paths = [], []
     for dct_lin in linearize_nested_dict(dct, match_end=match_end):

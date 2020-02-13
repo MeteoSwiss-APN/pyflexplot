@@ -170,6 +170,7 @@ class Plot(SummarizablePlotClass, ParentClass):
 
             scale_fact (float, optional): Scale factor applied to field.
                 Defaults to 1.0.
+
         """
         self.field = field
         self.map_conf = map_conf
@@ -268,12 +269,18 @@ class DispersionPlot_old(Plot):  # SR_TMP
         """Create an instance of ``DispersionPlot``.
 
         Args:
-            *args: Additional positional arguments passed to ``Plot.__init__``.
+            field (Field): Data field.
 
             lang (str, optional): Language, e.g., 'de' for German. Defaults to
                 'en' (English).
 
+            labels (DispersionPlotLabels, optional): Labels. Defaults to None.
+
+            reverse_legend (bool, optional): Whether to reverse the legend
+                elements vertically. Defaults to False.
+
             **kwargs: Additional keyword arguments passed to ``Plot.__init__``.
+
         """
         super().__init__(field, **kwargs)
         self.lang = lang or "en"

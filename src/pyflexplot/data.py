@@ -117,6 +117,8 @@ def threshold_agreement(arr, thr, *, axis=None, eq_ok=False, dtype=None):
         eq_ok (bool, optional): Whether values equal to the threshold are
             counted as exceedences. Defaults to False.
 
+        dtype (type, optional): Type of result. Defaults to None.
+
     """
     if arr is None:
         raise ValueError("arr is None")

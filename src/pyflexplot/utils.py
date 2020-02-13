@@ -140,7 +140,7 @@ class Summarizer:
 
     def _try_summarizable(self, obj):
         """
-        Summarizable object?
+        Try to summarize ``obj`` as a summarizable object.
         """
         try:
             data = obj.summarize()
@@ -151,7 +151,7 @@ class Summarizer:
 
     def _try_dict_like(self, obj):
         """
-        Dict-like object?
+        Try to summarize ``obj`` as a dict-like object.
         """
         try:
             items = obj.items()
@@ -162,7 +162,7 @@ class Summarizer:
 
     def _try_list_like(self, obj):
         """
-        List-like object?
+        Try to summarize ``obj`` as a list-like object.
         """
         if not isiterable(obj, str_ok=False):
             raise NotSummarizableError("list-like", obj)
@@ -174,7 +174,7 @@ class Summarizer:
 
     def _try_named(self, obj):
         """
-        Named object (e.g., function/method)?
+        Try to summarize ``obj`` as a named object (e.g., function/method).
         """
         try:
             name = obj.__name__
@@ -248,7 +248,7 @@ def summarizable(cls, attrs=None, method=None):
 
 
 def count_to_log_level(count: int) -> int:
-    """Map the occurence of the command line option verbose to the log level"""
+    """Map occurence of CLI option ``verbose`` to the log level."""
     if count == 0:
         return log.ERROR
     elif count == 1:
