@@ -199,7 +199,7 @@ def check_is_list_like(obj, *args, **kwargs):
     is_list_like(obj, *args, raise_=CheckFailedError, **kwargs)
 
 
-def return_or_raise(msg, kwargs=None):
+def return_or_raise(msg, kwargs, raise_):
     if not raise_:
         return False
     if kwargs is None:
@@ -241,15 +241,19 @@ def is_list_like(
     }
 
     if not isiterable(obj, str_ok=False):
-        return_or_raise(f"{type(obj).__name__} instance `obj` is not iterable", kwargs)
+        return_or_raise(
+            f"{type(obj).__name__} instance `obj` is not iterable", kwargs, raise_
+        )
 
     if len_ is not None:
         if len(obj) != len_:
-            return_or_raise(f"obj has wrong length {len(obj)}", kwargs)
+            return_or_raise(f"obj has wrong length {len(obj)}", kwargs, raise_)
 
     if not_ is not None:
         if isinstance(obj, not_):
-            return_or_raise(f"obj has unexpected type {type(obj).__name__}", kwargs)
+            return_or_raise(
+                f"obj has unexpected type {type(obj).__name__}", kwargs, raise_
+            )
 
     _check_children(obj, t_children, f_children, kwargs)
 

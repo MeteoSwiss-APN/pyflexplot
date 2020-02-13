@@ -216,7 +216,7 @@ def flatten_nested_dict(
                     children.append(child)
             return children
 
-        return _merge_children(collect_children(dct))
+        return _merge_children(collect_children(dct), tie_breaker)
 
     flat = run_rec(dct)
 
@@ -236,7 +236,7 @@ def flatten_nested_dict(
         return values
 
 
-def _merge_children(children):
+def _merge_children(children, tie_breaker):
     flat = {}
     for child in children:
         for key, val in child.items():
