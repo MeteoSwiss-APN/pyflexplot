@@ -1154,6 +1154,8 @@ class TextBoxAxes(SummarizablePlotClass):
 
             rect (list): Rectangle [left, bottom, width, height].
 
+            name (list, optional): Name. Defaults to None.
+
             lw_frame (float, optional): Line width of frame around box. Frame
                 is omitted if ``lw_frame`` is None. Defaults to 1.0.
 
@@ -1342,33 +1344,8 @@ class TextBoxAxes(SummarizablePlotClass):
         if dy_block is None:
             dy_block = dy_line
 
-        # Fetch text color (fall-back if no line-specific color)
         default_color = kwargs.pop("color", kwargs.pop("c", "black"))
-
-        # Rename colors variable
-        colors_blocks = colors
-        del colors
-
-        # Prepare line colors
-        if colors_blocks is None:
-            colors_blocks = [None] * len(blocks)
-        elif len(colors_blocks) != len(blocks):
-            raise ValueError(
-                f"colors must have same length as blocks:"
-                f"  {len(colors_blocks)} != {len(blocks)}"
-            )
-        for i, block in enumerate(blocks):
-            if colors_blocks[i] is None:
-                colors_blocks[i] = [None] * len(block)
-            elif len(colors_blocks) != len(blocks):
-                ith = f"{i}{({1: 'st', 2: 'nd', 3: 'rd'}.get(i, 'th'))}"
-                raise ValueError(
-                    f"colors of {ith} block must have same length as block: "
-                    f"{len(colors_blocks[i])} != {len(block)}"
-                )
-            for j in range(len(block)):
-                if colors_blocks[i][j] is None:
-                    colors_blocks[i][j] = default_color
+        colors_blocks = self._prepare_line_colors(blocks, colors, default_color)
 
         if reverse:
             # Revert order of blocks and lines
@@ -1385,26 +1362,62 @@ class TextBoxAxes(SummarizablePlotClass):
                 dy += dy_line
             dy += dy_block
 
+    @staticmethod
+    def _prepare_line_colors(blocks, colors, default_color):
+
+        if colors is None:
+            colors_blocks = [None] * len(blocks)
+        elif len(colors) == len(blocks):
+            colors_blocks = colors
+        else:
+            raise ValueError(
+                f"different no. colors than blocks: {len(colors)} != {len(blocks)}"
+            )
+
+        for i, block in enumerate(blocks):
+            if colors_blocks[i] is None:
+                colors_blocks[i] = [None] * len(block)
+            elif len(colors_blocks) != len(blocks):
+                ith = f"{i}{({1: 'st', 2: 'nd', 3: 'rd'}.get(i, 'th'))}"
+                raise ValueError(
+                    f"colors of {ith} block must have same length as block: "
+                    f"{len(colors_blocks[i])} != {len(block)}"
+                )
+            for j in range(len(block)):
+                if colors_blocks[i][j] is None:
+                    colors_blocks[i][j] = default_color
+
+        return colors_blocks
+
     def text_block_hfill(self, loc_y, block, **kwargs):
         """Single block of horizontally filled lines.
 
-        See ``TextBoxAxes.text_blocks_hfill`` for details.
+        Args:
+            loc_y (int or str): Vertical reference location. For details see
+                ``TextBoxAxes.text`` (vertical component only).
+
+            block (str or list[str] or ...): Text block. See docstring of
+                method ``text_blocks_hfill`` for details.
+
+            **kwargs: Additional keyword arguments passed on to method
+                ``text_blocks_hfill``.
+
         """
         self.text_blocks_hfill(loc_y, [block], **kwargs)
 
     def text_blocks_hfill(self, loc_y, blocks, **kwargs):
-        """Add blocks of horizontally-filling lines.
+        r"""Add blocks of horizontally-filling lines.
 
         Lines are split at a tab character ('\t'), with the text before the tab
         left-aligned, and the text after right-aligned.
 
         Args:
-            locy (int or str): Vertical reference location. For details see
+            loc_y (int or str): Vertical reference location. For details see
                 ``TextBoxAxes.text`` (vertical component only).
 
-            blocks (str or list[str] or list[list[str]] or list[list[tuple]]):
-                Text blocks, each of which consists of lines, each of which in
-                turn consists of a left and right part. Possible formats:
+            blocks (str or list[str] or ...): Text blocks, each of which
+                consists of lines, each of which in turn consists of a left and
+                right part. Possible formats:
 
                  - The blocks can be a multiline string, with empty lines
                    separating the individual blocks; or a list.
@@ -1420,6 +1433,7 @@ class TextBoxAxes(SummarizablePlotClass):
 
             **kwargs: Location and formatting options passed to
                 ``TextBoxAxes.text_blocks``.
+
         """
 
         if isinstance(blocks, str):
@@ -1536,7 +1550,7 @@ class TextBoxAxes(SummarizablePlotClass):
             loc (int or str): Reference location parameter used to initialize
                 an instance of ``TextBoxLocation``.
 
-            marker (str or int) Marker style passed to ``mpl.plot``. See
+            marker (str or int): Marker style passed to ``mpl.plot``. See
                 ``matplotlib.markers`` for more information.
 
             dx (float, optional): Horizontal offset in unit distances. May be
@@ -1553,13 +1567,32 @@ class TextBoxAxes(SummarizablePlotClass):
         if self._show_baselines:
             self.elements.append(TextBoxElement_HLine(self, loc))
 
-    def fit_text(self, s, size, n_shrink_max=None, pad_rel=None, dots=".."):
-        """Fit a text string into the box by shrinking and/or truncation.
+    def fit_text(self, s, size, **kwargs):
+        return TextFitter(self.ax, dx_unit=self.dx_unit, **kwargs).fit(s, size)
+
+
+class MinFontSizeReachedError(Exception):
+    """Font size cannot be reduced further."""
+
+
+class MinStrLenReachedError(Exception):
+    """String cannot be further truncated."""
+
+
+class TextFitter:
+    """
+    Fit a text string into the box by shrinking and/or truncation.
+    """
+
+    sizes = ["xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large"]
+
+    def __init__(self, ax, *, dx_unit, n_shrink_max=None, pad_rel=None, dots=".."):
+        """Create an instance of ``TextFitter``.
 
         Args:
-            s (str): Text string to fit into the box.
+            ax (Axes): Axes.
 
-            size (str): Initial font size (e.g., "medium", "x-large").
+            dx_unit (float): Horizontal unit distance.
 
             n_shrink_max (int, optional): Maximum number of times the font size
                 can be reduced before the string is truncated. If it is None or
@@ -1568,23 +1601,14 @@ class TextBoxAxes(SummarizablePlotClass):
 
             pad_rel (float, optional): Total horizontal padding as a fraction
                 of the box width. Defaults to twice the default horizontal
-                offset ``2 * self.dx_unit``.
+                offset ``2 * dx_unit``.
 
             dots (str, optional): String replacing the end of the retained part
                 of ``s`` in case it must be truncated. Defaults to "..".
 
         """
-        sizes = [
-            "xx-small",
-            "x-small",
-            "small",
-            "medium",
-            "large",
-            "x-large",
-            "xx-large",
-        ]
-        if size not in sizes:
-            raise ValueError(f"unknown font size '{size}'; must be one of {sizes}")
+        self.ax = ax
+        self.dx_unit = dx_unit
 
         if n_shrink_max is not None:
             try:
@@ -1596,62 +1620,68 @@ class TextBoxAxes(SummarizablePlotClass):
                 )
             if n_shrink_max < 0:
                 n_shrink_max = None
+        self.n_shrink_max = n_shrink_max
 
         if pad_rel is None:
             pad_rel = 2 * self.dx_unit
+        self.pad_rel = pad_rel
 
-        w_rel_max = 1.0 - pad_rel
+        self.dots = dots
 
-        def w_rel(s, size):
-            """Returns the width of a string as a fraction of the box width."""
+    def fit(self, s, size):
+        """
+        Fit a string with a certain target size into the box.
 
-            # Determine width of text in display coordinates
-            # src: https://stackoverflow.com/a/36959454
-            renderer = self.fig.canvas.get_renderer()
-            txt = self.ax.text(0, 0, s, size=size)
-            w_disp = txt.get_window_extent(renderer=renderer).width
+        Args:
+            s (str): Text string to fit into the box.
 
-            # Remove the text again from the axes
-            self.ax.texts.pop()
+            size (str): Initial font size (e.g., "medium", "x-large").
 
-            return w_disp / self.ax.bbox.width
+        """
+        if size not in self.sizes:
+            raise ValueError(f"unknown font size '{size}'; must be one of {self.sizes}")
 
-        class MinFontSizeReachedError(Exception):
-            """Font size cannot be reduced further."""
-
-            pass
-
-        def shrink(size, _n=[0]):
-            """Shrink the relative font size by one increment."""
-            i = sizes.index(size)
-            if i == 0 or (n_shrink_max is not None and _n[0] >= n_shrink_max):
-                raise MinFontSizeReachedError(size)
-            size = sizes[i - 1]
-            _n[0] += 1
-            return size
-
-        class MinStrLenReachedError(Exception):
-            """String cannot be further truncated."""
-
-            pass
-
-        def truncate(s, _n=[0]):
-            """Truncate a string by one character, ending it with ``dots``."""
-            if len(s) <= len(dots):
-                raise MinStrLenReachedError(s)
-            _n[0] += 1
-            return s[: -(len(dots) + 1)] + dots
-
-        while len(s) >= len(dots) and w_rel(s, size) > w_rel_max:
+        w_rel_max = 1.0 - self.pad_rel
+        while len(s) >= len(self.dots) and self.w_rel(s, size) > w_rel_max:
             try:
-                size = shrink(size)
+                size = self.shrink(size)
             except MinFontSizeReachedError:
                 try:
-                    s = truncate(s)
+                    s = self.truncate(s)
                 except MinStrLenReachedError:
                     break
 
         return s, size
+
+    def w_rel(self, s, size):
+        """Returns the width of a string as a fraction of the box width."""
+
+        # Determine width of text in display coordinates
+        # src: https://stackoverflow.com/a/36959454
+        renderer = self.ax.get_figure().canvas.get_renderer()
+        txt = self.ax.text(0, 0, s, size=size)
+        w_disp = txt.get_window_extent(renderer=renderer).width
+
+        # Remove the text again from the axes
+        self.ax.texts.pop()
+
+        return w_disp / self.ax.bbox.width
+
+    def shrink(self, size, _n=[0]):
+        """Shrink the relative font size by one increment."""
+        i = self.sizes.index(size)
+        if i == 0 or (self.n_shrink_max is not None and _n[0] >= self.n_shrink_max):
+            raise MinFontSizeReachedError(size)
+        size = self.sizes[i - 1]
+        _n[0] += 1
+        return size
+
+    def truncate(self, s, _n=[0]):
+        """Truncate a string by one character and end with ``self.dots``."""
+        if len(s) <= len(self.dots):
+            raise MinStrLenReachedError(s)
+        _n[0] += 1
+        return s[: -(len(self.dots) + 1)] + self.dots
 
 
 class MapAxesBoundingBox:
@@ -1665,13 +1695,13 @@ class MapAxesBoundingBox:
 
             coord_type (str): Coordinates type.
 
-            rlon0 (float): Rotated longitude of south-western corner.
+            lon0 (float): Longitude of south-western corner.
 
-            rlon1 (float): Rotated longitude of north-eastern corner.
+            lon1 (float): Longitude of north-eastern corner.
 
-            rlat0 (float): Rotated latitude of south-western corner.
+            lat0 (float): Latitude of south-western corner.
 
-            rlat1 (float): Rotated latitude of north-eastern corner.
+            lat1 (float): Latitude of north-eastern corner.
 
         """
         # SR_TMP <
@@ -1882,7 +1912,7 @@ class TextBoxLocation(SummarizablePlotClass):
             dx (float, optional): Horizontal offset in unit distances. Defaults
                 to 0.0.
 
-            dx (float, optional): Vertical offset in unit distances. Defaults
+            dy (float, optional): Vertical offset in unit distances. Defaults
                 to 0.0.
 
         """

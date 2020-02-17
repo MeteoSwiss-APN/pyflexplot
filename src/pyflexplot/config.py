@@ -23,7 +23,6 @@ class Config:
     PyFlexPlot configuration.
 
     Args:
-
         infiles: Input file path(s). May contain format keys.
 
         member_ids: List of ensemble member ids. Omit for deterministic

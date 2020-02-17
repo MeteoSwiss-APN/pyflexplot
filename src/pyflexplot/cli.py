@@ -141,9 +141,8 @@ def not_implemented(msg):
 @group_kwargs("config_cli")
 @click.pass_context
 def cli(ctx, config_file_path, config_cli, **cli_args):
-    """
-    Read NetCDF output of a deterministic or ensemble ``FLEXPART`` dispersion
-    simulation from INFILE(S) to create the plot OUTFILE.
+    r"""
+    Read ``FLEXPART`` NetCDF output from INFILE(S) to create the plot OUTFILE.
 
     Both INFILE(S) and OUTFILE may contain format keys that are replaced by
     values derived from options and/or the input data, which allows one to
@@ -152,7 +151,6 @@ def cli(ctx, config_file_path, config_cli, **cli_args):
     braces.
 
     Example:
-
     \b
     $ pyflexplot "ens_mem{member_id:03}.nc" "ens_spc-{species_id:02}.png" \\
     >   --member-id={1..10} --species-id={0,1} ...
@@ -266,9 +264,6 @@ def prep_var_specs_dct(config):
 
 
 def read_fields(cls_name, config):
-    """
-    TODO
-    """
 
     # SR_TMP < TODO find cleaner solution
     if config.simulation_type == "ensemble":

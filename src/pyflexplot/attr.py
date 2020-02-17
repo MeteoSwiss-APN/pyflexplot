@@ -84,55 +84,12 @@ class Attr(SummarizableClass):
     def merge_with(self, others, replace=None):
         if replace is None:
             replace = {}
-
         name = replace.get("name", self.name)
         type_ = replace.get("type_", self.type_)
-
-        # Value and unit might differ
-        values_units = [(self.value, self.unit)]
-        values, units = [self.value], [self.unit]
-
-        # Collect values and units
-        for other in others:
-            if "name" not in replace and other.name != name:
-                raise ValueError(f"names differ: {other.name} != {name}")
-            if "name" not in replace and other.type_ != type_:
-                raise ValueError(f"types differ: {other.type_} != {type_}")
-
-            if (other.value, other.unit) not in values_units:
-                values_units.append((other.value, other.unit))
-                values.append(other.value)
-                units.append(other.unit)
-
-        # Reduce values and units
-        if len(units) == 1:
-            # One value, one unit
-            value = next(iter(values))
-            unit = next(iter(units))
-        else:
-            # Multiple values, one or equally many units
-            # SR_TMP<
-            if self.name == "long_name":
-                name0 = next(iter(values))
-                if name0.lower().startswith("beaufschlagtes gebiet"):
-                    values = name0.replace("nasse", "totale").replace(
-                        "trockene", "totale"
-                    )
-                elif name0.lower().startswith("affected area"):
-                    values = name0.replace("wet", "total").replace("dry", "total")
-                elif name0.lower().endswith("bodendeposition"):
-                    values = name0.replace("nasse", "totale").replace(
-                        "trockene", "totale"
-                    )
-                elif name0.lower().endswith("surface deposition"):
-                    values = name0.replace("wet", "total").replace("dry", "total")
-            # SR_TMP>
-            value = values
-            unit = next(iter(units)) if len(set(units)) == 1 else units
-
+        values, units = self._collect_values_units(others, replace)
+        value, unit = self._reduce_values_units(values, units)
         value = replace.get("value", value)
         unit = replace.get("unit", unit)
-
         kwargs = {
             "name": name,
             "type_": type_,
@@ -142,6 +99,41 @@ class Attr(SummarizableClass):
         if isiterable(value, str_ok=False):
             return type(self).multiple(**kwargs)
         return type(self)(**kwargs)
+
+    def _collect_values_units(self, others, replace):
+        values_units = [(self.value, self.unit)]
+        values, units = [self.value], [self.unit]
+        for other in others:
+            if "name" not in replace and other.name != self.name:
+                raise ValueError(f"names differ: {other.name} != {self.name}")
+            if "name" not in replace and other.type_ != self.type_:
+                raise ValueError(f"types differ: {other.type_} != {self.type_}")
+            if (other.value, other.unit) not in values_units:
+                values_units.append((other.value, other.unit))
+                values.append(other.value)
+                units.append(other.unit)
+        return values, units
+
+    def _reduce_values_units(self, values, units):
+        if len(units) == 1:
+            # One value, one unit
+            return next(iter(values)), next(iter(units))
+        # Multiple values, one or equally many units
+        # SR_TMP<
+        if self.name == "long_name":
+            name0 = next(iter(values))
+            if name0.lower().startswith("beaufschlagtes gebiet"):
+                values = name0.replace("nasse", "totale").replace("trockene", "totale")
+            elif name0.lower().startswith("affected area"):
+                values = name0.replace("wet", "total").replace("dry", "total")
+            elif name0.lower().endswith("bodendeposition"):
+                values = name0.replace("nasse", "totale").replace("trockene", "totale")
+            elif name0.lower().endswith("surface deposition"):
+                values = name0.replace("wet", "total").replace("dry", "total")
+        # SR_TMP>
+        value = values
+        unit = next(iter(units)) if len(set(units)) == 1 else units
+        return value, unit
 
     def format(self, fmt=None, *, escape_format=False, skip_unit=False, join=None):
         if fmt is None:
@@ -473,15 +465,7 @@ class AttrGroupVariable(AttrGroup):
             pass
         # -- Multiple level ranges
 
-        try:
-            bots = sorted(self.level_bot.value)
-            tops = sorted(self.level_top.value)
-        except TypeError:
-            raise  # SR_TMP TODO proper error message
-        else:
-            if len(bots) != len(tops):
-                raise Exception(f"inconsistent no. levels: {len(bots)} != {len(tops)}")
-            n = len(bots)
+        bots, tops, n = self._get_range_params()
 
         if n == 2:
             if tops[0] == bots[1]:
@@ -498,6 +482,18 @@ class AttrGroupVariable(AttrGroup):
 
         else:
             raise NotImplementedError(f"{n} sets of levels")
+
+    def _get_range_params(self):
+        try:
+            bots = sorted(self.level_bot.value)
+            tops = sorted(self.level_top.value)
+        except TypeError:
+            raise  # SR_TMP TODO proper error message
+        else:
+            if len(bots) != len(tops):
+                raise Exception(f"inconsistent no. levels: {len(bots)} != {len(tops)}")
+            n = len(bots)
+        return bots, tops, n
 
 
 class AttrGroupRelease(AttrGroup):

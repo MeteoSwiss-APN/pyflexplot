@@ -77,7 +77,7 @@ class Plotter:
 
         # Create plots one-by-one
         for i_data, field in enumerate(data_lst):
-            file_path = self.fmt_file_path(field.field_specs)
+            file_path = self.format_file_path(field.field_specs)
             _w = len(str(len(data_lst)))
             print(f" {i_data+1:{_w}}/{len(data_lst)}  {file_path}")
 
@@ -87,7 +87,7 @@ class Plotter:
 
             yield file_path
 
-    def fmt_file_path(self, field_specs):
+    def format_file_path(self, field_specs):
 
         var_specs_dct = field_specs.multi_var_specs.compressed_dct()
 
@@ -103,7 +103,25 @@ class Plotter:
                     val = "int" if val else "no-int"
                 kwargs[fmt_key] = val
 
-        # Variable name
+        kwargs["variable"] = self._fmt_variable(var_specs_dct)
+        kwargs["lang"] = self.lang
+        # if field_specs.issubcls("ens"):
+        if "ens" in self.name:  # SR_TMP
+            kwargs["member_ids"] = self._fmt_member_ids(field_specs)
+
+        # Format the file path
+        # Don't use str.format in order to handle multival elements
+        file_path = self._fmt_file_path(kwargs)
+
+        # Add number if file path not unique
+        file_path = self.ensure_unique_path(file_path)
+
+        return file_path
+
+    def _fmt_variable(self, var_specs_dct):
+        """
+        Variable name.
+        """
         plot_var = self.name
         try:
             dep_type = var_specs_dct["deposition"]
@@ -120,44 +138,39 @@ class Plotter:
                 raise NotImplementedError(
                     f"plot_var for deposition-based variable '{plot_var}'"
                 )
-        kwargs["variable"] = plot_var
+        return plot_var
 
-        # Language
-        kwargs["lang"] = self.lang
-
-        # Ensemble member ids
-        # if field_specs.issubcls("ens"):
-        if "ens" in self.name:  # SR_TMP
-            if not field_specs.member_ids:
-                kwargs["member_ids"] = None
+    def _fmt_member_ids(self, field_specs):
+        """
+        Ensemble member ids.
+        """
+        if not field_specs.member_ids:
+            return None
+        member_ids_grouped = []
+        for i, member_id in enumerate(field_specs.member_ids):
+            if i == 0 or member_id - member_ids_grouped[-1][-1] > 1:
+                member_ids_grouped.append([member_id])
             else:
-                member_ids_grouped = []
-                for i, member_id in enumerate(field_specs.member_ids):
-                    if i == 0 or member_id - member_ids_grouped[-1][-1] > 1:
-                        member_ids_grouped.append([member_id])
-                    else:
-                        member_ids_grouped[-1].append(member_id)
-                s = None
-                for member_ids in member_ids_grouped:
-                    if len(member_ids) == 1:
-                        s_i = f"{member_ids[0]:d}"
-                    elif len(member_ids) == 2:
-                        s_i = f"{member_ids[0]:d}+{member_ids[1]:d}"
-                    else:
-                        s_i = f"{member_ids[0]:d}-{member_ids[-1]:d}"
-                    if s is None:
-                        s = s_i
-                    else:
-                        s += f"+{s_i}"
-                kwargs["member_ids"] = s
+                member_ids_grouped[-1].append(member_id)
+        s = None
+        for member_ids in member_ids_grouped:
+            if len(member_ids) == 1:
+                s_i = f"{member_ids[0]:d}"
+            elif len(member_ids) == 2:
+                s_i = f"{member_ids[0]:d}+{member_ids[1]:d}"
+            else:
+                s_i = f"{member_ids[0]:d}-{member_ids[-1]:d}"
+            if s is None:
+                s = s_i
+            else:
+                s += f"+{s_i}"
+        return s
 
-        # Format the file path
-        # Don't use str.format in order to handle multival elements
+    def _fmt_file_path(self, kwargs):
         file_path = self.file_path_fmt
         for key, val in kwargs.items():
             if not isiterable(val, str_ok=False):
                 val = [val]
-
             # Iterate over relevant format keys
             rxs = r"{" + key + r"(:[^}]*)?}"
             for m in re.finditer(rxs, file_path):
@@ -175,9 +188,6 @@ class Plotter:
 
                 # Replace format key in the path by the just formatted string
                 file_path = file_path[: m.span()[0]] + s + file_path[m.span()[1] :]
-
-        # Add number if file path not unique
-        file_path = self.ensure_unique_path(file_path)
 
         return file_path
 

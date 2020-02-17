@@ -65,6 +65,7 @@ class FieldSpecs(SummarizableClass):
                 to be replaced. Necessary if multiple specifications dicts are
                 passed for all those attributes that differ between the
                 resulting attributes collections. Defaults to '{}'.
+
         """
         self.name = name
 
