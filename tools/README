@@ -8,4 +8,3 @@ Some useful tools.
  *  vim-session:
     Open a vim session with the file specified in a `session` file.
     Source: git@bitbucket.org:ruestefa/bash_tools.git
-
