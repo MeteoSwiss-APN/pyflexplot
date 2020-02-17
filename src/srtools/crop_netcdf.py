@@ -13,7 +13,7 @@ import netCDF4 as nc4
 __version__ = "0.1.0"
 
 # Show default values of options by default
-click.option = functools.partial(click.option, show_default=True)
+click.option = functools.partial(click.option, show_default=True)  # type: ignore
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"],)
 

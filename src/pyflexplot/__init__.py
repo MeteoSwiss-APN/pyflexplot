@@ -10,6 +10,8 @@ __version__ = "0.6.1"
 # Standard library
 import os.path
 import sys
+from typing import Any
+from typing import List
 
 # Third-party
 import matplotlib
@@ -30,7 +32,7 @@ except Exception as e:
     print(msg, file=sys.stderr)
     sys.exit(1)
 
-__all__ = []
+__all__: List[Any] = []
 
 # Point cartopy to storerd offline data
 here = os.path.dirname(os.path.abspath(__file__))

@@ -6,6 +6,7 @@ Plots.
 import logging as log
 import warnings
 from dataclasses import field
+from typing import List
 from typing import Optional
 from typing import Tuple
 
@@ -135,7 +136,7 @@ class MapAxesConf:
     min_city_pop: int = 0
     ref_dist_conf: RefDistIndConf = field(default_factory=RefDistIndConf)
     ref_dist_on: bool = True
-    rel_offset: Tuple[float] = (0.0, 0.0)
+    rel_offset: Tuple[float, float] = (0.0, 0.0)
     zoom_fact: float = 1.0
 
     def __post_init_post_parse__(self):
@@ -162,7 +163,7 @@ class MapAxesConf_Cosmo1_CH(MapAxesConf_Cosmo1):
     # SR_TODO Determine the model from the data! (e.g., COSMO-1 v. COSMO-2 v. COSMO-E)
     # rel_offset: Tuple[float] = (0.037, 0.106)  # suitable for ensemble (COSMO-2?)
     # zoom_fact: float = 3.2  # suitable for ensemble (i.e., COSMO-2?)
-    rel_offset: Tuple[float] = (-0.02, 0.045)
+    rel_offset: Tuple[float, float] = (-0.02, 0.045)
     zoom_fact: float = 3.6
 
     def __post_init_post_parse__(self):
@@ -174,7 +175,7 @@ class MapAxesConf_Cosmo1_CH(MapAxesConf_Cosmo1):
 class MapAxesRotatedPole(SummarizablePlotClass):
     """Map plot axes for FLEXPART plot for rotated-pole data."""
 
-    summarizable_attrs = []  # SR_TMP
+    summarizable_attrs: List[str] = []  # SR_TMP
 
     # water_color = cartopy.feature.COLORS["water"]
     water_color = "lightskyblue"
@@ -918,7 +919,7 @@ class TextBoxElement(SummarizablePlotClass):
 class TextBoxElement_Text(TextBoxElement):
     """Text element in text box."""
 
-    summarizable_attrs = [
+    summarizable_attrs: List[str] = [
         "loc",
         "s",
         "replace_edge_spaces",
@@ -1009,7 +1010,7 @@ class TextBoxElement_Text(TextBoxElement):
 class TextBoxElement_ColorRect(TextBoxElement):
     """A colored box element inside a text box axes."""
 
-    summarizable_attrs = ["loc", "w", "h", "fc", "ec", "x_anker", "kwargs"]
+    summarizable_attrs: List[str] = ["loc", "w", "h", "fc", "ec", "x_anker", "kwargs"]
 
     def __init__(self, box, loc, *, w, h, fc, ec, x_anker=None, **kwargs):
         """Create an instance of ``TextBoxElement_BolorBox``.
@@ -1077,7 +1078,7 @@ class TextBoxElement_ColorRect(TextBoxElement):
 class TextBoxElement_Marker(TextBoxElement):
     """A marker element in a text box axes."""
 
-    summarizable_attrs = ["loc", "m", "kwargs"]
+    summarizable_attrs: List[str] = ["loc", "m", "kwargs"]
 
     def __init__(self, box, loc, *, m, **kwargs):
         """Create an instance of ``TextBoxElement_Marker``.
@@ -1104,7 +1105,7 @@ class TextBoxElement_Marker(TextBoxElement):
 class TextBoxElement_HLine(TextBoxElement):
     """Horizontal line in a text box axes."""
 
-    summarizable_attrs = ["loc", "c", "lw"]
+    summarizable_attrs: List[str] = ["loc", "c", "lw"]
 
     def __init__(self, box, loc, *, c="k", lw=1.0):
         """Create an instance of ``TextBoxElement_HLine``.
@@ -1241,7 +1242,7 @@ class TextBoxAxes(SummarizablePlotClass):
         for element in self.elements:
             element.draw()
 
-    summarizable_attrs = ["name", "rect", "lw_frame", "dx_unit", "dy_unit"]
+    summarizable_attrs: List[str] = ["name", "rect", "lw_frame", "dx_unit", "dy_unit"]
 
     def summarize(self, *, add=None, skip=None):
         """Summarize the text box to a JSON dict."""
@@ -1871,7 +1872,7 @@ class MapAxesBoundingBox:
 class TextBoxLocation(SummarizablePlotClass):
     """A reference location (like bottom-left) inside a box on a 3x3 grid."""
 
-    summarizable_attrs = [
+    summarizable_attrs: List[str] = [
         "loc",
         "loc_y",
         "loc_x",

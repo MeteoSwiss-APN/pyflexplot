@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Tests for module ``pyflexplot.field_specs``."""
-# Third-party
-from pydantic.dataclasses import dataclass as pydantic_dataclass
+# Standard library
+from dataclasses import dataclass
 
 # First-party
 from pyflexplot.field_specs import FieldSpecs
@@ -15,7 +15,7 @@ def check_multi_var_specs_lst(multi_var_specs_lst, len_=None):
     check_is_list_like(multi_var_specs_lst, len_=len_, t_children=MultiVarSpecs)
 
 
-@pydantic_dataclass(frozen=True)
+@dataclass(frozen=True)
 class Conf_Create(_TestConf):
     name: str
     type_name: str

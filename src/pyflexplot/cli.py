@@ -31,7 +31,7 @@ from .var_specs import MultiVarSpecs
 
 
 # Show default values of options by default
-click.option = functools.partial(click.option, show_default=True)
+click.option = functools.partial(click.option, show_default=True)  # type: ignore
 
 
 # comma_sep_list_of_unique_ints = CharSepList(int, ",", unique=True)

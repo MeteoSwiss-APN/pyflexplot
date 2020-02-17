@@ -2,6 +2,13 @@
 """
 Input variable specifications.
 """
+# Standard library
+from typing import Any
+from typing import List
+from typing import Mapping
+from typing import Optional
+from typing import Tuple
+
 # First-party
 from srutils.dict import decompress_multival_dict
 from srutils.dict import format_dictlike
@@ -25,12 +32,12 @@ def int_or_list(arg):
 class VarSpecs(SummarizableClass, ParentClass):
     """FLEXPART input variable specifications."""
 
-    summarizable_attrs = []  # SR_TODO
+    summarizable_attrs: List[str] = []  # SR_TODO
 
-    name = None
+    name: Optional[str] = None
 
     # Keys with respective type
-    specs_type_default = {
+    specs_type_default: Mapping[str, Tuple[Any, Any]] = {
         "species_id": (int_or_list, None),
         "integrate": (bool, None),
         "time": (int, None),
@@ -302,10 +309,10 @@ class VarSpecs(SummarizableClass, ParentClass):
 
         return inds
 
-    def long_name(self, *args, **kwargs):
+    def long_name(self):
         raise NotImplementedError(f"{type(self).__name__}.long_name: override it!")
 
-    def short_name(self, *args, **kwargs):
+    def short_name(self):
         raise NotImplementedError(f"{type(self).__name__}.short_name: override it!")
 
     def var_name(self, *args, **kwargs):
@@ -313,7 +320,7 @@ class VarSpecs(SummarizableClass, ParentClass):
 
 
 class VarSpecs_Concentration(VarSpecs):
-    name = "concentration"
+    name: str = "concentration"
 
     specs_type_default = {
         **VarSpecs.specs_type_default,
@@ -353,7 +360,7 @@ class VarSpecs_Concentration(VarSpecs):
 
 
 class VarSpecs_Deposition(VarSpecs):
-    name = "deposition"
+    name: str = "deposition"
 
     specs_type_default = {
         **VarSpecs.specs_type_default,
@@ -386,7 +393,7 @@ class VarSpecs_Deposition(VarSpecs):
 
 
 class VarSpecs_AffectedArea(VarSpecs_Deposition):
-    name = "deposition:affected_area"
+    name: str = "deposition:affected_area"
 
     def long_name(self):
         dep_name = super().long_name()
@@ -395,11 +402,11 @@ class VarSpecs_AffectedArea(VarSpecs_Deposition):
 
 
 class VarSpecs_AffectedAreaMono(VarSpecs_AffectedArea):
-    name = "deposition:affected_area:affected_area_mono"
+    name: str = "deposition:affected_area:affected_area_mono"
 
 
 class VarSpecs_EnsMean_Concentration(VarSpecs_Concentration):
-    name = "concentration:ens_mean_concentration"
+    name: str = "concentration:ens_mean_concentration"
 
     def long_name(self):
         return (
@@ -409,7 +416,7 @@ class VarSpecs_EnsMean_Concentration(VarSpecs_Concentration):
 
 
 class VarSpecs_EnsMean_Deposition(VarSpecs_Deposition):
-    name = "deposition:ens_mean_deposition"
+    name: str = "deposition:ens_mean_deposition"
 
     def long_name(self):
         return (
@@ -419,7 +426,7 @@ class VarSpecs_EnsMean_Deposition(VarSpecs_Deposition):
 
 
 class VarSpecs_EnsMean_AffectedArea(VarSpecs_AffectedArea):
-    name = "deposition:affected_area:ens_mean_affected_area"
+    name: str = "deposition:affected_area:ens_mean_affected_area"
 
     def long_name(self):
         return (
@@ -446,15 +453,15 @@ class VarSpecs_EnsThrAgrmt:
 
 
 class VarSpecs_EnsThrAgrmt_Concentration(VarSpecs_EnsThrAgrmt, VarSpecs_Concentration):
-    name = "concentration:ens_thr_agrmt_concentration"
+    name: str = "concentration:ens_thr_agrmt_concentration"
 
 
 class VarSpecs_EnsThrAgrmt_Deposition(VarSpecs_EnsThrAgrmt, VarSpecs_Deposition):
-    name = "deposition:ens_thr_agrmt_deposition"
+    name: str = "deposition:ens_thr_agrmt_deposition"
 
 
 class VarSpecs_EnsThrAgrmt_AffectedArea(VarSpecs_EnsThrAgrmt, VarSpecs_AffectedArea):
-    name = "deposition:affected_area:ens_thr_agrmt_affected_area"
+    name: str = "deposition:affected_area:ens_thr_agrmt_affected_area"
 
 
 class MultiVarSpecs:

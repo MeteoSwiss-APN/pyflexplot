@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Tests for module ``pyflexplot.io``."""
 # Standard library
+from dataclasses import dataclass
 from typing import Any
 from typing import Dict
 from typing import List
@@ -10,7 +11,6 @@ from typing import Optional
 # Third-party
 import numpy as np
 import pytest
-from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 # First-party
 from pyflexplot.field_specs import FieldSpecs
@@ -32,7 +32,7 @@ def get_var_name_ref(var_specs, var_names_ref):
     raise NotImplementedError(f"{var_specs}")
 
 
-@pydantic_dataclass
+@dataclass
 class Conf:
     datafilename: str
     name: str

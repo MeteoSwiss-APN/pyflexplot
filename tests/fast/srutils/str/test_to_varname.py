@@ -17,6 +17,8 @@ class Test_Default:
         assert to_varname("foo_bar") == "foo_bar"
 
     class Test_Spaces:
+        """Test spaces."""
+
         def test_single_space(self):
             assert to_varname("foo bar") == "foo_bar"
 
@@ -33,6 +35,8 @@ class Test_Default:
             assert to_varname("bar ") == "bar_"
 
     class Test_Dashes:
+        """Test dashes."""
+
         def test_single_dash(self):
             assert to_varname("foo-bar") == "foo_bar"
 
@@ -40,6 +44,8 @@ class Test_Default:
             assert to_varname("-foo--bar-baz---") == "_foo__bar_baz___"
 
     class Test_Numbers:
+        """Test numbers."""
+
         def test_leading_number(self):
             assert to_varname("1foo") == "_foo"
             assert to_varname(" 1foo") == "_1foo"
@@ -48,6 +54,8 @@ class Test_Default:
             assert to_varname("foo1bar2baz3") == "foo1bar2baz3"
 
     class Test_Others:
+        """Test others."""
+
         def test_periods(self):
             assert to_varname("foo. bar.baz.") == "foo__bar_baz_"
 

@@ -276,7 +276,6 @@ def create_dummy_words(lang):
             "washout_exponent",
         ],
     )
-    w.symbols = create_dummy_symbols()
     return w
 
 
@@ -289,9 +288,10 @@ def create_dummy_symbols():
 
 def create_dummy_labels(lang, attrs):
     dummy_words = create_dummy_words(lang)
+    dummy_symbols = create_dummy_symbols()
     from pyflexplot.plot import DispersionPlotLabels  # isort:skip
 
-    return DispersionPlotLabels(lang, dummy_words, attrs)
+    return DispersionPlotLabels(lang, dummy_words, dummy_symbols, attrs)
 
 
 def create_dummy_map_conf(lang):

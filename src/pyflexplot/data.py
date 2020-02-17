@@ -2,6 +2,9 @@
 """
 Data structures.
 """
+# Standard library
+from typing import List
+
 # Third-party
 import numpy as np
 
@@ -62,7 +65,7 @@ class Field(SummarizableClass):
                 r"{grid_shape}"
             )
 
-    summarizable_attrs = ["attrs", "field_specs", "time_stats"]
+    summarizable_attrs: List[str] = ["attrs", "field_specs", "time_stats"]
 
     def summarize(self, *args, **kwargs):
         data = super().summarize(*args, **kwargs)

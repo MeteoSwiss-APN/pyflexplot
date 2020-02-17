@@ -6,6 +6,7 @@ Plots.
 import os
 from copy import copy
 from textwrap import dedent
+from typing import List
 
 # Third-party
 import matplotlib as mpl
@@ -24,6 +25,7 @@ from .utils import ParentClass
 from .utils import SummarizableClass
 from .utils import fmt_float
 from .utils import format_level_ranges
+from .words import SYMBOLS
 from .words import WORDS
 
 # Plot Labels
@@ -32,14 +34,15 @@ from .words import WORDS
 # SR_TMP TODO Turn this class into some more adequate type (simple dict?)
 class DispersionPlotLabels(SummarizableClass):
 
-    summarizable_attrs = []  # SR_TODO
+    summarizable_attrs: List[str] = []  # SR_TODO
 
-    def __init__(self, lang, words, attrs):
+    def __init__(self, lang, words, symbols, attrs):
 
         self.words = words
+        self.symbols = symbols
 
         w = words
-        s = words.symbols
+        s = symbols
         a = attrs
 
         w.set_default_lang(lang)
@@ -87,9 +90,9 @@ class DispersionPlotLabels(SummarizableClass):
         }
 
         # Right-bottom box
-        deg_ = f"{w.symbols['deg']}{w.symbols['short_space']}"
-        _N = f"{w.symbols['short_space']}{w['north', None, 'abbr']}"
-        _E = f"{w.symbols['short_space']}{w['east', None, 'abbr']}"
+        deg_ = f"{s['deg']}{s['short_space']}"
+        _N = f"{s['short_space']}{w['north', None, 'abbr']}"
+        _E = f"{s['short_space']}{w['east', None, 'abbr']}"
         groups["right_bottom"] = {
             "title": w["release"].t,
             "start": w["start"].s,
@@ -144,7 +147,7 @@ class Plot(SummarizablePlotClass, ParentClass):
     """Base class for FLEXPART plots."""
 
     name = "__base__"
-    summarizable_attrs = [
+    summarizable_attrs: List[str] = [
         "name",
         "field",
         "map_conf",
@@ -249,7 +252,7 @@ class DispersionPlot_old(Plot):  # SR_TMP
     level_ranges_align = "center"
     lw_frame = 1.0
 
-    summarizable_attrs = Plot.summarizable_attrs + [
+    summarizable_attrs: List[str] = Plot.summarizable_attrs + [
         "lang",
         "labels",
         "extend",
@@ -287,7 +290,7 @@ class DispersionPlot_old(Plot):  # SR_TMP
         self.reverse_legend = reverse_legend or False
 
         if labels is None:
-            labels = DispersionPlotLabels(lang, WORDS, field.attrs)
+            labels = DispersionPlotLabels(lang, WORDS, SYMBOLS, field.attrs)
         self.labels = labels
 
         # Formatting arguments

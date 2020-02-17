@@ -4,10 +4,8 @@
 Some testing utils.
 """
 # Standard library
+from dataclasses import dataclass
 from pprint import pformat
-
-# Third-party
-from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 # Local
 from .str import str_or_none
@@ -187,7 +185,7 @@ def get_dict_element(dict_, key, name="dict", exception_type=ValueError):
     raise exception_type(err, {"name": name, "key": key, "dict_": dict_})
 
 
-@pydantic_dataclass(frozen=True)
+@dataclass(frozen=True)
 class TestConfBase:
     def derive(self, **kwargs):
         data = {k: getattr(self, k) for k in self.__dataclass_fields__}

@@ -298,9 +298,9 @@ def linearize_nested_dict(dct, match_end=None):
 @dataclass
 class _State:
     subdct: Dict[str, Any]
-    curr_key: str = None
+    curr_key: Optional[str] = None
     active: Dict[str, Any] = field(default_factory=dict)
-    head: Optional[Dict[str, any]] = None
+    head: Optional[Dict[str, Any]] = None
 
     def __post_init__(self):
         if self.head is None:

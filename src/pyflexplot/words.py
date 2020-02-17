@@ -22,7 +22,6 @@ SYMBOLS = Words(
 s = SYMBOLS
 
 WORDS = TranslatedWords("words", {}, default_lang="en")
-WORDS.symbols = SYMBOLS
 
 # A
 WORDS.add(en="accumulated over", de=f'akkumuliert {s["ue"]}ber')

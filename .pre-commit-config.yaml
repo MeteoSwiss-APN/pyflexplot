@@ -22,14 +22,20 @@ repos:
     hooks:
     -   id: isort
         files: ^(.*\.py|(src|tests|docs)/(.*/)*.*\.py)$
+-   repo: https://github.com/PyCQA/pydocstyle
+    rev: 5.0.2
+    hooks:
+    -   id: pydocstyle
+        files: ^(src|tests)/(.*/)*.*\.py$
 -   repo: https://github.com/PyCQA/flake8
     rev: 3.7.9
     hooks:
     -   id: flake8
         files: ^(.*\.py|(src|tests|docs)/(.*/)*.*\.py)$
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: ''
+    rev: v0.761
     hooks:
     -   id: mypy
-        files: ^(.*\.py|(src|tests|docs)/(.*/)*.*\.py)$
+        # files: ^(.*\.py|(src|tests|docs)/(.*/)*.*\.py)$
+        files: ^(.*\.py|(src|docs)/(.*/)*.*\.py)$
         args: [--no-strict-optional, --ignore-missing-imports]

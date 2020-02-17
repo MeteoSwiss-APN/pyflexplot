@@ -4,6 +4,7 @@ Field specifications.
 """
 # Standard library
 from copy import deepcopy
+from typing import List
 
 # Third-party
 import numpy as np
@@ -19,7 +20,7 @@ from .var_specs import MultiVarSpecs
 class FieldSpecs(SummarizableClass):
     """FLEXPART field specifications."""
 
-    summarizable_attrs = []  # SR_TODO fill!
+    summarizable_attrs: List[str] = []  # SR_TODO fill!
 
     # Dimensions with optionally multiple values
     dims_opt_mult_vals = ["species_id"]
