@@ -17,6 +17,7 @@ from srutils.click import CharSepList
 # Local
 from . import __version__
 from .config import ConfigFile
+from .examples import choices as example_choices
 from .examples import print_example
 from .field_specs import FieldSpecs
 from .io import FileReader
@@ -90,7 +91,7 @@ def not_implemented(msg):
 @click.option(
     "--example",
     help="Example commands.",
-    type=click.Choice(["naz_det_toml", "naz_det_sh"]),
+    type=click.Choice(list(example_choices)),
     callback=print_example,
     expose_value=False,
 )
@@ -161,11 +162,7 @@ def create_plots(config, cli_args):
 
     def fct_plot():
         return plotter.run(
-            cls_name,
-            field_lst,
-            config.outfile,
-            lang=config.lang,
-            scale_fact=cli_args["scale_fact"],
+            cls_name, field_lst, config, scale_fact=cli_args["scale_fact"],
         )
 
     # Note: Plotter.run yields the output file paths on-the-go

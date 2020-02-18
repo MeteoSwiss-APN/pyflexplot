@@ -31,7 +31,7 @@ class FileReader:
 
     cls_field = Field
 
-    choices_ens_var = ["mean", "max"]
+    choices_ens_var = ["mean", "median", "min", "max"]
 
     def __init__(self, file_path, *, cmd_open=nc4.Dataset):
         """Create an instance of ``FileReader``.
@@ -295,6 +295,10 @@ class FileReader:
 
         if ens_var == "mean":
             fld_time = np.nanmean(fld_time_mem, axis=0)
+        elif ens_var == "median":
+            fld_time = np.nanmedian(fld_time_mem, axis=0)
+        elif ens_var == "min":
+            fld_time = np.nanmin(fld_time_mem, axis=0)
         elif ens_var == "max":
             fld_time = np.nanmax(fld_time_mem, axis=0)
         elif ens_var == "thr_agrmt":

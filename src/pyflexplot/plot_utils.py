@@ -167,7 +167,7 @@ class MapAxesConf_Cosmo1_CH(MapAxesConf_Cosmo1):
     zoom_fact: float = 3.6
 
     def __post_init_post_parse__(self):
-        super().__attrs_post_init__()
+        super().__post_init_post_parse__()
         self.ref_dist_conf.dist = 25
 
 

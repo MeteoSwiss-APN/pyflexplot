@@ -4,14 +4,16 @@ Dictionary utilities.
 """
 # Standard library
 import itertools
-from collections import Mapping
 from collections import namedtuple
+from collections.abc import Mapping
 from copy import deepcopy
 from dataclasses import dataclass
 from dataclasses import field
 from pprint import pformat
 from typing import Any
+from typing import Callable
 from typing import Dict
+from typing import List
 from typing import Optional
 
 # Local
@@ -257,22 +259,46 @@ def _merge_children(children, tie_breaker):
     return flat
 
 
-def linearize_nested_dict(dct, match_end=None):
+def linearize_nested_dict(dct, branch_end_criterion=None):
+    return NestedDictLinearizer(dct).run(branch_end_criterion)
+
+
+# SR_TODO Refactor this class! Eliminate _State etc.!
+class NestedDictLinearizer:
     """
     Convert a nested dict with N branches into N linearly nested dicts.
-
-    Args:
-        dct (dict): Nested dict.
-
-        match_end (callable, optional): Function to match intermediate points.
-            If the key of a nested dict matches, then an additional linear
-            dict is created which ends at this level, containing all non-dict
-            elements in the dict with the matching key, but excluding any
-            further nested dicts. Defaults to None.
-
     """
 
-    def _run_rec(dct):
+    def __init__(self, dct):
+        """Create an instance of ``NestedDictLinearizer``.
+
+        Args:
+            dct (dict): Nested dict.
+
+        """
+        self.dct = dct
+
+    def run(self, branch_end_criterion=None):
+        """
+        Linearize the nested dict.
+
+        Args:
+            branch_end_criterion (callable, optional): Function to match branch
+                end points. For each key that fulfils this criterion (i.e., for
+                which the function returns True), a linear branch is created
+                from the beginning to this key. Defaults to None.
+
+        """
+        linears = self._run_rec(self.dct)
+        if branch_end_criterion:
+            linears = self._apply_branch_end_criterion(linears, branch_end_criterion)
+        return linears
+
+    def _run_rec(self, dct=None):
+
+        if dct is None:
+            dct = self.dct
+
         def separate_subdicts(dct):
             subdcts, elements = {}, {}
             for key, val in dct.items():
@@ -287,82 +313,76 @@ def linearize_nested_dict(dct, match_end=None):
                 return [elements]
             linears = []
             for key, val in subdcts.items():
-                for sublinear in _run_rec(val):
+                for sublinear in self._run_rec(val):
                     linears.append({**elements, key: sublinear})
             return linears
 
         return linearize_subdicts(*separate_subdicts(dct))
 
-    return _apply_match_end(_run_rec(dct), match_end)
+    def _apply_branch_end_criterion(
+        self, dcts: List[Dict[str, Any]], criterion: Callable[[str], bool],
+    ) -> List[Dict[str, Any]]:
+        """
+        Create a sub-branch copy up to each subdict key matching the criterion.
 
+        The criterion is given by ``criterion`` and may be a check whether
+        the key starts with an underscore. If so, each linear nested dict is
+        traversed, and every time such a key (of a further nested dict) is
+        encountered, a copy is made from the part of the branch that has
+        already been traversed. This copy branch includes all non-dict elements
+        of the dict with the matching key, but no further-nested dict elements.
+        """
 
-@dataclass
-class _State:
-    subdct: Dict[str, Any]
-    curr_key: Optional[str] = None
-    active: Dict[str, Any] = field(default_factory=dict)
-    head: Optional[Dict[str, Any]] = None
+        @dataclass
+        class _State:
+            subdct: Dict[str, Any]
+            curr_key: Optional[str] = None
+            active: Dict[str, Any] = field(default_factory=dict)
+            head: Optional[Dict[str, Any]] = None
 
-    def __post_init__(self):
-        if self.head is None:
-            self.head = self.active
+            def __post_init__(self):
+                if self.head is None:
+                    self.head = self.active
 
-    def nondict_to_head(self):
+        def _core_rec(result, dct, state=None):
+
+            if state is None:
+                state = _State(dct)
+
+            self._nondict_to_head(state)
+
+            if (
+                state.curr_key is not None
+                and criterion(state.curr_key)
+                and state.active not in result
+            ):
+                result.append(deepcopy(state.active))
+
+            for key, val in state.subdct.items():
+                if isinstance(val, Mapping):
+                    new_head = {}
+                    state.head[key] = new_head
+                    state.head = new_head
+                    state.curr_key = key
+                    state.subdct = val
+                    _core_rec(result, dct, state)
+
+        result = []
+        for dct in dcts:
+            _core_rec(result, dct)
+
+        return result
+
+    def _nondict_to_head(self, state):
         """
         Copy non-dict elements from subdct to head.
         """
-        for key, val in self.subdct.items():
-            if not isinstance(val, Mapping):
-                self.head[key] = val
-
-
-def _apply_match_end(dcts, match_end):
-    """
-    Create a sub-branch copy up to each subdict key matching the criterion.
-
-    The criterion is given by ``match_end`` and may be a check whether the
-    key starts with an underscore. If so, each linear nested dict is
-    traversed, and every time such a key (of a further nested dict) is
-    encountered, a copy is made from the part of the branch that has
-    already been traversed. This copy branch includes all non-dict elements
-    of the dict with the matching key, but no further-nested dict elements.
-    """
-
-    if match_end is None:
-        return dcts
-
-    def _core_rec(result, dct, state=None):
-
-        if state is None:
-            state = _State(dct)
-
-        state.nondict_to_head()
-
-        if state.curr_key is not None and match_end(state.curr_key):
-            if state.active not in result:
-                result.append(deepcopy(state.active))
-
-        done = True
         for key, val in state.subdct.items():
-            if isinstance(val, Mapping):
-                new_head = {}
-                state.head[key] = new_head
-                state.head = new_head
-                state.curr_key = key
-                state.subdct = val
-                _core_rec(result, dct, state)
-                done = False
-        if done and state.active not in result:
-            result.append(state.active)
-
-    result = []
-    for dct in dcts:
-        _core_rec(result, dct)
-
-    return result
+            if not isinstance(val, Mapping):
+                state.head[key] = val
 
 
-def decompress_nested_dict(dct, return_paths=False, match_end=None):
+def decompress_nested_dict(dct, return_paths=False, branch_end_criterion=None):
     """
     Convert a nested dict with N branches into N unnested dicts.
 
@@ -372,13 +392,15 @@ def decompress_nested_dict(dct, return_paths=False, match_end=None):
         return_paths (bool, optional): Whether to return the path of each value
             in the nested dicts as a separate dict. Defaults to False.
 
-        match_end (callable, optional): Function to match intermediate points.
+        branch_end_criterion (callable, optional): Function to match intermediate points.
             See docstring of ``linearize_nested_dict`` for details. Defaults
             to None.
 
     """
     values, paths = [], []
-    for dct_lin in linearize_nested_dict(dct, match_end=match_end):
+    for dct_lin in linearize_nested_dict(
+        dct, branch_end_criterion=branch_end_criterion
+    ):
         result = flatten_nested_dict(dct_lin, return_paths=return_paths)
         if not return_paths:
             values.append(result)

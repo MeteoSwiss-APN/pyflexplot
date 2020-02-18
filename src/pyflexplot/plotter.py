@@ -30,7 +30,7 @@ class Plotter:
     def __init__(self):
         self.file_paths = []
 
-    def run(self, name, field, file_path_fmt, *, domain=None, lang=None, **kwargs_plot):
+    def run(self, name, field, config, **kwargs_plot):
         """Create one or more plots.
 
         Args:
@@ -54,13 +54,16 @@ class Plotter:
             str: Output file paths.
 
         """
-        if file_path_fmt is None:
-            raise ValueError("file_path_fmt is None")
+        if config.outfile is None:
+            raise ValueError("config.outfile is None")
 
         self.name = name
-        self.file_path_fmt = file_path_fmt
-        self.domain = domain or "auto"
-        self.lang = lang or "en"
+        self.config = config
+        # SR_DBG <
+        self.file_path_fmt = config.outfile
+        self.domain = config.domain
+        self.lang = config.lang
+        # SR_DBG >
 
         data_lst = field if isinstance(field, (list, tuple)) else [field]
 
@@ -71,9 +74,9 @@ class Plotter:
         if self.domain == "auto":
             self.domain = "cosmo1"
         if self.domain == "cosmo1":
-            map_conf = MapAxesConf_Cosmo1(lang=lang)
+            map_conf = MapAxesConf_Cosmo1(lang=self.lang)
         elif self.domain == "ch":
-            map_conf = MapAxesConf_Cosmo1_CH(lang=lang)
+            map_conf = MapAxesConf_Cosmo1_CH(lang=self.lang)
         else:
             raise ValueError(f"unknown domain '{self.domain}'")
         # SR_TMP >
@@ -85,12 +88,19 @@ class Plotter:
             print(f" {i_data+1:{_w}}/{len(data_lst)}  {file_path}")
 
             Plot.subcls(self.name)(
-                field, map_conf=map_conf, lang=lang, **kwargs_plot
+                field, map_conf=map_conf, lang=self.lang, **kwargs_plot
             ).save(file_path)
 
             yield file_path
 
     def format_file_path(self, field_specs):
+
+        # SR_TMP <
+        if re.search(r"{member_ids:[0-9]*d}", self.file_path_fmt):
+            raise NotImplementedError(
+                "number formatting of member ids of the form '{member_ids:[0-9]*d}'"
+            )
+        # SR_TMP >
 
         var_specs_dct = field_specs.multi_var_specs.compressed_dct()
 
@@ -107,6 +117,7 @@ class Plotter:
                 kwargs[fmt_key] = val
 
         kwargs["variable"] = self._fmt_variable(var_specs_dct)
+        kwargs["plot_type"] = self.config.plot_type
         kwargs["lang"] = self.lang
         # if field_specs.issubcls("ens"):
         if "ens" in self.name:  # SR_TMP
@@ -125,23 +136,10 @@ class Plotter:
         """
         Variable name.
         """
-        plot_var = self.name
-        try:
-            dep_type = var_specs_dct["deposition"]
-        except KeyError:
-            pass
-        else:
-            if self.name == "deposition":
-                plot_var = f"{dep_type}-{plot_var}"
-            elif self.name.startswith("affected_area") or self.name.startswith(
-                "ens_thr_agrmt"
-            ):
-                plot_var = f"{plot_var}_{dep_type}-deposition"
-            else:
-                raise NotImplementedError(
-                    f"plot_var for deposition-based variable '{plot_var}'"
-                )
-        return plot_var
+        if self.name == "deposition":
+            deposition_type = var_specs_dct["deposition"]
+            return f"{deposition_type}_{self.name}"
+        return self.name
 
     def _fmt_member_ids(self, field_specs):
         """

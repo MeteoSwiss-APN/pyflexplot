@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Tests for module ``pyflexplot.config``."""
 # Standard library
+from collections.abc import Sequence
 from textwrap import dedent
 
 # First-party
@@ -9,10 +10,26 @@ from pyflexplot.config import Config
 from pyflexplot.config import ConfigCollection
 from pyflexplot.config import ConfigFile
 
+DEFAULT_KWARGS = {
+    "infiles": ["foo.nc"],
+    "outfile": "bar.png",
+}
+
+
+def fmt_val(val):
+    if isinstance(val, str):
+        return f'"{val}"'
+    elif isinstance(val, Sequence):
+        return f"[{', '.join([fmt_val(v) for v in val])}]"
+    else:
+        raise NotImplementedError(f"type {type(val).__name__}", val)
+
+
+DEFAULT_TOML = "\n".join([f"{k} = {fmt_val(v)}" for k, v in DEFAULT_KWARGS.items()])
+
 DEFAULT_CONFIG = {
-    "infiles": None,
+    **DEFAULT_KWARGS,
     "member_ids": None,
-    "outfile": None,
     "variable": "concentration",
     "simulation_type": "deterministic",
     "plot_type": "auto",
@@ -31,7 +48,7 @@ DEFAULT_CONFIG = {
 
 def test_default_config_dict():
     """Check the default configuration dict."""
-    assert Config() == DEFAULT_CONFIG
+    assert Config(**DEFAULT_KWARGS) == DEFAULT_CONFIG
 
 
 def read_tmp_config_file(tmp_path, content, **kwargs):
@@ -40,19 +57,21 @@ def read_tmp_config_file(tmp_path, content, **kwargs):
     return ConfigFile(tmp_file).read(**kwargs)
 
 
-def test_read_single_empty_section(tmp_path):
-    """Read config file with single empty section."""
-    content = """\
+def test_read_single_minimal_section(tmp_path):
+    """Read config file with single minimal section."""
+    content = f"""\
         [plot]
+        {DEFAULT_TOML}
         """
     configs = read_tmp_config_file(tmp_path, content)
     assert configs == [DEFAULT_CONFIG]
 
 
-def test_read_single_empty_renamed_section(tmp_path):
-    """Read config file with single empty section with arbitrary name."""
-    content = """\
+def test_read_single_minimal_renamed_section(tmp_path):
+    """Read config file with single minimal section with arbitrary name."""
+    content = f"""\
         [foobar]
+        {DEFAULT_TOML}
         """
     configs = read_tmp_config_file(tmp_path, content)
     assert configs == [DEFAULT_CONFIG]
@@ -60,8 +79,9 @@ def test_read_single_empty_renamed_section(tmp_path):
 
 def test_read_single_section(tmp_path):
     """Read config file with single non-empty section."""
-    content = """\
+    content = f"""\
         [plot]
+        {DEFAULT_TOML}
         variable = "deposition"
         lang = "de"
         """
@@ -74,10 +94,12 @@ def test_read_single_section(tmp_path):
 
 def test_read_multiple_parallel_empty_sections(tmp_path):
     """Read config file with multiple parallel empty sections."""
-    content = """\
+    content = f"""\
         [plot1]
+        {DEFAULT_TOML}
 
         [plot2]
+        {DEFAULT_TOML}
         """
     configs = read_tmp_config_file(tmp_path, content)
     assert configs == [DEFAULT_CONFIG] * 2
@@ -85,8 +107,9 @@ def test_read_multiple_parallel_empty_sections(tmp_path):
 
 def test_read_two_nested_empty_sections(tmp_path):
     """Read config file with two nested empty sections."""
-    content = """\
+    content = f"""\
         [_base]
+        {DEFAULT_TOML}
 
         [_base.plot]
         """
@@ -96,9 +119,9 @@ def test_read_two_nested_empty_sections(tmp_path):
 
 def test_read_multiple_nested_sections(tmp_path):
     """Read config file with two nested non-empty sections."""
-    content = """\
+    content = f"""\
         [_base]
-        infiles = ["file.nc"]
+        {DEFAULT_TOML}
         lang = "de"
 
         [_base.con]
@@ -134,7 +157,7 @@ def test_read_multiple_nested_sections(tmp_path):
         lang = "de"
         """
     sol_base = {
-        "infiles": ["file.nc"],
+        **DEFAULT_KWARGS,
         "lang": "de",
     }
     sol_specific = [
@@ -172,12 +195,13 @@ def test_read_multiple_nested_sections(tmp_path):
     assert configs == sol
 
 
-def test_read_realcase(tmp_path):
+def test_read_semi_realcase(tmp_path):
     """Test config file based on a real case."""
-    content = """\
+    content = f"""\
         # PyFlexPlot config file to create deterministic NAZ plots
 
         [_base]
+        {DEFAULT_TOML}
 
         [_base._concentration]
 
@@ -232,9 +256,12 @@ def test_read_realcase(tmp_path):
 class Test_ConfigCollection:
     def create_partial_dicts(self):
         return [
-            {"infiles": ["foo.nc"], "variable": "concentration", "domain": "ch"},
-            {"infiles": ["bar.nc"], "variable": "deposition", "lang": "de"},
-            {"age_class_idx": 1, "nout_rel_idx": 5, "release_point_idx": 3},
+            {**DEFAULT_KWARGS, **dct}
+            for dct in [
+                {"infiles": ["foo.nc"], "variable": "concentration", "domain": "ch"},
+                {"infiles": ["bar.nc"], "variable": "deposition", "lang": "de"},
+                {"age_class_idx": 1, "nout_rel_idx": 5, "release_point_idx": 3},
+            ]
         ]
 
     def create_complete_dicts(self):
