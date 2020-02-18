@@ -36,7 +36,7 @@ def naz_det_toml():
         infiles = [
             "/scratch/ruestefa/shared/flexpart_visualization/test/data/cosmo-1_2019052800.nc",
         ]
-        outfile = "test_case1_{variable}_{domain}_{lang}_{time_idx:02d}.png"
+        outfile = "test_{variable}_{plot_type}_{domain}_{lang}_{time_idx:02d}.png"
         simulation_type = "deterministic"
         plot_type = "auto"
         level_idx = 0

@@ -161,11 +161,7 @@ def create_plots(config, cli_args):
 
     def fct_plot():
         return plotter.run(
-            cls_name,
-            field_lst,
-            config.outfile,
-            lang=config.lang,
-            scale_fact=cli_args["scale_fact"],
+            cls_name, field_lst, config, scale_fact=cli_args["scale_fact"],
         )
 
     # Note: Plotter.run yields the output file paths on-the-go
