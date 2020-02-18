@@ -4,13 +4,12 @@ Configuration and configuration file.
 """
 # Standard library
 import dataclasses
-import warnings
 from typing import List
 from typing import Optional
 from typing import Union
 
 # Third-party
-import tomlkit
+import toml
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 # First-party
@@ -108,15 +107,6 @@ class Config:
             return obj
         return cls(**obj)
 
-    def update(self, dct, skip_none=False):
-        for key, val in dct.items():
-            if not hasattr(self, key):
-                warnings.warn(f"{type(self).__name__}.update: unknown key: {key}")
-            elif skip_none and val is None:
-                continue
-            else:
-                setattr(self, key, val)
-
     def as_dict(self):
         return dataclasses.asdict(self)
 
@@ -134,13 +124,17 @@ class Config:
         return self.as_dict() == other_as_dict
 
 
-class ConfigSet:
+class ConfigCollection:
     """
     A set of ``Config`` objects.
     """
 
     def __init__(self, configs):
         self._configs = [Config.as_config(obj) for obj in configs]
+
+    def __repr__(self):
+        s_configs = "\n  ".join([""] + [str(c) for c in self._configs])
+        return f"{type(self).__name__}([{s_configs}\n])"
 
     def __len__(self):
         return len(self._configs)
@@ -150,7 +144,10 @@ class ConfigSet:
             yield config
 
     def __eq__(self, other):
-        return [c.as_dict() for c in self._configs] == other
+        return self.as_dicts() == other
+
+    def as_dicts(self):
+        return [c.as_dict() for c in self._configs]
 
 
 class ConfigFile:
@@ -166,17 +163,16 @@ class ConfigFile:
         Read the configuration from a text file (TOML format).
         """
         with open(self.path, "r") as f:
-            s = f.read()
-        try:
-            raw_data = tomlkit.parse(s)
-        except Exception as e:
-            raise Exception(
-                f"error parsing TOML file {self.path} ({type(e).__name__}: {e})"
-            )
+            try:
+                raw_data = toml.load(f)
+            except Exception as e:
+                raise Exception(
+                    f"error parsing TOML file {self.path} ({type(e).__name__}: {e})"
+                )
         values, paths = decompress_nested_dict(
             raw_data, match_end=lambda key: not key.startswith("_"), return_paths=True,
         )
-        configs = ConfigSet(values)
+        configs = ConfigCollection(values)
         return configs
 
     def write(self, *args, **kwargs):

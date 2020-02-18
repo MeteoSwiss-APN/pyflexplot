@@ -6,8 +6,8 @@ from textwrap import dedent
 
 # First-party
 from pyflexplot.config import Config
+from pyflexplot.config import ConfigCollection
 from pyflexplot.config import ConfigFile
-from pyflexplot.config import ConfigSet
 
 DEFAULT_CONFIG = {
     "infiles": None,
@@ -34,10 +34,10 @@ def test_default_config_dict():
     assert Config() == DEFAULT_CONFIG
 
 
-def read_tmp_config_file(tmp_path, content):
+def read_tmp_config_file(tmp_path, content, **kwargs):
     tmp_file = tmp_path / "config.toml"
     tmp_file.write_text(dedent(content))
-    return ConfigFile(tmp_file).read()
+    return ConfigFile(tmp_file).read(**kwargs)
 
 
 def test_read_single_empty_section(tmp_path):
@@ -106,15 +106,32 @@ def test_read_multiple_nested_sections(tmp_path):
 
         [_base._dep]
         variable = "deposition"
-
-        [_base._dep.tot]
         deposition_type = "tot"
+
+        [_base._dep._tot._ch.en]
+        domain = "ch"
+        lang = "en"
+
+        [_base._dep._tot._ch.de]
+        domain = "ch"
+        lang = "de"
+
+        [_base._dep._tot._auto.en]
+        domain = "auto"
+        lang = "en"
+
+        [_base._dep._tot._auto.de]
+        domain = "auto"
+        lang = "de"
 
         [_base._dep.wet]
         deposition_type = "wet"
 
         [_base._dep.wet.en]
         lang = "en"
+
+        [_base._dep.wet.de]
+        lang = "de"
         """
     sol_base = {
         "infiles": ["file.nc"],
@@ -122,16 +139,97 @@ def test_read_multiple_nested_sections(tmp_path):
     }
     sol_specific = [
         {"variable": "concentration"},
-        {"variable": "deposition", "deposition_type": "tot"},
+        {
+            "variable": "deposition",
+            "deposition_type": "tot",
+            "domain": "ch",
+            "lang": "en",
+        },
+        {
+            "variable": "deposition",
+            "deposition_type": "tot",
+            "domain": "ch",
+            "lang": "de",
+        },
+        {
+            "variable": "deposition",
+            "deposition_type": "tot",
+            "domain": "auto",
+            "lang": "en",
+        },
+        {
+            "variable": "deposition",
+            "deposition_type": "tot",
+            "domain": "auto",
+            "lang": "de",
+        },
         {"variable": "deposition", "deposition_type": "wet"},
         {"variable": "deposition", "deposition_type": "wet", "lang": "en"},
+        {"variable": "deposition", "deposition_type": "wet", "lang": "de"},
     ]
     sol = [{**DEFAULT_CONFIG, **sol_base, **d} for d in sol_specific]
     configs = read_tmp_config_file(tmp_path, content)
     assert configs == sol
 
 
-class Test_ConfigSet:
+def test_read_realcase(tmp_path):
+    """Test config file based on a real case."""
+    content = """\
+        # PyFlexPlot config file to create deterministic NAZ plots
+
+        [_base]
+
+        [_base._concentration]
+
+            [_base._concentration._auto]
+
+                [_base._concentration._auto.en]
+
+                [_base._concentration._auto.de]
+
+            [_base._concentration._ch]
+
+                [_base._concentration._ch.en]
+
+                [_base._concentration._ch.de]
+
+            [_base._concentration._integr]
+
+                [_base._concentration._integr._auto.en]
+
+                [_base._concentration._integr._auto.de]
+
+                [_base._concentration._integr._ch.en]
+
+                [_base._concentration._integr._ch.de]
+
+        [_base._deposition]
+
+        [_base._deposition._affected_area]
+
+        [_base._deposition._auto.en]
+
+        [_base._deposition._auto.de]
+
+        [_base._deposition._ch.en]
+
+        [_base._deposition._ch.de]
+
+        [_base._deposition._affected_area._auto.en]
+
+        [_base._deposition._affected_area._auto.de]
+
+        [_base._deposition._affected_area._ch.en]
+
+        [_base._deposition._affected_area._ch.de]
+
+        """
+    configs = read_tmp_config_file(tmp_path, content)
+    # Note: Fails with tomlkit (Feb. 2020)
+    assert len(configs) == 16
+
+
+class Test_ConfigCollection:
     def create_partial_dicts(self):
         return [
             {"infiles": ["foo.nc"], "variable": "concentration", "domain": "ch"},
@@ -147,15 +245,15 @@ class Test_ConfigSet:
 
     def test_dicts_configs(self):
         """
-        Check the dicts and Config objects used in the ConfigSet tests.
+        Check the dicts and Config objects used in the ConfigCollection tests.
         """
         assert self.create_configs() == self.create_complete_dicts()
 
     def test_create_empty(self):
-        configs = ConfigSet([])
+        configs = ConfigCollection([])
         assert len(configs) == 0
 
     def test_from_configs(self):
         partial_dicts = self.create_partial_dicts()
-        configs = ConfigSet(partial_dicts)
+        configs = ConfigCollection(partial_dicts)
         assert len(configs) == len(partial_dicts)

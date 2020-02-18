@@ -13,7 +13,6 @@ import click
 
 # First-party
 from srutils.click import CharSepList
-from srutils.various import group_kwargs
 
 # Local
 from . import __version__
@@ -49,6 +48,13 @@ def not_implemented(msg):
 
 @click.command(context_settings={"help_option_names": ["-h", "--help"]},)
 @click.version_option(__version__, "--version", "-V", message="%(version)s")
+@click.argument(
+    "config_file_paths",
+    metavar="CONFIG_FILE...",
+    type=click.Path(exists=True, readable=True, allow_dash=True),
+    required=True,
+    nargs=-1,
+)
 @click.option(
     "--dry-run",
     "dry_run",
@@ -90,37 +96,6 @@ def not_implemented(msg):
 )
 # --- Input
 @click.option(
-    "--config",
-    "config_file_path",
-    help="Configuration file path (TOML).",
-    type=click.Path(exists=True, readable=True, allow_dash=True),
-    required=True,
-)
-@click.option(
-    "--time",
-    "config_cli__time_idx",
-    help="Index of time (zero-based). Format key: '{time_idx}'.",
-    type=int,
-)
-@click.option(
-    "--member-id",
-    "-m",
-    "config_cli__ens_member_id_lst",
-    help=(
-        "Ensemble member id. Repeat for multiple members. Omit for deterministic "
-        "simulation data. Use the format key '{member_id}' to embed the member id(s) "
-        "in the plot file path."
-    ),
-    type=int,
-    multiple=True,
-)
-@click.option(
-    "--lang",
-    "config_cli__lang",
-    help="Language. Use the format key '{lang}' to embed it into the plot file path.",
-    type=click.Choice(["en", "de"]),
-)
-@click.option(
     "--scale",
     "scale_fact",
     help="Scale field before plotting. Useful for debugging.",
@@ -138,25 +113,10 @@ def not_implemented(msg):
     default=False,
 )
 # ---
-@group_kwargs("config_cli")
 @click.pass_context
-def cli(ctx, config_file_path, config_cli, **cli_args):
-    r"""
-    Read ``FLEXPART`` NetCDF output from INFILE(S) to create the plot OUTFILE.
-
-    Both INFILE(S) and OUTFILE may contain format keys that are replaced by
-    values derived from options and/or the input data, which allows one to
-    specify multipe input and/or output files with a single string. The syntax
-    is that of Python format strings, with the variable name wrapped in curly
-    braces.
-
-    Example:
-    \b
-    $ pyflexplot "ens_mem{member_id:03}.nc" "ens_spc-{species_id:02}.png" \\
-    >   --member-id={1..10} --species-id={0,1} ...
-    # input  : ens_mem001.nc, ens_mem002.nc, ...,  ens_mem010.nc
-    # output : ens_spc00.png, ens_spc01.png
-
+def cli(ctx, config_file_paths, **cli_args):
+    """
+    Create dispersion plot as specified in CONFIG_FILE(S).
     """
 
     click.echo("Welcome fellow PyFlexPlotter!")
@@ -167,16 +127,11 @@ def cli(ctx, config_file_path, config_cli, **cli_args):
     ctx.ensure_object(dict)
 
     # Read config file
-    configs = ConfigFile(config_file_path).read()
-    for config in configs:
-        config.update(config_cli, skip_none=True)
-
-    # SR_TMP <
-    required_args = ["variable", "simulation_type"]
-    for arg in required_args:
-        if getattr(next(iter(configs)), arg) is None:
-            raise Exception(f"argument missing: {arg}")
-    # SR_TMP >
+    configs = [
+        config
+        for config_file_path in config_file_paths
+        for config in ConfigFile(config_file_path).read()
+    ]
 
     # Create plots
     # SR_TMP <

@@ -10,6 +10,7 @@ __version__ = "0.6.2"
 # Standard library
 import os.path
 import sys
+import warnings
 from typing import Any
 from typing import List
 
@@ -33,6 +34,21 @@ except Exception as e:
     sys.exit(1)
 
 __all__: List[Any] = []
+
+
+# Format warning messages (remove code)
+# See https://docs.python.org/3/library/warnings.html#warnings.showwarning
+def custom_showwarnings(message, category, filename, lineno, file=None, line=None):
+    if file is None:
+        file = sys.stderr
+    key = "src/pyflexplot/"
+    if key in filename:
+        filename = f"pyflexplot.{filename.split(key)[-1].replace('/', '.')}"
+    text = f"{filename}:{lineno}: {category.__name__}: {message}\n"
+    file.write(text)
+
+
+warnings.showwarning = custom_showwarnings
 
 # Point cartopy to storerd offline data
 here = os.path.dirname(os.path.abspath(__file__))

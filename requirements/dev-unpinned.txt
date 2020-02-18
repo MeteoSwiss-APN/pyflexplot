@@ -6,6 +6,5 @@ ipython
 # isort  # handled by pre-commit
 # mypy  # handled by pre-commit
 # pluggy
-pre-commit
 # Sphinx
 # watchdog

@@ -4,6 +4,7 @@ Dictionary utilities.
 """
 # Standard library
 import itertools
+from collections import Mapping
 from collections import namedtuple
 from copy import deepcopy
 from dataclasses import dataclass
@@ -206,7 +207,7 @@ def flatten_nested_dict(
         def collect_children(dct):
             children = []
             for key, val in dct.items():
-                if isinstance(val, dict):
+                if isinstance(val, Mapping):
                     subchildren = run_rec(val, curr_depth=curr_depth + 1)
                     for subchild in subchildren.values():
                         subchild["path"] = tuple([key] + list(subchild["path"]))
@@ -275,7 +276,7 @@ def linearize_nested_dict(dct, match_end=None):
         def separate_subdicts(dct):
             subdcts, elements = {}, {}
             for key, val in dct.items():
-                if isinstance(val, dict):
+                if isinstance(val, Mapping):
                     subdcts[key] = val
                 else:
                     elements[key] = val
@@ -311,7 +312,7 @@ class _State:
         Copy non-dict elements from subdct to head.
         """
         for key, val in self.subdct.items():
-            if not isinstance(val, dict):
+            if not isinstance(val, Mapping):
                 self.head[key] = val
 
 
@@ -343,7 +344,7 @@ def _apply_match_end(dcts, match_end):
 
         done = True
         for key, val in state.subdct.items():
-            if isinstance(val, dict):
+            if isinstance(val, Mapping):
                 new_head = {}
                 state.head[key] = new_head
                 state.head = new_head
@@ -387,3 +388,10 @@ def decompress_nested_dict(dct, return_paths=False, match_end=None):
     if return_paths:
         return values, paths
     return values
+
+
+def print_dict_skeleton(dct, s="  ", _depth=0):
+    for key, val in dct.items():
+        if isinstance(val, Mapping):
+            print(f"{s * _depth}{key}")
+            print_dict_skeleton(val, s=s, _depth=_depth + 1)
