@@ -36,70 +36,96 @@ def naz_det_toml():
         infiles = [
             "/scratch/ruestefa/shared/flexpart_visualization/test/data/cosmo-1_2019052800.nc",
         ]
-        lang = "en"
-        domain = "auto"
+        outfile = "test_case1_{variable}_{domain}_{lang}_{time_idx:02d}.png"
         simulation_type = "deterministic"
         plot_type = "auto"
         level_idx = 0
         species_id = 2
         time_idx = 3
 
-        [_base.concentration]
-        outfile = "test_case1_{variable}_species-{species_id}_level-{level_idx}_time-{time_idx:02d}_domain-{domain}_{lang}.png"
+        [_base._concentration]
         variable = "concentration"
         integrate = false
 
-        [_base.concentration.lang_de]
-        lang = "de"
-
-        [_base.concentration.domain_ch]
-        domain = "ch"
-
-        [_base.concentration.domain_ch.lang_de]
-        lang = "de"
-
-        [_base.concentration.integrated]
+        [_base._concentration._integr]
         time_idx = 10
         species_id = 1
         integrate = true
 
-        [_base.concentration.integrated.lang_de]
-        lang = "de"
-
-        [_base.concentration.integrated.domain_ch]
-        domain = "ch"
-
-        [_base.concentration.integrated.domain_ch.lang_de]
-        lang = "de"
-
-        [_base.deposition]
-        outfile = "test_case1_{variable}_species-{species_id}_time-{time_idx:02d}_domain-{domain}_{lang}.png"
+        [_base._deposition]
         variable = "deposition"
         deposition_type = "tot"
         integrate = true
 
-        [_base.deposition.lang_de]
-        lang = "de"
-
-        [_base.deposition.domain_ch]
-        domain = "ch"
-
-        [_base.deposition.domain_ch.lang_de]
-        lang = "de"
-
-        [_base.deposition.affected_area]
+        [_base._deposition._affected_area]
         plot_type = "affected_area_mono"
         time_idx = 10
         species_id = [1, 2]
 
-        [_base.deposition.affected_area.lang_de]
+        [_base._concentration._auto.en]
+        domain = "auto"
+        lang = "en"
+
+        [_base._concentration._auto.de]
+        domain = "auto"
         lang = "de"
 
-        [_base.deposition.affected_area.domain_ch]
+        [_base._concentration._ch.en]
         domain = "ch"
+        lang = "en"
 
-        [_base.deposition.affected_area.domain_ch.lang_de]
+        [_base._concentration._ch.de]
+        domain = "ch"
         lang = "de"
+
+        [_base._concentration._integr._auto.en]
+        domain = "auto"
+        lang = "en"
+
+        [_base._concentration._integr._auto.de]
+        domain = "auto"
+        lang = "de"
+
+        [_base._concentration._integr._ch.en]
+        domain = "ch"
+        lang = "en"
+
+        [_base._concentration._integr._ch.de]
+        domain = "ch"
+        lang = "de"
+
+        [_base._deposition._auto.en]
+        domain = "auto"
+        lang = "en"
+
+        [_base._deposition._auto.de]
+        domain = "auto"
+        lang = "de"
+
+        [_base._deposition._ch.en]
+        domain = "ch"
+        lang = "en"
+
+        [_base._deposition._ch.de]
+        domain = "ch"
+        lang = "de"
+
+        [_base._deposition._affected_area._auto.en]
+        domain = "auto"
+        lang = "en"
+
+        [_base._deposition._affected_area._auto.de]
+        domain = "auto"
+        lang = "de"
+
+        [_base._deposition._affected_area._ch.en]
+        domain = "ch"
+        lang = "en"
+
+        [_base._deposition._affected_area._ch.de]
+        domain = "ch"
+        lang = "de"
+
         """  # noqa:E501
     click.echo(dedent(s))
 

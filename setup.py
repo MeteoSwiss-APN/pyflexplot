@@ -45,7 +45,7 @@ dependencies = [
     "pillow >= 6.2.0",
     "pydantic",
     "scipy",
-    "tomlkit",
+    "toml",
 ]
 
 # Build shapely from source (dependency of Cartopy)

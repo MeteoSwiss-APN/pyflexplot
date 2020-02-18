@@ -1,4 +1,5 @@
 flake8
+pre-commit
 pydocstyle
 # pylint
 pytest

@@ -54,6 +54,9 @@ class Plotter:
             str: Output file paths.
 
         """
+        if file_path_fmt is None:
+            raise ValueError("file_path_fmt is None")
+
         self.name = name
         self.file_path_fmt = file_path_fmt
         self.domain = domain or "auto"
@@ -173,6 +176,7 @@ class Plotter:
                 val = [val]
             # Iterate over relevant format keys
             rxs = r"{" + key + r"(:[^}]*)?}"
+            re.finditer(rxs, file_path)
             for m in re.finditer(rxs, file_path):
 
                 # Obtain format specifier (if there is one)
