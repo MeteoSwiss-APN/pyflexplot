@@ -1025,6 +1025,54 @@ class Plot_EnsMeanAffectedAreaMono(Plot_Ens, Plot_AffectedAreaMono):
     name = "ens_mean_affected_area_mono"
 
 
+class Plot_EnsMedian_Concentration(Plot_Ens, Plot_Concentration):
+    name = "ens_median_concentration"
+
+
+class Plot_EnsMedian_Deposition(Plot_Ens, Plot_Deposition):
+    name = "ens_median_deposition"
+
+
+class Plot_EnsMedianAffectedArea(Plot_Ens, Plot_AffectedArea):
+    name = "ens_median_affected_area"
+
+
+class Plot_EnsMedianAffectedAreaMono(Plot_Ens, Plot_AffectedAreaMono):
+    name = "ens_median_affected_area_mono"
+
+
+class Plot_EnsMin_Concentration(Plot_Ens, Plot_Concentration):
+    name = "ens_min_concentration"
+
+
+class Plot_EnsMin_Deposition(Plot_Ens, Plot_Deposition):
+    name = "ens_min_deposition"
+
+
+class Plot_EnsMinAffectedArea(Plot_Ens, Plot_AffectedArea):
+    name = "ens_min_affected_area"
+
+
+class Plot_EnsMinAffectedAreaMono(Plot_Ens, Plot_AffectedAreaMono):
+    name = "ens_min_affected_area_mono"
+
+
+class Plot_EnsMax_Concentration(Plot_Ens, Plot_Concentration):
+    name = "ens_max_concentration"
+
+
+class Plot_EnsMax_Deposition(Plot_Ens, Plot_Deposition):
+    name = "ens_max_deposition"
+
+
+class Plot_EnsMaxAffectedArea(Plot_Ens, Plot_AffectedArea):
+    name = "ens_max_affected_area"
+
+
+class Plot_EnsMaxAffectedAreaMono(Plot_Ens, Plot_AffectedAreaMono):
+    name = "ens_max_affected_area_mono"
+
+
 class Plot_EnsThrAgrmt(Plot_Ens):
     name = "ens_thr_agrmt"
 

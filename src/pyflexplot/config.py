@@ -14,6 +14,7 @@ from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 # First-party
 from srutils.dict import decompress_nested_dict
+from srutils.dict import nested_dict_resolve_wildcards
 
 
 @pydantic_dataclass(frozen=True)
@@ -75,9 +76,9 @@ class Config:
 
     """
 
-    infiles: Optional[List[str]] = None
+    infiles: List[str]
+    outfile: str
     member_ids: Optional[List[int]] = None
-    outfile: Optional[str] = None
     #
     variable: str = "concentration"
     simulation_type: str = "deterministic"
@@ -95,11 +96,8 @@ class Config:
     species_id: Union[int, List[int]] = 1
     time_idx: int = 0
 
-    def __post__init_post_parse__(self):
-        if isinstance(self.infiles, str):
-            self.infiles = [self.infiles]
-        if self.deposition_type == "tot":
-            self.deposition_type = ["dry", "wet"]
+    def __post_init_post_parse__(self):
+        pass
 
     @classmethod
     def as_config(cls, obj):
@@ -169,8 +167,11 @@ class ConfigFile:
                 raise Exception(
                     f"error parsing TOML file {self.path} ({type(e).__name__}: {e})"
                 )
-        values, paths = decompress_nested_dict(
-            raw_data, match_end=lambda key: not key.startswith("_"), return_paths=True,
+        if not raw_data:
+            raise ValueError(f"empty config file", self.path)
+        raw_data = nested_dict_resolve_wildcards(raw_data)
+        values = decompress_nested_dict(
+            raw_data, branch_end_criterion=lambda key: not key.startswith("_"),
         )
         configs = ConfigCollection(values)
         return configs

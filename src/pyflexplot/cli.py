@@ -17,6 +17,7 @@ from srutils.click import CharSepList
 # Local
 from . import __version__
 from .config import ConfigFile
+from .examples import choices as example_choices
 from .examples import print_example
 from .field_specs import FieldSpecs
 from .io import FileReader
@@ -90,7 +91,7 @@ def not_implemented(msg):
 @click.option(
     "--example",
     help="Example commands.",
-    type=click.Choice(["naz_det_toml", "naz_det_sh"]),
+    type=click.Choice(list(example_choices)),
     callback=print_example,
     expose_value=False,
 )

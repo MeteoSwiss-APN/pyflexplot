@@ -95,6 +95,13 @@ class Plotter:
 
     def format_file_path(self, field_specs):
 
+        # SR_TMP <
+        if re.search(r"{member_ids:[0-9]*d}", self.file_path_fmt):
+            raise NotImplementedError(
+                "number formatting of member ids of the form '{member_ids:[0-9]*d}'"
+            )
+        # SR_TMP >
+
         var_specs_dct = field_specs.multi_var_specs.compressed_dct()
 
         # Collect variable specifications

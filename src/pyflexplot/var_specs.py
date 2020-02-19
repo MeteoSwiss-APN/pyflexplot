@@ -409,10 +409,7 @@ class VarSpecs_EnsMean_Concentration(VarSpecs_Concentration):
     name: str = "concentration:ens_mean_concentration"
 
     def long_name(self):
-        return (
-            f"{self._words['activity_concentration']}\n"
-            f"{self._words['ensemble_mean']}"
-        )
+        return f"{self._words['ensemble_mean']} {self._words['concentration']}"
 
 
 class VarSpecs_EnsMean_Deposition(VarSpecs_Deposition):
@@ -420,8 +417,8 @@ class VarSpecs_EnsMean_Deposition(VarSpecs_Deposition):
 
     def long_name(self):
         return (
-            f"{self._words['ensemble_mean']} {self.deposition_type()} "
-            f"{self._words['surface_deposition']}"
+            f"{self._words['ensemble_mean']} "
+            f"{self.deposition_type()} {self._words['surface_deposition']}"
         )
 
 
@@ -435,15 +432,90 @@ class VarSpecs_EnsMean_AffectedArea(VarSpecs_AffectedArea):
         )
 
 
+class VarSpecs_EnsMedian_Concentration(VarSpecs_Concentration):
+    name: str = "concentration:ens_median_concentration"
+
+    def long_name(self):
+        return f"{self._words['ensemble_median']} {self._words['concentration']}"
+
+
+class VarSpecs_EnsMedian_Deposition(VarSpecs_Deposition):
+    name: str = "deposition:ens_median_deposition"
+
+    def long_name(self):
+        return (
+            f"{self._words['ensemble_median']} "
+            f"{self.deposition_type()} {self._words['surface_deposition']}"
+        )
+
+
+class VarSpecs_EnsMedian_AffectedArea(VarSpecs_AffectedArea):
+    name: str = "deposition:affected_area:ens_median_affected_area"
+
+    def long_name(self):
+        return (
+            f"{self._words['ensemble_median']} {self._words['affected_area']} "
+            f"({self.deposition_type()})"
+        )
+
+
+class VarSpecs_EnsMin_Concentration(VarSpecs_Concentration):
+    name: str = "concentration:ens_min_concentration"
+
+    def long_name(self):
+        return f"{self._words['ensemble_minimum']} {self._words['concentration']}"
+
+
+class VarSpecs_EnsMin_Deposition(VarSpecs_Deposition):
+    name: str = "deposition:ens_min_deposition"
+
+    def long_name(self):
+        return (
+            f"{self._words['ensemble_minimum']} "
+            f"{self.deposition_type()} {self._words['surface_deposition']}"
+        )
+
+
+class VarSpecs_EnsMin_AffectedArea(VarSpecs_AffectedArea):
+    name: str = "deposition:affected_area:ens_min_affected_area"
+
+    def long_name(self):
+        return (
+            f"{self._words['ensemble_minimum']} {self._words['affected_area']} "
+            f"({self.deposition_type()})"
+        )
+
+
+class VarSpecs_EnsMax_Concentration(VarSpecs_Concentration):
+    name: str = "concentration:ens_max_concentration"
+
+    def long_name(self):
+        return f"{self._words['ensemble_maximum']} {self._words['concentration']}"
+
+
+class VarSpecs_EnsMax_Deposition(VarSpecs_Deposition):
+    name: str = "deposition:ens_max_deposition"
+
+    def long_name(self):
+        return (
+            f"{self._words['ensemble_maximum']} "
+            f"{self.deposition_type()} {self._words['surface_deposition']}"
+        )
+
+
+class VarSpecs_EnsMax_AffectedArea(VarSpecs_AffectedArea):
+    name: str = "deposition:affected_area:ens_max_affected_area"
+
+    def long_name(self):
+        return (
+            f"{self._words['ensemble_maximum']} {self._words['affected_area']} "
+            f"({self.deposition_type()})"
+        )
+
+
 class VarSpecs_EnsThrAgrmt:
     def long_name(self):
-        # SR_TMP <<<
-        lang = self._words.default_lang
-        of = dict(en="of", de="der")[lang]
-        return (
-            f"{self._words['ensemble']}{dict(en=' ', de='-')[lang]}"
-            f"{self._words['threshold_agreement']} {of} {super().long_name()}"
-        )
+        return f"{self._words['threshold_agreement']} ({super().short_name()})"
 
     def short_name(self):
         return (

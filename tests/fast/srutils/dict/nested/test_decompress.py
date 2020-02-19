@@ -33,7 +33,7 @@ from srutils.dict import decompress_nested_dict
         ),
     ],
 )
-def test(dct, sol):
+def test_basic(dct, sol):
     assert decompress_nested_dict(dct) == sol
 
 
@@ -111,20 +111,22 @@ class Test_MatchEnd:
     ]
 
     @staticmethod
-    def match_end(key):
+    def branch_end_criterion(key):
         return not key.startswith("_")
 
     def test_control(self):
-        res = decompress_nested_dict(self.dct, match_end=None)
+        res = decompress_nested_dict(self.dct, branch_end_criterion=None)
         assert res == self.sol_control
 
     def test_match_end(self):
-        res = decompress_nested_dict(self.dct, match_end=self.match_end)
+        res = decompress_nested_dict(
+            self.dct, branch_end_criterion=self.branch_end_criterion
+        )
         assert res == self.sol_match
 
     def test_return_paths(self):
         res_values, res_paths = decompress_nested_dict(
-            self.dct, match_end=self.match_end, return_paths=True,
+            self.dct, branch_end_criterion=self.branch_end_criterion, return_paths=True,
         )
         assert res_values == self.sol_match
         assert res_paths == self.sol_paths

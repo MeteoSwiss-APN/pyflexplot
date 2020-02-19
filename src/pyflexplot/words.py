@@ -58,7 +58,10 @@ WORDS.add(en="dry", de={"*": "trocken", "f": "trockene"})
 WORDS.add(en={"*": "east", "abbr": "E"}, de={"*": "Ost", "abbr": "O"})
 WORDS.add(en="end", de="Ende")
 WORDS.add(en="ensemble", de="Ensemble")
+WORDS.add(en="ensemble maximum", de="Ensemble-Maximum")
 WORDS.add(en="ensemble mean", de="Ensemble-Mittel")
+WORDS.add(en="ensemble median", de="Ensemble-Median")
+WORDS.add(en="ensemble minimum", de="Ensemble-Minimum")
 # F
 WORDS.add(en="FLEXPART", de="FLEXPART")
 # G
