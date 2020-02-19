@@ -24,6 +24,13 @@ def print_example(ctx, param, value):
 choices = {}
 
 
+def register_choice(fct):
+    """Register a function by its name as a choice for --example."""
+    choices[fct.__name__] = fct
+    return fct
+
+
+@register_choice
 def naz_det_toml():
     """
     TOML config file to create deterministic NAZ plots.
@@ -128,9 +135,7 @@ def naz_det_toml():
     click.echo(dedent(s))
 
 
-choices["naz_det_toml"] = naz_det_toml
-
-
+@register_choice
 def naz_det_sh():
     """
     Bash script to create deterministic NAZ plots.
@@ -144,9 +149,7 @@ def naz_det_sh():
     click.echo(dedent(s))
 
 
-choices["naz_det_sh"] = naz_det_sh
-
-
+@register_choice
 def ens_thr_agrmt():
     """Plot ensemble threshold agreement."""
     s = """\
@@ -173,9 +176,7 @@ def ens_thr_agrmt():
     click.echo(dedent(s))
 
 
-choices["ens_thr_agrmt"] = ens_thr_agrmt
-
-
+@register_choice
 def ens_basic_stats():
     """Plot basic ensemble statistical measures."""
     s = """\
@@ -225,6 +226,3 @@ def ens_basic_stats():
 
         """  # noqa:E501
     click.echo(dedent(s))
-
-
-choices["ens_basic_stats"] = ens_basic_stats
