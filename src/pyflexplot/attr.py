@@ -806,7 +806,7 @@ class AttrsCollector:
     def collect_simulation_attrs(self, attrs):
         """Collect simulation attributes."""
 
-        model_name = "COSMO-1"  # SR_HC
+        model_name = "COSMO-?"  # SR_HC
 
         # Start and end timesteps of simulation
         _ga = self.ncattrs_global

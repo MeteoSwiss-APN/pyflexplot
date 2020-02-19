@@ -197,6 +197,7 @@ def ens_basic_stats():
         [_base._deposition]
         variable = "deposition"
         deposition_type = "wet"
+        integrate = true
 
         [_base._concentration.mean]
         plot_type = "ens_mean"
