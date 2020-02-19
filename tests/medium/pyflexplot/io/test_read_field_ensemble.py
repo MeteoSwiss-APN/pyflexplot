@@ -271,10 +271,7 @@ class TestReadFieldEnsemble_Multiple:
             "max": np.nanmax,
             "thr_agrmt": (
                 lambda arr, axis: threshold_agreement(
-                    arr,
-                    self.agreement_threshold_concentration,
-                    axis=axis,
-                    dtype=arr.dtype,
+                    arr, self.agreement_threshold_concentration, axis=axis,
                 )
             ),
         }[ens_var]

@@ -171,3 +171,27 @@ def ens_basic_stats():
 
         """  # noqa:E501
     click.echo(dedent(s))
+
+
+@register_choice
+def ens_cloud_arrival_time():
+    """Plot cloud arrival time."""
+    s = """\
+        # PyFlexPlot config file to plot cloud arrival time.
+
+        [_base]
+        # Sampe data directory: /scratch/ruestefa/shared/flexpart_visualization/test/
+        infiles = ["data/cosmo-2e_2019073100_{member_id:03d}.nc"]
+        simulation_type = "ensemble"
+        member_ids = [
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+        ]
+        outfile = "test_{variable}_{domain}_{lang}_ts{time_idx:02d}_{member_ids}.png"
+        plot_type = "ens_cloud_arrival_time"
+        variable = "concentration"
+        time_idx = 0
+
+        ["**".en]
+        lang = "en"
+        """
+    click.echo(dedent(s))

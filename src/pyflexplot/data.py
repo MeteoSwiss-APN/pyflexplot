@@ -106,7 +106,7 @@ class Field(SummarizableClass):
             self.time_stats[key] *= fact
 
 
-def threshold_agreement(arr, thr, *, axis=None, eq_ok=False, dtype=None):
+def threshold_agreement(arr, thr, *, axis=None, thr_eq_ok=False):
     """Count the members exceeding a threshold at each grid point.
 
     Args:
@@ -117,17 +117,64 @@ def threshold_agreement(arr, thr, *, axis=None, eq_ok=False, dtype=None):
         axis (int, optional): Index of ensemble member axis, along which the
             reduction is performed. Defaults to None.
 
-        eq_ok (bool, optional): Whether values equal to the threshold are
+        thr_eq_ok (bool, optional): Whether values equal to the threshold are
             counted as exceedences. Defaults to False.
 
-        dtype (type, optional): Type of result. Defaults to None.
-
     """
+    # SR_TMP < TODO Remove once type hints added to arguments
     if arr is None:
         raise ValueError("arr is None")
     if thr is None:
         raise ValueError("thr is None")
-    result = np.count_nonzero(arr >= thr if eq_ok else arr > thr, axis=axis)
-    if dtype is not None:
-        result = result.astype(dtype)
+    # SR_TMP >
+    compare = np.greater_equal if thr_eq_ok else np.greater
+    result = np.count_nonzero(compare(arr, thr), axis=axis)
+    return result
+
+
+def cloud_arrival_time(
+    arr, thr, n_mem_min, *, mem_axis=None, time_axis=None, thr_eq_ok=False,
+):
+    """Count the time steps until a cloud arrives in enough members.
+
+    Args:
+        arr (np.ndarray[float]): Data array.
+
+        thr (float): Threshold to be exceeded.
+
+        n_mem_min (int): Minimum number of members required to agreement.
+
+        mem_axis (int, optional): Index of ensemble member axis, along which
+            the reduction is performed. Defaults to None.
+
+        time_axis (int, optional): Index of time axis. If None, the first non-
+            member-axis is chosen. Defaults to None.
+
+        thr_eq_ok (bool, optional): Whether values equal to the threshold are
+            counted as exceedences. Defaults to False.
+
+    """
+    # SR_TMP < TODO Remove once type hints added to arguments
+    if arr is None:
+        raise ValueError("arr is None")
+    if thr is None:
+        raise ValueError("thr is None")
+    if n_mem_min is None:
+        raise ValueError("n_mem_min is None")
+    # SR_TMP >
+    if time_axis is None:
+        time_axis = 1 if mem_axis == 0 else 0
+    compare = np.greater_equal if thr_eq_ok else np.greater
+    time_idx_max = arr.shape[time_axis] - 1
+    shape = tuple(
+        [arr.shape[time_axis]]
+        + [n for i, n in enumerate(arr.shape) if i not in (time_axis, mem_axis)]
+    )
+    result = np.full(shape, np.nan)
+    for time_idx in range(time_idx_max, -1, -1):
+        arr_i = np.take(arr, time_idx, time_axis)
+        m_cloud = np.count_nonzero(compare(arr_i, thr), axis=mem_axis) >= n_mem_min
+        result[time_idx][m_cloud] = 0
+        if time_idx < time_idx_max:
+            result[time_idx][~m_cloud] = result[time_idx + 1][~m_cloud] + 1
     return result

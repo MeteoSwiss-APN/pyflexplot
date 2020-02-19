@@ -536,6 +536,19 @@ class VarSpecs_EnsThrAgrmt_AffectedArea(VarSpecs_EnsThrAgrmt, VarSpecs_AffectedA
     name: str = "deposition:affected_area:ens_thr_agrmt_affected_area"
 
 
+class VarSpecs_EnsCloudArrivalTime_Concentration(VarSpecs_Concentration):
+    name: str = "concentration:ens_cloud_arrival_time_concentration"
+
+    def long_name(self):
+        return f"{self._words['cloud_arrival_time']}"
+
+    def short_name(self):
+        return (
+            f"{self._words['arrival_time'].c}\n"
+            f"({self._words['hour', None, 'pl'].c} {self._words['from_now']})"
+        )
+
+
 class MultiVarSpecs:
     """Hold multiple ``VarSpecs`` objects."""
 

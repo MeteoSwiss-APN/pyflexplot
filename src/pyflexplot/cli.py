@@ -221,6 +221,8 @@ def read_fields(cls_name, config):
     if config.simulation_type == "ensemble":
         if config.plot_type == "ens_thr_agrmt":
             ens_var_setup = {"thr": 1e-9}
+        elif config.plot_type == "ens_cloud_arrival_time":
+            ens_var_setup = {"thr": 1e-9, "n_mem_min": 11}
         else:
             ens_var_setup = {}
     else:

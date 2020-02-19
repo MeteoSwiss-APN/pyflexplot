@@ -26,22 +26,24 @@ WORDS = TranslatedWords("words", {}, default_lang="en")
 # A
 WORDS.add(en="accumulated over", de=f'akkumuliert {s["ue"]}ber')
 WORDS.add(
-    en={"*": "concentration", "abbr": "concentr."},
-    de={"*": "Konzentration", "abbr": "Konzentr."},
-)
-WORDS.add(
     en={"*": "activity concentration", "abbr": "activity concentr."},
     de={
         "*": f'Aktivit{s["ae"]}tskonzentration',
         "abbr": f'Aktivit{s["ae"]}tskonzentr.',
     },
 )
+WORDS.add(en="arrival time", de="Ankunftszeit")
 WORDS.add(en="affected area", de="Beaufschlagtes Gebiet")
 WORDS.add(en="at", de={"level": "auf", "place": "bei", "time": "um"})
 WORDS.add(en="averaged over", de=f'gemittelt {s["ue"]}ber')
 # B
 WORDS.add(en="based on", de="basierend auf")
 # C
+WORDS.add(en="cloud arrival time", de="Wolkenankunftszeit")
+WORDS.add(
+    en={"*": "concentration", "abbr": "concentr."},
+    de={"*": "Konzentration", "abbr": "Konzentr."},
+)
 # D
 deg_ = f"{s['deg']}{s['short_space']}"
 WORDS.add("degE", en=f"{deg_}E", de=f"{deg_}O")
@@ -64,10 +66,15 @@ WORDS.add(en="ensemble median", de="Ensemble-Median")
 WORDS.add(en="ensemble minimum", de="Ensemble-Minimum")
 # F
 WORDS.add(en="FLEXPART", de="FLEXPART")
+WORDS.add(en="from now", de="ab jetzt")
 # G
 # H
 WORDS.add(en="half-life", de="Halbwertszeit")
 WORDS.add(en="height", de=f'H{s["oe"]}he')
+WORDS.add(
+    en={"*": "hour", "pl": "hours", "abbr": "h"},
+    de={"*": "Stunde", "pl": "Stunden", "abbr": "h"},
+)
 # I
 WORDS.add(
     en={"*": "integrated", "abbr": "int."},

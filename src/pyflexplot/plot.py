@@ -1139,3 +1139,7 @@ class Plot_EnsThrAgrmt_Concentration(Plot_EnsThrAgrmt, Plot_Concentration):
 
 class Plot_EnsThrAgrmt_Deposition(Plot_EnsThrAgrmt, Plot_Deposition):
     name = "ens_thr_agrmt_deposition"
+
+
+class Plot_EnsCloudArrivalTime(Plot_Ens, Plot_Concentration):
+    name = "ens_cloud_arrival_time_concentration"

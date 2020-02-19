@@ -59,3 +59,12 @@ cartopy.config["pre_existing_data_dir"] = data_dir
 
 # Set matplotlib backend
 matplotlib.use("Agg")
+
+# SR_DEV < Shorthand to embed IPython shell
+try:
+    import IPython  # isort:skip
+except ImportError:
+    ipy = None
+else:
+    ipy = IPython.terminal.embed.embed
+# SR_DEV >

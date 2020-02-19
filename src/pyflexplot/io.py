@@ -16,6 +16,7 @@ from srutils.various import check_array_indices
 # Local
 from .attr import AttrsCollector
 from .data import Field
+from .data import cloud_arrival_time
 from .data import threshold_agreement
 from .field_specs import FieldSpecs
 
@@ -292,6 +293,7 @@ class FileReader:
 
         ens_var = fld_specs_time.ens_var
         ens_var_setup = getattr(fld_specs_time, "ens_var_setup", {})
+        setup_name = f"{type(fld_specs_time).__name__}.ens_var_setup"
 
         if ens_var == "mean":
             fld_time = np.nanmean(fld_time_mem, axis=0)
@@ -305,13 +307,18 @@ class FileReader:
             try:
                 thr = ens_var_setup["thr"]
             except KeyError:
-                raise Exception(
-                    f"'thr' missing in "
-                    f"{type(fld_specs_time).__name__}.ens_var_setup"
-                )
-            fld_time = threshold_agreement(
-                fld_time_mem, thr, axis=0, dtype=fld_time_mem.dtype
-            )
+                raise Exception(f"'thr' missing in {setup_name}")
+            fld_time = threshold_agreement(fld_time_mem, thr, axis=0)
+        elif ens_var == "cloud_arrival_time":
+            try:
+                thr = ens_var_setup["thr"]
+            except KeyError:
+                raise Exception(f"'thr' missing in {setup_name}")
+            try:
+                n_mem_min = ens_var_setup["n_mem_min"]
+            except KeyError:
+                raise Exception(f"'n_mem_min' missing in {setup_name}")
+            fld_time = cloud_arrival_time(fld_time_mem, thr, n_mem_min, mem_axis=0)
         else:
             raise NotImplementedError(f"ens_var '{ens_var}'")
         return fld_time
