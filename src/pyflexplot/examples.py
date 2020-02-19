@@ -31,7 +31,7 @@ def register_choice(fct):
 
 
 @register_choice
-def naz_det_toml():
+def naz_det():
     """
     TOML config file to create deterministic NAZ plots.
     """
@@ -52,82 +52,39 @@ def naz_det_toml():
         variable = "concentration"
         integrate = false
 
-        [_base._concentration._integr]
+        # TODO Derive from `_concentration` once wildcards/hooks more sophisticated
+        [_base._concentration_integrated]
+        variable = "concentration"
         time_idx = 10
         species_id = 1
-        integrate = true
 
         [_base._deposition]
         variable = "deposition"
         deposition_type = "tot"
         integrate = true
 
-        [_base._deposition._affected_area]
+        # TODO Derive from `_deposition` once wildcards/hooks more sophisticated
+        [_base._affected_area]
+        variable = "deposition"
+        deposition_type = "tot"
+        integrate = true
         plot_type = "affected_area_mono"
         time_idx = 10
         species_id = [1, 2]
 
-        [_base._concentration._auto.en]
+        [_base."*"._auto.en]
         domain = "auto"
         lang = "en"
 
-        [_base._concentration._auto.de]
-        domain = "auto"
-        lang = "de"
-
-        [_base._concentration._ch.en]
-        domain = "ch"
-        lang = "en"
-
-        [_base._concentration._ch.de]
-        domain = "ch"
-        lang = "de"
-
-        [_base._concentration._integr._auto.en]
-        domain = "auto"
-        lang = "en"
-
-        [_base._concentration._integr._auto.de]
+        [_base."*"._auto.de]
         domain = "auto"
         lang = "de"
 
-        [_base._concentration._integr._ch.en]
+        [_base."*"._ch.en]
         domain = "ch"
         lang = "en"
 
-        [_base._concentration._integr._ch.de]
-        domain = "ch"
-        lang = "de"
-
-        [_base._deposition._auto.en]
-        domain = "auto"
-        lang = "en"
-
-        [_base._deposition._auto.de]
-        domain = "auto"
-        lang = "de"
-
-        [_base._deposition._ch.en]
-        domain = "ch"
-        lang = "en"
-
-        [_base._deposition._ch.de]
-        domain = "ch"
-        lang = "de"
-
-        [_base._deposition._affected_area._auto.en]
-        domain = "auto"
-        lang = "en"
-
-        [_base._deposition._affected_area._auto.de]
-        domain = "auto"
-        lang = "de"
-
-        [_base._deposition._affected_area._ch.en]
-        domain = "ch"
-        lang = "en"
-
-        [_base._deposition._affected_area._ch.de]
+        [_base."*"._ch.de]
         domain = "ch"
         lang = "de"
 
@@ -200,28 +157,16 @@ def ens_basic_stats():
         deposition_type = "wet"
         integrate = true
 
-        [_base._concentration.mean]
+        [_base."*".mean]
         plot_type = "ens_mean"
 
-        [_base._deposition.mean]
-        plot_type = "ens_mean"
-
-        [_base._concentration.median]
+        [_base."*".median]
         plot_type = "ens_median"
 
-        [_base._deposition.median]
-        plot_type = "ens_median"
-
-        [_base._concentration.min]
+        [_base."*".min]
         plot_type = "ens_min"
 
-        [_base._deposition.min]
-        plot_type = "ens_min"
-
-        [_base._concentration.max]
-        plot_type = "ens_max"
-
-        [_base._deposition.max]
+        [_base."*".max]
         plot_type = "ens_max"
 
         """  # noqa:E501
