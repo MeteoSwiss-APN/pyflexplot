@@ -367,7 +367,7 @@ class NestedDictLinearizer:
                     state.subdct = val
                     _core_rec(result, dct, state)
 
-        result = []
+        result: List[Dict[str, Any]] = []
         for dct in dcts:
             _core_rec(result, dct)
 
@@ -392,9 +392,9 @@ def decompress_nested_dict(dct, return_paths=False, branch_end_criterion=None):
         return_paths (bool, optional): Whether to return the path of each value
             in the nested dicts as a separate dict. Defaults to False.
 
-        branch_end_criterion (callable, optional): Function to match intermediate points.
-            See docstring of ``linearize_nested_dict`` for details. Defaults
-            to None.
+        branch_end_criterion (callable, optional): Function to match end points
+            of linear branches. See docstring of ``linearize_nested_dict`` for
+            details. Defaults to None.
 
     """
     values, paths = [], []
@@ -410,6 +410,44 @@ def decompress_nested_dict(dct, return_paths=False, branch_end_criterion=None):
     if return_paths:
         return values, paths
     return values
+
+
+def nested_dict_resolve_wildcards(dct):
+    """Update all dicts at the same level with the one with a wildcard key.
+
+    Args:
+        dct (Dict[str, Any]): Nested dict.
+
+    """
+
+    def _apply_double_wc(dct, wild_val):
+        subdcts = []
+        for key, val in dct.items():
+            if isinstance(val, Mapping):
+                subdcts.append(val)
+        if subdcts:
+            for subdct in subdcts:
+                _apply_double_wc(subdct, wild_val)
+        else:
+            dct.update(wild_val)
+
+    wildcards = {}
+    for key, val in dct.copy().items():
+        if "*" in key:
+            wildcards[key] = dct.pop(key)
+    for wild_key, wild_val in wildcards.items():
+        if wild_key == "*":
+            for key, val in dct.items():
+                if isinstance(val, Mapping):
+                    val.update(wild_val)
+        elif wild_key == "**":
+            _apply_double_wc(dct, wild_val)
+        else:
+            raise NotImplementedError("invalid wildcard key", key)
+    for key, val in dct.items():
+        if isinstance(val, Mapping):
+            dct[key] = nested_dict_resolve_wildcards(val)
+    return dct
 
 
 def print_dict_skeleton(dct, s="  ", _depth=0):

@@ -14,6 +14,7 @@ from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 # First-party
 from srutils.dict import decompress_nested_dict
+from srutils.dict import nested_dict_resolve_wildcards
 
 
 @pydantic_dataclass(frozen=True)
@@ -168,10 +169,9 @@ class ConfigFile:
                 )
         if not raw_data:
             raise ValueError(f"empty config file", self.path)
-        values, paths = decompress_nested_dict(
-            raw_data,
-            branch_end_criterion=lambda key: not key.startswith("_"),
-            return_paths=True,
+        raw_data = nested_dict_resolve_wildcards(raw_data)
+        values = decompress_nested_dict(
+            raw_data, branch_end_criterion=lambda key: not key.startswith("_"),
         )
         configs = ConfigCollection(values)
         return configs

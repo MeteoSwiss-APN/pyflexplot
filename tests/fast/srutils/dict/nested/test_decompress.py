@@ -33,7 +33,7 @@ from srutils.dict import decompress_nested_dict
         ),
     ],
 )
-def test(dct, sol):
+def test_basic(dct, sol):
     assert decompress_nested_dict(dct) == sol
 
 

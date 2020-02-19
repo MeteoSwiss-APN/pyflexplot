@@ -19,6 +19,8 @@ DEFAULT_KWARGS = {
 def fmt_val(val):
     if isinstance(val, str):
         return f'"{val}"'
+    elif isinstance(val, bool):
+        return "true" if val else "false"
     elif isinstance(val, Sequence):
         return f"[{', '.join([fmt_val(v) for v in val])}]"
     else:
@@ -196,7 +198,7 @@ def test_read_multiple_nested_sections(tmp_path):
 
 
 def test_read_semi_realcase(tmp_path):
-    """Test config file based on a real case."""
+    """Test config file based on a real case, with some groups indented."""
     content = f"""\
         # PyFlexPlot config file to create deterministic NAZ plots
 
@@ -249,8 +251,127 @@ def test_read_semi_realcase(tmp_path):
 
         """
     configs = read_tmp_config_file(tmp_path, content)
-    # Note: Fails with tomlkit (Feb. 2020)
+    # Note: Fails with tomlkit, but works with toml (2020-02-18)
     assert len(configs) == 16
+
+
+def test_read_wildcard_simple(tmp_path):
+    """Apply a subgroup to multiple groups with a wildcard."""
+    content = f"""\
+        [_base]
+        {DEFAULT_TOML}
+
+        [_base._concentration]
+        variable = "concentration"
+
+        [_base._deposition]
+        variable = "deposition"
+
+        [_base."*".de]
+        lang = "de"
+
+        [_base."*".en]
+        lang = "en"
+
+        """
+    sol = [
+        {**DEFAULT_CONFIG, **dct}
+        for dct in [
+            {"variable": "concentration", "lang": "de"},
+            {"variable": "concentration", "lang": "en"},
+            {"variable": "deposition", "lang": "de"},
+            {"variable": "deposition", "lang": "en"},
+        ]
+    ]
+    configs = read_tmp_config_file(tmp_path, content)
+    assert configs == sol
+
+
+def test_read_double_wildcard_equal_depth(tmp_path):
+    """Apply a double-star wildcard subdict to an equal-depth nested dict."""
+    content = f"""\
+        [_base]
+        {DEFAULT_TOML}
+
+        [_base._concentration]
+        variable = "concentration"
+
+        [_base._deposition]
+        variable = "deposition"
+
+        ["**"._ch.de]
+        domain = "ch"
+        lang = "de"
+
+        ["**"._ch.en]
+        domain = "ch"
+        lang = "en"
+
+        ["**"._auto.de]
+        domain = "auto"
+        lang = "de"
+
+        ["**"._auto.en]
+        domain = "auto"
+        lang = "en"
+
+        """
+    sol = [
+        {**DEFAULT_CONFIG, **dct, "domain": domain, "lang": lang}
+        for dct in [
+            {"variable": "concentration", "integrate": False},
+            {"variable": "deposition", "integrate": False},
+        ]
+        for domain in ["ch", "auto"]
+        for lang in ["de", "en"]
+    ]
+    configs = read_tmp_config_file(tmp_path, content)
+    assert configs.as_dicts() == sol
+
+
+def test_read_double_wildcard_variable_depth(tmp_path):
+    """Apply a double-star wildcard subdict to a variable-depth nested dict."""
+    content = f"""\
+        [_base]
+        {DEFAULT_TOML}
+
+        [_base._concentration]
+        variable = "concentration"
+
+        [_base._concentration._time10]
+        time_idx = 10
+
+        [_base._deposition]
+        variable = "deposition"
+
+        ["**"._ch.de]
+        domain = "ch"
+        lang = "de"
+
+        ["**"._ch.en]
+        domain = "ch"
+        lang = "en"
+
+        ["**"._auto.de]
+        domain = "auto"
+        lang = "de"
+
+        ["**"._auto.en]
+        domain = "auto"
+        lang = "en"
+
+        """
+    sol = [
+        {**DEFAULT_CONFIG, **dct, "domain": domain, "lang": lang}
+        for dct in [
+            {"variable": "concentration", "time_idx": 10},
+            {"variable": "deposition"},
+        ]
+        for domain in ["ch", "auto"]
+        for lang in ["de", "en"]
+    ]
+    configs = read_tmp_config_file(tmp_path, content)
+    assert configs.as_dicts() == sol
 
 
 class Test_ConfigCollection:
