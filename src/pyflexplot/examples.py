@@ -55,6 +55,7 @@ def naz_det():
         # TODO Derive from `_concentration` once wildcards/hooks more sophisticated
         [_base._concentration_integrated]
         variable = "concentration"
+        integrate = true
         time_idx = 10
         species_id = 1
 
@@ -89,20 +90,6 @@ def naz_det():
         lang = "de"
 
         """  # noqa:E501
-    click.echo(dedent(s))
-
-
-@register_choice
-def naz_det_sh():
-    """
-    Bash script to create deterministic NAZ plots.
-    """
-    s = """\
-        #!/bin/bash
-
-        # Create deterministic NAZ plots
-        pyflexplot --setup=<(pyflexplot --example=naz_det_toml)
-        """
     click.echo(dedent(s))
 
 

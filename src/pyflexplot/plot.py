@@ -226,7 +226,7 @@ class Plot(SummarizablePlotClass, ParentClass):
     mark_release_site = True
     lw_frame = 1.0
 
-    # SR_TMP <<< TODO move to some config/setup class
+    # SR_TMP TODO move to some config/setup class
     @property
     def text_box_setup(self):
         if self.name.startswith("ens_"):
@@ -246,7 +246,7 @@ class Plot(SummarizablePlotClass, ParentClass):
                 "h_rel_box_rt": 0.45,
             }
 
-    # SR_TMP <<< TODO move to some config/setup class
+    # SR_TMP TODO move to some config/setup class
     @property
     def n_levels(self):
         if self.name.startswith("ens_thr_agrmt"):
@@ -262,7 +262,7 @@ class Plot(SummarizablePlotClass, ParentClass):
         else:
             return 9
 
-    # SR_TMP <<< TODO move to some config/setup class
+    # SR_TMP TODO move to some config/setup class
     @property
     def extend(self):
         if self.name.startswith("ens_thr_agrmt"):
@@ -274,7 +274,7 @@ class Plot(SummarizablePlotClass, ParentClass):
         else:
             return "max"
 
-    # SR_TMP <<< TODO move to some config/setup class
+    # SR_TMP TODO move to some config/setup class
     @property
     def d_level(self):
         if self.name.startswith("ens_thr_agrmt"):
@@ -284,7 +284,7 @@ class Plot(SummarizablePlotClass, ParentClass):
         else:
             return None
 
-    # SR_TMP <<< TODO move to some config/setup class
+    # SR_TMP TODO move to some config/setup class
     @property
     def level_range_style(self):
         if self.name.startswith("ens_thr_agrmt"):
@@ -294,7 +294,7 @@ class Plot(SummarizablePlotClass, ParentClass):
         else:
             return "base"
 
-    # SR_TMP <<< TODO move to some config/setup class
+    # SR_TMP TODO move to some config/setup class
     @property
     def level_ranges_align(self):
         if self.name.startswith("ens_thr_agrmt"):
@@ -304,7 +304,7 @@ class Plot(SummarizablePlotClass, ParentClass):
         else:
             return "center"
 
-    # SR_TMP <<< TODO move to some config/setup class
+    # SR_TMP TODO move to some config/setup class
     @property
     def mark_field_max(self):
         if self.name.startswith("ens_thr_agrmt"):
@@ -369,7 +369,7 @@ class Plot(SummarizablePlotClass, ParentClass):
 
         self.create_plot()
 
-    # SR_TMP <<< Intermediate step toward eliminating subclasses
+    # SR_TMP Intermediate step toward eliminating subclasses
     @classmethod
     def create(cls, field, setup, **kwargs):
         subcls = cls.subcls(setup.tmp_cls_name())
@@ -457,7 +457,17 @@ class Plot(SummarizablePlotClass, ParentClass):
 
         return h_con
 
+    # SR_TODO Replace name checks with plot-specific config/setup object
     def draw_colors_contours(self):
+        if self.name.startswith("ens_thr_agrmt"):
+            self._tmp_draw_colors_contours_ens_thr_agrmt()
+        elif self.name.startswith("ens_cloud_arrival_time"):
+            self._tmp_draw_colors_contours_ens_thr_agrmt()
+        else:
+            self._tmp_draw_colors_contours_default()
+
+    # SR_TMP Intermediate step toward eliminating subclasses
+    def _tmp_draw_colors_contours_default(self):
 
         field = np.log10(self.fld_nonzero())
 
@@ -478,6 +488,34 @@ class Plot(SummarizablePlotClass, ParentClass):
                 field, levels=self.levels_log10, colors="black", linewidths=1,
             )
             return (h_col, h_con)
+
+    def _tmp_draw_colors_contours_ens_thr_agrmt(self):
+
+        # If upper end of range is closed, color areas beyond black
+        colors_plot = copy(self.get_colors())
+        if self.extend in ["none", "min"]:
+            colors_plot.append("black")
+            extend_plot = {"none": "max", "min": "both"}[self.extend]
+        else:
+            extend_plot = self.extend
+
+        field = self.fld_nonzero()
+
+        if not self.draw_colors:
+            h_col = None
+        else:
+            h_col = self.ax_map.contourf(
+                field, levels=self.get_levels(), colors=colors_plot, extend=extend_plot,
+            )
+
+        if not self.draw_contours:
+            h_con = None
+        else:
+            h_con = self.ax_map.contour(
+                field, levels=self.get_levels(), colors="black", linewidths=1,
+            )
+
+        return (h_col, h_con)
 
     def draw_boxes(self):
         for fill_box, box in self.boxes.items():
@@ -742,11 +780,27 @@ class Plot(SummarizablePlotClass, ParentClass):
 
     # SR_TODO Move into Labels class
     def _format_top_box_subtitle(self):
-        return None
+        if self.name.startswith("ens_thr_agrmt"):
+            return self.labels.top_left["subtitle_thr_agrmt_fmt"].format(
+                thr=self.field.field_specs.ens_var_setup["thr"],
+            )
+        elif self.name.startswith("ens_cloud_arrival_time"):
+            return self.labels.top_left["subtitle_cloud_arrival_time"].format(
+                thr=self.field.field_specs.ens_var_setup["thr"],
+                mem=self.field.field_specs.ens_var_setup["n_mem_min"],
+            )
+        else:
+            return None
 
     # SR_TODO Move into Labels class
+    # SR_TODO Replace name checks with plot-specific config/setup object
     def _format_legend_box_title(self):
-        return self.labels.right_top["title_unit"]
+        if self.name.startswith("ens_thr_agrmt"):
+            return self.labels.right_top["title"]
+        elif self.name.startswith("ens_cloud_arrival_time"):
+            return self.labels.right_top["title"]
+        else:
+            return self.labels.right_top["title_unit"]
 
     def fill_box_right_bottom(self, box):
         """Fill the bottom box to the right of the map plot."""
@@ -809,19 +863,44 @@ class Plot(SummarizablePlotClass, ParentClass):
         # MeteoSwiss Copyright
         box.text("tr", dx=0.7, dy=0.5, s=labels["copyright"], size="small")
 
-    # SR_TODO move this into Labels class
+    # SR_TODO Move this into Labels class
+    # SR_TODO Replace name checks with plot-specific config/setup object
     def _model_info(self):
-        return self.labels.bottom["model_info_det"]
-
-    def get_colors(self):
-        if self.cmap == "flexplot":
-            return colors_flexplot(self.n_levels, self.extend)
+        if self.name.startswith("ens_"):
+            return self.labels.bottom["model_info_ens"]
         else:
-            cmap = mpl.cm.get_cmap(self.cmap)
-            return [cmap(i / (self.n_levels - 1)) for i in range(self.n_levels)]
+            return self.labels.bottom["model_info_det"]
 
+    # SR_TODO Replace name checks with plot-specific config/setup object
+    def get_colors(self):
+        if self.name.endswith("_mono"):
+            return (np.array([(200, 200, 200)]) / 255).tolist()
+        else:
+            if self.cmap == "flexplot":
+                return colors_flexplot(self.n_levels, self.extend)
+            else:
+                cmap = mpl.cm.get_cmap(self.cmap)
+                return [cmap(i / (self.n_levels - 1)) for i in range(self.n_levels)]
+
+    # SR_TODO Replace name checks with plot-specific config/setup object
     def get_levels(self):
-        return self.auto_levels_log10()
+        if self.name.startswith("ens_thr_agrmt"):
+            n_max = 20  # SR_TMP SR_HC
+            return (
+                np.arange(
+                    n_max - self.d_level * (self.n_levels - 1),
+                    n_max + self.d_level,
+                    self.d_level,
+                )
+                + 1
+            )
+        elif self.name.startswith("ens_cloud_arrival_time"):
+            return np.arange(0, self.n_levels) * self.d_level
+        elif self.name.endswith("_mono"):
+            levels = self.auto_levels_log10(n_levels=9)
+            return np.array([levels[0], np.inf])
+        else:
+            return self.auto_levels_log10()
 
     def auto_levels_log10(self, n_levels=None, val_max=None):
         if n_levels is None:
@@ -848,28 +927,15 @@ class Plot_Concentration(Plot):
 
 
 class Plot_Deposition(Plot):
-    """FLEXPART plot of surface deposition."""
-
     name = "deposition"
 
 
 class Plot_AffectedArea(Plot):
-    """FLEXPART plot of area affected by surface deposition."""
-
     name = "affected_area"
 
 
 class Plot_AffectedAreaMono(Plot_AffectedArea):
-    """FLEXPART plot of area affected by surface deposition (mono)."""
-
     name = "affected_area_mono"
-
-    def get_colors(self):
-        return (np.array([(200, 200, 200)]) / 255).tolist()
-
-    def get_levels(self):
-        levels = self.auto_levels_log10(n_levels=9)
-        return np.array([levels[0], np.inf])
 
 
 # Ensemble Simulation
@@ -877,10 +943,6 @@ class Plot_AffectedAreaMono(Plot_AffectedArea):
 
 class Plot_Ens(Plot):
     name = "ens"
-
-    # SR_TODO move this into Labels class
-    def _model_info(self):
-        return self.labels.bottom["model_info_ens"]
 
 
 class Plot_EnsMean_Concentration(Plot_Ens, Plot_Concentration):
@@ -950,56 +1012,6 @@ class Plot_EnsMaxAffectedAreaMono(Plot_Ens, Plot_AffectedAreaMono):
 class Plot_EnsThrAgrmt(Plot_Ens):
     name = "ens_thr_agrmt"
 
-    def get_levels(self):
-        n_max = 20  # SR_TMP SR_HC
-        return (
-            np.arange(
-                n_max - self.d_level * (self.n_levels - 1),
-                n_max + self.d_level,
-                self.d_level,
-            )
-            + 1
-        )
-
-    def draw_colors_contours(self):
-
-        # If upper end of range is closed, color areas beyond black
-        colors_plot = copy(self.get_colors())
-        if self.extend in ["none", "min"]:
-            colors_plot.append("black")
-            extend_plot = {"none": "max", "min": "both"}[self.extend]
-        else:
-            extend_plot = self.extend
-
-        field = self.fld_nonzero()
-
-        if not self.draw_colors:
-            h_col = None
-        else:
-            h_col = self.ax_map.contourf(
-                field, levels=self.get_levels(), colors=colors_plot, extend=extend_plot,
-            )
-
-        if not self.draw_contours:
-            h_con = None
-        else:
-            h_con = self.ax_map.contour(
-                field, levels=self.get_levels(), colors="black", linewidths=1,
-            )
-
-        return (h_col, h_con)
-
-    # SR_TODO Move into Labels class
-    def _format_top_box_subtitle(self):
-        labels = self.labels  # noqa
-        return labels.top_left["subtitle_thr_agrmt_fmt"].format(
-            thr=self.field.field_specs.ens_var_setup["thr"],
-        )
-
-    # SR_TODO Move into Labels class
-    def _format_legend_box_title(self):
-        return self.labels.right_top["title"]
-
 
 class Plot_EnsThrAgrmt_Concentration(Plot_EnsThrAgrmt, Plot_Concentration):
     name = "ens_thr_agrmt_concentration"
@@ -1011,21 +1023,3 @@ class Plot_EnsThrAgrmt_Deposition(Plot_EnsThrAgrmt, Plot_Deposition):
 
 class Plot_EnsCloudArrivalTime(Plot_Ens, Plot_Concentration):
     name = "ens_cloud_arrival_time_concentration"
-
-    def get_levels(self):
-        return np.arange(0, self.n_levels) * self.d_level
-
-    # SR_TODO Move Plot_EnsThrAgrmt.draw_colors_contours to a better place
-    def draw_colors_contours(self):
-        return Plot_EnsThrAgrmt.draw_colors_contours(self)
-
-    # SR_TODO Move into Labels class
-    def _format_top_box_subtitle(self):
-        return self.labels.top_left["subtitle_cloud_arrival_time"].format(
-            thr=self.field.field_specs.ens_var_setup["thr"],
-            mem=self.field.field_specs.ens_var_setup["n_mem_min"],
-        )
-
-    # SR_TODO Move into Labels class
-    def _format_legend_box_title(self):
-        return self.labels.right_top["title"]  # SR_TMP
