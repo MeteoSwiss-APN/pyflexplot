@@ -16,7 +16,7 @@ as best as possible, several classes used to define labels etc. are mocked:
 
 While the mocks allows us to inject dummy strings as labels etc. and makes the
 tests independent of the exact formation of those, the tests are still
-dependent on the structure of ``DispersionPlot``, i.e., what elements there are
+dependent on the structure of ``Plot``, i.e., what elements there are
 and where they go.
 
 Not every failure thus implies that summarization is broken! There might just
@@ -45,7 +45,7 @@ import numpy as np
 
 # First-party
 from pyflexplot.data import Field
-from pyflexplot.plot import DispersionPlot
+from pyflexplot.plot import Plot
 from srutils.testing import CheckFailedError
 from srutils.testing import IgnoredElement
 from srutils.testing import UnequalElement
@@ -289,9 +289,9 @@ def create_dummy_symbols():
 def create_dummy_labels(lang, attrs):
     dummy_words = create_dummy_words(lang)
     dummy_symbols = create_dummy_symbols()
-    from pyflexplot.plot import DispersionPlotLabels  # isort:skip
+    from pyflexplot.plot import PlotLabels  # isort:skip
 
-    return DispersionPlotLabels(lang, dummy_words, dummy_symbols, attrs)
+    return PlotLabels(lang, dummy_words, dummy_symbols, attrs)
 
 
 def create_dummy_map_conf(lang):
@@ -325,12 +325,19 @@ def create_res(lang, _cache={}):
 
     """
     if lang not in _cache:
+        name = "dummy"
         attrs = create_dummy_attrs(lang)
         field = create_dummy_field(attrs)
         labels = create_dummy_labels(lang, attrs)
         map_conf = create_dummy_map_conf(lang)
-        plot = DispersionPlot(
-            field, map_conf=map_conf, dpi=100, figsize=(12, 9), lang=lang, labels=labels
+        plot = Plot(
+            name,
+            field,
+            map_conf=map_conf,
+            dpi=100,
+            figsize=(12, 9),
+            lang=lang,
+            labels=labels,
         )
         _cache[lang] = plot.summarize()
     return _cache[lang]
@@ -496,7 +503,7 @@ class Solution:
     def base_attrs(self):
         e = self.element
         jdat = {
-            "type": e("DispersionPlot"),
+            "type": e("Plot"),
             "lang": e(self.lang),
             "extend": e("max"),
             "level_range_style": e("base"),
@@ -701,11 +708,11 @@ class Solution:
             ),
         }
         jdat = {
-            "method:DispersionPlot.fill_box_top_left": box_top_left,
-            "method:DispersionPlot.fill_box_top_right": box_top_right,
-            "method:DispersionPlot.fill_box_right_top": box_right_top,
-            "method:DispersionPlot.fill_box_right_bottom": box_right_bottom,
-            "method:DispersionPlot.fill_box_bottom": box_bottom,
+            "method:Plot.fill_box_top_left": box_top_left,
+            "method:Plot.fill_box_top_right": box_top_right,
+            "method:Plot.fill_box_right_top": box_right_top,
+            "method:Plot.fill_box_right_bottom": box_right_bottom,
+            "method:Plot.fill_box_bottom": box_bottom,
         }
 
         return {"boxes": jdat}

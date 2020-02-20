@@ -36,8 +36,7 @@ class Plotter:
         Args:
             name (str): Name.
 
-            field (Plot*, list[Plot*]): An instance or list of instances of the
-                plot class.
+            field (Field*, list[Field*]): One or more Field instances.
 
             file_path_fmt (str): Format string of output file path. Must
                 contain all necessary format keys to avoid that multiple files
@@ -65,10 +64,11 @@ class Plotter:
         self.lang = config.lang
         # SR_DBG >
 
-        data_lst = field if isinstance(field, (list, tuple)) else [field]
+        fields = field if isinstance(field, (list, tuple)) else [field]
+        assert all(type(obj).__name__.startswith("Field") for obj in fields)  # SR_DBG
 
-        _s = "s" if len(data_lst) > 1 else ""
-        print(f"create {len(data_lst)} {self.name} plot{_s}")
+        _s = "s" if len(fields) > 1 else ""
+        print(f"create {len(fields)} {self.name} plot{_s}")
 
         # SR_TMP < TODO Find less hard-coded solution
         if self.domain == "auto":
@@ -82,13 +82,13 @@ class Plotter:
         # SR_TMP >
 
         # Create plots one-by-one
-        for i_data, field in enumerate(data_lst):
+        for i_data, field in enumerate(fields):
             file_path = self.format_file_path(field.field_specs)
-            _w = len(str(len(data_lst)))
-            print(f" {i_data+1:{_w}}/{len(data_lst)}  {file_path}")
+            _w = len(str(len(fields)))
+            print(f" {i_data+1:{_w}}/{len(fields)}  {file_path}")
 
-            Plot.subcls(self.name)(
-                field, map_conf=map_conf, lang=self.lang, **kwargs_plot
+            Plot.create(
+                self.name, field, map_conf=map_conf, lang=self.lang, **kwargs_plot,
             ).save(file_path)
 
             yield file_path
