@@ -37,14 +37,23 @@ class VarSpecs(SummarizableClass, ParentClass):
     name: Optional[str] = None
 
     # Keys with respective type
-    specs_type_default: Mapping[str, Tuple[Any, Any]] = {
-        "species_id": (int_or_list, None),
-        "integrate": (bool, None),
-        "time": (int, None),
-        "nageclass": (int, None),
-        "numpoint": (int, None),
-        "noutrel": (int, None),
-    }
+    # SR_TMP TODO move to some config/setup class
+    @property
+    def specs_type_default(self) -> Mapping[str, Tuple[Any, Any]]:
+        specs_type = {
+            "species_id": (int_or_list, None),
+            "integrate": (bool, None),
+            "time": (int, None),
+            "nageclass": (int, None),
+            "numpoint": (int, None),
+            "noutrel": (int, None),
+        }
+        parts = type(self).name.split(":")
+        if parts[0] == "concentration":
+            specs_type.update({"level": (int_or_list, None)})
+        elif parts[0] == "deposition":
+            specs_type.update({"deposition": (str, None)})
+        return specs_type
 
     # SR_TMP TODO eventually eliminate
     def issubcls(self, name):
@@ -120,8 +129,7 @@ class VarSpecs(SummarizableClass, ParentClass):
             setattr(self, key, val)
         if var_specs_dct_todo:
             raise ValueError(
-                f"{len(var_specs_dct_todo)} unexpected arguments: "
-                f"{var_specs_dct_todo}"
+                f"{len(var_specs_dct_todo)} unexpected arguments: {var_specs_dct_todo}"
             )
 
     @classmethod
@@ -309,11 +317,109 @@ class VarSpecs(SummarizableClass, ParentClass):
 
         return inds
 
-    def long_name(self):
-        raise NotImplementedError(f"{type(self).__name__}.long_name: override it!")
+    # SR_TMP TODO move to some config/setup class
+    def long_name(self, name=None):
+        if name is None:
+            name = type(self).name
+        parts = name.split(":")
+        if len(parts) >= 3:
+            if parts[:3] == ["deposition", "affected_area", "ens_max_affected_area"]:
+                return (
+                    f"{self._words['ensemble_maximum']} {self._words['affected_area']} "
+                    f"({self.deposition_type()})"
+                )
+            if parts[:3] == ["deposition", "affected_area", "ens_min_affected_area"]:
+                return (
+                    f"{self._words['ensemble_minimum']} {self._words['affected_area']} "
+                    f"({self.deposition_type()})"
+                )
+            if parts[:3] == ["deposition", "affected_area", "ens_median_affected_area"]:
+                return (
+                    f"{self._words['ensemble_median']} {self._words['affected_area']} "
+                    f"({self.deposition_type()})"
+                )
+            if parts[:3] == ["deposition", "affected_area", "ens_mean_affected_area"]:
+                return (
+                    f"{self._words['ensemble_mean']} {self._words['affected_area']} "
+                    f"({self.deposition_type()})"
+                )
+        if len(parts) >= 2:
+            if parts[:2] == ["deposition:ens_max_deposition"]:
+                return (
+                    f"{self._words['ensemble_maximum']} "
+                    f"{self.deposition_type()} {self._words['surface_deposition']}"
+                )
+            if parts[:2] == ["concentration", "ens_max_concentration"]:
+                return (
+                    f"{self._words['ensemble_maximum']} {self._words['concentration']}"
+                )
+            if parts[:2] == ["deposition", "ens_min_deposition"]:
+                return (
+                    f"{self._words['ensemble_minimum']} "
+                    f"{self.deposition_type()} {self._words['surface_deposition']}"
+                )
+            if parts[:2] == ["concentration", "ens_min_concentration"]:
+                return (
+                    f"{self._words['ensemble_minimum']} {self._words['concentration']}"
+                )
+            if parts[:2] == ["deposition", "ens_median_deposition"]:
+                return (
+                    f"{self._words['ensemble_median']} "
+                    f"{self.deposition_type()} {self._words['surface_deposition']}"
+                )
+            if parts[:2] == ["concentration", "ens_median_concentration"]:
+                return (
+                    f"{self._words['ensemble_median']} {self._words['concentration']}"
+                )
+            if parts[:2] == ["concentration", "ens_mean_deposition"]:
+                return (
+                    f"{self._words['ensemble_mean']} "
+                    f"{self.deposition_type()} {self._words['surface_deposition']}"
+                )
+            if parts[:2] == ["concentration", "ens_mean_concentration"]:
+                return f"{self._words['ensemble_mean']} {self._words['concentration']}"
+            if parts[:2] == ["deposition", "affected_area"]:
+                dep_name = self.long_name("deposition")
+                return f"{self._words['affected_area']} " f"({dep_name})"
+            if parts[1].startswith("ens_thr_agrmt"):
+                super_name = self.short_name(parts[0])
+                return f"{self._words['threshold_agreement']} ({super_name})"
+            if parts[1].startswith("ens_cloud_arrival_time"):
+                return f"{self._words['cloud_arrival_time']}"
+        if parts[0] == "concentration":
+            ctx = "abbr" if self.integrate else "*"
+            return self._words["activity_concentration", None, ctx].s
+        if parts[0] == "deposition":
+            return f"{self.deposition_type()} {self._words['surface_deposition']}"
+        raise NotImplementedError(f"{type(self).__name__}.long_name")
 
-    def short_name(self):
-        raise NotImplementedError(f"{type(self).__name__}.short_name: override it!")
+    def short_name(self, name=None):
+        if name is None:
+            name = type(self).name
+        parts = name.split(":")
+        if len(parts) >= 2:
+            if parts[:2] == ["concentration", "ens_cloud_arrival_time_concentration"]:
+                return (
+                    # f"{self._words['arrival_time'].c}\n"
+                    # f"({self._words['hour', None, 'pl'].c} {self._words['from_now']})"
+                    f"{self._words['arrival'].c} "
+                    f"({self._words['hour', None, 'pl']}??)"
+                )
+            if parts[1].startswith("ens_thr_agrmt"):
+                return (
+                    f"{self._words['number_of', None, 'abbr'].c} "
+                    f"{self._words['member', None, 'pl']}"
+                )
+        if parts[0] == "deposition":
+            return self._words["deposition"].s
+        if parts[0] == "concentration":
+            if self.integrate:
+                return (
+                    f"{self._words['integrated', None, 'abbr']} "
+                    f"{self._words['concentration', None, 'abbr']}"
+                )
+            return self._words["concentration"].s
+        raise NotImplementedError(f"{type(self).__name__}.short_name")
 
     def var_name(self, *args, **kwargs):
         raise NotImplementedError(f"{type(self).__name__}.var_name: override it!")
@@ -321,23 +427,6 @@ class VarSpecs(SummarizableClass, ParentClass):
 
 class VarSpecs_Concentration(VarSpecs):
     name: str = "concentration"
-
-    specs_type_default = {
-        **VarSpecs.specs_type_default,
-        "level": (int_or_list, None),
-    }
-
-    def long_name(self):
-        ctx = "abbr" if self.integrate else "*"
-        return self._words["activity_concentration", None, ctx].s
-
-    def short_name(self):
-        if self.integrate:
-            return (
-                f"{self._words['integrated', None, 'abbr']} "
-                f"{self._words['concentration', None, 'abbr']}"
-            )
-        return self._words["concentration"].s
 
     def var_name(self):
         """Derive variable name from specifications."""
@@ -362,11 +451,6 @@ class VarSpecs_Concentration(VarSpecs):
 class VarSpecs_Deposition(VarSpecs):
     name: str = "deposition"
 
-    specs_type_default = {
-        **VarSpecs.specs_type_default,
-        "deposition": (str, None),
-    }
-
     def __init__(self, name, var_specs_dct, *args, **kwargs):
         dep = var_specs_dct["deposition"]
         if dep and dep not in ["wet", "dry"] and set(dep) != {"wet", "dry"}:
@@ -380,12 +464,6 @@ class VarSpecs_Deposition(VarSpecs):
         word = {"tot": "total"}.get(type_, type_)
         return self._words[word, None, "f"].s
 
-    def long_name(self):
-        return f"{self.deposition_type()} {self._words['surface_deposition']}"
-
-    def short_name(self):
-        return self._words["deposition"].s
-
     def var_name(self):
         """Derive variable name from specifications."""
         prefix = {"wet": "WD", "dry": "DD"}[self.deposition]
@@ -395,11 +473,6 @@ class VarSpecs_Deposition(VarSpecs):
 class VarSpecs_AffectedArea(VarSpecs_Deposition):
     name: str = "deposition:affected_area"
 
-    def long_name(self):
-        dep_name = super().long_name()
-        # raise Exception(f"{type(self).__name__}.long_name")  # SR_DBG
-        return f"{self._words['affected_area']} " f"({dep_name})"
-
 
 class VarSpecs_AffectedAreaMono(VarSpecs_AffectedArea):
     name: str = "deposition:affected_area:affected_area_mono"
@@ -408,120 +481,53 @@ class VarSpecs_AffectedAreaMono(VarSpecs_AffectedArea):
 class VarSpecs_EnsMean_Concentration(VarSpecs_Concentration):
     name: str = "concentration:ens_mean_concentration"
 
-    def long_name(self):
-        return f"{self._words['ensemble_mean']} {self._words['concentration']}"
-
 
 class VarSpecs_EnsMean_Deposition(VarSpecs_Deposition):
     name: str = "deposition:ens_mean_deposition"
-
-    def long_name(self):
-        return (
-            f"{self._words['ensemble_mean']} "
-            f"{self.deposition_type()} {self._words['surface_deposition']}"
-        )
 
 
 class VarSpecs_EnsMean_AffectedArea(VarSpecs_AffectedArea):
     name: str = "deposition:affected_area:ens_mean_affected_area"
 
-    def long_name(self):
-        return (
-            f"{self._words['ensemble_mean']} {self._words['affected_area']} "
-            f"({self.deposition_type()})"
-        )
-
 
 class VarSpecs_EnsMedian_Concentration(VarSpecs_Concentration):
     name: str = "concentration:ens_median_concentration"
-
-    def long_name(self):
-        return f"{self._words['ensemble_median']} {self._words['concentration']}"
 
 
 class VarSpecs_EnsMedian_Deposition(VarSpecs_Deposition):
     name: str = "deposition:ens_median_deposition"
 
-    def long_name(self):
-        return (
-            f"{self._words['ensemble_median']} "
-            f"{self.deposition_type()} {self._words['surface_deposition']}"
-        )
-
 
 class VarSpecs_EnsMedian_AffectedArea(VarSpecs_AffectedArea):
     name: str = "deposition:affected_area:ens_median_affected_area"
-
-    def long_name(self):
-        return (
-            f"{self._words['ensemble_median']} {self._words['affected_area']} "
-            f"({self.deposition_type()})"
-        )
 
 
 class VarSpecs_EnsMin_Concentration(VarSpecs_Concentration):
     name: str = "concentration:ens_min_concentration"
 
-    def long_name(self):
-        return f"{self._words['ensemble_minimum']} {self._words['concentration']}"
-
 
 class VarSpecs_EnsMin_Deposition(VarSpecs_Deposition):
     name: str = "deposition:ens_min_deposition"
-
-    def long_name(self):
-        return (
-            f"{self._words['ensemble_minimum']} "
-            f"{self.deposition_type()} {self._words['surface_deposition']}"
-        )
 
 
 class VarSpecs_EnsMin_AffectedArea(VarSpecs_AffectedArea):
     name: str = "deposition:affected_area:ens_min_affected_area"
 
-    def long_name(self):
-        return (
-            f"{self._words['ensemble_minimum']} {self._words['affected_area']} "
-            f"({self.deposition_type()})"
-        )
-
 
 class VarSpecs_EnsMax_Concentration(VarSpecs_Concentration):
     name: str = "concentration:ens_max_concentration"
-
-    def long_name(self):
-        return f"{self._words['ensemble_maximum']} {self._words['concentration']}"
 
 
 class VarSpecs_EnsMax_Deposition(VarSpecs_Deposition):
     name: str = "deposition:ens_max_deposition"
 
-    def long_name(self):
-        return (
-            f"{self._words['ensemble_maximum']} "
-            f"{self.deposition_type()} {self._words['surface_deposition']}"
-        )
-
 
 class VarSpecs_EnsMax_AffectedArea(VarSpecs_AffectedArea):
     name: str = "deposition:affected_area:ens_max_affected_area"
 
-    def long_name(self):
-        return (
-            f"{self._words['ensemble_maximum']} {self._words['affected_area']} "
-            f"({self.deposition_type()})"
-        )
-
 
 class VarSpecs_EnsThrAgrmt:
-    def long_name(self):
-        return f"{self._words['threshold_agreement']} ({super().short_name()})"
-
-    def short_name(self):
-        return (
-            f"{self._words['number_of', None, 'abbr'].c} "
-            f"{self._words['member', None, 'pl']}"
-        )
+    pass
 
 
 class VarSpecs_EnsThrAgrmt_Concentration(VarSpecs_EnsThrAgrmt, VarSpecs_Concentration):
@@ -538,17 +544,6 @@ class VarSpecs_EnsThrAgrmt_AffectedArea(VarSpecs_EnsThrAgrmt, VarSpecs_AffectedA
 
 class VarSpecs_EnsCloudArrivalTime_Concentration(VarSpecs_Concentration):
     name: str = "concentration:ens_cloud_arrival_time_concentration"
-
-    def long_name(self):
-        return f"{self._words['cloud_arrival_time']}"
-
-    def short_name(self):
-        return (
-            # f"{self._words['arrival_time'].c}\n"
-            # f"({self._words['hour', None, 'pl'].c} {self._words['from_now']})"
-            f"{self._words['arrival'].c} "
-            f"({self._words['hour', None, 'pl']}??)"
-        )
 
 
 class MultiVarSpecs:
