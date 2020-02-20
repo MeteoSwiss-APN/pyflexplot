@@ -241,7 +241,7 @@ def create_field(attrs):
 def create_setup(lang):
     infiles = ["dummy_infile.nc"]
     outfile = "dummy_outfile.png"
-    return Setup(infiles, outfile, lang=lang)
+    return Setup(infiles, outfile, lang=lang, variable="deposition")
 
 
 def create_words(lang):

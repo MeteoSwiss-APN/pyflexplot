@@ -149,6 +149,54 @@ class PlotLabels(SummarizableClass):
 # Plots
 
 
+def colors_flexplot(n_levels, extend):
+
+    # color_under = [i/255.0 for i in (255, 155, 255)]
+    color_under = [i / 255.0 for i in (200, 200, 200)]
+    color_over = [i / 255.0 for i in (200, 200, 200)]
+
+    colors_core_8 = (
+        np.array(
+            [
+                (224, 196, 172),  #
+                (221, 127, 215),  #
+                (99, 0, 255),  #
+                (100, 153, 199),  #
+                (34, 139, 34),  #
+                (93, 255, 2),  #
+                (199, 255, 0),  #
+                (255, 239, 57),  #
+            ],
+            float,
+        )
+        / 255
+    ).tolist()
+
+    colors_core_7 = [colors_core_8[i] for i in (0, 1, 2, 3, 5, 6, 7)]
+    colors_core_6 = [colors_core_8[i] for i in (1, 2, 3, 4, 5, 7)]
+    colors_core_5 = [colors_core_8[i] for i in (1, 2, 4, 5, 7)]
+
+    try:
+        colors_core = {
+            6: colors_core_5,
+            7: colors_core_6,
+            8: colors_core_7,
+            9: colors_core_8,
+        }[n_levels]
+    except KeyError:
+        raise ValueError(f"n_levels={n_levels}")
+
+    if extend == "none":
+        return colors_core
+    elif extend == "min":
+        return [color_under] + colors_core
+    elif extend == "max":
+        return colors_core + [color_over]
+    elif extend == "both":
+        return [color_under] + colors_core + [color_over]
+    raise ValueError(f"extend='{extend}'")
+
+
 class Plot(SummarizablePlotClass, ParentClass):
     """A FLEXPART dispersion plot."""
 
@@ -173,22 +221,98 @@ class Plot(SummarizablePlotClass, ParentClass):
     ]
 
     cmap = "flexplot"
-    extend = "max"
-    n_levels = 9
     draw_colors = True
     draw_contours = False
-    mark_field_max = True
     mark_release_site = True
-    text_box_setup = {
-        "h_rel_t": 0.1,
-        "h_rel_b": 0.03,
-        "w_rel_r": 0.25,
-        "pad_hor_rel": 0.015,
-        "h_rel_box_rt": 0.45,
-    }
-    level_range_style = "base"  # see ``format_level_ranges``
-    level_ranges_align = "center"
     lw_frame = 1.0
+
+    # SR_TMP <<< TODO move to some config/setup class
+    @property
+    def text_box_setup(self):
+        if self.name.startswith("ens_"):
+            return {
+                "h_rel_t": 0.14,
+                "h_rel_b": 0.03,
+                "w_rel_r": 0.25,
+                "pad_hor_rel": 0.015,
+                "h_rel_box_rt": 0.46,
+            }
+        else:
+            return {
+                "h_rel_t": 0.1,
+                "h_rel_b": 0.03,
+                "w_rel_r": 0.25,
+                "pad_hor_rel": 0.015,
+                "h_rel_box_rt": 0.45,
+            }
+
+    # SR_TMP <<< TODO move to some config/setup class
+    @property
+    def n_levels(self):
+        if self.name.startswith("ens_thr_agrmt"):
+            return 7
+        elif self.name.startswith("ens_cloud_arrival_time"):
+            return 9
+        elif self.name.endswith("_mono"):
+            return 1
+        elif "concentration" in self.name:
+            return 8
+        elif "deposition" in self.name:
+            return 9
+        else:
+            return 9
+
+    # SR_TMP <<< TODO move to some config/setup class
+    @property
+    def extend(self):
+        if self.name.startswith("ens_thr_agrmt"):
+            return "min"
+        elif self.name.startswith("ens_cloud_arrival_time"):
+            return "max"
+        elif self.name.endswith("_mono"):
+            return "none"
+        else:
+            return "max"
+
+    # SR_TMP <<< TODO move to some config/setup class
+    @property
+    def d_level(self):
+        if self.name.startswith("ens_thr_agrmt"):
+            return 2
+        elif self.name.startswith("ens_cloud_arrival_time"):
+            return 3
+        else:
+            return None
+
+    # SR_TMP <<< TODO move to some config/setup class
+    @property
+    def level_range_style(self):
+        if self.name.startswith("ens_thr_agrmt"):
+            return "int"
+        elif self.name.startswith("ens_cloud_arrival_time"):
+            return "int"
+        else:
+            return "base"
+
+    # SR_TMP <<< TODO move to some config/setup class
+    @property
+    def level_ranges_align(self):
+        if self.name.startswith("ens_thr_agrmt"):
+            return "left"
+        elif self.name.startswith("ens_cloud_arrival_time"):
+            return "left"
+        else:
+            return "center"
+
+    # SR_TMP <<< TODO move to some config/setup class
+    @property
+    def mark_field_max(self):
+        if self.name.startswith("ens_thr_agrmt"):
+            return False
+        elif self.name.startswith("ens_cloud_arrival_time"):
+            return False
+        else:
+            return True
 
     def __init__(
         self, field, setup, map_conf, *, dpi=None, figsize=None, labels=None,
@@ -716,69 +840,17 @@ class Plot(SummarizablePlotClass, ParentClass):
         return np.log10(self.get_levels())
 
 
-def colors_flexplot(n_levels, extend):
-
-    # color_under = [i/255.0 for i in (255, 155, 255)]
-    color_under = [i / 255.0 for i in (200, 200, 200)]
-    color_over = [i / 255.0 for i in (200, 200, 200)]
-
-    colors_core_8 = (
-        np.array(
-            [
-                (224, 196, 172),  #
-                (221, 127, 215),  #
-                (99, 0, 255),  #
-                (100, 153, 199),  #
-                (34, 139, 34),  #
-                (93, 255, 2),  #
-                (199, 255, 0),  #
-                (255, 239, 57),  #
-            ],
-            float,
-        )
-        / 255
-    ).tolist()
-
-    colors_core_7 = [colors_core_8[i] for i in (0, 1, 2, 3, 5, 6, 7)]
-    colors_core_6 = [colors_core_8[i] for i in (1, 2, 3, 4, 5, 7)]
-    colors_core_5 = [colors_core_8[i] for i in (1, 2, 4, 5, 7)]
-
-    try:
-        colors_core = {
-            6: colors_core_5,
-            7: colors_core_6,
-            8: colors_core_7,
-            9: colors_core_8,
-        }[n_levels]
-    except KeyError:
-        raise ValueError(f"n_levels={n_levels}")
-
-    if extend == "none":
-        return colors_core
-    elif extend == "min":
-        return [color_under] + colors_core
-    elif extend == "max":
-        return colors_core + [color_over]
-    elif extend == "both":
-        return [color_under] + colors_core + [color_over]
-    raise ValueError(f"extend='{extend}'")
-
-
 # Deterministic Simulation
 
 
 class Plot_Concentration(Plot):
-    """FLEXPART plot of particle concentration at a certain level."""
-
     name = "concentration"
-    n_levels = 8
 
 
 class Plot_Deposition(Plot):
     """FLEXPART plot of surface deposition."""
 
     name = "deposition"
-    n_levels = 9
 
 
 class Plot_AffectedArea(Plot):
@@ -791,8 +863,6 @@ class Plot_AffectedAreaMono(Plot_AffectedArea):
     """FLEXPART plot of area affected by surface deposition (mono)."""
 
     name = "affected_area_mono"
-    extend = "none"
-    n_levels = 1
 
     def get_colors(self):
         return (np.array([(200, 200, 200)]) / 255).tolist()
@@ -807,14 +877,6 @@ class Plot_AffectedAreaMono(Plot_AffectedArea):
 
 class Plot_Ens(Plot):
     name = "ens"
-
-    text_box_setup = {
-        "h_rel_t": 0.14,
-        "h_rel_b": 0.03,
-        "w_rel_r": 0.25,
-        "pad_hor_rel": 0.015,
-        "h_rel_box_rt": 0.46,
-    }
 
     # SR_TODO move this into Labels class
     def _model_info(self):
@@ -888,13 +950,6 @@ class Plot_EnsMaxAffectedAreaMono(Plot_Ens, Plot_AffectedAreaMono):
 class Plot_EnsThrAgrmt(Plot_Ens):
     name = "ens_thr_agrmt"
 
-    n_levels = 7
-    d_level = 2
-    extend = "min"
-    level_range_style = "int"  # see ``format_level_ranges``
-    level_ranges_align = "left"
-    mark_field_max = False
-
     def get_levels(self):
         n_max = 20  # SR_TMP SR_HC
         return (
@@ -956,13 +1011,6 @@ class Plot_EnsThrAgrmt_Deposition(Plot_EnsThrAgrmt, Plot_Deposition):
 
 class Plot_EnsCloudArrivalTime(Plot_Ens, Plot_Concentration):
     name = "ens_cloud_arrival_time_concentration"
-
-    n_levels = 9
-    d_level = 3
-    extend = "max"
-    level_range_style = "int"  # see ``format_level_ranges``
-    level_ranges_align = "left"
-    mark_field_max = False
 
     def get_levels(self):
         return np.arange(0, self.n_levels) * self.d_level
