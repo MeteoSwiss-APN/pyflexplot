@@ -120,8 +120,6 @@ def cli(ctx, config_file_paths, **cli_args):
     Create dispersion plot as specified in CONFIG_FILE(S).
     """
 
-    click.echo("Welcome fellow PyFlexPlotter!")
-
     log.basicConfig(level=count_to_log_level(cli_args["verbose"]))
 
     # Ensure that ctx.obj exists and is a dict
@@ -135,44 +133,43 @@ def cli(ctx, config_file_paths, **cli_args):
     ]
 
     # Create plots
-    # SR_TMP <
-    # + create_plots(configs, cli_args)
-    for config in configs:
-        create_plots(config, cli_args)
-    # SR_TMP >
+    create_plots(configs, cli_args)
 
     return 0
 
 
-def create_plots(config, cli_args):
+def create_plots(configs, cli_args):
     """
     Read and plot FLEXPART data.
     """
 
-    if config.simulation_type == "deterministic":
-        cls_name = f"{config.variable}"
-    elif config.simulation_type == "ensemble":
-        cls_name = f"{config.plot_type}_{config.variable}"
-
-    # Read input fields
-    field_lst = read_fields(cls_name, config)
-
-    # Prepare plotter
-    plotter = Plotter()
-
-    def fct_plot():
-        return plotter.run(
-            cls_name, field_lst, config, scale_fact=cli_args["scale_fact"],
-        )
-
-    # Note: Plotter.run yields the output file paths on-the-go
     out_file_paths = []
-    for i, out_file_path in enumerate(fct_plot()):
-        out_file_paths.append(out_file_path)
 
-        if cli_args["open_first_cmd"] and i == 0:
-            # Open the first file as soon as it's available
-            open_plots(cli_args["open_first_cmd"], [out_file_path])
+    # SR_TMP <<< TODO find better solution
+    for config in configs:
+        if config.simulation_type == "deterministic":
+            cls_name = f"{config.variable}"
+        elif config.simulation_type == "ensemble":
+            cls_name = f"{config.plot_type}_{config.variable}"
+
+        # Read input fields
+        field_lst = read_fields(cls_name, config)
+
+        # Prepare plotter
+        plotter = Plotter()
+
+        def fct_plot():
+            return plotter.run(
+                cls_name, field_lst, config, scale_fact=cli_args["scale_fact"],
+            )
+
+        # Note: Plotter.run yields the output file paths on-the-go
+        for i, out_file_path in enumerate(fct_plot()):
+            out_file_paths.append(out_file_path)
+
+            if cli_args["open_first_cmd"] and i == 0:
+                # Open the first file as soon as it's available
+                open_plots(cli_args["open_first_cmd"], [out_file_path])
 
     if cli_args["open_all_cmd"]:
         # Open all plots
