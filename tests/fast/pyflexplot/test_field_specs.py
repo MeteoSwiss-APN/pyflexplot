@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 # First-party
 from pyflexplot.field_specs import FieldSpecs
+from pyflexplot.setup import Setup
 from pyflexplot.var_specs import MultiVarSpecs
 from srutils.testing import TestConfBase as _TestConf
 from srutils.testing import check_is_list_like
@@ -28,8 +29,15 @@ class Test_Create_Concentration:
     c = Conf_Create(
         name="concentration",
         type_name="FieldSpecs_Concentration",  # SR_TMP
-        vs_dct={"nageclass": 0, "numpoint": 0, "time": 1, "integrate": False},
+        vs_dct={"integrate": False, "time": 1, "nageclass": 0, "numpoint": 0},
         n_vs=1,
+    )
+    setup = Setup(
+        infiles=["dummy.nc"],
+        outfile="dummy.png",
+        variable="concentration",
+        integrate=False,
+        time_idx=1,
     )
 
     def test_single_var_specs_one_fld_one_var(self):
@@ -39,7 +47,7 @@ class Test_Create_Concentration:
             "species_id": 1,
             "level": 0,
         }
-        multi_var_specs_lst = MultiVarSpecs.create(self.c.name, var_specs_dct)
+        multi_var_specs_lst = MultiVarSpecs.create(self.setup, var_specs_dct)
         check_multi_var_specs_lst(multi_var_specs_lst, len_=self.c.n_vs)
         fld_specs_lst = [
             FieldSpecs(self.c.name, multi_var_specs)
@@ -58,7 +66,7 @@ class Test_Create_Concentration:
             "species_id": [1, 2],
             "level": [0, 1],
         }
-        multi_var_specs_lst = MultiVarSpecs.create(self.c.name, var_specs_dct)
+        multi_var_specs_lst = MultiVarSpecs.create(self.setup, var_specs_dct)
         check_multi_var_specs_lst(multi_var_specs_lst, len_=4)
         fld_specs_lst = [
             FieldSpecs(self.c.name, multi_var_specs)
@@ -77,7 +85,7 @@ class Test_Create_Concentration:
             "species_id": (1, 2),
             "level": (0, 1),
         }
-        multi_var_specs_lst = MultiVarSpecs.create(self.c.name, var_specs_dct)
+        multi_var_specs_lst = MultiVarSpecs.create(self.setup, var_specs_dct)
         check_multi_var_specs_lst(multi_var_specs_lst, len_=1)
         fld_specs_lst = [
             FieldSpecs(self.c.name, multi_var_specs)
@@ -96,12 +104,19 @@ class Test_Create_Deposition:
         name="deposition",
         type_name="FieldSpecs_Deposition",  # SR_TMP
         vs_dct={
+            "deposition": "tot",
+            "integrate": False,
             "nageclass": 0,
             "numpoint": 0,
-            "integrate": False,
-            "deposition": "tot",
         },
         n_vs=2,
+    )
+    setup = Setup(
+        infiles=["dummy.nc"],
+        outfile="dummy.png",
+        variable="deposition",
+        deposition_type="tot",
+        integrate=False,
     )
 
     def test_single_var_specs_one_fld_one_var(self):
@@ -112,7 +127,7 @@ class Test_Create_Deposition:
             "species_id": 1,
         }
         multi_var_specs_lst = MultiVarSpecs.create(
-            self.c.name, {**var_specs_dct, "deposition": ("wet", "dry")},
+            self.setup, {**var_specs_dct, "deposition": ("wet", "dry")},
         )
         check_multi_var_specs_lst(multi_var_specs_lst, len_=1)
         fld_specs_lst = [
@@ -133,7 +148,7 @@ class Test_Create_Deposition:
             "species_id": [1, 2],
         }
         n = 6
-        multi_var_specs_lst = MultiVarSpecs.create(self.c.name, vs_dct)
+        multi_var_specs_lst = MultiVarSpecs.create(self.setup, vs_dct)
         check_multi_var_specs_lst(multi_var_specs_lst, len_=n)
         fld_specs_lst = [
             FieldSpecs(self.c.name, multi_var_specs)
@@ -153,7 +168,7 @@ class Test_Create_Deposition:
             "species_id": (1, 2),
         }
         n_vs = self.c.n_vs * 6
-        multi_var_specs_lst = MultiVarSpecs.create(self.c.name, vs_dct)
+        multi_var_specs_lst = MultiVarSpecs.create(self.setup, vs_dct)
         check_multi_var_specs_lst(multi_var_specs_lst, len_=1)
         multi_var_specs = next(iter(multi_var_specs_lst))
         fld_specs = FieldSpecs(self.c.name, multi_var_specs)

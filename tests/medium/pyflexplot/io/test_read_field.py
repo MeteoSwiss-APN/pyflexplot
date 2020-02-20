@@ -15,6 +15,7 @@ import pytest
 # First-party
 from pyflexplot.field_specs import FieldSpecs
 from pyflexplot.io import FileReader
+from pyflexplot.setup import Setup
 from pyflexplot.var_specs import MultiVarSpecs
 
 from io_utils import read_nc_var  # isort:skip
@@ -38,6 +39,7 @@ class Conf:
     name: str
     var_names_ref: List[str]
     var_specs_dct: Dict[str, Any]
+    setup: Setup
     scale_fld_ref: Optional[float] = 1.0
 
 
@@ -53,26 +55,44 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
             name="concentration",
             var_names_ref=[f"spec002"],
             var_specs_dct={
-                "nageclass": 0,
-                "numpoint": 0,
-                "time": 3,
+                "species_id": 2,
                 "level": 1,
                 "integrate": False,
-                "species_id": 2,
+                "time": 3,
+                "nageclass": 0,
+                "numpoint": 0,
             },
+            setup=Setup(
+                infiles=["dummy.nc"],
+                outfile="dummy.png",
+                variable="concentration",
+                species_id=2,
+                level_idx=1,
+                integrate=False,
+                time_idx=3,
+            ),
         ),
         Conf(
             datafilename=datafilename1,
             name="deposition",
             var_names_ref=[f"DD_spec002"],
             var_specs_dct={
+                "deposition": "dry",
+                "species_id": 2,
+                "integrate": False,
+                "time": 3,
                 "nageclass": 0,
                 "numpoint": 0,
-                "time": 3,
-                "integrate": False,
-                "species_id": 2,
-                "deposition": "dry",
             },
+            setup=Setup(
+                infiles=["dummy.nc"],
+                outfile="dummy.png",
+                variable="deposition",
+                deposition_type="dry",
+                species_id=2,
+                integrate=False,
+                time_idx=3,
+            ),
             scale_fld_ref=1 / 3,
         ),
         Conf(
@@ -80,13 +100,22 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
             name="deposition",
             var_names_ref=[f"WD_spec002"],
             var_specs_dct={
+                "deposition": "wet",
+                "species_id": 2,
+                "integrate": False,
+                "time": 3,
                 "nageclass": 0,
                 "numpoint": 0,
-                "time": 3,
-                "integrate": False,
-                "species_id": 2,
-                "deposition": "wet",
             },
+            setup=Setup(
+                infiles=["dummy.nc"],
+                outfile="dummy.png",
+                variable="deposition",
+                deposition_type="wet",
+                species_id=2,
+                integrate=False,
+                time_idx=3,
+            ),
             scale_fld_ref=1 / 3,
         ),
         Conf(
@@ -94,13 +123,22 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
             name="deposition",
             var_names_ref=[f"WD_spec002", f"DD_spec002"],
             var_specs_dct={
+                "deposition": ("wet", "dry"),
+                "species_id": 2,
+                "integrate": False,
+                "time": 3,
                 "nageclass": 0,
                 "numpoint": 0,
-                "time": 3,
-                "integrate": False,
-                "species_id": 2,
-                "deposition": ("wet", "dry"),
             },
+            setup=Setup(
+                infiles=["dummy.nc"],
+                outfile="dummy.png",
+                variable="deposition",
+                deposition_type="tot",
+                species_id=2,
+                integrate=False,
+                time_idx=3,
+            ),
             scale_fld_ref=1 / 3,
         ),
         Conf(
@@ -108,26 +146,44 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
             name="concentration",
             var_names_ref=[f"spec001"],
             var_specs_dct={
-                "nageclass": 0,
-                "noutrel": 0,
-                "time": 3,
+                "species_id": 1,
                 "level": 1,
                 "integrate": False,
-                "species_id": 1,
+                "time": 3,
+                "nageclass": 0,
+                "noutrel": 0,
             },
+            setup=Setup(
+                infiles=["dummy.nc"],
+                outfile="dummy.png",
+                variable="concentration",
+                level_idx=1,
+                species_id=1,
+                integrate=False,
+                time_idx=3,
+            ),
         ),
         Conf(
             datafilename=datafilename2,
             name="deposition",
             var_names_ref=[f"WD_spec001", f"DD_spec001"],
             var_specs_dct={
+                "deposition": ("wet", "dry"),
+                "species_id": 1,
+                "integrate": False,
+                "time": 3,
                 "nageclass": 0,
                 "noutrel": 0,
-                "time": 3,
-                "integrate": False,
-                "species_id": 1,
-                "deposition": ("wet", "dry"),
             },
+            setup=Setup(
+                infiles=["dummy.nc"],
+                outfile="dummy.png",
+                variable="deposition",
+                deposition_type="tot",
+                species_id=1,
+                integrate=False,
+                time_idx=3,
+            ),
             scale_fld_ref=1 / 3,
         ),
     ],
@@ -139,7 +195,7 @@ def test_single(datadir, conf):  # noqa:F811
 
     # Initialize variable specifications
     multi_var_specs_lst = MultiVarSpecs.create(
-        conf.name, conf.var_specs_dct, lang=None, words=None,
+        conf.setup, conf.var_specs_dct, lang=None, words=None,
     )
     assert len(multi_var_specs_lst) == 1
     multi_var_specs = next(iter(multi_var_specs_lst))
@@ -180,13 +236,22 @@ def test_single(datadir, conf):  # noqa:F811
             name="concentration",
             var_names_ref=[f"spec002"],
             var_specs_dct={
+                "level": [0, 2],
+                "species_id": 2,
+                "integrate": True,
+                "time": [0, 3, 9],
                 "nageclass": 0,
                 "numpoint": 0,
-                "time": [0, 3, 9],
-                "level": [0, 2],
-                "integrate": True,
-                "species_id": 2,
             },
+            setup=Setup(
+                infiles=["dummy.nc"],
+                outfile="dummy.png",
+                variable="concentration",
+                # + level_idx=(0, 2),  # SR_TODO
+                species_id=2,
+                integrate=True,
+                # + time_idx=(0, 3, 9),  # SR_TODO
+            ),
             scale_fld_ref=3.0,
         ),
         Conf(
@@ -194,52 +259,88 @@ def test_single(datadir, conf):  # noqa:F811
             name="deposition",
             var_names_ref=[f"DD_spec002"],
             var_specs_dct={
+                "deposition": "dry",
+                "species_id": 2,
+                "integrate": True,
+                "time": [0, 3, 9],
                 "nageclass": 0,
                 "numpoint": 0,
-                "time": [0, 3, 9],
-                "integrate": True,
-                "species_id": 2,
-                "deposition": "dry",
             },
+            setup=Setup(
+                infiles=["dummy.nc"],
+                outfile="dummy.png",
+                variable="deposition",
+                deposition_type="dry",
+                species_id=2,
+                integrate=True,
+                # + time_idx=(0, 3, 9),  # SR_TODO
+            ),
         ),
         Conf(
             datafilename=datafilename1,
             name="deposition",
             var_names_ref=[f"WD_spec002"],
             var_specs_dct={
+                "deposition": "wet",
+                "species_id": 2,
+                "integrate": True,
+                "time": [0, 3, 9],
                 "nageclass": 0,
                 "numpoint": 0,
-                "time": [0, 3, 9],
-                "integrate": True,
-                "species_id": 2,
-                "deposition": "wet",
             },
+            setup=Setup(
+                infiles=["dummy.nc"],
+                outfile="dummy.png",
+                variable="deposition",
+                deposition_type="wet",
+                species_id=2,
+                integrate=True,
+                # + time_idx=(0, 3, 9),  # SR_TODO
+            ),
         ),
         Conf(
             datafilename=datafilename1,
             name="deposition",
             var_names_ref=[f"WD_spec001", f"DD_spec001"],
             var_specs_dct={
+                "deposition": ("wet", "dry"),
+                "species_id": 1,
+                "integrate": True,
+                "time": [0, 3, 9],
                 "nageclass": 0,
                 "numpoint": 0,
-                "time": [0, 3, 9],
-                "integrate": True,
-                "species_id": 1,
-                "deposition": ("wet", "dry"),
             },
+            setup=Setup(
+                infiles=["dummy.nc"],
+                outfile="dummy.png",
+                variable="deposition",
+                deposition_type="tot",
+                species_id=1,
+                integrate=True,
+                # + time_idx=(0, 3, 9),  # SR_TODO
+            ),
         ),
         Conf(
             datafilename=datafilename2,
             name="concentration",
             var_names_ref=[f"spec001"],
             var_specs_dct={
+                "level": [0, 2],
+                "species_id": 1,
+                "integrate": True,
+                "time": [0, 3, 9],
                 "nageclass": 0,
                 "noutrel": 0,
-                "time": [0, 3, 9],
-                "level": [0, 2],
-                "integrate": True,
-                "species_id": 1,
             },
+            setup=Setup(
+                infiles=["dummy.nc"],
+                outfile="dummy.png",
+                variable="concentration",
+                # + level_idx=(0, 2),  # SR_TODO
+                species_id=1,
+                integrate=True,
+                # + time_idx=(0, 3, 9),  # SR_TODO
+            ),
             scale_fld_ref=3.0,
         ),
         Conf(
@@ -247,13 +348,22 @@ def test_single(datadir, conf):  # noqa:F811
             name="deposition",
             var_names_ref=[f"WD_spec001", f"DD_spec001"],
             var_specs_dct={
+                "deposition": ("wet", "dry"),
+                "species_id": 1,
+                "integrate": True,
+                "time": [0, 3, 9],
                 "nageclass": 0,
                 "noutrel": 0,
-                "time": [0, 3, 9],
-                "integrate": True,
-                "species_id": 1,
-                "deposition": ("wet", "dry"),
             },
+            setup=Setup(
+                infiles=["dummy.nc"],
+                outfile="dummy.png",
+                variable="deposition",
+                deposition_type="tot",
+                species_id=1,
+                integrate=True,
+                # + time_idx=(0, 3, 9),  # SR_TODO
+            ),
         ),
     ],
 )
@@ -264,7 +374,7 @@ def test_multiple(datadir, conf):  # noqa:F811
 
     # Create field specifications list
     multi_var_specs_lst = MultiVarSpecs.create(
-        conf.name, conf.var_specs_dct, lang=None, words=None,
+        conf.setup, conf.var_specs_dct, lang=None, words=None,
     )
     fld_specs_lst = [
         FieldSpecs(conf.name, multi_var_specs)

@@ -11,6 +11,7 @@ import numpy as np
 from pyflexplot.data import threshold_agreement
 from pyflexplot.field_specs import FieldSpecs
 from pyflexplot.io import FileReader
+from pyflexplot.setup import Setup
 from pyflexplot.var_specs import MultiVarSpecs
 
 from io_utils import read_nc_var  # isort:skip
@@ -54,6 +55,7 @@ class TestReadFieldEnsemble_Single:
         *,
         name,
         dims,
+        setup_kwargs,
         var_names_ref,
         var_specs_mult_unshared,
         ens_var,
@@ -69,8 +71,9 @@ class TestReadFieldEnsemble_Single:
             **self.var_specs_mult_shared,
             **var_specs_mult_unshared,
         }
+        setup = Setup(infiles=["dummy.nc"], outfile="dummy.png", **setup_kwargs)
         multi_var_specs_lst = MultiVarSpecs.create(
-            name, var_specs_dct, lang=None, words=None,
+            setup, var_specs_dct, lang=None, words=None,
         )
         assert len(multi_var_specs_lst) == 1
         multi_var_specs = next(iter(multi_var_specs_lst))
@@ -117,6 +120,7 @@ class TestReadFieldEnsemble_Single:
         self.run(
             datadir,
             name="concentration:ens_mean_concentration",
+            setup_kwargs={"variable": "concentration", "plot_type": "ens_mean"},
             dims={**self.dims_shared, "level": 1},
             var_names_ref=[f"spec{self.species_id:03d}"],
             var_specs_mult_unshared={},
@@ -167,6 +171,7 @@ class TestReadFieldEnsemble_Multiple:
         datafile_fmt,
         name,
         dims_mult,
+        setup_kwargs,
         var_names_ref,
         var_specs_mult_unshared,
         ens_var,
@@ -182,8 +187,9 @@ class TestReadFieldEnsemble_Multiple:
             **self.var_specs_mult_shared,
             **var_specs_mult_unshared,
         }
+        setup = Setup(infiles=["dummy.nc"], outfile="dummy.png", **setup_kwargs)
         multi_var_specs_lst = MultiVarSpecs.create(
-            name, var_specs_dct, lang=None, words=None,
+            setup, var_specs_dct, lang=None, words=None,
         )
         attrs = {
             "member_ids": self.member_ids,
@@ -284,6 +290,7 @@ class TestReadFieldEnsemble_Multiple:
             datafile_fmt=self.datafile_fmt(datadir),
             name=name,
             dims_mult={**self.dims_shared, "level": 1},
+            setup_kwargs={"variable": "concentration"},  # SR_TODO
             var_names_ref=[f"spec{self.species_id:03d}"],
             var_specs_mult_unshared={},
             ens_var=ens_var,
@@ -317,6 +324,10 @@ class TestReadFieldEnsemble_Multiple:
             datafile_fmt=self.datafile_fmt(datadir),
             name="deposition",
             dims_mult=self.dims_shared,
+            setup_kwargs={
+                "variable": "deposition",
+                "deposition_type": "tot",
+            },  # SR_TODO
             var_names_ref=[
                 f"WD_spec{self.species_id:03d}",
                 f"DD_spec{self.species_id:03d}",

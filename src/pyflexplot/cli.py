@@ -211,7 +211,7 @@ def read_fields(setup):
     # Create variable specification objects
     var_specs_dct = prep_var_specs_dct(setup)
     multi_var_specs_lst = MultiVarSpecs.create(
-        setup.tmp_cls_name(), var_specs_dct, lang=setup.lang, words=None,
+        setup, var_specs_dct, lang=setup.lang, words=None,
     )
 
     # Determine fields specifications (one for each eventual plot)

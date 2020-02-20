@@ -27,8 +27,6 @@ from .utils import format_level_ranges
 from .words import SYMBOLS
 from .words import WORDS
 
-# Plot Labels
-
 
 # SR_TMP TODO Turn this class into some more adequate type (simple dict?)
 class PlotLabels(SummarizableClass):
@@ -143,9 +141,6 @@ class PlotLabels(SummarizableClass):
                 if isinstance(s, str):
                     # Capitalize first letter only (even if it's a space!)
                     group[name] = list(s)[0].capitalize() + s[1:]
-
-
-# Plots
 
 
 def colors_flexplot(n_levels, extend):

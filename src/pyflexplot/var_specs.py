@@ -65,12 +65,12 @@ class VarSpecs(SummarizableClass, ParentClass):
     # +     raise DeprecationWarning(f"{cls.__name__}.subcls")
 
     def __init__(
-        self, name, var_specs_dct, *, rlat=None, rlon=None, words=None, lang=None,
+        self, setup, var_specs_dct, *, rlat=None, rlon=None, words=None, lang=None,
     ):
         """Create an instance of ``VarSpecs``.
 
         Args:
-            name (str): Name.
+            setup (Setup): Plot setup.
 
             var_specs_dct (dict): Variable specification dict comprised of only
                 single-object elements (see ``VarSpecs.create`` for more
@@ -88,7 +88,9 @@ class VarSpecs(SummarizableClass, ParentClass):
                 'en' (English).
 
         """
+        name = setup.tmp_cls_name()  # SR_TMP
         assert name in type(self).name  # SR_TMP
+        # assert name == type(self).name  # SR_TMP
         self.name = name
 
         def prepare_dim(dim):
@@ -133,7 +135,7 @@ class VarSpecs(SummarizableClass, ParentClass):
             )
 
     @classmethod
-    def create(cls, name, var_specs_dct, **kwargs):
+    def create(cls, setup, var_specs_dct, **kwargs):
         """Create one or more instances of ``VarSpecs``.
 
         The values of the specification dict elements may be
@@ -162,7 +164,7 @@ class VarSpecs(SummarizableClass, ParentClass):
         inner nest to the tuple values (separate input fields per plot).
 
         Args:
-            name (str): Name.
+            setup (Setup): Plot setup.
 
             var_specs_dct (dict): Variable specification dict (see above).
 
@@ -196,7 +198,6 @@ class VarSpecs(SummarizableClass, ParentClass):
             ]
 
         """
-        cls = cls.subcls(name)  # SR_TMP
         var_specs_dct_lst_outer = decompress_multival_dict(
             var_specs_dct, depth=1, cls_expand=list,
         )
@@ -205,9 +206,11 @@ class VarSpecs(SummarizableClass, ParentClass):
             for dct in var_specs_dct_lst_outer
         ]
 
+        cls = cls.subcls(setup.tmp_cls_name())  # SR_TMP
+
         def create_objs_rec(obj):
             if isinstance(obj, dict):
-                return cls(name, obj, **kwargs)
+                return cls(setup, obj, **kwargs)
             elif isinstance(obj, list):
                 return [create_objs_rec(i) for i in obj]
             raise ValueError(f"obj of type {type(obj).__name__}")
@@ -554,12 +557,12 @@ class MultiVarSpecs:
         self.var_specs_lst = var_specs_lst
 
     @classmethod
-    def create(cls, name, var_specs_dct, *args, **kwargs):
+    def create(cls, setup, var_specs_dct, *args, **kwargs):
         var_specs_dct = var_specs_dct.copy()
         if var_specs_dct.get("deposition") == "tot":
             var_specs_dct["deposition"] = ("wet", "dry")
-        var_specs_lst_lst = VarSpecs.create(name, var_specs_dct, *args, **kwargs)
-        return [cls(name, var_specs_lst) for var_specs_lst in var_specs_lst_lst]
+        var_specs_lst_lst = VarSpecs.create(setup, var_specs_dct, *args, **kwargs)
+        return [cls(setup, var_specs_lst) for var_specs_lst in var_specs_lst_lst]
 
     def __eq__(self, other):
         if isinstance(other, type(self)) or isinstance(self, type(other)):
