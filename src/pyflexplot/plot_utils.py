@@ -117,7 +117,7 @@ class MapAxesConf:
 
         min_city_pop: Minimum population of cities shown.
 
-        ref_dist_conf: Reference distance indicator configuration.
+        ref_dist_conf: Reference distance indicator setupuration.
 
         ref_dist_on: Whether to add a reference distance indicator.
 
@@ -194,7 +194,7 @@ class MapAxesRotatedPole(SummarizablePlotClass):
 
             pollon (float): Longitude of rotated pole.
 
-            conf (MapAxesConf): Map axes configuration.
+            conf (MapAxesConf): Map axes setupuration.
 
         """
         self.fig = fig

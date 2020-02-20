@@ -30,7 +30,7 @@ class Plotter:
     def __init__(self):
         self.file_paths = []
 
-    def run(self, name, field, config, **kwargs_plot):
+    def run(self, name, field, setup, **kwargs_plot):
         """Create one or more plots.
 
         Args:
@@ -53,15 +53,15 @@ class Plotter:
             str: Output file paths.
 
         """
-        if config.outfile is None:
-            raise ValueError("config.outfile is None")
+        if setup.outfile is None:
+            raise ValueError("setup.outfile is None")
 
         self.name = name
-        self.config = config
+        self.setup = setup
         # SR_DBG <
-        self.file_path_fmt = config.outfile
-        self.domain = config.domain
-        self.lang = config.lang
+        self.file_path_fmt = setup.outfile
+        self.domain = setup.domain
+        self.lang = setup.lang
         # SR_DBG >
 
         fields = field if isinstance(field, (list, tuple)) else [field]
@@ -117,7 +117,7 @@ class Plotter:
                 kwargs[fmt_key] = val
 
         kwargs["variable"] = self._fmt_variable(var_specs_dct)
-        kwargs["plot_type"] = self.config.plot_type
+        kwargs["plot_type"] = self.setup.plot_type
         kwargs["lang"] = self.lang
         # if field_specs.issubcls("ens"):
         if "ens" in self.name:  # SR_TMP

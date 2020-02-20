@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Tests for module ``pyflexplot.config``."""
+"""Tests for module ``pyflexplot.setup``."""
 # Standard library
 from collections.abc import Sequence
 from textwrap import dedent
 
 # First-party
-from pyflexplot.config import Config
-from pyflexplot.config import ConfigCollection
-from pyflexplot.config import ConfigFile
+from pyflexplot.setup import Setup
+from pyflexplot.setup import SetupCollection
+from pyflexplot.setup import SetupFile
 
 DEFAULT_KWARGS = {
     "infiles": ["foo.nc"],
@@ -48,54 +48,54 @@ DEFAULT_CONFIG = {
 }
 
 
-def test_default_config_dict():
-    """Check the default configuration dict."""
-    assert Config(**DEFAULT_KWARGS) == DEFAULT_CONFIG
+def test_default_setup_dict():
+    """Check the default setupuration dict."""
+    assert Setup(**DEFAULT_KWARGS) == DEFAULT_CONFIG
 
 
-def read_tmp_config_file(tmp_path, content, **kwargs):
-    tmp_file = tmp_path / "config.toml"
+def read_tmp_setup_file(tmp_path, content, **kwargs):
+    tmp_file = tmp_path / "setup.toml"
     tmp_file.write_text(dedent(content))
-    return ConfigFile(tmp_file).read(**kwargs)
+    return SetupFile(tmp_file).read(**kwargs)
 
 
 def test_read_single_minimal_section(tmp_path):
-    """Read config file with single minimal section."""
+    """Read setup file with single minimal section."""
     content = f"""\
         [plot]
         {DEFAULT_TOML}
         """
-    configs = read_tmp_config_file(tmp_path, content)
-    assert configs == [DEFAULT_CONFIG]
+    setups = read_tmp_setup_file(tmp_path, content)
+    assert setups == [DEFAULT_CONFIG]
 
 
 def test_read_single_minimal_renamed_section(tmp_path):
-    """Read config file with single minimal section with arbitrary name."""
+    """Read setup file with single minimal section with arbitrary name."""
     content = f"""\
         [foobar]
         {DEFAULT_TOML}
         """
-    configs = read_tmp_config_file(tmp_path, content)
-    assert configs == [DEFAULT_CONFIG]
+    setups = read_tmp_setup_file(tmp_path, content)
+    assert setups == [DEFAULT_CONFIG]
 
 
 def test_read_single_section(tmp_path):
-    """Read config file with single non-empty section."""
+    """Read setup file with single non-empty section."""
     content = f"""\
         [plot]
         {DEFAULT_TOML}
         variable = "deposition"
         lang = "de"
         """
-    configs = read_tmp_config_file(tmp_path, content)
-    assert len(configs) == 1
-    assert configs != [DEFAULT_CONFIG]
+    setups = read_tmp_setup_file(tmp_path, content)
+    assert len(setups) == 1
+    assert setups != [DEFAULT_CONFIG]
     sol = [{**DEFAULT_CONFIG, "variable": "deposition", "lang": "de"}]
-    assert configs == sol
+    assert setups == sol
 
 
 def test_read_multiple_parallel_empty_sections(tmp_path):
-    """Read config file with multiple parallel empty sections."""
+    """Read setup file with multiple parallel empty sections."""
     content = f"""\
         [plot1]
         {DEFAULT_TOML}
@@ -103,24 +103,24 @@ def test_read_multiple_parallel_empty_sections(tmp_path):
         [plot2]
         {DEFAULT_TOML}
         """
-    configs = read_tmp_config_file(tmp_path, content)
-    assert configs == [DEFAULT_CONFIG] * 2
+    setups = read_tmp_setup_file(tmp_path, content)
+    assert setups == [DEFAULT_CONFIG] * 2
 
 
 def test_read_two_nested_empty_sections(tmp_path):
-    """Read config file with two nested empty sections."""
+    """Read setup file with two nested empty sections."""
     content = f"""\
         [_base]
         {DEFAULT_TOML}
 
         [_base.plot]
         """
-    configs = read_tmp_config_file(tmp_path, content)
-    assert configs == [DEFAULT_CONFIG]
+    setups = read_tmp_setup_file(tmp_path, content)
+    assert setups == [DEFAULT_CONFIG]
 
 
 def test_read_multiple_nested_sections(tmp_path):
-    """Read config file with two nested non-empty sections."""
+    """Read setup file with two nested non-empty sections."""
     content = f"""\
         [_base]
         {DEFAULT_TOML}
@@ -193,14 +193,14 @@ def test_read_multiple_nested_sections(tmp_path):
         {"variable": "deposition", "deposition_type": "wet", "lang": "de"},
     ]
     sol = [{**DEFAULT_CONFIG, **sol_base, **d} for d in sol_specific]
-    configs = read_tmp_config_file(tmp_path, content)
-    assert configs == sol
+    setups = read_tmp_setup_file(tmp_path, content)
+    assert setups == sol
 
 
 def test_read_semi_realcase(tmp_path):
-    """Test config file based on a real case, with some groups indented."""
+    """Test setup file based on a real case, with some groups indented."""
     content = f"""\
-        # PyFlexPlot config file to create deterministic NAZ plots
+        # PyFlexPlot setup file to create deterministic NAZ plots
 
         [_base]
         {DEFAULT_TOML}
@@ -250,9 +250,9 @@ def test_read_semi_realcase(tmp_path):
         [_base._deposition._affected_area._ch.de]
 
         """
-    configs = read_tmp_config_file(tmp_path, content)
+    setups = read_tmp_setup_file(tmp_path, content)
     # Note: Fails with tomlkit, but works with toml (2020-02-18)
-    assert len(configs) == 16
+    assert len(setups) == 16
 
 
 def test_read_wildcard_simple(tmp_path):
@@ -283,8 +283,8 @@ def test_read_wildcard_simple(tmp_path):
             {"variable": "deposition", "lang": "en"},
         ]
     ]
-    configs = read_tmp_config_file(tmp_path, content)
-    assert configs == sol
+    setups = read_tmp_setup_file(tmp_path, content)
+    assert setups == sol
 
 
 def test_read_double_wildcard_equal_depth(tmp_path):
@@ -325,8 +325,8 @@ def test_read_double_wildcard_equal_depth(tmp_path):
         for domain in ["ch", "auto"]
         for lang in ["de", "en"]
     ]
-    configs = read_tmp_config_file(tmp_path, content)
-    assert configs.as_dicts() == sol
+    setups = read_tmp_setup_file(tmp_path, content)
+    assert setups.as_dicts() == sol
 
 
 def test_read_double_wildcard_variable_depth(tmp_path):
@@ -370,11 +370,11 @@ def test_read_double_wildcard_variable_depth(tmp_path):
         for domain in ["ch", "auto"]
         for lang in ["de", "en"]
     ]
-    configs = read_tmp_config_file(tmp_path, content)
-    assert configs.as_dicts() == sol
+    setups = read_tmp_setup_file(tmp_path, content)
+    assert setups.as_dicts() == sol
 
 
-class Test_ConfigCollection:
+class Test_SetupCollection:
     def create_partial_dicts(self):
         return [
             {**DEFAULT_KWARGS, **dct}
@@ -388,20 +388,20 @@ class Test_ConfigCollection:
     def create_complete_dicts(self):
         return [{**DEFAULT_CONFIG, **dct} for dct in self.create_partial_dicts()]
 
-    def create_configs(self):
-        return [Config(**dct) for dct in self.create_partial_dicts()]
+    def create_setups(self):
+        return [Setup(**dct) for dct in self.create_partial_dicts()]
 
-    def test_dicts_configs(self):
+    def test_dicts_setups(self):
         """
-        Check the dicts and Config objects used in the ConfigCollection tests.
+        Check the dicts and Setup objects used in the SetupCollection tests.
         """
-        assert self.create_configs() == self.create_complete_dicts()
+        assert self.create_setups() == self.create_complete_dicts()
 
     def test_create_empty(self):
-        configs = ConfigCollection([])
-        assert len(configs) == 0
+        setups = SetupCollection([])
+        assert len(setups) == 0
 
-    def test_from_configs(self):
+    def test_from_setups(self):
         partial_dicts = self.create_partial_dicts()
-        configs = ConfigCollection(partial_dicts)
-        assert len(configs) == len(partial_dicts)
+        setups = SetupCollection(partial_dicts)
+        assert len(setups) == len(partial_dicts)

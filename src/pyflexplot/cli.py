@@ -16,12 +16,12 @@ from srutils.click import CharSepList
 
 # Local
 from . import __version__
-from .config import ConfigFile
 from .examples import choices as example_choices
 from .examples import print_example
 from .field_specs import FieldSpecs
 from .io import FileReader
 from .plotter import Plotter
+from .setup import SetupFile
 from .utils import count_to_log_level
 from .var_specs import MultiVarSpecs
 
@@ -50,7 +50,7 @@ def not_implemented(msg):
 @click.command(context_settings={"help_option_names": ["-h", "--help"]},)
 @click.version_option(__version__, "--version", "-V", message="%(version)s")
 @click.argument(
-    "config_file_paths",
+    "setup_file_paths",
     metavar="CONFIG_FILE...",
     type=click.Path(exists=True, readable=True, allow_dash=True),
     required=True,
@@ -115,7 +115,7 @@ def not_implemented(msg):
 )
 # ---
 @click.pass_context
-def cli(ctx, config_file_paths, **cli_args):
+def cli(ctx, setup_file_paths, **cli_args):
     """
     Create dispersion plot as specified in CONFIG_FILE(S).
     """
@@ -125,20 +125,20 @@ def cli(ctx, config_file_paths, **cli_args):
     # Ensure that ctx.obj exists and is a dict
     ctx.ensure_object(dict)
 
-    # Read config file
-    configs = [
-        config
-        for config_file_path in config_file_paths
-        for config in ConfigFile(config_file_path).read()
+    # Read setup file
+    setups = [
+        setup
+        for setup_file_path in setup_file_paths
+        for setup in SetupFile(setup_file_path).read()
     ]
 
     # Create plots
-    create_plots(configs, cli_args)
+    create_plots(setups, cli_args)
 
     return 0
 
 
-def create_plots(configs, cli_args):
+def create_plots(setups, cli_args):
     """
     Read and plot FLEXPART data.
     """
@@ -146,28 +146,28 @@ def create_plots(configs, cli_args):
     out_file_paths = []
 
     # SR_TMP <<< TODO find better solution
-    for idx_config, config in enumerate(configs):
-        if config.simulation_type == "deterministic":
-            cls_name = f"{config.variable}"
-        elif config.simulation_type == "ensemble":
-            cls_name = f"{config.plot_type}_{config.variable}"
+    for idx_setup, setup in enumerate(setups):
+        if setup.simulation_type == "deterministic":
+            cls_name = f"{setup.variable}"
+        elif setup.simulation_type == "ensemble":
+            cls_name = f"{setup.plot_type}_{setup.variable}"
 
         # Read input fields
-        field_lst = read_fields(cls_name, config)
+        field_lst = read_fields(cls_name, setup)
 
         # Prepare plotter
         plotter = Plotter()
 
         def fct_plot():
             return plotter.run(
-                cls_name, field_lst, config, scale_fact=cli_args["scale_fact"],
+                cls_name, field_lst, setup, scale_fact=cli_args["scale_fact"],
             )
 
         # Note: Plotter.run yields the output file paths on-the-go
         for idx_plot, out_file_path in enumerate(fct_plot()):
             out_file_paths.append(out_file_path)
 
-            if cli_args["open_first_cmd"] and idx_config + idx_plot == 0:
+            if cli_args["open_first_cmd"] and idx_setup + idx_plot == 0:
                 # Open the first file as soon as it's available
                 open_plots(cli_args["open_first_cmd"], [out_file_path])
 
@@ -176,26 +176,26 @@ def create_plots(configs, cli_args):
         open_plots(cli_args["open_all_cmd"], out_file_paths)
 
 
-def prep_var_specs_dct(config):
+def prep_var_specs_dct(setup):
     """
     Prepare the variable specifications dict from the raw CLI input.
     """
 
     var_specs_raw = {
-        "time_lst": (config.time_idx,),
-        "nageclass_lst": (config.age_class_idx,),
-        "noutrel_lst": (config.nout_rel_idx,),
-        "numpoint_lst": (config.release_point_idx,),
-        "species_id_lst": (config.species_id,),
-        "integrate_lst": (config.integrate,),
+        "time_lst": (setup.time_idx,),
+        "nageclass_lst": (setup.age_class_idx,),
+        "noutrel_lst": (setup.nout_rel_idx,),
+        "numpoint_lst": (setup.release_point_idx,),
+        "species_id_lst": (setup.species_id,),
+        "integrate_lst": (setup.integrate,),
     }
 
-    if config.variable == "concentration":
-        var_specs_raw["level_lst"] = (config.level_idx,)
-    elif config.variable == "deposition":
-        var_specs_raw["deposition_lst"] = (config.deposition_type,)
+    if setup.variable == "concentration":
+        var_specs_raw["level_lst"] = (setup.level_idx,)
+    elif setup.variable == "deposition":
+        var_specs_raw["deposition_lst"] = (setup.deposition_type,)
     else:
-        raise NotImplementedError(f"variable='{config.variable}'")
+        raise NotImplementedError(f"variable='{setup.variable}'")
 
     var_specs_dct = {}
     for key, val in var_specs_raw.items():
@@ -212,13 +212,13 @@ def prep_var_specs_dct(config):
     return var_specs_dct
 
 
-def read_fields(cls_name, config):
+def read_fields(cls_name, setup):
 
     # SR_TMP < TODO find cleaner solution
-    if config.simulation_type == "ensemble":
-        if config.plot_type == "ens_thr_agrmt":
+    if setup.simulation_type == "ensemble":
+        if setup.plot_type == "ens_thr_agrmt":
             ens_var_setup = {"thr": 1e-9}
-        elif config.plot_type == "ens_cloud_arrival_time":
+        elif setup.plot_type == "ens_cloud_arrival_time":
             ens_var_setup = {"thr": 1e-9, "n_mem_min": 11}
         else:
             ens_var_setup = {}
@@ -227,18 +227,18 @@ def read_fields(cls_name, config):
     # SR_TMP >
 
     # SR_TMP <<< TODO clean this up
-    attrs = {"lang": config.lang}
-    if config.simulation_type == "ensemble":
-        if config.member_ids is not None:
-            attrs["member_ids"] = config.member_ids
-        assert config.plot_type.startswith("ens_"), config.plot_type
-        attrs["ens_var"] = config.plot_type[4:]
+    attrs = {"lang": setup.lang}
+    if setup.simulation_type == "ensemble":
+        if setup.member_ids is not None:
+            attrs["member_ids"] = setup.member_ids
+        assert setup.plot_type.startswith("ens_"), setup.plot_type
+        attrs["ens_var"] = setup.plot_type[4:]
         attrs["ens_var_setup"] = ens_var_setup
 
     # Create variable specification objects
-    var_specs_dct = prep_var_specs_dct(config)
+    var_specs_dct = prep_var_specs_dct(setup)
     multi_var_specs_lst = MultiVarSpecs.create(
-        cls_name, var_specs_dct, lang=config.lang, words=None,
+        cls_name, var_specs_dct, lang=setup.lang, words=None,
     )
 
     # Determine fields specifications (one for each eventual plot)
@@ -249,8 +249,8 @@ def read_fields(cls_name, config):
 
     # Read fields
     field_lst = []
-    for raw_path in config.infiles:
-        field_lst.extend(FileReader(raw_path).run(fld_specs_lst, lang=config.lang))
+    for raw_path in setup.infiles:
+        field_lst.extend(FileReader(raw_path).run(fld_specs_lst, lang=setup.lang))
 
     return field_lst
 

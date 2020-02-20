@@ -212,7 +212,7 @@ class Plot(SummarizablePlotClass, ParentClass):
 
             field (Field): Data field.
 
-            map_conf (MapAxesConf): Map plot configuration object.
+            map_conf (MapAxesConf): Map plot setupuration object.
 
             dpi (float, optional): Plot resolution (dots per inch). Defaults to
                 100.0.

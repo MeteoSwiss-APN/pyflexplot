@@ -33,10 +33,10 @@ def register_choice(fct):
 @register_choice
 def naz_det():
     """
-    TOML config file to create deterministic NAZ plots.
+    TOML setup file to create deterministic NAZ plots.
     """
     s = """\
-        # PyFlexPlot config file to create deterministic NAZ plots
+        # PyFlexPlot setup file to create deterministic NAZ plots
 
         [_base]
         # Sampe data directory: /scratch/ruestefa/shared/flexpart_visualization/test/
@@ -101,7 +101,7 @@ def naz_det_sh():
         #!/bin/bash
 
         # Create deterministic NAZ plots
-        pyflexplot --config=<(pyflexplot --example=naz_det_toml)
+        pyflexplot --setup=<(pyflexplot --example=naz_det_toml)
         """
     click.echo(dedent(s))
 
@@ -110,7 +110,7 @@ def naz_det_sh():
 def ens_thr_agrmt():
     """Plot ensemble threshold agreement."""
     s = """\
-        # PyFlexPlot config file to create ensemble threshold agreement plots.
+        # PyFlexPlot setup file to create ensemble threshold agreement plots.
 
         [_base]
         # Sampe data directory: /scratch/ruestefa/shared/flexpart_visualization/test/
@@ -137,7 +137,7 @@ def ens_thr_agrmt():
 def ens_basic_stats():
     """Plot basic ensemble statistical measures."""
     s = """\
-        # PyFlexPlot config file to plot basic statistical measures.
+        # PyFlexPlot setup file to plot basic statistical measures.
 
         [_base]
         # Sampe data directory: /scratch/ruestefa/shared/flexpart_visualization/test/
@@ -177,7 +177,7 @@ def ens_basic_stats():
 def ens_cloud_arrival_time():
     """Plot cloud arrival time."""
     s = """\
-        # PyFlexPlot config file to plot cloud arrival time.
+        # PyFlexPlot setup file to plot cloud arrival time.
 
         [_base]
         # Sampe data directory: /scratch/ruestefa/shared/flexpart_visualization/test/

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Configuration and configuration file.
+Plot setup and setup files.
 """
 # Standard library
 import dataclasses
@@ -18,9 +18,9 @@ from srutils.dict import nested_dict_resolve_wildcards
 
 
 @pydantic_dataclass(frozen=True)
-class Config:
+class Setup:
     """
-    PyFlexPlot configuration.
+    PyFlexPlot setup.
 
     Args:
         infiles: Input file path(s). May contain format keys.
@@ -100,7 +100,7 @@ class Config:
         pass
 
     @classmethod
-    def as_config(cls, obj):
+    def as_setup(cls, obj):
         if isinstance(obj, cls):
             return obj
         return cls(**obj)
@@ -122,35 +122,35 @@ class Config:
         return self.as_dict() == other_as_dict
 
 
-class ConfigCollection:
+class SetupCollection:
     """
-    A set of ``Config`` objects.
+    A set of ``Setup`` objects.
     """
 
-    def __init__(self, configs):
-        self._configs = [Config.as_config(obj) for obj in configs]
+    def __init__(self, setups):
+        self._setups = [Setup.as_setup(obj) for obj in setups]
 
     def __repr__(self):
-        s_configs = "\n  ".join([""] + [str(c) for c in self._configs])
-        return f"{type(self).__name__}([{s_configs}\n])"
+        s_setups = "\n  ".join([""] + [str(c) for c in self._setups])
+        return f"{type(self).__name__}([{s_setups}\n])"
 
     def __len__(self):
-        return len(self._configs)
+        return len(self._setups)
 
     def __iter__(self):
-        for config in self._configs:
-            yield config
+        for setup in self._setups:
+            yield setup
 
     def __eq__(self, other):
         return self.as_dicts() == other
 
     def as_dicts(self):
-        return [c.as_dict() for c in self._configs]
+        return [c.as_dict() for c in self._setups]
 
 
-class ConfigFile:
+class SetupFile:
     """
-    Configuration file to be read from and/or written to disk.
+    Setup file to be read from and/or written to disk.
     """
 
     def __init__(self, path):
@@ -158,7 +158,7 @@ class ConfigFile:
 
     def read(self):
         """
-        Read the configuration from a text file (TOML format).
+        Read the setup from a text file in TOML format.
         """
         with open(self.path, "r") as f:
             try:
@@ -168,16 +168,16 @@ class ConfigFile:
                     f"error parsing TOML file {self.path} ({type(e).__name__}: {e})"
                 )
         if not raw_data:
-            raise ValueError(f"empty config file", self.path)
+            raise ValueError(f"empty setup file", self.path)
         raw_data = nested_dict_resolve_wildcards(raw_data)
         values = decompress_nested_dict(
             raw_data, branch_end_criterion=lambda key: not key.startswith("_"),
         )
-        configs = ConfigCollection(values)
-        return configs
+        setups = SetupCollection(values)
+        return setups
 
     def write(self, *args, **kwargs):
         """
-        Write the configuration to a text file (TOML format).
+        Write the setup to a text file in TOML format.
         """
         raise NotImplementedError(f"{type(self).__name__}.write")

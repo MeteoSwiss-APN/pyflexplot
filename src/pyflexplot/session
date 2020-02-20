@@ -1,7 +1,6 @@
 __init__.py
 attr.py
 cli.py
-config.py
 data.py
 examples.py
 field_specs.py
@@ -9,6 +8,7 @@ io.py
 plot.py
 plotter.py
 plot_utils.py
+setup.py
 utils.py
 var_specs.py
 words.py
