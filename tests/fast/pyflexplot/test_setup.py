@@ -45,6 +45,8 @@ DEFAULT_CONFIG = {
     "release_point_idx": 0,
     "species_id": 1,
     "time_idx": 0,
+    "scale_fact": None,
+    "reverse_legend": False,
 }
 
 

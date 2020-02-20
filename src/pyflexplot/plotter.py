@@ -30,24 +30,18 @@ class Plotter:
     def __init__(self):
         self.file_paths = []
 
-    def run(self, name, field, setup, **kwargs_plot):
+    def run(self, field, setup, **kwargs_plot):
         """Create one or more plots.
 
         Args:
-            name (str): Name.
-
             field (Field*, list[Field*]): One or more Field instances.
+
+            setup (Setup): Plot setup.
 
             file_path_fmt (str): Format string of output file path. Must
                 contain all necessary format keys to avoid that multiple files
                 have the same name, but can be a plain string if no variable
                 assumes more than one value.
-
-            lang (str, optional): Language, e.g., 'de' for German. Defaults to
-                'en' (English).
-
-            **kwargs_plot: Keyword arguments used to instatiate the plot
-                instance.
 
         Yields:
             str: Output file paths.
@@ -56,12 +50,11 @@ class Plotter:
         if setup.outfile is None:
             raise ValueError("setup.outfile is None")
 
-        self.name = name
+        self.name = setup.tmp_cls_name()
         self.setup = setup
         # SR_DBG <
         self.file_path_fmt = setup.outfile
         self.domain = setup.domain
-        self.lang = setup.lang
         # SR_DBG >
 
         fields = field if isinstance(field, (list, tuple)) else [field]
@@ -74,9 +67,9 @@ class Plotter:
         if self.domain == "auto":
             self.domain = "cosmo1"
         if self.domain == "cosmo1":
-            map_conf = MapAxesConf_Cosmo1(lang=self.lang)
+            map_conf = MapAxesConf_Cosmo1(lang=self.setup.lang)
         elif self.domain == "ch":
-            map_conf = MapAxesConf_Cosmo1_CH(lang=self.lang)
+            map_conf = MapAxesConf_Cosmo1_CH(lang=self.setup.lang)
         else:
             raise ValueError(f"unknown domain '{self.domain}'")
         # SR_TMP >
@@ -87,9 +80,7 @@ class Plotter:
             _w = len(str(len(fields)))
             print(f" {i_data+1:{_w}}/{len(fields)}  {file_path}")
 
-            Plot.create(
-                self.name, field, map_conf=map_conf, lang=self.lang, **kwargs_plot,
-            ).save(file_path)
+            Plot.create(field, setup, map_conf=map_conf, **kwargs_plot,).save(file_path)
 
             yield file_path
 
@@ -118,7 +109,7 @@ class Plotter:
 
         kwargs["variable"] = self._fmt_variable(var_specs_dct)
         kwargs["plot_type"] = self.setup.plot_type
-        kwargs["lang"] = self.lang
+        kwargs["lang"] = self.setup.lang
         # if field_specs.issubcls("ens"):
         if "ens" in self.name:  # SR_TMP
             kwargs["member_ids"] = self._fmt_member_ids(field_specs)

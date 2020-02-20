@@ -46,6 +46,8 @@ import numpy as np
 # First-party
 from pyflexplot.data import Field
 from pyflexplot.plot import Plot
+from pyflexplot.plot import PlotLabels
+from pyflexplot.setup import Setup
 from srutils.testing import CheckFailedError
 from srutils.testing import IgnoredElement
 from srutils.testing import UnequalElement
@@ -172,7 +174,7 @@ class Dummy_Attr:
 # Prepare test data
 
 
-def create_dummy_attrs(lang):
+def create_attrs(lang):
 
     # Note: Some values must be passed, otherwise plotting fails
 
@@ -224,7 +226,7 @@ def create_dummy_attrs(lang):
     )
 
 
-def create_dummy_field(attrs):
+def create_field(attrs):
     dummy_field = Field(
         fld=np.array([[i] * 10 for i in range(10)], np.float32),
         rlat=np.arange(-5.0, 4.1, 1.0),
@@ -236,7 +238,13 @@ def create_dummy_field(attrs):
     return dummy_field
 
 
-def create_dummy_words(lang):
+def create_setup(lang):
+    infiles = ["dummy_infile.nc"]
+    outfile = "dummy_outfile.png"
+    return Setup(infiles, outfile, lang=lang)
+
+
+def create_words(lang):
 
     w = Dummy_TranslatedWords.create(
         "words",
@@ -279,22 +287,20 @@ def create_dummy_words(lang):
     return w
 
 
-def create_dummy_symbols():
+def create_symbols():
 
     return Dummy_Words.create(
         "symbols", ["ae", "copyright", "deg", "geq", "oe", "ue", "short_space", "t0"]
     )
 
 
-def create_dummy_labels(lang, attrs):
-    dummy_words = create_dummy_words(lang)
-    dummy_symbols = create_dummy_symbols()
-    from pyflexplot.plot import PlotLabels  # isort:skip
-
+def create_labels(lang, attrs):
+    dummy_words = create_words(lang)
+    dummy_symbols = create_symbols()
     return PlotLabels(lang, dummy_words, dummy_symbols, attrs)
 
 
-def create_dummy_map_conf(lang):
+def create_map_conf(lang):
     return SimpleNamespace(
         zoom_fact=1.0,
         rel_offset=(0, 0),
@@ -325,19 +331,13 @@ def create_res(lang, _cache={}):
 
     """
     if lang not in _cache:
-        name = "dummy"
-        attrs = create_dummy_attrs(lang)
-        field = create_dummy_field(attrs)
-        labels = create_dummy_labels(lang, attrs)
-        map_conf = create_dummy_map_conf(lang)
+        attrs = create_attrs(lang)
+        field = create_field(attrs)
+        setup = create_setup(lang)
+        labels = create_labels(lang, attrs)
+        map_conf = create_map_conf(lang)
         plot = Plot(
-            name,
-            field,
-            map_conf=map_conf,
-            dpi=100,
-            figsize=(12, 9),
-            lang=lang,
-            labels=labels,
+            field, setup, map_conf=map_conf, dpi=100, figsize=(12, 9), labels=labels,
         )
         _cache[lang] = plot.summarize()
     return _cache[lang]
@@ -504,13 +504,13 @@ class Solution:
         e = self.element
         jdat = {
             "type": e("Plot"),
-            "lang": e(self.lang),
             "extend": e("max"),
             "level_range_style": e("base"),
             "draw_colors": e(True),
             "draw_contours": e(False),
             "mark_field_max": e(True),
             "mark_release_site": e(True),
+            "setup": IgnoredElement("Setup"),  # SR_TMP TODO Summarize Setup!
         }
         return jdat
 

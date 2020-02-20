@@ -95,24 +95,6 @@ def not_implemented(msg):
     callback=print_example,
     expose_value=False,
 )
-# --- Input
-@click.option(
-    "--scale",
-    "scale_fact",
-    help="Scale field before plotting. Useful for debugging.",
-    type=float,
-    default=None,
-)
-@click.option(
-    "--reverse-legend/--no-reverse-legend",
-    "reverse_legend",
-    help=(
-        "Reverse the order of the level ranges and corresponding colors in the plot "
-        "legend such that the levels increase from top to bottom instead of decreasing."
-    ),
-    is_flag=True,
-    default=False,
-)
 # ---
 @click.pass_context
 def cli(ctx, setup_file_paths, **cli_args):
@@ -147,21 +129,12 @@ def create_plots(setups, cli_args):
 
     # SR_TMP <<< TODO find better solution
     for idx_setup, setup in enumerate(setups):
-        if setup.simulation_type == "deterministic":
-            cls_name = f"{setup.variable}"
-        elif setup.simulation_type == "ensemble":
-            cls_name = f"{setup.plot_type}_{setup.variable}"
 
         # Read input fields
-        field_lst = read_fields(cls_name, setup)
-
-        # Prepare plotter
-        plotter = Plotter()
+        field_lst = read_fields(setup)
 
         def fct_plot():
-            return plotter.run(
-                cls_name, field_lst, setup, scale_fact=cli_args["scale_fact"],
-            )
+            return Plotter().run(field_lst, setup)
 
         # Note: Plotter.run yields the output file paths on-the-go
         for idx_plot, out_file_path in enumerate(fct_plot()):
@@ -212,7 +185,7 @@ def prep_var_specs_dct(setup):
     return var_specs_dct
 
 
-def read_fields(cls_name, setup):
+def read_fields(setup):
 
     # SR_TMP < TODO find cleaner solution
     if setup.simulation_type == "ensemble":
@@ -238,12 +211,12 @@ def read_fields(cls_name, setup):
     # Create variable specification objects
     var_specs_dct = prep_var_specs_dct(setup)
     multi_var_specs_lst = MultiVarSpecs.create(
-        cls_name, var_specs_dct, lang=setup.lang, words=None,
+        setup.tmp_cls_name(), var_specs_dct, lang=setup.lang, words=None,
     )
 
     # Determine fields specifications (one for each eventual plot)
     fld_specs_lst = [
-        FieldSpecs(cls_name, multi_var_specs, attrs)
+        FieldSpecs(setup.tmp_cls_name(), multi_var_specs, attrs)
         for multi_var_specs in multi_var_specs_lst
     ]
 

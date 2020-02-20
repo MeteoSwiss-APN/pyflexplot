@@ -95,6 +95,9 @@ class Setup:
     release_point_idx: int = 0
     species_id: Union[int, List[int]] = 1
     time_idx: int = 0
+    #
+    scale_fact: Optional[float] = None
+    reverse_legend: bool = False
 
     def __post_init_post_parse__(self):
         pass
@@ -120,6 +123,13 @@ class Setup:
             except TypeError:
                 return False
         return self.as_dict() == other_as_dict
+
+    def tmp_cls_name(self):
+        if self.simulation_type == "deterministic":
+            return f"{self.variable}"
+        elif self.simulation_type == "ensemble":
+            return f"{self.plot_type}_{self.variable}"
+        raise NotImplementedError(f"simulation_type='{self.simulation_type}'")
 
 
 class SetupCollection:

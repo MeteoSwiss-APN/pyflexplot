@@ -153,27 +153,25 @@ class Plot(SummarizablePlotClass, ParentClass):
     """A FLEXPART dispersion plot."""
 
     summarizable_attrs: List[str] = [
-        "name",
-        "field",
-        "map_conf",
-        "dpi",
-        "figsize",
-        "fig",
         "ax_map",
-        "lang",
-        "labels",
-        "extend",
-        "level_range_style",
+        "boxes",
+        "dpi",
         "draw_colors",
         "draw_contours",
+        "extend",
+        "field",
+        "fig",
+        "figsize",
+        "labels",
+        "level_range_style",
+        "map_conf",
         "mark_field_max",
         "mark_release_site",
+        "name",
+        "setup",
         "text_box_setup",
-        "boxes",
-        "reverse_legend",
     ]
 
-    name = "__base__dispersion__"
     cmap = "flexplot"
     extend = "max"
     n_levels = 9
@@ -193,17 +191,7 @@ class Plot(SummarizablePlotClass, ParentClass):
     lw_frame = 1.0
 
     def __init__(
-        self,
-        name,
-        field,
-        map_conf,
-        *,
-        dpi=None,
-        figsize=None,
-        scale_fact=None,
-        lang=None,
-        labels=None,
-        reverse_legend=False,
+        self, field, setup, map_conf, *, dpi=None, figsize=None, labels=None,
     ):
         """Create an instance of ``Plot``.
 
@@ -211,6 +199,8 @@ class Plot(SummarizablePlotClass, ParentClass):
             name (str): Name of the plot.
 
             field (Field): Data field.
+
+            setup (Setup): Plot setup.
 
             map_conf (MapAxesConf): Map plot setupuration object.
 
@@ -220,31 +210,22 @@ class Plot(SummarizablePlotClass, ParentClass):
             figsize (tuple[float, float], optional): Figure size in inches.
                 Defaults to (12.0, 9.0).
 
-            scale_fact (float, optional): Scale factor applied to field.
-                Defaults to 1.0.
-
-            lang (str, optional): Language, e.g., 'de' for German. Defaults to
-                'en' (English).
-
             labels (PlotLabels, optional): Labels. Defaults to None.
 
-            reverse_legend (bool, optional): Whether to reverse the legend
-                elements vertically. Defaults to False.
-
         """
-        self.name = name
+        self.name = setup.tmp_cls_name()  # SR_TMP TODO eliminate
+        if type(self).__name__ != "Plot":  # SR_TMP TODO eliminate
+            assert self.name == type(self).name  # SR_TMP TODO eliminate
         self.field = field
+        self.setup = setup
         self.map_conf = map_conf
         self.dpi = dpi or 100.0
         self.figsize = figsize or (12.0, 9.0)
-        self.scale_fact = scale_fact
-        self.lang = lang or "en"
-        self.reverse_legend = reverse_legend or False
 
-        self.field.scale(self.scale_fact)
+        self.field.scale(self.setup.scale_fact)
 
         if labels is None:
-            labels = PlotLabels(lang, WORDS, SYMBOLS, field.attrs)
+            labels = PlotLabels(setup.lang, WORDS, SYMBOLS, field.attrs)
         self.labels = labels
 
         # Formatting arguments
@@ -266,10 +247,9 @@ class Plot(SummarizablePlotClass, ParentClass):
 
     # SR_TMP <<< Intermediate step toward eliminating subclasses
     @classmethod
-    def create(cls, name, *args, **kwargs):
-        subcls = cls.subcls(name)
-        assert subcls.name == name
-        return subcls(name, *args, **kwargs)
+    def create(cls, field, setup, **kwargs):
+        subcls = cls.subcls(setup.tmp_cls_name())
+        return subcls(field, setup, **kwargs)
 
     def summarize(self, *args, **kwargs):
         data = super().summarize(*args, **kwargs)
@@ -486,8 +466,8 @@ class Plot(SummarizablePlotClass, ParentClass):
         # Bottom-left: Integration time etc.
         if "bl" not in skip_pos:
             s = labels["period"]
-            if self.scale_fact is not None:
-                s += f" ({self.scale_fact}x)"
+            if self.setup.scale_fact is not None:
+                s += f" ({self.setup.scale_fact}x)"
             box.text("bl", s, size="large")
 
         # Top-right: Time step
@@ -564,7 +544,7 @@ class Plot(SummarizablePlotClass, ParentClass):
             dy_unit=dy0_labels,
             dy_line=dy_line,
             dx=dx_label,
-            reverse=self.reverse_legend,
+            reverse=self.setup.reverse_legend,
             ha="left",
             size=font_size,
             family="monospace",
@@ -572,7 +552,7 @@ class Plot(SummarizablePlotClass, ParentClass):
 
         # Legend color boxes
         colors = self.get_colors()
-        if self.reverse_legend:
+        if self.setup.reverse_legend:
             colors = colors[::-1]
         dy = dy0_boxes
         for color in colors:
