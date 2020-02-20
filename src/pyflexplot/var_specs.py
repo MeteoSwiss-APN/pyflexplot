@@ -48,7 +48,7 @@ class VarSpecs(SummarizableClass, ParentClass):
             "numpoint": (int, None),
             "noutrel": (int, None),
         }
-        parts = type(self).name.split(":")
+        parts = (type(self).name or "").split(":")
         if parts[0] == "concentration":
             specs_type.update({"level": (int_or_list, None)})
         elif parts[0] == "deposition":
@@ -57,7 +57,7 @@ class VarSpecs(SummarizableClass, ParentClass):
 
     # SR_TMP TODO eventually eliminate
     def issubcls(self, name):
-        return name in type(self).name.split(":")
+        return name in (type(self).name or "").split(":")
 
     # SR_TMP TODO use to double-check independence from ParentClass
     # + @classmethod
@@ -321,7 +321,7 @@ class VarSpecs(SummarizableClass, ParentClass):
     def long_name(self, name=None):
         if name is None:
             name = type(self).name
-        parts = name.split(":")
+        parts = (name or "").split(":")
         if len(parts) >= 3:
             if parts[:3] == ["deposition", "affected_area", "ens_max_affected_area"]:
                 return (
@@ -396,7 +396,7 @@ class VarSpecs(SummarizableClass, ParentClass):
     def short_name(self, name=None):
         if name is None:
             name = type(self).name
-        parts = name.split(":")
+        parts = (name or "").split(":")
         if len(parts) >= 2:
             if parts[:2] == ["concentration", "ens_cloud_arrival_time_concentration"]:
                 return (
