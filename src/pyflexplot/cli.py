@@ -146,7 +146,7 @@ def create_plots(configs, cli_args):
     out_file_paths = []
 
     # SR_TMP <<< TODO find better solution
-    for config in configs:
+    for idx_config, config in enumerate(configs):
         if config.simulation_type == "deterministic":
             cls_name = f"{config.variable}"
         elif config.simulation_type == "ensemble":
@@ -164,10 +164,10 @@ def create_plots(configs, cli_args):
             )
 
         # Note: Plotter.run yields the output file paths on-the-go
-        for i, out_file_path in enumerate(fct_plot()):
+        for idx_plot, out_file_path in enumerate(fct_plot()):
             out_file_paths.append(out_file_path)
 
-            if cli_args["open_first_cmd"] and i == 0:
+            if cli_args["open_first_cmd"] and idx_config + idx_plot == 0:
                 # Open the first file as soon as it's available
                 open_plots(cli_args["open_first_cmd"], [out_file_path])
 

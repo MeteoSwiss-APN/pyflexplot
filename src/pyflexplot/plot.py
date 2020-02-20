@@ -63,9 +63,15 @@ class DispersionPlotLabels(SummarizableClass):
         time_rels = a.simulation.now.format(rel=True, rel_start=a.release.start.value)
         period = a.simulation.fmt_integr_period()
         start = a.simulation.integr_start.format(rel=True)
+        unit_escaped = a.variable.unit.format(escape_format=True)
         groups["top_left"] = {
             "variable": f"{a.variable.long_name.value}{s_level}",
             "period": f"{integr_op} {period} ({w['since']} +{start})",
+            "subtitle_thr_agrmt_fmt": f"Cloud: {s['geq']} {{thr}} {unit_escaped}",
+            "subtitle_cloud_arrival_time": (
+                f"Cloud: {s['geq']} {{thr}} {unit_escaped}; "
+                f"members: {s['geq']} {{mem}}"
+            ),
             "timestep": f"{ts.format(rel=False)} (+{ts.format(rel=True)})",
             "time_since_release_start": (
                 f"{time_rels} {w['since']} {w['release_start']}"
@@ -83,8 +89,8 @@ class DispersionPlotLabels(SummarizableClass):
         unit = a.variable.unit.format()
         unit_escaped = a.variable.unit.format(escape_format=True)
         groups["right_top"] = {
-            "title": f"{name} ({unit})",
-            "title_thr_agrmt_fmt": f"{name}\n({s['geq']} {{thr}} {unit_escaped})",
+            "title": f"{name}",
+            "title_unit": f"{name} ({unit})",
             "release_site": w["release_site"].s,
             "max": w["max"].s,
         }
@@ -578,7 +584,7 @@ class DispersionPlot_old(Plot):  # SR_TMP
         dy0_boxes = dy0_labels - 0.2 * h_box
 
         # Box title
-        s = self._format_legend_box_title(labels)
+        s = self._format_legend_box_title()
         box.text("tc", s=s, dy=1.5, size="large")
 
         # Format level ranges (contour plot legend)
@@ -669,9 +675,13 @@ class DispersionPlot_old(Plot):  # SR_TMP
                 size=font_size,
             )
 
-    # SR_TODO move into Labels class
-    def _format_legend_box_title(self, labels):
-        return labels["title"]
+    # SR_TODO Move into Labels class
+    def _format_top_box_subtitle(self):
+        return None
+
+    # SR_TODO Move into Labels class
+    def _format_legend_box_title(self):
+        return self.right_top.labels["title_unit"]
 
     def fill_box_right_bottom(self, box):
         """Fill the bottom box to the right of the map plot."""
@@ -864,6 +874,12 @@ class DispersionPlot(DispersionPlot_old):
         if "tl" not in skip_pos:
             box.text("tl", labels["variable"], size="x-large")
 
+        # Center-left: Additional information
+        if "ml" not in skip_pos:
+            subtitle = self._format_top_box_subtitle()
+            if subtitle:
+                box.text("ml", subtitle, size="large")
+
         # Bottom-left: Integration time etc.
         if "bl" not in skip_pos:
             s = labels["period"]
@@ -997,7 +1013,7 @@ class Plot_Ens(Plot):
     name = "ens"
 
     text_box_setup = {
-        "h_rel_t": 0.12,
+        "h_rel_t": 0.14,
         "h_rel_b": 0.03,
         "w_rel_r": 0.25,
         "pad_hor_rel": 0.015,
@@ -1122,10 +1138,16 @@ class Plot_EnsThrAgrmt(Plot_Ens):
 
         return (h_col, h_con)
 
-    # SR_TODO move into Labels class
-    def _format_legend_box_title(self, labels):
-        thr = self.field.field_specs.ens_var_setup["thr"]
-        return labels["title_thr_agrmt_fmt"].format(thr=thr)
+    # SR_TODO Move into Labels class
+    def _format_top_box_subtitle(self):
+        labels = self.labels  # noqa
+        return labels.top_left["subtitle_thr_agrmt_fmt"].format(
+            thr=self.field.field_specs.ens_var_setup["thr"],
+        )
+
+    # SR_TODO Move into Labels class
+    def _format_legend_box_title(self):
+        return self.labels.right_top["title"]
 
 
 class Plot_EnsThrAgrmt_Concentration(Plot_EnsThrAgrmt, Plot_Concentration):
@@ -1149,35 +1171,17 @@ class Plot_EnsCloudArrivalTime(Plot_Ens, Plot_Concentration):
     def get_levels(self):
         return np.arange(0, self.n_levels) * self.d_level
 
+    # SR_TODO Move Plot_EnsThrAgrmt.draw_colors_contours to a better place
     def draw_colors_contours(self):
+        return Plot_EnsThrAgrmt.draw_colors_contours(self)
 
-        # If upper end of range is closed, color areas beyond black
-        colors_plot = copy(self.get_colors())
-        if self.extend in ["none", "min"]:
-            colors_plot.append("black")
-            extend_plot = {"none": "max", "min": "both"}[self.extend]
-        else:
-            extend_plot = self.extend
+    # SR_TODO Move into Labels class
+    def _format_top_box_subtitle(self):
+        return self.labels.top_left["subtitle_cloud_arrival_time"].format(
+            thr=self.field.field_specs.ens_var_setup["thr"],
+            mem=self.field.field_specs.ens_var_setup["n_mem_min"],
+        )
 
-        field = self.fld_nonzero()
-
-        if not self.draw_colors:
-            h_col = None
-        else:
-            h_col = self.ax_map.contourf(
-                field, levels=self.get_levels(), colors=colors_plot, extend=extend_plot,
-            )
-
-        if not self.draw_contours:
-            h_con = None
-        else:
-            h_con = self.ax_map.contour(
-                field, levels=self.get_levels(), colors="black", linewidths=1,
-            )
-
-        return (h_col, h_con)
-
-    # SR_TODO move into Labels class
-    def _format_legend_box_title(self, labels):
-        thr = self.field.field_specs.ens_var_setup["thr"]
-        return labels["title_thr_agrmt_fmt"].format(thr=thr)
+    # SR_TODO Move into Labels class
+    def _format_legend_box_title(self):
+        return self.labels.right_top["title"]  # SR_TMP
