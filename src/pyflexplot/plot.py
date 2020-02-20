@@ -21,7 +21,6 @@ from .plot_utils import MapAxesRotatedPole
 from .plot_utils import SummarizablePlotClass
 from .plot_utils import TextBoxAxes
 from .plot_utils import ax_w_h_in_fig_coords
-from .utils import ParentClass
 from .utils import SummarizableClass
 from .utils import fmt_float
 from .utils import format_level_ranges
@@ -197,7 +196,7 @@ def colors_flexplot(n_levels, extend):
     raise ValueError(f"extend='{extend}'")
 
 
-class Plot(SummarizablePlotClass, ParentClass):
+class Plot(SummarizablePlotClass):
     """A FLEXPART dispersion plot."""
 
     summarizable_attrs: List[str] = [
@@ -368,12 +367,6 @@ class Plot(SummarizablePlotClass, ParentClass):
         }
 
         self.create_plot()
-
-    # SR_TMP Intermediate step toward eliminating subclasses
-    @classmethod
-    def create(cls, field, setup, **kwargs):
-        subcls = cls.subcls(setup.tmp_cls_name())
-        return subcls(field, setup, **kwargs)
 
     def summarize(self, *args, **kwargs):
         data = super().summarize(*args, **kwargs)
@@ -917,109 +910,3 @@ class Plot(SummarizablePlotClass, ParentClass):
     @property
     def levels_log10(self):
         return np.log10(self.get_levels())
-
-
-# Deterministic Simulation
-
-
-class Plot_Concentration(Plot):
-    name = "concentration"
-
-
-class Plot_Deposition(Plot):
-    name = "deposition"
-
-
-class Plot_AffectedArea(Plot):
-    name = "affected_area"
-
-
-class Plot_AffectedAreaMono(Plot_AffectedArea):
-    name = "affected_area_mono"
-
-
-# Ensemble Simulation
-
-
-class Plot_Ens(Plot):
-    name = "ens"
-
-
-class Plot_EnsMean_Concentration(Plot_Ens, Plot_Concentration):
-    name = "ens_mean_concentration"
-
-
-class Plot_EnsMean_Deposition(Plot_Ens, Plot_Deposition):
-    name = "ens_mean_deposition"
-
-
-class Plot_EnsMeanAffectedArea(Plot_Ens, Plot_AffectedArea):
-    name = "ens_mean_affected_area"
-
-
-class Plot_EnsMeanAffectedAreaMono(Plot_Ens, Plot_AffectedAreaMono):
-    name = "ens_mean_affected_area_mono"
-
-
-class Plot_EnsMedian_Concentration(Plot_Ens, Plot_Concentration):
-    name = "ens_median_concentration"
-
-
-class Plot_EnsMedian_Deposition(Plot_Ens, Plot_Deposition):
-    name = "ens_median_deposition"
-
-
-class Plot_EnsMedianAffectedArea(Plot_Ens, Plot_AffectedArea):
-    name = "ens_median_affected_area"
-
-
-class Plot_EnsMedianAffectedAreaMono(Plot_Ens, Plot_AffectedAreaMono):
-    name = "ens_median_affected_area_mono"
-
-
-class Plot_EnsMin_Concentration(Plot_Ens, Plot_Concentration):
-    name = "ens_min_concentration"
-
-
-class Plot_EnsMin_Deposition(Plot_Ens, Plot_Deposition):
-    name = "ens_min_deposition"
-
-
-class Plot_EnsMinAffectedArea(Plot_Ens, Plot_AffectedArea):
-    name = "ens_min_affected_area"
-
-
-class Plot_EnsMinAffectedAreaMono(Plot_Ens, Plot_AffectedAreaMono):
-    name = "ens_min_affected_area_mono"
-
-
-class Plot_EnsMax_Concentration(Plot_Ens, Plot_Concentration):
-    name = "ens_max_concentration"
-
-
-class Plot_EnsMax_Deposition(Plot_Ens, Plot_Deposition):
-    name = "ens_max_deposition"
-
-
-class Plot_EnsMaxAffectedArea(Plot_Ens, Plot_AffectedArea):
-    name = "ens_max_affected_area"
-
-
-class Plot_EnsMaxAffectedAreaMono(Plot_Ens, Plot_AffectedAreaMono):
-    name = "ens_max_affected_area_mono"
-
-
-class Plot_EnsThrAgrmt(Plot_Ens):
-    name = "ens_thr_agrmt"
-
-
-class Plot_EnsThrAgrmt_Concentration(Plot_EnsThrAgrmt, Plot_Concentration):
-    name = "ens_thr_agrmt_concentration"
-
-
-class Plot_EnsThrAgrmt_Deposition(Plot_EnsThrAgrmt, Plot_Deposition):
-    name = "ens_thr_agrmt_deposition"
-
-
-class Plot_EnsCloudArrivalTime(Plot_Ens, Plot_Concentration):
-    name = "ens_cloud_arrival_time_concentration"

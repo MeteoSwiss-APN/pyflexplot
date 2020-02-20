@@ -79,9 +79,7 @@ class Plotter:
             file_path = self.format_file_path(field.field_specs)
             _w = len(str(len(fields)))
             print(f" {i_data+1:{_w}}/{len(fields)}  {file_path}")
-
-            Plot.create(field, setup, map_conf=map_conf, **kwargs_plot,).save(file_path)
-
+            Plot(field, setup, map_conf=map_conf, **kwargs_plot,).save(file_path)
             yield file_path
 
     def format_file_path(self, field_specs):
