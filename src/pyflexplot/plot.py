@@ -308,9 +308,6 @@ class DispersionPlot_old(Plot):  # SR_TMP
             "markeredgewidth": 1.5,
         }
 
-        self.define_colors()
-        self.define_levels()
-
         self.create()
 
     def create(self):
@@ -338,7 +335,7 @@ class DispersionPlot_old(Plot):  # SR_TMP
         """Plot the particle concentrations onto the map."""
 
         # Plot concentrations
-        h_con = self._draw_colors_contours()
+        h_con = self.draw_colors_contours()
 
         if self.mark_release_site:
             # Marker at release site
@@ -354,7 +351,7 @@ class DispersionPlot_old(Plot):  # SR_TMP
 
         return h_con
 
-    def _draw_colors_contours(self):
+    def draw_colors_contours(self):
 
         field = np.log10(self.fld_nonzero())
 
@@ -362,7 +359,10 @@ class DispersionPlot_old(Plot):  # SR_TMP
             h_col = None
         else:
             h_col = self.ax_map.contourf(
-                field, levels=self.levels_log10, colors=self.colors, extend=self.extend,
+                field,
+                levels=self.levels_log10,
+                colors=self.get_colors(),
+                extend=self.extend,
             )
 
         if not self.draw_contours:
@@ -583,7 +583,7 @@ class DispersionPlot_old(Plot):  # SR_TMP
 
         # Format level ranges (contour plot legend)
         legend_labels = format_level_ranges(
-            levels=self.levels,
+            levels=self.get_levels(),
             style=self.level_range_style,
             extend=self.extend,
             rstrip_zeros=True,
@@ -604,7 +604,7 @@ class DispersionPlot_old(Plot):  # SR_TMP
         )
 
         # Legend color boxes
-        colors = self.colors
+        colors = self.get_colors()
         if self.reverse_legend:
             colors = colors[::-1]
         dy = dy0_boxes
@@ -738,15 +738,15 @@ class DispersionPlot_old(Plot):  # SR_TMP
     def _model_info(self):
         return self.labels.bottom["model_info_det"]
 
-    def define_colors(self):
+    def get_colors(self):
         if self.cmap == "flexplot":
-            self.colors = colors_flexplot(self.n_levels, self.extend)
+            return colors_flexplot(self.n_levels, self.extend)
         else:
             cmap = mpl.cm.get_cmap(self.cmap)
-            self.colors = [cmap(i / (self.n_levels - 1)) for i in range(self.n_levels)]
+            return [cmap(i / (self.n_levels - 1)) for i in range(self.n_levels)]
 
-    def define_levels(self):
-        self.levels = self.auto_levels_log10()
+    def get_levels(self):
+        return self.auto_levels_log10()
 
     def auto_levels_log10(self, n_levels=None, val_max=None):
         if n_levels is None:
@@ -762,7 +762,7 @@ class DispersionPlot_old(Plot):  # SR_TMP
 
     @property
     def levels_log10(self):
-        return np.log10(self.levels)
+        return np.log10(self.get_levels())
 
 
 # SR_TMP < TODO merge back into DispersionPlot[_0] once new layout accepted
@@ -982,12 +982,12 @@ class Plot_AffectedAreaMono(Plot_AffectedArea):
     extend = "none"
     n_levels = 1
 
-    def define_colors(self):
-        self.colors = (np.array([(200, 200, 200)]) / 255).tolist()
+    def get_colors(self):
+        return (np.array([(200, 200, 200)]) / 255).tolist()
 
-    def define_levels(self):
+    def get_levels(self):
         levels = self.auto_levels_log10(n_levels=9)
-        self.levels = np.array([levels[0], np.inf])
+        return np.array([levels[0], np.inf])
 
 
 # Ensemble Simulation
@@ -1083,9 +1083,9 @@ class Plot_EnsThrAgrmt(Plot_Ens):
     level_ranges_align = "left"
     mark_field_max = False
 
-    def define_levels(self):
+    def get_levels(self):
         n_max = 20  # SR_TMP SR_HC
-        self.levels = (
+        return (
             np.arange(
                 n_max - self.d_level * (self.n_levels - 1),
                 n_max + self.d_level,
@@ -1094,10 +1094,10 @@ class Plot_EnsThrAgrmt(Plot_Ens):
             + 1
         )
 
-    def _draw_colors_contours(self):
+    def draw_colors_contours(self):
 
         # If upper end of range is closed, color areas beyond black
-        colors_plot = copy(self.colors)
+        colors_plot = copy(self.get_colors())
         if self.extend in ["none", "min"]:
             colors_plot.append("black")
             extend_plot = {"none": "max", "min": "both"}[self.extend]
@@ -1110,14 +1110,14 @@ class Plot_EnsThrAgrmt(Plot_Ens):
             h_col = None
         else:
             h_col = self.ax_map.contourf(
-                field, levels=self.levels, colors=colors_plot, extend=extend_plot,
+                field, levels=self.get_levels(), colors=colors_plot, extend=extend_plot,
             )
 
         if not self.draw_contours:
             h_con = None
         else:
             h_con = self.ax_map.contour(
-                field, levels=self.levels, colors="black", linewidths=1,
+                field, levels=self.get_levels(), colors="black", linewidths=1,
             )
 
         return (h_col, h_con)
@@ -1126,11 +1126,6 @@ class Plot_EnsThrAgrmt(Plot_Ens):
     def _format_legend_box_title(self, labels):
         thr = self.field.field_specs.ens_var_setup["thr"]
         return labels["title_thr_agrmt_fmt"].format(thr=thr)
-
-    # SR_TODO remove if not triggered
-    def _format_level(self, lvl):
-        raise Exception(f"{type(self).__name__}._format_level used after all!")
-        return f"{lvl}"
 
 
 class Plot_EnsThrAgrmt_Concentration(Plot_EnsThrAgrmt, Plot_Concentration):
@@ -1143,3 +1138,46 @@ class Plot_EnsThrAgrmt_Deposition(Plot_EnsThrAgrmt, Plot_Deposition):
 
 class Plot_EnsCloudArrivalTime(Plot_Ens, Plot_Concentration):
     name = "ens_cloud_arrival_time_concentration"
+
+    n_levels = 9
+    d_level = 3
+    extend = "max"
+    level_range_style = "int"  # see ``format_level_ranges``
+    level_ranges_align = "left"
+    mark_field_max = False
+
+    def get_levels(self):
+        return np.arange(0, self.n_levels) * self.d_level
+
+    def draw_colors_contours(self):
+
+        # If upper end of range is closed, color areas beyond black
+        colors_plot = copy(self.get_colors())
+        if self.extend in ["none", "min"]:
+            colors_plot.append("black")
+            extend_plot = {"none": "max", "min": "both"}[self.extend]
+        else:
+            extend_plot = self.extend
+
+        field = self.fld_nonzero()
+
+        if not self.draw_colors:
+            h_col = None
+        else:
+            h_col = self.ax_map.contourf(
+                field, levels=self.get_levels(), colors=colors_plot, extend=extend_plot,
+            )
+
+        if not self.draw_contours:
+            h_con = None
+        else:
+            h_con = self.ax_map.contour(
+                field, levels=self.get_levels(), colors="black", linewidths=1,
+            )
+
+        return (h_col, h_con)
+
+    # SR_TODO move into Labels class
+    def _format_legend_box_title(self, labels):
+        thr = self.field.field_specs.ens_var_setup["thr"]
+        return labels["title_thr_agrmt_fmt"].format(thr=thr)

@@ -32,6 +32,7 @@ WORDS.add(
         "abbr": f'Aktivit{s["ae"]}tskonzentr.',
     },
 )
+WORDS.add(en="arrival", de="Ankunft")
 WORDS.add(en="arrival time", de="Ankunftszeit")
 WORDS.add(en="affected area", de="Beaufschlagtes Gebiet")
 WORDS.add(en="at", de={"level": "auf", "place": "bei", "time": "um"})

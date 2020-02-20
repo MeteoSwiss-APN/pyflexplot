@@ -544,8 +544,10 @@ class VarSpecs_EnsCloudArrivalTime_Concentration(VarSpecs_Concentration):
 
     def short_name(self):
         return (
-            f"{self._words['arrival_time'].c}\n"
-            f"({self._words['hour', None, 'pl'].c} {self._words['from_now']})"
+            # f"{self._words['arrival_time'].c}\n"
+            # f"({self._words['hour', None, 'pl'].c} {self._words['from_now']})"
+            f"{self._words['arrival'].c} "
+            f"({self._words['hour', None, 'pl']}??)"
         )
 
 

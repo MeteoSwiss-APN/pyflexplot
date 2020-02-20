@@ -758,6 +758,10 @@ class AttrGroupCollection:
         return {name: dict(attrs) for name, attrs in self}
 
 
+def collect_attrs(fi, var_specs, **kwargs):
+    return AttrsCollector(fi, var_specs).run(**kwargs)
+
+
 class AttrsCollector:
     """Collect attributes for a field from an open NetCDF file."""
 

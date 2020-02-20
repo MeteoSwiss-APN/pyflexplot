@@ -14,7 +14,7 @@ import numpy as np
 from srutils.various import check_array_indices
 
 # Local
-from .attr import AttrsCollector
+from .attr import collect_attrs
 from .data import Field
 from .data import cloud_arrival_time
 from .data import threshold_agreement
@@ -344,7 +344,7 @@ class FileReader:
                     fld_specs = fld_specs_reqtime[i_reqtime]
                     attrs_lst = []
                     for var_specs in fld_specs.multi_var_specs:
-                        attrs = AttrsCollector(self.fi, var_specs,).run(lang=self.lang)
+                        attrs = collect_attrs(self.fi, var_specs, lang=self.lang)
                         attrs_lst.append(attrs)
                     attrs = attrs_lst[0].merge_with(
                         attrs_lst[1:], **fld_specs.var_attrs_replace
@@ -583,9 +583,6 @@ class FileReader:
     # SR_TMP <<<
     def _fix_nc_var(self, fld, var):
 
-        name = var.getncattr("long_name").split("_")[0]
-        unit = var.getncattr("units")
-
         # SR_TMP < TODO more general solution to combined species
         names = [
             "Cs-137",
@@ -595,18 +592,15 @@ class FileReader:
         ]
         # SR_TMP >
 
+        name = var.getncattr("long_name").split("_")[0]
+        unit = var.getncattr("units")
         if name in names:
-
             if unit == "ng kg-1":
                 fld[:] *= 1e-12
-
             elif unit == "1e-12 kg m-2":
                 fld[:] *= 1e-12
-
             else:
-                raise NotImplementedError(
-                    f"species '{name}': " f"unknown unit '{unit}'"
-                )
+                raise NotImplementedError(f"species '{name}': unknown unit '{unit}'")
         else:
             raise NotImplementedError(f"species '{name}'")
 
