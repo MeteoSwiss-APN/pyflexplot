@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Tests for module ``pyflexplot.io``."""
+"""
+Tests for module ``pyflexplot.io``.
+"""
 # Standard library
 import functools
 

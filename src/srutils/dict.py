@@ -265,9 +265,7 @@ def linearize_nested_dict(dct, branch_end_criterion=None):
 
 # SR_TODO Refactor this class! Eliminate _State etc.!
 class NestedDictLinearizer:
-    """
-    Convert a nested dict with N branches into N linearly nested dicts.
-    """
+    """Convert a nested dict with N branches into N linearly nested dicts."""
 
     def __init__(self, dct):
         """Create an instance of ``NestedDictLinearizer``.
@@ -374,9 +372,7 @@ class NestedDictLinearizer:
         return result
 
     def _nondict_to_head(self, state):
-        """
-        Copy non-dict elements from subdct to head.
-        """
+        """Copy non-dict elements from subdct to head."""
         for key, val in state.subdct.items():
             if not isinstance(val, Mapping):
                 state.head[key] = val

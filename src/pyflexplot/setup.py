@@ -99,9 +99,7 @@ class Setup(BaseModel):
     reverse_legend: bool = False
 
     class Config:
-        """
-        BaseModel configuration.
-        """
+        """BaseModel configuration."""
 
         allow_mutation = False
 
@@ -133,9 +131,7 @@ class Setup(BaseModel):
 
 
 class SetupCollection:
-    """
-    A set of ``Setup`` objects.
-    """
+    """A set of ``Setup`` objects."""
 
     def __init__(self, setups):
         self._setups = [Setup.as_setup(obj) for obj in setups]
@@ -159,17 +155,13 @@ class SetupCollection:
 
 
 class SetupFile:
-    """
-    Setup file to be read from and/or written to disk.
-    """
+    """Setup file to be read from and/or written to disk."""
 
     def __init__(self, path):
         self.path = path
 
     def read(self):
-        """
-        Read the setup from a text file in TOML format.
-        """
+        """Read the setup from a text file in TOML format."""
         with open(self.path, "r") as f:
             try:
                 raw_data = toml.load(f)
@@ -187,7 +179,5 @@ class SetupFile:
         return setups
 
     def write(self, *args, **kwargs):
-        """
-        Write the setup to a text file in TOML format.
-        """
+        """Write the setup to a text file in TOML format."""
         raise NotImplementedError(f"{type(self).__name__}.write")

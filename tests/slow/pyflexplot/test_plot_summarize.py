@@ -36,6 +36,7 @@ Some dict elements are explicitly ignored in comparisons by aid of
 ``IgnoredElement``. This allows us to test, for instance that the correct
 number of lebend labels are present without testing for the labels themselves,
 or to avoid hard-coding lat/lon coordinates in the solution.
+
 """
 # Standard library
 from types import SimpleNamespace

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Tests for module ``pyflexplot.setup``."""
+"""
+Tests for module ``pyflexplot.setup``.
+"""
 # Standard library
 from collections.abc import Sequence
 from textwrap import dedent
@@ -394,9 +396,7 @@ class Test_SetupCollection:
         return [Setup(**dct) for dct in self.create_partial_dicts()]
 
     def test_dicts_setups(self):
-        """
-        Check the dicts and Setup objects used in the SetupCollection tests.
-        """
+        """Check the dicts and Setup objects used in the SetupCollection tests."""
         assert self.create_setups() == self.create_complete_dicts()
 
     def test_create_empty(self):

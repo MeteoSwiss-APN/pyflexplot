@@ -54,9 +54,7 @@ def click_options(f_options):
 
 
 class CharSepList(click.ParamType):
-    """
-    List of elements of a given type separated by a given character.
-    """
+    """List of elements of a given type separated by a given character."""
 
     def __init__(self, type_, separator, *, name=None, unique=False):
         """Create an instance of ``CharSepList``.
@@ -120,9 +118,7 @@ class CharSepList(click.ParamType):
 
 
 class DerivChoice(click.ParamType):
-    """
-    Choices from which additional choices can be derived.
-    """
+    """Choices from which additional choices can be derived."""
 
     name = "choice"
 

@@ -1581,9 +1581,7 @@ class MinStrLenReachedError(Exception):
 
 
 class TextFitter:
-    """
-    Fit a text string into the box by shrinking and/or truncation.
-    """
+    """Fit a text string into the box by shrinking and/or truncation."""
 
     sizes = ["xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large"]
 

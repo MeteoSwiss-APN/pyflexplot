@@ -98,9 +98,7 @@ def not_implemented(msg):
 # ---
 @click.pass_context
 def cli(ctx, setup_file_paths, **cli_args):
-    """
-    Create dispersion plot as specified in CONFIG_FILE(S).
-    """
+    """Create dispersion plot as specified in CONFIG_FILE(S)."""
 
     log.basicConfig(level=count_to_log_level(cli_args["verbose"]))
 
@@ -121,9 +119,7 @@ def cli(ctx, setup_file_paths, **cli_args):
 
 
 def create_plots(setups, cli_args):
-    """
-    Read and plot FLEXPART data.
-    """
+    """Read and plot FLEXPART data."""
 
     out_file_paths = []
 
@@ -150,8 +146,7 @@ def create_plots(setups, cli_args):
 
 
 def prep_var_specs_dct(setup):
-    """
-    Prepare the variable specifications dict from the raw CLI input.
+    """Prepare the variable specifications dict from the raw CLI input.
     """
 
     var_specs_raw = {
@@ -229,9 +224,7 @@ def read_fields(setup):
 
 
 def open_plots(cmd, file_paths):
-    """
-    Open a plot file using a shell command.
-    """
+    """Open a plot file using a shell command."""
 
     # If not yet included, append the output file path
     if "{file}" not in cmd:

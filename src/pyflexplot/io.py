@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Input/output.
+IO.
 """
 # Standard library
 import logging as log

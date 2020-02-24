@@ -28,9 +28,7 @@ class KeyConflictError(Exception):
 
 
 class NotSummarizableError(Exception):
-    """
-    Object could not be summarized.
-    """
+    """Object could not be summarized."""
 
 
 class Summarizer:
@@ -80,9 +78,7 @@ class Summarizer:
         return data
 
     def _summarize(self, obj):
-        """
-        Try to summarize the object in various ways.
-        """
+        """Try to summarize the object in various ways."""
         methods = [
             self._try_summarizable,
             self._try_dict_like,
@@ -97,9 +93,7 @@ class Summarizer:
         return obj
 
     def _try_summarizable(self, obj):
-        """
-        Try to summarize ``obj`` as a summarizable object.
-        """
+        """Try to summarize ``obj`` as a summarizable object."""
         try:
             data = obj.summarize()
         except AttributeError:
@@ -108,9 +102,7 @@ class Summarizer:
             return self._summarize(data)
 
     def _try_dict_like(self, obj):
-        """
-        Try to summarize ``obj`` as a dict-like object.
-        """
+        """Try to summarize ``obj`` as a dict-like object."""
         try:
             items = obj.items()
         except AttributeError:
@@ -124,9 +116,7 @@ class Summarizer:
             return {self._summarize(key): self._summarize(val) for key, val in items}
 
     def _try_list_like(self, obj):
-        """
-        Try to summarize ``obj`` as a list-like object.
-        """
+        """Try to summarize ``obj`` as a list-like object."""
         if not isiterable(obj, str_ok=False):
             raise NotSummarizableError("list-like", obj)
         type_ = type(obj)
@@ -136,9 +126,7 @@ class Summarizer:
         return type_(data)
 
     def _try_named(self, obj):
-        """
-        Try to summarize ``obj`` as a named object (e.g., function/method).
-        """
+        """Try to summarize ``obj`` as a named object (e.g., function/method)."""
         try:
             name = obj.__name__
         except AttributeError:
@@ -159,9 +147,7 @@ def default_summarize_method(obj, **kwargs):
 
 
 class SummarizableClass:
-    """
-    Summarize important class attributes into a dict.
-    """
+    """Summarize important class attributes into a dict."""
 
     def __init__(self, *args, **kwargs):
         raise Exception(f"{type(self).__name__} must be subclassed")

@@ -52,9 +52,7 @@ def test_branched(dct, sol):
 
 
 class Test_MatchEnd:
-    """
-    Create a separate branch ending at each key matching a criterion.
-    """
+    """Create a separate branch ending at each key matching a criterion."""
 
     dct = {
         "_u": {
@@ -90,15 +88,11 @@ class Test_MatchEnd:
         return not key.startswith("_")
 
     def test_control(self):
-        """
-        Control test w/o matching function, returning only complete branches.
-        """
+        """Control: no matching function, return only complete branches."""
         res = linearize_nested_dict(self.dct, branch_end_criterion=None)
         assert res == self.sol_control
 
     def test_criterion(self):
-        """
-        Return an additional partial branch for each key not starting with "_".
-        """
+        """Return additional partial branches for keys not starting with "_"."""
         res = linearize_nested_dict(self.dct, branch_end_criterion=self.criterion)
         assert res == self.sol_criterion

@@ -111,9 +111,7 @@ def test_linear_nesting(dct, sol):
     ],
 )
 def test_branched_notie(dct, sol):
-    """
-    Branched nesting without a tie breaker.
-    """
+    """Branched nesting without a tie breaker."""
     assert flatten_nested_dict(dct) == sol
 
 
@@ -121,9 +119,7 @@ def test_branched_notie(dct, sol):
     "dct, sol", [({"foo": {"a": 1}, "bar": {"a": 2}}, Exception)],
 )
 def test_branched_notie_fail(dct, sol):
-    """
-    Failure without tie breaker in case of key conflict at same nesting level.
-    """
+    """Fail without tie breaker in case of key conflict at same nesting level."""
     with pytest.raises(sol):
         flatten_nested_dict(dct)
 

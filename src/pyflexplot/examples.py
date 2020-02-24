@@ -32,9 +32,7 @@ def register_choice(fct):
 
 @register_choice
 def naz_det():
-    """
-    TOML setup file to create deterministic NAZ plots.
-    """
+    """TOML setup file to create deterministic NAZ plots."""
     s = """\
         # PyFlexPlot setup file to create deterministic NAZ plots
 

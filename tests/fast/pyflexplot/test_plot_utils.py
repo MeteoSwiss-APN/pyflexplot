@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Tests for module ``pyflexplot.plot_utils``."""
+"""
+Tests for module ``pyflexplot.plot_utils``.
+"""
 # Third-party
 from matplotlib import pyplot as plt
 

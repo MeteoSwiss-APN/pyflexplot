@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Tests for module ``pyflexplot.field_specs``."""
+"""
+Tests for module ``pyflexplot.field_specs``.
+"""
 # Standard library
 from dataclasses import dataclass
 

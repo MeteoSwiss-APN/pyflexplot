@@ -122,18 +122,14 @@ class Plotter:
         return file_path
 
     def _fmt_variable(self, var_specs_dct):
-        """
-        Variable name.
-        """
+        """Variable name."""
         if self.name == "deposition":
             deposition_type = var_specs_dct["deposition"]
             return f"{deposition_type}_{self.name}"
         return self.name
 
     def _fmt_member_ids(self, field_specs):
-        """
-        Ensemble member ids.
-        """
+        """Ensemble member ids."""
         if not field_specs.member_ids:
             return None
         member_ids_grouped = []
