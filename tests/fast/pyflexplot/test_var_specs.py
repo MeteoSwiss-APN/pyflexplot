@@ -69,8 +69,6 @@ def check_var_specs(var_specs, conf):
         # Test data is broken, NOT the tested code, so NOT AssertionError!
         raise ValueError(f"invalid solution: key mismatches: {mismatches}")
 
-    assert type(var_specs).__name__ == conf.type_name  # SR_TMP
-
     sol = set(conf.dct.items())
     res = set(dict(var_specs).items())
     assert sol.issubset(res)
@@ -83,7 +81,6 @@ def check_var_specs(var_specs, conf):
 @dataclass(frozen=True)
 class Conf_Create(_TestConf):
     name: str
-    type_name: str  # SR_TMP
     dct: dict
     n: int
     subdct_fail: dict
@@ -112,7 +109,6 @@ class _Test_Create_SingleObjDct:
 class Test_Create_SingleObjDct_Concentration(_Test_Create_SingleObjDct):
     c = Conf_Create(
         name="concentration",
-        type_name="VarSpecs_Concentration",  # SR_TMP
         dct={
             "integrate": False,
             "species_id": 2,
@@ -139,7 +135,6 @@ class Test_Create_SingleObjDct_Concentration(_Test_Create_SingleObjDct):
 class Test_Create_SingleObjDct_Deposition(_Test_Create_SingleObjDct):
     c = Conf_Create(
         name="deposition",
-        type_name="VarSpecs_Deposition",  # SR_TMP
         dct={
             "deposition": "wet",
             "species_id": 2,
@@ -185,7 +180,6 @@ class _Test_Create_MultiObjDct:
 class Test_Create_MultiObjDct_Concentration(_Test_Create_MultiObjDct):
     c = Conf_Create(
         name="concentration",
-        type_name="VarSpecs_Concentration",  # SR_TMP
         dct={
             "species_id": [1, 2],
             "level": 1,
@@ -212,7 +206,6 @@ class Test_Create_MultiObjDct_Concentration(_Test_Create_MultiObjDct):
 class Test_Create_MultiObjDct_Deposition(_Test_Create_MultiObjDct):
     c = Conf_Create(
         name="deposition",
-        type_name="VarSpecs_Deposition",  # SR_TMP
         dct={
             "deposition": "dry",
             "species_id": [1, 2],
@@ -259,7 +252,6 @@ class _Test_Create_MultiObjDctNested:
 class Test_Create_MultiObjDctNested_Concentration(_Test_Create_MultiObjDctNested):
     c = Conf_Create(
         name="concentration",
-        type_name="VarSpecs_Concentration",  # SR_TMP
         dct={
             "species_id": [(1,), (1, 2)],
             "level": 1,
@@ -286,7 +278,6 @@ class Test_Create_MultiObjDctNested_Concentration(_Test_Create_MultiObjDctNested
 class Test_Create_MultiObjDctNested_Deposition(_Test_Create_MultiObjDctNested):
     c = Conf_Create(
         name="deposition",
-        type_name="VarSpecs_Deposition",  # SR_TMP
         dct={
             "deposition": "wet",
             "species_id": [(1,), (1, 2)],

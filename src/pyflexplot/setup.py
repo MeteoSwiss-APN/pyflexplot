@@ -4,30 +4,29 @@ Plot setup and setup files.
 """
 # Standard library
 import dataclasses
-from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import Union
 
 # Third-party
 import toml
-from pydantic.dataclasses import dataclass as pydantic_dataclass
+from pydantic import BaseModel
 
 # First-party
 from srutils.dict import decompress_nested_dict
 from srutils.dict import nested_dict_resolve_wildcards
 
 
-@pydantic_dataclass(frozen=True)
-class Setup:
+class Setup(BaseModel):
     """
     PyFlexPlot setup.
 
     Args:
         infiles: Input file path(s). May contain format keys.
 
-        member_ids: List of ensemble member ids. Omit for deterministic
-            simulations. Use the format key '{member_id}' to embed the member
-            id(s) in ``infiles`` or ``outfile``.
+        member_ids: Ensemble member ids. Omit for deterministic simulations.
+            Use the format key '{member_id}' to embed the member id(s) in
+            ``infiles`` or ``outfile``.
 
         outfile: Output file path. May contain format keys.
 
@@ -76,9 +75,9 @@ class Setup:
 
     """
 
-    infiles: List[str]
+    infiles: Tuple[str, ...]
     outfile: str
-    member_ids: Optional[List[int]] = None
+    member_ids: Optional[Tuple[int, ...]] = None
     #
     variable: str = "concentration"
     simulation_type: str = "deterministic"
@@ -90,17 +89,21 @@ class Setup:
     age_class_idx: int = 0
     deposition_type: str = "tot"
     integrate: bool = False
-    level_idx: Union[int, List[int]] = 0
+    level_idx: Union[int, Tuple[int, ...]] = 0
     nout_rel_idx: int = 0
     release_point_idx: int = 0
-    species_id: Union[int, List[int]] = 1
+    species_id: Union[int, Tuple[int, ...]] = 1
     time_idx: int = 0
     #
     scale_fact: Optional[float] = None
     reverse_legend: bool = False
 
-    def __post_init_post_parse__(self):
-        pass
+    class Config:
+        """
+        BaseModel configuration.
+        """
+
+        allow_mutation = False
 
     @classmethod
     def as_setup(cls, obj):
@@ -108,21 +111,18 @@ class Setup:
             return obj
         return cls(**obj)
 
-    def as_dict(self):
-        return dataclasses.asdict(self)
-
     def __len__(self):
-        return len(self.as_dict())
+        return len(dict(self))
 
     def __eq__(self, other):
         try:
-            other_as_dict = dataclasses.asdict(other)
+            other_dict = dict(other)
         except TypeError:
             try:
-                other_as_dict = dict(other)
+                other_dict = dataclasses.asdict(other)
             except TypeError:
                 return False
-        return self.as_dict() == other_as_dict
+        return dict(self) == other_dict
 
     def tmp_cls_name(self):
         if self.simulation_type == "deterministic":
@@ -152,10 +152,10 @@ class SetupCollection:
             yield setup
 
     def __eq__(self, other):
-        return self.as_dicts() == other
+        return self.dicts() == other
 
-    def as_dicts(self):
-        return [c.as_dict() for c in self._setups]
+    def dicts(self):
+        return [dict(c) for c in self._setups]
 
 
 class SetupFile:

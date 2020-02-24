@@ -542,12 +542,12 @@ class FileReader:
 
         dt_hr = self._time_resolution()
 
-        if var_specs.issubcls("concentration"):  # SR_TMP
+        if var_specs._setup.variable == "concentration":  # SR_TMP
             if var_specs.integrate:
                 # Integrate over time
                 fld = np.cumsum(fld, axis=0) * dt_hr
 
-        elif var_specs.issubcls("deposition"):  # SR_TMP
+        elif var_specs._setup.variable == "deposition":  # SR_TMP
             if not var_specs.integrate:
                 # Revert integration over time
                 fld[1:] = (fld[1:] - fld[:-1]) / dt_hr

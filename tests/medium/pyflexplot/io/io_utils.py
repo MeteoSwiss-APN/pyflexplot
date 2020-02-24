@@ -36,11 +36,11 @@ def read_nc_var(path, var_name, var_specs):
         fix_nc_fld(fld)  # SR_TMP
 
         # Reduce time dimension
-        if var_specs.issubcls("concentration"):
+        if var_specs._setup.variable == "concentration":
             if var_specs.integrate:
                 # Integrate concentration field over time
                 fld = np.cumsum(fld, axis=0)
-        elif var_specs.issubcls("deposition"):
+        elif var_specs._setup.variable == "deposition":
             if not var_specs.integrate:
                 # De-integrate deposition field over time
                 fld[1:] -= fld[:-1].copy()

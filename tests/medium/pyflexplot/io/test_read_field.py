@@ -23,10 +23,10 @@ from utils import datadir  # noqa:F401 isort:skip
 
 
 def get_var_name_ref(var_specs, var_names_ref):
-    if var_specs.issubcls("concentration"):
+    if var_specs._setup.variable == "concentration":
         assert len(var_names_ref) == 1
         return next(iter(var_names_ref))
-    elif var_specs.issubcls("deposition"):
+    elif var_specs._setup.variable == "deposition":
         for var_name in var_names_ref:
             if (var_specs.deposition, var_name[:2]) in [("dry", "DD"), ("wet", "WD")]:
                 return var_name

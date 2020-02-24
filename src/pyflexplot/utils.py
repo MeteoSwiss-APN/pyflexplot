@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Utils for the command line tool.
+Some utilities.
 """
 # Standard library
 import logging as log
@@ -14,8 +14,6 @@ import numpy as np
 # First-party
 from srutils.various import isiterable
 
-# Exceptions
-
 
 class MaxIterationError(Exception):
     """Maximum number of iterations of a loop exceeded."""
@@ -27,46 +25,6 @@ class KeyConflictError(Exception):
     """Conflicting dictionary keys."""
 
     pass
-
-
-class ParentClass:
-    """Enable easy access to subclasses via their 'name' attribute."""
-
-    @classmethod
-    def subcls(cls, name):
-        """Find a subcls by name."""
-        subclasses_by_name = cls.subclasses_by_name()
-        try:
-            return subclasses_by_name[name]
-        except KeyError:
-            raise ValueError(
-                f"class '{cls.__name__}' has no subcls '{name}'; options: "
-                f"{sorted(subclasses_by_name)}"
-            )
-
-    @classmethod
-    def subclasses_by_name(cls, unique=True):
-        """Recursively collect named subclasses by 'name' attribute."""
-        result = {}
-        for sub_cls in cls.__subclasses__():
-            try:
-                name = sub_cls.name
-            except AttributeError:
-                continue
-
-            if name is None:
-                continue
-
-            if unique and result.get(name) is sub_cls:
-                raise Exception(f"duplicate class name '{name}'")
-
-            # result[name] = sub_cls
-            for n in range(name.count(":") + 1):
-                subname = sub_cls.name.split(":", n)[-1]
-                result[subname] = sub_cls
-
-            result.update(sub_cls.subclasses_by_name())
-        return result
 
 
 class NotSummarizableError(Exception):
@@ -156,7 +114,12 @@ class Summarizer:
         try:
             items = obj.items()
         except AttributeError:
-            raise NotSummarizableError("dict-like", obj)
+            try:
+                obj = dict(obj)
+            except (TypeError, ValueError):
+                raise NotSummarizableError("dict-like", obj)
+            else:
+                items = obj.items()
         else:
             return {self._summarize(key): self._summarize(val) for key, val in items}
 

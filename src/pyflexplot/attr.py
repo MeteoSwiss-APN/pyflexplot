@@ -827,9 +827,9 @@ class AttrsCollector:
         ts_now, ts_integr_start = self._get_current_timestep_etc()
 
         # Type of integration (or, rather, reduction)
-        if self.var_specs.issubcls("concentration"):  # SR_TMP
+        if self.var_specs._setup.variable == "concentration":  # SR_TMP
             integr_type = "sum" if self.var_specs.integrate else "mean"
-        elif self.var_specs.issubcls("deposition"):  # SR_TMP
+        elif self.var_specs._setup.variable == "deposition":  # SR_TMP
             integr_type = "accum" if self.var_specs.integrate else "mean"
         else:
             raise NotImplementedError(
@@ -988,9 +988,9 @@ class AttrsCollector:
         substance = self._get_substance()
 
         # Get deposition and washout data
-        if self.var_specs.issubcls("concentration"):  # SR_TMP
+        if self.var_specs._setup.variable == "concentration":  # SR_TMP
             name_core = self.field_var_name
-        elif self.var_specs.issubcls("deposition"):  # SR_TMP
+        elif self.var_specs._setup.variable == "deposition":  # SR_TMP
             name_core = self.field_var_name[3:]
         deposit_vel = self.ncattrs_vars[f"DD_{name_core}"]["dryvel"]
         washout_coeff = self.ncattrs_vars[f"WD_{name_core}"]["weta"]
@@ -1024,7 +1024,7 @@ class AttrsCollector:
 
     def _get_substance(self):
         substance = self.ncattrs_field["long_name"]
-        if self.var_specs.issubcls("deposition"):  # SR_TMP
+        if self.var_specs._setup.variable == "deposition":  # SR_TMP
             substance = substance.replace(
                 f"_{self.var_specs.deposition}_deposition", ""
             )  # SR_HC

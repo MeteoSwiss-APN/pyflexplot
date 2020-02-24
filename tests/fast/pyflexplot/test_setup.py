@@ -11,7 +11,7 @@ from pyflexplot.setup import SetupCollection
 from pyflexplot.setup import SetupFile
 
 DEFAULT_KWARGS = {
-    "infiles": ["foo.nc"],
+    "infiles": ("foo.nc",),
     "outfile": "bar.png",
 }
 
@@ -328,7 +328,7 @@ def test_read_double_wildcard_equal_depth(tmp_path):
         for lang in ["de", "en"]
     ]
     setups = read_tmp_setup_file(tmp_path, content)
-    assert setups.as_dicts() == sol
+    assert setups.dicts() == sol
 
 
 def test_read_double_wildcard_variable_depth(tmp_path):
@@ -373,7 +373,7 @@ def test_read_double_wildcard_variable_depth(tmp_path):
         for lang in ["de", "en"]
     ]
     setups = read_tmp_setup_file(tmp_path, content)
-    assert setups.as_dicts() == sol
+    assert setups.dicts() == sol
 
 
 class Test_SetupCollection:
@@ -381,8 +381,8 @@ class Test_SetupCollection:
         return [
             {**DEFAULT_KWARGS, **dct}
             for dct in [
-                {"infiles": ["foo.nc"], "variable": "concentration", "domain": "ch"},
-                {"infiles": ["bar.nc"], "variable": "deposition", "lang": "de"},
+                {"infiles": ("foo.nc",), "variable": "concentration", "domain": "ch"},
+                {"infiles": ("bar.nc",), "variable": "deposition", "lang": "de"},
                 {"age_class_idx": 1, "nout_rel_idx": 5, "release_point_idx": 3},
             ]
         ]
