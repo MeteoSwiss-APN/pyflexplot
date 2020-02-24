@@ -7,9 +7,11 @@ import logging as log
 import re
 from collections import namedtuple
 from dataclasses import is_dataclass
+from functools import partial
 
 # Third-party
 import numpy as np
+from pydantic import BaseModel
 
 # First-party
 from srutils.various import isiterable
@@ -18,37 +20,165 @@ from srutils.various import isiterable
 class MaxIterationError(Exception):
     """Maximum number of iterations of a loop exceeded."""
 
-    pass
-
 
 class KeyConflictError(Exception):
     """Conflicting dictionary keys."""
-
-    pass
 
 
 class NotSummarizableError(Exception):
     """Object could not be summarized."""
 
 
-class Summarizer:
+class AttributeConflictError(Exception):
+    """Conflicting object attributes."""
+
+
+def is_attrs_class(cls):
+    """Determine whether a class has been defined with ``@attr.attrs``."""
+    return hasattr(cls, "__attrs_attrs__")
+
+
+def default_summarize(self, addl=None, skip=None):
+    """Default summarize method; see docstring of ``summarizable``.
+
+    Args:
+        self (object): The class instance to be summarized.
+
+        addl (List[str], optional): Additional attributes to be summarized.
+            Added to those specified in ``self.summarizable_attrs``. Defaults
+            to None.
+
+        skip (List[str], optional): Attributes not to be summarized despite
+            being specified in ``self.summarizable_attrs``. Defaults to None.
+
+    Return:
+        Dict[str, Any]: Summary dict.
+
     """
-    Collect specified attributes of an object in a dict.
+    return Summarizer().run(self, addl=addl, skip=skip)
+
+
+def default_post_summarize(self, summary):
+    """Default post_summarize method; see docstring of ``summarizable``.
+
+    Args:
+        self (object): The class instance to be summarized.
+
+        summary (Dict[str, Any]): Summary dict to be modified.
+
+    Return:
+        Dict[str, Any]: Modified summary dict.
+
+    """
+    return summary
+
+
+def summarizable(
+    cls=None,
+    *,
+    attrs=None,
+    summarize=None,
+    post_summarize=None,
+    auto_collect=True,
+    overwrite=False,
+):
+    """Decorator to make a class summarizable.
+
+    Args:
+        cls (type, optional): Class to be decorated. Defaults to None.
+
+        attrs (Collection[str], optional): Class attributes to summarize.
+            Added to the class as attribute ``summarizable_attrs``. Defaults
+            to None.
+
+        summarize (callable, optional): Custom function to summarize the class.
+            Returns a dict containing the summarized attributes, which is then
+            used to update the existing summary dict that has been created
+            based on ``attrs``. Replaces ``default_summarize``. Added to the
+            class as method ``summarize``. Defaults to None.
+
+        post_summarize (callable, optional): Custom function to post-process
+            the summary dict. Replaces ``default_post_summarize``. Added to the
+            class as method ``post_summarize``. Defaults to None.
+
+        auto_collect (bool, optional): Auto-collect attributes of certain types
+            of classes, such as data classes and dict-convertible classes, in
+            addition to those specified in attrs (if given at all). Defaults to
+            True.
+
+        overwrite (bool, optional): Overwrite existing class attributes and/or
+            methods. Must be True to make classes summarizable that inherit
+            from summarizable parent classes. Defaults to False.
+
+    """
+    if cls is None:
+        return partial(
+            summarizable,
+            attrs=attrs,
+            summarize=summarize,
+            post_summarize=post_summarize,
+            auto_collect=auto_collect,
+            overwrite=overwrite,
+        )
+
+    if attrs is None:
+        attrs = []
+    elif not isiterable(attrs, str_ok=False):
+        raise ValueError(
+            f"`attrs` of type '{type(attrs).__name__}' is not iterable", attrs,
+        )
+    else:
+        attrs = [a for a in attrs]
+
+    if summarize is None:
+        summarize = default_summarize
+    if post_summarize is None:
+        post_summarize = default_post_summarize
+
+    if auto_collect:
+        if is_attrs_class(cls):
+            # Collect attributes defined with ``attr.attrib``
+            attrs = [a.name for a in cls.__attrs_attrs__] + attrs
+        elif is_dataclass(cls):
+            # Collect dataclass fields
+            attrs = [f for f in cls.__dataclass_fields__] + attrs
+        elif issubclass(cls, BaseModel):
+            raise NotImplementedError("summarize: issubclass(cls, BaseModel)", cls)
+
+    # Extend class
+    for name, attr in [
+        ("summarizable_attrs", attrs),
+        ("summarize", summarize),
+        ("post_summarize", post_summarize),
+    ]:
+        if not overwrite and hasattr(cls, name):
+            raise AttributeConflictError(name, cls)
+        setattr(cls, name, attr)
+
+    return cls
+
+
+class Summarizer:
+    """Collect specified attributes of an object in a dict.
 
     Subclasses must define the property ``summarizable_attrs``, comprising
     a list of attribute names to be collected.
 
-    If attribute values possess a ``summarize`` method themselves, the
-    output of that is collected, otherwise the direct values.
+    If attribute values possess a ``summarize`` method themselves, the output
+    of that is collected. Otherwise, it is attemted to convert the values to
+    common types like dicts or lists. If all attempts fail, the raw value is
+    added to the summary dict.
 
     """
 
-    def run(self, obj, *, add=None, skip=None):
-        """
-        Summarize ``obj`` attributes in ``obj.summarizable_attrs`` in a dict.
+    def run(self, obj, *, addl=None, skip=None):
+        """Summarize specified attributes of ``obj`` in a dict.
+
+        The attributes to be summarized must be specified by name in the
+        attribute ``obj.summarizable_attrs``.
 
         Args:
-            add (list, optional): Additional attributes to be collected.
+            addl (list, optional): Additional attributes to be collected.
                 Defaults to None.
 
             skip (list, optional): Attributes to skip during collection.
@@ -66,8 +196,8 @@ class Summarizer:
 
         attrs = list(obj.summarizable_attrs)
 
-        if add is not None:
-            attrs += [a for a in add if a not in attrs]
+        if addl is not None:
+            attrs += [a for a in addl if a not in attrs]
 
         if skip is not None:
             attrs = [a for a in attrs if a not in skip]
@@ -75,7 +205,7 @@ class Summarizer:
         for attr in attrs:
             data[attr] = self._summarize(getattr(obj, attr))
 
-        return data
+        return obj.post_summarize(data)
 
     def _summarize(self, obj):
         """Try to summarize the object in various ways."""
@@ -140,72 +270,6 @@ class Summarizer:
                 name = f"{obj_self.__class__.__name__}.{name}"
             return f"{type(obj).__name__}:{name}"
         raise NotSummarizableError("named", obj)
-
-
-def default_summarize_method(obj, **kwargs):
-    return Summarizer().run(obj, **kwargs)
-
-
-class SummarizableClass:
-    """Summarize important class attributes into a dict."""
-
-    def __init__(self, *args, **kwargs):
-        raise Exception(f"{type(self).__name__} must be subclassed")
-
-    @property
-    def summarizable_attrs(self):
-        raise Exception(
-            f"`summarizable_attrs` must be an attribute of subclasses of "
-            f"{type(self).__name__}"
-        )
-
-    summarize = default_summarize_method
-
-
-def summarizable(cls, attrs=None, method=None):
-    """Decorator to make a class summarizable."""
-
-    def is_attrs_class(cls):
-        """Determine whether a class has been defined with ``@attr.attrs``."""
-        return hasattr(cls, "__attrs_attrs__")
-
-    if attrs is not None:
-        # Turn attrs from a non-str iterator into a list
-        if not isiterable(attrs, str_ok=False):
-            raise ValueError(f"attrs of type {type(attrs).__name__} is not iterable")
-        attrs = [a for a in attrs]
-    else:
-        if not is_attrs_class(cls) and not is_dataclass(cls):
-            raise ValueError(f"must pass attrs for non-attrs class {cls.__name__}")
-        attrs = []
-
-    if method is not None:
-        method = default_summarize_method
-
-    if is_attrs_class(cls):
-        # Collect attributes defined with ``attr.attrib``
-        attrs = [a.name for a in cls.__attrs_attrs__] + attrs
-    elif is_dataclass(cls):
-        # Collect dataclass fields
-        attrs = [f for f in cls.__dataclass_fields__] + attrs
-
-    # Extend class
-    setattr(cls, "summarizable_attrs", attrs)
-    setattr(cls, "summarize", method)
-
-    return cls
-
-
-def count_to_log_level(count: int) -> int:
-    """Map occurence of CLI option ``verbose`` to the log level."""
-    if count == 0:
-        return log.ERROR
-    elif count == 1:
-        return log.WARNING
-    elif count == 2:
-        return log.INFO
-    else:
-        return log.DEBUG
 
 
 def check_float_ok(f, ff0t):
@@ -661,3 +725,15 @@ class LevelRangeFormatter_Var(LevelRangeFormatter):
         s_c = op_fmtd
         s_r = self._format_level(lvl)
         return self._Commponents("", (s_c, ntex_c), s_r)
+
+
+def count_to_log_level(count: int) -> int:
+    """Map occurence of CLI option ``verbose`` to the log level."""
+    if count == 0:
+        return log.ERROR
+    elif count == 1:
+        return log.WARNING
+    elif count == 2:
+        return log.INFO
+    else:
+        return log.DEBUG

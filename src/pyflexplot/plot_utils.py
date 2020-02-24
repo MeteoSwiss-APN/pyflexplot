@@ -6,7 +6,6 @@ Plots.
 import logging as log
 import warnings
 from dataclasses import field
-from typing import List
 from typing import Optional
 from typing import Tuple
 
@@ -24,56 +23,57 @@ from srutils.various import isiterable
 
 # Local
 from .utils import MaxIterationError
-from .utils import SummarizableClass
 from .utils import summarizable
 
 
-class SummarizablePlotClass(SummarizableClass):
-    """Extend SummarizableClass with plotting-related functionality."""
+def post_summarize_plot(self, summary):
+    """Method to post-process summary dict of plot class.
 
-    def summarize(self, *, add=None, skip=None):
-        data = super().summarize(add=add, skip=skip)
-        cls_fig = mpl.figure.Figure
-        cls_axs = mpl.axes.Axes
-        cls_bbox = (mpl.transforms.Bbox, mpl.transforms.TransformedBbox)
-        for key, val in data.items():
-            if isinstance(val, cls_fig):
-                data[key] = summarize_mpl_figure(val)
-            elif isinstance(val, cls_axs):
-                data[key] = summarize_mpl_axes(val)
-            elif isinstance(val, cls_bbox):
-                data[key] = summarize_mpl_bbox(val)
-        return data
+    Convert elements like figures and axes into human-readable summaries of
+    themselves, provided that they have been specified as to be summarized.
+
+    """
+    cls_fig = mpl.figure.Figure
+    cls_axs = mpl.axes.Axes
+    cls_bbox = (mpl.transforms.Bbox, mpl.transforms.TransformedBbox)
+    for key, val in summary.items():
+        if isinstance(val, cls_fig):
+            summary[key] = summarize_mpl_figure(val)
+        elif isinstance(val, cls_axs):
+            summary[key] = summarize_mpl_axes(val)
+        elif isinstance(val, cls_bbox):
+            summary[key] = summarize_mpl_bbox(val)
+    return summary
 
 
 def summarize_mpl_figure(obj):
     """Summarize a matplotlib ``Figure`` instance in a dict."""
-    data = {
+    summary = {
         "type": type(obj).__name__,
         # SR_TODO if necessary, add option for shallow summary (avoid loops)
         "axes": [summarize_mpl_axes(a) for a in obj.get_axes()],
         "bbox": summarize_mpl_bbox(obj.bbox),
         "dpi": obj.dpi,
     }
-    return data
+    return summary
 
 
 def summarize_mpl_axes(obj):
     """Summarize a matplotlib ``Axes`` instance in a dict."""
-    data = {
+    summary = {
         "type": type(obj).__name__,
         "bbox": summarize_mpl_bbox(obj.bbox),
     }
-    return data
+    return summary
 
 
 def summarize_mpl_bbox(obj):
     """Summarize a matplotlib ``Bbox`` instance in a dict."""
-    data = {
+    summary = {
         "type": type(obj).__name__,
         "bounds": obj.bounds,
     }
-    return data
+    return summary
 
 
 @summarizable
@@ -172,10 +172,9 @@ class MapAxesConf_Cosmo1_CH(MapAxesConf_Cosmo1):
 
 
 # SR_TODO Push non-rotated-pole specific code up into MapAxesRotatedPole
-class MapAxesRotatedPole(SummarizablePlotClass):
+@summarizable(post_summarize=post_summarize_plot)
+class MapAxesRotatedPole:
     """Map plot axes for FLEXPART plot for rotated-pole data."""
-
-    summarizable_attrs: List[str] = []  # SR_TMP
 
     # water_color = cartopy.feature.COLORS["water"]
     water_color = "lightskyblue"
@@ -909,23 +908,20 @@ class MapDistanceCalculator:
             raise NotImplementedError(f"great circle distance in {self.unit}")
 
 
-class TextBoxElement(SummarizablePlotClass):
+@summarizable(post_summarize=post_summarize_plot)
+class TextBoxElement:
     """Base class for elements in text box."""
 
     def __init__(self, *args, **kwargs):
         raise Exception(f"{type(self).__name__} must be subclassed")
 
 
+@summarizable(
+    attrs=["loc", "s", "replace_edge_spaces", "edge_spaces_replacement_char", "kwargs"],
+    overwrite=True,
+)
 class TextBoxElement_Text(TextBoxElement):
     """Text element in text box."""
-
-    summarizable_attrs: List[str] = [
-        "loc",
-        "s",
-        "replace_edge_spaces",
-        "edge_spaces_replacement_char",
-        "kwargs",
-    ]
 
     def __init__(
         self,
@@ -1007,10 +1003,9 @@ class TextBoxElement_Text(TextBoxElement):
         self.box.ax.text(x=self.loc.x, y=self.loc.y, s=s, **self.kwargs)
 
 
+@summarizable(attrs=["loc", "w", "h", "fc", "ec", "x_anker", "kwargs"], overwrite=True)
 class TextBoxElement_ColorRect(TextBoxElement):
     """A colored box element inside a text box axes."""
-
-    summarizable_attrs: List[str] = ["loc", "w", "h", "fc", "ec", "x_anker", "kwargs"]
 
     def __init__(self, box, loc, *, w, h, fc, ec, x_anker=None, **kwargs):
         """Create an instance of ``TextBoxElement_BolorBox``.
@@ -1075,10 +1070,9 @@ class TextBoxElement_ColorRect(TextBoxElement):
         self.box.ax.add_patch(p)
 
 
+@summarizable(attrs=["loc", "m", "kwargs"], overwrite=True)
 class TextBoxElement_Marker(TextBoxElement):
     """A marker element in a text box axes."""
-
-    summarizable_attrs: List[str] = ["loc", "m", "kwargs"]
 
     def __init__(self, box, loc, *, m, **kwargs):
         """Create an instance of ``TextBoxElement_Marker``.
@@ -1102,10 +1096,9 @@ class TextBoxElement_Marker(TextBoxElement):
         self.box.ax.plot([self.loc.x], [self.loc.y], marker=self.m, **self.kwargs)
 
 
+@summarizable(attrs=["loc", "c", "lw"], overwrite=True)
 class TextBoxElement_HLine(TextBoxElement):
     """Horizontal line in a text box axes."""
-
-    summarizable_attrs: List[str] = ["loc", "c", "lw"]
 
     def __init__(self, box, loc, *, c="k", lw=1.0):
         """Create an instance of ``TextBoxElement_HLine``.
@@ -1129,7 +1122,14 @@ class TextBoxElement_HLine(TextBoxElement):
         self.box.ax.axhline(self.loc.y, color=self.c, linewidth=self.lw)
 
 
-class TextBoxAxes(SummarizablePlotClass):
+@summarizable(
+    attrs=["name", "rect", "lw_frame", "dx_unit", "dy_unit"],
+    post_summarize=lambda self, summary: {
+        **post_summarize_plot(self, summary),
+        "elements": [e.summarize() for e in self.elements],
+    },
+)
+class TextBoxAxes:
     """Text box axes for FLEXPART plot."""
 
     # Show text base line (useful for debugging)
@@ -1241,14 +1241,6 @@ class TextBoxAxes(SummarizablePlotClass):
 
         for element in self.elements:
             element.draw()
-
-    summarizable_attrs: List[str] = ["name", "rect", "lw_frame", "dx_unit", "dy_unit"]
-
-    def summarize(self, *, add=None, skip=None):
-        """Summarize the text box to a JSON dict."""
-        data = super().summarize(add=add, skip=skip)
-        data["elements"] = [e.summarize() for e in self.elements]
-        return data
 
     def text(self, loc, s, dx=0.0, dy=0.0, **kwargs):
         """Add text positioned relative to a reference location.
@@ -1867,10 +1859,8 @@ class MapAxesBoundingBox:
         return self.map_axes.ax.transData
 
 
-class TextBoxLocation(SummarizablePlotClass):
-    """A reference location (like bottom-left) inside a box on a 3x3 grid."""
-
-    summarizable_attrs: List[str] = [
+@summarizable(
+    attrs=[
         "loc",
         "loc_y",
         "loc_x",
@@ -1884,7 +1874,11 @@ class TextBoxLocation(SummarizablePlotClass):
         "y",
         "va",
         "ha",
-    ]
+    ],
+    post_summarize=post_summarize_plot,
+)
+class TextBoxLocation:
+    """A reference location (like bottom-left) inside a box on a 3x3 grid."""
 
     def __init__(self, parent, loc, dx=None, dy=None):
         """Initialize an instance of TextBoxLocation.

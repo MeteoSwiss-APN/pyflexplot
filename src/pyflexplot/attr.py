@@ -16,11 +16,12 @@ from srutils.dict import format_dictlike
 from srutils.various import isiterable
 
 # Local
-from .utils import SummarizableClass
+from .utils import summarizable
 from .words import WORDS
 
 
-class Attr(SummarizableClass):
+@summarizable
+class Attr:
     """Individual attribute."""
 
     def __init__(self, name, value, type_=None, unit=None, group=None):

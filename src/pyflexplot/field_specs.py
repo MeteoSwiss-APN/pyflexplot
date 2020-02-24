@@ -4,7 +4,6 @@ Field specifications.
 """
 # Standard library
 from copy import deepcopy
-from typing import List
 
 # Third-party
 import numpy as np
@@ -13,14 +12,13 @@ import numpy as np
 from srutils.dict import nested_dict_set
 
 # Local
-from .utils import SummarizableClass
+from .utils import summarizable
 from .var_specs import MultiVarSpecs
 
 
-class FieldSpecs(SummarizableClass):
+@summarizable
+class FieldSpecs:
     """FLEXPART field specifications."""
-
-    summarizable_attrs: List[str] = []  # SR_TODO fill!
 
     # Dimensions with optionally multiple values
     dims_opt_mult_vals = ["species_id"]

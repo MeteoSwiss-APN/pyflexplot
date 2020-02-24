@@ -2,17 +2,49 @@
 """
 Data structures.
 """
-# Standard library
-from typing import List
-
 # Third-party
 import numpy as np
 
 # Local
-from .utils import SummarizableClass
+from .utils import summarizable
 
 
-class Field(SummarizableClass):
+def summarize_field(obj):
+    return {
+        "fld": {
+            "dtype": str(obj.fld.dtype),
+            "shape": obj.fld.shape,
+            "nanmin": np.nanmin(obj.fld),
+            "nanmean": np.nanmean(obj.fld),
+            "nanmedian": np.nanmedian(obj.fld),
+            "nanmax": np.nanmax(obj.fld),
+            "nanmin_nonzero": np.nanmin(obj.fld[obj.fld != 0]),
+            "nanmean_nonzero": np.nanmean(obj.fld[obj.fld != 0]),
+            "nanmedian_nonzero": np.nanmedian(obj.fld[obj.fld != 0]),
+            "nanmax_nonzero": np.nanmax(obj.fld[obj.fld != 0]),
+            "n_nan": np.count_nonzero(np.isnan(obj.fld)),
+            "n_zero": np.count_nonzero(obj.fld == 0),
+        },
+        "rlat": {
+            "dtype": str(obj.rlat.dtype),
+            "shape": obj.rlat.shape,
+            "min": obj.rlat.min(),
+            "max": obj.rlat.max(),
+        },
+        "rlon": {
+            "dtype": str(obj.rlon.dtype),
+            "shape": obj.rlon.shape,
+            "min": obj.rlon.min(),
+            "max": obj.rlon.max(),
+        },
+    }
+
+
+@summarizable(
+    attrs=["attrs", "field_specs", "time_stats"],
+    post_summarize=lambda self, summary: {**summary, **summarize_field(self)},
+)
+class Field:
     """FLEXPART field on rotated-pole grid."""
 
     def __init__(self, fld, rlat, rlon, attrs, field_specs, time_stats):
@@ -64,38 +96,6 @@ class Field(SummarizableClass):
                 f"shape of fld inconsistent with (rlat, rlon): {fld.shape} != "
                 r"{grid_shape}"
             )
-
-    summarizable_attrs: List[str] = ["attrs", "field_specs", "time_stats"]
-
-    def summarize(self, *args, **kwargs):
-        data = super().summarize(*args, **kwargs)
-        data["fld"] = {
-            "dtype": str(self.fld.dtype),
-            "shape": self.fld.shape,
-            "nanmin": np.nanmin(self.fld),
-            "nanmean": np.nanmean(self.fld),
-            "nanmedian": np.nanmedian(self.fld),
-            "nanmax": np.nanmax(self.fld),
-            "nanmin_nonzero": np.nanmin(self.fld[self.fld != 0]),
-            "nanmean_nonzero": np.nanmean(self.fld[self.fld != 0]),
-            "nanmedian_nonzero": np.nanmedian(self.fld[self.fld != 0]),
-            "nanmax_nonzero": np.nanmax(self.fld[self.fld != 0]),
-            "n_nan": np.count_nonzero(np.isnan(self.fld)),
-            "n_zero": np.count_nonzero(self.fld == 0),
-        }
-        data["rlat"] = {
-            "dtype": str(self.rlat.dtype),
-            "shape": self.rlat.shape,
-            "min": self.rlat.min(),
-            "max": self.rlat.max(),
-        }
-        data["rlon"] = {
-            "dtype": str(self.rlon.dtype),
-            "shape": self.rlon.shape,
-            "min": self.rlon.min(),
-            "max": self.rlon.max(),
-        }
-        return data
 
     def scale(self, fact):
         if fact is None:

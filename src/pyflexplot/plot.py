@@ -6,7 +6,6 @@ Plots.
 import os
 from copy import copy
 from textwrap import dedent
-from typing import List
 
 # Third-party
 import matplotlib as mpl
@@ -18,21 +17,19 @@ from srutils.geo import Degrees
 
 # Local
 from .plot_utils import MapAxesRotatedPole
-from .plot_utils import SummarizablePlotClass
 from .plot_utils import TextBoxAxes
 from .plot_utils import ax_w_h_in_fig_coords
-from .utils import SummarizableClass
+from .plot_utils import post_summarize_plot
 from .utils import fmt_float
 from .utils import format_level_ranges
+from .utils import summarizable
 from .words import SYMBOLS
 from .words import WORDS
 
 
-# SR_TMP TODO Turn this class into some more adequate type (simple dict?)
-class PlotLabels(SummarizableClass):
-
-    summarizable_attrs: List[str] = []  # SR_TODO
-
+# SR_TMP TODO Turn into dataclass or the like.
+@summarizable
+class PlotLabels:
     def __init__(self, lang, words, symbols, attrs):
 
         self.words = words
@@ -191,10 +188,8 @@ def colors_flexplot(n_levels, extend):
     raise ValueError(f"extend='{extend}'")
 
 
-class Plot(SummarizablePlotClass):
-    """A FLEXPART dispersion plot."""
-
-    summarizable_attrs: List[str] = [
+@summarizable(
+    attrs=[
         "ax_map",
         "boxes",
         "dpi",
@@ -212,7 +207,11 @@ class Plot(SummarizablePlotClass):
         "name",
         "setup",
         "text_box_setup",
-    ]
+    ],
+    post_summarize=post_summarize_plot,
+)
+class Plot:
+    """A FLEXPART dispersion plot."""
 
     cmap = "flexplot"
     draw_colors = True
@@ -362,10 +361,6 @@ class Plot(SummarizablePlotClass):
         }
 
         self.create_plot()
-
-    def summarize(self, *args, **kwargs):
-        data = super().summarize(*args, **kwargs)
-        return data
 
     def prepare_plot(self):
 

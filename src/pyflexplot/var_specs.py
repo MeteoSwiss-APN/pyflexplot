@@ -4,7 +4,6 @@ Input variable specifications.
 """
 # Standard library
 from typing import Any
-from typing import List
 from typing import Mapping
 from typing import Optional
 from typing import Tuple
@@ -15,7 +14,7 @@ from srutils.dict import format_dictlike
 from srutils.various import isiterable
 
 # Local
-from .utils import SummarizableClass
+from .utils import summarizable
 from .words import WORDS
 
 
@@ -28,10 +27,9 @@ def int_or_list(arg):
         return [int(a) for a in arg]
 
 
-class VarSpecs(SummarizableClass):
+@summarizable
+class VarSpecs:
     """FLEXPART input variable specifications."""
-
-    summarizable_attrs: List[str] = []  # SR_TODO
 
     name: Optional[str] = None
 
