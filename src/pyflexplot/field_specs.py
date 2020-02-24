@@ -2,14 +2,8 @@
 """
 Field specifications.
 """
-# Standard library
-from copy import deepcopy
-
 # Third-party
 import numpy as np
-
-# First-party
-from srutils.dict import nested_dict_set
 
 # Local
 from .utils import summarizable
@@ -21,16 +15,16 @@ class FieldSpecs:
     """FLEXPART field specifications."""
 
     # Dimensions with optionally multiple values
-    dims_opt_mult_vals = ["species_id"]
+    # SR_TMP <<<
+    @property
+    def dims_opt_mult_vals(self):
+        lst = ["species_id"]
+        if self.name == "concentration":
+            lst.append("level")
+        return lst
 
     def __init__(
-        self,
-        name,
-        multi_var_specs,
-        attrs=None,
-        *,
-        op=np.nansum,
-        var_attrs_replace=None,
+        self, name, multi_var_specs, attrs=None, *, op=np.nansum,
     ):
         """Create an instance of ``FieldSpecs``.
 
@@ -60,17 +54,14 @@ class FieldSpecs:
 
                 Defaults to np.nansum.
 
-            var_attrs_replace (dict[str: dict], optional): Variable attributes
-                to be replaced. Necessary if multiple specifications dicts are
-                passed for all those attributes that differ between the
-                resulting attributes collections. Defaults to '{}'.
-
         """
         self.name = name
-
         # SR_TMP <
-        assert isinstance(multi_var_specs, MultiVarSpecs)
+        if not isinstance(self, FieldSpecs):
+            assert self.name == type(self).name
         # SR_TMP >
+
+        assert isinstance(multi_var_specs, MultiVarSpecs)  # SR_TMP
         self.multi_var_specs = multi_var_specs
 
         self.set_attrs(attrs)
@@ -83,19 +74,6 @@ class FieldSpecs:
         else:
             self.op = None
             self.op_lst = op
-
-        # SR_TMP < SR_TODO remove var_attrs_replace if this is not triggered!
-        if var_attrs_replace is not None:
-            raise Exception(
-                f"{type(self).__name__}: var_attrs_replace is not None: "
-                f"{var_attrs_replace}"
-            )
-        # SR_TMP >
-
-        # Store variable attributes
-        if var_attrs_replace is None:
-            var_attrs_replace = {}
-        self.var_attrs_replace = var_attrs_replace
 
     def set_attrs(self, attrs):
         """Set instance attributes."""
@@ -144,11 +122,6 @@ class FieldSpecs:
             for op in self.op_lst:
                 s += "f    {op.__name__}\n"
 
-        # Variable attributes replacements
-        s += f"  var_attrs_replace: {len(self.var_attrs_replace)}x\n"
-        for key, val in self.var_attrs_replace.items():
-            s += f"    '{key}': {val}\n"
-
         s += f")"
         return s
 
@@ -172,77 +145,3 @@ class FieldSpecs:
                 f"'{key}' differs among {len(self.multi_var_specs)} var stats: {vals}"
             )
         return next(iter(vals))
-
-
-class FieldSpecs_Concentration(FieldSpecs):
-    name = "concentration"
-
-    # Dimensions with optionally multiple values
-    dims_opt_mult_vals = FieldSpecs.dims_opt_mult_vals + ["level"]
-
-    def __init__(self, var_specs, *args, **kwargs):
-        """Create an instance of ``FieldSpecs_Concentration``."""
-        super().__init__([var_specs], *args, **kwargs)
-
-
-class FieldSpecs_Deposition(FieldSpecs):
-    name = "deposition"
-
-    def __init__(self, var_specs, *args, lang=None, **kwargs):
-        """Create an instance of ``FieldSpecs_Deposition``."""
-        lang = lang or "en"
-
-        var_specs_lst = [var_specs]
-
-        # Deposition mode
-        if var_specs["deposition"] in ["wet", "dry"]:
-            pass
-
-        elif var_specs["deposition"] == "tot":
-            long_name = var_specs.long_name()
-            nested_dict_set(
-                kwargs,
-                ["var_attrs_replace", "variable", "long_name", "value"],
-                long_name,
-            )
-            var_specs_new = deepcopy(var_specs)
-            var_specs["deposition"] = "wet"
-            var_specs_new["deposition"] = "dry"
-            var_specs_lst.append(var_specs_new)
-
-        else:
-            raise NotImplementedError(f"deposition type '{var_specs['deposition']}'")
-
-        super().__init__(var_specs_lst, *args, **kwargs)
-
-
-class FieldSpecs_AffectedArea(FieldSpecs_Deposition):
-    name = "affected_area"
-
-
-class FieldSpecs_AffectedAreaMono(FieldSpecs_AffectedArea):
-    name = "affected_area_mono"
-
-
-class FieldSpecs_Ens(FieldSpecs):
-    name = "ens"
-
-
-class FieldSpecs_EnsMean_Concentration(FieldSpecs_Ens, FieldSpecs_Concentration):
-    name = "ens_mean_concentration"
-
-
-class FieldSpecs_EnsMean_Deposition(FieldSpecs_Ens, FieldSpecs_Deposition):
-    name = "ens_mean_deposition"
-
-
-class FieldSpecs_EnsMean_AffectedArea(FieldSpecs_Ens, FieldSpecs_AffectedArea):
-    name = "ens_mean_affected_area"
-
-
-class FieldSpecs_EnsThrAgrmt_Concentration(FieldSpecs_Ens, FieldSpecs_Concentration):
-    name = "ens_thr_agrmt_concentration"
-
-
-class FieldSpecs_EnsThrAgrmt_Deposition(FieldSpecs_Ens, FieldSpecs_Deposition):
-    name = "ens_thr_agrmt_deposition"

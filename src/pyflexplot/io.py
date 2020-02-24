@@ -346,9 +346,7 @@ class FileReader:
                     for var_specs in fld_specs.multi_var_specs:
                         attrs = collect_attrs(self.fi, var_specs, lang=self.lang)
                         attrs_lst.append(attrs)
-                    attrs = attrs_lst[0].merge_with(
-                        attrs_lst[1:], **fld_specs.var_attrs_replace
-                    )
+                    attrs = attrs_lst[0].merge_with(attrs_lst[1:])
                     attrs_reqtime_mem[i_reqtime, i_mem] = attrs
             self.fi = None
         return attrs_reqtime_mem
