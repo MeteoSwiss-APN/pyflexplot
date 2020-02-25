@@ -179,7 +179,7 @@ def ens_cloud_arrival_time():
         outfile = "test_{domain}_{lang}_ts{time_idx:02d}.png"
         plot_type = "ens_cloud_arrival_time"
         variable = "concentration"
-        time_idxs = [0, 5, 10]
+        time_idxs = [0, 2, 4, 6]
 
         ["**".en]
         lang = "en"

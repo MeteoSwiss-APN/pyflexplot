@@ -145,41 +145,6 @@ def create_plots(setups, cli_args):
         open_plots(cli_args["open_all_cmd"], out_file_paths)
 
 
-def prep_var_specs_dct(setup):
-    """Prepare the variable specifications dict from the raw CLI input.
-    """
-
-    var_specs_raw = {
-        "time_lst": setup.time_idxs,
-        "nageclass_lst": (setup.age_class_idx,),
-        "noutrel_lst": (setup.nout_rel_idx,),
-        "numpoint_lst": (setup.release_point_idx,),
-        "species_id_lst": (setup.species_id,),
-        "integrate_lst": (setup.integrate,),
-    }
-
-    if setup.variable == "concentration":
-        var_specs_raw["level_lst"] = (setup.level_idx,)
-    elif setup.variable == "deposition":
-        var_specs_raw["deposition_lst"] = (setup.deposition_type,)
-    else:
-        raise NotImplementedError(f"variable='{setup.variable}'")
-
-    var_specs_dct = {}
-    for key, val in var_specs_raw.items():
-        if key.endswith("_lst"):
-            key = key[: -len("_lst")]
-        if isinstance(val, (tuple, list)):
-            val = [tuple(e) if isinstance(e, list) else e for e in val]
-        else:
-            raise Exception(f"invalid value type {type(val).__name__}", key)
-        if len(val) == 1:
-            val = next(iter(val))
-        var_specs_dct[key] = val
-
-    return var_specs_dct
-
-
 def read_fields(setup):
 
     # SR_TMP < TODO find cleaner solution
@@ -204,10 +169,7 @@ def read_fields(setup):
         attrs["ens_var_setup"] = ens_var_setup
 
     # Create variable specification objects
-    var_specs_dct = prep_var_specs_dct(setup)
-    multi_var_specs_lst = MultiVarSpecs.create(
-        setup, var_specs_dct, lang=setup.lang, words=None,
-    )
+    multi_var_specs_lst = MultiVarSpecs.create(setup)
 
     # Determine fields specifications (one for each eventual plot)
     fld_specs_lst = [

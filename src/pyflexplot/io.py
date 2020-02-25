@@ -367,7 +367,7 @@ class FileReader:
                     raise Exception(
                         f"{type(var_specs).__name__} instances of "
                         f"{type(fld_specs_time).__name__} instance differ in 'time' "
-                        f"({var_specs.time} != {time_idx}):\n{fld_specs_time}"
+                        f"({var_specs.time} != {time_idx}):\n{fld_specs}"
                     )
                 var_specs.time = slice(None)
 

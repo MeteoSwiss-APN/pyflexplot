@@ -245,7 +245,9 @@ def is_list_like(
 
     if len_ is not None:
         if len(obj) != len_:
-            return_or_raise(f"obj has wrong length {len(obj)}", kwargs, raise_)
+            return_or_raise(
+                f"obj has wrong length: {len(obj)} != {len_}", kwargs, raise_,
+            )
 
     if not_ is not None:
         if isinstance(obj, not_):

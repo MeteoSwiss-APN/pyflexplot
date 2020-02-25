@@ -23,22 +23,20 @@ from utils import datadir  # noqa:F401 isort:skip
 class TestReadFieldEnsemble_Single:
     """Read one ensemble of 2D fields from FLEXPART NetCDF files."""
 
-    # Dimensions shared by all tests
-    dims_shared = {
-        "nageclass": 0,
-        "numpoint": 0,
-        "time": 10,
-    }
-
-    # Variable specifications shared by all tests
-    var_specs_mult_shared = {
+    # Setup parameters shared by all tests
+    setup_params_shared = {
+        "infiles": ["dummy.nc"],
         "integrate": False,
+        "outfile": "dummy.png",
+        "plot_type": "ens_mean",
         "species_id": 2,
+        "time_idxs": [10],
+        "variable": "concentration",
     }
 
     @property
     def species_id(self):
-        return self.var_specs_mult_shared["species_id"]
+        return self.setup_params_shared["species_id"]
 
     # Ensemble member ids
     ens_member_ids = [0, 1, 5, 10, 15, 20]
@@ -56,10 +54,8 @@ class TestReadFieldEnsemble_Single:
         datadir,  # noqa:F811
         *,
         name,
-        dims,
-        setup_kwargs,
         var_names_ref,
-        var_specs_mult_unshared,
+        setup_params,
         ens_var,
         fct_reduce_mem,
     ):
@@ -68,15 +64,8 @@ class TestReadFieldEnsemble_Single:
         datafile_fmt = self.datafile_fmt(datadir)
 
         # Initialize specifications
-        var_specs_dct = {
-            **dims,
-            **self.var_specs_mult_shared,
-            **var_specs_mult_unshared,
-        }
-        setup = Setup(infiles=["dummy.nc"], outfile="dummy.png", **setup_kwargs)
-        multi_var_specs_lst = MultiVarSpecs.create(
-            setup, var_specs_dct, lang=None, words=None,
-        )
+        setup = Setup(**{**self.setup_params_shared, **setup_params})
+        multi_var_specs_lst = MultiVarSpecs.create(setup)
         assert len(multi_var_specs_lst) == 1
         multi_var_specs = next(iter(multi_var_specs_lst))
         attrs = {
@@ -122,10 +111,8 @@ class TestReadFieldEnsemble_Single:
         self.run(
             datadir,
             name="concentration:ens_mean_concentration",
-            setup_kwargs={"variable": "concentration", "plot_type": "ens_mean"},
-            dims={**self.dims_shared, "level": 1},
             var_names_ref=[f"spec{self.species_id:03d}"],
-            var_specs_mult_unshared={},
+            setup_params={"level_idx": 1},
             ens_var="mean",
             fct_reduce_mem=np.nanmean,
         )
@@ -134,22 +121,19 @@ class TestReadFieldEnsemble_Single:
 class TestReadFieldEnsemble_Multiple:
     """Read multiple 2D field ensembles from FLEXPART NetCDF files."""
 
-    # Dimensions arguments shared by all tests
-    dims_shared = {
-        "nageclass": 0,
-        "numpoint": 0,
-        "time": [0, 3, 9],
-    }
-
-    # Variables specification arguments shared by all tests
-    var_specs_mult_shared = {
+    # Setup parameters arguments shared by all tests
+    setup_params_shared = {
+        "infiles": ["dummy.py"],
         "integrate": True,
+        "outfile": "dummy.png",
         "species_id": 1,
+        "time_idxs": [0],
     }
+    derive_setups = [{"time_idxs": [3]}, {"time_idxs": [9]}]
 
     @property
     def species_id(self):
-        return self.var_specs_mult_shared["species_id"]
+        return self.setup_params_shared["species_id"]
 
     # Ensemble member ids
     ens_member_ids = [0, 1, 5, 10, 15, 20]
@@ -172,10 +156,8 @@ class TestReadFieldEnsemble_Multiple:
         separate,
         datafile_fmt,
         name,
-        dims_mult,
-        setup_kwargs,
         var_names_ref,
-        var_specs_mult_unshared,
+        setup_params,
         ens_var,
         ens_var_setup,
         fct_reduce_mem,
@@ -184,15 +166,12 @@ class TestReadFieldEnsemble_Multiple:
         """Run an individual test, reading one field after another."""
 
         # Create field specifications list
-        var_specs_dct = {
-            **dims_mult,
-            **self.var_specs_mult_shared,
-            **var_specs_mult_unshared,
-        }
-        setup = Setup(infiles=["dummy.nc"], outfile="dummy.png", **setup_kwargs)
-        multi_var_specs_lst = MultiVarSpecs.create(
-            setup, var_specs_dct, lang=None, words=None,
-        )
+        setups = [Setup(**{**self.setup_params_shared, **setup_params})]
+        for params in self.derive_setups:
+            setups.append(setups[0].derive(**params))
+        multi_var_specs_lst = []
+        for setup in setups:
+            multi_var_specs_lst.extend(MultiVarSpecs.create(setup))
         attrs = {
             "ens_member_ids": self.ens_member_ids,
             "ens_var": ens_var,
@@ -203,15 +182,8 @@ class TestReadFieldEnsemble_Multiple:
             for multi_var_specs in multi_var_specs_lst
         ]
 
-        dim_names = list(dims_mult.keys())
-
         run_core = functools.partial(
-            self._run_core,
-            datafile_fmt,
-            dim_names,
-            var_names_ref,
-            fct_reduce_mem,
-            scale_fld_ref,
+            self._run_core, datafile_fmt, var_names_ref, fct_reduce_mem, scale_fld_ref,
         )
         if separate:
             # Process field specifications one after another
@@ -221,13 +193,7 @@ class TestReadFieldEnsemble_Multiple:
             run_core(fld_specs_lst)
 
     def _run_core(
-        self,
-        datafile_fmt,
-        dim_names,
-        var_names_ref,
-        fct_reduce_mem,
-        scale_fld_ref,
-        fld_specs_lst,
+        self, datafile_fmt, var_names_ref, fct_reduce_mem, scale_fld_ref, fld_specs_lst,
     ):
 
         # Read input fields
@@ -291,10 +257,8 @@ class TestReadFieldEnsemble_Multiple:
             separate=separate,
             datafile_fmt=self.datafile_fmt(datadir),
             name=name,
-            dims_mult={**self.dims_shared, "level": 1},
-            setup_kwargs={"variable": "concentration"},  # SR_TODO
             var_names_ref=[f"spec{self.species_id:03d}"],
-            var_specs_mult_unshared={},
+            setup_params={"variable": "concentration", "level_idx": 1},
             ens_var=ens_var,
             ens_var_setup=ens_var_setup,
             fct_reduce_mem=fct_reduce_mem,
@@ -325,16 +289,11 @@ class TestReadFieldEnsemble_Multiple:
             separate=separate,
             datafile_fmt=self.datafile_fmt(datadir),
             name="deposition",
-            dims_mult=self.dims_shared,
-            setup_kwargs={
-                "variable": "deposition",
-                "deposition_type": "tot",
-            },  # SR_TODO
             var_names_ref=[
                 f"WD_spec{self.species_id:03d}",
                 f"DD_spec{self.species_id:03d}",
             ],
-            var_specs_mult_unshared={"deposition": ("wet", "dry")},
+            setup_params={"variable": "deposition", "deposition_type": "tot"},
             ens_var=ens_var,
             ens_var_setup=ens_var_setup,
             fct_reduce_mem=fct_reduce_mem,

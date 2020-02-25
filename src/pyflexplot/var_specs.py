@@ -436,21 +436,60 @@ class VarSpecs:
 class MultiVarSpecs:
     """Hold multiple ``VarSpecs`` objects."""
 
-    def __init__(self, name, var_specs_lst):
-        self.name = name
+    def __init__(self, setup, var_specs_lst):
+        self.setup = setup
         self.var_specs_lst = var_specs_lst
 
     @classmethod
-    def create(cls, setup, var_specs_dct, *args, **kwargs):
-        var_specs_dct = var_specs_dct.copy()
-        if var_specs_dct.get("deposition") == "tot":
-            var_specs_dct["deposition"] = ("wet", "dry")
-        var_specs_lst_lst = VarSpecs.create(setup, var_specs_dct, *args, **kwargs)
-        return [cls(setup, var_specs_lst) for var_specs_lst in var_specs_lst_lst]
+    def create(cls, setup, **kwargs):
+        """Create instances of ``MultiVarSpecs`` from a ``Setup`` object."""
+
+        kwargs["lang"] = setup.lang
+
+        var_specs_raw = {
+            "time_lst": setup.time_idxs,
+            "nageclass": setup.age_class_idx,
+            "noutrel": setup.nout_rel_idx,
+            "numpoint": setup.release_point_idx,
+            "species_id": setup.species_id,
+            "integrate": setup.integrate,
+        }
+
+        if setup.variable == "concentration":
+            var_specs_raw["level_lst"] = setup.level_idx
+        elif setup.variable == "deposition":
+            var_specs_raw["deposition_lst"] = setup.deposition_type
+        else:
+            raise NotImplementedError(f"variable='{setup.variable}'")
+
+        var_specs_dct = {}
+        for key, val in var_specs_raw.items():
+            if key.endswith("_lst"):
+                key = key[: -len("_lst")]
+            if (key, val) == ("deposition", "tot"):
+                val = ("wet", "dry")
+            var_specs_dct[key] = val
+
+        return [
+            cls(setup, var_specs_lst)
+            for var_specs_lst in VarSpecs.create(setup, var_specs_dct, **kwargs)
+        ]
+
+    def __repr__(self):
+        s_setup = "\n  ".join(repr(self.setup).split("\n"))
+        s_specs = ",\n    ".join([str(specs) for specs in self])
+        return (
+            f"{type(self).__name__}("
+            f"\n  setup={s_setup},"
+            f"\n  var_specs_lst=[\n    {s_specs}],"
+            f"\n)"
+        )
 
     def __eq__(self, other):
         if isinstance(other, type(self)) or isinstance(self, type(other)):
-            return self.name == other.name and self.var_specs_lst == other.var_specs_lst
+            return (
+                self.setup == other.setup and self.var_specs_lst == other.var_specs_lst
+            )
         return False
 
     def __iter__(self):
@@ -465,7 +504,7 @@ class MultiVarSpecs:
         if dct.get("deposition") == "tot":
             dct["deposition"] = None
         # SR_TMP >
-        return next(iter(next(iter(VarSpecs.create(self.name, dct)))))
+        return next(iter(next(iter(VarSpecs.create(self.setup, dct)))))
 
     def shared_dct(self):
         skipped = ["name", "rlat", "rlon"]  # SR_TMP TODO remove from dct

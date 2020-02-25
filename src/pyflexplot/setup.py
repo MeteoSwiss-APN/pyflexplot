@@ -4,6 +4,7 @@ Plot setup and setup files.
 """
 # Standard library
 import dataclasses
+from typing import Any
 from typing import Optional
 from typing import Tuple
 from typing import Union
@@ -72,8 +73,12 @@ class Setup(BaseModel):
 
     """
 
+    class Config:  # noqa
+        # allow_mutation = False  # SR_TMP TODO reactivate once deposition_type solved
+        extra = "forbid"
+
     age_class_idx: int = 0
-    deposition_type: str = "tot"
+    deposition_type: Union[str, Tuple[str, str]] = "tot"
     domain: str = "auto"
     ens_member_ids: Optional[Tuple[int, ...]] = None
     infiles: Tuple[str, ...]
@@ -91,16 +96,31 @@ class Setup(BaseModel):
     time_idxs: Tuple[int, ...] = (0,)
     variable: str = "concentration"
 
-    class Config:
-        """BaseModel configuration."""
-
-        allow_mutation = False
+    def __init__(self, **data: Any):
+        super().__init__(**data)
+        if isinstance(self.deposition_type, tuple):
+            if set(self.deposition_type) == {"dry", "wet"}:
+                self.deposition_type = "tot"
+            else:
+                raise ValueError(f"invalid deposition type", self.deposition_type)
 
     @classmethod
     def as_setup(cls, obj):
         if isinstance(obj, cls):
             return obj
         return cls(**obj)
+
+    def __repr__(self):
+        def fmt(obj):
+            if isinstance(obj, str):
+                return f"'{obj}'"
+            return str(obj)
+
+        s_attrs = ",\n  ".join(f"{k}={fmt(v)}" for k, v in dict(self).items())
+        return f"{type(self).__name__}(\n  {s_attrs},\n)"
+
+    def __str__(self):
+        return repr(self)
 
     def __len__(self):
         return len(dict(self))
@@ -114,6 +134,9 @@ class Setup(BaseModel):
             except TypeError:
                 return False
         return dict(self) == other_dict
+
+    def derive(self, **kwargs):
+        return type(self)(**{**dict(self), **kwargs})
 
     def tmp_cls_name(self):
         if self.simulation_type == "deterministic":
