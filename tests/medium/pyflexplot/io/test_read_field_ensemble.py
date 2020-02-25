@@ -41,15 +41,15 @@ class TestReadFieldEnsemble_Single:
         return self.var_specs_mult_shared["species_id"]
 
     # Ensemble member ids
-    member_ids = [0, 1, 5, 10, 15, 20]
+    ens_member_ids = [0, 1, 5, 10, 15, 20]
 
     def datafile_fmt(self, datadir):  # noqa:F811
-        return f"{datadir}/flexpart_cosmo-2e_20190727120_{{member_id:03d}}.nc"
+        return f"{datadir}/flexpart_cosmo-2e_20190727120_{{ens_member_id:03d}}.nc"
 
-    def datafile(self, member_id, *, datadir=None, datafile_fmt=None):  # noqa:F811
+    def datafile(self, ens_member_id, *, datadir=None, datafile_fmt=None):  # noqa:F811
         if datafile_fmt is None:
             datafile_fmt = self.datafile_fmt(datadir)
-        return datafile_fmt.format(member_id=member_id)
+        return datafile_fmt.format(ens_member_id=ens_member_id)
 
     def run(
         self,
@@ -80,7 +80,7 @@ class TestReadFieldEnsemble_Single:
         assert len(multi_var_specs_lst) == 1
         multi_var_specs = next(iter(multi_var_specs_lst))
         attrs = {
-            "member_ids": self.member_ids,
+            "ens_member_ids": self.ens_member_ids,
             "ens_var": ens_var,
         }
         fld_specs = FieldSpecs(name, multi_var_specs, attrs)
@@ -100,11 +100,11 @@ class TestReadFieldEnsemble_Single:
                 [
                     [
                         read_nc_var(
-                            self.datafile(member_id, datafile_fmt=datafile_fmt),
+                            self.datafile(ens_member_id, datafile_fmt=datafile_fmt),
                             var_name,
                             var_specs,
                         )
-                        for member_id in self.member_ids
+                        for ens_member_id in self.ens_member_ids
                     ]
                     for var_name in var_names_ref
                 ],
@@ -152,19 +152,19 @@ class TestReadFieldEnsemble_Multiple:
         return self.var_specs_mult_shared["species_id"]
 
     # Ensemble member ids
-    member_ids = [0, 1, 5, 10, 15, 20]
+    ens_member_ids = [0, 1, 5, 10, 15, 20]
 
     # Thresholds for ensemble threshold agreement
     agreement_threshold_concentration = 1e-7  # SR_TMP
     agreement_threshold_deposition_tot = None  # SR_TMP
 
     def datafile_fmt(self, datadir):  # noqa:F811
-        return f"{datadir}/flexpart_cosmo-2e_20190727120_{{member_id:03d}}.nc"
+        return f"{datadir}/flexpart_cosmo-2e_20190727120_{{ens_member_id:03d}}.nc"
 
-    def datafile(self, member_id, *, datafile_fmt=None, datadir=None):  # noqa:F811
+    def datafile(self, ens_member_id, *, datafile_fmt=None, datadir=None):  # noqa:F811
         if datafile_fmt is None:
             datafile_fmt = self.datafile_fmt(datadir)
-        return datafile_fmt.format(member_id=member_id)
+        return datafile_fmt.format(ens_member_id=ens_member_id)
 
     def run(
         self,
@@ -194,7 +194,7 @@ class TestReadFieldEnsemble_Multiple:
             setup, var_specs_dct, lang=None, words=None,
         )
         attrs = {
-            "member_ids": self.member_ids,
+            "ens_member_ids": self.ens_member_ids,
             "ens_var": ens_var,
             "ens_var_setup": ens_var_setup,
         }
@@ -243,12 +243,12 @@ class TestReadFieldEnsemble_Multiple:
             fld_ref_mem_time = [
                 [
                     read_nc_var(
-                        self.datafile(member_id, datafile_fmt=datafile_fmt),
+                        self.datafile(ens_member_id, datafile_fmt=datafile_fmt),
                         var_name,
                         var_specs,
                     )
                     * scale_fld_ref
-                    for member_id in self.member_ids
+                    for ens_member_id in self.ens_member_ids
                 ]
                 for var_name in var_names_ref
             ]

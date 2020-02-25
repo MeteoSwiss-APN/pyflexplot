@@ -33,7 +33,7 @@ DEFAULT_TOML = "\n".join([f"{k} = {fmt_val(v)}" for k, v in DEFAULT_KWARGS.items
 
 DEFAULT_CONFIG = {
     **DEFAULT_KWARGS,
-    "member_ids": None,
+    "ens_member_ids": None,
     "variable": "concentration",
     "simulation_type": "deterministic",
     "plot_type": "auto",
@@ -46,7 +46,7 @@ DEFAULT_CONFIG = {
     "nout_rel_idx": 0,
     "release_point_idx": 0,
     "species_id": 1,
-    "time_idx": 0,
+    "time_idxs": (0,),
     "scale_fact": None,
     "reverse_legend": False,
 }
@@ -343,7 +343,7 @@ def test_read_double_wildcard_variable_depth(tmp_path):
         variable = "concentration"
 
         [_base._concentration._time10]
-        time_idx = 10
+        time_idxs = [10]
 
         [_base._deposition]
         variable = "deposition"
@@ -368,7 +368,7 @@ def test_read_double_wildcard_variable_depth(tmp_path):
     sol = [
         {**DEFAULT_CONFIG, **dct, "domain": domain, "lang": lang}
         for dct in [
-            {"variable": "concentration", "time_idx": 10},
+            {"variable": "concentration", "time_idxs": (10,)},
             {"variable": "deposition"},
         ]
         for domain in ["ch", "auto"]

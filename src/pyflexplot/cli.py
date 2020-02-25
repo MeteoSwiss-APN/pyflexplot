@@ -150,7 +150,7 @@ def prep_var_specs_dct(setup):
     """
 
     var_specs_raw = {
-        "time_lst": (setup.time_idx,),
+        "time_lst": setup.time_idxs,
         "nageclass_lst": (setup.age_class_idx,),
         "noutrel_lst": (setup.nout_rel_idx,),
         "numpoint_lst": (setup.release_point_idx,),
@@ -197,8 +197,8 @@ def read_fields(setup):
     # SR_TMP <<< TODO clean this up
     attrs = {"lang": setup.lang}
     if setup.simulation_type == "ensemble":
-        if setup.member_ids is not None:
-            attrs["member_ids"] = setup.member_ids
+        if setup.ens_member_ids is not None:
+            attrs["ens_member_ids"] = setup.ens_member_ids
         assert setup.plot_type.startswith("ens_"), setup.plot_type
         attrs["ens_var"] = setup.plot_type[4:]
         attrs["ens_var_setup"] = ens_var_setup

@@ -34,19 +34,20 @@ class FileReader:
 
     choices_ens_var = ["mean", "median", "min", "max"]
 
-    def __init__(self, file_path, *, cmd_open=nc4.Dataset):
+    def __init__(self, in_file_path, *, cmd_open=nc4.Dataset):
         """Create an instance of ``FileReader``.
 
         Args:
-            file_path (str): File path. In case of ensemble data, it must
-                contain the format key '{member_ids[:0?d]}'.
+            in_file_path (str): File path. In case of ensemble data, it must
+                contain the format key '{ens_member_ids[:0?d]}'.
 
             cmd_open (function, optional): Function to open the input file.
                 Must support context manager interface, i.e., ``with
-                cmd_open(file_path, mode) as f:``. Defaults to netCDF4.Dataset.
+                cmd_open(in_file_path, mode) as f:``. Defaults to
+                netCDF4.Dataset.
 
         """
-        self.file_path_fmt = file_path
+        self.in_file_path_fmt = in_file_path
         self.cmd_open = cmd_open
 
         self.reset()
@@ -54,7 +55,7 @@ class FileReader:
     def reset(self):
         self.lang = None
         self.n_members = None
-        self.file_path_lst = None
+        self.in_file_path_lst = None
         self.fi = None
         self.rlat = None
         self.rlon = None
@@ -169,9 +170,9 @@ class FileReader:
             fld_specs_time = self._fld_specs_time_lst[i_fld_specs]
             time_idxs = self._time_inds_lst[i_fld_specs]
 
-            member_ids = getattr(fld_specs_time, "member_ids", None)
-            self.n_members = 1 if not member_ids else len(member_ids)
-            self.file_path_lst = self._prepare_file_path_lst(member_ids)
+            ens_member_ids = getattr(fld_specs_time, "ens_member_ids", None)
+            self.n_members = 1 if not ens_member_ids else len(ens_member_ids)
+            self.in_file_path_lst = self._prepare_in_file_path_lst(ens_member_ids)
 
             log.debug(f"{i_fld_specs + 1}/{self.n_fld_specs}: {fld_specs_time}")
 
@@ -190,26 +191,25 @@ class FileReader:
 
         return result
 
-    def _prepare_file_path_lst(self, member_ids):
+    def _prepare_in_file_path_lst(self, ens_member_ids):
 
-        fmt_keys = ["{member_id}", "{member_id:"]
-        fmt_key_in_path = any(k in self.file_path_fmt for k in fmt_keys)
+        fmt_keys = ["{ens_member_id}", "{ens_member_id:"]
+        fmt_key_in_path = any(k in self.in_file_path_fmt for k in fmt_keys)
 
-        if not member_ids:
+        if not ens_member_ids:
             if fmt_key_in_path:
                 raise ValueError(
-                    "input file path contains format key '{member_id[:0?d]}' but no "
-                    "member_ids have been passed"
+                    f"input file path contains format key '{fmt_keys[0]}', but no "
+                    f"ensemble member ids ('ens_member_ids') have been passed"
                 )
-            return [self.file_path_fmt]
+            return [self.in_file_path_fmt]
 
-        else:
-            if not fmt_key_in_path:
-                raise ValueError(
-                    "input file path missing format key '{member_id[:0?d]}': "
-                    f"{self.file_path_fmt}"
-                )
-            return [self.file_path_fmt.format(member_id=mid) for mid in member_ids]
+        if not fmt_key_in_path:
+            raise ValueError(
+                f"input file path missing format key '{fmt_keys[0]}': "
+                f"{self.in_file_path_fmt}"
+            )
+        return [self.in_file_path_fmt.format(ens_member_id=id) for id in ens_member_ids]
 
     def _determine_n_reqtime(self):
         """Determine the number of selected time steps."""
@@ -253,10 +253,10 @@ class FileReader:
 
         fld_time_mem = None
 
-        for i_mem, file_path in enumerate(self.file_path_lst):
+        for i_mem, in_file_path in enumerate(self.in_file_path_lst):
 
-            log.debug(f"read {file_path} (fields)")
-            with self.cmd_open(file_path, "r") as self.fi:
+            log.debug(f"read {in_file_path} (fields)")
+            with self.cmd_open(in_file_path, "r") as self.fi:
                 log.debug(f"extract {self.n_fld_specs} time steps")
 
                 # Read grid variables
@@ -336,9 +336,9 @@ class FileReader:
     def _collect_attrs_reqtime_mem(self, fld_specs_reqtime, time_idxs):
         """Collect attributes at requested time steps for all members."""
         attrs_reqtime_mem = np.full([self.n_reqtime, self.n_members], None)
-        for i_mem, file_path in enumerate(self.file_path_lst):
-            log.debug(f"read {file_path} (attributes)")
-            with self.cmd_open(file_path, "r") as self.fi:
+        for i_mem, in_file_path in enumerate(self.in_file_path_lst):
+            log.debug(f"read {in_file_path} (attributes)")
+            with self.cmd_open(in_file_path, "r") as self.fi:
                 for i_reqtime, time_idx in enumerate(time_idxs):
                     log.debug(f"{i_reqtime + 1}/{len(time_idxs)}: collect attributes")
                     fld_specs = fld_specs_reqtime[i_reqtime]

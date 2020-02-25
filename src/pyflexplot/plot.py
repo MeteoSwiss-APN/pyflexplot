@@ -118,10 +118,10 @@ class PlotLabels:
         # Bottom box
         model = a.simulation.model_name.value
         n_members = 21  # SR_TMP SR_HC TODO un-hardcode
-        member_ids = "{:03d}-{:03d}".format(0, 20)  # SR_TMP SR_HC TODO un-hardcode
+        ens_member_ids = "{:03d}-{:03d}".format(0, 20)  # SR_TMP SR_HC TODO un-hardcode
         model_ens = (
-            model
-            + (f"{w['ensemble']} ({n_members} {w['member', None, 'pl']}: {member_ids}"),
+            f"{model} {w['ensemble']} ({n_members} {w['member', None, 'pl']}: "
+            f"{ens_member_ids}"
         )
         start = a.simulation.start.format()
         model_info_fmt = f"{w['flexpart']} {w['based_on']} {model}, {start}"
@@ -600,7 +600,7 @@ class Plot:
 
         # Top-left: Variable name etc.
         if "tl" not in skip_pos:
-            box.text("tl", labels["variable"], size="x-large")
+            box.text("tl", labels["variable"], size="large")
 
         # Center-left: Additional information
         if "ml" not in skip_pos:

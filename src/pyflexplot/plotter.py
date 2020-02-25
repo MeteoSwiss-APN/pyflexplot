@@ -3,7 +3,6 @@
 Plotters.
 """
 # Standard library
-# import numpy as np
 import re
 
 # First-party
@@ -76,20 +75,13 @@ class Plotter:
 
         # Create plots one-by-one
         for i_data, field in enumerate(fields):
-            file_path = self.format_file_path(field.field_specs)
+            out_file_path = self.format_out_file_path(field.field_specs)
             _w = len(str(len(fields)))
-            print(f" {i_data+1:{_w}}/{len(fields)}  {file_path}")
-            Plot(field, setup, map_conf=map_conf, **kwargs_plot,).save(file_path)
-            yield file_path
+            print(f" {i_data+1:{_w}}/{len(fields)}  {out_file_path}")
+            Plot(field, setup, map_conf=map_conf, **kwargs_plot,).save(out_file_path)
+            yield out_file_path
 
-    def format_file_path(self, field_specs):
-
-        # SR_TMP <
-        if re.search(r"{member_ids:[0-9]*d}", self.file_path_fmt):
-            raise NotImplementedError(
-                "number formatting of member ids of the form '{member_ids:[0-9]*d}'"
-            )
-        # SR_TMP >
+    def format_out_file_path(self, field_specs):
 
         var_specs_dct = field_specs.multi_var_specs.compressed_dct()
 
@@ -105,62 +97,26 @@ class Plotter:
                     val = "int" if val else "no-int"
                 kwargs[fmt_key] = val
 
-        kwargs["variable"] = self._fmt_variable(var_specs_dct)
-        kwargs["plot_type"] = self.setup.plot_type
         kwargs["lang"] = self.setup.lang
-        # if field_specs.issubcls("ens"):
-        if "ens" in self.name:  # SR_TMP
-            kwargs["member_ids"] = self._fmt_member_ids(field_specs)
 
         # Format the file path
         # Don't use str.format in order to handle multival elements
-        file_path = self._fmt_file_path(kwargs)
+        out_file_path = self._fmt_out_file_path(kwargs)
 
         # Add number if file path not unique
-        file_path = self.ensure_unique_path(file_path)
+        out_file_path = self.ensure_unique_path(out_file_path)
 
-        return file_path
+        return out_file_path
 
-    def _fmt_variable(self, var_specs_dct):
-        """Variable name."""
-        if self.name == "deposition":
-            deposition_type = var_specs_dct["deposition"]
-            return f"{deposition_type}_{self.name}"
-        return self.name
-
-    def _fmt_member_ids(self, field_specs):
-        """Ensemble member ids."""
-        if not field_specs.member_ids:
-            return None
-        member_ids_grouped = []
-        for i, member_id in enumerate(field_specs.member_ids):
-            if i == 0 or member_id - member_ids_grouped[-1][-1] > 1:
-                member_ids_grouped.append([member_id])
-            else:
-                member_ids_grouped[-1].append(member_id)
-        s = None
-        for member_ids in member_ids_grouped:
-            if len(member_ids) == 1:
-                s_i = f"{member_ids[0]:d}"
-            elif len(member_ids) == 2:
-                s_i = f"{member_ids[0]:d}+{member_ids[1]:d}"
-            else:
-                s_i = f"{member_ids[0]:d}-{member_ids[-1]:d}"
-            if s is None:
-                s = s_i
-            else:
-                s += f"+{s_i}"
-        return s
-
-    def _fmt_file_path(self, kwargs):
-        file_path = self.file_path_fmt
+    def _fmt_out_file_path(self, kwargs):
+        out_file_path = self.file_path_fmt
         for key, val in kwargs.items():
             if not isiterable(val, str_ok=False):
                 val = [val]
             # Iterate over relevant format keys
             rxs = r"{" + key + r"(:[^}]*)?}"
-            re.finditer(rxs, file_path)
-            for m in re.finditer(rxs, file_path):
+            re.finditer(rxs, out_file_path)
+            for m in re.finditer(rxs, out_file_path):
 
                 # Obtain format specifier (if there is one)
                 try:
@@ -171,12 +127,19 @@ class Plotter:
                     f = ""
 
                 # Format the string that replaces this format key in the path
-                s = "+".join([f"{{{f}}}".format(v) for v in val])
+                formatted_key = "+".join([f"{{{f}}}".format(v) for v in val])
 
                 # Replace format key in the path by the just formatted string
-                file_path = file_path[: m.span()[0]] + s + file_path[m.span()[1] :]
+                start, end = out_file_path[: m.span()[0]], out_file_path[m.span()[1] :]
+                out_file_path = f"{start}{formatted_key}{end}"
 
-        return file_path
+        # Check that all keys have been formatted
+        if "{" in out_file_path or "}" in out_file_path:
+            raise Exception(
+                f"formatted output file path still contains format keys", out_file_path,
+            )
+
+        return out_file_path
 
     def ensure_unique_path(self, path):
         """If file path has been used before, add/increment trailing number."""

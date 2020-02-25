@@ -39,36 +39,39 @@ def naz_det():
         [_base]
         # Sampe data directory: /scratch/ruestefa/shared/flexpart_visualization/test/
         infiles = ["data/cosmo-1_2019052800.nc"]
-        outfile = "test_{variable}_{plot_type}_{domain}_{lang}_{time_idx:02d}.png"
         simulation_type = "deterministic"
         plot_type = "auto"
         level_idx = 0
         species_id = 2
-        time_idx = 3
+        time_idxs = [3]
 
         [_base._concentration]
+        outfile = "concentration_{domain}_{lang}_{time_idx:02d}.png"
         variable = "concentration"
         integrate = false
 
         # TODO Derive from `_concentration` once wildcards/hooks more sophisticated
         [_base._concentration_integrated]
+        outfile = "integrated_concentration_{domain}_{lang}_{time_idx:02d}.png"
         variable = "concentration"
         integrate = true
-        time_idx = 10
+        time_idxs = [10]
         species_id = 1
 
         [_base._deposition]
+        outfile = "deposition_{domain}_{lang}_{time_idx:02d}.png"
         variable = "deposition"
         deposition_type = "tot"
         integrate = true
 
         # TODO Derive from `_deposition` once wildcards/hooks more sophisticated
         [_base._affected_area]
+        outfile = "affected_area_{domain}_{lang}_{time_idx:02d}.png"
         variable = "deposition"
         deposition_type = "tot"
         integrate = true
         plot_type = "affected_area_mono"
-        time_idx = 10
+        time_idxs = [10]
         species_id = [1, 2]
 
         [_base."*"._auto.en]
@@ -99,14 +102,16 @@ def ens_thr_agrmt():
 
         [_base]
         # Sampe data directory: /scratch/ruestefa/shared/flexpart_visualization/test/
-        infiles = ["data/cosmo-2e_2019073100_{member_id:03d}.nc"]
+        infiles = ["data/cosmo-2e_2019073100_{ens_member_id:03d}.nc"]
         simulation_type = "ensemble"
-        member_ids = [
+        ens_member_ids = [
             0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
         ]
-        outfile = "test_{variable}_{domain}_{lang}_ts{time_idx:02d}_{member_ids}.png"
+        outfile = "ensemble_threshold_agreement_{domain}_{lang}_ts{time_idx:02d}.png"
         plot_type = "ens_thr_agrmt"
-        time_idx = 10
+        variable = "deposition"
+        deposition_type = "tot"
+        time_idxs = [10]
 
         [_base.en]
         lang = "en"
@@ -126,13 +131,13 @@ def ens_basic_stats():
 
         [_base]
         # Sampe data directory: /scratch/ruestefa/shared/flexpart_visualization/test/
-        infiles = ["data/cosmo-2e_2019073100_{member_id:03d}.nc"]
+        infiles = ["data/cosmo-2e_2019073100_{ens_member_id:03d}.nc"]
         simulation_type = "ensemble"
-        member_ids = [
+        ens_member_ids = [
             0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
         ]
-        outfile = "test_{variable}_{domain}_{lang}_ts{time_idx:02d}_{member_ids}.png"
-        time_idx = 10
+        outfile = "test_{variable}_{domain}_{lang}_ts{time_idx:02d}.png"
+        time_idxs = [10]
 
         [_base._concentration]
         variable = "concentration"
@@ -166,17 +171,17 @@ def ens_cloud_arrival_time():
 
         [_base]
         # Sampe data directory: /scratch/ruestefa/shared/flexpart_visualization/test/
-        infiles = ["data/cosmo-2e_2019073100_{member_id:03d}.nc"]
+        infiles = ["data/cosmo-2e_2019073100_{ens_member_id:03d}.nc"]
         simulation_type = "ensemble"
-        member_ids = [
+        ens_member_ids = [
             0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
         ]
-        outfile = "test_{variable}_{domain}_{lang}_ts{time_idx:02d}_{member_ids}.png"
+        outfile = "test_{domain}_{lang}_ts{time_idx:02d}.png"
         plot_type = "ens_cloud_arrival_time"
         variable = "concentration"
-        time_idx = 0
+        time_idxs = [0, 5, 10]
 
         ["**".en]
         lang = "en"
-        """
+        """  # noqa:E501
     click.echo(dedent(s))
