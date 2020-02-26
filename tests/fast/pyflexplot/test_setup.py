@@ -7,9 +7,6 @@ Tests for module ``pyflexplot.setup``.
 from collections.abc import Sequence
 from textwrap import dedent
 
-# Third-party
-import pytest
-
 # First-party
 from pyflexplot.setup import Setup
 from pyflexplot.setup import SetupCollection
@@ -413,10 +410,3 @@ class Test_SetupCollection:
         partial_dicts = self.create_partial_dicts()
         setups = SetupCollection(partial_dicts)
         assert len(setups) == len(partial_dicts)
-
-
-@pytest.mark.skip("test_combine_species: how? where?")
-def test_combine_species():
-    """Combine (sum up) multiple species or plot them separately."""
-    setup = DEFAULT_SETUP.derive(species_id=[1, 2], combine_species=False)
-    setup  # confuse flake8

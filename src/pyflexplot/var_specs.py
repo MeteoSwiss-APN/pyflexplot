@@ -75,7 +75,7 @@ class VarSpecs:
                 'en' (English).
 
         """
-        self.name = setup.tmp_cls_name()  # SR_TMP
+        self._name = setup.tmp_cls_name()  # SR_TMP
 
         if setup.variable == "deposition":
             deposition_type = var_specs_dct["deposition"]
@@ -229,7 +229,7 @@ class VarSpecs:
         # Attributes
         var_specs_dct = {}
         for key, val0 in iter(self):
-            if key in ["name", "rlat", "rlon"]:
+            if key in ["_name", "rlat", "rlon"]:
                 continue
 
             vals = [val0]
@@ -320,7 +320,7 @@ class VarSpecs:
     # SR_TMP TODO move to some config/setup class
     def long_name(self, name=None):
         if name is None:
-            name = self.name
+            name = self._name
         name = name.split(":")[-1]
         if name == "ens_max_affected_area":
             return (
@@ -387,7 +387,7 @@ class VarSpecs:
 
     def short_name(self, name=None):
         if name is None:
-            name = self.name
+            name = self._name
         name = name.split(":")[-1]
         if name == "ens_cloud_arrival_time_concentration":
             return (
@@ -507,7 +507,7 @@ class MultiVarSpecs:
         return next(iter(next(iter(VarSpecs.create(self.setup, dct)))))
 
     def shared_dct(self):
-        skipped = ["name", "rlat", "rlon"]  # SR_TMP TODO remove from dct
+        skipped = ["_name", "rlat", "rlon"]  # SR_TMP TODO remove from dct
         dct = {}
         for key, val in self.compressed_dct().items():
             # SR_TMP <

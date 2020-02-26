@@ -75,14 +75,13 @@ def check_var_specs(var_specs, conf):
     res = set(dict(var_specs).items())
     assert sol.issubset(res)
 
-    sol = {**conf.dct, "name": conf.name, "rlon": (None,), "rlat": (None,)}
+    sol = {**conf.dct, "rlon": (None,), "rlat": (None,)}
     res = dict(var_specs)
     assert sol == res
 
 
 @dataclass(frozen=True)
 class Conf_Create(_TestConf):
-    name: str
     dct: dict
     n: int
     subdct_fail: dict
@@ -110,7 +109,6 @@ class _Test_Create_SingleObjDct:
 
 class Test_Create_SingleObjDct_Concentration(_Test_Create_SingleObjDct):
     c = Conf_Create(
-        name="concentration",
         dct={
             "integrate": False,
             "species_id": 2,
@@ -136,7 +134,6 @@ class Test_Create_SingleObjDct_Concentration(_Test_Create_SingleObjDct):
 
 class Test_Create_SingleObjDct_Deposition(_Test_Create_SingleObjDct):
     c = Conf_Create(
-        name="deposition",
         dct={
             "deposition": "wet",
             "species_id": 2,
@@ -181,7 +178,6 @@ class _Test_Create_MultiObjDct:
 
 class Test_Create_MultiObjDct_Concentration(_Test_Create_MultiObjDct):
     c = Conf_Create(
-        name="concentration",
         dct={
             "species_id": [1, 2],
             "level": 1,
@@ -207,7 +203,6 @@ class Test_Create_MultiObjDct_Concentration(_Test_Create_MultiObjDct):
 
 class Test_Create_MultiObjDct_Deposition(_Test_Create_MultiObjDct):
     c = Conf_Create(
-        name="deposition",
         dct={
             "deposition": "dry",
             "species_id": [1, 2],
@@ -253,7 +248,6 @@ class _Test_Create_MultiObjDctNested:
 
 class Test_Create_MultiObjDctNested_Concentration(_Test_Create_MultiObjDctNested):
     c = Conf_Create(
-        name="concentration",
         dct={
             "species_id": [(1,), (1, 2)],
             "level": 1,
@@ -279,7 +273,6 @@ class Test_Create_MultiObjDctNested_Concentration(_Test_Create_MultiObjDctNested
 
 class Test_Create_MultiObjDctNested_Deposition(_Test_Create_MultiObjDctNested):
     c = Conf_Create(
-        name="deposition",
         dct={
             "deposition": "wet",
             "species_id": [(1,), (1, 2)],
@@ -305,7 +298,6 @@ class Test_Create_MultiObjDctNested_Deposition(_Test_Create_MultiObjDctNested):
 
 @dataclass(frozen=True)
 class Conf_Multi(_TestConf):
-    name: str
     dct: dict
     n: int
 
@@ -351,7 +343,6 @@ class _Test_MultiVarSpecs:
 
 class Test_MultiVarSpecs_Concentration(_Test_MultiVarSpecs):
     c = Conf_Multi(
-        name="concentration",
         dct={
             "species_id": [(1,), (1, 2)],
             "level": 1,
@@ -405,7 +396,6 @@ class Test_MultiVarSpecs_Concentration(_Test_MultiVarSpecs):
 
 class Test_MultiVarSpecs_DepositionDry(_Test_MultiVarSpecs):
     c = Conf_Multi(
-        name="deposition",
         dct={
             "deposition": "dry",
             "species_id": [(1,), (1, 2)],
@@ -459,7 +449,6 @@ class Test_MultiVarSpecs_DepositionDry(_Test_MultiVarSpecs):
 
 class Test_MultiVarSpecs_DepositionTot(_Test_MultiVarSpecs):
     c = Conf_Multi(
-        name="deposition",
         dct={
             "deposition": "tot",
             "species_id": 2,
@@ -509,7 +498,6 @@ class Test_MultiVarSpecs_DepositionTot(_Test_MultiVarSpecs):
 
 class Test_MultiVarSpecs_Interface:
     c = Conf_Multi(
-        name="deposition",
         dct={
             "deposition": "tot",
             "species_id": 2,
@@ -552,7 +540,7 @@ class Test_MultiVarSpecs_Interface:
         # Check that apart from "deposition", the two are identical
         # We need to neutralize a few elements that we expect to differ or
         # that are (at the moment still) added during creation of VarSpecs
-        neutral = {"name": None, "deposition": None, "rlat": None, "rlon": None}
+        neutral = {"deposition": None, "rlat": None, "rlon": None}
         sol = {**self.c.dct, **neutral}
         res1 = {**dict(var_specs_lst[0]), **neutral}
         res2 = {**dict(var_specs_lst[1]), **neutral}
