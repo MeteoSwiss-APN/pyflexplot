@@ -121,17 +121,16 @@ class Test_Create_SingleObjDct_Concentration(_Test_Create_SingleObjDct):
         n=1,
         subdct_fail={"time": 4, "level": 0},
     )
-    setups = [
-        Setup(
-            infiles=["dummy.nc"],
-            outfile="dummy.png",
-            variable="concentration",
-            integrate=False,
-            species_id=2,
-            level_idx=1,
-            time_idcs=[3],
-        ),
-    ]
+    base_setup = Setup(
+        infiles=["dummy.nc"],
+        outfile="dummy.png",
+        variable="concentration",
+        integrate=False,
+        species_id=2,
+        level_idx=1,
+        time_idcs=[3],
+    )
+    setups = [base_setup]
 
 
 class Test_Create_SingleObjDct_Deposition(_Test_Create_SingleObjDct):
@@ -148,17 +147,16 @@ class Test_Create_SingleObjDct_Deposition(_Test_Create_SingleObjDct):
         n=1,
         subdct_fail={"time": 4, "species_id": 0},
     )
-    setups = [
-        Setup(
-            infiles=["dummy.nc"],
-            outfile="dummy.png",
-            variable="deposition",
-            deposition_type="wet",
-            species_id=2,
-            integrate=False,
-            time_idcs=[3],
-        ),
-    ]
+    base_setup = Setup(
+        infiles=["dummy.nc"],
+        outfile="dummy.png",
+        variable="deposition",
+        deposition_type="wet",
+        species_id=2,
+        integrate=False,
+        time_idcs=[3],
+    )
+    setups = [base_setup]
 
 
 class _Test_Create_MultiObjDct:
@@ -196,14 +194,9 @@ class Test_Create_MultiObjDct_Concentration(_Test_Create_MultiObjDct):
         species_id=1,
         level_idx=1,
         integrate=False,
-        time_idcs=[1],
+        time_idcs=[1, 3],
     )
-    setups = [
-        base_setup,
-        base_setup.derive(time_idcs=[3]),
-        base_setup.derive(time_idcs=[1], species_id=2),
-        base_setup.derive(time_idcs=[3], species_id=2),
-    ]
+    setups = [base_setup, base_setup.derive(species_id=2)]
 
 
 class Test_Create_MultiObjDct_Deposition(_Test_Create_MultiObjDct):
@@ -227,14 +220,9 @@ class Test_Create_MultiObjDct_Deposition(_Test_Create_MultiObjDct):
         deposition_type="dry",
         species_id=1,
         integrate=False,
-        time_idcs=[1],
+        time_idcs=[1, 3],
     )
-    setups = [
-        base_setup,
-        base_setup.derive(time_idcs=[3]),
-        base_setup.derive(time_idcs=[1], species_id=2),
-        base_setup.derive(time_idcs=[3], species_id=2),
-    ]
+    setups = [base_setup, base_setup.derive(species_id=2)]
 
 
 class _Test_Create_MultiObjDctNested:
@@ -278,14 +266,9 @@ class Test_Create_MultiObjDctNested_Concentration(_Test_Create_MultiObjDctNested
         species_id=1,
         level_idx=1,
         integrate=False,
-        time_idcs=[1],
+        time_idcs=[1, 3],
     )
-    setups = [
-        base_setup,
-        base_setup.derive(time_idcs=[3]),
-        base_setup.derive(time_idcs=[1], species_id=[1, 2]),
-        base_setup.derive(time_idcs=[3], species_id=[1, 2]),
-    ]
+    setups = [base_setup, base_setup.derive(species_id=[1, 2])]
 
 
 class Test_Create_MultiObjDctNested_Deposition(_Test_Create_MultiObjDctNested):
@@ -309,14 +292,9 @@ class Test_Create_MultiObjDctNested_Deposition(_Test_Create_MultiObjDctNested):
         deposition_type="wet",
         species_id=1,
         integrate=False,
-        time_idcs=[1],
+        time_idcs=[1, 3],
     )
-    setups = [
-        base_setup,
-        base_setup.derive(time_idcs=[3]),
-        base_setup.derive(time_idcs=[1], species_id=[1, 2]),
-        base_setup.derive(time_idcs=[3], species_id=[1, 2]),
-    ]
+    setups = [base_setup, base_setup.derive(species_id=[1, 2])]
 
 
 @dataclass(frozen=True)
@@ -375,14 +353,9 @@ class Test_MultiVarSpecs_Concentration(_Test_MultiVarSpecs):
         species_id=1,
         level_idx=1,
         integrate=False,
-        time_idcs=[1],
+        time_idcs=[1, 3],
     )
-    setups = [
-        base_setup,
-        base_setup.derive(time_idcs=[3]),
-        base_setup.derive(time_idcs=[1], species_id=[1, 2]),
-        base_setup.derive(time_idcs=[3], species_id=[1, 2]),
-    ]
+    setups = [base_setup, base_setup.derive(species_id=[1, 2])]
 
 
 class Test_MultiVarSpecs_DepositionDry(_Test_MultiVarSpecs):
@@ -405,14 +378,9 @@ class Test_MultiVarSpecs_DepositionDry(_Test_MultiVarSpecs):
         deposition_type="dry",
         species_id=1,
         integrate=False,
-        time_idcs=[1],
+        time_idcs=[1, 3],
     )
-    setups = [
-        base_setup,
-        base_setup.derive(time_idcs=[3]),
-        base_setup.derive(time_idcs=[1], species_id=[1, 2]),
-        base_setup.derive(time_idcs=[3], species_id=[1, 2]),
-    ]
+    setups = [base_setup, base_setup.derive(species_id=[1, 2])]
 
 
 class Test_MultiVarSpecs_DepositionTot(_Test_MultiVarSpecs):
@@ -428,17 +396,16 @@ class Test_MultiVarSpecs_DepositionTot(_Test_MultiVarSpecs):
         },
         n=1,
     )
-    setups = [
-        Setup(
-            infiles=["dummy.nc"],
-            outfile="dummy.png",
-            variable="deposition",
-            deposition_type="tot",
-            species_id=2,
-            integrate=False,
-            time_idcs=[3],
-        ),
-    ]
+    base_setup = Setup(
+        infiles=["dummy.nc"],
+        outfile="dummy.png",
+        variable="deposition",
+        deposition_type="tot",
+        species_id=2,
+        integrate=False,
+        time_idcs=[3],
+    )
+    setups = [base_setup]
 
     def test_tot_vs_wet_dry(self):
         """Check that deposition type "tot" is equivalent to ("wet", "dry")."""
@@ -478,17 +445,16 @@ class Test_MultiVarSpecs_Interface:
         },
         n=1,
     )
-    setups = [
-        Setup(
-            infiles=["dummy.nc"],
-            outfile="dummy.png",
-            variable="deposition",
-            deposition_type="tot",
-            species_id=2,
-            integrate=False,
-            time_idcs=[3],
-        ),
-    ]
+    base_setup = Setup(
+        infiles=["dummy.nc"],
+        outfile="dummy.png",
+        variable="deposition",
+        deposition_type="tot",
+        species_id=2,
+        integrate=False,
+        time_idcs=[3],
+    )
+    setups = [base_setup]
 
     def create_multi_var_specs(self):
         setup = self.setups[0]  # SR_TMP

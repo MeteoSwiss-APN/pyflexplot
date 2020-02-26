@@ -182,55 +182,19 @@ class VarSpecs:
     # SR_TMP <<<
     @classmethod
     def from_setups(cls, setups):
+        # SR_TMP <
+        # Separate setups by time index
+        orig_setups, setups = setups, []
+        for setup in orig_setups:
+            for time_idx in setup.time_idcs:
+                setups.append(setup.derive(time_idcs=[time_idx]))
+        # SR_TMP >
         var_specs_lst_lst = []
         for setup in setups:
             var_specs_lst_lst_tmp = cls.from_setup(setup)
             assert len(var_specs_lst_lst_tmp) == 1
             var_specs_lst_lst.append(next(iter(var_specs_lst_lst_tmp)))
         return var_specs_lst_lst
-
-    # SR_TODO Remove method if exception not raised!
-    def merge_with(self, others):
-
-        # Setup
-        setup = None
-        raise NotImplementedError(f"{type(self).__name__}.merge_with")
-
-        # Words and language
-        for other in others:
-            if other._setup.lang != self._setup.lang:
-                raise Exception(
-                    f"merge of {other} with {self} failed: languages differ: "
-                    f"{other._setup.lang} != {self._setup.lang}"
-                )
-            if other._words != self._words:
-                raise Exception(
-                    f"merge of {other} with {self} failed: words differ: "
-                    f"{other._words} != {self._words}"
-                )
-
-        # Attributes
-        var_specs_dct = {}
-        for key, val0 in iter(self):
-            if key in ["_name", "rlat", "rlon"]:
-                continue
-
-            vals = [val0]
-            for other in others:
-                val = getattr(other, key)
-                if val not in vals:
-                    vals.append(val)
-
-            if len(vals) == 1:
-                var_specs_dct[key] = next(iter(vals))
-            elif key == "deposition" and set(vals) == set(["dry", "wet"]):
-                var_specs_dct[key] = tuple(vals)
-            else:
-                var_specs_dct[key] = vals
-
-        return type(self)(
-            setup, var_specs_dct, rlat=self.rlat, rlon=self.rlon, words=self._words,
-        )
 
     def __hash__(self):
         h = 0
@@ -421,16 +385,14 @@ class MultiVarSpecs:
     @classmethod
     def from_setup(cls, setup, **kwargs):
         """Create instances of ``MultiVarSpecs`` from a ``Setup`` object."""
-        # SR_TMP <
-        # Separate setups by time index
-        setups = []
-        for time_idx in setup.time_idcs:
-            setups.append(setup.derive(time_idcs=[time_idx]))
-        # SR_TMP >
         return [
             cls(setup, var_specs_lst)
-            for var_specs_lst in VarSpecs.from_setups(setups, **kwargs)
+            for var_specs_lst in VarSpecs.from_setups([setup], **kwargs)
         ]
+
+    @classmethod
+    def from_setups(cls, setups, **kwargs):
+        return [obj for setup in setups for obj in cls.from_setup(setup, **kwargs)]
 
     def __repr__(self):
         s_setup = "\n  ".join(repr(self.setup).split("\n"))

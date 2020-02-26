@@ -121,12 +121,8 @@ class Test_Create_Deposition:
         n = 6
         # SR_TMP <
         setups = [
-            self.setup.derive(time_idcs=[0], species_id=1),
-            self.setup.derive(time_idcs=[0], species_id=2),
-            self.setup.derive(time_idcs=[1], species_id=1),
-            self.setup.derive(time_idcs=[1], species_id=2),
-            self.setup.derive(time_idcs=[2], species_id=1),
-            self.setup.derive(time_idcs=[2], species_id=2),
+            self.setup.derive(time_idcs=[0, 1, 2], species_id=1),
+            self.setup.derive(time_idcs=[0, 1, 2], species_id=2),
         ]
         multi_var_specs_lst = []
         for setup in setups:

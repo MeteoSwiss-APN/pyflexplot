@@ -127,9 +127,8 @@ class TestReadFieldEnsemble_Multiple:
         "integrate": True,
         "outfile": "dummy.png",
         "species_id": 1,
-        "time_idcs": [0],
+        "time_idcs": [0, 3, 9],
     }
-    derive_setups = [{"time_idcs": [3]}, {"time_idcs": [9]}]
 
     @property
     def species_id(self):
@@ -167,11 +166,7 @@ class TestReadFieldEnsemble_Multiple:
 
         # Create field specifications list
         setups = [Setup(**{**self.setup_params_shared, **setup_params})]
-        for params in self.derive_setups:
-            setups.append(setups[0].derive(**params))
-        multi_var_specs_lst = []
-        for setup in setups:
-            multi_var_specs_lst.extend(MultiVarSpecs.from_setup(setup))
+        multi_var_specs_lst = MultiVarSpecs.from_setups(setups)
         attrs = {
             "ens_member_ids": self.ens_member_ids,
             "ens_var": ens_var,
