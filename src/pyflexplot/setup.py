@@ -31,6 +31,9 @@ class Setup(BaseModel):
         age_class_idx: Index of age class (zero-based). Use the format key
             '{age_class_idx}' to embed it into the output file path.
 
+        combine_species: Sum up over all specified species. Otherwise, each is
+            plotted separately.
+
         deposition_type: Type of deposition. Part of the plot variable name
             that may be embedded in the plot file path with the format key
             '{variable}'. Choices: "tot", "wet", "dry".
@@ -83,6 +86,7 @@ class Setup(BaseModel):
         extra = "forbid"
 
     age_class_idx: int = 0
+    combine_species: bool = False
     deposition_type: Union[str, Tuple[str, str]] = "tot"
     domain: str = "auto"
     ens_member_ids: Optional[Tuple[int, ...]] = None

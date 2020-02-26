@@ -7,6 +7,9 @@ Tests for module ``pyflexplot.setup``.
 from collections.abc import Sequence
 from textwrap import dedent
 
+# Third-party
+import pytest
+
 # First-party
 from pyflexplot.setup import Setup
 from pyflexplot.setup import SetupCollection
@@ -31,30 +34,33 @@ def fmt_val(val):
 
 DEFAULT_TOML = "\n".join([f"{k} = {fmt_val(v)}" for k, v in DEFAULT_KWARGS.items()])
 
-DEFAULT_CONFIG = {
-    **DEFAULT_KWARGS,
-    "ens_member_ids": None,
-    "variable": "concentration",
-    "simulation_type": "deterministic",
-    "plot_type": "auto",
-    "domain": "auto",
-    "lang": "en",
-    "age_class_idx": 0,
-    "deposition_type": "tot",
-    "integrate": False,
-    "level_idx": 0,
-    "nout_rel_idx": 0,
-    "release_point_idx": 0,
-    "species_id": 1,
-    "time_idxs": (0,),
-    "scale_fact": None,
-    "reverse_legend": False,
-}
+DEFAULT_SETUP = Setup(
+    **{
+        **DEFAULT_KWARGS,
+        "age_class_idx": 0,
+        "combine_species": False,
+        "deposition_type": "tot",
+        "domain": "auto",
+        "ens_member_ids": None,
+        "integrate": False,
+        "lang": "en",
+        "level_idx": 0,
+        "nout_rel_idx": 0,
+        "plot_type": "auto",
+        "release_point_idx": 0,
+        "reverse_legend": False,
+        "scale_fact": None,
+        "simulation_type": "deterministic",
+        "species_id": 1,
+        "time_idxs": (0,),
+        "variable": "concentration",
+    }
+)
 
 
 def test_default_setup_dict():
     """Check the default setupuration dict."""
-    assert Setup(**DEFAULT_KWARGS) == DEFAULT_CONFIG
+    assert Setup(**DEFAULT_KWARGS) == DEFAULT_SETUP.dict()
 
 
 def read_tmp_setup_file(tmp_path, content, **kwargs):
@@ -70,7 +76,7 @@ def test_read_single_minimal_section(tmp_path):
         {DEFAULT_TOML}
         """
     setups = read_tmp_setup_file(tmp_path, content)
-    assert setups == [DEFAULT_CONFIG]
+    assert setups == [DEFAULT_SETUP.dict()]
 
 
 def test_read_single_minimal_renamed_section(tmp_path):
@@ -80,7 +86,7 @@ def test_read_single_minimal_renamed_section(tmp_path):
         {DEFAULT_TOML}
         """
     setups = read_tmp_setup_file(tmp_path, content)
-    assert setups == [DEFAULT_CONFIG]
+    assert setups == [DEFAULT_SETUP.dict()]
 
 
 def test_read_single_section(tmp_path):
@@ -93,8 +99,8 @@ def test_read_single_section(tmp_path):
         """
     setups = read_tmp_setup_file(tmp_path, content)
     assert len(setups) == 1
-    assert setups != [DEFAULT_CONFIG]
-    sol = [{**DEFAULT_CONFIG, "variable": "deposition", "lang": "de"}]
+    assert setups != [DEFAULT_SETUP.dict()]
+    sol = [{**DEFAULT_SETUP.dict(), "variable": "deposition", "lang": "de"}]
     assert setups == sol
 
 
@@ -108,7 +114,7 @@ def test_read_multiple_parallel_empty_sections(tmp_path):
         {DEFAULT_TOML}
         """
     setups = read_tmp_setup_file(tmp_path, content)
-    assert setups == [DEFAULT_CONFIG] * 2
+    assert setups == [DEFAULT_SETUP.dict()] * 2
 
 
 def test_read_two_nested_empty_sections(tmp_path):
@@ -120,7 +126,7 @@ def test_read_two_nested_empty_sections(tmp_path):
         [_base.plot]
         """
     setups = read_tmp_setup_file(tmp_path, content)
-    assert setups == [DEFAULT_CONFIG]
+    assert setups == [DEFAULT_SETUP.dict()]
 
 
 def test_read_multiple_nested_sections(tmp_path):
@@ -196,7 +202,7 @@ def test_read_multiple_nested_sections(tmp_path):
         {"variable": "deposition", "deposition_type": "wet", "lang": "en"},
         {"variable": "deposition", "deposition_type": "wet", "lang": "de"},
     ]
-    sol = [{**DEFAULT_CONFIG, **sol_base, **d} for d in sol_specific]
+    sol = [{**DEFAULT_SETUP.dict(), **sol_base, **d} for d in sol_specific]
     setups = read_tmp_setup_file(tmp_path, content)
     assert setups == sol
 
@@ -279,7 +285,7 @@ def test_read_wildcard_simple(tmp_path):
 
         """
     sol = [
-        {**DEFAULT_CONFIG, **dct}
+        {**DEFAULT_SETUP.dict(), **dct}
         for dct in [
             {"variable": "concentration", "lang": "de"},
             {"variable": "concentration", "lang": "en"},
@@ -321,7 +327,7 @@ def test_read_double_wildcard_equal_depth(tmp_path):
 
         """
     sol = [
-        {**DEFAULT_CONFIG, **dct, "domain": domain, "lang": lang}
+        {**DEFAULT_SETUP.dict(), **dct, "domain": domain, "lang": lang}
         for dct in [
             {"variable": "concentration", "integrate": False},
             {"variable": "deposition", "integrate": False},
@@ -366,7 +372,7 @@ def test_read_double_wildcard_variable_depth(tmp_path):
 
         """
     sol = [
-        {**DEFAULT_CONFIG, **dct, "domain": domain, "lang": lang}
+        {**DEFAULT_SETUP.dict(), **dct, "domain": domain, "lang": lang}
         for dct in [
             {"variable": "concentration", "time_idxs": (10,)},
             {"variable": "deposition"},
@@ -390,7 +396,7 @@ class Test_SetupCollection:
         ]
 
     def create_complete_dicts(self):
-        return [{**DEFAULT_CONFIG, **dct} for dct in self.create_partial_dicts()]
+        return [{**DEFAULT_SETUP.dict(), **dct} for dct in self.create_partial_dicts()]
 
     def create_setups(self):
         return [Setup(**dct) for dct in self.create_partial_dicts()]
@@ -407,3 +413,10 @@ class Test_SetupCollection:
         partial_dicts = self.create_partial_dicts()
         setups = SetupCollection(partial_dicts)
         assert len(setups) == len(partial_dicts)
+
+
+@pytest.mark.skip("test_combine_species: how? where?")
+def test_combine_species():
+    """Combine (sum up) multiple species or plot them separately."""
+    setup = DEFAULT_SETUP.derive(species_id=[1, 2], combine_species=False)
+    setup  # confuse flake8
