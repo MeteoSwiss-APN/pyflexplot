@@ -43,7 +43,7 @@ def naz_det():
         plot_type = "auto"
         level_idx = 0
         species_id = 2
-        time_idxs = [3]
+        time_idcs = [3]
 
         [_base._concentration]
         outfile = "concentration_{domain}_{lang}_{time_idx:02d}.png"
@@ -55,7 +55,7 @@ def naz_det():
         outfile = "integrated_concentration_{domain}_{lang}_{time_idx:02d}.png"
         variable = "concentration"
         integrate = true
-        time_idxs = [10]
+        time_idcs = [10]
         species_id = 1
 
         [_base._deposition]
@@ -71,7 +71,7 @@ def naz_det():
         deposition_type = "tot"
         integrate = true
         plot_type = "affected_area_mono"
-        time_idxs = [10]
+        time_idcs = [10]
         species_id = [1, 2]
 
         [_base."*"._auto.en]
@@ -111,7 +111,7 @@ def ens_thr_agrmt():
         plot_type = "ens_thr_agrmt"
         variable = "deposition"
         deposition_type = "tot"
-        time_idxs = [10]
+        time_idcs = [10]
 
         [_base.en]
         lang = "en"
@@ -137,7 +137,7 @@ def ens_basic_stats():
             0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
         ]
         outfile = "test_{variable}_{domain}_{lang}_ts{time_idx:02d}.png"
-        time_idxs = [10]
+        time_idcs = [10]
 
         [_base._concentration]
         variable = "concentration"
@@ -179,7 +179,7 @@ def ens_cloud_arrival_time():
         outfile = "test_{domain}_{lang}_ts{time_idx:02d}.png"
         plot_type = "ens_cloud_arrival_time"
         variable = "concentration"
-        time_idxs = [0, 2, 4, 6]
+        time_idcs = [0]
 
         ["**".en]
         lang = "en"

@@ -91,7 +91,7 @@ class _Test_Create_SingleObjDct:
     """Create a single variable specification object."""
 
     def test(self):
-        var_specs_lst_lst = VarSpecs.create(self.setup, self.c.dct)
+        var_specs_lst_lst = VarSpecs.from_setups(self.setups)
         check_is_list_like(var_specs_lst_lst, len_=1, t_children=list)
         var_specs_lst = next(iter(var_specs_lst_lst))
         check_is_list_like(
@@ -101,7 +101,7 @@ class _Test_Create_SingleObjDct:
         check_var_specs(var_specs, self.c)
 
     def test_fail(self):
-        var_specs_lst_lst = VarSpecs.create(self.setup, self.c.dct)
+        var_specs_lst_lst = VarSpecs.from_setups(self.setups)
         conf = self.c.derive(dct={**self.c.dct, **self.c.subdct_fail})
         with pytest.raises(AssertionError):
             check_var_specs_lst_lst(var_specs_lst_lst, conf)
@@ -121,15 +121,17 @@ class Test_Create_SingleObjDct_Concentration(_Test_Create_SingleObjDct):
         n=1,
         subdct_fail={"time": 4, "level": 0},
     )
-    setup = Setup(
-        infiles=["dummy.nc"],
-        outfile="dummy.png",
-        variable="concentration",
-        integrate=False,
-        species_id=2,
-        level_idx=1,
-        time_idxs=[3],
-    )
+    setups = [
+        Setup(
+            infiles=["dummy.nc"],
+            outfile="dummy.png",
+            variable="concentration",
+            integrate=False,
+            species_id=2,
+            level_idx=1,
+            time_idcs=[3],
+        ),
+    ]
 
 
 class Test_Create_SingleObjDct_Deposition(_Test_Create_SingleObjDct):
@@ -146,31 +148,28 @@ class Test_Create_SingleObjDct_Deposition(_Test_Create_SingleObjDct):
         n=1,
         subdct_fail={"time": 4, "species_id": 0},
     )
-    setup = Setup(
-        infiles=["dummy.nc"],
-        outfile="dummy.png",
-        variable="deposition",
-        deposition_type="wet",
-        species_id=2,
-        integrate=False,
-        time_idxs=[3],
-    )
-
-    def test_tot_fail(self):
-        """Creation of ``ValSpecs`` with deposition type "tot" fails."""
-        with pytest.raises(ValueError):
-            VarSpecs.create(self.setup, {**self.c.dct, "deposition": "tot"})
+    setups = [
+        Setup(
+            infiles=["dummy.nc"],
+            outfile="dummy.png",
+            variable="deposition",
+            deposition_type="wet",
+            species_id=2,
+            integrate=False,
+            time_idcs=[3],
+        ),
+    ]
 
 
 class _Test_Create_MultiObjDct:
     """Create multiple variable specification objects."""
 
     def test(self):
-        var_specs_lst_lst = VarSpecs.create(self.setup, self.c.dct)
+        var_specs_lst_lst = VarSpecs.from_setups(self.setups)
         check_var_specs_lst_lst(var_specs_lst_lst, self.c)
 
     def test_fail(self):
-        var_specs_lst_lst = VarSpecs.create(self.setup, self.c.dct)
+        var_specs_lst_lst = VarSpecs.from_setups(self.setups)
         conf = self.c.derive(dct={**self.c.dct, **self.c.subdct_fail})
         with pytest.raises(AssertionError):
             check_var_specs_lst_lst(var_specs_lst_lst, conf)
@@ -190,15 +189,21 @@ class Test_Create_MultiObjDct_Concentration(_Test_Create_MultiObjDct):
         n=4,
         subdct_fail={"time": [3, 4], "level": 0},
     )
-    setup = Setup(
+    base_setup = Setup(
         infiles=["dummy.nc"],
         outfile="dummy.png",
         variable="concentration",
-        # + species_id=(1, 2),  # SR_TODO
+        species_id=1,
         level_idx=1,
         integrate=False,
-        time_idxs=[1, 3],
+        time_idcs=[1],
     )
+    setups = [
+        base_setup,
+        base_setup.derive(time_idcs=[3]),
+        base_setup.derive(time_idcs=[1], species_id=2),
+        base_setup.derive(time_idcs=[3], species_id=2),
+    ]
 
 
 class Test_Create_MultiObjDct_Deposition(_Test_Create_MultiObjDct):
@@ -215,15 +220,21 @@ class Test_Create_MultiObjDct_Deposition(_Test_Create_MultiObjDct):
         n=4,
         subdct_fail={"time": [3, 4], "species_id": 0},
     )
-    setup = Setup(
+    base_setup = Setup(
         infiles=["dummy.nc"],
         outfile="dummy.png",
         variable="deposition",
         deposition_type="dry",
-        # + species_id=(1, 2),  # SR_TODO
+        species_id=1,
         integrate=False,
-        time_idxs=[1, 3],
+        time_idcs=[1],
     )
+    setups = [
+        base_setup,
+        base_setup.derive(time_idcs=[3]),
+        base_setup.derive(time_idcs=[1], species_id=2),
+        base_setup.derive(time_idcs=[3], species_id=2),
+    ]
 
 
 class _Test_Create_MultiObjDctNested:
@@ -236,11 +247,11 @@ class _Test_Create_MultiObjDctNested:
     """
 
     def test(self):
-        var_specs_lst_lst = VarSpecs.create(self.setup, self.c.dct)
+        var_specs_lst_lst = VarSpecs.from_setups(self.setups)
         check_var_specs_lst_lst(var_specs_lst_lst, self.c)
 
     def test_fail(self):
-        var_specs_lst_lst = VarSpecs.create(self.setup, self.c.dct)
+        var_specs_lst_lst = VarSpecs.from_setups(self.setups)
         conf = self.c.derive(dct={**self.c.dct, **self.c.subdct_fail})
         with pytest.raises(AssertionError):
             check_var_specs_lst_lst(var_specs_lst_lst, conf)
@@ -260,15 +271,21 @@ class Test_Create_MultiObjDctNested_Concentration(_Test_Create_MultiObjDctNested
         n=4,
         subdct_fail={"time": [(3, 4), 2], "level": 0},
     )
-    setup = Setup(
+    base_setup = Setup(
         infiles=["dummy.nc"],
         outfile="dummy.png",
         variable="concentration",
-        # + species_id = (...),  # SR_TODO
+        species_id=1,
         level_idx=1,
         integrate=False,
-        time_idxs=[1, 3],
+        time_idcs=[1],
     )
+    setups = [
+        base_setup,
+        base_setup.derive(time_idcs=[3]),
+        base_setup.derive(time_idcs=[1], species_id=[1, 2]),
+        base_setup.derive(time_idcs=[3], species_id=[1, 2]),
+    ]
 
 
 class Test_Create_MultiObjDctNested_Deposition(_Test_Create_MultiObjDctNested):
@@ -285,15 +302,21 @@ class Test_Create_MultiObjDctNested_Deposition(_Test_Create_MultiObjDctNested):
         n=4,
         subdct_fail={"time": [(3, 4), 2], "deposition": "dry"},
     )
-    setup = Setup(
+    base_setup = Setup(
         infiles=["dummy.nc"],
         outfile="dummy.png",
         variable="deposition",
         deposition_type="wet",
-        # + species_id=(...),  # SR_TODO
+        species_id=1,
         integrate=False,
-        time_idxs=[1, 3],
+        time_idcs=[1],
     )
+    setups = [
+        base_setup,
+        base_setup.derive(time_idcs=[3]),
+        base_setup.derive(time_idcs=[1], species_id=[1, 2]),
+        base_setup.derive(time_idcs=[3], species_id=[1, 2]),
+    ]
 
 
 @dataclass(frozen=True)
@@ -308,22 +331,13 @@ class _Test_MultiVarSpecs:
     def test_create(self, conf=None):
 
         # Create reference VarSpecs objects (nested list)
-        dct = self.c.dct.copy()
-        if dct.get("deposition") == "tot":
-            # VarSpecs doesn't unterstand "tot" by itself
-            dct["deposition"] = ("wet", "dry")
-        conf = self.c.derive(dct=dct)
-        # SR_TMP <
-        var_specs_lst_lst = []
-        for setup in self.setups[:1]:  # SR_TMP
-            var_specs_lst_lst.extend(VarSpecs.create(setup, conf.dct))
-        # SR_TMP >
+        var_specs_lst_lst = VarSpecs.from_setups(self.setups)
         assert len(var_specs_lst_lst) == self.c.n
 
         # Create MultVarSpecs objects
         multi_var_specs_lst = []
         for setup in self.setups:
-            multi_var_specs_lst.extend(MultiVarSpecs.create(setup))
+            multi_var_specs_lst.extend(MultiVarSpecs.from_setup(setup))
         assert len(multi_var_specs_lst) == self.c.n
 
         # Compare VarSpecs objects in MultVarSpecs objects to reference ones
@@ -354,43 +368,20 @@ class Test_MultiVarSpecs_Concentration(_Test_MultiVarSpecs):
         },
         n=4,
     )
+    base_setup = Setup(
+        infiles=["dummy.nc"],
+        outfile="dummy.png",
+        variable="concentration",
+        species_id=1,
+        level_idx=1,
+        integrate=False,
+        time_idcs=[1],
+    )
     setups = [
-        Setup(
-            infiles=["dummy.nc"],
-            outfile="dummy.png",
-            variable="concentration",
-            species_id=1,
-            level_idx=1,
-            integrate=False,
-            time_idxs=[1],
-        ),
-        Setup(
-            infiles=["dummy.nc"],
-            outfile="dummy.png",
-            variable="concentration",
-            species_id=1,
-            level_idx=1,
-            integrate=False,
-            time_idxs=[3],
-        ),
-        Setup(
-            infiles=["dummy.nc"],
-            outfile="dummy.png",
-            variable="concentration",
-            species_id=[1, 2],
-            level_idx=1,
-            integrate=False,
-            time_idxs=[1],
-        ),
-        Setup(
-            infiles=["dummy.nc"],
-            outfile="dummy.png",
-            variable="concentration",
-            species_id=[1, 2],
-            level_idx=1,
-            integrate=False,
-            time_idxs=[3],
-        ),
+        base_setup,
+        base_setup.derive(time_idcs=[3]),
+        base_setup.derive(time_idcs=[1], species_id=[1, 2]),
+        base_setup.derive(time_idcs=[3], species_id=[1, 2]),
     ]
 
 
@@ -407,43 +398,20 @@ class Test_MultiVarSpecs_DepositionDry(_Test_MultiVarSpecs):
         },
         n=4,
     )
+    base_setup = Setup(
+        infiles=["dummy.nc"],
+        outfile="dummy.png",
+        variable="deposition",
+        deposition_type="dry",
+        species_id=1,
+        integrate=False,
+        time_idcs=[1],
+    )
     setups = [
-        Setup(
-            infiles=["dummy.nc"],
-            outfile="dummy.png",
-            variable="deposition",
-            deposition_type="dry",
-            species_id=1,
-            integrate=False,
-            time_idxs=[1],
-        ),
-        Setup(
-            infiles=["dummy.nc"],
-            outfile="dummy.png",
-            variable="deposition",
-            deposition_type="dry",
-            species_id=1,
-            integrate=False,
-            time_idxs=[3],
-        ),
-        Setup(
-            infiles=["dummy.nc"],
-            outfile="dummy.png",
-            variable="deposition",
-            deposition_type="dry",
-            species_id=[1, 2],
-            integrate=False,
-            time_idxs=[1],
-        ),
-        Setup(
-            infiles=["dummy.nc"],
-            outfile="dummy.png",
-            variable="deposition",
-            deposition_type="dry",
-            species_id=[1, 2],
-            integrate=False,
-            time_idxs=[3],
-        ),
+        base_setup,
+        base_setup.derive(time_idcs=[3]),
+        base_setup.derive(time_idcs=[1], species_id=[1, 2]),
+        base_setup.derive(time_idcs=[3], species_id=[1, 2]),
     ]
 
 
@@ -468,7 +436,7 @@ class Test_MultiVarSpecs_DepositionTot(_Test_MultiVarSpecs):
             deposition_type="tot",
             species_id=2,
             integrate=False,
-            time_idxs=[3],
+            time_idcs=[3],
         ),
     ]
 
@@ -476,20 +444,21 @@ class Test_MultiVarSpecs_DepositionTot(_Test_MultiVarSpecs):
         """Check that deposition type "tot" is equivalent to ("wet", "dry")."""
 
         # Deposition type "tot"
-        mvs0_lst = MultiVarSpecs.create(self.setups[0])
+        setup0 = next(iter(self.setups))
+        mvs0_lst = MultiVarSpecs.from_setup(setup0)
         assert len(mvs0_lst) == 1
         mvs0 = next(iter(mvs0_lst))
 
         # Deposition type ("wet", "dry")
         setup1 = self.setups[0].derive(deposition_type=("wet", "dry"))
-        mvs1_lst = MultiVarSpecs.create(setup1)
+        mvs1_lst = MultiVarSpecs.from_setup(setup1)
         assert len(mvs1_lst) == 1
         mvs1 = next(iter(mvs1_lst))
         assert mvs1 == mvs0  # ("wet", "dry") == "tot"
 
         # Deposition type "wet"
         setup2 = self.setups[0].derive(deposition_type="wet")
-        mvs2_lst = MultiVarSpecs.create(setup2)
+        mvs2_lst = MultiVarSpecs.from_setup(setup2)
         assert len(mvs2_lst) == 1
         mvs2 = next(iter(mvs2_lst))
         assert mvs2 != mvs0  # "tot" != "wet"
@@ -509,18 +478,21 @@ class Test_MultiVarSpecs_Interface:
         },
         n=1,
     )
-    setup = Setup(
-        infiles=["dummy.nc"],
-        outfile="dummy.png",
-        variable="deposition",
-        deposition_type="tot",
-        species_id=2,
-        integrate=False,
-        time_idxs=[3],
-    )
+    setups = [
+        Setup(
+            infiles=["dummy.nc"],
+            outfile="dummy.png",
+            variable="deposition",
+            deposition_type="tot",
+            species_id=2,
+            integrate=False,
+            time_idcs=[3],
+        ),
+    ]
 
     def create_multi_var_specs(self):
-        mvs_lst = MultiVarSpecs.create(self.setup)
+        setup = self.setups[0]  # SR_TMP
+        mvs_lst = MultiVarSpecs.from_setup(setup)
         assert len(mvs_lst) == 1
         mvs = next(iter(mvs_lst))
         assert len(list(mvs)) == 2

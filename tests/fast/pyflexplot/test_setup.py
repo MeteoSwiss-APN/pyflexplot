@@ -49,7 +49,7 @@ DEFAULT_SETUP = Setup(
         "scale_fact": None,
         "simulation_type": "deterministic",
         "species_id": 1,
-        "time_idxs": (0,),
+        "time_idcs": (0,),
         "variable": "concentration",
     }
 )
@@ -346,7 +346,7 @@ def test_read_double_wildcard_variable_depth(tmp_path):
         variable = "concentration"
 
         [_base._concentration._time10]
-        time_idxs = [10]
+        time_idcs = [10]
 
         [_base._deposition]
         variable = "deposition"
@@ -371,7 +371,7 @@ def test_read_double_wildcard_variable_depth(tmp_path):
     sol = [
         {**DEFAULT_SETUP.dict(), **dct, "domain": domain, "lang": lang}
         for dct in [
-            {"variable": "concentration", "time_idxs": (10,)},
+            {"variable": "concentration", "time_idcs": (10,)},
             {"variable": "deposition"},
         ]
         for domain in ["ch", "auto"]

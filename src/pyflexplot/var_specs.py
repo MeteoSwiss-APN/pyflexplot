@@ -52,7 +52,7 @@ class VarSpecs:
         return specs_type
 
     def __init__(
-        self, setup, var_specs_dct, *, rlat=None, rlon=None, words=None, lang=None,
+        self, setup, var_specs_dct, *, rlat=None, rlon=None, words=None,
     ):
         """Create an instance of ``VarSpecs``.
 
@@ -60,7 +60,7 @@ class VarSpecs:
             setup (Setup): Plot setup.
 
             var_specs_dct (dict): Variable specification dict comprised of only
-                single-object elements (see ``VarSpecs.create`` for more
+                single-object elements (see ``VarSpecs.???`` for more
                 information on single- vs. multi-object elements).
 
             rlat (tuple, optional): Rotated latitude slice parameters, passed
@@ -70,9 +70,6 @@ class VarSpecs:
                 to built-in ``slice``. Defaults to None.
 
             words (Words, optional): Word translations. Defaults to ``WORDS``.
-
-            lang (str, optional): Language, e.g., 'de' for German. Defaults to
-                'en' (English).
 
         """
         self._name = setup.tmp_cls_name()  # SR_TMP
@@ -104,8 +101,7 @@ class VarSpecs:
 
         self._setup = setup
         self._words = words or WORDS
-        self._lang = lang or "en"
-        self._words.set_default_lang(self._lang)
+        self._words.set_default_lang(self._setup.lang)
 
         self._set_attrs(var_specs_dct)
 
@@ -130,70 +126,10 @@ class VarSpecs:
                 f"{len(var_specs_dct_todo)} unexpected arguments: {var_specs_dct_todo}"
             )
 
+    # SR_TMP <<<
     @classmethod
-    def create(cls, setup, var_specs_dct, **kwargs):
-        """Create one or more instances of ``VarSpecs``.
+    def from_dct(cls, setup, var_specs_dct, **kwargs):
 
-        The values of the specification dict elements may be
-
-            - a single value, e.g., ``{"a": 0}``;
-
-            - a tuple of values, e.g., ``{"a": (0, 1)``; or
-
-            - a list of values and/or value tuples, e.g., ``{"a": [0, 1]}``,
-                ``{"a": [0, (1, 2)]}``, or ``{"a": [(0, 1), (2, 3)]}``.
-
-        Both tuple and list values constitute a shorthand to specify multiple
-        specification dicts at once, and are expanded into multiple dicts
-        with only single-value elements by combining all tuple/list elements.
-
-        The difference between tuple and list values is that value tuples
-        specify the input for an individual plot (e.g., multiple time steps
-        to integrate over), while value lists specify input for separate plots
-        (e.g., multiple time steps that are plotted separately).
-
-        After this expansion, all dicts only comprise single-value elements,
-        and each is used to create a ``VarSpecs`` object.
-
-        The ``VarSpecs`` objects are returned in a nested list, whereby the
-        outer nest corresponds to the list values (separate plots), and the
-        inner nest to the tuple values (separate input fields per plot).
-
-        Args:
-            setup (Setup): Plot setup.
-
-            var_specs_dct (dict): Variable specification dict (see above).
-
-            **kwargs: Additional keyword arguments used to create the
-                individual ``VarSpecs`` objects.
-
-        Returns:
-            list[list[VarSpecs]]: Nested list of ``VarSpecs`` object(s).
-
-        Examples:
-            >>> f = lambda dct: VarSpecs.create("test", dct)
-
-            >>> f({"a": 1, "b": 2})
-            [[VarSpecs(a=1, b=1)]]
-
-            >>> f({"a": (1, 2), "b": 3})
-            [[VarSpecs(a=1, b=3), VarSpecs(a=2, b=3)]]
-
-            >>> f({"a": [1, 2], "b": 3})
-            [[VarSpecs(a=1, b=3)], [VarSpecs(a=2, b=3)]]
-
-            >>> f({"a": [1, (2, 3)], "b": 4})
-            [[VarSpecs(a=1, b=4)], [VarSpecs(a=2, b=4), VarSpecs(a=3, b=4)]]
-
-            >>> f({"a": [1, 2], "b": [3, (4, 5)], "c": "hi"})
-            [
-                [VarSpecs(a=1, b=3, c="hi")],
-                [VarSpecs(a=1, b=4, c="hi"), VarSpecs(a=1, b=5, c="hi")],
-                [VarSpecs(a=2, b=3, c="hi")],
-                [VarSpecs(a=2, b=4, c="hi"), VarSpecs(a=2, b=5, c="hi")],
-            ]
-
-        """
         var_specs_dct_lst_outer = decompress_multival_dict(
             var_specs_dct, depth=1, cls_expand=list,
         )
@@ -211,14 +147,61 @@ class VarSpecs:
 
         return create_objs_rec(var_specs_dct_lst_lst)
 
+    # SR_TMP <<<
+    @classmethod
+    def from_setup(cls, setup, **kwargs):
+        def create_var_specs_dct(setup):
+            var_specs_raw = {
+                "time_lst": setup.time_idcs,
+                "nageclass": setup.age_class_idx,
+                "noutrel": setup.nout_rel_idx,
+                "numpoint": setup.release_point_idx,
+                "species_id": setup.species_id,
+                "integrate": setup.integrate,
+            }
+
+            if setup.variable == "concentration":
+                var_specs_raw["level_lst"] = setup.level_idx
+            elif setup.variable == "deposition":
+                var_specs_raw["deposition_lst"] = setup.deposition_type
+            else:
+                raise NotImplementedError(f"variable='{setup.variable}'")
+
+            var_specs_dct = {}
+            for key, val in var_specs_raw.items():
+                if key.endswith("_lst"):
+                    key = key[: -len("_lst")]
+                if (key, val) == ("deposition", "tot"):
+                    val = ("wet", "dry")
+                var_specs_dct[key] = val
+
+            return var_specs_dct
+
+        return cls.from_dct(setup, create_var_specs_dct(setup))
+
+    # SR_TMP <<<
+    @classmethod
+    def from_setups(cls, setups):
+        var_specs_lst_lst = []
+        for setup in setups:
+            var_specs_lst_lst_tmp = cls.from_setup(setup)
+            assert len(var_specs_lst_lst_tmp) == 1
+            var_specs_lst_lst.append(next(iter(var_specs_lst_lst_tmp)))
+        return var_specs_lst_lst
+
+    # SR_TODO Remove method if exception not raised!
     def merge_with(self, others):
+
+        # Setup
+        setup = None
+        raise NotImplementedError(f"{type(self).__name__}.merge_with")
 
         # Words and language
         for other in others:
-            if other._lang != self._lang:
+            if other._setup.lang != self._setup.lang:
                 raise Exception(
                     f"merge of {other} with {self} failed: languages differ: "
-                    f"{other._lang} != {self._lang}"
+                    f"{other._setup.lang} != {self._setup.lang}"
                 )
             if other._words != self._words:
                 raise Exception(
@@ -246,12 +229,7 @@ class VarSpecs:
                 var_specs_dct[key] = vals
 
         return type(self)(
-            self._setup.tmp_cls_name(),
-            var_specs_dct,
-            rlat=self.rlat,
-            rlon=self.rlon,
-            words=self._words,
-            lang=self._lang,
+            setup, var_specs_dct, rlat=self.rlat, rlon=self.rlon, words=self._words,
         )
 
     def __hash__(self):
@@ -441,38 +419,17 @@ class MultiVarSpecs:
         self.var_specs_lst = var_specs_lst
 
     @classmethod
-    def create(cls, setup, **kwargs):
+    def from_setup(cls, setup, **kwargs):
         """Create instances of ``MultiVarSpecs`` from a ``Setup`` object."""
-
-        kwargs["lang"] = setup.lang
-
-        var_specs_raw = {
-            "time_lst": setup.time_idxs,
-            "nageclass": setup.age_class_idx,
-            "noutrel": setup.nout_rel_idx,
-            "numpoint": setup.release_point_idx,
-            "species_id": setup.species_id,
-            "integrate": setup.integrate,
-        }
-
-        if setup.variable == "concentration":
-            var_specs_raw["level_lst"] = setup.level_idx
-        elif setup.variable == "deposition":
-            var_specs_raw["deposition_lst"] = setup.deposition_type
-        else:
-            raise NotImplementedError(f"variable='{setup.variable}'")
-
-        var_specs_dct = {}
-        for key, val in var_specs_raw.items():
-            if key.endswith("_lst"):
-                key = key[: -len("_lst")]
-            if (key, val) == ("deposition", "tot"):
-                val = ("wet", "dry")
-            var_specs_dct[key] = val
-
+        # SR_TMP <
+        # Separate setups by time index
+        setups = []
+        for time_idx in setup.time_idcs:
+            setups.append(setup.derive(time_idcs=[time_idx]))
+        # SR_TMP >
         return [
             cls(setup, var_specs_lst)
-            for var_specs_lst in VarSpecs.create(setup, var_specs_dct, **kwargs)
+            for var_specs_lst in VarSpecs.from_setups(setups, **kwargs)
         ]
 
     def __repr__(self):
@@ -504,7 +461,7 @@ class MultiVarSpecs:
         if dct.get("deposition") == "tot":
             dct["deposition"] = None
         # SR_TMP >
-        return next(iter(next(iter(VarSpecs.create(self.setup, dct)))))
+        return next(iter(next(iter(VarSpecs.from_dct(self.setup, dct)))))
 
     def shared_dct(self):
         skipped = ["_name", "rlat", "rlon"]  # SR_TMP TODO remove from dct

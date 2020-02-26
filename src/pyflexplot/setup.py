@@ -73,7 +73,7 @@ class Setup(BaseModel):
             ids with '+'. Use the format key '{species_id}' to embed it in the
             plot file path.
 
-        time_idxs: Time step indices.. Use the format key '{time_idx}' to embed
+        time_idcs: Time step indices.. Use the format key '{time_idx}' to embed
             it in the plot file path.
 
         variable: Input variable to be plotted. Choices: "concentration",
@@ -102,7 +102,7 @@ class Setup(BaseModel):
     scale_fact: Optional[float] = None
     simulation_type: str = "deterministic"
     species_id: Union[int, Tuple[int, ...]] = 1
-    time_idxs: Tuple[int, ...] = (0,)
+    time_idcs: Tuple[int, ...] = (0,)
     variable: str = "concentration"
 
     @validator("deposition_type")
@@ -146,7 +146,7 @@ class Setup(BaseModel):
                 return False
         return self.dict() == other_dict
 
-    def derive(self, **kwargs: Mapping[str, Any]) -> "Setup":
+    def derive(self, **kwargs) -> "Setup":
         return type(self)(**{**self.dict(), **kwargs})
 
     def tmp_cls_name(self):

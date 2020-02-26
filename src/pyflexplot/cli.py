@@ -169,7 +169,7 @@ def read_fields(setup):
         attrs["ens_var_setup"] = ens_var_setup
 
     # Create variable specification objects
-    multi_var_specs_lst = MultiVarSpecs.create(setup)
+    multi_var_specs_lst = MultiVarSpecs.from_setup(setup)
 
     # Determine fields specifications (one for each eventual plot)
     fld_specs_lst = [

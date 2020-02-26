@@ -64,7 +64,7 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
                 species_id=2,
                 level_idx=1,
                 integrate=False,
-                time_idxs=[3],
+                time_idcs=[3],
             ),
         ),
         Conf(
@@ -78,7 +78,7 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
                 deposition_type="dry",
                 species_id=2,
                 integrate=False,
-                time_idxs=[3],
+                time_idcs=[3],
             ),
             scale_fld_ref=1 / 3,
         ),
@@ -93,7 +93,7 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
                 deposition_type="wet",
                 species_id=2,
                 integrate=False,
-                time_idxs=[3],
+                time_idcs=[3],
             ),
             scale_fld_ref=1 / 3,
         ),
@@ -108,7 +108,7 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
                 deposition_type="tot",
                 species_id=2,
                 integrate=False,
-                time_idxs=[3],
+                time_idcs=[3],
             ),
             scale_fld_ref=1 / 3,
         ),
@@ -123,7 +123,7 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
                 level_idx=1,
                 species_id=1,
                 integrate=False,
-                time_idxs=[3],
+                time_idcs=[3],
             ),
         ),
         Conf(
@@ -137,7 +137,7 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
                 deposition_type="tot",
                 species_id=1,
                 integrate=False,
-                time_idxs=[3],
+                time_idcs=[3],
             ),
             scale_fld_ref=1 / 3,
         ),
@@ -156,7 +156,7 @@ def test_single(datadir, conf):  # noqa:F811
     # Initialize variable specifications
     multi_var_specs_lst = []
     for setup in setups:
-        multi_var_specs_lst.extend(MultiVarSpecs.create(setup))
+        multi_var_specs_lst.extend(MultiVarSpecs.from_setup(setup))
     assert len(multi_var_specs_lst) == 1
     multi_var_specs = next(iter(multi_var_specs_lst))
 
@@ -199,12 +199,28 @@ def test_single(datadir, conf):  # noqa:F811
                 infiles=["dummy.nc"],
                 outfile="dummy.png",
                 variable="concentration",
-                # + level_idx=(0, 2),  # SR_TODO
+                level_idx=[0, 2],
                 species_id=2,
                 integrate=True,
-                time_idxs=[0],
+                time_idcs=[0],
             ),
-            derive_setups=[{"time_idxs": [3]}, {"time_idxs": [0]}],
+            derive_setups=[{"time_idcs": [3]}, {"time_idcs": [0]}],
+            scale_fld_ref=3.0,
+        ),
+        Conf(
+            datafilename=datafilename1,
+            name="concentration",
+            var_names_ref=[f"spec002"],
+            setup=Setup(
+                infiles=["dummy.nc"],
+                outfile="dummy.png",
+                variable="concentration",
+                level_idx=[0, 2],
+                species_id=2,
+                integrate=True,
+                time_idcs=[0, 3],
+            ),
+            derive_setups=[],
             scale_fld_ref=3.0,
         ),
         Conf(
@@ -218,9 +234,9 @@ def test_single(datadir, conf):  # noqa:F811
                 deposition_type="dry",
                 species_id=2,
                 integrate=True,
-                time_idxs=[0],
+                time_idcs=[0],
             ),
-            derive_setups=[{"time_idxs": [3]}, {"time_idxs": [0]}],
+            derive_setups=[{"time_idcs": [3]}, {"time_idcs": [0]}],
         ),
         Conf(
             datafilename=datafilename1,
@@ -233,9 +249,9 @@ def test_single(datadir, conf):  # noqa:F811
                 deposition_type="wet",
                 species_id=2,
                 integrate=True,
-                time_idxs=[0],
+                time_idcs=[0],
             ),
-            derive_setups=[{"time_idxs": [3]}, {"time_idxs": [0]}],
+            derive_setups=[{"time_idcs": [3]}, {"time_idcs": [0]}],
         ),
         Conf(
             datafilename=datafilename1,
@@ -248,9 +264,9 @@ def test_single(datadir, conf):  # noqa:F811
                 deposition_type="tot",
                 species_id=1,
                 integrate=True,
-                time_idxs=[0],
+                time_idcs=[0],
             ),
-            derive_setups=[{"time_idxs": [3]}, {"time_idxs": [0]}],
+            derive_setups=[{"time_idcs": [3]}, {"time_idcs": [0]}],
         ),
         Conf(
             datafilename=datafilename2,
@@ -263,14 +279,14 @@ def test_single(datadir, conf):  # noqa:F811
                 level_idx=0,
                 species_id=1,
                 integrate=True,
-                time_idxs=[0],
+                time_idcs=[0],
             ),
             derive_setups=[
-                {"time_idxs": [3], "level_idx": 0},
-                {"time_idxs": [9], "level_idx": 0},
-                {"time_idxs": [0], "level_idx": 2},
-                {"time_idxs": [3], "level_idx": 2},
-                {"time_idxs": [9], "level_idx": 2},
+                {"time_idcs": [3], "level_idx": 0},
+                {"time_idcs": [9], "level_idx": 0},
+                {"time_idcs": [0], "level_idx": 2},
+                {"time_idcs": [3], "level_idx": 2},
+                {"time_idcs": [9], "level_idx": 2},
             ],
             scale_fld_ref=3.0,
         ),
@@ -285,9 +301,9 @@ def test_single(datadir, conf):  # noqa:F811
                 deposition_type=["wet", "dry"],
                 species_id=1,
                 integrate=True,
-                time_idxs=[0],
+                time_idcs=[0],
             ),
-            derive_setups=[{"time_idxs": [3]}, {"time_idxs": [0]}],
+            derive_setups=[{"time_idcs": [3]}, {"time_idcs": [0]}],
         ),
     ],
 )
@@ -304,7 +320,7 @@ def test_multiple(datadir, conf):  # noqa:F811
     # Create field specifications list
     multi_var_specs_lst = []
     for setup in setups:
-        multi_var_specs_lst.extend(MultiVarSpecs.create(setup))
+        multi_var_specs_lst.extend(MultiVarSpecs.from_setup(setup))
     fld_specs_lst = [
         FieldSpecs(conf.name, multi_var_specs)
         for multi_var_specs in multi_var_specs_lst

@@ -30,7 +30,7 @@ class TestReadFieldEnsemble_Single:
         "outfile": "dummy.png",
         "plot_type": "ens_mean",
         "species_id": 2,
-        "time_idxs": [10],
+        "time_idcs": [10],
         "variable": "concentration",
     }
 
@@ -65,7 +65,7 @@ class TestReadFieldEnsemble_Single:
 
         # Initialize specifications
         setup = Setup(**{**self.setup_params_shared, **setup_params})
-        multi_var_specs_lst = MultiVarSpecs.create(setup)
+        multi_var_specs_lst = MultiVarSpecs.from_setup(setup)
         assert len(multi_var_specs_lst) == 1
         multi_var_specs = next(iter(multi_var_specs_lst))
         attrs = {
@@ -127,9 +127,9 @@ class TestReadFieldEnsemble_Multiple:
         "integrate": True,
         "outfile": "dummy.png",
         "species_id": 1,
-        "time_idxs": [0],
+        "time_idcs": [0],
     }
-    derive_setups = [{"time_idxs": [3]}, {"time_idxs": [9]}]
+    derive_setups = [{"time_idcs": [3]}, {"time_idcs": [9]}]
 
     @property
     def species_id(self):
@@ -171,7 +171,7 @@ class TestReadFieldEnsemble_Multiple:
             setups.append(setups[0].derive(**params))
         multi_var_specs_lst = []
         for setup in setups:
-            multi_var_specs_lst.extend(MultiVarSpecs.create(setup))
+            multi_var_specs_lst.extend(MultiVarSpecs.from_setup(setup))
         attrs = {
             "ens_member_ids": self.ens_member_ids,
             "ens_var": ens_var,
