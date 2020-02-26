@@ -4,6 +4,11 @@ Plot setup and setup files.
 """
 # Standard library
 import dataclasses
+from typing import Any
+from typing import Collection
+from typing import Iterator
+from typing import List
+from typing import Mapping
 from typing import Optional
 from typing import Tuple
 from typing import Union
@@ -97,46 +102,48 @@ class Setup(BaseModel):
     variable: str = "concentration"
 
     @validator("deposition_type")
-    def _validate_deposition_type(cls, val, **kwargs):
-        if set(val) == {"dry", "wet"}:
-            val = "tot"
-        if val not in ("dry", "wet", "tot"):
-            raise ValueError("invalid deposition type", val)
-        return val
+    def _validate_deposition_type(cls, val: Union[str, Tuple[str, str]]) -> str:
+        if isinstance(val, tuple):
+            if set(val) == {"dry", "wet"}:
+                return "tot"
+        elif isinstance(val, str):
+            if val in ["dry", "wet", "tot"]:
+                return val
+        raise ValueError("invalid deposition type", val)
 
     @classmethod
-    def as_setup(cls, obj):
+    def as_setup(cls, obj: Union[Mapping[str, Any], "Setup"]) -> "Setup":
         if isinstance(obj, cls):
             return obj
-        return cls(**obj)
+        return cls(**obj)  # type: ignore
 
-    def __repr__(self):
+    def __repr__(self) -> str:  # type: ignore
         def fmt(obj):
             if isinstance(obj, str):
                 return f"'{obj}'"
             return str(obj)
 
-        s_attrs = ",\n  ".join(f"{k}={fmt(v)}" for k, v in dict(self).items())
+        s_attrs = ",\n  ".join(f"{k}={fmt(v)}" for k, v in self.dict().items())
         return f"{type(self).__name__}(\n  {s_attrs},\n)"
 
-    def __str__(self):
+    def __str__(self) -> str:  # type: ignore
         return repr(self)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(dict(self))
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         try:
-            other_dict = dict(other)
+            other_dict = dict(other)  # type: ignore
         except TypeError:
             try:
                 other_dict = dataclasses.asdict(other)
             except TypeError:
                 return False
-        return dict(self) == other_dict
+        return self.dict() == other_dict
 
-    def derive(self, **kwargs):
-        return type(self)(**{**dict(self), **kwargs})
+    def derive(self, **kwargs: Mapping[str, Any]) -> "Setup":
+        return type(self)(**{**self.dict(), **kwargs})
 
     def tmp_cls_name(self):
         if self.simulation_type == "deterministic":
@@ -149,34 +156,41 @@ class Setup(BaseModel):
 class SetupCollection:
     """A set of ``Setup`` objects."""
 
-    def __init__(self, setups):
+    def __init__(self, setups: Collection[Union[Mapping[str, Any], Setup]]) -> None:
         self._setups = [Setup.as_setup(obj) for obj in setups]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         s_setups = "\n  ".join([""] + [str(c) for c in self._setups])
         return f"{type(self).__name__}([{s_setups}\n])"
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._setups)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Setup]:
         for setup in self._setups:
             yield setup
 
-    def __eq__(self, other):
-        return self.dicts() == other
+    def __eq__(self, other: object) -> bool:
+        try:
+            other_dicts = other.as_dicts()  # type: ignore
+        except AttributeError:
+            other_dicts = [dict(obj) for obj in other]  # type: ignore
+        self_dicts = self.dicts()
+        return all(obj in other_dicts for obj in self_dicts) and all(
+            obj in self_dicts for obj in other_dicts
+        )
 
-    def dicts(self):
-        return [dict(c) for c in self._setups]
+    def dicts(self) -> List[Mapping[str, Any]]:
+        return [obj.dict() for obj in self._setups]
 
 
 class SetupFile:
     """Setup file to be read from and/or written to disk."""
 
-    def __init__(self, path):
-        self.path = path
+    def __init__(self, path: str) -> None:
+        self.path: str = path
 
-    def read(self):
+    def read(self) -> SetupCollection:
         """Read the setup from a text file in TOML format."""
         with open(self.path, "r") as f:
             try:
@@ -194,6 +208,6 @@ class SetupFile:
         setups = SetupCollection(values)
         return setups
 
-    def write(self, *args, **kwargs):
+    def write(self, *args, **kwargs) -> None:
         """Write the setup to a text file in TOML format."""
         raise NotImplementedError(f"{type(self).__name__}.write")
