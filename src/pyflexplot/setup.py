@@ -4,7 +4,6 @@ Plot setup and setup files.
 """
 # Standard library
 import dataclasses
-from typing import Any
 from typing import Optional
 from typing import Tuple
 from typing import Union
@@ -12,6 +11,7 @@ from typing import Union
 # Third-party
 import toml
 from pydantic import BaseModel
+from pydantic import validator
 
 # First-party
 from srutils.dict import decompress_nested_dict
@@ -74,7 +74,7 @@ class Setup(BaseModel):
     """
 
     class Config:  # noqa
-        # allow_mutation = False  # SR_TMP TODO reactivate once deposition_type solved
+        allow_mutation = False
         extra = "forbid"
 
     age_class_idx: int = 0
@@ -96,13 +96,13 @@ class Setup(BaseModel):
     time_idxs: Tuple[int, ...] = (0,)
     variable: str = "concentration"
 
-    def __init__(self, **data: Any):
-        super().__init__(**data)
-        if isinstance(self.deposition_type, tuple):
-            if set(self.deposition_type) == {"dry", "wet"}:
-                self.deposition_type = "tot"
-            else:
-                raise ValueError(f"invalid deposition type", self.deposition_type)
+    @validator("deposition_type")
+    def _validate_deposition_type(cls, val, **kwargs):
+        if set(val) == {"dry", "wet"}:
+            val = "tot"
+        if val not in ("dry", "wet", "tot"):
+            raise ValueError("invalid deposition type", val)
+        return val
 
     @classmethod
     def as_setup(cls, obj):
