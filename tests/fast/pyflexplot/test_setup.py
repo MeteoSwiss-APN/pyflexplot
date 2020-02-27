@@ -381,6 +381,15 @@ def test_read_double_wildcard_variable_depth(tmp_path):
     assert setups.dicts() == sol
 
 
+def test_decompress_all():
+    setup = DEFAULT_SETUP.derive(level_idx=[1, 2], time_idcs=[1, 2, 3])
+    setups = setup.decompress()
+    assert len(setups) == 6
+    res = {(setup.level_idx, next(iter(setup.time_idcs))) for setup in setups}
+    sol = {(1, 1), (1, 2), (1, 3), (2, 1), (2, 2), (2, 3)}
+    assert res == sol
+
+
 class Test_SetupCollection:
     def create_partial_dicts(self):
         return [

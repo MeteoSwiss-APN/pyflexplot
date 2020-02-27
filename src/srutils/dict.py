@@ -69,14 +69,18 @@ def merge_dicts(*dicts, unique_keys=True):
 
 
 def decompress_multival_dict(
-    dct, depth, cls_expand=(list, tuple), f_expand=None, flatten=False
+    dct, *, skip=None, depth=1, cls_expand=(list, tuple), f_expand=None, flatten=False
 ):
     """Combine dict with some nested list values into object-value dicts.
 
     Args:
         dct (dict): Specifications dict.
 
-        depth (int): Depth to which nested list values are resolved.
+        skip (Collection[str], optional): Names of keys that are not expanded.
+            Defaults to None.
+
+        depth (int, optional): Depth to which nested list values are resolved.
+            Defaults to 1.
 
         cls_expand (type or list[type], optional): One or more types, instances
             of which will be expanded. Overridden by ``f_expand``. Defaults to
@@ -106,9 +110,9 @@ def decompress_multival_dict(
     if not isinstance(depth, int) or depth <= 0:
         raise ValueError(f"depth must be a positive integer", depth)
 
-    def _run_rec(dct, depth, curr_depth=1):
+    def run_rec(dct, depth, curr_depth=1):
         """Run recursively."""
-        dct_lst = _dict_mult_vals_product(dct, cls_expand=cls_expand, f_expand=f_expand)
+        dct_lst = _dict_mult_vals_product(dct, skip, cls_expand, f_expand)
         if len(dct_lst) == 1 or curr_depth == depth:
             for _ in range(depth - curr_depth):
                 # Nest further until target depth reached
@@ -117,39 +121,42 @@ def decompress_multival_dict(
         else:
             result = []
             for dct_i in dct_lst:
-                obj = _run_rec(dct_i, depth, curr_depth + 1)
+                obj = run_rec(dct_i, depth, curr_depth + 1)
                 result.append(obj)
         return result
 
-    res = _run_rec(dct, depth)
+    res = run_rec(dct, depth)
 
-    def _flatten_rec(lst):
+    def flatten_rec(lst):
         if not isinstance(lst, list):
             return [lst]
         flat = []
         for obj in lst:
-            flat.extend(_flatten_rec(obj))
+            flat.extend(flatten_rec(obj))
         return flat
 
     if flatten:
-        res = _flatten_rec(res)
+        res = flatten_rec(res)
 
     return res
 
 
-def _dict_mult_vals_product(dct, cls_expand=list, f_expand=None):
+def _dict_mult_vals_product(dct, skip, cls_expand, f_expand):
+
+    if skip is None:
+        skip = []
+
     if isinstance(cls_expand, type):
         cls_expand = [cls_expand]
 
-    def f_expand_default(obj):
-        return any(isinstance(obj, t) for t in cls_expand)
-
     if f_expand is None:
-        f_expand = f_expand_default
+
+        def f_expand(obj):
+            return any(isinstance(obj, t) for t in cls_expand)
 
     keys, vals = [], []
     for key, val in dct.items():
-        if not f_expand(val):
+        if key in skip or not f_expand(val):
             val = [val]
         keys.append(key)
         vals.append(val)

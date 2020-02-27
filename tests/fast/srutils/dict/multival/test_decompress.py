@@ -146,3 +146,15 @@ def test_multival_mult_deep(depth, sol):
     dct = {"a": [[1, 2], [3]], "b": 4, "c": [5, [6, 7]]}
     res = decompress_multival_dict(dct, depth=depth)
     assert_dict_lists_equal(res, sol)
+
+
+def test_skip():
+    dct = {"a": ["foo", "bar"], "b": 1, "c": [2, 3], "d": (4, 5)}
+    res = decompress_multival_dict(dct, skip=["a"])
+    sol = [
+        {"a": ["foo", "bar"], "b": 1, "c": 2, "d": 4},
+        {"a": ["foo", "bar"], "b": 1, "c": 2, "d": 5},
+        {"a": ["foo", "bar"], "b": 1, "c": 3, "d": 4},
+        {"a": ["foo", "bar"], "b": 1, "c": 3, "d": 5},
+    ]
+    assert_dict_lists_equal(res, sol)

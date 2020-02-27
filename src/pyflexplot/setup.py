@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from pydantic import validator
 
 # First-party
+from srutils.dict import decompress_multival_dict
 from srutils.dict import decompress_nested_dict
 from srutils.dict import nested_dict_resolve_wildcards
 
@@ -147,7 +148,18 @@ class Setup(BaseModel):
         return self.dict() == other_dict
 
     def derive(self, **kwargs) -> "Setup":
+        """Derive another ``Setup`` object with adapted parameters."""
         return type(self)(**{**self.dict(), **kwargs})
+
+    def decompress(self) -> List["Setup"]:
+        """Create multiple ``Setup`` objects with one-value parameters only."""
+
+        def create(dct):
+            dct["time_idcs"] = [dct["time_idcs"]]
+            return Setup(**dct)
+
+        skip = ["infiles"]
+        return [create(dct) for dct in decompress_multival_dict(self.dict(), skip=skip)]
 
     def tmp_cls_name(self):
         if self.simulation_type == "deterministic":
