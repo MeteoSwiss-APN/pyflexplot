@@ -64,8 +64,14 @@ class TestReadFieldEnsemble_Single:
         datafile_fmt = self.datafile_fmt(datadir)
 
         # Initialize specifications
-        setup = Setup(**{**self.setup_params_shared, **setup_params})
-        multi_var_specs_lst = MultiVarSpecs.from_setup(setup)
+        setup_params = {
+            **self.setup_params_shared,
+            **setup_params,
+            "ens_member_ids": self.ens_member_ids,
+            "plot_type": f"ens_{ens_var}",
+        }
+        setups = Setup(**setup_params).decompress()
+        multi_var_specs_lst = MultiVarSpecs.from_setups(setups)
         assert len(multi_var_specs_lst) == 1
         multi_var_specs = next(iter(multi_var_specs_lst))
         attrs = {
@@ -91,7 +97,8 @@ class TestReadFieldEnsemble_Single:
                         read_nc_var(
                             self.datafile(ens_member_id, datafile_fmt=datafile_fmt),
                             var_name,
-                            var_specs,
+                            var_specs._setup,  # SR_TMP
+                            dict(var_specs),  # SR_TMP
                         )
                         for ens_member_id in self.ens_member_ids
                     ]
@@ -165,7 +172,13 @@ class TestReadFieldEnsemble_Multiple:
         """Run an individual test, reading one field after another."""
 
         # Create field specifications list
-        setups = [Setup(**{**self.setup_params_shared, **setup_params})]
+        setup_params = {
+            **self.setup_params_shared,
+            **setup_params,
+            "ens_member_ids": self.ens_member_ids,
+            "plot_type": f"ens_{ens_var}",
+        }
+        setups = Setup(**setup_params).decompress()
         multi_var_specs_lst = MultiVarSpecs.from_setups(setups)
         attrs = {
             "ens_member_ids": self.ens_member_ids,
@@ -196,7 +209,10 @@ class TestReadFieldEnsemble_Multiple:
         fld_arr = np.array([flex_field.fld for flex_field in flex_field_lst])
 
         # Collect merged variables specifications
-        var_specs_lst = [fs.multi_var_specs.shared() for fs in fld_specs_lst]
+        var_specs_lst = []
+        for fld_specs in fld_specs_lst:
+            var_specs = fld_specs.multi_var_specs.shared_dct()
+            var_specs_lst.append(var_specs)
 
         # Read reference fields
         fld_ref_lst = []
@@ -206,7 +222,8 @@ class TestReadFieldEnsemble_Multiple:
                     read_nc_var(
                         self.datafile(ens_member_id, datafile_fmt=datafile_fmt),
                         var_name,
-                        var_specs,
+                        var_specs._setup,  # SR_TMP
+                        dict(var_specs),  # SR_TMP
                     )
                     * scale_fld_ref
                     for ens_member_id in self.ens_member_ids

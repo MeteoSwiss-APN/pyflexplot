@@ -196,7 +196,7 @@ class Test_Create_MultiObjDct_Concentration(_Test_Create_MultiObjDct):
         integrate=False,
         time_idcs=[1, 3],
     )
-    setups = [base_setup, base_setup.derive(species_id=2)]
+    setups = [base_setup, base_setup.derive({"species_id": 2})]
 
 
 class Test_Create_MultiObjDct_Deposition(_Test_Create_MultiObjDct):
@@ -222,7 +222,7 @@ class Test_Create_MultiObjDct_Deposition(_Test_Create_MultiObjDct):
         integrate=False,
         time_idcs=[1, 3],
     )
-    setups = [base_setup, base_setup.derive(species_id=2)]
+    setups = [base_setup, base_setup.derive({"species_id": 2})]
 
 
 class _Test_Create_MultiObjDctNested:
@@ -268,7 +268,7 @@ class Test_Create_MultiObjDctNested_Concentration(_Test_Create_MultiObjDctNested
         integrate=False,
         time_idcs=[1, 3],
     )
-    setups = [base_setup, base_setup.derive(species_id=[1, 2])]
+    setups = [base_setup, base_setup.derive({"species_id": [1, 2]})]
 
 
 class Test_Create_MultiObjDctNested_Deposition(_Test_Create_MultiObjDctNested):
@@ -294,7 +294,7 @@ class Test_Create_MultiObjDctNested_Deposition(_Test_Create_MultiObjDctNested):
         integrate=False,
         time_idcs=[1, 3],
     )
-    setups = [base_setup, base_setup.derive(species_id=[1, 2])]
+    setups = [base_setup, base_setup.derive({"species_id": [1, 2]})]
 
 
 @dataclass(frozen=True)
@@ -355,7 +355,7 @@ class Test_MultiVarSpecs_Concentration(_Test_MultiVarSpecs):
         integrate=False,
         time_idcs=[1, 3],
     )
-    setups = [base_setup, base_setup.derive(species_id=[1, 2])]
+    setups = [base_setup, base_setup.derive({"species_id": [1, 2]})]
 
 
 class Test_MultiVarSpecs_DepositionDry(_Test_MultiVarSpecs):
@@ -380,7 +380,7 @@ class Test_MultiVarSpecs_DepositionDry(_Test_MultiVarSpecs):
         integrate=False,
         time_idcs=[1, 3],
     )
-    setups = [base_setup, base_setup.derive(species_id=[1, 2])]
+    setups = [base_setup, base_setup.derive({"species_id": [1, 2]})]
 
 
 class Test_MultiVarSpecs_DepositionTot(_Test_MultiVarSpecs):
@@ -417,14 +417,14 @@ class Test_MultiVarSpecs_DepositionTot(_Test_MultiVarSpecs):
         mvs0 = next(iter(mvs0_lst))
 
         # Deposition type ("wet", "dry")
-        setup1 = self.setups[0].derive(deposition_type=("wet", "dry"))
+        setup1 = self.setups[0].derive({"deposition_type": ("wet", "dry")})
         mvs1_lst = MultiVarSpecs.from_setup(setup1)
         assert len(mvs1_lst) == 1
         mvs1 = next(iter(mvs1_lst))
         assert mvs1 == mvs0  # ("wet", "dry") == "tot"
 
         # Deposition type "wet"
-        setup2 = self.setups[0].derive(deposition_type="wet")
+        setup2 = self.setups[0].derive({"deposition_type": "wet"})
         mvs2_lst = MultiVarSpecs.from_setup(setup2)
         assert len(mvs2_lst) == 1
         mvs2 = next(iter(mvs2_lst))

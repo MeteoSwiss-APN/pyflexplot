@@ -6,6 +6,7 @@ Plot setup and setup files.
 import dataclasses
 from typing import Any
 from typing import Collection
+from typing import Dict
 from typing import Iterator
 from typing import List
 from typing import Mapping
@@ -147,9 +148,13 @@ class Setup(BaseModel):
                 return False
         return self.dict() == other_dict
 
-    def derive(self, **kwargs) -> "Setup":
-        """Derive another ``Setup`` object with adapted parameters."""
-        return type(self)(**{**self.dict(), **kwargs})
+    def derive(
+        self, params: Union[Mapping[str, Any], Collection[Dict[str, Any]]],
+    ) -> "Setup":
+        """Derive another ``Setup`` object(s) with adapted parameters."""
+        if isinstance(params, Mapping):
+            return type(self)(**{**self.dict(), **params})
+        raise NotImplementedError("params is Collection", params)
 
     def decompress(self) -> List["Setup"]:
         """Create multiple ``Setup`` objects with one-value parameters only."""
@@ -158,7 +163,7 @@ class Setup(BaseModel):
             dct["time_idcs"] = [dct["time_idcs"]]
             return Setup(**dct)
 
-        skip = ["infiles"]
+        skip = ["infiles", "ens_member_ids"]
         return [create(dct) for dct in decompress_multival_dict(self.dict(), skip=skip)]
 
     def tmp_cls_name(self):

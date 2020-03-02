@@ -42,7 +42,7 @@ class Conf:
     name: str
     var_names_ref: List[str]
     setup: Setup
-    derive_setups: List[Dict[str, Any]] = field(default_factory=list)
+    derived_setup_params: List[Dict[str, Any]] = field(default_factory=list)
     scale_fld_ref: Optional[float] = 1.0
 
 
@@ -149,14 +149,11 @@ def test_single(datadir, conf):  # noqa:F811
     datafile = f"{datadir}/{conf.datafilename}"
 
     # Create setups
+    assert not conf.derived_setup_params
     setups = [conf.setup]
-    for kwargs in conf.derive_setups:
-        setups.append(conf.setup.derive(**kwargs))
 
     # Initialize variable specifications
-    multi_var_specs_lst = []
-    for setup in setups:
-        multi_var_specs_lst.extend(MultiVarSpecs.from_setup(setup))
+    multi_var_specs_lst = MultiVarSpecs.from_setups(setups)
     assert len(multi_var_specs_lst) == 1
     multi_var_specs = next(iter(multi_var_specs_lst))
 
@@ -174,7 +171,8 @@ def test_single(datadir, conf):  # noqa:F811
                 read_nc_var(
                     datafile,
                     get_var_name_ref(var_specs, conf.var_names_ref),
-                    var_specs,
+                    var_specs._setup,  # SR_TMP
+                    dict(var_specs),  # SR_TMP
                 )
                 for var_specs in multi_var_specs
             ],
@@ -276,7 +274,7 @@ def test_single(datadir, conf):  # noqa:F811
                 integrate=True,
                 time_idcs=[0, 3, 9],
             ),
-            derive_setups=[{"level_idx": 2}],
+            derived_setup_params=[{"level_idx": 2}],
             scale_fld_ref=3.0,
         ),
         Conf(
@@ -302,13 +300,11 @@ def test_multiple(datadir, conf):  # noqa:F811
 
     # Create setups
     setups = [conf.setup]
-    for kwargs in conf.derive_setups:
-        setups.append(conf.setup.derive(**kwargs))
+    for params in conf.derived_setup_params:
+        setups.append(conf.setup.derive(params))
 
     # Create field specifications list
-    multi_var_specs_lst = []
-    for setup in setups:
-        multi_var_specs_lst.extend(MultiVarSpecs.from_setup(setup))
+    multi_var_specs_lst = MultiVarSpecs.from_setups(setups)
     fld_specs_lst = [
         FieldSpecs(conf.name, multi_var_specs)
         for multi_var_specs in multi_var_specs_lst
@@ -330,7 +326,8 @@ def test_multiple(datadir, conf):  # noqa:F811
                 read_nc_var(
                     datafile,
                     get_var_name_ref(var_specs, conf.var_names_ref),
-                    var_specs,
+                    var_specs._setup,  # SR_TMP
+                    dict(var_specs),  # SR_TMP
                 )
             ]
             fld_ref_i = np.nansum(flds_ref_i, axis=0)

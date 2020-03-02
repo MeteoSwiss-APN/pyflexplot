@@ -382,7 +382,7 @@ def test_read_double_wildcard_variable_depth(tmp_path):
 
 
 def test_decompress_all():
-    setup = DEFAULT_SETUP.derive(level_idx=[1, 2], time_idcs=[1, 2, 3])
+    setup = DEFAULT_SETUP.derive({"level_idx": [1, 2], "time_idcs": [1, 2, 3]})
     setups = setup.decompress()
     assert len(setups) == 6
     res = {(setup.level_idx, next(iter(setup.time_idcs))) for setup in setups}

@@ -103,9 +103,7 @@ class VarSpecs:
         self._words = words or WORDS
         self._words.set_default_lang(self._setup.lang)
 
-        self._set_attrs(var_specs_dct)
-
-    def _set_attrs(self, var_specs_dct):
+        # Set attributes
         var_specs_dct_todo = {k: v for k, v in var_specs_dct.items()}
         for key, (type_, default) in self.specs_type_default.items():
             try:
@@ -128,7 +126,34 @@ class VarSpecs:
 
     # SR_TMP <<<
     @classmethod
-    def from_dct(cls, setup, var_specs_dct, **kwargs):
+    def from_setup(cls, setup, var_specs_dct=None, **kwargs):
+
+        sub_setups = setup.decompress()
+        if len(sub_setups) > 1:
+            var_specs_lst = []
+            for sub_setup in sub_setups:
+                var_specs_lst_lst_i = cls.from_setup(sub_setup, **kwargs)
+                assert len(var_specs_lst_lst_i) == 1
+                var_specs_lst.extend(var_specs_lst_lst_i[0])
+            var_specs_lst_lst = [var_specs_lst]
+            return var_specs_lst_lst
+
+        if var_specs_dct is None:
+            var_specs_dct = {
+                "time": setup.time_idcs,
+                "nageclass": setup.age_class_idx,
+                "noutrel": setup.nout_rel_idx,
+                "numpoint": setup.release_point_idx,
+                "species_id": setup.species_id,
+                "integrate": setup.integrate,
+            }
+            if setup.variable == "concentration":
+                var_specs_dct["level"] = setup.level_idx
+            elif setup.variable == "deposition":
+                if setup.deposition_type == "tot":
+                    var_specs_dct["deposition"] = ("wet", "dry")
+                else:
+                    var_specs_dct["deposition"] = setup.deposition_type
 
         var_specs_dct_lst_outer = decompress_multival_dict(
             var_specs_dct, depth=1, cls_expand=list,
@@ -145,53 +170,23 @@ class VarSpecs:
                 return [create_objs_rec(i) for i in obj]
             raise ValueError(f"obj of type {type(obj).__name__}")
 
-        return create_objs_rec(var_specs_dct_lst_lst)
+        var_specs_lst_lst = create_objs_rec(var_specs_dct_lst_lst)
+
+        return var_specs_lst_lst
 
     # SR_TMP <<<
     @classmethod
-    def from_setup(cls, setup, **kwargs):
-        def create_var_specs_dct(setup):
-            var_specs_raw = {
-                "time_lst": setup.time_idcs,
-                "nageclass": setup.age_class_idx,
-                "noutrel": setup.nout_rel_idx,
-                "numpoint": setup.release_point_idx,
-                "species_id": setup.species_id,
-                "integrate": setup.integrate,
-            }
-
-            if setup.variable == "concentration":
-                var_specs_raw["level_lst"] = setup.level_idx
-            elif setup.variable == "deposition":
-                var_specs_raw["deposition_lst"] = setup.deposition_type
-            else:
-                raise NotImplementedError(f"variable='{setup.variable}'")
-
-            var_specs_dct = {}
-            for key, val in var_specs_raw.items():
-                if key.endswith("_lst"):
-                    key = key[: -len("_lst")]
-                if (key, val) == ("deposition", "tot"):
-                    val = ("wet", "dry")
-                var_specs_dct[key] = val
-
-            return var_specs_dct
-
-        return cls.from_dct(setup, create_var_specs_dct(setup))
-
-    # SR_TMP <<<
-    @classmethod
-    def from_setups(cls, setups):
+    def from_setups(cls, setups, **kwargs):
         # SR_TMP <
         # Separate setups by time index
         orig_setups, setups = setups, []
         for setup in orig_setups:
             for time_idx in setup.time_idcs:
-                setups.append(setup.derive(time_idcs=[time_idx]))
+                setups.append(setup.derive({"time_idcs": [time_idx]}))
         # SR_TMP >
         var_specs_lst_lst = []
         for setup in setups:
-            var_specs_lst_lst_tmp = cls.from_setup(setup)
+            var_specs_lst_lst_tmp = cls.from_setup(setup, **kwargs)
             assert len(var_specs_lst_lst_tmp) == 1
             var_specs_lst_lst.append(next(iter(var_specs_lst_lst_tmp)))
         return var_specs_lst_lst
@@ -417,26 +412,16 @@ class MultiVarSpecs:
     def __len__(self):
         return len(self.var_specs_lst)
 
-    def shared(self):
-        dct = self.shared_dct()
-        # SR_TMP <
+    # SR_TMP <<< TODO eliminate (or replace)
+    def shared_dct(self):
+        dct = self.compressed_dct()
+        dct.pop("rlat")
+        dct.pop("rlon")
         if dct.get("deposition") == "tot":
             dct["deposition"] = None
-        # SR_TMP >
-        return next(iter(next(iter(VarSpecs.from_dct(self.setup, dct)))))
-
-    def shared_dct(self):
-        skipped = ["_name", "rlat", "rlon"]  # SR_TMP TODO remove from dct
-        dct = {}
-        for key, val in self.compressed_dct().items():
-            # SR_TMP <
-            if key in skipped:
-                continue
-            # SR_TMP >
-            if isinstance(val, tuple):
-                val = None
-            dct[key] = val
-        return dct
+        var_specs_lst_lst = VarSpecs.from_setup(self.setup, dct)
+        assert len(var_specs_lst_lst) == 1 and len(var_specs_lst_lst[0]) == 1
+        return var_specs_lst_lst[0][0]
 
     def compressed_dct(self):
         dct = {k: [v] for k, v in dict(list(self)[0]).items()}
