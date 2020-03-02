@@ -172,7 +172,6 @@ def test_single(datadir, conf):  # noqa:F811
                     datafile,
                     get_var_name_ref(var_specs, conf.var_names_ref),
                     var_specs._setup,  # SR_TMP
-                    dict(var_specs),  # SR_TMP
                 )
                 for var_specs in multi_var_specs
             ],
@@ -327,7 +326,6 @@ def test_multiple(datadir, conf):  # noqa:F811
                     datafile,
                     get_var_name_ref(var_specs, conf.var_names_ref),
                     var_specs._setup,  # SR_TMP
-                    dict(var_specs),  # SR_TMP
                 )
             ]
             fld_ref_i = np.nansum(flds_ref_i, axis=0)
