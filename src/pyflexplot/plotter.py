@@ -83,21 +83,22 @@ class Plotter:
 
     def format_out_file_path(self, field_specs):
 
-        var_specs_dct = field_specs.multi_var_specs.compressed_dct()
+        setup = field_specs.multi_var_specs.setup
 
-        # Collect variable specifications
-        kwargs = {"domain": self.domain}
-        for specs_key, fmt_key in self.specs_fmt_keys.items():
-            try:
-                val = var_specs_dct[specs_key]
-            except KeyError:
-                pass
-            else:
-                if specs_key == "integrate":
-                    val = "int" if val else "no-int"
-                kwargs[fmt_key] = val
+        variable = setup.variable
+        if setup.variable == "deposition":
+            variable += f"_{setup.deposition_type}"
 
-        kwargs["lang"] = self.setup.lang
+        kwargs = {
+            "age_class": setup.age_class_idx,
+            "domain": setup.domain,
+            "lang": setup.lang,
+            "level": setup.level_idx,
+            "nout_rel": setup.nout_rel_idx,
+            "species_id": setup.species_id,
+            "time": setup.time_idcs,
+            "variable": variable,
+        }
 
         # Format the file path
         # Don't use str.format in order to handle multival elements

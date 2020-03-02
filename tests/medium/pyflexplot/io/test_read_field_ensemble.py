@@ -15,9 +15,21 @@ from pyflexplot.field_specs import FieldSpecs
 from pyflexplot.io import FileReader
 from pyflexplot.setup import Setup
 from pyflexplot.var_specs import MultiVarSpecs
+from srutils.dict import decompress_multival_dict
 
 from io_utils import read_nc_var  # isort:skip
 from utils import datadir  # noqa:F401 isort:skip
+
+
+def get_var_name_ref(setup, var_names_ref):
+    if setup.variable == "concentration":
+        assert len(var_names_ref) == 1
+        return next(iter(var_names_ref))
+    elif setup.variable == "deposition":
+        for var_name in var_names_ref:
+            if (setup.deposition_type, var_name[:2]) in [("dry", "DD"), ("wet", "WD")]:
+                return var_name
+    raise NotImplementedError(f"{setup}")
 
 
 class TestReadFieldEnsemble_Single:
@@ -42,12 +54,12 @@ class TestReadFieldEnsemble_Single:
     ens_member_ids = [0, 1, 5, 10, 15, 20]
 
     def datafile_fmt(self, datadir):  # noqa:F811
-        return f"{datadir}/flexpart_cosmo-2e_20190727120_{{ens_member_id:03d}}.nc"
+        return f"{datadir}/flexpart_cosmo-2e_20190727120_{{ens_member:03d}}.nc"
 
     def datafile(self, ens_member_id, *, datadir=None, datafile_fmt=None):  # noqa:F811
         if datafile_fmt is None:
             datafile_fmt = self.datafile_fmt(datadir)
-        return datafile_fmt.format(ens_member_id=ens_member_id)
+        return datafile_fmt.format(ens_member=ens_member_id)
 
     def run(
         self,
@@ -81,8 +93,8 @@ class TestReadFieldEnsemble_Single:
         fld_specs = FieldSpecs(name, multi_var_specs, attrs)
 
         # SR_TMP <
-        assert len(multi_var_specs) == 1
-        var_specs = next(iter(multi_var_specs))
+        assert len(setups) == 1
+        setup = next(iter(setups))
         # SR_TMP >
 
         # Read input fields
@@ -97,7 +109,7 @@ class TestReadFieldEnsemble_Single:
                         read_nc_var(
                             self.datafile(ens_member_id, datafile_fmt=datafile_fmt),
                             var_name,
-                            var_specs._setup,  # SR_TMP
+                            setup,  # SR_TMP
                         )
                         for ens_member_id in self.ens_member_ids
                     ]
@@ -128,7 +140,7 @@ class TestReadFieldEnsemble_Multiple:
     """Read multiple 2D field ensembles from FLEXPART NetCDF files."""
 
     # Setup parameters arguments shared by all tests
-    setup_params_shared = {
+    shared_setup_params_compressed = {
         "infiles": ["dummy.py"],
         "integrate": True,
         "outfile": "dummy.png",
@@ -136,9 +148,8 @@ class TestReadFieldEnsemble_Multiple:
         "time_idcs": [0, 3, 9],
     }
 
-    @property
-    def species_id(self):
-        return self.setup_params_shared["species_id"]
+    # Species ID
+    species_id = shared_setup_params_compressed["species_id"]
 
     # Ensemble member ids
     ens_member_ids = [0, 1, 5, 10, 15, 20]
@@ -148,12 +159,12 @@ class TestReadFieldEnsemble_Multiple:
     agreement_threshold_deposition_tot = None  # SR_TMP
 
     def datafile_fmt(self, datadir):  # noqa:F811
-        return f"{datadir}/flexpart_cosmo-2e_20190727120_{{ens_member_id:03d}}.nc"
+        return f"{datadir}/flexpart_cosmo-2e_20190727120_{{ens_member:03d}}.nc"
 
     def datafile(self, ens_member_id, *, datafile_fmt=None, datadir=None):  # noqa:F811
         if datafile_fmt is None:
             datafile_fmt = self.datafile_fmt(datadir)
-        return datafile_fmt.format(ens_member_id=ens_member_id)
+        return datafile_fmt.format(ens_member=ens_member_id)
 
     def run(
         self,
@@ -171,14 +182,25 @@ class TestReadFieldEnsemble_Multiple:
         """Run an individual test, reading one field after another."""
 
         # Create field specifications list
-        setup_params = {
-            **self.setup_params_shared,
-            **setup_params,
-            "ens_member_ids": self.ens_member_ids,
-            "plot_type": f"ens_{ens_var}",
-        }
-        setups = Setup(**setup_params).decompress()
-        multi_var_specs_lst = MultiVarSpecs.from_setups(setups)
+        setups = []
+        multi_var_specs_lst = []
+        shared_setup_params_lst = decompress_multival_dict(
+            self.shared_setup_params_compressed, skip=["infiles"],
+        )
+        for shared_setup_params in shared_setup_params_lst:
+            shared_setup_params["time_idcs"] = [shared_setup_params["time_idcs"]]
+            setup_params_i = {
+                **shared_setup_params,
+                **setup_params,
+                "ens_member_ids": self.ens_member_ids,
+                "plot_type": f"ens_{ens_var}",
+            }
+            setup = Setup(**setup_params_i)
+            setups.append(setup)
+            multi_var_specs_lst_i = MultiVarSpecs.from_setup(setup)
+            assert len(multi_var_specs_lst_i) == 1
+            multi_var_specs = next(iter(multi_var_specs_lst_i))
+            multi_var_specs_lst.append(multi_var_specs)
         attrs = {
             "ens_member_ids": self.ens_member_ids,
             "ens_var": ens_var,
@@ -208,25 +230,24 @@ class TestReadFieldEnsemble_Multiple:
         fld_arr = np.array([flex_field.fld for flex_field in flex_field_lst])
 
         # Collect merged variables specifications
-        var_specs_lst = []
+        setups_lst = []
         for fld_specs in fld_specs_lst:
-            var_specs = fld_specs.multi_var_specs.shared_dct()
-            var_specs_lst.append(var_specs)
+            setups_lst.append(fld_specs.multi_var_specs.setup.decompress())
 
         # Read reference fields
         fld_ref_lst = []
-        for var_specs in var_specs_lst:
+        for setups in setups_lst:
             fld_ref_mem_time = [
                 [
                     read_nc_var(
                         self.datafile(ens_member_id, datafile_fmt=datafile_fmt),
-                        var_name,
-                        var_specs._setup,  # SR_TMP
+                        get_var_name_ref(setup, var_names_ref),
+                        setup,
                     )
                     * scale_fld_ref
                     for ens_member_id in self.ens_member_ids
                 ]
-                for var_name in var_names_ref
+                for setup in setups
             ]
             fld_ref_lst.append(
                 fct_reduce_mem(np.nansum(fld_ref_mem_time, axis=0), axis=0)

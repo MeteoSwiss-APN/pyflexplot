@@ -39,7 +39,7 @@ class FileReader:
 
         Args:
             in_file_path (str): File path. In case of ensemble data, it must
-                contain the format key '{ens_member_ids[:0?d]}'.
+                contain the format key '{ens_member[:0?d]}'.
 
             cmd_open (function, optional): Function to open the input file.
                 Must support context manager interface, i.e., ``with
@@ -193,7 +193,7 @@ class FileReader:
 
     def _prepare_in_file_path_lst(self, ens_member_ids):
 
-        fmt_keys = ["{ens_member_id}", "{ens_member_id:"]
+        fmt_keys = ["{ens_member}", "{ens_member:"]
         fmt_key_in_path = any(k in self.in_file_path_fmt for k in fmt_keys)
 
         if not ens_member_ids:
@@ -209,7 +209,7 @@ class FileReader:
                 f"input file path missing format key '{fmt_keys[0]}': "
                 f"{self.in_file_path_fmt}"
             )
-        return [self.in_file_path_fmt.format(ens_member_id=id) for id in ens_member_ids]
+        return [self.in_file_path_fmt.format(ens_member=id) for id in ens_member_ids]
 
     def _determine_n_reqtime(self):
         """Determine the number of selected time steps."""

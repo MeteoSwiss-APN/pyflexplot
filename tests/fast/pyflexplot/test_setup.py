@@ -36,7 +36,7 @@ DEFAULT_SETUP = Setup(
         **DEFAULT_KWARGS,
         "age_class_idx": 0,
         "combine_species": False,
-        "deposition_type": "tot",
+        "deposition_type": "none",
         "domain": "auto",
         "ens_member_ids": None,
         "integrate": False,

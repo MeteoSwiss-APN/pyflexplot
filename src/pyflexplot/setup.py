@@ -31,20 +31,22 @@ class Setup(BaseModel):
 
     Args:
         age_class_idx: Index of age class (zero-based). Use the format key
-            '{age_class_idx}' to embed it into the output file path.
+            '{age_class}' to embed it into the output file path.
 
         combine_species: Sum up over all specified species. Otherwise, each is
             plotted separately.
 
         deposition_type: Type of deposition. Part of the plot variable name
             that may be embedded in the plot file path with the format key
-            '{variable}'. Choices: "tot", "wet", "dry".
+            '{variable}'. Choices: "tot", "wet", "dry", "none".
 
         domain: Plot domain. Defaults to 'data', which derives the domain size
             from the input data. Use the format key '{domain}' to embed the
             domain name in the plot file path. Choices": "auto", "ch".
 
-        ens_member_ids: Ensemble member ids. Omit for deterministic simulations.
+        ens_member_ids: Ensemble member ids. Use the format key '{ens_member}'
+            to embed it into the input file path. Omit for deterministic
+            simulations.
 
         infiles: Input file path(s). May contain format keys.
 
@@ -55,10 +57,10 @@ class Setup(BaseModel):
 
         level_idx: Index/indices of vertical level (zero-based, bottom-up). To
             sum up multiple levels, combine their indices with '+'. Use the
-            format key '{level_idx}' to embed it in the plot file path.
+            format key '{level}' to embed it in the plot file path.
 
         nout_rel_idx: Index of noutrel (zero-based). Use the format key
-            '{noutrel_idx}' to embed it in the plot file path.
+            '{nout_rel}' to embed it in the plot file path.
 
         outfile: Output file path. May contain format keys.
 
@@ -75,8 +77,8 @@ class Setup(BaseModel):
             ids with '+'. Use the format key '{species_id}' to embed it in the
             plot file path.
 
-        time_idcs: Time step indices.. Use the format key '{time_idx}' to embed
-            it in the plot file path.
+        time_idcs: Time step indices.. Use the format key '{time}' to embed it
+            in the plot file path.
 
         variable: Input variable to be plotted. Choices: "concentration",
             "deposition".
@@ -89,7 +91,7 @@ class Setup(BaseModel):
 
     age_class_idx: int = 0
     combine_species: bool = False
-    deposition_type: Union[str, Tuple[str, str]] = "tot"
+    deposition_type: Union[str, Tuple[str, str]] = "none"
     domain: str = "auto"
     ens_member_ids: Optional[Tuple[int, ...]] = None
     infiles: Tuple[str, ...]
@@ -113,7 +115,7 @@ class Setup(BaseModel):
             if set(val) == {"dry", "wet"}:
                 return "tot"
         elif isinstance(val, str):
-            if val in ["dry", "wet", "tot"]:
+            if val in ["dry", "wet", "tot", "none"]:
                 return val
         raise ValueError("invalid deposition type", val)
 
@@ -160,11 +162,23 @@ class Setup(BaseModel):
         """Create multiple ``Setup`` objects with one-value parameters only."""
 
         def create(dct):
-            dct["time_idcs"] = [dct["time_idcs"]]
-            return Setup(**dct)
+            return Setup(**{**dct, "time_idcs": [dct["time_idcs"]]})
 
+        # SR_TMP < TODO cleaner solution
         skip = ["infiles", "ens_member_ids"]
-        return [create(dct) for dct in decompress_multival_dict(self.dict(), skip=skip)]
+        dcts = decompress_multival_dict(self.dict(), skip=skip)
+        if self.variable == "deposition" and self.deposition_type == "tot":
+            sub_setups = []
+            for dct in dcts:
+                for deposition_type in ["dry", "wet"]:
+                    sub_setups.append(
+                        create(dct).derive({"deposition_type": deposition_type})
+                    )
+        else:
+            sub_setups = [create(dct) for dct in dcts]
+        # SR_TMP >
+
+        return sub_setups
 
     def tmp_cls_name(self):
         if self.simulation_type == "deterministic":

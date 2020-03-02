@@ -485,14 +485,3 @@ class Test_MultiVarSpecs_Interface:
         assert res1 == sol
         assert res2 == sol
         assert res1 == res2
-
-    def test_compressed_var_specs(self):
-        multi_var_specs = self.create_multi_var_specs()
-        var_specs_dct = multi_var_specs.compressed_dct()
-        assert isinstance(var_specs_dct, dict)
-        # SR_TMP< TODO remove rlon/rlat etc. from dict in VarSpecs
-        # + assert var_specs_dct == selc.c.dct
-        sol = set(self.c.dct.items())
-        res = set(var_specs_dct.items())
-        assert res.issuperset(sol)
-        # SR_TMP>

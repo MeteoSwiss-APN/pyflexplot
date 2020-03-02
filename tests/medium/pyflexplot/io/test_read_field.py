@@ -25,15 +25,15 @@ from io_utils import read_nc_var  # isort:skip
 from utils import datadir  # noqa:F401 isort:skip
 
 
-def get_var_name_ref(var_specs, var_names_ref):
-    if var_specs._setup.variable == "concentration":
+def get_var_name_ref(setup, var_names_ref):
+    if setup.variable == "concentration":
         assert len(var_names_ref) == 1
         return next(iter(var_names_ref))
-    elif var_specs._setup.variable == "deposition":
+    elif setup.variable == "deposition":
         for var_name in var_names_ref:
-            if (var_specs.deposition, var_name[:2]) in [("dry", "DD"), ("wet", "WD")]:
+            if (setup.deposition_type, var_name[:2]) in [("dry", "DD"), ("wet", "WD")]:
                 return var_name
-    raise NotImplementedError(f"{var_specs}")
+    raise NotImplementedError(f"{setup}")
 
 
 @dataclass
@@ -148,14 +148,14 @@ def test_single(datadir, conf):  # noqa:F811
 
     datafile = f"{datadir}/{conf.datafilename}"
 
-    # Create setups
-    assert not conf.derived_setup_params
-    setups = [conf.setup]
-
     # Initialize variable specifications
-    multi_var_specs_lst = MultiVarSpecs.from_setups(setups)
+    multi_var_specs_lst = MultiVarSpecs.from_setup(conf.setup)
     assert len(multi_var_specs_lst) == 1
     multi_var_specs = next(iter(multi_var_specs_lst))
+
+    # SR_TMP < TODO at the very least, cleanly obtain from MultiVarSpecs
+    setups = conf.setup.decompress()
+    # SR_TMP >
 
     # Initialize field specifications
     fld_specs = FieldSpecs(conf.name, multi_var_specs)
@@ -169,11 +169,9 @@ def test_single(datadir, conf):  # noqa:F811
         np.nansum(
             [
                 read_nc_var(
-                    datafile,
-                    get_var_name_ref(var_specs, conf.var_names_ref),
-                    var_specs._setup,  # SR_TMP
+                    datafile, get_var_name_ref(setup, conf.var_names_ref), setup,
                 )
-                for var_specs in multi_var_specs
+                for setup in setups
             ],
             axis=0,
         )
@@ -298,9 +296,10 @@ def test_multiple(datadir, conf):  # noqa:F811
     datafile = f"{datadir}/{conf.datafilename}"
 
     # Create setups
-    setups = [conf.setup]
-    for params in conf.derived_setup_params:
-        setups.append(conf.setup.derive(params))
+    setups = conf.setup.decompress()
+    for setup in setups.copy():
+        for params in conf.derived_setup_params:
+            setups.append(setup.derive(params))
 
     # Create field specifications list
     multi_var_specs_lst = MultiVarSpecs.from_setups(setups)
@@ -324,7 +323,7 @@ def test_multiple(datadir, conf):  # noqa:F811
             flds_ref_i = [
                 read_nc_var(
                     datafile,
-                    get_var_name_ref(var_specs, conf.var_names_ref),
+                    get_var_name_ref(var_specs._setup, conf.var_names_ref),
                     var_specs._setup,  # SR_TMP
                 )
             ]

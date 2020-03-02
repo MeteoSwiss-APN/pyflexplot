@@ -382,7 +382,7 @@ class MultiVarSpecs:
         """Create instances of ``MultiVarSpecs`` from a ``Setup`` object."""
         return [
             cls(setup, var_specs_lst)
-            for var_specs_lst in VarSpecs.from_setups([setup], **kwargs)
+            for var_specs_lst in VarSpecs.from_setups([setup], **kwargs)  # SR_TMP
         ]
 
     @classmethod
@@ -411,26 +411,3 @@ class MultiVarSpecs:
 
     def __len__(self):
         return len(self.var_specs_lst)
-
-    # SR_TMP <<< TODO eliminate (or replace)
-    def shared_dct(self):
-        dct = self.compressed_dct()
-        dct.pop("rlat")
-        dct.pop("rlon")
-        if dct.get("deposition") == "tot":
-            dct["deposition"] = None
-        var_specs_lst_lst = VarSpecs.from_setup(self.setup, dct)
-        assert len(var_specs_lst_lst) == 1 and len(var_specs_lst_lst[0]) == 1
-        return var_specs_lst_lst[0][0]
-
-    def compressed_dct(self):
-        dct = {k: [v] for k, v in dict(list(self)[0]).items()}
-        for vs in list(self)[1:]:
-            for key, val in dict(vs).items():
-                if val not in dct[key]:
-                    dct[key] = dct[key] + [val]
-        for key, val in dct.items():
-            if key == "deposition" and set(val) == {"dry", "wet"}:
-                val = ["tot"]
-            dct[key] = next(iter(val)) if len(val) == 1 else tuple(val)
-        return dct
