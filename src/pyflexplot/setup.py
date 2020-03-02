@@ -24,6 +24,11 @@ from srutils.dict import decompress_multival_dict
 from srutils.dict import decompress_nested_dict
 from srutils.dict import nested_dict_resolve_wildcards
 
+# Some plot-specific default values
+ENS_THR_AGRMT_THR_DEFAULT: float = 1e-9
+ENS_CLOUD_ARRIVAL_TIME_MEM_MIN_DEFAULT = 1
+ENS_CLOUD_ARRIVAL_TIME_THR_DEFAULT: float = 1e-9
+
 
 class Setup(BaseModel):
     """
@@ -47,6 +52,13 @@ class Setup(BaseModel):
         ens_member_ids: Ensemble member ids. Use the format key '{ens_member}'
             to embed it into the input file path. Omit for deterministic
             simulations.
+
+        ens_param_mem_min: Minimum number of ensemble members used to compute
+            some ensemble variables. Its precise meaning depends on the
+            variable.
+
+        ens_param_thr: Threshold used to compute some ensemble variables. Its
+            precise meaning depends on the variable.
 
         infiles: Input file path(s). May contain format keys.
 
@@ -109,15 +121,51 @@ class Setup(BaseModel):
     time_idcs: Tuple[int, ...] = (0,)
     variable: str = "concentration"
 
-    @validator("deposition_type")
-    def _validate_deposition_type(cls, val: Union[str, Tuple[str, str]]) -> str:
-        if isinstance(val, tuple):
-            if set(val) == {"dry", "wet"}:
+    # Derived parameters
+    ens_param_mem_min: Optional[int] = None
+    ens_param_thr: Optional[float] = None
+
+    @validator("deposition_type", always=True)
+    def _validate_deposition_type(cls, value: Union[str, Tuple[str, str]]) -> str:
+        if isinstance(value, tuple):
+            if set(value) == {"dry", "wet"}:
                 return "tot"
-        elif isinstance(val, str):
-            if val in ["dry", "wet", "tot", "none"]:
-                return val
-        raise ValueError("invalid deposition type", val)
+        elif isinstance(value, str):
+            if value in ["dry", "wet", "tot", "none"]:
+                return value
+        raise ValueError("deposition_type is invalid", value)
+
+    @validator("ens_param_mem_min", always=True)
+    def _validate_ens_param_mem_min(
+        cls, value: Optional[int], values: Dict[str, Any],
+    ) -> Optional[int]:
+        if value is not None:
+            if values["simulation_type"] != "ensemble":
+                raise ValueError(
+                    "ens_param_mem_min incompatible with simulation_type",
+                    value,
+                    values["simulation_type"],
+                )
+        elif values["plot_type"] == "ens_cloud_arrival_time":
+            value = ENS_CLOUD_ARRIVAL_TIME_MEM_MIN_DEFAULT
+        return value
+
+    @validator("ens_param_thr", always=True)
+    def _validate_ens_param_thr(
+        cls, value: Optional[float], values: Dict[str, Any],
+    ) -> Optional[float]:
+        if value is not None:
+            if values["simulation_type"] != "ensemble":
+                raise ValueError(
+                    "ens_param_thr incompatible with simulation_type",
+                    value,
+                    values["simulation_type"],
+                )
+        elif values["plot_type"] == "ens_thr_agrmt":
+            value = ENS_THR_AGRMT_THR_DEFAULT
+        elif values["plot_type"] == "ens_cloud_arrival_time":
+            value = ENS_CLOUD_ARRIVAL_TIME_THR_DEFAULT
+        return value
 
     @classmethod
     def as_setup(cls, obj: Union[Mapping[str, Any], "Setup"]) -> "Setup":

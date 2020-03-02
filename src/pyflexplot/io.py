@@ -170,7 +170,7 @@ class FileReader:
             fld_specs_time = self._fld_specs_time_lst[i_fld_specs]
             time_idcs = self._time_inds_lst[i_fld_specs]
 
-            ens_member_ids = getattr(fld_specs_time, "ens_member_ids", None)
+            ens_member_ids = fld_specs_time.multi_var_specs.setup.ens_member_ids
             self.n_members = 1 if not ens_member_ids else len(ens_member_ids)
             self.in_file_path_lst = self._prepare_in_file_path_lst(ens_member_ids)
 
@@ -290,37 +290,25 @@ class FileReader:
         """Reduce the ensemble to a single field (time, rlat, rlon)."""
         if self.n_members == 1:
             return fld_time_mem[0]
-
-        ens_var = fld_specs_time.ens_var
-        ens_var_setup = getattr(fld_specs_time, "ens_var_setup", {})
-        setup_name = f"{type(fld_specs_time).__name__}.ens_var_setup"
-
-        if ens_var == "mean":
+        setup = fld_specs_time.multi_var_specs.setup
+        plot_type = setup.plot_type
+        if plot_type == "ens_mean":
             fld_time = np.nanmean(fld_time_mem, axis=0)
-        elif ens_var == "median":
+        elif plot_type == "ens_median":
             fld_time = np.nanmedian(fld_time_mem, axis=0)
-        elif ens_var == "min":
+        elif plot_type == "ens_min":
             fld_time = np.nanmin(fld_time_mem, axis=0)
-        elif ens_var == "max":
+        elif plot_type == "ens_max":
             fld_time = np.nanmax(fld_time_mem, axis=0)
-        elif ens_var == "thr_agrmt":
-            try:
-                thr = ens_var_setup["thr"]
-            except KeyError:
-                raise Exception(f"'thr' missing in {setup_name}")
+        elif plot_type == "ens_thr_agrmt":
+            thr = setup.ens_param_thr
             fld_time = threshold_agreement(fld_time_mem, thr, axis=0)
-        elif ens_var == "cloud_arrival_time":
-            try:
-                thr = ens_var_setup["thr"]
-            except KeyError:
-                raise Exception(f"'thr' missing in {setup_name}")
-            try:
-                n_mem_min = ens_var_setup["n_mem_min"]
-            except KeyError:
-                raise Exception(f"'n_mem_min' missing in {setup_name}")
-            fld_time = cloud_arrival_time(fld_time_mem, thr, n_mem_min, mem_axis=0)
+        elif plot_type == "ens_cloud_arrival_time":
+            thr = setup.ens_param_thr
+            mem_min = setup.ens_param_mem_min
+            fld_time = cloud_arrival_time(fld_time_mem, thr, mem_min, mem_axis=0)
         else:
-            raise NotImplementedError(f"ens_var '{ens_var}'")
+            raise NotImplementedError(f"plot var '{plot_type}'")
         return fld_time
 
     def _create_specs_reqtime(self, fld_specs_time, time_idcs):

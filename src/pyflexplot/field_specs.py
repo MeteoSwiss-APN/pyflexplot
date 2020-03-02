@@ -24,7 +24,7 @@ class FieldSpecs:
         return lst
 
     def __init__(
-        self, name, multi_var_specs, attrs=None, *, op=np.nansum,
+        self, name, multi_var_specs, *, op=np.nansum,
     ):
         """Create an instance of ``FieldSpecs``.
 
@@ -33,9 +33,6 @@ class FieldSpecs:
 
             multi_var_specs (MultiVarSpecs): Specifications of one or more
                 input variables used to subsequently create a plot field.
-
-            attrs (dict[str], optional): Additional arbitrary attributes.
-                Defaults to None.
 
         Kwargs:
             op (function or list[function], optional): Opterator(s) used to
@@ -64,19 +61,6 @@ class FieldSpecs:
         assert isinstance(multi_var_specs, MultiVarSpecs)  # SR_TMP
         self.multi_var_specs = multi_var_specs
 
-        # SR_TMP < TODO Work toward eliminating attrs entirely!
-        if attrs is not None:
-            attrs = attrs.copy()
-            setup = multi_var_specs.setup
-            if "ens_member_ids" in attrs:
-                assert tuple(attrs.pop("ens_member_ids")) == setup.ens_member_ids
-                self.ens_member_ids = setup.ens_member_ids
-            if "ens_var" in attrs:
-                assert f"ens_{attrs.pop('ens_var')}" == setup.plot_type
-                self.ens_var = setup.plot_type[4:]
-        # SR_TMP >
-        self.set_attrs(attrs)
-
         # Store operator(s)
         self.check_op(op)
         if callable(op):
@@ -85,18 +69,6 @@ class FieldSpecs:
         else:
             self.op = None
             self.op_lst = op
-
-    def set_attrs(self, attrs):
-        """Set instance attributes."""
-        if attrs is None:
-            return
-        for attr, val in attrs.items():
-            assert attr not in ["end_member_ids", "ens_var"]  # SR_TMP
-            if hasattr(self, attr):
-                raise ValueError(
-                    f"attribute '{type(self).__name__}.{attr}' already exists"
-                )
-            setattr(self, attr, val)
 
     def check_op(self, op):
         """Check operator(s)."""

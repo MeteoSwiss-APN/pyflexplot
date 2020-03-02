@@ -763,14 +763,14 @@ class Plot:
 
     # SR_TODO Move into Labels class
     def _format_top_box_subtitle(self):
+        setup = self.setup
         if self.name.startswith("ens_thr_agrmt"):
             return self.labels.top_left["subtitle_thr_agrmt_fmt"].format(
-                thr=self.field.field_specs.ens_var_setup["thr"],
+                thr=setup.ens_param_thr,
             )
         elif self.name.startswith("ens_cloud_arrival_time"):
             return self.labels.top_left["subtitle_cloud_arrival_time"].format(
-                thr=self.field.field_specs.ens_var_setup["thr"],
-                mem=self.field.field_specs.ens_var_setup["n_mem_min"],
+                thr=setup.ens_param_thr, mem=setup.ens_param_mem_min,
             )
         else:
             return None

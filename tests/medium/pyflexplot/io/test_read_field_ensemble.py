@@ -41,6 +41,7 @@ class TestReadFieldEnsemble_Single:
         "integrate": False,
         "outfile": "dummy.png",
         "plot_type": "ens_mean",
+        "simulation_type": "ensemble",
         "species_id": 2,
         "time_idcs": [10],
         "variable": "concentration",
@@ -76,26 +77,22 @@ class TestReadFieldEnsemble_Single:
         datafile_fmt = self.datafile_fmt(datadir)
 
         # Initialize specifications
-        setup_params = {
-            **self.setup_params_shared,
-            **setup_params,
-            "ens_member_ids": self.ens_member_ids,
-            "plot_type": f"ens_{ens_var}",
-        }
-        setups = Setup(**setup_params).decompress()
-        multi_var_specs_lst = MultiVarSpecs.from_setups(setups)
+        setup = Setup(
+            **{
+                **self.setup_params_shared,
+                **setup_params,
+                "ens_member_ids": self.ens_member_ids,
+                "plot_type": f"ens_{ens_var}",
+            }
+        )
+        multi_var_specs_lst = MultiVarSpecs.from_setup(setup)
         assert len(multi_var_specs_lst) == 1
         multi_var_specs = next(iter(multi_var_specs_lst))
-        attrs = {
-            "ens_member_ids": self.ens_member_ids,
-            "ens_var": ens_var,
-        }
-        fld_specs = FieldSpecs(name, multi_var_specs, attrs)
+        fld_specs = FieldSpecs(name, multi_var_specs)
 
-        # SR_TMP <
+        setups = multi_var_specs.setup.decompress()
         assert len(setups) == 1
         setup = next(iter(setups))
-        # SR_TMP >
 
         # Read input fields
         flex_field = FileReader(datafile_fmt).run(fld_specs)
@@ -144,6 +141,7 @@ class TestReadFieldEnsemble_Multiple:
         "infiles": ["dummy.py"],
         "integrate": True,
         "outfile": "dummy.png",
+        "simulation_type": "ensemble",
         "species_id": 1,
         "time_idcs": [0, 3, 9],
     }
@@ -155,8 +153,8 @@ class TestReadFieldEnsemble_Multiple:
     ens_member_ids = [0, 1, 5, 10, 15, 20]
 
     # Thresholds for ensemble threshold agreement
-    agreement_threshold_concentration = 1e-7  # SR_TMP
-    agreement_threshold_deposition_tot = None  # SR_TMP
+    ens_thr_agrmt_thr_concentration = 1e-7  # SR_TMP
+    ens_thr_agrmt_thr_deposition_tot = None  # SR_TMP
 
     def datafile_fmt(self, datadir):  # noqa:F811
         return f"{datadir}/flexpart_cosmo-2e_20190727120_{{ens_member:03d}}.nc"
@@ -175,7 +173,6 @@ class TestReadFieldEnsemble_Multiple:
         var_names_ref,
         setup_params,
         ens_var,
-        ens_var_setup,
         fct_reduce_mem,
         scale_fld_ref=1.0,
     ):
@@ -201,14 +198,8 @@ class TestReadFieldEnsemble_Multiple:
             assert len(multi_var_specs_lst_i) == 1
             multi_var_specs = next(iter(multi_var_specs_lst_i))
             multi_var_specs_lst.append(multi_var_specs)
-        attrs = {
-            "ens_member_ids": self.ens_member_ids,
-            "ens_var": ens_var,
-            "ens_var_setup": ens_var_setup,
-        }
         fld_specs_lst = [
-            FieldSpecs(name, multi_var_specs, attrs)
-            for multi_var_specs in multi_var_specs_lst
+            FieldSpecs(name, multi_var_specs) for multi_var_specs in multi_var_specs_lst
         ]
 
         run_core = functools.partial(
@@ -276,22 +267,25 @@ class TestReadFieldEnsemble_Multiple:
             "max": np.nanmax,
             "thr_agrmt": (
                 lambda arr, axis: threshold_agreement(
-                    arr, self.agreement_threshold_concentration, axis=axis,
+                    arr, self.ens_thr_agrmt_thr_concentration, axis=axis,
                 )
             ),
         }[ens_var]
-        ens_var_setup = {
-            "thr_agrmt": {"thr": self.agreement_threshold_concentration},
-        }.get(ens_var)
+
+        setup_params = {
+            "level_idx": 1,
+            "variable": "concentration",
+        }
+        if ens_var == "thr_agrmt":
+            setup_params["ens_param_thr"] = self.ens_thr_agrmt_thr_concentration
 
         self.run(
             separate=separate,
             datafile_fmt=self.datafile_fmt(datadir),
             name=name,
             var_names_ref=[f"spec{self.species_id:03d}"],
-            setup_params={"variable": "concentration", "level_idx": 1},
+            setup_params=setup_params,
             ens_var=ens_var,
-            ens_var_setup=ens_var_setup,
             fct_reduce_mem=fct_reduce_mem,
             scale_fld_ref=scale_fld_ref,
         )
@@ -313,9 +307,6 @@ class TestReadFieldEnsemble_Multiple:
     def run_deposition_tot(self, datadir, ens_var, *, separate=False):  # noqa:F811
         """Read ensemble total deposition field."""
         fct_reduce_mem = {"mean": np.nanmean, "max": np.nanmax}[ens_var]
-        ens_var_setup = {
-            # ...
-        }.get(ens_var)
         self.run(
             separate=separate,
             datafile_fmt=self.datafile_fmt(datadir),
@@ -326,7 +317,6 @@ class TestReadFieldEnsemble_Multiple:
             ],
             setup_params={"variable": "deposition", "deposition_type": "tot"},
             ens_var=ens_var,
-            ens_var_setup=ens_var_setup,
             fct_reduce_mem=fct_reduce_mem,
         )
 

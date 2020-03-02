@@ -147,33 +147,12 @@ def create_plots(setups, cli_args):
 
 def read_fields(setup):
 
-    # SR_TMP < TODO find cleaner solution
-    if setup.simulation_type == "ensemble":
-        if setup.plot_type == "ens_thr_agrmt":
-            ens_var_setup = {"thr": 1e-9}
-        elif setup.plot_type == "ens_cloud_arrival_time":
-            ens_var_setup = {"thr": 1e-9, "n_mem_min": 11}
-        else:
-            ens_var_setup = {}
-    else:
-        ens_var_setup = None
-    # SR_TMP >
-
-    # SR_TMP <<< TODO clean this up
-    attrs = {"lang": setup.lang}
-    if setup.simulation_type == "ensemble":
-        if setup.ens_member_ids is not None:
-            attrs["ens_member_ids"] = setup.ens_member_ids
-        assert setup.plot_type.startswith("ens_"), setup.plot_type
-        attrs["ens_var"] = setup.plot_type[4:]
-        attrs["ens_var_setup"] = ens_var_setup
-
     # Create variable specification objects
     multi_var_specs_lst = MultiVarSpecs.from_setup(setup)
 
     # Determine fields specifications (one for each eventual plot)
     fld_specs_lst = [
-        FieldSpecs(setup.tmp_cls_name(), multi_var_specs, attrs)
+        FieldSpecs(setup.tmp_cls_name(), multi_var_specs)
         for multi_var_specs in multi_var_specs_lst
     ]
 

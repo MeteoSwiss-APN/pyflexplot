@@ -338,9 +338,9 @@ class VarSpecs:
                 f"{self._words['number_of', None, 'abbr'].c} "
                 f"{self._words['member', None, 'pl']}"
             )
-        if name == "deposition":
+        if name.endswith("deposition"):
             return self._words["deposition"].s
-        if name == "concentration":
+        if name.endswith("concentration"):
             if self.integrate:
                 return (
                     f"{self._words['integrated', None, 'abbr']} "
