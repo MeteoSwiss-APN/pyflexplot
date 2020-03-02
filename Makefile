@@ -325,6 +325,11 @@ test-fast: ${_INSTALL_TEST}
 	@echo -e "${ECHO_PREFIX}running tests"
 	${PREFIX}pytest tests/fast
 
+.PHONY: test-medium #CMD Run fast and medium tests.
+test-medium: ${_INSTALL_TEST}
+	@echo -e "${ECHO_PREFIX}running tests"
+	${PREFIX}pytest tests/fast tests/medium
+
 .PHONY: test-cov #CMD Check code coverage of tests.
 test-cov: ${_INSTALL_TEST}
 	@echo -e "${ECHO_PREFIX}running tests with coverage check"
