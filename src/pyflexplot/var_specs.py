@@ -30,10 +30,11 @@ def int_or_list(arg):
 class VarSpecs:
     """FLEXPART input variable specifications."""
 
+    # SR_TMP <<< TODO eliminate
     # Keys with respective type
     # SR_TMP TODO move to some config/setup class
     @property
-    def specs_type_default(self) -> Mapping[str, Tuple[Any, Any]]:
+    def _specs_type_default(self) -> Mapping[str, Tuple[Any, Any]]:
         specs_type = {
             "species_id": (int_or_list, None),
             "integrate": (bool, None),
@@ -47,6 +48,46 @@ class VarSpecs:
         elif self._setup.variable == "deposition":
             specs_type.update({"deposition": (str, None)})
         return specs_type
+
+    # SR_TMP <<< TODO eliminate
+    @property
+    def species_id(self):
+        return self._species_id
+
+    # SR_TMP <<< TODO eliminate
+    @property
+    def integrate(self):
+        return self._integrate
+
+    # SR_TMP <<< TODO eliminate
+    @property
+    def time(self):
+        return self._time
+
+    # SR_TMP <<< TODO eliminate
+    @property
+    def nageclass(self):
+        return self._nageclass
+
+    # SR_TMP <<< TODO eliminate
+    @property
+    def numpoint(self):
+        return self._numpoint
+
+    # SR_TMP <<< TODO eliminate
+    @property
+    def noutrel(self):
+        return self._noutrel
+
+    # SR_TMP <<< TODO eliminate
+    @property
+    def level(self):
+        return self._level
+
+    # SR_TMP <<< TODO eliminate
+    @property
+    def deposition(self):
+        return self._deposition
 
     def __init__(
         self, setup, var_specs_dct, *, rlat=None, rlon=None, words=None,
@@ -71,17 +112,6 @@ class VarSpecs:
         """
         self._name = setup.tmp_cls_name()  # SR_TMP
 
-        if setup.variable == "deposition":
-            deposition_type = var_specs_dct["deposition"]
-            if (
-                deposition_type
-                and deposition_type not in ["wet", "dry"]
-                and set(deposition_type) != {"wet", "dry"}
-            ):
-                raise ValueError(
-                    f"invalid deposition type '{deposition_type}'", var_specs_dct,
-                )
-
         def prepare_dim(dim):
             if dim is None:
                 dim = (None,)
@@ -100,9 +130,10 @@ class VarSpecs:
         self._words = words or WORDS
         self._words.set_default_lang(self._setup.lang)
 
+        # SR_TMP < TODO eliminate
         # Set attributes
         var_specs_dct_todo = {k: v for k, v in var_specs_dct.items()}
-        for key, (type_, default) in self.specs_type_default.items():
+        for key, (type_, default) in self._specs_type_default.items():
             try:
                 val = var_specs_dct_todo.pop(key)
             except KeyError:
@@ -115,11 +146,12 @@ class VarSpecs:
                         f"argument '{key}': type '{type(val).__name__}' incompatible "
                         f"with '{type_.__name__}'"
                     )
-            setattr(self, key, val)
+            setattr(self, f"_{key}", val)
         if var_specs_dct_todo:
             raise ValueError(
                 f"{len(var_specs_dct_todo)} unexpected arguments: {var_specs_dct_todo}"
             )
+        # SR_TMP >
 
     # SR_TMP <<<
     @classmethod
@@ -213,11 +245,8 @@ class VarSpecs:
 
     def __getitem__(self, key):
         if key.startswith("_"):
-            raise ValueError(f"invalid key '{key}'")
-        try:
-            return self.__dict__[key]
-        except KeyError as e:
-            raise e from None
+            raise ValueError("key must not start with '_'", key)
+        return getattr(self, key)
 
     def __setitem__(self, key, val):
         if key.startswith("_") or key not in self.__dict__:
@@ -225,9 +254,14 @@ class VarSpecs:
         self.__dict__[key] = val
 
     def __iter__(self):
-        for key, val in self.__dict__.items():
-            if not key.startswith("_"):
-                yield key, val
+        for name in dir(self):
+            if name.startswith("_"):
+                continue
+            # SR_TMP <
+            if name not in self.__dict__ and f"_{name}" not in self.__dict__:
+                continue
+            # SR_TMP >
+            yield name, getattr(self, name)
 
     def dim_inds_by_name(self, *, rlat=None, rlon=None):
         """Derive indices along NetCDF dimensions."""

@@ -319,7 +319,9 @@ class FileReader:
         for i_reqtime, time_idx in enumerate(time_idcs):
             fld_specs = deepcopy(fld_specs_time)
             for var_specs in fld_specs.multi_var_specs:
-                var_specs.time = time_idx
+                # SR_TMP <
+                var_specs._time = time_idx
+                # SR_TMP >
             fld_specs_reqtime[i_reqtime] = fld_specs
         return fld_specs_reqtime
 
@@ -359,7 +361,9 @@ class FileReader:
                         f"{type(fld_specs_time).__name__} instance differ in 'time' "
                         f"({var_specs.time} != {time_idx}):\n{fld_specs}"
                     )
-                var_specs.time = slice(None)
+                # SR_TMP <
+                var_specs._time = slice(None)
+                # SR_TMP >
 
             # Store time-neutral fld specs alongside resp. time inds
             key = hash(fld_specs_time)

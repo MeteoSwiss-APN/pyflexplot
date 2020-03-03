@@ -5,6 +5,8 @@ Field specifications.
 # Standard library
 from typing import Callable
 from typing import List
+from typing import Optional
+from typing import Sequence
 from typing import Union
 
 # Third-party
@@ -62,32 +64,14 @@ class FieldSpecs:
         self.multi_var_specs = multi_var_specs
 
         # Store operator(s)
-        self.check_op(op)
+        self._op: Optional[Callable]
+        self._op_lst: Optional[Sequence[Callable]]
         if callable(op):
             self._op = op
             self._op_lst = None
         else:
             self._op = None
             self._op_lst = op
-
-    def check_op(self, op):
-        """Check operator(s)."""
-        try:
-            n_ops = len(op)
-        except TypeError:
-            if not callable(op):
-                raise ValueError(f"op: {type(op).__name__} not callable")
-            return
-
-        n_var_specs = len(self.multi_var_specs)
-        if n_ops != n_var_specs - 1:
-            raise ValueError(
-                f"wrong number of operators passed in {type(self).__name__}: "
-                f"{n_ops} != {n_var_specs}"
-            )
-        for op_i in op:
-            if not callable(op_i):
-                raise ValueError(f"op: {type(op_i).__name__} not callable")
 
     def __repr__(self):
         s = f"{type(self).__name__}(\n"

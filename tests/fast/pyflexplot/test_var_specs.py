@@ -69,7 +69,12 @@ def check_var_specs(var_specs, conf):
     mismatches = [k for k in conf.dct if k not in dict(var_specs)]
     if mismatches:
         # Test data is broken, NOT the tested code, so NOT AssertionError!
-        raise ValueError(f"invalid solution: key mismatches: {mismatches}")
+        raise ValueError(
+            f"invalid solution: {len(mismatches)} key mismatches",
+            mismatches,
+            conf.dct.keys(),
+            dict(var_specs).keys(),
+        )
 
     sol = set(conf.dct.items())
     res = set(dict(var_specs).items())
