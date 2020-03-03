@@ -318,10 +318,10 @@ class FileReader:
         fld_specs_reqtime = np.full([self.n_reqtime], None)
         for i_reqtime, time_idx in enumerate(time_idcs):
             fld_specs = deepcopy(fld_specs_time)
+            # SR_TMP <
             for var_specs in fld_specs.multi_var_specs:
-                # SR_TMP <
-                var_specs._time = time_idx
-                # SR_TMP >
+                var_specs._setup = var_specs._setup.derive({"time_idcs": [time_idx]})
+            # SR_TMP >
             fld_specs_reqtime[i_reqtime] = fld_specs
         return fld_specs_reqtime
 
@@ -351,19 +351,7 @@ class FileReader:
             fld_specs_time = deepcopy(fld_specs)
 
             # Extract time index and check its the same for all
-            time_idx = None
-            for var_specs in fld_specs_time.multi_var_specs:
-                if time_idx is None:
-                    time_idx = var_specs.time
-                elif var_specs.time != time_idx:
-                    raise Exception(
-                        f"{type(var_specs).__name__} instances of "
-                        f"{type(fld_specs_time).__name__} instance differ in 'time' "
-                        f"({var_specs.time} != {time_idx}):\n{fld_specs}"
-                    )
-                # SR_TMP <
-                var_specs._time = slice(None)
-                # SR_TMP >
+            time_idx = fld_specs_time.multi_var_specs.collect_equal("time")
 
             # Store time-neutral fld specs alongside resp. time inds
             key = hash(fld_specs_time)

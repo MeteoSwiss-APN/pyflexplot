@@ -2,17 +2,12 @@
 """
 Input variable specifications.
 """
-# Standard library
-from typing import Any
-from typing import Mapping
-from typing import Tuple
-
 # First-party
-from srutils.dict import decompress_multival_dict
 from srutils.dict import format_dictlike
 from srutils.various import isiterable
 
 # Local
+from .setup import Setup
 from .utils import summarizable
 from .words import WORDS
 
@@ -30,67 +25,8 @@ def int_or_list(arg):
 class VarSpecs:
     """FLEXPART input variable specifications."""
 
-    # SR_TMP <<< TODO eliminate
-    # Keys with respective type
-    # SR_TMP TODO move to some config/setup class
-    @property
-    def _specs_type_default(self) -> Mapping[str, Tuple[Any, Any]]:
-        specs_type = {
-            "species_id": (int_or_list, None),
-            "integrate": (bool, None),
-            "time": (int, None),
-            "nageclass": (int, None),
-            "numpoint": (int, None),
-            "noutrel": (int, None),
-        }
-        if self._setup.variable == "concentration":
-            specs_type.update({"level": (int_or_list, None)})
-        elif self._setup.variable == "deposition":
-            specs_type.update({"deposition": (str, None)})
-        return specs_type
-
-    # SR_TMP <<< TODO eliminate
-    @property
-    def species_id(self):
-        return self._species_id
-
-    # SR_TMP <<< TODO eliminate
-    @property
-    def integrate(self):
-        return self._integrate
-
-    # SR_TMP <<< TODO eliminate
-    @property
-    def time(self):
-        return self._time
-
-    # SR_TMP <<< TODO eliminate
-    @property
-    def nageclass(self):
-        return self._nageclass
-
-    # SR_TMP <<< TODO eliminate
-    @property
-    def numpoint(self):
-        return self._numpoint
-
-    # SR_TMP <<< TODO eliminate
-    @property
-    def noutrel(self):
-        return self._noutrel
-
-    # SR_TMP <<< TODO eliminate
-    @property
-    def level(self):
-        return self._level
-
-    # SR_TMP <<< TODO eliminate
-    @property
-    def deposition(self):
-        return self._deposition
-
     def __init__(
-        self, setup, var_specs_dct, *, rlat=None, rlon=None, words=None,
+        self, setup, *, rlat=None, rlon=None, words=None,
     ):
         """Create an instance of ``VarSpecs``.
 
@@ -131,31 +67,26 @@ class VarSpecs:
         self._words.set_default_lang(self._setup.lang)
 
         # SR_TMP < TODO eliminate
-        # Set attributes
-        var_specs_dct_todo = {k: v for k, v in var_specs_dct.items()}
-        for key, (type_, default) in self._specs_type_default.items():
-            try:
-                val = var_specs_dct_todo.pop(key)
-            except KeyError:
-                val = default
-            if val is not None:
-                try:
-                    val = type_(val)
-                except TypeError:
-                    raise ValueError(
-                        f"argument '{key}': type '{type(val).__name__}' incompatible "
-                        f"with '{type_.__name__}'"
-                    )
-            setattr(self, f"_{key}", val)
-        if var_specs_dct_todo:
-            raise ValueError(
-                f"{len(var_specs_dct_todo)} unexpected arguments: {var_specs_dct_todo}"
-            )
+        self.species_id = setup.species_id
+        self.integrate = setup.integrate
+        self.nageclass = setup.age_class_idx
+        self.numpoint = setup.release_point_idx
+        self.noutrel = setup.nout_rel_idx
+        if setup.variable == "concentration":  # SR_TMP
+            self.level = setup.level_idx
+        if setup.variable == "deposition":  # SR_TMP
+            self.deposition = setup.deposition_type
         # SR_TMP >
 
     # SR_TMP <<<
+    @property
+    def time(self):
+        assert len(self._setup.time_idcs) == 1
+        return next(iter(self._setup.time_idcs))
+
+    # SR_TMP <<<
     @classmethod
-    def from_setup(cls, setup, var_specs_dct=None, **kwargs):
+    def from_setup(cls, setup, **kwargs):
 
         sub_setups = setup.decompress()
         if len(sub_setups) > 1:
@@ -165,43 +96,10 @@ class VarSpecs:
                 assert len(var_specs_lst_lst_i) == 1
                 var_specs_lst.extend(var_specs_lst_lst_i[0])
             var_specs_lst_lst = [var_specs_lst]
+            # assert len(var_specs_lst_lst) == 1
             return var_specs_lst_lst
 
-        if var_specs_dct is None:
-            var_specs_dct = {
-                "time": setup.time_idcs,
-                "nageclass": setup.age_class_idx,
-                "noutrel": setup.nout_rel_idx,
-                "numpoint": setup.release_point_idx,
-                "species_id": setup.species_id,
-                "integrate": setup.integrate,
-            }
-            if setup.variable == "concentration":
-                var_specs_dct["level"] = setup.level_idx
-            elif setup.variable == "deposition":
-                if setup.deposition_type == "tot":
-                    var_specs_dct["deposition"] = ("wet", "dry")
-                else:
-                    var_specs_dct["deposition"] = setup.deposition_type
-
-        var_specs_dct_lst_outer = decompress_multival_dict(
-            var_specs_dct, depth=1, cls_expand=list,
-        )
-        var_specs_dct_lst_lst = [
-            decompress_multival_dict(dct, depth=1, cls_expand=tuple)
-            for dct in var_specs_dct_lst_outer
-        ]
-
-        def create_objs_rec(obj):
-            if isinstance(obj, dict):
-                return cls(setup, obj, **kwargs)
-            elif isinstance(obj, list):
-                return [create_objs_rec(i) for i in obj]
-            raise ValueError(f"obj of type {type(obj).__name__}")
-
-        var_specs_lst_lst = create_objs_rec(var_specs_dct_lst_lst)
-
-        return var_specs_lst_lst
+        return [[cls(setup, **kwargs)]]
 
     # SR_TMP <<<
     @classmethod
@@ -218,6 +116,7 @@ class VarSpecs:
             var_specs_lst_lst_tmp = cls.from_setup(setup, **kwargs)
             assert len(var_specs_lst_lst_tmp) == 1
             var_specs_lst_lst.append(next(iter(var_specs_lst_lst_tmp)))
+        # assert len(var_specs_lst_lst) == 1
         return var_specs_lst_lst
 
     def __hash__(self):
@@ -258,12 +157,12 @@ class VarSpecs:
             if name.startswith("_"):
                 continue
             # SR_TMP <
-            if name not in self.__dict__ and f"_{name}" not in self.__dict__:
+            if name not in list(self.__dict__) + ["time"]:
                 continue
             # SR_TMP >
             yield name, getattr(self, name)
 
-    def dim_inds_by_name(self, *, rlat=None, rlon=None):
+    def dim_inds_by_name(self, time_all=True):
         """Derive indices along NetCDF dimensions."""
 
         inds = {}
@@ -272,10 +171,12 @@ class VarSpecs:
         inds["numpoint"] = self.numpoint
         inds["noutrel"] = self.noutrel
 
-        if not self.integrate or self.time == slice(None):
-            inds["time"] = self.time
+        # SR_TMP <
+        if time_all:
+            inds["time"] = slice(None)
         else:
-            inds["time"] = slice(None, self.time + 1)
+            raise NotImplementedError("time_all == False")
+        # SR_TMP >
 
         inds["rlat"] = slice(*self.rlat)
         inds["rlon"] = slice(*self.rlon)
@@ -413,16 +314,18 @@ class MultiVarSpecs:
         self.var_specs_lst = var_specs_lst
 
     @classmethod
-    def from_setup(cls, setup, **kwargs):
-        """Create instances of ``MultiVarSpecs`` from a ``Setup`` object."""
-        return [
-            cls(setup, var_specs_lst)
-            for var_specs_lst in VarSpecs.from_setups([setup], **kwargs)  # SR_TMP
-        ]
-
-    @classmethod
-    def from_setups(cls, setups, **kwargs):
-        return [obj for setup in setups for obj in cls.from_setup(setup, **kwargs)]
+    def create(cls, setup_or_setups, **kwargs):
+        """Create instances of ``MultiVarSpecs`` from ``Setup`` object(s)."""
+        if isinstance(setup_or_setups, Setup):
+            setup = setup_or_setups
+            multi_var_specs_lst = []
+            var_specs_lst_lst = VarSpecs.from_setups([setup], **kwargs)
+            for var_specs_lst in var_specs_lst_lst:
+                multi_var_specs_lst.append(cls(setup, var_specs_lst))
+            return multi_var_specs_lst
+        else:
+            setups = setup_or_setups
+        return [obj for setup in setups for obj in cls.create(setup)]
 
     def __repr__(self):
         s_setup = "\n  ".join(repr(self.setup).split("\n"))

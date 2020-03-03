@@ -85,7 +85,7 @@ class TestReadFieldEnsemble_Single:
                 "plot_type": f"ens_{ens_var}",
             }
         )
-        multi_var_specs_lst = MultiVarSpecs.from_setup(setup)
+        multi_var_specs_lst = MultiVarSpecs.create(setup)
         assert len(multi_var_specs_lst) == 1
         multi_var_specs = next(iter(multi_var_specs_lst))
         fld_specs = FieldSpecs(name, multi_var_specs)
@@ -194,7 +194,7 @@ class TestReadFieldEnsemble_Multiple:
             }
             setup = Setup(**setup_params_i)
             setups.append(setup)
-            multi_var_specs_lst_i = MultiVarSpecs.from_setup(setup)
+            multi_var_specs_lst_i = MultiVarSpecs.create(setup)
             assert len(multi_var_specs_lst_i) == 1
             multi_var_specs = next(iter(multi_var_specs_lst_i))
             multi_var_specs_lst.append(multi_var_specs)

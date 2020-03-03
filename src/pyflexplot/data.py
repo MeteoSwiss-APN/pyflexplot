@@ -86,7 +86,7 @@ class Field:
             shape = arr.shape
             if len(shape) != ndim:
                 raise ValueError(
-                    f"{name}: expect {ndim} dimensions, got {shape}: {shape}"
+                    f"{name}: expect {ndim} dimensions, got {len(shape)}: {shape}"
                 )
 
         # Check consistency

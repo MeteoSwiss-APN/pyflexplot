@@ -318,9 +318,7 @@ class _Test_MultiVarSpecs:
         assert len(var_specs_lst_lst) == self.c.n
 
         # Create MultVarSpecs objects
-        multi_var_specs_lst = []
-        for setup in self.setups:
-            multi_var_specs_lst.extend(MultiVarSpecs.from_setup(setup))
+        multi_var_specs_lst = MultiVarSpecs.create(self.setups)
         assert len(multi_var_specs_lst) == self.c.n
 
         # Compare VarSpecs objects in MultVarSpecs objects to reference ones
@@ -417,20 +415,20 @@ class Test_MultiVarSpecs_DepositionTot(_Test_MultiVarSpecs):
 
         # Deposition type "tot"
         setup0 = next(iter(self.setups))
-        mvs0_lst = MultiVarSpecs.from_setup(setup0)
+        mvs0_lst = MultiVarSpecs.create(setup0)
         assert len(mvs0_lst) == 1
         mvs0 = next(iter(mvs0_lst))
 
         # Deposition type ("wet", "dry")
         setup1 = self.setups[0].derive({"deposition_type": ("wet", "dry")})
-        mvs1_lst = MultiVarSpecs.from_setup(setup1)
+        mvs1_lst = MultiVarSpecs.create(setup1)
         assert len(mvs1_lst) == 1
         mvs1 = next(iter(mvs1_lst))
         assert mvs1 == mvs0  # ("wet", "dry") == "tot"
 
         # Deposition type "wet"
         setup2 = self.setups[0].derive({"deposition_type": "wet"})
-        mvs2_lst = MultiVarSpecs.from_setup(setup2)
+        mvs2_lst = MultiVarSpecs.create(setup2)
         assert len(mvs2_lst) == 1
         mvs2 = next(iter(mvs2_lst))
         assert mvs2 != mvs0  # "tot" != "wet"
@@ -463,7 +461,7 @@ class Test_MultiVarSpecs_Interface:
 
     def create_multi_var_specs(self):
         setup = self.setups[0]  # SR_TMP
-        mvs_lst = MultiVarSpecs.from_setup(setup)
+        mvs_lst = MultiVarSpecs.create(setup)
         assert len(mvs_lst) == 1
         mvs = next(iter(mvs_lst))
         assert len(list(mvs)) == 2

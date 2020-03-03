@@ -149,7 +149,7 @@ def test_single(datadir, conf):  # noqa:F811
     datafile = f"{datadir}/{conf.datafilename}"
 
     # Initialize variable specifications
-    multi_var_specs_lst = MultiVarSpecs.from_setup(conf.setup)
+    multi_var_specs_lst = MultiVarSpecs.create(conf.setup)
     assert len(multi_var_specs_lst) == 1
     multi_var_specs = next(iter(multi_var_specs_lst))
     setups = multi_var_specs.setup.decompress()
@@ -298,7 +298,7 @@ def test_multiple(datadir, conf):  # noqa:F811
         setups.extend(setup.derive(conf.derived_setup_params))
 
     # Create field specifications list
-    multi_var_specs_lst = MultiVarSpecs.from_setups(setups)
+    multi_var_specs_lst = MultiVarSpecs.create(setups)
     fld_specs_lst = [
         FieldSpecs(conf.name, multi_var_specs)
         for multi_var_specs in multi_var_specs_lst

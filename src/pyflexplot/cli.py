@@ -148,7 +148,7 @@ def create_plots(setups, cli_args):
 def read_fields(setup):
 
     # Create variable specification objects
-    multi_var_specs_lst = MultiVarSpecs.from_setup(setup)
+    multi_var_specs_lst = MultiVarSpecs.create(setup)
 
     # Determine fields specifications (one for each eventual plot)
     fld_specs_lst = [

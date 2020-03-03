@@ -38,7 +38,7 @@ class Test_Create_Concentration:
     def test_single_var_specs_one_fld_one_var(self):
         """Single-value-only var specs, for one field, made of one var."""
         setup = self.setup.derive({"species_id": 1, "level_idx": 0})
-        multi_var_specs_lst = MultiVarSpecs.from_setup(setup)
+        multi_var_specs_lst = MultiVarSpecs.create(setup)
         check_multi_var_specs_lst(multi_var_specs_lst, len_=self.c.n_vs)
         fld_specs_lst = [
             FieldSpecs(self.c.name, multi_var_specs)
@@ -60,7 +60,7 @@ class Test_Create_Concentration:
                 {"species_id": 2, "level_idx": 1},
             ]
         )
-        multi_var_specs_lst = MultiVarSpecs.from_setups(setups)
+        multi_var_specs_lst = MultiVarSpecs.create(setups)
         check_multi_var_specs_lst(multi_var_specs_lst, len_=4)
         fld_specs_lst = [
             FieldSpecs(self.c.name, multi_var_specs)
@@ -75,7 +75,7 @@ class Test_Create_Concentration:
     def test_mult_var_specs_one_fld_many_vars(self):
         """Multi-value var specs, for one field, made of multiple vars."""
         setup = self.setup.derive({"species_id": (1, 2), "level_idx": (0, 1)})
-        multi_var_specs_lst = MultiVarSpecs.from_setup(setup)
+        multi_var_specs_lst = MultiVarSpecs.create(setup)
         check_multi_var_specs_lst(multi_var_specs_lst, len_=1)
         fld_specs_lst = [
             FieldSpecs(self.c.name, multi_var_specs)
@@ -102,7 +102,7 @@ class Test_Create_Deposition:
     def test_single_var_specs_one_fld_one_var(self):
         """Single-value-only var specs, for one field, made of one var."""
         setup = self.setup.derive({"time_idcs": [1], "species_id": 1})
-        multi_var_specs_lst = MultiVarSpecs.from_setup(setup)
+        multi_var_specs_lst = MultiVarSpecs.create(setup)
         check_multi_var_specs_lst(multi_var_specs_lst, len_=1)
         fld_specs_lst = [
             FieldSpecs(self.c.name, multi_var_specs)
@@ -126,7 +126,7 @@ class Test_Create_Deposition:
         )
         multi_var_specs_lst = []
         for setup in setups:
-            multi_var_specs_lst.extend(MultiVarSpecs.from_setup(setup))
+            multi_var_specs_lst.extend(MultiVarSpecs.create(setup))
         # SR_TMP >
         check_multi_var_specs_lst(multi_var_specs_lst, len_=n)
         fld_specs_lst = [
@@ -143,7 +143,7 @@ class Test_Create_Deposition:
         """Multi-value var specs, for one field, made of multiple vars."""
         n_vs = self.c.n_vs * 4
         setup = self.setup.derive({"deposition_type": "tot", "species_id": [1, 2]})
-        multi_var_specs_lst = MultiVarSpecs.from_setup(setup)
+        multi_var_specs_lst = MultiVarSpecs.create(setup)
         check_multi_var_specs_lst(multi_var_specs_lst, len_=1)
         multi_var_specs = next(iter(multi_var_specs_lst))
         fld_specs = FieldSpecs(self.c.name, multi_var_specs)
