@@ -216,26 +216,35 @@ class Setup(BaseModel):
             return [self.derive(params_i) for params_i in params]
         return type(self)(**{**self.dict(), **params})
 
-    def decompress(self) -> List["Setup"]:
+    def decompress(
+        self,
+        select: Optional[Collection[str]] = None,
+        *,
+        skip: Optional[Collection[str]] = None,
+    ) -> List["Setup"]:
         """Create multiple ``Setup`` objects with one-value parameters only."""
 
+        if skip is None:
+            skip = ["infiles", "ens_member_ids"]
+
+        dct = self.dict()
+
+        # Handle deposition type
+        expand_deposition_type = (
+            select is None or "deposition_type" in select
+        ) and "deposition_type" not in skip
+        if expand_deposition_type and dct["deposition_type"] == "tot":
+            dct["deposition_type"] = ("dry", "wet")
+
+        # Decompress dict
+        dcts = decompress_multival_dict(dct, select=select, skip=skip)
+
         def create(dct):
-            return Setup(**{**dct, "time_idcs": [dct["time_idcs"]]})
+            if isinstance(dct["time_idcs"], int):
+                dct["time_idcs"] = [dct["time_idcs"]]
+            return Setup(**dct)
 
-        # SR_TMP < TODO cleaner solution
-        skip = ["infiles", "ens_member_ids"]
-        dcts = decompress_multival_dict(self.dict(), skip=skip)
-        if self.variable == "deposition" and self.deposition_type == "tot":
-            sub_setups = []
-            for dct in dcts:
-                for deposition_type in ["dry", "wet"]:
-                    sub_setups.append(
-                        create(dct).derive({"deposition_type": deposition_type})
-                    )
-        else:
-            sub_setups = [create(dct) for dct in dcts]
-        # SR_TMP >
-
+        sub_setups = [create(dct) for dct in dcts]
         return sub_setups
 
     def tmp_cls_name(self):

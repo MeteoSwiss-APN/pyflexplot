@@ -96,7 +96,7 @@ class _Test_Create_SingleObjDct:
     """Create a single variable specification object."""
 
     def test(self):
-        var_specs_lst_lst = VarSpecs.from_setups(self.setups)
+        var_specs_lst_lst = VarSpecs.create_many(self.setups, pre_expand_time=True)
         check_is_list_like(var_specs_lst_lst, len_=1, t_children=list)
         var_specs_lst = next(iter(var_specs_lst_lst))
         check_is_list_like(
@@ -106,7 +106,7 @@ class _Test_Create_SingleObjDct:
         check_var_specs(var_specs, self.c)
 
     def test_fail(self):
-        var_specs_lst_lst = VarSpecs.from_setups(self.setups)
+        var_specs_lst_lst = VarSpecs.create_many(self.setups, pre_expand_time=True)
         conf = self.c.derive(dct={**self.c.dct, **self.c.subdct_fail})
         with pytest.raises(AssertionError):
             check_var_specs_lst_lst(var_specs_lst_lst, conf)
@@ -168,11 +168,11 @@ class _Test_Create_MultiObjDct:
     """Create multiple variable specification objects."""
 
     def test(self):
-        var_specs_lst_lst = VarSpecs.from_setups(self.setups)
+        var_specs_lst_lst = VarSpecs.create_many(self.setups, pre_expand_time=True)
         check_var_specs_lst_lst(var_specs_lst_lst, self.c)
 
     def test_fail(self):
-        var_specs_lst_lst = VarSpecs.from_setups(self.setups)
+        var_specs_lst_lst = VarSpecs.create_many(self.setups, pre_expand_time=True)
         conf = self.c.derive(dct={**self.c.dct, **self.c.subdct_fail})
         with pytest.raises(AssertionError):
             check_var_specs_lst_lst(var_specs_lst_lst, conf)
@@ -240,11 +240,11 @@ class _Test_Create_MultiObjDctNested:
     """
 
     def test(self):
-        var_specs_lst_lst = VarSpecs.from_setups(self.setups)
+        var_specs_lst_lst = VarSpecs.create_many(self.setups, pre_expand_time=True)
         check_var_specs_lst_lst(var_specs_lst_lst, self.c)
 
     def test_fail(self):
-        var_specs_lst_lst = VarSpecs.from_setups(self.setups)
+        var_specs_lst_lst = VarSpecs.create_many(self.setups, pre_expand_time=True)
         conf = self.c.derive(dct={**self.c.dct, **self.c.subdct_fail})
         with pytest.raises(AssertionError):
             check_var_specs_lst_lst(var_specs_lst_lst, conf)
@@ -314,7 +314,7 @@ class _Test_MultiVarSpecs:
     def test_create(self, conf=None):
 
         # Create reference VarSpecs objects (nested list)
-        var_specs_lst_lst = VarSpecs.from_setups(self.setups)
+        var_specs_lst_lst = VarSpecs.create_many(self.setups, pre_expand_time=True)
         assert len(var_specs_lst_lst) == self.c.n
 
         # Create MultVarSpecs objects

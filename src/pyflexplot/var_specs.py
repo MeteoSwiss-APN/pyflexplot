@@ -25,45 +25,16 @@ def int_or_list(arg):
 class VarSpecs:
     """FLEXPART input variable specifications."""
 
-    def __init__(
-        self, setup, *, rlat=None, rlon=None, words=None,
-    ):
-        """Create an instance of ``VarSpecs``.
+    def __init__(self, setup):
+        """Create an instance of ``VarSpecs``."""
 
-        Args:
-            setup (Setup): Plot setup.
-
-            var_specs_dct (dict): Variable specification dict comprised of only
-                single-object elements (see ``VarSpecs.???`` for more
-                information on single- vs. multi-object elements).
-
-            rlat (tuple, optional): Rotated latitude slice parameters, passed
-                to built-in ``slice``. Defaults to None.
-
-            rlon (tuple, optional): Rotated longitude slice parameters, passed
-                to built-in ``slice``. Defaults to None.
-
-            words (Words, optional): Word translations. Defaults to ``WORDS``.
-
-        """
         self._name = setup.tmp_cls_name()  # SR_TMP
 
-        def prepare_dim(dim):
-            if dim is None:
-                dim = (None,)
-            elif isinstance(dim, slice):
-                dim = (dim.start, dim.stop, dim.step)
-            try:
-                slice(*dim)
-            except ValueError:
-                raise
-            return dim
-
-        self.rlat = prepare_dim(rlat)
-        self.rlon = prepare_dim(rlon)
+        self.rlat = (None,)
+        self.rlon = (None,)
 
         self._setup = setup
-        self._words = words or WORDS
+        self._words = WORDS
         self._words.set_default_lang(self._setup.lang)
 
         # SR_TMP < TODO eliminate
@@ -84,40 +55,22 @@ class VarSpecs:
         assert len(self._setup.time_idcs) == 1
         return next(iter(self._setup.time_idcs))
 
-    # SR_TMP <<<
     @classmethod
-    def from_setup(cls, setup, **kwargs):
-
-        sub_setups = setup.decompress()
-        if len(sub_setups) > 1:
+    def create_many(cls, setups, pre_expand_time=False):
+        if not pre_expand_time:
             var_specs_lst = []
-            for sub_setup in sub_setups:
-                var_specs_lst_lst_i = cls.from_setup(sub_setup, **kwargs)
-                assert len(var_specs_lst_lst_i) == 1
-                var_specs_lst.extend(var_specs_lst_lst_i[0])
-            var_specs_lst_lst = [var_specs_lst]
-            # assert len(var_specs_lst_lst) == 1
+            for setup in setups:
+                for sub_setup in setup.decompress():
+                    var_specs_lst.append(cls(sub_setup))
+            return var_specs_lst
+        else:
+            var_specs_lst_lst = []
+            for setup in setups:
+                for sub_setup in setup.decompress(["time_idcs"]):
+                    var_specs_lst_lst.append([])
+                    for sub_sub_setup in sub_setup.decompress():
+                        var_specs_lst_lst[-1].append(cls(sub_sub_setup))
             return var_specs_lst_lst
-
-        return [[cls(setup, **kwargs)]]
-
-    # SR_TMP <<<
-    @classmethod
-    def from_setups(cls, setups, **kwargs):
-        # SR_TMP <
-        # Separate setups by time index
-        orig_setups, setups = setups, []
-        for setup in orig_setups:
-            for time_idx in setup.time_idcs:
-                setups.append(setup.derive({"time_idcs": [time_idx]}))
-        # SR_TMP >
-        var_specs_lst_lst = []
-        for setup in setups:
-            var_specs_lst_lst_tmp = cls.from_setup(setup, **kwargs)
-            assert len(var_specs_lst_lst_tmp) == 1
-            var_specs_lst_lst.append(next(iter(var_specs_lst_lst_tmp)))
-        # assert len(var_specs_lst_lst) == 1
-        return var_specs_lst_lst
 
     def __hash__(self):
         h = 0
@@ -314,12 +267,12 @@ class MultiVarSpecs:
         self.var_specs_lst = var_specs_lst
 
     @classmethod
-    def create(cls, setup_or_setups, **kwargs):
+    def create(cls, setup_or_setups):
         """Create instances of ``MultiVarSpecs`` from ``Setup`` object(s)."""
         if isinstance(setup_or_setups, Setup):
             setup = setup_or_setups
             multi_var_specs_lst = []
-            var_specs_lst_lst = VarSpecs.from_setups([setup], **kwargs)
+            var_specs_lst_lst = VarSpecs.create_many([setup], pre_expand_time=True)
             for var_specs_lst in var_specs_lst_lst:
                 multi_var_specs_lst.append(cls(setup, var_specs_lst))
             return multi_var_specs_lst

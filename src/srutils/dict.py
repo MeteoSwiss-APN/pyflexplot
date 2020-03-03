@@ -12,9 +12,12 @@ from dataclasses import field
 from pprint import pformat
 from typing import Any
 from typing import Callable
+from typing import Collection
 from typing import Dict
 from typing import List
+from typing import Mapping
 from typing import Optional
+from typing import Union
 
 # Local
 from .exceptions import KeyConflictError
@@ -69,42 +72,35 @@ def merge_dicts(*dicts, unique_keys=True):
 
 
 def decompress_multival_dict(
-    dct, *, skip=None, depth=1, cls_expand=(list, tuple), f_expand=None, flatten=False
-):
+    dct: Mapping[str, Any],
+    *,
+    select: Optional[Collection[str]] = None,
+    skip: Optional[Collection[str]] = None,
+    depth: int = 1,
+    cls_expand: Union[type, Collection[type]] = (list, tuple),
+    f_expand: Optional[Callable[[Any], bool]] = None,
+    flatten: bool = False,
+) -> List[Mapping[str, Any]]:
     """Combine dict with some nested list values into object-value dicts.
 
     Args:
-        dct (dict): Specifications dict.
+        dct: Specifications dict.
 
-        skip (Collection[str], optional): Names of keys that are not expanded.
-            Defaults to None.
+        select: Names of keys to be expanded. If passed, all unlisted keys are
+            skipped.
 
-        depth (int, optional): Depth to which nested list values are resolved.
-            Defaults to 1.
+        skip: Names of keys that are not expanded.
 
-        cls_expand (type or list[type], optional): One or more types, instances
-            of which will be expanded. Overridden by ``f_expand``. Defaults to
-            (list, tuple).
+        depth: Depth to which nested list values are resolved.
 
-        f_expand (callable, optional): Function to evaluate whether an object
-            is expandable. Trivial example (equivalent to ``cls_expand=lst``):
-            ``lambda obj: isinstance(obj, lst)``. Overrides ``cls_expand``.
-            Defaults to None.
+        cls_expand: One or more types, instances of which will be expanded.
+            Overridden by ``f_expand``.
 
-        flatten (bool, optional): Flatten the nested results list. Defaults to
-            False.
+        f_expand: Function to evaluate whether an object is expandable. Trivial
+            example (equivalent to ``cls_expand=lst``): ``lambda obj:
+            isinstance(obj, lst)``. Overrides ``cls_expand``.
 
-    Example:
-        >>> f = decompress_multival_dict
-        >>> d = {
-                "a": [1, [3, 4]],
-                "b": 5,
-            }
-        >>> f(d, depth=3)
-        [
-            [[{"a": 1, "b": 5}]],
-            [[{"a": 3, "b": 5}, {"a": 4, "b": 5}]]
-        ]
+        flatten: Flatten the nested results list.
 
     """
     if not isinstance(depth, int) or depth <= 0:
@@ -112,7 +108,7 @@ def decompress_multival_dict(
 
     def run_rec(dct, depth, curr_depth=1):
         """Run recursively."""
-        dct_lst = _dict_mult_vals_product(dct, skip, cls_expand, f_expand)
+        dct_lst = _dict_mult_vals_product(dct, select, skip, cls_expand, f_expand)
         if len(dct_lst) == 1 or curr_depth == depth:
             for _ in range(depth - curr_depth):
                 # Nest further until target depth reached
@@ -141,22 +137,27 @@ def decompress_multival_dict(
     return res
 
 
-def _dict_mult_vals_product(dct, skip, cls_expand, f_expand):
+def _dict_mult_vals_product(dct, select, skip, cls_expand, f_expand):
+    def select_key(key):
+        if select is None:
+            return True
+        return key in select
 
-    if skip is None:
-        skip = []
+    def skip_key(key):
+        if skip is None:
+            return False
+        return key in skip
 
-    if isinstance(cls_expand, type):
-        cls_expand = [cls_expand]
-
-    if f_expand is None:
-
-        def f_expand(obj):
-            return any(isinstance(obj, t) for t in cls_expand)
+    def expand_val(val):
+        if f_expand is not None:
+            return f_expand(val)
+        elif isinstance(cls_expand, type):
+            return isinstance(val, cls_expand)
+        return any(isinstance(val, t) for t in cls_expand)
 
     keys, vals = [], []
     for key, val in dct.items():
-        if key in skip or not f_expand(val):
+        if not select_key(key) or skip_key(key) or not expand_val(val):
             val = [val]
         keys.append(key)
         vals.append(val)

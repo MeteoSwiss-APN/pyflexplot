@@ -381,13 +381,60 @@ def test_read_double_wildcard_variable_depth(tmp_path):
     assert setups.dicts() == sol
 
 
-def test_decompress_all():
-    setup = DEFAULT_SETUP.derive({"level_idx": [1, 2], "time_idcs": [1, 2, 3]})
-    setups = setup.decompress()
-    assert len(setups) == 6
-    res = {(setup.level_idx, next(iter(setup.time_idcs))) for setup in setups}
-    sol = {(1, 1), (1, 2), (1, 3), (2, 1), (2, 2), (2, 3)}
-    assert res == sol
+class Test_Decompress:
+
+    setup = DEFAULT_SETUP.derive(
+        {
+            "variable": "deposition",
+            "deposition_type": ["dry", "wet"],
+            "level_idx": [1, 2],
+            "time_idcs": [1, 2, 3],
+        },
+    )
+
+    def test_all(self):
+        """Decompress all params."""
+        setups = self.setup.decompress()
+        assert len(setups) == 12
+        res = {(s.deposition_type, s.level_idx, s.time_idcs) for s in setups}
+        sol = {
+            ("dry", 1, (1,)),
+            ("dry", 1, (2,)),
+            ("dry", 1, (3,)),
+            ("dry", 2, (1,)),
+            ("dry", 2, (2,)),
+            ("dry", 2, (3,)),
+            ("wet", 1, (1,)),
+            ("wet", 1, (2,)),
+            ("wet", 1, (3,)),
+            ("wet", 2, (1,)),
+            ("wet", 2, (2,)),
+            ("wet", 2, (3,)),
+        }
+        assert res == sol
+
+    def test_select_one(self):
+        """Decompress only one select parameter."""
+        setups = self.setup.decompress(["level_idx"])
+        assert len(setups) == 2
+        res = {(s.deposition_type, s.level_idx, s.time_idcs) for s in setups}
+        sol = {("tot", 1, (1, 2, 3)), ("tot", 2, (1, 2, 3))}
+        assert res == sol
+
+    def test_select_two(self):
+        """Decompress two select parameters."""
+        setups = self.setup.decompress(["time_idcs", "deposition_type"])
+        assert len(setups) == 6
+        res = {(s.deposition_type, s.level_idx, s.time_idcs) for s in setups}
+        sol = {
+            ("dry", (1, 2), (1,)),
+            ("dry", (1, 2), (2,)),
+            ("dry", (1, 2), (3,)),
+            ("wet", (1, 2), (1,)),
+            ("wet", (1, 2), (2,)),
+            ("wet", (1, 2), (3,)),
+        }
+        assert res == sol
 
 
 class Test_SetupCollection:
