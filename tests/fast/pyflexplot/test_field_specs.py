@@ -53,12 +53,14 @@ class Test_Create_Concentration:
     def test_mult_var_specs_many_flds_one_var_each(self):
         """Multi-value var specs, for multiple fields, made of one var each."""
         # SR_TMP <
-        setups = [
-            self.setup.derive({"species_id": 1, "level_idx": 0}),
-            self.setup.derive({"species_id": 1, "level_idx": 1}),
-            self.setup.derive({"species_id": 2, "level_idx": 0}),
-            self.setup.derive({"species_id": 2, "level_idx": 1}),
-        ]
+        setups = self.setup.derive(
+            [
+                {"species_id": 1, "level_idx": 0},
+                {"species_id": 1, "level_idx": 1},
+                {"species_id": 2, "level_idx": 0},
+                {"species_id": 2, "level_idx": 1},
+            ]
+        )
         multi_var_specs_lst = []
         for setup in setups:
             multi_var_specs_lst.extend(MultiVarSpecs.from_setup(setup))
@@ -120,10 +122,12 @@ class Test_Create_Deposition:
         """Multi-value var specs, for multiple fields, made of one var each."""
         n = 6
         # SR_TMP <
-        setups = [
-            self.setup.derive({"time_idcs": [0, 1, 2], "species_id": 1}),
-            self.setup.derive({"time_idcs": [0, 1, 2], "species_id": 2}),
-        ]
+        setups = self.setup.derive(
+            [
+                {"time_idcs": [0, 1, 2], "species_id": 1},
+                {"time_idcs": [0, 1, 2], "species_id": 2},
+            ]
+        )
         multi_var_specs_lst = []
         for setup in setups:
             multi_var_specs_lst.extend(MultiVarSpecs.from_setup(setup))

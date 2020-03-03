@@ -411,3 +411,17 @@ class MultiVarSpecs:
 
     def __len__(self):
         return len(self.var_specs_lst)
+
+    def collect(self, key):
+        """Collect all values for a given key."""
+        try:
+            return [getattr(vs, key) for vs in self]
+        except AttributeError:
+            raise ValueError("invalid key", key)
+
+    def collect_equal(self, key):
+        """Obtain the value for a key, expecting it to be equal for all."""
+        values = self.collect(key)
+        if not all(value == values[0] for value in values[1:]):
+            raise Exception("values differ for key", key, values)
+        return next(iter(values))

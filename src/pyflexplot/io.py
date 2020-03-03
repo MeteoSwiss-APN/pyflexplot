@@ -260,10 +260,12 @@ class FileReader:
                 log.debug(f"extract {self.n_fld_specs} time steps")
 
                 # Read grid variables
-                _inds_rlat = slice(*fld_specs_time.var_specs_shared("rlat"))
-                _inds_rlon = slice(*fld_specs_time.var_specs_shared("rlon"))
-                rlat = self.fi.variables["rlat"][_inds_rlat]
-                rlon = self.fi.variables["rlon"][_inds_rlon]
+                rlat = self.fi.variables["rlat"][
+                    slice(*fld_specs_time.multi_var_specs.collect_equal("rlat"))
+                ]
+                rlon = self.fi.variables["rlon"][
+                    slice(*fld_specs_time.multi_var_specs.collect_equal("rlon"))
+                ]
                 if self.rlat is None:
                     self.rlat = rlat
                     self.rlon = rlon
