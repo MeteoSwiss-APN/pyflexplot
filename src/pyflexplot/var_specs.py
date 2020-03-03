@@ -4,7 +4,6 @@ Input variable specifications.
 """
 # First-party
 from srutils.dict import format_dictlike
-from srutils.various import isiterable
 
 # Local
 from .setup import Setup
@@ -72,40 +71,14 @@ class VarSpecs:
                         var_specs_lst_lst[-1].append(cls(sub_sub_setup))
             return var_specs_lst_lst
 
-    def __hash__(self):
-        h = 0
-        for key, val in iter(self):
-            if isinstance(val, slice):
-                val = (val.start, val.stop, val.step)
-            elif isiterable(val, str_ok=False):
-                val = tuple(val)
-            h += hash(val)
-            h *= 10
-        return h
-
-    def __lt__(self, other):
-        return hash(self) < hash(other)
-
     def __eq__(self, other):
-        return hash(self) == hash(other)
+        return self.dict() == other.dict()
 
     def __repr__(self):
         return format_dictlike(self)
 
-    def __str__(self):
-        return format_dictlike(self)
-
-    def __getitem__(self, key):
-        if key.startswith("_"):
-            raise ValueError("key must not start with '_'", key)
-        return getattr(self, key)
-
-    def __setitem__(self, key, val):
-        if key.startswith("_") or key not in self.__dict__:
-            raise ValueError(f"invalid key '{key}'")
-        self.__dict__[key] = val
-
-    def __iter__(self):
+    def dict(self):
+        dct = {}
         for name in dir(self):
             if name.startswith("_"):
                 continue
@@ -113,7 +86,8 @@ class VarSpecs:
             if name not in list(self.__dict__) + ["time"]:
                 continue
             # SR_TMP >
-            yield name, getattr(self, name)
+            dct[name] = getattr(self, name)
+        return dct
 
     def dim_inds_by_name(self, time_all=True):
         """Derive indices along NetCDF dimensions."""
@@ -254,7 +228,7 @@ class VarSpecs:
     def deposition_type(self):
         if self._setup.variable != "deposition":
             raise Exception(f"unexpected var specs type", type(self))
-        type_ = self["deposition"]
+        type_ = self.deposition
         word = {"tot": "total"}.get(type_, type_)
         return self._words[word, None, "f"].s
 

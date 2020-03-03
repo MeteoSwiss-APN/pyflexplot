@@ -66,22 +66,22 @@ def check_var_specs(var_specs, conf):
     assert isinstance(var_specs, VarSpecs)
 
     # Check validity of test data
-    mismatches = [k for k in conf.dct if k not in dict(var_specs)]
+    mismatches = [k for k in conf.dct if k not in var_specs.dict()]
     if mismatches:
         # Test data is broken, NOT the tested code, so NOT AssertionError!
         raise ValueError(
             f"invalid solution: {len(mismatches)} key mismatches",
             mismatches,
             conf.dct.keys(),
-            dict(var_specs).keys(),
+            var_specs.dict().keys(),
         )
 
     sol = set(conf.dct.items())
-    res = set(dict(var_specs).items())
+    res = set(var_specs.dict().items())
     assert sol.issubset(res)
 
     sol = {**conf.dct, "rlon": (None,), "rlat": (None,)}
-    res = dict(var_specs)
+    res = var_specs.dict()
     assert sol == res
 
 
@@ -483,8 +483,8 @@ class Test_MultiVarSpecs_Interface:
         # that are (at the moment still) added during creation of VarSpecs
         neutral = {"deposition": None, "rlat": None, "rlon": None}
         sol = {**self.c.dct, **neutral}
-        res1 = {**dict(var_specs_lst[0]), **neutral}
-        res2 = {**dict(var_specs_lst[1]), **neutral}
+        res1 = {**var_specs_lst[0].dict(), **neutral}
+        res2 = {**var_specs_lst[1].dict(), **neutral}
         assert res1 == sol
         assert res2 == sol
         assert res1 == res2

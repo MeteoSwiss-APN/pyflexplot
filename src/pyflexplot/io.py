@@ -149,10 +149,10 @@ class FileReader:
 
         # Group field specifications objects such that all in one group only
         # differ in time; collect the respective time indices; and merge the
-        # group into one field specifications instance with # time dimension
-        # 'slice(None)'. This allows for each such group to first read and
+        # group into one field specifications instance with time dimension
+        # 'slice(None)'. This allows for each such group to, first, read and
         # process all time steps (e.g., derive some statistics across all time
-        # steps), and subsequently extract the requested time steps using the
+        # steps); and, second, extract the requested time steps using the
         # separately stored indices.
         self._fld_specs_time_lst, self._time_inds_lst = self._group_fld_specs_by_time(
             fld_specs_lst
@@ -346,26 +346,26 @@ class FileReader:
     def _group_fld_specs_by_time(self, fld_specs_lst):
         """Group specs that differ only in their time dimension."""
 
-        fld_specs_time_inds_by_hash = {}
-        for fld_specs in fld_specs_lst:
+        fld_specs_time_inds_by_key = {}
+        for idx, fld_specs in enumerate(fld_specs_lst):
             fld_specs_time = deepcopy(fld_specs)
 
             # Extract time index and check its the same for all
             time_idx = fld_specs_time.multi_var_specs.collect_equal("time")
 
             # Store time-neutral fld specs alongside resp. time inds
-            key = hash(fld_specs_time)
-            if key not in fld_specs_time_inds_by_hash:
-                fld_specs_time_inds_by_hash[key] = (fld_specs_time, [])
-            if time_idx in fld_specs_time_inds_by_hash[key][1]:
+            key = idx
+            if key not in fld_specs_time_inds_by_key:
+                fld_specs_time_inds_by_key[key] = (fld_specs_time, [])
+            if time_idx in fld_specs_time_inds_by_key[key][1]:
                 raise Exception(
                     f"duplicate time index {time_idx} in fld_specs:\n" f"{fld_specs}"
                 )
-            fld_specs_time_inds_by_hash[key][1].append(time_idx)
+            fld_specs_time_inds_by_key[key][1].append(time_idx)
 
         # Regroup time-neutral fld specs and time inds into lists
         fld_specs_time_lst, time_inds_lst = [], []
-        for _, (fld_specs_time, time_idcs) in fld_specs_time_inds_by_hash.items():
+        for fld_specs_time, time_idcs in fld_specs_time_inds_by_key.values():
             fld_specs_time_lst.append(fld_specs_time)
             time_inds_lst.append(time_idcs)
 

@@ -93,15 +93,6 @@ class FieldSpecs:
         s += f")"
         return s
 
-    def __hash__(self):
-        return sum([sum([hash(vs) for vs in self.multi_var_specs])])
-
-    def __lt__(self, other):
-        return hash(self) < hash(other)
-
-    def __eq__(self, other):
-        return hash(self) == hash(other)
-
     def merge_fields(self, flds):
         """Merge fields by applying a single operator or an operator chain."""
         if self._op is not None:

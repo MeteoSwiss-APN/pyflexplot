@@ -28,7 +28,11 @@ def format_dictlike(obj, multiline=False, indent=1):
     if not multiline:
         indent = 0
     try:
-        s = pformat(dict(obj), indent=indent, sort_dicts=False)[1:-1]
+        obj = obj.dict()
+    except AttributeError:
+        obj = dict(obj)
+    try:
+        s = pformat(obj, indent=indent, sort_dicts=False)[1:-1]
     except TypeError:
         # Option 'sort_dicts' only available in Python3.8+
         s = pformat(dict(obj), indent=indent)[1:-1]
