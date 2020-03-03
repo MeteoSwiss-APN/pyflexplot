@@ -52,7 +52,6 @@ class Test_Create_Concentration:
 
     def test_mult_var_specs_many_flds_one_var_each(self):
         """Multi-value var specs, for multiple fields, made of one var each."""
-        # SR_TMP <
         setups = self.setup.derive(
             [
                 {"species_id": 1, "level_idx": 0},
@@ -61,10 +60,7 @@ class Test_Create_Concentration:
                 {"species_id": 2, "level_idx": 1},
             ]
         )
-        multi_var_specs_lst = []
-        for setup in setups:
-            multi_var_specs_lst.extend(MultiVarSpecs.from_setup(setup))
-        # SR_TMP >
+        multi_var_specs_lst = MultiVarSpecs.from_setups(setups)
         check_multi_var_specs_lst(multi_var_specs_lst, len_=4)
         fld_specs_lst = [
             FieldSpecs(self.c.name, multi_var_specs)

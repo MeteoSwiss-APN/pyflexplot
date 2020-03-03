@@ -443,7 +443,7 @@ class FileReader:
             fld_lst.append(fld)
 
         # Merge fields
-        fld = self._merge_fields(fld_lst, fld_specs)
+        fld = fld_specs.merge_fields(fld_lst)
 
         return fld
 
@@ -554,19 +554,6 @@ class FileReader:
         dt_min = next(iter(dts))
         dt_hr = dt_min / 3600.0
         return dt_hr
-
-    def _merge_fields(self, fld_lst, fld_specs):
-
-        if fld_specs.op is not None:
-            # Single operator
-            return fld_specs.op(fld_lst, axis=0)
-
-        # Operator chain
-        fld = fld_lst[0]
-        for i, fld_i in enumerate(fld_lst[1:]):
-            _op = fld_specs.op_lst[i]
-            fld = _op([fld, fld_i], axis=0)
-        return fld
 
     # SR_TMP <<<
     def _fix_nc_var(self, fld, var):

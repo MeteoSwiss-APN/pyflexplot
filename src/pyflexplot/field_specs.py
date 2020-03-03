@@ -2,6 +2,11 @@
 """
 Field specifications.
 """
+# Standard library
+from typing import Callable
+from typing import List
+from typing import Union
+
 # Third-party
 import numpy as np
 
@@ -24,21 +29,24 @@ class FieldSpecs:
         return lst
 
     def __init__(
-        self, name, multi_var_specs, *, op=np.nansum,
+        self,
+        name: str,
+        multi_var_specs: MultiVarSpecs,
+        *,
+        op: Union[Callable, List[Callable]] = np.nansum,
     ):
         """Create an instance of ``FieldSpecs``.
 
         Args:
-            name (str): Name.
+            name: Name.
 
             multi_var_specs (MultiVarSpecs): Specifications of one or more
                 input variables used to subsequently create a plot field.
 
         Kwargs:
-            op (function or list[function], optional): Opterator(s) used to
-                combine input fields read based on ``multi_var_specs``. Must
-                accept argument ``axis=0`` to only recude along over the
-                fields.
+            op: Opterator(s) used to combine input fields read based on
+                ``multi_var_specs``. Must accept argument ``axis=0`` to only
+                reduce along over the fields.
 
                 If a single operator is passed, it is used to sequentially
                 combine one field after the other, in the same order as the
@@ -49,26 +57,18 @@ class FieldSpecs:
                 operator is used between two subsequent fields (again in the
                 same order as the corresponding specifications).
 
-                Defaults to np.nansum.
-
         """
         self.name = name
-        # SR_TMP <
-        if not isinstance(self, FieldSpecs):
-            assert self.name == type(self).name
-        # SR_TMP >
-
-        assert isinstance(multi_var_specs, MultiVarSpecs)  # SR_TMP
         self.multi_var_specs = multi_var_specs
 
         # Store operator(s)
         self.check_op(op)
         if callable(op):
-            self.op = op
-            self.op_lst = None
+            self._op = op
+            self._op_lst = None
         else:
-            self.op = None
-            self.op_lst = op
+            self._op = None
+            self._op_lst = op
 
     def check_op(self, op):
         """Check operator(s)."""
@@ -99,11 +99,11 @@ class FieldSpecs:
                 s += f"    {line}\n"
 
         # Operator(s)
-        if self.op is not None:
-            s += f"  op: {self.op.__name__}\n"
+        if self._op is not None:
+            s += f"  op: {self._op.__name__}\n"
         else:
-            s += f"  ops: {len(self.op_lst)}x\n"
-            for op in self.op_lst:
+            s += f"  ops: {len(self._op_lst)}x\n"
+            for op in self._op_lst:
                 s += "f    {op.__name__}\n"
 
         s += f")"
@@ -117,3 +117,20 @@ class FieldSpecs:
 
     def __eq__(self, other):
         return hash(self) == hash(other)
+
+    def merge_fields(self, flds):
+        """Merge fields by applying a single operator or an operator chain."""
+        if self._op is not None:
+            fld = self._op(flds, axis=0)
+        elif self._op_lst is not None:
+            if not len(flds) == len(self._op_lst) + 1:
+                raise ValueError(
+                    "wrong number of fields", len(flds), len(self._op_lst) + 1,
+                )
+            fld = flds[0]
+            for i, fld_i in enumerate(flds[1:]):
+                _op = self._op_lst[i]
+                fld = _op([fld, fld_i], axis=0)
+        else:
+            raise Exception("no operator(s) defined")
+        return fld

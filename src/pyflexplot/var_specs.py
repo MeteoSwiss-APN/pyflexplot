@@ -5,7 +5,6 @@ Input variable specifications.
 # Standard library
 from typing import Any
 from typing import Mapping
-from typing import Optional
 from typing import Tuple
 
 # First-party
@@ -30,8 +29,6 @@ def int_or_list(arg):
 @summarizable
 class VarSpecs:
     """FLEXPART input variable specifications."""
-
-    name: Optional[str] = None
 
     # Keys with respective type
     # SR_TMP TODO move to some config/setup class
@@ -258,7 +255,9 @@ class VarSpecs:
     def long_name(self, name=None):
         if name is None:
             name = self._name
-        name = name.split(":")[-1]
+        if ":" in name:
+            # raise DeprecationWarning('":" in name')  # SR_TODO
+            name = name.split(":")[-1]
         if name == "ens_max_affected_area":
             return (
                 f"{self._words['ensemble_maximum']} {self._words['affected_area']} "
@@ -325,7 +324,9 @@ class VarSpecs:
     def short_name(self, name=None):
         if name is None:
             name = self._name
-        name = name.split(":")[-1]
+        if ":" in name:
+            # raise DeprecationWarning('":" in name')  # SR_TODO
+            name = name.split(":")[-1]
         if name == "ens_cloud_arrival_time_concentration":
             return (
                 # f"{self._words['arrival_time'].c}\n"
