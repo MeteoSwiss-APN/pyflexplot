@@ -152,10 +152,7 @@ def test_single(datadir, conf):  # noqa:F811
     multi_var_specs_lst = MultiVarSpecs.from_setup(conf.setup)
     assert len(multi_var_specs_lst) == 1
     multi_var_specs = next(iter(multi_var_specs_lst))
-
-    # SR_TMP < TODO at the very least, cleanly obtain from MultiVarSpecs
-    setups = conf.setup.decompress()
-    # SR_TMP >
+    setups = multi_var_specs.setup.decompress()
 
     # Initialize field specifications
     fld_specs = FieldSpecs(conf.name, multi_var_specs)
@@ -298,8 +295,7 @@ def test_multiple(datadir, conf):  # noqa:F811
     # Create setups
     setups = conf.setup.decompress()
     for setup in setups.copy():
-        for params in conf.derived_setup_params:
-            setups.append(setup.derive(params))
+        setups.extend(setup.derive(conf.derived_setup_params))
 
     # Create field specifications list
     multi_var_specs_lst = MultiVarSpecs.from_setups(setups)

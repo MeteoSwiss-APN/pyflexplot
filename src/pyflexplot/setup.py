@@ -11,8 +11,10 @@ from typing import Iterator
 from typing import List
 from typing import Mapping
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
+from typing import overload
 
 # Third-party
 import toml
@@ -198,13 +200,21 @@ class Setup(BaseModel):
                 return False
         return self.dict() == other_dict
 
+    @overload
+    def derive(self, params: Mapping[str, Any]) -> "Setup":
+        ...
+
+    @overload
+    def derive(self, params: Sequence[Mapping[str, Any]]) -> List["Setup"]:
+        ...
+
     def derive(
-        self, params: Union[Mapping[str, Any], Collection[Dict[str, Any]]],
-    ) -> "Setup":
-        """Derive another ``Setup`` object(s) with adapted parameters."""
-        if isinstance(params, Mapping):
-            return type(self)(**{**self.dict(), **params})
-        raise NotImplementedError("params is Collection", params)
+        self, params: Union[Mapping[str, Any], Sequence[Mapping[str, Any]]],
+    ) -> Union["Setup", List["Setup"]]:
+        """Derive ``Setup`` object(s) with adapted parameters."""
+        if isinstance(params, Sequence):
+            return [self.derive(params_i) for params_i in params]
+        return type(self)(**{**self.dict(), **params})
 
     def decompress(self) -> List["Setup"]:
         """Create multiple ``Setup`` objects with one-value parameters only."""
