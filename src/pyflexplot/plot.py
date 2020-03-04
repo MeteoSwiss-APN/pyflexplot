@@ -204,7 +204,6 @@ def colors_flexplot(n_levels, extend):
         "map_conf",
         "mark_field_max",
         "mark_release_site",
-        "name",
         "setup",
         "text_box_setup",
     ],
@@ -222,15 +221,7 @@ class Plot:
     # SR_TMP TODO move to some config/setup class
     @property
     def text_box_setup(self):
-        if self.name.startswith("ens_"):
-            return {
-                "h_rel_t": 0.14,
-                "h_rel_b": 0.03,
-                "w_rel_r": 0.25,
-                "pad_hor_rel": 0.015,
-                "h_rel_box_rt": 0.46,
-            }
-        else:
+        if self.setup.simulation_type == "deterministic":
             return {
                 "h_rel_t": 0.1,
                 "h_rel_b": 0.03,
@@ -238,31 +229,37 @@ class Plot:
                 "pad_hor_rel": 0.015,
                 "h_rel_box_rt": 0.45,
             }
+        elif self.setup.simulation_type == "ensemble":
+            return {
+                "h_rel_t": 0.14,
+                "h_rel_b": 0.03,
+                "w_rel_r": 0.25,
+                "pad_hor_rel": 0.015,
+                "h_rel_box_rt": 0.46,
+            }
 
     # SR_TMP TODO move to some config/setup class
     @property
     def n_levels(self):
-        if self.name.startswith("ens_thr_agrmt"):
+        if self.setup.plot_type == "ens_thr_agrmt":
             return 7
-        elif self.name.startswith("ens_cloud_arrival_time"):
+        elif self.setup.plot_type == "ens_cloud_arrival_time":
             return 9
-        elif self.name.endswith("_mono"):
+        elif self.setup.plot_type == "affected_area_mono":
             return 1
-        elif "concentration" in self.name:
+        elif self.setup.variable == "concentration":
             return 8
-        elif "deposition" in self.name:
-            return 9
-        else:
+        elif self.setup.variable == "deposition":
             return 9
 
     # SR_TMP TODO move to some config/setup class
     @property
     def extend(self):
-        if self.name.startswith("ens_thr_agrmt"):
+        if self.setup.plot_type == "ens_thr_agrmt":
             return "min"
-        elif self.name.startswith("ens_cloud_arrival_time"):
+        elif self.setup.plot_type == "ens_cloud_arrival_time":
             return "max"
-        elif self.name.endswith("_mono"):
+        elif self.setup.plot_type == "affected_area_mono":
             return "none"
         else:
             return "max"
@@ -270,19 +267,17 @@ class Plot:
     # SR_TMP TODO move to some config/setup class
     @property
     def d_level(self):
-        if self.name.startswith("ens_thr_agrmt"):
+        if self.setup.plot_type == "ens_thr_agrmt":
             return 2
-        elif self.name.startswith("ens_cloud_arrival_time"):
+        elif self.setup.plot_type == "ens_cloud_arrival_time":
             return 3
-        else:
-            return None
 
     # SR_TMP TODO move to some config/setup class
     @property
     def level_range_style(self):
-        if self.name.startswith("ens_thr_agrmt"):
+        if self.setup.plot_type == "ens_thr_agrmt":
             return "int"
-        elif self.name.startswith("ens_cloud_arrival_time"):
+        elif self.setup.plot_type == "ens_cloud_arrival_time":
             return "int"
         else:
             return "base"
@@ -290,9 +285,9 @@ class Plot:
     # SR_TMP TODO move to some config/setup class
     @property
     def level_ranges_align(self):
-        if self.name.startswith("ens_thr_agrmt"):
+        if self.setup.plot_type == "ens_thr_agrmt":
             return "left"
-        elif self.name.startswith("ens_cloud_arrival_time"):
+        elif self.setup.plot_type == "ens_cloud_arrival_time":
             return "left"
         else:
             return "center"
@@ -300,9 +295,9 @@ class Plot:
     # SR_TMP TODO move to some config/setup class
     @property
     def mark_field_max(self):
-        if self.name.startswith("ens_thr_agrmt"):
+        if self.setup.plot_type == "ens_thr_agrmt":
             return False
-        elif self.name.startswith("ens_cloud_arrival_time"):
+        elif self.setup.plot_type == "ens_cloud_arrival_time":
             return False
         else:
             return True
@@ -330,9 +325,6 @@ class Plot:
             labels (PlotLabels, optional): Labels. Defaults to None.
 
         """
-        self.name = setup.tmp_cls_name()  # SR_TMP TODO eliminate
-        if type(self).__name__ != "Plot":  # SR_TMP TODO eliminate
-            assert self.name == type(self).name  # SR_TMP TODO eliminate
         self.field = field
         self.setup = setup
         self.map_conf = map_conf
@@ -440,11 +432,11 @@ class Plot:
 
         return h_con
 
-    # SR_TODO Replace name checks with plot-specific config/setup object
+    # SR_TODO Replace checks with plot-specific config/setup object
     def draw_colors_contours(self):
-        if self.name.startswith("ens_thr_agrmt"):
+        if self.setup.plot_type == "ens_thr_agrmt":
             self._tmp_draw_colors_contours_ens_thr_agrmt()
-        elif self.name.startswith("ens_cloud_arrival_time"):
+        elif self.setup.plot_type == "ens_cloud_arrival_time":
             self._tmp_draw_colors_contours_ens_thr_agrmt()
         else:
             self._tmp_draw_colors_contours_default()
@@ -764,11 +756,11 @@ class Plot:
     # SR_TODO Move into Labels class
     def _format_top_box_subtitle(self):
         setup = self.setup
-        if self.name.startswith("ens_thr_agrmt"):
+        if self.setup.plot_type == "ens_thr_agrmt":
             return self.labels.top_left["subtitle_thr_agrmt_fmt"].format(
                 thr=setup.ens_param_thr,
             )
-        elif self.name.startswith("ens_cloud_arrival_time"):
+        elif self.setup.plot_type == "ens_cloud_arrival_time":
             return self.labels.top_left["subtitle_cloud_arrival_time"].format(
                 thr=setup.ens_param_thr, mem=setup.ens_param_mem_min,
             )
@@ -776,11 +768,11 @@ class Plot:
             return None
 
     # SR_TODO Move into Labels class
-    # SR_TODO Replace name checks with plot-specific config/setup object
+    # SR_TODO Replace checks with plot-specific config/setup object
     def _format_legend_box_title(self):
-        if self.name.startswith("ens_thr_agrmt"):
+        if self.setup.plot_type == "ens_thr_agrmt":
             return self.labels.right_top["title"]
-        elif self.name.startswith("ens_cloud_arrival_time"):
+        elif self.setup.plot_type == "ens_cloud_arrival_time":
             return self.labels.right_top["title"]
         else:
             return self.labels.right_top["title_unit"]
@@ -847,16 +839,16 @@ class Plot:
         box.text("tr", dx=0.7, dy=0.5, s=labels["copyright"], size="small")
 
     # SR_TODO Move this into Labels class
-    # SR_TODO Replace name checks with plot-specific config/setup object
+    # SR_TODO Replace checks with plot-specific config/setup object
     def _model_info(self):
-        if self.name.startswith("ens_"):
-            return self.labels.bottom["model_info_ens"]
-        else:
+        if self.setup.simulation_type == "deterministic":
             return self.labels.bottom["model_info_det"]
+        elif self.setup.simulation_type == "ensemble":
+            return self.labels.bottom["model_info_ens"]
 
-    # SR_TODO Replace name checks with plot-specific config/setup object
+    # SR_TODO Replace checks with plot-specific config/setup object
     def get_colors(self):
-        if self.name.endswith("_mono"):
+        if self.setup.plot_type == "affected_area_mono":
             return (np.array([(200, 200, 200)]) / 255).tolist()
         else:
             if self.cmap == "flexplot":
@@ -865,9 +857,9 @@ class Plot:
                 cmap = mpl.cm.get_cmap(self.cmap)
                 return [cmap(i / (self.n_levels - 1)) for i in range(self.n_levels)]
 
-    # SR_TODO Replace name checks with plot-specific config/setup object
+    # SR_TODO Replace checks with plot-specific config/setup object
     def get_levels(self):
-        if self.name.startswith("ens_thr_agrmt"):
+        if self.setup.plot_type == "ens_thr_agrmt":
             n_max = 20  # SR_TMP SR_HC
             return (
                 np.arange(
@@ -877,9 +869,9 @@ class Plot:
                 )
                 + 1
             )
-        elif self.name.startswith("ens_cloud_arrival_time"):
+        elif self.setup.plot_type == "ens_cloud_arrival_time":
             return np.arange(0, self.n_levels) * self.d_level
-        elif self.name.endswith("_mono"):
+        elif self.setup.plot_type == "affected_area_mono":
             levels = self.auto_levels_log10(n_levels=9)
             return np.array([levels[0], np.inf])
         else:
