@@ -26,7 +26,6 @@ class VarSpecs:
 
     def __init__(self, setup):
         """Create an instance of ``VarSpecs``."""
-        self._name = setup.tmp_cls_name()
         self._setup = setup
         self._words = WORDS
         self._words.set_default_lang(self._setup.lang)
@@ -120,74 +119,70 @@ class VarSpecs:
         return inds
 
     # SR_TMP TODO move to some config/setup class
-    def long_name(self, name=None):
-        if name is None:
-            name = self._name
-        if ":" in name:
-            # raise DeprecationWarning('":" in name')  # SR_TODO
-            name = name.split(":")[-1]
+    def long_name(self, *, variable=None, plot_type=None):
+        if (variable, plot_type) == (None, None):
+            variable = self._setup.variable
+            plot_type = self._setup.plot_type
         w = self._words
         dep = self.deposition_type_word()
-        if name == "ens_max_affected_area":
-            return f"{w['ensemble_maximum']} {w['affected_area']} ({dep})"
-        if name == "ens_min_affected_area":
-            return f"{w['ensemble_minimum']} {w['affected_area']} ({dep})"
-        if name == "ens_median_affected_area":
-            return f"{w['ensemble_median']} {w['affected_area']} ({dep})"
-        if name == "ens_mean_affected_area":
-            return f"{w['ensemble_mean']} {w['affected_area']} ({dep})"
-        if name == "ens_max_deposition":
-            return f"{w['ensemble_maximum']} {dep} {w['surface_deposition']}"
-        if name == "ens_max_concentration":
-            return f"{w['ensemble_maximum']} {w['concentration']}"
-        if name == "ens_min_deposition":
-            return f"{w['ensemble_minimum']} {dep} {w['surface_deposition']}"
-        if name == "ens_min_concentration":
-            return f"{w['ensemble_minimum']} {w['concentration']}"
-        if name == "ens_median_deposition":
-            return f"{w['ensemble_median']} {dep} {w['surface_deposition']}"
-        if name == "ens_median_concentration":
-            return f"{w['ensemble_median']} {w['concentration']}"
-        if name == "ens_mean_deposition":
-            return f"{w['ensemble_mean']} {dep} {w['surface_deposition']}"
-        if name == "ens_mean_concentration":
-            return f"{w['ensemble_mean']} {w['concentration']}"
-        if name.startswith("affected_area"):
-            dep_name = self.long_name("deposition")
-            return f"{w['affected_area']} ({dep_name})"
-        if name.startswith("ens_thr_agrmt"):
-            super_name = self.short_name(self._setup.variable)
+        if plot_type in ["affected_area", "affected_area_mono"]:
+            super_name = self.long_name(variable="deposition")
+            return f"{w['affected_area']} ({super_name})"
+        elif plot_type == "ens_thr_agrmt":
+            super_name = self.short_name(variable="deposition")
             return f"{w['threshold_agreement']} ({super_name})"
-        if name.startswith("ens_cloud_arrival_time"):
+        elif plot_type == "ens_cloud_arrival_time":
             return f"{w['cloud_arrival_time']}"
-        if name == "concentration":
-            ctx = "abbr" if self._setup.integrate else "*"
-            return w["activity_concentration", None, ctx].s
-        if name == "deposition":
-            return f"{dep} {w['surface_deposition']}"
-        raise NotImplementedError(f"{type(self).__name__}.long_name")
+        if variable == "deposition":
+            if plot_type == "ens_min":
+                return f"{w['ensemble_minimum']} {dep} {w['surface_deposition']}"
+            elif plot_type == "ens_max":
+                return f"{w['ensemble_maximum']} {dep} {w['surface_deposition']}"
+            elif plot_type == "ens_median":
+                return f"{w['ensemble_median']} {dep} {w['surface_deposition']}"
+            elif plot_type == "ens_mean":
+                return f"{w['ensemble_mean']} {dep} {w['surface_deposition']}"
+            else:
+                return f"{dep} {w['surface_deposition']}"
+        if variable == "concentration":
+            if plot_type == "ens_min":
+                return f"{w['ensemble_minimum']} {w['concentration']}"
+            elif plot_type == "ens_max":
+                return f"{w['ensemble_maximum']} {w['concentration']}"
+            elif plot_type == "ens_median":
+                return f"{w['ensemble_median']} {w['concentration']}"
+            elif plot_type == "ens_mean":
+                return f"{w['ensemble_mean']} {w['concentration']}"
+            else:
+                ctx = "abbr" if self._setup.integrate else "*"
+                return w["activity_concentration", None, ctx].s
+        raise NotImplementedError(
+            f"long_name for variable '{variable}' and plot_type '{plot_type}'"
+        )
 
-    def short_name(self, name=None):
-        if name is None:
-            name = self._name
-        if ":" in name:
-            # raise DeprecationWarning('":" in name')  # SR_TODO
-            name = name.split(":")[-1]
+    def short_name(self, *, variable="", plot_type=""):
+        if variable + plot_type == "":
+            variable = self._setup.variable
+            plot_type = self._setup.plot_type
         w = self._words
-        if name == "ens_cloud_arrival_time_concentration":
-            return f"{w['arrival'].c} ({w['hour', None, 'pl']}??)"
-        if name.startswith("ens_thr_agrmt"):
-            return f"{w['number_of', None, 'abbr'].c} {w['member', None, 'pl']}"
-        if name.endswith("deposition"):
-            return w["deposition"].s
-        if name.endswith("concentration"):
-            if self._setup.integrate:
-                return (
-                    f"{w['integrated', None, 'abbr']} "
-                    f"{w['concentration', None, 'abbr']}"
-                )
-            return w["concentration"].s
-        raise NotImplementedError(f"{type(self).__name__}.short_name")
+        if variable == "concentration":
+            if plot_type == "ens_cloud_arrival_time":
+                return f"{w['arrival'].c} ({w['hour', None, 'pl']}??)"
+            else:
+                if self._setup.integrate:
+                    return (
+                        f"{w['integrated', None, 'abbr']} "
+                        f"{w['concentration', None, 'abbr']}"
+                    )
+                return w["concentration"].s
+        if variable == "deposition":
+            if plot_type == "ens_thr_agrmt":
+                return f"{w['number_of', None, 'abbr'].c} {w['member', None, 'pl']}"
+            else:
+                return w["deposition"].s
+        raise NotImplementedError(
+            f"short_name for variable '{variable}' and plot_type '{plot_type}'"
+        )
 
     def var_name(self, *args, **kwargs):
         if self._setup.variable == "concentration":
