@@ -68,19 +68,16 @@ class VarSpecs:
 
     def dict(self):
         assert len(self._setup.time_idcs) == 1  # SR_TMP
-        dct = {
+        return {
+            "deposition": self._setup.deposition_type,
             "integrate": self._setup.integrate,
+            "level": self._setup.level_idx,
             "nageclass": self._setup.age_class_idx,
             "noutrel": self._setup.nout_rel_idx,
             "numpoint": self._setup.release_point_idx,
             "species_id": self._setup.species_id,
             "time": next(iter(self._setup.time_idcs)),  # SR_TMP
         }
-        if self._setup.variable == "concentration":  # SR_TMP
-            dct["level"] = self._setup.level_idx
-        if self._setup.variable == "deposition":  # SR_TMP
-            dct["deposition"] = self._setup.deposition_type
-        return dct
 
 
 class MultiVarSpecs:

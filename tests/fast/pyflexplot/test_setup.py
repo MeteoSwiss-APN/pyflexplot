@@ -41,7 +41,7 @@ DEFAULT_SETUP = Setup(
         "ens_member_ids": None,
         "integrate": False,
         "lang": "en",
-        "level_idx": 0,
+        "level_idx": None,
         "nout_rel_idx": 0,
         "plot_type": "auto",
         "release_point_idx": 0,
@@ -97,7 +97,14 @@ def test_read_single_section(tmp_path):
     setups = read_tmp_setup_file(tmp_path, content)
     assert len(setups) == 1
     assert setups != [DEFAULT_SETUP.dict()]
-    sol = [{**DEFAULT_SETUP.dict(), "variable": "deposition", "lang": "de"}]
+    sol = [
+        {
+            **DEFAULT_SETUP.dict(),
+            "variable": "deposition",
+            "level_idx": -1,
+            "lang": "de",
+        }
+    ]
     assert setups == sol
 
 
@@ -167,37 +174,20 @@ def test_read_multiple_nested_sections(tmp_path):
         """
     sol_base = {
         **DEFAULT_KWARGS,
+        "variable": "deposition",
+        "deposition_type": "tot",
+        "level_idx": -1,
         "lang": "de",
     }
     sol_specific = [
-        {"variable": "concentration"},
-        {
-            "variable": "deposition",
-            "deposition_type": "tot",
-            "domain": "ch",
-            "lang": "en",
-        },
-        {
-            "variable": "deposition",
-            "deposition_type": "tot",
-            "domain": "ch",
-            "lang": "de",
-        },
-        {
-            "variable": "deposition",
-            "deposition_type": "tot",
-            "domain": "auto",
-            "lang": "en",
-        },
-        {
-            "variable": "deposition",
-            "deposition_type": "tot",
-            "domain": "auto",
-            "lang": "de",
-        },
-        {"variable": "deposition", "deposition_type": "wet"},
-        {"variable": "deposition", "deposition_type": "wet", "lang": "en"},
-        {"variable": "deposition", "deposition_type": "wet", "lang": "de"},
+        {"variable": "concentration", "deposition_type": "none", "level_idx": 0},
+        {"domain": "ch", "lang": "en"},
+        {"domain": "ch", "lang": "de"},
+        {"domain": "auto", "lang": "en"},
+        {"domain": "auto", "lang": "de"},
+        {"deposition_type": "wet"},
+        {"deposition_type": "wet", "lang": "en"},
+        {"deposition_type": "wet", "lang": "de"},
     ]
     sol = [{**DEFAULT_SETUP.dict(), **sol_base, **d} for d in sol_specific]
     setups = read_tmp_setup_file(tmp_path, content)
@@ -286,8 +276,8 @@ def test_read_wildcard_simple(tmp_path):
         for dct in [
             {"variable": "concentration", "lang": "de"},
             {"variable": "concentration", "lang": "en"},
-            {"variable": "deposition", "lang": "de"},
-            {"variable": "deposition", "lang": "en"},
+            {"variable": "deposition", "level_idx": -1, "lang": "de"},
+            {"variable": "deposition", "level_idx": -1, "lang": "en"},
         ]
     ]
     setups = read_tmp_setup_file(tmp_path, content)
@@ -327,7 +317,7 @@ def test_read_double_wildcard_equal_depth(tmp_path):
         {**DEFAULT_SETUP.dict(), **dct, "domain": domain, "lang": lang}
         for dct in [
             {"variable": "concentration", "integrate": False},
-            {"variable": "deposition", "integrate": False},
+            {"variable": "deposition", "level_idx": -1, "integrate": False},
         ]
         for domain in ["ch", "auto"]
         for lang in ["de", "en"]
@@ -372,7 +362,7 @@ def test_read_double_wildcard_variable_depth(tmp_path):
         {**DEFAULT_SETUP.dict(), **dct, "domain": domain, "lang": lang}
         for dct in [
             {"variable": "concentration", "time_idcs": (10,)},
-            {"variable": "deposition"},
+            {"variable": "deposition", "level_idx": -1},
         ]
         for domain in ["ch", "auto"]
         for lang in ["de", "en"]
@@ -413,6 +403,7 @@ def test_read_combine_wildcards(tmp_path):
             **DEFAULT_SETUP.dict(),
             "infiles": ("data_{ens_member:02d}.nc",),
             "variable": variable,
+            "level_idx": {"concentration": 0, "deposition": -1}[variable],
             "plot_type": plot_type,
             "outfile": f"{plot_type}_{{lang}}.png",
             "lang": lang,
@@ -497,10 +488,6 @@ class Test_SetupCollection:
 
     def create_setups(self):
         return [Setup(**dct) for dct in self.create_partial_dicts()]
-
-    def test_dicts_setups(self):
-        """Check the dicts and Setup objects used in the SetupCollection tests."""
-        assert self.create_setups() == self.create_complete_dicts()
 
     def test_create_empty(self):
         setups = SetupCollection([])

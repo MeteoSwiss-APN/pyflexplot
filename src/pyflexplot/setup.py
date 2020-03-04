@@ -111,7 +111,6 @@ class Setup(BaseModel):
     infiles: Tuple[str, ...]
     integrate: bool = False
     lang: str = "en"
-    level_idx: Union[int, Tuple[int, ...]] = 0
     nout_rel_idx: int = 0
     outfile: str
     plot_type: str = "auto"
@@ -124,11 +123,12 @@ class Setup(BaseModel):
     variable: str = "concentration"
 
     # Derived parameters
+    level_idx: Union[int, Tuple[int, ...]] = None
     ens_param_mem_min: Optional[int] = None
     ens_param_thr: Optional[float] = None
 
     @validator("deposition_type", always=True)
-    def _validate_deposition_type(cls, value: Union[str, Tuple[str, str]]) -> str:
+    def _init_deposition_type(cls, value: Union[str, Tuple[str, str]]) -> str:
         if isinstance(value, tuple):
             if set(value) == {"dry", "wet"}:
                 return "tot"
@@ -138,7 +138,7 @@ class Setup(BaseModel):
         raise ValueError("deposition_type is invalid", value)
 
     @validator("ens_param_mem_min", always=True)
-    def _validate_ens_param_mem_min(
+    def _init_ens_param_mem_min(
         cls, value: Optional[int], values: Dict[str, Any],
     ) -> Optional[int]:
         if value is not None:
@@ -153,7 +153,7 @@ class Setup(BaseModel):
         return value
 
     @validator("ens_param_thr", always=True)
-    def _validate_ens_param_thr(
+    def _init_ens_param_thr(
         cls, value: Optional[float], values: Dict[str, Any],
     ) -> Optional[float]:
         if value is not None:
@@ -168,6 +168,17 @@ class Setup(BaseModel):
         elif values["plot_type"] == "ens_cloud_arrival_time":
             value = ENS_CLOUD_ARRIVAL_TIME_THR_DEFAULT
         return value
+
+    @validator("level_idx", always=True)
+    def _init_level_idx(
+        cls, value: Optional[Union[int, Tuple[int, ...]]], values: Dict[str, Any],
+    ) -> Union[int, Tuple[int, ...]]:
+        if value is not None:
+            return value
+        elif values["variable"] == "concentration":
+            return 0
+        else:
+            return -1
 
     @classmethod
     def as_setup(cls, obj: Union[Mapping[str, Any], "Setup"]) -> "Setup":
