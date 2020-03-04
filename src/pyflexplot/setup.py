@@ -247,13 +247,6 @@ class Setup(BaseModel):
         sub_setups = [create(dct) for dct in dcts]
         return sub_setups
 
-    def tmp_cls_name(self):
-        if self.simulation_type == "deterministic":
-            return f"{self.variable}"
-        elif self.simulation_type == "ensemble":
-            return f"{self.plot_type}_{self.variable}"
-        raise NotImplementedError(f"simulation_type='{self.simulation_type}'")
-
 
 class SetupCollection:
     """A set of ``Setup`` objects."""

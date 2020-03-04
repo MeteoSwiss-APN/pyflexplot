@@ -66,7 +66,6 @@ class TestReadFieldEnsemble_Single:
         self,
         datadir,  # noqa:F811
         *,
-        name,
         var_names_ref,
         setup_params,
         ens_var,
@@ -88,7 +87,7 @@ class TestReadFieldEnsemble_Single:
         multi_var_specs_lst = MultiVarSpecs.create(setup)
         assert len(multi_var_specs_lst) == 1
         multi_var_specs = next(iter(multi_var_specs_lst))
-        fld_specs = FieldSpecs(name, multi_var_specs)
+        fld_specs = FieldSpecs(multi_var_specs)
 
         setups = multi_var_specs.setup.decompress()
         assert len(setups) == 1
@@ -125,7 +124,6 @@ class TestReadFieldEnsemble_Single:
         """Read concentration field."""
         self.run(
             datadir,
-            name="concentration:ens_mean_concentration",
             var_names_ref=[f"spec{self.species_id:03d}"],
             setup_params={"level_idx": 1},
             ens_var="mean",
@@ -169,7 +167,6 @@ class TestReadFieldEnsemble_Multiple:
         *,
         separate,
         datafile_fmt,
-        name,
         var_names_ref,
         setup_params,
         ens_var,
@@ -199,7 +196,7 @@ class TestReadFieldEnsemble_Multiple:
             multi_var_specs = next(iter(multi_var_specs_lst_i))
             multi_var_specs_lst.append(multi_var_specs)
         fld_specs_lst = [
-            FieldSpecs(name, multi_var_specs) for multi_var_specs in multi_var_specs_lst
+            FieldSpecs(multi_var_specs) for multi_var_specs in multi_var_specs_lst
         ]
 
         run_core = functools.partial(
@@ -252,13 +249,7 @@ class TestReadFieldEnsemble_Multiple:
     # Concentration
 
     def run_concentration(
-        self,
-        datadir,  # noqa:F811
-        ens_var,
-        *,
-        separate=False,
-        name="concentration",
-        scale_fld_ref=1.0,
+        self, datadir, ens_var, *, separate=False, scale_fld_ref=1.0,  # noqa:F811
     ):
         """Read ensemble concentration field."""
 
@@ -282,7 +273,6 @@ class TestReadFieldEnsemble_Multiple:
         self.run(
             separate=separate,
             datafile_fmt=self.datafile_fmt(datadir),
-            name=name,
             var_names_ref=[f"spec{self.species_id:03d}"],
             setup_params=setup_params,
             ens_var=ens_var,
@@ -295,11 +285,7 @@ class TestReadFieldEnsemble_Multiple:
 
     def test_ens_threshold_agreement_concentration(self, datadir):  # noqa:F811
         self.run_concentration(
-            datadir,
-            "thr_agrmt",
-            separate=False,
-            name="concentration:ens_thr_agrmt_concentration",
-            scale_fld_ref=3.0,
+            datadir, "thr_agrmt", separate=False, scale_fld_ref=3.0,
         )
 
     # Deposition
@@ -310,7 +296,6 @@ class TestReadFieldEnsemble_Multiple:
         self.run(
             separate=separate,
             datafile_fmt=self.datafile_fmt(datadir),
-            name="deposition",
             var_names_ref=[
                 f"WD_spec{self.species_id:03d}",
                 f"DD_spec{self.species_id:03d}",

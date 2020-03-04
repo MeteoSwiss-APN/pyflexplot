@@ -39,7 +39,6 @@ def get_var_name_ref(setup, var_names_ref):
 @dataclass
 class Conf:
     datafilename: str
-    name: str
     var_names_ref: List[str]
     setup: Setup
     derived_setup_params: List[Dict[str, Any]] = field(default_factory=list)
@@ -55,7 +54,6 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
     [
         Conf(
             datafilename=datafilename1,
-            name="concentration",
             var_names_ref=[f"spec002"],
             setup=Setup(
                 infiles=["dummy.nc"],
@@ -69,7 +67,6 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
         ),
         Conf(
             datafilename=datafilename1,
-            name="deposition",
             var_names_ref=[f"DD_spec002"],
             setup=Setup(
                 infiles=["dummy.nc"],
@@ -84,7 +81,6 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
         ),
         Conf(
             datafilename=datafilename1,
-            name="deposition",
             var_names_ref=[f"WD_spec002"],
             setup=Setup(
                 infiles=["dummy.nc"],
@@ -99,7 +95,6 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
         ),
         Conf(
             datafilename=datafilename1,
-            name="deposition",
             var_names_ref=[f"WD_spec002", f"DD_spec002"],
             setup=Setup(
                 infiles=["dummy.nc"],
@@ -114,7 +109,6 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
         ),
         Conf(
             datafilename=datafilename2,
-            name="concentration",
             var_names_ref=[f"spec001"],
             setup=Setup(
                 infiles=["dummy.nc"],
@@ -128,7 +122,6 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
         ),
         Conf(
             datafilename=datafilename2,
-            name="deposition",
             var_names_ref=[f"WD_spec001", f"DD_spec001"],
             setup=Setup(
                 infiles=["dummy.nc"],
@@ -155,7 +148,7 @@ def test_single(datadir, conf):  # noqa:F811
     setups = multi_var_specs.setup.decompress()
 
     # Initialize field specifications
-    fld_specs = FieldSpecs(conf.name, multi_var_specs)
+    fld_specs = FieldSpecs(multi_var_specs)
 
     # Read input field
     flex_field = FileReader(datafile).run(fld_specs)
@@ -185,7 +178,6 @@ def test_single(datadir, conf):  # noqa:F811
     [
         Conf(
             datafilename=datafilename1,
-            name="concentration",
             var_names_ref=[f"spec002"],
             setup=Setup(
                 infiles=["dummy.nc"],
@@ -200,7 +192,6 @@ def test_single(datadir, conf):  # noqa:F811
         ),
         Conf(
             datafilename=datafilename1,
-            name="concentration",
             var_names_ref=[f"spec002"],
             setup=Setup(
                 infiles=["dummy.nc"],
@@ -215,7 +206,6 @@ def test_single(datadir, conf):  # noqa:F811
         ),
         Conf(
             datafilename=datafilename1,
-            name="deposition",
             var_names_ref=[f"DD_spec002"],
             setup=Setup(
                 infiles=["dummy.nc"],
@@ -229,7 +219,6 @@ def test_single(datadir, conf):  # noqa:F811
         ),
         Conf(
             datafilename=datafilename1,
-            name="deposition",
             var_names_ref=[f"WD_spec002"],
             setup=Setup(
                 infiles=["dummy.nc"],
@@ -243,7 +232,6 @@ def test_single(datadir, conf):  # noqa:F811
         ),
         Conf(
             datafilename=datafilename1,
-            name="deposition",
             var_names_ref=[f"WD_spec001", f"DD_spec001"],
             setup=Setup(
                 infiles=["dummy.nc"],
@@ -257,7 +245,6 @@ def test_single(datadir, conf):  # noqa:F811
         ),
         Conf(
             datafilename=datafilename2,
-            name="concentration",
             var_names_ref=[f"spec001"],
             setup=Setup(
                 infiles=["dummy.nc"],
@@ -273,7 +260,6 @@ def test_single(datadir, conf):  # noqa:F811
         ),
         Conf(
             datafilename=datafilename2,
-            name="deposition",
             var_names_ref=[f"WD_spec001", f"DD_spec001"],
             setup=Setup(
                 infiles=["dummy.nc"],
@@ -300,8 +286,7 @@ def test_multiple(datadir, conf):  # noqa:F811
     # Create field specifications list
     multi_var_specs_lst = MultiVarSpecs.create(setups)
     fld_specs_lst = [
-        FieldSpecs(conf.name, multi_var_specs)
-        for multi_var_specs in multi_var_specs_lst
+        FieldSpecs(multi_var_specs) for multi_var_specs in multi_var_specs_lst
     ]
 
     # Process field specifications one after another

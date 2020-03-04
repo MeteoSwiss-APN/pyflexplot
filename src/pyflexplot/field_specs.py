@@ -26,13 +26,12 @@ class FieldSpecs:
     @property
     def dims_opt_mult_vals(self):
         lst = ["species_id"]
-        if self.name == "concentration":
+        if self.setup.variable == "concentration":
             lst.append("level")
         return lst
 
     def __init__(
         self,
-        name: str,
         multi_var_specs: MultiVarSpecs,
         *,
         op: Union[Callable, List[Callable]] = np.nansum,
@@ -40,8 +39,6 @@ class FieldSpecs:
         """Create an instance of ``FieldSpecs``.
 
         Args:
-            name: Name.
-
             multi_var_specs (MultiVarSpecs): Specifications of one or more
                 input variables used to subsequently create a plot field.
 
@@ -60,7 +57,6 @@ class FieldSpecs:
                 same order as the corresponding specifications).
 
         """
-        self.name = name
         self.multi_var_specs = multi_var_specs
 
         # Store operator(s)

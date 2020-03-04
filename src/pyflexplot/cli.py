@@ -152,8 +152,7 @@ def read_fields(setup):
 
     # Determine fields specifications (one for each eventual plot)
     fld_specs_lst = [
-        FieldSpecs(setup.tmp_cls_name(), multi_var_specs)
-        for multi_var_specs in multi_var_specs_lst
+        FieldSpecs(multi_var_specs) for multi_var_specs in multi_var_specs_lst
     ]
 
     # Read fields
