@@ -49,7 +49,6 @@ class Plotter:
         if setup.outfile is None:
             raise ValueError("setup.outfile is None")
 
-        self.name = setup.tmp_cls_name()
         self.setup = setup
         # SR_DBG <
         self.file_path_fmt = setup.outfile
@@ -60,7 +59,7 @@ class Plotter:
         assert all(type(obj).__name__.startswith("Field") for obj in fields)  # SR_DBG
 
         _s = "s" if len(fields) > 1 else ""
-        print(f"create {len(fields)} {self.name} plot{_s}")
+        print(f"create {len(fields)} {self.setup.plot_type} plot{_s}")
 
         # SR_TMP < TODO Find less hard-coded solution
         if self.domain == "auto":
