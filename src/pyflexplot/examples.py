@@ -131,12 +131,11 @@ def ens_basic_stats():
 
         [_base]
         # Sampe data directory: /scratch/ruestefa/shared/flexpart_visualization/test/
-        infiles = ["data/cosmo-2e_2019073100_{ens_member_id:03d}.nc"]
+        infiles = ["data/cosmo-2e_2019073100_{ens_member:03d}.nc"]
         simulation_type = "ensemble"
         ens_member_ids = [
             0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
         ]
-        outfile = "test_{variable}_{domain}_{lang}_ts-{time:02d}.png"
         time_idcs = [10]
 
         [_base._concentration]
@@ -147,17 +146,27 @@ def ens_basic_stats():
         deposition_type = "wet"
         integrate = true
 
-        [_base."*".mean]
+        [_base."*"._mean]
+        outfile = "ens_mean_{variable}_{lang}_ts-{time:02d}.png"
         plot_type = "ens_mean"
 
-        [_base."*".median]
+        [_base."*"._median]
+        outfile = "ens_median_{variable}_{lang}_ts-{time:02d}.png"
         plot_type = "ens_median"
 
-        [_base."*".min]
+        [_base."*"._min]
+        outfile = "ens_min_{variable}_{lang}_ts-{time:02d}.png"
         plot_type = "ens_min"
 
-        [_base."*".max]
+        [_base."*"._max]
+        outfile = "ens_max_{variable}_{lang}_ts-{time:02d}.png"
         plot_type = "ens_max"
+
+        ["**".de]
+        lang = "de"
+
+        ["**".en]
+        lang = "en"
 
         """  # noqa:E501
     click.echo(dedent(s))
@@ -183,5 +192,8 @@ def ens_cloud_arrival_time():
 
         ["**".en]
         lang = "en"
+
+        ["**".de]
+        lang = "de"
         """  # noqa:E501
     click.echo(dedent(s))

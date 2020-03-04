@@ -206,8 +206,9 @@ class FileReader:
 
         if not fmt_key_in_path:
             raise ValueError(
-                f"input file path missing format key '{fmt_keys[0]}': "
-                f"{self.in_file_path_fmt}"
+                f"input file path missing format key",
+                fmt_keys[0],
+                self.in_file_path_fmt,
             )
         return [self.in_file_path_fmt.format(ens_member=id) for id in ens_member_ids]
 

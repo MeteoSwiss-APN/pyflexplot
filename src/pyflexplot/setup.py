@@ -303,11 +303,13 @@ class SetupFile:
                 )
         if not raw_data:
             raise ValueError(f"empty setup file", self.path)
-        raw_data = nested_dict_resolve_wildcards(raw_data)
-        values = decompress_nested_dict(
-            raw_data, branch_end_criterion=lambda key: not key.startswith("_"),
+        semi_raw_data = nested_dict_resolve_wildcards(
+            raw_data, double_only_to_ends=True,
         )
-        setups = SetupCollection(values)
+        data = decompress_nested_dict(
+            semi_raw_data, branch_end_criterion=lambda key: not key.startswith("_"),
+        )
+        setups = SetupCollection(data)
         return setups
 
     def write(self, *args, **kwargs) -> None:

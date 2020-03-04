@@ -381,6 +381,50 @@ def test_read_double_wildcard_variable_depth(tmp_path):
     assert setups.dicts() == sol
 
 
+def test_read_combine_wildcards(tmp_path):
+    """Apply single- and double-star wildcards in combination."""
+    content = f"""\
+        [_base]
+        infiles = ["data_{{ens_member:02d}}.nc"]
+
+        [_base._concentration]
+        variable = "concentration"
+
+        [_base._deposition]
+        variable = "deposition"
+
+        [_base."*"._mean]
+        plot_type = "ens_mean"
+        outfile = "ens_mean_{{lang}}.png"
+
+        [_base."*"._max]
+        plot_type = "ens_max"
+        outfile = "ens_max_{{lang}}.png"
+
+        ["**".de]
+        lang = "de"
+
+        ["**".en]
+        lang = "en"
+
+        """
+    sol = [
+        {
+            **DEFAULT_SETUP.dict(),
+            "infiles": ("data_{ens_member:02d}.nc",),
+            "variable": variable,
+            "plot_type": plot_type,
+            "outfile": f"{plot_type}_{{lang}}.png",
+            "lang": lang,
+        }
+        for variable in ["concentration", "deposition"]
+        for plot_type in ["ens_mean", "ens_max"]
+        for lang in ["de", "en"]
+    ]
+    setups = read_tmp_setup_file(tmp_path, content)
+    assert setups.dicts() == sol
+
+
 class Test_Decompress:
 
     setup = DEFAULT_SETUP.derive(
