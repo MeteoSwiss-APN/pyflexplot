@@ -27,8 +27,6 @@ class VarSpecs:
     def __init__(self, setup):
         """Create an instance of ``VarSpecs``."""
         self._name = setup.tmp_cls_name()
-        self._rlat = (None,)
-        self._rlon = (None,)
         self._setup = setup
         self._words = WORDS
         self._words.set_default_lang(self._setup.lang)
@@ -36,12 +34,12 @@ class VarSpecs:
     # SR_TMP <<<
     @property
     def rlat(self):
-        return self._rlat
+        return (None,)
 
     # SR_TMP <<<
     @property
     def rlon(self):
-        return self._rlon
+        return (None,)
 
     # SR_TMP <<<
     @property
@@ -51,20 +49,27 @@ class VarSpecs:
 
     @classmethod
     def create_many(cls, setups, pre_expand_time=False):
-        if not pre_expand_time:
-            var_specs_lst = []
-            for setup in setups:
-                for sub_setup in setup.decompress():
-                    var_specs_lst.append(cls(sub_setup))
-            return var_specs_lst
-        else:
+        def create_var_specs_lst_lst(setups):
             var_specs_lst_lst = []
             for setup in setups:
-                for sub_setup in setup.decompress(["time_idcs"]):
-                    var_specs_lst_lst.append([])
-                    for sub_sub_setup in sub_setup.decompress():
-                        var_specs_lst_lst[-1].append(cls(sub_sub_setup))
+                var_specs_lst = []
+                for sub_setup in setup.decompress():
+                    var_specs_lst.append(cls(sub_setup))
+                var_specs_lst_lst.append(var_specs_lst)
             return var_specs_lst_lst
+
+        def flatten(lst_lst):
+            return [obj for lst in lst_lst for obj in lst]
+
+        if not pre_expand_time:
+            return flatten(create_var_specs_lst_lst(setups))
+
+        setups_time = [
+            sub_setup
+            for setup in setups
+            for sub_setup in setup.decompress(["time_idcs"])
+        ]
+        return create_var_specs_lst_lst(setups_time)
 
     def __eq__(self, other):
         return self.dict() == other.dict()
@@ -79,8 +84,8 @@ class VarSpecs:
             "nageclass": self._setup.age_class_idx,
             "noutrel": self._setup.nout_rel_idx,
             "numpoint": self._setup.release_point_idx,
-            "rlat": self._rlat,
-            "rlon": self._rlon,
+            "rlat": (None,),
+            "rlon": (None,),
             "species_id": self._setup.species_id,
             "time": next(iter(self._setup.time_idcs)),  # SR_TMP
         }
@@ -106,8 +111,8 @@ class VarSpecs:
             raise NotImplementedError("time_all == False")
         # SR_TMP >
 
-        inds["rlat"] = slice(*self._rlat)
-        inds["rlon"] = slice(*self._rlon)
+        inds["rlat"] = slice(None)
+        inds["rlon"] = slice(None)
 
         if self._setup.variable == "concentration":
             inds["level"] = self._setup.level_idx
