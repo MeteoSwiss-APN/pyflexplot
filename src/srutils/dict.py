@@ -420,41 +420,104 @@ def decompress_nested_dict(dct, return_paths=False, branch_end_criterion=None):
     return values
 
 
-def nested_dict_resolve_wildcards(dct):
-    """Update all dicts at the same level with the one with a wildcard key.
+def nested_dict_resolve_wildcards(
+    dct, *, single=True, double=True, double_only_to_ends=False,
+):
+    """Update regular subdicts with single/double-star wildcard subdicts.
+
+    Args:
+        dct (Dict[str, Any]): Nested dict.
+
+        single (bool, optional): Resolve single-star wildcards. Defaults to
+            True.
+
+        double (bool, optional): Resolve double-star wildcards. Defaults to
+            True.
+
+        double_only_to_ends (bool, optional): Insert double-starred wildcard
+            dicts only at the ends of branches, i.e., update only dicts that do
+            not contain further nested dicts. Defaults to False.
+
+    """
+    if single and double:
+        return nested_dict_resolve_double_star_wildcards(
+            nested_dict_resolve_single_star_wildcards(dct),
+            only_to_ends=double_only_to_ends,
+        )
+    elif single:
+        return nested_dict_resolve_single_star_wildcards(dct)
+    elif double:
+        return nested_dict_resolve_double_star_wildcards(
+            dct, only_to_ends=double_only_to_ends,
+        )
+    else:
+        return deepcopy(dct)
+
+
+def nested_dict_resolve_single_star_wildcards(dct):
+    """Update regular subdicts with single-star wildcard subdicts.
 
     Args:
         dct (Dict[str, Any]): Nested dict.
 
     """
+    dct = deepcopy(dct)
 
-    def _apply_double_wc(dct, wild_val):
+    wildcards = {}
+    for key, val in dct.copy().items():
+        if key == "*":
+            wildcards[key] = dct.pop(key)
+
+    for wild_key, wild_val in wildcards.items():
+        for key, val in dct.items():
+            if isinstance(val, Mapping):
+                val.update(wild_val)
+
+    for key, val in dct.items():
+        if isinstance(val, Mapping):
+            dct[key] = nested_dict_resolve_single_star_wildcards(val)
+
+    return dct
+
+
+def nested_dict_resolve_double_star_wildcards(dct, only_to_ends=False):
+    """Update regular subdicts with double-star wildcard subdicts.
+
+    Args:
+        dct (Dict[str, Any]): Nested dict.
+
+        only_to_ends (bool, optional): Insert wildcard dicts only at the ends
+            of branches, i.e., update only dicts that do not contain further
+            nested dicts. Defaults to False.
+
+    """
+    dct = deepcopy(dct)
+
+    def _apply_double_star(dct, wild_val, depth=0):
         subdcts = []
         for key, val in dct.items():
             if isinstance(val, Mapping):
                 subdcts.append(val)
         if subdcts:
             for subdct in subdcts:
-                _apply_double_wc(subdct, wild_val)
-        else:
-            dct.update(wild_val)
+                _apply_double_star(subdct, wild_val, depth=depth + 1)
+        if depth > 0 and (not only_to_ends or not subdcts):
+            dct.update(deepcopy(wild_val))
 
     wildcards = {}
     for key, val in dct.copy().items():
-        if "*" in key:
+        if key == "**":
             wildcards[key] = dct.pop(key)
+
     for wild_key, wild_val in wildcards.items():
-        if wild_key == "*":
-            for key, val in dct.items():
-                if isinstance(val, Mapping):
-                    val.update(wild_val)
-        elif wild_key == "**":
-            _apply_double_wc(dct, wild_val)
-        else:
-            raise NotImplementedError("invalid wildcard key", key)
+        _apply_double_star(dct, wild_val)
+
     for key, val in dct.items():
         if isinstance(val, Mapping):
-            dct[key] = nested_dict_resolve_wildcards(val)
+            dct[key] = nested_dict_resolve_double_star_wildcards(
+                val, only_to_ends=only_to_ends,
+            )
+
     return dct
 
 
