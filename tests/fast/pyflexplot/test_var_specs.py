@@ -80,7 +80,7 @@ def check_var_specs(var_specs, conf):
     res = set(var_specs.dict().items())
     assert sol.issubset(res)
 
-    sol = {**conf.dct, "rlon": (None,), "rlat": (None,)}
+    sol = conf.dct
     res = var_specs.dict()
     assert sol == res
 
@@ -481,7 +481,7 @@ class Test_MultiVarSpecs_Interface:
         # Check that apart from "deposition", the two are identical
         # We need to neutralize a few elements that we expect to differ or
         # that are (at the moment still) added during creation of VarSpecs
-        neutral = {"deposition": None, "rlat": None, "rlon": None}
+        neutral = {"deposition": None}
         sol = {**self.c.dct, **neutral}
         res1 = {**var_specs_lst[0].dict(), **neutral}
         res2 = {**var_specs_lst[1].dict(), **neutral}

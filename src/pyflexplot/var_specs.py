@@ -32,16 +32,6 @@ class VarSpecs:
 
     # SR_TMP <<<
     @property
-    def rlat(self):
-        return (None,)
-
-    # SR_TMP <<<
-    @property
-    def rlon(self):
-        return (None,)
-
-    # SR_TMP <<<
-    @property
     def time(self):
         assert len(self._setup.time_idcs) == 1
         return next(iter(self._setup.time_idcs))
@@ -83,8 +73,6 @@ class VarSpecs:
             "nageclass": self._setup.age_class_idx,
             "noutrel": self._setup.nout_rel_idx,
             "numpoint": self._setup.release_point_idx,
-            "rlat": (None,),
-            "rlon": (None,),
             "species_id": self._setup.species_id,
             "time": next(iter(self._setup.time_idcs)),  # SR_TMP
         }
@@ -93,30 +81,6 @@ class VarSpecs:
         if self._setup.variable == "deposition":  # SR_TMP
             dct["deposition"] = self._setup.deposition_type
         return dct
-
-    def dim_inds_by_name(self, time_all=True):
-        """Derive indices along NetCDF dimensions."""
-
-        inds = {}
-
-        inds["nageclass"] = self._setup.age_class_idx
-        inds["numpoint"] = self._setup.release_point_idx
-        inds["noutrel"] = self._setup.nout_rel_idx
-
-        # SR_TMP <
-        if time_all:
-            inds["time"] = slice(None)
-        else:
-            raise NotImplementedError("time_all == False")
-        # SR_TMP >
-
-        inds["rlat"] = slice(None)
-        inds["rlon"] = slice(None)
-
-        if self._setup.variable == "concentration":
-            inds["level"] = self._setup.level_idx
-
-        return inds
 
     # SR_TMP TODO move to some config/setup class
     def long_name(self, *, variable=None, plot_type=None):
@@ -248,8 +212,6 @@ class MultiVarSpecs:
 
     def collect(self, param):
         """Collect all values of a given parameter."""
-        if param in ["rlat", "rlon"]:
-            return [getattr(vs, param) for vs in self]
         if param == "time":
             setup_param = "time_idcs"
             return [next(iter(getattr(vs._setup, setup_param))) for vs in self]

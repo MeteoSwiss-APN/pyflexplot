@@ -261,12 +261,8 @@ class FileReader:
                 log.debug(f"extract {self.n_fld_specs} time steps")
 
                 # Read grid variables
-                rlat = self.fi.variables["rlat"][
-                    slice(*fld_specs_time.multi_var_specs.collect_equal("rlat"))
-                ]
-                rlon = self.fi.variables["rlon"][
-                    slice(*fld_specs_time.multi_var_specs.collect_equal("rlon"))
-                ]
+                rlat = self.fi.variables["rlat"][:]
+                rlon = self.fi.variables["rlon"][:]
                 if self.rlat is None:
                     self.rlat = rlat
                     self.rlon = rlon
@@ -447,7 +443,7 @@ class FileReader:
         var = self.fi.variables[var_name]
 
         # Indices of field along NetCDF dimensions
-        dim_idcs_by_name = var_specs.dim_inds_by_name()
+        dim_idcs_by_name = self._dim_inds_by_name(var_specs._setup)
 
         # Assemble indices for slicing
         idcs = [None] * len(var.dimensions)
@@ -517,6 +513,27 @@ class FileReader:
         fld = self._time_integrations(fld, var_specs)
 
         return fld
+
+    @staticmethod
+    def _dim_inds_by_name(setup, *, time_all=True):
+        """Derive indices along NetCDF dimensions."""
+
+        inds = {}
+
+        inds["nageclass"] = setup.age_class_idx
+        inds["numpoint"] = setup.release_point_idx
+        inds["noutrel"] = setup.nout_rel_idx
+
+        # SR_TMP <
+        inds["time"] = slice(None)
+        inds["rlat"] = slice(None)
+        inds["rlon"] = slice(None)
+        # SR_TMP >
+
+        if setup.variable == "concentration":
+            inds["level"] = setup.level_idx
+
+        return inds
 
     def _time_integrations(self, fld, var_specs):
 
