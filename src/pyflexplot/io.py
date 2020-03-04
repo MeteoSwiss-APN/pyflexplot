@@ -446,11 +446,11 @@ class FileReader:
         var = self.fi.variables[var_name]
 
         # Indices of field along NetCDF dimensions
-        dim_idxs_by_name = var_specs.dim_inds_by_name()
+        dim_idcs_by_name = var_specs.dim_inds_by_name()
 
         # Assemble indices for slicing
-        idxs = [None] * len(var.dimensions)
-        for dim_name, dim_idx in dim_idxs_by_name.items():
+        idcs = [None] * len(var.dimensions)
+        for dim_name, dim_idx in dim_idcs_by_name.items():
             # Get the index of the dimension for this variable
             try:
                 idx = var.dimensions.index(dim_name)
@@ -483,11 +483,11 @@ class FileReader:
                     },
                 )
 
-            idxs[idx] = dim_idx
+            idcs[idx] = dim_idx
 
         # Check that all variable dimensions have been identified
         try:
-            idx = idxs.index(None)
+            idx = idcs.index(None)
         except ValueError:
             # All good!
             pass
@@ -495,20 +495,19 @@ class FileReader:
             raise Exception(
                 f"unknown variable dimension #{idx} '{var.dimensions[idx]}'",
                 {
-                    "dim_idxs_by_name": dim_idxs_by_name,
-                    "idxs": idxs,
+                    "dim_idcs_by_name": dim_idcs_by_name,
+                    "idcs": idcs,
                     "var.dimensions": var.dimensions,
                     "var_name": var_name,
                 },
             )
-        idxs = idxs
-        log.debug(f"indices: {idxs}")
-        check_array_indices(var.shape, idxs)
+        log.debug(f"indices: {idcs}")
+        check_array_indices(var.shape, idcs)
 
         # Read field
         log.debug(f"shape: {var.shape}")
-        log.debug(f"indices: {idxs}")
-        fld = var[idxs]
+        log.debug(f"indices: {idcs}")
+        fld = var[idcs]
 
         log.debug(f"fix nc data: variable {var.name}")
         self._fix_nc_var(fld, var)
@@ -523,12 +522,12 @@ class FileReader:
         dt_hr = self._time_resolution()
 
         if var_specs._setup.variable == "concentration":  # SR_TMP
-            if var_specs.integrate:
+            if var_specs._setup.integrate:
                 # Integrate over time
                 fld = np.cumsum(fld, axis=0) * dt_hr
 
         elif var_specs._setup.variable == "deposition":  # SR_TMP
-            if not var_specs.integrate:
+            if not var_specs._setup.integrate:
                 # Revert integration over time
                 fld[1:] = (fld[1:] - fld[:-1]) / dt_hr
 

@@ -829,9 +829,9 @@ class AttrsCollector:
 
         # Type of integration (or, rather, reduction)
         if self.var_specs._setup.variable == "concentration":  # SR_TMP
-            integr_type = "sum" if self.var_specs.integrate else "mean"
+            integr_type = "sum" if self.var_specs._setup.integrate else "mean"
         elif self.var_specs._setup.variable == "deposition":  # SR_TMP
-            integr_type = "accum" if self.var_specs.integrate else "mean"
+            integr_type = "accum" if self.var_specs._setup.integrate else "mean"
         else:
             raise NotImplementedError(
                 f"no integration type specified for '{self.var_specs.name}'"
@@ -851,7 +851,8 @@ class AttrsCollector:
 
         if idx is None:
             # Default to timestep of current field
-            idx = self.var_specs.time
+            assert len(self.var_specs._setup.time_idcs) == 1  # SR_TMP
+            idx = next(iter(self.var_specs._setup.time_idcs))  # SR_TMP
 
         if not isinstance(idx, int):
             raise Exception(f"expect type 'int', not '{type(idx).__name__}': {idx}")
@@ -886,7 +887,7 @@ class AttrsCollector:
         now = start + delta_tot
 
         # Determine start timestep of integration period
-        if self.var_specs.integrate:
+        if self.var_specs._setup.integrate:
             delta_integr = delta_tot
         else:
             delta_prev = delta_tot / (idx + 1)
@@ -910,8 +911,9 @@ class AttrsCollector:
         """Collect release point attributes."""
 
         # Collect release point information
-        _idx = self.var_specs.numpoint
-        release_point = ReleasePoint.from_file(self.fi, _idx)
+        release_point = ReleasePoint.from_file(
+            self.fi, self.var_specs._setup.release_point_idx,
+        )
 
         sim_start = attrs["simulation"]["start"]
         start = sim_start + datetime.timedelta(seconds=release_point.rel_start)
@@ -960,7 +962,7 @@ class AttrsCollector:
         unit = self.ncattrs_field["units"]
 
         try:
-            _i = self.var_specs.level
+            _i = self.var_specs._setup.level_idx
         except AttributeError:
             # SR_TMP <
             level_unit = ""
@@ -1027,7 +1029,7 @@ class AttrsCollector:
         substance = self.ncattrs_field["long_name"]
         if self.var_specs._setup.variable == "deposition":  # SR_TMP
             substance = substance.replace(
-                f"_{self.var_specs.deposition}_deposition", ""
+                f"_{self.var_specs._setup.deposition_type}_deposition", ""
             )  # SR_HC
         return substance
 

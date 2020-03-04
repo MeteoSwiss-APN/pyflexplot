@@ -475,7 +475,7 @@ class Test_MultiVarSpecs_Interface:
         check_is_list_like(var_specs_lst, len_=2, t_children=VarSpecs)
         assert len(var_specs_lst) == 2
         sol = {"wet", "dry"}
-        res = {vs.deposition for vs in var_specs_lst}
+        res = {vs._setup.deposition_type for vs in var_specs_lst}
         assert res == sol
 
         # Check that apart from "deposition", the two are identical

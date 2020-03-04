@@ -26,27 +26,22 @@ class VarSpecs:
 
     def __init__(self, setup):
         """Create an instance of ``VarSpecs``."""
-
-        self._name = setup.tmp_cls_name()  # SR_TMP
-
-        self.rlat = (None,)
-        self.rlon = (None,)
-
+        self._name = setup.tmp_cls_name()
+        self._rlat = (None,)
+        self._rlon = (None,)
         self._setup = setup
         self._words = WORDS
         self._words.set_default_lang(self._setup.lang)
 
-        # SR_TMP < TODO eliminate
-        self.species_id = setup.species_id
-        self.integrate = setup.integrate
-        self.nageclass = setup.age_class_idx
-        self.numpoint = setup.release_point_idx
-        self.noutrel = setup.nout_rel_idx
-        if setup.variable == "concentration":  # SR_TMP
-            self.level = setup.level_idx
-        if setup.variable == "deposition":  # SR_TMP
-            self.deposition = setup.deposition_type
-        # SR_TMP >
+    # SR_TMP <<<
+    @property
+    def rlat(self):
+        return self._rlat
+
+    # SR_TMP <<<
+    @property
+    def rlon(self):
+        return self._rlon
 
     # SR_TMP <<<
     @property
@@ -78,15 +73,21 @@ class VarSpecs:
         return format_dictlike(self)
 
     def dict(self):
-        dct = {}
-        for name in dir(self):
-            if name.startswith("_"):
-                continue
-            # SR_TMP <
-            if name not in list(self.__dict__) + ["time"]:
-                continue
-            # SR_TMP >
-            dct[name] = getattr(self, name)
+        assert len(self._setup.time_idcs) == 1  # SR_TMP
+        dct = {
+            "integrate": self._setup.integrate,
+            "nageclass": self._setup.age_class_idx,
+            "noutrel": self._setup.nout_rel_idx,
+            "numpoint": self._setup.release_point_idx,
+            "rlat": self._rlat,
+            "rlon": self._rlon,
+            "species_id": self._setup.species_id,
+            "time": next(iter(self._setup.time_idcs)),  # SR_TMP
+        }
+        if self._setup.variable == "concentration":  # SR_TMP
+            dct["level"] = self._setup.level_idx
+        if self._setup.variable == "deposition":  # SR_TMP
+            dct["deposition"] = self._setup.deposition_type
         return dct
 
     def dim_inds_by_name(self, time_all=True):
@@ -94,9 +95,9 @@ class VarSpecs:
 
         inds = {}
 
-        inds["nageclass"] = self.nageclass
-        inds["numpoint"] = self.numpoint
-        inds["noutrel"] = self.noutrel
+        inds["nageclass"] = self._setup.age_class_idx
+        inds["numpoint"] = self._setup.release_point_idx
+        inds["noutrel"] = self._setup.nout_rel_idx
 
         # SR_TMP <
         if time_all:
@@ -105,11 +106,11 @@ class VarSpecs:
             raise NotImplementedError("time_all == False")
         # SR_TMP >
 
-        inds["rlat"] = slice(*self.rlat)
-        inds["rlon"] = slice(*self.rlon)
+        inds["rlat"] = slice(*self._rlat)
+        inds["rlon"] = slice(*self._rlon)
 
         if self._setup.variable == "concentration":
-            inds["level"] = self.level
+            inds["level"] = self._setup.level_idx
 
         return inds
 
@@ -177,7 +178,7 @@ class VarSpecs:
         if name.startswith("ens_cloud_arrival_time"):
             return f"{self._words['cloud_arrival_time']}"
         if name == "concentration":
-            ctx = "abbr" if self.integrate else "*"
+            ctx = "abbr" if self._setup.integrate else "*"
             return self._words["activity_concentration", None, ctx].s
         if name == "deposition":
             return f"{self.deposition_type()} {self._words['surface_deposition']}"
@@ -204,7 +205,7 @@ class VarSpecs:
         if name.endswith("deposition"):
             return self._words["deposition"].s
         if name.endswith("concentration"):
-            if self.integrate:
+            if self._setup.integrate:
                 return (
                     f"{self._words['integrated', None, 'abbr']} "
                     f"{self._words['concentration', None, 'abbr']}"
@@ -215,20 +216,20 @@ class VarSpecs:
     def var_name(self, *args, **kwargs):
         if self._setup.variable == "concentration":
             try:
-                iter(self.species_id)
+                iter(self._setup.species_id)
             except TypeError:
-                return f"spec{self.species_id:03d}"
+                return f"spec{self._setup.species_id:03d}"
             else:
-                return [f"spec{sid:03d}" for sid in self.species_id]
+                return [f"spec{sid:03d}" for sid in self._setup.species_id]
         elif self._setup.variable == "deposition":
-            prefix = {"wet": "WD", "dry": "DD"}[self.deposition]
-            return f"{prefix}_spec{self.species_id:03d}"
+            prefix = {"wet": "WD", "dry": "DD"}[self._setup.deposition_type]
+            return f"{prefix}_spec{self._setup.species_id:03d}"
         raise NotImplementedError(f"{type(self).__name__}.var_name: override it!")
 
     def deposition_type(self):
         if self._setup.variable != "deposition":
             raise Exception(f"unexpected var specs type", type(self))
-        type_ = self.deposition
+        type_ = self._setup.deposition_type
         word = {"tot": "total"}.get(type_, type_)
         return self._words[word, None, "f"].s
 
@@ -277,16 +278,27 @@ class MultiVarSpecs:
     def __len__(self):
         return len(self.var_specs_lst)
 
-    def collect(self, key):
-        """Collect all values for a given key."""
-        try:
-            return [getattr(vs, key) for vs in self]
-        except AttributeError:
-            raise ValueError("invalid key", key)
+    def collect(self, param):
+        """Collect all values of a given parameter."""
+        if param in ["rlat", "rlon"]:
+            return [getattr(vs, param) for vs in self]
+        if param == "time":
+            setup_param = "time_idcs"
+            return [next(iter(getattr(vs._setup, setup_param))) for vs in self]
+        setup_param = {
+            "species_id": "species_id",
+            "integrate": "integrate",
+            "nageclass": "age_class_idx",
+            "numpoint": "release_point_idx",
+            "noutrel": "nout_rel_idx",
+            "level": "level_idx",
+            "deposition": "deposition_type",
+        }.get(param, param)
+        return [getattr(vs._setup, setup_param) for vs in self]
 
-    def collect_equal(self, key):
-        """Obtain the value for a key, expecting it to be equal for all."""
-        values = self.collect(key)
+    def collect_equal(self, param):
+        """Obtain the value of a param, expecting it to be equal for all."""
+        values = self.collect(param)
         if not all(value == values[0] for value in values[1:]):
-            raise Exception("values differ for key", key, values)
+            raise Exception("values differ for param", param, values)
         return next(iter(values))
