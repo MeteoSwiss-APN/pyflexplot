@@ -19,7 +19,6 @@ import pytest
 from pyflexplot.field_specs import FieldSpecs
 from pyflexplot.io import FileReader
 from pyflexplot.setup import Setup
-from pyflexplot.var_specs import MultiVarSpecs
 
 from io_utils import read_nc_var  # isort:skip
 from utils import datadir  # noqa:F401 isort:skip
@@ -141,14 +140,13 @@ def test_single(datadir, conf):  # noqa:F811
 
     datafile = f"{datadir}/{conf.datafilename}"
 
-    # Initialize variable specifications
-    multi_var_specs_lst = MultiVarSpecs.create(conf.setup)
-    assert len(multi_var_specs_lst) == 1
-    multi_var_specs = next(iter(multi_var_specs_lst))
-    setups = multi_var_specs.setup.decompress()
-
     # Initialize field specifications
-    fld_specs = FieldSpecs(multi_var_specs)
+    fld_specs_lst = FieldSpecs.create(conf.setup)
+    assert len(fld_specs_lst) == 1
+    fld_specs = next(iter(fld_specs_lst))
+
+    # Initialize individual setup objects
+    setups = fld_specs.multi_var_specs.setup.decompress()
 
     # Read input field
     flex_field = FileReader(datafile).run(fld_specs)
@@ -284,10 +282,7 @@ def test_multiple(datadir, conf):  # noqa:F811
         setups.extend(setup.derive(conf.derived_setup_params))
 
     # Create field specifications list
-    multi_var_specs_lst = MultiVarSpecs.create(setups)
-    fld_specs_lst = [
-        FieldSpecs(multi_var_specs) for multi_var_specs in multi_var_specs_lst
-    ]
+    fld_specs_lst = FieldSpecs.create(setups)
 
     # Process field specifications one after another
     for fld_specs in fld_specs_lst:

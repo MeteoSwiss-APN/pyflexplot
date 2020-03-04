@@ -23,7 +23,6 @@ from .io import FileReader
 from .plotter import Plotter
 from .setup import SetupFile
 from .utils import count_to_log_level
-from .var_specs import MultiVarSpecs
 
 # # To debug segmentation fault, uncomment and run with PYTHONFAULTHANDLER=1
 # import faulthandler
@@ -147,13 +146,8 @@ def create_plots(setups, cli_args):
 
 def read_fields(setup):
 
-    # Create variable specification objects
-    multi_var_specs_lst = MultiVarSpecs.create(setup)
-
     # Determine fields specifications (one for each eventual plot)
-    fld_specs_lst = [
-        FieldSpecs(multi_var_specs) for multi_var_specs in multi_var_specs_lst
-    ]
+    fld_specs_lst = FieldSpecs.create(setup)
 
     # Read fields
     field_lst = []

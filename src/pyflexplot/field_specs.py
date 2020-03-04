@@ -21,20 +21,11 @@ from .var_specs import MultiVarSpecs
 class FieldSpecs:
     """FLEXPART field specifications."""
 
-    # Dimensions with optionally multiple values
-    # SR_TMP <<<
-    @property
-    def dims_opt_mult_vals(self):
-        lst = ["species_id"]
-        if self.setup.variable == "concentration":
-            lst.append("level")
-        return lst
-
     def __init__(
         self,
         multi_var_specs: MultiVarSpecs,
         *,
-        op: Union[Callable, List[Callable]] = np.nansum,
+        op: Union[Callable, List[Callable]] = None,
     ):
         """Create an instance of ``FieldSpecs``.
 
@@ -62,6 +53,8 @@ class FieldSpecs:
         # Store operator(s)
         self._op: Optional[Callable]
         self._op_lst: Optional[Sequence[Callable]]
+        if op is None:
+            op = np.nansum
         if callable(op):
             self._op = op
             self._op_lst = None
@@ -69,14 +62,21 @@ class FieldSpecs:
             self._op = None
             self._op_lst = op
 
+    # SR_TMP <<<
+    @classmethod
+    def create(cls, setup_or_setups, op=None):
+        multi_var_specs_lst = MultiVarSpecs.create(setup_or_setups)
+        assert isinstance(multi_var_specs_lst, list)  # SR_TMP
+        assert isinstance(multi_var_specs_lst[0], MultiVarSpecs)  # SR_TMP
+        return [cls(multi_var_specs, op=op) for multi_var_specs in multi_var_specs_lst]
+
     def __repr__(self):
         s = f"{type(self).__name__}(\n"
 
         # Variables specifications
         s += f"  var_specs: {len(self.multi_var_specs)}x\n"
-        for var_specs in self.multi_var_specs:
-            for line in str(var_specs).split("\n"):
-                s += f"    {line}\n"
+        for line in repr(self.multi_var_specs).split("\n"):
+            s += f"    {line}\n"
 
         # Operator(s)
         if self._op is not None:

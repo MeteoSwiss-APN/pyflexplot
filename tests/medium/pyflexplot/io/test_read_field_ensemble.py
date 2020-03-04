@@ -14,7 +14,6 @@ from pyflexplot.data import threshold_agreement
 from pyflexplot.field_specs import FieldSpecs
 from pyflexplot.io import FileReader
 from pyflexplot.setup import Setup
-from pyflexplot.var_specs import MultiVarSpecs
 from srutils.dict import decompress_multival_dict
 
 from io_utils import read_nc_var  # isort:skip
@@ -84,12 +83,11 @@ class TestReadFieldEnsemble_Single:
                 "plot_type": f"ens_{ens_var}",
             }
         )
-        multi_var_specs_lst = MultiVarSpecs.create(setup)
-        assert len(multi_var_specs_lst) == 1
-        multi_var_specs = next(iter(multi_var_specs_lst))
-        fld_specs = FieldSpecs(multi_var_specs)
+        fld_specs_lst = FieldSpecs.create(setup)
+        assert len(fld_specs_lst) == 1
+        fld_specs = next(iter(fld_specs_lst))
 
-        setups = multi_var_specs.setup.decompress()
+        setups = fld_specs.multi_var_specs.setup.decompress()
         assert len(setups) == 1
         setup = next(iter(setups))
 
@@ -177,11 +175,9 @@ class TestReadFieldEnsemble_Multiple:
 
         # Create field specifications list
         setups = []
-        multi_var_specs_lst = []
-        shared_setup_params_lst = decompress_multival_dict(
+        for shared_setup_params in decompress_multival_dict(
             self.shared_setup_params_compressed, skip=["infiles"],
-        )
-        for shared_setup_params in shared_setup_params_lst:
+        ):
             shared_setup_params["time_idcs"] = [shared_setup_params["time_idcs"]]
             setup_params_i = {
                 **shared_setup_params,
@@ -189,15 +185,8 @@ class TestReadFieldEnsemble_Multiple:
                 "ens_member_ids": self.ens_member_ids,
                 "plot_type": f"ens_{ens_var}",
             }
-            setup = Setup(**setup_params_i)
-            setups.append(setup)
-            multi_var_specs_lst_i = MultiVarSpecs.create(setup)
-            assert len(multi_var_specs_lst_i) == 1
-            multi_var_specs = next(iter(multi_var_specs_lst_i))
-            multi_var_specs_lst.append(multi_var_specs)
-        fld_specs_lst = [
-            FieldSpecs(multi_var_specs) for multi_var_specs in multi_var_specs_lst
-        ]
+            setups.append(Setup(**setup_params_i))
+        fld_specs_lst = FieldSpecs.create(setups)
 
         run_core = functools.partial(
             self._run_core, datafile_fmt, var_names_ref, fct_reduce_mem, scale_fld_ref,
