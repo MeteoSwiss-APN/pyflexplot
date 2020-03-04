@@ -15,6 +15,7 @@ from srutils.various import check_array_indices
 
 # Local
 from .attr import collect_attrs
+from .attr import nc_var_name
 from .data import Field
 from .data import cloud_arrival_time
 from .data import threshold_agreement
@@ -427,7 +428,7 @@ class FileReader:
 
             # Field
             log.debug("read field")
-            fld = self._read_var(var_specs)
+            fld = self._read_var(var_specs._setup)
 
             fld_lst.append(fld)
 
@@ -436,14 +437,14 @@ class FileReader:
 
         return fld
 
-    def _read_var(self, var_specs):
+    def _read_var(self, setup):
 
         # Select variable in file
-        var_name = var_specs.var_name()
+        var_name = nc_var_name(setup)
         var = self.fi.variables[var_name]
 
         # Indices of field along NetCDF dimensions
-        dim_idcs_by_name = self._dim_inds_by_name(var_specs._setup)
+        dim_idcs_by_name = self._dim_inds_by_name(setup)
 
         # Assemble indices for slicing
         idcs = [None] * len(var.dimensions)
@@ -510,7 +511,7 @@ class FileReader:
         self._fix_nc_var(fld, var)
 
         # Time integration
-        fld = self._time_integrations(fld, var_specs)
+        fld = self._time_integrations(fld, setup)
 
         return fld
 
@@ -535,22 +536,22 @@ class FileReader:
 
         return inds
 
-    def _time_integrations(self, fld, var_specs):
+    def _time_integrations(self, fld, setup):
 
         dt_hr = self._time_resolution()
 
-        if var_specs._setup.variable == "concentration":  # SR_TMP
-            if var_specs._setup.integrate:
+        if setup.variable == "concentration":  # SR_TMP
+            if setup.integrate:
                 # Integrate over time
                 fld = np.cumsum(fld, axis=0) * dt_hr
 
-        elif var_specs._setup.variable == "deposition":  # SR_TMP
-            if not var_specs._setup.integrate:
+        elif setup.variable == "deposition":  # SR_TMP
+            if not setup.integrate:
                 # Revert integration over time
                 fld[1:] = (fld[1:] - fld[:-1]) / dt_hr
 
         else:
-            raise NotImplementedError(f"var_specs of type '{type(var_specs).__name__}'")
+            raise NotImplementedError("variable", setup.variable)
 
         return fld
 

@@ -776,6 +776,8 @@ class AttrsCollector:
 
         """
         self.fi = fi
+        self._setup = var_specs._setup
+        self._words = var_specs._words
         self.var_specs = var_specs
 
         # Collect all global attributes
@@ -791,8 +793,7 @@ class AttrsCollector:
             }
 
         # Select attributes of field variable
-        self.field_var_name = self.var_specs.var_name()
-        self.ncattrs_field = self.ncattrs_vars[self.field_var_name]
+        self.ncattrs_field = self.ncattrs_vars[nc_var_name(self._setup)]
 
     def run(self, lang=None):
         """Collect attributes."""
@@ -828,13 +829,13 @@ class AttrsCollector:
         ts_now, ts_integr_start = self._get_current_timestep_etc()
 
         # Type of integration (or, rather, reduction)
-        if self.var_specs._setup.variable == "concentration":  # SR_TMP
-            integr_type = "sum" if self.var_specs._setup.integrate else "mean"
-        elif self.var_specs._setup.variable == "deposition":  # SR_TMP
-            integr_type = "accum" if self.var_specs._setup.integrate else "mean"
+        if self._setup.variable == "concentration":  # SR_TMP
+            integr_type = "sum" if self._setup.integrate else "mean"
+        elif self._setup.variable == "deposition":  # SR_TMP
+            integr_type = "accum" if self._setup.integrate else "mean"
         else:
             raise NotImplementedError(
-                f"no integration type specified for '{self.var_specs.name}'"
+                f"no integration type specified for '{self.name}'"
             )
 
         return {
@@ -851,8 +852,8 @@ class AttrsCollector:
 
         if idx is None:
             # Default to timestep of current field
-            assert len(self.var_specs._setup.time_idcs) == 1  # SR_TMP
-            idx = next(iter(self.var_specs._setup.time_idcs))  # SR_TMP
+            assert len(self._setup.time_idcs) == 1  # SR_TMP
+            idx = next(iter(self._setup.time_idcs))  # SR_TMP
 
         if not isinstance(idx, int):
             raise Exception(f"expect type 'int', not '{type(idx).__name__}': {idx}")
@@ -887,7 +888,7 @@ class AttrsCollector:
         now = start + delta_tot
 
         # Determine start timestep of integration period
-        if self.var_specs._setup.integrate:
+        if self._setup.integrate:
             delta_integr = delta_tot
         else:
             delta_prev = delta_tot / (idx + 1)
@@ -911,9 +912,7 @@ class AttrsCollector:
         """Collect release point attributes."""
 
         # Collect release point information
-        release_point = ReleasePoint.from_file(
-            self.fi, self.var_specs._setup.release_point_idx,
-        )
+        release_point = ReleasePoint.from_file(self.fi, self._setup.release_point_idx,)
 
         sim_start = attrs["simulation"]["start"]
         start = sim_start + datetime.timedelta(seconds=release_point.rel_start)
@@ -955,14 +954,14 @@ class AttrsCollector:
         """Collect variable attributes."""
 
         # Variable names
-        long_name = self.var_specs.long_name()
-        short_name = self.var_specs.short_name()
+        long_name = self._long_name()
+        short_name = self._short_name()
 
         # Variable unit
         unit = self.ncattrs_field["units"]
 
         try:
-            _i = self.var_specs._setup.level_idx
+            _i = self._setup.level_idx
         except AttributeError:
             # SR_TMP <
             level_unit = ""
@@ -991,10 +990,9 @@ class AttrsCollector:
         substance = self._get_substance()
 
         # Get deposition and washout data
-        if self.var_specs._setup.variable == "concentration":  # SR_TMP
-            name_core = self.field_var_name
-        elif self.var_specs._setup.variable == "deposition":  # SR_TMP
-            name_core = self.field_var_name[3:]
+        name_core = nc_var_name(self._setup)
+        if self._setup.variable == "deposition":  # SR_TMP
+            name_core = name_core[3:]
         deposit_vel = self.ncattrs_vars[f"DD_{name_core}"]["dryvel"]
         washout_coeff = self.ncattrs_vars[f"WD_{name_core}"]["weta"]
         washout_exponent = self.ncattrs_vars[f"WD_{name_core}"]["wetb"]
@@ -1027,11 +1025,94 @@ class AttrsCollector:
 
     def _get_substance(self):
         substance = self.ncattrs_field["long_name"]
-        if self.var_specs._setup.variable == "deposition":  # SR_TMP
+        if self._setup.variable == "deposition":  # SR_TMP
             substance = substance.replace(
-                f"_{self.var_specs._setup.deposition_type}_deposition", ""
+                f"_{self._setup.deposition_type}_deposition", ""
             )  # SR_HC
         return substance
+
+    def _long_name(self, *, variable=None, plot_type=None):
+        setup = self._setup
+        words = self._words
+        if (variable, plot_type) == (None, None):
+            variable = setup.variable
+            plot_type = setup.plot_type
+        dep = self._deposition_type_word()
+        if plot_type in ["affected_area", "affected_area_mono"]:
+            super_name = self._long_name(variable="deposition")
+            return f"{words['affected_area']} ({super_name})"
+        elif plot_type == "ens_thr_agrmt":
+            super_name = self._short_name(variable="deposition")
+            return f"{words['threshold_agreement']} ({super_name})"
+        elif plot_type == "ens_cloud_arrival_time":
+            return f"{words['cloud_arrival_time']}"
+        if variable == "deposition":
+            if plot_type == "ens_min":
+                return (
+                    f"{words['ensemble_minimum']} {dep} {words['surface_deposition']}"
+                )
+            elif plot_type == "ens_max":
+                return (
+                    f"{words['ensemble_maximum']} {dep} {words['surface_deposition']}"
+                )
+            elif plot_type == "ens_median":
+                return f"{words['ensemble_median']} {dep} {words['surface_deposition']}"
+            elif plot_type == "ens_mean":
+                return f"{words['ensemble_mean']} {dep} {words['surface_deposition']}"
+            else:
+                return f"{dep} {words['surface_deposition']}"
+        if variable == "concentration":
+            if plot_type == "ens_min":
+                return f"{words['ensemble_minimum']} {words['concentration']}"
+            elif plot_type == "ens_max":
+                return f"{words['ensemble_maximum']} {words['concentration']}"
+            elif plot_type == "ens_median":
+                return f"{words['ensemble_median']} {words['concentration']}"
+            elif plot_type == "ens_mean":
+                return f"{words['ensemble_mean']} {words['concentration']}"
+            else:
+                ctx = "abbr" if setup.integrate else "*"
+                return words["activity_concentration", None, ctx].s
+        raise NotImplementedError(
+            f"long_name for variable '{variable}' and plot_type '{plot_type}'"
+        )
+
+    def _short_name(self, *, variable=None, plot_type=None):
+        setup = self._setup
+        words = self._words
+        if (variable, plot_type) == (None, None):
+            variable = setup.variable
+            plot_type = setup.plot_type
+        if variable == "concentration":
+            if plot_type == "ens_cloud_arrival_time":
+                return f"{words['arrival'].c} ({words['hour', None, 'pl']}??)"
+            else:
+                if setup.integrate:
+                    return (
+                        f"{words['integrated', None, 'abbr']} "
+                        f"{words['concentration', None, 'abbr']}"
+                    )
+                return words["concentration"].s
+        if variable == "deposition":
+            if plot_type == "ens_thr_agrmt":
+                return (
+                    f"{words['number_of', None, 'abbr'].c} "
+                    f"{words['member', None, 'pl']}"
+                )
+            else:
+                return words["deposition"].s
+        raise NotImplementedError(
+            f"short_name for variable '{variable}' and plot_type '{plot_type}'"
+        )
+
+    def _deposition_type_word(self):
+        setup = self._setup
+        words = self._words
+        if setup.variable == "deposition":
+            type_ = setup.deposition_type
+            word = {"tot": "total"}.get(type_, type_)
+            return words[word, None, "f"].s
+        return "none"
 
 
 class ReleasePoint:
@@ -1179,3 +1260,14 @@ class ReleasePoint:
         """
         n = fi.variables[var_name].shape[0]
         return [cls.from_file(fi, i, var_name) for i in range(n)]
+
+
+# SR_TMP <<< TODO figure out what to do with this
+def nc_var_name(setup):
+    if setup.variable == "concentration":
+        if isinstance(setup.species_id, int):
+            return f"spec{setup.species_id:03d}"
+        return [f"spec{sid:03d}" for sid in setup.species_id]
+    elif setup.variable == "deposition":
+        prefix = {"wet": "WD", "dry": "DD"}[setup.deposition_type]
+        return f"{prefix}_spec{setup.species_id:03d}"
