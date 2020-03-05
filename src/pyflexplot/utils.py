@@ -3,8 +3,8 @@
 Some utilities.
 """
 # Standard library
-import logging as log
 import re
+import warnings
 from collections import namedtuple
 from dataclasses import is_dataclass
 from functools import partial
@@ -593,7 +593,7 @@ class LevelRangeFormatter_Int(LevelRangeFormatter):
         if widths is None:
             widths = (2, 3, 2)
         if kwargs.get("rstrip_zeros"):
-            log.warning(f"{type(self).__name__}: force rstrip_zeros=False")
+            warnings.warn(f"{type(self).__name__}: force rstrip_zeros=False")
         kwargs["rstrip_zeros"] = False
         super().__init__(*args, widths=widths, **kwargs)
 
@@ -606,7 +606,7 @@ class LevelRangeFormatter_Int(LevelRangeFormatter):
 
     def _format_level(self, lvl):
         if int(lvl) != float(lvl):
-            log.warning(f"{type(self).__name__}._format_level: not an int: {lvl}")
+            warnings.warn(f"{type(self).__name__}._format_level: not an int: {lvl}")
         return str(lvl)
 
 
@@ -725,15 +725,3 @@ class LevelRangeFormatter_Var(LevelRangeFormatter):
         s_c = op_fmtd
         s_r = self._format_level(lvl)
         return self._Commponents("", (s_c, ntex_c), s_r)
-
-
-def count_to_log_level(count: int) -> int:
-    """Map occurence of CLI option ``verbose`` to the log level."""
-    if count == 0:
-        return log.ERROR
-    elif count == 1:
-        return log.WARNING
-    elif count == 2:
-        return log.INFO
-    else:
-        return log.DEBUG

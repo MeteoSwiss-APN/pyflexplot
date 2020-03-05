@@ -115,26 +115,26 @@ class _Test_Create_SingleObjDct:
 class Test_Create_SingleObjDct_Concentration(_Test_Create_SingleObjDct):
     c = Conf_Create(
         dct={
+            "deposition": "none",
             "integrate": False,
-            "species_id": 2,
             "level": 1,
-            "time": 3,
             "nageclass": 0,
             "noutrel": 0,
             "numpoint": 0,
-            "deposition": "none",
+            "species_id": 2,
+            "time": 3,
         },
         n=1,
-        subdct_fail={"time": 4, "level": 0},
+        subdct_fail={"level": 0, "time": 4},
     )
     base_setup = Setup(
         infiles=["dummy.nc"],
-        outfile="dummy.png",
-        variable="concentration",
         integrate=False,
-        species_id=2,
         level_idx=1,
+        outfile="dummy.png",
+        species_id=2,
         time_idcs=[3],
+        variable="concentration",
     )
     setups = [base_setup]
 
@@ -143,25 +143,25 @@ class Test_Create_SingleObjDct_Deposition(_Test_Create_SingleObjDct):
     c = Conf_Create(
         dct={
             "deposition": "wet",
-            "species_id": 2,
             "integrate": False,
-            "time": 3,
+            "level": None,
             "nageclass": 0,
             "noutrel": 0,
             "numpoint": 0,
-            "level": -1,
+            "species_id": 2,
+            "time": 3,
         },
         n=1,
-        subdct_fail={"time": 4, "species_id": 0},
+        subdct_fail={"species_id": 0, "time": 4},
     )
     base_setup = Setup(
-        infiles=["dummy.nc"],
-        outfile="dummy.png",
-        variable="deposition",
         deposition_type="wet",
-        species_id=2,
+        infiles=["dummy.nc"],
         integrate=False,
+        outfile="dummy.png",
+        species_id=2,
         time_idcs=[3],
+        variable="deposition",
     )
     setups = [base_setup]
 
@@ -183,26 +183,26 @@ class _Test_Create_MultiObjDct:
 class Test_Create_MultiObjDct_Concentration(_Test_Create_MultiObjDct):
     c = Conf_Create(
         dct={
-            "species_id": [1, 2],
-            "level": 1,
+            "deposition": "none",
             "integrate": False,
-            "time": [1, 3],
+            "level": 1,
             "nageclass": 0,
             "noutrel": 0,
             "numpoint": 0,
-            "deposition": "none",
+            "species_id": [1, 2],
+            "time": [1, 3],
         },
         n=4,
-        subdct_fail={"time": [3, 4], "level": 0},
+        subdct_fail={"level": 0, "time": [3, 4]},
     )
     base_setup = Setup(
         infiles=["dummy.nc"],
-        outfile="dummy.png",
-        variable="concentration",
-        species_id=1,
-        level_idx=1,
         integrate=False,
+        level_idx=1,
+        outfile="dummy.png",
+        species_id=1,
         time_idcs=[1, 3],
+        variable="concentration",
     )
     setups = [base_setup, base_setup.derive({"species_id": 2})]
 
@@ -211,25 +211,25 @@ class Test_Create_MultiObjDct_Deposition(_Test_Create_MultiObjDct):
     c = Conf_Create(
         dct={
             "deposition": "dry",
-            "species_id": [1, 2],
             "integrate": False,
-            "time": [1, 3],
+            "level": None,
             "nageclass": 0,
             "noutrel": 0,
             "numpoint": 0,
-            "level": -1,
+            "species_id": [1, 2],
+            "time": [1, 3],
         },
         n=4,
-        subdct_fail={"time": [3, 4], "species_id": 0},
+        subdct_fail={"species_id": 0, "time": [3, 4]},
     )
     base_setup = Setup(
-        infiles=["dummy.nc"],
-        outfile="dummy.png",
-        variable="deposition",
         deposition_type="dry",
-        species_id=1,
+        infiles=["dummy.nc"],
         integrate=False,
+        outfile="dummy.png",
+        species_id=1,
         time_idcs=[1, 3],
+        variable="deposition",
     )
     setups = [base_setup, base_setup.derive({"species_id": 2})]
 
@@ -257,26 +257,26 @@ class _Test_Create_MultiObjDctNested:
 class Test_Create_MultiObjDctNested_Concentration(_Test_Create_MultiObjDctNested):
     c = Conf_Create(
         dct={
-            "species_id": [(1,), (1, 2)],
-            "level": 1,
+            "deposition": "none",
             "integrate": False,
-            "time": [1, 3],
+            "level": 1,
             "nageclass": 0,
             "noutrel": 0,
             "numpoint": 0,
-            "deposition": "none",
+            "species_id": [(1,), (1, 2)],
+            "time": [1, 3],
         },
         n=4,
-        subdct_fail={"time": [(3, 4), 2], "level": 0},
+        subdct_fail={"level": 0, "time": [(3, 4), 2]},
     )
     base_setup = Setup(
         infiles=["dummy.nc"],
-        outfile="dummy.png",
-        variable="concentration",
-        species_id=1,
-        level_idx=1,
         integrate=False,
+        level_idx=1,
+        outfile="dummy.png",
+        species_id=1,
         time_idcs=[1, 3],
+        variable="concentration",
     )
     setups = [base_setup, base_setup.derive({"species_id": [1, 2]})]
 
@@ -285,25 +285,25 @@ class Test_Create_MultiObjDctNested_Deposition(_Test_Create_MultiObjDctNested):
     c = Conf_Create(
         dct={
             "deposition": "wet",
-            "species_id": [(1,), (1, 2)],
             "integrate": False,
-            "time": [1, 3],
+            "level": None,
             "nageclass": 0,
             "noutrel": 0,
             "numpoint": 0,
-            "level": -1,
+            "species_id": [(1,), (1, 2)],
+            "time": [1, 3],
         },
         n=4,
-        subdct_fail={"time": [(3, 4), 2], "deposition": "dry"},
+        subdct_fail={"deposition": "dry", "time": [(3, 4), 2]},
     )
     base_setup = Setup(
-        infiles=["dummy.nc"],
-        outfile="dummy.png",
-        variable="deposition",
         deposition_type="wet",
-        species_id=1,
+        infiles=["dummy.nc"],
         integrate=False,
+        outfile="dummy.png",
+        species_id=1,
         time_idcs=[1, 3],
+        variable="deposition",
     )
     setups = [base_setup, base_setup.derive({"species_id": [1, 2]})]
 
@@ -345,25 +345,25 @@ class _Test_MultiVarSpecs:
 class Test_MultiVarSpecs_Concentration(_Test_MultiVarSpecs):
     c = Conf_Multi(
         dct={
-            "species_id": [(1,), (1, 2)],
-            "level": 1,
+            "deposition": "none",
             "integrate": False,
-            "time": [1, 3],
+            "level": 1,
             "nageclass": 0,
             "noutrel": 0,
             "numpoint": 0,
-            "deposition": "none",
+            "species_id": [(1,), (1, 2)],
+            "time": [1, 3],
         },
         n=4,
     )
     base_setup = Setup(
         infiles=["dummy.nc"],
-        outfile="dummy.png",
-        variable="concentration",
-        species_id=1,
-        level_idx=1,
         integrate=False,
+        level_idx=1,
+        outfile="dummy.png",
+        species_id=1,
         time_idcs=[1, 3],
+        variable="concentration",
     )
     setups = [base_setup, base_setup.derive({"species_id": [1, 2]})]
 
@@ -372,24 +372,24 @@ class Test_MultiVarSpecs_DepositionDry(_Test_MultiVarSpecs):
     c = Conf_Multi(
         dct={
             "deposition": "dry",
-            "species_id": [(1,), (1, 2)],
             "integrate": False,
-            "time": [1, 3],
+            "level": None,
             "nageclass": 0,
             "noutrel": 0,
             "numpoint": 0,
-            "level": -1,
+            "species_id": [(1,), (1, 2)],
+            "time": [1, 3],
         },
         n=4,
     )
     base_setup = Setup(
-        infiles=["dummy.nc"],
-        outfile="dummy.png",
-        variable="deposition",
         deposition_type="dry",
-        species_id=1,
+        infiles=["dummy.nc"],
         integrate=False,
+        outfile="dummy.png",
+        species_id=1,
         time_idcs=[1, 3],
+        variable="deposition",
     )
     setups = [base_setup, base_setup.derive({"species_id": [1, 2]})]
 
@@ -398,24 +398,24 @@ class Test_MultiVarSpecs_DepositionTot(_Test_MultiVarSpecs):
     c = Conf_Multi(
         dct={
             "deposition": "tot",
-            "species_id": 2,
             "integrate": False,
-            "time": 3,
+            "level": None,
             "nageclass": 0,
             "noutrel": 0,
             "numpoint": 0,
-            "level": -1,
+            "species_id": 2,
+            "time": 3,
         },
         n=1,
     )
     base_setup = Setup(
-        infiles=["dummy.nc"],
-        outfile="dummy.png",
-        variable="deposition",
         deposition_type="tot",
-        species_id=2,
+        infiles=["dummy.nc"],
         integrate=False,
+        outfile="dummy.png",
+        species_id=2,
         time_idcs=[3],
+        variable="deposition",
     )
     setups = [base_setup]
 
@@ -448,24 +448,24 @@ class Test_MultiVarSpecs_Interface:
     c = Conf_Multi(
         dct={
             "deposition": "tot",
-            "species_id": 2,
             "integrate": False,
-            "time": 3,
+            "level": None,
             "nageclass": 0,
             "noutrel": 0,
             "numpoint": 0,
-            "level": -1,
+            "species_id": 2,
+            "time": 3,
         },
         n=1,
     )
     base_setup = Setup(
-        infiles=["dummy.nc"],
-        outfile="dummy.png",
-        variable="deposition",
         deposition_type="tot",
-        species_id=2,
+        infiles=["dummy.nc"],
         integrate=False,
+        outfile="dummy.png",
+        species_id=2,
         time_idcs=[3],
+        variable="deposition",
     )
     setups = [base_setup]
 

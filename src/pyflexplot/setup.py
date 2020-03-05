@@ -172,13 +172,15 @@ class Setup(BaseModel):
     @validator("level_idx", always=True)
     def _init_level_idx(
         cls, value: Optional[Union[int, Tuple[int, ...]]], values: Dict[str, Any],
-    ) -> Union[int, Tuple[int, ...]]:
+    ) -> Optional[Union[int, Tuple[int, ...]]]:
         if value is not None:
-            return value
+            if values["variable"] == "deposition":
+                raise ValueError(
+                    "level_idx must be None for variable", value, values["variable"],
+                )
         elif values["variable"] == "concentration":
             return 0
-        else:
-            return -1
+        return value
 
     @classmethod
     def as_setup(cls, obj: Union[Mapping[str, Any], "Setup"]) -> "Setup":
@@ -225,6 +227,14 @@ class Setup(BaseModel):
         """Derive ``Setup`` object(s) with adapted parameters."""
         if isinstance(params, Sequence):
             return [self.derive(params_i) for params_i in params]
+        # SR_TMP < TODO find cleaner solution (w/o duplication of logic)
+        if (
+            self.variable == "concentration"
+            and params.get("variable") == "deposition"
+            and "level_idx" not in params
+        ):
+            params["level_idx"] = None  # type: ignore
+        # SR_TMP >
         return type(self)(**{**self.dict(), **params})
 
     def decompress(

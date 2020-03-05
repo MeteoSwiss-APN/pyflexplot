@@ -4,7 +4,6 @@ Command line interface.
 """
 # Standard library
 import functools
-import logging as log
 import os
 import sys
 
@@ -22,7 +21,6 @@ from .field_specs import FieldSpecs
 from .io import FileReader
 from .plotter import plot
 from .setup import SetupFile
-from .utils import count_to_log_level
 
 # # To debug segmentation fault, uncomment and run with PYTHONFAULTHANDLER=1
 # import faulthandler
@@ -98,8 +96,6 @@ def not_implemented(msg):
 @click.pass_context
 def cli(ctx, setup_file_paths, **cli_args):
     """Create dispersion plot as specified in CONFIG_FILE(S)."""
-
-    log.basicConfig(level=count_to_log_level(cli_args["verbose"]))
 
     # Ensure that ctx.obj exists and is a dict
     ctx.ensure_object(dict)

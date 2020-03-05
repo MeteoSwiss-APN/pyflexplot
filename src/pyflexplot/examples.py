@@ -41,13 +41,13 @@ def naz_det():
         infiles = ["data/cosmo-1_2019052800.nc"]
         simulation_type = "deterministic"
         plot_type = "auto"
-        level_idx = 0
         species_id = 2
         time_idcs = [3]
 
         [_base._concentration]
         outfile = "concentration_{domain}_{lang}_ts-{time:02d}.png"
         variable = "concentration"
+        level_idx = 0
         integrate = false
 
         # TODO Derive from `_concentration` once wildcards/hooks more sophisticated

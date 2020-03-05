@@ -3,7 +3,6 @@
 Plots.
 """
 # Standard library
-import logging as log
 import warnings
 from dataclasses import field
 from typing import Optional
@@ -492,7 +491,7 @@ class MapAxesRotatedPole:
 
         """
         if np.isnan(fld).all():
-            log.warning("skip contour plot (all-nan field)")
+            warnings.warn("skip contour plot (all-nan field)")
             return
 
         handle = self.ax.contour(
@@ -518,7 +517,7 @@ class MapAxesRotatedPole:
 
         """
         if np.isnan(fld).all():
-            log.warning("skip filled contour plot (all-nan field)")
+            warnings.warn("skip filled contour plot (all-nan field)")
             return
 
         handle = self.ax.contourf(
@@ -586,7 +585,7 @@ class MapAxesRotatedPole:
     def mark_max(self, fld, marker, **kwargs):
         """Mark the location of the field maximum."""
         if np.isnan(fld).all():
-            log.warning("skip maximum marker (all-nan field)")
+            warnings.warn("skip maximum marker (all-nan field)")
             return
         jmax, imax = np.unravel_index(np.nanargmax(fld), fld.shape)
         rlon, rlat = self.rlon[imax], self.rlat[jmax]

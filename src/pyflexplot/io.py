@@ -3,8 +3,15 @@
 IO.
 """
 # Standard library
-import logging as log
 from copy import deepcopy
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Mapping
+from typing import Optional
+from typing import Sequence
+from typing import Tuple
+from typing import Union
 
 # Third-party
 import netCDF4 as nc4
@@ -14,11 +21,14 @@ import numpy as np
 from srutils.various import check_array_indices
 
 # Local
+from .attr import AttrMult
 from .attr import collect_attrs
 from .attr import nc_var_name
 from .data import Field
 from .data import cloud_arrival_time
 from .data import threshold_agreement
+from .field_specs import FieldSpecs
+from .setup import Setup
 
 
 class FileReader:
@@ -32,91 +42,70 @@ class FileReader:
 
     choices_ens_var = ["mean", "median", "min", "max"]
 
-    def __init__(self, in_file_path, *, cmd_open=nc4.Dataset):
+    def __init__(
+        self, in_file_path: str,
+    ):
         """Create an instance of ``FileReader``.
 
         Args:
-            in_file_path (str): File path. In case of ensemble data, it must
+            in_file_path: File path. In case of ensemble data, it must
                 contain the format key '{ens_member[:0?d]}'.
 
-            cmd_open (function, optional): Function to open the input file.
-                Must support context manager interface, i.e., ``with
-                cmd_open(in_file_path, mode) as f:``. Defaults to
-                netCDF4.Dataset.
+            cmd_open: Context manager to open the input file.
 
         """
         self.in_file_path_fmt = in_file_path
-        self.cmd_open = cmd_open
 
-        self.lang = None
-        self.n_members = None
-        self.in_file_path_lst = None
-        self.fi = None
-        self.rlat = None
-        self.rlon = None
+        self.lang: Optional[str] = None
+        self.n_members: Optional[int] = None
+        self.in_file_path_lst: Optional[Sequence[str]] = None
+        self.fi: Optional[nc4.File] = None
+        self.rlat: Optional[np.ndarray] = None
+        self.rlon: Optional[np.ndarray] = None
 
-        self.fixer = FlexPartDataFixer()
+        self.fixer: FlexPartDataFixer = FlexPartDataFixer()
 
-    def run(self, fld_specs_lst, *, lang=None):
+    def run(
+        self, fld_specs_lst: Sequence[FieldSpecs], *, lang: Optional[str] = None,
+    ) -> Tuple[List[Field], List[AttrMult]]:
         """Read one or more fields from a file from disc.
 
         Args:
-            fld_specs_lst (List[FieldSpecs]): List of field specifications.
+            fld_specs_lst: List of field specifications.
 
-            ens_var (str, optional): Name of ensemble variable, e.g., 'mean'.
-                See ``Field.choices_ens_var`` for the full list. Mandatory in
-                case of multiple ensemble members. Defaults to None.
-
-            ens_var_opts (dict, optional): Options that can/must be passed
-                alongside certain ensemble variables. Defaults to {}.
-
-            lang (str, optional): Language, e.g., 'de' for German. Defaults to
-                'en' (English).
+            lang: Language ('en': English, 'de': German). Defaults to 'en'.
 
         """
         self.lang = lang or "en"
 
-        # Group field specifications objects such that all in one group only
-        # differ in time; collect the respective time indices; and merge the
-        # group into one field specifications instance with time dimension
-        # 'slice(None)'. This allows for each such group to, first, read and
-        # process all time steps (e.g., derive some statistics across all time
-        # steps); and, second, extract the requested time steps using the
-        # separately stored indices.
-        fld_specs_time_lst, time_inds_lst = self._group_fld_specs_by_time(fld_specs_lst)
-        self._fld_specs_time_lst = fld_specs_time_lst
-        self._time_inds_lst = time_inds_lst
+        timeless_fld_specs_lst: List[FieldSpecs]
+        time_idcs_lst: List[List[int]]
+        timeless_fld_specs_lst, time_idcs_lst = self._extract_time_idcs_from_fld_specs(
+            fld_specs_lst,
+        )
 
         # Prepare array for fields
-        self.n_fld_specs = len(fld_specs_time_lst)
-        self.n_reqtime = self._determine_n_reqtime()
-        fields = []
-        attrs_lst = []
+        self.n_reqtime = self._determine_n_reqtime(time_idcs_lst)
 
-        # Collect fields
-        log.debug(f"process {self.n_fld_specs} field specs groups")
-        for i_fld_specs in range(self.n_fld_specs):
-
-            fld_specs = fld_specs_time_lst[i_fld_specs]
-            time_idcs = time_inds_lst[i_fld_specs]
-
-            ens_member_ids = fld_specs.multi_var_specs.setup.ens_member_ids
+        # Collect fields and attrs
+        fields: List[Field] = []
+        attrs_lst: List[AttrMult] = []
+        for timeless_fld_specs, time_idcs in zip(timeless_fld_specs_lst, time_idcs_lst):
+            ens_member_ids: Sequence[int] = (
+                timeless_fld_specs.multi_var_specs.setup.ens_member_ids
+            )
             self.n_members = 1 if not ens_member_ids else len(ens_member_ids)
             self.in_file_path_lst = self._prepare_in_file_path_lst(ens_member_ids)
 
-            log.debug(f"{i_fld_specs + 1}/{self.n_fld_specs}: {fld_specs}")
-
-            fields_i, attrs_lst_i = self._create_fields(fld_specs, time_idcs)
+            fields_i, attrs_lst_i = self._create_fields(timeless_fld_specs, time_idcs)
             fields.extend(fields_i)
             attrs_lst.extend(attrs_lst_i)
 
         return fields, attrs_lst
 
-    def _prepare_in_file_path_lst(self, ens_member_ids):
-
+    def _prepare_in_file_path_lst(self, ens_member_ids: Sequence[int]) -> List[str]:
         fmt_keys = ["{ens_member}", "{ens_member:"]
         fmt_key_in_path = any(k in self.in_file_path_fmt for k in fmt_keys)
-
         if not ens_member_ids:
             if fmt_key_in_path:
                 raise ValueError(
@@ -124,7 +113,6 @@ class FileReader:
                     f"ensemble member ids ('ens_member_ids') have been passed"
                 )
             return [self.in_file_path_fmt]
-
         if not fmt_key_in_path:
             raise ValueError(
                 f"input file path missing format key",
@@ -133,51 +121,58 @@ class FileReader:
             )
         return [self.in_file_path_fmt.format(ens_member=id) for id in ens_member_ids]
 
-    def _determine_n_reqtime(self):
+    def _determine_n_reqtime(self, time_idcs_lst: Sequence[Sequence[int]]) -> int:
         """Determine the number of selected time steps."""
-        n_reqtime_per_mem = [len(inds) for inds in self._time_inds_lst]
-        if len(set(n_reqtime_per_mem)) > 1:
+        n_reqtime_per_mem = [len(idcs) for idcs in time_idcs_lst]
+        n_reqtime = n_reqtime_per_mem.pop(0)
+        if any(n != n_reqtime for n in n_reqtime_per_mem[1:]):
             raise Exception(
-                f"numbers of timesteps differ across members: " f"{n_reqtime_per_mem}"
+                "numbers of timesteps differ across members",
+                [n_reqtime] + n_reqtime_per_mem,
             )
-        return next(iter(n_reqtime_per_mem))
+        return n_reqtime
 
-    def _create_fields(self, fld_specs_time, time_idcs):
+    def _create_fields(
+        self, timeless_fld_specs: FieldSpecs, time_idcs: Sequence[int],
+    ) -> Tuple[List[Field], List[AttrMult]]:
 
         # Read fields of all members at all time steps
-        fld_time_mem = self._read_fld_time_mem(fld_specs_time)
+        fld_time_mem: np.ndarray = self._read_fld_time_mem(timeless_fld_specs)
 
         # Reduce fields array along member dimension
         # In other words: Compute single field from ensemble
-        fld_time = self._reduce_ensemble(fld_time_mem, fld_specs_time)
+        setup = timeless_fld_specs.multi_var_specs.setup
+        fld_time: np.ndarray = self._reduce_ensemble(fld_time_mem, setup)
 
         # Collect time stats
-        time_stats = self._collect_time_stats(fld_time)
+        time_stats: Dict[str, np.ndarray] = {
+            "mean": np.nanmean(fld_time),
+            "median": np.nanmedian(fld_time),
+            "mean_nz": np.nanmean(fld_time[fld_time > 0]),
+            "median_nz": np.nanmedian(fld_time[fld_time > 0]),
+            "max": np.nanmax(fld_time),
+        }
 
         # Create time-step-specific field specifications
-        fld_specs_lst = self._create_fld_specs(fld_specs_time, time_idcs)
+        fld_specs_lst: List[FieldSpecs] = self._expand_timeless_fld_specs_in_time(
+            timeless_fld_specs, time_idcs,
+        )
 
         # Collect time-step-specific data attributes
-        attrs_lst = self._collect_attrs(fld_specs_lst, time_idcs)
+        attrs_lst: List[AttrMult] = self._collect_attrs(fld_specs_lst)
 
         # Create fields at requested time steps for all members
-        fields = self._create_fields_lst(fld_specs_lst, fld_time, time_idcs, time_stats)
-
-        # Fix some known issues with the NetCDF input data
-        self.fixer.fix_attrs(attrs_lst)
+        fields: List[Field] = self._create_field_objs(
+            fld_specs_lst, fld_time, time_stats,
+        )
 
         return fields, attrs_lst
 
-    def _read_fld_time_mem(self, fld_specs_time):
+    def _read_fld_time_mem(self, timeless_fld_specs: FieldSpecs) -> np.ndarray:
         """Read field over all time steps for each member."""
-
-        fld_time_mem = None
-
-        for i_mem, in_file_path in enumerate(self.in_file_path_lst):
-
-            log.debug(f"read {in_file_path} (fields)")
-            with self.cmd_open(in_file_path, "r") as self.fi:
-                log.debug(f"extract {self.n_fld_specs} time steps")
+        fld_time_mem: Optional[np.ndarray] = None
+        for i_mem, in_file_path in enumerate(self.in_file_path_lst or []):
+            with nc4.Dataset(in_file_path, "r") as self.fi:
 
                 # Read grid variables
                 rlat = self.fi.variables["rlat"][:]
@@ -192,23 +187,28 @@ class FileReader:
                         raise Exception("inconsistent rlon")
 
                 # Read field (all time steps)
-                fld_time = self._import_field(fld_specs_time)
+                fld_time: np.ndarray = self._read_field(timeless_fld_specs)
 
                 # Store field for currentmember
                 if fld_time_mem is None:
-                    _shape = [self.n_members] + list(fld_time.shape)
-                    fld_time_mem = np.full(_shape, np.nan, np.float32)
+                    shape = [self.n_members] + list(fld_time.shape)
+                    fld_time_mem = np.full(shape, np.nan, np.float32)
                 fld_time_mem[i_mem] = fld_time
 
             self.fi = None
-
         return fld_time_mem
 
-    def _reduce_ensemble(self, fld_time_mem, fld_specs_time):
+    def _read_field(self, fld_specs: FieldSpecs) -> np.ndarray:
+        fld_lst = [
+            self._read_nc_var(var_specs._setup)
+            for var_specs in fld_specs.multi_var_specs
+        ]
+        return fld_specs.merge_fields(fld_lst)
+
+    def _reduce_ensemble(self, fld_time_mem: np.ndarray, setup: Setup) -> np.ndarray:
         """Reduce the ensemble to a single field (time, rlat, rlon)."""
         if self.n_members == 1:
             return fld_time_mem[0]
-        setup = fld_specs_time.multi_var_specs.setup
         plot_type = setup.plot_type
         if plot_type == "ens_mean":
             fld_time = np.nanmean(fld_time_mem, axis=0)
@@ -229,85 +229,106 @@ class FileReader:
             raise NotImplementedError(f"plot var '{plot_type}'")
         return fld_time
 
-    def _create_fld_specs(self, fld_specs_time, time_idcs):
-        """Create time-step-specific field specifications."""
-        fld_specs_lst = []
-        for i_reqtime, time_idx in enumerate(time_idcs):
-            fld_specs = deepcopy(fld_specs_time)
+    def _expand_timeless_fld_specs_in_time(
+        self, timeless_fld_specs: FieldSpecs, time_idcs: Sequence[int]
+    ) -> List[FieldSpecs]:
+        fld_specs_lst: List[FieldSpecs] = []
+        for time_idx in time_idcs:
+            fld_specs_i: FieldSpecs = deepcopy(timeless_fld_specs)
             # SR_TMP <
-            for var_specs in fld_specs.multi_var_specs:
+            for var_specs in fld_specs_i.multi_var_specs:
                 var_specs._setup = var_specs._setup.derive({"time_idcs": [time_idx]})
             # SR_TMP >
-            fld_specs_lst.append(fld_specs)
+            fld_specs_lst.append(fld_specs_i)
         return fld_specs_lst
 
-    def _collect_attrs(self, fld_specs_lst, time_idcs):
+    def _collect_attrs(self, fld_specs_lst: Sequence[FieldSpecs]) -> List[AttrMult]:
         """Collect time-step-specific data attributes."""
 
         # Collect attributes at requested time steps for all members
-        attrs_by_reqtime_mem = self._collect_attrs_by_reqtime_mem(
-            fld_specs_lst, time_idcs
-        )
+        attrs_by_reqtime_mem = self._collect_attrs_by_reqtime_mem(fld_specs_lst)
 
         # Merge attributes across members
-        attrs_lst = self._merge_attrs_across_members(attrs_by_reqtime_mem)
+        attrs_lst: List[AttrMult] = self._merge_attrs_across_members(
+            attrs_by_reqtime_mem,
+        )
+
+        # Fix some known issues with the NetCDF input data
+        self.fixer.fix_attrs(attrs_lst)
 
         return attrs_lst
 
-    def _collect_attrs_by_reqtime_mem(self, fld_specs_by_reqtime, time_idcs):
+    def _collect_attrs_by_reqtime_mem(
+        self, fld_specs_lst: Sequence[FieldSpecs],
+    ) -> np.ndarray:
         """Collect attributes at requested time steps for all members."""
-        attrs_by_reqtime_mem = np.full([self.n_reqtime, self.n_members], None)
-        for i_mem, in_file_path in enumerate(self.in_file_path_lst):
-            log.debug(f"read {in_file_path} (attributes)")
-            with self.cmd_open(in_file_path, "r") as self.fi:
-                for i_reqtime, time_idx in enumerate(time_idcs):
-                    log.debug(f"{i_reqtime + 1}/{len(time_idcs)}: collect attributes")
-                    fld_specs = fld_specs_by_reqtime[i_reqtime]
+        attrs_by_reqtime_mem: np.ndarray = np.full(
+            [self.n_reqtime, self.n_members], None,
+        )
+        for idx_mem, in_file_path in enumerate(self.in_file_path_lst or []):
+            with nc4.Dataset(in_file_path, "r") as self.fi:
+                for idx_time, fld_specs in enumerate(fld_specs_lst):
                     attrs_lst = []
                     for var_specs in fld_specs.multi_var_specs:
                         attrs = collect_attrs(self.fi, var_specs, lang=self.lang)
                         attrs_lst.append(attrs)
                     attrs = attrs_lst[0].merge_with(attrs_lst[1:])
-                    attrs_by_reqtime_mem[i_reqtime, i_mem] = attrs
+                    attrs_by_reqtime_mem[idx_time, idx_mem] = attrs
             self.fi = None
         return attrs_by_reqtime_mem
 
-    def _group_fld_specs_by_time(self, fld_specs_lst):
-        """Group specs that differ only in their time dimension."""
+    def _extract_time_idcs_from_fld_specs(
+        self, fld_specs_lst: Sequence[FieldSpecs]
+    ) -> Tuple[List[FieldSpecs], List[List[int]]]:
+        """Group field specs that differ only in their time dimension.
 
-        fld_specs_time_inds_by_key = {}
-        for idx, fld_specs in enumerate(fld_specs_lst):
-            fld_specs_time = deepcopy(fld_specs)
+        Steps:
+         -  Group field specifications objects such that all in one group only
+            differ in time.
+         -  Collect the respective time indices.
+         -  Merge the group into one field specifications instance with time
+            dimension 'slice(None)'.
 
-            # Extract time index and check its the same for all
-            time_idx = fld_specs_time.multi_var_specs.collect_equal("time")
+        """
 
-            # Store time-neutral fld specs alongside resp. time inds
-            key = idx
-            if key not in fld_specs_time_inds_by_key:
-                fld_specs_time_inds_by_key[key] = (fld_specs_time, [])
-            if time_idx in fld_specs_time_inds_by_key[key][1]:
-                raise Exception(
-                    f"duplicate time index {time_idx} in fld_specs:\n" f"{fld_specs}"
-                )
-            fld_specs_time_inds_by_key[key][1].append(time_idx)
+        timeless_fld_specs_lst: List[FieldSpecs] = []
+        time_idcs_lst: List[List[int]] = []
+        for fld_specs in fld_specs_lst:
 
-        # Regroup time-neutral fld specs and time inds into lists
-        fld_specs_time_lst, time_inds_lst = [], []
-        for fld_specs_time, time_idcs in fld_specs_time_inds_by_key.values():
-            fld_specs_time_lst.append(fld_specs_time)
-            time_inds_lst.append(time_idcs)
+            # Extract time index (same vor all var_specs in the fld_specs)
+            time_idcs = fld_specs.multi_var_specs.collect_equal("time_idcs")
+            assert len(time_idcs) == 1  # SR_DBG
+            time_idx: int = next(iter(time_idcs))
 
-        return fld_specs_time_lst, time_inds_lst
+            # Reset time index
+            timeless_fld_specs: FieldSpecs = deepcopy(fld_specs)
+            for var_specs in timeless_fld_specs.multi_var_specs:
+                var_specs._setup = var_specs._setup.derive({"time_idcs": []})
 
-    def _merge_attrs_across_members(self, attrs_by_reqtime_mem):
+            for idx, timeless_fld_specs_i in enumerate(timeless_fld_specs_lst):
+                if timeless_fld_specs == timeless_fld_specs_i:
+                    if time_idx in time_idcs_lst[idx]:
+                        raise Exception(
+                            "duplicate fld_specs", time_idx, timeless_fld_specs,
+                        )
+                    time_idcs_lst[idx].append(time_idx)
+                    break
+            else:
+                timeless_fld_specs_lst.append(timeless_fld_specs)
+                time_idcs_lst.append([time_idx])
+
+        return timeless_fld_specs_lst, time_idcs_lst
+
+    def _merge_attrs_across_members(
+        self, attrs_by_reqtime_mem: np.ndarray,
+    ) -> List[AttrMult]:
         """Merge attributes at each time step across members.
 
         As they should be member-independent, check that they are indeed the
         same for all and pick those of the first member.
 
         """
-        for i_mem in range(1, self.n_members):
+        for i_mem in range(1, self.n_members or 1):
             for i_reqtime, attrs in enumerate(attrs_by_reqtime_mem[:, i_mem]):
                 attrs_ref = attrs_by_reqtime_mem[i_reqtime, 0]
                 if attrs != attrs_ref:
@@ -317,97 +338,63 @@ class FileReader:
                     )
         return attrs_by_reqtime_mem[:, 0].tolist()
 
-    def _create_fields_lst(self, fld_specs_lst, fld_time, time_idcs, time_stats):
+    def _create_field_objs(
+        self,
+        fld_specs_lst: Sequence[FieldSpecs],
+        fld_time: np.ndarray,
+        time_stats: Mapping[str, np.ndarray],
+    ) -> List[Field]:
         """Create fields at requested time steps for all members."""
-
-        log.debug(f"select fields at requested time steps")
-
-        fields = []
-        for i_reqtime, time_idx in enumerate(time_idcs):
-            log.debug(f"{i_reqtime + 1}/{len(time_idcs)}")
-
-            fld_specs = fld_specs_lst[i_reqtime]
-
-            # Extract field
-            fld = fld_time[time_idx]
-
-            # Collect data
-            log.debug("create data object")
-            field = Field(fld, self.rlat, self.rlon, fld_specs, time_stats)
-
-            fields.append(field)
+        fields: List[Field] = []
+        for fld_specs in fld_specs_lst:
+            time_idcs = fld_specs.multi_var_specs.collect_equal("time_idcs")
+            assert len(time_idcs) == 1  # SR_TMP
+            time_idx = next(iter(time_idcs))
+            fld: np.ndarray = fld_time[time_idx]
+            fields.append(Field(fld, self.rlat, self.rlon, fld_specs, time_stats))
         return fields
 
-    def _collect_time_stats(self, fld_time):
-        stats = {
-            "mean": np.nanmean(fld_time),
-            "median": np.nanmedian(fld_time),
-            "mean_nz": np.nanmean(fld_time[fld_time > 0]),
-            "median_nz": np.nanmedian(fld_time[fld_time > 0]),
-            "max": np.nanmax(fld_time),
-        }
-        return stats
-
-    def _import_field(self, fld_specs):
-
-        # Read fields and attributes from var specifications
-        fld_lst = []
-        for var_specs in fld_specs.multi_var_specs:
-
-            # Field
-            log.debug("read field")
-            fld = self._read_var(var_specs._setup)
-
-            fld_lst.append(fld)
-
-        # Merge fields
-        fld = fld_specs.merge_fields(fld_lst)
-
-        return fld
-
-    def _read_var(self, setup):
+    def _read_nc_var(self, setup: Setup) -> np.ndarray:
 
         # Select variable in file
         var_name = nc_var_name(setup)
+        assert self.fi is not None  # for mypy
         nc_var = self.fi.variables[var_name]
 
         # Indices of field along NetCDF dimensions
-        dim_idcs_by_name = self._dim_inds_by_name(setup)
+        dim_idcs_by_name = {
+            "level": setup.level_idx,
+            "nageclass": setup.age_class_idx,
+            "noutrel": setup.nout_rel_idx,
+            "numpoint": setup.release_point_idx,
+            "rlat": slice(None),  # SR_TMP
+            "rlon": slice(None),  # SR_TMP
+            "time": slice(None),  # SR_TMP
+        }
 
         # Assemble indices for slicing
-        idcs = [None] * len(nc_var.dimensions)
+        idcs: List[Any] = [None] * len(nc_var.dimensions)
         for dim_name, dim_idx in dim_idcs_by_name.items():
+            err_dct = {
+                "dim_idx": dim_idx,
+                "dim_name": dim_name,
+                "fi.filepath": self.fi.filepath(),
+            }
             # Get the index of the dimension for this variable
             try:
                 idx = nc_var.dimensions.index(dim_name)
             except ValueError:
-                # Potential issue: Dimension not among the variable dimensions!
+                # Potential issue: Dimension is not among the variable dimensions!
                 if dim_idx in (None, 0):
-                    continue
-                else:
-                    # Index along the missing dimension cannot be non-trivial!
-                    raise Exception(
-                        f"dimension '{dim_name}' with non-zero index {dim_idx} missing",
-                        {
-                            "dim_idx": dim_idx,
-                            "dim_name": dim_name,
-                            "fi.filepath": self.fi.filepath(),
-                            "nc_var.dimensions": nc_var.dimensions,
-                            "var_name": var_name,
-                        },
-                    )
+                    continue  # Zero-index: We're good after all!
+                raise Exception(
+                    "dimension with non-zero index missing",
+                    {**err_dct, "dimensions": nc_var.dimensions, "var_name": var_name},
+                )
 
             # Check that the index along the dimension is valid
             if dim_idx is None:
-                raise Exception(
-                    f"dimension #{idx} '{dim_name}' is None",
-                    {
-                        "dim_idx": dim_idx,
-                        "dim_name": dim_name,
-                        "fi.filepath": self.fi.filepath(),
-                        "idx": idx,
-                    },
-                )
+                raise Exception("dimension is None", {**err_dct, "idx": idx})
 
             idcs[idx] = dim_idx
 
@@ -415,75 +402,51 @@ class FileReader:
         try:
             idx = idcs.index(None)
         except ValueError:
-            # All good!
-            pass
+            pass  # All good!
         else:
             raise Exception(
-                f"unknown variable dimension #{idx} '{nc_var.dimensions[idx]}'",
+                "unknown variable dimension",
                 {
                     "dim_idcs_by_name": dim_idcs_by_name,
+                    "dimension": nc_var.dimensions[idx],
+                    "dimensions": nc_var.dimensions,
                     "idcs": idcs,
-                    "nc_var.dimensions": nc_var.dimensions,
+                    "idx": idx,
                     "var_name": var_name,
                 },
             )
-        log.debug(f"indices: {idcs}")
         check_array_indices(nc_var.shape, idcs)
-
-        # Read field
-        log.debug(f"shape: {nc_var.shape}")
-        log.debug(f"indices: {idcs}")
         fld = nc_var[idcs]
 
+        # Fix known issues with NetCDF input data
         self.fixer.fix_nc_var(nc_var, fld)
 
-        # Time integration
-        fld = self._time_integrations(fld, setup)
-
+        fld = self._handle_time_integration(fld, setup)
         return fld
 
-    @staticmethod
-    def _dim_inds_by_name(setup, *, time_all=True):
-        """Derive indices along NetCDF dimensions."""
-
-        inds = {}
-
-        inds["nageclass"] = setup.age_class_idx
-        inds["numpoint"] = setup.release_point_idx
-        inds["noutrel"] = setup.nout_rel_idx
-
-        # SR_TMP <
-        inds["time"] = slice(None)
-        inds["rlat"] = slice(None)
-        inds["rlon"] = slice(None)
-        # SR_TMP >
-
+    def _handle_time_integration(self, fld: np.ndarray, setup: Setup) -> np.ndarray:
+        """Integrate, or desintegrate, field over time."""
         if setup.variable == "concentration":
-            inds["level"] = setup.level_idx
-
-        return inds
-
-    def _time_integrations(self, fld, setup):
-
-        dt_hr = self._time_resolution()
-
-        if setup.variable == "concentration":  # SR_TMP
             if setup.integrate:
-                # Integrate over time
-                fld = np.cumsum(fld, axis=0) * dt_hr
-
-        elif setup.variable == "deposition":  # SR_TMP
-            if not setup.integrate:
-                # Revert integration over time
+                # Integrate field over time
+                dt_hr = self._compute_temporal_resolution()
+                return np.cumsum(fld, axis=0) * dt_hr
+            else:
+                # Field is already instantaneous
+                return fld
+        elif setup.variable == "deposition":
+            if setup.integrate:
+                # Field is already time-integrated
+                return fld
+            else:
+                # Revert time integration of field
+                dt_hr = self._compute_temporal_resolution()
                 fld[1:] = (fld[1:] - fld[:-1]) / dt_hr
+                return fld
+        raise NotImplementedError("unknown variable", setup.variable)
 
-        else:
-            raise NotImplementedError("variable", setup.variable)
-
-        return fld
-
-    def _time_resolution(self):
-        """Determine time resolution of input data."""
+    def _compute_temporal_resolution(self) -> float:
+        assert self.fi is not None  # for mypy
         time = self.fi.variables["time"]
         dts = set(time[1:] - time[:-1])
         if len(dts) > 1:
@@ -496,24 +459,20 @@ class FileReader:
 class FlexPartDataFixer:
     """Fix issues with FlexPart NetCDF output."""
 
-    possible_var_names = [
+    possible_var_names: List[Union[str, List[str]]] = [
         "Cs-137",
         "I-131a",
         ["Cs-137", "I-131a"],
         ["I-131a", "Cs-137"],
     ]
-    conversion_factor_by_unit = {
+    conversion_factor_by_unit: Dict[str, float] = {
         "ng kg-1": 1.0e-12,
         "1e-12 kg m-2": 1.0e-12,
     }
 
-    def fix_nc_var(self, nc_var, fld):
-
-        log.debug(f"fix nc data: variable {nc_var.name}")
-
+    def fix_nc_var(self, nc_var: nc4.Variable, fld: np.ndarray) -> None:
         name = nc_var.getncattr("long_name").split("_")[0]
         unit = nc_var.getncattr("units")
-
         if name not in self.possible_var_names:
             raise NotImplementedError("variable", {"name": name})
         try:
@@ -524,22 +483,22 @@ class FlexPartDataFixer:
             )
         fld[:] *= fact
 
-    def fix_attrs(self, attrs_or_attrs_lst):
-
+    def fix_attrs(
+        self, attrs_or_attrs_lst: Union[AttrMult, Sequence[AttrMult]]
+    ) -> None:
         if isinstance(attrs_or_attrs_lst, list):
-            return [self.fix_attrs(attrs) for attrs in attrs_or_attrs_lst]
+            for attrs in attrs_or_attrs_lst:
+                self.fix_attrs(attrs)
+            return
         attrs = attrs_or_attrs_lst
-
-        log.debug("fix nc data: attrs")
 
         name = attrs.species.name.value
         if name not in self.possible_var_names:
             raise NotImplementedError("variable", {"name": name})
+        integr_type = attrs.simulation.integr_type.value
+        old_unit = attrs.variable.unit.value
 
         new_unit = "Bq"
-
-        # Integration type
-        integr_type = attrs.simulation.integr_type.value
         if integr_type == "mean":
             pass
         elif integr_type in ["sum", "accum"]:
@@ -548,17 +507,12 @@ class FlexPartDataFixer:
             raise NotImplementedError(
                 "unknown integration type", {"integr_type": integr_type, "name": name},
             )
-
-        # Old unit
-        old_unit = attrs.variable.unit.value
         if old_unit == "ng kg-1":
             new_unit += " m-3"
         elif old_unit == "1e-12 kg m-2":
             new_unit += " m-2"
         else:
             raise NotImplementedError(
-                f"species '{attrs.species.name.value}': "
-                f"unit '{attrs.variable.unit.value}'"
+                "unknown unit", {"name": name, "unit": old_unit},
             )
-
         attrs.variable.unit.value = new_unit

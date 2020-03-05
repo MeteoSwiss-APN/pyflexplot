@@ -959,19 +959,16 @@ class AttrsCollector:
         # Variable unit
         unit = self.ncattrs_field["units"]
 
-        try:
-            _i = self._setup.level_idx
-        except AttributeError:
-            # SR_TMP <
+        idx = self._setup.level_idx
+        if idx is None:
             level_unit = ""
             level_bot = -1
             level_top = -1
-            # SR_TMP >
         else:
             level_unit = self._words["m_agl", self.lang].s
             _var = self.fi.variables["level"]
-            level_bot = 0.0 if _i == 0 else float(_var[_i - 1])
-            level_top = float(_var[_i])
+            level_bot = 0.0 if idx == 0 else float(_var[idx - 1])
+            level_top = float(_var[idx])
 
         return {
             "long_name": long_name,
