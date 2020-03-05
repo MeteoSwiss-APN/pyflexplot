@@ -17,7 +17,6 @@ from srutils.various import isiterable
 
 # Local
 from .utils import summarizable
-from .words import WORDS
 
 
 @summarizable
@@ -924,7 +923,7 @@ class AttrsCollector:
         site_name = {"Goesgen": r"G$\mathrm{\"o}$sgen"}.get(site_name)
 
         height = np.mean([release_point.zbot, release_point.ztop])
-        height_unit = WORDS["m_agl", self.lang].s
+        height_unit = self._words["m_agl", self.lang].s
 
         assert len(release_point.ms_parts) == 1
         mass = next(iter(release_point.ms_parts))
@@ -969,7 +968,7 @@ class AttrsCollector:
             level_top = -1
             # SR_TMP >
         else:
-            level_unit = WORDS["m_agl", self.lang].s
+            level_unit = self._words["m_agl", self.lang].s
             _var = self.fi.variables["level"]
             level_bot = 0.0 if _i == 0 else float(_var[_i - 1])
             level_top = float(_var[_i])

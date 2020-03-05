@@ -218,98 +218,12 @@ class Plot:
     mark_release_site = True
     lw_frame = 1.0
 
-    # SR_TMP TODO move to some config/setup class
-    @property
-    def text_box_setup(self):
-        if self.setup.simulation_type == "deterministic":
-            return {
-                "h_rel_t": 0.1,
-                "h_rel_b": 0.03,
-                "w_rel_r": 0.25,
-                "pad_hor_rel": 0.015,
-                "h_rel_box_rt": 0.45,
-            }
-        elif self.setup.simulation_type == "ensemble":
-            return {
-                "h_rel_t": 0.14,
-                "h_rel_b": 0.03,
-                "w_rel_r": 0.25,
-                "pad_hor_rel": 0.015,
-                "h_rel_box_rt": 0.46,
-            }
-
-    # SR_TMP TODO move to some config/setup class
-    @property
-    def n_levels(self):
-        if self.setup.plot_type == "ens_thr_agrmt":
-            return 7
-        elif self.setup.plot_type == "ens_cloud_arrival_time":
-            return 9
-        elif self.setup.plot_type == "affected_area_mono":
-            return 1
-        elif self.setup.variable == "concentration":
-            return 8
-        elif self.setup.variable == "deposition":
-            return 9
-
-    # SR_TMP TODO move to some config/setup class
-    @property
-    def extend(self):
-        if self.setup.plot_type == "ens_thr_agrmt":
-            return "min"
-        elif self.setup.plot_type == "ens_cloud_arrival_time":
-            return "max"
-        elif self.setup.plot_type == "affected_area_mono":
-            return "none"
-        else:
-            return "max"
-
-    # SR_TMP TODO move to some config/setup class
-    @property
-    def d_level(self):
-        if self.setup.plot_type == "ens_thr_agrmt":
-            return 2
-        elif self.setup.plot_type == "ens_cloud_arrival_time":
-            return 3
-
-    # SR_TMP TODO move to some config/setup class
-    @property
-    def level_range_style(self):
-        if self.setup.plot_type == "ens_thr_agrmt":
-            return "int"
-        elif self.setup.plot_type == "ens_cloud_arrival_time":
-            return "int"
-        else:
-            return "base"
-
-    # SR_TMP TODO move to some config/setup class
-    @property
-    def level_ranges_align(self):
-        if self.setup.plot_type == "ens_thr_agrmt":
-            return "left"
-        elif self.setup.plot_type == "ens_cloud_arrival_time":
-            return "left"
-        else:
-            return "center"
-
-    # SR_TMP TODO move to some config/setup class
-    @property
-    def mark_field_max(self):
-        if self.setup.plot_type == "ens_thr_agrmt":
-            return False
-        elif self.setup.plot_type == "ens_cloud_arrival_time":
-            return False
-        else:
-            return True
-
     def __init__(
         self, field, setup, map_conf, *, dpi=None, figsize=None, labels=None,
     ):
         """Create an instance of ``Plot``.
 
         Args:
-            name (str): Name of the plot.
-
             field (Field): Data field.
 
             setup (Setup): Plot setup.
@@ -353,6 +267,75 @@ class Plot:
         }
 
         self.create_plot()
+
+    # SR_TMP TODO move to some config/setup class
+    @property
+    def text_box_setup(self):
+        return {
+            "deterministic": {
+                "h_rel_t": 0.1,
+                "h_rel_b": 0.03,
+                "w_rel_r": 0.25,
+                "pad_hor_rel": 0.015,
+                "h_rel_box_rt": 0.45,
+            },
+            "ensemble": {
+                "h_rel_t": 0.14,
+                "h_rel_b": 0.03,
+                "w_rel_r": 0.25,
+                "pad_hor_rel": 0.015,
+                "h_rel_box_rt": 0.46,
+            },
+        }[self.setup.simulation_type]
+
+    # SR_TMP TODO move to some config/setup class
+    @property
+    def n_levels(self):
+        return {
+            "ens_thr_agrmt": 7,
+            "ens_cloud_arrival_time": 9,
+            "affected_area_mono": 1,
+        }.get(
+            self.setup.plot_type,
+            {"concentration": 8, "deposition": 9}[self.setup.variable],
+        )
+
+    # SR_TMP TODO move to some config/setup class
+    @property
+    def extend(self):
+        return {
+            "ens_thr_agrmt": "min",
+            "ens_cloud_arrival_time": "max",
+            "affected_area_mono": "none",
+        }.get(self.setup.variable, "max")
+
+    # SR_TMP TODO move to some config/setup class
+    @property
+    def d_level(self):
+        return {"ens_thr_agrmt": 2, "ens_cloud_arrival_time": 3}.get(
+            self.setup.plot_type
+        )
+
+    # SR_TMP TODO move to some config/setup class
+    @property
+    def level_range_style(self):
+        return {"ens_thr_agrmt": "int", "ens_cloud_arrival_time": "int"}.get(
+            self.setup.plot_type, "base"
+        )
+
+    # SR_TMP TODO move to some config/setup class
+    @property
+    def level_ranges_align(self):
+        return {"ens_thr_agrmt": "left", "ens_cloud_arrival_time": "left"}.get(
+            self.setup.plot_type, "center"
+        )
+
+    # SR_TMP TODO move to some config/setup class
+    @property
+    def mark_field_max(self):
+        return {"ens_thr_agrmt": False, "ens_cloud_arrival_time": False}.get(
+            self.setup.plot_type, True
+        )
 
     def prepare_plot(self):
 
