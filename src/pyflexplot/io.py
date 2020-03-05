@@ -55,6 +55,8 @@ class FileReader:
         self.rlat = None
         self.rlon = None
 
+        self.fixer = FlexPartDataFixer()
+
     def run(self, fld_specs_lst, *, lang=None):
         """Read one or more fields from a file from disc.
 
@@ -155,11 +157,14 @@ class FileReader:
         # Create time-step-specific field specifications
         fld_specs_lst = self._create_fld_specs(fld_specs_time, time_idcs)
 
+        # Collect time-step-specific data attributes
+        attrs_lst = self._collect_attrs(fld_specs_lst, time_idcs)
+
         # Create fields at requested time steps for all members
         fields = self._create_fields_lst(fld_specs_lst, fld_time, time_idcs, time_stats)
 
-        # Collect time-step-specific data attributes
-        attrs_lst = self._collect_attrs(fld_specs_lst, time_idcs, fields)
+        # Fix some known issues with the NetCDF input data
+        self.fixer.fix_attrs(attrs_lst)
 
         return fields, attrs_lst
 
@@ -236,7 +241,7 @@ class FileReader:
             fld_specs_lst.append(fld_specs)
         return fld_specs_lst
 
-    def _collect_attrs(self, fld_specs_lst, time_idcs, fields):
+    def _collect_attrs(self, fld_specs_lst, time_idcs):
         """Collect time-step-specific data attributes."""
 
         # Collect attributes at requested time steps for all members
@@ -246,11 +251,6 @@ class FileReader:
 
         # Merge attributes across members
         attrs_lst = self._merge_attrs_across_members(attrs_by_reqtime_mem)
-
-        # Fix some known issues with the NetCDF input data
-        for i_reqtime, field in enumerate(fields):
-            log.debug("fix nc data: attrs")
-            self._fix_nc_attrs(fields[i_reqtime].fld, attrs_lst[i_reqtime])
 
         return attrs_lst
 
@@ -307,7 +307,6 @@ class FileReader:
         same for all and pick those of the first member.
 
         """
-        attrs_lst = attrs_by_reqtime_mem[:, 0]
         for i_mem in range(1, self.n_members):
             for i_reqtime, attrs in enumerate(attrs_by_reqtime_mem[:, i_mem]):
                 attrs_ref = attrs_by_reqtime_mem[i_reqtime, 0]
@@ -316,7 +315,7 @@ class FileReader:
                         f"attributes differ between members 0 and {i_mem}: "
                         f"{attrs_ref} != {attrs}"
                     )
-        return attrs_lst
+        return attrs_by_reqtime_mem[:, 0].tolist()
 
     def _create_fields_lst(self, fld_specs_lst, fld_time, time_idcs, time_stats):
         """Create fields at requested time steps for all members."""
@@ -370,17 +369,17 @@ class FileReader:
 
         # Select variable in file
         var_name = nc_var_name(setup)
-        var = self.fi.variables[var_name]
+        nc_var = self.fi.variables[var_name]
 
         # Indices of field along NetCDF dimensions
         dim_idcs_by_name = self._dim_inds_by_name(setup)
 
         # Assemble indices for slicing
-        idcs = [None] * len(var.dimensions)
+        idcs = [None] * len(nc_var.dimensions)
         for dim_name, dim_idx in dim_idcs_by_name.items():
             # Get the index of the dimension for this variable
             try:
-                idx = var.dimensions.index(dim_name)
+                idx = nc_var.dimensions.index(dim_name)
             except ValueError:
                 # Potential issue: Dimension not among the variable dimensions!
                 if dim_idx in (None, 0):
@@ -393,7 +392,7 @@ class FileReader:
                             "dim_idx": dim_idx,
                             "dim_name": dim_name,
                             "fi.filepath": self.fi.filepath(),
-                            "var.dimensions": var.dimensions,
+                            "nc_var.dimensions": nc_var.dimensions,
                             "var_name": var_name,
                         },
                     )
@@ -420,24 +419,23 @@ class FileReader:
             pass
         else:
             raise Exception(
-                f"unknown variable dimension #{idx} '{var.dimensions[idx]}'",
+                f"unknown variable dimension #{idx} '{nc_var.dimensions[idx]}'",
                 {
                     "dim_idcs_by_name": dim_idcs_by_name,
                     "idcs": idcs,
-                    "var.dimensions": var.dimensions,
+                    "nc_var.dimensions": nc_var.dimensions,
                     "var_name": var_name,
                 },
             )
         log.debug(f"indices: {idcs}")
-        check_array_indices(var.shape, idcs)
+        check_array_indices(nc_var.shape, idcs)
 
         # Read field
-        log.debug(f"shape: {var.shape}")
+        log.debug(f"shape: {nc_var.shape}")
         log.debug(f"indices: {idcs}")
-        fld = var[idcs]
+        fld = nc_var[idcs]
 
-        log.debug(f"fix nc data: variable {var.name}")
-        self._fix_nc_var(fld, var)
+        self.fixer.fix_nc_var(nc_var, fld)
 
         # Time integration
         fld = self._time_integrations(fld, setup)
@@ -494,66 +492,73 @@ class FileReader:
         dt_hr = dt_min / 3600.0
         return dt_hr
 
-    # SR_TMP <<<
-    def _fix_nc_var(self, fld, var):
 
-        # SR_TMP < TODO more general solution to combined species
-        names = [
-            "Cs-137",
-            "I-131a",
-            ["Cs-137", "I-131a"],
-            ["I-131a", "Cs-137"],
-        ]
-        # SR_TMP >
+class FlexPartDataFixer:
+    """Fix issues with FlexPart NetCDF output."""
 
-        name = var.getncattr("long_name").split("_")[0]
-        unit = var.getncattr("units")
-        if name in names:
-            if unit == "ng kg-1":
-                fld[:] *= 1e-12
-            elif unit == "1e-12 kg m-2":
-                fld[:] *= 1e-12
-            else:
-                raise NotImplementedError(f"species '{name}': unknown unit '{unit}'")
+    possible_var_names = [
+        "Cs-137",
+        "I-131a",
+        ["Cs-137", "I-131a"],
+        ["I-131a", "Cs-137"],
+    ]
+    conversion_factor_by_unit = {
+        "ng kg-1": 1.0e-12,
+        "1e-12 kg m-2": 1.0e-12,
+    }
+
+    def fix_nc_var(self, nc_var, fld):
+
+        log.debug(f"fix nc data: variable {nc_var.name}")
+
+        name = nc_var.getncattr("long_name").split("_")[0]
+        unit = nc_var.getncattr("units")
+
+        if name not in self.possible_var_names:
+            raise NotImplementedError("variable", {"name": name})
+        try:
+            fact = self.conversion_factor_by_unit[unit]
+        except KeyError:
+            raise NotImplementedError(
+                "conversion factor", {"name": name, "unit": unit},
+            )
+        fld[:] *= fact
+
+    def fix_attrs(self, attrs_or_attrs_lst):
+
+        if isinstance(attrs_or_attrs_lst, list):
+            return [self.fix_attrs(attrs) for attrs in attrs_or_attrs_lst]
+        attrs = attrs_or_attrs_lst
+
+        log.debug("fix nc data: attrs")
+
+        name = attrs.species.name.value
+        if name not in self.possible_var_names:
+            raise NotImplementedError("variable", {"name": name})
+
+        new_unit = "Bq"
+
+        # Integration type
+        integr_type = attrs.simulation.integr_type.value
+        if integr_type == "mean":
+            pass
+        elif integr_type in ["sum", "accum"]:
+            new_unit += " h"
         else:
-            raise NotImplementedError(f"species '{name}'")
+            raise NotImplementedError(
+                "unknown integration type", {"integr_type": integr_type, "name": name},
+            )
 
-    def _fix_nc_attrs(self, fld, attrs):
-
-        # SR_TMP < TODO more general solution to combined species
-        names = [
-            "Cs-137",
-            "I-131a",
-            ["Cs-137", "I-131a"],
-            ["I-131a", "Cs-137"],
-        ]
-        # SR_TMP >
-        if attrs.species.name.value in names:
-
-            new_unit = "Bq"  # SR_HC
-
-            # Integration type
-            if attrs.simulation.integr_type.value == "mean":
-                pass
-            elif attrs.simulation.integr_type.value in ["sum", "accum"]:
-                new_unit += " h"
-            else:
-                raise NotImplementedError(
-                    f"species '{attrs.species.name.value}': "
-                    f"integration type '{attrs.simulation.integr_type.value}'"
-                )
-
-            # Original unit
-            if attrs.variable.unit.value == "ng kg-1":
-                new_unit += " m-3"  # SR_HC
-            elif attrs.variable.unit.value == "1e-12 kg m-2":
-                new_unit += " m-2"  # SR_HC
-            else:
-                raise NotImplementedError(
-                    f"species '{attrs.species.name.value}': "
-                    f"unit '{attrs.variable.unit.value}'"
-                )
-
-            attrs.variable.unit.value = new_unit
+        # Old unit
+        old_unit = attrs.variable.unit.value
+        if old_unit == "ng kg-1":
+            new_unit += " m-3"
+        elif old_unit == "1e-12 kg m-2":
+            new_unit += " m-2"
         else:
-            raise NotImplementedError(f"species '{attrs.species.name.value}'")
+            raise NotImplementedError(
+                f"species '{attrs.species.name.value}': "
+                f"unit '{attrs.variable.unit.value}'"
+            )
+
+        attrs.variable.unit.value = new_unit
