@@ -123,7 +123,7 @@ class Setup(BaseModel):
     variable: str = "concentration"
 
     # Derived parameters
-    level_idx: Union[int, Tuple[int, ...]] = None
+    level_idx: Optional[Union[int, Tuple[int, ...]]] = None
     ens_param_mem_min: Optional[int] = None
     ens_param_thr: Optional[float] = None
 
