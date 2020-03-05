@@ -143,14 +143,14 @@ def test_single(datadir, conf):  # noqa:F811
     # Initialize field specifications
     fld_specs_lst = FieldSpecs.create(conf.setup)
     assert len(fld_specs_lst) == 1
-    fld_specs = next(iter(fld_specs_lst))
-
-    # Initialize individual setup objects
-    setups = fld_specs.multi_var_specs.setup.decompress()
 
     # Read input field
-    flex_field = FileReader(datafile).run(fld_specs)
-    fld = flex_field.fld
+    fields, attrs_lst = FileReader(datafile).run(fld_specs_lst)
+    assert len(fields) == 1
+    fld = fields[0].fld
+
+    # Initialize individual setup objects
+    setups = fld_specs_lst[0].multi_var_specs.setup.decompress()
 
     # Read reference field
     fld_ref = (
@@ -286,10 +286,13 @@ def test_multiple(datadir, conf):  # noqa:F811
 
     # Process field specifications one after another
     for fld_specs in fld_specs_lst:
+        fld_specs_lst_i = [fld_specs]
 
         # Read input fields
-        flex_field_lst = FileReader(datafile).run([fld_specs])
-        fld = np.array([flex_field.fld for flex_field in flex_field_lst])
+        fields, attrs_lst = FileReader(datafile).run(fld_specs_lst_i)
+        assert len(fields) == 1
+        assert len(attrs_lst) == 1
+        fld = np.array([field.fld for field in fields])
         assert fld.shape[0] == 1
         fld = fld[0]
 

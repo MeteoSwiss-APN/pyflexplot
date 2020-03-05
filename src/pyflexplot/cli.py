@@ -20,7 +20,7 @@ from .examples import choices as example_choices
 from .examples import print_example
 from .field_specs import FieldSpecs
 from .io import FileReader
-from .plotter import Plotter
+from .plotter import plot
 from .setup import SetupFile
 from .utils import count_to_log_level
 
@@ -126,13 +126,10 @@ def create_plots(setups, cli_args):
     for idx_setup, setup in enumerate(setups):
 
         # Read input fields
-        field_lst = read_fields(setup)
-
-        def fct_plot():
-            return Plotter().run(field_lst, setup)
+        fields, attrs_lst = read_fields(setup)
 
         # Note: Plotter.run yields the output file paths on-the-go
-        for idx_plot, out_file_path in enumerate(fct_plot()):
+        for idx_plot, out_file_path in enumerate(plot(fields, attrs_lst, setup)):
             out_file_paths.append(out_file_path)
 
             if cli_args["open_first_cmd"] and idx_setup + idx_plot == 0:
@@ -150,11 +147,14 @@ def read_fields(setup):
     fld_specs_lst = FieldSpecs.create(setup)
 
     # Read fields
-    field_lst = []
+    fields = []
+    attrs_lst = []
     for raw_path in setup.infiles:
-        field_lst.extend(FileReader(raw_path).run(fld_specs_lst, lang=setup.lang))
+        fields_i, attrs_lst_i = FileReader(raw_path).run(fld_specs_lst, lang=setup.lang)
+        fields.extend(fields_i)
+        attrs_lst.extend(attrs_lst_i)
 
-    return field_lst
+    return fields, attrs_lst
 
 
 def open_plots(cmd, file_paths):

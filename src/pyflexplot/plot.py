@@ -30,14 +30,17 @@ from .words import WORDS
 # SR_TMP TODO Turn into dataclass or the like.
 @summarizable
 class PlotLabels:
-    def __init__(self, lang, words, symbols, attrs):
 
-        self.words = words
-        self.symbols = symbols
+    words = WORDS
+    symbols = SYMBOLS
 
-        w = words
-        s = symbols
-        a = attrs
+    def __init__(self, lang, attrs):
+        """Create an instance of ``PlotLabels``."""
+        self.attrs = attrs
+
+        w = self.words
+        s = self.symbols
+        a = self.attrs
 
         w.set_default_lang(lang)
 
@@ -219,7 +222,7 @@ class Plot:
     lw_frame = 1.0
 
     def __init__(
-        self, field, setup, map_conf, *, dpi=None, figsize=None, labels=None,
+        self, field, setup, attrs, map_conf, *, dpi=None, figsize=None, labels=None,
     ):
         """Create an instance of ``Plot``.
 
@@ -227,6 +230,8 @@ class Plot:
             field (Field): Data field.
 
             setup (Setup): Plot setup.
+
+            attrs (AttrMult): Data attributes.
 
             map_conf (MapAxesConf): Map plot setupuration object.
 
@@ -241,6 +246,7 @@ class Plot:
         """
         self.field = field
         self.setup = setup
+        self.attrs = attrs
         self.map_conf = map_conf
         self.dpi = dpi or 100.0
         self.figsize = figsize or (12.0, 9.0)
@@ -248,7 +254,7 @@ class Plot:
         self.field.scale(self.setup.scale_fact)
 
         if labels is None:
-            labels = PlotLabels(setup.lang, WORDS, SYMBOLS, field.attrs)
+            labels = PlotLabels(setup.lang, attrs)
         self.labels = labels
 
         # Formatting arguments
@@ -307,7 +313,7 @@ class Plot:
             "ens_thr_agrmt": "min",
             "ens_cloud_arrival_time": "max",
             "affected_area_mono": "none",
-        }.get(self.setup.variable, "max")
+        }.get(self.setup.plot_type, "max")
 
     # SR_TMP TODO move to some config/setup class
     @property
@@ -345,8 +351,8 @@ class Plot:
             self.fig,
             self.field.rlat,
             self.field.rlon,
-            self.field.attrs.grid.north_pole_lat.value,
-            self.field.attrs.grid.north_pole_lon.value,
+            self.attrs.grid.north_pole_lat.value,
+            self.attrs.grid.north_pole_lon.value,
             self.map_conf,
         )
 
@@ -404,8 +410,8 @@ class Plot:
         if self.mark_release_site:
             # Marker at release site
             self.ax_map.marker(
-                self.field.attrs.release.site_lon.value,
-                self.field.attrs.release.site_lat.value,
+                self.attrs.release.site_lon.value,
+                self.attrs.release.site_lat.value,
                 **self._site_marker_kwargs,
             )
 
@@ -764,7 +770,7 @@ class Plot:
         """Fill the bottom box to the right of the map plot."""
 
         l = self.labels.right_bottom  # noqa:E741
-        a = self.field.attrs
+        a = self.attrs
 
         # Box title
         # box.text('tc', l['title'], size='large')
@@ -833,12 +839,11 @@ class Plot:
     def get_colors(self):
         if self.setup.plot_type == "affected_area_mono":
             return (np.array([(200, 200, 200)]) / 255).tolist()
+        elif self.cmap == "flexplot":
+            return colors_flexplot(self.n_levels, self.extend)
         else:
-            if self.cmap == "flexplot":
-                return colors_flexplot(self.n_levels, self.extend)
-            else:
-                cmap = mpl.cm.get_cmap(self.cmap)
-                return [cmap(i / (self.n_levels - 1)) for i in range(self.n_levels)]
+            cmap = mpl.cm.get_cmap(self.cmap)
+            return [cmap(i / (self.n_levels - 1)) for i in range(self.n_levels)]
 
     # SR_TODO Replace checks with plot-specific config/setup object
     def get_levels(self):

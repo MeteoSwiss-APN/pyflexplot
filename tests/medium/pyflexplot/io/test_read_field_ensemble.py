@@ -85,15 +85,16 @@ class TestReadFieldEnsemble_Single:
         )
         fld_specs_lst = FieldSpecs.create(setup)
         assert len(fld_specs_lst) == 1
-        fld_specs = next(iter(fld_specs_lst))
-
-        setups = fld_specs.multi_var_specs.setup.decompress()
-        assert len(setups) == 1
-        setup = next(iter(setups))
 
         # Read input fields
-        flex_field = FileReader(datafile_fmt).run(fld_specs)
-        fld = flex_field.fld
+        fields, attrs_lst = FileReader(datafile_fmt).run(fld_specs_lst)
+        assert len(fields) == 1
+        assert len(attrs_lst) == 1
+        fld = fields[0].fld
+
+        setups = fld_specs_lst[0].multi_var_specs.setup.decompress()
+        assert len(setups) == 1
+        setup = next(iter(setups))
 
         # Read reference fields
         fld_ref = fct_reduce_mem(
@@ -103,7 +104,7 @@ class TestReadFieldEnsemble_Single:
                         read_nc_var(
                             self.datafile(ens_member_id, datafile_fmt=datafile_fmt),
                             var_name,
-                            setup,  # SR_TMP
+                            setup,
                         )
                         for ens_member_id in self.ens_member_ids
                     ]
@@ -203,8 +204,8 @@ class TestReadFieldEnsemble_Multiple:
     ):
 
         # Read input fields
-        flex_field_lst = FileReader(datafile_fmt).run(fld_specs_lst)
-        fld_arr = np.array([flex_field.fld for flex_field in flex_field_lst])
+        fields, attrs_lst = FileReader(datafile_fmt).run(fld_specs_lst)
+        fld_arr = np.array([field.fld for field in fields])
 
         # Collect merged variables specifications
         setups_lst = []

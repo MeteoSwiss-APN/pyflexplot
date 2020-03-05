@@ -227,12 +227,11 @@ def create_attrs(lang):
     )
 
 
-def create_field(attrs):
+def create_field():
     dummy_field = Field(
         fld=np.array([[i] * 10 for i in range(10)], np.float32),
         rlat=np.arange(-5.0, 4.1, 1.0),
         rlon=np.arange(-6.0, 3.1, 1.0),
-        attrs=attrs,
         field_specs=None,
         time_stats={"max": 15},
     )
@@ -296,9 +295,9 @@ def create_symbols():
 
 
 def create_labels(lang, attrs):
-    dummy_words = create_words(lang)
-    dummy_symbols = create_symbols()
-    return PlotLabels(lang, dummy_words, dummy_symbols, attrs)
+    PlotLabels.words = create_words(lang)
+    PlotLabels.symbols = create_symbols()
+    return PlotLabels(lang, attrs)
 
 
 def create_map_conf(lang):
@@ -332,13 +331,19 @@ def create_res(lang, _cache={}):
 
     """
     if lang not in _cache:
-        attrs = create_attrs(lang)
-        field = create_field(attrs)
+        field = create_field()
         setup = create_setup(lang)
+        attrs = create_attrs(lang)
         labels = create_labels(lang, attrs)
         map_conf = create_map_conf(lang)
         plot = Plot(
-            field, setup, map_conf=map_conf, dpi=100, figsize=(12, 9), labels=labels,
+            field,
+            setup,
+            attrs,
+            map_conf=map_conf,
+            dpi=100,
+            figsize=(12, 9),
+            labels=labels,
         )
         _cache[lang] = plot.summarize()
     return _cache[lang]
@@ -744,7 +749,6 @@ class Solution:
         e = self.element
         jdat = {
             "type": "Field",
-            "attrs": {},  # SR_TMP
             "field_specs": None,  # SR_TMP
             "time_stats": {"max": e(15)},
             "fld": {

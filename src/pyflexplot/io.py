@@ -19,7 +19,6 @@ from .attr import nc_var_name
 from .data import Field
 from .data import cloud_arrival_time
 from .data import threshold_agreement
-from .field_specs import FieldSpecs
 
 
 class FileReader:
@@ -30,8 +29,6 @@ class FileReader:
     member).
 
     """
-
-    cls_field = Field
 
     choices_ens_var = ["mean", "median", "min", "max"]
 
@@ -51,9 +48,6 @@ class FileReader:
         self.in_file_path_fmt = in_file_path
         self.cmd_open = cmd_open
 
-        self.reset()
-
-    def reset(self):
         self.lang = None
         self.n_members = None
         self.in_file_path_lst = None
@@ -61,59 +55,11 @@ class FileReader:
         self.rlat = None
         self.rlon = None
 
-        # SR_TMP < TODO don't cheat! _attrs_{all,none} are for checks only!
-        if hasattr(self, "_attrs_all"):
-            for attr in self.__dict__.keys():
-                if attr in ["_attrs_all", "_attrs_none"]:
-                    pass
-                elif attr not in self._attrs_all:
-                    del self.__dict__[attr]
-                elif attr in self._attrs_none:
-                    setattr(self, attr, None)
-        # SR_TMP >
-
-    # SR_DEV <<<
-    def _store_attrs(self):
-        """Store names of all attributes, and which are None."""
-        if "_attrs_all" in self.__dict__:
-            raise Exception("'_attrs_all' in self.__dict__")
-        if "_attrs_none" in self.__dict__:
-            raise Exception("'_attrs_none' in self.__dict__")
-        self._attrs_all = self.__dict__.keys()
-        self._attrs_none = [a for a in self._attrs_all if getattr(self, a) is None]
-
-    # SR_DEV <<<
-    def _check_attrs(self):
-        """Check that attributes have been cleared up properly.
-
-        Checks:
-            There are no attributes that should not be there.
-
-            All attributes that should be None, are.
-
-        """
-        attrs_all = self.__dict__.pop("_attrs_all")
-        attrs_none = self.__dict__.pop("_attrs_none")
-
-        # Check that there are no unexpected attributes
-        attrs_unexp = [a for a in self.__dict__.keys() if a not in attrs_all]
-        if attrs_unexp:
-            raise Exception(f"{len(attrs_unexp)} unexpected attributes: {attrs_unexp}")
-
-        # Check that all attributes that should be None, are
-        attrs_nonone = [a for a in attrs_none if getattr(self, a) is not None]
-        if attrs_nonone:
-            raise Exception(
-                f"{len(attrs_nonone)} attributes should be None but are not: "
-                f"{attrs_nonone}"
-            )
-
-    def run(self, fld_specs, *, lang=None):
+    def run(self, fld_specs_lst, *, lang=None):
         """Read one or more fields from a file from disc.
 
         Args:
-            fld_specs (FieldSpecs or list[FieldSpecs]): Specifications for one
-                or more input fields.
+            fld_specs_lst (List[FieldSpecs]): List of field specifications.
 
             ens_var (str, optional): Name of ensemble variable, e.g., 'mean'.
                 See ``Field.choices_ens_var`` for the full list. Mandatory in
@@ -125,28 +71,8 @@ class FileReader:
             lang (str, optional): Language, e.g., 'de' for German. Defaults to
                 'en' (English).
 
-        Returns:
-            Field: Single data object; if ``fld_specs`` constitutes a single
-            ``FieldSpecs`` instance.
-
-            or
-
-            list[Field]: One data object for each field; if ``fld_specs``
-                constitutes a list of ``FieldSpecs`` instances.
-
         """
-        self._store_attrs()  # SR_DEV
-
-        # Set some attributes
         self.lang = lang or "en"
-
-        if isinstance(fld_specs, FieldSpecs):
-            multiple = False
-            fld_specs_lst = [fld_specs]
-        else:
-            multiple = True
-            fld_specs_lst = fld_specs
-        del fld_specs
 
         # Group field specifications objects such that all in one group only
         # differ in time; collect the respective time indices; and merge the
@@ -155,42 +81,34 @@ class FileReader:
         # process all time steps (e.g., derive some statistics across all time
         # steps); and, second, extract the requested time steps using the
         # separately stored indices.
-        self._fld_specs_time_lst, self._time_inds_lst = self._group_fld_specs_by_time(
-            fld_specs_lst
-        )
+        fld_specs_time_lst, time_inds_lst = self._group_fld_specs_by_time(fld_specs_lst)
+        self._fld_specs_time_lst = fld_specs_time_lst
+        self._time_inds_lst = time_inds_lst
 
         # Prepare array for fields
-        self.n_fld_specs = len(self._fld_specs_time_lst)
+        self.n_fld_specs = len(fld_specs_time_lst)
         self.n_reqtime = self._determine_n_reqtime()
-        flex_field_lst = []
+        fields = []
+        attrs_lst = []
 
         # Collect fields
         log.debug(f"process {self.n_fld_specs} field specs groups")
         for i_fld_specs in range(self.n_fld_specs):
 
-            fld_specs_time = self._fld_specs_time_lst[i_fld_specs]
-            time_idcs = self._time_inds_lst[i_fld_specs]
+            fld_specs = fld_specs_time_lst[i_fld_specs]
+            time_idcs = time_inds_lst[i_fld_specs]
 
-            ens_member_ids = fld_specs_time.multi_var_specs.setup.ens_member_ids
+            ens_member_ids = fld_specs.multi_var_specs.setup.ens_member_ids
             self.n_members = 1 if not ens_member_ids else len(ens_member_ids)
             self.in_file_path_lst = self._prepare_in_file_path_lst(ens_member_ids)
 
-            log.debug(f"{i_fld_specs + 1}/{self.n_fld_specs}: {fld_specs_time}")
+            log.debug(f"{i_fld_specs + 1}/{self.n_fld_specs}: {fld_specs}")
 
-            flex_field_lst.extend(
-                self._create_fields_fld_specs(fld_specs_time, time_idcs)
-            )
+            fields_i, attrs_lst_i = self._create_fields(fld_specs, time_idcs)
+            fields.extend(fields_i)
+            attrs_lst.extend(attrs_lst_i)
 
-        # Return result field(s)
-        result = flex_field_lst
-        if not multiple:
-            # Only one field type specified: remove fields dimension
-            result = result[0]
-
-        self.reset()
-        self._check_attrs()  # SR_DEV
-
-        return result
+        return fields, attrs_lst
 
     def _prepare_in_file_path_lst(self, ens_member_ids):
 
@@ -222,7 +140,7 @@ class FileReader:
             )
         return next(iter(n_reqtime_per_mem))
 
-    def _create_fields_fld_specs(self, fld_specs_time, time_idcs):
+    def _create_fields(self, fld_specs_time, time_idcs):
 
         # Read fields of all members at all time steps
         fld_time_mem = self._read_fld_time_mem(fld_specs_time)
@@ -235,20 +153,15 @@ class FileReader:
         time_stats = self._collect_time_stats(fld_time)
 
         # Create time-step-specific field specifications
-        fld_specs_reqtime = self._create_specs_reqtime(fld_specs_time, time_idcs)
-
-        # Collect attributes at requested time steps for all members
-        attrs_reqtime_mem = self._collect_attrs_reqtime_mem(
-            fld_specs_reqtime, time_idcs
-        )
-
-        # Merge attributes across members
-        attrs_reqtime = self._merge_attrs_across_members(attrs_reqtime_mem)
+        fld_specs_lst = self._create_fld_specs(fld_specs_time, time_idcs)
 
         # Create fields at requested time steps for all members
-        return self._create_fields_reqtime(
-            fld_specs_reqtime, attrs_reqtime, fld_time, time_idcs, time_stats
-        )
+        fields = self._create_fields_lst(fld_specs_lst, fld_time, time_idcs, time_stats)
+
+        # Collect time-step-specific data attributes
+        attrs_lst = self._collect_attrs(fld_specs_lst, time_idcs, fields)
+
+        return fields, attrs_lst
 
     def _read_fld_time_mem(self, fld_specs_time):
         """Read field over all time steps for each member."""
@@ -311,35 +224,53 @@ class FileReader:
             raise NotImplementedError(f"plot var '{plot_type}'")
         return fld_time
 
-    def _create_specs_reqtime(self, fld_specs_time, time_idcs):
+    def _create_fld_specs(self, fld_specs_time, time_idcs):
         """Create time-step-specific field specifications."""
-        fld_specs_reqtime = np.full([self.n_reqtime], None)
+        fld_specs_lst = []
         for i_reqtime, time_idx in enumerate(time_idcs):
             fld_specs = deepcopy(fld_specs_time)
             # SR_TMP <
             for var_specs in fld_specs.multi_var_specs:
                 var_specs._setup = var_specs._setup.derive({"time_idcs": [time_idx]})
             # SR_TMP >
-            fld_specs_reqtime[i_reqtime] = fld_specs
-        return fld_specs_reqtime
+            fld_specs_lst.append(fld_specs)
+        return fld_specs_lst
 
-    def _collect_attrs_reqtime_mem(self, fld_specs_reqtime, time_idcs):
+    def _collect_attrs(self, fld_specs_lst, time_idcs, fields):
+        """Collect time-step-specific data attributes."""
+
+        # Collect attributes at requested time steps for all members
+        attrs_by_reqtime_mem = self._collect_attrs_by_reqtime_mem(
+            fld_specs_lst, time_idcs
+        )
+
+        # Merge attributes across members
+        attrs_lst = self._merge_attrs_across_members(attrs_by_reqtime_mem)
+
+        # Fix some known issues with the NetCDF input data
+        for i_reqtime, field in enumerate(fields):
+            log.debug("fix nc data: attrs")
+            self._fix_nc_attrs(fields[i_reqtime].fld, attrs_lst[i_reqtime])
+
+        return attrs_lst
+
+    def _collect_attrs_by_reqtime_mem(self, fld_specs_by_reqtime, time_idcs):
         """Collect attributes at requested time steps for all members."""
-        attrs_reqtime_mem = np.full([self.n_reqtime, self.n_members], None)
+        attrs_by_reqtime_mem = np.full([self.n_reqtime, self.n_members], None)
         for i_mem, in_file_path in enumerate(self.in_file_path_lst):
             log.debug(f"read {in_file_path} (attributes)")
             with self.cmd_open(in_file_path, "r") as self.fi:
                 for i_reqtime, time_idx in enumerate(time_idcs):
                     log.debug(f"{i_reqtime + 1}/{len(time_idcs)}: collect attributes")
-                    fld_specs = fld_specs_reqtime[i_reqtime]
+                    fld_specs = fld_specs_by_reqtime[i_reqtime]
                     attrs_lst = []
                     for var_specs in fld_specs.multi_var_specs:
                         attrs = collect_attrs(self.fi, var_specs, lang=self.lang)
                         attrs_lst.append(attrs)
                     attrs = attrs_lst[0].merge_with(attrs_lst[1:])
-                    attrs_reqtime_mem[i_reqtime, i_mem] = attrs
+                    attrs_by_reqtime_mem[i_reqtime, i_mem] = attrs
             self.fi = None
-        return attrs_reqtime_mem
+        return attrs_by_reqtime_mem
 
     def _group_fld_specs_by_time(self, fld_specs_lst):
         """Group specs that differ only in their time dimension."""
@@ -369,46 +300,44 @@ class FileReader:
 
         return fld_specs_time_lst, time_inds_lst
 
-    def _merge_attrs_across_members(self, attrs_reqtime_mem):
-        attrs_reqtime = attrs_reqtime_mem[:, 0]
+    def _merge_attrs_across_members(self, attrs_by_reqtime_mem):
+        """Merge attributes at each time step across members.
+
+        As they should be member-independent, check that they are indeed the
+        same for all and pick those of the first member.
+
+        """
+        attrs_lst = attrs_by_reqtime_mem[:, 0]
         for i_mem in range(1, self.n_members):
-            for i_reqtime, attrs in enumerate(attrs_reqtime_mem[:, i_mem]):
-                attrs_ref = attrs_reqtime[i_reqtime]
+            for i_reqtime, attrs in enumerate(attrs_by_reqtime_mem[:, i_mem]):
+                attrs_ref = attrs_by_reqtime_mem[i_reqtime, 0]
                 if attrs != attrs_ref:
                     raise Exception(
-                        f"attributes differ between members 0 and {i_mem}: {attrs_ref} "
-                        f"!= {attrs}"
+                        f"attributes differ between members 0 and {i_mem}: "
+                        f"{attrs_ref} != {attrs}"
                     )
-        return attrs_reqtime
+        return attrs_lst
 
-    def _create_fields_reqtime(
-        self, fld_specs_reqtime, attrs_reqtime, fld_time, time_idcs, time_stats
-    ):
+    def _create_fields_lst(self, fld_specs_lst, fld_time, time_idcs, time_stats):
         """Create fields at requested time steps for all members."""
 
         log.debug(f"select fields at requested time steps")
 
-        flex_field_lst = []
+        fields = []
         for i_reqtime, time_idx in enumerate(time_idcs):
             log.debug(f"{i_reqtime + 1}/{len(time_idcs)}")
 
-            fld_specs = fld_specs_reqtime[i_reqtime]
-            attrs = attrs_reqtime[i_reqtime]
+            fld_specs = fld_specs_lst[i_reqtime]
 
             # Extract field
             fld = fld_time[time_idx]
 
-            # Fix some known issues with the NetCDF input data
-            log.debug("fix nc data: attrs")
-            self._fix_nc_attrs(fld, attrs)
-
             # Collect data
             log.debug("create data object")
-            flex_field = self.cls_field(
-                fld, self.rlat, self.rlon, attrs, fld_specs, time_stats,
-            )
-            flex_field_lst.append(flex_field)
-        return flex_field_lst
+            field = Field(fld, self.rlat, self.rlon, fld_specs, time_stats)
+
+            fields.append(field)
+        return fields
 
     def _collect_time_stats(self, fld_time):
         stats = {

@@ -14,6 +14,10 @@ from .plot_utils import MapAxesConf_Cosmo1
 from .plot_utils import MapAxesConf_Cosmo1_CH
 
 
+def plot(fields, attrs_lst, setup):
+    return Plotter().run(fields, attrs_lst, setup)
+
+
 class Plotter:
     """Create one or more FLEXPLART plots of a certain type."""
 
@@ -29,18 +33,16 @@ class Plotter:
     def __init__(self):
         self.file_paths = []
 
-    def run(self, field, setup, **kwargs_plot):
+    def run(self, fields, attrs_lst, setup):
         """Create one or more plots.
 
         Args:
-            field (Field*, list[Field*]): One or more Field instances.
+            field (List[Field]): A list of fields.
+
+            attrs_lst (List[Attr???]): A list of data attributes of equal
+                length as ``fields``.
 
             setup (Setup): Plot setup.
-
-            file_path_fmt (str): Format string of output file path. Must
-                contain all necessary format keys to avoid that multiple files
-                have the same name, but can be a plain string if no variable
-                assumes more than one value.
 
         Yields:
             str: Output file paths.
@@ -50,34 +52,28 @@ class Plotter:
             raise ValueError("setup.outfile is None")
 
         self.setup = setup
-        # SR_DBG <
-        self.file_path_fmt = setup.outfile
-        self.domain = setup.domain
-        # SR_DBG >
-
-        fields = field if isinstance(field, (list, tuple)) else [field]
-        assert all(type(obj).__name__.startswith("Field") for obj in fields)  # SR_DBG
 
         _s = "s" if len(fields) > 1 else ""
         print(f"create {len(fields)} {self.setup.plot_type} plot{_s}")
 
         # SR_TMP < TODO Find less hard-coded solution
-        if self.domain == "auto":
-            self.domain = "cosmo1"
-        if self.domain == "cosmo1":
+        domain = self.setup.domain
+        if domain == "auto":
+            domain = "cosmo1"
+        if domain == "cosmo1":
             map_conf = MapAxesConf_Cosmo1(lang=self.setup.lang)
-        elif self.domain == "ch":
+        elif domain == "ch":
             map_conf = MapAxesConf_Cosmo1_CH(lang=self.setup.lang)
         else:
-            raise ValueError(f"unknown domain '{self.domain}'")
+            raise ValueError("unknown domain", domain)
         # SR_TMP >
 
         # Create plots one-by-one
-        for i_data, field in enumerate(fields):
+        for i_data, (field, attrs) in enumerate(zip(fields, attrs_lst)):
             out_file_path = self.format_out_file_path(field.field_specs)
             _w = len(str(len(fields)))
             print(f" {i_data+1:{_w}}/{len(fields)}  {out_file_path}")
-            Plot(field, setup, map_conf=map_conf, **kwargs_plot,).save(out_file_path)
+            Plot(field, setup, attrs, map_conf=map_conf).save(out_file_path)
             yield out_file_path
 
     def format_out_file_path(self, field_specs):
@@ -109,7 +105,7 @@ class Plotter:
         return out_file_path
 
     def _fmt_out_file_path(self, kwargs):
-        out_file_path = self.file_path_fmt
+        out_file_path = self.setup.outfile
         for key, val in kwargs.items():
             if not isiterable(val, str_ok=False):
                 val = [val]
