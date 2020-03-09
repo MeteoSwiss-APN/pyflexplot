@@ -11,8 +11,8 @@ import pytest
 
 # First-party
 from pyflexplot.setup import Setup
-from pyflexplot.var_specs import MultiVarSpecs
-from pyflexplot.var_specs import VarSpecs
+from pyflexplot.specs import FldSpecs
+from pyflexplot.specs import VarSpecs
 from srutils.dict import decompress_multival_dict
 from srutils.testing import TestConfBase as _TestConf
 from srutils.testing import check_is_list_like
@@ -314,8 +314,8 @@ class Conf_Multi(_TestConf):
     n: int
 
 
-class _Test_MultiVarSpecs:
-    """Test ``MultiVarSpecs``."""
+class _Test_FldSpecs:
+    """Test ``FldSpecs``."""
 
     def test_create(self, conf=None):
 
@@ -324,8 +324,8 @@ class _Test_MultiVarSpecs:
         assert len(var_specs_lst_lst) == self.c.n
 
         # Create MultVarSpecs objects
-        multi_var_specs_lst = MultiVarSpecs.create(self.setups)
-        assert len(multi_var_specs_lst) == self.c.n
+        fld_specs_lst = FldSpecs.create(self.setups)
+        assert len(fld_specs_lst) == self.c.n
 
         # Compare VarSpecs objects in MultVarSpecs objects to reference ones
         sol = [
@@ -333,16 +333,12 @@ class _Test_MultiVarSpecs:
             for var_specs_lst in var_specs_lst_lst
             for var_specs in var_specs_lst
         ]
-        res = [
-            var_specs
-            for multi_var_specs in multi_var_specs_lst
-            for var_specs in multi_var_specs
-        ]
+        res = [var_specs for fld_specs in fld_specs_lst for var_specs in fld_specs]
         assert len(res) == len(sol)
         assert res == sol
 
 
-class Test_MultiVarSpecs_Concentration(_Test_MultiVarSpecs):
+class Test_FldSpecs_Concentration(_Test_FldSpecs):
     c = Conf_Multi(
         dct={
             "deposition": "none",
@@ -368,7 +364,7 @@ class Test_MultiVarSpecs_Concentration(_Test_MultiVarSpecs):
     setups = [base_setup, base_setup.derive({"species_id": [1, 2]})]
 
 
-class Test_MultiVarSpecs_DepositionDry(_Test_MultiVarSpecs):
+class Test_FldSpecs_DepositionDry(_Test_FldSpecs):
     c = Conf_Multi(
         dct={
             "deposition": "dry",
@@ -394,7 +390,7 @@ class Test_MultiVarSpecs_DepositionDry(_Test_MultiVarSpecs):
     setups = [base_setup, base_setup.derive({"species_id": [1, 2]})]
 
 
-class Test_MultiVarSpecs_DepositionTot(_Test_MultiVarSpecs):
+class Test_FldSpecs_DepositionTot(_Test_FldSpecs):
     c = Conf_Multi(
         dct={
             "deposition": "tot",
@@ -424,27 +420,27 @@ class Test_MultiVarSpecs_DepositionTot(_Test_MultiVarSpecs):
 
         # Deposition type "tot"
         setup0 = next(iter(self.setups))
-        mvs0_lst = MultiVarSpecs.create(setup0)
+        mvs0_lst = FldSpecs.create(setup0)
         assert len(mvs0_lst) == 1
         mvs0 = next(iter(mvs0_lst))
 
         # Deposition type ("wet", "dry")
         setup1 = self.setups[0].derive({"deposition_type": ("wet", "dry")})
-        mvs1_lst = MultiVarSpecs.create(setup1)
+        mvs1_lst = FldSpecs.create(setup1)
         assert len(mvs1_lst) == 1
         mvs1 = next(iter(mvs1_lst))
         assert mvs1 == mvs0  # ("wet", "dry") == "tot"
 
         # Deposition type "wet"
         setup2 = self.setups[0].derive({"deposition_type": "wet"})
-        mvs2_lst = MultiVarSpecs.create(setup2)
+        mvs2_lst = FldSpecs.create(setup2)
         assert len(mvs2_lst) == 1
         mvs2 = next(iter(mvs2_lst))
         assert mvs2 != mvs0  # "tot" != "wet"
         assert mvs2 != mvs1  # "tot" != ("wet", "dry")
 
 
-class Test_MultiVarSpecs_Interface:
+class Test_FldSpecs_Interface:
     c = Conf_Multi(
         dct={
             "deposition": "tot",
@@ -469,17 +465,17 @@ class Test_MultiVarSpecs_Interface:
     )
     setups = [base_setup]
 
-    def create_multi_var_specs(self):
+    def create_fld_specs(self):
         setup = self.setups[0]  # SR_TMP
-        mvs_lst = MultiVarSpecs.create(setup)
+        mvs_lst = FldSpecs.create(setup)
         assert len(mvs_lst) == 1
         mvs = next(iter(mvs_lst))
         assert len(list(mvs)) == 2
         return mvs
 
     def test_var_specs(self):
-        multi_var_specs = self.create_multi_var_specs()
-        var_specs_lst = list(multi_var_specs)
+        fld_specs = self.create_fld_specs()
+        var_specs_lst = list(fld_specs)
 
         # Check that there are separate VarSpecs for "wet" and "dry"
         check_is_list_like(var_specs_lst, len_=2, t_children=VarSpecs)

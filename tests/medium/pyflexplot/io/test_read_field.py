@@ -16,9 +16,9 @@ import numpy as np
 import pytest
 
 # First-party
-from pyflexplot.fld_specs import FldSpecs
 from pyflexplot.io import read_files
 from pyflexplot.setup import Setup
+from pyflexplot.specs import FldSpecs
 from pyflexplot.words import WORDS
 
 from io_utils import read_nc_var  # isort:skip
@@ -300,7 +300,7 @@ def test_multiple(datadir, conf):  # noqa:F811
 
         # Read reference fields
         fld_ref = None
-        for var_specs in fld_specs.multi_var_specs:
+        for var_specs in fld_specs:
             flds_ref_i = [
                 read_nc_var(
                     datafile,

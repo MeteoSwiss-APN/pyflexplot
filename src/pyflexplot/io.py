@@ -29,8 +29,8 @@ from .data import Field
 from .data import cloud_arrival_time
 from .data import merge_fields
 from .data import threshold_agreement
-from .fld_specs import FldSpecs
 from .setup import Setup
+from .specs import FldSpecs
 
 
 def read_files(in_file_path, setup, words, fld_specs_lst):
@@ -204,10 +204,7 @@ class FileReader:
         return fld_time_mem
 
     def _read_field(self, fld_specs: FldSpecs) -> np.ndarray:
-        fld_lst = [
-            self._read_nc_var(var_specs._setup)
-            for var_specs in fld_specs.multi_var_specs
-        ]
+        fld_lst = [self._read_nc_var(var_specs._setup) for var_specs in fld_specs]
         return merge_fields(fld_lst)
 
     def _reduce_ensemble(self, fld_time_mem: np.ndarray, setup: Setup) -> np.ndarray:
@@ -241,7 +238,7 @@ class FileReader:
         for time_idx in time_idcs:
             fld_specs_i: FldSpecs = deepcopy(timeless_fld_specs)
             # SR_TMP <
-            for var_specs in fld_specs_i.multi_var_specs:
+            for var_specs in fld_specs_i:
                 var_specs._setup = var_specs._setup.derive({"time_idcs": [time_idx]})
             # SR_TMP >
             fld_specs_lst.append(fld_specs_i)
@@ -274,7 +271,7 @@ class FileReader:
             with nc4.Dataset(in_file_path, "r") as self.fi:
                 for idx_time, fld_specs in enumerate(fld_specs_lst):
                     attrs_lst = []
-                    for var_specs in fld_specs.multi_var_specs:
+                    for var_specs in fld_specs:
                         attrs = collect_attrs(
                             self.fi, self.setup, self.words, var_specs,
                         )
@@ -303,13 +300,13 @@ class FileReader:
         for fld_specs in fld_specs_lst:
 
             # Extract time index (same vor all var_specs in the fld_specs)
-            time_idcs = fld_specs.multi_var_specs.collect_equal("time_idcs")
+            time_idcs = fld_specs.collect_equal("time_idcs")
             assert len(time_idcs) == 1  # SR_DBG
             time_idx: int = next(iter(time_idcs))
 
             # Reset time index
             timeless_fld_specs: FldSpecs = deepcopy(fld_specs)
-            for var_specs in timeless_fld_specs.multi_var_specs:
+            for var_specs in timeless_fld_specs:
                 var_specs._setup = var_specs._setup.derive({"time_idcs": []})
 
             for idx, timeless_fld_specs_i in enumerate(timeless_fld_specs_lst):
@@ -354,7 +351,7 @@ class FileReader:
         """Create fields at requested time steps for all members."""
         fields: List[Field] = []
         for fld_specs in fld_specs_lst:
-            time_idcs = fld_specs.multi_var_specs.collect_equal("time_idcs")
+            time_idcs = fld_specs.collect_equal("time_idcs")
             assert len(time_idcs) == 1  # SR_TMP
             time_idx = next(iter(time_idcs))
             fld: np.ndarray = fld_time[time_idx]

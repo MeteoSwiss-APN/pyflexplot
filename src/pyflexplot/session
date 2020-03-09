@@ -3,12 +3,11 @@ attr.py
 cli.py
 data.py
 examples.py
-fld_specs.py
 io.py
 plot.py
-plotter.py
 plot_utils.py
+plotter.py
 setup.py
+specs.py
 utils.py
-var_specs.py
 words.py

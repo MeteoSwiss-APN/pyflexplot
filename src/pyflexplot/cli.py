@@ -17,10 +17,10 @@ from srutils.click import CharSepList
 from . import __version__
 from .examples import choices as example_choices
 from .examples import print_example
-from .fld_specs import FldSpecs
 from .io import read_files
 from .plotter import plot
 from .setup import SetupFile
+from .specs import FldSpecs
 from .words import WORDS
 
 # # To debug segmentation fault, uncomment and run with PYTHONFAULTHANDLER=1

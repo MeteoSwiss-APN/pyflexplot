@@ -4,6 +4,7 @@ Data structures.
 """
 # Standard library
 from typing import Callable
+from typing import Mapping
 from typing import Sequence
 from typing import Union
 
@@ -11,6 +12,7 @@ from typing import Union
 import numpy as np
 
 # Local
+from .specs import FldSpecs
 from .utils import summarizable
 
 
@@ -52,20 +54,26 @@ def summarize_field(obj):
 class Field:
     """FLEXPART field on rotated-pole grid."""
 
-    def __init__(self, fld, rlat, rlon, fld_specs, time_stats):
+    def __init__(
+        self,
+        fld: np.ndarray,
+        rlat: np.ndarray,
+        rlon: np.ndarray,
+        fld_specs: FldSpecs,
+        time_stats: Mapping[str, np.ndarray],
+    ):
         """Create an instance of ``Field``.
 
         Args:
-            fld (ndarray[float, float]): Field array (2D) with
-                dimensions (rlat, rlon).
+            fld: Field array (2D) with dimensions (rlat, rlon).
 
-            rlat (ndarray[float]): Rotated latitude array (1D).
+            rlat: Rotated latitude array (1D).
 
-            rlon (ndarray[float]): Rotated longitude array (1D).
+            rlon: Rotated longitude array (1D).
 
-            fld_specs (FldSpecs): Input field specifications.
+            fld_specs: Input field specifications.
 
-            time_stats (dict): Some statistics across all time steps.
+            time_stats: Some statistics across all time steps.
 
         """
         self._check_args(fld, rlat, rlon)
@@ -195,10 +203,10 @@ def merge_fields(
 
             If a single operator is passed, it is used to sequentially combine
             one field after the other, in the same order as the corresponding
-            specifications (``multi_var_specs``).
+            specifications (``fld_specs``).
 
             If a list of operators has been passed, then it's length must be
-            one smaller than that of ``multi_var_specs``, such that each
+            one smaller than that of ``fld_specs``, such that each
             operator is used between two subsequent fields (again in the same
             order as the corresponding specifications).
 

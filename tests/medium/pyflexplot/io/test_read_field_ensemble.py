@@ -11,9 +11,9 @@ import numpy as np
 
 # First-party
 from pyflexplot.data import threshold_agreement
-from pyflexplot.fld_specs import FldSpecs
 from pyflexplot.io import read_files
 from pyflexplot.setup import Setup
+from pyflexplot.specs import FldSpecs
 from pyflexplot.words import WORDS
 from srutils.dict import decompress_multival_dict
 

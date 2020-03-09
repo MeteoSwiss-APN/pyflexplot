@@ -77,7 +77,7 @@ class VarSpecs:
         }
 
 
-class MultiVarSpecs:
+class FldSpecs:
     """Hold multiple ``VarSpecs`` objects."""
 
     def __init__(self, setup, var_specs_lst):
@@ -86,16 +86,17 @@ class MultiVarSpecs:
 
     @classmethod
     def create(cls, setup_or_setups):
-        """Create instances of ``MultiVarSpecs`` from ``Setup`` object(s)."""
+        """Create instances of ``FldSpecs`` from ``Setup`` object(s)."""
         if not isinstance(setup_or_setups, Setup):
             return [obj for setup in setup_or_setups for obj in cls.create(setup)]
         else:
             setup = setup_or_setups
             var_specs_lst_lst = VarSpecs.create_many([setup], pre_expand_time=True)
-            multi_var_specs_lst = []
+            fld_specs_lst = []
             for var_specs_lst in var_specs_lst_lst:
-                multi_var_specs_lst.append(cls(setup, var_specs_lst))
-            return multi_var_specs_lst
+                obj = cls(setup, var_specs_lst)
+                fld_specs_lst.append(obj)
+            return fld_specs_lst
 
     def __repr__(self):
         s_setup = "\n  ".join(repr(self.setup).split("\n"))

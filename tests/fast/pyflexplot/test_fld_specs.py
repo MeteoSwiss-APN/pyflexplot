@@ -4,8 +4,8 @@
 Tests for module ``pyflexplot.fld_specs``.
 """
 # First-party
-from pyflexplot.fld_specs import FldSpecs
 from pyflexplot.setup import Setup
+from pyflexplot.specs import FldSpecs
 from srutils.testing import check_is_list_like
 
 
@@ -26,7 +26,7 @@ class Test_Create_Concentration:
         fld_specs_lst = FldSpecs.create(setup)
         check_is_list_like(fld_specs_lst, len_=self.n_vs, t_children=FldSpecs)
         fld_specs = next(iter(fld_specs_lst))
-        assert len(fld_specs.multi_var_specs) == 1
+        assert len(fld_specs) == 1
 
     def test_mult_var_specs_many_flds_one_var_each(self):
         """Multi-value var specs, for multiple fields, made of one var each."""
@@ -41,7 +41,7 @@ class Test_Create_Concentration:
         fld_specs_lst = FldSpecs.create(setups)
         check_is_list_like(fld_specs_lst, len_=4, t_children=FldSpecs)
         for fld_specs in fld_specs_lst:
-            assert len(fld_specs.multi_var_specs) == 1
+            assert len(fld_specs) == 1
 
     def test_mult_var_specs_one_fld_many_vars(self):
         """Multi-value var specs, for one field, made of multiple vars."""
@@ -49,7 +49,7 @@ class Test_Create_Concentration:
         fld_specs_lst = FldSpecs.create(setup)
         check_is_list_like(fld_specs_lst, len_=1, t_children=FldSpecs)
         fld_specs = next(iter(fld_specs_lst))
-        assert len(fld_specs.multi_var_specs) == 4
+        assert len(fld_specs) == 4
 
 
 class Test_Create_Deposition:
@@ -69,7 +69,7 @@ class Test_Create_Deposition:
         fld_specs_lst = FldSpecs.create(setup)
         check_is_list_like(fld_specs_lst, len_=1, t_children=FldSpecs)
         fld_specs = next(iter(fld_specs_lst))
-        assert len(fld_specs.multi_var_specs) == self.n_vs
+        assert len(fld_specs) == self.n_vs
 
     def test_mult_var_specs_many_flds_one_var_each(self):
         """Multi-value var specs, for multiple fields, made of one var each."""
@@ -83,7 +83,7 @@ class Test_Create_Deposition:
         fld_specs_lst = FldSpecs.create(setups)
         check_is_list_like(fld_specs_lst, len_=n, t_children=FldSpecs)
         for fld_specs in fld_specs_lst:
-            assert len(fld_specs.multi_var_specs) == self.n_vs
+            assert len(fld_specs) == self.n_vs
 
     def test_mult_var_specs_one_fld_many_vars(self):
         """Multi-value var specs, for one field, made of multiple vars."""
@@ -92,4 +92,4 @@ class Test_Create_Deposition:
         fld_specs_lst = FldSpecs.create(setup)
         assert len(fld_specs_lst) == 1
         fld_specs = next(iter(fld_specs_lst))
-        assert len(fld_specs.multi_var_specs) == n_vs
+        assert len(fld_specs) == n_vs
