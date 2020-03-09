@@ -46,13 +46,13 @@ def summarize_field(obj):
 
 
 @summarizable(
-    attrs=["field_specs", "time_stats"],
+    attrs=["fld_specs", "time_stats"],
     post_summarize=lambda self, summary: {**summary, **summarize_field(self)},
 )
 class Field:
     """FLEXPART field on rotated-pole grid."""
 
-    def __init__(self, fld, rlat, rlon, field_specs, time_stats):
+    def __init__(self, fld, rlat, rlon, fld_specs, time_stats):
         """Create an instance of ``Field``.
 
         Args:
@@ -63,7 +63,7 @@ class Field:
 
             rlon (ndarray[float]): Rotated longitude array (1D).
 
-            field_specs (FieldSpecs): Input field specifications.
+            fld_specs (FldSpecs): Input field specifications.
 
             time_stats (dict): Some statistics across all time steps.
 
@@ -72,7 +72,7 @@ class Field:
         self.fld = fld
         self.rlat = rlat
         self.rlon = rlon
-        self.field_specs = field_specs
+        self.fld_specs = fld_specs
         self.time_stats = time_stats
         self.scale_fact = 1.0
 

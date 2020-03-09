@@ -11,7 +11,7 @@ import numpy as np
 
 # First-party
 from pyflexplot.data import threshold_agreement
-from pyflexplot.field_specs import FieldSpecs
+from pyflexplot.fld_specs import FldSpecs
 from pyflexplot.io import read_files
 from pyflexplot.setup import Setup
 from pyflexplot.words import WORDS
@@ -84,7 +84,7 @@ class TestReadFieldEnsemble_Single:
                 "plot_type": f"ens_{ens_var}",
             }
         )
-        fld_specs_lst = FieldSpecs.create(setup)
+        fld_specs_lst = FldSpecs.create(setup)
         assert len(fld_specs_lst) == 1
 
         # Read input fields
@@ -188,7 +188,7 @@ class TestReadFieldEnsemble_Multiple:
                 "plot_type": f"ens_{ens_var}",
             }
             setups.append(Setup(**setup_params_i))
-        fld_specs_lst = FieldSpecs.create(setups)
+        fld_specs_lst = FldSpecs.create(setups)
 
         run_core = functools.partial(
             self._run_core, datafile_fmt, var_names_ref, fct_reduce_mem, scale_fld_ref,

@@ -16,7 +16,7 @@ import numpy as np
 import pytest
 
 # First-party
-from pyflexplot.field_specs import FieldSpecs
+from pyflexplot.fld_specs import FldSpecs
 from pyflexplot.io import read_files
 from pyflexplot.setup import Setup
 from pyflexplot.words import WORDS
@@ -142,7 +142,7 @@ def test_single(datadir, conf):  # noqa:F811
     datafile = f"{datadir}/{conf.datafilename}"
 
     # Initialize field specifications
-    fld_specs_lst = FieldSpecs.create(conf.setup)
+    fld_specs_lst = FldSpecs.create(conf.setup)
     assert len(fld_specs_lst) == 1
 
     # Read input field
@@ -283,7 +283,7 @@ def test_multiple(datadir, conf):  # noqa:F811
         setups.extend(setup.derive(conf.derived_setup_params))
 
     # Create field specifications list
-    fld_specs_lst = FieldSpecs.create(setups)
+    fld_specs_lst = FldSpecs.create(setups)
 
     # Process field specifications one after another
     for fld_specs in fld_specs_lst:

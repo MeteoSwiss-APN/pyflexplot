@@ -29,7 +29,7 @@ from .data import Field
 from .data import cloud_arrival_time
 from .data import merge_fields
 from .data import threshold_agreement
-from .field_specs import FieldSpecs
+from .fld_specs import FldSpecs
 from .setup import Setup
 
 
@@ -75,7 +75,7 @@ class FileReader:
         self.fixer: FlexPartDataFixer = FlexPartDataFixer()
 
     def run(
-        self, fld_specs_lst: Sequence[FieldSpecs]
+        self, fld_specs_lst: Sequence[FldSpecs]
     ) -> Tuple[List[Field], List[AttrMult]]:
         """Read one or more fields from a file from disc.
 
@@ -85,7 +85,7 @@ class FileReader:
             lang: Language ('en': English, 'de': German). Defaults to 'en'.
 
         """
-        timeless_fld_specs_lst: List[FieldSpecs]
+        timeless_fld_specs_lst: List[FldSpecs]
         time_idcs_lst: List[List[int]]
         timeless_fld_specs_lst, time_idcs_lst = self._extract_time_idcs_from_fld_specs(
             fld_specs_lst,
@@ -138,7 +138,7 @@ class FileReader:
         return n_reqtime
 
     def _create_fields(
-        self, timeless_fld_specs: FieldSpecs, time_idcs: Sequence[int],
+        self, timeless_fld_specs: FldSpecs, time_idcs: Sequence[int],
     ) -> Tuple[List[Field], List[AttrMult]]:
 
         # Read fields of all members at all time steps
@@ -159,7 +159,7 @@ class FileReader:
         }
 
         # Create time-step-specific field specifications
-        fld_specs_lst: List[FieldSpecs] = self._expand_timeless_fld_specs_in_time(
+        fld_specs_lst: List[FldSpecs] = self._expand_timeless_fld_specs_in_time(
             timeless_fld_specs, time_idcs,
         )
 
@@ -173,7 +173,7 @@ class FileReader:
 
         return fields, attrs_lst
 
-    def _read_fld_time_mem(self, timeless_fld_specs: FieldSpecs) -> np.ndarray:
+    def _read_fld_time_mem(self, timeless_fld_specs: FldSpecs) -> np.ndarray:
         """Read field over all time steps for each member."""
         fld_time_mem: Optional[np.ndarray] = None
         for i_mem, in_file_path in enumerate(self.in_file_path_lst or []):
@@ -203,7 +203,7 @@ class FileReader:
             self.fi = None
         return fld_time_mem
 
-    def _read_field(self, fld_specs: FieldSpecs) -> np.ndarray:
+    def _read_field(self, fld_specs: FldSpecs) -> np.ndarray:
         fld_lst = [
             self._read_nc_var(var_specs._setup)
             for var_specs in fld_specs.multi_var_specs
@@ -235,11 +235,11 @@ class FileReader:
         return fld_time
 
     def _expand_timeless_fld_specs_in_time(
-        self, timeless_fld_specs: FieldSpecs, time_idcs: Sequence[int]
-    ) -> List[FieldSpecs]:
-        fld_specs_lst: List[FieldSpecs] = []
+        self, timeless_fld_specs: FldSpecs, time_idcs: Sequence[int]
+    ) -> List[FldSpecs]:
+        fld_specs_lst: List[FldSpecs] = []
         for time_idx in time_idcs:
-            fld_specs_i: FieldSpecs = deepcopy(timeless_fld_specs)
+            fld_specs_i: FldSpecs = deepcopy(timeless_fld_specs)
             # SR_TMP <
             for var_specs in fld_specs_i.multi_var_specs:
                 var_specs._setup = var_specs._setup.derive({"time_idcs": [time_idx]})
@@ -247,7 +247,7 @@ class FileReader:
             fld_specs_lst.append(fld_specs_i)
         return fld_specs_lst
 
-    def _collect_attrs(self, fld_specs_lst: Sequence[FieldSpecs]) -> List[AttrMult]:
+    def _collect_attrs(self, fld_specs_lst: Sequence[FldSpecs]) -> List[AttrMult]:
         """Collect time-step-specific data attributes."""
 
         # Collect attributes at requested time steps for all members
@@ -264,7 +264,7 @@ class FileReader:
         return attrs_lst
 
     def _collect_attrs_by_reqtime_mem(
-        self, fld_specs_lst: Sequence[FieldSpecs],
+        self, fld_specs_lst: Sequence[FldSpecs],
     ) -> np.ndarray:
         """Collect attributes at requested time steps for all members."""
         attrs_by_reqtime_mem: np.ndarray = np.full(
@@ -285,8 +285,8 @@ class FileReader:
         return attrs_by_reqtime_mem
 
     def _extract_time_idcs_from_fld_specs(
-        self, fld_specs_lst: Sequence[FieldSpecs]
-    ) -> Tuple[List[FieldSpecs], List[List[int]]]:
+        self, fld_specs_lst: Sequence[FldSpecs]
+    ) -> Tuple[List[FldSpecs], List[List[int]]]:
         """Group field specs that differ only in their time dimension.
 
         Steps:
@@ -298,7 +298,7 @@ class FileReader:
 
         """
 
-        timeless_fld_specs_lst: List[FieldSpecs] = []
+        timeless_fld_specs_lst: List[FldSpecs] = []
         time_idcs_lst: List[List[int]] = []
         for fld_specs in fld_specs_lst:
 
@@ -308,7 +308,7 @@ class FileReader:
             time_idx: int = next(iter(time_idcs))
 
             # Reset time index
-            timeless_fld_specs: FieldSpecs = deepcopy(fld_specs)
+            timeless_fld_specs: FldSpecs = deepcopy(fld_specs)
             for var_specs in timeless_fld_specs.multi_var_specs:
                 var_specs._setup = var_specs._setup.derive({"time_idcs": []})
 
@@ -347,7 +347,7 @@ class FileReader:
 
     def _create_field_objs(
         self,
-        fld_specs_lst: Sequence[FieldSpecs],
+        fld_specs_lst: Sequence[FldSpecs],
         fld_time: np.ndarray,
         time_stats: Mapping[str, np.ndarray],
     ) -> List[Field]:

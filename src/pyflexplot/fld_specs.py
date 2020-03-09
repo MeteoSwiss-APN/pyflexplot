@@ -9,13 +9,13 @@ from .var_specs import MultiVarSpecs
 
 
 @summarizable
-class FieldSpecs:
+class FldSpecs:
     """FLEXPART field specifications."""
 
     def __init__(
         self, setup: Setup, multi_var_specs: MultiVarSpecs,
     ):
-        """Create an instance of ``FieldSpecs``."""
+        """Create an instance of ``FldSpecs``."""
         self.setup = setup
         self.multi_var_specs = multi_var_specs
 

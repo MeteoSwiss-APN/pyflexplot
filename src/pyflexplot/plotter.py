@@ -70,15 +70,15 @@ class Plotter:
 
         # Create plots one-by-one
         for i_data, (field, attrs) in enumerate(zip(fields, attrs_lst)):
-            out_file_path = self.format_out_file_path(field.field_specs)
+            out_file_path = self.format_out_file_path(field.fld_specs)
             _w = len(str(len(fields)))
             print(f" {i_data+1:{_w}}/{len(fields)}  {out_file_path}")
             Plot(field, setup, attrs, map_conf=map_conf).save(out_file_path)
             yield out_file_path
 
-    def format_out_file_path(self, field_specs):
+    def format_out_file_path(self, fld_specs):
 
-        setup = field_specs.setup
+        setup = fld_specs.setup
 
         variable = setup.variable
         if setup.variable == "deposition":

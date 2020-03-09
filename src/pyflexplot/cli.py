@@ -17,7 +17,7 @@ from srutils.click import CharSepList
 from . import __version__
 from .examples import choices as example_choices
 from .examples import print_example
-from .field_specs import FieldSpecs
+from .fld_specs import FldSpecs
 from .io import read_files
 from .plotter import plot
 from .setup import SetupFile
@@ -141,7 +141,7 @@ def create_plots(setups, cli_args, words):
 def read_fields(setup, words):
 
     # Determine fields specifications (one for each eventual plot)
-    fld_specs_lst = FieldSpecs.create(setup)
+    fld_specs_lst = FldSpecs.create(setup)
 
     # Read fields
     fields = []

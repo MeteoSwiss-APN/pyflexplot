@@ -232,7 +232,7 @@ def create_field():
         fld=np.array([[i] * 10 for i in range(10)], np.float32),
         rlat=np.arange(-5.0, 4.1, 1.0),
         rlon=np.arange(-6.0, 3.1, 1.0),
-        field_specs=None,
+        fld_specs=None,
         time_stats={"max": 15},
     )
     return dummy_field
@@ -749,7 +749,7 @@ class Solution:
         e = self.element
         jdat = {
             "type": "Field",
-            "field_specs": None,  # SR_TMP
+            "fld_specs": None,  # SR_TMP
             "time_stats": {"max": e(15)},
             "fld": {
                 "dtype": "float32",

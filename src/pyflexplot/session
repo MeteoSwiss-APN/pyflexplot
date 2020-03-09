@@ -3,7 +3,7 @@ attr.py
 cli.py
 data.py
 examples.py
-field_specs.py
+fld_specs.py
 io.py
 plot.py
 plotter.py
