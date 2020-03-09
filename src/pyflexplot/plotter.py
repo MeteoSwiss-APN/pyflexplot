@@ -78,7 +78,7 @@ class Plotter:
 
     def format_out_file_path(self, field_specs):
 
-        setup = field_specs.multi_var_specs.setup
+        setup = field_specs.setup
 
         variable = setup.variable
         if setup.variable == "deposition":

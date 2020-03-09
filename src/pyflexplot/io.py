@@ -19,6 +19,7 @@ import numpy as np
 
 # First-party
 from srutils.various import check_array_indices
+from words import Words
 
 # Local
 from .attr import AttrMult
@@ -26,9 +27,14 @@ from .attr import collect_attrs
 from .attr import nc_var_name
 from .data import Field
 from .data import cloud_arrival_time
+from .data import merge_fields
 from .data import threshold_agreement
 from .field_specs import FieldSpecs
 from .setup import Setup
+
+
+def read_files(in_file_path, setup, words, fld_specs_lst):
+    return FileReader(in_file_path, setup, words).run(fld_specs_lst)
 
 
 class FileReader:
@@ -43,7 +49,7 @@ class FileReader:
     choices_ens_var = ["mean", "median", "min", "max"]
 
     def __init__(
-        self, in_file_path: str,
+        self, in_file_path: str, setup: Setup, words: Words,
     ):
         """Create an instance of ``FileReader``.
 
@@ -51,12 +57,15 @@ class FileReader:
             in_file_path: File path. In case of ensemble data, it must
                 contain the format key '{ens_member[:0?d]}'.
 
-            cmd_open: Context manager to open the input file.
+            setup: Setup.
+
+            words: Words.
 
         """
         self.in_file_path_fmt = in_file_path
+        self.setup = setup
+        self.words = words
 
-        self.lang: Optional[str] = None
         self.n_members: Optional[int] = None
         self.in_file_path_lst: Optional[Sequence[str]] = None
         self.fi: Optional[nc4.File] = None
@@ -66,7 +75,7 @@ class FileReader:
         self.fixer: FlexPartDataFixer = FlexPartDataFixer()
 
     def run(
-        self, fld_specs_lst: Sequence[FieldSpecs], *, lang: Optional[str] = None,
+        self, fld_specs_lst: Sequence[FieldSpecs]
     ) -> Tuple[List[Field], List[AttrMult]]:
         """Read one or more fields from a file from disc.
 
@@ -76,8 +85,6 @@ class FileReader:
             lang: Language ('en': English, 'de': German). Defaults to 'en'.
 
         """
-        self.lang = lang or "en"
-
         timeless_fld_specs_lst: List[FieldSpecs]
         time_idcs_lst: List[List[int]]
         timeless_fld_specs_lst, time_idcs_lst = self._extract_time_idcs_from_fld_specs(
@@ -91,9 +98,7 @@ class FileReader:
         fields: List[Field] = []
         attrs_lst: List[AttrMult] = []
         for timeless_fld_specs, time_idcs in zip(timeless_fld_specs_lst, time_idcs_lst):
-            ens_member_ids: Sequence[int] = (
-                timeless_fld_specs.multi_var_specs.setup.ens_member_ids
-            )
+            ens_member_ids: Sequence[int] = (timeless_fld_specs.setup.ens_member_ids)
             self.n_members = 1 if not ens_member_ids else len(ens_member_ids)
             self.in_file_path_lst = self._prepare_in_file_path_lst(ens_member_ids)
 
@@ -141,7 +146,7 @@ class FileReader:
 
         # Reduce fields array along member dimension
         # In other words: Compute single field from ensemble
-        setup = timeless_fld_specs.multi_var_specs.setup
+        setup = timeless_fld_specs.setup
         fld_time: np.ndarray = self._reduce_ensemble(fld_time_mem, setup)
 
         # Collect time stats
@@ -203,7 +208,7 @@ class FileReader:
             self._read_nc_var(var_specs._setup)
             for var_specs in fld_specs.multi_var_specs
         ]
-        return fld_specs.merge_fields(fld_lst)
+        return merge_fields(fld_lst)
 
     def _reduce_ensemble(self, fld_time_mem: np.ndarray, setup: Setup) -> np.ndarray:
         """Reduce the ensemble to a single field (time, rlat, rlon)."""
@@ -270,7 +275,9 @@ class FileReader:
                 for idx_time, fld_specs in enumerate(fld_specs_lst):
                     attrs_lst = []
                     for var_specs in fld_specs.multi_var_specs:
-                        attrs = collect_attrs(self.fi, var_specs, lang=self.lang)
+                        attrs = collect_attrs(
+                            self.fi, self.setup, self.words, var_specs,
+                        )
                         attrs_lst.append(attrs)
                     attrs = attrs_lst[0].merge_with(attrs_lst[1:])
                     attrs_by_reqtime_mem[idx_time, idx_mem] = attrs

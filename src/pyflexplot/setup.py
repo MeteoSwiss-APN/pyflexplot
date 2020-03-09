@@ -22,6 +22,7 @@ from pydantic import BaseModel
 from pydantic import validator
 
 # First-party
+from srutils.dict import compress_multival_dicts
 from srutils.dict import decompress_multival_dict
 from srutils.dict import decompress_nested_dict
 from srutils.dict import nested_dict_resolve_wildcards
@@ -236,6 +237,19 @@ class Setup(BaseModel):
             params["level_idx"] = None  # type: ignore
         # SR_TMP >
         return type(self)(**{**self.dict(), **params})
+
+    @classmethod
+    def compress(cls, setups: Collection["Setup"]) -> "Setup":
+        if not setups:
+            raise ValueError("missing setups")
+        dcts = [setup.dict() for setup in setups]
+        dct = compress_multival_dicts(dcts, cls_seq=tuple)
+        # SR_TMP < TODO find cleaner solution (move logic to Setup or the like)
+        for param in ["infiles", "time_idcs"]:
+            if not isinstance(dct[param], tuple):
+                dct[param] = (dct[param],)
+        # SR_TMP >
+        return cls(**dct)
 
     def decompress(
         self,

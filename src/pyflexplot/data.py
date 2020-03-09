@@ -2,6 +2,11 @@
 """
 Data structures.
 """
+# Standard library
+from typing import Callable
+from typing import Sequence
+from typing import Union
+
 # Third-party
 import numpy as np
 
@@ -175,3 +180,41 @@ def cloud_arrival_time(
         if time_idx < time_idx_max:
             result[time_idx][~m_cloud] = result[time_idx + 1][~m_cloud] + 1
     return result
+
+
+def merge_fields(
+    flds: Sequence[np.ndarray], op: Union[Callable, Sequence[Callable]] = np.nansum,
+) -> np.ndarray:
+    """Merge fields by applying a single operator or an operator chain.
+
+    Args:
+        flds: Fields to be merged.
+
+        op (optional): Opterator(s) used to combine input fields. Must accept
+            argument ``axis=0`` to only reduce along over the fields.
+
+            If a single operator is passed, it is used to sequentially combine
+            one field after the other, in the same order as the corresponding
+            specifications (``multi_var_specs``).
+
+            If a list of operators has been passed, then it's length must be
+            one smaller than that of ``multi_var_specs``, such that each
+            operator is used between two subsequent fields (again in the same
+            order as the corresponding specifications).
+
+    """
+    if callable(op):
+        return op(flds, axis=0)
+    elif isinstance(op, Sequence):
+        op_lst = op
+        if not len(flds) == len(op_lst) + 1:
+            raise ValueError(
+                "wrong number of fields", len(flds), len(op_lst) + 1,
+            )
+        fld = flds[0]
+        for i, fld_i in enumerate(flds[1:]):
+            _op = op_lst[i]
+            fld = _op([fld, fld_i], axis=0)
+        return fld
+    else:
+        raise Exception("no operator(s) defined")

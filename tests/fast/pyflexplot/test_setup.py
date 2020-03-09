@@ -503,3 +503,30 @@ class Test_SetupCollection:
         partial_dicts = self.create_partial_dicts()
         setups = SetupCollection(partial_dicts)
         assert len(setups) == len(partial_dicts)
+
+
+class Test_Compress:
+    dcts = [
+        {**DEFAULT_KWARGS, **dct}
+        for dct in [
+            {"infiles": ("foo.nc",), "variable": "concentration", "level_idx": 0},
+            {"infiles": ("foo.nc",), "variable": "concentration", "level_idx": 1},
+            {"infiles": ("foo.nc",), "variable": "concentration", "level_idx": (1, 2)},
+        ]
+    ]
+    setups = [Setup(**dct) for dct in dcts]
+
+    def test_one(self):
+        res = Setup.compress(self.setups[:1]).dict()
+        sol = self.setups[0]
+        assert res == sol
+
+    def test_two(self):
+        res = Setup.compress(self.setups[:2]).dict()
+        sol = Setup(**{**self.dcts[0], "level_idx": (0, 1)})
+        assert res == sol
+
+    def test_three(self):
+        res = Setup.compress(self.setups[:3]).dict()
+        sol = Setup(**{**self.dcts[0], "level_idx": (0, 1, 2)})
+        assert res == sol

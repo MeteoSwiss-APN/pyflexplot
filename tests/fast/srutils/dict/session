@@ -1,3 +1,4 @@
+multival/test_compress.py
 multival/test_decompress.py
 nested/test_decompress.py
 nested/test_flatten.py

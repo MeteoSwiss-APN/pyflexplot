@@ -8,7 +8,6 @@ from srutils.dict import format_dictlike
 # Local
 from .setup import Setup
 from .utils import summarizable
-from .words import WORDS
 
 
 def int_or_list(arg):
@@ -27,8 +26,6 @@ class VarSpecs:
     def __init__(self, setup):
         """Create an instance of ``VarSpecs``."""
         self._setup = setup
-        self._words = WORDS
-        self._words.set_default_lang(self._setup.lang)
 
     # SR_TMP <<<
     @property
@@ -85,21 +82,20 @@ class MultiVarSpecs:
 
     def __init__(self, setup, var_specs_lst):
         self.setup = setup
-        self.var_specs_lst = var_specs_lst
+        self._var_specs_lst = var_specs_lst
 
     @classmethod
     def create(cls, setup_or_setups):
         """Create instances of ``MultiVarSpecs`` from ``Setup`` object(s)."""
-        if isinstance(setup_or_setups, Setup):
+        if not isinstance(setup_or_setups, Setup):
+            return [obj for setup in setup_or_setups for obj in cls.create(setup)]
+        else:
             setup = setup_or_setups
-            multi_var_specs_lst = []
             var_specs_lst_lst = VarSpecs.create_many([setup], pre_expand_time=True)
+            multi_var_specs_lst = []
             for var_specs_lst in var_specs_lst_lst:
                 multi_var_specs_lst.append(cls(setup, var_specs_lst))
             return multi_var_specs_lst
-        else:
-            setups = setup_or_setups
-        return [obj for setup in setups for obj in cls.create(setup)]
 
     def __repr__(self):
         s_setup = "\n  ".join(repr(self.setup).split("\n"))
@@ -114,15 +110,16 @@ class MultiVarSpecs:
     def __eq__(self, other):
         if isinstance(other, type(self)) or isinstance(self, type(other)):
             return (
-                self.setup == other.setup and self.var_specs_lst == other.var_specs_lst
+                self.setup == other.setup
+                and self._var_specs_lst == other._var_specs_lst
             )
         return False
 
     def __iter__(self):
-        return iter(self.var_specs_lst)
+        return iter(self._var_specs_lst)
 
     def __len__(self):
-        return len(self.var_specs_lst)
+        return len(self._var_specs_lst)
 
     def collect(self, param):
         """Collect all values of a given parameter."""

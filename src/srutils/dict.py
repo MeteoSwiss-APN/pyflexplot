@@ -6,6 +6,7 @@ Dictionary utilities.
 import itertools
 from collections import namedtuple
 from collections.abc import Mapping
+from copy import copy
 from copy import deepcopy
 from dataclasses import dataclass
 from dataclasses import field
@@ -17,6 +18,9 @@ from typing import Dict
 from typing import List
 from typing import Mapping
 from typing import Optional
+from typing import Sequence
+from typing import Tuple
+from typing import Type
 from typing import Union
 
 # Local
@@ -73,6 +77,46 @@ def merge_dicts(*dicts, unique_keys=True):
                     raise KeyConflictError(key)
                 merged[key] = val
     return merged
+
+
+def compress_multival_dicts(
+    dcts: Sequence[Mapping[str, Any]],
+    cls_seq: Type[Union[List[Any], Tuple[Any, ...]]] = list,
+) -> Dict[str, Any]:
+    """Compress multiple dicts with shared keys into one multi-value dict.
+
+    Args:
+        dcts: Dicts.
+
+        cls_seq (optional): Type of sequence for multi-values.
+
+    """
+    if not dcts:
+        raise ValueError("missing dicts")
+
+    # SR_TODO Consider adding option to allow differing keys
+    if not all(dct.keys() == dcts[0].keys() for dct in dcts):
+        raise ValueError("keys differ between dicts", [dct.keys() for dct in dcts])
+
+    dct: Mapping[str, Any] = {
+        key: [i for i in val] if isinstance(val, cls_seq) else [copy(val)]
+        for key, val in dcts[0].items()
+    }
+    for dct_i in dcts[1:]:
+        for key, val in dct.items():
+            val_i = dct_i[key]
+            if isinstance(val_i, cls_seq):
+                val_i = [i for i in val_i]
+            else:
+                val_i = [val_i]
+            for val_ij in val_i:
+                if val_ij not in val:
+                    val.append(val_ij)
+    dct = {
+        key: next(iter(val)) if len(val) == 1 else cls_seq(val)
+        for key, val in dct.items()
+    }
+    return dct
 
 
 def decompress_multival_dict(

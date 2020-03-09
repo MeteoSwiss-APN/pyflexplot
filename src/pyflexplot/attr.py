@@ -16,6 +16,7 @@ from srutils.dict import format_dictlike
 from srutils.various import isiterable
 
 # Local
+from .setup import Setup
 from .utils import summarizable
 
 
@@ -293,12 +294,12 @@ class AttrDatetime(Attr):
 class AttrGroup:
     """Base class for attributes."""
 
-    def __init__(self, *args, lang=None, **kwargs):
+    def __init__(self, setup, **kwargs):
         if type(self) is AttrGroup:
             raise ValueError(
                 f"{type(self).__name__} should be subclassed, not instatiated"
             )
-        self.lang = lang or "en"
+        self._setup = setup
         self.reset()
 
     def reset(self):
@@ -354,14 +355,24 @@ class AttrGroup:
         if replace is None:
             replace = {}
 
-        # Language
-        langs = sorted(set([self.lang] + [o.lang for o in others]))
-        if len(langs) == 1:
-            lang = next(iter(langs))
-        else:
-            raise Exception(f"multiple languages: {langs}")
+        # Check setups
+        equal_setup_params = ["lang"]  # SR_TMP TODO add more keys
+        self_setup_dct = {k: self._setup.dict()[k] for k in equal_setup_params}
+        other_setups = [other._setup for other in others]
+        other_setup_dcts = [
+            {k: setup.dict()[k] for k in equal_setup_params} for setup in other_setups
+        ]
+        differing = [dct for dct in other_setup_dcts if dct != self_setup_dct]
+        if differing:
+            raise ValueError(
+                "setups of others differ",
+                equal_setup_params,
+                self_setup_dct,
+                other_setup_dcts,
+            )
+        setup = Setup.compress([self._setup] + other_setups)
 
-        kwargs = {"lang": lang}
+        kwargs = {}
         for key, attr0 in iter(self):
             attrs1 = [getattr(o, key) for o in others]
             attr = attr0.merge_with(attrs1, replace=replace.get(key))
@@ -370,7 +381,7 @@ class AttrGroup:
                 kwargs[f"{key}_unit"] = attr.unit
 
         try:
-            return type(self)(**kwargs)
+            return type(self)(setup, **kwargs)
         except Exception as e:
             raise Exception(
                 f"error creating instance of {type(self).__name__} "
@@ -383,7 +394,7 @@ class AttrGroupGrid(AttrGroup):
 
     group_name = "grid"
 
-    def __init__(self, *, north_pole_lat, north_pole_lon, **kwargs):
+    def __init__(self, *args, north_pole_lat, north_pole_lon, **kwargs):
         """Initialize instance of ``AttrGroupGrid``.
 
         Kwargs:
@@ -392,7 +403,7 @@ class AttrGroupGrid(AttrGroup):
             north_pole_lon (float): Longitude of rotated north pole.
 
         """
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
         self.set("north_pole_lat", north_pole_lat, float)
         self.set("north_pole_lon", north_pole_lon, float)
 
@@ -404,7 +415,7 @@ class AttrGroupVariable(AttrGroup):
 
     def __init__(
         self,
-        *,
+        *args,
         long_name,
         short_name,
         unit,
@@ -431,7 +442,7 @@ class AttrGroupVariable(AttrGroup):
             level_top_unit (str): Bottom level unit.
 
         """
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
         self.set("long_name", long_name, str)
         self.set("short_name", short_name, str)
         self.set("unit", unit, str)
@@ -503,7 +514,7 @@ class AttrGroupRelease(AttrGroup):
 
     def __init__(
         self,
-        *,
+        *args,
         start,
         end,
         site_lat,
@@ -543,7 +554,7 @@ class AttrGroupRelease(AttrGroup):
             mass_unit (str): Release mass unit.
 
         """
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
         self.set("start", start, datetime.datetime, start=start)
         self.set("end", end, datetime.datetime, start=start)
         self.set("site_lat", site_lat, float)
@@ -561,7 +572,7 @@ class AttrGroupSpecies(AttrGroup):
 
     def __init__(
         self,
-        *,
+        *args,
         name,
         half_life,
         half_life_unit,
@@ -599,7 +610,7 @@ class AttrGroupSpecies(AttrGroup):
             washout_exponent (float or list[float]): Washout exponent value(s).
 
         """
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
         self.set("name", name, str)
         self.set("half_life", half_life, float, unit=half_life_unit)
         self.set("deposit_vel", deposit_vel, float, unit=deposit_vel_unit)
@@ -614,7 +625,7 @@ class AttrGroupSimulation(AttrGroup):
     group_name = "simulation"
 
     def __init__(
-        self, *, model_name, start, end, now, integr_start, integr_type, **kwargs
+        self, *args, model_name, start, end, now, integr_start, integr_type, **kwargs
     ):
         """Create an instance of ``AttrGroupSimulation``.
 
@@ -632,7 +643,7 @@ class AttrGroupSimulation(AttrGroup):
             integr_type (str): Type of integration (or reduction).
 
         """
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
         self.set("model_name", model_name, str)
         self.set("start", start, datetime.datetime, start=start)
         self.set("end", end, datetime.datetime, start=start)
@@ -648,8 +659,11 @@ class AttrGroupSimulation(AttrGroup):
 class AttrGroupCollection:
     """Collection of FLEXPART attributes."""
 
-    def __init__(self, *, grid, variable, release, species, simulation, lang=None):
+    def __init__(self, setup, *, grid, variable, release, species, simulation):
         """Initialize an instance of ``AttrGroupCollection``.
+
+        Args:
+            setup (Setup): Setup.
 
         Kwargs:
             grid (dict): Kwargs passed to ``AttrGroupGrid``.
@@ -663,7 +677,7 @@ class AttrGroupCollection:
             simulation (dict): Kwargs passed to ``AttrGroupSimulation``.
 
         """
-        self.lang = lang or "en"
+        self._setup = setup
         self.reset()
         self.add("grid", grid)
         self.add("variable", variable)
@@ -694,7 +708,7 @@ class AttrGroupCollection:
                 "simulation": AttrGroupSimulation,
             }
             try:
-                cls = cls_by_name[name]
+                cls_group = cls_by_name[name]
             except KeyError:
                 raise ValueError(f"missing AttrGroup class for name '{name}'")
             # SR_TMP <
@@ -702,7 +716,7 @@ class AttrGroupCollection:
                 if isinstance(attr, Attr) and attr.unit is not None:
                     attrs[f"{key}_unit"] = attr.unit
             # SR_TMP >
-            attrs = cls(lang=self.lang, **attrs)
+            attrs = cls_group(self._setup, **attrs)
 
         self._attrs[name] = attrs
 
@@ -741,7 +755,7 @@ class AttrGroupCollection:
             )
 
         """
-        kwargs = {"lang": self.lang}
+        kwargs = {"setup": self._setup}
         for name in sorted(self._attrs.keys()):
             kwargs[name] = dict(
                 self._attrs[name].merge_with(
@@ -758,25 +772,29 @@ class AttrGroupCollection:
         return {name: dict(attrs) for name, attrs in self}
 
 
-def collect_attrs(fi, var_specs, **kwargs):
-    return AttrsCollector(fi, var_specs).run(**kwargs)
+def collect_attrs(fi, setup, words, var_specs, **kwargs):
+    return AttrsCollector(fi, setup, words, var_specs).run()
 
 
 class AttrsCollector:
     """Collect attributes for a field from an open NetCDF file."""
 
-    def __init__(self, fi, var_specs):
+    def __init__(self, fi, setup, words, var_specs):
         """Create an instance of ``AttrsCollector``.
 
         Args:
             fi (netCDF4.Dataset): An open FLEXPART NetCDF file.
+
+            setup (Setup): Setup.
+
+            words (Words): Words.
 
             var_specs (VarSpecs): Input field specifications.
 
         """
         self.fi = fi
         self._setup = var_specs._setup
-        self._words = var_specs._words
+        self._words = words
         self.var_specs = var_specs
 
         # Collect all global attributes
@@ -794,10 +812,8 @@ class AttrsCollector:
         # Select attributes of field variable
         self.ncattrs_field = self.ncattrs_vars[nc_var_name(self._setup)]
 
-    def run(self, lang=None):
+    def run(self):
         """Collect attributes."""
-
-        self.lang = lang or "en"
 
         attrs = {}
         attrs["simulation"] = self.collect_simulation_attrs(attrs)
@@ -806,7 +822,7 @@ class AttrsCollector:
         attrs["species"] = self.collect_species_attrs(attrs)
         attrs["variable"] = self.collect_variable_attrs(attrs)
 
-        return AttrGroupCollection(lang=lang, **attrs)
+        return AttrGroupCollection(self._setup, **attrs)
 
     def collect_simulation_attrs(self, attrs):
         """Collect simulation attributes."""
@@ -923,7 +939,7 @@ class AttrsCollector:
         site_name = {"Goesgen": r"G$\mathrm{\"o}$sgen"}.get(site_name)
 
         height = np.mean([release_point.zbot, release_point.ztop])
-        height_unit = self._words["m_agl", self.lang].s
+        height_unit = self._words["m_agl", self._setup.lang].s
 
         assert len(release_point.ms_parts) == 1
         mass = next(iter(release_point.ms_parts))
@@ -965,7 +981,7 @@ class AttrsCollector:
             level_bot = -1
             level_top = -1
         else:
-            level_unit = self._words["m_agl", self.lang].s
+            level_unit = self._words["m_agl", self._setup.lang].s
             _var = self.fi.variables["level"]
             level_bot = 0.0 if idx == 0 else float(_var[idx - 1])
             level_top = float(_var[idx])

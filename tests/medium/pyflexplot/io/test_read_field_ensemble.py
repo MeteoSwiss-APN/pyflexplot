@@ -12,8 +12,9 @@ import numpy as np
 # First-party
 from pyflexplot.data import threshold_agreement
 from pyflexplot.field_specs import FieldSpecs
-from pyflexplot.io import FileReader
+from pyflexplot.io import read_files
 from pyflexplot.setup import Setup
+from pyflexplot.words import WORDS
 from srutils.dict import decompress_multival_dict
 
 from io_utils import read_nc_var  # isort:skip
@@ -87,12 +88,12 @@ class TestReadFieldEnsemble_Single:
         assert len(fld_specs_lst) == 1
 
         # Read input fields
-        fields, attrs_lst = FileReader(datafile_fmt).run(fld_specs_lst)
+        fields, attrs_lst = read_files(datafile_fmt, setup, WORDS, fld_specs_lst)
         assert len(fields) == 1
         assert len(attrs_lst) == 1
         fld = fields[0].fld
 
-        setups = fld_specs_lst[0].multi_var_specs.setup.decompress()
+        setups = fld_specs_lst[0].setup.decompress()
         assert len(setups) == 1
         setup = next(iter(setups))
 
@@ -203,18 +204,17 @@ class TestReadFieldEnsemble_Multiple:
         self, datafile_fmt, var_names_ref, fct_reduce_mem, scale_fld_ref, fld_specs_lst,
     ):
 
-        # Read input fields
-        fields, attrs_lst = FileReader(datafile_fmt).run(fld_specs_lst)
-        fld_arr = np.array([field.fld for field in fields])
-
         # Collect merged variables specifications
-        setups_lst = []
-        for fld_specs in fld_specs_lst:
-            setups_lst.append(fld_specs.multi_var_specs.setup.decompress())
+        compressed_setups = [fld_specs.setup for fld_specs in fld_specs_lst]
+        global_setup = Setup.compress(compressed_setups)
+
+        # Read input fields
+        fields, attrs_lst = read_files(datafile_fmt, global_setup, WORDS, fld_specs_lst)
+        fld_arr = np.array([field.fld for field in fields])
 
         # Read reference fields
         fld_ref_lst = []
-        for setups in setups_lst:
+        for compressed_setup in compressed_setups:
             fld_ref_mem_time = [
                 [
                     read_nc_var(
@@ -225,7 +225,7 @@ class TestReadFieldEnsemble_Multiple:
                     * scale_fld_ref
                     for ens_member_id in self.ens_member_ids
                 ]
-                for setup in setups
+                for setup in compressed_setup.decompress()
             ]
             fld_ref_lst.append(
                 fct_reduce_mem(np.nansum(fld_ref_mem_time, axis=0), axis=0)
