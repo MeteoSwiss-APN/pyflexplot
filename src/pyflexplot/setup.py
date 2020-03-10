@@ -116,7 +116,11 @@ class Setup(BaseModel):
 
     nageclass: int = 0
     combine_species: bool = False
-    deposition_type: Tuple[str, ...] = ("none",)
+    # SR_TMP < TODO remove option to specify "tot" as ["dry", "wet"]
+    # deposition_type: str = "none"
+    deposition_type: Union[str, Tuple[str, str]] = "none"
+    # SR_TMP >
+    # SR_TMP >
     domain: str = "auto"
     # ens_member_id: Tuple[Optional[int], ...] = (None,)
     ens_member_id: Optional[Tuple[int, ...]] = None
@@ -144,7 +148,11 @@ class Setup(BaseModel):
         """Ensure that all parameter values constitute a sequence."""
         for param, value in values.items():
             # SR_TMP <
-            if param not in ["deposition_type", "species_id", "level"]:
+            if param in ["deposition_type"]:
+                continue
+            # SR_TMP >
+            # SR_TMP <
+            if param not in ["species_id", "level"]:
                 continue
             # SR_TMP >
             if not isinstance(value, Sequence) or isinstance(value, str):
@@ -158,15 +166,12 @@ class Setup(BaseModel):
         return value
 
     @validator("deposition_type", always=True)
-    def _init_deposition_type(cls, value: Tuple[str, ...]) -> str:
-        if len(value) == 1:
-            if next(iter(value)) in ["dry", "wet", "tot", "none"]:
-                # return (value,)
-                return next(iter(value))  # SR_TMP
-        elif len(value) == 2:
-            if set(value) == {"dry", "wet"}:
-                # return "tot"
-                return "tot"  # SR_TMP
+    def _init_deposition_type(cls, value: Union[str, Tuple[str, str]]) -> str:
+        if value in ["dry", "wet", "tot", "none"]:
+            assert isinstance(value, str)  # for mypy
+            return value
+        elif set(value) == {"dry", "wet"}:
+            return "tot"
         raise ValueError("deposition_type is invalid", value)
 
     @validator("ens_param_mem_min", always=True)
@@ -204,16 +209,17 @@ class Setup(BaseModel):
     @validator("level", always=True)
     def _init_level(
         cls, value: Tuple[Optional[int], ...], values: Dict[str, Any],
-    ) -> Optional[Union[int, Tuple[int, ...]]]:
-        if value != (None,):
-            if values["variable"] == "deposition":
-                raise ValueError(
-                    "level must be None for variable", value, values["variable"],
-                )
-        elif values["variable"] == "concentration":
-            return 0
-        # return value
-        return next(iter(value)) if len(value) == 1 else value  # SR_TMP
+    ) -> Optional[Tuple[int, ...]]:
+        if value == (None,):
+            if values["variable"] == "concentration":
+                return (0,)
+            else:
+                return None
+        elif values["variable"] == "deposition":
+            raise ValueError(
+                "level must be None for variable", value, values["variable"],
+            )
+        return value  # type: ignore
 
     @classmethod
     def as_setup(cls, obj: Union[Mapping[str, Any], "Setup"]) -> "Setup":

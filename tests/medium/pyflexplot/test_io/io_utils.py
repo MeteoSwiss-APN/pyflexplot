@@ -28,7 +28,11 @@ def read_nc_var(path, var_name, setup):
                 assert len(setup.time) == 1
                 idx = slice(setup.time[0] + 1)
             elif dim_name == "level":
-                idx = setup.level
+                # SR_TMP < TODO Clean up once CoreSetup has been implemented
+                assert setup.level is None or len(setup.level) == 1
+                idx = None if setup.level is None else next(iter(setup.level))
+                # idx = setup.level
+                # SR_TMP >
             elif dim_name in ["nageclass", "numpoint", "noutrel"]:
                 idx = 0  # SR_HC
             else:

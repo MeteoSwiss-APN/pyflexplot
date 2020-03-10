@@ -976,7 +976,11 @@ class AttrsCollector:
         # Variable unit
         unit = self.ncattrs_field["units"]
 
-        idx = self._setup.level
+        # SR_TMP < TODO clean up once CoreSetup has been implemented
+        assert self._setup.level is None or len(self._setup.level) == 1
+        idx = None if self._setup.level is None else next(iter(self._setup.level))
+        # idx = self._setup.level
+        # SR_TMP >
         if idx is None:
             level_unit = ""
             level_bot = -1

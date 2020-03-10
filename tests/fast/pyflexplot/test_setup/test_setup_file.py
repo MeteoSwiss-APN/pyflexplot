@@ -149,7 +149,7 @@ def test_read_multiple_nested_sections(tmp_path):
         "lang": "de",
     }
     sol_specific = [
-        {"variable": "concentration", "deposition_type": "none", "level": 0},
+        {"variable": "concentration", "deposition_type": "none", "level": (0,)},
         {"domain": "ch", "lang": "en"},
         {"domain": "ch", "lang": "de"},
         {"domain": "auto", "lang": "en"},
@@ -372,7 +372,7 @@ def test_read_combine_wildcards(tmp_path):
             **CREATE_DEFAULT_SETUP().dict(),
             "infiles": ("data_{ens_member:02d}.nc",),
             "variable": variable,
-            "level": {"concentration": 0, "deposition": None}[variable],
+            "level": {"concentration": (0,), "deposition": None}[variable],
             "plot_type": plot_type,
             "outfile": f"{plot_type}_{{lang}}.png",
             "lang": lang,
