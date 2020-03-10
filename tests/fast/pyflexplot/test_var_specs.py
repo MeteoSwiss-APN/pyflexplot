@@ -333,7 +333,11 @@ class _Test_FldSpecs:
             for var_specs_lst in var_specs_lst_lst
             for var_specs in var_specs_lst
         ]
-        res = [var_specs for fld_specs in fld_specs_lst for var_specs in fld_specs]
+        res = [
+            var_specs
+            for fld_specs in fld_specs_lst
+            for var_specs in fld_specs.var_specs_lst
+        ]
         assert len(res) == len(sol)
         assert res == sol
 
@@ -420,24 +424,24 @@ class Test_FldSpecs_DepositionTot(_Test_FldSpecs):
 
         # Deposition type "tot"
         setup0 = next(iter(self.setups))
-        mvs0_lst = FldSpecs.create(setup0)
-        assert len(mvs0_lst) == 1
-        mvs0 = next(iter(mvs0_lst))
+        fld_specs_0_lst = FldSpecs.create(setup0)
+        assert len(fld_specs_0_lst) == 1
+        fld_specs_0 = next(iter(fld_specs_0_lst))
 
         # Deposition type ("wet", "dry")
         setup1 = self.setups[0].derive({"deposition_type": ("wet", "dry")})
-        mvs1_lst = FldSpecs.create(setup1)
-        assert len(mvs1_lst) == 1
-        mvs1 = next(iter(mvs1_lst))
-        assert mvs1 == mvs0  # ("wet", "dry") == "tot"
+        fld_specs_1_lst = FldSpecs.create(setup1)
+        assert len(fld_specs_1_lst) == 1
+        fld_specs_1 = next(iter(fld_specs_1_lst))
+        assert fld_specs_1 == fld_specs_0  # ("wet", "dry") == "tot"
 
         # Deposition type "wet"
         setup2 = self.setups[0].derive({"deposition_type": "wet"})
-        mvs2_lst = FldSpecs.create(setup2)
-        assert len(mvs2_lst) == 1
-        mvs2 = next(iter(mvs2_lst))
-        assert mvs2 != mvs0  # "tot" != "wet"
-        assert mvs2 != mvs1  # "tot" != ("wet", "dry")
+        fld_specs_2_lst = FldSpecs.create(setup2)
+        assert len(fld_specs_2_lst) == 1
+        fld_specs_2 = next(iter(fld_specs_2_lst))
+        assert fld_specs_2 != fld_specs_0  # "tot" != "wet"
+        assert fld_specs_2 != fld_specs_1  # "tot" != ("wet", "dry")
 
 
 class Test_FldSpecs_Interface:
@@ -467,15 +471,14 @@ class Test_FldSpecs_Interface:
 
     def create_fld_specs(self):
         setup = self.setups[0]  # SR_TMP
-        mvs_lst = FldSpecs.create(setup)
-        assert len(mvs_lst) == 1
-        mvs = next(iter(mvs_lst))
-        assert len(list(mvs)) == 2
-        return mvs
+        fld_specs_lst = FldSpecs.create(setup)
+        assert len(fld_specs_lst) == 1
+        fld_specs = next(iter(fld_specs_lst))
+        assert len(fld_specs.var_specs_lst) == 2
+        return fld_specs
 
     def test_var_specs(self):
-        fld_specs = self.create_fld_specs()
-        var_specs_lst = list(fld_specs)
+        var_specs_lst = self.create_fld_specs().var_specs_lst
 
         # Check that there are separate VarSpecs for "wet" and "dry"
         check_is_list_like(var_specs_lst, len_=2, t_children=VarSpecs)

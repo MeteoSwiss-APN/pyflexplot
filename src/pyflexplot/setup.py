@@ -128,6 +128,12 @@ class Setup(BaseModel):
     ens_param_mem_min: Optional[int] = None
     ens_param_thr: Optional[float] = None
 
+    @validator("time_idcs")
+    def _validate_time_idcs(cls, value: Tuple[int, ...]):
+        if len(value) == 0:
+            raise ValueError("missing time_idcs")
+        return value
+
     @validator("deposition_type", always=True)
     def _init_deposition_type(cls, value: Union[str, Tuple[str, str]]) -> str:
         if isinstance(value, tuple):

@@ -44,12 +44,6 @@ class VarSpecs:
         """Create an instance of ``VarSpecs``."""
         self._setup = setup
 
-    # SR_TMP <<<
-    @property
-    def time(self):
-        assert len(self._setup.time_idcs) == 1
-        return next(iter(self._setup.time_idcs))
-
     @classmethod
     def create_many(
         cls, setups: Sequence[Setup], pre_expand_time: bool = False,
@@ -77,13 +71,17 @@ class VarSpecs:
         return create_var_specs_lst_lst(setups_time)
 
     def __eq__(self, other):
-        return self.dict() == other.dict()
+        return self._setup == other._setup
 
     def __repr__(self):
         return format_dictlike(self)
 
     def dict(self):
-        assert len(self._setup.time_idcs) == 1  # SR_TMP
+        time = (
+            self._setup.time_idcs
+            if len(self._setup.time_idcs) != 1
+            else next(iter(self._setup.time_idcs))
+        )  # SR_TMP
         return {
             "deposition": self._setup.deposition_type,
             "integrate": self._setup.integrate,
@@ -92,7 +90,7 @@ class VarSpecs:
             "noutrel": self._setup.nout_rel_idx,
             "numpoint": self._setup.release_point_idx,
             "species_id": self._setup.species_id,
-            "time": next(iter(self._setup.time_idcs)),  # SR_TMP
+            "time": time,
         }
 
 
@@ -101,7 +99,7 @@ class FldSpecs:
 
     def __init__(self, setup: Setup, var_specs_lst: Sequence[VarSpecs]) -> None:
         self.setup = setup
-        self._var_specs_lst = var_specs_lst
+        self.var_specs_lst = var_specs_lst
 
     @classmethod
     def create(cls, setup_or_setups: Union[Setup, Sequence[Setup]]) -> List["FldSpecs"]:
@@ -119,7 +117,7 @@ class FldSpecs:
 
     def __repr__(self):
         s_setup = "\n  ".join(repr(self.setup).split("\n"))
-        s_specs = ",\n    ".join([str(specs) for specs in self])
+        s_specs = ",\n    ".join([str(specs) for specs in self.var_specs_lst])
         return (
             f"{type(self).__name__}("
             f"\n  setup={s_setup},"
@@ -128,27 +126,26 @@ class FldSpecs:
         )
 
     def __eq__(self, other):
+        # raise DeprecationWarning()
         try:
-            return (
-                self.setup == other.setup
-                and self._var_specs_lst == other._var_specs_lst
-            )
+            var_specs_eq = self.var_specs_lst == other.var_specs_lst
+            setup_eq = self.setup == other.setup
         except AttributeError:
             raise ValueError(
                 f"incomparable types: {type(self).__name__}, {type(other).__name__}"
             )
-
-    def __iter__(self):
-        return iter(self._var_specs_lst)
-
-    def __len__(self):
-        return len(self._var_specs_lst)
+        # # Note: var_specs_eq may not equal setup_eq for timeless var_specs,
+        # # that is, when the latter lack a meaningful time index (-999)
+        # assert var_specs_eq == setup_eq
+        return var_specs_eq and setup_eq
 
     def collect(self, param: str) -> List[Any]:
         """Collect all values of a given parameter."""
         if param == "time":
             setup_param = "time_idcs"
-            return [next(iter(getattr(vs._setup, setup_param))) for vs in self]
+            return [
+                next(iter(getattr(vs._setup, setup_param))) for vs in self.var_specs_lst
+            ]
         setup_param = {
             "species_id": "species_id",
             "integrate": "integrate",
@@ -158,7 +155,7 @@ class FldSpecs:
             "level": "level_idx",
             "deposition": "deposition_type",
         }.get(param, param)
-        return [getattr(vs._setup, setup_param) for vs in self]
+        return [getattr(vs._setup, setup_param) for vs in self.var_specs_lst]
 
     def collect_equal(self, param: str) -> Any:
         """Obtain the value of a param, expecting it to be equal for all."""

@@ -300,7 +300,7 @@ def test_multiple(datadir, conf):  # noqa:F811
 
         # Read reference fields
         fld_ref = None
-        for var_specs in fld_specs:
+        for var_specs in fld_specs.var_specs_lst:
             flds_ref_i = [
                 read_nc_var(
                     datafile,
