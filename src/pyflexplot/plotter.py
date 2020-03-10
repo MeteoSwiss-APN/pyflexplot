@@ -10,8 +10,8 @@ from srutils.various import isiterable
 
 # Local
 from .plot import Plot
-from .plot_utils import MapAxesConf_Cosmo1
-from .plot_utils import MapAxesConf_Cosmo1_CH
+from .plot_lib import MapAxesConf_Cosmo1
+from .plot_lib import MapAxesConf_Cosmo1_CH
 
 
 def plot(fields, attrs_lst, setup):

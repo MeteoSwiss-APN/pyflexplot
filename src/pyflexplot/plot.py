@@ -16,10 +16,10 @@ from matplotlib import pyplot as plt
 from srutils.geo import Degrees
 
 # Local
-from .plot_utils import MapAxesRotatedPole
-from .plot_utils import TextBoxAxes
-from .plot_utils import ax_w_h_in_fig_coords
-from .plot_utils import post_summarize_plot
+from .plot_lib import MapAxesRotatedPole
+from .plot_lib import TextBoxAxes
+from .plot_lib import ax_w_h_in_fig_coords
+from .plot_lib import post_summarize_plot
 from .utils import fmt_float
 from .utils import format_level_ranges
 from .utils import summarizable
