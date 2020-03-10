@@ -1277,10 +1277,11 @@ class ReleasePoint:
 
 # SR_TMP <<< TODO figure out what to do with this
 def nc_var_name(setup):
-    if setup.variable == "concentration":
-        if isinstance(setup.species_id, int):
-            return f"spec{setup.species_id:03d}"
-        return [f"spec{sid:03d}" for sid in setup.species_id]
-    elif setup.variable == "deposition":
-        prefix = {"wet": "WD", "dry": "DD"}[setup.deposition_type]
-        return f"{prefix}_spec{setup.species_id:03d}"
+    result = []
+    for species_id in setup.species_id:
+        if setup.variable == "concentration":
+            result.append(f"spec{species_id:03d}")
+        elif setup.variable == "deposition":
+            prefix = {"wet": "WD", "dry": "DD"}[setup.deposition_type]
+            result.append(f"{prefix}_spec{species_id:03d}")
+    return result[0] if len(result) == 1 else result

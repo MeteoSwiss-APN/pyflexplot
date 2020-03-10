@@ -19,6 +19,7 @@ from typing import overload
 # Third-party
 import toml
 from pydantic import BaseModel
+from pydantic import root_validator
 from pydantic import validator
 
 # First-party
@@ -115,8 +116,9 @@ class Setup(BaseModel):
 
     nageclass: int = 0
     combine_species: bool = False
-    deposition_type: Union[str, Tuple[str, str]] = "none"
+    deposition_type: Tuple[str, ...] = ("none",)
     domain: str = "auto"
+    # ens_member_id: Tuple[Optional[int], ...] = (None,)
     ens_member_id: Optional[Tuple[int, ...]] = None
     infiles: Tuple[str, ...]
     integrate: bool = False
@@ -128,14 +130,26 @@ class Setup(BaseModel):
     reverse_legend: bool = False
     scale_fact: Optional[float] = None
     simulation_type: str = "deterministic"
-    species_id: Union[int, Tuple[int, ...]] = 1
+    species_id: Union[int, Tuple[int, ...]] = (1,)
     time: Tuple[int, ...] = (0,)
     variable: str = "concentration"
 
     # Derived parameters
-    level: Optional[Union[int, Tuple[int, ...]]] = None
+    level: Tuple[Optional[int], ...] = (None,)
     ens_param_mem_min: Optional[int] = None
     ens_param_thr: Optional[float] = None
+
+    @root_validator(pre=True)
+    def _to_sequence(cls, values):
+        """Ensure that all parameter values constitute a sequence."""
+        for param, value in values.items():
+            # SR_TMP <
+            if param not in ["deposition_type", "species_id", "level"]:
+                continue
+            # SR_TMP >
+            if not isinstance(value, Sequence) or isinstance(value, str):
+                values[param] = [value]
+        return values
 
     @validator("time")
     def _validate_time(cls, value: Tuple[int, ...]):
@@ -144,13 +158,15 @@ class Setup(BaseModel):
         return value
 
     @validator("deposition_type", always=True)
-    def _init_deposition_type(cls, value: Union[str, Tuple[str, str]]) -> str:
-        if isinstance(value, tuple):
+    def _init_deposition_type(cls, value: Tuple[str, ...]) -> str:
+        if len(value) == 1:
+            if next(iter(value)) in ["dry", "wet", "tot", "none"]:
+                # return (value,)
+                return next(iter(value))  # SR_TMP
+        elif len(value) == 2:
             if set(value) == {"dry", "wet"}:
-                return "tot"
-        elif isinstance(value, str):
-            if value in ["dry", "wet", "tot", "none"]:
-                return value
+                # return "tot"
+                return "tot"  # SR_TMP
         raise ValueError("deposition_type is invalid", value)
 
     @validator("ens_param_mem_min", always=True)
@@ -187,16 +203,17 @@ class Setup(BaseModel):
 
     @validator("level", always=True)
     def _init_level(
-        cls, value: Optional[Union[int, Tuple[int, ...]]], values: Dict[str, Any],
+        cls, value: Tuple[Optional[int], ...], values: Dict[str, Any],
     ) -> Optional[Union[int, Tuple[int, ...]]]:
-        if value is not None:
+        if value != (None,):
             if values["variable"] == "deposition":
                 raise ValueError(
                     "level must be None for variable", value, values["variable"],
                 )
         elif values["variable"] == "concentration":
             return 0
-        return value
+        # return value
+        return next(iter(value)) if len(value) == 1 else value  # SR_TMP
 
     @classmethod
     def as_setup(cls, obj: Union[Mapping[str, Any], "Setup"]) -> "Setup":

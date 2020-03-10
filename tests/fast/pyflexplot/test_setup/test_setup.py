@@ -61,18 +61,18 @@ class Test_Decompress:
         assert len(setups) == 12
         res = {(s.deposition_type, s.species_id, s.time) for s in setups}
         sol = {
-            ("dry", 1, (1,)),
-            ("dry", 1, (2,)),
-            ("dry", 1, (3,)),
-            ("dry", 2, (1,)),
-            ("dry", 2, (2,)),
-            ("dry", 2, (3,)),
-            ("wet", 1, (1,)),
-            ("wet", 1, (2,)),
-            ("wet", 1, (3,)),
-            ("wet", 2, (1,)),
-            ("wet", 2, (2,)),
-            ("wet", 2, (3,)),
+            ("dry", (1,), (1,)),
+            ("dry", (1,), (2,)),
+            ("dry", (1,), (3,)),
+            ("dry", (2,), (1,)),
+            ("dry", (2,), (2,)),
+            ("dry", (2,), (3,)),
+            ("wet", (1,), (1,)),
+            ("wet", (1,), (2,)),
+            ("wet", (1,), (3,)),
+            ("wet", (2,), (1,)),
+            ("wet", (2,), (2,)),
+            ("wet", (2,), (3,)),
         }
         assert res == sol
 
@@ -81,7 +81,7 @@ class Test_Decompress:
         setups = self.setup.decompress(["species_id"])
         assert len(setups) == 2
         res = {(s.deposition_type, s.species_id, s.time) for s in setups}
-        sol = {("tot", 1, (1, 2, 3)), ("tot", 2, (1, 2, 3))}
+        sol = {("tot", (1,), (1, 2, 3)), ("tot", (2,), (1, 2, 3))}
         assert res == sol
 
     def test_select_two(self):

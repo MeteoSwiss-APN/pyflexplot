@@ -1,2 +1,2 @@
-< dict/session
-str/test_to_varname.py
+< test_dict/session
+test_str/test_to_varname.py

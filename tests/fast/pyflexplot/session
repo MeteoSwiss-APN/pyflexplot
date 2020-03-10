@@ -2,6 +2,6 @@ test_data.py
 test_fld_specs.py
 test_plot_lib.py
 test_var_specs.py
-setup/__init__.py
-setup/test_setup.py
-setup/test_setup_file.py
+test_setup/__init__.py
+test_setup/test_setup.py
+test_setup/test_setup_file.py

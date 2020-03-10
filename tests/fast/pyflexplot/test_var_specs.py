@@ -56,8 +56,7 @@ def check_var_specs_lst_unordered(var_specs_lst, conf):
         else:
             raise AssertionError(
                 f"no matching solution found for var_specs among var_specs_dct_lst",
-                var_specs,
-                var_specs_dct_lst,
+                {"var_specs": var_specs, "var_specs_dct_lst": var_specs_dct_lst},
             ) from exception
 
 
@@ -77,11 +76,25 @@ def check_var_specs(var_specs, conf):
             var_specs.dict().keys(),
         )
 
-    sol = set(conf.dct.items())
+    # SR_TMP <
+    # sol = set(conf.dct.items())
+    # SR_TMP -
+    dct = conf.dct.copy()
+    dct = dct.copy()
+    for param in ["species_id"]:
+        value = dct[param]
+        if not isinstance(value, tuple):
+            dct[param] = (value,)
+    sol = set(dct.items())
+    # SR_TMP >
     res = set(var_specs.dict().items())
     assert sol.issubset(res)
 
-    sol = conf.dct
+    # SR_TMP <
+    # sol = conf.dct
+    # SR_TMP -
+    sol = dct
+    # SR_TMP >
     res = var_specs.dict()
     assert sol == res
 
@@ -122,7 +135,7 @@ class Test_Create_SingleObjDct_Concentration(_Test_Create_SingleObjDct):
             "nageclass": 0,
             "noutrel": 0,
             "numpoint": 0,
-            "species_id": 2,
+            "species_id": (2,),
             "time": 3,
         },
         n=1,
@@ -149,11 +162,11 @@ class Test_Create_SingleObjDct_Deposition(_Test_Create_SingleObjDct):
             "nageclass": 0,
             "noutrel": 0,
             "numpoint": 0,
-            "species_id": 2,
+            "species_id": (2,),
             "time": 3,
         },
         n=1,
-        subdct_fail={"species_id": 0, "time": 4},
+        subdct_fail={"species_id": (0,), "time": 4},
     )
     base_setup = Setup(
         deposition_type="wet",
@@ -205,7 +218,7 @@ class Test_Create_MultiObjDct_Concentration(_Test_Create_MultiObjDct):
         time=[1, 3],
         variable="concentration",
     )
-    setups = SetupCollection([base_setup, base_setup.derive({"species_id": 2})])
+    setups = SetupCollection([base_setup, base_setup.derive({"species_id": (2,)})])
 
 
 class Test_Create_MultiObjDct_Deposition(_Test_Create_MultiObjDct):
@@ -221,7 +234,7 @@ class Test_Create_MultiObjDct_Deposition(_Test_Create_MultiObjDct):
             "time": [1, 3],
         },
         n=4,
-        subdct_fail={"species_id": 0, "time": [3, 4]},
+        subdct_fail={"species_id": (0,), "time": [3, 4]},
     )
     base_setup = Setup(
         deposition_type="dry",
@@ -232,7 +245,7 @@ class Test_Create_MultiObjDct_Deposition(_Test_Create_MultiObjDct):
         time=[1, 3],
         variable="deposition",
     )
-    setups = SetupCollection([base_setup, base_setup.derive({"species_id": 2})])
+    setups = SetupCollection([base_setup, base_setup.derive({"species_id": (2,)})])
 
 
 class _Test_Create_MultiObjDctNested:
@@ -404,7 +417,7 @@ class Test_FldSpecs_DepositionTot(_Test_FldSpecs):
             "nageclass": 0,
             "noutrel": 0,
             "numpoint": 0,
-            "species_id": 2,
+            "species_id": (2,),
             "time": 3,
         },
         n=1,
@@ -454,7 +467,7 @@ class Test_FldSpecs_Interface:
             "nageclass": 0,
             "noutrel": 0,
             "numpoint": 0,
-            "species_id": 2,
+            "species_id": (2,),
             "time": 3,
         },
         n=1,
