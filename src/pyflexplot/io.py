@@ -68,7 +68,6 @@ class FileReader:
 
         self.n_members: Optional[int] = None
         self.in_file_path_lst: Optional[Sequence[str]] = None
-        self.fi: Optional[nc4.File] = None
         self.rlat: Optional[np.ndarray] = None
         self.rlon: Optional[np.ndarray] = None
 
@@ -144,14 +143,19 @@ class FileReader:
     def _create_fields(
         self, timeless_fld_specs: FldSpecs, time_idcs: Sequence[int],
     ) -> Tuple[List[Field], List[AttrMult]]:
+        # SR_TMP <
+        fld_setup = timeless_fld_specs.setup
+        var_setups = [
+            var_specs._setup for var_specs in timeless_fld_specs.var_specs_lst
+        ]
+        # SR_TMP >
 
         # Read fields of all members at all time steps
-        fld_time_mem: np.ndarray = self._read_fld_time_mem(timeless_fld_specs)
+        fld_time_mem: np.ndarray = self._read_fld_time_mem(var_setups)
 
         # Reduce fields array along member dimension
         # In other words: Compute single field from ensemble
-        setup = timeless_fld_specs.setup
-        fld_time: np.ndarray = self._reduce_ensemble(fld_time_mem, setup)
+        fld_time: np.ndarray = self._reduce_ensemble(fld_time_mem, fld_setup)
 
         # Collect time stats
         time_stats: Dict[str, np.ndarray] = {
@@ -177,15 +181,15 @@ class FileReader:
 
         return fields, attrs_lst
 
-    def _read_fld_time_mem(self, timeless_fld_specs: FldSpecs) -> np.ndarray:
+    def _read_fld_time_mem(self, setups: Sequence[Setup]) -> np.ndarray:
         """Read field over all time steps for each member."""
         fld_time_mem: Optional[np.ndarray] = None
         for i_mem, in_file_path in enumerate(self.in_file_path_lst or []):
-            with nc4.Dataset(in_file_path, "r") as self.fi:
+            with nc4.Dataset(in_file_path, "r") as fi:
 
                 # Read grid variables
-                rlat = self.fi.variables["rlat"][:]
-                rlon = self.fi.variables["rlon"][:]
+                rlat = fi.variables["rlat"][:]
+                rlon = fi.variables["rlon"][:]
                 if self.rlat is None:
                     self.rlat = rlat
                     self.rlon = rlon
@@ -196,7 +200,9 @@ class FileReader:
                         raise Exception("inconsistent rlon")
 
                 # Read field (all time steps)
-                fld_time: np.ndarray = self._read_field(timeless_fld_specs)
+                fld_time: np.ndarray = merge_fields(
+                    [self._read_nc_var(fi, setup) for setup in setups],
+                )
 
                 # Store field for currentmember
                 if fld_time_mem is None:
@@ -204,14 +210,7 @@ class FileReader:
                     fld_time_mem = np.full(shape, np.nan, np.float32)
                 fld_time_mem[i_mem] = fld_time
 
-            self.fi = None
         return fld_time_mem
-
-    def _read_field(self, fld_specs: FldSpecs) -> np.ndarray:
-        fld_lst = [
-            self._read_nc_var(var_specs._setup) for var_specs in fld_specs.var_specs_lst
-        ]
-        return merge_fields(fld_lst)
 
     def _reduce_ensemble(self, fld_time_mem: np.ndarray, setup: Setup) -> np.ndarray:
         """Reduce the ensemble to a single field (time, rlat, rlon)."""
@@ -227,12 +226,11 @@ class FileReader:
         elif plot_type == "ens_max":
             fld_time = np.nanmax(fld_time_mem, axis=0)
         elif plot_type == "ens_thr_agrmt":
-            thr = setup.ens_param_thr
-            fld_time = threshold_agreement(fld_time_mem, thr, axis=0)
+            fld_time = threshold_agreement(fld_time_mem, setup.ens_param_thr, axis=0)
         elif plot_type == "ens_cloud_arrival_time":
-            thr = setup.ens_param_thr
-            mem_min = setup.ens_param_mem_min
-            fld_time = cloud_arrival_time(fld_time_mem, thr, mem_min, mem_axis=0)
+            fld_time = cloud_arrival_time(
+                fld_time_mem, setup.ens_param_thr, setup.ens_param_mem_min, mem_axis=0,
+            )
         else:
             raise NotImplementedError(f"plot var '{plot_type}'")
         return fld_time
@@ -274,17 +272,14 @@ class FileReader:
             [self.n_reqtime, self.n_members], None,
         )
         for idx_mem, in_file_path in enumerate(self.in_file_path_lst or []):
-            with nc4.Dataset(in_file_path, "r") as self.fi:
+            with nc4.Dataset(in_file_path, "r") as fi:
                 for idx_time, fld_specs in enumerate(fld_specs_lst):
                     attrs_lst = []
                     for var_specs in fld_specs.var_specs_lst:
-                        attrs = collect_attrs(
-                            self.fi, self.setup, self.words, var_specs,
-                        )
+                        attrs = collect_attrs(fi, self.setup, self.words, var_specs)
                         attrs_lst.append(attrs)
                     attrs = attrs_lst[0].merge_with(attrs_lst[1:])
                     attrs_by_reqtime_mem[idx_time, idx_mem] = attrs
-            self.fi = None
         return attrs_by_reqtime_mem
 
     def _extract_time_idcs_from_fld_specs(
@@ -367,12 +362,11 @@ class FileReader:
             fields.append(Field(fld, self.rlat, self.rlon, fld_specs, time_stats))
         return fields
 
-    def _read_nc_var(self, setup: Setup) -> np.ndarray:
+    def _read_nc_var(self, fi: nc4.Dataset, setup: Setup) -> np.ndarray:
 
         # Select variable in file
         var_name = nc_var_name(setup)
-        assert self.fi is not None  # for mypy
-        nc_var = self.fi.variables[var_name]
+        nc_var = fi.variables[var_name]
 
         # Indices of field along NetCDF dimensions
         dim_idcs_by_name = {
@@ -391,7 +385,7 @@ class FileReader:
             err_dct = {
                 "dim_idx": dim_idx,
                 "dim_name": dim_name,
-                "fi.filepath": self.fi.filepath(),
+                "fi.filepath": fi.filepath(),
             }
             # Get the index of the dimension for this variable
             try:
@@ -434,15 +428,17 @@ class FileReader:
         # Fix known issues with NetCDF input data
         self.fixer.fix_nc_var(nc_var, fld)
 
-        fld = self._handle_time_integration(fld, setup)
+        fld = self._handle_time_integration(fi, fld, setup)
         return fld
 
-    def _handle_time_integration(self, fld: np.ndarray, setup: Setup) -> np.ndarray:
+    def _handle_time_integration(
+        self, fi: nc4.Dataset, fld: np.ndarray, setup: Setup,
+    ) -> np.ndarray:
         """Integrate, or desintegrate, field over time."""
         if setup.variable == "concentration":
             if setup.integrate:
                 # Integrate field over time
-                dt_hr = self._compute_temporal_resolution()
+                dt_hr = self._compute_temporal_resolution(fi)
                 return np.cumsum(fld, axis=0) * dt_hr
             else:
                 # Field is already instantaneous
@@ -453,14 +449,13 @@ class FileReader:
                 return fld
             else:
                 # Revert time integration of field
-                dt_hr = self._compute_temporal_resolution()
+                dt_hr = self._compute_temporal_resolution(fi)
                 fld[1:] = (fld[1:] - fld[:-1]) / dt_hr
                 return fld
         raise NotImplementedError("unknown variable", setup.variable)
 
-    def _compute_temporal_resolution(self) -> float:
-        assert self.fi is not None  # for mypy
-        time = self.fi.variables["time"]
+    def _compute_temporal_resolution(self, fi: nc4.Dataset) -> float:
+        time = fi.variables["time"]
         dts = set(time[1:] - time[:-1])
         if len(dts) > 1:
             raise Exception(f"Non-uniform time resolution: {sorted(dts)} ({time})")
