@@ -11,6 +11,7 @@ import pytest  # type: ignore
 
 # First-party
 from pyflexplot.setup import Setup
+from pyflexplot.setup import SetupCollection
 from pyflexplot.specs import FldSpecs
 from pyflexplot.specs import VarSpecs
 from srutils.dict import decompress_multival_dict
@@ -136,7 +137,7 @@ class Test_Create_SingleObjDct_Concentration(_Test_Create_SingleObjDct):
         time_idcs=[3],
         variable="concentration",
     )
-    setups = [base_setup]
+    setups = SetupCollection([base_setup])
 
 
 class Test_Create_SingleObjDct_Deposition(_Test_Create_SingleObjDct):
@@ -163,7 +164,7 @@ class Test_Create_SingleObjDct_Deposition(_Test_Create_SingleObjDct):
         time_idcs=[3],
         variable="deposition",
     )
-    setups = [base_setup]
+    setups = SetupCollection([base_setup])
 
 
 class _Test_Create_MultiObjDct:
@@ -204,7 +205,7 @@ class Test_Create_MultiObjDct_Concentration(_Test_Create_MultiObjDct):
         time_idcs=[1, 3],
         variable="concentration",
     )
-    setups = [base_setup, base_setup.derive({"species_id": 2})]
+    setups = SetupCollection([base_setup, base_setup.derive({"species_id": 2})])
 
 
 class Test_Create_MultiObjDct_Deposition(_Test_Create_MultiObjDct):
@@ -231,7 +232,7 @@ class Test_Create_MultiObjDct_Deposition(_Test_Create_MultiObjDct):
         time_idcs=[1, 3],
         variable="deposition",
     )
-    setups = [base_setup, base_setup.derive({"species_id": 2})]
+    setups = SetupCollection([base_setup, base_setup.derive({"species_id": 2})])
 
 
 class _Test_Create_MultiObjDctNested:
@@ -278,7 +279,7 @@ class Test_Create_MultiObjDctNested_Concentration(_Test_Create_MultiObjDctNested
         time_idcs=[1, 3],
         variable="concentration",
     )
-    setups = [base_setup, base_setup.derive({"species_id": [1, 2]})]
+    setups = SetupCollection([base_setup, base_setup.derive({"species_id": [1, 2]})])
 
 
 class Test_Create_MultiObjDctNested_Deposition(_Test_Create_MultiObjDctNested):
@@ -305,7 +306,7 @@ class Test_Create_MultiObjDctNested_Deposition(_Test_Create_MultiObjDctNested):
         time_idcs=[1, 3],
         variable="deposition",
     )
-    setups = [base_setup, base_setup.derive({"species_id": [1, 2]})]
+    setups = SetupCollection([base_setup, base_setup.derive({"species_id": [1, 2]})])
 
 
 @dataclass(frozen=True)
@@ -365,7 +366,7 @@ class Test_FldSpecs_Concentration(_Test_FldSpecs):
         time_idcs=[1, 3],
         variable="concentration",
     )
-    setups = [base_setup, base_setup.derive({"species_id": [1, 2]})]
+    setups = SetupCollection([base_setup, base_setup.derive({"species_id": [1, 2]})])
 
 
 class Test_FldSpecs_DepositionDry(_Test_FldSpecs):
@@ -391,7 +392,7 @@ class Test_FldSpecs_DepositionDry(_Test_FldSpecs):
         time_idcs=[1, 3],
         variable="deposition",
     )
-    setups = [base_setup, base_setup.derive({"species_id": [1, 2]})]
+    setups = SetupCollection([base_setup, base_setup.derive({"species_id": [1, 2]})])
 
 
 class Test_FldSpecs_DepositionTot(_Test_FldSpecs):
@@ -417,7 +418,7 @@ class Test_FldSpecs_DepositionTot(_Test_FldSpecs):
         time_idcs=[3],
         variable="deposition",
     )
-    setups = [base_setup]
+    setups = SetupCollection([base_setup])
 
     def test_tot_vs_wet_dry(self):
         """Check that deposition type "tot" is equivalent to ("wet", "dry")."""
@@ -429,14 +430,14 @@ class Test_FldSpecs_DepositionTot(_Test_FldSpecs):
         fld_specs_0 = next(iter(fld_specs_0_lst))
 
         # Deposition type ("wet", "dry")
-        setup1 = self.setups[0].derive({"deposition_type": ("wet", "dry")})
+        setup1 = next(iter(self.setups)).derive({"deposition_type": ("wet", "dry")})
         fld_specs_1_lst = FldSpecs.create(setup1)
         assert len(fld_specs_1_lst) == 1
         fld_specs_1 = next(iter(fld_specs_1_lst))
         assert fld_specs_1 == fld_specs_0  # ("wet", "dry") == "tot"
 
         # Deposition type "wet"
-        setup2 = self.setups[0].derive({"deposition_type": "wet"})
+        setup2 = next(iter(self.setups)).derive({"deposition_type": "wet"})
         fld_specs_2_lst = FldSpecs.create(setup2)
         assert len(fld_specs_2_lst) == 1
         fld_specs_2 = next(iter(fld_specs_2_lst))
@@ -467,10 +468,10 @@ class Test_FldSpecs_Interface:
         time_idcs=[3],
         variable="deposition",
     )
-    setups = [base_setup]
+    setups = SetupCollection([base_setup])
 
     def create_fld_specs(self):
-        setup = self.setups[0]  # SR_TMP
+        setup = next(iter(self.setups))  # SR_TMP
         fld_specs_lst = FldSpecs.create(setup)
         assert len(fld_specs_lst) == 1
         fld_specs = next(iter(fld_specs_lst))

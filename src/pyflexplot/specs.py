@@ -14,6 +14,7 @@ from srutils.dict import format_dictlike
 
 # Local
 from .setup import Setup
+from .setup import SetupCollection
 from .utils import summarizable
 
 
@@ -46,7 +47,7 @@ class VarSpecs:
 
     @classmethod
     def create_many(
-        cls, setups: Sequence[Setup], pre_expand_time: bool = False,
+        cls, setups: SetupCollection, pre_expand_time: bool = False,
     ):
         def create_var_specs_lst_lst(setups):
             var_specs_lst_lst = []
@@ -102,16 +103,25 @@ class FldSpecs:
         self.var_specs_lst = var_specs_lst
 
     @classmethod
-    def create(cls, setup_or_setups: Union[Setup, Sequence[Setup]]) -> List["FldSpecs"]:
+    def create(cls, setup_or_setups: Union[Setup, SetupCollection]) -> List["FldSpecs"]:
         """Create instances of ``FldSpecs`` from ``Setup`` object(s)."""
-        if not isinstance(setup_or_setups, Setup):
-            return [obj for setup in setup_or_setups for obj in cls.create(setup)]
+        if isinstance(setup_or_setups, SetupCollection):
+            setups = setup_or_setups
+        elif isinstance(setup_or_setups, Setup):
+            setups = SetupCollection([setup_or_setups])
         else:
-            setup = setup_or_setups
-            var_specs_lst_lst = VarSpecs.create_many([setup], pre_expand_time=True)
+            raise ValueError(
+                "setup_or_setups has invalid type",
+                type(setup_or_setups),
+                setup_or_setups,
+            )
+        if len(setups) > 1:
+            return [obj for setup in setups for obj in cls.create(setup)]
+        else:
+            var_specs_lst_lst = VarSpecs.create_many(setups, pre_expand_time=True)
             fld_specs_lst = []
             for var_specs_lst in var_specs_lst_lst:
-                obj = cls(setup, var_specs_lst)
+                obj = cls(next(iter(setups)), var_specs_lst)
                 fld_specs_lst.append(obj)
             return fld_specs_lst
 

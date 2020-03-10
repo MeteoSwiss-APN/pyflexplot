@@ -18,6 +18,7 @@ import pytest  # type: ignore
 # First-party
 from pyflexplot.io import read_files
 from pyflexplot.setup import Setup
+from pyflexplot.setup import SetupCollection
 from pyflexplot.specs import FldSpecs
 from pyflexplot.words import WORDS
 
@@ -278,12 +279,12 @@ def test_multiple(datadir, conf):  # noqa:F811
     datafile = f"{datadir}/{conf.datafilename}"
 
     # Create setups
-    setups = conf.setup.decompress()
-    for setup in setups.copy():
-        setups.extend(setup.derive(conf.derived_setup_params))
+    setup_lst = list(conf.setup.decompress())
+    for setup in setup_lst.copy():
+        setup_lst.extend(setup.derive(conf.derived_setup_params))
 
     # Create field specifications list
-    fld_specs_lst = FldSpecs.create(setups)
+    fld_specs_lst = FldSpecs.create(SetupCollection(setup_lst))
 
     # Process field specifications one after another
     for fld_specs in fld_specs_lst:

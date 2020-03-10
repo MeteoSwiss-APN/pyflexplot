@@ -225,15 +225,15 @@ class Setup(BaseModel):
         ...
 
     @overload
-    def derive(self, params: Sequence[Mapping[str, Any]]) -> List["Setup"]:
+    def derive(self, params: Sequence[Mapping[str, Any]]) -> "SetupCollection":
         ...
 
     def derive(
         self, params: Union[Mapping[str, Any], Sequence[Mapping[str, Any]]],
-    ) -> Union["Setup", List["Setup"]]:
+    ) -> Union["Setup", "SetupCollection"]:
         """Derive ``Setup`` object(s) with adapted parameters."""
         if isinstance(params, Sequence):
-            return [self.derive(params_i) for params_i in params]
+            return SetupCollection([self.derive(params_i) for params_i in params])
         # SR_TMP < TODO find cleaner solution (w/o duplication of logic)
         if (
             self.variable == "concentration"
@@ -262,7 +262,7 @@ class Setup(BaseModel):
         select: Optional[Collection[str]] = None,
         *,
         skip: Optional[Collection[str]] = None,
-    ) -> List["Setup"]:
+    ) -> "SetupCollection":
         """Create multiple ``Setup`` objects with one-value parameters only."""
 
         if skip is None:
@@ -280,13 +280,12 @@ class Setup(BaseModel):
         # Decompress dict
         dcts = decompress_multival_dict(dct, select=select, skip=skip)
 
-        def create(dct):
+        def create_setup(dct):
             if isinstance(dct["time_idcs"], int):
                 dct["time_idcs"] = [dct["time_idcs"]]
             return Setup(**dct)
 
-        sub_setups = [create(dct) for dct in dcts]
-        return sub_setups
+        return SetupCollection([create_setup(dct) for dct in dcts])
 
 
 class SetupCollection:
