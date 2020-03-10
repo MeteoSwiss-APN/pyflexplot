@@ -98,7 +98,9 @@ class FileReader:
         fields: List[Field] = []
         attrs_lst: List[AttrMult] = []
         for timeless_fld_specs, time_idcs in zip(timeless_fld_specs_lst, time_idcs_lst):
-            ens_member_ids: Sequence[int] = (timeless_fld_specs.setup.ens_member_ids)
+            ens_member_ids: Optional[Sequence[int]] = (
+                timeless_fld_specs.setup.ens_member_ids
+            )
             self.n_members = 1 if not ens_member_ids else len(ens_member_ids)
             self.in_file_path_lst = self._prepare_in_file_path_lst(ens_member_ids)
 
@@ -108,7 +110,9 @@ class FileReader:
 
         return fields, attrs_lst
 
-    def _prepare_in_file_path_lst(self, ens_member_ids: Sequence[int]) -> List[str]:
+    def _prepare_in_file_path_lst(
+        self, ens_member_ids: Optional[Sequence[int]]
+    ) -> List[str]:
         fmt_keys = ["{ens_member}", "{ens_member:"]
         fmt_key_in_path = any(k in self.in_file_path_fmt for k in fmt_keys)
         if not ens_member_ids:

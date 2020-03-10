@@ -2,6 +2,13 @@
 """
 Input variable specifications.
 """
+# Standard library
+from typing import Any
+from typing import List
+from typing import Sequence
+from typing import Union
+from typing import overload
+
 # First-party
 from srutils.dict import format_dictlike
 
@@ -10,20 +17,30 @@ from .setup import Setup
 from .utils import summarizable
 
 
-def int_or_list(arg):
-    try:
-        iter(arg)
-    except TypeError:
-        return int(arg)
-    else:
+@overload
+def int_or_list(arg: Union[int, float]) -> int:
+    ...
+
+
+@overload
+def int_or_list(arg: Sequence[Union[int, float]]) -> List[int]:
+    ...
+
+
+def int_or_list(
+    arg: Union[Union[int, float], Sequence[Union[int, float]]]
+) -> Union[int, List[int]]:
+    if isinstance(arg, Sequence):
         return [int(a) for a in arg]
+    else:
+        return int(arg)
 
 
 @summarizable
 class VarSpecs:
     """FLEXPART input variable specifications."""
 
-    def __init__(self, setup):
+    def __init__(self, setup: Setup) -> None:
         """Create an instance of ``VarSpecs``."""
         self._setup = setup
 
@@ -34,7 +51,9 @@ class VarSpecs:
         return next(iter(self._setup.time_idcs))
 
     @classmethod
-    def create_many(cls, setups, pre_expand_time=False):
+    def create_many(
+        cls, setups: Sequence[Setup], pre_expand_time: bool = False,
+    ):
         def create_var_specs_lst_lst(setups):
             var_specs_lst_lst = []
             for setup in setups:
@@ -80,12 +99,12 @@ class VarSpecs:
 class FldSpecs:
     """Hold multiple ``VarSpecs`` objects."""
 
-    def __init__(self, setup, var_specs_lst):
+    def __init__(self, setup: Setup, var_specs_lst: Sequence[VarSpecs]) -> None:
         self.setup = setup
         self._var_specs_lst = var_specs_lst
 
     @classmethod
-    def create(cls, setup_or_setups):
+    def create(cls, setup_or_setups: Union[Setup, Sequence[Setup]]) -> List["FldSpecs"]:
         """Create instances of ``FldSpecs`` from ``Setup`` object(s)."""
         if not isinstance(setup_or_setups, Setup):
             return [obj for setup in setup_or_setups for obj in cls.create(setup)]
@@ -109,12 +128,15 @@ class FldSpecs:
         )
 
     def __eq__(self, other):
-        if isinstance(other, type(self)) or isinstance(self, type(other)):
+        try:
             return (
                 self.setup == other.setup
                 and self._var_specs_lst == other._var_specs_lst
             )
-        return False
+        except AttributeError:
+            raise ValueError(
+                f"incomparable types: {type(self).__name__}, {type(other).__name__}"
+            )
 
     def __iter__(self):
         return iter(self._var_specs_lst)
@@ -122,7 +144,7 @@ class FldSpecs:
     def __len__(self):
         return len(self._var_specs_lst)
 
-    def collect(self, param):
+    def collect(self, param: str) -> List[Any]:
         """Collect all values of a given parameter."""
         if param == "time":
             setup_param = "time_idcs"
@@ -138,7 +160,7 @@ class FldSpecs:
         }.get(param, param)
         return [getattr(vs._setup, setup_param) for vs in self]
 
-    def collect_equal(self, param):
+    def collect_equal(self, param: str) -> Any:
         """Obtain the value of a param, expecting it to be equal for all."""
         values = self.collect(param)
         if not all(value == values[0] for value in values[1:]):
