@@ -70,7 +70,7 @@ def test_read_single_section(tmp_path):
         {
             **CREATE_DEFAULT_SETUP().dict(),
             "variable": "deposition",
-            "level_idx": None,
+            "level": None,
             "lang": "de",
         }
     ]
@@ -145,11 +145,11 @@ def test_read_multiple_nested_sections(tmp_path):
         **DEFAULT_KWARGS,
         "variable": "deposition",
         "deposition_type": "tot",
-        "level_idx": None,
+        "level": None,
         "lang": "de",
     }
     sol_specific = [
-        {"variable": "concentration", "deposition_type": "none", "level_idx": 0},
+        {"variable": "concentration", "deposition_type": "none", "level": 0},
         {"domain": "ch", "lang": "en"},
         {"domain": "ch", "lang": "de"},
         {"domain": "auto", "lang": "en"},
@@ -245,8 +245,8 @@ def test_read_wildcard_simple(tmp_path):
         for dct in [
             {"variable": "concentration", "lang": "de"},
             {"variable": "concentration", "lang": "en"},
-            {"variable": "deposition", "level_idx": None, "lang": "de"},
-            {"variable": "deposition", "level_idx": None, "lang": "en"},
+            {"variable": "deposition", "level": None, "lang": "de"},
+            {"variable": "deposition", "level": None, "lang": "en"},
         ]
     ]
     setups = read_tmp_setup_file(tmp_path, content)
@@ -286,7 +286,7 @@ def test_read_double_wildcard_equal_depth(tmp_path):
         {**CREATE_DEFAULT_SETUP().dict(), **dct, "domain": domain, "lang": lang}
         for dct in [
             {"variable": "concentration", "integrate": False},
-            {"variable": "deposition", "level_idx": None, "integrate": False},
+            {"variable": "deposition", "level": None, "integrate": False},
         ]
         for domain in ["ch", "auto"]
         for lang in ["de", "en"]
@@ -305,7 +305,7 @@ def test_read_double_wildcard_variable_depth(tmp_path):
         variable = "concentration"
 
         [_base._concentration._time10]
-        time_idcs = [10]
+        time = [10]
 
         [_base._deposition]
         variable = "deposition"
@@ -330,8 +330,8 @@ def test_read_double_wildcard_variable_depth(tmp_path):
     sol = [
         {**CREATE_DEFAULT_SETUP().dict(), **dct, "domain": domain, "lang": lang}
         for dct in [
-            {"variable": "concentration", "time_idcs": (10,)},
-            {"variable": "deposition", "level_idx": None},
+            {"variable": "concentration", "time": (10,)},
+            {"variable": "deposition", "level": None},
         ]
         for domain in ["ch", "auto"]
         for lang in ["de", "en"]
@@ -372,7 +372,7 @@ def test_read_combine_wildcards(tmp_path):
             **CREATE_DEFAULT_SETUP().dict(),
             "infiles": ("data_{ens_member:02d}.nc",),
             "variable": variable,
-            "level_idx": {"concentration": 0, "deposition": None}[variable],
+            "level": {"concentration": 0, "deposition": None}[variable],
             "plot_type": plot_type,
             "outfile": f"{plot_type}_{{lang}}.png",
             "lang": lang,

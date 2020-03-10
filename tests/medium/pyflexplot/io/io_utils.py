@@ -25,10 +25,10 @@ def read_nc_var(path, var_name, setup):
                 idx = slice(None)
             elif dim_name == "time":
                 # Read all timesteps until the selected one
-                assert len(setup.time_idcs) == 1
-                idx = slice(setup.time_idcs[0] + 1)
+                assert len(setup.time) == 1
+                idx = slice(setup.time[0] + 1)
             elif dim_name == "level":
-                idx = setup.level_idx
+                idx = setup.level
             elif dim_name in ["nageclass", "numpoint", "noutrel"]:
                 idx = 0  # SR_HC
             else:

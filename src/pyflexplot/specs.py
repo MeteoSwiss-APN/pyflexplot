@@ -65,9 +65,7 @@ class VarSpecs:
             return flatten(create_var_specs_lst_lst(setups))
 
         setups_time = [
-            sub_setup
-            for setup in setups
-            for sub_setup in setup.decompress(["time_idcs"])
+            sub_setup for setup in setups for sub_setup in setup.decompress(["time"])
         ]
         return create_var_specs_lst_lst(setups_time)
 
@@ -78,20 +76,19 @@ class VarSpecs:
         return format_dictlike(self)
 
     def dict(self):
-        time = (
-            self._setup.time_idcs
-            if len(self._setup.time_idcs) != 1
-            else next(iter(self._setup.time_idcs))
-        )  # SR_TMP
         return {
             "deposition": self._setup.deposition_type,
             "integrate": self._setup.integrate,
-            "level": self._setup.level_idx,
-            "nageclass": self._setup.age_class_idx,
-            "noutrel": self._setup.nout_rel_idx,
-            "numpoint": self._setup.release_point_idx,
+            "level": self._setup.level,
+            "nageclass": self._setup.nageclass,
+            "noutrel": self._setup.noutrel,
+            "numpoint": self._setup.numpoint,
             "species_id": self._setup.species_id,
-            "time": time,
+            "time": (
+                self._setup.time
+                if len(self._setup.time) != 1
+                else next(iter(self._setup.time))
+            ),
         }
 
 
@@ -151,20 +148,7 @@ class FldSpecs:
 
     def collect(self, param: str) -> List[Any]:
         """Collect all values of a given parameter."""
-        if param == "time":
-            setup_param = "time_idcs"
-            return [
-                next(iter(getattr(vs._setup, setup_param))) for vs in self.var_specs_lst
-            ]
-        setup_param = {
-            "species_id": "species_id",
-            "integrate": "integrate",
-            "nageclass": "age_class_idx",
-            "numpoint": "release_point_idx",
-            "noutrel": "nout_rel_idx",
-            "level": "level_idx",
-            "deposition": "deposition_type",
-        }.get(param, param)
+        setup_param = "deposition" if param == "deposition_type" else param
         return [getattr(vs._setup, setup_param) for vs in self.var_specs_lst]
 
     def collect_equal(self, param: str) -> Any:

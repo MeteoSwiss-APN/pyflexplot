@@ -121,10 +121,10 @@ class PlotLabels:
         # Bottom box
         model = a.simulation.model_name.value
         n_members = 21  # SR_TMP SR_HC TODO un-hardcode
-        ens_member_ids = "{:03d}-{:03d}".format(0, 20)  # SR_TMP SR_HC TODO un-hardcode
+        ens_member_id = "{:03d}-{:03d}".format(0, 20)  # SR_TMP SR_HC TODO un-hardcode
         model_ens = (
             f"{model} {w['ensemble']} ({n_members} {w['member', None, 'pl']}: "
-            f"{ens_member_ids}"
+            f"{ens_member_id}"
         )
         start = a.simulation.start.format()
         model_info_fmt = f"{w['flexpart']} {w['based_on']} {model}, {start}"

@@ -25,7 +25,7 @@ class Plotter:
         "time": "time_idx",
         "nageclass": "age_idx",
         "numpoint": "rel_pt_idx",
-        "level": "level_idx",
+        "level": "level",
         "species_id": "species_id",
         "integrate": "integrate",
     }
@@ -83,13 +83,13 @@ class Plotter:
             variable += f"_{setup.deposition_type}"
 
         kwargs = {
-            "age_class": setup.age_class_idx,
+            "nageclass": setup.nageclass,
             "domain": setup.domain,
             "lang": setup.lang,
-            "level": setup.level_idx,
-            "nout_rel": setup.nout_rel_idx,
+            "level": setup.level,
+            "noutrel": setup.noutrel,
             "species_id": setup.species_id,
-            "time": setup.time_idcs,
+            "time": setup.time,
             "variable": variable,
         }
 

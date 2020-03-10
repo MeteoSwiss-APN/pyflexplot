@@ -33,13 +33,23 @@ ENS_CLOUD_ARRIVAL_TIME_MEM_MIN_DEFAULT = 1
 ENS_CLOUD_ARRIVAL_TIME_THR_DEFAULT: float = 1e-9
 
 
+def setup_repr(obj: "Setup") -> str:
+    def fmt(obj):
+        if isinstance(obj, str):
+            return f"'{obj}'"
+        return str(obj)
+
+    s_attrs = ",\n  ".join(f"{k}={fmt(v)}" for k, v in obj.dict().items())
+    return f"{type(obj).__name__}(\n  {s_attrs},\n)"
+
+
 class Setup(BaseModel):
     """
     PyFlexPlot setup.
 
     Args:
-        age_class_idx: Index of age class (zero-based). Use the format key
-            '{age_class}' to embed it into the output file path.
+        nageclass: Index of age class (zero-based). Use the format key
+            '{nageclass}' to embed it into the output file path.
 
         combine_species: Sum up over all specified species. Otherwise, each is
             plotted separately.
@@ -52,7 +62,7 @@ class Setup(BaseModel):
             from the input data. Use the format key '{domain}' to embed the
             domain name in the plot file path. Choices": "auto", "ch".
 
-        ens_member_ids: Ensemble member ids. Use the format key '{ens_member}'
+        ens_member_id: Ensemble member ids. Use the format key '{ens_member}'
             to embed it into the input file path. Omit for deterministic
             simulations.
 
@@ -70,20 +80,19 @@ class Setup(BaseModel):
         lang: Language. Use the format key '{lang}' to embed it into the plot
             file path. Choices: "en", "de".
 
-        level_idx: Index/indices of vertical level (zero-based, bottom-up). To
+        level: Index/indices of vertical level (zero-based, bottom-up). To
             sum up multiple levels, combine their indices with '+'. Use the
             format key '{level}' to embed it in the plot file path.
 
-        nout_rel_idx: Index of noutrel (zero-based). Use the format key
-            '{nout_rel}' to embed it in the plot file path.
+        noutrel: Index of noutrel (zero-based). Use the format key
+            '{noutrel}' to embed it in the plot file path.
 
         outfile: Output file path. May contain format keys.
 
         plot_type: Plot type. Choices: "auto", "affected_area",
             "affected_area_mono", "ens_mean", "ens_max", "ens_thr_agrmt".
 
-        release_point_idx: Index of release point (zero-based). Use the format
-            key '{rls_pt_idx}' to embed it in the plot file path.
+        numpoint: Index of release point (zero-based).
 
         simulation_type: Type of the simulation. Choices: "deterministic",
             "ensemble".
@@ -92,8 +101,8 @@ class Setup(BaseModel):
             ids with '+'. Use the format key '{species_id}' to embed it in the
             plot file path.
 
-        time_idcs: Time step indices.. Use the format key '{time}' to embed it
-            in the plot file path.
+        time: Time step indices (zero-based). Use the format key '{time}'
+            to embed one in the plot file path.
 
         variable: Input variable to be plotted. Choices: "concentration",
             "deposition".
@@ -104,34 +113,34 @@ class Setup(BaseModel):
         allow_mutation = False
         extra = "forbid"
 
-    age_class_idx: int = 0
+    nageclass: int = 0
     combine_species: bool = False
     deposition_type: Union[str, Tuple[str, str]] = "none"
     domain: str = "auto"
-    ens_member_ids: Optional[Tuple[int, ...]] = None
+    ens_member_id: Optional[Tuple[int, ...]] = None
     infiles: Tuple[str, ...]
     integrate: bool = False
     lang: str = "en"
-    nout_rel_idx: int = 0
+    noutrel: int = 0
     outfile: str
     plot_type: str = "auto"
-    release_point_idx: int = 0
+    numpoint: int = 0
     reverse_legend: bool = False
     scale_fact: Optional[float] = None
     simulation_type: str = "deterministic"
     species_id: Union[int, Tuple[int, ...]] = 1
-    time_idcs: Tuple[int, ...] = (0,)
+    time: Tuple[int, ...] = (0,)
     variable: str = "concentration"
 
     # Derived parameters
-    level_idx: Optional[Union[int, Tuple[int, ...]]] = None
+    level: Optional[Union[int, Tuple[int, ...]]] = None
     ens_param_mem_min: Optional[int] = None
     ens_param_thr: Optional[float] = None
 
-    @validator("time_idcs")
-    def _validate_time_idcs(cls, value: Tuple[int, ...]):
+    @validator("time")
+    def _validate_time(cls, value: Tuple[int, ...]):
         if len(value) == 0:
-            raise ValueError("missing time_idcs")
+            raise ValueError("missing time")
         return value
 
     @validator("deposition_type", always=True)
@@ -176,14 +185,14 @@ class Setup(BaseModel):
             value = ENS_CLOUD_ARRIVAL_TIME_THR_DEFAULT
         return value
 
-    @validator("level_idx", always=True)
-    def _init_level_idx(
+    @validator("level", always=True)
+    def _init_level(
         cls, value: Optional[Union[int, Tuple[int, ...]]], values: Dict[str, Any],
     ) -> Optional[Union[int, Tuple[int, ...]]]:
         if value is not None:
             if values["variable"] == "deposition":
                 raise ValueError(
-                    "level_idx must be None for variable", value, values["variable"],
+                    "level must be None for variable", value, values["variable"],
                 )
         elif values["variable"] == "concentration":
             return 0
@@ -196,13 +205,7 @@ class Setup(BaseModel):
         return cls(**obj)  # type: ignore
 
     def __repr__(self) -> str:  # type: ignore
-        def fmt(obj):
-            if isinstance(obj, str):
-                return f"'{obj}'"
-            return str(obj)
-
-        s_attrs = ",\n  ".join(f"{k}={fmt(v)}" for k, v in self.dict().items())
-        return f"{type(self).__name__}(\n  {s_attrs},\n)"
+        return setup_repr(self)
 
     def __str__(self) -> str:  # type: ignore
         return repr(self)
@@ -238,20 +241,19 @@ class Setup(BaseModel):
         if (
             self.variable == "concentration"
             and params.get("variable") == "deposition"
-            and "level_idx" not in params
+            and "level" not in params
         ):
-            params["level_idx"] = None  # type: ignore
+            params["level"] = None  # type: ignore
         # SR_TMP >
         return type(self)(**{**self.dict(), **params})
 
     @classmethod
-    def compress(cls, setups: Collection["Setup"]) -> "Setup":
+    def compress(cls, setups: "SetupCollection") -> "Setup":
         if not setups:
             raise ValueError("missing setups")
-        dcts = [setup.dict() for setup in setups]
-        dct = compress_multival_dicts(dcts, cls_seq=tuple)
+        dct = compress_multival_dicts(setups.dicts(), cls_seq=tuple)
         # SR_TMP < TODO find cleaner solution (move logic to Setup or the like)
-        for param in ["infiles", "time_idcs"]:
+        for param in ["infiles", "time"]:
             if not isinstance(dct[param], tuple):
                 dct[param] = (dct[param],)
         # SR_TMP >
@@ -266,7 +268,7 @@ class Setup(BaseModel):
         """Create multiple ``Setup`` objects with one-value parameters only."""
 
         if skip is None:
-            skip = ["infiles", "ens_member_ids"]
+            skip = ["infiles", "ens_member_id"]
 
         dct = self.dict()
 
@@ -281,18 +283,18 @@ class Setup(BaseModel):
         dcts = decompress_multival_dict(dct, select=select, skip=skip)
 
         def create_setup(dct):
-            if isinstance(dct["time_idcs"], int):
-                dct["time_idcs"] = [dct["time_idcs"]]
+            if isinstance(dct["time"], int):
+                dct["time"] = [dct["time"]]
             return Setup(**dct)
 
         return SetupCollection([create_setup(dct) for dct in dcts])
 
 
 class SetupCollection:
-    """A set of ``Setup`` objects."""
+    """A collection of ``Setup`` objects."""
 
     def __init__(self, setups: Collection[Union[Mapping[str, Any], Setup]]) -> None:
-        self._setups = [Setup.as_setup(obj) for obj in setups]
+        self._setups: List[Setup] = [Setup.as_setup(obj) for obj in setups]
 
     def __repr__(self) -> str:
         s_setups = "\n  ".join([""] + [str(c) for c in self._setups])

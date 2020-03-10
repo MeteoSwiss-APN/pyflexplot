@@ -44,7 +44,7 @@ class TestReadFieldEnsemble_Single:
         "plot_type": "ens_mean",
         "simulation_type": "ensemble",
         "species_id": 2,
-        "time_idcs": [10],
+        "time": [10],
         "variable": "concentration",
     }
 
@@ -81,7 +81,7 @@ class TestReadFieldEnsemble_Single:
             **{
                 **self.setup_params_shared,
                 **setup_params,
-                "ens_member_ids": self.ens_member_ids,
+                "ens_member_id": self.ens_member_ids,
                 "plot_type": f"ens_{ens_var}",
             }
         )
@@ -126,7 +126,7 @@ class TestReadFieldEnsemble_Single:
         self.run(
             datadir,
             var_names_ref=[f"spec{self.species_id:03d}"],
-            setup_params={"level_idx": 1},
+            setup_params={"level": 1},
             ens_var="mean",
             fct_reduce_mem=np.nanmean,
         )
@@ -142,7 +142,7 @@ class TestReadFieldEnsemble_Multiple:
         "outfile": "dummy.png",
         "simulation_type": "ensemble",
         "species_id": 1,
-        "time_idcs": [0, 3, 9],
+        "time": [0, 3, 9],
     }
 
     # Species ID
@@ -181,11 +181,11 @@ class TestReadFieldEnsemble_Multiple:
         for shared_setup_params in decompress_multival_dict(
             self.shared_setup_params_compressed, skip=["infiles"],
         ):
-            shared_setup_params["time_idcs"] = [shared_setup_params["time_idcs"]]
+            shared_setup_params["time"] = [shared_setup_params["time"]]
             setup_params_i = {
                 **shared_setup_params,
                 **setup_params,
-                "ens_member_ids": self.ens_member_ids,
+                "ens_member_id": self.ens_member_ids,
                 "plot_type": f"ens_{ens_var}",
             }
             setups.append(Setup(**setup_params_i))
@@ -206,7 +206,9 @@ class TestReadFieldEnsemble_Multiple:
     ):
 
         # Collect merged variables specifications
-        compressed_setups = [fld_specs.setup for fld_specs in fld_specs_lst]
+        compressed_setups = SetupCollection(
+            [fld_specs.setup for fld_specs in fld_specs_lst],
+        )
         global_setup = Setup.compress(compressed_setups)
 
         # Read input fields
@@ -255,7 +257,7 @@ class TestReadFieldEnsemble_Multiple:
         }[ens_var]
 
         setup_params = {
-            "level_idx": 1,
+            "level": 1,
             "variable": "concentration",
         }
         if ens_var == "thr_agrmt":

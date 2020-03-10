@@ -131,10 +131,10 @@ class Test_Create_SingleObjDct_Concentration(_Test_Create_SingleObjDct):
     base_setup = Setup(
         infiles=["dummy.nc"],
         integrate=False,
-        level_idx=1,
+        level=1,
         outfile="dummy.png",
         species_id=2,
-        time_idcs=[3],
+        time=[3],
         variable="concentration",
     )
     setups = SetupCollection([base_setup])
@@ -161,7 +161,7 @@ class Test_Create_SingleObjDct_Deposition(_Test_Create_SingleObjDct):
         integrate=False,
         outfile="dummy.png",
         species_id=2,
-        time_idcs=[3],
+        time=[3],
         variable="deposition",
     )
     setups = SetupCollection([base_setup])
@@ -199,10 +199,10 @@ class Test_Create_MultiObjDct_Concentration(_Test_Create_MultiObjDct):
     base_setup = Setup(
         infiles=["dummy.nc"],
         integrate=False,
-        level_idx=1,
+        level=1,
         outfile="dummy.png",
         species_id=1,
-        time_idcs=[1, 3],
+        time=[1, 3],
         variable="concentration",
     )
     setups = SetupCollection([base_setup, base_setup.derive({"species_id": 2})])
@@ -229,7 +229,7 @@ class Test_Create_MultiObjDct_Deposition(_Test_Create_MultiObjDct):
         integrate=False,
         outfile="dummy.png",
         species_id=1,
-        time_idcs=[1, 3],
+        time=[1, 3],
         variable="deposition",
     )
     setups = SetupCollection([base_setup, base_setup.derive({"species_id": 2})])
@@ -273,10 +273,10 @@ class Test_Create_MultiObjDctNested_Concentration(_Test_Create_MultiObjDctNested
     base_setup = Setup(
         infiles=["dummy.nc"],
         integrate=False,
-        level_idx=1,
+        level=1,
         outfile="dummy.png",
         species_id=1,
-        time_idcs=[1, 3],
+        time=[1, 3],
         variable="concentration",
     )
     setups = SetupCollection([base_setup, base_setup.derive({"species_id": [1, 2]})])
@@ -303,7 +303,7 @@ class Test_Create_MultiObjDctNested_Deposition(_Test_Create_MultiObjDctNested):
         integrate=False,
         outfile="dummy.png",
         species_id=1,
-        time_idcs=[1, 3],
+        time=[1, 3],
         variable="deposition",
     )
     setups = SetupCollection([base_setup, base_setup.derive({"species_id": [1, 2]})])
@@ -360,10 +360,10 @@ class Test_FldSpecs_Concentration(_Test_FldSpecs):
     base_setup = Setup(
         infiles=["dummy.nc"],
         integrate=False,
-        level_idx=1,
+        level=1,
         outfile="dummy.png",
         species_id=1,
-        time_idcs=[1, 3],
+        time=[1, 3],
         variable="concentration",
     )
     setups = SetupCollection([base_setup, base_setup.derive({"species_id": [1, 2]})])
@@ -389,7 +389,7 @@ class Test_FldSpecs_DepositionDry(_Test_FldSpecs):
         integrate=False,
         outfile="dummy.png",
         species_id=1,
-        time_idcs=[1, 3],
+        time=[1, 3],
         variable="deposition",
     )
     setups = SetupCollection([base_setup, base_setup.derive({"species_id": [1, 2]})])
@@ -415,7 +415,7 @@ class Test_FldSpecs_DepositionTot(_Test_FldSpecs):
         integrate=False,
         outfile="dummy.png",
         species_id=2,
-        time_idcs=[3],
+        time=[3],
         variable="deposition",
     )
     setups = SetupCollection([base_setup])
@@ -465,7 +465,7 @@ class Test_FldSpecs_Interface:
         integrate=False,
         outfile="dummy.png",
         species_id=2,
-        time_idcs=[3],
+        time=[3],
         variable="deposition",
     )
     setups = SetupCollection([base_setup])

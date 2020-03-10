@@ -98,7 +98,7 @@ class FileReader:
         attrs_lst: List[AttrMult] = []
         for timeless_fld_specs, time_idcs in zip(timeless_fld_specs_lst, time_idcs_lst):
             ens_member_ids: Optional[Sequence[int]] = (
-                timeless_fld_specs.setup.ens_member_ids
+                timeless_fld_specs.setup.ens_member_id
             )
             self.n_members = 1 if not ens_member_ids else len(ens_member_ids)
             self.in_file_path_lst = self._prepare_in_file_path_lst(ens_member_ids)
@@ -127,7 +127,7 @@ class FileReader:
                 fmt_keys[0],
                 self.in_file_path_fmt,
             )
-        return [self.in_file_path_fmt.format(ens_member=id) for id in ens_member_ids]
+        return [self.in_file_path_fmt.format(ens_member=id_) for id_ in ens_member_ids]
 
     def _determine_n_reqtime(self, time_idcs_lst: Sequence[Sequence[int]]) -> int:
         """Determine the number of selected time steps."""
@@ -243,7 +243,7 @@ class FileReader:
             fld_specs_i: FldSpecs = deepcopy(timeless_fld_specs)
             # SR_TMP <
             for var_specs in fld_specs_i.var_specs_lst:
-                var_specs._setup = var_specs._setup.derive({"time_idcs": [time_idx]})
+                var_specs._setup = var_specs._setup.derive({"time": [time_idx]})
             # SR_TMP >
             fld_specs_lst.append(fld_specs_i)
         return fld_specs_lst
@@ -301,7 +301,7 @@ class FileReader:
         for fld_specs in fld_specs_lst:
 
             # Extract time index (same vor all var_specs in the fld_specs)
-            time_idcs = fld_specs.collect_equal("time_idcs")
+            time_idcs = fld_specs.collect_equal("time")
             assert len(time_idcs) == 1  # SR_DBG
             time_idx: int = next(iter(time_idcs))
 
@@ -309,9 +309,7 @@ class FileReader:
             dummy_time_idx = -999  # SR_TMP TODO find proper solution
             timeless_fld_specs: FldSpecs = deepcopy(fld_specs)
             for var_specs in timeless_fld_specs.var_specs_lst:
-                var_specs._setup = var_specs._setup.derive(
-                    {"time_idcs": [dummy_time_idx]},
-                )
+                var_specs._setup = var_specs._setup.derive({"time": [dummy_time_idx]},)
 
             for idx, timeless_fld_specs_i in enumerate(timeless_fld_specs_lst):
                 if timeless_fld_specs == timeless_fld_specs_i:
@@ -355,7 +353,7 @@ class FileReader:
         """Create fields at requested time steps for all members."""
         fields: List[Field] = []
         for fld_specs in fld_specs_lst:
-            time_idcs = fld_specs.collect_equal("time_idcs")
+            time_idcs = fld_specs.collect_equal("time")
             assert len(time_idcs) == 1  # SR_TMP
             time_idx = next(iter(time_idcs))
             fld: np.ndarray = fld_time[time_idx]
@@ -370,10 +368,10 @@ class FileReader:
 
         # Indices of field along NetCDF dimensions
         dim_idcs_by_name = {
-            "level": setup.level_idx,
-            "nageclass": setup.age_class_idx,
-            "noutrel": setup.nout_rel_idx,
-            "numpoint": setup.release_point_idx,
+            "level": setup.level,
+            "nageclass": setup.nageclass,
+            "noutrel": setup.noutrel,
+            "numpoint": setup.numpoint,
             "rlat": slice(None),  # SR_TMP
             "rlon": slice(None),  # SR_TMP
             "time": slice(None),  # SR_TMP

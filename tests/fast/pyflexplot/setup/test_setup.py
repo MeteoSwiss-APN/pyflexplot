@@ -17,22 +17,22 @@ def CREATE_DEFAULT_SETUP():
     return Setup(
         **{
             **DEFAULT_KWARGS,
-            "age_class_idx": 0,
+            "nageclass": 0,
             "combine_species": False,
             "deposition_type": "none",
             "domain": "auto",
-            "ens_member_ids": None,
+            "ens_member_id": None,
             "integrate": False,
             "lang": "en",
-            "level_idx": None,
-            "nout_rel_idx": 0,
+            "level": None,
+            "noutrel": 0,
             "plot_type": "auto",
-            "release_point_idx": 0,
+            "numpoint": 0,
             "reverse_legend": False,
             "scale_fact": None,
             "simulation_type": "deterministic",
             "species_id": 1,
-            "time_idcs": (0,),
+            "time": (0,),
             "variable": "concentration",
         }
     )
@@ -51,7 +51,7 @@ class Test_Decompress:
                 "variable": "deposition",
                 "deposition_type": ["dry", "wet"],
                 "species_id": [1, 2],
-                "time_idcs": [1, 2, 3],
+                "time": [1, 2, 3],
             },
         )
 
@@ -59,7 +59,7 @@ class Test_Decompress:
         """Decompress all params."""
         setups = self.setup.decompress()
         assert len(setups) == 12
-        res = {(s.deposition_type, s.species_id, s.time_idcs) for s in setups}
+        res = {(s.deposition_type, s.species_id, s.time) for s in setups}
         sol = {
             ("dry", 1, (1,)),
             ("dry", 1, (2,)),
@@ -80,15 +80,15 @@ class Test_Decompress:
         """Decompress only one select parameter."""
         setups = self.setup.decompress(["species_id"])
         assert len(setups) == 2
-        res = {(s.deposition_type, s.species_id, s.time_idcs) for s in setups}
+        res = {(s.deposition_type, s.species_id, s.time) for s in setups}
         sol = {("tot", 1, (1, 2, 3)), ("tot", 2, (1, 2, 3))}
         assert res == sol
 
     def test_select_two(self):
         """Decompress two select parameters."""
-        setups = self.setup.decompress(["time_idcs", "deposition_type"])
+        setups = self.setup.decompress(["time", "deposition_type"])
         assert len(setups) == 6
-        res = {(s.deposition_type, s.species_id, s.time_idcs) for s in setups}
+        res = {(s.deposition_type, s.species_id, s.time) for s in setups}
         sol = {
             ("dry", (1, 2), (1,)),
             ("dry", (1, 2), (2,)),
@@ -107,7 +107,7 @@ class Test_SetupCollection:
             for dct in [
                 {"infiles": ("foo.nc",), "variable": "concentration", "domain": "ch"},
                 {"infiles": ("bar.nc",), "variable": "deposition", "lang": "de"},
-                {"age_class_idx": 1, "nout_rel_idx": 5, "release_point_idx": 3},
+                {"nageclass": 1, "noutrel": 5, "numpoint": 3},
             ]
         ]
 
@@ -134,24 +134,24 @@ class Test_Compress:
     dcts = [
         {**DEFAULT_KWARGS, **dct}
         for dct in [
-            {"infiles": ("foo.nc",), "variable": "concentration", "level_idx": 0},
-            {"infiles": ("foo.nc",), "variable": "concentration", "level_idx": 1},
-            {"infiles": ("foo.nc",), "variable": "concentration", "level_idx": (1, 2)},
+            {"infiles": ("foo.nc",), "variable": "concentration", "level": 0},
+            {"infiles": ("foo.nc",), "variable": "concentration", "level": 1},
+            {"infiles": ("foo.nc",), "variable": "concentration", "level": (1, 2)},
         ]
     ]
-    setups = [Setup(**dct) for dct in dcts]
+    setups_lst = [Setup(**dct) for dct in dcts]
 
     def test_one(self):
-        res = Setup.compress(self.setups[:1]).dict()
-        sol = self.setups[0]
+        res = Setup.compress(SetupCollection(self.setups_lst[:1])).dict()
+        sol = self.setups_lst[0]
         assert res == sol
 
     def test_two(self):
-        res = Setup.compress(self.setups[:2]).dict()
-        sol = Setup(**{**self.dcts[0], "level_idx": (0, 1)})
+        res = Setup.compress(SetupCollection(self.setups_lst[:2])).dict()
+        sol = Setup(**{**self.dcts[0], "level": (0, 1)})
         assert res == sol
 
     def test_three(self):
-        res = Setup.compress(self.setups[:3]).dict()
-        sol = Setup(**{**self.dcts[0], "level_idx": (0, 1, 2)})
+        res = Setup.compress(SetupCollection(self.setups_lst[:3])).dict()
+        sol = Setup(**{**self.dcts[0], "level": (0, 1, 2)})
         assert res == sol

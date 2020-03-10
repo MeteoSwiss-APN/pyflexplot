@@ -17,6 +17,7 @@ from srutils.various import isiterable
 
 # Local
 from .setup import Setup
+from .setup import SetupCollection
 from .utils import summarizable
 
 
@@ -370,7 +371,7 @@ class AttrGroup:
                 self_setup_dct,
                 other_setup_dcts,
             )
-        setup = Setup.compress([self._setup] + other_setups)
+        setup = Setup.compress(SetupCollection([self._setup] + other_setups))
 
         kwargs = {}
         for key, attr0 in iter(self):
@@ -867,8 +868,8 @@ class AttrsCollector:
 
         if idx is None:
             # Default to timestep of current field
-            assert len(self._setup.time_idcs) == 1  # SR_TMP
-            idx = next(iter(self._setup.time_idcs))  # SR_TMP
+            assert len(self._setup.time) == 1  # SR_TMP
+            idx = next(iter(self._setup.time))  # SR_TMP
 
         if not isinstance(idx, int):
             raise Exception(f"expect type 'int', not '{type(idx).__name__}': {idx}")
@@ -927,25 +928,25 @@ class AttrsCollector:
         """Collect release point attributes."""
 
         # Collect release point information
-        release_point = ReleasePoint.from_file(self.fi, self._setup.release_point_idx,)
+        numpoint = ReleasePoint.from_file(self.fi, self._setup.numpoint,)
 
         sim_start = attrs["simulation"]["start"]
-        start = sim_start + datetime.timedelta(seconds=release_point.rel_start)
-        end = sim_start + datetime.timedelta(seconds=release_point.rel_end)
+        start = sim_start + datetime.timedelta(seconds=numpoint.rel_start)
+        end = sim_start + datetime.timedelta(seconds=numpoint.rel_end)
 
-        site_lat = np.mean([release_point.lllat, release_point.urlat])
-        site_lon = np.mean([release_point.lllon, release_point.urlon])
-        site_name = release_point.name
+        site_lat = np.mean([numpoint.lllat, numpoint.urlat])
+        site_lon = np.mean([numpoint.lllon, numpoint.urlon])
+        site_name = numpoint.name
         site_name = {"Goesgen": r"G$\mathrm{\"o}$sgen"}.get(site_name)
 
-        height = np.mean([release_point.zbot, release_point.ztop])
+        height = np.mean([numpoint.zbot, numpoint.ztop])
         height_unit = self._words["m_agl", self._setup.lang].s
 
-        assert len(release_point.ms_parts) == 1
-        mass = next(iter(release_point.ms_parts))
+        assert len(numpoint.ms_parts) == 1
+        mass = next(iter(numpoint.ms_parts))
         mass_unit = "Bq"  # SR_HC
 
-        duration = release_point.rel_end - release_point.rel_start
+        duration = numpoint.rel_end - numpoint.rel_start
         duration_unit = "s"  # SR_HC
 
         rate = mass / duration
@@ -975,7 +976,7 @@ class AttrsCollector:
         # Variable unit
         unit = self.ncattrs_field["units"]
 
-        idx = self._setup.level_idx
+        idx = self._setup.level
         if idx is None:
             level_unit = ""
             level_bot = -1
