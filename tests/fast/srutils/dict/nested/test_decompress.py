@@ -4,7 +4,7 @@
 Tests for function ``srutils.dict.decompress_nested_dict``.
 """
 # Third-party
-import pytest
+import pytest  # type: ignore
 
 # First-party
 from srutils.dict import decompress_nested_dict

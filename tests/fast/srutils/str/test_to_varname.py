@@ -4,7 +4,7 @@
 Tests for function ``srutils.str.to_varname``.
 """
 # Third-party
-import pytest
+import pytest  # type: ignore
 
 # First-party
 from srutils.str import to_varname

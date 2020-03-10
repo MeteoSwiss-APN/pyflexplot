@@ -7,7 +7,7 @@ Tests for module ``pyflexplot.var_specs``.
 from dataclasses import dataclass
 
 # Third-party
-import pytest
+import pytest  # type: ignore
 
 # First-party
 from pyflexplot.setup import Setup

@@ -7,7 +7,7 @@ import distutils.dir_util
 import os
 
 # Third-party
-import pytest
+import pytest  # type: ignore
 
 
 @pytest.fixture

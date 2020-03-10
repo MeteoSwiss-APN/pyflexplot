@@ -36,8 +36,7 @@ repos:
     rev: v0.740
     hooks:
     -   id: mypy
-        # files: ^(.*\.py|(src|tests|docs)/(.*/)*.*\.py)$
-        files: ^(.*\.py|(src|docs)/(.*/)*.*\.py)$
+        files: ^(.*\.py|(src|tests|docs)/(.*/)*.*\.py)$
         args: [--no-strict-optional, --ignore-missing-imports]
         additional_dependencies:
         -   "pydantic"

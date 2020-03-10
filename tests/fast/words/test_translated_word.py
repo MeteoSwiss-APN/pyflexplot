@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Any
 
 # Third-party
-import pytest
+import pytest  # type: ignore
 
 # First-party
 from srutils.testing import property_obj

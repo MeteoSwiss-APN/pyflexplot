@@ -13,7 +13,7 @@ from typing import Optional
 
 # Third-party
 import numpy as np
-import pytest
+import pytest  # type: ignore
 
 # First-party
 from pyflexplot.io import read_files

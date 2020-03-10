@@ -4,7 +4,7 @@
 Tests for function ``srutils.dict.linearize_nested_dict``.
 """
 # Third-party
-import pytest
+import pytest  # type: ignore
 
 # First-party
 from srutils.dict import linearize_nested_dict
