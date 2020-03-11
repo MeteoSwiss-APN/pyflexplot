@@ -928,7 +928,12 @@ class AttrsCollector:
         """Collect release point attributes."""
 
         # Collect release point information
-        numpoint = ReleasePoint.from_file(self.fi, self._setup.numpoint,)
+        # SR_TMP < TODO clean up once CoreSetup has been implemented
+        assert len(self._setup.numpoint) == 1
+        idx = next(iter(self._setup.numpoint))
+        # idx = self._setup.numpoint
+        # SR_TMP >
+        numpoint = ReleasePoint.from_file(self.fi, idx)
 
         sim_start = attrs["simulation"]["start"]
         start = sim_start + datetime.timedelta(seconds=numpoint.rel_start)

@@ -114,7 +114,7 @@ class Setup(BaseModel):
         allow_mutation = False
         extra = "forbid"
 
-    nageclass: int = 0
+    nageclass: Tuple[int, ...] = (0,)
     combine_species: bool = False
     # SR_TMP < TODO remove option to specify "tot" as ["dry", "wet"]
     # deposition_type: str = "none"
@@ -125,10 +125,10 @@ class Setup(BaseModel):
     infile: Union[str, Tuple[str, ...]]
     integrate: bool = False
     lang: str = "en"
-    noutrel: int = 0
+    noutrel: Tuple[int, ...] = (0,)
     outfile: str
     plot_type: str = "auto"
-    numpoint: int = 0
+    numpoint: Tuple[int, ...] = (0,)
     reverse_legend: bool = False
     scale_fact: Optional[float] = None
     simulation_type: str = "deterministic"
@@ -151,16 +151,13 @@ class Setup(BaseModel):
             # SR_TMP >
             # SR_TMP < Handle one parameter after the other
             if param in [
-                "nageclass",
                 "combine_species",
                 "deposition_type",
                 "domain",
                 "integrate",
                 "lang",
-                "noutrel",
                 "outfile",
                 "plot_type",
-                "numpoint",
                 "reverse_legend",
                 "scale_fact",
                 "simulation_type",

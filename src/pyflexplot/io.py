@@ -368,20 +368,17 @@ class FileReader:
 
         # SR_TMP < TODO remove once CoreSetup implemented
         assert setup.level is None or len(setup.level) == 1
-        # + assert len(setup.nageclass) == 1
-        # + assert len(setup.noutrel) == 1
-        # + assert len(setup.numpoint) == 1
+        assert len(setup.nageclass) == 1
+        assert len(setup.noutrel) == 1
+        assert len(setup.numpoint) == 1
         # SR_TMP >
 
         # Indices of field along NetCDF dimensions
         dim_idcs_by_name = {
             "level": None if setup.level is None else next(iter(setup.level)),
-            "nageclass": setup.nageclass,
-            "noutrel": setup.noutrel,
-            "numpoint": setup.numpoint,
-            # + "nageclass": next(iter(setup.nageclass)),
-            # + "noutrel": next(iter(setup.noutrel)),
-            # + "numpoint": next(iter(setup.numpoint)),
+            "nageclass": next(iter(setup.nageclass)),
+            "noutrel": next(iter(setup.noutrel)),
+            "numpoint": next(iter(setup.numpoint)),
             "rlat": slice(None),  # SR_TMP
             "rlon": slice(None),  # SR_TMP
             "time": slice(None),  # SR_TMP
