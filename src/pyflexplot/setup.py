@@ -114,32 +114,39 @@ class Setup(BaseModel):
         allow_mutation = False
         extra = "forbid"
 
-    nageclass: Tuple[int, ...] = (0,)
-    combine_species: bool = False
-    # SR_TMP < TODO remove option to specify "tot" as ["dry", "wet"]
-    # deposition_type: str = "none"
-    deposition_type: Union[str, Tuple[str, str]] = "none"
-    # SR_TMP >
-    domain: str = "auto"
-    ens_member_id: Tuple[Optional[int], ...] = (None,)
+    # Basics
     infile: Union[str, Tuple[str, ...]]
-    integrate: bool = False
-    lang: str = "en"
-    noutrel: Tuple[int, ...] = (0,)
     outfile: str
     plot_type: str = "auto"
-    numpoint: Tuple[int, ...] = (0,)
-    reverse_legend: bool = False
-    scale_fact: Optional[float] = None
-    simulation_type: str = "deterministic"
-    species_id: Union[int, Tuple[int, ...]] = (1,)
-    time: Tuple[int, ...] = (0,)
     variable: str = "concentration"
 
-    # Derived parameters
-    level: Tuple[Optional[int], ...] = (None,)
+    # Tweaks
+    deposition_type: Union[str, Tuple[str, str]] = "none"
+    integrate: bool = False
+    combine_species: bool = False
+
+    # Ensemble-related
+    simulation_type: str = "deterministic"
+    ens_member_id: Optional[Tuple[Optional[int], ...]] = None
     ens_param_mem_min: Optional[int] = None
     ens_param_thr: Optional[float] = None
+
+    # Plot appearance
+    lang: str = "en"
+    domain: str = "auto"
+    reverse_legend: bool = False
+    scale_fact: Optional[float] = None
+
+    # Dimensions
+    nageclass: Tuple[int, ...] = (0,)
+    noutrel: Tuple[int, ...] = (0,)
+    numpoint: Tuple[int, ...] = (0,)
+    species_id: Union[int, Tuple[int, ...]] = (1,)
+    time: Tuple[int, ...] = (0,)
+    # SR_TMP < TODO figure out why this doesn't work!
+    # level: Optional[Tuple[int, ...]] = None
+    level: Optional[Tuple[Optional[int], ...]] = None
+    # SR_TMP >
 
     @root_validator(pre=True)
     def _to_sequence(cls, values):
@@ -186,6 +193,19 @@ class Setup(BaseModel):
             return "tot"
         raise ValueError("deposition_type is invalid", value)
 
+    @validator("ens_member_id", always=True)
+    def _init_ens_member_id(
+        cls, value: Optional[Tuple[Optional[int], ...]],
+    ) -> Optional[Tuple[int, ...]]:
+        value_out: Optional[Tuple[int, ...]]
+        if value in [None, (None,)]:
+            value_out = None
+        else:
+            assert isinstance(value, tuple)  # for mypy
+            assert all(isinstance(i, int) for i in value)  # for mypy
+            value_out = value  # type: ignore
+        return value_out
+
     @validator("ens_param_mem_min", always=True)
     def _init_ens_param_mem_min(
         cls, value: Optional[int], values: Dict[str, Any],
@@ -220,18 +240,30 @@ class Setup(BaseModel):
 
     @validator("level", always=True)
     def _init_level(
-        cls, value: Tuple[Optional[int], ...], values: Dict[str, Any],
+        cls,
+        value: Optional[Union[Tuple[None], Tuple[int, ...]]],
+        values: Dict[str, Any],
     ) -> Optional[Tuple[int, ...]]:
-        if value == (None,):
+        value_out: Optional[Tuple[int, ...]]
+        if value in [None, (None,)]:
             if values["variable"] == "concentration":
-                return (0,)
+                value_out = (0,)
             else:
-                return None
+                value_out = None
         elif values["variable"] == "deposition":
             raise ValueError(
                 "level must be None for variable", value, values["variable"],
             )
-        return value  # type: ignore
+        else:
+            assert isinstance(value, tuple)  # for mypy
+            assert all(isinstance(i, int) for i in value)  # for mypy
+            value_out = value  # type: ignore
+        # SR_DBG <
+        assert value_out is None or (
+            isinstance(value_out, tuple) and all(isinstance(i, int) for i in value_out)
+        )
+        # SR_DBG >
+        return value_out
 
     @classmethod
     def as_setup(cls, obj: Union[Mapping[str, Any], "Setup"]) -> "Setup":
@@ -280,7 +312,8 @@ class Setup(BaseModel):
         ):
             params["level"] = None  # type: ignore
         # SR_TMP >
-        return type(self)(**{**self.dict(), **params})
+        params = {**self.dict(), **params}
+        return type(self)(**params)
 
     @classmethod
     def compress(cls, setups: "SetupCollection") -> "Setup":

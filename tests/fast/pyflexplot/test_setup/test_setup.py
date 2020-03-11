@@ -32,7 +32,7 @@ def CREATE_DEFAULT_SETUP():
             "scale_fact": None,
             "simulation_type": "deterministic",
             "species_id": 1,
-            "time": (0,),
+            "time": 0,
             "variable": "concentration",
         }
     )
@@ -40,7 +40,9 @@ def CREATE_DEFAULT_SETUP():
 
 def test_default_setup_dict():
     """Check the default setupuration dict."""
-    assert Setup(**DEFAULT_KWARGS) == CREATE_DEFAULT_SETUP().dict()
+    setup1 = Setup(**DEFAULT_KWARGS)
+    setup2 = CREATE_DEFAULT_SETUP().dict()
+    assert setup1 == setup2
 
 
 class Test_Decompress:

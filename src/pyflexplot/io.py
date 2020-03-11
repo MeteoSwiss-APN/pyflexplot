@@ -97,9 +97,13 @@ class FileReader:
         fields: List[Field] = []
         attrs_lst: List[AttrMult] = []
         for timeless_fld_specs, time_idcs in zip(timeless_fld_specs_lst, time_idcs_lst):
-            ens_member_ids: Optional[Sequence[int]] = (
-                timeless_fld_specs.setup.ens_member_id
-            )
+            # SR_TMP < TODO cleaner  mypy-compatible solution
+            ens_member_ids: Optional[Sequence[int]]
+            assert timeless_fld_specs.setup.ens_member_id is None or all(
+                isinstance(i, int) for i in timeless_fld_specs.setup.ens_member_id
+            )  # for mypy
+            ens_member_ids = timeless_fld_specs.setup.ens_member_id  # type: ignore
+            # SR_TMP >
             self.n_members = 1 if not ens_member_ids else len(ens_member_ids)
             self.in_file_path_lst = self._prepare_in_file_path_lst(ens_member_ids)
 
@@ -110,11 +114,11 @@ class FileReader:
         return fields, attrs_lst
 
     def _prepare_in_file_path_lst(
-        self, ens_member_ids: Union[Tuple[None], Sequence[int]]
+        self, ens_member_ids: Union[Optional[Tuple[None]], Sequence[int]]
     ) -> List[str]:
         fmt_keys = ["{ens_member}", "{ens_member:"]
         fmt_key_in_path = any(k in self.in_file_path_fmt for k in fmt_keys)
-        if ens_member_ids == (None,):
+        if ens_member_ids in [None, (None,)]:  # SR_TMP
             if fmt_key_in_path:
                 raise ValueError(
                     f"input file path contains format key '{fmt_keys[0]}', but no "
@@ -127,6 +131,7 @@ class FileReader:
                 fmt_keys[0],
                 self.in_file_path_fmt,
             )
+        assert ens_member_ids is not None  # for mypy
         return [self.in_file_path_fmt.format(ens_member=id_) for id_ in ens_member_ids]
 
     def _determine_n_reqtime(self, time_idcs_lst: Sequence[Sequence[int]]) -> int:
