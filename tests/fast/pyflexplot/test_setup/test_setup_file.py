@@ -305,7 +305,7 @@ def test_read_double_wildcard_variable_depth(tmp_path):
         variable = "concentration"
 
         [_base._concentration._time10]
-        time = [10]
+        time = 10
 
         [_base._deposition]
         variable = "deposition"
@@ -344,7 +344,7 @@ def test_read_combine_wildcards(tmp_path):
     """Apply single- and double-star wildcards in combination."""
     content = f"""\
         [_base]
-        infiles = ["data_{{ens_member:02d}}.nc"]
+        infile = "data_{{ens_member:02d}}.nc"
 
         [_base._concentration]
         variable = "concentration"
@@ -370,7 +370,7 @@ def test_read_combine_wildcards(tmp_path):
     sol = [
         {
             **CREATE_DEFAULT_SETUP().dict(),
-            "infiles": ("data_{ens_member:02d}.nc",),
+            "infile": ("data_{ens_member:02d}.nc",),
             "variable": variable,
             "level": {"concentration": (0,), "deposition": None}[variable],
             "plot_type": plot_type,

@@ -12,11 +12,11 @@ from srutils.testing import check_is_list_like
 class Test_Create_Concentration:
 
     setup = Setup(
-        infiles=["dummy.nc"],
+        infile="dummy.nc",
         outfile="dummy.png",
         variable="concentration",
         integrate=False,
-        time=[1],
+        time=1,
     )
     n_vs = 1
 
@@ -55,7 +55,7 @@ class Test_Create_Concentration:
 class Test_Create_Deposition:
 
     setup = Setup(
-        infiles=["dummy.nc"],
+        infile="dummy.nc",
         outfile="dummy.png",
         variable="deposition",
         deposition_type="dry",
@@ -65,7 +65,7 @@ class Test_Create_Deposition:
 
     def test_single_var_specs_one_fld_one_var(self):
         """Single-value-only var specs, for one field, made of one var."""
-        setup = self.setup.derive({"time": [1], "species_id": 1})
+        setup = self.setup.derive({"time": 1, "species_id": 1})
         fld_specs_lst = FldSpecs.create(setup)
         check_is_list_like(fld_specs_lst, len_=1, t_children=FldSpecs)
         fld_specs = next(iter(fld_specs_lst))

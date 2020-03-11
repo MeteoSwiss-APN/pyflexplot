@@ -8,7 +8,7 @@ from pyflexplot.setup import Setup
 from pyflexplot.setup import SetupCollection
 
 DEFAULT_KWARGS = {
-    "infiles": ("foo.nc",),
+    "infile": ("foo.nc",),
     "outfile": "bar.png",
 }
 
@@ -105,8 +105,8 @@ class Test_SetupCollection:
         return [
             {**DEFAULT_KWARGS, **dct}
             for dct in [
-                {"infiles": ("foo.nc",), "variable": "concentration", "domain": "ch"},
-                {"infiles": ("bar.nc",), "variable": "deposition", "lang": "de"},
+                {"infile": "foo.nc", "variable": "concentration", "domain": "ch"},
+                {"infile": "bar.nc", "variable": "deposition", "lang": "de"},
                 {"nageclass": 1, "noutrel": 5, "numpoint": 3},
             ]
         ]
@@ -134,9 +134,9 @@ class Test_Compress:
     dcts = [
         {**DEFAULT_KWARGS, **dct}
         for dct in [
-            {"infiles": ("foo.nc",), "variable": "concentration", "level": 0},
-            {"infiles": ("foo.nc",), "variable": "concentration", "level": 1},
-            {"infiles": ("foo.nc",), "variable": "concentration", "level": (1, 2)},
+            {"infile": "foo.nc", "variable": "concentration", "level": 0},
+            {"infile": "foo.nc", "variable": "concentration", "level": 1},
+            {"infile": "foo.nc", "variable": "concentration", "level": (1, 2)},
         ]
     ]
     setups_lst = [Setup(**dct) for dct in dcts]

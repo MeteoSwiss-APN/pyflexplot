@@ -239,9 +239,9 @@ def create_field():
 
 
 def create_setup(lang):
-    infiles = ["dummy_infile.nc"]
+    infile = "dummy_infile.nc"
     outfile = "dummy_outfile.png"
-    return Setup(infiles=infiles, outfile=outfile, lang=lang, variable="deposition")
+    return Setup(infile=infile, outfile=outfile, lang=lang, variable="deposition")
 
 
 def create_words(lang):

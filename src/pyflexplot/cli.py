@@ -146,7 +146,7 @@ def read_fields(setup, words):
     # Read fields
     fields = []
     attrs_lst = []
-    for raw_path in setup.infiles:
+    for raw_path in setup.infile:
         fields_i, attrs_lst_i = read_files(raw_path, setup, words, fld_specs_lst)
         fields.extend(fields_i)
         attrs_lst.extend(attrs_lst_i)

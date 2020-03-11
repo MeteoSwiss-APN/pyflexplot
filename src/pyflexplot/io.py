@@ -110,11 +110,11 @@ class FileReader:
         return fields, attrs_lst
 
     def _prepare_in_file_path_lst(
-        self, ens_member_ids: Optional[Sequence[int]]
+        self, ens_member_ids: Union[Tuple[None], Sequence[int]]
     ) -> List[str]:
         fmt_keys = ["{ens_member}", "{ens_member:"]
         fmt_key_in_path = any(k in self.in_file_path_fmt for k in fmt_keys)
-        if not ens_member_ids:
+        if ens_member_ids == (None,):
             if fmt_key_in_path:
                 raise ValueError(
                     f"input file path contains format key '{fmt_keys[0]}', but no "

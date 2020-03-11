@@ -74,7 +74,7 @@ class Setup(BaseModel):
         ens_param_thr: Threshold used to compute some ensemble variables. Its
             precise meaning depends on the variable.
 
-        infiles: Input file path(s). May contain format keys.
+        infile: Input file path(s). May contain format keys.
 
         integrate: Integrate field over time.
 
@@ -120,11 +120,9 @@ class Setup(BaseModel):
     # deposition_type: str = "none"
     deposition_type: Union[str, Tuple[str, str]] = "none"
     # SR_TMP >
-    # SR_TMP >
     domain: str = "auto"
-    # ens_member_id: Tuple[Optional[int], ...] = (None,)
-    ens_member_id: Optional[Tuple[int, ...]] = None
-    infiles: Tuple[str, ...]
+    ens_member_id: Tuple[Optional[int], ...] = (None,)
+    infile: Union[str, Tuple[str, ...]]
     integrate: bool = False
     lang: str = "en"
     noutrel: int = 0
@@ -147,12 +145,29 @@ class Setup(BaseModel):
     def _to_sequence(cls, values):
         """Ensure that all parameter values constitute a sequence."""
         for param, value in values.items():
-            # SR_TMP <
+            # SR_TMP < TODO Figure out whether/how to pass multiple types
             if param in ["deposition_type"]:
                 continue
             # SR_TMP >
-            # SR_TMP <
-            if param not in ["species_id", "level"]:
+            # SR_TMP < Handle one parameter after the other
+            if param in [
+                "nageclass",
+                "combine_species",
+                "deposition_type",
+                "domain",
+                "integrate",
+                "lang",
+                "noutrel",
+                "outfile",
+                "plot_type",
+                "numpoint",
+                "reverse_legend",
+                "scale_fact",
+                "simulation_type",
+                "variable",
+                "ens_param_mem_min",
+                "ens_param_thr",
+            ]:
                 continue
             # SR_TMP >
             if not isinstance(value, Sequence) or isinstance(value, str):
@@ -275,11 +290,6 @@ class Setup(BaseModel):
         if not setups:
             raise ValueError("missing setups")
         dct = compress_multival_dicts(setups.dicts(), cls_seq=tuple)
-        # SR_TMP < TODO find cleaner solution (move logic to Setup or the like)
-        for param in ["infiles", "time"]:
-            if not isinstance(dct[param], tuple):
-                dct[param] = (dct[param],)
-        # SR_TMP >
         return cls(**dct)
 
     def decompress(
@@ -291,7 +301,7 @@ class Setup(BaseModel):
         """Create multiple ``Setup`` objects with one-value parameters only."""
 
         if skip is None:
-            skip = ["infiles", "ens_member_id"]
+            skip = ["infile", "ens_member_id"]
 
         dct = self.dict()
 

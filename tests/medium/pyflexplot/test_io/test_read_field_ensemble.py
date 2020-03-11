@@ -38,13 +38,13 @@ class TestReadFieldEnsemble_Single:
 
     # Setup parameters shared by all tests
     setup_params_shared = {
-        "infiles": ["dummy.nc"],
+        "infile": "dummy.nc",
         "integrate": False,
         "outfile": "dummy.png",
         "plot_type": "ens_mean",
         "simulation_type": "ensemble",
         "species_id": 2,
-        "time": [10],
+        "time": 10,
         "variable": "concentration",
     }
 
@@ -137,7 +137,7 @@ class TestReadFieldEnsemble_Multiple:
 
     # Setup parameters arguments shared by all tests
     shared_setup_params_compressed = {
-        "infiles": ["dummy.py"],
+        "infile": "dummy.nc",
         "integrate": True,
         "outfile": "dummy.png",
         "simulation_type": "ensemble",
@@ -179,7 +179,7 @@ class TestReadFieldEnsemble_Multiple:
         # Create field specifications list
         setups = []
         for shared_setup_params in decompress_multival_dict(
-            self.shared_setup_params_compressed, skip=["infiles"],
+            self.shared_setup_params_compressed, skip=["infile"],
         ):
             shared_setup_params["time"] = [shared_setup_params["time"]]
             setup_params_i = {
