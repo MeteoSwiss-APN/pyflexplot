@@ -3,6 +3,11 @@
 """
 Tests for module ``pyflexplot.setup``.
 """
+# Standard library
+from typing import Any
+from typing import Dict
+from typing import List
+
 # First-party
 from pyflexplot.setup import Setup
 from pyflexplot.setup import SetupCollection
@@ -13,42 +18,41 @@ DEFAULT_KWARGS = {
 }
 
 
-def CREATE_DEFAULT_SETUP():
-    return Setup(
-        **{
-            **DEFAULT_KWARGS,
-            "nageclass": 0,
-            "combine_species": False,
-            "deposition_type": "none",
-            "domain": "auto",
-            "ens_member_id": None,
-            "integrate": False,
-            "lang": "en",
-            "level": None,
-            "noutrel": 0,
-            "plot_type": "auto",
-            "numpoint": 0,
-            "reverse_legend": False,
-            "scale_fact": None,
-            "simulation_type": "deterministic",
-            "species_id": 1,
-            "time": 0,
-            "variable": "concentration",
-        }
-    )
+DEFAULT_SETUP = Setup(
+    **{
+        **DEFAULT_KWARGS,
+        "nageclass": (0,),
+        "combine_species": False,
+        "deposition_type": "none",
+        "domain": "auto",
+        "ens_member_id": None,
+        "integrate": False,
+        "lang": "en",
+        "level": None,
+        "noutrel": (0,),
+        "plot_type": "auto",
+        "numpoint": (0,),
+        "reverse_legend": False,
+        "scale_fact": None,
+        "simulation_type": "deterministic",
+        "species_id": (1,),
+        "time": (0,),
+        "variable": "concentration",
+    }
+)
 
 
 def test_default_setup_dict():
     """Check the default setupuration dict."""
     setup1 = Setup(**DEFAULT_KWARGS)
-    setup2 = CREATE_DEFAULT_SETUP().dict()
+    setup2 = DEFAULT_SETUP.dict()
     assert setup1 == setup2
 
 
 class Test_Decompress:
     @property
     def setup(self):
-        return CREATE_DEFAULT_SETUP().derive(
+        return DEFAULT_SETUP.derive(
             {
                 "variable": "deposition",
                 "deposition_type": ["dry", "wet"],
@@ -114,13 +118,10 @@ class Test_SetupCollection:
         ]
 
     def create_complete_dicts(self):
-        return [
-            {**CREATE_DEFAULT_SETUP().dict(), **dct}
-            for dct in self.create_partial_dicts()
-        ]
+        return [{**DEFAULT_SETUP.dict(), **dct} for dct in self.create_partial_dicts()]
 
     def create_setups(self):
-        return [Setup(**dct) for dct in self.create_partial_dicts()]
+        return [Setup.create(dct) for dct in self.create_partial_dicts()]
 
     def test_create_empty(self):
         setups = SetupCollection([])
@@ -128,12 +129,12 @@ class Test_SetupCollection:
 
     def test_from_setups(self):
         partial_dicts = self.create_partial_dicts()
-        setups = SetupCollection(partial_dicts)
+        setups = SetupCollection.create(partial_dicts)
         assert len(setups) == len(partial_dicts)
 
 
 class Test_Compress:
-    dcts = [
+    dcts: List[Dict[str, Any]] = [
         {**DEFAULT_KWARGS, **dct}
         for dct in [
             {"infile": "foo.nc", "variable": "concentration", "level": 0},
@@ -141,7 +142,7 @@ class Test_Compress:
             {"infile": "foo.nc", "variable": "concentration", "level": (1, 2)},
         ]
     ]
-    setups_lst = [Setup(**dct) for dct in dcts]
+    setups_lst = [Setup.create(dct) for dct in dcts]
 
     def test_one(self):
         res = Setup.compress(SetupCollection(self.setups_lst[:1])).dict()
@@ -150,10 +151,10 @@ class Test_Compress:
 
     def test_two(self):
         res = Setup.compress(SetupCollection(self.setups_lst[:2])).dict()
-        sol = Setup(**{**self.dcts[0], "level": (0, 1)})
+        sol = Setup.create({**self.dcts[0], "level": (0, 1)})
         assert res == sol
 
     def test_three(self):
         res = Setup.compress(SetupCollection(self.setups_lst[:3])).dict()
-        sol = Setup(**{**self.dcts[0], "level": (0, 1, 2)})
+        sol = Setup.create({**self.dcts[0], "level": (0, 1, 2)})
         assert res == sol

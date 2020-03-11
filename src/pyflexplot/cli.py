@@ -16,6 +16,7 @@ from srutils.click import CharSepList
 # Local
 from . import __version__
 from .examples import choices as example_choices
+from .examples import list_examples
 from .examples import print_example
 from .io import read_files
 from .plotter import plot
@@ -88,10 +89,16 @@ def not_implemented(msg):
 )
 @click.option(
     "--example",
-    help="Example commands.",
+    help="Print example setup file.",
     type=click.Choice(list(example_choices)),
     callback=print_example,
     expose_value=False,
+)
+@click.option(
+    "--list-examples",
+    help="List the names of all example setup files.",
+    callback=list_examples,
+    is_flag=True,
 )
 # ---
 @click.pass_context

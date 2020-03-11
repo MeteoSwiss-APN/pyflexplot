@@ -11,12 +11,14 @@ from srutils.testing import check_is_list_like
 
 class Test_Create_Concentration:
 
-    setup = Setup(
-        infile="dummy.nc",
-        outfile="dummy.png",
-        variable="concentration",
-        integrate=False,
-        time=1,
+    setup = Setup.create(
+        {
+            "infile": "dummy.nc",
+            "outfile": "dummy.png",
+            "variable": "concentration",
+            "integrate": False,
+            "time": 1,
+        },
     )
     n_vs = 1
 
@@ -54,12 +56,14 @@ class Test_Create_Concentration:
 
 class Test_Create_Deposition:
 
-    setup = Setup(
-        infile="dummy.nc",
-        outfile="dummy.png",
-        variable="deposition",
-        deposition_type="dry",
-        integrate=False,
+    setup = Setup.create(
+        {
+            "infile": "dummy.nc",
+            "outfile": "dummy.png",
+            "variable": "deposition",
+            "deposition_type": "dry",
+            "integrate": False,
+        },
     )
     n_vs = 1
 

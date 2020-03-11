@@ -241,7 +241,9 @@ def create_field():
 def create_setup(lang):
     infile = "dummy_infile.nc"
     outfile = "dummy_outfile.png"
-    return Setup(infile=infile, outfile=outfile, lang=lang, variable="deposition")
+    return Setup.create(
+        {"infile": infile, "outfile": outfile, "lang": lang, "variable": "deposition"},
+    )
 
 
 def create_words(lang):

@@ -11,8 +11,8 @@ from textwrap import dedent
 from pyflexplot.setup import SetupFile
 
 # Local
-from .test_setup import CREATE_DEFAULT_SETUP
 from .test_setup import DEFAULT_KWARGS
+from .test_setup import DEFAULT_SETUP
 
 
 def fmt_val(val):
@@ -42,7 +42,7 @@ def test_read_single_minimal_section(tmp_path):
         {DEFAULT_TOML}
         """
     setups = read_tmp_setup_file(tmp_path, content)
-    assert setups == [CREATE_DEFAULT_SETUP().dict()]
+    assert setups == [DEFAULT_SETUP.dict()]
 
 
 def test_read_single_minimal_renamed_section(tmp_path):
@@ -52,7 +52,7 @@ def test_read_single_minimal_renamed_section(tmp_path):
         {DEFAULT_TOML}
         """
     setups = read_tmp_setup_file(tmp_path, content)
-    assert setups == [CREATE_DEFAULT_SETUP().dict()]
+    assert setups == [DEFAULT_SETUP.dict()]
 
 
 def test_read_single_section(tmp_path):
@@ -65,14 +65,9 @@ def test_read_single_section(tmp_path):
         """
     setups = read_tmp_setup_file(tmp_path, content)
     assert len(setups) == 1
-    assert setups != [CREATE_DEFAULT_SETUP().dict()]
+    assert setups != [DEFAULT_SETUP.dict()]
     sol = [
-        {
-            **CREATE_DEFAULT_SETUP().dict(),
-            "variable": "deposition",
-            "level": None,
-            "lang": "de",
-        }
+        {**DEFAULT_SETUP.dict(), "variable": "deposition", "level": None, "lang": "de"},
     ]
     assert setups == sol
 
@@ -87,7 +82,7 @@ def test_read_multiple_parallel_empty_sections(tmp_path):
         {DEFAULT_TOML}
         """
     setups = read_tmp_setup_file(tmp_path, content)
-    assert setups == [CREATE_DEFAULT_SETUP().dict()] * 2
+    assert setups == [DEFAULT_SETUP.dict()] * 2
 
 
 def test_read_two_nested_empty_sections(tmp_path):
@@ -99,7 +94,7 @@ def test_read_two_nested_empty_sections(tmp_path):
         [_base.plot]
         """
     setups = read_tmp_setup_file(tmp_path, content)
-    assert setups == [CREATE_DEFAULT_SETUP().dict()]
+    assert setups == [DEFAULT_SETUP.dict()]
 
 
 def test_read_multiple_nested_sections(tmp_path):
@@ -158,7 +153,7 @@ def test_read_multiple_nested_sections(tmp_path):
         {"deposition_type": "wet", "lang": "en"},
         {"deposition_type": "wet", "lang": "de"},
     ]
-    sol = [{**CREATE_DEFAULT_SETUP().dict(), **sol_base, **d} for d in sol_specific]
+    sol = [{**DEFAULT_SETUP.dict(), **sol_base, **d} for d in sol_specific]
     setups = read_tmp_setup_file(tmp_path, content)
     assert setups == sol
 
@@ -241,7 +236,7 @@ def test_read_wildcard_simple(tmp_path):
 
         """
     sol = [
-        {**CREATE_DEFAULT_SETUP().dict(), **dct}
+        {**DEFAULT_SETUP.dict(), **dct}
         for dct in [
             {"variable": "concentration", "lang": "de"},
             {"variable": "concentration", "lang": "en"},
@@ -283,7 +278,7 @@ def test_read_double_wildcard_equal_depth(tmp_path):
 
         """
     sol = [
-        {**CREATE_DEFAULT_SETUP().dict(), **dct, "domain": domain, "lang": lang}
+        {**DEFAULT_SETUP.dict(), **dct, "domain": domain, "lang": lang}
         for dct in [
             {"variable": "concentration", "integrate": False},
             {"variable": "deposition", "level": None, "integrate": False},
@@ -328,7 +323,7 @@ def test_read_double_wildcard_variable_depth(tmp_path):
 
         """
     sol = [
-        {**CREATE_DEFAULT_SETUP().dict(), **dct, "domain": domain, "lang": lang}
+        {**DEFAULT_SETUP.dict(), **dct, "domain": domain, "lang": lang}
         for dct in [
             {"variable": "concentration", "time": (10,)},
             {"variable": "deposition", "level": None},
@@ -369,7 +364,7 @@ def test_read_combine_wildcards(tmp_path):
         """
     sol = [
         {
-            **CREATE_DEFAULT_SETUP().dict(),
+            **DEFAULT_SETUP.dict(),
             "infile": ("data_{ens_member:02d}.nc",),
             "variable": variable,
             "level": {"concentration": (0,), "deposition": None}[variable],
@@ -383,3 +378,72 @@ def test_read_combine_wildcards(tmp_path):
     ]
     setups = read_tmp_setup_file(tmp_path, content)
     assert setups.dicts() == sol
+
+
+class Test_IndividualParams_SingleOrMultipleValues:
+    def test_infile(self, tmp_path):
+        content = f"""\
+            [_base]
+            {DEFAULT_TOML}
+
+            [_base.single]
+            infile = "foo.nc"
+
+            [_base.multiple]
+            infile = ["bar.nc", "baz.nc"]
+
+            """
+        setups = read_tmp_setup_file(tmp_path, content)
+        sol = [
+            {**DEFAULT_SETUP.dict(), "infile": value}
+            for value in [("foo.nc",), ("bar.nc", "baz.nc")]
+        ]
+        assert setups.dicts() == sol
+
+    def test_species_id(self, tmp_path):
+        content = f"""\
+            [_base]
+            {DEFAULT_TOML}
+
+            [_base.single]
+            species_id = 1
+
+            [_base.multiple]
+            species_id = [1, 2, 3]
+
+            """
+        setups = read_tmp_setup_file(tmp_path, content)
+        sol = [
+            {**DEFAULT_SETUP.dict(), "species_id": value} for value in [(1,), (1, 2, 3)]
+        ]
+        assert setups.dicts() == sol
+
+    def test_level(self, tmp_path):
+        content = f"""\
+            [_base]
+            {DEFAULT_TOML}
+            variable = "concentration"
+
+            [_base.single]
+            level = 0
+
+            [_base.multiple]
+            level = [1, 2]
+
+            """
+        setups = read_tmp_setup_file(tmp_path, content)
+        sol = [{**DEFAULT_SETUP.dict(), "level": value} for value in [(0,), (1, 2)]]
+        assert setups.dicts() == sol
+
+    def test_level_none(self, tmp_path):
+        content = f"""\
+            [base]
+            {DEFAULT_TOML}
+            variable = "deposition"
+
+            """
+        setups = read_tmp_setup_file(tmp_path, content)
+        sol = [
+            {**DEFAULT_SETUP.dict(), "variable": "deposition", "level": None},
+        ]
+        assert setups.dicts() == sol

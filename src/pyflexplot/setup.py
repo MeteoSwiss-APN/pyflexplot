@@ -19,7 +19,8 @@ from typing import overload
 # Third-party
 import toml
 from pydantic import BaseModel
-from pydantic import root_validator
+from pydantic import ValidationError
+from pydantic import parse_obj_as
 from pydantic import validator
 
 # First-party
@@ -115,7 +116,7 @@ class Setup(BaseModel):
         extra = "forbid"
 
     # Basics
-    infile: Union[str, Tuple[str, ...]]
+    infile: Tuple[str, ...]
     outfile: str
     plot_type: str = "auto"
     variable: str = "concentration"
@@ -127,7 +128,7 @@ class Setup(BaseModel):
 
     # Ensemble-related
     simulation_type: str = "deterministic"
-    ens_member_id: Optional[Tuple[Optional[int], ...]] = None
+    ens_member_id: Optional[Tuple[int, ...]] = None
     ens_param_mem_min: Optional[int] = None
     ens_param_thr: Optional[float] = None
 
@@ -141,45 +142,12 @@ class Setup(BaseModel):
     nageclass: Tuple[int, ...] = (0,)
     noutrel: Tuple[int, ...] = (0,)
     numpoint: Tuple[int, ...] = (0,)
-    species_id: Union[int, Tuple[int, ...]] = (1,)
+    species_id: Tuple[int, ...] = (1,)
     time: Tuple[int, ...] = (0,)
-    # SR_TMP < TODO figure out why this doesn't work!
-    # level: Optional[Tuple[int, ...]] = None
-    level: Optional[Tuple[Optional[int], ...]] = None
-    # SR_TMP >
-
-    @root_validator(pre=True)
-    def _to_sequence(cls, values):
-        """Ensure that all parameter values constitute a sequence."""
-        for param, value in values.items():
-            # SR_TMP < TODO Figure out whether/how to pass multiple types
-            if param in ["deposition_type"]:
-                continue
-            # SR_TMP >
-            # SR_TMP < Handle one parameter after the other
-            if param in [
-                "combine_species",
-                "deposition_type",
-                "domain",
-                "integrate",
-                "lang",
-                "outfile",
-                "plot_type",
-                "reverse_legend",
-                "scale_fact",
-                "simulation_type",
-                "variable",
-                "ens_param_mem_min",
-                "ens_param_thr",
-            ]:
-                continue
-            # SR_TMP >
-            if not isinstance(value, Sequence) or isinstance(value, str):
-                values[param] = [value]
-        return values
+    level: Optional[Tuple[int, ...]] = None
 
     @validator("time")
-    def _validate_time(cls, value: Tuple[int, ...]):
+    def _validate_time(cls, value: Tuple[int, ...]) -> Tuple[int, ...]:
         if len(value) == 0:
             raise ValueError("missing time")
         return value
@@ -192,19 +160,6 @@ class Setup(BaseModel):
         elif set(value) == {"dry", "wet"}:
             return "tot"
         raise ValueError("deposition_type is invalid", value)
-
-    @validator("ens_member_id", always=True)
-    def _init_ens_member_id(
-        cls, value: Optional[Tuple[Optional[int], ...]],
-    ) -> Optional[Tuple[int, ...]]:
-        value_out: Optional[Tuple[int, ...]]
-        if value in [None, (None,)]:
-            value_out = None
-        else:
-            assert isinstance(value, tuple)  # for mypy
-            assert all(isinstance(i, int) for i in value)  # for mypy
-            value_out = value  # type: ignore
-        return value_out
 
     @validator("ens_param_mem_min", always=True)
     def _init_ens_param_mem_min(
@@ -240,36 +195,85 @@ class Setup(BaseModel):
 
     @validator("level", always=True)
     def _init_level(
-        cls,
-        value: Optional[Union[Tuple[None], Tuple[int, ...]]],
-        values: Dict[str, Any],
+        cls, value: Optional[Tuple[int, ...]], values: Dict[str, Any],
     ) -> Optional[Tuple[int, ...]]:
-        value_out: Optional[Tuple[int, ...]]
-        if value in [None, (None,)]:
+        if value is None:
             if values["variable"] == "concentration":
-                value_out = (0,)
-            else:
-                value_out = None
+                return (0,)
+            return None
         elif values["variable"] == "deposition":
             raise ValueError(
                 "level must be None for variable", value, values["variable"],
             )
-        else:
-            assert isinstance(value, tuple)  # for mypy
-            assert all(isinstance(i, int) for i in value)  # for mypy
-            value_out = value  # type: ignore
-        # SR_DBG <
-        assert value_out is None or (
-            isinstance(value_out, tuple) and all(isinstance(i, int) for i in value_out)
-        )
-        # SR_DBG >
-        return value_out
+        return value
+
+    @classmethod
+    def create(cls, params: Dict[str, Any]) -> "Setup":
+        """Create an instance of ``Setup``.
+
+        Args:
+            params: Parameters to instatiate ``Setup``. In contrast to direct
+                instatiation, all ``Tuple`` parameters may alternatively be
+                passed directly, for instance `{"time": 0}` instead of
+                `{"time": (0,)}`.
+
+        """
+        for param, value in params.items():
+            # SR_TMP <
+            if param in ["deposition_type"]:
+                continue
+            # SR_TMP >
+            # SR_TMP < Handle one parameter after the other
+            if param in [
+                "combine_species",
+                "deposition_type",
+                "domain",
+                "integrate",
+                "lang",
+                "outfile",
+                "plot_type",
+                "reverse_legend",
+                "scale_fact",
+                "simulation_type",
+                "variable",
+                "ens_param_mem_min",
+                "ens_param_thr",
+            ]:
+                continue
+            # SR_TMP >
+            field = cls.__fields__[param]
+            if value is None and field.allow_none:
+                continue
+            field_type = field.outer_type_
+            try:
+                # Try to convert value to the field type
+                parse_obj_as(field_type, value)
+            except ValidationError as e:
+                # Conversion failed, so let's try something else!
+                error_type = e.errors()[0]["type"]
+                if error_type == "type_error.sequence":
+                    try:
+                        # Try again, with the value in a sequence
+                        parse_obj_as(field_type, [value])
+                    except ValidationError:
+                        # Still not working; let's give up!
+                        raise ValueError(
+                            f"value of param {param} with type {type(value).__name__} "
+                            f"incompatible with field type {field_type}, both directly "
+                            f"and in a sequence"
+                        )
+                    else:
+                        # Now it worked; wrapping value in list and we're good!
+                        params[param] = [value]
+                else:
+                    raise NotImplementedError("unknown ValidationError", error_type, e)
+        return cls(**params)
 
     @classmethod
     def as_setup(cls, obj: Union[Mapping[str, Any], "Setup"]) -> "Setup":
         if isinstance(obj, cls):
             return obj
-        return cls(**obj)  # type: ignore
+        return cls.create(obj)  # type: ignore
 
     def __repr__(self) -> str:  # type: ignore
         return setup_repr(self)
@@ -313,14 +317,14 @@ class Setup(BaseModel):
             params["level"] = None  # type: ignore
         # SR_TMP >
         params = {**self.dict(), **params}
-        return type(self)(**params)
+        return type(self).create(params)
 
     @classmethod
     def compress(cls, setups: "SetupCollection") -> "Setup":
         if not setups:
             raise ValueError("missing setups")
         dct = compress_multival_dicts(setups.dicts(), cls_seq=tuple)
-        return cls(**dct)
+        return cls.create(dct)
 
     def decompress(
         self,
@@ -348,7 +352,7 @@ class Setup(BaseModel):
         def create_setup(dct):
             if isinstance(dct["time"], int):
                 dct["time"] = [dct["time"]]
-            return Setup(**dct)
+            return Setup.create(dct)
 
         return SetupCollection([create_setup(dct) for dct in dcts])
 
@@ -356,8 +360,14 @@ class Setup(BaseModel):
 class SetupCollection:
     """A collection of ``Setup`` objects."""
 
-    def __init__(self, setups: Collection[Union[Mapping[str, Any], Setup]]) -> None:
-        self._setups: List[Setup] = [Setup.as_setup(obj) for obj in setups]
+    def __init__(self, setups: Collection[Setup]) -> None:
+        self._setups: List[Setup] = [setup for setup in setups]
+
+    @classmethod
+    def create(
+        cls, setups: Collection[Union[Mapping[str, Any], Setup]],
+    ) -> "SetupCollection":
+        return cls([Setup.as_setup(obj) for obj in setups])
 
     def __repr__(self) -> str:
         s_setups = "\n  ".join([""] + [str(c) for c in self._setups])
@@ -407,7 +417,7 @@ class SetupFile:
         data = decompress_nested_dict(
             semi_raw_data, branch_end_criterion=lambda key: not key.startswith("_"),
         )
-        setups = SetupCollection(data)
+        setups = SetupCollection.create(data)
         return setups
 
     def write(self, *args, **kwargs) -> None:

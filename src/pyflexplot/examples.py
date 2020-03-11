@@ -12,12 +12,22 @@ import click
 def print_example(ctx, param, value):
     if value is None:
         return
+    global choices
     try:
         choice = choices[value]
     except AttributeError:
-        raise NotImplementedError(f"example={value}")
+        raise KeyError(value, choices.keys())
     else:
         choice()
+    ctx.exit(0)
+
+
+def list_examples(ctx, param, value):
+    if not value:
+        return
+    global choices
+    for example in sorted(choices):
+        click.echo(example)
     ctx.exit(0)
 
 

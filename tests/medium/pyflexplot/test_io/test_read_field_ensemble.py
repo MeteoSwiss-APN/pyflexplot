@@ -77,8 +77,8 @@ class TestReadFieldEnsemble_Single:
         datafile_fmt = self.datafile_fmt(datadir)
 
         # Initialize specifications
-        setup = Setup(
-            **{
+        setup = Setup.create(
+            {
                 **self.setup_params_shared,
                 **setup_params,
                 "ens_member_id": self.ens_member_ids,
@@ -188,7 +188,7 @@ class TestReadFieldEnsemble_Multiple:
                 "ens_member_id": self.ens_member_ids,
                 "plot_type": f"ens_{ens_var}",
             }
-            setups.append(Setup(**setup_params_i))
+            setups.append(Setup.create(setup_params_i))
         fld_specs_lst = FldSpecs.create(SetupCollection(setups))
 
         run_core = functools.partial(
