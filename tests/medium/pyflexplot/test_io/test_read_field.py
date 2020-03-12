@@ -156,7 +156,7 @@ def test_single(datadir, conf):  # noqa:F811
     fld = fields[0].fld
 
     # Initialize individual setup objects
-    setups = fld_specs_lst[0].setup.decompress()
+    setups = fld_specs_lst[0].fld_setup.decompress()
 
     # Read reference field
     fld_ref = (
@@ -293,7 +293,7 @@ def test_multiple(datadir, conf):  # noqa:F811
     # Process field specifications one after another
     for fld_specs in fld_specs_lst:
         fld_specs_lst_i = [fld_specs]
-        setup = fld_specs.setup
+        setup = fld_specs.fld_setup
 
         # Read input fields
         fields, attrs_lst = read_files(datafile, setup, WORDS, fld_specs_lst_i)
@@ -305,12 +305,12 @@ def test_multiple(datadir, conf):  # noqa:F811
 
         # Read reference fields
         fld_ref = None
-        for var_specs in fld_specs.var_specs_lst:
+        for var_setup in fld_specs.var_setups:
             flds_ref_i = [
                 read_nc_var(
                     datafile,
-                    get_var_name_ref(var_specs._setup, conf.var_names_ref),
-                    var_specs._setup,  # SR_TMP
+                    get_var_name_ref(var_setup, conf.var_names_ref),
+                    var_setup,
                 )
             ]
             fld_ref_i = np.nansum(flds_ref_i, axis=0)

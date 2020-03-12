@@ -391,7 +391,7 @@ class SetupCollection:
         )
 
     def dicts(self) -> List[Mapping[str, Any]]:
-        return [obj.dict() for obj in self._setups]
+        return [setup.dict() for setup in self._setups]
 
 
 class SetupFile:

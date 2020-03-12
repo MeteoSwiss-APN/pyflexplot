@@ -94,7 +94,7 @@ class TestReadFieldEnsemble_Single:
         assert len(attrs_lst) == 1
         fld = fields[0].fld
 
-        setups = fld_specs_lst[0].setup.decompress()
+        setups = fld_specs_lst[0].fld_setup.decompress()
         assert len(setups) == 1
         setup = next(iter(setups))
 
@@ -207,7 +207,7 @@ class TestReadFieldEnsemble_Multiple:
 
         # Collect merged variables specifications
         compressed_setups = SetupCollection(
-            [fld_specs.setup for fld_specs in fld_specs_lst],
+            [fld_specs.fld_setup for fld_specs in fld_specs_lst],
         )
         global_setup = Setup.compress(compressed_setups)
 

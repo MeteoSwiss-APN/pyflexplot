@@ -9,13 +9,9 @@ from typing import Sequence
 from typing import Union
 from typing import overload
 
-# First-party
-from srutils.dict import format_dictlike
-
 # Local
 from .setup import Setup
 from .setup import SetupCollection
-from .utils import summarizable
 
 
 @overload
@@ -37,67 +33,38 @@ def int_or_list(
         return int(arg)
 
 
-@summarizable
-class VarSpecs:
-    """FLEXPART input variable specifications."""
+# SR_TMP <<< Leftover from VarSpecs
+def create_var_setups(fld_setups: SetupCollection, pre_expand_time: bool = False):
+    def create_var_setups_lst(fld_setups):
+        var_setups_lst = []
+        for fld_setup in fld_setups:
+            var_setups = []
+            for var_setup in fld_setup.decompress():
+                var_setups.append(var_setup)
+            var_setups_lst.append(var_setups)
+        return var_setups_lst
 
-    def __init__(self, setup: Setup) -> None:
-        """Create an instance of ``VarSpecs``."""
-        self._setup = setup
-
-    @classmethod
-    def create_many(
-        cls, setups: SetupCollection, pre_expand_time: bool = False,
-    ):
-        def create_var_specs_lst_lst(setups):
-            var_specs_lst_lst = []
-            for setup in setups:
-                var_specs_lst = []
-                for sub_setup in setup.decompress():
-                    var_specs_lst.append(cls(sub_setup))
-                var_specs_lst_lst.append(var_specs_lst)
-            return var_specs_lst_lst
-
-        def flatten(lst_lst):
-            return [obj for lst in lst_lst for obj in lst]
-
-        if not pre_expand_time:
-            return flatten(create_var_specs_lst_lst(setups))
-
-        setups_time = [
-            sub_setup for setup in setups for sub_setup in setup.decompress(["time"])
+    if not pre_expand_time:
+        return [
+            var_setup
+            for var_setups in create_var_setups_lst(fld_setups)
+            for var_setup in var_setups
         ]
-        return create_var_specs_lst_lst(setups_time)
 
-    def __eq__(self, other):
-        return self._setup == other._setup
-
-    def __repr__(self):
-        return format_dictlike(self)
-
-    def dict(self):
-        return {
-            "deposition": self._setup.deposition_type,
-            "integrate": self._setup.integrate,
-            "level": self._setup.level,
-            "nageclass": self._setup.nageclass,
-            "noutrel": self._setup.noutrel,
-            "numpoint": self._setup.numpoint,
-            "species_id": self._setup.species_id,
-            "time": (
-                self._setup.time
-                if len(self._setup.time) != 1
-                else next(iter(self._setup.time))
-            ),
-        }
+    setups_time = [
+        sub_setup
+        for fld_setup in fld_setups
+        for sub_setup in fld_setup.decompress(["time"])
+    ]
+    return create_var_setups_lst(setups_time)
 
 
 class FldSpecs:
-    """Hold multiple ``VarSpecs`` objects."""
+    """Specifications to compute a field."""
 
-    def __init__(self, setup: Setup, var_specs_lst: Sequence[VarSpecs]) -> None:
-        self.setup = setup
-        self.var_specs_lst = var_specs_lst
+    def __init__(self, fld_setup: Setup, var_setups: Sequence[Setup]) -> None:
+        self.fld_setup = fld_setup
+        self.var_setups = var_setups
 
     @classmethod
     def create(cls, setup_or_setups: Union[Setup, SetupCollection]) -> List["FldSpecs"]:
@@ -115,41 +82,42 @@ class FldSpecs:
         if len(setups) > 1:
             return [obj for setup in setups for obj in cls.create(setup)]
         else:
-            var_specs_lst_lst = VarSpecs.create_many(setups, pre_expand_time=True)
+            fld_setup = next(iter(setups))
+            var_setups_lst = create_var_setups(setups, pre_expand_time=True)
             fld_specs_lst = []
-            for var_specs_lst in var_specs_lst_lst:
-                obj = cls(next(iter(setups)), var_specs_lst)
-                fld_specs_lst.append(obj)
+            for var_setups in var_setups_lst:
+                fld_specs = cls(fld_setup, var_setups)
+                fld_specs_lst.append(fld_specs)
             return fld_specs_lst
 
     def __repr__(self):
-        s_setup = "\n  ".join(repr(self.setup).split("\n"))
-        s_specs = ",\n    ".join([str(specs) for specs in self.var_specs_lst])
+        s_fld_setup = "\n  ".join(repr(self.fld_setup).split("\n"))
+        s_var_setups = ",\n    ".join([str(var_setup) for var_setup in self.var_setups])
         return (
             f"{type(self).__name__}("
-            f"\n  setup={s_setup},"
-            f"\n  var_specs_lst=[\n    {s_specs}],"
+            f"\n  fld_setup={s_fld_setup},"
+            f"\n  var_setups=[\n    {s_var_setups}],"
             f"\n)"
         )
 
     def __eq__(self, other):
         # raise DeprecationWarning()
         try:
-            var_specs_eq = self.var_specs_lst == other.var_specs_lst
-            setup_eq = self.setup == other.setup
+            var_setups_eq = self.var_setups == other.var_setups
+            fld_setup_eq = self.fld_setup == other.fld_setup
         except AttributeError:
             raise ValueError(
                 f"incomparable types: {type(self).__name__}, {type(other).__name__}"
             )
-        # # Note: var_specs_eq may not equal setup_eq for timeless var_specs,
-        # # that is, when the latter lack a meaningful time index (-999)
-        # assert var_specs_eq == setup_eq
-        return var_specs_eq and setup_eq
+        # Note: ``var_setups_eq`` may not equal ``fld_setup_eq`` for timeless
+        # ``var_setups``, i.e., if the latter sport a dummy time index (-999)!
+        # assert var_setups_eq == setup_eq
+        return var_setups_eq and fld_setup_eq
 
     def collect(self, param: str) -> List[Any]:
         """Collect all values of a given parameter."""
         setup_param = "deposition" if param == "deposition_type" else param
-        return [getattr(vs._setup, setup_param) for vs in self.var_specs_lst]
+        return [getattr(var_setup, setup_param) for var_setup in self.var_setups]
 
     def collect_equal(self, param: str) -> Any:
         """Obtain the value of a param, expecting it to be equal for all."""

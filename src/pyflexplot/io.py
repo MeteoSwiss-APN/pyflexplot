@@ -99,10 +99,10 @@ class FileReader:
         for timeless_fld_specs, time_idcs in zip(timeless_fld_specs_lst, time_idcs_lst):
             # SR_TMP < TODO cleaner  mypy-compatible solution
             ens_member_ids: Optional[Sequence[int]]
-            assert timeless_fld_specs.setup.ens_member_id is None or all(
-                isinstance(i, int) for i in timeless_fld_specs.setup.ens_member_id
+            assert timeless_fld_specs.fld_setup.ens_member_id is None or all(
+                isinstance(i, int) for i in timeless_fld_specs.fld_setup.ens_member_id
             )  # for mypy
-            ens_member_ids = timeless_fld_specs.setup.ens_member_id  # type: ignore
+            ens_member_ids = timeless_fld_specs.fld_setup.ens_member_id  # type: ignore
             # SR_TMP >
             self.n_members = 1 if not ens_member_ids else len(ens_member_ids)
             self.in_file_path_lst = self._prepare_in_file_path_lst(ens_member_ids)
@@ -149,10 +149,8 @@ class FileReader:
         self, timeless_fld_specs: FldSpecs, time_idcs: Sequence[int],
     ) -> Tuple[List[Field], List[AttrMult]]:
         # SR_TMP <
-        fld_setup = timeless_fld_specs.setup
-        var_setups = [
-            var_specs._setup for var_specs in timeless_fld_specs.var_specs_lst
-        ]
+        fld_setup = timeless_fld_specs.fld_setup
+        var_setups = timeless_fld_specs.var_setups
         # SR_TMP >
 
         # Read fields of all members at all time steps
@@ -247,8 +245,10 @@ class FileReader:
         for time_idx in time_idcs:
             fld_specs_i: FldSpecs = deepcopy(timeless_fld_specs)
             # SR_TMP <
-            for var_specs in fld_specs_i.var_specs_lst:
-                var_specs._setup = var_specs._setup.derive({"time": [time_idx]})
+            fld_specs_i.var_setups = [
+                var_setup.derive({"time": [time_idx]})
+                for var_setup in fld_specs_i.var_setups
+            ]
             # SR_TMP >
             fld_specs_lst.append(fld_specs_i)
         return fld_specs_lst
@@ -279,10 +279,10 @@ class FileReader:
         for idx_mem, in_file_path in enumerate(self.in_file_path_lst or []):
             with nc4.Dataset(in_file_path, "r") as fi:
                 for idx_time, fld_specs in enumerate(fld_specs_lst):
-                    attrs_lst = []
-                    for var_specs in fld_specs.var_specs_lst:
-                        attrs = collect_attrs(fi, self.setup, self.words, var_specs)
-                        attrs_lst.append(attrs)
+                    attrs_lst = [
+                        collect_attrs(fi, var_setup, self.words)
+                        for var_setup in fld_specs.var_setups
+                    ]
                     attrs = attrs_lst[0].merge_with(attrs_lst[1:])
                     attrs_by_reqtime_mem[idx_time, idx_mem] = attrs
         return attrs_by_reqtime_mem
@@ -305,7 +305,7 @@ class FileReader:
         time_idcs_lst: List[List[int]] = []
         for fld_specs in fld_specs_lst:
 
-            # Extract time index (same vor all var_specs in the fld_specs)
+            # Extract time index (shoult be the same for all)
             time_idcs = fld_specs.collect_equal("time")
             assert len(time_idcs) == 1  # SR_DBG
             time_idx: int = next(iter(time_idcs))
@@ -313,8 +313,10 @@ class FileReader:
             # Reset time index
             dummy_time_idx = -999  # SR_TMP TODO find proper solution
             timeless_fld_specs: FldSpecs = deepcopy(fld_specs)
-            for var_specs in timeless_fld_specs.var_specs_lst:
-                var_specs._setup = var_specs._setup.derive({"time": [dummy_time_idx]},)
+            timeless_fld_specs.var_setups = [
+                var_setup.derive({"time": [dummy_time_idx]})
+                for var_setup in timeless_fld_specs.var_setups
+            ]
 
             for idx, timeless_fld_specs_i in enumerate(timeless_fld_specs_lst):
                 if timeless_fld_specs == timeless_fld_specs_i:

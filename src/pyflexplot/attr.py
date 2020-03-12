@@ -773,14 +773,14 @@ class AttrGroupCollection:
         return {name: dict(attrs) for name, attrs in self}
 
 
-def collect_attrs(fi, setup, words, var_specs, **kwargs):
-    return AttrsCollector(fi, setup, words, var_specs).run()
+def collect_attrs(fi, setup, words):
+    return AttrsCollector(fi, setup, words).run()
 
 
 class AttrsCollector:
     """Collect attributes for a field from an open NetCDF file."""
 
-    def __init__(self, fi, setup, words, var_specs):
+    def __init__(self, fi, setup, words):
         """Create an instance of ``AttrsCollector``.
 
         Args:
@@ -790,13 +790,10 @@ class AttrsCollector:
 
             words (Words): Words.
 
-            var_specs (VarSpecs): Input field specifications.
-
         """
         self.fi = fi
-        self._setup = var_specs._setup
+        self._setup = setup
         self._words = words
-        self.var_specs = var_specs
 
         # Collect all global attributes
         self.ncattrs_global = {
