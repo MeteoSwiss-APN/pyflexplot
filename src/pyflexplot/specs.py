@@ -34,29 +34,12 @@ def int_or_list(
 
 
 # SR_TMP <<< Leftover from VarSpecs
-def create_var_setups(fld_setups: SetupCollection, pre_expand_time: bool = False):
-    def create_var_setups_lst(fld_setups):
-        var_setups_lst = []
-        for fld_setup in fld_setups:
-            var_setups = []
-            for var_setup in fld_setup.decompress():
-                var_setups.append(var_setup)
-            var_setups_lst.append(var_setups)
-        return var_setups_lst
-
-    if not pre_expand_time:
-        return [
-            var_setup
-            for var_setups in create_var_setups_lst(fld_setups)
-            for var_setup in var_setups
-        ]
-
-    setups_time = [
-        sub_setup
-        for fld_setup in fld_setups
-        for sub_setup in fld_setup.decompress(["time"])
-    ]
-    return create_var_setups_lst(setups_time)
+def create_var_setups(fld_setups: SetupCollection):
+    var_setups_lst = []
+    for fld_setup in fld_setups:
+        for fld_sub_setup in fld_setup.decompress(["time"]):
+            var_setups_lst.append(fld_sub_setup.decompress())
+    return var_setups_lst
 
 
 class FldSpecs:
@@ -83,7 +66,7 @@ class FldSpecs:
             return [obj for setup in setups for obj in cls.create(setup)]
         else:
             fld_setup = next(iter(setups))
-            var_setups_lst = create_var_setups(setups, pre_expand_time=True)
+            var_setups_lst = create_var_setups(setups)
             fld_specs_lst = []
             for var_setups in var_setups_lst:
                 fld_specs = cls(fld_setup, var_setups)
