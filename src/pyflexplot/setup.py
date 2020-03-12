@@ -13,6 +13,7 @@ from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from typing import Type
 from typing import Union
 from typing import overload
 
@@ -35,7 +36,7 @@ ENS_CLOUD_ARRIVAL_TIME_MEM_MIN_DEFAULT = 1
 ENS_CLOUD_ARRIVAL_TIME_THR_DEFAULT: float = 1e-9
 
 
-def setup_repr(obj: "Setup") -> str:
+def setup_repr(obj: Union["CoreSetup", "Setup"]) -> str:
     def fmt(obj):
         if isinstance(obj, str):
             return f"'{obj}'"
@@ -43,6 +44,64 @@ def setup_repr(obj: "Setup") -> str:
 
     s_attrs = ",\n  ".join(f"{k}={fmt(v)}" for k, v in obj.dict().items())
     return f"{type(obj).__name__}(\n  {s_attrs},\n)"
+
+
+class CoreSetup(BaseModel):
+    """
+    PyFlexPlot core setup with exactly one value per parameter.
+
+    See ``Setup`` for details on the parameters.
+
+    """
+
+    class Config:  # noqa
+        allow_mutation = False
+        extra = "forbid"
+
+    # Basics
+    infile: str
+    outfile: str
+    plot_type: str = "auto"
+    variable: str = "concentration"
+
+    # Tweaks
+    deposition_type: str = "none"
+    integrate: bool = False
+    combine_species: bool = False
+
+    # Ensemble-related
+    simulation_type: str = "deterministic"
+    ens_member_id: Optional[int] = None
+    ens_param_mem_min: Optional[int] = None
+    ens_param_thr: Optional[float] = None
+
+    # Plot appearance
+    lang: str = "en"
+    domain: str = "auto"
+    reverse_legend: bool = False
+    scale_fact: Optional[float] = None
+
+    # Dimensions
+    nageclass: int = 0
+    noutrel: int = 0
+    numpoint: int = 0
+    species_id: int = 1
+    time: int = 0
+    level: Optional[int] = None
+
+    def __repr__(self) -> str:  # type: ignore
+        return setup_repr(self)
+
+    @classmethod
+    def create(cls, params: Mapping[str, Any]) -> "CoreSetup":
+        return cls(**params)
+
+    @classmethod
+    def as_setup(cls, obj: Union[Mapping[str, Any], "CoreSetup"]) -> "CoreSetup":
+        if isinstance(obj, cls):
+            return obj
+        assert isinstance(obj, Mapping)  # mypy
+        return cls(**obj)
 
 
 class Setup(BaseModel):
@@ -155,7 +214,7 @@ class Setup(BaseModel):
     @validator("deposition_type", always=True)
     def _init_deposition_type(cls, value: Union[str, Tuple[str, str]]) -> str:
         if value in ["dry", "wet", "tot", "none"]:
-            assert isinstance(value, str)  # for mypy
+            assert isinstance(value, str)  # mypy
             return value
         elif set(value) == {"dry", "wet"}:
             return "tot"
@@ -326,23 +385,83 @@ class Setup(BaseModel):
         dct = compress_multival_dicts(setups.dicts(), cls_seq=tuple)
         return cls.create(dct)
 
-    def decompress(
-        self,
-        select: Optional[Collection[str]] = None,
-        *,
-        skip: Optional[Collection[str]] = None,
+    def decompress(self) -> "CoreSetupCollection":
+        return self._decompress(None, None)
+
+    def decompress_partially(
+        self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None,
     ) -> "SetupCollection":
+        if (select, skip) == (None, None):
+            return self._decompress(None, None, Setup)
+        elif skip is None:
+            assert select is not None  # mypy
+            return self._decompress(select, None)
+        elif select is None:
+            assert skip is not None  # mypy
+            return self._decompress(None, skip)
+        else:
+            return self._decompress(select, skip)
+
+    @overload
+    def _decompress(
+        self, select: None, skip: None, cls_setup: Optional[Type["CoreSetup"]] = None,
+    ) -> "CoreSetupCollection":
+        ...
+
+    @overload
+    def _decompress(
+        self, select: None, skip: None, cls_setup: Type["Setup"],
+    ) -> "SetupCollection":
+        ...
+
+    @overload
+    def _decompress(
+        self,
+        select: None,
+        skip: Collection[str],
+        cls_setup: Optional[Union[Type["CoreSetup"], Type["Setup"]]] = None,
+    ) -> "SetupCollection":
+        ...
+
+    @overload
+    def _decompress(
+        self,
+        select: Collection[str],
+        skip: None,
+        cls_setup: Optional[Union[Type["CoreSetup"], Type["Setup"]]] = None,
+    ) -> "SetupCollection":
+        ...
+
+    @overload
+    def _decompress(
+        self,
+        select: Collection[str],
+        skip: Collection[str],
+        cls_setup: Optional[Union[Type["CoreSetup"], Type["Setup"]]] = None,
+    ) -> "SetupCollection":
+        ...
+
+    def _decompress(self, select=None, skip=None, cls_setup=None):
         """Create multiple ``Setup`` objects with one-value parameters only."""
 
-        if skip is None:
-            skip = ["infile", "ens_member_id"]
+        if cls_setup is None:
+            if (select, skip) == (None, None):
+                cls_setup = CoreSetup
+            else:
+                cls_setup = Setup
+        if cls_setup is CoreSetup:
+            cls_setup_collection = CoreSetupCollection
+        elif cls_setup is Setup:
+            cls_setup_collection = SetupCollection
+        else:
+            raise ValueError("invalid cls_setup", cls_setup)
 
         dct = self.dict()
 
         # Handle deposition type
         expand_deposition_type = (
             select is None or "deposition_type" in select
-        ) and "deposition_type" not in skip
+        ) and "deposition_type" not in (skip or [])
         if expand_deposition_type and dct["deposition_type"] == "tot":
             dct["deposition_type"] = ("dry", "wet")
 
@@ -352,22 +471,25 @@ class Setup(BaseModel):
         def create_setup(dct):
             if isinstance(dct["time"], int):
                 dct["time"] = [dct["time"]]
-            return Setup.create(dct)
+            return cls_setup.create(dct)
 
-        return SetupCollection([create_setup(dct) for dct in dcts])
+        return cls_setup_collection([cls_setup.create(dct) for dct in dcts])
 
 
+# SR_TMP <<< TODO Consider merging with CoreSetupCollection (failed due to mypy)
 class SetupCollection:
-    """A collection of ``Setup`` objects."""
-
     def __init__(self, setups: Collection[Setup]) -> None:
         self._setups: List[Setup] = [setup for setup in setups]
 
     @classmethod
     def create(
-        cls, setups: Collection[Union[Mapping[str, Any], Setup]],
+        cls, setups: Collection[Union[Mapping[str, Any], Setup]]
     ) -> "SetupCollection":
-        return cls([Setup.as_setup(obj) for obj in setups])
+        setup_objs: List[Setup] = []
+        for obj in setups:
+            setup_obj = Setup.as_setup(obj)
+            setup_objs.append(setup_obj)
+        return cls(setup_objs)
 
     def __repr__(self) -> str:
         s_setups = "\n  ".join([""] + [str(c) for c in self._setups])
@@ -392,6 +514,30 @@ class SetupCollection:
 
     def dicts(self) -> List[Mapping[str, Any]]:
         return [setup.dict() for setup in self._setups]
+
+
+# SR_TMP <<< TODO Consider merging with SetupCollection (failed due to mypy)
+class CoreSetupCollection:
+    def __init__(self, setups: Collection[CoreSetup]) -> None:
+        self._setups: List[CoreSetup] = [setup for setup in setups]
+
+    @classmethod
+    def create(
+        cls, setups: Collection[Union[Mapping[str, Any], CoreSetup]]
+    ) -> "CoreSetupCollection":
+        setup_objs: List[CoreSetup] = []
+        for obj in setups:
+            setup_obj = CoreSetup.as_setup(obj)
+            setup_objs.append(setup_obj)
+        return cls(setup_objs)
+
+    # SR_TMP <
+    __repr__ = SetupCollection.__repr__
+    __len__ = SetupCollection.__len__
+    __iter__ = SetupCollection.__iter__
+    __eq__ = SetupCollection.__eq__
+    dicts = SetupCollection.dicts
+    # SR_TMP >
 
 
 class SetupFile:

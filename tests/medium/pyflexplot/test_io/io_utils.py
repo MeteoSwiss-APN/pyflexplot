@@ -7,6 +7,9 @@ Tests for module ``pyflexplot.io``.
 import netCDF4 as nc4
 import numpy as np
 
+# First-party
+from pyflexplot.setup import CoreSetup
+
 
 # SR_TMP <<<
 def fix_nc_fld(fld):
@@ -15,6 +18,7 @@ def fix_nc_fld(fld):
 
 
 def read_nc_var(path, var_name, setup):
+    # + assert isinstance(setup, CoreSetup)  # SR_TODO
     with nc4.Dataset(path, "r") as fi:
         var = fi.variables[var_name]
 
@@ -25,13 +29,20 @@ def read_nc_var(path, var_name, setup):
                 idx = slice(None)
             elif dim_name == "time":
                 # Read all timesteps until the selected one
-                assert len(setup.time) == 1
-                idx = slice(setup.time[0] + 1)
+                # SR_TMP <
+                if isinstance(setup, CoreSetup):
+                    idx = slice(setup.time + 1)
+                else:
+                    assert len(setup.time) == 1
+                    idx = slice(setup.time[0] + 1)
+                # SR_TMP >
             elif dim_name == "level":
-                # SR_TMP < TODO Clean up once CoreSetup has been implemented
-                assert setup.level is None or len(setup.level) == 1
-                idx = None if setup.level is None else next(iter(setup.level))
-                # idx = setup.level
+                # SR_TMP <
+                if isinstance(setup, CoreSetup) or setup.level is None:
+                    idx = setup.level
+                else:
+                    assert len(setup.level) == 1
+                    idx = next(iter(setup.level))
                 # SR_TMP >
             elif dim_name in ["nageclass", "numpoint", "noutrel"]:
                 idx = 0  # SR_HC

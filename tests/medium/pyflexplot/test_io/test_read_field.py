@@ -283,7 +283,7 @@ def test_multiple(datadir, conf):  # noqa:F811
     datafile = f"{datadir}/{conf.datafilename}"
 
     # Create setups
-    setup_lst = list(conf.setup.decompress())
+    setup_lst = list(conf.setup.decompress_partially(None))
     for setup in setup_lst.copy():
         setup_lst.extend(setup.derive(conf.derived_setup_params))
 

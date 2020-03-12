@@ -94,7 +94,13 @@ class TestReadFieldEnsemble_Single:
         assert len(attrs_lst) == 1
         fld = fields[0].fld
 
-        setups = fld_specs_lst[0].fld_setup.decompress()
+        # SR_TMP <
+        assert len(fld_specs_lst[0].fld_setup.infile) == 1
+        setups = fld_specs_lst[0].fld_setup.decompress_partially(
+            None, skip=["ens_member_id"],
+        )
+        # SR_TMP >
+        assert len(fld_specs_lst[0].fld_setup.infile) == 1  # SR_TMP
         assert len(setups) == 1
         setup = next(iter(setups))
 
@@ -218,6 +224,7 @@ class TestReadFieldEnsemble_Multiple:
         # Read reference fields
         fld_ref_lst = []
         for compressed_setup in compressed_setups:
+            assert len(compressed_setup.infile) == 1  # SR_TMP
             fld_ref_mem_time = [
                 [
                     read_nc_var(
@@ -228,7 +235,11 @@ class TestReadFieldEnsemble_Multiple:
                     * scale_fld_ref
                     for ens_member_id in self.ens_member_ids
                 ]
-                for setup in compressed_setup.decompress()
+                # SR_TMP <
+                for setup in compressed_setup.decompress_partially(
+                    None, skip=["ens_member_id"],
+                )
+                # SR_TMP >
             ]
             fld_ref_lst.append(
                 fct_reduce_mem(np.nansum(fld_ref_mem_time, axis=0), axis=0)

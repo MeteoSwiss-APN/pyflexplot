@@ -37,8 +37,19 @@ def int_or_list(
 def create_var_setups(fld_setups: SetupCollection):
     var_setups_lst = []
     for fld_setup in fld_setups:
-        for fld_sub_setup in fld_setup.decompress(["time"]):
-            var_setups_lst.append(fld_sub_setup.decompress())
+        # SR_TMP <
+        # for fld_sub_setup in fld_setup.decompress_partially(["time"]):
+        #     var_setups_lst.append(fld_sub_setup.decompress())
+        assert len(fld_setup.infile) == 1  # SR_TMP
+        for fld_sub_setup in fld_setup.decompress_partially(
+            ["time"], skip=["ens_member_id"]
+        ):
+            assert len(fld_sub_setup.infile) == 1  # SR_TMP
+            var_setups_lst.append(
+                fld_sub_setup.decompress_partially(None, skip=["ens_member_id"])
+            )
+            # SR_TMP >
+        # SR_TMP >
     return var_setups_lst
 
 

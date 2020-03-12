@@ -101,7 +101,7 @@ class FileReader:
             ens_member_ids: Optional[Sequence[int]]
             assert timeless_fld_specs.fld_setup.ens_member_id is None or all(
                 isinstance(i, int) for i in timeless_fld_specs.fld_setup.ens_member_id
-            )  # for mypy
+            )  # mypy
             ens_member_ids = timeless_fld_specs.fld_setup.ens_member_id  # type: ignore
             # SR_TMP >
             self.n_members = 1 if not ens_member_ids else len(ens_member_ids)
@@ -131,7 +131,7 @@ class FileReader:
                 fmt_keys[0],
                 self.in_file_path_fmt,
             )
-        assert ens_member_ids is not None  # for mypy
+        assert ens_member_ids is not None  # mypy
         return [self.in_file_path_fmt.format(ens_member=id_) for id_ in ens_member_ids]
 
     def _determine_n_reqtime(self, time_idcs_lst: Sequence[Sequence[int]]) -> int:

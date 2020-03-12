@@ -9,6 +9,8 @@ from typing import Dict
 from typing import List
 
 # First-party
+from pyflexplot.setup import CoreSetup
+from pyflexplot.setup import CoreSetupCollection
 from pyflexplot.setup import Setup
 from pyflexplot.setup import SetupCollection
 
@@ -61,30 +63,34 @@ class Test_Decompress:
             },
         )
 
-    def test_all(self):
+    def test_full(self):
         """Decompress all params."""
         setups = self.setup.decompress()
         assert len(setups) == 12
+        assert isinstance(setups, CoreSetupCollection)
+        assert all(isinstance(setup, CoreSetup) for setup in setups)
         res = {(s.deposition_type, s.species_id, s.time) for s in setups}
         sol = {
-            ("dry", (1,), (1,)),
-            ("dry", (1,), (2,)),
-            ("dry", (1,), (3,)),
-            ("dry", (2,), (1,)),
-            ("dry", (2,), (2,)),
-            ("dry", (2,), (3,)),
-            ("wet", (1,), (1,)),
-            ("wet", (1,), (2,)),
-            ("wet", (1,), (3,)),
-            ("wet", (2,), (1,)),
-            ("wet", (2,), (2,)),
-            ("wet", (2,), (3,)),
+            ("dry", 1, 1),
+            ("dry", 1, 2),
+            ("dry", 1, 3),
+            ("dry", 2, 1),
+            ("dry", 2, 2),
+            ("dry", 2, 3),
+            ("wet", 1, 1),
+            ("wet", 1, 2),
+            ("wet", 1, 3),
+            ("wet", 2, 1),
+            ("wet", 2, 2),
+            ("wet", 2, 3),
         }
         assert res == sol
 
-    def test_select_one(self):
+    def test_partially_one(self):
         """Decompress only one select parameter."""
-        setups = self.setup.decompress(["species_id"])
+        setups = self.setup.decompress_partially(["species_id"])
+        assert isinstance(setups, SetupCollection)
+        assert all(isinstance(setup, Setup) for setup in setups)
         assert len(setups) == 2
         res = {(s.deposition_type, s.species_id, s.time) for s in setups}
         sol = {("tot", (1,), (1, 2, 3)), ("tot", (2,), (1, 2, 3))}
@@ -92,8 +98,10 @@ class Test_Decompress:
 
     def test_select_two(self):
         """Decompress two select parameters."""
-        setups = self.setup.decompress(["time", "deposition_type"])
+        setups = self.setup.decompress_partially(["time", "deposition_type"])
         assert len(setups) == 6
+        assert isinstance(setups, SetupCollection)
+        assert all(isinstance(setup, Setup) for setup in setups)
         res = {(s.deposition_type, s.species_id, s.time) for s in setups}
         sol = {
             ("dry", (1, 2), (1,)),
@@ -158,3 +166,10 @@ class Test_Compress:
         res = Setup.compress(SetupCollection(self.setups_lst[:3])).dict()
         sol = Setup.create({**self.dcts[0], "level": (0, 1, 2)})
         assert res == sol
+
+
+# +
+# +
+# +class Test_CoreSetup:
+# +    def test_foo(self):
+# +        pass
