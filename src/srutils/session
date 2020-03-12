@@ -3,6 +3,7 @@ click.py
 dict.py
 exceptions.py
 geo.py
+iter.py
 str.py
 testing.py
 various.py

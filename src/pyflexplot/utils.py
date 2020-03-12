@@ -14,7 +14,7 @@ import numpy as np
 from pydantic import BaseModel
 
 # First-party
-from srutils.various import isiterable
+from srutils.iter import isiterable
 
 
 class MaxIterationError(Exception):

@@ -1,2 +1,3 @@
 < test_dict/session
+test_iter/test_flatten.py
 test_str/test_to_varname.py

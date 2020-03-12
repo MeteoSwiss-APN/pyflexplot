@@ -6,7 +6,7 @@ Plotters.
 import re
 
 # First-party
-from srutils.various import isiterable
+from srutils.iter import isiterable
 
 # Local
 from .plot import Plot

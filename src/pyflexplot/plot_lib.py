@@ -18,7 +18,7 @@ import numpy as np
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 # First-party
-from srutils.various import isiterable
+from srutils.iter import isiterable
 
 # Local
 from .utils import MaxIterationError

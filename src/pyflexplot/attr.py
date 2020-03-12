@@ -13,7 +13,7 @@ import numpy as np
 
 # First-party
 from srutils.dict import format_dictlike
-from srutils.various import isiterable
+from srutils.iter import isiterable
 
 # Local
 from .setup import Setup
