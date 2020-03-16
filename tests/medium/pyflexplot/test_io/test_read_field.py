@@ -20,7 +20,6 @@ from pyflexplot.io import read_files
 from pyflexplot.setup import Setup
 from pyflexplot.setup import SetupCollection
 from pyflexplot.specs import FldSpecs
-from pyflexplot.words import WORDS
 
 from io_utils import read_nc_var  # isort:skip
 from utils import datadir  # noqa:F401 isort:skip
@@ -151,7 +150,7 @@ def test_single(datadir, conf):  # noqa:F811
     assert len(fld_specs_lst) == 1
 
     # Read input field
-    fields, attrs_lst = read_files(datafile, conf.setup, WORDS, fld_specs_lst)
+    fields, attrs_lst = read_files(datafile, conf.setup, fld_specs_lst)
     assert len(fields) == 1
     fld = fields[0].fld
 
@@ -296,7 +295,7 @@ def test_multiple(datadir, conf):  # noqa:F811
         setup = fld_specs.fld_setup
 
         # Read input fields
-        fields, attrs_lst = read_files(datafile, setup, WORDS, fld_specs_lst_i)
+        fields, attrs_lst = read_files(datafile, setup, fld_specs_lst_i)
         assert len(fields) == 1
         assert len(attrs_lst) == 1
         fld = np.array([field.fld for field in fields])

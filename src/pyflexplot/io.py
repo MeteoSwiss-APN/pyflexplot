@@ -19,7 +19,6 @@ import numpy as np
 
 # First-party
 from srutils.various import check_array_indices
-from words import Words
 
 # Local
 from .attr import AttrMult
@@ -33,8 +32,8 @@ from .setup import Setup
 from .specs import FldSpecs
 
 
-def read_files(in_file_path, setup, words, fld_specs_lst):
-    return FileReader(in_file_path, setup, words).run(fld_specs_lst)
+def read_files(in_file_path, setup, fld_specs_lst):
+    return FileReader(in_file_path, setup).run(fld_specs_lst)
 
 
 class FileReader:
@@ -48,9 +47,7 @@ class FileReader:
 
     choices_ens_var = ["mean", "median", "min", "max"]
 
-    def __init__(
-        self, in_file_path: str, setup: Setup, words: Words,
-    ):
+    def __init__(self, in_file_path: str, setup: Setup):
         """Create an instance of ``FileReader``.
 
         Args:
@@ -59,12 +56,9 @@ class FileReader:
 
             setup: Setup.
 
-            words: Words.
-
         """
         self.in_file_path_fmt = in_file_path
         self.setup = setup
-        self.words = words
 
         self.n_members: Optional[int] = None
         self.in_file_path_lst: Optional[Sequence[str]] = None
@@ -280,7 +274,7 @@ class FileReader:
             with nc4.Dataset(in_file_path, "r") as fi:
                 for idx_time, fld_specs in enumerate(fld_specs_lst):
                     attrs_lst = [
-                        collect_attrs(fi, var_setup, self.words)
+                        collect_attrs(fi, var_setup)
                         for var_setup in fld_specs.var_setups
                     ]
                     attrs = attrs_lst[0].merge_with(attrs_lst[1:])

@@ -6,10 +6,16 @@ Attributes.
 import datetime
 import re
 import time
-from pprint import pformat
+from typing import Any
+from typing import Dict
+from typing import Generic
+from typing import Optional
+from typing import TypeVar
 
 # Third-party
 import numpy as np
+from pydantic import root_validator
+from pydantic.generics import GenericModel
 
 # First-party
 from srutils.dict import format_dictlike
@@ -19,97 +25,84 @@ from srutils.iter import isiterable
 from .setup import Setup
 from .setup import SetupCollection
 from .utils import summarizable
+from .words import WORDS
+
+ValueT = TypeVar("ValueT")
+
+
+class NewAttr(GenericModel, Generic[ValueT]):
+    name: str
+    value: ValueT
+    unit: Optional[str] = None
+    attrs: Dict[str, Any] = None
+
+    @root_validator(pre=True)
+    def _init_attrs(cls, values):
+        if values.get("attrs") is None:
+            values["attrs"] = {}
+        return values
 
 
 @summarizable
 class Attr:
     """Individual attribute."""
 
-    def __init__(self, name, value, type_=None, unit=None, group=None):
-
-        self.name = name
-        self.type_ = type(value) if type_ is None else type_
-        self.unit = unit
-
-        self.set_group(group)
-
-        # SR_TMP <
-        assert not isinstance(value, type(self)), f"value type {type(value).__name__}"
-        assert not isiterable(value, str_ok=False), f"iterable value: {value}"
-        # SR_TMP >
-
-        # Ensure consistency of value and type_
-        if isinstance(value, type_):
-            self.value = value
-        else:
-            try:
-                self.value = type_(value)
-            except (TypeError, ValueError) as e:
-                raise ValueError(
-                    f"value='{value}' of type '{type(value).__name__}' incompatible "
-                    f"with type_='{type_.__name__}' ({type(e).__name__}: {e})"
-                )
+    def __init__(self, attr, type_):
+        self._attr = attr
+        self.name = attr.name
+        self.value = attr.value
+        self.unit = attr.unit
+        self.type_ = type_
+        self.group = attr.attrs.get("group")
 
     @classmethod
-    def multiple(cls, *args, **kwargs):
-        return AttrMult(*args, cls_attr=cls, **kwargs)
+    def create(cls, *, type_, name, value, unit=None, **kwargs):
+        if type_ is datetime.datetime:  # noqa
+            return AttrDatetime(
+                type_=type_, name=name, value=value, unit=unit, **kwargs,
+            )
+        attr = NewAttr[type_](name=name, value=value, unit=unit, attrs=kwargs)
+        return cls(attr=attr, type_=type_)
 
-    def set_group(self, group):
-        self._group = group
+    @classmethod
+    def multiple(cls, **kwargs):
+        return AttrMult(cls_attr=cls, **kwargs)
 
     # SR_TMP <<<
     def __eq__(self, other):
-        return self.value == other.value
-
-    def __repr__(self):
-        if isinstance(self.value, str):
-            value = f"'{self.value}'"
-        else:
-            value = str(self.value)
-        if self.unit is None:
-            unit = "None"
-        else:
-            unit = f"'{self.unit}'"
-        return (
-            f"{type(self).__name__}("
-            + ", ".join(
-                [
-                    f"name='{self.name}'",
-                    f"value={value}",
-                    f"type_={self.type_.__name__}",
-                    f"unit={unit}",
-                ]
-            )
-            + f")"
-        )
+        return self._attr == other._attr
+        # return self.value == other.value
 
     def merge_with(self, others, replace=None):
+        assert all(isinstance(o._attr, type(self._attr)) for o in others)  # SR_DBG
         if replace is None:
             replace = {}
         name = replace.get("name", self.name)
-        type_ = replace.get("type_", self.type_)
         values, units = self._collect_values_units(others, replace)
         value, unit = self._reduce_values_units(values, units)
         value = replace.get("value", value)
         unit = replace.get("unit", unit)
         kwargs = {
             "name": name,
-            "type_": type_,
+            "type_": self.type_,  # SR_TMP
             "value": value,
             "unit": unit,
         }
         if isiterable(value, str_ok=False):
             return type(self).multiple(**kwargs)
-        return type(self)(**kwargs)
+        return type(self).create(**kwargs)  # SR_TMP
 
     def _collect_values_units(self, others, replace):
         values_units = [(self.value, self.unit)]
         values, units = [self.value], [self.unit]
         for other in others:
-            if "name" not in replace and other.name != self.name:
-                raise ValueError(f"names differ: {other.name} != {self.name}")
-            if "name" not in replace and other.type_ != self.type_:
-                raise ValueError(f"types differ: {other.type_} != {self.type_}")
+            if "name" not in replace:
+                if other.name != self.name:
+                    raise ValueError(f"names differ: {other.name} != {self.name}")
+                if type(other._attr) is not type(self._attr):  # noqa
+                    raise ValueError(
+                        f"types differ: {type(other._attr)} is not {type(self._attr)}"
+                    )
             if (other.value, other.unit) not in values_units:
                 values_units.append((other.value, other.unit))
                 values.append(other.value)
@@ -167,7 +160,7 @@ class Attr:
 
 
 class AttrMult(Attr):
-    def __init__(self, name, value, type_=None, unit=None, cls_attr=Attr):
+    def __init__(self, *, name, value, type_=None, unit=None, cls_attr=Attr):
 
         self.name = name
 
@@ -198,10 +191,10 @@ class AttrMult(Attr):
         del value, unit
 
         # Initialize individual attributes
-        self._attr_lst = []
-        for value, unit in zip(values, units):
-            attr = cls_attr(name, value, type_=type_, unit=unit)
-            self._attr_lst.append(attr)
+        self._attr_lst = [
+            cls_attr.create(type_=type_, name=name, value=value, unit=unit)
+            for value, unit in zip(values, units)
+        ]
 
     def __repr__(self):
         s = f"{type(self).__name__}("
@@ -238,25 +231,12 @@ class AttrMult(Attr):
 class AttrDatetime(Attr):
     """Individual datetime attribute."""
 
-    def __init__(self, name, value, *, type_=None, start=None, **kwargs):
-
-        if type_ is None:
-            type_ = datetime.datetime
-
-        if type_ is not datetime.datetime:
-            raise ValueError(
-                f"invalid type_ '{type_.__name__}' (not datetime.datetime)"
-            )
-
-        if not isinstance(value, type_):
-            raise ValueError(
-                f"value has wrong type: expected '{type_.__name__}', got "
-                f"'{type(value).__name__}'"
-            )
-
-        super().__init__(name, value, type_=type_, **kwargs)
-
-        self.start = start.value if isinstance(start, Attr) else start
+    def __init__(self, *, type_, name, value, unit=None, **kwargs):
+        assert type_ is datetime.datetime  # noqa
+        assert isinstance(value, type_)
+        attr = NewAttr[type_](name=name, value=value, unit=unit, attrs=kwargs)
+        super().__init__(attr=attr, type_=type_)
+        self.start = attr.attrs.get("start")
 
     def __repr__(self):
         s = super().__repr__()
@@ -319,17 +299,11 @@ class AttrGroup:
     def set(self, name, value, type_, **kwargs):
         if isinstance(value, Attr):
             attr = value
-            attr.set_group(self)
+            attr.group = self
         else:
             cls = {datetime.datetime: AttrDatetime}.get(type_, Attr)
             kwargs.update({"name": name, "value": value, "type_": type_, "group": self})
-            try:
-                attr = cls(**kwargs)
-            except Exception as e:
-                raise Exception(
-                    f"error creating instance of {cls.__name__} "
-                    f"({type(e).__name__}: {e})"
-                )
+            attr = cls.create(**kwargs)  # SR_TMP
         self._attrs[name] = attr
 
     def __iter__(self):
@@ -381,13 +355,7 @@ class AttrGroup:
             if attr.unit is not None:
                 kwargs[f"{key}_unit"] = attr.unit
 
-        try:
-            return type(self)(setup, **kwargs)
-        except Exception as e:
-            raise Exception(
-                f"error creating instance of {type(self).__name__} "
-                f"({type(e).__name__}: {e})\n\n{len(kwargs)} kwargs:\n{pformat(kwargs)}"
-            )
+        return type(self)(setup, **kwargs)
 
 
 class AttrGroupGrid(AttrGroup):
@@ -773,8 +741,8 @@ class AttrGroupCollection:
         return {name: dict(attrs) for name, attrs in self}
 
 
-def collect_attrs(fi, setup, words):
-    return AttrsCollector(fi, setup, words).run()
+def collect_attrs(fi, setup):
+    return AttrsCollector(fi, setup, WORDS).run()
 
 
 class AttrsCollector:

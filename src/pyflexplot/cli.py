@@ -22,7 +22,6 @@ from .io import read_files
 from .plot import plot
 from .setup import SetupFile
 from .specs import FldSpecs
-from .words import WORDS
 
 # # To debug segmentation fault, uncomment and run with PYTHONFAULTHANDLER=1
 # import faulthandler
@@ -116,12 +115,12 @@ def cli(ctx, setup_file_paths, **cli_args):
     ]
 
     # Create plots
-    create_plots(setups, cli_args, words=WORDS)
+    create_plots(setups, cli_args)
 
     return 0
 
 
-def create_plots(setups, cli_args, words):
+def create_plots(setups, cli_args):
     """Read and plot FLEXPART data."""
 
     out_file_paths = []
@@ -130,7 +129,7 @@ def create_plots(setups, cli_args, words):
     for idx_setup, setup in enumerate(setups):
 
         # Read input fields
-        fields, attrs_lst = read_fields(setup, words)
+        fields, attrs_lst = read_fields(setup)
 
         # Note: Plotter.run yields the output file paths on-the-go
         for idx_plot, out_file_path in enumerate(plot(fields, attrs_lst, setup)):
@@ -145,7 +144,7 @@ def create_plots(setups, cli_args, words):
         open_plots(cli_args["open_all_cmd"], out_file_paths)
 
 
-def read_fields(setup, words):
+def read_fields(setup):
 
     # Determine fields specifications (one for each eventual plot)
     fld_specs_lst = FldSpecs.create(setup)
@@ -154,7 +153,7 @@ def read_fields(setup, words):
     fields = []
     attrs_lst = []
     for raw_path in setup.infile:
-        fields_i, attrs_lst_i = read_files(raw_path, setup, words, fld_specs_lst)
+        fields_i, attrs_lst_i = read_files(raw_path, setup, fld_specs_lst)
         fields.extend(fields_i)
         attrs_lst.extend(attrs_lst_i)
 

@@ -28,18 +28,18 @@ class PlotLabels:
         """Create an instance of ``PlotLabels``."""
         self.attrs = attrs
 
-        w = self.words
-        s = self.symbols
+        words = self.words
+        symbs = self.symbols
         a = self.attrs
 
-        w.set_default_lang(lang)
+        words.set_default_lang(lang)
 
         groups = {}
 
         # Top-left box
         level = a.variable.fmt_level_range()
-        s_level = f" {w['at', None, 'level']} {level}" if level else ""
-        integr_op = w[
+        s_level = f" {words['at', None, 'level']} {level}" if level else ""
+        integr_op = words[
             {
                 "sum": "summed_over",
                 "mean": "averaged_over",
@@ -53,22 +53,22 @@ class PlotLabels:
         unit_escaped = a.variable.unit.format(escape_format=True)
         groups["top_left"] = {
             "variable": f"{a.variable.long_name.value}{s_level}",
-            "period": f"{integr_op} {period} ({w['since']} +{start})",
-            "subtitle_thr_agrmt_fmt": f"Cloud: {s['geq']} {{thr}} {unit_escaped}",
+            "period": f"{integr_op} {period} ({words['since']} +{start})",
+            "subtitle_thr_agrmt_fmt": f"Cloud: {symbs['geq']} {{thr}} {unit_escaped}",
             "subtitle_cloud_arrival_time": (
-                f"Cloud: {s['geq']} {{thr}} {unit_escaped}; "
-                f"members: {s['geq']} {{mem}}"
+                f"Cloud: {symbs['geq']} {{thr}} {unit_escaped}; "
+                f"members: {symbs['geq']} {{mem}}"
             ),
             "timestep": f"{ts.format(rel=False)} (+{ts.format(rel=True)})",
             "time_since_release_start": (
-                f"{time_rels} {w['since']} {w['release_start']}"
+                f"{time_rels} {words['since']} {words['release_start']}"
             ),
         }
 
         # Top-right box
         groups["top_right"] = {
             "species": f"{a.species.name.format(join=' + ')}",
-            "site": f"{w['site']}: {a.release.site_name.value}",
+            "site": f"{words['site']}: {a.release.site_name.value}",
         }
 
         # Right-top box
@@ -78,34 +78,34 @@ class PlotLabels:
         groups["right_top"] = {
             "title": f"{name}",
             "title_unit": f"{name} ({unit})",
-            "release_site": w["release_site"].s,
-            "max": w["max"].s,
+            "release_site": words["release_site"].s,
+            "max": words["max"].s,
         }
 
         # Right-bottom box
-        deg_ = f"{s['deg']}{s['short_space']}"
-        _N = f"{s['short_space']}{w['north', None, 'abbr']}"
-        _E = f"{s['short_space']}{w['east', None, 'abbr']}"
+        deg_ = f"{symbs['deg']}{symbs['short_space']}"
+        _N = f"{symbs['short_space']}{words['north', None, 'abbr']}"
+        _E = f"{symbs['short_space']}{words['east', None, 'abbr']}"
         groups["right_bottom"] = {
-            "title": w["release"].t,
-            "start": w["start"].s,
-            "end": w["end"].s,
-            "latitude": w["latitude"].s,
-            "longitude": w["longitude"].s,
-            "lat_deg_fmt": f"{{d}}{deg_}{{m}}'{_N} ({{f:.2f}}{w['degN']})",
-            "lon_deg_fmt": f"{{d}}{deg_}{{m}}'{_E} ({{f:.2f}}{w['degE']})",
-            "height": w["height"].s,
-            "rate": w["rate"].s,
-            "mass": w["total_mass"].s,
-            "site": w["site"].s,
-            "release_site": w["release_site"].s,
-            "max": w["max"].s,
-            "name": w["substance"].s,
-            "half_life": w["half_life"].s,
-            "deposit_vel": w["deposition_velocity", None, "abbr"].s,
-            "sediment_vel": w["sedimentation_velocity", None, "abbr"].s,
-            "washout_coeff": w["washout_coeff"].s,
-            "washout_exponent": w["washout_exponent"].s,
+            "title": words["release"].t,
+            "start": words["start"].s,
+            "end": words["end"].s,
+            "latitude": words["latitude"].s,
+            "longitude": words["longitude"].s,
+            "lat_deg_fmt": f"{{d}}{deg_}{{m}}'{_N} ({{f:.2f}}{words['degN']})",
+            "lon_deg_fmt": f"{{d}}{deg_}{{m}}'{_E} ({{f:.2f}}{words['degE']})",
+            "height": words["height"].s,
+            "rate": words["rate"].s,
+            "mass": words["total_mass"].s,
+            "site": words["site"].s,
+            "release_site": words["release_site"].s,
+            "max": words["max"].s,
+            "name": words["substance"].s,
+            "half_life": words["half_life"].s,
+            "deposit_vel": words["deposition_velocity", None, "abbr"].s,
+            "sediment_vel": words["sedimentation_velocity", None, "abbr"].s,
+            "washout_coeff": words["washout_coeff"].s,
+            "washout_exponent": words["washout_exponent"].s,
         }
 
         # Bottom box
@@ -113,24 +113,24 @@ class PlotLabels:
         n_members = 21  # SR_TMP SR_HC TODO un-hardcode
         ens_member_id = "{:03d}-{:03d}".format(0, 20)  # SR_TMP SR_HC TODO un-hardcode
         model_ens = (
-            f"{model} {w['ensemble']} ({n_members} {w['member', None, 'pl']}: "
+            f"{model} {words['ensemble']} ({n_members} {words['member', None, 'pl']}: "
             f"{ens_member_id}"
         )
         start = a.simulation.start.format()
-        model_info_fmt = f"{w['flexpart']} {w['based_on']} {model}, {start}"
+        model_info_fmt = f"{words['flexpart']} {words['based_on']} {model}, {start}"
         groups["bottom"] = {
             "model_info_det": model_info_fmt.format(m=model),
             "model_info_ens": model_info_fmt.format(m=model_ens),
-            "copyright": f"{s['copyright']}{w['meteoswiss']}",
+            "copyright": f"{symbs['copyright']}{words['meteoswiss']}",
         }
 
         # Format all labels (hacky!)
         for group_name, group in groups.items():
             setattr(self, group_name, group)  # SR_TMP
-            for name, s in group.items():
-                if isinstance(s, str):
-                    # Capitalize first letter only (even if it's a space!)
-                    group[name] = list(s)[0].capitalize() + s[1:]
+            for name, symbs in group.items():
+                if isinstance(symbs, str):
+                    # Capitalize first letter only (even if it'symbs a space!)
+                    group[name] = list(symbs)[0].capitalize() + symbs[1:]
 
 
 def colors_flexplot(n_levels, extend):

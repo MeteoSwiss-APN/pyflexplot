@@ -15,7 +15,6 @@ from pyflexplot.io import read_files
 from pyflexplot.setup import Setup
 from pyflexplot.setup import SetupCollection
 from pyflexplot.specs import FldSpecs
-from pyflexplot.words import WORDS
 from srutils.dict import decompress_multival_dict
 
 from io_utils import read_nc_var  # isort:skip
@@ -89,7 +88,7 @@ class TestReadFieldEnsemble_Single:
         assert len(fld_specs_lst) == 1
 
         # Read input fields
-        fields, attrs_lst = read_files(datafile_fmt, setup, WORDS, fld_specs_lst)
+        fields, attrs_lst = read_files(datafile_fmt, setup, fld_specs_lst)
         assert len(fields) == 1
         assert len(attrs_lst) == 1
         fld = fields[0].fld
@@ -218,7 +217,7 @@ class TestReadFieldEnsemble_Multiple:
         global_setup = Setup.compress(compressed_setups)
 
         # Read input fields
-        fields, attrs_lst = read_files(datafile_fmt, global_setup, WORDS, fld_specs_lst)
+        fields, attrs_lst = read_files(datafile_fmt, global_setup, fld_specs_lst)
         fld_arr = np.array([field.fld for field in fields])
 
         # Read reference fields
