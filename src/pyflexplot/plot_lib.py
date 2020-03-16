@@ -52,7 +52,6 @@ def summarize_mpl_figure(obj):
         # SR_TODO if necessary, add option for shallow summary (avoid loops)
         "axes": [summarize_mpl_axes(a) for a in obj.get_axes()],
         "bbox": summarize_mpl_bbox(obj.bbox),
-        "dpi": obj.dpi,
     }
     return summary
 

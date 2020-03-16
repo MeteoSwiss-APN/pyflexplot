@@ -34,8 +34,6 @@ DEFAULT_SETUP = Setup(
         "noutrel": (0,),
         "plot_type": "auto",
         "numpoint": (0,),
-        "reverse_legend": False,
-        "scale_fact": None,
         "simulation_type": "deterministic",
         "species_id": (1,),
         "time": (0,),

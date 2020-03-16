@@ -48,6 +48,7 @@ import numpy as np
 from pyflexplot.data import Field
 from pyflexplot.plot import Plot
 from pyflexplot.plot import PlotLabels
+from pyflexplot.plot import PlotSetup
 from pyflexplot.setup import Setup
 from srutils.testing import CheckFailedError
 from srutils.testing import IgnoredElement
@@ -302,6 +303,13 @@ def create_labels(lang, attrs):
     return PlotLabels(lang, attrs)
 
 
+def create_plot_setup(lang):
+    setup = create_setup(lang)
+    attrs = create_attrs(lang)
+    labels = create_labels(lang, attrs)
+    return PlotSetup(setup, attrs, labels)
+
+
 def create_map_conf(lang):
     return SimpleNamespace(
         zoom_fact=1.0,
@@ -334,19 +342,9 @@ def create_res(lang, _cache={}):
     """
     if lang not in _cache:
         field = create_field()
-        setup = create_setup(lang)
-        attrs = create_attrs(lang)
-        labels = create_labels(lang, attrs)
+        plot_setup = create_plot_setup(lang)
         map_conf = create_map_conf(lang)
-        plot = Plot(
-            field,
-            setup,
-            attrs,
-            map_conf=map_conf,
-            dpi=100,
-            figsize=(12, 9),
-            labels=labels,
-        )
+        plot = Plot(field, plot_setup, map_conf)
         _cache[lang] = plot.summarize()
     return _cache[lang]
 
@@ -379,8 +377,6 @@ class CreateTests:
     invs = [False, True]
     args = [
         "base_attrs",
-        "dim_attrs",
-        "labels",
         "ax_map",
         "boxes",
         "boxes_text",
@@ -429,16 +425,6 @@ class Test_BaseAttrs:
 
 
 @CreateTests()
-class Test_DimAttrs:
-    dim_attrs = True
-
-
-@CreateTests()
-class Test_Labels:
-    labels = True
-
-
-@CreateTests()
 class Test_Boxes:
     boxes = True
 
@@ -462,8 +448,6 @@ class Test_Field:
 @CreateTests()
 class Test_Full:
     base_attrs = True
-    dim_attrs = True
-    labels = True
     ax_map = True
     boxes = True
     boxes_text = True
@@ -483,16 +467,10 @@ class Solution:
         self.lang = lang
         self.inverted = inverted
 
-    def create(
-        self, *, base_attrs, dim_attrs, labels, ax_map, boxes, boxes_text, fig, field
-    ):
+    def create(self, *, base_attrs, ax_map, boxes, boxes_text, fig, field):
         sol = {}
         if base_attrs:
             sol.update(self.base_attrs())
-        if dim_attrs:
-            sol.update(self.dim_attrs())
-        if labels:
-            sol.update(self.labels())
         if ax_map:
             sol.update(self.ax_map())
         if boxes:
@@ -512,35 +490,16 @@ class Solution:
         e = self.element
         jdat = {
             "type": e("Plot"),
-            "extend": e("max"),
-            "level_range_style": e("base"),
+            # SR_TMP "extend": e("max"),
+            # SR_TMP "level_range_style": e("base"),
             "draw_colors": e(True),
             "draw_contours": e(False),
-            "mark_field_max": e(True),
+            # SR_TMP "mark_field_max": e(True),
             "mark_release_site": e(True),
-            "setup": IgnoredElement("Setup"),  # SR_TMP TODO Summarize Setup!
+            "plot_setup": IgnoredElement("PlotSetupTMP"),  # SR_TMP TODO
+            # SR_TMP "setup": IgnoredElement("Setup"),  # SR_TMP TODO
         }
         return jdat
-
-    def dim_attrs(self):
-        e = self.element
-        jdat = {
-            "dpi": e(100.0),
-            "figsize": e((12.0, 9.0)),
-            "text_box_setup": {
-                "h_rel_t": e(0.1),
-                "h_rel_b": e(0.03),
-                "w_rel_r": e(0.25),
-                "pad_hor_rel": e(0.015),
-                "h_rel_box_rt": e(0.45),
-            },
-        }
-        return jdat
-
-    def labels(self):
-        e = self.element
-        jdat = e({})  # SR_TMP
-        return {"labels": jdat}
 
     def ax_map(self):
         e = self.element
@@ -730,7 +689,6 @@ class Solution:
 
         jdat = {
             "type": "Figure",
-            "dpi": e(100.0),
             "bbox": {
                 "type": "TransformedBbox",
                 "bounds": e((0.0, 0.0, 1200.0, 900.0)),

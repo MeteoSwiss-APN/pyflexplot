@@ -19,7 +19,7 @@ from .examples import choices as example_choices
 from .examples import list_examples
 from .examples import print_example
 from .io import read_files
-from .plotter import plot
+from .plot import plot
 from .setup import SetupFile
 from .specs import FldSpecs
 from .words import WORDS

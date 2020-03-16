@@ -4,8 +4,9 @@ Plots.
 """
 # Standard library
 import os
-from copy import copy
+import re
 from textwrap import dedent
+from typing import Optional
 
 # Third-party
 import matplotlib as mpl
@@ -14,12 +15,17 @@ from matplotlib import pyplot as plt
 
 # First-party
 from srutils.geo import Degrees
+from srutils.iter import isiterable
 
 # Local
+from .attr import AttrMult
+from .plot_lib import MapAxesConf_Cosmo1
+from .plot_lib import MapAxesConf_Cosmo1_CH
 from .plot_lib import MapAxesRotatedPole
 from .plot_lib import TextBoxAxes
 from .plot_lib import ax_w_h_in_fig_coords
 from .plot_lib import post_summarize_plot
+from .setup import Setup
 from .utils import fmt_float
 from .utils import format_level_ranges
 from .utils import summarizable
@@ -191,90 +197,24 @@ def colors_flexplot(n_levels, extend):
     raise ValueError(f"extend='{extend}'")
 
 
-@summarizable(
-    attrs=[
-        "ax_map",
-        "boxes",
-        "dpi",
-        "draw_colors",
-        "draw_contours",
-        "extend",
-        "field",
-        "fig",
-        "figsize",
-        "labels",
-        "level_range_style",
-        "map_conf",
-        "mark_field_max",
-        "mark_release_site",
-        "setup",
-        "text_box_setup",
-    ],
-    post_summarize=post_summarize_plot,
-)
-class Plot:
-    """A FLEXPART dispersion plot."""
+class PlotSetup:
+    """Class to pull code specific to individual plots out of Plot.
 
-    cmap = "flexplot"
-    draw_colors = True
-    draw_contours = False
-    mark_release_site = True
-    lw_frame = 1.0
+    For the moment, assume this class is only temporary!
+
+    """
 
     def __init__(
-        self, field, setup, attrs, map_conf, *, dpi=None, figsize=None, labels=None,
-    ):
-        """Create an instance of ``Plot``.
-
-        Args:
-            field (Field): Data field.
-
-            setup (Setup): Plot setup.
-
-            attrs (AttrMult): Data attributes.
-
-            map_conf (MapAxesConf): Map plot setupuration object.
-
-            dpi (float, optional): Plot resolution (dots per inch). Defaults to
-                100.0.
-
-            figsize (tuple[float, float], optional): Figure size in inches.
-                Defaults to (12.0, 9.0).
-
-            labels (PlotLabels, optional): Labels. Defaults to None.
-
-        """
-        self.field = field
+        self, setup: Setup, attrs: AttrMult, labels: Optional[PlotLabels] = None
+    ) -> None:
         self.setup = setup
         self.attrs = attrs
-        self.map_conf = map_conf
-        self.dpi = dpi or 100.0
-        self.figsize = figsize or (12.0, 9.0)
+        self.labels: PlotLabels = labels or PlotLabels(setup.lang, attrs)
 
-        self.field.scale(self.setup.scale_fact)
+        self.figsize = (12.0, 9.0)
+        self.reverse_legend = False
 
-        if labels is None:
-            labels = PlotLabels(setup.lang, attrs)
-        self.labels = labels
-
-        # Formatting arguments
-        self._max_marker_kwargs = {
-            "marker": "+",
-            "color": "black",
-            "markersize": 10,
-            "markeredgewidth": 1.5,
-        }
-        self._site_marker_kwargs = {
-            "marker": "^",
-            "markeredgecolor": "red",
-            "markerfacecolor": "white",
-            "markersize": 7.5,
-            "markeredgewidth": 1.5,
-        }
-
-        self.create_plot()
-
-    # SR_TMP TODO move to some config/setup class
+    # SR_TMP <<<
     @property
     def text_box_setup(self):
         return {
@@ -294,7 +234,16 @@ class Plot:
             },
         }[self.setup.simulation_type]
 
-    # SR_TMP TODO move to some config/setup class
+    # SR_TMP
+    @property
+    def extend(self):
+        return {
+            "ens_thr_agrmt": "min",
+            "ens_cloud_arrival_time": "max",
+            "affected_area_mono": "none",
+        }.get(self.setup.plot_type, "max")
+
+    # SR_TMP
     @property
     def n_levels(self):
         return {
@@ -306,53 +255,170 @@ class Plot:
             {"concentration": 8, "deposition": 9}[self.setup.variable],
         )
 
-    # SR_TMP TODO move to some config/setup class
-    @property
-    def extend(self):
-        return {
-            "ens_thr_agrmt": "min",
-            "ens_cloud_arrival_time": "max",
-            "affected_area_mono": "none",
-        }.get(self.setup.plot_type, "max")
-
-    # SR_TMP TODO move to some config/setup class
+    # SR_TMP
     @property
     def d_level(self):
         return {"ens_thr_agrmt": 2, "ens_cloud_arrival_time": 3}.get(
             self.setup.plot_type
         )
 
-    # SR_TMP TODO move to some config/setup class
+    # SR_TMP
     @property
     def level_range_style(self):
         return {"ens_thr_agrmt": "int", "ens_cloud_arrival_time": "int"}.get(
             self.setup.plot_type, "base"
         )
 
-    # SR_TMP TODO move to some config/setup class
+    # SR_TMP
     @property
     def level_ranges_align(self):
         return {"ens_thr_agrmt": "left", "ens_cloud_arrival_time": "left"}.get(
             self.setup.plot_type, "center"
         )
 
-    # SR_TMP TODO move to some config/setup class
+    # SR_TMP
     @property
     def mark_field_max(self):
         return {"ens_thr_agrmt": False, "ens_cloud_arrival_time": False}.get(
             self.setup.plot_type, True
         )
 
+    # SR_TMP
+    @property
+    def top_box_subtitle(self):
+        setup = self.setup
+        labels = self.labels.top_left
+        if setup.plot_type == "ens_thr_agrmt":
+            return labels["subtitle_thr_agrmt_fmt"].format(thr=setup.ens_param_thr,)
+        elif setup.plot_type == "ens_cloud_arrival_time":
+            return labels["subtitle_cloud_arrival_time"].format(
+                thr=setup.ens_param_thr, mem=setup.ens_param_mem_min,
+            )
+        else:
+            return None
+
+    # SR_TMP
+    @property
+    def legend_box_title(self):
+        labels = self.labels.right_top
+        if self.setup.plot_type == "ens_thr_agrmt":
+            return labels["title"]
+        elif self.setup.plot_type == "ens_cloud_arrival_time":
+            return labels["title"]
+        else:
+            return labels["title_unit"]
+
+    # SR_TMP
+    @property
+    def model_info(self):
+        labels = self.labels.bottom
+        if self.setup.simulation_type == "deterministic":
+            return labels["model_info_det"]
+        elif self.setup.simulation_type == "ensemble":
+            return labels["model_info_ens"]
+
+    # SR_TMP
+    def get_colors(self, cmap):
+        if self.setup.plot_type == "affected_area_mono":
+            return (np.array([(200, 200, 200)]) / 255).tolist()
+        elif cmap == "flexplot":
+            return colors_flexplot(self.n_levels, self.extend)
+        else:
+            cmap = mpl.cm.get_cmap(cmap)
+            return [cmap(i / (self.n_levels - 1)) for i in range(self.n_levels)]
+
+    # SR_TMP
+    @property
+    def levels_scale(self):
+        if self.setup.plot_type in ["ens_thr_agrmt", "ens_cloud_arrival_time"]:
+            return "lin"
+        return "log"
+
+    # SR_TMP
+    def get_levels(self, time_stats):
+        n_levels = self.n_levels
+        d_level = self.d_level
+        if self.setup.plot_type == "ens_thr_agrmt":
+            n_max = 20  # SR_TMP SR_HC
+            return (
+                np.arange(n_max - d_level * (n_levels - 1), n_max + d_level, d_level,)
+                + 1
+            )
+        elif self.setup.plot_type == "ens_cloud_arrival_time":
+            return np.arange(0, n_levels) * d_level
+        elif self.setup.plot_type == "affected_area_mono":
+            levels = self._auto_levels_log10(n_levels=9, val_max=time_stats["max"])
+            return np.array([levels[0], np.inf])
+        else:
+            return self._auto_levels_log10(val_max=time_stats["max"])
+
+    def _auto_levels_log10(self, n_levels=None, val_max=None):
+        if n_levels is None:
+            n_levels = self.n_levels
+        log10_max = int(np.floor(np.log10(val_max)))
+        log10_d = 1
+        return 10 ** np.arange(
+            log10_max - (n_levels - 1) * log10_d, log10_max + 0.5 * log10_d, log10_d,
+        )
+
+
+@summarizable(
+    attrs=[
+        "ax_map",
+        "boxes",
+        "draw_colors",
+        "draw_contours",
+        "field",
+        "fig",
+        "map_conf",
+        "mark_release_site",
+        "plot_setup",
+    ],
+    post_summarize=post_summarize_plot,
+)
+class Plot:
+    """A FLEXPART dispersion plot."""
+
+    cmap = "flexplot"
+    draw_colors = True
+    draw_contours = False
+    mark_release_site = True
+    lw_frame = 1.0
+
+    # SR_TMP TODO consider moving attrs (at least attrs.grid) to Field
+    def __init__(self, field, plot_setup, map_conf):
+        """Create an instance of ``Plot``."""
+        self.field = field
+        self.plot_setup = plot_setup
+        self.map_conf = map_conf
+
+        # Formatting arguments
+        self._max_marker_kwargs = {
+            "marker": "+",
+            "color": "black",
+            "markersize": 10,
+            "markeredgewidth": 1.5,
+        }
+        self._site_marker_kwargs = {
+            "marker": "^",
+            "markeredgecolor": "red",
+            "markerfacecolor": "white",
+            "markersize": 7.5,
+            "markeredgewidth": 1.5,
+        }
+
+        self.create_plot()
+
     def prepare_plot(self):
 
-        self.fig = plt.figure(figsize=self.figsize)
+        self.fig = plt.figure(figsize=self.plot_setup.figsize)
 
         self.ax_map = MapAxesRotatedPole(
             self.fig,
             self.field.rlat,
             self.field.rlon,
-            self.attrs.grid.north_pole_lat.value,
-            self.attrs.grid.north_pole_lon.value,
+            self.plot_setup.attrs.grid.north_pole_lat.value,
+            self.plot_setup.attrs.grid.north_pole_lon.value,
             self.map_conf,
         )
 
@@ -405,81 +471,37 @@ class Plot:
         """Plot the particle concentrations onto the map."""
 
         # Plot concentrations
-        h_con = self.draw_colors_contours()
+        self.draw_colors_contours()
 
         if self.mark_release_site:
             # Marker at release site
             self.ax_map.marker(
-                self.attrs.release.site_lon.value,
-                self.attrs.release.site_lat.value,
+                self.plot_setup.attrs.release.site_lon.value,
+                self.plot_setup.attrs.release.site_lat.value,
                 **self._site_marker_kwargs,
             )
 
-        if self.mark_field_max:
+        if self.plot_setup.mark_field_max:
             # Marker at location of maximum value
             self.ax_map.mark_max(self.field.fld, **self._max_marker_kwargs)
 
-        return h_con
-
     # SR_TODO Replace checks with plot-specific config/setup object
     def draw_colors_contours(self):
-        if self.setup.plot_type == "ens_thr_agrmt":
-            self._tmp_draw_colors_contours_ens_thr_agrmt()
-        elif self.setup.plot_type == "ens_cloud_arrival_time":
-            self._tmp_draw_colors_contours_ens_thr_agrmt()
-        else:
-            self._tmp_draw_colors_contours_default()
-
-    # SR_TMP Intermediate step toward eliminating subclasses
-    def _tmp_draw_colors_contours_default(self):
-
-        field = np.log10(self.fld_nonzero())
-
-        if not self.draw_colors:
-            h_col = None
-        else:
-            h_col = self.ax_map.contourf(
-                field,
-                levels=self.levels_log10,
-                colors=self.get_colors(),
-                extend=self.extend,
-            )
-
-        if not self.draw_contours:
-            h_con = None
-        else:
-            h_con = self.ax_map.contour(
-                field, levels=self.levels_log10, colors="black", linewidths=1,
-            )
-            return (h_col, h_con)
-
-    def _tmp_draw_colors_contours_ens_thr_agrmt(self):
-
-        # If upper end of range is closed, color areas beyond black
-        colors_plot = copy(self.get_colors())
-        if self.extend in ["none", "min"]:
-            colors_plot.append("black")
-            extend_plot = {"none": "max", "min": "both"}[self.extend]
-        else:
-            extend_plot = self.extend
-
         field = self.fld_nonzero()
-
-        if not self.draw_colors:
-            h_col = None
-        else:
-            h_col = self.ax_map.contourf(
-                field, levels=self.get_levels(), colors=colors_plot, extend=extend_plot,
-            )
-
-        if not self.draw_contours:
-            h_con = None
-        else:
-            h_con = self.ax_map.contour(
-                field, levels=self.get_levels(), colors="black", linewidths=1,
-            )
-
-        return (h_col, h_con)
+        levels = self.plot_setup.get_levels(self.field.time_stats)
+        colors = self.plot_setup.get_colors(self.cmap)
+        extend = self.plot_setup.extend
+        if self.plot_setup.levels_scale == "log":
+            field = np.log10(field)
+            levels = np.log10(levels)
+        elif extend in ["none", "min"]:
+            # Areas beyond the closed upper bound are colored black
+            colors = [c for c in colors] + ["black"]
+            extend = {"none": "max", "min": "both"}[extend]
+        if self.draw_colors:
+            self.ax_map.contourf(field, levels=levels, colors=colors, extend=extend)
+        if self.draw_contours:
+            self.ax_map.contour(field, levels=levels, colors="black", linewidths=1)
 
     def draw_boxes(self):
         for fill_box, box in self.boxes.items():
@@ -487,11 +509,12 @@ class Plot:
             box.draw()
 
     def add_text_boxes(self):
-        h_rel_t = self.text_box_setup["h_rel_t"]
-        h_rel_b = self.text_box_setup["h_rel_b"]
-        w_rel_r = self.text_box_setup["w_rel_r"]
-        pad_hor_rel = self.text_box_setup["pad_hor_rel"]
-        h_rel_box_rt = self.text_box_setup["h_rel_box_rt"]
+        text_box_setup = self.plot_setup.text_box_setup
+        h_rel_t = text_box_setup["h_rel_t"]
+        h_rel_b = text_box_setup["h_rel_b"]
+        w_rel_r = text_box_setup["w_rel_r"]
+        pad_hor_rel = text_box_setup["pad_hor_rel"]
+        h_rel_box_rt = text_box_setup["h_rel_box_rt"]
 
         # Freeze the map plot in order to fix it's coordinates (bbox)
         try:
@@ -574,7 +597,7 @@ class Plot:
     def fill_box_top_left(self, box, *, skip_pos=None):
         """Fill the box above the map plot."""
 
-        labels = self.labels.top_left
+        labels = self.plot_setup.labels.top_left
 
         if skip_pos is None:
             skip_pos = {}
@@ -585,15 +608,13 @@ class Plot:
 
         # Center-left: Additional information
         if "ml" not in skip_pos:
-            subtitle = self._format_top_box_subtitle()
+            subtitle = self.plot_setup.top_box_subtitle
             if subtitle:
                 box.text("ml", subtitle, size="large")
 
         # Bottom-left: Integration time etc.
         if "bl" not in skip_pos:
             s = labels["period"]
-            if self.setup.scale_fact is not None:
-                s += f" ({self.setup.scale_fact}x)"
             box.text("bl", s, size="large")
 
         # Top-right: Time step
@@ -609,7 +630,7 @@ class Plot:
     def fill_box_top_right(self, box, *, skip_pos=None):
         """Fill the box to the top-right of the map plot."""
 
-        labels = self.labels.top_right
+        labels = self.plot_setup.labels.top_right
 
         if skip_pos is None:
             skip_pos = []
@@ -628,7 +649,7 @@ class Plot:
     def fill_box_right_top(self, box, dy_line=3.0, dy0_markers=0.25, w_box=4, h_box=2):
         """Fill the top box to the right of the map plot."""
 
-        labels = self.labels.right_top
+        labels = self.plot_setup.labels.right_top
 
         # font_size = 'small'
         font_size = "medium"
@@ -643,24 +664,25 @@ class Plot:
 
         # Vertical position of legend (depending on number of levels)
         _f = (
-            self.n_levels
-            + int(self.extend in ["min", "both"])
-            + int(self.extend in ["max", "both"])
+            self.plot_setup.n_levels
+            + int(self.plot_setup.extend in ["min", "both"])
+            + int(self.plot_setup.extend in ["max", "both"])
         )
         dy0_labels = 22.5 - 1.5 * _f
         dy0_boxes = dy0_labels - 0.2 * h_box
 
         # Box title
-        s = self._format_legend_box_title()
+        s = self.plot_setup.legend_box_title
         box.text("tc", s=s, dy=1.5, size="large")
 
         # Format level ranges (contour plot legend)
+        levels = self.plot_setup.get_levels(time_stats=self.field.time_stats)
         legend_labels = format_level_ranges(
-            levels=self.get_levels(),
-            style=self.level_range_style,
-            extend=self.extend,
+            levels=levels,
+            style=self.plot_setup.level_range_style,
+            extend=self.plot_setup.extend,
             rstrip_zeros=True,
-            align=self.level_ranges_align,
+            align=self.plot_setup.level_ranges_align,
         )
 
         # Legend labels (level ranges)
@@ -670,15 +692,15 @@ class Plot:
             dy_unit=dy0_labels,
             dy_line=dy_line,
             dx=dx_label,
-            reverse=self.setup.reverse_legend,
+            reverse=self.plot_setup.reverse_legend,
             ha="left",
             size=font_size,
             family="monospace",
         )
 
         # Legend color boxes
-        colors = self.get_colors()
-        if self.setup.reverse_legend:
+        colors = self.plot_setup.get_colors(self.cmap)
+        if self.plot_setup.reverse_legend:
             colors = colors[::-1]
         dy = dy0_boxes
         for color in colors:
@@ -697,7 +719,7 @@ class Plot:
 
         # Markers
 
-        n_markers = self.mark_release_site + self.mark_field_max
+        n_markers = self.mark_release_site + self.plot_setup.mark_field_max
         dy0_marker_i = dy0_markers + (2 - n_markers) * dy_line / 2
 
         # Release site marker
@@ -719,7 +741,7 @@ class Plot:
             )
 
         # Field maximum marker
-        if self.mark_field_max:
+        if self.plot_setup.mark_field_max:
             dy_marker_label_max = dy0_marker_i
             dy0_marker_i += dy_line
             dy_max_marker = dy_marker_label_max + 0.7
@@ -742,35 +764,11 @@ class Plot:
                 size=font_size,
             )
 
-    # SR_TODO Move into Labels class
-    def _format_top_box_subtitle(self):
-        setup = self.setup
-        if self.setup.plot_type == "ens_thr_agrmt":
-            return self.labels.top_left["subtitle_thr_agrmt_fmt"].format(
-                thr=setup.ens_param_thr,
-            )
-        elif self.setup.plot_type == "ens_cloud_arrival_time":
-            return self.labels.top_left["subtitle_cloud_arrival_time"].format(
-                thr=setup.ens_param_thr, mem=setup.ens_param_mem_min,
-            )
-        else:
-            return None
-
-    # SR_TODO Move into Labels class
-    # SR_TODO Replace checks with plot-specific config/setup object
-    def _format_legend_box_title(self):
-        if self.setup.plot_type == "ens_thr_agrmt":
-            return self.labels.right_top["title"]
-        elif self.setup.plot_type == "ens_cloud_arrival_time":
-            return self.labels.right_top["title"]
-        else:
-            return self.labels.right_top["title_unit"]
-
     def fill_box_right_bottom(self, box):
         """Fill the bottom box to the right of the map plot."""
 
-        l = self.labels.right_bottom  # noqa:E741
-        a = self.attrs
+        l = self.plot_setup.labels.right_bottom  # noqa:E741
+        a = self.plot_setup.attrs
 
         # Box title
         # box.text('tc', l['title'], size='large')
@@ -818,65 +816,167 @@ class Plot:
     def fill_box_bottom(self, box):
         """Fill the box to the bottom of the map plot."""
 
-        labels = self.labels.bottom
+        labels = self.plot_setup.labels.bottom
 
         # FLEXPART/model info
-        s = self._model_info()  # SR_TODO move into Labels class
+        s = self.plot_setup.model_info
         box.text("tl", dx=-0.7, dy=0.5, s=s, size="small")
 
         # MeteoSwiss Copyright
         box.text("tr", dx=0.7, dy=0.5, s=labels["copyright"], size="small")
 
-    # SR_TODO Move this into Labels class
-    # SR_TODO Replace checks with plot-specific config/setup object
-    def _model_info(self):
-        if self.setup.simulation_type == "deterministic":
-            return self.labels.bottom["model_info_det"]
-        elif self.setup.simulation_type == "ensemble":
-            return self.labels.bottom["model_info_ens"]
 
-    # SR_TODO Replace checks with plot-specific config/setup object
-    def get_colors(self):
-        if self.setup.plot_type == "affected_area_mono":
-            return (np.array([(200, 200, 200)]) / 255).tolist()
-        elif self.cmap == "flexplot":
-            return colors_flexplot(self.n_levels, self.extend)
+def plot(fields, attrs_lst, setup):
+    return Plotter().run(fields, attrs_lst, setup)
+
+
+class Plotter:
+    """Create one or more FLEXPLART plots of a certain type."""
+
+    specs_fmt_keys = {
+        "time": "time_idx",
+        "nageclass": "age_idx",
+        "numpoint": "rel_pt_idx",
+        "level": "level",
+        "species_id": "species_id",
+        "integrate": "integrate",
+    }
+
+    def __init__(self):
+        self.file_paths = []
+
+    def run(self, fields, attrs_lst, setup):
+        """Create one or more plots.
+
+        Args:
+            field (List[Field]): A list of fields.
+
+            attrs_lst (List[Attr???]): A list of data attributes of equal
+                length as ``fields``.
+
+            setup (Setup): Plot setup.
+
+        Yields:
+            str: Output file paths.
+
+        """
+        if setup.outfile is None:
+            raise ValueError("setup.outfile is None")
+
+        self.setup = setup
+
+        _s = "s" if len(fields) > 1 else ""
+        print(f"create {len(fields)} {self.setup.plot_type} plot{_s}")
+
+        # SR_TMP < TODO Find less hard-coded solution
+        domain = self.setup.domain
+        if domain == "auto":
+            domain = "cosmo1"
+        if domain == "cosmo1":
+            map_conf = MapAxesConf_Cosmo1(lang=self.setup.lang)
+        elif domain == "ch":
+            map_conf = MapAxesConf_Cosmo1_CH(lang=self.setup.lang)
         else:
-            cmap = mpl.cm.get_cmap(self.cmap)
-            return [cmap(i / (self.n_levels - 1)) for i in range(self.n_levels)]
+            raise ValueError("unknown domain", domain)
+        # SR_TMP >
 
-    # SR_TODO Replace checks with plot-specific config/setup object
-    def get_levels(self):
-        if self.setup.plot_type == "ens_thr_agrmt":
-            n_max = 20  # SR_TMP SR_HC
-            return (
-                np.arange(
-                    n_max - self.d_level * (self.n_levels - 1),
-                    n_max + self.d_level,
-                    self.d_level,
-                )
-                + 1
+        # Create plots one-by-one
+        for i_data, (field, attrs) in enumerate(zip(fields, attrs_lst)):
+            out_file_path = self.format_out_file_path(attrs._setup)
+            _w = len(str(len(fields)))
+            print(f" {i_data+1:{_w}}/{len(fields)}  {out_file_path}")
+            plot_setup = PlotSetup(setup, attrs)
+            Plot(field, plot_setup, map_conf).save(out_file_path)
+            yield out_file_path
+
+    def format_out_file_path(self, setup):
+
+        variable = setup.variable
+        if setup.variable == "deposition":
+            variable += f"_{setup.deposition_type}"
+
+        kwargs = {
+            "nageclass": setup.nageclass,
+            "domain": setup.domain,
+            "lang": setup.lang,
+            "level": setup.level,
+            "noutrel": setup.noutrel,
+            "species_id": setup.species_id,
+            "time": setup.time,
+            "variable": variable,
+        }
+
+        # Format the file path
+        # Don't use str.format in order to handle multival elements
+        out_file_path = self._fmt_out_file_path(kwargs)
+
+        # Add number if file path not unique
+        out_file_path = self.ensure_unique_path(out_file_path)
+
+        return out_file_path
+
+    def _fmt_out_file_path(self, kwargs):
+        out_file_path = self.setup.outfile
+        for key, val in kwargs.items():
+            if not isiterable(val, str_ok=False):
+                val = [val]
+            # Iterate over relevant format keys
+            rxs = r"{" + key + r"(:[^}]*)?}"
+            re.finditer(rxs, out_file_path)
+            for m in re.finditer(rxs, out_file_path):
+
+                # Obtain format specifier (if there is one)
+                try:
+                    f = m.group(1)
+                except IndexError:
+                    f = None
+                if not f:
+                    f = ""
+
+                # Format the string that replaces this format key in the path
+                formatted_key = "+".join([f"{{{f}}}".format(v) for v in val])
+
+                # Replace format key in the path by the just formatted string
+                start, end = out_file_path[: m.span()[0]], out_file_path[m.span()[1] :]
+                out_file_path = f"{start}{formatted_key}{end}"
+
+        # Check that all keys have been formatted
+        if "{" in out_file_path or "}" in out_file_path:
+            raise Exception(
+                f"formatted output file path still contains format keys", out_file_path,
             )
-        elif self.setup.plot_type == "ens_cloud_arrival_time":
-            return np.arange(0, self.n_levels) * self.d_level
-        elif self.setup.plot_type == "affected_area_mono":
-            levels = self.auto_levels_log10(n_levels=9)
-            return np.array([levels[0], np.inf])
+
+        return out_file_path
+
+    def ensure_unique_path(self, path):
+        """If file path has been used before, add/increment trailing number."""
+        while path in self.file_paths:
+            path = self.derive_unique_path(path)
+        self.file_paths.append(path)
+        return path
+
+    @staticmethod
+    def derive_unique_path(path):
+        """Add/increment a trailing number to a file path."""
+
+        # Extract suffix
+        if path.endswith(".png"):
+            suffix = ".png"
         else:
-            return self.auto_levels_log10()
+            raise NotImplementedError(f"unknown suffix: {path}")
+        path_base = path[: -len(suffix)]
 
-    def auto_levels_log10(self, n_levels=None, val_max=None):
-        if n_levels is None:
-            n_levels = self.n_levels
-        if val_max is None:
-            val_max = self.field.time_stats["max"]
-        log10_max = int(np.floor(np.log10(val_max)))
-        log10_d = 1
-        levels_log10 = np.arange(
-            log10_max - (n_levels - 1) * log10_d, log10_max + 0.5 * log10_d, log10_d,
-        )
-        return 10 ** levels_log10
+        # Reuse existing numbering if present
+        match = re.search(r"-(?P<i>[0-9]+)$", path_base)
+        if match:
+            i = int(match.group("i")) + 1
+            w = len(match.group("i"))
+            path_base = path_base[: -w - 1]
+        else:
+            i = 1
+            w = 1
 
-    @property
-    def levels_log10(self):
-        return np.log10(self.get_levels())
+        # Add numbering and suffix
+        path = f"{path_base}-{{i:0{w}}}{suffix}".format(i=i)
+
+        return path

@@ -15,7 +15,7 @@ class Test_TextBoxAxes_Summarize:
     """Summarize all relevant information about an ``TextBoxAxes``."""
 
     def create_text_box(self, **kwargs):
-        self.fig, self.ax_ref = plt.subplots(figsize=(1, 1), dpi=100)
+        self.fig, self.ax_ref = plt.subplots(figsize=(1, 1))
         self.rect_lbwh = [1, 1, 3, 2]
         self.box = TextBoxAxes(self.fig, self.ax_ref, self.rect_lbwh, **kwargs)
         return self.box
@@ -27,7 +27,6 @@ class Test_TextBoxAxes_Summarize:
         "rect": [1.0, 1.0, 3.0, 2.0],
         "fig": {
             "type": "Figure",
-            "dpi": 100,
             "bbox": {"type": "TransformedBbox", "bounds": (0.0, 0.0, 100.0, 100.0)},
             "axes": [
                 {"type": "AxesSubplot"},

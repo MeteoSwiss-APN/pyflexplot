@@ -78,8 +78,6 @@ class CoreSetup(BaseModel):
     # Plot appearance
     lang: str = "en"
     domain: str = "auto"
-    reverse_legend: bool = False
-    scale_fact: Optional[float] = None
 
     # Dimensions
     nageclass: int = 0
@@ -194,8 +192,6 @@ class Setup(BaseModel):
     # Plot appearance
     lang: str = "en"
     domain: str = "auto"
-    reverse_legend: bool = False
-    scale_fact: Optional[float] = None
 
     # Dimensions
     nageclass: Tuple[int, ...] = (0,)
@@ -291,8 +287,6 @@ class Setup(BaseModel):
                 "lang",
                 "outfile",
                 "plot_type",
-                "reverse_legend",
-                "scale_fact",
                 "simulation_type",
                 "variable",
                 "ens_param_mem_min",

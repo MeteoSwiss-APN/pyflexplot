@@ -82,7 +82,6 @@ class Field:
         self.rlon = rlon
         self.fld_specs = fld_specs
         self.time_stats = time_stats
-        self.scale_fact = 1.0
 
     def _check_args(self, fld, rlat, rlon, *, ndim_fld=2):
         """Check consistency of field, dimensions, etc."""
