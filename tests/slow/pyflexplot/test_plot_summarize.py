@@ -47,8 +47,8 @@ import numpy as np
 # First-party
 from pyflexplot.data import Field
 from pyflexplot.plot import Plot
-from pyflexplot.plot import PlotLabels
-from pyflexplot.plot import PlotSetup
+from pyflexplot.plot_types import PlotConfig
+from pyflexplot.plot_types import PlotLabels
 from pyflexplot.setup import Setup
 from srutils.testing import CheckFailedError
 from srutils.testing import IgnoredElement
@@ -303,11 +303,11 @@ def create_labels(lang, attrs):
     return PlotLabels(lang, attrs)
 
 
-def create_plot_setup(lang):
+def create_plot_config(lang):
     setup = create_setup(lang)
     attrs = create_attrs(lang)
     labels = create_labels(lang, attrs)
-    return PlotSetup(setup, attrs, labels)
+    return PlotConfig(setup, attrs, labels)
 
 
 def create_map_conf(lang):
@@ -342,9 +342,9 @@ def create_res(lang, _cache={}):
     """
     if lang not in _cache:
         field = create_field()
-        plot_setup = create_plot_setup(lang)
+        plot_config = create_plot_config(lang)
         map_conf = create_map_conf(lang)
-        plot = Plot(field, plot_setup, map_conf)
+        plot = Plot(field, plot_config, map_conf)
         _cache[lang] = plot.summarize()
     return _cache[lang]
 
@@ -496,7 +496,7 @@ class Solution:
             "draw_contours": e(False),
             # SR_TMP "mark_field_max": e(True),
             "mark_release_site": e(True),
-            "plot_setup": IgnoredElement("PlotSetupTMP"),  # SR_TMP TODO
+            "plot_config": IgnoredElement("PlotConfig"),  # SR_TMP TODO
             # SR_TMP "setup": IgnoredElement("Setup"),  # SR_TMP TODO
         }
         return jdat

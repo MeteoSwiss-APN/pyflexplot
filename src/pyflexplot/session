@@ -6,6 +6,7 @@ examples.py
 io.py
 plot.py
 plot_lib.py
+plot_types.py
 setup.py
 specs.py
 utils.py
