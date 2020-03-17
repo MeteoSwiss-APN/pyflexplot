@@ -30,9 +30,13 @@ def get_var_name_ref(setup, var_names_ref):
         assert len(var_names_ref) == 1
         return next(iter(var_names_ref))
     elif setup.variable == "deposition":
-        for var_name in var_names_ref:
-            if (setup.deposition_type, var_name[:2]) in [("dry", "DD"), ("wet", "WD")]:
-                return var_name
+        species_id = setup.species_id
+        if isinstance(species_id, tuple):
+            assert len(species_id) == 1
+            species_id = next(iter(species_id))
+        var_name = f"{setup.deposition_type[0].upper()}D_spec{species_id:03d}"
+        if var_name in var_names_ref:
+            return var_name
     raise NotImplementedError(f"{setup}")
 
 
@@ -133,6 +137,20 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
                 "variable": "deposition",
                 "deposition_type": "tot",
                 "species_id": 1,
+                "integrate": False,
+                "time": 3,
+            },
+            scale_fld_ref=1 / 3,
+        ),
+        Conf(
+            datafilename=datafilename1,
+            var_names_ref=[f"DD_spec001", f"DD_spec002", f"WD_spec001", f"WD_spec002"],
+            setup_dct={
+                "infile": "dummy.nc",
+                "outfile": "dummy.png",
+                "variable": "deposition",
+                "deposition_type": "tot",
+                "species_id": [1, 2],
                 "integrate": False,
                 "time": 3,
             },
