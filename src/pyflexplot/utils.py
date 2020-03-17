@@ -8,6 +8,11 @@ import warnings
 from collections import namedtuple
 from dataclasses import is_dataclass
 from functools import partial
+from typing import Any
+from typing import Callable
+from typing import Collection
+from typing import Dict
+from typing import Optional
 
 # Third-party
 import numpy as np
@@ -33,82 +38,83 @@ class AttributeConflictError(Exception):
     """Conflicting object attributes."""
 
 
-def is_attrs_class(cls):
+def is_attrs_class(cls: Any):
     """Determine whether a class has been defined with ``@attr.attrs``."""
-    return hasattr(cls, "__attrs_attrs__")
+    return isinstance(cls, type) and hasattr(cls, "__attrs_attrs__")
 
 
-def default_summarize(self, addl=None, skip=None):
+def default_summarize(
+    self: Any,
+    addl: Optional[Collection[str]] = None,
+    skip: Optional[Collection[str]] = None,
+) -> Dict[str, Any]:
     """Default summarize method; see docstring of ``summarizable``.
 
     Args:
-        self (object): The class instance to be summarized.
+        self: The class instance to be summarized.
 
-        addl (List[str], optional): Additional attributes to be summarized.
-            Added to those specified in ``self.summarizable_attrs``. Defaults
-            to None.
+        addl: Additional attributes to be summarized. Added to those specified
+            in ``self.summarizable_attrs``.
 
-        skip (List[str], optional): Attributes not to be summarized despite
-            being specified in ``self.summarizable_attrs``. Defaults to None.
+        skip: Attributes not to be summarized despite being specified in
+            ``self.summarizable_attrs``.
 
     Return:
-        Dict[str, Any]: Summary dict.
+        Summary dict.
 
     """
     return Summarizer().run(self, addl=addl, skip=skip)
 
 
-def default_post_summarize(self, summary):
+def default_post_summarize(self: Any, summary: Dict[str, Any]) -> Dict[str, Any]:
     """Default post_summarize method; see docstring of ``summarizable``.
 
     Args:
-        self (object): The class instance to be summarized.
+        self: The class instance to be summarized.
 
-        summary (Dict[str, Any]): Summary dict to be modified.
+        summary: Summary dict to be modified.
 
     Return:
-        Dict[str, Any]: Modified summary dict.
+        Modified summary dict.
 
     """
     return summary
 
 
 def summarizable(
-    cls=None,
+    cls: Optional[Callable] = None,
     *,
-    attrs=None,
-    summarize=None,
-    post_summarize=None,
-    auto_collect=True,
-    overwrite=False,
-):
+    attrs: Optional[Collection[str]] = None,
+    summarize: Optional[Callable[[Any, Dict[str, Any]], Dict[str, Any]]] = None,
+    post_summarize: Optional[Callable[[Any, Dict[str, Any]], Dict[str, Any]]] = None,
+    auto_collect: bool = True,
+    overwrite: bool = False,
+) -> Callable:
     """Decorator to make a class summarizable.
 
     Args:
-        cls (type, optional): Class to be decorated. Defaults to None.
+        cls: Class to be decorated.
 
-        attrs (Collection[str], optional): Class attributes to summarize.
-            Added to the class as attribute ``summarizable_attrs``. Defaults
-            to None.
+        attrs: Class attributes to summarize. Added to the class as attribute
+            ``summarizable_attrs``.
 
-        summarize (callable, optional): Custom function to summarize the class.
-            Returns a dict containing the summarized attributes, which is then
-            used to update the existing summary dict that has been created
-            based on ``attrs``. Replaces ``default_summarize``. Added to the
-            class as method ``summarize``. Defaults to None.
+        summarize: Custom function to summarize the class. Returns a dict
+            containing the summarized attributes, which is then used to update
+            the existing summary dict that has been created based on ``attrs``.
+            Replaces ``default_summarize``. Added to the class as method
+            ``summarize``.
 
-        post_summarize (callable, optional): Custom function to post-process
-            the summary dict. Replaces ``default_post_summarize``. Added to the
-            class as method ``post_summarize``. Defaults to None.
+        post_summarize: Custom function to post-process the summary dict.
+            Replaces ``default_post_summarize``. Added to the class as method
+            ``post_summarize``.
 
-        auto_collect (bool, optional): Auto-collect attributes of certain types
-            of classes, such as data classes and dict-convertible classes, in
-            addition to those specified in attrs (if given at all). Defaults to
-            True.
+        auto_collect: Auto-collect attributes of certain types of classes, such
+            as data classes and dict-convertible classes, in addition to those
+            specified in attrs (if given at all).
 
-        overwrite (bool, optional): Overwrite existing class attributes and/or
-            methods. Must be True to make classes summarizable that inherit
-            from summarizable parent classes. Defaults to False.
+        overwrite: Overwrite existing class attributes and/or methods. Must be
+            True to make classes summarizable that inherit from summarizable
+            parent classes.
 
     """
     if cls is None:
@@ -138,12 +144,13 @@ def summarizable(
     if auto_collect:
         if is_attrs_class(cls):
             # Collect attributes defined with ``attr.attrib``
-            attrs = [a.name for a in cls.__attrs_attrs__] + attrs
+            attrs = [a.name for a in cls.__attrs_attrs__] + attrs  # type: ignore
         elif is_dataclass(cls):
             # Collect dataclass fields
-            attrs = [f for f in cls.__dataclass_fields__] + attrs
-        elif issubclass(cls, BaseModel):
-            raise NotImplementedError("summarize: issubclass(cls, BaseModel)", cls)
+            attrs = [f for f in cls.__dataclass_fields__] + attrs  # type: ignore
+        elif issubclass(cls, BaseModel):  # type: ignore
+            # Collect model fields
+            attrs = [f for f in cls.__fields__] + attrs  # type: ignore
 
     # Extend class
     for name, attr in [
