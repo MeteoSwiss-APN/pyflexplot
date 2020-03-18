@@ -548,7 +548,7 @@ class Plotter:
 
         # Create plots one-by-one
         for i_data, (field, attrs) in enumerate(zip(fields, attrs_lst)):
-            out_file_path = self.format_out_file_path(attrs._setup)
+            out_file_path = self.format_out_file_path(attrs.setup)
             _w = len(str(len(fields)))
             print(f" {i_data+1:{_w}}/{len(fields)}  {out_file_path}")
             plot_config = PlotConfig(setup, attrs)

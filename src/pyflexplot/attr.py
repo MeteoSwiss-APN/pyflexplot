@@ -11,9 +11,12 @@ from typing import Dict
 from typing import Generic
 from typing import Optional
 from typing import TypeVar
+from typing import Union
 
 # Third-party
 import numpy as np
+from pydantic import BaseModel
+from pydantic import root_validator
 from pydantic import validator
 from pydantic.generics import GenericModel
 
@@ -30,12 +33,12 @@ from .words import WORDS
 ValueT = TypeVar("ValueT", int, float, str, datetime.datetime)
 
 
+@summarizable
 class Attr(GenericModel, Generic[ValueT]):
     """Individual attribute."""
 
     name: str
     value: ValueT
-    unit: Optional[str] = None
     attrs: Dict[str, Any] = {}  # need Optional[] despite validator?
 
     class Config:  # noqa
@@ -54,45 +57,34 @@ class Attr(GenericModel, Generic[ValueT]):
         return type(self.value)
 
     @classmethod
-    def create(cls, type_, *, name, value, unit=None, attrs=None):
-        return Attr[type_](name=name, value=value, unit=unit, attrs=attrs)
+    def create(cls, type_, *, name, value, attrs=None):
+        return Attr[type_](name=name, value=value, attrs=attrs)
 
-    # SR_TODO Extract methods into separate class (AttrMerger or so)
+    # SR_TODO Extract methods into separate class (e.g., AttrMerger)!
     def merge_with(self, others, replace=None):
         assert all(issubclass(o.type_, self.type_) for o in others)  # noqa SR_DBG
         if replace is None:
             replace = {}
         name = replace.get("name", self.name)
-        value, unit = self._reduce_values_units(others, replace)
+        reduced_value = self._reduce_values(others, replace)
         attrs = self._merge_attrs(others)
-        if isiterable(value, str_ok=False):
-            return AttrMult(
-                self.type_, name=name, values=value, units=unit, attrs=attrs,
-            )
-        return Attr(name=name, value=value, unit=unit, attrs=attrs)
+        if isiterable(reduced_value, str_ok=False):
+            return AttrMult(self.type_, name=name, values=reduced_value, attrs=attrs)
+        return Attr(name=name, value=reduced_value, attrs=attrs)
 
-    def _collect_values_units(self, others, replace):
-        values_units = [(self.value, self.unit)]
-        values, units = [self.value], [self.unit]
+    def _reduce_values(self, others, replace):
+        values = [self.value]
         for other in others:
             if "name" not in replace:
                 if other.name != self.name:
-                    raise ValueError(f"names differ: {other.name} != {self.name}")
+                    raise ValueError("names differ", self.name, other.name)
                 if type(other) is not type(self):  # noqa
-                    raise ValueError(f"types differ: {type(other)} is not {type(self)}")
-            if (other.value, other.unit) not in values_units:
-                values_units.append((other.value, other.unit))
+                    raise ValueError("types differ", type(self), type(other))
+            if other.value not in values:
                 values.append(other.value)
-                units.append(other.unit)
-        return values, units
-
-    def _reduce_values_units(self, others, replace):
-        values, units = self._collect_values_units(others, replace)
-        if len(units) == 1:
-            # One value, one unit
-            value, unit = next(iter(values)), next(iter(units))
+        if len(values) == 1:
+            reduced_value = next(iter(values))
         else:
-            # Multiple values, one or equally many units
             # SR_TMP<
             if self.name == "long_name":
                 name0 = next(iter(values))
@@ -109,12 +101,9 @@ class Attr(GenericModel, Generic[ValueT]):
                 elif name0.lower().endswith("surface deposition"):
                     values = name0.replace("wet", "total").replace("dry", "total")
             # SR_TMP>
-            value = values
-            unit = next(iter(units)) if len(set(units)) == 1 else units
-        value = replace.get("value", value)
-        unit = replace.get("unit", unit)
-        assert value is not None  # SR_DBG
-        return value, unit
+            reduced_value = next(iter(values)) if len(values) == 1 else values
+        reduced_value = replace.get("value", reduced_value)
+        return reduced_value
 
     def _merge_attrs(self, others):
         assert all(o.attrs.keys() == self.attrs.keys() for o in others)
@@ -128,13 +117,7 @@ class Attr(GenericModel, Generic[ValueT]):
         return attrs
 
     def format(
-        self,
-        fmt=None,
-        *,
-        escape_format=False,
-        skip_unit=False,
-        join=None,
-        **kwargs_datetime,
+        self, fmt=None, *, escape_format=False, join=None, **kwargs_datetime,
     ):
         if issubclass(self.type_, datetime.datetime):
             return self._format_datetime(**kwargs_datetime)
@@ -142,10 +125,6 @@ class Attr(GenericModel, Generic[ValueT]):
         if fmt is None:
             fmt = "g" if issubclass(self.type_, (float, int)) else ""
         s = f"{{:{fmt}}}".format(self.value)
-        if self.name == "unit":
-            s = self.fmt_unit(unit=s)
-        if self.unit and not skip_unit:
-            s += f" {self.fmt_unit()}"
         if escape_format:
             s = s.replace("{", "{{").replace("}", "}}")
         return s
@@ -162,23 +141,23 @@ class Attr(GenericModel, Generic[ValueT]):
         mins = int((seconds / 3600) % 1 * 60)
         return f"{hours:02d}:{mins:02d}$\\,$h"
 
-    def fmt_unit(self, unit=None):
-        """Auto-format the unit by elevating superscripts etc."""
-        if unit is None:
-            unit = self.unit
-        old_new = [
-            ("m-2", "m$^{-2}$"),
-            ("m-3", "m$^{-3}$"),
-            ("s-1", "s$^{-1}$"),
-        ]
-        for old, new in old_new:
-            unit = unit.replace(old, new)
-        return unit
+
+# SR_TMP <<<
+def format_unit(s):
+    """Auto-format the unit by elevating superscripts etc."""
+    old_new = [
+        ("m-2", "m$^{-2}$"),
+        ("m-3", "m$^{-3}$"),
+        ("s-1", "s$^{-1}$"),
+    ]
+    for old, new in old_new:
+        s = s.replace(old, new)
+    return s
 
 
-@summarizable
+@summarizable(attrs=["type_", "name", "attrs", "_attr_lst"])
 class AttrMult:
-    def __init__(self, type_, *, name, values, units=None, attrs=None):
+    def __init__(self, type_, *, name, values, attrs=None):
         assert attrs is not None  # SR_TMP
 
         self.type_ = type_
@@ -187,35 +166,36 @@ class AttrMult:
 
         assert isiterable(values, str_ok=False)
 
-        if not isiterable(units, str_ok=False):
-            units = [units for _ in values]
-        assert len(units) == len(values)
-
         # Initialize individual attributes
         self._attr_lst = [
-            Attr[type_](name=name, value=value, unit=unit, attrs=attrs)
-            for value, unit in zip(values, units)
+            Attr[type_](name=name, value=value, attrs=attrs) for value in values
         ]
 
     @property
     def value(self):
         return [a.value for a in self._attr_lst]
 
-    @property
-    def unit(self):
-        units = [a.unit for a in self._attr_lst]
-        if len(set(units)) == 1:
-            return units[0]
-        return units
-
     def format(self, fmt=None, *, join=" / ", **kwargs):
         return join.join([a.format(fmt, **kwargs) for a in self._attr_lst])
 
-    def fmt_unit(self, unit=None):
-        units = [a.fmt_unit(unit=unit) for a in self._attr_lst]
-        if len(set(units)) == 1:
-            return next(iter(units))
-        return units
+    # SR_TMP <<< quick'n'dirty
+    def __repr__(self):
+        from pprint import pformat  # isort:skip
+
+        return pformat(self.summarize())
+
+    def __eq__(self, other):
+        if type(self) is not type(other):  # noqa
+            return False
+        if self.type_ is not other.type_:  # noqa
+            return False
+        if self.name != other.name:
+            return False
+        if self.attrs != other.attrs:
+            return False
+        if self._attr_lst != other._attr_lst:
+            return False
+        return True
 
 
 @summarizable
@@ -227,30 +207,33 @@ class AttrGroup:
             raise ValueError(
                 f"{type(self).__name__} should be subclassed, not instatiated"
             )
-        self._setup = setup
-        self._attrs = {}
+        self.setup = setup
 
     def __eq__(self, other):
-        return self._setup == other._setup
+        return self.setup == other.setup
 
-    def __getattr__(self, name):
-        try:
-            return self._attrs[name]
-        except KeyError:
-            raise AttributeError(f"{type(self).__name__}.{name}")
-
-    # SR_TMP <<< TODO eliminate
-    def set(self, type_, name, value, *, unit=None, attrs=None):
-        if isinstance(value, (Attr, AttrMult)):
-            attr = value
-        else:
-            assert not isiterable(value, str_ok=False)  # SR_TMP
-            attr = Attr[type_](name=name, value=value, unit=unit, attrs=attrs)
-        self._attrs[name] = attr
-
+    # SR_DBG <<<
     def __iter__(self):
-        for name, attr in sorted(self._attrs.items()):
-            yield name, attr
+        raise DeprecationWarning()
+
+    # SR_TODO <<< eliminate iterator method
+    def iter_attr_items(self):
+        result = []  # SR_DBG
+        if isinstance(self, BaseModel):  # SR_TMP
+            for attr in self.__fields__:
+                if attr != "setup":
+                    # yield attr, getattr(self, attr)
+                    result.append((attr, getattr(self, attr)))  # SR_DBG
+        else:
+            for attr in dir(self):
+                if not (
+                    attr.startswith("_") or attr in ["setup", "summarizable_attrs"]
+                ):
+                    value = getattr(self, attr)
+                    if not callable(value):
+                        # yield attr, value
+                        result.append((attr, value))  # SR_DBG
+        return result  # SR_DBG
 
     def merge_with(self, others, replace=None):
         """Create new instance by merging self and others.
@@ -274,8 +257,8 @@ class AttrGroup:
 
         # Check setups
         equal_setup_params = ["lang"]  # SR_TMP TODO add more keys
-        self_setup_dct = {k: self._setup.dict()[k] for k in equal_setup_params}
-        other_setups = [other._setup for other in others]
+        self_setup_dct = {k: self.setup.dict()[k] for k in equal_setup_params}
+        other_setups = [other.setup for other in others]
         other_setup_dcts = [
             {k: setup.dict()[k] for k in equal_setup_params} for setup in other_setups
         ]
@@ -287,82 +270,92 @@ class AttrGroup:
                 self_setup_dct,
                 other_setup_dcts,
             )
-        setup = Setup.compress(SetupCollection([self._setup] + other_setups))
+        setup = Setup.compress(SetupCollection([self.setup] + other_setups))
 
         kwargs = {}
-        for key, attr0 in iter(self):
-            attrs1 = [getattr(o, key) for o in others]
-            attr = attr0.merge_with(attrs1, replace=replace.get(key))
-            kwargs[key] = attr
-            if attr.unit is not None:
-                kwargs[f"{key}_unit"] = attr.unit
+        for attr, value in self.iter_attr_items():
+            other_values = [getattr(o, attr) for o in others]
+            kwargs[attr] = value.merge_with(other_values, replace=replace.get(attr))
 
-        return type(self)(setup, **kwargs)
+        return type(self)(setup=setup, **kwargs)
 
 
-class AttrGroupGrid(AttrGroup):
-    """Grid attributes."""
+def init_attr(type_, name, attrs=None):
+    def f(value):
+        if not isinstance(value, (Attr, AttrMult)):
+            value = Attr[type_](name=name, value=value, attrs=attrs)
+        return value
 
-    group_name = "grid"
-
-    def __init__(self, *args, north_pole_lat, north_pole_lon, **kwargs):
-        """Initialize instance of ``AttrGroupGrid``.
-
-        Kwargs:
-            north_pole_lat (float): Latitude of rotated north pole.
-
-            north_pole_lon (float): Longitude of rotated north pole.
-
-        """
-        super().__init__(*args, **kwargs)
-        self.set(float, "north_pole_lat", north_pole_lat)
-        self.set(float, "north_pole_lon", north_pole_lon)
+    return validator(name, pre=True, allow_reuse=True)(f)
 
 
-class AttrGroupVariable(AttrGroup):
-    """Variable attributes."""
+class AttrGroupGrid(BaseModel, AttrGroup):
+    """Grid attributes.
 
-    group_name = "variable"
+    Attributes:
+        north_pole_lat: Latitude of rotated north pole.
 
-    def __init__(
-        self,
-        *args,
-        long_name,
-        short_name,
-        unit,
-        level_bot,
-        level_bot_unit,
-        level_top,
-        level_top_unit,
-        **kwargs,
-    ):
-        """Initialize an instance of ``AttrGroupVariable``.
+        north_pole_lon: Longitude of rotated north pole.
 
-        Kwargs:
-            name (str): Name of variable.
+    """
 
-            unit (str): Unit of variable as a regular string (e.g., 'm-3' for
-                cubic meters).
+    setup: Setup
+    north_pole_lat: Attr[float]
+    north_pole_lon: Attr[float]
 
-            level_bot (float or list[float]): Bottom level value(s).
+    _init_north_pole_lat = init_attr(float, "north_pole_lat")
+    _init_north_pole_lon = init_attr(float, "north_pole_lon")
 
-            level_bot_unit (str): Bottom level unit.
 
-            level_top (float or list[float]): Top level value(s).
+class AttrGroupVariable(BaseModel, AttrGroup):
+    """Variable attributes.
 
-            level_top_unit (str): Bottom level unit.
+    Attributes:
+        name: Name of variable.
 
-        """
-        super().__init__(*args, **kwargs)
-        self.set(str, "long_name", long_name)
-        self.set(str, "short_name", short_name)
-        self.set(str, "unit", unit)
-        self.set(float, "level_bot", level_bot, unit=level_bot_unit)
-        self.set(float, "level_top", level_top, unit=level_top_unit)
+        unit: Unit of variable as a string (e.g., 'm-3' for cubic meters).
+
+        level_bot: Bottom level value(s).
+
+        level_bot_unit: Bottom level unit.
+
+        level_top: Top level value(s).
+
+        level_top_unit: Bottom level unit.
+
+    """
+
+    setup: Setup
+    # long_name: Attr[str]
+    # short_name: Attr[str]
+    # unit: Attr[str]
+    # level_bot: Attr[float]
+    # level_top: Attr[float]
+    # level_bot_unit: Attr[str]
+    # level_top_unit: Attr[str]
+    long_name: Union[Attr[str], AttrMult]
+    short_name: Union[Attr[str], AttrMult]
+    unit: Union[Attr[str], AttrMult]
+    level_bot: Union[Attr[float], AttrMult]
+    level_top: Union[Attr[float], AttrMult]
+    level_bot_unit: Union[Attr[str], AttrMult]
+    level_top_unit: Union[Attr[str], AttrMult]
+
+    _init_long_name = init_attr(str, "long_name")
+    _init_short_name = init_attr(str, "short_name")
+    _init_unit = init_attr(str, "unit")
+    _init_level_bot = init_attr(float, "level_bot")
+    _init_level_top = init_attr(float, "level_top")
+    _init_level_bot_unit = init_attr(str, "level_bot_unit")
+    _init_level_top_unit = init_attr(str, "level_top_unit")
+
+    class Config:  # noqa
+        arbitrary_types_allowed = True  # SR_TMP AttrMult
+        extra = "forbid"
 
     def fmt_level_unit(self):
-        unit_bottom = self.level_bot.fmt_unit()
-        unit_top = self.level_top.fmt_unit()
+        unit_bottom = format_unit(self.level_bot_unit.value)
+        unit_top = format_unit(self.level_top_unit.value)
         if unit_bottom != unit_top:
             raise Exception(
                 f"bottom and top level units differ: '{unit_bottom}' != '{unit_top}'"
@@ -418,151 +411,195 @@ class AttrGroupVariable(AttrGroup):
         return bots, tops, n
 
 
-class AttrGroupRelease(AttrGroup):
-    """Release attributes."""
+class AttrGroupRelease(BaseModel, AttrGroup):
+    """Release attributes.
 
-    group_name = "release"
+    Attributes:
+        site_name: Name of release site.
 
-    def __init__(
-        self,
-        *args,
-        start,
-        end,
-        site_lat,
-        site_lon,
-        site_name,
-        height,
-        height_unit,
-        rate,
-        rate_unit,
-        mass,
-        mass_unit,
-        **kwargs,
-    ):
-        """Initialize an instance of ``AttrGroupRelease``.
+        site_lat: Latitude of release site.
 
-        Kwargs:
-            start (datetime): Start of the release.
+        site_lon: Longitude of release site.
 
-            end (datetime): End of the release.
+        height: Release height value(s).
 
-            site_lat (float): Latitude of release site.
+        rate: Release rate value(s).
 
-            site_lon (float): Longitude of release site.
+        mass: Release mass value(s).
 
-            site_name (str): Name of release site.
+        height_unit: Release height unit
 
-            height (float or list[float]): Release height value(s).
+        rate_unit: Release rate unit.
 
-            height_unit (str): Release height unit
+        mass_unit: Release mass unit.
 
-            rate (float or list[float]): Release rate value(s).
+        start: Start of the release.
 
-            rate_unit (str): Release rate unit.
+        end: End of the release.
 
-            mass (float or list[float]): Release mass value(s).
+    """
 
-            mass_unit (str): Release mass unit.
+    setup: Setup
+    # site_name: Attr[str]
+    # site_lat: Attr[float]
+    # site_lon: Attr[float]
+    # height: Attr[float]
+    # rate: Attr[float]
+    # mass: Attr[float]
+    # height_unit: Attr[str]
+    # rate_unit: Attr[str]
+    # mass_unit: Attr[str]
+    # start: Attr[datetime.datetime]
+    # end: Attr[datetime.datetime]
+    site_name: Union[Attr[str], AttrMult]
+    site_lat: Union[Attr[float], AttrMult]
+    site_lon: Union[Attr[float], AttrMult]
+    height: Union[Attr[float], AttrMult]
+    rate: Union[Attr[float], AttrMult]
+    mass: Union[Attr[float], AttrMult]
+    height_unit: Union[Attr[str], AttrMult]
+    rate_unit: Union[Attr[str], AttrMult]
+    mass_unit: Union[Attr[str], AttrMult]
+    start: Union[Attr[datetime.datetime], AttrMult]
+    end: Union[Attr[datetime.datetime], AttrMult]
 
-        """
-        super().__init__(*args, **kwargs)
-        dt = datetime.datetime
-        self.set(dt, "start", start, attrs={"start": start})
-        self.set(dt, "end", end, attrs={"start": start})
-        self.set(float, "site_lat", site_lat)
-        self.set(float, "site_lon", site_lon)
-        self.set(str, "site_name", site_name)
-        self.set(float, "height", height, unit=height_unit)
-        self.set(float, "rate", rate, unit=rate_unit)
-        self.set(float, "mass", mass, unit=mass_unit)
+    _init_site_name = init_attr(str, "site_name")
+    _init_site_lat = init_attr(float, "site_lat")
+    _init_site_lon = init_attr(float, "site_lon")
+    _init_height = init_attr(float, "height")
+    _init_rate = init_attr(float, "rate")
+    _init_mass = init_attr(float, "mass")
+    _init_height_unit = init_attr(str, "height_unit")
+    _init_rate_unit = init_attr(str, "rate_unit")
+    _init_mass_unit = init_attr(str, "mass_unit")
+    _init_start = init_attr(datetime.datetime, "start")
+    _init_end = init_attr(datetime.datetime, "end")
 
+    @root_validator
+    def _set_start(cls, values):
+        values["start"].attrs["start"] = values["start"].value
+        values["end"].attrs["start"] = values["start"].value
+        return values
 
-class AttrGroupSpecies(AttrGroup):
-    """Species attributes."""
-
-    group_name = "species"
-
-    def __init__(
-        self,
-        *args,
-        name,
-        half_life,
-        half_life_unit,
-        deposit_vel,
-        deposit_vel_unit,
-        sediment_vel,
-        sediment_vel_unit,
-        washout_coeff,
-        washout_coeff_unit,
-        washout_exponent,
-        **kwargs,
-    ):
-        """Create an instance of ``AttrGroupSpecies``.
-
-        Kwargs:
-            name (str): Species name.
-
-            half_life (float or list[float]): Half life value(s).
-
-            half_life_unit (str): Half life unit.
-
-            deposit_vel (float or list[float]): Deposition velocity value(s).
-
-            deposit_vel_unit (str): Deposition velocity unit.
-
-            sediment_vel (float or list[float]): Sedimentation velocity
-                value(s).
-
-            sediment_vel_unit (str): Sedimentation velocity unit.
-
-            washout_coeff (float or list[float]): Washout coefficient value(s).
-
-            washout_coeff_unit (str): Washout coefficient unit.
-
-            washout_exponent (float or list[float]): Washout exponent value(s).
-
-        """
-        super().__init__(*args, **kwargs)
-        self.set(str, "name", name)
-        self.set(float, "half_life", half_life, unit=half_life_unit)
-        self.set(float, "deposit_vel", deposit_vel, unit=deposit_vel_unit)
-        self.set(float, "sediment_vel", sediment_vel, unit=sediment_vel_unit)
-        self.set(float, "washout_coeff", washout_coeff, unit=washout_coeff_unit)
-        self.set(float, "washout_exponent", washout_exponent)
+    class Config:  # noqa
+        arbitrary_types_allowed = True  # SR_TMP AttrMult
+        extra = "forbid"
 
 
-class AttrGroupSimulation(AttrGroup):
-    """Simulation attributes."""
+class AttrGroupSpecies(BaseModel, AttrGroup):
+    """Species attributes.
 
-    group_name = "simulation"
+    Attributes:
+        name: Species name.
 
-    def __init__(
-        self, *args, model_name, start, end, now, integr_start, integr_type, **kwargs
-    ):
-        """Create an instance of ``AttrGroupSimulation``.
+        half_life: Half life value(s).
 
-        Kwargs:
-            model_name (str): Name of the model.
+        half_life_unit: Half life unit.
 
-            start (datetime): Start of the simulation.
+        deposit_vel: Deposition velocity value(s).
 
-            end (datetime): End of the simulation.
+        deposit_vel_unit: Deposition velocity unit.
 
-            now (datetime): Current timestep.
+        sediment_vel: Sedimentation velocity value(s).
 
-            integr_start (datetime): Start of the integration period.
+        sediment_vel_unit: Sedimentation velocity unit.
 
-            integr_type (str): Type of integration (or reduction).
+        washout_coeff: Washout coefficient value(s).
 
-        """
-        super().__init__(*args, **kwargs)
-        dt = datetime.datetime
-        self.set(str, "model_name", model_name)
-        self.set(dt, "start", start, attrs={"start": start})
-        self.set(dt, "end", end, attrs={"start": start})
-        self.set(dt, "now", now, attrs={"start": start})
-        self.set(dt, "integr_start", integr_start, attrs={"start": start})
-        self.set(str, "integr_type", integr_type)
+        washout_coeff_unit: Washout coefficient unit.
+
+        washout_exponent: Washout exponent value(s).
+
+    """
+
+    setup: Setup
+    # name: Attr[str]
+    # half_life: Attr[float]
+    # deposit_vel: Attr[float]
+    # sediment_vel: Attr[float]
+    # washout_coeff: Attr[float]
+    # washout_exponent: Attr[float]
+    # half_life_unit: Attr[str]
+    # deposit_vel_unit: Attr[str]
+    # sediment_vel_unit: Attr[str]
+    # washout_coeff_unit: Attr[str]
+    name: Union[Attr[str], AttrMult]
+    half_life: Union[Attr[float], AttrMult]
+    deposit_vel: Union[Attr[float], AttrMult]
+    sediment_vel: Union[Attr[float], AttrMult]
+    washout_coeff: Union[Attr[float], AttrMult]
+    washout_exponent: Union[Attr[float], AttrMult]
+    half_life_unit: Union[Attr[str], AttrMult]
+    deposit_vel_unit: Union[Attr[str], AttrMult]
+    sediment_vel_unit: Union[Attr[str], AttrMult]
+    washout_coeff_unit: Union[Attr[str], AttrMult]
+
+    _init_name = init_attr(str, "name")
+    _init_half_life = init_attr(float, "half_life")
+    _init_deposit_vel = init_attr(float, "deposit_vel")
+    _init_sediment_vel = init_attr(float, "sediment_vel")
+    _init_washout_coeff = init_attr(float, "washout_coeff")
+    _init_washout_exponent = init_attr(float, "washout_exponent")
+    _init_half_life_unit = init_attr(str, "half_life_unit")
+    _init_deposit_vel_unit = init_attr(str, "deposit_vel_unit")
+    _init_sediment_vel_unit = init_attr(str, "sediment_vel_unit")
+    _init_washout_coeff_unit = init_attr(str, "washout_coeff_unit")
+
+    class Config:  # noqa
+        arbitrary_types_allowed = True  # SR_TMP AttrMult
+        extra = "forbid"
+
+
+class AttrGroupSimulation(BaseModel, AttrGroup):
+    """Simulation attributes.
+
+    Attributes:
+        model_name: Name of the model.
+
+        start: Start of the simulation.
+
+        end: End of the simulation.
+
+        now: Current timestep.
+
+        integr_start: Start of the integration period.
+
+        integr_type: Type of integration (or reduction).
+
+    """
+
+    setup: Setup
+    # model_name: Attr[str]
+    # start: Attr[datetime.datetime]
+    # end: Attr[datetime.datetime]
+    # now: Attr[datetime.datetime]
+    # integr_start: Attr[datetime.datetime]
+    # integr_type: Attr[str]
+    model_name: Union[Attr[str], AttrMult]
+    start: Union[Attr[datetime.datetime], AttrMult]
+    end: Union[Attr[datetime.datetime], AttrMult]
+    now: Union[Attr[datetime.datetime], AttrMult]
+    integr_start: Union[Attr[datetime.datetime], AttrMult]
+    integr_type: Union[Attr[str], AttrMult]
+
+    _init_model_name = init_attr(str, "model_name")
+    _init_start = init_attr(datetime.datetime, "start")
+    _init_end = init_attr(datetime.datetime, "end")
+    _init_now = init_attr(datetime.datetime, "now")
+    _init_integr_start = init_attr(datetime.datetime, "integr_start")
+    _init_integr_type = init_attr(str, "integr_type")
+
+    @root_validator
+    def _set_start(cls, values):
+        values["start"].attrs["start"] = values["start"].value
+        values["end"].attrs["start"] = values["start"].value
+        values["now"].attrs["start"] = values["start"].value
+        values["integr_start"].attrs["start"] = values["start"].value
+        return values
+
+    class Config:  # noqa
+        arbitrary_types_allowed = True  # SR_TMP AttrMult
+        extra = "forbid"
 
     def fmt_integr_period(self):
         integr_period = self.now.value - self.integr_start.value
@@ -590,7 +627,7 @@ class AttrGroupCollection:
             simulation (dict): Kwargs passed to ``AttrGroupSimulation``.
 
         """
-        self._setup = setup
+        self.setup = setup
         self._attrs = {}
         self.add("grid", grid)
         self.add("variable", variable)
@@ -599,7 +636,7 @@ class AttrGroupCollection:
         self.add("simulation", simulation)
 
     def __eq__(self, other):
-        return dict(self) == dict(other)
+        return self._attrs == other._attrs
 
     def __getattr__(self, name):
         try:
@@ -621,12 +658,7 @@ class AttrGroupCollection:
                 cls_group = cls_by_name[name]
             except KeyError:
                 raise ValueError(f"missing AttrGroup class for name '{name}'")
-            # SR_TMP <
-            for key, attr in attrs.copy().items():
-                if isinstance(attr, (Attr, AttrMult)) and attr.unit is not None:
-                    attrs[f"{key}_unit"] = attr.unit
-            # SR_TMP >
-            attrs = cls_group(self._setup, **attrs)
+            attrs = cls_group(setup=self.setup, **attrs)
 
         self._attrs[name] = attrs
 
@@ -665,13 +697,11 @@ class AttrGroupCollection:
             )
 
         """
-        kwargs = {"setup": self._setup}
+        kwargs = {"setup": self.setup}
         for name in sorted(self._attrs.keys()):
-            kwargs[name] = dict(
-                self._attrs[name].merge_with(
-                    [o._attrs[name] for o in others], replace.get(name),
-                )
-            )
+            other_attrs = [o._attrs[name] for o in others]
+            merged = self._attrs[name].merge_with(other_attrs, replace.get(name))
+            kwargs[name] = dict(merged.iter_attr_items())
         return type(self)(**kwargs)
 
     def __iter__(self):
@@ -701,7 +731,7 @@ class AttrsCollector:
 
         """
         self.fi = fi
-        self._setup = setup
+        self.setup = setup
         self._words = words
 
         # Collect all global attributes
@@ -717,7 +747,7 @@ class AttrsCollector:
             }
 
         # Select attributes of field variable
-        self.ncattrs_field = self.ncattrs_vars[nc_var_name(self._setup)]
+        self.ncattrs_field = self.ncattrs_vars[nc_var_name(self.setup)]
 
     def run(self):
         """Collect attributes."""
@@ -729,7 +759,7 @@ class AttrsCollector:
         attrs["species"] = self.collect_species_attrs(attrs)
         attrs["variable"] = self.collect_variable_attrs(attrs)
 
-        return AttrGroupCollection(self._setup, **attrs)
+        return AttrGroupCollection(self.setup, **attrs)
 
     def collect_simulation_attrs(self, attrs):
         """Collect simulation attributes."""
@@ -751,10 +781,10 @@ class AttrsCollector:
         ts_now, ts_integr_start = self._get_current_timestep_etc()
 
         # Type of integration (or, rather, reduction)
-        if self._setup.variable == "concentration":  # SR_TMP
-            integr_type = "sum" if self._setup.integrate else "mean"
-        elif self._setup.variable == "deposition":  # SR_TMP
-            integr_type = "accum" if self._setup.integrate else "mean"
+        if self.setup.variable == "concentration":  # SR_TMP
+            integr_type = "sum" if self.setup.integrate else "mean"
+        elif self.setup.variable == "deposition":  # SR_TMP
+            integr_type = "accum" if self.setup.integrate else "mean"
         else:
             raise NotImplementedError(
                 f"no integration type specified for '{self.name}'"
@@ -774,8 +804,8 @@ class AttrsCollector:
 
         if idx is None:
             # Default to timestep of current field
-            assert len(self._setup.time) == 1  # SR_TMP
-            idx = next(iter(self._setup.time))  # SR_TMP
+            assert len(self.setup.time) == 1  # SR_TMP
+            idx = next(iter(self.setup.time))  # SR_TMP
 
         if not isinstance(idx, int):
             raise Exception(f"expect type 'int', not '{type(idx).__name__}': {idx}")
@@ -810,7 +840,7 @@ class AttrsCollector:
         now = start + delta_tot
 
         # Determine start timestep of integration period
-        if self._setup.integrate:
+        if self.setup.integrate:
             delta_integr = delta_tot
         else:
             delta_prev = delta_tot / (idx + 1)
@@ -835,9 +865,9 @@ class AttrsCollector:
 
         # Collect release point information
         # SR_TMP < TODO clean up once CoreSetup has been implemented
-        assert len(self._setup.numpoint) == 1
-        idx = next(iter(self._setup.numpoint))
-        # idx = self._setup.numpoint
+        assert len(self.setup.numpoint) == 1
+        idx = next(iter(self.setup.numpoint))
+        # idx = self.setup.numpoint
         # SR_TMP >
         numpoint = ReleasePoint.from_file(self.fi, idx)
 
@@ -851,7 +881,7 @@ class AttrsCollector:
         site_name = {"Goesgen": r"G$\mathrm{\"o}$sgen"}.get(site_name)
 
         height = np.mean([numpoint.zbot, numpoint.ztop])
-        height_unit = self._words["m_agl", self._setup.lang].s
+        height_unit = self._words["m_agl", self.setup.lang].s
 
         assert len(numpoint.ms_parts) == 1
         mass = next(iter(numpoint.ms_parts))
@@ -888,16 +918,16 @@ class AttrsCollector:
         unit = self.ncattrs_field["units"]
 
         # SR_TMP < TODO clean up once CoreSetup has been implemented
-        assert self._setup.level is None or len(self._setup.level) == 1
-        idx = None if self._setup.level is None else next(iter(self._setup.level))
-        # idx = self._setup.level
+        assert self.setup.level is None or len(self.setup.level) == 1
+        idx = None if self.setup.level is None else next(iter(self.setup.level))
+        # idx = self.setup.level
         # SR_TMP >
         if idx is None:
             level_unit = ""
             level_bot = -1
             level_top = -1
         else:
-            level_unit = self._words["m_agl", self._setup.lang].s
+            level_unit = self._words["m_agl", self.setup.lang].s
             _var = self.fi.variables["level"]
             level_bot = 0.0 if idx == 0 else float(_var[idx - 1])
             level_top = float(_var[idx])
@@ -918,8 +948,8 @@ class AttrsCollector:
         substance = self._get_substance()
 
         # Get deposition and washout data
-        name_core = nc_var_name(self._setup)
-        if self._setup.variable == "deposition":  # SR_TMP
+        name_core = nc_var_name(self.setup)
+        if self.setup.variable == "deposition":  # SR_TMP
             name_core = name_core[3:]
         deposit_vel = self.ncattrs_vars[f"DD_{name_core}"]["dryvel"]
         washout_coeff = self.ncattrs_vars[f"WD_{name_core}"]["weta"]
@@ -953,14 +983,14 @@ class AttrsCollector:
 
     def _get_substance(self):
         substance = self.ncattrs_field["long_name"]
-        if self._setup.variable == "deposition":  # SR_TMP
+        if self.setup.variable == "deposition":  # SR_TMP
             substance = substance.replace(
-                f"_{self._setup.deposition_type}_deposition", ""
+                f"_{self.setup.deposition_type}_deposition", ""
             )  # SR_HC
         return substance
 
     def _long_name(self, *, variable=None, plot_type=None):
-        setup = self._setup
+        setup = self.setup
         words = self._words
         if (variable, plot_type) == (None, None):
             variable = setup.variable
@@ -1006,7 +1036,7 @@ class AttrsCollector:
         )
 
     def _short_name(self, *, variable=None, plot_type=None):
-        setup = self._setup
+        setup = self.setup
         words = self._words
         if (variable, plot_type) == (None, None):
             variable = setup.variable
@@ -1034,7 +1064,7 @@ class AttrsCollector:
         )
 
     def _deposition_type_word(self):
-        setup = self._setup
+        setup = self.setup
         words = self._words
         if setup.variable == "deposition":
             type_ = setup.deposition_type
