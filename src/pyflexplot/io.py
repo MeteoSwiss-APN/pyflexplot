@@ -226,6 +226,14 @@ class FileReader:
         fld_time_mem: Optional[np.ndarray] = None
         for i_mem, in_file_path in enumerate(self.in_file_path_lst or []):
             with nc4.Dataset(in_file_path, "r") as fi:
+                model = self._determine_model(fi)
+
+                # SR_TMP <
+                if model in ["cosmo1", "cosmo2"]:
+                    pass
+                else:
+                    raise NotImplementedError("model", model)
+                # SR_TMP >
 
                 # Read grid variables
                 rlat = fi.variables["rlat"][:]
@@ -251,6 +259,23 @@ class FileReader:
                 fld_time_mem[i_mem] = fld_time
 
         return fld_time_mem
+
+    def _determine_model(self, fi):
+        """Determine the model from the NetCDF meta data.
+
+        For lack of an explicit NetCDF attribute, use the grid resolution.
+
+        """
+        dxout = fi.getncattr("dxout")
+        choices = {
+            type(dxout)(0.25): "ifs",
+            type(dxout)(0.02): "cosmo2",
+            type(dxout)(0.01): "cosmo1",
+        }
+        try:
+            return choices[dxout]
+        except KeyError:
+            raise Exception("no model defined for dxout", dxout, choices)
 
     def _reduce_ensemble(self, fld_time_mem: np.ndarray, setup: Setup) -> np.ndarray:
         """Reduce the ensemble to a single field (time, rlat, rlon)."""
