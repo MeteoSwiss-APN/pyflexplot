@@ -79,14 +79,17 @@ class Plot:
 
         self.fig = plt.figure(figsize=self.plot_config.figsize)
 
-        self.ax_map = MapAxesRotatedPole(
-            self.fig,
-            self.field.rlat,
-            self.field.rlon,
-            self.plot_config.mdata.grid.north_pole_lat.value,
-            self.plot_config.mdata.grid.north_pole_lon.value,
-            self.map_conf,
-        )
+        if self.field.rotated_pole:
+            self.ax_map = MapAxesRotatedPole(
+                self.fig,
+                self.field.lat,
+                self.field.lon,
+                self.plot_config.mdata.grid.north_pole_lat.value,
+                self.plot_config.mdata.grid.north_pole_lon.value,
+                self.map_conf,
+            )
+        else:
+            raise NotImplementedError("non-rotated pole")
 
     def save(self, file_path, format=None):
         """Save the plot to disk.

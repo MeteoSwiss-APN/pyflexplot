@@ -62,8 +62,9 @@ class FileReader:
 
         self.n_members: Optional[int] = None
         self.in_file_path_lst: Optional[Sequence[str]] = None
-        self.rlat: Optional[np.ndarray] = None
-        self.rlon: Optional[np.ndarray] = None
+        self.model: str = None
+        self.lat: Optional[np.ndarray] = None
+        self.lon: Optional[np.ndarray] = None
 
         self.fixer: FlexPartDataFixer = FlexPartDataFixer()
 
@@ -226,33 +227,42 @@ class FileReader:
         fld_time_mem: Optional[np.ndarray] = None
         for i_mem, in_file_path in enumerate(self.in_file_path_lst or []):
             with nc4.Dataset(in_file_path, "r") as fi:
-                model = self._determine_model(fi)
 
-                # SR_TMP <
-                if model in ["cosmo1", "cosmo2"]:
-                    pass
-                else:
-                    raise NotImplementedError("model", model)
-                # SR_TMP >
+                # Determine model
+                model = self._determine_model(fi)
+                if self.model is None:
+                    # SR_TMP <
+                    if model in ["cosmo1", "cosmo2"]:
+                        self.rotated_pole = True
+                    else:
+                        self.rotated_pole = False
+                    self.model = model
+                    # SR_TMP >
+                elif model != self.model:
+                    raise Exception("inconsistent model", model, self.model)
 
                 # Read grid variables
-                rlat = fi.variables["rlat"][:]
-                rlon = fi.variables["rlon"][:]
-                if self.rlat is None:
-                    self.rlat = rlat
-                    self.rlon = rlon
+                if not self.rotated_pole:
+                    lat = fi.variables["latitude"][:]
+                    lon = fi.variables["longitude"][:]
                 else:
-                    if not (rlat == self.rlat).all():
-                        raise Exception("inconsistent rlat")
-                    if not (rlon == self.rlon).all():
-                        raise Exception("inconsistent rlon")
+                    lat = fi.variables["rlat"][:]
+                    lon = fi.variables["rlon"][:]
+                if self.lat is None:
+                    self.lat = lat
+                    self.lon = lon
+                else:
+                    if not (lat == self.lat).all():
+                        raise Exception("inconsistent latitude", lat, self.lat)
+                    if not (lon == self.lon).all():
+                        raise Exception("inconsistent longitude", lon, self.lon)
 
                 # Read field (all time steps)
                 fld_time: np.ndarray = merge_fields(
                     [self._read_nc_var(fi, setup) for setup in setups],
                 )
 
-                # Store field for currentmember
+                # Store field for current member
                 if fld_time_mem is None:
                     shape = [self.n_members] + list(fld_time.shape)
                     fld_time_mem = np.full(shape, np.nan, np.float32)
@@ -260,6 +270,7 @@ class FileReader:
 
         return fld_time_mem
 
+    # SR_TODO Add class representing model, storing info like rotated pole etc.
     def _determine_model(self, fi):
         """Determine the model from the NetCDF meta data.
 
@@ -278,7 +289,7 @@ class FileReader:
             raise Exception("no model defined for dxout", dxout, choices)
 
     def _reduce_ensemble(self, fld_time_mem: np.ndarray, setup: Setup) -> np.ndarray:
-        """Reduce the ensemble to a single field (time, rlat, rlon)."""
+        """Reduce the ensemble to a single field (time, lat, lon)."""
         if self.n_members == 1:
             return fld_time_mem[0]
         plot_type = setup.plot_type
@@ -364,7 +375,10 @@ class FileReader:
             assert len(time_idcs) == 1  # SR_TMP
             time_idx = next(iter(time_idcs))
             fld: np.ndarray = fld_time[time_idx]
-            fields.append(Field(fld, self.rlat, self.rlon, fld_specs, time_stats))
+            field = Field(
+                fld, self.lat, self.lon, self.rotated_pole, fld_specs, time_stats,
+            )
+            fields.append(field)
         return fields
 
     def _read_nc_var(self, fi: nc4.Dataset, setup: Setup) -> np.ndarray:
@@ -386,10 +400,14 @@ class FileReader:
             "nageclass": next(iter(setup.nageclass)),
             "noutrel": next(iter(setup.noutrel)),
             "numpoint": next(iter(setup.numpoint)),
-            "rlat": slice(None),  # SR_TMP
-            "rlon": slice(None),  # SR_TMP
             "time": slice(None),  # SR_TMP
         }
+        if self.rotated_pole:
+            dim_idcs_by_name["rlat"] = slice(None)  # SR_TMP
+            dim_idcs_by_name["rlon"] = slice(None)  # SR_TMP
+        else:
+            dim_idcs_by_name["latitude"] = slice(None)  # SR_TMP
+            dim_idcs_by_name["longitude"] = slice(None)  # SR_TMP
 
         # Assemble indices for slicing
         idcs: List[Any] = [None] * len(nc_var.dimensions)

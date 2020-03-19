@@ -446,9 +446,10 @@ class MapAxesRotatedPole:
 
         def get_name(city):
             """Fetch city name in current language, hand-correcting some."""
-            return city.attributes[f"name_{self.conf.lang}"].replace(
-                "Freiburg im Üechtland", "Freiburg"
-            )
+            name = city.attributes[f"name_{self.conf.lang}"]
+            if name.startswith("Freiburg im ") and name.endswith("echtland"):
+                name = "Freiburg"
+            return name
 
         # src: https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-populated-places/lk  # noqa
         cities = cartopy.io.shapereader.Reader(

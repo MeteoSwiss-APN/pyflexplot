@@ -101,9 +101,7 @@ def transfer_dimensions(fi, fo, **conf):
         transfer_dimension(fi, fo, dim, **conf)
 
 
-def transfer_dimension(
-    fi, fo, dim, lat_name, lon_name, lat_slice, lon_slice, **conf
-):
+def transfer_dimension(fi, fo, dim, lat_name, lon_name, lat_slice, lon_slice, **conf):
     """Transfer single dimension from in- to outfile."""
 
     # Determine dimension size
@@ -126,9 +124,7 @@ def transfer_dimension(
         # There's none; that's fine
         pass
     else:
-        transfer_variable(
-            fi, fo, var, lat_name, lon_name, lat_slice, lon_slice, **conf
-        )
+        transfer_variable(fi, fo, var, lat_name, lon_name, lat_slice, lon_slice, **conf)
 
 
 def transfer_variables(fi, fo, **conf):
@@ -138,9 +134,7 @@ def transfer_variables(fi, fo, **conf):
             transfer_variable(fi, fo, var, **conf)
 
 
-def transfer_variable(
-    fi, fo, var, lat_name, lon_name, lat_slice, lon_slice, **conf
-):
+def transfer_variable(fi, fo, var, lat_name, lon_name, lat_slice, lon_slice, **conf):
     """Transfer single variable from in- to outfile."""
 
     # Create variable
@@ -153,9 +147,7 @@ def transfer_variable(
         inds = []
         for dim_name in var.dimensions:
             inds.append(
-                {lat_name: lat_slice, lon_name: lon_slice}.get(
-                    dim_name, slice(None),
-                )
+                {lat_name: lat_slice, lon_name: lon_slice}.get(dim_name, slice(None),)
             )
         new_var[:] = var[inds]
 

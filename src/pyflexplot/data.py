@@ -32,17 +32,17 @@ def summarize_field(obj):
             "n_nan": np.count_nonzero(np.isnan(obj.fld)),
             "n_zero": np.count_nonzero(obj.fld == 0),
         },
-        "rlat": {
-            "dtype": str(obj.rlat.dtype),
-            "shape": obj.rlat.shape,
-            "min": obj.rlat.min(),
-            "max": obj.rlat.max(),
+        "lat": {
+            "dtype": str(obj.lat.dtype),
+            "shape": obj.lat.shape,
+            "min": obj.lat.min(),
+            "max": obj.lat.max(),
         },
-        "rlon": {
-            "dtype": str(obj.rlon.dtype),
-            "shape": obj.rlon.shape,
-            "min": obj.rlon.min(),
-            "max": obj.rlon.max(),
+        "lon": {
+            "dtype": str(obj.lon.dtype),
+            "shape": obj.lon.shape,
+            "min": obj.lon.min(),
+            "max": obj.lon.max(),
         },
     }
 
@@ -57,40 +57,44 @@ class Field:
     def __init__(
         self,
         fld: np.ndarray,
-        rlat: np.ndarray,
-        rlon: np.ndarray,
+        lat: np.ndarray,
+        lon: np.ndarray,
+        rotated_pole: bool,
         fld_specs: FldSpecs,
         time_stats: Mapping[str, np.ndarray],
     ):
         """Create an instance of ``Field``.
 
         Args:
-            fld: Field array (2D) with dimensions (rlat, rlon).
+            fld: Field array (2D) with dimensions (lat, lon).
 
-            rlat: Rotated latitude array (1D).
+            lat: Latitude array (1D).
 
-            rlon: Rotated longitude array (1D).
+            lon: Longitude array (1D).
+
+            rotated_pole: Whether pole is rotated.
 
             fld_specs: Input field specifications.
 
             time_stats: Some statistics across all time steps.
 
         """
-        self._check_args(fld, rlat, rlon)
+        self._check_args(fld, lat, lon)
         self.fld = fld
-        self.rlat = rlat
-        self.rlon = rlon
+        self.lat = lat
+        self.lon = lon
+        self.rotated_pole = rotated_pole
         self.fld_specs = fld_specs
         self.time_stats = time_stats
 
-    def _check_args(self, fld, rlat, rlon, *, ndim_fld=2):
+    def _check_args(self, fld, lat, lon, *, ndim_fld=2):
         """Check consistency of field, dimensions, etc."""
 
         # Check dimensionalities
         for name, arr, ndim in [
             ("fld", fld, ndim_fld),
-            ("rlat", rlat, 1),
-            ("rlon", rlon, 1),
+            ("lat", lat, 1),
+            ("lon", lon, 1),
         ]:
             shape = arr.shape
             if len(shape) != ndim:
@@ -99,10 +103,10 @@ class Field:
                 )
 
         # Check consistency
-        grid_shape = (rlat.size, rlon.size)
+        grid_shape = (lat.size, lon.size)
         if fld.shape[-2:] != grid_shape:
             raise ValueError(
-                f"shape of fld inconsistent with (rlat, rlon): {fld.shape} != "
+                f"shape of fld inconsistent with (lat, lon): {fld.shape} != "
                 r"{grid_shape}"
             )
 

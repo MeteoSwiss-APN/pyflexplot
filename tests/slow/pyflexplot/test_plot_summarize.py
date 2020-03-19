@@ -231,8 +231,9 @@ def create_mdata(lang):
 def create_field():
     dummy_field = Field(
         fld=np.array([[i] * 10 for i in range(10)], np.float32),
-        rlat=np.arange(-5.0, 4.1, 1.0),
-        rlon=np.arange(-6.0, 3.1, 1.0),
+        lat=np.arange(-5.0, 4.1, 1.0),
+        lon=np.arange(-6.0, 3.1, 1.0),
+        rotated_pole=True,
         fld_specs=None,
         time_stats={"max": 15},
     )
@@ -725,13 +726,13 @@ class Solution:
                 "n_nan": e(0),
                 "n_zero": e(10),
             },
-            "rlat": {
+            "lat": {
                 "dtype": "float64",
                 "shape": e((10,)),
                 "min": e(-5.0),
                 "max": e(4.0),
             },
-            "rlon": {
+            "lon": {
                 "dtype": "float64",
                 "shape": e((10,)),
                 "min": e(-6.0),

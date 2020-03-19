@@ -55,6 +55,7 @@ class Conf:
 
 datafilename1 = "flexpart_cosmo-1_2019052800.nc"
 datafilename2 = "flexpart_cosmo-1_2019093012.nc"
+datafilename3 = "flexpart_ifs_20200317000000.nc"
 
 
 @pytest.mark.parametrize(
@@ -156,6 +157,19 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
             },
             scale_fld_ref=1 / 3,
         ),
+        # Conf(
+        #     datafilename=datafilename3,
+        #     var_names_ref=[f"spec002"],
+        #     setup_dct={
+        #         "infile": "dummy.nc",
+        #         "outfile": "dummy.png",
+        #         "variable": "concentration",
+        #         "species_id": 2,
+        #         "level": 1,
+        #         "integrate": False,
+        #         "time": 3,
+        #     },
+        # ),
     ],
 )
 def test_single(datadir, conf):  # noqa:F811

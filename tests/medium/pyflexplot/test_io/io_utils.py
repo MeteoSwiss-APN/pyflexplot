@@ -25,7 +25,7 @@ def read_nc_var(path, var_name, setup):
         # Collect dimension indices
         idcs = []
         for dim_name in var.dimensions:
-            if dim_name in ["rlat", "rlon"]:
+            if dim_name in ["rlat", "rlon", "latitude", "longitude"]:
                 idx = slice(None)
             elif dim_name == "time":
                 # Read all timesteps until the selected one
