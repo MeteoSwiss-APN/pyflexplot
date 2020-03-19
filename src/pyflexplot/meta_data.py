@@ -3,16 +3,20 @@
 Attributes.
 """
 # Standard library
-import datetime
 import re
 import time
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
 from typing import Any
 from typing import Dict
 from typing import Generic
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import TypeVar
 from typing import Union
+from warnings import warn
 
 # Third-party
 import numpy as np
@@ -23,7 +27,6 @@ from pydantic.generics import GenericModel
 
 # First-party
 from srutils.dict import format_dictlike
-from srutils.iter import isiterable
 
 # Local
 from .setup import Setup
@@ -31,7 +34,7 @@ from .setup import SetupCollection
 from .utils import summarizable
 from .words import WORDS
 
-ValueT = TypeVar("ValueT", int, float, str, datetime.datetime)
+ValueT = TypeVar("ValueT", int, float, str, datetime)
 
 
 @summarizable
@@ -39,8 +42,8 @@ class MetaDatum(GenericModel, Generic[ValueT]):
     """Individual piece of meta data."""
 
     name: str
-    value: ValueT
-    attrs: Dict[str, Any] = {}  # need Optional[] despite validator?
+    value: Union[ValueT, Tuple[ValueT, ...]]
+    attrs: Dict[str, Any] = {}
 
     class Config:  # noqa
         # allow_mutation = False  # SR_TODO consider this
@@ -54,41 +57,44 @@ class MetaDatum(GenericModel, Generic[ValueT]):
         return value
 
     @property
-    def type_(self):
-        return type(self.value)
+    def is_combo(self):
+        return isinstance(self.value, tuple)
+        # return isinstance(self.value, Sequence) and not isinstance(self.value, str)
 
-    @classmethod
-    def create(cls, type_, *, name, value, attrs=None):
-        return MetaDatum[type_](name=name, value=value, attrs=attrs)
+    @property
+    def type_(self):
+        if self.is_combo:
+            return type(next(iter(self.value)))
+        return type(self.value)
 
     # SR_TODO Extract methods into separate class (e.g., AttrMerger)!
     def merge_with(self, others, replace=None):
+        if self.is_combo:
+            raise NotImplementedError(f"{type(self).__name__}.merge_with (is_combo)")
         assert all(issubclass(o.type_, self.type_) for o in others)  # noqa SR_DBG
         if replace is None:
             replace = {}
         name = replace.get("name", self.name)
         reduced_value = self._reduce_values(others, replace)
         attrs = self._merge_attrs(others)
-        if isiterable(reduced_value, str_ok=False):
-            return MetaDatumCombo[self.type_](
-                name=name, values=reduced_value, attrs=attrs
-            )
         return MetaDatum[self.type_](name=name, value=reduced_value, attrs=attrs)
 
     def _reduce_values(self, others, replace):
-        values = [self.value]
+        values = list(self.value) if self.is_combo else [self.value]
         for other in others:
             if "name" not in replace:
                 if other.name != self.name:
                     raise ValueError("names differ", self.name, other.name)
                 if type(other) is not type(self):  # noqa
                     raise ValueError("types differ", type(self), type(other))
-            if other.value not in values:
-                values.append(other.value)
+            other_values = list(other.value) if other.is_combo else [other.value]
+            for other_value in other_values:
+                if other_value not in values:
+                    values.append(other_value)
         if len(values) == 1:
             reduced_value = next(iter(values))
         else:
-            # SR_TMP<
+            # SR_TMP < TODO cleaner, less hard-coded solution
             if self.name == "long_name":
                 name0 = next(iter(values))
                 if name0.lower().startswith("beaufschlagtes gebiet"):
@@ -103,7 +109,7 @@ class MetaDatum(GenericModel, Generic[ValueT]):
                     )
                 elif name0.lower().endswith("surface deposition"):
                     values = name0.replace("wet", "total").replace("dry", "total")
-            # SR_TMP>
+            # SR_TMP >
             reduced_value = next(iter(values)) if len(values) == 1 else values
         reduced_value = replace.get("value", reduced_value)
         return reduced_value
@@ -119,91 +125,62 @@ class MetaDatum(GenericModel, Generic[ValueT]):
                 raise NotImplementedError("differing values", attr, value, other_values)
         return attrs
 
-    def format(self, **kwargs):
-        return format_meta_datum(self.value, self.attrs, **kwargs)
-
-
-# SR_TMP <<< TODO move back to MetaDatum if MetaDatum and MetaDatumCombo merged
-def format_meta_datum(
-    value, attrs, *, fmt=None, escape_format=False, join=None, **kwargs_dt,
-):
-    if isinstance(value, datetime.datetime):
-        return format_meta_datum_datetime(value, attrs, **kwargs_dt)
-
-    if fmt is None:
-        fmt = "g" if isinstance(value, (float, int)) else ""
-    s = f"{{:{fmt}}}".format(value)
-    if escape_format:
-        s = s.replace("{", "{{").replace("}", "}}")
-    return s
-
-
-# SR_TMP <<< TODO move back to MetaDatum if MetaDatum and MetaDatumCombo merged
-def format_meta_datum_datetime(
-    value, attrs, *, rel=False, rel_start=None, rel_neg_ok=True,
-):
-    if not rel:
-        return value.strftime("%Y-%m-%d %H:%M %Z")
-    if rel_start is None:
-        rel_start = attrs["start"]
-    seconds = (value - rel_start).total_seconds()
-    if not rel_neg_ok and seconds < 0:
-        seconds = -seconds
-    hours = int(seconds / 3600)
-    mins = int((seconds / 3600) % 1 * 60)
-    return f"{hours:02d}:{mins:02d}$\\,$h"
-
-
-# SR_TMP <<<
-def format_unit(s):
-    """Auto-format the unit by elevating superscripts etc."""
-    old_new = [
-        ("m-2", "m$^{-2}$"),
-        ("m-3", "m$^{-3}$"),
-        ("s-1", "s$^{-1}$"),
-    ]
-    for old, new in old_new:
-        s = s.replace(old, new)
-    return s
-
-
-# SR_TODO <<< possible to merge with MetaDatum (common base class or so)?
-@summarizable
-class MetaDatumCombo(GenericModel, Generic[ValueT]):
-    """Individual pice of meta data comprising multiple values."""
-
-    name: str
-    values: Tuple[ValueT, ...]
-    attrs: Dict[str, Any] = {}  # need Optional[] despite validator?
-
-    class Config:  # noqa
-        # allow_mutation = False  # SR_TODO consider this
-        validate_all = True
-        validate_assigment = True  # SR_TODO obsolete if allow_mutation = False
-
-    # SR_TMP <<< copy-pasted from MetaDatum
-    @validator("attrs", pre=True, always=True)
-    def _init_attrs(cls, value: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-        if value is None:
-            return {}
-        return value
-
-    # SR_TMP <<< clean this up! sucky interface! (or is it?)
-    @property
-    def value(self):
-        return list(self.values)
-
-    # SR_TODO <<< Ensure this is covered by the test suite (currently isn't)!
     def format(self, *, join=" / ", **kwargs):
-        return join.join(
-            [format_meta_datum(value, self.attrs, **kwargs) for value in self.values]
-        )
+        if self.is_combo:
+            # SR_TODO make sure this is covered by a test (it currently isn't)!
+            return join.join(
+                [self._format_meta_datum(value=v, **kwargs) for v in self.value]
+            )
+        return self._format_meta_datum(**kwargs)
 
-    # SR_TMP <<< quick'n'dirty
-    def __repr__(self):
-        from pprint import pformat  # isort:skip
+    def _format_meta_datum(
+        self, *, value=None, fmt=None, escape_format=False, join=None, **kwargs_dt,
+    ):
+        if value is None:
+            value = self.value
+        if isinstance(value, datetime):
+            return self._format_meta_datum_datetime(value=value, **kwargs_dt)
+        if fmt is None:
+            fmt = "g" if isinstance(value, (float, int)) else ""
+        s = f"{{:{fmt}}}".format(value)
+        if escape_format:
+            s = s.replace("{", "{{").replace("}", "}}")
+        return s
 
-        return pformat(self.summarize())
+    def _format_meta_datum_datetime(
+        self, *, value=None, rel=False, rel_start=None, rel_neg_ok=True,
+    ):
+        if value is None:
+            value = self.value
+        if not rel:
+            return value.strftime("%Y-%m-%d %H:%M %Z")
+        if rel_start is None:
+            rel_start = self.attrs["start"]
+        seconds = (value - rel_start).total_seconds()
+        if not rel_neg_ok and seconds < 0:
+            seconds = -seconds
+        hours = int(seconds / 3600)
+        mins = int((seconds / 3600) % 1 * 60)
+        return f"{hours:02d}:{mins:02d}$\\,$h"
+
+    def format_unit(self):
+        """Auto-format the unit by elevating superscripts etc."""
+        # SR_TMP <
+        if not self.name.endswith("unit"):
+            warn(
+                f"calling {type(self).__name__}.format_unit: "
+                f"'{self.name}' does not appear to be a unit"
+            )
+        # SR_TMP >
+        old_new = [
+            ("m-2", "m$^{-2}$"),
+            ("m-3", "m$^{-3}$"),
+            ("s-1", "s$^{-1}$"),
+        ]
+        s = self.value
+        for old, new in old_new:
+            s = s.replace(old, new)
+        return s
 
 
 @summarizable
@@ -286,7 +263,7 @@ class MetaData:
 
 def init_mdatum(type_, name, attrs=None):
     def f(value):
-        if not isinstance(value, (MetaDatum, MetaDatumCombo)):
+        if not isinstance(value, MetaDatum):
             value = MetaDatum[type_](name=name, value=value, attrs=attrs)
         return value
 
@@ -330,20 +307,13 @@ class MetaDataVariable(BaseModel, MetaData):
     """
 
     setup: Setup
-    # long_name: MetaDatum[str]
-    # short_name: MetaDatum[str]
-    # unit: MetaDatum[str]
-    # level_bot: MetaDatum[float]
-    # level_top: MetaDatum[float]
-    # level_bot_unit: MetaDatum[str]
-    # level_top_unit: MetaDatum[str]
-    long_name: Union[MetaDatum[str], MetaDatumCombo[str]]
-    short_name: Union[MetaDatum[str], MetaDatumCombo[str]]
-    unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    level_bot: Union[MetaDatum[float], MetaDatumCombo[float]]
-    level_top: Union[MetaDatum[float], MetaDatumCombo[float]]
-    level_bot_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    level_top_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
+    long_name: MetaDatum[str]
+    short_name: MetaDatum[str]
+    unit: MetaDatum[str]
+    level_bot: MetaDatum[float]
+    level_top: MetaDatum[float]
+    level_bot_unit: MetaDatum[str]
+    level_top_unit: MetaDatum[str]
 
     _init_long_name = init_mdatum(str, "long_name")
     _init_short_name = init_mdatum(str, "short_name")
@@ -354,12 +324,11 @@ class MetaDataVariable(BaseModel, MetaData):
     _init_level_top_unit = init_mdatum(str, "level_top_unit")
 
     class Config:  # noqa
-        arbitrary_types_allowed = True  # SR_TMP MetaDatumCombo
         extra = "forbid"
 
     def fmt_level_unit(self):
-        unit_bottom = format_unit(self.level_bot_unit.value)
-        unit_top = format_unit(self.level_top_unit.value)
+        unit_bottom = self.level_bot_unit.format_unit()
+        unit_top = self.level_top_unit.format_unit()
         if unit_bottom != unit_top:
             raise Exception(
                 f"bottom and top level units differ: '{unit_bottom}' != '{unit_top}'"
@@ -444,28 +413,17 @@ class MetaDataRelease(BaseModel, MetaData):
     """
 
     setup: Setup
-    # site_name: MetaDatum[str]
-    # site_lat: MetaDatum[float]
-    # site_lon: MetaDatum[float]
-    # height: MetaDatum[float]
-    # rate: MetaDatum[float]
-    # mass: MetaDatum[float]
-    # height_unit: MetaDatum[str]
-    # rate_unit: MetaDatum[str]
-    # mass_unit: MetaDatum[str]
-    # start: MetaDatum[datetime.datetime]
-    # end: MetaDatum[datetime.datetime]
-    site_name: Union[MetaDatum[str], MetaDatumCombo[str]]
-    site_lat: Union[MetaDatum[float], MetaDatumCombo[float]]
-    site_lon: Union[MetaDatum[float], MetaDatumCombo[float]]
-    height: Union[MetaDatum[float], MetaDatumCombo[float]]
-    rate: Union[MetaDatum[float], MetaDatumCombo[float]]
-    mass: Union[MetaDatum[float], MetaDatumCombo[float]]
-    height_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    rate_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    mass_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    start: Union[MetaDatum[datetime.datetime], MetaDatumCombo[datetime.datetime]]
-    end: Union[MetaDatum[datetime.datetime], MetaDatumCombo[datetime.datetime]]
+    site_name: MetaDatum[str]
+    site_lat: MetaDatum[float]
+    site_lon: MetaDatum[float]
+    height: MetaDatum[float]
+    rate: MetaDatum[float]
+    mass: MetaDatum[float]
+    height_unit: MetaDatum[str]
+    rate_unit: MetaDatum[str]
+    mass_unit: MetaDatum[str]
+    start: MetaDatum[datetime]
+    end: MetaDatum[datetime]
 
     _init_site_name = init_mdatum(str, "site_name")
     _init_site_lat = init_mdatum(float, "site_lat")
@@ -476,8 +434,8 @@ class MetaDataRelease(BaseModel, MetaData):
     _init_height_unit = init_mdatum(str, "height_unit")
     _init_rate_unit = init_mdatum(str, "rate_unit")
     _init_mass_unit = init_mdatum(str, "mass_unit")
-    _init_start = init_mdatum(datetime.datetime, "start")
-    _init_end = init_mdatum(datetime.datetime, "end")
+    _init_start = init_mdatum(datetime, "start")
+    _init_end = init_mdatum(datetime, "end")
 
     @root_validator
     def _set_start(cls, values):
@@ -486,7 +444,6 @@ class MetaDataRelease(BaseModel, MetaData):
         return values
 
     class Config:  # noqa
-        arbitrary_types_allowed = True  # SR_TMP MetaDatumCombo
         extra = "forbid"
 
 
@@ -517,26 +474,16 @@ class MetaDataSpecies(BaseModel, MetaData):
     """
 
     setup: Setup
-    # name: MetaDatum[str]
-    # half_life: MetaDatum[float]
-    # deposit_vel: MetaDatum[float]
-    # sediment_vel: MetaDatum[float]
-    # washout_coeff: MetaDatum[float]
-    # washout_exponent: MetaDatum[float]
-    # half_life_unit: MetaDatum[str]
-    # deposit_vel_unit: MetaDatum[str]
-    # sediment_vel_unit: MetaDatum[str]
-    # washout_coeff_unit: MetaDatum[str]
-    name: Union[MetaDatum[str], MetaDatumCombo[str]]
-    half_life: Union[MetaDatum[float], MetaDatumCombo[float]]
-    deposit_vel: Union[MetaDatum[float], MetaDatumCombo[float]]
-    sediment_vel: Union[MetaDatum[float], MetaDatumCombo[float]]
-    washout_coeff: Union[MetaDatum[float], MetaDatumCombo[float]]
-    washout_exponent: Union[MetaDatum[float], MetaDatumCombo[float]]
-    half_life_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    deposit_vel_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    sediment_vel_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    washout_coeff_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
+    name: MetaDatum[str]
+    half_life: MetaDatum[float]
+    deposit_vel: MetaDatum[float]
+    sediment_vel: MetaDatum[float]
+    washout_coeff: MetaDatum[float]
+    washout_exponent: MetaDatum[float]
+    half_life_unit: MetaDatum[str]
+    deposit_vel_unit: MetaDatum[str]
+    sediment_vel_unit: MetaDatum[str]
+    washout_coeff_unit: MetaDatum[str]
 
     _init_name = init_mdatum(str, "name")
     _init_half_life = init_mdatum(float, "half_life")
@@ -550,7 +497,6 @@ class MetaDataSpecies(BaseModel, MetaData):
     _init_washout_coeff_unit = init_mdatum(str, "washout_coeff_unit")
 
     class Config:  # noqa
-        arbitrary_types_allowed = True  # SR_TMP MetaDatumCombo
         extra = "forbid"
 
 
@@ -573,24 +519,18 @@ class MetaDataSimulation(BaseModel, MetaData):
     """
 
     setup: Setup
-    # model_name: MetaDatum[str]
-    # start: MetaDatum[datetime.datetime]
-    # end: MetaDatum[datetime.datetime]
-    # now: MetaDatum[datetime.datetime]
-    # integr_start: MetaDatum[datetime.datetime]
-    # integr_type: MetaDatum[str]
-    model_name: Union[MetaDatum[str], MetaDatumCombo[str]]
-    start: Union[MetaDatum[datetime.datetime], MetaDatumCombo[datetime.datetime]]
-    end: Union[MetaDatum[datetime.datetime], MetaDatumCombo[datetime.datetime]]
-    now: Union[MetaDatum[datetime.datetime], MetaDatumCombo[datetime.datetime]]
-    integr_start: Union[MetaDatum[datetime.datetime], MetaDatumCombo[datetime.datetime]]
-    integr_type: Union[MetaDatum[str], MetaDatumCombo[str]]
+    model_name: MetaDatum[str]
+    start: MetaDatum[datetime]
+    end: MetaDatum[datetime]
+    now: MetaDatum[datetime]
+    integr_start: MetaDatum[datetime]
+    integr_type: MetaDatum[str]
 
     _init_model_name = init_mdatum(str, "model_name")
-    _init_start = init_mdatum(datetime.datetime, "start")
-    _init_end = init_mdatum(datetime.datetime, "end")
-    _init_now = init_mdatum(datetime.datetime, "now")
-    _init_integr_start = init_mdatum(datetime.datetime, "integr_start")
+    _init_start = init_mdatum(datetime, "start")
+    _init_end = init_mdatum(datetime, "end")
+    _init_now = init_mdatum(datetime, "now")
+    _init_integr_start = init_mdatum(datetime, "integr_start")
     _init_integr_type = init_mdatum(str, "integr_type")
 
     @root_validator
@@ -602,7 +542,6 @@ class MetaDataSimulation(BaseModel, MetaData):
         return values
 
     class Config:  # noqa
-        arbitrary_types_allowed = True  # SR_TMP MetaDatumCombo
         extra = "forbid"
 
     def fmt_integr_period(self):
@@ -666,39 +605,22 @@ class MetaDataCollection:
 
         self._objs[name] = obj
 
-    def merge_with(self, others, **replace):
+    def merge_with(
+        self, others: Sequence["MetaDataCollection"], **replace: Dict[str, Any],
+    ) -> "MetaDataCollection":
         """Create a new instance by merging this and others.
 
         Args:
-            others (list[MetaDataCollection]): Other instances to be merged
-                with this.
+            others: Other instances to be merged with this.
 
-            **replace (dicts): Collections of meta data to be replaced in the
-                merged ``MetaData*`` instances of the shared collection
-                instance. Must contain all meta data that differ between any
-                of the collections.
+            **replace: Collections of meta data to be replaced in the merged
+                ``MetaData*`` instances of the shared collection instance.
+                Must contain all meta data that differ between any of the
+                collections.
 
         Returns:
-            MetaDataCollection: New meta data collection instance derived
-                from ``self`` and ``others``. Note that no input collection is
-                changed.
-
-        Example:
-            In this example, all meta data collection in a list are merged and
-            the variable and release site names replaced, implying those differ
-            between the collections. Wether that is the case or not, all other
-            meta data must be the same, otherwise an error is issued.
-
-            mdata_coll = mdata_colls[0].merge_with(
-                mdata_colls[1:],
-                variable={
-                    'long_name': 'X Sum',
-                    'short_name': 'x_sum',
-                },
-                release={
-                    'site_name': 'source',
-                },
-            )
+            New meta data collection instance derived from ``self`` and
+                ``others``. Note that no input collection is changed.
 
         """
         kwargs = {"setup": self.setup}
@@ -772,13 +694,13 @@ class MetaDataCollector:
 
         # Start and end timesteps of simulation
         _ga = self.ncattrs_global
-        ts_start = datetime.datetime(
+        ts_start = datetime(
             *time.strptime(_ga["ibdate"] + _ga["ibtime"], "%Y%m%d%H%M%S")[:6],
-            tzinfo=datetime.timezone.utc,
+            tzinfo=timezone.utc,
         )
-        ts_end = datetime.datetime(
+        ts_end = datetime(
             *time.strptime(_ga["iedate"] + _ga["ietime"], "%Y%m%d%H%M%S")[:6],
-            tzinfo=datetime.timezone.utc,
+            tzinfo=timezone.utc,
         )
 
         # Current time step and start time step of current integration period
@@ -828,17 +750,17 @@ class MetaDataCollector:
         match = rx.match(var.units)
         if not match:
             raise Exception(f"cannot extract start from units '{var.units}'")
-        start = datetime.datetime(
+        start = datetime(
             int(match["yyyy"]),
             int(match["mm"]),
             int(match["dd"]),
             int(match["HH"]),
             int(match["MM"]),
-            tzinfo=datetime.timezone.utc,
+            tzinfo=timezone.utc,
         )
 
         # Determine time since start
-        delta_tot = datetime.timedelta(seconds=int(var[idx]))
+        delta_tot = timedelta(seconds=int(var[idx]))
 
         # Determine current timestep
         now = start + delta_tot
@@ -876,8 +798,8 @@ class MetaDataCollector:
         numpoint = ReleasePoint.from_file(self.fi, idx)
 
         sim_start = mdata["simulation"]["start"]
-        start = sim_start + datetime.timedelta(seconds=numpoint.rel_start)
-        end = sim_start + datetime.timedelta(seconds=numpoint.rel_end)
+        start = sim_start + timedelta(seconds=numpoint.rel_start)
+        end = sim_start + timedelta(seconds=numpoint.rel_end)
 
         site_lat = np.mean([numpoint.lllat, numpoint.urlat])
         site_lon = np.mean([numpoint.lllon, numpoint.urlon])

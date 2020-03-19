@@ -454,11 +454,11 @@ class FileReader:
 class FlexPartDataFixer:
     """Fix issues with FlexPart NetCDF output."""
 
-    possible_var_names: List[Union[str, List[str]]] = [
+    possible_var_names: List[Union[str, Tuple[str, ...]]] = [
         "Cs-137",
         "I-131a",
-        ["Cs-137", "I-131a"],
-        ["I-131a", "Cs-137"],
+        ("Cs-137", "I-131a"),
+        ("I-131a", "Cs-137"),
     ]
     conversion_factor_by_unit: Dict[str, float] = {
         "ng kg-1": 1.0e-12,
