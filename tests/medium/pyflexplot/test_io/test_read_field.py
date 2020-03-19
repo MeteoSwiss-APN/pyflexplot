@@ -43,6 +43,7 @@ def get_var_name_ref(setup, var_names_ref):
 @dataclass
 class Conf:
     datafilename: str
+    model: str
     var_names_ref: List[str]
     setup_dct: Dict[str, Any]
     derived_setup_params: List[Dict[str, Any]] = field(default_factory=list)
@@ -63,6 +64,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
     [
         Conf(
             datafilename=datafilename1,
+            model="cosmo1",
             var_names_ref=[f"spec002"],
             setup_dct={
                 "infile": "dummy.nc",
@@ -76,6 +78,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
         ),
         Conf(
             datafilename=datafilename1,
+            model="cosmo1",
             var_names_ref=[f"DD_spec002"],
             setup_dct={
                 "infile": "dummy.nc",
@@ -90,6 +93,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
         ),
         Conf(
             datafilename=datafilename1,
+            model="cosmo1",
             var_names_ref=[f"WD_spec002"],
             setup_dct={
                 "infile": "dummy.nc",
@@ -104,6 +108,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
         ),
         Conf(
             datafilename=datafilename1,
+            model="cosmo1",
             var_names_ref=[f"WD_spec002", f"DD_spec002"],
             setup_dct={
                 "infile": "dummy.nc",
@@ -118,6 +123,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
         ),
         Conf(
             datafilename=datafilename2,
+            model="cosmo1",
             var_names_ref=[f"spec001"],
             setup_dct={
                 "infile": "dummy.nc",
@@ -131,6 +137,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
         ),
         Conf(
             datafilename=datafilename2,
+            model="cosmo1",
             var_names_ref=[f"WD_spec001", f"DD_spec001"],
             setup_dct={
                 "infile": "dummy.nc",
@@ -145,6 +152,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
         ),
         Conf(
             datafilename=datafilename1,
+            model="cosmo1",
             var_names_ref=[f"DD_spec001", f"DD_spec002", f"WD_spec001", f"WD_spec002"],
             setup_dct={
                 "infile": "dummy.nc",
@@ -157,19 +165,20 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             },
             scale_fld_ref=1 / 3,
         ),
-        # Conf(
-        #     datafilename=datafilename3,
-        #     var_names_ref=[f"spec002"],
-        #     setup_dct={
-        #         "infile": "dummy.nc",
-        #         "outfile": "dummy.png",
-        #         "variable": "concentration",
-        #         "species_id": 2,
-        #         "level": 1,
-        #         "integrate": False,
-        #         "time": 3,
-        #     },
-        # ),
+        Conf(
+            datafilename=datafilename3,
+            model="ifs",
+            var_names_ref=[f"spec001_mr"],
+            setup_dct={
+                "infile": "dummy.nc",
+                "outfile": "dummy.png",
+                "variable": "concentration",
+                "species_id": 1,
+                "level": 1,
+                "integrate": False,
+                "time": 10,
+            },
+        ),
     ],
 )
 def test_single(datadir, conf):  # noqa:F811
@@ -194,7 +203,10 @@ def test_single(datadir, conf):  # noqa:F811
         np.nansum(
             [
                 read_nc_var(
-                    datafile, get_var_name_ref(setup, conf.var_names_ref), setup,
+                    datafile,
+                    get_var_name_ref(setup, conf.var_names_ref),
+                    setup,
+                    conf.model,
                 )
                 for setup in setups
             ],
@@ -213,6 +225,7 @@ def test_single(datadir, conf):  # noqa:F811
     [
         Conf(
             datafilename=datafilename1,
+            model="cosmo1",
             var_names_ref=[f"spec002"],
             setup_dct={
                 "infile": "dummy.nc",
@@ -227,6 +240,7 @@ def test_single(datadir, conf):  # noqa:F811
         ),
         Conf(
             datafilename=datafilename1,
+            model="cosmo1",
             var_names_ref=[f"spec002"],
             setup_dct={
                 "infile": "dummy.nc",
@@ -241,6 +255,7 @@ def test_single(datadir, conf):  # noqa:F811
         ),
         Conf(
             datafilename=datafilename1,
+            model="cosmo1",
             var_names_ref=[f"DD_spec002"],
             setup_dct={
                 "infile": "dummy.nc",
@@ -254,6 +269,7 @@ def test_single(datadir, conf):  # noqa:F811
         ),
         Conf(
             datafilename=datafilename1,
+            model="cosmo1",
             var_names_ref=[f"WD_spec002"],
             setup_dct={
                 "infile": "dummy.nc",
@@ -267,6 +283,7 @@ def test_single(datadir, conf):  # noqa:F811
         ),
         Conf(
             datafilename=datafilename1,
+            model="cosmo1",
             var_names_ref=[f"WD_spec001", f"DD_spec001"],
             setup_dct={
                 "infile": "dummy.nc",
@@ -280,6 +297,7 @@ def test_single(datadir, conf):  # noqa:F811
         ),
         Conf(
             datafilename=datafilename2,
+            model="cosmo1",
             var_names_ref=[f"spec001"],
             setup_dct={
                 "infile": "dummy.nc",
@@ -295,6 +313,7 @@ def test_single(datadir, conf):  # noqa:F811
         ),
         Conf(
             datafilename=datafilename2,
+            model="cosmo1",
             var_names_ref=[f"WD_spec001", f"DD_spec001"],
             setup_dct={
                 "infile": "dummy.nc",
@@ -342,6 +361,7 @@ def test_multiple(datadir, conf):  # noqa:F811
                     datafile,
                     get_var_name_ref(var_setup, conf.var_names_ref),
                     var_setup,
+                    conf.model,
                 )
             ]
             fld_ref_i = np.nansum(flds_ref_i, axis=0)

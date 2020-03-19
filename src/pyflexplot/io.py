@@ -66,7 +66,7 @@ class FileReader:
         self.lat: Optional[np.ndarray] = None
         self.lon: Optional[np.ndarray] = None
 
-        self.fixer: FlexPartDataFixer = FlexPartDataFixer()
+        self.fixer: FlexPartDataFixer = FlexPartDataFixer(self)
 
     def run(
         self, fld_specs_lst: Sequence[FldSpecs]
@@ -338,7 +338,7 @@ class FileReader:
             with nc4.Dataset(in_file_path, "r") as fi:
                 for idx_time, fld_specs in enumerate(fld_specs_lst):
                     mdata_lst_i = [
-                        collect_meta_data(fi, var_setup)
+                        collect_meta_data(fi, var_setup, self.model)
                         for var_setup in fld_specs.var_setups
                     ]
                     mdata = mdata_lst_i[0].merge_with(mdata_lst_i[1:])
@@ -384,7 +384,7 @@ class FileReader:
     def _read_nc_var(self, fi: nc4.Dataset, setup: Setup) -> np.ndarray:
 
         # Select variable in file
-        var_name = nc_var_name(setup)
+        var_name = nc_var_name(setup, self.model)
         nc_var = fi.variables[var_name]
 
         # SR_TMP < TODO remove once CoreSetup implemented
@@ -394,20 +394,31 @@ class FileReader:
         assert len(setup.numpoint) == 1
         # SR_TMP >
 
+        # SR_TMP < TODO proper solution
+        if setup.level is None:
+            level = None
+        else:
+            level = next(iter(setup.level))
+        # SR_TMP >
+
         # Indices of field along NetCDF dimensions
         dim_idcs_by_name = {
-            "level": None if setup.level is None else next(iter(setup.level)),
             "nageclass": next(iter(setup.nageclass)),
             "noutrel": next(iter(setup.noutrel)),
             "numpoint": next(iter(setup.numpoint)),
+            "level": level,
             "time": slice(None),  # SR_TMP
+            "rlat": slice(None),  # SR_TMP
+            "rlon": slice(None),  # SR_TMP
         }
-        if self.rotated_pole:
-            dim_idcs_by_name["rlat"] = slice(None)  # SR_TMP
-            dim_idcs_by_name["rlon"] = slice(None)  # SR_TMP
-        else:
-            dim_idcs_by_name["latitude"] = slice(None)  # SR_TMP
-            dim_idcs_by_name["longitude"] = slice(None)  # SR_TMP
+        # SR_TMP < TODO proper implementation
+        if self.model == "ifs":
+            dim_idcs_by_name["pointspec"] = dim_idcs_by_name.pop("numpoint")  # SR_TMP
+            dim_idcs_by_name["height"] = dim_idcs_by_name.pop("level")  # SR_TMP
+            assert not self.rotated_pole  # SR_TMP
+            dim_idcs_by_name["latitude"] = dim_idcs_by_name.pop("rlat")  # SR_TMP
+            dim_idcs_by_name["longitude"] = dim_idcs_by_name.pop("rlon")  # SR_TMP
+        # SR_TMP >
 
         # Assemble indices for slicing
         idcs: List[Any] = [None] * len(nc_var.dimensions)
@@ -431,7 +442,7 @@ class FileReader:
 
             # Check that the index along the dimension is valid
             if dim_idx is None:
-                raise Exception("dimension is None", {**err_dct, "idx": idx})
+                raise Exception("dimension is None", idx, err_dct)
 
             idcs[idx] = dim_idx
 
@@ -443,13 +454,13 @@ class FileReader:
         else:
             raise Exception(
                 "unknown variable dimension",
+                nc_var.dimensions[idx],
                 {
-                    "dim_idcs_by_name": dim_idcs_by_name,
-                    "dimension": nc_var.dimensions[idx],
-                    "dimensions": nc_var.dimensions,
-                    "idcs": idcs,
                     "idx": idx,
                     "var_name": var_name,
+                    "idcs": idcs,
+                    "dimensions": nc_var.dimensions,
+                    "dim_idcs_by_name": dim_idcs_by_name,
                 },
             )
         check_array_indices(nc_var.shape, idcs)
@@ -497,6 +508,9 @@ class FileReader:
 class FlexPartDataFixer:
     """Fix issues with FlexPart NetCDF output."""
 
+    def __init__(self, file_reader):
+        self.file_reader = file_reader
+
     possible_var_names: List[Union[str, Tuple[str, ...]]] = [
         "Cs-137",
         "I-131a",
@@ -509,6 +523,14 @@ class FlexPartDataFixer:
     }
 
     def fix_nc_var(self, nc_var: nc4.Variable, fld: np.ndarray) -> None:
+        if self.file_reader.model in ["cosmo2", "cosmo1"]:
+            self._fix_nc_var_cosmo(nc_var, fld)
+        elif self.file_reader.model == "ifs":
+            pass
+        else:
+            raise NotImplementedError("model", self.file_reader.model)
+
+    def _fix_nc_var_cosmo(self, nc_var, fld):
         name = nc_var.getncattr("long_name").split("_")[0]
         unit = nc_var.getncattr("units")
         if name not in self.possible_var_names:
@@ -524,6 +546,14 @@ class FlexPartDataFixer:
     def fix_meta_data(
         self, mdata: Union[MetaDataCollection, Sequence[MetaDataCollection]],
     ) -> None:
+        if self.file_reader.model in ["cosmo2", "cosmo1"]:
+            self._fix_meta_data_cosmo(mdata)
+        elif self.file_reader.model == "ifs":
+            pass
+        else:
+            raise NotImplementedError("model", self.file_reader.model)
+
+    def _fix_meta_data_cosmo(self, mdata):
         if isinstance(mdata, Sequence):
             for mdata_i in mdata:
                 self.fix_meta_data(mdata_i)

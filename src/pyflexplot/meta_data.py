@@ -638,27 +638,18 @@ class MetaDataCollection:
         return {name: dict(objs) for name, objs in self}
 
 
-def collect_meta_data(fi, setup):
-    return MetaDataCollector(fi, setup, WORDS).run()
+def collect_meta_data(fi, setup, model):
+    return MetaDataCollector(fi, setup, WORDS, model).run()
 
 
 class MetaDataCollector:
     """Collect meta data for a field from an open NetCDF file."""
 
-    def __init__(self, fi, setup, words):
-        """Create an instance of ``MetaDataCollector``.
-
-        Args:
-            fi (netCDF4.Dataset): An open FLEXPART NetCDF file.
-
-            setup (Setup): Setup.
-
-            words (Words): Words.
-
-        """
+    def __init__(self, fi, setup, words, model):  # SR_TMP TODO properly pass model
         self.fi = fi
         self.setup = setup
         self._words = words
+        self.model = model  # SR_TMP
 
         # Collect all global attributes
         self.ncattrs_global = {
@@ -673,7 +664,7 @@ class MetaDataCollector:
             }
 
         # Select attributes of field variable
-        self.ncattrs_field = self.ncattrs_vars[nc_var_name(self.setup)]
+        self.ncattrs_field = self.ncattrs_vars[nc_var_name(self.setup, self.model)]
 
     def run(self):
         """Collect meta data."""
@@ -778,8 +769,11 @@ class MetaDataCollector:
     def collect_grid_mdata(self, mdata):
         """Collect grid meta data."""
 
-        np_lat = self.ncattrs_vars["rotated_pole"]["grid_north_pole_latitude"]
-        np_lon = self.ncattrs_vars["rotated_pole"]["grid_north_pole_longitude"]
+        try:  # SR_TMP
+            np_lat = self.ncattrs_vars["rotated_pole"]["grid_north_pole_latitude"]
+            np_lon = self.ncattrs_vars["rotated_pole"]["grid_north_pole_longitude"]
+        except KeyError:  # SR_TMP
+            np_lat, np_lon = -1, -1
 
         return {
             "north_pole_lat": np_lat,
@@ -804,7 +798,7 @@ class MetaDataCollector:
         site_lat = np.mean([numpoint.lllat, numpoint.urlat])
         site_lon = np.mean([numpoint.lllon, numpoint.urlon])
         site_name = numpoint.name
-        site_name = {"Goesgen": r"G$\mathrm{\"o}$sgen"}.get(site_name)
+        site_name = {"Goesgen": r"G$\mathrm{\"o}$sgen"}.get(site_name, "???")  # SR_TMP
 
         height = np.mean([numpoint.zbot, numpoint.ztop])
         height_unit = self._words["m_agl", self.setup.lang].s
@@ -854,7 +848,10 @@ class MetaDataCollector:
             level_top = -1
         else:
             level_unit = self._words["m_agl", self.setup.lang].s
-            _var = self.fi.variables["level"]
+            try:  # SR_TMP IFS
+                _var = self.fi.variables["level"]
+            except KeyError:  # SR_TMP IFS
+                _var = self.fi.variables["height"]  # SR_TMP IFS
             level_bot = 0.0 if idx == 0 else float(_var[idx - 1])
             level_top = float(_var[idx])
 
@@ -874,12 +871,17 @@ class MetaDataCollector:
         substance = self._get_substance()
 
         # Get deposition and washout data
-        name_core = nc_var_name(self.setup)
+        name_core = nc_var_name(self.setup, self.model)
         if self.setup.variable == "deposition":  # SR_TMP
             name_core = name_core[3:]
-        deposit_vel = self.ncattrs_vars[f"DD_{name_core}"]["dryvel"]
-        washout_coeff = self.ncattrs_vars[f"WD_{name_core}"]["weta"]
-        washout_exponent = self.ncattrs_vars[f"WD_{name_core}"]["wetb"]
+        try:  # SR_TMP IFS
+            deposit_vel = self.ncattrs_vars[f"DD_{name_core}"]["dryvel"]
+            washout_coeff = self.ncattrs_vars[f"WD_{name_core}"]["weta"]
+            washout_exponent = self.ncattrs_vars[f"WD_{name_core}"]["wetb"]
+        except KeyError:  # SR_TMP IFS
+            deposit_vel = -1  # SR_TMP IFS
+            washout_coeff = -1  # SR_TMP IFS
+            washout_exponent = -1  # SR_TMP IFS
 
         # Get half life information
         try:
@@ -1147,11 +1149,16 @@ class ReleasePoint:
 
 
 # SR_TMP <<< TODO figure out what to do with this
-def nc_var_name(setup):
+def nc_var_name(setup, model):
     result = []
     for species_id in setup.species_id:
         if setup.variable == "concentration":
-            result.append(f"spec{species_id:03d}")
+            if model in ["cosmo2", "cosmo1"]:
+                result.append(f"spec{species_id:03d}")
+            elif model == "ifs":
+                result.append(f"spec{species_id:03d}_mr")
+            else:
+                raise ValueError("unknown model", model)
         elif setup.variable == "deposition":
             prefix = {"wet": "WD", "dry": "DD"}[setup.deposition_type]
             result.append(f"{prefix}_spec{species_id:03d}")

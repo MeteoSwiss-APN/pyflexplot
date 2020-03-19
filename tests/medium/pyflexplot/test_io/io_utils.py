@@ -12,13 +12,18 @@ from pyflexplot.setup import CoreSetup
 
 
 # SR_TMP <<<
-def fix_nc_fld(fld):
+def fix_nc_fld(fld, model):
     """Fix field read directly from NetCDF file."""
-    fld[:] *= 1e-12
+    if model in ["cosmo1", "cosmo2"]:
+        fld[:] *= 1e-12
+    elif model == "ifs":
+        pass
+    else:
+        raise NotImplementedError("model", model)
 
 
-def read_nc_var(path, var_name, setup):
-    # + assert isinstance(setup, CoreSetup)  # SR_TODO
+def read_nc_var(path, var_name, setup, model):
+    # + assert isinstance(setup, CoreSetup)  # SR_TODO (if that's indeed the goal)
     with nc4.Dataset(path, "r") as fi:
         var = fi.variables[var_name]
 
@@ -36,7 +41,7 @@ def read_nc_var(path, var_name, setup):
                     assert len(setup.time) == 1
                     idx = slice(setup.time[0] + 1)
                 # SR_TMP >
-            elif dim_name == "level":
+            elif dim_name in ["level", "height"]:
                 # SR_TMP <
                 if isinstance(setup, CoreSetup) or setup.level is None:
                     idx = setup.level
@@ -44,7 +49,7 @@ def read_nc_var(path, var_name, setup):
                     assert len(setup.level) == 1
                     idx = next(iter(setup.level))
                 # SR_TMP >
-            elif dim_name in ["nageclass", "numpoint", "noutrel"]:
+            elif dim_name in ["nageclass", "numpoint", "noutrel", "pointspec"]:
                 idx = 0  # SR_HC
             else:
                 raise NotImplementedError(f"dimension '{dim_name}'")
@@ -55,7 +60,7 @@ def read_nc_var(path, var_name, setup):
         assert len(fld.shape) == 3
 
         # Fix some issues with the input data
-        fix_nc_fld(fld)  # SR_TMP
+        fix_nc_fld(fld, model)  # SR_TMP
 
         # Reduce time dimension
         if setup.variable == "concentration":

@@ -112,6 +112,7 @@ class TestReadFieldEnsemble_Single:
                             self.datafile(ens_member_id, datafile_fmt=datafile_fmt),
                             var_name,
                             setup,
+                            model="cosmo2",  # SR_TMP
                         )
                         for ens_member_id in self.ens_member_ids
                     ]
@@ -209,7 +210,6 @@ class TestReadFieldEnsemble_Multiple:
     def _run_core(
         self, datafile_fmt, var_names_ref, fct_reduce_mem, scale_fld_ref, fld_specs_lst,
     ):
-
         # Collect merged variables specifications
         compressed_setups = SetupCollection(
             [fld_specs.fld_setup for fld_specs in fld_specs_lst],
@@ -230,6 +230,7 @@ class TestReadFieldEnsemble_Multiple:
                         self.datafile(ens_member_id, datafile_fmt=datafile_fmt),
                         get_var_name_ref(setup, var_names_ref),
                         setup,
+                        model="cosmo2",  # SR_TMP
                     )
                     * scale_fld_ref
                     for ens_member_id in self.ens_member_ids
