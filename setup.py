@@ -53,7 +53,7 @@ dependencies.append("shapely @ git+ssh://git@github.com/Toblerity/shapely.git")
 
 scripts = [
     "pyflexplot=pyflexplot.cli:cli",
-    "crop-netcdf=tools.crop_netcdf:main",
+    "crop-netcdf=srtools.crop_netcdf:main",
 ]
 
 setup(
