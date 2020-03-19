@@ -168,7 +168,7 @@ def test_single(datadir, conf):  # noqa:F811
     assert len(fld_specs_lst) == 1
 
     # Read input field
-    fields, attrs_lst = read_files(datafile, conf.setup, fld_specs_lst)
+    fields, mdata_lst = read_files(datafile, conf.setup, fld_specs_lst)
     assert len(fields) == 1
     fld = fields[0].fld
 
@@ -313,9 +313,9 @@ def test_multiple(datadir, conf):  # noqa:F811
         setup = fld_specs.fld_setup
 
         # Read input fields
-        fields, attrs_lst = read_files(datafile, setup, fld_specs_lst_i)
+        fields, mdata_lst = read_files(datafile, setup, fld_specs_lst_i)
         assert len(fields) == 1
-        assert len(attrs_lst) == 1
+        assert len(mdata_lst) == 1
         fld = np.array([field.fld for field in fields])
         assert fld.shape[0] == 1
         fld = fld[0]

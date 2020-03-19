@@ -21,13 +21,13 @@ import numpy as np
 from srutils.various import check_array_indices
 
 # Local
-from .attr import AttrMult
-from .attr import collect_attrs
-from .attr import nc_var_name
 from .data import Field
 from .data import cloud_arrival_time
 from .data import merge_fields
 from .data import threshold_agreement
+from .meta_data import MetaDataCollection
+from .meta_data import collect_meta_data
+from .meta_data import nc_var_name
 from .setup import Setup
 from .specs import FldSpecs
 
@@ -69,13 +69,11 @@ class FileReader:
 
     def run(
         self, fld_specs_lst: Sequence[FldSpecs]
-    ) -> Tuple[List[Field], List[AttrMult]]:
+    ) -> Tuple[List[Field], List[MetaDataCollection]]:
         """Read one or more fields from a file from disc.
 
         Args:
             fld_specs_lst: List of field specifications.
-
-            lang: Language ('en': English, 'de': German). Defaults to 'en'.
 
         """
         timeless_fld_specs_lst: List[FldSpecs]
@@ -89,7 +87,7 @@ class FileReader:
 
         # Collect fields and attrs
         fields: List[Field] = []
-        attrs_lst: List[AttrMult] = []
+        mdata_lst: List[MetaDataCollection] = []
         for timeless_fld_specs, time_idcs in zip(timeless_fld_specs_lst, time_idcs_lst):
             # SR_TMP < TODO cleaner  mypy-compatible solution
             ens_member_ids: Optional[Sequence[int]]
@@ -101,11 +99,56 @@ class FileReader:
             self.n_members = 1 if not ens_member_ids else len(ens_member_ids)
             self.in_file_path_lst = self._prepare_in_file_path_lst(ens_member_ids)
 
-            fields_i, attrs_lst_i = self._create_fields(timeless_fld_specs, time_idcs)
+            fields_i, mdata_lst_i = self._create_fields(timeless_fld_specs, time_idcs,)
             fields.extend(fields_i)
-            attrs_lst.extend(attrs_lst_i)
+            mdata_lst.extend(mdata_lst_i)
 
-        return fields, attrs_lst
+        return fields, mdata_lst
+
+    def _extract_time_idcs_from_fld_specs(
+        self, fld_specs_lst: Sequence[FldSpecs]
+    ) -> Tuple[List[FldSpecs], List[List[int]]]:
+        """Group field specs that differ only in their time dimension.
+
+        Steps:
+         -  Group field specifications objects such that all in one group only
+            differ in time.
+         -  Collect the respective time indices.
+         -  Merge the group into one field specifications instance with time
+            dimension 'slice(None)'.
+
+        """
+
+        timeless_fld_specs_lst: List[FldSpecs] = []
+        time_idcs_lst: List[List[int]] = []
+        for fld_specs in fld_specs_lst:
+
+            # Extract time index (shoult be the same for all)
+            time_idcs = fld_specs.collect_equal("time")
+            assert len(time_idcs) == 1  # SR_DBG
+            time_idx: int = next(iter(time_idcs))
+
+            # Reset time index
+            dummy_time_idx = -999  # SR_TMP TODO find proper solution
+            timeless_fld_specs: FldSpecs = deepcopy(fld_specs)
+            timeless_fld_specs.var_setups = [
+                var_setup.derive({"time": [dummy_time_idx]})
+                for var_setup in timeless_fld_specs.var_setups
+            ]
+
+            for idx, timeless_fld_specs_i in enumerate(timeless_fld_specs_lst):
+                if timeless_fld_specs == timeless_fld_specs_i:
+                    if time_idx in time_idcs_lst[idx]:
+                        raise Exception(
+                            "duplicate fld_specs", time_idx, timeless_fld_specs,
+                        )
+                    time_idcs_lst[idx].append(time_idx)
+                    break
+            else:
+                timeless_fld_specs_lst.append(timeless_fld_specs)
+                time_idcs_lst.append([time_idx])
+
+        return timeless_fld_specs_lst, time_idcs_lst
 
     def _prepare_in_file_path_lst(
         self, ens_member_ids: Union[Optional[Tuple[None]], Sequence[int]]
@@ -141,7 +184,7 @@ class FileReader:
 
     def _create_fields(
         self, timeless_fld_specs: FldSpecs, time_idcs: Sequence[int],
-    ) -> Tuple[List[Field], List[AttrMult]]:
+    ) -> Tuple[List[Field], List[MetaDataCollection]]:
         # SR_TMP <
         fld_setup = timeless_fld_specs.fld_setup
         var_setups = timeless_fld_specs.var_setups
@@ -168,15 +211,15 @@ class FileReader:
             timeless_fld_specs, time_idcs,
         )
 
-        # Collect time-step-specific data attributes
-        attrs_lst: List[AttrMult] = self._collect_attrs(fld_specs_lst)
+        # Collect time-step-specific data meta data
+        mdata_lst: List[MetaDataCollection] = self._collect_meta_data(fld_specs_lst)
 
         # Create fields at requested time steps for all members
         fields: List[Field] = self._create_field_objs(
             fld_specs_lst, fld_time, time_stats,
         )
 
-        return fields, attrs_lst
+        return fields, mdata_lst
 
     def _read_fld_time_mem(self, setups: Sequence[Setup]) -> np.ndarray:
         """Read field over all time steps for each member."""
@@ -247,103 +290,41 @@ class FileReader:
             fld_specs_lst.append(fld_specs_i)
         return fld_specs_lst
 
-    def _collect_attrs(self, fld_specs_lst: Sequence[FldSpecs]) -> List[AttrMult]:
-        """Collect time-step-specific data attributes."""
+    def _collect_meta_data(
+        self, fld_specs_lst: Sequence[FldSpecs]
+    ) -> List[MetaDataCollection]:
+        """Collect time-step-specific data meta data."""
 
-        # Collect attributes at requested time steps for all members
-        attrs_by_reqtime_mem = self._collect_attrs_by_reqtime_mem(fld_specs_lst)
-
-        # Merge attributes across members
-        attrs_lst: List[AttrMult] = self._merge_attrs_across_members(
-            attrs_by_reqtime_mem,
-        )
-
-        # Fix some known issues with the NetCDF input data
-        self.fixer.fix_attrs(attrs_lst)
-
-        return attrs_lst
-
-    def _collect_attrs_by_reqtime_mem(
-        self, fld_specs_lst: Sequence[FldSpecs],
-    ) -> np.ndarray:
-        """Collect attributes at requested time steps for all members."""
-        attrs_by_reqtime_mem: np.ndarray = np.full(
-            [self.n_reqtime, self.n_members], None,
-        )
+        # Collect meta data at requested time steps for all members
+        shape = (self.n_reqtime, self.n_members)
+        mdata_by_reqtime_mem: np.ndarray = np.full(shape, None)
         for idx_mem, in_file_path in enumerate(self.in_file_path_lst or []):
             with nc4.Dataset(in_file_path, "r") as fi:
                 for idx_time, fld_specs in enumerate(fld_specs_lst):
-                    attrs_lst = [
-                        collect_attrs(fi, var_setup)
+                    mdata_lst_i = [
+                        collect_meta_data(fi, var_setup)
                         for var_setup in fld_specs.var_setups
                     ]
-                    attrs = attrs_lst[0].merge_with(attrs_lst[1:])
-                    attrs_by_reqtime_mem[idx_time, idx_mem] = attrs
-        return attrs_by_reqtime_mem
+                    mdata = mdata_lst_i[0].merge_with(mdata_lst_i[1:])
+                    mdata_by_reqtime_mem[idx_time, idx_mem] = mdata
 
-    def _extract_time_idcs_from_fld_specs(
-        self, fld_specs_lst: Sequence[FldSpecs]
-    ) -> Tuple[List[FldSpecs], List[List[int]]]:
-        """Group field specs that differ only in their time dimension.
-
-        Steps:
-         -  Group field specifications objects such that all in one group only
-            differ in time.
-         -  Collect the respective time indices.
-         -  Merge the group into one field specifications instance with time
-            dimension 'slice(None)'.
-
-        """
-
-        timeless_fld_specs_lst: List[FldSpecs] = []
-        time_idcs_lst: List[List[int]] = []
-        for fld_specs in fld_specs_lst:
-
-            # Extract time index (shoult be the same for all)
-            time_idcs = fld_specs.collect_equal("time")
-            assert len(time_idcs) == 1  # SR_DBG
-            time_idx: int = next(iter(time_idcs))
-
-            # Reset time index
-            dummy_time_idx = -999  # SR_TMP TODO find proper solution
-            timeless_fld_specs: FldSpecs = deepcopy(fld_specs)
-            timeless_fld_specs.var_setups = [
-                var_setup.derive({"time": [dummy_time_idx]})
-                for var_setup in timeless_fld_specs.var_setups
-            ]
-
-            for idx, timeless_fld_specs_i in enumerate(timeless_fld_specs_lst):
-                if timeless_fld_specs == timeless_fld_specs_i:
-                    if time_idx in time_idcs_lst[idx]:
-                        raise Exception(
-                            "duplicate fld_specs", time_idx, timeless_fld_specs,
-                        )
-                    time_idcs_lst[idx].append(time_idx)
-                    break
-            else:
-                timeless_fld_specs_lst.append(timeless_fld_specs)
-                time_idcs_lst.append([time_idx])
-
-        return timeless_fld_specs_lst, time_idcs_lst
-
-    def _merge_attrs_across_members(
-        self, attrs_by_reqtime_mem: np.ndarray,
-    ) -> List[AttrMult]:
-        """Merge attributes at each time step across members.
-
-        As they should be member-independent, check that they are indeed the
-        same for all and pick those of the first member.
-
-        """
+        # Merge meta data across members
         for i_mem in range(1, self.n_members or 1):
-            for i_reqtime, attrs in enumerate(attrs_by_reqtime_mem[:, i_mem]):
-                attrs_ref = attrs_by_reqtime_mem[i_reqtime, 0]
-                if attrs != attrs_ref:
+            for i_reqtime, mdata in enumerate(mdata_by_reqtime_mem[:, i_mem]):
+                mdata_ref = mdata_by_reqtime_mem[i_reqtime, 0]
+                if mdata != mdata_ref:
                     raise Exception(
-                        f"attributes differ between members 0 and {i_mem}: "
-                        f"{attrs_ref} != {attrs}"
+                        f"meta data differ between members 0 and {i_mem}",
+                        mdata_ref,
+                        mdata,
                     )
-        return attrs_by_reqtime_mem[:, 0].tolist()
+        mdata_lst: List[MetaDataCollection] = mdata_by_reqtime_mem[:, 0].tolist()
+        assert isinstance(next(iter(mdata_lst)), MetaDataCollection)  # SR_DBG
+
+        # Fix some known issues with the NetCDF input data
+        self.fixer.fix_meta_data(mdata_lst)
+
+        return mdata_lst
 
     def _create_field_objs(
         self,
@@ -497,20 +478,20 @@ class FlexPartDataFixer:
             )
         fld[:] *= fact
 
-    def fix_attrs(
-        self, attrs_or_attrs_lst: Union[AttrMult, Sequence[AttrMult]]
+    def fix_meta_data(
+        self, mdata: Union[MetaDataCollection, Sequence[MetaDataCollection]],
     ) -> None:
-        if isinstance(attrs_or_attrs_lst, list):
-            for attrs in attrs_or_attrs_lst:
-                self.fix_attrs(attrs)
+        if isinstance(mdata, Sequence):
+            for mdata_i in mdata:
+                self.fix_meta_data(mdata_i)
             return
-        attrs = attrs_or_attrs_lst
+        assert isinstance(mdata, MetaDataCollection)  # mypy
 
-        name = attrs.species.name.value
+        name = mdata.species.name.value
         if name not in self.possible_var_names:
             raise NotImplementedError("variable", {"name": name})
-        integr_type = attrs.simulation.integr_type.value
-        old_unit = attrs.variable.unit.value
+        integr_type = mdata.simulation.integr_type.value
+        old_unit = mdata.variable.unit.value
 
         new_unit = "Bq"
         if integr_type == "mean":
@@ -529,4 +510,4 @@ class FlexPartDataFixer:
             raise NotImplementedError(
                 "unknown unit", {"name": name, "unit": old_unit},
             )
-        attrs.variable.unit.value = new_unit
+        mdata.variable.unit.value = new_unit

@@ -34,8 +34,8 @@ ValueT = TypeVar("ValueT", int, float, str, datetime.datetime)
 
 
 @summarizable
-class Attr(GenericModel, Generic[ValueT]):
-    """Individual attribute."""
+class MetaDatum(GenericModel, Generic[ValueT]):
+    """Individual piece of meta data."""
 
     name: str
     value: ValueT
@@ -58,7 +58,7 @@ class Attr(GenericModel, Generic[ValueT]):
 
     @classmethod
     def create(cls, type_, *, name, value, attrs=None):
-        return Attr[type_](name=name, value=value, attrs=attrs)
+        return MetaDatum[type_](name=name, value=value, attrs=attrs)
 
     # SR_TODO Extract methods into separate class (e.g., AttrMerger)!
     def merge_with(self, others, replace=None):
@@ -69,8 +69,10 @@ class Attr(GenericModel, Generic[ValueT]):
         reduced_value = self._reduce_values(others, replace)
         attrs = self._merge_attrs(others)
         if isiterable(reduced_value, str_ok=False):
-            return AttrMult(self.type_, name=name, values=reduced_value, attrs=attrs)
-        return Attr(name=name, value=reduced_value, attrs=attrs)
+            return MetaDatumCombo(
+                self.type_, name=name, values=reduced_value, attrs=attrs
+            )
+        return MetaDatum(name=name, value=reduced_value, attrs=attrs)
 
     def _reduce_values(self, others, replace):
         values = [self.value]
@@ -155,8 +157,8 @@ def format_unit(s):
     return s
 
 
-@summarizable(attrs=["type_", "name", "attrs", "_attr_lst"])
-class AttrMult:
+@summarizable(attrs=["type_", "name", "attrs", "_objs"])
+class MetaDatumCombo:
     def __init__(self, type_, *, name, values, attrs=None):
         assert attrs is not None  # SR_TMP
 
@@ -167,16 +169,16 @@ class AttrMult:
         assert isiterable(values, str_ok=False)
 
         # Initialize individual attributes
-        self._attr_lst = [
-            Attr[type_](name=name, value=value, attrs=attrs) for value in values
+        self._objs = [
+            MetaDatum[type_](name=name, value=value, attrs=attrs) for value in values
         ]
 
     @property
     def value(self):
-        return [a.value for a in self._attr_lst]
+        return [a.value for a in self._objs]
 
     def format(self, fmt=None, *, join=" / ", **kwargs):
-        return join.join([a.format(fmt, **kwargs) for a in self._attr_lst])
+        return join.join([a.format(fmt, **kwargs) for a in self._objs])
 
     # SR_TMP <<< quick'n'dirty
     def __repr__(self):
@@ -193,17 +195,17 @@ class AttrMult:
             return False
         if self.attrs != other.attrs:
             return False
-        if self._attr_lst != other._attr_lst:
+        if self._objs != other._objs:
             return False
         return True
 
 
 @summarizable
-class AttrGroup:
-    """Base class for attributes."""
+class MetaData:
+    """Base class for meta data."""
 
     def __init__(self, setup, **kwargs):
-        if type(self) is AttrGroup:
+        if type(self) is MetaData:
             raise ValueError(
                 f"{type(self).__name__} should be subclassed, not instatiated"
             )
@@ -217,37 +219,33 @@ class AttrGroup:
         raise DeprecationWarning()
 
     # SR_TODO <<< eliminate iterator method
-    def iter_attr_items(self):
-        result = []  # SR_DBG
+    def iter_objs(self):
         if isinstance(self, BaseModel):  # SR_TMP
-            for attr in self.__fields__:
-                if attr != "setup":
-                    # yield attr, getattr(self, attr)
-                    result.append((attr, getattr(self, attr)))  # SR_DBG
+            for name in self.__fields__:
+                if name != "setup":
+                    yield name, getattr(self, name)
         else:
-            for attr in dir(self):
+            for name in dir(self):
                 if not (
-                    attr.startswith("_") or attr in ["setup", "summarizable_attrs"]
+                    name.startswith("_") or name in ["setup", "summarizable_attrs"]
                 ):
-                    value = getattr(self, attr)
-                    if not callable(value):
-                        # yield attr, value
-                        result.append((attr, value))  # SR_DBG
-        return result  # SR_DBG
+                    datum = getattr(self, name)
+                    if not callable(datum):
+                        yield name, datum
 
     def merge_with(self, others, replace=None):
         """Create new instance by merging self and others.
 
         Args:
-            others (list[AttrGroup]): Other instances of the same attributes
+            others (list[MetaData]): Other instances of the same meta data
                 class, to be merged with this one.
 
             replace (dict, optional): Attributes to be replaced in the merged
-                instance. Must contain all attributes that differ between any
+                instance. Must contain all meta data that differ between any
                 of the instances to be merged. Defaults to '{}'.
 
         Returns:
-            AttrGroup: Merged instance derived from ``self`` and ``others``.
+            MetaData: Merged instance derived from ``self`` and ``others``.
                 Note that no input instance is changed.
 
         """
@@ -273,24 +271,24 @@ class AttrGroup:
         setup = Setup.compress(SetupCollection([self.setup] + other_setups))
 
         kwargs = {}
-        for attr, value in self.iter_attr_items():
-            other_values = [getattr(o, attr) for o in others]
-            kwargs[attr] = value.merge_with(other_values, replace=replace.get(attr))
+        for name, datum in self.iter_objs():
+            other_data = [getattr(o, name) for o in others]
+            kwargs[name] = datum.merge_with(other_data, replace=replace.get(name))
 
         return type(self)(setup=setup, **kwargs)
 
 
-def init_attr(type_, name, attrs=None):
+def init_mdatum(type_, name, attrs=None):
     def f(value):
-        if not isinstance(value, (Attr, AttrMult)):
-            value = Attr[type_](name=name, value=value, attrs=attrs)
+        if not isinstance(value, (MetaDatum, MetaDatumCombo)):
+            value = MetaDatum[type_](name=name, value=value, attrs=attrs)
         return value
 
     return validator(name, pre=True, allow_reuse=True)(f)
 
 
-class AttrGroupGrid(BaseModel, AttrGroup):
-    """Grid attributes.
+class MetaDataGrid(BaseModel, MetaData):
+    """Grid meta data.
 
     Attributes:
         north_pole_lat: Latitude of rotated north pole.
@@ -300,15 +298,15 @@ class AttrGroupGrid(BaseModel, AttrGroup):
     """
 
     setup: Setup
-    north_pole_lat: Attr[float]
-    north_pole_lon: Attr[float]
+    north_pole_lat: MetaDatum[float]
+    north_pole_lon: MetaDatum[float]
 
-    _init_north_pole_lat = init_attr(float, "north_pole_lat")
-    _init_north_pole_lon = init_attr(float, "north_pole_lon")
+    _init_north_pole_lat = init_mdatum(float, "north_pole_lat")
+    _init_north_pole_lon = init_mdatum(float, "north_pole_lon")
 
 
-class AttrGroupVariable(BaseModel, AttrGroup):
-    """Variable attributes.
+class MetaDataVariable(BaseModel, MetaData):
+    """Variable meta data.
 
     Attributes:
         name: Name of variable.
@@ -326,31 +324,31 @@ class AttrGroupVariable(BaseModel, AttrGroup):
     """
 
     setup: Setup
-    # long_name: Attr[str]
-    # short_name: Attr[str]
-    # unit: Attr[str]
-    # level_bot: Attr[float]
-    # level_top: Attr[float]
-    # level_bot_unit: Attr[str]
-    # level_top_unit: Attr[str]
-    long_name: Union[Attr[str], AttrMult]
-    short_name: Union[Attr[str], AttrMult]
-    unit: Union[Attr[str], AttrMult]
-    level_bot: Union[Attr[float], AttrMult]
-    level_top: Union[Attr[float], AttrMult]
-    level_bot_unit: Union[Attr[str], AttrMult]
-    level_top_unit: Union[Attr[str], AttrMult]
+    # long_name: MetaDatum[str]
+    # short_name: MetaDatum[str]
+    # unit: MetaDatum[str]
+    # level_bot: MetaDatum[float]
+    # level_top: MetaDatum[float]
+    # level_bot_unit: MetaDatum[str]
+    # level_top_unit: MetaDatum[str]
+    long_name: Union[MetaDatum[str], MetaDatumCombo]
+    short_name: Union[MetaDatum[str], MetaDatumCombo]
+    unit: Union[MetaDatum[str], MetaDatumCombo]
+    level_bot: Union[MetaDatum[float], MetaDatumCombo]
+    level_top: Union[MetaDatum[float], MetaDatumCombo]
+    level_bot_unit: Union[MetaDatum[str], MetaDatumCombo]
+    level_top_unit: Union[MetaDatum[str], MetaDatumCombo]
 
-    _init_long_name = init_attr(str, "long_name")
-    _init_short_name = init_attr(str, "short_name")
-    _init_unit = init_attr(str, "unit")
-    _init_level_bot = init_attr(float, "level_bot")
-    _init_level_top = init_attr(float, "level_top")
-    _init_level_bot_unit = init_attr(str, "level_bot_unit")
-    _init_level_top_unit = init_attr(str, "level_top_unit")
+    _init_long_name = init_mdatum(str, "long_name")
+    _init_short_name = init_mdatum(str, "short_name")
+    _init_unit = init_mdatum(str, "unit")
+    _init_level_bot = init_mdatum(float, "level_bot")
+    _init_level_top = init_mdatum(float, "level_top")
+    _init_level_bot_unit = init_mdatum(str, "level_bot_unit")
+    _init_level_top_unit = init_mdatum(str, "level_top_unit")
 
     class Config:  # noqa
-        arbitrary_types_allowed = True  # SR_TMP AttrMult
+        arbitrary_types_allowed = True  # SR_TMP MetaDatumCombo
         extra = "forbid"
 
     def fmt_level_unit(self):
@@ -411,8 +409,8 @@ class AttrGroupVariable(BaseModel, AttrGroup):
         return bots, tops, n
 
 
-class AttrGroupRelease(BaseModel, AttrGroup):
-    """Release attributes.
+class MetaDataRelease(BaseModel, MetaData):
+    """Release meta data.
 
     Attributes:
         site_name: Name of release site.
@@ -440,40 +438,40 @@ class AttrGroupRelease(BaseModel, AttrGroup):
     """
 
     setup: Setup
-    # site_name: Attr[str]
-    # site_lat: Attr[float]
-    # site_lon: Attr[float]
-    # height: Attr[float]
-    # rate: Attr[float]
-    # mass: Attr[float]
-    # height_unit: Attr[str]
-    # rate_unit: Attr[str]
-    # mass_unit: Attr[str]
-    # start: Attr[datetime.datetime]
-    # end: Attr[datetime.datetime]
-    site_name: Union[Attr[str], AttrMult]
-    site_lat: Union[Attr[float], AttrMult]
-    site_lon: Union[Attr[float], AttrMult]
-    height: Union[Attr[float], AttrMult]
-    rate: Union[Attr[float], AttrMult]
-    mass: Union[Attr[float], AttrMult]
-    height_unit: Union[Attr[str], AttrMult]
-    rate_unit: Union[Attr[str], AttrMult]
-    mass_unit: Union[Attr[str], AttrMult]
-    start: Union[Attr[datetime.datetime], AttrMult]
-    end: Union[Attr[datetime.datetime], AttrMult]
+    # site_name: MetaDatum[str]
+    # site_lat: MetaDatum[float]
+    # site_lon: MetaDatum[float]
+    # height: MetaDatum[float]
+    # rate: MetaDatum[float]
+    # mass: MetaDatum[float]
+    # height_unit: MetaDatum[str]
+    # rate_unit: MetaDatum[str]
+    # mass_unit: MetaDatum[str]
+    # start: MetaDatum[datetime.datetime]
+    # end: MetaDatum[datetime.datetime]
+    site_name: Union[MetaDatum[str], MetaDatumCombo]
+    site_lat: Union[MetaDatum[float], MetaDatumCombo]
+    site_lon: Union[MetaDatum[float], MetaDatumCombo]
+    height: Union[MetaDatum[float], MetaDatumCombo]
+    rate: Union[MetaDatum[float], MetaDatumCombo]
+    mass: Union[MetaDatum[float], MetaDatumCombo]
+    height_unit: Union[MetaDatum[str], MetaDatumCombo]
+    rate_unit: Union[MetaDatum[str], MetaDatumCombo]
+    mass_unit: Union[MetaDatum[str], MetaDatumCombo]
+    start: Union[MetaDatum[datetime.datetime], MetaDatumCombo]
+    end: Union[MetaDatum[datetime.datetime], MetaDatumCombo]
 
-    _init_site_name = init_attr(str, "site_name")
-    _init_site_lat = init_attr(float, "site_lat")
-    _init_site_lon = init_attr(float, "site_lon")
-    _init_height = init_attr(float, "height")
-    _init_rate = init_attr(float, "rate")
-    _init_mass = init_attr(float, "mass")
-    _init_height_unit = init_attr(str, "height_unit")
-    _init_rate_unit = init_attr(str, "rate_unit")
-    _init_mass_unit = init_attr(str, "mass_unit")
-    _init_start = init_attr(datetime.datetime, "start")
-    _init_end = init_attr(datetime.datetime, "end")
+    _init_site_name = init_mdatum(str, "site_name")
+    _init_site_lat = init_mdatum(float, "site_lat")
+    _init_site_lon = init_mdatum(float, "site_lon")
+    _init_height = init_mdatum(float, "height")
+    _init_rate = init_mdatum(float, "rate")
+    _init_mass = init_mdatum(float, "mass")
+    _init_height_unit = init_mdatum(str, "height_unit")
+    _init_rate_unit = init_mdatum(str, "rate_unit")
+    _init_mass_unit = init_mdatum(str, "mass_unit")
+    _init_start = init_mdatum(datetime.datetime, "start")
+    _init_end = init_mdatum(datetime.datetime, "end")
 
     @root_validator
     def _set_start(cls, values):
@@ -482,12 +480,12 @@ class AttrGroupRelease(BaseModel, AttrGroup):
         return values
 
     class Config:  # noqa
-        arbitrary_types_allowed = True  # SR_TMP AttrMult
+        arbitrary_types_allowed = True  # SR_TMP MetaDatumCombo
         extra = "forbid"
 
 
-class AttrGroupSpecies(BaseModel, AttrGroup):
-    """Species attributes.
+class MetaDataSpecies(BaseModel, MetaData):
+    """Species meta data.
 
     Attributes:
         name: Species name.
@@ -513,45 +511,45 @@ class AttrGroupSpecies(BaseModel, AttrGroup):
     """
 
     setup: Setup
-    # name: Attr[str]
-    # half_life: Attr[float]
-    # deposit_vel: Attr[float]
-    # sediment_vel: Attr[float]
-    # washout_coeff: Attr[float]
-    # washout_exponent: Attr[float]
-    # half_life_unit: Attr[str]
-    # deposit_vel_unit: Attr[str]
-    # sediment_vel_unit: Attr[str]
-    # washout_coeff_unit: Attr[str]
-    name: Union[Attr[str], AttrMult]
-    half_life: Union[Attr[float], AttrMult]
-    deposit_vel: Union[Attr[float], AttrMult]
-    sediment_vel: Union[Attr[float], AttrMult]
-    washout_coeff: Union[Attr[float], AttrMult]
-    washout_exponent: Union[Attr[float], AttrMult]
-    half_life_unit: Union[Attr[str], AttrMult]
-    deposit_vel_unit: Union[Attr[str], AttrMult]
-    sediment_vel_unit: Union[Attr[str], AttrMult]
-    washout_coeff_unit: Union[Attr[str], AttrMult]
+    # name: MetaDatum[str]
+    # half_life: MetaDatum[float]
+    # deposit_vel: MetaDatum[float]
+    # sediment_vel: MetaDatum[float]
+    # washout_coeff: MetaDatum[float]
+    # washout_exponent: MetaDatum[float]
+    # half_life_unit: MetaDatum[str]
+    # deposit_vel_unit: MetaDatum[str]
+    # sediment_vel_unit: MetaDatum[str]
+    # washout_coeff_unit: MetaDatum[str]
+    name: Union[MetaDatum[str], MetaDatumCombo]
+    half_life: Union[MetaDatum[float], MetaDatumCombo]
+    deposit_vel: Union[MetaDatum[float], MetaDatumCombo]
+    sediment_vel: Union[MetaDatum[float], MetaDatumCombo]
+    washout_coeff: Union[MetaDatum[float], MetaDatumCombo]
+    washout_exponent: Union[MetaDatum[float], MetaDatumCombo]
+    half_life_unit: Union[MetaDatum[str], MetaDatumCombo]
+    deposit_vel_unit: Union[MetaDatum[str], MetaDatumCombo]
+    sediment_vel_unit: Union[MetaDatum[str], MetaDatumCombo]
+    washout_coeff_unit: Union[MetaDatum[str], MetaDatumCombo]
 
-    _init_name = init_attr(str, "name")
-    _init_half_life = init_attr(float, "half_life")
-    _init_deposit_vel = init_attr(float, "deposit_vel")
-    _init_sediment_vel = init_attr(float, "sediment_vel")
-    _init_washout_coeff = init_attr(float, "washout_coeff")
-    _init_washout_exponent = init_attr(float, "washout_exponent")
-    _init_half_life_unit = init_attr(str, "half_life_unit")
-    _init_deposit_vel_unit = init_attr(str, "deposit_vel_unit")
-    _init_sediment_vel_unit = init_attr(str, "sediment_vel_unit")
-    _init_washout_coeff_unit = init_attr(str, "washout_coeff_unit")
+    _init_name = init_mdatum(str, "name")
+    _init_half_life = init_mdatum(float, "half_life")
+    _init_deposit_vel = init_mdatum(float, "deposit_vel")
+    _init_sediment_vel = init_mdatum(float, "sediment_vel")
+    _init_washout_coeff = init_mdatum(float, "washout_coeff")
+    _init_washout_exponent = init_mdatum(float, "washout_exponent")
+    _init_half_life_unit = init_mdatum(str, "half_life_unit")
+    _init_deposit_vel_unit = init_mdatum(str, "deposit_vel_unit")
+    _init_sediment_vel_unit = init_mdatum(str, "sediment_vel_unit")
+    _init_washout_coeff_unit = init_mdatum(str, "washout_coeff_unit")
 
     class Config:  # noqa
-        arbitrary_types_allowed = True  # SR_TMP AttrMult
+        arbitrary_types_allowed = True  # SR_TMP MetaDatumCombo
         extra = "forbid"
 
 
-class AttrGroupSimulation(BaseModel, AttrGroup):
-    """Simulation attributes.
+class MetaDataSimulation(BaseModel, MetaData):
+    """Simulation meta data.
 
     Attributes:
         model_name: Name of the model.
@@ -569,25 +567,25 @@ class AttrGroupSimulation(BaseModel, AttrGroup):
     """
 
     setup: Setup
-    # model_name: Attr[str]
-    # start: Attr[datetime.datetime]
-    # end: Attr[datetime.datetime]
-    # now: Attr[datetime.datetime]
-    # integr_start: Attr[datetime.datetime]
-    # integr_type: Attr[str]
-    model_name: Union[Attr[str], AttrMult]
-    start: Union[Attr[datetime.datetime], AttrMult]
-    end: Union[Attr[datetime.datetime], AttrMult]
-    now: Union[Attr[datetime.datetime], AttrMult]
-    integr_start: Union[Attr[datetime.datetime], AttrMult]
-    integr_type: Union[Attr[str], AttrMult]
+    # model_name: MetaDatum[str]
+    # start: MetaDatum[datetime.datetime]
+    # end: MetaDatum[datetime.datetime]
+    # now: MetaDatum[datetime.datetime]
+    # integr_start: MetaDatum[datetime.datetime]
+    # integr_type: MetaDatum[str]
+    model_name: Union[MetaDatum[str], MetaDatumCombo]
+    start: Union[MetaDatum[datetime.datetime], MetaDatumCombo]
+    end: Union[MetaDatum[datetime.datetime], MetaDatumCombo]
+    now: Union[MetaDatum[datetime.datetime], MetaDatumCombo]
+    integr_start: Union[MetaDatum[datetime.datetime], MetaDatumCombo]
+    integr_type: Union[MetaDatum[str], MetaDatumCombo]
 
-    _init_model_name = init_attr(str, "model_name")
-    _init_start = init_attr(datetime.datetime, "start")
-    _init_end = init_attr(datetime.datetime, "end")
-    _init_now = init_attr(datetime.datetime, "now")
-    _init_integr_start = init_attr(datetime.datetime, "integr_start")
-    _init_integr_type = init_attr(str, "integr_type")
+    _init_model_name = init_mdatum(str, "model_name")
+    _init_start = init_mdatum(datetime.datetime, "start")
+    _init_end = init_mdatum(datetime.datetime, "end")
+    _init_now = init_mdatum(datetime.datetime, "now")
+    _init_integr_start = init_mdatum(datetime.datetime, "integr_start")
+    _init_integr_type = init_mdatum(str, "integr_type")
 
     @root_validator
     def _set_start(cls, values):
@@ -598,7 +596,7 @@ class AttrGroupSimulation(BaseModel, AttrGroup):
         return values
 
     class Config:  # noqa
-        arbitrary_types_allowed = True  # SR_TMP AttrMult
+        arbitrary_types_allowed = True  # SR_TMP MetaDatumCombo
         extra = "forbid"
 
     def fmt_integr_period(self):
@@ -606,29 +604,29 @@ class AttrGroupSimulation(BaseModel, AttrGroup):
         return f"{integr_period.total_seconds()/3600:g}$\\,$h"
 
 
-class AttrGroupCollection:
-    """Collection of FLEXPART attributes."""
+class MetaDataCollection:
+    """Collection of meta data."""
 
     def __init__(self, setup, *, grid, variable, release, species, simulation):
-        """Initialize an instance of ``AttrGroupCollection``.
+        """Initialize an instance of ``MetaDataCollection``.
 
         Args:
             setup (Setup): Setup.
 
         Kwargs:
-            grid (dict): Kwargs passed to ``AttrGroupGrid``.
+            grid (dict): Kwargs passed to ``MetaDataGrid``.
 
-            variable (dict): Kwargs passed to ``AttrGroupVariable``.
+            variable (dict): Kwargs passed to ``MetaDataVariable``.
 
-            release (dict): Kwargs passed to ``AttrGroupRelease``.
+            release (dict): Kwargs passed to ``MetaDataRelease``.
 
-            species (dict): Kwargs passed to ``AttrGroupSpecies``.
+            species (dict): Kwargs passed to ``MetaDataSpecies``.
 
-            simulation (dict): Kwargs passed to ``AttrGroupSimulation``.
+            simulation (dict): Kwargs passed to ``MetaDataSimulation``.
 
         """
         self.setup = setup
-        self._attrs = {}
+        self._objs = {}
         self.add("grid", grid)
         self.add("variable", variable)
         self.add("release", release)
@@ -636,57 +634,57 @@ class AttrGroupCollection:
         self.add("simulation", simulation)
 
     def __eq__(self, other):
-        return self._attrs == other._attrs
+        return self._objs == other._objs
 
     def __getattr__(self, name):
         try:
-            return self._attrs[name]
+            return self._objs[name]
         except KeyError:
             raise AttributeError(f"{type(self).__name__}.{name}")
 
-    def add(self, name, attrs):
+    def add(self, name, obj):
 
-        if not isinstance(attrs, AttrGroup):
+        if not isinstance(obj, MetaData):
             cls_by_name = {
-                "grid": AttrGroupGrid,
-                "variable": AttrGroupVariable,
-                "release": AttrGroupRelease,
-                "species": AttrGroupSpecies,
-                "simulation": AttrGroupSimulation,
+                "grid": MetaDataGrid,
+                "variable": MetaDataVariable,
+                "release": MetaDataRelease,
+                "species": MetaDataSpecies,
+                "simulation": MetaDataSimulation,
             }
             try:
                 cls_group = cls_by_name[name]
             except KeyError:
-                raise ValueError(f"missing AttrGroup class for name '{name}'")
-            attrs = cls_group(setup=self.setup, **attrs)
+                raise ValueError(f"missing MetaData class for name '{name}'")
+            obj = cls_group(setup=self.setup, **obj)
 
-        self._attrs[name] = attrs
+        self._objs[name] = obj
 
     def merge_with(self, others, **replace):
         """Create a new instance by merging this and others.
 
         Args:
-            others (list[AttrGroupCollection]): Other instances to be merged
+            others (list[MetaDataCollection]): Other instances to be merged
                 with this.
 
-            **replace (dicts): Collections of attributes to be replaced in the
-                merged ``AttrGroup*`` instances of the shared collection
-                instance. Must contain all attributes that differ between any
+            **replace (dicts): Collections of meta data to be replaced in the
+                merged ``MetaData*`` instances of the shared collection
+                instance. Must contain all meta data that differ between any
                 of the collections.
 
         Returns:
-            AttrGroupCollection: New attributes collection instance derived
+            MetaDataCollection: New meta data collection instance derived
                 from ``self`` and ``others``. Note that no input collection is
                 changed.
 
         Example:
-            In this example, all attributes collection in a list are merged and
+            In this example, all meta data collection in a list are merged and
             the variable and release site names replaced, implying those differ
             between the collections. Wether that is the case or not, all other
-            attributes must be the same, otherwise an error is issued.
+            meta data must be the same, otherwise an error is issued.
 
-            attrs_coll = attrs_colls[0].merge_with(
-                attrs_colls[1:],
+            mdata_coll = mdata_colls[0].merge_with(
+                mdata_colls[1:],
                 variable={
                     'long_name': 'X Sum',
                     'short_name': 'x_sum',
@@ -698,29 +696,29 @@ class AttrGroupCollection:
 
         """
         kwargs = {"setup": self.setup}
-        for name in sorted(self._attrs.keys()):
-            other_attrs = [o._attrs[name] for o in others]
-            merged = self._attrs[name].merge_with(other_attrs, replace.get(name))
-            kwargs[name] = dict(merged.iter_attr_items())
+        for name in sorted(self._objs.keys()):
+            other_objs = [o._objs[name] for o in others]
+            merged = self._objs[name].merge_with(other_objs, replace.get(name))
+            kwargs[name] = dict(merged.iter_objs())
         return type(self)(**kwargs)
 
     def __iter__(self):
-        for name, attr in sorted(self._attrs.items()):
-            yield name, attr
+        for name, datum in sorted(self._objs.items()):
+            yield name, datum
 
     def asdict(self):
-        return {name: dict(attrs) for name, attrs in self}
+        return {name: dict(objs) for name, objs in self}
 
 
-def collect_attrs(fi, setup):
-    return AttrsCollector(fi, setup, WORDS).run()
+def collect_meta_data(fi, setup):
+    return MetaDataCollector(fi, setup, WORDS).run()
 
 
-class AttrsCollector:
-    """Collect attributes for a field from an open NetCDF file."""
+class MetaDataCollector:
+    """Collect meta data for a field from an open NetCDF file."""
 
     def __init__(self, fi, setup, words):
-        """Create an instance of ``AttrsCollector``.
+        """Create an instance of ``MetaDataCollector``.
 
         Args:
             fi (netCDF4.Dataset): An open FLEXPART NetCDF file.
@@ -750,19 +748,19 @@ class AttrsCollector:
         self.ncattrs_field = self.ncattrs_vars[nc_var_name(self.setup)]
 
     def run(self):
-        """Collect attributes."""
+        """Collect meta data."""
 
-        attrs = {}
-        attrs["simulation"] = self.collect_simulation_attrs(attrs)
-        attrs["grid"] = self.collect_grid_attrs(attrs)
-        attrs["release"] = self.collect_release_attrs(attrs)
-        attrs["species"] = self.collect_species_attrs(attrs)
-        attrs["variable"] = self.collect_variable_attrs(attrs)
+        mdata = {}
+        mdata["simulation"] = self.collect_simulation_mdata(mdata)
+        mdata["grid"] = self.collect_grid_mdata(mdata)
+        mdata["release"] = self.collect_release_mdata(mdata)
+        mdata["species"] = self.collect_species_mdata(mdata)
+        mdata["variable"] = self.collect_variable_mdata(mdata)
 
-        return AttrGroupCollection(self.setup, **attrs)
+        return MetaDataCollection(self.setup, **mdata)
 
-    def collect_simulation_attrs(self, attrs):
-        """Collect simulation attributes."""
+    def collect_simulation_mdata(self, mdata):
+        """Collect simulation meta data."""
 
         model_name = "COSMO-?"  # SR_HC
 
@@ -849,8 +847,8 @@ class AttrsCollector:
 
         return now, ts_integr_start
 
-    def collect_grid_attrs(self, attrs):
-        """Collect grid attributes."""
+    def collect_grid_mdata(self, mdata):
+        """Collect grid meta data."""
 
         np_lat = self.ncattrs_vars["rotated_pole"]["grid_north_pole_latitude"]
         np_lon = self.ncattrs_vars["rotated_pole"]["grid_north_pole_longitude"]
@@ -860,8 +858,8 @@ class AttrsCollector:
             "north_pole_lon": np_lon,
         }
 
-    def collect_release_attrs(self, attrs):
-        """Collect release point attributes."""
+    def collect_release_mdata(self, mdata):
+        """Collect release point meta data."""
 
         # Collect release point information
         # SR_TMP < TODO clean up once CoreSetup has been implemented
@@ -871,7 +869,7 @@ class AttrsCollector:
         # SR_TMP >
         numpoint = ReleasePoint.from_file(self.fi, idx)
 
-        sim_start = attrs["simulation"]["start"]
+        sim_start = mdata["simulation"]["start"]
         start = sim_start + datetime.timedelta(seconds=numpoint.rel_start)
         end = sim_start + datetime.timedelta(seconds=numpoint.rel_end)
 
@@ -907,8 +905,8 @@ class AttrsCollector:
             "mass_unit": mass_unit,
         }
 
-    def collect_variable_attrs(self, attrs):
-        """Collect variable attributes."""
+    def collect_variable_mdata(self, mdata):
+        """Collect variable meta data."""
 
         # Variable names
         long_name = self._long_name()
@@ -942,8 +940,8 @@ class AttrsCollector:
             "level_top_unit": level_unit,
         }
 
-    def collect_species_attrs(self, attrs):
-        """Collect species attributes."""
+    def collect_species_mdata(self, mdata):
+        """Collect species meta data."""
 
         substance = self._get_substance()
 

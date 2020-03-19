@@ -10,7 +10,7 @@ import matplotlib as mpl
 import numpy as np
 
 # Local
-from .attr import AttrMult
+from .meta_data import MetaDataCollection
 from .setup import Setup
 from .utils import summarizable
 from .words import SYMBOLS
@@ -24,35 +24,37 @@ class PlotLabels:
     words = WORDS
     symbols = SYMBOLS
 
-    def __init__(self, lang, attrs):
+    def __init__(self, lang, mdata):
         """Create an instance of ``PlotLabels``."""
-        self.attrs = attrs
+        self.mdata = mdata
 
         words = self.words
         symbs = self.symbols
-        a = self.attrs
+        mdata = self.mdata
 
         words.set_default_lang(lang)
 
         groups = {}
 
         # Top-left box
-        level = a.variable.fmt_level_range()
+        level = mdata.variable.fmt_level_range()
         s_level = f" {words['at', None, 'level']} {level}" if level else ""
         integr_op = words[
             {
                 "sum": "summed_over",
                 "mean": "averaged_over",
                 "accum": "accumulated_over",
-            }[a.simulation.integr_type.value]
+            }[mdata.simulation.integr_type.value]
         ].s
-        ts = a.simulation.now
-        time_rels = a.simulation.now.format(rel=True, rel_start=a.release.start.value)
-        period = a.simulation.fmt_integr_period()
-        start = a.simulation.integr_start.format(rel=True)
-        unit_escaped = a.variable.unit.format(escape_format=True)
+        ts = mdata.simulation.now
+        time_rels = mdata.simulation.now.format(
+            rel=True, rel_start=mdata.release.start.value
+        )
+        period = mdata.simulation.fmt_integr_period()
+        start = mdata.simulation.integr_start.format(rel=True)
+        unit_escaped = mdata.variable.unit.format(escape_format=True)
         groups["top_left"] = {
-            "variable": f"{a.variable.long_name.value}{s_level}",
+            "variable": f"{mdata.variable.long_name.value}{s_level}",
             "period": f"{integr_op} {period} ({words['since']} +{start})",
             "subtitle_thr_agrmt_fmt": f"Cloud: {symbs['geq']} {{thr}} {unit_escaped}",
             "subtitle_cloud_arrival_time": (
@@ -67,14 +69,14 @@ class PlotLabels:
 
         # Top-right box
         groups["top_right"] = {
-            "species": f"{a.species.name.format(join=' + ')}",
-            "site": f"{words['site']}: {a.release.site_name.value}",
+            "species": f"{mdata.species.name.format(join=' + ')}",
+            "site": f"{words['site']}: {mdata.release.site_name.value}",
         }
 
         # Right-top box
-        name = a.variable.short_name.format()
-        unit = a.variable.unit.format()
-        unit_escaped = a.variable.unit.format(escape_format=True)
+        name = mdata.variable.short_name.format()
+        unit = mdata.variable.unit.format()
+        unit_escaped = mdata.variable.unit.format(escape_format=True)
         groups["right_top"] = {
             "title": f"{name}",
             "title_unit": f"{name} ({unit})",
@@ -109,14 +111,14 @@ class PlotLabels:
         }
 
         # Bottom box
-        model = a.simulation.model_name.value
+        model = mdata.simulation.model_name.value
         n_members = 21  # SR_TMP SR_HC TODO un-hardcode
         ens_member_id = "{:03d}-{:03d}".format(0, 20)  # SR_TMP SR_HC TODO un-hardcode
         model_ens = (
             f"{model} {words['ensemble']} ({n_members} {words['member', None, 'pl']}: "
             f"{ens_member_id}"
         )
-        start = a.simulation.start.format()
+        start = mdata.simulation.start.format()
         model_info_fmt = f"{words['flexpart']} {words['based_on']} {model}, {start}"
         groups["bottom"] = {
             "model_info_det": model_info_fmt.format(m=model),
@@ -129,7 +131,7 @@ class PlotLabels:
             setattr(self, group_name, group)  # SR_TMP
             for name, symbs in group.items():
                 if isinstance(symbs, str):
-                    # Capitalize first letter only (even if it'symbs a space!)
+                    # Capitalize first letter only (even if it's a space!)
                     group[name] = list(symbs)[0].capitalize() + symbs[1:]
 
 
@@ -189,11 +191,14 @@ class PlotConfig:
     """
 
     def __init__(
-        self, setup: Setup, attrs: AttrMult, labels: Optional[PlotLabels] = None
+        self,
+        setup: Setup,
+        mdata: MetaDataCollection,
+        labels: Optional[PlotLabels] = None,
     ) -> None:
         self.setup = setup
-        self.attrs = attrs
-        self.labels: PlotLabels = labels or PlotLabels(setup.lang, attrs)
+        self.mdata = mdata
+        self.labels: PlotLabels = labels or PlotLabels(setup.lang, mdata)
 
         self.figsize = (12.0, 9.0)
         self.reverse_legend = False

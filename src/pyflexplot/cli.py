@@ -129,10 +129,10 @@ def create_plots(setups, cli_args):
     for idx_setup, setup in enumerate(setups):
 
         # Read input fields
-        fields, attrs_lst = read_fields(setup)
+        fields, mdata_lst = read_fields(setup)
 
         # Note: Plotter.run yields the output file paths on-the-go
-        for idx_plot, out_file_path in enumerate(plot(fields, attrs_lst, setup)):
+        for idx_plot, out_file_path in enumerate(plot(fields, mdata_lst, setup)):
             out_file_paths.append(out_file_path)
 
             if cli_args["open_first_cmd"] and idx_setup + idx_plot == 0:
@@ -151,13 +151,13 @@ def read_fields(setup):
 
     # Read fields
     fields = []
-    attrs_lst = []
+    mdata_lst = []
     for raw_path in setup.infile:
-        fields_i, attrs_lst_i = read_files(raw_path, setup, fld_specs_lst)
+        fields_i, mdata_lst_i = read_files(raw_path, setup, fld_specs_lst)
         fields.extend(fields_i)
-        attrs_lst.extend(attrs_lst_i)
+        mdata_lst.extend(mdata_lst_i)
 
-    return fields, attrs_lst
+    return fields, mdata_lst
 
 
 def open_plots(cmd, file_paths):

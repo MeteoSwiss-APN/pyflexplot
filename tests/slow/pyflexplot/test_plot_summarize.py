@@ -176,7 +176,7 @@ class Dummy_Attr:
 # Prepare test data
 
 
-def create_attrs(lang):
+def create_mdata(lang):
 
     # Note: Some values must be passed, otherwise plotting fails
 
@@ -297,17 +297,17 @@ def create_symbols():
     )
 
 
-def create_labels(lang, attrs):
+def create_labels(lang, mdata):
     PlotLabels.words = create_words(lang)
     PlotLabels.symbols = create_symbols()
-    return PlotLabels(lang, attrs)
+    return PlotLabels(lang, mdata)
 
 
 def create_plot_config(lang):
     setup = create_setup(lang)
-    attrs = create_attrs(lang)
-    labels = create_labels(lang, attrs)
-    return PlotConfig(setup, attrs, labels)
+    mdata = create_mdata(lang)
+    labels = create_labels(lang, mdata)
+    return PlotConfig(setup, mdata, labels)
 
 
 def create_map_conf(lang):

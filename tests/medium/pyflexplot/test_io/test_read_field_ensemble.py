@@ -88,9 +88,9 @@ class TestReadFieldEnsemble_Single:
         assert len(fld_specs_lst) == 1
 
         # Read input fields
-        fields, attrs_lst = read_files(datafile_fmt, setup, fld_specs_lst)
+        fields, mdata_lst = read_files(datafile_fmt, setup, fld_specs_lst)
         assert len(fields) == 1
-        assert len(attrs_lst) == 1
+        assert len(mdata_lst) == 1
         fld = fields[0].fld
 
         # SR_TMP <
@@ -217,7 +217,7 @@ class TestReadFieldEnsemble_Multiple:
         global_setup = Setup.compress(compressed_setups)
 
         # Read input fields
-        fields, attrs_lst = read_files(datafile_fmt, global_setup, fld_specs_lst)
+        fields, mdata_lst = read_files(datafile_fmt, global_setup, fld_specs_lst)
         fld_arr = np.array([field.fld for field in fields])
 
         # Read reference fields

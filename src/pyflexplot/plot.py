@@ -51,7 +51,7 @@ class Plot:
     mark_release_site = True
     lw_frame = 1.0
 
-    # SR_TMP TODO consider moving attrs (at least attrs.grid) to Field
+    # SR_TMP TODO consider moving mdat (at least mdata.grid) to Field
     def __init__(self, field, plot_config, map_conf):
         """Create an instance of ``Plot``."""
         self.field = field
@@ -83,8 +83,8 @@ class Plot:
             self.fig,
             self.field.rlat,
             self.field.rlon,
-            self.plot_config.attrs.grid.north_pole_lat.value,
-            self.plot_config.attrs.grid.north_pole_lon.value,
+            self.plot_config.mdata.grid.north_pole_lat.value,
+            self.plot_config.mdata.grid.north_pole_lon.value,
             self.map_conf,
         )
 
@@ -142,8 +142,8 @@ class Plot:
         if self.mark_release_site:
             # Marker at release site
             self.ax_map.marker(
-                self.plot_config.attrs.release.site_lon.value,
-                self.plot_config.attrs.release.site_lat.value,
+                self.plot_config.mdata.release.site_lon.value,
+                self.plot_config.mdata.release.site_lat.value,
                 **self._site_marker_kwargs,
             )
 
@@ -433,37 +433,37 @@ class Plot:
     def fill_box_right_bottom(self, box):
         """Fill the bottom box to the right of the map plot."""
 
-        l = self.plot_config.labels.right_bottom  # noqa:E741
-        a = self.plot_config.attrs
+        labels = self.plot_config.labels.right_bottom  # noqa:E741
+        mdata = self.plot_config.mdata
 
         # Box title
-        # box.text('tc', l['title'], size='large')
-        box.text("tc", l["title"], dy=-1.0, size="large")
+        # box.text('tc', labels['title'], size='large')
+        box.text("tc", labels["title"], dy=-1.0, size="large")
 
         # Release site coordinates
-        lat = Degrees(a.release.site_lat.value)
-        lon = Degrees(a.release.site_lon.value)
-        lat_deg = l["lat_deg_fmt"].format(d=lat.degs(), m=lat.mins(), f=lat.frac())
-        lon_deg = l["lon_deg_fmt"].format(d=lon.degs(), m=lon.mins(), f=lon.frac())
+        lat = Degrees(mdata.release.site_lat.value)
+        lon = Degrees(mdata.release.site_lon.value)
+        lat_deg = labels["lat_deg_fmt"].format(d=lat.degs(), m=lat.mins(), f=lat.frac())
+        lon_deg = labels["lon_deg_fmt"].format(d=lon.degs(), m=lon.mins(), f=lon.frac())
 
         info_blocks = dedent(
             f"""\
-            {l['site']}:\t{a.release.site_name.format()}
-            {l['latitude']}:\t{lat_deg}
-            {l['longitude']}:\t{lon_deg}
-            {l['height']}:\t{a.release.height.format()}
+            {labels['site']}:\t{mdata.release.site_name.format()}
+            {labels['latitude']}:\t{lat_deg}
+            {labels['longitude']}:\t{lon_deg}
+            {labels['height']}:\t{mdata.release.height.format()}
 
-            {l['start']}:\t{a.release.start.format()}
-            {l['end']}:\t{a.release.end.format()}
-            {l['rate']}:\t{a.release.rate.format()}
-            {l['mass']}:\t{a.release.mass.format()}
+            {labels['start']}:\t{mdata.release.start.format()}
+            {labels['end']}:\t{mdata.release.end.format()}
+            {labels['rate']}:\t{mdata.release.rate.format()}
+            {labels['mass']}:\t{mdata.release.mass.format()}
 
-            {l['name']}:\t{a.species.name.format()}
-            {l['half_life']}:\t{a.species.half_life.format()}
-            {l['deposit_vel']}:\t{a.species.deposit_vel.format()}
-            {l['sediment_vel']}:\t{a.species.sediment_vel.format()}
-            {l['washout_coeff']}:\t{a.species.washout_coeff.format()}
-            {l['washout_exponent']}:\t{a.species.washout_exponent.format()}
+            {labels['name']}:\t{mdata.species.name.format()}
+            {labels['half_life']}:\t{mdata.species.half_life.format()}
+            {labels['deposit_vel']}:\t{mdata.species.deposit_vel.format()}
+            {labels['sediment_vel']}:\t{mdata.species.sediment_vel.format()}
+            {labels['washout_coeff']}:\t{mdata.species.washout_coeff.format()}
+            {labels['washout_exponent']}:\t{mdata.species.washout_exponent.format()}
             """
         )
 
@@ -492,8 +492,8 @@ class Plot:
         box.text("tr", dx=0.7, dy=0.5, s=labels["copyright"], size="small")
 
 
-def plot(fields, attrs_lst, setup):
-    return Plotter().run(fields, attrs_lst, setup)
+def plot(fields, mdata_lst, setup):
+    return Plotter().run(fields, mdata_lst, setup)
 
 
 class Plotter:
@@ -511,13 +511,13 @@ class Plotter:
     def __init__(self):
         self.file_paths = []
 
-    def run(self, fields, attrs_lst, setup):
+    def run(self, fields, mdata_lst, setup):
         """Create one or more plots.
 
         Args:
             field (List[Field]): A list of fields.
 
-            attrs_lst (List[Attr???]): A list of data attributes of equal
+            mdata_lst (List[Attr???]): A list of data meta data of equal
                 length as ``fields``.
 
             setup (Setup): Plot setup.
@@ -547,11 +547,11 @@ class Plotter:
         # SR_TMP >
 
         # Create plots one-by-one
-        for i_data, (field, attrs) in enumerate(zip(fields, attrs_lst)):
-            out_file_path = self.format_out_file_path(attrs.setup)
+        for i_data, (field, mdata) in enumerate(zip(fields, mdata_lst)):
+            out_file_path = self.format_out_file_path(mdata.setup)
             _w = len(str(len(fields)))
             print(f" {i_data+1:{_w}}/{len(fields)}  {out_file_path}")
-            plot_config = PlotConfig(setup, attrs)
+            plot_config = PlotConfig(setup, mdata)
             Plot(field, plot_config, map_conf).save(out_file_path)
             yield out_file_path
 
