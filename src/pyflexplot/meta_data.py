@@ -10,6 +10,7 @@ from typing import Any
 from typing import Dict
 from typing import Generic
 from typing import Optional
+from typing import Tuple
 from typing import TypeVar
 from typing import Union
 
@@ -42,9 +43,9 @@ class MetaDatum(GenericModel, Generic[ValueT]):
     attrs: Dict[str, Any] = {}  # need Optional[] despite validator?
 
     class Config:  # noqa
-        # allow_mutation = False
+        # allow_mutation = False  # SR_TODO consider this
         validate_all = True
-        validate_assignment = True
+        validate_assigment = True  # SR_TODO obsolete if allow_mutation = False
 
     @validator("attrs", pre=True, always=True)
     def _init_attrs(cls, value: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -69,10 +70,10 @@ class MetaDatum(GenericModel, Generic[ValueT]):
         reduced_value = self._reduce_values(others, replace)
         attrs = self._merge_attrs(others)
         if isiterable(reduced_value, str_ok=False):
-            return MetaDatumCombo(
-                self.type_, name=name, values=reduced_value, attrs=attrs
+            return MetaDatumCombo[self.type_](
+                name=name, values=reduced_value, attrs=attrs
             )
-        return MetaDatum(name=name, value=reduced_value, attrs=attrs)
+        return MetaDatum[self.type_](name=name, value=reduced_value, attrs=attrs)
 
     def _reduce_values(self, others, replace):
         values = [self.value]
@@ -118,30 +119,39 @@ class MetaDatum(GenericModel, Generic[ValueT]):
                 raise NotImplementedError("differing values", attr, value, other_values)
         return attrs
 
-    def format(
-        self, fmt=None, *, escape_format=False, join=None, **kwargs_datetime,
-    ):
-        if issubclass(self.type_, datetime.datetime):
-            return self._format_datetime(**kwargs_datetime)
+    def format(self, **kwargs):
+        return format_meta_datum(self.value, self.attrs, **kwargs)
 
-        if fmt is None:
-            fmt = "g" if issubclass(self.type_, (float, int)) else ""
-        s = f"{{:{fmt}}}".format(self.value)
-        if escape_format:
-            s = s.replace("{", "{{").replace("}", "}}")
-        return s
 
-    def _format_datetime(self, *, rel=False, rel_start=None, rel_neg_ok=True):
-        if not rel:
-            return self.value.strftime("%Y-%m-%d %H:%M %Z")
-        if rel_start is None:
-            rel_start = self.attrs["start"]
-        seconds = (self.value - rel_start).total_seconds()
-        if not rel_neg_ok and seconds < 0:
-            seconds = -seconds
-        hours = int(seconds / 3600)
-        mins = int((seconds / 3600) % 1 * 60)
-        return f"{hours:02d}:{mins:02d}$\\,$h"
+# SR_TMP <<< TODO move back to MetaDatum if MetaDatum and MetaDatumCombo merged
+def format_meta_datum(
+    value, attrs, *, fmt=None, escape_format=False, join=None, **kwargs_dt,
+):
+    if isinstance(value, datetime.datetime):
+        return format_meta_datum_datetime(value, attrs, **kwargs_dt)
+
+    if fmt is None:
+        fmt = "g" if isinstance(value, (float, int)) else ""
+    s = f"{{:{fmt}}}".format(value)
+    if escape_format:
+        s = s.replace("{", "{{").replace("}", "}}")
+    return s
+
+
+# SR_TMP <<< TODO move back to MetaDatum if MetaDatum and MetaDatumCombo merged
+def format_meta_datum_datetime(
+    value, attrs, *, rel=False, rel_start=None, rel_neg_ok=True,
+):
+    if not rel:
+        return value.strftime("%Y-%m-%d %H:%M %Z")
+    if rel_start is None:
+        rel_start = attrs["start"]
+    seconds = (value - rel_start).total_seconds()
+    if not rel_neg_ok and seconds < 0:
+        seconds = -seconds
+    hours = int(seconds / 3600)
+    mins = int((seconds / 3600) % 1 * 60)
+    return f"{hours:02d}:{mins:02d}$\\,$h"
 
 
 # SR_TMP <<<
@@ -157,47 +167,43 @@ def format_unit(s):
     return s
 
 
-@summarizable(attrs=["type_", "name", "attrs", "_objs"])
-class MetaDatumCombo:
-    def __init__(self, type_, *, name, values, attrs=None):
-        assert attrs is not None  # SR_TMP
+# SR_TODO <<< possible to merge with MetaDatum (common base class or so)?
+@summarizable
+class MetaDatumCombo(GenericModel, Generic[ValueT]):
+    """Individual pice of meta data comprising multiple values."""
 
-        self.type_ = type_
-        self.name = name
-        self.attrs = attrs or {}
+    name: str
+    values: Tuple[ValueT, ...]
+    attrs: Dict[str, Any] = {}  # need Optional[] despite validator?
 
-        assert isiterable(values, str_ok=False)
+    class Config:  # noqa
+        # allow_mutation = False  # SR_TODO consider this
+        validate_all = True
+        validate_assigment = True  # SR_TODO obsolete if allow_mutation = False
 
-        # Initialize individual attributes
-        self._objs = [
-            MetaDatum[type_](name=name, value=value, attrs=attrs) for value in values
-        ]
+    # SR_TMP <<< copy-pasted from MetaDatum
+    @validator("attrs", pre=True, always=True)
+    def _init_attrs(cls, value: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        if value is None:
+            return {}
+        return value
 
+    # SR_TMP <<< clean this up! sucky interface! (or is it?)
     @property
     def value(self):
-        return [a.value for a in self._objs]
+        return list(self.values)
 
-    def format(self, fmt=None, *, join=" / ", **kwargs):
-        return join.join([a.format(fmt, **kwargs) for a in self._objs])
+    # SR_TODO <<< Ensure this is covered by the test suite (currently isn't)!
+    def format(self, *, join=" / ", **kwargs):
+        return join.join(
+            [format_meta_datum(value, self.attrs, **kwargs) for value in self.values]
+        )
 
     # SR_TMP <<< quick'n'dirty
     def __repr__(self):
         from pprint import pformat  # isort:skip
 
         return pformat(self.summarize())
-
-    def __eq__(self, other):
-        if type(self) is not type(other):  # noqa
-            return False
-        if self.type_ is not other.type_:  # noqa
-            return False
-        if self.name != other.name:
-            return False
-        if self.attrs != other.attrs:
-            return False
-        if self._objs != other._objs:
-            return False
-        return True
 
 
 @summarizable
@@ -331,13 +337,13 @@ class MetaDataVariable(BaseModel, MetaData):
     # level_top: MetaDatum[float]
     # level_bot_unit: MetaDatum[str]
     # level_top_unit: MetaDatum[str]
-    long_name: Union[MetaDatum[str], MetaDatumCombo]
-    short_name: Union[MetaDatum[str], MetaDatumCombo]
-    unit: Union[MetaDatum[str], MetaDatumCombo]
-    level_bot: Union[MetaDatum[float], MetaDatumCombo]
-    level_top: Union[MetaDatum[float], MetaDatumCombo]
-    level_bot_unit: Union[MetaDatum[str], MetaDatumCombo]
-    level_top_unit: Union[MetaDatum[str], MetaDatumCombo]
+    long_name: Union[MetaDatum[str], MetaDatumCombo[str]]
+    short_name: Union[MetaDatum[str], MetaDatumCombo[str]]
+    unit: Union[MetaDatum[str], MetaDatumCombo[str]]
+    level_bot: Union[MetaDatum[float], MetaDatumCombo[float]]
+    level_top: Union[MetaDatum[float], MetaDatumCombo[float]]
+    level_bot_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
+    level_top_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
 
     _init_long_name = init_mdatum(str, "long_name")
     _init_short_name = init_mdatum(str, "short_name")
@@ -449,17 +455,17 @@ class MetaDataRelease(BaseModel, MetaData):
     # mass_unit: MetaDatum[str]
     # start: MetaDatum[datetime.datetime]
     # end: MetaDatum[datetime.datetime]
-    site_name: Union[MetaDatum[str], MetaDatumCombo]
-    site_lat: Union[MetaDatum[float], MetaDatumCombo]
-    site_lon: Union[MetaDatum[float], MetaDatumCombo]
-    height: Union[MetaDatum[float], MetaDatumCombo]
-    rate: Union[MetaDatum[float], MetaDatumCombo]
-    mass: Union[MetaDatum[float], MetaDatumCombo]
-    height_unit: Union[MetaDatum[str], MetaDatumCombo]
-    rate_unit: Union[MetaDatum[str], MetaDatumCombo]
-    mass_unit: Union[MetaDatum[str], MetaDatumCombo]
-    start: Union[MetaDatum[datetime.datetime], MetaDatumCombo]
-    end: Union[MetaDatum[datetime.datetime], MetaDatumCombo]
+    site_name: Union[MetaDatum[str], MetaDatumCombo[str]]
+    site_lat: Union[MetaDatum[float], MetaDatumCombo[float]]
+    site_lon: Union[MetaDatum[float], MetaDatumCombo[float]]
+    height: Union[MetaDatum[float], MetaDatumCombo[float]]
+    rate: Union[MetaDatum[float], MetaDatumCombo[float]]
+    mass: Union[MetaDatum[float], MetaDatumCombo[float]]
+    height_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
+    rate_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
+    mass_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
+    start: Union[MetaDatum[datetime.datetime], MetaDatumCombo[datetime.datetime]]
+    end: Union[MetaDatum[datetime.datetime], MetaDatumCombo[datetime.datetime]]
 
     _init_site_name = init_mdatum(str, "site_name")
     _init_site_lat = init_mdatum(float, "site_lat")
@@ -521,16 +527,16 @@ class MetaDataSpecies(BaseModel, MetaData):
     # deposit_vel_unit: MetaDatum[str]
     # sediment_vel_unit: MetaDatum[str]
     # washout_coeff_unit: MetaDatum[str]
-    name: Union[MetaDatum[str], MetaDatumCombo]
-    half_life: Union[MetaDatum[float], MetaDatumCombo]
-    deposit_vel: Union[MetaDatum[float], MetaDatumCombo]
-    sediment_vel: Union[MetaDatum[float], MetaDatumCombo]
-    washout_coeff: Union[MetaDatum[float], MetaDatumCombo]
-    washout_exponent: Union[MetaDatum[float], MetaDatumCombo]
-    half_life_unit: Union[MetaDatum[str], MetaDatumCombo]
-    deposit_vel_unit: Union[MetaDatum[str], MetaDatumCombo]
-    sediment_vel_unit: Union[MetaDatum[str], MetaDatumCombo]
-    washout_coeff_unit: Union[MetaDatum[str], MetaDatumCombo]
+    name: Union[MetaDatum[str], MetaDatumCombo[str]]
+    half_life: Union[MetaDatum[float], MetaDatumCombo[float]]
+    deposit_vel: Union[MetaDatum[float], MetaDatumCombo[float]]
+    sediment_vel: Union[MetaDatum[float], MetaDatumCombo[float]]
+    washout_coeff: Union[MetaDatum[float], MetaDatumCombo[float]]
+    washout_exponent: Union[MetaDatum[float], MetaDatumCombo[float]]
+    half_life_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
+    deposit_vel_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
+    sediment_vel_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
+    washout_coeff_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
 
     _init_name = init_mdatum(str, "name")
     _init_half_life = init_mdatum(float, "half_life")
@@ -573,12 +579,12 @@ class MetaDataSimulation(BaseModel, MetaData):
     # now: MetaDatum[datetime.datetime]
     # integr_start: MetaDatum[datetime.datetime]
     # integr_type: MetaDatum[str]
-    model_name: Union[MetaDatum[str], MetaDatumCombo]
-    start: Union[MetaDatum[datetime.datetime], MetaDatumCombo]
-    end: Union[MetaDatum[datetime.datetime], MetaDatumCombo]
-    now: Union[MetaDatum[datetime.datetime], MetaDatumCombo]
-    integr_start: Union[MetaDatum[datetime.datetime], MetaDatumCombo]
-    integr_type: Union[MetaDatum[str], MetaDatumCombo]
+    model_name: Union[MetaDatum[str], MetaDatumCombo[str]]
+    start: Union[MetaDatum[datetime.datetime], MetaDatumCombo[datetime.datetime]]
+    end: Union[MetaDatum[datetime.datetime], MetaDatumCombo[datetime.datetime]]
+    now: Union[MetaDatum[datetime.datetime], MetaDatumCombo[datetime.datetime]]
+    integr_start: Union[MetaDatum[datetime.datetime], MetaDatumCombo[datetime.datetime]]
+    integr_type: Union[MetaDatum[str], MetaDatumCombo[str]]
 
     _init_model_name = init_mdatum(str, "model_name")
     _init_start = init_mdatum(datetime.datetime, "start")
