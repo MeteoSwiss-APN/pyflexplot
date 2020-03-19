@@ -8,7 +8,7 @@ SHELL := /bin/bash
 
 ECHO_PREFIX ?= \nMAKE: #OPT Prefix of command echos
 IGNORE_VENV ?= 0#OPT Don't create and/or use a virtual environment.
-INSTALL ?= 0#OPT Whether to install project and dependencies if necessary.
+CHAIN ?= 0#OPT Whether to chain targets, e.g., let test depend on install-test.
 VENV_DIR ?= venv#OPT Path to virtual environment to be created and/or used.
 VENV_NAME ?= pyflexplot#OPT Name of virtual environment if one is created.
 
@@ -32,17 +32,17 @@ endif
 export PREFIX
 
 #
-# Targets conditional on ${INSTALL}.
+# Targets conditional on ${CHAIN}.
 #
 # Use these to specify the respective targets for post-installation targets
-# like ``test``, for which installation is optionally activated with INSTALL=1.
+# like ``test``, for which installation is optionally activated with CHAIN=1.
 #
 # Note that for interdependencies between venv/installation targets -- like
 # of ``install`` on ``venv``, or if ``install-dev`` on ``install-test`` -- the
 # targets are hard-coded w/o these variables, such that they are always executed
-# regardless of ${INSTALL}.
+# regardless of ${CHAIN}.
 #
-ifeq (${INSTALL}, 0)
+ifeq (${CHAIN}, 0)
 	_VENV :=
 	_INSTALL :=
 	_INSTALL_EDIT :=
