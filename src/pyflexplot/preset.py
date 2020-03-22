@@ -133,6 +133,26 @@ def click_use_preset(ctx, param, value):
     if key not in ctx.obj:
         ctx.obj[key] = []
     for name in value:
-        for path in collect_preset_files_flat(name).values():
-            if path not in ctx.obj[key]:
-                ctx.obj[key].append(path)
+        try:
+            files = collect_preset_files_flat(name)
+        except ValueError:
+            click.echo(
+                f"Error: No preset setup file found for '{name}'!", file=sys.stderr,
+            )
+            _click_propose_alternatives(name)
+            ctx.exit(1)
+        else:
+            for path in files.values():
+                if path not in ctx.obj[key]:
+                    ctx.obj[key].append(path)
+
+
+def _click_propose_alternatives(name):
+    try:
+        alternatives = collect_preset_files_flat(f"*{name}*")
+    except ValueError:
+        pass
+    else:
+        if alternatives:
+            click.echo("Are you looking for any of these?", file=sys.stderr)
+            click.echo(" " + "\n ".join(alternatives.keys()), file=sys.stderr)
