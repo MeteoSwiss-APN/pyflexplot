@@ -62,9 +62,11 @@ class FileReader:
 
         self.n_members: Optional[int] = None
         self.in_file_path_lst: Optional[Sequence[str]] = None
-        self.model: str = None
+        self.model: Optional[str] = None
         self.lat: Optional[np.ndarray] = None
         self.lon: Optional[np.ndarray] = None
+
+        self.rotated_pole: bool
 
         self.fixer: FlexPartDataFixer = FlexPartDataFixer(self)
 

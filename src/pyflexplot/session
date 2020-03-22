@@ -1,12 +1,12 @@
 __init__.py
 cli.py
 data.py
-examples.py
 io.py
 meta_data.py
 plot.py
 plot_lib.py
 plot_types.py
+preset.py
 setup.py
 specs.py
 utils.py

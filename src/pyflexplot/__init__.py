@@ -8,9 +8,9 @@ __email__ = "stefan.ruedisuehli@env.ethz.ch"
 __version__ = "0.6.8"
 
 # Standard library
-import os.path
 import sys
 import warnings
+from pathlib import Path
 from typing import Any
 from typing import List
 
@@ -33,12 +33,38 @@ except Exception as e:
     print(msg, file=sys.stderr)
     sys.exit(1)
 
+
 __all__: List[Any] = []
 
 
-# Format warning messages (remove code)
-# See https://docs.python.org/3/library/warnings.html#warnings.showwarning
+def check_dir_exists(path):
+    """Check that a directory exists."""
+    if not path.exists():
+        raise Exception("data directory is missing", path)
+    if not path.is_dir():
+        raise Exception("data directory is not a directory", path)
+
+
+# Set some paths
+root_path: Path = Path(__file__).parent
+data_path: Path = root_path / "data"
+check_dir_exists(data_path)
+
+
+# Point cartopy to storerd offline data
+cartopy.config["pre_existing_data_dir"] = data_path
+
+
+# Set matplotlib backend
+matplotlib.use("Agg")
+
+
 def custom_showwarnings(message, category, filename, lineno, file=None, line=None):
+    """Show warnings without code excerpt.
+
+    See https://docs.python.org/3/library/warnings.html#warnings.showwarning
+
+    """
     if file is None:
         file = sys.stderr
     key = "src/pyflexplot/"
@@ -48,23 +74,14 @@ def custom_showwarnings(message, category, filename, lineno, file=None, line=Non
     file.write(text)
 
 
+# Custom warnings formatting
 warnings.showwarning = custom_showwarnings
 
-# Point cartopy to storerd offline data
-here = os.path.dirname(os.path.abspath(__file__))
-data_dir = os.path.abspath(f"{here}/data")
-if not os.path.isdir(data_dir):
-    raise Exception(f"data directory missing: {data_dir}")
-cartopy.config["pre_existing_data_dir"] = data_dir
 
-# Set matplotlib backend
-matplotlib.use("Agg")
-
-# SR_DEV < Shorthand to embed IPython shell
+# Shorthand to embed IPython shell (handy during development/debugging)
 try:
     import IPython  # isort:skip
 except ImportError:
     ipy = None
 else:
     ipy = IPython.terminal.embed.embed
-# SR_DEV >

@@ -45,6 +45,7 @@ dependencies = [
     "pillow >= 6.2.0",
     "pydantic",
     "scipy",
+    "typing-extensions",
     "toml",
 ]
 
