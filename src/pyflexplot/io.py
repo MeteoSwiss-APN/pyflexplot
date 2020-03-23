@@ -30,7 +30,7 @@ from .io_meta_data import read_meta_data
 from .meta_data import MetaDataCollection
 from .meta_data import collect_meta_data
 from .meta_data import nc_var_name
-from .setup import Setup
+from .setup import InputSetup
 from .specs import FldSpecs
 
 
@@ -49,14 +49,14 @@ class FileReader:
 
     choices_ens_var = ["mean", "median", "min", "max"]
 
-    def __init__(self, in_file_path: str, setup: Setup):
+    def __init__(self, in_file_path: str, setup: InputSetup):
         """Create an instance of ``FileReader``.
 
         Args:
             in_file_path: File path. In case of ensemble data, it must
                 contain the format key '{ens_member[:0?d]}'.
 
-            setup: Setup.
+            setup: InputSetup.
 
         """
         self.in_file_path_fmt = in_file_path
@@ -226,7 +226,7 @@ class FileReader:
 
         return fields, mdata_lst
 
-    def _read_fld_time_mem(self, setups: Sequence[Setup]) -> np.ndarray:
+    def _read_fld_time_mem(self, setups: Sequence[InputSetup]) -> np.ndarray:
         """Read field over all time steps for each member."""
         fld_time_mem: Optional[np.ndarray] = None
         for i_mem, in_file_path in enumerate(self.in_file_path_lst or []):
@@ -282,7 +282,9 @@ class FileReader:
 
         return fld_time_mem
 
-    def _reduce_ensemble(self, fld_time_mem: np.ndarray, setup: Setup) -> np.ndarray:
+    def _reduce_ensemble(
+        self, fld_time_mem: np.ndarray, setup: InputSetup,
+    ) -> np.ndarray:
         """Reduce the ensemble to a single field (time, lat, lon)."""
         if self.n_members == 1:
             return fld_time_mem[0]
@@ -375,13 +377,13 @@ class FileReader:
             fields.append(field)
         return fields
 
-    def _read_nc_var(self, fi: nc4.Dataset, setup: Setup) -> np.ndarray:
+    def _read_nc_var(self, fi: nc4.Dataset, setup: InputSetup) -> np.ndarray:
 
         # Select variable in file
         var_name = nc_var_name(setup, self.model)
         nc_var = fi.variables[var_name]
 
-        # SR_TMP < TODO remove once CoreSetup implemented
+        # SR_TMP < TODO remove once CoreInputSetup implemented
         assert setup.level is None or len(setup.level) == 1
         assert len(setup.nageclass) == 1
         assert len(setup.noutrel) == 1
@@ -467,7 +469,7 @@ class FileReader:
         return fld
 
     def _handle_time_integration(
-        self, fi: nc4.Dataset, fld: np.ndarray, setup: Setup,
+        self, fi: nc4.Dataset, fld: np.ndarray, setup: InputSetup,
     ) -> np.ndarray:
         """Integrate, or desintegrate, field over time."""
         if setup.variable == "concentration":

@@ -4,14 +4,14 @@
 Tests for module ``pyflexplot.fld_specs``.
 """
 # First-party
-from pyflexplot.setup import Setup
+from pyflexplot.setup import InputSetup
 from pyflexplot.specs import FldSpecs
 from srutils.testing import check_is_list_like
 
 
 class Test_Create_Concentration:
 
-    setup = Setup.create(
+    setup = InputSetup.create(
         {
             "infile": "dummy.nc",
             "outfile": "dummy.png",
@@ -56,7 +56,7 @@ class Test_Create_Concentration:
 
 class Test_Create_Deposition:
 
-    setup = Setup.create(
+    setup = InputSetup.create(
         {
             "infile": "dummy.nc",
             "outfile": "dummy.png",

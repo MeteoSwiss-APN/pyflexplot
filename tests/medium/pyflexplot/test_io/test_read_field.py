@@ -17,8 +17,8 @@ import pytest  # type: ignore
 
 # First-party
 from pyflexplot.io import read_files
-from pyflexplot.setup import Setup
-from pyflexplot.setup import SetupCollection
+from pyflexplot.setup import InputSetup
+from pyflexplot.setup import InputSetupCollection
 from pyflexplot.specs import FldSpecs
 
 from io_utils import read_nc_var  # isort:skip
@@ -51,7 +51,7 @@ class Conf:
 
     @property
     def setup(self):
-        return Setup.create(self.setup_dct)
+        return InputSetup.create(self.setup_dct)
 
 
 datafilename1 = "flexpart_cosmo-1_2019052800.nc"
@@ -338,7 +338,7 @@ def test_multiple(datadir, conf):  # noqa:F811
         setup_lst.extend(setup.derive(conf.derived_setup_params))
 
     # Create field specifications list
-    fld_specs_lst = FldSpecs.create(SetupCollection(setup_lst))
+    fld_specs_lst = FldSpecs.create(InputSetupCollection(setup_lst))
 
     # Process field specifications one after another
     for fld_specs in fld_specs_lst:

@@ -9,10 +9,10 @@ from typing import Dict
 from typing import List
 
 # First-party
-from pyflexplot.setup import CoreSetup
-from pyflexplot.setup import CoreSetupCollection
-from pyflexplot.setup import Setup
-from pyflexplot.setup import SetupCollection
+from pyflexplot.setup import CoreInputSetup
+from pyflexplot.setup import CoreInputSetupCollection
+from pyflexplot.setup import InputSetup
+from pyflexplot.setup import InputSetupCollection
 
 DEFAULT_KWARGS = {
     "infile": ("foo.nc",),
@@ -20,7 +20,7 @@ DEFAULT_KWARGS = {
 }
 
 
-DEFAULT_SETUP = Setup(
+DEFAULT_SETUP = InputSetup(
     **{
         **DEFAULT_KWARGS,
         "nageclass": (0,),
@@ -44,7 +44,7 @@ DEFAULT_SETUP = Setup(
 
 def test_default_setup_dict():
     """Check the default setupuration dict."""
-    setup1 = Setup(**DEFAULT_KWARGS)
+    setup1 = InputSetup(**DEFAULT_KWARGS)
     setup2 = DEFAULT_SETUP.dict()
     assert setup1 == setup2
 
@@ -65,8 +65,8 @@ class Test_Decompress:
         """Decompress all params."""
         setups = self.setup.decompress()
         assert len(setups) == 12
-        assert isinstance(setups, CoreSetupCollection)
-        assert all(isinstance(setup, CoreSetup) for setup in setups)
+        assert isinstance(setups, CoreInputSetupCollection)
+        assert all(isinstance(setup, CoreInputSetup) for setup in setups)
         res = {(s.deposition_type, s.species_id, s.time) for s in setups}
         sol = {
             ("dry", 1, 1),
@@ -88,8 +88,8 @@ class Test_Decompress:
         """Decompress all params."""
         setups = self.setup.decompress_partially(None)
         assert len(setups) == 12
-        assert isinstance(setups, SetupCollection)
-        assert all(isinstance(setup, Setup) for setup in setups)
+        assert isinstance(setups, InputSetupCollection)
+        assert all(isinstance(setup, InputSetup) for setup in setups)
         res = {(s.deposition_type, s.species_id, s.time) for s in setups}
         sol = {
             ("dry", (1,), (1,)),
@@ -110,8 +110,8 @@ class Test_Decompress:
     def test_partially_one(self):
         """Decompress only one select parameter."""
         setups = self.setup.decompress_partially(["species_id"])
-        assert isinstance(setups, SetupCollection)
-        assert all(isinstance(setup, Setup) for setup in setups)
+        assert isinstance(setups, InputSetupCollection)
+        assert all(isinstance(setup, InputSetup) for setup in setups)
         assert len(setups) == 2
         res = {(s.deposition_type, s.species_id, s.time) for s in setups}
         sol = {("tot", (1,), (1, 2, 3)), ("tot", (2,), (1, 2, 3))}
@@ -121,8 +121,8 @@ class Test_Decompress:
         """Decompress two select parameters."""
         setups = self.setup.decompress_partially(["time", "deposition_type"])
         assert len(setups) == 6
-        assert isinstance(setups, SetupCollection)
-        assert all(isinstance(setup, Setup) for setup in setups)
+        assert isinstance(setups, InputSetupCollection)
+        assert all(isinstance(setup, InputSetup) for setup in setups)
         res = {(s.deposition_type, s.species_id, s.time) for s in setups}
         sol = {
             ("dry", (1, 2), (1,)),
@@ -135,7 +135,7 @@ class Test_Decompress:
         assert res == sol
 
 
-class Test_SetupCollection:
+class Test_InputSetupCollection:
     def create_partial_dicts(self):
         return [
             {**DEFAULT_KWARGS, **dct}
@@ -150,15 +150,15 @@ class Test_SetupCollection:
         return [{**DEFAULT_SETUP.dict(), **dct} for dct in self.create_partial_dicts()]
 
     def create_setups(self):
-        return [Setup.create(dct) for dct in self.create_partial_dicts()]
+        return [InputSetup.create(dct) for dct in self.create_partial_dicts()]
 
     def test_create_empty(self):
-        setups = SetupCollection([])
+        setups = InputSetupCollection([])
         assert len(setups) == 0
 
     def test_from_setups(self):
         partial_dicts = self.create_partial_dicts()
-        setups = SetupCollection.create(partial_dicts)
+        setups = InputSetupCollection.create(partial_dicts)
         assert len(setups) == len(partial_dicts)
 
 
@@ -171,26 +171,19 @@ class Test_Compress:
             {"infile": "foo.nc", "variable": "concentration", "level": (1, 2)},
         ]
     ]
-    setups_lst = [Setup.create(dct) for dct in dcts]
+    setups_lst = [InputSetup.create(dct) for dct in dcts]
 
     def test_one(self):
-        res = Setup.compress(SetupCollection(self.setups_lst[:1])).dict()
+        res = InputSetup.compress(InputSetupCollection(self.setups_lst[:1])).dict()
         sol = self.setups_lst[0]
         assert res == sol
 
     def test_two(self):
-        res = Setup.compress(SetupCollection(self.setups_lst[:2])).dict()
-        sol = Setup.create({**self.dcts[0], "level": (0, 1)})
+        res = InputSetup.compress(InputSetupCollection(self.setups_lst[:2])).dict()
+        sol = InputSetup.create({**self.dcts[0], "level": (0, 1)})
         assert res == sol
 
     def test_three(self):
-        res = Setup.compress(SetupCollection(self.setups_lst[:3])).dict()
-        sol = Setup.create({**self.dcts[0], "level": (0, 1, 2)})
+        res = InputSetup.compress(InputSetupCollection(self.setups_lst[:3])).dict()
+        sol = InputSetup.create({**self.dcts[0], "level": (0, 1, 2)})
         assert res == sol
-
-
-# +
-# +
-# +class Test_CoreSetup:
-# +    def test_foo(self):
-# +        pass

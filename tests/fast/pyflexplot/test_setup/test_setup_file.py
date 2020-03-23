@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Tests for module ``pyflexplot.setup.SetupFile``.
+Tests for module ``pyflexplot.setup.InputSetupFile``.
 """
 # Standard library
 from collections.abc import Sequence
 from textwrap import dedent
 
 # First-party
-from pyflexplot.setup import SetupFile
+from pyflexplot.setup import InputSetupFile
 
 # Local
 from .test_setup import DEFAULT_KWARGS
@@ -32,7 +32,7 @@ DEFAULT_TOML = "\n".join([f"{k} = {fmt_val(v)}" for k, v in DEFAULT_KWARGS.items
 def read_tmp_setup_file(tmp_path, content, **kwargs):
     tmp_file = tmp_path / "setup.toml"
     tmp_file.write_text(dedent(content))
-    return SetupFile(tmp_file).read(**kwargs)
+    return InputSetupFile(tmp_file).read(**kwargs)
 
 
 def test_read_single_minimal_section(tmp_path):

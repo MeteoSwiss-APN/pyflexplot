@@ -29,8 +29,8 @@ from pydantic.generics import GenericModel
 from srutils.dict import format_dictlike
 
 # Local
-from .setup import Setup
-from .setup import SetupCollection
+from .setup import InputSetup
+from .setup import InputSetupCollection
 from .utils import summarizable
 from .words import WORDS
 
@@ -251,7 +251,7 @@ class MetaData:
                 self_setup_dct,
                 other_setup_dcts,
             )
-        setup = Setup.compress(SetupCollection([self.setup] + other_setups))
+        setup = InputSetup.compress(InputSetupCollection([self.setup] + other_setups))
 
         kwargs = {}
         for name, datum in self.iter_objs():
@@ -280,7 +280,7 @@ class MetaDataGrid(BaseModel, MetaData):
 
     """
 
-    setup: Setup
+    setup: InputSetup
     north_pole_lat: MetaDatum[float]
     north_pole_lon: MetaDatum[float]
 
@@ -306,7 +306,7 @@ class MetaDataVariable(BaseModel, MetaData):
 
     """
 
-    setup: Setup
+    setup: InputSetup
     long_name: MetaDatum[str]
     short_name: MetaDatum[str]
     unit: MetaDatum[str]
@@ -412,7 +412,7 @@ class MetaDataRelease(BaseModel, MetaData):
 
     """
 
-    setup: Setup
+    setup: InputSetup
     site_name: MetaDatum[str]
     site_lat: MetaDatum[float]
     site_lon: MetaDatum[float]
@@ -473,7 +473,7 @@ class MetaDataSpecies(BaseModel, MetaData):
 
     """
 
-    setup: Setup
+    setup: InputSetup
     name: MetaDatum[str]
     half_life: MetaDatum[float]
     deposit_vel: MetaDatum[float]
@@ -518,7 +518,7 @@ class MetaDataSimulation(BaseModel, MetaData):
 
     """
 
-    setup: Setup
+    setup: InputSetup
     model_name: MetaDatum[str]
     start: MetaDatum[datetime]
     end: MetaDatum[datetime]
@@ -556,7 +556,7 @@ class MetaDataCollection:
         """Initialize an instance of ``MetaDataCollection``.
 
         Args:
-            setup (Setup): Setup.
+            setup (InputSetup): InputSetup.
 
         Kwargs:
             grid (dict): Kwargs passed to ``MetaDataGrid``.
@@ -784,7 +784,7 @@ class MetaDataCollector:
         """Collect release point meta data."""
 
         # Collect release point information
-        # SR_TMP < TODO clean up once CoreSetup has been implemented
+        # SR_TMP < TODO clean up once CoreInputSetup has been implemented
         assert len(self.setup.numpoint) == 1
         idx = next(iter(self.setup.numpoint))
         # idx = self.setup.numpoint
@@ -837,7 +837,7 @@ class MetaDataCollector:
         # Variable unit
         unit = self.ncattrs_field["units"]
 
-        # SR_TMP < TODO clean up once CoreSetup has been implemented
+        # SR_TMP < TODO clean up once CoreInputSetup has been implemented
         assert self.setup.level is None or len(self.setup.level) == 1
         idx = None if self.setup.level is None else next(iter(self.setup.level))
         # idx = self.setup.level

@@ -529,7 +529,7 @@ class Plotter:
             mdata_lst (List[Attr???]): A list of data meta data of equal
                 length as ``fields``.
 
-            setup (Setup): Plot setup.
+            setup (InputSetup): Plot setup.
 
         Yields:
             str: Output file paths.

@@ -49,7 +49,7 @@ from pyflexplot.data import Field
 from pyflexplot.plot import Plot
 from pyflexplot.plot_types import PlotConfig
 from pyflexplot.plot_types import PlotLabels
-from pyflexplot.setup import Setup
+from pyflexplot.setup import InputSetup
 from srutils.testing import CheckFailedError
 from srutils.testing import IgnoredElement
 from srutils.testing import UnequalElement
@@ -243,7 +243,7 @@ def create_field():
 def create_setup(lang):
     infile = "dummy_infile.nc"
     outfile = "dummy_outfile.png"
-    return Setup.create(
+    return InputSetup.create(
         {"infile": infile, "outfile": outfile, "lang": lang, "variable": "deposition"},
     )
 
@@ -498,7 +498,7 @@ class Solution:
             # SR_TMP "mark_field_max": e(True),
             "mark_release_site": e(True),
             "plot_config": IgnoredElement("PlotConfig"),  # SR_TMP TODO
-            # SR_TMP "setup": IgnoredElement("Setup"),  # SR_TMP TODO
+            # SR_TMP "setup": IgnoredElement("InputSetup"),  # SR_TMP TODO
         }
         return jdat
 

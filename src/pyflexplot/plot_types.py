@@ -14,7 +14,7 @@ import numpy as np
 # Local
 from .meta_data import MetaDataCollection
 from .plot_lib import MapAxesConf
-from .setup import Setup
+from .setup import InputSetup
 from .utils import summarizable
 from .words import SYMBOLS
 from .words import WORDS
@@ -220,7 +220,7 @@ class PlotConfig:
 
     def __init__(
         self,
-        setup: Setup,
+        setup: InputSetup,
         mdata: MetaDataCollection,
         labels: Optional[PlotLabels] = None,
     ) -> None:

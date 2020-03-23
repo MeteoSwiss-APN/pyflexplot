@@ -36,7 +36,7 @@ ENS_CLOUD_ARRIVAL_TIME_MEM_MIN_DEFAULT = 1
 ENS_CLOUD_ARRIVAL_TIME_THR_DEFAULT: float = 1e-9
 
 
-def setup_repr(obj: Union["CoreSetup", "Setup"]) -> str:
+def setup_repr(obj: Union["CoreInputSetup", "InputSetup"]) -> str:
     def fmt(obj):
         if isinstance(obj, str):
             return f"'{obj}'"
@@ -46,11 +46,11 @@ def setup_repr(obj: Union["CoreSetup", "Setup"]) -> str:
     return f"{type(obj).__name__}(\n  {s_attrs},\n)"
 
 
-class CoreSetup(BaseModel):
+class CoreInputSetup(BaseModel):
     """
     PyFlexPlot core setup with exactly one value per parameter.
 
-    See ``Setup`` for details on the parameters.
+    See ``InputSetup`` for details on the parameters.
 
     """
 
@@ -91,18 +91,20 @@ class CoreSetup(BaseModel):
         return setup_repr(self)
 
     @classmethod
-    def create(cls, params: Mapping[str, Any]) -> "CoreSetup":
+    def create(cls, params: Mapping[str, Any]) -> "CoreInputSetup":
         return cls(**params)
 
     @classmethod
-    def as_setup(cls, obj: Union[Mapping[str, Any], "CoreSetup"]) -> "CoreSetup":
+    def as_setup(
+        cls, obj: Union[Mapping[str, Any], "CoreInputSetup"],
+    ) -> "CoreInputSetup":
         if isinstance(obj, cls):
             return obj
         assert isinstance(obj, Mapping)  # mypy
         return cls(**obj)
 
 
-class Setup(BaseModel):
+class InputSetup(BaseModel):
     """
     PyFlexPlot setup.
 
@@ -263,11 +265,11 @@ class Setup(BaseModel):
         return value
 
     @classmethod
-    def create(cls, params: Dict[str, Any]) -> "Setup":
-        """Create an instance of ``Setup``.
+    def create(cls, params: Dict[str, Any]) -> "InputSetup":
+        """Create an instance of ``InputSetup``.
 
         Args:
-            params: Parameters to instatiate ``Setup``. In contrast to direct
+            params: Parameters to instatiate ``InputSetup``. In contrast to direct
                 instatiation, all ``Tuple`` parameters may alternatively be
                 passed directly, for instance `{"time": 0}` instead of
                 `{"time": (0,)}`.
@@ -323,7 +325,7 @@ class Setup(BaseModel):
         return cls(**params)
 
     @classmethod
-    def as_setup(cls, obj: Union[Mapping[str, Any], "Setup"]) -> "Setup":
+    def as_setup(cls, obj: Union[Mapping[str, Any], "InputSetup"]) -> "InputSetup":
         if isinstance(obj, cls):
             return obj
         return cls.create(obj)  # type: ignore
@@ -348,19 +350,19 @@ class Setup(BaseModel):
         return self.dict() == other_dict
 
     @overload
-    def derive(self, params: Mapping[str, Any]) -> "Setup":
+    def derive(self, params: Mapping[str, Any]) -> "InputSetup":
         ...
 
     @overload
-    def derive(self, params: Sequence[Mapping[str, Any]]) -> "SetupCollection":
+    def derive(self, params: Sequence[Mapping[str, Any]]) -> "InputSetupCollection":
         ...
 
     def derive(
         self, params: Union[Mapping[str, Any], Sequence[Mapping[str, Any]]],
-    ) -> Union["Setup", "SetupCollection"]:
-        """Derive ``Setup`` object(s) with adapted parameters."""
+    ) -> Union["InputSetup", "InputSetupCollection"]:
+        """Derive ``InputSetup`` object(s) with adapted parameters."""
         if isinstance(params, Sequence):
-            return SetupCollection([self.derive(params_i) for params_i in params])
+            return InputSetupCollection([self.derive(params_i) for params_i in params])
         # SR_TMP < TODO find cleaner solution (w/o duplication of logic)
         if (
             self.variable == "concentration"
@@ -373,20 +375,20 @@ class Setup(BaseModel):
         return type(self).create(params)
 
     @classmethod
-    def compress(cls, setups: "SetupCollection") -> "Setup":
+    def compress(cls, setups: "InputSetupCollection") -> "InputSetup":
         if not setups:
             raise ValueError("missing setups")
         dct = compress_multival_dicts(setups.dicts(), cls_seq=tuple)
         return cls.create(dct)
 
-    def decompress(self) -> "CoreSetupCollection":
+    def decompress(self) -> "CoreInputSetupCollection":
         return self._decompress(None, None)
 
     def decompress_partially(
         self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None,
-    ) -> "SetupCollection":
+    ) -> "InputSetupCollection":
         if (select, skip) == (None, None):
-            return self._decompress(None, None, Setup)
+            return self._decompress(None, None, InputSetup)
         elif skip is None:
             assert select is not None  # mypy
             return self._decompress(select, None)
@@ -398,14 +400,17 @@ class Setup(BaseModel):
 
     @overload
     def _decompress(
-        self, select: None, skip: None, cls_setup: Optional[Type["CoreSetup"]] = None,
-    ) -> "CoreSetupCollection":
+        self,
+        select: None,
+        skip: None,
+        cls_setup: Optional[Type["CoreInputSetup"]] = None,
+    ) -> "CoreInputSetupCollection":
         ...
 
     @overload
     def _decompress(
-        self, select: None, skip: None, cls_setup: Type["Setup"],
-    ) -> "SetupCollection":
+        self, select: None, skip: None, cls_setup: Type["InputSetup"],
+    ) -> "InputSetupCollection":
         ...
 
     @overload
@@ -413,8 +418,8 @@ class Setup(BaseModel):
         self,
         select: None,
         skip: Collection[str],
-        cls_setup: Optional[Union[Type["CoreSetup"], Type["Setup"]]] = None,
-    ) -> "SetupCollection":
+        cls_setup: Optional[Union[Type["CoreInputSetup"], Type["InputSetup"]]] = None,
+    ) -> "InputSetupCollection":
         ...
 
     @overload
@@ -422,8 +427,8 @@ class Setup(BaseModel):
         self,
         select: Collection[str],
         skip: None,
-        cls_setup: Optional[Union[Type["CoreSetup"], Type["Setup"]]] = None,
-    ) -> "SetupCollection":
+        cls_setup: Optional[Union[Type["CoreInputSetup"], Type["InputSetup"]]] = None,
+    ) -> "InputSetupCollection":
         ...
 
     @overload
@@ -431,22 +436,22 @@ class Setup(BaseModel):
         self,
         select: Collection[str],
         skip: Collection[str],
-        cls_setup: Optional[Union[Type["CoreSetup"], Type["Setup"]]] = None,
-    ) -> "SetupCollection":
+        cls_setup: Optional[Union[Type["CoreInputSetup"], Type["InputSetup"]]] = None,
+    ) -> "InputSetupCollection":
         ...
 
     def _decompress(self, select=None, skip=None, cls_setup=None):
-        """Create multiple ``Setup`` objects with one-value parameters only."""
+        """Create multiple ``InputSetup`` objects with one-value parameters only."""
 
         if cls_setup is None:
             if (select, skip) == (None, None):
-                cls_setup = CoreSetup
+                cls_setup = CoreInputSetup
             else:
-                cls_setup = Setup
-        if cls_setup is CoreSetup:
-            cls_setup_collection = CoreSetupCollection
-        elif cls_setup is Setup:
-            cls_setup_collection = SetupCollection
+                cls_setup = InputSetup
+        if cls_setup is CoreInputSetup:
+            cls_setup_collection = CoreInputSetupCollection
+        elif cls_setup is InputSetup:
+            cls_setup_collection = InputSetupCollection
         else:
             raise ValueError("invalid cls_setup", cls_setup)
 
@@ -470,18 +475,18 @@ class Setup(BaseModel):
         return cls_setup_collection([cls_setup.create(dct) for dct in dcts])
 
 
-# SR_TMP <<< TODO Consider merging with CoreSetupCollection (failed due to mypy)
-class SetupCollection:
-    def __init__(self, setups: Collection[Setup]) -> None:
-        self._setups: List[Setup] = [setup for setup in setups]
+# SR_TMP <<< TODO Consider merging with CoreInputSetupCollection (failed due to mypy)
+class InputSetupCollection:
+    def __init__(self, setups: Collection[InputSetup]) -> None:
+        self._setups: List[InputSetup] = [setup for setup in setups]
 
     @classmethod
     def create(
-        cls, setups: Collection[Union[Mapping[str, Any], Setup]]
-    ) -> "SetupCollection":
-        setup_objs: List[Setup] = []
+        cls, setups: Collection[Union[Mapping[str, Any], InputSetup]]
+    ) -> "InputSetupCollection":
+        setup_objs: List[InputSetup] = []
         for obj in setups:
-            setup_obj = Setup.as_setup(obj)
+            setup_obj = InputSetup.as_setup(obj)
             setup_objs.append(setup_obj)
         return cls(setup_objs)
 
@@ -492,7 +497,7 @@ class SetupCollection:
     def __len__(self) -> int:
         return len(self._setups)
 
-    def __iter__(self) -> Iterator[Setup]:
+    def __iter__(self) -> Iterator[InputSetup]:
         for setup in self._setups:
             yield setup
 
@@ -510,37 +515,37 @@ class SetupCollection:
         return [setup.dict() for setup in self._setups]
 
 
-# SR_TMP <<< TODO Consider merging with SetupCollection (failed due to mypy)
-class CoreSetupCollection:
-    def __init__(self, setups: Collection[CoreSetup]) -> None:
-        self._setups: List[CoreSetup] = [setup for setup in setups]
+# SR_TMP <<< TODO Consider merging with InputSetupCollection (failed due to mypy)
+class CoreInputSetupCollection:
+    def __init__(self, setups: Collection[CoreInputSetup]) -> None:
+        self._setups: List[CoreInputSetup] = [setup for setup in setups]
 
     @classmethod
     def create(
-        cls, setups: Collection[Union[Mapping[str, Any], CoreSetup]]
-    ) -> "CoreSetupCollection":
-        setup_objs: List[CoreSetup] = []
+        cls, setups: Collection[Union[Mapping[str, Any], CoreInputSetup]]
+    ) -> "CoreInputSetupCollection":
+        setup_objs: List[CoreInputSetup] = []
         for obj in setups:
-            setup_obj = CoreSetup.as_setup(obj)
+            setup_obj = CoreInputSetup.as_setup(obj)
             setup_objs.append(setup_obj)
         return cls(setup_objs)
 
     # SR_TMP <
-    __repr__ = SetupCollection.__repr__
-    __len__ = SetupCollection.__len__
-    __iter__ = SetupCollection.__iter__
-    __eq__ = SetupCollection.__eq__
-    dicts = SetupCollection.dicts
+    __repr__ = InputSetupCollection.__repr__
+    __len__ = InputSetupCollection.__len__
+    __iter__ = InputSetupCollection.__iter__
+    __eq__ = InputSetupCollection.__eq__
+    dicts = InputSetupCollection.dicts
     # SR_TMP >
 
 
-class SetupFile:
-    """Setup file to be read from and/or written to disk."""
+class InputSetupFile:
+    """InputSetup file to be read from and/or written to disk."""
 
     def __init__(self, path: str) -> None:
         self.path: str = path
 
-    def read(self) -> SetupCollection:
+    def read(self) -> InputSetupCollection:
         """Read the setup from a text file in TOML format."""
         with open(self.path, "r") as f:
             try:
@@ -557,7 +562,7 @@ class SetupFile:
         data = decompress_nested_dict(
             semi_raw_data, branch_end_criterion=lambda key: not key.startswith("_"),
         )
-        setups = SetupCollection.create(data)
+        setups = InputSetupCollection.create(data)
         return setups
 
     def write(self, *args, **kwargs) -> None:

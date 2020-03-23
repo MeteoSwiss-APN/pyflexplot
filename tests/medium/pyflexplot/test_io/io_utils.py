@@ -8,7 +8,7 @@ import netCDF4 as nc4
 import numpy as np
 
 # First-party
-from pyflexplot.setup import CoreSetup
+from pyflexplot.setup import CoreInputSetup
 
 
 # SR_TMP <<<
@@ -23,7 +23,7 @@ def fix_nc_fld(fld, model):
 
 
 def read_nc_var(path, var_name, setup, model):
-    # + assert isinstance(setup, CoreSetup)  # SR_TODO (if that's indeed the goal)
+    # + assert isinstance(setup, CoreInputSetup)  # SR_TODO (if that's indeed the goal)
     with nc4.Dataset(path, "r") as fi:
         var = fi.variables[var_name]
 
@@ -35,7 +35,7 @@ def read_nc_var(path, var_name, setup, model):
             elif dim_name == "time":
                 # Read all timesteps until the selected one
                 # SR_TMP <
-                if isinstance(setup, CoreSetup):
+                if isinstance(setup, CoreInputSetup):
                     idx = slice(setup.time + 1)
                 else:
                     assert len(setup.time) == 1
@@ -43,7 +43,7 @@ def read_nc_var(path, var_name, setup, model):
                 # SR_TMP >
             elif dim_name in ["level", "height"]:
                 # SR_TMP <
-                if isinstance(setup, CoreSetup) or setup.level is None:
+                if isinstance(setup, CoreInputSetup) or setup.level is None:
                     idx = setup.level
                 else:
                     assert len(setup.level) == 1

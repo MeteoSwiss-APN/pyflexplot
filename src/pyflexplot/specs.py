@@ -10,8 +10,8 @@ from typing import Union
 from typing import overload
 
 # Local
-from .setup import Setup
-from .setup import SetupCollection
+from .setup import InputSetup
+from .setup import InputSetupCollection
 
 
 @overload
@@ -34,7 +34,7 @@ def int_or_list(
 
 
 # SR_TMP <<< Leftover from VarSpecs
-def create_var_setups(fld_setups: SetupCollection):
+def create_var_setups(fld_setups: InputSetupCollection):
     var_setups_lst = []
     for fld_setup in fld_setups:
         # SR_TMP <
@@ -56,17 +56,19 @@ def create_var_setups(fld_setups: SetupCollection):
 class FldSpecs:
     """Specifications to compute a field."""
 
-    def __init__(self, fld_setup: Setup, var_setups: Sequence[Setup]) -> None:
+    def __init__(self, fld_setup: InputSetup, var_setups: Sequence[InputSetup]) -> None:
         self.fld_setup = fld_setup
         self.var_setups = var_setups
 
     @classmethod
-    def create(cls, setup_or_setups: Union[Setup, SetupCollection]) -> List["FldSpecs"]:
-        """Create instances of ``FldSpecs`` from ``Setup`` object(s)."""
-        if isinstance(setup_or_setups, SetupCollection):
+    def create(
+        cls, setup_or_setups: Union[InputSetup, InputSetupCollection],
+    ) -> List["FldSpecs"]:
+        """Create instances of ``FldSpecs`` from ``InputSetup`` object(s)."""
+        if isinstance(setup_or_setups, InputSetupCollection):
             setups = setup_or_setups
-        elif isinstance(setup_or_setups, Setup):
-            setups = SetupCollection([setup_or_setups])
+        elif isinstance(setup_or_setups, InputSetup):
+            setups = InputSetupCollection([setup_or_setups])
         else:
             raise ValueError(
                 "setup_or_setups has invalid type",

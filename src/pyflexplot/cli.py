@@ -22,7 +22,7 @@ from .preset import click_cat_preset
 from .preset import click_find_presets
 from .preset import click_list_presets
 from .preset import click_use_preset
-from .setup import SetupFile
+from .setup import InputSetupFile
 from .specs import FldSpecs
 
 # # To debug segmentation fault, uncomment and run with PYTHONFAULTHANDLER=1
@@ -150,7 +150,7 @@ def cli(ctx, setup_file_paths, **cli_args):
     setups = [
         setup
         for setup_file_path in setup_file_paths
-        for setup in SetupFile(setup_file_path).read()
+        for setup in InputSetupFile(setup_file_path).read()
     ]
 
     # Create plots

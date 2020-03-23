@@ -12,8 +12,8 @@ import numpy as np
 # First-party
 from pyflexplot.data import threshold_agreement
 from pyflexplot.io import read_files
-from pyflexplot.setup import Setup
-from pyflexplot.setup import SetupCollection
+from pyflexplot.setup import InputSetup
+from pyflexplot.setup import InputSetupCollection
 from pyflexplot.specs import FldSpecs
 from srutils.dict import decompress_multival_dict
 
@@ -35,7 +35,7 @@ def get_var_name_ref(setup, var_names_ref):
 class TestReadFieldEnsemble_Single:
     """Read one ensemble of 2D fields from FLEXPART NetCDF files."""
 
-    # Setup parameters shared by all tests
+    # InputSetup parameters shared by all tests
     setup_params_shared = {
         "infile": "dummy.nc",
         "integrate": False,
@@ -76,7 +76,7 @@ class TestReadFieldEnsemble_Single:
         datafile_fmt = self.datafile_fmt(datadir)
 
         # Initialize specifications
-        setup = Setup.create(
+        setup = InputSetup.create(
             {
                 **self.setup_params_shared,
                 **setup_params,
@@ -141,7 +141,7 @@ class TestReadFieldEnsemble_Single:
 class TestReadFieldEnsemble_Multiple:
     """Read multiple 2D field ensembles from FLEXPART NetCDF files."""
 
-    # Setup parameters arguments shared by all tests
+    # InputSetup parameters arguments shared by all tests
     shared_setup_params_compressed = {
         "infile": "dummy.nc",
         "integrate": True,
@@ -194,8 +194,8 @@ class TestReadFieldEnsemble_Multiple:
                 "ens_member_id": self.ens_member_ids,
                 "plot_type": f"ens_{ens_var}",
             }
-            setups.append(Setup.create(setup_params_i))
-        fld_specs_lst = FldSpecs.create(SetupCollection(setups))
+            setups.append(InputSetup.create(setup_params_i))
+        fld_specs_lst = FldSpecs.create(InputSetupCollection(setups))
 
         run_core = functools.partial(
             self._run_core, datafile_fmt, var_names_ref, fct_reduce_mem, scale_fld_ref,
@@ -211,10 +211,10 @@ class TestReadFieldEnsemble_Multiple:
         self, datafile_fmt, var_names_ref, fct_reduce_mem, scale_fld_ref, fld_specs_lst,
     ):
         # Collect merged variables specifications
-        compressed_setups = SetupCollection(
+        compressed_setups = InputSetupCollection(
             [fld_specs.fld_setup for fld_specs in fld_specs_lst],
         )
-        global_setup = Setup.compress(compressed_setups)
+        global_setup = InputSetup.compress(compressed_setups)
 
         # Read input fields
         fields, mdata_lst = read_files(datafile_fmt, global_setup, fld_specs_lst)
