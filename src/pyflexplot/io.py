@@ -26,6 +26,7 @@ from .data import Field
 from .data import cloud_arrival_time
 from .data import merge_fields
 from .data import threshold_agreement
+from .io_meta_data import read_meta_data
 from .meta_data import MetaDataCollection
 from .meta_data import collect_meta_data
 from .meta_data import nc_var_name
@@ -231,8 +232,11 @@ class FileReader:
         for i_mem, in_file_path in enumerate(self.in_file_path_lst or []):
             with nc4.Dataset(in_file_path, "r") as fi:
 
+                # Read meta data
+                meta_data = read_meta_data(fi)
+
                 # Determine model
-                model = self._determine_model(fi)
+                model = meta_data["analysis"]["model"]
                 if self.model is None:
                     # SR_TMP <
                     if model in ["cosmo1", "cosmo2"]:
@@ -277,24 +281,6 @@ class FileReader:
                         raise Exception("inconsistent longitude", lon, self.lon)
 
         return fld_time_mem
-
-    # SR_TODO Add class representing model, storing info like rotated pole etc.
-    def _determine_model(self, fi):
-        """Determine the model from the NetCDF meta data.
-
-        For lack of an explicit NetCDF attribute, use the grid resolution.
-
-        """
-        dxout = fi.getncattr("dxout")
-        choices = {
-            type(dxout)(0.25): "ifs",
-            type(dxout)(0.02): "cosmo2",
-            type(dxout)(0.01): "cosmo1",
-        }
-        try:
-            return choices[dxout]
-        except KeyError:
-            raise Exception("no model defined for dxout", dxout, choices)
 
     def _reduce_ensemble(self, fld_time_mem: np.ndarray, setup: Setup) -> np.ndarray:
         """Reduce the ensemble to a single field (time, lat, lon)."""
@@ -614,7 +600,6 @@ class FlexPartDataFixer:
         if np.unique(dlons).size > 1:
             raise ValueError("longitude not evenly spaced/seamless", np.unique(dlons))
         dlon = next(iter(dlons))
-        print(lon)
 
         # Shift the grid
         if lon[-1] > 180.0:
