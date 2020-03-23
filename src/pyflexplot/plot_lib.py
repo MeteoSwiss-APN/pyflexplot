@@ -4,6 +4,7 @@ Plots.
 """
 # Standard library
 import warnings
+from dataclasses import dataclass
 from dataclasses import field
 from typing import Optional
 from typing import Tuple
@@ -15,7 +16,6 @@ import matplotlib as mpl
 import matplotlib.patches
 import matplotlib.ticker
 import numpy as np
-from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 # First-party
 from srutils.iter import isiterable
@@ -75,7 +75,7 @@ def summarize_mpl_bbox(obj):
 
 
 @summarizable
-@pydantic_dataclass
+@dataclass
 class RefDistIndConf:
     """
     Configuration of ``ReferenceDistanceIndicator``.
@@ -97,7 +97,7 @@ class RefDistIndConf:
 
 
 @summarizable
-@pydantic_dataclass
+@dataclass
 class MapAxesConf:
     """
     Configuration of ``MapAxesPlot``.
@@ -137,66 +137,36 @@ class MapAxesConf:
     rel_offset: Tuple[float, float] = (0.0, 0.0)
     zoom_fact: float = 1.0
 
-    def __post_init_post_parse__(self):
+    def __post_init__(self):
         if self.geo_res_cities is None:
             self.geo_res_cities = self.geo_res
         if self.geo_res_rivers is None:
             self.geo_res_rivers = self.geo_res
 
 
-@pydantic_dataclass
-class MapAxesConf_Cosmo1(MapAxesConf):
-    geo_res: str = "10m"
-    geo_res_cities: str = "50m"
-    geo_res_rivers: str = "50m"
-    zoom_fact: float = 1.02
-    min_city_pop: int = 300_000
-
-
-@pydantic_dataclass
-class MapAxesConf_Cosmo1_CH(MapAxesConf_Cosmo1):
-    geo_res_cities: str = "10m"
-    geo_res_rivers: str = "10m"
-    min_city_pop: int = 0
-    # SR_TODO Determine the model from the data! (e.g., COSMO-1 v. COSMO-2 v. COSMO-E)
-    # rel_offset: Tuple[float] = (0.037, 0.106)  # suitable for ensemble (COSMO-2?)
-    # zoom_fact: float = 3.2  # suitable for ensemble (i.e., COSMO-2?)
-    rel_offset: Tuple[float, float] = (-0.02, 0.045)
-    zoom_fact: float = 3.6
-
-    def __post_init_post_parse__(self):
-        super().__post_init_post_parse__()
-        self.ref_dist_conf.dist = 25
-
-
-# SR_TODO Push non-rotated-pole specific code up into MapAxesRotatedPole
 @summarizable(post_summarize=post_summarize_plot)
-class MapAxesRotatedPole:
-    """Map plot axes for FLEXPART plot for rotated-pole data."""
+class MapAxes:
+    """Map plot axes for regular lat/lon data."""
 
     # water_color = cartopy.feature.COLORS["water"]
     water_color = "lightskyblue"
 
-    def __init__(self, fig, rlat, rlon, pollat, pollon, conf):
+    def __init__(self, *, fig, lat, lon, conf):
         """Initialize instance of MapAxesRotatedPole.
 
         Args:
             fig (Figure): Figure to which to map axes is added.
 
-            rlat (ndarray[float]): Rotated latitude coordinates.
+            lat (ndarray[float]): Latitude coordinates.
 
-            rlon (ndarray[float]): Rotated longitude coordinates.
+            lon (ndarray[float]): Longitude coordinates.
 
-            pollat (float): Latitude of rotated pole.
-
-            pollon (float): Longitude of rotated pole.
-
-            conf (MapAxesConf): Map axes setupuration.
+            conf (MapAxesConf): Map axes setup.
 
         """
         self.fig = fig
-        self.rlat = rlat
-        self.rlon = rlon
+        self.lat = lat
+        self.lon = lon
         self.conf = conf
 
         # Determine zorder of unique plot elements, from low to high
@@ -213,16 +183,17 @@ class MapAxesRotatedPole:
         self.zorder = {e: d0 + i * dz for i, e in enumerate(zorders_const)}
 
         # Prepare the map projections (input, plot, geographic)
-        self.prepare_projections(pollat, pollon)
+        self.prepare_projections()
 
         # Initialize plot
         self.ax = self.fig.add_subplot(projection=self.proj_map)
         self.ax.outline_patch.set_edgecolor("none")
 
         # Set extent of map
-        edges = [self.rlon[0], self.rlon[-1], self.rlat[0], self.rlat[-1]]
         bbox = (
-            MapAxesBoundingBox(self, "data", *edges)
+            MapAxesBoundingBox(
+                self, "data", self.lon[0], self.lon[-1], self.lat[0], self.lat[-1],
+            )
             .to_axes()
             .zoom(self.conf.zoom_fact, self.conf.rel_offset)
             .to_data()
@@ -236,7 +207,7 @@ class MapAxesRotatedPole:
         gl.xlocator = mpl.ticker.FixedLocator(np.arange(-180, 180.1, 2))
         gl.ylocator = mpl.ticker.FixedLocator(np.arange(-90, 90.1, 2))
 
-        # Reference distance indicator
+        # Define reference distance indicator
         if not self.conf.ref_dist_on:
             self.ref_dist_box = None
         else:
@@ -268,40 +239,27 @@ class MapAxesRotatedPole:
             ),
         )
 
-    def prepare_projections(self, pollat, pollon):
-        """Prepare projections to transform the data for plotting.
+    def __repr__(self):
+        return f"{type(self).__name__}(<TODO>)"  # SR_TODO
 
-        Args:
-            pollat (float): Lattitude of rorated pole.
+    def prepare_projections(self):
+        """Prepare projections to transform the data for plotting."""
 
-            pollon (float): Longitude of rotated pole.
-
-        """
-
-        # Projection of input data: Rotated Pole
-        self.proj_data = cartopy.crs.RotatedPole(
-            pole_latitude=pollat, pole_longitude=pollon
-        )
+        # Projection of input data
+        self.proj_data = cartopy.crs.PlateCarree()
 
         # Projection of plot
-        clon = 180 + pollon
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            self.proj_map = cartopy.crs.TransverseMercator(central_longitude=clon)
+        self.proj_map = cartopy.crs.PlateCarree()  # SR_TMP
 
-        # Geographical lat/lon arrays
+        # Geographical projection
         self.proj_geo = cartopy.crs.PlateCarree()
-        rlat2d, rlon2d = np.meshgrid(self.rlat, self.rlon)
-        self.lon2d, self.lat2d, _ = self.proj_geo.transform_points(
-            self.proj_data, rlat2d, rlon2d
-        ).T
 
     def add_data_domain_outline(self):
         """Add domain outlines to map plot."""
-        rlon0, rlon1 = self.rlon[[0, -1]]
-        rlat0, rlat1 = self.rlat[[0, -1]]
-        xs = [rlon0, rlon1, rlon1, rlon0, rlon0]
-        ys = [rlat0, rlat0, rlat1, rlat1, rlat0]
+        lon0, lon1 = self.lon[[0, -1]]
+        lat0, lat1 = self.lat[[0, -1]]
+        xs = [lon0, lon1, lon1, lon0, lon0]
+        ys = [lat0, lat0, lat1, lat1, lat0]
         self.ax.plot(xs, ys, transform=self.proj_data, c="black", lw=1)
 
     def add_geography(self):
@@ -424,9 +382,11 @@ class MapAxesRotatedPole:
                 return x0 <= x <= x1 and y0 <= y <= y1
 
             # In domain
-            prlon, prlat = self.proj_data.transform_point(plon, plat, self.proj_geo)
+            plon, plat = self.proj_data.transform_point(
+                plon, plat, self.proj_geo, trap=True,
+            )
             in_domain = is_in_box(
-                prlon, prlat, self.rlon[0], self.rlon[-1], self.rlat[0], self.rlat[-1],
+                plon, plat, self.lon[0], self.lon[-1], self.lat[0], self.lat[-1],
             )
 
             # Not behind reference distance indicator box
@@ -495,8 +455,8 @@ class MapAxesRotatedPole:
             return
 
         handle = self.ax.contour(
-            self.rlon,
-            self.rlat,
+            self.lon,
+            self.lat,
             fld,
             transform=self.proj_data,
             zorder=self.zorder["fld"],
@@ -521,8 +481,8 @@ class MapAxesRotatedPole:
             return
 
         handle = self.ax.contourf(
-            self.rlon,
-            self.rlat,
+            self.lon,
+            self.lat,
             fld,
             transform=self.proj_data,
             zorder=self.zorder["fld"],
@@ -532,21 +492,16 @@ class MapAxesRotatedPole:
 
     def marker(self, lon, lat, marker, *, zorder=None, **kwargs):
         """Add a marker at a location in natural coordinates."""
-        rlon, rlat = self.proj_data.transform_point(lon, lat, self.proj_geo)
-        handle = self.marker_rot(rlon, rlat, marker, zorder=zorder, **kwargs)
+        lon, lat = self.proj_data.transform_point(lon, lat, self.proj_geo, trap=True)
+        handle = self.add_marker(lon, lat, marker, zorder=zorder, **kwargs)
         return handle
 
-    def marker_rot(self, rlon, rlat, marker, *, zorder=None, **kwargs):
+    def add_marker(self, lon, lat, marker, *, zorder=None, **kwargs):
         """Add a marker at a location in rotated coordinates."""
         if zorder is None:
             zorder = self.zorder["marker"]
         handle = self.ax.plot(
-            rlon,
-            rlat,
-            marker=marker,
-            transform=self.proj_data,
-            zorder=zorder,
-            **kwargs,
+            lon, lat, marker=marker, transform=self.proj_data, zorder=zorder, **kwargs,
         )
         return handle
 
@@ -588,8 +543,8 @@ class MapAxesRotatedPole:
             warnings.warn("skip maximum marker (all-nan field)")
             return
         jmax, imax = np.unravel_index(np.nanargmax(fld), fld.shape)
-        rlon, rlat = self.rlon[imax], self.rlat[jmax]
-        handle = self.marker_rot(rlon, rlat, marker, **kwargs)
+        lon, lat = self.lon[imax], self.lat[jmax]
+        handle = self.add_marker(lon, lat, marker, **kwargs)
         return handle
 
     # SR_TODO create tranformator class
@@ -603,6 +558,34 @@ class MapAxesRotatedPole:
         return transform_xy_geo_to_axes(
             x, y, self.proj_map, self.proj_geo, self.ax.transData, self.ax.transAxes,
         )
+
+
+class MapAxesRotatedPole(MapAxes):
+    """Map plot axes for rotated-pole data."""
+
+    def __init__(self, *, pollon, pollat, **kwargs):
+        self.pollon = pollon
+        self.pollat = pollat
+        super().__init__(**kwargs)
+
+    def prepare_projections(self):
+        """Prepare projections to transform the data for plotting."""
+
+        # Projection of input data: Rotated Pole
+        self.proj_data = cartopy.crs.RotatedPole(
+            pole_latitude=self.pollat, pole_longitude=self.pollon
+        )
+
+        # Projection of plot
+        clon = 180 + self.pollon
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.proj_map = cartopy.crs.TransverseMercator(
+                central_longitude=clon, approx=True,
+            )
+
+        # Geographical projection
+        self.proj_geo = cartopy.crs.PlateCarree()
 
 
 class ReferenceDistanceIndicator:
@@ -715,64 +698,85 @@ class ReferenceDistanceIndicator:
         return x1
 
 
-def transform_xy_geo_to_axes(x, y, proj_map, proj_geo, transData, transAxes):
+def transform_xy_geo_to_axes(
+    x, y, proj_map, proj_geo, transData, transAxes, invalid_ok=True, invalid_warn=True,
+):
     """Transform geographic coordinates to axes coordinates."""
 
+    def recurse(xi, yi):
+        return transform_xy_geo_to_axes(
+            xi, yi, proj_map, proj_geo, transData, transAxes, invalid_ok, invalid_warn,
+        )
+
     if isiterable(x) or isiterable(y):
-        check_equivalent_iterables(x, y)
+        check_same_sized_iterables(x, y)
+        return tuple(np.array([recurse(xi, yi) for xi, yi in zip(x, y)]).T)
 
-        def f(xi, yi):
-            return transform_xy_geo_to_axes(
-                xi, yi, proj_map, proj_geo, transData, transAxes
-            )
-
-        return tuple(np.array([f(xi, yi) for xi, yi in zip(x, y)]).T)
+    check_valid_coords((x, y), invalid_ok, invalid_warn)
 
     # Geo -> Plot
-    xy_plt = proj_map.transform_point(x, y, proj_geo)
+    xy_plt = proj_map.transform_point(x, y, proj_geo, trap=True)
+    check_valid_coords(xy_plt, invalid_ok, invalid_warn)
 
     # Plot -> Display
     xy_dis = transData.transform(xy_plt)
+    check_valid_coords(xy_dis, invalid_ok, invalid_warn)
 
     # Display -> Axes
     xy_axs = transAxes.inverted().transform(xy_dis)
+    check_valid_coords(xy_axs, invalid_ok, invalid_warn)
 
     return xy_axs
 
 
-def transform_xy_axes_to_geo(x, y, transAxes, transData, proj_geo, proj_map):
+def transform_xy_axes_to_geo(
+    x, y, transAxes, transData, proj_geo, proj_map, invalid_ok=True, invalid_warn=True,
+):
     """Transform axes coordinates to geographic coordinates."""
 
+    def recurse(xi, yi):
+        return transform_xy_axes_to_geo(
+            xi, yi, transAxes, transData, proj_geo, proj_map, invalid_ok, invalid_warn,
+        )
+
     if isiterable(x) or isiterable(y):
-        check_equivalent_iterables(x, y)
+        check_same_sized_iterables(x, y)
+        return tuple(np.array([recurse(xi, yi) for xi, yi in zip(x, y)]).T)
 
-        def f(xi, yi):
-            return transform_xy_axes_to_geo(
-                xi, yi, transAxes, transData, proj_geo, proj_map
-            )
-
-        return tuple(np.array([f(xi, yi) for xi, yi in zip(x, y)]).T)
+    check_valid_coords((x, y), invalid_ok, invalid_warn)
 
     # Axes -> Display
     xy_dis = transAxes.transform((x, y))
+    check_valid_coords(xy_dis, invalid_ok, invalid_warn)
 
     # Display -> Plot
     x_plt, y_plt = transData.inverted().transform(xy_dis)
+    check_valid_coords((x_plt, y_plt), invalid_ok, invalid_warn)
 
     # Plot -> Geo
-    xy_geo = proj_geo.transform_point(x_plt, y_plt, proj_map)
+    xy_geo = proj_geo.transform_point(x_plt, y_plt, proj_map, trap=True)
+    check_valid_coords(xy_geo, invalid_ok, invalid_warn)
 
     return xy_geo
 
 
-def check_equivalent_iterables(x, y):
+def check_same_sized_iterables(x, y):
     """Check that x and y are iterables of the same size."""
     if isiterable(x) and not isiterable(y):
-        raise ValueError(f"x is iterable but y is not: x={x}, y={y}")
+        raise ValueError(f"x is iterable but y is not", (x, y))
     if isiterable(y) and not isiterable(x):
-        raise ValueError(f"y is iterable but x is not: x={x}, y={y}")
+        raise ValueError(f"y is iterable but x is not", (x, y))
     if len(x) != len(y):
-        raise ValueError(f"x and y differ in length: {len(x)} != {len(y)}")
+        raise ValueError(f"x and y differ in length", (len(x), len(y)), (x, y))
+
+
+def check_valid_coords(xy, allow, warn):
+    """Check that xy coordinate is valid."""
+    if np.isnan(xy).any() or np.isinf(xy).any():
+        if not allow:
+            raise ValueError("invalid coordinates", xy)
+        elif warn:
+            warnings.warn(f"invalid coordinates: {xy}")
 
 
 class MapDistanceCalculator:
@@ -1700,9 +1704,41 @@ class MapAxesBoundingBox:
         self.map_axes = map_axes
         self.set(coord_type, lon0, lon1, lat0, lat1)
 
+    def __repr__(self):
+        return (
+            f"{type(self).__name__}("
+            f'map_axes={self.map_axes}, coord_type="{self.coord_type}", '
+            f"lon0={self.lon0:.2f}, lon1={self.lon1:.2f}, "
+            f"lat0={self.lat0:.2f}, lat1={self.lat1:.2f})"
+        )
+
     @property
     def coord_type(self):
         return self._curr_coord_type
+
+    @property
+    def lon0(self):
+        return self._curr_lon0
+
+    @property
+    def lon1(self):
+        return self._curr_lon1
+
+    @property
+    def lat0(self):
+        return self._curr_lat0
+
+    @property
+    def lat1(self):
+        return self._curr_lat1
+
+    def set(self, coord_type, lon0, lon1, lat0, lat1):
+        assert not any(np.isnan(c) for c in (lon0, lon1, lat0, lat1))
+        self._curr_coord_type = coord_type
+        self._curr_lon0 = lon0
+        self._curr_lon1 = lon1
+        self._curr_lat0 = lat0
+        self._curr_lat1 = lat1
 
     def __iter__(self):
         """Iterate over the rotated corner coordinates."""
@@ -1716,13 +1752,6 @@ class MapAxesBoundingBox:
 
     def __getitem__(self, idx):
         return list(iter(self))[idx]
-
-    def set(self, coord_type, lon0, lon1, lat0, lat1):
-        self._curr_coord_type = coord_type
-        self._curr_lon0 = lon0
-        self._curr_lon1 = lon1
-        self._curr_lat0 = lat0
-        self._curr_lat1 = lat1
 
     def to_data(self):
         if self.coord_type == "geo":
@@ -1754,6 +1783,7 @@ class MapAxesBoundingBox:
                     self._transData,
                     self._proj_geo,
                     self._proj_map,
+                    invalid_ok=False,
                 )
             )
         else:
@@ -1771,6 +1801,7 @@ class MapAxesBoundingBox:
                     self._proj_geo,
                     self._transData,
                     self._transAxes,
+                    invalid_ok=False,
                 )
             )
         elif self.coord_type == "data":

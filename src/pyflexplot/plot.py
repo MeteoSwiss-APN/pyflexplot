@@ -16,12 +16,13 @@ from srutils.geo import Degrees
 from srutils.iter import isiterable
 
 # Local
-from .plot_lib import MapAxesConf_Cosmo1
-from .plot_lib import MapAxesConf_Cosmo1_CH
+from .plot_lib import MapAxes
 from .plot_lib import MapAxesRotatedPole
 from .plot_lib import TextBoxAxes
 from .plot_lib import ax_w_h_in_fig_coords
 from .plot_lib import post_summarize_plot
+from .plot_types import MapAxesConf_Cosmo1
+from .plot_types import MapAxesConf_Cosmo1_CH
 from .plot_types import PlotConfig
 from .utils import fmt_float
 from .utils import format_level_ranges
@@ -81,15 +82,20 @@ class Plot:
 
         if self.field.rotated_pole:
             self.ax_map = MapAxesRotatedPole(
-                self.fig,
-                self.field.lat,
-                self.field.lon,
-                self.plot_config.mdata.grid.north_pole_lat.value,
-                self.plot_config.mdata.grid.north_pole_lon.value,
-                self.map_conf,
+                fig=self.fig,
+                lat=self.field.lat,
+                lon=self.field.lon,
+                pollat=self.plot_config.mdata.grid.north_pole_lat.value,
+                pollon=self.plot_config.mdata.grid.north_pole_lon.value,
+                conf=self.map_conf,
             )
         else:
-            raise NotImplementedError("non-rotated pole")
+            self.ax_map = MapAxes(
+                fig=self.fig,
+                lat=self.field.lat,
+                lon=self.field.lon,
+                conf=self.map_conf,
+            )
 
     def save(self, file_path, format=None):
         """Save the plot to disk.

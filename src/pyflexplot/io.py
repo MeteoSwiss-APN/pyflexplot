@@ -3,6 +3,7 @@
 IO.
 """
 # Standard library
+import warnings
 from copy import deepcopy
 from typing import Any
 from typing import Dict
@@ -250,6 +251,22 @@ class FileReader:
                 else:
                     lat = fi.variables["rlat"][:]
                     lon = fi.variables["rlon"][:]
+
+                # Read field (all time steps)
+                fld_time: np.ndarray = merge_fields(
+                    [self._read_nc_var(fi, setup) for setup in setups],
+                )
+
+                if self.model in ["ifs"]:
+                    self.fixer.fix_global_grid(lon, fld_time)
+
+                # Store field for current member
+                if fld_time_mem is None:
+                    shape = [self.n_members] + list(fld_time.shape)
+                    fld_time_mem = np.full(shape, np.nan, np.float32)
+                fld_time_mem[i_mem] = fld_time
+
+                # Ensure consistent grid across all input
                 if self.lat is None:
                     self.lat = lat
                     self.lon = lon
@@ -258,17 +275,6 @@ class FileReader:
                         raise Exception("inconsistent latitude", lat, self.lat)
                     if not (lon == self.lon).all():
                         raise Exception("inconsistent longitude", lon, self.lon)
-
-                # Read field (all time steps)
-                fld_time: np.ndarray = merge_fields(
-                    [self._read_nc_var(fi, setup) for setup in setups],
-                )
-
-                # Store field for current member
-                if fld_time_mem is None:
-                    shape = [self.n_members] + list(fld_time.shape)
-                    fld_time_mem = np.full(shape, np.nan, np.float32)
-                fld_time_mem[i_mem] = fld_time
 
         return fld_time_mem
 
@@ -586,3 +592,70 @@ class FlexPartDataFixer:
                 "unknown unit", {"name": name, "unit": old_unit},
             )
         mdata.variable.unit.value = new_unit
+
+    def fix_global_grid(self, lon, fld_time, idx_lon=-1):
+        """Shift global grid longitudinally to fit into (-180..180) range."""
+
+        # Check longitude dimension index
+        if (
+            (idx_lon < 0 and -idx_lon > len(fld_time.shape))
+            or (idx_lon >= 0 and idx_lon >= len(fld_time.shape))
+            or fld_time.shape[idx_lon] != lon.size
+        ):
+            raise ValueError("invalid idx_lon", idx_lon, fld_time.shape, lon.size)
+
+        # Check longitudinal range
+        if lon.max() - lon.min() > 360.0:
+            raise ValueError("longitutinal range too large", lon.max() - lon.min())
+
+        # Check that longitude is evenly spaced and seamless across date line
+        dlons_raw = np.r_[lon, lon[0]] - np.r_[lon[-1], lon]
+        dlons = np.abs(np.stack([dlons_raw, 360 - np.abs(dlons_raw)])).min(axis=0)
+        if np.unique(dlons).size > 1:
+            raise ValueError("longitude not evenly spaced/seamless", np.unique(dlons))
+        dlon = next(iter(dlons))
+        print(lon)
+
+        # Shift the grid
+        if lon[-1] > 180.0:
+            # Eastward shift
+            n_shift = 0
+            while lon[-1] > 180.0:
+                n_shift += 1
+                lon[:] = np.r_[lon[0] - dlon, lon[:-1]]
+                if lon[0] < -180.0 or n_shift >= lon.size:
+                    raise Exception(
+                        "unexpected error while shifting lon eastward", lon, n_shift,
+                    )
+                idcs = np.arange(fld_time.shape[idx_lon] - 1)
+                fld_time[:] = np.concatenate(
+                    [
+                        np.take(fld_time, [-1], idx_lon),
+                        np.take(fld_time, idcs, idx_lon),
+                    ],
+                    axis=idx_lon,
+                )
+            warnings.warn(f"fix global data: shift eastward by {n_shift} * {dlon} deg")
+            return
+
+        elif lon[0] < -180.0:
+            # Westward shift
+            n_shift = 0
+            while lon[0] < -180.0:
+                n_shift += 1
+                lon[:] = np.r_[lon[1:], lon[-1] + dlon]
+                print(n_shift, lon)
+                if lon[-1] < -180.0 or n_shift >= lon.size:
+                    raise Exception(
+                        "unexpected error while shifting lon eastward", lon, n_shift,
+                    )
+                idcs = np.arange(1, fld_time.shape[idx_lon])
+                fld_time[:] = np.concatenate(
+                    [
+                        np.take(fld_time, idcs, idx_lon),
+                        np.take(fld_time, [0], idx_lon),
+                    ],
+                    axis=idx_lon,
+                )
+            warnings.warn(f"fix global data: shift westward by {n_shift} * {dlon} deg")
+            return
