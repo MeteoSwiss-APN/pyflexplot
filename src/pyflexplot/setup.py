@@ -171,7 +171,7 @@ class InputSetup(BaseModel):
     """
 
     class Config:  # noqa
-        allow_mutation = False
+        # allow_mutation = False
         extra = "forbid"
 
     # Basics
@@ -196,18 +196,12 @@ class InputSetup(BaseModel):
     domain: str = "auto"
 
     # Dimensions
-    nageclass: Tuple[int, ...] = (0,)
-    noutrel: Tuple[int, ...] = (0,)
-    numpoint: Tuple[int, ...] = (0,)
-    species_id: Tuple[int, ...] = (1,)
-    time: Tuple[int, ...] = (0,)
+    nageclass: Optional[Tuple[int, ...]] = None
+    noutrel: Optional[Tuple[int, ...]] = None
+    numpoint: Optional[Tuple[int, ...]] = None
+    species_id: Optional[Tuple[int, ...]] = None
+    time: Optional[Tuple[int, ...]] = None
     level: Optional[Tuple[int, ...]] = None
-
-    @validator("time")
-    def _validate_time(cls, value: Tuple[int, ...]) -> Tuple[int, ...]:
-        if len(value) == 0:
-            raise ValueError("missing time")
-        return value
 
     @validator("deposition_type", always=True)
     def _init_deposition_type(cls, value: Union[str, Tuple[str, str]]) -> str:
@@ -254,11 +248,7 @@ class InputSetup(BaseModel):
     def _init_level(
         cls, value: Optional[Tuple[int, ...]], values: Dict[str, Any],
     ) -> Optional[Tuple[int, ...]]:
-        if value is None:
-            if values["variable"] == "concentration":
-                return (0,)
-            return None
-        elif values["variable"] == "deposition":
+        if value is not None and values["variable"] == "deposition":
             raise ValueError(
                 "level must be None for variable", value, values["variable"],
             )
@@ -269,35 +259,17 @@ class InputSetup(BaseModel):
         """Create an instance of ``InputSetup``.
 
         Args:
-            params: Parameters to instatiate ``InputSetup``. In contrast to direct
-                instatiation, all ``Tuple`` parameters may alternatively be
-                passed directly, for instance `{"time": 0}` instead of
-                `{"time": (0,)}`.
+            params: Parameters to instatiate ``InputSetup``. In contrast to
+                direct instatiation, all ``Tuple`` parameters may be passed
+                directly, e.g., as `{"time": 0}` instead of `{"time": (0,)}`.
 
         """
         for param, value in params.items():
-            # SR_TMP <
-            if param in ["deposition_type"]:
-                continue
-            # SR_TMP >
-            # SR_TMP < Handle one parameter after the other
-            if param in [
-                "combine_species",
-                "deposition_type",
-                "domain",
-                "integrate",
-                "lang",
-                "outfile",
-                "plot_type",
-                "simulation_type",
-                "variable",
-                "ens_param_mem_min",
-                "ens_param_thr",
-            ]:
-                continue
-            # SR_TMP >
             field = cls.__fields__[param]
             if value is None and field.allow_none:
+                continue
+            if value == "*" and field.allow_none:
+                params[param] = None
                 continue
             field_type = field.outer_type_
             try:
@@ -329,6 +301,42 @@ class InputSetup(BaseModel):
         if isinstance(obj, cls):
             return obj
         return cls.create(obj)  # type: ignore
+
+    # SR_TODO consider renaming this method (sth. containing 'dimensions')
+    def replace_nones(self, meta_data: Mapping[str, Any]) -> List[str]:
+        dimensions = meta_data["dimensions"]
+        completed = []
+
+        if self.time is None:
+            self.time = tuple(range(dimensions["time"]["size"]))
+            completed.append("time")
+
+        if self.level is None:
+            if self.variable == "concentration":
+                if "level" in dimensions:
+                    self.level = tuple(range(dimensions["level"]["size"]))
+                    completed.append("level")
+
+        if self.species_id is None:
+            self.species_id = meta_data["analysis"]["species_ids"]
+            completed.append("species_id")
+
+        if self.nageclass is None:
+            if "nageclass" in dimensions:
+                self.nageclass = tuple(range(dimensions["nageclass"]["size"]))
+                completed.append("nageclass")
+
+        if self.noutrel is None:
+            if "noutrel" in dimensions:
+                self.noutrel = tuple(range(dimensions["noutrel"]["size"]))
+                completed.append("nageclass")
+
+        if self.numpoint is None:
+            if "numpoint" in dimensions:
+                self.numpoint = tuple(range(dimensions["numpoint"]["size"]))
+                completed.append("numpoint")
+
+        return completed
 
     def __repr__(self) -> str:  # type: ignore
         return setup_repr(self)
@@ -513,6 +521,19 @@ class InputSetupCollection:
 
     def dicts(self) -> List[Mapping[str, Any]]:
         return [setup.dict() for setup in self._setups]
+
+    def replace_nones(
+        self,
+        meta_data: Mapping[str, Any],
+        decompress_skip: Optional[Collection[str]] = None,
+    ) -> List[str]:
+        orig_setups = [setup for setup in self._setups]
+        self._setups.clear()
+        for setup in orig_setups:
+            completed: List[str] = setup.replace_nones(meta_data)
+            select = [dim for dim in completed if dim not in (decompress_skip or [])]
+            self._setups.extend(setup.decompress_partially(select))
+        return completed
 
 
 # SR_TMP <<< TODO Consider merging with InputSetupCollection (failed due to mypy)

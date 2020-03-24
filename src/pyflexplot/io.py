@@ -31,6 +31,7 @@ from .meta_data import MetaDataCollection
 from .meta_data import collect_meta_data
 from .meta_data import nc_var_name
 from .setup import InputSetup
+from .setup import InputSetupCollection
 from .specs import FldSpecs
 
 
@@ -81,6 +82,28 @@ class FileReader:
             fld_specs_lst: List of field specifications.
 
         """
+
+        # Collect ensemble member ids
+        ens_member_ids = None
+        for fld_specs in fld_specs_lst:
+            ens_member_ids_i = fld_specs.collect_equal("ens_member_id")
+            if ens_member_ids is None:
+                ens_member_ids = ens_member_ids_i
+            else:
+                assert ens_member_ids_i == ens_member_ids
+        self.n_members = 1 if not ens_member_ids else len(ens_member_ids)
+
+        # Create input file paths
+        self.in_file_path_lst = self._prepare_in_file_path_lst(ens_member_ids)
+
+        # Collect input file meta data
+        self._read_nc_meta_data()
+        for fld_specs in fld_specs_lst:
+            fld_specs.var_setups.replace_nones(
+                self.nc_meta_data, decompress_skip=["time"],
+            )
+
+        # Create timestep-independent field specs
         timeless_fld_specs_lst: List[FldSpecs]
         time_idcs_lst: List[List[int]]
         timeless_fld_specs_lst, time_idcs_lst = self._extract_time_idcs_from_fld_specs(
@@ -95,14 +118,10 @@ class FileReader:
         mdata_lst: List[MetaDataCollection] = []
         for timeless_fld_specs, time_idcs in zip(timeless_fld_specs_lst, time_idcs_lst):
             # SR_TMP < TODO cleaner  mypy-compatible solution
-            ens_member_ids: Optional[Sequence[int]]
             assert timeless_fld_specs.fld_setup.ens_member_id is None or all(
                 isinstance(i, int) for i in timeless_fld_specs.fld_setup.ens_member_id
             )  # mypy
-            ens_member_ids = timeless_fld_specs.fld_setup.ens_member_id  # type: ignore
             # SR_TMP >
-            self.n_members = 1 if not ens_member_ids else len(ens_member_ids)
-            self.in_file_path_lst = self._prepare_in_file_path_lst(ens_member_ids)
 
             fields_i, mdata_lst_i = self._create_fields(timeless_fld_specs, time_idcs,)
             fields.extend(fields_i)
@@ -130,28 +149,29 @@ class FileReader:
 
             # Extract time index (shoult be the same for all)
             time_idcs = fld_specs.collect_equal("time")
-            assert len(time_idcs) == 1  # SR_DBG
-            time_idx: int = next(iter(time_idcs))
 
             # Reset time index
             dummy_time_idx = -999  # SR_TMP TODO find proper solution
             timeless_fld_specs: FldSpecs = deepcopy(fld_specs)
-            timeless_fld_specs.var_setups = [
-                var_setup.derive({"time": [dummy_time_idx]})
-                for var_setup in timeless_fld_specs.var_setups
-            ]
+            timeless_fld_specs.var_setups = InputSetupCollection(
+                [
+                    var_setup.derive({"time": [dummy_time_idx]})
+                    for var_setup in timeless_fld_specs.var_setups
+                ]
+            )
 
             for idx, timeless_fld_specs_i in enumerate(timeless_fld_specs_lst):
                 if timeless_fld_specs == timeless_fld_specs_i:
-                    if time_idx in time_idcs_lst[idx]:
-                        raise Exception(
-                            "duplicate fld_specs", time_idx, timeless_fld_specs,
-                        )
-                    time_idcs_lst[idx].append(time_idx)
+                    for time_idx in time_idcs:
+                        if time_idx in time_idcs_lst[idx]:
+                            raise Exception(
+                                "duplicate fld_specs", time_idx, timeless_fld_specs,
+                            )
+                        time_idcs_lst[idx].append(time_idx)
                     break
             else:
                 timeless_fld_specs_lst.append(timeless_fld_specs)
-                time_idcs_lst.append([time_idx])
+                time_idcs_lst.append(time_idcs)
 
         return timeless_fld_specs_lst, time_idcs_lst
 
@@ -226,17 +246,29 @@ class FileReader:
 
         return fields, mdata_lst
 
-    def _read_fld_time_mem(self, setups: Sequence[InputSetup]) -> np.ndarray:
+    def _read_nc_meta_data(self):
+        nc_meta_data = None
+        for i_mem, in_file_path in enumerate(self.in_file_path_lst or []):
+            with nc4.Dataset(in_file_path, "r") as fi:
+                if nc_meta_data is not None:
+                    nc_meta_data_i = read_meta_data(fi)
+                    if nc_meta_data_i != nc_meta_data:
+                        raise Exception(
+                            f"meta data differs", nc_meta_data_i, nc_meta_data,
+                        )
+                else:
+                    nc_meta_data = read_meta_data(fi)
+        assert nc_meta_data is not None  # mypy
+        self.nc_meta_data = nc_meta_data
+
+    def _read_fld_time_mem(self, setups: InputSetupCollection) -> np.ndarray:
         """Read field over all time steps for each member."""
         fld_time_mem: Optional[np.ndarray] = None
         for i_mem, in_file_path in enumerate(self.in_file_path_lst or []):
             with nc4.Dataset(in_file_path, "r") as fi:
 
-                # Read meta data
-                meta_data = read_meta_data(fi)
-
                 # Determine model
-                model = meta_data["analysis"]["model"]
+                model = self.nc_meta_data["analysis"]["model"]
                 if self.model is None:
                     # SR_TMP <
                     if model in ["cosmo1", "cosmo2"]:
@@ -314,10 +346,12 @@ class FileReader:
         for time_idx in time_idcs:
             fld_specs_i: FldSpecs = deepcopy(timeless_fld_specs)
             # SR_TMP <
-            fld_specs_i.var_setups = [
-                var_setup.derive({"time": [time_idx]})
-                for var_setup in fld_specs_i.var_setups
-            ]
+            fld_specs_i.var_setups = InputSetupCollection(
+                [
+                    var_setup.derive({"time": [time_idx]})
+                    for var_setup in fld_specs_i.var_setups
+                ]
+            )
             # SR_TMP >
             fld_specs_lst.append(fld_specs_i)
         return fld_specs_lst
@@ -383,13 +417,6 @@ class FileReader:
         var_name = nc_var_name(setup, self.model)
         nc_var = fi.variables[var_name]
 
-        # SR_TMP < TODO remove once CoreInputSetup implemented
-        assert setup.level is None or len(setup.level) == 1
-        assert len(setup.nageclass) == 1
-        assert len(setup.noutrel) == 1
-        assert len(setup.numpoint) == 1
-        # SR_TMP >
-
         # SR_TMP < TODO proper solution
         if setup.level is None:
             level = None
@@ -399,14 +426,20 @@ class FileReader:
 
         # Indices of field along NetCDF dimensions
         dim_idcs_by_name = {
-            "nageclass": next(iter(setup.nageclass)),
-            "noutrel": next(iter(setup.noutrel)),
-            "numpoint": next(iter(setup.numpoint)),
             "level": level,
             "time": slice(None),  # SR_TMP
             "rlat": slice(None),  # SR_TMP
             "rlon": slice(None),  # SR_TMP
         }
+        # SR_TMP <
+        if setup.nageclass is not None:
+            dim_idcs_by_name["nageclass"] = next(iter(setup.nageclass))
+        if setup.noutrel is not None:
+            dim_idcs_by_name["noutrel"] = next(iter(setup.noutrel))
+        if setup.numpoint is not None:
+            dim_idcs_by_name["numpoint"] = next(iter(setup.numpoint))
+        # SR_TMP >
+
         # SR_TMP < TODO proper implementation
         if self.model == "ifs":
             dim_idcs_by_name["pointspec"] = dim_idcs_by_name.pop("numpoint")  # SR_TMP

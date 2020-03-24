@@ -34,8 +34,8 @@ def int_or_list(
 
 
 # SR_TMP <<< Leftover from VarSpecs
-def create_var_setups(fld_setups: InputSetupCollection):
-    var_setups_lst = []
+def create_var_setups(fld_setups: InputSetupCollection) -> List[InputSetupCollection]:
+    var_setups_lst: List[InputSetupCollection] = []
     for fld_setup in fld_setups:
         # SR_TMP <
         # for fld_sub_setup in fld_setup.decompress_partially(["time"]):
@@ -56,7 +56,7 @@ def create_var_setups(fld_setups: InputSetupCollection):
 class FldSpecs:
     """Specifications to compute a field."""
 
-    def __init__(self, fld_setup: InputSetup, var_setups: Sequence[InputSetup]) -> None:
+    def __init__(self, fld_setup: InputSetup, var_setups: InputSetupCollection) -> None:
         self.fld_setup = fld_setup
         self.var_setups = var_setups
 

@@ -17,7 +17,12 @@ def read_meta_data(file_handle: nc4.Dataset):
 
     """
     # Global NetCDF attributes
-    ncattrs = {attr: file_handle.getncattr(attr) for attr in file_handle.ncattrs()}
+    attrs_select = ["dxout", "dyout"]
+    ncattrs = {
+        attr: file_handle.getncattr(attr)
+        for attr in file_handle.ncattrs()
+        if attr in attrs_select
+    }
 
     # Dimensions
     dimensions = {}

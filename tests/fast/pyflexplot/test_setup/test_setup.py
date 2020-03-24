@@ -14,7 +14,7 @@ from pyflexplot.setup import CoreInputSetupCollection
 from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
 
-DEFAULT_KWARGS = {
+DEFAULT_KWARGS: Dict[str, Any] = {
     "infile": ("foo.nc",),
     "outfile": "bar.png",
 }
@@ -23,7 +23,7 @@ DEFAULT_KWARGS = {
 DEFAULT_SETUP = InputSetup(
     **{
         **DEFAULT_KWARGS,
-        "nageclass": (0,),
+        "nageclass": None,
         "combine_species": False,
         "deposition_type": "none",
         "domain": "auto",
@@ -31,12 +31,12 @@ DEFAULT_SETUP = InputSetup(
         "integrate": False,
         "lang": "en",
         "level": None,
-        "noutrel": (0,),
+        "noutrel": None,
         "plot_type": "auto",
-        "numpoint": (0,),
+        "numpoint": None,
         "simulation_type": "deterministic",
-        "species_id": (1,),
-        "time": (0,),
+        "species_id": None,
+        "time": None,
         "variable": "concentration",
     }
 )
@@ -58,6 +58,9 @@ class Test_Decompress:
                 "deposition_type": ["dry", "wet"],
                 "species_id": [1, 2],
                 "time": [1, 2, 3],
+                "nageclass": (0,),
+                "noutrel": (0,),
+                "numpoint": (0,),
             },
         )
 
@@ -187,3 +190,81 @@ class Test_Compress:
         res = InputSetup.compress(InputSetupCollection(self.setups_lst[:3])).dict()
         sol = InputSetup.create({**self.dcts[0], "level": (0, 1, 2)})
         assert res == sol
+
+
+class Test_CreateWildcardToNone:
+    """Wildcard values passed to ``InputSetup.create`` turn into None.
+
+    The wildcards can be used in a set file to explicitly specify that all
+    available values of a respective dimension (etc.) shall be read from a
+    NetCDF file, as es the case if the setup value is None (the default).
+
+    """
+
+    def setup_create(self, params):
+        return InputSetup.create({**DEFAULT_KWARGS, **params})
+
+    def test_species_id(self):
+        setup = self.setup_create({"species_id": "*"})
+        assert setup.species_id is None
+
+    def test_time(self):
+        setup = self.setup_create({"time": "*"})
+        assert setup.time is None
+
+    def test_level(self):
+        setup = self.setup_create({"level": "*"})
+        assert setup.level is None
+
+    def test_others(self):
+        setup = self.setup_create({"nageclass": "*", "noutrel": "*", "numpoint": "*"})
+        assert setup.nageclass is None
+        assert setup.noutrel is None
+        assert setup.numpoint is None
+
+
+class Test_ReplaceNoneByAvailable:
+    meta_data: Dict[str, Any] = {
+        "dimensions": {
+            "time": {"name": "time", "size": 11},
+            "rlon": {"name": "rlon", "size": 40},
+            "rlat": {"name": "rlat", "size": 30},
+            "level": {"name": "level", "size": 3},
+            "nageclass": {"name": "nageclass", "size": 1},
+            "noutrel": {"name": "numpoint", "size": 1},
+            "numpoint": {"name": "numpoint", "size": 2},
+            "nchar": {"name": "nchar", "size": 45},
+        },
+        "analysis": {"species_ids": (1, 2)},
+    }
+
+    def setup_create(self, params):
+        return InputSetup.create({**DEFAULT_KWARGS, **params})
+
+    def test_time(self):
+        setup = self.setup_create({"time": "*"})
+        assert setup.time is None
+        setup.replace_nones(self.meta_data)
+        assert setup.time == (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+
+    def test_level(self):
+        setup = self.setup_create({"level": "*"})
+        assert setup.level is None
+        setup.replace_nones(self.meta_data)
+        assert setup.level == (0, 1, 2)
+
+    def test_species_id(self):
+        setup = self.setup_create({"species_id": "*"})
+        assert setup.species_id is None
+        setup.replace_nones(self.meta_data)
+        assert setup.species_id == (1, 2)
+
+    def test_others(self):
+        setup = self.setup_create({"nageclass": "*", "noutrel": "*", "numpoint": "*"})
+        assert setup.nageclass is None
+        assert setup.noutrel is None
+        assert setup.numpoint is None
+        setup.replace_nones(self.meta_data)
+        assert setup.nageclass == (0,)
+        assert setup.noutrel == (0,)
+        assert setup.numpoint == (0, 1)
