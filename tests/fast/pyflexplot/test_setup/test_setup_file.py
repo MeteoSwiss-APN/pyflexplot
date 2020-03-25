@@ -365,7 +365,7 @@ def test_read_combine_wildcards(tmp_path):
     sol = [
         {
             **DEFAULT_SETUP.dict(),
-            "infile": ("data_{ens_member:02d}.nc",),
+            "infile": "data_{ens_member:02d}.nc",
             "variable": variable,
             "plot_type": plot_type,
             "outfile": f"{plot_type}_{{lang}}.png",
@@ -380,25 +380,6 @@ def test_read_combine_wildcards(tmp_path):
 
 
 class Test_IndividualParams_SingleOrMultipleValues:
-    def test_infile(self, tmp_path):
-        content = f"""\
-            [_base]
-            {DEFAULT_TOML}
-
-            [_base.single]
-            infile = "foo.nc"
-
-            [_base.multiple]
-            infile = ["bar.nc", "baz.nc"]
-
-            """
-        setups = read_tmp_setup_file(tmp_path, content)
-        sol = [
-            {**DEFAULT_SETUP.dict(), "infile": value}
-            for value in [("foo.nc",), ("bar.nc", "baz.nc")]
-        ]
-        assert setups.dicts() == sol
-
     def test_species_id(self, tmp_path):
         content = f"""\
             [_base]

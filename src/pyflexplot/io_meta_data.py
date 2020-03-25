@@ -51,6 +51,7 @@ def read_meta_data(file_handle: nc4.Dataset):
     species_ids = determine_species_ids(model, variables)
     analysis = {
         "model": model,
+        "rotated_pole": model.startswith("cosmo"),
         "species_ids": species_ids,
     }
 

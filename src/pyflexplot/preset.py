@@ -63,14 +63,12 @@ def click_add_preset_path(ctx, param, value):
 
 
 def collect_preset_files_flat(name: str):
-    preset_files_by_dir = collect_preset_files(name)
+    files_by_dir = collect_preset_files(name)
     named_paths = {
-        name: path
-        for preset_files in preset_files_by_dir.values()
-        for name, path in preset_files.items()
+        name: path for files in files_by_dir.values() for name, path in files.items()
     }
     if not named_paths:
-        raise ValueError("preset not found", name, preset_files_by_dir)
+        raise ValueError("preset not found", name, files_by_dir)
     return named_paths
 
 
@@ -96,18 +94,7 @@ def click_find_presets(ctx, param, value):
     """Find preset setup file(s) by name (optional wildcards) and exit."""
     if not value:
         return
-    verbosity = ctx.obj["verbosity"]
-    if verbosity == 0:
-        for name in collect_preset_files_flat(value):
-            click.echo(name)
-    elif verbosity > 0:
-        for dir, files in collect_preset_files(value).items():
-            click.echo(f"{dir}:")
-            for name, path in files.items():
-                if verbosity == 1:
-                    click.echo(f"  {name}")
-                else:
-                    click.echo(f"  {name:23}  {path}")
+    _click_list_presets(ctx, collect_preset_files(value))
     ctx.exit(0)
 
 
@@ -134,7 +121,7 @@ def click_use_preset(ctx, param, value):
         ctx.obj[key] = []
     for name in value:
         try:
-            files = collect_preset_files_flat(name)
+            files_by_dir = collect_preset_files(name)
         except ValueError:
             click.echo(
                 f"Error: No preset setup file found for '{name}'!", file=sys.stderr,
@@ -142,9 +129,27 @@ def click_use_preset(ctx, param, value):
             _click_propose_alternatives(name)
             ctx.exit(1)
         else:
+            n = sum([len(files) for files in files_by_dir.values()])
+            click.echo(f"Collected {n} preset setup file{'' if n == 1 else 's'}:")
+            _click_list_presets(ctx, files_by_dir, indent_all=True)
+        for files in files_by_dir.values():
             for path in files.values():
                 if path not in ctx.obj[key]:
                     ctx.obj[key].append(path)
+
+
+def _click_list_presets(ctx, preset_files_by_dir, indent_all=False):
+    verbosity = ctx.obj["verbosity"]
+    for dir, files in preset_files_by_dir.items():
+        if verbosity > 0:
+            click.echo(f"{dir}:")
+        for name, path in files.items():
+            if verbosity == 0:
+                click.echo(f"{'  ' if indent_all else ''}{name}")
+            elif verbosity == 1:
+                click.echo(f"  {name}")
+            else:
+                click.echo(f"  {name:23}  {path}")
 
 
 def _click_propose_alternatives(name):

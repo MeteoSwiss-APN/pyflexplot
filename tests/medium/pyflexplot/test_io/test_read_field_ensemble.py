@@ -88,18 +88,16 @@ class TestReadFieldEnsemble_Single:
         assert len(fld_specs_lst) == 1
 
         # Read input fields
-        fields, mdata_lst = read_files(datafile_fmt, setup, fld_specs_lst)
+        fields, mdata_lst = read_files(datafile_fmt, fld_specs_lst)
         assert len(fields) == 1
         assert len(mdata_lst) == 1
         fld = fields[0].fld
 
         # SR_TMP <
-        assert len(fld_specs_lst[0].fld_setup.infile) == 1
         setups = fld_specs_lst[0].fld_setup.decompress_partially(
             None, skip=["ens_member_id"],
         )
         # SR_TMP >
-        assert len(fld_specs_lst[0].fld_setup.infile) == 1  # SR_TMP
         assert len(setups) == 1
         setup = next(iter(setups))
 
@@ -214,16 +212,14 @@ class TestReadFieldEnsemble_Multiple:
         compressed_setups = InputSetupCollection(
             [fld_specs.fld_setup for fld_specs in fld_specs_lst],
         )
-        global_setup = InputSetup.compress(compressed_setups)
 
         # Read input fields
-        fields, mdata_lst = read_files(datafile_fmt, global_setup, fld_specs_lst)
+        fields, mdata_lst = read_files(datafile_fmt, fld_specs_lst)
         fld_arr = np.array([field.fld for field in fields])
 
         # Read reference fields
         fld_ref_lst = []
         for compressed_setup in compressed_setups:
-            assert len(compressed_setup.infile) == 1  # SR_TMP
             fld_ref_mem_time = [
                 [
                     read_nc_var(

@@ -4,8 +4,10 @@ Input variable specifications.
 """
 # Standard library
 from typing import Any
+from typing import Dict
 from typing import List
 from typing import Sequence
+from typing import Tuple
 from typing import Union
 from typing import overload
 
@@ -40,11 +42,9 @@ def create_var_setups(fld_setups: InputSetupCollection) -> List[InputSetupCollec
         # SR_TMP <
         # for fld_sub_setup in fld_setup.decompress_partially(["time"]):
         #     var_setups_lst.append(fld_sub_setup.decompress())
-        assert len(fld_setup.infile) == 1  # SR_TMP
         for fld_sub_setup in fld_setup.decompress_partially(
             ["time"], skip=["ens_member_id"]
         ):
-            assert len(fld_sub_setup.infile) == 1  # SR_TMP
             var_setups_lst.append(
                 fld_sub_setup.decompress_partially(None, skip=["ens_member_id"])
             )
@@ -56,9 +56,13 @@ def create_var_setups(fld_setups: InputSetupCollection) -> List[InputSetupCollec
 class FldSpecs:
     """Specifications to compute a field."""
 
-    def __init__(self, fld_setup: InputSetup, var_setups: InputSetupCollection) -> None:
-        self.fld_setup = fld_setup
+    def __init__(self, var_setups: InputSetupCollection) -> None:
         self.var_setups = var_setups
+
+    # SR_TMP <<<
+    @property
+    def fld_setup(self):
+        return InputSetup.compress(self.var_setups)
 
     @classmethod
     def create(
@@ -78,11 +82,10 @@ class FldSpecs:
         if len(setups) > 1:
             return [obj for setup in setups for obj in cls.create(setup)]
         else:
-            fld_setup = next(iter(setups))
             var_setups_lst = create_var_setups(setups)
             fld_specs_lst = []
             for var_setups in var_setups_lst:
-                fld_specs = cls(fld_setup, var_setups)
+                fld_specs = cls(var_setups)
                 fld_specs_lst.append(fld_specs)
             return fld_specs_lst
 
@@ -109,6 +112,20 @@ class FldSpecs:
         # ``var_setups``, i.e., if the latter sport a dummy time index (-999)!
         # assert var_setups_eq == setup_eq
         return var_setups_eq and fld_setup_eq
+
+    # SR_TMP <<<
+    def decompress_time(self) -> List["FldSpecs"]:
+        var_setups_by_time: Dict[Tuple[int, ...], List[InputSetup]] = {}
+        for var_setup in self.var_setups:
+            for setup in var_setup.decompress_partially(["time"]):
+                if setup.time not in var_setups_by_time:
+                    assert isinstance(setup.time, tuple)  # mypy
+                    var_setups_by_time[setup.time] = []
+                var_setups_by_time[setup.time].append(setup)
+        return [
+            type(self)(InputSetupCollection(var_setups))
+            for var_setups in var_setups_by_time.values()
+        ]
 
     def collect(self, param: str) -> List[Any]:
         """Collect all values of a given parameter."""

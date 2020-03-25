@@ -135,68 +135,45 @@ def set_verbosity(ctx, param, value):
 def cli(ctx, setup_file_paths, **cli_args):
     """Create dispersion plot as specified in CONFIG_FILE(S)."""
 
+    ctx.obj.update(cli_args)
+
     # Add preset setup file paths
     setup_file_paths = list(setup_file_paths)
     for path in ctx.obj.get("preset_setup_file_paths", []):
         if path not in setup_file_paths:
             setup_file_paths.append(path)
     if not setup_file_paths:
-        ctx.echo(
+        click.echo(
             "Error: Must pass explicit and/or preset setup file(s)", file=sys.stderr,
         )
         ctx.exit(1)
 
-    # Read setup file
-    setups = [
-        setup
-        for setup_file_path in setup_file_paths
-        for setup in InputSetupFile(setup_file_path).read()
-    ]
+    # Read setup files
+    setups = InputSetupFile.read_multiple(setup_file_paths)
 
-    # Create plots
-    create_plots(setups, cli_args)
+    # Group setups by input file(s)
+    setups_by_infile = setups.group("infile")
 
-    return 0
-
-
-def create_plots(setups, cli_args):
-    """Read and plot FLEXPART data."""
-
+    # Create plots input file(s) by input file(s)
     out_file_paths = []
-
-    # SR_TMP <<< TODO find better solution
-    for idx_setup, setup in enumerate(setups):
+    for in_file_path, sub_setups in setups_by_infile.items():
 
         # Read input fields
-        fields, mdata_lst = read_fields(setup)
+        fld_specs_lst = FldSpecs.create(sub_setups)
+        fields, mdata_lst = read_files(in_file_path, fld_specs_lst)
+        assert len(fields) == len(mdata_lst)
 
-        # Note: Plotter.run yields the output file paths on-the-go
-        for idx_plot, out_file_path in enumerate(plot(fields, mdata_lst, setup)):
-            out_file_paths.append(out_file_path)
+        for (field, mdata) in zip(fields, mdata_lst):
+            # Note: plot(...) yields the output file paths on-the-go
+            for out_file_path in plot([field], [mdata], field.fld_specs.fld_setup):
+                if ctx.obj["open_first_cmd"] and not out_file_paths:
+                    open_plots(ctx.obj["open_first_cmd"], [out_file_path])
+                out_file_paths.append(out_file_path)
 
-            if cli_args["open_first_cmd"] and idx_setup + idx_plot == 0:
-                # Open the first file as soon as it's available
-                open_plots(cli_args["open_first_cmd"], [out_file_path])
+    if ctx.obj["open_all_cmd"]:
+        open_plots(ctx.obj["open_all_cmd"], out_file_paths)
 
-    if cli_args["open_all_cmd"]:
-        # Open all plots
-        open_plots(cli_args["open_all_cmd"], out_file_paths)
-
-
-def read_fields(setup):
-
-    # Determine fields specifications (one for each eventual plot)
-    fld_specs_lst = FldSpecs.create(setup)
-
-    # Read fields
-    fields = []
-    mdata_lst = []
-    for raw_path in setup.infile:
-        fields_i, mdata_lst_i = read_files(raw_path, setup, fld_specs_lst)
-        fields.extend(fields_i)
-        mdata_lst.extend(mdata_lst_i)
-
-    return fields, mdata_lst
+    return 0
 
 
 def open_plots(cmd, file_paths):

@@ -306,7 +306,7 @@ class PlotConfig:
         setup = self.setup
         labels = self.labels.top_left
         if setup.plot_type == "ens_thr_agrmt":
-            return labels["subtitle_thr_agrmt_fmt"].format(thr=setup.ens_param_thr,)
+            return labels["subtitle_thr_agrmt_fmt"].format(thr=setup.ens_param_thr)
         elif setup.plot_type == "ens_cloud_arrival_time":
             return labels["subtitle_cloud_arrival_time"].format(
                 thr=setup.ens_param_thr, mem=setup.ens_param_mem_min,
@@ -358,7 +358,7 @@ class PlotConfig:
         if self.setup.plot_type == "ens_thr_agrmt":
             n_max = 20  # SR_TMP SR_HC
             return (
-                np.arange(n_max - d_level * (n_levels - 1), n_max + d_level, d_level,)
+                np.arange(n_max - d_level * (n_levels - 1), n_max + d_level, d_level)
                 + 1
             )
         elif self.setup.plot_type == "ens_cloud_arrival_time":

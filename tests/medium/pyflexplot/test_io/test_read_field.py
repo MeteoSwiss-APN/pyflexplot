@@ -215,7 +215,7 @@ def test_single(datadir, conf):  # noqa:F811
     assert len(fld_specs_lst) == 1
 
     # Read input field
-    fields, mdata_lst = read_files(datafile, conf.setup, fld_specs_lst)
+    fields, mdata_lst = read_files(datafile, fld_specs_lst)
     assert len(fields) == 1
     fld = fields[0].fld
 
@@ -388,10 +388,9 @@ def test_multiple(datadir, conf):  # noqa:F811
     # Process field specifications one after another
     for fld_specs in fld_specs_lst:
         fld_specs_lst_i = [fld_specs]
-        setup = fld_specs.fld_setup
 
         # Read input fields
-        fields, mdata_lst = read_files(datafile, setup, fld_specs_lst_i)
+        fields, mdata_lst = read_files(datafile, fld_specs_lst_i)
         assert len(fields) == 1
         assert len(mdata_lst) == 1
         fld = np.array([field.fld for field in fields])

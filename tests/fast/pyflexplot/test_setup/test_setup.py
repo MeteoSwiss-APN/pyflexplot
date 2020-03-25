@@ -15,7 +15,7 @@ from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
 
 DEFAULT_KWARGS: Dict[str, Any] = {
-    "infile": ("foo.nc",),
+    "infile": "foo.nc",
     "outfile": "bar.png",
 }
 

@@ -175,7 +175,7 @@ class InputSetup(BaseModel):
         extra = "forbid"
 
     # Basics
-    infile: Tuple[str, ...]
+    infile: str
     outfile: str
     plot_type: str = "auto"
     variable: str = "concentration"
@@ -264,7 +264,10 @@ class InputSetup(BaseModel):
                 directly, e.g., as `{"time": 0}` instead of `{"time": (0,)}`.
 
         """
+        singles = ["infile"]
         for param, value in params.items():
+            if param in singles:
+                continue
             field = cls.__fields__[param]
             if value is None and field.allow_none:
                 continue
@@ -388,6 +391,28 @@ class InputSetup(BaseModel):
             raise ValueError("missing setups")
         dct = compress_multival_dicts(setups.dicts(), cls_seq=tuple)
         return cls.create(dct)
+
+    @classmethod
+    def compress_partially(
+        cls, setups: "InputSetupCollection", skip: List[str],
+    ) -> "InputSetupCollection":
+        dcts: List[Dict[str, Any]] = setups.dicts()
+        preserved_params_lst: List[Dict[str, Any]] = []
+        for dct in dcts:
+            preserved_params = {}
+            for param in skip:
+                try:
+                    preserved_params[param] = dct.pop(param)
+                except ValueError:
+                    raise ValueError("invalid param", param)
+            if preserved_params not in preserved_params_lst:
+                preserved_params_lst.append(preserved_params)
+        partial_dct = compress_multival_dicts(setups.dicts(), cls_seq=tuple)
+        setup_lst: List["InputSetup"] = []
+        for preserved_params in preserved_params_lst:
+            dct = {**partial_dct, **preserved_params}
+            setup_lst.append(cls.create(dct))
+        return InputSetupCollection(setup_lst)
 
     def decompress(self) -> "CoreInputSetupCollection":
         return self._decompress(None, None)
@@ -519,14 +544,32 @@ class InputSetupCollection:
             obj in self_dicts for obj in other_dicts
         )
 
-    def dicts(self) -> List[Mapping[str, Any]]:
+    def dicts(self) -> List[Dict[str, Any]]:
         return [setup.dict() for setup in self._setups]
+
+    def group(self, param: str) -> Dict[Any, "InputSetupCollection"]:
+        """Group setups by the value of a parameter."""
+        grouped_raw: Dict[Any, List[InputSetup]] = {}
+        for setup in self:
+            try:
+                value = getattr(setup, param)
+            except AttributeError:
+                raise ValueError("invalid input setup parameter", param)
+            else:
+                if value not in grouped_raw:
+                    grouped_raw[value] = []
+                grouped_raw[value].append(setup)
+        grouped: Dict[Any, "InputSetupCollection"] = {
+            value: type(self)(setups) for value, setups in grouped_raw.items()
+        }
+        return grouped
 
     def replace_nones(
         self,
         meta_data: Mapping[str, Any],
         decompress_skip: Optional[Collection[str]] = None,
     ) -> List[str]:
+        """Set unconstrained dimensions to all available indices."""
         orig_setups = [setup for setup in self._setups]
         self._setups.clear()
         for setup in orig_setups:
@@ -565,6 +608,12 @@ class InputSetupFile:
 
     def __init__(self, path: str) -> None:
         self.path: str = path
+
+    @classmethod
+    def read_multiple(cls, paths: Sequence[str]) -> InputSetupCollection:
+        return InputSetupCollection(
+            [setup for path in paths for setup in cls(path).read()]
+        )
 
     def read(self) -> InputSetupCollection:
         """Read the setup from a text file in TOML format."""
