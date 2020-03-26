@@ -229,6 +229,7 @@ def create_mdata(lang):
 
 
 def create_field():
+    dummy_nc_meta_data = {}  # SR_TMP
     dummy_field = Field(
         fld=np.array([[i] * 10 for i in range(10)], np.float32),
         lat=np.arange(-5.0, 4.1, 1.0),
@@ -236,6 +237,7 @@ def create_field():
         rotated_pole=True,
         fld_specs=None,
         time_stats={"max": 15},
+        nc_meta_data=dummy_nc_meta_data,
     )
     return dummy_field
 

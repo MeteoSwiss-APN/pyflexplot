@@ -16,7 +16,7 @@ from srutils.click import CharSepList
 # Local
 from . import __version__
 from .io import read_files
-from .plot import plot
+from .plot import plot_fields
 from .preset import click_add_preset_path
 from .preset import click_cat_preset
 from .preset import click_find_presets
@@ -67,10 +67,6 @@ def set_verbosity(ctx, param, value):
     help="Perform a trial run with no changes made.",
     is_flag=True,
     default=False,
-    # SR_TMP <
-    is_eager=True,
-    callback=not_implemented("--dry-run"),
-    # SR_TMP >
 )
 @click.option(
     "--verbose",
@@ -132,7 +128,7 @@ def set_verbosity(ctx, param, value):
 )
 # ---
 @click.pass_context
-def cli(ctx, setup_file_paths, **cli_args):
+def cli(ctx, setup_file_paths, dry_run, **cli_args):
     """Create dispersion plot as specified in CONFIG_FILE(S)."""
 
     ctx.obj.update(cli_args)
@@ -154,24 +150,37 @@ def cli(ctx, setup_file_paths, **cli_args):
     # Group setups by input file(s)
     setups_by_infile = setups.group("infile")
 
+    open_first_cmd = ctx.obj["open_first_cmd"]
+    open_all_cmd = ctx.obj["open_all_cmd"]
+
     # Create plots input file(s) by input file(s)
     out_file_paths = []
+    i_plot = 0
     for in_file_path, sub_setups in setups_by_infile.items():
 
         # Read input fields
         fld_specs_lst = FldSpecs.create(sub_setups)
+
         fields, mdata_lst = read_files(in_file_path, fld_specs_lst)
+
         assert len(fields) == len(mdata_lst)
 
-        for (field, mdata) in zip(fields, mdata_lst):
-            # Note: plot(...) yields the output file paths on-the-go
-            for out_file_path in plot([field], [mdata], field.fld_specs.fld_setup):
-                if ctx.obj["open_first_cmd"] and not out_file_paths:
-                    open_plots(ctx.obj["open_first_cmd"], [out_file_path])
-                out_file_paths.append(out_file_path)
+        # Note: plot_fields(...) yields the output file paths on-the-go
+        for out_file_path in plot_fields(fields, mdata_lst, dry_run=dry_run):
+            i_plot += 1
 
-    if ctx.obj["open_all_cmd"]:
-        open_plots(ctx.obj["open_all_cmd"], out_file_paths)
+            _w = len(str(len(fields)))
+            print(f" {i_plot + 1:{_w}}/{len(fields)}  {out_file_path}")
+
+            if out_file_path in out_file_paths:
+                raise Exception("duplicate output file", out_file_path)
+            out_file_paths.append(out_file_path)
+
+            if open_first_cmd and not out_file_paths:
+                open_plots(open_first_cmd, [out_file_path])
+
+    if open_all_cmd:
+        open_plots(open_all_cmd, out_file_paths)
 
     return 0
 

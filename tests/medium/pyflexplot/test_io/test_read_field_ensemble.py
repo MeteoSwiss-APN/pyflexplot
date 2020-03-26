@@ -94,8 +94,10 @@ class TestReadFieldEnsemble_Single:
         fld = fields[0].fld
 
         # SR_TMP <
-        setups = fld_specs_lst[0].fld_setup.decompress_partially(
-            None, skip=["ens_member_id"],
+        setups = (
+            fld_specs_lst[0]
+            .var_setups.compress()
+            .decompress_partially(None, skip=["ens_member_id"],)
         )
         # SR_TMP >
         assert len(setups) == 1
@@ -209,9 +211,11 @@ class TestReadFieldEnsemble_Multiple:
         self, datafile_fmt, var_names_ref, fct_reduce_mem, scale_fld_ref, fld_specs_lst,
     ):
         # Collect merged variables specifications
+        # SR_TMP < TODO cleaner solution
         compressed_setups = InputSetupCollection(
-            [fld_specs.fld_setup for fld_specs in fld_specs_lst],
+            [fld_specs.var_setups.compress() for fld_specs in fld_specs_lst],
         )
+        # SR_TMP >
 
         # Read input fields
         fields, mdata_lst = read_files(datafile_fmt, fld_specs_lst)

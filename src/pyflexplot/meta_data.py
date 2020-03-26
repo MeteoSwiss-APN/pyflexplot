@@ -251,7 +251,7 @@ class MetaData:
                 self_setup_dct,
                 other_setup_dcts,
             )
-        setup = InputSetup.compress(InputSetupCollection([self.setup] + other_setups))
+        setup = InputSetupCollection([self.setup] + other_setups).compress()
 
         kwargs = {}
         for name, datum in self.iter_objs():

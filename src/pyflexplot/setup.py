@@ -547,6 +547,37 @@ class InputSetupCollection:
     def dicts(self) -> List[Dict[str, Any]]:
         return [setup.dict() for setup in self._setups]
 
+    def compress(self) -> InputSetup:
+        return InputSetup.compress(self)
+
+    def decompress_partially(
+        self, params: Collection[str],
+    ) -> List["InputSetupCollection"]:
+        setups = self._setups
+        sub_setup_lst_lst: List[List[InputSetup]] = []
+        for setup in setups:
+            sub_setups = setup.decompress_partially(params)
+            if not sub_setup_lst_lst:
+                sub_setup_lst_lst = [[sub_setup] for sub_setup in sub_setups]
+            else:
+                assert len(sub_setups) == len(sub_setup_lst_lst)
+                for idx, sub_setup in enumerate(sub_setups):
+                    sub_setup_lst_lst[idx].append(sub_setup)
+        return [
+            InputSetupCollection(sub_setup_lst) for sub_setup_lst in sub_setup_lst_lst
+        ]
+
+    def collect(self, param: str) -> List[Any]:
+        """Collect the values of a parameter for all setups."""
+        return [getattr(var_setup, param) for var_setup in self._setups]
+
+    def collect_equal(self, param: str) -> Any:
+        """Collect the value of a parameter that is shared by all setups."""
+        values = self.collect(param)
+        if not all(value == values[0] for value in values[1:]):
+            raise Exception("values differ for param", param, values)
+        return next(iter(values))
+
     def group(self, param: str) -> Dict[Any, "InputSetupCollection"]:
         """Group setups by the value of a parameter."""
         grouped_raw: Dict[Any, List[InputSetup]] = {}

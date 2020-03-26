@@ -177,17 +177,17 @@ class Test_Compress:
     setups_lst = [InputSetup.create(dct) for dct in dcts]
 
     def test_one(self):
-        res = InputSetup.compress(InputSetupCollection(self.setups_lst[:1])).dict()
+        res = InputSetupCollection(self.setups_lst[:1]).compress().dict()
         sol = self.setups_lst[0]
         assert res == sol
 
     def test_two(self):
-        res = InputSetup.compress(InputSetupCollection(self.setups_lst[:2])).dict()
+        res = InputSetupCollection(self.setups_lst[:2]).compress().dict()
         sol = InputSetup.create({**self.dcts[0], "level": (0, 1)})
         assert res == sol
 
     def test_three(self):
-        res = InputSetup.compress(InputSetupCollection(self.setups_lst[:3])).dict()
+        res = InputSetupCollection(self.setups_lst[:3]).compress().dict()
         sol = InputSetup.create({**self.dcts[0], "level": (0, 1, 2)})
         assert res == sol
 

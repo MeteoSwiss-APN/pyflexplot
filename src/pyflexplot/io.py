@@ -49,7 +49,7 @@ def read_files(
     fld_specs_lst_lst: List[List[FldSpecs]] = []
     for fld_specs in fld_specs_lst:
         completed_dims = fld_specs.var_setups.complete_dimensions(reader.nc_meta_data)
-        decompressed = fld_specs.decompress(completed_dims)
+        decompressed = fld_specs.decompress_partially(completed_dims)
         fld_specs_lst_lst.append(decompressed)
 
     # Run the reader
@@ -66,7 +66,7 @@ def collect_ens_member_ids(fld_specs_lst: Collection[FldSpecs]) -> Optional[List
     """Collect the ensemble member ids from field specifications."""
     ens_member_ids: Optional[List[int]] = None
     for fld_specs in fld_specs_lst:
-        ens_member_ids_i = fld_specs.collect_equal("ens_member_id")
+        ens_member_ids_i = fld_specs.var_setups.collect_equal("ens_member_id")
         if not ens_member_ids:
             ens_member_ids = ens_member_ids_i
         else:
@@ -174,7 +174,7 @@ class FileReader:
 
         # Reduce fields array along member dimension
         # In other words: Compute single field from ensemble
-        fld_time: np.ndarray = self._reduce_ensemble(fld_time_mem, fld_specs.fld_setup)
+        fld_time: np.ndarray = self._reduce_ensemble(fld_time_mem, fld_specs)
 
         # Collect time stats
         time_stats: Dict[str, np.ndarray] = {
@@ -257,12 +257,17 @@ class FileReader:
         return fld_time
 
     def _reduce_ensemble(
-        self, fld_time_mem: np.ndarray, setup: InputSetup,
+        self, fld_time_mem: np.ndarray, fld_specs: FldSpecs,
     ) -> np.ndarray:
         """Reduce the ensemble to a single field (time, lat, lon)."""
+
         if self.n_members == 1:
             return fld_time_mem[0]
-        plot_type = setup.plot_type
+
+        plot_type = fld_specs.var_setups.collect_equal("plot_type")
+        ens_param_thr = fld_specs.var_setups.collect_equal("ens_param_thr")
+        ens_param_mem_min = fld_specs.var_setups.collect_equal("ens_param_mem_min")
+
         if plot_type == "ens_mean":
             fld_time = np.nanmean(fld_time_mem, axis=0)
         elif plot_type == "ens_median":
@@ -272,10 +277,10 @@ class FileReader:
         elif plot_type == "ens_max":
             fld_time = np.nanmax(fld_time_mem, axis=0)
         elif plot_type == "ens_thr_agrmt":
-            fld_time = threshold_agreement(fld_time_mem, setup.ens_param_thr, axis=0)
+            fld_time = threshold_agreement(fld_time_mem, ens_param_thr, axis=0)
         elif plot_type == "ens_cloud_arrival_time":
             fld_time = cloud_arrival_time(
-                fld_time_mem, setup.ens_param_thr, setup.ens_param_mem_min, mem_axis=0,
+                fld_time_mem, ens_param_thr, ens_param_mem_min, mem_axis=0,
             )
         else:
             raise NotImplementedError(f"plot var '{plot_type}'")
@@ -287,12 +292,14 @@ class FileReader:
         model = self.nc_meta_data["analysis"]["model"]
 
         # Collect meta data at requested time steps for all members
-        n_ts = len(fld_specs.collect_equal("time"))
+        n_ts = len(fld_specs.var_setups.collect_equal("time"))
         shape = (n_ts, self.n_members)
         mdata_by_reqtime_mem: np.ndarray = np.full(shape, None)
         for idx_mem, in_file_path in enumerate(self.in_file_path_lst or []):
             with nc4.Dataset(in_file_path, "r") as fi:
-                for idx_time, fld_specs_i in enumerate(fld_specs.decompress(["time"])):
+                for idx_time, fld_specs_i in enumerate(
+                    fld_specs.decompress_partially(["time"])
+                ):
                     mdata_lst_i = []
                     for var_setup in fld_specs_i.var_setups:
                         mdata_lst_i.append(collect_meta_data(fi, var_setup, model))
@@ -324,11 +331,19 @@ class FileReader:
     ) -> List[Field]:
         """Create fields at requested time steps for all members."""
         rotated_pole = self.nc_meta_data["analysis"]["rotated_pole"]
-        time_idcs = fld_specs.collect_equal("time")
+        time_idcs = fld_specs.var_setups.collect_equal("time")
         fields: List[Field] = []
         for time_idx in time_idcs:
             fld: np.ndarray = fld_time[time_idx]
-            field = Field(fld, self.lat, self.lon, rotated_pole, fld_specs, time_stats)
+            field = Field(
+                fld=fld,
+                lat=self.lat,
+                lon=self.lon,
+                rotated_pole=rotated_pole,
+                fld_specs=fld_specs,
+                time_stats=time_stats,
+                nc_meta_data=self.nc_meta_data,
+            )
             fields.append(field)
         return fields
 

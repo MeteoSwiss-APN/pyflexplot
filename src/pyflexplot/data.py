@@ -3,6 +3,7 @@
 Data structures.
 """
 # Standard library
+from typing import Any
 from typing import Callable
 from typing import Mapping
 from typing import Sequence
@@ -62,6 +63,7 @@ class Field:
         rotated_pole: bool,
         fld_specs: FldSpecs,
         time_stats: Mapping[str, np.ndarray],
+        nc_meta_data: Mapping[str, Any],
     ):
         """Create an instance of ``Field``.
 
@@ -78,6 +80,8 @@ class Field:
 
             time_stats: Some statistics across all time steps.
 
+            nc_meta_data: Meta data from NetCDF input file.
+
         """
         self._check_args(fld, lat, lon)
         self.fld = fld
@@ -86,6 +90,7 @@ class Field:
         self.rotated_pole = rotated_pole
         self.fld_specs = fld_specs
         self.time_stats = time_stats
+        self.nc_meta_data = nc_meta_data
 
     def _check_args(self, fld, lat, lon, *, ndim_fld=2):
         """Check consistency of field, dimensions, etc."""

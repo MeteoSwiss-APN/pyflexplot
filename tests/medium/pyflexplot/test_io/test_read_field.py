@@ -220,7 +220,7 @@ def test_single(datadir, conf):  # noqa:F811
     fld = fields[0].fld
 
     # Initialize individual setup objects
-    setups = fld_specs_lst[0].fld_setup.decompress()
+    setups = fld_specs_lst[0].var_setups
 
     # Read reference field
     fld_ref = (
