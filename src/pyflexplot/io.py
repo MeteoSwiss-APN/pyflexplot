@@ -50,7 +50,13 @@ def read_files(
     sub_setups_lst_lst: List[List[InputSetupCollection]] = []
     for var_setups in var_setups_lst:
         completed_dims = var_setups.complete_dimensions(reader.nc_meta_data)
-        sub_setups_lst_lst.append(var_setups.decompress_partially(completed_dims))
+        sub_setups_lst = var_setups.decompress_partially(
+            completed_dims, skip=["species_id"],
+        )
+        sub_setups_lst, _sub_setups_lst_tmp = [], sub_setups_lst
+        for sub_setups in _sub_setups_lst_tmp:
+            sub_setups_lst.extend(sub_setups.decompress_species_id())
+        sub_setups_lst_lst.append(sub_setups_lst)
 
     # Read the data
     field_lst = []

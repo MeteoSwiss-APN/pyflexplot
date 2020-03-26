@@ -184,6 +184,8 @@ def cli(ctx, setup_file_paths, dry_run, **cli_args):
 def open_plots(cmd, file_paths, dry_run):
     """Open a plot file using a shell command."""
 
+    file_paths = sorted(file_paths)
+
     # If not yet included, append the output file path
     if "{file}" not in cmd:
         cmd += " {file}"

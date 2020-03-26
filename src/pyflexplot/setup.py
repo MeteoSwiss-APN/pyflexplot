@@ -596,6 +596,23 @@ class InputSetupCollection:
                 sub_setups_lst.append(sub_setup.decompress_partially(None, skip))
         return sub_setups_lst
 
+    def decompress_species_id(self) -> List["InputSetupCollection"]:
+        """Decompress species ids depending in whether to combine them."""
+        try:
+            combine_species: bool = self.collect_equal("combine_species")
+        except Exception as e:
+            # SR_NOTE This should not happen AFAIK, but in case it does,
+            # SR_NOTE catch and raise it here explicitly!
+            raise NotImplementedError("sub_setups differing in combine_species", e)
+        sub_setups_lst: List["InputSetupCollection"] = (
+            self.decompress_partially(["species_id"])
+        )
+        if combine_species:
+            sub_setups_lst = [
+                type(self)([setup for setups in sub_setups_lst for setup in setups])
+            ]
+        return sub_setups_lst
+
     def collect(self, param: str) -> List[Any]:
         """Collect the values of a parameter for all setups."""
         return [getattr(var_setup, param) for var_setup in self._setups]

@@ -59,7 +59,7 @@ def collect_preset_files(
     files_by_dir = {}  # type: ignore
     for dir in collect_preset_paths():
         files_by_dir[dir] = {}
-        for path in dir.glob(f"*.toml"):
+        for path in sorted(dir.glob(f"*.toml")):
             name = path.name[: -len(path.suffix)]
             for rx_pattern in rx_patterns:
                 if rx_pattern.match(name):
