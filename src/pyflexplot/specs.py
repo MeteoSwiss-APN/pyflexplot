@@ -57,6 +57,8 @@ class FldSpecs:
     """Specifications to compute a field."""
 
     def __init__(self, var_setups: InputSetupCollection) -> None:
+        if not var_setups:
+            raise ValueError("missing var_setups", var_setups)
         self.var_setups = var_setups
 
     # SR_TMP <<<
@@ -90,14 +92,8 @@ class FldSpecs:
             return fld_specs_lst
 
     def __repr__(self):
-        s_fld_setup = "\n  ".join(repr(self.fld_setup).split("\n"))
         s_var_setups = ",\n    ".join([str(var_setup) for var_setup in self.var_setups])
-        return (
-            f"{type(self).__name__}("
-            f"\n  fld_setup={s_fld_setup},"
-            f"\n  var_setups=[\n    {s_var_setups}],"
-            f"\n)"
-        )
+        return f"{type(self).__name__}(\n  var_setups=[\n    {s_var_setups}],\n)"
 
     def __eq__(self, other):
         # raise DeprecationWarning()

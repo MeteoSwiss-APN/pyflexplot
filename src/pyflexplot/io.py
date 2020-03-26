@@ -60,12 +60,12 @@ class FileReader:
         """
         self.in_file_path_fmt = in_file_path
 
-        self.n_members: Optional[int] = None
-        self.in_file_path_lst: Optional[Sequence[str]] = None
-        self.lat: Optional[np.ndarray] = None
-        self.lon: Optional[np.ndarray] = None
-
-        self.rotated_pole: bool
+        # Declare some attributes
+        self.nc_meta_data: Dict[str, Any]
+        self.n_members: int
+        self.in_file_path_lst: Sequence[str]
+        self.lat: np.ndarray
+        self.lon: np.ndarray
 
         self.fixer: FlexPartDataFixer = FlexPartDataFixer(self)
 
@@ -86,15 +86,17 @@ class FileReader:
         self.in_file_path_lst = self._prepare_in_file_path_lst(ens_member_ids)
 
         # Collect input file meta data
-        nc_meta_data = self._read_nc_meta_data()
+        self.nc_meta_data = self._read_nc_meta_data()
+
+        # Set unconstrained dimensions to available indices
         for fld_specs in fld_specs_lst:
-            fld_specs.var_setups.replace_nones(nc_meta_data, decompress_skip=["time"])
+            fld_specs.var_setups.replace_nones(self.nc_meta_data)
 
         # Collect fields and attrs
         fields: List[Field] = []
         mdata_lst: List[MetaDataCollection] = []
         for fld_specs in fld_specs_lst:
-            fields_i, mdata_lst_i = self._create_fields(fld_specs, nc_meta_data)
+            fields_i, mdata_lst_i = self._create_fields(fld_specs)
             fields.extend(fields_i)
             mdata_lst.extend(mdata_lst_i)
 
@@ -114,7 +116,9 @@ class FileReader:
                 assert ens_member_ids_i == ens_member_ids
         return ens_member_ids
 
-    def _prepare_in_file_path_lst(self, ens_member_ids: Sequence[int]) -> List[str]:
+    def _prepare_in_file_path_lst(
+        self, ens_member_ids: Optional[Sequence[int]],
+    ) -> List[str]:
         path_fmt = self.in_file_path_fmt
         if re.search(r"{ens_member(:[0-9]+d)?}", path_fmt):
             if not ens_member_ids:
@@ -134,13 +138,11 @@ class FileReader:
             )
 
     def _create_fields(
-        self, fld_specs: FldSpecs, nc_meta_data: Mapping["str", Any],
+        self, fld_specs: FldSpecs,
     ) -> Tuple[List[Field], List[MetaDataCollection]]:
 
         # Read fields of all members at all time steps
-        fld_time_mem: np.ndarray = self._read_fld_time_mem(
-            fld_specs.var_setups, nc_meta_data,
-        )
+        fld_time_mem: np.ndarray = self._read_fld_time_mem(fld_specs.var_setups)
 
         # Reduce fields array along member dimension
         # In other words: Compute single field from ensemble
@@ -156,45 +158,37 @@ class FileReader:
         }
 
         # Collect time-step-specific data meta data
-        mdata_lst: List[MetaDataCollection] = self._collect_meta_data(
-            fld_specs, nc_meta_data,
-        )
+        mdata_lst: List[MetaDataCollection] = self._collect_meta_data(fld_specs)
 
         # Create fields at requested time steps for all members
-        fields: List[Field] = self._create_field_objs(
-            fld_specs, fld_time, time_stats, nc_meta_data,
-        )
+        fields: List[Field] = self._create_field_objs(fld_specs, fld_time, time_stats)
 
         return fields, mdata_lst
 
     def _read_nc_meta_data(self) -> Dict[str, Any]:
-        nc_meta_data = None
+        nc_meta_data: Dict[str, Any]
         for i_mem, in_file_path in enumerate(self.in_file_path_lst or []):
             with nc4.Dataset(in_file_path, "r") as fi:
-                if nc_meta_data is not None:
-                    nc_meta_data_i = read_meta_data(fi)
-                    if nc_meta_data_i != nc_meta_data:
-                        raise Exception(
-                            f"meta data differs", nc_meta_data_i, nc_meta_data,
-                        )
-                else:
-                    nc_meta_data = read_meta_data(fi)
-        assert nc_meta_data is not None  # mypy
+                nc_meta_data_i = read_meta_data(fi)
+                if i_mem == 0:
+                    nc_meta_data = nc_meta_data_i
+                elif nc_meta_data_i != nc_meta_data:
+                    raise Exception(
+                        f"meta data differs", nc_meta_data_i, nc_meta_data,
+                    )
         return nc_meta_data
 
-    def _read_fld_time_mem(
-        self, setups: InputSetupCollection, nc_meta_data: Mapping[str, Any],
-    ) -> np.ndarray:
+    def _read_fld_time_mem(self, setups: InputSetupCollection) -> np.ndarray:
         """Read field over all time steps for each member."""
         fld_time_mem: Optional[np.ndarray] = None
         for i_mem, in_file_path in enumerate(self.in_file_path_lst or []):
             with nc4.Dataset(in_file_path, "r") as fi:
 
                 # Read grid variables
-                self.lat, self.lon = self._read_grid(fi, nc_meta_data)
+                self._read_grid(fi)
 
                 # Read field (all time steps)
-                fld_time = self._read_fld_time(fi, setups, nc_meta_data)
+                fld_time = self._read_fld_time(fi, setups)
 
                 # Store field for current member
                 if fld_time_mem is None:
@@ -205,30 +199,31 @@ class FileReader:
         assert fld_time_mem is not None  # mypy
         return fld_time_mem
 
-    def _read_grid(self, fi, nc_meta_data):
-        dim_names = self._dim_names(nc_meta_data)
+    def _read_grid(self, fi):
+        dim_names = self._dim_names()
         lat = fi.variables[dim_names["lat"]][:]
         lon = fi.variables[dim_names["lon"]][:]
+        try:
+            old_lat = self.lat
+            old_lon = self.lon
+        except AttributeError:
+            self.lat = lat
+            self.lon = lon
+        else:
+            if not (lat == old_lat).all():
+                raise Exception("inconsistent latitude", lat, old_lat)
+            if not (lon == old_lon).all():
+                raise Exception("inconsistent longitude", lon, old_lon)
 
-        # Ensure consistent grid across all input files
-        if self.lat is not None:
-            if not (lat == self.lat).all():
-                raise Exception("inconsistent latitude", lat, self.lat)
-            if not (lon == self.lon).all():
-                raise Exception("inconsistent longitude", lon, self.lon)
-
-        return lat, lon
-
-    def _read_fld_time(self, fi, setups, nc_meta_data):
+    def _read_fld_time(self, fi, setups):
         """Read field at all time steps."""
 
         expand = ["lat", "lon", "time"]
-        flds_time = [
-            self._read_nc_var(fi, setup, nc_meta_data, expand) for setup in setups
-        ]
+        flds_time = [self._read_nc_var(fi, setup, expand) for setup in setups]
         fld_time: np.ndarray = merge_fields(flds_time)
 
-        if nc_meta_data["analysis"]["model"] in ["ifs"]:
+        model = self.nc_meta_data["analysis"]["model"]
+        if model in ["ifs"]:
             self.fixer.fix_global_grid(self.lon, fld_time)
 
         return fld_time
@@ -258,10 +253,10 @@ class FileReader:
             raise NotImplementedError(f"plot var '{plot_type}'")
         return fld_time
 
-    def _collect_meta_data(
-        self, fld_specs: FldSpecs, nc_meta_data: Mapping[str, Any],
-    ) -> List[MetaDataCollection]:
+    def _collect_meta_data(self, fld_specs: FldSpecs) -> List[MetaDataCollection]:
         """Collect time-step-specific data meta data."""
+
+        model = self.nc_meta_data["analysis"]["model"]
 
         # Collect meta data at requested time steps for all members
         n_ts = len(fld_specs.collect_equal("time"))
@@ -272,11 +267,7 @@ class FileReader:
                 for idx_time, fld_specs_i in enumerate(fld_specs.decompress_time()):
                     mdata_lst_i = []
                     for var_setup in fld_specs_i.var_setups:
-                        mdata_lst_i.append(
-                            collect_meta_data(
-                                fi, var_setup, nc_meta_data["analysis"]["model"],
-                            )
-                        )
+                        mdata_lst_i.append(collect_meta_data(fi, var_setup, model))
                     mdata = mdata_lst_i[0].merge_with(mdata_lst_i[1:])
                     mdata_by_reqtime_mem[idx_time, idx_mem] = mdata
 
@@ -293,7 +284,7 @@ class FileReader:
         mdata_lst: List[MetaDataCollection] = mdata_by_reqtime_mem[:, 0].tolist()
 
         # Fix some known issues with the NetCDF input data
-        self.fixer.fix_meta_data(nc_meta_data["analysis"]["model"], mdata_lst)
+        self.fixer.fix_meta_data(model, mdata_lst)
 
         return mdata_lst
 
@@ -302,21 +293,20 @@ class FileReader:
         fld_specs: FldSpecs,
         fld_time: np.ndarray,
         time_stats: Mapping[str, np.ndarray],
-        nc_meta_data: Mapping[str, Any],
     ) -> List[Field]:
         """Create fields at requested time steps for all members."""
+        rotated_pole = self.nc_meta_data["analysis"]["rotated_pole"]
         time_idcs = fld_specs.collect_equal("time")
         fields: List[Field] = []
         for time_idx in time_idcs:
             fld: np.ndarray = fld_time[time_idx]
-            rotated_pole: bool = nc_meta_data["analysis"]["rotated_pole"]
             field = Field(fld, self.lat, self.lon, rotated_pole, fld_specs, time_stats)
             fields.append(field)
         return fields
 
-    def _dim_names(self, nc_meta_data: Mapping[str, Any]) -> Dict[str, str]:
+    def _dim_names(self) -> Dict[str, str]:
         """Model-specific dimension names."""
-        model = nc_meta_data["analysis"]["model"]
+        model = self.nc_meta_data["analysis"]["model"]
         if model.startswith("cosmo"):
             return {
                 "lat": "rlat",
@@ -340,20 +330,18 @@ class FileReader:
         raise NotImplementedError("dimension names for model", model)
 
     def _read_nc_var(
-        self,
-        fi: nc4.Dataset,
-        setup: InputSetup,
-        nc_meta_data: Mapping["str", Any],
-        expand: Optional[List[str]] = None,
+        self, fi: nc4.Dataset, setup: InputSetup, expand: Optional[List[str]] = None,
     ) -> np.ndarray:
         if expand is None:
             expand = []
 
-        # Model-specific dimension names
-        dim_names = self._dim_names(nc_meta_data)
+        model = self.nc_meta_data["analysis"]["model"]
+
+        # Get dimension names (model-specific
+        dim_names = self._dim_names()
 
         # Select variable in file
-        var_name = nc_var_name(setup, nc_meta_data["analysis"]["model"])
+        var_name = nc_var_name(setup, model)
         nc_var = fi.variables[var_name]
 
         # SR_TMP < TODO proper solution
@@ -427,7 +415,7 @@ class FileReader:
         fld = nc_var[indices]
 
         # Fix known issues with NetCDF input data
-        self.fixer.fix_nc_var(nc_var, fld, nc_meta_data["analysis"]["model"])
+        self.fixer.fix_nc_var(nc_var, fld, model)
 
         fld = self._handle_time_integration(fi, fld, setup)
         return fld

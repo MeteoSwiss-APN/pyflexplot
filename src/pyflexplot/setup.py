@@ -567,15 +567,26 @@ class InputSetupCollection:
     def replace_nones(
         self,
         meta_data: Mapping[str, Any],
+        decompress: bool = False,
         decompress_skip: Optional[Collection[str]] = None,
     ) -> List[str]:
         """Set unconstrained dimensions to all available indices."""
         orig_setups = [setup for setup in self._setups]
         self._setups.clear()
+        completed: List[str] = []
         for setup in orig_setups:
-            completed: List[str] = setup.replace_nones(meta_data)
-            select = [dim for dim in completed if dim not in (decompress_skip or [])]
-            self._setups.extend(setup.decompress_partially(select))
+            completed_i: List[str] = setup.replace_nones(meta_data)
+            if not completed:
+                completed = completed_i
+            elif completed != completed_i:
+                raise Exception("completed dimensions differ", completed, completed_i)
+            if not decompress:
+                self._setups.append(setup)
+            else:
+                select = [
+                    dim for dim in completed if dim not in (decompress_skip or [])
+                ]
+                self._setups.extend(setup.decompress_partially(select))
         return completed
 
 
