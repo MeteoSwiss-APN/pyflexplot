@@ -19,7 +19,6 @@ import pytest  # type: ignore
 from pyflexplot.io import read_files
 from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
-from pyflexplot.specs import FldSpecs
 
 from io_utils import read_nc_var  # isort:skip
 from utils import datadir  # noqa:F401 isort:skip
@@ -211,16 +210,17 @@ def test_single(datadir, conf):  # noqa:F811
     datafile = f"{datadir}/{conf.datafilename}"
 
     # Initialize field specifications
-    fld_specs_lst = FldSpecs.create(conf.setup)
-    assert len(fld_specs_lst) == 1
+    var_setups_lst = InputSetupCollection([conf.setup]).decompress_grouped_by_time()
+    assert len(var_setups_lst) == 1
 
     # Read input field
-    fields, mdata_lst = read_files(datafile, fld_specs_lst)
+    fields, mdata_lst = read_files(datafile, var_setups_lst)
     assert len(fields) == 1
     fld = fields[0].fld
 
     # Initialize individual setup objects
-    setups = fld_specs_lst[0].var_setups
+    assert len(var_setups_lst) == 1
+    var_setups = next(iter(var_setups_lst))
 
     # Read reference field
     fld_ref = (
@@ -232,7 +232,7 @@ def test_single(datadir, conf):  # noqa:F811
                     setup,
                     conf.model,
                 )
-                for setup in setups
+                for setup in var_setups
             ],
             axis=0,
         )
@@ -378,19 +378,18 @@ def test_multiple(datadir, conf):  # noqa:F811
     datafile = f"{datadir}/{conf.datafilename}"
 
     # Create setups
-    setup_lst = list(conf.setup.decompress_partially(None))
-    for setup in setup_lst.copy():
-        setup_lst.extend(setup.derive(conf.derived_setup_params))
+    setups = list(conf.setup.decompress_partially(None))
+    for setup in setups.copy():
+        setups.extend(setup.derive(conf.derived_setup_params))
 
     # Create field specifications list
-    fld_specs_lst = FldSpecs.create(InputSetupCollection(setup_lst))
+    var_setups_lst = InputSetupCollection(setups).decompress_grouped_by_time()
 
     # Process field specifications one after another
-    for fld_specs in fld_specs_lst:
-        fld_specs_lst_i = [fld_specs]
+    for var_setups in var_setups_lst:
 
         # Read input fields
-        fields, mdata_lst = read_files(datafile, fld_specs_lst_i)
+        fields, mdata_lst = read_files(datafile, [var_setups])
         assert len(fields) == 1
         assert len(mdata_lst) == 1
         fld = np.array([field.fld for field in fields])
@@ -399,7 +398,7 @@ def test_multiple(datadir, conf):  # noqa:F811
 
         # Read reference fields
         fld_ref = None
-        for var_setup in fld_specs.var_setups:
+        for var_setup in var_setups:
             flds_ref_i = [
                 read_nc_var(
                     datafile,

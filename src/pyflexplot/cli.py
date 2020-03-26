@@ -23,7 +23,6 @@ from .preset import click_find_presets
 from .preset import click_list_presets
 from .preset import click_use_preset
 from .setup import InputSetupFile
-from .specs import FldSpecs
 
 # # To debug segmentation fault, uncomment and run with PYTHONFAULTHANDLER=1
 # import faulthandler
@@ -117,6 +116,7 @@ def set_verbosity(ctx, param, value):
     help="List preset setup file(s) by name (may contain wildcards).",
     metavar="NAME",
     callback=click_find_presets,
+    multiple=True,
 )
 @click.option(
     "--add-presets",
@@ -155,37 +155,33 @@ def cli(ctx, setup_file_paths, dry_run, **cli_args):
 
     # Create plots input file(s) by input file(s)
     out_file_paths = []
-    i_plot = 0
-    for in_file_path, sub_setups in setups_by_infile.items():
+    for i_in, (in_file_path, sub_setups) in enumerate(setups_by_infile.items()):
 
         # Read input fields
-        fld_specs_lst = FldSpecs.create(sub_setups)
+        var_setups_lst = sub_setups.decompress_grouped_by_time()
 
-        fields, mdata_lst = read_files(in_file_path, fld_specs_lst)
-
+        fields, mdata_lst = read_files(in_file_path, var_setups_lst, dry_run)
         assert len(fields) == len(mdata_lst)
 
         # Note: plot_fields(...) yields the output file paths on-the-go
-        for out_file_path in plot_fields(fields, mdata_lst, dry_run=dry_run):
-            i_plot += 1
-
+        for i_fld, out_file_path in enumerate(plot_fields(fields, mdata_lst, dry_run)):
             _w = len(str(len(fields)))
-            print(f" {i_plot + 1:{_w}}/{len(fields)}  {out_file_path}")
+            print(f"[{i_in}] {i_fld + 1:{_w}}/{len(fields)}  {out_file_path}")
 
             if out_file_path in out_file_paths:
                 raise Exception("duplicate output file", out_file_path)
             out_file_paths.append(out_file_path)
 
             if open_first_cmd and not out_file_paths:
-                open_plots(open_first_cmd, [out_file_path])
+                open_plots(open_first_cmd, [out_file_path], dry_run)
 
     if open_all_cmd:
-        open_plots(open_all_cmd, out_file_paths)
+        open_plots(open_all_cmd, out_file_paths, dry_run)
 
     return 0
 
 
-def open_plots(cmd, file_paths):
+def open_plots(cmd, file_paths, dry_run):
     """Open a plot file using a shell command."""
 
     # If not yet included, append the output file path
@@ -199,7 +195,8 @@ def open_plots(cmd, file_paths):
     # Run the command
     cmd = cmd.format(file=" ".join(file_paths))
     click.echo(cmd)
-    os.system(cmd)
+    if not dry_run:
+        os.system(cmd)
 
 
 if __name__ == "__main__":

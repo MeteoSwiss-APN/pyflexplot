@@ -9,6 +9,5 @@ plot_lib.py
 plot_types.py
 preset.py
 setup.py
-specs.py
 utils.py
 words.py

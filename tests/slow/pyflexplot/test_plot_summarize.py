@@ -235,7 +235,7 @@ def create_field():
         lat=np.arange(-5.0, 4.1, 1.0),
         lon=np.arange(-6.0, 3.1, 1.0),
         rotated_pole=True,
-        fld_specs=None,
+        var_setups=None,
         time_stats={"max": 15},
         nc_meta_data=dummy_nc_meta_data,
     )
@@ -712,7 +712,7 @@ class Solution:
         e = self.element
         jdat = {
             "type": "Field",
-            "fld_specs": None,  # SR_TMP
+            "var_setups": None,  # SR_TMP
             "time_stats": {"max": e(15)},
             "fld": {
                 "dtype": "float32",

@@ -506,7 +506,7 @@ def plot_fields(fields, mdata_lst, dry_run=False):
 
     # Create plots one-by-one
     for field, mdata in zip(fields, mdata_lst):
-        setup = field.fld_specs.var_setups.compress()
+        setup = field.var_setups.compress()
         out_file_path = format_out_file_path(setup)
 
         # SR_TMP < TODO Find less hard-coded solution
@@ -515,8 +515,10 @@ def plot_fields(fields, mdata_lst, dry_run=False):
         map_conf = None
         if domain == "auto":
             domain = model
-        if model == "cosmo1":
-            if domain == "cosmo1":
+        # if model == "cosmo1":
+        if model.startswith("cosmo"):
+            # if domain == "cosmo1":
+            if domain.startswith("cosmo"):
                 map_conf = MapAxesConf_Cosmo1(lang=setup.lang)
             elif domain == "ch":
                 map_conf = MapAxesConf_Cosmo1_CH(lang=setup.lang)
@@ -529,11 +531,22 @@ def plot_fields(fields, mdata_lst, dry_run=False):
         yield out_file_path
 
         if not dry_run:
+            assert mdata is not None  # mypy
             plot_config = PlotConfig(setup, mdata)
             Plot(field, plot_config, map_conf).save(out_file_path)
 
 
-def format_out_file_path(setup):
+def format_out_file_path(setup, _previous=[]):
+    template = setup.outfile
+    path = _format_out_file_path_core(template, setup)
+    while path in _previous:
+        template = derive_unique_path(template)
+        path = _format_out_file_path_core(template, setup)
+    _previous.append(path)
+    return path
+
+
+def _format_out_file_path_core(template, setup):
 
     variable = setup.variable
     if setup.variable == "deposition":
@@ -552,22 +565,19 @@ def format_out_file_path(setup):
 
     # Format the file path
     # Don't use str.format in order to handle multival elements
-    out_file_path = _fmt_out_file_path_core(setup.outfile, kwargs)
+    path = _replace_format_keys(template, kwargs)
 
-    # Add number if file path not unique
-    out_file_path = ensure_unique_path(out_file_path)
-
-    return out_file_path
+    return path
 
 
-def _fmt_out_file_path_core(out_file_path, kwargs):
+def _replace_format_keys(path, kwargs):
     for key, val in kwargs.items():
         if not isiterable(val, str_ok=False):
             val = [val]
         # Iterate over relevant format keys
         rxs = r"{" + key + r"(:[^}]*)?}"
-        re.finditer(rxs, out_file_path)
-        for m in re.finditer(rxs, out_file_path):
+        re.finditer(rxs, path)
+        for m in re.finditer(rxs, path):
 
             # Obtain format specifier (if there is one)
             try:
@@ -581,23 +591,15 @@ def _fmt_out_file_path_core(out_file_path, kwargs):
             formatted_key = "+".join([f"{{{f}}}".format(v) for v in val])
 
             # Replace format key in the path by the just formatted string
-            start, end = out_file_path[: m.span()[0]], out_file_path[m.span()[1] :]
-            out_file_path = f"{start}{formatted_key}{end}"
+            start, end = path[: m.span()[0]], path[m.span()[1] :]
+            path = f"{start}{formatted_key}{end}"
 
     # Check that all keys have been formatted
-    if "{" in out_file_path or "}" in out_file_path:
+    if "{" in path or "}" in path:
         raise Exception(
-            f"formatted output file path still contains format keys", out_file_path,
+            f"formatted output file path still contains format keys", path,
         )
 
-    return out_file_path
-
-
-def ensure_unique_path(path, _previous_paths=[]):
-    """If file path has been used before, add/increment trailing number."""
-    while path in _previous_paths:
-        path = derive_unique_path(path)
-    _previous_paths.append(path)
     return path
 
 
@@ -622,6 +624,6 @@ def derive_unique_path(path):
         w = 1
 
     # Add numbering and suffix
-    path = f"{path_base}-{{i:0{w}}}{suffix}".format(i=i)
+    path = path_base + f"-{{i:0{w}}}{suffix}".format(i=i)
 
     return path

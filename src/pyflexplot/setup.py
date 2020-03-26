@@ -314,6 +314,17 @@ class InputSetup(BaseModel):
             self.time = tuple(range(dimensions["time"]["size"]))
             completed.append("time")
 
+        # SR_TMP < does this belong here?
+        nts = dimensions["time"]["size"]
+        time_new = []
+        for its in self.time:
+            if its < 0:
+                its += nts
+                assert 0 <= its < nts
+            time_new.append(its)
+        self.time = tuple(time_new)
+        # SR_TMP >
+
         if self.level is None:
             if self.variable == "concentration":
                 if "level" in dimensions:
@@ -551,12 +562,12 @@ class InputSetupCollection:
         return InputSetup.compress(self)
 
     def decompress_partially(
-        self, params: Collection[str],
+        self, select: Collection[str], skip: Optional[Collection[str]] = None,
     ) -> List["InputSetupCollection"]:
         setups = self._setups
         sub_setup_lst_lst: List[List[InputSetup]] = []
         for setup in setups:
-            sub_setups = setup.decompress_partially(params)
+            sub_setups = setup.decompress_partially(select, skip)
             if not sub_setup_lst_lst:
                 sub_setup_lst_lst = [[sub_setup] for sub_setup in sub_setups]
             else:
@@ -566,6 +577,24 @@ class InputSetupCollection:
         return [
             InputSetupCollection(sub_setup_lst) for sub_setup_lst in sub_setup_lst_lst
         ]
+
+    # SR_TMP <<< TODO cleaner solution
+    def decompress_grouped_by_time(self) -> List["InputSetupCollection"]:
+        # Note: This is what's left-over of FldSpecs, specifically FldSpecs.create
+        return self.decompress_two_step(["time"], None, ["ens_member_id"])
+
+    def decompress_two_step(
+        self,
+        select_outer: List[str],
+        select_inner: Optional[Collection[str]],
+        skip: Optional[Collection[str]] = None,
+    ) -> List["InputSetupCollection"]:
+        skip = ["ens_member_id"]
+        sub_setups_lst: List[InputSetupCollection] = []
+        for setup in self._setups:
+            for sub_setup in setup.decompress_partially(["time"], skip):
+                sub_setups_lst.append(sub_setup.decompress_partially(None, skip))
+        return sub_setups_lst
 
     def collect(self, param: str) -> List[Any]:
         """Collect the values of a parameter for all setups."""

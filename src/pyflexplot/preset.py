@@ -6,6 +6,7 @@ Preset setup files.
 import re
 import sys
 from pathlib import Path
+from typing import Collection
 from typing import Dict
 from typing import Iterator
 from typing import List
@@ -40,19 +41,30 @@ def collect_preset_paths() -> Iterator[Path]:
         yield Path(path)
 
 
-def collect_preset_files(pattern: str = "*") -> Dict[Path, Dict[str, Path]]:
+def collect_preset_files(
+    pattern: Union[str, Collection[str]] = "*"
+) -> Dict[Path, Dict[str, Path]]:
     """Collect all setup files in locations specified in ``preset_path``."""
-    ch = "[a-zA-Z0-9_.-]"
-    rx_pattern = re.compile(
-        r"\A" + pattern.replace("*", f"{ch}*").replace("?", ch) + r"\Z"
-    )
+    if isinstance(pattern, str):
+        patterns = [pattern]
+    else:
+        patterns = list(pattern)
+    rx_patterns = []
+    for pattern in patterns:
+        ch = "[a-zA-Z0-9_.-]"
+        rx_pattern = re.compile(
+            r"\A" + pattern.replace("*", f"{ch}*").replace("?", ch) + r"\Z"
+        )
+        rx_patterns.append(rx_pattern)
     files_by_dir = {}  # type: ignore
     for dir in collect_preset_paths():
         files_by_dir[dir] = {}
         for path in dir.glob(f"*.toml"):
             name = path.name[: -len(path.suffix)]
-            if rx_pattern.match(name):
-                files_by_dir[dir][name] = path
+            for rx_pattern in rx_patterns:
+                if rx_pattern.match(name):
+                    files_by_dir[dir][name] = path
+                    break
     return files_by_dir
 
 

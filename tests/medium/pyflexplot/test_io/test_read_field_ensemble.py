@@ -14,7 +14,6 @@ from pyflexplot.data import threshold_agreement
 from pyflexplot.io import read_files
 from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
-from pyflexplot.specs import FldSpecs
 from srutils.dict import decompress_multival_dict
 
 from io_utils import read_nc_var  # isort:skip
@@ -84,20 +83,19 @@ class TestReadFieldEnsemble_Single:
                 "plot_type": f"ens_{ens_var}",
             }
         )
-        fld_specs_lst = FldSpecs.create(setup)
-        assert len(fld_specs_lst) == 1
+        var_setups_lst = InputSetupCollection([setup]).decompress_grouped_by_time()
+        assert len(var_setups_lst) == 1
 
         # Read input fields
-        fields, mdata_lst = read_files(datafile_fmt, fld_specs_lst)
+        fields, mdata_lst = read_files(datafile_fmt, var_setups_lst)
         assert len(fields) == 1
         assert len(mdata_lst) == 1
         fld = fields[0].fld
 
         # SR_TMP <
-        setups = (
-            fld_specs_lst[0]
-            .var_setups.compress()
-            .decompress_partially(None, skip=["ens_member_id"],)
+        var_setups = next(iter(var_setups_lst))
+        setups = var_setups.compress().decompress_partially(
+            None, skip=["ens_member_id"]
         )
         # SR_TMP >
         assert len(setups) == 1
@@ -195,30 +193,35 @@ class TestReadFieldEnsemble_Multiple:
                 "plot_type": f"ens_{ens_var}",
             }
             setups.append(InputSetup.create(setup_params_i))
-        fld_specs_lst = FldSpecs.create(InputSetupCollection(setups))
+        var_setups_lst = InputSetupCollection(setups).decompress_grouped_by_time()
 
         run_core = functools.partial(
             self._run_core, datafile_fmt, var_names_ref, fct_reduce_mem, scale_fld_ref,
         )
         if separate:
             # Process field specifications one after another
-            for fld_specs in fld_specs_lst:
-                run_core([fld_specs])
+            for var_setups in var_setups_lst:
+                run_core([var_setups])
         else:
-            run_core(fld_specs_lst)
+            run_core(var_setups_lst)
 
     def _run_core(
-        self, datafile_fmt, var_names_ref, fct_reduce_mem, scale_fld_ref, fld_specs_lst,
+        self,
+        datafile_fmt,
+        var_names_ref,
+        fct_reduce_mem,
+        scale_fld_ref,
+        var_setups_lst,
     ):
         # Collect merged variables specifications
         # SR_TMP < TODO cleaner solution
         compressed_setups = InputSetupCollection(
-            [fld_specs.var_setups.compress() for fld_specs in fld_specs_lst],
+            [var_setups.compress() for var_setups in var_setups_lst],
         )
         # SR_TMP >
 
         # Read input fields
-        fields, mdata_lst = read_files(datafile_fmt, fld_specs_lst)
+        fields, mdata_lst = read_files(datafile_fmt, var_setups_lst)
         fld_arr = np.array([field.fld for field in fields])
 
         # Read reference fields

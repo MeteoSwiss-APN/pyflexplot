@@ -33,40 +33,43 @@ from .meta_data import collect_meta_data
 from .meta_data import nc_var_name
 from .setup import InputSetup
 from .setup import InputSetupCollection
-from .specs import FldSpecs
 
 
 def read_files(
-    in_file_path: str, fld_specs_lst: Collection[FldSpecs],
-) -> Tuple[List[Field], List[MetaDataCollection]]:
+    in_file_path: str,
+    var_setups_lst: Collection[InputSetupCollection],
+    dry_run: bool = False,
+) -> Tuple[List[Field], Union[List[MetaDataCollection], List[None]]]:
 
     # Prepare the file reader
-    ens_member_ids = collect_ens_member_ids(fld_specs_lst)
-    reader = FileReader(in_file_path, ens_member_ids)
+    ens_member_ids = collect_ens_member_ids(var_setups_lst)
+    reader = FileReader(in_file_path, ens_member_ids, dry_run)
     reader.prepare()
 
     # Set unconstrained dimensions to available indices
-    fld_specs_lst_lst: List[List[FldSpecs]] = []
-    for fld_specs in fld_specs_lst:
-        completed_dims = fld_specs.var_setups.complete_dimensions(reader.nc_meta_data)
-        decompressed = fld_specs.decompress_partially(completed_dims)
-        fld_specs_lst_lst.append(decompressed)
+    sub_setups_lst_lst: List[List[InputSetupCollection]] = []
+    for var_setups in var_setups_lst:
+        completed_dims = var_setups.complete_dimensions(reader.nc_meta_data)
+        sub_setups_lst_lst.append(var_setups.decompress_partially(completed_dims))
 
-    # Run the reader
-    field_lst, mdata_lst = [], []
-    for fld_specs_lst_i in fld_specs_lst_lst:
-        field_lst_i, mdata_lst_i = reader.run(fld_specs_lst_i)
+    # Read the data
+    field_lst = []
+    mdata_lst: List[Any] = []
+    for sub_setups_lst in sub_setups_lst_lst:
+        field_lst_i, mdata_lst_i = reader.run(sub_setups_lst)
         field_lst.extend(field_lst_i)
         mdata_lst.extend(mdata_lst_i)
 
     return field_lst, mdata_lst
 
 
-def collect_ens_member_ids(fld_specs_lst: Collection[FldSpecs]) -> Optional[List[int]]:
+def collect_ens_member_ids(
+    var_setups_lst: Collection[InputSetupCollection],
+) -> Optional[List[int]]:
     """Collect the ensemble member ids from field specifications."""
     ens_member_ids: Optional[List[int]] = None
-    for fld_specs in fld_specs_lst:
-        ens_member_ids_i = fld_specs.var_setups.collect_equal("ens_member_id")
+    for var_setups in var_setups_lst:
+        ens_member_ids_i = var_setups.collect_equal("ens_member_id")
         if not ens_member_ids:
             ens_member_ids = ens_member_ids_i
         else:
@@ -86,7 +89,12 @@ class FileReader:
 
     choices_ens_var = ["mean", "median", "min", "max"]
 
-    def __init__(self, in_file_path: str, ens_member_ids: Optional[List[int]] = None):
+    def __init__(
+        self,
+        in_file_path: str,
+        ens_member_ids: Optional[List[int]] = None,
+        dry_run: bool = False,
+    ):
         """Create an instance of ``FileReader``.
 
         Args:
@@ -95,9 +103,12 @@ class FileReader:
 
             ens_member_ids (optional): Ensemble member ids.
 
+            dry_run (optional): Dry run.
+
         """
         self.in_file_path_fmt = in_file_path
         self.ens_member_ids = ens_member_ids
+        self.dry_run = dry_run
 
         # Declare some attributes
         self.prepared: bool = False
@@ -117,22 +128,17 @@ class FileReader:
         self._read_nc_meta_data()
 
     def run(
-        self, fld_specs_lst: Sequence[FldSpecs]
-    ) -> Tuple[List[Field], List[MetaDataCollection]]:
-        """Read one or more fields from a file from disc.
-
-        Args:
-            fld_specs_lst: List of field specifications.
-
-        """
+        self, var_setups_lst: Sequence[InputSetupCollection]
+    ) -> Tuple[List[Field], Union[List[MetaDataCollection], List[None]]]:
+        """Read one or more fields from a file from disc."""
         if not self.prepared:
             self.prepare()
 
         # Collect fields and attrs
         fields: List[Field] = []
-        mdata_lst: List[MetaDataCollection] = []
-        for fld_specs in fld_specs_lst:
-            fields_i, mdata_lst_i = self._create_fields(fld_specs)
+        mdata_lst: List[Any] = []
+        for var_setups in var_setups_lst:
+            fields_i, mdata_lst_i = self._create_fields(var_setups)
             fields.extend(fields_i)
             mdata_lst.extend(mdata_lst_i)
 
@@ -166,31 +172,21 @@ class FileReader:
         self.in_file_path_lst = path_lst
 
     def _create_fields(
-        self, fld_specs: FldSpecs,
-    ) -> Tuple[List[Field], List[MetaDataCollection]]:
-
-        # Read fields of all members at all time steps
-        fld_time_mem: np.ndarray = self._read_fld_time_mem(fld_specs.var_setups)
-
-        # Reduce fields array along member dimension
-        # In other words: Compute single field from ensemble
-        fld_time: np.ndarray = self._reduce_ensemble(fld_time_mem, fld_specs)
-
-        # Collect time stats
-        time_stats: Dict[str, np.ndarray] = {
-            "mean": np.nanmean(fld_time),
-            "median": np.nanmedian(fld_time),
-            "mean_nz": np.nanmean(fld_time[fld_time > 0]),
-            "median_nz": np.nanmedian(fld_time[fld_time > 0]),
-            "max": np.nanmax(fld_time),
-        }
-
-        # Collect time-step-specific data meta data
-        mdata_lst: List[MetaDataCollection] = self._collect_meta_data(fld_specs)
-
-        # Create fields at requested time steps for all members
-        fields: List[Field] = self._create_field_objs(fld_specs, fld_time, time_stats)
-
+        self, var_setups: InputSetupCollection,
+    ) -> Tuple[List[Field], Union[List[MetaDataCollection], List[None]]]:
+        fld_time: np.ndarray
+        mdata_lst: Union[List[MetaDataCollection], List[None]]
+        if self.dry_run:
+            fld_time = self._create_dummy_fld()
+        else:
+            fld_time_mem = self._read_fld_time_mem(var_setups)
+            fld_time = self._reduce_ensemble(fld_time_mem, var_setups)
+        time_stats: Dict[str, np.ndarray] = self._collect_time_stats(fld_time)
+        fields: List[Field] = self._create_field_objs(var_setups, fld_time, time_stats)
+        if self.dry_run:
+            mdata_lst = [None] * len(fields)
+        else:
+            mdata_lst = self._collect_meta_data(var_setups)
         return fields, mdata_lst
 
     def _read_nc_meta_data(self):
@@ -205,6 +201,16 @@ class FileReader:
                         f"meta data differs", nc_meta_data_i, nc_meta_data,
                     )
         self.nc_meta_data = nc_meta_data
+
+    def _create_dummy_fld(self):
+        dim_names = self._dim_names()
+        nlat = self.nc_meta_data["dimensions"][dim_names["lat"]]["size"]
+        nlon = self.nc_meta_data["dimensions"][dim_names["lon"]]["size"]
+        nts = self.nc_meta_data["dimensions"][dim_names["time"]]["size"]
+        self.lat = np.full((nlat,), np.nan)
+        self.lon = np.full((nlon,), np.nan)
+        fld_time = np.full((nts, nlat, nlon), np.nan)
+        return fld_time
 
     def _read_fld_time_mem(self, setups: InputSetupCollection) -> np.ndarray:
         """Read field over all time steps for each member."""
@@ -257,16 +263,16 @@ class FileReader:
         return fld_time
 
     def _reduce_ensemble(
-        self, fld_time_mem: np.ndarray, fld_specs: FldSpecs,
+        self, fld_time_mem: np.ndarray, var_setups: InputSetupCollection,
     ) -> np.ndarray:
         """Reduce the ensemble to a single field (time, lat, lon)."""
 
         if self.n_members == 1:
             return fld_time_mem[0]
 
-        plot_type = fld_specs.var_setups.collect_equal("plot_type")
-        ens_param_thr = fld_specs.var_setups.collect_equal("ens_param_thr")
-        ens_param_mem_min = fld_specs.var_setups.collect_equal("ens_param_mem_min")
+        plot_type = var_setups.collect_equal("plot_type")
+        ens_param_thr = var_setups.collect_equal("ens_param_thr")
+        ens_param_mem_min = var_setups.collect_equal("ens_param_mem_min")
 
         if plot_type == "ens_mean":
             fld_time = np.nanmean(fld_time_mem, axis=0)
@@ -286,23 +292,34 @@ class FileReader:
             raise NotImplementedError(f"plot var '{plot_type}'")
         return fld_time
 
-    def _collect_meta_data(self, fld_specs: FldSpecs) -> List[MetaDataCollection]:
+    def _collect_time_stats(self, fld_time: np.ndarray,) -> Dict[str, np.ndarray]:
+        return {
+            "mean": np.nanmean(fld_time),
+            "median": np.nanmedian(fld_time),
+            "mean_nz": np.nanmean(fld_time[fld_time > 0]),
+            "median_nz": np.nanmedian(fld_time[fld_time > 0]),
+            "max": np.nanmax(fld_time),
+        }
+
+    def _collect_meta_data(
+        self, var_setups: InputSetupCollection,
+    ) -> List[MetaDataCollection]:
         """Collect time-step-specific data meta data."""
 
         model = self.nc_meta_data["analysis"]["model"]
 
         # Collect meta data at requested time steps for all members
-        n_ts = len(fld_specs.var_setups.collect_equal("time"))
+        n_ts = len(var_setups.collect_equal("time"))
         shape = (n_ts, self.n_members)
         mdata_by_reqtime_mem: np.ndarray = np.full(shape, None)
         for idx_mem, in_file_path in enumerate(self.in_file_path_lst or []):
             with nc4.Dataset(in_file_path, "r") as fi:
-                for idx_time, fld_specs_i in enumerate(
-                    fld_specs.decompress_partially(["time"])
+                for idx_time, sub_setups in enumerate(
+                    var_setups.decompress_partially(["time"])
                 ):
                     mdata_lst_i = []
-                    for var_setup in fld_specs_i.var_setups:
-                        mdata_lst_i.append(collect_meta_data(fi, var_setup, model))
+                    for sub_setup in sub_setups:
+                        mdata_lst_i.append(collect_meta_data(fi, sub_setup, model))
                     mdata = mdata_lst_i[0].merge_with(mdata_lst_i[1:])
                     mdata_by_reqtime_mem[idx_time, idx_mem] = mdata
 
@@ -325,13 +342,13 @@ class FileReader:
 
     def _create_field_objs(
         self,
-        fld_specs: FldSpecs,
+        var_setups: InputSetupCollection,
         fld_time: np.ndarray,
         time_stats: Mapping[str, np.ndarray],
     ) -> List[Field]:
         """Create fields at requested time steps for all members."""
         rotated_pole = self.nc_meta_data["analysis"]["rotated_pole"]
-        time_idcs = fld_specs.var_setups.collect_equal("time")
+        time_idcs = var_setups.collect_equal("time")
         fields: List[Field] = []
         for time_idx in time_idcs:
             fld: np.ndarray = fld_time[time_idx]
@@ -340,7 +357,7 @@ class FileReader:
                 lat=self.lat,
                 lon=self.lon,
                 rotated_pole=rotated_pole,
-                fld_specs=fld_specs,
+                var_setups=var_setups,
                 time_stats=time_stats,
                 nc_meta_data=self.nc_meta_data,
             )

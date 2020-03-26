@@ -13,7 +13,7 @@ from typing import Union
 import numpy as np
 
 # Local
-from .specs import FldSpecs
+from .setup import InputSetupCollection
 from .utils import summarizable
 
 
@@ -48,8 +48,9 @@ def summarize_field(obj):
     }
 
 
+# SR_TODO Turn into dataclass
 @summarizable(
-    attrs=["fld_specs", "time_stats"],
+    attrs=["var_setups", "time_stats"],
     post_summarize=lambda self, summary: {**summary, **summarize_field(self)},
 )
 class Field:
@@ -61,7 +62,7 @@ class Field:
         lat: np.ndarray,
         lon: np.ndarray,
         rotated_pole: bool,
-        fld_specs: FldSpecs,
+        var_setups: InputSetupCollection,
         time_stats: Mapping[str, np.ndarray],
         nc_meta_data: Mapping[str, Any],
     ):
@@ -76,7 +77,7 @@ class Field:
 
             rotated_pole: Whether pole is rotated.
 
-            fld_specs: Input field specifications.
+            var_setups: Variables setups.
 
             time_stats: Some statistics across all time steps.
 
@@ -88,7 +89,7 @@ class Field:
         self.lat = lat
         self.lon = lon
         self.rotated_pole = rotated_pole
-        self.fld_specs = fld_specs
+        self.var_setups = var_setups
         self.time_stats = time_stats
         self.nc_meta_data = nc_meta_data
 
@@ -211,10 +212,10 @@ def merge_fields(
 
             If a single operator is passed, it is used to sequentially combine
             one field after the other, in the same order as the corresponding
-            specifications (``fld_specs``).
+            specifications (``var_setups``).
 
             If a list of operators has been passed, then it's length must be
-            one smaller than that of ``fld_specs``, such that each
+            one smaller than that of ``var_setups``, such that each
             operator is used between two subsequent fields (again in the same
             order as the corresponding specifications).
 
