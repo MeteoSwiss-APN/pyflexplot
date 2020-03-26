@@ -4,11 +4,11 @@
 # Sample data directory: /scratch/ruestefa/shared/flexpart_visualization/test/
 infile = "data/cosmo-1_2019052800.nc"
 simulation_type = "deterministic"
-# plot_type = "auto"
+plot_type = "auto"
 species_id = "*"
 
 [_base._deposition]
-# outfile = "deposition_tot_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
+outfile = "deposition_tot_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
 variable = "deposition"
 deposition_type = "tot"
 combine_species = true
