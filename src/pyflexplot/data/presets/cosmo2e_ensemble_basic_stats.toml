@@ -1,7 +1,7 @@
 # PyFlexPlot setup file to plot basic statistical measures.
 
 [_base]
-# Sample data directory: /scratch/ruestefa/shared/flexpart_visualization/test/
+# Sample data directory: /scratch/ruestefa/shared/pyflexplot_test/
 infile = "data/cosmo-2e_2019073100_{ens_member:03d}.nc"
 simulation_type = "ensemble"
 ens_member_id = [
