@@ -189,6 +189,7 @@ def open_plots(cmd, file_paths):
 
     # Run the command
     cmd = cmd.format(file=" ".join(file_paths))
+    click.echo(cmd)
     os.system(cmd)
 
 

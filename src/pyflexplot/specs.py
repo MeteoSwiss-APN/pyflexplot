@@ -4,10 +4,8 @@ Input variable specifications.
 """
 # Standard library
 from typing import Any
-from typing import Dict
 from typing import List
 from typing import Sequence
-from typing import Tuple
 from typing import Union
 from typing import overload
 
@@ -110,18 +108,25 @@ class FldSpecs:
         return var_setups_eq and fld_setup_eq
 
     # SR_TMP <<<
-    def decompress_time(self) -> List["FldSpecs"]:
-        var_setups_by_time: Dict[Tuple[int, ...], List[InputSetup]] = {}
-        for var_setup in self.var_setups:
-            for setup in var_setup.decompress_partially(["time"]):
-                if setup.time not in var_setups_by_time:
-                    assert isinstance(setup.time, tuple)  # mypy
-                    var_setups_by_time[setup.time] = []
-                var_setups_by_time[setup.time].append(setup)
-        return [
-            type(self)(InputSetupCollection(var_setups))
-            for var_setups in var_setups_by_time.values()
-        ]
+    def decompress(self, params) -> List["FldSpecs"]:
+
+        var_setup_lst_lst: List[List[InputSetup]] = []
+        for setup in self.var_setups:
+            sub_setups = setup.decompress_partially(params)
+            if not var_setup_lst_lst:
+                var_setup_lst_lst = [[sub_setup] for sub_setup in sub_setups]
+            else:
+                assert len(sub_setups) == len(var_setup_lst_lst)
+                for idx, sub_setup in enumerate(sub_setups):
+                    var_setup_lst_lst[idx].append(sub_setup)
+
+        fld_specs_lst: List["FldSpecs"] = []
+        for var_setup_lst in var_setup_lst_lst:
+            var_setups = InputSetupCollection(var_setup_lst)
+            fld_specs = type(self)(var_setups)
+            fld_specs_lst.append(fld_specs)
+
+        return fld_specs_lst
 
     def collect(self, param: str) -> List[Any]:
         """Collect all values of a given parameter."""

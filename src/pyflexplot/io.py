@@ -6,6 +6,7 @@ IO.
 import re
 import warnings
 from typing import Any
+from typing import Collection
 from typing import Dict
 from typing import List
 from typing import Mapping
@@ -35,8 +36,43 @@ from .setup import InputSetupCollection
 from .specs import FldSpecs
 
 
-def read_files(in_file_path, fld_specs_lst):
-    return FileReader(in_file_path).run(fld_specs_lst)
+def read_files(
+    in_file_path: str, fld_specs_lst: Collection[FldSpecs],
+) -> Tuple[List[Field], List[MetaDataCollection]]:
+
+    # Prepare the file reader
+    ens_member_ids = collect_ens_member_ids(fld_specs_lst)
+    reader = FileReader(in_file_path, ens_member_ids)
+    reader.prepare()
+
+    # Set unconstrained dimensions to available indices
+    fld_specs_lst_lst: List[List[FldSpecs]] = []
+    for fld_specs in fld_specs_lst:
+        completed_dims = fld_specs.var_setups.complete_dimensions(reader.nc_meta_data)
+        decompressed = fld_specs.decompress(completed_dims)
+        fld_specs_lst_lst.append(decompressed)
+
+    # Run the reader
+    field_lst, mdata_lst = [], []
+    for fld_specs_lst_i in fld_specs_lst_lst:
+        field_lst_i, mdata_lst_i = reader.run(fld_specs_lst_i)
+        field_lst.extend(field_lst_i)
+        mdata_lst.extend(mdata_lst_i)
+
+    return field_lst, mdata_lst
+
+
+def collect_ens_member_ids(fld_specs_lst: Collection[FldSpecs]) -> Optional[List[int]]:
+    """Collect the ensemble member ids from field specifications."""
+    ens_member_ids: Optional[List[int]] = None
+    for fld_specs in fld_specs_lst:
+        ens_member_ids_i = fld_specs.collect_equal("ens_member_id")
+        if not ens_member_ids:
+            ens_member_ids = ens_member_ids_i
+        else:
+            # Should be the same for all!
+            assert ens_member_ids_i == ens_member_ids
+    return ens_member_ids
 
 
 class FileReader:
@@ -50,24 +86,35 @@ class FileReader:
 
     choices_ens_var = ["mean", "median", "min", "max"]
 
-    def __init__(self, in_file_path: str):
+    def __init__(self, in_file_path: str, ens_member_ids: Optional[List[int]] = None):
         """Create an instance of ``FileReader``.
 
         Args:
             in_file_path: File path. In case of ensemble data, it must
                 contain the format key '{ens_member[:0?d]}'.
 
+            ens_member_ids (optional): Ensemble member ids.
+
         """
         self.in_file_path_fmt = in_file_path
+        self.ens_member_ids = ens_member_ids
 
         # Declare some attributes
+        self.prepared: bool = False
         self.nc_meta_data: Dict[str, Any]
-        self.n_members: int
         self.in_file_path_lst: Sequence[str]
         self.lat: np.ndarray
         self.lon: np.ndarray
 
         self.fixer: FlexPartDataFixer = FlexPartDataFixer(self)
+
+    def prepare(self):
+        if self.prepared:
+            raise Exception(f"file reader has already been prepared")
+        self.prepared = True
+
+        self._prepare_in_file_path_lst()
+        self._read_nc_meta_data()
 
     def run(
         self, fld_specs_lst: Sequence[FldSpecs]
@@ -78,19 +125,8 @@ class FileReader:
             fld_specs_lst: List of field specifications.
 
         """
-        # Collect ensemble member ids
-        ens_member_ids = self._collect_ens_member_ids(fld_specs_lst)
-        self.n_members = 1 if not ens_member_ids else len(ens_member_ids)
-
-        # Create input file paths
-        self.in_file_path_lst = self._prepare_in_file_path_lst(ens_member_ids)
-
-        # Collect input file meta data
-        self.nc_meta_data = self._read_nc_meta_data()
-
-        # Set unconstrained dimensions to available indices
-        for fld_specs in fld_specs_lst:
-            fld_specs.var_setups.replace_nones(self.nc_meta_data)
+        if not self.prepared:
+            self.prepare()
 
         # Collect fields and attrs
         fields: List[Field] = []
@@ -102,24 +138,15 @@ class FileReader:
 
         return fields, mdata_lst
 
-    def _collect_ens_member_ids(
-        self, fld_specs_lst: Sequence[FldSpecs]
-    ) -> Optional[List[int]]:
-        """Collect the ensemble member ids from field specifications."""
-        ens_member_ids: Optional[List[int]] = None
-        for fld_specs in fld_specs_lst:
-            ens_member_ids_i = fld_specs.collect_equal("ens_member_id")
-            if not ens_member_ids:
-                ens_member_ids = ens_member_ids_i
-            else:
-                # Should be the same for all!
-                assert ens_member_ids_i == ens_member_ids
-        return ens_member_ids
+    # SR_TMP <<< TODO eliminate or implement properly
+    @property
+    def n_members(self):
+        return 1 if not self.ens_member_ids else len(self.ens_member_ids)
 
-    def _prepare_in_file_path_lst(
-        self, ens_member_ids: Optional[Sequence[int]],
-    ) -> List[str]:
+    def _prepare_in_file_path_lst(self) -> None:
+        ens_member_ids = self.ens_member_ids
         path_fmt = self.in_file_path_fmt
+        path_lst: List[str]
         if re.search(r"{ens_member(:[0-9]+d)?}", path_fmt):
             if not ens_member_ids:
                 raise ValueError(
@@ -129,13 +156,14 @@ class FileReader:
                     ens_member_ids,
                 )
             assert ens_member_ids is not None  # mypy
-            return [path_fmt.format(ens_member=id_) for id_ in ens_member_ids]
+            path_lst = [path_fmt.format(ens_member=id_) for id_ in ens_member_ids]
         elif not ens_member_ids:
-            return [path_fmt]
+            path_lst = [path_fmt]
         else:
             raise ValueError(
                 f"input file path missing format key", path_fmt, ens_member_ids,
             )
+        self.in_file_path_lst = path_lst
 
     def _create_fields(
         self, fld_specs: FldSpecs,
@@ -165,7 +193,7 @@ class FileReader:
 
         return fields, mdata_lst
 
-    def _read_nc_meta_data(self) -> Dict[str, Any]:
+    def _read_nc_meta_data(self):
         nc_meta_data: Dict[str, Any]
         for i_mem, in_file_path in enumerate(self.in_file_path_lst or []):
             with nc4.Dataset(in_file_path, "r") as fi:
@@ -176,7 +204,7 @@ class FileReader:
                     raise Exception(
                         f"meta data differs", nc_meta_data_i, nc_meta_data,
                     )
-        return nc_meta_data
+        self.nc_meta_data = nc_meta_data
 
     def _read_fld_time_mem(self, setups: InputSetupCollection) -> np.ndarray:
         """Read field over all time steps for each member."""
@@ -264,7 +292,7 @@ class FileReader:
         mdata_by_reqtime_mem: np.ndarray = np.full(shape, None)
         for idx_mem, in_file_path in enumerate(self.in_file_path_lst or []):
             with nc4.Dataset(in_file_path, "r") as fi:
-                for idx_time, fld_specs_i in enumerate(fld_specs.decompress_time()):
+                for idx_time, fld_specs_i in enumerate(fld_specs.decompress(["time"])):
                     mdata_lst_i = []
                     for var_setup in fld_specs_i.var_setups:
                         mdata_lst_i.append(collect_meta_data(fi, var_setup, model))

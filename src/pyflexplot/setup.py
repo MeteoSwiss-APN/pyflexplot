@@ -306,7 +306,7 @@ class InputSetup(BaseModel):
         return cls.create(obj)  # type: ignore
 
     # SR_TODO consider renaming this method (sth. containing 'dimensions')
-    def replace_nones(self, meta_data: Mapping[str, Any]) -> List[str]:
+    def complete_dimensions(self, meta_data: Mapping[str, Any]) -> List[str]:
         dimensions = meta_data["dimensions"]
         completed = []
 
@@ -564,7 +564,7 @@ class InputSetupCollection:
         }
         return grouped
 
-    def replace_nones(
+    def complete_dimensions(
         self,
         meta_data: Mapping[str, Any],
         decompress: bool = False,
@@ -575,7 +575,7 @@ class InputSetupCollection:
         self._setups.clear()
         completed: List[str] = []
         for setup in orig_setups:
-            completed_i: List[str] = setup.replace_nones(meta_data)
+            completed_i: List[str] = setup.complete_dimensions(meta_data)
             if not completed:
                 completed = completed_i
             elif completed != completed_i:
