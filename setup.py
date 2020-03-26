@@ -45,6 +45,7 @@ dependencies = [
     "pillow >= 6.2.0",
     "pydantic",
     "scipy",
+    "typing-extensions",
     "toml",
 ]
 
@@ -53,7 +54,7 @@ dependencies.append("shapely @ git+ssh://git@github.com/Toblerity/shapely.git")
 
 scripts = [
     "pyflexplot=pyflexplot.cli:cli",
-    "crop-netcdf=tools.crop_netcdf:main",
+    "crop-netcdf=srtools.crop_netcdf:main",
 ]
 
 setup(
@@ -63,5 +64,6 @@ setup(
     packages=find_packages("src"),
     package_dir={"": "src"},
     include_package_data=True,
+    zip_save=False,
     **metadata,
 )

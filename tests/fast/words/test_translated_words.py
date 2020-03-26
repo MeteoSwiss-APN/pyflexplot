@@ -7,7 +7,7 @@ Tests for module ``words.word``.
 import functools
 
 # Third-party
-import pytest
+import pytest  # type: ignore
 
 # First-party
 from srutils.testing import property_obj

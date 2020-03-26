@@ -47,8 +47,9 @@ import numpy as np
 # First-party
 from pyflexplot.data import Field
 from pyflexplot.plot import Plot
-from pyflexplot.plot import PlotLabels
-from pyflexplot.setup import Setup
+from pyflexplot.plot_types import PlotConfig
+from pyflexplot.plot_types import PlotLabels
+from pyflexplot.setup import InputSetup
 from srutils.testing import CheckFailedError
 from srutils.testing import IgnoredElement
 from srutils.testing import UnequalElement
@@ -175,7 +176,7 @@ class Dummy_Attr:
 # Prepare test data
 
 
-def create_attrs(lang):
+def create_mdata(lang):
 
     # Note: Some values must be passed, otherwise plotting fails
 
@@ -227,22 +228,24 @@ def create_attrs(lang):
     )
 
 
-def create_field(attrs):
+def create_field():
     dummy_field = Field(
         fld=np.array([[i] * 10 for i in range(10)], np.float32),
-        rlat=np.arange(-5.0, 4.1, 1.0),
-        rlon=np.arange(-6.0, 3.1, 1.0),
-        attrs=attrs,
-        field_specs=None,
+        lat=np.arange(-5.0, 4.1, 1.0),
+        lon=np.arange(-6.0, 3.1, 1.0),
+        rotated_pole=True,
+        fld_specs=None,
         time_stats={"max": 15},
     )
     return dummy_field
 
 
 def create_setup(lang):
-    infiles = ["dummy_infile.nc"]
+    infile = "dummy_infile.nc"
     outfile = "dummy_outfile.png"
-    return Setup(infiles=infiles, outfile=outfile, lang=lang, variable="deposition")
+    return InputSetup.create(
+        {"infile": infile, "outfile": outfile, "lang": lang, "variable": "deposition"},
+    )
 
 
 def create_words(lang):
@@ -295,10 +298,17 @@ def create_symbols():
     )
 
 
-def create_labels(lang, attrs):
-    dummy_words = create_words(lang)
-    dummy_symbols = create_symbols()
-    return PlotLabels(lang, dummy_words, dummy_symbols, attrs)
+def create_labels(lang, mdata):
+    PlotLabels.words = create_words(lang)
+    PlotLabels.symbols = create_symbols()
+    return PlotLabels(lang, mdata)
+
+
+def create_plot_config(lang):
+    setup = create_setup(lang)
+    mdata = create_mdata(lang)
+    labels = create_labels(lang, mdata)
+    return PlotConfig(setup, mdata, labels)
 
 
 def create_map_conf(lang):
@@ -332,14 +342,10 @@ def create_res(lang, _cache={}):
 
     """
     if lang not in _cache:
-        attrs = create_attrs(lang)
-        field = create_field(attrs)
-        setup = create_setup(lang)
-        labels = create_labels(lang, attrs)
+        field = create_field()
+        plot_config = create_plot_config(lang)
         map_conf = create_map_conf(lang)
-        plot = Plot(
-            field, setup, map_conf=map_conf, dpi=100, figsize=(12, 9), labels=labels,
-        )
+        plot = Plot(field, plot_config, map_conf)
         _cache[lang] = plot.summarize()
     return _cache[lang]
 
@@ -372,8 +378,6 @@ class CreateTests:
     invs = [False, True]
     args = [
         "base_attrs",
-        "dim_attrs",
-        "labels",
         "ax_map",
         "boxes",
         "boxes_text",
@@ -422,16 +426,6 @@ class Test_BaseAttrs:
 
 
 @CreateTests()
-class Test_DimAttrs:
-    dim_attrs = True
-
-
-@CreateTests()
-class Test_Labels:
-    labels = True
-
-
-@CreateTests()
 class Test_Boxes:
     boxes = True
 
@@ -455,8 +449,6 @@ class Test_Field:
 @CreateTests()
 class Test_Full:
     base_attrs = True
-    dim_attrs = True
-    labels = True
     ax_map = True
     boxes = True
     boxes_text = True
@@ -476,16 +468,10 @@ class Solution:
         self.lang = lang
         self.inverted = inverted
 
-    def create(
-        self, *, base_attrs, dim_attrs, labels, ax_map, boxes, boxes_text, fig, field
-    ):
+    def create(self, *, base_attrs, ax_map, boxes, boxes_text, fig, field):
         sol = {}
         if base_attrs:
             sol.update(self.base_attrs())
-        if dim_attrs:
-            sol.update(self.dim_attrs())
-        if labels:
-            sol.update(self.labels())
         if ax_map:
             sol.update(self.ax_map())
         if boxes:
@@ -505,35 +491,16 @@ class Solution:
         e = self.element
         jdat = {
             "type": e("Plot"),
-            "extend": e("max"),
-            "level_range_style": e("base"),
+            # SR_TMP "extend": e("max"),
+            # SR_TMP "level_range_style": e("base"),
             "draw_colors": e(True),
             "draw_contours": e(False),
-            "mark_field_max": e(True),
+            # SR_TMP "mark_field_max": e(True),
             "mark_release_site": e(True),
-            "setup": IgnoredElement("Setup"),  # SR_TMP TODO Summarize Setup!
+            "plot_config": IgnoredElement("PlotConfig"),  # SR_TMP TODO
+            # SR_TMP "setup": IgnoredElement("InputSetup"),  # SR_TMP TODO
         }
         return jdat
-
-    def dim_attrs(self):
-        e = self.element
-        jdat = {
-            "dpi": e(100.0),
-            "figsize": e((12.0, 9.0)),
-            "text_box_setup": {
-                "h_rel_t": e(0.1),
-                "h_rel_b": e(0.03),
-                "w_rel_r": e(0.25),
-                "pad_hor_rel": e(0.015),
-                "h_rel_box_rt": e(0.45),
-            },
-        }
-        return jdat
-
-    def labels(self):
-        e = self.element
-        jdat = e({})  # SR_TMP
-        return {"labels": jdat}
 
     def ax_map(self):
         e = self.element
@@ -723,7 +690,6 @@ class Solution:
 
         jdat = {
             "type": "Figure",
-            "dpi": e(100.0),
             "bbox": {
                 "type": "TransformedBbox",
                 "bounds": e((0.0, 0.0, 1200.0, 900.0)),
@@ -744,8 +710,7 @@ class Solution:
         e = self.element
         jdat = {
             "type": "Field",
-            "attrs": {},  # SR_TMP
-            "field_specs": None,  # SR_TMP
+            "fld_specs": None,  # SR_TMP
             "time_stats": {"max": e(15)},
             "fld": {
                 "dtype": "float32",
@@ -761,13 +726,13 @@ class Solution:
                 "n_nan": e(0),
                 "n_zero": e(10),
             },
-            "rlat": {
+            "lat": {
                 "dtype": "float64",
                 "shape": e((10,)),
                 "min": e(-5.0),
                 "max": e(4.0),
             },
-            "rlon": {
+            "lon": {
                 "dtype": "float64",
                 "shape": e((10,)),
                 "min": e(-6.0),

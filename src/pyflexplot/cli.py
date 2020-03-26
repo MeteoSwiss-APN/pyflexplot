@@ -4,7 +4,6 @@ Command line interface.
 """
 # Standard library
 import functools
-import logging as log
 import os
 import sys
 
@@ -16,13 +15,15 @@ from srutils.click import CharSepList
 
 # Local
 from . import __version__
-from .examples import choices as example_choices
-from .examples import print_example
-from .field_specs import FieldSpecs
-from .io import FileReader
-from .plotter import Plotter
-from .setup import SetupFile
-from .utils import count_to_log_level
+from .io import read_files
+from .plot import plot
+from .preset import click_add_preset_path
+from .preset import click_cat_preset
+from .preset import click_find_presets
+from .preset import click_list_presets
+from .preset import click_use_preset
+from .setup import InputSetupFile
+from .specs import FldSpecs
 
 # # To debug segmentation fault, uncomment and run with PYTHONFAULTHANDLER=1
 # import faulthandler
@@ -46,13 +47,18 @@ def not_implemented(msg):
     return f
 
 
+def set_verbosity(ctx, param, value):
+    if ctx.obj is None:
+        ctx.obj = {}
+    ctx.obj["verbosity"] = value
+
+
 @click.command(context_settings={"help_option_names": ["-h", "--help"]},)
 @click.version_option(__version__, "--version", "-V", message="%(version)s")
 @click.argument(
     "setup_file_paths",
     metavar="CONFIG_FILE...",
     type=click.Path(exists=True, readable=True, allow_dash=True),
-    required=True,
     nargs=-1,
 )
 @click.option(
@@ -72,6 +78,8 @@ def not_implemented(msg):
     "verbose",
     help="Increase verbosity; specify multiple times for more.",
     count=True,
+    callback=set_verbosity,
+    is_eager=True,
 )
 @click.option(
     "--open-first",
@@ -88,10 +96,38 @@ def not_implemented(msg):
     "--open-all", "open_all_cmd", help="Like --open-first, but for all plots.",
 )
 @click.option(
-    "--example",
-    help="Example commands.",
-    type=click.Choice(list(example_choices)),
-    callback=print_example,
+    "--preset",
+    help="Run with preset setup file(s) matching name (may contain wildcards).",
+    metavar="NAME",
+    multiple=True,
+    callback=click_use_preset,
+    expose_value=False,
+)
+@click.option(
+    "--cat-preset",
+    help="Show the content of a preset setup file.",
+    metavar="NAME",
+    callback=click_cat_preset,
+    expose_value=False,
+)
+@click.option(
+    "--list-presets",
+    help="List the names of all preset setup files.",
+    callback=click_list_presets,
+    is_flag=True,
+)
+@click.option(
+    "--find-presets",
+    help="List preset setup file(s) by name (may contain wildcards).",
+    metavar="NAME",
+    callback=click_find_presets,
+)
+@click.option(
+    "--add-presets",
+    help="Add a directory containing preset setup files.",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    callback=click_add_preset_path,
+    is_eager=True,
     expose_value=False,
 )
 # ---
@@ -99,62 +135,45 @@ def not_implemented(msg):
 def cli(ctx, setup_file_paths, **cli_args):
     """Create dispersion plot as specified in CONFIG_FILE(S)."""
 
-    log.basicConfig(level=count_to_log_level(cli_args["verbose"]))
+    ctx.obj.update(cli_args)
 
-    # Ensure that ctx.obj exists and is a dict
-    ctx.ensure_object(dict)
+    # Add preset setup file paths
+    setup_file_paths = list(setup_file_paths)
+    for path in ctx.obj.get("preset_setup_file_paths", []):
+        if path not in setup_file_paths:
+            setup_file_paths.append(path)
+    if not setup_file_paths:
+        click.echo(
+            "Error: Must pass explicit and/or preset setup file(s)", file=sys.stderr,
+        )
+        ctx.exit(1)
 
-    # Read setup file
-    setups = [
-        setup
-        for setup_file_path in setup_file_paths
-        for setup in SetupFile(setup_file_path).read()
-    ]
+    # Read setup files
+    setups = InputSetupFile.read_multiple(setup_file_paths)
 
-    # Create plots
-    create_plots(setups, cli_args)
+    # Group setups by input file(s)
+    setups_by_infile = setups.group("infile")
 
-    return 0
-
-
-def create_plots(setups, cli_args):
-    """Read and plot FLEXPART data."""
-
+    # Create plots input file(s) by input file(s)
     out_file_paths = []
-
-    # SR_TMP <<< TODO find better solution
-    for idx_setup, setup in enumerate(setups):
+    for in_file_path, sub_setups in setups_by_infile.items():
 
         # Read input fields
-        field_lst = read_fields(setup)
+        fld_specs_lst = FldSpecs.create(sub_setups)
+        fields, mdata_lst = read_files(in_file_path, fld_specs_lst)
+        assert len(fields) == len(mdata_lst)
 
-        def fct_plot():
-            return Plotter().run(field_lst, setup)
+        for (field, mdata) in zip(fields, mdata_lst):
+            # Note: plot(...) yields the output file paths on-the-go
+            for out_file_path in plot([field], [mdata], field.fld_specs.fld_setup):
+                if ctx.obj["open_first_cmd"] and not out_file_paths:
+                    open_plots(ctx.obj["open_first_cmd"], [out_file_path])
+                out_file_paths.append(out_file_path)
 
-        # Note: Plotter.run yields the output file paths on-the-go
-        for idx_plot, out_file_path in enumerate(fct_plot()):
-            out_file_paths.append(out_file_path)
+    if ctx.obj["open_all_cmd"]:
+        open_plots(ctx.obj["open_all_cmd"], out_file_paths)
 
-            if cli_args["open_first_cmd"] and idx_setup + idx_plot == 0:
-                # Open the first file as soon as it's available
-                open_plots(cli_args["open_first_cmd"], [out_file_path])
-
-    if cli_args["open_all_cmd"]:
-        # Open all plots
-        open_plots(cli_args["open_all_cmd"], out_file_paths)
-
-
-def read_fields(setup):
-
-    # Determine fields specifications (one for each eventual plot)
-    fld_specs_lst = FieldSpecs.create(setup)
-
-    # Read fields
-    field_lst = []
-    for raw_path in setup.infiles:
-        field_lst.extend(FileReader(raw_path).run(fld_specs_lst, lang=setup.lang))
-
-    return field_lst
+    return 0
 
 
 def open_plots(cmd, file_paths):
@@ -170,6 +189,7 @@ def open_plots(cmd, file_paths):
 
     # Run the command
     cmd = cmd.format(file=" ".join(file_paths))
+    click.echo(cmd)
     os.system(cmd)
 
 

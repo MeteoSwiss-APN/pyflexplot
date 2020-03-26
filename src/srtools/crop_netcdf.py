@@ -26,37 +26,35 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"],)
     "out_file_path", metavar="outfile", nargs=1, type=click.Path(),
 )
 @click.option(
-    "--rlat",
-    "rlat_slice",
-    help="Rotated latitude index slice arguments. STOP is exclusive.",
+    "--lat",
+    "lat_slice",
+    help="Latitude index slice arguments. STOP is exclusive.",
     type=(int, int, int),
     metavar="START STOP STEP",
     default=(0, -1, 1),
 )
 @click.option(
-    "--rlon",
-    "rlon_slice",
-    help="Rotated longitude index slice arguments. STOP is exclusive.",
+    "--lon",
+    "lon_slice",
+    help="Longitude index slice arguments. STOP is exclusive.",
     type=(int, int, int),
     metavar="START STOP STEP",
     default=(0, -1, 1),
 )
 @click.option(
-    "--rlat-name", help="Name of rotated latitude dimension.", default="rlat",
+    "--lat-name", help="Name of latitude dimension.", default="lat",
 )
 @click.option(
-    "--rlon-name", help="Name of rotated longitude dimension.", default="rlon",
+    "--lon-name", help="Name of longitude dimension.", default="lon",
 )
 def main(in_file_path, out_file_path, **conf):
 
-    click.echo()
-    click.echo(f"infile     : {in_file_path}")
-    click.echo(f"outfile    : {out_file_path}")
-    click.echo(f"rlat_name  : {conf['rlat_name']}")
-    click.echo(f"rlon_name  : {conf['rlon_name']}")
-    click.echo(f"rlat_slice : ({', '.join([str(f) for f in conf['rlat_slice']])})")
-    click.echo(f"rlon_slice : ({', '.join([str(f) for f in conf['rlon_slice']])})")
-    click.echo()
+    click.echo(f"infile    : {in_file_path}")
+    click.echo(f"outfile   : {out_file_path}")
+    click.echo(f"lat_name  : {conf['lat_name']}")
+    click.echo(f"lon_name  : {conf['lon_name']}")
+    click.echo(f"lat_slice : ({', '.join([str(f) for f in conf['lat_slice']])})")
+    click.echo(f"lon_slice : ({', '.join([str(f) for f in conf['lon_slice']])})")
 
     with nc4.Dataset(in_file_path, "r") as fi, nc4.Dataset(out_file_path, "w") as fo:
         prepare_slices(fi, conf)
@@ -66,7 +64,7 @@ def main(in_file_path, out_file_path, **conf):
 
 
 def prepare_slices(fi, conf):
-    """Prepare rlon/rlat slices from input arguments."""
+    """Prepare lon/lat slices from input arguments."""
 
     def prepare_slice(name):
         start, stop, step = conf.pop(f"{name}_slice")
@@ -76,14 +74,14 @@ def prepare_slices(fi, conf):
         elif 0 <= stop < n:
             pass
         else:
-            raise Exception(f"{name}: stop out of bounds: {stop} > {n}")
+            raise Exception(f"{name}: stop out of bounds: {stop} >= {n}")
         try:
             conf[f"{name}_slice"] = slice(start, stop, step)
         except ValueError:
             raise Exception(f"{name}: invalid slice args: ({start}, {stop}, {step})")
 
-    prepare_slice("rlon")
-    prepare_slice("rlat")
+    prepare_slice("lon")
+    prepare_slice("lat")
 
 
 def len_slice(s):
@@ -103,18 +101,16 @@ def transfer_dimensions(fi, fo, **conf):
         transfer_dimension(fi, fo, dim, **conf)
 
 
-def transfer_dimension(
-    fi, fo, dim, rlat_name, rlon_name, rlat_slice, rlon_slice, **conf
-):
+def transfer_dimension(fi, fo, dim, lat_name, lon_name, lat_slice, lon_slice, **conf):
     """Transfer single dimension from in- to outfile."""
 
     # Determine dimension size
     if dim.isunlimited():
         size = None
-    elif dim.name == rlat_name:
-        size = len_slice(rlat_slice)
-    elif dim.name == rlon_name:
-        size = len_slice(rlon_slice)
+    elif dim.name == lat_name:
+        size = len_slice(lat_slice)
+    elif dim.name == lon_name:
+        size = len_slice(lon_slice)
     else:
         size = dim.size
 
@@ -128,9 +124,7 @@ def transfer_dimension(
         # There's none; that's fine
         pass
     else:
-        transfer_variable(
-            fi, fo, var, rlat_name, rlon_name, rlat_slice, rlon_slice, **conf
-        )
+        transfer_variable(fi, fo, var, lat_name, lon_name, lat_slice, lon_slice, **conf)
 
 
 def transfer_variables(fi, fo, **conf):
@@ -140,9 +134,7 @@ def transfer_variables(fi, fo, **conf):
             transfer_variable(fi, fo, var, **conf)
 
 
-def transfer_variable(
-    fi, fo, var, rlat_name, rlon_name, rlat_slice, rlon_slice, **conf
-):
+def transfer_variable(fi, fo, var, lat_name, lon_name, lat_slice, lon_slice, **conf):
     """Transfer single variable from in- to outfile."""
 
     # Create variable
@@ -150,14 +142,12 @@ def transfer_variable(
         varname=var.name, datatype=var.datatype, dimensions=var.dimensions,
     )
 
-    # Transfer data, slicing along rlat/rlon
+    # Transfer data, slicing along lat/lon
     if var.dimensions:
         inds = []
         for dim_name in var.dimensions:
             inds.append(
-                {rlat_name: rlat_slice, rlon_name: rlon_slice}.get(
-                    dim_name, slice(None),
-                )
+                {lat_name: lat_slice, lon_name: lon_slice}.get(dim_name, slice(None),)
             )
         new_var[:] = var[inds]
 

@@ -1,0 +1,40 @@
+# PyFlexPlot setup file to plot basic statistical measures.
+
+[_base]
+# Sample data directory: /scratch/ruestefa/shared/flexpart_visualization/test/
+infile = "data/cosmo-2e_2019073100_{ens_member:03d}.nc"
+simulation_type = "ensemble"
+ens_member_id = [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+]
+time = 10
+
+[_base._concentration]
+variable = "concentration"
+
+[_base._deposition]
+variable = "deposition"
+deposition_type = "wet"
+integrate = true
+
+[_base."*"._mean]
+outfile = "ens_mean_{variable}_{lang}_ts-{time:02d}.png"
+plot_type = "ens_mean"
+
+[_base."*"._median]
+outfile = "ens_median_{variable}_{lang}_ts-{time:02d}.png"
+plot_type = "ens_median"
+
+[_base."*"._min]
+outfile = "ens_min_{variable}_{lang}_ts-{time:02d}.png"
+plot_type = "ens_min"
+
+[_base."*"._max]
+outfile = "ens_max_{variable}_{lang}_ts-{time:02d}.png"
+plot_type = "ens_max"
+
+["**".de]
+lang = "de"
+
+["**".en]
+lang = "en"

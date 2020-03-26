@@ -5,7 +5,7 @@ Tests for module ``pyflexplot.data``.
 """
 # Third-party
 import numpy as np
-import pytest
+import pytest  # type: ignore
 
 # First-party
 from pyflexplot.data import cloud_arrival_time

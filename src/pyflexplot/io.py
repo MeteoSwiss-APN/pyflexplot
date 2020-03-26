@@ -3,8 +3,17 @@
 IO.
 """
 # Standard library
-import logging as log
-from copy import deepcopy
+import re
+import warnings
+from typing import Any
+from typing import Collection
+from typing import Dict
+from typing import List
+from typing import Mapping
+from typing import Optional
+from typing import Sequence
+from typing import Tuple
+from typing import Union
 
 # Third-party
 import netCDF4 as nc4
@@ -14,12 +23,56 @@ import numpy as np
 from srutils.various import check_array_indices
 
 # Local
-from .attr import collect_attrs
-from .attr import nc_var_name
 from .data import Field
 from .data import cloud_arrival_time
+from .data import merge_fields
 from .data import threshold_agreement
-from .field_specs import FieldSpecs
+from .io_meta_data import read_meta_data
+from .meta_data import MetaDataCollection
+from .meta_data import collect_meta_data
+from .meta_data import nc_var_name
+from .setup import InputSetup
+from .setup import InputSetupCollection
+from .specs import FldSpecs
+
+
+def read_files(
+    in_file_path: str, fld_specs_lst: Collection[FldSpecs],
+) -> Tuple[List[Field], List[MetaDataCollection]]:
+
+    # Prepare the file reader
+    ens_member_ids = collect_ens_member_ids(fld_specs_lst)
+    reader = FileReader(in_file_path, ens_member_ids)
+    reader.prepare()
+
+    # Set unconstrained dimensions to available indices
+    fld_specs_lst_lst: List[List[FldSpecs]] = []
+    for fld_specs in fld_specs_lst:
+        completed_dims = fld_specs.var_setups.complete_dimensions(reader.nc_meta_data)
+        decompressed = fld_specs.decompress(completed_dims)
+        fld_specs_lst_lst.append(decompressed)
+
+    # Run the reader
+    field_lst, mdata_lst = [], []
+    for fld_specs_lst_i in fld_specs_lst_lst:
+        field_lst_i, mdata_lst_i = reader.run(fld_specs_lst_i)
+        field_lst.extend(field_lst_i)
+        mdata_lst.extend(mdata_lst_i)
+
+    return field_lst, mdata_lst
+
+
+def collect_ens_member_ids(fld_specs_lst: Collection[FldSpecs]) -> Optional[List[int]]:
+    """Collect the ensemble member ids from field specifications."""
+    ens_member_ids: Optional[List[int]] = None
+    for fld_specs in fld_specs_lst:
+        ens_member_ids_i = fld_specs.collect_equal("ens_member_id")
+        if not ens_member_ids:
+            ens_member_ids = ens_member_ids_i
+        else:
+            # Should be the same for all!
+            assert ens_member_ids_i == ens_member_ids
+    return ens_member_ids
 
 
 class FileReader:
@@ -31,266 +84,184 @@ class FileReader:
 
     """
 
-    cls_field = Field
-
     choices_ens_var = ["mean", "median", "min", "max"]
 
-    def __init__(self, in_file_path, *, cmd_open=nc4.Dataset):
+    def __init__(self, in_file_path: str, ens_member_ids: Optional[List[int]] = None):
         """Create an instance of ``FileReader``.
 
         Args:
-            in_file_path (str): File path. In case of ensemble data, it must
+            in_file_path: File path. In case of ensemble data, it must
                 contain the format key '{ens_member[:0?d]}'.
 
-            cmd_open (function, optional): Function to open the input file.
-                Must support context manager interface, i.e., ``with
-                cmd_open(in_file_path, mode) as f:``. Defaults to
-                netCDF4.Dataset.
+            ens_member_ids (optional): Ensemble member ids.
 
         """
         self.in_file_path_fmt = in_file_path
-        self.cmd_open = cmd_open
+        self.ens_member_ids = ens_member_ids
 
-        self.reset()
+        # Declare some attributes
+        self.prepared: bool = False
+        self.nc_meta_data: Dict[str, Any]
+        self.in_file_path_lst: Sequence[str]
+        self.lat: np.ndarray
+        self.lon: np.ndarray
 
-    def reset(self):
-        self.lang = None
-        self.n_members = None
-        self.in_file_path_lst = None
-        self.fi = None
-        self.rlat = None
-        self.rlon = None
+        self.fixer: FlexPartDataFixer = FlexPartDataFixer(self)
 
-        # SR_TMP < TODO don't cheat! _attrs_{all,none} are for checks only!
-        if hasattr(self, "_attrs_all"):
-            for attr in self.__dict__.keys():
-                if attr in ["_attrs_all", "_attrs_none"]:
-                    pass
-                elif attr not in self._attrs_all:
-                    del self.__dict__[attr]
-                elif attr in self._attrs_none:
-                    setattr(self, attr, None)
-        # SR_TMP >
+    def prepare(self):
+        if self.prepared:
+            raise Exception(f"file reader has already been prepared")
+        self.prepared = True
 
-    # SR_DEV <<<
-    def _store_attrs(self):
-        """Store names of all attributes, and which are None."""
-        if "_attrs_all" in self.__dict__:
-            raise Exception("'_attrs_all' in self.__dict__")
-        if "_attrs_none" in self.__dict__:
-            raise Exception("'_attrs_none' in self.__dict__")
-        self._attrs_all = self.__dict__.keys()
-        self._attrs_none = [a for a in self._attrs_all if getattr(self, a) is None]
+        self._prepare_in_file_path_lst()
+        self._read_nc_meta_data()
 
-    # SR_DEV <<<
-    def _check_attrs(self):
-        """Check that attributes have been cleared up properly.
-
-        Checks:
-            There are no attributes that should not be there.
-
-            All attributes that should be None, are.
-
-        """
-        attrs_all = self.__dict__.pop("_attrs_all")
-        attrs_none = self.__dict__.pop("_attrs_none")
-
-        # Check that there are no unexpected attributes
-        attrs_unexp = [a for a in self.__dict__.keys() if a not in attrs_all]
-        if attrs_unexp:
-            raise Exception(f"{len(attrs_unexp)} unexpected attributes: {attrs_unexp}")
-
-        # Check that all attributes that should be None, are
-        attrs_nonone = [a for a in attrs_none if getattr(self, a) is not None]
-        if attrs_nonone:
-            raise Exception(
-                f"{len(attrs_nonone)} attributes should be None but are not: "
-                f"{attrs_nonone}"
-            )
-
-    def run(self, fld_specs, *, lang=None):
+    def run(
+        self, fld_specs_lst: Sequence[FldSpecs]
+    ) -> Tuple[List[Field], List[MetaDataCollection]]:
         """Read one or more fields from a file from disc.
 
         Args:
-            fld_specs (FieldSpecs or list[FieldSpecs]): Specifications for one
-                or more input fields.
-
-            ens_var (str, optional): Name of ensemble variable, e.g., 'mean'.
-                See ``Field.choices_ens_var`` for the full list. Mandatory in
-                case of multiple ensemble members. Defaults to None.
-
-            ens_var_opts (dict, optional): Options that can/must be passed
-                alongside certain ensemble variables. Defaults to {}.
-
-            lang (str, optional): Language, e.g., 'de' for German. Defaults to
-                'en' (English).
-
-        Returns:
-            Field: Single data object; if ``fld_specs`` constitutes a single
-            ``FieldSpecs`` instance.
-
-            or
-
-            list[Field]: One data object for each field; if ``fld_specs``
-                constitutes a list of ``FieldSpecs`` instances.
+            fld_specs_lst: List of field specifications.
 
         """
-        self._store_attrs()  # SR_DEV
+        if not self.prepared:
+            self.prepare()
 
-        # Set some attributes
-        self.lang = lang or "en"
+        # Collect fields and attrs
+        fields: List[Field] = []
+        mdata_lst: List[MetaDataCollection] = []
+        for fld_specs in fld_specs_lst:
+            fields_i, mdata_lst_i = self._create_fields(fld_specs)
+            fields.extend(fields_i)
+            mdata_lst.extend(mdata_lst_i)
 
-        if isinstance(fld_specs, FieldSpecs):
-            multiple = False
-            fld_specs_lst = [fld_specs]
-        else:
-            multiple = True
-            fld_specs_lst = fld_specs
-        del fld_specs
+        return fields, mdata_lst
 
-        # Group field specifications objects such that all in one group only
-        # differ in time; collect the respective time indices; and merge the
-        # group into one field specifications instance with time dimension
-        # 'slice(None)'. This allows for each such group to, first, read and
-        # process all time steps (e.g., derive some statistics across all time
-        # steps); and, second, extract the requested time steps using the
-        # separately stored indices.
-        self._fld_specs_time_lst, self._time_inds_lst = self._group_fld_specs_by_time(
-            fld_specs_lst
-        )
+    # SR_TMP <<< TODO eliminate or implement properly
+    @property
+    def n_members(self):
+        return 1 if not self.ens_member_ids else len(self.ens_member_ids)
 
-        # Prepare array for fields
-        self.n_fld_specs = len(self._fld_specs_time_lst)
-        self.n_reqtime = self._determine_n_reqtime()
-        flex_field_lst = []
-
-        # Collect fields
-        log.debug(f"process {self.n_fld_specs} field specs groups")
-        for i_fld_specs in range(self.n_fld_specs):
-
-            fld_specs_time = self._fld_specs_time_lst[i_fld_specs]
-            time_idcs = self._time_inds_lst[i_fld_specs]
-
-            ens_member_ids = fld_specs_time.multi_var_specs.setup.ens_member_ids
-            self.n_members = 1 if not ens_member_ids else len(ens_member_ids)
-            self.in_file_path_lst = self._prepare_in_file_path_lst(ens_member_ids)
-
-            log.debug(f"{i_fld_specs + 1}/{self.n_fld_specs}: {fld_specs_time}")
-
-            flex_field_lst.extend(
-                self._create_fields_fld_specs(fld_specs_time, time_idcs)
-            )
-
-        # Return result field(s)
-        result = flex_field_lst
-        if not multiple:
-            # Only one field type specified: remove fields dimension
-            result = result[0]
-
-        self.reset()
-        self._check_attrs()  # SR_DEV
-
-        return result
-
-    def _prepare_in_file_path_lst(self, ens_member_ids):
-
-        fmt_keys = ["{ens_member}", "{ens_member:"]
-        fmt_key_in_path = any(k in self.in_file_path_fmt for k in fmt_keys)
-
-        if not ens_member_ids:
-            if fmt_key_in_path:
+    def _prepare_in_file_path_lst(self) -> None:
+        ens_member_ids = self.ens_member_ids
+        path_fmt = self.in_file_path_fmt
+        path_lst: List[str]
+        if re.search(r"{ens_member(:[0-9]+d)?}", path_fmt):
+            if not ens_member_ids:
                 raise ValueError(
-                    f"input file path contains format key '{fmt_keys[0]}', but no "
-                    f"ensemble member ids ('ens_member_ids') have been passed"
+                    f"input file path contains ensemble member format key, but no "
+                    f"ensemble member ids have been passed",
+                    path_fmt,
+                    ens_member_ids,
                 )
-            return [self.in_file_path_fmt]
-
-        if not fmt_key_in_path:
+            assert ens_member_ids is not None  # mypy
+            path_lst = [path_fmt.format(ens_member=id_) for id_ in ens_member_ids]
+        elif not ens_member_ids:
+            path_lst = [path_fmt]
+        else:
             raise ValueError(
-                f"input file path missing format key",
-                fmt_keys[0],
-                self.in_file_path_fmt,
+                f"input file path missing format key", path_fmt, ens_member_ids,
             )
-        return [self.in_file_path_fmt.format(ens_member=id) for id in ens_member_ids]
+        self.in_file_path_lst = path_lst
 
-    def _determine_n_reqtime(self):
-        """Determine the number of selected time steps."""
-        n_reqtime_per_mem = [len(inds) for inds in self._time_inds_lst]
-        if len(set(n_reqtime_per_mem)) > 1:
-            raise Exception(
-                f"numbers of timesteps differ across members: " f"{n_reqtime_per_mem}"
-            )
-        return next(iter(n_reqtime_per_mem))
-
-    def _create_fields_fld_specs(self, fld_specs_time, time_idcs):
+    def _create_fields(
+        self, fld_specs: FldSpecs,
+    ) -> Tuple[List[Field], List[MetaDataCollection]]:
 
         # Read fields of all members at all time steps
-        fld_time_mem = self._read_fld_time_mem(fld_specs_time)
+        fld_time_mem: np.ndarray = self._read_fld_time_mem(fld_specs.var_setups)
 
         # Reduce fields array along member dimension
         # In other words: Compute single field from ensemble
-        fld_time = self._reduce_ensemble(fld_time_mem, fld_specs_time)
+        fld_time: np.ndarray = self._reduce_ensemble(fld_time_mem, fld_specs.fld_setup)
 
         # Collect time stats
-        time_stats = self._collect_time_stats(fld_time)
+        time_stats: Dict[str, np.ndarray] = {
+            "mean": np.nanmean(fld_time),
+            "median": np.nanmedian(fld_time),
+            "mean_nz": np.nanmean(fld_time[fld_time > 0]),
+            "median_nz": np.nanmedian(fld_time[fld_time > 0]),
+            "max": np.nanmax(fld_time),
+        }
 
-        # Create time-step-specific field specifications
-        fld_specs_reqtime = self._create_specs_reqtime(fld_specs_time, time_idcs)
-
-        # Collect attributes at requested time steps for all members
-        attrs_reqtime_mem = self._collect_attrs_reqtime_mem(
-            fld_specs_reqtime, time_idcs
-        )
-
-        # Merge attributes across members
-        attrs_reqtime = self._merge_attrs_across_members(attrs_reqtime_mem)
+        # Collect time-step-specific data meta data
+        mdata_lst: List[MetaDataCollection] = self._collect_meta_data(fld_specs)
 
         # Create fields at requested time steps for all members
-        return self._create_fields_reqtime(
-            fld_specs_reqtime, attrs_reqtime, fld_time, time_idcs, time_stats
-        )
+        fields: List[Field] = self._create_field_objs(fld_specs, fld_time, time_stats)
 
-    def _read_fld_time_mem(self, fld_specs_time):
+        return fields, mdata_lst
+
+    def _read_nc_meta_data(self):
+        nc_meta_data: Dict[str, Any]
+        for i_mem, in_file_path in enumerate(self.in_file_path_lst or []):
+            with nc4.Dataset(in_file_path, "r") as fi:
+                nc_meta_data_i = read_meta_data(fi)
+                if i_mem == 0:
+                    nc_meta_data = nc_meta_data_i
+                elif nc_meta_data_i != nc_meta_data:
+                    raise Exception(
+                        f"meta data differs", nc_meta_data_i, nc_meta_data,
+                    )
+        self.nc_meta_data = nc_meta_data
+
+    def _read_fld_time_mem(self, setups: InputSetupCollection) -> np.ndarray:
         """Read field over all time steps for each member."""
-
-        fld_time_mem = None
-
-        for i_mem, in_file_path in enumerate(self.in_file_path_lst):
-
-            log.debug(f"read {in_file_path} (fields)")
-            with self.cmd_open(in_file_path, "r") as self.fi:
-                log.debug(f"extract {self.n_fld_specs} time steps")
+        fld_time_mem: Optional[np.ndarray] = None
+        for i_mem, in_file_path in enumerate(self.in_file_path_lst or []):
+            with nc4.Dataset(in_file_path, "r") as fi:
 
                 # Read grid variables
-                rlat = self.fi.variables["rlat"][:]
-                rlon = self.fi.variables["rlon"][:]
-                if self.rlat is None:
-                    self.rlat = rlat
-                    self.rlon = rlon
-                else:
-                    if not (rlat == self.rlat).all():
-                        raise Exception("inconsistent rlat")
-                    if not (rlon == self.rlon).all():
-                        raise Exception("inconsistent rlon")
+                self._read_grid(fi)
 
                 # Read field (all time steps)
-                fld_time = self._import_field(fld_specs_time)
+                fld_time = self._read_fld_time(fi, setups)
 
-                # Store field for currentmember
+                # Store field for current member
                 if fld_time_mem is None:
-                    _shape = [self.n_members] + list(fld_time.shape)
-                    fld_time_mem = np.full(_shape, np.nan, np.float32)
+                    shape = [self.n_members] + list(fld_time.shape)
+                    fld_time_mem = np.full(shape, np.nan, np.float32)
                 fld_time_mem[i_mem] = fld_time
 
-            self.fi = None
-
+        assert fld_time_mem is not None  # mypy
         return fld_time_mem
 
-    def _reduce_ensemble(self, fld_time_mem, fld_specs_time):
-        """Reduce the ensemble to a single field (time, rlat, rlon)."""
+    def _read_grid(self, fi):
+        dim_names = self._dim_names()
+        lat = fi.variables[dim_names["lat"]][:]
+        lon = fi.variables[dim_names["lon"]][:]
+        try:
+            old_lat = self.lat
+            old_lon = self.lon
+        except AttributeError:
+            self.lat = lat
+            self.lon = lon
+        else:
+            if not (lat == old_lat).all():
+                raise Exception("inconsistent latitude", lat, old_lat)
+            if not (lon == old_lon).all():
+                raise Exception("inconsistent longitude", lon, old_lon)
+
+    def _read_fld_time(self, fi, setups):
+        """Read field at all time steps."""
+
+        expand = ["lat", "lon", "time"]
+        flds_time = [self._read_nc_var(fi, setup, expand) for setup in setups]
+        fld_time: np.ndarray = merge_fields(flds_time)
+
+        model = self.nc_meta_data["analysis"]["model"]
+        if model in ["ifs"]:
+            self.fixer.fix_global_grid(self.lon, fld_time)
+
+        return fld_time
+
+    def _reduce_ensemble(
+        self, fld_time_mem: np.ndarray, setup: InputSetup,
+    ) -> np.ndarray:
+        """Reduce the ensemble to a single field (time, lat, lon)."""
         if self.n_members == 1:
             return fld_time_mem[0]
-        setup = fld_specs_time.multi_var_specs.setup
         plot_type = setup.plot_type
         if plot_type == "ens_mean":
             fld_time = np.nanmean(fld_time_mem, axis=0)
@@ -301,263 +272,207 @@ class FileReader:
         elif plot_type == "ens_max":
             fld_time = np.nanmax(fld_time_mem, axis=0)
         elif plot_type == "ens_thr_agrmt":
-            thr = setup.ens_param_thr
-            fld_time = threshold_agreement(fld_time_mem, thr, axis=0)
+            fld_time = threshold_agreement(fld_time_mem, setup.ens_param_thr, axis=0)
         elif plot_type == "ens_cloud_arrival_time":
-            thr = setup.ens_param_thr
-            mem_min = setup.ens_param_mem_min
-            fld_time = cloud_arrival_time(fld_time_mem, thr, mem_min, mem_axis=0)
+            fld_time = cloud_arrival_time(
+                fld_time_mem, setup.ens_param_thr, setup.ens_param_mem_min, mem_axis=0,
+            )
         else:
             raise NotImplementedError(f"plot var '{plot_type}'")
         return fld_time
 
-    def _create_specs_reqtime(self, fld_specs_time, time_idcs):
-        """Create time-step-specific field specifications."""
-        fld_specs_reqtime = np.full([self.n_reqtime], None)
-        for i_reqtime, time_idx in enumerate(time_idcs):
-            fld_specs = deepcopy(fld_specs_time)
-            # SR_TMP <
-            for var_specs in fld_specs.multi_var_specs:
-                var_specs._setup = var_specs._setup.derive({"time_idcs": [time_idx]})
-            # SR_TMP >
-            fld_specs_reqtime[i_reqtime] = fld_specs
-        return fld_specs_reqtime
+    def _collect_meta_data(self, fld_specs: FldSpecs) -> List[MetaDataCollection]:
+        """Collect time-step-specific data meta data."""
 
-    def _collect_attrs_reqtime_mem(self, fld_specs_reqtime, time_idcs):
-        """Collect attributes at requested time steps for all members."""
-        attrs_reqtime_mem = np.full([self.n_reqtime, self.n_members], None)
-        for i_mem, in_file_path in enumerate(self.in_file_path_lst):
-            log.debug(f"read {in_file_path} (attributes)")
-            with self.cmd_open(in_file_path, "r") as self.fi:
-                for i_reqtime, time_idx in enumerate(time_idcs):
-                    log.debug(f"{i_reqtime + 1}/{len(time_idcs)}: collect attributes")
-                    fld_specs = fld_specs_reqtime[i_reqtime]
-                    attrs_lst = []
-                    for var_specs in fld_specs.multi_var_specs:
-                        attrs = collect_attrs(self.fi, var_specs, lang=self.lang)
-                        attrs_lst.append(attrs)
-                    attrs = attrs_lst[0].merge_with(attrs_lst[1:])
-                    attrs_reqtime_mem[i_reqtime, i_mem] = attrs
-            self.fi = None
-        return attrs_reqtime_mem
+        model = self.nc_meta_data["analysis"]["model"]
 
-    def _group_fld_specs_by_time(self, fld_specs_lst):
-        """Group specs that differ only in their time dimension."""
+        # Collect meta data at requested time steps for all members
+        n_ts = len(fld_specs.collect_equal("time"))
+        shape = (n_ts, self.n_members)
+        mdata_by_reqtime_mem: np.ndarray = np.full(shape, None)
+        for idx_mem, in_file_path in enumerate(self.in_file_path_lst or []):
+            with nc4.Dataset(in_file_path, "r") as fi:
+                for idx_time, fld_specs_i in enumerate(fld_specs.decompress(["time"])):
+                    mdata_lst_i = []
+                    for var_setup in fld_specs_i.var_setups:
+                        mdata_lst_i.append(collect_meta_data(fi, var_setup, model))
+                    mdata = mdata_lst_i[0].merge_with(mdata_lst_i[1:])
+                    mdata_by_reqtime_mem[idx_time, idx_mem] = mdata
 
-        fld_specs_time_inds_by_key = {}
-        for idx, fld_specs in enumerate(fld_specs_lst):
-            fld_specs_time = deepcopy(fld_specs)
-
-            # Extract time index and check its the same for all
-            time_idx = fld_specs_time.multi_var_specs.collect_equal("time")
-
-            # Store time-neutral fld specs alongside resp. time inds
-            key = idx
-            if key not in fld_specs_time_inds_by_key:
-                fld_specs_time_inds_by_key[key] = (fld_specs_time, [])
-            if time_idx in fld_specs_time_inds_by_key[key][1]:
-                raise Exception(
-                    f"duplicate time index {time_idx} in fld_specs:\n" f"{fld_specs}"
-                )
-            fld_specs_time_inds_by_key[key][1].append(time_idx)
-
-        # Regroup time-neutral fld specs and time inds into lists
-        fld_specs_time_lst, time_inds_lst = [], []
-        for fld_specs_time, time_idcs in fld_specs_time_inds_by_key.values():
-            fld_specs_time_lst.append(fld_specs_time)
-            time_inds_lst.append(time_idcs)
-
-        return fld_specs_time_lst, time_inds_lst
-
-    def _merge_attrs_across_members(self, attrs_reqtime_mem):
-        attrs_reqtime = attrs_reqtime_mem[:, 0]
-        for i_mem in range(1, self.n_members):
-            for i_reqtime, attrs in enumerate(attrs_reqtime_mem[:, i_mem]):
-                attrs_ref = attrs_reqtime[i_reqtime]
-                if attrs != attrs_ref:
+        # Merge meta data across members
+        for i_mem in range(1, self.n_members or 1):
+            for i_reqtime, mdata in enumerate(mdata_by_reqtime_mem[:, i_mem]):
+                mdata_ref = mdata_by_reqtime_mem[i_reqtime, 0]
+                if mdata != mdata_ref:
                     raise Exception(
-                        f"attributes differ between members 0 and {i_mem}: {attrs_ref} "
-                        f"!= {attrs}"
+                        f"meta data differ between members 0 and {i_mem}",
+                        mdata_ref,
+                        mdata,
                     )
-        return attrs_reqtime
+        mdata_lst: List[MetaDataCollection] = mdata_by_reqtime_mem[:, 0].tolist()
 
-    def _create_fields_reqtime(
-        self, fld_specs_reqtime, attrs_reqtime, fld_time, time_idcs, time_stats
-    ):
+        # Fix some known issues with the NetCDF input data
+        self.fixer.fix_meta_data(model, mdata_lst)
+
+        return mdata_lst
+
+    def _create_field_objs(
+        self,
+        fld_specs: FldSpecs,
+        fld_time: np.ndarray,
+        time_stats: Mapping[str, np.ndarray],
+    ) -> List[Field]:
         """Create fields at requested time steps for all members."""
+        rotated_pole = self.nc_meta_data["analysis"]["rotated_pole"]
+        time_idcs = fld_specs.collect_equal("time")
+        fields: List[Field] = []
+        for time_idx in time_idcs:
+            fld: np.ndarray = fld_time[time_idx]
+            field = Field(fld, self.lat, self.lon, rotated_pole, fld_specs, time_stats)
+            fields.append(field)
+        return fields
 
-        log.debug(f"select fields at requested time steps")
+    def _dim_names(self) -> Dict[str, str]:
+        """Model-specific dimension names."""
+        model = self.nc_meta_data["analysis"]["model"]
+        if model.startswith("cosmo"):
+            return {
+                "lat": "rlat",
+                "lon": "rlon",
+                "time": "time",
+                "level": "level",
+                "nageclass": "nageclass",
+                "noutrel": "noutrel",
+                "numpoint": "numpoint",
+            }
+        elif model == "ifs":
+            return {
+                "lat": "latitude",
+                "lon": "longitude",
+                "time": "time",
+                "level": "height",
+                "nageclass": "nageclass",
+                "noutrel": "noutrel",
+                "numpoint": "pointspec",
+            }
+        raise NotImplementedError("dimension names for model", model)
 
-        flex_field_lst = []
-        for i_reqtime, time_idx in enumerate(time_idcs):
-            log.debug(f"{i_reqtime + 1}/{len(time_idcs)}")
+    def _read_nc_var(
+        self, fi: nc4.Dataset, setup: InputSetup, expand: Optional[List[str]] = None,
+    ) -> np.ndarray:
+        if expand is None:
+            expand = []
 
-            fld_specs = fld_specs_reqtime[i_reqtime]
-            attrs = attrs_reqtime[i_reqtime]
+        model = self.nc_meta_data["analysis"]["model"]
 
-            # Extract field
-            fld = fld_time[time_idx]
-
-            # Fix some known issues with the NetCDF input data
-            log.debug("fix nc data: attrs")
-            self._fix_nc_attrs(fld, attrs)
-
-            # Collect data
-            log.debug("create data object")
-            flex_field = self.cls_field(
-                fld, self.rlat, self.rlon, attrs, fld_specs, time_stats,
-            )
-            flex_field_lst.append(flex_field)
-        return flex_field_lst
-
-    def _collect_time_stats(self, fld_time):
-        stats = {
-            "mean": np.nanmean(fld_time),
-            "median": np.nanmedian(fld_time),
-            "mean_nz": np.nanmean(fld_time[fld_time > 0]),
-            "median_nz": np.nanmedian(fld_time[fld_time > 0]),
-            "max": np.nanmax(fld_time),
-        }
-        return stats
-
-    def _import_field(self, fld_specs):
-
-        # Read fields and attributes from var specifications
-        fld_lst = []
-        for var_specs in fld_specs.multi_var_specs:
-
-            # Field
-            log.debug("read field")
-            fld = self._read_var(var_specs._setup)
-
-            fld_lst.append(fld)
-
-        # Merge fields
-        fld = fld_specs.merge_fields(fld_lst)
-
-        return fld
-
-    def _read_var(self, setup):
+        # Get dimension names (model-specific
+        dim_names = self._dim_names()
 
         # Select variable in file
-        var_name = nc_var_name(setup)
-        var = self.fi.variables[var_name]
+        var_name = nc_var_name(setup, model)
+        nc_var = fi.variables[var_name]
+
+        # SR_TMP < TODO proper solution
+        if setup.level is None:
+            level = None
+        else:
+            assert len(setup.level) == 1
+            level = next(iter(setup.level))
+        # SR_TMP >
 
         # Indices of field along NetCDF dimensions
-        dim_idcs_by_name = self._dim_inds_by_name(setup)
+        dim_idcs_by_name = {
+            dim_names["time"]: slice(None) if "time" in expand else level,
+            dim_names["level"]: slice(None) if "level" in expand else level,
+            dim_names["lat"]: slice(None),
+            dim_names["lon"]: slice(None),
+        }
+        # SR_TMP <
+        for dim_name in ["nageclass", "noutrel", "numpoint"]:
+            if dim_name in expand:
+                idcs = slice(None)
+            else:
+                idcs = getattr(setup, dim_name)
+                if idcs is not None:
+                    # SR_TMP <
+                    assert isinstance(idcs, Sequence)  # mypy
+                    assert len(idcs) == 1, f"len(setup.{dim_name}) > 1: {idcs}"
+                    idcs = next(iter(idcs))
+                    # SR_TMP >
+            dim_idcs_by_name[dim_names[dim_name]] = idcs
+        # SR_TMP >
 
         # Assemble indices for slicing
-        idcs = [None] * len(var.dimensions)
+        indices: List[Any] = [None] * len(nc_var.dimensions)
         for dim_name, dim_idx in dim_idcs_by_name.items():
+            err_dct = {
+                "dim_idx": dim_idx,
+                "dim_name": dim_name,
+                "fi.filepath": fi.filepath(),
+            }
             # Get the index of the dimension for this variable
             try:
-                idx = var.dimensions.index(dim_name)
+                idx = nc_var.dimensions.index(dim_name)
             except ValueError:
-                # Potential issue: Dimension not among the variable dimensions!
+                # Potential issue: Dimension is not among the variable dimensions!
                 if dim_idx in (None, 0):
-                    continue
-                else:
-                    # Index along the missing dimension cannot be non-trivial!
-                    raise Exception(
-                        f"dimension '{dim_name}' with non-zero index {dim_idx} missing",
-                        {
-                            "dim_idx": dim_idx,
-                            "dim_name": dim_name,
-                            "fi.filepath": self.fi.filepath(),
-                            "var.dimensions": var.dimensions,
-                            "var_name": var_name,
-                        },
-                    )
+                    continue  # Zero-index: We're good after all!
+                raise Exception(
+                    "dimension with non-zero index missing",
+                    {**err_dct, "dimensions": nc_var.dimensions, "var_name": var_name},
+                )
 
             # Check that the index along the dimension is valid
             if dim_idx is None:
-                raise Exception(
-                    f"dimension #{idx} '{dim_name}' is None",
-                    {
-                        "dim_idx": dim_idx,
-                        "dim_name": dim_name,
-                        "fi.filepath": self.fi.filepath(),
-                        "idx": idx,
-                    },
-                )
+                raise Exception("dimension is None", idx, err_dct)
 
-            idcs[idx] = dim_idx
+            indices[idx] = dim_idx
 
         # Check that all variable dimensions have been identified
         try:
-            idx = idcs.index(None)
+            idx = indices.index(None)
         except ValueError:
-            # All good!
-            pass
+            pass  # All good!
         else:
             raise Exception(
-                f"unknown variable dimension #{idx} '{var.dimensions[idx]}'",
-                {
-                    "dim_idcs_by_name": dim_idcs_by_name,
-                    "idcs": idcs,
-                    "var.dimensions": var.dimensions,
-                    "var_name": var_name,
-                },
+                "unknown variable dimension",
+                nc_var.dimensions[idx],
+                (idx, var_name, indices, nc_var.dimensions, dim_idcs_by_name),
             )
-        log.debug(f"indices: {idcs}")
-        check_array_indices(var.shape, idcs)
+        check_array_indices(nc_var.shape, indices)
+        fld = nc_var[indices]
 
-        # Read field
-        log.debug(f"shape: {var.shape}")
-        log.debug(f"indices: {idcs}")
-        fld = var[idcs]
+        # Fix known issues with NetCDF input data
+        self.fixer.fix_nc_var(nc_var, fld, model)
 
-        log.debug(f"fix nc data: variable {var.name}")
-        self._fix_nc_var(fld, var)
-
-        # Time integration
-        fld = self._time_integrations(fld, setup)
-
+        fld = self._handle_time_integration(fi, fld, setup)
         return fld
 
-    @staticmethod
-    def _dim_inds_by_name(setup, *, time_all=True):
-        """Derive indices along NetCDF dimensions."""
-
-        inds = {}
-
-        inds["nageclass"] = setup.age_class_idx
-        inds["numpoint"] = setup.release_point_idx
-        inds["noutrel"] = setup.nout_rel_idx
-
-        # SR_TMP <
-        inds["time"] = slice(None)
-        inds["rlat"] = slice(None)
-        inds["rlon"] = slice(None)
-        # SR_TMP >
-
+    def _handle_time_integration(
+        self, fi: nc4.Dataset, fld: np.ndarray, setup: InputSetup,
+    ) -> np.ndarray:
+        """Integrate, or desintegrate, field over time."""
         if setup.variable == "concentration":
-            inds["level"] = setup.level_idx
-
-        return inds
-
-    def _time_integrations(self, fld, setup):
-
-        dt_hr = self._time_resolution()
-
-        if setup.variable == "concentration":  # SR_TMP
             if setup.integrate:
-                # Integrate over time
-                fld = np.cumsum(fld, axis=0) * dt_hr
-
-        elif setup.variable == "deposition":  # SR_TMP
-            if not setup.integrate:
-                # Revert integration over time
+                # Integrate field over time
+                dt_hr = self._compute_temporal_resolution(fi)
+                return np.cumsum(fld, axis=0) * dt_hr
+            else:
+                # Field is already instantaneous
+                return fld
+        elif setup.variable == "deposition":
+            if setup.integrate:
+                # Field is already time-integrated
+                return fld
+            else:
+                # Revert time integration of field
+                dt_hr = self._compute_temporal_resolution(fi)
                 fld[1:] = (fld[1:] - fld[:-1]) / dt_hr
+                return fld
+        raise NotImplementedError("unknown variable", setup.variable)
 
-        else:
-            raise NotImplementedError("variable", setup.variable)
-
-        return fld
-
-    def _time_resolution(self):
-        """Determine time resolution of input data."""
-        time = self.fi.variables["time"]
+    def _compute_temporal_resolution(self, fi: nc4.Dataset) -> float:
+        time = fi.variables["time"]
         dts = set(time[1:] - time[:-1])
         if len(dts) > 1:
             raise Exception(f"Non-uniform time resolution: {sorted(dts)} ({time})")
@@ -565,66 +480,151 @@ class FileReader:
         dt_hr = dt_min / 3600.0
         return dt_hr
 
-    # SR_TMP <<<
-    def _fix_nc_var(self, fld, var):
 
-        # SR_TMP < TODO more general solution to combined species
-        names = [
-            "Cs-137",
-            "I-131a",
-            ["Cs-137", "I-131a"],
-            ["I-131a", "Cs-137"],
-        ]
-        # SR_TMP >
+class FlexPartDataFixer:
+    """Fix issues with FlexPart NetCDF output."""
 
-        name = var.getncattr("long_name").split("_")[0]
-        unit = var.getncattr("units")
-        if name in names:
-            if unit == "ng kg-1":
-                fld[:] *= 1e-12
-            elif unit == "1e-12 kg m-2":
-                fld[:] *= 1e-12
-            else:
-                raise NotImplementedError(f"species '{name}': unknown unit '{unit}'")
+    def __init__(self, file_reader):
+        self.file_reader = file_reader
+
+    possible_var_names: List[Union[str, Tuple[str, ...]]] = [
+        "Cs-137",
+        "I-131a",
+        ("Cs-137", "I-131a"),
+        ("I-131a", "Cs-137"),
+    ]
+    conversion_factor_by_unit: Dict[str, float] = {
+        "ng kg-1": 1.0e-12,
+        "1e-12 kg m-2": 1.0e-12,
+    }
+
+    def fix_nc_var(self, nc_var: nc4.Variable, fld: np.ndarray, model: str) -> None:
+        if model in ["cosmo2", "cosmo1"]:
+            self._fix_nc_var_cosmo(nc_var, fld)
+        elif model == "ifs":
+            pass
         else:
-            raise NotImplementedError(f"species '{name}'")
+            raise NotImplementedError("model", model)
 
-    def _fix_nc_attrs(self, fld, attrs):
+    def _fix_nc_var_cosmo(self, nc_var, fld):
+        name = nc_var.getncattr("long_name").split("_")[0]
+        unit = nc_var.getncattr("units")
+        if name not in self.possible_var_names:
+            raise NotImplementedError("variable", {"name": name})
+        try:
+            fact = self.conversion_factor_by_unit[unit]
+        except KeyError:
+            raise NotImplementedError(
+                "conversion factor", {"name": name, "unit": unit},
+            )
+        fld[:] *= fact
 
-        # SR_TMP < TODO more general solution to combined species
-        names = [
-            "Cs-137",
-            "I-131a",
-            ["Cs-137", "I-131a"],
-            ["I-131a", "Cs-137"],
-        ]
-        # SR_TMP >
-        if attrs.species.name.value in names:
-
-            new_unit = "Bq"  # SR_HC
-
-            # Integration type
-            if attrs.simulation.integr_type.value == "mean":
-                pass
-            elif attrs.simulation.integr_type.value in ["sum", "accum"]:
-                new_unit += " h"
-            else:
-                raise NotImplementedError(
-                    f"species '{attrs.species.name.value}': "
-                    f"integration type '{attrs.simulation.integr_type.value}'"
-                )
-
-            # Original unit
-            if attrs.variable.unit.value == "ng kg-1":
-                new_unit += " m-3"  # SR_HC
-            elif attrs.variable.unit.value == "1e-12 kg m-2":
-                new_unit += " m-2"  # SR_HC
-            else:
-                raise NotImplementedError(
-                    f"species '{attrs.species.name.value}': "
-                    f"unit '{attrs.variable.unit.value}'"
-                )
-
-            attrs.variable.unit.value = new_unit
+    def fix_meta_data(
+        self,
+        model: str,
+        mdata: Union[MetaDataCollection, Sequence[MetaDataCollection]],
+    ) -> None:
+        if model in ["cosmo2", "cosmo1"]:
+            self._fix_meta_data_cosmo(mdata)
+        elif model == "ifs":
+            pass
         else:
-            raise NotImplementedError(f"species '{attrs.species.name.value}'")
+            raise NotImplementedError("model", model)
+
+    def _fix_meta_data_cosmo(self, mdata):
+        if isinstance(mdata, Sequence):
+            for mdata_i in mdata:
+                self._fix_meta_data_cosmo(mdata_i)
+            return
+        assert isinstance(mdata, MetaDataCollection)  # mypy
+
+        name = mdata.species.name.value
+        if name not in self.possible_var_names:
+            raise NotImplementedError("variable", {"name": name})
+        integr_type = mdata.simulation.integr_type.value
+        old_unit = mdata.variable.unit.value
+
+        new_unit = "Bq"
+        if integr_type == "mean":
+            pass
+        elif integr_type in ["sum", "accum"]:
+            new_unit += " h"
+        else:
+            raise NotImplementedError(
+                "unknown integration type", {"integr_type": integr_type, "name": name},
+            )
+        if old_unit == "ng kg-1":
+            new_unit += " m-3"
+        elif old_unit == "1e-12 kg m-2":
+            new_unit += " m-2"
+        else:
+            raise NotImplementedError(
+                "unknown unit", {"name": name, "unit": old_unit},
+            )
+        mdata.variable.unit.value = new_unit
+
+    def fix_global_grid(self, lon, fld_time, idx_lon=-1):
+        """Shift global grid longitudinally to fit into (-180..180) range."""
+
+        # Check longitude dimension index
+        if (
+            (idx_lon < 0 and -idx_lon > len(fld_time.shape))
+            or (idx_lon >= 0 and idx_lon >= len(fld_time.shape))
+            or fld_time.shape[idx_lon] != lon.size
+        ):
+            raise ValueError("invalid idx_lon", idx_lon, fld_time.shape, lon.size)
+
+        # Check longitudinal range
+        if lon.max() - lon.min() > 360.0:
+            raise ValueError("longitutinal range too large", lon.max() - lon.min())
+
+        # Check that longitude is evenly spaced and seamless across date line
+        dlons_raw = np.r_[lon, lon[0]] - np.r_[lon[-1], lon]
+        dlons = np.abs(np.stack([dlons_raw, 360 - np.abs(dlons_raw)])).min(axis=0)
+        if np.unique(dlons).size > 1:
+            raise ValueError("longitude not evenly spaced/seamless", np.unique(dlons))
+        dlon = next(iter(dlons))
+
+        # Shift the grid
+        if lon[-1] > 180.0:
+            # Eastward shift
+            n_shift = 0
+            while lon[-1] > 180.0:
+                n_shift += 1
+                lon[:] = np.r_[lon[0] - dlon, lon[:-1]]
+                if lon[0] < -180.0 or n_shift >= lon.size:
+                    raise Exception(
+                        "unexpected error while shifting lon eastward", lon, n_shift,
+                    )
+                idcs = np.arange(fld_time.shape[idx_lon] - 1)
+                fld_time[:] = np.concatenate(
+                    [
+                        np.take(fld_time, [-1], idx_lon),
+                        np.take(fld_time, idcs, idx_lon),
+                    ],
+                    axis=idx_lon,
+                )
+            warnings.warn(f"fix global data: shift eastward by {n_shift} * {dlon} deg")
+            return
+
+        elif lon[0] < -180.0:
+            # Westward shift
+            n_shift = 0
+            while lon[0] < -180.0:
+                n_shift += 1
+                lon[:] = np.r_[lon[1:], lon[-1] + dlon]
+                print(n_shift, lon)
+                if lon[-1] < -180.0 or n_shift >= lon.size:
+                    raise Exception(
+                        "unexpected error while shifting lon eastward", lon, n_shift,
+                    )
+                idcs = np.arange(1, fld_time.shape[idx_lon])
+                fld_time[:] = np.concatenate(
+                    [
+                        np.take(fld_time, idcs, idx_lon),
+                        np.take(fld_time, [0], idx_lon),
+                    ],
+                    axis=idx_lon,
+                )
+            warnings.warn(f"fix global data: shift westward by {n_shift} * {dlon} deg")
+            return

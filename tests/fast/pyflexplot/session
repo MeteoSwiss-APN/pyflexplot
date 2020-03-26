@@ -1,5 +1,6 @@
 test_data.py
-test_field_specs.py
-test_plot_utils.py
-test_setup.py
-test_var_specs.py
+test_fld_specs.py
+test_plot_lib.py
+test_setup/__init__.py
+test_setup/test_setup.py
+test_setup/test_setup_file.py

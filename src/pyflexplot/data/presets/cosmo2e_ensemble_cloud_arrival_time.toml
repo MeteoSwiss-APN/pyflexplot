@@ -1,0 +1,19 @@
+# PyFlexPlot setup file to plot cloud arrival time.
+
+[_base]
+# Sample data directory: /scratch/ruestefa/shared/flexpart_visualization/test/
+infile = "data/cosmo-2e_2019073100_{ens_member:03d}.nc"
+simulation_type = "ensemble"
+ens_member_id = [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+]
+outfile = "test_{domain}_{lang}_ts-{time:02d}.png"
+plot_type = "ens_cloud_arrival_time"
+variable = "concentration"
+time = 0
+
+["**".en]
+lang = "en"
+
+["**".de]
+lang = "de"

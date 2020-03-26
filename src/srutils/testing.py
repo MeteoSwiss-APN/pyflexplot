@@ -8,8 +8,8 @@ from dataclasses import dataclass
 from pprint import pformat
 
 # Local
+from .iter import isiterable
 from .str import str_or_none
-from .various import isiterable
 
 
 class CheckFailedError(Exception):

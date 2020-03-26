@@ -13,15 +13,19 @@ from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from typing import Type
 from typing import Union
 from typing import overload
 
 # Third-party
 import toml
 from pydantic import BaseModel
+from pydantic import ValidationError
+from pydantic import parse_obj_as
 from pydantic import validator
 
 # First-party
+from srutils.dict import compress_multival_dicts
 from srutils.dict import decompress_multival_dict
 from srutils.dict import decompress_nested_dict
 from srutils.dict import nested_dict_resolve_wildcards
@@ -32,13 +36,81 @@ ENS_CLOUD_ARRIVAL_TIME_MEM_MIN_DEFAULT = 1
 ENS_CLOUD_ARRIVAL_TIME_THR_DEFAULT: float = 1e-9
 
 
-class Setup(BaseModel):
+def setup_repr(obj: Union["CoreInputSetup", "InputSetup"]) -> str:
+    def fmt(obj):
+        if isinstance(obj, str):
+            return f"'{obj}'"
+        return str(obj)
+
+    s_attrs = ",\n  ".join(f"{k}={fmt(v)}" for k, v in obj.dict().items())
+    return f"{type(obj).__name__}(\n  {s_attrs},\n)"
+
+
+class CoreInputSetup(BaseModel):
+    """
+    PyFlexPlot core setup with exactly one value per parameter.
+
+    See ``InputSetup`` for details on the parameters.
+
+    """
+
+    class Config:  # noqa
+        allow_mutation = False
+        extra = "forbid"
+
+    # Basics
+    infile: str
+    outfile: str
+    plot_type: str = "auto"
+    variable: str = "concentration"
+
+    # Tweaks
+    deposition_type: str = "none"
+    integrate: bool = False
+    combine_species: bool = False
+
+    # Ensemble-related
+    simulation_type: str = "deterministic"
+    ens_member_id: Optional[int] = None
+    ens_param_mem_min: Optional[int] = None
+    ens_param_thr: Optional[float] = None
+
+    # Plot appearance
+    lang: str = "en"
+    domain: str = "auto"
+
+    # Dimensions
+    nageclass: int = 0
+    noutrel: int = 0
+    numpoint: int = 0
+    species_id: int = 1
+    time: int = 0
+    level: Optional[int] = None
+
+    def __repr__(self) -> str:  # type: ignore
+        return setup_repr(self)
+
+    @classmethod
+    def create(cls, params: Mapping[str, Any]) -> "CoreInputSetup":
+        return cls(**params)
+
+    @classmethod
+    def as_setup(
+        cls, obj: Union[Mapping[str, Any], "CoreInputSetup"],
+    ) -> "CoreInputSetup":
+        if isinstance(obj, cls):
+            return obj
+        assert isinstance(obj, Mapping)  # mypy
+        return cls(**obj)
+
+
+class InputSetup(BaseModel):
     """
     PyFlexPlot setup.
 
     Args:
-        age_class_idx: Index of age class (zero-based). Use the format key
-            '{age_class}' to embed it into the output file path.
+        nageclass: Index of age class (zero-based). Use the format key
+            '{nageclass}' to embed it into the output file path.
 
         combine_species: Sum up over all specified species. Otherwise, each is
             plotted separately.
@@ -51,7 +123,7 @@ class Setup(BaseModel):
             from the input data. Use the format key '{domain}' to embed the
             domain name in the plot file path. Choices": "auto", "ch".
 
-        ens_member_ids: Ensemble member ids. Use the format key '{ens_member}'
+        ens_member_id: Ensemble member ids. Use the format key '{ens_member}'
             to embed it into the input file path. Omit for deterministic
             simulations.
 
@@ -62,27 +134,26 @@ class Setup(BaseModel):
         ens_param_thr: Threshold used to compute some ensemble variables. Its
             precise meaning depends on the variable.
 
-        infiles: Input file path(s). May contain format keys.
+        infile: Input file path(s). May contain format keys.
 
         integrate: Integrate field over time.
 
         lang: Language. Use the format key '{lang}' to embed it into the plot
             file path. Choices: "en", "de".
 
-        level_idx: Index/indices of vertical level (zero-based, bottom-up). To
+        level: Index/indices of vertical level (zero-based, bottom-up). To
             sum up multiple levels, combine their indices with '+'. Use the
             format key '{level}' to embed it in the plot file path.
 
-        nout_rel_idx: Index of noutrel (zero-based). Use the format key
-            '{nout_rel}' to embed it in the plot file path.
+        noutrel: Index of noutrel (zero-based). Use the format key
+            '{noutrel}' to embed it in the plot file path.
 
         outfile: Output file path. May contain format keys.
 
         plot_type: Plot type. Choices: "auto", "affected_area",
             "affected_area_mono", "ens_mean", "ens_max", "ens_thr_agrmt".
 
-        release_point_idx: Index of release point (zero-based). Use the format
-            key '{rls_pt_idx}' to embed it in the plot file path.
+        numpoint: Index of release point (zero-based).
 
         simulation_type: Type of the simulation. Choices: "deterministic",
             "ensemble".
@@ -91,8 +162,8 @@ class Setup(BaseModel):
             ids with '+'. Use the format key '{species_id}' to embed it in the
             plot file path.
 
-        time_idcs: Time step indices.. Use the format key '{time}' to embed it
-            in the plot file path.
+        time: Time step indices (zero-based). Use the format key '{time}'
+            to embed one in the plot file path.
 
         variable: Input variable to be plotted. Choices: "concentration",
             "deposition".
@@ -100,41 +171,45 @@ class Setup(BaseModel):
     """
 
     class Config:  # noqa
-        allow_mutation = False
+        # allow_mutation = False
         extra = "forbid"
 
-    age_class_idx: int = 0
-    combine_species: bool = False
-    deposition_type: Union[str, Tuple[str, str]] = "none"
-    domain: str = "auto"
-    ens_member_ids: Optional[Tuple[int, ...]] = None
-    infiles: Tuple[str, ...]
-    integrate: bool = False
-    lang: str = "en"
-    nout_rel_idx: int = 0
+    # Basics
+    infile: str
     outfile: str
     plot_type: str = "auto"
-    release_point_idx: int = 0
-    reverse_legend: bool = False
-    scale_fact: Optional[float] = None
-    simulation_type: str = "deterministic"
-    species_id: Union[int, Tuple[int, ...]] = 1
-    time_idcs: Tuple[int, ...] = (0,)
     variable: str = "concentration"
 
-    # Derived parameters
-    level_idx: Union[int, Tuple[int, ...]] = None
+    # Tweaks
+    deposition_type: Union[str, Tuple[str, str]] = "none"
+    integrate: bool = False
+    combine_species: bool = False
+
+    # Ensemble-related
+    simulation_type: str = "deterministic"
+    ens_member_id: Optional[Tuple[int, ...]] = None
     ens_param_mem_min: Optional[int] = None
     ens_param_thr: Optional[float] = None
 
+    # Plot appearance
+    lang: str = "en"
+    domain: str = "auto"
+
+    # Dimensions
+    nageclass: Optional[Tuple[int, ...]] = None
+    noutrel: Optional[Tuple[int, ...]] = None
+    numpoint: Optional[Tuple[int, ...]] = None
+    species_id: Optional[Tuple[int, ...]] = None
+    time: Optional[Tuple[int, ...]] = None
+    level: Optional[Tuple[int, ...]] = None
+
     @validator("deposition_type", always=True)
     def _init_deposition_type(cls, value: Union[str, Tuple[str, str]]) -> str:
-        if isinstance(value, tuple):
-            if set(value) == {"dry", "wet"}:
-                return "tot"
-        elif isinstance(value, str):
-            if value in ["dry", "wet", "tot", "none"]:
-                return value
+        if value in ["dry", "wet", "tot", "none"]:
+            assert isinstance(value, str)  # mypy
+            return value
+        elif set(value) == {"dry", "wet"}:
+            return "tot"
         raise ValueError("deposition_type is invalid", value)
 
     @validator("ens_param_mem_min", always=True)
@@ -169,31 +244,105 @@ class Setup(BaseModel):
             value = ENS_CLOUD_ARRIVAL_TIME_THR_DEFAULT
         return value
 
-    @validator("level_idx", always=True)
-    def _init_level_idx(
-        cls, value: Optional[Union[int, Tuple[int, ...]]], values: Dict[str, Any],
-    ) -> Union[int, Tuple[int, ...]]:
-        if value is not None:
-            return value
-        elif values["variable"] == "concentration":
-            return 0
-        else:
-            return -1
+    @validator("level", always=True)
+    def _init_level(
+        cls, value: Optional[Tuple[int, ...]], values: Dict[str, Any],
+    ) -> Optional[Tuple[int, ...]]:
+        if value is not None and values["variable"] == "deposition":
+            raise ValueError(
+                "level must be None for variable", value, values["variable"],
+            )
+        return value
 
     @classmethod
-    def as_setup(cls, obj: Union[Mapping[str, Any], "Setup"]) -> "Setup":
+    def create(cls, params: Dict[str, Any]) -> "InputSetup":
+        """Create an instance of ``InputSetup``.
+
+        Args:
+            params: Parameters to instatiate ``InputSetup``. In contrast to
+                direct instatiation, all ``Tuple`` parameters may be passed
+                directly, e.g., as `{"time": 0}` instead of `{"time": (0,)}`.
+
+        """
+        singles = ["infile"]
+        for param, value in params.items():
+            if param in singles:
+                continue
+            field = cls.__fields__[param]
+            if value is None and field.allow_none:
+                continue
+            if value == "*" and field.allow_none:
+                params[param] = None
+                continue
+            field_type = field.outer_type_
+            try:
+                # Try to convert value to the field type
+                parse_obj_as(field_type, value)
+            except ValidationError as e:
+                # Conversion failed, so let's try something else!
+                error_type = e.errors()[0]["type"]
+                if error_type == "type_error.sequence":
+                    try:
+                        # Try again, with the value in a sequence
+                        parse_obj_as(field_type, [value])
+                    except ValidationError:
+                        # Still not working; let's give up!
+                        raise ValueError(
+                            f"value of param {param} with type {type(value).__name__} "
+                            f"incompatible with field type {field_type}, both directly "
+                            f"and in a sequence"
+                        )
+                    else:
+                        # Now it worked; wrapping value in list and we're good!
+                        params[param] = [value]
+                else:
+                    raise NotImplementedError("unknown ValidationError", error_type, e)
+        return cls(**params)
+
+    @classmethod
+    def as_setup(cls, obj: Union[Mapping[str, Any], "InputSetup"]) -> "InputSetup":
         if isinstance(obj, cls):
             return obj
-        return cls(**obj)  # type: ignore
+        return cls.create(obj)  # type: ignore
+
+    # SR_TODO consider renaming this method (sth. containing 'dimensions')
+    def complete_dimensions(self, meta_data: Mapping[str, Any]) -> List[str]:
+        dimensions = meta_data["dimensions"]
+        completed = []
+
+        if self.time is None:
+            self.time = tuple(range(dimensions["time"]["size"]))
+            completed.append("time")
+
+        if self.level is None:
+            if self.variable == "concentration":
+                if "level" in dimensions:
+                    self.level = tuple(range(dimensions["level"]["size"]))
+                    completed.append("level")
+
+        if self.species_id is None:
+            self.species_id = meta_data["analysis"]["species_ids"]
+            completed.append("species_id")
+
+        if self.nageclass is None:
+            if "nageclass" in dimensions:
+                self.nageclass = tuple(range(dimensions["nageclass"]["size"]))
+                completed.append("nageclass")
+
+        if self.noutrel is None:
+            if "noutrel" in dimensions:
+                self.noutrel = tuple(range(dimensions["noutrel"]["size"]))
+                completed.append("nageclass")
+
+        if self.numpoint is None:
+            if "numpoint" in dimensions:
+                self.numpoint = tuple(range(dimensions["numpoint"]["size"]))
+                completed.append("numpoint")
+
+        return completed
 
     def __repr__(self) -> str:  # type: ignore
-        def fmt(obj):
-            if isinstance(obj, str):
-                return f"'{obj}'"
-            return str(obj)
-
-        s_attrs = ",\n  ".join(f"{k}={fmt(v)}" for k, v in self.dict().items())
-        return f"{type(self).__name__}(\n  {s_attrs},\n)"
+        return setup_repr(self)
 
     def __str__(self) -> str:  # type: ignore
         return repr(self)
@@ -212,58 +361,167 @@ class Setup(BaseModel):
         return self.dict() == other_dict
 
     @overload
-    def derive(self, params: Mapping[str, Any]) -> "Setup":
+    def derive(self, params: Mapping[str, Any]) -> "InputSetup":
         ...
 
     @overload
-    def derive(self, params: Sequence[Mapping[str, Any]]) -> List["Setup"]:
+    def derive(self, params: Sequence[Mapping[str, Any]]) -> "InputSetupCollection":
         ...
 
     def derive(
         self, params: Union[Mapping[str, Any], Sequence[Mapping[str, Any]]],
-    ) -> Union["Setup", List["Setup"]]:
-        """Derive ``Setup`` object(s) with adapted parameters."""
+    ) -> Union["InputSetup", "InputSetupCollection"]:
+        """Derive ``InputSetup`` object(s) with adapted parameters."""
         if isinstance(params, Sequence):
-            return [self.derive(params_i) for params_i in params]
-        return type(self)(**{**self.dict(), **params})
+            return InputSetupCollection([self.derive(params_i) for params_i in params])
+        # SR_TMP < TODO find cleaner solution (w/o duplication of logic)
+        if (
+            self.variable == "concentration"
+            and params.get("variable") == "deposition"
+            and "level" not in params
+        ):
+            params["level"] = None  # type: ignore
+        # SR_TMP >
+        params = {**self.dict(), **params}
+        return type(self).create(params)
 
-    def decompress(
+    @classmethod
+    def compress(cls, setups: "InputSetupCollection") -> "InputSetup":
+        if not setups:
+            raise ValueError("missing setups")
+        dct = compress_multival_dicts(setups.dicts(), cls_seq=tuple)
+        return cls.create(dct)
+
+    @classmethod
+    def compress_partially(
+        cls, setups: "InputSetupCollection", skip: List[str],
+    ) -> "InputSetupCollection":
+        dcts: List[Dict[str, Any]] = setups.dicts()
+        preserved_params_lst: List[Dict[str, Any]] = []
+        for dct in dcts:
+            preserved_params = {}
+            for param in skip:
+                try:
+                    preserved_params[param] = dct.pop(param)
+                except ValueError:
+                    raise ValueError("invalid param", param)
+            if preserved_params not in preserved_params_lst:
+                preserved_params_lst.append(preserved_params)
+        partial_dct = compress_multival_dicts(setups.dicts(), cls_seq=tuple)
+        setup_lst: List["InputSetup"] = []
+        for preserved_params in preserved_params_lst:
+            dct = {**partial_dct, **preserved_params}
+            setup_lst.append(cls.create(dct))
+        return InputSetupCollection(setup_lst)
+
+    def decompress(self) -> "CoreInputSetupCollection":
+        return self._decompress(None, None)
+
+    def decompress_partially(
+        self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None,
+    ) -> "InputSetupCollection":
+        if (select, skip) == (None, None):
+            return self._decompress(None, None, InputSetup)
+        elif skip is None:
+            assert select is not None  # mypy
+            return self._decompress(select, None)
+        elif select is None:
+            assert skip is not None  # mypy
+            return self._decompress(None, skip)
+        else:
+            return self._decompress(select, skip)
+
+    @overload
+    def _decompress(
         self,
-        select: Optional[Collection[str]] = None,
-        *,
-        skip: Optional[Collection[str]] = None,
-    ) -> List["Setup"]:
-        """Create multiple ``Setup`` objects with one-value parameters only."""
+        select: None,
+        skip: None,
+        cls_setup: Optional[Type["CoreInputSetup"]] = None,
+    ) -> "CoreInputSetupCollection":
+        ...
 
-        if skip is None:
-            skip = ["infiles", "ens_member_ids"]
+    @overload
+    def _decompress(
+        self, select: None, skip: None, cls_setup: Type["InputSetup"],
+    ) -> "InputSetupCollection":
+        ...
+
+    @overload
+    def _decompress(
+        self,
+        select: None,
+        skip: Collection[str],
+        cls_setup: Optional[Union[Type["CoreInputSetup"], Type["InputSetup"]]] = None,
+    ) -> "InputSetupCollection":
+        ...
+
+    @overload
+    def _decompress(
+        self,
+        select: Collection[str],
+        skip: None,
+        cls_setup: Optional[Union[Type["CoreInputSetup"], Type["InputSetup"]]] = None,
+    ) -> "InputSetupCollection":
+        ...
+
+    @overload
+    def _decompress(
+        self,
+        select: Collection[str],
+        skip: Collection[str],
+        cls_setup: Optional[Union[Type["CoreInputSetup"], Type["InputSetup"]]] = None,
+    ) -> "InputSetupCollection":
+        ...
+
+    def _decompress(self, select=None, skip=None, cls_setup=None):
+        """Create multiple ``InputSetup`` objects with one-value parameters only."""
+
+        if cls_setup is None:
+            if (select, skip) == (None, None):
+                cls_setup = CoreInputSetup
+            else:
+                cls_setup = InputSetup
+        if cls_setup is CoreInputSetup:
+            cls_setup_collection = CoreInputSetupCollection
+        elif cls_setup is InputSetup:
+            cls_setup_collection = InputSetupCollection
+        else:
+            raise ValueError("invalid cls_setup", cls_setup)
 
         dct = self.dict()
 
         # Handle deposition type
         expand_deposition_type = (
             select is None or "deposition_type" in select
-        ) and "deposition_type" not in skip
+        ) and "deposition_type" not in (skip or [])
         if expand_deposition_type and dct["deposition_type"] == "tot":
             dct["deposition_type"] = ("dry", "wet")
 
         # Decompress dict
         dcts = decompress_multival_dict(dct, select=select, skip=skip)
 
-        def create(dct):
-            if isinstance(dct["time_idcs"], int):
-                dct["time_idcs"] = [dct["time_idcs"]]
-            return Setup(**dct)
+        def create_setup(dct):
+            if isinstance(dct["time"], int):
+                dct["time"] = [dct["time"]]
+            return cls_setup.create(dct)
 
-        sub_setups = [create(dct) for dct in dcts]
-        return sub_setups
+        return cls_setup_collection([cls_setup.create(dct) for dct in dcts])
 
 
-class SetupCollection:
-    """A set of ``Setup`` objects."""
+# SR_TMP <<< TODO Consider merging with CoreInputSetupCollection (failed due to mypy)
+class InputSetupCollection:
+    def __init__(self, setups: Collection[InputSetup]) -> None:
+        self._setups: List[InputSetup] = [setup for setup in setups]
 
-    def __init__(self, setups: Collection[Union[Mapping[str, Any], Setup]]) -> None:
-        self._setups = [Setup.as_setup(obj) for obj in setups]
+    @classmethod
+    def create(
+        cls, setups: Collection[Union[Mapping[str, Any], InputSetup]]
+    ) -> "InputSetupCollection":
+        setup_objs: List[InputSetup] = []
+        for obj in setups:
+            setup_obj = InputSetup.as_setup(obj)
+            setup_objs.append(setup_obj)
+        return cls(setup_objs)
 
     def __repr__(self) -> str:
         s_setups = "\n  ".join([""] + [str(c) for c in self._setups])
@@ -272,7 +530,7 @@ class SetupCollection:
     def __len__(self) -> int:
         return len(self._setups)
 
-    def __iter__(self) -> Iterator[Setup]:
+    def __iter__(self) -> Iterator[InputSetup]:
         for setup in self._setups:
             yield setup
 
@@ -286,17 +544,89 @@ class SetupCollection:
             obj in self_dicts for obj in other_dicts
         )
 
-    def dicts(self) -> List[Mapping[str, Any]]:
-        return [obj.dict() for obj in self._setups]
+    def dicts(self) -> List[Dict[str, Any]]:
+        return [setup.dict() for setup in self._setups]
+
+    def group(self, param: str) -> Dict[Any, "InputSetupCollection"]:
+        """Group setups by the value of a parameter."""
+        grouped_raw: Dict[Any, List[InputSetup]] = {}
+        for setup in self:
+            try:
+                value = getattr(setup, param)
+            except AttributeError:
+                raise ValueError("invalid input setup parameter", param)
+            else:
+                if value not in grouped_raw:
+                    grouped_raw[value] = []
+                grouped_raw[value].append(setup)
+        grouped: Dict[Any, "InputSetupCollection"] = {
+            value: type(self)(setups) for value, setups in grouped_raw.items()
+        }
+        return grouped
+
+    def complete_dimensions(
+        self,
+        meta_data: Mapping[str, Any],
+        decompress: bool = False,
+        decompress_skip: Optional[Collection[str]] = None,
+    ) -> List[str]:
+        """Set unconstrained dimensions to all available indices."""
+        orig_setups = [setup for setup in self._setups]
+        self._setups.clear()
+        completed: List[str] = []
+        for setup in orig_setups:
+            completed_i: List[str] = setup.complete_dimensions(meta_data)
+            if not completed:
+                completed = completed_i
+            elif completed != completed_i:
+                raise Exception("completed dimensions differ", completed, completed_i)
+            if not decompress:
+                self._setups.append(setup)
+            else:
+                select = [
+                    dim for dim in completed if dim not in (decompress_skip or [])
+                ]
+                self._setups.extend(setup.decompress_partially(select))
+        return completed
 
 
-class SetupFile:
-    """Setup file to be read from and/or written to disk."""
+# SR_TMP <<< TODO Consider merging with InputSetupCollection (failed due to mypy)
+class CoreInputSetupCollection:
+    def __init__(self, setups: Collection[CoreInputSetup]) -> None:
+        self._setups: List[CoreInputSetup] = [setup for setup in setups]
+
+    @classmethod
+    def create(
+        cls, setups: Collection[Union[Mapping[str, Any], CoreInputSetup]]
+    ) -> "CoreInputSetupCollection":
+        setup_objs: List[CoreInputSetup] = []
+        for obj in setups:
+            setup_obj = CoreInputSetup.as_setup(obj)
+            setup_objs.append(setup_obj)
+        return cls(setup_objs)
+
+    # SR_TMP <
+    __repr__ = InputSetupCollection.__repr__
+    __len__ = InputSetupCollection.__len__
+    __iter__ = InputSetupCollection.__iter__
+    __eq__ = InputSetupCollection.__eq__
+    dicts = InputSetupCollection.dicts
+    # SR_TMP >
+
+
+class InputSetupFile:
+    """InputSetup file to be read from and/or written to disk."""
 
     def __init__(self, path: str) -> None:
         self.path: str = path
 
-    def read(self) -> SetupCollection:
+    @classmethod
+    def read_multiple(cls, paths: Sequence[str]) -> InputSetupCollection:
+        return InputSetupCollection(
+            [setup for path in paths for setup in cls(path).read()]
+        )
+
+    def read(self) -> InputSetupCollection:
         """Read the setup from a text file in TOML format."""
         with open(self.path, "r") as f:
             try:
@@ -313,7 +643,7 @@ class SetupFile:
         data = decompress_nested_dict(
             semi_raw_data, branch_end_criterion=lambda key: not key.startswith("_"),
         )
-        setups = SetupCollection(data)
+        setups = InputSetupCollection.create(data)
         return setups
 
     def write(self, *args, **kwargs) -> None:
