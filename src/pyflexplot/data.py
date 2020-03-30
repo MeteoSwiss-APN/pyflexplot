@@ -3,6 +3,7 @@
 Data structures.
 """
 # Standard library
+from dataclasses import dataclass
 from typing import Any
 from typing import Callable
 from typing import Mapping
@@ -50,48 +51,40 @@ def summarize_field(obj):
 
 # SR_TODO Turn into dataclass
 @summarizable(
-    attrs=["var_setups", "time_stats"],
+    attrs_skip=["fld", "lat", "lon"],
     post_summarize=lambda self, summary: {**summary, **summarize_field(self)},
 )
+@dataclass
 class Field:
-    """FLEXPART field on rotated-pole grid."""
+    """FLEXPART field on rotated-pole grid.
 
-    def __init__(
-        self,
-        fld: np.ndarray,
-        lat: np.ndarray,
-        lon: np.ndarray,
-        rotated_pole: bool,
-        var_setups: InputSetupCollection,
-        time_stats: Mapping[str, np.ndarray],
-        nc_meta_data: Mapping[str, Any],
-    ):
-        """Create an instance of ``Field``.
+    Args:
+        fld: Field array (2D) with dimensions (lat, lon).
 
-        Args:
-            fld: Field array (2D) with dimensions (lat, lon).
+        lat: Latitude array (1D).
 
-            lat: Latitude array (1D).
+        lon: Longitude array (1D).
 
-            lon: Longitude array (1D).
+        rotated_pole: Whether pole is rotated.
 
-            rotated_pole: Whether pole is rotated.
+        var_setups: Variables setups.
 
-            var_setups: Variables setups.
+        time_stats: Some statistics across all time steps.
 
-            time_stats: Some statistics across all time steps.
+        nc_meta_data: Meta data from NetCDF input file.
 
-            nc_meta_data: Meta data from NetCDF input file.
+    """
 
-        """
-        self._check_args(fld, lat, lon)
-        self.fld = fld
-        self.lat = lat
-        self.lon = lon
-        self.rotated_pole = rotated_pole
-        self.var_setups = var_setups
-        self.time_stats = time_stats
-        self.nc_meta_data = nc_meta_data
+    fld: np.ndarray
+    lat: np.ndarray
+    lon: np.ndarray
+    rotated_pole: bool
+    var_setups: InputSetupCollection
+    time_stats: Mapping[str, np.ndarray]
+    nc_meta_data: Mapping[str, Any]
+
+    def __post_init__(self):
+        self._check_args(self.fld, self.lat, self.lon)
 
     def _check_args(self, fld, lat, lon, *, ndim_fld=2):
         """Check consistency of field, dimensions, etc."""

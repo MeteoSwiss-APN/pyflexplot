@@ -85,6 +85,7 @@ def summarizable(
     cls: Optional[Callable] = None,
     *,
     attrs: Optional[Collection[str]] = None,
+    attrs_skip: Optional[Collection[str]] = None,
     summarize: Optional[Callable[[Any, Dict[str, Any]], Dict[str, Any]]] = None,
     post_summarize: Optional[Callable[[Any, Dict[str, Any]], Dict[str, Any]]] = None,
     auto_collect: bool = True,
@@ -95,17 +96,23 @@ def summarizable(
     Args:
         cls: Class to be decorated.
 
-        attrs: Class attributes to summarize. Added to the class as attribute
-            ``summarizable_attrs``.
+        attrs: Class attributes to summarize. Added to ``cls`` as class
+            attribute ``summarizable_attrs``, which also contains all auto-
+            collected attributes of special classes like dataclasse (unless
+            ``auto_collect`` is False), but none specified in ``attrs_skip``.
+
+        attrs_skip: Class attributes not to summarize. Affects attributes in
+            ``attrs`` and, more importantly, auto-collected ones such as
+            dataclass attributes.
 
         summarize: Custom function to summarize the class. Returns a dict
             containing the summarized attributes, which is then used to update
             the existing summary dict that has been created based on ``attrs``.
-            Replaces ``default_summarize``. Added to the class as method
+            Replaces ``default_summarize``. Added to ``cls`` as method
             ``summarize``.
 
         post_summarize: Custom function to post-process the summary dict.
-            Replaces ``default_post_summarize``. Added to the class as method
+            Replaces ``default_post_summarize``. Added to ``cls`` as method
             ``post_summarize``.
 
         auto_collect: Auto-collect attributes of certain types of classes, such
@@ -121,21 +128,21 @@ def summarizable(
         return partial(
             summarizable,
             attrs=attrs,
+            attrs_skip=attrs_skip,
             summarize=summarize,
             post_summarize=post_summarize,
             auto_collect=auto_collect,
             overwrite=overwrite,
         )
 
-    if attrs is None:
-        attrs = []
-    elif not isiterable(attrs, str_ok=False):
-        raise ValueError(
-            f"`attrs` of type '{type(attrs).__name__}' is not iterable", attrs,
-        )
-    else:
-        attrs = [a for a in attrs]
-
+    try:
+        attrs = [] if attrs is None else [a for a in attrs]
+    except TypeError:
+        raise ValueError("`attrs` is not iterable", type(attrs), attrs)
+    try:
+        attrs_skip = [] if attrs_skip is None else [a for a in attrs_skip]
+    except TypeError:
+        raise ValueError("`attrs_skip` is not iterable", type(attrs_skip), attrs_skip)
     if summarize is None:
         summarize = default_summarize
     if post_summarize is None:
@@ -151,6 +158,7 @@ def summarizable(
         elif issubclass(cls, BaseModel):  # type: ignore
             # Collect model fields
             attrs = [f for f in cls.__fields__] + attrs  # type: ignore
+    attrs = [a for a in attrs if a not in attrs_skip]
 
     # Extend class
     for name, attr in [
@@ -161,7 +169,6 @@ def summarizable(
         if not overwrite and hasattr(cls, name):
             raise AttributeConflictError(name, cls)
         setattr(cls, name, attr)
-
     return cls
 
 
@@ -260,6 +267,8 @@ class Summarizer:
         data = []
         for item in obj:
             data.append(self._summarize(item))
+        if isinstance(obj, np.ndarray):
+            return data
         return type_(data)
 
     def _try_named(self, obj):
