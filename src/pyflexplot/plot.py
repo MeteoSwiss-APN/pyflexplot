@@ -6,6 +6,8 @@ Plots.
 import os
 import re
 from textwrap import dedent
+from typing import Collection
+from typing import Optional
 
 # Third-party
 import numpy as np
@@ -16,11 +18,14 @@ from srutils.geo import Degrees
 from srutils.iter import isiterable
 
 # Local
+# TextBoxAxes Local
+from .data import Field
 from .plot_lib import MapAxes
 from .plot_lib import MapAxesRotatedPole
 from .plot_lib import TextBoxAxes
 from .plot_lib import ax_w_h_in_fig_coords
 from .plot_lib import post_summarize_plot
+from .plot_types import MapAxesConf
 from .plot_types import MapAxesConf_Cosmo1
 from .plot_types import MapAxesConf_Cosmo1_CH
 from .plot_types import PlotConfig
@@ -53,7 +58,7 @@ class Plot:
     lw_frame = 1.0
 
     # SR_TMP TODO consider moving mdat (at least mdata.grid) to Field
-    def __init__(self, field, plot_config, map_conf):
+    def __init__(self, field: Field, plot_config: PlotConfig, map_conf: MapAxesConf):
         """Create an instance of ``Plot``."""
         self.field = field
         self.plot_config = plot_config
@@ -97,15 +102,15 @@ class Plot:
                 conf=self.map_conf,
             )
 
-    def save(self, file_path, format=None):
+    def save(self, file_path: str, format: Optional[str] = None):
         """Save the plot to disk.
 
         Args:
-            file_path (str): Output file name, incl. path.
+            file_path: Output file name, incl. path.
 
-            format (str): Plot format (e.g., 'png', 'pdf'). Defaults to None.
-                If ``format`` is None, the plot format is derived from the
-                extension of ``file_path``.
+            format (optional): Plot format (e.g., 'png', 'pdf'). If ``format``
+                is None, the plot format is derived from the extension of
+                ``file_path``.
 
         """
         if format is None:
@@ -116,6 +121,8 @@ class Plot:
                     f"from '{os.path.basename(file_path)}'"
                 )
             format = ext[1:]
+        assert format is not None  # mypy
+        self.format: str = format
 
         self.fig.savefig(
             file_path,
@@ -269,7 +276,9 @@ class Plot:
             ),
         }
 
-    def fill_box_top_left(self, box, *, skip_pos=None):
+    def fill_box_top_left(
+        self, box: TextBoxAxes, *, skip_pos: Optional[Collection[str]] = None,
+    ) -> None:
         """Fill the box above the map plot."""
 
         labels = self.plot_config.labels.top_left
@@ -300,9 +309,9 @@ class Plot:
         if "br" not in skip_pos:
             box.text("br", labels["time_since_release_start"], size="large")
 
-        return box
-
-    def fill_box_top_right(self, box, *, skip_pos=None):
+    def fill_box_top_right(
+        self, box: TextBoxAxes, *, skip_pos: Optional[Collection[str]] = None,
+    ) -> None:
         """Fill the box to the top-right of the map plot."""
 
         labels = self.plot_config.labels.top_right
@@ -319,9 +328,14 @@ class Plot:
             s, size = box.fit_text(labels["site"], "large", n_shrink_max=1)
             box.text("bc", s, size=size)
 
-        return box
-
-    def fill_box_right_top(self, box, dy_line=3.0, dy0_markers=0.25, w_box=4, h_box=2):
+    def fill_box_right_top(
+        self,
+        box: TextBoxAxes,
+        dy_line: float = 3.0,
+        dy0_markers: float = 0.25,
+        w_box: float = 4.0,
+        h_box: float = 2.0,
+    ) -> None:
         """Fill the top box to the right of the map plot."""
 
         labels = self.plot_config.labels.right_top
@@ -439,7 +453,7 @@ class Plot:
                 size=font_size,
             )
 
-    def fill_box_right_bottom(self, box):
+    def fill_box_right_bottom(self, box: TextBoxAxes) -> None:
         """Fill the bottom box to the right of the map plot."""
 
         labels = self.plot_config.labels.right_bottom  # noqa:E741
@@ -488,7 +502,7 @@ class Plot:
             size="small",
         )
 
-    def fill_box_bottom(self, box):
+    def fill_box_bottom(self, box: TextBoxAxes) -> None:
         """Fill the box to the bottom of the map plot."""
 
         labels = self.plot_config.labels.bottom

@@ -4,7 +4,10 @@ Plot types.
 """
 # Standard library
 from dataclasses import dataclass
+from typing import Any
+from typing import Dict
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 
 # Third-party
@@ -62,7 +65,20 @@ class PlotLabels:
 
         words.set_default_lang(lang)
 
-        groups = {}
+        # Declare groups
+        self.top_left: Dict[str, Any]
+        self.top_right: Dict[str, Any]
+        self.right_top: Dict[str, Any]
+        self.right_bottom: Dict[str, Any]
+        self.bottom: Dict[str, Any]
+
+        def set_group(name, values: Dict[str, Any]) -> None:
+            """Preprocess and set group values."""
+            for key, val in values.copy().items():
+                if isinstance(val, str):
+                    # Capitalize first letter only (even if it's a space!)
+                    values[key] = list(val)[0].capitalize() + val[1:]
+            setattr(self, name, values)
 
         # Top-left box
         level = mdata.variable.fmt_level_range()
@@ -81,22 +97,27 @@ class PlotLabels:
         period = mdata.simulation.fmt_integr_period()
         start = mdata.simulation.integr_start.format(rel=True)
         unit_escaped = mdata.variable.unit.format(escape_format=True)
-        groups["top_left"] = {
-            "variable": f"{mdata.variable.long_name.value}{s_level}",
-            "period": f"{integr_op} {period} ({words['since']} +{start})",
-            "subtitle_thr_agrmt_fmt": f"Cloud: {symbs['geq']} {{thr}} {unit_escaped}",
-            "subtitle_cloud_arrival_time": (
-                f"Cloud: {symbs['geq']} {{thr}} {unit_escaped}; "
-                f"members: {symbs['geq']} {{mem}}"
-            ),
-            "timestep": f"{ts.format(rel=False)} (+{ts.format(rel=True)})",
-            "time_since_release_start": (
-                f"{time_rels} {words['since']} {words['release_start']}"
-            ),
-        }
+        set_group(
+            "top_left",
+            {
+                "variable": f"{mdata.variable.long_name.value}{s_level}",
+                "period": f"{integr_op} {period} ({words['since']} +{start})",
+                "subtitle_thr_agrmt_fmt": (
+                    f"Cloud: {symbs['geq']} {{thr}} {unit_escaped}"
+                ),
+                "subtitle_cloud_arrival_time": (
+                    f"Cloud: {symbs['geq']} {{thr}} {unit_escaped}; "
+                    f"members: {symbs['geq']} {{mem}}"
+                ),
+                "timestep": f"{ts.format(rel=False)} (+{ts.format(rel=True)})",
+                "time_since_release_start": (
+                    f"{time_rels} {words['since']} {words['release_start']}"
+                ),
+            },
+        )
 
         # Top-right box
-        groups["top_right"] = {
+        self.top_right = {
             "species": f"{mdata.species.name.format(join=' + ')}",
             "site": f"{words['site']}: {mdata.release.site_name.value}",
         }
@@ -105,38 +126,44 @@ class PlotLabels:
         name = mdata.variable.short_name.format()
         unit = mdata.variable.unit.format()
         unit_escaped = mdata.variable.unit.format(escape_format=True)
-        groups["right_top"] = {
-            "title": f"{name}",
-            "title_unit": f"{name} ({unit})",
-            "release_site": words["release_site"].s,
-            "max": words["max"].s,
-        }
+        set_group(
+            "right_top",
+            {
+                "title": f"{name}",
+                "title_unit": f"{name} ({unit})",
+                "release_site": words["release_site"].s,
+                "max": words["max"].s,
+            },
+        )
 
         # Right-bottom box
         deg_ = f"{symbs['deg']}{symbs['short_space']}"
         _N = f"{symbs['short_space']}{words['north', None, 'abbr']}"
         _E = f"{symbs['short_space']}{words['east', None, 'abbr']}"
-        groups["right_bottom"] = {
-            "title": words["release"].t,
-            "start": words["start"].s,
-            "end": words["end"].s,
-            "latitude": words["latitude"].s,
-            "longitude": words["longitude"].s,
-            "lat_deg_fmt": f"{{d}}{deg_}{{m}}'{_N} ({{f:.2f}}{words['degN']})",
-            "lon_deg_fmt": f"{{d}}{deg_}{{m}}'{_E} ({{f:.2f}}{words['degE']})",
-            "height": words["height"].s,
-            "rate": words["rate"].s,
-            "mass": words["total_mass"].s,
-            "site": words["site"].s,
-            "release_site": words["release_site"].s,
-            "max": words["max"].s,
-            "name": words["substance"].s,
-            "half_life": words["half_life"].s,
-            "deposit_vel": words["deposition_velocity", None, "abbr"].s,
-            "sediment_vel": words["sedimentation_velocity", None, "abbr"].s,
-            "washout_coeff": words["washout_coeff"].s,
-            "washout_exponent": words["washout_exponent"].s,
-        }
+        set_group(
+            "right_bottom",
+            {
+                "title": words["release"].t,
+                "start": words["start"].s,
+                "end": words["end"].s,
+                "latitude": words["latitude"].s,
+                "longitude": words["longitude"].s,
+                "lat_deg_fmt": f"{{d}}{deg_}{{m}}'{_N} ({{f:.2f}}{words['degN']})",
+                "lon_deg_fmt": f"{{d}}{deg_}{{m}}'{_E} ({{f:.2f}}{words['degE']})",
+                "height": words["height"].s,
+                "rate": words["rate"].s,
+                "mass": words["total_mass"].s,
+                "site": words["site"].s,
+                "release_site": words["release_site"].s,
+                "max": words["max"].s,
+                "name": words["substance"].s,
+                "half_life": words["half_life"].s,
+                "deposit_vel": words["deposition_velocity", None, "abbr"].s,
+                "sediment_vel": words["sedimentation_velocity", None, "abbr"].s,
+                "washout_coeff": words["washout_coeff"].s,
+                "washout_exponent": words["washout_exponent"].s,
+            },
+        )
 
         # Bottom box
         model = mdata.simulation.model_name.value
@@ -148,22 +175,17 @@ class PlotLabels:
         )
         start = mdata.simulation.start.format()
         model_info_fmt = f"{words['flexpart']} {words['based_on']} {model}, {start}"
-        groups["bottom"] = {
-            "model_info_det": model_info_fmt.format(m=model),
-            "model_info_ens": model_info_fmt.format(m=model_ens),
-            "copyright": f"{symbs['copyright']}{words['meteoswiss']}",
-        }
-
-        # Format all labels (hacky!)
-        for group_name, group in groups.items():
-            setattr(self, group_name, group)  # SR_TMP
-            for name, symbs in group.items():
-                if isinstance(symbs, str):
-                    # Capitalize first letter only (even if it's a space!)
-                    group[name] = list(symbs)[0].capitalize() + symbs[1:]
+        set_group(
+            "bottom",
+            {
+                "model_info_det": model_info_fmt.format(m=model),
+                "model_info_ens": model_info_fmt.format(m=model_ens),
+                "copyright": f"{symbs['copyright']}{words['meteoswiss']}",
+            },
+        )
 
 
-def colors_flexplot(n_levels, extend):
+def colors_flexplot(n_levels: int, extend: str) -> Sequence[Tuple[int, int, int]]:
 
     # color_under = [i/255.0 for i in (255, 155, 255)]
     color_under = [i / 255.0 for i in (200, 200, 200)]
@@ -233,7 +255,7 @@ class PlotConfig:
 
     # SR_TMP <<<
     @property
-    def text_box_setup(self):
+    def text_box_setup(self) -> Dict[str, float]:
         return {
             "deterministic": {
                 "h_rel_t": 0.1,
@@ -253,7 +275,7 @@ class PlotConfig:
 
     # SR_TMP
     @property
-    def extend(self):
+    def extend(self) -> str:
         return {
             "ens_thr_agrmt": "min",
             "ens_cloud_arrival_time": "max",
@@ -262,7 +284,7 @@ class PlotConfig:
 
     # SR_TMP
     @property
-    def n_levels(self):
+    def n_levels(self) -> int:
         return {
             "ens_thr_agrmt": 7,
             "ens_cloud_arrival_time": 9,
@@ -274,35 +296,38 @@ class PlotConfig:
 
     # SR_TMP
     @property
-    def d_level(self):
-        return {"ens_thr_agrmt": 2, "ens_cloud_arrival_time": 3}.get(
-            self.setup.plot_type
-        )
+    def d_level(self) -> int:
+        try:
+            return {"ens_thr_agrmt": 2, "ens_cloud_arrival_time": 3}[
+                self.setup.plot_type
+            ]
+        except KeyError:
+            raise NotImplementedError("plot_type", self.setup.plot_type)
 
     # SR_TMP
     @property
-    def level_range_style(self):
+    def level_range_style(self) -> str:
         return {"ens_thr_agrmt": "int", "ens_cloud_arrival_time": "int"}.get(
             self.setup.plot_type, "base"
         )
 
     # SR_TMP
     @property
-    def level_ranges_align(self):
+    def level_ranges_align(self) -> str:
         return {"ens_thr_agrmt": "left", "ens_cloud_arrival_time": "left"}.get(
             self.setup.plot_type, "center"
         )
 
     # SR_TMP
     @property
-    def mark_field_max(self):
+    def mark_field_max(self) -> bool:
         return {"ens_thr_agrmt": False, "ens_cloud_arrival_time": False}.get(
             self.setup.plot_type, True
         )
 
     # SR_TMP
     @property
-    def top_box_subtitle(self):
+    def top_box_subtitle(self) -> Optional[str]:
         setup = self.setup
         labels = self.labels.top_left
         if setup.plot_type == "ens_thr_agrmt":
@@ -311,12 +336,11 @@ class PlotConfig:
             return labels["subtitle_cloud_arrival_time"].format(
                 thr=setup.ens_param_thr, mem=setup.ens_param_mem_min,
             )
-        else:
-            return None
+        return None
 
     # SR_TMP
     @property
-    def legend_box_title(self):
+    def legend_box_title(self) -> str:
         labels = self.labels.right_top
         if self.setup.plot_type == "ens_thr_agrmt":
             return labels["title"]
@@ -327,15 +351,16 @@ class PlotConfig:
 
     # SR_TMP
     @property
-    def model_info(self):
+    def model_info(self) -> str:
         labels = self.labels.bottom
         if self.setup.simulation_type == "deterministic":
             return labels["model_info_det"]
         elif self.setup.simulation_type == "ensemble":
             return labels["model_info_ens"]
+        raise NotImplementedError("simulation_type", self.setup.simulation_type)
 
     # SR_TMP
-    def get_colors(self, cmap):
+    def get_colors(self, cmap) -> Sequence[Tuple[int, int, int]]:
         if self.setup.plot_type == "affected_area_mono":
             return (np.array([(200, 200, 200)]) / 255).tolist()
         elif cmap == "flexplot":
@@ -346,30 +371,32 @@ class PlotConfig:
 
     # SR_TMP
     @property
-    def levels_scale(self):
+    def levels_scale(self) -> str:
         if self.setup.plot_type in ["ens_thr_agrmt", "ens_cloud_arrival_time"]:
             return "lin"
         return "log"
 
     # SR_TMP
-    def get_levels(self, time_stats):
+    def get_levels(self, time_stats) -> Sequence[float]:
         n_levels = self.n_levels
-        d_level = self.d_level
         if self.setup.plot_type == "ens_thr_agrmt":
+            d_level = self.d_level
             n_max = 20  # SR_TMP SR_HC
             return (
                 np.arange(n_max - d_level * (n_levels - 1), n_max + d_level, d_level)
                 + 1
             )
         elif self.setup.plot_type == "ens_cloud_arrival_time":
-            return np.arange(0, n_levels) * d_level
+            return np.arange(0, n_levels) * self.d_level
         elif self.setup.plot_type == "affected_area_mono":
             levels = self._auto_levels_log10(n_levels=9, val_max=time_stats["max"])
             return np.array([levels[0], np.inf])
         else:
             return self._auto_levels_log10(val_max=time_stats["max"])
 
-    def _auto_levels_log10(self, n_levels=None, val_max=None):
+    def _auto_levels_log10(
+        self, n_levels: Optional[int] = None, val_max: Optional[float] = None,
+    ) -> Sequence[float]:
         if n_levels is None:
             n_levels = self.n_levels
         log10_max = int(np.floor(np.log10(val_max)))

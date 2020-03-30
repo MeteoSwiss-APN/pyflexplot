@@ -6,23 +6,29 @@ Preset setup files.
 import re
 import sys
 from pathlib import Path
+from typing import Any
 from typing import Collection
 from typing import Dict
 from typing import Iterator
 from typing import List
+from typing import Mapping
 from typing import Union
 
 # Third-party
 import click
+from click import Context
 
 # Local
 from . import check_dir_exists
 from . import data_path
 
+ParamType = Union[click.Option, click.Parameter]
+
+
 preset_path: List[Union[str, Path]] = []
 
 
-def add_preset_path(path: Union[Path, str], first=True):
+def add_preset_path(path: Union[Path, str], first: bool = True) -> None:
     global preset_path
     path = Path(path)
     check_dir_exists(path)
@@ -68,13 +74,13 @@ def collect_preset_files(
     return files_by_dir
 
 
-def click_add_preset_path(ctx, param, value):
+def click_add_preset_path(ctx: Context, param: ParamType, value: Any) -> None:
     if not value:
         return
     add_preset_path(value)
 
 
-def collect_preset_files_flat(name: str):
+def collect_preset_files_flat(name: str) -> Dict[str, Path]:
     files_by_dir = collect_preset_files(name)
     named_paths = {
         name: path for files in files_by_dir.values() for name, path in files.items()
@@ -95,14 +101,14 @@ def cat_preset(name: str, include_source: bool = False) -> str:
     return "\n".join(lines)
 
 
-def click_list_presets(ctx, param, value):
+def click_list_presets(ctx: Context, param: ParamType, value: Any) -> None:
     """List all presets setup files and exit."""
     if not value:
         return
-    click_find_presets(ctx, None, "*")
+    click_find_presets(ctx, param, "*")
 
 
-def click_find_presets(ctx, param, value):
+def click_find_presets(ctx: Context, param: ParamType, value: Any) -> None:
     """Find preset setup file(s) by name (optional wildcards) and exit."""
     if not value:
         return
@@ -110,7 +116,7 @@ def click_find_presets(ctx, param, value):
     ctx.exit(0)
 
 
-def click_cat_preset(ctx, param, value):
+def click_cat_preset(ctx: Context, param: ParamType, value: Any) -> None:
     """Print the content of a preset setup file and exit."""
     if not value:
         return
@@ -125,7 +131,7 @@ def click_cat_preset(ctx, param, value):
         ctx.exit(0)
 
 
-def click_use_preset(ctx, param, value):
+def click_use_preset(ctx: Context, param: ParamType, value: Any) -> None:
     if not value:
         return
     key = "preset_setup_file_paths"
@@ -150,7 +156,11 @@ def click_use_preset(ctx, param, value):
                     ctx.obj[key].append(path)
 
 
-def _click_list_presets(ctx, preset_files_by_dir, indent_all=False):
+def _click_list_presets(
+    ctx: Context,
+    preset_files_by_dir: Mapping[Path, Mapping[str, Path]],
+    indent_all: bool = False,
+) -> None:
     verbosity = ctx.obj["verbosity"]
     for dir, files in preset_files_by_dir.items():
         if verbosity > 0:
@@ -164,7 +174,7 @@ def _click_list_presets(ctx, preset_files_by_dir, indent_all=False):
                 click.echo(f"  {name:23}  {path}")
 
 
-def _click_propose_alternatives(name):
+def _click_propose_alternatives(name: str) -> None:
     try:
         alternatives = collect_preset_files_flat(f"*{name}*")
     except ValueError:

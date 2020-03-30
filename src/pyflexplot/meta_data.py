@@ -9,10 +9,10 @@ from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 from typing import Any
+from typing import Collection
 from typing import Dict
 from typing import Generic
 from typing import Optional
-from typing import Sequence
 from typing import Tuple
 from typing import TypeVar
 from typing import Union
@@ -187,19 +187,15 @@ class MetaDatum(GenericModel, Generic[ValueT]):
 class MetaData:
     """Base class for meta data."""
 
-    def __init__(self, setup, **kwargs):
+    def __init__(self, setup: InputSetup, **kwargs):
         if type(self) is MetaData:
             raise ValueError(
                 f"{type(self).__name__} should be subclassed, not instatiated"
             )
         self.setup = setup
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return self.setup == other.setup
-
-    # SR_DBG <<<
-    def __iter__(self):
-        raise DeprecationWarning()
 
     # SR_TODO <<< eliminate iterator method
     def iter_objs(self):
@@ -216,20 +212,23 @@ class MetaData:
                     if not callable(datum):
                         yield name, datum
 
-    def merge_with(self, others, replace=None):
-        """Create new instance by merging self and others.
+    def merge_with(
+        self, others: Collection["MetaData"], replace: Optional[Dict[str, Any]] = None,
+    ) -> "MetaData":
+        """Create a new instance by merging this instance with others.
+
+        Note that neither ``self`` nor ``others`` are changed.
 
         Args:
-            others (list[MetaData]): Other instances of the same meta data
-                class, to be merged with this one.
+            others: Other instances of the same meta data class, to be merged
+                with this one.
 
-            replace (dict, optional): Attributes to be replaced in the merged
+            replace (optional): Attributes to be replaced in the merged
                 instance. Must contain all meta data that differ between any
                 of the instances to be merged. Defaults to '{}'.
 
         Returns:
-            MetaData: Merged instance derived from ``self`` and ``others``.
-                Note that no input instance is changed.
+            Merged instance derived from ``self`` and ``others``.
 
         """
 
@@ -606,7 +605,7 @@ class MetaDataCollection:
         self._objs[name] = obj
 
     def merge_with(
-        self, others: Sequence["MetaDataCollection"], **replace: Dict[str, Any],
+        self, others: Collection["MetaDataCollection"], **replace: Dict[str, Any],
     ) -> "MetaDataCollection":
         """Create a new instance by merging this and others.
 

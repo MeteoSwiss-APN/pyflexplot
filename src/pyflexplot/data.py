@@ -6,7 +6,9 @@ Data structures.
 from dataclasses import dataclass
 from typing import Any
 from typing import Callable
+from typing import Dict
 from typing import Mapping
+from typing import Optional
 from typing import Sequence
 from typing import Union
 
@@ -18,7 +20,7 @@ from .setup import InputSetupCollection
 from .utils import summarizable
 
 
-def summarize_field(obj):
+def summarize_field(obj: Any) -> Dict[str, Dict[str, Any]]:
     return {
         "fld": {
             "dtype": str(obj.fld.dtype),
@@ -145,25 +147,31 @@ def threshold_agreement(arr, thr, *, axis=None, thr_eq_ok=False):
 
 
 def cloud_arrival_time(
-    arr, thr, n_mem_min, *, mem_axis=None, time_axis=None, thr_eq_ok=False,
-):
+    arr: np.ndarray,
+    thr: float,
+    n_mem_min: int,
+    *,
+    mem_axis: Optional[int] = None,
+    time_axis: Optional[int] = None,
+    thr_eq_ok: bool = False,
+) -> np.ndarray:
     """Count the time steps until a cloud arrives in enough members.
 
     Args:
-        arr (np.ndarray[float]): Data array.
+        arr: Data array.
 
-        thr (float): Threshold to be exceeded.
+        thr: Threshold to be exceeded.
 
-        n_mem_min (int): Minimum number of members required to agreement.
+        n_mem_min: Minimum number of members required to agreement.
 
-        mem_axis (int, optional): Index of ensemble member axis, along which
-            the reduction is performed. Defaults to None.
+        mem_axis (optional): Index of ensemble member axis, along which the
+            reduction is performed.
 
-        time_axis (int, optional): Index of time axis. If None, the first non-
-            member-axis is chosen. Defaults to None.
+        time_axis (optional): Index of time axis. If None, the first
+            non-member-axis is chosen.
 
-        thr_eq_ok (bool, optional): Whether values equal to the threshold are
-            counted as exceedences. Defaults to False.
+        thr_eq_ok (optional): Whether values equal to the threshold are counted
+            as exceedences.
 
     """
     # SR_TMP < TODO Remove once type hints added to arguments

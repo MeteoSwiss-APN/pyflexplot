@@ -5,14 +5,18 @@ Some utilities.
 # Standard library
 import re
 import warnings
-from collections import namedtuple
+from dataclasses import dataclass
 from dataclasses import is_dataclass
 from functools import partial
 from typing import Any
 from typing import Callable
 from typing import Collection
 from typing import Dict
+from typing import List
 from typing import Optional
+from typing import Sequence
+from typing import Tuple
+from typing import Union
 
 # Third-party
 import numpy as np
@@ -38,7 +42,7 @@ class AttributeConflictError(Exception):
     """Conflicting object attributes."""
 
 
-def is_attrs_class(cls: Any):
+def is_attrs_class(cls: Any) -> bool:
     """Determine whether a class has been defined with ``@attr.attrs``."""
     return isinstance(cls, type) and hasattr(cls, "__attrs_attrs__")
 
@@ -185,25 +189,30 @@ class Summarizer:
 
     """
 
-    def run(self, obj, *, addl=None, skip=None):
+    def run(
+        self,
+        obj: Any,
+        *,
+        addl: Optional[Collection[str]] = None,
+        skip: Optional[Collection[str]] = None,
+    ) -> Dict[str, Any]:
         """Summarize specified attributes of ``obj`` in a dict.
 
         The attributes to be summarized must be specified by name in the
         attribute ``obj.summarizable_attrs``.
 
         Args:
-            addl (list, optional): Additional attributes to be collected.
-                Defaults to None.
+            obj: Object to summarize.
 
-            skip (list, optional): Attributes to skip during collection.
-                Defaults to None.
+            addl (optional): Additional attributes to be collected.
+
+            skip (optional): Attributes to skip during collection.
 
         Returns:
-            dict: Dictionary containing the collected attributes and their
-                values.
+            Dictionary containing the collected attributes and their values.
 
         """
-        data = {}
+        data: Dict[str, Any] = {}
 
         if skip is None or "type" not in skip:
             data["type"] = type(obj).__name__
@@ -221,7 +230,7 @@ class Summarizer:
 
         return obj.post_summarize(data)
 
-    def _summarize(self, obj):
+    def _summarize(self, obj: Any) -> Union[Dict[str, Any], Any]:
         """Try to summarize the object in various ways."""
         methods = [
             self._try_summarizable,
@@ -236,7 +245,7 @@ class Summarizer:
                 continue
         return obj
 
-    def _try_summarizable(self, obj):
+    def _try_summarizable(self, obj: Any) -> Dict[str, Any]:
         """Try to summarize ``obj`` as a summarizable object."""
         try:
             data = obj.summarize()
@@ -245,7 +254,7 @@ class Summarizer:
         else:
             return self._summarize(data)
 
-    def _try_dict_like(self, obj):
+    def _try_dict_like(self, obj: Any) -> Dict[Any, Any]:
         """Try to summarize ``obj`` as a dict-like object."""
         try:
             items = obj.items()
@@ -256,10 +265,9 @@ class Summarizer:
                 raise NotSummarizableError("dict-like", obj)
             else:
                 items = obj.items()
-        else:
-            return {self._summarize(key): self._summarize(val) for key, val in items}
+        return {self._summarize(key): self._summarize(val) for key, val in items}
 
-    def _try_list_like(self, obj):
+    def _try_list_like(self, obj: Any) -> Sequence[Any]:
         """Try to summarize ``obj`` as a list-like object."""
         if not isiterable(obj, str_ok=False):
             raise NotSummarizableError("list-like", obj)
@@ -271,7 +279,7 @@ class Summarizer:
             return data
         return type_(data)
 
-    def _try_named(self, obj):
+    def _try_named(self, obj: Any) -> str:
         """Try to summarize ``obj`` as a named object (e.g., function/method)."""
         try:
             name = obj.__name__
@@ -288,13 +296,19 @@ class Summarizer:
         raise NotSummarizableError("named", obj)
 
 
-def check_float_ok(f, ff0t):
+def check_float_ok(f: float, ff0t: str) -> bool:
     if f != np.inf and f >= 1.0:
         return bool(re.match(f"^{int(f)}" + r"\.[0-9]+$", ff0t))
     return (f == 0.0) or (float(ff0t) != 0.0)
 
 
-def fmt_float(f, fmt_e0=None, fmt_f0=None, fmt_e1=None, fmt_f1=None):
+def fmt_float(
+    f: float,
+    fmt_e0: Optional[str] = None,
+    fmt_f0: Optional[str] = None,
+    fmt_e1: Optional[str] = None,
+    fmt_f1: Optional[str] = None,
+) -> str:
     """Auto-format a float to floating-point or exponential notation.
 
     Very small and very large numbers are formatted in exponential notation.
@@ -303,24 +317,27 @@ def fmt_float(f, fmt_e0=None, fmt_f0=None, fmt_e1=None, fmt_f1=None):
     the former.
 
     Args:
-        f (float): Number to format.
+        f: Number to format.
 
-        fmt_e0 (str, optional): Exponential-notation format string used to
-            create the string that is compared to that produced with ``fmt_f0``
-            to decide the appropriate notation. Defaults to '{f:e}'.
+        fmt_e0 (optional): Exponential-notation format string used to create
+            the string that is compared to that produced with ``fmt_f0`` to
+            decide the appropriate notation. Defaults to '{f:e}'.
 
-        fmt_f0 (str, optional): Floating-point notation format string used to
-            create the string that is compared to that produced with ``fmt_e0``
-            to decide the appropriate notation. Defaults to '{f:f}'.
+        fmt_f0 (optional): Floating-point notation format string used to create
+            the string that is compared to that produced with ``fmt_e0`` to
+            decide the appropriate notation. Defaults to '{f:f}'.
 
-        fmt_e1 (str, optional): Exponential-notation format string used to
-            create the return string if exponential notation has been found to
-            be appropriate. Defaults to ``fmt_e0``.
+        fmt_e1 (optional): Exponential-notation format string used to create
+            the return string if exponential notation has been found to be
+            appropriate. Defaults to ``fmt_e0``.
 
-        fmt_f1 (str, optional): Floating-point notation format string used to
-            create the return string if floating point notation has been found
-            to be appropriate. Defaults to '{f:f}' with the resulting string
-            trimmed to the length of that produced with ``fmt_e0``.
+        fmt_f1 (optional): Floating-point notation format string used to create
+            the return string if floating point notation has been found to be
+            appropriate. Defaults to '{f:f}' with the resulting string trimmed
+            to the length of that produced with ``fmt_e0``.
+
+    Returns:
+        Formatted number.
 
     Algorithm:
         - Format ``f`` in both exponential notation with ``fmt_e0`` and in
@@ -385,43 +402,47 @@ def fmt_float(f, fmt_e0=None, fmt_f0=None, fmt_e1=None, fmt_f1=None):
 
 
 def format_level_ranges(
-    levels, style=None, widths=None, extend=None, align=None, **kwargs
-):
+    levels: Sequence[float],
+    style: Optional[str] = None,
+    widths: Optional[Tuple[int, int, int]] = None,
+    extend: Optional[str] = None,
+    align: Optional[str] = None,
+    **kwargs,
+) -> List[str]:
     """Format a list of level ranges in a certain style.
 
     Args:
-        levels (list[float]): Levels between the ranges.
+        levels: Levels between the ranges.
 
-        style (str, optional): Formatting style (options and examples below).
+        style (optional): Formatting style (options and examples below).
             Defaults to 'base'.
 
-        widths (tuple[int, int, int], optional): Tuple with the minimum
-            character widths of, respectively, the left ('lower-than'), center
-            (operator), and right ('greater-than') parts of the ranges.
-            Defaults to style-specific values.
+        widths (optional): Tuple with the minimum character widths of,
+            respectively, the left ('lower-than'), center (operator), and right
+            ('greater-than') parts of the ranges. Defaults to style-specific
+            values.
 
-        extend (str, optional): Whether the range is closed ('none'), open at
-            the lower ('min') or the upper ('max') end, or both ('both'). Same
-            as the ``extend`` keyword of, e.g., ``matplotlib.pyplot.contourf``.
+        extend (optional): Whether the range is closed ('none'), open at the
+            lower ('min') or the upper ('max') end, or both ('both'). Same as
+            the ``extend`` keyword of, e.g., ``matplotlib.pyplot.contourf``.
             Defaults to 'none'.
 
-        align (str, optional): Horizontal alignment of the left and right
-            components (the center component with the operator is always
-            center-aligned). Options: 'left' (both components left-aligned),
-            'right' (both components right-aligned), 'center', (left/right
-            component right/left-aligned), and 'edges' (left/right component
-            left/right-aligned). Defaults to 'center'.
+        align (optional): Horizontal alignment of the left and right components
+            (the center component with the operator is always center-aligned).
+            Options: 'left' (both components left-aligned), 'right' (both
+            components right-aligned), 'center', (left/right component
+            right/left-aligned), and 'edges' (left/right component left/right-
+            aligned). Defaults to 'center'.
 
         **kwargs: Additional style-specific keyword arguments used to
             initialize the respective formatter class. See individual formatter
             classes for details.
 
     Returns:
-        list[str]: List of formatted level range strings, each of which
-            represents the range between two successive ``levels``. Depending
-            on ``extend``, the number of strings is equal to ('min' or 'max'),
-            one smaller ('none'), or one greater ('both') than the number of
-            ``levels``.
+        Formatted level range strings, each of which represents the range
+            between two successive ``levels``. Depending on ``extend``, the
+            number of strings is equal to ('min' or 'max'), one smaller
+            ('none'), or one greater ('both') than the number of ``levels``.
 
     Styles:
         +-------+----------------+--------------------+---------------+
@@ -470,34 +491,75 @@ def format_level_ranges(
     return formatter.fmt_multiple(levels)
 
 
+@dataclass
+class Component:
+    """Auxiliary class to pass results between formatter methods."""
+
+    s: str
+    ntex: int
+
+    @classmethod
+    def create(cls, name: str, arg: Union[str, Tuple[str, int]]) -> "Component":
+        if isinstance(arg, str):
+            return cls(arg, len(arg))
+        else:
+            return cls(*arg)
+
+
+@dataclass
+class Components:
+    """Auxiliary class to pass results between formatter methods."""
+
+    left: Component
+    center: Component
+    right: Component
+
+    @classmethod
+    def create(
+        cls,
+        left: Union[str, Tuple[str, int]],
+        center: Union[str, Tuple[str, int]],
+        right: Union[str, Tuple[str, int]],
+    ) -> "Components":
+        return Components(
+            left=Component.create("left", left),
+            center=Component.create("center", center),
+            right=Component.create("right", right),
+        )
+
+
 class LevelRangeFormatter:
     """Format level ranges, e.g., for legends of color contour plots."""
 
     def __init__(
-        self, style, widths=None, extend="none", align="center", rstrip_zeros=False
-    ):
+        self,
+        style: str,
+        *,
+        widths: Optional[Tuple[int, int, int]] = None,
+        extend: str = "none",
+        align: str = "center",
+        rstrip_zeros: bool = False,
+    ) -> None:
         """Create an instance of ``LevelRangeFormatter``.
 
         Args: See ``format_level_ranges``.
 
         """
-        if widths is None:
-            widths = (5, 3, 5)
-        else:
-            self._check_widths(widths)
-        self.widths = widths
+        self.widths = widths or (5, 3, 5)
         self.extend = extend
         self.align = align
         self.rstrip_zeros = rstrip_zeros
 
-    def _check_widths(self, widths):
+        self._check_widths(self.widths)
+
+    def _check_widths(self, widths: Tuple[int, int, int]) -> None:
         try:
             wl, wc, wr = [int(w) for w in widths]
         except (ValueError, TypeError):
             raise ValueError(f"widths is not a tree-int tuple: {widths}")
 
-    def fmt_multiple(self, levels):
-        ss = []
+    def fmt_multiple(self, levels: Sequence[float]) -> List[str]:
+        ss: List[str] = []
         if self.extend in ("min", "both"):
             ss.append(self.format(None, levels[0]))
         for lvl0, lvl1 in zip(levels[:-1], levels[1:]):
@@ -506,12 +568,12 @@ class LevelRangeFormatter:
             ss.append(self.format(levels[-1], None))
         return ss
 
-    def format(self, lvl0, lvl1):
+    def format(self, lvl0: Optional[float], lvl1: Optional[float]) -> str:
         cs = self._format_components(lvl0, lvl1)
 
-        s_l = cs.l.s
-        s_c = cs.c.s
-        s_r = cs.r.s
+        s_l = cs.left.s
+        s_c = cs.center.s
+        s_r = cs.right.s
 
         dc = "^"
         dl, dr = dict(left="<<", right=">>", center="><", edges="<>")[self.align]
@@ -529,25 +591,30 @@ class LevelRangeFormatter:
 
         wl, wc, wr = self.widths
 
-        s_l = f"{{:{dl}{wl + cs.l.ntex}}}".format(s_l)
-        s_c = f"{{:{dc}{wc + cs.c.ntex}}}".format(s_c)
-        s_r = f"{{:{dr}{wr + cs.r.ntex}}}".format(s_r)
+        s_l = f"{{:{dl}{wl + cs.left.ntex}}}".format(s_l)
+        s_c = f"{{:{dc}{wc + cs.center.ntex}}}".format(s_c)
+        s_r = f"{{:{dr}{wr + cs.right.ntex}}}".format(s_r)
 
         return f"{s_l}{s_c}{s_r}"
 
-    def _format_components(self, lvl0, lvl1):
+    def _format_components(
+        self, lvl0: Optional[float], lvl1: Optional[float],
+    ) -> Components:
         open_left = lvl0 in (None, np.inf)
         open_right = lvl1 in (None, np.inf)
         if open_left and open_right:
             raise ValueError(f"range open at both ends")
         elif open_left:
+            assert lvl1 is not None  # mypy
             return self._format_open_left(lvl1)
         elif open_right:
+            assert lvl0 is not None  # mypy
             return self._format_open_right(lvl0)
         else:
+            assert lvl0 is not None and lvl1 is not None  # mypy
             return self._format_closed(lvl0, lvl1)
 
-    def _format_closed(self, lvl0, lvl1):
+    def _format_closed(self, lvl0: float, lvl1: float) -> Components:
         lvl0_fmtd = self._format_level(lvl0)
         lvl1_fmtd = self._format_level(lvl1)
         op_fmtd = r"$\tt -$"
@@ -555,57 +622,29 @@ class LevelRangeFormatter:
         s_l = lvl0_fmtd
         s_c = op_fmtd
         s_r = lvl1_fmtd
-        return self._Components(s_l, (s_c, ntex_c), s_r)
+        return Components.create(s_l, (s_c, ntex_c), s_r)
 
-    def _format_open_left(self, lvl):
+    def _format_open_left(self, lvl: float) -> Components:
         return self._format_open_core(lvl, r"$\tt <$")
 
-    def _format_open_right(self, lvl):
+    def _format_open_right(self, lvl: float) -> Components:
         return self._format_open_core(lvl, r"$\tt \geq$")
 
-    def _format_open_core(self, lvl, op, *, len_op=1):
+    def _format_open_core(self, lvl: float, op: str, *, len_op: int = 1) -> Components:
         lvl_fmtd = self._format_level(lvl)
         ntex_c = len(op) - len_op
         s_c = op
         s_r = lvl_fmtd
-        return self._Components("", (s_c, ntex_c), s_r)
+        return Components.create("", (s_c, ntex_c), s_r)
 
-    def _format_level(self, lvl):
+    def _format_level(self, lvl: float) -> str:
         return fmt_float(lvl, "{f:.0E}")
-
-    @classmethod
-    def _Component(cls, s, n=None):
-        """Auxiliary type for passing results between methods."""
-        if n is None:
-            n = len(s)
-        Component = namedtuple("component", "s ntex")
-        return Component(s, n)
-
-    @classmethod
-    def _Components(cls, left, center, right):
-        """Auxiliary type for passing results between methods."""
-        Components = namedtuple("components", "l c r")
-
-        def create_component(name, arg):
-            if isinstance(arg, str):
-                return cls._Component(arg, 0)
-            try:
-                return cls._Component(*arg)
-            except Exception:
-                raise ValueError(
-                    f"cannot create {name} Component "
-                    f"from {type(arg).__name__} {arg}"
-                )
-
-        return Components(
-            create_component("left", left),
-            create_component("center", center),
-            create_component("right", right),
-        )
 
 
 class LevelRangeFormatter_Int(LevelRangeFormatter):
-    def __init__(self, *args, widths=None, **kwargs):
+    def __init__(
+        self, *args, widths: Optional[Tuple[int, int, int]] = None, **kwargs,
+    ) -> None:
         if widths is None:
             widths = (2, 3, 2)
         if kwargs.get("rstrip_zeros"):
@@ -613,27 +652,33 @@ class LevelRangeFormatter_Int(LevelRangeFormatter):
         kwargs["rstrip_zeros"] = False
         super().__init__(*args, widths=widths, **kwargs)
 
-    def _format_components(self, lvl0, lvl1):
+    def _format_components(
+        self, lvl0: Optional[float], lvl1: Optional[float],
+    ) -> Components:
         if lvl1 is not None:
             lvl1 = lvl1 - 1
             if lvl0 == lvl1:
-                return self._Components("", "", self._format_level(lvl1))
+                return Components.create("", "", self._format_level(lvl1))
         return super()._format_components(lvl0, lvl1)
 
-    def _format_level(self, lvl):
+    def _format_level(self, lvl: float) -> str:
         if int(lvl) != float(lvl):
             warnings.warn(f"{type(self).__name__}._format_level: not an int: {lvl}")
         return str(lvl)
 
 
 class LevelRangeFormatter_Math(LevelRangeFormatter):
-    def __init__(self, *args, widths=None, **kwargs):
+    def __init__(
+        self, *args, widths: Optional[Tuple[int, int, int]] = None, **kwargs,
+    ) -> None:
         if widths is None:
             widths = (6, 2, 6)
         super().__init__(*args, widths=widths, **kwargs)
 
-    def _format_components(self, lvl0, lvl1):
-        return self._Components(
+    def _format_components(
+        self, lvl0: Optional[float], lvl1: Optional[float],
+    ) -> Components:
+        return Components.create(
             "-inf" if lvl0 is None else f"[{self._format_level(lvl0)}",
             ",",
             "inf" if lvl1 is None else f"{self._format_level(lvl1)})",
@@ -641,40 +686,46 @@ class LevelRangeFormatter_Math(LevelRangeFormatter):
 
 
 class LevelRangeFormatter_Up(LevelRangeFormatter):
-    def __init__(self, *args, widths=None, **kwargs):
+    def __init__(
+        self, *args, widths: Optional[Tuple[int, int, int]] = None, **kwargs,
+    ) -> None:
         if widths is None:
             widths = (0, 2, 5)
         super().__init__(*args, widths=widths, **kwargs)
 
-    def _format_closed(self, lvl0, lvl1):
+    def _format_closed(self, lvl0: float, lvl1: float) -> Components:
         op_fmtd = r"$\tt \geq$"
         ntex_c = len(op_fmtd) - 1
         s_c = op_fmtd
         s_r = self._format_level(lvl0)
-        return self._Components("", (s_c, ntex_c), s_r)
+        return Components.create("", (s_c, ntex_c), s_r)
 
 
 class LevelRangeFormatter_Down(LevelRangeFormatter):
-    def __init__(self, *args, widths=None, **kwargs):
+    def __init__(
+        self, *args, widths: Optional[Tuple[int, int, int]] = None, **kwargs,
+    ):
         if widths is None:
             widths = (0, 2, 5)
         super().__init__(*args, widths=widths, **kwargs)
 
-    def _format_closed(self, lvl0, lvl1):
+    def _format_closed(self, lvl0: float, lvl1: float) -> Components:
         op_fmtd = r"$\tt <$"
         ntex_c = len(op_fmtd) - 1
         s_c = op_fmtd
         s_r = self._format_level(lvl1)
-        return self._Components("", (s_c, ntex_c), s_r)
+        return Components.create("", (s_c, ntex_c), s_r)
 
 
 class LevelRangeFormatter_And(LevelRangeFormatter):
-    def __init__(self, *args, widths=None, **kwargs):
+    def __init__(
+        self, *args, widths: Optional[Tuple[int, int, int]] = None, **kwargs,
+    ) -> None:
         if widths is None:
             widths = (8, 3, 8)
         super().__init__(*args, widths=widths, **kwargs)
 
-    def _format_closed(self, lvl0, lvl1):
+    def _format_closed(self, lvl0: float, lvl1: float) -> Components:
 
         op0_fmtd = r"$\tt \geq$"
         lvl0_fmtd = f"{op0_fmtd} {self._format_level(lvl0)}"
@@ -690,31 +741,37 @@ class LevelRangeFormatter_And(LevelRangeFormatter):
         s_l = lvl0_fmtd
         s_c = op_fmtd
         s_r = lvl1_fmtd
-        return self._Components((s_l, ntex_l), (s_c, ntex_c), (s_r, ntex_r))
+        return Components.create((s_l, ntex_l), (s_c, ntex_c), (s_r, ntex_r))
 
-    def _format_open_left(self, lvl):
+    def _format_open_left(self, lvl: float) -> Components:
         op_fmtd = r"\tt $<$"
         lvl_fmtd = f"{op_fmtd} {self._format_level(lvl)}"
         ntex_r = len(op_fmtd) - 1
         s_r = lvl_fmtd
-        return self._Components("", "", (s_r, ntex_r))
+        return Components.create("", "", (s_r, ntex_r))
 
-    def _format_open_right(self, lvl):
+    def _format_open_right(self, lvl: float) -> Components:
         op0_fmtd = r"$\tt \geq$"
         lvl_fmtd = f"{op0_fmtd} {self._format_level(lvl)}"
         ntex_l = len(op0_fmtd) - 1
         s_l = lvl_fmtd
-        return self._Components((s_l, ntex_l), "", "")
+        return Components.create((s_l, ntex_l), "", "")
 
 
 class LevelRangeFormatter_Var(LevelRangeFormatter):
-    def __init__(self, *args, widths=None, var="v", **kwargs):
+    def __init__(
+        self,
+        *args,
+        widths: Optional[Tuple[int, int, int]] = None,
+        var: str = "v",
+        **kwargs,
+    ):
         if widths is None:
             widths = (5, 9, 5)
         super().__init__(*args, widths=widths, **kwargs)
         self.var = var
 
-    def _format_closed(self, lvl0, lvl1):
+    def _format_closed(self, lvl0: float, lvl1: float) -> Components:
         op0 = r"$\tt \leq$"
         op1 = r"$\tt <$"
         op_fmtd = f"{op0} {self.var} {op1}"
@@ -722,22 +779,22 @@ class LevelRangeFormatter_Var(LevelRangeFormatter):
         s_l = self._format_level(lvl0)
         s_c = op_fmtd
         s_r = self._format_level(lvl1)
-        return self._Components(s_l, (s_c, ntex_c), s_r)
+        return Components.create(s_l, (s_c, ntex_c), s_r)
 
-    def _format_open_right(self, lvl):
+    def _format_open_right(self, lvl: float) -> Components:
         op0 = r"$\tt \leq$"
         op1 = ""
         op_fmtd = f"{op0} {self.var} {op1}"
         ntex_c = len(op0) + len(op1) - 2
         s_l = self._format_level(lvl)
         s_c = op_fmtd
-        return self._Components(s_l, (s_c, ntex_c), "")
+        return Components.create(s_l, (s_c, ntex_c), "")
 
-    def _format_open_left(self, lvl):
+    def _format_open_left(self, lvl: float) -> Components:
         op0 = " "
         op1 = "$\tt <$"
         op_fmtd = f"{op0} {self.var} {op1}"
         ntex_c = len(op0) + len(op1) - 2
         s_c = op_fmtd
         s_r = self._format_level(lvl)
-        return self._Commponents("", (s_c, ntex_c), s_r)
+        return Components.create("", (s_c, ntex_c), s_r)
