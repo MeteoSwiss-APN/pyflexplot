@@ -8,6 +8,9 @@ from typing import Any
 from typing import Dict
 from typing import List
 
+# Third-party
+import pytest  # type: ignore
+
 # First-party
 from pyflexplot.setup import CoreInputSetup
 from pyflexplot.setup import CoreInputSetupCollection
@@ -268,3 +271,84 @@ class Test_ReplaceNoneByAvailable:
         assert setup.nageclass == (0,)
         assert setup.noutrel == (0,)
         assert setup.numpoint == (0, 1)
+
+
+class Test_Cast_SingleValue:
+    def test_infile(self):
+        assert InputSetup.cast("infile", "foo.nc") == "foo.nc"
+
+    def test_outfile(self):
+        assert InputSetup.cast("outfile", "foo.png") == "foo.png"
+
+    def test_lang(self):
+        assert InputSetup.cast("lang", "de") == "de"
+
+    def test_ens_member_id(self):
+        assert InputSetup.cast("ens_member_id", "004") == 4
+
+    def test_integrate(self):
+        assert InputSetup.cast("integrate", "True") is True
+        assert InputSetup.cast("integrate", "False") is False
+
+    def test_level(self):
+        assert InputSetup.cast("level", "2") == 2
+
+    def test_time(self):
+        assert InputSetup.cast("time", "10") == 10
+
+
+class Test_Cast_MultiValue:
+    def test_infile_fail(self):
+        with pytest.raises(ValueError):
+            InputSetup.cast("infile", ["a.nc", "b.nc"])
+
+    def test_outfile_fail(self):
+        with pytest.raises(ValueError):
+            InputSetup.cast("outfile", ["a.png", "b.png"])
+
+    def test_lang_fail(self):
+        with pytest.raises(ValueError):
+            InputSetup.cast("lang", ["en", "de"])
+
+    def test_ens_member_id(self):
+        assert InputSetup.cast("ens_member_id", ["01", "02", "03"]) == [1, 2, 3]
+
+    def test_integrate_fail(self):
+        with pytest.raises(ValueError):
+            InputSetup.cast("integrate", ["True", "False"])
+
+    def test_level(self):
+        assert InputSetup.cast("level", ["1", "2"]) == [1, 2]
+
+    def test_time(self):
+        assert InputSetup.cast("time", ["0", "1", "2", "3", "4"]) == [0, 1, 2, 3, 4]
+
+
+class Test_CastMany:
+    def test_dict(self):
+        params = {"infile": "foo.nc", "species_id": ["1", "2"], "integrate": "False"}
+        res = InputSetup.cast_many(params)
+        sol = {"infile": "foo.nc", "species_id": [1, 2], "integrate": False}
+        assert res == sol
+
+    def test_dict_comma_separated_fail(self):
+        params = {"infile": "foo.nc", "species_id": "1,2", "integrate": "False"}
+        with pytest.raises(ValueError):
+            InputSetup.cast_many(params)
+
+    def test_dict_comma_separated(self):
+        params = {"infile": "foo.nc", "species_id": "1,2", "integrate": "False"}
+        res = InputSetup.cast_many(params, list_separator=",")
+        sol = {"infile": "foo.nc", "species_id": [1, 2], "integrate": False}
+        assert res == sol
+
+    def test_tuple(self):
+        params = (("infile", "foo.nc"), ("species_id", "1,2"), ("integrate", "False"))
+        res = InputSetup.cast_many(params, list_separator=",")
+        sol = {"infile": "foo.nc", "species_id": [1, 2], "integrate": False}
+        assert res == sol
+
+    def test_tuple_duplicates_fail(self):
+        params = (("infile", "foo.nc"), ("species_id", "1"), ("infile", "bar.nc"))
+        with pytest.raises(ValueError):
+            InputSetup.cast_many(params)

@@ -4,6 +4,7 @@ Plot setup and setup files.
 """
 # Standard library
 import dataclasses
+import typing
 from typing import Any
 from typing import Collection
 from typing import Dict
@@ -23,6 +24,7 @@ from pydantic import BaseModel
 from pydantic import ValidationError
 from pydantic import parse_obj_as
 from pydantic import validator
+from pydantic.fields import ModelField
 
 # First-party
 from srutils.dict import compress_multival_dicts
@@ -34,6 +36,40 @@ from srutils.dict import nested_dict_resolve_wildcards
 ENS_THR_AGRMT_THR_DEFAULT: float = 1e-9
 ENS_CLOUD_ARRIVAL_TIME_MEM_MIN_DEFAULT = 1
 ENS_CLOUD_ARRIVAL_TIME_THR_DEFAULT: float = 1e-9
+
+
+def field_outer_type(field: ModelField, *, generic: bool = False) -> Type:
+    """Obtain the outer type of a pydantic model field."""
+    str_ = str(field.outer_type_)
+    prefix = "typing."
+    if not str_.startswith(prefix):
+        raise TypeError(
+            "<field>.outer_type_ does not start with '{prefix}'", str_, field,
+        )
+    str_ = str_[len(prefix) :]
+    str_ = str_.split("[")[0]
+    try:
+        type_ = getattr(typing, str_)
+    except AttributeError:
+        raise TypeError(
+            f"cannot derive type from <field>.outer_type_: typing.{str_} not found",
+            field,
+        )
+    if generic:
+        generics = {
+            typing.Tuple: tuple,
+            typing.List: list,
+            typing.Sequence: list,
+            typing.Set: set,
+            typing.Collection: set,
+            typing.Dict: dict,
+            typing.Mapping: dict,
+        }
+        try:
+            type_ = generics[type_]
+        except KeyError:
+            raise NotImplementedError("generic type for tpying type", type_, generics)
+    return type_
 
 
 def setup_repr(obj: Union["CoreInputSetup", "InputSetup"]) -> str:
@@ -304,6 +340,61 @@ class InputSetup(BaseModel):
         if isinstance(obj, cls):
             return obj
         return cls.create(obj)  # type: ignore
+
+    @classmethod
+    def cast(cls, param: str, value: Any) -> Any:
+        """Cast a parameter to the appropriate type."""
+        try:
+            field = cls.__fields__[param]
+        except KeyError:
+            raise ValueError("invalid parameter name", param, sorted(cls.__fields__))
+        if isinstance(value, Collection) and not isinstance(value, str):
+            try:
+                outer_type = field_outer_type(field, generic=True)
+            except TypeError:
+                raise ValueError("invalid parameter value: collection", param, value)
+            try:
+                outer_type(value)
+            except ValueError:
+                raise ValueError("invalid parameter value", param, value, outer_type)
+            else:
+                return [cls.cast(param, val) for val in value]
+        if issubclass(field.type_, bool):
+            if value in [True, "True"]:
+                return True
+            elif value in [False, "False"]:
+                return False
+        else:
+            try:
+                return field.type_(value)
+            except ValueError:
+                pass
+        raise ValueError("invalid parameter value", param, value, field.type_)
+
+    @classmethod
+    def cast_many(
+        cls,
+        params: Union[Collection[Tuple[str, Any]], Mapping[str, Any]],
+        *,
+        list_separator: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        if not isinstance(params, Mapping):
+            params_dct: Dict[str, Any] = {}
+            for param, value in params:
+                if param in params_dct:
+                    raise ValueError("duplicate parameter", param)
+                params_dct[param] = value
+            return cls.cast_many(params_dct, list_separator=list_separator)
+        params_cast = {}
+        for param, value in params.items():
+            if (
+                list_separator is not None
+                and isinstance(value, str)
+                and list_separator in value
+            ):
+                value = value.split(list_separator)
+            params_cast[param] = cls.cast(param, value)
+        return params_cast
 
     # SR_TODO consider renaming this method (sth. containing 'dimensions')
     def complete_dimensions(self, meta_data: Mapping[str, Any]) -> List[str]:
@@ -698,12 +789,19 @@ class InputSetupFile:
         self.path: str = path
 
     @classmethod
-    def read_multiple(cls, paths: Sequence[str]) -> InputSetupCollection:
-        return InputSetupCollection(
-            [setup for path in paths for setup in cls(path).read()]
-        )
+    def read_multiple(
+        cls, paths: Sequence[str], override: Optional[Dict[str, Any]] = None,
+    ) -> InputSetupCollection:
+        setup_lst: List[InputSetup] = []
+        for path in paths:
+            for setup in cls(path).read(override=override):
+                if setup not in setup_lst:
+                    setup_lst.append(setup)
+        return InputSetupCollection(setup_lst)
 
-    def read(self) -> InputSetupCollection:
+    def read(
+        self, *, override: Optional[Dict[str, Any]] = None,
+    ) -> InputSetupCollection:
         """Read the setup from a text file in TOML format."""
         with open(self.path, "r") as f:
             try:
@@ -717,10 +815,16 @@ class InputSetupFile:
         semi_raw_data = nested_dict_resolve_wildcards(
             raw_data, double_only_to_ends=True,
         )
-        data = decompress_nested_dict(
+        params_lst = decompress_nested_dict(
             semi_raw_data, branch_end_criterion=lambda key: not key.startswith("_"),
         )
-        setups = InputSetupCollection.create(data)
+        if override is not None:
+            params_lst, old_params_lst = [], params_lst
+            for old_params in old_params_lst:
+                params = {**old_params, **override}
+                if params not in params_lst:
+                    params_lst.append(params)
+        setups = InputSetupCollection.create(params_lst)
         return setups
 
     def write(self, *args, **kwargs) -> None:

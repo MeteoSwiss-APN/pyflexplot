@@ -22,6 +22,7 @@ from .preset import click_cat_preset
 from .preset import click_find_presets
 from .preset import click_list_presets
 from .preset import click_use_preset
+from .setup import InputSetup
 from .setup import InputSetupFile
 
 # # To debug segmentation fault, uncomment and run with PYTHONFAULTHANDLER=1
@@ -41,7 +42,6 @@ def not_implemented(msg):
     def f(ctx, param, value):
         if value:
             click.echo(f"not implemented: {msg}")
-            ctx.exit(1)
 
     return f
 
@@ -50,6 +50,16 @@ def set_verbosity(ctx, param, value):
     if ctx.obj is None:
         ctx.obj = {}
     ctx.obj["verbosity"] = value
+
+
+def prepare_input_setup_params(ctx, param, value):
+    if not value:
+        return
+    try:
+        return InputSetup.cast_many(value, list_separator=",")
+    except ValueError as e:
+        click.echo(f"Error: Invalid setup parameter: {e}", file=sys.stderr)
+        ctx.exit(1)
 
 
 @click.command(context_settings={"help_option_names": ["-h", "--help"]},)
@@ -77,18 +87,13 @@ def set_verbosity(ctx, param, value):
     is_eager=True,
 )
 @click.option(
-    "--open-first",
-    "open_first_cmd",
-    help=(
-        "Shell command to open the first plot as soon as it is available. The file "
-        "path is appended to the command, unless explicitly embedded with the format "
-        "key '{file}', which allows one to use more complex commands than simple "
-        "application names (example: 'eog {file} >/dev/null 2>&1' instead of 'eog' to "
-        "silence the application 'eog')."
-    ),
-)
-@click.option(
-    "--open-all", "open_all_cmd", help="Like --open-first, but for all plots.",
+    "--setup-param",
+    "input_setup_params",
+    help="Setup parameter overriding those in the setup file(s).",
+    metavar="PARAM VALUE",
+    nargs=2,
+    multiple=True,
+    callback=prepare_input_setup_params,
 )
 @click.option(
     "--preset",
@@ -126,9 +131,23 @@ def set_verbosity(ctx, param, value):
     is_eager=True,
     expose_value=False,
 )
+@click.option(
+    "--open-first",
+    "open_first_cmd",
+    help=(
+        "Shell command to open the first plot as soon as it is available. The file "
+        "path is appended to the command, unless explicitly embedded with the format "
+        "key '{file}', which allows one to use more complex commands than simple "
+        "application names (example: 'eog {file} >/dev/null 2>&1' instead of 'eog' to "
+        "silence the application 'eog')."
+    ),
+)
+@click.option(
+    "--open-all", "open_all_cmd", help="Like --open-first, but for all plots.",
+)
 # ---
 @click.pass_context
-def cli(ctx, setup_file_paths, dry_run, **cli_args):
+def cli(ctx, setup_file_paths, input_setup_params, dry_run, **cli_args):
     """Create dispersion plot as specified in CONFIG_FILE(S)."""
 
     ctx.obj.update(cli_args)
@@ -145,7 +164,7 @@ def cli(ctx, setup_file_paths, dry_run, **cli_args):
         ctx.exit(1)
 
     # Read setup files
-    setups = InputSetupFile.read_multiple(setup_file_paths)
+    setups = InputSetupFile.read_multiple(setup_file_paths, override=input_setup_params)
 
     # Group setups by input file(s)
     setups_by_infile = setups.group("infile")
@@ -161,7 +180,7 @@ def cli(ctx, setup_file_paths, dry_run, **cli_args):
         var_setups_lst = sub_setups.decompress_grouped_by_time()
 
         fields, mdata_lst = read_files(in_file_path, var_setups_lst, dry_run)
-        assert len(fields) == len(mdata_lst)
+        assert len(fields) == len(mdata_lst)  # SR_TMP
 
         # Note: plot_fields(...) yields the output file paths on-the-go
         for i_fld, out_file_path in enumerate(plot_fields(fields, mdata_lst, dry_run)):

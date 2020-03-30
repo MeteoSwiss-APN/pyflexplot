@@ -158,6 +158,69 @@ def test_read_multiple_nested_sections(tmp_path):
     assert setups == sol
 
 
+def test_read_multiple_override(tmp_path):
+    """Read setup file and override some parameters."""
+    content = f"""\
+        [_base]
+        {DEFAULT_TOML}
+        lang = "de"
+
+        [_base.con]
+        variable = "concentration"
+
+        [_base._dep]
+        variable = "deposition"
+        deposition_type = "tot"
+
+        [_base._dep._tot._ch.en]
+        domain = "ch"
+        lang = "en"
+
+        [_base._dep._tot._ch.de]
+        domain = "ch"
+        lang = "de"
+
+        [_base._dep._tot._auto.en]
+        domain = "auto"
+        lang = "en"
+
+        [_base._dep._tot._auto.de]
+        domain = "auto"
+        lang = "de"
+
+        [_base._dep.wet]
+        deposition_type = "wet"
+
+        [_base._dep.wet.en]
+        lang = "en"
+
+        [_base._dep.wet.de]
+        lang = "de"
+        """
+    override = {
+        "infile": "foo.nc",
+        "lang": "de",
+    }
+    sol_base = {
+        **DEFAULT_KWARGS,
+        "infile": "foo.nc",
+        "variable": "deposition",
+        "deposition_type": "tot",
+        "level": None,
+        "lang": "de",
+    }
+    sol_specific = [
+        {"variable": "concentration", "deposition_type": "none"},
+        {"domain": "ch", "lang": "de"},
+        {"domain": "auto", "lang": "de"},
+        {"deposition_type": "wet"},
+        {"deposition_type": "wet", "lang": "de"},
+    ]
+    sol = [{**DEFAULT_SETUP.dict(), **sol_base, **d} for d in sol_specific]
+    setups = read_tmp_setup_file(tmp_path, content, override=override)
+    assert setups == sol
+
+
 def test_read_semi_realcase(tmp_path):
     """Test setup file based on a real case, with some groups indented."""
     content = f"""\

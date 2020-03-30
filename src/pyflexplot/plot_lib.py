@@ -361,10 +361,10 @@ class MapAxes:
                 "https://github.com/shevawen/cartopy/tree/patch-1"
             )
         else:
-            warnings.warn(
-                f"successfully added major rivers; "
-                "TODO: remove workaround and pin minimum Cartopy version!"
-            )
+            # warnings.warn(
+            #     f"successfully added major rivers; "
+            #     "TODO: remove workaround and pin minimum Cartopy version!"
+            # )
             self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
             if self.conf.geo_res_rivers == "10m":
                 self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
@@ -716,15 +716,24 @@ def transform_xy_geo_to_axes(
 
     # Geo -> Plot
     xy_plt = proj_map.transform_point(x, y, proj_geo, trap=True)
-    check_valid_coords(xy_plt, invalid_ok, invalid_warn)
+    # SR_TMP < Suppress NaN warning TODO investigate origin of NaNs
+    # check_valid_coords(xy_plt, invalid_ok, invalid_warn)
+    check_valid_coords(xy_plt, invalid_ok, warn=False)
+    # SR_TMP >
 
     # Plot -> Display
     xy_dis = transData.transform(xy_plt)
-    check_valid_coords(xy_dis, invalid_ok, invalid_warn)
+    # SR_TMP < Suppress NaN warning TODO investigate origin of NaNs
+    # check_valid_coords(xy_dis, invalid_ok, invalid_warn)
+    check_valid_coords(xy_dis, invalid_ok, warn=False)
+    # SR_TMP >
 
     # Display -> Axes
     xy_axs = transAxes.inverted().transform(xy_dis)
-    check_valid_coords(xy_axs, invalid_ok, invalid_warn)
+    # SR_TMP < Suppress NaN warning TODO investigate origin of NaNs
+    # check_valid_coords(xy_axs, invalid_ok, invalid_warn)
+    check_valid_coords(xy_axs, invalid_ok, warn=False)
+    # SR_TMP >
 
     return xy_axs
 
