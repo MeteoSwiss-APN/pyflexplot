@@ -464,13 +464,17 @@ class MapAxes:
         )
         return handle
 
-    def contourf(self, fld, **kwargs):
+    def contourf(self, fld, *, levels, extend, **kwargs):
         """Plot a filled-contour field on the map.
 
         Args:
-            fld (ndarray[float, float]): Field to plot.
+            fld: Field.
 
-            **kwargs: Arguments passed to ax.contourf().
+            levels: Levels.
+
+            extend: Extend mode.
+
+            **kwargs: Additional arguments to ``contourf``.
 
         Returns:
             Plot handle.
@@ -480,14 +484,24 @@ class MapAxes:
             warnings.warn("skip filled contour plot (all-nan field)")
             return
 
-        handle = self.ax.contourf(
-            self.lon,
-            self.lat,
-            fld,
-            transform=self.proj_data,
-            zorder=self.zorder["fld"],
-            **kwargs,
-        )
+        # Check if there's anything to plot (prevent ugly failure of contourf)
+        if (
+            (np.nanmin(fld) == np.nanmax(fld))
+            or (np.nanmax(fld) < levels.min() and extend not in ["min", "both"])
+            or (np.nanmax(fld) > levels.max() and extend not in ["max", "both"])
+        ):
+            handle = None
+        else:
+            handle = self.ax.contourf(
+                self.lon,
+                self.lat,
+                fld,
+                transform=self.proj_data,
+                levels=levels,
+                extend=extend,
+                zorder=self.zorder["fld"],
+                **kwargs,
+            )
         return handle
 
     def marker(self, lon, lat, marker, *, zorder=None, **kwargs):
