@@ -21,7 +21,6 @@ from srutils.iter import isiterable
 # TextBoxAxes Local
 from .data import Field
 from .plot_lib import MapAxes
-from .plot_lib import MapAxesRotatedPole
 from .plot_lib import TextBoxAxes
 from .plot_lib import ax_w_h_in_fig_coords
 from .plot_lib import post_summarize_plot
@@ -81,27 +80,6 @@ class Plot:
 
         self.create_plot()
 
-    def prepare_plot(self):
-
-        self.fig = plt.figure(figsize=self.plot_config.figsize)
-
-        if self.field.rotated_pole:
-            self.ax_map = MapAxesRotatedPole(
-                fig=self.fig,
-                lat=self.field.lat,
-                lon=self.field.lon,
-                pollat=self.plot_config.mdata.grid.north_pole_lat.value,
-                pollon=self.plot_config.mdata.grid.north_pole_lon.value,
-                conf=self.map_conf,
-            )
-        else:
-            self.ax_map = MapAxes(
-                fig=self.fig,
-                lat=self.field.lat,
-                lon=self.field.lon,
-                conf=self.map_conf,
-            )
-
     def save(self, file_path: str, format: Optional[str] = None):
         """Save the plot to disk.
 
@@ -137,7 +115,8 @@ class Plot:
         """Create plot."""
 
         # Prepare plot
-        self.prepare_plot()
+        self.fig = plt.figure(figsize=self.plot_config.figsize)
+        self.ax_map = MapAxes.create(self.map_conf, fig=self.fig, field=self.field,)
 
         # Plot particle concentration field
         self.draw_map_plot()
@@ -343,11 +322,11 @@ class Plot:
         # font_size = 'small'
         font_size = "medium"
 
-        dx_box = -10
-        dx_label = -3
+        dx_box: float = -10
+        dx_label: float = -3
 
-        dx_marker = dx_box + 0.5 * w_box
-        dx_marker_label = dx_label
+        dx_marker: float = dx_box + 0.5 * w_box
+        dx_marker_label: float = dx_label
 
         # Color boxes (legend)
 

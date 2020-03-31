@@ -239,6 +239,13 @@ class MapAxes:
             ),
         )
 
+    @classmethod
+    def create(cls, conf, *, fig, field):
+        if field.rotated_pole:
+            return MapAxesRotatedPole.create(conf, fig=fig, field=field)
+        else:
+            return cls(fig=fig, lat=field.lat, lon=field.lon, conf=conf)
+
     def __repr__(self):
         return f"{type(self).__name__}(<TODO>)"  # SR_TODO
 
@@ -581,6 +588,22 @@ class MapAxesRotatedPole(MapAxes):
         self.pollon = pollon
         self.pollat = pollat
         super().__init__(**kwargs)
+
+    @classmethod
+    def create(cls, conf, *, fig, field):
+        if not field.rotated_pole:
+            raise ValueError("not a rotated-pole field", field)
+        rotated_pole = field.nc_meta_data["variables"]["rotated_pole"]["ncattrs"]
+        pollat = rotated_pole["grid_north_pole_latitude"]
+        pollon = rotated_pole["grid_north_pole_longitude"]
+        return cls(
+            fig=fig,
+            lat=field.lat,
+            lon=field.lon,
+            pollat=pollat,
+            pollon=pollon,
+            conf=conf,
+        )
 
     def prepare_projections(self):
         """Prepare projections to transform the data for plotting."""

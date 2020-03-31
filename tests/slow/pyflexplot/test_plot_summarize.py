@@ -188,10 +188,6 @@ def create_mdata(lang):
 
     return SimpleNamespace(
         summarize=lambda: {},
-        grid=SimpleNamespace(
-            north_pole_lat=DA("grid.north_pole_lat", 43.0),
-            north_pole_lon=DA("grid.north_pole_lat", -170),
-        ),
         release=SimpleNamespace(
             height=DA("release.height"),
             mass=DA("release.mass"),
@@ -228,8 +224,21 @@ def create_mdata(lang):
     )
 
 
+def create_nc_meta_data():
+    return {
+        "variables": {
+            "rotated_pole": {
+                "ncattrs": {
+                    "grid_north_pole_latitude": 43.0,
+                    "grid_north_pole_longitude": -170,
+                },
+            },
+        },
+    }
+
+
 def create_field():
-    dummy_nc_meta_data = {}  # SR_TMP
+    dummy_nc_meta_data = create_nc_meta_data()
     dummy_field = Field(
         fld=np.array([[i] * 10 for i in range(10)], np.float32),
         lat=np.arange(-5.0, 4.1, 1.0),

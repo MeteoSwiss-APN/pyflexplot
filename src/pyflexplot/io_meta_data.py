@@ -4,6 +4,7 @@ Input file meta data.
 """
 # Standard library
 import re
+from typing import List
 
 # Third-party
 import netCDF4 as nc4
@@ -16,13 +17,17 @@ def read_meta_data(file_handle: nc4.Dataset):
         file_handle: Open NetCDF file handle.
 
     """
-    # Global NetCDF attributes
-    attrs_select = ["dxout", "dyout"]
-    ncattrs = {
-        attr: file_handle.getncattr(attr)
-        for attr in file_handle.ncattrs()
-        if attr in attrs_select
-    }
+    # Select global NetCDF attributes
+    attrs_select: List[str] = ["dxout", "dyout"]
+    attrs_try_select: List[str] = []
+    ncattrs = {}
+    for attr in attrs_select:
+        ncattrs[attr] = file_handle.getncattr(attr)
+    for attr in attrs_try_select:
+        try:
+            ncattrs[attr] = file_handle.getncattr(attr)
+        except AttributeError:
+            continue
 
     # Dimensions
     dimensions = {}
