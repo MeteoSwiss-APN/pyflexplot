@@ -789,7 +789,7 @@ class InputSetupFile:
         self.path: str = path
 
     @classmethod
-    def read_multiple(
+    def read_many(
         cls, paths: Sequence[str], override: Optional[Dict[str, Any]] = None,
     ) -> InputSetupCollection:
         setup_lst: List[InputSetup] = []

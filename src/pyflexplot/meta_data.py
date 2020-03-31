@@ -33,7 +33,7 @@ from .setup import InputSetupCollection
 from .utils import summarizable
 from .words import WORDS
 
-ValueT = TypeVar("ValueT", int, float, str, datetime)
+ValueT = TypeVar("ValueT", int, float, str, datetime, timedelta)
 
 
 @summarizable
@@ -48,10 +48,6 @@ class MetaDatum(GenericModel, Generic[ValueT]):
         # allow_mutation = False  # SR_TODO consider this
         validate_all = True
         validate_assigment = True  # SR_TODO obsolete if allow_mutation = False
-
-    @validator("value")
-    def _eliminate_tuples(cls, value):
-        return value
 
     @validator("attrs", pre=True, always=True)
     def _init_attrs(cls, value: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -128,36 +124,27 @@ class MetaDatum(GenericModel, Generic[ValueT]):
                 raise NotImplementedError("differing values", attr, value, other_values)
         return attrs
 
-    def format(self, *, join=" / ", **kwargs):
+    def __str__(self):
+        return self._format()
+
+    def _format(self):
         if self.is_combo:
             # SR_TODO make sure this is covered by a test (it currently isn't)!
-            return join.join([self._format_meta_datum(v, **kwargs) for v in self.value])
-        return self._format_meta_datum(self.value, **kwargs)
+            join = self.attrs.get("join", " / ")
+            return join.join([self._format_meta_datum(v) for v in self.value])
+        return self._format_meta_datum(self.value)
 
-    def _format_meta_datum(
-        self, value, *, fmt=None, escape_format=False, join=None, **kwargs_dt,
-    ):
+    def _format_meta_datum(self, value):
         if isinstance(value, datetime):
-            return self._format_meta_datum_datetime(value, **kwargs_dt)
-        if fmt is None:
-            fmt = "g" if isinstance(value, (float, int)) else ""
-        s = f"{{:{fmt}}}".format(value)
-        if escape_format:
-            s = s.replace("{", "{{").replace("}", "}}")
-        return s
-
-    def _format_meta_datum_datetime(
-        self, value, *, rel, rel_start, rel_neg_ok=True,
-    ):
-        if not rel:
             return value.strftime("%Y-%m-%d %H:%M %Z")
-        else:
-            seconds = (value - rel_start).total_seconds()
-            if not rel_neg_ok and seconds < 0:
-                seconds = -seconds
+        elif isinstance(value, timedelta):
+            seconds = value.total_seconds()
             hours = int(seconds / 3600)
             mins = int((seconds / 3600) % 1 * 60)
             return f"{hours:02d}:{mins:02d}$\\,$h"
+        fmt = "g" if isinstance(value, (float, int)) else ""
+        s = f"{{:{fmt}}}".format(value)
+        return s
 
     def format_unit(self):
         """Auto-format the unit by elevating superscripts etc."""
@@ -301,7 +288,13 @@ class MetaData(BaseModel, BaseMetaData):
 
         release_start: Start of the release.
 
+        release_start_rel: Start of the release relative to the start of the
+            simulation.
+
         release_end: End of the release.
+
+        release_end_rel: End of the release relative to the start of the
+            simulation.
 
         species_name: Species name.
 
@@ -331,7 +324,13 @@ class MetaData(BaseModel, BaseMetaData):
 
         simulation_now: Current timestep.
 
+        simulation_now_rel: Current timestep relative to the start of the
+            simulation.
+
         simulation_integr_start: Start of the integration period.
+
+        simulation_integr_start_rel: Start of the integration period relative
+            to the simulation start..
 
         simulation_integr_type: Type of integration (or reduction).
 
@@ -355,7 +354,9 @@ class MetaData(BaseModel, BaseMetaData):
     release_rate_unit: MetaDatum[str]
     release_mass_unit: MetaDatum[str]
     release_start: MetaDatum[datetime]
+    release_start_rel: MetaDatum[timedelta]
     release_end: MetaDatum[datetime]
+    release_end_rel: MetaDatum[timedelta]
     species_name: MetaDatum[str]
     species_half_life: MetaDatum[float]
     species_deposit_vel: MetaDatum[float]
@@ -370,7 +371,9 @@ class MetaData(BaseModel, BaseMetaData):
     simulation_start: MetaDatum[datetime]
     simulation_end: MetaDatum[datetime]
     simulation_now: MetaDatum[datetime]
+    simulation_now_rel: MetaDatum[timedelta]
     simulation_integr_start: MetaDatum[datetime]
+    simulation_integr_start_rel: MetaDatum[timedelta]
     simulation_integr_type: MetaDatum[str]
 
     _init_variable_long_name = init_mdatum(str, "variable_long_name")
@@ -390,8 +393,10 @@ class MetaData(BaseModel, BaseMetaData):
     _init_release_rate_unit = init_mdatum(str, "release_rate_unit")
     _init_release_mass_unit = init_mdatum(str, "release_mass_unit")
     _init_release_start = init_mdatum(datetime, "release_start")
+    _init_release_start_rel = init_mdatum(timedelta, "release_start_rel")
     _init_release_end = init_mdatum(datetime, "release_end")
-    _init_species_name = init_mdatum(str, "species_name")
+    _init_release_end_rel = init_mdatum(timedelta, "release_end_rel")
+    _init_species_name = init_mdatum(str, "species_name", attrs={"join": " + "})
     _init_species_half_life = init_mdatum(float, "species_half_life")
     _init_species_deposit_vel = init_mdatum(float, "species_deposit_vel")
     _init_species_sediment_vel = init_mdatum(float, "species_sediment_vel")
@@ -405,7 +410,11 @@ class MetaData(BaseModel, BaseMetaData):
     _init_simulation_start = init_mdatum(datetime, "simulation_start")
     _init_simulation_end = init_mdatum(datetime, "simulation_end")
     _init_simulation_now = init_mdatum(datetime, "simulation_now")
+    _init_simulation_now_rel = init_mdatum(timedelta, "simulation_now_rel")
     _init_simulation_integr_start = init_mdatum(datetime, "simulation_integr_start")
+    _init_simulation_integr_start_rel = init_mdatum(
+        timedelta, "simulation_integr_start_rel"
+    )
     _init_simulation_integr_type = init_mdatum(str, "simulation_integr_type")
 
     class Config:  # noqa
@@ -534,6 +543,8 @@ class MetaDataCollector:
 
         # Current time step and start time step of current integration period
         ts_now, ts_integr_start = self._get_current_timestep_etc()
+        ts_now_rel = ts_now - ts_start
+        ts_integr_start_rel = ts_integr_start - ts_start
 
         # Type of integration (or, rather, reduction)
         if self.setup.variable == "concentration":  # SR_TMP
@@ -551,7 +562,9 @@ class MetaDataCollector:
                 "simulation_start": ts_start,
                 "simulation_end": ts_end,
                 "simulation_now": ts_now,
+                "simulation_now_rel": ts_now_rel,
                 "simulation_integr_start": ts_integr_start,
+                "simulation_integr_start_rel": ts_integr_start_rel,
                 "simulation_integr_type": integr_type,
             }
         )
@@ -618,8 +631,10 @@ class MetaDataCollector:
         numpoint = ReleasePoint.from_file(self.fi, idx)
 
         sim_start = mdata_raw["simulation_start"]
-        start = sim_start + timedelta(seconds=numpoint.rel_start)
-        end = sim_start + timedelta(seconds=numpoint.rel_end)
+        start_rel = timedelta(seconds=numpoint.rel_start)
+        end_rel = timedelta(seconds=numpoint.rel_end)
+        start = sim_start + start_rel
+        end = sim_start + end_rel
 
         site_lat = np.mean([numpoint.lllat, numpoint.urlat])
         site_lon = np.mean([numpoint.lllon, numpoint.urlon])
@@ -643,7 +658,9 @@ class MetaDataCollector:
         mdata_raw.update(
             {
                 "release_start": start,
+                "release_start_rel": start_rel,
                 "release_end": end,
+                "release_end_rel": end_rel,
                 "release_site_lat": site_lat,
                 "release_site_lon": site_lon,
                 "release_site_name": site_name,

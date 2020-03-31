@@ -164,7 +164,7 @@ def cli(ctx, setup_file_paths, input_setup_params, dry_run, **cli_args):
         ctx.exit(1)
 
     # Read setup files
-    setups = InputSetupFile.read_multiple(setup_file_paths, override=input_setup_params)
+    setups = InputSetupFile.read_many(setup_file_paths, override=input_setup_params)
 
     # Group setups by input file(s)
     setups_by_infile = setups.group("infile")

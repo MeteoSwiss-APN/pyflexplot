@@ -166,11 +166,8 @@ class Dummy_Attr:
         self.lang = lang
         self.unit = f"{name}.unit"
 
-    # def __str__(self):
-    #     return self._name
-
-    def format(self, *args, **kwargs):
-        return f"<{self._name[1:-1]}.format>"
+    def __str__(self):
+        return f"<{self._name[1:-1]}>"
 
 
 # Prepare test data
@@ -184,7 +181,7 @@ def create_mdata(lang):
         return Dummy_Attr(name, value, lang=lang)
 
     def fm(name, value=None):
-        return DA(name, value).format
+        return DA(name, value).__str__
 
     return SimpleNamespace(
         summarize=lambda: {},
@@ -192,16 +189,20 @@ def create_mdata(lang):
         release_mass=DA("release_mass"),
         release_rate=DA("release_rate"),
         release_start=DA("release_start"),
+        release_start_rel=DA("release_start_rel"),
         release_end=DA("release_end"),
+        release_end_rel=DA("release_end_rel"),
         release_site_lat=DA("release_site_lat", 47.0),
         release_site_lon=DA("release_site_lon", 8.0),
         release_site_name=DA("release_site_name"),
         simulation_end=DA("simulation_end"),
         simulation_fmt_integr_period=fm("simulation_fmt_integr_period"),
         simulation_integr_start=DA("simulation_integr_start"),
+        simulation_integr_start_rel=DA("simulation_integr_start_rel"),
         simulation_integr_type=DA("simulation_integr_type", "mean"),
         simulation_model_name=DA("simulation_model_name"),
         simulation_now=DA("simulation_now"),
+        simulation_now_rel=DA("simulation_now_rel"),
         simulation_start=DA("simulation_start"),
         species_deposit_vel=DA("species_deposit_vel"),
         species_half_life=DA("species_half_life"),
@@ -563,23 +564,19 @@ class Solution:
                         "tl",
                         f"<variable_long_name{sl}> "
                         f"<words.at[{self.lang}|level]> "
-                        f"<variable_fmt_level_range{sl}.format>",
+                        f"<variable_fmt_level_range{sl}>",
                     ),
                     txt(
                         "bl",
                         f"<words.averaged_over{sl}> "
-                        f"<simulation_fmt_integr_period{sl}.format> "
+                        f"<simulation_fmt_integr_period{sl}> "
                         f"(<words.since{sl}> "
-                        f"+<simulation_integr_start{sl}.format>)",
+                        f"+<simulation_integr_start_rel{sl}>)",
                     ),
-                    txt(
-                        "tr",
-                        f"<simulation_now{sl}.format> "
-                        f"(+<simulation_now{sl}.format>)",
-                    ),
+                    txt("tr", f"<simulation_now{sl}> (+<simulation_now_rel{sl}>)"),
                     txt(
                         "br",
-                        f"<simulation_now{sl}.format> "
+                        f"<simulation_now_rel{sl}> "
                         f"<words.since{sl}> "
                         f"<words.release_start{sl}>",
                     ),
@@ -591,7 +588,7 @@ class Solution:
             "name": e1("top/right"),
             "elements": e1(
                 [
-                    txt("tc", f"<species_name{sl}.format>"),
+                    txt("tc", f"<species_name{sl}>"),
                     txt("bc", IgnoredElement("release site (may be truncated")),
                 ]
             ),
@@ -601,11 +598,7 @@ class Solution:
             "name": e1("right/top"),
             "elements": e1(
                 [
-                    txt(
-                        "tc",
-                        f"<variable_short_name{sl}.format> "
-                        f"(<variable_unit{sl}.format>)",
-                    ),
+                    txt("tc", f"<variable_short_name{sl}> (<variable_unit{sl}>)"),
                     txt("bc", IgnoredElement("level range #0")),
                     txt("bc", IgnoredElement("level range #1")),
                     txt("bc", IgnoredElement("level range #2")),
@@ -651,20 +644,20 @@ class Solution:
                     txt("bl", f"<words.longitude{sl}>:"),
                     txt("bl", f"<words.latitude{sl}>:"),
                     txt("bl", f"<words.site{sl}>:"),
-                    txt("br", f"<species_washout_exponent{sl}.format>"),
-                    txt("br", f"<species_washout_coeff{sl}.format>"),
-                    txt("br", f"<species_sediment_vel{sl}.format>"),
-                    txt("br", f"<species_deposit_vel{sl}.format>"),
-                    txt("br", f"<species_half_life{sl}.format>"),
-                    txt("br", f"<species_name{sl}.format>"),
-                    txt("br", f"<release_mass{sl}.format>"),
-                    txt("br", f"<release_rate{sl}.format>"),
-                    txt("br", f"<release_end{sl}.format>"),
-                    txt("br", f"<release_start{sl}.format>"),
-                    txt("br", f"<release_height{sl}.format>"),
+                    txt("br", f"<species_washout_exponent{sl}>"),
+                    txt("br", f"<species_washout_coeff{sl}>"),
+                    txt("br", f"<species_sediment_vel{sl}>"),
+                    txt("br", f"<species_deposit_vel{sl}>"),
+                    txt("br", f"<species_half_life{sl}>"),
+                    txt("br", f"<species_name{sl}>"),
+                    txt("br", f"<release_mass{sl}>"),
+                    txt("br", f"<release_rate{sl}>"),
+                    txt("br", f"<release_end{sl}>"),
+                    txt("br", f"<release_start{sl}>"),
+                    txt("br", f"<release_height{sl}>"),
                     txt("br", IgnoredElement("release longitude")),
                     txt("br", IgnoredElement("release latitude")),
-                    txt("br", f"<release_site_name{sl}.format>"),
+                    txt("br", f"<release_site_name{sl}>"),
                 ]
             ),
         }
@@ -678,7 +671,7 @@ class Solution:
                         f"<words.flexpart{sl}> "
                         f"<words.based_on{sl}> "
                         f"<simulation_model_name{sl}>, "
-                        f"<simulation_start{sl}.format>",
+                        f"<simulation_start{sl}>",
                     ),
                     txt("tr", f"<symbols.copyright><words.meteoswiss{sl}>"),
                 ]

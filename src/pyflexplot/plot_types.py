@@ -90,17 +90,13 @@ class PlotLabels:
                 "accum": "accumulated_over",
             }[mdata.simulation_integr_type.value]
         ].s
-        ts = mdata.simulation_now
-        time_rels = mdata.simulation_now.format(
-            rel=True, rel_start=mdata.release_start.value
-        )
+        time_rels = mdata.simulation_now_rel
         period = mdata.simulation_fmt_integr_period()
-        start = mdata.simulation_integr_start.format(
-            rel=True, rel_start=mdata.simulation_start.value
-        )
-        unit_escaped = mdata.variable_unit.format(escape_format=True)
-        ts_abs = ts.format(rel=False, rel_start=None)
-        ts_rel = ts.format(rel=True, rel_start=mdata.simulation_start.value)
+        start = mdata.simulation_integr_start_rel
+        unit = mdata.variable_unit
+        unit_escaped = str(unit).replace("{", "{{").replace("}", "}}")
+        ts_abs = mdata.simulation_now
+        ts_rel = mdata.simulation_now_rel
         set_group(
             "top_left",
             {
@@ -122,14 +118,14 @@ class PlotLabels:
 
         # Top-right box
         self.top_right = {
-            "species": f"{mdata.species_name.format(join=' + ')}",
+            "species": f"{mdata.species_name}",
             "site": f"{words['site']}: {mdata.release_site_name.value}",
         }
 
         # Right-top box
-        name = mdata.variable_short_name.format()
-        unit = mdata.variable_unit.format()
-        unit_escaped = mdata.variable_unit.format(escape_format=True)
+        name = mdata.variable_short_name
+        unit = mdata.variable_unit
+        unit_escaped = str(unit).replace("{", "{{").replace("}", "}}")
         set_group(
             "right_top",
             {
@@ -177,7 +173,7 @@ class PlotLabels:
             f"{model} {words['ensemble']} ({n_members} {words['member', None, 'pl']}: "
             f"{ens_member_id}"
         )
-        start = mdata.simulation_start.format(rel=False, rel_start=None)
+        start = mdata.simulation_start
         model_info_fmt = f"{words['flexpart']} {words['based_on']} {model}, {start}"
         set_group(
             "bottom",

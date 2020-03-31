@@ -460,22 +460,22 @@ class Plot:
 
         info_blocks = dedent(
             f"""\
-            {labels['site']}:\t{mdata.release_site_name.format()}
+            {labels['site']}:\t{mdata.release_site_name}
             {labels['latitude']}:\t{lat_deg}
             {labels['longitude']}:\t{lon_deg}
-            {labels['height']}:\t{mdata.release_height.format()}
+            {labels['height']}:\t{mdata.release_height}
 
-            {labels['start']}:\t{mdata.release_start.format(rel=False, rel_start=None)}
-            {labels['end']}:\t{mdata.release_end.format(rel=False, rel_start=None)}
-            {labels['rate']}:\t{mdata.release_rate.format()}
-            {labels['mass']}:\t{mdata.release_mass.format()}
+            {labels['start']}:\t{mdata.release_start}
+            {labels['end']}:\t{mdata.release_end}
+            {labels['rate']}:\t{mdata.release_rate}
+            {labels['mass']}:\t{mdata.release_mass}
 
-            {labels['name']}:\t{mdata.species_name.format()}
-            {labels['half_life']}:\t{mdata.species_half_life.format()}
-            {labels['deposit_vel']}:\t{mdata.species_deposit_vel.format()}
-            {labels['sediment_vel']}:\t{mdata.species_sediment_vel.format()}
-            {labels['washout_coeff']}:\t{mdata.species_washout_coeff.format()}
-            {labels['washout_exponent']}:\t{mdata.species_washout_exponent.format()}
+            {labels['name']}:\t{mdata.species_name}
+            {labels['half_life']}:\t{mdata.species_half_life}
+            {labels['deposit_vel']}:\t{mdata.species_deposit_vel}
+            {labels['sediment_vel']}:\t{mdata.species_sediment_vel}
+            {labels['washout_coeff']}:\t{mdata.species_washout_coeff}
+            {labels['washout_exponent']}:\t{mdata.species_washout_exponent}
             """
         )
 
