@@ -87,7 +87,7 @@ def prepare_input_setup_params(ctx, param, value):
     is_eager=True,
 )
 @click.option(
-    "--setup-param",
+    "--setup",
     "input_setup_params",
     help="Setup parameter overriding those in the setup file(s).",
     metavar="PARAM VALUE",
