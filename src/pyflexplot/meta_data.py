@@ -187,12 +187,9 @@ class MetaDatum(GenericModel, Generic[ValueT]):
 class MetaData:
     """Base class for meta data."""
 
-    def __init__(self, setup: InputSetup, **kwargs):
-        if type(self) is MetaData:
-            raise ValueError(
-                f"{type(self).__name__} should be subclassed, not instatiated"
-            )
-        self.setup = setup
+    def __init__(self, *args, **kwargs):
+        self.setup: InputSetup
+        raise ValueError("MetaData must be subclassed!")
 
     def __eq__(self, other: Any) -> bool:
         return self.setup == other.setup
@@ -257,6 +254,7 @@ class MetaData:
             other_data = [getattr(o, name) for o in others]
             kwargs[name] = datum.merge_with(other_data, replace=replace.get(name))
 
+        assert type(self) is not MetaData  # mypy
         return type(self)(setup=setup, **kwargs)
 
 
@@ -637,18 +635,20 @@ class MetaDataCollection:
         return {name: dict(objs) for name, objs in self}
 
 
-def collect_meta_data(fi, setup, model):
-    return MetaDataCollector(fi, setup, WORDS, model).run()
+def collect_meta_data(fi, setup, nc_meta_data):
+    words = WORDS
+    words.set_default_lang(setup.lang)
+    return MetaDataCollector(fi, setup, words, nc_meta_data).run()
 
 
 class MetaDataCollector:
     """Collect meta data for a field from an open NetCDF file."""
 
-    def __init__(self, fi, setup, words, model):  # SR_TMP TODO properly pass model
+    def __init__(self, fi, setup, words, nc_meta_data):
         self.fi = fi
         self.setup = setup
         self._words = words
-        self.model = model  # SR_TMP
+        self.nc_meta_data = nc_meta_data  # SR_TMP
 
         # Collect all global attributes
         self.ncattrs_global = {
@@ -663,7 +663,8 @@ class MetaDataCollector:
             }
 
         # Select attributes of field variable
-        self.ncattrs_field = self.ncattrs_vars[nc_var_name(self.setup, self.model)]
+        model = self.nc_meta_data["analysis"]["model"]
+        self.ncattrs_field = self.ncattrs_vars[nc_var_name(self.setup, model)]
 
     def run(self):
         """Collect meta data."""
@@ -680,7 +681,10 @@ class MetaDataCollector:
     def collect_simulation_mdata(self, mdata):
         """Collect simulation meta data."""
 
-        model_name = "COSMO-?"  # SR_HC
+        # Model name
+        model_name = {"cosmo1": "COSMO-1", "cosmo2": "COSMO-2", "ifs": "IFS"}[
+            self.nc_meta_data["analysis"]["model"]
+        ]
 
         # Start and end timesteps of simulation
         _ga = self.ncattrs_global
@@ -800,7 +804,7 @@ class MetaDataCollector:
         site_name = {"Goesgen": r"G$\mathrm{\"o}$sgen"}.get(site_name, "???")  # SR_TMP
 
         height = np.mean([numpoint.zbot, numpoint.ztop])
-        height_unit = self._words["m_agl", self.setup.lang].s
+        height_unit = self._words["m_agl"].s
 
         assert len(numpoint.ms_parts) == 1
         mass = next(iter(numpoint.ms_parts))
@@ -846,7 +850,7 @@ class MetaDataCollector:
             level_bot = -1
             level_top = -1
         else:
-            level_unit = self._words["m_agl", self.setup.lang].s
+            level_unit = self._words["m_agl"].s
             try:  # SR_TMP IFS
                 _var = self.fi.variables["level"]
             except KeyError:  # SR_TMP IFS
@@ -870,7 +874,8 @@ class MetaDataCollector:
         substance = self._get_substance()
 
         # Get deposition and washout data
-        name_core = nc_var_name(self.setup, self.model)
+        model = self.nc_meta_data["analysis"]["model"]
+        name_core = nc_var_name(self.setup, model)
         if self.setup.variable == "deposition":  # SR_TMP
             name_core = name_core[3:]
         try:  # SR_TMP IFS

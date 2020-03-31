@@ -312,8 +312,6 @@ class FileReader:
     ) -> List[MetaDataCollection]:
         """Collect time-step-specific data meta data."""
 
-        model = self.nc_meta_data["analysis"]["model"]
-
         # Collect meta data at requested time steps for all members
         n_ts = len(var_setups.collect_equal("time"))
         shape = (n_ts, self.n_members)
@@ -325,7 +323,9 @@ class FileReader:
                 ):
                     mdata_lst_i = []
                     for sub_setup in sub_setups:
-                        mdata_lst_i.append(collect_meta_data(fi, sub_setup, model))
+                        mdata_lst_i.append(
+                            collect_meta_data(fi, sub_setup, self.nc_meta_data)
+                        )
                     mdata = mdata_lst_i[0].merge_with(mdata_lst_i[1:])
                     mdata_by_reqtime_mem[idx_time, idx_mem] = mdata
 
@@ -342,7 +342,7 @@ class FileReader:
         mdata_lst: List[MetaDataCollection] = mdata_by_reqtime_mem[:, 0].tolist()
 
         # Fix some known issues with the NetCDF input data
-        self.fixer.fix_meta_data(model, mdata_lst)
+        self.fixer.fix_meta_data(self.nc_meta_data["analysis"]["model"], mdata_lst)
 
         return mdata_lst
 

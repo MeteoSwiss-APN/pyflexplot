@@ -116,7 +116,7 @@ class Plot:
 
         # Prepare plot
         self.fig = plt.figure(figsize=self.plot_config.figsize)
-        self.ax_map = MapAxes.create(self.map_conf, fig=self.fig, field=self.field,)
+        self.ax_map = MapAxes.create(self.map_conf, fig=self.fig, field=self.field)
 
         # Plot particle concentration field
         self.draw_map_plot()
