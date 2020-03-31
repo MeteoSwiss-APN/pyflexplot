@@ -801,7 +801,8 @@ class MetaDataCollector:
         site_lat = np.mean([numpoint.lllat, numpoint.urlat])
         site_lon = np.mean([numpoint.lllon, numpoint.urlon])
         site_name = numpoint.name
-        site_name = {"Goesgen": r"G$\mathrm{\"o}$sgen"}.get(site_name, "???")  # SR_TMP
+        if site_name == "Goesgen":
+            site_name = r"G$\mathrm{\"o}$sgen"
 
         height = np.mean([numpoint.zbot, numpoint.ztop])
         height_unit = self._words["m_agl"].s
