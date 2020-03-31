@@ -21,7 +21,6 @@ from warnings import warn
 # Third-party
 import numpy as np
 from pydantic import BaseModel
-from pydantic import root_validator
 from pydantic import validator
 from pydantic.generics import GenericModel
 
@@ -49,6 +48,10 @@ class MetaDatum(GenericModel, Generic[ValueT]):
         # allow_mutation = False  # SR_TODO consider this
         validate_all = True
         validate_assigment = True  # SR_TODO obsolete if allow_mutation = False
+
+    @validator("value")
+    def _eliminate_tuples(cls, value):
+        return value
 
     @validator("attrs", pre=True, always=True)
     def _init_attrs(cls, value: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -128,18 +131,14 @@ class MetaDatum(GenericModel, Generic[ValueT]):
     def format(self, *, join=" / ", **kwargs):
         if self.is_combo:
             # SR_TODO make sure this is covered by a test (it currently isn't)!
-            return join.join(
-                [self._format_meta_datum(value=v, **kwargs) for v in self.value]
-            )
-        return self._format_meta_datum(**kwargs)
+            return join.join([self._format_meta_datum(v, **kwargs) for v in self.value])
+        return self._format_meta_datum(self.value, **kwargs)
 
     def _format_meta_datum(
-        self, *, value=None, fmt=None, escape_format=False, join=None, **kwargs_dt,
+        self, value, *, fmt=None, escape_format=False, join=None, **kwargs_dt,
     ):
-        if value is None:
-            value = self.value
         if isinstance(value, datetime):
-            return self._format_meta_datum_datetime(value=value, **kwargs_dt)
+            return self._format_meta_datum_datetime(value, **kwargs_dt)
         if fmt is None:
             fmt = "g" if isinstance(value, (float, int)) else ""
         s = f"{{:{fmt}}}".format(value)
@@ -148,20 +147,17 @@ class MetaDatum(GenericModel, Generic[ValueT]):
         return s
 
     def _format_meta_datum_datetime(
-        self, *, value=None, rel=False, rel_start=None, rel_neg_ok=True,
+        self, value, *, rel, rel_start, rel_neg_ok=True,
     ):
-        if value is None:
-            value = self.value
         if not rel:
             return value.strftime("%Y-%m-%d %H:%M %Z")
-        if rel_start is None:
-            rel_start = self.attrs["start"]
-        seconds = (value - rel_start).total_seconds()
-        if not rel_neg_ok and seconds < 0:
-            seconds = -seconds
-        hours = int(seconds / 3600)
-        mins = int((seconds / 3600) % 1 * 60)
-        return f"{hours:02d}:{mins:02d}$\\,$h"
+        else:
+            seconds = (value - rel_start).total_seconds()
+            if not rel_neg_ok and seconds < 0:
+                seconds = -seconds
+            hours = int(seconds / 3600)
+            mins = int((seconds / 3600) % 1 * 60)
+            return f"{hours:02d}:{mins:02d}$\\,$h"
 
     def format_unit(self):
         """Auto-format the unit by elevating superscripts etc."""
@@ -415,18 +411,6 @@ class MetaData(BaseModel, BaseMetaData):
     class Config:  # noqa
         extra = "forbid"
 
-    @root_validator
-    def _set_start(cls, values):
-        values["release_start"].attrs["start"] = values["release_start"].value
-        values["release_end"].attrs["start"] = values["release_start"].value
-        values["simulation_start"].attrs["start"] = values["simulation_start"].value
-        values["simulation_end"].attrs["start"] = values["simulation_start"].value
-        values["simulation_now"].attrs["start"] = values["simulation_start"].value
-        values["simulation_integr_start"].attrs["start"] = values[
-            "simulation_start"
-        ].value
-        return values
-
     def variable_fmt_level_unit(self):
         unit_bottom = self.variable_level_bot_unit.format_unit()
         unit_top = self.variable_level_top_unit.format_unit()
@@ -489,53 +473,6 @@ class MetaData(BaseModel, BaseMetaData):
         return f"{integr_period.total_seconds()/3600:g}$\\,$h"
 
 
-class MetaDataCollection:
-    """Collection of meta data."""
-
-    def __init__(self, setup, meta_data):
-        self.setup = setup
-        self._meta_data = meta_data
-
-    def __eq__(self, other):
-        return self._meta_data == other._meta_data
-
-    # SR_TMP <<< TODO eliminate
-    def __getattr__(self, name):
-        try:
-            return getattr(self._meta_data, name)
-        except KeyError:
-            raise AttributeError(f"{type(self).__name__}.{name}")
-
-    def merge_with(
-        self, others: Collection["MetaDataCollection"], **replace: Dict[str, Any],
-    ) -> "MetaDataCollection":
-        """Create a new instance by merging this and others.
-
-        Args:
-            others: Other instances to be merged with this.
-
-            **replace: Collections of meta data to be replaced in the merged
-                ``MetaData*`` instances of the shared collection instance.
-                Must contain all meta data that differ between any of the
-                collections.
-
-        Returns:
-            New meta data collection instance derived from ``self`` and
-                ``others``. Note that no input collection is changed.
-
-        """
-        merged = self._meta_data.merge_with([o._meta_data for o in others], replace)
-        return type(self)(setup=self.setup, meta_data=merged)
-
-    # SR_TMP <<< TODO eliminate
-    def __iter__(self):
-        raise DeprecationWarning()
-        yield "meta_data", self._meta_data
-
-    def asdict(self):
-        return {name: dict(objs) for name, objs in self}
-
-
 def collect_meta_data(fi, setup, nc_meta_data):
     words = WORDS
     words.set_default_lang(setup.lang)
@@ -574,8 +511,7 @@ class MetaDataCollector:
         self.collect_release_mdata(mdata_raw)
         self.collect_species_mdata(mdata_raw)
         self.collect_variable_mdata(mdata_raw)
-        mdata = MetaData(setup=self.setup, **mdata_raw)
-        return MetaDataCollection(self.setup, mdata)
+        return MetaData(setup=self.setup, **mdata_raw)
 
     def collect_simulation_mdata(self, mdata_raw):
         """Collect simulation meta data."""

@@ -28,7 +28,7 @@ from .data import cloud_arrival_time
 from .data import merge_fields
 from .data import threshold_agreement
 from .io_meta_data import read_meta_data
-from .meta_data import MetaDataCollection
+from .meta_data import MetaData
 from .meta_data import collect_meta_data
 from .meta_data import nc_var_name
 from .setup import InputSetup
@@ -39,7 +39,7 @@ def read_files(
     in_file_path: str,
     var_setups_lst: Collection[InputSetupCollection],
     dry_run: bool = False,
-) -> Tuple[List[Field], Union[List[MetaDataCollection], List[None]]]:
+) -> Tuple[List[Field], Union[List[MetaData], List[None]]]:
 
     # Prepare the file reader
     ens_member_ids = collect_ens_member_ids(var_setups_lst)
@@ -135,7 +135,7 @@ class FileReader:
 
     def run(
         self, var_setups_lst: Sequence[InputSetupCollection]
-    ) -> Tuple[List[Field], Union[List[MetaDataCollection], List[None]]]:
+    ) -> Tuple[List[Field], Union[List[MetaData], List[None]]]:
         """Read one or more fields from a file from disc."""
         if not self.prepared:
             self.prepare()
@@ -179,9 +179,9 @@ class FileReader:
 
     def _create_fields(
         self, var_setups: InputSetupCollection,
-    ) -> Tuple[List[Field], Union[List[MetaDataCollection], List[None]]]:
+    ) -> Tuple[List[Field], Union[List[MetaData], List[None]]]:
         fld_time: np.ndarray
-        mdata_lst: Union[List[MetaDataCollection], List[None]]
+        mdata_lst: Union[List[MetaData], List[None]]
         if self.dry_run:
             fld_time = self._create_dummy_fld()
         else:
@@ -307,9 +307,7 @@ class FileReader:
             "max": np.nanmax(fld_time),
         }
 
-    def _collect_meta_data(
-        self, var_setups: InputSetupCollection,
-    ) -> List[MetaDataCollection]:
+    def _collect_meta_data(self, var_setups: InputSetupCollection,) -> List[MetaData]:
         """Collect time-step-specific data meta data."""
 
         # Collect meta data at requested time steps for all members
@@ -339,7 +337,7 @@ class FileReader:
                         mdata_ref,
                         mdata,
                     )
-        mdata_lst: List[MetaDataCollection] = mdata_by_reqtime_mem[:, 0].tolist()
+        mdata_lst: List[MetaData] = mdata_by_reqtime_mem[:, 0].tolist()
 
         # Fix some known issues with the NetCDF input data
         self.fixer.fix_meta_data(self.nc_meta_data["analysis"]["model"], mdata_lst)
@@ -558,9 +556,7 @@ class FlexPartDataFixer:
         fld[:] *= fact
 
     def fix_meta_data(
-        self,
-        model: str,
-        mdata: Union[MetaDataCollection, Sequence[MetaDataCollection]],
+        self, model: str, mdata: Union[MetaData, Sequence[MetaData]],
     ) -> None:
         if model in ["cosmo2", "cosmo1"]:
             self._fix_meta_data_cosmo(mdata)
@@ -574,7 +570,7 @@ class FlexPartDataFixer:
             for mdata_i in mdata:
                 self._fix_meta_data_cosmo(mdata_i)
             return
-        assert isinstance(mdata, MetaDataCollection)  # mypy
+        assert isinstance(mdata, MetaData)  # mypy
 
         name = mdata.species_name.value
         if name not in self.possible_var_names:

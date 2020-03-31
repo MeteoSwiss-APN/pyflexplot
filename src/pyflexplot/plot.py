@@ -465,8 +465,8 @@ class Plot:
             {labels['longitude']}:\t{lon_deg}
             {labels['height']}:\t{mdata.release_height.format()}
 
-            {labels['start']}:\t{mdata.release_start.format()}
-            {labels['end']}:\t{mdata.release_end.format()}
+            {labels['start']}:\t{mdata.release_start.format(rel=False, rel_start=None)}
+            {labels['end']}:\t{mdata.release_end.format(rel=False, rel_start=None)}
             {labels['rate']}:\t{mdata.release_rate.format()}
             {labels['mass']}:\t{mdata.release_mass.format()}
 

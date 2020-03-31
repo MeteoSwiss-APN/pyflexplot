@@ -15,7 +15,7 @@ import matplotlib as mpl
 import numpy as np
 
 # Local
-from .meta_data import MetaDataCollection
+from .meta_data import MetaData
 from .plot_lib import MapAxesConf
 from .setup import InputSetup
 from .utils import summarizable
@@ -95,8 +95,12 @@ class PlotLabels:
             rel=True, rel_start=mdata.release_start.value
         )
         period = mdata.simulation_fmt_integr_period()
-        start = mdata.simulation_integr_start.format(rel=True)
+        start = mdata.simulation_integr_start.format(
+            rel=True, rel_start=mdata.simulation_start.value
+        )
         unit_escaped = mdata.variable_unit.format(escape_format=True)
+        ts_abs = ts.format(rel=False, rel_start=None)
+        ts_rel = ts.format(rel=True, rel_start=mdata.simulation_start.value)
         set_group(
             "top_left",
             {
@@ -109,7 +113,7 @@ class PlotLabels:
                     f"Cloud: {symbs['geq']} {{thr}} {unit_escaped}; "
                     f"members: {symbs['geq']} {{mem}}"
                 ),
-                "timestep": f"{ts.format(rel=False)} (+{ts.format(rel=True)})",
+                "timestep": f"{ts_abs} (+{ts_rel})",
                 "time_since_release_start": (
                     f"{time_rels} {words['since']} {words['release_start']}"
                 ),
@@ -173,7 +177,7 @@ class PlotLabels:
             f"{model} {words['ensemble']} ({n_members} {words['member', None, 'pl']}: "
             f"{ens_member_id}"
         )
-        start = mdata.simulation_start.format()
+        start = mdata.simulation_start.format(rel=False, rel_start=None)
         model_info_fmt = f"{words['flexpart']} {words['based_on']} {model}, {start}"
         set_group(
             "bottom",
@@ -241,10 +245,7 @@ class PlotConfig:
     """
 
     def __init__(
-        self,
-        setup: InputSetup,
-        mdata: MetaDataCollection,
-        labels: Optional[PlotLabels] = None,
+        self, setup: InputSetup, mdata: MetaData, labels: Optional[PlotLabels] = None,
     ) -> None:
         self.setup = setup
         self.mdata = mdata
