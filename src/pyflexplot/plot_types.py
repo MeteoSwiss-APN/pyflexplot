@@ -81,26 +81,26 @@ class PlotLabels:
             setattr(self, name, values)
 
         # Top-left box
-        level = mdata.variable.fmt_level_range()
+        level = mdata.variable_fmt_level_range()
         s_level = f" {words['at', None, 'level']} {level}" if level else ""
         integr_op = words[
             {
                 "sum": "summed_over",
                 "mean": "averaged_over",
                 "accum": "accumulated_over",
-            }[mdata.simulation.integr_type.value]
+            }[mdata.simulation_integr_type.value]
         ].s
-        ts = mdata.simulation.now
-        time_rels = mdata.simulation.now.format(
-            rel=True, rel_start=mdata.release.start.value
+        ts = mdata.simulation_now
+        time_rels = mdata.simulation_now.format(
+            rel=True, rel_start=mdata.release_start.value
         )
-        period = mdata.simulation.fmt_integr_period()
-        start = mdata.simulation.integr_start.format(rel=True)
-        unit_escaped = mdata.variable.unit.format(escape_format=True)
+        period = mdata.simulation_fmt_integr_period()
+        start = mdata.simulation_integr_start.format(rel=True)
+        unit_escaped = mdata.variable_unit.format(escape_format=True)
         set_group(
             "top_left",
             {
-                "variable": f"{mdata.variable.long_name.value}{s_level}",
+                "variable": f"{mdata.variable_long_name.value}{s_level}",
                 "period": f"{integr_op} {period} ({words['since']} +{start})",
                 "subtitle_thr_agrmt_fmt": (
                     f"Cloud: {symbs['geq']} {{thr}} {unit_escaped}"
@@ -118,14 +118,14 @@ class PlotLabels:
 
         # Top-right box
         self.top_right = {
-            "species": f"{mdata.species.name.format(join=' + ')}",
-            "site": f"{words['site']}: {mdata.release.site_name.value}",
+            "species": f"{mdata.species_name.format(join=' + ')}",
+            "site": f"{words['site']}: {mdata.release_site_name.value}",
         }
 
         # Right-top box
-        name = mdata.variable.short_name.format()
-        unit = mdata.variable.unit.format()
-        unit_escaped = mdata.variable.unit.format(escape_format=True)
+        name = mdata.variable_short_name.format()
+        unit = mdata.variable_unit.format()
+        unit_escaped = mdata.variable_unit.format(escape_format=True)
         set_group(
             "right_top",
             {
@@ -166,14 +166,14 @@ class PlotLabels:
         )
 
         # Bottom box
-        model = mdata.simulation.model_name.value
+        model = mdata.simulation_model_name.value
         n_members = 21  # SR_TMP SR_HC TODO un-hardcode
         ens_member_id = "{:03d}-{:03d}".format(0, 20)  # SR_TMP SR_HC TODO un-hardcode
         model_ens = (
             f"{model} {words['ensemble']} ({n_members} {words['member', None, 'pl']}: "
             f"{ens_member_id}"
         )
-        start = mdata.simulation.start.format()
+        start = mdata.simulation_start.format()
         model_info_fmt = f"{words['flexpart']} {words['based_on']} {model}, {start}"
         set_group(
             "bottom",

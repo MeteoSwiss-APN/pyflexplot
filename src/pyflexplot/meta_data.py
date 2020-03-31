@@ -95,7 +95,7 @@ class MetaDatum(GenericModel, Generic[ValueT]):
             reduced_value = next(iter(values))
         else:
             # SR_TMP < TODO cleaner, less hard-coded solution
-            if self.name == "long_name":
+            if self.name == "variable_long_name":
                 name0 = next(iter(values))
                 if name0.lower().startswith("beaufschlagtes gebiet"):
                     values = name0.replace("nasse", "totale").replace(
@@ -184,12 +184,12 @@ class MetaDatum(GenericModel, Generic[ValueT]):
 
 
 @summarizable
-class MetaData:
+class BaseMetaData:
     """Base class for meta data."""
 
     def __init__(self, *args, **kwargs):
         self.setup: InputSetup
-        raise ValueError("MetaData must be subclassed!")
+        raise ValueError("BaseMetaData must be subclassed!")
 
     def __eq__(self, other: Any) -> bool:
         return self.setup == other.setup
@@ -210,8 +210,10 @@ class MetaData:
                         yield name, datum
 
     def merge_with(
-        self, others: Collection["MetaData"], replace: Optional[Dict[str, Any]] = None,
-    ) -> "MetaData":
+        self,
+        others: Collection["BaseMetaData"],
+        replace: Optional[Dict[str, Any]] = None,
+    ) -> "BaseMetaData":
         """Create a new instance by merging this instance with others.
 
         Note that neither ``self`` nor ``others`` are changed.
@@ -254,7 +256,7 @@ class MetaData:
             other_data = [getattr(o, name) for o in others]
             kwargs[name] = datum.merge_with(other_data, replace=replace.get(name))
 
-        assert type(self) is not MetaData  # mypy
+        assert type(self) is not BaseMetaData  # mypy
         return type(self)(setup=setup, **kwargs)
 
 
@@ -267,77 +269,179 @@ def init_mdatum(type_, name, attrs=None):
     return validator(name, pre=True, allow_reuse=True)(f)
 
 
-class MetaDataGrid(BaseModel, MetaData):
-    """Grid meta data.
+class MetaData(BaseModel, BaseMetaData):
+    """Meta data.
 
     Attributes:
-        north_pole_lat: Latitude of rotated north pole.
+        variable_name: Name of variable.
 
-        north_pole_lon: Longitude of rotated north pole.
+        variable_unit: Unit of variable as a string (e.g., 'm-3' for m^3).
+
+        variable_level_bot: Bottom level value(s).
+
+        variable_level_bot_unit: Bottom level unit.
+
+        variable_level_top: Top level value(s).
+
+        variable_level_top_unit: Bottom level unit.
+
+        release_site_name: Name of release site.
+
+        release_site_lat: Latitude of release site.
+
+        release_site_lon: Longitude of release site.
+
+        release_height: Release height value(s).
+
+        release_rate: Release rate value(s).
+
+        release_mass: Release mass value(s).
+
+        release_height_unit: Release height unit
+
+        release_rate_unit: Release rate unit.
+
+        release_mass_unit: Release mass unit.
+
+        release_start: Start of the release.
+
+        release_end: End of the release.
+
+        species_name: Species name.
+
+        species_half_life: Half life value(s).
+
+        species_half_life_unit: Half life unit.
+
+        species_deposit_vel: Deposition velocity value(s).
+
+        species_deposit_vel_unit: Deposition velocity unit.
+
+        species_sediment_vel: Sedimentation velocity value(s).
+
+        species_sediment_vel_unit: Sedimentation velocity unit.
+
+        species_washout_coeff: Washout coefficient value(s).
+
+        species_washout_coeff_unit: Washout coefficient unit.
+
+        species_washout_exponent: Washout exponent value(s).
+
+        simulation_model_name: Name of the model.
+
+        simulation_start: Start of the simulation.
+
+        simulation_end: End of the simulation.
+
+        simulation_now: Current timestep.
+
+        simulation_integr_start: Start of the integration period.
+
+        simulation_integr_type: Type of integration (or reduction).
 
     """
 
     setup: InputSetup
-    north_pole_lat: MetaDatum[float]
-    north_pole_lon: MetaDatum[float]
+    variable_long_name: MetaDatum[str]
+    variable_short_name: MetaDatum[str]
+    variable_unit: MetaDatum[str]
+    variable_level_bot: MetaDatum[float]
+    variable_level_top: MetaDatum[float]
+    variable_level_bot_unit: MetaDatum[str]
+    variable_level_top_unit: MetaDatum[str]
+    release_site_name: MetaDatum[str]
+    release_site_lat: MetaDatum[float]
+    release_site_lon: MetaDatum[float]
+    release_height: MetaDatum[float]
+    release_rate: MetaDatum[float]
+    release_mass: MetaDatum[float]
+    release_height_unit: MetaDatum[str]
+    release_rate_unit: MetaDatum[str]
+    release_mass_unit: MetaDatum[str]
+    release_start: MetaDatum[datetime]
+    release_end: MetaDatum[datetime]
+    species_name: MetaDatum[str]
+    species_half_life: MetaDatum[float]
+    species_deposit_vel: MetaDatum[float]
+    species_sediment_vel: MetaDatum[float]
+    species_washout_coeff: MetaDatum[float]
+    species_washout_exponent: MetaDatum[float]
+    species_half_life_unit: MetaDatum[str]
+    species_deposit_vel_unit: MetaDatum[str]
+    species_sediment_vel_unit: MetaDatum[str]
+    species_washout_coeff_unit: MetaDatum[str]
+    simulation_model_name: MetaDatum[str]
+    simulation_start: MetaDatum[datetime]
+    simulation_end: MetaDatum[datetime]
+    simulation_now: MetaDatum[datetime]
+    simulation_integr_start: MetaDatum[datetime]
+    simulation_integr_type: MetaDatum[str]
 
-    _init_north_pole_lat = init_mdatum(float, "north_pole_lat")
-    _init_north_pole_lon = init_mdatum(float, "north_pole_lon")
-
-
-class MetaDataVariable(BaseModel, MetaData):
-    """Variable meta data.
-
-    Attributes:
-        name: Name of variable.
-
-        unit: Unit of variable as a string (e.g., 'm-3' for cubic meters).
-
-        level_bot: Bottom level value(s).
-
-        level_bot_unit: Bottom level unit.
-
-        level_top: Top level value(s).
-
-        level_top_unit: Bottom level unit.
-
-    """
-
-    setup: InputSetup
-    long_name: MetaDatum[str]
-    short_name: MetaDatum[str]
-    unit: MetaDatum[str]
-    level_bot: MetaDatum[float]
-    level_top: MetaDatum[float]
-    level_bot_unit: MetaDatum[str]
-    level_top_unit: MetaDatum[str]
-
-    _init_long_name = init_mdatum(str, "long_name")
-    _init_short_name = init_mdatum(str, "short_name")
-    _init_unit = init_mdatum(str, "unit")
-    _init_level_bot = init_mdatum(float, "level_bot")
-    _init_level_top = init_mdatum(float, "level_top")
-    _init_level_bot_unit = init_mdatum(str, "level_bot_unit")
-    _init_level_top_unit = init_mdatum(str, "level_top_unit")
+    _init_variable_long_name = init_mdatum(str, "variable_long_name")
+    _init_variable_short_name = init_mdatum(str, "variable_short_name")
+    _init_variable_unit = init_mdatum(str, "variable_unit")
+    _init_variable_level_bot = init_mdatum(float, "variable_level_bot")
+    _init_variable_level_top = init_mdatum(float, "variable_level_top")
+    _init_variable_level_bot_unit = init_mdatum(str, "variable_level_bot_unit")
+    _init_variable_level_top_unit = init_mdatum(str, "variable_level_top_unit")
+    _init_release_site_name = init_mdatum(str, "release_site_name")
+    _init_release_site_lat = init_mdatum(float, "release_site_lat")
+    _init_release_site_lon = init_mdatum(float, "release_site_lon")
+    _init_release_height = init_mdatum(float, "release_height")
+    _init_release_rate = init_mdatum(float, "release_rate")
+    _init_release_mass = init_mdatum(float, "release_mass")
+    _init_release_height_unit = init_mdatum(str, "release_height_unit")
+    _init_release_rate_unit = init_mdatum(str, "release_rate_unit")
+    _init_release_mass_unit = init_mdatum(str, "release_mass_unit")
+    _init_release_start = init_mdatum(datetime, "release_start")
+    _init_release_end = init_mdatum(datetime, "release_end")
+    _init_species_name = init_mdatum(str, "species_name")
+    _init_species_half_life = init_mdatum(float, "species_half_life")
+    _init_species_deposit_vel = init_mdatum(float, "species_deposit_vel")
+    _init_species_sediment_vel = init_mdatum(float, "species_sediment_vel")
+    _init_species_washout_coeff = init_mdatum(float, "species_washout_coeff")
+    _init_species_washout_exponent = init_mdatum(float, "species_washout_exponent")
+    _init_species_half_life_unit = init_mdatum(str, "species_half_life_unit")
+    _init_species_deposit_vel_unit = init_mdatum(str, "species_deposit_vel_unit")
+    _init_species_sediment_vel_unit = init_mdatum(str, "species_sediment_vel_unit")
+    _init_species_washout_coeff_unit = init_mdatum(str, "species_washout_coeff_unit")
+    _init_simulation_model_name = init_mdatum(str, "simulation_model_name")
+    _init_simulation_start = init_mdatum(datetime, "simulation_start")
+    _init_simulation_end = init_mdatum(datetime, "simulation_end")
+    _init_simulation_now = init_mdatum(datetime, "simulation_now")
+    _init_simulation_integr_start = init_mdatum(datetime, "simulation_integr_start")
+    _init_simulation_integr_type = init_mdatum(str, "simulation_integr_type")
 
     class Config:  # noqa
         extra = "forbid"
 
-    def fmt_level_unit(self):
-        unit_bottom = self.level_bot_unit.format_unit()
-        unit_top = self.level_top_unit.format_unit()
+    @root_validator
+    def _set_start(cls, values):
+        values["release_start"].attrs["start"] = values["release_start"].value
+        values["release_end"].attrs["start"] = values["release_start"].value
+        values["simulation_start"].attrs["start"] = values["simulation_start"].value
+        values["simulation_end"].attrs["start"] = values["simulation_start"].value
+        values["simulation_now"].attrs["start"] = values["simulation_start"].value
+        values["simulation_integr_start"].attrs["start"] = values[
+            "simulation_start"
+        ].value
+        return values
+
+    def variable_fmt_level_unit(self):
+        unit_bottom = self.variable_level_bot_unit.format_unit()
+        unit_top = self.variable_level_top_unit.format_unit()
         if unit_bottom != unit_top:
             raise Exception(
                 f"bottom and top level units differ: '{unit_bottom}' != '{unit_top}'"
             )
         return unit_top
 
-    def fmt_level_range(self):
+    def variable_fmt_level_range(self):
 
-        if (self.level_bot.value, self.level_top.value) == (-1, -1):
+        if (self.variable_level_bot.value, self.variable_level_top.value) == (-1, -1):
             return None
 
-        def fmt(bot, top, unit_fmtd=self.fmt_level_unit()):
+        def fmt(bot, top, unit_fmtd=self.variable_fmt_level_unit()):
             s = f"{bot:g}" + r"$-$" + f"{top:g}"
             if unit_fmtd:
                 s += f" {unit_fmtd}"
@@ -345,12 +449,12 @@ class MetaDataVariable(BaseModel, MetaData):
 
         try:
             # Single level range
-            return fmt(self.level_bot.value, self.level_top.value)
+            return fmt(self.variable_level_bot.value, self.variable_level_top.value)
         except TypeError:
             pass
         # -- Multiple level ranges
 
-        bots, tops, n = self._get_range_params()
+        bots, tops, n = self._variable_get_range_params()
 
         if n == 2:
             if tops[0] == bots[1]:
@@ -368,10 +472,10 @@ class MetaDataVariable(BaseModel, MetaData):
         else:
             raise NotImplementedError(f"{n} sets of levels")
 
-    def _get_range_params(self):
+    def _variable_get_range_params(self):
         try:
-            bots = sorted(self.level_bot.value)
-            tops = sorted(self.level_top.value)
+            bots = sorted(self.variable_level_bot.value)
+            tops = sorted(self.variable_level_top.value)
         except TypeError:
             raise  # SR_TMP TODO proper error message
         else:
@@ -380,227 +484,27 @@ class MetaDataVariable(BaseModel, MetaData):
             n = len(bots)
         return bots, tops, n
 
-
-class MetaDataRelease(BaseModel, MetaData):
-    """Release meta data.
-
-    Attributes:
-        site_name: Name of release site.
-
-        site_lat: Latitude of release site.
-
-        site_lon: Longitude of release site.
-
-        height: Release height value(s).
-
-        rate: Release rate value(s).
-
-        mass: Release mass value(s).
-
-        height_unit: Release height unit
-
-        rate_unit: Release rate unit.
-
-        mass_unit: Release mass unit.
-
-        start: Start of the release.
-
-        end: End of the release.
-
-    """
-
-    setup: InputSetup
-    site_name: MetaDatum[str]
-    site_lat: MetaDatum[float]
-    site_lon: MetaDatum[float]
-    height: MetaDatum[float]
-    rate: MetaDatum[float]
-    mass: MetaDatum[float]
-    height_unit: MetaDatum[str]
-    rate_unit: MetaDatum[str]
-    mass_unit: MetaDatum[str]
-    start: MetaDatum[datetime]
-    end: MetaDatum[datetime]
-
-    _init_site_name = init_mdatum(str, "site_name")
-    _init_site_lat = init_mdatum(float, "site_lat")
-    _init_site_lon = init_mdatum(float, "site_lon")
-    _init_height = init_mdatum(float, "height")
-    _init_rate = init_mdatum(float, "rate")
-    _init_mass = init_mdatum(float, "mass")
-    _init_height_unit = init_mdatum(str, "height_unit")
-    _init_rate_unit = init_mdatum(str, "rate_unit")
-    _init_mass_unit = init_mdatum(str, "mass_unit")
-    _init_start = init_mdatum(datetime, "start")
-    _init_end = init_mdatum(datetime, "end")
-
-    @root_validator
-    def _set_start(cls, values):
-        values["start"].attrs["start"] = values["start"].value
-        values["end"].attrs["start"] = values["start"].value
-        return values
-
-    class Config:  # noqa
-        extra = "forbid"
-
-
-class MetaDataSpecies(BaseModel, MetaData):
-    """Species meta data.
-
-    Attributes:
-        name: Species name.
-
-        half_life: Half life value(s).
-
-        half_life_unit: Half life unit.
-
-        deposit_vel: Deposition velocity value(s).
-
-        deposit_vel_unit: Deposition velocity unit.
-
-        sediment_vel: Sedimentation velocity value(s).
-
-        sediment_vel_unit: Sedimentation velocity unit.
-
-        washout_coeff: Washout coefficient value(s).
-
-        washout_coeff_unit: Washout coefficient unit.
-
-        washout_exponent: Washout exponent value(s).
-
-    """
-
-    setup: InputSetup
-    name: MetaDatum[str]
-    half_life: MetaDatum[float]
-    deposit_vel: MetaDatum[float]
-    sediment_vel: MetaDatum[float]
-    washout_coeff: MetaDatum[float]
-    washout_exponent: MetaDatum[float]
-    half_life_unit: MetaDatum[str]
-    deposit_vel_unit: MetaDatum[str]
-    sediment_vel_unit: MetaDatum[str]
-    washout_coeff_unit: MetaDatum[str]
-
-    _init_name = init_mdatum(str, "name")
-    _init_half_life = init_mdatum(float, "half_life")
-    _init_deposit_vel = init_mdatum(float, "deposit_vel")
-    _init_sediment_vel = init_mdatum(float, "sediment_vel")
-    _init_washout_coeff = init_mdatum(float, "washout_coeff")
-    _init_washout_exponent = init_mdatum(float, "washout_exponent")
-    _init_half_life_unit = init_mdatum(str, "half_life_unit")
-    _init_deposit_vel_unit = init_mdatum(str, "deposit_vel_unit")
-    _init_sediment_vel_unit = init_mdatum(str, "sediment_vel_unit")
-    _init_washout_coeff_unit = init_mdatum(str, "washout_coeff_unit")
-
-    class Config:  # noqa
-        extra = "forbid"
-
-
-class MetaDataSimulation(BaseModel, MetaData):
-    """Simulation meta data.
-
-    Attributes:
-        model_name: Name of the model.
-
-        start: Start of the simulation.
-
-        end: End of the simulation.
-
-        now: Current timestep.
-
-        integr_start: Start of the integration period.
-
-        integr_type: Type of integration (or reduction).
-
-    """
-
-    setup: InputSetup
-    model_name: MetaDatum[str]
-    start: MetaDatum[datetime]
-    end: MetaDatum[datetime]
-    now: MetaDatum[datetime]
-    integr_start: MetaDatum[datetime]
-    integr_type: MetaDatum[str]
-
-    _init_model_name = init_mdatum(str, "model_name")
-    _init_start = init_mdatum(datetime, "start")
-    _init_end = init_mdatum(datetime, "end")
-    _init_now = init_mdatum(datetime, "now")
-    _init_integr_start = init_mdatum(datetime, "integr_start")
-    _init_integr_type = init_mdatum(str, "integr_type")
-
-    @root_validator
-    def _set_start(cls, values):
-        values["start"].attrs["start"] = values["start"].value
-        values["end"].attrs["start"] = values["start"].value
-        values["now"].attrs["start"] = values["start"].value
-        values["integr_start"].attrs["start"] = values["start"].value
-        return values
-
-    class Config:  # noqa
-        extra = "forbid"
-
-    def fmt_integr_period(self):
-        integr_period = self.now.value - self.integr_start.value
+    def simulation_fmt_integr_period(self):
+        integr_period = self.simulation_now.value - self.simulation_integr_start.value
         return f"{integr_period.total_seconds()/3600:g}$\\,$h"
 
 
 class MetaDataCollection:
     """Collection of meta data."""
 
-    def __init__(self, setup, *, grid, variable, release, species, simulation):
-        """Initialize an instance of ``MetaDataCollection``.
-
-        Args:
-            setup (InputSetup): InputSetup.
-
-        Kwargs:
-            grid (dict): Kwargs passed to ``MetaDataGrid``.
-
-            variable (dict): Kwargs passed to ``MetaDataVariable``.
-
-            release (dict): Kwargs passed to ``MetaDataRelease``.
-
-            species (dict): Kwargs passed to ``MetaDataSpecies``.
-
-            simulation (dict): Kwargs passed to ``MetaDataSimulation``.
-
-        """
+    def __init__(self, setup, meta_data):
         self.setup = setup
-        self._objs = {}
-        self.add("grid", grid)
-        self.add("variable", variable)
-        self.add("release", release)
-        self.add("species", species)
-        self.add("simulation", simulation)
+        self._meta_data = meta_data
 
     def __eq__(self, other):
-        return self._objs == other._objs
+        return self._meta_data == other._meta_data
 
+    # SR_TMP <<< TODO eliminate
     def __getattr__(self, name):
         try:
-            return self._objs[name]
+            return getattr(self._meta_data, name)
         except KeyError:
             raise AttributeError(f"{type(self).__name__}.{name}")
-
-    def add(self, name, obj):
-
-        if not isinstance(obj, MetaData):
-            cls_by_name = {
-                "grid": MetaDataGrid,
-                "variable": MetaDataVariable,
-                "release": MetaDataRelease,
-                "species": MetaDataSpecies,
-                "simulation": MetaDataSimulation,
-            }
-            try:
-                cls_group = cls_by_name[name]
-            except KeyError:
-                raise ValueError(f"missing MetaData class for name '{name}'")
-            obj = cls_group(setup=self.setup, **obj)
-
-        self._objs[name] = obj
 
     def merge_with(
         self, others: Collection["MetaDataCollection"], **replace: Dict[str, Any],
@@ -620,16 +524,13 @@ class MetaDataCollection:
                 ``others``. Note that no input collection is changed.
 
         """
-        kwargs = {"setup": self.setup}
-        for name in sorted(self._objs.keys()):
-            other_objs = [o._objs[name] for o in others]
-            merged = self._objs[name].merge_with(other_objs, replace.get(name))
-            kwargs[name] = dict(merged.iter_objs())
-        return type(self)(**kwargs)
+        merged = self._meta_data.merge_with([o._meta_data for o in others], replace)
+        return type(self)(setup=self.setup, meta_data=merged)
 
+    # SR_TMP <<< TODO eliminate
     def __iter__(self):
-        for name, datum in sorted(self._objs.items()):
-            yield name, datum
+        raise DeprecationWarning()
+        yield "meta_data", self._meta_data
 
     def asdict(self):
         return {name: dict(objs) for name, objs in self}
@@ -668,17 +569,15 @@ class MetaDataCollector:
 
     def run(self):
         """Collect meta data."""
+        mdata_raw = {}
+        self.collect_simulation_mdata(mdata_raw)
+        self.collect_release_mdata(mdata_raw)
+        self.collect_species_mdata(mdata_raw)
+        self.collect_variable_mdata(mdata_raw)
+        mdata = MetaData(setup=self.setup, **mdata_raw)
+        return MetaDataCollection(self.setup, mdata)
 
-        mdata = {}
-        mdata["simulation"] = self.collect_simulation_mdata(mdata)
-        mdata["grid"] = self.collect_grid_mdata(mdata)
-        mdata["release"] = self.collect_release_mdata(mdata)
-        mdata["species"] = self.collect_species_mdata(mdata)
-        mdata["variable"] = self.collect_variable_mdata(mdata)
-
-        return MetaDataCollection(self.setup, **mdata)
-
-    def collect_simulation_mdata(self, mdata):
+    def collect_simulation_mdata(self, mdata_raw):
         """Collect simulation meta data."""
 
         # Model name
@@ -710,14 +609,16 @@ class MetaDataCollector:
                 f"no integration type specified for '{self.name}'"
             )
 
-        return {
-            "model_name": model_name,
-            "start": ts_start,
-            "end": ts_end,
-            "now": ts_now,
-            "integr_start": ts_integr_start,
-            "integr_type": integr_type,
-        }
+        mdata_raw.update(
+            {
+                "simulation_model_name": model_name,
+                "simulation_start": ts_start,
+                "simulation_end": ts_end,
+                "simulation_now": ts_now,
+                "simulation_integr_start": ts_integr_start,
+                "simulation_integr_type": integr_type,
+            }
+        )
 
     def _get_current_timestep_etc(self, idx=None):
         """Get the current timestep, or a specific one by index."""
@@ -769,21 +670,7 @@ class MetaDataCollector:
 
         return now, ts_integr_start
 
-    def collect_grid_mdata(self, mdata):
-        """Collect grid meta data."""
-
-        try:  # SR_TMP
-            np_lat = self.ncattrs_vars["rotated_pole"]["grid_north_pole_latitude"]
-            np_lon = self.ncattrs_vars["rotated_pole"]["grid_north_pole_longitude"]
-        except KeyError:  # SR_TMP
-            np_lat, np_lon = -1, -1
-
-        return {
-            "north_pole_lat": np_lat,
-            "north_pole_lon": np_lon,
-        }
-
-    def collect_release_mdata(self, mdata):
+    def collect_release_mdata(self, mdata_raw):
         """Collect release point meta data."""
 
         # Collect release point information
@@ -794,7 +681,7 @@ class MetaDataCollector:
         # SR_TMP >
         numpoint = ReleasePoint.from_file(self.fi, idx)
 
-        sim_start = mdata["simulation"]["start"]
+        sim_start = mdata_raw["simulation_start"]
         start = sim_start + timedelta(seconds=numpoint.rel_start)
         end = sim_start + timedelta(seconds=numpoint.rel_end)
 
@@ -817,21 +704,23 @@ class MetaDataCollector:
         rate = mass / duration
         rate_unit = f"{mass_unit} {duration_unit}-1"
 
-        return {
-            "start": start,
-            "end": end,
-            "site_lat": site_lat,
-            "site_lon": site_lon,
-            "site_name": site_name,
-            "height": height,
-            "height_unit": height_unit,
-            "rate": rate,
-            "rate_unit": rate_unit,
-            "mass": mass,
-            "mass_unit": mass_unit,
-        }
+        mdata_raw.update(
+            {
+                "release_start": start,
+                "release_end": end,
+                "release_site_lat": site_lat,
+                "release_site_lon": site_lon,
+                "release_site_name": site_name,
+                "release_height": height,
+                "release_height_unit": height_unit,
+                "release_rate": rate,
+                "release_rate_unit": rate_unit,
+                "release_mass": mass,
+                "release_mass_unit": mass_unit,
+            }
+        )
 
-    def collect_variable_mdata(self, mdata):
+    def collect_variable_mdata(self, mdata_raw):
         """Collect variable meta data."""
 
         # Variable names
@@ -859,17 +748,19 @@ class MetaDataCollector:
             level_bot = 0.0 if idx == 0 else float(_var[idx - 1])
             level_top = float(_var[idx])
 
-        return {
-            "long_name": long_name,
-            "short_name": short_name,
-            "unit": unit,
-            "level_bot": level_bot,
-            "level_bot_unit": level_unit,
-            "level_top": level_top,
-            "level_top_unit": level_unit,
-        }
+        mdata_raw.update(
+            {
+                "variable_long_name": long_name,
+                "variable_short_name": short_name,
+                "variable_unit": unit,
+                "variable_level_bot": level_bot,
+                "variable_level_bot_unit": level_unit,
+                "variable_level_top": level_top,
+                "variable_level_top_unit": level_unit,
+            }
+        )
 
-    def collect_species_mdata(self, mdata):
+    def collect_species_mdata(self, mdata_raw):
         """Collect species meta data."""
 
         substance = self._get_substance()
@@ -901,18 +792,20 @@ class MetaDataCollector:
         sediment_vel_unit = "m s-1"  # SR_HC
         washout_coeff_unit = "s-1"  # SR_HC
 
-        return {
-            "name": substance,
-            "half_life": half_life,
-            "half_life_unit": half_life_unit,
-            "deposit_vel": deposit_vel,
-            "deposit_vel_unit": deposit_vel_unit,
-            "sediment_vel": 0.0,
-            "sediment_vel_unit": sediment_vel_unit,
-            "washout_coeff": washout_coeff,
-            "washout_coeff_unit": washout_coeff_unit,
-            "washout_exponent": washout_exponent,
-        }
+        mdata_raw.update(
+            {
+                "species_name": substance,
+                "species_half_life": half_life,
+                "species_half_life_unit": half_life_unit,
+                "species_deposit_vel": deposit_vel,
+                "species_deposit_vel_unit": deposit_vel_unit,
+                "species_sediment_vel": 0.0,
+                "species_sediment_vel_unit": sediment_vel_unit,
+                "species_washout_coeff": washout_coeff,
+                "species_washout_coeff_unit": washout_coeff_unit,
+                "species_washout_exponent": washout_exponent,
+            }
+        )
 
     def _get_substance(self):
         substance = self.ncattrs_field["long_name"]
@@ -929,7 +822,7 @@ class MetaDataCollector:
             variable = setup.variable
             plot_type = setup.plot_type
         dep = self._deposition_type_word()
-        if plot_type in ["affected_area", "affected_area_mono"]:
+        if plot_type and plot_type.startswith("affected_area"):
             super_name = self._long_name(variable="deposition")
             return f"{words['affected_area']} ({super_name})"
         elif plot_type == "ens_thr_agrmt":

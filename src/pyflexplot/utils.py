@@ -583,6 +583,8 @@ class LevelRangeFormatter:
         if self.rstrip_zeros:
 
             def rstrip_zeros(s):
+                if "e" in s or "E" in s:
+                    return s
                 rx_str = r"(?<!\.)0\b(?!\.)"
                 while re.search(rx_str, s):
                     s = re.sub(rx_str, "", s)

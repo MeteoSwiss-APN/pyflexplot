@@ -576,11 +576,11 @@ class FlexPartDataFixer:
             return
         assert isinstance(mdata, MetaDataCollection)  # mypy
 
-        name = mdata.species.name.value
+        name = mdata.species_name.value
         if name not in self.possible_var_names:
             raise NotImplementedError("variable", {"name": name})
-        integr_type = mdata.simulation.integr_type.value
-        old_unit = mdata.variable.unit.value
+        integr_type = mdata.simulation_integr_type.value
+        old_unit = mdata.variable_unit.value
 
         new_unit = "Bq"
         if integr_type == "mean":
@@ -599,7 +599,7 @@ class FlexPartDataFixer:
             raise NotImplementedError(
                 "unknown unit", {"name": name, "unit": old_unit},
             )
-        mdata.variable.unit.value = new_unit
+        mdata.variable_unit.value = new_unit
 
     def fix_global_grid(self, lon, fld_time, idx_lon=-1):
         """Shift global grid longitudinally to fit into (-180..180) range."""

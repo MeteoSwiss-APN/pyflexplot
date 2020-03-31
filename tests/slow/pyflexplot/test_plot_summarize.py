@@ -188,39 +188,31 @@ def create_mdata(lang):
 
     return SimpleNamespace(
         summarize=lambda: {},
-        release=SimpleNamespace(
-            height=DA("release.height"),
-            mass=DA("release.mass"),
-            rate=DA("release.rate"),
-            start=DA("release.start"),
-            end=DA("release.end"),
-            site_lat=DA("release.site_lat", 47.0),
-            site_lon=DA("release.site_lon", 8.0),
-            site_name=DA("release.site_name"),
-        ),
-        simulation=SimpleNamespace(
-            end=DA("simulation.end"),
-            fmt_integr_period=fm("simulation.fmt_integr_period"),
-            integr_start=DA("simulation.integr_start"),
-            integr_type=DA("simulation.integr_type", "mean"),
-            model_name=DA("simulation.model_name"),
-            now=DA("simulation.now"),
-            start=DA("simulation.start"),
-        ),
-        species=SimpleNamespace(
-            deposit_vel=DA("species.deposit_vel"),
-            half_life=DA("species.half_life"),
-            name=DA("species.name"),
-            sediment_vel=DA("species.sediment_vel"),
-            washout_coeff=DA("species.washout_coeff"),
-            washout_exponent=DA("species.washout_exponent"),
-        ),
-        variable=SimpleNamespace(
-            fmt_level_range=fm("variable.fmt_level_range"),
-            long_name=DA("variable.long_name"),
-            short_name=DA("variable.short_name"),
-            unit=DA("variable.unit"),
-        ),
+        release_height=DA("release_height"),
+        release_mass=DA("release_mass"),
+        release_rate=DA("release_rate"),
+        release_start=DA("release_start"),
+        release_end=DA("release_end"),
+        release_site_lat=DA("release_site_lat", 47.0),
+        release_site_lon=DA("release_site_lon", 8.0),
+        release_site_name=DA("release_site_name"),
+        simulation_end=DA("simulation_end"),
+        simulation_fmt_integr_period=fm("simulation_fmt_integr_period"),
+        simulation_integr_start=DA("simulation_integr_start"),
+        simulation_integr_type=DA("simulation_integr_type", "mean"),
+        simulation_model_name=DA("simulation_model_name"),
+        simulation_now=DA("simulation_now"),
+        simulation_start=DA("simulation_start"),
+        species_deposit_vel=DA("species_deposit_vel"),
+        species_half_life=DA("species_half_life"),
+        species_name=DA("species_name"),
+        species_sediment_vel=DA("species_sediment_vel"),
+        species_washout_coeff=DA("species_washout_coeff"),
+        species_washout_exponent=DA("species_washout_exponent"),
+        variable_fmt_level_range=fm("variable_fmt_level_range"),
+        variable_long_name=DA("variable_long_name"),
+        variable_short_name=DA("variable_short_name"),
+        variable_unit=DA("variable_unit"),
     )
 
 
@@ -569,22 +561,26 @@ class Solution:
                 [
                     txt(
                         "tl",
-                        f"<variable.long_name{sl}> <words.at[{self.lang}|level]> "
-                        f"<variable.fmt_level_range{sl}.format>",
+                        f"<variable_long_name{sl}> "
+                        f"<words.at[{self.lang}|level]> "
+                        f"<variable_fmt_level_range{sl}.format>",
                     ),
                     txt(
                         "bl",
                         f"<words.averaged_over{sl}> "
-                        f"<simulation.fmt_integr_period{sl}.format> (<words.since{sl}> "
-                        f"+<simulation.integr_start{sl}.format>)",
+                        f"<simulation_fmt_integr_period{sl}.format> "
+                        f"(<words.since{sl}> "
+                        f"+<simulation_integr_start{sl}.format>)",
                     ),
                     txt(
                         "tr",
-                        f"<simulation.now{sl}.format> (+<simulation.now{sl}.format>)",
+                        f"<simulation_now{sl}.format> "
+                        f"(+<simulation_now{sl}.format>)",
                     ),
                     txt(
                         "br",
-                        f"<simulation.now{sl}.format> <words.since{sl}> "
+                        f"<simulation_now{sl}.format> "
+                        f"<words.since{sl}> "
                         f"<words.release_start{sl}>",
                     ),
                 ]
@@ -595,7 +591,7 @@ class Solution:
             "name": e1("top/right"),
             "elements": e1(
                 [
-                    txt("tc", f"<species.name{sl}.format>"),
+                    txt("tc", f"<species_name{sl}.format>"),
                     txt("bc", IgnoredElement("release site (may be truncated")),
                 ]
             ),
@@ -607,8 +603,8 @@ class Solution:
                 [
                     txt(
                         "tc",
-                        f"<variable.short_name{sl}.format> "
-                        f"(<variable.unit{sl}.format>)",
+                        f"<variable_short_name{sl}.format> "
+                        f"(<variable_unit{sl}.format>)",
                     ),
                     txt("bc", IgnoredElement("level range #0")),
                     txt("bc", IgnoredElement("level range #1")),
@@ -655,20 +651,20 @@ class Solution:
                     txt("bl", f"<words.longitude{sl}>:"),
                     txt("bl", f"<words.latitude{sl}>:"),
                     txt("bl", f"<words.site{sl}>:"),
-                    txt("br", f"<species.washout_exponent{sl}.format>"),
-                    txt("br", f"<species.washout_coeff{sl}.format>"),
-                    txt("br", f"<species.sediment_vel{sl}.format>"),
-                    txt("br", f"<species.deposit_vel{sl}.format>"),
-                    txt("br", f"<species.half_life{sl}.format>"),
-                    txt("br", f"<species.name{sl}.format>"),
-                    txt("br", f"<release.mass{sl}.format>"),
-                    txt("br", f"<release.rate{sl}.format>"),
-                    txt("br", f"<release.end{sl}.format>"),
-                    txt("br", f"<release.start{sl}.format>"),
-                    txt("br", f"<release.height{sl}.format>"),
+                    txt("br", f"<species_washout_exponent{sl}.format>"),
+                    txt("br", f"<species_washout_coeff{sl}.format>"),
+                    txt("br", f"<species_sediment_vel{sl}.format>"),
+                    txt("br", f"<species_deposit_vel{sl}.format>"),
+                    txt("br", f"<species_half_life{sl}.format>"),
+                    txt("br", f"<species_name{sl}.format>"),
+                    txt("br", f"<release_mass{sl}.format>"),
+                    txt("br", f"<release_rate{sl}.format>"),
+                    txt("br", f"<release_end{sl}.format>"),
+                    txt("br", f"<release_start{sl}.format>"),
+                    txt("br", f"<release_height{sl}.format>"),
                     txt("br", IgnoredElement("release longitude")),
                     txt("br", IgnoredElement("release latitude")),
-                    txt("br", f"<release.site_name{sl}.format>"),
+                    txt("br", f"<release_site_name{sl}.format>"),
                 ]
             ),
         }
@@ -679,8 +675,10 @@ class Solution:
                 [
                     txt(
                         "tl",
-                        f"<words.flexpart{sl}> <words.based_on{sl}> "
-                        f"<simulation.model_name{sl}>, <simulation.start{sl}.format>",
+                        f"<words.flexpart{sl}> "
+                        f"<words.based_on{sl}> "
+                        f"<simulation_model_name{sl}>, "
+                        f"<simulation_start{sl}.format>",
                     ),
                     txt("tr", f"<symbols.copyright><words.meteoswiss{sl}>"),
                 ]

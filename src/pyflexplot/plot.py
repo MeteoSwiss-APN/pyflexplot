@@ -55,7 +55,6 @@ class Plot:
     mark_release_site = True
     lw_frame = 1.0
 
-    # SR_TMP TODO consider moving mdat (at least mdata.grid) to Field
     def __init__(self, field: Field, plot_config: PlotConfig, map_conf: MapAxesConf):
         """Create an instance of ``Plot``."""
         self.field = field
@@ -136,8 +135,8 @@ class Plot:
         if self.mark_release_site:
             # Marker at release site
             self.ax_map.marker(
-                self.plot_config.mdata.release.site_lon.value,
-                self.plot_config.mdata.release.site_lat.value,
+                self.plot_config.mdata.release_site_lon.value,
+                self.plot_config.mdata.release_site_lat.value,
                 **self._site_marker_kwargs,
             )
 
@@ -454,29 +453,29 @@ class Plot:
         box.text("tc", labels["title"], dy=-1.0, size="large")
 
         # Release site coordinates
-        lat = Degrees(mdata.release.site_lat.value)
-        lon = Degrees(mdata.release.site_lon.value)
+        lat = Degrees(mdata.release_site_lat.value)
+        lon = Degrees(mdata.release_site_lon.value)
         lat_deg = labels["lat_deg_fmt"].format(d=lat.degs(), m=lat.mins(), f=lat.frac())
         lon_deg = labels["lon_deg_fmt"].format(d=lon.degs(), m=lon.mins(), f=lon.frac())
 
         info_blocks = dedent(
             f"""\
-            {labels['site']}:\t{mdata.release.site_name.format()}
+            {labels['site']}:\t{mdata.release_site_name.format()}
             {labels['latitude']}:\t{lat_deg}
             {labels['longitude']}:\t{lon_deg}
-            {labels['height']}:\t{mdata.release.height.format()}
+            {labels['height']}:\t{mdata.release_height.format()}
 
-            {labels['start']}:\t{mdata.release.start.format()}
-            {labels['end']}:\t{mdata.release.end.format()}
-            {labels['rate']}:\t{mdata.release.rate.format()}
-            {labels['mass']}:\t{mdata.release.mass.format()}
+            {labels['start']}:\t{mdata.release_start.format()}
+            {labels['end']}:\t{mdata.release_end.format()}
+            {labels['rate']}:\t{mdata.release_rate.format()}
+            {labels['mass']}:\t{mdata.release_mass.format()}
 
-            {labels['name']}:\t{mdata.species.name.format()}
-            {labels['half_life']}:\t{mdata.species.half_life.format()}
-            {labels['deposit_vel']}:\t{mdata.species.deposit_vel.format()}
-            {labels['sediment_vel']}:\t{mdata.species.sediment_vel.format()}
-            {labels['washout_coeff']}:\t{mdata.species.washout_coeff.format()}
-            {labels['washout_exponent']}:\t{mdata.species.washout_exponent.format()}
+            {labels['name']}:\t{mdata.species_name.format()}
+            {labels['half_life']}:\t{mdata.species_half_life.format()}
+            {labels['deposit_vel']}:\t{mdata.species_deposit_vel.format()}
+            {labels['sediment_vel']}:\t{mdata.species_sediment_vel.format()}
+            {labels['washout_coeff']}:\t{mdata.species_washout_coeff.format()}
+            {labels['washout_exponent']}:\t{mdata.species_washout_exponent.format()}
             """
         )
 
