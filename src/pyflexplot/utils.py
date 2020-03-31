@@ -501,9 +501,11 @@ class Component:
     @classmethod
     def create(cls, name: str, arg: Union[str, Tuple[str, int]]) -> "Component":
         if isinstance(arg, str):
-            return cls(arg, len(arg))
+            s, ntex = arg, 0
         else:
-            return cls(*arg)
+            s = arg[0]
+            ntex = arg[1] or len(s)
+        return cls(s, ntex)
 
 
 @dataclass
