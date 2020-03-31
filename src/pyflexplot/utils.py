@@ -302,7 +302,7 @@ def check_float_ok(f: float, ff0t: str) -> bool:
     return (f == 0.0) or (float(ff0t) != 0.0)
 
 
-def fmt_float(
+def format_float(
     f: float,
     fmt_e0: Optional[str] = None,
     fmt_f0: Optional[str] = None,
@@ -640,7 +640,7 @@ class LevelRangeFormatter:
         return Components.create("", (s_c, ntex_c), s_r)
 
     def _format_level(self, lvl: float) -> str:
-        return fmt_float(lvl, "{f:.0E}")
+        return format_float(lvl, "{f:.0E}")
 
 
 class LevelRangeFormatter_Int(LevelRangeFormatter):

@@ -28,7 +28,6 @@ from .plot_types import MapAxesConf
 from .plot_types import MapAxesConf_Cosmo1
 from .plot_types import MapAxesConf_Cosmo1_CH
 from .plot_types import PlotConfig
-from .utils import fmt_float
 from .utils import format_level_ranges
 from .utils import summarizable
 
@@ -420,9 +419,21 @@ class Plot:
             if np.isnan(self.field.fld).all():
                 s += "NaN"
             else:
-                s += fmt_float(
-                    np.nanmax(self.field.fld), fmt_e0="{f:.3E}", fmt_f1="{f:,.3f}"
-                )
+                fld_max = np.nanmax(self.field.fld)
+                if 0.001 <= fld_max < 0.01:
+                    s += f"{fld_max:.5f}"
+                elif 0.01 <= fld_max < 0.1:
+                    s += f"{fld_max:.4f}"
+                elif 0.1 <= fld_max < 1:
+                    s += f"{fld_max:.3f}"
+                elif 1 <= fld_max < 10:
+                    s += f"{fld_max:.2f}"
+                elif 10 <= fld_max < 100:
+                    s += f"{fld_max:.1f}"
+                elif 100 <= fld_max < 1000:
+                    s += f"{fld_max:.0f}"
+                else:
+                    s += f"{fld_max:.2E}"
             box.text(
                 loc="bc",
                 s=s,
