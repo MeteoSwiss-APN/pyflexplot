@@ -271,13 +271,10 @@ class Summarizer:
         """Try to summarize ``obj`` as a list-like object."""
         if not isiterable(obj, str_ok=False):
             raise NotSummarizableError("list-like", obj)
-        type_ = type(obj)
         data = []
         for item in obj:
             data.append(self._summarize(item))
-        if isinstance(obj, np.ndarray):
-            return data
-        return type_(data)
+        return data
 
     def _try_named(self, obj: Any) -> str:
         """Try to summarize ``obj`` as a named object (e.g., function/method)."""

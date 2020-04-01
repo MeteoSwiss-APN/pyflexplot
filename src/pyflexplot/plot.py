@@ -42,7 +42,6 @@ from .utils import summarizable
         "fig",
         "map_conf",
         "mark_release_site",
-        "plot_config",
     ],
     post_summarize=post_summarize_plot,
 )
@@ -78,7 +77,7 @@ class Plot:
 
         self.create_plot()
 
-    def save(self, file_path: str, format: Optional[str] = None):
+    def save(self, file_path: str, *, format: Optional[str] = None, write: bool = True):
         """Save the plot to disk.
 
         Args:
@@ -87,6 +86,8 @@ class Plot:
             format (optional): Plot format (e.g., 'png', 'pdf'). If ``format``
                 is None, the plot format is derived from the extension of
                 ``file_path``.
+
+            write (optional): Whether to actually write the plot to disk.
 
         """
         if format is None:
@@ -100,13 +101,14 @@ class Plot:
         assert format is not None  # mypy
         self.format: str = format
 
-        self.fig.savefig(
-            file_path,
-            facecolor=self.fig.get_facecolor(),
-            edgecolor=self.fig.get_edgecolor(),
-            bbox_inches="tight",
-            pad_inches=0.15,
-        )
+        if write:
+            self.fig.savefig(
+                file_path,
+                facecolor=self.fig.get_facecolor(),
+                edgecolor=self.fig.get_edgecolor(),
+                bbox_inches="tight",
+                pad_inches=0.15,
+            )
         plt.close(self.fig)
 
     def create_plot(self):
@@ -504,8 +506,7 @@ class Plot:
         box.text("tr", dx=0.7, dy=0.5, s=labels["copyright"], size="small")
 
 
-def plot_fields(fields, mdata_lst, dry_run=False):
-    print(f"create {len(fields)} plot{'s' if len(fields) > 1 else ''}")
+def plot_fields(fields, mdata_lst, dry_run=False, *, write=True):
 
     # Create plots one-by-one
     for field, mdata in zip(fields, mdata_lst):
@@ -531,12 +532,15 @@ def plot_fields(fields, mdata_lst, dry_run=False):
             )
         # SR_TMP >
 
-        yield out_file_path
-
-        if not dry_run:
+        if dry_run:
+            plot = None
+        else:
             assert mdata is not None  # mypy
             plot_config = PlotConfig(setup, mdata)
-            Plot(field, plot_config, map_conf).save(out_file_path)
+            plot = Plot(field, plot_config, map_conf)
+            plot.save(out_file_path, write=write)
+
+        yield out_file_path, plot
 
 
 def format_out_file_path(setup, _previous=[]):

@@ -139,11 +139,14 @@ def check_summary_dict_element_is_subelement(
     # Check types
     t_super, t_sub = type(obj_super), type(obj_sub)
     if not isinstance(obj_sub, t_super) and not isinstance(obj_super, t_sub):
-        raise CheckFailedError(
-            f"incompatible types {t_super.__name__} and {t_sub.__name__} "
-            f"(neither is an instance of the other)",
-            {**err_objs, "t_super": t_super, "t_sub": t_sub},
-        )
+        if isinstance(obj_sub, Sequence) and isinstance(obj_super, Sequence):
+            pass
+        else:
+            raise CheckFailedError(
+                f"incompatible types {t_super.__name__} and {t_sub.__name__} "
+                f"(neither is an instance of the other)",
+                {**err_objs, "t_super": t_super, "t_sub": t_sub},
+            )
 
     if isinstance(obj_sub, dict):
         # Compare dicts

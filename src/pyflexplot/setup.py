@@ -613,6 +613,10 @@ class InputSetup(BaseModel):
 # SR_TMP <<< TODO Consider merging with CoreInputSetupCollection (failed due to mypy)
 class InputSetupCollection:
     def __init__(self, setups: Collection[InputSetup]) -> None:
+        if not isinstance(setups, Collection) or (
+            setups and not isinstance(next(iter(setups)), InputSetup)
+        ):
+            raise ValueError("setups is not a collection of InputSetup objects", setups)
         self._setups: List[InputSetup] = [setup for setup in setups]
 
     @classmethod

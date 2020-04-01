@@ -16,6 +16,7 @@ import numpy as np
 
 # Local
 from .meta_data import MetaData
+from .meta_data import format_level_range
 from .plot_lib import MapAxesConf
 from .setup import InputSetup
 from .utils import summarizable
@@ -81,8 +82,16 @@ class PlotLabels:
             setattr(self, name, values)
 
         # Top-left box
-        level = mdata.variable_fmt_level_range()
-        s_level = f" {words['at', None, 'level']} {level}" if level else ""
+        level = format_level_range(
+            value_bottom=mdata.variable_level_bot.value,
+            value_top=mdata.variable_level_top.value,
+            unit_bottom=mdata.variable_level_bot_unit.value,
+            unit_top=mdata.variable_level_top_unit.value,
+        )
+        if not level:
+            s_level = ""
+        else:
+            s_level = f" {words['at', None, 'level']} {level}"
         integr_op = words[
             {
                 "sum": "summed_over",

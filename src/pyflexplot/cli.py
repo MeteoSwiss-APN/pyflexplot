@@ -180,10 +180,11 @@ def cli(ctx, setup_file_paths, input_setup_params, dry_run, **cli_args):
         var_setups_lst = sub_setups.decompress_grouped_by_time()
 
         fields, mdata_lst = read_files(in_file_path, var_setups_lst, dry_run)
-        assert len(fields) == len(mdata_lst)  # SR_TMP
 
         # Note: plot_fields(...) yields the output file paths on-the-go
-        for i_fld, out_file_path in enumerate(plot_fields(fields, mdata_lst, dry_run)):
+        for i_fld, (out_file_path, plot_handle) in enumerate(
+            plot_fields(fields, mdata_lst, dry_run)
+        ):
             _w = len(str(len(fields)))
             print(f"[{i_in}] {i_fld + 1:{_w}}/{len(fields)}  {out_file_path}")
 
