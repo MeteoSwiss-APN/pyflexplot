@@ -6,10 +6,19 @@ Some testing utils.
 # Standard library
 from dataclasses import dataclass
 from pprint import pformat
+from typing import Any
+from typing import Collection
+from typing import Dict
+from typing import Mapping
+from typing import Optional
+from typing import Sequence
+
+# Third-party
+import numpy as np
 
 # Local
 from .iter import isiterable
-from .str import str_or_none
+from .str import sfmt
 
 
 class CheckFailedError(Exception):
@@ -55,7 +64,7 @@ class IgnoredElement:
         self.description = description
 
     def __repr__(self):
-        return f"{type(self).__name__}({str_or_none(self.description)})"
+        return f"{type(self).__name__}({sfmt(self.description)})"
 
 
 class UnequalElement:
@@ -65,7 +74,7 @@ class UnequalElement:
         self.description = description
 
     def __repr__(self):
-        return f"{type(self).__name__}({str_or_none(self.description)})"
+        return f"{type(self).__name__}({sfmt(self.description)})"
 
     def __eq__(self, other):
         return False
@@ -277,3 +286,123 @@ def _check_children(obj, t_children, f_children, kwargs):
                     f"f_children returns False for child",
                     {**kwargs, "child": child, "idx": idx},
                 )
+
+
+def assert_nested_equal(
+    obj1: Collection,
+    obj2: Collection,
+    float_close_ok: bool = False,
+    kwargs_close: Optional[Dict[str, Any]] = None,
+) -> None:
+    """Compare two nested collections (dicts etc.) for equality.
+
+    Args:
+        obj1: Object compared against ``obj2``.
+
+        obj2: Object compared against ``obj1``.
+
+        float_close_ok (optional): Whether it is sufficient for floats to be
+            close instead of identical.
+
+        kwargs_close (optional): Keyword arguments passed to ``np.close``.
+
+    """
+    if not isinstance(obj1, Collection):
+        raise ValueError(f"expecting Collection, not {type(obj1).__name__}")
+    if not isinstance(obj2, Collection):
+        raise ValueError(f"expecting Collection, not {type(obj2).__name__}")
+
+    def error(msg, path, obj1=None, obj2=None):
+        err = f"\n{msg}\n\nPath ({len(path)}):\n{pformat(path)}\n"
+        if obj1 is not None:
+            err += f"\nobj1 ({type(obj1).__name__}):\n{pformat(obj1)}\n"
+        if obj2 is not None:
+            err += f"\nobj2 ({type(obj2).__name__}):\n{pformat(obj2)}\n"
+        return AssertionError(err)
+
+    def recurse(obj1, obj2, path):
+        try:
+            if obj1 == obj2:
+                return
+        except ValueError:
+            # Numpy array?
+            try:
+                if (obj1 == obj2).all():
+                    return
+            except Exception:
+                pass
+
+        if isinstance(obj1, Mapping):
+            if not isinstance(obj2, Mapping):
+                raise error(
+                    f"unequivalent types (expected mappings): "
+                    f"{type(obj1).__name__} vs. {type(obj2).__name__}",
+                    *[path, obj1, obj2],
+                )
+            if obj1.keys() != obj2.keys():
+                raise error(
+                    f"mappings differ in keys: {obj1.keys()} vs. {obj2.keys()}",
+                    *[path, obj1, obj2],
+                )
+            for key, val1 in obj1.items():
+                val2 = obj2[key]
+                recurse(val1, val2, path + [f"key: {key}"])
+
+        elif isinstance(obj1, Sequence):
+            if not isinstance(obj2, Sequence):
+                raise error(
+                    f"unequivalent types (expected sequences): "
+                    f"{type(obj1).__name__} vs. {type(obj2).__name__}",
+                    *[path, obj1, obj2],
+                )
+            if len(obj1) != len(obj2):
+                raise error(
+                    f"sequences differ in length: {len(obj1)} vs. {len(obj2)}",
+                    *[path, obj1, obj2],
+                )
+            for idx, (ele1, ele2) in enumerate(zip(obj1, obj2)):
+                recurse(ele1, ele2, path + [f"idx: {idx}"])
+
+        elif isinstance(obj1, Collection):
+            if not isinstance(obj2, Collection):
+                raise error(
+                    f"unequivalent types (expected collections): "
+                    f"{type(obj1).__name__} vs. {type(obj2).__name__}",
+                    *[path, obj1, obj2],
+                )
+            if len(obj1) != len(obj2):
+                raise error(
+                    f"collections differ in length: {len(obj1)} vs. {len(obj2)}",
+                    *[path, obj1, obj2],
+                )
+            try:
+                obj1 = sorted(obj1)
+                obj2 = sorted(obj2)
+            except Exception:
+                raise error(f"unequal collections are unsortable", path, obj1, obj2)
+            for idx, (ele1, ele2) in enumerate(zip(obj1, obj2)):
+                recurse(ele1, ele2, path + [f"idx: {idx}"])
+
+        elif np.isreal(obj1):
+            if not np.isreal(obj2):
+                raise error(
+                    f"unequivalent types (expected real numbers): "
+                    f"{type(obj1).__name__} vs. {type(obj2).__name__}, ",
+                    *[path, obj1, obj2],
+                )
+            if float_close_ok:
+                if np.isclose(obj1, obj2, **(kwargs_close or {})):
+                    return
+                msg = f"unequal floats not even close: {obj1} vs. {obj2}"
+                if kwargs_close:
+                    msg += " ({})".format(
+                        ", ".join([f"{k}={sfmt(v)}" for k, v in kwargs_close.items()]),
+                    )
+                raise error(msg, path)
+            raise error(
+                f"unequal floats: {obj1} vs. {obj2} (consider float_close_ok)", path,
+            )
+        else:
+            raise error(f"unequal objects", path, obj1, obj2)
+
+    return recurse(obj1, obj2, path=[])

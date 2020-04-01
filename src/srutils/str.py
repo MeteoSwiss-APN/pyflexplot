@@ -4,12 +4,17 @@ String utilities.
 """
 # Standard library
 import re
+from typing import Any
 
 
-def str_or_none(s, q="'", *, none="None"):
-    if s is None:
+def sfmt(obj: Any, q: str = "'", *, none: str = "None") -> str:
+    """Format a object to a string, while quoting strings and so forth."""
+    if obj is None:
         return none
-    return f"{q}{s}{q}"
+    elif isinstance(obj, str):
+        return f"{q}{obj}{q}"
+    else:
+        return str(obj)
 
 
 def to_varname(s, filter_invalid=None):
