@@ -306,16 +306,17 @@ class MapAxes:
             ),
             zorder=self.zorder[zorder_key],
         )
-        self.ax.add_feature(
-            cartopy.feature.NaturalEarthFeature(
-                category="physical",
-                name="lakes_europe",
-                scale=self.conf.geo_res,
-                edgecolor="none",
-                facecolor=self.water_color,
-            ),
-            zorder=self.zorder[zorder_key],
-        )
+        if self.conf.geo_res == "10m":
+            self.ax.add_feature(
+                cartopy.feature.NaturalEarthFeature(
+                    category="physical",
+                    name="lakes_europe",
+                    scale=self.conf.geo_res,
+                    edgecolor="none",
+                    facecolor=self.water_color,
+                ),
+                zorder=self.zorder[zorder_key],
+            )
 
     def add_rivers(self, zorder_key):
         linewidth = {"lowest": 1, "geo_lower": 1, "geo_upper": 2 / 3}[zorder_key]

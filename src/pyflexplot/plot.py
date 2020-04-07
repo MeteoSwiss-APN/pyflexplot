@@ -25,8 +25,11 @@ from .plot_lib import TextBoxAxes
 from .plot_lib import ax_w_h_in_fig_coords
 from .plot_lib import post_summarize_plot
 from .plot_types import MapAxesConf
-from .plot_types import MapAxesConf_Cosmo1
-from .plot_types import MapAxesConf_Cosmo1_CH
+from .plot_types import MapAxesConf_COSMO1
+from .plot_types import MapAxesConf_COSMO1_CH
+from .plot_types import MapAxesConf_COSMO2
+from .plot_types import MapAxesConf_COSMO2_CH
+from .plot_types import MapAxesConf_IFS
 from .plot_types import PlotConfig
 from .utils import format_level_ranges
 from .utils import summarizable
@@ -519,13 +522,18 @@ def plot_fields(fields, mdata_lst, dry_run=False, *, write=True):
         map_conf = None
         if domain == "auto":
             domain = model
-        # if model == "cosmo1":
-        if model.startswith("cosmo"):
-            # if domain == "cosmo1":
-            if domain.startswith("cosmo"):
-                map_conf = MapAxesConf_Cosmo1(lang=setup.lang)
-            elif domain == "ch":
-                map_conf = MapAxesConf_Cosmo1_CH(lang=setup.lang)
+        if model == "cosmo1":
+            if domain == "ch":
+                map_conf = MapAxesConf_COSMO1_CH(lang=setup.lang)
+            else:
+                map_conf = MapAxesConf_COSMO1(lang=setup.lang)
+        if model == "cosmo2":
+            if domain == "ch":
+                map_conf = MapAxesConf_COSMO2_CH(lang=setup.lang)
+            else:
+                map_conf = MapAxesConf_COSMO2(lang=setup.lang)
+        elif model == "ifs":
+            map_conf = MapAxesConf_IFS(lang=setup.lang)
         if not map_conf:
             raise NotImplementedError(
                 f"map_conf for model '{model}' and domain '{domain}'"

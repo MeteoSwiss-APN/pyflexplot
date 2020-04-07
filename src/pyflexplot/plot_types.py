@@ -25,28 +25,46 @@ from .words import WORDS
 
 
 @dataclass
-class MapAxesConf_Cosmo1(MapAxesConf):
+class MapAxesConf_COSMO1(MapAxesConf):
     geo_res: str = "10m"
     geo_res_cities: str = "50m"
     geo_res_rivers: str = "50m"
-    zoom_fact: float = 1.02
     min_city_pop: int = 300_000
+    zoom_fact: float = 1.02
 
 
 @dataclass
-class MapAxesConf_Cosmo1_CH(MapAxesConf_Cosmo1):
+class MapAxesConf_COSMO2(MapAxesConf_COSMO1):
+    pass
+
+
+@dataclass
+class MapAxesConf_COSMO1_CH(MapAxesConf):
+    geo_res: str = "10m"
     geo_res_cities: str = "10m"
     geo_res_rivers: str = "10m"
     min_city_pop: int = 0
-    # SR_TODO Determine the model from the data! (e.g., COSMO-1 v. COSMO-2 v. COSMO-E)
-    # rel_offset: Tuple[float] = (0.037, 0.106)  # suitable for ensemble (COSMO-2?)
+    zoom_fact: float = 3.6
     # zoom_fact: float = 3.2  # suitable for ensemble (i.e., COSMO-2?)
     rel_offset: Tuple[float, float] = (-0.02, 0.045)
-    zoom_fact: float = 3.6
 
     def __post_init__(self):
         super().__post_init__()
         self.ref_dist_conf.dist = 25
+
+
+@dataclass
+class MapAxesConf_COSMO2_CH(MapAxesConf_COSMO1_CH):
+    zoom_fact: float = 3.2
+
+
+@dataclass
+class MapAxesConf_IFS(MapAxesConf):
+    geo_res: str = "110m"
+    geo_res_cities: str = "110m"
+    geo_res_rivers: str = "110m"
+    min_city_pop: int = 1_000_000
+    zoom_fact: float = 1.02
 
 
 # SR_TMP TODO Turn into dataclass or the like.
