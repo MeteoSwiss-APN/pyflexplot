@@ -1,4 +1,4 @@
 # -*- coding: utf-8 -*-
 """
-Tests for pyflexplot.setup.
+Tests for ``pyflexplot.setup``.
 """

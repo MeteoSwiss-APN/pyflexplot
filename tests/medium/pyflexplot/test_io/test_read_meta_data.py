@@ -58,7 +58,7 @@ class Test_COSMO1(_TestBase):
 
 
 class Test_COSMO2(_TestBase):
-    datafilename = "flexpart_cosmo-2e_20190727120_000.nc"
+    datafilename = "flexpart_cosmo-2e_2019072712_000.nc"
 
     def test_model(self, datadir):
         self.set_up(datadir)

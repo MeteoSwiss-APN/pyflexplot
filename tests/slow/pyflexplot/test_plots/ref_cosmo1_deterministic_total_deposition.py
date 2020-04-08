@@ -2,7 +2,7 @@
 """
 Test reference for pytest test.
 
-tests/slow/pyflexplot/test_plots/test_cosmo1_deterministic.py::Test_TotalDeposition::test
+tests/slow/pyflexplot/test_plots/shared.py::Test_TotalDeposition::test
 
 Created by temporarily changing the parent class of ``Test_TotalDeposition``
 from ``_TestBase`` to ``_CreateReference`` and running pytest.
@@ -281,7 +281,7 @@ field_summary = {
             "ens_member_id": None,
             "ens_param_mem_min": None,
             "ens_param_thr": None,
-            "infile": "data/cosmo-1_2019052800.nc",
+            "infile": "flexpart_cosmo-1_2019093012.nc",
             "integrate": True,
             "lang": "de",
             "level": None,
@@ -302,7 +302,7 @@ field_summary = {
             "ens_member_id": None,
             "ens_param_mem_min": None,
             "ens_param_thr": None,
-            "infile": "data/cosmo-1_2019052800.nc",
+            "infile": "flexpart_cosmo-1_2019093012.nc",
             "integrate": True,
             "lang": "de",
             "level": None,
@@ -2277,7 +2277,7 @@ plot_summary = {
                 "ens_member_id": None,
                 "ens_param_mem_min": None,
                 "ens_param_thr": None,
-                "infile": "data/cosmo-1_2019052800.nc",
+                "infile": "flexpart_cosmo-1_2019093012.nc",
                 "integrate": True,
                 "lang": "de",
                 "level": None,
@@ -2298,7 +2298,7 @@ plot_summary = {
                 "ens_member_id": None,
                 "ens_param_mem_min": None,
                 "ens_param_thr": None,
-                "infile": "data/cosmo-1_2019052800.nc",
+                "infile": "flexpart_cosmo-1_2019093012.nc",
                 "integrate": True,
                 "lang": "de",
                 "level": None,

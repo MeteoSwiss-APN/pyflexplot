@@ -1,4 +1,4 @@
 # -*- coding: utf-8 -*-
 """
-Tests for srutils.dict.
+Tests for ``srutils.dict``.
 """

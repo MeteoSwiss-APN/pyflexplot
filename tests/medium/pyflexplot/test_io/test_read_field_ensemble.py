@@ -53,7 +53,7 @@ class TestReadFieldEnsemble_Single:
     ens_member_ids = [0, 1, 5, 10, 15, 20]
 
     def datafile_fmt(self, datadir):  # noqa:F811
-        return f"{datadir}/flexpart_cosmo-2e_20190727120_{{ens_member:03d}}.nc"
+        return f"{datadir}/flexpart_cosmo-2e_2019072712_{{ens_member:03d}}.nc"
 
     def datafile(self, ens_member_id, *, datadir=None, datafile_fmt=None):  # noqa:F811
         if datafile_fmt is None:
@@ -159,7 +159,7 @@ class TestReadFieldEnsemble_Multiple:
     ens_thr_agrmt_thr_deposition_tot = None  # SR_TMP
 
     def datafile_fmt(self, datadir):  # noqa:F811
-        return f"{datadir}/flexpart_cosmo-2e_20190727120_{{ens_member:03d}}.nc"
+        return f"{datadir}/flexpart_cosmo-2e_2019072712_{{ens_member:03d}}.nc"
 
     def datafile(self, ens_member_id, *, datafile_fmt=None, datadir=None):  # noqa:F811
         if datafile_fmt is None:

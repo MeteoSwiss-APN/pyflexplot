@@ -2,7 +2,7 @@
 """
 Test reference for pytest test.
 
-tests/slow/pyflexplot/test_plots/test_cosmo1_deterministic.py::Test_Concentration::test
+tests/slow/pyflexplot/test_plots/shared.py::Test_Concentration::test
 
 Created by temporarily changing the parent class of ``Test_Concentration``
 from ``_TestBase`` to ``_CreateReference`` and running pytest.
@@ -281,7 +281,7 @@ field_summary = {
             "ens_member_id": None,
             "ens_param_mem_min": None,
             "ens_param_thr": None,
-            "infile": "dummy.nc",
+            "infile": "flexpart_cosmo-1_2019093012.nc",
             "integrate": False,
             "lang": "de",
             "level": [0],
@@ -2199,7 +2199,7 @@ plot_summary = {
                 "ens_member_id": None,
                 "ens_param_mem_min": None,
                 "ens_param_thr": None,
-                "infile": "dummy.nc",
+                "infile": "flexpart_cosmo-1_2019093012.nc",
                 "integrate": False,
                 "lang": "de",
                 "level": [0],
