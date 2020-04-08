@@ -335,13 +335,19 @@ def assert_nested_equal(
             except Exception:
                 pass
 
-        if isinstance(obj1, Mapping):
-            if not isinstance(obj2, Mapping):
+        def check_equivalent(obj1, obj2, type_, path):
+            if not isinstance(obj1, type_) or not isinstance(obj2, type_):
                 raise error(
-                    f"unequivalent types (expected mappings): "
-                    f"{type(obj1).__name__} vs. {type(obj2).__name__}",
+                    f"unequivalent types: expected {type_.__name__}, got "
+                    f"{type(obj1).__name__} and {type(obj2).__name__}",
                     *[path, obj1, obj2],
                 )
+
+        if isinstance(obj1, str):
+            check_equivalent(obj1, obj2, str, path)
+            raise error("unequal strings", path, obj1, obj2)
+        elif isinstance(obj1, Mapping):
+            check_equivalent(obj1, obj2, Mapping, path)
             if obj1.keys() != obj2.keys():
                 raise error(
                     f"mappings differ in keys: {obj1.keys()} vs. {obj2.keys()}",
@@ -352,12 +358,7 @@ def assert_nested_equal(
                 recurse(val1, val2, path + [f"key: {key}"])
 
         elif isinstance(obj1, Sequence):
-            if not isinstance(obj2, Sequence):
-                raise error(
-                    f"unequivalent types (expected sequences): "
-                    f"{type(obj1).__name__} vs. {type(obj2).__name__}",
-                    *[path, obj1, obj2],
-                )
+            check_equivalent(obj1, obj2, Sequence, path)
             if len(obj1) != len(obj2):
                 raise error(
                     f"sequences differ in length: {len(obj1)} vs. {len(obj2)}",
@@ -367,12 +368,7 @@ def assert_nested_equal(
                 recurse(ele1, ele2, path + [f"idx: {idx}"])
 
         elif isinstance(obj1, Collection):
-            if not isinstance(obj2, Collection):
-                raise error(
-                    f"unequivalent types (expected collections): "
-                    f"{type(obj1).__name__} vs. {type(obj2).__name__}",
-                    *[path, obj1, obj2],
-                )
+            check_equivalent(obj1, obj2, Collection, path)
             if len(obj1) != len(obj2):
                 raise error(
                     f"collections differ in length: {len(obj1)} vs. {len(obj2)}",

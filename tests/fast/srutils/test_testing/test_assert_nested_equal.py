@@ -50,3 +50,9 @@ def test_float_close_flat():
     with pytest.raises(AssertionError):
         assert_nested_equal(obj1, obj2)
     assert_nested_equal(obj1, obj2, float_close_ok=True)
+
+
+def test_string():
+    assert_nested_equal(["a"], ["a"])
+    with pytest.raises(AssertionError):
+        assert_nested_equal(["a"], ["b"])
