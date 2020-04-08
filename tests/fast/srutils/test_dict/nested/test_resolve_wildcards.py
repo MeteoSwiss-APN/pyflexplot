@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Tests for function ``srutils.dict.nested_dict_resolve_wildcards``.
