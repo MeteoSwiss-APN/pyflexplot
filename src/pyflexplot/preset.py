@@ -148,7 +148,12 @@ def click_use_preset(ctx: Context, param: ParamType, value: Any) -> None:
             ctx.exit(1)
         else:
             n = sum([len(files) for files in files_by_dir.values()])
-            click.echo(f"Collected {n} preset setup file{'' if n == 1 else 's'}:")
+            if n == 0:
+                click.echo(f"Collected no preset setup files")
+            elif n == 1:
+                click.echo(f"Collected {n} preset setup file:")
+            else:
+                click.echo(f"Collected {n} preset setup files:")
             _click_list_presets(ctx, files_by_dir, indent_all=True)
         for files in files_by_dir.values():
             for path in files.values():

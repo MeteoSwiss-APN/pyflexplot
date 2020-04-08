@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Test elements of complete plots.
@@ -8,6 +7,7 @@ import distutils.dir_util
 import importlib
 import os
 from pprint import pformat
+from textwrap import dedent
 from typing import Any
 from typing import Dict
 
@@ -83,23 +83,48 @@ class _TestBase:
         assert_nested_equal(res, sol, float_close_ok=True)
 
 
-class CreateReference(_TestBase):
+class ReferenceFileCreationSuccess(Exception):
+    """Test reference file successfully written to disk."""
+
+
+class ReferenceFileCreationError(Exception):
+    """Error writing test reference file to disk."""
+
+
+class _CreateReference(_TestBase):
     """Create new reference file by inheriting from this instead of _TestBase."""
 
     def test(self, datadir):
+        reffile = f"{self.reference}.py"
         field, mdata = self.get_field_and_mdata(datadir)
         field_summary = field.summarize()
-
         plot = self.get_plot(field, mdata)
         plot_summary = plot.summarize()
+        module_path_rel = os.path.relpath(__file__, ".")
+        cls_name = type(self).__name__
+        header = f'''\
+            # -*- coding: utf-8 -*-
+            """
+            Test reference for pytest test.
 
-        reffile = f"{self.reference}.py"
-        print(f"\nwriting reference for {type(self).__name__} to {reffile}\n")
-        with open(reffile, "w") as f:
-            f.write(f"\nfield_summary = {pformat(field_summary)}\n")
-            f.write(f"\nplot_summary = {pformat(plot_summary)}\n")
+            {module_path_rel}::{cls_name}::test
+
+            Created by temporarily changing the parent class of ``{cls_name}``
+            from ``_TestBase`` to ``_CreateReference`` and running pytest.
+            """
+            '''
+        try:
+            with open(reffile, "w") as f:
+                f.write(dedent(header))
+                f.write(f"\nfield_summary = {pformat(field_summary)}\n")
+                f.write(f"\nplot_summary = {pformat(plot_summary)}\n")
+        except Exception:
+            raise ReferenceFileCreationError(reffile)
+        else:
+            raise ReferenceFileCreationSuccess(reffile)
 
 
+# class Test_Concentration(_CreateReference):
 class Test_Concentration(_TestBase):
     reference = "ref_cosmo1_deterministic_concentration"
     setup_dct = {
@@ -125,6 +150,7 @@ class Test_Concentration(_TestBase):
     }
 
 
+# class Test_IntegratedConcentration(_CreateReference):
 class Test_IntegratedConcentration(_TestBase):
     reference = "ref_cosmo1_deterministic_integrated_concentration"
     setup_dct = {
@@ -140,7 +166,7 @@ class Test_IntegratedConcentration(_TestBase):
         "ens_param_mem_min": None,
         "ens_param_thr": None,
         "lang": "de",
-        "domain": "auto",
+        "domain": "ch",
         "nageclass": None,
         "noutrel": None,
         "numpoint": None,
@@ -150,6 +176,7 @@ class Test_IntegratedConcentration(_TestBase):
     }
 
 
+# class Test_TotalDeposition(_CreateReference):
 class Test_TotalDeposition(_TestBase):
     reference = "ref_cosmo1_deterministic_total_deposition"
     setup_dct = {
@@ -175,6 +202,7 @@ class Test_TotalDeposition(_TestBase):
     }
 
 
+# class Test_AffectedArea(_CreateReference):
 class Test_AffectedArea(_TestBase):
     reference = "ref_cosmo1_deterministic_affected_area"
     setup_dct = {
@@ -190,7 +218,7 @@ class Test_AffectedArea(_TestBase):
         "ens_param_mem_min": None,
         "ens_param_thr": None,
         "lang": "de",
-        "domain": "auto",
+        "domain": "ch",
         "nageclass": None,
         "noutrel": None,
         "numpoint": None,

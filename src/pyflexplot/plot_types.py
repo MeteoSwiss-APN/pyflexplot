@@ -3,7 +3,6 @@
 Plot types.
 """
 # Standard library
-from dataclasses import dataclass
 from typing import Any
 from typing import Dict
 from typing import Optional
@@ -15,6 +14,7 @@ import matplotlib as mpl
 import numpy as np
 
 # Local
+from .data import Field
 from .meta_data import MetaData
 from .meta_data import format_level_range
 from .plot_lib import MapAxesConf
@@ -24,47 +24,47 @@ from .words import SYMBOLS
 from .words import WORDS
 
 
-@dataclass
-class MapAxesConf_COSMO1(MapAxesConf):
-    geo_res: str = "10m"
-    geo_res_cities: str = "50m"
-    geo_res_rivers: str = "50m"
-    min_city_pop: int = 300_000
-    zoom_fact: float = 1.02
+def create_map_conf(field: Field) -> MapAxesConf:
+    domain = field.var_setups.collect_equal("domain")
+    model = field.nc_meta_data["analysis"]["model"]
 
+    conf_base = {"lang": field.var_setups.collect_equal("lang")}
 
-@dataclass
-class MapAxesConf_COSMO2(MapAxesConf_COSMO1):
-    pass
+    conf_model_ifs = {"geo_res": "110m"}
+    conf_model_cosmo = {"geo_res": "10m"}
 
+    conf_domain_global = {
+        "geo_res_cities": "110m",
+        "geo_res_rivers": "110m",
+        "min_city_pop": 1_000_000,
+        "zoom_fact": 1.02,
+    }
+    conf_domain_eu = {
+        "geo_res_cities": "50m",
+        "geo_res_rivers": "50m",
+        "min_city_pop": 300_000,
+        "zoom_fact": 1.02,
+    }
+    conf_domain_ch = {
+        "geo_res_cities": "10m",
+        "geo_res_rivers": "10m",
+        "min_city_pop": 0,
+        "ref_dist_conf": {"dist": 25},
+        "rel_offset": (-0.02, 0.045),
+    }
 
-@dataclass
-class MapAxesConf_COSMO1_CH(MapAxesConf):
-    geo_res: str = "10m"
-    geo_res_cities: str = "10m"
-    geo_res_rivers: str = "10m"
-    min_city_pop: int = 0
-    zoom_fact: float = 3.6
-    # zoom_fact: float = 3.2  # suitable for ensemble (i.e., COSMO-2?)
-    rel_offset: Tuple[float, float] = (-0.02, 0.045)
+    if (model, domain) in [("cosmo1", "auto"), ("cosmo2", "auto")]:
+        conf = {**conf_base, **conf_model_cosmo, **conf_domain_eu}
+    elif (model, domain) == ("cosmo1", "ch"):
+        conf = {**conf_base, **conf_model_cosmo, **conf_domain_ch, "zoom_fact": 3.6}
+    elif (model, domain) == ("cosmo2", "ch"):
+        conf = {**conf_base, **conf_model_cosmo, **conf_domain_ch, "zoom_fact": 3.2}
+    elif (model, domain) == ("ifs", "auto"):
+        conf = {**conf_base, **conf_model_ifs, **conf_domain_global}
+    else:
+        raise Exception(f"unknown domain '{domain}' for model '{model}'")
 
-    def __post_init__(self):
-        super().__post_init__()
-        self.ref_dist_conf.dist = 25
-
-
-@dataclass
-class MapAxesConf_COSMO2_CH(MapAxesConf_COSMO1_CH):
-    zoom_fact: float = 3.2
-
-
-@dataclass
-class MapAxesConf_IFS(MapAxesConf):
-    geo_res: str = "110m"
-    geo_res_cities: str = "110m"
-    geo_res_rivers: str = "110m"
-    min_city_pop: int = 1_000_000
-    zoom_fact: float = 1.02
+    return MapAxesConf(**conf)
 
 
 # SR_TMP TODO Turn into dataclass or the like.

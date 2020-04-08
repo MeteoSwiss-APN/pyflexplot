@@ -1,282 +1,301 @@
 # -*- coding: utf-8 -*-
 """
-Reference for test_cosmo1_deterministic.py::Test_Concentration.
+Test reference for pytest test.
+
+tests/slow/pyflexplot/test_plots/test_cosmo1_deterministic.py::Test_Concentration::test
+
+Created by temporarily changing the parent class of ``Test_Concentration``
+from ``_TestBase`` to ``_CreateReference`` and running pytest.
 """
+
 field_summary = {
-    "type": "Field",
-    "rotated_pole": True,
-    "var_setups": [
-        {
-            "infile": "dummy.nc",
-            "outfile": "dummy.png",
-            "plot_type": "auto",
-            "variable": "concentration",
-            "deposition_type": "none",
-            "integrate": False,
-            "combine_species": True,
-            "simulation_type": "deterministic",
-            "ens_member_id": None,
-            "ens_param_mem_min": None,
-            "ens_param_thr": None,
-            "lang": "de",
-            "domain": "auto",
-            "nageclass": [0],
-            "noutrel": [0],
-            "numpoint": [0],
-            "species_id": [1],
-            "time": [5],
-            "level": [0],
-        }
-    ],
-    "time_stats": {
-        "mean": 2.9835212e-06,
-        "median": 0.0,
-        "mean_nz": 1.0435209e-05,
-        "median_nz": 1.4416405e-06,
-        "max": 0.0063348617,
+    "fld": {
+        "dtype": "float32",
+        "n_nan": 0,
+        "n_zero": 697,
+        "nanmax": 0.0010116174,
+        "nanmax_nonzero": 0.0010116174,
+        "nanmean": 4.5633556e-06,
+        "nanmean_nonzero": 1.0886733e-05,
+        "nanmedian": 0.0,
+        "nanmedian_nonzero": 1.6747575e-06,
+        "nanmin": 0.0,
+        "nanmin_nonzero": 2.310588e-10,
+        "shape": (30, 40),
     },
+    "lat": {"dtype": "float32", "max": 2.9499998, "min": -1.4000003, "shape": (30,)},
+    "lon": {"dtype": "float32", "max": 4.0499997, "min": -1.7999997, "shape": (40,)},
     "nc_meta_data": {
-        "ncattrs": {"dxout": 0.01, "dyout": 0.01},
+        "analysis": {"model": "cosmo1", "rotated_pole": True, "species_ids": [1]},
         "dimensions": {
-            "time": {"name": "time", "size": 11},
-            "rlon": {"name": "rlon", "size": 40},
-            "rlat": {"name": "rlat", "size": 30},
             "level": {"name": "level", "size": 3},
-            "numspec": {"name": "numspec", "size": 1},
-            "numpoint": {"name": "numpoint", "size": 1},
-            "noutrel": {"name": "noutrel", "size": 1},
             "nageclass": {"name": "nageclass", "size": 1},
             "nchar": {"name": "nchar", "size": 45},
+            "noutrel": {"name": "noutrel", "size": 1},
+            "numpoint": {"name": "numpoint", "size": 1},
+            "numspec": {"name": "numspec", "size": 1},
+            "rlat": {"name": "rlat", "size": 30},
+            "rlon": {"name": "rlon", "size": 40},
+            "time": {"name": "time", "size": 11},
         },
+        "ncattrs": {"dxout": 0.01, "dyout": 0.01},
         "variables": {
-            "time": {
-                "name": "time",
-                "dimensions": ["time"],
-                "shape": [11],
+            "DD_spec001": {
+                "dimensions": ["nageclass", "noutrel", "time", "rlat", "rlon"],
+                "name": "DD_spec001",
                 "ncattrs": {
-                    "units": "seconds since 2019-09-30 12:00",
-                    "calendar": "proleptic_gregorian",
+                    "coordinates": "lon " "lat",
+                    "density": 2500.0,
+                    "dquer": 0.6,
+                    "dryvel": 0.0015,
+                    "dsigma": 0.3,
+                    "f0": 0.0,
+                    "henry": 0.0,
+                    "long_name": "Cs-137_dry_deposition",
+                    "reldiff": -9.9,
+                    "units": "1e-12 kg " "m-2",
                 },
+                "shape": [1, 1, 11, 30, 40],
             },
-            "rlon": {
-                "name": "rlon",
-                "dimensions": ["rlon"],
-                "shape": [40],
-                "ncattrs": {
-                    "long_name": "longitude in rotated pole grid",
-                    "units": "degrees",
-                    "standard_name": "grid_longitude",
-                    "axis": "X",
-                    "description": "grid cell centers",
-                },
+            "LAGE": {
+                "dimensions": ["nageclass"],
+                "name": "LAGE",
+                "ncattrs": {"long_name": "age class", "units": "seconds"},
+                "shape": [1],
             },
-            "rlat": {
-                "name": "rlat",
-                "dimensions": ["rlat"],
-                "shape": [30],
+            "RELCOM": {
+                "dimensions": ["numpoint", "nchar"],
+                "name": "RELCOM",
+                "ncattrs": {"long_name": "release " "point " "name"},
+                "shape": [1, 45],
+            },
+            "RELEND": {
+                "dimensions": ["numpoint"],
+                "name": "RELEND",
                 "ncattrs": {
-                    "long_name": "latitude in rotated pole grid",
-                    "units": "degrees",
-                    "standard_name": "grid_latitude",
-                    "axis": "Y",
-                    "description": "grid cell centers",
+                    "long_name": "release "
+                    "end "
+                    "relative "
+                    "to "
+                    "simulation "
+                    "start",
+                    "units": "seconds",
                 },
+                "shape": [1],
+            },
+            "RELKINDZ": {
+                "dimensions": ["numpoint"],
+                "name": "RELKINDZ",
+                "ncattrs": {"long_name": "release " "kind"},
+                "shape": [1],
+            },
+            "RELLAT1": {
+                "dimensions": ["numpoint"],
+                "name": "RELLAT1",
+                "ncattrs": {
+                    "long_name": "release " "latitude " "lower " "left " "corner",
+                    "units": "degrees_north",
+                },
+                "shape": [1],
+            },
+            "RELLAT2": {
+                "dimensions": ["numpoint"],
+                "name": "RELLAT2",
+                "ncattrs": {
+                    "long_name": "release " "latitude " "upper " "right " "corner",
+                    "units": "degrees_north",
+                },
+                "shape": [1],
+            },
+            "RELLNG1": {
+                "dimensions": ["numpoint"],
+                "name": "RELLNG1",
+                "ncattrs": {
+                    "long_name": "release " "longitude " "lower " "left " "corner",
+                    "units": "degrees_east",
+                },
+                "shape": [1],
+            },
+            "RELLNG2": {
+                "dimensions": ["numpoint"],
+                "name": "RELLNG2",
+                "ncattrs": {
+                    "long_name": "release " "longitude " "upper " "right " "corner",
+                    "units": "degrees_east",
+                },
+                "shape": [1],
+            },
+            "RELPART": {
+                "dimensions": ["numpoint"],
+                "name": "RELPART",
+                "ncattrs": {"long_name": "number " "of " "release " "particles"},
+                "shape": [1],
+            },
+            "RELSTART": {
+                "dimensions": ["numpoint"],
+                "name": "RELSTART",
+                "ncattrs": {
+                    "long_name": "release "
+                    "start "
+                    "relative "
+                    "to "
+                    "simulation "
+                    "start",
+                    "units": "seconds",
+                },
+                "shape": [1],
+            },
+            "RELXMASS": {
+                "dimensions": ["numspec", "numpoint"],
+                "name": "RELXMASS",
+                "ncattrs": {"long_name": "total " "release " "particle " "mass"},
+                "shape": [1, 1],
+            },
+            "RELZZ1": {
+                "dimensions": ["numpoint"],
+                "name": "RELZZ1",
+                "ncattrs": {
+                    "long_name": "release " "height " "bottom",
+                    "units": "meters",
+                },
+                "shape": [1],
+            },
+            "RELZZ2": {
+                "dimensions": ["numpoint"],
+                "name": "RELZZ2",
+                "ncattrs": {"long_name": "release " "height " "top", "units": "meters"},
+                "shape": [1],
+            },
+            "WD_spec001": {
+                "dimensions": ["nageclass", "noutrel", "time", "rlat", "rlon"],
+                "name": "WD_spec001",
+                "ncattrs": {
+                    "coordinates": "lon " "lat",
+                    "dquer": 0.6,
+                    "henry": 0.0,
+                    "long_name": "Cs-137_wet_deposition",
+                    "units": "1e-12 kg " "m-2",
+                    "weta": 7e-05,
+                    "wetb": 0.8,
+                },
+                "shape": [1, 1, 11, 30, 40],
+            },
+            "fptot": {
+                "dimensions": ["noutrel", "rlat", "rlon"],
+                "name": "fptot",
+                "ncattrs": {
+                    "coordinates": "lon lat",
+                    "long_name": "total_footprint",
+                    "sampling_height": "undefined",
+                    "units": "ng kg-1",
+                },
+                "shape": [1, 30, 40],
             },
             "level": {
-                "name": "level",
                 "dimensions": ["level"],
-                "shape": [3],
+                "name": "level",
                 "ncattrs": {
                     "axis": "Z",
-                    "units": "meters",
+                    "description": "grid " "cell top",
+                    "long_name": "height " "above " "ground",
                     "positive": "up",
                     "standard_name": "height",
-                    "long_name": "height above ground",
-                    "description": "grid cell top",
+                    "units": "meters",
                 },
+                "shape": [3],
+            },
+            "rlat": {
+                "dimensions": ["rlat"],
+                "name": "rlat",
+                "ncattrs": {
+                    "axis": "Y",
+                    "description": "grid cell " "centers",
+                    "long_name": "latitude in " "rotated " "pole grid",
+                    "standard_name": "grid_latitude",
+                    "units": "degrees",
+                },
+                "shape": [30],
+            },
+            "rlon": {
+                "dimensions": ["rlon"],
+                "name": "rlon",
+                "ncattrs": {
+                    "axis": "X",
+                    "description": "grid cell " "centers",
+                    "long_name": "longitude " "in rotated " "pole grid",
+                    "standard_name": "grid_longitude",
+                    "units": "degrees",
+                },
+                "shape": [40],
             },
             "rotated_pole": {
-                "name": "rotated_pole",
                 "dimensions": {},
-                "shape": {},
+                "name": "rotated_pole",
                 "ncattrs": {
                     "grid_mapping_name": "rotated_latitude_longitude",
                     "grid_north_pole_latitude": 43.0,
                     "grid_north_pole_longitude": -170.0,
                 },
-            },
-            "RELCOM": {
-                "name": "RELCOM",
-                "dimensions": ["numpoint", "nchar"],
-                "shape": [1, 45],
-                "ncattrs": {"long_name": "release point name"},
-            },
-            "RELLNG1": {
-                "name": "RELLNG1",
-                "dimensions": ["numpoint"],
-                "shape": [1],
-                "ncattrs": {
-                    "units": "degrees_east",
-                    "long_name": "release longitude lower left corner",
-                },
-            },
-            "RELLNG2": {
-                "name": "RELLNG2",
-                "dimensions": ["numpoint"],
-                "shape": [1],
-                "ncattrs": {
-                    "units": "degrees_east",
-                    "long_name": "release longitude upper right corner",
-                },
-            },
-            "RELLAT1": {
-                "name": "RELLAT1",
-                "dimensions": ["numpoint"],
-                "shape": [1],
-                "ncattrs": {
-                    "units": "degrees_north",
-                    "long_name": "release latitude lower left corner",
-                },
-            },
-            "RELLAT2": {
-                "name": "RELLAT2",
-                "dimensions": ["numpoint"],
-                "shape": [1],
-                "ncattrs": {
-                    "units": "degrees_north",
-                    "long_name": "release latitude upper right corner",
-                },
-            },
-            "RELZZ1": {
-                "name": "RELZZ1",
-                "dimensions": ["numpoint"],
-                "shape": [1],
-                "ncattrs": {"units": "meters", "long_name": "release height bottom"},
-            },
-            "RELZZ2": {
-                "name": "RELZZ2",
-                "dimensions": ["numpoint"],
-                "shape": [1],
-                "ncattrs": {"units": "meters", "long_name": "release height top"},
-            },
-            "RELKINDZ": {
-                "name": "RELKINDZ",
-                "dimensions": ["numpoint"],
-                "shape": [1],
-                "ncattrs": {"long_name": "release kind"},
-            },
-            "RELSTART": {
-                "name": "RELSTART",
-                "dimensions": ["numpoint"],
-                "shape": [1],
-                "ncattrs": {
-                    "units": "seconds",
-                    "long_name": "release start relative to simulation start",
-                },
-            },
-            "RELEND": {
-                "name": "RELEND",
-                "dimensions": ["numpoint"],
-                "shape": [1],
-                "ncattrs": {
-                    "units": "seconds",
-                    "long_name": "release end relative to simulation start",
-                },
-            },
-            "RELPART": {
-                "name": "RELPART",
-                "dimensions": ["numpoint"],
-                "shape": [1],
-                "ncattrs": {"long_name": "number of release particles"},
-            },
-            "RELXMASS": {
-                "name": "RELXMASS",
-                "dimensions": ["numspec", "numpoint"],
-                "shape": [1, 1],
-                "ncattrs": {"long_name": "total release particle mass"},
-            },
-            "LAGE": {
-                "name": "LAGE",
-                "dimensions": ["nageclass"],
-                "shape": [1],
-                "ncattrs": {"units": "seconds", "long_name": "age class"},
+                "shape": {},
             },
             "spec001": {
-                "name": "spec001",
                 "dimensions": ["nageclass", "noutrel", "time", "level", "rlat", "rlon"],
-                "shape": [1, 1, 11, 3, 30, 40],
+                "name": "spec001",
                 "ncattrs": {
-                    "units": "ng kg-1",
-                    "long_name": "Cs-137",
-                    "coordinates": "lon lat",
+                    "coordinates": "lon " "lat",
                     "decay": 7.3265155e-10,
-                    "weightmolar": -9.99,
+                    "long_name": "Cs-137",
                     "ohreact": -9.9e-09,
-                    "vsetaver": -0.0003866022,
                     "spec_ass": -9,
-                },
-            },
-            "WD_spec001": {
-                "name": "WD_spec001",
-                "dimensions": ["nageclass", "noutrel", "time", "rlat", "rlon"],
-                "shape": [1, 1, 11, 30, 40],
-                "ncattrs": {
-                    "units": "1e-12 kg m-2",
-                    "long_name": "Cs-137_wet_deposition",
-                    "coordinates": "lon lat",
-                    "weta": 7e-05,
-                    "wetb": 0.8,
-                    "dquer": 0.6,
-                    "henry": 0.0,
-                },
-            },
-            "DD_spec001": {
-                "name": "DD_spec001",
-                "dimensions": ["nageclass", "noutrel", "time", "rlat", "rlon"],
-                "shape": [1, 1, 11, 30, 40],
-                "ncattrs": {
-                    "units": "1e-12 kg m-2",
-                    "long_name": "Cs-137_dry_deposition",
-                    "coordinates": "lon lat",
-                    "dryvel": 0.0015,
-                    "reldiff": -9.9,
-                    "henry": 0.0,
-                    "f0": 0.0,
-                    "dquer": 0.6,
-                    "density": 2500.0,
-                    "dsigma": 0.3,
-                },
-            },
-            "fptot": {
-                "name": "fptot",
-                "dimensions": ["noutrel", "rlat", "rlon"],
-                "shape": [1, 30, 40],
-                "ncattrs": {
-                    "coordinates": "lon lat",
                     "units": "ng kg-1",
-                    "long_name": "total_footprint",
-                    "sampling_height": "undefined",
+                    "vsetaver": -0.0003866022,
+                    "weightmolar": -9.99,
                 },
+                "shape": [1, 1, 11, 3, 30, 40],
+            },
+            "time": {
+                "dimensions": ["time"],
+                "name": "time",
+                "ncattrs": {
+                    "calendar": "proleptic_gregorian",
+                    "units": "seconds since " "2019-09-30 " "12:00",
+                },
+                "shape": [11],
             },
         },
-        "analysis": {"model": "cosmo1", "rotated_pole": True, "species_ids": [1]},
     },
-    "fld": {
-        "dtype": "float32",
-        "shape": (30, 40),
-        "nanmin": 0.0,
-        "nanmean": 4.5633556e-06,
-        "nanmedian": 0.0,
-        "nanmax": 0.0010116174,
-        "nanmin_nonzero": 2.310588e-10,
-        "nanmean_nonzero": 1.0886733e-05,
-        "nanmedian_nonzero": 1.6747575e-06,
-        "nanmax_nonzero": 0.0010116174,
-        "n_nan": 0,
-        "n_zero": 697,
+    "rotated_pole": True,
+    "time_stats": {
+        "max": 0.0063348617,
+        "mean": 2.9835212e-06,
+        "mean_nz": 1.0435209e-05,
+        "median": 0.0,
+        "median_nz": 1.4416405e-06,
     },
-    "lat": {"dtype": "float32", "shape": (30,), "min": -1.4000003, "max": 2.9499998},
-    "lon": {"dtype": "float32", "shape": (40,), "min": -1.7999997, "max": 4.0499997},
+    "type": "Field",
+    "var_setups": [
+        {
+            "combine_species": True,
+            "deposition_type": "none",
+            "domain": "auto",
+            "ens_member_id": None,
+            "ens_param_mem_min": None,
+            "ens_param_thr": None,
+            "infile": "dummy.nc",
+            "integrate": False,
+            "lang": "de",
+            "level": [0],
+            "nageclass": [0],
+            "noutrel": [0],
+            "numpoint": [0],
+            "outfile": "dummy.png",
+            "plot_type": "auto",
+            "simulation_type": "deterministic",
+            "species_id": [1],
+            "time": [5],
+            "variable": "concentration",
+        }
+    ],
 }
 
 plot_summary = {
@@ -2200,12 +2219,7 @@ plot_summary = {
         "axes": [
             {
                 "bbox": {
-                    "bounds": (
-                        60.0,
-                        45.00000000000005,
-                        930.0000000000001,
-                        691.0181770724328,
-                    ),
+                    "bounds": (60.0, 45.0, 930.0000000000001, 691.0181770724328),
                     "type": "TransformedBbox",
                 },
                 "type": "GeoAxesSubplot",
@@ -2269,7 +2283,7 @@ plot_summary = {
         },
         "ref_dist_on": True,
         "rel_offset": [0.0, 0.0],
-        "type": "MapAxesConf_Cosmo1",
+        "type": "MapAxesConf",
         "zoom_fact": 1.02,
     },
     "mark_release_site": True,

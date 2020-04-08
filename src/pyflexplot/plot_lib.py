@@ -5,8 +5,8 @@ Plots.
 # Standard library
 import warnings
 from dataclasses import dataclass
-from dataclasses import field
-from typing import Optional
+from typing import Any
+from typing import Dict
 from typing import Tuple
 
 # Third-party
@@ -16,6 +16,9 @@ import matplotlib as mpl
 import matplotlib.patches
 import matplotlib.ticker
 import numpy as np
+from pydantic import BaseModel
+from pydantic import root_validator
+from pydantic import validator
 
 # First-party
 from srutils.iter import isiterable
@@ -95,10 +98,13 @@ class RefDistIndConf:
     pos: str = "bl"
     unit: str = "km"
 
+    @classmethod
+    def create(cls, params):
+        return cls(**params)
+
 
 @summarizable
-@dataclass
-class MapAxesConf:
+class MapAxesConf(BaseModel):
     """
     Configuration of ``MapAxesPlot``.
 
@@ -115,7 +121,7 @@ class MapAxesConf:
 
         min_city_pop: Minimum population of cities shown.
 
-        ref_dist_conf: Reference distance indicator setupuration.
+        ref_dist_conf: Reference distance indicator setup.
 
         ref_dist_on: Whether to add a reference distance indicator.
 
@@ -127,21 +133,47 @@ class MapAxesConf:
     """
 
     geo_res: str = "50m"
-    geo_res_cities: Optional[str] = None
-    geo_res_rivers: Optional[str] = None
+    geo_res_cities: str = "none"
+    geo_res_rivers: str = "none"
     lang: str = "en"
     lw_frame: float = 1.0
     min_city_pop: int = 0
-    ref_dist_conf: RefDistIndConf = field(default_factory=RefDistIndConf)
+    ref_dist_conf: RefDistIndConf = RefDistIndConf()
     ref_dist_on: bool = True
     rel_offset: Tuple[float, float] = (0.0, 0.0)
     zoom_fact: float = 1.0
 
-    def __post_init__(self):
-        if self.geo_res_cities is None:
-            self.geo_res_cities = self.geo_res
-        if self.geo_res_rivers is None:
-            self.geo_res_rivers = self.geo_res
+    class Config:  # noqa
+        arbitrary_types_allowed = True
+
+    @root_validator(pre=True)
+    def _init_ref_dist_conf(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        param = "ref_dist_conf"
+        type_ = RefDistIndConf
+        try:
+            value = values[param]
+        except KeyError:
+            values[param] = type_()
+        else:
+            if isinstance(value, dict):
+                values[param] = type_(**value)
+            elif not isinstance(value, type_):
+                raise TypeError(
+                    f"ref_dist_conf: expected dict or {type_.__name__}, got "
+                    f"{type(value).__name__}",
+                    value,
+                )
+        return values
+
+    @validator("geo_res_cities", always=True, allow_reuse=True)
+    def _init_geo_res_cities(cls, value: str, values: Dict[str, Any]) -> str:
+        if value == "none":
+            value = values["geo_res"]
+        return value
+
+    _init_geo_res_rivers = validator("geo_res_rivers", always=True)(
+        _init_geo_res_cities  # type: ignore
+    )
 
 
 @summarizable(post_summarize=post_summarize_plot)

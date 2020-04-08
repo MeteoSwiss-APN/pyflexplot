@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Reference for test_cosmo1_deterministic.py::Test_TotalDeposition.
+Test reference for pytest test.
+
+tests/slow/pyflexplot/test_plots/test_cosmo1_deterministic.py::Test_TotalDeposition::test
+
+Created by temporarily changing the parent class of ``Test_TotalDeposition``
+from ``_TestBase`` to ``_CreateReference`` and running pytest.
 """
+
 field_summary = {
     "fld": {
         "dtype": "float32",
@@ -2312,12 +2318,7 @@ plot_summary = {
         "axes": [
             {
                 "bbox": {
-                    "bounds": (
-                        60.0,
-                        45.00000000000005,
-                        930.0000000000001,
-                        691.0181770724328,
-                    ),
+                    "bounds": (60.0, 45.0, 930.0000000000001, 691.0181770724328),
                     "type": "TransformedBbox",
                 },
                 "type": "GeoAxesSubplot",
@@ -2381,7 +2382,7 @@ plot_summary = {
         },
         "ref_dist_on": True,
         "rel_offset": [0.0, 0.0],
-        "type": "MapAxesConf_Cosmo1",
+        "type": "MapAxesConf",
         "zoom_fact": 1.02,
     },
     "mark_release_site": True,
