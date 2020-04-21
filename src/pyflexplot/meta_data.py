@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=R0903  # too-few-public-methods
 """
 Attributes.
 """
@@ -25,9 +26,6 @@ from pydantic import BaseModel
 from pydantic import validator
 from pydantic.generics import GenericModel
 
-# First-party
-from srutils.dict import format_dictlike
-
 # Local
 from .setup import InputSetup
 from .setup import InputSetupCollection
@@ -38,6 +36,7 @@ ValueT = TypeVar("ValueT", int, float, str, datetime, timedelta)
 
 
 @summarizable
+# pylint: disable=E0213  # no-self-argument (@validator)
 class MetaDatum(GenericModel, Generic[ValueT]):
     """Individual piece of meta data."""
 
@@ -46,6 +45,7 @@ class MetaDatum(GenericModel, Generic[ValueT]):
     attrs: Dict[str, Any] = {}
 
     class Config:  # noqa
+        extra = "forbid"
         validate_all = True
         validate_assigment = True
 
@@ -142,6 +142,7 @@ class MetaDatumCombo(GenericModel, Generic[ValueT]):
     attrs: Dict[str, Any] = {}
 
     class Config:  # noqa
+        extra = "forbid"
         validate_all = True
         validate_assignment = True
 
@@ -243,7 +244,7 @@ class BaseMetaData:
     # SR_TODO <<< eliminate iterator method
     def iter_objs(self):
         if isinstance(self, BaseModel):  # SR_TMP
-            for name in self.__fields__:
+            for name in self.__fields__:  # pylint: disable=E1101  # no-member
                 if name != "setup":
                     yield name, getattr(self, name)
         else:
@@ -302,7 +303,8 @@ class BaseMetaData:
             other_data = [getattr(o, name) for o in others]
             kwargs[name] = datum.merge_with(other_data, replace=replace.get(name))
 
-        assert type(self) is not BaseMetaData  # mypy
+        assert type(self) is not BaseMetaData  # pylint: disable=C0123  # mypy
+        # C0123: unidiomatic-typecheck (type instead of isinstance)
         return type(self)(setup=setup, **kwargs)
 
 
@@ -566,7 +568,7 @@ class MetaDataCollector:
             integr_type = "accum" if self.setup.integrate else "mean"
         else:
             raise NotImplementedError(
-                f"no integration type specified for '{self.name}'"
+                "no integration type specified", self.setup.variable,
             )
 
         mdata_raw.update(
@@ -632,6 +634,7 @@ class MetaDataCollector:
 
         return now, ts_integr_start
 
+    # pylint: disable=R0914  # too-many-locals
     def collect_release_mdata(self, mdata_raw):
         """Collect release point meta data."""
 
@@ -781,6 +784,7 @@ class MetaDataCollector:
             )  # SR_HC
         return substance
 
+    # pylint: disable=R0911,R0912  # too-many-return-statements,too-many-branches
     def _long_name(self, *, variable=None, plot_type=None):
         setup = self.setup
         words = self._words
@@ -865,73 +869,27 @@ class MetaDataCollector:
         return "none"
 
 
-class ReleasePoint:
+class ReleasePoint(BaseModel):
     """Release point information."""
 
-    # Define the init arguments with target types
-    # Done here to avoid duplication
-    attr_types = {
-        "name": str,
-        "age_id": int,
-        "kind": str,
-        "lllat": float,
-        "lllon": float,
-        "urlat": float,
-        "urlon": float,
-        "zbot": float,
-        "ztop": float,
-        "rel_start": int,
-        "rel_end": int,
-        "n_parts": int,
-        "ms_parts": list,
-    }
+    name: str
+    age_id: int
+    kind: str
+    lllat: float
+    lllon: float
+    urlat: float
+    urlon: float
+    zbot: float
+    ztop: float
+    rel_start: int
+    rel_end: int
+    n_parts: int
+    ms_parts: Tuple[int, ...]
 
-    def __init__(self, **kwargs):
-        """Create an instance of ``ReleasePoint``."""
-
-        # Keep track of passed keyword arguments
-        attr_keys_todo = [k for k in self.attr_types]
-
-        # Process keyword arguments
-        for key, val in kwargs.items():
-
-            # Check existence of argument while fetching target type
-            try:
-                type_ = self.attr_types[key]
-            except KeyError:
-                raise ValueError(f"unexpected argument {key}='{val}'")
-
-            # Cross valid argument off the todo list
-            attr_keys_todo.remove(key)
-
-            # Check type while converting to target type
-            try:
-                val = type_(val)
-            except TypeError:
-                raise ValueError(
-                    f"argument {key}={val} of type '{type(val).__name__}' incompatible "
-                    f"with expected type '{type_.__name__}'"
-                )
-
-            # Set as attribute
-            setattr(self, key, val)
-
-        # Check that all arguments have been passed
-        if attr_keys_todo:
-            n = len(attr_keys_todo)
-            raise ValueError(
-                f"missing {n} argument{'' if n == 1 else 's'}: " f"{attr_keys_todo}"
-            )
-
-    def __repr__(self):
-        return format_dictlike(self)
-
-    def __str__(self):
-        return format_dictlike(self)
-
-    def __iter__(self):
-        for key in self.attr_types:
-            yield key, getattr(self, key)
+    class Config:  # noqa
+        extra = "forbid"
+        validate_all = True
+        validate_assigment = True
 
     @classmethod
     def from_file(cls, fi, i=None, var_name="RELCOM"):
