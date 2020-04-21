@@ -1,10 +1,10 @@
-# black  # handled by pre-commit
+black
 bump2version
 # flake8-black  # handled by pre-commit
 ipdb
 ipython
-# isort  # handled by pre-commit
-# mypy  # handled by pre-commit
+isort
+mypy
 # pluggy
 # Sphinx
 # watchdog
