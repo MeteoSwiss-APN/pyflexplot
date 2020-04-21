@@ -129,9 +129,12 @@ class _CreateReference(_TestBase):
             """
             Test reference for pytest test.
 
-            {module_path_rel}::{cls_name}::test
+            {module_path_rel}
+                ::{cls_name}
+                ::test
 
-            Created by temporarily changing the parent class of ``{cls_name}``
+            Created by temporarily changing the parent class of
+            ``{cls_name}``
             from ``_TestBase`` to ``_CreateReference`` and running pytest.
             """
             '''

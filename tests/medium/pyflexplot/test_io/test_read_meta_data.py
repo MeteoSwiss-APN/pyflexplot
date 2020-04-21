@@ -22,7 +22,7 @@ class _TestBase:
     def set_up(cls, datadir, cache=True):
         if cache:
             if cls.meta_data is not None:
-                return
+                return None
         with nc4.Dataset(f"{datadir}/{cls.datafilename}", "r") as f:
             cls.meta_data = read_meta_data(f)
 
