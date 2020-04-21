@@ -492,7 +492,7 @@ class MapAxes:
         """
         if np.isnan(fld).all():
             warnings.warn("skip contour plot (all-nan field)")
-            return
+            return None
 
         handle = self.ax.contour(
             self.lon,
@@ -522,7 +522,7 @@ class MapAxes:
         """
         if np.isnan(fld).all():
             warnings.warn("skip filled contour plot (all-nan field)")
-            return
+            return None
 
         # Check if there's anything to plot (prevent ugly failure of contourf)
         if (
@@ -595,7 +595,7 @@ class MapAxes:
         """Mark the location of the field maximum."""
         if np.isnan(fld).all():
             warnings.warn("skip maximum marker (all-nan field)")
-            return
+            return None
         jmax, imax = np.unravel_index(np.nanargmax(fld), fld.shape)
         lon, lat = self.lon[imax], self.lat[jmax]
         handle = self.add_marker(lon, lat, marker, **kwargs)

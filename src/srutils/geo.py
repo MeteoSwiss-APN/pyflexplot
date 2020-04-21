@@ -22,7 +22,7 @@ class Degrees:
         # Check for fraction
         if isinstance(deg, (int, float)):
             self._frac = float(deg)
-            return
+            return None
 
         # Check for most common non-stable sequence
         if isinstance(deg, set):
@@ -35,7 +35,7 @@ class Degrees:
             pass
         else:
             self._frac = float(deg[0])
-            return
+            return None
 
         # Check for `(degs, mins)`
         try:
@@ -44,7 +44,7 @@ class Degrees:
             pass
         else:
             self._frac = float(deg[0]) + deg[1] / 60.0
-            return
+            return None
 
         # Check for `(degs, mins, secs)`
         try:

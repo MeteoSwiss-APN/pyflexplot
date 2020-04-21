@@ -89,7 +89,7 @@ def check_summary_dict_is_subdict(
     """Check that one summary dict is a subdict of another."""
 
     if ignored(subdict) or ignored(superdict):
-        return
+        return None
 
     if not isinstance(subdict, dict):
         raise CheckFailedError(
@@ -120,10 +120,10 @@ def check_summary_dict_element_is_subelement(
 ):
 
     if ignored(obj_sub) or ignored(obj_super):
-        return
+        return None
 
     if obj_sub == obj_super:
-        return
+        return None
 
     # Collect objects passed to exceptions
     err_objs = {
@@ -325,12 +325,12 @@ def assert_nested_equal(
     def recurse(obj1, obj2, path):
         try:
             if obj1 == obj2:
-                return
+                return None
         except ValueError:
             # Numpy array?
             try:
                 if (obj1 == obj2).all():
-                    return
+                    return None
             except Exception:
                 pass
 
@@ -390,7 +390,7 @@ def assert_nested_equal(
                 )
             if float_close_ok:
                 if np.isclose(obj1, obj2, **(kwargs_close or {})):
-                    return
+                    return None
                 msg = f"unequal floats not even close: {obj1} vs. {obj2}"
                 if kwargs_close:
                     msg += " ({})".format(

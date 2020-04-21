@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 Some utilities.
+
+TODO Split module up into `exceptions`, `summarize`, and `format`!
 """
 # Standard library
 import re
@@ -8,6 +10,7 @@ import warnings
 from dataclasses import dataclass
 from dataclasses import is_dataclass
 from functools import partial
+from pprint import pformat
 from typing import Any
 from typing import Callable
 from typing import Collection
@@ -70,6 +73,7 @@ def default_summarize(
     return Summarizer().run(self, addl=addl, skip=skip)
 
 
+# pylint: disable=W0613  # unused-argument (self)
 def default_post_summarize(self: Any, summary: Dict[str, Any]) -> Dict[str, Any]:
     """Default post_summarize method; see docstring of ``summarizable``.
 
@@ -140,11 +144,11 @@ def summarizable(
         )
 
     try:
-        attrs = [] if attrs is None else [a for a in attrs]
+        attrs = list(attrs or [])
     except TypeError:
         raise ValueError("`attrs` is not iterable", type(attrs), attrs)
     try:
-        attrs_skip = [] if attrs_skip is None else [a for a in attrs_skip]
+        attrs_skip = list(attrs_skip or [])
     except TypeError:
         raise ValueError("`attrs_skip` is not iterable", type(attrs_skip), attrs_skip)
     if summarize is None:
@@ -158,10 +162,10 @@ def summarizable(
             attrs = [a.name for a in cls.__attrs_attrs__] + attrs  # type: ignore
         elif is_dataclass(cls):
             # Collect dataclass fields
-            attrs = [f for f in cls.__dataclass_fields__] + attrs  # type: ignore
+            attrs = list(cls.__dataclass_fields__) + attrs  # type: ignore
         elif issubclass(cls, BaseModel):  # type: ignore
             # Collect model fields
-            attrs = [f for f in cls.__fields__] + attrs  # type: ignore
+            attrs = list(cls.__fields__) + attrs  # type: ignore
     attrs = [a for a in attrs if a not in attrs_skip]
 
     # Extend class
@@ -470,21 +474,19 @@ def format_level_ranges(
             )
     formatters = {
         "base": LevelRangeFormatter,
-        "int": LevelRangeFormatter_Int,
-        "math": LevelRangeFormatter_Math,
-        "up": LevelRangeFormatter_Up,
-        "down": LevelRangeFormatter_Down,
-        "and": LevelRangeFormatter_And,
-        "var": LevelRangeFormatter_Var,
+        "int": LevelRangeFormatterInt,
+        "math": LevelRangeFormatterMath,
+        "up": LevelRangeFormatterUp,
+        "down": LevelRangeFormatterDown,
+        "and": LevelRangeFormatterAnd,
+        "var": LevelRangeFormatterVar,
     }
     try:
         cls = formatters[style]
     except AttributeError:
         raise ValueError(f"unknown style '{style}'; options: {sorted(formatters)}")
     else:
-        formatter = cls(
-            style=style, widths=widths, extend=extend, align=align, **kwargs
-        )
+        formatter = cls(widths=widths, extend=extend, align=align, **kwargs)
     return formatter.fmt_multiple(levels)
 
 
@@ -496,7 +498,7 @@ class Component:
     ntex: int
 
     @classmethod
-    def create(cls, name: str, arg: Union[str, Tuple[str, int]]) -> "Component":
+    def create(cls, arg: Union[str, Tuple[str, int]]) -> "Component":
         if isinstance(arg, str):
             s, ntex = arg, 0
         else:
@@ -521,9 +523,9 @@ class Components:
         right: Union[str, Tuple[str, int]],
     ) -> "Components":
         return Components(
-            left=Component.create("left", left),
-            center=Component.create("center", center),
-            right=Component.create("right", right),
+            left=Component.create(left),
+            center=Component.create(center),
+            right=Component.create(right),
         )
 
 
@@ -532,7 +534,6 @@ class LevelRangeFormatter:
 
     def __init__(
         self,
-        style: str,
         *,
         widths: Optional[Tuple[int, int, int]] = None,
         extend: str = "none",
@@ -642,10 +643,11 @@ class LevelRangeFormatter:
         return format_float(lvl, "{f:.0E}")
 
 
-class LevelRangeFormatter_Int(LevelRangeFormatter):
+class LevelRangeFormatterInt(LevelRangeFormatter):
     def __init__(
         self, *args, widths: Optional[Tuple[int, int, int]] = None, **kwargs,
     ) -> None:
+        assert not kwargs, pformat(kwargs)  # SR_TMP TODO eliminate **kwargs
         if widths is None:
             widths = (2, 3, 2)
         if kwargs.get("rstrip_zeros"):
@@ -668,10 +670,11 @@ class LevelRangeFormatter_Int(LevelRangeFormatter):
         return str(lvl)
 
 
-class LevelRangeFormatter_Math(LevelRangeFormatter):
+class LevelRangeFormatterMath(LevelRangeFormatter):
     def __init__(
         self, *args, widths: Optional[Tuple[int, int, int]] = None, **kwargs,
     ) -> None:
+        assert not kwargs, pformat(kwargs)  # SR_TMP TODO eliminate **kwargs
         if widths is None:
             widths = (6, 2, 6)
         super().__init__(*args, widths=widths, **kwargs)
@@ -686,10 +689,11 @@ class LevelRangeFormatter_Math(LevelRangeFormatter):
         )
 
 
-class LevelRangeFormatter_Up(LevelRangeFormatter):
+class LevelRangeFormatterUp(LevelRangeFormatter):
     def __init__(
         self, *args, widths: Optional[Tuple[int, int, int]] = None, **kwargs,
     ) -> None:
+        assert not kwargs, pformat(kwargs)  # SR_TMP TODO eliminate **kwargs
         if widths is None:
             widths = (0, 2, 5)
         super().__init__(*args, widths=widths, **kwargs)
@@ -702,10 +706,11 @@ class LevelRangeFormatter_Up(LevelRangeFormatter):
         return Components.create("", (s_c, ntex_c), s_r)
 
 
-class LevelRangeFormatter_Down(LevelRangeFormatter):
+class LevelRangeFormatterDown(LevelRangeFormatter):
     def __init__(
         self, *args, widths: Optional[Tuple[int, int, int]] = None, **kwargs,
     ):
+        assert not kwargs, pformat(kwargs)  # SR_TMP TODO eliminate **kwargs
         if widths is None:
             widths = (0, 2, 5)
         super().__init__(*args, widths=widths, **kwargs)
@@ -718,10 +723,11 @@ class LevelRangeFormatter_Down(LevelRangeFormatter):
         return Components.create("", (s_c, ntex_c), s_r)
 
 
-class LevelRangeFormatter_And(LevelRangeFormatter):
+class LevelRangeFormatterAnd(LevelRangeFormatter):
     def __init__(
         self, *args, widths: Optional[Tuple[int, int, int]] = None, **kwargs,
     ) -> None:
+        assert not kwargs, pformat(kwargs)  # SR_TMP TODO eliminate **kwargs
         if widths is None:
             widths = (8, 3, 8)
         super().__init__(*args, widths=widths, **kwargs)
@@ -759,7 +765,7 @@ class LevelRangeFormatter_And(LevelRangeFormatter):
         return Components.create((s_l, ntex_l), "", "")
 
 
-class LevelRangeFormatter_Var(LevelRangeFormatter):
+class LevelRangeFormatterVar(LevelRangeFormatter):
     def __init__(
         self,
         *args,
@@ -767,6 +773,7 @@ class LevelRangeFormatter_Var(LevelRangeFormatter):
         var: str = "v",
         **kwargs,
     ):
+        assert not kwargs, pformat(kwargs)  # SR_TMP TODO eliminate **kwargs
         if widths is None:
             widths = (5, 9, 5)
         super().__init__(*args, widths=widths, **kwargs)

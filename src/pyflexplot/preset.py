@@ -76,7 +76,7 @@ def collect_preset_files(
 
 def click_add_preset_path(ctx: Context, param: ParamType, value: Any) -> None:
     if not value:
-        return
+        return None
     add_preset_path(value)
 
 
@@ -104,14 +104,14 @@ def cat_preset(name: str, include_source: bool = False) -> str:
 def click_list_presets(ctx: Context, param: ParamType, value: Any) -> None:
     """List all presets setup files and exit."""
     if not value:
-        return
+        return None
     click_find_presets(ctx, param, "*")
 
 
 def click_find_presets(ctx: Context, param: ParamType, value: Any) -> None:
     """Find preset setup file(s) by name (optional wildcards) and exit."""
     if not value:
-        return
+        return None
     _click_list_presets(ctx, collect_preset_files(value))
     ctx.exit(0)
 
@@ -119,7 +119,7 @@ def click_find_presets(ctx: Context, param: ParamType, value: Any) -> None:
 def click_cat_preset(ctx: Context, param: ParamType, value: Any) -> None:
     """Print the content of a preset setup file and exit."""
     if not value:
-        return
+        return None
     verbosity = ctx.obj["verbosity"]
     try:
         content = cat_preset(value, include_source=(verbosity > 0))
@@ -133,7 +133,7 @@ def click_cat_preset(ctx: Context, param: ParamType, value: Any) -> None:
 
 def click_use_preset(ctx: Context, param: ParamType, value: Any) -> None:
     if not value:
-        return
+        return None
     key = "preset_setup_file_paths"
     if key not in ctx.obj:
         ctx.obj[key] = []

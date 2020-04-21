@@ -125,7 +125,7 @@ class TranslatedWords:
         """Return the languages the words are defined in."""
         if not self._langs:
             return []
-        return [lang for lang in self._langs]
+        return list(self._langs)
 
     def __repr__(self):
         s_name = f" ({self.name})" if self.name else ""

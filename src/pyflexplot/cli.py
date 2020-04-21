@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=R0914  # too-many-locals
 """
 Command line interface.
 """
@@ -39,22 +40,23 @@ plus_sep_list_of_unique_ints = CharSepList(int, "+", unique=True)
 
 
 def not_implemented(msg):
-    def f(ctx, param, value):
+    def f(ctx, param, value):  # pylint: disable=W0613  # unused-argument
         if value:
             click.echo(f"not implemented: {msg}")
 
     return f
 
 
-def set_verbosity(ctx, param, value):
+def set_verbosity(ctx, param, value):  # pylint: disable=W0613  # unused-argument
     if ctx.obj is None:
         ctx.obj = {}
     ctx.obj["verbosity"] = value
 
 
 def prepare_input_setup_params(ctx, param, value):
+    # pylint: disable=W0613  # unused-argument
     if not value:
-        return
+        return None
     try:
         return InputSetup.cast_many(value, list_separator=",")
     except ValueError as e:
@@ -182,6 +184,7 @@ def cli(ctx, setup_file_paths, input_setup_params, dry_run, **cli_args):
         fields, mdata_lst = read_files(in_file_path, var_setups_lst, dry_run)
 
         # Note: plot_fields(...) yields the output file paths on-the-go
+        # pylint: disable=W0612  # unused-variable (plot_handle)
         for i_fld, (out_file_path, plot_handle) in enumerate(
             plot_fields(fields, mdata_lst, dry_run)
         ):
@@ -222,4 +225,4 @@ def open_plots(cmd, file_paths, dry_run):
 
 
 if __name__ == "__main__":
-    sys.exit(cli())  # pragma: no cover
+    sys.exit(1)  # pragma: no cover

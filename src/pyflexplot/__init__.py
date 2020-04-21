@@ -11,7 +11,6 @@ __version__ = "0.7.2"
 import sys
 import warnings
 from pathlib import Path
-from typing import Any
 from typing import List
 
 # Third-party
@@ -34,7 +33,7 @@ except Exception as e:
     sys.exit(1)
 
 
-__all__: List[Any] = []
+__all__: List[str] = []
 
 
 def check_dir_exists(path):

@@ -569,7 +569,7 @@ class FlexPartDataFixer:
         if isinstance(mdata, Sequence):
             for mdata_i in mdata:
                 self._fix_meta_data_cosmo(mdata_i)
-            return
+            return None
         assert isinstance(mdata, MetaData)  # mypy
 
         name = mdata.species_name.value
@@ -639,7 +639,7 @@ class FlexPartDataFixer:
                     axis=idx_lon,
                 )
             warnings.warn(f"fix global data: shift eastward by {n_shift} * {dlon} deg")
-            return
+            return None
 
         elif lon[0] < -180.0:
             # Westward shift
@@ -661,4 +661,4 @@ class FlexPartDataFixer:
                     axis=idx_lon,
                 )
             warnings.warn(f"fix global data: shift westward by {n_shift} * {dlon} deg")
-            return
+            return None

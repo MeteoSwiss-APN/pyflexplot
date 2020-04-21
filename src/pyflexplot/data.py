@@ -113,7 +113,7 @@ class Field:
 
     def scale(self, fact):
         if fact is None:
-            return
+            return None
         self.scale_fact *= fact
         self.fld = self.fld * fact
         for key in self.time_stats:

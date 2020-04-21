@@ -17,21 +17,21 @@ def test_string():
 def test_capitalize_method():
     w = TranslatedWord(en="the quick brown FOX", de="der flinke braune FUCHS")
     assert w["en"].capital() == "The quick brown FOX"
-    assert w["en"].capital(all=False) == "The quick brown FOX"
-    assert w["en"].capital(all=True) == "The Quick Brown FOX"
+    assert w["en"].capital(all_=False) == "The quick brown FOX"
+    assert w["en"].capital(all_=True) == "The Quick Brown FOX"
     assert w["de"].capital() == "Der flinke braune FUCHS"
-    assert w["de"].capital(all=False) == "Der flinke braune FUCHS"
-    assert w["de"].capital(all=True) == "Der Flinke Braune FUCHS"
-    assert w["en"].capital(all=False, preserve=False) == "The quick brown fox"
-    assert w["en"].capital(all=True, preserve=False) == "The Quick Brown Fox"
-    assert w["de"].capital(all=False, preserve=False) == "Der flinke braune fuchs"
-    assert w["de"].capital(all=True, preserve=False) == "Der Flinke Braune Fuchs"
+    assert w["de"].capital(all_=False) == "Der flinke braune FUCHS"
+    assert w["de"].capital(all_=True) == "Der Flinke Braune FUCHS"
+    assert w["en"].capital(all_=False, preserve=False) == "The quick brown fox"
+    assert w["en"].capital(all_=True, preserve=False) == "The Quick Brown Fox"
+    assert w["de"].capital(all_=False, preserve=False) == "Der flinke braune fuchs"
+    assert w["de"].capital(all_=True, preserve=False) == "Der Flinke Braune Fuchs"
     assert isinstance(w["en"].capital(), str)
     assert isinstance(w["de"].capital(), str)
-    assert isinstance(w["en"].capital(all=False), str)
-    assert isinstance(w["de"].capital(all=False), str)
-    assert isinstance(w["en"].capital(all=True), str)
-    assert isinstance(w["de"].capital(all=True), str)
+    assert isinstance(w["en"].capital(all_=False), str)
+    assert isinstance(w["de"].capital(all_=False), str)
+    assert isinstance(w["en"].capital(all_=True), str)
+    assert isinstance(w["de"].capital(all_=True), str)
 
 
 def test_capitalize_property():

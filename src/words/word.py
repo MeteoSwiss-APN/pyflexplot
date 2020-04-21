@@ -12,29 +12,22 @@ from srutils.str import to_varname
 class Word:
     """An individual word."""
 
-    def __init__(self, s, **attrs):
+    def __init__(self, s, lang, ctx=None):
         """Create an instance of ``Word``.
 
         Args:
             s (str): The word as a string.
 
-            lang (str, optional): Language in which the word is given. Defaults
-                to None.
+            lang (str): Language in which the word is given.
 
-            ctx (str, optional): Context in which the word is valid. Defaults
-                to None.
+            ctx (str, optional): Context in which the word is valid.
 
         """
         if not isinstance(s, str):
             raise ValueError(f"type of s is {type(s).__name__}, not str")
-
         self._s = s
-        for name, val in attrs.items():
-            if hasattr(self, name):
-                raise ValueError(
-                    f"attr '{name}' clashes with existing attribute {type(self)}.{name}"
-                )
-            setattr(self, name, val)
+        self.lang = lang
+        self.ctx = ctx
 
     def __eq__(self, other):
         return str(self) == str(other)
@@ -45,14 +38,14 @@ class Word:
     def __hash__(self):
         return hash(str(self))
 
-    def capital(self, *, all=False, preserve=True):
+    def capital(self, *, all_=False, preserve=True):
         """Capitalize the first letter of the first or of each word.
 
         Already capitalized words are retained as such, in contrast to
         ``str.capitalize()``.
 
         Args:
-            all (bool, optional): Whether to capitalize all words. Defaults to
+            all_ (bool, optional): Whether to capitalize all words. Defaults to
                 False.
 
             preserve (bool, optional): Whether to preserve capitalized letters.
@@ -62,26 +55,18 @@ class Word:
         s = str(self)
         if not preserve:
             s = s.lower()
-        if all:
+        if all_:
             return " ".join([capitalize(w) for w in s.split(" ")])
         words = s.split(" ")
         return " ".join([capitalize(words[0])] + words[1:])
 
     def title(self, *, preserve=True):
-        if not hasattr(self, "lang"):
-            raise AttributeError(
-                f"{type(self).__name__} '{self}': method `title` requires attribute "
-                f"'lang': not not among {self.attrs}"
-            )
         if self.lang == "en":
             return titlecase(str(self), preserve=preserve)
         elif self.lang == "de":
-            return self.capital(all=False, preserve=preserve)
+            return self.capital(all_=False, preserve=preserve)
         else:
-            raise NotImplementedError(
-                f"{type(self).__name__} '{self}' in language '{self.lang}': method "
-                f"`title`"
-            )
+            raise NotImplementedError(f"{type(self).__name__}.title", self.lang)
 
     @property
     def s(self):
@@ -90,11 +75,11 @@ class Word:
     @property
     def c(self):
         """Shorthand to capitalize the first word."""
-        return self.capital(all=False, preserve=True)
+        return self.capital(all_=False, preserve=True)
 
     @property
-    def C(self):
-        return self.capital(all=True, preserve=True)
+    def C(self):  # pylint: disable=C0103  # invalid-name
+        return self.capital(all_=True, preserve=True)
 
     @property
     def t(self):
@@ -201,7 +186,7 @@ class TranslatedWord:
 
     def _collect_contexts(self, translations):
         ctxs = []
-        for lang, word in translations.items():
+        for word in translations.values():
             try:
                 {**word}
             except TypeError:
@@ -292,13 +277,12 @@ class ContextWord:
 
     cls_word = Word
 
-    def __init__(self, lang=None, *, default_context=None, **variants):
+    def __init__(self, lang, *, default_context=None, **variants):
         """Create an instance of ``ContextWord``.
 
         Args:
-            lang (str, optional): Language. Defaults to None. Argument name
-                ends with underscore to avoid conflict with possible context
-                specifier 'lang'.
+            lang (str): Language. Argument name ends with underscore to avoid
+                conflict with possible context specifier 'lang'.
 
             default_context (str, optional): Default context specifier.
                 Defaults to the first key in ``variants``.
@@ -309,9 +293,6 @@ class ContextWord:
 
         """
         self.lang = lang
-        # self._default_lang = lang
-        # self._default_lang_query = None
-
         self._variants = {}
         for ctx, word in variants.items():
             if not isinstance(word, (Word, str)):
@@ -342,9 +323,7 @@ class ContextWord:
         if as_str:
             assert isinstance(word, Word)  # SR_TMP
             return word
-        return word  # SR_TMP
-        lang = self.lang or "None"
-        return TranslatedWord(**{lang: word})
+        return word
 
     def ctxs(self):
         """List of contexts."""
@@ -362,8 +341,6 @@ class ContextWord:
     def __eq__(self, other):
         return str(self) == str(other)
 
-    # SR_TMP <
-
     @property
     def s(self):
         return str(self)
@@ -379,11 +356,9 @@ class ContextWord:
         return self.get().c
 
     @property
-    def C(self):
+    def C(self):  # pylint: disable=C0103  # invalid-name
         return self.get().C
 
     @property
     def t(self):
         return self.get().t
-
-    # SR_TMP >

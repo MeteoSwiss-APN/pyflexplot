@@ -66,11 +66,9 @@ class Test_Simple:
 
 
 class Test_ContextWord:
-    def test_single_nolang(self):
-        w = ContextWord(default_context="foo", foo="bar")
-        assert w.lang is None
-        assert w == "bar"
-        assert w.default_context == "foo"
+    def test_fail_single_nolang(self):
+        with pytest.raises(TypeError):
+            ContextWord(default_context="foo", foo="bar")
 
     def test_single_lang(self):
         w = ContextWord(foo="Zug", lang="de")
