@@ -10,7 +10,6 @@ import warnings
 from dataclasses import dataclass
 from dataclasses import is_dataclass
 from functools import partial
-from pprint import pformat
 from typing import Any
 from typing import Callable
 from typing import Collection
@@ -536,19 +535,27 @@ class LevelRangeFormatter:
         self,
         *,
         widths: Optional[Tuple[int, int, int]] = None,
-        extend: str = "none",
-        align: str = "center",
-        rstrip_zeros: bool = False,
+        extend: Optional[str] = None,
+        align: Optional[str] = None,
+        rstrip_zeros: Optional[bool] = None,
     ) -> None:
         """Create an instance of ``LevelRangeFormatter``.
 
         Args: See ``format_level_ranges``.
 
         """
-        self.widths = widths or (5, 3, 5)
-        self.extend = extend
-        self.align = align
-        self.rstrip_zeros = rstrip_zeros
+        if widths is None:
+            widths = (5, 3, 5)
+        if extend is None:
+            extend = "none"
+        if align is None:
+            align = "center"
+        if rstrip_zeros is None:
+            rstrip_zeros = False
+        self.widths: Tuple[int, int, int] = widths
+        self.extend: str = extend
+        self.align: str = align
+        self.rstrip_zeros: bool = rstrip_zeros
 
         self._check_widths(self.widths)
 
@@ -645,15 +652,21 @@ class LevelRangeFormatter:
 
 class LevelRangeFormatterInt(LevelRangeFormatter):
     def __init__(
-        self, *args, widths: Optional[Tuple[int, int, int]] = None, **kwargs,
+        self,
+        *,
+        widths: Optional[Tuple[int, int, int]] = None,
+        extend: Optional[str] = None,
+        align: Optional[str] = None,
+        rstrip_zeros: Optional[bool] = None,
     ) -> None:
-        assert not kwargs, pformat(kwargs)  # SR_TMP TODO eliminate **kwargs
         if widths is None:
             widths = (2, 3, 2)
-        if kwargs.get("rstrip_zeros"):
+        if rstrip_zeros is True:
             warnings.warn(f"{type(self).__name__}: force rstrip_zeros=False")
-        kwargs["rstrip_zeros"] = False
-        super().__init__(*args, widths=widths, **kwargs)
+            rstrip_zeros = False
+        super().__init__(
+            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros,
+        )
 
     def _format_components(
         self, lvl0: Optional[float], lvl1: Optional[float],
@@ -672,12 +685,18 @@ class LevelRangeFormatterInt(LevelRangeFormatter):
 
 class LevelRangeFormatterMath(LevelRangeFormatter):
     def __init__(
-        self, *args, widths: Optional[Tuple[int, int, int]] = None, **kwargs,
+        self,
+        *,
+        widths: Optional[Tuple[int, int, int]] = None,
+        extend: Optional[str] = None,
+        align: Optional[str] = None,
+        rstrip_zeros: Optional[bool] = None,
     ) -> None:
-        assert not kwargs, pformat(kwargs)  # SR_TMP TODO eliminate **kwargs
         if widths is None:
             widths = (6, 2, 6)
-        super().__init__(*args, widths=widths, **kwargs)
+        super().__init__(
+            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros,
+        )
 
     def _format_components(
         self, lvl0: Optional[float], lvl1: Optional[float],
@@ -691,12 +710,18 @@ class LevelRangeFormatterMath(LevelRangeFormatter):
 
 class LevelRangeFormatterUp(LevelRangeFormatter):
     def __init__(
-        self, *args, widths: Optional[Tuple[int, int, int]] = None, **kwargs,
+        self,
+        *,
+        widths: Optional[Tuple[int, int, int]] = None,
+        extend: Optional[str] = None,
+        align: Optional[str] = None,
+        rstrip_zeros: Optional[bool] = None,
     ) -> None:
-        assert not kwargs, pformat(kwargs)  # SR_TMP TODO eliminate **kwargs
         if widths is None:
             widths = (0, 2, 5)
-        super().__init__(*args, widths=widths, **kwargs)
+        super().__init__(
+            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros,
+        )
 
     def _format_closed(self, lvl0: float, lvl1: float) -> Components:
         op_fmtd = r"$\tt \geq$"
@@ -708,12 +733,18 @@ class LevelRangeFormatterUp(LevelRangeFormatter):
 
 class LevelRangeFormatterDown(LevelRangeFormatter):
     def __init__(
-        self, *args, widths: Optional[Tuple[int, int, int]] = None, **kwargs,
-    ):
-        assert not kwargs, pformat(kwargs)  # SR_TMP TODO eliminate **kwargs
+        self,
+        *,
+        widths: Optional[Tuple[int, int, int]] = None,
+        extend: Optional[str] = None,
+        align: Optional[str] = None,
+        rstrip_zeros: Optional[bool] = None,
+    ) -> None:
         if widths is None:
             widths = (0, 2, 5)
-        super().__init__(*args, widths=widths, **kwargs)
+        super().__init__(
+            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros,
+        )
 
     def _format_closed(self, lvl0: float, lvl1: float) -> Components:
         op_fmtd = r"$\tt <$"
@@ -725,12 +756,18 @@ class LevelRangeFormatterDown(LevelRangeFormatter):
 
 class LevelRangeFormatterAnd(LevelRangeFormatter):
     def __init__(
-        self, *args, widths: Optional[Tuple[int, int, int]] = None, **kwargs,
+        self,
+        *,
+        widths: Optional[Tuple[int, int, int]] = None,
+        extend: Optional[str] = None,
+        align: Optional[str] = None,
+        rstrip_zeros: Optional[bool] = None,
     ) -> None:
-        assert not kwargs, pformat(kwargs)  # SR_TMP TODO eliminate **kwargs
         if widths is None:
             widths = (8, 3, 8)
-        super().__init__(*args, widths=widths, **kwargs)
+        super().__init__(
+            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros,
+        )
 
     def _format_closed(self, lvl0: float, lvl1: float) -> Components:
 
@@ -768,16 +805,21 @@ class LevelRangeFormatterAnd(LevelRangeFormatter):
 class LevelRangeFormatterVar(LevelRangeFormatter):
     def __init__(
         self,
-        *args,
+        *,
         widths: Optional[Tuple[int, int, int]] = None,
-        var: str = "v",
-        **kwargs,
+        extend: Optional[str] = None,
+        align: Optional[str] = None,
+        rstrip_zeros: Optional[bool] = None,
+        var: Optional[str] = None,
     ):
-        assert not kwargs, pformat(kwargs)  # SR_TMP TODO eliminate **kwargs
         if widths is None:
             widths = (5, 9, 5)
-        super().__init__(*args, widths=widths, **kwargs)
-        self.var = var
+        super().__init__(
+            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros,
+        )
+        if var is None:
+            var = "v"
+        self.var: str = var
 
     def _format_closed(self, lvl0: float, lvl1: float) -> Components:
         op0 = r"$\tt \leq$"
