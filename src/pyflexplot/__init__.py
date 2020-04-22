@@ -18,7 +18,7 @@ import matplotlib
 
 try:
     import cartopy  # isort:skip
-except Exception as e:
+except Exception as e:  # pylint: disable=W0703  # broad-except
     if "libproj" in str(e):
         dep = "proj"
     if "libgeos" in str(e):
@@ -58,6 +58,7 @@ cartopy.config["pre_existing_data_dir"] = data_path
 matplotlib.use("Agg")
 
 
+# pylint: disable=R0913,W0613  # too-many-arguments, unused-argument (line)
 def custom_showwarnings(message, category, filename, lineno, file=None, line=None):
     """Show warnings without code excerpt.
 

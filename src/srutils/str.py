@@ -45,6 +45,8 @@ def to_varname(s, filter_invalid=None):
 
     if filter_invalid is None:
 
+        # pylint: disable=W0613  # unused-argument (s)
+        # pylint: disable=E0102  # function-redefined
         def filter_invalid(s):
             return "_"
 

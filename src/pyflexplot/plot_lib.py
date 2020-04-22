@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0302  # too-many-lines (module)
 """
 Plots.
 """
@@ -7,14 +8,13 @@ import warnings
 from dataclasses import dataclass
 from typing import Any
 from typing import Dict
+from typing import Optional
 from typing import Tuple
 
 # Third-party
 import cartopy
 import geopy.distance
 import matplotlib as mpl
-import matplotlib.patches
-import matplotlib.ticker
 import numpy as np
 from pydantic import BaseModel
 from pydantic import root_validator
@@ -28,6 +28,7 @@ from .utils import MaxIterationError
 from .utils import summarizable
 
 
+# pylint: disable=W0613  # unused argument (self)
 def post_summarize_plot(self, summary):
     """Method to post-process summary dict of plot class.
 
@@ -104,6 +105,7 @@ class RefDistIndConf:
 
 
 @summarizable
+# pylint: disable=E0213  # no-self-argument (validators)
 class MapAxesConf(BaseModel):
     """
     Configuration of ``MapAxesPlot``.
@@ -176,6 +178,7 @@ class MapAxesConf(BaseModel):
     )
 
 
+# pylint: disable=R0902  # too-many-instance-attributes
 @summarizable(post_summarize=post_summarize_plot)
 class MapAxes:
     """Map plot axes for regular lat/lon data."""
@@ -393,7 +396,7 @@ class MapAxes:
         # SR_DBG <<< TODO remove once bugfix in Cartopy master
         try:
             major_rivers.geometries()
-        except Exception:
+        except Exception:  # pylint: disable=W0703  # broad-except
             warnings.warn(
                 f"cannot add major rivers due to shapely issue with "
                 "'rivers_lake_centerline; pending bugfix: "
@@ -418,6 +421,7 @@ class MapAxes:
 
             plon, plat = city.geometry.x, city.geometry.y
 
+            # pylint: disable=R0913  # too-many-arguments
             def is_in_box(x, y, x0, x1, y0, y1):
                 return x0 <= x <= x1 and y0 <= y <= y1
 
@@ -596,6 +600,8 @@ class MapAxes:
         if np.isnan(fld).all():
             warnings.warn("skip maximum marker (all-nan field)")
             return None
+        assert len(fld.shape) == 2  # pylint
+        # pylint: disable=W0632  # unbalanced-tuple-unpacking
         jmax, imax = np.unravel_index(np.nanargmax(fld), fld.shape)
         lon, lat = self.lon[imax], self.lat[jmax]
         handle = self.add_marker(lon, lat, marker, **kwargs)
@@ -658,6 +664,7 @@ class MapAxesRotatedPole(MapAxes):
         self.proj_geo = cartopy.crs.PlateCarree()
 
 
+# pylint: disable=R0902  # too-many-instance-attributes
 class ReferenceDistanceIndicator:
     """Reference distance indicator on a map plot."""
 
@@ -768,14 +775,30 @@ class ReferenceDistanceIndicator:
         return x1
 
 
+# SR_TODO Refactor to reduce number of arguments!
+# pylint: disable=R0913  # too-many-arguments
 def transform_xy_geo_to_axes(
-    x, y, proj_map, proj_geo, transData, transAxes, invalid_ok=True, invalid_warn=True,
+    x,
+    y,
+    proj_map,
+    proj_geo,
+    trans_data,
+    trans_axes,
+    invalid_ok=True,
+    invalid_warn=True,
 ):
     """Transform geographic coordinates to axes coordinates."""
 
     def recurse(xi, yi):
         return transform_xy_geo_to_axes(
-            xi, yi, proj_map, proj_geo, transData, transAxes, invalid_ok, invalid_warn,
+            xi,
+            yi,
+            proj_map,
+            proj_geo,
+            trans_data,
+            trans_axes,
+            invalid_ok,
+            invalid_warn,
         )
 
     if isiterable(x) or isiterable(y):
@@ -792,14 +815,14 @@ def transform_xy_geo_to_axes(
     # SR_TMP >
 
     # Plot -> Display
-    xy_dis = transData.transform(xy_plt)
+    xy_dis = trans_data.transform(xy_plt)
     # SR_TMP < Suppress NaN warning TODO investigate origin of NaNs
     # check_valid_coords(xy_dis, invalid_ok, invalid_warn)
     check_valid_coords(xy_dis, invalid_ok, warn=False)
     # SR_TMP >
 
     # Display -> Axes
-    xy_axs = transAxes.inverted().transform(xy_dis)
+    xy_axs = trans_axes.inverted().transform(xy_dis)
     # SR_TMP < Suppress NaN warning TODO investigate origin of NaNs
     # check_valid_coords(xy_axs, invalid_ok, invalid_warn)
     check_valid_coords(xy_axs, invalid_ok, warn=False)
@@ -808,14 +831,30 @@ def transform_xy_geo_to_axes(
     return xy_axs
 
 
+# SR_TODO Refactor to reduce number of arguments!
+# pylint: disable=R0913  # too-many-arguments
 def transform_xy_axes_to_geo(
-    x, y, transAxes, transData, proj_geo, proj_map, invalid_ok=True, invalid_warn=True,
+    x,
+    y,
+    trans_axes,
+    trans_data,
+    proj_geo,
+    proj_map,
+    invalid_ok=True,
+    invalid_warn=True,
 ):
     """Transform axes coordinates to geographic coordinates."""
 
     def recurse(xi, yi):
         return transform_xy_axes_to_geo(
-            xi, yi, transAxes, transData, proj_geo, proj_map, invalid_ok, invalid_warn,
+            xi,
+            yi,
+            trans_axes,
+            trans_data,
+            proj_geo,
+            proj_map,
+            invalid_ok,
+            invalid_warn,
         )
 
     if isiterable(x) or isiterable(y):
@@ -825,11 +864,11 @@ def transform_xy_axes_to_geo(
     check_valid_coords((x, y), invalid_ok, invalid_warn)
 
     # Axes -> Display
-    xy_dis = transAxes.transform((x, y))
+    xy_dis = trans_axes.transform((x, y))
     check_valid_coords(xy_dis, invalid_ok, invalid_warn)
 
     # Display -> Plot
-    x_plt, y_plt = transData.inverted().transform(xy_dis)
+    x_plt, y_plt = trans_data.inverted().transform(xy_dis)
     check_valid_coords((x_plt, y_plt), invalid_ok, invalid_warn)
 
     # Plot -> Geo
@@ -858,6 +897,8 @@ def check_valid_coords(xy, allow, warn):
             warnings.warn(f"invalid coordinates: {xy}")
 
 
+# SR_TODO Refactor to reduce number of instance attributes!
+# pylint: disable=R0902  # too-many-instance-attributes
 class MapDistanceCalculator:
     """Calculate geographic distance along a line on a map plot."""
 
@@ -879,9 +920,16 @@ class MapDistanceCalculator:
         self.unit = unit
         self.p = p
 
-    def reset(self, dist=None, dir=None):
+        # Declare attributes
+        self.dist: Optional[float]
+        self.direction: str
+        self._step_ax_rel: float
+        self._dx_unit: int
+        self._dy_unit: int
+
+    def reset(self, dist=None, dir_=None):
         self._set_dist(dist)
-        self._set_dir(dir)
+        self._set_dir(dir_)
 
         self._step_ax_rel = 0.1
 
@@ -911,9 +959,10 @@ class MapDistanceCalculator:
                 raise NotImplementedError(f"direction='{direction}'")
         self.direction = direction
 
-    def run(self, x0, y0, dist, dir="east"):
+    # pylint: disable=R0914  # too-many-locals
+    def run(self, x0, y0, dist, dir_="east"):
         """Measure geo. distance along a straight line on the plot."""
-        self.reset(dist=dist, dir=dir)
+        self.reset(dist=dist, dir_=dir_)
 
         step_ax_rel = 0.1
         refine_quot = 3
@@ -922,7 +971,7 @@ class MapDistanceCalculator:
         x, y = x0, y0
 
         iter_max = 99999
-        for iter_i in range(iter_max):
+        for _ in range(iter_max):
 
             # Step away from point until target distance exceeded
             path, dists = self._overstep(x, y, dist0, step_ax_rel)
@@ -1002,9 +1051,10 @@ class TextBoxElement:
     attrs=["loc", "s", "replace_edge_spaces", "edge_spaces_replacement_char", "kwargs"],
     overwrite=True,
 )
-class TextBoxElement_Text(TextBoxElement):
+class TextBoxElementText(TextBoxElement):
     """Text element in text box."""
 
+    # pylint: disable=W0231  # super-init-not-called
     def __init__(
         self,
         box,
@@ -1015,7 +1065,7 @@ class TextBoxElement_Text(TextBoxElement):
         edge_spaces_replacement_char="\u2423",
         **kwargs,
     ):
-        """Create an instance of ``TextBoxElement_Text``.
+        """Create an instance of ``TextBoxElementText``.
 
         Args:
             box (TextBoxAxes): Parent text box.
@@ -1086,11 +1136,13 @@ class TextBoxElement_Text(TextBoxElement):
 
 
 @summarizable(attrs=["loc", "w", "h", "fc", "ec", "x_anker", "kwargs"], overwrite=True)
-class TextBoxElement_ColorRect(TextBoxElement):
+# pylint: disable=R0902  # too-many-instance-attributes
+class TextBoxElementColorRect(TextBoxElement):
     """A colored box element inside a text box axes."""
 
+    # pylint: disable=W0231  # super-init-not-called
     def __init__(self, box, loc, *, w, h, fc, ec, x_anker=None, **kwargs):
-        """Create an instance of ``TextBoxElement_BolorBox``.
+        """Create an instance of ``TextBoxElementBolorBox``.
 
         Args:
             box (TextBoxAxes): Parent text box.
@@ -1153,11 +1205,12 @@ class TextBoxElement_ColorRect(TextBoxElement):
 
 
 @summarizable(attrs=["loc", "m", "kwargs"], overwrite=True)
-class TextBoxElement_Marker(TextBoxElement):
+class TextBoxElementMarker(TextBoxElement):
     """A marker element in a text box axes."""
 
+    # pylint: disable=W0231  # super-init-not-called
     def __init__(self, box, loc, *, m, **kwargs):
-        """Create an instance of ``TextBoxElement_Marker``.
+        """Create an instance of ``TextBoxElementMarker``.
 
         Args:
             box (TextBoxAxes): Parent text box.
@@ -1179,11 +1232,12 @@ class TextBoxElement_Marker(TextBoxElement):
 
 
 @summarizable(attrs=["loc", "c", "lw"], overwrite=True)
-class TextBoxElement_HLine(TextBoxElement):
+class TextBoxElementHLine(TextBoxElement):
     """Horizontal line in a text box axes."""
 
+    # pylint: disable=W0231  # super-init-not-called
     def __init__(self, box, loc, *, c="k", lw=1.0):
-        """Create an instance of ``TextBoxElement_HLine``.
+        """Create an instance of ``TextBoxElementHLine``.
 
         Args:
             box (TextBoxAxes): Parent text box.
@@ -1211,12 +1265,15 @@ class TextBoxElement_HLine(TextBoxElement):
         "elements": [e.summarize() for e in self.elements],
     },
 )
+# SR_TODO Refactor to reduce instance attributes and arguments!
+# pylint: disable=R0902  # too-many-instance-attributes
 class TextBoxAxes:
     """Text box axes for FLEXPART plot."""
 
     # Show text base line (useful for debugging)
     _show_baselines = False
 
+    # pylint: disable=R0913  # too-many-arguments
     def __init__(
         self,
         fig,
@@ -1343,9 +1400,9 @@ class TextBoxAxes:
 
         """
         loc = TextBoxLocation(self, loc, dx, dy)
-        self.elements.append(TextBoxElement_Text(self, loc=loc, s=s, **kwargs))
+        self.elements.append(TextBoxElementText(self, loc=loc, s=s, **kwargs))
         if self._show_baselines:
-            self.elements.append(TextBoxElement_HLine(self, loc))
+            self.elements.append(TextBoxElementHLine(self, loc))
 
     def text_block(self, loc, block, colors=None, **kwargs):
         """Add a text block comprised of multiple lines.
@@ -1366,6 +1423,7 @@ class TextBoxAxes:
         """
         self.text_blocks(loc, [block], colors=[colors], **kwargs)
 
+    # pylint: disable=R0914  # too-many-locals
     def text_blocks(
         self,
         loc,
@@ -1425,7 +1483,7 @@ class TextBoxAxes:
         if reverse:
             # Revert order of blocks and lines
             def revert(lsts):
-                return [[l for l in lst[::-1]] for lst in lsts[::-1]]
+                return [lst[::-1] for lst in lsts[::-1]]
 
             blocks = revert(blocks)
             colors_blocks = revert(colors_blocks)
@@ -1570,19 +1628,9 @@ class TextBoxAxes:
         self.text("tc", "top center", **kwargs)
         self.text("tr", "top right", **kwargs)
 
-    def show_baselines(self, val=True, **kwargs):
-        """Show the base line of a text command (for debugging).
-
-        Args:
-            val (bool, optional): Whether to show or hide the baseline.
-                Defaults to True.
-
-            **kwargs: Keyword arguments passed to ax.axhline().
-
-        """
+    def show_baselines(self, val=True):
+        """Show or hide the base line of a text command (for debugging)."""
         self._show_baselines = val
-        self._baseline_kwargs = self._baseline_kwargs_default
-        self._baseline_kwargs.update(kwargs)
 
     def color_rect(self, loc, fc, ec=None, dx=0.0, dy=0.0, w=3.0, h=2.0, **kwargs):
         """Add a colored rectangle.
@@ -1613,10 +1661,10 @@ class TextBoxAxes:
             ec = fc
         loc = TextBoxLocation(self, loc, dx, dy)
         self.elements.append(
-            TextBoxElement_ColorRect(self, loc, w=w, h=h, fc=fc, ec=ec, **kwargs)
+            TextBoxElementColorRect(self, loc, w=w, h=h, fc=fc, ec=ec, **kwargs)
         )
         if self._show_baselines:
-            self.elements.append(TextBoxElement_HLine(self, loc))
+            self.elements.append(TextBoxElementHLine(self, loc))
 
     def marker(self, loc, marker, dx=0.0, dy=0.0, **kwargs):
         """Add a marker symbol.
@@ -1638,9 +1686,9 @@ class TextBoxAxes:
 
         """
         loc = TextBoxLocation(self, loc, dx, dy)
-        self.elements.append(TextBoxElement_Marker(self, loc, m=marker, **kwargs))
+        self.elements.append(TextBoxElementMarker(self, loc, m=marker, **kwargs))
         if self._show_baselines:
-            self.elements.append(TextBoxElement_HLine(self, loc))
+            self.elements.append(TextBoxElementHLine(self, loc))
 
     def fit_text(self, s, size, **kwargs):
         return TextFitter(self.ax, dx_unit=self.dx_unit, **kwargs).fit(s, size)
@@ -1740,6 +1788,7 @@ class TextFitter:
 
         return w_disp / self.ax.bbox.width
 
+    # pylint: disable=W0102  # dangerous-default-value
     def shrink(self, size, _n=[0]):
         """Shrink the relative font size by one increment."""
         i = self.sizes.index(size)
@@ -1749,6 +1798,7 @@ class TextFitter:
         _n[0] += 1
         return size
 
+    # pylint: disable=W0102  # dangerous-default-value
     def truncate(self, s, _n=[0]):
         """Truncate a string by one character and end with ``self.dots``."""
         if len(s) <= len(self.dots):
@@ -1760,6 +1810,7 @@ class TextFitter:
 class MapAxesBoundingBox:
     """Bounding box of a ``MapAxes``."""
 
+    # pylint: disable=R0913  # too-many-arguments
     def __init__(self, map_axes, coord_type, lon0, lon1, lat0, lat1):
         """Create an instance of ``MapAxesBoundingBox``.
 
@@ -1811,6 +1862,7 @@ class MapAxesBoundingBox:
     def lat1(self):
         return self._curr_lat1
 
+    # pylint: disable=R0913  # too-many-arguments
     def set(self, coord_type, lon0, lon1, lat0, lat1):
         assert not any(np.isnan(c) for c in (lon0, lon1, lat0, lat1))
         self._curr_coord_type = coord_type
@@ -1858,8 +1910,8 @@ class MapAxesBoundingBox:
                 transform_xy_axes_to_geo(
                     self.lon,
                     self.lat,
-                    self._transAxes,
-                    self._transData,
+                    self._trans_axes,
+                    self._trans_data,
                     self._proj_geo,
                     self._proj_map,
                     invalid_ok=False,
@@ -1878,8 +1930,8 @@ class MapAxesBoundingBox:
                     self.lat,
                     self._proj_map,
                     self._proj_geo,
-                    self._transData,
-                    self._transAxes,
+                    self._trans_data,
+                    self._trans_axes,
                     invalid_ok=False,
                 )
             )
@@ -1895,6 +1947,7 @@ class MapAxesBoundingBox:
             f"{type(self).__name__}.{method} from '{self.coord_type}'"
         )
 
+    # pylint: disable=R0914  # too-many-locals
     def zoom(self, fact, rel_offset):
         """Zoom into or out of the domain.
 
@@ -1960,11 +2013,11 @@ class MapAxesBoundingBox:
         return self.map_axes.proj_map
 
     @property
-    def _transAxes(self):
+    def _trans_axes(self):
         return self.map_axes.ax.transAxes
 
     @property
-    def _transData(self):
+    def _trans_data(self):
         return self.map_axes.ax.transData
 
 
@@ -1986,6 +2039,8 @@ class MapAxesBoundingBox:
     ],
     post_summarize=post_summarize_plot,
 )
+# SR_TODO Refactor to remove number of instance attributes!
+# pylint: disable=R0902  # too-many-instance-attributes
 class TextBoxLocation:
     """A reference location (like bottom-left) inside a box on a 3x3 grid."""
 
@@ -2118,7 +2173,7 @@ class TextBoxLocation:
 def ax_w_h_in_fig_coords(fig, ax):
     """Get the dimensions of an axes in figure coords."""
     trans = fig.transFigure.inverted()
-    x, y, w, h = ax.bbox.transformed(trans).bounds
+    _, _, w, h = ax.bbox.transformed(trans).bounds
     return w, h
 
 

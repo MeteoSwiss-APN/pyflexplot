@@ -19,9 +19,9 @@ from . import __version__
 from .io import read_files
 from .plot import plot_fields
 from .preset import click_add_preset_path
-from .preset import click_cat_preset
-from .preset import click_find_presets
-from .preset import click_list_presets
+from .preset import click_cat_preset_and_exit
+from .preset import click_find_presets_and_exit
+from .preset import click_list_presets_and_exit
 from .preset import click_use_preset
 from .setup import InputSetup
 from .setup import InputSetupFile
@@ -109,20 +109,20 @@ def prepare_input_setup_params(ctx, param, value):
     "--cat-preset",
     help="Show the content of a preset setup file.",
     metavar="NAME",
-    callback=click_cat_preset,
+    callback=click_cat_preset_and_exit,
     expose_value=False,
 )
 @click.option(
     "--list-presets",
     help="List the names of all preset setup files.",
-    callback=click_list_presets,
+    callback=click_list_presets_and_exit,
     is_flag=True,
 )
 @click.option(
     "--find-presets",
     help="List preset setup file(s) by name (may contain wildcards).",
     metavar="NAME",
-    callback=click_find_presets,
+    callback=click_find_presets_and_exit,
     multiple=True,
 )
 @click.option(

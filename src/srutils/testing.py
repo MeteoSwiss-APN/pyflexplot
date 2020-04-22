@@ -50,6 +50,7 @@ def property_obj(cls, *args, **kwargs):
 
     """
 
+    # pylint: disable=W0613  # unused-argument (self)
     def create_obj(self):
         return cls(*args, **kwargs)
 
@@ -89,7 +90,7 @@ def check_summary_dict_is_subdict(
     """Check that one summary dict is a subdict of another."""
 
     if ignored(subdict) or ignored(superdict):
-        return None
+        return
 
     if not isinstance(subdict, dict):
         raise CheckFailedError(
@@ -110,6 +111,7 @@ def check_summary_dict_is_subdict(
         )
 
 
+# pylint: disable=R0913  # too-many-arguments
 def check_summary_dict_element_is_subelement(
     obj_sub,
     obj_super,
@@ -120,10 +122,10 @@ def check_summary_dict_element_is_subelement(
 ):
 
     if ignored(obj_sub) or ignored(obj_super):
-        return None
+        return
 
     if obj_sub == obj_super:
-        return None
+        return
 
     # Collect objects passed to exceptions
     err_objs = {
@@ -199,6 +201,7 @@ def get_dict_element(dict_, key, name="dict", exception_type=ValueError):
 @dataclass(frozen=True)
 class TestConfBase:
     def derive(self, **kwargs):
+        # pylint: disable=E1101  # no-member (__dataclass_fields__)
         data = {k: getattr(self, k) for k in self.__dataclass_fields__}
         data.update(kwargs)
         return type(self)(**data)
@@ -246,7 +249,6 @@ def is_list_like(
         "not_": not_,
         "t_children": t_children,
         "f_children": f_children,
-        "raise_": raise_,
     }
 
     if not isiterable(obj, str_ok=False):
@@ -266,12 +268,12 @@ def is_list_like(
                 f"obj has unexpected type {type(obj).__name__}", kwargs, raise_
             )
 
-    _check_children(obj, t_children, f_children, kwargs)
+    _check_children(obj, t_children, f_children, kwargs, raise_)
 
     return True
 
 
-def _check_children(obj, t_children, f_children, kwargs):
+def _check_children(obj, t_children, f_children, kwargs, raise_):
 
     if t_children is not None:
         for idx, child in enumerate(obj):
@@ -279,6 +281,7 @@ def _check_children(obj, t_children, f_children, kwargs):
                 return_or_raise(
                     f"child has unexpected type {type(child).__name__}",
                     {**kwargs, "child": child, "idx": idx},
+                    raise_,
                 )
 
     if f_children is not None:
@@ -287,9 +290,11 @@ def _check_children(obj, t_children, f_children, kwargs):
                 return_or_raise(
                     f"f_children returns False for child",
                     {**kwargs, "child": child, "idx": idx},
+                    raise_,
                 )
 
 
+# pylint: disable=R0915  # too-many-statements
 def assert_nested_equal(
     obj1: Collection,
     obj2: Collection,
@@ -322,17 +327,20 @@ def assert_nested_equal(
             err += f"\nobj2 ({type(obj2).__name__}):\n{pformat(obj2)}\n"
         return AssertionError(err)
 
+    # pylint: disable=R0912  # too-many-branches
     def recurse(obj1, obj2, path):
         try:
             if obj1 == obj2:
-                return None
+                return
         except ValueError:
             # Numpy array?
             try:
-                if (obj1 == obj2).all():
-                    return None
-            except Exception:
+                arrays_equal = (obj1 == obj2).all()
+            except Exception:  # pylint: disable=W0703  # broad-except
                 pass
+            else:
+                if arrays_equal:
+                    return
 
         def check_equivalent(obj1, obj2, type_, path):
             if not isinstance(obj1, type_) or not isinstance(obj2, type_):
@@ -390,7 +398,7 @@ def assert_nested_equal(
                 )
             if float_close_ok:
                 if np.isclose(obj1, obj2, **(kwargs_close or {})):
-                    return None
+                    return
                 msg = f"unequal floats not even close: {obj1} vs. {obj2}"
                 if kwargs_close:
                     msg += " ({})".format(

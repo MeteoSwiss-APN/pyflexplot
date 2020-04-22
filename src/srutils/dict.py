@@ -5,7 +5,6 @@ Dictionary utilities.
 # Standard library
 import itertools
 from collections import namedtuple
-from collections.abc import Mapping
 from copy import copy
 from copy import deepcopy
 from dataclasses import dataclass
@@ -36,6 +35,7 @@ def format_dictlike(obj, multiline=False, indent=1):
     except AttributeError:
         obj = dict(obj)
     try:
+        # pylint: disable=E1123  # unexpected-keyword-arg (sort_dicts)
         s = pformat(obj, indent=indent, sort_dicts=False)[1:-1]
     except TypeError:
         # Option 'sort_dicts' only available in Python3.8+
@@ -99,14 +99,14 @@ def compress_multival_dicts(
         raise ValueError("keys differ between dicts", [dct.keys() for dct in dcts])
 
     dct: Mapping[str, Any] = {
-        key: [i for i in val] if isinstance(val, cls_seq) else [copy(val)]
+        key: list(val) if isinstance(val, cls_seq) else [copy(val)]
         for key, val in dcts[0].items()
     }
     for dct_i in dcts[1:]:
         for key, val in dct.items():
             val_i = dct_i[key]
             if isinstance(val_i, cls_seq):
-                val_i = [i for i in val_i]
+                val_i = list(val_i)
             else:
                 val_i = [val_i]
             for val_ij in val_i:
@@ -512,7 +512,7 @@ def nested_dict_resolve_single_star_wildcards(dct):
         if key == "*":
             wildcards[key] = dct.pop(key)
 
-    for wild_key, wild_val in wildcards.items():
+    for wild_val in wildcards.values():
         for key, val in dct.items():
             if isinstance(val, Mapping):
                 val.update(wild_val)
@@ -539,7 +539,7 @@ def nested_dict_resolve_double_star_wildcards(dct, only_to_ends=False):
 
     def _apply_double_star(dct, wild_val, depth=0):
         subdcts = []
-        for key, val in dct.items():
+        for val in dct.values():
             if isinstance(val, Mapping):
                 subdcts.append(val)
         if subdcts:
@@ -553,7 +553,7 @@ def nested_dict_resolve_double_star_wildcards(dct, only_to_ends=False):
         if key == "**":
             wildcards[key] = dct.pop(key)
 
-    for wild_key, wild_val in wildcards.items():
+    for wild_val in wildcards.values():
         _apply_double_star(dct, wild_val)
 
     for key, val in dct.items():

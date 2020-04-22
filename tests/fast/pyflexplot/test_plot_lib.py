@@ -48,7 +48,7 @@ class Test_TextBoxAxes_Summarize:
             **self.sol_base,
             "elements": [
                 {
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                     "s": "lower-left",
                     "loc": {
                         "type": "TextBoxLocation",
@@ -69,8 +69,8 @@ class Test_TextBoxAxes_Summarize:
         sol = {
             **self.sol_base,
             "elements": [
-                {"type": "TextBoxElement_Text", "s": ("foo", "bar")},
-                {"type": "TextBoxElement_Text", "s": ("hello", "world")},
+                {"type": "TextBoxElementText", "s": ("foo", "bar")},
+                {"type": "TextBoxElementText", "s": ("hello", "world")},
             ],
         }
         check_summary_dict_is_subdict(superdict=res, subdict=sol)
@@ -82,7 +82,7 @@ class Test_TextBoxAxes_Summarize:
         sol = {
             **self.sol_base,
             "elements": [
-                {"type": "TextBoxElement_ColorRect", "fc": "red", "ec": "black"}
+                {"type": "TextBoxElementColorRect", "fc": "red", "ec": "black"}
             ],
         }
         check_summary_dict_is_subdict(superdict=res, subdict=sol)

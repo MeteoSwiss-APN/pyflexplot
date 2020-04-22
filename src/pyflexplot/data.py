@@ -51,12 +51,12 @@ def summarize_field(obj: Any) -> Dict[str, Dict[str, Any]]:
     }
 
 
-# SR_TODO Turn into dataclass
 @summarizable(
     attrs_skip=["fld", "lat", "lon"],
     post_summarize=lambda self, summary: {**summary, **summarize_field(self)},
 )
 @dataclass
+# pylint: disable=R0902  # too-many-instance-attributes
 class Field:
     """FLEXPART field on rotated-pole grid.
 
@@ -110,14 +110,6 @@ class Field:
                 f"shape of fld inconsistent with (lat, lon): {fld.shape} != "
                 r"{grid_shape}"
             )
-
-    def scale(self, fact):
-        if fact is None:
-            return None
-        self.scale_fact *= fact
-        self.fld = self.fld * fact
-        for key in self.time_stats:
-            self.time_stats[key] *= fact
 
 
 def threshold_agreement(arr, thr, *, axis=None, thr_eq_ok=False):

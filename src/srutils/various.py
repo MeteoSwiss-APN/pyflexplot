@@ -82,7 +82,7 @@ def group_kwargs(name, name_out=None, separator=None):
             if name_out in kwargs:
                 raise ValueError(f"keyword argument '{name_out}' already present")
             group = {}
-            for key in [k for k in kwargs]:
+            for key in list(kwargs):
                 if key.startswith(prefix):
                     new_key = key[len(prefix) :]
                     group[new_key] = kwargs.pop(key)

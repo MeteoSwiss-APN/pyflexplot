@@ -7,7 +7,7 @@ Iteration utilities.
 def flatten(obj, cls=None, max_depth=None, *, _depth=0):
     """Flatten a nested sequence recursively."""
 
-    max_depth_reached = max_depth is not None and max_depth >= 0 and _depth > max_depth
+    max_depth_reached = max_depth is not None and 0 <= max_depth < _depth
 
     def is_expandable(obj):
         if not isiterable(obj, str_ok=False):

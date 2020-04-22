@@ -140,6 +140,7 @@ class CoreInputSetup(BaseModel):
         return cls(**obj)
 
 
+# pylint: disable=E0213  # no-self-argument (validators)
 class InputSetup(BaseModel):
     """
     PyFlexPlot setup.
@@ -397,6 +398,7 @@ class InputSetup(BaseModel):
         return params_cast
 
     # SR_TODO consider renaming this method (sth. containing 'dimensions')
+    # pylint: disable=R0912  # too-many-branches
     def complete_dimensions(self, meta_data: Mapping[str, Any]) -> List[str]:
         dimensions = meta_data["dimensions"]
         completed = []
@@ -602,11 +604,6 @@ class InputSetup(BaseModel):
         # Decompress dict
         dcts = decompress_multival_dict(dct, select=select, skip=skip)
 
-        def create_setup(dct):
-            if isinstance(dct["time"], int):
-                dct["time"] = [dct["time"]]
-            return cls_setup.create(dct)
-
         return cls_setup_collection([cls_setup.create(dct) for dct in dcts])
 
 
@@ -617,7 +614,7 @@ class InputSetupCollection:
             setups and not isinstance(next(iter(setups)), InputSetup)
         ):
             raise ValueError("setups is not a collection of InputSetup objects", setups)
-        self._setups: List[InputSetup] = [setup for setup in setups]
+        self._setups: List[InputSetup] = list(setups)
 
     @classmethod
     def create(
@@ -676,7 +673,9 @@ class InputSetupCollection:
     # SR_TMP <<< TODO cleaner solution
     def decompress_grouped_by_time(self) -> List["InputSetupCollection"]:
         # Note: This is what's left-over of FldSpecs, specifically FldSpecs.create
-        return self.decompress_two_step(["time"], None, ["ens_member_id"])
+        return self.decompress_two_step(
+            select_outer=["time"], select_inner=None, skip=["ens_member_id"],
+        )
 
     def decompress_two_step(
         self,
@@ -687,8 +686,10 @@ class InputSetupCollection:
         skip = ["ens_member_id"]
         sub_setups_lst: List[InputSetupCollection] = []
         for setup in self._setups:
-            for sub_setup in setup.decompress_partially(["time"], skip):
-                sub_setups_lst.append(sub_setup.decompress_partially(None, skip))
+            for sub_setup in setup.decompress_partially(select_outer, skip):
+                sub_setups_lst.append(
+                    sub_setup.decompress_partially(select_inner, skip)
+                )
         return sub_setups_lst
 
     def decompress_species_id(self) -> List["InputSetupCollection"]:
@@ -743,7 +744,7 @@ class InputSetupCollection:
         decompress_skip: Optional[Collection[str]] = None,
     ) -> List[str]:
         """Set unconstrained dimensions to all available indices."""
-        orig_setups = [setup for setup in self._setups]
+        orig_setups = list(self._setups)
         self._setups.clear()
         completed: List[str] = []
         for setup in orig_setups:
@@ -765,7 +766,7 @@ class InputSetupCollection:
 # SR_TMP <<< TODO Consider merging with InputSetupCollection (failed due to mypy)
 class CoreInputSetupCollection:
     def __init__(self, setups: Collection[CoreInputSetup]) -> None:
-        self._setups: List[CoreInputSetup] = [setup for setup in setups]
+        self._setups: List[CoreInputSetup] = list(setups)
 
     @classmethod
     def create(

@@ -330,7 +330,7 @@ plot_summary = {
                     "COSMO-1, "
                     "2019-09-30 "
                     "12:00 UTC",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -353,7 +353,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "©MeteoSchweiz",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
             ],
             "lw_frame": None,
@@ -386,7 +386,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "Freisetzung",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -414,7 +414,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "Auswaschexponent:",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -442,7 +442,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "Auswaschkoeff.:",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -470,7 +470,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "Sediment.-Geschw.:",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -498,7 +498,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "Deposit.-Geschw.:",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -526,7 +526,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "Halbwertszeit:",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -554,7 +554,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "Substanz:",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -582,7 +582,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "Totale " "Masse:",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -610,7 +610,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "Rate:",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -638,7 +638,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "Ende:",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -666,7 +666,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "Start:",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -694,7 +694,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": 'H$\\mathrm{\\"o}$he:',
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -722,7 +722,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": 'L$\\mathrm{\\"a}$nge:',
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -750,7 +750,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "Breite:",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -778,7 +778,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "Ort:",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -806,7 +806,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "0",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -834,7 +834,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "0",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -862,7 +862,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "0",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -890,7 +890,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "0",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -918,7 +918,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "30",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -946,7 +946,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "Cs-137",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -974,7 +974,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "1e+09",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1002,7 +1002,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "34722",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1030,7 +1030,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "2019-09-30 " "20:00 UTC",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1058,7 +1058,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "2019-09-30 " "12:00 UTC",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1086,7 +1086,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "100",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1114,7 +1114,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "7$^\\circ$$\\,$0'$\\,$O " "(7.0000$^\\circ$$\\,$O)",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1142,7 +1142,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "47$^\\circ$$\\,$0'$\\,$N " "(47.0000$^\\circ$$\\,$N)",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1170,7 +1170,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": 'G$\\mathrm{\\"o}$sgen',
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
             ],
             "lw_frame": 1.0,
@@ -1203,7 +1203,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "Konzentration " "(Bq m-3)",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1232,7 +1232,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "1E-10 $\\tt " "-$ 1E-09",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1261,7 +1261,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "1E-09 $\\tt " "-$ 1E-08",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1290,7 +1290,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "1E-08 $\\tt " "-$ 1E-07",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1319,7 +1319,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "1E-07 $\\tt " "-$ 1E-06",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1348,7 +1348,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "1E-06 $\\tt " "-$ 1E-05",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1377,7 +1377,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "1E-05 $\\tt " "-$ 1E-04",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1406,7 +1406,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "1E-04 $\\tt " "-$ 0.001",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1435,7 +1435,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "      $\\tt " "\\geq$ 0.001",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "ec": "black",
@@ -1458,7 +1458,7 @@ plot_summary = {
                         "y": 0.2248644154303971,
                         "y0": 0.02753441821596699,
                     },
-                    "type": "TextBoxElement_ColorRect",
+                    "type": "TextBoxElementColorRect",
                     "w": 4.0,
                     "x_anker": "left",
                 },
@@ -1483,7 +1483,7 @@ plot_summary = {
                         "y": 0.29370046097031455,
                         "y0": 0.02753441821596699,
                     },
-                    "type": "TextBoxElement_ColorRect",
+                    "type": "TextBoxElementColorRect",
                     "w": 4.0,
                     "x_anker": "left",
                 },
@@ -1508,7 +1508,7 @@ plot_summary = {
                         "y": 0.362536506510232,
                         "y0": 0.02753441821596699,
                     },
-                    "type": "TextBoxElement_ColorRect",
+                    "type": "TextBoxElementColorRect",
                     "w": 4.0,
                     "x_anker": "left",
                 },
@@ -1533,7 +1533,7 @@ plot_summary = {
                         "y": 0.4313725520501495,
                         "y0": 0.02753441821596699,
                     },
-                    "type": "TextBoxElement_ColorRect",
+                    "type": "TextBoxElementColorRect",
                     "w": 4.0,
                     "x_anker": "left",
                 },
@@ -1558,7 +1558,7 @@ plot_summary = {
                         "y": 0.5002085975900671,
                         "y0": 0.02753441821596699,
                     },
-                    "type": "TextBoxElement_ColorRect",
+                    "type": "TextBoxElementColorRect",
                     "w": 4.0,
                     "x_anker": "left",
                 },
@@ -1583,7 +1583,7 @@ plot_summary = {
                         "y": 0.5690446431299846,
                         "y0": 0.02753441821596699,
                     },
-                    "type": "TextBoxElement_ColorRect",
+                    "type": "TextBoxElementColorRect",
                     "w": 4.0,
                     "x_anker": "left",
                 },
@@ -1608,7 +1608,7 @@ plot_summary = {
                         "y": 0.637880688669902,
                         "y0": 0.02753441821596699,
                     },
-                    "type": "TextBoxElement_ColorRect",
+                    "type": "TextBoxElementColorRect",
                     "w": 4.0,
                     "x_anker": "left",
                 },
@@ -1633,7 +1633,7 @@ plot_summary = {
                         "y": 0.7067167342098195,
                         "y0": 0.02753441821596699,
                     },
-                    "type": "TextBoxElement_ColorRect",
+                    "type": "TextBoxElementColorRect",
                     "w": 4.0,
                     "x_anker": "left",
                 },
@@ -1661,7 +1661,7 @@ plot_summary = {
                         "y0": 0.02753441821596699,
                     },
                     "m": "^",
-                    "type": "TextBoxElement_Marker",
+                    "type": "TextBoxElementMarker",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1684,7 +1684,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "Abgabeort",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "kwargs": {
@@ -1709,7 +1709,7 @@ plot_summary = {
                         "y0": 0.02753441821596699,
                     },
                     "m": "+",
-                    "type": "TextBoxElement_Marker",
+                    "type": "TextBoxElementMarker",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1732,7 +1732,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "Max.: " "0.00101",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
             ],
             "lw_frame": 1.0,
@@ -1772,7 +1772,7 @@ plot_summary = {
                     "s": 'Aktivit$\\mathrm{\\"a}$tskonzentration '
                     "auf 0$-$500 m "
                     '$\\mathrm{\\"u}$.G.',
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1798,7 +1798,7 @@ plot_summary = {
                     '$\\mathrm{\\"u}$ber '
                     "3$\\,$h (seit "
                     "+15:00$\\,$h)",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1821,7 +1821,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "2019-10-01 " "06:00 UTC " "(+18:00$\\,$h)",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1844,7 +1844,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "18:00$\\,$h " "seit " "Freisetzungsbeginn",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
             ],
             "lw_frame": 1.0,
@@ -1877,7 +1877,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "Cs-137",
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
                 {
                     "edge_spaces_replacement_char": "␣",
@@ -1900,7 +1900,7 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "Ort: " 'G$\\mathrm{\\"o}$sgen',
-                    "type": "TextBoxElement_Text",
+                    "type": "TextBoxElementText",
                 },
             ],
             "lw_frame": 1.0,

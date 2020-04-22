@@ -29,7 +29,7 @@ preset_path: List[Union[str, Path]] = []
 
 
 def add_preset_path(path: Union[Path, str], first: bool = True) -> None:
-    global preset_path
+    global preset_path  # pylint: disable=W0603  # global-statement
     path = Path(path)
     check_dir_exists(path)
     idx = 0 if first else -1
@@ -41,7 +41,7 @@ add_preset_path(data_path / "presets")
 
 def collect_preset_paths() -> Iterator[Path]:
     """Collect all setup file paths as specified in ``preset_path``."""
-    global preset_path
+    global preset_path  # pylint: disable=W0603  # global-statement
     for path in preset_path:
         check_dir_exists(path)
         yield Path(path)
@@ -56,27 +56,28 @@ def collect_preset_files(
     else:
         patterns = list(pattern)
     rx_patterns = []
-    for pattern in patterns:
+    for pattern_i in patterns:
         ch = "[a-zA-Z0-9_.-]"
         rx_pattern = re.compile(
-            r"\A" + pattern.replace("*", f"{ch}*").replace("?", ch) + r"\Z"
+            r"\A" + pattern_i.replace("*", f"{ch}*").replace("?", ch) + r"\Z"
         )
         rx_patterns.append(rx_pattern)
     files_by_dir = {}  # type: ignore
-    for dir in collect_preset_paths():
-        files_by_dir[dir] = {}
-        for path in sorted(dir.glob(f"*.toml")):
+    for dir_ in collect_preset_paths():
+        files_by_dir[dir_] = {}
+        for path in sorted(dir_.glob(f"*.toml")):
             name = path.name[: -len(path.suffix)]
             for rx_pattern in rx_patterns:
                 if rx_pattern.match(name):
-                    files_by_dir[dir][name] = path
+                    files_by_dir[dir_][name] = path
                     break
     return files_by_dir
 
 
+# pylint: disable=W0613  # unused-argument (ctx, param)
 def click_add_preset_path(ctx: Context, param: ParamType, value: Any) -> None:
     if not value:
-        return None
+        return
     add_preset_path(value)
 
 
@@ -101,25 +102,27 @@ def cat_preset(name: str, include_source: bool = False) -> str:
     return "\n".join(lines)
 
 
-def click_list_presets(ctx: Context, param: ParamType, value: Any) -> None:
+def click_list_presets_and_exit(ctx: Context, param: ParamType, value: Any) -> None:
     """List all presets setup files and exit."""
     if not value:
-        return None
-    click_find_presets(ctx, param, "*")
+        return
+    click_find_presets_and_exit(ctx, param, "*")
 
 
-def click_find_presets(ctx: Context, param: ParamType, value: Any) -> None:
+# pylint: disable=W0613  # unused-argument (param)
+def click_find_presets_and_exit(ctx: Context, param: ParamType, value: Any) -> None:
     """Find preset setup file(s) by name (optional wildcards) and exit."""
     if not value:
-        return None
+        return
     _click_list_presets(ctx, collect_preset_files(value))
     ctx.exit(0)
 
 
-def click_cat_preset(ctx: Context, param: ParamType, value: Any) -> None:
+# pylint: disable=W0613  # unused-argument (param)
+def click_cat_preset_and_exit(ctx: Context, param: ParamType, value: Any) -> None:
     """Print the content of a preset setup file and exit."""
     if not value:
-        return None
+        return
     verbosity = ctx.obj["verbosity"]
     try:
         content = cat_preset(value, include_source=(verbosity > 0))
@@ -131,9 +134,10 @@ def click_cat_preset(ctx: Context, param: ParamType, value: Any) -> None:
         ctx.exit(0)
 
 
+# pylint: disable=W0613  # unused-argument (param)
 def click_use_preset(ctx: Context, param: ParamType, value: Any) -> None:
     if not value:
-        return None
+        return
     key = "preset_setup_file_paths"
     if key not in ctx.obj:
         ctx.obj[key] = []
@@ -167,9 +171,9 @@ def _click_list_presets(
     indent_all: bool = False,
 ) -> None:
     verbosity = ctx.obj["verbosity"]
-    for dir, files in preset_files_by_dir.items():
+    for dir_, files in preset_files_by_dir.items():
         if verbosity > 0:
-            click.echo(f"{dir}:")
+            click.echo(f"{dir_}:")
         for name, path in files.items():
             if verbosity == 0:
                 click.echo(f"{'  ' if indent_all else ''}{name}")

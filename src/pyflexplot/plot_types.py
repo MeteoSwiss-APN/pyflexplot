@@ -78,136 +78,135 @@ class PlotLabels:
         """Create an instance of ``PlotLabels``."""
         self.mdata = mdata
 
-        words = self.words
-        symbs = self.symbols
-        mdata = self.mdata
-
-        words.set_default_lang(lang)
+        self.words.set_default_lang(lang)
 
         # Declare groups
-        self.top_left: Dict[str, Any]
-        self.top_right: Dict[str, Any]
-        self.right_top: Dict[str, Any]
-        self.right_bottom: Dict[str, Any]
-        self.bottom: Dict[str, Any]
+        self.top_left: Dict[str, Any] = self._init_top_left()
+        self.top_right: Dict[str, Any] = self._init_top_right()
+        self.right_top: Dict[str, Any] = self._init_right_top()
+        self.right_bottom: Dict[str, Any] = self._init_right_bottom()
+        self.bottom: Dict[str, Any] = self._init_bottom()
 
-        def set_group(name, values: Dict[str, Any]) -> None:
-            """Preprocess and set group values."""
-            for key, val in values.copy().items():
-                if isinstance(val, str):
-                    # Capitalize first letter only (even if it's a space!)
-                    values[key] = list(val)[0].capitalize() + val[1:]
-            setattr(self, name, values)
+    def _init_group(self, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Preprocess and set group values."""
+        for key, val in values.copy().items():
+            if isinstance(val, str):
+                # Capitalize first letter only (even if it's a space!)
+                values[key] = list(val)[0].capitalize() + val[1:]
+        return values
 
-        # Top-left box
+    def _init_top_left(self) -> Dict[str, Any]:
         level = format_level_range(
-            value_bottom=mdata.variable_level_bot.value,
-            value_top=mdata.variable_level_top.value,
-            unit_bottom=mdata.variable_level_bot_unit.value,
-            unit_top=mdata.variable_level_top_unit.value,
+            value_bottom=self.mdata.variable_level_bot.value,
+            value_top=self.mdata.variable_level_top.value,
+            unit_bottom=self.mdata.variable_level_bot_unit.value,
+            unit_top=self.mdata.variable_level_top_unit.value,
         )
         if not level:
             s_level = ""
         else:
-            s_level = f" {words['at', None, 'level']} {level}"
-        integr_op = words[
+            s_level = f" {self.words['at', None, 'level']} {level}"
+        integr_op = self.words[
             {
                 "sum": "summed_over",
                 "mean": "averaged_over",
                 "accum": "accumulated_over",
-            }[mdata.simulation_integr_type.value]
+            }[self.mdata.simulation_integr_type.value]
         ].s
-        time_rels = mdata.simulation_now_rel
-        period = mdata.simulation_fmt_integr_period()
-        start = mdata.simulation_integr_start_rel
-        unit = mdata.variable_unit
+        time_rels = self.mdata.simulation_now_rel
+        period = self.mdata.simulation_fmt_integr_period()
+        start = self.mdata.simulation_integr_start_rel
+        unit = self.mdata.variable_unit
         unit_escaped = str(unit).replace("{", "{{").replace("}", "}}")
-        ts_abs = mdata.simulation_now
-        ts_rel = mdata.simulation_now_rel
-        set_group(
-            "top_left",
+        ts_abs = self.mdata.simulation_now
+        ts_rel = self.mdata.simulation_now_rel
+        return self._init_group(
             {
-                "variable": f"{mdata.variable_long_name.value}{s_level}",
-                "period": f"{integr_op} {period} ({words['since']} +{start})",
+                "variable": f"{self.mdata.variable_long_name.value}{s_level}",
+                "period": f"{integr_op} {period} ({self.words['since']} +{start})",
                 "subtitle_thr_agrmt_fmt": (
-                    f"Cloud: {symbs['geq']} {{thr}} {unit_escaped}"
+                    f"Cloud: {self.symbols['geq']} {{thr}} {unit_escaped}"
                 ),
                 "subtitle_cloud_arrival_time": (
-                    f"Cloud: {symbs['geq']} {{thr}} {unit_escaped}; "
-                    f"members: {symbs['geq']} {{mem}}"
+                    f"Cloud: {self.symbols['geq']} {{thr}} {unit_escaped}; "
+                    f"members: {self.symbols['geq']} {{mem}}"
                 ),
                 "timestep": f"{ts_abs} (+{ts_rel})",
                 "time_since_release_start": (
-                    f"{time_rels} {words['since']} {words['release_start']}"
+                    f"{time_rels} {self.words['since']} {self.words['release_start']}"
                 ),
             },
         )
 
-        # Top-right box
-        self.top_right = {
-            "species": f"{mdata.species_name}",
-            "site": f"{words['site']}: {mdata.release_site_name.value}",
-        }
+    def _init_top_right(self) -> Dict[str, Any]:
+        return self._init_group(
+            {
+                "species": f"{self.mdata.species_name}",
+                "site": f"{self.words['site']}: {self.mdata.release_site_name.value}",
+            },
+        )
 
-        # Right-top box
-        name = mdata.variable_short_name
-        unit = mdata.variable_unit
-        unit_escaped = str(unit).replace("{", "{{").replace("}", "}}")
-        set_group(
-            "right_top",
+    def _init_right_top(self) -> Dict[str, Any]:
+        name = self.mdata.variable_short_name
+        unit = self.mdata.variable_unit
+        return self._init_group(
             {
                 "title": f"{name}",
                 "title_unit": f"{name} ({unit})",
-                "release_site": words["release_site"].s,
-                "max": words["max"].s,
+                "release_site": self.words["release_site"].s,
+                "max": self.words["max"].s,
             },
         )
 
-        # Right-bottom box
-        deg_ = f"{symbs['deg']}{symbs['short_space']}"
-        _N = f"{symbs['short_space']}{words['north', None, 'abbr']}"
-        _E = f"{symbs['short_space']}{words['east', None, 'abbr']}"
-        set_group(
-            "right_bottom",
+    def _init_right_bottom(self) -> Dict[str, Any]:
+        deg_ = f"{self.symbols['deg']}{self.symbols['short_space']}"
+        north = f"{self.symbols['short_space']}{self.words['north', None, 'abbr']}"
+        east = f"{self.symbols['short_space']}{self.words['east', None, 'abbr']}"
+        return self._init_group(
             {
-                "title": words["release"].t,
-                "start": words["start"].s,
-                "end": words["end"].s,
-                "latitude": words["latitude"].s,
-                "longitude": words["longitude"].s,
-                "lat_deg_fmt": f"{{d}}{deg_}{{m}}'{_N} ({{f:.4f}}{words['degN']})",
-                "lon_deg_fmt": f"{{d}}{deg_}{{m}}'{_E} ({{f:.4f}}{words['degE']})",
-                "height": words["height"].s,
-                "rate": words["rate"].s,
-                "mass": words["total_mass"].s,
-                "site": words["site"].s,
-                "release_site": words["release_site"].s,
-                "max": words["max"].s,
-                "name": words["substance"].s,
-                "half_life": words["half_life"].s,
-                "deposit_vel": words["deposition_velocity", None, "abbr"].s,
-                "sediment_vel": words["sedimentation_velocity", None, "abbr"].s,
-                "washout_coeff": words["washout_coeff"].s,
-                "washout_exponent": words["washout_exponent"].s,
+                "title": self.words["release"].t,
+                "start": self.words["start"].s,
+                "end": self.words["end"].s,
+                "latitude": self.words["latitude"].s,
+                "longitude": self.words["longitude"].s,
+                "lat_deg_fmt": (
+                    f"{{d}}{deg_}{{m}}'{north} ({{f:.4f}}{self.words['degN']})"
+                ),
+                "lon_deg_fmt": (
+                    f"{{d}}{deg_}{{m}}'{east} ({{f:.4f}}{self.words['degE']})"
+                ),
+                "height": self.words["height"].s,
+                "rate": self.words["rate"].s,
+                "mass": self.words["total_mass"].s,
+                "site": self.words["site"].s,
+                "release_site": self.words["release_site"].s,
+                "max": self.words["max"].s,
+                "name": self.words["substance"].s,
+                "half_life": self.words["half_life"].s,
+                "deposit_vel": self.words["deposition_velocity", None, "abbr"].s,
+                "sediment_vel": self.words["sedimentation_velocity", None, "abbr"].s,
+                "washout_coeff": self.words["washout_coeff"].s,
+                "washout_exponent": self.words["washout_exponent"].s,
             },
         )
 
-        # Bottom box
-        model = mdata.simulation_model_name.value
+    def _init_bottom(self) -> Dict[str, Any]:
+        model = self.mdata.simulation_model_name.value
         n_members = 21  # SR_TMP SR_HC TODO un-hardcode
         ens_member_id = "{:03d}-{:03d}".format(0, 20)  # SR_TMP SR_HC TODO un-hardcode
         model_ens = (
-            f"{model} {words['ensemble']} ({n_members} {words['member', None, 'pl']}: "
-            f"{ens_member_id}"
+            f"{model} {self.words['ensemble']} ({n_members} "
+            f"{self.words['member', None, 'pl']}: {ens_member_id}"
         )
-        start = mdata.simulation_start
-        model_info_fmt = f"{words['flexpart']} {words['based_on']} {model}, {start}"
-        set_group(
-            "bottom",
+        start = self.mdata.simulation_start
+        model_info_fmt = (
+            f"{self.words['flexpart']} {self.words['based_on']} {model}, {start}"
+        )
+        return self._init_group(
             {
                 "model_info_det": model_info_fmt.format(m=model),
                 "model_info_ens": model_info_fmt.format(m=model_ens),
-                "copyright": f"{symbs['copyright']}{words['meteoswiss']}",
+                "copyright": f"{self.symbols['copyright']}{self.words['meteoswiss']}",
             },
         )
 

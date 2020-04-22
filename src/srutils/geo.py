@@ -52,7 +52,7 @@ class Degrees:
         except TypeError:
             pass
         else:
-            self._frac = float(deg[0]) + deg[1] / 60.0 + deg[2] / 3600.0
+            self._frac = float(degs) + mins / 60.0 + secs / 3600.0
 
         raise ValueError(
             f"invalid deg='{deg}'; " f"must be `float` or `(degs, [mins, [secs, ]])`"

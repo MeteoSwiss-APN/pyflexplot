@@ -84,6 +84,7 @@ def collect_ens_member_ids(
     return ens_member_ids
 
 
+# pylint: disable=R0902  # too-many-instance-attributes
 class FileReader:
     """Reader of NetCDF files containing FLEXPART data.
 
@@ -307,6 +308,7 @@ class FileReader:
             "max": np.nanmax(fld_time),
         }
 
+    # pylint: disable=R0914  # too-many-locals
     def _collect_meta_data(self, var_setups: InputSetupCollection,) -> List[MetaData]:
         """Collect time-step-specific data meta data."""
 
@@ -393,6 +395,8 @@ class FileReader:
             }
         raise NotImplementedError("dimension names for model", model)
 
+    # SR_TODO refactor to reduce branching and locals!
+    # pylint: disable=R0912,R0914  # too-many-branches, too-many-locals
     def _read_nc_var(
         self, fi: nc4.Dataset, setup: InputSetup, expand: Optional[List[str]] = None,
     ) -> np.ndarray:
@@ -569,7 +573,7 @@ class FlexPartDataFixer:
         if isinstance(mdata, Sequence):
             for mdata_i in mdata:
                 self._fix_meta_data_cosmo(mdata_i)
-            return None
+            return
         assert isinstance(mdata, MetaData)  # mypy
 
         name = mdata.species_name.value
@@ -639,7 +643,7 @@ class FlexPartDataFixer:
                     axis=idx_lon,
                 )
             warnings.warn(f"fix global data: shift eastward by {n_shift} * {dlon} deg")
-            return None
+            return
 
         elif lon[0] < -180.0:
             # Westward shift
@@ -661,4 +665,4 @@ class FlexPartDataFixer:
                     axis=idx_lon,
                 )
             warnings.warn(f"fix global data: shift westward by {n_shift} * {dlon} deg")
-            return None
+            return

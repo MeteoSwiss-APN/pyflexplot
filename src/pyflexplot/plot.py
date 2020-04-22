@@ -3,10 +3,10 @@
 Plots.
 """
 # Standard library
-import os
 import re
 from textwrap import dedent
 from typing import Collection
+from typing import Dict
 from typing import Optional
 
 # Third-party
@@ -44,6 +44,7 @@ from .utils import summarizable
     ],
     post_summarize=post_summarize_plot,
 )
+# pylint: disable=R0902  # too-many-instance-attributes
 class Plot:
     """A FLEXPART dispersion plot."""
 
@@ -74,32 +75,20 @@ class Plot:
             "markeredgewidth": 1.5,
         }
 
+        # Declare attributes
+        self.boxes: Dict[str, TextBoxAxes]
+
         self.create_plot()
 
-    def save(self, file_path: str, *, format: Optional[str] = None, write: bool = True):
+    def save(self, file_path: str, *, write: bool = True):
         """Save the plot to disk.
 
         Args:
             file_path: Output file name, incl. path.
 
-            format (optional): Plot format (e.g., 'png', 'pdf'). If ``format``
-                is None, the plot format is derived from the extension of
-                ``file_path``.
-
             write (optional): Whether to actually write the plot to disk.
 
         """
-        if format is None:
-            ext = os.path.splitext(file_path)[1].lower()
-            if ext not in [".pdf", ".png"]:
-                raise ValueError(
-                    f"Cannot derive format from extension '{ext}' derived "
-                    f"from '{os.path.basename(file_path)}'"
-                )
-            format = ext[1:]
-        assert format is not None  # mypy
-        self.format: str = format
-
         if write:
             self.fig.savefig(
                 file_path,
@@ -156,7 +145,7 @@ class Plot:
             levels = np.log10(levels)
         elif extend in ["none", "min"]:
             # Areas beyond the closed upper bound are colored black
-            colors = [c for c in colors] + ["black"]
+            colors = list(colors) + ["black"]
             extend = {"none": "max", "min": "both"}[extend]
         if self.draw_colors:
             self.ax_map.contourf(field, levels=levels, colors=colors, extend=extend)
@@ -168,6 +157,7 @@ class Plot:
             fill_box(box)
             box.draw()
 
+    # pylint: disable=R0914  # too-many-locals
     def add_text_boxes(self):
         text_box_setup = self.plot_config.text_box_setup
         h_rel_t = text_box_setup["h_rel_t"]
@@ -306,6 +296,10 @@ class Plot:
             s, size = box.fit_text(labels["site"], "large", n_shrink_max=1)
             box.text("bc", s, size=size)
 
+    # pylint: disable=R0912   # too-many-branches
+    # pylint: disable=R0913   # too-many-arguments
+    # pylint: disable=R0914   # too-many-locals
+    # pylint: disable=R0915   # too-many-statements
     def fill_box_right_top(
         self,
         box: TextBoxAxes,
@@ -524,6 +518,7 @@ def plot_fields(fields, mdata_lst, dry_run=False, *, write=True):
         yield out_file_path, plot
 
 
+# pylint: disable=W0102  # dangerious-default-value ([])
 def format_out_file_path(setup, _previous=[]):
     template = setup.outfile
     path = _format_out_file_path_core(template, setup)
