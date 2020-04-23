@@ -230,84 +230,6 @@ def format_level_range(
         raise NotImplementedError(f"{n} sets of levels")
 
 
-@summarizable
-class BaseMetaData:
-    """Base class for meta data."""
-
-    def __init__(self, *args, **kwargs):
-        self.setup: InputSetup
-        raise ValueError("BaseMetaData must be subclassed!")
-
-    def __eq__(self, other: Any) -> bool:
-        return self.setup == other.setup
-
-    # SR_TODO <<< eliminate iterator method
-    def iter_objs(self):
-        if isinstance(self, BaseModel):  # SR_TMP
-            for name in self.__fields__:  # pylint: disable=E1101  # no-member
-                if name != "setup":
-                    yield name, getattr(self, name)
-        else:
-            for name in dir(self):
-                if not (
-                    name.startswith("_") or name in ["setup", "summarizable_attrs"]
-                ):
-                    datum = getattr(self, name)
-                    if not callable(datum):
-                        yield name, datum
-
-    def merge_with(
-        self,
-        others: Collection["BaseMetaData"],
-        replace: Optional[Dict[str, Any]] = None,
-    ) -> "BaseMetaData":
-        """Create a new instance by merging this instance with others.
-
-        Note that neither ``self`` nor ``others`` are changed.
-
-        Args:
-            others: Other instances of the same meta data class, to be merged
-                with this one.
-
-            replace (optional): Attributes to be replaced in the merged
-                instance. Must contain all meta data that differ between any
-                of the instances to be merged. Defaults to '{}'.
-
-        Returns:
-            Merged instance derived from ``self`` and ``others``.
-
-        """
-
-        if replace is None:
-            replace = {}
-
-        # Check setups
-        equal_setup_params = ["lang"]  # SR_TMP TODO add more keys
-        self_setup_dct = {k: self.setup.dict()[k] for k in equal_setup_params}
-        other_setups = [other.setup for other in others]
-        other_setup_dcts = [
-            {k: setup.dict()[k] for k in equal_setup_params} for setup in other_setups
-        ]
-        differing = [dct for dct in other_setup_dcts if dct != self_setup_dct]
-        if differing:
-            raise ValueError(
-                "setups of others differ",
-                equal_setup_params,
-                self_setup_dct,
-                other_setup_dcts,
-            )
-        setup = InputSetupCollection([self.setup] + other_setups).compress()
-
-        kwargs = {}
-        for name, datum in self.iter_objs():
-            other_data = [getattr(o, name) for o in others]
-            kwargs[name] = datum.merge_with(other_data, replace=replace.get(name))
-
-        assert type(self) is not BaseMetaData  # pylint: disable=C0123  # mypy
-        # C0123: unidiomatic-typecheck (type instead of isinstance)
-        return type(self)(setup=setup, **kwargs)
-
-
 def init_mdatum(type_, name, attrs=None):
     """Pydantic validator to initialize ``MetaData`` attributes."""
 
@@ -323,7 +245,7 @@ def init_mdatum(type_, name, attrs=None):
     return validator(name, pre=True, allow_reuse=True)(f)
 
 
-class MetaData(BaseModel, BaseMetaData):
+class MetaData(BaseModel):
     """Meta data.
 
     Attributes:
@@ -494,6 +416,71 @@ class MetaData(BaseModel, BaseMetaData):
     def simulation_fmt_integr_period(self):
         integr_period = self.simulation_now.value - self.simulation_integr_start.value
         return f"{integr_period.total_seconds()/3600:g}$\\,$h"
+
+    def __eq__(self, other: Any) -> bool:
+        return self.setup == other.setup
+
+    # SR_TODO <<< eliminate iterator method
+    def iter_objs(self):
+        if isinstance(self, BaseModel):  # SR_TMP
+            for name in self.__fields__:  # pylint: disable=E1101  # no-member
+                if name != "setup":
+                    yield name, getattr(self, name)
+        else:
+            for name in dir(self):
+                if not (
+                    name.startswith("_") or name in ["setup", "summarizable_attrs"]
+                ):
+                    datum = getattr(self, name)
+                    if not callable(datum):
+                        yield name, datum
+
+    def merge_with(
+        self, others: Collection["MetaData"], replace: Optional[Dict[str, Any]] = None,
+    ) -> "MetaData":
+        """Create a new instance by merging this instance with others.
+
+        Note that neither ``self`` nor ``others`` are changed.
+
+        Args:
+            others: Other instances of the same meta data class, to be merged
+                with this one.
+
+            replace (optional): Attributes to be replaced in the merged
+                instance. Must contain all meta data that differ between any
+                of the instances to be merged. Defaults to '{}'.
+
+        Returns:
+            Merged instance derived from ``self`` and ``others``.
+
+        """
+
+        if replace is None:
+            replace = {}
+
+        # Check setups
+        equal_setup_params = ["lang"]  # SR_TMP TODO add more keys
+        self_setup_dct = {k: self.setup.dict()[k] for k in equal_setup_params}
+        other_setups = [other.setup for other in others]
+        other_setup_dcts = [
+            {k: setup.dict()[k] for k in equal_setup_params} for setup in other_setups
+        ]
+        differing = [dct for dct in other_setup_dcts if dct != self_setup_dct]
+        if differing:
+            raise ValueError(
+                "setups of others differ",
+                equal_setup_params,
+                self_setup_dct,
+                other_setup_dcts,
+            )
+        setup = InputSetupCollection([self.setup] + other_setups).compress()
+
+        kwargs = {}
+        for name, datum in self.iter_objs():
+            other_data = [getattr(o, name) for o in others]
+            kwargs[name] = datum.merge_with(other_data, replace=replace.get(name))
+
+        return type(self)(setup=setup, **kwargs)
 
 
 def collect_meta_data(fi, setup, nc_meta_data):

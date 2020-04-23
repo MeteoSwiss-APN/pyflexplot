@@ -19,12 +19,15 @@ from matplotlib.colors import Colormap
 
 # Local
 from .data import Field
+from .meta_data import MetaData
 from .meta_data import format_level_range
 from .plot_lib import MapAxesConf
 from .setup import InputSetup
 from .utils import summarizable
 from .words import SYMBOLS
 from .words import WORDS
+from .words import TranslatedWords
+from .words import Words
 
 
 def create_map_conf(field: Field) -> MapAxesConf:
@@ -74,12 +77,12 @@ def create_map_conf(field: Field) -> MapAxesConf:
 @summarizable
 class PlotLabels:
 
-    words = WORDS
-    symbols = SYMBOLS
+    words: TranslatedWords = WORDS
+    symbols: Words = SYMBOLS
 
-    def __init__(self, lang, mdata):
+    def __init__(self, lang: str, mdata: MetaData):
         """Create an instance of ``PlotLabels``."""
-        self.mdata = mdata
+        self.mdata: MetaData = mdata
 
         self.words.set_default_lang(lang)
 
@@ -99,16 +102,18 @@ class PlotLabels:
         return values
 
     def _init_top_left(self) -> Dict[str, Any]:
-        level = format_level_range(
-            value_bottom=self.mdata.variable_level_bot.value,
-            value_top=self.mdata.variable_level_top.value,
-            unit_bottom=self.mdata.variable_level_bot_unit.value,
-            unit_top=self.mdata.variable_level_top_unit.value,
-        )
+        value_bottom = self.mdata.variable_level_bot.value
+        value_top = self.mdata.variable_level_top.value
+        unit_bottom = self.mdata.variable_level_bot_unit.value
+        unit_top = self.mdata.variable_level_top_unit.value
+        assert isinstance(unit_bottom, str)  # mypy
+        assert isinstance(unit_top, str)  # mypy
+        level = format_level_range(value_bottom, value_top, unit_bottom, unit_top)
         if not level:
             s_level = ""
         else:
             s_level = f" {self.words['at', None, 'level']} {level}"
+        assert isinstance(self.mdata.simulation_integr_type.value, str)  # mypy
         integr_op = self.words[
             {
                 "sum": "summed_over",
