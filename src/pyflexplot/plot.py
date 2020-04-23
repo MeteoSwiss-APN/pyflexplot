@@ -26,6 +26,7 @@ from .plot_lib import TextBoxAxes
 from .plot_lib import ax_w_h_in_fig_coords
 from .plot_lib import post_summarize_plot
 from .plot_types import PlotConfig
+from .plot_types import PlotLabels
 from .plot_types import colors_from_plot_config
 from .plot_types import create_map_conf
 from .plot_types import levels_from_time_stats
@@ -112,8 +113,8 @@ class Plot:
         if self.plot_config.mark_release_site:
             # Marker at release site
             self.ax_map.marker(
-                self.plot_config.mdata.release_site_lon.value,
-                self.plot_config.mdata.release_site_lat.value,
+                self.plot_config.labels.mdata.release_site_lon.value,
+                self.plot_config.labels.mdata.release_site_lat.value,
                 **self._site_marker_kwargs,
             )
 
@@ -311,6 +312,7 @@ class Plot:
         # Color boxes (legend)
 
         # Vertical position of legend (depending on number of levels)
+        assert self.plot_config.n_levels is not None  # mypy
         _f = (
             self.plot_config.n_levels
             + int(self.plot_config.extend in ["min", "both"])
@@ -428,7 +430,7 @@ class Plot:
         """Fill the bottom box to the right of the map plot."""
 
         labels = self.plot_config.labels.right_bottom  # noqa:E741
-        mdata = self.plot_config.mdata
+        mdata = self.plot_config.labels.mdata
 
         # Box title
         # box.text('tc', labels['title'], size='large')
@@ -498,7 +500,7 @@ def plot_fields(fields, mdata_lst, dry_run=False, *, write=True):
             plot = None
         else:
             assert mdata is not None  # mypy
-            plot_config = PlotConfig(setup, mdata)
+            plot_config = PlotConfig.create(setup, PlotLabels(setup.lang, mdata))
             plot = Plot(field, plot_config, map_conf)
             plot.save(out_file_path, write=write)
 

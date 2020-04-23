@@ -3,20 +3,22 @@
 Plot types.
 """
 # Standard library
+from dataclasses import dataclass
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Mapping
 from typing import Optional
 from typing import Tuple
+from typing import Union
 
 # Third-party
 import matplotlib as mpl
 import numpy as np
+from matplotlib.colors import Colormap
 
 # Local
 from .data import Field
-from .meta_data import MetaData
 from .meta_data import format_level_range
 from .plot_lib import MapAxesConf
 from .setup import InputSetup
@@ -212,6 +214,89 @@ class PlotLabels:
         )
 
 
+@dataclass
+# pylint: disable=R0902  # too-many-instance-attributes
+class PlotConfig:
+    setup: InputSetup  # SR_TODO consider removing this
+    labels: PlotLabels  # SR_TODO consider removing this
+    cmap: Union[str, Colormap] = "flexplot"
+    d_level: Optional[int] = None  # SR_TODO sensible default
+    draw_colors: bool = True
+    draw_contours: bool = False
+    extend: str = "max"
+    figsize: Tuple[float, float] = (12.0, 9.0)
+    legend_box_title: str = ""  # SR_TODO sensible default
+    level_ranges_align: str = "center"
+    level_range_style: str = "base"
+    levels_scale: str = "log"
+    lw_frame: float = 1.0
+    mark_field_max: bool = True
+    mark_release_site: bool = True
+    model_info: str = ""  # SR_TODO sensible default
+    n_levels: Optional[int] = None  # SR_TODO sensible default
+    reverse_legend: bool = False
+    text_box_setup: Optional[Dict[str, float]] = None  # SR_TODO sensible default
+    top_box_subtitle: str = ""
+
+    @classmethod
+    def create(cls, setup: InputSetup, labels: PlotLabels) -> "PlotConfig":
+        new_config_dct: Dict[str, Any] = {}
+        if setup.variable == "concentration":
+            new_config_dct["n_levels"] = 8
+        elif setup.variable == "deposition":
+            new_config_dct["n_levels"] = 9
+        if setup.simulation_type == "deterministic":
+            new_config_dct["text_box_setup"] = {
+                "h_rel_t": 0.1,
+                "h_rel_b": 0.03,
+                "w_rel_r": 0.25,
+                "pad_hor_rel": 0.015,
+                "h_rel_box_rt": 0.45,
+            }
+            new_config_dct["model_info"] = labels.bottom["model_info_det"]
+            if setup.plot_type == "affected_area_mono":
+                new_config_dct["extend"] = "none"
+                new_config_dct["n_levels"] = 1
+        if setup.simulation_type == "ensemble":
+            new_config_dct["text_box_setup"] = {
+                "h_rel_t": 0.14,
+                "h_rel_b": 0.03,
+                "w_rel_r": 0.25,
+                "pad_hor_rel": 0.015,
+                "h_rel_box_rt": 0.46,
+            }
+            new_config_dct["model_info"] = labels.bottom["model_info_ens"]
+            if setup.plot_type == "ens_thr_agrmt":
+                new_config_dct["extend"] = "min"
+                new_config_dct["n_levels"] = 7
+                new_config_dct["d_level"] = 2
+                new_config_dct["level_range_style"] = "int"
+                new_config_dct["level_ranges_align"] = "left"
+                new_config_dct["mark_field_max"] = False
+                new_config_dct["top_box_subtitle"] = labels.top_left[
+                    "subtitle_thr_agrmt_fmt"
+                ].format(thr=setup.ens_param_thr)
+                new_config_dct["legend_box_title"] = labels.right_top["title"]
+                new_config_dct["levels_scale"] = "lin"
+            elif setup.plot_type == "ens_cloud_arrival_time":
+                new_config_dct["extend"] = "max"
+                new_config_dct["n_levels"] = 5
+                new_config_dct["d_level"] = 3
+                new_config_dct["level_range_style"] = "int"
+                new_config_dct["level_ranges_align"] = "left"
+                new_config_dct["mark_field_max"] = False
+                new_config_dct["top_box_subtitle"] = labels.top_left[
+                    "subtitle_cloud_arrival_time"
+                ].format(thr=setup.ens_param_thr, mem=setup.ens_param_mem_min)
+                new_config_dct["legend_box_title"] = labels.right_top["title"]
+                new_config_dct["levels_scale"] = "lin"
+        # SR_TMP < TODO set default
+        if "lebend_box_title" not in new_config_dct:
+            new_config_dct["legend_box_title"] = labels.right_top["title_unit"]
+        # SR_TMP >
+        return cls(setup=setup, labels=labels, **new_config_dct)
+
+
 def colors_flexplot(n_levels: int, extend: str) -> List[Tuple[int, int, int]]:
 
     # color_under = [i/255.0 for i in (255, 155, 255)]
@@ -262,143 +347,8 @@ def colors_flexplot(n_levels: int, extend: str) -> List[Tuple[int, int, int]]:
     raise ValueError(f"extend='{extend}'")
 
 
-class PlotConfig:
-    """Class to pull code specific to individual plots out of Plot.
-
-    For the moment, assume this class is only temporary!
-
-    """
-
-    def __init__(
-        self, setup: InputSetup, mdata: MetaData, labels: Optional[PlotLabels] = None,
-    ) -> None:
-        self.setup = setup
-        self.mdata = mdata
-        self.labels: PlotLabels = labels or PlotLabels(setup.lang, mdata)
-
-        self.figsize = (12.0, 9.0)
-        self.reverse_legend = False
-
-    cmap = "flexplot"
-    draw_colors = True
-    draw_contours = False
-    mark_release_site = True
-    lw_frame = 1.0
-
-    # SR_TMP <<<
-    @property
-    def text_box_setup(self) -> Dict[str, float]:
-        return {
-            "deterministic": {
-                "h_rel_t": 0.1,
-                "h_rel_b": 0.03,
-                "w_rel_r": 0.25,
-                "pad_hor_rel": 0.015,
-                "h_rel_box_rt": 0.45,
-            },
-            "ensemble": {
-                "h_rel_t": 0.14,
-                "h_rel_b": 0.03,
-                "w_rel_r": 0.25,
-                "pad_hor_rel": 0.015,
-                "h_rel_box_rt": 0.46,
-            },
-        }[self.setup.simulation_type]
-
-    # SR_TMP
-    @property
-    def extend(self) -> str:
-        return {
-            "ens_thr_agrmt": "min",
-            "ens_cloud_arrival_time": "max",
-            "affected_area_mono": "none",
-        }.get(self.setup.plot_type, "max")
-
-    # SR_TMP
-    @property
-    def n_levels(self) -> int:
-        return {
-            "ens_thr_agrmt": 7,
-            "ens_cloud_arrival_time": 5,
-            "affected_area_mono": 1,
-        }.get(
-            self.setup.plot_type,
-            {"concentration": 8, "deposition": 9}[self.setup.variable],
-        )
-
-    # SR_TMP
-    @property
-    def d_level(self) -> int:
-        try:
-            return {"ens_thr_agrmt": 2, "ens_cloud_arrival_time": 3}[
-                self.setup.plot_type
-            ]
-        except KeyError:
-            raise NotImplementedError("plot_type", self.setup.plot_type)
-
-    # SR_TMP
-    @property
-    def level_range_style(self) -> str:
-        return {"ens_thr_agrmt": "int", "ens_cloud_arrival_time": "int"}.get(
-            self.setup.plot_type, "base"
-        )
-
-    # SR_TMP
-    @property
-    def level_ranges_align(self) -> str:
-        return {"ens_thr_agrmt": "left", "ens_cloud_arrival_time": "left"}.get(
-            self.setup.plot_type, "center"
-        )
-
-    # SR_TMP
-    @property
-    def mark_field_max(self) -> bool:
-        return {"ens_thr_agrmt": False, "ens_cloud_arrival_time": False}.get(
-            self.setup.plot_type, True
-        )
-
-    # SR_TMP
-    @property
-    def top_box_subtitle(self) -> Optional[str]:
-        setup = self.setup
-        labels = self.labels.top_left
-        if setup.plot_type == "ens_thr_agrmt":
-            return labels["subtitle_thr_agrmt_fmt"].format(thr=setup.ens_param_thr)
-        elif setup.plot_type == "ens_cloud_arrival_time":
-            return labels["subtitle_cloud_arrival_time"].format(
-                thr=setup.ens_param_thr, mem=setup.ens_param_mem_min,
-            )
-        return None
-
-    # SR_TMP
-    @property
-    def legend_box_title(self) -> str:
-        labels = self.labels.right_top
-        if self.setup.plot_type == "ens_thr_agrmt":
-            return labels["title"]
-        elif self.setup.plot_type == "ens_cloud_arrival_time":
-            return labels["title"]
-        else:
-            return labels["title_unit"]
-
-    # SR_TMP
-    @property
-    def model_info(self) -> str:
-        labels = self.labels.bottom
-        if self.setup.simulation_type == "deterministic":
-            return labels["model_info_det"]
-        elif self.setup.simulation_type == "ensemble":
-            return labels["model_info_ens"]
-        raise NotImplementedError("simulation_type", self.setup.simulation_type)
-
-    @property
-    def levels_scale(self) -> str:
-        if self.setup.plot_type in ["ens_thr_agrmt", "ens_cloud_arrival_time"]:
-            return "lin"
-        return "log"
-
-
 def colors_from_plot_config(plot_config: PlotConfig) -> List[Tuple[int, int, int]]:
+    assert plot_config.n_levels is not None  # mypy
     if plot_config.setup.plot_type == "affected_area_mono":
         return (np.array([(200, 200, 200)]) / 255).tolist()
     elif plot_config.cmap == "flexplot":
@@ -420,16 +370,20 @@ def levels_from_time_stats(
             log10_max - (n_levels - 1) * log10_d, log10_max + 0.5 * log10_d, log10_d
         )
 
+    assert plot_config.n_levels is not None  # mypy
     if plot_config.setup.plot_type == "ens_thr_agrmt":
-        d_level = plot_config.d_level
         n_max = 20  # SR_TMP SR_HC
+        assert plot_config.d_level is not None  # mypy
         return (
             np.arange(
-                n_max - d_level * (plot_config.n_levels - 1), n_max + d_level, d_level
+                n_max - plot_config.d_level * (plot_config.n_levels - 1),
+                n_max + plot_config.d_level,
+                plot_config.d_level,
             )
             + 1
         )
     elif plot_config.setup.plot_type == "ens_cloud_arrival_time":
+        assert plot_config.d_level is not None  # mypy
         return np.arange(0, plot_config.n_levels) * plot_config.d_level
     elif plot_config.setup.plot_type == "affected_area_mono":
         levels = _auto_levels_log10(n_levels=9, val_max=time_stats["max"])
