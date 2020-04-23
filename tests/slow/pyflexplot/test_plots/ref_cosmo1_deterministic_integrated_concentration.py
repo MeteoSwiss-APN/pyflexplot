@@ -278,7 +278,7 @@ field_summary = {
     "type": "Field",
     "var_setups": [
         {
-            "combine_species": True,
+            "combine_species": False,
             "deposition_type": "none",
             "domain": "ch",
             "ens_member_id": None,
@@ -2195,7 +2195,7 @@ plot_summary = {
         "type": "Field",
         "var_setups": [
             {
-                "combine_species": True,
+                "combine_species": False,
                 "deposition_type": "none",
                 "domain": "ch",
                 "ens_member_id": None,

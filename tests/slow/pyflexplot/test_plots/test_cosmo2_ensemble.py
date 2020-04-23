@@ -28,7 +28,7 @@ class Test_EnsMedian_Concentration(_TestBase):
         "ens_member_id": ENS_MEMBER_IDS,
         "lang": "de",
         "domain": "auto",
-        "species_id": None,
+        "species_id": (1, 2),
         "time": (5,),
         "level": (0,),
     }
@@ -43,12 +43,11 @@ class Test_EnsMax_IntegratedConcentration(_TestBase):
         "plot_type": "ens_max",
         "variable": "concentration",
         "integrate": True,
-        "combine_species": True,
         "simulation_type": "ensemble",
         "ens_member_id": ENS_MEMBER_IDS,
         "lang": "de",
         "domain": "ch",
-        "species_id": None,
+        "species_id": (2,),
         "time": (10,),
         "level": (0,),
     }
@@ -69,7 +68,7 @@ class Test_EnsMean_TotalDeposition(_TestBase):
         "ens_member_id": ENS_MEMBER_IDS,
         "lang": "de",
         "domain": "auto",
-        "species_id": None,
+        "species_id": (1, 2),
         "time": (-1,),
     }
 
@@ -90,7 +89,7 @@ class Test_EnsMin_AffectedArea(_TestBase):
         "ens_member_id": ENS_MEMBER_IDS,
         "lang": "de",
         "domain": "auto",
-        "species_id": None,
+        "species_id": (1, 2),
         "time": (-1,),
     }
 
@@ -105,14 +104,13 @@ class Test_CloudArrivalTime(_TestBase):
         "plot_type": "ens_cloud_arrival_time",
         "variable": "concentration",
         "integrate": True,
-        "combine_species": True,
         "simulation_type": "ensemble",
         "ens_member_id": ENS_MEMBER_IDS,
         "ens_param_mem_min": 3,
         "ens_param_thr": 1e-9,
         "lang": "de",
         "domain": "ch",
-        "species_id": None,
+        "species_id": (1,),
         "time": (0,),
         "level": (0,),
     }

@@ -278,7 +278,7 @@ field_summary = {
     "type": "Field",
     "var_setups": [
         {
-            "combine_species": True,
+            "combine_species": False,
             "deposition_type": "dry",
             "domain": "ch",
             "ens_member_id": None,
@@ -299,7 +299,7 @@ field_summary = {
             "variable": "deposition",
         },
         {
-            "combine_species": True,
+            "combine_species": False,
             "deposition_type": "wet",
             "domain": "ch",
             "ens_member_id": None,
@@ -1836,7 +1836,7 @@ plot_summary = {
         "type": "Field",
         "var_setups": [
             {
-                "combine_species": True,
+                "combine_species": False,
                 "deposition_type": "dry",
                 "domain": "ch",
                 "ens_member_id": None,
@@ -1857,7 +1857,7 @@ plot_summary = {
                 "variable": "deposition",
             },
             {
-                "combine_species": True,
+                "combine_species": False,
                 "deposition_type": "wet",
                 "domain": "ch",
                 "ens_member_id": None,

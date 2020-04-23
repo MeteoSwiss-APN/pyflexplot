@@ -11,7 +11,7 @@ import netCDF4 as nc4
 from utils import datadir  # noqa:F401
 
 # First-party
-from pyflexplot.io_meta_data import read_meta_data
+from pyflexplot.nc_meta_data import read_meta_data
 
 
 class _TestBase:
