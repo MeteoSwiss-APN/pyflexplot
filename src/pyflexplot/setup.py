@@ -82,64 +82,6 @@ def setup_repr(obj: Union["CoreInputSetup", "InputSetup"]) -> str:
     return f"{type(obj).__name__}(\n  {s_attrs},\n)"
 
 
-class CoreInputSetup(BaseModel):
-    """
-    PyFlexPlot core setup with exactly one value per parameter.
-
-    See ``InputSetup`` for details on the parameters.
-
-    """
-
-    class Config:  # noqa
-        allow_mutation = False
-        extra = "forbid"
-
-    # Basics
-    infile: str
-    outfile: str
-    plot_type: str = "auto"
-    variable: str = "concentration"
-
-    # Tweaks
-    deposition_type: str = "none"
-    integrate: bool = False
-    combine_species: bool = False
-
-    # Ensemble-related
-    simulation_type: str = "deterministic"
-    ens_member_id: Optional[int] = None
-    ens_param_mem_min: Optional[int] = None
-    ens_param_thr: Optional[float] = None
-
-    # Plot appearance
-    lang: str = "en"
-    domain: str = "auto"
-
-    # Dimensions
-    nageclass: int = 0
-    noutrel: int = 0
-    numpoint: int = 0
-    species_id: int = 1
-    time: int = 0
-    level: Optional[int] = None
-
-    def __repr__(self) -> str:  # type: ignore
-        return setup_repr(self)
-
-    @classmethod
-    def create(cls, params: Mapping[str, Any]) -> "CoreInputSetup":
-        return cls(**params)
-
-    @classmethod
-    def as_setup(
-        cls, obj: Union[Mapping[str, Any], "CoreInputSetup"],
-    ) -> "CoreInputSetup":
-        if isinstance(obj, cls):
-            return obj
-        assert isinstance(obj, Mapping)  # mypy
-        return cls(**obj)
-
-
 # pylint: disable=E0213  # no-self-argument (validators)
 class InputSetup(BaseModel):
     """
@@ -605,6 +547,64 @@ class InputSetup(BaseModel):
         dcts = decompress_multival_dict(dct, select=select, skip=skip)
 
         return cls_setup_collection([cls_setup.create(dct) for dct in dcts])
+
+
+class CoreInputSetup(BaseModel):
+    """
+    PyFlexPlot core setup with exactly one value per parameter.
+
+    See ``InputSetup`` for details on the parameters.
+
+    """
+
+    class Config:  # noqa
+        allow_mutation = False
+        extra = "forbid"
+
+    # Basics
+    infile: str
+    outfile: str
+    plot_type: str = "auto"
+    variable: str = "concentration"
+
+    # Tweaks
+    deposition_type: str = "none"
+    integrate: bool = False
+    combine_species: bool = False
+
+    # Ensemble-related
+    simulation_type: str = "deterministic"
+    ens_member_id: Optional[int] = None
+    ens_param_mem_min: Optional[int] = None
+    ens_param_thr: Optional[float] = None
+
+    # Plot appearance
+    lang: str = "en"
+    domain: str = "auto"
+
+    # Dimensions
+    nageclass: int = 0
+    noutrel: int = 0
+    numpoint: int = 0
+    species_id: int = 1
+    time: int = 0
+    level: Optional[int] = None
+
+    def __repr__(self) -> str:  # type: ignore
+        return setup_repr(self)
+
+    @classmethod
+    def create(cls, params: Mapping[str, Any]) -> "CoreInputSetup":
+        return cls(**params)
+
+    @classmethod
+    def as_setup(
+        cls, obj: Union[Mapping[str, Any], "CoreInputSetup"],
+    ) -> "CoreInputSetup":
+        if isinstance(obj, cls):
+            return obj
+        assert isinstance(obj, Mapping)  # mypy
+        return cls(**obj)
 
 
 # SR_TMP <<< TODO Consider merging with CoreInputSetupCollection (failed due to mypy)
