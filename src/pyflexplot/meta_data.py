@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=R0903  # too-few-public-methods
+# pylint: disable=C0302  # too-many-lines (>1000)
 """
 Attributes.
 """
@@ -532,23 +532,36 @@ class MetaDataCollector:
         """Collect simulation meta data."""
 
         # Model name
-        model_name = {"cosmo1": "COSMO-1", "cosmo2": "COSMO-2", "ifs": "IFS"}[
-            self.nc_meta_data["analysis"]["model"]
-        ]
+        model_name_raw = self.nc_meta_data["analysis"]["model"]
+        if model_name_raw == "cosmo1":
+            model_name = "COSMO-1"
+        elif model_name_raw == "cosmo2":
+            model_name = "COSMO-2"
+        elif model_name_raw == "ifs":
+            model_name = "IFS"
+        else:
+            raise Exception("unknown raw model name", model_name_raw)
 
         # Start and end timesteps of simulation
-        _ga = self.ncattrs_global
         ts_start = datetime(
-            *time.strptime(_ga["ibdate"] + _ga["ibtime"], "%Y%m%d%H%M%S")[:6],
+            *time.strptime(
+                self.ncattrs_global["ibdate"] + self.ncattrs_global["ibtime"],
+                "%Y%m%d%H%M%S",
+            )[:6],
             tzinfo=timezone.utc,
         )
         ts_end = datetime(
-            *time.strptime(_ga["iedate"] + _ga["ietime"], "%Y%m%d%H%M%S")[:6],
+            *time.strptime(
+                self.ncattrs_global["iedate"] + self.ncattrs_global["ietime"],
+                "%Y%m%d%H%M%S",
+            )[:6],
             tzinfo=timezone.utc,
         )
 
         # Current time step and start time step of current integration period
-        ts_now, ts_integr_start = self._get_current_timestep_etc()
+        tsp = TimeStepMetaDataCollector(self.fi, self.setup)
+        ts_now = tsp.ts_now()
+        ts_integr_start = tsp.ts_integr_start()
         ts_now_rel: timedelta = ts_now - ts_start
         ts_integr_start_rel: timedelta = ts_integr_start - ts_start
 
@@ -574,59 +587,6 @@ class MetaDataCollector:
                 "simulation_integr_type": integr_type,
             }
         )
-
-    def _get_current_timestep_etc(
-        self, idx: Optional[int] = None,
-    ) -> Tuple[datetime, datetime]:
-        """Get the current timestep, or a specific one by index."""
-
-        if idx is None:
-            # Default to timestep of current field
-            assert self.setup.time is not None  # mypy
-            assert len(self.setup.time) == 1  # SR_TMP
-            idx = next(iter(self.setup.time))  # SR_TMP
-
-        if not isinstance(idx, int):
-            raise Exception(f"expect type 'int', not '{type(idx).__name__}': {idx}")
-
-        var = self.fi.variables["time"]
-
-        # Obtain start from time unit
-        rx = re.compile(
-            r"seconds since "
-            r"(?P<yyyy>[12][0-9][0-9][0-9])-"
-            r"(?P<mm>[01][0-9])-"
-            r"(?P<dd>[0-3][0-9]) "
-            r"(?P<HH>[0-2][0-9]):"
-            r"(?P<MM>[0-6][0-9])"
-        )
-        match = rx.match(var.units)
-        if not match:
-            raise Exception(f"cannot extract start from units '{var.units}'")
-        start = datetime(
-            int(match["yyyy"]),
-            int(match["mm"]),
-            int(match["dd"]),
-            int(match["HH"]),
-            int(match["MM"]),
-            tzinfo=timezone.utc,
-        )
-
-        # Determine time since start
-        delta_tot = timedelta(seconds=int(var[idx]))
-
-        # Determine current timestep
-        now = start + delta_tot
-
-        # Determine start timestep of integration period
-        if self.setup.integrate:
-            delta_integr = delta_tot
-        else:
-            delta_prev = delta_tot / (idx + 1)
-            delta_integr = delta_prev
-        ts_integr_start = now - delta_integr
-
-        return now, ts_integr_start
 
     # pylint: disable=R0914  # too-many-locals
     def collect_release_mdata(self, mdata_raw: Dict[str, Any]) -> None:
@@ -867,6 +827,63 @@ class MetaDataCollector:
             word = {"tot": "total"}.get(type_, type_)
             return words[word, None, "f"].s
         return "none"
+
+
+class TimeStepMetaDataCollector:
+    def __init__(self, fi: nc4.Dataset, setup: InputSetup) -> None:
+        self.fi = fi
+        self.setup = setup
+
+    def comp_ts_start(self) -> datetime:
+        """Compute the time step when the simulation started."""
+        var = self.fi.variables["time"]
+        rx = re.compile(
+            r"seconds since "
+            r"(?P<year>[12][0-9][0-9][0-9])-"
+            r"(?P<month>[01][0-9])-"
+            r"(?P<day>[0-3][0-9]) "
+            r"(?P<hour>[0-2][0-9]):"
+            r"(?P<minute>[0-6][0-9])"
+        )
+        match = rx.match(var.units)
+        if not match:
+            raise Exception(f"cannot extract start from units '{var.units}'")
+        return datetime(
+            year=int(match["year"]),
+            month=int(match["month"]),
+            day=int(match["day"]),
+            hour=int(match["hour"]),
+            minute=int(match["minute"]),
+            tzinfo=timezone.utc,
+        )
+
+    def ts_now(self) -> datetime:
+        """Compute current time step."""
+        return self.comp_ts_start() + self.ts_delta_tot()
+
+    def ts_integr_start(self) -> datetime:
+        """Compute the timestep when integration started."""
+        return self.ts_now() - self.ts_delta_integr()
+
+    def ts_delta_tot(self) -> timedelta:
+        """Compute time since start."""
+        var = self.fi.variables["time"]
+        return timedelta(seconds=int(var[self.ts_idx()]))
+
+    def ts_delta_integr(self) -> timedelta:
+        """Compute timestep delta of integration period."""
+        delta_tot = self.ts_delta_tot()
+        if self.setup.integrate:
+            return delta_tot
+        delta_prev = delta_tot / (self.ts_idx() + 1)
+        return delta_prev
+
+    def ts_idx(self) -> int:
+        """Index of current time step of current field."""
+        # Default to timestep of current field
+        assert self.setup.time is not None  # mypy
+        assert len(self.setup.time) == 1  # SR_TMP
+        return next(iter(self.setup.time))  # SR_TMP
 
 
 class ReleasePoint(BaseModel):
