@@ -261,9 +261,68 @@ class MetaData(BaseModel):
     """Meta data.
 
     Attributes:
-        variable_name: Name of variable.
+        release_end: End of the release.
 
-        variable_unit: Unit of variable as a string (e.g., 'm-3' for m^3).
+        release_end_rel: End of the release relative to the start of the simulation.
+
+        release_height: Release height value(s).
+
+        release_height_unit: Release height unit
+
+        release_mass: Release mass value(s).
+
+        release_mass_unit: Release mass unit.
+
+        release_rate: Release rate value(s).
+
+        release_rate_unit: Release rate unit.
+
+        release_site_lat: Latitude of release site.
+
+        release_site_lon: Longitude of release site.
+
+        release_site_name: Name of release site.
+
+        release_start_rel:  Release start relative to the simulation start.
+
+        release_start: Release start.
+
+        simulation_end: Simulation end.
+
+        simulation_integr_start_rel: Integration period start relative to the
+            simulation start.
+
+        simulation_integr_start: Integration period start.
+
+        simulation_integr_type: Type of integration (or reduction).
+
+        simulation_model_name: Model name.
+
+        simulation_now: Current timestep.
+
+        simulation_now_rel: Current timestep relative to the simulation start.
+
+        simulation_start: Simulation start.
+
+        species_deposit_vel: Deposition velocity value(s).
+
+        species_deposit_vel_unit: Deposition velocity unit.
+
+        species_half_life: Half life value(s).
+
+        species_half_life_unit: Half life unit.
+
+        species_name: Species name.
+
+        species_sediment_vel: Sedimentation velocity value(s).
+
+        species_sediment_vel_unit: Sedimentation velocity unit.
+
+        species_washout_coeff_unit: Washout coefficient unit.
+
+        species_washout_coeff: Washout coefficient value(s).
+
+        species_washout_exponent: Washout exponent value(s).
 
         variable_level_bot: Bottom level value(s).
 
@@ -273,154 +332,92 @@ class MetaData(BaseModel):
 
         variable_level_top_unit: Bottom level unit.
 
-        release_site_name: Name of release site.
+        variable_name: Name of variable.
 
-        release_site_lat: Latitude of release site.
-
-        release_site_lon: Longitude of release site.
-
-        release_height: Release height value(s).
-
-        release_rate: Release rate value(s).
-
-        release_mass: Release mass value(s).
-
-        release_height_unit: Release height unit
-
-        release_rate_unit: Release rate unit.
-
-        release_mass_unit: Release mass unit.
-
-        release_start: Start of the release.
-
-        release_start_rel: Start of the release relative to the start of the
-            simulation.
-
-        release_end: End of the release.
-
-        release_end_rel: End of the release relative to the start of the
-            simulation.
-
-        species_name: Species name.
-
-        species_half_life: Half life value(s).
-
-        species_half_life_unit: Half life unit.
-
-        species_deposit_vel: Deposition velocity value(s).
-
-        species_deposit_vel_unit: Deposition velocity unit.
-
-        species_sediment_vel: Sedimentation velocity value(s).
-
-        species_sediment_vel_unit: Sedimentation velocity unit.
-
-        species_washout_coeff: Washout coefficient value(s).
-
-        species_washout_coeff_unit: Washout coefficient unit.
-
-        species_washout_exponent: Washout exponent value(s).
-
-        simulation_model_name: Name of the model.
-
-        simulation_start: Start of the simulation.
-
-        simulation_end: End of the simulation.
-
-        simulation_now: Current timestep.
-
-        simulation_now_rel: Current timestep relative to the start of the
-            simulation.
-
-        simulation_integr_start: Start of the integration period.
-
-        simulation_integr_start_rel: Start of the integration period relative
-            to the simulation start..
-
-        simulation_integr_type: Type of integration (or reduction).
+        variable_unit: Unit of variable as a string (e.g., 'm-3' for m^3).
 
     """
 
     setup: InputSetup
+    release_end_rel: Union[MetaDatum[timedelta], MetaDatumCombo[timedelta]]
+    release_end: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
+    release_height: Union[MetaDatum[float], MetaDatumCombo[float]]
+    release_height_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
+    release_mass: Union[MetaDatum[float], MetaDatumCombo[float]]
+    release_mass_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
+    release_rate: Union[MetaDatum[float], MetaDatumCombo[float]]
+    release_rate_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
+    release_site_lat: Union[MetaDatum[float], MetaDatumCombo[float]]
+    release_site_lon: Union[MetaDatum[float], MetaDatumCombo[float]]
+    release_site_name: Union[MetaDatum[str], MetaDatumCombo[str]]
+    release_start_rel: Union[MetaDatum[timedelta], MetaDatumCombo[timedelta]]
+    release_start: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
+    simulation_end: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
+    simulation_integr_start_rel: Union[MetaDatum[timedelta], MetaDatumCombo[timedelta]]
+    simulation_integr_start: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
+    simulation_integr_type: Union[MetaDatum[str], MetaDatumCombo[str]]
+    simulation_model_name: Union[MetaDatum[str], MetaDatumCombo[str]]
+    simulation_now_rel: Union[MetaDatum[timedelta], MetaDatumCombo[timedelta]]
+    simulation_now: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
+    simulation_start: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
+    species_deposit_vel: Union[MetaDatum[float], MetaDatumCombo[float]]
+    species_deposit_vel_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
+    species_half_life: Union[MetaDatum[float], MetaDatumCombo[float]]
+    species_half_life_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
+    species_name: Union[MetaDatum[str], MetaDatumCombo[str]]
+    species_sediment_vel: Union[MetaDatum[float], MetaDatumCombo[float]]
+    species_sediment_vel_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
+    species_washout_coeff: Union[MetaDatum[float], MetaDatumCombo[float]]
+    species_washout_coeff_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
+    species_washout_exponent: Union[MetaDatum[float], MetaDatumCombo[float]]
+    variable_level_bot: Union[MetaDatum[float], MetaDatumCombo[float]]
+    variable_level_bot_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
+    variable_level_top: Union[MetaDatum[float], MetaDatumCombo[float]]
+    variable_level_top_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
     variable_long_name: Union[MetaDatum[str], MetaDatumCombo[str]]
     variable_short_name: Union[MetaDatum[str], MetaDatumCombo[str]]
     variable_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    variable_level_bot: Union[MetaDatum[float], MetaDatumCombo[float]]
-    variable_level_top: Union[MetaDatum[float], MetaDatumCombo[float]]
-    variable_level_bot_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    variable_level_top_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    release_site_name: Union[MetaDatum[str], MetaDatumCombo[str]]
-    release_site_lat: Union[MetaDatum[float], MetaDatumCombo[float]]
-    release_site_lon: Union[MetaDatum[float], MetaDatumCombo[float]]
-    release_height: Union[MetaDatum[float], MetaDatumCombo[float]]
-    release_rate: Union[MetaDatum[float], MetaDatumCombo[float]]
-    release_mass: Union[MetaDatum[float], MetaDatumCombo[float]]
-    release_height_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    release_rate_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    release_mass_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    release_start: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
-    release_start_rel: Union[MetaDatum[timedelta], MetaDatumCombo[timedelta]]
-    release_end: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
-    release_end_rel: Union[MetaDatum[timedelta], MetaDatumCombo[timedelta]]
-    species_name: Union[MetaDatum[str], MetaDatumCombo[str]]
-    species_half_life: Union[MetaDatum[float], MetaDatumCombo[float]]
-    species_deposit_vel: Union[MetaDatum[float], MetaDatumCombo[float]]
-    species_sediment_vel: Union[MetaDatum[float], MetaDatumCombo[float]]
-    species_washout_coeff: Union[MetaDatum[float], MetaDatumCombo[float]]
-    species_washout_exponent: Union[MetaDatum[float], MetaDatumCombo[float]]
-    species_half_life_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    species_deposit_vel_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    species_sediment_vel_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    species_washout_coeff_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    simulation_model_name: Union[MetaDatum[str], MetaDatumCombo[str]]
-    simulation_start: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
-    simulation_end: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
-    simulation_now: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
-    simulation_now_rel: Union[MetaDatum[timedelta], MetaDatumCombo[timedelta]]
-    simulation_integr_start: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
-    simulation_integr_start_rel: Union[MetaDatum[timedelta], MetaDatumCombo[timedelta]]
-    simulation_integr_type: Union[MetaDatum[str], MetaDatumCombo[str]]
 
+    _init_release_end = init_mdatum(datetime, "release_end")
+    _init_release_end_rel = init_mdatum(timedelta, "release_end_rel")
+    _init_release_height = init_mdatum(float, "release_height")
+    _init_release_height_unit = init_mdatum(str, "release_height_unit")
+    _init_release_mass = init_mdatum(float, "release_mass")
+    _init_release_mass_unit = init_mdatum(str, "release_mass_unit")
+    _init_release_rate = init_mdatum(float, "release_rate")
+    _init_release_rate_unit = init_mdatum(str, "release_rate_unit")
+    _init_release_site_lat = init_mdatum(float, "release_site_lat")
+    _init_release_site_lon = init_mdatum(float, "release_site_lon")
+    _init_release_site_name = init_mdatum(str, "release_site_name")
+    _init_release_start = init_mdatum(datetime, "release_start")
+    _init_release_start_rel = init_mdatum(timedelta, "release_start_rel")
+    _init_simulation_end = init_mdatum(datetime, "simulation_end")
+    _init_simulation_integr_start = init_mdatum(datetime, "simulation_integr_start")
+    _init_simulation_integr_start_rel = init_mdatum(
+        timedelta, "simulation_integr_start_rel",
+    )
+    _init_simulation_integr_type = init_mdatum(str, "simulation_integr_type")
+    _init_simulation_model_name = init_mdatum(str, "simulation_model_name")
+    _init_simulation_now = init_mdatum(datetime, "simulation_now")
+    _init_simulation_now_rel = init_mdatum(timedelta, "simulation_now_rel")
+    _init_simulation_start = init_mdatum(datetime, "simulation_start")
+    _init_species_deposit_vel = init_mdatum(float, "species_deposit_vel")
+    _init_species_deposit_vel_unit = init_mdatum(str, "species_deposit_vel_unit")
+    _init_species_half_life = init_mdatum(float, "species_half_life")
+    _init_species_half_life_unit = init_mdatum(str, "species_half_life_unit")
+    _init_species_name = init_mdatum(str, "species_name", attrs={"join": " + "})
+    _init_species_sediment_vel = init_mdatum(float, "species_sediment_vel")
+    _init_species_sediment_vel_unit = init_mdatum(str, "species_sediment_vel_unit")
+    _init_species_washout_coeff = init_mdatum(float, "species_washout_coeff")
+    _init_species_washout_coeff_unit = init_mdatum(str, "species_washout_coeff_unit")
+    _init_species_washout_exponent = init_mdatum(float, "species_washout_exponent")
+    _init_variable_level_bot = init_mdatum(float, "variable_level_bot")
+    _init_variable_level_bot_unit = init_mdatum(str, "variable_level_bot_unit")
+    _init_variable_level_top = init_mdatum(float, "variable_level_top")
+    _init_variable_level_top_unit = init_mdatum(str, "variable_level_top_unit")
     _init_variable_long_name = init_mdatum(str, "variable_long_name")
     _init_variable_short_name = init_mdatum(str, "variable_short_name")
     _init_variable_unit = init_mdatum(str, "variable_unit")
-    _init_variable_level_bot = init_mdatum(float, "variable_level_bot")
-    _init_variable_level_top = init_mdatum(float, "variable_level_top")
-    _init_variable_level_bot_unit = init_mdatum(str, "variable_level_bot_unit")
-    _init_variable_level_top_unit = init_mdatum(str, "variable_level_top_unit")
-    _init_release_site_name = init_mdatum(str, "release_site_name")
-    _init_release_site_lat = init_mdatum(float, "release_site_lat")
-    _init_release_site_lon = init_mdatum(float, "release_site_lon")
-    _init_release_height = init_mdatum(float, "release_height")
-    _init_release_rate = init_mdatum(float, "release_rate")
-    _init_release_mass = init_mdatum(float, "release_mass")
-    _init_release_height_unit = init_mdatum(str, "release_height_unit")
-    _init_release_rate_unit = init_mdatum(str, "release_rate_unit")
-    _init_release_mass_unit = init_mdatum(str, "release_mass_unit")
-    _init_release_start = init_mdatum(datetime, "release_start")
-    _init_release_start_rel = init_mdatum(timedelta, "release_start_rel")
-    _init_release_end = init_mdatum(datetime, "release_end")
-    _init_release_end_rel = init_mdatum(timedelta, "release_end_rel")
-    _init_species_name = init_mdatum(str, "species_name", attrs={"join": " + "})
-    _init_species_half_life = init_mdatum(float, "species_half_life")
-    _init_species_deposit_vel = init_mdatum(float, "species_deposit_vel")
-    _init_species_sediment_vel = init_mdatum(float, "species_sediment_vel")
-    _init_species_washout_coeff = init_mdatum(float, "species_washout_coeff")
-    _init_species_washout_exponent = init_mdatum(float, "species_washout_exponent")
-    _init_species_half_life_unit = init_mdatum(str, "species_half_life_unit")
-    _init_species_deposit_vel_unit = init_mdatum(str, "species_deposit_vel_unit")
-    _init_species_sediment_vel_unit = init_mdatum(str, "species_sediment_vel_unit")
-    _init_species_washout_coeff_unit = init_mdatum(str, "species_washout_coeff_unit")
-    _init_simulation_model_name = init_mdatum(str, "simulation_model_name")
-    _init_simulation_start = init_mdatum(datetime, "simulation_start")
-    _init_simulation_end = init_mdatum(datetime, "simulation_end")
-    _init_simulation_now = init_mdatum(datetime, "simulation_now")
-    _init_simulation_now_rel = init_mdatum(timedelta, "simulation_now_rel")
-    _init_simulation_integr_start = init_mdatum(datetime, "simulation_integr_start")
-    _init_simulation_integr_start_rel = init_mdatum(
-        timedelta, "simulation_integr_start_rel"
-    )
-    _init_simulation_integr_type = init_mdatum(str, "simulation_integr_type")
 
     class Config:  # noqa
         extra = "forbid"
@@ -588,59 +585,26 @@ class MetaDataCollector:
             }
         )
 
-    # pylint: disable=R0914  # too-many-locals
     def collect_release_mdata(self, mdata_raw: Dict[str, Any]) -> None:
         """Collect release point meta data."""
-
-        # Collect release point information
-        # SR_TMP < TODO clean up once CoreInputSetup has been implemented
-        assert self.setup.numpoint is not None  # mypy
-        assert len(self.setup.numpoint) == 1
-        idx = next(iter(self.setup.numpoint))
-        # idx = self.setup.numpoint
-        # SR_TMP >
-        numpoint = ReleasePoint.from_file(self.fi, idx)
-
-        sim_start = mdata_raw["simulation_start"]
-        start_rel = timedelta(seconds=numpoint.rel_start)
-        end_rel = timedelta(seconds=numpoint.rel_end)
-        start = sim_start + start_rel
-        end = sim_start + end_rel
-
-        site_lat = np.mean([numpoint.lllat, numpoint.urlat])
-        site_lon = np.mean([numpoint.lllon, numpoint.urlon])
-        site_name = numpoint.name
-        if site_name == "Goesgen":
-            site_name = r"G$\mathrm{\"o}$sgen"
-
-        height = np.mean([numpoint.zbot, numpoint.ztop])
-        height_unit = self._words["m_agl"].s
-
-        assert len(numpoint.ms_parts) == 1
-        mass = next(iter(numpoint.ms_parts))
-        mass_unit = "Bq"  # SR_HC
-
-        duration = numpoint.rel_end - numpoint.rel_start
-        duration_unit = "s"  # SR_HC
-
-        rate = mass / duration
-        rate_unit = f"{mass_unit} {duration_unit}-1"
-
+        release = ReleaseMetaData.from_file(self.fi, mdata_raw, self.setup, self._words)
         mdata_raw.update(
             {
-                "release_start": start,
-                "release_start_rel": start_rel,
-                "release_end": end,
-                "release_end_rel": end_rel,
-                "release_site_lat": site_lat,
-                "release_site_lon": site_lon,
-                "release_site_name": site_name,
-                "release_height": height,
-                "release_height_unit": height_unit,
-                "release_rate": rate,
-                "release_rate_unit": rate_unit,
-                "release_mass": mass,
-                "release_mass_unit": mass_unit,
+                # "release_duration": release.get_duration(),
+                # "release_duration_unit": release.get_duration_unit(),
+                "release_end": release.get_end(),
+                "release_end_rel": release.get_end_rel(),
+                "release_height": release.get_height(),
+                "release_height_unit": release.get_height_unit(),
+                "release_mass": release.get_mass(),
+                "release_mass_unit": release.get_mass_unit(),
+                "release_rate": release.get_rate(),
+                "release_rate_unit": release.get_rate_unit(),
+                "release_site_lat": release.get_lat(),
+                "release_site_lon": release.get_lon(),
+                "release_site_name": release.get_name(),
+                "release_start": release.get_start(),
+                "release_start_rel": release.get_start_rel(),
             }
         )
 
@@ -886,46 +850,99 @@ class TimeStepMetaDataCollector:
         return next(iter(self.setup.time))  # SR_TMP
 
 
-class ReleasePoint(BaseModel):
+class ReleaseMetaData(BaseModel):
     """Release point information."""
 
-    name: str
-    age_id: int
-    kind: str
-    lllat: float
-    lllon: float
-    urlat: float
-    urlon: float
-    zbot: float
-    ztop: float
-    rel_start: int
-    rel_end: int
-    n_parts: int
-    ms_parts: Tuple[int, ...]
+    nc_meta_data: Dict[str, Any]
+    setup: InputSetup
+    words: TranslatedWords
+
+    raw_age_id: int
+    raw_kind: str
+    raw_lllat: float
+    raw_lllon: float
+    raw_ms_parts: Tuple[int, ...]
+    raw_name: str
+    raw_n_parts: int
+    raw_rel_end: timedelta
+    raw_rel_start: timedelta
+    raw_urlat: float
+    raw_urlon: float
+    raw_zbot: float
+    raw_ztop: float
 
     class Config:  # noqa
+        arbitrary_types_allowed = True
         extra = "forbid"
         validate_all = True
         validate_assigment = True
 
+    def get_name(self) -> str:
+        name = self.raw_name
+        if name == "Goesgen":
+            name = r"G$\mathrm{\"o}$sgen"
+        return name
+
+    def get_start_rel(self) -> timedelta:
+        return self.raw_rel_start
+
+    def get_end_rel(self) -> timedelta:
+        return self.raw_rel_end
+
+    def get_start(self) -> datetime:
+        return self.nc_meta_data["simulation_start"] + self.get_start_rel()
+
+    def get_end(self) -> datetime:
+        return self.nc_meta_data["simulation_start"] + self.get_end_rel()
+
+    def get_lat(self) -> float:
+        return np.mean([self.raw_lllat, self.raw_urlat])
+
+    def get_lon(self) -> float:
+        return np.mean([self.raw_lllon, self.raw_urlon])
+
+    def get_height(self) -> float:
+        return np.mean([self.raw_zbot, self.raw_ztop])
+
+    def get_height_unit(self) -> str:
+        return self.words["m_agl"].s
+
+    def get_duration(self) -> timedelta:
+        return self.get_end_rel() - self.get_start_rel()
+
+    def get_duration_unit(self) -> str:
+        return "s"  # SR_HC
+
+    def get_mass(self) -> float:
+        assert len(self.raw_ms_parts) == 1
+        return next(iter(self.raw_ms_parts))
+
+    def get_mass_unit(self) -> str:
+        return "Bq"  # SR_HC
+
+    def get_rate(self) -> float:
+        return self.get_mass() / self.get_duration().total_seconds()
+
+    def get_rate_unit(self) -> str:
+        return f"{self.get_mass_unit()} {self.get_duration_unit()}-1"
+
     @classmethod
     def from_file(
-        cls, fi: nc4.Dataset, i: Optional[int] = None, var_name: str = "RELCOM",
-    ) -> "ReleasePoint":
-        """Read information on single release point from open file.
+        cls,
+        fi: nc4.Dataset,
+        nc_meta_data: Dict[str, Any],
+        setup: InputSetup,
+        words: TranslatedWords,
+    ) -> "ReleaseMetaData":
+        """Read information on a release from open file."""
 
-        Args:
-            fi: Open NetCDF file handle.
+        assert setup.numpoint is not None  # mypy
+        # SR_TMP < TODO proper implementation
+        assert len(setup.numpoint) == 1
+        idx: int = next(iter(setup.numpoint))
+        # SR_TMP >
 
-            i (optional): Release point index. Mandatory if ``fi`` contains
-                multiple release points.
-
-            var_name (optional): Variable name of release point.
-
-        Returns:
-            Release point object.
-
-        """
+        var_name: str = "RELCOM"  # SR_HC TODO un-hardcode
         var = fi.variables[var_name]
 
         # Check index against no. release point and set it if necessary
@@ -933,61 +950,45 @@ class ReleasePoint(BaseModel):
         if n == 0:
             raise ValueError(f"file '{fi.name}': no release points ('{var_name}')")
         elif n == 1:
-            if i is None:
-                i = 0
+            if idx is None:
+                idx = 0
         elif n > 1:
-            if i is None:
+            if idx is None:
                 raise ValueError(
-                    f"file '{fi.name}': i is None despite {n} release points"
+                    f"file '{fi.name}': idx is None despite {n} release points"
                 )
-        assert i is not None  # mypy
-        if i < 0 or i >= n:
+        assert idx is not None  # mypy
+        if idx < 0 or idx >= n:
             raise ValueError(
-                f"file '{fi.name}': invalid index {i} for {n} release points"
+                f"file '{fi.name}': invalid index {idx} for {n} release points"
             )
 
-        kwargs = {}
+        kwargs = {"nc_meta_data": nc_meta_data, "setup": setup, "words": words}
 
-        # Name -- byte character array
-        kwargs["name"] = var[i][~var[i].mask].tostring().decode("utf-8").rstrip()
+        # Name: convert from byte character array
+        kwargs["raw_name"] = (
+            var[idx][~var[idx].mask].tostring().decode("utf-8").rstrip()
+        )
 
         # Other attributes
         key_pairs = [
-            ("age_id", "LAGE"),
-            ("kind", "RELKINDZ"),
-            ("lllat", "RELLAT1"),
-            ("lllon", "RELLNG1"),
-            ("urlat", "RELLAT2"),
-            ("urlon", "RELLNG2"),
-            ("zbot", "RELZZ1"),
-            ("ztop", "RELZZ2"),
-            ("rel_start", "RELSTART"),
-            ("rel_end", "RELEND"),
-            ("n_parts", "RELPART"),
-            ("ms_parts", "RELXMASS"),
+            ("raw_age_id", "LAGE"),
+            ("raw_kind", "RELKINDZ"),
+            ("raw_lllat", "RELLAT1"),
+            ("raw_lllon", "RELLNG1"),
+            ("raw_ms_parts", "RELXMASS"),
+            ("raw_n_parts", "RELPART"),
+            ("raw_rel_end", "RELEND"),
+            ("raw_rel_start", "RELSTART"),
+            ("raw_urlat", "RELLAT2"),
+            ("raw_urlon", "RELLNG2"),
+            ("raw_zbot", "RELZZ1"),
+            ("raw_ztop", "RELZZ2"),
         ]
         for key_out, key_in in key_pairs:
-            kwargs[key_out] = fi.variables[key_in][i].tolist()
+            kwargs[key_out] = fi.variables[key_in][idx].tolist()
 
         return cls(**kwargs)
-
-    @classmethod
-    def multiple_from_file(
-        cls, fi: nc4.Dataset, var_name: str = "RELCOM"
-    ) -> List["ReleasePoint"]:
-        """Read information on multiple release points from open file.
-
-        Args:
-            fi: Open NetCDF file handle.
-
-            var_name (optional): Variable name of release point.
-
-        Returns:
-            Release points objects.
-
-        """
-        n = fi.variables[var_name].shape[0]
-        return [cls.from_file(fi, i, var_name) for i in range(n)]
 
 
 # SR_TMP <<< TODO figure out what to do with this
