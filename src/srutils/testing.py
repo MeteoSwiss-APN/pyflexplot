@@ -402,7 +402,7 @@ def assert_nested_equal(
                     f"{type(obj1).__name__} vs. {type(obj2).__name__}, ",
                     *[path, obj1, obj2],
                 )
-            if float_close_ok:
+            if (isinstance(obj1, float) or isinstance(obj2, float)) and float_close_ok:
                 if np.isclose(obj1, obj2, **(kwargs_close or {})):
                     return
                 msg = f"unequal floats not even close: {obj1} vs. {obj2}"
@@ -411,9 +411,13 @@ def assert_nested_equal(
                         ", ".join([f"{k}={sfmt(v)}" for k, v in kwargs_close.items()]),
                     )
                 raise error(msg, path)
-            raise error(
-                f"unequal floats: {obj1} vs. {obj2} (consider float_close_ok)", path,
-            )
+            if isinstance(obj1, bool) and isinstance(obj2, bool):
+                msg = f"unequal bools: {obj1} vs. {obj2}"
+            elif isinstance(obj1, int) and isinstance(obj2, int):
+                msg = f"unequal ints: {obj1} vs. {obj2}"
+            else:
+                msg = f"unequal reals: {obj1} vs. {obj2} (consider float_close_ok)"
+            raise error(msg, path)
         else:
             raise error(f"unequal objects", path, obj1, obj2)
 
