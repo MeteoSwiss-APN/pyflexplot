@@ -2,9 +2,12 @@
 """
 Test reference for pytest test.
 
-tests/slow/pyflexplot/test_plots/shared.py::Test_EnsMedian_Concentration::test
+tests/slow/pyflexplot/test_plots/shared.py
+    ::Test_EnsMedian_Concentration
+    ::test
 
-Created by temporarily changing the parent class of ``Test_EnsMedian_Concentration``
+Created by temporarily changing the parent class of
+``Test_EnsMedian_Concentration``
 from ``_TestBase`` to ``_CreateReference`` and running pytest.
 """
 
@@ -1995,8 +1998,6 @@ plot_summary = {
             "type": "TextBoxAxes",
         },
     },
-    "draw_colors": True,
-    "draw_contours": False,
     "field": {
         "fld": {
             "dtype": "float32",
@@ -2449,6 +2450,5 @@ plot_summary = {
         "type": "MapAxesConf",
         "zoom_fact": 1.02,
     },
-    "mark_release_site": True,
     "type": "Plot",
 }

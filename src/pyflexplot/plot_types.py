@@ -5,8 +5,9 @@ Plot types.
 # Standard library
 from typing import Any
 from typing import Dict
+from typing import List
+from typing import Mapping
 from typing import Optional
-from typing import Sequence
 from typing import Tuple
 
 # Third-party
@@ -211,7 +212,7 @@ class PlotLabels:
         )
 
 
-def colors_flexplot(n_levels: int, extend: str) -> Sequence[Tuple[int, int, int]]:
+def colors_flexplot(n_levels: int, extend: str) -> List[Tuple[int, int, int]]:
 
     # color_under = [i/255.0 for i in (255, 155, 255)]
     color_under = [i / 255.0 for i in (200, 200, 200)]
@@ -277,6 +278,12 @@ class PlotConfig:
 
         self.figsize = (12.0, 9.0)
         self.reverse_legend = False
+
+    cmap = "flexplot"
+    draw_colors = True
+    draw_contours = False
+    mark_release_site = True
+    lw_frame = 1.0
 
     # SR_TMP <<<
     @property
@@ -384,48 +391,48 @@ class PlotConfig:
             return labels["model_info_ens"]
         raise NotImplementedError("simulation_type", self.setup.simulation_type)
 
-    # SR_TMP
-    def get_colors(self, cmap) -> Sequence[Tuple[int, int, int]]:
-        if self.setup.plot_type == "affected_area_mono":
-            return (np.array([(200, 200, 200)]) / 255).tolist()
-        elif cmap == "flexplot":
-            return colors_flexplot(self.n_levels, self.extend)
-        else:
-            cmap = mpl.cm.get_cmap(cmap)
-            return [cmap(i / (self.n_levels - 1)) for i in range(self.n_levels)]
-
-    # SR_TMP
     @property
     def levels_scale(self) -> str:
         if self.setup.plot_type in ["ens_thr_agrmt", "ens_cloud_arrival_time"]:
             return "lin"
         return "log"
 
-    # SR_TMP
-    def get_levels(self, time_stats) -> Sequence[float]:
-        n_levels = self.n_levels
-        if self.setup.plot_type == "ens_thr_agrmt":
-            d_level = self.d_level
-            n_max = 20  # SR_TMP SR_HC
-            return (
-                np.arange(n_max - d_level * (n_levels - 1), n_max + d_level, d_level)
-                + 1
-            )
-        elif self.setup.plot_type == "ens_cloud_arrival_time":
-            return np.arange(0, n_levels) * self.d_level
-        elif self.setup.plot_type == "affected_area_mono":
-            levels = self._auto_levels_log10(n_levels=9, val_max=time_stats["max"])
-            return np.array([levels[0], np.inf])
-        else:
-            return self._auto_levels_log10(val_max=time_stats["max"])
 
-    def _auto_levels_log10(
-        self, n_levels: Optional[int] = None, val_max: Optional[float] = None,
-    ) -> Sequence[float]:
-        if n_levels is None:
-            n_levels = self.n_levels
+def colors_from_plot_config(plot_config: PlotConfig) -> List[Tuple[int, int, int]]:
+    if plot_config.setup.plot_type == "affected_area_mono":
+        return (np.array([(200, 200, 200)]) / 255).tolist()
+    elif plot_config.cmap == "flexplot":
+        return colors_flexplot(plot_config.n_levels, plot_config.extend)
+    else:
+        cmap = mpl.cm.get_cmap(plot_config.cmap)
+        return [
+            cmap(i / (plot_config.n_levels - 1)) for i in range(plot_config.n_levels)
+        ]
+
+
+def levels_from_time_stats(
+    plot_config: PlotConfig, time_stats: Mapping[str, float]
+) -> List[float]:
+    def _auto_levels_log10(n_levels: int, val_max: float) -> List[float]:
         log10_max = int(np.floor(np.log10(val_max)))
         log10_d = 1
         return 10 ** np.arange(
-            log10_max - (n_levels - 1) * log10_d, log10_max + 0.5 * log10_d, log10_d,
+            log10_max - (n_levels - 1) * log10_d, log10_max + 0.5 * log10_d, log10_d
         )
+
+    if plot_config.setup.plot_type == "ens_thr_agrmt":
+        d_level = plot_config.d_level
+        n_max = 20  # SR_TMP SR_HC
+        return (
+            np.arange(
+                n_max - d_level * (plot_config.n_levels - 1), n_max + d_level, d_level
+            )
+            + 1
+        )
+    elif plot_config.setup.plot_type == "ens_cloud_arrival_time":
+        return np.arange(0, plot_config.n_levels) * plot_config.d_level
+    elif plot_config.setup.plot_type == "affected_area_mono":
+        levels = _auto_levels_log10(n_levels=9, val_max=time_stats["max"])
+        return np.array([levels[0], np.inf])
+    else:
+        return _auto_levels_log10(plot_config.n_levels, val_max=time_stats["max"])

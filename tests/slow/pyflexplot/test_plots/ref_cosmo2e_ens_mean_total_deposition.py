@@ -2096,8 +2096,6 @@ plot_summary = {
             "type": "TextBoxAxes",
         },
     },
-    "draw_colors": True,
-    "draw_contours": False,
     "field": {
         "fld": {
             "dtype": "float32",
@@ -2592,6 +2590,5 @@ plot_summary = {
         "type": "MapAxesConf",
         "zoom_fact": 1.02,
     },
-    "mark_release_site": True,
     "type": "Plot",
 }

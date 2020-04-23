@@ -26,33 +26,20 @@ from .plot_lib import TextBoxAxes
 from .plot_lib import ax_w_h_in_fig_coords
 from .plot_lib import post_summarize_plot
 from .plot_types import PlotConfig
+from .plot_types import colors_from_plot_config
 from .plot_types import create_map_conf
+from .plot_types import levels_from_time_stats
 from .utils import format_level_ranges
 from .utils import summarizable
 
 
 @summarizable(
-    attrs=[
-        "ax_map",
-        "boxes",
-        "draw_colors",
-        "draw_contours",
-        "field",
-        "fig",
-        "map_conf",
-        "mark_release_site",
-    ],
+    attrs=["ax_map", "boxes", "field", "fig", "map_conf"],
     post_summarize=post_summarize_plot,
 )
 # pylint: disable=R0902  # too-many-instance-attributes
 class Plot:
     """A FLEXPART dispersion plot."""
-
-    cmap = "flexplot"
-    draw_colors = True
-    draw_contours = False
-    mark_release_site = True
-    lw_frame = 1.0
 
     def __init__(self, field: Field, plot_config: PlotConfig, map_conf: MapAxesConf):
         """Create an instance of ``Plot``."""
@@ -122,7 +109,7 @@ class Plot:
         # Plot concentrations
         self.draw_colors_contours()
 
-        if self.mark_release_site:
+        if self.plot_config.mark_release_site:
             # Marker at release site
             self.ax_map.marker(
                 self.plot_config.mdata.release_site_lon.value,
@@ -137,8 +124,8 @@ class Plot:
     # SR_TODO Replace checks with plot-specific config/setup object
     def draw_colors_contours(self):
         field = self.fld_nonzero()
-        levels = self.plot_config.get_levels(self.field.time_stats)
-        colors = self.plot_config.get_colors(self.cmap)
+        levels = levels_from_time_stats(self.plot_config, self.field.time_stats)
+        colors = colors_from_plot_config(self.plot_config)
         extend = self.plot_config.extend
         if self.plot_config.levels_scale == "log":
             field = np.log10(field)
@@ -147,9 +134,9 @@ class Plot:
             # Areas beyond the closed upper bound are colored black
             colors = list(colors) + ["black"]
             extend = {"none": "max", "min": "both"}[extend]
-        if self.draw_colors:
+        if self.plot_config.draw_colors:
             self.ax_map.contourf(field, levels=levels, colors=colors, extend=extend)
-        if self.draw_contours:
+        if self.plot_config.draw_contours:
             self.ax_map.contour(field, levels=levels, colors="black", linewidths=1)
 
     def draw_boxes(self):
@@ -197,7 +184,7 @@ class Plot:
             "fig": self.fig,
             "ax_ref": self.ax_map.ax,
             "f_pad": 1.2,
-            "lw_frame": self.lw_frame,
+            "lw_frame": self.plot_config.lw_frame,
         }
 
         # Axes for text boxes (one on top, two to the right)
@@ -337,7 +324,7 @@ class Plot:
         box.text("tc", s=s, dy=1.5, size="large")
 
         # Format level ranges (contour plot legend)
-        levels = self.plot_config.get_levels(time_stats=self.field.time_stats)
+        levels = levels_from_time_stats(self.plot_config, self.field.time_stats)
         legend_labels = format_level_ranges(
             levels=levels,
             style=self.plot_config.level_range_style,
@@ -360,7 +347,7 @@ class Plot:
         )
 
         # Legend color boxes
-        colors = self.plot_config.get_colors(self.cmap)
+        colors = colors_from_plot_config(self.plot_config)
         if self.plot_config.reverse_legend:
             colors = colors[::-1]
         dy = dy0_boxes
@@ -380,11 +367,11 @@ class Plot:
 
         # Markers
 
-        n_markers = self.mark_release_site + self.plot_config.mark_field_max
+        n_markers = self.plot_config.mark_release_site + self.plot_config.mark_field_max
         dy0_marker_i = dy0_markers + (2 - n_markers) * dy_line / 2
 
         # Release site marker
-        if self.mark_release_site:
+        if self.plot_config.mark_release_site:
             dy_site_label = dy0_marker_i
             dy0_marker_i += dy_line
             dy_site_marker = dy_site_label + 0.7

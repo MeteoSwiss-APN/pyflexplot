@@ -75,8 +75,8 @@ class Test_EnsMean_TotalDeposition(_TestBase):
 
 
 @pytest.mark.skip("WIP")
-class Test_EnsMin_AffectedArea(_CreateReference):
-    # class Test_EnsMin_AffectedArea(_TestBase):
+# class Test_EnsMin_AffectedArea(_CreateReference):
+class Test_EnsMin_AffectedArea(_TestBase):
     reference = "ref_cosmo2e_ens_min_affected_area"
     setup_dct = {
         "infile": INFILE_NAME,
@@ -95,6 +95,7 @@ class Test_EnsMin_AffectedArea(_CreateReference):
     }
 
 
+@pytest.mark.skip("WIP")
 # class Test_CloudArrivalTime(_CreateReference):
 class Test_CloudArrivalTime(_TestBase):
     reference = "ref_cosmo2e_ens_cloud_arrival_time"

@@ -319,12 +319,18 @@ def assert_nested_equal(
     if not isinstance(obj2, Collection):
         raise ValueError(f"expecting Collection, not {type(obj2).__name__}")
 
+    def format_obj(obj):
+        lines = pformat(obj).split("\n")
+        if len(lines) > 20:
+            lines = lines[:10] + ["..."] + lines[-10:]
+        return "\n".join(lines)
+
     def error(msg, path, obj1=None, obj2=None):
         err = f"\n{msg}\n\nPath ({len(path)}):\n{pformat(path)}\n"
         if obj1 is not None:
-            err += f"\nobj1 ({type(obj1).__name__}):\n{pformat(obj1)}\n"
+            err += f"\nobj1 ({type(obj1).__name__}):\n{format_obj(obj1)}\n"
         if obj2 is not None:
-            err += f"\nobj2 ({type(obj2).__name__}):\n{pformat(obj2)}\n"
+            err += f"\nobj2 ({type(obj2).__name__}):\n{format_obj(obj2)}\n"
         return AssertionError(err)
 
     # pylint: disable=R0912  # too-many-branches
