@@ -20,6 +20,7 @@ from matplotlib.colors import Colormap
 # Local
 from .data import Field
 from .meta_data import MetaData
+from .meta_data import format_integr_period
 from .meta_data import format_level_range
 from .plot_lib import MapAxesConf
 from .setup import InputSetup
@@ -122,7 +123,7 @@ class PlotLabels:
             }[self.mdata.simulation_integr_type.value]
         ].s
         time_rels = self.mdata.simulation_now_rel
-        period = self.mdata.simulation_fmt_integr_period()
+        period = format_integr_period(self.mdata)
         start = self.mdata.simulation_integr_start_rel
         unit = self.mdata.variable_unit
         unit_escaped = str(unit).replace("{", "{{").replace("}", "}}")

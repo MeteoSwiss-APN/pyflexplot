@@ -230,6 +230,15 @@ def format_level_range(
         raise NotImplementedError(f"{n} sets of levels")
 
 
+def format_integr_period(mdata: "MetaData"):
+    start = mdata.simulation_integr_start.value
+    now = mdata.simulation_now.value
+    assert isinstance(start, datetime)  # mypy
+    assert isinstance(now, datetime)  # mypy
+    integr_period = now - start
+    return f"{integr_period.total_seconds()/3600:g}$\\,$h"
+
+
 def init_mdatum(type_, name, attrs=None):
     """Pydantic validator to initialize ``MetaData`` attributes."""
 
@@ -413,28 +422,6 @@ class MetaData(BaseModel):
     class Config:  # noqa
         extra = "forbid"
 
-    def simulation_fmt_integr_period(self):
-        integr_period = self.simulation_now.value - self.simulation_integr_start.value
-        return f"{integr_period.total_seconds()/3600:g}$\\,$h"
-
-    def __eq__(self, other: Any) -> bool:
-        return self.setup == other.setup
-
-    # SR_TODO <<< eliminate iterator method
-    def iter_objs(self):
-        if isinstance(self, BaseModel):  # SR_TMP
-            for name in self.__fields__:  # pylint: disable=E1101  # no-member
-                if name != "setup":
-                    yield name, getattr(self, name)
-        else:
-            for name in dir(self):
-                if not (
-                    name.startswith("_") or name in ["setup", "summarizable_attrs"]
-                ):
-                    datum = getattr(self, name)
-                    if not callable(datum):
-                        yield name, datum
-
     def merge_with(
         self, others: Collection["MetaData"], replace: Optional[Dict[str, Any]] = None,
     ) -> "MetaData":
@@ -476,7 +463,10 @@ class MetaData(BaseModel):
         setup = InputSetupCollection([self.setup] + other_setups).compress()
 
         kwargs = {}
-        for name, datum in self.iter_objs():
+        for name in self.__fields__:  # pylint: disable=E1101  # no-member
+            if name == "setup":
+                continue
+            datum = getattr(self, name)
             other_data = [getattr(o, name) for o in others]
             kwargs[name] = datum.merge_with(other_data, replace=replace.get(name))
 

@@ -8,6 +8,7 @@ from textwrap import dedent
 from typing import Collection
 from typing import Dict
 from typing import Optional
+from typing import Sequence
 
 # Third-party
 import numpy as np
@@ -20,6 +21,7 @@ from srutils.iter import isiterable
 # Local
 # TextBoxAxes Local
 from .data import Field
+from .meta_data import MetaData
 from .plot_lib import MapAxes
 from .plot_lib import MapAxesConf
 from .plot_lib import TextBoxAxes
@@ -488,7 +490,13 @@ class Plot:
         box.text("tr", dx=0.7, dy=0.5, s=labels["copyright"], size="small")
 
 
-def plot_fields(fields, mdata_lst, dry_run=False, *, write=True):
+def plot_fields(
+    fields: Sequence[Field],
+    mdata_lst: Sequence[MetaData],
+    dry_run: bool = False,
+    *,
+    write: bool = True,
+):
 
     # Create plots one-by-one
     for field, mdata in zip(fields, mdata_lst):
