@@ -237,9 +237,11 @@ def colors_flexplot(n_levels: int, extend: str) -> Sequence[Tuple[int, int, int]
     colors_core_7 = [colors_core_8[i] for i in (0, 1, 2, 3, 5, 6, 7)]
     colors_core_6 = [colors_core_8[i] for i in (1, 2, 3, 4, 5, 7)]
     colors_core_5 = [colors_core_8[i] for i in (1, 2, 4, 5, 7)]
+    colors_core_4 = [colors_core_8[i] for i in (1, 2, 4, 7)]
 
     try:
         colors_core = {
+            5: colors_core_4,
             6: colors_core_5,
             7: colors_core_6,
             8: colors_core_7,
@@ -310,7 +312,7 @@ class PlotConfig:
     def n_levels(self) -> int:
         return {
             "ens_thr_agrmt": 7,
-            "ens_cloud_arrival_time": 9,
+            "ens_cloud_arrival_time": 5,
             "affected_area_mono": 1,
         }.get(
             self.setup.plot_type,
