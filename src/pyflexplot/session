@@ -2,8 +2,8 @@ __init__.py
 cli.py
 data.py
 io.py
-io_meta_data.py
 meta_data.py
+nc_meta_data.py
 plot.py
 plot_lib.py
 plot_types.py

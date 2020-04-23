@@ -13,6 +13,7 @@ from typing import Any
 from typing import Collection
 from typing import Dict
 from typing import Generic
+from typing import List
 from typing import Mapping
 from typing import Optional
 from typing import Sequence
@@ -21,6 +22,7 @@ from typing import TypeVar
 from typing import Union
 
 # Third-party
+import netCDF4 as nc4
 import numpy as np
 from pydantic import BaseModel
 from pydantic import validator
@@ -31,6 +33,7 @@ from .setup import InputSetup
 from .setup import InputSetupCollection
 from .utils import summarizable
 from .words import WORDS
+from .words import TranslatedWords
 
 ValueT = TypeVar("ValueT", int, float, str, datetime, timedelta)
 
@@ -118,7 +121,7 @@ class MetaDatum(GenericModel, Generic[ValueT]):
 
         return next(iter(values)) if len(values) == 1 else tuple(values)
 
-    def _merge_attrs(self, others):
+    def _merge_attrs(self, others: Collection["MetaDatum"]) -> Dict[str, Any]:
         assert all(o.attrs.keys() == self.attrs.keys() for o in others)
         attrs = {}
         for attr, value in self.attrs.items():
@@ -239,7 +242,7 @@ def format_integr_period(mdata: "MetaData"):
     return f"{integr_period.total_seconds()/3600:g}$\\,$h"
 
 
-def init_mdatum(type_, name, attrs=None):
+def init_mdatum(type_: type, name: str, attrs: Optional[Mapping[str, Any]] = None):
     """Pydantic validator to initialize ``MetaData`` attributes."""
 
     def f(value):
@@ -423,7 +426,9 @@ class MetaData(BaseModel):
         extra = "forbid"
 
     def merge_with(
-        self, others: Collection["MetaData"], replace: Optional[Dict[str, Any]] = None,
+        self,
+        others: Collection["MetaData"],
+        replace: Optional[Mapping[str, Any]] = None,
     ) -> "MetaData":
         """Create a new instance by merging this instance with others.
 
@@ -473,7 +478,9 @@ class MetaData(BaseModel):
         return type(self)(setup=setup, **kwargs)
 
 
-def collect_meta_data(fi, setup, nc_meta_data):
+def collect_meta_data(
+    fi: nc4.Dataset, setup: InputSetup, nc_meta_data: Mapping[str, Any],
+) -> MetaData:
     """Collect meta data in open NetCDF file."""
     words = WORDS
     words.set_default_lang(setup.lang)
@@ -483,7 +490,13 @@ def collect_meta_data(fi, setup, nc_meta_data):
 class MetaDataCollector:
     """Collect meta data for a field from an open NetCDF file."""
 
-    def __init__(self, fi, setup, words, nc_meta_data):
+    def __init__(
+        self,
+        fi: nc4.Dataset,
+        setup: InputSetup,
+        words: TranslatedWords,
+        nc_meta_data: Mapping[str, Any],
+    ) -> None:
         self.fi = fi
         self.setup = setup
         self._words = words
@@ -495,26 +508,27 @@ class MetaDataCollector:
         }
 
         # Collect all variables attributes
-        self.ncattrs_vars = {}
+        self.ncattrs_vars: Dict[str, Any] = {}
         for var in self.fi.variables.values():
             self.ncattrs_vars[var.name] = {
                 attr: var.getncattr(attr) for attr in var.ncattrs()
             }
 
         # Select attributes of field variable
-        model = self.nc_meta_data["analysis"]["model"]
-        self.ncattrs_field = self.ncattrs_vars[nc_var_name(self.setup, model)]
+        name = nc_var_name(self.setup, self.nc_meta_data["analysis"]["model"])
+        assert isinstance(name, str)  # mypy
+        self.ncattrs_field = self.ncattrs_vars[name]
 
-    def run(self):
+    def run(self) -> MetaData:
         """Collect meta data."""
-        mdata_raw = {}
+        mdata_raw: Dict[str, Any] = {}
         self.collect_simulation_mdata(mdata_raw)
         self.collect_release_mdata(mdata_raw)
         self.collect_species_mdata(mdata_raw)
         self.collect_variable_mdata(mdata_raw)
         return MetaData(setup=self.setup, **mdata_raw)
 
-    def collect_simulation_mdata(self, mdata_raw):
+    def collect_simulation_mdata(self, mdata_raw: Dict[str, Any]) -> None:
         """Collect simulation meta data."""
 
         # Model name
@@ -535,8 +549,8 @@ class MetaDataCollector:
 
         # Current time step and start time step of current integration period
         ts_now, ts_integr_start = self._get_current_timestep_etc()
-        ts_now_rel = ts_now - ts_start
-        ts_integr_start_rel = ts_integr_start - ts_start
+        ts_now_rel: timedelta = ts_now - ts_start
+        ts_integr_start_rel: timedelta = ts_integr_start - ts_start
 
         # Type of integration (or, rather, reduction)
         if self.setup.variable == "concentration":  # SR_TMP
@@ -561,11 +575,14 @@ class MetaDataCollector:
             }
         )
 
-    def _get_current_timestep_etc(self, idx=None):
+    def _get_current_timestep_etc(
+        self, idx: Optional[int] = None,
+    ) -> Tuple[datetime, datetime]:
         """Get the current timestep, or a specific one by index."""
 
         if idx is None:
             # Default to timestep of current field
+            assert self.setup.time is not None  # mypy
             assert len(self.setup.time) == 1  # SR_TMP
             idx = next(iter(self.setup.time))  # SR_TMP
 
@@ -612,11 +629,12 @@ class MetaDataCollector:
         return now, ts_integr_start
 
     # pylint: disable=R0914  # too-many-locals
-    def collect_release_mdata(self, mdata_raw):
+    def collect_release_mdata(self, mdata_raw: Dict[str, Any]) -> None:
         """Collect release point meta data."""
 
         # Collect release point information
         # SR_TMP < TODO clean up once CoreInputSetup has been implemented
+        assert self.setup.numpoint is not None  # mypy
         assert len(self.setup.numpoint) == 1
         idx = next(iter(self.setup.numpoint))
         # idx = self.setup.numpoint
@@ -666,7 +684,7 @@ class MetaDataCollector:
             }
         )
 
-    def collect_variable_mdata(self, mdata_raw):
+    def collect_variable_mdata(self, mdata_raw: Dict[str, Any]) -> None:
         """Collect variable meta data."""
 
         # Variable names
@@ -683,8 +701,8 @@ class MetaDataCollector:
         # SR_TMP >
         if idx is None:
             level_unit = ""
-            level_bot = -1
-            level_top = -1
+            level_bot = -1.0
+            level_top = -1.0
         else:
             level_unit = self._words["m_agl"].s
             try:  # SR_TMP IFS
@@ -706,7 +724,7 @@ class MetaDataCollector:
             }
         )
 
-    def collect_species_mdata(self, mdata_raw):
+    def collect_species_mdata(self, mdata_raw: Dict[str, Any]) -> None:
         """Collect species meta data."""
 
         substance = self._get_substance()
@@ -753,7 +771,7 @@ class MetaDataCollector:
             }
         )
 
-    def _get_substance(self):
+    def _get_substance(self) -> str:
         substance = self.ncattrs_field["long_name"]
         if self.setup.variable == "deposition":  # SR_TMP
             substance = substance.replace(
@@ -762,7 +780,9 @@ class MetaDataCollector:
         return substance
 
     # pylint: disable=R0911,R0912  # too-many-return-statements,too-many-branches
-    def _long_name(self, *, variable=None, plot_type=None):
+    def _long_name(
+        self, *, variable: Optional[str] = None, plot_type: Optional[str] = None,
+    ) -> str:
         setup = self.setup
         words = self._words
         if (variable, plot_type) == (None, None):
@@ -808,7 +828,9 @@ class MetaDataCollector:
             f"long_name for variable '{variable}' and plot_type '{plot_type}'"
         )
 
-    def _short_name(self, *, variable=None, plot_type=None):
+    def _short_name(
+        self, *, variable: Optional[str] = None, plot_type: Optional[str] = None,
+    ) -> str:
         setup = self.setup
         words = self._words
         if (variable, plot_type) == (None, None):
@@ -836,11 +858,12 @@ class MetaDataCollector:
             f"short_name for variable '{variable}' and plot_type '{plot_type}'"
         )
 
-    def _deposition_type_word(self):
+    def _deposition_type_word(self) -> str:
         setup = self.setup
         words = self._words
         if setup.variable == "deposition":
             type_ = setup.deposition_type
+            assert isinstance(type_, str)  # mypy
             word = {"tot": "total"}.get(type_, type_)
             return words[word, None, "f"].s
         return "none"
@@ -869,20 +892,21 @@ class ReleasePoint(BaseModel):
         validate_assigment = True
 
     @classmethod
-    def from_file(cls, fi, i=None, var_name="RELCOM"):
+    def from_file(
+        cls, fi: nc4.Dataset, i: Optional[int] = None, var_name: str = "RELCOM",
+    ) -> "ReleasePoint":
         """Read information on single release point from open file.
 
         Args:
-            fi (netCDF4.Dataset): Open NetCDF file handle.
+            fi: Open NetCDF file handle.
 
-            i (int, optional): Release point index. Mandatory if ``fi``
-                contains multiple release points. Defaults to None.
+            i (optional): Release point index. Mandatory if ``fi`` contains
+                multiple release points.
 
-            var_name (str, optional): Variable name of release point. Defaults
-                to 'RELCOM'.
+            var_name (optional): Variable name of release point.
 
         Returns:
-            ReleasePoint: Release point object.
+            Release point object.
 
         """
         var = fi.variables[var_name]
@@ -899,6 +923,7 @@ class ReleasePoint(BaseModel):
                 raise ValueError(
                     f"file '{fi.name}': i is None despite {n} release points"
                 )
+        assert i is not None  # mypy
         if i < 0 or i >= n:
             raise ValueError(
                 f"file '{fi.name}': invalid index {i} for {n} release points"
@@ -930,17 +955,18 @@ class ReleasePoint(BaseModel):
         return cls(**kwargs)
 
     @classmethod
-    def multiple_from_file(cls, fi, var_name="RELCOM"):
+    def multiple_from_file(
+        cls, fi: nc4.Dataset, var_name: str = "RELCOM"
+    ) -> List["ReleasePoint"]:
         """Read information on multiple release points from open file.
 
         Args:
-            fi (netCDF4.Dataset): Open NetCDF file handle.
+            fi: Open NetCDF file handle.
 
-            var_name (str, optional): Variable name of release point. Defaults
-                to 'RELCOM'.
+            var_name (optional): Variable name of release point.
 
         Returns:
-            list[ReleasePoint]: List of release points objects.
+            Release points objects.
 
         """
         n = fi.variables[var_name].shape[0]
@@ -948,17 +974,19 @@ class ReleasePoint(BaseModel):
 
 
 # SR_TMP <<< TODO figure out what to do with this
-def nc_var_name(setup, model):
-    result = []
-    for species_id in setup.species_id:
-        if setup.variable == "concentration":
-            if model in ["cosmo2", "cosmo1"]:
-                result.append(f"spec{species_id:03d}")
-            elif model == "ifs":
-                result.append(f"spec{species_id:03d}_mr")
-            else:
-                raise ValueError("unknown model", model)
-        elif setup.variable == "deposition":
-            prefix = {"wet": "WD", "dry": "DD"}[setup.deposition_type]
-            result.append(f"{prefix}_spec{species_id:03d}")
-    return result[0] if len(result) == 1 else result
+def nc_var_name(setup: InputSetup, model: str) -> Union[str, List[str]]:
+    assert setup.species_id is not None  # mypy
+    assert len(setup.species_id) == 1  # SR_TMP
+    species_id = next(iter(setup.species_id))
+    if setup.variable == "concentration":
+        if model in ["cosmo2", "cosmo1"]:
+            return f"spec{species_id:03d}"
+        elif model == "ifs":
+            return f"spec{species_id:03d}_mr"
+        else:
+            raise ValueError("unknown model", model)
+    elif setup.variable == "deposition":
+        assert isinstance(setup.deposition_type, str)  # mypy
+        prefix = {"wet": "WD", "dry": "DD"}[setup.deposition_type]
+        return f"{prefix}_spec{species_id:03d}"
+    raise ValueError("unknown variable", setup.variable)

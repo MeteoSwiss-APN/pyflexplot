@@ -27,10 +27,10 @@ from .data import Field
 from .data import cloud_arrival_time
 from .data import merge_fields
 from .data import threshold_agreement
-from .io_meta_data import read_meta_data
 from .meta_data import MetaData
 from .meta_data import collect_meta_data
 from .meta_data import nc_var_name
+from .nc_meta_data import read_meta_data
 from .setup import InputSetup
 from .setup import InputSetupCollection
 

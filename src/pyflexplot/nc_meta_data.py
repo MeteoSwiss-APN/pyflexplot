@@ -4,13 +4,15 @@ Input file meta data.
 """
 # Standard library
 import re
+from typing import Any
+from typing import Dict
 from typing import List
 
 # Third-party
 import netCDF4 as nc4
 
 
-def read_meta_data(file_handle: nc4.Dataset):
+def read_meta_data(file_handle: nc4.Dataset) -> Dict[str, Any]:
     """Read meta data (variables, dimensions, attributes) from a NetCDF file.
 
     Args:
