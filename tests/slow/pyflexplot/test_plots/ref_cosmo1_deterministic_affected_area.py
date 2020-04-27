@@ -1226,7 +1226,7 @@ plot_summary = {
                         "y0": 0.9724553489079236,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Deposition " "(Bq h m-2)",
+                    "s": "Deposition " "(Bq h " "m$^{-2}$)",
                     "type": "TextBoxElementText",
                 },
                 {

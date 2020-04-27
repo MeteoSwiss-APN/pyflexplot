@@ -102,12 +102,12 @@ class PlotLabels:
                 ),
                 "subtitle_thr_agrmt_fmt": (
                     f"Cloud: {self.symbols['geq']} {{thr}} "
-                    f"{escape_format_keys(self.mdata.variable_unit.value)}"
+                    f"{escape_format_keys(format_unit(self.mdata.variable_unit.value))}"
                 ),
                 "subtitle_cloud_arrival_time": (
                     f"Cloud: {self.symbols['geq']} {{thr}} "
-                    f"{escape_format_keys(self.mdata.variable_unit.value)}; "
-                    f"members: {self.symbols['geq']} {{mem}}"
+                    f"{escape_format_keys(format_unit(self.mdata.variable_unit.value))}"
+                    f"; members: {self.symbols['geq']} {{mem}}"
                 ),
                 "timestep": (
                     f"{self.mdata.simulation_now} (+{self.mdata.simulation_now_rel})"
@@ -132,7 +132,7 @@ class PlotLabels:
                 "title": get_short_name(self.setup, self.words),
                 "title_unit": (
                     f"{get_short_name(self.setup, self.words)} "
-                    f"({self.mdata.variable_unit})"
+                    f"({format_unit(self.mdata.variable_unit.value)})"
                 ),
                 "release_site": self.words["release_site"].s,
                 "max": self.words["max"].s,
@@ -211,7 +211,20 @@ def format_level_label(mdata: MetaData, words: TranslatedWords):
         mdata.variable_level_bot_unit.value,
         mdata.variable_level_top_unit.value,
     )
-    return f" {words['at', None, 'level']} {level}" if level else ""
+    return f" {words['at', None, 'level']} {format_unit(level)}" if level else ""
+
+
+def format_unit(s: str) -> str:
+    """Auto-format the unit by elevating superscripts etc."""
+    s = str(s)
+    old_new = [
+        ("m-2", "m$^{-2}$"),
+        ("m-3", "m$^{-3}$"),
+        ("s-1", "s$^{-1}$"),
+    ]
+    for old, new in old_new:
+        s = s.replace(old, new)
+    return s
 
 
 def format_integr_period(
@@ -390,7 +403,7 @@ def create_plot_config(setup: InputSetup, labels: PlotLabels) -> "PlotConfig":
             new_config_dct["legend_box_title"] = labels.right_top["title"]
             new_config_dct["levels_scale"] = "lin"
     # SR_TMP < TODO set default
-    if "lebend_box_title" not in new_config_dct:
+    if "legend_box_title" not in new_config_dct:
         new_config_dct["legend_box_title"] = labels.right_top["title_unit"]
     # SR_TMP >
     return PlotConfig(setup=setup, labels=labels, **new_config_dct)

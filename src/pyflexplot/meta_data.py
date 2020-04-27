@@ -162,19 +162,6 @@ def format_meta_datum(value: str, join: Optional[str] = None) -> str:
     return f"{{:{fmt}}}".format(value)
 
 
-def format_unit(s: str) -> str:
-    """Auto-format the unit by elevating superscripts etc."""
-    s = str(s)
-    old_new = [
-        ("m-2", "m$^{-2}$"),
-        ("m-3", "m$^{-3}$"),
-        ("s-1", "s$^{-1}$"),
-    ]
-    for old, new in old_new:
-        s = s.replace(old, new)
-    return s
-
-
 def format_level_range(
     value_bottom: Union[float, Sequence[float]],
     value_top: Union[float, Sequence[float]],

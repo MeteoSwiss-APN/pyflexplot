@@ -1205,7 +1205,7 @@ plot_summary = {
                         "y0": 0.9724553489079236,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Int. " "Konzentr. " "(Bq h m-3)",
+                    "s": "Int. " "Konzentr. " "(Bq h " "m$^{-3}$)",
                     "type": "TextBoxElementText",
                 },
                 {

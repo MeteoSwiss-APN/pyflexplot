@@ -195,7 +195,7 @@ def cli(ctx, setup_file_paths, input_setup_params, dry_run, **cli_args):
                 raise Exception("duplicate output file", out_file_path)
             out_file_paths.append(out_file_path)
 
-            if open_first_cmd and not out_file_paths:
+            if open_first_cmd and i_in + i_fld == 0:
                 open_plots(open_first_cmd, [out_file_path], dry_run)
 
     if open_all_cmd:
