@@ -57,7 +57,7 @@ class Test_Basic_BracketsInterface:
         assert self.ws["train"] == "train"
         assert self.ws["high_school"] == "high school"
 
-    def test_default_lang_none_bracket(self):
+    def test_active_lang_none_bracket(self):
         assert self.ws["train", None] == "train"
         assert self.ws["high_school", None] == "high school"
 
@@ -84,15 +84,15 @@ class Test_ContextDependent_OneToMany:
     ws = p_TranslatedWords(
         "words",
         {"at": {"en": "at", "de": {"place": "bei", "level": "auf"}}},
-        default_lang="de",
+        active_lang="de",
     )
 
-    def test_change_default_lang(self):
+    def test_change_active_lang(self):
         ws = self.ws
-        assert ws.default_lang == "de"
+        assert ws.active_lang == "de"
         assert ws.get("at") == "bei"
-        ws.set_default_lang("en")
-        assert ws.default_lang == "en"
+        ws.set_active_lang("en")
+        assert ws.active_lang == "en"
         assert ws.get("at") == "at"
 
     def test_default_context(self):
@@ -132,7 +132,7 @@ class Test_ContextDependent_OneToMany_BracketInterface:
 
     ws = Test_ContextDependent_OneToMany.ws
 
-    def test_default_lang_default_context(self):
+    def test_active_lang_default_context(self):
         assert self.ws["at"] == "bei"
         assert self.ws["at", None] == "bei"
         assert self.ws["at", None, None] == "bei"
@@ -141,7 +141,7 @@ class Test_ContextDependent_OneToMany_BracketInterface:
         assert self.ws["at", "en"] == "at"
         assert self.ws["at", "en", None] == "at"
 
-    def test_default_lang_explicit_context(self):
+    def test_active_lang_explicit_context(self):
         assert self.ws["at", None, "level"] == "auf"
 
     def test_explicit_lang_explicit_context(self):
@@ -159,15 +159,15 @@ class Test_ContextDependent_ManyToMany:
                 "de": {"f": "integrierte", "*": "integriert", "abbr": "int."},
             }
         },
-        default_lang="de",
+        active_lang="de",
     )
 
-    def test_change_default_lang(self):
+    def test_change_active_lang(self):
         ws = self.ws
-        assert ws.default_lang == "de"
+        assert ws.active_lang == "de"
         assert ws.get("integrated") == "integrierte"
-        ws.set_default_lang("en")
-        assert ws.default_lang == "en"
+        ws.set_active_lang("en")
+        assert ws.active_lang == "en"
         assert ws.get("integrated") == "integrated"
 
     def test_default_context(self):
@@ -216,7 +216,7 @@ class Test_ContextDependent_ManyToMany_BracketInterface:
 
     ws = Test_ContextDependent_ManyToMany.ws
 
-    def test_default_lang_default_context(self):
+    def test_active_lang_default_context(self):
         assert self.ws["integrated"] == "integrierte"
         assert self.ws["integrated", None] == "integrierte"
         assert self.ws["integrated", None, None] == "integrierte"
@@ -225,7 +225,7 @@ class Test_ContextDependent_ManyToMany_BracketInterface:
         assert self.ws["integrated", "en"] == "integrated"
         assert self.ws["integrated", "en", None] == "integrated"
 
-    def test_default_lang_explicit_context(self):
+    def test_active_lang_explicit_context(self):
         assert self.ws["integrated", None, "*"] == "integriert"
         assert self.ws["integrated", None, "f"] == "integrierte"
 
@@ -296,5 +296,5 @@ class Test_Interface_AddWords:
 
 
 class Test_Interface_Various:
-    def test_init_empty_with_default_lang(self):
-        TranslatedWords("name", default_lang="en")
+    def test_init_empty_with_active_lang(self):
+        TranslatedWords("name", active_lang="en")

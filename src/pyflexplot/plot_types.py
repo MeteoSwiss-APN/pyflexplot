@@ -87,7 +87,7 @@ class PlotLabels:
         self.mdata: MetaData = mdata
         self.setup: InputSetup = mdata.setup
 
-        self.words.set_default_lang(lang)
+        self.words.set_active_lang(lang)
 
         self.top_left: Dict[str, Any] = self._init_group(
             {

@@ -24,7 +24,7 @@ class Test_Basic:
     w = p_TranslatedWord(en="train", de="Zug")
 
     def test_str_default(self):
-        assert self.w.default_lang == "en"
+        assert self.w.active_lang == "en"
         assert self.w == "train"
 
     def test_lang_method(self):
@@ -45,7 +45,7 @@ class Test_Simple:
     w = p_TranslatedWord("high_school", en="high school", de="Mittelschule")
 
     def test_basics(self):
-        assert self.w.default_lang == "en"
+        assert self.w.active_lang == "en"
         assert self.w == "high school"
         assert self.w.get_in("en") == "high school"
         assert self.w.get_in("de") == "Mittelschule"
@@ -58,10 +58,10 @@ class Test_Simple:
 
     def test_default(self):
         w = self.w
-        assert w.default_lang == "en"
+        assert w.active_lang == "en"
         assert w == "high school"
-        w.set_default_lang("de")
-        assert w.default_lang == "de"
+        w.set_active_lang("de")
+        assert w.active_lang == "de"
         assert w == "Mittelschule"
 
 
@@ -87,7 +87,7 @@ class Test_Context_OneMany:
     """A word depending on context in one language."""
 
     w = p_TranslatedWord(
-        en="at", de=dict(place="bei", time="um", level="auf"), default_lang="de"
+        en="at", de=dict(place="bei", time="um", level="auf"), active_lang="de"
     )
 
     def test_name(self):
@@ -101,7 +101,7 @@ class Test_Context_OneMany:
         assert self.w["de"].ctx("time") == "um"
         assert self.w["de"].ctx("level") == "auf"
 
-    def test_explicit_contexts_default_lang(self):
+    def test_explicit_contexts_active_lang(self):
         assert self.w.ctx("place") == "bei"
         assert self.w.ctx("time") == "um"
         assert self.w.ctx("level") == "auf"
@@ -179,38 +179,38 @@ class Test_QueryDefault:
     def test_noquery(self):
         """Pass hard-coded default language."""
         w = self.w
-        w.set_default_lang(lang="de", query=None)
+        w.set_active_lang(lang="de", query=None)
         assert w == "Zug"
-        w.set_default_lang(lang="en", query=None)
+        w.set_active_lang(lang="en", query=None)
         assert w == "train"
 
     def test_query_hardcoded(self):
         """Query default language from hard-coded lamba."""
         w = self.w
-        w.set_default_lang(lang=None, query=lambda: "en")
+        w.set_active_lang(lang=None, query=lambda: "en")
         assert w == "train"
-        w.set_default_lang(lang=None, query=lambda: "de")
+        w.set_active_lang(lang=None, query=lambda: "de")
         assert w == "Zug"
 
     def test_query_dynamic(self):
         """Query default language dynamically from external object."""
         w = self.w
         default = AttrHolder()
-        w.set_default_lang(lang=None, query=default.get)
+        w.set_active_lang(lang=None, query=default.get)
         default.set("de")
-        w.set_default_lang(lang=None, query=lambda: "de")
+        w.set_active_lang(lang=None, query=lambda: "de")
         default.set("en")
-        w.set_default_lang(lang=None, query=lambda: "en")
+        w.set_active_lang(lang=None, query=lambda: "en")
 
     def test_query_dynamic_precedence(self):
         """Ensure precedence of query over hard-coded default."""
         w = self.w
         default = AttrHolder()
-        w.set_default_lang(lang="de", query=default.get)
+        w.set_active_lang(lang="de", query=default.get)
         default.set("de")
-        w.set_default_lang(lang=None, query=lambda: "de")
+        w.set_active_lang(lang=None, query=lambda: "de")
         default.set("en")
-        w.set_default_lang(lang=None, query=lambda: "en")
+        w.set_active_lang(lang=None, query=lambda: "en")
 
 
 class Test_Creation:

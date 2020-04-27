@@ -92,7 +92,7 @@ class TranslatedWord:
     cls_word = Word
 
     def __init__(
-        self, name=None, *, default_lang=None, default_lang_query=None, **translations
+        self, name=None, *, active_lang=None, active_lang_query=None, **translations
     ):
         """Create an instance of ``TranslatedWord``.
 
@@ -103,12 +103,12 @@ class TranslatedWord:
                 by replacing all spaces and dashes by underscores and dropping
                 all other special characters.
 
-            default_lang (str, optional): Default language. Overridden by
-                ``default_lang_query`` if the latter is not None. Defaults to
-                the first key in ``langs``.
+            active_lang (str, optional): Active language. Overridden by
+                ``active_lang_query`` if the latter is not None. Defaults to the
+                first key in ``langs``.
 
-            default_lang_query (callable, optional): Function to query the
-                default language. Overrides ``default_lang``. Defaults to None.
+            active_lang_query (callable, optional): Function to query the active
+                language. Overrides ``active_lang``. Defaults to None.
 
             **translations (dict of str: str or (dict of str: str)): The word
                 in different languages. The values are either strings for
@@ -159,7 +159,7 @@ class TranslatedWord:
                 )
             self._translations[lang] = ContextWord(lang, **word)
 
-        self.set_default_lang(lang=default_lang, query=default_lang_query)
+        self.set_active_lang(lang=active_lang, query=active_lang_query)
 
     def _check_langs(self, translations):
         """Check validity of languages and words."""
@@ -171,18 +171,15 @@ class TranslatedWord:
 
             if lang in self.__dict__:
                 # Name clash between language and class attribute
-                raise ValueError(f"invalid language specifier: {lang}")
+                raise ValueError("invalid language specifier", lang)
 
             if not isinstance(word, (Word, str, dict)):
                 # Wrong word type
-                raise ValueError(
-                    f"word must be of type str or dict, not "
-                    f"{type(word).__name__}: {word}"
-                )
+                raise ValueError("word must be of type str or dict", type(word), word)
 
             if not word:
                 # Undefined word
-                raise ValueError(f"empty word passed in language '{lang}': {word}")
+                raise ValueError("empty word passed in language", word, lang)
 
     def _collect_contexts(self, translations):
         ctxs = []
@@ -195,45 +192,43 @@ class TranslatedWord:
                 ctxs += [ctx for ctx in word.keys() if ctx not in ctxs]
         return ctxs
 
-    def set_default_lang(self, lang=None, query=None):
-        """Set the default language, either hard-coded or queriable.
+    def set_active_lang(self, lang=None, query=None):
+        """Set the active language, either hard-coded or queriable.
 
         Args:
             lang (str, None): Default language. Overridden by ``query`` if the
                 latter is not None. Defaults to the first key in
                 ``TranslatedWord.langs``.
 
-            query (callable, None): Function to query the default language.
+            query (callable, None): Function to query the active language.
                 Overrides ``default``. Defaults to None.
 
         """
         if lang is None:
             lang = next(iter(self.langs))
         elif lang not in self.langs:
-            raise ValueError(
-                f"invalid default language: {lang} (not among {self.langs})"
-            )
-        self._default_lang = lang
+            raise ValueError(f"invalid language: {lang} (not among {self.langs})")
+        self._active_lang = lang
 
         if query is not None and not callable(query):
             raise ValueError(f"query of type {type(query).__name__} not callable")
-        self._default_lang_query = query
+        self._active_lang_query = query
 
     @property
-    def default_lang(self):
-        """Get the default language."""
-        if self._default_lang_query is not None:
-            return self._default_lang_query()
-        return self._default_lang
+    def active_lang(self):
+        """Get the active language."""
+        if self._active_lang_query is not None:
+            return self._active_lang_query()
+        return self._active_lang
 
     def get(self):
-        """Get word in default language."""
+        """Get word in the active language."""
         return self.get_in(None)
 
     def get_in(self, lang):
         """Get word in a certain language."""
         if lang is None:
-            lang = self.default_lang
+            lang = self.active_lang
         try:
             return self._translations[lang]
         except KeyError:
@@ -243,7 +238,7 @@ class TranslatedWord:
             )
 
     def ctx(self, *args, **kwargs):
-        return self.get_in(self.default_lang).ctx(*args, **kwargs)
+        return self.get_in(self.active_lang).ctx(*args, **kwargs)
 
     @property
     def langs(self):
@@ -258,8 +253,7 @@ class TranslatedWord:
     def __repr__(self):
         s_langs = ", ".join([f"{l}={repr(v)}" for l, v in self._translations.items()])
         return (
-            f"{type(self).__name__}({self.name}, {s_langs}, "
-            f"default_lang='{self.default_lang}')"
+            f"{type(self).__name__}({self.name}, {s_langs}, lang='{self.active_lang}')"
         )
 
     def __eq__(self, other):
@@ -268,7 +262,7 @@ class TranslatedWord:
     def __getitem__(self, key):
         lang = key
         if lang is None:
-            lang = self.default_lang
+            lang = self.active_lang
         return self.get_in(lang)
 
 

@@ -19,7 +19,7 @@ class TranslatedWords:
 
     cls_word = TranslatedWord
 
-    def __init__(self, name, words_langs=None, *, default_lang=None):
+    def __init__(self, name, words_langs=None, *, active_lang=None):
         """Create an instance of ``TranslatedWords``.
 
         Args:
@@ -32,8 +32,8 @@ class TranslatedWords:
                 All words must be defined in the same languages. Defaults to
                 None.
 
-            default_lang (str, optional): Default language. Defaults to the
-                first language in which the first word is defined.
+            active_lang (str, optional): Active language. Defaults to the first
+                language in which the first word is defined.
 
         """
         self.name = name
@@ -50,10 +50,10 @@ class TranslatedWords:
                 raise ValueError(f"word '{word_name}' not a dict: {word_langs}")
             self.add(word_name, **word_langs)
 
-            if default_lang is None:
-                default_lang = next(iter(self._langs))
+            if active_lang is None:
+                active_lang = next(iter(self._langs))
 
-        self.set_default_lang(default_lang)
+        self.set_active_lang(active_lang)
 
     def add(self, name=None, **word_langs):
         """Add a word."""
@@ -67,7 +67,7 @@ class TranslatedWords:
                 f"!= set({self._langs})"
             )
         word = self.cls_word(
-            name, default_lang_query=lambda: self.default_lang, **word_langs
+            name, active_lang_query=lambda: self.active_lang, **word_langs
         )
         self.words[name] = word
         return word
@@ -95,11 +95,11 @@ class TranslatedWords:
 
         return name
 
-    def set_default_lang(self, lang):
-        """Change default language recursively for all words."""
+    def set_active_lang(self, lang):
+        """Change active language recursively for all words."""
         if lang and self.langs and lang not in self.langs:
             raise MissingLanguageError(f"{lang} not in {self.langs}")
-        self._default_lang = lang
+        self._active_lang = lang
 
     def get(self, name, lang=None, ctx=None, *, chainable=True):
 
@@ -116,9 +116,9 @@ class TranslatedWords:
         return word.get_in(lang).ctx(ctx)
 
     @property
-    def default_lang(self):
-        """Return the default language."""
-        return self._default_lang
+    def active_lang(self):
+        """Return the active language."""
+        return self._active_lang
 
     @property
     def langs(self):
@@ -152,5 +152,5 @@ class Words(TranslatedWords):  # SR_TMP TODO remove parent
         # SR_TMP <
         lang = "None"
         words_langs = {name: {lang: word} for name, word in words.items()}
-        super().__init__(name, words_langs, default_lang=lang)
+        super().__init__(name, words_langs, active_lang=lang)
         # SR_TMP >
