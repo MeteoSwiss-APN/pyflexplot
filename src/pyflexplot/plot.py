@@ -28,9 +28,10 @@ from .plot_lib import TextBoxAxes
 from .plot_lib import ax_w_h_in_fig_coords
 from .plot_lib import post_summarize_plot
 from .plot_types import PlotConfig
-from .plot_types import PlotLabels
 from .plot_types import colors_from_plot_config
 from .plot_types import create_map_conf
+from .plot_types import create_plot_config
+from .plot_types import create_plot_labels
 from .plot_types import levels_from_time_stats
 from .utils import format_level_ranges
 from .utils import summarizable
@@ -508,7 +509,8 @@ def plot_fields(
             plot = None
         else:
             assert mdata is not None  # mypy
-            plot_config = PlotConfig.create(setup, PlotLabels(setup.lang, mdata))
+            plot_labels = create_plot_labels(setup, mdata)
+            plot_config = create_plot_config(setup, plot_labels)
             plot = Plot(field, plot_config, map_conf)
             plot.save(out_file_path, write=write)
 

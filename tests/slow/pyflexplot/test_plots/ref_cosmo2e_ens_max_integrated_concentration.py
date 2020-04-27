@@ -389,7 +389,10 @@ plot_summary = {
                     "replace_edge_spaces": False,
                     "s": "FLEXPART "
                     "basierend auf "
-                    "COSMO-2, "
+                    "COSMO-2 "
+                    "Ensemble (X "
+                    "Members: "
+                    "XX-YY), "
                     "2019-07-27 "
                     "12:00 UTC",
                     "type": "TextBoxElementText",

@@ -13,6 +13,9 @@ from .shared import datadir  # noqa  # required by _TestBase.test
 INFILE_NAME = "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc"
 ENS_MEMBER_IDS = [0, 1, 5, 10, 15, 20]
 
+# Uncomment to recreate all references
+# _TestBase = _CreateReference
+
 
 # class Test_EnsMedian_Concentration(_CreateReference):
 class Test_EnsMedian_Concentration(_TestBase):

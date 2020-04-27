@@ -616,8 +616,7 @@ class MetaDataCollector:
     def collect_species_mdata(self, mdata_raw: Dict[str, Any]) -> None:
         """Collect species meta data."""
 
-        model = self.nc_meta_data["analysis"]["model"]
-        name_core = nc_var_name(self.setup, model)
+        name_core = nc_var_name(self.setup, self.nc_meta_data["analysis"]["model"])
         if self.setup.variable == "deposition":  # SR_TMP
             name_core = name_core[3:]
         try:  # SR_TMP IFS
@@ -640,6 +639,7 @@ class MetaDataCollector:
         else:
             raise NotImplementedError(f"half_life of '{name}'")
 
+        sediment_vel = 0.0  # SR_HC
         deposit_vel_unit = "m s-1"  # SR_HC
         sediment_vel_unit = "m s-1"  # SR_HC
         washout_coeff_unit = "s-1"  # SR_HC
@@ -651,7 +651,7 @@ class MetaDataCollector:
                 "species_half_life_unit": half_life_unit,
                 "species_deposit_vel": deposit_vel,
                 "species_deposit_vel_unit": deposit_vel_unit,
-                "species_sediment_vel": 0.0,
+                "species_sediment_vel": sediment_vel,
                 "species_sediment_vel_unit": sediment_vel_unit,
                 "species_washout_coeff": washout_coeff,
                 "species_washout_coeff_unit": washout_coeff_unit,

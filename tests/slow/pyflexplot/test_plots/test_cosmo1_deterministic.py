@@ -7,6 +7,9 @@ from .shared import _CreateReference  # noqa:F401
 from .shared import _TestBase
 from .shared import datadir  # noqa:F401  # required by _TestBase.test
 
+# Uncomment to recreate all references
+# _TestBase = _CreateReference
+
 INFILE_NAME = "flexpart_cosmo-1_2019093012.nc"
 
 

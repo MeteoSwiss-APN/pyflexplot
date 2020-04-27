@@ -113,10 +113,7 @@ class PlotLabels:
             self.mdata.variable_level_bot_unit.value,
             self.mdata.variable_level_top_unit.value,
         )
-        if not level:
-            s_level = ""
-        else:
-            s_level = f" {self.words['at', None, 'level']} {level}"
+        s_level = f" {self.words['at', None, 'level']} {level}" if level else ""
         integr_type = get_integr_type(self.setup)
         if integr_type == "mean":
             integr_op = self.words["averaged_over"].s
@@ -124,16 +121,15 @@ class PlotLabels:
             integr_op = self.words["summed_over"].s
         elif integr_type == "accum":
             integr_op = self.words["accumulated_over"].s
-        period = format_integr_period(self.mdata)
-        start = self.mdata.simulation_integr_start_rel
-        unit = self.mdata.variable_unit
-        unit_escaped = str(unit).replace("{", "{{").replace("}", "}}")
-        ts_abs = self.mdata.simulation_now
-        ts_rel = self.mdata.simulation_now_rel
+        _unit = self.mdata.variable_unit
+        unit_escaped = str(_unit).replace("{", "{{").replace("}", "}}")
         return self._init_group(
             {
                 "variable": f"{get_long_name(self.setup, self.words)}{s_level}",
-                "period": f"{integr_op} {period} ({self.words['since']} +{start})",
+                "period": (
+                    f"{integr_op} {format_integr_period(self.mdata)} "
+                    f"({self.words['since']} +{self.mdata.simulation_integr_start_rel})"
+                ),
                 "subtitle_thr_agrmt_fmt": (
                     f"Cloud: {self.symbols['geq']} {{thr}} {unit_escaped}"
                 ),
@@ -141,7 +137,9 @@ class PlotLabels:
                     f"Cloud: {self.symbols['geq']} {{thr}} {unit_escaped}; "
                     f"members: {self.symbols['geq']} {{mem}}"
                 ),
-                "timestep": f"{ts_abs} (+{ts_rel})",
+                "timestep": (
+                    f"{self.mdata.simulation_now} (+{self.mdata.simulation_now_rel})"
+                ),
                 "time_since_release_start": (
                     f"{self.mdata.simulation_now_rel} "
                     f"{self.words['since']} "
@@ -159,21 +157,19 @@ class PlotLabels:
         )
 
     def _init_right_top(self) -> Dict[str, Any]:
-        name = get_short_name(self.setup, self.words)
-        unit = self.mdata.variable_unit
         return self._init_group(
             {
-                "title": f"{name}",
-                "title_unit": f"{name} ({unit})",
+                "title": get_short_name(self.setup, self.words),
+                "title_unit": (
+                    f"{get_short_name(self.setup, self.words)} "
+                    f"({self.mdata.variable_unit})"
+                ),
                 "release_site": self.words["release_site"].s,
                 "max": self.words["max"].s,
             },
         )
 
     def _init_right_bottom(self) -> Dict[str, Any]:
-        deg_ = f"{self.symbols['deg']}{self.symbols['short_space']}"
-        north = f"{self.symbols['short_space']}{self.words['north', None, 'abbr']}"
-        east = f"{self.symbols['short_space']}{self.words['east', None, 'abbr']}"
         return self._init_group(
             {
                 "title": self.words["release"].t,
@@ -181,12 +177,8 @@ class PlotLabels:
                 "end": self.words["end"].s,
                 "latitude": self.words["latitude"].s,
                 "longitude": self.words["longitude"].s,
-                "lat_deg_fmt": (
-                    f"{{d}}{deg_}{{m}}'{north} ({{f:.4f}}{self.words['degN']})"
-                ),
-                "lon_deg_fmt": (
-                    f"{{d}}{deg_}{{m}}'{east} ({{f:.4f}}{self.words['degE']})"
-                ),
+                "lat_deg_fmt": format_coord_label("north", self.words, self.symbols),
+                "lon_deg_fmt": format_coord_label("east", self.words, self.symbols),
                 "height": self.words["height"].s,
                 "rate": self.words["rate"].s,
                 "mass": self.words["total_mass"].s,
@@ -203,24 +195,44 @@ class PlotLabels:
         )
 
     def _init_bottom(self) -> Dict[str, Any]:
-        model = self.mdata.simulation_model_name.value
-        n_members = 21  # SR_TMP SR_HC TODO un-hardcode
-        ens_member_id = "{:03d}-{:03d}".format(0, 20)  # SR_TMP SR_HC TODO un-hardcode
-        model_ens = (
-            f"{model} {self.words['ensemble']} ({n_members} "
-            f"{self.words['member', None, 'pl']}: {ens_member_id}"
+        # SR_TMP < TODO un-hardcode
+        n_members = "X"  # SR_HC
+        # ens_member_id = "{:03d}-{:03d}".format(0, 20)  # SR_HC
+        ens_member_id = "XX-YY"  # SR_HC
+        # SR_TMP >
+        s_ens = (
+            f" {self.words['ensemble']} "
+            f"({n_members} {self.words['member', None, 'pl']}: {ens_member_id})"
         )
-        start = self.mdata.simulation_start
-        model_info_fmt = (
-            f"{self.words['flexpart']} {self.words['based_on']} {model}, {start}"
+        info_fmt_base = (
+            f"{self.words['flexpart']} {self.words['based_on']} "
+            f"{self.mdata.simulation_model_name.value}{{ens}}, "
+            f"{self.mdata.simulation_start}"
         )
         return self._init_group(
             {
-                "model_info_det": model_info_fmt.format(m=model),
-                "model_info_ens": model_info_fmt.format(m=model_ens),
+                "model_info_det": info_fmt_base.format(ens=""),
+                "model_info_ens": info_fmt_base.format(ens=s_ens),
                 "copyright": f"{self.symbols['copyright']}{self.words['meteoswiss']}",
             },
         )
+
+
+def create_plot_labels(setup: InputSetup, mdata: MetaData):
+    return PlotLabels(setup.lang, mdata)
+
+
+def format_coord_label(direction: str, words: TranslatedWords, symbols: Words) -> str:
+    deg_unit = f"{symbols['deg']}{symbols['short_space']}"
+    min_unit = f"'{symbols['short_space']}"
+    dir_unit = words[direction, None, "abbr"]
+    if direction == "north":
+        deg_dir_unit = words["degN"]
+    elif direction == "east":
+        deg_dir_unit = words["degE"]
+    else:
+        raise NotImplementedError("unit for direction", direction)
+    return f"{{d}}{deg_unit}{{m}}{min_unit}{dir_unit} ({{f:.4f}}{deg_dir_unit})"
 
 
 # pylint: disable=R0911,R0912  # too-many-return-statements,too-many-branches
@@ -315,63 +327,63 @@ class PlotConfig:
     text_box_setup: Optional[Dict[str, float]] = None  # SR_TODO sensible default
     top_box_subtitle: str = ""
 
-    @classmethod
-    def create(cls, setup: InputSetup, labels: PlotLabels) -> "PlotConfig":
-        new_config_dct: Dict[str, Any] = {}
-        if setup.variable == "concentration":
-            new_config_dct["n_levels"] = 8
-        elif setup.variable == "deposition":
-            new_config_dct["n_levels"] = 9
-        if setup.simulation_type == "deterministic":
-            new_config_dct["text_box_setup"] = {
-                "h_rel_t": 0.1,
-                "h_rel_b": 0.03,
-                "w_rel_r": 0.25,
-                "pad_hor_rel": 0.015,
-                "h_rel_box_rt": 0.45,
-            }
-            new_config_dct["model_info"] = labels.bottom["model_info_det"]
-            if setup.plot_type == "affected_area_mono":
-                new_config_dct["extend"] = "none"
-                new_config_dct["n_levels"] = 1
-        if setup.simulation_type == "ensemble":
-            new_config_dct["text_box_setup"] = {
-                "h_rel_t": 0.14,
-                "h_rel_b": 0.03,
-                "w_rel_r": 0.25,
-                "pad_hor_rel": 0.015,
-                "h_rel_box_rt": 0.46,
-            }
-            new_config_dct["model_info"] = labels.bottom["model_info_ens"]
-            if setup.plot_type == "ens_thr_agrmt":
-                new_config_dct["extend"] = "min"
-                new_config_dct["n_levels"] = 7
-                new_config_dct["d_level"] = 2
-                new_config_dct["level_range_style"] = "int"
-                new_config_dct["level_ranges_align"] = "left"
-                new_config_dct["mark_field_max"] = False
-                new_config_dct["top_box_subtitle"] = labels.top_left[
-                    "subtitle_thr_agrmt_fmt"
-                ].format(thr=setup.ens_param_thr)
-                new_config_dct["legend_box_title"] = labels.right_top["title"]
-                new_config_dct["levels_scale"] = "lin"
-            elif setup.plot_type == "ens_cloud_arrival_time":
-                new_config_dct["extend"] = "max"
-                new_config_dct["n_levels"] = 5
-                new_config_dct["d_level"] = 3
-                new_config_dct["level_range_style"] = "int"
-                new_config_dct["level_ranges_align"] = "left"
-                new_config_dct["mark_field_max"] = False
-                new_config_dct["top_box_subtitle"] = labels.top_left[
-                    "subtitle_cloud_arrival_time"
-                ].format(thr=setup.ens_param_thr, mem=setup.ens_param_mem_min)
-                new_config_dct["legend_box_title"] = labels.right_top["title"]
-                new_config_dct["levels_scale"] = "lin"
-        # SR_TMP < TODO set default
-        if "lebend_box_title" not in new_config_dct:
-            new_config_dct["legend_box_title"] = labels.right_top["title_unit"]
-        # SR_TMP >
-        return cls(setup=setup, labels=labels, **new_config_dct)
+
+def create_plot_config(setup: InputSetup, labels: PlotLabels) -> "PlotConfig":
+    new_config_dct: Dict[str, Any] = {}
+    if setup.variable == "concentration":
+        new_config_dct["n_levels"] = 8
+    elif setup.variable == "deposition":
+        new_config_dct["n_levels"] = 9
+    if setup.simulation_type == "deterministic":
+        new_config_dct["text_box_setup"] = {
+            "h_rel_t": 0.1,
+            "h_rel_b": 0.03,
+            "w_rel_r": 0.25,
+            "pad_hor_rel": 0.015,
+            "h_rel_box_rt": 0.45,
+        }
+        new_config_dct["model_info"] = labels.bottom["model_info_det"]
+        if setup.plot_type == "affected_area_mono":
+            new_config_dct["extend"] = "none"
+            new_config_dct["n_levels"] = 1
+    if setup.simulation_type == "ensemble":
+        new_config_dct["text_box_setup"] = {
+            "h_rel_t": 0.14,
+            "h_rel_b": 0.03,
+            "w_rel_r": 0.25,
+            "pad_hor_rel": 0.015,
+            "h_rel_box_rt": 0.46,
+        }
+        new_config_dct["model_info"] = labels.bottom["model_info_ens"]
+        if setup.plot_type == "ens_thr_agrmt":
+            new_config_dct["extend"] = "min"
+            new_config_dct["n_levels"] = 7
+            new_config_dct["d_level"] = 2
+            new_config_dct["level_range_style"] = "int"
+            new_config_dct["level_ranges_align"] = "left"
+            new_config_dct["mark_field_max"] = False
+            new_config_dct["top_box_subtitle"] = labels.top_left[
+                "subtitle_thr_agrmt_fmt"
+            ].format(thr=setup.ens_param_thr)
+            new_config_dct["legend_box_title"] = labels.right_top["title"]
+            new_config_dct["levels_scale"] = "lin"
+        elif setup.plot_type == "ens_cloud_arrival_time":
+            new_config_dct["extend"] = "max"
+            new_config_dct["n_levels"] = 5
+            new_config_dct["d_level"] = 3
+            new_config_dct["level_range_style"] = "int"
+            new_config_dct["level_ranges_align"] = "left"
+            new_config_dct["mark_field_max"] = False
+            new_config_dct["top_box_subtitle"] = labels.top_left[
+                "subtitle_cloud_arrival_time"
+            ].format(thr=setup.ens_param_thr, mem=setup.ens_param_mem_min)
+            new_config_dct["legend_box_title"] = labels.right_top["title"]
+            new_config_dct["levels_scale"] = "lin"
+    # SR_TMP < TODO set default
+    if "lebend_box_title" not in new_config_dct:
+        new_config_dct["legend_box_title"] = labels.right_top["title_unit"]
+    # SR_TMP >
+    return PlotConfig(setup=setup, labels=labels, **new_config_dct)
 
 
 def colors_flexplot(n_levels: int, extend: str) -> List[Tuple[int, int, int]]:

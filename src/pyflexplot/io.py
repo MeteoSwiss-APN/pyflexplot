@@ -406,20 +406,18 @@ class FileReader:
 
         model = self.nc_meta_data["analysis"]["model"]
 
-        # Get dimension names (model-specific
+        # Get dimension names (model-specific)
         dim_names = self._dim_names()
 
         # Select variable in file
         var_name = nc_var_name(setup, model)
         nc_var = fi.variables[var_name]
 
-        # SR_TMP < TODO proper solution
         if setup.level is None:
             level = None
         else:
             assert len(setup.level) == 1
             level = next(iter(setup.level))
-        # SR_TMP >
 
         # Indices of field along NetCDF dimensions
         dim_idcs_by_name = {
@@ -428,6 +426,7 @@ class FileReader:
             dim_names["lat"]: slice(None),
             dim_names["lon"]: slice(None),
         }
+
         # SR_TMP <
         for dim_name in ["nageclass", "noutrel", "numpoint"]:
             if dim_name in expand:

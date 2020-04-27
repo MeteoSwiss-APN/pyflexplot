@@ -97,12 +97,20 @@ class _TestBase:
         field, mdata = self.get_field_and_mdata(datadir)
         res = field.summarize()
         sol = self.get_reference("field_summary")
-        assert_nested_equal(res, sol, float_close_ok=True)
+        try:
+            assert_nested_equal(res, sol, float_close_ok=True)
+        except AssertionError as e:
+            msg = f"field summaries differ (result vs. solution):\n\n {e}"
+            raise AssertionError(msg) from None
 
         plot = self.get_plot(field, mdata)
         res = plot.summarize()
         sol = self.get_reference("plot_summary")
-        assert_nested_equal(res, sol, float_close_ok=True)
+        try:
+            assert_nested_equal(res, sol, float_close_ok=True)
+        except AssertionError as e:
+            msg = f"plot summaries differ (result vs. solution):\n\n{e}"
+            raise AssertionError(msg) from None
 
 
 class ReferenceFileCreationSuccess(Exception):
