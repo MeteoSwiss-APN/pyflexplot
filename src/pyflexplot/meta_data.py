@@ -16,7 +16,6 @@ from typing import Generic
 from typing import List
 from typing import Mapping
 from typing import Optional
-from typing import Sequence
 from typing import Tuple
 from typing import TypeVar
 from typing import Union
@@ -32,8 +31,6 @@ from pydantic.generics import GenericModel
 from .setup import InputSetup
 from .setup import InputSetupCollection
 from .utils import summarizable
-from .words import WORDS
-from .words import TranslatedWords
 
 ValueT = TypeVar("ValueT", int, float, str, datetime, timedelta)
 
@@ -160,52 +157,6 @@ def format_meta_datum(value: str, join: Optional[str] = None) -> str:
         return f"{hours:02d}:{mins:02d}$\\,$h"
     fmt = "g" if isinstance(value, (float, int)) else ""
     return f"{{:{fmt}}}".format(value)
-
-
-def format_level_range(
-    value_bottom: Union[float, Sequence[float]],
-    value_top: Union[float, Sequence[float]],
-    unit_bottom: str,
-    unit_top: str,
-) -> Optional[str]:
-
-    if (value_bottom, value_top) == (-1, -1):
-        return None
-
-    def fmt(bot, top):
-        if unit_bottom != unit_top:
-            raise Exception(f"level units differ: '{unit_bottom}' != '{unit_top}'")
-        unit_fmtd = unit_top
-        return f"{bot:g}" + r"$-$" + f"{top:g} {unit_fmtd}"
-
-    try:
-        # One level range (early exit)
-        return fmt(value_bottom, value_top)
-    except TypeError:
-        pass
-
-    # Multiple level ranges
-    assert isinstance(value_bottom, Collection)  # mypy
-    assert isinstance(value_top, Collection)  # mypy
-    bots = sorted(value_bottom)
-    tops = sorted(value_top)
-    if len(bots) != len(tops):
-        raise Exception(f"inconsistent no. levels: {len(bots)} != {len(tops)}")
-    n = len(bots)
-    if n == 2:
-        # Two level ranges
-        if tops[0] == bots[1]:
-            return fmt(bots[0], tops[1])
-        else:
-            return f"{fmt(bots[0], tops[0])} + {fmt(bots[1], tops[1])}"
-    elif n == 3:
-        # Three level ranges
-        if tops[0] == bots[1] and tops[1] == bots[2]:
-            return fmt(bots[0], tops[2])
-        else:
-            raise NotImplementedError(f"3 non-continuous level ranges")
-    else:
-        raise NotImplementedError(f"{n} sets of levels")
 
 
 def init_mdatum(type_: type, name: str, attrs: Optional[Mapping[str, Any]] = None):
@@ -437,24 +388,17 @@ def collect_meta_data(
     fi: nc4.Dataset, setup: InputSetup, nc_meta_data: Mapping[str, Any],
 ) -> MetaData:
     """Collect meta data in open NetCDF file."""
-    words = WORDS
-    words.set_default_lang(setup.lang)
-    return MetaDataCollector(fi, setup, words, nc_meta_data).run()
+    return MetaDataCollector(fi, setup, nc_meta_data).run()
 
 
 class MetaDataCollector:
     """Collect meta data for a field from an open NetCDF file."""
 
     def __init__(
-        self,
-        fi: nc4.Dataset,
-        setup: InputSetup,
-        words: TranslatedWords,
-        nc_meta_data: Mapping[str, Any],
+        self, fi: nc4.Dataset, setup: InputSetup, nc_meta_data: Mapping[str, Any],
     ) -> None:
         self.fi = fi
         self.setup = setup
-        self._words = words
         self.nc_meta_data = nc_meta_data  # SR_TMP
 
         # Collect all global attributes
@@ -536,7 +480,7 @@ class MetaDataCollector:
 
     def collect_release_mdata(self, mdata_raw: Dict[str, Any]) -> None:
         """Collect release point meta data."""
-        release = ReleaseMetaData.from_file(self.fi, mdata_raw, self.setup, self._words)
+        release = ReleaseMetaData.from_file(self.fi, mdata_raw, self.setup)
         mdata_raw.update(
             {
                 # "release_duration": release.duration,
@@ -573,13 +517,13 @@ class MetaDataCollector:
             level_bot = -1.0
             level_top = -1.0
         else:
-            level_unit = self._words["m_agl"].s
             try:  # SR_TMP IFS
-                _var = self.fi.variables["level"]
+                var = self.fi.variables["level"]
             except KeyError:  # SR_TMP IFS
-                _var = self.fi.variables["height"]  # SR_TMP IFS
-            level_bot = 0.0 if idx == 0 else float(_var[idx - 1])
-            level_top = float(_var[idx])
+                var = self.fi.variables["height"]  # SR_TMP IFS
+            level_bot = 0.0 if idx == 0 else float(var[idx - 1])
+            level_top = float(var[idx])
+            level_unit = var.getncattr("units")
 
         mdata_raw.update(
             {
@@ -708,7 +652,9 @@ class RawReleaseMetaData(BaseModel):
     urlat: float
     urlon: float
     zbot: float
+    zbot_unit: str
     ztop: float
+    ztop_unit: str
 
     class Config:  # noqa
         arbitrary_types_allowed = True
@@ -765,9 +711,12 @@ class RawReleaseMetaData(BaseModel):
             ("zbot", "RELZZ1"),
             ("ztop", "RELZZ2"),
         ]
+        store_units = ["zbot", "ztop"]
         params = {"name": name}
         for key_out, key_in in key_pairs:
             params[key_out] = fi.variables[key_in][idx].tolist()
+            if key_out in store_units:
+                params[f"{key_out}_unit"] = fi.variables[key_in].getncattr("units")
         return cls(**params)
 
 
@@ -798,11 +747,7 @@ class ReleaseMetaData(BaseModel):
 
     @classmethod
     def from_file(
-        cls,
-        fi: nc4.Dataset,
-        nc_meta_data: Dict[str, Any],
-        setup: InputSetup,
-        words: TranslatedWords,
+        cls, fi: nc4.Dataset, nc_meta_data: Dict[str, Any], setup: InputSetup
     ) -> "ReleaseMetaData":
         """Read information on a release from open file."""
 
@@ -816,6 +761,8 @@ class ReleaseMetaData(BaseModel):
         end_rel = raw.rel_end
         duration = end_rel - start_rel
         duration_unit = "s"  # SR_HC
+        assert raw.zbot_unit == raw.ztop_unit
+        height_unit = raw.zbot_unit
         assert len(raw.ms_parts) == 1
         mass = next(iter(raw.ms_parts))
         mass_unit = "Bq"  # SR_HC
@@ -826,7 +773,7 @@ class ReleaseMetaData(BaseModel):
             end=nc_meta_data["simulation_start"] + end_rel,
             end_rel=end_rel,
             height=np.mean([raw.zbot, raw.ztop]),
-            height_unit=words["m_agl"].s,
+            height_unit=height_unit,
             lat=np.mean([raw.lllat, raw.urlat]),
             lon=np.mean([raw.lllon, raw.urlon]),
             mass=mass,

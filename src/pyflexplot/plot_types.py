@@ -21,10 +21,10 @@ from matplotlib.colors import Colormap
 # Local
 from .data import Field
 from .meta_data import MetaData
-from .meta_data import format_level_range
 from .meta_data import get_integr_type
 from .plot_lib import MapAxesConf
 from .setup import InputSetup
+from .utils import format_level_range
 from .utils import summarizable
 from .words import SYMBOLS
 from .words import WORDS
@@ -89,7 +89,6 @@ class PlotLabels:
 
         self.words.set_default_lang(lang)
 
-        assert isinstance(self.mdata.variable_unit.value, str)  # mypy
         self.top_left: Dict[str, Any] = self._init_group(
             {
                 "variable": (
@@ -102,11 +101,11 @@ class PlotLabels:
                 ),
                 "subtitle_thr_agrmt_fmt": (
                     f"Cloud: {self.symbols['geq']} {{thr}} "
-                    f"{escape_format_keys(format_unit(self.mdata.variable_unit.value))}"
+                    f"{escape_format_keys(format_unit(str(self.mdata.variable_unit)))}"
                 ),
                 "subtitle_cloud_arrival_time": (
                     f"Cloud: {self.symbols['geq']} {{thr}} "
-                    f"{escape_format_keys(format_unit(self.mdata.variable_unit.value))}"
+                    f"{escape_format_keys(format_unit(str(self.mdata.variable_unit)))}"
                     f"; members: {self.symbols['geq']} {{mem}}"
                 ),
                 "timestep": (
@@ -123,7 +122,7 @@ class PlotLabels:
         self.top_right: Dict[str, Any] = self._init_group(
             {
                 "species": f"{self.mdata.species_name}",
-                "site": f"{self.words['site']}: {self.mdata.release_site_name.value}",
+                "site": f"{self.words['site']}: {self.mdata.release_site_name}",
             },
         )
 
@@ -132,7 +131,7 @@ class PlotLabels:
                 "title": get_short_name(self.setup, self.words),
                 "title_unit": (
                     f"{get_short_name(self.setup, self.words)} "
-                    f"({format_unit(self.mdata.variable_unit.value)})"
+                    f"({format_unit(str(self.mdata.variable_unit))})"
                 ),
                 "release_site": self.words["release_site"].s,
                 "max": self.words["max"].s,
@@ -174,7 +173,7 @@ class PlotLabels:
         )
         info_fmt_base = (
             f"{self.words['flexpart']} {self.words['based_on']} "
-            f"{self.mdata.simulation_model_name.value}{{ens}}, "
+            f"{self.mdata.simulation_model_name}{{ens}}, "
             f"{self.mdata.simulation_start}"
         )
         self.bottom: Dict[str, Any] = self._init_group(
@@ -203,15 +202,26 @@ def escape_format_keys(s: str) -> str:
 
 
 def format_level_label(mdata: MetaData, words: TranslatedWords):
-    assert isinstance(mdata.variable_level_bot_unit.value, str)  # mypy
-    assert isinstance(mdata.variable_level_top_unit.value, str)  # mypy
+    unit = mdata.variable_level_bot_unit.value
+    if mdata.variable_level_top_unit.value != unit:
+        raise Exception(
+            "inconsistent level units",
+            mdata.variable_level_bot_unit,
+            mdata.variable_level_top_unit,
+        )
+    if not unit:
+        pass
+    elif unit == "meters":
+        unit = words["m_agl"].s
+    else:
+        raise NotImplementedError("unexpected level unit", unit)
+    assert isinstance(unit, str)  # mypy
     level = format_level_range(
-        mdata.variable_level_bot.value,
-        mdata.variable_level_top.value,
-        mdata.variable_level_bot_unit.value,
-        mdata.variable_level_top_unit.value,
+        mdata.variable_level_bot.value, mdata.variable_level_top.value, unit
     )
-    return f" {words['at', None, 'level']} {format_unit(level)}" if level else ""
+    if not level:
+        return ""
+    return f" {words['at', None, 'level']} {format_unit(level)}"
 
 
 def format_unit(s: str) -> str:
