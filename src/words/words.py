@@ -37,10 +37,8 @@ class TranslatedWords:
 
         """
         self.name = name
-
         if words_langs is None:
             words_langs = {}
-
         self._langs = None
         self.words = {}
         for word_name, word_langs in words_langs.items():
@@ -49,10 +47,8 @@ class TranslatedWords:
             except TypeError:
                 raise ValueError(f"word '{word_name}' not a dict: {word_langs}")
             self.add(word_name, **word_langs)
-
             if active_lang is None:
                 active_lang = next(iter(self._langs))
-
         self.set_active_lang(active_lang)
 
     def add(self, name=None, **word_langs):
@@ -73,7 +69,6 @@ class TranslatedWords:
         return word
 
     def _prepare_word_name(self, name, word_langs):
-
         if name is None:
             name = next(iter(word_langs.values()))
             if isinstance(name, dict):
@@ -87,7 +82,6 @@ class TranslatedWords:
             name = to_varname(
                 name, filter_invalid=lambda c: "_" if c in "- " else ""
             ).lower()
-
         if not isinstance(name, str):
             raise ValueError(
                 f"argument `name`: expect type str, got {type(name).__name__}"
@@ -101,14 +95,12 @@ class TranslatedWords:
             raise MissingLanguageError(f"{lang} not in {self.langs}")
         self._active_lang = lang
 
-    def get(self, name, lang=None, ctx=None, *, chainable=True):
-
+    def get(self, name, *, ctx=None, lang=None, chain=True):
         try:
             word = self.words[name]
         except KeyError:
             raise MissingWordError(name)
-
-        if chainable:
+        if chain:
             if lang is None and ctx is None:
                 return word
             elif ctx is None:
@@ -142,9 +134,15 @@ class TranslatedWords:
     def __getitem__(self, key):
         if not isinstance(key, tuple):
             key = (key,)
-        elif len(key) not in [1, 2, 3]:
+        if len(key) == 1:
+            name, ctx, lang = key[0], None, None
+        elif len(key) == 2:
+            name, ctx, lang = key[0], key[1], None
+        elif len(key) == 3:
+            name, ctx, lang = key[0], key[1], key[2]
+        else:
             raise KeyError(f"wrong number of key elements: {len(key)} not in [1, 2, 3]")
-        return self.get(*key, chainable=False)
+        return self.get(name, ctx=ctx, lang=lang, chain=False)
 
 
 class Words(TranslatedWords):  # SR_TMP TODO remove parent

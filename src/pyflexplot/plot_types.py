@@ -155,8 +155,8 @@ class PlotLabels:
                 "max": self.words["max"].s,
                 "name": self.words["substance"].s,
                 "half_life": self.words["half_life"].s,
-                "deposit_vel": self.words["deposition_velocity", None, "abbr"].s,
-                "sediment_vel": self.words["sedimentation_velocity", None, "abbr"].s,
+                "deposit_vel": self.words["deposition_velocity", "abbr"].s,
+                "sediment_vel": self.words["sedimentation_velocity", "abbr"].s,
                 "washout_coeff": self.words["washout_coeff"].s,
                 "washout_exponent": self.words["washout_exponent"].s,
             },
@@ -169,7 +169,7 @@ class PlotLabels:
         # SR_TMP >
         s_ens = (
             f" {self.words['ensemble']} "
-            f"({n_members} {self.words['member', None, 'pl']}: {ens_member_id})"
+            f"({n_members} {self.words['member', 'pl']}: {ens_member_id})"
         )
         info_fmt_base = (
             f"{self.words['flexpart']} {self.words['based_on']} "
@@ -221,7 +221,7 @@ def format_level_label(mdata: MetaData, words: TranslatedWords):
     )
     if not level:
         return ""
-    return f" {words['at', None, 'level']} {format_unit(level)}"
+    return f" {words['at', 'level']} {format_unit(level)}"
 
 
 def format_unit(s: str) -> str:
@@ -258,7 +258,7 @@ def format_integr_period(
 def format_coord_label(direction: str, words: TranslatedWords, symbols: Words) -> str:
     deg_unit = f"{symbols['deg']}{symbols['short_space']}"
     min_unit = f"'{symbols['short_space']}"
-    dir_unit = words[direction, None, "abbr"]
+    dir_unit = words[direction, "abbr"]
     if direction == "north":
         deg_dir_unit = words["degN"]
     elif direction == "east":
@@ -286,7 +286,7 @@ def get_long_name(setup: InputSetup, words: TranslatedWords) -> str:
         else:
             assert isinstance(setup.deposition_type, str)  # mypy
             word = setup.deposition_type
-        dep = words[word, None, "f"].s
+        dep = words[word, "f"].s
         if setup.plot_type == "ens_min":
             return f"{words['ensemble_minimum']} {dep} {words['surface_deposition']}"
         elif setup.plot_type == "ens_max":
@@ -308,7 +308,7 @@ def get_long_name(setup: InputSetup, words: TranslatedWords) -> str:
             return f"{words['ensemble_mean']} {words['concentration']}"
         else:
             ctx = "abbr" if setup.integrate else "*"
-            return words["activity_concentration", None, ctx].s
+            return words["activity_concentration", ctx].s
     raise NotImplementedError(
         f"long_name", setup.variable, setup.plot_type, setup.integrate
     )
@@ -317,20 +317,17 @@ def get_long_name(setup: InputSetup, words: TranslatedWords) -> str:
 def get_short_name(setup: InputSetup, words: TranslatedWords) -> str:
     if setup.variable == "concentration":
         if setup.plot_type == "ens_cloud_arrival_time":
-            return f"{words['arrival'].c} ({words['hour', None, 'pl']}??)"
+            return f"{words['arrival'].c} ({words['hour', 'pl']}??)"
         else:
             if setup.integrate:
                 return (
-                    f"{words['integrated', None, 'abbr']} "
-                    f"{words['concentration', None, 'abbr']}"
+                    f"{words['integrated', 'abbr']} "
+                    f"{words['concentration', 'abbr']}"
                 )
             return words["concentration"].s
     if setup.variable == "deposition":
         if setup.plot_type == "ens_thr_agrmt":
-            return (
-                f"{words['number_of', None, 'abbr'].c} "
-                f"{words['member', None, 'pl']}"
-            )
+            return f"{words['number_of', 'abbr'].c} " f"{words['member', 'pl']}"
         else:
             return words["deposition"].s
     raise NotImplementedError("short_name", setup.variable, setup.plot_type)

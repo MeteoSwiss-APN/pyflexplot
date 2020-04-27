@@ -57,26 +57,6 @@ class Test_Basic_BracketsInterface:
         assert self.ws["train"] == "train"
         assert self.ws["high_school"] == "high school"
 
-    def test_active_lang_none_bracket(self):
-        assert self.ws["train", None] == "train"
-        assert self.ws["high_school", None] == "high school"
-
-    def test_lang_bracket(self):
-        assert self.ws["train", "en"] == "train"
-        assert self.ws["train", "de"] == "Zug"
-        assert self.ws["high_school", "en"] == "high school"
-        assert self.ws["high_school", "de"] == "Mittelschule"
-
-    def test_format(self):
-        assert self.ws["high_school", "en"].s == "high school"
-        assert self.ws["high_school", "de"].s == "Mittelschule"
-        assert self.ws["high_school", "en"].c == "High school"
-        assert self.ws["high_school", "de"].c == "Mittelschule"
-        assert self.ws["high_school", "en"].C == "High School"
-        assert self.ws["high_school", "de"].C == "Mittelschule"
-        assert self.ws["high_school", "en"].t == "High School"
-        assert self.ws["high_school", "de"].t == "Mittelschule"
-
 
 class Test_ContextDependent_OneToMany:
     """Test words with context-dependency in one language."""
@@ -99,8 +79,8 @@ class Test_ContextDependent_OneToMany:
         assert self.ws.get("at") == "bei"
         assert self.ws.get("at").get_in("de") == "bei"
         assert self.ws.get("at").get_in("en") == "at"
-        assert self.ws.get("at", "de") == "bei"
-        assert self.ws.get("at", "en") == "at"
+        assert self.ws.get("at", lang="de") == "bei"
+        assert self.ws.get("at", lang="en") == "at"
 
     def test_explicit_context__arg(self):
         assert self.ws.get("at").ctx("place") == "bei"
@@ -111,20 +91,20 @@ class Test_ContextDependent_OneToMany:
         assert self.ws.get("at").get_in("en").ctx("level") == "at"
 
     def test_explicit_context_one_args(self):
-        assert self.ws.get("at", None).ctx("place") == "bei"
-        assert self.ws.get("at", None).ctx("level") == "auf"
-        assert self.ws.get("at", "de").ctx("place") == "bei"
-        assert self.ws.get("at", "de").ctx("level") == "auf"
-        assert self.ws.get("at", "en").ctx("place") == "at"
-        assert self.ws.get("at", "en").ctx("level") == "at"
+        assert self.ws.get("at", lang=None).ctx("place") == "bei"
+        assert self.ws.get("at", lang=None).ctx("level") == "auf"
+        assert self.ws.get("at", lang="de").ctx("place") == "bei"
+        assert self.ws.get("at", lang="de").ctx("level") == "auf"
+        assert self.ws.get("at", lang="en").ctx("place") == "at"
+        assert self.ws.get("at", lang="en").ctx("level") == "at"
 
     def test_explicit_context_three_args(self):
-        assert self.ws.get("at", None, "place") == "bei"
-        assert self.ws.get("at", None, "level") == "auf"
-        assert self.ws.get("at", "de", "place") == "bei"
-        assert self.ws.get("at", "de", "level") == "auf"
-        assert self.ws.get("at", "en", "place") == "at"
-        assert self.ws.get("at", "en", "level") == "at"
+        assert self.ws.get("at", ctx="place", lang=None) == "bei"
+        assert self.ws.get("at", ctx="level", lang=None) == "auf"
+        assert self.ws.get("at", ctx="place", lang="de") == "bei"
+        assert self.ws.get("at", ctx="level", lang="de") == "auf"
+        assert self.ws.get("at", ctx="place", lang="en") == "at"
+        assert self.ws.get("at", ctx="level", lang="en") == "at"
 
 
 class Test_ContextDependent_OneToMany_BracketInterface:
@@ -138,14 +118,14 @@ class Test_ContextDependent_OneToMany_BracketInterface:
         assert self.ws["at", None, None] == "bei"
 
     def test_explicit_lang_default_context(self):
-        assert self.ws["at", "en"] == "at"
-        assert self.ws["at", "en", None] == "at"
+        assert self.ws["at", None, "en"] == "at"
+        assert self.ws["at", None, "en"] == "at"
 
     def test_active_lang_explicit_context(self):
-        assert self.ws["at", None, "level"] == "auf"
+        assert self.ws["at", "level", None] == "auf"
 
     def test_explicit_lang_explicit_context(self):
-        assert self.ws["at", "en", "level"] == "at"
+        assert self.ws["at", "level", "en"] == "at"
 
 
 class Test_ContextDependent_ManyToMany:
@@ -174,8 +154,8 @@ class Test_ContextDependent_ManyToMany:
         assert self.ws.get("integrated") == "integrierte"
         assert self.ws.get("integrated").get_in("de") == "integrierte"
         assert self.ws.get("integrated").get_in("en") == "integrated"
-        assert self.ws.get("integrated", "de") == "integrierte"
-        assert self.ws.get("integrated", "en") == "integrated"
+        assert self.ws.get("integrated", lang="de") == "integrierte"
+        assert self.ws.get("integrated", lang="en") == "integrated"
 
     def test_explicit_context_one_arg(self):
         assert self.ws.get("integrated").ctx("*") == "integriert"
@@ -189,26 +169,26 @@ class Test_ContextDependent_ManyToMany:
         assert self.ws.get("integrated").get_in("en").ctx("abbr") == "int."
 
     def test_explicit_context_two_args(self):
-        assert self.ws.get("integrated", None).ctx("*") == "integriert"
-        assert self.ws.get("integrated", None).ctx("f") == "integrierte"
-        assert self.ws.get("integrated", None).ctx("abbr") == "int."
-        assert self.ws.get("integrated", "de").ctx("*") == "integriert"
-        assert self.ws.get("integrated", "de").ctx("f") == "integrierte"
-        assert self.ws.get("integrated", "de").ctx("abbr") == "int."
-        assert self.ws.get("integrated", "en").ctx("*") == "integrated"
-        assert self.ws.get("integrated", "en").ctx("f") == "integrated"
-        assert self.ws.get("integrated", "en").ctx("abbr") == "int."
+        assert self.ws.get("integrated", lang=None).ctx("*") == "integriert"
+        assert self.ws.get("integrated", lang=None).ctx("f") == "integrierte"
+        assert self.ws.get("integrated", lang=None).ctx("abbr") == "int."
+        assert self.ws.get("integrated", lang="de").ctx("*") == "integriert"
+        assert self.ws.get("integrated", lang="de").ctx("f") == "integrierte"
+        assert self.ws.get("integrated", lang="de").ctx("abbr") == "int."
+        assert self.ws.get("integrated", lang="en").ctx("*") == "integrated"
+        assert self.ws.get("integrated", lang="en").ctx("f") == "integrated"
+        assert self.ws.get("integrated", lang="en").ctx("abbr") == "int."
 
     def test_explicit_context_three_args(self):
-        assert self.ws.get("integrated", None, "*") == "integriert"
-        assert self.ws.get("integrated", None, "f") == "integrierte"
-        assert self.ws.get("integrated", None, "abbr") == "int."
-        assert self.ws.get("integrated", "de", "*") == "integriert"
-        assert self.ws.get("integrated", "de", "f") == "integrierte"
-        assert self.ws.get("integrated", "de", "abbr") == "int."
-        assert self.ws.get("integrated", "en", "*") == "integrated"
-        assert self.ws.get("integrated", "en", "f") == "integrated"
-        assert self.ws.get("integrated", "en", "abbr") == "int."
+        assert self.ws.get("integrated", lang=None, ctx="*") == "integriert"
+        assert self.ws.get("integrated", lang=None, ctx="f") == "integrierte"
+        assert self.ws.get("integrated", lang=None, ctx="abbr") == "int."
+        assert self.ws.get("integrated", lang="de", ctx="*") == "integriert"
+        assert self.ws.get("integrated", lang="de", ctx="f") == "integrierte"
+        assert self.ws.get("integrated", lang="de", ctx="abbr") == "int."
+        assert self.ws.get("integrated", lang="en", ctx="*") == "integrated"
+        assert self.ws.get("integrated", lang="en", ctx="f") == "integrated"
+        assert self.ws.get("integrated", lang="en", ctx="abbr") == "int."
 
 
 class Test_ContextDependent_ManyToMany_BracketInterface:
@@ -222,44 +202,45 @@ class Test_ContextDependent_ManyToMany_BracketInterface:
         assert self.ws["integrated", None, None] == "integrierte"
 
     def test_explicit_lang_default_context(self):
-        assert self.ws["integrated", "en"] == "integrated"
-        assert self.ws["integrated", "en", None] == "integrated"
+        assert self.ws["integrated", None, "en"] == "integrated"
 
     def test_active_lang_explicit_context(self):
-        assert self.ws["integrated", None, "*"] == "integriert"
-        assert self.ws["integrated", None, "f"] == "integrierte"
+        assert self.ws["integrated", "*"] == "integriert"
+        assert self.ws["integrated", "f"] == "integrierte"
+        assert self.ws["integrated", "*", None] == "integriert"
+        assert self.ws["integrated", "f", None] == "integrierte"
 
     def test_explicit_lang_explicit_context(self):
-        assert self.ws["integrated", "en", "*"] == "integrated"
-        assert self.ws["integrated", "en", "f"] == "integrated"
+        assert self.ws["integrated", "*", "en"] == "integrated"
+        assert self.ws["integrated", "f", "en"] == "integrated"
 
     def test_format(self):
-        assert self.ws["integrated", "en", "*"].s == "integrated"
-        assert self.ws["integrated", "en", "f"].s == "integrated"
-        assert self.ws["integrated", "en", "*"].c == "Integrated"
-        assert self.ws["integrated", "en", "f"].c == "Integrated"
-        assert self.ws["integrated", "en", "*"].C == "Integrated"
-        assert self.ws["integrated", "en", "f"].C == "Integrated"
-        assert self.ws["integrated", "en", "*"].t == "Integrated"
-        assert self.ws["integrated", "en", "f"].t == "Integrated"
+        assert self.ws["integrated", "*", "en"].s == "integrated"
+        assert self.ws["integrated", "f", "en"].s == "integrated"
+        assert self.ws["integrated", "*", "en"].c == "Integrated"
+        assert self.ws["integrated", "f", "en"].c == "Integrated"
+        assert self.ws["integrated", "*", "en"].C == "Integrated"
+        assert self.ws["integrated", "f", "en"].C == "Integrated"
+        assert self.ws["integrated", "*", "en"].t == "Integrated"
+        assert self.ws["integrated", "f", "en"].t == "Integrated"
 
 
 class Test_Interface_AddWords:
 
     sol = {
-        ("train", "en", None): "train",
-        ("train", "de", None): "Zug",
-        ("at", "en", "place"): "at",
-        ("at", "de", "place"): "bei",
-        ("at", "en", "time"): "at",
-        ("at", "de", "time"): "um",
-        ("at", "en", "level"): "at",
-        ("at", "de", "level"): "auf",
+        ("train", None, "en"): "train",
+        ("train", None, "de"): "Zug",
+        ("at", "place", "en"): "at",
+        ("at", "place", "de"): "bei",
+        ("at", "time", "en"): "at",
+        ("at", "time", "de"): "um",
+        ("at", "level", "en"): "at",
+        ("at", "level", "de"): "auf",
     }
 
     def check_ws(self, ws):
-        for (name, lang, ctx), s in self.sol.items():
-            assert ws[name, lang, ctx].s == s
+        for (name, ctx, lang), s in self.sol.items():
+            assert ws[name, ctx, lang].s == s
 
     def test_fail(self):
         """Ensure that ``_test_ws`` fails with wrong input."""
