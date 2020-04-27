@@ -22,6 +22,7 @@ from .data import Field
 from .meta_data import MetaData
 from .meta_data import format_integr_period
 from .meta_data import format_level_range
+from .meta_data import get_integr_type
 from .plot_lib import MapAxesConf
 from .setup import InputSetup
 from .utils import summarizable
@@ -84,6 +85,7 @@ class PlotLabels:
     def __init__(self, lang: str, mdata: MetaData):
         """Create an instance of ``PlotLabels``."""
         self.mdata: MetaData = mdata
+        self.setup: InputSetup = mdata.setup
 
         self.words.set_default_lang(lang)
 
@@ -103,26 +105,25 @@ class PlotLabels:
         return values
 
     def _init_top_left(self) -> Dict[str, Any]:
-        value_bottom = self.mdata.variable_level_bot.value
-        value_top = self.mdata.variable_level_top.value
-        unit_bottom = self.mdata.variable_level_bot_unit.value
-        unit_top = self.mdata.variable_level_top_unit.value
-        assert isinstance(unit_bottom, str)  # mypy
-        assert isinstance(unit_top, str)  # mypy
-        level = format_level_range(value_bottom, value_top, unit_bottom, unit_top)
+        assert isinstance(self.mdata.variable_level_bot_unit.value, str)  # mypy
+        assert isinstance(self.mdata.variable_level_top_unit.value, str)  # mypy
+        level = format_level_range(
+            self.mdata.variable_level_bot.value,
+            self.mdata.variable_level_top.value,
+            self.mdata.variable_level_bot_unit.value,
+            self.mdata.variable_level_top_unit.value,
+        )
         if not level:
             s_level = ""
         else:
             s_level = f" {self.words['at', None, 'level']} {level}"
-        assert isinstance(self.mdata.simulation_integr_type.value, str)  # mypy
-        integr_op = self.words[
-            {
-                "sum": "summed_over",
-                "mean": "averaged_over",
-                "accum": "accumulated_over",
-            }[self.mdata.simulation_integr_type.value]
-        ].s
-        time_rels = self.mdata.simulation_now_rel
+        integr_type = get_integr_type(self.setup)
+        if integr_type == "mean":
+            integr_op = self.words["averaged_over"].s
+        elif integr_type == "sum":
+            integr_op = self.words["summed_over"].s
+        elif integr_type == "accum":
+            integr_op = self.words["accumulated_over"].s
         period = format_integr_period(self.mdata)
         start = self.mdata.simulation_integr_start_rel
         unit = self.mdata.variable_unit
@@ -131,7 +132,7 @@ class PlotLabels:
         ts_rel = self.mdata.simulation_now_rel
         return self._init_group(
             {
-                "variable": f"{get_long_name(self.mdata.setup, self.words)}{s_level}",
+                "variable": f"{get_long_name(self.setup, self.words)}{s_level}",
                 "period": f"{integr_op} {period} ({self.words['since']} +{start})",
                 "subtitle_thr_agrmt_fmt": (
                     f"Cloud: {self.symbols['geq']} {{thr}} {unit_escaped}"
@@ -142,7 +143,9 @@ class PlotLabels:
                 ),
                 "timestep": f"{ts_abs} (+{ts_rel})",
                 "time_since_release_start": (
-                    f"{time_rels} {self.words['since']} {self.words['release_start']}"
+                    f"{self.mdata.simulation_now_rel} "
+                    f"{self.words['since']} "
+                    f"{self.words['release_start']}"
                 ),
             },
         )
@@ -156,7 +159,7 @@ class PlotLabels:
         )
 
     def _init_right_top(self) -> Dict[str, Any]:
-        name = get_short_name(self.mdata.setup, self.words)
+        name = get_short_name(self.setup, self.words)
         unit = self.mdata.variable_unit
         return self._init_group(
             {

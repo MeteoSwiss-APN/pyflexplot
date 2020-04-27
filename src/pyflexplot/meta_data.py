@@ -282,8 +282,6 @@ class MetaData(BaseModel):
 
         simulation_integr_start: Integration period start.
 
-        simulation_integr_type: Type of integration (or reduction).
-
         simulation_model_name: Model name.
 
         simulation_now: Current timestep.
@@ -343,7 +341,6 @@ class MetaData(BaseModel):
     simulation_end: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
     simulation_integr_start_rel: Union[MetaDatum[timedelta], MetaDatumCombo[timedelta]]
     simulation_integr_start: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
-    simulation_integr_type: Union[MetaDatum[str], MetaDatumCombo[str]]
     simulation_model_name: Union[MetaDatum[str], MetaDatumCombo[str]]
     simulation_now_rel: Union[MetaDatum[timedelta], MetaDatumCombo[timedelta]]
     simulation_now: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
@@ -382,7 +379,6 @@ class MetaData(BaseModel):
     _init_simulation_integr_start_rel = init_mdatum(
         timedelta, "simulation_integr_start_rel",
     )
-    _init_simulation_integr_type = init_mdatum(str, "simulation_integr_type")
     _init_simulation_model_name = init_mdatum(str, "simulation_model_name")
     _init_simulation_now = init_mdatum(datetime, "simulation_now")
     _init_simulation_now_rel = init_mdatum(timedelta, "simulation_now_rel")
@@ -547,14 +543,6 @@ class MetaDataCollector:
         ts_integr_start_rel: timedelta = ts_integr_start - ts_start
 
         # Type of integration (or, rather, reduction)
-        if self.setup.variable == "concentration":  # SR_TMP
-            integr_type = "sum" if self.setup.integrate else "mean"
-        elif self.setup.variable == "deposition":  # SR_TMP
-            integr_type = "accum" if self.setup.integrate else "mean"
-        else:
-            raise NotImplementedError(
-                "no integration type specified", self.setup.variable,
-            )
 
         mdata_raw.update(
             {
@@ -565,7 +553,6 @@ class MetaDataCollector:
                 "simulation_now_rel": ts_now_rel,
                 "simulation_integr_start": ts_integr_start,
                 "simulation_integr_start_rel": ts_integr_start_rel,
-                "simulation_integr_type": integr_type,
             }
         )
 
@@ -595,7 +582,6 @@ class MetaDataCollector:
     def collect_variable_mdata(self, mdata_raw: Dict[str, Any]) -> None:
         """Collect variable meta data."""
 
-        # Variable unit
         unit = self.ncattrs_field["units"]
 
         # SR_TMP < TODO clean up once CoreInputSetup has been implemented
@@ -603,6 +589,7 @@ class MetaDataCollector:
         idx = None if self.setup.level is None else next(iter(self.setup.level))
         # idx = self.setup.level
         # SR_TMP >
+
         if idx is None:
             level_unit = ""
             level_bot = -1.0
@@ -629,9 +616,6 @@ class MetaDataCollector:
     def collect_species_mdata(self, mdata_raw: Dict[str, Any]) -> None:
         """Collect species meta data."""
 
-        substance = self._get_substance()
-
-        # Get deposition and washout data
         model = self.nc_meta_data["analysis"]["model"]
         name_core = nc_var_name(self.setup, model)
         if self.setup.variable == "deposition":  # SR_TMP
@@ -645,14 +629,16 @@ class MetaDataCollector:
             washout_coeff = -1  # SR_TMP IFS
             washout_exponent = -1  # SR_TMP IFS
 
-        # Get half life information
-        try:
-            half_life, half_life_unit = {
-                "Cs-137": (30.17, "a"),  # SR_HC
-                "I-131a": (8.02, "d"),  # SR_HC
-            }[substance]
-        except KeyError:
-            raise NotImplementedError(f"half_life of '{substance}'")
+        name = self.ncattrs_field["long_name"].split("_")[0]
+
+        if name.startswith("Cs-137"):
+            half_life = 30.17  # SR_HC
+            half_life_unit = "a"  # SR_HC
+        elif name.startswith("I-131a"):
+            half_life = 8.02  # SR_HC
+            half_life_unit = "d"  # SR_HC
+        else:
+            raise NotImplementedError(f"half_life of '{name}'")
 
         deposit_vel_unit = "m s-1"  # SR_HC
         sediment_vel_unit = "m s-1"  # SR_HC
@@ -660,7 +646,7 @@ class MetaDataCollector:
 
         mdata_raw.update(
             {
-                "species_name": substance,
+                "species_name": name,
                 "species_half_life": half_life,
                 "species_half_life_unit": half_life_unit,
                 "species_deposit_vel": deposit_vel,
@@ -672,14 +658,6 @@ class MetaDataCollector:
                 "species_washout_exponent": washout_exponent,
             }
         )
-
-    def _get_substance(self) -> str:
-        substance = self.ncattrs_field["long_name"]
-        if self.setup.variable == "deposition":  # SR_TMP
-            substance = substance.replace(
-                f"_{self.setup.deposition_type}_deposition", ""
-            )  # SR_HC
-        return substance
 
 
 class TimeStepMetaDataCollector:
@@ -852,32 +830,29 @@ class ReleaseMetaData(BaseModel):
                 f"file '{fi.name}': invalid index {idx} for {n} release points"
             )
 
-        kwargs = {"nc_meta_data": nc_meta_data, "setup": setup, "words": words}
-
         # Name: convert from byte character array
-        kwargs["raw_name"] = (
-            var[idx][~var[idx].mask].tostring().decode("utf-8").rstrip()
-        )
+        name = var[idx][~var[idx].mask].tostring().decode("utf-8").rstrip()
 
         # Other attributes
         key_pairs = [
-            ("raw_age_id", "LAGE"),
-            ("raw_kind", "RELKINDZ"),
-            ("raw_lllat", "RELLAT1"),
-            ("raw_lllon", "RELLNG1"),
-            ("raw_ms_parts", "RELXMASS"),
-            ("raw_n_parts", "RELPART"),
-            ("raw_rel_end", "RELEND"),
-            ("raw_rel_start", "RELSTART"),
-            ("raw_urlat", "RELLAT2"),
-            ("raw_urlon", "RELLNG2"),
-            ("raw_zbot", "RELZZ1"),
-            ("raw_ztop", "RELZZ2"),
+            ("age_id", "LAGE"),
+            ("kind", "RELKINDZ"),
+            ("lllat", "RELLAT1"),
+            ("lllon", "RELLNG1"),
+            ("ms_parts", "RELXMASS"),
+            ("n_parts", "RELPART"),
+            ("rel_end", "RELEND"),
+            ("rel_start", "RELSTART"),
+            ("urlat", "RELLAT2"),
+            ("urlon", "RELLNG2"),
+            ("zbot", "RELZZ1"),
+            ("ztop", "RELZZ2"),
         ]
+        raw_mdata = {"raw_name": name}
         for key_out, key_in in key_pairs:
-            kwargs[key_out] = fi.variables[key_in][idx].tolist()
+            raw_mdata[f"raw_{key_out}"] = fi.variables[key_in][idx].tolist()
 
-        return cls(**kwargs)
+        return cls(nc_meta_data=nc_meta_data, setup=setup, words=words, **raw_mdata)
 
 
 # SR_TMP <<< TODO figure out what to do with this
@@ -897,3 +872,15 @@ def nc_var_name(setup: InputSetup, model: str) -> Union[str, List[str]]:
         prefix = {"wet": "WD", "dry": "DD"}[setup.deposition_type]
         return f"{prefix}_spec{species_id:03d}"
     raise ValueError("unknown variable", setup.variable)
+
+
+# SR_TMP <<< TODO figure out what to do with this
+def get_integr_type(setup: InputSetup) -> str:
+    if not setup.integrate:
+        return "mean"
+    elif setup.variable == "concentration":
+        return "sum"
+    elif setup.variable == "deposition":
+        return "accum"
+    else:
+        raise NotImplementedError("integration type for variable", setup.variable)

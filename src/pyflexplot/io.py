@@ -29,6 +29,7 @@ from .data import merge_fields
 from .data import threshold_agreement
 from .meta_data import MetaData
 from .meta_data import collect_meta_data
+from .meta_data import get_integr_type
 from .meta_data import nc_var_name
 from .nc_meta_data import read_meta_data
 from .setup import InputSetup
@@ -579,7 +580,7 @@ class FlexPartDataFixer:
         name = mdata.species_name.value
         if name not in self.possible_var_names:
             raise NotImplementedError("variable", {"name": name})
-        integr_type = mdata.simulation_integr_type.value
+        integr_type = get_integr_type(mdata.setup)
         old_unit = mdata.variable_unit.value
 
         new_unit = "Bq"
