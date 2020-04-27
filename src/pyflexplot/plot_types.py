@@ -131,7 +131,7 @@ class PlotLabels:
         ts_rel = self.mdata.simulation_now_rel
         return self._init_group(
             {
-                "variable": f"{self.mdata.variable_long_name.value}{s_level}",
+                "variable": f"{get_long_name(self.mdata.setup, self.words)}{s_level}",
                 "period": f"{integr_op} {period} ({self.words['since']} +{start})",
                 "subtitle_thr_agrmt_fmt": (
                     f"Cloud: {self.symbols['geq']} {{thr}} {unit_escaped}"
@@ -156,7 +156,7 @@ class PlotLabels:
         )
 
     def _init_right_top(self) -> Dict[str, Any]:
-        name = self.mdata.variable_short_name
+        name = get_short_name(self.mdata.setup, self.words)
         unit = self.mdata.variable_unit
         return self._init_group(
             {
@@ -218,6 +218,74 @@ class PlotLabels:
                 "copyright": f"{self.symbols['copyright']}{self.words['meteoswiss']}",
             },
         )
+
+
+# pylint: disable=R0911,R0912  # too-many-return-statements,too-many-branches
+def get_long_name(setup: InputSetup, words: TranslatedWords) -> str:
+    if setup.plot_type and setup.plot_type.startswith("affected_area"):
+        super_name = get_long_name(
+            setup.derive({"variable": "deposition", "plot_type": "auto"}), words
+        )
+        return f"{words['affected_area']} ({super_name})"
+    elif setup.plot_type == "ens_thr_agrmt":
+        super_name = get_short_name(setup.derive({"variable": "deposition"}), words)
+        return f"{words['threshold_agreement']} ({super_name})"
+    elif setup.plot_type == "ens_cloud_arrival_time":
+        return f"{words['cloud_arrival_time']}"
+    if setup.variable == "deposition":
+        if setup.deposition_type == "tot":
+            word = "total"
+        else:
+            assert isinstance(setup.deposition_type, str)  # mypy
+            word = setup.deposition_type
+        dep = words[word, None, "f"].s
+        if setup.plot_type == "ens_min":
+            return f"{words['ensemble_minimum']} {dep} {words['surface_deposition']}"
+        elif setup.plot_type == "ens_max":
+            return f"{words['ensemble_maximum']} {dep} {words['surface_deposition']}"
+        elif setup.plot_type == "ens_median":
+            return f"{words['ensemble_median']} {dep} {words['surface_deposition']}"
+        elif setup.plot_type == "ens_mean":
+            return f"{words['ensemble_mean']} {dep} {words['surface_deposition']}"
+        else:
+            return f"{dep} {words['surface_deposition']}"
+    if setup.variable == "concentration":
+        if setup.plot_type == "ens_min":
+            return f"{words['ensemble_minimum']} {words['concentration']}"
+        elif setup.plot_type == "ens_max":
+            return f"{words['ensemble_maximum']} {words['concentration']}"
+        elif setup.plot_type == "ens_median":
+            return f"{words['ensemble_median']} {words['concentration']}"
+        elif setup.plot_type == "ens_mean":
+            return f"{words['ensemble_mean']} {words['concentration']}"
+        else:
+            ctx = "abbr" if setup.integrate else "*"
+            return words["activity_concentration", None, ctx].s
+    raise NotImplementedError(
+        f"long_name", setup.variable, setup.plot_type, setup.integrate
+    )
+
+
+def get_short_name(setup: InputSetup, words: TranslatedWords) -> str:
+    if setup.variable == "concentration":
+        if setup.plot_type == "ens_cloud_arrival_time":
+            return f"{words['arrival'].c} ({words['hour', None, 'pl']}??)"
+        else:
+            if setup.integrate:
+                return (
+                    f"{words['integrated', None, 'abbr']} "
+                    f"{words['concentration', None, 'abbr']}"
+                )
+            return words["concentration"].s
+    if setup.variable == "deposition":
+        if setup.plot_type == "ens_thr_agrmt":
+            return (
+                f"{words['number_of', None, 'abbr'].c} "
+                f"{words['member', None, 'pl']}"
+            )
+        else:
+            return words["deposition"].s
+    raise NotImplementedError("short_name", setup.variable, setup.plot_type)
 
 
 @dataclass

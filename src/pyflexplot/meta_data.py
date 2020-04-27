@@ -107,18 +107,6 @@ class MetaDatum(GenericModel, Generic[ValueT]):
         if len(values) == 1:
             return next(iter(values))
 
-        if self.name == "variable_long_name":
-            val = next(iter(values))
-            assert isinstance(val, str)  # mypy
-            if val.lower().startswith("beaufschlagtes gebiet"):
-                values = [val.replace("nasse", "totale").replace("trockene", "totale")]
-            elif val.lower().startswith("affected area"):
-                values = [val.replace("wet", "total").replace("dry", "total")]
-            elif val.lower().endswith("bodendeposition"):
-                values = [val.replace("nasse", "totale").replace("trockene", "totale")]
-            elif val.lower().endswith("surface deposition"):
-                values = [val.replace("wet", "total").replace("dry", "total")]
-
         return next(iter(values)) if len(values) == 1 else tuple(values)
 
     def _merge_attrs(self, others: Collection["MetaDatum"]) -> Dict[str, Any]:
@@ -374,8 +362,6 @@ class MetaData(BaseModel):
     variable_level_bot_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
     variable_level_top: Union[MetaDatum[float], MetaDatumCombo[float]]
     variable_level_top_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    variable_long_name: Union[MetaDatum[str], MetaDatumCombo[str]]
-    variable_short_name: Union[MetaDatum[str], MetaDatumCombo[str]]
     variable_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
 
     _init_release_end = init_mdatum(datetime, "release_end")
@@ -415,8 +401,6 @@ class MetaData(BaseModel):
     _init_variable_level_bot_unit = init_mdatum(str, "variable_level_bot_unit")
     _init_variable_level_top = init_mdatum(float, "variable_level_top")
     _init_variable_level_top_unit = init_mdatum(str, "variable_level_top_unit")
-    _init_variable_long_name = init_mdatum(str, "variable_long_name")
-    _init_variable_short_name = init_mdatum(str, "variable_short_name")
     _init_variable_unit = init_mdatum(str, "variable_unit")
 
     class Config:  # noqa
@@ -611,10 +595,6 @@ class MetaDataCollector:
     def collect_variable_mdata(self, mdata_raw: Dict[str, Any]) -> None:
         """Collect variable meta data."""
 
-        # Variable names
-        long_name = self._long_name()
-        short_name = self._short_name()
-
         # Variable unit
         unit = self.ncattrs_field["units"]
 
@@ -638,8 +618,6 @@ class MetaDataCollector:
 
         mdata_raw.update(
             {
-                "variable_long_name": long_name,
-                "variable_short_name": short_name,
                 "variable_unit": unit,
                 "variable_level_bot": level_bot,
                 "variable_level_bot_unit": level_unit,
@@ -702,95 +680,6 @@ class MetaDataCollector:
                 f"_{self.setup.deposition_type}_deposition", ""
             )  # SR_HC
         return substance
-
-    # pylint: disable=R0911,R0912  # too-many-return-statements,too-many-branches
-    def _long_name(
-        self, *, variable: Optional[str] = None, plot_type: Optional[str] = None,
-    ) -> str:
-        setup = self.setup
-        words = self._words
-        if (variable, plot_type) == (None, None):
-            variable = setup.variable
-            plot_type = setup.plot_type
-        dep = self._deposition_type_word()
-        if plot_type and plot_type.startswith("affected_area"):
-            super_name = self._long_name(variable="deposition")
-            return f"{words['affected_area']} ({super_name})"
-        elif plot_type == "ens_thr_agrmt":
-            super_name = self._short_name(variable="deposition")
-            return f"{words['threshold_agreement']} ({super_name})"
-        elif plot_type == "ens_cloud_arrival_time":
-            return f"{words['cloud_arrival_time']}"
-        if variable == "deposition":
-            if plot_type == "ens_min":
-                return (
-                    f"{words['ensemble_minimum']} {dep} {words['surface_deposition']}"
-                )
-            elif plot_type == "ens_max":
-                return (
-                    f"{words['ensemble_maximum']} {dep} {words['surface_deposition']}"
-                )
-            elif plot_type == "ens_median":
-                return f"{words['ensemble_median']} {dep} {words['surface_deposition']}"
-            elif plot_type == "ens_mean":
-                return f"{words['ensemble_mean']} {dep} {words['surface_deposition']}"
-            else:
-                return f"{dep} {words['surface_deposition']}"
-        if variable == "concentration":
-            if plot_type == "ens_min":
-                return f"{words['ensemble_minimum']} {words['concentration']}"
-            elif plot_type == "ens_max":
-                return f"{words['ensemble_maximum']} {words['concentration']}"
-            elif plot_type == "ens_median":
-                return f"{words['ensemble_median']} {words['concentration']}"
-            elif plot_type == "ens_mean":
-                return f"{words['ensemble_mean']} {words['concentration']}"
-            else:
-                ctx = "abbr" if setup.integrate else "*"
-                return words["activity_concentration", None, ctx].s
-        raise NotImplementedError(
-            f"long_name for variable '{variable}' and plot_type '{plot_type}'"
-        )
-
-    def _short_name(
-        self, *, variable: Optional[str] = None, plot_type: Optional[str] = None,
-    ) -> str:
-        setup = self.setup
-        words = self._words
-        if (variable, plot_type) == (None, None):
-            variable = setup.variable
-            plot_type = setup.plot_type
-        if variable == "concentration":
-            if plot_type == "ens_cloud_arrival_time":
-                return f"{words['arrival'].c} ({words['hour', None, 'pl']}??)"
-            else:
-                if setup.integrate:
-                    return (
-                        f"{words['integrated', None, 'abbr']} "
-                        f"{words['concentration', None, 'abbr']}"
-                    )
-                return words["concentration"].s
-        if variable == "deposition":
-            if plot_type == "ens_thr_agrmt":
-                return (
-                    f"{words['number_of', None, 'abbr'].c} "
-                    f"{words['member', None, 'pl']}"
-                )
-            else:
-                return words["deposition"].s
-        raise NotImplementedError(
-            f"short_name for variable '{variable}' and plot_type '{plot_type}'"
-        )
-
-    def _deposition_type_word(self) -> str:
-        setup = self.setup
-        words = self._words
-        if setup.variable == "deposition":
-            type_ = setup.deposition_type
-            assert isinstance(type_, str)  # mypy
-            word = {"tot": "total"}.get(type_, type_)
-            return words[word, None, "f"].s
-        return "none"
 
 
 class TimeStepMetaDataCollector:
