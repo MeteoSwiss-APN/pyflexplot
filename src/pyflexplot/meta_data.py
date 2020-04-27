@@ -221,15 +221,6 @@ def format_level_range(
         raise NotImplementedError(f"{n} sets of levels")
 
 
-def format_integr_period(mdata: "MetaData"):
-    start = mdata.simulation_integr_start.value
-    now = mdata.simulation_now.value
-    assert isinstance(start, datetime)  # mypy
-    assert isinstance(now, datetime)  # mypy
-    integr_period = now - start
-    return f"{integr_period.total_seconds()/3600:g}$\\,$h"
-
-
 def init_mdatum(type_: type, name: str, attrs: Optional[Mapping[str, Any]] = None):
     """Pydantic validator to initialize ``MetaData`` attributes."""
 
@@ -861,7 +852,6 @@ class ReleaseMetaData(BaseModel):
         )
 
 
-# SR_TMP <<< TODO figure out what to do with this
 def nc_var_name(setup: InputSetup, model: str) -> Union[str, List[str]]:
     assert setup.species_id is not None  # mypy
     assert len(setup.species_id) == 1  # SR_TMP
@@ -880,7 +870,6 @@ def nc_var_name(setup: InputSetup, model: str) -> Union[str, List[str]]:
     raise ValueError("unknown variable", setup.variable)
 
 
-# SR_TMP <<< TODO figure out what to do with this
 def get_integr_type(setup: InputSetup) -> str:
     if not setup.integrate:
         return "mean"

@@ -4,6 +4,7 @@ Plot types.
 """
 # Standard library
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 from typing import Dict
 from typing import List
@@ -20,7 +21,6 @@ from matplotlib.colors import Colormap
 # Local
 from .data import Field
 from .meta_data import MetaData
-from .meta_data import format_integr_period
 from .meta_data import format_level_range
 from .meta_data import get_integr_type
 from .plot_lib import MapAxesConf
@@ -89,52 +89,24 @@ class PlotLabels:
 
         self.words.set_default_lang(lang)
 
-        # Declare groups
-        self.top_left: Dict[str, Any] = self._init_top_left()
-        self.top_right: Dict[str, Any] = self._init_top_right()
-        self.right_top: Dict[str, Any] = self._init_right_top()
-        self.right_bottom: Dict[str, Any] = self._init_right_bottom()
-        self.bottom: Dict[str, Any] = self._init_bottom()
-
-    def _init_group(self, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Preprocess and set group values."""
-        for key, val in values.copy().items():
-            if isinstance(val, str):
-                # Capitalize first letter only (even if it's a space!)
-                values[key] = list(val)[0].capitalize() + val[1:]
-        return values
-
-    def _init_top_left(self) -> Dict[str, Any]:
-        assert isinstance(self.mdata.variable_level_bot_unit.value, str)  # mypy
-        assert isinstance(self.mdata.variable_level_top_unit.value, str)  # mypy
-        level = format_level_range(
-            self.mdata.variable_level_bot.value,
-            self.mdata.variable_level_top.value,
-            self.mdata.variable_level_bot_unit.value,
-            self.mdata.variable_level_top_unit.value,
-        )
-        s_level = f" {self.words['at', None, 'level']} {level}" if level else ""
-        integr_type = get_integr_type(self.setup)
-        if integr_type == "mean":
-            integr_op = self.words["averaged_over"].s
-        elif integr_type == "sum":
-            integr_op = self.words["summed_over"].s
-        elif integr_type == "accum":
-            integr_op = self.words["accumulated_over"].s
-        _unit = self.mdata.variable_unit
-        unit_escaped = str(_unit).replace("{", "{{").replace("}", "}}")
-        return self._init_group(
+        assert isinstance(self.mdata.variable_unit.value, str)  # mypy
+        self.top_left: Dict[str, Any] = self._init_group(
             {
-                "variable": f"{get_long_name(self.setup, self.words)}{s_level}",
+                "variable": (
+                    f"{get_long_name(self.setup, self.words)}"
+                    f"{format_level_label(self.mdata, self.words)}"
+                ),
                 "period": (
-                    f"{integr_op} {format_integr_period(self.mdata)} "
+                    f"{format_integr_period(self.mdata, self.setup, self.words)} "
                     f"({self.words['since']} +{self.mdata.simulation_integr_start_rel})"
                 ),
                 "subtitle_thr_agrmt_fmt": (
-                    f"Cloud: {self.symbols['geq']} {{thr}} {unit_escaped}"
+                    f"Cloud: {self.symbols['geq']} {{thr}} "
+                    f"{escape_format_keys(self.mdata.variable_unit.value)}"
                 ),
                 "subtitle_cloud_arrival_time": (
-                    f"Cloud: {self.symbols['geq']} {{thr}} {unit_escaped}; "
+                    f"Cloud: {self.symbols['geq']} {{thr}} "
+                    f"{escape_format_keys(self.mdata.variable_unit.value)}; "
                     f"members: {self.symbols['geq']} {{mem}}"
                 ),
                 "timestep": (
@@ -148,16 +120,14 @@ class PlotLabels:
             },
         )
 
-    def _init_top_right(self) -> Dict[str, Any]:
-        return self._init_group(
+        self.top_right: Dict[str, Any] = self._init_group(
             {
                 "species": f"{self.mdata.species_name}",
                 "site": f"{self.words['site']}: {self.mdata.release_site_name.value}",
             },
         )
 
-    def _init_right_top(self) -> Dict[str, Any]:
-        return self._init_group(
+        self.right_top: Dict[str, Any] = self._init_group(
             {
                 "title": get_short_name(self.setup, self.words),
                 "title_unit": (
@@ -169,8 +139,7 @@ class PlotLabels:
             },
         )
 
-    def _init_right_bottom(self) -> Dict[str, Any]:
-        return self._init_group(
+        self.right_bottom: Dict[str, Any] = self._init_group(
             {
                 "title": self.words["release"].t,
                 "start": self.words["start"].s,
@@ -194,7 +163,6 @@ class PlotLabels:
             },
         )
 
-    def _init_bottom(self) -> Dict[str, Any]:
         # SR_TMP < TODO un-hardcode
         n_members = "X"  # SR_HC
         # ens_member_id = "{:03d}-{:03d}".format(0, 20)  # SR_HC
@@ -209,7 +177,7 @@ class PlotLabels:
             f"{self.mdata.simulation_model_name.value}{{ens}}, "
             f"{self.mdata.simulation_start}"
         )
-        return self._init_group(
+        self.bottom: Dict[str, Any] = self._init_group(
             {
                 "model_info_det": info_fmt_base.format(ens=""),
                 "model_info_ens": info_fmt_base.format(ens=s_ens),
@@ -217,9 +185,51 @@ class PlotLabels:
             },
         )
 
+    def _init_group(self, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Preprocess and set group values."""
+        for key, val in values.copy().items():
+            if isinstance(val, str):
+                # Capitalize first letter only (even if it's a space!)
+                values[key] = list(val)[0].capitalize() + val[1:]
+        return values
+
 
 def create_plot_labels(setup: InputSetup, mdata: MetaData):
     return PlotLabels(setup.lang, mdata)
+
+
+def escape_format_keys(s: str) -> str:
+    return s.replace("{", "{{").replace("}", "}}")
+
+
+def format_level_label(mdata: MetaData, words: TranslatedWords):
+    assert isinstance(mdata.variable_level_bot_unit.value, str)  # mypy
+    assert isinstance(mdata.variable_level_top_unit.value, str)  # mypy
+    level = format_level_range(
+        mdata.variable_level_bot.value,
+        mdata.variable_level_top.value,
+        mdata.variable_level_bot_unit.value,
+        mdata.variable_level_top_unit.value,
+    )
+    return f" {words['at', None, 'level']} {level}" if level else ""
+
+
+def format_integr_period(
+    mdata: "MetaData", setup: InputSetup, words: TranslatedWords
+) -> str:
+    integr_type = get_integr_type(setup)
+    if integr_type == "mean":
+        operation = words["averaged_over"].s
+    elif integr_type == "sum":
+        operation = words["summed_over"].s
+    elif integr_type == "accum":
+        operation = words["accumulated_over"].s
+    start = mdata.simulation_integr_start.value
+    now = mdata.simulation_now.value
+    assert isinstance(start, datetime)  # mypy
+    assert isinstance(now, datetime)  # mypy
+    period = (now - start).total_seconds() / 3600
+    return f"{operation} {period:g}$\\,$h"
 
 
 def format_coord_label(direction: str, words: TranslatedWords, symbols: Words) -> str:
