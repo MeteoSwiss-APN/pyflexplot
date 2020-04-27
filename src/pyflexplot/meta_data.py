@@ -62,6 +62,9 @@ class MetaDatum(GenericModel, Generic[ValueT]):
     def type_(self):
         return type(self.value)
 
+    def __str__(self):
+        return format_meta_datum(self.value)
+
     # SR_TODO Extract methods into separate class (e.g., AttrMerger)!
     def merge_with(
         self,
@@ -119,9 +122,6 @@ class MetaDatum(GenericModel, Generic[ValueT]):
             else:
                 raise NotImplementedError("values differ", attr, value, other_values)
         return attrs
-
-    def __str__(self):
-        return format_meta_datum(self.value)
 
 
 @summarizable
@@ -561,21 +561,21 @@ class MetaDataCollector:
         release = ReleaseMetaData.from_file(self.fi, mdata_raw, self.setup, self._words)
         mdata_raw.update(
             {
-                # "release_duration": release.get_duration(),
-                # "release_duration_unit": release.get_duration_unit(),
-                "release_end": release.get_end(),
-                "release_end_rel": release.get_end_rel(),
-                "release_height": release.get_height(),
-                "release_height_unit": release.get_height_unit(),
-                "release_mass": release.get_mass(),
-                "release_mass_unit": release.get_mass_unit(),
-                "release_rate": release.get_rate(),
-                "release_rate_unit": release.get_rate_unit(),
-                "release_site_lat": release.get_lat(),
-                "release_site_lon": release.get_lon(),
-                "release_site_name": release.get_name(),
-                "release_start": release.get_start(),
-                "release_start_rel": release.get_start_rel(),
+                # "release_duration": release.duration,
+                # "release_duration_unit": release.duration_unit,
+                "release_end": release.end,
+                "release_end_rel": release.end_rel,
+                "release_height": release.height,
+                "release_height_unit": release.height_unit,
+                "release_mass": release.mass,
+                "release_mass_unit": release.mass_unit,
+                "release_rate": release.rate,
+                "release_rate_unit": release.rate_unit,
+                "release_site_lat": release.lat,
+                "release_site_lon": release.lon,
+                "release_site_name": release.name,
+                "release_start": release.start,
+                "release_start_rel": release.start_rel,
             }
         )
 
@@ -717,26 +717,20 @@ class TimeStepMetaDataCollector:
         return next(iter(self.setup.time))  # SR_TMP
 
 
-class ReleaseMetaData(BaseModel):
-    """Release point information."""
-
-    nc_meta_data: Dict[str, Any]
-    setup: InputSetup
-    words: TranslatedWords
-
-    raw_age_id: int
-    raw_kind: str
-    raw_lllat: float
-    raw_lllon: float
-    raw_ms_parts: Tuple[int, ...]
-    raw_name: str
-    raw_n_parts: int
-    raw_rel_end: timedelta
-    raw_rel_start: timedelta
-    raw_urlat: float
-    raw_urlon: float
-    raw_zbot: float
-    raw_ztop: float
+class RawReleaseMetaData(BaseModel):
+    age_id: int
+    kind: str
+    lllat: float
+    lllon: float
+    ms_parts: Tuple[int, ...]
+    name: str
+    n_parts: int
+    rel_end: timedelta
+    rel_start: timedelta
+    urlat: float
+    urlon: float
+    zbot: float
+    ztop: float
 
     class Config:  # noqa
         arbitrary_types_allowed = True
@@ -744,63 +738,8 @@ class ReleaseMetaData(BaseModel):
         validate_all = True
         validate_assigment = True
 
-    def get_name(self) -> str:
-        name = self.raw_name
-        if name == "Goesgen":
-            name = r"G$\mathrm{\"o}$sgen"
-        return name
-
-    def get_start_rel(self) -> timedelta:
-        return self.raw_rel_start
-
-    def get_end_rel(self) -> timedelta:
-        return self.raw_rel_end
-
-    def get_start(self) -> datetime:
-        return self.nc_meta_data["simulation_start"] + self.get_start_rel()
-
-    def get_end(self) -> datetime:
-        return self.nc_meta_data["simulation_start"] + self.get_end_rel()
-
-    def get_lat(self) -> float:
-        return np.mean([self.raw_lllat, self.raw_urlat])
-
-    def get_lon(self) -> float:
-        return np.mean([self.raw_lllon, self.raw_urlon])
-
-    def get_height(self) -> float:
-        return np.mean([self.raw_zbot, self.raw_ztop])
-
-    def get_height_unit(self) -> str:
-        return self.words["m_agl"].s
-
-    def get_duration(self) -> timedelta:
-        return self.get_end_rel() - self.get_start_rel()
-
-    def get_duration_unit(self) -> str:
-        return "s"  # SR_HC
-
-    def get_mass(self) -> float:
-        assert len(self.raw_ms_parts) == 1
-        return next(iter(self.raw_ms_parts))
-
-    def get_mass_unit(self) -> str:
-        return "Bq"  # SR_HC
-
-    def get_rate(self) -> float:
-        return self.get_mass() / self.get_duration().total_seconds()
-
-    def get_rate_unit(self) -> str:
-        return f"{self.get_mass_unit()} {self.get_duration_unit()}-1"
-
     @classmethod
-    def from_file(
-        cls,
-        fi: nc4.Dataset,
-        nc_meta_data: Dict[str, Any],
-        setup: InputSetup,
-        words: TranslatedWords,
-    ) -> "ReleaseMetaData":
+    def from_file(cls, fi: nc4.Dataset, setup: InputSetup) -> "RawReleaseMetaData":
         """Read information on a release from open file."""
 
         assert setup.numpoint is not None  # mypy
@@ -848,11 +787,78 @@ class ReleaseMetaData(BaseModel):
             ("zbot", "RELZZ1"),
             ("ztop", "RELZZ2"),
         ]
-        raw_mdata = {"raw_name": name}
+        params = {"name": name}
         for key_out, key_in in key_pairs:
-            raw_mdata[f"raw_{key_out}"] = fi.variables[key_in][idx].tolist()
+            params[key_out] = fi.variables[key_in][idx].tolist()
+        return cls(**params)
 
-        return cls(nc_meta_data=nc_meta_data, setup=setup, words=words, **raw_mdata)
+
+class ReleaseMetaData(BaseModel):
+    """Release point information."""
+
+    duration: timedelta
+    duration_unit: str
+    end: datetime
+    end_rel: timedelta
+    height: float
+    height_unit: str
+    lat: float
+    lon: float
+    mass: float
+    mass_unit: str
+    name: str
+    rate: float
+    rate_unit: str
+    start: datetime
+    start_rel: timedelta
+
+    class Config:  # noqa
+        arbitrary_types_allowed = True
+        extra = "forbid"
+        validate_all = True
+        validate_assigment = True
+
+    @classmethod
+    def from_file(
+        cls,
+        fi: nc4.Dataset,
+        nc_meta_data: Dict[str, Any],
+        setup: InputSetup,
+        words: TranslatedWords,
+    ) -> "ReleaseMetaData":
+        """Read information on a release from open file."""
+
+        raw = RawReleaseMetaData.from_file(fi, setup)
+
+        name = raw.name
+        if name == "Goesgen":
+            name = r"G$\mathrm{\"o}$sgen"
+
+        start_rel = raw.rel_start
+        end_rel = raw.rel_end
+        duration = end_rel - start_rel
+        duration_unit = "s"  # SR_HC
+        assert len(raw.ms_parts) == 1
+        mass = next(iter(raw.ms_parts))
+        mass_unit = "Bq"  # SR_HC
+
+        return cls(
+            duration=duration,
+            duration_unit=duration_unit,
+            end=nc_meta_data["simulation_start"] + end_rel,
+            end_rel=end_rel,
+            height=np.mean([raw.zbot, raw.ztop]),
+            height_unit=words["m_agl"].s,
+            lat=np.mean([raw.lllat, raw.urlat]),
+            lon=np.mean([raw.lllon, raw.urlon]),
+            mass=mass,
+            mass_unit=mass_unit,
+            name=name,
+            rate=mass / duration.total_seconds(),
+            rate_unit=f"{mass_unit} {duration_unit}-1",
+            start=nc_meta_data["simulation_start"] + start_rel,
+            start_rel=start_rel,
+        )
 
 
 # SR_TMP <<< TODO figure out what to do with this
