@@ -119,9 +119,17 @@ class MapAxesConf(BaseModel):
 
         lang: Language ('en' for English, 'de' for German).
 
+        lllat: Latitude of lower-left corner.
+
+        lllon: Longitude of lower-left corner.
+
         lw_frame: Line width of frames.
 
         min_city_pop: Minimum population of cities shown.
+
+        urlat: Latitude of upper-right corner.
+
+        urlon: Longitude of upper-right corner.
 
         ref_dist_conf: Reference distance indicator setup.
 
@@ -138,8 +146,12 @@ class MapAxesConf(BaseModel):
     geo_res_cities: str = "none"
     geo_res_rivers: str = "none"
     lang: str = "en"
+    lllat: Optional[float] = None
+    lllon: Optional[float] = None
     lw_frame: float = 1.0
     min_city_pop: int = 0
+    urlat: Optional[float] = None
+    urlon: Optional[float] = None
     ref_dist_conf: RefDistIndConf = RefDistIndConf()
     ref_dist_on: bool = True
     rel_offset: Tuple[float, float] = (0.0, 0.0)
@@ -225,10 +237,12 @@ class MapAxes:
         self.ax.outline_patch.set_edgecolor("none")
 
         # Set extent of map
+        lllon = self.conf.lllon if self.conf.lllon is not None else self.lon[0]
+        urlon = self.conf.urlon if self.conf.urlon is not None else self.lon[-1]
+        lllat = self.conf.lllat if self.conf.lllat is not None else self.lat[0]
+        urlat = self.conf.urlat if self.conf.urlat is not None else self.lat[-1]
         bbox = (
-            MapAxesBoundingBox(
-                self, "data", self.lon[0], self.lon[-1], self.lat[0], self.lat[-1],
-            )
+            MapAxesBoundingBox(self, "data", lllon, urlon, lllat, urlat)
             .to_axes()
             .zoom(self.conf.zoom_fact, self.conf.rel_offset)
             .to_data()
@@ -356,7 +370,7 @@ class MapAxes:
     def add_rivers(self, zorder_key):
         linewidth = {"lowest": 1, "geo_lower": 1, "geo_upper": 2 / 3}[zorder_key]
 
-        # SR_DBG <
+        # SR_WORKAROUND <
         # Note:
         #  - Bug in Cartopy with recent shapefiles triggers errors (NULL geometry)
         #  - Issue fixed in a branch but pull request still pending
@@ -366,7 +380,7 @@ class MapAxes:
         #       -> Fork fixes setup depencies issue (with  pyproject.toml)
         #  - For now, check validity of rivers geometry objects when adding
         #  - Once it works with the master branch, remove these workarounds
-        # SR_DBG >
+        # SR_WORKAROUND >
 
         major_rivers = cartopy.feature.NaturalEarthFeature(
             category="physical",
@@ -376,9 +390,9 @@ class MapAxes:
             facecolor=(0, 0, 0, 0),
             linewidth=linewidth,
         )
-        # SR_DBG < TODO revert once bugfix in Cartopy master
+        # SR_WORKAROUND < TODO revert once bugfix in Cartopy master
         # self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
-        # SR_DBG >
+        # SR_WORKAROUND >
 
         if self.conf.geo_res_rivers == "10m":
             minor_rivers = cartopy.feature.NaturalEarthFeature(
@@ -389,11 +403,11 @@ class MapAxes:
                 facecolor=(0, 0, 0, 0),
                 linewidth=linewidth,
             )
-            # SR_DBG < TODO revert once bugfix in Cartopy master
+            # SR_WORKAROUND < TODO revert once bugfix in Cartopy master
             # self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
-            # SR_DBG >
+            # SR_WORKAROUND >
 
-        # SR_DBG <<< TODO remove once bugfix in Cartopy master
+        # SR_WORKAROUND <<< TODO remove once bugfix in Cartopy master
         try:
             major_rivers.geometries()
         except Exception:  # pylint: disable=W0703  # broad-except
@@ -411,7 +425,7 @@ class MapAxes:
             self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
             if self.conf.geo_res_rivers == "10m":
                 self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
-        # SR_DBG >
+        # SR_WORKAROUND >
 
     def add_cities(self):
         """Add major cities, incl. all capitals."""
