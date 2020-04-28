@@ -219,7 +219,7 @@ def cli(
                 plot_fields(fields, mdata_lst, dry_run)
             ):
                 i_tot += 1
-                click.echo(f"[{i_in + 1}/{n_in}|{i_fld + 1}/{n_fld}] {out_file_path}")
+                click.echo(f"[{i_in + 1}/{n_in}][{i_fld + 1}/{n_fld}] {out_file_path}")
 
                 if out_file_path in out_file_paths:
                     raise Exception("duplicate output file", out_file_path)
