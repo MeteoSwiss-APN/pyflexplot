@@ -134,6 +134,24 @@ def prepare_input_setup_params(ctx, param, value):
     expose_value=False,
 )
 @click.option(
+    "--only",
+    help=(
+        "Only create the first N plots based on the given setup. Useful during "
+        "development; not supposed to be used in production."
+    ),
+    type=int,
+    metavar="N",
+)
+@click.option(
+    "--each-only",
+    help=(
+        "Only create the first N plots (at most) for each input file. Useful "
+        "during development; not supposed to be used in production."
+    ),
+    type=int,
+    metavar="N",
+)
+@click.option(
     "--open-first",
     "open_first_cmd",
     help=(
@@ -149,7 +167,9 @@ def prepare_input_setup_params(ctx, param, value):
 )
 # ---
 @click.pass_context
-def cli(ctx, setup_file_paths, input_setup_params, dry_run, **cli_args):
+def cli(
+    ctx, setup_file_paths, input_setup_params, dry_run, only, each_only, **cli_args
+):
     """Create dispersion plot as specified in CONFIG_FILE(S)."""
 
     ctx.obj.update(cli_args)
@@ -174,8 +194,16 @@ def cli(ctx, setup_file_paths, input_setup_params, dry_run, **cli_args):
     open_first_cmd = ctx.obj["open_first_cmd"]
     open_all_cmd = ctx.obj["open_all_cmd"]
 
+    class BreakInner(Exception):
+        """Break out of inner loop, but continue outer loop."""
+
+    class BreakOuter(Exception):
+        """Break out of inner and outer loop."""
+
     # Create plots input file(s) by input file(s)
     out_file_paths = []
+    n_in = len(setups_by_infile)
+    i_tot = -1
     for i_in, (in_file_path, sub_setups) in enumerate(setups_by_infile.items()):
 
         # Read input fields
@@ -183,20 +211,38 @@ def cli(ctx, setup_file_paths, input_setup_params, dry_run, **cli_args):
 
         fields, mdata_lst = read_files(in_file_path, var_setups_lst, dry_run)
 
-        # Note: plot_fields(...) yields the output file paths on-the-go
-        # pylint: disable=W0612  # unused-variable (plot_handle)
-        for i_fld, (out_file_path, plot_handle) in enumerate(
-            plot_fields(fields, mdata_lst, dry_run)
-        ):
-            _w = len(str(len(fields)))
-            print(f"[{i_in}] {i_fld + 1:{_w}}/{len(fields)}  {out_file_path}")
+        try:
+            # Note: plot_fields(...) yields the output file paths on-the-go
+            # pylint: disable=W0612  # unused-variable (plot_handle)
+            n_fld = len(fields)
+            for i_fld, (out_file_path, plot_handle) in enumerate(
+                plot_fields(fields, mdata_lst, dry_run)
+            ):
+                i_tot += 1
+                click.echo(f"[{i_in + 1}/{n_in}|{i_fld + 1}/{n_fld}] {out_file_path}")
 
-            if out_file_path in out_file_paths:
-                raise Exception("duplicate output file", out_file_path)
-            out_file_paths.append(out_file_path)
+                if out_file_path in out_file_paths:
+                    raise Exception("duplicate output file", out_file_path)
+                out_file_paths.append(out_file_path)
 
-            if open_first_cmd and i_in + i_fld == 0:
-                open_plots(open_first_cmd, [out_file_path], dry_run)
+                if open_first_cmd and i_in + i_fld == 0:
+                    open_plots(open_first_cmd, [out_file_path], dry_run)
+
+                remaining_plots = n_fld - i_fld - 1
+                if remaining_plots and each_only and (i_fld + 1) >= each_only:
+                    click.echo(f"skip remaining {remaining_plots} plots")
+                    raise BreakInner()
+                if only and (i_tot + 1) >= only:
+                    if remaining_plots:
+                        click.echo(f"skip remaining {remaining_plots} plots")
+                    raise BreakOuter()
+        except BreakInner:
+            continue
+        except BreakOuter:
+            remaining_files = n_in - i_in - 1
+            if remaining_files:
+                click.echo(f"skip remaining {remaining_files} input files")
+            break
 
     if open_all_cmd:
         open_plots(open_all_cmd, out_file_paths, dry_run)
