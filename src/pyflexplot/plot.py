@@ -4,6 +4,7 @@ Plots.
 """
 # Standard library
 import re
+from dataclasses import dataclass
 from textwrap import dedent
 from typing import Collection
 from typing import Dict
@@ -25,13 +26,13 @@ from .meta_data import MetaData
 from .plot_lib import MapAxes
 from .plot_lib import MapAxesConf
 from .plot_lib import TextBoxAxes
-from .plot_lib import ax_w_h_in_fig_coords
 from .plot_lib import post_summarize_plot
 from .plot_types import PlotConfig
 from .plot_types import colors_from_plot_config
 from .plot_types import create_map_conf
 from .plot_types import create_plot_config
 from .plot_types import create_plot_labels
+from .plot_types import format_unit
 from .plot_types import levels_from_time_stats
 from .utils import format_level_ranges
 from .utils import summarizable
@@ -94,14 +95,16 @@ class Plot:
         """Create plot."""
 
         # Prepare plot
-        self.fig = plt.figure(figsize=self.plot_config.figsize)
-        self.ax_map = MapAxes.create(self.map_conf, fig=self.fig, field=self.field)
-
-        # Plot particle concentration field
+        layout = PlotLayout(aspect=self.plot_config.fig_aspect)
+        self.fig = plt.figure(figsize=self.plot_config.fig_size)
+        self.ax_map = MapAxes.create(
+            self.map_conf,
+            fig=self.fig,
+            rect=layout.rect_center_left(),
+            field=self.field,
+        )
+        self.add_text_boxes(layout)
         self.draw_map_plot()
-
-        # Text boxes around plot
-        self.add_text_boxes()
         self.draw_boxes()
 
     def fld_nonzero(self):
@@ -149,91 +152,27 @@ class Plot:
             box.draw()
 
     # pylint: disable=R0914  # too-many-locals
-    def add_text_boxes(self):
-        text_box_setup = self.plot_config.text_box_setup
-        h_rel_t = text_box_setup["h_rel_t"]
-        h_rel_b = text_box_setup["h_rel_b"]
-        w_rel_r = text_box_setup["w_rel_r"]
-        pad_hor_rel = text_box_setup["pad_hor_rel"]
-        h_rel_box_rt = text_box_setup["h_rel_box_rt"]
-
-        # Freeze the map plot in order to fix it's coordinates (bbox)
-        try:
-            self.fig.canvas.draw()
-        except Exception as e:
-            # Avoid long library tracebacks (matplotlib/cartopy/urllib/...)
-            raise RuntimeError(e)
-
-        # Obtain aspect ratio of figure
-        fig_pxs = self.fig.get_window_extent()
-        fig_aspect = fig_pxs.width / fig_pxs.height
-
-        # Get map dimensions in figure coordinates
-        w_map, h_map = ax_w_h_in_fig_coords(self.fig, self.ax_map.ax)
-
-        # Relocate the map close to the lower left corner
-        x0_map, y0_map = 0.05, 0.05
-        self.ax_map.ax.set_position([x0_map, y0_map, w_map, h_map])
-
-        # Determine height of top box and width of right boxes
-        w_box = w_rel_r * w_map
-        h_box_t = h_rel_t * h_map
-        h_box_b = h_rel_b * h_map
-
-        # Determine padding between plot and boxes
-        pad_hor = pad_hor_rel * w_map
-        pad_ver = pad_hor * fig_aspect
-
-        text_box_conf = {
+    def add_text_boxes(self, layout):
+        kwargs = {
             "fig": self.fig,
-            "ax_ref": self.ax_map.ax,
-            "f_pad": 1.2,
             "lw_frame": self.plot_config.lw_frame,
         }
-
-        # Axes for text boxes (one on top, two to the right)
-        self.boxes = {
-            self.fill_box_top_left: TextBoxAxes(
-                name="top/left",
-                rect=[x0_map, y0_map + pad_ver + h_map, w_map, h_box_t],
-                **text_box_conf,
-            ),
-            self.fill_box_top_right: TextBoxAxes(
-                name="top/right",
-                rect=[
-                    x0_map + w_map + pad_hor,
-                    y0_map + pad_ver + h_map,
-                    w_box,
-                    h_box_t,
-                ],
-                **text_box_conf,
-            ),
-            self.fill_box_right_top: TextBoxAxes(
-                name="right/top",
-                rect=[
-                    x0_map + pad_hor + w_map,
-                    y0_map + 0.5 * pad_ver + (1.0 - h_rel_box_rt) * h_map,
-                    w_box,
-                    h_rel_box_rt * h_map - 0.5 * pad_ver,
-                ],
-                **text_box_conf,
-            ),
-            self.fill_box_right_bottom: TextBoxAxes(
-                name="right/bottom",
-                rect=[
-                    x0_map + pad_hor + w_map,
-                    y0_map,
-                    w_box,
-                    (1.0 - h_rel_box_rt) * h_map - 0.5 * pad_ver,
-                ],
-                **text_box_conf,
-            ),
-            self.fill_box_bottom: TextBoxAxes(
-                name="bottom",
-                rect=[x0_map, y0_map - h_box_b, w_map + pad_hor + w_box, h_box_b],
-                **{**text_box_conf, "lw_frame": None},
-            ),
-        }
+        self.boxes = {}
+        self.boxes[self.fill_box_top_left] = TextBoxAxes(
+            name="top/left", rect=layout.rect_top_left(), **kwargs,
+        )
+        self.boxes[self.fill_box_top_right] = TextBoxAxes(
+            name="top/right", rect=layout.rect_top_right(), **kwargs,
+        )
+        self.boxes[self.fill_box_right_top] = TextBoxAxes(
+            name="right/top", rect=layout.rect_center_right_top(), **kwargs,
+        )
+        self.boxes[self.fill_box_right_bottom] = TextBoxAxes(
+            name="right/bottom", rect=layout.rect_center_right_bottom(), **kwargs,
+        )
+        self.boxes[self.fill_box_bottom] = TextBoxAxes(
+            name="bottom", rect=layout.rect_bottom(), **{**kwargs, "lw_frame": None},
+        )
 
     def fill_box_top_left(
         self, box: TextBoxAxes, *, skip_pos: Optional[Collection[str]] = None,
@@ -370,7 +309,7 @@ class Plot:
             )
             dy += dy_line
 
-        # Markers
+        # self.Markers
 
         n_markers = self.plot_config.mark_release_site + self.plot_config.mark_field_max
         dy0_marker_i = dy0_markers + (2 - n_markers) * dy_line / 2
@@ -445,23 +384,51 @@ class Plot:
         lat_deg = labels["lat_deg_fmt"].format(d=lat.degs(), m=lat.mins(), f=lat.frac())
         lon_deg = labels["lon_deg_fmt"].format(d=lon.degs(), m=lon.mins(), f=lon.frac())
 
+        # SR_TMP < TODO clean this up, especially for ComboMetaData (units messed up)!
+        release_height = (
+            f"{mdata.release_height} {format_unit(str(mdata.release_height_unit))}"
+        )
+        release_rate = (
+            f"{mdata.release_rate} {format_unit(str(mdata.release_rate_unit))}"
+        )
+        release_mass = (
+            f" {mdata.release_mass} {format_unit(str(mdata.release_mass_unit))}"
+        )
+        half_life = (
+            f"{mdata.species_half_life} "
+            f"{format_unit(str(mdata.species_half_life_unit))}"
+        )
+        deposit_vel = (
+            f"{mdata.species_deposit_vel} "
+            f"{format_unit(str(mdata.species_deposit_vel_unit))}"
+        )
+        sediment_vel = (
+            f"{mdata.species_sediment_vel} "
+            f"{format_unit(str(mdata.species_sediment_vel_unit))}"
+        )
+        washout_coeff = (
+            f"{mdata.species_washout_coeff} "
+            f"{format_unit(str(mdata.species_washout_coeff_unit))}"
+        )
+        # SR_TMP >
+
         info_blocks = dedent(
             f"""\
             {labels['site']}:\t{mdata.release_site_name}
             {labels['latitude']}:\t{lat_deg}
             {labels['longitude']}:\t{lon_deg}
-            {labels['height']}:\t{mdata.release_height}
+            {labels['height']}:\t{release_height}
 
             {labels['start']}:\t{mdata.release_start}
             {labels['end']}:\t{mdata.release_end}
-            {labels['rate']}:\t{mdata.release_rate}
-            {labels['mass']}:\t{mdata.release_mass}
+            {labels['rate']}:\t{release_rate}
+            {labels['mass']}:\t{release_mass}
 
             {labels['name']}:\t{mdata.species_name}
-            {labels['half_life']}:\t{mdata.species_half_life}
-            {labels['deposit_vel']}:\t{mdata.species_deposit_vel}
-            {labels['sediment_vel']}:\t{mdata.species_sediment_vel}
-            {labels['washout_coeff']}:\t{mdata.species_washout_coeff}
+            {labels['half_life']}:\t{half_life}
+            {labels['deposit_vel']}:\t{deposit_vel}
+            {labels['sediment_vel']}:\t{sediment_vel}
+            {labels['washout_coeff']}:\t{washout_coeff}
             {labels['washout_exponent']}:\t{mdata.species_washout_exponent}
             """
         )
@@ -475,6 +442,7 @@ class Plot:
             dy_line=dy,
             blocks=info_blocks,
             reverse=True,
+            # size="small",
             size="small",
         )
 
@@ -515,6 +483,112 @@ def plot_fields(
             plot.save(out_file_path, write=write)
 
         yield out_file_path, plot
+
+
+@dataclass
+# pylint: disable=R0902  # too-many-instance-attributes
+# pylint: disable=R0904  # too-many-public-methods
+class PlotLayout:
+    aspect: float
+    x0_tot: float = 0.0
+    x1_tot: float = 1.0
+    y0_tot: float = 0.0
+    y1_tot: float = 1.0
+    y_pad: float = 0.02
+    h_top: float = 0.1
+    w_right: float = 0.2
+    h_crbot: float = 0.45
+    h_bottom: float = 0.05
+
+    @property
+    def x_pad(self):
+        return self.y_pad / self.aspect
+
+    @property
+    def h_tot(self):
+        return self.y1_tot - self.y0_tot
+
+    @property
+    def y1_top(self):
+        return self.y1_tot
+
+    @property
+    def y0_top(self):
+        return self.y1_top - self.h_top
+
+    @property
+    def y1_center(self):
+        return self.y0_top - self.y_pad
+
+    @property
+    def y0_center(self):
+        return self.y0_tot + self.h_bottom
+
+    @property
+    def h_center(self):
+        return self.y1_center - self.y0_center
+
+    @property
+    def w_tot(self):
+        return self.x1_tot - self.x0_tot
+
+    @property
+    def x1_right(self):
+        return self.x1_tot
+
+    @property
+    def x0_right(self):
+        return self.x1_right - self.w_right
+
+    @property
+    def x1_left(self):
+        return self.x0_right - self.x_pad
+
+    @property
+    def x0_left(self):
+        return self.x0_tot
+
+    @property
+    def w_left(self):
+        return self.x1_left - self.x0_left
+
+    @property
+    def y0_crbot(self):
+        return self.y0_center
+
+    @property
+    def y1_crbot(self):
+        return self.y0_crbot + self.h_crbot
+
+    @property
+    def y1_crtop(self):
+        return self.y1_center
+
+    @property
+    def y0_crtop(self):
+        return self.y1_crbot + self.y_pad
+
+    @property
+    def h_crtop(self):
+        return self.y1_crtop - self.y0_crtop
+
+    def rect_top_left(self):
+        return (self.x0_left, self.y0_top, self.w_left, self.h_top)
+
+    def rect_top_right(self):
+        return (self.x0_right, self.y0_top, self.w_right, self.h_top)
+
+    def rect_center_left(self):
+        return (self.x0_left, self.y0_center, self.w_left, self.h_center)
+
+    def rect_center_right_top(self):
+        return (self.x0_right, self.y0_crtop, self.w_right, self.h_crtop)
+
+    def rect_center_right_bottom(self):
+        return (self.x0_right, self.y0_crbot, self.w_right, self.h_crbot)
+
+    def rect_bottom(self):
+        return (self.x0_tot, self.y0_tot, self.w_tot, self.h_bottom)
 
 
 # pylint: disable=W0102  # dangerious-default-value ([])

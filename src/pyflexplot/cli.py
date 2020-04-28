@@ -167,6 +167,8 @@ def prepare_input_setup_params(ctx, param, value):
 )
 # ---
 @click.pass_context
+# pylint: disable=R0913  # too-many-arguments
+# pylint: disable=R0912  # too-many-branches
 def cli(
     ctx, setup_file_paths, input_setup_params, dry_run, only, each_only, **cli_args
 ):

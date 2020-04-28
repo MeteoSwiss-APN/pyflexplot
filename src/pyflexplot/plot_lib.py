@@ -87,9 +87,9 @@ class RefDistIndConf:
     Args:
         dist: Reference distance in ``unit``.
 
-        pos: Position of reference distance indicator box (corners of the
-            plot). Options: "tl" (top-left), "tr" (top-right), "bl"
-            (bottom-left), "br" (bottom-right).
+        pos: Position of reference distance indicator box (corners of the plot).
+            Options: "tl" (top-left), "tr" (top-right), "bl" (bottom-left), "br"
+            (bottom-right).
 
         unit: Unit of reference distance ``val``.
 
@@ -98,10 +98,6 @@ class RefDistIndConf:
     dist: int = 100
     pos: str = "bl"
     unit: str = "km"
-
-    @classmethod
-    def create(cls, params):
-        return cls(**params)
 
 
 @summarizable
@@ -198,11 +194,13 @@ class MapAxes:
     # water_color = cartopy.feature.COLORS["water"]
     water_color = "lightskyblue"
 
-    def __init__(self, *, fig, lat, lon, conf):
+    def __init__(self, *, fig, rect, lat, lon, conf):
         """Initialize instance of MapAxesRotatedPole.
 
         Args:
             fig (Figure): Figure to which to map axes is added.
+
+            rect (tuple[float]): Rectangle in figure coordinates.
 
             lat (ndarray[float]): Latitude coordinates.
 
@@ -233,10 +231,11 @@ class MapAxes:
         self.prepare_projections()
 
         # Initialize plot
-        self.ax = self.fig.add_subplot(projection=self.proj_map)
+        self.ax = self.fig.add_axes(rect, projection=self.proj_map)
+        self.ax.set_adjustable("datalim")
         self.ax.outline_patch.set_edgecolor("none")
 
-        # Set extent of map
+        # Set geographical extent of the map
         lllon = self.conf.lllon if self.conf.lllon is not None else self.lon[0]
         urlon = self.conf.urlon if self.conf.urlon is not None else self.lon[-1]
         lllat = self.conf.lllat if self.conf.lllat is not None else self.lat[0]
@@ -271,7 +270,7 @@ class MapAxes:
         self.add_geography()
 
         # # Show data domain outline
-        # self.add_data_domain_outline()
+        self.add_data_domain_outline()
 
         # Redraw plot frame on top of all other elements
         self.ax.add_patch(
@@ -289,11 +288,11 @@ class MapAxes:
         )
 
     @classmethod
-    def create(cls, conf, *, fig, field):
+    def create(cls, conf, *, fig, rect, field):
         if field.rotated_pole:
-            return MapAxesRotatedPole.create(conf, fig=fig, field=field)
+            return MapAxesRotatedPole.create(conf, fig=fig, rect=rect, field=field)
         else:
-            return cls(fig=fig, lat=field.lat, lon=field.lon, conf=conf)
+            return cls(fig=fig, lat=field.lat, rect=rect, lon=field.lon, conf=conf)
 
     def __repr__(self):
         return f"{type(self).__name__}(<TODO>)"  # SR_TODO
@@ -643,7 +642,7 @@ class MapAxesRotatedPole(MapAxes):
         super().__init__(**kwargs)
 
     @classmethod
-    def create(cls, conf, *, fig, field):
+    def create(cls, conf, *, fig, rect, field):
         if not field.rotated_pole:
             raise ValueError("not a rotated-pole field", field)
         rotated_pole = field.nc_meta_data["variables"]["rotated_pole"]["ncattrs"]
@@ -651,6 +650,7 @@ class MapAxesRotatedPole(MapAxes):
         pollon = rotated_pole["grid_north_pole_longitude"]
         return cls(
             fig=fig,
+            rect=rect,
             lat=field.lat,
             lon=field.lon,
             pollat=pollat,
@@ -1289,89 +1289,47 @@ class TextBoxAxes:
 
     # pylint: disable=R0913  # too-many-arguments
     def __init__(
-        self,
-        fig,
-        ax_ref,
-        rect,
-        name=None,
-        lw_frame=1.0,
-        ec="black",
-        fc="none",
-        f_pad=None,
+        self, fig, rect, name, lw_frame=1.0, ec="black", fc="none",
     ):
         """Initialize instance of TextBoxAxes.
 
         Args:
             fig (Figure): Figure to which to add the text box axes.
 
-            ax_ref (Axis): Reference axes.
+            rect (tuple[float]): Rectangle [left, bottom, width, height].
 
-            rect (list): Rectangle [left, bottom, width, height].
-
-            name (list, optional): Name. Defaults to None.
+            name (str): Name of the text box.
 
             lw_frame (float, optional): Line width of frame around box. Frame
-                is omitted if ``lw_frame`` is None. Defaults to 1.0.
+                is omitted if ``lw_frame`` is None.
 
-            ec (str, optional): Edge color. Defaults to "black".
+            ec (str, optional): Edge color.
 
-            fc (str, optional): Face color. Defaults to "none".
-
-            f_pad (float or tuple[float, float], optional): Padding of text box
-                elements in unit distances, either one value in both directions
-                or separate values in the x and y direction. Defaults to 1.0.
+            fc (str, optional): Face color.
 
         """
         self.fig = fig
-        self.ax_ref = ax_ref
         self.rect = rect
         self.name = name
         self.lw_frame = lw_frame
         self.ec = ec
         self.fc = fc
 
-        self.elements = []
-        self.ax = self.fig.add_axes(self.rect)
+        self.ax = self.fig.add_axes(rect)
         self.ax.axis("off")
-        self._set_unit_distances()
-        self._set_pad(1.0 if f_pad is None else f_pad)
 
-    def _set_unit_distances(self, unit_w_map_rel=0.01):
-        """Compute unit distances in x and y for text positioning.
+        # SR_TMP < TODO Clean up!
+        w_rel_fig, h_rel_fig = ax_w_h_in_fig_coords(fig, self.ax)
+        self.dx_unit = 0.0075 / w_rel_fig
+        self.dy_unit = 0.009 / h_rel_fig
+        self.pad_x = 1.0 * self.dx_unit
+        self.pad_y = 1.0 * self.dy_unit
+        # SR_TMP >
 
-        To position text nicely inside a box, it is handy to have unit
-        distances of absolute length to work with that are independent of the
-        size of the box (i.e., axes). This method computes such distances as a
-        fraction of the width of the map plot.
+        self.elements = []
 
-        Args:
-            unit_w_map_rel (float, optional): Fraction of the width of the map
-                plot that corresponds to one unit distance. Defaults to 0.01.
-
-        """
-        w_map_fig, _ = ax_w_h_in_fig_coords(self.fig, self.ax_ref)
-        w_box_fig, h_box_fig = ax_w_h_in_fig_coords(self.fig, self.ax)
-
-        self.dx_unit = unit_w_map_rel * w_map_fig / w_box_fig
-        self.dy_unit = unit_w_map_rel * w_map_fig / h_box_fig
-
-    def _set_pad(self, f_pad):
-        """Set padding in x and y direction."""
-
-        if not isiterable(f_pad, str_ok=False):
-            try:
-                f_pad_x = float(f_pad)
-                f_pad_y = float(f_pad)
-            except Exception:
-                raise ValueError(f"f_pad is not a float nor a pair of floats: {f_pad}")
-        else:
-            try:
-                f_pad_x, f_pad_y = [float(i) for i in f_pad]
-            except Exception:
-                raise ValueError(f"f_pad is not a float nor a pair of floats: {f_pad}")
-
-        self.pad_x = f_pad_x * self.dx_unit
-        self.pad_y = f_pad_y * self.dy_unit
+        # Uncomment to populate the box with nine sample labels
+        # self.sample_labels()
 
     def draw(self):
         """Draw the defined text boxes onto the plot axes."""

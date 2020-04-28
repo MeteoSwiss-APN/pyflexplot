@@ -45,13 +45,19 @@ def create_map_conf(field: Field) -> MapAxesConf:
         "geo_res_cities": "110m",
         "geo_res_rivers": "110m",
         "min_city_pop": 1_000_000,
+        # SR_DBG <
         "zoom_fact": 1.02,
+        # "zoom_fact": 0.975,  # SR_DBG
+        # SR_DBG >
     }
     conf_domain_eu = {
         "geo_res_cities": "50m",
         "geo_res_rivers": "50m",
         "min_city_pop": 300_000,
+        # SR_DBG <
         "zoom_fact": 1.02,
+        # "zoom_fact": 0.975,  # SR_DBG
+        # SR_DBG >
     }
     conf_domain_ch = {
         "geo_res_cities": "10m",
@@ -227,6 +233,9 @@ def format_level_label(mdata: MetaData, words: TranslatedWords):
 def format_unit(s: str) -> str:
     """Auto-format the unit by elevating superscripts etc."""
     s = str(s)
+    # SR_TMP < Note: Should be m. agl.! TODO: Fix meta data combo formatting with units!
+    if s == "meters":
+        return "m"
     old_new = [
         ("m-2", "m$^{-2}$"),
         ("m-3", "m$^{-3}$"),
@@ -343,7 +352,9 @@ class PlotConfig:
     draw_colors: bool = True
     draw_contours: bool = False
     extend: str = "max"
-    figsize: Tuple[float, float] = (12.0, 9.0)
+    # SR_NOTE Figure size may change when boxes etc. are added
+    # SR_TODO Specify plot size in a robust way (what you want is what you get)
+    fig_size: Tuple[float, float] = (12.5, 8.0)
     legend_box_title: str = ""  # SR_TODO sensible default
     level_ranges_align: str = "center"
     level_range_style: str = "base"
@@ -354,10 +365,14 @@ class PlotConfig:
     model_info: str = ""  # SR_TODO sensible default
     n_levels: Optional[int] = None  # SR_TODO sensible default
     reverse_legend: bool = False
-    text_box_setup: Optional[Dict[str, float]] = None  # SR_TODO sensible default
     top_box_subtitle: str = ""
 
+    @property
+    def fig_aspect(self):
+        return np.divide(*self.fig_size)
 
+
+# SR_TODO Create dataclass with default values for test box setup
 def create_plot_config(setup: InputSetup, labels: PlotLabels) -> "PlotConfig":
     new_config_dct: Dict[str, Any] = {}
     if setup.variable == "concentration":
@@ -365,25 +380,11 @@ def create_plot_config(setup: InputSetup, labels: PlotLabels) -> "PlotConfig":
     elif setup.variable == "deposition":
         new_config_dct["n_levels"] = 9
     if setup.simulation_type == "deterministic":
-        new_config_dct["text_box_setup"] = {
-            "h_rel_t": 0.1,
-            "h_rel_b": 0.03,
-            "w_rel_r": 0.25,
-            "pad_hor_rel": 0.015,
-            "h_rel_box_rt": 0.45,
-        }
         new_config_dct["model_info"] = labels.bottom["model_info_det"]
         if setup.plot_type == "affected_area_mono":
             new_config_dct["extend"] = "none"
             new_config_dct["n_levels"] = 1
     if setup.simulation_type == "ensemble":
-        new_config_dct["text_box_setup"] = {
-            "h_rel_t": 0.14,
-            "h_rel_b": 0.03,
-            "w_rel_r": 0.25,
-            "pad_hor_rel": 0.015,
-            "h_rel_box_rt": 0.46,
-        }
         new_config_dct["model_info"] = labels.bottom["model_info_ens"]
         if setup.plot_type == "ens_thr_agrmt":
             new_config_dct["extend"] = "min"
