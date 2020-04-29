@@ -245,17 +245,29 @@ class FileReader:
         dim_names = self._dim_names()
         lat = fi.variables[dim_names["lat"]][:]
         lon = fi.variables[dim_names["lon"]][:]
+        time = fi.variables[dim_names["time"]][:]
+        # SR_TMP <
+        time_unit = fi.variables[dim_names["time"]].units
+        if time_unit.startswith("seconds since"):
+            time = time / 3600.0
+        else:
+            raise NotImplementedError("unexpected time unit", time_unit)
+        # SR_TMP >
         try:
             old_lat = self.lat
             old_lon = self.lon
+            old_time = self.time
         except AttributeError:
             self.lat = lat
             self.lon = lon
+            self.time = time
         else:
             if not (lat == old_lat).all():
                 raise Exception("inconsistent latitude", lat, old_lat)
             if not (lon == old_lon).all():
                 raise Exception("inconsistent longitude", lon, old_lon)
+            if not (time == old_time).all():
+                raise Exception("inconsistent time", time, old_time)
 
     def _read_fld_time(self, fi, setups):
         """Read field at all time steps."""
@@ -294,7 +306,7 @@ class FileReader:
             fld_time = threshold_agreement(fld_time_mem, ens_param_thr, axis=0)
         elif plot_type == "ens_cloud_arrival_time":
             fld_time = cloud_arrival_time(
-                fld_time_mem, ens_param_thr, ens_param_mem_min, mem_axis=0,
+                fld_time_mem, self.time, ens_param_thr, ens_param_mem_min, mem_axis=0,
             )
         else:
             raise NotImplementedError(f"plot var '{plot_type}'")

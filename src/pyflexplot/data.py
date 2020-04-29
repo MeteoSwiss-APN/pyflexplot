@@ -140,6 +140,7 @@ def threshold_agreement(arr, thr, *, axis=None, thr_eq_ok=False):
 
 def cloud_arrival_time(
     arr: np.ndarray,
+    time: np.ndarray,
     thr: float,
     n_mem_min: int,
     *,
@@ -151,6 +152,8 @@ def cloud_arrival_time(
 
     Args:
         arr: Data array.
+
+        time: Time dimension.
 
         thr: Threshold to be exceeded.
 
@@ -169,6 +172,8 @@ def cloud_arrival_time(
     # SR_TMP < TODO Remove once type hints added to arguments
     if arr is None:
         raise ValueError("arr is None")
+    if time is None:
+        raise ValueError("time is None")
     if thr is None:
         raise ValueError("thr is None")
     if n_mem_min is None:
@@ -188,7 +193,8 @@ def cloud_arrival_time(
         m_cloud = np.count_nonzero(compare(arr_i, thr), axis=mem_axis) >= n_mem_min
         result[time_idx][m_cloud] = 0
         if time_idx < time_idx_max:
-            result[time_idx][~m_cloud] = result[time_idx + 1][~m_cloud] + 1
+            d_time = time[time_idx + 1] - time[time_idx]
+            result[time_idx][~m_cloud] = result[time_idx + 1][~m_cloud] + d_time
     return result
 
 
