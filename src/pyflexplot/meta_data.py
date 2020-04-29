@@ -57,16 +57,30 @@ class MetaDatum(GenericModel, Generic[ValueT]):
         return value
 
     @property
-    def type_(self):
+    def type_(self) -> type:
         return type(self.value)
+
+    @property
+    def cls_combo(self) -> type:
+        try:
+            return {
+                int: MetaDatumCombo[int],
+                float: MetaDatumCombo[float],
+                str: MetaDatumCombo[str],
+                datetime: MetaDatumCombo[datetime],
+                timedelta: MetaDatumCombo[timedelta],
+            }[self.type_]
+        except KeyError:
+            raise NotImplementedError(f"{type(self).__name__}.cls_combo")
 
     def __str__(self):
         return format_meta_datum(self.value)
 
     def derive(
         self,
-        name: Optional[str] = None,
+        *,
         value: Optional[ValueT] = None,
+        name: Optional[str] = None,
         attrs: Optional[Dict[str, Any]] = None,
     ) -> "MetaDatum[ValueT]":
         if name is None:
@@ -75,16 +89,20 @@ class MetaDatum(GenericModel, Generic[ValueT]):
             value = self.value
         if attrs is None:
             attrs = self.attrs
-        # assert name is not None  # mypy
-        # assert value is not None  # mypy
-        # assert attrs is not None  # mypy
         return type(self)(name=name, value=value, attrs=attrs)
 
-    def as_combo(self, n: int) -> "MetaDatumCombo[ValueT]":
-        combo_value = [self.value] * n
-        return MetaDatumCombo[ValueT](
-            name=self.name, value=combo_value, attrs=self.attrs
-        )
+    def derive_combo(
+        self,
+        *,
+        value: Sequence[ValueT],
+        name: Optional[str] = None,
+        attrs: Optional[Dict[str, Any]] = None,
+    ) -> "MetaDatumCombo[ValueT]":
+        if name is None:
+            name = self.name
+        if attrs is None:
+            attrs = self.attrs
+        return self.cls_combo(name=name, value=value, attrs=attrs)
 
     # SR_TODO Extract methods into separate class (e.g., AttrMerger)!
     def merge_with(
@@ -113,10 +131,12 @@ class MetaDatum(GenericModel, Generic[ValueT]):
         # Reduce attrs dicts
         attrs = self._merge_attrs(others)
 
-        if isinstance(reduced_value, Collection) and not isinstance(reduced_value, str):
-            return MetaDatumCombo[ValueT](name=name, value=reduced_value, attrs=attrs)
+        if isinstance(reduced_value, Sequence) and not isinstance(reduced_value, str):
+            combo_value: Sequence[ValueT] = reduced_value  # mypy
+            return self.derive_combo(name=name, value=combo_value, attrs=attrs)
         else:
-            return MetaDatum[ValueT](name=name, value=reduced_value, attrs=attrs)
+            value: ValueT = reduced_value  # type: ignore  # mypy
+            return self.derive(name=name, value=value, attrs=attrs)
 
     def _reduce_values(
         self, others: Collection["MetaDatum[ValueT]"],
@@ -185,9 +205,6 @@ class MetaDatumCombo(GenericModel, Generic[ValueT]):
             value = self.value
         if attrs is None:
             attrs = self.attrs
-        # assert name is not None  # mypy
-        # assert value is not None  # mypy
-        # assert attrs is not None  # mypy
         return type(self)(name=name, value=value, attrs=attrs)
 
     def as_datums(self) -> List[MetaDatum[ValueT]]:
@@ -203,7 +220,8 @@ class MetaDatumCombo(GenericModel, Generic[ValueT]):
         self, other: Union[MetaDatum, "MetaDatumCombo"], join: str = " "
     ) -> "MetaDatumCombo":
         if isinstance(other, MetaDatum):
-            other = other.as_combo(len(self.value))
+            combo_value = [self.value] * len(self.value)
+            other = other.derive_combo(value=combo_value)
         elif not isinstance(other, MetaDatumCombo):
             raise ValueError(
                 "wrong type to be combined with {type(self).__name__}", type(other)
