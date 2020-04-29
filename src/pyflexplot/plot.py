@@ -32,7 +32,6 @@ from .plot_types import colors_from_plot_config
 from .plot_types import create_map_conf
 from .plot_types import create_plot_config
 from .plot_types import create_plot_labels
-from .plot_types import format_unit
 from .plot_types import levels_from_time_stats
 from .utils import format_level_ranges
 from .utils import summarizable
@@ -385,31 +384,15 @@ class Plot:
         lon_deg = labels["lon_deg_fmt"].format(d=lon.degs(), m=lon.mins(), f=lon.frac())
 
         # SR_TMP < TODO clean this up, especially for ComboMetaData (units messed up)!
-        release_height = (
-            f"{mdata.release_height} {format_unit(str(mdata.release_height_unit))}"
-        )
-        release_rate = (
-            f"{mdata.release_rate} {format_unit(str(mdata.release_rate_unit))}"
-        )
-        release_mass = (
-            f" {mdata.release_mass} {format_unit(str(mdata.release_mass_unit))}"
-        )
-        half_life = (
-            f"{mdata.species_half_life} "
-            f"{format_unit(str(mdata.species_half_life_unit))}"
-        )
-        deposit_vel = (
-            f"{mdata.species_deposit_vel} "
-            f"{format_unit(str(mdata.species_deposit_vel_unit))}"
-        )
-        sediment_vel = (
-            f"{mdata.species_sediment_vel} "
-            f"{format_unit(str(mdata.species_sediment_vel_unit))}"
-        )
-        washout_coeff = (
-            f"{mdata.species_washout_coeff} "
-            f"{format_unit(str(mdata.species_washout_coeff_unit))}"
-        )
+        height = mdata.format("release_height", add_unit=True)
+        rate = mdata.format("release_rate", add_unit=True)
+        mass = mdata.format("release_mass", add_unit=True)
+        substance = mdata.format("species_name", join_combo=" / ")
+        half_life = mdata.format("species_half_life", add_unit=True)
+        deposit_vel = mdata.format("species_deposit_vel", add_unit=True)
+        sediment_vel = mdata.format("species_sediment_vel", add_unit=True)
+        washout_coeff = mdata.format("species_washout_coeff", add_unit=True)
+        washout_exponent = mdata.format("species_washout_exponent")
         # SR_TMP >
 
         info_blocks = dedent(
@@ -417,19 +400,19 @@ class Plot:
             {labels['site']}:\t{mdata.release_site_name}
             {labels['latitude']}:\t{lat_deg}
             {labels['longitude']}:\t{lon_deg}
-            {labels['height']}:\t{release_height}
+            {labels['height']}:\t{height}
 
             {labels['start']}:\t{mdata.release_start}
             {labels['end']}:\t{mdata.release_end}
-            {labels['rate']}:\t{release_rate}
-            {labels['mass']}:\t{release_mass}
+            {labels['rate']}:\t{rate}
+            {labels['mass']}:\t{mass}
 
-            {labels['name']}:\t{mdata.species_name}
+            {labels['name']}:\t{substance}
             {labels['half_life']}:\t{half_life}
             {labels['deposit_vel']}:\t{deposit_vel}
             {labels['sediment_vel']}:\t{sediment_vel}
             {labels['washout_coeff']}:\t{washout_coeff}
-            {labels['washout_exponent']}:\t{mdata.species_washout_exponent}
+            {labels['washout_exponent']}:\t{washout_exponent}
             """
         )
 

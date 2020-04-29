@@ -16,6 +16,7 @@ from typing import Generic
 from typing import List
 from typing import Mapping
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import TypeVar
 from typing import Union
@@ -61,6 +62,29 @@ class MetaDatum(GenericModel, Generic[ValueT]):
 
     def __str__(self):
         return format_meta_datum(self.value)
+
+    def derive(
+        self,
+        name: Optional[str] = None,
+        value: Optional[ValueT] = None,
+        attrs: Optional[Dict[str, Any]] = None,
+    ) -> "MetaDatum[ValueT]":
+        if name is None:
+            name = self.name
+        if value is None:
+            value = self.value
+        if attrs is None:
+            attrs = self.attrs
+        # assert name is not None  # mypy
+        # assert value is not None  # mypy
+        # assert attrs is not None  # mypy
+        return type(self)(name=name, value=value, attrs=attrs)
+
+    def as_combo(self, n: int) -> "MetaDatumCombo[ValueT]":
+        combo_value = [self.value] * n
+        return MetaDatumCombo[ValueT](
+            name=self.name, value=combo_value, attrs=self.attrs
+        )
 
     # SR_TODO Extract methods into separate class (e.g., AttrMerger)!
     def merge_with(
@@ -120,6 +144,14 @@ class MetaDatum(GenericModel, Generic[ValueT]):
                 raise NotImplementedError("values differ", attr, value, other_values)
         return attrs
 
+    def combine_with(self, other: "MetaDatum", join: str = " ") -> "MetaDatum":
+        if not isinstance(other, MetaDatum):
+            raise ValueError(
+                f"wrong type to be combined with {type(self).__name__}", type(other)
+            )
+        combo_value = join.join([str(self), str(other)])
+        return MetaDatum[str](name=self.name, value=combo_value, attrs=self.attrs)
+
 
 @summarizable
 class MetaDatumCombo(GenericModel, Generic[ValueT]):
@@ -134,14 +166,62 @@ class MetaDatumCombo(GenericModel, Generic[ValueT]):
         validate_all = True
         validate_assignment = True
 
+    @property
     def type_(self):
         return type(next(iter(self.value)))
+
+    def __str__(self):
+        return format_meta_datum(self.value, self.attrs.get("join"))
+
+    def derive(
+        self,
+        name: Optional[str] = None,
+        value: Optional[Sequence[ValueT]] = None,
+        attrs: Optional[Dict[str, Any]] = None,
+    ) -> "MetaDatumCombo[ValueT]":
+        if name is None:
+            name = self.name
+        if value is None:
+            value = self.value
+        if attrs is None:
+            attrs = self.attrs
+        # assert name is not None  # mypy
+        # assert value is not None  # mypy
+        # assert attrs is not None  # mypy
+        return type(self)(name=name, value=value, attrs=attrs)
+
+    def as_datums(self) -> List[MetaDatum[ValueT]]:
+        return [
+            MetaDatum[ValueT](name=self.name, value=value, attrs=self.attrs)
+            for value in self.value
+        ]
 
     def merge_with(self, others, replace=None):
         raise NotImplementedError(f"{type(self).__name__}.merge_with")
 
-    def __str__(self):
-        return format_meta_datum(self.value, self.attrs.get("join"))
+    def combine_with(
+        self, other: Union[MetaDatum, "MetaDatumCombo"], join: str = " "
+    ) -> "MetaDatumCombo":
+        if isinstance(other, MetaDatum):
+            other = other.as_combo(len(self.value))
+        elif not isinstance(other, MetaDatumCombo):
+            raise ValueError(
+                "wrong type to be combined with {type(self).__name__}", type(other)
+            )
+        elif len(self.value) != len(other.value):
+            raise ValueError(
+                "number of combo values differs", len(self.value), len(other.value)
+            )
+        assert isinstance(other, MetaDatumCombo)  # mypy
+        combo_values = []
+        for self_datum, other_datum in zip(self.as_datums(), other.as_datums()):
+            combined_datum = self_datum.combine_with(other_datum, join=join)
+            combo_values.append(combined_datum.value)
+        return MetaDatumCombo[str](
+            name=f"self.name+other.name",
+            value=combo_values,
+            attrs={**other.attrs, **self.attrs},
+        )
 
 
 def format_meta_datum(value: str, join: Optional[str] = None) -> str:
@@ -382,6 +462,55 @@ class MetaData(BaseModel):
             kwargs[name] = datum.merge_with(other_data, replace=replace.get(name))
 
         return type(self)(setup=setup, **kwargs)
+
+    def format(
+        self,
+        param: str,
+        *,
+        add_unit: bool = False,
+        auto_format_unit: bool = True,
+        join_combo: Optional[str] = None,
+    ) -> str:
+        """Format a parameter, optionally adding the unit (`~_unit`)."""
+        if add_unit and param.endswith("_unit"):
+            raise ValueError("cannot add unit to param ending in '_unit'", param)
+        try:
+            datum = getattr(self, param)
+        except AttributeError:
+            raise ValueError("invalid param", param)
+        if auto_format_unit and param.endswith("_unit"):
+            contains_unit = True
+        elif add_unit:
+            unit_param = f"{param}_unit"
+            try:
+                unit_datum = getattr(self, unit_param)
+            except AttributeError:
+                raise Exception("no unit found for parameter", param, unit_param)
+            datum = datum.combine_with(unit_datum, join=r"$\,$")
+            contains_unit = True
+        else:
+            contains_unit = False
+        if isinstance(datum, MetaDatumCombo) and join_combo is not None:
+            datum = datum.derive(attrs={**datum.attrs, "join": join_combo})
+        if contains_unit:
+            return format_unit(str(datum))
+        return str(datum)
+
+
+def format_unit(s: str) -> str:
+    """Auto-format the unit by elevating superscripts etc."""
+    s = str(s)
+    # SR_TMP < Note: Should be m. agl.! TODO: Fix meta data combo formatting with units!
+    if s == "meters":
+        return "m"
+    old_new = [
+        ("m-2", "m$^{-2}$"),
+        ("m-3", "m$^{-3}$"),
+        ("s-1", "s$^{-1}$"),
+    ]
+    for old, new in old_new:
+        s = s.replace(old, new)
+    return s
 
 
 def collect_meta_data(

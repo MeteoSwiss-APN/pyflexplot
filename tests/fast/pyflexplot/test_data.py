@@ -301,5 +301,8 @@ class TestCloudArrivalTime:
         ],
     )
     def test(self, thr, n_mem_min, sol):
-        res = cloud_arrival_time(self.arr, thr=thr, n_mem_min=n_mem_min, **self.kwargs)
+        time = np.arange(5)
+        res = cloud_arrival_time(
+            self.arr, time=time, thr=thr, n_mem_min=n_mem_min, **self.kwargs
+        )
         np.testing.assert_array_equal(res, sol)

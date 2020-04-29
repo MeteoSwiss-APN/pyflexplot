@@ -21,6 +21,7 @@ from matplotlib.colors import Colormap
 # Local
 from .data import Field
 from .meta_data import MetaData
+from .meta_data import format_unit
 from .meta_data import get_integr_type
 from .plot_lib import MapAxesConf
 from .setup import InputSetup
@@ -112,11 +113,11 @@ class PlotLabels:
                 ),
                 "subtitle_thr_agrmt_fmt": (
                     f"Cloud: {self.symbols['geq']} {{thr}} "
-                    f"{escape_format_keys(format_unit(str(self.mdata.variable_unit)))}"
+                    f"{escape_format_keys(self.mdata.format('variable_unit'))}"
                 ),
                 "subtitle_cloud_arrival_time": (
                     f"Cloud: {self.symbols['geq']} {{thr}} "
-                    f"{escape_format_keys(format_unit(str(self.mdata.variable_unit)))}"
+                    f"{escape_format_keys(self.mdata.format('variable_unit'))}"
                     f"; members: {self.symbols['geq']} {{mem}}"
                 ),
                 "timestep": (
@@ -142,7 +143,7 @@ class PlotLabels:
                 "title": get_short_name(self.setup, self.words),
                 "title_unit": (
                     f"{get_short_name(self.setup, self.words)} "
-                    f"({format_unit(str(self.mdata.variable_unit))})"
+                    f"({self.mdata.format('variable_unit')})"
                 ),
                 "release_site": self.words["release_site"].s,
                 "max": self.words["max"].s,
@@ -233,22 +234,6 @@ def format_level_label(mdata: MetaData, words: TranslatedWords):
     if not level:
         return ""
     return f" {words['at', 'level']} {format_unit(level)}"
-
-
-def format_unit(s: str) -> str:
-    """Auto-format the unit by elevating superscripts etc."""
-    s = str(s)
-    # SR_TMP < Note: Should be m. agl.! TODO: Fix meta data combo formatting with units!
-    if s == "meters":
-        return "m"
-    old_new = [
-        ("m-2", "m$^{-2}$"),
-        ("m-3", "m$^{-3}$"),
-        ("s-1", "s$^{-1}$"),
-    ]
-    for old, new in old_new:
-        s = s.replace(old, new)
-    return s
 
 
 def format_integr_period(

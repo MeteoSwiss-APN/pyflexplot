@@ -1576,6 +1576,8 @@ class TextBoxAxes:
 
                 # Obtain left and right part of line
                 if isinstance(line, str):
+                    if "\t" not in line:
+                        raise ValueError("no '\t' in line", line)
                     str_l, str_r = line.split("\t", 1)
                 elif len(line) == 2:
                     str_l, str_r = line

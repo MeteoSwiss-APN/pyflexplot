@@ -124,6 +124,7 @@ class FileReader:
         self.in_file_path_lst: Sequence[str]
         self.lat: np.ndarray
         self.lon: np.ndarray
+        self.time: np.ndarray
 
         self.fixer: FlexPartDataFixer = FlexPartDataFixer(self)
 
