@@ -223,10 +223,6 @@ def format_level_label(mdata: MetaData, words: TranslatedWords):
         )
     if not unit:
         pass
-    elif unit == "meters":
-        unit = words["m_agl"].s
-    else:
-        raise NotImplementedError("unexpected level unit", unit)
     assert isinstance(unit, str)  # mypy
     level = format_level_range(
         mdata.variable_level_bot.value, mdata.variable_level_top.value, unit
