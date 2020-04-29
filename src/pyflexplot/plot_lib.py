@@ -491,8 +491,13 @@ class MapAxes:
                     zorder=self.zorder["geo_upper"],
                 )
                 name = get_name(city)
+                # SR_TODO Fix positioning of city labels relative to markers!
+                # SR_DBG < Hotfix to create reasonably-looking IFS plot
+                offset = (0.01, 0)  # Works over Europe
+                # offset = (-0.04, 0)  # Works more or less over Japan
+                # SR_DBG
                 self.text(
-                    x, y, name, (0.01, 0), va="center", size="small", clip_on=True,
+                    x, y, name, offset, va="center", size="small", clip_on=True,
                 )
 
     def contour(self, fld, **kwargs):

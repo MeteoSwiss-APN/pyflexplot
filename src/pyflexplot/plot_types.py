@@ -38,18 +38,21 @@ def create_map_conf(field: Field) -> MapAxesConf:
 
     conf_base = {"lang": field.var_setups.collect_equal("lang")}
 
-    conf_model_ifs = {"geo_res": "110m"}
+    conf_model_ifs = {"geo_res": "50m"}
     conf_model_cosmo = {"geo_res": "10m"}
 
-    conf_domain_global = {
-        "geo_res_cities": "110m",
-        "geo_res_rivers": "110m",
-        "min_city_pop": 1_000_000,
-        # SR_DBG <
-        "zoom_fact": 1.02,
-        # "zoom_fact": 0.975,  # SR_DBG
-        # SR_DBG >
+    # SR_TMP < TODO generalize based on meta data
+    conf_domain_japan = {
+        "geo_res_cities": "50m",
+        "geo_res_rivers": "50m",
+        "min_city_pop": 4_000_000,
+        "lllat": 20,
+        "urlat": 50,
+        "lllon": 110,
+        "urlon": 160,
+        "ref_dist_conf": {"dist": 500},
     }
+    # SR_TMP >
     conf_domain_eu = {
         "geo_res_cities": "50m",
         "geo_res_rivers": "50m",
@@ -74,7 +77,9 @@ def create_map_conf(field: Field) -> MapAxesConf:
     elif (model, domain) == ("cosmo2", "ch"):
         conf = {**conf_base, **conf_model_cosmo, **conf_domain_ch, "zoom_fact": 3.2}
     elif (model, domain) == ("ifs", "auto"):
-        conf = {**conf_base, **conf_model_ifs, **conf_domain_global}
+        # SR_TMP < TODO Generalize IFS domains
+        conf = {**conf_base, **conf_model_ifs, **conf_domain_japan}
+        # SR_TMP >
     else:
         raise Exception(f"unknown domain '{domain}' for model '{model}'")
 
@@ -326,7 +331,7 @@ def get_long_name(setup: InputSetup, words: TranslatedWords) -> str:
 def get_short_name(setup: InputSetup, words: TranslatedWords) -> str:
     if setup.variable == "concentration":
         if setup.plot_type == "ens_cloud_arrival_time":
-            return f"{words['arrival'].c} ({words['hour', 'pl']}??)"
+            return f"{words['arrival'].c} ({words['hour', 'pl']})"
         else:
             if setup.integrate:
                 return (
@@ -400,7 +405,7 @@ def create_plot_config(setup: InputSetup, labels: PlotLabels) -> "PlotConfig":
             new_config_dct["levels_scale"] = "lin"
         elif setup.plot_type == "ens_cloud_arrival_time":
             new_config_dct["extend"] = "max"
-            new_config_dct["n_levels"] = 5
+            new_config_dct["n_levels"] = 9
             new_config_dct["d_level"] = 3
             new_config_dct["level_range_style"] = "int"
             new_config_dct["level_ranges_align"] = "left"
