@@ -155,3 +155,7 @@ class _CreateReference(_TestBase):
             raise ReferenceFileCreationError(reffile)
         else:
             raise ReferenceFileCreationSuccess(reffile)
+
+
+# Uncomment to recreate all test references at once
+# _TestBase = _CreateReference
