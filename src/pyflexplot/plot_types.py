@@ -342,6 +342,7 @@ class PlotConfig:
     # SR_TODO Specify plot size in a robust way (what you want is what you get)
     fig_size: Tuple[float, float] = (12.5, 8.0)
     legend_box_title: str = ""  # SR_TODO sensible default
+    legend_rstrip_zeros: bool = True
     level_ranges_align: str = "center"
     level_range_style: str = "base"
     levels_scale: str = "log"
@@ -376,6 +377,7 @@ def create_plot_config(setup: InputSetup, labels: PlotLabels) -> "PlotConfig":
             new_config_dct["extend"] = "min"
             new_config_dct["n_levels"] = 7
             new_config_dct["d_level"] = 2
+            new_config_dct["legend_rstrip_zeros"] = False
             new_config_dct["level_range_style"] = "int"
             new_config_dct["level_ranges_align"] = "left"
             new_config_dct["mark_field_max"] = False
@@ -388,6 +390,7 @@ def create_plot_config(setup: InputSetup, labels: PlotLabels) -> "PlotConfig":
             new_config_dct["extend"] = "max"
             new_config_dct["n_levels"] = 9
             new_config_dct["d_level"] = 3
+            new_config_dct["legend_rstrip_zeros"] = False
             new_config_dct["level_range_style"] = "int"
             new_config_dct["level_ranges_align"] = "left"
             new_config_dct["mark_field_max"] = False

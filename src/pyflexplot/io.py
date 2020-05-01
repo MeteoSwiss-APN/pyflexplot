@@ -314,12 +314,14 @@ class FileReader:
         return fld_time
 
     def _collect_time_stats(self, fld_time: np.ndarray,) -> Dict[str, np.ndarray]:
+        data = fld_time[~np.isnan(fld_time)]
+        data_nz = data[data > 0]
         return {
-            "mean": np.nanmean(fld_time),
-            "median": np.nanmedian(fld_time),
-            "mean_nz": np.nanmean(fld_time[fld_time > 0]),
-            "median_nz": np.nanmedian(fld_time[fld_time > 0]),
-            "max": np.nanmax(fld_time),
+            "mean": np.mean(data),
+            "median": np.median(data),
+            "mean_nz": np.mean(data_nz),
+            "median_nz": np.median(data_nz),
+            "max": np.max(data),
         }
 
     # pylint: disable=R0914  # too-many-locals

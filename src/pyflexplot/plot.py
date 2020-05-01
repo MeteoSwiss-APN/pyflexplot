@@ -107,7 +107,7 @@ class Plot:
         self.draw_boxes()
 
     def fld_nonzero(self):
-        return np.where(self.field.fld > 0, self.field.fld, np.nan)
+        return np.where(self.field.fld == 0, np.nan, self.field.fld)
 
     def draw_map_plot(self):
         """Plot the particle concentrations onto the map."""
@@ -272,7 +272,7 @@ class Plot:
             levels=levels,
             style=self.plot_config.level_range_style,
             extend=self.plot_config.extend,
-            rstrip_zeros=True,
+            rstrip_zeros=self.plot_config.legend_rstrip_zeros,
             align=self.plot_config.level_ranges_align,
         )
 
