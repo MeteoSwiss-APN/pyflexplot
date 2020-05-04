@@ -27,9 +27,6 @@ from .meta_data import format_unit
 from .meta_data import get_integr_type
 from .plot_lib import MapAxesConf
 from .setup import InputSetup
-from .utils import summarizable
-from .words import SYMBOLS
-from .words import WORDS
 from .words import TranslatedWords
 from .words import Words
 
@@ -86,113 +83,6 @@ def create_map_conf(field: Field) -> MapAxesConf:
         raise Exception(f"unknown domain '{domain}' for model '{model}'")
 
     return MapAxesConf(**conf)
-
-
-# SR_TMP TODO Turn into dataclass or the like.
-@summarizable
-class PlotLabels:
-
-    words: TranslatedWords = WORDS
-    symbols: Words = SYMBOLS
-
-    def __init__(self, lang: str, mdata: MetaData):
-        """Create an instance of ``PlotLabels``."""
-        self.mdata: MetaData = mdata
-        self.setup: InputSetup = mdata.setup
-
-        self.words.set_active_lang(lang)
-
-        self.top_left: Dict[str, Any] = self._init_group(
-            {
-                "top_left": (
-                    f"{get_long_name(self.setup, self.words)}"
-                    f" {self.words['of']} {self.mdata.species_name}"
-                ),
-                "bottom_left": (
-                    f"{format_integr_period(self.mdata, self.setup, self.words)}"
-                    f" {self.words['since']}"
-                    f" +{self.mdata.simulation_integr_start_rel}"
-                ),
-                "top_right": (
-                    f"{self.mdata.simulation_now} (+{self.mdata.simulation_now_rel})"
-                ),
-                "bottom_right": (
-                    f"{self.mdata.simulation_now_rel} {self.words['since']}"
-                    f" {self.words['release_start']}"
-                    f" {self.words['at', 'place']} {self.mdata.release_site_name}"
-                ),
-            }
-        )
-
-        self.right_top: Dict[str, Any] = self._init_group(
-            {
-                "title": get_short_name(self.setup, self.words),
-                "title_unit": (
-                    f"{get_short_name(self.setup, self.words)}"
-                    f" ({self.mdata.format('variable_unit')})"
-                ),
-                "release_site": self.words["release_site"].s,
-                "max": self.words["max"].s,
-            },
-        )
-
-        self.right_bottom: Dict[str, Any] = self._init_group(
-            {
-                "title": self.words["release"].t,
-                "start": self.words["start"].s,
-                "end": self.words["end"].s,
-                "latitude": self.words["latitude"].s,
-                "longitude": self.words["longitude"].s,
-                "lat_deg_fmt": format_coord_label("north", self.words, self.symbols),
-                "lon_deg_fmt": format_coord_label("east", self.words, self.symbols),
-                "height": self.words["height"].s,
-                "rate": self.words["rate"].s,
-                "mass": self.words["total_mass"].s,
-                "site": self.words["site"].s,
-                "release_site": self.words["release_site"].s,
-                "max": self.words["max"].s,
-                "name": self.words["substance"].s,
-                "half_life": self.words["half_life"].s,
-                "deposit_vel": self.words["deposition_velocity", "abbr"].s,
-                "sediment_vel": self.words["sedimentation_velocity", "abbr"].s,
-                "washout_coeff": self.words["washout_coeff"].s,
-                "washout_exponent": self.words["washout_exponent"].s,
-            },
-        )
-
-        # SR_TMP < TODO un-hardcode
-        n_members = "X"  # SR_HC
-        # ens_member_id = "{:03d}-{:03d}".format(0, 20)  # SR_HC
-        ens_member_id = "XX-YY"  # SR_HC
-        # SR_TMP >
-        s_ens = (
-            f" {self.words['ensemble']}"
-            f" ({n_members} {self.words['member', 'pl']}: {ens_member_id})"
-        )
-        info_fmt_base = (
-            f"{self.words['flexpart']} {self.words['based_on']}"
-            f" {self.mdata.simulation_model_name}{{ens}},"
-            f" {self.mdata.simulation_start}"
-        )
-        self.bottom: Dict[str, Any] = self._init_group(
-            {
-                "model_info_det": info_fmt_base.format(ens=""),
-                "model_info_ens": info_fmt_base.format(ens=s_ens),
-                "copyright": f"{self.symbols['copyright']}{self.words['meteoswiss']}",
-            },
-        )
-
-    def _init_group(self, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Preprocess and set group values."""
-        for key, val in values.copy().items():
-            if isinstance(val, str):
-                # Capitalize first letter only (even if it's a space!)
-                values[key] = list(val)[0].capitalize() + val[1:]
-        return values
-
-
-def create_plot_labels(setup: InputSetup, mdata: MetaData):
-    return PlotLabels(setup.lang, mdata)
 
 
 def escape_format_keys(s: str) -> str:
@@ -260,7 +150,10 @@ def format_vertical_level_range(
 
 
 def format_integr_period(
-    mdata: "MetaData", setup: InputSetup, words: TranslatedWords
+    mdata: "MetaData",
+    setup: InputSetup,
+    words: TranslatedWords,
+    capitalize: bool = False,
 ) -> str:
     integr_type = get_integr_type(setup)
     if integr_type == "mean":
@@ -276,7 +169,10 @@ def format_integr_period(
     period = now - start
     hours = int(period.total_seconds() / 3600)
     minutes = int((period.total_seconds() / 60) % 60)
-    return f"{operation} {hours:d}:{minutes:02d}$\\,$h"
+    s = f"{operation} {hours:d}:{minutes:02d}$\\,$h"
+    if capitalize:
+        s = s[0].upper() + s[1:]
+    return s
 
 
 def format_coord_label(direction: str, words: TranslatedWords, symbols: Words) -> str:
@@ -293,18 +189,21 @@ def format_coord_label(direction: str, words: TranslatedWords, symbols: Words) -
 
 
 # pylint: disable=R0911,R0912  # too-many-return-statements,too-many-branches
-def get_long_name(setup: InputSetup, words: TranslatedWords) -> str:
+def get_long_name(
+    setup: InputSetup, words: TranslatedWords, capitalize: bool = False
+) -> str:
+    s: str = ""
     if setup.plot_type and setup.plot_type.startswith("affected_area"):
         super_name = get_long_name(
             setup.derive({"variable": "deposition", "plot_type": "auto"}), words
         )
-        return f"{words['affected_area']} ({super_name})"
+        s = f"{words['affected_area']} ({super_name})"
     elif setup.plot_type == "ens_thr_agrmt":
         super_name = get_short_name(setup.derive({"variable": "deposition"}), words)
-        return f"{words['threshold_agreement']} ({super_name})"
+        s = f"{words['threshold_agreement']} ({super_name})"
     elif setup.plot_type == "ens_cloud_arrival_time":
-        return f"{words['cloud_arrival_time']}"
-    if setup.variable == "deposition":
+        s = f"{words['cloud_arrival_time']}"
+    elif setup.variable == "deposition":
         if setup.deposition_type == "tot":
             word = "total"
         else:
@@ -312,54 +211,67 @@ def get_long_name(setup: InputSetup, words: TranslatedWords) -> str:
             word = setup.deposition_type
         dep = words[word, "f"].s
         if setup.plot_type == "ens_min":
-            return f"{words['ensemble_minimum']} {dep} {words['surface_deposition']}"
+            s = f"{words['ensemble_minimum']} {dep} {words['surface_deposition']}"
         elif setup.plot_type == "ens_max":
-            return f"{words['ensemble_maximum']} {dep} {words['surface_deposition']}"
+            s = f"{words['ensemble_maximum']} {dep} {words['surface_deposition']}"
         elif setup.plot_type == "ens_median":
-            return f"{words['ensemble_median']} {dep} {words['surface_deposition']}"
+            s = f"{words['ensemble_median']} {dep} {words['surface_deposition']}"
         elif setup.plot_type == "ens_mean":
-            return f"{words['ensemble_mean']} {dep} {words['surface_deposition']}"
+            s = f"{words['ensemble_mean']} {dep} {words['surface_deposition']}"
         else:
-            return f"{dep} {words['surface_deposition']}"
-    if setup.variable == "concentration":
+            s = f"{dep} {words['surface_deposition']}"
+    elif setup.variable == "concentration":
         if setup.plot_type == "ens_min":
-            return f"{words['ensemble_minimum']} {words['concentration']}"
+            s = f"{words['ensemble_minimum']} {words['concentration']}"
         elif setup.plot_type == "ens_max":
-            return f"{words['ensemble_maximum']} {words['concentration']}"
+            s = f"{words['ensemble_maximum']} {words['concentration']}"
         elif setup.plot_type == "ens_median":
-            return f"{words['ensemble_median']} {words['concentration']}"
+            s = f"{words['ensemble_median']} {words['concentration']}"
         elif setup.plot_type == "ens_mean":
-            return f"{words['ensemble_mean']} {words['concentration']}"
+            s = f"{words['ensemble_mean']} {words['concentration']}"
         else:
             ctx = "abbr" if setup.integrate else "*"
-            return words["activity_concentration", ctx].s
-    raise NotImplementedError(
-        f"long_name", setup.variable, setup.plot_type, setup.integrate
-    )
+            s = str(words["activity_concentration", ctx])
+    if not s:
+        raise NotImplementedError(
+            f"long_name", setup.variable, setup.plot_type, setup.integrate
+        )
+    if capitalize:
+        s = s[0].upper() + s[1:]
+    return s
 
 
-def get_short_name(setup: InputSetup, words: TranslatedWords) -> str:
+def get_short_name(
+    setup: InputSetup, words: TranslatedWords, capitalize: bool = False
+) -> str:
+    s: str = ""
     if setup.variable == "concentration":
         if setup.plot_type == "ens_cloud_arrival_time":
-            return f"{words['arrival'].c} ({words['hour', 'pl']})"
+            s = f"{words['arrival'].c} ({words['hour', 'pl']})"
         else:
             if setup.integrate:
-                return (
+                s = (
                     f"{words['integrated', 'abbr']}"
                     f" {words['concentration', 'abbr']}"
                 )
-            return words["concentration"].s
-    if setup.variable == "deposition":
+            else:
+                s = str(words["concentration"])
+    elif setup.variable == "deposition":
         if setup.plot_type == "ens_thr_agrmt":
-            return f"{words['number_of', 'abbr'].c} " f"{words['member', 'pl']}"
+            s = f"{words['number_of', 'abbr'].c} " f"{words['member', 'pl']}"
         else:
-            return words["deposition"].s
-    raise NotImplementedError("short_name", setup.variable, setup.plot_type)
+            s = str(words["deposition"])
+    if not s:
+        raise NotImplementedError("short_name", setup.variable, setup.plot_type)
+    if capitalize:
+        s = s[0].upper() + s[1:]
+    return s
 
 
 # pylint: disable=R0902  # too-many-instance-attributes
 class PlotConfig(BaseModel):
     setup: InputSetup  # SR_TODO consider removing this
+    mdata: MetaData  # SR_TODO consider removing this
     cmap: Union[str, Colormap] = "flexplot"
     d_level: Optional[int] = None  # SR_TODO sensible default
     draw_colors: bool = True
@@ -369,7 +281,6 @@ class PlotConfig(BaseModel):
     # SR_TODO Specify plot size in a robust way (what you want is what you get)
     fig_size: Tuple[float, float] = (12.5, 8.0)
     labels: Dict[str, Any] = {}
-    old_labels: PlotLabels  # SR_TODO eliminate!
     legend_box_title: str = ""  # SR_TODO sensible default
     legend_rstrip_zeros: bool = True
     level_ranges_align: str = "center"
@@ -381,7 +292,6 @@ class PlotConfig(BaseModel):
     model_info: str = ""  # SR_TODO sensible default
     n_levels: Optional[int] = None  # SR_TODO sensible default
     reverse_legend: bool = False
-    top_box_subtitle: str = ""
 
     class Config:  # noqa
         allow_extra = False
@@ -394,18 +304,77 @@ class PlotConfig(BaseModel):
 
 # SR_TODO Create dataclass with default values for test box setup
 def create_plot_config(
-    setup: InputSetup,
-    words: TranslatedWords,
-    symbols: Words,
-    mdata: MetaData,
-    old_labels: PlotLabels,
+    setup: InputSetup, words: TranslatedWords, symbols: Words, mdata: MetaData,
 ) -> "PlotConfig":
+    words.set_active_lang(setup.lang)
     new_config_dct: Dict[str, Any] = {
         "setup": setup,
-        "old_labels": old_labels,
-        "labels": {"top_right": {}},
+        "mdata": mdata,
+        "labels": {},
     }
-    new_config_dct["top_box_subtitle"] = old_labels.top_left.get("subtitle", "")
+    new_config_dct["labels"]["top_left"] = {
+        "tl": (
+            f"{get_long_name(setup, words, capitalize=True)}"
+            f" {words['of']} {mdata.species_name}"
+        ),
+        "bl": (
+            f"{format_integr_period(mdata, setup, words, capitalize=True)}"
+            f" {words['since']}"
+            f" +{mdata.simulation_integr_start_rel}"
+        ),
+        "tr": (f"{mdata.simulation_now} (+{mdata.simulation_now_rel})"),
+        "br": (
+            f"{mdata.simulation_now_rel} {words['since']}"
+            f" {words['release_start']}"
+            f" {words['at', 'place']} {mdata.release_site_name}"
+        ),
+    }
+    new_config_dct["labels"]["top_right"] = {}
+    new_config_dct["labels"]["right_top"] = {
+        "title": get_short_name(setup, words, capitalize=True),
+        "title_unit": (
+            f"{get_short_name(setup, words, capitalize=True)}"
+            f" ({mdata.format('variable_unit')})"
+        ),
+        "release_site": words["release_site"].s,
+        "max": words["max"].s,
+    }
+    new_config_dct["labels"]["right_bottom"] = {
+        "title": words["release"].t,
+        "start": words["start"].s,
+        "end": words["end"].s,
+        "latitude": words["latitude"].s,
+        "longitude": words["longitude"].s,
+        "lat_deg_fmt": format_coord_label("north", words, symbols),
+        "lon_deg_fmt": format_coord_label("east", words, symbols),
+        "height": words["height"].s,
+        "rate": words["rate"].s,
+        "mass": words["total_mass"].s,
+        "site": words["site"].s,
+        "release_site": words["release_site"].s,
+        "max": words["max"].s,
+        "name": words["substance"].s,
+        "half_life": words["half_life"].s,
+        "deposit_vel": words["deposition_velocity", "abbr"].s,
+        "sediment_vel": words["sedimentation_velocity", "abbr"].s,
+        "washout_coeff": words["washout_coeff"].s,
+        "washout_exponent": words["washout_exponent"].s,
+    }
+    _info_fmt_base = (
+        f"{words['flexpart']} {words['based_on']}"
+        f" {mdata.simulation_model_name}{{ens}},"
+        f" {mdata.simulation_start}"
+    )
+    new_config_dct["labels"]["bottom"] = {
+        "model_info_det": _info_fmt_base.format(ens=""),
+        "model_info_ens": _info_fmt_base.format(
+            ens=(
+                f" {words['ensemble']}"
+                f" ({'X'} {words['member', 'pl']}: {'XX-YY'})"  # SR_TODO unhardcode!
+            )
+        ),
+        "copyright": f"{symbols['copyright']}{words['meteoswiss']}",
+    }
     if setup.variable == "concentration":
         new_config_dct["n_levels"] = 8
         new_config_dct["labels"]["top_right"]["tc"] = (
@@ -415,12 +384,16 @@ def create_plot_config(
     elif setup.variable == "deposition":
         new_config_dct["n_levels"] = 9
     if setup.simulation_type == "deterministic":
-        new_config_dct["model_info"] = old_labels.bottom["model_info_det"]
+        new_config_dct["model_info"] = new_config_dct["labels"]["bottom"][
+            "model_info_det"
+        ]
         if setup.plot_type == "affected_area_mono":
             new_config_dct["extend"] = "none"
             new_config_dct["n_levels"] = 1
     if setup.simulation_type == "ensemble":
-        new_config_dct["model_info"] = old_labels.bottom["model_info_ens"]
+        new_config_dct["model_info"] = new_config_dct["labels"]["bottom"][
+            "model_info_ens"
+        ]
         if setup.plot_type == "ens_thr_agrmt":
             new_config_dct.update(
                 {
@@ -431,7 +404,7 @@ def create_plot_config(
                     "level_range_style": "int",
                     "level_ranges_align": "left",
                     "mark_field_max": False,
-                    "legend_box_title": old_labels.right_top["title"],
+                    "legend_box_title": new_config_dct["labels"]["right_top"]["title"],
                     "levels_scale": "lin",
                 }
             )
@@ -449,7 +422,7 @@ def create_plot_config(
                     "level_range_style": "int",
                     "level_ranges_align": "left",
                     "mark_field_max": False,
-                    "legend_box_title": old_labels.right_top["title"],
+                    "legend_box_title": new_config_dct["labels"]["right_top"]["title"],
                     "levels_scale": "lin",
                 }
             )
@@ -463,7 +436,9 @@ def create_plot_config(
             )
     # SR_TMP < TODO set default
     if "legend_box_title" not in new_config_dct:
-        new_config_dct["legend_box_title"] = old_labels.right_top["title_unit"]
+        new_config_dct["legend_box_title"] = new_config_dct["labels"]["right_top"][
+            "title_unit"
+        ]
     # SR_TMP >
     return PlotConfig(**new_config_dct)
 

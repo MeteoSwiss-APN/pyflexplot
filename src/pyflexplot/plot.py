@@ -29,7 +29,6 @@ from .plot_types import PlotConfig
 from .plot_types import colors_from_plot_config
 from .plot_types import create_map_conf
 from .plot_types import create_plot_config
-from .plot_types import create_plot_labels
 from .plot_types import levels_from_time_stats
 from .utils import format_level_ranges
 from .utils import summarizable
@@ -118,8 +117,8 @@ class Plot:
         if self.plot_config.mark_release_site:
             # Marker at release site
             self.ax_map.marker(
-                self.plot_config.old_labels.mdata.release_site_lon.value,
-                self.plot_config.old_labels.mdata.release_site_lat.value,
+                self.plot_config.mdata.release_site_lon.value,
+                self.plot_config.mdata.release_site_lat.value,
                 **self._site_marker_kwargs,
             )
 
@@ -174,29 +173,12 @@ class Plot:
         )
 
     def fill_box_top_left(self, box: TextBoxAxes) -> None:
-        """Fill the box above the map plot."""
-
-        labels = self.plot_config.old_labels.top_left
-
-        # Top-left: Variable name etc.
-        box.text("tl", labels["top_left"], size="large")
-
-        # Center-left: Additional information
-        subtitle = self.plot_config.top_box_subtitle
-        if subtitle:
-            box.text("ml", subtitle, size="large")
-
-        # Bottom-left: Integration time etc.
-        box.text("bl", labels["bottom_left"], size="large")
-
-        # Top-right: Time step
-        box.text("tr", labels["top_right"], size="large")
-
-        # Bottom-right: Time since release start
-        box.text("br", labels["bottom_right"], size="large")
+        sizes = {"tl": "x-large"}
+        for position, label in self.plot_config.labels.get("top_left", {}).items():
+            size = sizes.get("position", "large")
+            box.text(position, label, size=size)
 
     def fill_box_top_right(self, box: TextBoxAxes) -> None:
-        """Fill the box to the top-right of the map plot."""
         for position, label in self.plot_config.labels.get("top_right", {}).items():
             box.text(position, label, size="large")
 
@@ -214,7 +196,7 @@ class Plot:
     ) -> None:
         """Fill the top box to the right of the map plot."""
 
-        labels = self.plot_config.old_labels.right_top
+        labels = self.plot_config.labels["right_top"]
 
         # font_size = 'small'
         font_size = "medium"
@@ -345,8 +327,8 @@ class Plot:
     def fill_box_right_bottom(self, box: TextBoxAxes) -> None:
         """Fill the bottom box to the right of the map plot."""
 
-        labels = self.plot_config.old_labels.right_bottom  # noqa:E741
-        mdata = self.plot_config.old_labels.mdata
+        labels = self.plot_config.labels["right_bottom"]
+        mdata = self.plot_config.mdata
 
         # Box title
         # box.text('tc', labels['title'], size='large')
@@ -407,7 +389,7 @@ class Plot:
     def fill_box_bottom(self, box: TextBoxAxes) -> None:
         """Fill the box to the bottom of the map plot."""
 
-        labels = self.plot_config.old_labels.bottom
+        labels = self.plot_config.labels["bottom"]
 
         # FLEXPART/model info
         s = self.plot_config.model_info
@@ -435,8 +417,7 @@ def plot_fields(
             plot = None
         else:
             assert mdata is not None  # mypy
-            plot_labels = create_plot_labels(setup, mdata)
-            plot_config = create_plot_config(setup, WORDS, SYMBOLS, mdata, plot_labels)
+            plot_config = create_plot_config(setup, WORDS, SYMBOLS, mdata)
             plot = Plot(field, plot_config, map_conf)
             plot.save(out_file_path, write=write)
 
