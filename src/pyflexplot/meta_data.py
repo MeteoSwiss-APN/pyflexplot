@@ -249,10 +249,9 @@ def format_meta_datum(value: str, join: Optional[str] = None) -> str:
     elif isinstance(value, datetime):
         return value.strftime("%Y-%m-%d %H:%M %Z")
     elif isinstance(value, timedelta):
-        seconds = value.total_seconds()
-        hours = int(seconds / 3600)
-        mins = int((seconds / 3600) % 1 * 60)
-        return f"{hours:02d}:{mins:02d}$\\,$h"
+        hours = int(value.total_seconds() / 3600)
+        minutes = int((value.total_seconds() / 60) % 60)
+        return f"{hours:d}:{minutes:02d}$\\,$h"
     fmt = "g" if isinstance(value, (float, int)) else ""
     return f"{{:{fmt}}}".format(value)
 

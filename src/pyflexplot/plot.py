@@ -6,9 +6,7 @@ Plots.
 import re
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import Collection
 from typing import Dict
-from typing import Optional
 from typing import Sequence
 
 # Third-party
@@ -35,6 +33,8 @@ from .plot_types import create_plot_labels
 from .plot_types import levels_from_time_stats
 from .utils import format_level_ranges
 from .utils import summarizable
+from .words import SYMBOLS
+from .words import WORDS
 
 
 @summarizable(
@@ -118,8 +118,8 @@ class Plot:
         if self.plot_config.mark_release_site:
             # Marker at release site
             self.ax_map.marker(
-                self.plot_config.labels.mdata.release_site_lon.value,
-                self.plot_config.labels.mdata.release_site_lat.value,
+                self.plot_config.old_labels.mdata.release_site_lon.value,
+                self.plot_config.old_labels.mdata.release_site_lat.value,
                 **self._site_marker_kwargs,
             )
 
@@ -173,57 +173,32 @@ class Plot:
             name="bottom", rect=layout.rect_bottom(), **{**kwargs, "lw_frame": None},
         )
 
-    def fill_box_top_left(
-        self, box: TextBoxAxes, *, skip_pos: Optional[Collection[str]] = None,
-    ) -> None:
+    def fill_box_top_left(self, box: TextBoxAxes) -> None:
         """Fill the box above the map plot."""
 
-        labels = self.plot_config.labels.top_left
-
-        if skip_pos is None:
-            skip_pos = {}
+        labels = self.plot_config.old_labels.top_left
 
         # Top-left: Variable name etc.
-        if "tl" not in skip_pos:
-            box.text("tl", labels["variable"], size="large")
+        box.text("tl", labels["top_left"], size="large")
 
         # Center-left: Additional information
-        if "ml" not in skip_pos:
-            subtitle = self.plot_config.top_box_subtitle
-            if subtitle:
-                box.text("ml", subtitle, size="large")
+        subtitle = self.plot_config.top_box_subtitle
+        if subtitle:
+            box.text("ml", subtitle, size="large")
 
         # Bottom-left: Integration time etc.
-        if "bl" not in skip_pos:
-            s = labels["period"]
-            box.text("bl", s, size="large")
+        box.text("bl", labels["bottom_left"], size="large")
 
         # Top-right: Time step
-        if "tr" not in skip_pos:
-            box.text("tr", labels["timestep"], size="large")
+        box.text("tr", labels["top_right"], size="large")
 
         # Bottom-right: Time since release start
-        if "br" not in skip_pos:
-            box.text("br", labels["time_since_release_start"], size="large")
+        box.text("br", labels["bottom_right"], size="large")
 
-    def fill_box_top_right(
-        self, box: TextBoxAxes, *, skip_pos: Optional[Collection[str]] = None,
-    ) -> None:
+    def fill_box_top_right(self, box: TextBoxAxes) -> None:
         """Fill the box to the top-right of the map plot."""
-
-        labels = self.plot_config.labels.top_right
-
-        if skip_pos is None:
-            skip_pos = []
-
-        if "tc" not in skip_pos:
-            # Top center: species
-            box.text("tc", labels["species"], size="large")
-
-        if "bc" not in skip_pos:
-            # Bottom center: release site (shrunk/truncated to fit box)
-            s, size = box.fit_text(labels["site"], "large", n_shrink_max=1)
-            box.text("bc", s, size=size)
+        for position, label in self.plot_config.labels.get("top_right", {}).items():
+            box.text(position, label, size="large")
 
     # pylint: disable=R0912   # too-many-branches
     # pylint: disable=R0913   # too-many-arguments
@@ -239,7 +214,7 @@ class Plot:
     ) -> None:
         """Fill the top box to the right of the map plot."""
 
-        labels = self.plot_config.labels.right_top
+        labels = self.plot_config.old_labels.right_top
 
         # font_size = 'small'
         font_size = "medium"
@@ -370,8 +345,8 @@ class Plot:
     def fill_box_right_bottom(self, box: TextBoxAxes) -> None:
         """Fill the bottom box to the right of the map plot."""
 
-        labels = self.plot_config.labels.right_bottom  # noqa:E741
-        mdata = self.plot_config.labels.mdata
+        labels = self.plot_config.old_labels.right_bottom  # noqa:E741
+        mdata = self.plot_config.old_labels.mdata
 
         # Box title
         # box.text('tc', labels['title'], size='large')
@@ -432,7 +407,7 @@ class Plot:
     def fill_box_bottom(self, box: TextBoxAxes) -> None:
         """Fill the box to the bottom of the map plot."""
 
-        labels = self.plot_config.labels.bottom
+        labels = self.plot_config.old_labels.bottom
 
         # FLEXPART/model info
         s = self.plot_config.model_info
@@ -461,7 +436,7 @@ def plot_fields(
         else:
             assert mdata is not None  # mypy
             plot_labels = create_plot_labels(setup, mdata)
-            plot_config = create_plot_config(setup, plot_labels)
+            plot_config = create_plot_config(setup, WORDS, SYMBOLS, mdata, plot_labels)
             plot = Plot(field, plot_config, map_conf)
             plot.save(out_file_path, write=write)
 

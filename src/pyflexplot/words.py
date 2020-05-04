@@ -35,11 +35,12 @@ WORDS.add(
 WORDS.add(en="arrival", de="Ankunft")
 WORDS.add(en="arrival time", de="Ankunftszeit")
 WORDS.add(en="affected area", de="Beaufschlagtes Gebiet")
-WORDS.add(en="at", de={"level": "auf", "place": "bei", "time": "um"})
+WORDS.add(en="at", de={"level": "auf", "place": "in", "time": "um"})
 WORDS.add(en="averaged over", de=f'gemittelt {s["ue"]}ber')
 # B
 WORDS.add(en="based on", de="basierend auf")
 # C
+WORDS.add(en="cloud", de="Wolke")
 WORDS.add(en="cloud arrival time", de="Wolkenankunftszeit")
 WORDS.add(
     en={"*": "concentration", "abbr": "concentr."},
@@ -77,6 +78,7 @@ WORDS.add(
     de={"*": "Stunde", "pl": "Stunden", "abbr": "h"},
 )
 # I
+WORDS.add(en="in", de="in")
 WORDS.add(
     en={"*": "integrated", "abbr": "int."},
     de={
@@ -91,6 +93,7 @@ WORDS.add(
 # K
 # L
 WORDS.add(en="latitude", de="Breite")
+WORDS.add(en="level", de="Level")
 WORDS.add(en="longitude", de=f'L{s["ae"]}nge')
 # M
 WORDS.add(en="m AGL", de=f'm {s["ue"]}.G.')
@@ -101,6 +104,7 @@ WORDS.add(en="MeteoSwiss", de="MeteoSchweiz")
 WORDS.add(en={"*": "north", "abbr": "N"}, de={"*": "Norden", "abbr": "N"})
 WORDS.add(en={"*": "number of", "abbr": "no."}, de={"*": "Anzahl", "abbr": "Anz."})
 # O
+WORDS.add(en="of", de="von")
 # P
 # Q
 # R

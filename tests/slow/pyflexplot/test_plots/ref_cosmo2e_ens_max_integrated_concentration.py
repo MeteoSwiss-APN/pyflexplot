@@ -1829,10 +1829,7 @@ plot_summary = {
                         "y0": 0.91,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Ensemble-Maximum "
-                    "Konzentration "
-                    "auf 0$-$500 m "
-                    '$\\mathrm{\\"u}$.G.',
+                    "s": "Ensemble-Maximum " "Konzentration " "von I-131a",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -1857,9 +1854,9 @@ plot_summary = {
                     "replace_edge_spaces": False,
                     "s": "Aufsummiert "
                     '$\\mathrm{\\"u}$ber '
-                    "33$\\,$h "
-                    "(seit "
-                    "+00:00$\\,$h)",
+                    "33:00$\\,$h "
+                    "seit "
+                    "+0:00$\\,$h",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -1905,7 +1902,11 @@ plot_summary = {
                         "y0": 0.09000000000000001,
                     },
                     "replace_edge_spaces": False,
-                    "s": "33:00$\\,$h " "seit " "Freisetzungsbeginn",
+                    "s": "33:00$\\,$h "
+                    "seit "
+                    "Freisetzungsbeginn "
+                    "in "
+                    'G$\\mathrm{\\"o}$sgen',
                     "type": "TextBoxElementText",
                 },
             ],
@@ -1938,32 +1939,9 @@ plot_summary = {
                         "y0": 0.91,
                     },
                     "replace_edge_spaces": False,
-                    "s": "I-131a",
+                    "s": "Level: " "0$-$500 m " '$\\mathrm{{\\"u}}$.G.',
                     "type": "TextBoxElementText",
-                },
-                {
-                    "edge_spaces_replacement_char": "␣",
-                    "kwargs": {"ha": "center", "size": "large", "va": "baseline"},
-                    "loc": {
-                        "dx": 0.0,
-                        "dx_unit": 0.037500000000000006,
-                        "dy": 0.0,
-                        "dy_unit": 0.09000000000000001,
-                        "ha": "center",
-                        "loc": "bc",
-                        "loc_x": "c",
-                        "loc_y": "b",
-                        "type": "TextBoxLocation",
-                        "va": "baseline",
-                        "x": 0.5,
-                        "x0": 0.5,
-                        "y": 0.09000000000000001,
-                        "y0": 0.09000000000000001,
-                    },
-                    "replace_edge_spaces": False,
-                    "s": "Ort: " 'G$\\mathrm{\\"o}$sgen',
-                    "type": "TextBoxElementText",
-                },
+                }
             ],
             "lw_frame": 1.0,
             "name": "top/right",

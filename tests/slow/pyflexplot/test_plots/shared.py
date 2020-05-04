@@ -121,11 +121,19 @@ class ReferenceFileCreationError(Exception):
     """Error writing test reference file to disk."""
 
 
+class PlotCreationSuccess(Exception):
+    """Test plot successfully written to disk."""
+
+
+class PlotCreationError(Exception):
+    """Error writing test plot to disk."""
+
+
 class _CreateReference(_TestBase):
-    """Create new reference file by inheriting from this instead of _TestBase."""
+    """Test parent class to create a new test reference for a test."""
 
     def test(self, datadir):
-        reffile = f"{self.reference}.py"
+        ref_file = f"{self.reference}.py"
         field, mdata = self.get_field_and_mdata(datadir)
         field_summary = field.summarize()
         plot = self.get_plot(field, mdata)
@@ -147,15 +155,33 @@ class _CreateReference(_TestBase):
             """
             '''
         try:
-            with open(reffile, "w") as f:
+            with open(ref_file, "w") as f:
                 f.write(dedent(header))
                 f.write(f"\nfield_summary = {pformat(field_summary)}\n")
                 f.write(f"\nplot_summary = {pformat(plot_summary)}\n")
         except Exception:
-            raise ReferenceFileCreationError(reffile)
+            raise ReferenceFileCreationError(ref_file)
         else:
-            raise ReferenceFileCreationSuccess(reffile)
+            raise ReferenceFileCreationSuccess(ref_file)
 
 
-# Uncomment to recreate all test references at once
+class _CreatePlot(_TestBase):
+    """Test parent class to create plots based on a test setup."""
+
+    def test(self, datadir):
+        plot_file = f"{self.reference}.png"
+        field, mdata = self.get_field_and_mdata(datadir)
+        plot = self.get_plot(field, mdata)
+        try:
+            plot.save(plot_file)
+        except Exception:
+            raise PlotCreationError(plot_file)
+        else:
+            raise PlotCreationSuccess(plot_file)
+
+
+# Uncomment to create test references for all tests at once
 # _TestBase = _CreateReference
+
+# Uncomment to create test plots for all tests at once
+# _TestBase = _CreatePlot

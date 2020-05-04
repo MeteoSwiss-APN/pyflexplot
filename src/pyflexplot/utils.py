@@ -486,50 +486,7 @@ def format_level_ranges(
         raise ValueError(f"unknown style '{style}'; options: {sorted(formatters)}")
     else:
         formatter = cls(widths=widths, extend=extend, align=align, **kwargs)
-    return formatter.fmt_multiple(levels)
-
-
-# SR_TODO Check if `format_level_range` can be merged with `format_level_ranges`
-def format_level_range(
-    value_bottom: Union[float, Sequence[float]],
-    value_top: Union[float, Sequence[float]],
-    unit: str,
-) -> Optional[str]:
-
-    if (value_bottom, value_top) == (-1, -1):
-        return None
-
-    def fmt(bot, top):
-        return f"{bot:g}" + r"$-$" + f"{top:g} {unit}"
-
-    try:
-        # One level range (early exit)
-        return fmt(value_bottom, value_top)
-    except TypeError:
-        pass
-
-    # Multiple level ranges
-    assert isinstance(value_bottom, Collection)  # mypy
-    assert isinstance(value_top, Collection)  # mypy
-    bots = sorted(value_bottom)
-    tops = sorted(value_top)
-    if len(bots) != len(tops):
-        raise Exception(f"inconsistent no. levels: {len(bots)} != {len(tops)}")
-    n = len(bots)
-    if n == 2:
-        # Two level ranges
-        if tops[0] == bots[1]:
-            return fmt(bots[0], tops[1])
-        else:
-            return f"{fmt(bots[0], tops[0])} + {fmt(bots[1], tops[1])}"
-    elif n == 3:
-        # Three level ranges
-        if tops[0] == bots[1] and tops[1] == bots[2]:
-            return fmt(bots[0], tops[2])
-        else:
-            raise NotImplementedError(f"3 non-continuous level ranges")
-    else:
-        raise NotImplementedError(f"{n} sets of levels")
+    return formatter.format_multiple(levels)
 
 
 @dataclass
@@ -600,6 +557,9 @@ class LevelRangeFormatter:
         self.align: str = align
         self.rstrip_zeros: bool = rstrip_zeros
 
+        # Declare attributes
+        self._max_val: Optional[float] = None
+
         self._check_widths(self.widths)
 
     def _check_widths(self, widths: Tuple[int, int, int]) -> None:
@@ -608,17 +568,21 @@ class LevelRangeFormatter:
         except (ValueError, TypeError):
             raise ValueError(f"widths is not a tree-int tuple: {widths}")
 
-    def fmt_multiple(self, levels: Sequence[float]) -> List[str]:
-        ss: List[str] = []
+    def format_multiple(self, levels: Sequence[float]) -> List[str]:
+        labels: List[str] = []
+        self._max_val = max(levels)
         if self.extend in ("min", "both"):
-            ss.append(self.format(None, levels[0]))
+            labels.append(self.format(None, levels[0]))
         for lvl0, lvl1 in zip(levels[:-1], levels[1:]):
-            ss.append(self.format(lvl0, lvl1))
+            labels.append(self.format(lvl0, lvl1))
         if self.extend in ("max", "both"):
-            ss.append(self.format(levels[-1], None))
-        return ss
+            labels.append(self.format(levels[-1], None))
+        return labels
 
     def format(self, lvl0: Optional[float], lvl1: Optional[float]) -> str:
+        if self._max_val is None:
+            self._max_val = max([lvl0, lvl1])
+
         cs = self._format_components(lvl0, lvl1)
 
         s_l = cs.left.s
@@ -723,7 +687,8 @@ class LevelRangeFormatterInt(LevelRangeFormatter):
     def _format_level(self, lvl: float) -> str:
         if int(lvl) != float(lvl):
             warnings.warn(f"{type(self).__name__}._format_level: not an int: {lvl}")
-        return str(lvl)
+        # return str(lvl)
+        return f"{{:>{len(str(self._max_val))}}}".format(lvl)
 
 
 class LevelRangeFormatterMath(LevelRangeFormatter):

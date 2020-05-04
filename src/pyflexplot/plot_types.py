@@ -3,13 +3,14 @@
 Plot types.
 """
 # Standard library
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
+from typing import Collection
 from typing import Dict
 from typing import List
 from typing import Mapping
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -17,6 +18,7 @@ from typing import Union
 import matplotlib as mpl
 import numpy as np
 from matplotlib.colors import Colormap
+from pydantic import BaseModel
 
 # Local
 from .data import Field
@@ -25,7 +27,6 @@ from .meta_data import format_unit
 from .meta_data import get_integr_type
 from .plot_lib import MapAxesConf
 from .setup import InputSetup
-from .utils import format_level_range
 from .utils import summarizable
 from .words import SYMBOLS
 from .words import WORDS
@@ -103,47 +104,32 @@ class PlotLabels:
 
         self.top_left: Dict[str, Any] = self._init_group(
             {
-                "variable": (
+                "top_left": (
                     f"{get_long_name(self.setup, self.words)}"
-                    f"{format_level_label(self.mdata, self.words)}"
+                    f" {self.words['of']} {self.mdata.species_name}"
                 ),
-                "period": (
-                    f"{format_integr_period(self.mdata, self.setup, self.words)} "
-                    f"({self.words['since']} +{self.mdata.simulation_integr_start_rel})"
+                "bottom_left": (
+                    f"{format_integr_period(self.mdata, self.setup, self.words)}"
+                    f" {self.words['since']}"
+                    f" +{self.mdata.simulation_integr_start_rel}"
                 ),
-                "subtitle_thr_agrmt_fmt": (
-                    f"Cloud: {self.symbols['geq']} {{thr}} "
-                    f"{escape_format_keys(self.mdata.format('variable_unit'))}"
-                ),
-                "subtitle_cloud_arrival_time": (
-                    f"Cloud: {self.symbols['geq']} {{thr}} "
-                    f"{escape_format_keys(self.mdata.format('variable_unit'))}"
-                    f"; members: {self.symbols['geq']} {{mem}}"
-                ),
-                "timestep": (
+                "top_right": (
                     f"{self.mdata.simulation_now} (+{self.mdata.simulation_now_rel})"
                 ),
-                "time_since_release_start": (
-                    f"{self.mdata.simulation_now_rel} "
-                    f"{self.words['since']} "
-                    f"{self.words['release_start']}"
+                "bottom_right": (
+                    f"{self.mdata.simulation_now_rel} {self.words['since']}"
+                    f" {self.words['release_start']}"
+                    f" {self.words['at', 'place']} {self.mdata.release_site_name}"
                 ),
-            },
-        )
-
-        self.top_right: Dict[str, Any] = self._init_group(
-            {
-                "species": f"{self.mdata.species_name}",
-                "site": f"{self.words['site']}: {self.mdata.release_site_name}",
-            },
+            }
         )
 
         self.right_top: Dict[str, Any] = self._init_group(
             {
                 "title": get_short_name(self.setup, self.words),
                 "title_unit": (
-                    f"{get_short_name(self.setup, self.words)} "
-                    f"({self.mdata.format('variable_unit')})"
+                    f"{get_short_name(self.setup, self.words)}"
+                    f" ({self.mdata.format('variable_unit')})"
                 ),
                 "release_site": self.words["release_site"].s,
                 "max": self.words["max"].s,
@@ -180,13 +166,13 @@ class PlotLabels:
         ens_member_id = "XX-YY"  # SR_HC
         # SR_TMP >
         s_ens = (
-            f" {self.words['ensemble']} "
-            f"({n_members} {self.words['member', 'pl']}: {ens_member_id})"
+            f" {self.words['ensemble']}"
+            f" ({n_members} {self.words['member', 'pl']}: {ens_member_id})"
         )
         info_fmt_base = (
-            f"{self.words['flexpart']} {self.words['based_on']} "
-            f"{self.mdata.simulation_model_name}{{ens}}, "
-            f"{self.mdata.simulation_start}"
+            f"{self.words['flexpart']} {self.words['based_on']}"
+            f" {self.mdata.simulation_model_name}{{ens}},"
+            f" {self.mdata.simulation_start}"
         )
         self.bottom: Dict[str, Any] = self._init_group(
             {
@@ -221,15 +207,56 @@ def format_level_label(mdata: MetaData, words: TranslatedWords):
             mdata.variable_level_bot_unit,
             mdata.variable_level_top_unit,
         )
-    if not unit:
-        pass
     assert isinstance(unit, str)  # mypy
-    level = format_level_range(
+    level = format_vertical_level_range(
         mdata.variable_level_bot.value, mdata.variable_level_top.value, unit
     )
     if not level:
         return ""
-    return f" {words['at', 'level']} {format_unit(level)}"
+    # return f" {words['at', 'level']} {format_unit(level)}"
+    return f"{format_unit(level)}"
+
+
+def format_vertical_level_range(
+    value_bottom: Union[float, Sequence[float]],
+    value_top: Union[float, Sequence[float]],
+    unit: str,
+) -> Optional[str]:
+
+    if (value_bottom, value_top) == (-1, -1):
+        return None
+
+    def fmt(bot, top):
+        return f"{bot:g}" + r"$-$" + f"{top:g} {unit}"
+
+    try:
+        # One level range (early exit)
+        return fmt(value_bottom, value_top)
+    except TypeError:
+        pass
+
+    # Multiple level ranges
+    assert isinstance(value_bottom, Collection)  # mypy
+    assert isinstance(value_top, Collection)  # mypy
+    bots = sorted(value_bottom)
+    tops = sorted(value_top)
+    if len(bots) != len(tops):
+        raise Exception(f"inconsistent no. levels: {len(bots)} != {len(tops)}")
+    n = len(bots)
+    if n == 2:
+        # Two level ranges
+        if tops[0] == bots[1]:
+            return fmt(bots[0], tops[1])
+        else:
+            return f"{fmt(bots[0], tops[0])} + {fmt(bots[1], tops[1])}"
+    elif n == 3:
+        # Three level ranges
+        if tops[0] == bots[1] and tops[1] == bots[2]:
+            return fmt(bots[0], tops[2])
+        else:
+            raise NotImplementedError(f"3 non-continuous level ranges")
+    else:
+        raise NotImplementedError(f"{n} sets of levels")
 
 
 def format_integr_period(
@@ -246,8 +273,10 @@ def format_integr_period(
     now = mdata.simulation_now.value
     assert isinstance(start, datetime)  # mypy
     assert isinstance(now, datetime)  # mypy
-    period = (now - start).total_seconds() / 3600
-    return f"{operation} {period:g}$\\,$h"
+    period = now - start
+    hours = int(period.total_seconds() / 3600)
+    minutes = int((period.total_seconds() / 60) % 60)
+    return f"{operation} {hours:d}:{minutes:02d}$\\,$h"
 
 
 def format_coord_label(direction: str, words: TranslatedWords, symbols: Words) -> str:
@@ -316,8 +345,8 @@ def get_short_name(setup: InputSetup, words: TranslatedWords) -> str:
         else:
             if setup.integrate:
                 return (
-                    f"{words['integrated', 'abbr']} "
-                    f"{words['concentration', 'abbr']}"
+                    f"{words['integrated', 'abbr']}"
+                    f" {words['concentration', 'abbr']}"
                 )
             return words["concentration"].s
     if setup.variable == "deposition":
@@ -328,11 +357,9 @@ def get_short_name(setup: InputSetup, words: TranslatedWords) -> str:
     raise NotImplementedError("short_name", setup.variable, setup.plot_type)
 
 
-@dataclass
 # pylint: disable=R0902  # too-many-instance-attributes
-class PlotConfig:
+class PlotConfig(BaseModel):
     setup: InputSetup  # SR_TODO consider removing this
-    labels: PlotLabels  # SR_TODO consider removing this
     cmap: Union[str, Colormap] = "flexplot"
     d_level: Optional[int] = None  # SR_TODO sensible default
     draw_colors: bool = True
@@ -341,6 +368,8 @@ class PlotConfig:
     # SR_NOTE Figure size may change when boxes etc. are added
     # SR_TODO Specify plot size in a robust way (what you want is what you get)
     fig_size: Tuple[float, float] = (12.5, 8.0)
+    labels: Dict[str, Any] = {}
+    old_labels: PlotLabels  # SR_TODO eliminate!
     legend_box_title: str = ""  # SR_TODO sensible default
     legend_rstrip_zeros: bool = True
     level_ranges_align: str = "center"
@@ -354,56 +383,89 @@ class PlotConfig:
     reverse_legend: bool = False
     top_box_subtitle: str = ""
 
+    class Config:  # noqa
+        allow_extra = False
+        arbitrary_types_allowed = True
+
     @property
     def fig_aspect(self):
         return np.divide(*self.fig_size)
 
 
 # SR_TODO Create dataclass with default values for test box setup
-def create_plot_config(setup: InputSetup, labels: PlotLabels) -> "PlotConfig":
-    new_config_dct: Dict[str, Any] = {}
+def create_plot_config(
+    setup: InputSetup,
+    words: TranslatedWords,
+    symbols: Words,
+    mdata: MetaData,
+    old_labels: PlotLabels,
+) -> "PlotConfig":
+    new_config_dct: Dict[str, Any] = {
+        "setup": setup,
+        "old_labels": old_labels,
+        "labels": {"top_right": {}},
+    }
+    new_config_dct["top_box_subtitle"] = old_labels.top_left.get("subtitle", "")
     if setup.variable == "concentration":
         new_config_dct["n_levels"] = 8
+        new_config_dct["labels"]["top_right"]["tc"] = (
+            f"{words['level']}:"
+            f" {escape_format_keys(format_level_label(mdata, words))}"
+        )
     elif setup.variable == "deposition":
         new_config_dct["n_levels"] = 9
     if setup.simulation_type == "deterministic":
-        new_config_dct["model_info"] = labels.bottom["model_info_det"]
+        new_config_dct["model_info"] = old_labels.bottom["model_info_det"]
         if setup.plot_type == "affected_area_mono":
             new_config_dct["extend"] = "none"
             new_config_dct["n_levels"] = 1
     if setup.simulation_type == "ensemble":
-        new_config_dct["model_info"] = labels.bottom["model_info_ens"]
+        new_config_dct["model_info"] = old_labels.bottom["model_info_ens"]
         if setup.plot_type == "ens_thr_agrmt":
-            new_config_dct["extend"] = "min"
-            new_config_dct["n_levels"] = 7
-            new_config_dct["d_level"] = 2
-            new_config_dct["legend_rstrip_zeros"] = False
-            new_config_dct["level_range_style"] = "int"
-            new_config_dct["level_ranges_align"] = "left"
-            new_config_dct["mark_field_max"] = False
-            new_config_dct["top_box_subtitle"] = labels.top_left[
-                "subtitle_thr_agrmt_fmt"
-            ].format(thr=setup.ens_param_thr)
-            new_config_dct["legend_box_title"] = labels.right_top["title"]
-            new_config_dct["levels_scale"] = "lin"
+            new_config_dct.update(
+                {
+                    "extend": "min",
+                    "n_levels": 7,
+                    "d_level": 2,
+                    "legend_rstrip_zeros": False,
+                    "level_range_style": "int",
+                    "level_ranges_align": "left",
+                    "mark_field_max": False,
+                    "legend_box_title": old_labels.right_top["title"],
+                    "levels_scale": "lin",
+                }
+            )
+            new_config_dct["labels"]["top_right"]["tc"] = (
+                f"{words['cloud']}: {symbols['geq']} {setup.ens_param_thr}"
+                f" {mdata.format('variable_unit')}"
+            )
         elif setup.plot_type == "ens_cloud_arrival_time":
-            new_config_dct["extend"] = "max"
-            new_config_dct["n_levels"] = 9
-            new_config_dct["d_level"] = 3
-            new_config_dct["legend_rstrip_zeros"] = False
-            new_config_dct["level_range_style"] = "int"
-            new_config_dct["level_ranges_align"] = "left"
-            new_config_dct["mark_field_max"] = False
-            new_config_dct["top_box_subtitle"] = labels.top_left[
-                "subtitle_cloud_arrival_time"
-            ].format(thr=setup.ens_param_thr, mem=setup.ens_param_mem_min)
-            new_config_dct["legend_box_title"] = labels.right_top["title"]
-            new_config_dct["levels_scale"] = "lin"
+            new_config_dct.update(
+                {
+                    "extend": "max",
+                    "n_levels": 9,
+                    "d_level": 3,
+                    "legend_rstrip_zeros": False,
+                    "level_range_style": "int",
+                    "level_ranges_align": "left",
+                    "mark_field_max": False,
+                    "legend_box_title": old_labels.right_top["title"],
+                    "levels_scale": "lin",
+                }
+            )
+            new_config_dct["labels"]["top_right"]["tc"] = (
+                f"{words['cloud']}: {symbols['geq']} {setup.ens_param_thr}"
+                f" {mdata.format('variable_unit')}"
+            )
+            new_config_dct["labels"]["top_right"]["bc"] = (
+                f"{words['member', 'pl']}: {symbols['geq']}"
+                f" {setup.ens_param_mem_min}"
+            )
     # SR_TMP < TODO set default
     if "legend_box_title" not in new_config_dct:
-        new_config_dct["legend_box_title"] = labels.right_top["title_unit"]
+        new_config_dct["legend_box_title"] = old_labels.right_top["title_unit"]
     # SR_TMP >
-    return PlotConfig(setup=setup, labels=labels, **new_config_dct)
+    return PlotConfig(**new_config_dct)
 
 
 def colors_flexplot(n_levels: int, extend: str) -> List[Tuple[int, int, int]]:

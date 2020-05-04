@@ -1846,7 +1846,7 @@ plot_summary = {
                         "y0": 0.91,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Totale " "Bodendeposition",
+                    "s": "Totale " "Bodendeposition " "von Cs-137",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -1871,9 +1871,9 @@ plot_summary = {
                     "replace_edge_spaces": False,
                     "s": "Akkumuliert "
                     '$\\mathrm{\\"u}$ber '
-                    "33$\\,$h "
-                    "(seit "
-                    "+00:00$\\,$h)",
+                    "33:00$\\,$h "
+                    "seit "
+                    "+0:00$\\,$h",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -1919,7 +1919,11 @@ plot_summary = {
                         "y0": 0.09000000000000001,
                     },
                     "replace_edge_spaces": False,
-                    "s": "33:00$\\,$h " "seit " "Freisetzungsbeginn",
+                    "s": "33:00$\\,$h "
+                    "seit "
+                    "Freisetzungsbeginn "
+                    "in "
+                    'G$\\mathrm{\\"o}$sgen',
                     "type": "TextBoxElementText",
                 },
             ],
@@ -1931,54 +1935,7 @@ plot_summary = {
         "method:Plot.fill_box_top_right": {
             "dx_unit": 0.037500000000000006,
             "dy_unit": 0.09000000000000001,
-            "elements": [
-                {
-                    "edge_spaces_replacement_char": "␣",
-                    "kwargs": {"ha": "center", "size": "large", "va": "top"},
-                    "loc": {
-                        "dx": 0.0,
-                        "dx_unit": 0.037500000000000006,
-                        "dy": 0.0,
-                        "dy_unit": 0.09000000000000001,
-                        "ha": "center",
-                        "loc": "tc",
-                        "loc_x": "c",
-                        "loc_y": "t",
-                        "type": "TextBoxLocation",
-                        "va": "top",
-                        "x": 0.5,
-                        "x0": 0.5,
-                        "y": 0.91,
-                        "y0": 0.91,
-                    },
-                    "replace_edge_spaces": False,
-                    "s": "Cs-137",
-                    "type": "TextBoxElementText",
-                },
-                {
-                    "edge_spaces_replacement_char": "␣",
-                    "kwargs": {"ha": "center", "size": "large", "va": "baseline"},
-                    "loc": {
-                        "dx": 0.0,
-                        "dx_unit": 0.037500000000000006,
-                        "dy": 0.0,
-                        "dy_unit": 0.09000000000000001,
-                        "ha": "center",
-                        "loc": "bc",
-                        "loc_x": "c",
-                        "loc_y": "b",
-                        "type": "TextBoxLocation",
-                        "va": "baseline",
-                        "x": 0.5,
-                        "x0": 0.5,
-                        "y": 0.09000000000000001,
-                        "y0": 0.09000000000000001,
-                    },
-                    "replace_edge_spaces": False,
-                    "s": "Ort: " 'G$\\mathrm{\\"o}$sgen',
-                    "type": "TextBoxElementText",
-                },
-            ],
+            "elements": {},
             "lw_frame": 1.0,
             "name": "top/right",
             "rect": [0.8, 0.9, 0.2, 0.1],
