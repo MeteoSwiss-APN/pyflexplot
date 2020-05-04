@@ -294,6 +294,15 @@ def _check_children(obj, t_children, f_children, kwargs, raise_):
                 )
 
 
+def type_name(type_) -> str:
+    try:
+        return type_.__name__
+    except AttributeError:
+        if str(type_).startswith("typing."):
+            return str(type_).split(".")[1]
+        raise ValueError(type_)
+
+
 # pylint: disable=R0915  # too-many-statements
 def assert_nested_equal(
     obj1: Collection,
@@ -315,9 +324,9 @@ def assert_nested_equal(
 
     """
     if not isinstance(obj1, Collection):
-        raise ValueError(f"expecting Collection, not {type(obj1).__name__}")
+        raise ValueError(f"expecting Collection, not {type_name(type(obj1))}")
     if not isinstance(obj2, Collection):
-        raise ValueError(f"expecting Collection, not {type(obj2).__name__}")
+        raise ValueError(f"expecting Collection, not {type_name((obj2))}")
 
     def format_obj(obj):
         lines = pformat(obj).split("\n")
@@ -328,9 +337,9 @@ def assert_nested_equal(
     def error(msg, path, obj1=None, obj2=None):
         err = f"\n{msg}\n\nPath ({len(path)}):\n{pformat(path)}\n"
         if obj1 is not None:
-            err += f"\nobj1 ({type(obj1).__name__}):\n{format_obj(obj1)}\n"
+            err += f"\nobj1 ({type_name(type(obj1))}):\n{format_obj(obj1)}\n"
         if obj2 is not None:
-            err += f"\nobj2 ({type(obj2).__name__}):\n{format_obj(obj2)}\n"
+            err += f"\nobj2 ({type_name(type(obj2))}):\n{format_obj(obj2)}\n"
         return AssertionError(err)
 
     # pylint: disable=R0912  # too-many-branches
@@ -351,8 +360,8 @@ def assert_nested_equal(
         def check_equivalent(obj1, obj2, type_, path):
             if not isinstance(obj1, type_) or not isinstance(obj2, type_):
                 raise error(
-                    f"unequivalent types: expected {type_.__name__}, got "
-                    f"{type(obj1).__name__} and {type(obj2).__name__}",
+                    f"unequivalent types: expected {type_name(type_)}, got "
+                    f"{type_name(type(obj1))} and {type_name(type(obj2))}",
                     *[path, obj1, obj2],
                 )
 
@@ -399,7 +408,7 @@ def assert_nested_equal(
             if not np.isreal(obj2):
                 raise error(
                     f"unequivalent types (expected real numbers): "
-                    f"{type(obj1).__name__} vs. {type(obj2).__name__}, ",
+                    f"{type_name(type(obj1))} vs. {type_name(type(obj2))}, ",
                     *[path, obj1, obj2],
                 )
             if (isinstance(obj1, float) or isinstance(obj2, float)) and float_close_ok:
