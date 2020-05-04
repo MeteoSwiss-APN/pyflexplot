@@ -28,6 +28,10 @@ ParamType = Union[click.Option, click.Parameter]
 preset_path: List[Union[str, Path]] = []
 
 
+class NoPresetFileFoundError(Exception):
+    """No preset file found in directory/ies."""
+
+
 def add_preset_path(path: Union[Path, str], first: bool = True) -> None:
     global preset_path  # pylint: disable=W0603  # global-statement
     path = Path(path)
@@ -71,6 +75,8 @@ def collect_preset_files(
                 if rx_pattern.match(name):
                     files_by_dir[dir_][name] = path
                     break
+        if not files_by_dir[dir_]:
+            raise NoPresetFileFoundError(pattern, dir_)
     return files_by_dir
 
 
@@ -87,7 +93,7 @@ def collect_preset_files_flat(name: str) -> Dict[str, Path]:
         name: path for files in files_by_dir.values() for name, path in files.items()
     }
     if not named_paths:
-        raise ValueError("preset not found", name, files_by_dir)
+        raise NoPresetFileFoundError(name, files_by_dir)
     return named_paths
 
 
@@ -126,8 +132,8 @@ def click_cat_preset_and_exit(ctx: Context, param: ParamType, value: Any) -> Non
     verbosity = ctx.obj["verbosity"]
     try:
         content = cat_preset(value, include_source=(verbosity > 0))
-    except ValueError:
-        click.echo(f"Error: preset '{value}' not found!", file=sys.stderr)
+    except NoPresetFileFoundError:
+        click.echo(f"Error: preset '{value}' not found.", file=sys.stderr)
         ctx.exit(1)
     else:
         click.echo(content)
@@ -144,9 +150,9 @@ def click_use_preset(ctx: Context, param: ParamType, value: Any) -> None:
     for name in value:
         try:
             files_by_dir = collect_preset_files(name)
-        except ValueError:
+        except NoPresetFileFoundError:
             click.echo(
-                f"Error: No preset setup file found for '{name}'!", file=sys.stderr,
+                f"Error: No preset setup file found for '{name}'.", file=sys.stderr,
             )
             _click_propose_alternatives(name)
             ctx.exit(1)
@@ -186,7 +192,7 @@ def _click_list_presets(
 def _click_propose_alternatives(name: str) -> None:
     try:
         alternatives = collect_preset_files_flat(f"*{name}*")
-    except ValueError:
+    except NoPresetFileFoundError:
         pass
     else:
         if alternatives:
