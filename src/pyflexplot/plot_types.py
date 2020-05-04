@@ -130,10 +130,7 @@ def create_plot_config(
         "labels": {},
     }
     new_config_dct["labels"]["top_left"] = {
-        "tl": (
-            f"{get_long_name(setup, words, capitalize=True)}"
-            f" {words['of']} {mdata.species_name}"
-        ),
+        "tl": "",  # SR_TMP force into 1st position of dict (for tests)
         "bl": (
             f"{format_integr_period(mdata, setup, words, capitalize=True)}"
             f" {words['since']}"
@@ -148,11 +145,8 @@ def create_plot_config(
     }
     new_config_dct["labels"]["top_right"] = {}
     new_config_dct["labels"]["right_top"] = {
-        "title": get_short_name(setup, words, capitalize=True),
-        "title_unit": (
-            f"{get_short_name(setup, words, capitalize=True)}"
-            f" ({mdata.format('variable_unit')})"
-        ),
+        "title": "",  # SR_TMP Force into 1st position in dict (for tests)
+        "title_unit": "",  # SR_TMP Force into 2nd position in dict (for tests)
         "release_site": words["release_site"].s,
         "max": words["max"].s,
     }
@@ -192,6 +186,71 @@ def create_plot_config(
         ),
         "copyright": f"{symbols['copyright']}{words['meteoswiss']}",
     }
+
+    def capitalize(s: str) -> str:
+        return s[0].upper() + s[1:]
+
+    short_name = ""
+    long_name = ""
+    if setup.variable == "concentration":
+        if setup.plot_type == "ens_cloud_arrival_time":
+            short_name = f"{words['arrival'].c} ({words['hour', 'pl']})"
+            long_name = f"{words['cloud_arrival_time']}"
+        else:
+            if setup.integrate:
+                short_name = (
+                    f"{words['integrated', 'abbr']}"
+                    f" {words['concentration', 'abbr']}"
+                )
+            else:
+                short_name = str(words["concentration"])
+        if setup.plot_type == "ens_min":
+            long_name = f"{words['ensemble_minimum']} {words['concentration']}"
+        elif setup.plot_type == "ens_max":
+            long_name = f"{words['ensemble_maximum']} {words['concentration']}"
+        elif setup.plot_type == "ens_median":
+            long_name = f"{words['ensemble_median']} {words['concentration']}"
+        elif setup.plot_type == "ens_mean":
+            long_name = f"{words['ensemble_mean']} {words['concentration']}"
+        else:
+            ctx = "abbr" if setup.integrate else "*"
+            long_name = str(words["activity_concentration", ctx])
+    elif setup.variable == "deposition":
+        assert isinstance(setup.deposition_type, str)  # mypy
+        dep_type = words[
+            "total" if setup.deposition_type == "tot" else setup.deposition_type, "f"
+        ]
+        deposition = f"{dep_type} {words['surface_deposition']}"
+        if setup.plot_type == "ens_thr_agrmt":
+            short_name = f"{words['number_of', 'abbr'].c} " f"{words['member', 'pl']}"
+            long_name = (
+                f"{words['threshold_agreement']}"
+                f" ({words['number_of', 'abbr'].c} {words['member', 'pl']})"
+            )
+        else:
+            short_name = str(words["deposition"])
+            if setup.plot_type.startswith("affected_area"):
+                long_name = f"{words['affected_area']} ({deposition})"
+            elif setup.plot_type == "ens_min":
+                long_name = f"{words['ensemble_minimum']} {deposition}"
+            elif setup.plot_type == "ens_max":
+                long_name = f"{words['ensemble_maximum']} {deposition}"
+            elif setup.plot_type == "ens_median":
+                long_name = f"{words['ensemble_median']} {deposition}"
+            elif setup.plot_type == "ens_mean":
+                long_name = f"{words['ensemble_mean']} {deposition}"
+            else:
+                long_name = f"{deposition}"
+    if short_name:
+        new_config_dct["labels"]["right_top"]["title"] = capitalize(short_name)
+        new_config_dct["labels"]["right_top"]["title_unit"] = capitalize(
+            f"{short_name} ({mdata.format('variable_unit')})"
+        )
+    if long_name:
+        new_config_dct["labels"]["top_left"]["tl"] = capitalize(
+            f"{long_name} {words['of']} {mdata.species_name}"
+        )
+
     if setup.variable == "concentration":
         new_config_dct["n_levels"] = 8
         new_config_dct["labels"]["top_right"]["tc"] = (
@@ -456,83 +515,3 @@ def format_coord_label(direction: str, words: TranslatedWords, symbols: Words) -
     else:
         raise NotImplementedError("unit for direction", direction)
     return f"{{d}}{deg_unit}{{m}}{min_unit}{dir_unit} ({{f:.4f}}{deg_dir_unit})"
-
-
-# pylint: disable=R0911,R0912  # too-many-return-statements,too-many-branches
-def get_long_name(
-    setup: InputSetup, words: TranslatedWords, capitalize: bool = False
-) -> str:
-    s: str = ""
-    if setup.plot_type and setup.plot_type.startswith("affected_area"):
-        super_name = get_long_name(
-            setup.derive({"variable": "deposition", "plot_type": "auto"}), words
-        )
-        s = f"{words['affected_area']} ({super_name})"
-    elif setup.plot_type == "ens_thr_agrmt":
-        super_name = get_short_name(setup.derive({"variable": "deposition"}), words)
-        s = f"{words['threshold_agreement']} ({super_name})"
-    elif setup.plot_type == "ens_cloud_arrival_time":
-        s = f"{words['cloud_arrival_time']}"
-    elif setup.variable == "deposition":
-        if setup.deposition_type == "tot":
-            word = "total"
-        else:
-            assert isinstance(setup.deposition_type, str)  # mypy
-            word = setup.deposition_type
-        dep = words[word, "f"].s
-        if setup.plot_type == "ens_min":
-            s = f"{words['ensemble_minimum']} {dep} {words['surface_deposition']}"
-        elif setup.plot_type == "ens_max":
-            s = f"{words['ensemble_maximum']} {dep} {words['surface_deposition']}"
-        elif setup.plot_type == "ens_median":
-            s = f"{words['ensemble_median']} {dep} {words['surface_deposition']}"
-        elif setup.plot_type == "ens_mean":
-            s = f"{words['ensemble_mean']} {dep} {words['surface_deposition']}"
-        else:
-            s = f"{dep} {words['surface_deposition']}"
-    elif setup.variable == "concentration":
-        if setup.plot_type == "ens_min":
-            s = f"{words['ensemble_minimum']} {words['concentration']}"
-        elif setup.plot_type == "ens_max":
-            s = f"{words['ensemble_maximum']} {words['concentration']}"
-        elif setup.plot_type == "ens_median":
-            s = f"{words['ensemble_median']} {words['concentration']}"
-        elif setup.plot_type == "ens_mean":
-            s = f"{words['ensemble_mean']} {words['concentration']}"
-        else:
-            ctx = "abbr" if setup.integrate else "*"
-            s = str(words["activity_concentration", ctx])
-    if not s:
-        raise NotImplementedError(
-            f"long_name", setup.variable, setup.plot_type, setup.integrate
-        )
-    if capitalize:
-        s = s[0].upper() + s[1:]
-    return s
-
-
-def get_short_name(
-    setup: InputSetup, words: TranslatedWords, capitalize: bool = False
-) -> str:
-    s: str = ""
-    if setup.variable == "concentration":
-        if setup.plot_type == "ens_cloud_arrival_time":
-            s = f"{words['arrival'].c} ({words['hour', 'pl']})"
-        else:
-            if setup.integrate:
-                s = (
-                    f"{words['integrated', 'abbr']}"
-                    f" {words['concentration', 'abbr']}"
-                )
-            else:
-                s = str(words["concentration"])
-    elif setup.variable == "deposition":
-        if setup.plot_type == "ens_thr_agrmt":
-            s = f"{words['number_of', 'abbr'].c} " f"{words['member', 'pl']}"
-        else:
-            s = str(words["deposition"])
-    if not s:
-        raise NotImplementedError("short_name", setup.variable, setup.plot_type)
-    if capitalize:
-        s = s[0].upper() + s[1:]
-    return s
