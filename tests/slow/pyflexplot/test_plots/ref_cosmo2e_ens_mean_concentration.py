@@ -345,7 +345,7 @@ field_summary = {
             "ens_param_thr": None,
             "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
             "integrate": False,
-            "lang": "de",
+            "lang": "en",
             "level": [0],
             "nageclass": [0],
             "noutrel": None,
@@ -366,7 +366,7 @@ field_summary = {
             "ens_param_thr": None,
             "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
             "integrate": False,
-            "lang": "de",
+            "lang": "en",
             "level": [0],
             "nageclass": [0],
             "noutrel": None,
@@ -408,11 +408,10 @@ plot_summary = {
                         "y0": 0.8200000000000001,
                     },
                     "replace_edge_spaces": False,
-                    "s": "FLEXPART "
-                    "basierend auf "
-                    "COSMO-2 "
-                    "Ensemble (X "
-                    "Members: "
+                    "s": "FLEXPART based "
+                    "on COSMO-2 "
+                    "ensemble (X "
+                    "members: "
                     "XX-YY), "
                     "2019-07-27 "
                     "12:00 UTC",
@@ -438,7 +437,7 @@ plot_summary = {
                         "y0": 0.8200000000000001,
                     },
                     "replace_edge_spaces": False,
-                    "s": "©MeteoSchweiz",
+                    "s": "©MeteoSwiss",
                     "type": "TextBoxElementText",
                 },
             ],
@@ -471,7 +470,7 @@ plot_summary = {
                         "y0": 0.98,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Freisetzung",
+                    "s": "Release",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -499,7 +498,7 @@ plot_summary = {
                         "y0": 0.019999999999999997,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Auswaschexponent:",
+                    "s": "washout " "exponent:",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -527,7 +526,7 @@ plot_summary = {
                         "y0": 0.019999999999999997,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Auswaschkoeff.:",
+                    "s": "washout " "coeff.:",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -555,7 +554,7 @@ plot_summary = {
                         "y0": 0.019999999999999997,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Sediment.-Geschw.:",
+                    "s": "sediment. " "vel.:",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -583,7 +582,7 @@ plot_summary = {
                         "y0": 0.019999999999999997,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Deposit.-Geschw.:",
+                    "s": "deposit. " "vel.:",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -611,7 +610,7 @@ plot_summary = {
                         "y0": 0.019999999999999997,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Halbwertszeit:",
+                    "s": "half-life:",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -639,7 +638,7 @@ plot_summary = {
                         "y0": 0.019999999999999997,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Substanz:",
+                    "s": "substance:",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -667,7 +666,7 @@ plot_summary = {
                         "y0": 0.019999999999999997,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Totale " "Masse:",
+                    "s": "total " "mass:",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -695,7 +694,7 @@ plot_summary = {
                         "y0": 0.019999999999999997,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Rate:",
+                    "s": "rate:",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -723,7 +722,7 @@ plot_summary = {
                         "y0": 0.019999999999999997,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Ende:",
+                    "s": "end:",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -751,7 +750,7 @@ plot_summary = {
                         "y0": 0.019999999999999997,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Start:",
+                    "s": "start:",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -779,7 +778,7 @@ plot_summary = {
                         "y0": 0.019999999999999997,
                     },
                     "replace_edge_spaces": False,
-                    "s": 'H$\\mathrm{\\"o}$he:',
+                    "s": "height:",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -807,7 +806,7 @@ plot_summary = {
                         "y0": 0.019999999999999997,
                     },
                     "replace_edge_spaces": False,
-                    "s": 'L$\\mathrm{\\"a}$nge:',
+                    "s": "longitude:",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -835,7 +834,7 @@ plot_summary = {
                         "y0": 0.019999999999999997,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Breite:",
+                    "s": "latitude:",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -863,7 +862,7 @@ plot_summary = {
                         "y0": 0.019999999999999997,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Ort:",
+                    "s": "site:",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -1171,7 +1170,7 @@ plot_summary = {
                         "y0": 0.019999999999999997,
                     },
                     "replace_edge_spaces": False,
-                    "s": "100$\\,$m " '$\\mathrm{\\"u}$.G.',
+                    "s": "100$\\,$m " "AGL",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -1199,7 +1198,7 @@ plot_summary = {
                         "y0": 0.019999999999999997,
                     },
                     "replace_edge_spaces": False,
-                    "s": "7$^\\circ$$\\,$58'$\\,$O " "(7.9700$^\\circ$$\\,$O)",
+                    "s": "7$^\\circ$$\\,$58'$\\,$E " "(7.9700$^\\circ$$\\,$E)",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -1288,7 +1287,7 @@ plot_summary = {
                         "y0": 0.975,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Konzentration " "(Bq " "m$^{-3}$)",
+                    "s": "Concentration " "(Bq " "m$^{-3}$)",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -1769,7 +1768,7 @@ plot_summary = {
                         "y0": 0.024999999999999998,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Abgabeort",
+                    "s": "release site",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -1817,7 +1816,7 @@ plot_summary = {
                         "y0": 0.024999999999999998,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Max.: " "0.00113",
+                    "s": "max.: " "0.00113",
                     "type": "TextBoxElementText",
                 },
             ],
@@ -1850,7 +1849,12 @@ plot_summary = {
                         "y0": 0.91,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Ensemble-Median " "Konzentration " "von Cs-137 + " "I-131a",
+                    "s": "Ensemble "
+                    "median of "
+                    "activity "
+                    "concentration "
+                    "of Cs-137 + "
+                    "I-131a",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -1873,11 +1877,7 @@ plot_summary = {
                         "y0": 0.09000000000000001,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Gemittelt "
-                    '$\\mathrm{\\"u}$ber '
-                    "3:00$\\,$h "
-                    "seit "
-                    "+15:00$\\,$h",
+                    "s": "Averaged over " "3:00$\\,$h " "since " "+15:00$\\,$h",
                     "type": "TextBoxElementText",
                 },
                 {
@@ -1924,9 +1924,8 @@ plot_summary = {
                     },
                     "replace_edge_spaces": False,
                     "s": "18:00$\\,$h "
-                    "seit "
-                    "Freisetzungsbeginn "
-                    "in "
+                    "since release "
+                    "start at "
                     'G$\\mathrm{\\"o}$sgen',
                     "type": "TextBoxElementText",
                 },
@@ -1960,7 +1959,7 @@ plot_summary = {
                         "y0": 0.91,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Level: " "0$-$500 m " '$\\mathrm{{\\"u}}$.G.',
+                    "s": "level: " "0$-$500 m " "AGL",
                     "type": "TextBoxElementText",
                 }
             ],
@@ -2316,7 +2315,7 @@ plot_summary = {
                 "ens_param_thr": None,
                 "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
                 "integrate": False,
-                "lang": "de",
+                "lang": "en",
                 "level": [0],
                 "nageclass": [0],
                 "noutrel": None,
@@ -2337,7 +2336,7 @@ plot_summary = {
                 "ens_param_thr": None,
                 "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
                 "integrate": False,
-                "lang": "de",
+                "lang": "en",
                 "level": [0],
                 "nageclass": [0],
                 "noutrel": None,
@@ -2400,7 +2399,7 @@ plot_summary = {
         "geo_res": "10m",
         "geo_res_cities": "50m",
         "geo_res_rivers": "50m",
-        "lang": "de",
+        "lang": "en",
         "lllat": None,
         "lllon": None,
         "lw_frame": 1.0,

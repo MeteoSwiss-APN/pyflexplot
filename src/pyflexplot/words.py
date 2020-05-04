@@ -57,7 +57,7 @@ WORDS.add(
     de={"*": "Depositionsgeschwindigkeit", "abbr": "Deposit.-Geschw."},
 )
 WORDS.add(en="deposition", de="Deposition")
-WORDS.add(en="dry", de={"*": "trocken", "f": "trockene"})
+WORDS.add(en="dry", de={"*": "trocken", "f": "trockene", "g": "trockenen"})
 # E
 WORDS.add(en={"*": "east", "abbr": "E"}, de={"*": "Ost", "abbr": "O"})
 WORDS.add(en="end", de="Ende")
@@ -87,6 +87,7 @@ WORDS.add(
         "m": "integrierter",
         "f": "integrierte",
         "n": "integriertes",
+        "g": "integrierten",
     },
 )
 # J
@@ -104,7 +105,7 @@ WORDS.add(en="MeteoSwiss", de="MeteoSchweiz")
 WORDS.add(en={"*": "north", "abbr": "N"}, de={"*": "Norden", "abbr": "N"})
 WORDS.add(en={"*": "number of", "abbr": "no."}, de={"*": "Anzahl", "abbr": "Anz."})
 # O
-WORDS.add(en="of", de="von")
+WORDS.add(en="of", de={"*": "von", "fg": "der"})
 # P
 # Q
 # R
@@ -131,7 +132,7 @@ WORDS.add(
 WORDS.add(
     en="threshold agreement", de=f"Grenzwert{s['ue']}bereinstimmung",
 )
-WORDS.add(en="total", de={"*": "total", "m": "totaler", "f": "totale"})
+WORDS.add(en="total", de={"*": "total", "m": "totaler", "f": "totale", "g": "totalen"})
 WORDS.add(en="total mass", de="Totale Masse")
 # U
 # V
@@ -139,7 +140,7 @@ WORDS.add(en="total mass", de="Totale Masse")
 WORDS.add(en="washout coeff.", de="Auswaschkoeff.")
 WORDS.add(en="washout exponent", de="Auswaschexponent")
 WORDS.add(en={"*": "west", "abbr": "W"}, de={"*": "Westen", "abbr": "W"})
-WORDS.add(en="wet", de={"*": "nass", "f": "nasse"})
+WORDS.add(en="wet", de={"*": "nass", "f": "nasse", "g": "nassen"})
 # X
 # Y
 # Z

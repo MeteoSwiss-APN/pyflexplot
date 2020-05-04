@@ -1829,7 +1829,11 @@ plot_summary = {
                         "y0": 0.91,
                     },
                     "replace_edge_spaces": False,
-                    "s": "Ensemble-Maximum " "Konzentration " "von I-131a",
+                    "s": "Ensemble-Maximum "
+                    "der "
+                    "integrierten "
+                    'Aktivit$\\mathrm{\\"a}$tskonzentration '
+                    "von I-131a",
                     "type": "TextBoxElementText",
                 },
                 {
