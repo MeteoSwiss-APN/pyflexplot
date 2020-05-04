@@ -85,189 +85,6 @@ def create_map_conf(field: Field) -> MapAxesConf:
     return MapAxesConf(**conf)
 
 
-def escape_format_keys(s: str) -> str:
-    return s.replace("{", "{{").replace("}", "}}")
-
-
-def format_level_label(mdata: MetaData, words: TranslatedWords):
-    unit = mdata.variable_level_bot_unit.value
-    if mdata.variable_level_top_unit.value != unit:
-        raise Exception(
-            "inconsistent level units",
-            mdata.variable_level_bot_unit,
-            mdata.variable_level_top_unit,
-        )
-    assert isinstance(unit, str)  # mypy
-    level = format_vertical_level_range(
-        mdata.variable_level_bot.value, mdata.variable_level_top.value, unit
-    )
-    if not level:
-        return ""
-    # return f" {words['at', 'level']} {format_unit(level)}"
-    return f"{format_unit(level)}"
-
-
-def format_vertical_level_range(
-    value_bottom: Union[float, Sequence[float]],
-    value_top: Union[float, Sequence[float]],
-    unit: str,
-) -> Optional[str]:
-
-    if (value_bottom, value_top) == (-1, -1):
-        return None
-
-    def fmt(bot, top):
-        return f"{bot:g}" + r"$-$" + f"{top:g} {unit}"
-
-    try:
-        # One level range (early exit)
-        return fmt(value_bottom, value_top)
-    except TypeError:
-        pass
-
-    # Multiple level ranges
-    assert isinstance(value_bottom, Collection)  # mypy
-    assert isinstance(value_top, Collection)  # mypy
-    bots = sorted(value_bottom)
-    tops = sorted(value_top)
-    if len(bots) != len(tops):
-        raise Exception(f"inconsistent no. levels: {len(bots)} != {len(tops)}")
-    n = len(bots)
-    if n == 2:
-        # Two level ranges
-        if tops[0] == bots[1]:
-            return fmt(bots[0], tops[1])
-        else:
-            return f"{fmt(bots[0], tops[0])} + {fmt(bots[1], tops[1])}"
-    elif n == 3:
-        # Three level ranges
-        if tops[0] == bots[1] and tops[1] == bots[2]:
-            return fmt(bots[0], tops[2])
-        else:
-            raise NotImplementedError(f"3 non-continuous level ranges")
-    else:
-        raise NotImplementedError(f"{n} sets of levels")
-
-
-def format_integr_period(
-    mdata: "MetaData",
-    setup: InputSetup,
-    words: TranslatedWords,
-    capitalize: bool = False,
-) -> str:
-    integr_type = get_integr_type(setup)
-    if integr_type == "mean":
-        operation = words["averaged_over"].s
-    elif integr_type == "sum":
-        operation = words["summed_over"].s
-    elif integr_type == "accum":
-        operation = words["accumulated_over"].s
-    start = mdata.simulation_integr_start.value
-    now = mdata.simulation_now.value
-    assert isinstance(start, datetime)  # mypy
-    assert isinstance(now, datetime)  # mypy
-    period = now - start
-    hours = int(period.total_seconds() / 3600)
-    minutes = int((period.total_seconds() / 60) % 60)
-    s = f"{operation} {hours:d}:{minutes:02d}$\\,$h"
-    if capitalize:
-        s = s[0].upper() + s[1:]
-    return s
-
-
-def format_coord_label(direction: str, words: TranslatedWords, symbols: Words) -> str:
-    deg_unit = f"{symbols['deg']}{symbols['short_space']}"
-    min_unit = f"'{symbols['short_space']}"
-    dir_unit = words[direction, "abbr"]
-    if direction == "north":
-        deg_dir_unit = words["degN"]
-    elif direction == "east":
-        deg_dir_unit = words["degE"]
-    else:
-        raise NotImplementedError("unit for direction", direction)
-    return f"{{d}}{deg_unit}{{m}}{min_unit}{dir_unit} ({{f:.4f}}{deg_dir_unit})"
-
-
-# pylint: disable=R0911,R0912  # too-many-return-statements,too-many-branches
-def get_long_name(
-    setup: InputSetup, words: TranslatedWords, capitalize: bool = False
-) -> str:
-    s: str = ""
-    if setup.plot_type and setup.plot_type.startswith("affected_area"):
-        super_name = get_long_name(
-            setup.derive({"variable": "deposition", "plot_type": "auto"}), words
-        )
-        s = f"{words['affected_area']} ({super_name})"
-    elif setup.plot_type == "ens_thr_agrmt":
-        super_name = get_short_name(setup.derive({"variable": "deposition"}), words)
-        s = f"{words['threshold_agreement']} ({super_name})"
-    elif setup.plot_type == "ens_cloud_arrival_time":
-        s = f"{words['cloud_arrival_time']}"
-    elif setup.variable == "deposition":
-        if setup.deposition_type == "tot":
-            word = "total"
-        else:
-            assert isinstance(setup.deposition_type, str)  # mypy
-            word = setup.deposition_type
-        dep = words[word, "f"].s
-        if setup.plot_type == "ens_min":
-            s = f"{words['ensemble_minimum']} {dep} {words['surface_deposition']}"
-        elif setup.plot_type == "ens_max":
-            s = f"{words['ensemble_maximum']} {dep} {words['surface_deposition']}"
-        elif setup.plot_type == "ens_median":
-            s = f"{words['ensemble_median']} {dep} {words['surface_deposition']}"
-        elif setup.plot_type == "ens_mean":
-            s = f"{words['ensemble_mean']} {dep} {words['surface_deposition']}"
-        else:
-            s = f"{dep} {words['surface_deposition']}"
-    elif setup.variable == "concentration":
-        if setup.plot_type == "ens_min":
-            s = f"{words['ensemble_minimum']} {words['concentration']}"
-        elif setup.plot_type == "ens_max":
-            s = f"{words['ensemble_maximum']} {words['concentration']}"
-        elif setup.plot_type == "ens_median":
-            s = f"{words['ensemble_median']} {words['concentration']}"
-        elif setup.plot_type == "ens_mean":
-            s = f"{words['ensemble_mean']} {words['concentration']}"
-        else:
-            ctx = "abbr" if setup.integrate else "*"
-            s = str(words["activity_concentration", ctx])
-    if not s:
-        raise NotImplementedError(
-            f"long_name", setup.variable, setup.plot_type, setup.integrate
-        )
-    if capitalize:
-        s = s[0].upper() + s[1:]
-    return s
-
-
-def get_short_name(
-    setup: InputSetup, words: TranslatedWords, capitalize: bool = False
-) -> str:
-    s: str = ""
-    if setup.variable == "concentration":
-        if setup.plot_type == "ens_cloud_arrival_time":
-            s = f"{words['arrival'].c} ({words['hour', 'pl']})"
-        else:
-            if setup.integrate:
-                s = (
-                    f"{words['integrated', 'abbr']}"
-                    f" {words['concentration', 'abbr']}"
-                )
-            else:
-                s = str(words["concentration"])
-    elif setup.variable == "deposition":
-        if setup.plot_type == "ens_thr_agrmt":
-            s = f"{words['number_of', 'abbr'].c} " f"{words['member', 'pl']}"
-        else:
-            s = str(words["deposition"])
-    if not s:
-        raise NotImplementedError("short_name", setup.variable, setup.plot_type)
-    if capitalize:
-        s = s[0].upper() + s[1:]
-    return s
-
-
 # pylint: disable=R0902  # too-many-instance-attributes
 class PlotConfig(BaseModel):
     setup: InputSetup  # SR_TODO consider removing this
@@ -536,3 +353,186 @@ def levels_from_time_stats(
         return np.array([levels[0], np.inf])
     else:
         return _auto_levels_log10(plot_config.n_levels, val_max=time_stats["max"])
+
+
+def escape_format_keys(s: str) -> str:
+    return s.replace("{", "{{").replace("}", "}}")
+
+
+def format_level_label(mdata: MetaData, words: TranslatedWords):
+    unit = mdata.variable_level_bot_unit.value
+    if mdata.variable_level_top_unit.value != unit:
+        raise Exception(
+            "inconsistent level units",
+            mdata.variable_level_bot_unit,
+            mdata.variable_level_top_unit,
+        )
+    assert isinstance(unit, str)  # mypy
+    level = format_vertical_level_range(
+        mdata.variable_level_bot.value, mdata.variable_level_top.value, unit
+    )
+    if not level:
+        return ""
+    # return f" {words['at', 'level']} {format_unit(level)}"
+    return f"{format_unit(level)}"
+
+
+def format_vertical_level_range(
+    value_bottom: Union[float, Sequence[float]],
+    value_top: Union[float, Sequence[float]],
+    unit: str,
+) -> Optional[str]:
+
+    if (value_bottom, value_top) == (-1, -1):
+        return None
+
+    def fmt(bot, top):
+        return f"{bot:g}" + r"$-$" + f"{top:g} {unit}"
+
+    try:
+        # One level range (early exit)
+        return fmt(value_bottom, value_top)
+    except TypeError:
+        pass
+
+    # Multiple level ranges
+    assert isinstance(value_bottom, Collection)  # mypy
+    assert isinstance(value_top, Collection)  # mypy
+    bots = sorted(value_bottom)
+    tops = sorted(value_top)
+    if len(bots) != len(tops):
+        raise Exception(f"inconsistent no. levels: {len(bots)} != {len(tops)}")
+    n = len(bots)
+    if n == 2:
+        # Two level ranges
+        if tops[0] == bots[1]:
+            return fmt(bots[0], tops[1])
+        else:
+            return f"{fmt(bots[0], tops[0])} + {fmt(bots[1], tops[1])}"
+    elif n == 3:
+        # Three level ranges
+        if tops[0] == bots[1] and tops[1] == bots[2]:
+            return fmt(bots[0], tops[2])
+        else:
+            raise NotImplementedError(f"3 non-continuous level ranges")
+    else:
+        raise NotImplementedError(f"{n} sets of levels")
+
+
+def format_integr_period(
+    mdata: "MetaData",
+    setup: InputSetup,
+    words: TranslatedWords,
+    capitalize: bool = False,
+) -> str:
+    integr_type = get_integr_type(setup)
+    if integr_type == "mean":
+        operation = words["averaged_over"].s
+    elif integr_type == "sum":
+        operation = words["summed_over"].s
+    elif integr_type == "accum":
+        operation = words["accumulated_over"].s
+    start = mdata.simulation_integr_start.value
+    now = mdata.simulation_now.value
+    assert isinstance(start, datetime)  # mypy
+    assert isinstance(now, datetime)  # mypy
+    period = now - start
+    hours = int(period.total_seconds() / 3600)
+    minutes = int((period.total_seconds() / 60) % 60)
+    s = f"{operation} {hours:d}:{minutes:02d}$\\,$h"
+    if capitalize:
+        s = s[0].upper() + s[1:]
+    return s
+
+
+def format_coord_label(direction: str, words: TranslatedWords, symbols: Words) -> str:
+    deg_unit = f"{symbols['deg']}{symbols['short_space']}"
+    min_unit = f"'{symbols['short_space']}"
+    dir_unit = words[direction, "abbr"]
+    if direction == "north":
+        deg_dir_unit = words["degN"]
+    elif direction == "east":
+        deg_dir_unit = words["degE"]
+    else:
+        raise NotImplementedError("unit for direction", direction)
+    return f"{{d}}{deg_unit}{{m}}{min_unit}{dir_unit} ({{f:.4f}}{deg_dir_unit})"
+
+
+# pylint: disable=R0911,R0912  # too-many-return-statements,too-many-branches
+def get_long_name(
+    setup: InputSetup, words: TranslatedWords, capitalize: bool = False
+) -> str:
+    s: str = ""
+    if setup.plot_type and setup.plot_type.startswith("affected_area"):
+        super_name = get_long_name(
+            setup.derive({"variable": "deposition", "plot_type": "auto"}), words
+        )
+        s = f"{words['affected_area']} ({super_name})"
+    elif setup.plot_type == "ens_thr_agrmt":
+        super_name = get_short_name(setup.derive({"variable": "deposition"}), words)
+        s = f"{words['threshold_agreement']} ({super_name})"
+    elif setup.plot_type == "ens_cloud_arrival_time":
+        s = f"{words['cloud_arrival_time']}"
+    elif setup.variable == "deposition":
+        if setup.deposition_type == "tot":
+            word = "total"
+        else:
+            assert isinstance(setup.deposition_type, str)  # mypy
+            word = setup.deposition_type
+        dep = words[word, "f"].s
+        if setup.plot_type == "ens_min":
+            s = f"{words['ensemble_minimum']} {dep} {words['surface_deposition']}"
+        elif setup.plot_type == "ens_max":
+            s = f"{words['ensemble_maximum']} {dep} {words['surface_deposition']}"
+        elif setup.plot_type == "ens_median":
+            s = f"{words['ensemble_median']} {dep} {words['surface_deposition']}"
+        elif setup.plot_type == "ens_mean":
+            s = f"{words['ensemble_mean']} {dep} {words['surface_deposition']}"
+        else:
+            s = f"{dep} {words['surface_deposition']}"
+    elif setup.variable == "concentration":
+        if setup.plot_type == "ens_min":
+            s = f"{words['ensemble_minimum']} {words['concentration']}"
+        elif setup.plot_type == "ens_max":
+            s = f"{words['ensemble_maximum']} {words['concentration']}"
+        elif setup.plot_type == "ens_median":
+            s = f"{words['ensemble_median']} {words['concentration']}"
+        elif setup.plot_type == "ens_mean":
+            s = f"{words['ensemble_mean']} {words['concentration']}"
+        else:
+            ctx = "abbr" if setup.integrate else "*"
+            s = str(words["activity_concentration", ctx])
+    if not s:
+        raise NotImplementedError(
+            f"long_name", setup.variable, setup.plot_type, setup.integrate
+        )
+    if capitalize:
+        s = s[0].upper() + s[1:]
+    return s
+
+
+def get_short_name(
+    setup: InputSetup, words: TranslatedWords, capitalize: bool = False
+) -> str:
+    s: str = ""
+    if setup.variable == "concentration":
+        if setup.plot_type == "ens_cloud_arrival_time":
+            s = f"{words['arrival'].c} ({words['hour', 'pl']})"
+        else:
+            if setup.integrate:
+                s = (
+                    f"{words['integrated', 'abbr']}"
+                    f" {words['concentration', 'abbr']}"
+                )
+            else:
+                s = str(words["concentration"])
+    elif setup.variable == "deposition":
+        if setup.plot_type == "ens_thr_agrmt":
+            s = f"{words['number_of', 'abbr'].c} " f"{words['member', 'pl']}"
+        else:
+            s = str(words["deposition"])
+    if not s:
+        raise NotImplementedError("short_name", setup.variable, setup.plot_type)
+    if capitalize:
+        s = s[0].upper() + s[1:]
+    return s
