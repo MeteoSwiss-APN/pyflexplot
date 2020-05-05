@@ -120,6 +120,8 @@ class PlotConfig(BaseModel):
 
 
 # SR_TODO Create dataclass with default values for test box setup
+# pylint: disable=R0912  # too-many-branches
+# pylint: disable=R0915  # too-many-statements
 def create_plot_config(
     setup: InputSetup, words: TranslatedWords, symbols: Words, mdata: MetaData,
 ) -> "PlotConfig":
@@ -193,8 +195,7 @@ def create_plot_config(
     if setup.variable == "concentration":
         new_config_dct["n_levels"] = 8
         new_config_dct["labels"]["top_right"]["tc"] = (
-            f"{words['level']}:"
-            f" {escape_format_keys(format_level_label(mdata, words))}"
+            f"{words['level']}:" f" {escape_format_keys(format_level_label(mdata))}"
         )
         if setup.integrate:
             long_name = f"{words['integrated']} {words['activity_concentration']}"
@@ -416,7 +417,7 @@ def escape_format_keys(s: str) -> str:
     return s.replace("{", "{{").replace("}", "}}")
 
 
-def format_level_label(mdata: MetaData, words: TranslatedWords):
+def format_level_label(mdata: MetaData):
     unit = mdata.variable_level_bot_unit.value
     if mdata.variable_level_top_unit.value != unit:
         raise Exception(
@@ -430,7 +431,6 @@ def format_level_label(mdata: MetaData, words: TranslatedWords):
     )
     if not level:
         return ""
-    # return f" {words['at', 'level']} {format_unit(level)}"
     return f"{format_unit(level)}"
 
 
