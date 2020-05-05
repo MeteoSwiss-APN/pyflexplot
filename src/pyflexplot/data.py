@@ -161,20 +161,26 @@ class EnsembleCloud:
 
     def arrival_time(self) -> np.ndarray:
         """Compute the time at each grid point until the cloud arrives."""
-        arrival_time = self._init_result_arr()
-        for time_idx in range(self._n_time - 1, -1, -1):
-            self._update_arrival_time(arrival_time, time_idx)
-        return arrival_time
+        arr = self.departure_time(self.arr[:, ::-1])[::-1]
+        return np.where(~np.isnan(arr), -arr + 1, arr)
 
-    def departure_time(self) -> np.ndarray:
+    def departure_time(self, arr: Optional[np.array] = None) -> np.ndarray:
         """Compute the time at each grid point until the cloud departs."""
-        departure_time = self._init_result_arr()
+        if arr is None:
+            arr = self.arr
 
-        # Identify ensemble cloud at all time steps
-        cloudy_members = np.count_nonzero(self.arr > self.thr, axis=0)
+        # Initialize all points to NAN
+        # Only points that never encounter a cloud will retain this value
+        departure_time = np.full(
+            tuple([arr.shape[1]] + [n for i, n in enumerate(arr.shape) if i > 1]),
+            np.nan,
+        )
+
+        # Identify ensemble cloud across all time steps
+        cloudy_members = np.count_nonzero(arr > self.thr, axis=0)
         m_cloud = cloudy_members >= self.n_mem_min
 
-        # Identify time steps where cloud has just departed
+        # Mark points where cloud has just departed with 0
         m_departed = np.full(m_cloud.shape, False)
         m_departed[1:] = m_cloud[:-1] & ~m_cloud[1:]
         departure_time[m_departed] = 0
@@ -184,17 +190,14 @@ class EnsembleCloud:
         for time_idx in range(self._n_time - 2, -1, -1):
             d_time = self.time[time_idx + 1] - self.time[time_idx]
 
-            # Mark points where cloud will vanish with the time until then
-            m_nan_next = np.isnan(departure_time[time_idx + 1])
-            m_inf_next = np.isinf(departure_time[time_idx + 1])
-            m_will_depart = (
-                np.where(m_nan_next | m_inf_next, -1, departure_time[time_idx + 1]) >= 0
-            )
+            # Set points where cloud will vanish to the time until it does so
+            m_fin_next = np.isfinite(departure_time[time_idx + 1])
+            m_will_depart = np.where(m_fin_next, departure_time[time_idx + 1], -1) >= 0
             departure_time[time_idx][m_will_depart] = (
                 departure_time[time_idx + 1][m_will_depart] + d_time
             )
 
-            # Mark points with INF where cloud will never depart for good
+            # Set points where cloud will never depart for good to INF
             m_wont_depart = np.isinf(departure_time[time_idx + 1])
             departure_time[time_idx][m_wont_depart] = np.inf
 
@@ -212,29 +215,6 @@ class EnsembleCloud:
             )
 
         return departure_time
-
-    def _init_result_arr(self) -> np.ndarray:
-        """Initialize results array."""
-        shape = tuple(
-            [self.arr.shape[1]] + [n for i, n in enumerate(self.arr.shape) if i > 1]
-        )
-        return np.full(shape, np.nan)
-
-    def _identify_ens_cloud(self, time_idx: int) -> np.ndarray:
-        """Identify the ensemble cloud at a given time step."""
-        arr_idx = np.take(self.arr, time_idx, axis=1)
-        cloudy_members = np.count_nonzero(arr_idx > self.thr, axis=0)
-        return cloudy_members >= self.n_mem_min
-
-    def _update_arrival_time(self, arrival_time: np.ndarray, time_idx: int) -> None:
-        """Update the cloud arrival time at a given time step."""
-        m_cloud = self._identify_ens_cloud(time_idx)
-        arrival_time[time_idx][m_cloud] = 0
-        if time_idx < self._n_time - 1:
-            d_time = self.time[time_idx + 1] - self.time[time_idx]
-            arrival_time[time_idx][~m_cloud] = (
-                arrival_time[time_idx + 1][~m_cloud] + d_time
-            )
 
 
 def merge_fields(

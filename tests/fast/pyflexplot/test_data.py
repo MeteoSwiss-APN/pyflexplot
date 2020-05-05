@@ -78,6 +78,7 @@ class TestThrAgrmt3D:
 
 N = np.nan
 I = np.inf
+J = -np.inf
 
 
 class TestEnsembleCloud:
@@ -160,147 +161,151 @@ class TestEnsembleCloud:
             arr=self.arr, time=np.arange(5), thr=thr, n_mem_min=n_mem_min,
         )
 
+    # test_arrival_time
+    # fmt: off
     @pytest.mark.parametrize(
         "thr, n_mem_min, sol",
         [
             (
                 0.5,
                 1,
-                [  # 0  1  2  3  4  5  6
-                    [0, 1, 0, 0, 0, 0, 0],  # time: 0
-                    [0, 0, 1, 0, 0, 0, 0],  # time: 1
-                    [0, 0, 0, 0, 0, 0, 0],  # time: 2
-                    [0, 1, 0, 0, 0, 0, 0],  # time: 3
-                    [N, 0, 0, 0, 0, 0, 0],  # time: 4
+                [  #  0  1  2  3  4  5  6
+                    [ J, 1, J, J, J, J, J],  # time: 0
+                    [ J, 0, J, J, J, J, J],  # time: 1
+                    [ J,-1, J, J, J, J, J],  # time: 2
+                    [ J,-2, J, J, J, J, J],  # time: 3
+                    [ J,-3, J, J, J, J, J],  # time: 4
                 ],
             ),
             (
                 0.5,
                 2,
-                [  # 0  1  2  3  4  5  6
-                    [1, 4, 3, 2, 0, 1, 0],  # time: 0
-                    [0, 3, 2, 1, 0, 0, 0],  # time: 1
-                    [N, 2, 1, 0, 0, 0, N],  # time: 2
-                    [N, 1, 0, 0, 0, 0, N],  # time: 3
-                    [N, 0, 0, 0, 0, N, N],  # time: 4
+                [  #  0  1  2  3  4  5  6
+                    [ 1, 4, 3, 2, J, 1, J],  # time: 0
+                    [ 0, 3, 2, 1, J, 0, J],  # time: 1
+                    [-1, 2, 1, 0, J,-1, J],  # time: 2
+                    [-2, 1, 0,-1, J,-2, J],  # time: 3
+                    [-3, 0,-1,-2, J,-3, J],  # time: 4
                 ],
             ),
             (
                 0.5,
                 3,
-                [  # 0  1  2  3  4  5  6
-                    [N, N, 3, 2, 1, 1, 1],  # time: 0
-                    [N, N, 2, 1, 0, 0, 0],  # time: 1
-                    [N, N, 1, 0, 0, N, N],  # time: 2
-                    [N, N, 0, 0, 0, N, N],  # time: 3
-                    [N, N, N, 0, 0, N, N],  # time: 4
+                [  #  0  1  2  3  4  5  6
+                    [ N, N, 3, 2, 1, 1, 1],  # time: 0
+                    [ N, N, 2, 1, 0, 0, 0],  # time: 1
+                    [ N, N, 1, 0,-1,-1,-1],  # time: 2
+                    [ N, N, 0,-1,-2,-2,-2],  # time: 3
+                    [ N, N,-1,-2,-3,-3,-3],  # time: 4
                 ],
             ),
             (
                 0.5,
                 4,
-                [  # 0  1  2  3  4  5  6
-                    [N, N, 3, 3, 3, 1, N],  # time: 0
-                    [N, N, 2, 2, 2, 0, N],  # time: 1
-                    [N, N, 1, 1, 1, N, N],  # time: 2
-                    [N, N, 0, 0, 0, N, N],  # time: 3
-                    [N, N, N, 0, N, N, N],  # time: 4
+                [  #  0  1  2  3  4  5  6
+                    [ N, N, 3, 3, 3, 1, N],  # time: 0
+                    [ N, N, 2, 2, 2, 0, N],  # time: 1
+                    [ N, N, 1, 1, 1,-1, N],  # time: 2
+                    [ N, N, 0, 0, 0,-2, N],  # time: 3
+                    [ N, N,-1,-1,-1,-3, N],  # time: 4
                 ],
             ),
             (
                 0.5,
                 5,
-                [  # 0  1  2  3  4  5  6
-                    [N, N, N, N, N, N, N],  # time: 0
-                    [N, N, N, N, N, N, N],  # time: 1
-                    [N, N, N, N, N, N, N],  # time: 2
-                    [N, N, N, N, N, N, N],  # time: 3
-                    [N, N, N, N, N, N, N],  # time: 4
+                [  #  0  1  2  3  4  5  6
+                    [ N, N, N, N, N, N, N],  # time: 0
+                    [ N, N, N, N, N, N, N],  # time: 1
+                    [ N, N, N, N, N, N, N],  # time: 2
+                    [ N, N, N, N, N, N, N],  # time: 3
+                    [ N, N, N, N, N, N, N],  # time: 4
                 ],
             ),
             (
                 1.5,
                 1,
-                [  # 0  1  2  3  4  5  6
-                    [1, N, 2, 0, 1, 0, 0],  # time: 0
-                    [0, N, 1, 0, 0, 0, 0],  # time: 1
-                    [N, N, 0, 0, 0, 0, 0],  # time: 2
-                    [N, N, 0, 0, 0, 0, 0],  # time: 3
-                    [N, N, 0, 0, 0, 0, N],  # time: 4
+                [  #  0  1  2  3  4  5  6
+                    [ 1, N, 2, J, 1, J, J],  # time: 0
+                    [ 0, N, 1, J, 0, J, J],  # time: 1
+                    [-1, N, 0, J,-1, J, J],  # time: 2
+                    [-2, N,-1, J,-2, J, J],  # time: 3
+                    [-3, N,-2, J,-3, J, J],  # time: 4
                 ],
             ),
             (
                 1.5,
                 2,
-                [  # 0  1  2  3  4  5  6
-                    [N, N, 4, 2, 1, 1, N],  # time: 0
-                    [N, N, 3, 1, 0, 0, N],  # time: 1
-                    [N, N, 2, 0, 0, N, N],  # time: 2
-                    [N, N, 1, 0, 0, N, N],  # time: 3
-                    [N, N, 0, 0, N, N, N],  # time: 4
+                [  #  0  1  2  3  4  5  6
+                    [ N, N, 4, 2, 1, 1, N],  # time: 0
+                    [ N, N, 3, 1, 0, 0, N],  # time: 1
+                    [ N, N, 2, 0,-1,-1, N],  # time: 2
+                    [ N, N, 1,-1,-2,-2, N],  # time: 3
+                    [ N, N, 0,-2,-3,-3, N],  # time: 4
                 ],
             ),
             (
                 1.5,
                 3,
-                [  # 0  1  2  3  4  5  6
-                    [N, N, N, 3, 2, N, N],  # time: 0
-                    [N, N, N, 2, 1, N, N],  # time: 1
-                    [N, N, N, 1, 0, N, N],  # time: 2
-                    [N, N, N, 0, 0, N, N],  # time: 3
-                    [N, N, N, 0, N, N, N],  # time: 4
+                [  #  0  1  2  3  4  5  6
+                    [ N, N, N, 3, 2, N, N],  # time: 0
+                    [ N, N, N, 2, 1, N, N],  # time: 1
+                    [ N, N, N, 1, 0, N, N],  # time: 2
+                    [ N, N, N, 0,-1, N, N],  # time: 3
+                    [ N, N, N,-1,-2, N, N],  # time: 4
                 ],
             ),
             (
                 1.5,
                 4,
-                [  # 0  1  2  3  4  5  6
-                    [N, N, N, 3, N, N, N],  # time: 0
-                    [N, N, N, 2, N, N, N],  # time: 1
-                    [N, N, N, 1, N, N, N],  # time: 2
-                    [N, N, N, 0, N, N, N],  # time: 3
-                    [N, N, N, N, N, N, N],  # time: 4
+                [  #  0  1  2  3  4  5  6
+                    [ N, N, N, 3, N, N, N],  # time: 0
+                    [ N, N, N, 2, N, N, N],  # time: 1
+                    [ N, N, N, 1, N, N, N],  # time: 2
+                    [ N, N, N, 0, N, N, N],  # time: 3
+                    [ N, N, N,-1, N, N, N],  # time: 4
                 ],
             ),
             (
                 2.5,
                 1,
-                [  # 0  1  2  3  4  5  6
-                    [N, N, 2, 0, 2, 0, N],  # time: 0
-                    [N, N, 1, 1, 1, 1, N],  # time: 1
-                    [N, N, 0, 0, 0, 0, N],  # time: 2
-                    [N, N, 1, 0, 0, 1, N],  # time: 3
-                    [N, N, 0, 0, 0, 0, N],  # time: 4
+                [  #  0  1  2  3  4  5  6
+                    [ N, N, 2, J, 2, J, N],  # time: 0
+                    [ N, N, 1, J, 1, J, N],  # time: 1
+                    [ N, N, 0, J, 0, J, N],  # time: 2
+                    [ N, N,-1, J,-1, J, N],  # time: 3
+                    [ N, N,-2, J,-2, J, N],  # time: 4
                 ],
             ),
             (
                 2.5,
                 2,
-                [  # 0  1  2  3  4  5  6
-                    [N, N, N, 2, 2, N, N],  # time: 0
-                    [N, N, N, 1, 1, N, N],  # time: 1
-                    [N, N, N, 0, 0, N, N],  # time: 2
-                    [N, N, N, N, N, N, N],  # time: 3
-                    [N, N, N, N, N, N, N],  # time: 4
+                [  #  0  1  2  3  4  5  6
+                    [ N, N, N, 2, 2, N, N],  # time: 0
+                    [ N, N, N, 1, 1, N, N],  # time: 1
+                    [ N, N, N, 0, 0, N, N],  # time: 2
+                    [ N, N, N,-1,-1, N, N],  # time: 3
+                    [ N, N, N,-2,-2, N, N],  # time: 4
                 ],
             ),
             (
                 3.5,
                 1,
-                [  # 0  1  2  3  4  5  6
-                    [N, N, N, N, N, N, N],  # time: 0
-                    [N, N, N, N, N, N, N],  # time: 1
-                    [N, N, N, N, N, N, N],  # time: 2
-                    [N, N, N, N, N, N, N],  # time: 3
-                    [N, N, N, N, N, N, N],  # time: 4
+                [  #  0  1  2  3  4  5  6
+                    [ N, N, N, N, N, N, N],  # time: 0
+                    [ N, N, N, N, N, N, N],  # time: 1
+                    [ N, N, N, N, N, N, N],  # time: 2
+                    [ N, N, N, N, N, N, N],  # time: 3
+                    [ N, N, N, N, N, N, N],  # time: 4
                 ],
             ),
         ],
     )
+    # fmt: on
     def test_arrival_time(self, thr, n_mem_min, sol):
         res = self.create_cloud(thr, n_mem_min).arrival_time()
         np.testing.assert_array_equal(res, sol)
 
+    # test_departure_time
     # fmt: off
     @pytest.mark.parametrize(
         "thr, n_mem_min, sol",
