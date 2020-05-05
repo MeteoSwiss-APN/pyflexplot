@@ -23,8 +23,8 @@ import numpy as np
 from srutils.various import check_array_indices
 
 # Local
+from .data import EnsembleCloud
 from .data import Field
-from .data import cloud_arrival_time
 from .data import merge_fields
 from .data import threshold_agreement
 from .meta_data import MetaData
@@ -305,10 +305,17 @@ class FileReader:
             fld_time = np.nanmax(fld_time_mem, axis=0)
         elif plot_type == "ens_thr_agrmt":
             fld_time = threshold_agreement(fld_time_mem, ens_param_thr, axis=0)
-        elif plot_type == "ens_cloud_arrival_time":
-            fld_time = cloud_arrival_time(
-                fld_time_mem, self.time, ens_param_thr, ens_param_mem_min, mem_axis=0,
+        elif plot_type in ["ens_cloud_arrival_time", "ens_cloud_departure_time"]:
+            cloud = EnsembleCloud(
+                arr=fld_time_mem,
+                time=self.time,
+                thr=ens_param_thr,
+                n_mem_min=ens_param_mem_min,
             )
+            if plot_type == "ens_cloud_arrival_time":
+                fld_time = cloud.arrival_time()
+            elif plot_type == "ens_cloud_departure_time":
+                fld_time = cloud.departure_time()
         else:
             raise NotImplementedError(f"plot var '{plot_type}'")
         return fld_time

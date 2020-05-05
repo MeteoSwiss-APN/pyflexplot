@@ -33,9 +33,9 @@ from srutils.dict import decompress_nested_dict
 from srutils.dict import nested_dict_resolve_wildcards
 
 # Some plot-specific default values
-ENS_THR_AGRMT_THR_DEFAULT: float = 1e-9
-ENS_CLOUD_ARRIVAL_TIME_MEM_MIN_DEFAULT = 1
-ENS_CLOUD_ARRIVAL_TIME_THR_DEFAULT: float = 1e-9
+ENS_THR_AGRMT_THR_DEFAULT: float = 1e-8
+ENS_CLOUD_ARRIVAL_TIME_MEM_MIN_DEFAULT = 10
+ENS_CLOUD_ARRIVAL_TIME_THR_DEFAULT: float = 1e-7
 
 
 def field_outer_type(field: ModelField, *, generic: bool = False) -> Type:
@@ -202,7 +202,10 @@ class InputSetup(BaseModel):
                     value,
                     values["simulation_type"],
                 )
-        elif values["plot_type"] == "ens_cloud_arrival_time":
+        elif values["plot_type"] in [
+            "ens_cloud_arrival_time",
+            "ens_cloud_departure_time",
+        ]:
             value = ENS_CLOUD_ARRIVAL_TIME_MEM_MIN_DEFAULT
         return value
 
@@ -219,7 +222,10 @@ class InputSetup(BaseModel):
                 )
         elif values["plot_type"] == "ens_thr_agrmt":
             value = ENS_THR_AGRMT_THR_DEFAULT
-        elif values["plot_type"] == "ens_cloud_arrival_time":
+        elif values["plot_type"] in [
+            "ens_cloud_arrival_time",
+            "ens_cloud_departure_time",
+        ]:
             value = ENS_CLOUD_ARRIVAL_TIME_THR_DEFAULT
         return value
 

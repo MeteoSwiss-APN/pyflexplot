@@ -112,7 +112,7 @@ class Field:
             )
 
 
-def threshold_agreement(arr, thr, *, axis=None, thr_eq_ok=False):
+def threshold_agreement(arr, thr, *, axis=None):
     """Count the members exceeding a threshold at each grid point.
 
     Args:
@@ -123,9 +123,6 @@ def threshold_agreement(arr, thr, *, axis=None, thr_eq_ok=False):
         axis (int, optional): Index of ensemble member axis, along which the
             reduction is performed. Defaults to None.
 
-        thr_eq_ok (bool, optional): Whether values equal to the threshold are
-            counted as exceedences. Defaults to False.
-
     """
     # SR_TMP < TODO Remove once type hints added to arguments
     if arr is None:
@@ -133,69 +130,111 @@ def threshold_agreement(arr, thr, *, axis=None, thr_eq_ok=False):
     if thr is None:
         raise ValueError("thr is None")
     # SR_TMP >
-    compare = np.greater_equal if thr_eq_ok else np.greater
-    result = np.count_nonzero(compare(arr, thr), axis=axis)
+    result = np.count_nonzero(arr > thr, axis=axis)
     return result
 
 
-def cloud_arrival_time(
-    arr: np.ndarray,
-    time: np.ndarray,
-    thr: float,
-    n_mem_min: int,
-    *,
-    mem_axis: Optional[int] = None,
-    time_axis: Optional[int] = None,
-    thr_eq_ok: bool = False,
-) -> np.ndarray:
-    """Count the time steps until a cloud arrives in enough members.
+@dataclass
+class EnsembleCloud:
+    """Partical cloud in an ensemble simulation.
 
     Args:
-        arr: Data array.
+        arr: Data array with dimensions (members, time, space), where space
+            represents at least one spatial dimension.
 
-        time: Time dimension.
+        time: Time dimension values.
 
         thr: Threshold to be exceeded.
 
         n_mem_min: Minimum number of members required to agreement.
 
-        mem_axis (optional): Index of ensemble member axis, along which the
-            reduction is performed.
-
-        time_axis (optional): Index of time axis. If None, the first
-            non-member-axis is chosen.
-
-        thr_eq_ok (optional): Whether values equal to the threshold are counted
-            as exceedences.
-
     """
-    # SR_TMP < TODO Remove once type hints added to arguments
-    if arr is None:
-        raise ValueError("arr is None")
-    if time is None:
-        raise ValueError("time is None")
-    if thr is None:
-        raise ValueError("thr is None")
-    if n_mem_min is None:
-        raise ValueError("n_mem_min is None")
-    # SR_TMP >
-    if time_axis is None:
-        time_axis = 1 if mem_axis == 0 else 0
-    compare = np.greater_equal if thr_eq_ok else np.greater
-    time_idx_max = arr.shape[time_axis] - 1
-    shape = tuple(
-        [arr.shape[time_axis]]
-        + [n for i, n in enumerate(arr.shape) if i not in (time_axis, mem_axis)]
-    )
-    result = np.full(shape, np.nan)
-    for time_idx in range(time_idx_max, -1, -1):
-        arr_i = np.take(arr, time_idx, time_axis)
-        m_cloud = np.count_nonzero(compare(arr_i, thr), axis=mem_axis) >= n_mem_min
-        result[time_idx][m_cloud] = 0
-        if time_idx < time_idx_max:
-            d_time = time[time_idx + 1] - time[time_idx]
-            result[time_idx][~m_cloud] = result[time_idx + 1][~m_cloud] + d_time
-    return result
+
+    arr: np.ndarray
+    time: np.ndarray
+    thr: float
+    n_mem_min: int
+
+    def __post_init__(self):
+        self._n_time: int = self.arr.shape[1]
+        self.m_cloud_prev: Optional[np.ndarray] = None
+
+    def arrival_time(self) -> np.ndarray:
+        """Compute the time at each grid point until the cloud arrives."""
+        arrival_time = self._init_result_arr()
+        for time_idx in range(self._n_time - 1, -1, -1):
+            self._update_arrival_time(arrival_time, time_idx)
+        return arrival_time
+
+    def departure_time(self) -> np.ndarray:
+        """Compute the time at each grid point until the cloud departs."""
+        departure_time = self._init_result_arr()
+
+        # Identify ensemble cloud at all time steps
+        cloudy_members = np.count_nonzero(self.arr > self.thr, axis=0)
+        m_cloud = cloudy_members >= self.n_mem_min
+
+        # Identify time steps where cloud has just departed
+        m_departed = np.full(m_cloud.shape, False)
+        m_departed[1:] = m_cloud[:-1] & ~m_cloud[1:]
+        departure_time[m_departed] = 0
+
+        # Iterate backward in time
+        departure_time[-1][m_cloud[-1]] = np.inf
+        for time_idx in range(self._n_time - 2, -1, -1):
+            d_time = self.time[time_idx + 1] - self.time[time_idx]
+
+            # Mark points where cloud will vanish with the time until then
+            m_nan_next = np.isnan(departure_time[time_idx + 1])
+            m_inf_next = np.isinf(departure_time[time_idx + 1])
+            m_will_depart = (
+                np.where(m_nan_next | m_inf_next, -1, departure_time[time_idx + 1]) >= 0
+            )
+            departure_time[time_idx][m_will_depart] = (
+                departure_time[time_idx + 1][m_will_depart] + d_time
+            )
+
+            # Mark points with INF where cloud will never depart for good
+            m_wont_depart = np.isinf(departure_time[time_idx + 1])
+            departure_time[time_idx][m_wont_depart] = np.inf
+
+        # Iterate forward in time
+        for time_idx in range(1, self._n_time):
+            d_time = self.time[time_idx] - self.time[time_idx - 1]
+
+            # Mark points where cloud has vanished with the time since then
+            m_nan_prev = np.isnan(departure_time[time_idx - 1])
+            m_has_departed = ~m_cloud[time_idx] & (
+                np.where(m_nan_prev, np.inf, departure_time[time_idx - 1]) <= 0
+            )
+            departure_time[time_idx][m_has_departed] = (
+                departure_time[time_idx - 1][m_has_departed] - d_time
+            )
+
+        return departure_time
+
+    def _init_result_arr(self) -> np.ndarray:
+        """Initialize results array."""
+        shape = tuple(
+            [self.arr.shape[1]] + [n for i, n in enumerate(self.arr.shape) if i > 1]
+        )
+        return np.full(shape, np.nan)
+
+    def _identify_ens_cloud(self, time_idx: int) -> np.ndarray:
+        """Identify the ensemble cloud at a given time step."""
+        arr_idx = np.take(self.arr, time_idx, axis=1)
+        cloudy_members = np.count_nonzero(arr_idx > self.thr, axis=0)
+        return cloudy_members >= self.n_mem_min
+
+    def _update_arrival_time(self, arrival_time: np.ndarray, time_idx: int) -> None:
+        """Update the cloud arrival time at a given time step."""
+        m_cloud = self._identify_ens_cloud(time_idx)
+        arrival_time[time_idx][m_cloud] = 0
+        if time_idx < self._n_time - 1:
+            d_time = self.time[time_idx + 1] - self.time[time_idx]
+            arrival_time[time_idx][~m_cloud] = (
+                arrival_time[time_idx + 1][~m_cloud] + d_time
+            )
 
 
 def merge_fields(
