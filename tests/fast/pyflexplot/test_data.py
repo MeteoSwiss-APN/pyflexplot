@@ -26,20 +26,10 @@ class TestThrAgrmt2D:
 
     thr = 5
 
-    def test_default(self):
-        sol = threshold_agreement(self.arr, self.thr)
-        ref = 10
-        assert sol == ref
-
-    def test_ax0(self):
-        sol = threshold_agreement(self.arr, self.thr, axis=0)
-        ref = np.array([2, 1, 2, 0, 2, 1, 1, 1])
-        assert (sol == ref).all()
-
-    def test_ax1(self):
-        sol = threshold_agreement(self.arr, self.thr, axis=1)
-        ref = np.array([1, 3, 2, 4])
-        assert (sol == ref).all()
+    def test(self):
+        res = threshold_agreement(self.arr, self.thr)
+        sol = np.array([2, 2, 2, 1, 2, 1, 1, 2])
+        assert (res == sol).all()
 
 
 class TestThrAgrmt3D:
@@ -55,25 +45,10 @@ class TestThrAgrmt3D:
 
     thr = 3
 
-    def test_default(self):
-        sol = threshold_agreement(self.arr, self.thr)
-        ref = 19
-        assert ref == sol
-
-    def test_ax0(self):
-        sol = threshold_agreement(self.arr, self.thr, axis=0)
-        ref = np.array([[3, 2, 3], [0, 1, 1], [1, 0, 1], [2, 2, 0], [1, 0, 2]])
-        assert (sol == ref).all()
-
-    def test_ax1(self):
-        sol = threshold_agreement(self.arr, self.thr, axis=1)
-        ref = np.array([[2, 2, 1], [2, 2, 3], [3, 1, 3]])
-        assert (sol == ref).all()
-
-    def test_ax2(self):
-        sol = threshold_agreement(self.arr, self.thr, axis=2)
-        ref = np.array([[2, 1, 0, 2, 0], [3, 0, 1, 2, 1], [3, 1, 1, 0, 2]])
-        assert (sol == ref).all()
+    def test(self):
+        res = threshold_agreement(self.arr, self.thr)
+        sol = np.array([[3, 2, 3], [0, 2, 1], [1, 1, 1], [3, 3, 1], [1, 2, 2]])
+        assert (res == sol).all()
 
 
 N = np.nan
@@ -156,15 +131,13 @@ class TestEnsembleCloud:
 
     """
 
-    def create_cloud(self, thr, n_mem_min):
-        return EnsembleCloud(
-            arr=self.arr, time=np.arange(5), thr=thr, n_mem_min=n_mem_min,
-        )
+    def create_cloud(self, thr, mem):
+        return EnsembleCloud(arr=self.arr, time=np.arange(5), thr=thr, mem=mem,)
 
     # test_arrival_time
     # fmt: off
     @pytest.mark.parametrize(
-        "thr, n_mem_min, sol",
+        "thr, mem, sol",
         [
             (
                 0.5,
@@ -301,14 +274,14 @@ class TestEnsembleCloud:
         ],
     )
     # fmt: on
-    def test_arrival_time(self, thr, n_mem_min, sol):
-        res = self.create_cloud(thr, n_mem_min).arrival_time()
+    def test_arrival_time(self, thr, mem, sol):
+        res = self.create_cloud(thr, mem).arrival_time()
         np.testing.assert_array_equal(res, sol)
 
     # test_departure_time
     # fmt: off
     @pytest.mark.parametrize(
-        "thr, n_mem_min, sol",
+        "thr, mem, sol",
         [
             (
                 0.5,
@@ -445,6 +418,6 @@ class TestEnsembleCloud:
         ],
     )
     # fmt: on
-    def test_departure_time(self, thr, n_mem_min, sol):
-        res = self.create_cloud(thr, n_mem_min).departure_time()
+    def test_departure_time(self, thr, mem, sol):
+        res = self.create_cloud(thr, mem).departure_time()
         np.testing.assert_array_equal(res, sol)

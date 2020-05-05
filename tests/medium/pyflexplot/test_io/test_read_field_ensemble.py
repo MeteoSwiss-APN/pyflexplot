@@ -117,7 +117,6 @@ class TestReadFieldEnsemble_Single:
                 ],
                 axis=0,
             ),
-            axis=0,
         )
 
         # Check array
@@ -131,7 +130,7 @@ class TestReadFieldEnsemble_Single:
             var_names_ref=[f"spec{self.species_id:03d}"],
             setup_params={"level": 1},
             ens_var="mean",
-            fct_reduce_mem=np.nanmean,
+            fct_reduce_mem=lambda arr: np.nanmean(arr, axis=0),
         )
 
 
@@ -243,9 +242,7 @@ class TestReadFieldEnsemble_Multiple:
                 )
                 # SR_TMP >
             ]
-            fld_ref_lst.append(
-                fct_reduce_mem(np.nansum(fld_ref_mem_time, axis=0), axis=0)
-            )
+            fld_ref_lst.append(fct_reduce_mem(np.nansum(fld_ref_mem_time, axis=0)))
         fld_arr_ref = np.array(fld_ref_lst)
 
         assert fld_arr.shape == fld_arr_ref.shape
@@ -260,11 +257,11 @@ class TestReadFieldEnsemble_Multiple:
         """Read ensemble concentration field."""
 
         fct_reduce_mem = {
-            "mean": np.nanmean,
-            "max": np.nanmax,
+            "mean": lambda arr: np.nanmean(arr, axis=0),
+            "max": lambda arr: np.nanmax(arr, axis=0),
             "thr_agrmt": (
-                lambda arr, axis: threshold_agreement(
-                    arr, self.ens_thr_agrmt_thr_concentration, axis=axis,
+                lambda arr: threshold_agreement(
+                    arr, self.ens_thr_agrmt_thr_concentration,
                 )
             ),
         }[ens_var]
@@ -298,7 +295,10 @@ class TestReadFieldEnsemble_Multiple:
 
     def run_deposition_tot(self, datadir, ens_var, *, separate=False):  # noqa:F811
         """Read ensemble total deposition field."""
-        fct_reduce_mem = {"mean": np.nanmean, "max": np.nanmax}[ens_var]
+        fct_reduce_mem = {
+            "mean": lambda arr: np.nanmean(arr, axis=0),
+            "max": lambda arr: np.nanmax(arr, axis=0),
+        }[ens_var]
         self.run(
             separate=separate,
             datafile_fmt=self.datafile_fmt(datadir),

@@ -112,26 +112,19 @@ class Field:
             )
 
 
-def threshold_agreement(arr, thr, *, axis=None):
+def threshold_agreement(arr: np.ndarray, thr: float) -> np.ndarray:
     """Count the members exceeding a threshold at each grid point.
 
     Args:
-        arr (np.ndarray[float]): Data array.
+        arr: Data array with dimensions (member, ...).
 
-        thr (float): Threshold to be exceeded.
+        thr: Minimum threshold value defining a cloud.
 
-        axis (int, optional): Index of ensemble member axis, along which the
-            reduction is performed. Defaults to None.
+    Returns:
+        Field with the number of members with a cloud at each grid point.
 
     """
-    # SR_TMP < TODO Remove once type hints added to arguments
-    if arr is None:
-        raise ValueError("arr is None")
-    if thr is None:
-        raise ValueError("thr is None")
-    # SR_TMP >
-    result = np.count_nonzero(arr > thr, axis=axis)
-    return result
+    return np.count_nonzero(arr >= thr, axis=0)
 
 
 @dataclass
@@ -144,28 +137,52 @@ class EnsembleCloud:
 
         time: Time dimension values.
 
-        thr: Threshold to be exceeded.
+        thr: Minimum threshold value defining a cloud in a single member.
 
-        n_mem_min: Minimum number of members required to agreement.
+        mem: Minimum number of members defining the ensemble cloud.
 
     """
 
     arr: np.ndarray
     time: np.ndarray
     thr: float
-    n_mem_min: int
+    mem: int
 
     def __post_init__(self):
         self._n_time: int = self.arr.shape[1]
         self.m_cloud_prev: Optional[np.ndarray] = None
 
     def arrival_time(self) -> np.ndarray:
-        """Compute the time at each grid point until the cloud arrives."""
+        """Compute the time at each grid point until the cloud arrives.
+
+        The computed value at a given grid point has the following meaning:
+            - > 0: Time until the point encounters its first cloud.
+            - 0: Time step when the point encounters its first cloud.
+            - < 0: Time since the point has encountered its first cloud.
+            - -inf: The point is already cloudy at the first time step.
+            - nan: The point never encounters a cloud.
+
+        Returns:
+            Field over time with the time until/since the first cloud arrival.
+
+        """
         arr = self.departure_time(self.arr[:, ::-1])[::-1]
         return np.where(~np.isnan(arr), -arr + 1, arr)
 
     def departure_time(self, arr: Optional[np.array] = None) -> np.ndarray:
-        """Compute the time at each grid point until the cloud departs."""
+        """Compute the time at each grid point until the cloud departs.
+
+        The computed value at a given grid point has the following meaning:
+            - > 0: Time until its last cloud leaves the point.
+            - 0: Time step when the point has just been left its last cloud.
+            - < 0: Time since its last cloud has left the point.
+            - inf: The point is still cloudy at the last time step.
+            - nan: The point never encounters a cloud.
+
+        Returns:
+            Field over time with the time since/until the first cloud departure.
+
+        """
         if arr is None:
             arr = self.arr
 
@@ -177,8 +194,8 @@ class EnsembleCloud:
         )
 
         # Identify ensemble cloud across all time steps
-        cloudy_members = np.count_nonzero(arr > self.thr, axis=0)
-        m_cloud = cloudy_members >= self.n_mem_min
+        cloudy_members = np.count_nonzero(arr >= self.thr, axis=0)
+        m_cloud = cloudy_members >= self.mem
 
         # Mark points where cloud has just departed with 0
         m_departed = np.full(m_cloud.shape, False)

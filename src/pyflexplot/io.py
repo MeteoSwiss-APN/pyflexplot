@@ -304,13 +304,13 @@ class FileReader:
         elif plot_type == "ens_max":
             fld_time = np.nanmax(fld_time_mem, axis=0)
         elif plot_type == "ens_thr_agrmt":
-            fld_time = threshold_agreement(fld_time_mem, ens_param_thr, axis=0)
+            fld_time = threshold_agreement(fld_time_mem, ens_param_thr)
         elif plot_type in ["ens_cloud_arrival_time", "ens_cloud_departure_time"]:
             cloud = EnsembleCloud(
                 arr=fld_time_mem,
                 time=self.time,
                 thr=ens_param_thr,
-                n_mem_min=ens_param_mem_min,
+                mem=ens_param_mem_min,
             )
             if plot_type == "ens_cloud_arrival_time":
                 fld_time = cloud.arrival_time()
