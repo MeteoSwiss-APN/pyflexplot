@@ -31,7 +31,7 @@ from pydantic.generics import GenericModel
 # Local
 from .setup import InputSetup
 from .setup import InputSetupCollection
-from .utils import summarizable
+from .summarize import summarizable
 
 ValueT = TypeVar("ValueT", int, float, str, datetime, timedelta)
 

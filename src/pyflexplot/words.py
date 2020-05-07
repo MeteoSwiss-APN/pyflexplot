@@ -42,11 +42,14 @@ WORDS.add(en="based on", de="basierend auf")
 # C
 WORDS.add(en="cloud", de="Wolke")
 WORDS.add(en="cloud arrival time", de="Wolkenankunftszeit")
+WORDS.add(en="cloud departure time", de="Wolkenabzugszeit")
 WORDS.add(
     en={"*": "concentration", "abbr": "concentr."},
     de={"*": "Konzentration", "abbr": "Konzentr."},
 )
 # D
+WORDS.add(en="departure", de="Abzug")
+WORDS.add(en="departure time", de="Abzugszeit")
 deg_ = f"{s['deg']}{s['short_space']}"
 WORDS.add("degE", en=f"{deg_}E", de=f"{deg_}O")
 WORDS.add("degN", en=f"{deg_}N", de=f"{deg_}N")

@@ -411,7 +411,11 @@ def assert_nested_equal(
                     f"{type_name(type(obj1))} vs. {type_name(type(obj2))}, ",
                     *[path, obj1, obj2],
                 )
-            if (isinstance(obj1, float) or isinstance(obj2, float)) and float_close_ok:
+            if np.isnan(obj1) and np.isnan(obj2):
+                return
+            elif (
+                isinstance(obj1, float) or isinstance(obj2, float)
+            ) and float_close_ok:
                 if np.isclose(obj1, obj2, **(kwargs_close or {})):
                     return
                 msg = f"unequal floats not even close: {obj1} vs. {obj2}"

@@ -24,8 +24,8 @@ from pydantic import validator
 from srutils.iter import isiterable
 
 # Local
+from .summarize import summarizable
 from .utils import MaxIterationError
-from .utils import summarizable
 
 
 # pylint: disable=W0613  # unused argument (self)

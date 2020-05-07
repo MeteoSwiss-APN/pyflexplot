@@ -98,7 +98,6 @@ class PlotConfig(BaseModel):
     # SR_TODO Specify plot size in a robust way (what you want is what you get)
     fig_size: Tuple[float, float] = (12.5, 8.0)
     labels: Dict[str, Any] = {}
-    legend_box_title: str = ""  # SR_TODO sensible default
     legend_rstrip_zeros: bool = True
     level_ranges_align: str = "center"
     level_range_style: str = "base"
@@ -119,8 +118,14 @@ class PlotConfig(BaseModel):
         return np.divide(*self.fig_size)
 
 
+def capitalize(s: str) -> str:
+    """Capitalize the first letter while leaving all others as they are."""
+    return s[0].upper() + s[1:]
+
+
 # SR_TODO Create dataclass with default values for test box setup
 # pylint: disable=R0912  # too-many-branches
+# pylint: disable=R0914  # too-many-locals
 # pylint: disable=R0915  # too-many-statements
 def create_plot_config(
     setup: InputSetup, words: TranslatedWords, symbols: Words, mdata: MetaData,
@@ -134,7 +139,7 @@ def create_plot_config(
     new_config_dct["labels"]["top_left"] = {
         "tl": "",  # SR_TMP force into 1st position of dict (for tests)
         "bl": (
-            f"{format_integr_period(mdata, setup, words, capitalize=True)}"
+            f"{format_integr_period(mdata, setup, words, cap=True)}"
             f" {words['since']}"
             f" +{mdata.simulation_integr_start_rel}"
         ),
@@ -191,6 +196,7 @@ def create_plot_config(
 
     short_name = ""
     long_name = ""
+    unit = mdata.format("variable_unit")
 
     if setup.variable == "concentration":
         new_config_dct["n_levels"] = 8
@@ -257,7 +263,6 @@ def create_plot_config(
                     "level_range_style": "int",
                     "level_ranges_align": "left",
                     "mark_field_max": False,
-                    "legend_box_title": new_config_dct["labels"]["right_top"]["title"],
                     "levels_scale": "lin",
                 }
             )
@@ -270,7 +275,7 @@ def create_plot_config(
                 f"{words['threshold_agreement']}"
                 f" ({words['number_of', 'abbr'].c} {words['member', 'pl']})"
             )
-        elif setup.plot_type == "ens_cloud_arrival_time":
+        elif setup.plot_type in ["ens_cloud_arrival_time", "ens_cloud_departure_time"]:
             new_config_dct.update(
                 {
                     "extend": "max",
@@ -280,7 +285,6 @@ def create_plot_config(
                     "level_range_style": "int",
                     "level_ranges_align": "left",
                     "mark_field_max": False,
-                    "legend_box_title": new_config_dct["labels"]["right_top"]["title"],
                     "levels_scale": "lin",
                 }
             )
@@ -292,29 +296,28 @@ def create_plot_config(
                 f"{words['member', 'pl']}: {symbols['geq']}"
                 f" {setup.ens_param_mem_min}"
             )
-            short_name = f"{words['arrival'].c} ({words['hour', 'pl']})"
-            long_name = f"{words['cloud_arrival_time']}"
-
-    def capitalize(s: str) -> str:
-        return s[0].upper() + s[1:]
+            if setup.plot_type == "ens_cloud_arrival_time":
+                long_name = f"{words['cloud_arrival_time']}"
+                short_name = f"{words['arrival']}"
+            elif setup.plot_type == "ens_cloud_departure_time":
+                long_name = f"{words['cloud_departure_time']}"
+                short_name = f"{words['departure']}"
+            unit = f"{words['hour', 'pl']}"
 
     if short_name:
-        new_config_dct["labels"]["right_top"]["title"] = capitalize(short_name)
-        new_config_dct["labels"]["right_top"]["title_unit"] = capitalize(
-            f"{short_name} ({mdata.format('variable_unit')})"
-        )
+        new_config_dct["labels"]["right_top"]["title"] = short_name
+        new_config_dct["labels"]["right_top"]["title_unit"] = f"{short_name} ({unit})"
 
     if long_name:
-        new_config_dct["labels"]["top_left"]["tl"] = capitalize(
-            f"{long_name} {words['of']} {mdata.species_name}"
-        )
+        new_config_dct["labels"]["top_left"][
+            "tl"
+        ] = f"{long_name} {words['of']} {mdata.species_name}"
 
-    # SR_TMP < TODO set default
-    if "legend_box_title" not in new_config_dct:
-        new_config_dct["legend_box_title"] = new_config_dct["labels"]["right_top"][
-            "title_unit"
-        ]
-    # SR_TMP >
+    # Capitalize all labels
+    for labels in new_config_dct["labels"].values():
+        for name, label in labels.items():
+            labels[name] = capitalize(label)
+
     return PlotConfig(**new_config_dct)
 
 
@@ -385,6 +388,8 @@ def levels_from_time_stats(
     plot_config: PlotConfig, time_stats: Mapping[str, float]
 ) -> List[float]:
     def _auto_levels_log10(n_levels: int, val_max: float) -> List[float]:
+        if not np.isfinite(val_max):
+            raise ValueError("val_max not finite", val_max)
         log10_max = int(np.floor(np.log10(val_max)))
         log10_d = 1
         return 10 ** np.arange(
@@ -403,7 +408,10 @@ def levels_from_time_stats(
             )
             + 1
         )
-    elif plot_config.setup.plot_type == "ens_cloud_arrival_time":
+    elif plot_config.setup.plot_type in [
+        "ens_cloud_arrival_time",
+        "ens_cloud_departure_time",
+    ]:
         assert plot_config.d_level is not None  # mypy
         return np.arange(0, plot_config.n_levels) * plot_config.d_level
     elif plot_config.setup.plot_type == "affected_area_mono":
@@ -477,10 +485,7 @@ def format_vertical_level_range(
 
 
 def format_integr_period(
-    mdata: "MetaData",
-    setup: InputSetup,
-    words: TranslatedWords,
-    capitalize: bool = False,
+    mdata: "MetaData", setup: InputSetup, words: TranslatedWords, cap: bool = False
 ) -> str:
     integr_type = get_integr_type(setup)
     if integr_type == "mean":
@@ -497,7 +502,7 @@ def format_integr_period(
     hours = int(period.total_seconds() / 3600)
     minutes = int((period.total_seconds() / 60) % 60)
     s = f"{operation} {hours:d}:{minutes:02d}$\\,$h"
-    if capitalize:
+    if cap:
         s = s[0].upper() + s[1:]
     return s
 

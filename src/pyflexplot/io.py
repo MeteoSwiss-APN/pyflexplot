@@ -321,15 +321,27 @@ class FileReader:
         return fld_time
 
     def _collect_time_stats(self, fld_time: np.ndarray,) -> Dict[str, np.ndarray]:
-        data = fld_time[~np.isnan(fld_time)]
+        data = fld_time[np.isfinite(fld_time)]
         data_nz = data[data > 0]
-        return {
-            "mean": np.mean(data),
-            "median": np.median(data),
-            "mean_nz": np.mean(data_nz),
-            "median_nz": np.median(data_nz),
-            "max": np.max(data),
-        }
+        # Avoid zero-size errors below
+        if data.size == 0:
+            data = np.full([1], np.nan)
+        if data_nz.size == 0:
+            data_nz = np.full([1], np.nan)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", category=RuntimeWarning, message="All-NaN slice encountered"
+            )
+            warnings.filterwarnings(
+                "ignore", category=RuntimeWarning, message="Mean of empty slice"
+            )
+            return {
+                "mean": np.nanmean(data),
+                "median": np.nanmedian(data),
+                "mean_nz": np.nanmean(data_nz),
+                "median_nz": np.nanmedian(data_nz),
+                "max": np.nanmax(data),
+            }
 
     # pylint: disable=R0914  # too-many-locals
     def _collect_meta_data(self, var_setups: InputSetupCollection,) -> List[MetaData]:

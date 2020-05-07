@@ -6,18 +6,19 @@ Test the elements of complete plots based on ensemble COSMO-2 data.
 import pytest
 
 # Local
-from .shared import _CreateReference  # noqa:F401
 from .shared import _TestBase
+from .shared import _TestCreatePlot  # noqa:F401
+from .shared import _TestCreateReference  # noqa:F401
 from .shared import datadir  # noqa  # required by _TestBase.test
 
 INFILE_NAME = "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc"
 ENS_MEMBER_IDS = [0, 1, 5, 10, 15, 20]
 
 # Uncomment to recreate all references
-# _TestBase = _CreateReference
+# _TestBase = _TestCreateReference
 
 
-# class Test_EnsMedian_Concentration(_CreateReference):
+# class Test_EnsMedian_Concentration(_TestCreateReference):
 class Test_EnsMedian_Concentration(_TestBase):
     reference = "ref_cosmo2e_ens_mean_concentration"
     setup_dct = {
@@ -37,7 +38,7 @@ class Test_EnsMedian_Concentration(_TestBase):
     }
 
 
-# class Test_EnsMax_IntegratedConcentration(_CreateReference):
+# class Test_EnsMax_IntegratedConcentration(_TestCreateReference):
 class Test_EnsMax_IntegratedConcentration(_TestBase):
     reference = "ref_cosmo2e_ens_max_integrated_concentration"
     setup_dct = {
@@ -56,7 +57,7 @@ class Test_EnsMax_IntegratedConcentration(_TestBase):
     }
 
 
-# class Test_EnsMean_TotalDeposition(_CreateReference):
+# class Test_EnsMean_TotalDeposition(_TestCreateReference):
 class Test_EnsMean_TotalDeposition(_TestBase):
     reference = "ref_cosmo2e_ens_mean_total_deposition"
     setup_dct = {
@@ -77,7 +78,7 @@ class Test_EnsMean_TotalDeposition(_TestBase):
 
 
 @pytest.mark.skip("WIP")
-# class Test_EnsMin_AffectedArea(_CreateReference):
+# class Test_EnsMin_AffectedArea(_TestCreateReference):
 class Test_EnsMin_AffectedArea(_TestBase):
     reference = "ref_cosmo2e_ens_min_affected_area"
     setup_dct = {
@@ -91,14 +92,14 @@ class Test_EnsMin_AffectedArea(_TestBase):
         "simulation_type": "ensemble",
         "ens_member_id": ENS_MEMBER_IDS,
         "lang": "de",
-        "domain": "auto",
+        "domain": "ch",
         "species_id": (1, 2),
         "time": (-1,),
     }
 
 
-@pytest.mark.skip("WIP")
-# class Test_CloudArrivalTime(_CreateReference):
+# class Test_CloudArrivalTime(_TestCreatePlot):
+# class Test_CloudArrivalTime(_TestCreateReference):
 class Test_CloudArrivalTime(_TestBase):
     reference = "ref_cosmo2e_ens_cloud_arrival_time"
     setup_dct = {
@@ -110,10 +111,32 @@ class Test_CloudArrivalTime(_TestBase):
         "simulation_type": "ensemble",
         "ens_member_id": ENS_MEMBER_IDS,
         "ens_param_mem_min": 3,
-        "ens_param_thr": 1e-9,
+        "ens_param_thr": 1e-6,
         "lang": "en",
-        "domain": "ch",
+        "domain": "auto",
         "species_id": (1,),
         "time": (0,),
         "level": (0,),
+    }
+
+
+# class Test_CloudDepartureTime(_TestCreatePlot):
+# class Test_CloudDepartureTime(_TestCreateReference):
+class Test_CloudDepartureTime(_TestBase):
+    reference = "ref_cosmo2e_ens_cloud_departure_time"
+    setup_dct = {
+        "infile": INFILE_NAME,
+        "outfile": "plot.png",
+        "plot_type": "ens_cloud_departure_time",
+        "variable": "concentration",
+        "integrate": True,
+        "simulation_type": "ensemble",
+        "ens_member_id": ENS_MEMBER_IDS,
+        "ens_param_mem_min": 4,
+        "ens_param_thr": 1e-7,
+        "lang": "de",
+        "domain": "ch",
+        "species_id": (1, 2),
+        "time": (0,),
+        "level": (0, 1, 2),
     }

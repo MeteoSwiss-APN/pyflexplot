@@ -17,11 +17,12 @@ import numpy as np
 
 # Local
 from .setup import InputSetupCollection
-from .utils import summarizable
+from .summarize import default_summarize
+from .summarize import summarizable
 
 
 def summarize_field(obj: Any) -> Dict[str, Dict[str, Any]]:
-    return {
+    dct = {
         "fld": {
             "dtype": str(obj.fld.dtype),
             "shape": obj.fld.shape,
@@ -49,6 +50,7 @@ def summarize_field(obj: Any) -> Dict[str, Dict[str, Any]]:
             "max": obj.lon.max(),
         },
     }
+    return default_summarize(dct)
 
 
 @summarizable(

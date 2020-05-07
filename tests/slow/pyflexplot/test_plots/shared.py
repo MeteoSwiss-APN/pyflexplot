@@ -6,7 +6,7 @@ Shared functions and classes for tests of elements of complete plots.
 import distutils.dir_util
 import importlib
 import os
-from pprint import pformat
+import re
 from textwrap import dedent
 from typing import Any
 from typing import Dict
@@ -20,6 +20,12 @@ from pyflexplot.plot import plot_fields
 from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
 from srutils.testing import assert_nested_equal
+
+try:
+    import black
+except ImportError:
+    black = None
+
 
 PACKAGE = "test_plots"
 
@@ -51,7 +57,7 @@ class _TestBase:
 
      *  Test reference files, as specified by the class attribute ``reference``,
         are created by changing the parent module of a test class temporarily
-        from ``_TestBase`` to ``_CreateReference`` and running the tests (which
+        from ``_TestBase`` to ``_TestCreateReference`` and running the tests (which
         will fail with ``ReferenceFileCreationSuccess`` if all goes well).
 
         This creates a file for each test (``<reference>.py``) in the current
@@ -121,18 +127,12 @@ class ReferenceFileCreationError(Exception):
     """Error writing test reference file to disk."""
 
 
-class PlotCreationSuccess(Exception):
-    """Test plot successfully written to disk."""
-
-
-class PlotCreationError(Exception):
-    """Error writing test plot to disk."""
-
-
-class _CreateReference(_TestBase):
+class _TestCreateReference(_TestBase):
     """Test parent class to create a new test reference for a test."""
 
     def test(self, datadir):
+        if black is None:
+            raise ImportError("must install black to create test reference")
         ref_file = f"{self.reference}.py"
         field, mdata = self.get_field_and_mdata(datadir)
         field_summary = field.summarize()
@@ -140,8 +140,9 @@ class _CreateReference(_TestBase):
         plot_summary = plot.summarize()
         module_path_rel = os.path.relpath(__file__, ".")
         cls_name = type(self).__name__
-        header = f'''\
+        content = f'''\
             # -*- coding: utf-8 -*-
+            # flake8: noqa
             """
             Test reference for pytest test.
 
@@ -151,21 +152,46 @@ class _CreateReference(_TestBase):
 
             Created by temporarily changing the parent class of
             ``{cls_name}``
-            from ``_TestBase`` to ``_CreateReference`` and running pytest.
+            from ``_TestBase`` to ``_TestCreateReference`` and running pytest.
             """
+            import numpy as np
+
+            field_summary = {field_summary}
+
+            plot_summary = {plot_summary}
             '''
+        content = dedent(content)
+        # Replace non-importable nan/inf objects by np.nan/np.inf
+        content_np = re.sub(r": (-?)\b(nan|inf)\b", r": \1np.\2", content)
+        if content_np != content:
+            content = content_np
+        else:
+            # No np.nan/np.inf: Remove obsolete numpy import
+            content = content.replace("import numpy as np\n", "")
+        content = black_format(content)
         try:
             with open(ref_file, "w") as f:
-                f.write(dedent(header))
-                f.write(f"\nfield_summary = {pformat(field_summary)}\n")
-                f.write(f"\nplot_summary = {pformat(plot_summary)}\n")
+                f.write(content)
         except Exception:
             raise ReferenceFileCreationError(ref_file)
         else:
             raise ReferenceFileCreationSuccess(ref_file)
 
 
-class _CreatePlot(_TestBase):
+def black_format(code: str) -> str:
+    """Format a string of code with black."""
+    return str(black.format_str(code, mode=black.FileMode()))
+
+
+class PlotCreationSuccess(Exception):
+    """Test plot successfully written to disk."""
+
+
+class PlotCreationError(Exception):
+    """Error writing test plot to disk."""
+
+
+class _TestCreatePlot(_TestBase):
     """Test parent class to create plots based on a test setup."""
 
     def test(self, datadir):
@@ -181,7 +207,7 @@ class _CreatePlot(_TestBase):
 
 
 # Uncomment to create test references for all tests at once
-# _TestBase = _CreateReference
+# _TestBase = _TestCreateReference
 
 # Uncomment to create test plots for all tests at once
-# _TestBase = _CreatePlot
+# _TestBase = _TestCreatePlot

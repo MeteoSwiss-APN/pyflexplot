@@ -3,17 +3,17 @@
 Test the elements of complete plots based on deterministic COSMO-1 data.
 """
 # Local
-from .shared import _CreateReference  # noqa:F401
 from .shared import _TestBase
+from .shared import _TestCreateReference  # noqa:F401
 from .shared import datadir  # noqa:F401  # required by _TestBase.test
 
 # Uncomment to recreate all references
-# _TestBase = _CreateReference
+# _TestBase = _TestCreateReference
 
 INFILE_NAME = "flexpart_cosmo-1_2019093012.nc"
 
 
-# class Test_Concentration(_CreateReference):
+# class Test_Concentration(_TestCreateReference):
 class Test_Concentration(_TestBase):
     reference = "ref_cosmo1_deterministic_concentration"
     setup_dct = {
@@ -34,7 +34,7 @@ class Test_Concentration(_TestBase):
         super().test(datadir)
 
 
-# class Test_IntegratedConcentration(_CreateReference):
+# class Test_IntegratedConcentration(_TestCreateReference):
 class Test_IntegratedConcentration(_TestBase):
     reference = "ref_cosmo1_deterministic_integrated_concentration"
     setup_dct = {
@@ -52,7 +52,7 @@ class Test_IntegratedConcentration(_TestBase):
     }
 
 
-# class Test_TotalDeposition(_CreateReference):
+# class Test_TotalDeposition(_TestCreateReference):
 class Test_TotalDeposition(_TestBase):
     reference = "ref_cosmo1_deterministic_total_deposition"
     setup_dct = {
@@ -70,7 +70,7 @@ class Test_TotalDeposition(_TestBase):
     }
 
 
-# class Test_AffectedArea(_CreateReference):
+# class Test_AffectedArea(_TestCreateReference):
 class Test_AffectedArea(_TestBase):
     reference = "ref_cosmo1_deterministic_affected_area"
     setup_dct = {

@@ -30,8 +30,8 @@ from .plot_types import colors_from_plot_config
 from .plot_types import create_map_conf
 from .plot_types import create_plot_config
 from .plot_types import levels_from_time_stats
+from .summarize import summarizable
 from .utils import format_level_ranges
-from .utils import summarizable
 from .words import SYMBOLS
 from .words import WORDS
 
@@ -198,7 +198,6 @@ class Plot:
 
         labels = self.plot_config.labels["right_top"]
 
-        # font_size = 'small'
         font_size = "medium"
 
         dx_box: float = -10
@@ -220,8 +219,7 @@ class Plot:
         dy0_boxes = dy0_labels - 0.2 * h_box
 
         # Box title
-        s = self.plot_config.legend_box_title
-        box.text("tc", s=s, dy=1.5, size="large")
+        box.text("tc", s=labels["title_unit"], dy=1.5, size="large")
 
         # Format level ranges (contour plot legend)
         levels = levels_from_time_stats(self.plot_config, self.field.time_stats)
@@ -331,7 +329,7 @@ class Plot:
         mdata = self.plot_config.mdata
 
         # Box title
-        # box.text('tc', labels['title'], size='large')
+        # box.text("tc", labels["title"], size="large")
         box.text("tc", labels["title"], dy=-1.0, size="large")
 
         # Release site coordinates
