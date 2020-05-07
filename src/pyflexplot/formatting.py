@@ -408,17 +408,23 @@ class LevelRangeFormatterInt(LevelRangeFormatter):
     def _format_components(
         self, lvl0: Optional[float], lvl1: Optional[float],
     ) -> Components:
+        # if lvl1 is not None:
         if lvl1 is not None:
-            lvl1 = lvl1 - 1
-            if lvl0 == lvl1:
-                return Components.create("", "", self._format_level(lvl1))
+            # SR_DBG <
+            if lvl0 is not None:
+                # SR_DBG >
+                lvl1 = lvl1 - 1
+                if lvl0 == lvl1:
+                    return Components.create("", "", self._format_level(lvl1))
         return super()._format_components(lvl0, lvl1)
 
     def _format_level(self, lvl: float) -> str:
         if int(lvl) != float(lvl):
             warnings.warn(f"{type(self).__name__}._format_level: not an int: {lvl}")
-        # return str(lvl)
         return f"{{:>{len(str(self._max_val))}}}".format(lvl)
+
+    def _format_open_left(self, lvl: float) -> Components:
+        return self._format_open_core(lvl, r"$\tt\leq$")
 
 
 class LevelRangeFormatterMath(LevelRangeFormatter):

@@ -98,6 +98,7 @@ class Test_EnsMin_AffectedArea(_TestBase):
     }
 
 
+@pytest.mark.skip("WIP")
 # class Test_CloudArrivalTime(_TestCreatePlot):
 # class Test_CloudArrivalTime(_TestCreateReference):
 class Test_CloudArrivalTime(_TestBase):
@@ -120,6 +121,7 @@ class Test_CloudArrivalTime(_TestBase):
     }
 
 
+@pytest.mark.skip("WIP")
 # class Test_CloudDepartureTime(_TestCreatePlot):
 # class Test_CloudDepartureTime(_TestCreateReference):
 class Test_CloudDepartureTime(_TestBase):

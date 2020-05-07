@@ -24,8 +24,8 @@ from pydantic import validator
 from srutils.iter import isiterable
 
 # Local
+from .formatting import MaxIterationError
 from .summarize import summarizable
-from .utils import MaxIterationError
 
 
 # pylint: disable=W0613  # unused argument (self)
@@ -526,7 +526,7 @@ class MapAxes:
         )
         return handle
 
-    def contourf(self, fld, *, levels, extend, **kwargs):
+    def contourf(self, fld, *, levels, extend="none", **kwargs):
         """Plot a filled-contour field on the map.
 
         Args:

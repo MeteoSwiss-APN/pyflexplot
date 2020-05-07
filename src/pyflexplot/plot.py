@@ -12,6 +12,7 @@ from typing import Sequence
 # Third-party
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 
 # First-party
 from srutils.geo import Degrees
@@ -20,6 +21,7 @@ from srutils.iter import isiterable
 # Local
 # TextBoxAxes Local
 from .data import Field
+from .formatting import format_level_ranges
 from .meta_data import MetaData
 from .plot_lib import MapAxes
 from .plot_lib import MapAxesConf
@@ -31,7 +33,6 @@ from .plot_types import create_map_conf
 from .plot_types import create_plot_config
 from .plot_types import levels_from_time_stats
 from .summarize import summarizable
-from .utils import format_level_ranges
 from .words import SYMBOLS
 from .words import WORDS
 
@@ -105,9 +106,6 @@ class Plot:
         self.draw_map_plot()
         self.draw_boxes()
 
-    def fld_nonzero(self):
-        return np.where(self.field.fld == 0, np.nan, self.field.fld)
-
     def draw_map_plot(self):
         """Plot the particle concentrations onto the map."""
 
@@ -128,21 +126,25 @@ class Plot:
 
     # SR_TODO Replace checks with plot-specific config/setup object
     def draw_colors_contours(self):
-        field = self.fld_nonzero()
+        arr = self.field.fld
         levels = levels_from_time_stats(self.plot_config, self.field.time_stats)
         colors = colors_from_plot_config(self.plot_config)
         extend = self.plot_config.extend
         if self.plot_config.levels_scale == "log":
-            field = np.log10(field)
+            arr = np.log10(arr)
             levels = np.log10(levels)
         elif extend in ["none", "min"]:
             # Areas beyond the closed upper bound are colored black
             colors = list(colors) + ["black"]
             extend = {"none": "max", "min": "both"}[extend]
         if self.plot_config.draw_colors:
-            self.ax_map.contourf(field, levels=levels, colors=colors, extend=extend)
+            self.ax_map.contourf(arr, levels=levels, colors=colors, extend=extend)
+            # SR_TMP <
+            cmap_black = LinearSegmentedColormap.from_list("black", ["black"])
+            self.ax_map.contourf(arr, levels=np.array([-0.01, 0.01]), colors=cmap_black)
+            # SR_TMP >
         if self.plot_config.draw_contours:
-            self.ax_map.contour(field, levels=levels, colors="black", linewidths=1)
+            self.ax_map.contour(arr, levels=levels, colors="black", linewidths=1)
 
     def draw_boxes(self):
         for fill_box, box in self.boxes.items():

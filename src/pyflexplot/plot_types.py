@@ -30,6 +30,8 @@ from .setup import InputSetup
 from .words import TranslatedWords
 from .words import Words
 
+ColorType = Union[str, Tuple[int, int, int], Tuple[int, int, int, int]]
+
 
 def create_map_conf(field: Field) -> MapAxesConf:
     domain = field.var_setups.collect_equal("domain")
@@ -278,7 +280,7 @@ def create_plot_config(
         elif setup.plot_type in ["ens_cloud_arrival_time", "ens_cloud_departure_time"]:
             new_config_dct.update(
                 {
-                    "extend": "max",
+                    "extend": "both",
                     "n_levels": 9,
                     "d_level": 3,
                     "legend_rstrip_zeros": False,
@@ -321,11 +323,11 @@ def create_plot_config(
     return PlotConfig(**new_config_dct)
 
 
-def colors_flexplot(n_levels: int, extend: str) -> List[Tuple[int, int, int]]:
+def colors_flexplot(n_levels: int, extend: str) -> List[ColorType]:
 
-    # color_under = [i/255.0 for i in (255, 155, 255)]
-    color_under = [i / 255.0 for i in (200, 200, 200)]
-    color_over = [i / 255.0 for i in (200, 200, 200)]
+    color_under = "red"
+    # color_over = "darkgray"
+    color_over = tuple([200 / 255] * 3)  # SR_TMP
 
     colors_core_8 = (
         np.array(
@@ -371,7 +373,7 @@ def colors_flexplot(n_levels: int, extend: str) -> List[Tuple[int, int, int]]:
     raise ValueError(f"extend='{extend}'")
 
 
-def colors_from_plot_config(plot_config: PlotConfig) -> List[Tuple[int, int, int]]:
+def colors_from_plot_config(plot_config: PlotConfig) -> List[ColorType]:
     assert plot_config.n_levels is not None  # mypy
     if plot_config.setup.plot_type == "affected_area_mono":
         return (np.array([(200, 200, 200)]) / 255).tolist()

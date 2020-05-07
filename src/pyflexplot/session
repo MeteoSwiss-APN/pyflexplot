@@ -1,6 +1,7 @@
 __init__.py
 cli.py
 data.py
+formatting.py
 io.py
 meta_data.py
 nc_meta_data.py
@@ -10,5 +11,4 @@ plot_types.py
 preset.py
 setup.py
 summarize.py
-utils.py
 words.py
