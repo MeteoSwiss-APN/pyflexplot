@@ -317,7 +317,7 @@ class FileReader:
             elif plot_type == "ens_cloud_departure_time":
                 fld_time = cloud.departure_time()
         else:
-            raise NotImplementedError(f"plot var '{plot_type}'")
+            raise NotImplementedError("plot var", plot_type)
         return fld_time
 
     def _collect_time_stats(self, fld_time: np.ndarray,) -> Dict[str, np.ndarray]:
@@ -584,13 +584,11 @@ class FlexPartDataFixer:
         name = nc_var.getncattr("long_name").split("_")[0]
         unit = nc_var.getncattr("units")
         if name not in self.possible_var_names:
-            raise NotImplementedError("variable", {"name": name})
+            raise NotImplementedError("variable", name)
         try:
             fact = self.conversion_factor_by_unit[unit]
         except KeyError:
-            raise NotImplementedError(
-                "conversion factor", {"name": name, "unit": unit},
-            )
+            raise NotImplementedError("conversion factor", name, unit)
         fld[:] *= fact
 
     def fix_meta_data(

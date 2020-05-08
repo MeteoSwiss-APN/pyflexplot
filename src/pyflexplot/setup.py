@@ -182,6 +182,11 @@ class InputSetup(BaseModel):
     time: Optional[Tuple[int, ...]] = None
     level: Optional[Tuple[int, ...]] = None
 
+    @validator("variable")
+    def _check_variable(cls, value: str) -> str:
+        assert value in ["concentration", "deposition"]
+        return value
+
     @validator("deposition_type", always=True)
     def _init_deposition_type(cls, value: Union[str, Tuple[str, str]]) -> str:
         if value in ["dry", "wet", "tot", "none"]:

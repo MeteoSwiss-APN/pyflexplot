@@ -323,28 +323,34 @@ def create_plot_config(
     return PlotConfig(**new_config_dct)
 
 
-def colors_flexplot(n_levels: int, extend: str) -> List[ColorType]:
+def colors_flexplot(n_levels: int, extend: str) -> Sequence[ColorType]:
 
-    color_under = "red"
-    # color_over = "darkgray"
-    color_over = tuple([200 / 255] * 3)  # SR_TMP
+    color_under = "darkgray"
+    color_over = "lightgray"
 
-    colors_core_8 = (
-        np.array(
-            [
-                (224, 196, 172),
-                (221, 127, 215),
-                (99, 0, 255),
-                (100, 153, 199),
-                (34, 139, 34),
-                (93, 255, 2),
-                (199, 255, 0),
-                (255, 239, 57),
-            ],
-            float,
-        )
-        / 255
-    ).tolist()
+    def rgb(*vals):
+        return np.array(vals, float) / 255
+
+    # colors_core_8_old = [
+    #     rgb(224, 196, 172),
+    #     rgb(221, 127, 215),
+    #     rgb(99, 0, 255),
+    #     rgb(100, 153, 199),
+    #     rgb(34, 139, 34),
+    #     rgb(93, 255, 2),
+    #     rgb(199, 255, 0),
+    #     rgb(255, 239, 57),
+    # ]
+    colors_core_8 = [
+        "bisque",
+        "violet",
+        "rebeccapurple",
+        "cornflowerblue",
+        "forestgreen",
+        "yellowgreen",
+        "greenyellow",
+        "yellow",
+    ]
 
     colors_core_7 = [colors_core_8[i] for i in (0, 1, 2, 3, 5, 6, 7)]
     colors_core_6 = [colors_core_8[i] for i in (1, 2, 3, 4, 5, 7)]
@@ -373,7 +379,7 @@ def colors_flexplot(n_levels: int, extend: str) -> List[ColorType]:
     raise ValueError(f"extend='{extend}'")
 
 
-def colors_from_plot_config(plot_config: PlotConfig) -> List[ColorType]:
+def colors_from_plot_config(plot_config: PlotConfig) -> Sequence[ColorType]:
     assert plot_config.n_levels is not None  # mypy
     if plot_config.setup.plot_type == "affected_area_mono":
         return (np.array([(200, 200, 200)]) / 255).tolist()

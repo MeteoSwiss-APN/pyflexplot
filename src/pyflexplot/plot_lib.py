@@ -557,7 +557,7 @@ class MapAxes:
             handle = self.ax.contourf(
                 self.lon,
                 self.lat,
-                fld,
+                self._replace_infs(fld, levels),
                 transform=self.proj_data,
                 levels=levels,
                 extend=extend,
@@ -565,6 +565,26 @@ class MapAxes:
                 **kwargs,
             )
         return handle
+
+    def _replace_infs(self, fld: np.ndarray, levels: np.ndarray) -> np.ndarray:
+        """Replace inf by large values outside the data and level range.
+
+        Reason: Contourf apparently ignores inf values.
+
+        """
+        large_value = 999.9
+        vals = np.r_[fld.flatten(), levels]
+        thr = vals[np.isfinite(vals)].max()
+        max_ = np.finfo(np.float32).max
+        while large_value <= thr:
+            large_value = large_value * 10 + 0.9
+            if large_value > max_:
+                raise Exception(
+                    "cannot derive large enough value", large_value, max_, thr
+                )
+        fld = np.where(np.isneginf(fld), -large_value, fld)
+        fld = np.where(np.isposinf(fld), large_value, fld)
+        return fld
 
     def marker(self, lon, lat, marker, *, zorder=None, **kwargs):
         """Add a marker at a location in natural coordinates."""

@@ -21,6 +21,14 @@ from .summarize import default_summarize
 from .summarize import summarizable
 
 
+class ArrayDimensionError(Exception):
+    """Array has wrong dimensions."""
+
+
+class InconsistentArrayShapesError(Exception):
+    """Arrays have inconsistent shapes."""
+
+
 def summarize_field(obj: Any) -> Dict[str, Dict[str, Any]]:
     dct = {
         "fld": {
@@ -88,30 +96,28 @@ class Field:
     nc_meta_data: Mapping[str, Any]
 
     def __post_init__(self):
-        self._check_args(self.fld, self.lat, self.lon)
+        try:
+            self.check_consistency()
+        except Exception as e:
+            raise ValueError(f"{type(e).__name__}: {e}")
 
-    def _check_args(self, fld, lat, lon, *, ndim_fld=2):
+    def check_consistency(self):
         """Check consistency of field, dimensions, etc."""
 
         # Check dimensionalities
         for name, arr, ndim in [
-            ("fld", fld, ndim_fld),
-            ("lat", lat, 1),
-            ("lon", lon, 1),
+            ("fld", self.fld, 2),
+            ("lat", self.lat, 1),
+            ("lon", self.lon, 1),
         ]:
             shape = arr.shape
             if len(shape) != ndim:
-                raise ValueError(
-                    f"{name}: expect {ndim} dimensions, got {len(shape)}: {shape}"
-                )
+                raise ArrayDimensionError(f"{name}: len({shape}) != {ndim}")
 
         # Check consistency
-        grid_shape = (lat.size, lon.size)
-        if fld.shape[-2:] != grid_shape:
-            raise ValueError(
-                f"shape of fld inconsistent with (lat, lon): {fld.shape} != "
-                r"{grid_shape}"
-            )
+        grid_shape = (self.lat.size, self.lon.size)
+        if self.fld.shape[-2:] != grid_shape:
+            raise InconsistentArrayShapesError(f"{self.fld.shape} != {grid_shape}")
 
 
 def threshold_agreement(arr: np.ndarray, thr: float) -> np.ndarray:
