@@ -4,7 +4,6 @@ Plots.
 """
 # Standard library
 import re
-from dataclasses import dataclass
 from textwrap import dedent
 from typing import Dict
 from typing import Sequence
@@ -28,6 +27,7 @@ from .plot_lib import MapAxesConf
 from .plot_lib import TextBoxAxes
 from .plot_lib import post_summarize_plot
 from .plot_types import PlotConfig
+from .plot_types import PlotLayout
 from .plot_types import colors_from_plot_config
 from .plot_types import create_map_conf
 from .plot_types import create_plot_config
@@ -97,10 +97,7 @@ class Plot:
         layout = PlotLayout(aspect=self.plot_config.fig_aspect)
         self.fig = plt.figure(figsize=self.plot_config.fig_size)
         self.ax_map = MapAxes.create(
-            self.map_conf,
-            fig=self.fig,
-            rect=layout.rect_center_left(),
-            field=self.field,
+            self.map_conf, fig=self.fig, rect=layout.rect_center_left, field=self.field,
         )
         self.add_text_boxes(layout)
         self.draw_map_plot()
@@ -159,30 +156,39 @@ class Plot:
         }
         self.boxes = {}
         self.boxes[self.fill_box_top_left] = TextBoxAxes(
-            name="top/left", rect=layout.rect_top_left(), **kwargs,
+            name="top/left", rect=layout.rect_top_left, **kwargs,
         )
         self.boxes[self.fill_box_top_right] = TextBoxAxes(
-            name="top/right", rect=layout.rect_top_right(), **kwargs,
+            name="top/right", rect=layout.rect_top_right, **kwargs,
         )
         self.boxes[self.fill_box_right_top] = TextBoxAxes(
-            name="right/top", rect=layout.rect_center_right_top(), **kwargs,
+            name="right/top", rect=layout.rect_center_right_top, **kwargs,
         )
         self.boxes[self.fill_box_right_bottom] = TextBoxAxes(
-            name="right/bottom", rect=layout.rect_center_right_bottom(), **kwargs,
+            name="right/bottom", rect=layout.rect_center_right_bottom, **kwargs,
         )
         self.boxes[self.fill_box_bottom] = TextBoxAxes(
-            name="bottom", rect=layout.rect_bottom(), **{**kwargs, "lw_frame": None},
+            name="bottom", rect=layout.rect_bottom, **{**kwargs, "lw_frame": None},
         )
 
     def fill_box_top_left(self, box: TextBoxAxes) -> None:
-        sizes = {"tl": "x-large"}
         for position, label in self.plot_config.labels.get("top_left", {}).items():
-            size = sizes.get("position", "large")
-            box.text(position, label, size=size)
+            if position == "tl":
+                font_size = self.plot_config.font_sizes.title_large
+            else:
+                font_size = self.plot_config.font_sizes.content_large
+            box.text(
+                position, label, fontname=self.plot_config.font_name, size=font_size
+            )
 
     def fill_box_top_right(self, box: TextBoxAxes) -> None:
         for position, label in self.plot_config.labels.get("top_right", {}).items():
-            box.text(position, label, size="large")
+            box.text(
+                position,
+                label,
+                fontname=self.plot_config.font_name,
+                size=self.plot_config.font_sizes.content_medium,
+            )
 
     # pylint: disable=R0912   # too-many-branches
     # pylint: disable=R0913   # too-many-arguments
@@ -199,8 +205,6 @@ class Plot:
         """Fill the top box to the right of the map plot."""
 
         labels = self.plot_config.labels["right_top"]
-
-        font_size = "medium"
 
         dx_box: float = -10
         dx_label: float = -3
@@ -221,7 +225,13 @@ class Plot:
         dy0_boxes = dy0_labels - 0.2 * h_box
 
         # Box title
-        box.text("tc", s=labels["title_unit"], dy=1.5, size="large")
+        box.text(
+            "tc",
+            s=labels["title_unit"],
+            dy=1.5,
+            fontname=self.plot_config.font_name,
+            size=self.plot_config.font_sizes.title_small,
+        )
 
         # Format level ranges (contour plot legend)
         levels = levels_from_time_stats(self.plot_config, self.field.time_stats)
@@ -242,7 +252,8 @@ class Plot:
             dx=dx_label,
             reverse=self.plot_config.reverse_legend,
             ha="left",
-            size=font_size,
+            fontname=self.plot_config.font_name,
+            size=self.plot_config.font_sizes.content_medium,
             family="monospace",
         )
 
@@ -265,8 +276,6 @@ class Plot:
             )
             dy += dy_line
 
-        # self.Markers
-
         n_markers = self.plot_config.mark_release_site + self.plot_config.mark_field_max
         dy0_marker_i = dy0_markers + (2 - n_markers) * dy_line / 2
 
@@ -285,7 +294,8 @@ class Plot:
                 dx=dx_marker_label,
                 dy=dy_site_label,
                 ha="left",
-                size=font_size,
+                fontname=self.plot_config.font_name,
+                size=self.plot_config.font_sizes.content_medium,
             )
 
         # Field maximum marker
@@ -321,7 +331,8 @@ class Plot:
                 dx=dx_marker_label,
                 dy=dy_marker_label_max,
                 ha="left",
-                size=font_size,
+                fontname=self.plot_config.font_name,
+                size=self.plot_config.font_sizes.content_medium,
             )
 
     def fill_box_right_bottom(self, box: TextBoxAxes) -> None:
@@ -331,8 +342,14 @@ class Plot:
         mdata = self.plot_config.mdata
 
         # Box title
-        # box.text("tc", labels["title"], size="large")
-        box.text("tc", labels["title"], dy=-1.0, size="large")
+        # SR_TODO Fix positioning in box so dy=-1.0 can be removed!
+        box.text(
+            "tc",
+            labels["title"],
+            dy=-1.0,
+            fontname=self.plot_config.font_name,
+            size=self.plot_config.font_sizes.title_small,
+        )
 
         # Release site coordinates
         lat = Degrees(mdata.release_site_lat.value)
@@ -382,8 +399,8 @@ class Plot:
             dy_line=dy,
             blocks=info_blocks,
             reverse=True,
-            # size="small",
-            size="small",
+            fontname=self.plot_config.font_name,
+            size=self.plot_config.font_sizes.content_small,
         )
 
     def fill_box_bottom(self, box: TextBoxAxes) -> None:
@@ -393,10 +410,24 @@ class Plot:
 
         # FLEXPART/model info
         s = self.plot_config.model_info
-        box.text("tl", dx=-0.7, dy=0.5, s=s, size="small")
+        box.text(
+            "tl",
+            dx=-0.7,
+            dy=0.5,
+            s=s,
+            fontname=self.plot_config.font_name,
+            size=self.plot_config.font_sizes.content_small,
+        )
 
         # MeteoSwiss Copyright
-        box.text("tr", dx=0.7, dy=0.5, s=labels["copyright"], size="small")
+        box.text(
+            "tr",
+            dx=0.7,
+            dy=0.5,
+            s=labels["copyright"],
+            fontname=self.plot_config.font_name,
+            size=self.plot_config.font_sizes.content_small,
+        )
 
 
 def plot_fields(
@@ -422,112 +453,6 @@ def plot_fields(
             plot.save(out_file_path, write=write)
 
         yield out_file_path, plot
-
-
-@dataclass
-# pylint: disable=R0902  # too-many-instance-attributes
-# pylint: disable=R0904  # too-many-public-methods
-class PlotLayout:
-    aspect: float
-    x0_tot: float = 0.0
-    x1_tot: float = 1.0
-    y0_tot: float = 0.0
-    y1_tot: float = 1.0
-    y_pad: float = 0.02
-    h_top: float = 0.1
-    w_right: float = 0.2
-    h_crbot: float = 0.45
-    h_bottom: float = 0.05
-
-    @property
-    def x_pad(self):
-        return self.y_pad / self.aspect
-
-    @property
-    def h_tot(self):
-        return self.y1_tot - self.y0_tot
-
-    @property
-    def y1_top(self):
-        return self.y1_tot
-
-    @property
-    def y0_top(self):
-        return self.y1_top - self.h_top
-
-    @property
-    def y1_center(self):
-        return self.y0_top - self.y_pad
-
-    @property
-    def y0_center(self):
-        return self.y0_tot + self.h_bottom
-
-    @property
-    def h_center(self):
-        return self.y1_center - self.y0_center
-
-    @property
-    def w_tot(self):
-        return self.x1_tot - self.x0_tot
-
-    @property
-    def x1_right(self):
-        return self.x1_tot
-
-    @property
-    def x0_right(self):
-        return self.x1_right - self.w_right
-
-    @property
-    def x1_left(self):
-        return self.x0_right - self.x_pad
-
-    @property
-    def x0_left(self):
-        return self.x0_tot
-
-    @property
-    def w_left(self):
-        return self.x1_left - self.x0_left
-
-    @property
-    def y0_crbot(self):
-        return self.y0_center
-
-    @property
-    def y1_crbot(self):
-        return self.y0_crbot + self.h_crbot
-
-    @property
-    def y1_crtop(self):
-        return self.y1_center
-
-    @property
-    def y0_crtop(self):
-        return self.y1_crbot + self.y_pad
-
-    @property
-    def h_crtop(self):
-        return self.y1_crtop - self.y0_crtop
-
-    def rect_top_left(self):
-        return (self.x0_left, self.y0_top, self.w_left, self.h_top)
-
-    def rect_top_right(self):
-        return (self.x0_right, self.y0_top, self.w_right, self.h_top)
-
-    def rect_center_left(self):
-        return (self.x0_left, self.y0_center, self.w_left, self.h_center)
-
-    def rect_center_right_top(self):
-        return (self.x0_right, self.y0_crtop, self.w_right, self.h_crtop)
-
-    def rect_center_right_bottom(self):
-        return (self.x0_right, self.y0_crbot, self.w_right, self.h_crbot)
-
-    def rect_bottom(self):
-        return (self.x0_tot, self.y0_tot, self.w_tot, self.h_bottom)
 
 
 # pylint: disable=W0102  # dangerious-default-value ([])

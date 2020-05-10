@@ -3,6 +3,7 @@
 Plot types.
 """
 # Standard library
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 from typing import Collection
@@ -87,6 +88,94 @@ def create_map_conf(field: Field) -> MapAxesConf:
     return MapAxesConf(**conf)
 
 
+FontSizeType = Union[str, float]
+
+
+@dataclass
+class FontSizes:
+    title_large: FontSizeType = 14.0
+    title_medium: FontSizeType = 12.0
+    title_small: FontSizeType = 12.0
+    content_large: FontSizeType = 12.0
+    content_medium: FontSizeType = 10.0
+    content_small: FontSizeType = 9.0
+
+
+RectType = Tuple[float, float, float, float]
+
+
+@dataclass
+# pylint: disable=R0902  # too-many-instance-attributes
+class PlotLayout:
+    aspect: float
+    x0_tot: float = 0.0
+    x1_tot: float = 1.0
+    y0_tot: float = 0.0
+    y1_tot: float = 1.0
+    y_pad: float = 0.02
+    h_top: float = 0.08
+    w_right: float = 0.2
+    h_crbot: float = 0.43
+    h_bottom: float = 0.05
+
+    def __post_init__(self):
+        self.x_pad: float = self.y_pad / self.aspect
+        self.h_tot: float = self.y1_tot - self.y0_tot
+        self.y1_top: float = self.y1_tot
+        self.y0_top: float = self.y1_top - self.h_top
+        self.y1_center: float = self.y0_top - self.y_pad
+        self.y0_center: float = self.y0_tot + self.h_bottom
+        self.h_center: float = self.y1_center - self.y0_center
+        self.w_tot: float = self.x1_tot - self.x0_tot
+        self.x1_right: float = self.x1_tot
+        self.x0_right: float = self.x1_right - self.w_right
+        self.x1_left: float = self.x0_right - self.x_pad
+        self.x0_left: float = self.x0_tot
+        self.w_left: float = self.x1_left - self.x0_left
+        self.y0_crbot: float = self.y0_center
+        self.y1_crbot: float = self.y0_crbot + self.h_crbot
+        self.y1_crtop: float = self.y1_center
+        self.y0_crtop: float = self.y1_crbot + self.y_pad
+        self.h_crtop: float = self.y1_crtop - self.y0_crtop
+        self.rect_top_left: RectType = (
+            self.x0_left,
+            self.y0_top,
+            self.w_left,
+            self.h_top,
+        )
+        self.rect_top_right: RectType = (
+            self.x0_right,
+            self.y0_top,
+            self.w_right,
+            self.h_top,
+        )
+        self.rect_center_left: RectType = (
+            self.x0_left,
+            self.y0_center,
+            self.w_left,
+            self.h_center,
+        )
+        self.rect_center_right_top: RectType = (
+            self.x0_right,
+            self.y0_crtop,
+            self.w_right,
+            self.h_crtop,
+        )
+        self.rect_center_right_bottom: RectType = (
+            self.x0_right,
+            self.y0_crbot,
+            self.w_right,
+            self.h_crbot,
+        )
+        self.rect_bottom: RectType = (
+            self.x0_tot,
+            self.y0_tot,
+            self.w_tot,
+            self.h_bottom,
+        )
+
+
+# SR_TODO Move class definition to pyflexplot.plot
 # pylint: disable=R0902  # too-many-instance-attributes
 class PlotConfig(BaseModel):
     setup: InputSetup  # SR_TODO consider removing this
@@ -99,6 +188,8 @@ class PlotConfig(BaseModel):
     # SR_NOTE Figure size may change when boxes etc. are added
     # SR_TODO Specify plot size in a robust way (what you want is what you get)
     fig_size: Tuple[float, float] = (12.5, 8.0)
+    font_name: str = "Liberation Sans"
+    font_sizes: FontSizes = FontSizes()
     labels: Dict[str, Any] = {}
     legend_rstrip_zeros: bool = True
     level_ranges_align: str = "center"

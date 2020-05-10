@@ -96,6 +96,7 @@ class RefDistIndConf:
     """
 
     dist: int = 100
+    font_size: float = 11.0
     pos: str = "bl"
     unit: str = "km"
 
@@ -775,7 +776,7 @@ class ReferenceDistanceIndicator:
             zorder=zorder,
             ha="center",
             va="top",
-            fontsize="large",
+            fontsize=self.conf.font_size,
         )
 
     def _calc_box_y_params(self):
