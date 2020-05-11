@@ -134,31 +134,26 @@ class PlotLayout:
         self.y1_crtop: float = self.y1_center
         self.y0_crtop: float = self.y1_crbot + self.y_pad
         self.h_crtop: float = self.y1_crtop - self.y0_crtop
-        self.rect_top_left: RectType = (
-            self.x0_left,
-            self.y0_top,
-            self.w_left,
-            self.h_top,
-        )
-        self.rect_top_right: RectType = (
-            self.x0_right,
-            self.y0_top,
-            self.w_right,
-            self.h_top,
-        )
-        self.rect_center_left: RectType = (
+        self.rect_top: RectType = (self.x0_left, self.y0_top, self.w_left, self.h_top)
+        self.rect_center: RectType = (
             self.x0_left,
             self.y0_center,
             self.w_left,
             self.h_center,
         )
-        self.rect_center_right_top: RectType = (
+        self.rect_right_top: RectType = (
+            self.x0_right,
+            self.y0_top,
+            self.w_right,
+            self.h_top,
+        )
+        self.rect_right_middle: RectType = (
             self.x0_right,
             self.y0_crtop,
             self.w_right,
             self.h_crtop,
         )
-        self.rect_center_right_bottom: RectType = (
+        self.rect_right_bottom: RectType = (
             self.x0_right,
             self.y0_crbot,
             self.w_right,
@@ -212,7 +207,6 @@ class PlotConfig(BaseModel):
     }
     model_info: str = ""  # SR_TODO sensible default
     n_levels: Optional[int] = None  # SR_TODO sensible default
-    reverse_legend: bool = False
 
     class Config:  # noqa
         allow_extra = False
@@ -225,7 +219,12 @@ class PlotConfig(BaseModel):
 
 def capitalize(s: str) -> str:
     """Capitalize the first letter while leaving all others as they are."""
-    return s[0].upper() + s[1:]
+    if not s:
+        return s
+    try:
+        return s[0].upper() + s[1:]
+    except Exception:
+        raise ValueError("s not capitalizable", s)
 
 
 # SR_TODO Create dataclass with default values for test box setup
@@ -241,7 +240,7 @@ def create_plot_config(
         "mdata": mdata,
         "labels": {},
     }
-    new_config_dct["labels"]["top_left"] = {
+    new_config_dct["labels"]["top"] = {
         "tl": "",  # SR_TMP force into 1st position of dict (for tests)
         "bl": (
             f"{format_integr_period(mdata, setup, words, cap=True)}"
@@ -255,8 +254,12 @@ def create_plot_config(
             f" {words['at', 'place']} {mdata.release_site_name}"
         ),
     }
-    new_config_dct["labels"]["top_right"] = {}
     new_config_dct["labels"]["right_top"] = {
+        "lines": [
+            f"{words['substance'].c}:\t{mdata.format('species_name', join_combo=' + ')}"
+        ]
+    }
+    new_config_dct["labels"]["right_middle"] = {
         "title": "",  # SR_TMP Force into 1st position in dict (for tests)
         "title_unit": "",  # SR_TMP Force into 2nd position in dict (for tests)
         "release_site": words["release_site"].s,
@@ -305,7 +308,7 @@ def create_plot_config(
 
     if setup.variable == "concentration":
         new_config_dct["n_levels"] = 8
-        new_config_dct["labels"]["top_right"]["tc"] = (
+        new_config_dct["labels"]["right_middle"]["tc"] = (
             f"{words['level']}:" f" {escape_format_keys(format_level_label(mdata))}"
         )
         if setup.integrate:
@@ -371,8 +374,8 @@ def create_plot_config(
                     "levels_scale": "lin",
                 }
             )
-            new_config_dct["labels"]["top_right"]["tc"] = (
-                f"{words['cloud']}: {symbols['geq']} {setup.ens_param_thr}"
+            new_config_dct["labels"]["right_top"]["lines"].append(
+                f"{words['cloud']}:\t{symbols['geq']} {setup.ens_param_thr}"
                 f" {mdata.format('variable_unit')}"
             )
             short_name = f"{words['number_of', 'abbr'].c} " f"{words['member', 'pl']}"
@@ -393,12 +396,12 @@ def create_plot_config(
                     "levels_scale": "lin",
                 }
             )
-            new_config_dct["labels"]["top_right"]["tc"] = (
-                f"{words['cloud']}: {symbols['geq']} {setup.ens_param_thr}"
+            new_config_dct["labels"]["right_top"]["lines"].append(
+                f"{words['cloud']}:\t{symbols['geq']} {setup.ens_param_thr}"
                 f" {mdata.format('variable_unit')}"
             )
-            new_config_dct["labels"]["top_right"]["bc"] = (
-                f"{words['member', 'pl']}: {symbols['geq']}"
+            new_config_dct["labels"]["right_top"]["lines"].append(
+                f"{words['member', 'pl']}:\t{symbols['geq']}"
                 f" {setup.ens_param_mem_min}"
             )
             if setup.plot_type == "ens_cloud_arrival_time":
@@ -410,18 +413,24 @@ def create_plot_config(
             unit = f"{words['hour', 'pl']}"
 
     if short_name:
-        new_config_dct["labels"]["right_top"]["title"] = short_name
-        new_config_dct["labels"]["right_top"]["title_unit"] = f"{short_name} ({unit})"
+        new_config_dct["labels"]["right_middle"]["title"] = short_name
+        new_config_dct["labels"]["right_middle"][
+            "title_unit"
+        ] = f"{short_name} ({unit})"
 
     if long_name:
-        new_config_dct["labels"]["top_left"][
+        new_config_dct["labels"]["top"][
             "tl"
         ] = f"{long_name} {words['of']} {mdata.species_name}"
 
     # Capitalize all labels
     for labels in new_config_dct["labels"].values():
         for name, label in labels.items():
-            labels[name] = capitalize(label)
+            if name == "lines":
+                label = [capitalize(line) for line in label]
+            else:
+                label = capitalize(label)
+            labels[name] = label
 
     return PlotConfig(**new_config_dct)
 

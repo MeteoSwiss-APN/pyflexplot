@@ -8,8 +8,11 @@ import warnings
 from dataclasses import dataclass
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
+from typing import Union
 
 # Third-party
 import cartopy
@@ -26,6 +29,16 @@ from srutils.iter import isiterable
 # Local
 from .formatting import MaxIterationError
 from .summarize import summarizable
+
+# Custom types
+ColorType = Union[str, Tuple[int, int, int], Tuple[int, int, int, int]]
+LocationType = Union[str, int]
+MarkerStyleType = Union[str, int]
+RawTextBlockType = Union[str, Sequence[str]]
+RectType = Tuple[float, float, float, float]
+TextBlockType = List[str]
+RawTextBlocksType = Union[str, Sequence[RawTextBlockType]]
+TextBlocksType = List[TextBlockType]
 
 
 # pylint: disable=W0613  # unused argument (self)
@@ -1161,7 +1174,6 @@ class TextBoxElementText(TextBoxElement):
     def draw(self):
         """Draw text element onto text bot axes."""
         s = self.s
-
         if self.replace_edge_spaces:
             # Preserve trailing whitespace by replacing the first and
             # last space by a visible character
@@ -1171,7 +1183,6 @@ class TextBoxElementText(TextBoxElement):
                 s = self.edge_spaces_replacement_char + s[1:]
             if self.s[-1] == " ":
                 s = s[:-1] + self.edge_spaces_replacement_char
-
         self.box.ax.text(x=self.loc.x, y=self.loc.y, s=s, **self.kwargs)
 
 
@@ -1306,46 +1317,44 @@ class TextBoxElementHLine(TextBoxElement):
     },
 )
 # SR_TODO Refactor to reduce instance attributes and arguments!
+@dataclass
 # pylint: disable=R0902  # too-many-instance-attributes
+# pylint: disable=R0913  # too-many-arguments
 class TextBoxAxes:
-    """Text box axes for FLEXPART plot."""
+    """Text box axes for FLEXPART plot.
 
-    # Show text base line (useful for debugging)
-    _show_baselines = False
+    Args:
+        fig: Figure to which to add the text box axes.
 
-    # pylint: disable=R0913  # too-many-arguments
-    def __init__(
-        self, fig, rect, name, lw_frame=1.0, ec="black", fc="none",
-    ):
-        """Initialize instance of TextBoxAxes.
+        rect: Rectangle [left, bottom, width, height].
 
-        Args:
-            fig (Figure): Figure to which to add the text box axes.
+        name: Name of the text box.
 
-            rect (tuple[float]): Rectangle [left, bottom, width, height].
+        lw_frame (optional): Line width of frame around box. Frame is omitted if
+            ``lw_frame`` is None.
 
-            name (str): Name of the text box.
+        ec (optional): Edge color.
 
-            lw_frame (float, optional): Line width of frame around box. Frame
-                is omitted if ``lw_frame`` is None.
+        fc (optional): Face color.
 
-            ec (str, optional): Edge color.
+    """
 
-            fc (str, optional): Face color.
+    fig: mpl.figure.Figure
+    rect: RectType
+    name: str
+    lw_frame: Optional[float] = 1.0
+    ec: ColorType = "black"
+    fc: ColorType = "none"
+    show_baselines: bool = False  # useful for debugging
 
-        """
-        self.fig = fig
-        self.rect = rect
-        self.name = name
-        self.lw_frame = lw_frame
-        self.ec = ec
-        self.fc = fc
-
-        self.ax = self.fig.add_axes(rect)
+    def __post_init__(self):
+        self.ax = self.fig.add_axes(self.rect)
         self.ax.axis("off")
+        self.ax.set_xlim(0.0, 1.0)
+        self.ax.set_ylim(0.0, 1.0)
 
         # SR_TMP < TODO Clean up!
-        w_rel_fig, h_rel_fig = ax_w_h_in_fig_coords(fig, self.ax)
+        w_rel_fig, h_rel_fig = ax_w_h_in_fig_coords(self.fig, self.ax)
         self.dx_unit = 0.0075 / w_rel_fig
         self.dy_unit = 0.009 / h_rel_fig
         self.pad_x = 1.0 * self.dx_unit
@@ -1372,98 +1381,101 @@ class TextBoxAxes:
         )
         self.ax.add_patch(p)
 
-        if self.lw_frame and self.lw_frame != "none":
+        if self.lw_frame:
             # Enable frame around box
             p.set(edgecolor=self.ec, linewidth=self.lw_frame)
 
         for element in self.elements:
             element.draw()
 
-    def text(self, loc, s, dx=0.0, dy=0.0, **kwargs):
+    def text(
+        self, s: str, loc: LocationType, dx: float = 0.0, dy: float = 0.0, **kwargs
+    ) -> None:
         """Add text positioned relative to a reference location.
 
         Args:
-            loc (int or str): Reference location parameter used to initialize
-                an instance of ``TextBoxLocation``.
+            loc: Reference location parameter used to initialize an instance of
+                ``TextBoxLocation``.
 
-            s (str): Text string.
+            s: Text string.
 
-            dx (float, optional): Horizontal offset in unit distances. May be
-                negative. Defaults to 0.0.
+            dx (optional): Horizontal offset in unit distances. May be negative.
 
-            dy (float, optional): Vertical offset in unit distances. May be
-                negative. Defaults to 0.0.
+            dy (float): Vertical offset in unit distances. May be negative.
 
-            **kwargs: Formatting options passed to ax.text().
+            **kwargs: Formatting options passed to ``ax.text()``.
 
         """
-        loc = TextBoxLocation(self, loc, dx, dy)
-        self.elements.append(TextBoxElementText(self, loc=loc, s=s, **kwargs))
-        if self._show_baselines:
-            self.elements.append(TextBoxElementHLine(self, loc))
+        fancy_loc = TextBoxLocation(self, loc, dx, dy)
+        self.elements.append(TextBoxElementText(self, loc=fancy_loc, s=s, **kwargs))
+        if self.show_baselines:
+            self.elements.append(TextBoxElementHLine(self, fancy_loc))
 
-    def text_block(self, loc, block, colors=None, **kwargs):
+    def text_block(
+        self,
+        block: RawTextBlockType,
+        loc: LocationType,
+        colors: Optional[Sequence[ColorType]] = None,
+        **kwargs,
+    ) -> None:
         """Add a text block comprised of multiple lines.
 
         Args:
-            loc (int or str): Reference location. For details see
+            loc: Reference location. For details see
                 ``TextBoxAxes.text``.
 
-            block (list[str]): Text block.
+            block: Text block.
 
-            colors (list[<color>], optional): Line-specific colors. Defaults to
-                None. If not None, must have same length as ``block``. Omit
-                individual lines with None.
+            colors (optional): Line-specific colors. Defaults to None. If not
+                None, must have same length as ``block``. Omit individual lines
+                with None.
 
             **kwargs: Positioning and formatting options passed to
                 ``TextBoxAxes.text_blocks``.
 
         """
-        self.text_blocks(loc, [block], colors=[colors], **kwargs)
+        blocks_colors: Optional[Sequence[Sequence[ColorType]]]
+        if colors is None:
+            blocks_colors = None
+        else:
+            blocks_colors = [colors]
+        self.text_blocks(blocks=[block], loc=loc, colors=blocks_colors, **kwargs)
 
     # pylint: disable=R0914  # too-many-locals
     def text_blocks(
         self,
-        loc,
-        blocks,
+        blocks: RawTextBlocksType,
+        loc: LocationType,
         *,
-        dy_unit=None,
-        dy_line=None,
-        dy_block=None,
-        reverse=False,
-        colors=None,
+        dy_unit: Optional[float] = None,
+        dy_line: Optional[float] = None,
+        dy_block: Optional[float] = None,
+        colors: Optional[Sequence[Sequence[ColorType]]] = None,
         **kwargs,
-    ):
+    ) -> None:
         """Add multiple text blocks.
 
         Args:
-            loc (int or str): Reference location. For details see
-                ``TextBoxAxes.text``.
+            loc: Reference location. For details see ``TextBoxAxes.text``.
 
-            blocks (list[list[str]]): List of text blocks, each of which
-                constitutes a list of lines.
+            blocks: List of text blocks, each of which constitutes a list of
+                lines.
 
-            dy_unit (float, optional): Initial vertical offset in unit distances.
-                May be negative. Defaults to ``dy_line``.
+            dy_unit (optional): Initial vertical offset in unit distances. May
+                be negative. Defaults to ``dy_line``.
 
-            dy_line (float, optional): Incremental vertical offset between
-                lines. Can be negative. Defaults to 2.5.
+            dy_line (optional): Incremental vertical offset between lines. May
+                be negative. Defaults to 2.5.
 
-            dy_block (float, optional): Incremental vertical offset between
+            dy_block (optional): Incremental vertical offset between
                 blocks of lines. Can be negative. Defaults to ``dy_line``.
 
-            dx (float, optional): Horizontal offset in unit distances. May be
-                negative. Defaults to 0.0.
+            dx (optional): Horizontal offset in unit distances. May be negative.
+                Defaults to 0.0.
 
-            reverse (bool, optional): If True, revert the block and line order.
-                Defaults to False. Note that if line-specific colors are
-                passed, they must be in the same order as the unreversed
-                blocks.
-
-            colors (list[list[<color>]], optional): Line-specific colors in
-                each block. Defaults to None. If not None, must have same shape
-                as ``blocks``. Omit individual blocks or lines in blocks with
-                None.
+            colors (optional): Line-specific colors in each block. If not None,
+                must have same shape as ``blocks``. Omit individual blocks or
+                lines in blocks with None.
 
             **kwargs: Formatting options passed to ``ax.text``.
 
@@ -1478,20 +1490,12 @@ class TextBoxAxes:
         default_color = kwargs.pop("color", kwargs.pop("c", "black"))
         colors_blocks = self._prepare_line_colors(blocks, colors, default_color)
 
-        if reverse:
-            # Revert order of blocks and lines
-            def revert(lsts):
-                return [lst[::-1] for lst in lsts[::-1]]
-
-            blocks = revert(blocks)
-            colors_blocks = revert(colors_blocks)
-
         dy = dy_unit
         for i, block in enumerate(blocks):
             for j, line in enumerate(block):
-                self.text(loc, s=line, dy=dy, color=colors_blocks[i][j], **kwargs)
-                dy += dy_line
-            dy += dy_block
+                self.text(line, loc=loc, dy=dy, color=colors_blocks[i][j], **kwargs)
+                dy -= dy_line
+            dy -= dy_block
 
     @staticmethod
     def _prepare_line_colors(blocks, colors, default_color):
@@ -1520,35 +1524,36 @@ class TextBoxAxes:
 
         return colors_blocks
 
-    def text_block_hfill(self, loc_y, block, **kwargs):
+    def text_block_hfill(
+        self, block: RawTextBlockType, loc_y: LocationType = "t", **kwargs
+    ) -> None:
         """Single block of horizontally filled lines.
 
         Args:
-            loc_y (int or str): Vertical reference location. For details see
-                ``TextBoxAxes.text`` (vertical component only).
+            block: Text block. See docstring of method ``text_blocks_hfill``
+                for details.
 
-            block (str or list[str] or ...): Text block. See docstring of
-                method ``text_blocks_hfill`` for details.
+            loc_y: Vertical reference location. For details see
+                ``TextBoxAxes.text`` (vertical component only).
 
             **kwargs: Additional keyword arguments passed on to method
                 ``text_blocks_hfill``.
 
         """
-        self.text_blocks_hfill(loc_y, [block], **kwargs)
+        blocks: Sequence[RawTextBlockType] = [block]
+        self.text_blocks_hfill(blocks, loc_y, **kwargs)
 
-    def text_blocks_hfill(self, loc_y, blocks, **kwargs):
+    def text_blocks_hfill(
+        self, blocks: RawTextBlocksType, loc_y: LocationType = "t", **kwargs,
+    ) -> None:
         r"""Add blocks of horizontally-filling lines.
 
         Lines are split at a tab character ('\t'), with the text before the tab
         left-aligned, and the text after right-aligned.
 
         Args:
-            loc_y (int or str): Vertical reference location. For details see
-                ``TextBoxAxes.text`` (vertical component only).
-
-            blocks (str or list[str] or ...): Text blocks, each of which
-                consists of lines, each of which in turn consists of a left and
-                right part. Possible formats:
+            blocks: Text blocks, each of which consists of lines, each of which
+                in turn consists of a left and right part. Possible formats:
 
                  - The blocks can be a multiline string, with empty lines
                    separating the individual blocks; or a list.
@@ -1562,39 +1567,51 @@ class TextBoxAxes:
                  - Lines represented by a string are split into a left and
                    right part at the first tab character ('\t').
 
+            loc_y: Vertical reference location. For details see
+                ``TextBoxAxes.text`` (vertical component only).
+
             **kwargs: Location and formatting options passed to
                 ``TextBoxAxes.text_blocks``.
 
         """
+        prepared_blocks = self._prepare_text_blocks(blocks)
+        blocks_l, blocks_r = self._split_lines_horizontally(prepared_blocks)
+        self.text_blocks(blocks_l, f"{loc_y}l", **kwargs)
+        self.text_blocks(blocks_r, f"{loc_y}r", **kwargs)
 
+    def _prepare_text_blocks(self, blocks: RawTextBlocksType) -> TextBlocksType:
+        """Turn multiline strings (shorthand notation) into lists of strings."""
+        blocks_lst: TextBlocksType = []
+        block_or_blocks: Union[Sequence[str], Sequence[Sequence[str]]]
         if isinstance(blocks, str):
-            # Whole blocks is a multiline string
             blocks = blocks.strip().split("\n\n")
-
-        # Handle case where a multiblock string is embedded
-        # in a blocks list alongside string or list blocks
-        blocks_orig, blocks = blocks, []
-        for block in blocks_orig:
-            if isinstance(block, str):
-                # Possible multiblock string (if with empty line)
-                for subblock in block.strip().split("\n\n"):
-                    blocks.append(subblock)
+        assert isinstance(blocks, Sequence)  # mypy
+        for block_or_blocks in blocks:
+            blocks_i: RawTextBlocksType
+            if isinstance(block_or_blocks, str):
+                blocks_i = block_or_blocks.strip().split("\n\n")
             else:
-                # List block
-                blocks.append(block)
+                blocks_i = [block_or_blocks]
+            block: RawTextBlockType
+            for block in blocks_i:
+                blocks_lst.append([])
+                if isinstance(block, str):
+                    block = block.strip().split("\n")
+                assert isinstance(block, Sequence)  # mypy
+                line: str
+                for line in block:
+                    blocks_lst[-1].append(line)
+        return blocks_lst
 
-        # Separate left and right parts of lines
-        blocks_l, blocks_r = [], []
+    def _split_lines_horizontally(
+        self, blocks: Sequence[Sequence[str]]
+    ) -> Tuple[List[List[str]], List[List[str]]]:
+        blocks_l: TextBlocksType = []
+        blocks_r: TextBlocksType = []
         for block in blocks:
-
-            if isinstance(block, str):
-                # Turn multiline block into list block
-                block = block.strip().split("\n")
-
             blocks_l.append([])
             blocks_r.append([])
             for line in block:
-
                 # Obtain left and right part of line
                 if isinstance(line, str):
                     if "\t" not in line:
@@ -1604,16 +1621,9 @@ class TextBoxAxes:
                     str_l, str_r = line
                 else:
                     raise ValueError(f"invalid line: {line}")
-
                 blocks_l[-1].append(str_l)
                 blocks_r[-1].append(str_r)
-
-        dx_l = kwargs.pop("dx", None)
-        dx_r = None if dx_l is None else -dx_l
-
-        # Add lines to box
-        self.text_blocks("bl", blocks_l, dx=dx_l, **kwargs)
-        self.text_blocks("br", blocks_r, dx=dx_r, **kwargs)
+        return blocks_l, blocks_r
 
     def sample_labels(self):
         """Add sample text labels in corners etc."""
@@ -1628,30 +1638,34 @@ class TextBoxAxes:
         self.text("tc", "top center", **kwargs)
         self.text("tr", "top right", **kwargs)
 
-    def show_baselines(self, val=True):
-        """Show or hide the base line of a text command (for debugging)."""
-        self._show_baselines = val
-
-    def color_rect(self, loc, fc, ec=None, dx=0.0, dy=0.0, w=3.0, h=2.0, **kwargs):
+    def color_rect(
+        self,
+        loc: LocationType,
+        fc: ColorType,
+        ec: Optional[ColorType] = None,
+        dx: float = 0.0,
+        dy: float = 0.0,
+        w: float = 3.0,
+        h: float = 2.0,
+        **kwargs,
+    ) -> None:
         """Add a colored rectangle.
 
         Args:
-            loc (int or str): Reference location parameter used to initialize
-                an instance of ``TextBoxLocation``.
+            loc: Reference location parameter used to initialize an instance of
+                ``TextBoxLocation``.
 
-            fc (str or typle[float]): Face color.
+            fc: Face color.
 
-            ec (<color>, optional): Edge color. Defaults to face color.
+            ec (optional): Edge color. Defaults to face color.
 
-            dx (float, optional): Horizontal offset in unit distances. May be
-                negative. Defaults to 0.0.
+            dx (optional): Horizontal offset in unit distances. May be negative.
 
-            dy (float, optional): Vertical offset in unit distances. May be
-                negative. Defaults to 0.0.
+            dy (optional): Vertical offset in unit distances. May be negative.
 
-            w (float, optional): Width in unit distances. Defaults to 3.0.
+            w (optional): Width in unit distances.
 
-            h (float, optional): Height in unit distances. Defaults to 2.0.
+            h (optional): Height in unit distances.
 
             **kwargs: Keyword arguments passed to
                 ``matplotlib.patches.Rectangle``.
@@ -1659,38 +1673,43 @@ class TextBoxAxes:
         """
         if ec is None:
             ec = fc
-        loc = TextBoxLocation(self, loc, dx, dy)
+        fancy_loc = TextBoxLocation(self, loc, dx, dy)
         self.elements.append(
-            TextBoxElementColorRect(self, loc, w=w, h=h, fc=fc, ec=ec, **kwargs)
+            TextBoxElementColorRect(self, fancy_loc, w=w, h=h, fc=fc, ec=ec, **kwargs)
         )
-        if self._show_baselines:
-            self.elements.append(TextBoxElementHLine(self, loc))
+        if self.show_baselines:
+            self.elements.append(TextBoxElementHLine(self, fancy_loc))
 
-    def marker(self, loc, marker, dx=0.0, dy=0.0, **kwargs):
+    def marker(
+        self,
+        loc: LocationType,
+        marker: MarkerStyleType,
+        dx: float = 0.0,
+        dy: float = 0.0,
+        **kwargs,
+    ) -> None:
         """Add a marker symbol.
 
         Args:
-            loc (int or str): Reference location parameter used to initialize
-                an instance of ``TextBoxLocation``.
+            loc: Reference location parameter used to initialize an instance of
+                ``TextBoxLocation``.
 
-            marker (str or int): Marker style passed to ``mpl.plot``. See
+            marker: Marker style passed to ``mpl.plot``. See
                 ``matplotlib.markers`` for more information.
 
-            dx (float, optional): Horizontal offset in unit distances. May be
-                negative. Defaults to 0.0.
+            dx (optional): Horizontal offset in unit distances. May be negative.
 
-            dy (float, optional): Vertical offset in unit distances. May be
-                negative. Defaults to 0.0.
+            dy (optional): Vertical offset in unit distances. May be negative.
 
             **kwargs: Keyword arguments passed to ``mpl.plot``.
 
         """
-        loc = TextBoxLocation(self, loc, dx, dy)
-        self.elements.append(TextBoxElementMarker(self, loc, m=marker, **kwargs))
-        if self._show_baselines:
-            self.elements.append(TextBoxElementHLine(self, loc))
+        fancy_loc = TextBoxLocation(self, loc, dx, dy)
+        self.elements.append(TextBoxElementMarker(self, fancy_loc, m=marker, **kwargs))
+        if self.show_baselines:
+            self.elements.append(TextBoxElementHLine(self, fancy_loc))
 
-    def fit_text(self, s, size, **kwargs):
+    def fit_text(self, s: str, size: float, **kwargs) -> str:
         return TextFitter(self.ax, dx_unit=self.dx_unit, **kwargs).fit(s, size)
 
 
@@ -2084,19 +2103,16 @@ class TextBoxLocation:
         self.pad_y = parent.pad_y
 
     def _determine_loc_components(self, loc):
-        """Split and evaluate components of location parameter."""
-
+        """Evaluate vertical and horizontal location parameter components."""
         loc = str(loc)
-
-        # Split location into vertical and horizontal part
         if len(loc) == 2:
             loc_y, loc_x = loc
         elif loc == "center":
             loc_y, loc_x = loc, loc
-        else:
+        elif " " in loc:
             loc_y, loc_x = loc.split(" ", 1)
-
-        # Evaluate location components
+        else:
+            raise ValueError("invalid location parameter", loc)
         self.loc_y = self._standardize_loc_y(loc_y)
         self.loc_x = self._standardize_loc_x(loc_x)
         self.loc = f"{self.loc_y}{self.loc_x}"

@@ -43,22 +43,28 @@ from .words import WORDS
 RectType = Tuple[float, float, float, float]
 
 
-def fill_box_top_left(box: TextBoxAxes, plot: "Plot") -> None:
-    for position, label in plot.config.labels.get("top_left", {}).items():
+def fill_box_top(box: TextBoxAxes, plot: "Plot") -> None:
+    for position, label in plot.config.labels.get("top", {}).items():
         if position == "tl":
             font_size = plot.config.font_sizes.title_large
         else:
             font_size = plot.config.font_sizes.content_large
-        box.text(position, label, fontname=plot.config.font_name, size=font_size)
+        box.text(label, loc=position, fontname=plot.config.font_name, size=font_size)
 
 
-def fill_box_top_right(box: TextBoxAxes, plot: "Plot") -> None:
-    for position, label in plot.config.labels.get("top_right", {}).items():
-        box.text(
-            position,
-            label,
+def fill_box_right_top(box: TextBoxAxes, plot: "Plot") -> None:
+    try:
+        lines = plot.config.labels["right_top"]["lines"]
+    except KeyError:
+        return
+    else:
+        box.text_block_hfill(
+            lines,
+            # dy_unit=-4.0,
+            dy_unit=0.0,
+            dy_line=2.5,
             fontname=plot.config.font_name,
-            size=plot.config.font_sizes.content_medium,
+            size=plot.config.font_sizes.content_small,
         )
 
 
@@ -66,15 +72,22 @@ def fill_box_top_right(box: TextBoxAxes, plot: "Plot") -> None:
 # pylint: disable=R0913   # too-many-arguments
 # pylint: disable=R0914   # too-many-locals
 # pylint: disable=R0915   # too-many-statements
-def fill_box_right_top(box: TextBoxAxes, plot: "Plot") -> None:
+def fill_box_right_middle(box: TextBoxAxes, plot: "Plot") -> None:
     """Fill the top box to the right of the map plot."""
 
+    labels = plot.config.labels["right_middle"]
+
+    # Box title
+    box.text(
+        labels["title_unit"],
+        loc="tc",
+        fontname=plot.config.font_name,
+        size=plot.config.font_sizes.title_small,
+    )
+
     dy_line: float = 3.0
-    dy0_markers: float = 0.25
     w_box: float = 4.0
     h_box: float = 2.0
-
-    labels = plot.config.labels["right_top"]
 
     dx_box: float = -10
     dx_label: float = -3
@@ -82,26 +95,9 @@ def fill_box_right_top(box: TextBoxAxes, plot: "Plot") -> None:
     dx_marker: float = dx_box + 0.5 * w_box
     dx_marker_label: float = dx_label
 
-    # Color boxes (legend)
-
     # Vertical position of legend (depending on number of levels)
-    assert plot.config.n_levels is not None  # mypy
-    _f = (
-        plot.config.n_levels
-        + int(plot.config.extend in ["min", "both"])
-        + int(plot.config.extend in ["max", "both"])
-    )
-    dy0_labels = 22.5 - 1.5 * _f
-    dy0_boxes = dy0_labels - 0.2 * h_box
-
-    # Box title
-    box.text(
-        "tc",
-        s=labels["title_unit"],
-        dy=1.5,
-        fontname=plot.config.font_name,
-        size=plot.config.font_sizes.title_small,
-    )
+    dy0_labels = -5.0
+    dy0_boxes = dy0_labels - 0.8 * h_box
 
     # Format level ranges (contour plot legend)
     legend_labels = format_level_ranges(
@@ -114,12 +110,11 @@ def fill_box_right_top(box: TextBoxAxes, plot: "Plot") -> None:
 
     # Legend labels (level ranges)
     box.text_block(
-        "bc",
         legend_labels,
+        loc="tc",
         dy_unit=dy0_labels,
         dy_line=dy_line,
         dx=dx_label,
-        reverse=plot.config.reverse_legend,
         ha="left",
         fontname=plot.config.font_name,
         size=plot.config.font_sizes.content_medium,
@@ -128,12 +123,10 @@ def fill_box_right_top(box: TextBoxAxes, plot: "Plot") -> None:
 
     # Legend color boxes
     colors = colors_from_plot_config(plot.config)
-    if plot.config.reverse_legend:
-        colors = colors[::-1]
     dy = dy0_boxes
     for color in colors:
         box.color_rect(
-            loc="bc",
+            loc="tc",
             x_anker="left",
             dx=dx_box,
             dy=dy,
@@ -143,23 +136,22 @@ def fill_box_right_top(box: TextBoxAxes, plot: "Plot") -> None:
             ec="black",
             lw=1.0,
         )
-        dy += dy_line
+        dy -= dy_line
 
-    n_markers = plot.config.mark_release_site + plot.config.mark_field_max
-    dy0_marker_i = dy0_markers + (2 - n_markers) * dy_line / 2
+    dy0_markers = dy0_boxes - dy_line * (len(legend_labels) - 0.3)
+    dy0_marker = dy0_markers
 
     # Release site marker
     if plot.config.mark_release_site:
-        dy_site_label = dy0_marker_i
-        dy0_marker_i += dy_line
-        dy_site_marker = dy_site_label + 0.7
+        dy_site_label = dy0_marker
+        dy0_marker -= dy_line
+        dy_site_marker = dy_site_label - 0.7
         box.marker(
-            loc="bc", dx=dx_marker, dy=dy_site_marker, **plot.config.markers["site"],
+            loc="tc", dx=dx_marker, dy=dy_site_marker, **plot.config.markers["site"],
         )
-        s = labels["release_site"]
         box.text(
-            loc="bc",
-            s=s,
+            s=labels["release_site"],
+            loc="tc",
             dx=dx_marker_label,
             dy=dy_site_label,
             ha="left",
@@ -169,11 +161,11 @@ def fill_box_right_top(box: TextBoxAxes, plot: "Plot") -> None:
 
     # Field maximum marker
     if plot.config.mark_field_max:
-        dy_marker_label_max = dy0_marker_i
-        dy0_marker_i += dy_line
-        dy_max_marker = dy_marker_label_max + 0.7
+        dy_marker_label_max = dy0_marker
+        dy0_marker -= dy_line
+        dy_max_marker = dy_marker_label_max - 0.7
         box.marker(
-            loc="bc", dx=dx_marker, dy=dy_max_marker, **plot.config.markers["max"],
+            loc="tc", dx=dx_marker, dy=dy_max_marker, **plot.config.markers["max"],
         )
         s = f"{labels['max']}: "
         if np.isnan(plot.field.fld).all():
@@ -195,8 +187,8 @@ def fill_box_right_top(box: TextBoxAxes, plot: "Plot") -> None:
             else:
                 s += f"{fld_max:.2E}"
         box.text(
-            loc="bc",
             s=s,
+            loc="tc",
             dx=dx_marker_label,
             dy=dy_marker_label_max,
             ha="left",
@@ -212,11 +204,9 @@ def fill_box_right_bottom(box: TextBoxAxes, plot: "Plot") -> None:
     mdata = plot.config.mdata
 
     # Box title
-    # SR_TODO Fix positioning in box so dy=-1.0 can be removed!
     box.text(
-        "tc",
-        labels["title"],
-        dy=-1.0,
+        s=labels["title"],
+        loc="tc",
         fontname=plot.config.font_name,
         size=plot.config.font_sizes.title_small,
     )
@@ -261,14 +251,10 @@ def fill_box_right_bottom(box: TextBoxAxes, plot: "Plot") -> None:
     )
 
     # Add lines bottom-up (to take advantage of baseline alignment)
-    dy_unit = 1.5
-    dy = 2.5
     box.text_blocks_hfill(
-        "b",
-        dy_unit=dy_unit,
-        dy_line=dy,
-        blocks=info_blocks,
-        reverse=True,
+        info_blocks,
+        dy_unit=-4.0,
+        dy_line=2.5,
         fontname=plot.config.font_name,
         size=plot.config.font_sizes.content_small,
     )
@@ -282,20 +268,20 @@ def fill_box_bottom(box: TextBoxAxes, plot: "Plot") -> None:
     # FLEXPART/model info
     s = plot.config.model_info
     box.text(
-        "tl",
+        s=s,
+        loc="tl",
         dx=-0.7,
         dy=0.5,
-        s=s,
         fontname=plot.config.font_name,
         size=plot.config.font_sizes.content_small,
     )
 
     # MeteoSwiss Copyright
     box.text(
-        "tr",
+        s=labels["copyright"],
+        loc="tr",
         dx=0.7,
         dy=0.5,
-        s=labels["copyright"],
         fontname=plot.config.font_name,
         size=plot.config.font_sizes.content_small,
     )
@@ -343,7 +329,7 @@ class Plot:
         layout = PlotLayout(aspect=self.config.fig_aspect)
         self.fig = plt.figure(figsize=self.config.fig_size)
         self.ax_map = MapAxes.create(
-            self.map_conf, fig=self.fig, rect=layout.rect_center_left, field=self.field,
+            self.map_conf, fig=self.fig, rect=layout.rect_center, field=self.field,
         )
         self._add_text_boxes(layout)
         self._draw_colors_contours()
@@ -384,11 +370,13 @@ class Plot:
 
     # pylint: disable=R0914  # too-many-locals
     def _add_text_boxes(self, layout):
-        self.add_text_box("top_left", layout.rect_top_left, fill_box_top_left)
-        self.add_text_box("top_right", layout.rect_top_right, fill_box_top_right)
-        self.add_text_box("right_top", layout.rect_center_right_top, fill_box_right_top)
+        self.add_text_box("top", layout.rect_top, fill_box_top)
+        self.add_text_box("right_top", layout.rect_right_top, fill_box_right_top)
         self.add_text_box(
-            "right_bottom", layout.rect_center_right_bottom, fill_box_right_bottom
+            "right_middle", layout.rect_right_middle, fill_box_right_middle
+        )
+        self.add_text_box(
+            "right_bottom", layout.rect_right_bottom, fill_box_right_bottom
         )
         self.add_text_box("bottom", layout.rect_bottom, fill_box_bottom, frame_on=False)
 

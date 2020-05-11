@@ -42,7 +42,7 @@ class Test_TextBoxAxes_Summarize:
 
     def test_text_line(self):
         box = self.create_text_box("text_line")
-        box.text("bl", "lower-left", dx=1.6, dy=0.8)
+        box.text("lower-left", loc="bl", dx=1.6, dy=0.8)
         res = box.summarize(**self.kwargs_summarize)
         sol = {
             "name": "text_line",
@@ -65,7 +65,7 @@ class Test_TextBoxAxes_Summarize:
 
     def test_text_block(self):
         box = self.create_text_box("text_block")
-        box.text_block("mc", [("foo", "bar"), ("hello", "world")])
+        box.text_block(loc="mc", block=[("foo", "bar"), ("hello", "world")])
         res = box.summarize(**self.kwargs_summarize)
         sol = {
             **self.sol_base,
