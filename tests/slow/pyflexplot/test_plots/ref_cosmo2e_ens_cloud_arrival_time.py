@@ -352,9 +352,9 @@ plot_summary = {
     "type": "Plot",
     "ax_map": {"type": "MapAxesRotatedPole"},
     "boxes": {
-        "method:Plot.fill_box_top_left": {
+        "top_left": {
             "type": "TextBoxAxes",
-            "name": "top/left",
+            "name": "top_left",
             "rect": [0.0, 0.92, 0.7872, 0.08],
             "lw_frame": 1.0,
             "dx_unit": 0.009527439024390244,
@@ -474,9 +474,9 @@ plot_summary = {
                 },
             ],
         },
-        "method:Plot.fill_box_top_right": {
+        "top_right": {
             "type": "TextBoxAxes",
-            "name": "top/right",
+            "name": "top_right",
             "rect": [0.8, 0.92, 0.2, 0.08],
             "lw_frame": 1.0,
             "dx_unit": 0.037500000000000006,
@@ -540,9 +540,9 @@ plot_summary = {
                 },
             ],
         },
-        "method:Plot.fill_box_right_top": {
+        "right_top": {
             "type": "TextBoxAxes",
-            "name": "right/top",
+            "name": "right_top",
             "rect": [0.8, 0.5, 0.2, 0.4],
             "lw_frame": 1.0,
             "dx_unit": 0.037500000000000006,
@@ -1182,9 +1182,9 @@ plot_summary = {
                 },
             ],
         },
-        "method:Plot.fill_box_right_bottom": {
+        "right_bottom": {
             "type": "TextBoxAxes",
-            "name": "right/bottom",
+            "name": "right_bottom",
             "rect": [0.8, 0.05, 0.2, 0.43],
             "lw_frame": 1.0,
             "dx_unit": 0.037500000000000006,
@@ -2032,7 +2032,7 @@ plot_summary = {
                 },
             ],
         },
-        "method:Plot.fill_box_bottom": {
+        "bottom": {
             "type": "TextBoxAxes",
             "name": "bottom",
             "rect": [0.0, 0.0, 1.0, 0.05],

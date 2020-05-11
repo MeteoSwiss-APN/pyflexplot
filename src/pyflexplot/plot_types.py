@@ -31,7 +31,10 @@ from .setup import InputSetup
 from .words import TranslatedWords
 from .words import Words
 
+# Custom types
 ColorType = Union[str, Tuple[int, int, int], Tuple[int, int, int, int]]
+FontSizeType = Union[str, float]
+RectType = Tuple[float, float, float, float]
 
 
 def create_map_conf(field: Field) -> MapAxesConf:
@@ -88,9 +91,6 @@ def create_map_conf(field: Field) -> MapAxesConf:
     return MapAxesConf(**conf)
 
 
-FontSizeType = Union[str, float]
-
-
 @dataclass
 class FontSizes:
     title_large: FontSizeType = 14.0
@@ -99,9 +99,6 @@ class FontSizes:
     content_large: FontSizeType = 12.0
     content_medium: FontSizeType = 10.0
     content_small: FontSizeType = 9.0
-
-
-RectType = Tuple[float, float, float, float]
 
 
 @dataclass
@@ -198,6 +195,21 @@ class PlotConfig(BaseModel):
     lw_frame: float = 1.0
     mark_field_max: bool = True
     mark_release_site: bool = True
+    markers: Dict[str, Dict[str, Any]] = {
+        "max": {
+            "marker": "+",
+            "color": "black",
+            "markersize": 10,
+            "markeredgewidth": 1.5,
+        },
+        "site": {
+            "marker": "^",
+            "markeredgecolor": "red",
+            "markerfacecolor": "white",
+            "markersize": 7.5,
+            "markeredgewidth": 1.5,
+        },
+    }
     model_info: str = ""  # SR_TODO sensible default
     n_levels: Optional[int] = None  # SR_TODO sensible default
     reverse_legend: bool = False
@@ -419,8 +431,8 @@ def colors_flexplot(n_levels: int, extend: str) -> Sequence[ColorType]:
     color_under = "darkgray"
     color_over = "lightgray"
 
-    def rgb(*vals):
-        return np.array(vals, float) / 255
+    # def rgb(*vals):
+    #     return np.array(vals, float) / 255
 
     # colors_core_8_old = [
     #     rgb(224, 196, 172),
