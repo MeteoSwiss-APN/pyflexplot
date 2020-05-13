@@ -406,7 +406,7 @@ def plot_fields(
     dry_run: bool = False,
     *,
     write: bool = True,
-) -> Iterator[Tuple[str, Plot]]:
+) -> Iterator[Tuple[str, Optional[Plot]]]:
     """Create plots while yielding them with the plot file path one by one."""
     for field, mdata in zip(fields, mdata_lst):
         setup = field.var_setups.compress()
@@ -464,10 +464,8 @@ def _replace_format_keys(path: str, kwargs: Mapping[str, Any]) -> str:
 
             # Obtain format specifier (if there is one)
             try:
-                f = m.group(1)
+                f = m.group(1) or ""
             except IndexError:
-                f = None
-            if not f:
                 f = ""
 
             # Format the string that replaces this format key in the path

@@ -408,13 +408,13 @@ def create_plot_config(
                 f"{words['cloud_density'].c}:\t{words['minimum', 'abbr']}"
                 f" {setup.ens_param_thr} {mdata.format('variable_unit')}"
             )
+            n_min: int = setup.ens_param_mem_min or 1
+            n_tot: int = len((setup.ens_member_id or []))
             new_config_dct["labels"]["right_top"]["lines"].append(
                 f"{words['number_of', 'abbr'].c} {words['member', 'pl']}:"
-                f"\t{words['minimum', 'abbr']}"
-                f" {setup.ens_param_mem_min}"
+                f"\t{words['minimum', 'abbr']} {setup.ens_param_mem_min}"
                 r"$\,/\,$"
-                f"{len(setup.ens_member_id)}"
-                f" ({setup.ens_param_mem_min/len(setup.ens_member_id):.0%})"
+                f"{n_tot} ({n_min/(n_tot or 1):.0%})"
             )
             if setup.plot_type == "ens_cloud_arrival_time":
                 long_name = f"{words['cloud_arrival_time']}"

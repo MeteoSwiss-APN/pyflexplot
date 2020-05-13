@@ -132,6 +132,7 @@ def format_float(
         return fe0
 
 
+# pylint: disable=R0913  # too-many-arguments
 def format_range(
     numbers: Collection[float],
     fmt: str = "g",
@@ -179,11 +180,9 @@ def format_range(
         formatted_numbers: List[str] = []
         for number in numbers_to_format:
             try:
-                formatted_number = template.format(num=number)
+                formatted_numbers.append(template.format(num=number))
             except ValueError:
                 raise Exception("cannot format number with template", number, template)
-            else:
-                formatted_numbers.append(formatted_number)
         formatted_numbers_and_ranges.append(join.join(formatted_numbers))
     return join_others.join(formatted_numbers_and_ranges)
 

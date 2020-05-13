@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import MutableMapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -19,6 +20,8 @@ import cartopy
 import geopy.distance
 import matplotlib as mpl
 import numpy as np
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from pydantic import BaseModel
 from pydantic import root_validator
 from pydantic import validator
@@ -42,15 +45,17 @@ TextBlocksType = List[TextBlockType]
 
 
 # pylint: disable=W0613  # unused argument (self)
-def post_summarize_plot(self, summary):
+def post_summarize_plot(
+    self, summary: MutableMapping[str, Any]
+) -> MutableMapping[str, Any]:
     """Method to post-process summary dict of plot class.
 
     Convert elements like figures and axes into human-readable summaries of
     themselves, provided that they have been specified as to be summarized.
 
     """
-    cls_fig = mpl.figure.Figure
-    cls_axs = mpl.axes.Axes
+    cls_fig = Figure
+    cls_axs = Axes
     cls_bbox = (mpl.transforms.Bbox, mpl.transforms.TransformedBbox)
     for key, val in summary.items():
         if isinstance(val, cls_fig):
@@ -62,7 +67,7 @@ def post_summarize_plot(self, summary):
     return summary
 
 
-def summarize_mpl_figure(obj):
+def summarize_mpl_figure(obj: Any) -> Dict[str, Any]:
     """Summarize a matplotlib ``Figure`` instance in a dict."""
     summary = {
         "type": type(obj).__name__,
@@ -73,7 +78,7 @@ def summarize_mpl_figure(obj):
     return summary
 
 
-def summarize_mpl_axes(obj):
+def summarize_mpl_axes(obj: Any) -> Dict[str, Any]:
     """Summarize a matplotlib ``Axes`` instance in a dict."""
     summary = {
         "type": type(obj).__name__,
@@ -82,7 +87,7 @@ def summarize_mpl_axes(obj):
     return summary
 
 
-def summarize_mpl_bbox(obj):
+def summarize_mpl_bbox(obj: Any) -> Dict[str, Any]:
     """Summarize a matplotlib ``Bbox`` instance in a dict."""
     summary = {
         "type": type(obj).__name__,
@@ -202,31 +207,31 @@ class MapAxesConf(BaseModel):
 
 # pylint: disable=R0902  # too-many-instance-attributes
 @summarizable(post_summarize=post_summarize_plot)
+@dataclass
 class MapAxes:
-    """Map plot axes for regular lat/lon data."""
+    """Map plot axes for regular lat/lon data.
 
-    # water_color = cartopy.feature.COLORS["water"]
-    water_color = "lightskyblue"
+    Args:
+        fig: Figure to which to map axes is added.
 
-    def __init__(self, *, fig, rect, lat, lon, conf):
-        """Initialize instance of MapAxesRotatedPole.
+        rect: Rectangle in figure coordinates.
 
-        Args:
-            fig (Figure): Figure to which to map axes is added.
+        lat: Latitude coordinates.
 
-            rect (tuple[float]): Rectangle in figure coordinates.
+        lon: Longitude coordinates.
 
-            lat (ndarray[float]): Latitude coordinates.
+        conf: Map axes setup.
 
-            lon (ndarray[float]): Longitude coordinates.
+    """
 
-            conf (MapAxesConf): Map axes setup.
+    fig: Figure
+    rect: RectType
+    lat: np.ndarray
+    lon: np.ndarray
+    conf: MapAxesConf
+    water_color: ColorType = "lightskyblue"
 
-        """
-        self.fig = fig
-        self.lat = lat
-        self.lon = lon
-        self.conf = conf
+    def __post_init__(self) -> None:
 
         # Determine zorder of unique plot elements, from low to high
         zorders_const = [
@@ -245,7 +250,7 @@ class MapAxes:
         self.prepare_projections()
 
         # Initialize plot
-        self.ax = self.fig.add_axes(rect, projection=self.proj_map)
+        self.ax = self.fig.add_axes(self.rect, projection=self.proj_map)
         self.ax.set_adjustable("datalim")
         self.ax.outline_patch.set_edgecolor("none")
 
@@ -302,16 +307,18 @@ class MapAxes:
         )
 
     @classmethod
-    def create(cls, conf, *, fig, rect, field):
+    def create(
+        cls, conf: MapAxesConf, *, fig: Figure, rect: RectType, field: np.ndarray,
+    ) -> "MapAxes":
         if field.rotated_pole:
             return MapAxesRotatedPole.create(conf, fig=fig, rect=rect, field=field)
         else:
             return cls(fig=fig, lat=field.lat, rect=rect, lon=field.lon, conf=conf)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{type(self).__name__}(<TODO>)"  # SR_TODO
 
-    def prepare_projections(self):
+    def prepare_projections(self) -> None:
         """Prepare projections to transform the data for plotting."""
 
         # Projection of input data
@@ -323,7 +330,7 @@ class MapAxes:
         # Geographical projection
         self.proj_geo = cartopy.crs.PlateCarree()
 
-    def add_data_domain_outline(self):
+    def add_data_domain_outline(self) -> None:
         """Add domain outlines to map plot."""
         lon0, lon1 = self.lon[[0, -1]]
         lat0, lat1 = self.lat[[0, -1]]
@@ -331,9 +338,8 @@ class MapAxes:
         ys = [lat0, lat0, lat1, lat1, lat0]
         self.ax.plot(xs, ys, transform=self.proj_data, c="black", lw=1)
 
-    def add_geography(self):
-        """Add geographic elements: coasts, countries, colors, ...
-        """
+    def add_geography(self) -> None:
+        """Add geographic elements: coasts, countries, colors, etc."""
         self.ax.coastlines(resolution=self.conf.geo_res)
         self.ax.background_patch.set_facecolor(self.water_color)
         self.add_countries("lowest")
@@ -342,7 +348,7 @@ class MapAxes:
         self.add_countries("geo_upper")
         self.add_cities()
 
-    def add_countries(self, zorder_key):
+    def add_countries(self, zorder_key: str) -> None:
         facecolor = "white" if zorder_key == "lowest" else "none"
         linewidth = 1 if zorder_key == "lowest" else 1 / 3
         self.ax.add_feature(
@@ -357,7 +363,7 @@ class MapAxes:
             zorder=self.zorder[zorder_key],
         )
 
-    def add_lakes(self, zorder_key):
+    def add_lakes(self, zorder_key: str) -> None:
         self.ax.add_feature(
             cartopy.feature.NaturalEarthFeature(
                 category="physical",
@@ -380,7 +386,7 @@ class MapAxes:
                 zorder=self.zorder[zorder_key],
             )
 
-    def add_rivers(self, zorder_key):
+    def add_rivers(self, zorder_key: str) -> None:
         linewidth = {"lowest": 1, "geo_lower": 1, "geo_upper": 2 / 3}[zorder_key]
 
         # SR_WORKAROUND <
@@ -440,10 +446,10 @@ class MapAxes:
                 self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
         # SR_WORKAROUND >
 
-    def add_cities(self):
+    def add_cities(self) -> None:
         """Add major cities, incl. all capitals."""
 
-        def is_visible(city):
+        def is_visible(city) -> bool:
             """Check if a point is inside the domain."""
 
             plon, plat = city.geometry.x, city.geometry.y
@@ -463,6 +469,7 @@ class MapAxes:
             # Not behind reference distance indicator box
             pxa, pya = self._transform_xy_geo_to_axes(plon, plat)
             rdb = self.ref_dist_box
+            assert rdb is not None  # mypy
             behind_rdb = is_in_box(
                 pxa, pya, rdb.x0_box, rdb.x1_box, rdb.y0_box, rdb.y1_box,
             )
@@ -1339,7 +1346,7 @@ class TextBoxAxes:
 
     """
 
-    fig: mpl.figure.Figure
+    fig: Figure
     rect: RectType
     name: str
     lw_frame: Optional[float] = 1.0
