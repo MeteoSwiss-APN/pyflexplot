@@ -23,6 +23,7 @@ from pydantic import BaseModel
 
 # Local
 from .data import Field
+from .formatting import format_range
 from .meta_data import MetaData
 from .meta_data import format_unit
 from .meta_data import get_integr_type
@@ -112,7 +113,8 @@ class PlotLayout:
     y_pad: float = 0.02
     h_top: float = 0.08
     w_right: float = 0.2
-    h_crbot: float = 0.43
+    h_rigtop: float = 0.15
+    h_rigbot: float = 0.42
     h_bottom: float = 0.05
 
     def __post_init__(self):
@@ -129,11 +131,13 @@ class PlotLayout:
         self.x1_left: float = self.x0_right - self.x_pad
         self.x0_left: float = self.x0_tot
         self.w_left: float = self.x1_left - self.x0_left
-        self.y0_crbot: float = self.y0_center
-        self.y1_crbot: float = self.y0_crbot + self.h_crbot
-        self.y1_crtop: float = self.y1_center
-        self.y0_crtop: float = self.y1_crbot + self.y_pad
-        self.h_crtop: float = self.y1_crtop - self.y0_crtop
+        self.y0_rigbot: float = self.y0_center
+        self.y1_rigtop: float = self.y1_tot
+        self.y0_rigtop: float = self.y1_rigtop - self.h_rigtop
+        self.y1_rigbot: float = self.y0_rigbot + self.h_rigbot
+        self.y1_rigmid: float = self.y0_rigtop - self.y_pad
+        self.y0_rigmid: float = self.y1_rigbot + self.y_pad
+        self.h_rigmid: float = self.y1_rigmid - self.y0_rigmid
         self.rect_top: RectType = (self.x0_left, self.y0_top, self.w_left, self.h_top)
         self.rect_center: RectType = (
             self.x0_left,
@@ -143,21 +147,21 @@ class PlotLayout:
         )
         self.rect_right_top: RectType = (
             self.x0_right,
-            self.y0_top,
+            self.y0_rigtop,
             self.w_right,
-            self.h_top,
+            self.h_rigtop,
         )
         self.rect_right_middle: RectType = (
             self.x0_right,
-            self.y0_crtop,
+            self.y0_rigmid,
             self.w_right,
-            self.h_crtop,
+            self.h_rigmid,
         )
         self.rect_right_bottom: RectType = (
             self.x0_right,
-            self.y0_crbot,
+            self.y0_rigbot,
             self.w_right,
-            self.h_crbot,
+            self.h_rigbot,
         )
         self.rect_bottom: RectType = (
             self.x0_tot,
@@ -227,7 +231,7 @@ def capitalize(s: str) -> str:
         raise ValueError("s not capitalizable", s)
 
 
-# SR_TODO Create dataclass with default values for test box setup
+# SR_TODO Create dataclass with default values for text box setup
 # pylint: disable=R0912  # too-many-branches
 # pylint: disable=R0914  # too-many-locals
 # pylint: disable=R0915  # too-many-statements
@@ -255,9 +259,8 @@ def create_plot_config(
         ),
     }
     new_config_dct["labels"]["right_top"] = {
-        "lines": [
-            f"{words['substance'].c}:\t{mdata.format('species_name', join_combo=' + ')}"
-        ]
+        "title": f"{words['data'].c}",
+        "lines": [],
     }
     new_config_dct["labels"]["right_middle"] = {
         "title": "",  # SR_TMP Force into 1st position in dict (for tests)
@@ -296,14 +299,16 @@ def create_plot_config(
         "model_info_ens": _info_fmt_base.format(
             ens=(
                 f" {words['ensemble']}"
-                f" ({'X'} {words['member', 'pl']}: {'XX-YY'})"  # SR_TODO unhardcode!
+                f" ({len(setup.ens_member_id or [])} {words['member', 'pl']}:"
+                f" {format_range(setup.ens_member_id or [], fmt='02d')})"
             )
         ),
         "copyright": f"{symbols['copyright']}{words['meteoswiss']}",
     }
 
-    short_name = ""
     long_name = ""
+    short_name = ""
+    var_name = ""
     unit = mdata.format("variable_unit")
 
     if setup.variable == "concentration":
@@ -311,8 +316,9 @@ def create_plot_config(
         new_config_dct["labels"]["right_middle"]["tc"] = (
             f"{words['level']}:" f" {escape_format_keys(format_level_label(mdata))}"
         )
+        var_name = str(words["activity_concentration"])
         if setup.integrate:
-            long_name = f"{words['integrated']} {words['activity_concentration']}"
+            long_name = f"{words['integrated']} {var_name}"
             short_name = (
                 f"{words['integrated', 'abbr']} {words['concentration', 'abbr']}"
             )
@@ -321,16 +327,19 @@ def create_plot_config(
                 f" {words['activity_concentration']}"
             )
         else:
-            long_name = str(words["activity_concentration"])
+            long_name = var_name
             short_name = str(words["concentration"])
             variable_rel = f"{words['of', 'fg']} {words['activity_concentration']}"
+        new_config_dct["labels"]["right_top"]["lines"].insert(
+            0, f"{words['level'].c}:\t{escape_format_keys(format_level_label(mdata))}"
+        )
 
     elif setup.variable == "deposition":
         dep_type_word = (
             "total" if setup.deposition_type == "tot" else setup.deposition_type
         )
-        deposition = f"{words[dep_type_word, 'f']} {words['surface_deposition']}"
-        long_name = f"{deposition}"
+        var_name = f"{words[dep_type_word, 'f']} {words['surface_deposition']}"
+        long_name = var_name
         short_name = str(words["deposition"])
         variable_rel = (
             f"{words['of', 'fg']} {words[dep_type_word, 'g']}"
@@ -343,7 +352,6 @@ def create_plot_config(
             "model_info_det"
         ]
         if setup.plot_type.startswith("affected_area"):
-            # long_name = f"{words['affected_area']} ({deposition})"
             long_name = f"{words['affected_area']} {variable_rel}"
             if setup.plot_type == "affected_area_mono":
                 new_config_dct["extend"] = "none"
@@ -397,12 +405,16 @@ def create_plot_config(
                 }
             )
             new_config_dct["labels"]["right_top"]["lines"].append(
-                f"{words['cloud']}:\t{symbols['geq']} {setup.ens_param_thr}"
-                f" {mdata.format('variable_unit')}"
+                f"{words['cloud_density'].c}:\t{words['minimum', 'abbr']}"
+                f" {setup.ens_param_thr} {mdata.format('variable_unit')}"
             )
             new_config_dct["labels"]["right_top"]["lines"].append(
-                f"{words['member', 'pl']}:\t{symbols['geq']}"
+                f"{words['number_of', 'abbr'].c} {words['member', 'pl']}:"
+                f"\t{words['minimum', 'abbr']}"
                 f" {setup.ens_param_mem_min}"
+                r"$\,/\,$"
+                f"{len(setup.ens_member_id)}"
+                f" ({setup.ens_param_mem_min/len(setup.ens_member_id):.0%})"
             )
             if setup.plot_type == "ens_cloud_arrival_time":
                 long_name = f"{words['cloud_arrival_time']}"
@@ -412,16 +424,21 @@ def create_plot_config(
                 short_name = f"{words['departure']}"
             unit = f"{words['hour', 'pl']}"
 
-    if short_name:
-        new_config_dct["labels"]["right_middle"]["title"] = short_name
-        new_config_dct["labels"]["right_middle"][
-            "title_unit"
-        ] = f"{short_name} ({unit})"
+    # SR_TMP <
+    if not short_name:
+        raise Exception("no short name")
+    if not long_name:
+        raise Exception("no short name")
+    # SR_TMP >
 
-    if long_name:
-        new_config_dct["labels"]["top"][
-            "tl"
-        ] = f"{long_name} {words['of']} {mdata.species_name}"
+    new_config_dct["labels"]["top"][
+        "tl"
+    ] = f"{long_name} {words['of']} {mdata.species_name}"
+    new_config_dct["labels"]["right_top"]["lines"].insert(
+        0, f"{words['input_variable'].c}:\t{capitalize(var_name)}",
+    )
+    new_config_dct["labels"]["right_middle"]["title"] = short_name
+    new_config_dct["labels"]["right_middle"]["title_unit"] = f"{short_name} ({unit})"
 
     # Capitalize all labels
     for labels in new_config_dct["labels"].values():
@@ -545,7 +562,7 @@ def escape_format_keys(s: str) -> str:
     return s.replace("{", "{{").replace("}", "}}")
 
 
-def format_level_label(mdata: MetaData):
+def format_level_label(mdata: MetaData) -> str:
     unit = mdata.variable_level_bot_unit.value
     if mdata.variable_level_top_unit.value != unit:
         raise Exception(

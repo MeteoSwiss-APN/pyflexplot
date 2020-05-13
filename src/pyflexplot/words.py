@@ -43,11 +43,13 @@ WORDS.add(en="based on", de="basierend auf")
 WORDS.add(en="cloud", de="Wolke")
 WORDS.add(en="cloud arrival time", de="Wolkenankunftszeit")
 WORDS.add(en="cloud departure time", de="Wolkenabzugszeit")
+WORDS.add(en="cloud density", de="Wolkendichte")
 WORDS.add(
     en={"*": "concentration", "abbr": "concentr."},
     de={"*": "Konzentration", "abbr": "Konzentr."},
 )
 # D
+WORDS.add(en="data", de="Daten")
 WORDS.add(en="departure", de="Abzug")
 WORDS.add(en="departure time", de="Abzugszeit")
 deg_ = f"{s['deg']}{s['short_space']}"
@@ -70,6 +72,7 @@ WORDS.add(en="ensemble mean", de="Ensemble-Mittel")
 WORDS.add(en="ensemble median", de="Ensemble-Median")
 WORDS.add(en="ensemble minimum", de="Ensemble-Minimum")
 # F
+WORDS.add(en="field", de="Feld")
 WORDS.add(en="FLEXPART", de="FLEXPART")
 WORDS.add(en="from now", de="ab jetzt")
 # G
@@ -82,6 +85,7 @@ WORDS.add(
 )
 # I
 WORDS.add(en="in", de="in")
+WORDS.add(en="input variable", de="Inputvariable")
 WORDS.add(
     en={"*": "integrated", "abbr": "int."},
     de={
@@ -104,6 +108,10 @@ WORDS.add(en="m AGL", de=f'm {s["ue"]}.G.')
 WORDS.add(en="max.", de="Max.")
 WORDS.add(en={"*": "member", "pl": "members"}, de={"*": "Member", "pl": "Members"})
 WORDS.add(en="MeteoSwiss", de="MeteoSchweiz")
+WORDS.add(
+    en={"*": "minimum", "abbr": "min."},
+    de={"*": "minimum", "n": "Minimum", "abbr": "min."},
+)
 # N
 WORDS.add(en={"*": "north", "abbr": "N"}, de={"*": "Norden", "abbr": "N"})
 WORDS.add(en={"*": "number of", "abbr": "no."}, de={"*": "Anzahl", "abbr": "Anz."})
@@ -132,13 +140,13 @@ WORDS.add(
     de={"*": "Bodendeposition", "abbr": "Bodendep."},
 )
 # T
-WORDS.add(
-    en="threshold agreement", de=f"Grenzwert{s['ue']}bereinstimmung",
-)
+WORDS.add(en="threshold", de=f"Grenzwert")
+WORDS.add(en="threshold agreement", de=f"Grenzwert{s['ue']}bereinstimmung")
 WORDS.add(en="total", de={"*": "total", "m": "totaler", "f": "totale", "g": "totalen"})
 WORDS.add(en="total mass", de="Totale Masse")
 # U
 # V
+WORDS.add(en="variable", de="Variable")
 # W
 WORDS.add(en="washout coeff.", de="Auswaschkoeff.")
 WORDS.add(en="washout exponent", de="Auswaschexponent")

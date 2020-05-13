@@ -5,8 +5,12 @@ Plots.
 # Standard library
 import re
 from textwrap import dedent
+from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import Iterator
+from typing import List
+from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -21,7 +25,6 @@ from srutils.geo import Degrees
 from srutils.iter import isiterable
 
 # Local
-# TextBoxAxes Local
 from .data import Field
 from .formatting import format_level_ranges
 from .meta_data import MetaData
@@ -35,6 +38,7 @@ from .plot_types import colors_from_plot_config
 from .plot_types import create_map_conf
 from .plot_types import create_plot_config
 from .plot_types import levels_from_time_stats
+from .setup import InputSetup
 from .summarize import summarizable
 from .words import SYMBOLS
 from .words import WORDS
@@ -53,19 +57,20 @@ def fill_box_top(box: TextBoxAxes, plot: "Plot") -> None:
 
 
 def fill_box_right_top(box: TextBoxAxes, plot: "Plot") -> None:
-    try:
-        lines = plot.config.labels["right_top"]["lines"]
-    except KeyError:
-        return
-    else:
-        box.text_block_hfill(
-            lines,
-            # dy_unit=-4.0,
-            dy_unit=0.0,
-            dy_line=2.5,
-            fontname=plot.config.font_name,
-            size=plot.config.font_sizes.content_small,
-        )
+    labels = plot.config.labels["right_top"]
+    box.text(
+        labels["title"],
+        loc="tc",
+        fontname=plot.config.font_name,
+        size=plot.config.font_sizes.title_small,
+    )
+    box.text_block_hfill(
+        labels["lines"],
+        dy_unit=-4.0,
+        dy_line=2.5,
+        fontname=plot.config.font_name,
+        size=plot.config.font_sizes.content_small,
+    )
 
 
 # pylint: disable=R0912   # too-many-branches
@@ -85,7 +90,8 @@ def fill_box_right_middle(box: TextBoxAxes, plot: "Plot") -> None:
         size=plot.config.font_sizes.title_small,
     )
 
-    dy_line: float = 3.0
+    # dy_line: float = 3.0
+    dy_line: float = 2.5
     w_box: float = 4.0
     h_box: float = 2.0
 
@@ -295,7 +301,7 @@ def fill_box_bottom(box: TextBoxAxes, plot: "Plot") -> None:
 class Plot:
     """A FLEXPART dispersion plot."""
 
-    def __init__(self, field: Field, config: PlotConfig, map_conf: MapAxesConf):
+    def __init__(self, field: Field, config: PlotConfig, map_conf: MapAxesConf) -> None:
         """Create an instance of ``Plot``."""
         self.field = field
         self.config = config
@@ -306,7 +312,7 @@ class Plot:
         )
         self.create_plot()
 
-    def save(self, file_path: str, *, write: bool = True):
+    def save(self, file_path: str, *, write: bool = True) -> None:
         """Save the plot to disk.
 
         Args:
@@ -325,7 +331,7 @@ class Plot:
             )
         plt.close(self.fig)
 
-    def create_plot(self):
+    def create_plot(self) -> None:
         layout = PlotLayout(aspect=self.config.fig_aspect)
         self.fig = plt.figure(figsize=self.config.fig_size)
         self.ax_map = MapAxes.create(
@@ -335,7 +341,7 @@ class Plot:
         self._draw_colors_contours()
         self._add_markers()
 
-    def _add_markers(self):
+    def _add_markers(self) -> None:
         if self.config.mark_release_site:
             self.ax_map.marker(
                 self.config.mdata.release_site_lon.value,
@@ -347,7 +353,7 @@ class Plot:
             self.ax_map.mark_max(self.field.fld, **self.config.markers["max"])
 
     # SR_TODO Replace checks with plot-specific config/setup object
-    def _draw_colors_contours(self):
+    def _draw_colors_contours(self) -> None:
         arr = self.field.fld
         levels = self.levels
         colors = colors_from_plot_config(self.config)
@@ -369,7 +375,7 @@ class Plot:
             self.ax_map.contour(arr, levels=levels, colors="black", linewidths=1)
 
     # pylint: disable=R0914  # too-many-locals
-    def _add_text_boxes(self, layout):
+    def _add_text_boxes(self, layout: PlotLayout) -> None:
         self.add_text_box("top", layout.rect_top, fill_box_top)
         self.add_text_box("right_top", layout.rect_right_top, fill_box_right_top)
         self.add_text_box(
@@ -400,14 +406,12 @@ def plot_fields(
     dry_run: bool = False,
     *,
     write: bool = True,
-):
-
-    # Create plots one-by-one
+) -> Iterator[Tuple[str, Plot]]:
+    """Create plots while yielding them with the plot file path one by one."""
     for field, mdata in zip(fields, mdata_lst):
         setup = field.var_setups.compress()
         out_file_path = format_out_file_path(setup)
         map_conf = create_map_conf(field)
-
         if dry_run:
             plot = None
         else:
@@ -415,12 +419,11 @@ def plot_fields(
             config = create_plot_config(setup, WORDS, SYMBOLS, mdata)
             plot = Plot(field, config, map_conf)
             plot.save(out_file_path, write=write)
-
         yield out_file_path, plot
 
 
-# pylint: disable=W0102  # dangerious-default-value ([])
-def format_out_file_path(setup, _previous=[]):
+# pylint: disable=W0102  # dangerous-default-value ([])
+def format_out_file_path(setup: InputSetup, _previous: List[str] = []) -> str:
     template = setup.outfile
     path = _format_out_file_path_core(template, setup)
     while path in _previous:
@@ -430,12 +433,10 @@ def format_out_file_path(setup, _previous=[]):
     return path
 
 
-def _format_out_file_path_core(template, setup):
-
+def _format_out_file_path_core(template: str, setup: InputSetup) -> str:
     variable = setup.variable
     if setup.variable == "deposition":
         variable += f"_{setup.deposition_type}"
-
     kwargs = {
         "nageclass": setup.nageclass,
         "domain": setup.domain,
@@ -446,15 +447,13 @@ def _format_out_file_path_core(template, setup):
         "time": setup.time,
         "variable": variable,
     }
-
     # Format the file path
     # Don't use str.format in order to handle multival elements
     path = _replace_format_keys(template, kwargs)
-
     return path
 
 
-def _replace_format_keys(path, kwargs):
+def _replace_format_keys(path: str, kwargs: Mapping[str, Any]) -> str:
     for key, val in kwargs.items():
         if not isiterable(val, str_ok=False):
             val = [val]
@@ -487,7 +486,7 @@ def _replace_format_keys(path, kwargs):
     return path
 
 
-def derive_unique_path(path):
+def derive_unique_path(path: str) -> str:
     """Add/increment a trailing number to a file path."""
 
     # Extract suffix

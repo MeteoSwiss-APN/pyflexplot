@@ -9,6 +9,7 @@ from typing import Any
 from typing import Callable
 from typing import Collection
 from typing import Dict
+from typing import MutableMapping
 from typing import Optional
 from typing import Sequence
 from typing import Union
@@ -52,7 +53,9 @@ def default_summarize(
 
 
 # pylint: disable=W0613  # unused-argument (self)
-def default_post_summarize(self: Any, summary: Dict[str, Any]) -> Dict[str, Any]:
+def default_post_summarize(
+    self: Any, summary: MutableMapping[str, Any]
+) -> MutableMapping[str, Any]:
     """Default post_summarize method; see docstring of ``summarizable``.
 
     Args:
@@ -72,8 +75,12 @@ def summarizable(
     *,
     attrs: Optional[Collection[str]] = None,
     attrs_skip: Optional[Collection[str]] = None,
-    summarize: Optional[Callable[[Any, Dict[str, Any]], Dict[str, Any]]] = None,
-    post_summarize: Optional[Callable[[Any, Dict[str, Any]], Dict[str, Any]]] = None,
+    summarize: Optional[
+        Callable[[Any, MutableMapping[str, Any]], MutableMapping[str, Any]]
+    ] = None,
+    post_summarize: Optional[
+        Callable[[Any, MutableMapping[str, Any]], MutableMapping[str, Any]]
+    ] = None,
     auto_collect: bool = True,
     overwrite: bool = False,
 ) -> Callable:

@@ -8,6 +8,7 @@ TODO Split module up into `exceptions`, `summarize`, and `format`!
 import re
 import warnings
 from dataclasses import dataclass
+from typing import Collection
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -129,6 +130,62 @@ def format_float(
         return fmt_e1.format(f=f)
     else:
         return fe0
+
+
+def format_range(
+    numbers: Collection[float],
+    fmt: str = "g",
+    delta: float = 1,
+    join_range: str = "-",
+    join_others: str = ",",
+    range_min: int = 3,
+) -> str:
+    """Format numbers individually or, if they are consecutive, as a range.
+
+    Args:
+        numbers: Collection of numbers to be formatted.
+
+        fmt (optional): How to format individual numbers, e.g., "03d" for zero-
+            padded three-digit integers.
+
+        delta (optional): Differences between consecutive numbers.
+
+        join_range (optional): Character(s) used to join the first and last
+            number in a range.
+
+        join_others (optional): Character(s) used to join non-consecutive
+            numbers or ranges.
+
+        range_min (optional): Minimum number of consecutive numbers to be
+            formatted as a range.
+
+    """
+    template = f"{{num:{fmt}}}"
+    consecutive_numbers_groups: List[List[float]] = []
+    previous_number: Optional[float] = None
+    for number in sorted(numbers):
+        if previous_number is None or number - previous_number != delta:
+            consecutive_numbers_groups.append([])
+        consecutive_numbers_groups[-1].append(number)
+        previous_number = number
+    formatted_numbers_and_ranges: List[str] = []
+    for consecutive_numbers in consecutive_numbers_groups:
+        if len(consecutive_numbers) < range_min:
+            numbers_to_format = consecutive_numbers
+            join = join_others
+        else:
+            numbers_to_format = [consecutive_numbers[0], consecutive_numbers[-1]]
+            join = join_range
+        formatted_numbers: List[str] = []
+        for number in numbers_to_format:
+            try:
+                formatted_number = template.format(num=number)
+            except ValueError:
+                raise Exception("cannot format number with template", number, template)
+            else:
+                formatted_numbers.append(formatted_number)
+        formatted_numbers_and_ranges.append(join.join(formatted_numbers))
+    return join_others.join(formatted_numbers_and_ranges)
 
 
 def format_level_ranges(
