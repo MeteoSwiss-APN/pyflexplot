@@ -116,7 +116,7 @@ def fill_box_right_middle(box: TextBoxAxes, plot: "Plot") -> None:
 
     # Legend labels (level ranges)
     box.text_block(
-        legend_labels,
+        legend_labels[::-1],
         loc="tc",
         dy_unit=dy0_labels,
         dy_line=dy_line,
@@ -130,7 +130,7 @@ def fill_box_right_middle(box: TextBoxAxes, plot: "Plot") -> None:
     # Legend color boxes
     colors = colors_from_plot_config(plot.config)
     dy = dy0_boxes
-    for color in colors:
+    for color in colors[::-1]:
         box.color_rect(
             loc="tc",
             x_anker="left",
