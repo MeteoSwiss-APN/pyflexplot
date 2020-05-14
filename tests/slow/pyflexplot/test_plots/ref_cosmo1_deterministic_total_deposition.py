@@ -417,7 +417,6 @@ plot_summary = {
             "rel_offset": [0.0, 0.0],
             "zoom_fact": 1.02,
         },
-        "water_color": "lightskyblue",
     },
     "boxes": {
         "top": {

@@ -14,14 +14,20 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Union
+from typing import overload
 
 # Third-party
 import cartopy
 import geopy.distance
 import matplotlib as mpl
 import numpy as np
+from cartopy.crs import Projection  # type: ignore
+from cartopy.io.shapereader import Record  # type: ignore
 from matplotlib.axes import Axes
+from matplotlib.contour import ContourSet
 from matplotlib.figure import Figure
+from matplotlib.lines import Line2D
+from matplotlib.text import Text
 from pydantic import BaseModel
 from pydantic import root_validator
 from pydantic import validator
@@ -229,82 +235,28 @@ class MapAxes:
     lat: np.ndarray
     lon: np.ndarray
     conf: MapAxesConf
-    water_color: ColorType = "lightskyblue"
 
     def __post_init__(self) -> None:
+        self._water_color: ColorType = "lightskyblue"
 
-        # Determine zorder of unique plot elements, from low to high
-        zorders_const = [
-            "lowest",
-            "geo_lower",
-            "fld",
-            "geo_upper",
-            "grid",
-            "marker",
-            "frames",
-        ]
-        d0, dz = 1, 1
-        self.zorder = {e: d0 + i * dz for i, e in enumerate(zorders_const)}
+        self.zorder: Dict[str, int]
+        self._init_zorder()
 
-        # Prepare the map projections (input, plot, geographic)
-        self.prepare_projections()
+        self.proj_data: Projection
+        self.proj_map: Projection
+        self.proj_geo: Projection
+        self._init_projs()
 
-        # Initialize plot
-        self.ax = self.fig.add_axes(self.rect, projection=self.proj_map)
-        self.ax.set_adjustable("datalim")
-        self.ax.outline_patch.set_edgecolor("none")
+        self.ax: Axes
+        self._init_ax()
 
-        # Set geographical extent of the map
-        lllon = self.conf.lllon if self.conf.lllon is not None else self.lon[0]
-        urlon = self.conf.urlon if self.conf.urlon is not None else self.lon[-1]
-        lllat = self.conf.lllat if self.conf.lllat is not None else self.lat[0]
-        urlat = self.conf.urlat if self.conf.urlat is not None else self.lat[-1]
-        bbox = (
-            MapAxesBoundingBox(self, "data", lllon, urlon, lllat, urlat)
-            .to_axes()
-            .zoom(self.conf.zoom_fact, self.conf.rel_offset)
-            .to_data()
-        )
-        self.ax.set_extent(bbox, self.proj_data)
+        self.ref_dist_box: Optional[ReferenceDistanceIndicator]
+        self._init_ref_dist_box()
 
-        # Activate grid lines
-        gl = self.ax.gridlines(
-            linestyle=":", linewidth=1, color="black", zorder=self.zorder["grid"],
-        )
-        gl.xlocator = mpl.ticker.FixedLocator(np.arange(-180, 180.1, 2))
-        gl.ylocator = mpl.ticker.FixedLocator(np.arange(-90, 90.1, 2))
-
-        # Define reference distance indicator
-        if not self.conf.ref_dist_on:
-            self.ref_dist_box = None
-        else:
-            self.ref_dist_box = ReferenceDistanceIndicator(
-                ax=self.ax,
-                axes_to_geo=self._transform_xy_axes_to_geo,
-                conf=self.conf.ref_dist_conf,
-                zorder=self.zorder["grid"],
-            )
-
-        # Add geographical elements (coasts etc.)
-        self.add_geography()
-
-        # # Show data domain outline
-        self.add_data_domain_outline()
-
-        # Redraw plot frame on top of all other elements
-        self.ax.add_patch(
-            mpl.patches.Rectangle(
-                xy=(0, 0),
-                width=1,
-                height=1,
-                transform=self.ax.transAxes,
-                zorder=self.zorder["frames"],
-                facecolor="none",
-                edgecolor="black",
-                linewidth=self.conf.lw_frame,
-                clip_on=False,
-            ),
-        )
+        self._ax_add_grid()
+        self._ax_add_geography()
+        self._ax_add_data_domain_outline()
+        self._ax_add_frame()
 
     @classmethod
     def create(
@@ -315,213 +267,7 @@ class MapAxes:
         else:
             return cls(fig=fig, lat=field.lat, rect=rect, lon=field.lon, conf=conf)
 
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}(<TODO>)"  # SR_TODO
-
-    def prepare_projections(self) -> None:
-        """Prepare projections to transform the data for plotting."""
-
-        # Projection of input data
-        self.proj_data = cartopy.crs.PlateCarree()
-
-        # Projection of plot
-        self.proj_map = cartopy.crs.PlateCarree()  # SR_TMP
-
-        # Geographical projection
-        self.proj_geo = cartopy.crs.PlateCarree()
-
-    def add_data_domain_outline(self) -> None:
-        """Add domain outlines to map plot."""
-        lon0, lon1 = self.lon[[0, -1]]
-        lat0, lat1 = self.lat[[0, -1]]
-        xs = [lon0, lon1, lon1, lon0, lon0]
-        ys = [lat0, lat0, lat1, lat1, lat0]
-        self.ax.plot(xs, ys, transform=self.proj_data, c="black", lw=1)
-
-    def add_geography(self) -> None:
-        """Add geographic elements: coasts, countries, colors, etc."""
-        self.ax.coastlines(resolution=self.conf.geo_res)
-        self.ax.background_patch.set_facecolor(self.water_color)
-        self.add_countries("lowest")
-        self.add_lakes("lowest")
-        self.add_rivers("lowest")
-        self.add_countries("geo_upper")
-        self.add_cities()
-
-    def add_countries(self, zorder_key: str) -> None:
-        facecolor = "white" if zorder_key == "lowest" else "none"
-        linewidth = 1 if zorder_key == "lowest" else 1 / 3
-        self.ax.add_feature(
-            cartopy.feature.NaturalEarthFeature(
-                category="cultural",
-                name="admin_0_countries_lakes",
-                scale=self.conf.geo_res,
-                edgecolor="black",
-                facecolor=facecolor,
-                linewidth=linewidth,
-            ),
-            zorder=self.zorder[zorder_key],
-        )
-
-    def add_lakes(self, zorder_key: str) -> None:
-        self.ax.add_feature(
-            cartopy.feature.NaturalEarthFeature(
-                category="physical",
-                name="lakes",
-                scale=self.conf.geo_res,
-                edgecolor="none",
-                facecolor=self.water_color,
-            ),
-            zorder=self.zorder[zorder_key],
-        )
-        if self.conf.geo_res == "10m":
-            self.ax.add_feature(
-                cartopy.feature.NaturalEarthFeature(
-                    category="physical",
-                    name="lakes_europe",
-                    scale=self.conf.geo_res,
-                    edgecolor="none",
-                    facecolor=self.water_color,
-                ),
-                zorder=self.zorder[zorder_key],
-            )
-
-    def add_rivers(self, zorder_key: str) -> None:
-        linewidth = {"lowest": 1, "geo_lower": 1, "geo_upper": 2 / 3}[zorder_key]
-
-        # SR_WORKAROUND <
-        # Note:
-        #  - Bug in Cartopy with recent shapefiles triggers errors (NULL geometry)
-        #  - Issue fixed in a branch but pull request still pending
-        #       -> Branch: https://github.com/shevawen/cartopy/tree/patch-1
-        #       -> PR: https://github.com/SciTools/cartopy/pull/1411
-        #  - Fixed it in our fork MeteoSwiss-APN/cartopy
-        #       -> Fork fixes setup depencies issue (with  pyproject.toml)
-        #  - For now, check validity of rivers geometry objects when adding
-        #  - Once it works with the master branch, remove these workarounds
-        # SR_WORKAROUND >
-
-        major_rivers = cartopy.feature.NaturalEarthFeature(
-            category="physical",
-            name="rivers_lake_centerlines",
-            scale=self.conf.geo_res,
-            edgecolor=self.water_color,
-            facecolor=(0, 0, 0, 0),
-            linewidth=linewidth,
-        )
-        # SR_WORKAROUND < TODO revert once bugfix in Cartopy master
-        # self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
-        # SR_WORKAROUND >
-
-        if self.conf.geo_res_rivers == "10m":
-            minor_rivers = cartopy.feature.NaturalEarthFeature(
-                category="physical",
-                name="rivers_europe",
-                scale=self.conf.geo_res,
-                edgecolor=self.water_color,
-                facecolor=(0, 0, 0, 0),
-                linewidth=linewidth,
-            )
-            # SR_WORKAROUND < TODO revert once bugfix in Cartopy master
-            # self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
-            # SR_WORKAROUND >
-
-        # SR_WORKAROUND <<< TODO remove once bugfix in Cartopy master
-        try:
-            major_rivers.geometries()
-        except Exception:  # pylint: disable=W0703  # broad-except
-            warnings.warn(
-                f"cannot add major rivers due to shapely issue with "
-                "'rivers_lake_centerline; pending bugfix: "
-                "https://github.com/SciTools/cartopy/pull/1411; workaround: use "
-                "https://github.com/shevawen/cartopy/tree/patch-1"
-            )
-        else:
-            # warnings.warn(
-            #     f"successfully added major rivers; "
-            #     "TODO: remove workaround and pin minimum Cartopy version!"
-            # )
-            self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
-            if self.conf.geo_res_rivers == "10m":
-                self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
-        # SR_WORKAROUND >
-
-    def add_cities(self) -> None:
-        """Add major cities, incl. all capitals."""
-
-        def is_visible(city) -> bool:
-            """Check if a point is inside the domain."""
-
-            plon, plat = city.geometry.x, city.geometry.y
-
-            # pylint: disable=R0913  # too-many-arguments
-            def is_in_box(x, y, x0, x1, y0, y1):
-                return x0 <= x <= x1 and y0 <= y <= y1
-
-            # In domain
-            plon, plat = self.proj_data.transform_point(
-                plon, plat, self.proj_geo, trap=True,
-            )
-            in_domain = is_in_box(
-                plon, plat, self.lon[0], self.lon[-1], self.lat[0], self.lat[-1],
-            )
-
-            # Not behind reference distance indicator box
-            pxa, pya = self._transform_xy_geo_to_axes(plon, plat)
-            rdb = self.ref_dist_box
-            assert rdb is not None  # mypy
-            behind_rdb = is_in_box(
-                pxa, pya, rdb.x0_box, rdb.x1_box, rdb.y0_box, rdb.y1_box,
-            )
-
-            return in_domain and not behind_rdb
-
-        def is_of_interest(city):
-            """Check if a city fulfils certain importance criteria."""
-            is_capital = city.attributes["FEATURECLA"].startswith("Admin-0 capital")
-            is_large = city.attributes["GN_POP"] > self.conf.min_city_pop
-            return is_capital or is_large
-
-        def get_name(city):
-            """Fetch city name in current language, hand-correcting some."""
-            name = city.attributes[f"name_{self.conf.lang}"]
-            if name.startswith("Freiburg im ") and name.endswith("echtland"):
-                name = "Freiburg"
-            return name
-
-        # src: https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-populated-places/lk  # noqa
-        cities = cartopy.io.shapereader.Reader(
-            cartopy.io.shapereader.natural_earth(
-                category="cultural",
-                name="populated_places",
-                resolution=self.conf.geo_res_cities,
-            )
-        ).records()
-
-        for city in cities:
-            x, y = city.geometry.x, city.geometry.y
-            if is_visible(city) and is_of_interest(city):
-                self.marker(
-                    x,
-                    y,
-                    marker="o",
-                    color="black",
-                    fillstyle="none",
-                    markeredgewidth=1,
-                    markersize=3,
-                    zorder=self.zorder["geo_upper"],
-                )
-                name = get_name(city)
-                # SR_TODO Fix positioning of city labels relative to markers!
-                # SR_DBG < Hotfix to create reasonably-looking IFS plot
-                offset = (0.01, 0)  # Works over Europe
-                # offset = (-0.04, 0)  # Works more or less over Japan
-                # SR_DBG
-                self.text(
-                    x, y, name, offset, va="center", size="small", clip_on=True,
-                )
-
-    def contour(self, fld, **kwargs):
+    def contour(self, fld: np.ndarray, **kwargs) -> Optional[ContourSet]:
         """Plot a contour field on the map.
 
         Args:
@@ -537,6 +283,7 @@ class MapAxes:
             warnings.warn("skip contour plot (all-nan field)")
             return None
 
+        # SR_TODO Test if check for empty plot is necessary as for contourf
         handle = self.ax.contour(
             self.lon,
             self.lat,
@@ -547,7 +294,9 @@ class MapAxes:
         )
         return handle
 
-    def contourf(self, fld, *, levels, extend="none", **kwargs):
+    def contourf(
+        self, fld: np.ndarray, *, levels: np.ndarray, extend: str = "none", **kwargs
+    ) -> Optional[ContourSet]:
         """Plot a filled-contour field on the map.
 
         Args:
@@ -555,7 +304,7 @@ class MapAxes:
 
             levels: Levels.
 
-            extend: Extend mode.
+            extend (optional): Extend mode.
 
             **kwargs: Additional arguments to ``contourf``.
 
@@ -587,6 +336,142 @@ class MapAxes:
             )
         return handle
 
+    def marker(
+        self,
+        lon: float,
+        lat: float,
+        marker: str,
+        *,
+        zorder: Optional[int] = None,
+        **kwargs,
+    ) -> Sequence[Line2D]:
+        """Add a marker at a location in natural coordinates."""
+        lon, lat = self._transform_xy_geo_to_data(lon, lat)
+        if zorder is None:
+            zorder = self.zorder["marker"]
+        handle = self.ax.plot(
+            lon, lat, marker=marker, transform=self.proj_data, zorder=zorder, **kwargs,
+        )
+        return handle
+
+    def text(
+        self, lon: float, lat: float, s: str, *, zorder: Optional[int] = None, **kwargs,
+    ) -> Text:
+        """Add text at a geographical point.
+
+        Args:
+            lon: Point longitude.
+
+            lat: Point latitude.
+
+            s: Text string.
+
+            dx: Horizontal offset in unit distances.
+
+            dy (optional): Vertical offset in unit distances.
+
+            zorder (optional): Vertical order. Defaults to "geo_lower".
+
+            **kwargs: Additional keyword arguments for ``ax.text``.
+
+        """
+        if zorder is None:
+            zorder = self.zorder["geo_lower"]
+        kwargs_default = {"xytext": (5, 1), "textcoords": "offset points"}
+        kwargs = {**kwargs_default, **kwargs}
+        # pylint: disable=W0212  # protected-access
+        transform = self.proj_geo._as_mpl_transform(self.ax)
+        # -> see https://stackoverflow.com/a/25421922/4419816
+        handle = self.ax.annotate(
+            s, xy=(lon, lat), xycoords=transform, zorder=zorder, **kwargs,
+        )
+        return handle
+
+    def mark_max(
+        self, fld: np.ndarray, marker: str, **kwargs
+    ) -> Optional[Sequence[Line2D]]:
+        """Mark the location of the field maximum."""
+        if np.isnan(fld).all():
+            warnings.warn("skip maximum marker (all-nan field)")
+            return None
+        assert len(fld.shape) == 2  # pylint
+        # pylint: disable=W0632  # unbalanced-tuple-unpacking
+        jmax, imax = np.unravel_index(np.nanargmax(fld), fld.shape)
+        lon, lat = self.lon[imax], self.lat[jmax]
+        handle = self.marker(lon, lat, marker, **kwargs)
+        return handle
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(<TODO>)"  # SR_TODO
+
+    def _init_zorder(self) -> None:
+        """Determine zorder of unique plot elements, from low to high."""
+        zorders_const = [
+            "lowest",
+            "geo_lower",
+            "fld",
+            "geo_upper",
+            "grid",
+            "marker",
+            "frames",
+        ]
+        d0, dz = 1, 1
+        self.zorder = {name: d0 + idx * dz for idx, name in enumerate(zorders_const)}
+
+    def _init_projs(self) -> None:
+        """Prepare projections to transform the data for plotting."""
+
+        # Projection of input data
+        self.proj_data = cartopy.crs.PlateCarree()
+
+        # Projection of plot
+        self.proj_map = cartopy.crs.PlateCarree()  # SR_TMP
+
+        # Geographical projection
+        self.proj_geo = cartopy.crs.PlateCarree()
+
+    def _init_ax(self) -> None:
+        """Initialize Axes."""
+        ax: Axes = self.fig.add_axes(self.rect, projection=self.proj_map)
+        ax.set_adjustable("datalim")
+        ax.outline_patch.set_edgecolor("none")
+        self.ax = ax
+        self._ax_set_extent()
+
+    def _ax_set_extent(self) -> None:
+        """Set the geographical map extent based on the grid and config."""
+        lllon: float = self.conf.lllon if self.conf.lllon is not None else self.lon[0]
+        urlon: float = self.conf.urlon if self.conf.urlon is not None else self.lon[-1]
+        lllat: float = self.conf.lllat if self.conf.lllat is not None else self.lat[0]
+        urlat: float = self.conf.urlat if self.conf.urlat is not None else self.lat[-1]
+        bbox = (
+            MapAxesBoundingBox(self, "data", lllon, urlon, lllat, urlat)
+            .to_axes()
+            .zoom(self.conf.zoom_fact, self.conf.rel_offset)
+            .to_data()
+        )
+        self.ax.set_extent(bbox, self.proj_data)
+
+    def _init_ref_dist_box(self) -> None:
+        """Initialize the reference distance indicator (if activated)."""
+        if not self.conf.ref_dist_on:
+            self.ref_dist_box = None
+        else:
+            self.ref_dist_box = ReferenceDistanceIndicator(
+                ax=self.ax,
+                axes_to_geo=self._transform_xy_axes_to_geo,
+                conf=self.conf.ref_dist_conf,
+                zorder=self.zorder["grid"],
+            )
+
+    def _ax_add_grid(self) -> None:
+        """Show grid lines on map."""
+        gl = self.ax.gridlines(
+            linestyle=":", linewidth=1, color="black", zorder=self.zorder["grid"],
+        )
+        gl.xlocator = mpl.ticker.FixedLocator(np.arange(-180, 180.1, 2))
+        gl.ylocator = mpl.ticker.FixedLocator(np.arange(-90, 90.1, 2))
+
     def _replace_infs(self, fld: np.ndarray, levels: np.ndarray) -> np.ndarray:
         """Replace inf by large values outside the data and level range.
 
@@ -607,88 +492,263 @@ class MapAxes:
         fld = np.where(np.isposinf(fld), large_value, fld)
         return fld
 
-    def marker(self, lon, lat, marker, *, zorder=None, **kwargs):
-        """Add a marker at a location in natural coordinates."""
-        lon, lat = self.proj_data.transform_point(lon, lat, self.proj_geo, trap=True)
-        handle = self.add_marker(lon, lat, marker, zorder=zorder, **kwargs)
-        return handle
+    def _ax_add_geography(self) -> None:
+        """Add geographic elements: coasts, countries, colors, etc."""
+        self.ax.coastlines(resolution=self.conf.geo_res)
+        self.ax.background_patch.set_facecolor(self._water_color)
+        self._ax_add_countries("lowest")
+        self._ax_add_lakes("lowest")
+        self._ax_add_rivers("lowest")
+        self._ax_add_countries("geo_upper")
+        self._ax_add_cities()
 
-    def add_marker(self, lon, lat, marker, *, zorder=None, **kwargs):
-        """Add a marker at a location in rotated coordinates."""
-        if zorder is None:
-            zorder = self.zorder["marker"]
-        handle = self.ax.plot(
-            lon, lat, marker=marker, transform=self.proj_data, zorder=zorder, **kwargs,
+    def _ax_add_countries(self, zorder_key: str) -> None:
+        facecolor = "white" if zorder_key == "lowest" else "none"
+        linewidth = 1 if zorder_key == "lowest" else 1 / 3
+        self.ax.add_feature(
+            cartopy.feature.NaturalEarthFeature(
+                category="cultural",
+                name="admin_0_countries_lakes",
+                scale=self.conf.geo_res,
+                edgecolor="black",
+                facecolor=facecolor,
+                linewidth=linewidth,
+            ),
+            zorder=self.zorder[zorder_key],
         )
-        return handle
 
-    def text(self, lon, lat, s, xy_offset_axs=None, *, zorder=None, **kwargs):
-        """Add text at a geographical point.
-
-        Args:
-            lon (float): Point longitude.
-
-            lat (float): Point latitude.
-
-            s (str): Text string.
-
-            xy_offset_axs (tuple[float], optional): Horizontal and vertical
-                offset in Axes coordinates. Defaults to None.
-
-            dy (float, optional): Vertical offset in unit distances. Defaults
-                to None.
-
-            zorder (int, optional): Vertical order. Defaults to "geo_lower".
-
-            **kwargs: Additional keyword arguments for ``ax.text``.
-
-        """
-        if zorder is None:
-            zorder = self.zorder["geo_lower"]
-        x, y = self._transform_xy_geo_to_axes(lon, lat)
-        if xy_offset_axs is not None:
-            x += xy_offset_axs[0]
-            y += xy_offset_axs[1]
-        handle = self.ax.text(
-            x, y, s, zorder=zorder, transform=self.ax.transAxes, **kwargs
+    def _ax_add_lakes(self, zorder_key: str) -> None:
+        self.ax.add_feature(
+            cartopy.feature.NaturalEarthFeature(
+                category="physical",
+                name="lakes",
+                scale=self.conf.geo_res,
+                edgecolor="none",
+                facecolor=self._water_color,
+            ),
+            zorder=self.zorder[zorder_key],
         )
-        return handle
+        if self.conf.geo_res == "10m":
+            self.ax.add_feature(
+                cartopy.feature.NaturalEarthFeature(
+                    category="physical",
+                    name="lakes_europe",
+                    scale=self.conf.geo_res,
+                    edgecolor="none",
+                    facecolor=self._water_color,
+                ),
+                zorder=self.zorder[zorder_key],
+            )
 
-    def mark_max(self, fld, marker, **kwargs):
-        """Mark the location of the field maximum."""
-        if np.isnan(fld).all():
-            warnings.warn("skip maximum marker (all-nan field)")
-            return None
-        assert len(fld.shape) == 2  # pylint
-        # pylint: disable=W0632  # unbalanced-tuple-unpacking
-        jmax, imax = np.unravel_index(np.nanargmax(fld), fld.shape)
-        lon, lat = self.lon[imax], self.lat[jmax]
-        handle = self.add_marker(lon, lat, marker, **kwargs)
-        return handle
+    def _ax_add_rivers(self, zorder_key: str) -> None:
+        linewidth = {"lowest": 1, "geo_lower": 1, "geo_upper": 2 / 3}[zorder_key]
 
-    # SR_TODO create tranformator class
+        # SR_WORKAROUND <
+        # Note:
+        #  - Bug in Cartopy with recent shapefiles triggers errors (NULL geometry)
+        #  - Issue fixed in a branch but pull request still pending
+        #       -> Branch: https://github.com/shevawen/cartopy/tree/patch-1
+        #       -> PR: https://github.com/SciTools/cartopy/pull/1411
+        #  - Fixed it in our fork MeteoSwiss-APN/cartopy
+        #       -> Fork fixes setup depencies issue (with  pyproject.toml)
+        #  - For now, check validity of rivers geometry objects when adding
+        #  - Once it works with the master branch, remove these workarounds
+        # SR_WORKAROUND >
+
+        major_rivers = cartopy.feature.NaturalEarthFeature(
+            category="physical",
+            name="rivers_lake_centerlines",
+            scale=self.conf.geo_res,
+            edgecolor=self._water_color,
+            facecolor=(0, 0, 0, 0),
+            linewidth=linewidth,
+        )
+        # SR_WORKAROUND < TODO revert once bugfix in Cartopy master
+        # self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
+        # SR_WORKAROUND >
+
+        if self.conf.geo_res_rivers == "10m":
+            minor_rivers = cartopy.feature.NaturalEarthFeature(
+                category="physical",
+                name="rivers_europe",
+                scale=self.conf.geo_res,
+                edgecolor=self._water_color,
+                facecolor=(0, 0, 0, 0),
+                linewidth=linewidth,
+            )
+            # SR_WORKAROUND < TODO revert once bugfix in Cartopy master
+            # self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
+            # SR_WORKAROUND >
+
+        # SR_WORKAROUND <<< TODO remove once bugfix in Cartopy master
+        try:
+            major_rivers.geometries()
+        except Exception:  # pylint: disable=W0703  # broad-except
+            warnings.warn(
+                f"cannot add major rivers due to shapely issue with "
+                "'rivers_lake_centerline; pending bugfix: "
+                "https://github.com/SciTools/cartopy/pull/1411; workaround: use "
+                "https://github.com/shevawen/cartopy/tree/patch-1"
+            )
+        else:
+            # warnings.warn(
+            #     f"successfully added major rivers; "
+            #     "TODO: remove workaround and pin minimum Cartopy version!"
+            # )
+            self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
+            if self.conf.geo_res_rivers == "10m":
+                self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
+        # SR_WORKAROUND >
+
+    def _ax_add_cities(self) -> None:
+        """Add major cities, incl. all capitals."""
+
+        # pylint: disable=R0913  # too-many-arguments
+        def is_in_box(
+            x: float, y: float, x0: float, x1: float, y0: float, y1: float
+        ) -> bool:
+            return x0 <= x <= x1 and y0 <= y <= y1
+
+        def is_visible(city: Record) -> bool:
+            """Check if a point is inside the domain."""
+            lon: float = city.geometry.x
+            lat: float = city.geometry.y
+
+            # In domain
+            lon, lat = self.proj_data.transform_point(
+                lon, lat, self.proj_geo, trap=True,
+            )
+            in_domain = is_in_box(
+                lon, lat, self.lon[0], self.lon[-1], self.lat[0], self.lat[-1],
+            )
+
+            # Not behind reference distance indicator box
+            pxa, pya = self._transform_xy_geo_to_axes(lon, lat)
+            rdb = self.ref_dist_box
+            assert rdb is not None  # mypy
+            behind_rdb = is_in_box(
+                pxa, pya, rdb.x0_box, rdb.x1_box, rdb.y0_box, rdb.y1_box,
+            )
+
+            return in_domain and not behind_rdb
+
+        def is_of_interest(city: Record) -> bool:
+            """Check if a city fulfils certain importance criteria."""
+            is_capital = city.attributes["FEATURECLA"].startswith("Admin-0 capital")
+            is_large = city.attributes["GN_POP"] > self.conf.min_city_pop
+            return is_capital or is_large
+
+        def get_name(city: Record) -> str:
+            """Fetch city name in current language, hand-correcting some."""
+            name = city.attributes[f"name_{self.conf.lang}"]
+            if name.startswith("Freiburg im ") and name.endswith("echtland"):
+                name = "Freiburg"
+            return name
+
+        # src: https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-populated-places/lk  # noqa
+        cities: Sequence[Record] = cartopy.io.shapereader.Reader(
+            cartopy.io.shapereader.natural_earth(
+                category="cultural",
+                name="populated_places",
+                resolution=self.conf.geo_res_cities,
+            )
+        ).records()
+
+        for city in cities:
+            lon, lat = city.geometry.x, city.geometry.y
+            if is_visible(city) and is_of_interest(city):
+                self.marker(
+                    lon,
+                    lat,
+                    marker="o",
+                    color="black",
+                    fillstyle="none",
+                    markeredgewidth=1,
+                    markersize=3,
+                    zorder=self.zorder["geo_upper"],
+                )
+                name = get_name(city)
+                self.text(lon, lat, name, va="center", size="small", clip_on=True)
+
+    def _ax_add_data_domain_outline(self) -> None:
+        """Add domain outlines to map plot."""
+        lon0, lon1 = self.lon[[0, -1]]
+        lat0, lat1 = self.lat[[0, -1]]
+        xs = [lon0, lon1, lon1, lon0, lon0]
+        ys = [lat0, lat0, lat1, lat1, lat0]
+        self.ax.plot(xs, ys, transform=self.proj_data, c="black", lw=1)
+
+    def _ax_add_frame(self) -> None:
+        """Draw frame around map plot."""
+        self.ax.add_patch(
+            mpl.patches.Rectangle(
+                xy=(0, 0),
+                width=1,
+                height=1,
+                transform=self.ax.transAxes,
+                zorder=self.zorder["frames"],
+                facecolor="none",
+                edgecolor="black",
+                linewidth=self.conf.lw_frame,
+                clip_on=False,
+            ),
+        )
+
+    @overload
+    def _transform_xy_axes_to_geo(self, x: float, y: float) -> Tuple[float, float]:
+        ...
+
+    @overload
+    def _transform_xy_axes_to_geo(
+        self, x: Sequence[float], y: Sequence[float]
+    ) -> Tuple[Sequence[float], Sequence[float]]:
+        ...
 
     def _transform_xy_axes_to_geo(self, x, y):
         return transform_xy_axes_to_geo(
             x, y, self.ax.transAxes, self.ax.transData, self.proj_geo, self.proj_map,
         )
 
+    @overload
+    def _transform_xy_geo_to_axes(self, x: float, y: float) -> Tuple[float, float]:
+        ...
+
+    @overload
+    def _transform_xy_geo_to_axes(
+        self, x: Sequence[float], y: Sequence[float]
+    ) -> Tuple[Sequence[float], Sequence[float]]:
+        ...
+
     def _transform_xy_geo_to_axes(self, x, y):
         return transform_xy_geo_to_axes(
             x, y, self.proj_map, self.proj_geo, self.ax.transData, self.ax.transAxes,
         )
 
+    @overload
+    def _transform_xy_geo_to_data(self, x: float, y: float) -> Tuple[float, float]:
+        ...
 
+    @overload
+    def _transform_xy_geo_to_data(
+        self, x: Sequence[float], y: Sequence[float]
+    ) -> Tuple[Sequence[float], Sequence[float]]:
+        ...
+
+    def _transform_xy_geo_to_data(self, x, y):
+        return self.proj_data.transform_point(x, y, self.proj_geo, trap=True)
+
+
+@dataclass
 class MapAxesRotatedPole(MapAxes):
     """Map plot axes for rotated-pole data."""
 
-    def __init__(self, *, pollon, pollat, **kwargs):
-        self.pollon = pollon
-        self.pollat = pollat
-        super().__init__(**kwargs)
+    pollon: float
+    pollat: float
 
     @classmethod
-    def create(cls, conf, *, fig, rect, field):
+    def create(
+        cls, conf: MapAxesConf, *, fig: Figure, rect: RectType, field: np.ndarray
+    ) -> "MapAxesRotatedPole":
         if not field.rotated_pole:
             raise ValueError("not a rotated-pole field", field)
         rotated_pole = field.nc_meta_data["variables"]["rotated_pole"]["ncattrs"]
@@ -704,7 +764,7 @@ class MapAxesRotatedPole(MapAxes):
             conf=conf,
         )
 
-    def prepare_projections(self):
+    def _init_projs(self) -> None:
         """Prepare projections to transform the data for plotting."""
 
         # Projection of input data: Rotated Pole
@@ -728,9 +788,20 @@ class MapAxesRotatedPole(MapAxes):
 class ReferenceDistanceIndicator:
     """Reference distance indicator on a map plot."""
 
-    def __init__(self, ax, axes_to_geo, conf, zorder):
+    def __init__(
+        self, ax: Axes, axes_to_geo: Projection, conf: RefDistIndConf, zorder: int
+    ) -> None:
         """Create an instance of ``ReferenceDistanceIndicator``.
 
+        Args:
+            ax: Axes.
+
+            axes_to_geo: Projection to convert from axes to geographical
+                coordinates.
+
+            conf: Configuration.
+
+            zorder: Vertical order in plot.
 
         """
         self.conf = conf
@@ -752,14 +823,14 @@ class ReferenceDistanceIndicator:
         self._add_to(ax, zorder)
 
     @property
-    def x_text(self):
+    def x_text(self) -> float:
         return self.x0_box + 0.5 * self.w_box
 
     @property
-    def y_text(self):
+    def y_text(self) -> float:
         return self.y1_box - self.ypad_box
 
-    def _add_to(self, ax, zorder):
+    def _add_to(self, ax: Axes, zorder: int) -> None:
 
         # Draw box
         ax.add_patch(
@@ -799,7 +870,7 @@ class ReferenceDistanceIndicator:
             fontsize=self.conf.font_size,
         )
 
-    def _calc_box_y_params(self):
+    def _calc_box_y_params(self) -> None:
         if self.pos_y == "t":
             self.y1_box = 1.0
             self.y0_box = self.y1_box - self.h_box
@@ -810,7 +881,7 @@ class ReferenceDistanceIndicator:
             raise ValueError(f"invalid y-position '{self.pos_y}'")
         self.y_line = self.y0_box + self.ypad_box
 
-    def _calc_box_x_params(self, axes_to_geo):
+    def _calc_box_x_params(self, axes_to_geo) -> None:
         if self.pos_x == "l":
             self.x0_box = 0.0
             self.x0_line = self.x0_box + self.xpad_box
@@ -821,18 +892,48 @@ class ReferenceDistanceIndicator:
             self.x0_line = self._calc_horiz_dist(self.x1_line, "west", axes_to_geo)
         else:
             raise ValueError(f"invalid x-position '{self.pos_x}'")
-
         self.w_box = self.x1_line - self.x0_line + 2 * self.xpad_box
-
         if self.pos_x == "l":
             self.x1_box = self.x0_box + self.w_box
         elif self.pos_x == "r":
             self.x0_box = self.x1_box - self.w_box
 
-    def _calc_horiz_dist(self, x0, direction, axes_to_geo):
-        calc = MapDistanceCalculator(axes_to_geo, self.conf.unit)
-        x1, _, _ = calc.run(x0, self.y_line, self.conf.dist, direction)
+    def _calc_horiz_dist(
+        self, x0: float, direction: str, axes_to_geo: Projection
+    ) -> float:
+        calculator = MapDistanceCalculator(axes_to_geo, self.conf.unit)
+        x1, _, _ = calculator.run(x0, self.y_line, self.conf.dist, direction)
         return x1
+
+
+@overload
+# pylint: disable=R0913  # too-many-arguments
+def transform_xy_geo_to_axes(
+    x: float,
+    y: float,
+    proj_map,
+    proj_geo,
+    trans_data,
+    trans_axes,
+    invalid_ok=...,
+    invalid_warn=...,
+) -> Tuple[float, float]:
+    ...
+
+
+@overload
+# pylint: disable=R0913  # too-many-arguments
+def transform_xy_geo_to_axes(
+    x: np.ndarray,
+    y: np.ndarray,
+    proj_map,
+    proj_geo,
+    trans_data,
+    trans_axes,
+    invalid_ok=...,
+    invalid_warn=...,
+) -> Tuple[np.ndarray, np.ndarray]:
+    ...
 
 
 # SR_TODO Refactor to reduce number of arguments!
@@ -840,16 +941,16 @@ class ReferenceDistanceIndicator:
 def transform_xy_geo_to_axes(
     x,
     y,
-    proj_map,
-    proj_geo,
-    trans_data,
-    trans_axes,
-    invalid_ok=True,
-    invalid_warn=True,
+    proj_map: Projection,
+    proj_geo: Projection,
+    trans_data: Projection,
+    trans_axes: Projection,
+    invalid_ok: bool = True,
+    invalid_warn: bool = True,
 ):
     """Transform geographic coordinates to axes coordinates."""
 
-    def recurse(xi, yi):
+    def recurse(xi: float, yi: float) -> Tuple[float, float]:
         return transform_xy_geo_to_axes(
             xi,
             yi,
@@ -863,7 +964,11 @@ def transform_xy_geo_to_axes(
 
     if isiterable(x) or isiterable(y):
         check_same_sized_iterables(x, y)
-        return tuple(np.array([recurse(xi, yi) for xi, yi in zip(x, y)]).T)
+        assert isinstance(x, np.ndarray)  # mypy
+        assert isinstance(y, np.ndarray)  # mypy
+        # pylint: disable=E0633  # unpacking-non-sequence
+        x, y = np.array([recurse(xi, yi) for xi, yi in zip(x, y)]).T
+        return x, y
 
     check_valid_coords((x, y), invalid_ok, invalid_warn)
 
@@ -891,17 +996,47 @@ def transform_xy_geo_to_axes(
     return xy_axs
 
 
+@overload
+# pylint: disable=R0913  # too-many-arguments
+def transform_xy_axes_to_geo(
+    x: float,
+    y: float,
+    trans_axes,
+    trans_data,
+    proj_geo,
+    proj_map,
+    invalid_ok=...,
+    invalid_warn=...,
+) -> Tuple[float, float]:
+    ...
+
+
+@overload
+# pylint: disable=R0913  # too-many-arguments
+def transform_xy_axes_to_geo(
+    x: np.ndarray,
+    y: np.ndarray,
+    trans_axes,
+    trans_data,
+    proj_geo,
+    proj_map,
+    invalid_ok=...,
+    invalid_warn=...,
+) -> Tuple[np.ndarray, np.ndarray]:
+    ...
+
+
 # SR_TODO Refactor to reduce number of arguments!
 # pylint: disable=R0913  # too-many-arguments
 def transform_xy_axes_to_geo(
     x,
     y,
-    trans_axes,
-    trans_data,
-    proj_geo,
-    proj_map,
-    invalid_ok=True,
-    invalid_warn=True,
+    trans_axes: Projection,
+    trans_data: Projection,
+    proj_geo: Projection,
+    proj_map: Projection,
+    invalid_ok: bool = True,
+    invalid_warn: bool = True,
 ):
     """Transform axes coordinates to geographic coordinates."""
 
@@ -919,8 +1054,13 @@ def transform_xy_axes_to_geo(
 
     if isiterable(x) or isiterable(y):
         check_same_sized_iterables(x, y)
-        return tuple(np.array([recurse(xi, yi) for xi, yi in zip(x, y)]).T)
+        assert isinstance(x, np.ndarray)  # mypy
+        assert isinstance(y, np.ndarray)  # mypy
+        x, y = tuple(np.array([recurse(xi, yi) for xi, yi in zip(x, y)]).T)
+        return x, y
 
+    assert isinstance(x, float)  # mypy
+    assert isinstance(y, float)  # mypy
     check_valid_coords((x, y), invalid_ok, invalid_warn)
 
     # Axes -> Display
@@ -938,7 +1078,7 @@ def transform_xy_axes_to_geo(
     return xy_geo
 
 
-def check_same_sized_iterables(x, y):
+def check_same_sized_iterables(x: np.ndarray, y: np.ndarray) -> None:
     """Check that x and y are iterables of the same size."""
     if isiterable(x) and not isiterable(y):
         raise ValueError(f"x is iterable but y is not", (x, y))
@@ -948,7 +1088,17 @@ def check_same_sized_iterables(x, y):
         raise ValueError(f"x and y differ in length", (len(x), len(y)), (x, y))
 
 
-def check_valid_coords(xy, allow, warn):
+@overload
+def check_valid_coords(xy: Tuple[float, float], allow, warn):
+    ...
+
+
+@overload
+def check_valid_coords(xy: Tuple[np.ndarray, np.ndarray], allow, warn):
+    ...
+
+
+def check_valid_coords(xy, allow: bool, warn: bool) -> None:
     """Check that xy coordinate is valid."""
     if np.isnan(xy).any() or np.isinf(xy).any():
         if not allow:
@@ -1408,7 +1558,7 @@ class TextBoxAxes:
 
             dx (optional): Horizontal offset in unit distances. May be negative.
 
-            dy (float): Vertical offset in unit distances. May be negative.
+            dy (optional): Vertical offset in unit distances. May be negative.
 
             **kwargs: Formatting options passed to ``ax.text()``.
 

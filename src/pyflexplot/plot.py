@@ -343,6 +343,8 @@ class Plot:
 
     def _add_markers(self) -> None:
         if self.config.mark_release_site:
+            assert isinstance(self.config.mdata.release_site_lon.value, float)  # mypy
+            assert isinstance(self.config.mdata.release_site_lat.value, float)  # mypy
             self.ax_map.marker(
                 self.config.mdata.release_site_lon.value,
                 self.config.mdata.release_site_lat.value,
