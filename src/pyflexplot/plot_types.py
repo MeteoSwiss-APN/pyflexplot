@@ -311,7 +311,7 @@ def create_plot_config(
     var_name = ""
     unit = mdata.format("variable_unit")
 
-    if setup.variable == "concentration":
+    if setup.input_variable == "concentration":
         new_config_dct["n_levels"] = 8
         new_config_dct["labels"]["right_middle"]["tc"] = (
             f"{words['level']}:" f" {escape_format_keys(format_level_label(mdata))}"
@@ -334,7 +334,7 @@ def create_plot_config(
             0, f"{words['level'].c}:\t{escape_format_keys(format_level_label(mdata))}"
         )
 
-    elif setup.variable == "deposition":
+    elif setup.input_variable == "deposition":
         dep_type_word = (
             "total" if setup.deposition_type == "tot" else setup.deposition_type
         )

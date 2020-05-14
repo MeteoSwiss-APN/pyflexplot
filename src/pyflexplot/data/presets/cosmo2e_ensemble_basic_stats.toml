@@ -10,27 +10,27 @@ ens_member_id = [
 time = 10
 
 [_base._concentration]
-variable = "concentration"
+input_variable = "concentration"
 
 [_base._deposition]
-variable = "deposition"
+input_variable = "deposition"
 deposition_type = "wet"
 integrate = true
 
 [_base."*"._mean]
-outfile = "ens_mean_{variable}_{lang}_ts-{time:02d}.png"
+outfile = "ens_mean_{input_variable}_{lang}_ts-{time:02d}.png"
 plot_type = "ens_mean"
 
 [_base."*"._median]
-outfile = "ens_median_{variable}_{lang}_ts-{time:02d}.png"
+outfile = "ens_median_{input_variable}_{lang}_ts-{time:02d}.png"
 plot_type = "ens_median"
 
 [_base."*"._min]
-outfile = "ens_min_{variable}_{lang}_ts-{time:02d}.png"
+outfile = "ens_min_{input_variable}_{lang}_ts-{time:02d}.png"
 plot_type = "ens_min"
 
 [_base."*"._max]
-outfile = "ens_max_{variable}_{lang}_ts-{time:02d}.png"
+outfile = "ens_max_{input_variable}_{lang}_ts-{time:02d}.png"
 plot_type = "ens_max"
 
 ["**".de]

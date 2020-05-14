@@ -24,10 +24,10 @@ from utils import datadir  # noqa:F401 isort:skip
 
 
 def get_var_name_ref(setup, var_names_ref):
-    if setup.variable == "concentration":
+    if setup.input_variable == "concentration":
         assert len(var_names_ref) == 1
         return next(iter(var_names_ref))
-    elif setup.variable == "deposition":
+    elif setup.input_variable == "deposition":
         species_id = setup.species_id
         if isinstance(species_id, tuple):
             assert len(species_id) == 1
@@ -67,7 +67,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
-                "variable": "concentration",
+                "input_variable": "concentration",
                 "species_id": 2,
                 "level": 1,
                 "integrate": False,
@@ -84,7 +84,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
-                "variable": "deposition",
+                "input_variable": "deposition",
                 "deposition_type": "dry",
                 "species_id": 2,
                 "integrate": False,
@@ -102,7 +102,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
-                "variable": "deposition",
+                "input_variable": "deposition",
                 "deposition_type": "wet",
                 "species_id": 2,
                 "integrate": False,
@@ -120,7 +120,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
-                "variable": "deposition",
+                "input_variable": "deposition",
                 "deposition_type": "tot",
                 "species_id": 2,
                 "integrate": False,
@@ -138,7 +138,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
-                "variable": "concentration",
+                "input_variable": "concentration",
                 "level": 1,
                 "species_id": 1,
                 "integrate": False,
@@ -155,7 +155,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
-                "variable": "deposition",
+                "input_variable": "deposition",
                 "deposition_type": "tot",
                 "species_id": 1,
                 "integrate": False,
@@ -173,7 +173,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
-                "variable": "deposition",
+                "input_variable": "deposition",
                 "deposition_type": "tot",
                 "species_id": [1, 2],
                 "integrate": False,
@@ -191,7 +191,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
-                "variable": "concentration",
+                "input_variable": "concentration",
                 "species_id": 1,
                 "level": 1,
                 "integrate": False,
@@ -253,7 +253,7 @@ def test_single(datadir, conf):  # noqa:F811
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
-                "variable": "concentration",
+                "input_variable": "concentration",
                 "level": [0, 2],
                 "species_id": 2,
                 "integrate": True,
@@ -271,7 +271,7 @@ def test_single(datadir, conf):  # noqa:F811
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
-                "variable": "concentration",
+                "input_variable": "concentration",
                 "level": [0, 2],
                 "species_id": 2,
                 "integrate": True,
@@ -289,7 +289,7 @@ def test_single(datadir, conf):  # noqa:F811
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
-                "variable": "deposition",
+                "input_variable": "deposition",
                 "deposition_type": "dry",
                 "species_id": 2,
                 "integrate": True,
@@ -306,7 +306,7 @@ def test_single(datadir, conf):  # noqa:F811
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
-                "variable": "deposition",
+                "input_variable": "deposition",
                 "deposition_type": "wet",
                 "species_id": 2,
                 "integrate": True,
@@ -323,7 +323,7 @@ def test_single(datadir, conf):  # noqa:F811
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
-                "variable": "deposition",
+                "input_variable": "deposition",
                 "deposition_type": "tot",
                 "species_id": 1,
                 "integrate": True,
@@ -340,7 +340,7 @@ def test_single(datadir, conf):  # noqa:F811
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
-                "variable": "concentration",
+                "input_variable": "concentration",
                 "level": 0,
                 "species_id": 1,
                 "integrate": True,
@@ -359,7 +359,7 @@ def test_single(datadir, conf):  # noqa:F811
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
-                "variable": "deposition",
+                "input_variable": "deposition",
                 "deposition_type": ["wet", "dry"],
                 "species_id": 1,
                 "integrate": True,

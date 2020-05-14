@@ -62,16 +62,16 @@ def read_nc_var(path, var_name, setup, model):
         fix_nc_fld(fld, model)  # SR_TMP
 
         # Reduce time dimension
-        if setup.variable == "concentration":
+        if setup.input_variable == "concentration":
             if setup.integrate:
                 # Integrate concentration field over time
                 fld = np.cumsum(fld, axis=0)
-        elif setup.variable == "deposition":
+        elif setup.input_variable == "deposition":
             if not setup.integrate:
                 # De-integrate deposition field over time
                 fld[1:] -= fld[:-1].copy()
         else:
-            raise NotImplementedError(f"variable '{setup.variable}'")
+            raise NotImplementedError(f"variable '{setup.input_variable}'")
         fld = fld[-1]
 
         return fld

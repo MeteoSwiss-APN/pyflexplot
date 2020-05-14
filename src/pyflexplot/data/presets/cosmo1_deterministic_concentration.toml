@@ -9,7 +9,7 @@ species_id = "*"
 
 [_base._concentration]
 outfile = "concentration_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
-variable = "concentration"
+input_variable = "concentration"
 level = 0
 combine_species = false
 time = "*"

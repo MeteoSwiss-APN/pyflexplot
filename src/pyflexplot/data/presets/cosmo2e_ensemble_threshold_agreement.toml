@@ -9,7 +9,7 @@ ens_member_id = [
 ]
 outfile = "ensemble_threshold_agreement_{domain}_{lang}_ts-{time:02d}.png"
 plot_type = "ens_thr_agrmt"
-variable = "deposition"
+input_variable = "deposition"
 deposition_type = "tot"
 time = 10
 

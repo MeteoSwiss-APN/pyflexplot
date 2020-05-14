@@ -8,7 +8,7 @@ plot_type = "auto"
 species_id = "*"
 
 [_base._concentration]
-variable = "concentration"
+input_variable = "concentration"
 level = 0
 combine_species = false
 
@@ -24,7 +24,7 @@ integrate = true
 
 [_base._deposition]
 outfile = "deposition_tot_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
-variable = "deposition"
+input_variable = "deposition"
 deposition_type = "tot"
 combine_species = true
 time = -1
@@ -33,7 +33,7 @@ integrate = true
 [_base._affected_area]
 outfile = "affected_area_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
 plot_type = "affected_area_mono"
-variable = "deposition"
+input_variable = "deposition"
 deposition_type = "tot"
 combine_species = true
 time = -1

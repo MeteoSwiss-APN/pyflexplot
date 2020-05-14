@@ -39,7 +39,7 @@ DEFAULT_SETUP = InputSetup(
         "simulation_type": "deterministic",
         "species_id": None,
         "time": None,
-        "variable": "concentration",
+        "input_variable": "concentration",
     }
 )
 
@@ -56,7 +56,7 @@ class Test_Decompress:
     def setup(self):
         return DEFAULT_SETUP.derive(
             {
-                "variable": "deposition",
+                "input_variable": "deposition",
                 "deposition_type": ["dry", "wet"],
                 "species_id": [1, 2],
                 "time": [1, 2, 3],
@@ -145,8 +145,8 @@ class Test_InputSetupCollection:
         return [
             {**DEFAULT_KWARGS, **dct}
             for dct in [
-                {"infile": "foo.nc", "variable": "concentration", "domain": "ch"},
-                {"infile": "bar.nc", "variable": "deposition", "lang": "de"},
+                {"infile": "foo.nc", "input_variable": "concentration", "domain": "ch"},
+                {"infile": "bar.nc", "input_variable": "deposition", "lang": "de"},
                 {"nageclass": 1, "noutrel": 5, "numpoint": 3},
             ]
         ]
@@ -171,9 +171,9 @@ class Test_Compress:
     dcts: List[Dict[str, Any]] = [
         {**DEFAULT_KWARGS, **dct}
         for dct in [
-            {"infile": "foo.nc", "variable": "concentration", "level": 0},
-            {"infile": "foo.nc", "variable": "concentration", "level": 1},
-            {"infile": "foo.nc", "variable": "concentration", "level": (1, 2)},
+            {"infile": "foo.nc", "input_variable": "concentration", "level": 0},
+            {"infile": "foo.nc", "input_variable": "concentration", "level": 1},
+            {"infile": "foo.nc", "input_variable": "concentration", "level": (1, 2)},
         ]
     ]
     setups_lst = [InputSetup.create(dct) for dct in dcts]

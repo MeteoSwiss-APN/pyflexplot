@@ -20,10 +20,10 @@ from utils import datadir  # noqa:F401 isort:skip
 
 
 def get_var_name_ref(setup, var_names_ref):
-    if setup.variable == "concentration":
+    if setup.input_variable == "concentration":
         assert len(var_names_ref) == 1
         return next(iter(var_names_ref))
-    elif setup.variable == "deposition":
+    elif setup.input_variable == "deposition":
         for var_name in var_names_ref:
             if (setup.deposition_type, var_name[:2]) in [("dry", "DD"), ("wet", "WD")]:
                 return var_name
@@ -42,7 +42,7 @@ class TestReadFieldEnsemble_Single:
         "simulation_type": "ensemble",
         "species_id": 2,
         "time": 10,
-        "variable": "concentration",
+        "input_variable": "concentration",
     }
 
     @property
@@ -268,7 +268,7 @@ class TestReadFieldEnsemble_Multiple:
 
         setup_params = {
             "level": 1,
-            "variable": "concentration",
+            "input_variable": "concentration",
         }
         if ens_var == "thr_agrmt":
             setup_params["ens_param_thr"] = self.ens_thr_agrmt_thr_concentration
@@ -306,7 +306,7 @@ class TestReadFieldEnsemble_Multiple:
                 f"WD_spec{self.species_id:03d}",
                 f"DD_spec{self.species_id:03d}",
             ],
-            setup_params={"variable": "deposition", "deposition_type": "tot"},
+            setup_params={"input_variable": "deposition", "deposition_type": "tot"},
             ens_var=ens_var,
             fct_reduce_mem=fct_reduce_mem,
         )

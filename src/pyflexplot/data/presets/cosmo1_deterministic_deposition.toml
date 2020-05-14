@@ -9,7 +9,7 @@ species_id = "*"
 
 [_base._deposition]
 outfile = "deposition_tot_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
-variable = "deposition"
+input_variable = "deposition"
 deposition_type = "tot"
 combine_species = true
 time = -1

@@ -688,7 +688,7 @@ class MetaDataCollector:
         """Collect species meta data."""
 
         name_core = nc_var_name(self.setup, self.nc_meta_data["analysis"]["model"])
-        if self.setup.variable == "deposition":  # SR_TMP
+        if self.setup.input_variable == "deposition":  # SR_TMP
             name_core = name_core[3:]
         try:  # SR_TMP IFS
             deposit_vel = self.ncattrs_vars[f"DD_{name_core}"]["dryvel"]
@@ -966,26 +966,26 @@ def nc_var_name(setup: InputSetup, model: str) -> Union[str, List[str]]:
     assert setup.species_id is not None  # mypy
     assert len(setup.species_id) == 1  # SR_TMP
     species_id = next(iter(setup.species_id))
-    if setup.variable == "concentration":
+    if setup.input_variable == "concentration":
         if model in ["cosmo2", "cosmo1"]:
             return f"spec{species_id:03d}"
         elif model == "ifs":
             return f"spec{species_id:03d}_mr"
         else:
             raise ValueError("unknown model", model)
-    elif setup.variable == "deposition":
+    elif setup.input_variable == "deposition":
         assert isinstance(setup.deposition_type, str)  # mypy
         prefix = {"wet": "WD", "dry": "DD"}[setup.deposition_type]
         return f"{prefix}_spec{species_id:03d}"
-    raise ValueError("unknown variable", setup.variable)
+    raise ValueError("unknown variable", setup.input_variable)
 
 
 def get_integr_type(setup: InputSetup) -> str:
     if not setup.integrate:
         return "mean"
-    elif setup.variable == "concentration":
+    elif setup.input_variable == "concentration":
         return "sum"
-    elif setup.variable == "deposition":
+    elif setup.input_variable == "deposition":
         return "accum"
     else:
-        raise NotImplementedError("integration type for variable", setup.variable)
+        raise NotImplementedError("integration type for variable", setup.input_variable)

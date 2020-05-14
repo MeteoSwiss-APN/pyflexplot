@@ -59,14 +59,19 @@ def test_read_single_section(tmp_path):
     content = f"""\
         [plot]
         {DEFAULT_TOML}
-        variable = "deposition"
+        input_variable = "deposition"
         lang = "de"
         """
     setups = read_tmp_setup_file(tmp_path, content)
     assert len(setups) == 1
     assert setups != [DEFAULT_SETUP.dict()]
     sol = [
-        {**DEFAULT_SETUP.dict(), "variable": "deposition", "level": None, "lang": "de"},
+        {
+            **DEFAULT_SETUP.dict(),
+            "input_variable": "deposition",
+            "level": None,
+            "lang": "de",
+        },
     ]
     assert setups == sol
 
@@ -104,10 +109,10 @@ def test_read_multiple_nested_sections(tmp_path):
         lang = "de"
 
         [_base.con]
-        variable = "concentration"
+        input_variable = "concentration"
 
         [_base._dep]
-        variable = "deposition"
+        input_variable = "deposition"
         deposition_type = "tot"
 
         [_base._dep._tot._ch.en]
@@ -137,13 +142,13 @@ def test_read_multiple_nested_sections(tmp_path):
         """
     sol_base = {
         **DEFAULT_KWARGS,
-        "variable": "deposition",
+        "input_variable": "deposition",
         "deposition_type": "tot",
         "level": None,
         "lang": "de",
     }
     sol_specific = [
-        {"variable": "concentration", "deposition_type": "none"},
+        {"input_variable": "concentration", "deposition_type": "none"},
         {"domain": "ch", "lang": "en"},
         {"domain": "ch", "lang": "de"},
         {"domain": "auto", "lang": "en"},
@@ -165,10 +170,10 @@ def test_read_multiple_override(tmp_path):
         lang = "de"
 
         [_base.con]
-        variable = "concentration"
+        input_variable = "concentration"
 
         [_base._dep]
-        variable = "deposition"
+        input_variable = "deposition"
         deposition_type = "tot"
 
         [_base._dep._tot._ch.en]
@@ -203,13 +208,13 @@ def test_read_multiple_override(tmp_path):
     sol_base = {
         **DEFAULT_KWARGS,
         "infile": "foo.nc",
-        "variable": "deposition",
+        "input_variable": "deposition",
         "deposition_type": "tot",
         "level": None,
         "lang": "de",
     }
     sol_specific = [
-        {"variable": "concentration", "deposition_type": "none"},
+        {"input_variable": "concentration", "deposition_type": "none"},
         {"domain": "ch", "lang": "de"},
         {"domain": "auto", "lang": "de"},
         {"deposition_type": "wet"},
@@ -285,10 +290,10 @@ def test_read_wildcard_simple(tmp_path):
         {DEFAULT_TOML}
 
         [_base._concentration]
-        variable = "concentration"
+        input_variable = "concentration"
 
         [_base._deposition]
-        variable = "deposition"
+        input_variable = "deposition"
 
         [_base."*".de]
         lang = "de"
@@ -300,10 +305,10 @@ def test_read_wildcard_simple(tmp_path):
     sol = [
         {**DEFAULT_SETUP.dict(), **dct}
         for dct in [
-            {"variable": "concentration", "lang": "de"},
-            {"variable": "concentration", "lang": "en"},
-            {"variable": "deposition", "level": None, "lang": "de"},
-            {"variable": "deposition", "level": None, "lang": "en"},
+            {"input_variable": "concentration", "lang": "de"},
+            {"input_variable": "concentration", "lang": "en"},
+            {"input_variable": "deposition", "level": None, "lang": "de"},
+            {"input_variable": "deposition", "level": None, "lang": "en"},
         ]
     ]
     setups = read_tmp_setup_file(tmp_path, content)
@@ -317,10 +322,10 @@ def test_read_double_wildcard_equal_depth(tmp_path):
         {DEFAULT_TOML}
 
         [_base._concentration]
-        variable = "concentration"
+        input_variable = "concentration"
 
         [_base._deposition]
-        variable = "deposition"
+        input_variable = "deposition"
 
         ["**"._ch.de]
         domain = "ch"
@@ -342,8 +347,8 @@ def test_read_double_wildcard_equal_depth(tmp_path):
     sol = [
         {**DEFAULT_SETUP.dict(), **dct, "domain": domain, "lang": lang}
         for dct in [
-            {"variable": "concentration", "integrate": False},
-            {"variable": "deposition", "level": None, "integrate": False},
+            {"input_variable": "concentration", "integrate": False},
+            {"input_variable": "deposition", "level": None, "integrate": False},
         ]
         for domain in ["ch", "auto"]
         for lang in ["de", "en"]
@@ -359,13 +364,13 @@ def test_read_double_wildcard_variable_depth(tmp_path):
         {DEFAULT_TOML}
 
         [_base._concentration]
-        variable = "concentration"
+        input_variable = "concentration"
 
         [_base._concentration._time10]
         time = 10
 
         [_base._deposition]
-        variable = "deposition"
+        input_variable = "deposition"
 
         ["**"._ch.de]
         domain = "ch"
@@ -387,8 +392,8 @@ def test_read_double_wildcard_variable_depth(tmp_path):
     sol = [
         {**DEFAULT_SETUP.dict(), **dct, "domain": domain, "lang": lang}
         for dct in [
-            {"variable": "concentration", "time": (10,)},
-            {"variable": "deposition", "level": None},
+            {"input_variable": "concentration", "time": (10,)},
+            {"input_variable": "deposition", "level": None},
         ]
         for domain in ["ch", "auto"]
         for lang in ["de", "en"]
@@ -404,10 +409,10 @@ def test_read_combine_wildcards(tmp_path):
         infile = "data_{{ens_member:02d}}.nc"
 
         [_base._concentration]
-        variable = "concentration"
+        input_variable = "concentration"
 
         [_base._deposition]
-        variable = "deposition"
+        input_variable = "deposition"
 
         [_base."*"._mean]
         plot_type = "ens_mean"
@@ -428,12 +433,12 @@ def test_read_combine_wildcards(tmp_path):
         {
             **DEFAULT_SETUP.dict(),
             "infile": "data_{ens_member:02d}.nc",
-            "variable": variable,
+            "input_variable": input_variable,
             "plot_type": plot_type,
             "outfile": f"{plot_type}_{{lang}}.png",
             "lang": lang,
         }
-        for variable in ["concentration", "deposition"]
+        for input_variable in ["concentration", "deposition"]
         for plot_type in ["ens_mean", "ens_max"]
         for lang in ["de", "en"]
     ]
@@ -464,7 +469,7 @@ class Test_IndividualParams_SingleOrMultipleValues:
         content = f"""\
             [_base]
             {DEFAULT_TOML}
-            variable = "concentration"
+            input_variable = "concentration"
 
             [_base.single]
             level = 0
@@ -481,11 +486,11 @@ class Test_IndividualParams_SingleOrMultipleValues:
         content = f"""\
             [base]
             {DEFAULT_TOML}
-            variable = "deposition"
+            input_variable = "deposition"
 
             """
         setups = read_tmp_setup_file(tmp_path, content)
         sol = [
-            {**DEFAULT_SETUP.dict(), "variable": "deposition", "level": None},
+            {**DEFAULT_SETUP.dict(), "input_variable": "deposition", "level": None},
         ]
         assert setups.dicts() == sol

@@ -526,7 +526,7 @@ class FileReader:
         self, fi: nc4.Dataset, fld: np.ndarray, setup: InputSetup,
     ) -> np.ndarray:
         """Integrate, or desintegrate, field over time."""
-        if setup.variable == "concentration":
+        if setup.input_variable == "concentration":
             if setup.integrate:
                 # Integrate field over time
                 dt_hr = self._compute_temporal_resolution(fi)
@@ -534,7 +534,7 @@ class FileReader:
             else:
                 # Field is already instantaneous
                 return fld
-        elif setup.variable == "deposition":
+        elif setup.input_variable == "deposition":
             if setup.integrate:
                 # Field is already time-integrated
                 return fld
@@ -543,7 +543,7 @@ class FileReader:
                 dt_hr = self._compute_temporal_resolution(fi)
                 fld[1:] = (fld[1:] - fld[:-1]) / dt_hr
                 return fld
-        raise NotImplementedError("unknown variable", setup.variable)
+        raise NotImplementedError("unknown variable", setup.input_variable)
 
     def _compute_temporal_resolution(self, fi: nc4.Dataset) -> float:
         time = fi.variables["time"]
@@ -584,7 +584,7 @@ class FlexPartDataFixer:
         name = nc_var.getncattr("long_name").split("_")[0]
         unit = nc_var.getncattr("units")
         if name not in self.possible_var_names:
-            raise NotImplementedError("variable", name)
+            raise NotImplementedError("input_variable", name)
         try:
             fact = self.conversion_factor_by_unit[unit]
         except KeyError:
@@ -611,7 +611,7 @@ class FlexPartDataFixer:
         # Variable unit
         var_name = mdata.species_name.value
         if var_name not in self.possible_var_names:
-            raise NotImplementedError("variable", var_name)
+            raise NotImplementedError("input_variable", var_name)
         integr_type = get_integr_type(mdata.setup)
         old_unit = mdata.variable_unit.value
         new_unit = "Bq"

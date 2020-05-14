@@ -115,6 +115,9 @@ class InputSetup(BaseModel):
 
         infile: Input file path(s). May contain format keys.
 
+        input_variable: Input variable to be plotted. Choices: "concentration",
+            "deposition".
+
         integrate: Integrate field over time.
 
         lang: Language. Use the format key '{lang}' to embed it into the plot
@@ -144,9 +147,6 @@ class InputSetup(BaseModel):
         time: Time step indices (zero-based). Use the format key '{time}'
             to embed one in the plot file path.
 
-        variable: Input variable to be plotted. Choices: "concentration",
-            "deposition".
-
     """
 
     class Config:  # noqa
@@ -157,7 +157,7 @@ class InputSetup(BaseModel):
     infile: str
     outfile: str
     plot_type: str = "auto"
-    variable: str = "concentration"
+    input_variable: str = "concentration"
 
     # Tweaks
     deposition_type: Union[str, Tuple[str, str]] = "none"
@@ -182,7 +182,7 @@ class InputSetup(BaseModel):
     time: Optional[Tuple[int, ...]] = None
     level: Optional[Tuple[int, ...]] = None
 
-    @validator("variable")
+    @validator("input_variable")
     def _check_variable(cls, value: str) -> str:
         assert value in ["concentration", "deposition"]
         return value
@@ -238,9 +238,9 @@ class InputSetup(BaseModel):
     def _init_level(
         cls, value: Optional[Tuple[int, ...]], values: Dict[str, Any],
     ) -> Optional[Tuple[int, ...]]:
-        if value is not None and values["variable"] == "deposition":
+        if value is not None and values["input_variable"] == "deposition":
             raise ValueError(
-                "level must be None for variable", value, values["variable"],
+                "level must be None for variable", value, values["input_variable"],
             )
         return value
 
@@ -372,7 +372,7 @@ class InputSetup(BaseModel):
         # SR_TMP >
 
         if self.level is None:
-            if self.variable == "concentration":
+            if self.input_variable == "concentration":
                 if "level" in dimensions:
                     self.level = tuple(range(dimensions["level"]["size"]))
                     completed.append("level")
@@ -433,8 +433,8 @@ class InputSetup(BaseModel):
             return InputSetupCollection([self.derive(params_i) for params_i in params])
         # SR_TMP < TODO find cleaner solution (w/o duplication of logic)
         if (
-            self.variable == "concentration"
-            and params.get("variable") == "deposition"
+            self.input_variable == "concentration"
+            and params.get("input_variable") == "deposition"
             and "level" not in params
         ):
             params["level"] = None  # type: ignore
@@ -576,7 +576,7 @@ class CoreInputSetup(BaseModel):
     infile: str
     outfile: str
     plot_type: str = "auto"
-    variable: str = "concentration"
+    input_variable: str = "concentration"
 
     # Tweaks
     deposition_type: str = "none"

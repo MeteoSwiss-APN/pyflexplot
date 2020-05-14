@@ -436,9 +436,9 @@ def format_out_file_path(setup: InputSetup, _previous: List[str] = []) -> str:
 
 
 def _format_out_file_path_core(template: str, setup: InputSetup) -> str:
-    variable = setup.variable
-    if setup.variable == "deposition":
-        variable += f"_{setup.deposition_type}"
+    input_variable = setup.input_variable
+    if setup.input_variable == "deposition":
+        input_variable += f"_{setup.deposition_type}"
     kwargs = {
         "nageclass": setup.nageclass,
         "domain": setup.domain,
@@ -447,7 +447,7 @@ def _format_out_file_path_core(template: str, setup: InputSetup) -> str:
         "noutrel": setup.noutrel,
         "species_id": setup.species_id,
         "time": setup.time,
-        "variable": variable,
+        "input_variable": input_variable,
     }
     # Format the file path
     # Don't use str.format in order to handle multival elements

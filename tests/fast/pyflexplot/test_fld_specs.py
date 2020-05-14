@@ -16,7 +16,7 @@ class Test_Create_Concentration:
         {
             "infile": "dummy.nc",
             "outfile": "dummy.png",
-            "variable": "concentration",
+            "input_variable": "concentration",
             "integrate": False,
             "time": 1,
         },
@@ -63,7 +63,7 @@ class Test_Create_Deposition:
         {
             "infile": "dummy.nc",
             "outfile": "dummy.png",
-            "variable": "deposition",
+            "input_variable": "deposition",
             "deposition_type": "dry",
             "integrate": False,
         },
