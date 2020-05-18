@@ -480,7 +480,7 @@ def _replace_format_keys(path: str, kwargs: Mapping[str, Any]) -> str:
     # Check that all keys have been formatted
     if "{" in path or "}" in path:
         raise Exception(
-            f"formatted output file path still contains format keys", path,
+            "formatted output file path still contains format keys", path,
         )
 
     return path

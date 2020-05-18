@@ -140,7 +140,7 @@ WORDS.add(
     de={"*": "Bodendeposition", "abbr": "Bodendep."},
 )
 # T
-WORDS.add(en="threshold", de=f"Grenzwert")
+WORDS.add(en="threshold", de="Grenzwert")
 WORDS.add(en="threshold agreement", de=f"Grenzwert{s['ue']}bereinstimmung")
 WORDS.add(en="total", de={"*": "total", "m": "totaler", "f": "totale", "g": "totalen"})
 WORDS.add(en="total mass", de="Totale Masse")

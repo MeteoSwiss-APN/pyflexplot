@@ -294,7 +294,7 @@ class ContextWord:
             if not isinstance(word, Word):
                 word = self.cls_word(word, lang=lang, ctx=ctx)
             self._variants[ctx] = word
-        self.default_context = next(iter(self._variants))
+        self.default_context = default_context or next(iter(self._variants))
 
     def get(self):
         """Return word in default context."""

@@ -26,7 +26,7 @@ class Degrees:
 
         # Check for most common non-stable sequence
         if isinstance(deg, set):
-            raise ValueError(f"deg cannot be a set")
+            raise ValueError("deg cannot be a set", deg)
 
         # Check for `(degs,)`
         try:

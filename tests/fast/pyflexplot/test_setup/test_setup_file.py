@@ -404,9 +404,9 @@ def test_read_double_wildcard_variable_depth(tmp_path):
 
 def test_read_combine_wildcards(tmp_path):
     """Apply single- and double-star wildcards in combination."""
-    content = f"""\
+    content = """\
         [_base]
-        infile = "data_{{ens_member:02d}}.nc"
+        infile = "data_{ens_member:02d}.nc"
 
         [_base._concentration]
         input_variable = "concentration"
@@ -416,11 +416,11 @@ def test_read_combine_wildcards(tmp_path):
 
         [_base."*"._mean]
         plot_type = "ens_mean"
-        outfile = "ens_mean_{{lang}}.png"
+        outfile = "ens_mean_{lang}.png"
 
         [_base."*"._max]
         plot_type = "ens_max"
-        outfile = "ens_max_{{lang}}.png"
+        outfile = "ens_max_{lang}.png"
 
         ["**".de]
         lang = "de"

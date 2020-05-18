@@ -585,7 +585,7 @@ class MapAxes:
             major_rivers.geometries()
         except Exception:  # pylint: disable=W0703  # broad-except
             warnings.warn(
-                f"cannot add major rivers due to shapely issue with "
+                "cannot add major rivers due to shapely issue with "
                 "'rivers_lake_centerline; pending bugfix: "
                 "https://github.com/SciTools/cartopy/pull/1411; workaround: use "
                 "https://github.com/shevawen/cartopy/tree/patch-1"
@@ -1081,11 +1081,11 @@ def transform_xy_axes_to_geo(
 def check_same_sized_iterables(x: np.ndarray, y: np.ndarray) -> None:
     """Check that x and y are iterables of the same size."""
     if isiterable(x) and not isiterable(y):
-        raise ValueError(f"x is iterable but y is not", (x, y))
+        raise ValueError("x is iterable but y is not", (x, y))
     if isiterable(y) and not isiterable(x):
-        raise ValueError(f"y is iterable but x is not", (x, y))
+        raise ValueError("y is iterable but x is not", (x, y))
     if len(x) != len(y):
-        raise ValueError(f"x and y differ in length", (len(x), len(y)), (x, y))
+        raise ValueError("x and y differ in length", (len(x), len(y)), (x, y))
 
 
 @overload

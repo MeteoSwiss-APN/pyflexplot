@@ -616,7 +616,7 @@ def format_vertical_level_range(
         if tops[0] == bots[1] and tops[1] == bots[2]:
             return fmt(bots[0], tops[2])
         else:
-            raise NotImplementedError(f"3 non-continuous level ranges")
+            raise NotImplementedError("3 non-continuous level ranges")
     else:
         raise NotImplementedError(f"{n} sets of levels")
 

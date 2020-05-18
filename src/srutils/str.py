@@ -69,7 +69,7 @@ def _filter_s(s, filter_invalid):
             try:
                 c = filter_invalid(c)
             except TypeError as e:
-                raise ValueError(f"invalid filter", e, filter_invalid, c)
+                raise ValueError("invalid filter", e, filter_invalid, c)
             else:
                 if not isinstance(c, str):
                     raise ValueError("filter must return str", c, filter_invalid, c)
@@ -81,10 +81,10 @@ def check_is_valid_varname(s):
     """Raise ``ValueError`` if ``s`` is not a valid variable name."""
 
     if re.match(r"^[0-9]", s):
-        raise ValueError(f"starts with number")
+        raise ValueError("starts with number")
 
     if not re.match(r"^[a-zA-Z0-9_]*$", s):
-        raise ValueError(f"contains invalid characters")
+        raise ValueError("contains invalid characters")
 
 
 def is_valid_varname(s):

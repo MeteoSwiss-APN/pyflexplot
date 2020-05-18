@@ -159,7 +159,7 @@ def check_summary_dict_element_is_subelement(
         # Compare other (non-str) iterables
 
         if not isiterable(obj_super, str_ok=False):
-            raise CheckFailedError(f"superdict element not iterable", err_objs)
+            raise CheckFailedError("superdict element not iterable", err_objs)
 
         n_sub, n_super = len(obj_sub), len(obj_super)
         if n_sub != n_super:
@@ -279,7 +279,7 @@ def _check_children(obj, t_children, f_children, kwargs, raise_):
         for idx, child in enumerate(obj):
             if not isinstance(child, t_children):
                 return_or_raise(
-                    f"child has unexpected type {type(child).__name__}",
+                    "child has unexpected type",
                     {**kwargs, "child": child, "idx": idx},
                     raise_,
                 )
@@ -288,7 +288,7 @@ def _check_children(obj, t_children, f_children, kwargs, raise_):
         for idx, child in enumerate(obj):
             if not f_children(child):
                 return_or_raise(
-                    f"f_children returns False for child",
+                    "f_children returns False for child",
                     {**kwargs, "child": child, "idx": idx},
                     raise_,
                 )
@@ -382,9 +382,10 @@ def assert_nested_equal(
         elif isinstance(obj1, Sequence):
             check_equivalent(obj1, obj2, Sequence, path)
             if len(obj1) != len(obj2):
+                # pylint: disable=E1121  # too-many-function-args
                 raise error(
-                    f"sequences differ in length: {len(obj1)} vs. {len(obj2)}",
-                    *[path, obj1, obj2],
+                    "sequences differ in length",
+                    *[len(obj1), len(obj2), path, obj1, obj2],
                 )
             for idx, (ele1, ele2) in enumerate(zip(obj1, obj2)):
                 recurse(ele1, ele2, path + [f"idx: {idx}"])
@@ -392,15 +393,16 @@ def assert_nested_equal(
         elif isinstance(obj1, Collection):
             check_equivalent(obj1, obj2, Collection, path)
             if len(obj1) != len(obj2):
+                # pylint: disable=E1121  # too-many-function-args
                 raise error(
-                    f"collections differ in length: {len(obj1)} vs. {len(obj2)}",
-                    *[path, obj1, obj2],
+                    "collections differ in length",
+                    *[len(obj1), len(obj2), path, obj1, obj2],
                 )
             try:
                 obj1 = sorted(obj1)
                 obj2 = sorted(obj2)
             except Exception:
-                raise error(f"unequal collections are unsortable", path, obj1, obj2)
+                raise error("unequal collections are unsortable", path, obj1, obj2)
             for idx, (ele1, ele2) in enumerate(zip(obj1, obj2)):
                 recurse(ele1, ele2, path + [f"idx: {idx}"])
 
@@ -432,6 +434,6 @@ def assert_nested_equal(
                 msg = f"unequal reals: {obj1} vs. {obj2} (consider float_close_ok)"
             raise error(msg, path)
         else:
-            raise error(f"unequal objects", path, obj1, obj2)
+            raise error("unequal objects", path, obj1, obj2)
 
     return recurse(obj1, obj2, path=[])

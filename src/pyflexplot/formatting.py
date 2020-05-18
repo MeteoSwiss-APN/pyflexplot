@@ -350,6 +350,7 @@ class LevelRangeFormatter:
 
     def _check_widths(self, widths: Tuple[int, int, int]) -> None:
         try:
+            # pylint: disable=W0612  # unused-variable
             wl, wc, wr = [int(w) for w in widths]
         except (ValueError, TypeError):
             raise ValueError(f"widths is not a tree-int tuple: {widths}")
@@ -405,7 +406,7 @@ class LevelRangeFormatter:
         open_left = lvl0 in (None, np.inf)
         open_right = lvl1 in (None, np.inf)
         if open_left and open_right:
-            raise ValueError(f"range open at both ends")
+            raise ValueError("range open at both ends")
         elif open_left:
             assert lvl1 is not None  # mypy
             return self._format_open_left(lvl1)

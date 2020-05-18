@@ -236,7 +236,7 @@ class MetaDatumCombo(GenericModel, Generic[ValueT]):
             combined_datum = self_datum.combine_with(other_datum, join=join)
             combo_values.append(combined_datum.value)
         return MetaDatumCombo[str](
-            name=f"self.name+other.name",
+            name=f"{self.name}+{other.name}",
             value=combo_values,
             attrs={**other.attrs, **self.attrs},
         )

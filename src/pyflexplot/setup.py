@@ -827,7 +827,7 @@ class InputSetupFile:
                     f"error parsing TOML file {self.path} ({type(e).__name__}: {e})"
                 )
         if not raw_data:
-            raise ValueError(f"empty setup file", self.path)
+            raise ValueError("empty setup file", self.path)
         semi_raw_data = nested_dict_resolve_wildcards(
             raw_data, double_only_to_ends=True,
         )

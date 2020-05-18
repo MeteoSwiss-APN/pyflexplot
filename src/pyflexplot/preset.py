@@ -69,7 +69,7 @@ def collect_preset_files(
     files_by_dir = {}  # type: ignore
     for dir_ in collect_preset_paths():
         files_by_dir[dir_] = {}
-        for path in sorted(dir_.glob(f"*.toml")):
+        for path in sorted(dir_.glob("*.toml")):
             name = path.name[: -len(path.suffix)]
             for rx_pattern in rx_patterns:
                 if rx_pattern.match(name):
@@ -159,7 +159,7 @@ def click_use_preset(ctx: Context, param: ParamType, value: Any) -> None:
         else:
             n = sum([len(files) for files in files_by_dir.values()])
             if n == 0:
-                click.echo(f"Collected no preset setup files")
+                click.echo("Collected no preset setup files")
             elif n == 1:
                 click.echo(f"Collected {n} preset setup file:")
             else:

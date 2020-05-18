@@ -152,7 +152,7 @@ def decompress_multival_dict(
 
     """
     if not isinstance(depth, int) or depth <= 0:
-        raise ValueError(f"depth must be a positive integer", depth)
+        raise ValueError("depth must be a positive integer", depth)
 
     def run_rec(dct, depth, curr_depth=1):
         """Run recursively."""
@@ -308,9 +308,7 @@ def _merge_children(children, tie_breaker):
                         raise KeyConflictError(
                             f"key conflict at depth {val_flat['depth']}", key,
                         )
-                    raise NotImplementedError(
-                        f"tie_breaker is not None", tie_breaker,
-                    )
+                    raise NotImplementedError("tie_breaker is not None", tie_breaker)
             flat[key] = val
     return flat
 

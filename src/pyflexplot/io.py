@@ -130,7 +130,7 @@ class FileReader:
 
     def prepare(self):
         if self.prepared:
-            raise Exception(f"file reader has already been prepared")
+            raise Exception("file reader has already been prepared")
         self.prepared = True
 
         self._prepare_in_file_path_lst()
@@ -165,8 +165,8 @@ class FileReader:
         if re.search(r"{ens_member(:[0-9]+d)?}", path_fmt):
             if not ens_member_ids:
                 raise ValueError(
-                    f"input file path contains ensemble member format key, but no "
-                    f"ensemble member ids have been passed",
+                    "input file path contains ensemble member format key, but no "
+                    "ensemble member ids have been passed",
                     path_fmt,
                     ens_member_ids,
                 )
@@ -176,7 +176,7 @@ class FileReader:
             path_lst = [path_fmt]
         else:
             raise ValueError(
-                f"input file path missing format key", path_fmt, ens_member_ids,
+                "input file path missing format key", path_fmt, ens_member_ids,
             )
         self.in_file_path_lst = path_lst
 
@@ -207,7 +207,7 @@ class FileReader:
                     nc_meta_data = nc_meta_data_i
                 elif nc_meta_data_i != nc_meta_data:
                     raise Exception(
-                        f"meta data differs", nc_meta_data_i, nc_meta_data,
+                        "meta data differs", nc_meta_data_i, nc_meta_data,
                     )
         self.nc_meta_data = nc_meta_data
 

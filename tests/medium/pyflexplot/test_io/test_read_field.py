@@ -63,7 +63,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
         Conf(
             datafilename=datafilename1,
             model="cosmo1",
-            var_names_ref=[f"spec002"],
+            var_names_ref=["spec002"],
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
@@ -80,7 +80,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
         Conf(
             datafilename=datafilename1,
             model="cosmo1",
-            var_names_ref=[f"DD_spec002"],
+            var_names_ref=["DD_spec002"],
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
@@ -98,7 +98,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
         Conf(
             datafilename=datafilename1,
             model="cosmo1",
-            var_names_ref=[f"WD_spec002"],
+            var_names_ref=["WD_spec002"],
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
@@ -116,7 +116,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
         Conf(
             datafilename=datafilename1,
             model="cosmo1",
-            var_names_ref=[f"WD_spec002", f"DD_spec002"],
+            var_names_ref=["WD_spec002", "DD_spec002"],
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
@@ -134,7 +134,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
         Conf(
             datafilename=datafilename2,
             model="cosmo1",
-            var_names_ref=[f"spec001"],
+            var_names_ref=["spec001"],
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
@@ -151,7 +151,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
         Conf(
             datafilename=datafilename2,
             model="cosmo1",
-            var_names_ref=[f"WD_spec001", f"DD_spec001"],
+            var_names_ref=["WD_spec001", "DD_spec001"],
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
@@ -169,7 +169,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
         Conf(
             datafilename=datafilename1,
             model="cosmo1",
-            var_names_ref=[f"DD_spec001", f"DD_spec002", f"WD_spec001", f"WD_spec002"],
+            var_names_ref=["DD_spec001", "DD_spec002", "WD_spec001", "WD_spec002"],
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
@@ -187,7 +187,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
         Conf(
             datafilename=datafilename3,
             model="ifs",
-            var_names_ref=[f"spec001_mr"],
+            var_names_ref=["spec001_mr"],
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
@@ -249,7 +249,7 @@ def test_single(datadir, conf):  # noqa:F811
         Conf(
             datafilename=datafilename1,
             model="cosmo1",
-            var_names_ref=[f"spec002"],
+            var_names_ref=["spec002"],
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
@@ -267,7 +267,7 @@ def test_single(datadir, conf):  # noqa:F811
         Conf(
             datafilename=datafilename1,
             model="cosmo1",
-            var_names_ref=[f"spec002"],
+            var_names_ref=["spec002"],
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
@@ -285,7 +285,7 @@ def test_single(datadir, conf):  # noqa:F811
         Conf(
             datafilename=datafilename1,
             model="cosmo1",
-            var_names_ref=[f"DD_spec002"],
+            var_names_ref=["DD_spec002"],
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
@@ -302,7 +302,7 @@ def test_single(datadir, conf):  # noqa:F811
         Conf(
             datafilename=datafilename1,
             model="cosmo1",
-            var_names_ref=[f"WD_spec002"],
+            var_names_ref=["WD_spec002"],
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
@@ -319,7 +319,7 @@ def test_single(datadir, conf):  # noqa:F811
         Conf(
             datafilename=datafilename1,
             model="cosmo1",
-            var_names_ref=[f"WD_spec001", f"DD_spec001"],
+            var_names_ref=["WD_spec001", "DD_spec001"],
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
@@ -336,7 +336,7 @@ def test_single(datadir, conf):  # noqa:F811
         Conf(
             datafilename=datafilename2,
             model="cosmo1",
-            var_names_ref=[f"spec001"],
+            var_names_ref=["spec001"],
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
@@ -355,7 +355,7 @@ def test_single(datadir, conf):  # noqa:F811
         Conf(
             datafilename=datafilename2,
             model="cosmo1",
-            var_names_ref=[f"WD_spec001", f"DD_spec001"],
+            var_names_ref=["WD_spec001", "DD_spec001"],
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
