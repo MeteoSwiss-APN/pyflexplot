@@ -23,6 +23,7 @@ import toml
 from pydantic import BaseModel
 from pydantic import ValidationError
 from pydantic import parse_obj_as
+from pydantic import root_validator
 from pydantic import validator
 from pydantic.fields import ModelField
 
@@ -112,8 +113,10 @@ class InputSetup(BaseModel):
     # Basics
     infile: str
     outfile: str
-    plot_type: str = "auto"
     input_variable: str = "concentration"
+    plot_variable: str = "auto"
+    ens_variable: str = "none"
+    plot_type: str = "auto"
 
     # Tweaks
     deposition_type: Union[str, Tuple[str, str]] = "none"
@@ -138,10 +141,28 @@ class InputSetup(BaseModel):
     time: Optional[Tuple[int, ...]] = None
     level: Optional[Tuple[int, ...]] = None
 
-    @validator("input_variable")
-    def _check_variable(cls, value: str) -> str:
-        assert value in ["concentration", "deposition"]
-        return value
+    @root_validator
+    def _check_variables_etc(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        input_variables = ["concentration", "deposition"]
+        assert values["input_variable"] in input_variables, values["input_variable"]
+        plot_variables = ["auto"]  # , "affected_area", "affected_area_mono"]
+        assert values["plot_variable"] in plot_variables, values["plot_variable"]
+        ens_variables = ["none"]
+        assert values["ens_variable"] in ens_variables, values["ens_variable"]
+        plot_types = [
+            "auto",
+            "affected_area",
+            "affected_area_mono",
+            "ens_min",
+            "ens_mean",
+            "ens_median",
+            "ens_max",
+            "ens_thr_agrmt",
+            "ens_cloud_arrival_time",
+            "ens_cloud_departure_time",
+        ]
+        assert values["plot_type"] in plot_types, values["plot_type"]
+        return values
 
     @validator("deposition_type", always=True)
     def _init_deposition_type(cls, value: Union[str, Tuple[str, str]]) -> str:
@@ -531,8 +552,10 @@ class CoreInputSetup(BaseModel):
     # Basics
     infile: str
     outfile: str
-    plot_type: str = "auto"
     input_variable: str = "concentration"
+    plot_variable: str = "auto"
+    ens_variable: str = "none"
+    plot_type: str = "auto"
 
     # Tweaks
     deposition_type: str = "none"

@@ -19,8 +19,10 @@ field_summary = {
         {
             "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
             "outfile": "plot.png",
-            "plot_type": "ens_max",
             "input_variable": "concentration",
+            "plot_variable": "auto",
+            "ens_variable": "none",
+            "plot_type": "ens_max",
             "deposition_type": "none",
             "integrate": True,
             "combine_species": False,
@@ -2307,8 +2309,10 @@ plot_summary = {
             {
                 "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
                 "outfile": "plot.png",
-                "plot_type": "ens_max",
                 "input_variable": "concentration",
+                "plot_variable": "auto",
+                "ens_variable": "none",
+                "plot_type": "ens_max",
                 "deposition_type": "none",
                 "integrate": True,
                 "combine_species": False,

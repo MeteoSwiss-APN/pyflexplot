@@ -19,8 +19,10 @@ field_summary = {
         {
             "infile": "flexpart_cosmo-1_2019093012.nc",
             "outfile": "dummy.png",
-            "plot_type": "auto",
             "input_variable": "concentration",
+            "plot_variable": "auto",
+            "ens_variable": "none",
+            "plot_type": "auto",
             "deposition_type": "none",
             "integrate": False,
             "combine_species": False,
@@ -2238,8 +2240,10 @@ plot_summary = {
             {
                 "infile": "flexpart_cosmo-1_2019093012.nc",
                 "outfile": "dummy.png",
-                "plot_type": "auto",
                 "input_variable": "concentration",
+                "plot_variable": "auto",
+                "ens_variable": "none",
+                "plot_type": "auto",
                 "deposition_type": "none",
                 "integrate": False,
                 "combine_species": False,
