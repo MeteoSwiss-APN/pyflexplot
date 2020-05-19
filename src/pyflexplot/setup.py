@@ -806,17 +806,30 @@ class InputSetupFile:
 
     @classmethod
     def read_many(
-        cls, paths: Sequence[str], override: Optional[Dict[str, Any]] = None,
+        cls,
+        paths: Sequence[str],
+        override: Optional[Dict[str, Any]] = None,
+        only: Optional[int] = None,
+        each_only: Optional[int] = None,
     ) -> InputSetupCollection:
+        if only is not None:
+            if only < 0:
+                raise ValueError("only must not be negative", only)
+            each_only = only
+        elif each_only is not None:
+            if each_only < 0:
+                raise ValueError("each_only must not be negative", each_only)
         setup_lst: List[InputSetup] = []
         for path in paths:
-            for setup in cls(path).read(override=override):
+            for setup in cls(path).read(override=override, only=each_only):
+                if only is not None and len(setup_lst) >= only:
+                    break
                 if setup not in setup_lst:
                     setup_lst.append(setup)
         return InputSetupCollection(setup_lst)
 
     def read(
-        self, *, override: Optional[Dict[str, Any]] = None,
+        self, *, override: Optional[Dict[str, Any]] = None, only: Optional[int] = None
     ) -> InputSetupCollection:
         """Read the setup from a text file in TOML format."""
         with open(self.path, "r") as f:
@@ -841,6 +854,10 @@ class InputSetupFile:
                 if params not in params_lst:
                     params_lst.append(params)
         setups = InputSetupCollection.create(params_lst)
+        if only is not None:
+            if only < 0:
+                raise ValueError("only must not be negative", only)
+            setups = InputSetupCollection(list(setups)[:only])
         return setups
 
     def write(self, *args, **kwargs) -> None:

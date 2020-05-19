@@ -144,6 +144,9 @@ def click_cat_preset_and_exit(ctx: Context, param: ParamType, value: Any) -> Non
 def click_use_preset(ctx: Context, param: ParamType, value: Any) -> None:
     if not value:
         return
+    if value == ("?",):
+        click.echo("Available presets ('?'):")
+        click_find_presets_and_exit(ctx, param, "*")
     key = "preset_setup_file_paths"
     if key not in ctx.obj:
         ctx.obj[key] = []

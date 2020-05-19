@@ -99,7 +99,10 @@ def prepare_input_setup_params(ctx, param, value):
 )
 @click.option(
     "--preset",
-    help="Run with preset setup file(s) matching name (may contain wildcards).",
+    help=(
+        "Run with preset setup file(s) matching name (may contain wildcards)."
+        " A single '?' serves as a shortcut to --list-setups."
+    ),
     metavar="NAME",
     multiple=True,
     callback=click_use_preset,
@@ -188,6 +191,14 @@ def cli(
         ctx.exit(1)
 
     # Read setup files
+    # Note: Already added argument `each_only` to `read_many` in order to plot
+    #       N plots per input setup file instead of per input data file, as it
+    #       is done now, but this does not yet work because it would select
+    #       n unexpanded setups per setup file, which may well correspond to a
+    #       large number of plots, e.g., in case of many time steps!
+    #       The setups would either have to be pre-expanded during reading, or
+    #       this had to be solved some other way, but for now, let's just stick
+    #       with the current implementation of N plots per input data file...
     setups = InputSetupFile.read_many(setup_file_paths, override=input_setup_params)
 
     # Group setups by input file(s)
