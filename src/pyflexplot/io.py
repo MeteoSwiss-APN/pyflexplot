@@ -25,8 +25,8 @@ from srutils.various import check_array_indices
 # Local
 from .data import EnsembleCloud
 from .data import Field
+from .data import ens_probability
 from .data import merge_fields
-from .data import threshold_agreement
 from .meta_data import MetaData
 from .meta_data import collect_meta_data
 from .meta_data import get_integr_type
@@ -294,6 +294,7 @@ class FileReader:
         plot_type = var_setups.collect_equal("plot_type")
         ens_param_thr = var_setups.collect_equal("ens_param_thr")
         ens_param_mem_min = var_setups.collect_equal("ens_param_mem_min")
+        n_ens_mem = len(var_setups.collect_equal("ens_member_id"))
 
         if plot_type == "ens_mean":
             fld_time = np.nanmean(fld_time_mem, axis=0)
@@ -303,8 +304,8 @@ class FileReader:
             fld_time = np.nanmin(fld_time_mem, axis=0)
         elif plot_type == "ens_max":
             fld_time = np.nanmax(fld_time_mem, axis=0)
-        elif plot_type == "ens_thr_agrmt":
-            fld_time = threshold_agreement(fld_time_mem, ens_param_thr)
+        elif plot_type == "ens_probability":
+            fld_time = ens_probability(fld_time_mem, ens_param_thr, n_ens_mem)
         elif plot_type in ["ens_cloud_arrival_time", "ens_cloud_departure_time"]:
             cloud = EnsembleCloud(
                 arr=fld_time_mem,

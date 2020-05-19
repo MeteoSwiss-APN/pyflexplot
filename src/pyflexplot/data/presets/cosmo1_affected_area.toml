@@ -17,7 +17,7 @@ integrate = true
 
 [_base._deposition._affected_area]
 outfile = "affected_area_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
-plot_type = "affected_area_mono"
+plot_variable = "affected_area_mono"
 
 # ["**"._auto.en]
 # domain = "auto"

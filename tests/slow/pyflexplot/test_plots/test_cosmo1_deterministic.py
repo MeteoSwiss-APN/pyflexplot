@@ -76,8 +76,8 @@ class Test_AffectedArea(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": "plot.png",
-        "plot_type": "affected_area_mono",
         "input_variable": "deposition",
+        "plot_variable": "affected_area_mono",
         "deposition_type": "tot",
         "integrate": True,
         "simulation_type": "deterministic",

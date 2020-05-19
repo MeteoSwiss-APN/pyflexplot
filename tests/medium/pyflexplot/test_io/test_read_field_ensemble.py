@@ -9,7 +9,7 @@ import functools
 import numpy as np
 
 # First-party
-from pyflexplot.data import threshold_agreement
+from pyflexplot.data import ens_probability
 from pyflexplot.io import read_files
 from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
@@ -153,9 +153,9 @@ class TestReadFieldEnsemble_Multiple:
     # Ensemble member ids
     ens_member_ids = [0, 1, 5, 10, 15, 20]
 
-    # Thresholds for ensemble threshold agreement
-    ens_thr_agrmt_thr_concentration = 1e-7  # SR_TMP
-    ens_thr_agrmt_thr_deposition_tot = None  # SR_TMP
+    # Thresholds for ensemble probability
+    ens_prob_thr_concentration = 1e-7  # SR_TMP
+    ens_prob_thr_tot_deposition = None  # SR_TMP
 
     def datafile_fmt(self, datadir):  # noqa:F811
         return f"{datadir}/flexpart_cosmo-2e_2019072712_{{ens_member:03d}}.nc"
@@ -259,9 +259,9 @@ class TestReadFieldEnsemble_Multiple:
         fct_reduce_mem = {
             "mean": lambda arr: np.nanmean(arr, axis=0),
             "max": lambda arr: np.nanmax(arr, axis=0),
-            "thr_agrmt": (
-                lambda arr: threshold_agreement(
-                    arr, self.ens_thr_agrmt_thr_concentration,
+            "probability": (
+                lambda arr: ens_probability(
+                    arr, self.ens_prob_thr_concentration, len(self.ens_member_ids)
                 )
             ),
         }[ens_var]
@@ -270,8 +270,8 @@ class TestReadFieldEnsemble_Multiple:
             "level": 1,
             "input_variable": "concentration",
         }
-        if ens_var == "thr_agrmt":
-            setup_params["ens_param_thr"] = self.ens_thr_agrmt_thr_concentration
+        if ens_var == "probability":
+            setup_params["ens_param_thr"] = self.ens_prob_thr_concentration
 
         self.run(
             separate=separate,
@@ -286,9 +286,9 @@ class TestReadFieldEnsemble_Multiple:
     def test_ens_mean_concentration(self, datadir):  # noqa:F811
         self.run_concentration(datadir, "mean", separate=False, scale_fld_ref=3)
 
-    def test_ens_threshold_agreement_concentration(self, datadir):  # noqa:F811
+    def test_ens_probability_concentration(self, datadir):  # noqa:F811
         self.run_concentration(
-            datadir, "thr_agrmt", separate=False, scale_fld_ref=3.0,
+            datadir, "probability", separate=False, scale_fld_ref=3.0,
         )
 
     # Deposition

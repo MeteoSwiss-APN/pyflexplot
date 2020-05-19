@@ -480,8 +480,8 @@ class LevelRangeFormatterInt(LevelRangeFormatter):
             warnings.warn(f"{type(self).__name__}._format_level: not an int: {lvl}")
         return f"{{:>{len(str(self._max_val))}}}".format(lvl)
 
-    def _format_open_left(self, lvl: float) -> Components:
-        return self._format_open_core(lvl, r"$\tt\leq$")
+    # def _format_open_left(self, lvl: float) -> Components:
+    #     return self._format_open_core(lvl, r"$\tt\leq$")
 
 
 class LevelRangeFormatterMath(LevelRangeFormatter):

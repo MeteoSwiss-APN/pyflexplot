@@ -86,8 +86,9 @@ class Test_EnsMean_TotalDeposition(_TestBase):
 #     setup_dct = {
 #         "infile": INFILE_NAME,
 #         "outfile": "plot.png",
+#         "input_variable": "deposition",
 #         "plot_type": "ens_minn",
-#         "input_variable": "affected_area",
+#         "plot_variable": "affected_area",
 #         "deposition_type": "tot",
 #         "integrate": True,
 #         "combine_species": True,

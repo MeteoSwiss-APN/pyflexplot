@@ -351,9 +351,9 @@ def create_plot_config(
         new_config_dct["model_info"] = new_config_dct["labels"]["bottom"][
             "model_info_det"
         ]
-        if setup.plot_type.startswith("affected_area"):
+        if setup.plot_variable.startswith("affected_area"):
             long_name = f"{words['affected_area']} {variable_rel}"
-            if setup.plot_type == "affected_area_mono":
+            if setup.plot_variable == "affected_area_mono":
                 new_config_dct["extend"] = "none"
                 new_config_dct["n_levels"] = 1
 
@@ -369,12 +369,12 @@ def create_plot_config(
             long_name = f"{words['ensemble_median']} {variable_rel}"
         elif setup.plot_type == "ens_mean":
             long_name = f"{words['ensemble_mean']} {variable_rel}"
-        elif setup.plot_type == "ens_thr_agrmt":
+        elif setup.plot_type == "ens_probability":
             new_config_dct.update(
                 {
-                    "extend": "min",
-                    "n_levels": 7,
-                    "d_level": 2,
+                    "extend": "both",
+                    "n_levels": 9,
+                    "d_level": 10,
                     "legend_rstrip_zeros": False,
                     "level_range_style": "int",
                     "level_ranges_align": "left",
@@ -386,11 +386,9 @@ def create_plot_config(
                 f"{words['cloud']}:\t{symbols['geq']} {setup.ens_param_thr}"
                 f" {mdata.format('variable_unit')}"
             )
-            short_name = f"{words['number_of', 'abbr'].c} " f"{words['member', 'pl']}"
-            long_name = (
-                f"{words['threshold_agreement']}"
-                f" ({words['number_of', 'abbr'].c} {words['member', 'pl']})"
-            )
+            short_name = f"{words['probability']}"
+            unit = "%"
+            long_name = f"{words['probability']} {variable_rel}"
         elif setup.plot_type in ["ens_cloud_arrival_time", "ens_cloud_departure_time"]:
             new_config_dct.update(
                 {
@@ -510,7 +508,7 @@ def colors_flexplot(n_levels: int, extend: str) -> Sequence[ColorType]:
 
 def colors_from_plot_config(plot_config: PlotConfig) -> Sequence[ColorType]:
     assert plot_config.n_levels is not None  # mypy
-    if plot_config.setup.plot_type == "affected_area_mono":
+    if plot_config.setup.plot_variable == "affected_area_mono":
         return (np.array([(200, 200, 200)]) / 255).tolist()
     elif plot_config.cmap == "flexplot":
         return colors_flexplot(plot_config.n_levels, plot_config.extend)
@@ -534,16 +532,13 @@ def levels_from_time_stats(
         )
 
     assert plot_config.n_levels is not None  # mypy
-    if plot_config.setup.plot_type == "ens_thr_agrmt":
-        n_max = 20  # SR_TMP SR_HC
+    if plot_config.setup.plot_type == "ens_probability":
         assert plot_config.d_level is not None  # mypy
-        return (
-            np.arange(
-                n_max - plot_config.d_level * (plot_config.n_levels - 1),
-                n_max + plot_config.d_level,
-                plot_config.d_level,
-            )
-            + 1
+        n_max = 90
+        return np.arange(
+            n_max - plot_config.d_level * (plot_config.n_levels - 1),
+            n_max + plot_config.d_level,
+            plot_config.d_level,
         )
     elif plot_config.setup.plot_type in [
         "ens_cloud_arrival_time",
@@ -551,7 +546,7 @@ def levels_from_time_stats(
     ]:
         assert plot_config.d_level is not None  # mypy
         return np.arange(0, plot_config.n_levels) * plot_config.d_level
-    elif plot_config.setup.plot_type == "affected_area_mono":
+    elif plot_config.setup.plot_variable == "affected_area_mono":
         levels = _auto_levels_log10(n_levels=9, val_max=time_stats["max"])
         return np.array([levels[0], np.inf])
     else:

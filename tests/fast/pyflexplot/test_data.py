@@ -9,11 +9,11 @@ import pytest  # type: ignore
 
 # First-party
 from pyflexplot.data import EnsembleCloud
-from pyflexplot.data import threshold_agreement
+from pyflexplot.data import ens_probability
 
 
-class TestThrAgrmt2D:
-    """Count number threshold exceedences along a 2D-array axis."""
+class TestEnsProb2D:
+    """Fraction of threshold exceedences along a 2D-array axis."""
 
     arr = np.array(
         [
@@ -27,13 +27,14 @@ class TestThrAgrmt2D:
     thr = 5
 
     def test(self):
-        res = threshold_agreement(self.arr, self.thr)
-        sol = np.array([2, 2, 2, 1, 2, 1, 1, 2])
-        assert (res == sol).all()
+        n = self.arr.shape[0]
+        res = ens_probability(self.arr, self.thr, n)
+        sol = np.array([2, 2, 2, 1, 2, 1, 1, 2]) * 100 / n
+        assert np.allclose(res, sol)
 
 
-class TestThrAgrmt3D:
-    """Count number threshold exceedences along a 3D-array axis."""
+class TestEnsProb3D:
+    """Fraction of threshold exceedences along a 3D-array axis."""
 
     arr = np.array(
         [
@@ -46,9 +47,12 @@ class TestThrAgrmt3D:
     thr = 3
 
     def test(self):
-        res = threshold_agreement(self.arr, self.thr)
-        sol = np.array([[3, 2, 3], [0, 2, 1], [1, 1, 1], [3, 3, 1], [1, 2, 2]])
-        assert (res == sol).all()
+        n = self.arr.shape[0]
+        res = ens_probability(self.arr, self.thr, n)
+        sol = (
+            np.array([[3, 2, 3], [0, 2, 1], [1, 1, 1], [3, 3, 1], [1, 2, 2]]) * 100 / n
+        )
+        assert np.allclose(res, sol)
 
 
 N = np.nan

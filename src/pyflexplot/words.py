@@ -118,6 +118,7 @@ WORDS.add(en={"*": "number of", "abbr": "no."}, de={"*": "Anzahl", "abbr": "Anz.
 # O
 WORDS.add(en="of", de={"*": "von", "fg": "der"})
 # P
+WORDS.add(en="probability", de="Wahrscheinlichkeit")
 # Q
 # R
 WORDS.add(en="rate", de="Rate")
@@ -141,7 +142,6 @@ WORDS.add(
 )
 # T
 WORDS.add(en="threshold", de="Grenzwert")
-WORDS.add(en="threshold agreement", de=f"Grenzwert{s['ue']}bereinstimmung")
 WORDS.add(en="total", de={"*": "total", "m": "totaler", "f": "totale", "g": "totalen"})
 WORDS.add(en="total mass", de="Totale Masse")
 # U

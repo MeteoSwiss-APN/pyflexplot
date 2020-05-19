@@ -34,9 +34,9 @@ from srutils.dict import decompress_nested_dict
 from srutils.dict import nested_dict_resolve_wildcards
 
 # Some plot-specific default values
-ENS_THR_AGRMT_THR_DEFAULT: float = 1e-8
-ENS_CLOUD_ARRIVAL_TIME_MEM_MIN_DEFAULT = 10
-ENS_CLOUD_ARRIVAL_TIME_THR_DEFAULT: float = 1e-7
+ENS_PROBABILITY_DEFAULT_PARAM_THR: float = 1e-8
+ENS_CLOUD_ARRIVAL_TIME_DEFAULT_PARAM_MEM_MIN = 10
+ENS_CLOUD_ARRIVAL_TIME_DEFAULT_PARAM_THR: float = 1e-7
 
 
 # pylint: disable=E0213  # no-self-argument (validators)
@@ -70,10 +70,11 @@ class InputSetup(BaseModel):
         ens_param_thr: Threshold used to compute some ensemble variables. Its
             precise meaning depends on the variable.
 
+        ense_variable: Ensemble variable computed from plot variable.
+
         infile: Input file path(s). May contain format keys.
 
-        input_variable: Input variable to be plotted. Choices: "concentration",
-            "deposition".
+        input_variable: Input variable. Choices: "concentration", "deposition".
 
         integrate: Integrate field over time.
 
@@ -89,13 +90,13 @@ class InputSetup(BaseModel):
 
         outfile: Output file path. May contain format keys.
 
-        plot_type: Plot type. Choices: "auto", "affected_area",
-            "affected_area_mono", "ens_mean", "ens_max", "ens_thr_agrmt".
+        plot_type: Plot type.
+
+        plot_variable: Variable computed from input variable.
 
         numpoint: Index of release point (zero-based).
 
-        simulation_type: Type of the simulation. Choices: "deterministic",
-            "ensemble".
+        simulation_type: Type of the simulation (deterministic or ensemble).
 
         species_id: Species id(s). To sum up multiple species, combine their
             ids with '+'. Use the format key '{species_id}' to embed it in the
@@ -145,19 +146,17 @@ class InputSetup(BaseModel):
     def _check_variables_etc(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         input_variables = ["concentration", "deposition"]
         assert values["input_variable"] in input_variables, values["input_variable"]
-        plot_variables = ["auto"]  # , "affected_area", "affected_area_mono"]
+        plot_variables = ["auto", "affected_area", "affected_area_mono"]
         assert values["plot_variable"] in plot_variables, values["plot_variable"]
         ens_variables = ["none"]
         assert values["ens_variable"] in ens_variables, values["ens_variable"]
         plot_types = [
             "auto",
-            "affected_area",
-            "affected_area_mono",
             "ens_min",
             "ens_mean",
             "ens_median",
             "ens_max",
-            "ens_thr_agrmt",
+            "ens_probability",
             "ens_cloud_arrival_time",
             "ens_cloud_departure_time",
         ]
@@ -188,7 +187,7 @@ class InputSetup(BaseModel):
             "ens_cloud_arrival_time",
             "ens_cloud_departure_time",
         ]:
-            value = ENS_CLOUD_ARRIVAL_TIME_MEM_MIN_DEFAULT
+            value = ENS_CLOUD_ARRIVAL_TIME_DEFAULT_PARAM_MEM_MIN
         return value
 
     @validator("ens_param_thr", always=True)
@@ -202,13 +201,13 @@ class InputSetup(BaseModel):
                     value,
                     values["simulation_type"],
                 )
-        elif values["plot_type"] == "ens_thr_agrmt":
-            value = ENS_THR_AGRMT_THR_DEFAULT
+        elif values["plot_type"] == "ens_probability":
+            value = ENS_PROBABILITY_DEFAULT_PARAM_THR
         elif values["plot_type"] in [
             "ens_cloud_arrival_time",
             "ens_cloud_departure_time",
         ]:
-            value = ENS_CLOUD_ARRIVAL_TIME_THR_DEFAULT
+            value = ENS_CLOUD_ARRIVAL_TIME_DEFAULT_PARAM_THR
         return value
 
     @validator("level", always=True)

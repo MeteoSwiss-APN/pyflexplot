@@ -1218,7 +1218,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "   $\\tt\\leq$  0",
+                    "s": "   $\\tt <$  0",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

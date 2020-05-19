@@ -32,7 +32,7 @@ integrate = true
 
 [_base._affected_area]
 outfile = "affected_area_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
-plot_type = "affected_area_mono"
+plot_variable = "affected_area_mono"
 input_variable = "deposition"
 deposition_type = "tot"
 combine_species = true
