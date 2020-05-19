@@ -38,50 +38,6 @@ ENS_CLOUD_ARRIVAL_TIME_MEM_MIN_DEFAULT = 10
 ENS_CLOUD_ARRIVAL_TIME_THR_DEFAULT: float = 1e-7
 
 
-def field_outer_type(field: ModelField, *, generic: bool = False) -> Type:
-    """Obtain the outer type of a pydantic model field."""
-    str_ = str(field.outer_type_)
-    prefix = "typing."
-    if not str_.startswith(prefix):
-        raise TypeError(
-            "<field>.outer_type_ does not start with '{prefix}'", str_, field,
-        )
-    str_ = str_[len(prefix) :]
-    str_ = str_.split("[")[0]
-    try:
-        type_ = getattr(typing, str_)
-    except AttributeError:
-        raise TypeError(
-            f"cannot derive type from <field>.outer_type_: typing.{str_} not found",
-            field,
-        )
-    if generic:
-        generics = {
-            typing.Tuple: tuple,
-            typing.List: list,
-            typing.Sequence: list,
-            typing.Set: set,
-            typing.Collection: set,
-            typing.Dict: dict,
-            typing.Mapping: dict,
-        }
-        try:
-            type_ = generics[type_]
-        except KeyError:
-            raise NotImplementedError("generic type for tpying type", type_, generics)
-    return type_
-
-
-def setup_repr(obj: Union["CoreInputSetup", "InputSetup"]) -> str:
-    def fmt(obj):
-        if isinstance(obj, str):
-            return f"'{obj}'"
-        return str(obj)
-
-    s_attrs = ",\n  ".join(f"{k}={fmt(v)}" for k, v in obj.dict().items())
-    return f"{type(obj).__name__}(\n  {s_attrs},\n)"
-
-
 # pylint: disable=E0213  # no-self-argument (validators)
 class InputSetup(BaseModel):
     """
@@ -304,7 +260,7 @@ class InputSetup(BaseModel):
             raise ValueError("invalid parameter name", param, sorted(cls.__fields__))
         if isinstance(value, Collection) and not isinstance(value, str):
             try:
-                outer_type = field_outer_type(field, generic=True)
+                outer_type = field_get_outer_type(field, generic=True)
             except TypeError:
                 raise ValueError("invalid parameter value: collection", param, value)
             try:
@@ -863,3 +819,47 @@ class InputSetupFile:
     def write(self, *args, **kwargs) -> None:
         """Write the setup to a text file in TOML format."""
         raise NotImplementedError(f"{type(self).__name__}.write")
+
+
+def field_get_outer_type(field: ModelField, *, generic: bool = False) -> Type:
+    """Obtain the outer type of a pydantic model field."""
+    str_ = str(field.outer_type_)
+    prefix = "typing."
+    if not str_.startswith(prefix):
+        raise TypeError(
+            "<field>.outer_type_ does not start with '{prefix}'", str_, field,
+        )
+    str_ = str_[len(prefix) :]
+    str_ = str_.split("[")[0]
+    try:
+        type_ = getattr(typing, str_)
+    except AttributeError:
+        raise TypeError(
+            f"cannot derive type from <field>.outer_type_: typing.{str_} not found",
+            field,
+        )
+    if generic:
+        generics = {
+            typing.Tuple: tuple,
+            typing.List: list,
+            typing.Sequence: list,
+            typing.Set: set,
+            typing.Collection: set,
+            typing.Dict: dict,
+            typing.Mapping: dict,
+        }
+        try:
+            type_ = generics[type_]
+        except KeyError:
+            raise NotImplementedError("generic type for tpying type", type_, generics)
+    return type_
+
+
+def setup_repr(obj: Union["CoreInputSetup", "InputSetup"]) -> str:
+    def fmt(obj):
+        if isinstance(obj, str):
+            return f"'{obj}'"
+        return str(obj)
+
+    s_attrs = ",\n  ".join(f"{k}={fmt(v)}" for k, v in obj.dict().items())
+    return f"{type(obj).__name__}(\n  {s_attrs},\n)"
