@@ -528,21 +528,31 @@ def format_unit(s: str) -> str:
 
 
 def collect_meta_data(
-    fi: nc4.Dataset, setup: InputSetup, nc_meta_data: Mapping[str, Any],
+    fi: nc4.Dataset,
+    setup: InputSetup,
+    nc_meta_data: Mapping[str, Any],
+    *,
+    add_ts0: bool = False,
 ) -> MetaData:
     """Collect meta data in open NetCDF file."""
-    return MetaDataCollector(fi, setup, nc_meta_data).run()
+    return MetaDataCollector(fi, setup, nc_meta_data, add_ts0=add_ts0).run()
 
 
 class MetaDataCollector:
     """Collect meta data for a field from an open NetCDF file."""
 
     def __init__(
-        self, fi: nc4.Dataset, setup: InputSetup, nc_meta_data: Mapping[str, Any],
+        self,
+        fi: nc4.Dataset,
+        setup: InputSetup,
+        nc_meta_data: Mapping[str, Any],
+        *,
+        add_ts0: bool = False,
     ) -> None:
         self.fi = fi
         self.setup = setup
         self.nc_meta_data = nc_meta_data  # SR_TMP
+        self.add_ts0 = add_ts0
 
         # Collect all global attributes
         self.ncattrs_global = {
@@ -601,7 +611,7 @@ class MetaDataCollector:
         )
 
         # Current time step and start time step of current integration period
-        tsp = TimeStepMetaDataCollector(self.fi, self.setup)
+        tsp = TimeStepMetaDataCollector(self.fi, self.setup, add_ts0=self.add_ts0)
         ts_now = tsp.ts_now()
         ts_integr_start = tsp.ts_integr_start()
         ts_now_rel: timedelta = ts_now - ts_start
@@ -732,9 +742,12 @@ class MetaDataCollector:
 
 
 class TimeStepMetaDataCollector:
-    def __init__(self, fi: nc4.Dataset, setup: InputSetup) -> None:
+    def __init__(
+        self, fi: nc4.Dataset, setup: InputSetup, *, add_ts0: bool = False
+    ) -> None:
         self.fi = fi
         self.setup = setup
+        self.add_ts0 = add_ts0
 
     def comp_ts_start(self) -> datetime:
         """Compute the time step when the simulation started."""
@@ -770,22 +783,30 @@ class TimeStepMetaDataCollector:
     def ts_delta_tot(self) -> timedelta:
         """Compute time since start."""
         var = self.fi.variables["time"]
-        return timedelta(seconds=int(var[self.ts_idx()]))
+        idx = self.ts_idx()
+        if idx < 0:
+            return timedelta(0)
+        return timedelta(seconds=int(var[idx]))
 
     def ts_delta_integr(self) -> timedelta:
         """Compute timestep delta of integration period."""
         delta_tot = self.ts_delta_tot()
         if self.setup.integrate:
             return delta_tot
-        delta_prev = delta_tot / (self.ts_idx() + 1)
-        return delta_prev
+        n = self.ts_idx() + 1
+        if n == 0:
+            return timedelta(0)
+        return delta_tot / n
 
     def ts_idx(self) -> int:
         """Index of current time step of current field."""
         # Default to timestep of current field
         assert self.setup.time is not None  # mypy
         assert len(self.setup.time) == 1  # SR_TMP
-        return next(iter(self.setup.time))  # SR_TMP
+        idx = next(iter(self.setup.time))  # SR_TMP
+        if self.add_ts0:
+            return idx - 1
+        return idx
 
 
 class RawReleaseMetaData(BaseModel):

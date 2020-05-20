@@ -36,20 +36,42 @@ from .setup import InputSetup
 from .setup import InputSetupCollection
 
 
-def read_files(
+# pylint: disable=R0914  # too-many-locals
+def read_fields(
     in_file_path: str,
     var_setups_lst: Collection[InputSetupCollection],
+    *,
+    add_ts0: bool = False,
     dry_run: bool = False,
 ) -> Tuple[List[Field], Union[List[MetaData], List[None]]]:
+    """Read fields from an input file, or multiple files derived from one path.
+
+    Args:
+        in_file_path: Input file path. In case of ensemble data, it must contain
+            the format key '{ens_member[:0?d]}', in which case a separate path
+            is derived for each member.
+
+        var_setups_lst: List of variable setups, containing among other things
+            the ensemble member IDs in case of an ensemble simulation.
+
+        add_ts0: Whether to insert an additional time step 0 in the beginning
+            with empty fields, given that the first data time step may not
+            correspond to the beginning of the simulation, but constitute the
+            sum over the first few hours of the simulation.
+
+        dry_run (optional): Whether to skip reading the data from disk.
+
+    """
 
     # Prepare the file reader
     ens_member_ids = collect_ens_member_ids(var_setups_lst)
-    reader = FileReader(in_file_path, ens_member_ids, dry_run)
+    reader = FileReader(in_file_path, ens_member_ids, add_ts0=add_ts0, dry_run=dry_run)
     reader.prepare()
 
     # Set unconstrained dimensions to available indices
     sub_setups_lst_lst: List[List[InputSetupCollection]] = []
-    for var_setups in var_setups_lst:
+    for var_setups_in in var_setups_lst:
+        var_setups = var_setups_in.copy()
         completed_dims = var_setups.complete_dimensions(reader.nc_meta_data)
         sub_setups_lst = var_setups.decompress_partially(
             completed_dims, skip=["species_id"],
@@ -101,6 +123,8 @@ class FileReader:
         self,
         in_file_path: str,
         ens_member_ids: Optional[List[int]] = None,
+        *,
+        add_ts0: bool = False,
         dry_run: bool = False,
     ):
         """Create an instance of ``FileReader``.
@@ -111,11 +135,17 @@ class FileReader:
 
             ens_member_ids (optional): Ensemble member ids.
 
-            dry_run (optional): Dry run.
+            add_ts0: Whether to insert an additional time step 0 in the
+                beginning with empty fields, given that the first data time step
+                may not correspond to the beginning of the simulation, but
+                constitute the sum over the first few hours of the simulation.
+
+            dry_run (optional): Whether to skip reading the data from disk.
 
         """
         self.in_file_path_fmt = in_file_path
         self.ens_member_ids = ens_member_ids
+        self.add_ts0 = add_ts0
         self.dry_run = dry_run
 
         # Declare some attributes
@@ -209,6 +239,8 @@ class FileReader:
                     raise Exception(
                         "meta data differs", nc_meta_data_i, nc_meta_data,
                     )
+        if self.add_ts0:
+            self._insert_ts0_in_nc_meta_data(nc_meta_data)
         self.nc_meta_data = nc_meta_data
 
     def _create_dummy_fld(self):
@@ -232,10 +264,12 @@ class FileReader:
 
                 # Read field (all time steps)
                 fld_time = self._read_fld_time(fi, setups)
+                if self.add_ts0:
+                    fld_time = self._add_ts0_to_fld_time(fld_time)
 
                 # Store field for current member
                 if fld_time_mem is None:
-                    shape = [self.n_members] + list(fld_time.shape)
+                    shape = tuple([self.n_members] + list(fld_time.shape))
                     fld_time_mem = np.full(shape, np.nan, np.float32)
                 fld_time_mem[i_mem] = fld_time
 
@@ -254,6 +288,8 @@ class FileReader:
         else:
             raise NotImplementedError("unexpected time unit", time_unit)
         # SR_TMP >
+        if self.add_ts0:
+            time = self._add_ts0_to_time(time)
         try:
             old_lat = self.lat
             old_lon = self.lon
@@ -282,6 +318,25 @@ class FileReader:
             self.fixer.fix_global_grid(self.lon, fld_time)
 
         return fld_time
+
+    def _insert_ts0_in_nc_meta_data(self, nc_meta_data: Dict[str, Any]) -> None:
+        old_size = nc_meta_data["dimensions"]["time"]["size"]
+        new_size = old_size + 1
+        nc_meta_data["dimensions"]["time"]["size"] = new_size
+        nc_meta_data["variables"]["time"]["shape"] = (new_size,)
+
+    def _add_ts0_to_time(self, time: np.ndarray):
+        delta = time[1] - time[0]
+        if time[0] != delta:
+            raise ValueError("expecting first time to equal delta", time)
+        return np.array([0.0] + time.tolist(), time.dtype)
+
+    def _add_ts0_to_fld_time(self, fld_time: np.ndarray) -> np.ndarray:
+        old_shape = fld_time.shape
+        new_shape = tuple([old_shape[0] + 1] + list(old_shape[1:]))
+        new_fld_time = np.zeros(new_shape, fld_time.dtype)
+        new_fld_time[1:] = fld_time
+        return new_fld_time
 
     def _reduce_ensemble(
         self, fld_time_mem: np.ndarray, var_setups: InputSetupCollection,
@@ -358,7 +413,9 @@ class FileReader:
                     mdata_lst_i = []
                     for sub_setup in sub_setups:
                         mdata_lst_i.append(
-                            collect_meta_data(fi, sub_setup, self.nc_meta_data)
+                            collect_meta_data(
+                                fi, sub_setup, self.nc_meta_data, add_ts0=self.add_ts0
+                            )
                         )
                     mdata = mdata_lst_i[0].merge_with(mdata_lst_i[1:])
                     mdata_by_reqtime_mem[idx_time, idx_mem] = mdata

@@ -42,7 +42,7 @@ field_summary = {
         }
     ],
     "time_stats": {
-        "mean": 0.0008482309,
+        "mean": 0.000777545,
         "median": 0.0,
         "mean_nz": 0.0037213,
         "median_nz": 0.00034858542,
@@ -51,7 +51,7 @@ field_summary = {
     "nc_meta_data": {
         "ncattrs": {"dxout": 0.02, "dyout": 0.02},
         "dimensions": {
-            "time": {"name": "time", "size": 11},
+            "time": {"name": "time", "size": 12},
             "rlon": {"name": "rlon", "size": 50},
             "rlat": {"name": "rlat", "size": 30},
             "level": {"name": "level", "size": 3},
@@ -64,7 +64,7 @@ field_summary = {
             "time": {
                 "name": "time",
                 "dimensions": ["time"],
-                "shape": [11],
+                "shape": [12],
                 "ncattrs": {
                     "units": "seconds since 2019-07-27 12:00",
                     "calendar": "proleptic_gregorian",
@@ -337,15 +337,15 @@ field_summary = {
         "dtype": "float32",
         "shape": [30, 50],
         "nanmin": 0.0,
-        "nanmean": 0.0019710604,
-        "nanmedian": 0.000109504195,
+        "nanmean": 0.001879271,
+        "nanmedian": 1.915114e-05,
         "nanmax": 0.32722116,
-        "nanmin_nonzero": 6.293489e-16,
-        "nanmean_nonzero": 0.0023785927,
-        "nanmedian_nonzero": 0.0002695204,
+        "nanmin_nonzero": 3.705685e-12,
+        "nanmean_nonzero": 0.0029272132,
+        "nanmedian_nonzero": 0.00037422692,
         "nanmax_nonzero": 0.32722116,
         "n_nan": 0,
-        "n_zero": 257,
+        "n_zero": 537,
     },
     "lat": {"dtype": "float32", "shape": [30], "min": -3.3199997, "max": -0.42000008},
     "lon": {"dtype": "float32", "shape": [50], "min": -2.42, "max": 2.4799995},
@@ -535,7 +535,7 @@ plot_summary = {
                         "va": "baseline",
                         "ha": "left",
                     },
-                    "s": 'Aufsummiert $\\mathrm{\\"u}$ber 33:00$\\,$h seit +0:00$\\,$h',
+                    "s": 'Aufsummiert $\\mathrm{\\"u}$ber 30:00$\\,$h seit +0:00$\\,$h',
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -563,7 +563,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2019-07-28 21:00 UTC (+33:00$\\,$h)",
+                    "s": "2019-07-28 18:00 UTC (+30:00$\\,$h)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -591,7 +591,7 @@ plot_summary = {
                         "va": "baseline",
                         "ha": "right",
                     },
-                    "s": '33:00$\\,$h seit Freisetzungsbeginn in G$\\mathrm{\\"o}$sgen',
+                    "s": '30:00$\\,$h seit Freisetzungsbeginn in G$\\mathrm{\\"o}$sgen',
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -2333,7 +2333,7 @@ plot_summary = {
             }
         ],
         "time_stats": {
-            "mean": 0.0008482309,
+            "mean": 0.000777545,
             "median": 0.0,
             "mean_nz": 0.0037213,
             "median_nz": 0.00034858542,
@@ -2342,7 +2342,7 @@ plot_summary = {
         "nc_meta_data": {
             "ncattrs": {"dxout": 0.02, "dyout": 0.02},
             "dimensions": {
-                "time": {"name": "time", "size": 11},
+                "time": {"name": "time", "size": 12},
                 "rlon": {"name": "rlon", "size": 50},
                 "rlat": {"name": "rlat", "size": 30},
                 "level": {"name": "level", "size": 3},
@@ -2355,7 +2355,7 @@ plot_summary = {
                 "time": {
                     "name": "time",
                     "dimensions": ["time"],
-                    "shape": [11],
+                    "shape": [12],
                     "ncattrs": {
                         "units": "seconds since 2019-07-27 12:00",
                         "calendar": "proleptic_gregorian",
@@ -2635,15 +2635,15 @@ plot_summary = {
             "dtype": "float32",
             "shape": [30, 50],
             "nanmin": 0.0,
-            "nanmean": 0.0019710604,
-            "nanmedian": 0.000109504195,
+            "nanmean": 0.001879271,
+            "nanmedian": 1.915114e-05,
             "nanmax": 0.32722116,
-            "nanmin_nonzero": 6.293489e-16,
-            "nanmean_nonzero": 0.0023785927,
-            "nanmedian_nonzero": 0.0002695204,
+            "nanmin_nonzero": 3.705685e-12,
+            "nanmean_nonzero": 0.0029272132,
+            "nanmedian_nonzero": 0.00037422692,
             "nanmax_nonzero": 0.32722116,
             "n_nan": 0,
-            "n_zero": 257,
+            "n_zero": 537,
         },
         "lat": {
             "dtype": "float32",

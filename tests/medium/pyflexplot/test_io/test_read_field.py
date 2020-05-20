@@ -15,7 +15,7 @@ import numpy as np
 import pytest  # type: ignore
 
 # First-party
-from pyflexplot.io import read_files
+from pyflexplot.io import read_fields
 from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
 
@@ -57,6 +57,7 @@ datafilename2 = "flexpart_cosmo-1_2019093012.nc"
 datafilename3 = "flexpart_ifs_20200317000000.nc"
 
 
+# test_single
 @pytest.mark.parametrize(
     "conf",
     [
@@ -213,7 +214,7 @@ def test_single(datadir, conf):  # noqa:F811
     assert len(var_setups_lst) == 1
 
     # Read input field
-    fields, mdata_lst = read_files(datafile, var_setups_lst)
+    fields, mdata_lst = read_fields(datafile, var_setups_lst)
     assert len(fields) == 1
     fld = fields[0].fld
 
@@ -243,6 +244,7 @@ def test_single(datadir, conf):  # noqa:F811
     np.testing.assert_allclose(fld, fld_ref, equal_nan=True, rtol=1e-6)
 
 
+# test_multiple
 @pytest.mark.parametrize(
     "conf",
     [
@@ -388,7 +390,7 @@ def test_multiple(datadir, conf):  # noqa:F811
     for var_setups in var_setups_lst:
 
         # Read input fields
-        fields, mdata_lst = read_files(datafile, [var_setups])
+        fields, mdata_lst = read_fields(datafile, [var_setups])
         assert len(fields) == 1
         assert len(mdata_lst) == 1
         fld = np.array([field.fld for field in fields])
@@ -416,3 +418,61 @@ def test_multiple(datadir, conf):  # noqa:F811
         assert fld.shape == fld_ref.shape
         assert np.isclose(np.nanmean(fld), np.nanmean(fld_ref), rtol=1e-6)
         np.testing.assert_allclose(fld, fld_ref, equal_nan=True, rtol=1e-6)
+
+
+# test_single_add_ts0
+@pytest.mark.parametrize(
+    "conf",
+    [
+        Conf(
+            datafilename=datafilename1,
+            model="cosmo1",
+            var_names_ref=["spec002"],
+            setup_dct={
+                "infile": "dummy.nc",
+                "outfile": "dummy.png",
+                "input_variable": "concentration",
+                "species_id": 2,
+                "level": 1,
+                "integrate": False,
+                "time": None,
+                "nageclass": 0,
+                "noutrel": 0,
+                "numpoint": 0,
+            },
+        ),
+        Conf(
+            datafilename=datafilename1,
+            model="cosmo1",
+            var_names_ref=["WD_spec002", "DD_spec002"],
+            setup_dct={
+                "infile": "dummy.nc",
+                "outfile": "dummy.png",
+                "input_variable": "deposition",
+                "deposition_type": "tot",
+                "species_id": 2,
+                "integrate": False,
+                "time": None,
+                "nageclass": 0,
+                "noutrel": 0,
+                "numpoint": 0,
+            },
+            scale_fld_ref=1 / 3,
+        ),
+    ],
+)
+def test_single_add_ts0(datadir, conf):
+    """Insert an additional time step 0 in the beginning, with empty fields."""
+
+    datafile = f"{datadir}/{conf.datafilename}"
+
+    # Initialize field specifications
+    var_setups_lst = InputSetupCollection([conf.setup]).decompress_grouped_by_time()
+    assert len(var_setups_lst) == 1
+
+    # Read fields with and without added time step 0
+    fields_raw, _ = read_fields(datafile, var_setups_lst, add_ts0=False)
+    fields_ts0, _ = read_fields(datafile, var_setups_lst, add_ts0=True)
+    assert len(fields_ts0) == len(fields_raw) + 1
+    assert (fields_ts0[1].fld == fields_raw[0].fld).all()
+    assert (fields_ts0[0].fld == 0.0).all()

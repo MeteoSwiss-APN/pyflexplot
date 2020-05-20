@@ -10,7 +10,7 @@ import numpy as np
 
 # First-party
 from pyflexplot.data import ensemble_probability
-from pyflexplot.io import read_files
+from pyflexplot.io import read_fields
 from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
 from srutils.dict import decompress_multival_dict
@@ -86,7 +86,7 @@ class TestReadFieldEnsemble_Single:
         assert len(var_setups_lst) == 1
 
         # Read input fields
-        fields, mdata_lst = read_files(datafile_fmt, var_setups_lst)
+        fields, mdata_lst = read_fields(datafile_fmt, var_setups_lst)
         assert len(fields) == 1
         assert len(mdata_lst) == 1
         fld = fields[0].fld
@@ -219,7 +219,7 @@ class TestReadFieldEnsemble_Multiple:
         # SR_TMP >
 
         # Read input fields
-        fields, mdata_lst = read_files(datafile_fmt, var_setups_lst)
+        fields, mdata_lst = read_fields(datafile_fmt, var_setups_lst)
         fld_arr = np.array([field.fld for field in fields])
 
         # Read reference fields

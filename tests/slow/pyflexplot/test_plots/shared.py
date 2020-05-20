@@ -15,7 +15,7 @@ from typing import Dict
 import pytest  # type: ignore
 
 # First-party
-from pyflexplot.io import read_files
+from pyflexplot.io import read_fields
 from pyflexplot.plot import plot_fields
 from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
@@ -79,7 +79,7 @@ class _TestBase:
         setups = self.get_setups()
         var_setups_lst = setups.decompress_grouped_by_time()
 
-        fields, mdata_lst = read_files(infile, var_setups_lst)
+        fields, mdata_lst = read_fields(infile, var_setups_lst, add_ts0=True)
         assert len(fields) == len(mdata_lst) == 1
         field = next(iter(fields))
         mdata = next(iter(mdata_lst))

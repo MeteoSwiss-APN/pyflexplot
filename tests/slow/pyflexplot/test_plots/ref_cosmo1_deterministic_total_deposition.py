@@ -37,7 +37,7 @@ field_summary = {
             "noutrel": [0],
             "numpoint": [0],
             "species_id": [1],
-            "time": [10],
+            "time": [11],
             "level": None,
         },
         {
@@ -61,12 +61,12 @@ field_summary = {
             "noutrel": [0],
             "numpoint": [0],
             "species_id": [1],
-            "time": [10],
+            "time": [11],
             "level": None,
         },
     ],
     "time_stats": {
-        "mean": 0.0004015538,
+        "mean": 0.000368091,
         "median": 0.0,
         "mean_nz": 0.0012772315,
         "median_nz": 0.00020140434,
@@ -75,7 +75,7 @@ field_summary = {
     "nc_meta_data": {
         "ncattrs": {"dxout": 0.01, "dyout": 0.01},
         "dimensions": {
-            "time": {"name": "time", "size": 11},
+            "time": {"name": "time", "size": 12},
             "rlon": {"name": "rlon", "size": 40},
             "rlat": {"name": "rlat", "size": 30},
             "level": {"name": "level", "size": 3},
@@ -89,7 +89,7 @@ field_summary = {
             "time": {
                 "name": "time",
                 "dimensions": ["time"],
-                "shape": [11],
+                "shape": [12],
                 "ncattrs": {
                     "units": "seconds since 2019-09-30 12:00",
                     "calendar": "proleptic_gregorian",
@@ -2280,7 +2280,7 @@ plot_summary = {
                 "noutrel": [0],
                 "numpoint": [0],
                 "species_id": [1],
-                "time": [10],
+                "time": [11],
                 "level": None,
             },
             {
@@ -2304,12 +2304,12 @@ plot_summary = {
                 "noutrel": [0],
                 "numpoint": [0],
                 "species_id": [1],
-                "time": [10],
+                "time": [11],
                 "level": None,
             },
         ],
         "time_stats": {
-            "mean": 0.0004015538,
+            "mean": 0.000368091,
             "median": 0.0,
             "mean_nz": 0.0012772315,
             "median_nz": 0.00020140434,
@@ -2318,7 +2318,7 @@ plot_summary = {
         "nc_meta_data": {
             "ncattrs": {"dxout": 0.01, "dyout": 0.01},
             "dimensions": {
-                "time": {"name": "time", "size": 11},
+                "time": {"name": "time", "size": 12},
                 "rlon": {"name": "rlon", "size": 40},
                 "rlat": {"name": "rlat", "size": 30},
                 "level": {"name": "level", "size": 3},
@@ -2332,7 +2332,7 @@ plot_summary = {
                 "time": {
                     "name": "time",
                     "dimensions": ["time"],
-                    "shape": [11],
+                    "shape": [12],
                     "ncattrs": {
                         "units": "seconds since 2019-09-30 12:00",
                         "calendar": "proleptic_gregorian",

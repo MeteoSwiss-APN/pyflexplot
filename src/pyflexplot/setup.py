@@ -637,6 +637,9 @@ class InputSetupCollection:
             setup_objs.append(setup_obj)
         return cls(setup_objs)
 
+    def copy(self) -> "InputSetupCollection":
+        return type(self)([setup.copy() for setup in self])
+
     def __repr__(self) -> str:
         s_setups = "\n  ".join([""] + [str(c) for c in self._setups])
         return f"{type(self).__name__}([{s_setups}\n])"

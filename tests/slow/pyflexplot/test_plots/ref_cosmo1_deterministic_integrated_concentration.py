@@ -42,7 +42,7 @@ field_summary = {
         }
     ],
     "time_stats": {
-        "mean": 6.225337e-05,
+        "mean": 5.7065587e-05,
         "median": 0.0,
         "mean_nz": 0.00016808025,
         "median_nz": 2.5472184e-05,
@@ -51,7 +51,7 @@ field_summary = {
     "nc_meta_data": {
         "ncattrs": {"dxout": 0.01, "dyout": 0.01},
         "dimensions": {
-            "time": {"name": "time", "size": 11},
+            "time": {"name": "time", "size": 12},
             "rlon": {"name": "rlon", "size": 40},
             "rlat": {"name": "rlat", "size": 30},
             "level": {"name": "level", "size": 3},
@@ -65,7 +65,7 @@ field_summary = {
             "time": {
                 "name": "time",
                 "dimensions": ["time"],
-                "shape": [11],
+                "shape": [12],
                 "ncattrs": {
                     "units": "seconds since 2019-09-30 12:00",
                     "calendar": "proleptic_gregorian",
@@ -278,12 +278,12 @@ field_summary = {
         "dtype": "float32",
         "shape": [30, 40],
         "nanmin": 0.0,
-        "nanmean": 9.845621e-05,
-        "nanmedian": 6.9165535e-06,
+        "nanmean": 9.7421966e-05,
+        "nanmedian": 6.8192676e-06,
         "nanmax": 0.038744926,
         "nanmin_nonzero": 5.969089e-10,
-        "nanmean_nonzero": 0.00016902352,
-        "nanmedian_nonzero": 3.9854775e-05,
+        "nanmean_nonzero": 0.00016724801,
+        "nanmedian_nonzero": 3.904104e-05,
         "nanmax_nonzero": 0.038744926,
         "n_nan": 0,
         "n_zero": 501,
@@ -466,7 +466,7 @@ plot_summary = {
                         "va": "baseline",
                         "ha": "left",
                     },
-                    "s": "Summed over 33:00$\\,$h since +0:00$\\,$h",
+                    "s": "Summed over 30:00$\\,$h since +0:00$\\,$h",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -494,7 +494,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2019-10-01 21:00 UTC (+33:00$\\,$h)",
+                    "s": "2019-10-01 18:00 UTC (+30:00$\\,$h)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -522,7 +522,7 @@ plot_summary = {
                         "va": "baseline",
                         "ha": "right",
                     },
-                    "s": '33:00$\\,$h since release start at G$\\mathrm{\\"o}$sgen',
+                    "s": '30:00$\\,$h since release start at G$\\mathrm{\\"o}$sgen',
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -2264,7 +2264,7 @@ plot_summary = {
             }
         ],
         "time_stats": {
-            "mean": 6.225337e-05,
+            "mean": 5.7065587e-05,
             "median": 0.0,
             "mean_nz": 0.00016808025,
             "median_nz": 2.5472184e-05,
@@ -2273,7 +2273,7 @@ plot_summary = {
         "nc_meta_data": {
             "ncattrs": {"dxout": 0.01, "dyout": 0.01},
             "dimensions": {
-                "time": {"name": "time", "size": 11},
+                "time": {"name": "time", "size": 12},
                 "rlon": {"name": "rlon", "size": 40},
                 "rlat": {"name": "rlat", "size": 30},
                 "level": {"name": "level", "size": 3},
@@ -2287,7 +2287,7 @@ plot_summary = {
                 "time": {
                     "name": "time",
                     "dimensions": ["time"],
-                    "shape": [11],
+                    "shape": [12],
                     "ncattrs": {
                         "units": "seconds since 2019-09-30 12:00",
                         "calendar": "proleptic_gregorian",
@@ -2510,12 +2510,12 @@ plot_summary = {
             "dtype": "float32",
             "shape": [30, 40],
             "nanmin": 0.0,
-            "nanmean": 9.845621e-05,
-            "nanmedian": 6.9165535e-06,
+            "nanmean": 9.7421966e-05,
+            "nanmedian": 6.8192676e-06,
             "nanmax": 0.038744926,
             "nanmin_nonzero": 5.969089e-10,
-            "nanmean_nonzero": 0.00016902352,
-            "nanmedian_nonzero": 3.9854775e-05,
+            "nanmean_nonzero": 0.00016724801,
+            "nanmedian_nonzero": 3.904104e-05,
             "nanmax_nonzero": 0.038744926,
             "n_nan": 0,
             "n_zero": 501,

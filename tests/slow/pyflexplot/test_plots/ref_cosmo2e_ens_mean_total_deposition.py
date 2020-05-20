@@ -37,7 +37,7 @@ field_summary = {
             "noutrel": None,
             "numpoint": [0],
             "species_id": [1],
-            "time": [10],
+            "time": [11],
             "level": None,
         },
         {
@@ -61,7 +61,7 @@ field_summary = {
             "noutrel": None,
             "numpoint": [0],
             "species_id": [2],
-            "time": [10],
+            "time": [11],
             "level": None,
         },
         {
@@ -85,7 +85,7 @@ field_summary = {
             "noutrel": None,
             "numpoint": [0],
             "species_id": [1],
-            "time": [10],
+            "time": [11],
             "level": None,
         },
         {
@@ -109,12 +109,12 @@ field_summary = {
             "noutrel": None,
             "numpoint": [0],
             "species_id": [2],
-            "time": [10],
+            "time": [11],
             "level": None,
         },
     ],
     "time_stats": {
-        "mean": 0.06554155,
+        "mean": 0.060079753,
         "median": 0.0,
         "mean_nz": 0.29628372,
         "median_nz": 0.0031997827,
@@ -123,7 +123,7 @@ field_summary = {
     "nc_meta_data": {
         "ncattrs": {"dxout": 0.02, "dyout": 0.02},
         "dimensions": {
-            "time": {"name": "time", "size": 11},
+            "time": {"name": "time", "size": 12},
             "rlon": {"name": "rlon", "size": 50},
             "rlat": {"name": "rlat", "size": 30},
             "level": {"name": "level", "size": 3},
@@ -136,7 +136,7 @@ field_summary = {
             "time": {
                 "name": "time",
                 "dimensions": ["time"],
-                "shape": [11],
+                "shape": [12],
                 "ncattrs": {
                     "units": "seconds since 2019-07-27 12:00",
                     "calendar": "proleptic_gregorian",
@@ -2397,7 +2397,7 @@ plot_summary = {
                 "noutrel": None,
                 "numpoint": [0],
                 "species_id": [1],
-                "time": [10],
+                "time": [11],
                 "level": None,
             },
             {
@@ -2421,7 +2421,7 @@ plot_summary = {
                 "noutrel": None,
                 "numpoint": [0],
                 "species_id": [2],
-                "time": [10],
+                "time": [11],
                 "level": None,
             },
             {
@@ -2445,7 +2445,7 @@ plot_summary = {
                 "noutrel": None,
                 "numpoint": [0],
                 "species_id": [1],
-                "time": [10],
+                "time": [11],
                 "level": None,
             },
             {
@@ -2469,12 +2469,12 @@ plot_summary = {
                 "noutrel": None,
                 "numpoint": [0],
                 "species_id": [2],
-                "time": [10],
+                "time": [11],
                 "level": None,
             },
         ],
         "time_stats": {
-            "mean": 0.06554155,
+            "mean": 0.060079753,
             "median": 0.0,
             "mean_nz": 0.29628372,
             "median_nz": 0.0031997827,
@@ -2483,7 +2483,7 @@ plot_summary = {
         "nc_meta_data": {
             "ncattrs": {"dxout": 0.02, "dyout": 0.02},
             "dimensions": {
-                "time": {"name": "time", "size": 11},
+                "time": {"name": "time", "size": 12},
                 "rlon": {"name": "rlon", "size": 50},
                 "rlat": {"name": "rlat", "size": 30},
                 "level": {"name": "level", "size": 3},
@@ -2496,7 +2496,7 @@ plot_summary = {
                 "time": {
                     "name": "time",
                     "dimensions": ["time"],
-                    "shape": [11],
+                    "shape": [12],
                     "ncattrs": {
                         "units": "seconds since 2019-07-27 12:00",
                         "calendar": "proleptic_gregorian",

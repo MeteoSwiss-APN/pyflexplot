@@ -16,7 +16,7 @@ from srutils.click import CharSepList
 
 # Local
 from . import __version__
-from .io import read_files
+from .io import read_fields
 from .plot import plot_fields
 from .preset import click_add_preset_path
 from .preset import click_cat_preset_and_exit
@@ -222,7 +222,9 @@ def cli(
         # Read input fields
         var_setups_lst = sub_setups.decompress_grouped_by_time()
 
-        fields, mdata_lst = read_files(in_file_path, var_setups_lst, dry_run)
+        fields, mdata_lst = read_fields(
+            in_file_path, var_setups_lst, add_ts0=True, dry_run=dry_run
+        )
 
         try:
             # Note: plot_fields(...) yields the output file paths on-the-go
