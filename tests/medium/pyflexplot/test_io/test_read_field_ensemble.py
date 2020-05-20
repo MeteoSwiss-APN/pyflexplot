@@ -9,7 +9,7 @@ import functools
 import numpy as np
 
 # First-party
-from pyflexplot.data import ens_probability
+from pyflexplot.data import ensemble_probability
 from pyflexplot.io import read_files
 from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
@@ -38,7 +38,7 @@ class TestReadFieldEnsemble_Single:
         "infile": "dummy.nc",
         "integrate": False,
         "outfile": "dummy.png",
-        "plot_type": "ens_mean",
+        "plot_type": "ensemble_mean",
         "simulation_type": "ensemble",
         "species_id": 2,
         "time": 10,
@@ -79,7 +79,7 @@ class TestReadFieldEnsemble_Single:
                 **self.setup_params_shared,
                 **setup_params,
                 "ens_member_id": self.ens_member_ids,
-                "plot_type": f"ens_{ens_var}",
+                "plot_type": f"ensemble_{ens_var}",
             }
         )
         var_setups_lst = InputSetupCollection([setup]).decompress_grouped_by_time()
@@ -188,7 +188,7 @@ class TestReadFieldEnsemble_Multiple:
                 **shared_setup_params,
                 **setup_params,
                 "ens_member_id": self.ens_member_ids,
-                "plot_type": f"ens_{ens_var}",
+                "plot_type": f"ensemble_{ens_var}",
             }
             setups.append(InputSetup.create(setup_params_i))
         var_setups_lst = InputSetupCollection(setups).decompress_grouped_by_time()
@@ -258,9 +258,9 @@ class TestReadFieldEnsemble_Multiple:
 
         fct_reduce_mem = {
             "mean": lambda arr: np.nanmean(arr, axis=0),
-            "max": lambda arr: np.nanmax(arr, axis=0),
+            "maximum": lambda arr: np.nanmax(arr, axis=0),
             "probability": (
-                lambda arr: ens_probability(
+                lambda arr: ensemble_probability(
                     arr, self.ens_prob_thr_concentration, len(self.ens_member_ids)
                 )
             ),
@@ -297,7 +297,7 @@ class TestReadFieldEnsemble_Multiple:
         """Read ensemble total deposition field."""
         fct_reduce_mem = {
             "mean": lambda arr: np.nanmean(arr, axis=0),
-            "max": lambda arr: np.nanmax(arr, axis=0),
+            "maximum": lambda arr: np.nanmax(arr, axis=0),
         }[ens_var]
         self.run(
             separate=separate,
@@ -318,4 +318,4 @@ class TestReadFieldEnsemble_Multiple:
         self.run_deposition_tot(datadir, "mean", separate=False)
 
     def test_ens_max_deposition_tot(self, datadir):  # noqa:F811
-        self.run_deposition_tot(datadir, "max")
+        self.run_deposition_tot(datadir, "maximum")

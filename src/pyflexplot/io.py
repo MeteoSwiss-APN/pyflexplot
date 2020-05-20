@@ -25,7 +25,7 @@ from srutils.various import check_array_indices
 # Local
 from .data import EnsembleCloud
 from .data import Field
-from .data import ens_probability
+from .data import ensemble_probability
 from .data import merge_fields
 from .meta_data import MetaData
 from .meta_data import collect_meta_data
@@ -297,23 +297,23 @@ class FileReader:
         ens_param_time_win = var_setups.collect_equal("ens_param_time_win")
         n_ens_mem = len(var_setups.collect_equal("ens_member_id"))
 
-        if plot_type == "ens_mean":
+        if plot_type == "ensemble_mean":
             fld_time = np.nanmean(fld_time_mem, axis=0)
-        elif plot_type == "ens_median":
+        elif plot_type == "ensemble_median":
             fld_time = np.nanmedian(fld_time_mem, axis=0)
-        elif plot_type == "ens_min":
+        elif plot_type == "ensemble_minimum":
             fld_time = np.nanmin(fld_time_mem, axis=0)
-        elif plot_type == "ens_max":
+        elif plot_type == "ensemble_maximum":
             fld_time = np.nanmax(fld_time_mem, axis=0)
-        elif plot_type == "ens_probability":
-            fld_time = ens_probability(fld_time_mem, ens_param_thr, n_ens_mem)
-        elif plot_type.startswith("ens_cloud_"):
+        elif plot_type == "ensemble_probability":
+            fld_time = ensemble_probability(fld_time_mem, ens_param_thr, n_ens_mem)
+        elif plot_type.startswith("ensemble_cloud_"):
             cloud = EnsembleCloud(arr=fld_time_mem, time=self.time, thr=ens_param_thr)
-            if plot_type == "ens_cloud_arrival_time":
+            if plot_type == "ensemble_cloud_arrival_time":
                 fld_time = cloud.arrival_time(ens_param_mem_min)
-            elif plot_type == "ens_cloud_departure_time":
+            elif plot_type == "ensemble_cloud_departure_time":
                 fld_time = cloud.departure_time(ens_param_mem_min)
-            elif plot_type == "ens_cloud_occurrence_probability":
+            elif plot_type == "ensemble_cloud_occurrence_probability":
                 fld_time = cloud.occurrence_probability(ens_param_time_win)
         else:
             raise NotImplementedError("plot var", plot_type)

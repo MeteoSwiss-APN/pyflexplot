@@ -17,11 +17,11 @@ level = 0
 
 [_base._arrival_time]
 outfile = "cosmo2e_cloud_arrival_time_{domain}_{lang}_ts-{time:02d}.png"
-plot_type = "ens_cloud_arrival_time"
+plot_type = "ensemble_cloud_arrival_time"
 
 [_base._departure_time]
 outfile = "cosmo2e_cloud_departure_time_{domain}_{lang}_ts-{time:02d}.png"
-plot_type = "ens_cloud_departure_time"
+plot_type = "ensemble_cloud_departure_time"
 
 ["**".en]
 lang = "en"

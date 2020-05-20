@@ -120,8 +120,8 @@ class Field:
             raise InconsistentArrayShapesError(f"{self.fld.shape} != {grid_shape}")
 
 
-def ens_probability(arr: np.ndarray, thr: float, n_mem: int) -> np.ndarray:
-    """Probability based on the no. members exceeding a threshold at each point.
+def ensemble_probability(arr: np.ndarray, thr: float, n_mem: int) -> np.ndarray:
+    """Ensemble-based probability of threshold exceedence at each point.
 
     Args:
         arr: Data array with dimensions (member, ...).
@@ -134,8 +134,7 @@ def ens_probability(arr: np.ndarray, thr: float, n_mem: int) -> np.ndarray:
         Field with the number of members with a cloud at each grid point.
 
     """
-    n_cloud = np.count_nonzero(arr >= thr, axis=0)
-    return np.where(n_cloud == 0, np.nan, n_cloud.astype(np.float32) * 100 / n_mem)
+    return np.count_nonzero(arr >= thr, axis=0).astype(np.float32) * 100 / n_mem
 
 
 @dataclass

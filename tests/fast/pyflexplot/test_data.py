@@ -9,10 +9,10 @@ import pytest  # type: ignore
 
 # First-party
 from pyflexplot.data import EnsembleCloud
-from pyflexplot.data import ens_probability
+from pyflexplot.data import ensemble_probability
 
 
-class TestEnsProb2D:
+class TestEnsembleProbability2D:
     """Fraction of threshold exceedences along a 2D-array axis."""
 
     arr = np.array(
@@ -28,13 +28,12 @@ class TestEnsProb2D:
 
     def test(self):
         n = self.arr.shape[0]
-        res = ens_probability(self.arr, self.thr, n)
+        res = ensemble_probability(self.arr, self.thr, n)
         sol = np.array([2, 2, 2, 1, 2, 1, 1, 2]) * 100 / n
         assert np.allclose(res, sol)
 
 
-@pytest.mark.skip("TODO: fix!!!")
-class TestEnsProb3D:
+class TestEnsembleProbability3D:
     """Fraction of threshold exceedences along a 3D-array axis."""
 
     arr = np.array(
@@ -49,19 +48,21 @@ class TestEnsProb3D:
 
     def test(self):
         n = self.arr.shape[0]
-        res = ens_probability(self.arr, self.thr, n)
+        res = ensemble_probability(self.arr, self.thr, n)
         sol = (
             np.array([[3, 2, 3], [0, 2, 1], [1, 1, 1], [3, 3, 1], [1, 2, 2]]) * 100 / n
         )
         assert np.allclose(res, sol)
 
 
+# Shorthands for special values
 N = np.nan
 I = np.inf
 J = -np.inf
 
 
 def a(*args, **kwargs):
+    """Shorthand to create array."""
     return np.array(*args, **kwargs)
 
 

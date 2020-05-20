@@ -157,14 +157,14 @@ class InputSetup(BaseModel):
         assert values["ens_variable"] in ens_variables, values["ens_variable"]
         plot_types = [
             "auto",
-            "ens_min",
-            "ens_mean",
-            "ens_median",
-            "ens_max",
-            "ens_probability",
-            "ens_cloud_arrival_time",
-            "ens_cloud_departure_time",
-            "ens_cloud_occurrence_probability",
+            "ensemble_minimum",
+            "ensemble_mean",
+            "ensemble_median",
+            "ensemble_maximum",
+            "ensemble_probability",
+            "ensemble_cloud_arrival_time",
+            "ensemble_cloud_departure_time",
+            "ensemble_cloud_occurrence_probability",
         ]
         assert values["plot_type"] in plot_types, values["plot_type"]
         return values
@@ -190,8 +190,8 @@ class InputSetup(BaseModel):
                     values["simulation_type"],
                 )
         elif values["plot_type"] in [
-            "ens_cloud_arrival_time",
-            "ens_cloud_departure_time",
+            "ensemble_cloud_arrival_time",
+            "ensemble_cloud_departure_time",
         ]:
             value = ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN
         return value
@@ -207,11 +207,11 @@ class InputSetup(BaseModel):
                     value,
                     values["simulation_type"],
                 )
-        elif values["plot_type"] == "ens_probability":
+        elif values["plot_type"] == "ensemble_probability":
             value = ENS_PROBABILITY_DEFAULT_PARAM_THR
         elif values["plot_type"] in [
-            "ens_cloud_arrival_time",
-            "ens_cloud_departure_time",
+            "ensemble_cloud_arrival_time",
+            "ensemble_cloud_departure_time",
         ]:
             value = ENS_CLOUD_TIME_DEFAULT_PARAM_THR
         return value
@@ -227,7 +227,7 @@ class InputSetup(BaseModel):
                     value,
                     values["simulation_type"],
                 )
-        elif values["plot_type"] == "ens_cloud_occurrence_probability":
+        elif values["plot_type"] == "ensemble_cloud_occurrence_probability":
             value = ENS_CLOUD_PROB_DEFAULT_PARAM_TIME_WIN
         return value
 
@@ -587,6 +587,7 @@ class CoreInputSetup(BaseModel):
     ens_member_id: Optional[int] = None
     ens_param_mem_min: Optional[int] = None
     ens_param_thr: Optional[float] = None
+    ens_param_time_win: Optional[float] = None
 
     # Plot appearance
     lang: str = "en"

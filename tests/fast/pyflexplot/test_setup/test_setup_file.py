@@ -64,16 +64,15 @@ def test_read_single_section(tmp_path):
         """
     setups = read_tmp_setup_file(tmp_path, content)
     assert len(setups) == 1
-    assert setups != [DEFAULT_SETUP.dict()]
-    sol = [
-        {
-            **DEFAULT_SETUP.dict(),
-            "input_variable": "deposition",
-            "level": None,
-            "lang": "de",
-        },
-    ]
-    assert setups == sol
+    res = next(iter(setups))
+    assert res != DEFAULT_SETUP.dict()
+    sol = {
+        **DEFAULT_SETUP.dict(),
+        "input_variable": "deposition",
+        "level": None,
+        "lang": "de",
+    }
+    assert res == sol
 
 
 def test_read_multiple_parallel_empty_sections(tmp_path):
@@ -415,12 +414,12 @@ def test_read_combine_wildcards(tmp_path):
         input_variable = "deposition"
 
         [_base."*"._mean]
-        plot_type = "ens_mean"
-        outfile = "ens_mean_{lang}.png"
+        plot_type = "ensemble_mean"
+        outfile = "ensemble_mean_{lang}.png"
 
         [_base."*"._max]
-        plot_type = "ens_max"
-        outfile = "ens_max_{lang}.png"
+        plot_type = "ensemble_maximum"
+        outfile = "ensemble_maximum_{lang}.png"
 
         ["**".de]
         lang = "de"
@@ -439,11 +438,13 @@ def test_read_combine_wildcards(tmp_path):
             "lang": lang,
         }
         for input_variable in ["concentration", "deposition"]
-        for plot_type in ["ens_mean", "ens_max"]
+        for plot_type in ["ensemble_mean", "ensemble_maximum"]
         for lang in ["de", "en"]
     ]
     setups = read_tmp_setup_file(tmp_path, content)
-    assert setups.dicts() == sol
+    res = setups.dicts()
+    assert len(res) == len(sol)
+    assert res == sol
 
 
 class Test_IndividualParams_SingleOrMultipleValues:

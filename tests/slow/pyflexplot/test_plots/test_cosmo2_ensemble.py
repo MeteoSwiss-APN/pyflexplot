@@ -24,7 +24,7 @@ class Test_EnsMedian_Concentration(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": "dummy.png",
-        "plot_type": "ens_median",
+        "plot_type": "ensemble_median",
         "input_variable": "concentration",
         "integrate": False,
         "combine_species": True,
@@ -44,7 +44,7 @@ class Test_EnsMax_IntegratedConcentration(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": "plot.png",
-        "plot_type": "ens_max",
+        "plot_type": "ensemble_maximum",
         "input_variable": "concentration",
         "integrate": True,
         "simulation_type": "ensemble",
@@ -63,7 +63,7 @@ class Test_EnsMean_TotalDeposition(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": "plot.png",
-        "plot_type": "ens_mean",
+        "plot_type": "ensemble_mean",
         "input_variable": "deposition",
         "deposition_type": "tot",
         "integrate": True,
@@ -78,7 +78,7 @@ class Test_EnsMean_TotalDeposition(_TestBase):
 
 
 # SR_TODO Reactivate once input and derived variable have been separated
-# SR_TODO (input: deposition; derived: affected_area; plot: ens_min)
+# SR_TODO (input: deposition; derived: affected_area; plot: ensemble_minimum)
 # # @pytest.mark.skip("WIP")
 # # class Test_EnsMin_AffectedArea(_TestCreateReference):
 # class Test_EnsMin_AffectedArea(_TestBase):
@@ -109,7 +109,7 @@ class Test_CloudArrivalTime(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": "plot.png",
-        "plot_type": "ens_cloud_arrival_time",
+        "plot_type": "ensemble_cloud_arrival_time",
         "input_variable": "concentration",
         "integrate": True,
         "simulation_type": "ensemble",
@@ -132,7 +132,7 @@ class Test_CloudDepartureTime(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": "plot.png",
-        "plot_type": "ens_cloud_departure_time",
+        "plot_type": "ensemble_cloud_departure_time",
         "input_variable": "concentration",
         "integrate": True,
         "simulation_type": "ensemble",

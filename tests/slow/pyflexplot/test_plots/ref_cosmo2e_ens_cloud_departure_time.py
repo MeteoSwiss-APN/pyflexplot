@@ -21,7 +21,7 @@ field_summary = {
         {
             "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
             "outfile": "plot.png",
-            "plot_type": "ens_cloud_departure_time",
+            "plot_type": "ensemble_cloud_departure_time",
             "input_variable": "concentration",
             "deposition_type": "none",
             "integrate": True,
@@ -42,7 +42,7 @@ field_summary = {
         {
             "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
             "outfile": "plot.png",
-            "plot_type": "ens_cloud_departure_time",
+            "plot_type": "ensemble_cloud_departure_time",
             "input_variable": "concentration",
             "deposition_type": "none",
             "integrate": True,
@@ -63,7 +63,7 @@ field_summary = {
         {
             "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
             "outfile": "plot.png",
-            "plot_type": "ens_cloud_departure_time",
+            "plot_type": "ensemble_cloud_departure_time",
             "input_variable": "concentration",
             "deposition_type": "none",
             "integrate": True,
@@ -84,7 +84,7 @@ field_summary = {
         {
             "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
             "outfile": "plot.png",
-            "plot_type": "ens_cloud_departure_time",
+            "plot_type": "ensemble_cloud_departure_time",
             "input_variable": "concentration",
             "deposition_type": "none",
             "integrate": True,
@@ -105,7 +105,7 @@ field_summary = {
         {
             "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
             "outfile": "plot.png",
-            "plot_type": "ens_cloud_departure_time",
+            "plot_type": "ensemble_cloud_departure_time",
             "input_variable": "concentration",
             "deposition_type": "none",
             "integrate": True,
@@ -126,7 +126,7 @@ field_summary = {
         {
             "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
             "outfile": "plot.png",
-            "plot_type": "ens_cloud_departure_time",
+            "plot_type": "ensemble_cloud_departure_time",
             "input_variable": "concentration",
             "deposition_type": "none",
             "integrate": True,
@@ -2070,7 +2070,7 @@ plot_summary = {
             {
                 "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
                 "outfile": "plot.png",
-                "plot_type": "ens_cloud_departure_time",
+                "plot_type": "ensemble_cloud_departure_time",
                 "input_variable": "concentration",
                 "deposition_type": "none",
                 "integrate": True,
@@ -2091,7 +2091,7 @@ plot_summary = {
             {
                 "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
                 "outfile": "plot.png",
-                "plot_type": "ens_cloud_departure_time",
+                "plot_type": "ensemble_cloud_departure_time",
                 "input_variable": "concentration",
                 "deposition_type": "none",
                 "integrate": True,
@@ -2112,7 +2112,7 @@ plot_summary = {
             {
                 "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
                 "outfile": "plot.png",
-                "plot_type": "ens_cloud_departure_time",
+                "plot_type": "ensemble_cloud_departure_time",
                 "input_variable": "concentration",
                 "deposition_type": "none",
                 "integrate": True,
@@ -2133,7 +2133,7 @@ plot_summary = {
             {
                 "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
                 "outfile": "plot.png",
-                "plot_type": "ens_cloud_departure_time",
+                "plot_type": "ensemble_cloud_departure_time",
                 "input_variable": "concentration",
                 "deposition_type": "none",
                 "integrate": True,
@@ -2154,7 +2154,7 @@ plot_summary = {
             {
                 "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
                 "outfile": "plot.png",
-                "plot_type": "ens_cloud_departure_time",
+                "plot_type": "ensemble_cloud_departure_time",
                 "input_variable": "concentration",
                 "deposition_type": "none",
                 "integrate": True,
@@ -2175,7 +2175,7 @@ plot_summary = {
             {
                 "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
                 "outfile": "plot.png",
-                "plot_type": "ens_cloud_departure_time",
+                "plot_type": "ensemble_cloud_departure_time",
                 "input_variable": "concentration",
                 "deposition_type": "none",
                 "integrate": True,
