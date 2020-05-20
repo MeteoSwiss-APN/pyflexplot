@@ -294,6 +294,7 @@ class FileReader:
         plot_type = var_setups.collect_equal("plot_type")
         ens_param_thr = var_setups.collect_equal("ens_param_thr")
         ens_param_mem_min = var_setups.collect_equal("ens_param_mem_min")
+        ens_param_time_win = var_setups.collect_equal("ens_param_time_win")
         n_ens_mem = len(var_setups.collect_equal("ens_member_id"))
 
         if plot_type == "ens_mean":
@@ -306,17 +307,14 @@ class FileReader:
             fld_time = np.nanmax(fld_time_mem, axis=0)
         elif plot_type == "ens_probability":
             fld_time = ens_probability(fld_time_mem, ens_param_thr, n_ens_mem)
-        elif plot_type in ["ens_cloud_arrival_time", "ens_cloud_departure_time"]:
-            cloud = EnsembleCloud(
-                arr=fld_time_mem,
-                time=self.time,
-                thr=ens_param_thr,
-                mem=ens_param_mem_min,
-            )
+        elif plot_type.startswith("ens_cloud_"):
+            cloud = EnsembleCloud(arr=fld_time_mem, time=self.time, thr=ens_param_thr)
             if plot_type == "ens_cloud_arrival_time":
-                fld_time = cloud.arrival_time()
+                fld_time = cloud.arrival_time(ens_param_mem_min)
             elif plot_type == "ens_cloud_departure_time":
-                fld_time = cloud.departure_time()
+                fld_time = cloud.departure_time(ens_param_mem_min)
+            elif plot_type == "ens_cloud_occurrence_probability":
+                fld_time = cloud.occurrence_probability(ens_param_time_win)
         else:
             raise NotImplementedError("plot var", plot_type)
         return fld_time

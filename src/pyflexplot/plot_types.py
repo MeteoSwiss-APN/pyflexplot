@@ -369,12 +369,10 @@ def create_plot_config(
             long_name = f"{words['ensemble_median']} {variable_rel}"
         elif setup.plot_type == "ens_mean":
             long_name = f"{words['ensemble_mean']} {variable_rel}"
-        elif setup.plot_type == "ens_probability":
+        else:
             new_config_dct.update(
                 {
                     "extend": "both",
-                    "n_levels": 9,
-                    "d_level": 10,
                     "legend_rstrip_zeros": False,
                     "level_range_style": "int",
                     "level_ranges_align": "left",
@@ -382,45 +380,56 @@ def create_plot_config(
                     "levels_scale": "lin",
                 }
             )
-            new_config_dct["labels"]["right_top"]["lines"].append(
-                f"{words['cloud']}:\t{symbols['geq']} {setup.ens_param_thr}"
-                f" {mdata.format('variable_unit')}"
-            )
-            short_name = f"{words['probability']}"
-            unit = "%"
-            long_name = f"{words['probability']} {variable_rel}"
-        elif setup.plot_type in ["ens_cloud_arrival_time", "ens_cloud_departure_time"]:
-            new_config_dct.update(
-                {
-                    "extend": "both",
-                    "n_levels": 9,
-                    "d_level": 3,
-                    "legend_rstrip_zeros": False,
-                    "level_range_style": "int",
-                    "level_ranges_align": "left",
-                    "mark_field_max": False,
-                    "levels_scale": "lin",
-                }
-            )
-            new_config_dct["labels"]["right_top"]["lines"].append(
-                f"{words['cloud_density'].c}:\t{words['minimum', 'abbr']}"
-                f" {setup.ens_param_thr} {mdata.format('variable_unit')}"
-            )
-            n_min: int = setup.ens_param_mem_min or 1
-            n_tot: int = len((setup.ens_member_id or []))
-            new_config_dct["labels"]["right_top"]["lines"].append(
-                f"{words['number_of', 'abbr'].c} {words['member', 'pl']}:"
-                f"\t{words['minimum', 'abbr']} {setup.ens_param_mem_min}"
-                r"$\,/\,$"
-                f"{n_tot} ({n_min/(n_tot or 1):.0%})"
-            )
-            if setup.plot_type == "ens_cloud_arrival_time":
-                long_name = f"{words['cloud_arrival_time']}"
-                short_name = f"{words['arrival']}"
-            elif setup.plot_type == "ens_cloud_departure_time":
-                long_name = f"{words['cloud_departure_time']}"
-                short_name = f"{words['departure']}"
-            unit = f"{words['hour', 'pl']}"
+            if setup.plot_type == "ens_probability":
+                new_config_dct.update({"n_levels": 9, "d_level": 10})
+                new_config_dct["labels"]["right_top"]["lines"].append(
+                    f"{words['cloud']}:\t{symbols['geq']} {setup.ens_param_thr}"
+                    f" {mdata.format('variable_unit')}"
+                )
+                short_name = f"{words['probability']}"
+                unit = "%"
+                long_name = f"{words['probability']} {variable_rel}"
+            elif setup.plot_type in [
+                "ens_cloud_arrival_time",
+                "ens_cloud_departure_time",
+            ]:
+                new_config_dct.update({"n_levels": 9, "d_level": 3})
+                new_config_dct["labels"]["right_top"]["lines"].append(
+                    f"{words['cloud_density'].c}:\t{words['minimum', 'abbr']}"
+                    f" {setup.ens_param_thr} {mdata.format('variable_unit')}"
+                )
+                n_min = setup.ens_param_mem_min or 1
+                n_tot = len((setup.ens_member_id or []))
+                new_config_dct["labels"]["right_top"]["lines"].append(
+                    f"{words['number_of', 'abbr'].c} {words['member', 'pl']}:"
+                    f"\t{words['minimum', 'abbr']} {setup.ens_param_mem_min}"
+                    r"$\,/\,$"
+                    f"{n_tot} ({n_min/(n_tot or 1):.0%})"
+                )
+                if setup.plot_type == "ens_cloud_arrival_time":
+                    long_name = f"{words['cloud_arrival_time']}"
+                    short_name = f"{words['arrival']}"
+                elif setup.plot_type == "ens_cloud_departure_time":
+                    long_name = f"{words['cloud_departure_time']}"
+                    short_name = f"{words['departure']}"
+                unit = f"{words['hour', 'pl']}"
+            elif setup.plot_type == "ens_cloud_occurrence_probability":
+                new_config_dct.update({"n_levels": 9, "d_level": 10})
+                new_config_dct["labels"]["right_top"]["lines"].append(
+                    f"{words['cloud_density'].c}:\t{words['minimum', 'abbr']}"
+                    f" {setup.ens_param_thr} {mdata.format('variable_unit')}"
+                )
+                n_min = setup.ens_param_mem_min or 1
+                n_tot = len((setup.ens_member_id or []))
+                new_config_dct["labels"]["right_top"]["lines"].append(
+                    f"{words['number_of', 'abbr'].c} {words['member', 'pl']}:"
+                    f"\t{words['minimum', 'abbr']} {setup.ens_param_mem_min}"
+                    r"$\,/\,$"
+                    f"{n_tot} ({n_min/(n_tot or 1):.0%})"
+                )
+                short_name = f"{words['probability']}"
+                unit = f"%"
+                long_name = f"{words['cloud_occurrence_probability']}"
 
     # SR_TMP <
     if not short_name:
@@ -532,7 +541,9 @@ def levels_from_time_stats(
         )
 
     assert plot_config.n_levels is not None  # mypy
-    if plot_config.setup.plot_type == "ens_probability":
+    if plot_config.setup.plot_type.startswith(
+        "ens_"
+    ) and plot_config.setup.plot_type.endswith("_probability"):
         assert plot_config.d_level is not None  # mypy
         n_max = 90
         return np.arange(

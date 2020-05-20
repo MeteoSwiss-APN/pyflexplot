@@ -41,8 +41,12 @@ WORDS.add(en="averaged over", de=f'gemittelt {s["ue"]}ber')
 WORDS.add(en="based on", de="basierend auf")
 # C
 WORDS.add(en="cloud", de="Wolke")
+WORDS.add(en="cloud probability", de="Wolkenwahrscheinlichkeit")
+WORDS.add(en="cloud arrival probability", de="Wolkenankunftswahrscheinlichkeit")
 WORDS.add(en="cloud arrival time", de="Wolkenankunftszeit")
+WORDS.add(en="cloud departure probability", de="Wolkenabzugswahrscheinlichkeit")
 WORDS.add(en="cloud departure time", de="Wolkenabzugszeit")
+WORDS.add(en="cloud occurrence probability", de="Wolkenauftretenswahrscheinlichkeit")
 WORDS.add(en="cloud density", de="Wolkendichte")
 WORDS.add(
     en={"*": "concentration", "abbr": "concentr."},

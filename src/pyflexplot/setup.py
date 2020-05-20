@@ -34,9 +34,10 @@ from srutils.dict import decompress_nested_dict
 from srutils.dict import nested_dict_resolve_wildcards
 
 # Some plot-specific default values
-ENS_PROBABILITY_DEFAULT_PARAM_THR: float = 1e-8
-ENS_CLOUD_ARRIVAL_TIME_DEFAULT_PARAM_MEM_MIN = 10
-ENS_CLOUD_ARRIVAL_TIME_DEFAULT_PARAM_THR: float = 1e-7
+ENS_PROBABILITY_DEFAULT_PARAM_THR = 1e-8
+ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN = 10
+ENS_CLOUD_TIME_DEFAULT_PARAM_THR = 1e-7
+ENS_CLOUD_PROB_DEFAULT_PARAM_TIME_WIN = 12
 
 
 # pylint: disable=E0213  # no-self-argument (validators)
@@ -69,6 +70,9 @@ class InputSetup(BaseModel):
 
         ens_param_thr: Threshold used to compute some ensemble variables. Its
             precise meaning depends on the variable.
+
+        ens_param_time_win: Tim window used to compute some ensemble variables.
+            Its precise meaning depends on the variable.
 
         ense_variable: Ensemble variable computed from plot variable.
 
@@ -129,6 +133,7 @@ class InputSetup(BaseModel):
     ens_member_id: Optional[Tuple[int, ...]] = None
     ens_param_mem_min: Optional[int] = None
     ens_param_thr: Optional[float] = None
+    ens_param_time_win: Optional[float] = None
 
     # Plot appearance
     lang: str = "en"
@@ -159,6 +164,7 @@ class InputSetup(BaseModel):
             "ens_probability",
             "ens_cloud_arrival_time",
             "ens_cloud_departure_time",
+            "ens_cloud_occurrence_probability",
         ]
         assert values["plot_type"] in plot_types, values["plot_type"]
         return values
@@ -187,7 +193,7 @@ class InputSetup(BaseModel):
             "ens_cloud_arrival_time",
             "ens_cloud_departure_time",
         ]:
-            value = ENS_CLOUD_ARRIVAL_TIME_DEFAULT_PARAM_MEM_MIN
+            value = ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN
         return value
 
     @validator("ens_param_thr", always=True)
@@ -207,7 +213,22 @@ class InputSetup(BaseModel):
             "ens_cloud_arrival_time",
             "ens_cloud_departure_time",
         ]:
-            value = ENS_CLOUD_ARRIVAL_TIME_DEFAULT_PARAM_THR
+            value = ENS_CLOUD_TIME_DEFAULT_PARAM_THR
+        return value
+
+    @validator("ens_param_time_win", always=True)
+    def _init_ens_param_time_win(
+        cls, value: Optional[float], values: Dict[str, Any],
+    ) -> Optional[float]:
+        if value is not None:
+            if values["simulation_type"] != "ensemble":
+                raise ValueError(
+                    "ens_param_time_win incompatible with simulation_type",
+                    value,
+                    values["simulation_type"],
+                )
+        elif values["plot_type"] == "ens_cloud_occurrence_probability":
+            value = ENS_CLOUD_PROB_DEFAULT_PARAM_TIME_WIN
         return value
 
     @validator("level", always=True)

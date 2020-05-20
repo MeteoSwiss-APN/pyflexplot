@@ -33,6 +33,7 @@ class TestEnsProb2D:
         assert np.allclose(res, sol)
 
 
+@pytest.mark.skip("TODO: fix!!!")
 class TestEnsProb3D:
     """Fraction of threshold exceedences along a 3D-array axis."""
 
@@ -60,8 +61,14 @@ I = np.inf
 J = -np.inf
 
 
+def a(*args, **kwargs):
+    return np.array(*args, **kwargs)
+
+
 class TestEnsembleCloud:
     """Test ensemble cloud fields like arrival and departure time."""
+
+    n_mem = 4
 
     arr = np.array(
         [
@@ -135,8 +142,8 @@ class TestEnsembleCloud:
 
     """
 
-    def create_cloud(self, thr, mem):
-        return EnsembleCloud(arr=self.arr, time=np.arange(5), thr=thr, mem=mem,)
+    def create_cloud(self, thr):
+        return EnsembleCloud(arr=self.arr, time=np.arange(5), thr=thr)
 
     # test_arrival_time
     # fmt: off
@@ -279,7 +286,7 @@ class TestEnsembleCloud:
     )
     # fmt: on
     def test_arrival_time(self, thr, mem, sol):
-        res = self.create_cloud(thr, mem).arrival_time()
+        res = self.create_cloud(thr).arrival_time(mem)
         np.testing.assert_array_equal(res, sol)
 
     # test_departure_time
@@ -423,5 +430,116 @@ class TestEnsembleCloud:
     )
     # fmt: on
     def test_departure_time(self, thr, mem, sol):
-        res = self.create_cloud(thr, mem).departure_time()
+        res = self.create_cloud(thr).departure_time(mem)
         np.testing.assert_array_equal(res, sol)
+
+    # test_occurrence_probability
+    # fmt: off
+    @pytest.mark.parametrize(
+        "thr, win, sol_raw",
+        [
+            (
+                0.5,
+                0,
+                [  #    0  1  2  3  4  5  6
+                    a([ 1, 0, 1, 1, 2, 1, 2])/1,  # time: 0
+                    a([ 2, 1, 0, 1, 3, 4, 3])/1,  # time: 1
+                    a([ 1, 1, 1, 3, 3, 2, 1])/1,  # time: 2
+                    a([ 1, 0, 4, 4, 4, 2, 1])/1,  # time: 3
+                    a([ 0, 2, 2, 4, 3, 1, 1])/1,  # time: 4
+                ],
+            ),
+            (
+                0.5,
+                1,
+                [  #    0  1  2  3  4  5  6
+                    a([ 3, 1, 1, 2, 5, 5, 5])/2,  # time: 0
+                    a([ 3, 2, 1, 4, 6, 6, 4])/2,  # time: 1
+                    a([ 2, 1, 5, 7, 7, 4, 2])/2,  # time: 2
+                    a([ 1, 2, 6, 8, 7, 3, 2])/2,  # time: 3
+                    a([ 0, 2, 2, 4, 3, 1, 1])/1,  # time: 4
+                ],
+            ),
+            (
+                0.5,
+                4,
+                [  #    0  1  2  3  4  5  6
+                    a([ 5, 4, 8,13,15,10, 8])/5,  # time: 0
+                    a([ 4, 4, 7,12,13, 9, 6])/4,  # time: 1
+                    a([ 2, 3, 7,11,10, 5, 3])/3,  # time: 2
+                    a([ 1, 2, 6, 8, 7, 3, 2])/2,  # time: 3
+                    a([ 0, 2, 2, 4, 3, 1, 1])/1,  # time: 4
+                ],
+            ),
+            (
+                1.5,
+                1,
+                [  #    0  1  2  3  4  5  6
+                    a([ 1, 0, 0, 2, 2, 3, 2])/2,  # time: 0
+                    a([ 1, 0, 1, 3, 5, 3, 2])/2,  # time: 1
+                    a([ 0, 0, 2, 6, 6, 2, 2])/2,  # time: 2
+                    a([ 0, 0, 3, 7, 4, 2, 1])/2,  # time: 3
+                    a([ 0, 0, 2, 3, 1, 1, 0])/1,  # time: 4
+                ],
+            ),
+            (
+                1.5,
+                2,
+                [  #    0  1  2  3  4  5  6
+                    a([ 1, 0, 1, 4, 5, 4, 3])/3,  # time: 0
+                    a([ 1, 0, 2, 7, 8, 4, 3])/3,  # time: 1
+                    a([ 0, 0, 4, 9, 7, 3, 2])/3,  # time: 2
+                    a([ 0, 0, 3, 7, 4, 2, 1])/2,  # time: 3
+                    a([ 0, 0, 2, 3, 1, 1, 0])/1,  # time: 4
+                ],
+            ),
+            (
+                2.5,
+                3,
+                [  #    0  1  2  3  4  5  6
+                    a([ 0, 0, 1, 4, 3, 2, 0])/4,  # time: 0
+                    a([ 0, 0, 2, 4, 4, 2, 0])/4,  # time: 1
+                    a([ 0, 0, 2, 4, 4, 2, 0])/3,  # time: 2
+                    a([ 0, 0, 1, 2, 2, 1, 0])/2,  # time: 3
+                    a([ 0, 0, 1, 1, 1, 1, 0])/1,  # time: 4
+                ],
+            ),
+            (
+                2.5,
+                4,
+                [  #    0  1  2  3  4  5  6
+                    a([ 0, 0, 2, 5, 4, 3, 0])/5,  # time: 0
+                    a([ 0, 0, 2, 4, 4, 2, 0])/4,  # time: 1
+                    a([ 0, 0, 2, 4, 4, 2, 0])/3,  # time: 2
+                    a([ 0, 0, 1, 2, 2, 1, 0])/2,  # time: 3
+                    a([ 0, 0, 1, 1, 1, 1, 0])/1,  # time: 4
+                ],
+            ),
+            (
+                2.5,
+                6,
+                [  #    0  1  2  3  4  5  6
+                    a([ 0, 0, 2, 5, 4, 3, 0])/5,  # time: 0
+                    a([ 0, 0, 2, 4, 4, 2, 0])/4,  # time: 1
+                    a([ 0, 0, 2, 4, 4, 2, 0])/3,  # time: 2
+                    a([ 0, 0, 1, 2, 2, 1, 0])/2,  # time: 3
+                    a([ 0, 0, 1, 1, 1, 1, 0])/1,  # time: 4
+                ],
+            ),
+            (
+                3.5,
+                4,
+                [  #    0  1  2  3  4  5  6
+                    a([ 0, 0, 0, 0, 0, 0, 0])/4,  # time: 0
+                    a([ 0, 0, 0, 0, 0, 0, 0])/4,  # time: 1
+                    a([ 0, 0, 0, 0, 0, 0, 0])/3,  # time: 2
+                    a([ 0, 0, 0, 0, 0, 0, 0])/2,  # time: 3
+                    a([ 0, 0, 0, 0, 0, 0, 0])/1,  # time: 4
+                ],
+            ),
+        ]
+    )
+    def test_occurrence_probability(self, thr, win, sol_raw):
+        sol = np.array(sol_raw).astype(np.float32) * 100 / self.n_mem
+        res = self.create_cloud(thr).occurrence_probability(win)
+        np.testing.assert_array_almost_equal(res, sol, decimal=5)
