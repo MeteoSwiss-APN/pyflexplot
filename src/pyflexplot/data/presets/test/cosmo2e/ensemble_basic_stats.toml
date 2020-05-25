@@ -43,31 +43,35 @@ outfile = "ens_median_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{
 plot_type = "ensemble_median"
 
 # ["**"._min]
-[_base.total_deposition._min]
+[_base._total_deposition._min]
 outfile = "ens_min_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time:02d}.png"
 plot_type = "ensemble_minimum"
 
 # ["**"._max]
-[_base.wet_deposition._max]
+[_base._wet_deposition._max]
 outfile = "ens_max_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time:02d}.png"
 plot_type = "ensemble_maximum"
 
 # ["**"._auto.de]
-[_base."*"._mean._auto.de]
+# [_base."*"._mean._auto.de]  # TODO "*" should match only "_concentration" due to "_mean"
+[_base._concentration._mean._auto.de]
 domain = "auto"
 lang = "de"
 
 # ["**"._auto.en]
-[_base."*"._median._auto.en]
+# [_base."*"._median._auto.en]  # TODO "*" should match only "_integrated_concentration" due to "_median"
+[_base._integrated_concentration._median._auto.en]
 domain = "auto"
 lang = "en"
 
 # ["**"._ch.de]
-[_base."*"._min._ch.de]
+# [_base."*"._min._ch.de]  # TODO "*" should match only "_total_deposition" due to "_min"
+[_base._total_deposition._min._ch.de]
 domain = "ch"
 lang = "de"
 
 # ["**"._ch.en]
-[_base."*"._max._ch.en]
+# [_base."*"._max._ch.en]  # TODO "*" should match only "_wet_deposition" due to "_max"
+[_base._wet_deposition._max._ch.en]
 domain = "ch"
 lang = "en"
