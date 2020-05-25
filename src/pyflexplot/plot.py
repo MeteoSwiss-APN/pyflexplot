@@ -69,7 +69,6 @@ class Plot:
             self.map_conf, fig=self.fig, rect=self.layout.rect_center, field=self.field,
         )
         self._draw_colors_contours()
-        self._add_markers()
 
     def save(self, file_path: str, *, write: bool = True) -> None:
         """Save the plot to disk.
@@ -89,26 +88,6 @@ class Plot:
                 pad_inches=0.15,
             )
         plt.close(self.fig)
-
-    def _add_markers(self) -> None:
-        if self.config.mark_release_site:
-            assert isinstance(self.config.mdata.release_site_lon.value, float)  # mypy
-            assert isinstance(self.config.mdata.release_site_lat.value, float)  # mypy
-            self.ax_map.marker(
-                self.config.mdata.release_site_lon.value,
-                self.config.mdata.release_site_lat.value,
-                **self.config.markers["site"],
-            )
-
-        if self.config.mark_field_max:
-            try:
-                max_lat, max_lon = self.field.locate_max()
-            except FieldAllNaNError:
-                warnings.warn("skip maximum marker (all-nan field)")
-            else:
-                self.ax_map.marker(
-                    lon=max_lon, lat=max_lat, **self.config.markers["max"]
-                )
 
     # SR_TODO Replace checks with plot-specific config/setup object
     def _draw_colors_contours(self) -> None:
@@ -145,6 +124,30 @@ class Plot:
         box.draw()
         self.boxes[name] = box
 
+    def add_marker(self, lat: float, lon: float, marker: str, **kwargs) -> None:
+        self.ax_map.marker(lat=lat, lon=lon, marker=marker, **kwargs)
+
+
+def plot_add_markers(plot: Plot) -> None:
+    config = plot.config
+
+    if config.mark_release_site:
+        assert isinstance(config.mdata.release_site_lon.value, float)  # mypy
+        assert isinstance(config.mdata.release_site_lat.value, float)  # mypy
+        plot.add_marker(
+            lat=config.mdata.release_site_lat.value,
+            lon=config.mdata.release_site_lon.value,
+            **config.markers["site"],
+        )
+
+    if config.mark_field_max:
+        try:
+            max_lat, max_lon = plot.field.locate_max()
+        except FieldAllNaNError:
+            warnings.warn("skip maximum marker (all-nan field)")
+        else:
+            plot.ax_map.marker(lat=max_lat, lon=max_lon, **config.markers["max"])
+
 
 def plot_fields(
     fields: Sequence[Field],
@@ -165,6 +168,7 @@ def plot_fields(
             config = create_plot_config(setup, WORDS, SYMBOLS, mdata)
             plot = Plot(field, config, map_conf)
             plot_add_text_boxes(plot)
+            plot_add_markers(plot)
             plot.save(out_file_path, write=write)
         yield out_file_path, plot
 

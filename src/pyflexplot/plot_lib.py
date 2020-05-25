@@ -338,10 +338,10 @@ class MapAxes:
 
     def marker(
         self,
+        *,
         lon: float,
         lat: float,
         marker: str,
-        *,
         zorder: Optional[int] = None,
         **kwargs,
     ) -> Sequence[Line2D]:
@@ -644,8 +644,8 @@ class MapAxes:
             lon, lat = city.geometry.x, city.geometry.y
             if is_visible(city) and is_of_interest(city):
                 self.marker(
-                    lon,
-                    lat,
+                    lat=lat,
+                    lon=lon,
                     marker="o",
                     color="black",
                     fillstyle="none",
