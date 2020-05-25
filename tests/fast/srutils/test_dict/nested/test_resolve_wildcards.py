@@ -7,7 +7,7 @@ from srutils.dict import nested_dict_resolve_wildcards
 
 
 def test_single_star_flat():
-    """Update dicts at same level with contents of single-starred dict."""
+    """Update dicts at same level with contents of single-star dict."""
     # fmt: off
     dct = {
         "foo": {
@@ -39,8 +39,8 @@ def test_single_star_flat():
     assert res == sol
 
 
-def test_single_star_nested():
-    """Update dicts at same level with contents of single-starred dict."""
+def test_single_star_nested_flat():
+    """Update dicts at same level with contents of flat single-star dict."""
     # fmt: off
     dct = {
         "foo": {
@@ -103,8 +103,76 @@ def test_single_star_nested():
     assert res == sol
 
 
-def test_double_star_linear():
-    """Update all regular dicts with the contents of double-starred dicts."""
+def test_single_star_nested_nested():
+    """Update dicts at same level with contents of nested single-star dict."""
+    # fmt: off
+    dct = {
+        "dog": {
+            "a": 0,
+            "cat": {
+                "b": 1,
+                "tree": {
+                    "c": 2,
+                },
+            },
+        },
+        "wolf": {
+            "d": 3,
+        },
+        "bird": {
+            "cat": {
+                "e": 4,
+            }
+        },
+        "*": {
+            "e": 5,
+            "cat": {
+                "b": 6,
+                "tree": {
+                    "c": 7,
+                },
+            },
+        },
+    }
+    sol = {
+        "dog": {
+            "a": 0,
+            "e": 5,  # "*"
+            "cat": {
+                "b": 6,  # "*"
+                "tree": {
+                    "c": 7,  # "*"
+                },
+            },
+        },
+        "wolf": {
+            "d": 3,
+            "e": 5,  # "*"
+            "cat": {  # "*"
+                "b": 6,
+                "tree": {
+                    "c": 7,
+                },
+            },
+        },
+        "bird": {
+            "e": 5,
+            "cat": {
+                "b": 6,  # "*"
+                "e": 4,
+                "tree": {  # "*"
+                    "c": 7,
+                },
+            },
+        },
+    }
+    # fmt: on
+    res = nested_dict_resolve_wildcards(dct)
+    assert res == sol
+
+
+def test_double_star_linear_flat():
+    """Update all regular dicts with the contents of flat double-star dicts."""
     # fmt: off
     dct = {
         "foo": {
@@ -139,8 +207,8 @@ def test_double_star_linear():
     assert res == sol
 
 
-def test_double_star_linear_ends_only():
-    """Update end-of-branch dicts with the contents of double-starred dicts."""
+def test_double_star_linear_flat_ends_only():
+    """Update end-of-branch dicts with the contents of flat double-star dicts."""
     # fmt: off
     dct = {
         "foo": {
@@ -173,8 +241,8 @@ def test_double_star_linear_ends_only():
     assert res == sol
 
 
-def test_double_star_nested():
-    """Update all regular dicts with the contents of double-starred dicts."""
+def test_double_star_nested_flat():
+    """Update all regular dicts with the contents of flat double-star dicts."""
     # fmt: off
     dct = {
         "foo": {
@@ -242,8 +310,8 @@ def test_double_star_nested():
     assert res == sol
 
 
-def test_double_star_nested_linear_ends_only():
-    """Update end-of-branch dicts with the contents of double-starred dicts."""
+def test_double_star_nested_linear_flat_ends_only():
+    """Update end-of-branch dicts with the contents of flat double-star dicts."""
     # fmt: off
     dct = {
         "foo": {
@@ -307,8 +375,8 @@ def test_double_star_nested_linear_ends_only():
     assert res == sol
 
 
-def test_mixed_stars():
-    """Mixed single- and double-star wildcards; based on 'real' Setup case."""
+def test_mixed_stars_flat():
+    """Mixed flat single- and double-star wildcards."""
     # fmt: off
     dct = {
         "foo": {

@@ -16,6 +16,7 @@ from typing import Collection
 from typing import Dict
 from typing import List
 from typing import Mapping
+from typing import MutableMapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -496,6 +497,18 @@ def nested_dict_resolve_wildcards(
         return deepcopy(dct)
 
 
+def recursive_update(dct1: MutableMapping[Any, Any], dct2: Mapping[Any, Any]) -> None:
+    for key, val2 in dct2.items():
+        if key in dct1:
+            val1 = dct1[key]
+            if isinstance(val1, MutableMapping) and isinstance(val1, Mapping):
+                recursive_update(val1, val2)
+            else:
+                dct1[key] = val2
+        else:
+            dct1[key] = val2
+
+
 def nested_dict_resolve_single_star_wildcards(dct):
     """Update regular subdicts with single-star wildcard subdicts.
 
@@ -512,8 +525,8 @@ def nested_dict_resolve_single_star_wildcards(dct):
 
     for wild_val in wildcards.values():
         for key, val in dct.items():
-            if isinstance(val, Mapping):
-                val.update(wild_val)
+            if isinstance(val, MutableMapping):
+                recursive_update(val, wild_val)
 
     for key, val in dct.items():
         if isinstance(val, Mapping):
@@ -544,7 +557,7 @@ def nested_dict_resolve_double_star_wildcards(dct, only_to_ends=False):
             for subdct in subdcts:
                 _apply_double_star(subdct, wild_val, depth=depth + 1)
         if depth > 0 and (not only_to_ends or not subdcts):
-            dct.update(deepcopy(wild_val))
+            recursive_update(dct, wild_val)
 
     wildcards = {}
     for key, val in dct.copy().items():
