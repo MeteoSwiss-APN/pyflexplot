@@ -317,7 +317,7 @@ field_summary = {
 }
 
 plot_summary = {
-    "type": "Plot",
+    "type": "BoxedPlot",
     "ax_map": {
         "type": "MapAxesRotatedPole",
         "fig": {

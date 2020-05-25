@@ -40,7 +40,7 @@ from .formatting import MaxIterationError
 from .summarize import summarizable
 
 # Custom types
-ColorType = Union[str, Tuple[int, int, int], Tuple[int, int, int, int]]
+ColorType = Union[str, Tuple[float, float, float], Tuple[float, float, float, float]]
 LocationType = Union[str, int]
 MarkerStyleType = Union[str, int]
 RawTextBlockType = Union[str, Sequence[str]]

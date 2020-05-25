@@ -4,15 +4,12 @@ Plot types.
 """
 # Standard library
 import warnings
-from dataclasses import dataclass
 from datetime import datetime
 from textwrap import dedent
 from typing import Any
 from typing import Collection
 from typing import Dict
 from typing import Iterator
-from typing import List
-from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -21,8 +18,6 @@ from typing import Union
 # Third-party
 import matplotlib as mpl
 import numpy as np
-from matplotlib.colors import Colormap
-from pydantic import BaseModel
 
 # First-party
 from srutils.geo import Degrees
@@ -35,6 +30,8 @@ from .formatting import format_range
 from .meta_data import MetaData
 from .meta_data import format_unit
 from .meta_data import get_integr_type
+from .plot import BoxedPlot
+from .plot import BoxedPlotConfig
 from .plot_lib import MapAxesConf
 from .plot_lib import TextBoxAxes
 from .setup import FilePathFormatter
@@ -47,7 +44,6 @@ from .words import Words
 # Custom types
 ColorType = Union[str, Tuple[float, float, float], Tuple[float, float, float, float]]
 FontSizeType = Union[str, float]
-Plot = Any  # cannot import .plot.Plot (circular dependency)
 RectType = Tuple[float, float, float, float]
 
 
@@ -118,136 +114,6 @@ def create_map_conf(field: Field) -> MapAxesConf:
     return MapAxesConf(**conf)
 
 
-@dataclass
-class FontSizes:
-    title_large: FontSizeType = 14.0
-    title_medium: FontSizeType = 12.0
-    title_small: FontSizeType = 12.0
-    content_large: FontSizeType = 12.0
-    content_medium: FontSizeType = 10.0
-    content_small: FontSizeType = 9.0
-
-
-@dataclass
-# pylint: disable=R0902  # too-many-instance-attributes
-class PlotLayout:
-    aspect: float
-    x0_tot: float = 0.0
-    x1_tot: float = 1.0
-    y0_tot: float = 0.0
-    y1_tot: float = 1.0
-    y_pad: float = 0.02
-    h_top: float = 0.08
-    w_right: float = 0.2
-    h_rigtop: float = 0.15
-    h_rigbot: float = 0.42
-    h_bottom: float = 0.05
-
-    def __post_init__(self):
-        self.x_pad: float = self.y_pad / self.aspect
-        self.h_tot: float = self.y1_tot - self.y0_tot
-        self.y1_top: float = self.y1_tot
-        self.y0_top: float = self.y1_top - self.h_top
-        self.y1_center: float = self.y0_top - self.y_pad
-        self.y0_center: float = self.y0_tot + self.h_bottom
-        self.h_center: float = self.y1_center - self.y0_center
-        self.w_tot: float = self.x1_tot - self.x0_tot
-        self.x1_right: float = self.x1_tot
-        self.x0_right: float = self.x1_right - self.w_right
-        self.x1_left: float = self.x0_right - self.x_pad
-        self.x0_left: float = self.x0_tot
-        self.w_left: float = self.x1_left - self.x0_left
-        self.y0_rigbot: float = self.y0_center
-        self.y1_rigtop: float = self.y1_tot
-        self.y0_rigtop: float = self.y1_rigtop - self.h_rigtop
-        self.y1_rigbot: float = self.y0_rigbot + self.h_rigbot
-        self.y1_rigmid: float = self.y0_rigtop - self.y_pad
-        self.y0_rigmid: float = self.y1_rigbot + self.y_pad
-        self.h_rigmid: float = self.y1_rigmid - self.y0_rigmid
-        self.rect_top: RectType = (self.x0_left, self.y0_top, self.w_left, self.h_top)
-        self.rect_center: RectType = (
-            self.x0_left,
-            self.y0_center,
-            self.w_left,
-            self.h_center,
-        )
-        self.rect_right_top: RectType = (
-            self.x0_right,
-            self.y0_rigtop,
-            self.w_right,
-            self.h_rigtop,
-        )
-        self.rect_right_middle: RectType = (
-            self.x0_right,
-            self.y0_rigmid,
-            self.w_right,
-            self.h_rigmid,
-        )
-        self.rect_right_bottom: RectType = (
-            self.x0_right,
-            self.y0_rigbot,
-            self.w_right,
-            self.h_rigbot,
-        )
-        self.rect_bottom: RectType = (
-            self.x0_tot,
-            self.y0_tot,
-            self.w_tot,
-            self.h_bottom,
-        )
-
-
-# SR_TODO Move class definition to pyflexplot.plot
-# pylint: disable=R0902  # too-many-instance-attributes
-class PlotConfig(BaseModel):
-    setup: InputSetup  # SR_TODO consider removing this
-    mdata: MetaData  # SR_TODO consider removing this
-    cmap: Union[str, Colormap] = "flexplot"
-    colors: List[ColorType]
-    d_level: Optional[int] = None  # SR_TODO sensible default
-    draw_colors: bool = True
-    draw_contours: bool = False
-    extend: str = "max"
-    # SR_NOTE Figure size may change when boxes etc. are added
-    # SR_TODO Specify plot size in a robust way (what you want is what you get)
-    fig_size: Tuple[float, float] = (12.5, 8.0)
-    font_name: str = "Liberation Sans"
-    font_sizes: FontSizes = FontSizes()
-    labels: Dict[str, Any] = {}
-    legend_rstrip_zeros: bool = True
-    level_ranges_align: str = "center"
-    level_range_style: str = "base"
-    levels_scale: str = "log"
-    lw_frame: float = 1.0
-    mark_field_max: bool = True
-    mark_release_site: bool = True
-    markers: Dict[str, Dict[str, Any]] = {
-        "max": {
-            "marker": "+",
-            "color": "black",
-            "markersize": 10,
-            "markeredgewidth": 1.5,
-        },
-        "site": {
-            "marker": "^",
-            "markeredgecolor": "red",
-            "markerfacecolor": "white",
-            "markersize": 7.5,
-            "markeredgewidth": 1.5,
-        },
-    }
-    model_info: str = ""  # SR_TODO sensible default
-    n_levels: Optional[int] = None  # SR_TODO sensible default
-
-    class Config:  # noqa
-        allow_extra = False
-        arbitrary_types_allowed = True
-
-    @property
-    def fig_aspect(self):
-        return np.divide(*self.fig_size)
-
-
 def capitalize(s: str) -> str:
     """Capitalize the first letter while leaving all others as they are."""
     if not s:
@@ -264,7 +130,7 @@ def capitalize(s: str) -> str:
 # pylint: disable=R0915  # too-many-statements
 def create_plot_config(
     setup: InputSetup, words: TranslatedWords, symbols: Words, mdata: MetaData,
-) -> "PlotConfig":
+) -> BoxedPlotConfig:
     words.set_active_lang(setup.lang)
     new_config_dct: Dict[str, Any] = {
         "setup": setup,
@@ -496,10 +362,26 @@ def create_plot_config(
         colors = [cmap(i / (n_levels - 1)) for i in range(n_levels)]
     new_config_dct["colors"] = colors
 
-    return PlotConfig(**new_config_dct)
+    new_config_dct["markers"] = {
+        "max": {
+            "marker": "+",
+            "color": "black",
+            "markersize": 10,
+            "markeredgewidth": 1.5,
+        },
+        "site": {
+            "marker": "^",
+            "markeredgecolor": "red",
+            "markerfacecolor": "white",
+            "markersize": 7.5,
+            "markeredgewidth": 1.5,
+        },
+    }
+
+    return BoxedPlotConfig(**new_config_dct)
 
 
-def fill_box_top(box: TextBoxAxes, plot: Plot) -> None:
+def fill_box_top(box: TextBoxAxes, plot: BoxedPlot) -> None:
     for position, label in plot.config.labels.get("top", {}).items():
         if position == "tl":
             font_size = plot.config.font_sizes.title_large
@@ -508,7 +390,7 @@ def fill_box_top(box: TextBoxAxes, plot: Plot) -> None:
         box.text(label, loc=position, fontname=plot.config.font_name, size=font_size)
 
 
-def fill_box_right_top(box: TextBoxAxes, plot: Plot) -> None:
+def fill_box_right_top(box: TextBoxAxes, plot: BoxedPlot) -> None:
     labels = plot.config.labels["right_top"]
     box.text(
         labels["title"],
@@ -529,7 +411,7 @@ def fill_box_right_top(box: TextBoxAxes, plot: Plot) -> None:
 # pylint: disable=R0913   # too-many-arguments
 # pylint: disable=R0914   # too-many-locals
 # pylint: disable=R0915   # too-many-statements
-def fill_box_right_middle(box: TextBoxAxes, plot: Plot) -> None:
+def fill_box_right_middle(box: TextBoxAxes, plot: BoxedPlot) -> None:
     """Fill the top box to the right of the map plot."""
 
     labels = plot.config.labels["right_middle"]
@@ -655,7 +537,7 @@ def fill_box_right_middle(box: TextBoxAxes, plot: Plot) -> None:
         )
 
 
-def fill_box_right_bottom(box: TextBoxAxes, plot: Plot) -> None:
+def fill_box_right_bottom(box: TextBoxAxes, plot: BoxedPlot) -> None:
     """Fill the bottom box to the right of the map plot."""
 
     labels = plot.config.labels["right_bottom"]
@@ -718,7 +600,7 @@ def fill_box_right_bottom(box: TextBoxAxes, plot: Plot) -> None:
     )
 
 
-def fill_box_bottom(box: TextBoxAxes, plot: Plot) -> None:
+def fill_box_bottom(box: TextBoxAxes, plot: BoxedPlot) -> None:
     """Fill the box to the bottom of the map plot."""
 
     labels = plot.config.labels["bottom"]
@@ -751,7 +633,7 @@ def plot_fields(
     dry_run: bool = False,
     *,
     write: bool = True,
-) -> Iterator[Tuple[str, Optional[Plot]]]:
+) -> Iterator[Tuple[str, Optional[BoxedPlot]]]:
     """Create plots while yielding them with the plot file path one by one."""
     path_formatter = FilePathFormatter()
     for field, mdata in zip(fields, mdata_lst):
@@ -763,14 +645,14 @@ def plot_fields(
         else:
             assert mdata is not None  # mypy
             config = create_plot_config(setup, WORDS, SYMBOLS, mdata)
-            plot = Plot(field, config, map_conf)
+            plot = BoxedPlot(field, config, map_conf)
             plot_add_text_boxes(plot)
             plot_add_markers(plot)
             plot.save(out_file_path, write=write)
         yield out_file_path, plot
 
 
-def plot_add_text_boxes(plot: Plot) -> None:
+def plot_add_text_boxes(plot: BoxedPlot) -> None:
     layout = plot.layout  # SR_TMP
     plot.add_text_box("top", layout.rect_top, fill_box_top)
     plot.add_text_box("right_top", layout.rect_right_top, fill_box_right_top)
@@ -779,7 +661,7 @@ def plot_add_text_boxes(plot: Plot) -> None:
     plot.add_text_box("bottom", layout.rect_bottom, fill_box_bottom, frame_on=False)
 
 
-def plot_add_markers(plot: Plot) -> None:
+def plot_add_markers(plot: BoxedPlot) -> None:
     config = plot.config
 
     if config.mark_release_site:
@@ -854,42 +736,6 @@ def colors_flexplot(n_levels: int, extend: str) -> Sequence[ColorType]:
     elif extend == "both":
         return [color_under] + colors_core + [color_over]
     raise ValueError(f"extend='{extend}'")
-
-
-def levels_from_time_stats(
-    plot_config: PlotConfig, time_stats: Mapping[str, float]
-) -> List[float]:
-    def _auto_levels_log10(n_levels: int, val_max: float) -> List[float]:
-        if not np.isfinite(val_max):
-            raise ValueError("val_max not finite", val_max)
-        log10_max = int(np.floor(np.log10(val_max)))
-        log10_d = 1
-        return 10 ** np.arange(
-            log10_max - (n_levels - 1) * log10_d, log10_max + 0.5 * log10_d, log10_d
-        )
-
-    assert plot_config.n_levels is not None  # mypy
-    if plot_config.setup.plot_type.startswith(
-        "ensemble_"
-    ) and plot_config.setup.plot_type.endswith("_probability"):
-        assert plot_config.d_level is not None  # mypy
-        n_max = 90
-        return np.arange(
-            n_max - plot_config.d_level * (plot_config.n_levels - 1),
-            n_max + plot_config.d_level,
-            plot_config.d_level,
-        )
-    elif plot_config.setup.plot_type in [
-        "ensemble_cloud_arrival_time",
-        "ensemble_cloud_departure_time",
-    ]:
-        assert plot_config.d_level is not None  # mypy
-        return np.arange(0, plot_config.n_levels) * plot_config.d_level
-    elif plot_config.setup.plot_variable == "affected_area_mono":
-        levels = _auto_levels_log10(n_levels=9, val_max=time_stats["max"])
-        return np.array([levels[0], np.inf])
-    else:
-        return _auto_levels_log10(plot_config.n_levels, val_max=time_stats["max"])
 
 
 def escape_format_keys(s: str) -> str:
