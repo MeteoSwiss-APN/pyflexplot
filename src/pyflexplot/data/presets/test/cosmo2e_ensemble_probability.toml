@@ -4,9 +4,8 @@
 # Sample data directory: /scratch/ruestefa/shared/pyflexplot_test/
 infile = "data/cosmo-2e_2019073100_{ens_member:03d}.nc"
 simulation_type = "ensemble"
-ens_member_id = [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-]
+# ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+ens_member_id = [0, 2, 5, 8, 11, 14, 17, 20]
 plot_type = "ensemble_probability"
 combine_species = true
 time = 10
@@ -21,8 +20,18 @@ outfile = "ens_prob_tot_deposit_{domain}_{lang}_ts-{time:02d}.png"
 input_variable = "deposition"
 deposition_type = "tot"
 
-[_base."*".en]
+[_base."*"._auto.en]
+domain = "auto"
 lang = "en"
 
-[_base."*".de]
+# [_base."*"._auto.de]
+# domain = "auto"
+# lang = "de"
+
+# [_base."*"._ch.en]
+# domain = "ch"
+# lang = "en"
+
+[_base."*"._ch.de]
+domain = "ch"
 lang = "de"

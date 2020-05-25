@@ -4,7 +4,6 @@
 # Sample data directory: /scratch/ruestefa/shared/pyflexplot_test/
 infile = "data/cosmo-1_2019052800.nc"
 simulation_type = "deterministic"
-# plot_type = "auto"
 species_id = "*"
 
 [_base._deposition]
@@ -19,13 +18,13 @@ integrate = true
 outfile = "affected_area_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
 plot_variable = "affected_area_mono"
 
-# ["**"._auto.en]
-# domain = "auto"
-# lang = "en"
-
-["**"._auto.de]
+["**"._auto.en]
 domain = "auto"
-lang = "de"
+lang = "en"
+
+# ["**"._auto.de]
+# domain = "auto"
+# lang = "de"
 
 # ["**"._ch.en]
 # domain = "ch"

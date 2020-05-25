@@ -20,33 +20,37 @@ from click import Context
 
 # Local
 from . import check_dir_exists
-from . import data_path
 
 ParamType = Union[click.Option, click.Parameter]
 
 
-preset_path: List[Union[str, Path]] = []
+preset_paths: List[Union[str, Path]] = []
 
 
 class NoPresetFileFoundError(Exception):
     """No preset file found in directory/ies."""
 
 
-def add_preset_path(path: Union[Path, str], first: bool = True) -> None:
-    global preset_path  # pylint: disable=W0603  # global-statement
+def add_to_preset_paths(path: Union[Path, str], first: bool = True) -> None:
+    """Add a path to the preset path list.
+
+    Args:
+        path: Path to preset files.
+
+        first (optional): Add the new path ahead of existing ones.
+
+    """
+    global preset_paths  # pylint: disable=W0603  # global-statement
     path = Path(path)
     check_dir_exists(path)
     idx = 0 if first else -1
-    preset_path.insert(idx, path)
-
-
-add_preset_path(data_path / "presets")
+    preset_paths.insert(idx, path)
 
 
 def collect_preset_paths() -> Iterator[Path]:
-    """Collect all setup file paths as specified in ``preset_path``."""
-    global preset_path  # pylint: disable=W0603  # global-statement
-    for path in preset_path:
+    """Collect all setup file paths as specified in ``preset_paths``."""
+    global preset_paths  # pylint: disable=W0603  # global-statement
+    for path in preset_paths:
         check_dir_exists(path)
         yield Path(path)
 
@@ -54,37 +58,38 @@ def collect_preset_paths() -> Iterator[Path]:
 def collect_preset_files(
     pattern: Union[str, Collection[str]] = "*"
 ) -> Dict[Path, Dict[str, Path]]:
-    """Collect all setup files in locations specified in ``preset_path``."""
+    """Collect all setup files in locations specified in ``preset_paths``."""
     if isinstance(pattern, str):
         patterns = [pattern]
     else:
         patterns = list(pattern)
     rx_patterns = []
     for pattern_i in patterns:
-        ch = "[a-zA-Z0-9_.-]"
+        ch = "[a-zA-Z0-9_.-/]"
         rx_pattern = re.compile(
             r"\A" + pattern_i.replace("*", f"{ch}*").replace("?", ch) + r"\Z"
         )
         rx_patterns.append(rx_pattern)
-    files_by_dir = {}  # type: ignore
-    for dir_ in collect_preset_paths():
-        files_by_dir[dir_] = {}
-        for path in sorted(dir_.glob("*.toml")):
-            name = path.name[: -len(path.suffix)]
+    files_by_preset_path = {}  # type: ignore
+    for preset_path in collect_preset_paths():
+        files_by_preset_path[preset_path] = {}
+        for file_path in sorted(preset_path.rglob("*.toml")):
+            file_path_rel = file_path.relative_to(preset_path)
+            name = str(file_path_rel)[: -len(file_path.suffix)]
             for rx_pattern in rx_patterns:
                 if rx_pattern.match(name):
-                    files_by_dir[dir_][name] = path
+                    files_by_preset_path[preset_path][name] = file_path
                     break
-        if not files_by_dir[dir_]:
-            raise NoPresetFileFoundError(pattern, dir_)
-    return files_by_dir
+        if not files_by_preset_path[preset_path]:
+            raise NoPresetFileFoundError(pattern, preset_path)
+    return files_by_preset_path
 
 
 # pylint: disable=W0613  # unused-argument (ctx, param)
-def click_add_preset_path(ctx: Context, param: ParamType, value: Any) -> None:
+def click_add_to_preset_paths(ctx: Context, param: ParamType, value: Any) -> None:
     if not value:
         return
-    add_preset_path(value)
+    add_to_preset_paths(value)
 
 
 def collect_preset_files_flat(name: str) -> Dict[str, Path]:
@@ -152,7 +157,7 @@ def click_use_preset(ctx: Context, param: ParamType, value: Any) -> None:
         ctx.obj[key] = []
     for name in value:
         try:
-            files_by_dir = collect_preset_files(name)
+            files_by_preset_path = collect_preset_files(name)
         except NoPresetFileFoundError:
             click.echo(
                 f"Error: No preset setup file found for '{name}'.", file=sys.stderr,
@@ -160,15 +165,15 @@ def click_use_preset(ctx: Context, param: ParamType, value: Any) -> None:
             _click_propose_alternatives(name)
             ctx.exit(1)
         else:
-            n = sum([len(files) for files in files_by_dir.values()])
+            n = sum([len(files) for files in files_by_preset_path.values()])
             if n == 0:
                 click.echo("Collected no preset setup files")
             elif n == 1:
                 click.echo(f"Collected {n} preset setup file:")
             else:
                 click.echo(f"Collected {n} preset setup files:")
-            _click_list_presets(ctx, files_by_dir, indent_all=True)
-        for files in files_by_dir.values():
+            _click_list_presets(ctx, files_by_preset_path, indent_all=True)
+        for files in files_by_preset_path.values():
             for path in files.values():
                 if path not in ctx.obj[key]:
                     ctx.obj[key].append(path)
@@ -176,13 +181,13 @@ def click_use_preset(ctx: Context, param: ParamType, value: Any) -> None:
 
 def _click_list_presets(
     ctx: Context,
-    preset_files_by_dir: Mapping[Path, Mapping[str, Path]],
+    files_by_preset_path: Mapping[Path, Mapping[str, Path]],
     indent_all: bool = False,
 ) -> None:
     verbosity = ctx.obj["verbosity"]
-    for dir_, files in preset_files_by_dir.items():
+    for preset_path, files in files_by_preset_path.items():
         if verbosity > 0:
-            click.echo(f"{dir_}:")
+            click.echo(f"{preset_path}:")
         for name, path in files.items():
             if verbosity == 0:
                 click.echo(f"{'  ' if indent_all else ''}{name}")

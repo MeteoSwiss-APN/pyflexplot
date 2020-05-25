@@ -4,14 +4,12 @@
 # Sample data directory: /scratch/ruestefa/shared/pyflexplot_test/
 infile = "data/cosmo-2e_2019073100_{ens_member:03d}.nc"
 simulation_type = "ensemble"
-ens_member_id = [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-]
+# ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+ens_member_id = [0, 2, 5, 8, 11, 14, 17, 20]
 input_variable = "concentration"
 ens_param_mem_min = 11
 ens_param_thr = 1e-6
 time = 0
-species_id = "*"
 combine_species = true
 level = 0
 
@@ -23,8 +21,18 @@ plot_type = "ensemble_cloud_arrival_time"
 outfile = "cosmo2e_cloud_departure_time_{domain}_{lang}_ts-{time:02d}.png"
 plot_type = "ensemble_cloud_departure_time"
 
-["**".en]
+# ["**"._auto.en]
+# domain = "auto"
+# lang = "en"
+
+["**"._auto.de]
+domain = "auto"
+lang = "de"
+
+["**"._ch.en]
+domain = "ch"
 lang = "en"
 
-["**".de]
-lang = "de"
+# ["**"._ch.de]
+# domain = "ch"
+# lang = "de"

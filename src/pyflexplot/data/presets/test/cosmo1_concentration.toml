@@ -4,16 +4,13 @@
 # Sample data directory: /scratch/ruestefa/shared/pyflexplot_test/
 infile = "data/cosmo-1_2019052800.nc"
 simulation_type = "deterministic"
-plot_type = "auto"
-species_id = "*"
-
-[_base._deposition]
-outfile = "deposition_tot_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
-input_variable = "deposition"
-deposition_type = "tot"
-combine_species = true
-time = -1
-integrate = true
+outfile = "concentration_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
+input_variable = "concentration"
+species_id = [1]
+combine_species = false
+level = 0
+time = [1, 6, 11]
+integrate = false
 
 # ["**"._auto.en]
 # domain = "auto"
@@ -23,10 +20,10 @@ integrate = true
 domain = "auto"
 lang = "de"
 
-# ["**"._ch.en]
-# domain = "ch"
-# lang = "en"
-
-["**"._ch.de]
+["**"._ch.en]
 domain = "ch"
-lang = "de"
+lang = "en"
+
+# ["**"._ch.de]
+# domain = "ch"
+# lang = "de"

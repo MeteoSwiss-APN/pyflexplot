@@ -1,0 +1,28 @@
+# PyFlexPlot setup file to create deterministic NAZ plots
+
+[_base]
+# Sample data directory: /scratch/ruestefa/shared/pyflexplot_test/
+infile = "data/cosmo-1_2019052800.nc"
+simulation_type = "deterministic"
+outfile = "integrated_concentration_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
+input_variable = "concentration"
+level = 0
+time = -1
+species_id = 0
+integrate = true
+
+# ["**"._auto.en]
+# domain = "auto"
+# lang = "en"
+
+["**"._auto.de]
+domain = "auto"
+lang = "de"
+
+["**"._ch.en]
+domain = "ch"
+lang = "en"
+
+# ["**"._ch.de]
+# domain = "ch"
+# lang = "de"

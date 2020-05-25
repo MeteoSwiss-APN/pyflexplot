@@ -1,0 +1,73 @@
+# PyFlexPlot setup file to plot basic statistical measures.
+
+[_base]
+# Sample data directory: /scratch/ruestefa/shared/pyflexplot_test/
+infile = "data/cosmo-2e_2019073100_{ens_member:03d}.nc"
+simulation_type = "ensemble"
+# ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+ens_member_id = [0, 2, 5, 8, 11, 14, 17, 20]
+time = 6
+
+[_base._concentration]
+input_variable = "concentration"
+species_id = 1
+level = 0
+
+[_base._integrated_concentration]
+input_variable = "concentration"
+species_id = 2
+level = 0
+integrate = true
+
+[_base._total_deposition]
+input_variable = "deposition"
+deposition_type = "tot"
+species_id = 1
+integrate = true
+
+[_base._wet_deposition]
+input_variable = "deposition"
+deposition_type = "wet"
+integrate = true
+species_id = "*"
+combine_species = true
+
+# ["**"._mean]
+[_base._concentration._mean]
+outfile = "ens_mean_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time:02d}.png"
+plot_type = "ensemble_mean"
+
+# ["**"._median]
+[_base._integrated_concentration._median]
+outfile = "ens_median_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time:02d}.png"
+plot_type = "ensemble_median"
+
+# ["**"._min]
+[_base.total_deposition._min]
+outfile = "ens_min_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time:02d}.png"
+plot_type = "ensemble_minimum"
+
+# ["**"._max]
+[_base.wet_deposition._max]
+outfile = "ens_max_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time:02d}.png"
+plot_type = "ensemble_maximum"
+
+# ["**"._auto.de]
+[_base."*"._mean._auto.de]
+domain = "auto"
+lang = "de"
+
+# ["**"._auto.en]
+[_base."*"._median._auto.en]
+domain = "auto"
+lang = "en"
+
+# ["**"._ch.de]
+[_base."*"._min._ch.de]
+domain = "ch"
+lang = "de"
+
+# ["**"._ch.en]
+[_base."*"._max._ch.en]
+domain = "ch"
+lang = "en"

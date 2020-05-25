@@ -16,9 +16,11 @@ from srutils.click import CharSepList
 
 # Local
 from . import __version__
+from . import data_path
 from .io import read_fields
 from .plot import plot_fields
-from .preset import click_add_preset_path
+from .preset import add_to_preset_paths
+from .preset import click_add_to_preset_paths
 from .preset import click_cat_preset_and_exit
 from .preset import click_find_presets_and_exit
 from .preset import click_list_presets_and_exit
@@ -29,6 +31,9 @@ from .setup import InputSetupFile
 # # To debug segmentation fault, uncomment and run with PYTHONFAULTHANDLER=1
 # import faulthandler
 # faulthandler.enable()
+
+
+add_to_preset_paths(data_path / "presets")
 
 
 # Show default values of options by default
@@ -132,7 +137,7 @@ def prepare_input_setup_params(ctx, param, value):
     "--add-presets",
     help="Add a directory containing preset setup files.",
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    callback=click_add_preset_path,
+    callback=click_add_to_preset_paths,
     is_eager=True,
     expose_value=False,
 )

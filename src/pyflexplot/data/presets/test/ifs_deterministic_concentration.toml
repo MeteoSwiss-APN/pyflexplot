@@ -7,30 +7,29 @@ outfile = "ifs_concentration_{domain}_{lang}_ts-{time:02d}.png"
 simulation_type = "deterministic"
 plot_type = "auto"
 species_id = 2
-time = 3
+time = [1, 6, 11]
 input_variable = "concentration"
 level = 0
 integrate = false
 
-# TODO Derive from `_concentration` once wildcards/hooks more sophisticated
 [_base._integrated]
 outfile = "integrated_concentration_{domain}_{lang}_ts-{time:02d}.png"
 integrate = true
-time = 10
+time = -1
 species_id = 1
 
-["**"._auto.en]
-domain = "auto"
-lang = "en"
-
-# ["**"._auto.de]
+# ["**"._auto.en]
 # domain = "auto"
-# lang = "de"
+# lang = "en"
+
+["**"._auto.de]
+domain = "auto"
+lang = "de"
 
 # ["**"._ch.en]
 # domain = "ch"
 # lang = "en"
 
-# ["**"._ch.de]
-# domain = "ch"
-# lang = "de"
+# # ["**"._ch.de]
+# # domain = "ch"
+# # lang = "de"

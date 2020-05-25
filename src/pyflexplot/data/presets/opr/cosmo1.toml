@@ -8,17 +8,32 @@ plot_type = "auto"
 species_id = "*"
 
 [_base._concentration]
-# outfile = "concentration_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
 input_variable = "concentration"
 level = 0
 combine_species = false
-# time = "*"
-# integrate = false
 
-[_base._concentration._integrated]
+[_base._concentration._instant]
+outfile = "concentration_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
+time = "*"
+integrate = false
+
+[_base._concentration._integr]
 outfile = "integrated_concentration_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
 time = -1
 integrate = true
+
+[_base._deposition]
+outfile = "deposition_tot_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
+input_variable = "deposition"
+deposition_type = "tot"
+combine_species = true
+time = -1
+integrate = true
+
+[_base._deposition._affected_area]
+outfile = "affected_area_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
+plot_variable = "affected_area_mono"
+time = -1
 
 # ["**"._auto.en]
 # domain = "auto"
