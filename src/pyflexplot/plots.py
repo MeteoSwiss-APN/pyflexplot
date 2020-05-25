@@ -23,6 +23,8 @@ import numpy as np
 from srutils.geo import Degrees
 
 # Local
+from .boxed_plot import BoxedPlot
+from .boxed_plot import BoxedPlotConfig
 from .data import Field
 from .data import FieldAllNaNError
 from .formatting import format_level_ranges
@@ -30,21 +32,15 @@ from .formatting import format_range
 from .meta_data import MetaData
 from .meta_data import format_unit
 from .meta_data import get_integr_type
-from .plot import BoxedPlot
-from .plot import BoxedPlotConfig
-from .plot_lib import MapAxesConf
-from .plot_lib import TextBoxAxes
+from .plot_elements import MapAxesConf
+from .plot_elements import TextBoxAxes
 from .setup import FilePathFormatter
 from .setup import InputSetup
+from .typing import ColorType
 from .words import SYMBOLS
 from .words import WORDS
 from .words import TranslatedWords
 from .words import Words
-
-# Custom types
-ColorType = Union[str, Tuple[float, float, float], Tuple[float, float, float, float]]
-FontSizeType = Union[str, float]
-RectType = Tuple[float, float, float, float]
 
 
 def create_map_conf(field: Field) -> MapAxesConf:
@@ -240,7 +236,7 @@ def create_plot_config(
         )
         new_config_dct["n_levels"] = 9
 
-    if setup.simulation_type == "deterministic":
+    if setup.get_simulation_type() == "deterministic":
         new_config_dct["model_info"] = new_config_dct["labels"]["bottom"][
             "model_info_det"
         ]
@@ -250,7 +246,7 @@ def create_plot_config(
                 new_config_dct["extend"] = "none"
                 new_config_dct["n_levels"] = 1
 
-    elif setup.simulation_type == "ensemble":
+    elif setup.get_simulation_type() == "ensemble":
         new_config_dct["model_info"] = new_config_dct["labels"]["bottom"][
             "model_info_ens"
         ]
@@ -486,6 +482,7 @@ def fill_box_right_middle(box: TextBoxAxes, plot: BoxedPlot) -> None:
         dy_site_label = dy0_marker
         dy0_marker -= dy_line
         dy_site_marker = dy_site_label - 0.7
+        assert plot.config.markers is not None  # mypy
         box.marker(
             loc="tc", dx=dx_marker, dy=dy_site_marker, **plot.config.markers["site"],
         )
@@ -504,6 +501,7 @@ def fill_box_right_middle(box: TextBoxAxes, plot: BoxedPlot) -> None:
         dy_marker_label_max = dy0_marker
         dy0_marker -= dy_line
         dy_max_marker = dy_marker_label_max - 0.7
+        assert plot.config.markers is not None  # mypy
         box.marker(
             loc="tc", dx=dx_marker, dy=dy_max_marker, **plot.config.markers["max"],
         )
@@ -667,6 +665,7 @@ def plot_add_markers(plot: BoxedPlot) -> None:
     if config.mark_release_site:
         assert isinstance(config.mdata.release_site_lon.value, float)  # mypy
         assert isinstance(config.mdata.release_site_lat.value, float)  # mypy
+        assert config.markers is not None  # mypy
         plot.add_marker(
             lat=config.mdata.release_site_lat.value,
             lon=config.mdata.release_site_lon.value,
@@ -674,6 +673,7 @@ def plot_add_markers(plot: BoxedPlot) -> None:
         )
 
     if config.mark_field_max:
+        assert config.markers is not None  # mypy
         try:
             max_lat, max_lon = plot.field.locate_max()
         except FieldAllNaNError:

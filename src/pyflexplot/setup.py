@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0302  # too-many-lines
 """
 Plot setup and setup files.
 """
@@ -102,8 +103,6 @@ class InputSetup(BaseModel):
 
         numpoint: Index of release point (zero-based).
 
-        simulation_type: Type of the simulation (deterministic or ensemble).
-
         species_id: Species id(s). To sum up multiple species, combine their
             ids with '+'. Use the format key '{species_id}' to embed it in the
             plot file path.
@@ -131,7 +130,6 @@ class InputSetup(BaseModel):
     combine_species: bool = False
 
     # Ensemble-related
-    simulation_type: str = "deterministic"
     ens_member_id: Optional[Tuple[int, ...]] = None
     ens_param_mem_min: Optional[int] = None
     ens_param_thr: Optional[float] = None
@@ -157,7 +155,7 @@ class InputSetup(BaseModel):
         assert values["plot_variable"] in plot_variables, values["plot_variable"]
         ens_variables = ["none"]
         assert values["ens_variable"] in ens_variables, values["ens_variable"]
-        plot_types = [
+        plots = [
             "auto",
             "ensemble_minimum",
             "ensemble_mean",
@@ -168,7 +166,7 @@ class InputSetup(BaseModel):
             "ensemble_cloud_departure_time",
             "ensemble_cloud_occurrence_probability",
         ]
-        assert values["plot_type"] in plot_types, values["plot_type"]
+        assert values["plot_type"] in plots, values["plot_type"]
         return values
 
     @validator("deposition_type", always=True)
@@ -184,53 +182,35 @@ class InputSetup(BaseModel):
     def _init_ens_param_mem_min(
         cls, value: Optional[int], values: Dict[str, Any],
     ) -> Optional[int]:
-        if value is not None:
-            if values["simulation_type"] != "ensemble":
-                raise ValueError(
-                    "ens_param_mem_min incompatible with simulation_type",
-                    value,
-                    values["simulation_type"],
-                )
-        elif values["plot_type"] in [
-            "ensemble_cloud_arrival_time",
-            "ensemble_cloud_departure_time",
-        ]:
-            value = ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN
+        if value is None:
+            if values["plot_type"] in [
+                "ensemble_cloud_arrival_time",
+                "ensemble_cloud_departure_time",
+            ]:
+                value = ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN
         return value
 
     @validator("ens_param_thr", always=True)
     def _init_ens_param_thr(
         cls, value: Optional[float], values: Dict[str, Any],
     ) -> Optional[float]:
-        if value is not None:
-            if values["simulation_type"] != "ensemble":
-                raise ValueError(
-                    "ens_param_thr incompatible with simulation_type",
-                    value,
-                    values["simulation_type"],
-                )
-        elif values["plot_type"] == "ensemble_probability":
-            value = ENS_PROBABILITY_DEFAULT_PARAM_THR
-        elif values["plot_type"] in [
-            "ensemble_cloud_arrival_time",
-            "ensemble_cloud_departure_time",
-        ]:
-            value = ENS_CLOUD_TIME_DEFAULT_PARAM_THR
+        if value is None:
+            if values["plot_type"] == "ensemble_probability":
+                value = ENS_PROBABILITY_DEFAULT_PARAM_THR
+            elif values["plot_type"] in [
+                "ensemble_cloud_arrival_time",
+                "ensemble_cloud_departure_time",
+            ]:
+                value = ENS_CLOUD_TIME_DEFAULT_PARAM_THR
         return value
 
     @validator("ens_param_time_win", always=True)
     def _init_ens_param_time_win(
         cls, value: Optional[float], values: Dict[str, Any],
     ) -> Optional[float]:
-        if value is not None:
-            if values["simulation_type"] != "ensemble":
-                raise ValueError(
-                    "ens_param_time_win incompatible with simulation_type",
-                    value,
-                    values["simulation_type"],
-                )
-        elif values["plot_type"] == "ensemble_cloud_occurrence_probability":
-            value = ENS_CLOUD_PROB_DEFAULT_PARAM_TIME_WIN
+        if value is None:
+            if values["plot_type"] == "ensemble_cloud_occurrence_probability":
+                value = ENS_CLOUD_PROB_DEFAULT_PARAM_TIME_WIN
         return value
 
     @validator("level", always=True)
@@ -242,6 +222,12 @@ class InputSetup(BaseModel):
                 "level must be None for variable", value, values["input_variable"],
             )
         return value
+
+    # SR_TMP <<<
+    def get_simulation_type(self) -> str:
+        if self.ens_member_id:
+            return "ensemble"
+        return "deterministic"
 
     @classmethod
     def create(cls, params: Dict[str, Any]) -> "InputSetup":
@@ -593,7 +579,6 @@ class CoreInputSetup(BaseModel):
     combine_species: bool = False
 
     # Ensemble-related
-    simulation_type: str = "deterministic"
     ens_member_id: Optional[int] = None
     ens_param_mem_min: Optional[int] = None
     ens_param_thr: Optional[float] = None
@@ -931,6 +916,7 @@ class FilePathFormatter:
     # pylint: disable=W0102  # dangerous-default-value ([])
     def format(self, setup: InputSetup) -> str:
         self._setup = setup
+        assert self._setup is not None  # mypy
         template = setup.outfile
         path = self._format_template(template)
         while path in self.previous:
@@ -940,6 +926,7 @@ class FilePathFormatter:
         return path
 
     def _format_template(self, template: str) -> str:
+        assert self._setup is not None  # mypy
         input_variable = self._setup.input_variable
         if self._setup.input_variable == "deposition":
             input_variable += f"_{self._setup.deposition_type}"

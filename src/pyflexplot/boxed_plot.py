@@ -23,17 +23,15 @@ from pydantic import BaseModel
 # Local
 from .data import Field
 from .meta_data import MetaData
-from .plot_lib import MapAxes
-from .plot_lib import MapAxesConf
-from .plot_lib import TextBoxAxes
-from .plot_lib import post_summarize_plot
+from .plot_elements import MapAxes
+from .plot_elements import MapAxesConf
+from .plot_elements import TextBoxAxes
+from .plot_elements import post_summarize_plot
 from .setup import InputSetup
 from .summarize import summarizable
-
-# Custom types
-ColorType = Union[str, Tuple[float, float, float], Tuple[float, float, float, float]]
-FontSizeType = Union[str, float]
-RectType = Tuple[float, float, float, float]
+from .typing import ColorType
+from .typing import FontSizeType
+from .typing import RectType
 
 
 @dataclass

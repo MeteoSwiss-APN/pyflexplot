@@ -38,16 +38,13 @@ from srutils.iter import isiterable
 # Local
 from .formatting import MaxIterationError
 from .summarize import summarizable
-
-# Custom types
-ColorType = Union[str, Tuple[float, float, float], Tuple[float, float, float, float]]
-LocationType = Union[str, int]
-MarkerStyleType = Union[str, int]
-RawTextBlockType = Union[str, Sequence[str]]
-RectType = Tuple[float, float, float, float]
-TextBlockType = List[str]
-RawTextBlocksType = Union[str, Sequence[RawTextBlockType]]
-TextBlocksType = List[TextBlockType]
+from .typing import ColorType
+from .typing import LocationType
+from .typing import MarkerStyleType
+from .typing import RawTextBlocksType
+from .typing import RawTextBlockType
+from .typing import RectType
+from .typing import TextBlocksType
 
 
 # pylint: disable=W0613  # unused argument (self)

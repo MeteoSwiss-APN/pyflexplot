@@ -39,7 +39,6 @@ class TestReadFieldEnsemble_Single:
         "integrate": False,
         "outfile": "dummy.png",
         "plot_type": "ensemble_mean",
-        "simulation_type": "ensemble",
         "species_id": 2,
         "time": 10,
         "input_variable": "concentration",
@@ -142,7 +141,6 @@ class TestReadFieldEnsemble_Multiple:
         "infile": "dummy.nc",
         "integrate": True,
         "outfile": "dummy.png",
-        "simulation_type": "ensemble",
         "species_id": 1,
         "time": [0, 3, 9],
     }

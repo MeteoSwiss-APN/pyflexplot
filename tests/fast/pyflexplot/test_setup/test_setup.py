@@ -36,7 +36,6 @@ DEFAULT_SETUP = InputSetup(
         "noutrel": None,
         "plot_type": "auto",
         "numpoint": None,
-        "simulation_type": "deterministic",
         "species_id": None,
         "time": None,
         "input_variable": "concentration",

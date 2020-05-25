@@ -20,9 +20,7 @@ from click import Context
 
 # Local
 from . import check_dir_exists
-
-ParamType = Union[click.Option, click.Parameter]
-
+from .typing import ClickParamType
 
 preset_paths: List[Union[str, Path]] = []
 
@@ -86,7 +84,7 @@ def collect_preset_files(
 
 
 # pylint: disable=W0613  # unused-argument (ctx, param)
-def click_add_to_preset_paths(ctx: Context, param: ParamType, value: Any) -> None:
+def click_add_to_preset_paths(ctx: Context, param: ClickParamType, value: Any) -> None:
     if not value:
         return
     add_to_preset_paths(value)
@@ -113,7 +111,9 @@ def cat_preset(name: str, include_source: bool = False) -> str:
     return "\n".join(lines)
 
 
-def click_list_presets_and_exit(ctx: Context, param: ParamType, value: Any) -> None:
+def click_list_presets_and_exit(
+    ctx: Context, param: ClickParamType, value: Any
+) -> None:
     """List all presets setup files and exit."""
     if not value:
         return
@@ -121,7 +121,9 @@ def click_list_presets_and_exit(ctx: Context, param: ParamType, value: Any) -> N
 
 
 # pylint: disable=W0613  # unused-argument (param)
-def click_find_presets_and_exit(ctx: Context, param: ParamType, value: Any) -> None:
+def click_find_presets_and_exit(
+    ctx: Context, param: ClickParamType, value: Any
+) -> None:
     """Find preset setup file(s) by name (optional wildcards) and exit."""
     if not value:
         return
@@ -130,7 +132,7 @@ def click_find_presets_and_exit(ctx: Context, param: ParamType, value: Any) -> N
 
 
 # pylint: disable=W0613  # unused-argument (param)
-def click_cat_preset_and_exit(ctx: Context, param: ParamType, value: Any) -> None:
+def click_cat_preset_and_exit(ctx: Context, param: ClickParamType, value: Any) -> None:
     """Print the content of a preset setup file and exit."""
     if not value:
         return
@@ -146,7 +148,7 @@ def click_cat_preset_and_exit(ctx: Context, param: ParamType, value: Any) -> Non
 
 
 # pylint: disable=W0613  # unused-argument (param)
-def click_use_preset(ctx: Context, param: ParamType, value: Any) -> None:
+def click_use_preset(ctx: Context, param: ClickParamType, value: Any) -> None:
     if not value:
         return
     if value == ("?",):

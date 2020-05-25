@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Tests for module ``pyflexplot.plot_lib``.
+Tests for module ``pyflexplot.plot_elements``.
 """
 # Third-party
 from matplotlib import pyplot as plt
 
 # First-party
-from pyflexplot.plot_lib import TextBoxAxes
+from pyflexplot.plot_elements import TextBoxAxes
 from srutils.testing import check_summary_dict_is_subdict
 
 

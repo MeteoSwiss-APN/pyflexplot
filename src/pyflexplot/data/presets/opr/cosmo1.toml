@@ -3,7 +3,6 @@
 [_base]
 # Sample data directory: /scratch/ruestefa/shared/pyflexplot_test/
 infile = "data/cosmo-1_2019052800.nc"
-simulation_type = "deterministic"
 plot_type = "auto"
 species_id = "*"
 

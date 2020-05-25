@@ -18,7 +18,7 @@ from srutils.click import CharSepList
 from . import __version__
 from . import data_path
 from .io import read_fields
-from .plot_types import plot_fields
+from .plots import plot_fields
 from .preset import add_to_preset_paths
 from .preset import click_add_to_preset_paths
 from .preset import click_cat_preset_and_exit

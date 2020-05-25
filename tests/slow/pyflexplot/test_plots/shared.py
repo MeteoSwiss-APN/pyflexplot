@@ -16,7 +16,7 @@ import pytest  # type: ignore
 
 # First-party
 from pyflexplot.io import read_fields
-from pyflexplot.plot_types import plot_fields
+from pyflexplot.plots import plot_fields
 from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
 from srutils.testing import assert_nested_equal
