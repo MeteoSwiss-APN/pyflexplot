@@ -10,6 +10,7 @@ from textwrap import dedent
 from typing import Any
 from typing import Collection
 from typing import Dict
+from typing import Iterator
 from typing import List
 from typing import Mapping
 from typing import Optional
@@ -36,7 +37,10 @@ from .meta_data import format_unit
 from .meta_data import get_integr_type
 from .plot_lib import MapAxesConf
 from .plot_lib import TextBoxAxes
+from .setup import FilePathFormatter
 from .setup import InputSetup
+from .words import SYMBOLS
+from .words import WORDS
 from .words import TranslatedWords
 from .words import Words
 
@@ -739,6 +743,31 @@ def fill_box_bottom(box: TextBoxAxes, plot: Plot) -> None:
         fontname=plot.config.font_name,
         size=plot.config.font_sizes.content_small,
     )
+
+
+def plot_fields(
+    fields: Sequence[Field],
+    mdata_lst: Sequence[MetaData],
+    dry_run: bool = False,
+    *,
+    write: bool = True,
+) -> Iterator[Tuple[str, Optional[Plot]]]:
+    """Create plots while yielding them with the plot file path one by one."""
+    path_formatter = FilePathFormatter()
+    for field, mdata in zip(fields, mdata_lst):
+        setup = field.var_setups.compress()
+        out_file_path = path_formatter.format(setup)
+        map_conf = create_map_conf(field)
+        if dry_run:
+            plot = None
+        else:
+            assert mdata is not None  # mypy
+            config = create_plot_config(setup, WORDS, SYMBOLS, mdata)
+            plot = Plot(field, config, map_conf)
+            plot_add_text_boxes(plot)
+            plot_add_markers(plot)
+            plot.save(out_file_path, write=write)
+        yield out_file_path, plot
 
 
 def plot_add_text_boxes(plot: Plot) -> None:

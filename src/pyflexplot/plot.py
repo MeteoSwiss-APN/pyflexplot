@@ -5,9 +5,7 @@ Plots.
 # Standard library
 from typing import Callable
 from typing import Dict
-from typing import Iterator
 from typing import Optional
-from typing import Sequence
 from typing import Tuple
 
 # Third-party
@@ -17,22 +15,14 @@ from matplotlib.colors import LinearSegmentedColormap
 
 # Local
 from .data import Field
-from .meta_data import MetaData
 from .plot_lib import MapAxes
 from .plot_lib import MapAxesConf
 from .plot_lib import TextBoxAxes
 from .plot_lib import post_summarize_plot
 from .plot_types import PlotConfig
 from .plot_types import PlotLayout
-from .plot_types import create_map_conf
-from .plot_types import create_plot_config
 from .plot_types import levels_from_time_stats
-from .plot_types import plot_add_markers
-from .plot_types import plot_add_text_boxes
-from .setup import FilePathFormatter
 from .summarize import summarizable
-from .words import SYMBOLS
-from .words import WORDS
 
 # Custom types
 RectType = Tuple[float, float, float, float]
@@ -118,28 +108,3 @@ class Plot:
 
     def add_marker(self, lat: float, lon: float, marker: str, **kwargs) -> None:
         self.ax_map.marker(lat=lat, lon=lon, marker=marker, **kwargs)
-
-
-def plot_fields(
-    fields: Sequence[Field],
-    mdata_lst: Sequence[MetaData],
-    dry_run: bool = False,
-    *,
-    write: bool = True,
-) -> Iterator[Tuple[str, Optional[Plot]]]:
-    """Create plots while yielding them with the plot file path one by one."""
-    path_formatter = FilePathFormatter()
-    for field, mdata in zip(fields, mdata_lst):
-        setup = field.var_setups.compress()
-        out_file_path = path_formatter.format(setup)
-        map_conf = create_map_conf(field)
-        if dry_run:
-            plot = None
-        else:
-            assert mdata is not None  # mypy
-            config = create_plot_config(setup, WORDS, SYMBOLS, mdata)
-            plot = Plot(field, config, map_conf)
-            plot_add_text_boxes(plot)
-            plot_add_markers(plot)
-            plot.save(out_file_path, write=write)
-        yield out_file_path, plot
