@@ -284,7 +284,15 @@ class InputSetup(BaseModel):
                         params[param] = [value]
                 else:
                     raise NotImplementedError("unknown ValidationError", error_type, e)
-        return cls(**params)
+        try:
+            return cls(**params)
+        except ValidationError as e:
+            error = next(iter(e.errors()))
+            msg = "error creating setup"
+            if error["type"] == "value_error.missing":
+                param = next(iter(error["loc"]))
+                msg += f": missing parameter: {param}"
+            raise Exception(msg)
 
     @classmethod
     def as_setup(cls, obj: Union[Mapping[str, Any], "InputSetup"]) -> "InputSetup":
