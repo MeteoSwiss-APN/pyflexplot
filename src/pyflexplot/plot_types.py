@@ -5,6 +5,7 @@ Plot types.
 # Standard library
 from dataclasses import dataclass
 from datetime import datetime
+from textwrap import dedent
 from typing import Any
 from typing import Collection
 from typing import Dict
@@ -21,13 +22,18 @@ import numpy as np
 from matplotlib.colors import Colormap
 from pydantic import BaseModel
 
+# First-party
+from srutils.geo import Degrees
+
 # Local
 from .data import Field
+from .formatting import format_level_ranges
 from .formatting import format_range
 from .meta_data import MetaData
 from .meta_data import format_unit
 from .meta_data import get_integr_type
 from .plot_lib import MapAxesConf
+from .plot_lib import TextBoxAxes
 from .setup import InputSetup
 from .words import TranslatedWords
 from .words import Words
@@ -35,6 +41,7 @@ from .words import Words
 # Custom types
 ColorType = Union[str, Tuple[int, int, int], Tuple[int, int, int, int]]
 FontSizeType = Union[str, float]
+Plot = Any  # cannot import .plot.Plot (circular dependency)
 RectType = Tuple[float, float, float, float]
 
 
@@ -470,6 +477,261 @@ def create_plot_config(
             labels[name] = label
 
     return PlotConfig(**new_config_dct)
+
+
+def fill_box_top(box: TextBoxAxes, plot: Plot) -> None:
+    for position, label in plot.config.labels.get("top", {}).items():
+        if position == "tl":
+            font_size = plot.config.font_sizes.title_large
+        else:
+            font_size = plot.config.font_sizes.content_large
+        box.text(label, loc=position, fontname=plot.config.font_name, size=font_size)
+
+
+def fill_box_right_top(box: TextBoxAxes, plot: Plot) -> None:
+    labels = plot.config.labels["right_top"]
+    box.text(
+        labels["title"],
+        loc="tc",
+        fontname=plot.config.font_name,
+        size=plot.config.font_sizes.title_small,
+    )
+    box.text_block_hfill(
+        labels["lines"],
+        dy_unit=-4.0,
+        dy_line=2.5,
+        fontname=plot.config.font_name,
+        size=plot.config.font_sizes.content_small,
+    )
+
+
+# pylint: disable=R0912   # too-many-branches
+# pylint: disable=R0913   # too-many-arguments
+# pylint: disable=R0914   # too-many-locals
+# pylint: disable=R0915   # too-many-statements
+def fill_box_right_middle(box: TextBoxAxes, plot: Plot) -> None:
+    """Fill the top box to the right of the map plot."""
+
+    labels = plot.config.labels["right_middle"]
+
+    # Box title
+    box.text(
+        labels["title_unit"],
+        loc="tc",
+        fontname=plot.config.font_name,
+        size=plot.config.font_sizes.title_small,
+    )
+
+    # dy_line: float = 3.0
+    dy_line: float = 2.5
+    w_box: float = 4.0
+    h_box: float = 2.0
+
+    dx_box: float = -10
+    dx_label: float = -3
+
+    dx_marker: float = dx_box + 0.5 * w_box
+    dx_marker_label: float = dx_label
+
+    # Vertical position of legend (depending on number of levels)
+    dy0_labels = -5.0
+    dy0_boxes = dy0_labels - 0.8 * h_box
+
+    # Format level ranges (contour plot legend)
+    legend_labels = format_level_ranges(
+        levels=plot.levels,
+        style=plot.config.level_range_style,
+        extend=plot.config.extend,
+        rstrip_zeros=plot.config.legend_rstrip_zeros,
+        align=plot.config.level_ranges_align,
+    )
+
+    # Legend labels (level ranges)
+    box.text_block(
+        legend_labels[::-1],
+        loc="tc",
+        dy_unit=dy0_labels,
+        dy_line=dy_line,
+        dx=dx_label,
+        ha="left",
+        fontname=plot.config.font_name,
+        size=plot.config.font_sizes.content_medium,
+        family="monospace",
+    )
+
+    # Legend color boxes
+    colors = colors_from_plot_config(plot.config)
+    dy = dy0_boxes
+    for color in colors[::-1]:
+        box.color_rect(
+            loc="tc",
+            x_anker="left",
+            dx=dx_box,
+            dy=dy,
+            w=w_box,
+            h=h_box,
+            fc=color,
+            ec="black",
+            lw=1.0,
+        )
+        dy -= dy_line
+
+    dy0_markers = dy0_boxes - dy_line * (len(legend_labels) - 0.3)
+    dy0_marker = dy0_markers
+
+    # Release site marker
+    if plot.config.mark_release_site:
+        dy_site_label = dy0_marker
+        dy0_marker -= dy_line
+        dy_site_marker = dy_site_label - 0.7
+        box.marker(
+            loc="tc", dx=dx_marker, dy=dy_site_marker, **plot.config.markers["site"],
+        )
+        box.text(
+            s=labels["release_site"],
+            loc="tc",
+            dx=dx_marker_label,
+            dy=dy_site_label,
+            ha="left",
+            fontname=plot.config.font_name,
+            size=plot.config.font_sizes.content_medium,
+        )
+
+    # Field maximum marker
+    if plot.config.mark_field_max:
+        dy_marker_label_max = dy0_marker
+        dy0_marker -= dy_line
+        dy_max_marker = dy_marker_label_max - 0.7
+        box.marker(
+            loc="tc", dx=dx_marker, dy=dy_max_marker, **plot.config.markers["max"],
+        )
+        s = f"{labels['max']}: "
+        if np.isnan(plot.field.fld).all():
+            s += "NaN"
+        else:
+            fld_max = np.nanmax(plot.field.fld)
+            if 0.001 <= fld_max < 0.01:
+                s += f"{fld_max:.5f}"
+            elif 0.01 <= fld_max < 0.1:
+                s += f"{fld_max:.4f}"
+            elif 0.1 <= fld_max < 1:
+                s += f"{fld_max:.3f}"
+            elif 1 <= fld_max < 10:
+                s += f"{fld_max:.2f}"
+            elif 10 <= fld_max < 100:
+                s += f"{fld_max:.1f}"
+            elif 100 <= fld_max < 1000:
+                s += f"{fld_max:.0f}"
+            else:
+                s += f"{fld_max:.2E}"
+        box.text(
+            s=s,
+            loc="tc",
+            dx=dx_marker_label,
+            dy=dy_marker_label_max,
+            ha="left",
+            fontname=plot.config.font_name,
+            size=plot.config.font_sizes.content_medium,
+        )
+
+
+def fill_box_right_bottom(box: TextBoxAxes, plot: Plot) -> None:
+    """Fill the bottom box to the right of the map plot."""
+
+    labels = plot.config.labels["right_bottom"]
+    mdata = plot.config.mdata
+
+    # Box title
+    box.text(
+        s=labels["title"],
+        loc="tc",
+        fontname=plot.config.font_name,
+        size=plot.config.font_sizes.title_small,
+    )
+
+    # Release site coordinates
+    lat = Degrees(mdata.release_site_lat.value)
+    lon = Degrees(mdata.release_site_lon.value)
+    lat_deg = labels["lat_deg_fmt"].format(d=lat.degs(), m=lat.mins(), f=lat.frac())
+    lon_deg = labels["lon_deg_fmt"].format(d=lon.degs(), m=lon.mins(), f=lon.frac())
+
+    # SR_TMP < TODO clean this up, especially for ComboMetaData (units messed up)!
+    height = mdata.format("release_height", add_unit=True)
+    rate = mdata.format("release_rate", add_unit=True)
+    mass = mdata.format("release_mass", add_unit=True)
+    substance = mdata.format("species_name", join_combo=" / ")
+    half_life = mdata.format("species_half_life", add_unit=True)
+    deposit_vel = mdata.format("species_deposit_vel", add_unit=True)
+    sediment_vel = mdata.format("species_sediment_vel", add_unit=True)
+    washout_coeff = mdata.format("species_washout_coeff", add_unit=True)
+    washout_exponent = mdata.format("species_washout_exponent")
+    # SR_TMP >
+
+    info_blocks = dedent(
+        f"""\
+        {labels['site']}:\t{mdata.release_site_name}
+        {labels['latitude']}:\t{lat_deg}
+        {labels['longitude']}:\t{lon_deg}
+        {labels['height']}:\t{height}
+
+        {labels['start']}:\t{mdata.release_start}
+        {labels['end']}:\t{mdata.release_end}
+        {labels['rate']}:\t{rate}
+        {labels['mass']}:\t{mass}
+
+        {labels['name']}:\t{substance}
+        {labels['half_life']}:\t{half_life}
+        {labels['deposit_vel']}:\t{deposit_vel}
+        {labels['sediment_vel']}:\t{sediment_vel}
+        {labels['washout_coeff']}:\t{washout_coeff}
+        {labels['washout_exponent']}:\t{washout_exponent}
+        """
+    )
+
+    # Add lines bottom-up (to take advantage of baseline alignment)
+    box.text_blocks_hfill(
+        info_blocks,
+        dy_unit=-4.0,
+        dy_line=2.5,
+        fontname=plot.config.font_name,
+        size=plot.config.font_sizes.content_small,
+    )
+
+
+def fill_box_bottom(box: TextBoxAxes, plot: Plot) -> None:
+    """Fill the box to the bottom of the map plot."""
+
+    labels = plot.config.labels["bottom"]
+
+    # FLEXPART/model info
+    s = plot.config.model_info
+    box.text(
+        s=s,
+        loc="tl",
+        dx=-0.7,
+        dy=0.5,
+        fontname=plot.config.font_name,
+        size=plot.config.font_sizes.content_small,
+    )
+
+    # MeteoSwiss Copyright
+    box.text(
+        s=labels["copyright"],
+        loc="tr",
+        dx=0.7,
+        dy=0.5,
+        fontname=plot.config.font_name,
+        size=plot.config.font_sizes.content_small,
+    )
+
+
+def plot_add_text_boxes(plot: Plot) -> None:
+    layout = plot.layout  # SR_TMP
+    plot.add_text_box("top", layout.rect_top, fill_box_top)
+    plot.add_text_box("right_top", layout.rect_right_top, fill_box_right_top)
+    plot.add_text_box("right_middle", layout.rect_right_middle, fill_box_right_middle)
+    plot.add_text_box("right_bottom", layout.rect_right_bottom, fill_box_right_bottom)
+    plot.add_text_box("bottom", layout.rect_bottom, fill_box_bottom, frame_on=False)
 
 
 def colors_flexplot(n_levels: int, extend: str) -> Sequence[ColorType]:
