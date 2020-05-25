@@ -42,13 +42,13 @@ def create_map_conf(field: Field) -> MapAxesConf:
     domain = field.var_setups.collect_equal("domain")
     model = field.nc_meta_data["analysis"]["model"]
 
-    conf_base = {"lang": field.var_setups.collect_equal("lang")}
+    conf_base: Dict[str, Any] = {"lang": field.var_setups.collect_equal("lang")}
 
-    conf_model_ifs = {"geo_res": "50m"}
-    conf_model_cosmo = {"geo_res": "10m"}
+    conf_model_ifs: Dict[str, Any] = {"geo_res": "50m"}
+    conf_model_cosmo: Dict[str, Any] = {"geo_res": "10m"}
 
     # SR_TMP < TODO generalize based on meta data
-    conf_domain_japan = {
+    conf_domain_japan: Dict[str, Any] = {
         "geo_res_cities": "50m",
         "geo_res_rivers": "50m",
         "min_city_pop": 4_000_000,
@@ -59,29 +59,42 @@ def create_map_conf(field: Field) -> MapAxesConf:
         "ref_dist_conf": {"dist": 500},
     }
     # SR_TMP >
-    conf_domain_eu = {
+    conf_scale_continent: Dict[str, Any] = {
         "geo_res_cities": "50m",
         "geo_res_rivers": "50m",
         "min_city_pop": 300_000,
-        # SR_DBG <
-        "zoom_fact": 1.02,
-        # "zoom_fact": 0.975,  # SR_DBG
-        # SR_DBG >
     }
-    conf_domain_ch = {
+    conf_scale_country: Dict[str, Any] = {
         "geo_res_cities": "10m",
         "geo_res_rivers": "10m",
         "min_city_pop": 0,
         "ref_dist_conf": {"dist": 25},
-        "rel_offset": (-0.02, 0.045),
     }
 
+    conf: Dict[str, Any]
     if (model, domain) in [("cosmo1", "auto"), ("cosmo2", "auto")]:
-        conf = {**conf_base, **conf_model_cosmo, **conf_domain_eu}
+        conf = {
+            **conf_base,
+            **conf_model_cosmo,
+            **conf_scale_continent,
+            "zoom_fact": 1.05,
+        }
     elif (model, domain) == ("cosmo1", "ch"):
-        conf = {**conf_base, **conf_model_cosmo, **conf_domain_ch, "zoom_fact": 3.6}
+        conf = {
+            **conf_base,
+            **conf_model_cosmo,
+            **conf_scale_country,
+            "zoom_fact": 3.6,
+            "rel_offset": (-0.02, 0.045),
+        }
     elif (model, domain) == ("cosmo2", "ch"):
-        conf = {**conf_base, **conf_model_cosmo, **conf_domain_ch, "zoom_fact": 3.2}
+        conf = {
+            **conf_base,
+            **conf_model_cosmo,
+            **conf_scale_country,
+            "zoom_fact": 3.23,
+            "rel_offset": (0.037, 0.1065),
+        }
     elif (model, domain) == ("ifs", "auto"):
         # SR_TMP < TODO Generalize IFS domains
         conf = {**conf_base, **conf_model_ifs, **conf_domain_japan}

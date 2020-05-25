@@ -465,8 +465,8 @@ plot_summary = {
                 "unit": "km",
             },
             "ref_dist_on": True,
-            "rel_offset": [-0.02, 0.045],
-            "zoom_fact": 3.2,
+            "rel_offset": [0.037, 0.1065],
+            "zoom_fact": 3.23,
         },
     },
     "boxes": {
@@ -2718,7 +2718,7 @@ plot_summary = {
             "unit": "km",
         },
         "ref_dist_on": True,
-        "rel_offset": [-0.02, 0.045],
-        "zoom_fact": 3.2,
+        "rel_offset": [0.037, 0.1065],
+        "zoom_fact": 3.23,
     },
 }

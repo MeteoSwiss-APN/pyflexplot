@@ -466,7 +466,7 @@ plot_summary = {
             },
             "ref_dist_on": True,
             "rel_offset": [0.0, 0.0],
-            "zoom_fact": 1.02,
+            "zoom_fact": 1.05,
         },
     },
     "boxes": {
@@ -2892,6 +2892,6 @@ plot_summary = {
         },
         "ref_dist_on": True,
         "rel_offset": [0.0, 0.0],
-        "zoom_fact": 1.02,
+        "zoom_fact": 1.05,
     },
 }
