@@ -39,7 +39,7 @@ from .words import TranslatedWords
 from .words import Words
 
 # Custom types
-ColorType = Union[str, Tuple[int, int, int], Tuple[int, int, int, int]]
+ColorType = Union[str, Tuple[float, float, float], Tuple[float, float, float, float]]
 FontSizeType = Union[str, float]
 Plot = Any  # cannot import .plot.Plot (circular dependency)
 RectType = Tuple[float, float, float, float]
@@ -197,6 +197,7 @@ class PlotConfig(BaseModel):
     setup: InputSetup  # SR_TODO consider removing this
     mdata: MetaData  # SR_TODO consider removing this
     cmap: Union[str, Colormap] = "flexplot"
+    colors: List[ColorType]
     d_level: Optional[int] = None  # SR_TODO sensible default
     draw_colors: bool = True
     draw_contours: bool = False
@@ -476,6 +477,19 @@ def create_plot_config(
                 label = capitalize(label)
             labels[name] = label
 
+    # Colors
+    n_levels = new_config_dct["n_levels"]
+    extend = new_config_dct.get("extend", "max")
+    cmap = new_config_dct.get("cmap", "flexplot")
+    if setup.plot_variable == "affected_area_mono":
+        colors = (np.array([(200, 200, 200)]) / 255).tolist()
+    elif cmap == "flexplot":
+        colors = colors_flexplot(n_levels, extend)
+    else:
+        cmap = mpl.cm.get_cmap(cmap)
+        colors = [cmap(i / (n_levels - 1)) for i in range(n_levels)]
+    new_config_dct["colors"] = colors
+
     return PlotConfig(**new_config_dct)
 
 
@@ -560,7 +574,7 @@ def fill_box_right_middle(box: TextBoxAxes, plot: Plot) -> None:
     )
 
     # Legend color boxes
-    colors = colors_from_plot_config(plot.config)
+    colors = plot.config.colors
     dy = dy0_boxes
     for color in colors[::-1]:
         box.color_rect(
@@ -788,19 +802,6 @@ def colors_flexplot(n_levels: int, extend: str) -> Sequence[ColorType]:
     elif extend == "both":
         return [color_under] + colors_core + [color_over]
     raise ValueError(f"extend='{extend}'")
-
-
-def colors_from_plot_config(plot_config: PlotConfig) -> Sequence[ColorType]:
-    assert plot_config.n_levels is not None  # mypy
-    if plot_config.setup.plot_variable == "affected_area_mono":
-        return (np.array([(200, 200, 200)]) / 255).tolist()
-    elif plot_config.cmap == "flexplot":
-        return colors_flexplot(plot_config.n_levels, plot_config.extend)
-    else:
-        cmap = mpl.cm.get_cmap(plot_config.cmap)
-        return [
-            cmap(i / (plot_config.n_levels - 1)) for i in range(plot_config.n_levels)
-        ]
 
 
 def levels_from_time_stats(

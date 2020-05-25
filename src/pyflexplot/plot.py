@@ -31,7 +31,6 @@ from .plot_lib import TextBoxAxes
 from .plot_lib import post_summarize_plot
 from .plot_types import PlotConfig
 from .plot_types import PlotLayout
-from .plot_types import colors_from_plot_config
 from .plot_types import create_map_conf
 from .plot_types import create_plot_config
 from .plot_types import levels_from_time_stats
@@ -106,7 +105,7 @@ class Plot:
     def _draw_colors_contours(self) -> None:
         arr = self.field.fld
         levels = self.levels
-        colors = colors_from_plot_config(self.config)
+        colors = self.config.colors
         extend = self.config.extend
         if self.config.levels_scale == "log":
             arr = np.log10(arr)
