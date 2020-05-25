@@ -4,7 +4,9 @@ Plot setup and setup files.
 """
 # Standard library
 import dataclasses
+import re
 import typing
+from dataclasses import dataclass
 from typing import Any
 from typing import Collection
 from typing import Dict
@@ -918,3 +920,96 @@ def setup_repr(obj: Union["CoreInputSetup", "InputSetup"]) -> str:
 
     s_attrs = ",\n  ".join(f"{k}={fmt(v)}" for k, v in obj.dict().items())
     return f"{type(obj).__name__}(\n  {s_attrs},\n)"
+
+
+@dataclass
+class FilePathFormatter:
+    def __init__(self):
+        self.previous: List[str] = []
+        self._setup: Optional[InputSetup] = None
+
+    # pylint: disable=W0102  # dangerous-default-value ([])
+    def format(self, setup: InputSetup) -> str:
+        self._setup = setup
+        template = setup.outfile
+        path = self._format_template(template)
+        while path in self.previous:
+            template = self.derive_unique_path(self._format_template(template))
+        self.previous.append(path)
+        self._setup = None
+        return path
+
+    def _format_template(self, template: str) -> str:
+        input_variable = self._setup.input_variable
+        if self._setup.input_variable == "deposition":
+            input_variable += f"_{self._setup.deposition_type}"
+        kwargs = {
+            "nageclass": self._setup.nageclass,
+            "domain": self._setup.domain,
+            "lang": self._setup.lang,
+            "level": self._setup.level,
+            "noutrel": self._setup.noutrel,
+            "species_id": self._setup.species_id,
+            "time": self._setup.time,
+            "input_variable": input_variable,
+        }
+        # Format the file path
+        # Don't use str.format in order to handle multival elements
+        path = self._replace_format_keys(template, kwargs)
+        return path
+
+    def _replace_format_keys(self, path: str, kwargs: Mapping[str, Any]) -> str:
+        for key, val in kwargs.items():
+            if not (isinstance(val, Sequence) and not isinstance(val, str)):
+                val = [val]
+            # Iterate over relevant format keys
+            rxs = r"{" + key + r"(:[^}]*)?}"
+            re.finditer(rxs, path)
+            for m in re.finditer(rxs, path):
+
+                # Obtain format specifier (if there is one)
+                try:
+                    f = m.group(1) or ""
+                except IndexError:
+                    f = ""
+
+                # Format the string that replaces this format key in the path
+                formatted_key = "+".join([f"{{{f}}}".format(v) for v in val])
+
+                # Replace format key in the path by the just formatted string
+                start, end = path[: m.span()[0]], path[m.span()[1] :]
+                path = f"{start}{formatted_key}{end}"
+
+        # Check that all keys have been formatted
+        if "{" in path or "}" in path:
+            raise Exception(
+                "formatted output file path still contains format keys", path,
+            )
+
+        return path
+
+    @staticmethod
+    def derive_unique_path(path: str) -> str:
+        """Add/increment a trailing number to a file path."""
+
+        # Extract suffix
+        if path.endswith(".png"):
+            suffix = ".png"
+        else:
+            raise NotImplementedError(f"unknown suffix: {path}")
+        path_base = path[: -len(suffix)]
+
+        # Reuse existing numbering if present
+        match = re.search(r"-(?P<i>[0-9]+)$", path_base)
+        if match:
+            i = int(match.group("i")) + 1
+            w = len(match.group("i"))
+            path_base = path_base[: -w - 1]
+        else:
+            i = 1
+            w = 1
+
+        # Add numbering and suffix
+        path = path_base + f"-{{i:0{w}}}{suffix}".format(i=i)
+
+        return path

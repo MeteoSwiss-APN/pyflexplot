@@ -3,6 +3,7 @@
 Plot types.
 """
 # Standard library
+import warnings
 from dataclasses import dataclass
 from datetime import datetime
 from textwrap import dedent
@@ -27,6 +28,7 @@ from srutils.geo import Degrees
 
 # Local
 from .data import Field
+from .data import FieldAllNaNError
 from .formatting import format_level_ranges
 from .formatting import format_range
 from .meta_data import MetaData
@@ -746,6 +748,27 @@ def plot_add_text_boxes(plot: Plot) -> None:
     plot.add_text_box("right_middle", layout.rect_right_middle, fill_box_right_middle)
     plot.add_text_box("right_bottom", layout.rect_right_bottom, fill_box_right_bottom)
     plot.add_text_box("bottom", layout.rect_bottom, fill_box_bottom, frame_on=False)
+
+
+def plot_add_markers(plot: Plot) -> None:
+    config = plot.config
+
+    if config.mark_release_site:
+        assert isinstance(config.mdata.release_site_lon.value, float)  # mypy
+        assert isinstance(config.mdata.release_site_lat.value, float)  # mypy
+        plot.add_marker(
+            lat=config.mdata.release_site_lat.value,
+            lon=config.mdata.release_site_lon.value,
+            **config.markers["site"],
+        )
+
+    if config.mark_field_max:
+        try:
+            max_lat, max_lon = plot.field.locate_max()
+        except FieldAllNaNError:
+            warnings.warn("skip maximum marker (all-nan field)")
+        else:
+            plot.ax_map.marker(lat=max_lat, lon=max_lon, **config.markers["max"])
 
 
 def colors_flexplot(n_levels: int, extend: str) -> Sequence[ColorType]:

@@ -176,3 +176,29 @@ def ordinal(i):
     else:
         sfx = "th"
     return f"{i}{sfx}"
+
+
+def derive_unique_path(path: str) -> str:
+    """Add/increment a trailing number to a file path."""
+
+    # Extract suffix
+    if path.endswith(".png"):
+        suffix = ".png"
+    else:
+        raise NotImplementedError(f"unknown suffix: {path}")
+    path_base = path[: -len(suffix)]
+
+    # Reuse existing numbering if present
+    match = re.search(r"-(?P<i>[0-9]+)$", path_base)
+    if match:
+        i = int(match.group("i")) + 1
+        w = len(match.group("i"))
+        path_base = path_base[: -w - 1]
+    else:
+        i = 1
+        w = 1
+
+    # Add numbering and suffix
+    path = path_base + f"-{{i:0{w}}}{suffix}".format(i=i)
+
+    return path

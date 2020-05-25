@@ -3,14 +3,9 @@
 Plots.
 """
 # Standard library
-import re
-import warnings
-from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import Iterator
-from typing import List
-from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -20,12 +15,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
-# First-party
-from srutils.iter import isiterable
-
 # Local
 from .data import Field
-from .data import FieldAllNaNError
 from .meta_data import MetaData
 from .plot_lib import MapAxes
 from .plot_lib import MapAxesConf
@@ -36,8 +27,9 @@ from .plot_types import PlotLayout
 from .plot_types import create_map_conf
 from .plot_types import create_plot_config
 from .plot_types import levels_from_time_stats
+from .plot_types import plot_add_markers
 from .plot_types import plot_add_text_boxes
-from .setup import InputSetup
+from .setup import FilePathFormatter
 from .summarize import summarizable
 from .words import SYMBOLS
 from .words import WORDS
@@ -128,27 +120,6 @@ class Plot:
         self.ax_map.marker(lat=lat, lon=lon, marker=marker, **kwargs)
 
 
-def plot_add_markers(plot: Plot) -> None:
-    config = plot.config
-
-    if config.mark_release_site:
-        assert isinstance(config.mdata.release_site_lon.value, float)  # mypy
-        assert isinstance(config.mdata.release_site_lat.value, float)  # mypy
-        plot.add_marker(
-            lat=config.mdata.release_site_lat.value,
-            lon=config.mdata.release_site_lon.value,
-            **config.markers["site"],
-        )
-
-    if config.mark_field_max:
-        try:
-            max_lat, max_lon = plot.field.locate_max()
-        except FieldAllNaNError:
-            warnings.warn("skip maximum marker (all-nan field)")
-        else:
-            plot.ax_map.marker(lat=max_lat, lon=max_lon, **config.markers["max"])
-
-
 def plot_fields(
     fields: Sequence[Field],
     mdata_lst: Sequence[MetaData],
@@ -157,9 +128,10 @@ def plot_fields(
     write: bool = True,
 ) -> Iterator[Tuple[str, Optional[Plot]]]:
     """Create plots while yielding them with the plot file path one by one."""
+    path_formatter = FilePathFormatter()
     for field, mdata in zip(fields, mdata_lst):
         setup = field.var_setups.compress()
-        out_file_path = format_out_file_path(setup)
+        out_file_path = path_formatter.format(setup)
         map_conf = create_map_conf(field)
         if dry_run:
             plot = None
@@ -171,91 +143,3 @@ def plot_fields(
             plot_add_markers(plot)
             plot.save(out_file_path, write=write)
         yield out_file_path, plot
-
-
-# pylint: disable=W0102  # dangerous-default-value ([])
-def format_out_file_path(setup: InputSetup, _previous: List[str] = []) -> str:
-    template = setup.outfile
-    path = _format_out_file_path_core(template, setup)
-    while path in _previous:
-        template = derive_unique_path(template)
-        path = _format_out_file_path_core(template, setup)
-    _previous.append(path)
-    return path
-
-
-def _format_out_file_path_core(template: str, setup: InputSetup) -> str:
-    input_variable = setup.input_variable
-    if setup.input_variable == "deposition":
-        input_variable += f"_{setup.deposition_type}"
-    kwargs = {
-        "nageclass": setup.nageclass,
-        "domain": setup.domain,
-        "lang": setup.lang,
-        "level": setup.level,
-        "noutrel": setup.noutrel,
-        "species_id": setup.species_id,
-        "time": setup.time,
-        "input_variable": input_variable,
-    }
-    # Format the file path
-    # Don't use str.format in order to handle multival elements
-    path = _replace_format_keys(template, kwargs)
-    return path
-
-
-def _replace_format_keys(path: str, kwargs: Mapping[str, Any]) -> str:
-    for key, val in kwargs.items():
-        if not isiterable(val, str_ok=False):
-            val = [val]
-        # Iterate over relevant format keys
-        rxs = r"{" + key + r"(:[^}]*)?}"
-        re.finditer(rxs, path)
-        for m in re.finditer(rxs, path):
-
-            # Obtain format specifier (if there is one)
-            try:
-                f = m.group(1) or ""
-            except IndexError:
-                f = ""
-
-            # Format the string that replaces this format key in the path
-            formatted_key = "+".join([f"{{{f}}}".format(v) for v in val])
-
-            # Replace format key in the path by the just formatted string
-            start, end = path[: m.span()[0]], path[m.span()[1] :]
-            path = f"{start}{formatted_key}{end}"
-
-    # Check that all keys have been formatted
-    if "{" in path or "}" in path:
-        raise Exception(
-            "formatted output file path still contains format keys", path,
-        )
-
-    return path
-
-
-def derive_unique_path(path: str) -> str:
-    """Add/increment a trailing number to a file path."""
-
-    # Extract suffix
-    if path.endswith(".png"):
-        suffix = ".png"
-    else:
-        raise NotImplementedError(f"unknown suffix: {path}")
-    path_base = path[: -len(suffix)]
-
-    # Reuse existing numbering if present
-    match = re.search(r"-(?P<i>[0-9]+)$", path_base)
-    if match:
-        i = int(match.group("i")) + 1
-        w = len(match.group("i"))
-        path_base = path_base[: -w - 1]
-    else:
-        i = 1
-        w = 1
-
-    # Add numbering and suffix
-    path = path_base + f"-{{i:0{w}}}{suffix}".format(i=i)
-
-    return path
