@@ -10,6 +10,7 @@ from typing import Dict
 from typing import Mapping
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
 from typing import Union
 
 # Third-party
@@ -19,6 +20,10 @@ import numpy as np
 from .setup import InputSetupCollection
 from .summarize import default_summarize
 from .summarize import summarizable
+
+
+class FieldAllNaNError(Exception):
+    """Field contains only NaN values."""
 
 
 class ArrayDimensionError(Exception):
@@ -118,6 +123,17 @@ class Field:
         grid_shape = (self.lat.size, self.lon.size)
         if self.fld.shape[-2:] != grid_shape:
             raise InconsistentArrayShapesError(f"{self.fld.shape} != {grid_shape}")
+
+    def locate_max(self) -> Tuple[float, float]:
+        if np.isnan(self.fld).all():
+            raise FieldAllNaNError(self.fld.shape)
+        assert len(self.fld.shape) == 2  # pylint
+        # pylint: disable=W0632  # unbalanced-tuple-unpacking
+        jmax, imax = np.unravel_index(np.nanargmax(self.fld), self.fld.shape)
+        return (
+            self.lat[jmax],
+            self.lon[imax],
+        )
 
 
 def ensemble_probability(arr: np.ndarray, thr: float, n_mem: int) -> np.ndarray:

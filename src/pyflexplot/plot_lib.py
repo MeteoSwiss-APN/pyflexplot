@@ -387,20 +387,6 @@ class MapAxes:
         )
         return handle
 
-    def mark_max(
-        self, fld: np.ndarray, marker: str, **kwargs
-    ) -> Optional[Sequence[Line2D]]:
-        """Mark the location of the field maximum."""
-        if np.isnan(fld).all():
-            warnings.warn("skip maximum marker (all-nan field)")
-            return None
-        assert len(fld.shape) == 2  # pylint
-        # pylint: disable=W0632  # unbalanced-tuple-unpacking
-        jmax, imax = np.unravel_index(np.nanargmax(fld), fld.shape)
-        lon, lat = self.lon[imax], self.lat[jmax]
-        handle = self.marker(lon, lat, marker, **kwargs)
-        return handle
-
     def __repr__(self) -> str:
         return f"{type(self).__name__}(<TODO>)"  # SR_TODO
 

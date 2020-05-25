@@ -4,6 +4,7 @@ Plots.
 """
 # Standard library
 import re
+import warnings
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -24,6 +25,7 @@ from srutils.iter import isiterable
 
 # Local
 from .data import Field
+from .data import FieldAllNaNError
 from .meta_data import MetaData
 from .plot_lib import MapAxes
 from .plot_lib import MapAxesConf
@@ -99,7 +101,14 @@ class Plot:
             )
 
         if self.config.mark_field_max:
-            self.ax_map.mark_max(self.field.fld, **self.config.markers["max"])
+            try:
+                max_lat, max_lon = self.field.locate_max()
+            except FieldAllNaNError:
+                warnings.warn("skip maximum marker (all-nan field)")
+            else:
+                self.ax_map.marker(
+                    lon=max_lon, lat=max_lat, **self.config.markers["max"]
+                )
 
     # SR_TODO Replace checks with plot-specific config/setup object
     def _draw_colors_contours(self) -> None:
