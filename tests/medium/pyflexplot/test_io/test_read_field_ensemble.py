@@ -38,7 +38,7 @@ class TestReadFieldEnsemble_Single:
         "infile": "dummy.nc",
         "integrate": False,
         "outfile": "dummy.png",
-        "plot_type": "ensemble_mean",
+        "ens_variable": "mean",
         "species_id": 2,
         "time": 10,
         "input_variable": "concentration",
@@ -73,14 +73,18 @@ class TestReadFieldEnsemble_Single:
         datafile_fmt = self.datafile_fmt(datadir)
 
         # Initialize specifications
-        setup = InputSetup.create(
-            {
-                **self.setup_params_shared,
-                **setup_params,
-                "ens_member_id": self.ens_member_ids,
-                "plot_type": f"ensemble_{ens_var}",
-            }
-        )
+        setup_dct = {
+            **self.setup_params_shared,
+            **setup_params,
+            "ens_member_id": self.ens_member_ids,
+        }
+        # SR_TMP <
+        if ens_var in ["probability", "minimum", "maximum", "mean", "median"]:
+            setup_dct["ens_variable"] = ens_var
+        else:
+            setup_dct["plot_type"] = f"ensemble_{ens_var}"
+        # SR_TMP >
+        setup = InputSetup.create(setup_dct)
         var_setups_lst = InputSetupCollection([setup]).decompress_grouped_by_time()
         assert len(var_setups_lst) == 1
 
@@ -186,8 +190,13 @@ class TestReadFieldEnsemble_Multiple:
                 **shared_setup_params,
                 **setup_params,
                 "ens_member_id": self.ens_member_ids,
-                "plot_type": f"ensemble_{ens_var}",
             }
+            # SR_TMP <
+            if ens_var in ["probability", "minimum", "maximum", "mean", "median"]:
+                setup_params_i["ens_variable"] = ens_var
+            else:
+                setup_params_i["plot_type"] = f"ensemble_{ens_var}"
+            # SR_TMP >
             setups.append(InputSetup.create(setup_params_i))
         var_setups_lst = InputSetupCollection(setups).decompress_grouped_by_time()
 

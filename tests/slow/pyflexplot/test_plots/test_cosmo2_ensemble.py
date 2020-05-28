@@ -24,7 +24,7 @@ class Test_EnsMedian_Concentration(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": "dummy.png",
-        "plot_type": "ensemble_median",
+        "ens_variable": "median",
         "input_variable": "concentration",
         "integrate": False,
         "combine_species": True,
@@ -43,7 +43,7 @@ class Test_EnsMax_IntegratedConcentration(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": "plot.png",
-        "plot_type": "ensemble_maximum",
+        "ens_variable": "maximum",
         "input_variable": "concentration",
         "integrate": True,
         "ens_member_id": ENS_MEMBER_IDS,
@@ -61,7 +61,7 @@ class Test_EnsMean_TotalDeposition(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": "plot.png",
-        "plot_type": "ensemble_mean",
+        "ens_variable": "mean",
         "input_variable": "deposition",
         "deposition_type": "tot",
         "integrate": True,
@@ -74,27 +74,26 @@ class Test_EnsMean_TotalDeposition(_TestBase):
     }
 
 
-# SR_TODO Reactivate once input and derived variable have been separated
-# SR_TODO (input: deposition; derived: affected_area; plot: ensemble_minimum)
-# # @pytest.mark.skip("WIP")
+# SR_TODO Implement new combinations such as this!
 # # class Test_EnsMin_AffectedArea(_TestCreateReference):
-# class Test_EnsMin_AffectedArea(_TestBase):
-#     reference = "ref_cosmo2e_ens_min_affected_area"
-#     setup_dct = {
-#         "infile": INFILE_NAME,
-#         "outfile": "plot.png",
-#         "input_variable": "deposition",
-#         "plot_type": "ens_minn",
-#         "plot_variable": "affected_area",
-#         "deposition_type": "tot",
-#         "integrate": True,
-#         "combine_species": True,
-#         "ens_member_id": ENS_MEMBER_IDS,
-#         "lang": "de",
-#         "domain": "ch",
-#         "species_id": (1, 2),
-#         "time": (-1,),
-#     }
+# class Test_EnsMin_AffectedArea(_TestCreatePlot):
+# # class Test_EnsMin_AffectedArea(_TestBase):
+#      reference = "ref_cosmo2e_ens_min_affected_area"
+#      setup_dct = {
+#          "infile": INFILE_NAME,
+#          "outfile": "plot.png",
+#          "input_variable": "deposition",
+#          "ens_variable": "minimum",
+#          "plot_variable": "affected_area",
+#          "deposition_type": "tot",
+#          "integrate": True,
+#          "combine_species": True,
+#          "ens_member_id": ENS_MEMBER_IDS,
+#          "lang": "de",
+#          "domain": "ch",
+#          "species_id": (1, 2),
+#          "time": (-1,),
+#      }
 
 
 # @pytest.mark.skip("WIP")
@@ -105,7 +104,7 @@ class Test_CloudArrivalTime(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": "plot.png",
-        "plot_type": "ensemble_cloud_arrival_time",
+        "ens_variable": "cloud_arrival_time",
         "input_variable": "concentration",
         "integrate": True,
         "ens_member_id": ENS_MEMBER_IDS,
@@ -127,7 +126,7 @@ class Test_CloudDepartureTime(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": "plot.png",
-        "plot_type": "ensemble_cloud_departure_time",
+        "ens_variable": "cloud_departure_time",
         "input_variable": "concentration",
         "integrate": True,
         "ens_member_id": ENS_MEMBER_IDS,

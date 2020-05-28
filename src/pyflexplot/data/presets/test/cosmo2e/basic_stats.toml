@@ -34,22 +34,22 @@ combine_species = true
 # ["**"._mean]
 [_base._concentration._mean]
 outfile = "ens_mean_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time:02d}.png"
-plot_type = "ensemble_mean"
+ens_variable = "mean"
 
 # ["**"._median]
 [_base._integrated_concentration._median]
 outfile = "ens_median_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time:02d}.png"
-plot_type = "ensemble_median"
+ens_variable = "median"
 
 # ["**"._min]
 [_base._total_deposition._min]
 outfile = "ens_min_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time:02d}.png"
-plot_type = "ensemble_minimum"
+ens_variable = "minimum"
 
 # ["**"._max]
 [_base._wet_deposition._max]
 outfile = "ens_max_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time:02d}.png"
-plot_type = "ensemble_maximum"
+ens_variable = "maximum"
 
 # ["**"._auto.de]
 # [_base."*"._mean._auto.de]  # TODO "*" should match only "_concentration" due to "_mean"

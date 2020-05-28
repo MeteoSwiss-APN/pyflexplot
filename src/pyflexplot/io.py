@@ -347,28 +347,29 @@ class FileReader:
             return fld_time_mem[0]
 
         plot_type = var_setups.collect_equal("plot_type")
+        ens_variable = var_setups.collect_equal("ens_variable")
         ens_param_thr = var_setups.collect_equal("ens_param_thr")
         ens_param_mem_min = var_setups.collect_equal("ens_param_mem_min")
         ens_param_time_win = var_setups.collect_equal("ens_param_time_win")
         n_ens_mem = len(var_setups.collect_equal("ens_member_id"))
 
-        if plot_type == "ensemble_mean":
+        if ens_variable == "mean":
             fld_time = np.nanmean(fld_time_mem, axis=0)
-        elif plot_type == "ensemble_median":
+        elif ens_variable == "median":
             fld_time = np.nanmedian(fld_time_mem, axis=0)
-        elif plot_type == "ensemble_minimum":
+        elif ens_variable == "minimum":
             fld_time = np.nanmin(fld_time_mem, axis=0)
-        elif plot_type == "ensemble_maximum":
+        elif ens_variable == "maximum":
             fld_time = np.nanmax(fld_time_mem, axis=0)
-        elif plot_type == "ensemble_probability":
+        elif ens_variable == "probability":
             fld_time = ensemble_probability(fld_time_mem, ens_param_thr, n_ens_mem)
-        elif plot_type.startswith("ensemble_cloud_"):
+        elif ens_variable.startswith("cloud_"):
             cloud = EnsembleCloud(arr=fld_time_mem, time=self.time, thr=ens_param_thr)
-            if plot_type == "ensemble_cloud_arrival_time":
+            if ens_variable == "cloud_arrival_time":
                 fld_time = cloud.arrival_time(ens_param_mem_min)
-            elif plot_type == "ensemble_cloud_departure_time":
+            elif ens_variable == "cloud_departure_time":
                 fld_time = cloud.departure_time(ens_param_mem_min)
-            elif plot_type == "ensemble_cloud_occurrence_probability":
+            elif ens_variable == "cloud_occurrence_probability":
                 fld_time = cloud.occurrence_probability(ens_param_time_win)
         else:
             raise NotImplementedError("plot var", plot_type)

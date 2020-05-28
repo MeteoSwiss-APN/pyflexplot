@@ -414,11 +414,11 @@ def test_read_combine_wildcards(tmp_path):
         input_variable = "deposition"
 
         [_base."*"._mean]
-        plot_type = "ensemble_mean"
+        ens_variable = "mean"
         outfile = "ensemble_mean_{lang}.png"
 
         [_base."*"._max]
-        plot_type = "ensemble_maximum"
+        ens_variable = "maximum"
         outfile = "ensemble_maximum_{lang}.png"
 
         ["**".de]
@@ -433,12 +433,12 @@ def test_read_combine_wildcards(tmp_path):
             **DEFAULT_SETUP.dict(),
             "infile": "data_{ens_member:02d}.nc",
             "input_variable": input_variable,
-            "plot_type": plot_type,
-            "outfile": f"{plot_type}_{{lang}}.png",
+            "ens_variable": ens_variable,
+            "outfile": f"ensemble_{ens_variable}_{{lang}}.png",
             "lang": lang,
         }
         for input_variable in ["concentration", "deposition"]
-        for plot_type in ["ensemble_mean", "ensemble_maximum"]
+        for ens_variable in ["mean", "maximum"]
         for lang in ["de", "en"]
     ]
     setups = read_tmp_setup_file(tmp_path, content)

@@ -155,20 +155,20 @@ class InputSetup(BaseModel):
         assert values["input_variable"] in input_variables, values["input_variable"]
         plot_variables = ["auto", "affected_area", "affected_area_mono"]
         assert values["plot_variable"] in plot_variables, values["plot_variable"]
-        ens_variables = ["none"]
-        assert values["ens_variable"] in ens_variables, values["ens_variable"]
-        plots = [
-            "auto",
-            "ensemble_minimum",
-            "ensemble_mean",
-            "ensemble_median",
-            "ensemble_maximum",
-            "ensemble_probability",
-            "ensemble_cloud_arrival_time",
-            "ensemble_cloud_departure_time",
-            "ensemble_cloud_occurrence_probability",
+        ens_variables = [
+            "none",
+            "probability",
+            "minimum",
+            "maximum",
+            "mean",
+            "median",
+            "cloud_arrival_time",
+            "cloud_departure_time",
+            "cloud_occurrence_probability",
         ]
-        assert values["plot_type"] in plots, values["plot_type"]
+        assert values["ens_variable"] in ens_variables, values["ens_variable"]
+        plot_types = ["auto"]
+        assert values["plot_type"] in plot_types, values["plot_type"]
         return values
 
     @validator("deposition_type", always=True)
@@ -185,33 +185,33 @@ class InputSetup(BaseModel):
         cls, value: Optional[int], values: Dict[str, Any],
     ) -> Optional[int]:
         if value is None:
-            if values["plot_type"] in [
-                "ensemble_cloud_arrival_time",
-                "ensemble_cloud_departure_time",
+            if values["ens_variable"] in [
+                "cloud_arrival_time",
+                "cloud_departure_time",
             ]:
                 value = ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN
         return value
 
-    @validator("ens_param_thr", always=True)
-    def _init_ens_param_thr(
-        cls, value: Optional[float], values: Dict[str, Any],
-    ) -> Optional[float]:
+    @root_validator
+    def _init_ens_param_thr(cls, values: Dict[str, Any],) -> Dict[str, Any]:
+        value: Optional[float] = values["ens_param_thr"]
         if value is None:
-            if values["plot_type"] == "ensemble_probability":
+            if values["ens_variable"] == "probability":
                 value = ENS_PROBABILITY_DEFAULT_PARAM_THR
-            elif values["plot_type"] in [
-                "ensemble_cloud_arrival_time",
-                "ensemble_cloud_departure_time",
+            elif values["ens_variable"] in [
+                "cloud_arrival_time",
+                "cloud_departure_time",
             ]:
                 value = ENS_CLOUD_TIME_DEFAULT_PARAM_THR
-        return value
+        values["ens_param_thr"] = value
+        return values
 
     @validator("ens_param_time_win", always=True)
     def _init_ens_param_time_win(
         cls, value: Optional[float], values: Dict[str, Any],
     ) -> Optional[float]:
         if value is None:
-            if values["plot_type"] == "ensemble_cloud_occurrence_probability":
+            if values["ens_variable"] == "cloud_occurrence_probability":
                 value = ENS_CLOUD_PROB_DEFAULT_PARAM_TIME_WIN
         return value
 

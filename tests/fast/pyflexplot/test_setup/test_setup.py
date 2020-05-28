@@ -30,6 +30,7 @@ DEFAULT_SETUP = InputSetup(
         "deposition_type": "none",
         "domain": "auto",
         "ens_member_id": None,
+        "ens_variable": "none",
         "integrate": False,
         "lang": "en",
         "level": None,

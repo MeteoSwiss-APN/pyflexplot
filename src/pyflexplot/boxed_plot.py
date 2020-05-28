@@ -254,9 +254,9 @@ def levels_from_time_stats(
             n_max + plot_config.d_level,
             plot_config.d_level,
         )
-    elif plot_config.setup.plot_type in [
-        "ensemble_cloud_arrival_time",
-        "ensemble_cloud_departure_time",
+    elif plot_config.setup.ens_variable in [
+        "cloud_arrival_time",
+        "cloud_departure_time",
     ]:
         assert plot_config.d_level is not None  # mypy
         return np.arange(0, plot_config.n_levels) * plot_config.d_level

@@ -5,7 +5,6 @@
 infile = "data/cosmo-1_2019052800.nc"
 outfile = "deposition_tot_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
 input_variable = "deposition"
-plot_type = "auto"
 species_id = "*"
 deposition_type = "tot"
 combine_species = true
