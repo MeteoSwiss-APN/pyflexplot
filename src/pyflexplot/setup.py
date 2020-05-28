@@ -50,22 +50,21 @@ class InputSetup(BaseModel):
 
     Args:
         nageclass: Index of age class (zero-based). Use the format key
-            '{nageclass}' to embed it into the output file path.
+            '{nageclass}' to embed it in ``outfile``.
 
         combine_species: Sum up over all specified species. Otherwise, each is
             plotted separately.
 
         deposition_type: Type of deposition. Part of the plot variable name
-            that may be embedded in the plot file path with the format key
+            that may be embedded in ``outfile`` with the format key
             '{variable}'. Choices: "tot", "wet", "dry", "none".
 
         domain: Plot domain. Defaults to 'data', which derives the domain size
-            from the input data. Use the format key '{domain}' to embed the
-            domain name in the plot file path. Choices": "auto", "ch".
+            from the input data. Use the format key '{domain}' to embed it in
+            ``outfile``. Choices": "auto", "ch".
 
         ens_member_id: Ensemble member ids. Use the format key '{ens_member}'
-            to embed it into the input file path. Omit for deterministic
-            simulations.
+            to embed it in ``outfile``. Omit for deterministic simulations.
 
         ens_param_mem_min: Minimum number of ensemble members used to compute
             some ensemble variables. Its precise meaning depends on the
@@ -77,7 +76,8 @@ class InputSetup(BaseModel):
         ens_param_time_win: Tim window used to compute some ensemble variables.
             Its precise meaning depends on the variable.
 
-        ense_variable: Ensemble variable computed from plot variable.
+        ense_variable: Ensemble variable computed from plot variable. Use the
+            format key '{ens_variable}' to embed it in ``outfile``.
 
         infile: Input file path(s). May contain format keys.
 
@@ -85,30 +85,32 @@ class InputSetup(BaseModel):
 
         integrate: Integrate field over time.
 
-        lang: Language. Use the format key '{lang}' to embed it into the plot
-            file path. Choices: "en", "de".
+        lang: Language. Use the format key '{lang}' to embed it in ``oufile``.
+            Choices: "en", "de".
 
-        level: Index/indices of vertical level (zero-based, bottom-up). To
-            sum up multiple levels, combine their indices with '+'. Use the
-            format key '{level}' to embed it in the plot file path.
+        level: Index/indices of vertical level (zero-based, bottom-up). To sum
+            up multiple levels, combine their indices with '+'. Use the format
+            key '{level}' to embed it in ``outfile``.
 
         noutrel: Index of noutrel (zero-based). Use the format key
-            '{noutrel}' to embed it in the plot file path.
+            '{noutrel}' to embed it in ``outfile``.
 
         outfile: Output file path. May contain format keys.
 
-        plot_type: Plot type.
+        plot_type: Plot type. Use the format key '{plot_type}' to embed it in
+            ``outfile``.
 
-        plot_variable: Variable computed from input variable.
+        plot_variable: Variable computed from input variable. Use the format key
+            '{plot_variable}' to embed it in ``outfile``.
 
         numpoint: Index of release point (zero-based).
 
         species_id: Species id(s). To sum up multiple species, combine their
-            ids with '+'. Use the format key '{species_id}' to embed it in the
-            plot file path.
+            ids with '+'. Use the format key '{species_id}' to embed it in
+            ``outfile``.
 
         time: Time step indices (zero-based). Use the format key '{time}'
-            to embed one in the plot file path.
+            to embed one in ``outfile``.
 
     """
 
@@ -939,6 +941,9 @@ class FilePathFormatter:
             "species_id": self._setup.species_id,
             "time": self._setup.time,
             "input_variable": input_variable,
+            "plot_variable": self._setup.plot_variable,
+            "plot_type": self._setup.plot_type,
+            "ens_variable": self._setup.ens_variable,
         }
         # Format the file path
         # Don't use str.format in order to handle multival elements

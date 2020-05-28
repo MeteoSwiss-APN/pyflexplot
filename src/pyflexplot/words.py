@@ -109,7 +109,7 @@ WORDS.add(en="level", de="Level")
 WORDS.add(en="longitude", de=f'L{s["ae"]}nge')
 # M
 WORDS.add(en="m AGL", de=f'm {s["ue"]}.G.')
-WORDS.add(en="max.", de="Max.")
+WORDS.add(en={"*": "maximum", "abbr": "max."}, de={"*": "Maximum", "abbr": "Max."})
 WORDS.add(en={"*": "member", "pl": "members"}, de={"*": "Member", "pl": "Members"})
 WORDS.add(en="MeteoSwiss", de="MeteoSchweiz")
 WORDS.add(
