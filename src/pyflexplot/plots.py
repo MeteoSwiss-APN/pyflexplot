@@ -144,7 +144,7 @@ def create_plot_config(
         "br": (
             f"{mdata.simulation_now_rel} {words['since']}"
             f" {words['release_start']}"
-            f" {words['at', 'place']} {mdata.release_site_name}"
+            # f" {words['at', 'place']} {mdata.release_site_name}"
         ),
     }
     new_config_dct["labels"]["right_top"] = {
@@ -155,7 +155,9 @@ def create_plot_config(
         "title": "",  # SR_TMP Force into 1st position in dict (for tests)
         "title_unit": "",  # SR_TMP Force into 2nd position in dict (for tests)
         "release_site": words["release_site"].s,
-        "max": words["max"].s,
+        "site": words["site"].s,
+        "max": words["maximum", "abbr"].s,
+        "maximum": words["maximum"].s,
     }
     new_config_dct["labels"]["right_bottom"] = {
         "title": words["release"].t,
@@ -170,7 +172,7 @@ def create_plot_config(
         "mass": words["total_mass"].s,
         "site": words["site"].s,
         "release_site": words["release_site"].s,
-        "max": words["max"].s,
+        "max": words["maximum", "abbr"].s,
         "name": words["substance"].s,
         "half_life": words["half_life"].s,
         "deposit_vel": words["deposition_velocity", "abbr"].s,
@@ -335,6 +337,7 @@ def create_plot_config(
     )
     new_config_dct["labels"]["right_middle"]["title"] = short_name
     new_config_dct["labels"]["right_middle"]["title_unit"] = f"{short_name} ({unit})"
+    new_config_dct["labels"]["right_middle"]["unit"] = unit
 
     # Capitalize all labels
     for labels in new_config_dct["labels"].values():
@@ -411,6 +414,7 @@ def fill_box_right_middle(box: TextBoxAxes, plot: BoxedPlot) -> None:
     """Fill the top box to the right of the map plot."""
 
     labels = plot.config.labels["right_middle"]
+    mdata = plot.config.mdata
 
     # Box title
     box.text(
@@ -422,18 +426,19 @@ def fill_box_right_middle(box: TextBoxAxes, plot: BoxedPlot) -> None:
 
     # dy_line: float = 3.0
     dy_line: float = 2.5
-    w_box: float = 4.0
-    h_box: float = 2.0
 
-    dx_box: float = -10
-    dx_label: float = -3
+    w_legend_box: float = 4.0
+    h_legend_box: float = 2.0
 
-    dx_marker: float = dx_box + 0.5 * w_box
-    dx_marker_label: float = dx_label
+    dx_legend_box: float = -10
+    dx_legend_label: float = -3
+
+    dx_marker: float = dx_legend_box + 0.5 * w_legend_box
+    dx_marker_label: float = dx_legend_label - 0.5
 
     # Vertical position of legend (depending on number of levels)
     dy0_labels = -5.0
-    dy0_boxes = dy0_labels - 0.8 * h_box
+    dy0_boxes = dy0_labels - 0.8 * h_legend_box
 
     # Format level ranges (contour plot legend)
     legend_labels = format_level_ranges(
@@ -450,7 +455,7 @@ def fill_box_right_middle(box: TextBoxAxes, plot: BoxedPlot) -> None:
         loc="tc",
         dy_unit=dy0_labels,
         dy_line=dy_line,
-        dx=dx_label,
+        dx=dx_legend_label,
         ha="left",
         fontname=plot.config.font_name,
         size=plot.config.font_sizes.content_medium,
@@ -464,10 +469,10 @@ def fill_box_right_middle(box: TextBoxAxes, plot: BoxedPlot) -> None:
         box.color_rect(
             loc="tc",
             x_anker="left",
-            dx=dx_box,
+            dx=dx_legend_box,
             dy=dy,
-            w=w_box,
-            h=h_box,
+            w=w_legend_box,
+            h=h_legend_box,
             fc=color,
             ec="black",
             lw=1.0,
@@ -476,25 +481,6 @@ def fill_box_right_middle(box: TextBoxAxes, plot: BoxedPlot) -> None:
 
     dy0_markers = dy0_boxes - dy_line * (len(legend_labels) - 0.3)
     dy0_marker = dy0_markers
-
-    # Release site marker
-    if plot.config.mark_release_site:
-        dy_site_label = dy0_marker
-        dy0_marker -= dy_line
-        dy_site_marker = dy_site_label - 0.7
-        assert plot.config.markers is not None  # mypy
-        box.marker(
-            loc="tc", dx=dx_marker, dy=dy_site_marker, **plot.config.markers["site"],
-        )
-        box.text(
-            s=labels["release_site"],
-            loc="tc",
-            dx=dx_marker_label,
-            dy=dy_site_label,
-            ha="left",
-            fontname=plot.config.font_name,
-            size=plot.config.font_sizes.content_medium,
-        )
 
     # Field maximum marker
     if plot.config.mark_field_max:
@@ -505,30 +491,55 @@ def fill_box_right_middle(box: TextBoxAxes, plot: BoxedPlot) -> None:
         box.marker(
             loc="tc", dx=dx_marker, dy=dy_max_marker, **plot.config.markers["max"],
         )
-        s = f"{labels['max']}: "
         if np.isnan(plot.field.fld).all():
-            s += "NaN"
+            s_val = "NaN"
         else:
             fld_max = np.nanmax(plot.field.fld)
             if 0.001 <= fld_max < 0.01:
-                s += f"{fld_max:.5f}"
+                s_val = f"{fld_max:.5f}"
             elif 0.01 <= fld_max < 0.1:
-                s += f"{fld_max:.4f}"
+                s_val = f"{fld_max:.4f}"
             elif 0.1 <= fld_max < 1:
-                s += f"{fld_max:.3f}"
+                s_val = f"{fld_max:.3f}"
             elif 1 <= fld_max < 10:
-                s += f"{fld_max:.2f}"
+                s_val = f"{fld_max:.2f}"
             elif 10 <= fld_max < 100:
-                s += f"{fld_max:.1f}"
+                s_val = f"{fld_max:.1f}"
             elif 100 <= fld_max < 1000:
-                s += f"{fld_max:.0f}"
+                s_val = f"{fld_max:.0f}"
             else:
-                s += f"{fld_max:.2E}"
+                s_val = f"{fld_max:.2E}"
+            # s_val += r"$\,$" + labels["unit"]
+        s = f"{labels['max']}: {s_val}"
+        # s = f"{labels['max']} ({s_val})"
+        # s = f"{labels['maximum']}:\n({s_val})"
         box.text(
             s=s,
             loc="tc",
             dx=dx_marker_label,
             dy=dy_marker_label_max,
+            ha="left",
+            fontname=plot.config.font_name,
+            size=plot.config.font_sizes.content_medium,
+        )
+
+    # Release site marker
+    if plot.config.mark_release_site:
+        dy_site_label = dy0_marker
+        dy0_marker -= dy_line
+        dy_site_marker = dy_site_label - 0.7
+        assert plot.config.markers is not None  # mypy
+        box.marker(
+            loc="tc", dx=dx_marker, dy=dy_site_marker, **plot.config.markers["site"],
+        )
+        # s = f"{labels['release_site']}"
+        # s = f"{labels['site']} ({mdata.release_site_name})"
+        s = f"{labels['site']}: {mdata.release_site_name}"
+        box.text(
+            s=s,
+            loc="tc",
+            dx=dx_marker_label,
+            dy=dy_site_label,
             ha="left",
             fontname=plot.config.font_name,
             size=plot.config.font_sizes.content_medium,
