@@ -210,15 +210,16 @@ def test_single(datadir, conf):  # noqa:F811
     datafile = f"{datadir}/{conf.datafilename}"
 
     # Initialize field specifications
-    var_setups_lst = InputSetupCollection([conf.setup]).decompress_grouped_by_time()
-    assert len(var_setups_lst) == 1
+    setups = InputSetupCollection([conf.setup])
 
     # Read input field
-    fields, mdata_lst = read_fields(datafile, var_setups_lst)
-    assert len(fields) == 1
-    fld = fields[0].fld
+    field_lst_lst, mdata_lst_lst = read_fields(datafile, setups)
+    assert len(field_lst_lst) == 1
+    assert len(field_lst_lst[0]) == 1
+    fld = field_lst_lst[0][0].fld
 
     # Initialize individual setup objects
+    var_setups_lst = setups.decompress_twice(["time"], None, ["ens_member_id"])
     assert len(var_setups_lst) == 1
     var_setups = next(iter(var_setups_lst))
 
@@ -379,21 +380,24 @@ def test_multiple(datadir, conf):  # noqa:F811
     datafile = f"{datadir}/{conf.datafilename}"
 
     # Create setups
-    setups = list(conf.setup.decompress_partially(None))
-    for setup in setups.copy():
-        setups.extend(setup.derive(conf.derived_setup_params))
-
-    # Create field specifications list
-    var_setups_lst = InputSetupCollection(setups).decompress_grouped_by_time()
+    setup_lst = list(conf.setup.decompress_partially(None))
+    for setup in setup_lst.copy():
+        setup_lst.extend(setup.derive(conf.derived_setup_params))
+    setups = InputSetupCollection(setup_lst)
 
     # Process field specifications one after another
-    for var_setups in var_setups_lst:
+    var_setups: InputSetupCollection
+    for var_setups in setups.decompress_twice(["time"], None, ["ens_member_id"]):
 
         # Read input fields
-        fields, mdata_lst = read_fields(datafile, [var_setups])
-        assert len(fields) == 1
-        assert len(mdata_lst) == 1
-        fld = np.array([field.fld for field in fields])
+        field_lst_lst, mdata_lst_lst = read_fields(datafile, var_setups)
+        assert len(field_lst_lst) == 1
+        assert len(mdata_lst_lst) == 1
+        assert len(field_lst_lst[0]) == 1
+        assert len(mdata_lst_lst[0]) == 1
+        fld = np.array(
+            [field.fld for field_lst in field_lst_lst for field in field_lst]
+        )
         assert fld.shape[0] == 1
         fld = fld[0]
 
@@ -467,12 +471,15 @@ def test_single_add_ts0(datadir, conf):
     datafile = f"{datadir}/{conf.datafilename}"
 
     # Initialize field specifications
-    var_setups_lst = InputSetupCollection([conf.setup]).decompress_grouped_by_time()
-    assert len(var_setups_lst) == 1
+    setups = InputSetupCollection([conf.setup])
 
     # Read fields with and without added time step 0
-    fields_raw, _ = read_fields(datafile, var_setups_lst, add_ts0=False)
-    fields_ts0, _ = read_fields(datafile, var_setups_lst, add_ts0=True)
-    assert len(fields_ts0) == len(fields_raw) + 1
-    assert (fields_ts0[1].fld == fields_raw[0].fld).all()
-    assert (fields_ts0[0].fld == 0.0).all()
+    field_raw_lst_lst, _ = read_fields(datafile, setups, add_ts0=False)
+    field_ts0_lst_lst, _ = read_fields(datafile, setups, add_ts0=True)
+    assert len(field_raw_lst_lst) == 1
+    assert len(field_ts0_lst_lst) == 1
+    field_raw_lst = next(iter(field_raw_lst_lst))
+    field_ts0_lst = next(iter(field_ts0_lst_lst))
+    assert len(field_ts0_lst) == len(field_raw_lst) + 1
+    assert (field_ts0_lst[1].fld == field_raw_lst[0].fld).all()
+    assert (field_ts0_lst[0].fld == 0.0).all()

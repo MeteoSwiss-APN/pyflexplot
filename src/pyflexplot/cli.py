@@ -225,18 +225,16 @@ def cli(
     for i_in, (in_file_path, sub_setups) in enumerate(setups_by_infile.items()):
 
         # Read input fields
-        var_setups_lst = sub_setups.decompress_grouped_by_time()
-
-        fields, mdata_lst = read_fields(
-            in_file_path, var_setups_lst, add_ts0=True, dry_run=dry_run
+        field_lst_lst, mdata_lst_lst = read_fields(
+            in_file_path, sub_setups, add_ts0=True, dry_run=dry_run
         )
 
         try:
             # Note: plot_fields(...) yields the output file paths on-the-go
             # pylint: disable=W0612  # unused-variable (plot_handle)
-            n_fld = len(fields)
+            n_fld = len(field_lst_lst)
             for i_fld, (out_file_path, plot_handle) in enumerate(
-                plot_fields(fields, mdata_lst, dry_run)
+                plot_fields(field_lst_lst, mdata_lst_lst, dry_run)
             ):
                 i_tot += 1
                 click.echo(f"[{i_in + 1}/{n_in}][{i_fld + 1}/{n_fld}] {out_file_path}")

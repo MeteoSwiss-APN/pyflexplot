@@ -1,0 +1,39 @@
+# PyFlexPlot setup file to plot basic statistical measures.
+
+[_base]
+# Sample data directory: /scratch/ruestefa/shared/pyflexplot_test/
+infile = "data/cosmo-2e_2019073100_{ens_member:03d}.nc"
+# ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+ens_member_id = [0, 2, 5, 8, 11, 14, 17, 20]
+time = 6
+plot_type = "multipanel"
+multipanel_param = "ens_variable"
+outfile = "ens_stats_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time:02d}.png"
+ens_variable = ["minimum", "maximum", "mean", "median"]
+species_id = [1, 2]
+combine_species = true
+
+# [_base._concentration]
+# input_variable = "concentration"
+# level = 0
+
+[_base._total_deposition]
+input_variable = "deposition"
+deposition_type = "tot"
+integrate = true
+
+# ["**"._auto.de]
+# domain = "auto"
+# lang = "de"
+
+["**"._auto.en]
+domain = "auto"
+lang = "en"
+
+["**"._ch.de]
+domain = "ch"
+lang = "de"
+
+# ["**"._ch.en]
+# domain = "ch"
+# lang = "en"

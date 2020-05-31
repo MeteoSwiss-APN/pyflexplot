@@ -92,6 +92,13 @@ class InputSetup(BaseModel):
             up multiple levels, combine their indices with '+'. Use the format
             key '{level}' to embed it in ``outfile``.
 
+        multipanel_param: Parameter used to plot multiple panels. Only valid for
+            ``plot_type = "multipanel"``. The respective parameter must have one
+            value per panel. For example, a four-panel plot with one ensemble
+            statistic plot each may be specified with ``multipanel_param =
+            "ens_variable"`` and ``ens_variable = ["minimum", "maximum", "meam",
+            "median"]``.
+
         noutrel: Index of noutrel (zero-based). Use the format key
             '{noutrel}' to embed it in ``outfile``.
 
@@ -123,8 +130,9 @@ class InputSetup(BaseModel):
     outfile: str
     input_variable: str = "concentration"
     plot_variable: str = "auto"
-    ens_variable: str = "none"
+    ens_variable: Union[str, Tuple[str, ...]] = "none"
     plot_type: str = "auto"
+    multipanel_param: Optional[str] = None
 
     # Tweaks
     deposition_type: Union[str, Tuple[str, str]] = "none"
@@ -150,12 +158,23 @@ class InputSetup(BaseModel):
     level: Optional[Tuple[int, ...]] = None
 
     @root_validator
-    def _check_variables_etc(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        input_variables = ["concentration", "deposition"]
-        assert values["input_variable"] in input_variables, values["input_variable"]
-        plot_variables = ["auto", "affected_area", "affected_area_mono"]
-        assert values["plot_variable"] in plot_variables, values["plot_variable"]
-        ens_variables = [
+    def _check_input_variable(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        value = values["input_variable"]
+        choices = ["concentration", "deposition"]
+        assert value in choices, value
+        return values
+
+    @root_validator
+    def _check_plot_variable(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        value = values["plot_variable"]
+        choices = ["auto", "affected_area", "affected_area_mono"]
+        assert value in choices, value
+        return values
+
+    @root_validator
+    def _check_ens_variable(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        value = values["ens_variable"]
+        choices = [
             "none",
             "probability",
             "minimum",
@@ -166,9 +185,62 @@ class InputSetup(BaseModel):
             "cloud_departure_time",
             "cloud_occurrence_probability",
         ]
-        assert values["ens_variable"] in ens_variables, values["ens_variable"]
-        plot_types = ["auto"]
-        assert values["plot_type"] in plot_types, values["plot_type"]
+        if isinstance(value, str):
+            assert value in choices, value
+        else:
+            for sub_value in value:
+                assert sub_value in choices, sub_value
+        return values
+
+    @root_validator
+    def _check_plot_type(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        value = values["plot_type"]
+        choices = ["auto", "multipanel"]
+        assert value in choices, value
+        return values
+
+    @root_validator
+    def _check_multipanel_param(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        value = values["multipanel_param"]
+        # SR_TODO Consider a generic alternative to the hard-coded list
+        multipanel_param_choices = ["ens_variable"]
+        if value is None:
+            pass
+        elif value in multipanel_param_choices:
+            if not (
+                isinstance(values[value], Sequence)
+                and not isinstance(values[value], str)
+            ):
+                # SR_TMP <  SR_MULTIPANEL
+                # raise ValueError(
+                #     "multipanel_param parameter must be a sequence",
+                #     value,
+                #     values[value],
+                # )
+                # SR_NOTE The exception should be raised when the input is parsed,
+                #         but not afterward when the setup objects for the individual
+                #         fields are created (which contain only one value each of
+                #         the multipanel_param, but still retain plot_type
+                #         "multipanel")..
+                #         This issue illustrates that InputSetup and Setup should
+                #         be separated again in some fashion!
+                return values  # SR_TMP
+                # SR_TMP >  SR_MULTIPANEL
+            # SR_TODO Consider a generic alternative to the hard-coded list
+            n_panels_choices = [4]
+            n_panels = len(values[value])
+            if n_panels not in n_panels_choices:
+                raise NotImplementedError(
+                    "unexpected number of multipanel_param parameter values",
+                    value,
+                    n_panels,
+                    values[value],
+                )
+        else:
+            raise NotImplementedError(
+                f"unknown multipanel_param '{value}'"
+                f"; choices: {', '.join(multipanel_param_choices)}"
+            )
         return values
 
     @validator("deposition_type", always=True)
@@ -574,6 +646,7 @@ class CoreInputSetup(BaseModel):
     plot_variable: str = "auto"
     ens_variable: str = "none"
     plot_type: str = "auto"
+    multipanel_param: Optional[str] = None
 
     # Tweaks
     deposition_type: str = "none"
@@ -621,7 +694,11 @@ class InputSetupCollection:
         if not isinstance(setups, Collection) or (
             setups and not isinstance(next(iter(setups)), InputSetup)
         ):
-            raise ValueError("setups is not a collection of InputSetup objects", setups)
+            raise ValueError(
+                "setups is not an InputSetup collection",
+                type(setups),
+                type(next(iter(setups))),
+            )
         self._setups: List[InputSetup] = list(setups)
 
     @classmethod
@@ -638,7 +715,9 @@ class InputSetupCollection:
         return type(self)([setup.copy() for setup in self])
 
     def __repr__(self) -> str:
-        s_setups = "\n  ".join([""] + [str(c) for c in self._setups])
+        s_setups = "\n  ".join(
+            [""] + [re.sub(r" *\n +", " ", str(setup)) for setup in self._setups]
+        )  # SR_TODO clean this up
         return f"{type(self).__name__}([{s_setups}\n])"
 
     def __len__(self) -> int:
@@ -681,27 +760,32 @@ class InputSetupCollection:
             InputSetupCollection(sub_setup_lst) for sub_setup_lst in sub_setup_lst_lst
         ]
 
-    # SR_TMP <<< TODO cleaner solution
-    def decompress_grouped_by_time(self) -> List["InputSetupCollection"]:
-        # Note: This is what's left-over of FldSpecs, specifically FldSpecs.create
-        return self.decompress_two_step(
-            select_outer=["time"], select_inner=None, skip=["ens_member_id"],
-        )
-
-    def decompress_two_step(
+    def decompress_twice(
         self,
-        select_outer: List[str],
-        select_inner: Optional[Collection[str]],
+        select_outer: Collection[str],
+        select_inner: Optional[Collection[str]] = None,
         skip: Optional[Collection[str]] = None,
     ) -> List["InputSetupCollection"]:
-        skip = ["ens_member_id"]
         sub_setups_lst: List[InputSetupCollection] = []
         for setup in self._setups:
             for sub_setup in setup.decompress_partially(select_outer, skip):
-                sub_setups_lst.append(
-                    sub_setup.decompress_partially(select_inner, skip)
-                )
+                sub_sub_setups = sub_setup.decompress_partially(select_inner, skip)
+                sub_setups_lst.append(sub_sub_setups)
         return sub_setups_lst
+
+    def decompress_thrice(
+        self,
+        select_outer: Collection[str],
+        select_middle: Collection[str],
+        select_inner: Optional[Collection[str]] = None,
+        skip: Optional[Collection[str]] = None,
+    ) -> List[List["InputSetupCollection"]]:
+        return [
+            setup.decompress_partially(select_outer, skip).decompress_twice(
+                select_middle, select_inner, skip
+            )
+            for setup in self._setups
+        ]
 
     def decompress_species_id(self) -> List["InputSetupCollection"]:
         """Decompress species ids depending in whether to combine them."""

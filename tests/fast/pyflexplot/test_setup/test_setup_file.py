@@ -34,7 +34,7 @@ def read_tmp_setup_file(tmp_path, content, **kwargs):
     return InputSetupFile(tmp_file).read(**kwargs)
 
 
-def test_read_single_minimal_section(tmp_path):
+def test_single_minimal_section(tmp_path):
     """Read setup file with single minimal section."""
     content = f"""\
         [plot]
@@ -44,7 +44,7 @@ def test_read_single_minimal_section(tmp_path):
     assert setups == [DEFAULT_SETUP.dict()]
 
 
-def test_read_single_minimal_renamed_section(tmp_path):
+def test_single_minimal_renamed_section(tmp_path):
     """Read setup file with single minimal section with arbitrary name."""
     content = f"""\
         [foobar]
@@ -54,7 +54,7 @@ def test_read_single_minimal_renamed_section(tmp_path):
     assert setups == [DEFAULT_SETUP.dict()]
 
 
-def test_read_single_section(tmp_path):
+def test_single_section(tmp_path):
     """Read setup file with single non-empty section."""
     content = f"""\
         [plot]
@@ -75,7 +75,7 @@ def test_read_single_section(tmp_path):
     assert res == sol
 
 
-def test_read_multiple_parallel_empty_sections(tmp_path):
+def test_multiple_parallel_empty_sections(tmp_path):
     """Read setup file with multiple parallel empty sections."""
     content = f"""\
         [plot1]
@@ -88,7 +88,7 @@ def test_read_multiple_parallel_empty_sections(tmp_path):
     assert setups == [DEFAULT_SETUP.dict()] * 2
 
 
-def test_read_two_nested_empty_sections(tmp_path):
+def test_two_nested_empty_sections(tmp_path):
     """Read setup file with two nested empty sections."""
     content = f"""\
         [_base]
@@ -100,7 +100,7 @@ def test_read_two_nested_empty_sections(tmp_path):
     assert setups == [DEFAULT_SETUP.dict()]
 
 
-def test_read_multiple_nested_sections(tmp_path):
+def test_multiple_nested_sections(tmp_path):
     """Read setup file with two nested non-empty sections."""
     content = f"""\
         [_base]
@@ -161,7 +161,7 @@ def test_read_multiple_nested_sections(tmp_path):
     assert setups == sol
 
 
-def test_read_multiple_override(tmp_path):
+def test_multiple_override(tmp_path):
     """Read setup file and override some parameters."""
     content = f"""\
         [_base]
@@ -224,7 +224,7 @@ def test_read_multiple_override(tmp_path):
     assert setups == sol
 
 
-def test_read_semi_realcase(tmp_path):
+def test_semi_realcase(tmp_path):
     """Test setup file based on a real case, with some groups indented."""
     content = f"""\
         # PyFlexPlot setup file to create deterministic NAZ plots
@@ -282,7 +282,7 @@ def test_read_semi_realcase(tmp_path):
     assert len(setups) == 16
 
 
-def test_read_wildcard_simple(tmp_path):
+def test_wildcard_simple(tmp_path):
     """Apply a subgroup to multiple groups with a wildcard."""
     content = f"""\
         [_base]
@@ -314,7 +314,7 @@ def test_read_wildcard_simple(tmp_path):
     assert setups == sol
 
 
-def test_read_double_wildcard_equal_depth(tmp_path):
+def test_double_wildcard_equal_depth(tmp_path):
     """Apply a double-star wildcard subdict to an equal-depth nested dict."""
     content = f"""\
         [_base]
@@ -356,7 +356,7 @@ def test_read_double_wildcard_equal_depth(tmp_path):
     assert setups.dicts() == sol
 
 
-def test_read_double_wildcard_variable_depth(tmp_path):
+def test_double_wildcard_variable_depth(tmp_path):
     """Apply a double-star wildcard subdict to a variable-depth nested dict."""
     content = f"""\
         [_base]
@@ -401,7 +401,7 @@ def test_read_double_wildcard_variable_depth(tmp_path):
     assert setups.dicts() == sol
 
 
-def test_read_combine_wildcards(tmp_path):
+def test_combine_wildcards(tmp_path):
     """Apply single- and double-star wildcards in combination."""
     content = """\
         [_base]
@@ -495,3 +495,32 @@ class Test_IndividualParams_SingleOrMultipleValues:
             {**DEFAULT_SETUP.dict(), "input_variable": "deposition", "level": None},
         ]
         assert setups.dicts() == sol
+
+
+def test_multipanel_param_ens_variable(tmp_path):
+    """Declare multi-panel plot based on ensemble variables."""
+    content = """\
+        [plot]
+        infile = "data_{ens_member:02d}.nc"
+        outfile = "ens_stats_multipanel.png"
+        ens_member_id = [1, 2, 3]
+        plot_type = "multipanel"
+        multipanel_param = "ens_variable"
+        ens_variable = ["minimum", "maximum", "mean", "median"]
+
+        """
+    sol = [
+        {
+            **DEFAULT_SETUP.dict(),
+            "infile": "data_{ens_member:02d}.nc",
+            "outfile": "ens_stats_multipanel.png",
+            "ens_member_id": (1, 2, 3),
+            "plot_type": "multipanel",
+            "multipanel_param": "ens_variable",
+            "ens_variable": ("minimum", "maximum", "mean", "median"),
+        }
+    ]
+    setups = read_tmp_setup_file(tmp_path, content)
+    res = setups.dicts()
+    assert len(res) == len(sol)
+    assert res == sol

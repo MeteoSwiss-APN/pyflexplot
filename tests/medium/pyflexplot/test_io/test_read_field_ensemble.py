@@ -84,17 +84,19 @@ class TestReadFieldEnsemble_Single:
         else:
             setup_dct["plot_type"] = f"ensemble_{ens_var}"
         # SR_TMP >
-        setup = InputSetup.create(setup_dct)
-        var_setups_lst = InputSetupCollection([setup]).decompress_grouped_by_time()
-        assert len(var_setups_lst) == 1
+        setups = InputSetupCollection([InputSetup.create(setup_dct)])
 
         # Read input fields
-        fields, mdata_lst = read_fields(datafile_fmt, var_setups_lst)
-        assert len(fields) == 1
-        assert len(mdata_lst) == 1
-        fld = fields[0].fld
+        field_lst_lst, mdata_lst_lst = read_fields(datafile_fmt, setups)
+        assert len(field_lst_lst) == 1
+        assert len(mdata_lst_lst) == 1
+        assert len(field_lst_lst[0]) == 1
+        assert len(mdata_lst_lst[0]) == 1
+        fld = field_lst_lst[0][0].fld
 
         # SR_TMP <
+        var_setups_lst = setups.decompress_twice(["time"], None, ["ens_member_id"])
+        assert len(var_setups_lst) == 1
         var_setups = next(iter(var_setups_lst))
         setups = var_setups.compress().decompress_partially(
             None, skip=["ens_member_id"]
@@ -181,7 +183,7 @@ class TestReadFieldEnsemble_Multiple:
         """Run an individual test, reading one field after another."""
 
         # Create field specifications list
-        setups = []
+        setup_lst = []
         for shared_setup_params in decompress_multival_dict(
             self.shared_setup_params_compressed, skip=["infile"],
         ):
@@ -197,55 +199,46 @@ class TestReadFieldEnsemble_Multiple:
             else:
                 setup_params_i["plot_type"] = f"ensemble_{ens_var}"
             # SR_TMP >
-            setups.append(InputSetup.create(setup_params_i))
-        var_setups_lst = InputSetupCollection(setups).decompress_grouped_by_time()
+            setup_lst.append(InputSetup.create(setup_params_i))
+        setups = InputSetupCollection(setup_lst)
 
         run_core = functools.partial(
             self._run_core, datafile_fmt, var_names_ref, fct_reduce_mem, scale_fld_ref,
         )
         if separate:
             # Process field specifications one after another
+            var_setups_lst = setups.decompress_twice(["time"], None, ["ens_member_id"])
             for var_setups in var_setups_lst:
-                run_core([var_setups])
+                run_core(var_setups)
         else:
-            run_core(var_setups_lst)
+            run_core(setups)
 
     def _run_core(
-        self,
-        datafile_fmt,
-        var_names_ref,
-        fct_reduce_mem,
-        scale_fld_ref,
-        var_setups_lst,
+        self, datafile_fmt, var_names_ref, fct_reduce_mem, scale_fld_ref, setups,
     ):
-        # Collect merged variables specifications
-        # SR_TMP < TODO cleaner solution
-        compressed_setups = InputSetupCollection(
-            [var_setups.compress() for var_setups in var_setups_lst],
-        )
-        # SR_TMP >
-
         # Read input fields
-        fields, mdata_lst = read_fields(datafile_fmt, var_setups_lst)
-        fld_arr = np.array([field.fld for field in fields])
+        field_lst_lst, mdata_lst_lst = read_fields(datafile_fmt, setups)
+        fld_arr = np.array(
+            [field.fld for field_lst in field_lst_lst for field in field_lst]
+        )
 
         # Read reference fields
         fld_ref_lst = []
-        for compressed_setup in compressed_setups:
+        for setup in setups:
             fld_ref_mem_time = [
                 [
                     read_nc_var(
                         self.datafile(ens_member_id, datafile_fmt=datafile_fmt),
-                        get_var_name_ref(setup, var_names_ref),
-                        setup,
+                        get_var_name_ref(sub_setup, var_names_ref),
+                        sub_setup,
                         model="cosmo2",  # SR_TMP
                     )
                     * scale_fld_ref
                     for ens_member_id in self.ens_member_ids
                 ]
                 # SR_TMP <
-                for setup in compressed_setup.decompress_partially(
-                    None, skip=["ens_member_id"],
+                for sub_setup in setup.decompress_partially(
+                    None, skip=["ens_member_id"]
                 )
                 # SR_TMP >
             ]

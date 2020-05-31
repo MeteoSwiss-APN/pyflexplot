@@ -10,6 +10,7 @@ from typing import Dict
 from typing import List
 from typing import Mapping
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -158,9 +159,20 @@ class BoxedPlot:
     """A FLEXPART dispersion plot."""
 
     def __init__(
-        self, field: Field, config: BoxedPlotConfig, map_conf: MapAxesConf
+        self,
+        fields: Sequence[Field],
+        configs: Sequence[BoxedPlotConfig],
+        map_confs: Sequence[MapAxesConf],
     ) -> None:
         """Create an instance of ``BoxedPlot``."""
+        # SR_TMP <
+        assert len(fields) == len(map_confs)
+        if len(fields) > 1:
+            raise NotImplementedError("multiple fields")
+        field = fields[0]
+        map_conf = map_confs[0]
+        config = configs[0]
+        # SR_TMP >
         self.field = field
         self.config = config
         self.map_conf = map_conf

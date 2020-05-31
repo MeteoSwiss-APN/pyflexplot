@@ -39,11 +39,11 @@ from .setup import InputSetupCollection
 # pylint: disable=R0914  # too-many-locals
 def read_fields(
     in_file_path: str,
-    var_setups_lst: Collection[InputSetupCollection],
+    setups: InputSetupCollection,
     *,
     add_ts0: bool = False,
     dry_run: bool = False,
-) -> Tuple[List[Field], Union[List[MetaData], List[None]]]:
+) -> Tuple[List[List[Field]], Union[List[List[MetaData]], List[List[None]]]]:
     """Read fields from an input file, or multiple files derived from one path.
 
     Args:
@@ -51,8 +51,8 @@ def read_fields(
             the format key '{ens_member[:0?d]}', in which case a separate path
             is derived for each member.
 
-        var_setups_lst: List of variable setups, containing among other things
-            the ensemble member IDs in case of an ensemble simulation.
+        setups: Collection variable setups, containing among other things the
+            ensemble member IDs in case of an ensemble simulation.
 
         add_ts0: Whether to insert an additional time step 0 in the beginning
             with empty fields, given that the first data time step may not
@@ -63,47 +63,69 @@ def read_fields(
 
     """
 
-    # Prepare the file reader
-    ens_member_ids = collect_ens_member_ids(var_setups_lst)
+    def _complete_dimensions(
+        setups_in_lst_lst: Sequence[Sequence[InputSetupCollection]],
+        nc_meta_data: Mapping[str, Any],
+    ) -> List[List[InputSetupCollection]]:
+        """Set unset dimensions to available indices, expanding as necessary."""
+        setups_lst_lst: List[List[InputSetupCollection]] = []
+        for setups_in_lst in setups_in_lst_lst:
+            setups_lst_lst.append([])
+            for setups_in in setups_in_lst:
+                setups = setups_in.copy()
+                completed_dims = setups.complete_dimensions(nc_meta_data)
+                sub_setups_lst = setups.decompress_partially(
+                    completed_dims, skip=["species_id"],
+                )
+                sub_setups_lst, _sub_setups_lst_tmp = [], sub_setups_lst
+                for sub_setups in _sub_setups_lst_tmp:
+                    setups_lst_lst[-1].extend(sub_setups.decompress_species_id())
+        return setups_lst_lst
+
+    def _read_fields(
+        setups_lst_lst: Sequence[Sequence[InputSetupCollection]], reader: "FileReader",
+    ) -> Tuple[List[List[Field]], Union[List[List[MetaData]], List[List[None]]]]:
+        field_lst_lst: List[List[Field]] = []
+        mdata_lst_lst: List[List[Any]] = []
+        for sub_setups_lst in setups_lst_lst:
+            field_lst_lst.append([])
+            mdata_lst_lst.append([])
+            for sub_setups in sub_setups_lst:
+                field_lst_i, mdata_lst_i = reader.run(sub_setups)
+                assert len(field_lst_i) == 1  # SR_TMP  SR_MULTIPANEL
+                field = next(iter(field_lst_i))
+                mdata = next(iter(mdata_lst_i))
+                field_lst_lst[-1].append(field)  # SR_TMP  SR_MULTIPANEL
+                mdata_lst_lst[-1].append(mdata)  # SR_TMP  SR_MULTIPANEL
+        return field_lst_lst, mdata_lst_lst
+
+    setups_in_lst_lst = setups.decompress_thrice(
+        ["time"], ["ens_variable"], None, skip=["ens_member_id"]
+    )
+
+    ens_member_ids = collect_ens_member_ids(setups_in_lst_lst)
     reader = FileReader(in_file_path, ens_member_ids, add_ts0=add_ts0, dry_run=dry_run)
     reader.prepare()
 
-    # Set unconstrained dimensions to available indices
-    sub_setups_lst_lst: List[List[InputSetupCollection]] = []
-    for var_setups_in in var_setups_lst:
-        var_setups = var_setups_in.copy()
-        completed_dims = var_setups.complete_dimensions(reader.nc_meta_data)
-        sub_setups_lst = var_setups.decompress_partially(
-            completed_dims, skip=["species_id"],
-        )
-        sub_setups_lst, _sub_setups_lst_tmp = [], sub_setups_lst
-        for sub_setups in _sub_setups_lst_tmp:
-            sub_setups_lst.extend(sub_setups.decompress_species_id())
-        sub_setups_lst_lst.append(sub_setups_lst)
+    setups_lst_lst = _complete_dimensions(setups_in_lst_lst, reader.nc_meta_data)
+    field_lst_lst, mdata_lst_lst = _read_fields(setups_lst_lst, reader)
 
-    # Read the data
-    field_lst = []
-    mdata_lst: List[Any] = []
-    for sub_setups_lst in sub_setups_lst_lst:
-        field_lst_i, mdata_lst_i = reader.run(sub_setups_lst)
-        field_lst.extend(field_lst_i)
-        mdata_lst.extend(mdata_lst_i)
-
-    return field_lst, mdata_lst
+    return field_lst_lst, mdata_lst_lst
 
 
 def collect_ens_member_ids(
-    var_setups_lst: Collection[InputSetupCollection],
+    var_setups_lst_lst: Collection[Collection[InputSetupCollection]],
 ) -> Optional[List[int]]:
     """Collect the ensemble member ids from field specifications."""
     ens_member_ids: Optional[List[int]] = None
-    for var_setups in var_setups_lst:
-        ens_member_ids_i = var_setups.collect_equal("ens_member_id")
-        if not ens_member_ids:
-            ens_member_ids = ens_member_ids_i
-        else:
-            # Should be the same for all!
-            assert ens_member_ids_i == ens_member_ids
+    for var_setups_lst in var_setups_lst_lst:
+        for var_setups in var_setups_lst:
+            ens_member_ids_i = var_setups.collect_equal("ens_member_id")
+            if not ens_member_ids:
+                ens_member_ids = ens_member_ids_i
+            else:
+                # Should be the same for all!
+                assert ens_member_ids_i == ens_member_ids
     return ens_member_ids
 
 
@@ -167,21 +189,12 @@ class FileReader:
         self._read_nc_meta_data()
 
     def run(
-        self, var_setups_lst: Sequence[InputSetupCollection]
+        self, var_setups: InputSetupCollection
     ) -> Tuple[List[Field], Union[List[MetaData], List[None]]]:
         """Read one or more fields from a file from disc."""
         if not self.prepared:
             self.prepare()
-
-        # Collect fields and attrs
-        fields: List[Field] = []
-        mdata_lst: List[Any] = []
-        for var_setups in var_setups_lst:
-            fields_i, mdata_lst_i = self._create_fields(var_setups)
-            fields.extend(fields_i)
-            mdata_lst.extend(mdata_lst_i)
-
-        return fields, mdata_lst
+        return self._create_fields(var_setups)
 
     # SR_TMP <<< TODO eliminate or implement properly
     @property
@@ -214,19 +227,21 @@ class FileReader:
         self, var_setups: InputSetupCollection,
     ) -> Tuple[List[Field], Union[List[MetaData], List[None]]]:
         fld_time: np.ndarray
-        mdata_lst: Union[List[MetaData], List[None]]
         if self.dry_run:
             fld_time = self._create_dummy_fld()
         else:
             fld_time_mem = self._read_fld_time_mem(var_setups)
             fld_time = self._reduce_ensemble(fld_time_mem, var_setups)
         time_stats: Dict[str, np.ndarray] = self._collect_time_stats(fld_time)
-        fields: List[Field] = self._create_field_objs(var_setups, fld_time, time_stats)
+        field_lst: List[Field] = self._create_field_objs(
+            var_setups, fld_time, time_stats
+        )
+        mdata_lst: Union[List[MetaData], List[None]]
         if self.dry_run:
-            mdata_lst = [None] * len(fields)
+            mdata_lst = [None] * len(field_lst)
         else:
             mdata_lst = self._collect_meta_data(var_setups)
-        return fields, mdata_lst
+        return field_lst, mdata_lst
 
     def _read_nc_meta_data(self):
         nc_meta_data: Dict[str, Any]
@@ -447,7 +462,7 @@ class FileReader:
         """Create fields at requested time steps for all members."""
         rotated_pole = self.nc_meta_data["analysis"]["rotated_pole"]
         time_idcs = var_setups.collect_equal("time")
-        fields: List[Field] = []
+        field_lst: List[Field] = []
         for time_idx in time_idcs:
             fld: np.ndarray = fld_time[time_idx]
             field = Field(
@@ -459,8 +474,8 @@ class FileReader:
                 time_stats=time_stats,
                 nc_meta_data=self.nc_meta_data,
             )
-            fields.append(field)
-        return fields
+            field_lst.append(field)  # SR_TMP SR_MULTIPANEL
+        return field_lst
 
     def _dim_names(self) -> Dict[str, str]:
         """Model-specific dimension names."""

@@ -75,19 +75,19 @@ class _TestBase:
 
     def get_field_and_mdata(self, datadir):
         infile = f"{datadir}/{self.setup_dct['infile']}"
-
         setups = self.get_setups()
-        var_setups_lst = setups.decompress_grouped_by_time()
-
-        fields, mdata_lst = read_fields(infile, var_setups_lst, add_ts0=True)
-        assert len(fields) == len(mdata_lst) == 1
-        field = next(iter(fields))
-        mdata = next(iter(mdata_lst))
-
+        field_lst_lst, mdata_lst_lst = read_fields(infile, setups, add_ts0=True)
+        assert len(field_lst_lst) == len(mdata_lst_lst) == 1
+        assert len(field_lst_lst[0]) == 1
+        assert len(mdata_lst_lst[0]) == 1
+        field = field_lst_lst[0][0]
+        mdata = mdata_lst_lst[0][0]
         return field, mdata
 
     def get_plot(self, field, mdata):
-        outfiles, plots = zip(*plot_fields([field], [mdata], write=False))
+        field_lst_lst = [[field]]
+        mdata_lst_lst = [[mdata]]
+        outfiles, plots = zip(*plot_fields(field_lst_lst, mdata_lst_lst, write=False))
         assert len(outfiles) == len(plots) == 1
         plot = next(iter(plots))
         return plot

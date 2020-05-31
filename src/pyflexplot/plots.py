@@ -36,6 +36,7 @@ from .plot_elements import MapAxesConf
 from .plot_elements import TextBoxAxes
 from .setup import FilePathFormatter
 from .setup import InputSetup
+from .setup import InputSetupCollection
 from .typing import ColorType
 from .words import SYMBOLS
 from .words import WORDS
@@ -637,24 +638,27 @@ def fill_box_bottom(box: TextBoxAxes, plot: BoxedPlot) -> None:
 
 
 def plot_fields(
-    fields: Sequence[Field],
-    mdata_lst: Sequence[MetaData],
+    field_lst_lst: Sequence[Sequence[Field]],
+    mdata_lst_lst: Sequence[Sequence[MetaData]],
     dry_run: bool = False,
     *,
     write: bool = True,
 ) -> Iterator[Tuple[str, Optional[BoxedPlot]]]:
     """Create plots while yielding them with the plot file path one by one."""
     path_formatter = FilePathFormatter()
-    for field, mdata in zip(fields, mdata_lst):
-        setup = field.var_setups.compress()
+    for field_lst, mdata_lst in zip(field_lst_lst, mdata_lst_lst):
+        setup = InputSetupCollection(
+            [var_setup for field in field_lst for var_setup in field.var_setups]
+        ).compress()
         out_file_path = path_formatter.format(setup)
-        map_conf = create_map_conf(field)
+        map_conf_lst = [create_map_conf(field) for field in field_lst]
         if dry_run:
             plot = None
         else:
-            assert mdata is not None  # mypy
-            config = create_plot_config(setup, WORDS, SYMBOLS, mdata)
-            plot = BoxedPlot(field, config, map_conf)
+            configs = [
+                create_plot_config(setup, WORDS, SYMBOLS, mdata) for mdata in mdata_lst
+            ]
+            plot = BoxedPlot(field_lst, configs, map_conf_lst)
             plot_add_text_boxes(plot)
             plot_add_markers(plot)
             plot.save(out_file_path, write=write)
