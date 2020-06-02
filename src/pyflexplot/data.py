@@ -124,6 +124,29 @@ class Field:
         if self.fld.shape[-2:] != grid_shape:
             raise InconsistentArrayShapesError(f"{self.fld.shape} != {grid_shape}")
 
+    def __repr__(self):
+        head = f"{type(self).__name__}("
+        foot = ")"
+        lines = [
+            (
+                f"fld=array[shape={self.fld.shape}, dtype={self.fld.dtype}],"
+                f" lat=array[shape={self.lat.shape}, dtype={self.lat.dtype}],"
+                f" lon=array[shape={self.lon.shape}, dtype={self.lon.dtype}],"
+                f" rotated_pole={self.rotated_pole},"
+            ),
+            f"var_setups={self.var_setups},",
+            (
+                f"time_stats=dict[n={len(self.time_stats)},"
+                f" keys={tuple(self.time_stats)}],"
+            ),
+            (
+                f"nc_meta_data=dict[n={len(self.nc_meta_data)},"
+                f" keys={tuple(self.nc_meta_data)}],"
+            ),
+        ]
+        body = "\n".join(["  " + line.replace("\n", "\n  ") for line in lines])
+        return "\n".join([head, body, foot])
+
     def locate_max(self) -> Tuple[float, float]:
         if np.isnan(self.fld).all():
             raise FieldAllNaNError(self.fld.shape)
