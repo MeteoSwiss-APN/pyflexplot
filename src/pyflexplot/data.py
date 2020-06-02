@@ -16,6 +16,9 @@ from typing import Union
 # Third-party
 import numpy as np
 
+# First-party
+from srutils.str import join_multilines
+
 # Local
 from .setup import InputSetupCollection
 from .summarize import default_summarize
@@ -125,8 +128,6 @@ class Field:
             raise InconsistentArrayShapesError(f"{self.fld.shape} != {grid_shape}")
 
     def __repr__(self):
-        head = f"{type(self).__name__}("
-        foot = ")"
         lines = [
             (
                 f"fld=array[shape={self.fld.shape}, dtype={self.fld.dtype}],"
@@ -140,12 +141,12 @@ class Field:
                 f" keys={tuple(self.time_stats)}],"
             ),
             (
-                f"nc_meta_data=dict[n={len(self.nc_meta_data)},"
-                f" keys={tuple(self.nc_meta_data)}],"
+                f"nc_meta_data="
+                f"dict[n={len(self.nc_meta_data)}, keys={tuple(self.nc_meta_data)}],"
             ),
         ]
-        body = "\n".join(["  " + line.replace("\n", "\n  ") for line in lines])
-        return "\n".join([head, body, foot])
+        body = join_multilines(lines, indent=2)
+        return "\n".join([f"{type(self).__name__}(", body, ")"])
 
     def locate_max(self) -> Tuple[float, float]:
         if np.isnan(self.fld).all():
