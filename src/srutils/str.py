@@ -179,16 +179,14 @@ def ordinal(i):
     return f"{i}{sfx}"
 
 
-def join_multilines(
-    lines: Sequence[str], *, indent: int = 0, sub_indent: int = 0
-) -> str:
+def join_multilines(lines: Sequence[str], *, indent: int = 0) -> str:
     """Join multi-line blocks, indenting each line in the blocks."""
     s_lines = []
     for line in lines:
         s_sub_lines = []
         for sub_line in line.split("\n"):
-            s_sub_line = " " * sub_indent + sub_line
+            s_sub_line = " " * indent + sub_line
             s_sub_lines.append(s_sub_line)
-        s_line = " " * indent + "\n".join(s_sub_lines)
+        s_line = "\n".join(s_sub_lines)
         s_lines.append(s_line)
     return "\n".join(s_lines)

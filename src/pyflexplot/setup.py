@@ -741,7 +741,7 @@ class InputSetupCollection:
             return f"{name}: {body}"
 
         lines = [format_params(same, "same"), format_params(diff, "diff")]
-        body = join_multilines(lines, sub_indent=2)
+        body = join_multilines(lines, indent=2)
 
         return "\n".join([f"{type(self).__name__}[", body, "]"])
 
