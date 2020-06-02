@@ -715,10 +715,16 @@ class InputSetupCollection:
         return type(self)([setup.copy() for setup in self])
 
     def __repr__(self) -> str:
-        s_setups = "\n  ".join(
-            [""] + [re.sub(r" *\n +", " ", str(setup)) for setup in self._setups]
-        )  # SR_TODO clean this up
-        return f"{type(self).__name__}([{s_setups}\n])"
+        s_setups_lst = []
+        for setup in self._setups:
+            s_setup = re.sub(r"\(\n *", "(", str(setup))
+            s_setup = re.sub(r",\n *", ", ", s_setup)
+            s_setup = re.sub(r", +\)", ")", s_setup)
+            s_setups_lst.append(f"  {s_setup},")
+        body = "\n".join(s_setups_lst)
+        head = f"{type(self).__name__}(["
+        foot = "])"
+        return f"{head}\n{body}\n{foot}"
 
     def __len__(self) -> int:
         return len(self._setups)
