@@ -12,6 +12,9 @@ from typing import Dict
 from typing import Iterator
 from typing import List
 from typing import Mapping
+from typing import Optional
+from typing import Pattern
+from typing import Sequence
 from typing import Union
 
 # Third-party
@@ -53,33 +56,38 @@ def collect_preset_paths() -> Iterator[Path]:
         yield Path(path)
 
 
-def collect_preset_files(
-    pattern: Union[str, Collection[str]] = "*"
-) -> Dict[Path, Dict[str, Path]]:
-    """Collect all setup files in locations specified in ``preset_paths``."""
-    if isinstance(pattern, str):
-        patterns = [pattern]
-    else:
-        patterns = list(pattern)
+def compile_patterns(patterns: Collection[str]) -> List[Pattern]:
     rx_patterns = []
-    for pattern_i in patterns:
+    for pattern in patterns:
         ch = "[a-zA-Z0-9_.-/]"
         rx_pattern = re.compile(
-            r"\A" + pattern_i.replace("*", f"{ch}*").replace("?", ch) + r"\Z"
+            r"\A" + pattern.replace("*", f"{ch}*").replace("?", ch) + r"\Z"
         )
         rx_patterns.append(rx_pattern)
+    return rx_patterns
+
+
+def collect_preset_files(
+    patterns: Collection[str] = "*", antipatterns: Optional[Collection[str]] = None,
+) -> Dict[Path, Dict[str, Path]]:
+    """Collect all setup files in locations specified in ``preset_paths``."""
+    rx_patterns = compile_patterns(patterns)
+    rx_antipatterns = [] if antipatterns is None else compile_patterns(antipatterns)
     files_by_preset_path = {}  # type: ignore
     for preset_path in collect_preset_paths():
         files_by_preset_path[preset_path] = {}
         for file_path in sorted(preset_path.rglob("*.toml")):
             file_path_rel = file_path.relative_to(preset_path)
             name = str(file_path_rel)[: -len(file_path.suffix)]
-            for rx_pattern in rx_patterns:
-                if rx_pattern.match(name):
+            for rx in rx_antipatterns:
+                if rx.match(name):
+                    break
+            for rx in rx_patterns:
+                if rx.match(name):
                     files_by_preset_path[preset_path][name] = file_path
                     break
         if not files_by_preset_path[preset_path]:
-            raise NoPresetFileFoundError(pattern, preset_path)
+            raise NoPresetFileFoundError(patterns, preset_path)
     return files_by_preset_path
 
 
@@ -90,13 +98,13 @@ def click_add_to_preset_paths(ctx: Context, param: ClickParamType, value: Any) -
     add_to_preset_paths(value)
 
 
-def collect_preset_files_flat(name: str) -> Dict[str, Path]:
-    files_by_dir = collect_preset_files(name)
+def collect_preset_files_flat(pattern: str) -> Dict[str, Path]:
+    files_by_dir = collect_preset_files([pattern])
     named_paths = {
         name: path for files in files_by_dir.values() for name, path in files.items()
     }
     if not named_paths:
-        raise NoPresetFileFoundError(name, files_by_dir)
+        raise NoPresetFileFoundError(pattern, files_by_dir)
     return named_paths
 
 
@@ -127,6 +135,8 @@ def click_find_presets_and_exit(
     """Find preset setup file(s) by name (optional wildcards) and exit."""
     if not value:
         return
+    assert isinstance(value, Sequence)  # mypy
+    assert isinstance(value[0], str)  # mypy
     _click_list_presets(ctx, collect_preset_files(value))
     ctx.exit(0)
 
@@ -151,20 +161,26 @@ def click_cat_preset_and_exit(ctx: Context, param: ClickParamType, value: Any) -
 def click_use_preset(ctx: Context, param: ClickParamType, value: Any) -> None:
     if not value:
         return
+
     if value == ("?",):
         click.echo("Available presets ('?'):")
         click_find_presets_and_exit(ctx, param, "*")
+
+    patterns: Sequence[str] = value
+    antipatterns: Sequence[str] = ctx.params.get("preset_skip", [])
+
     key = "preset_setup_file_paths"
     if key not in ctx.obj:
         ctx.obj[key] = []
-    for name in value:
+
+    for pattern in patterns:
         try:
-            files_by_preset_path = collect_preset_files(name)
+            files_by_preset_path = collect_preset_files([pattern], antipatterns)
         except NoPresetFileFoundError:
             click.echo(
-                f"Error: No preset setup file found for '{name}'.", file=sys.stderr,
+                f"Error: No preset setup file found for '{pattern}'.", file=sys.stderr,
             )
-            _click_propose_alternatives(name)
+            _click_propose_alternatives(pattern)
             ctx.exit(1)
         else:
             n = sum([len(files) for files in files_by_preset_path.values()])

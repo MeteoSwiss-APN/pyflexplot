@@ -105,36 +105,49 @@ def prepare_input_setup_params(ctx, param, value):
 @click.option(
     "--preset",
     help=(
-        "Run with preset setup file(s) matching name (may contain wildcards)."
-        " A single '?' serves as a shortcut to --list-setups."
+        "Run with preset setup files matching PATTERN (wildcards: '*', '?')."
+        " A single '?' lists all available setups (like --setup-list)."
     ),
-    metavar="NAME",
+    metavar="PATTERN",
     multiple=True,
     callback=click_use_preset,
     expose_value=False,
 )
 @click.option(
-    "--cat-preset",
-    help="Show the content of a preset setup file.",
-    metavar="NAME",
+    "--preset-skip",
+    help=(
+        "Among preset setup files specified with --preset, skip those matching "
+        " PATTERN (wildcards: '*', '?')."
+    ),
+    metavar="PATTERN",
+    multiple=True,
+    is_eager=True,
+)
+@click.option(
+    "--preset-cat",
+    help=(
+        "Show the contents of preset setup files matching PATTERN (wildcards:"
+        " '*', '?')."
+    ),
+    metavar="PATTERN",
     callback=click_cat_preset_and_exit,
     expose_value=False,
 )
 @click.option(
-    "--list-presets",
+    "--preset-list",
     help="List the names of all preset setup files.",
     callback=click_list_presets_and_exit,
     is_flag=True,
 )
 @click.option(
-    "--find-presets",
+    "--preset-find",
     help="List preset setup file(s) by name (may contain wildcards).",
     metavar="NAME",
     callback=click_find_presets_and_exit,
     multiple=True,
 )
 @click.option(
-    "--add-presets",
+    "--preset-add",
     help="Add a directory containing preset setup files.",
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
     callback=click_add_to_preset_paths,
@@ -177,8 +190,16 @@ def prepare_input_setup_params(ctx, param, value):
 @click.pass_context
 # pylint: disable=R0913  # too-many-arguments
 # pylint: disable=R0912  # too-many-branches
+# pylint: disable=W0613  # unused-argument (preset_skip)
 def cli(
-    ctx, setup_file_paths, input_setup_params, dry_run, only, each_only, **cli_args
+    ctx,
+    setup_file_paths,
+    input_setup_params,
+    dry_run,
+    only,
+    each_only,
+    preset_skip,
+    **cli_args,
 ):
     """Create dispersion plot as specified in CONFIG_FILE(S)."""
 
