@@ -15,7 +15,7 @@ from typing import Dict
 import pytest  # type: ignore
 
 # First-party
-from pyflexplot.io import read_fields
+from pyflexplot.input import read_fields
 from pyflexplot.plots import plot_fields
 from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
@@ -68,6 +68,7 @@ class _TestBase:
 
     reference: str
     setup_dct: Dict[str, Any]
+    n_plots: int = 1
 
     def get_setups(self):
         setup = InputSetup(**self.setup_dct)
@@ -77,12 +78,14 @@ class _TestBase:
         infile = f"{datadir}/{self.setup_dct['infile']}"
         setups = self.get_setups()
         field_lst_lst, mdata_lst_lst = read_fields(infile, setups, add_ts0=True)
-        assert len(field_lst_lst) == len(mdata_lst_lst) == 1
-        assert len(field_lst_lst[0]) == 1
-        assert len(mdata_lst_lst[0]) == 1
-        field = field_lst_lst[0][0]
-        mdata = mdata_lst_lst[0][0]
-        return field, mdata
+        assert len(field_lst_lst) == len(mdata_lst_lst) == self.n_plots
+        for field_lst, mdata_lst in zip(field_lst_lst, mdata_lst_lst):
+            # SR_TODO Consider support for multipanel plots!
+            assert len(field_lst) == 1
+            assert len(mdata_lst) == 1
+            field = field_lst[0]
+            mdata = mdata_lst[0]
+            yield (field, mdata)
 
     def get_plot(self, field, mdata):
         field_lst_lst = [[field]]
@@ -100,23 +103,24 @@ class _TestBase:
         return ref
 
     def test(self, datadir):
-        field, mdata = self.get_field_and_mdata(datadir)
-        res = field.summarize()
-        sol = self.get_reference("field_summary")
-        try:
-            assert_nested_equal(res, sol, float_close_ok=True)
-        except AssertionError as e:
-            msg = f"field summaries differ (result vs. solution):\n\n {e}"
-            raise AssertionError(msg) from None
+        for field, mdata in self.get_field_and_mdata(datadir):
+            res = field.summarize()
+            # SR_TODO Add support for multiple plots!
+            sol = self.get_reference("field_summary")
+            try:
+                assert_nested_equal(res, sol, float_close_ok=True)
+            except AssertionError as e:
+                msg = f"field summaries differ (result vs. solution):\n\n {e}"
+                raise AssertionError(msg)
 
-        plot = self.get_plot(field, mdata)
-        res = plot.summarize()
-        sol = self.get_reference("plot_summary")
-        try:
-            assert_nested_equal(res, sol, float_close_ok=True)
-        except AssertionError as e:
-            msg = f"plot summaries differ (result vs. solution):\n\n{e}"
-            raise AssertionError(msg) from None
+            plot = self.get_plot(field, mdata)
+            res = plot.summarize()
+            sol = self.get_reference("plot_summary")
+            try:
+                assert_nested_equal(res, sol, float_close_ok=True)
+            except AssertionError as e:
+                msg = f"plot summaries differ (result vs. solution):\n\n{e}"
+                raise AssertionError(msg)
 
 
 class ReferenceFileCreationSuccess(Exception):

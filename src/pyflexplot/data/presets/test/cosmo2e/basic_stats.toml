@@ -20,7 +20,8 @@ integrate = true
 
 [_base._total_deposition]
 input_variable = "deposition"
-deposition_type = "tot"
+deposition_type = ["dry", "wet"]
+combine_deposition_types = true
 species_id = 1
 integrate = true
 

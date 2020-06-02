@@ -1,5 +1,1 @@
-test_io/io_utils.py
-test_io/test_read_field_ensemble.py
-test_io/test_read_field.py
-test_io/test_read_meta_data.py
-test_io/utils.py
+< test_read_fields/session

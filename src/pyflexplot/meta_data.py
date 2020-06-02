@@ -995,8 +995,7 @@ def nc_var_name(setup: InputSetup, model: str) -> Union[str, List[str]]:
         else:
             raise ValueError("unknown model", model)
     elif setup.input_variable == "deposition":
-        assert isinstance(setup.deposition_type, str)  # mypy
-        prefix = {"wet": "WD", "dry": "DD"}[setup.deposition_type]
+        prefix = {"wet": "WD", "dry": "DD"}[setup.deposition_type_str]
         return f"{prefix}_spec{species_id:03d}"
     raise ValueError("unknown variable", setup.input_variable)
 

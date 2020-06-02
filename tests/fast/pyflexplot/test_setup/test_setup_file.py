@@ -112,7 +112,8 @@ def test_multiple_nested_sections(tmp_path):
 
         [_base._dep]
         input_variable = "deposition"
-        deposition_type = "tot"
+        deposition_type = ["dry", "wet"]
+        combine_deposition_types = true
 
         [_base._dep._tot._ch.en]
         domain = "ch"
@@ -142,19 +143,24 @@ def test_multiple_nested_sections(tmp_path):
     sol_base = {
         **DEFAULT_KWARGS,
         "input_variable": "deposition",
-        "deposition_type": "tot",
+        "deposition_type": ("dry", "wet"),
+        "combine_deposition_types": True,
         "level": None,
         "lang": "de",
     }
     sol_specific = [
-        {"input_variable": "concentration", "deposition_type": "none"},
+        {
+            "input_variable": "concentration",
+            "deposition_type": None,
+            "combine_deposition_types": False,
+        },
         {"domain": "ch", "lang": "en"},
         {"domain": "ch", "lang": "de"},
         {"domain": "auto", "lang": "en"},
         {"domain": "auto", "lang": "de"},
-        {"deposition_type": "wet"},
-        {"deposition_type": "wet", "lang": "en"},
-        {"deposition_type": "wet", "lang": "de"},
+        {"deposition_type": ("wet",)},
+        {"deposition_type": ("wet",), "lang": "en"},
+        {"deposition_type": ("wet",), "lang": "de"},
     ]
     sol = [{**DEFAULT_SETUP.dict(), **sol_base, **d} for d in sol_specific]
     setups = read_tmp_setup_file(tmp_path, content)
@@ -173,7 +179,8 @@ def test_multiple_override(tmp_path):
 
         [_base._dep]
         input_variable = "deposition"
-        deposition_type = "tot"
+        deposition_type = ["dry", "wet"]
+        combine_deposition_types = true
 
         [_base._dep._tot._ch.en]
         domain = "ch"
@@ -208,16 +215,21 @@ def test_multiple_override(tmp_path):
         **DEFAULT_KWARGS,
         "infile": "foo.nc",
         "input_variable": "deposition",
-        "deposition_type": "tot",
+        "deposition_type": ("dry", "wet"),
+        "combine_deposition_types": True,
         "level": None,
         "lang": "de",
     }
     sol_specific = [
-        {"input_variable": "concentration", "deposition_type": "none"},
+        {
+            "input_variable": "concentration",
+            "deposition_type": None,
+            "combine_deposition_types": False,
+        },
         {"domain": "ch", "lang": "de"},
         {"domain": "auto", "lang": "de"},
-        {"deposition_type": "wet"},
-        {"deposition_type": "wet", "lang": "de"},
+        {"deposition_type": ("wet",)},
+        {"deposition_type": ("wet",), "lang": "de"},
     ]
     sol = [{**DEFAULT_SETUP.dict(), **sol_base, **d} for d in sol_specific]
     setups = read_tmp_setup_file(tmp_path, content, override=override)

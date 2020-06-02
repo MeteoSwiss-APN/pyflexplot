@@ -228,7 +228,7 @@ def create_plot_config(
 
     elif setup.input_variable == "deposition":
         dep_type_word = (
-            "total" if setup.deposition_type == "tot" else setup.deposition_type
+            "total" if setup.deposition_type_str == "tot" else setup.deposition_type_str
         )
         var_name = f"{words[dep_type_word, 'f']} {words['surface_deposition']}"
         long_name = var_name

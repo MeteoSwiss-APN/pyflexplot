@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tests for module ``pyflexplot.io``.
+Tests for function ``pyflexplot.input.read_fields`` for ensemble data.
 """
 # Standard library
 import functools
@@ -10,13 +10,14 @@ import numpy as np
 
 # First-party
 from pyflexplot.data import ensemble_probability
-from pyflexplot.io import read_fields
+from pyflexplot.input import read_fields
 from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
 from srutils.dict import decompress_multival_dict
 
-from io_utils import read_nc_var  # isort:skip
-from utils import datadir  # noqa:F401 isort:skip
+# Local  isort:skip
+from shared import read_nc_var  # isort:skip
+from shared import datadir  # noqa:F401 isort:skip
 
 
 def get_var_name_ref(setup, var_names_ref):
@@ -25,7 +26,10 @@ def get_var_name_ref(setup, var_names_ref):
         return next(iter(var_names_ref))
     elif setup.input_variable == "deposition":
         for var_name in var_names_ref:
-            if (setup.deposition_type, var_name[:2]) in [("dry", "DD"), ("wet", "WD")]:
+            if (setup.deposition_type_str, var_name[:2]) in [
+                ("dry", "DD"),
+                ("wet", "WD"),
+            ]:
                 return var_name
     raise NotImplementedError(f"{setup}")
 
@@ -95,7 +99,7 @@ class TestReadFieldEnsemble_Single:
         fld = field_lst_lst[0][0].fld
 
         # SR_TMP <
-        var_setups_lst = setups.decompress_twice(["time"], None, ["ens_member_id"])
+        var_setups_lst = setups.decompress_twice("time", skip=["ens_member_id"])
         assert len(var_setups_lst) == 1
         var_setups = next(iter(var_setups_lst))
         setups = var_setups.compress().decompress_partially(
@@ -207,7 +211,7 @@ class TestReadFieldEnsemble_Multiple:
         )
         if separate:
             # Process field specifications one after another
-            var_setups_lst = setups.decompress_twice(["time"], None, ["ens_member_id"])
+            var_setups_lst = setups.decompress_twice("time", skip=["ens_member_id"])
             for var_setups in var_setups_lst:
                 run_core(var_setups)
         else:
@@ -306,7 +310,11 @@ class TestReadFieldEnsemble_Multiple:
                 f"WD_spec{self.species_id:03d}",
                 f"DD_spec{self.species_id:03d}",
             ],
-            setup_params={"input_variable": "deposition", "deposition_type": "tot"},
+            setup_params={
+                "input_variable": "deposition",
+                "deposition_type": ("dry", "wet"),
+                "combine_deposition_types": True,
+            },
             ens_var=ens_var,
             fct_reduce_mem=fct_reduce_mem,
         )

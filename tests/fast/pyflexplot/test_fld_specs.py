@@ -27,7 +27,7 @@ class Test_Create_Concentration:
         """Single-value-only var specs, for one field, made of one var."""
         setup = self.setup.derive({"species_id": 1, "level": 0})
         setups = InputSetupCollection([setup])
-        var_setups_lst = setups.decompress_twice(["time"], None, ["ens_member_id"])
+        var_setups_lst = setups.decompress_twice("time", skip=["ens_member_id"])
         check_is_list_like(
             var_setups_lst, len_=self.n_vs, t_children=InputSetupCollection,
         )
@@ -44,7 +44,7 @@ class Test_Create_Concentration:
                 {"species_id": 2, "level": 1},
             ]
         )
-        var_setups_lst = setups.decompress_twice(["time"], None, ["ens_member_id"])
+        var_setups_lst = setups.decompress_twice("time", skip=["ens_member_id"])
         check_is_list_like(var_setups_lst, len_=4, t_children=InputSetupCollection)
         for var_setups in var_setups_lst:
             assert len(var_setups) == 1
@@ -53,7 +53,7 @@ class Test_Create_Concentration:
         """Multi-value var specs, for one field, made of multiple vars."""
         setup = self.setup.derive({"species_id": (1, 2), "level": (0, 1)})
         setups = InputSetupCollection([setup])
-        var_setups_lst = setups.decompress_twice(["time"], None, ["ens_member_id"])
+        var_setups_lst = setups.decompress_twice("time", skip=["ens_member_id"])
         check_is_list_like(var_setups_lst, len_=1, t_children=InputSetupCollection)
         var_setups = next(iter(var_setups_lst))
         assert len(var_setups) == 4
@@ -76,7 +76,7 @@ class Test_Create_Deposition:
         """Single-value-only var specs, for one field, made of one var."""
         setup = self.setup.derive({"time": 1, "species_id": 1})
         setups = InputSetupCollection([setup])
-        var_setups_lst = setups.decompress_twice(["time"], None, ["ens_member_id"])
+        var_setups_lst = setups.decompress_twice("time", skip=["ens_member_id"])
         check_is_list_like(var_setups_lst, len_=1, t_children=InputSetupCollection)
         var_setups = next(iter(var_setups_lst))
         assert len(var_setups) == self.n_vs
@@ -90,7 +90,7 @@ class Test_Create_Deposition:
                 {"time": [0, 1, 2], "species_id": 2},
             ]
         )
-        var_setups_lst = setups.decompress_twice(["time"], None, ["ens_member_id"])
+        var_setups_lst = setups.decompress_twice("time", skip=["ens_member_id"])
         check_is_list_like(var_setups_lst, len_=n, t_children=InputSetupCollection)
         for var_setups in var_setups_lst:
             assert len(var_setups) == self.n_vs
@@ -98,9 +98,15 @@ class Test_Create_Deposition:
     def test_one_fld_many_vars(self):
         """Multi-value var specs, for one field, made of multiple vars."""
         n_vs = self.n_vs * 4
-        setup = self.setup.derive({"deposition_type": "tot", "species_id": [1, 2]})
+        setup = self.setup.derive(
+            {
+                "deposition_type": ("dry", "wet"),
+                "combine_deposition_types": True,
+                "species_id": [1, 2],
+            }
+        )
         setups = InputSetupCollection([setup])
-        var_setups_lst = setups.decompress_twice(["time"], None, ["ens_member_id"])
+        var_setups_lst = setups.decompress_twice("time", skip=["ens_member_id"])
         check_is_list_like(var_setups_lst, len_=1, t_children=InputSetupCollection)
         var_setups = next(iter(var_setups_lst))
         assert len(var_setups) == n_vs

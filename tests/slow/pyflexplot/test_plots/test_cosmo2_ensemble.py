@@ -63,7 +63,7 @@ class Test_EnsMean_TotalDeposition(_TestBase):
         "outfile": "plot.png",
         "ens_variable": "mean",
         "input_variable": "deposition",
-        "deposition_type": "tot",
+        "combine_deposition_types": True,
         "integrate": True,
         "combine_species": True,
         "ens_member_id": ENS_MEMBER_IDS,
@@ -85,7 +85,8 @@ class Test_EnsMean_TotalDeposition(_TestBase):
 #          "input_variable": "deposition",
 #          "ens_variable": "minimum",
 #          "plot_variable": "affected_area",
-#          "deposition_type": "tot",
+#          "deposition_type": ["dry", "wet"],
+#          "combine_deposition_types": True,
 #          "integrate": True,
 #          "combine_species": True,
 #          "ens_member_id": ENS_MEMBER_IDS,
@@ -96,7 +97,6 @@ class Test_EnsMean_TotalDeposition(_TestBase):
 #      }
 
 
-# @pytest.mark.skip("WIP")
 # class Test_CloudArrivalTime(_TestCreatePlot):
 # class Test_CloudArrivalTime(_TestCreateReference):
 class Test_CloudArrivalTime(_TestBase):
@@ -118,7 +118,7 @@ class Test_CloudArrivalTime(_TestBase):
     }
 
 
-@pytest.mark.skip("WIP")
+@pytest.mark.skip(f"{__file__.split('/')[-1]}::Test_CloudDepartureTime: WIP")
 # class Test_CloudDepartureTime(_TestCreatePlot):
 # class Test_CloudDepartureTime(_TestCreateReference):
 class Test_CloudDepartureTime(_TestBase):

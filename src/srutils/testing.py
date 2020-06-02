@@ -367,6 +367,7 @@ def assert_nested_equal(
 
         if isinstance(obj1, str):
             check_equivalent(obj1, obj2, str, path)
+            # Must be unequal, otherwise already returned above
             raise error("unequal strings", path, obj1, obj2)
         elif isinstance(obj1, Mapping):
             check_equivalent(obj1, obj2, Mapping, path)

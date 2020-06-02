@@ -17,7 +17,7 @@ from srutils.click import CharSepList
 # Local
 from . import __version__
 from . import data_path
-from .io import read_fields
+from .input import read_fields
 from .plots import plot_fields
 from .preset import add_to_preset_paths
 from .preset import click_add_to_preset_paths
@@ -244,6 +244,8 @@ def cli(
     n_in = len(setups_by_infile)
     i_tot = -1
     for i_in, (in_file_path, sub_setups) in enumerate(setups_by_infile.items()):
+        if ctx.obj["verbosity"] > 0:
+            click.echo(f"[{i_in + 1}/{n_in}] input: {in_file_path}")
 
         # Read input fields
         field_lst_lst, mdata_lst_lst = read_fields(

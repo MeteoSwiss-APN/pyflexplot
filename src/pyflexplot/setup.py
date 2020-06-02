@@ -57,12 +57,16 @@ class InputSetup(BaseModel):
         nageclass: Index of age class (zero-based). Use the format key
             '{nageclass}' to embed it in ``outfile``.
 
+        combine_deposition_types: Sum up dry and wet deposition. Otherwise, each
+            is plotted separately.
+
         combine_species: Sum up over all specified species. Otherwise, each is
             plotted separately.
 
-        deposition_type: Type of deposition. Part of the plot variable name
+        deposition_type: Type(s) of deposition. Part of the plot variable name
             that may be embedded in ``outfile`` with the format key
-            '{variable}'. Choices: "tot", "wet", "dry", "none".
+            '{variable}'. Choices: "none", "dry", "wet" (the latter may can be
+            combined).
 
         domain: Plot domain. Defaults to 'data', which derives the domain size
             from the input data. Use the format key '{domain}' to embed it in
@@ -140,7 +144,8 @@ class InputSetup(BaseModel):
     multipanel_param: Optional[str] = None
 
     # Tweaks
-    deposition_type: Union[str, Tuple[str, str]] = "none"
+    combine_deposition_types: bool = False
+    deposition_type: Optional[Union[Tuple[str], Tuple[str, str]]] = None
     integrate: bool = False
     combine_species: bool = False
 
@@ -249,13 +254,12 @@ class InputSetup(BaseModel):
         return values
 
     @validator("deposition_type", always=True)
-    def _init_deposition_type(cls, value: Union[str, Tuple[str, str]]) -> str:
-        if value in ["dry", "wet", "tot", "none"]:
-            assert isinstance(value, str)  # mypy
-            return value
-        elif set(value) == {"dry", "wet"}:
-            return "tot"
-        raise ValueError("deposition_type is invalid", value)
+    def _check_deposition_type(
+        cls, value: Optional[Union[Tuple[str], Tuple[str, str]]]
+    ) -> Optional[Union[Tuple[str], Tuple[str, str]]]:
+        if value is not None:
+            assert set(value) in [{"dry"}, {"wet"}, {"dry", "wet"}]
+        return value
 
     @validator("ens_param_mem_min", always=True)
     def _init_ens_param_mem_min(
@@ -303,6 +307,22 @@ class InputSetup(BaseModel):
         return value
 
     # SR_TMP <<<
+    @property
+    def deposition_type_str(self) -> str:
+        if self.deposition_type is None:
+            if self.input_variable == "deposition":
+                return "tot"
+            return None
+        elif set(self.deposition_type) == {"dry", "wet"}:
+            return "tot"
+        elif self.deposition_type == ("dry",):
+            return "dry"
+        elif self.deposition_type == ("wet",):
+            return "wet"
+        else:
+            raise NotImplementedError(self.deposition_type)
+
+    # SR_TMP <<<
     def get_simulation_type(self) -> str:
         if self.ens_member_id:
             return "ensemble"
@@ -335,7 +355,7 @@ class InputSetup(BaseModel):
             except ValidationError as e:
                 # Conversion failed, so let's try something else!
                 error_type = e.errors()[0]["type"]
-                if error_type == "type_error.sequence":
+                if error_type in ["type_error.sequence", "type_error.tuple"]:
                     try:
                         # Try again, with the value in a sequence
                         parse_obj_as(field_type, [value])
@@ -424,51 +444,50 @@ class InputSetup(BaseModel):
 
     # SR_TODO consider renaming this method (sth. containing 'dimensions')
     # pylint: disable=R0912  # too-many-branches
-    def complete_dimensions(self, meta_data: Mapping[str, Any]) -> List[str]:
+    def complete_dimensions(self, meta_data: Mapping[str, Any]) -> "InputSetup":
+        """Complete unconstrained dimensions based on available indices."""
         dimensions = meta_data["dimensions"]
-        completed = []
+        obj = self.copy()
 
-        if self.time is None:
-            self.time = tuple(range(dimensions["time"]["size"]))
-            completed.append("time")
+        if obj.time is None:
+            obj.time = tuple(range(dimensions["time"]["size"]))
 
-        # SR_TMP < does this belong here?
+        # SR_TMP < does this belong here? and what does it do? TODO explain!
         nts = dimensions["time"]["size"]
         time_new = []
-        for its in self.time:
+        for its in obj.time:
             if its < 0:
                 its += nts
                 assert 0 <= its < nts
             time_new.append(its)
-        self.time = tuple(time_new)
+        obj.time = tuple(time_new)
         # SR_TMP >
 
-        if self.level is None:
-            if self.input_variable == "concentration":
+        if obj.level is None:
+            if obj.input_variable == "concentration":
                 if "level" in dimensions:
-                    self.level = tuple(range(dimensions["level"]["size"]))
-                    completed.append("level")
+                    obj.level = tuple(range(dimensions["level"]["size"]))
 
-        if self.species_id is None:
-            self.species_id = meta_data["analysis"]["species_ids"]
-            completed.append("species_id")
+        if obj.deposition_type is None:
+            if obj.input_variable == "deposition":
+                obj.deposition_type = ("dry", "wet")  # SR_HARDCODED
 
-        if self.nageclass is None:
+        if obj.species_id is None:
+            obj.species_id = meta_data["analysis"]["species_ids"]
+
+        if obj.nageclass is None:
             if "nageclass" in dimensions:
-                self.nageclass = tuple(range(dimensions["nageclass"]["size"]))
-                completed.append("nageclass")
+                obj.nageclass = tuple(range(dimensions["nageclass"]["size"]))
 
-        if self.noutrel is None:
+        if obj.noutrel is None:
             if "noutrel" in dimensions:
-                self.noutrel = tuple(range(dimensions["noutrel"]["size"]))
-                completed.append("nageclass")
+                obj.noutrel = tuple(range(dimensions["noutrel"]["size"]))
 
-        if self.numpoint is None:
+        if obj.numpoint is None:
             if "numpoint" in dimensions:
-                self.numpoint = tuple(range(dimensions["numpoint"]["size"]))
-                completed.append("numpoint")
+                obj.numpoint = tuple(range(dimensions["numpoint"]["size"]))
 
-        return completed
+        return obj
 
     def __repr__(self) -> str:  # type: ignore
         return setup_repr(self)
@@ -543,8 +562,16 @@ class InputSetup(BaseModel):
             setup_lst.append(cls.create(dct))
         return InputSetupCollection(setup_lst)
 
-    def decompress(self) -> "CoreInputSetupCollection":
-        return self._decompress(None, None)
+    @overload
+    def decompress(self, skip: None) -> "CoreInputSetupCollection":
+        ...
+
+    @overload
+    def decompress(self, skip: List[str]) -> "InputSetupCollection":
+        ...
+
+    def decompress(self, skip=None):
+        return self._decompress(select=None, skip=skip)
 
     def decompress_partially(
         self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None,
@@ -620,11 +647,10 @@ class InputSetup(BaseModel):
         dct = self.dict()
 
         # Handle deposition type
-        expand_deposition_type = (
-            select is None or "deposition_type" in select
-        ) and "deposition_type" not in (skip or [])
-        if expand_deposition_type and dct["deposition_type"] == "tot":
-            dct["deposition_type"] = ("dry", "wet")
+        if self.deposition_type_str == "tot":
+            if select is None or "deposition_type" in select:
+                if "deposition_type" not in (skip or []):
+                    dct["deposition_type"] = ("dry", "wet")
 
         # Decompress dict
         dcts = decompress_multival_dict(dct, select=select, skip=skip)
@@ -654,7 +680,8 @@ class CoreInputSetup(BaseModel):
     multipanel_param: Optional[str] = None
 
     # Tweaks
-    deposition_type: str = "none"
+    deposition_type: Optional[str] = None
+    combine_deposition_types: bool = False
     integrate: bool = False
     combine_species: bool = False
 
@@ -735,12 +762,16 @@ class InputSetupCollection:
             for param, value in params.items():
                 s_value = f"'{value}'" if isinstance(value, str) else str(value)
                 lines.append(f"{param}={s_value}")
-            # body = join_lines(lines, sub_indent=2)
+            # body = join_lines(lines, indent=2) if lines else "--"
             # return f"{head}\n{body}"
-            body = ", ".join(lines)
+            body = ", ".join(lines) if lines else "--"
             return f"{name}: {body}"
 
-        lines = [format_params(same, "same"), format_params(diff, "diff")]
+        lines = [
+            f"n: {len(self)}",
+            format_params(same, "same"),
+            format_params(diff, "diff"),
+        ]
         body = join_multilines(lines, indent=2)
 
         return "\n".join([f"{type(self).__name__}[", body, "]"])
@@ -768,12 +799,16 @@ class InputSetupCollection:
     def compress(self) -> InputSetup:
         return InputSetup.compress(self)
 
+    def decompress(
+        self, skip: Optional[Collection[str]] = None
+    ) -> List["InputSetupCollection"]:
+        return self.decompress_partially(select=None, skip=skip)
+
     def decompress_partially(
         self, select: Collection[str], skip: Optional[Collection[str]] = None,
     ) -> List["InputSetupCollection"]:
-        setups = self._setups
         sub_setup_lst_lst: List[List[InputSetup]] = []
-        for setup in setups:
+        for setup in self._setups:
             sub_setups = setup.decompress_partially(select, skip)
             if not sub_setup_lst_lst:
                 sub_setup_lst_lst = [[sub_setup] for sub_setup in sub_setups]
@@ -785,48 +820,24 @@ class InputSetupCollection:
             InputSetupCollection(sub_setup_lst) for sub_setup_lst in sub_setup_lst_lst
         ]
 
+    @overload
     def decompress_twice(
-        self,
-        select_outer: Collection[str],
-        select_inner: Optional[Collection[str]] = None,
-        skip: Optional[Collection[str]] = None,
+        self, outer, skip: None = None,
+    ) -> List["CoreInputSetupCollection"]:
+        ...
+
+    @overload
+    def decompress_twice(
+        self, outer, skip: Collection[str]
     ) -> List["InputSetupCollection"]:
+        ...
+
+    def decompress_twice(self, outer: str, skip=None):
         sub_setups_lst: List[InputSetupCollection] = []
         for setup in self._setups:
-            for sub_setup in setup.decompress_partially(select_outer, skip):
-                sub_sub_setups = sub_setup.decompress_partially(select_inner, skip)
+            for sub_setup in setup.decompress_partially([outer], skip):
+                sub_sub_setups = sub_setup.decompress(skip)
                 sub_setups_lst.append(sub_sub_setups)
-        return sub_setups_lst
-
-    def decompress_thrice(
-        self,
-        select_outer: Collection[str],
-        select_middle: Collection[str],
-        select_inner: Optional[Collection[str]] = None,
-        skip: Optional[Collection[str]] = None,
-    ) -> List[List["InputSetupCollection"]]:
-        return [
-            setup.decompress_partially(select_outer, skip).decompress_twice(
-                select_middle, select_inner, skip
-            )
-            for setup in self._setups
-        ]
-
-    def decompress_species_id(self) -> List["InputSetupCollection"]:
-        """Decompress species ids depending in whether to combine them."""
-        try:
-            combine_species: bool = self.collect_equal("combine_species")
-        except UnequalInputSetupParamValuesError as e:
-            # SR_NOTE This should not happen AFAIK, but in case it does,
-            # SR_NOTE catch and raise it here explicitly!
-            raise NotImplementedError("sub_setups differing in combine_species", e)
-        sub_setups_lst: List["InputSetupCollection"] = (
-            self.decompress_partially(["species_id"])
-        )
-        if combine_species:
-            sub_setups_lst = [
-                type(self)([setup for setups in sub_setups_lst for setup in setups])
-            ]
         return sub_setups_lst
 
     def collect(self, param: str) -> List[Any]:
@@ -858,29 +869,13 @@ class InputSetupCollection:
         return grouped
 
     def complete_dimensions(
-        self,
-        meta_data: Mapping[str, Any],
-        decompress: bool = False,
-        decompress_skip: Optional[Collection[str]] = None,
-    ) -> List[str]:
-        """Set unconstrained dimensions to all available indices."""
-        orig_setups = list(self._setups)
-        self._setups.clear()
-        completed: List[str] = []
-        for setup in orig_setups:
-            completed_i: List[str] = setup.complete_dimensions(meta_data)
-            if not completed:
-                completed = completed_i
-            elif completed != completed_i:
-                raise Exception("completed dimensions differ", completed, completed_i)
-            if not decompress:
-                self._setups.append(setup)
-            else:
-                select = [
-                    dim for dim in completed if dim not in (decompress_skip or [])
-                ]
-                self._setups.extend(setup.decompress_partially(select))
-        return completed
+        self, meta_data: Mapping[str, Any]
+    ) -> "InputSetupCollection":
+        """Complete unconstrained dimensions based on available indices."""
+        setup_lst = []
+        for setup in self:
+            setup_lst.append(setup.complete_dimensions(meta_data))
+        return type(self)(setup_lst)
 
 
 # SR_TMP <<< TODO Consider merging with InputSetupCollection (failed due to mypy)
@@ -1040,7 +1035,7 @@ class FilePathFormatter:
         assert self._setup is not None  # mypy
         input_variable = self._setup.input_variable
         if self._setup.input_variable == "deposition":
-            input_variable += f"_{self._setup.deposition_type}"
+            input_variable += f"_{self._setup.deposition_type_str}"
         kwargs = {
             "nageclass": self._setup.nageclass,
             "domain": self._setup.domain,

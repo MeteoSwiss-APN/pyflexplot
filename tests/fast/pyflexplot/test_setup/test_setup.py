@@ -27,7 +27,7 @@ DEFAULT_SETUP = InputSetup(
         **DEFAULT_KWARGS,
         "nageclass": None,
         "combine_species": False,
-        "deposition_type": "none",
+        "deposition_type": None,
         "domain": "auto",
         "ens_member_id": None,
         "ens_variable": "none",
@@ -97,18 +97,18 @@ class Test_Decompress:
         assert all(isinstance(setup, InputSetup) for setup in setups)
         res = {(s.deposition_type, s.species_id, s.time) for s in setups}
         sol = {
-            ("dry", (1,), (1,)),
-            ("dry", (1,), (2,)),
-            ("dry", (1,), (3,)),
-            ("dry", (2,), (1,)),
-            ("dry", (2,), (2,)),
-            ("dry", (2,), (3,)),
-            ("wet", (1,), (1,)),
-            ("wet", (1,), (2,)),
-            ("wet", (1,), (3,)),
-            ("wet", (2,), (1,)),
-            ("wet", (2,), (2,)),
-            ("wet", (2,), (3,)),
+            (("dry",), (1,), (1,)),
+            (("dry",), (1,), (2,)),
+            (("dry",), (1,), (3,)),
+            (("dry",), (2,), (1,)),
+            (("dry",), (2,), (2,)),
+            (("dry",), (2,), (3,)),
+            (("wet",), (1,), (1,)),
+            (("wet",), (1,), (2,)),
+            (("wet",), (1,), (3,)),
+            (("wet",), (2,), (1,)),
+            (("wet",), (2,), (2,)),
+            (("wet",), (2,), (3,)),
         }
         assert res == sol
 
@@ -119,7 +119,7 @@ class Test_Decompress:
         assert all(isinstance(setup, InputSetup) for setup in setups)
         assert len(setups) == 2
         res = {(s.deposition_type, s.species_id, s.time) for s in setups}
-        sol = {("tot", (1,), (1, 2, 3)), ("tot", (2,), (1, 2, 3))}
+        sol = {(("dry", "wet"), (1,), (1, 2, 3)), (("dry", "wet"), (2,), (1, 2, 3))}
         assert res == sol
 
     def test_select_two(self):
@@ -130,12 +130,12 @@ class Test_Decompress:
         assert all(isinstance(setup, InputSetup) for setup in setups)
         res = {(s.deposition_type, s.species_id, s.time) for s in setups}
         sol = {
-            ("dry", (1, 2), (1,)),
-            ("dry", (1, 2), (2,)),
-            ("dry", (1, 2), (3,)),
-            ("wet", (1, 2), (1,)),
-            ("wet", (1, 2), (2,)),
-            ("wet", (1, 2), (3,)),
+            (("dry",), (1, 2), (1,)),
+            (("dry",), (1, 2), (2,)),
+            (("dry",), (1, 2), (3,)),
+            (("wet",), (1, 2), (1,)),
+            (("wet",), (1, 2), (2,)),
+            (("wet",), (1, 2), (3,)),
         }
         assert res == sol
 
@@ -246,19 +246,19 @@ class Test_ReplaceNoneByAvailable:
     def test_time(self):
         setup = self.setup_create({"time": "*"})
         assert setup.time is None
-        setup.complete_dimensions(self.meta_data)
+        setup = setup.complete_dimensions(self.meta_data)
         assert setup.time == (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 
     def test_level(self):
         setup = self.setup_create({"level": "*"})
         assert setup.level is None
-        setup.complete_dimensions(self.meta_data)
+        setup = setup.complete_dimensions(self.meta_data)
         assert setup.level == (0, 1, 2)
 
     def test_species_id(self):
         setup = self.setup_create({"species_id": "*"})
         assert setup.species_id is None
-        setup.complete_dimensions(self.meta_data)
+        setup = setup.complete_dimensions(self.meta_data)
         assert setup.species_id == (1, 2)
 
     def test_others(self):
@@ -266,7 +266,7 @@ class Test_ReplaceNoneByAvailable:
         assert setup.nageclass is None
         assert setup.noutrel is None
         assert setup.numpoint is None
-        setup.complete_dimensions(self.meta_data)
+        setup = setup.complete_dimensions(self.meta_data)
         assert setup.nageclass == (0,)
         assert setup.noutrel == (0,)
         assert setup.numpoint == (0, 1)

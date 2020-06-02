@@ -17,7 +17,7 @@ level = 0
 [_base._deposition]
 outfile = "{ens_variable}_tot_deposit_{domain}_{lang}_ts-{time:02d}.png"
 input_variable = "deposition"
-deposition_type = "tot"
+combine_deposition_types = true
 
 [_base."*"._auto.en]
 domain = "auto"

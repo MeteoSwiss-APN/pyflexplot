@@ -2,6 +2,9 @@
 """
 Test the elements of complete plots based on deterministic COSMO-1 data.
 """
+# Third-party
+import pytest
+
 # Local
 from .shared import _TestBase
 from .shared import _TestCreateReference  # noqa:F401
@@ -18,8 +21,7 @@ class Test_Concentration(_TestBase):
     reference = "ref_cosmo1_deterministic_concentration"
     setup_dct = {
         "infile": INFILE_NAME,
-        "outfile": "dummy.png",
-        "plot_type": "auto",
+        "outfile": "plot.png",
         "input_variable": "concentration",
         "integrate": False,
         "lang": "de",
@@ -29,8 +31,22 @@ class Test_Concentration(_TestBase):
         "level": (0,),
     }
 
-    def test(self, datadir):
-        super().test(datadir)
+
+@pytest.mark.skip(f"{__file__.split('/')[-1]}::Test_Concentration2: TODO")
+class Test_Concentration2(_TestCreateReference):
+    # class Test_Concentration2(_TestBase):
+    reference = "ref_cosmo1_deterministic_concentration_2"
+    setup_dct = {
+        "infile": INFILE_NAME,
+        "outfile": "plot_{ts}.png",
+        "input_variable": "concentration",
+        "lang": "en",
+        "domain": "ch",
+        "species_id": (1,),
+        "time": (1, 6, 11),
+        "level": (0,),
+    }
+    n_plots = 3
 
 
 # class Test_IntegratedConcentration(_TestCreateReference):
@@ -58,7 +74,7 @@ class Test_TotalDeposition(_TestBase):
         "outfile": "plot.png",
         "plot_type": "auto",
         "input_variable": "deposition",
-        "deposition_type": "tot",
+        "combine_deposition_types": True,
         "integrate": True,
         "lang": "de",
         "domain": "auto",
@@ -75,7 +91,8 @@ class Test_AffectedArea(_TestBase):
         "outfile": "plot.png",
         "input_variable": "deposition",
         "plot_variable": "affected_area_mono",
-        "deposition_type": "tot",
+        "deposition_type": ["dry", "wet"],
+        "combine_deposition_types": True,
         "integrate": True,
         "lang": "en",
         "domain": "ch",

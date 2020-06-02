@@ -6,7 +6,6 @@ IO.
 import re
 import warnings
 from typing import Any
-from typing import Collection
 from typing import Dict
 from typing import List
 from typing import Mapping
@@ -63,70 +62,39 @@ def read_fields(
 
     """
 
-    def _complete_dimensions(
-        setups_in_lst_lst: Sequence[Sequence[InputSetupCollection]],
-        nc_meta_data: Mapping[str, Any],
-    ) -> List[List[InputSetupCollection]]:
-        """Set unset dimensions to available indices, expanding as necessary."""
-        setups_lst_lst: List[List[InputSetupCollection]] = []
-        for setups_in_lst in setups_in_lst_lst:
-            setups_lst_lst.append([])
-            for setups_in in setups_in_lst:
-                setups = setups_in.copy()
-                completed_dims = setups.complete_dimensions(nc_meta_data)
-                sub_setups_lst = setups.decompress_partially(
-                    completed_dims, skip=["species_id"],
-                )
-                sub_setups_lst, _sub_setups_lst_tmp = [], sub_setups_lst
-                for sub_setups in _sub_setups_lst_tmp:
-                    setups_lst_lst[-1].extend(sub_setups.decompress_species_id())
-        return setups_lst_lst
+    field_lst_lst: List[List[Field]] = []
+    mdata_lst_lst: List[List[Any]] = []
+    ens_mem_ids: List[int]
+    setups_ens: InputSetupCollection
+    for ens_mem_ids, setups_ens in setups.group("ens_member_id").items():
+        reader = FileReader(in_file_path, ens_mem_ids, add_ts0=add_ts0, dry_run=dry_run)
+        reader.prepare()
+        setups_ens = setups_ens.complete_dimensions(reader.nc_meta_data)
 
-    def _read_fields(
-        setups_lst_lst: Sequence[Sequence[InputSetupCollection]], reader: "FileReader",
-    ) -> Tuple[List[List[Field]], Union[List[List[MetaData]], List[List[None]]]]:
-        field_lst_lst: List[List[Field]] = []
-        mdata_lst_lst: List[List[Any]] = []
-        for sub_setups_lst in setups_lst_lst:
+        setups_lst_lst: List[List[InputSetupCollection]] = []
+
+        for combine_species, setups_spec in setups_ens.group("combine_species").items():
+            for setup_spec in setups_spec:
+                skip = ["ens_member_id"]
+                setups_time = setup_spec.decompress_partially(["time"], skip)
+                setups_lst_i = []
+                for sub_setup in setups_time:
+                    setups_lst_i.append(sub_setup.decompress(skip))
+                setups_lst_lst.append(setups_lst_i)
+
+        for setups_lst_i in setups_lst_lst:
             field_lst_lst.append([])
             mdata_lst_lst.append([])
-            for sub_setups in sub_setups_lst:
+            for sub_setups in setups_lst_i:
                 field_lst_i, mdata_lst_i = reader.run(sub_setups)
                 assert len(field_lst_i) == 1  # SR_TMP  SR_MULTIPANEL
                 field = next(iter(field_lst_i))
                 mdata = next(iter(mdata_lst_i))
                 field_lst_lst[-1].append(field)  # SR_TMP  SR_MULTIPANEL
                 mdata_lst_lst[-1].append(mdata)  # SR_TMP  SR_MULTIPANEL
-        return field_lst_lst, mdata_lst_lst
 
-    setups_in_lst_lst = setups.decompress_thrice(
-        ["time"], ["ens_variable"], None, skip=["ens_member_id"]
-    )
-
-    ens_member_ids = collect_ens_member_ids(setups_in_lst_lst)
-    reader = FileReader(in_file_path, ens_member_ids, add_ts0=add_ts0, dry_run=dry_run)
-    reader.prepare()
-
-    setups_lst_lst = _complete_dimensions(setups_in_lst_lst, reader.nc_meta_data)
-    field_lst_lst, mdata_lst_lst = _read_fields(setups_lst_lst, reader)
-
+    # breakpoint()
     return field_lst_lst, mdata_lst_lst
-
-
-def collect_ens_member_ids(
-    var_setups_lst_lst: Collection[Collection[InputSetupCollection]],
-) -> Optional[List[int]]:
-    """Collect the ensemble member ids from field specifications."""
-    ens_member_ids: Optional[List[int]] = None
-    for var_setups_lst in var_setups_lst_lst:
-        for var_setups in var_setups_lst:
-            ens_member_ids_i = var_setups.collect_equal("ens_member_id")
-            if not ens_member_ids:
-                ens_member_ids = ens_member_ids_i
-            else:
-                # Should be the same for all!
-                assert ens_member_ids_i == ens_member_ids
-    return ens_member_ids
 
 
 # pylint: disable=R0902  # too-many-instance-attributes

@@ -23,7 +23,8 @@ integrate = true
 [_base._deposition]
 outfile = "deposition_tot_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
 input_variable = "deposition"
-deposition_type = "tot"
+deposition_type = ["dry", "wet"]
+combine_deposition_types = true
 combine_species = true
 time = -1
 integrate = true

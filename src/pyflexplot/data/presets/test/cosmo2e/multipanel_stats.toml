@@ -19,7 +19,8 @@ combine_species = true
 
 [_base._total_deposition]
 input_variable = "deposition"
-deposition_type = "tot"
+deposition_type = ["dry", "wet"]
+combine_deposition_types = true
 integrate = true
 
 # ["**"._auto.de]

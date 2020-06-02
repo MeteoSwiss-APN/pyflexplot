@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tests for <TODO> in module ``pyflexplot.io``.
+Tests for <TODO> in module ``pyflexplot.input``.
 """
 # Standard library
 from typing import Dict
@@ -8,10 +8,12 @@ from typing import Optional
 
 # Third-party
 import netCDF4 as nc4
-from utils import datadir  # noqa:F401
 
 # First-party
 from pyflexplot.nc_meta_data import read_meta_data
+
+# Local  isort:skip
+from shared import datadir  # noqa:F401 isort:skip
 
 
 class _TestBase:

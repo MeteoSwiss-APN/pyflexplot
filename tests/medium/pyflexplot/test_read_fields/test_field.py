@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tests for module ``pyflexplot.io``.
+Tests for function ``pyflexplot.input.read_fields`` for deterministic data.
 """
 # Standard library
 from dataclasses import dataclass
@@ -15,12 +15,13 @@ import numpy as np
 import pytest  # type: ignore
 
 # First-party
-from pyflexplot.io import read_fields
+from pyflexplot.input import read_fields
 from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
 
-from io_utils import read_nc_var  # isort:skip
-from utils import datadir  # noqa:F401 isort:skip
+# Local  isort:skip
+from shared import read_nc_var  # isort:skip
+from shared import datadir  # noqa:F401 isort:skip
 
 
 def get_var_name_ref(setup, var_names_ref):
@@ -32,7 +33,7 @@ def get_var_name_ref(setup, var_names_ref):
         if isinstance(species_id, tuple):
             assert len(species_id) == 1
             species_id = next(iter(species_id))
-        var_name = f"{setup.deposition_type[0].upper()}D_spec{species_id:03d}"
+        var_name = f"{setup.deposition_type_str[0].upper()}D_spec{species_id:03d}"
         if var_name in var_names_ref:
             return var_name
     raise NotImplementedError(f"{setup}")
@@ -61,7 +62,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
 @pytest.mark.parametrize(
     "conf",
     [
-        Conf(
+        Conf(  # [conf0]
             datafilename=datafilename1,
             model="cosmo1",
             var_names_ref=["spec002"],
@@ -78,7 +79,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
                 "numpoint": 0,
             },
         ),
-        Conf(
+        Conf(  # [conf1]
             datafilename=datafilename1,
             model="cosmo1",
             var_names_ref=["DD_spec002"],
@@ -96,7 +97,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             },
             scale_fld_ref=1 / 3,
         ),
-        Conf(
+        Conf(  # [conf2]
             datafilename=datafilename1,
             model="cosmo1",
             var_names_ref=["WD_spec002"],
@@ -114,7 +115,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             },
             scale_fld_ref=1 / 3,
         ),
-        Conf(
+        Conf(  # [conf3]
             datafilename=datafilename1,
             model="cosmo1",
             var_names_ref=["WD_spec002", "DD_spec002"],
@@ -122,7 +123,8 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
                 "input_variable": "deposition",
-                "deposition_type": "tot",
+                "deposition_type": ["dry", "wet"],
+                "combine_deposition_types": True,
                 "species_id": 2,
                 "integrate": False,
                 "time": 3,
@@ -132,7 +134,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             },
             scale_fld_ref=1 / 3,
         ),
-        Conf(
+        Conf(  # [conf4]
             datafilename=datafilename2,
             model="cosmo1",
             var_names_ref=["spec001"],
@@ -149,7 +151,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
                 "numpoint": 0,
             },
         ),
-        Conf(
+        Conf(  # [conf5]
             datafilename=datafilename2,
             model="cosmo1",
             var_names_ref=["WD_spec001", "DD_spec001"],
@@ -157,7 +159,8 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
                 "input_variable": "deposition",
-                "deposition_type": "tot",
+                "deposition_type": ["dry", "wet"],
+                "combine_deposition_types": True,
                 "species_id": 1,
                 "integrate": False,
                 "time": 3,
@@ -167,7 +170,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             },
             scale_fld_ref=1 / 3,
         ),
-        Conf(
+        Conf(  # [conf6]
             datafilename=datafilename1,
             model="cosmo1",
             var_names_ref=["DD_spec001", "DD_spec002", "WD_spec001", "WD_spec002"],
@@ -175,8 +178,10 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
                 "input_variable": "deposition",
-                "deposition_type": "tot",
+                "deposition_type": ["dry", "wet"],
+                "combine_deposition_types": True,
                 "species_id": [1, 2],
+                "combine_species": True,
                 "integrate": False,
                 "time": 3,
                 "nageclass": 0,
@@ -185,7 +190,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             },
             scale_fld_ref=1 / 3,
         ),
-        Conf(
+        Conf(  # [conf7]
             datafilename=datafilename3,
             model="ifs",
             var_names_ref=["spec001_mr"],
@@ -219,7 +224,7 @@ def test_single(datadir, conf):  # noqa:F811
     fld = field_lst_lst[0][0].fld
 
     # Initialize individual setup objects
-    var_setups_lst = setups.decompress_twice(["time"], None, ["ens_member_id"])
+    var_setups_lst = setups.decompress_twice("time", skip=["ens_member_id"])
     assert len(var_setups_lst) == 1
     var_setups = next(iter(var_setups_lst))
 
@@ -327,7 +332,8 @@ def test_single(datadir, conf):  # noqa:F811
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
                 "input_variable": "deposition",
-                "deposition_type": "tot",
+                "deposition_type": ["dry", "wet"],
+                "combine_deposition_types": True,
                 "species_id": 1,
                 "integrate": True,
                 "time": [0, 3, 9],
@@ -387,7 +393,7 @@ def test_multiple(datadir, conf):  # noqa:F811
 
     # Process field specifications one after another
     var_setups: InputSetupCollection
-    for var_setups in setups.decompress_twice(["time"], None, ["ens_member_id"]):
+    for var_setups in setups.decompress_twice("time", skip=["ens_member_id"]):
 
         # Read input fields
         field_lst_lst, mdata_lst_lst = read_fields(datafile, var_setups)
@@ -453,7 +459,8 @@ def test_multiple(datadir, conf):  # noqa:F811
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
                 "input_variable": "deposition",
-                "deposition_type": "tot",
+                "deposition_type": ["dry", "wet"],
+                "combine_deposition_types": True,
                 "species_id": 2,
                 "integrate": False,
                 "time": None,
@@ -476,6 +483,7 @@ def test_single_add_ts0(datadir, conf):
     # Read fields with and without added time step 0
     field_raw_lst_lst, _ = read_fields(datafile, setups, add_ts0=False)
     field_ts0_lst_lst, _ = read_fields(datafile, setups, add_ts0=True)
+    # SR_TMP <  TODO Figure out which solution is correct!
     assert len(field_raw_lst_lst) == 1
     assert len(field_ts0_lst_lst) == 1
     field_raw_lst = next(iter(field_raw_lst_lst))
@@ -483,3 +491,12 @@ def test_single_add_ts0(datadir, conf):
     assert len(field_ts0_lst) == len(field_raw_lst) + 1
     assert (field_ts0_lst[1].fld == field_raw_lst[0].fld).all()
     assert (field_ts0_lst[0].fld == 0.0).all()
+    # SR_TMP -
+    # field_raw_lst_lst, _ = read_fields(datafile, setups, add_ts0=False)
+    # field_ts0_lst_lst, _ = read_fields(datafile, setups, add_ts0=True)
+    # assert len(field_ts0_lst_lst) == len(field_raw_lst_lst) + 1
+    # assert all(len(field_lst) == 1 for field_lst in field_ts0_lst_lst)
+    # assert all(len(field_lst) == 1 for field_lst in field_raw_lst_lst)
+    # assert (field_ts0_lst_lst[1][0].fld == field_raw_lst_lst[0][0].fld).all()
+    # assert (field_ts0_lst_lst[0][0].fld == 0.0).all()
+    # SR_TMP >
