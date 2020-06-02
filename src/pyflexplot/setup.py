@@ -35,12 +35,17 @@ from srutils.dict import compress_multival_dicts
 from srutils.dict import decompress_multival_dict
 from srutils.dict import decompress_nested_dict
 from srutils.dict import nested_dict_resolve_wildcards
+from srutils.str import join_multilines
 
 # Some plot-specific default values
 ENS_PROBABILITY_DEFAULT_PARAM_THR = 1e-8
 ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN = 10
 ENS_CLOUD_TIME_DEFAULT_PARAM_THR = 1e-7
 ENS_CLOUD_PROB_DEFAULT_PARAM_TIME_WIN = 12
+
+
+class UnequalInputSetupParamValuesError(Exception):
+    """Values of a param differs between multiple ``InputSetup`` objects."""
 
 
 # pylint: disable=E0213  # no-self-argument (validators)
@@ -715,16 +720,30 @@ class InputSetupCollection:
         return type(self)([setup.copy() for setup in self])
 
     def __repr__(self) -> str:
-        s_setups_lst = []
-        for setup in self._setups:
-            s_setup = re.sub(r"\(\n *", "(", str(setup))
-            s_setup = re.sub(r",\n *", ", ", s_setup)
-            s_setup = re.sub(r", +\)", ")", s_setup)
-            s_setups_lst.append(f"  {s_setup},")
-        body = "\n".join(s_setups_lst)
-        head = f"{type(self).__name__}(["
-        foot = "])"
-        return f"{head}\n{body}\n{foot}"
+        same = {}
+        diff = {}
+        for param in InputSetup.__fields__:
+            try:
+                value = self.collect_equal(param)
+            except UnequalInputSetupParamValuesError:
+                diff[param] = self.collect(param)
+            else:
+                same[param] = value
+
+        def format_params(params: Dict[str, Any], name: str) -> str:
+            lines = []
+            for param, value in params.items():
+                s_value = f"'{value}'" if isinstance(value, str) else str(value)
+                lines.append(f"{param}={s_value}")
+            # body = join_lines(lines, sub_indent=2)
+            # return f"{head}\n{body}"
+            body = ", ".join(lines)
+            return f"{name}: {body}"
+
+        lines = [format_params(same, "same"), format_params(diff, "diff")]
+        body = join_multilines(lines, sub_indent=2)
+
+        return "\n".join([f"{type(self).__name__}[", body, "]"])
 
     def __len__(self) -> int:
         return len(self._setups)
@@ -797,7 +816,7 @@ class InputSetupCollection:
         """Decompress species ids depending in whether to combine them."""
         try:
             combine_species: bool = self.collect_equal("combine_species")
-        except Exception as e:
+        except UnequalInputSetupParamValuesError as e:
             # SR_NOTE This should not happen AFAIK, but in case it does,
             # SR_NOTE catch and raise it here explicitly!
             raise NotImplementedError("sub_setups differing in combine_species", e)
@@ -818,7 +837,7 @@ class InputSetupCollection:
         """Collect the value of a parameter that is shared by all setups."""
         values = self.collect(param)
         if not all(value == values[0] for value in values[1:]):
-            raise Exception("values differ for param", param, values)
+            raise UnequalInputSetupParamValuesError(param, values)
         return next(iter(values))
 
     def group(self, param: str) -> Dict[Any, "InputSetupCollection"]:
