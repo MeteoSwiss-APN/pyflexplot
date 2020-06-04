@@ -137,13 +137,26 @@ def check_summary_dict_element_is_subelement(
         "idx_dict": idx_dict,
     }
 
+    def exception(msg: str, info: Dict[str, any]) -> Exception:
+        """Build exception that can be raised directly."""
+        blocks = [msg]
+        for name, obj in info.items():
+            s_obj = pformat(obj)
+            if "\n" in s_obj:
+                block = f"{name}:\n{s_obj}"
+            else:
+                block = f"{name}: {s_obj}"
+            blocks.append(block)
+        err = "\n\n".join(blocks)
+        return CheckFailedError(err)
+
     # Check types
     t_super, t_sub = type(obj_super), type(obj_sub)
     if not isinstance(obj_sub, t_super) and not isinstance(obj_super, t_sub):
         if isinstance(obj_sub, Sequence) and isinstance(obj_super, Sequence):
             pass
         else:
-            raise CheckFailedError(
+            raise exception(
                 f"incompatible types {t_super.__name__} and {t_sub.__name__} "
                 f"(neither is an instance of the other)",
                 {**err_objs, "t_super": t_super, "t_sub": t_sub},
@@ -159,29 +172,38 @@ def check_summary_dict_element_is_subelement(
         # Compare other (non-str) iterables
 
         if not isiterable(obj_super, str_ok=False):
-            raise CheckFailedError("superdict element not iterable", err_objs)
+            raise exception("superdict element not iterable", err_objs)
 
         n_sub, n_super = len(obj_sub), len(obj_super)
         if n_sub != n_super:
-            raise CheckFailedError(
+            raise exception(
                 f"iterable elements differ in size: {n_sub} != {n_super}",
                 {**err_objs, "n_super": n_super, "n_sub": n_sub},
             )
 
         for idx, (subobj_sub, subobj_super) in enumerate(zip(obj_sub, obj_super)):
-            check_summary_dict_element_is_subelement(
-                subobj_sub,
-                subobj_super,
-                name_sub,
-                name_super,
-                idx_list=idx,
-                idx_dict=idx_dict,
-            )
+            try:
+                check_summary_dict_element_is_subelement(
+                    subobj_sub,
+                    subobj_super,
+                    name_sub,
+                    name_super,
+                    idx_list=idx,
+                    idx_dict=idx_dict,
+                )
+            except CheckFailedError as error:
+                msg = str(error).split("\n")[0]
+                raise exception(
+                    f"iterable elements #{idx} differ: {msg}",
+                    {
+                        **err_objs,
+                        "subobj_super": subobj_super,
+                        "subobj_sup": subobj_sub,
+                    },
+                )
 
     else:
-        raise CheckFailedError(
-            f"elements differ ('{name_sub}' vs. '{name_super}')", err_objs,
-        )
+        raise exception(f"elements differ ('{name_sub}' vs. '{name_super}')", err_objs)
 
 
 def get_dict_element(dict_, key, name="dict", exception_type=ValueError):
