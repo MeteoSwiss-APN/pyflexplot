@@ -16,7 +16,7 @@ import pytest  # type: ignore
 
 # First-party
 from pyflexplot.input import read_fields
-from pyflexplot.plots import plot_fields
+from pyflexplot.plots import create_plot
 from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
 from srutils.testing import assert_nested_equal
@@ -88,9 +88,10 @@ class _TestBase:
             yield (field, mdata)
 
     def get_plot(self, field, mdata):
-        field_lst_lst = [[field]]
-        mdata_lst_lst = [[mdata]]
-        outfiles, plots = zip(*plot_fields(field_lst_lst, mdata_lst_lst, write=False))
+        field_lst = [field]
+        mdata_lst = [mdata]
+        outfiles, plots = [], []
+        plots.append(create_plot(field_lst, mdata_lst, outfiles, write=False))
         assert len(outfiles) == len(plots) == 1
         plot = next(iter(plots))
         return plot

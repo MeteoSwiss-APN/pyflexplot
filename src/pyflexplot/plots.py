@@ -9,10 +9,9 @@ from textwrap import dedent
 from typing import Any
 from typing import Collection
 from typing import Dict
-from typing import Iterator
+from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Tuple
 from typing import Union
 
 # Third-party
@@ -25,6 +24,7 @@ from srutils.geo import Degrees
 # Local
 from .boxed_plot import BoxedPlot
 from .boxed_plot import BoxedPlotConfig
+from .boxed_plot import DummyBoxedPlot
 from .data import Field
 from .data import FieldAllNaNError
 from .formatting import format_level_ranges
@@ -637,32 +637,30 @@ def fill_box_bottom(box: TextBoxAxes, plot: BoxedPlot) -> None:
     )
 
 
-def plot_fields(
-    field_lst_lst: Sequence[Sequence[Field]],
-    mdata_lst_lst: Sequence[Sequence[MetaData]],
-    dry_run: bool = False,
+def create_plot(
+    field_lst: Sequence[Field],
+    mdata_lst: Sequence[MetaData],
+    prev_out_file_paths: Optional[List[str]] = None,
     *,
+    dry_run: bool = False,
     write: bool = True,
-) -> Iterator[Tuple[str, Optional[BoxedPlot]]]:
+) -> Union[BoxedPlot, DummyBoxedPlot]:
     """Create plots while yielding them with the plot file path one by one."""
-    path_formatter = FilePathFormatter()
-    for field_lst, mdata_lst in zip(field_lst_lst, mdata_lst_lst):
-        setup = InputSetupCollection(
-            [var_setup for field in field_lst for var_setup in field.var_setups]
-        ).compress()
-        out_file_path = path_formatter.format(setup)
-        map_conf_lst = [create_map_conf(field) for field in field_lst]
-        if dry_run:
-            plot = None
-        else:
-            configs = [
-                create_plot_config(setup, WORDS, SYMBOLS, mdata) for mdata in mdata_lst
-            ]
-            plot = BoxedPlot(field_lst, configs, map_conf_lst)
-            plot_add_text_boxes(plot)
-            plot_add_markers(plot)
-            plot.save(out_file_path, write=write)
-        yield out_file_path, plot
+    var_setups_lst = [field.var_setups for field in field_lst]
+    setup = InputSetupCollection.merge(var_setups_lst).compress()
+    out_file_path = FilePathFormatter(prev_out_file_paths).format(setup)
+    map_conf_lst = [create_map_conf(field) for field in field_lst]
+    if dry_run:
+        return DummyBoxedPlot(out_file_path)
+    else:
+        configs = [
+            create_plot_config(setup, WORDS, SYMBOLS, mdata) for mdata in mdata_lst
+        ]
+        plot = BoxedPlot(field_lst, configs, map_conf_lst)
+        plot_add_text_boxes(plot)
+        plot_add_markers(plot)
+        plot.save(out_file_path, write=write)
+        return plot
 
 
 def plot_add_text_boxes(plot: BoxedPlot) -> None:

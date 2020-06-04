@@ -61,7 +61,6 @@ def read_fields(
         dry_run (optional): Whether to skip reading the data from disk.
 
     """
-
     field_lst_lst: List[List[Field]] = []
     mdata_lst_lst: List[List[Any]] = []
     ens_mem_ids: List[int]
@@ -72,7 +71,6 @@ def read_fields(
         setups_ens = setups_ens.complete_dimensions(reader.nc_meta_data)
 
         setups_lst_lst: List[List[InputSetupCollection]] = []
-
         for combine_species, setups_spec in setups_ens.group("combine_species").items():
             for setup_spec in setups_spec:
                 skip = ["ens_member_id"]

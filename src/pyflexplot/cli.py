@@ -18,7 +18,7 @@ from srutils.click import CharSepList
 from . import __version__
 from . import data_path
 from .input import read_fields
-from .plots import plot_fields
+from .plots import create_plot
 from .preset import add_to_preset_paths
 from .preset import click_add_to_preset_paths
 from .preset import click_cat_preset_and_exit
@@ -246,36 +246,30 @@ def cli(
     for i_in, (in_file_path, sub_setups) in enumerate(setups_by_infile.items()):
         if ctx.obj["verbosity"] > 0:
             click.echo(f"[{i_in + 1}/{n_in}] input: {in_file_path}")
-
-        # Read input fields
         field_lst_lst, mdata_lst_lst = read_fields(
             in_file_path, sub_setups, add_ts0=True, dry_run=dry_run
         )
-
+        n_fld = len(field_lst_lst)
         try:
-            # Note: plot_fields(...) yields the output file paths on-the-go
-            # pylint: disable=W0612  # unused-variable (plot_handle)
-            n_fld = len(field_lst_lst)
-            for i_fld, (out_file_path, plot_handle) in enumerate(
-                plot_fields(field_lst_lst, mdata_lst_lst, dry_run)
+            for i_fld, (field_lst, mdata_lst) in enumerate(
+                zip(field_lst_lst, mdata_lst_lst)
             ):
                 i_tot += 1
-                click.echo(f"[{i_in + 1}/{n_in}][{i_fld + 1}/{n_fld}] {out_file_path}")
-
-                if out_file_path in out_file_paths:
-                    raise Exception("duplicate output file", out_file_path)
-                out_file_paths.append(out_file_path)
+                plot = create_plot(
+                    field_lst, mdata_lst, out_file_paths, dry_run=dry_run
+                )
+                click.echo(f"[{i_in + 1}/{n_in}][{i_fld + 1}/{n_fld}] {plot.file_path}")
 
                 if open_first_cmd and i_in + i_fld == 0:
-                    open_plots(open_first_cmd, [out_file_path], dry_run)
+                    open_plots(open_first_cmd, [plot.file_path], dry_run)
 
-                remaining_plots = n_fld - i_fld - 1
-                if remaining_plots and each_only and (i_fld + 1) >= each_only:
-                    click.echo(f"skip remaining {remaining_plots} plots")
+                n_plt_todo = n_fld - i_fld - 1
+                if n_plt_todo and each_only and (i_fld + 1) >= each_only:
+                    click.echo(f"skip remaining {n_plt_todo} plots")
                     raise BreakInner()
                 if only and (i_tot + 1) >= only:
-                    if remaining_plots:
-                        click.echo(f"skip remaining {remaining_plots} plots")
+                    if n_plt_todo:
+                        click.echo(f"skip remaining {n_plt_todo} plots")
                     raise BreakOuter()
         except BreakInner:
             continue

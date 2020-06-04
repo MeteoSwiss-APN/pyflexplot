@@ -150,6 +150,13 @@ class BoxedPlotLayout:
         )
 
 
+@dataclass
+class DummyBoxedPlot:
+    """Dummy for dry runs."""
+
+    file_path: str
+
+
 @summarizable(
     attrs=["ax_map", "boxes", "field", "fig", "map_conf"],
     post_summarize=post_summarize_plot,
@@ -184,6 +191,7 @@ class BoxedPlot:
             self.map_conf, fig=self.fig, rect=self.layout.rect_center, field=self.field,
         )
         self._draw_colors_contours()
+        self.file_path: Optional[str] = None
 
     def save(self, file_path: str, *, write: bool = True) -> None:
         """Save the plot to disk.
@@ -194,6 +202,7 @@ class BoxedPlot:
             write (optional): Whether to actually write the plot to disk.
 
         """
+        self.file_path = file_path
         if write:
             self.fig.savefig(
                 file_path,

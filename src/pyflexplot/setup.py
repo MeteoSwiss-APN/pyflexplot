@@ -796,6 +796,12 @@ class InputSetupCollection:
     def dicts(self) -> List[Dict[str, Any]]:
         return [setup.dict() for setup in self._setups]
 
+    @classmethod
+    def merge(
+        cls, setups_lst: Sequence["InputSetupCollection"]
+    ) -> "InputSetupCollection":
+        return cls([setup for setups in setups_lst for setup in setups])
+
     def compress(self) -> InputSetup:
         return InputSetup.compress(self)
 
@@ -1015,8 +1021,8 @@ def setup_repr(obj: Union["CoreInputSetup", "InputSetup"]) -> str:
 
 @dataclass
 class FilePathFormatter:
-    def __init__(self):
-        self.previous: List[str] = []
+    def __init__(self, previous: Optional[List[str]] = None) -> None:
+        self.previous: List[str] = previous if previous is not None else []
         self._setup: Optional[InputSetup] = None
 
     # pylint: disable=W0102  # dangerous-default-value ([])
