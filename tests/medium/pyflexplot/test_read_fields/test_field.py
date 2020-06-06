@@ -483,20 +483,10 @@ def test_single_add_ts0(datadir, conf):
     # Read fields with and without added time step 0
     field_raw_lst_lst, _ = read_fields(datafile, setups, add_ts0=False)
     field_ts0_lst_lst, _ = read_fields(datafile, setups, add_ts0=True)
-    # SR_TMP <  TODO Figure out which solution is correct!
-    assert len(field_raw_lst_lst) == 1
-    assert len(field_ts0_lst_lst) == 1
-    field_raw_lst = next(iter(field_raw_lst_lst))
-    field_ts0_lst = next(iter(field_ts0_lst_lst))
-    assert len(field_ts0_lst) == len(field_raw_lst) + 1
-    assert (field_ts0_lst[1].fld == field_raw_lst[0].fld).all()
-    assert (field_ts0_lst[0].fld == 0.0).all()
-    # SR_TMP -
-    # field_raw_lst_lst, _ = read_fields(datafile, setups, add_ts0=False)
-    # field_ts0_lst_lst, _ = read_fields(datafile, setups, add_ts0=True)
-    # assert len(field_ts0_lst_lst) == len(field_raw_lst_lst) + 1
-    # assert all(len(field_lst) == 1 for field_lst in field_ts0_lst_lst)
-    # assert all(len(field_lst) == 1 for field_lst in field_raw_lst_lst)
-    # assert (field_ts0_lst_lst[1][0].fld == field_raw_lst_lst[0][0].fld).all()
-    # assert (field_ts0_lst_lst[0][0].fld == 0.0).all()
-    # SR_TMP >
+    field_raw_lst_lst, _ = read_fields(datafile, setups, add_ts0=False)
+    field_ts0_lst_lst, _ = read_fields(datafile, setups, add_ts0=True)
+    assert len(field_ts0_lst_lst) == len(field_raw_lst_lst) + 1
+    assert all(len(field_lst) == 1 for field_lst in field_ts0_lst_lst)
+    assert all(len(field_lst) == 1 for field_lst in field_raw_lst_lst)
+    assert (field_ts0_lst_lst[0][0].fld == 0.0).all()
+    assert (field_ts0_lst_lst[1][0].fld == field_raw_lst_lst[0][0].fld).all()

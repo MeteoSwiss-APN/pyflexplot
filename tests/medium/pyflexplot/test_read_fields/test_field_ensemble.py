@@ -176,7 +176,6 @@ class TestReadFieldEnsemble_Multiple:
     def run(
         self,
         *,
-        separate,
         datafile_fmt,
         var_names_ref,
         setup_params,
@@ -209,13 +208,7 @@ class TestReadFieldEnsemble_Multiple:
         run_core = functools.partial(
             self._run_core, datafile_fmt, var_names_ref, fct_reduce_mem, scale_fld_ref,
         )
-        if separate:
-            # Process field specifications one after another
-            var_setups_lst = setups.decompress_twice("time", skip=["ens_member_id"])
-            for var_setups in var_setups_lst:
-                run_core(var_setups)
-        else:
-            run_core(setups)
+        run_core(setups)
 
     def _run_core(
         self, datafile_fmt, var_names_ref, fct_reduce_mem, scale_fld_ref, setups,
@@ -256,7 +249,7 @@ class TestReadFieldEnsemble_Multiple:
     # Concentration
 
     def run_concentration(
-        self, datadir, ens_var, *, separate=False, scale_fld_ref=1.0,  # noqa:F811
+        self, datadir, ens_var, *, scale_fld_ref=1.0,  # noqa:F811
     ):
         """Read ensemble concentration field."""
 
@@ -278,7 +271,6 @@ class TestReadFieldEnsemble_Multiple:
             setup_params["ens_param_thr"] = self.ens_prob_thr_concentration
 
         self.run(
-            separate=separate,
             datafile_fmt=self.datafile_fmt(datadir),
             var_names_ref=[f"spec{self.species_id:03d}"],
             setup_params=setup_params,
@@ -288,23 +280,22 @@ class TestReadFieldEnsemble_Multiple:
         )
 
     def test_ens_mean_concentration(self, datadir):  # noqa:F811
-        self.run_concentration(datadir, "mean", separate=False, scale_fld_ref=3)
+        self.run_concentration(datadir, "mean", scale_fld_ref=3)
 
     def test_ens_probability_concentration(self, datadir):  # noqa:F811
         self.run_concentration(
-            datadir, "probability", separate=False, scale_fld_ref=3.0,
+            datadir, "probability", scale_fld_ref=3.0,
         )
 
     # Deposition
 
-    def run_deposition_tot(self, datadir, ens_var, *, separate=False):  # noqa:F811
+    def run_deposition_tot(self, datadir, ens_var):  # noqa:F811
         """Read ensemble total deposition field."""
         fct_reduce_mem = {
             "mean": lambda arr: np.nanmean(arr, axis=0),
             "maximum": lambda arr: np.nanmax(arr, axis=0),
         }[ens_var]
         self.run(
-            separate=separate,
             datafile_fmt=self.datafile_fmt(datadir),
             var_names_ref=[
                 f"WD_spec{self.species_id:03d}",
@@ -319,11 +310,8 @@ class TestReadFieldEnsemble_Multiple:
             fct_reduce_mem=fct_reduce_mem,
         )
 
-    def test_ens_mean_deposition_tot_separate(self, datadir):  # noqa:F811
-        self.run_deposition_tot(datadir, "mean", separate=True)
-
     def test_ens_mean_deposition_tot(self, datadir):  # noqa:F811
-        self.run_deposition_tot(datadir, "mean", separate=False)
+        self.run_deposition_tot(datadir, "mean")
 
     def test_ens_max_deposition_tot(self, datadir):  # noqa:F811
         self.run_deposition_tot(datadir, "maximum")

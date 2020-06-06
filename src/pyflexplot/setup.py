@@ -60,6 +60,9 @@ class InputSetup(BaseModel):
         combine_deposition_types: Sum up dry and wet deposition. Otherwise, each
             is plotted separately.
 
+        combine_levels: Sum up over multiple vertical levels. Otherwise, each is
+            plotted separately.
+
         combine_species: Sum up over all specified species. Otherwise, each is
             plotted separately.
 
@@ -85,7 +88,7 @@ class InputSetup(BaseModel):
         ens_param_time_win: Tim window used to compute some ensemble variables.
             Its precise meaning depends on the variable.
 
-        ense_variable: Ensemble variable computed from plot variable. Use the
+        ens_variable: Ensemble variable computed from plot variable. Use the
             format key '{ens_variable}' to embed it in ``outfile``.
 
         infile: Input file path(s). May contain format keys.
@@ -144,9 +147,10 @@ class InputSetup(BaseModel):
     multipanel_param: Optional[str] = None
 
     # Tweaks
-    combine_deposition_types: bool = False
     deposition_type: Optional[Union[Tuple[str], Tuple[str, str]]] = None
     integrate: bool = False
+    combine_deposition_types: bool = False
+    combine_levels: bool = False
     combine_species: bool = False
 
     # Ensemble-related
@@ -535,8 +539,12 @@ class InputSetup(BaseModel):
 
     @classmethod
     def compress(cls, setups: "InputSetupCollection") -> "InputSetup":
-        if not setups:
-            raise ValueError("missing setups")
+        # SR_TMP <
+        try:
+            setups.collect_equal("input_variable")
+        except UnequalInputSetupParamValuesError:
+            raise ValueError("cannot compress setups: input_variable differs") from None
+        # SR_TMP >
         dct = compress_multival_dicts(setups.dicts(), cls_seq=tuple)
         return cls.create(dct)
 
@@ -563,7 +571,7 @@ class InputSetup(BaseModel):
         return InputSetupCollection(setup_lst)
 
     @overload
-    def decompress(self, skip: None) -> "CoreInputSetupCollection":
+    def decompress(self, skip: None = None) -> "CoreInputSetupCollection":
         ...
 
     @overload
@@ -681,8 +689,9 @@ class CoreInputSetup(BaseModel):
 
     # Tweaks
     deposition_type: Optional[str] = None
-    combine_deposition_types: bool = False
     integrate: bool = False
+    combine_deposition_types: bool = False
+    combine_levels: bool = False
     combine_species: bool = False
 
     # Ensemble-related
@@ -696,12 +705,17 @@ class CoreInputSetup(BaseModel):
     domain: str = "auto"
 
     # Dimensions
-    nageclass: int = 0
-    noutrel: int = 0
-    numpoint: int = 0
     species_id: int = 1
     time: int = 0
     level: Optional[int] = None
+    nageclass: Optional[int] = None
+    noutrel: Optional[int] = None
+    numpoint: Optional[int] = None
+
+    # SR_TMP <<<
+    @property
+    def deposition_type_str(self) -> str:
+        return "none" if self.deposition_type is None else self.deposition_type
 
     def __repr__(self) -> str:  # type: ignore
         return setup_repr(self)
@@ -794,7 +808,7 @@ class InputSetupCollection:
         )
 
     def dicts(self) -> List[Dict[str, Any]]:
-        return [setup.dict() for setup in self._setups]
+        return [setup.dict() for setup in self]
 
     @classmethod
     def merge(
@@ -805,16 +819,32 @@ class InputSetupCollection:
     def compress(self) -> InputSetup:
         return InputSetup.compress(self)
 
-    def decompress(
-        self, skip: Optional[Collection[str]] = None
-    ) -> List["InputSetupCollection"]:
-        return self.decompress_partially(select=None, skip=skip)
+    def decompress(self) -> List["CoreInputSetupCollection"]:
+        return self.decompress_partially(select=None, skip=None)
 
+    @overload
     def decompress_partially(
-        self, select: Collection[str], skip: Optional[Collection[str]] = None,
+        self, select: None, skip: None = None
+    ) -> List["CoreInputSetupCollection"]:
+        ...
+
+    @overload
+    def decompress_partially(
+        self, select: None, skip: Collection[str]
     ) -> List["InputSetupCollection"]:
+        ...
+
+    @overload
+    def decompress_partially(
+        self, select: Collection[str], skip: Optional[Collection[str]] = None
+    ) -> List["InputSetupCollection"]:
+        ...
+
+    def decompress_partially(self, select, skip=None):
+        if (select, skip) == (None, None):
+            return [CoreInputSetupCollection(setup.decompress()) for setup in self]
         sub_setup_lst_lst: List[List[InputSetup]] = []
-        for setup in self._setups:
+        for setup in self:
             sub_setups = setup.decompress_partially(select, skip)
             if not sub_setup_lst_lst:
                 sub_setup_lst_lst = [[sub_setup] for sub_setup in sub_setups]
@@ -840,7 +870,7 @@ class InputSetupCollection:
 
     def decompress_twice(self, outer: str, skip=None):
         sub_setups_lst: List[InputSetupCollection] = []
-        for setup in self._setups:
+        for setup in self:
             for sub_setup in setup.decompress_partially([outer], skip):
                 sub_sub_setups = sub_setup.decompress(skip)
                 sub_setups_lst.append(sub_sub_setups)
@@ -848,7 +878,7 @@ class InputSetupCollection:
 
     def collect(self, param: str) -> List[Any]:
         """Collect the values of a parameter for all setups."""
-        return [getattr(var_setup, param) for var_setup in self._setups]
+        return [getattr(var_setup, param) for var_setup in self]
 
     def collect_equal(self, param: str) -> Any:
         """Collect the value of a parameter that is shared by all setups."""
@@ -899,12 +929,16 @@ class CoreInputSetupCollection:
             setup_objs.append(setup_obj)
         return cls(setup_objs)
 
-    # SR_TMP <
+    def __iter__(self) -> Iterator[CoreInputSetup]:
+        return iter(self._setups)
+
+    # SR_TMP < TODO clean this up!!!
     __repr__ = InputSetupCollection.__repr__
     __len__ = InputSetupCollection.__len__
-    __iter__ = InputSetupCollection.__iter__
     __eq__ = InputSetupCollection.__eq__
     dicts = InputSetupCollection.dicts
+    collect = InputSetupCollection.collect
+    collect_equal = InputSetupCollection.collect_equal
     # SR_TMP >
 
 

@@ -8,7 +8,6 @@ import warnings
 from typing import Any
 from typing import Dict
 from typing import List
-from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -31,7 +30,7 @@ from .meta_data import collect_meta_data
 from .meta_data import get_integr_type
 from .meta_data import nc_var_name
 from .nc_meta_data import read_meta_data
-from .setup import InputSetup
+from .setup import CoreInputSetup
 from .setup import InputSetupCollection
 
 
@@ -70,26 +69,85 @@ def read_fields(
         reader.prepare()
         setups_ens = setups_ens.complete_dimensions(reader.nc_meta_data)
 
-        setups_lst_lst: List[List[InputSetupCollection]] = []
-        for combine_species, setups_spec in setups_ens.group("combine_species").items():
-            for setup_spec in setups_spec:
-                skip = ["ens_member_id"]
-                setups_time = setup_spec.decompress_partially(["time"], skip)
-                setups_lst_i = []
-                for sub_setup in setups_time:
-                    setups_lst_i.append(sub_setup.decompress(skip))
-                setups_lst_lst.append(setups_lst_i)
+        # SR_TMP <
 
-        for setups_lst_i in setups_lst_lst:
-            field_lst_lst.append([])
-            mdata_lst_lst.append([])
-            for sub_setups in setups_lst_i:
-                field_lst_i, mdata_lst_i = reader.run(sub_setups)
-                assert len(field_lst_i) == 1  # SR_TMP  SR_MULTIPANEL
-                field = next(iter(field_lst_i))
-                mdata = next(iter(mdata_lst_i))
-                field_lst_lst[-1].append(field)  # SR_TMP  SR_MULTIPANEL
-                mdata_lst_lst[-1].append(mdata)  # SR_TMP  SR_MULTIPANEL
+        for input_variable, setups_var in setups_ens.group("input_variable").items():
+            for combine_levels, setups_lvl in setups_var.group(
+                "combine_levels"
+            ).items():
+                for combine_deposition_types, setups_dep in setups_lvl.group(
+                    "combine_deposition_types"
+                ).items():
+                    for combine_species, setups_spc in setups_dep.group(
+                        "combine_species"
+                    ).items():
+                        setups_loc = setups_spc  # SR_TMP
+
+                        skip = ["time", "ens_member_id"]
+                        if input_variable == "concentration":
+                            if combine_levels:
+                                skip.append("level")
+                        elif input_variable == "deposition":
+                            if combine_deposition_types:
+                                skip.append("deposition_type")
+                        if combine_species:
+                            skip.append("species_id")
+
+                        setups_field_lst = setups_loc.decompress_partially(
+                            None, skip=skip
+                        )
+                        for setups_field in setups_field_lst:
+                            field_lst, mdata_lst = reader.run(setups_field)
+                            for field, mdata in zip(field_lst, mdata_lst):
+                                field_lst_lst.append([field])  # SR_TMP
+                                mdata_lst_lst.append([mdata])  # SR_TMP
+
+    # TODO: Fix InputSetupCollection etc., especially decompress_partially !!!
+    # TODO: Define roles of the four classes [Core]InputSetup[Collection] !!!
+    # TODO: Add tests for the various [de]compression methods !!!
+    # TODO: Invest some time in this, and only then come back to this !!!
+
+    # breakpoint()
+
+    # SR_TMP -
+    #
+    # setups_lst_lst: List[List[InputSetupCollection]] = []
+    # for combine_species, setups_spec in setups_ens.group(
+    #     "combine_species"
+    # ).items():
+    #     for setup_spec in setups_spec:
+    #         skip = ["ens_member_id"]
+    #         setups_time = setup_spec.decompress_partially(["time"], skip)
+    #         setups_lst_i = []
+    #         for sub_setup in setups_time:
+    #             setups_lst_i.append(sub_setup.decompress(skip))
+    #         setups_lst_lst.append(setups_lst_i)
+    #
+    # for setups_lst_i in setups_lst_lst:
+    #     field_lst_i = []
+    #     mdata_lst_i = []
+    #     for sub_setups in setups_lst_i:
+    #         field_lst_i, mdata_lst_i = reader.run(sub_setups)
+    #         assert len(field_lst_i) == 1  # SR_TMP  SR_MULTIPANEL
+    #         field = next(iter(field_lst_i))
+    #         mdata = next(iter(mdata_lst_i))
+    #         field_lst_i.append(field)  # SR_TMP  SR_MULTIPANEL
+    #         mdata_lst_i.append(mdata)  # SR_TMP  SR_MULTIPANEL
+    #     field_lst_lst.append(field_lst_i)
+    #     mdata_lst_lst.append(mdata_lst_i)
+
+    # for setups_lst_i in setups_lst_lst:
+    #     field_lst_i = []
+    #     mdata_lst_i = []
+    #     for sub_setups in setups_lst_i:
+    #         field_lst_i, mdata_lst_i = reader.run(sub_setups)
+    #         assert len(field_lst_i) == 1  # SR_TMP  SR_MULTIPANEL
+    #         field = next(iter(field_lst_i))
+    #         mdata = next(iter(mdata_lst_i))
+    #         field_lst_i.append(field)  # SR_TMP  SR_MULTIPANEL
+    #         mdata_lst_i.append(mdata)  # SR_TMP  SR_MULTIPANEL
+    #     field_lst_lst.append(field_lst_i)
+    #     mdata_lst_lst.append(mdata_lst_i)
 
     # breakpoint()
     return field_lst_lst, mdata_lst_lst
@@ -160,7 +218,55 @@ class FileReader:
         """Read one or more fields from a file from disc."""
         if not self.prepared:
             self.prepare()
-        return self._create_fields(var_setups)
+
+        # Read data at all time steps
+        fld_time: np.ndarray
+        if self.dry_run:
+            fld_time = self._create_dummy_fld(var_setups)
+        else:
+            fld_time_mem = self._read_fld_time_mem(var_setups)
+            fld_time = self._reduce_ensemble(fld_time_mem, var_setups)
+        time_stats: Dict[str, np.ndarray] = self._collect_time_stats(fld_time)
+
+        # # SR_NOTE Dirty workaround for issue arising in test_field_ensemble.py
+        # # SR_NOTE Problem: time decompression below fails (internally pre-separated)
+        # # SR_NOTE Issue: decompression etc. not properly defined/implemented/tested!
+        # # SR_NOTE However, I'd rather work around this right now than solve it...
+        # # SR_TODO Define how exactly decompress_partially etc. works and write tests!!
+        # # SR_TMP < Merge setups with different timesteps, otherwise decompress fails!
+        # _time = tuple(
+        #     sorted({ts for tss in var_setups.collect("time") for ts in tss})
+        # )
+        # _dcts = []
+        # for _dct in var_setups.dicts():
+        #     _dct.update({"time": _time})
+        #     if _dct not in _dcts:
+        #         _dcts.append(_dct)
+        # var_setups = InputSetupCollection([InputSetup(**_dct) for _dct in _dcts])
+        # # SR_TMP >
+
+        # Create fields and meta data at requested time steps
+        field_lst: List[Field] = []
+        mdata_lst: List[Any] = []
+        for var_setups_time in var_setups.decompress_partially(["time"]):
+            time_idx = next(iter(var_setups_time.collect_equal("time")))
+            fld: np.ndarray = fld_time[time_idx]
+            field = Field(
+                fld=fld,
+                lat=self.lat,
+                lon=self.lon,
+                rotated_pole=self.nc_meta_data["analysis"]["rotated_pole"],
+                var_setups=var_setups_time,
+                time_stats=time_stats,
+                nc_meta_data=self.nc_meta_data,
+            )
+            field_lst.append(field)
+            if not self.dry_run:
+                mdata_lst.append(self._collect_meta_data(var_setups_time))
+        if self.dry_run:
+            mdata_lst = [None] * len(field_lst)
+
+        return field_lst, mdata_lst
 
     # SR_TMP <<< TODO eliminate or implement properly
     @property
@@ -189,26 +295,6 @@ class FileReader:
             )
         self.in_file_path_lst = path_lst
 
-    def _create_fields(
-        self, var_setups: InputSetupCollection,
-    ) -> Tuple[List[Field], Union[List[MetaData], List[None]]]:
-        fld_time: np.ndarray
-        if self.dry_run:
-            fld_time = self._create_dummy_fld()
-        else:
-            fld_time_mem = self._read_fld_time_mem(var_setups)
-            fld_time = self._reduce_ensemble(fld_time_mem, var_setups)
-        time_stats: Dict[str, np.ndarray] = self._collect_time_stats(fld_time)
-        field_lst: List[Field] = self._create_field_objs(
-            var_setups, fld_time, time_stats
-        )
-        mdata_lst: Union[List[MetaData], List[None]]
-        if self.dry_run:
-            mdata_lst = [None] * len(field_lst)
-        else:
-            mdata_lst = self._collect_meta_data(var_setups)
-        return field_lst, mdata_lst
-
     def _read_nc_meta_data(self):
         nc_meta_data: Dict[str, Any]
         for i_mem, in_file_path in enumerate(self.in_file_path_lst or []):
@@ -224,7 +310,12 @@ class FileReader:
             self._insert_ts0_in_nc_meta_data(nc_meta_data)
         self.nc_meta_data = nc_meta_data
 
-    def _create_dummy_fld(self):
+    def _create_dummy_fld(self, var_setups: InputSetupCollection):
+        try:
+            # Way to check whether var_setups is valid (catches some invalid cases)
+            var_setups.compress()
+        except Exception:
+            raise ValueError("invalid var setups for individual field", var_setups)
         dim_names = self._dim_names()
         nlat = self.nc_meta_data["dimensions"][dim_names["lat"]]["size"]
         nlon = self.nc_meta_data["dimensions"][dim_names["lon"]]["size"]
@@ -291,7 +382,10 @@ class FileReader:
         """Read field at all time steps."""
 
         expand = ["lat", "lon", "time"]
-        flds_time = [self._read_nc_var(fi, setup, expand) for setup in setups]
+        flds_time = []
+        for core_setups in setups.decompress():
+            for core_setup in core_setups:
+                flds_time.append(self._read_nc_var(fi, core_setup, expand))
         fld_time: np.ndarray = merge_fields(flds_time)
 
         model = self.nc_meta_data["analysis"]["model"]
@@ -380,68 +474,31 @@ class FileReader:
             }
 
     # pylint: disable=R0914  # too-many-locals
-    def _collect_meta_data(self, var_setups: InputSetupCollection,) -> List[MetaData]:
+    def _collect_meta_data(self, var_setups_time: InputSetupCollection) -> MetaData:
         """Collect time-step-specific data meta data."""
 
         # Collect meta data at requested time steps for all members
-        n_ts = len(var_setups.collect_equal("time"))
-        shape = (n_ts, self.n_members)
-        mdata_by_reqtime_mem: np.ndarray = np.full(shape, None)
+        mdata: Optional[MetaData] = None
         for idx_mem, in_file_path in enumerate(self.in_file_path_lst or []):
             with nc4.Dataset(in_file_path, "r") as fi:
-                for idx_time, sub_setups in enumerate(
-                    var_setups.decompress_partially(["time"])
-                ):
-                    mdata_lst_i = []
-                    for sub_setup in sub_setups:
+                mdata_lst_i = []
+                for core_setups in var_setups_time.decompress():
+                    for core_setup in core_setups:
                         mdata_lst_i.append(
                             collect_meta_data(
-                                fi, sub_setup, self.nc_meta_data, add_ts0=self.add_ts0
+                                fi, core_setup, self.nc_meta_data, add_ts0=self.add_ts0
                             )
                         )
-                    mdata = mdata_lst_i[0].merge_with(mdata_lst_i[1:])
-                    mdata_by_reqtime_mem[idx_time, idx_mem] = mdata
-
-        # Merge meta data across members
-        for i_mem in range(1, self.n_members or 1):
-            for i_reqtime, mdata in enumerate(mdata_by_reqtime_mem[:, i_mem]):
-                mdata_ref = mdata_by_reqtime_mem[i_reqtime, 0]
-                if mdata != mdata_ref:
-                    raise Exception(
-                        f"meta data differ between members 0 and {i_mem}",
-                        mdata_ref,
-                        mdata,
-                    )
-        mdata_lst: List[MetaData] = mdata_by_reqtime_mem[:, 0].tolist()
+                mdata_i = mdata_lst_i[0].merge_with(mdata_lst_i[1:])
+                if mdata is None:
+                    mdata = mdata_i
+                elif mdata_i != mdata:
+                    raise Exception("meta data differ across members")
 
         # Fix some known issues with the NetCDF input data
-        self.fixer.fix_meta_data(self.nc_meta_data["analysis"]["model"], mdata_lst)
+        self.fixer.fix_meta_data(self.nc_meta_data["analysis"]["model"], mdata)
 
-        return mdata_lst
-
-    def _create_field_objs(
-        self,
-        var_setups: InputSetupCollection,
-        fld_time: np.ndarray,
-        time_stats: Mapping[str, np.ndarray],
-    ) -> List[Field]:
-        """Create fields at requested time steps for all members."""
-        rotated_pole = self.nc_meta_data["analysis"]["rotated_pole"]
-        time_idcs = var_setups.collect_equal("time")
-        field_lst: List[Field] = []
-        for time_idx in time_idcs:
-            fld: np.ndarray = fld_time[time_idx]
-            field = Field(
-                fld=fld,
-                lat=self.lat,
-                lon=self.lon,
-                rotated_pole=rotated_pole,
-                var_setups=var_setups,
-                time_stats=time_stats,
-                nc_meta_data=self.nc_meta_data,
-            )
-            field_lst.append(field)  # SR_TMP SR_MULTIPANEL
-        return field_lst
+        return mdata
 
     def _dim_names(self) -> Dict[str, str]:
         """Model-specific dimension names."""
@@ -471,7 +528,10 @@ class FileReader:
     # SR_TODO refactor to reduce branching and locals!
     # pylint: disable=R0912,R0914  # too-many-branches, too-many-locals
     def _read_nc_var(
-        self, fi: nc4.Dataset, setup: InputSetup, expand: Optional[List[str]] = None,
+        self,
+        fi: nc4.Dataset,
+        setup: CoreInputSetup,
+        expand: Optional[List[str]] = None,
     ) -> np.ndarray:
         if expand is None:
             expand = []
@@ -482,19 +542,14 @@ class FileReader:
         dim_names = self._dim_names()
 
         # Select variable in file
+        assert isinstance(setup, CoreInputSetup)  # SR_DBG
         var_name = nc_var_name(setup, model)
         nc_var = fi.variables[var_name]
 
-        if setup.level is None:
-            level = None
-        else:
-            assert len(setup.level) == 1
-            level = next(iter(setup.level))
-
         # Indices of field along NetCDF dimensions
         dim_idcs_by_name = {
-            dim_names["time"]: slice(None) if "time" in expand else level,
-            dim_names["level"]: slice(None) if "level" in expand else level,
+            dim_names["time"]: slice(None) if "time" in expand else setup.level,
+            dim_names["level"]: slice(None) if "level" in expand else setup.level,
             dim_names["lat"]: slice(None),
             dim_names["lon"]: slice(None),
         }
@@ -505,12 +560,6 @@ class FileReader:
                 idcs = slice(None)
             else:
                 idcs = getattr(setup, dim_name)
-                if idcs is not None:
-                    # SR_TMP <
-                    assert isinstance(idcs, Sequence)  # mypy
-                    assert len(idcs) == 1, f"len(setup.{dim_name}) > 1: {idcs}"
-                    idcs = next(iter(idcs))
-                    # SR_TMP >
             dim_idcs_by_name[dim_names[dim_name]] = idcs
         # SR_TMP >
 
@@ -561,7 +610,7 @@ class FileReader:
         return fld
 
     def _handle_time_integration(
-        self, fi: nc4.Dataset, fld: np.ndarray, setup: InputSetup,
+        self, fi: nc4.Dataset, fld: np.ndarray, setup: CoreInputSetup,
     ) -> np.ndarray:
         """Integrate, or desintegrate, field over time."""
         if setup.input_variable == "concentration":
