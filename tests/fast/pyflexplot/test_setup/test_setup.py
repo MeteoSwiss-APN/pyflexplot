@@ -14,16 +14,8 @@ from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
 
 # Local
-from .shared import DEFAULT_CORE_SETUP
 from .shared import DEFAULT_KWARGS
 from .shared import DEFAULT_SETUP
-
-
-def test_default_setup_dict():
-    """Check the default setupuration dict."""
-    setup1 = CoreInputSetup(**DEFAULT_KWARGS)
-    setup2 = DEFAULT_CORE_SETUP.dict()
-    assert setup1 == setup2
 
 
 class Test_Decompress:
@@ -35,9 +27,11 @@ class Test_Decompress:
                 "deposition_type": ["dry", "wet"],
                 "species_id": [1, 2],
                 "time": [1, 2, 3],
-                "nageclass": (0,),
-                "noutrel": (0,),
-                "numpoint": (0,),
+                "dimensions": {
+                    "nageclass": (0,),
+                    "noutrel": (0,),
+                    "numpoint": (0,),
+                },
             },
         )
 
@@ -122,7 +116,7 @@ class Test_InputSetupCollection:
             for dct in [
                 {"infile": "foo.nc", "input_variable": "concentration", "domain": "ch"},
                 {"infile": "bar.nc", "input_variable": "deposition", "lang": "de"},
-                {"nageclass": 1, "noutrel": 5, "numpoint": 3},
+                {"dimensions": {"nageclass": 1, "noutrel": 5, "numpoint": 3}},
             ]
         ]
 

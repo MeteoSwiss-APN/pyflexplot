@@ -48,15 +48,226 @@ class UnequalInputSetupParamValuesError(Exception):
     """Values of a param differs between multiple ``InputSetup`` objects."""
 
 
+def prepare_field_value(
+    field: ModelField, value: Any, *, alias_none: Optional[Sequence[Any]] = None
+) -> Any:
+    """Convert a value to a type compatible with a model field."""
+    if alias_none is None:
+        alias_none = []
+    alias_none = list(alias_none) + [None]
+    if value in alias_none and field.allow_none:
+        return None
+    field_type = field.outer_type_
+    try:
+        # Try to convert value to the field type
+        parse_obj_as(field_type, value)
+    except ValidationError as e:
+        # Conversion failed, so let's try something else!
+        error_type = e.errors()[0]["type"]
+        if error_type in ["type_error.sequence", "type_error.tuple"]:
+            try:
+                # Try again, with the value in a sequence
+                parse_obj_as(field_type, [value])
+            except ValidationError:
+                # Still not working; let's give up!
+                raise ValueError(
+                    f"value '{value}' with type {type(value).__name__} is incompatible"
+                    f" with field type {field_type}, both directly and in a sequence"
+                )
+            else:
+                # Now it worked; wrapping value in list and we're good!
+                value = [value]
+        else:
+            raise NotImplementedError("unknown ValidationError", error_type, e)
+    return value
+
+
+# SR_TODO Clean up docstring -- where should format key hints go?
+class CoreDimensions(BaseModel):
+    """Selected dimensions.
+
+    Args:
+        level: Index/indices of vertical level (zero-based, bottom-up). To sum
+            up multiple levels, combine their indices with '+'. Use the format
+            key '{level}' to embed it in ``outfile``.
+
+        nageclass: Index of age class (zero-based). Use the format key
+            '{nageclass}' to embed it in ``outfile``.
+
+        noutrel: Index of noutrel (zero-based). Use the format key
+            '{noutrel}' to embed it in ``outfile``.
+
+        numpoint: Index of release point (zero-based).
+
+        species_id: Species id(s). To sum up multiple species, combine their
+            ids with '+'. Use the format key '{species_id}' to embed it in
+            ``outfile``.
+
+        time: Time step indices (zero-based). Use the format key '{time}'
+            to embed one in ``outfile``.
+
+    """
+
+    class Config:  # noqa
+        # allow_mutation = False
+        extra = "forbid"
+
+    nageclass: Optional[int] = None
+    noutrel: Optional[int] = None
+    numpoint: Optional[int] = None
+    # species_id: Optional[int] = None
+    # time: Optional[int] = None
+    # level: Optional[int] = None
+
+    @classmethod
+    def create(cls, params: Dict[str, Any]) -> "CoreDimensions":
+        for param, value in params.items():
+            field = cls.__fields__[param]
+            try:
+                params[param] = prepare_field_value(field, value, alias_none=["*"])
+            except Exception as error:
+                raise ValueError("invalid parameter value", param, value) from error
+        try:
+            return cls(**params)
+        except ValidationError as e:
+            error = next(iter(e.errors()))
+            msg = f"error creating {cls.__name__} object"
+            if error["type"] == "value_error.missing":
+                param = next(iter(error["loc"]))
+                msg += f": missing parameter: {param}"
+            raise Exception(msg)
+
+
+class Dimensions:
+    """A collection of Domensions objects."""
+
+    _params: Tuple[str, ...] = tuple(CoreDimensions.__fields__)
+
+    def __init__(self, core: Optional[Sequence[CoreDimensions]] = None) -> None:
+        """Create an instance of ``Dimensions``."""
+        if core is None:
+            core = [CoreDimensions()]
+        assert core is not None  # mypy
+        assert all(isinstance(obj, CoreDimensions) for obj in core)
+        self._core: List[CoreDimensions] = list(core)
+
+    @classmethod
+    def create(cls, params: Dict[str, Any]) -> "Dimensions":
+        if isinstance(params, cls):
+            params = params.compact_dict()
+        else:
+            params = dict(**params)
+        n_max = 1
+        for param, value in params.items():
+            if not isinstance(value, Sequence) or isinstance(value, str):
+                params[param] = [value]
+            else:
+                n_max = max(n_max, len(value))
+        core_dims_lst: List[CoreDimensions] = []
+        for idx in range(n_max):
+            core_params = {}
+            for param, values in params.items():
+                try:
+                    core_params[param] = values[idx]
+                except IndexError:
+                    pass
+            core_dims = CoreDimensions.create(core_params)
+            core_dims_lst.append(core_dims)
+        return cls(core_dims_lst)
+
+    def __eq__(self, other):
+        if isinstance(other, type(self)):
+            return self.compact_dict() == other.compact_dict()
+        raise NotImplementedError(
+            f"comparison of {type(self).__name__} and {type(other).__name__} objects"
+        )
+
+    def __iter__(self) -> Iterator[CoreDimensions]:
+        return iter(self._core)
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self.get_compact(name)
+        except ValueError:
+            return object.__getattribute__(self, name)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name in self._params:
+            self.set(name, value)
+        else:
+            super().__setattr__(name, value)
+
+    def update(self, other: Union["Dimensions", Mapping[str, Any]]) -> None:
+        if isinstance(other, type(self)):
+            other = other.compact_dict()
+        assert isinstance(other, Mapping)
+        for param, value in other.items():
+            self.set(param, value)
+
+    def set(self, param: str, value: Optional[Union[int, Sequence[int]]]) -> None:
+        dct = self.compact_dict()
+        dct[param] = value
+        self._core = type(self).create(dct)._core
+
+    def get_compact(self, param: str) -> Optional[Union[int, Tuple[int, ...]]]:
+        """Gather the value(s) of a parameter in compact form.
+
+        The values are ordered, and duplicates and Nones are removed.
+        Single values are returned directly, multiple values as a tuple.
+        In absence of values, None is returned.
+
+        """
+        values = []
+        for value in self.get_raw(param):
+            if value is not None and value not in values:
+                values.append(value)
+        if len(values) == 0:
+            return None
+        elif len(values) == 1:
+            return next(iter(values))
+        else:
+            return tuple(sorted(values))
+
+    def get_raw(self, param: str) -> Tuple[Optional[int], ...]:
+        """Gather the values of a parameter in raw form.
+
+        The values are neither sorted, nor are duplicates or Nones removed, and
+        a tuple is returned regardless of the number of values.
+
+        """
+        if param not in self._params:
+            raise ValueError(param)
+        values = []
+        for core_dimension in self:
+            value = getattr(core_dimension, param)
+            values.append(value)
+        return tuple(values)
+
+    def compact_dict(self) -> Dict[str, Optional[Union[int, Tuple[int, ...]]]]:
+        """Return a compact dictionary representation.
+
+        See method ``get_compact`` for information of how the values of each
+        parameter are compacted.
+
+        """
+        return {param: self.get_compact(param) for param in self._params}
+
+    def raw_dict(self) -> Dict[str, Tuple[Optional[int], ...]]:
+        """Return a raw dictionary representation.
+
+        The parameter values are unordered, with duplicates and Nones retained.
+
+        """
+        return {param: self.get_raw(param) for param in self._params}
+
+
+# SR_TODO Clean up docstring -- where should format key hints go?
 # pylint: disable=E0213  # no-self-argument (validators)
 class InputSetup(BaseModel):
     """
     PyFlexPlot setup.
 
     Args:
-        nageclass: Index of age class (zero-based). Use the format key
-            '{nageclass}' to embed it in ``outfile``.
-
         combine_deposition_types: Sum up dry and wet deposition. Otherwise, each
             is plotted separately.
 
@@ -100,19 +311,12 @@ class InputSetup(BaseModel):
         lang: Language. Use the format key '{lang}' to embed it in ``oufile``.
             Choices: "en", "de".
 
-        level: Index/indices of vertical level (zero-based, bottom-up). To sum
-            up multiple levels, combine their indices with '+'. Use the format
-            key '{level}' to embed it in ``outfile``.
-
         multipanel_param: Parameter used to plot multiple panels. Only valid for
             ``plot_type = "multipanel"``. The respective parameter must have one
             value per panel. For example, a four-panel plot with one ensemble
             statistic plot each may be specified with ``multipanel_param =
             "ens_variable"`` and ``ens_variable = ["minimum", "maximum", "meam",
             "median"]``.
-
-        noutrel: Index of noutrel (zero-based). Use the format key
-            '{noutrel}' to embed it in ``outfile``.
 
         outfile: Output file path. May contain format keys.
 
@@ -122,19 +326,11 @@ class InputSetup(BaseModel):
         plot_variable: Variable computed from input variable. Use the format key
             '{plot_variable}' to embed it in ``outfile``.
 
-        numpoint: Index of release point (zero-based).
-
-        species_id: Species id(s). To sum up multiple species, combine their
-            ids with '+'. Use the format key '{species_id}' to embed it in
-            ``outfile``.
-
-        time: Time step indices (zero-based). Use the format key '{time}'
-            to embed one in ``outfile``.
-
     """
 
     class Config:  # noqa
         # allow_mutation = False
+        arbitrary_types_allowed = True
         extra = "forbid"
 
     # Basics
@@ -164,9 +360,7 @@ class InputSetup(BaseModel):
     domain: str = "auto"
 
     # Dimensions
-    nageclass: Optional[Tuple[int, ...]] = None
-    noutrel: Optional[Tuple[int, ...]] = None
-    numpoint: Optional[Tuple[int, ...]] = None
+    dimensions: Dimensions = Dimensions()
     species_id: Optional[Tuple[int, ...]] = None
     time: Optional[Tuple[int, ...]] = None
     level: Optional[Tuple[int, ...]] = None
@@ -342,44 +536,31 @@ class InputSetup(BaseModel):
                 directly, e.g., as `{"time": 0}` instead of `{"time": (0,)}`.
 
         """
+        params = dict(**params)
+
+        dimensions = Dimensions.create(params.pop("dimensions", {}))
+        for param, value in dict(**params).items():
+            if param in dimensions:
+                del params[param]
+                # dimensions.param = value
+                dimensions.update(Dimensions.create({"param": value}))  # SR_TMP
+
         singles = ["infile"]
-        for param, value in params.items():
+        for param, value in dict(**params).items():
             if param in singles:
                 continue
             field = cls.__fields__[param]
-            if value is None and field.allow_none:
-                continue
-            if value == "*" and field.allow_none:
-                params[param] = None
-                continue
-            field_type = field.outer_type_
             try:
-                # Try to convert value to the field type
-                parse_obj_as(field_type, value)
-            except ValidationError as e:
-                # Conversion failed, so let's try something else!
-                error_type = e.errors()[0]["type"]
-                if error_type in ["type_error.sequence", "type_error.tuple"]:
-                    try:
-                        # Try again, with the value in a sequence
-                        parse_obj_as(field_type, [value])
-                    except ValidationError:
-                        # Still not working; let's give up!
-                        raise ValueError(
-                            f"value of param {param} with type {type(value).__name__} "
-                            f"incompatible with field type {field_type}, both directly "
-                            f"and in a sequence"
-                        )
-                    else:
-                        # Now it worked; wrapping value in list and we're good!
-                        params[param] = [value]
-                else:
-                    raise NotImplementedError("unknown ValidationError", error_type, e)
+                params[param] = prepare_field_value(field, value, alias_none=["*"])
+            except Exception:
+                raise ValueError("invalid parameter value", param, value)
+
+        params["dimensions"] = dimensions
         try:
             return cls(**params)
         except ValidationError as e:
             error = next(iter(e.errors()))
-            msg = "error creating setup"
+            msg = f"error creating {cls.__name__} object"
             if error["type"] == "value_error.missing":
                 param = next(iter(error["loc"]))
                 msg += f": missing parameter: {param}"
@@ -479,17 +660,17 @@ class InputSetup(BaseModel):
         if obj.species_id is None:
             obj.species_id = meta_data["analysis"]["species_ids"]
 
-        if obj.nageclass is None:
+        if obj.dimensions.nageclass is None:
             if "nageclass" in dimensions:
-                obj.nageclass = tuple(range(dimensions["nageclass"]["size"]))
+                obj.dimensions.nageclass = tuple(range(dimensions["nageclass"]["size"]))
 
-        if obj.noutrel is None:
+        if obj.dimensions.noutrel is None:
             if "noutrel" in dimensions:
-                obj.noutrel = tuple(range(dimensions["noutrel"]["size"]))
+                obj.dimensions.noutrel = tuple(range(dimensions["noutrel"]["size"]))
 
-        if obj.numpoint is None:
+        if obj.dimensions.numpoint is None:
             if "numpoint" in dimensions:
-                obj.numpoint = tuple(range(dimensions["numpoint"]["size"]))
+                obj.dimensions.numpoint = tuple(range(dimensions["numpoint"]["size"]))
 
         return obj
 
@@ -675,6 +856,7 @@ class CoreInputSetup(BaseModel):
     """
 
     class Config:  # noqa
+        arbitrary_types_allowed = True
         allow_mutation = False
         extra = "forbid"
 
@@ -705,24 +887,22 @@ class CoreInputSetup(BaseModel):
     domain: str = "auto"
 
     # Dimensions
+    dimensions: Dimensions = Dimensions()
     species_id: int = 1
     time: int = 0
     level: Optional[int] = None
-    nageclass: Optional[int] = None
-    noutrel: Optional[int] = None
-    numpoint: Optional[int] = None
 
     # SR_TMP <<<
     @property
     def deposition_type_str(self) -> str:
         return "none" if self.deposition_type is None else self.deposition_type
 
-    def __repr__(self) -> str:  # type: ignore
-        return setup_repr(self)
-
     @classmethod
     def create(cls, params: Mapping[str, Any]) -> "CoreInputSetup":
         return cls(**params)
+
+    def __repr__(self) -> str:  # type: ignore
+        return setup_repr(self)
 
     @classmethod
     def as_setup(
@@ -1077,11 +1257,11 @@ class FilePathFormatter:
         if self._setup.input_variable == "deposition":
             input_variable += f"_{self._setup.deposition_type_str}"
         kwargs = {
-            "nageclass": self._setup.nageclass,
+            "nageclass": self._setup.dimensions.nageclass,
             "domain": self._setup.domain,
             "lang": self._setup.lang,
             "level": self._setup.level,
-            "noutrel": self._setup.noutrel,
+            "noutrel": self._setup.dimensions.noutrel,
             "species_id": self._setup.species_id,
             "time": self._setup.time,
             "input_variable": input_variable,

@@ -40,6 +40,7 @@ class Test_ReplaceNoneByAvailable:
     }
 
     def setup_create(self, params):
+        assert "dimensions" not in DEFAULT_KWARGS
         return InputSetup.create({**DEFAULT_KWARGS, **params})
 
     def test_time(self):
@@ -61,14 +62,14 @@ class Test_ReplaceNoneByAvailable:
         assert setup.species_id == (1, 2)
 
     def test_others(self):
-        setup = self.setup_create({"nageclass": "*", "noutrel": "*", "numpoint": "*"})
-        assert setup.nageclass is None
-        assert setup.noutrel is None
-        assert setup.numpoint is None
+        setup = self.setup_create({"dimensions": {"nageclass": "*", "noutrel": "*", "numpoint": "*"}})
+        assert setup.dimensions.nageclass is None
+        assert setup.dimensions.noutrel is None
+        assert setup.dimensions.numpoint is None
         setup = setup.complete_dimensions(self.meta_data)
-        assert setup.nageclass == (0,)
-        assert setup.noutrel == (0,)
-        assert setup.numpoint == (0, 1)
+        assert setup.dimensions.nageclass == 0
+        assert setup.dimensions.noutrel == 0
+        assert setup.dimensions.numpoint == (0, 1)
 
 
 class Test_WildcardToNone:
@@ -96,10 +97,10 @@ class Test_WildcardToNone:
         assert setup.level is None
 
     def test_others(self):
-        setup = self.setup_create({"nageclass": "*", "noutrel": "*", "numpoint": "*"})
-        assert setup.nageclass is None
-        assert setup.noutrel is None
-        assert setup.numpoint is None
+        setup = self.setup_create({"dimensions": {"nageclass": "*", "noutrel": "*", "numpoint": "*"}})
+        assert setup.dimensions.nageclass is None
+        assert setup.dimensions.noutrel is None
+        assert setup.dimensions.numpoint is None
 
 
 class Test_Cast:

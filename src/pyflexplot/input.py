@@ -559,7 +559,7 @@ class FileReader:
             if dim_name in expand:
                 idcs = slice(None)
             else:
-                idcs = getattr(setup, dim_name)
+                idcs = getattr(setup.dimensions, dim_name)
             dim_idcs_by_name[dim_names[dim_name]] = idcs
         # SR_TMP >
 

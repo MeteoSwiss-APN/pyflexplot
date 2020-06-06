@@ -836,14 +836,14 @@ class RawReleaseMetaData(BaseModel):
 
         # assert isinstance(setup, CoreInputSetup)  # TODO try this out!!!
 
-        assert setup.numpoint is not None  # mypy
+        assert setup.dimensions.numpoint is not None  # mypy
         # SR_TMP < TODO proper implementation
         if isinstance(setup, CoreInputSetup):
-            idx = setup.numpoint
+            idx = setup.dimensions.numpoint
         else:
             assert isinstance(setup, InputSetup)
-            assert len(setup.numpoint) == 1
-            idx = next(iter(setup.numpoint))
+            assert len(setup.dimensions.numpoint) == 1
+            idx = next(iter(setup.dimensions.numpoint))
         # SR_TMP >
 
         var_name: str = "RELCOM"  # SR_HC TODO un-hardcode
