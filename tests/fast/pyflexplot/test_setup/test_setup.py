@@ -7,47 +7,22 @@ from typing import Any
 from typing import Dict
 from typing import List
 
-# Third-party
-import pytest  # type: ignore
-
 # First-party
 from pyflexplot.setup import CoreInputSetup
 from pyflexplot.setup import CoreInputSetupCollection
 from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
 
-DEFAULT_KWARGS: Dict[str, Any] = {
-    "infile": "foo.nc",
-    "outfile": "bar.png",
-}
-
-
-DEFAULT_SETUP = InputSetup(
-    **{
-        **DEFAULT_KWARGS,
-        "nageclass": None,
-        "combine_species": False,
-        "deposition_type": None,
-        "domain": "auto",
-        "ens_member_id": None,
-        "ens_variable": "none",
-        "integrate": False,
-        "lang": "en",
-        "level": None,
-        "noutrel": None,
-        "plot_type": "auto",
-        "numpoint": None,
-        "species_id": None,
-        "time": None,
-        "input_variable": "concentration",
-    }
-)
+# Local
+from .shared import DEFAULT_CORE_SETUP
+from .shared import DEFAULT_KWARGS
+from .shared import DEFAULT_SETUP
 
 
 def test_default_setup_dict():
     """Check the default setupuration dict."""
-    setup1 = InputSetup(**DEFAULT_KWARGS)
-    setup2 = DEFAULT_SETUP.dict()
+    setup1 = CoreInputSetup(**DEFAULT_KWARGS)
+    setup2 = DEFAULT_CORE_SETUP.dict()
     assert setup1 == setup2
 
 
@@ -192,162 +167,3 @@ class Test_Compress:
         res = InputSetupCollection(self.setups_lst[:3]).compress().dict()
         sol = InputSetup.create({**self.dcts[0], "level": (0, 1, 2)})
         assert res == sol
-
-
-class Test_CreateWildcardToNone:
-    """Wildcard values passed to ``InputSetup.create`` turn into None.
-
-    The wildcards can be used in a set file to explicitly specify that all
-    available values of a respective dimension (etc.) shall be read from a
-    NetCDF file, as es the case if the setup value is None (the default).
-
-    """
-
-    def setup_create(self, params):
-        return InputSetup.create({**DEFAULT_KWARGS, **params})
-
-    def test_species_id(self):
-        setup = self.setup_create({"species_id": "*"})
-        assert setup.species_id is None
-
-    def test_time(self):
-        setup = self.setup_create({"time": "*"})
-        assert setup.time is None
-
-    def test_level(self):
-        setup = self.setup_create({"level": "*"})
-        assert setup.level is None
-
-    def test_others(self):
-        setup = self.setup_create({"nageclass": "*", "noutrel": "*", "numpoint": "*"})
-        assert setup.nageclass is None
-        assert setup.noutrel is None
-        assert setup.numpoint is None
-
-
-class Test_ReplaceNoneByAvailable:
-    meta_data: Dict[str, Any] = {
-        "dimensions": {
-            "time": {"name": "time", "size": 11},
-            "rlon": {"name": "rlon", "size": 40},
-            "rlat": {"name": "rlat", "size": 30},
-            "level": {"name": "level", "size": 3},
-            "nageclass": {"name": "nageclass", "size": 1},
-            "noutrel": {"name": "numpoint", "size": 1},
-            "numpoint": {"name": "numpoint", "size": 2},
-            "nchar": {"name": "nchar", "size": 45},
-        },
-        "analysis": {"species_ids": (1, 2)},
-    }
-
-    def setup_create(self, params):
-        return InputSetup.create({**DEFAULT_KWARGS, **params})
-
-    def test_time(self):
-        setup = self.setup_create({"time": "*"})
-        assert setup.time is None
-        setup = setup.complete_dimensions(self.meta_data)
-        assert setup.time == (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-
-    def test_level(self):
-        setup = self.setup_create({"level": "*"})
-        assert setup.level is None
-        setup = setup.complete_dimensions(self.meta_data)
-        assert setup.level == (0, 1, 2)
-
-    def test_species_id(self):
-        setup = self.setup_create({"species_id": "*"})
-        assert setup.species_id is None
-        setup = setup.complete_dimensions(self.meta_data)
-        assert setup.species_id == (1, 2)
-
-    def test_others(self):
-        setup = self.setup_create({"nageclass": "*", "noutrel": "*", "numpoint": "*"})
-        assert setup.nageclass is None
-        assert setup.noutrel is None
-        assert setup.numpoint is None
-        setup = setup.complete_dimensions(self.meta_data)
-        assert setup.nageclass == (0,)
-        assert setup.noutrel == (0,)
-        assert setup.numpoint == (0, 1)
-
-
-class Test_Cast_SingleValue:
-    def test_infile(self):
-        assert InputSetup.cast("infile", "foo.nc") == "foo.nc"
-
-    def test_outfile(self):
-        assert InputSetup.cast("outfile", "foo.png") == "foo.png"
-
-    def test_lang(self):
-        assert InputSetup.cast("lang", "de") == "de"
-
-    def test_ens_member_id(self):
-        assert InputSetup.cast("ens_member_id", "004") == 4
-
-    def test_integrate(self):
-        assert InputSetup.cast("integrate", "True") is True
-        assert InputSetup.cast("integrate", "False") is False
-
-    def test_level(self):
-        assert InputSetup.cast("level", "2") == 2
-
-    def test_time(self):
-        assert InputSetup.cast("time", "10") == 10
-
-
-class Test_Cast_MultiValue:
-    def test_infile_fail(self):
-        with pytest.raises(ValueError):
-            InputSetup.cast("infile", ["a.nc", "b.nc"])
-
-    def test_outfile_fail(self):
-        with pytest.raises(ValueError):
-            InputSetup.cast("outfile", ["a.png", "b.png"])
-
-    def test_lang_fail(self):
-        with pytest.raises(ValueError):
-            InputSetup.cast("lang", ["en", "de"])
-
-    def test_ens_member_id(self):
-        assert InputSetup.cast("ens_member_id", ["01", "02", "03"]) == [1, 2, 3]
-
-    def test_integrate_fail(self):
-        with pytest.raises(ValueError):
-            InputSetup.cast("integrate", ["True", "False"])
-
-    def test_level(self):
-        assert InputSetup.cast("level", ["1", "2"]) == [1, 2]
-
-    def test_time(self):
-        assert InputSetup.cast("time", ["0", "1", "2", "3", "4"]) == [0, 1, 2, 3, 4]
-
-
-class Test_CastMany:
-    def test_dict(self):
-        params = {"infile": "foo.nc", "species_id": ["1", "2"], "integrate": "False"}
-        res = InputSetup.cast_many(params)
-        sol = {"infile": "foo.nc", "species_id": [1, 2], "integrate": False}
-        assert res == sol
-
-    def test_dict_comma_separated_fail(self):
-        params = {"infile": "foo.nc", "species_id": "1,2", "integrate": "False"}
-        with pytest.raises(ValueError):
-            InputSetup.cast_many(params)
-
-    def test_dict_comma_separated(self):
-        params = {"infile": "foo.nc", "species_id": "1,2", "integrate": "False"}
-        res = InputSetup.cast_many(params, list_separator=",")
-        sol = {"infile": "foo.nc", "species_id": [1, 2], "integrate": False}
-        assert res == sol
-
-    def test_tuple(self):
-        params = (("infile", "foo.nc"), ("species_id", "1,2"), ("integrate", "False"))
-        res = InputSetup.cast_many(params, list_separator=",")
-        sol = {"infile": "foo.nc", "species_id": [1, 2], "integrate": False}
-        assert res == sol
-
-    def test_tuple_duplicates_fail(self):
-        params = (("infile", "foo.nc"), ("species_id", "1"), ("infile", "bar.nc"))
-        with pytest.raises(ValueError):
-            InputSetup.cast_many(params)

@@ -10,8 +10,8 @@ from textwrap import dedent
 from pyflexplot.setup import InputSetupFile
 
 # Local
-from .test_setup import DEFAULT_KWARGS
-from .test_setup import DEFAULT_SETUP
+from .shared import DEFAULT_KWARGS
+from .shared import DEFAULT_SETUP
 
 
 def fmt_val(val):
