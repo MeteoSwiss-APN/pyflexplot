@@ -21,7 +21,7 @@ from pyflexplot.setup import InputSetupCollection
 
 # Local  isort:skip
 from shared import read_nc_var  # isort:skip
-from shared import datadir  # noqa:F401 isort:skip
+from shared import datadir_reduced as datadir  # noqa:F401 isort:skip
 
 
 def get_var_name_ref(setup, var_names_ref):
@@ -29,7 +29,7 @@ def get_var_name_ref(setup, var_names_ref):
         assert len(var_names_ref) == 1
         return next(iter(var_names_ref))
     elif setup.input_variable == "deposition":
-        species_id = setup.species_id
+        species_id = setup.dimensions.species_id
         if isinstance(species_id, tuple):
             assert len(species_id) == 1
             species_id = next(iter(species_id))
@@ -70,15 +70,15 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
                 "input_variable": "concentration",
-                "species_id": 2,
-                "level": 1,
                 "integrate": False,
-                "time": 3,
                 "dimensions": {
+                    "level": 1,
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
-                }
+                    "species_id": 2,
+                    "time": 3,
+                },
             },
         ),
         Conf(  # [conf1]
@@ -90,13 +90,13 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
                 "outfile": "dummy.png",
                 "input_variable": "deposition",
                 "deposition_type": "dry",
-                "species_id": 2,
                 "integrate": False,
-                "time": 3,
                 "dimensions": {
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
+                    "species_id": 2,
+                    "time": 3,
                 },
             },
             scale_fld_ref=1 / 3,
@@ -110,13 +110,13 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
                 "outfile": "dummy.png",
                 "input_variable": "deposition",
                 "deposition_type": "wet",
-                "species_id": 2,
                 "integrate": False,
-                "time": 3,
                 "dimensions": {
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
+                    "species_id": 2,
+                    "time": 3,
                 },
             },
             scale_fld_ref=1 / 3,
@@ -131,13 +131,13 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
                 "input_variable": "deposition",
                 "deposition_type": ["dry", "wet"],
                 "combine_deposition_types": True,
-                "species_id": 2,
                 "integrate": False,
-                "time": 3,
                 "dimensions": {
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
+                    "species_id": 2,
+                    "time": 3,
                 },
             },
             scale_fld_ref=1 / 3,
@@ -150,14 +150,14 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
                 "input_variable": "concentration",
-                "level": 1,
-                "species_id": 1,
                 "integrate": False,
-                "time": 3,
                 "dimensions": {
+                    "level": 1,
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
+                    "species_id": 1,
+                    "time": 3,
                 },
             },
         ),
@@ -171,13 +171,13 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
                 "input_variable": "deposition",
                 "deposition_type": ["dry", "wet"],
                 "combine_deposition_types": True,
-                "species_id": 1,
                 "integrate": False,
-                "time": 3,
                 "dimensions": {
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
+                    "species_id": 1,
+                    "time": 3,
                 },
             },
             scale_fld_ref=1 / 3,
@@ -192,14 +192,14 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
                 "input_variable": "deposition",
                 "deposition_type": ["dry", "wet"],
                 "combine_deposition_types": True,
-                "species_id": [1, 2],
                 "combine_species": True,
                 "integrate": False,
-                "time": 3,
                 "dimensions": {
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
+                    "species_id": [1, 2],
+                    "time": 3,
                 },
             },
             scale_fld_ref=1 / 3,
@@ -212,14 +212,14 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
                 "input_variable": "concentration",
-                "species_id": 1,
-                "level": 1,
                 "integrate": False,
-                "time": 10,
                 "dimensions": {
+                    "level": 1,
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
+                    "species_id": 1,
+                    "time": 10,
                 },
             },
         ),
@@ -240,7 +240,7 @@ def test_single(datadir, conf):  # noqa:F811
     fld = field_lst_lst[0][0].fld
 
     # Initialize individual setup objects
-    var_setups_lst = setups.decompress_twice("time", skip=["ens_member_id"])
+    var_setups_lst = setups.decompress_twice("dimensions.time", skip=["ens_member_id"])
     assert len(var_setups_lst) == 1
     var_setups = next(iter(var_setups_lst))
 
@@ -270,7 +270,7 @@ def test_single(datadir, conf):  # noqa:F811
 @pytest.mark.parametrize(
     "conf",
     [
-        Conf(
+        Conf(  # [conf0]
             datafilename=datafilename1,
             model="cosmo1",
             var_names_ref=["spec002"],
@@ -278,19 +278,19 @@ def test_single(datadir, conf):  # noqa:F811
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
                 "input_variable": "concentration",
-                "level": [0, 2],
-                "species_id": 2,
                 "integrate": True,
-                "time": [0, 3],
                 "dimensions": {
+                    "level": [0, 2],
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
+                    "species_id": 2,
+                    "time": [0, 3],
                 },
             },
             scale_fld_ref=3.0,
         ),
-        Conf(
+        Conf(  # [conf1]
             datafilename=datafilename1,
             model="cosmo1",
             var_names_ref=["spec002"],
@@ -298,19 +298,19 @@ def test_single(datadir, conf):  # noqa:F811
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
                 "input_variable": "concentration",
-                "level": [0, 2],
-                "species_id": 2,
                 "integrate": True,
-                "time": [0, 3],
                 "dimensions": {
+                    "level": [0, 2],
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
+                    "species_id": 2,
+                    "time": [0, 3],
                 },
             },
             scale_fld_ref=3.0,
         ),
-        Conf(
+        Conf(  # [conf2]
             datafilename=datafilename1,
             model="cosmo1",
             var_names_ref=["DD_spec002"],
@@ -319,17 +319,17 @@ def test_single(datadir, conf):  # noqa:F811
                 "outfile": "dummy.png",
                 "input_variable": "deposition",
                 "deposition_type": "dry",
-                "species_id": 2,
                 "integrate": True,
-                "time": [0, 3, 9],
                 "dimensions": {
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
+                    "species_id": 2,
+                    "time": [0, 3, 9],
                 },
             },
         ),
-        Conf(
+        Conf(  # [conf3]
             datafilename=datafilename1,
             model="cosmo1",
             var_names_ref=["WD_spec002"],
@@ -338,17 +338,17 @@ def test_single(datadir, conf):  # noqa:F811
                 "outfile": "dummy.png",
                 "input_variable": "deposition",
                 "deposition_type": "wet",
-                "species_id": 2,
                 "integrate": True,
-                "time": [0, 3, 9],
                 "dimensions": {
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
+                    "species_id": 2,
+                    "time": [0, 3, 9],
                 },
             },
         ),
-        Conf(
+        Conf(  # [conf4]
             datafilename=datafilename1,
             model="cosmo1",
             var_names_ref=["WD_spec001", "DD_spec001"],
@@ -358,17 +358,17 @@ def test_single(datadir, conf):  # noqa:F811
                 "input_variable": "deposition",
                 "deposition_type": ["dry", "wet"],
                 "combine_deposition_types": True,
-                "species_id": 1,
                 "integrate": True,
-                "time": [0, 3, 9],
                 "dimensions": {
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
+                    "species_id": 1,
+                    "time": [0, 3, 9],
                 },
             },
         ),
-        Conf(
+        Conf(  # [conf5]
             datafilename=datafilename2,
             model="cosmo1",
             var_names_ref=["spec001"],
@@ -376,20 +376,20 @@ def test_single(datadir, conf):  # noqa:F811
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
                 "input_variable": "concentration",
-                "level": 0,
-                "species_id": 1,
                 "integrate": True,
-                "time": [0, 3, 9],
                 "dimensions": {
+                    "level": 0,
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
+                    "species_id": 1,
+                    "time": [0, 3, 9],
                 },
             },
-            derived_setup_params=[{"level": 2}],
+            derived_setup_params=[{"dimensions": {"level": 2}}],
             scale_fld_ref=3.0,
         ),
-        Conf(
+        Conf(  # [conf6]
             datafilename=datafilename2,
             model="cosmo1",
             var_names_ref=["WD_spec001", "DD_spec001"],
@@ -398,13 +398,13 @@ def test_single(datadir, conf):  # noqa:F811
                 "outfile": "dummy.png",
                 "input_variable": "deposition",
                 "deposition_type": ["wet", "dry"],
-                "species_id": 1,
                 "integrate": True,
-                "time": [0, 3, 9],
                 "dimensions": {
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
+                    "species_id": 1,
+                    "time": [0, 3, 9],
                 },
             },
         ),
@@ -423,10 +423,14 @@ def test_multiple(datadir, conf):  # noqa:F811
 
     # Process field specifications one after another
     var_setups: InputSetupCollection
-    for var_setups in setups.decompress_twice("time", skip=["ens_member_id"]):
+    for var_setups in setups.decompress_twice(
+        "dimensions.time", skip=["ens_member_id"]
+    ):
 
         # Read input fields
+        var_setups_dicts_pre = var_setups.dicts()
         field_lst_lst, mdata_lst_lst = read_fields(datafile, var_setups)
+        assert var_setups.dicts() == var_setups_dicts_pre
         assert len(field_lst_lst) == 1
         assert len(mdata_lst_lst) == 1
         assert len(field_lst_lst[0]) == 1
@@ -461,6 +465,7 @@ def test_multiple(datadir, conf):  # noqa:F811
 
 
 # test_single_add_ts0
+@pytest.mark.skip("test_single_add_ts0: TODO fix/implement")
 @pytest.mark.parametrize(
     "conf",
     [
@@ -472,14 +477,14 @@ def test_multiple(datadir, conf):  # noqa:F811
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
                 "input_variable": "concentration",
-                "species_id": 2,
-                "level": 1,
                 "integrate": False,
-                "time": None,
                 "dimensions": {
+                    "level": 1,
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
+                    "species_id": 2,
+                    "time": None,
                 },
             },
         ),
@@ -493,13 +498,13 @@ def test_multiple(datadir, conf):  # noqa:F811
                 "input_variable": "deposition",
                 "deposition_type": ["dry", "wet"],
                 "combine_deposition_types": True,
-                "species_id": 2,
                 "integrate": False,
-                "time": None,
                 "dimensions": {
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
+                    "species_id": 2,
+                    "time": None,
                 },
             },
             scale_fld_ref=1 / 3,

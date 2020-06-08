@@ -197,8 +197,8 @@ def check_summary_dict_element_is_subelement(
                     f"iterable elements #{idx} differ: {msg}",
                     {
                         **err_objs,
-                        "subobj_super": subobj_super,
-                        "subobj_sup": subobj_sub,
+                        "sub_obj_super": subobj_super,
+                        "sub_obj_sub": subobj_sub,
                     },
                 )
 

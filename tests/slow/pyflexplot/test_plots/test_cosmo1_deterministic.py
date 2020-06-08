@@ -26,13 +26,11 @@ class Test_Concentration(_TestBase):
         "integrate": False,
         "lang": "de",
         "domain": "auto",
-        "species_id": (1,),
-        "time": (5,),
-        "level": (0,),
+        "dimensions": {"species_id": 1, "time": 5, "level": 0},
     }
 
 
-@pytest.mark.skip(f"{__file__.split('/')[-1]}::Test_Concentration2: TODO")
+@pytest.mark.skip(f"{__file__.split('/')[-1]}::Test_Concentration2: TODO implment")
 class Test_Concentration2(_TestCreateReference):
     # class Test_Concentration2(_TestBase):
     reference = "ref_cosmo1_deterministic_concentration_2"
@@ -42,9 +40,7 @@ class Test_Concentration2(_TestCreateReference):
         "input_variable": "concentration",
         "lang": "en",
         "domain": "ch",
-        "species_id": (1,),
-        "time": (1, 6, 11),
-        "level": (0,),
+        "dimensions": {"species_id": 1, "time": (1, 6, 11), "level": 0},
     }
     n_plots = 3
 
@@ -60,9 +56,7 @@ class Test_IntegratedConcentration(_TestBase):
         "integrate": True,
         "lang": "en",
         "domain": "ch",
-        "species_id": (1,),
-        "time": (10,),
-        "level": (0,),
+        "dimensions": {"species_id": 1, "time": 10, "level": 0},
     }
 
 
@@ -78,8 +72,7 @@ class Test_TotalDeposition(_TestBase):
         "integrate": True,
         "lang": "de",
         "domain": "auto",
-        "species_id": (1,),
-        "time": (-1,),
+        "dimensions": {"species_id": 1, "time": -1},
     }
 
 
@@ -96,6 +89,5 @@ class Test_AffectedArea(_TestBase):
         "integrate": True,
         "lang": "en",
         "domain": "ch",
-        "species_id": (1,),
-        "time": (-1,),
+        "dimensions": {"species_id": 1, "time": -1},
     }

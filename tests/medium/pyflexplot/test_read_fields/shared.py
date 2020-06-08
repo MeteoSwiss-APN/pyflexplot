@@ -5,6 +5,8 @@ Utilities for testing.
 # Standard library
 import distutils.dir_util
 import os
+from typing import Any
+from typing import Mapping
 
 # Third-party
 import netCDF4 as nc4
@@ -33,15 +35,38 @@ def datadir_rel(tmpdir, request):
 
 
 @pytest.fixture
-def datadir(tmpdir, request):
-    """Return path to temporary data directory."""
+def datadir_original(tmpdir, request):
+    """Return path to temporary data directory with original data files."""
+    return _datadir_core("original", tmpdir, request)
+
+
+@pytest.fixture
+def datadir_artificial(tmpdir, request):
+    """Return path to temporary data directory with artificial data files."""
+    return _datadir_core("artificial", tmpdir, request)
+
+
+@pytest.fixture
+def datadir_reduced(tmpdir, request):
+    """Return path to temporary data directory with reduced data files."""
+    return _datadir_core("reduced", tmpdir, request)
+
+
+def _datadir_core(subdir, tmpdir, request):
     file = request.module.__file__
     dir, _ = os.path.splitext(file)
     data_root = os.path.abspath(f"{os.path.abspath(dir)}/../../../../data")
-    data_dir = f"{data_root}/pyflexplot/input/reduced"
+    data_dir = f"{data_root}/pyflexplot/input/{subdir}"
     if os.path.isdir(data_dir):
         distutils.dir_util.copy_tree(data_dir, str(tmpdir))
     return tmpdir
+
+
+def merge_setup_dcts(
+    dct1: Mapping[str, Any], dct2: Mapping[str, Any]
+) -> Mapping[str, Any]:
+    dimensions = {**dct1.get("dimensions", {}), **dct2.get("dimensions", {})}
+    return {**dct1, **dct2, "dimensions": dimensions}
 
 
 def fix_nc_fld(fld, model):

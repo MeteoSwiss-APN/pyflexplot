@@ -665,12 +665,12 @@ class MetaDataCollector:
         # SR_TMP >
 
         idx: int
-        if self.setup.level is None:
+        if self.setup.dimensions.level is None:
             level_unit = ""
             level_bot = -1.0
             level_top = -1.0
         else:
-            idx = self.setup.level
+            idx = self.setup.dimensions.level
             try:  # SR_TMP IFS
                 var = self.fi.variables["level"]
             except KeyError:  # SR_TMP IFS
@@ -799,10 +799,10 @@ class TimeStepMetaDataCollector:
     def ts_idx(self) -> int:
         """Index of current time step of current field."""
         # Default to timestep of current field
-        assert self.setup.time is not None  # mypy
+        assert self.setup.dimensions.time is not None  # mypy
         if self.add_ts0:
-            return self.setup.time - 1
-        return self.setup.time
+            return self.setup.dimensions.time - 1
+        return self.setup.dimensions.time
 
 
 class RawReleaseMetaData(BaseModel):
@@ -993,13 +993,13 @@ def fix_unit_meters_agl(unit: str, lang: str) -> str:
 def nc_var_name(
     setup: Union[InputSetup, CoreInputSetup], model: str
 ) -> Union[str, List[str]]:
-    assert setup.species_id is not None  # mypy
+    assert setup.dimensions.species_id is not None  # mypy
     if isinstance(setup, CoreInputSetup):
-        species_id = setup.species_id
+        species_id = setup.dimensions.species_id
     else:
         assert isinstance(setup, InputSetup)  # mypy
-        assert len(setup.species_id) == 1  # SR_TMP
-        species_id = next(iter(setup.species_id))
+        assert len(setup.dimensions.species_id) == 1  # SR_TMP
+        species_id = next(iter(setup.dimensions.species_id))
     if setup.input_variable == "concentration":
         if model in ["cosmo2", "cosmo1"]:
             return f"spec{species_id:03d}"

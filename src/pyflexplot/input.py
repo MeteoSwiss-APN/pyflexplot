@@ -8,9 +8,11 @@ import warnings
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from typing import Type
 from typing import Union
 
 # Third-party
@@ -60,17 +62,20 @@ def read_fields(
         dry_run (optional): Whether to skip reading the data from disk.
 
     """
+    dbg_time_in = setups.collect("dimensions.time")  # SR_DBG
     field_lst_lst: List[List[Field]] = []
     mdata_lst_lst: List[List[Any]] = []
     ens_mem_ids: List[int]
     setups_ens: InputSetupCollection
     for ens_mem_ids, setups_ens in setups.group("ens_member_id").items():
-        reader = FileReader(in_file_path, ens_mem_ids, add_ts0=add_ts0, dry_run=dry_run)
-        reader.prepare()
+        reader = FileReader(
+            in_file_path,
+            ens_mem_ids,
+            add_ts0=add_ts0,
+            dry_run=dry_run,
+            cls_fixer=FlexPartDataFixer,
+        )
         setups_ens = setups_ens.complete_dimensions(reader.nc_meta_data)
-
-        # SR_TMP <
-
         for input_variable, setups_var in setups_ens.group("input_variable").items():
             for combine_levels, setups_lvl in setups_var.group(
                 "combine_levels"
@@ -82,17 +87,15 @@ def read_fields(
                         "combine_species"
                     ).items():
                         setups_loc = setups_spc  # SR_TMP
-
-                        skip = ["time", "ens_member_id"]
+                        skip = ["dimensions.time", "ens_member_id"]
                         if input_variable == "concentration":
                             if combine_levels:
-                                skip.append("level")
+                                skip.append("dimensions.level")
                         elif input_variable == "deposition":
                             if combine_deposition_types:
                                 skip.append("deposition_type")
                         if combine_species:
-                            skip.append("species_id")
-
+                            skip.append("dimensions.species_id")
                         setups_field_lst = setups_loc.decompress_partially(
                             None, skip=skip
                         )
@@ -102,14 +105,10 @@ def read_fields(
                                 field_lst_lst.append([field])  # SR_TMP
                                 mdata_lst_lst.append([mdata])  # SR_TMP
 
-    # TODO: Fix InputSetupCollection etc., especially decompress_partially !!!
-    # TODO: Define roles of the four classes [Core]InputSetup[Collection] !!!
-    # TODO: Add tests for the various [de]compression methods !!!
-    # TODO: Invest some time in this, and only then come back to this !!!
+    dbg_time_out = setups.collect("dimensions.time")  # SR_DBG
+    assert dbg_time_in == [None] or dbg_time_in == dbg_time_out  # SR_DBG
 
-    # breakpoint()
-
-    # SR_TMP -
+    # SR_TMP < TODO remove once the above works!
     #
     # setups_lst_lst: List[List[InputSetupCollection]] = []
     # for combine_species, setups_spec in setups_ens.group(
@@ -135,21 +134,9 @@ def read_fields(
     #         mdata_lst_i.append(mdata)  # SR_TMP  SR_MULTIPANEL
     #     field_lst_lst.append(field_lst_i)
     #     mdata_lst_lst.append(mdata_lst_i)
+    #
+    # SR_TMP >
 
-    # for setups_lst_i in setups_lst_lst:
-    #     field_lst_i = []
-    #     mdata_lst_i = []
-    #     for sub_setups in setups_lst_i:
-    #         field_lst_i, mdata_lst_i = reader.run(sub_setups)
-    #         assert len(field_lst_i) == 1  # SR_TMP  SR_MULTIPANEL
-    #         field = next(iter(field_lst_i))
-    #         mdata = next(iter(mdata_lst_i))
-    #         field_lst_i.append(field)  # SR_TMP  SR_MULTIPANEL
-    #         mdata_lst_i.append(mdata)  # SR_TMP  SR_MULTIPANEL
-    #     field_lst_lst.append(field_lst_i)
-    #     mdata_lst_lst.append(mdata_lst_i)
-
-    # breakpoint()
     return field_lst_lst, mdata_lst_lst
 
 
@@ -172,6 +159,7 @@ class FileReader:
         *,
         add_ts0: bool = False,
         dry_run: bool = False,
+        cls_fixer: Optional[Type["FlexPartDataFixer"]] = None,
     ):
         """Create an instance of ``FileReader``.
 
@@ -188,6 +176,9 @@ class FileReader:
 
             dry_run (optional): Whether to skip reading the data from disk.
 
+            cls_fixer (optional): Class providing methods to fix issues with the
+                input data. Is instatiated with this instance of ``FileReader``.
+
         """
         self.in_file_path_fmt = in_file_path
         self.ens_member_ids = ens_member_ids
@@ -195,61 +186,44 @@ class FileReader:
         self.dry_run = dry_run
 
         # Declare some attributes
-        self.prepared: bool = False
         self.nc_meta_data: Dict[str, Any]
         self.in_file_path_lst: Sequence[str]
         self.lat: np.ndarray
         self.lon: np.ndarray
         self.time: np.ndarray
 
-        self.fixer: FlexPartDataFixer = FlexPartDataFixer(self)
+        self.fixer: Optional["FlexPartDataFixer"] = None
+        if cls_fixer is not None:
+            self.fixer = cls_fixer(self)
 
-    def prepare(self):
-        if self.prepared:
-            raise Exception("file reader has already been prepared")
-        self.prepared = True
-
+        # Prepare reader
         self._prepare_in_file_path_lst()
         self._read_nc_meta_data()
+
+    # SR_TMP <<< TODO eliminate or implement properly
+    @property
+    def _n_members(self):
+        return 1 if not self.ens_member_ids else len(self.ens_member_ids)
 
     def run(
         self, var_setups: InputSetupCollection
     ) -> Tuple[List[Field], Union[List[MetaData], List[None]]]:
         """Read one or more fields from a file from disc."""
-        if not self.prepared:
-            self.prepare()
 
         # Read data at all time steps
         fld_time: np.ndarray
         if self.dry_run:
             fld_time = self._create_dummy_fld(var_setups)
         else:
-            fld_time_mem = self._read_fld_time_mem(var_setups)
+            fld_time_mem = self._read_member_fields_over_time(var_setups)
             fld_time = self._reduce_ensemble(fld_time_mem, var_setups)
         time_stats: Dict[str, np.ndarray] = self._collect_time_stats(fld_time)
-
-        # # SR_NOTE Dirty workaround for issue arising in test_field_ensemble.py
-        # # SR_NOTE Problem: time decompression below fails (internally pre-separated)
-        # # SR_NOTE Issue: decompression etc. not properly defined/implemented/tested!
-        # # SR_NOTE However, I'd rather work around this right now than solve it...
-        # # SR_TODO Define how exactly decompress_partially etc. works and write tests!!
-        # # SR_TMP < Merge setups with different timesteps, otherwise decompress fails!
-        # _time = tuple(
-        #     sorted({ts for tss in var_setups.collect("time") for ts in tss})
-        # )
-        # _dcts = []
-        # for _dct in var_setups.dicts():
-        #     _dct.update({"time": _time})
-        #     if _dct not in _dcts:
-        #         _dcts.append(_dct)
-        # var_setups = InputSetupCollection([InputSetup(**_dct) for _dct in _dcts])
-        # # SR_TMP >
 
         # Create fields and meta data at requested time steps
         field_lst: List[Field] = []
         mdata_lst: List[Any] = []
-        for var_setups_time in var_setups.decompress_partially(["time"]):
-            time_idx = next(iter(var_setups_time.collect_equal("time")))
+        for var_setups_time in var_setups.decompress_partially(["dimensions.time"]):
+            time_idx = var_setups_time.collect_equal("dimensions.time")
             fld: np.ndarray = fld_time[time_idx]
             field = Field(
                 fld=fld,
@@ -268,10 +242,71 @@ class FileReader:
 
         return field_lst, mdata_lst
 
-    # SR_TMP <<< TODO eliminate or implement properly
-    @property
-    def n_members(self):
-        return 1 if not self.ens_member_ids else len(self.ens_member_ids)
+    def _read_nc_meta_data(self) -> None:
+        nc_meta_data: Dict[str, Any]
+        for i_mem, in_file_path in enumerate(self.in_file_path_lst or []):
+            with nc4.Dataset(in_file_path, "r") as fi:
+                nc_meta_data_i = read_meta_data(fi)  # <- !!!!!
+                if i_mem == 0:
+                    nc_meta_data = nc_meta_data_i
+                elif nc_meta_data_i != nc_meta_data:
+                    raise Exception(
+                        "meta data differs", nc_meta_data_i, nc_meta_data,
+                    )
+        if self.add_ts0:
+            self._insert_ts0_in_nc_meta_data(nc_meta_data)
+        self.nc_meta_data = nc_meta_data
+
+    def _read_member_fields_over_time(self, setups: InputSetupCollection) -> np.ndarray:
+        """Read field over all time steps for each member."""
+        fld_time_mem: Optional[np.ndarray] = None
+        for i_mem, in_file_path in enumerate(self.in_file_path_lst or []):
+            with nc4.Dataset(in_file_path, "r") as fi:  # <- !!!!!
+
+                # Read grid variables
+                self._read_grid(fi)
+
+                # Read field (all time steps)
+                fld_time = self._read_field_over_time(fi, setups)
+                if self.add_ts0:
+                    fld_time = self._add_ts0_to_fld_time(fld_time)
+
+                # Store field for current member
+                if fld_time_mem is None:
+                    shape = tuple([self._n_members] + list(fld_time.shape))
+                    fld_time_mem = np.full(shape, np.nan, np.float32)
+                fld_time_mem[i_mem] = fld_time
+
+        assert fld_time_mem is not None  # mypy
+        return fld_time_mem
+
+    # pylint: disable=R0914  # too-many-locals
+    def _collect_meta_data(self, var_setups_time: InputSetupCollection) -> MetaData:
+        """Collect time-step-specific data meta data."""
+
+        # Collect meta data at requested time steps for all members
+        mdata: Optional[MetaData] = None
+        for idx_mem, in_file_path in enumerate(self.in_file_path_lst or []):
+            with nc4.Dataset(in_file_path, "r") as fi:
+                mdata_lst_i = []
+                for core_setups in var_setups_time.decompress():
+                    for core_setup in core_setups:
+                        mdata_lst_i.append(
+                            collect_meta_data(
+                                fi, core_setup, self.nc_meta_data, add_ts0=self.add_ts0
+                            )
+                        )
+                mdata_i = mdata_lst_i[0].merge_with(mdata_lst_i[1:])
+                if mdata is None:
+                    mdata = mdata_i
+                elif mdata_i != mdata:
+                    raise Exception("meta data differ across members")
+
+        # Fix some known issues with the NetCDF input data
+        if self.fixer:
+            self.fixer.fix_meta_data(self.nc_meta_data["analysis"]["model"], mdata)
+
+        return mdata
 
     def _prepare_in_file_path_lst(self) -> None:
         ens_member_ids = self.ens_member_ids
@@ -295,22 +330,7 @@ class FileReader:
             )
         self.in_file_path_lst = path_lst
 
-    def _read_nc_meta_data(self):
-        nc_meta_data: Dict[str, Any]
-        for i_mem, in_file_path in enumerate(self.in_file_path_lst or []):
-            with nc4.Dataset(in_file_path, "r") as fi:
-                nc_meta_data_i = read_meta_data(fi)
-                if i_mem == 0:
-                    nc_meta_data = nc_meta_data_i
-                elif nc_meta_data_i != nc_meta_data:
-                    raise Exception(
-                        "meta data differs", nc_meta_data_i, nc_meta_data,
-                    )
-        if self.add_ts0:
-            self._insert_ts0_in_nc_meta_data(nc_meta_data)
-        self.nc_meta_data = nc_meta_data
-
-    def _create_dummy_fld(self, var_setups: InputSetupCollection):
+    def _create_dummy_fld(self, var_setups: InputSetupCollection) -> np.ndarray:
         try:
             # Way to check whether var_setups is valid (catches some invalid cases)
             var_setups.compress()
@@ -324,29 +344,6 @@ class FileReader:
         self.lon = np.full((nlon,), np.nan)
         fld_time = np.full((nts, nlat, nlon), np.nan)
         return fld_time
-
-    def _read_fld_time_mem(self, setups: InputSetupCollection) -> np.ndarray:
-        """Read field over all time steps for each member."""
-        fld_time_mem: Optional[np.ndarray] = None
-        for i_mem, in_file_path in enumerate(self.in_file_path_lst or []):
-            with nc4.Dataset(in_file_path, "r") as fi:
-
-                # Read grid variables
-                self._read_grid(fi)
-
-                # Read field (all time steps)
-                fld_time = self._read_fld_time(fi, setups)
-                if self.add_ts0:
-                    fld_time = self._add_ts0_to_fld_time(fld_time)
-
-                # Store field for current member
-                if fld_time_mem is None:
-                    shape = tuple([self.n_members] + list(fld_time.shape))
-                    fld_time_mem = np.full(shape, np.nan, np.float32)
-                fld_time_mem[i_mem] = fld_time
-
-        assert fld_time_mem is not None  # mypy
-        return fld_time_mem
 
     def _read_grid(self, fi):
         dim_names = self._dim_names()
@@ -378,20 +375,18 @@ class FileReader:
             if not (time == old_time).all():
                 raise Exception("inconsistent time", time, old_time)
 
-    def _read_fld_time(self, fi, setups):
-        """Read field at all time steps."""
-
+    def _read_field_over_time(self, fi, setups):
+        """Read field (for a given member) at all time steps."""
         expand = ["lat", "lon", "time"]
         flds_time = []
         for core_setups in setups.decompress():
             for core_setup in core_setups:
-                flds_time.append(self._read_nc_var(fi, core_setup, expand))
+                flds_time.append(self.read_fld(fi, core_setup, expand))
         fld_time: np.ndarray = merge_fields(flds_time)
-
         model = self.nc_meta_data["analysis"]["model"]
         if model in ["ifs"]:
-            self.fixer.fix_global_grid(self.lon, fld_time)
-
+            if self.fixer:
+                self.fixer.fix_global_grid(self.lon, fld_time)
         return fld_time
 
     def _insert_ts0_in_nc_meta_data(self, nc_meta_data: Dict[str, Any]) -> None:
@@ -418,10 +413,9 @@ class FileReader:
     ) -> np.ndarray:
         """Reduce the ensemble to a single field (time, lat, lon)."""
 
-        if self.n_members == 1:
+        if self._n_members == 1:
             return fld_time_mem[0]
 
-        plot_type = var_setups.collect_equal("plot_type")
         ens_variable = var_setups.collect_equal("ens_variable")
         ens_param_thr = var_setups.collect_equal("ens_param_thr")
         ens_param_mem_min = var_setups.collect_equal("ens_param_mem_min")
@@ -447,7 +441,7 @@ class FileReader:
             elif ens_variable == "cloud_occurrence_probability":
                 fld_time = cloud.occurrence_probability(ens_param_time_win)
         else:
-            raise NotImplementedError("plot var", plot_type)
+            raise NotImplementedError("ens_variable", ens_variable)
         return fld_time
 
     def _collect_time_stats(self, fld_time: np.ndarray,) -> Dict[str, np.ndarray]:
@@ -472,33 +466,6 @@ class FileReader:
                 "median_nz": np.nanmedian(data_nz),
                 "max": np.nanmax(data),
             }
-
-    # pylint: disable=R0914  # too-many-locals
-    def _collect_meta_data(self, var_setups_time: InputSetupCollection) -> MetaData:
-        """Collect time-step-specific data meta data."""
-
-        # Collect meta data at requested time steps for all members
-        mdata: Optional[MetaData] = None
-        for idx_mem, in_file_path in enumerate(self.in_file_path_lst or []):
-            with nc4.Dataset(in_file_path, "r") as fi:
-                mdata_lst_i = []
-                for core_setups in var_setups_time.decompress():
-                    for core_setup in core_setups:
-                        mdata_lst_i.append(
-                            collect_meta_data(
-                                fi, core_setup, self.nc_meta_data, add_ts0=self.add_ts0
-                            )
-                        )
-                mdata_i = mdata_lst_i[0].merge_with(mdata_lst_i[1:])
-                if mdata is None:
-                    mdata = mdata_i
-                elif mdata_i != mdata:
-                    raise Exception("meta data differ across members")
-
-        # Fix some known issues with the NetCDF input data
-        self.fixer.fix_meta_data(self.nc_meta_data["analysis"]["model"], mdata)
-
-        return mdata
 
     def _dim_names(self) -> Dict[str, str]:
         """Model-specific dimension names."""
@@ -527,12 +494,13 @@ class FileReader:
 
     # SR_TODO refactor to reduce branching and locals!
     # pylint: disable=R0912,R0914  # too-many-branches, too-many-locals
-    def _read_nc_var(
+    def read_fld(
         self,
         fi: nc4.Dataset,
         setup: CoreInputSetup,
         expand: Optional[List[str]] = None,
     ) -> np.ndarray:
+        """Read an individual 2D field at a given time step from disk."""
         if expand is None:
             expand = []
 
@@ -548,14 +516,10 @@ class FileReader:
 
         # Indices of field along NetCDF dimensions
         dim_idcs_by_name = {
-            dim_names["time"]: slice(None) if "time" in expand else setup.level,
-            dim_names["level"]: slice(None) if "level" in expand else setup.level,
             dim_names["lat"]: slice(None),
             dim_names["lon"]: slice(None),
         }
-
-        # SR_TMP <
-        for dim_name in ["nageclass", "noutrel", "numpoint"]:
+        for dim_name in ["nageclass", "noutrel", "numpoint", "time", "level"]:
             if dim_name in expand:
                 idcs = slice(None)
             else:
@@ -604,7 +568,10 @@ class FileReader:
         fld = nc_var[indices]
 
         # Fix known issues with NetCDF input data
-        self.fixer.fix_nc_var(nc_var, fld, model)
+        model = self.nc_meta_data["analysis"]["model"]
+        var_ncattrs = {attr: nc_var.getncattr(attr) for attr in nc_var.ncattrs()}
+        if self.fixer:
+            self.fixer.fix_nc_var_fld(fld, model, var_ncattrs)
 
         fld = self._handle_time_integration(fi, fld, setup)
         return fld
@@ -659,17 +626,23 @@ class FlexPartDataFixer:
         "1e-12 kg m-2": 1.0e-12,
     }
 
-    def fix_nc_var(self, nc_var: nc4.Variable, fld: np.ndarray, model: str) -> None:
+    def fix_nc_var_fld(
+        self, fld: np.ndarray, model: str, var_ncattrs: Mapping[str, Any]
+    ) -> None:
         if model in ["cosmo2", "cosmo1"]:
-            self._fix_nc_var_cosmo(nc_var, fld)
+            self._fix_nc_var_cosmo(fld, var_ncattrs)
         elif model == "ifs":
             pass
         else:
             raise NotImplementedError("model", model)
 
-    def _fix_nc_var_cosmo(self, nc_var, fld):
-        name = nc_var.getncattr("long_name").split("_")[0]
-        unit = nc_var.getncattr("units")
+    def _fix_nc_var_cosmo(
+        self, fld: np.ndarray, var_ncattrs: Mapping[str, Any]
+    ) -> None:
+        name = var_ncattrs["long_name"]
+        if name.endswith("_dry_deposition") or name.endswith("_wet_deposition"):
+            name = name.split("_")[0]
+        unit = var_ncattrs["units"]
         if name not in self.possible_var_names:
             raise NotImplementedError("input_variable", name)
         try:
@@ -768,7 +741,6 @@ class FlexPartDataFixer:
             while lon[0] < -180.0:
                 n_shift += 1
                 lon[:] = np.r_[lon[1:], lon[-1] + dlon]
-                print(n_shift, lon)
                 if lon[-1] < -180.0 or n_shift >= lon.size:
                     raise Exception(
                         "unexpected error while shifting lon eastward", lon, n_shift,

@@ -44,25 +44,27 @@ class Test_ReplaceNoneByAvailable:
         return InputSetup.create({**DEFAULT_KWARGS, **params})
 
     def test_time(self):
-        setup = self.setup_create({"time": "*"})
-        assert setup.time is None
+        setup = self.setup_create({"dimensions": {"time": "*"}})
+        assert setup.dimensions.time is None
         setup = setup.complete_dimensions(self.meta_data)
-        assert setup.time == (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+        assert setup.dimensions.time == (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 
     def test_level(self):
-        setup = self.setup_create({"level": "*"})
-        assert setup.level is None
+        setup = self.setup_create({"dimensions": {"level": "*"}})
+        assert setup.dimensions.level is None
         setup = setup.complete_dimensions(self.meta_data)
-        assert setup.level == (0, 1, 2)
+        assert setup.dimensions.level == (0, 1, 2)
 
     def test_species_id(self):
-        setup = self.setup_create({"species_id": "*"})
-        assert setup.species_id is None
+        setup = self.setup_create({"dimensions": {"species_id": "*"}})
+        assert setup.dimensions.species_id is None
         setup = setup.complete_dimensions(self.meta_data)
-        assert setup.species_id == (1, 2)
+        assert setup.dimensions.species_id == (1, 2)
 
     def test_others(self):
-        setup = self.setup_create({"dimensions": {"nageclass": "*", "noutrel": "*", "numpoint": "*"}})
+        setup = self.setup_create(
+            {"dimensions": {"nageclass": "*", "noutrel": "*", "numpoint": "*"}}
+        )
         assert setup.dimensions.nageclass is None
         assert setup.dimensions.noutrel is None
         assert setup.dimensions.numpoint is None
@@ -85,19 +87,21 @@ class Test_WildcardToNone:
         return InputSetup.create({**DEFAULT_KWARGS, **params})
 
     def test_species_id(self):
-        setup = self.setup_create({"species_id": "*"})
-        assert setup.species_id is None
+        setup = self.setup_create({"dimensions": {"species_id": "*"}})
+        assert setup.dimensions.species_id is None
 
     def test_time(self):
-        setup = self.setup_create({"time": "*"})
-        assert setup.time is None
+        setup = self.setup_create({"dimensions": {"time": "*"}})
+        assert setup.dimensions.time is None
 
     def test_level(self):
-        setup = self.setup_create({"level": "*"})
-        assert setup.level is None
+        setup = self.setup_create({"dimensions": {"level": "*"}})
+        assert setup.dimensions.level is None
 
     def test_others(self):
-        setup = self.setup_create({"dimensions": {"nageclass": "*", "noutrel": "*", "numpoint": "*"}})
+        setup = self.setup_create(
+            {"dimensions": {"nageclass": "*", "noutrel": "*", "numpoint": "*"}}
+        )
         assert setup.dimensions.nageclass is None
         assert setup.dimensions.noutrel is None
         assert setup.dimensions.numpoint is None
@@ -121,10 +125,10 @@ class Test_Cast:
         assert InputSetup.cast("integrate", "False") is False
 
     def test_level(self):
-        assert InputSetup.cast("level", "2") == 2
+        assert InputSetup.cast("dimensions", {"level": "2"}) == {"level": 2}
 
     def test_time(self):
-        assert InputSetup.cast("time", "10") == 10
+        assert InputSetup.cast("dimensions", {"time": "10"}) == {"time": 10}
 
 
 class Test_CastSequence:
@@ -148,37 +152,43 @@ class Test_CastSequence:
             InputSetup.cast("integrate", ["True", "False"])
 
     def test_level(self):
-        assert InputSetup.cast("level", ["1", "2"]) == [1, 2]
+        res = InputSetup.cast("dimensions", {"level": ["1", "2"]})
+        assert res == {"level": (1, 2)}
 
     def test_time(self):
-        assert InputSetup.cast("time", ["0", "1", "2", "3", "4"]) == [0, 1, 2, 3, 4]
+        res = InputSetup.cast("dimensions", {"time": ["0", "1", "2", "3", "4"]})
+        assert res == {"time": (0, 1, 2, 3, 4)}
 
 
 class Test_CastMany:
     def test_dict(self):
-        params = {"infile": "foo.nc", "species_id": ["1", "2"], "integrate": "False"}
+        params = {
+            "infile": "foo.nc",
+            "dimensions": {"species_id": ["1", "2"]},
+            "integrate": "False",
+        }
         res = InputSetup.cast_many(params)
-        sol = {"infile": "foo.nc", "species_id": [1, 2], "integrate": False}
+        sol = {
+            "infile": "foo.nc",
+            "dimensions": {"species_id": (1, 2)},
+            "integrate": False,
+        }
         assert res == sol
 
     def test_dict_comma_separated_fail(self):
-        params = {"infile": "foo.nc", "species_id": "1,2", "integrate": "False"}
+        params = {
+            "infile": "foo.nc",
+            "dimensions": {"species_id": "1,2"},
+            "integrate": "False",
+        }
         with pytest.raises(ValueError):
             InputSetup.cast_many(params)
 
-    def test_dict_comma_separated(self):
-        params = {"infile": "foo.nc", "species_id": "1,2", "integrate": "False"}
-        res = InputSetup.cast_many(params, list_separator=",")
-        sol = {"infile": "foo.nc", "species_id": [1, 2], "integrate": False}
-        assert res == sol
-
-    def test_tuple(self):
-        params = (("infile", "foo.nc"), ("species_id", "1,2"), ("integrate", "False"))
-        res = InputSetup.cast_many(params, list_separator=",")
-        sol = {"infile": "foo.nc", "species_id": [1, 2], "integrate": False}
-        assert res == sol
-
     def test_tuple_duplicates_fail(self):
-        params = (("infile", "foo.nc"), ("species_id", "1"), ("infile", "bar.nc"))
+        params = (
+            ("infile", "foo.nc"),
+            ("dimensions", ("species_id", "1")),
+            ("infile", "bar.nc"),
+        )
         with pytest.raises(ValueError):
             InputSetup.cast_many(params)

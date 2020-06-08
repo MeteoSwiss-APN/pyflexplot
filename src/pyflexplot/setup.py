@@ -14,11 +14,14 @@ from typing import Dict
 from typing import Iterator
 from typing import List
 from typing import Mapping
+from typing import MutableMapping
 from typing import Optional
 from typing import Sequence
+from typing import Set
 from typing import Tuple
 from typing import Type
 from typing import Union
+from typing import cast
 from typing import overload
 
 # Third-party
@@ -82,6 +85,87 @@ def prepare_field_value(
     return value
 
 
+def cast_field_value(cls: Type, param: str, value: Any) -> Any:
+    try:
+        field = cls.__fields__[param]
+    except KeyError:
+        raise ValueError("invalid parameter name", param, sorted(cls.__fields__))
+    if isinstance(value, Collection) and not isinstance(value, str):
+        try:
+            outer_type = field_get_outer_type(field, generic=True)
+        except TypeError:
+            raise ValueError("invalid parameter value: collection", param, value)
+        if issubclass(outer_type, (str, bool)):
+            raise ValueError(
+                "invalid parameter error: not '{outer_type.__name__}}'", param, value
+            )
+        try:
+            outer_type(value)
+        except ValueError:
+            raise ValueError("invalid parameter value", param, value, outer_type)
+        else:
+            return [cls.cast(param, val) for val in value]
+    if issubclass(field.type_, bool):
+        if value in [True, "True"]:
+            return True
+        elif value in [False, "False"]:
+            return False
+    else:
+        try:
+            return field.type_(value)
+        except ValueError:
+            pass
+    raise ValueError("invalid parameter value", param, value, field.type_)
+
+
+def field_get_outer_type(field: ModelField, *, generic: bool = False) -> Type:
+    """Obtain the outer type of a pydantic model field."""
+    try:
+        field.outer_type_()
+    except TypeError:
+        pass
+    else:
+        return field.outer_type_
+    s_type = str(field.outer_type_)
+    prefix = "typing."
+    if not s_type.startswith(prefix):
+        raise TypeError(
+            f"<field>.outer_type_ does not start with '{prefix}'", s_type, field,
+        )
+    s_type = s_type[len(prefix) :]
+    s_type = s_type.split("[")[0]
+    try:
+        type_ = getattr(typing, s_type)
+    except AttributeError:
+        raise TypeError(
+            f"cannot derive type from <field>.outer_type_: typing.{s_type} not found",
+            field,
+        )
+    if generic:
+        generics = {
+            typing.Tuple: tuple,
+            typing.List: list,
+            typing.Sequence: list,
+            typing.Set: set,
+            typing.Collection: set,
+            typing.Dict: dict,
+            typing.Mapping: dict,
+        }
+        try:
+            type_ = generics[type_]
+        except KeyError:
+            raise NotImplementedError("generic type for tpying type", type_, generics)
+    return type_
+
+
+def is_setup_param(param: str) -> bool:
+    return param in CoreInputSetup.__fields__
+
+
+def is_dimensions_param(param: str) -> bool:
+    return param in CoreDimensions.__fields__
+
+
 # SR_TODO Clean up docstring -- where should format key hints go?
 class CoreDimensions(BaseModel):
     """Selected dimensions.
@@ -115,9 +199,9 @@ class CoreDimensions(BaseModel):
     nageclass: Optional[int] = None
     noutrel: Optional[int] = None
     numpoint: Optional[int] = None
-    # species_id: Optional[int] = None
-    # time: Optional[int] = None
-    # level: Optional[int] = None
+    species_id: Optional[int] = None
+    time: Optional[int] = None
+    level: Optional[int] = None
 
     @classmethod
     def create(cls, params: Dict[str, Any]) -> "CoreDimensions":
@@ -129,19 +213,23 @@ class CoreDimensions(BaseModel):
                 raise ValueError("invalid parameter value", param, value) from error
         try:
             return cls(**params)
-        except ValidationError as e:
-            error = next(iter(e.errors()))
+        except ValidationError as error:
             msg = f"error creating {cls.__name__} object"
-            if error["type"] == "value_error.missing":
-                param = next(iter(error["loc"]))
+            error_params = next(iter(error.errors()))
+            if error_params["type"] == "value_error.missing":
+                param = next(iter(error_params["loc"]))
                 msg += f": missing parameter: {param}"
             raise Exception(msg)
+
+    @classmethod
+    def cast(cls, param: str, value: Any) -> Any:
+        return cast_field_value(cls, param, value)
 
 
 class Dimensions:
     """A collection of Domensions objects."""
 
-    _params: Tuple[str, ...] = tuple(CoreDimensions.__fields__)
+    params: Tuple[str, ...] = tuple(CoreDimensions.__fields__)
 
     def __init__(self, core: Optional[Sequence[CoreDimensions]] = None) -> None:
         """Create an instance of ``Dimensions``."""
@@ -152,14 +240,17 @@ class Dimensions:
         self._core: List[CoreDimensions] = list(core)
 
     @classmethod
-    def create(cls, params: Dict[str, Any]) -> "Dimensions":
+    def create(cls, params: Union["Dimensions", Mapping[str, Any]]) -> "Dimensions":
         if isinstance(params, cls):
             params = params.compact_dict()
         else:
+            assert isinstance(params, Mapping)  # mypy
+            params = cast(MutableMapping, params)
             params = dict(**params)
         n_max = 1
         for param, value in params.items():
             if not isinstance(value, Sequence) or isinstance(value, str):
+                assert isinstance(params, MutableMapping)  # mypy
                 params[param] = [value]
             else:
                 n_max = max(n_max, len(value))
@@ -167,6 +258,7 @@ class Dimensions:
         for idx in range(n_max):
             core_params = {}
             for param, values in params.items():
+                assert isinstance(values, Sequence)  # mypy
                 try:
                     core_params[param] = values[idx]
                 except IndexError:
@@ -175,7 +267,33 @@ class Dimensions:
             core_dims_lst.append(core_dims)
         return cls(core_dims_lst)
 
-    def __eq__(self, other):
+    @classmethod
+    def cast(cls, param: str, value: Any) -> Any:
+        """Cast a parameter to the appropriate type."""
+        if isinstance(value, Sequence) and not isinstance(value, str):
+            sub_values = []
+            for sub_value in value:
+                sub_values.append(cls.cast(param, sub_value))
+            if len(sub_values) == 1:
+                return next(iter(sub_values))
+            return tuple(sub_values)
+        return CoreDimensions.cast(param, value)
+
+    @classmethod
+    def merge(cls, objs: Sequence["Dimensions"]) -> "Dimensions":
+        return cls([core_setup for obj in objs for core_setup in obj._core])
+
+    def derive(self, params: Mapping[str, Any]) -> "Dimensions":
+        """Derive a new ``Dimensions`` object with some changed parameters."""
+        return type(self).create({**self.compact_dict(), **params})
+
+    def __repr__(self) -> str:
+        head = f"{type(self).__name__}"
+        lines = [f"{param}={value}" for param, value in self.compact_dict().items()]
+        body = join_multilines(lines, indent=2)
+        return f"{head}(\n{body}\n)"
+
+    def __eq__(self, other) -> bool:
         if isinstance(other, type(self)):
             return self.compact_dict() == other.compact_dict()
         raise NotImplementedError(
@@ -192,7 +310,7 @@ class Dimensions:
             return object.__getattribute__(self, name)
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if name in self._params:
+        if name in self.params:
             self.set(name, value)
         else:
             super().__setattr__(name, value)
@@ -206,6 +324,8 @@ class Dimensions:
 
     def set(self, param: str, value: Optional[Union[int, Sequence[int]]]) -> None:
         dct = self.compact_dict()
+        if isinstance(value, Sequence):
+            value = tuple(value)
         dct[param] = value
         self._core = type(self).create(dct)._core
 
@@ -217,7 +337,7 @@ class Dimensions:
         In absence of values, None is returned.
 
         """
-        values = []
+        values: List[int] = []
         for value in self.get_raw(param):
             if value is not None and value not in values:
                 values.append(value)
@@ -235,7 +355,7 @@ class Dimensions:
         a tuple is returned regardless of the number of values.
 
         """
-        if param not in self._params:
+        if param not in self.params:
             raise ValueError(param)
         values = []
         for core_dimension in self:
@@ -250,7 +370,7 @@ class Dimensions:
         parameter are compacted.
 
         """
-        return {param: self.get_compact(param) for param in self._params}
+        return {param: self.get_compact(param) for param in self.params}
 
     def raw_dict(self) -> Dict[str, Tuple[Optional[int], ...]]:
         """Return a raw dictionary representation.
@@ -258,7 +378,7 @@ class Dimensions:
         The parameter values are unordered, with duplicates and Nones retained.
 
         """
-        return {param: self.get_raw(param) for param in self._params}
+        return {param: self.get_raw(param) for param in self.params}
 
 
 # SR_TODO Clean up docstring -- where should format key hints go?
@@ -361,9 +481,6 @@ class InputSetup(BaseModel):
 
     # Dimensions
     dimensions: Dimensions = Dimensions()
-    species_id: Optional[Tuple[int, ...]] = None
-    time: Optional[Tuple[int, ...]] = None
-    level: Optional[Tuple[int, ...]] = None
 
     @root_validator
     def _check_input_variable(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -494,16 +611,6 @@ class InputSetup(BaseModel):
                 value = ENS_CLOUD_PROB_DEFAULT_PARAM_TIME_WIN
         return value
 
-    @validator("level", always=True)
-    def _init_level(
-        cls, value: Optional[Tuple[int, ...]], values: Dict[str, Any],
-    ) -> Optional[Tuple[int, ...]]:
-        if value is not None and values["input_variable"] == "deposition":
-            raise ValueError(
-                "level must be None for variable", value, values["input_variable"],
-            )
-        return value
-
     # SR_TMP <<<
     @property
     def deposition_type_str(self) -> str:
@@ -533,17 +640,19 @@ class InputSetup(BaseModel):
         Args:
             params: Parameters to instatiate ``InputSetup``. In contrast to
                 direct instatiation, all ``Tuple`` parameters may be passed
-                directly, e.g., as `{"time": 0}` instead of `{"time": (0,)}`.
+                directly, e.g., as `{"deposition_type": "dry"}` instead of
+                `{"deposition_type": ("dry",)}`.
 
         """
         params = dict(**params)
 
-        dimensions = Dimensions.create(params.pop("dimensions", {}))
+        dim_params = params.pop("dimensions", {})
+        dimensions = Dimensions.create(dim_params)
         for param, value in dict(**params).items():
-            if param in dimensions:
+            if param in dimensions.params:
                 del params[param]
                 # dimensions.param = value
-                dimensions.update(Dimensions.create({"param": value}))  # SR_TMP
+                dimensions.update(Dimensions.create({param: value}))  # SR_TMP
 
         singles = ["infile"]
         for param, value in dict(**params).items():
@@ -575,39 +684,18 @@ class InputSetup(BaseModel):
     @classmethod
     def cast(cls, param: str, value: Any) -> Any:
         """Cast a parameter to the appropriate type."""
-        try:
-            field = cls.__fields__[param]
-        except KeyError:
-            raise ValueError("invalid parameter name", param, sorted(cls.__fields__))
-        if isinstance(value, Collection) and not isinstance(value, str):
-            try:
-                outer_type = field_get_outer_type(field, generic=True)
-            except TypeError:
-                raise ValueError("invalid parameter value: collection", param, value)
-            try:
-                outer_type(value)
-            except ValueError:
-                raise ValueError("invalid parameter value", param, value, outer_type)
-            else:
-                return [cls.cast(param, val) for val in value]
-        if issubclass(field.type_, bool):
-            if value in [True, "True"]:
-                return True
-            elif value in [False, "False"]:
-                return False
-        else:
-            try:
-                return field.type_(value)
-            except ValueError:
-                pass
-        raise ValueError("invalid parameter value", param, value, field.type_)
+        # SR_TMP < TODO move to Dimensions (?)
+        if param == "dimensions":
+            return {
+                dim_param: Dimensions.cast(dim_param, dim_value)
+                for dim_param, dim_value in value.items()
+            }
+        # SR_TMP >
+        return cast_field_value(cls, param, value)
 
     @classmethod
     def cast_many(
-        cls,
-        params: Union[Collection[Tuple[str, Any]], Mapping[str, Any]],
-        *,
-        list_separator: Optional[str] = None,
+        cls, params: Union[Collection[Tuple[str, Any]], Mapping[str, Any]],
     ) -> Dict[str, Any]:
         if not isinstance(params, Mapping):
             params_dct: Dict[str, Any] = {}
@@ -615,17 +703,24 @@ class InputSetup(BaseModel):
                 if param in params_dct:
                     raise ValueError("duplicate parameter", param)
                 params_dct[param] = value
-            return cls.cast_many(params_dct, list_separator=list_separator)
+            return cls.cast_many(params_dct)
         params_cast = {}
         for param, value in params.items():
-            if (
-                list_separator is not None
-                and isinstance(value, str)
-                and list_separator in value
-            ):
-                value = value.split(list_separator)
             params_cast[param] = cls.cast(param, value)
         return params_cast
+
+    def dict(self, **kwargs) -> Dict[str, Any]:
+        # SR_TMP < Catch args that MAY interfere with dimensions
+        for arg in ["include", "exclude"]:
+            if kwargs.get(arg) is not None:
+                raise NotImplementedError(
+                    f"{type(self).__name__}.dict with argument '{arg}'", kwargs[arg]
+                )
+        # SR_TMP >
+        return {
+            **super().dict(**kwargs),
+            "dimensions": self.dimensions.compact_dict(),
+        }
 
     # SR_TODO consider renaming this method (sth. containing 'dimensions')
     # pylint: disable=R0912  # too-many-branches
@@ -634,31 +729,35 @@ class InputSetup(BaseModel):
         dimensions = meta_data["dimensions"]
         obj = self.copy()
 
-        if obj.time is None:
-            obj.time = tuple(range(dimensions["time"]["size"]))
+        if obj.dimensions.time is None:
+            obj.dimensions.time = tuple(range(dimensions["time"]["size"]))
 
         # SR_TMP < does this belong here? and what does it do? TODO explain!
         nts = dimensions["time"]["size"]
         time_new = []
-        for its in obj.time:
+        if isinstance(obj.dimensions.time, Sequence):
+            times = obj.dimensions.time
+        else:
+            times = [obj.dimensions.time]
+        for its in times:
             if its < 0:
                 its += nts
                 assert 0 <= its < nts
             time_new.append(its)
-        obj.time = tuple(time_new)
+        obj.dimensions.time = tuple(time_new)
         # SR_TMP >
 
-        if obj.level is None:
+        if obj.dimensions.level is None:
             if obj.input_variable == "concentration":
                 if "level" in dimensions:
-                    obj.level = tuple(range(dimensions["level"]["size"]))
+                    obj.dimensions.level = tuple(range(dimensions["level"]["size"]))
 
         if obj.deposition_type is None:
             if obj.input_variable == "deposition":
                 obj.deposition_type = ("dry", "wet")  # SR_HARDCODED
 
-        if obj.species_id is None:
-            obj.species_id = meta_data["analysis"]["species_ids"]
+        if obj.dimensions.species_id is None:
+            obj.dimensions.species_id = meta_data["analysis"]["species_ids"]
 
         if obj.dimensions.nageclass is None:
             if "nageclass" in dimensions:
@@ -677,8 +776,8 @@ class InputSetup(BaseModel):
     def __repr__(self) -> str:  # type: ignore
         return setup_repr(self)
 
-    def __str__(self) -> str:  # type: ignore
-        return repr(self)
+    def copy(self):
+        return self.create(self.dict())
 
     def __len__(self) -> int:
         return len(dict(self))
@@ -707,16 +806,10 @@ class InputSetup(BaseModel):
         """Derive ``InputSetup`` object(s) with adapted parameters."""
         if isinstance(params, Sequence):
             return InputSetupCollection([self.derive(params_i) for params_i in params])
-        # SR_TMP < TODO find cleaner solution (w/o duplication of logic)
-        if (
-            self.input_variable == "concentration"
-            and params.get("input_variable") == "deposition"
-            and "level" not in params
-        ):
-            params["level"] = None  # type: ignore
-        # SR_TMP >
-        params = {**self.dict(), **params}
-        return type(self).create(params)
+        dct = {**self.dict(), **params}
+        if "dimensions" in params:
+            dct["dimensions"] = self.dimensions.derive(params["dimensions"])
+        return type(self).create(dct)
 
     @classmethod
     def compress(cls, setups: "InputSetupCollection") -> "InputSetup":
@@ -727,6 +820,10 @@ class InputSetup(BaseModel):
             raise ValueError("cannot compress setups: input_variable differs") from None
         # SR_TMP >
         dct = compress_multival_dicts(setups.dicts(), cls_seq=tuple)
+        if isinstance(dct["dimensions"], Sequence):
+            dct["dimensions"] = compress_multival_dicts(
+                dct["dimensions"], cls_seq=tuple
+            )
         return cls.create(dct)
 
     @classmethod
@@ -821,17 +918,27 @@ class InputSetup(BaseModel):
     def _decompress(self, select=None, skip=None, cls_setup=None):
         """Create multiple ``InputSetup`` objects with one-value parameters only."""
 
-        if cls_setup is None:
-            if (select, skip) == (None, None):
-                cls_setup = CoreInputSetup
+        def get_cls_setup(cls_setup: Type, select: Optional, skip: Optional) -> Type:
+            if cls_setup is None:
+                if (select, skip) == (None, None):
+                    return CoreInputSetup
+                else:
+                    return InputSetup
+            return cls_setup
+
+        def get_cls_setup_collection(cls_setup: Type) -> Type:
+            if cls_setup is CoreInputSetup:
+                return CoreInputSetupCollection
+            elif cls_setup is InputSetup:
+                return InputSetupCollection
             else:
-                cls_setup = InputSetup
-        if cls_setup is CoreInputSetup:
-            cls_setup_collection = CoreInputSetupCollection
-        elif cls_setup is InputSetup:
-            cls_setup_collection = InputSetupCollection
-        else:
-            raise ValueError("invalid cls_setup", cls_setup)
+                raise ValueError("invalid cls_setup", cls_setup)
+
+        cls_setup = get_cls_setup(cls_setup, select, skip)
+        cls_setup_collection = get_cls_setup_collection(cls_setup)
+
+        select_setup, select_dimensions = self._group_params(select)
+        skip_setup, skip_dimensions = self._group_params(skip)
 
         dct = self.dict()
 
@@ -842,9 +949,39 @@ class InputSetup(BaseModel):
                     dct["deposition_type"] = ("dry", "wet")
 
         # Decompress dict
-        dcts = decompress_multival_dict(dct, select=select, skip=skip)
+        dcts = []
+        for dct_i in decompress_multival_dict(
+            dct, select=select_setup, skip=skip_setup
+        ):
+            if "dimensions" not in dct_i:
+                dcts.append(dct_i)
+            else:
+                for dims_j in decompress_multival_dict(
+                    dct_i["dimensions"], select=select_dimensions, skip=skip_dimensions
+                ):
+                    dct_ij = {**dct_i, "dimensions": dims_j}
+                    dcts.append(dct_ij)
 
         return cls_setup_collection([cls_setup.create(dct) for dct in dcts])
+
+    def _group_params(
+        self, params: Optional[Collection[str]]
+    ) -> Tuple[Optional[List[str]], ...]:
+        if params is None:
+            return (None, None)
+        params_setup: List[str] = []
+        params_dimensions: List[str] = []
+        for param in params:
+            if is_setup_param(param):
+                params_setup.append(param)
+                continue
+            if param.startswith("dimensions."):
+                dims_param = param.split(".", 1)[-1]
+                if is_dimensions_param(dims_param):
+                    params_dimensions.append(dims_param)
+                    continue
+            raise ValueError("invalid param", param)
+        return (params_setup, params_dimensions)
 
 
 class CoreInputSetup(BaseModel):
@@ -887,10 +1024,8 @@ class CoreInputSetup(BaseModel):
     domain: str = "auto"
 
     # Dimensions
-    dimensions: Dimensions = Dimensions()
-    species_id: int = 1
-    time: int = 0
-    level: Optional[int] = None
+    # dimensions: CoreDimensions = CoreDimensions()
+    dimensions: Dimensions = Dimensions()  # SR_TMP
 
     # SR_TMP <<<
     @property
@@ -899,7 +1034,8 @@ class CoreInputSetup(BaseModel):
 
     @classmethod
     def create(cls, params: Mapping[str, Any]) -> "CoreInputSetup":
-        return cls(**params)
+        dimensions = Dimensions.create(params.get("dimensions", {}))
+        return cls(**{**params, "dimensions": dimensions})
 
     def __repr__(self) -> str:  # type: ignore
         return setup_repr(self)
@@ -954,12 +1090,15 @@ class InputSetupCollection:
         def format_params(params: Dict[str, Any], name: str) -> str:
             lines = []
             for param, value in params.items():
+                if param == "dimensions" and isinstance(value, Sequence):
+                    value = Dimensions.merge(value)
                 s_value = f"'{value}'" if isinstance(value, str) else str(value)
                 lines.append(f"{param}={s_value}")
-            # body = join_lines(lines, indent=2) if lines else "--"
-            # return f"{head}\n{body}"
-            body = ", ".join(lines) if lines else "--"
-            return f"{name}: {body}"
+            if not lines:
+                return f"{name}: --"
+            else:
+                body = join_multilines(lines, indent=2)
+                return f"{name}:\n{body}"
 
         lines = [
             f"n: {len(self)}",
@@ -1058,7 +1197,20 @@ class InputSetupCollection:
 
     def collect(self, param: str) -> List[Any]:
         """Collect the values of a parameter for all setups."""
-        return [getattr(var_setup, param) for var_setup in self]
+        if is_setup_param(param):
+            return [getattr(var_setup, param) for var_setup in self]
+        if param.startswith("dimensions."):
+            dims_param = param.split(".", 1)[-1]
+            if is_dimensions_param(dims_param):
+                values: Set[Any] = set()
+                for dimensions in self.collect("dimensions"):
+                    value = dimensions.get_compact(dims_param)
+                    try:
+                        values |= set(value)
+                    except TypeError:
+                        values.add(value)
+                return sorted(values)
+        raise ValueError("invalid param", param)
 
     def collect_equal(self, param: str) -> Any:
         """Collect the value of a parameter that is shared by all setups."""
@@ -1189,40 +1341,6 @@ class InputSetupFile:
         raise NotImplementedError(f"{type(self).__name__}.write")
 
 
-def field_get_outer_type(field: ModelField, *, generic: bool = False) -> Type:
-    """Obtain the outer type of a pydantic model field."""
-    str_ = str(field.outer_type_)
-    prefix = "typing."
-    if not str_.startswith(prefix):
-        raise TypeError(
-            "<field>.outer_type_ does not start with '{prefix}'", str_, field,
-        )
-    str_ = str_[len(prefix) :]
-    str_ = str_.split("[")[0]
-    try:
-        type_ = getattr(typing, str_)
-    except AttributeError:
-        raise TypeError(
-            f"cannot derive type from <field>.outer_type_: typing.{str_} not found",
-            field,
-        )
-    if generic:
-        generics = {
-            typing.Tuple: tuple,
-            typing.List: list,
-            typing.Sequence: list,
-            typing.Set: set,
-            typing.Collection: set,
-            typing.Dict: dict,
-            typing.Mapping: dict,
-        }
-        try:
-            type_ = generics[type_]
-        except KeyError:
-            raise NotImplementedError("generic type for tpying type", type_, generics)
-    return type_
-
-
 def setup_repr(obj: Union["CoreInputSetup", "InputSetup"]) -> str:
     def fmt(obj):
         if isinstance(obj, str):
@@ -1260,10 +1378,10 @@ class FilePathFormatter:
             "nageclass": self._setup.dimensions.nageclass,
             "domain": self._setup.domain,
             "lang": self._setup.lang,
-            "level": self._setup.level,
+            "level": self._setup.dimensions.level,
             "noutrel": self._setup.dimensions.noutrel,
-            "species_id": self._setup.species_id,
-            "time": self._setup.time,
+            "species_id": self._setup.dimensions.species_id,
+            "time": self._setup.dimensions.time,
             "input_variable": input_variable,
             "plot_variable": self._setup.plot_variable,
             "plot_type": self._setup.plot_type,

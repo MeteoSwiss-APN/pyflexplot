@@ -7,7 +7,6 @@ from typing import Any
 from typing import Dict
 
 # First-party
-from pyflexplot.setup import CoreInputSetup
 from pyflexplot.setup import InputSetup
 
 DEFAULT_KWARGS: Dict[str, Any] = {
@@ -29,14 +28,14 @@ DEFAULT_SETUP = InputSetup.create(
         "input_variable": "concentration",
         "integrate": False,
         "lang": "en",
-        "level": None,
         "dimensions": {
+            "level": None,
             "nageclass": None,
             "noutrel": None,
             "numpoint": None,
+            "species_id": None,
+            "time": None,
         },
         "plot_type": "auto",
-        "species_id": None,
-        "time": None,
     }
 )

@@ -69,7 +69,7 @@ def test_single_section(tmp_path):
     sol = {
         **DEFAULT_SETUP.dict(),
         "input_variable": "deposition",
-        "level": None,
+        "dimensions": {**DEFAULT_SETUP.dict()["dimensions"], "level": None},
         "lang": "de",
     }
     assert res == sol
@@ -145,7 +145,7 @@ def test_multiple_nested_sections(tmp_path):
         "input_variable": "deposition",
         "deposition_type": ("dry", "wet"),
         "combine_deposition_types": True,
-        "level": None,
+        "dimensions": {**DEFAULT_SETUP.dict()["dimensions"], "level": None},
         "lang": "de",
     }
     sol_specific = [
@@ -217,7 +217,7 @@ def test_multiple_override(tmp_path):
         "input_variable": "deposition",
         "deposition_type": ("dry", "wet"),
         "combine_deposition_types": True,
-        "level": None,
+        "dimensions": {**DEFAULT_SETUP.dict()["dimensions"], "level": None},
         "lang": "de",
     }
     sol_specific = [
@@ -318,8 +318,16 @@ def test_wildcard_simple(tmp_path):
         for dct in [
             {"input_variable": "concentration", "lang": "de"},
             {"input_variable": "concentration", "lang": "en"},
-            {"input_variable": "deposition", "level": None, "lang": "de"},
-            {"input_variable": "deposition", "level": None, "lang": "en"},
+            {
+                "input_variable": "deposition",
+                "dimensions": {**DEFAULT_SETUP.dict()["dimensions"], "level": None},
+                "lang": "de",
+            },
+            {
+                "input_variable": "deposition",
+                "dimensions": {**DEFAULT_SETUP.dict()["dimensions"], "level": None},
+                "lang": "en",
+            },
         ]
     ]
     setups = read_tmp_setup_file(tmp_path, content)
@@ -359,7 +367,11 @@ def test_double_wildcard_equal_depth(tmp_path):
         {**DEFAULT_SETUP.dict(), **dct, "domain": domain, "lang": lang}
         for dct in [
             {"input_variable": "concentration", "integrate": False},
-            {"input_variable": "deposition", "level": None, "integrate": False},
+            {
+                "input_variable": "deposition",
+                "dimensions": {**DEFAULT_SETUP.dict()["dimensions"], "level": None},
+                "integrate": False,
+            },
         ]
         for domain in ["ch", "auto"]
         for lang in ["de", "en"]
@@ -403,8 +415,14 @@ def test_double_wildcard_variable_depth(tmp_path):
     sol = [
         {**DEFAULT_SETUP.dict(), **dct, "domain": domain, "lang": lang}
         for dct in [
-            {"input_variable": "concentration", "time": (10,)},
-            {"input_variable": "deposition", "level": None},
+            {
+                "input_variable": "concentration",
+                "dimensions": {**DEFAULT_SETUP.dict()["dimensions"], "time": 10},
+            },
+            {
+                "input_variable": "deposition",
+                "dimensions": {**DEFAULT_SETUP.dict()["dimensions"], "level": None},
+            },
         ]
         for domain in ["ch", "auto"]
         for lang in ["de", "en"]
@@ -473,10 +491,18 @@ class Test_IndividualParams_SingleOrMultipleValues:
 
             """
         setups = read_tmp_setup_file(tmp_path, content)
+        res = setups.dicts()
         sol = [
-            {**DEFAULT_SETUP.dict(), "species_id": value} for value in [(1,), (1, 2, 3)]
+            {
+                **DEFAULT_SETUP.dict(),
+                "dimensions": {
+                    **DEFAULT_SETUP.dimensions.compact_dict(),
+                    "species_id": value,
+                },
+            }
+            for value in [1, (1, 2, 3)]
         ]
-        assert setups.dicts() == sol
+        assert res == sol
 
     def test_level(self, tmp_path):
         content = f"""\
@@ -492,7 +518,13 @@ class Test_IndividualParams_SingleOrMultipleValues:
 
             """
         setups = read_tmp_setup_file(tmp_path, content)
-        sol = [{**DEFAULT_SETUP.dict(), "level": value} for value in [(0,), (1, 2)]]
+        sol = [
+            {
+                **DEFAULT_SETUP.dict(),
+                "dimensions": {**DEFAULT_SETUP.dict()["dimensions"], "level": value},
+            }
+            for value in [0, (1, 2)]
+        ]
         assert setups.dicts() == sol
 
     def test_level_none(self, tmp_path):
@@ -504,7 +536,11 @@ class Test_IndividualParams_SingleOrMultipleValues:
             """
         setups = read_tmp_setup_file(tmp_path, content)
         sol = [
-            {**DEFAULT_SETUP.dict(), "input_variable": "deposition", "level": None},
+            {
+                **DEFAULT_SETUP.dict(),
+                "input_variable": "deposition",
+                "dimensions": {**DEFAULT_SETUP.dict()["dimensions"], "level": None},
+            },
         ]
         assert setups.dicts() == sol
 
@@ -521,6 +557,8 @@ def test_multipanel_param_ens_variable(tmp_path):
         ens_variable = ["minimum", "maximum", "mean", "median"]
 
         """
+    setups = read_tmp_setup_file(tmp_path, content)
+    res = setups.dicts()
     sol = [
         {
             **DEFAULT_SETUP.dict(),
@@ -532,7 +570,5 @@ def test_multipanel_param_ens_variable(tmp_path):
             "ens_variable": ("minimum", "maximum", "mean", "median"),
         }
     ]
-    setups = read_tmp_setup_file(tmp_path, content)
-    res = setups.dicts()
     assert len(res) == len(sol)
     assert res == sol

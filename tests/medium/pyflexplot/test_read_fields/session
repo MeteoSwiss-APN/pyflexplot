@@ -1,5 +1,6 @@
 test_dry_run.py
-test_field.py
-test_field_ensemble.py
+test_deterministic.py
+test_ensemble_artificial.py
+test_ensemble.py
 test_meta_data.py
 shared.py

@@ -31,9 +31,7 @@ class Test_EnsMedian_Concentration(_TestBase):
         "ens_member_id": ENS_MEMBER_IDS,
         "lang": "en",
         "domain": "auto",
-        "species_id": (1, 2),
-        "time": (5,),
-        "level": (0,),
+        "dimensions": {"species_id": (1, 2), "time": 5, "level": 0},
     }
 
 
@@ -49,9 +47,7 @@ class Test_EnsMax_IntegratedConcentration(_TestBase):
         "ens_member_id": ENS_MEMBER_IDS,
         "lang": "de",
         "domain": "ch",
-        "species_id": (2,),
-        "time": (10,),
-        "level": (0,),
+        "dimensions": {"species_id": 2, "time": 10, "level": 0},
     }
 
 
@@ -69,8 +65,7 @@ class Test_EnsMean_TotalDeposition(_TestBase):
         "ens_member_id": ENS_MEMBER_IDS,
         "lang": "en",
         "domain": "auto",
-        "species_id": (1, 2),
-        "time": (-1,),
+        "dimensions": {"species_id": (1, 2), "time": -1},
     }
 
 
@@ -92,8 +87,7 @@ class Test_EnsMean_TotalDeposition(_TestBase):
 #          "ens_member_id": ENS_MEMBER_IDS,
 #          "lang": "de",
 #          "domain": "ch",
-#          "species_id": (1, 2),
-#          "time": (-1,),
+#          "dimensions": {"species_id": (1, 2), "time": -1},
 #      }
 
 
@@ -112,9 +106,7 @@ class Test_CloudArrivalTime(_TestBase):
         "ens_param_thr": 1e-6,
         "lang": "en",
         "domain": "auto",
-        "species_id": (1,),
-        "time": (0,),
-        "level": (0,),
+        "dimensions": {"species_id": 1, "time": 0, "level": 0},
     }
 
 
@@ -134,7 +126,5 @@ class Test_CloudDepartureTime(_TestBase):
         "ens_param_thr": 1e-7,
         "lang": "de",
         "domain": "ch",
-        "species_id": (1, 2),
-        "time": (0,),
-        "level": (0, 1, 2),
+        "dimensions": {"species_id": (1, 2), "time": 0, "level": (0, 1, 2)},
     }

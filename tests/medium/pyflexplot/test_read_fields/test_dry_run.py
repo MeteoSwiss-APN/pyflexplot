@@ -22,7 +22,7 @@ from pyflexplot.setup import InputSetupCollection
 from srutils.testing import check_summary_dict_element_is_subelement
 
 # Local  isort:skip
-from shared import datadir  # noqa:F401 isort:skip
+from shared import datadir_reduced as datadir  # noqa:F401 isort:skip
 
 
 datafilename1 = "flexpart_cosmo-1_2019052800.nc"
@@ -46,10 +46,10 @@ def fields_to_setup_dcts(obj: Sequence[Sequence], params=...) -> Sequence[Sequen
 
 
 def fields_to_setup_dcts(obj, params: Optional[List[str]] = None):
-    """Turn one or more fields into a dict each based on their input setups.
+    """Extract input setups from one or more ``Field`` objects.
 
-    Multiple fields may be passed in nested sequences, in which case the nesting
-    structure is retained.
+    Multiple ``Field`` objects may be passed as arbitrarily nested sequences,
+    in which case the nesting is retained in the result.
 
     """
     if isinstance(obj, Sequence):
@@ -59,10 +59,20 @@ def fields_to_setup_dcts(obj, params: Optional[List[str]] = None):
         return result
     else:
         assert isinstance(obj, Field)
-        dct = obj.var_setups.compress().dict()
-        if params is not None:
-            dct = {param: dct[param] for param in params}
-        return dct
+        dct_all = obj.var_setups.compress().dict()
+        if params is None:
+            return dct_all
+        else:
+            dct_sel = {}
+            for param in params:
+                if not param.startswith("dimensions."):
+                    dct_sel[param] = dct_all[param]
+                else:
+                    if "dimensions" not in dct_sel:
+                        dct_sel["dimensions"] = {}
+                    param = param.split(".", 1)[-1]
+                    dct_sel["dimensions"][param] = dct_all["dimensions"][param]
+            return dct_sel
 
 
 def _test_setups_core(
@@ -87,13 +97,13 @@ class ConfMultipleSetups:
 
 
 def _test_single_setup_core(conf, params):
-    setup = InputSetup(**conf.setup_dct)
+    setup = InputSetup.create(conf.setup_dct)
     setups = InputSetupCollection([setup])
     _test_setups_core(setups, params, conf.sol)
 
 
 def _test_multiple_setups_core(conf, params):
-    setup_lst = [InputSetup(**setup_dct) for setup_dct in conf.setup_dct_lst]
+    setup_lst = [InputSetup.create(setup_dct) for setup_dct in conf.setup_dct_lst]
     setups = InputSetupCollection(setup_lst)
     _test_setups_core(setups, params, conf.sol)
 
@@ -103,115 +113,105 @@ def _test_multiple_setups_core(conf, params):
     "conf",
     [
         ConfSingleSetup(  # [conf0]
-            setup_dct={"species_id": (1,), "level": (0,), "time": (0,)},
-            sol=[[{"species_id": (1,), "time": (0,)}]],
+            setup_dct={"dimensions": {"species_id": 1, "level": 0, "time": 0}},
+            sol=[[{"dimensions": {"species_id": 1, "time": 0}}]],
         ),
         ConfSingleSetup(  # [conf1]
-            setup_dct={"species_id": (1,), "level": (0,), "time": (0, 3, 6)},
+            setup_dct={"dimensions": {"species_id": 1, "level": 0, "time": (0, 3, 6)}},
             sol=[
-                [{"species_id": (1,), "time": (0,)}],
-                [{"species_id": (1,), "time": (3,)}],
-                [{"species_id": (1,), "time": (6,)}],
+                [{"dimensions": {"species_id": 1, "time": 0}}],
+                [{"dimensions": {"species_id": 1, "time": 3}}],
+                [{"dimensions": {"species_id": 1, "time": 6}}],
             ],
         ),
         ConfSingleSetup(  # [conf2]
             setup_dct={
-                "species_id": (1, 2),
-                "level": (0,),
+                "dimensions": {"species_id": (1, 2), "level": 0, "time": 0},
                 "combine_species": True,
-                "time": (0,),
             },
-            sol=[[{"species_id": (1, 2), "time": (0,)}]],
+            sol=[[{"dimensions": {"species_id": (1, 2), "time": 0}}]],
         ),
         ConfSingleSetup(  # [conf3]
             setup_dct={
-                "species_id": (1, 2),
+                "dimensions": {"species_id": (1, 2), "level": 0, "time": (0, 3, 6)},
                 "combine_species": True,
-                "level": (0,),
-                "time": (0, 3, 6),
             },
             sol=[
-                [{"species_id": (1, 2), "time": (0,)}],
-                [{"species_id": (1, 2), "time": (3,)}],
-                [{"species_id": (1, 2), "time": (6,)}],
+                [{"dimensions": {"species_id": (1, 2), "time": 0}}],
+                [{"dimensions": {"species_id": (1, 2), "time": 3}}],
+                [{"dimensions": {"species_id": (1, 2), "time": 6}}],
             ],
         ),
         ConfSingleSetup(  # [conf4]
             setup_dct={
-                "species_id": (1, 2),
+                "dimensions": {"species_id": (1, 2), "level": 0, "time": 0},
                 "combine_species": False,
-                "level": (0,),
-                "time": (0,),
             },
             sol=[
-                [{"species_id": (1,), "time": (0,)}],
-                [{"species_id": (2,), "time": (0,)}],
+                [{"dimensions": {"species_id": 1, "time": 0}}],
+                [{"dimensions": {"species_id": 2, "time": 0}}],
             ],
         ),
         ConfSingleSetup(  # [conf5]
             setup_dct={
-                "species_id": (1, 2),
+                "dimensions": {"species_id": (1, 2), "level": 0, "time": (0, 3, 6)},
                 "combine_species": False,
-                "level": (0,),
-                "time": (0, 3, 6),
             },
             sol=[
-                [{"species_id": (1,), "time": (0,)}],
-                [{"species_id": (1,), "time": (3,)}],
-                [{"species_id": (1,), "time": (6,)}],
-                [{"species_id": (2,), "time": (0,)}],
-                [{"species_id": (2,), "time": (3,)}],
-                [{"species_id": (2,), "time": (6,)}],
+                [{"dimensions": {"species_id": 1, "time": 0}}],
+                [{"dimensions": {"species_id": 1, "time": 3}}],
+                [{"dimensions": {"species_id": 1, "time": 6}}],
+                [{"dimensions": {"species_id": 2, "time": 0}}],
+                [{"dimensions": {"species_id": 2, "time": 3}}],
+                [{"dimensions": {"species_id": 2, "time": 6}}],
             ],
         ),
         ConfSingleSetup(  # [conf6]
             setup_dct={
-                "species_id": (1,),
-                "level": (0, 1),
+                "dimensions": {"species_id": 1, "level": (0, 1), "time": 0},
                 "combine_levels": True,
-                "time": (0,),
             },
-            sol=[[{"species_id": (1,), "level": (0, 1), "time": (0,)}]],
+            sol=[[{"dimensions": {"species_id": 1, "level": (0, 1), "time": 0}}]],
         ),
         ConfSingleSetup(  # [conf7]
             setup_dct={
-                "species_id": (1,),
-                "level": (0, 1),
+                "dimensions": {"species_id": 1, "level": (0, 1), "time": 0},
                 "combine_levels": False,
-                "time": (0,),
             },
             sol=[
-                [{"species_id": (1,), "level": (0,), "time": (0,)}],
-                [{"species_id": (1,), "level": (1,), "time": (0,)}],
+                [{"dimensions": {"species_id": 1, "level": 0, "time": 0}}],
+                [{"dimensions": {"species_id": 1, "level": 1, "time": 0}}],
             ],
         ),
         ConfSingleSetup(  # [conf8]
             setup_dct={
-                "species_id": (1, 2),
+                "dimensions": {
+                    "species_id": (1, 2),
+                    "level": (0, 1),
+                    "time": (0, 3, 6),
+                },
                 "combine_species": False,
-                "level": (0, 1),
                 "combine_levels": False,
-                "time": (0, 3, 6),
             },
             sol=[
-                [{"level": (0,), "species_id": (1,), "time": (0,)}],
-                [{"level": (0,), "species_id": (1,), "time": (3,)}],
-                [{"level": (0,), "species_id": (1,), "time": (6,)}],
-                [{"level": (1,), "species_id": (1,), "time": (0,)}],
-                [{"level": (1,), "species_id": (1,), "time": (3,)}],
-                [{"level": (1,), "species_id": (1,), "time": (6,)}],
-                [{"level": (0,), "species_id": (2,), "time": (0,)}],
-                [{"level": (0,), "species_id": (2,), "time": (3,)}],
-                [{"level": (0,), "species_id": (2,), "time": (6,)}],
-                [{"level": (1,), "species_id": (2,), "time": (0,)}],
-                [{"level": (1,), "species_id": (2,), "time": (3,)}],
-                [{"level": (1,), "species_id": (2,), "time": (6,)}],
+                [{"dimensions": {"level": 0, "species_id": 1, "time": 0}}],
+                [{"dimensions": {"level": 0, "species_id": 1, "time": 3}}],
+                [{"dimensions": {"level": 0, "species_id": 1, "time": 6}}],
+                [{"dimensions": {"level": 1, "species_id": 1, "time": 0}}],
+                [{"dimensions": {"level": 1, "species_id": 1, "time": 3}}],
+                [{"dimensions": {"level": 1, "species_id": 1, "time": 6}}],
+                [{"dimensions": {"level": 0, "species_id": 2, "time": 0}}],
+                [{"dimensions": {"level": 0, "species_id": 2, "time": 3}}],
+                [{"dimensions": {"level": 0, "species_id": 2, "time": 6}}],
+                [{"dimensions": {"level": 1, "species_id": 2, "time": 0}}],
+                [{"dimensions": {"level": 1, "species_id": 2, "time": 3}}],
+                [{"dimensions": {"level": 1, "species_id": 2, "time": 6}}],
             ],
         ),
     ],
 )
 def test_single_setup_concentration(datadir: str, conf: ConfSingleSetup):
-    params = ["species_id", "level", "time"]
+    params = ["dimensions.species_id", "dimensions.level", "dimensions.time"]
     conf.setup_dct.update(
         {
             "infile": f"{datadir}/{datafilename1}",
@@ -227,53 +227,105 @@ def test_single_setup_concentration(datadir: str, conf: ConfSingleSetup):
     "conf",
     [
         ConfSingleSetup(  # [conf0]
-            setup_dct={"deposition_type": ("dry",), "species_id": (1,), "time": (0,)},
-            sol=[[{"deposition_type": ("dry",), "species_id": (1,), "time": (0,)}]],
+            setup_dct={
+                "deposition_type": ("dry",),
+                "dimensions": {"species_id": 1, "time": 0},
+            },
+            sol=[
+                [
+                    {
+                        "deposition_type": ("dry",),
+                        "dimensions": {"species_id": 1, "time": 0},
+                    }
+                ]
+            ],
         ),
         ConfSingleSetup(  # [conf1]
             setup_dct={
                 "deposition_type": ("dry", "wet"),
                 "combine_deposition_types": False,
-                "species_id": (1,),
-                "time": (0,),
+                "dimensions": {"species_id": 1, "time": 0},
             },
             sol=[
-                [{"deposition_type": ("dry",), "species_id": (1,), "time": (0,)}],
-                [{"deposition_type": ("wet",), "species_id": (1,), "time": (0,)}],
+                [
+                    {
+                        "deposition_type": ("dry",),
+                        "dimensions": {"species_id": 1, "time": 0},
+                    }
+                ],
+                [
+                    {
+                        "deposition_type": ("wet",),
+                        "dimensions": {"species_id": 1, "time": 0},
+                    }
+                ],
             ],
         ),
         ConfSingleSetup(  # [conf2]
             setup_dct={
                 "deposition_type": ("dry", "wet"),
                 "combine_deposition_types": True,
-                "species_id": (1,),
-                "time": (0,),
+                "dimensions": {"species_id": 1, "time": 0},
             },
             sol=[
-                [{"deposition_type": ("dry", "wet"), "species_id": (1,), "time": (0,)}],
+                [
+                    {
+                        "deposition_type": ("dry", "wet"),
+                        "dimensions": {"species_id": 1, "time": 0},
+                    }
+                ],
             ],
         ),
         ConfSingleSetup(  # [conf3]
             setup_dct={
                 "deposition_type": ("dry", "wet"),
                 "combine_deposition_types": False,
-                "species_id": (1, 2),
                 "combine_species": True,
-                "time": (0, 3, 6),
+                "dimensions": {"species_id": (1, 2), "time": (0, 3, 6)},
             },
             sol=[
-                [{"deposition_type": ("dry",), "species_id": (1, 2), "time": (0,)}],
-                [{"deposition_type": ("dry",), "species_id": (1, 2), "time": (3,)}],
-                [{"deposition_type": ("dry",), "species_id": (1, 2), "time": (6,)}],
-                [{"deposition_type": ("wet",), "species_id": (1, 2), "time": (0,)}],
-                [{"deposition_type": ("wet",), "species_id": (1, 2), "time": (3,)}],
-                [{"deposition_type": ("wet",), "species_id": (1, 2), "time": (6,)}],
+                [
+                    {
+                        "deposition_type": ("dry",),
+                        "dimensions": {"species_id": (1, 2), "time": 0},
+                    }
+                ],
+                [
+                    {
+                        "deposition_type": ("dry",),
+                        "dimensions": {"species_id": (1, 2), "time": 3},
+                    }
+                ],
+                [
+                    {
+                        "deposition_type": ("dry",),
+                        "dimensions": {"species_id": (1, 2), "time": 6},
+                    }
+                ],
+                [
+                    {
+                        "deposition_type": ("wet",),
+                        "dimensions": {"species_id": (1, 2), "time": 0},
+                    }
+                ],
+                [
+                    {
+                        "deposition_type": ("wet",),
+                        "dimensions": {"species_id": (1, 2), "time": 3},
+                    }
+                ],
+                [
+                    {
+                        "deposition_type": ("wet",),
+                        "dimensions": {"species_id": (1, 2), "time": 6},
+                    }
+                ],
             ],
         ),
     ],
 )
 def test_single_setup_deposition(datadir: str, conf: ConfSingleSetup):
-    params = ["deposition_type", "species_id", "time"]
+    params = ["deposition_type", "dimensions.species_id", "dimensions.time"]
     conf.setup_dct.update(
         {
             "infile": f"{datadir}/{datafilename1}",
@@ -292,15 +344,12 @@ def test_single_setup_deposition(datadir: str, conf: ConfSingleSetup):
             setup_dct_lst=[
                 {
                     "input_variable": "concentration",
-                    "level": (0,),
-                    "species_id": (1,),
-                    "time": (0,),
+                    "dimensions": {"species_id": 1, "level": 0, "time": 0},
                 },
                 {
                     "input_variable": "deposition",
                     "deposition_type": ("dry",),
-                    "species_id": (1,),
-                    "time": (0,),
+                    "dimensions": {"species_id": 1, "time": 0},
                 },
             ],
             sol=[
@@ -312,28 +361,29 @@ def test_single_setup_deposition(datadir: str, conf: ConfSingleSetup):
             setup_dct_lst=[
                 {
                     "input_variable": "concentration",
-                    "level": (0, 1),
                     "combine_levels": False,
-                    "species_id": (1, 2),
+                    "dimensions": {
+                        "species_id": (1, 2),
+                        "level": (0, 1),
+                        "time": (0, 3),
+                    },
                     "combine_species": True,
-                    "time": (0, 3),
                 },
                 {
                     "input_variable": "deposition",
                     "deposition_type": ("dry", "wet"),
                     "combine_deposition_types": True,
-                    "species_id": (1, 2),
+                    "dimensions": {"species_id": (1, 2), "time": (3, 6)},
                     "combine_species": False,
-                    "time": (3, 6),
                 },
             ],
             sol=[
                 [{**dct, "input_variable": "concentration"}]  # type: ignore
                 for dct in [
-                    {"level": (0,), "species_id": (1, 2), "time": (0,)},
-                    {"level": (0,), "species_id": (1, 2), "time": (3,)},
-                    {"level": (1,), "species_id": (1, 2), "time": (0,)},
-                    {"level": (1,), "species_id": (1, 2), "time": (3,)},
+                    {"dimensions": {"level": 0, "species_id": (1, 2), "time": 0}},
+                    {"dimensions": {"level": 0, "species_id": (1, 2), "time": 3}},
+                    {"dimensions": {"level": 1, "species_id": (1, 2), "time": 0}},
+                    {"dimensions": {"level": 1, "species_id": (1, 2), "time": 3}},
                 ]
             ]
             + [
@@ -345,10 +395,10 @@ def test_single_setup_deposition(datadir: str, conf: ConfSingleSetup):
                     }
                 ]
                 for dct in [
-                    {"species_id": (1,), "time": (3,)},
-                    {"species_id": (1,), "time": (6,)},
-                    {"species_id": (2,), "time": (3,)},
-                    {"species_id": (2,), "time": (6,)},
+                    {"dimensions": {"species_id": 1, "time": 3}},
+                    {"dimensions": {"species_id": 1, "time": 6}},
+                    {"dimensions": {"species_id": 2, "time": 3}},
+                    {"dimensions": {"species_id": 2, "time": 6}},
                 ]
             ],
         ),
@@ -356,34 +406,40 @@ def test_single_setup_deposition(datadir: str, conf: ConfSingleSetup):
             setup_dct_lst=[
                 {
                     "input_variable": "concentration",
-                    "level": (0, 1),
                     "combine_levels": True,
-                    "species_id": (1, 2),
                     "combine_species": False,
-                    "time": (0,),
+                    "dimensions": {"species_id": (1, 2), "level": (0, 1), "time": 0},
                 },
                 {
                     "input_variable": "concentration",
-                    "level": (0, 1),
                     "combine_levels": False,
-                    "species_id": (1, 2),
                     "combine_species": True,
-                    "time": (0, 3),
+                    "dimensions": {
+                        "species_id": (1, 2),
+                        "level": (0, 1),
+                        "time": (0, 3),
+                    },
                 },
             ],
             sol=[
-                [{"level": (0, 1), "species_id": (1,), "time": (0,)}],
-                [{"level": (0, 1), "species_id": (2,), "time": (0,)}],
-                [{"level": (0,), "species_id": (1, 2), "time": (0,)}],
-                [{"level": (0,), "species_id": (1, 2), "time": (3,)}],
-                [{"level": (1,), "species_id": (1, 2), "time": (0,)}],
-                [{"level": (1,), "species_id": (1, 2), "time": (3,)}],
+                [{"dimensions": {"level": (0, 1), "species_id": 1, "time": 0}}],
+                [{"dimensions": {"level": (0, 1), "species_id": 2, "time": 0}}],
+                [{"dimensions": {"level": 0, "species_id": (1, 2), "time": 0}}],
+                [{"dimensions": {"level": 0, "species_id": (1, 2), "time": 3}}],
+                [{"dimensions": {"level": 1, "species_id": (1, 2), "time": 0}}],
+                [{"dimensions": {"level": 1, "species_id": (1, 2), "time": 3}}],
             ],
         ),
     ],
 )
 def test_multiple_setups(datadir: str, conf: ConfMultipleSetups):
-    params = ["input_variable", "deposition_type", "level", "species_id", "time"]
+    params = [
+        "input_variable",
+        "deposition_type",
+        "dimensions.level",
+        "dimensions.species_id",
+        "dimensions.time",
+    ]
     for setup_dct in conf.setup_dct_lst:
         setup_dct.update({"infile": f"{datadir}/{datafilename1}", "outfile": "foo.png"})
     _test_multiple_setups_core(conf, params)

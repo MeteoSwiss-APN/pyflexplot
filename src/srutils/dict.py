@@ -94,12 +94,17 @@ def compress_multival_dicts(
     """
     if not dcts:
         raise ValueError("missing dicts")
+    for dct in dcts:
+        if not isinstance(dct, Mapping):
+            raise ValueError(
+                f"invalid dcts element of type '{type(dct).__name__}'", dct, dcts
+            )
 
     # SR_TODO Consider adding option to allow differing keys
     if not all(dct.keys() == dcts[0].keys() for dct in dcts):
         raise ValueError("keys differ between dicts", [dct.keys() for dct in dcts])
 
-    dct: Mapping[str, Any] = {
+    dct = {
         key: list(val) if isinstance(val, cls_seq) else [copy(val)]
         for key, val in dcts[0].items()
     }

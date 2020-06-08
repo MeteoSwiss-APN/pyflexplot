@@ -24,9 +24,10 @@ field_summary = {
             "ens_variable": "none",
             "plot_type": "auto",
             "multipanel_param": None,
-            "combine_deposition_types": False,
             "deposition_type": None,
             "integrate": False,
+            "combine_deposition_types": False,
+            "combine_levels": False,
             "combine_species": False,
             "ens_member_id": None,
             "ens_param_mem_min": None,
@@ -34,12 +35,16 @@ field_summary = {
             "ens_param_time_win": None,
             "lang": "de",
             "domain": "auto",
-            "nageclass": [0],
-            "noutrel": [0],
-            "numpoint": [0],
-            "species_id": [1],
-            "time": [5],
-            "level": [0],
+            "dimensions": [
+                {
+                    "nageclass": 0,
+                    "noutrel": 0,
+                    "numpoint": 0,
+                    "species_id": 1,
+                    "time": 5,
+                    "level": 0,
+                }
+            ],
         }
     ],
     "time_stats": {
@@ -2247,9 +2252,10 @@ plot_summary = {
                 "ens_variable": "none",
                 "plot_type": "auto",
                 "multipanel_param": None,
-                "combine_deposition_types": False,
                 "deposition_type": None,
                 "integrate": False,
+                "combine_deposition_types": False,
+                "combine_levels": False,
                 "combine_species": False,
                 "ens_member_id": None,
                 "ens_param_mem_min": None,
@@ -2257,12 +2263,16 @@ plot_summary = {
                 "ens_param_time_win": None,
                 "lang": "de",
                 "domain": "auto",
-                "nageclass": [0],
-                "noutrel": [0],
-                "numpoint": [0],
-                "species_id": [1],
-                "time": [5],
-                "level": [0],
+                "dimensions": [
+                    {
+                        "nageclass": 0,
+                        "noutrel": 0,
+                        "numpoint": 0,
+                        "species_id": 1,
+                        "time": 5,
+                        "level": 0,
+                    }
+                ],
             }
         ],
         "time_stats": {
