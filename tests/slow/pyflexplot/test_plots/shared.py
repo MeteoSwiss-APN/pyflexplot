@@ -36,7 +36,7 @@ def datadir(tmpdir, request):
     file = request.module.__file__
     dir, _ = os.path.splitext(file)
     data_root = os.path.abspath(f"{os.path.abspath(dir)}/../../../../data")
-    data_dir = f"{data_root}/pyflexplot/io/reduced"
+    data_dir = f"{data_root}/pyflexplot/input/reduced"
     if os.path.isdir(data_dir):
         distutils.dir_util.copy_tree(data_dir, str(tmpdir))
     return tmpdir
@@ -71,7 +71,7 @@ class _TestBase:
     n_plots: int = 1
 
     def get_setups(self):
-        setup = InputSetup(**self.setup_dct)
+        setup = InputSetup.create(self.setup_dct)
         return InputSetupCollection([setup])
 
     def get_field_and_mdata(self, datadir):
@@ -79,13 +79,15 @@ class _TestBase:
         setups = self.get_setups()
         field_lst_lst, mdata_lst_lst = read_fields(infile, setups, add_ts0=True)
         assert len(field_lst_lst) == len(mdata_lst_lst) == self.n_plots
-        for field_lst, mdata_lst in zip(field_lst_lst, mdata_lst_lst):
-            # SR_TODO Consider support for multipanel plots!
-            assert len(field_lst) == 1
-            assert len(mdata_lst) == 1
-            field = field_lst[0]
-            mdata = mdata_lst[0]
-            yield (field, mdata)
+        # SR_TMP <
+        assert self.n_plots == 1
+        field_lst = next(iter(field_lst_lst))
+        mdata_lst = next(iter(mdata_lst_lst))
+        assert len(field_lst) == len(mdata_lst) == 1
+        field = next(iter(field_lst))
+        mdata = next(iter(mdata_lst))
+        # SR_TMP >
+        return field, mdata
 
     def get_plot(self, field, mdata):
         field_lst = [field]
@@ -104,24 +106,24 @@ class _TestBase:
         return ref
 
     def test(self, datadir):
-        for field, mdata in self.get_field_and_mdata(datadir):
-            res = field.summarize()
-            # SR_TODO Add support for multiple plots!
-            sol = self.get_reference("field_summary")
-            try:
-                assert_nested_equal(res, sol, float_close_ok=True)
-            except AssertionError as e:
-                msg = f"field summaries differ (result vs. solution):\n\n {e}"
-                raise AssertionError(msg)
+        field, mdata = self.get_field_and_mdata(datadir)
+        res = field.summarize()
+        # SR_TODO Add support for multiple plots!
+        sol = self.get_reference("field_summary")
+        try:
+            assert_nested_equal(res, sol, float_close_ok=True)
+        except AssertionError as e:
+            msg = f"field summaries differ (result vs. solution):\n\n {e}"
+            raise AssertionError(msg)
 
-            plot = self.get_plot(field, mdata)
-            res = plot.summarize()
-            sol = self.get_reference("plot_summary")
-            try:
-                assert_nested_equal(res, sol, float_close_ok=True)
-            except AssertionError as e:
-                msg = f"plot summaries differ (result vs. solution):\n\n{e}"
-                raise AssertionError(msg)
+        plot = self.get_plot(field, mdata)
+        res = plot.summarize()
+        sol = self.get_reference("plot_summary")
+        try:
+            assert_nested_equal(res, sol, float_close_ok=True)
+        except AssertionError as e:
+            msg = f"plot summaries differ (result vs. solution):\n\n{e}"
+            raise AssertionError(msg)
 
 
 class ReferenceFileCreationSuccess(Exception):

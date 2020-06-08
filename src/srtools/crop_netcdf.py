@@ -8,7 +8,6 @@ import functools
 import sys
 from dataclasses import dataclass
 from typing import Optional
-from typing import Tuple
 
 # Third-party
 import click
@@ -21,8 +20,9 @@ __version__ = "0.1.0"
 class Setup:
     lat_name: str
     lon_name: str
-    lat_slice: Tuple[Optional[int], Optional[int], Optional[int]]
-    lon_slice: Tuple[Optional[int], Optional[int], Optional[int]]
+    lat_slice: slice
+    lon_slice: slice
+    set_const: Optional[float]
 
     def dict(self):
         return dataclasses.asdict(self)
@@ -57,13 +57,14 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"],)
     metavar="START STOP STEP",
     default=(None, None, None),
 )
+@click.option("--lat-name", help="Name of latitude dimension.", default="lat")
+@click.option("--lon-name", help="Name of longitude dimension.", default="lon")
 @click.option(
-    "--lat-name", help="Name of latitude dimension.", default="lat",
-)
-@click.option(
-    "--lon-name", help="Name of longitude dimension.", default="lon",
+    "--set-const", help="Set field to constant value.", type=float, default=None
 )
 def main(in_file_path, out_file_path, **kwargs_setup):
+    kwargs_setup["lat_slice"] = slice(*kwargs_setup["lat_slice"])
+    kwargs_setup["lon_slice"] = slice(*kwargs_setup["lon_slice"])
     setup = Setup(**kwargs_setup)
 
     for name, value in {
@@ -79,11 +80,6 @@ def main(in_file_path, out_file_path, **kwargs_setup):
         transfer_variables(fi, fo, setup)
 
 
-def len_slice(s):
-    """Count number of elements selected by slice."""
-    return len(range(s.start, s.stop, s.step))
-
-
 def transfer_ncattrs(fi, fo):
     """Transfer global attributes from in- to outfile."""
     ncattrs = {ncattr: fi.getncattr(ncattr) for ncattr in fi.ncattrs()}
@@ -92,6 +88,10 @@ def transfer_ncattrs(fi, fo):
 
 def transfer_dimensions(fi, fo, setup):
     """Transfer all dimensions from in- to outfile."""
+    if setup.lat_name not in fi.dimensions:
+        raise Exception(f"dimension '{setup.lat_name}' not among {list(fi.dimensions)}")
+    if setup.lon_name not in fi.dimensions:
+        raise Exception(f"dimension '{setup.lon_name}' not among {list(fi.dimensions)}")
     for dim in fi.dimensions.values():
         transfer_dimension(fi, fo, dim, setup)
 
@@ -102,10 +102,14 @@ def transfer_dimension(fi, fo, dim, setup):
     # Determine dimension size
     if dim.isunlimited():
         size = None
-    elif dim.name == setup.lat_name:
-        size = len_slice(setup.lat_slice)
-    elif dim.name == setup.lon_name:
-        size = len_slice(setup.lon_slice)
+    elif dim.name == setup.lat_name and setup.lat_slice != slice(None):
+        size = len(
+            range(setup.lat_slice.start, setup.lat_slice.stop, setup.lat_slice.step)
+        )
+    elif dim.name == setup.lon_name and setup.lon_slice != slice(None):
+        size = len(
+            range(setup.lon_slice.start, setup.lon_slice.stop, setup.lon_slice.step)
+        )
     else:
         size = dim.size
 
@@ -120,6 +124,15 @@ def transfer_dimension(fi, fo, dim, setup):
         pass
     else:
         transfer_variable(fo, var, setup)
+
+
+def len_slice(arg, n):
+    """Count number of elements selected by slice."""
+    if not isinstance(arg, slice):
+        if arg == (None, None, None):
+            return n
+        arg = slice(*arg)
+    return len(range(arg.start, arg.stop, arg.step))
 
 
 def transfer_variables(fi, fo, setup):
@@ -142,12 +155,20 @@ def transfer_variable(fo, var, setup):
         inds = []
         for dim_name in var.dimensions:
             if dim_name == setup.lat_name:
-                inds.append(slice(setup.lat_slice))
+                inds.append(setup.lat_slice)
             elif dim_name == setup.lon_name:
-                inds.append(slice(setup.lon_slice))
+                inds.append(setup.lon_slice)
             else:
                 inds.append(slice(None))
-        new_var[:] = var[inds]
+        if (
+            setup.set_const is not None
+            and var.name not in fo.dimensions
+            and setup.lat_name in var.dimensions
+            and setup.lon_name in var.dimensions
+        ):
+            new_var[:] = setup.set_const
+        else:
+            new_var[:] = var[inds]
 
     # Transfer variable attributes
     transfer_ncattrs(var, new_var)

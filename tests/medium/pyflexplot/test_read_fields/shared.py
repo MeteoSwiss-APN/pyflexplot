@@ -38,7 +38,7 @@ def datadir(tmpdir, request):
     file = request.module.__file__
     dir, _ = os.path.splitext(file)
     data_root = os.path.abspath(f"{os.path.abspath(dir)}/../../../../data")
-    data_dir = f"{data_root}/pyflexplot/io/reduced"
+    data_dir = f"{data_root}/pyflexplot/input/reduced"
     if os.path.isdir(data_dir):
         distutils.dir_util.copy_tree(data_dir, str(tmpdir))
     return tmpdir
@@ -68,18 +68,18 @@ def read_nc_var(path, var_name, setup, model):
                 # Read all timesteps until the selected one
                 # SR_TMP <
                 if isinstance(setup, CoreInputSetup):
-                    idx = slice(setup.time + 1)
+                    idx = slice(setup.dimensions.time + 1)
                 else:
-                    assert len(setup.time) == 1
-                    idx = slice(setup.time[0] + 1)
+                    assert isinstance(setup.dimensions.time, int)
+                    idx = slice(setup.dimensions.time + 1)
                 # SR_TMP >
             elif dim_name in ["level", "height"]:
                 # SR_TMP <
-                if isinstance(setup, CoreInputSetup) or setup.level is None:
-                    idx = setup.level
+                if isinstance(setup, CoreInputSetup) or setup.dimensions.level is None:
+                    idx = setup.dimensions.level
                 else:
-                    assert len(setup.level) == 1
-                    idx = next(iter(setup.level))
+                    assert isinstance(setup.dimensions.level, int)
+                    idx = setup.dimensions.level
                 # SR_TMP >
             elif dim_name in ["nageclass", "numpoint", "noutrel", "pointspec"]:
                 idx = 0  # SR_HC
