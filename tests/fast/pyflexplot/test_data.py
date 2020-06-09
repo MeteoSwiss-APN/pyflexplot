@@ -8,8 +8,8 @@ import numpy as np
 import pytest  # type: ignore
 
 # First-party
-from pyflexplot.data import EnsembleCloud
 from pyflexplot.data import ensemble_probability
+from pyflexplot.data import EnsembleCloud
 
 
 class TestEnsembleProbability2D:

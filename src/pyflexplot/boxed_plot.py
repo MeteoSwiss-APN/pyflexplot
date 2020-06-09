@@ -26,8 +26,8 @@ from .data import Field
 from .meta_data import MetaData
 from .plot_elements import MapAxes
 from .plot_elements import MapAxesConf
-from .plot_elements import TextBoxAxes
 from .plot_elements import post_summarize_plot
+from .plot_elements import TextBoxAxes
 from .setup import InputSetup
 from .summarize import summarizable
 from .typing import ColorType

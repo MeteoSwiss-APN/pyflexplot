@@ -11,10 +11,10 @@ from typing import Dict
 from typing import List
 from typing import MutableMapping
 from typing import Optional
+from typing import overload
 from typing import Sequence
 from typing import Tuple
 from typing import Union
-from typing import overload
 
 # Third-party
 import cartopy

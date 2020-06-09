@@ -12,8 +12,8 @@ from typing import Sequence
 from typing import Type
 
 # Third-party
-from pydantic import ValidationError
 from pydantic import parse_obj_as
+from pydantic import ValidationError
 from pydantic.fields import ModelField
 
 

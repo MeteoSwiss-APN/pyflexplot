@@ -7,13 +7,13 @@ import warnings
 from datetime import datetime
 from textwrap import dedent
 from typing import Any
+from typing import cast
 from typing import Collection
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
-from typing import cast
 
 # Third-party
 import matplotlib as mpl
@@ -30,9 +30,9 @@ from .data import Field
 from .data import FieldAllNaNError
 from .formatting import format_level_ranges
 from .formatting import format_range
-from .meta_data import MetaData
 from .meta_data import format_unit
 from .meta_data import get_integr_type
+from .meta_data import MetaData
 from .plot_elements import MapAxesConf
 from .plot_elements import TextBoxAxes
 from .setup import FilePathFormatter
@@ -40,8 +40,8 @@ from .setup import InputSetup
 from .setup import InputSetupCollection
 from .typing import ColorType
 from .words import SYMBOLS
-from .words import WORDS
 from .words import TranslatedWords
+from .words import WORDS
 from .words import Words
 
 

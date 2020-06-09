@@ -14,18 +14,18 @@ from typing import Iterator
 from typing import List
 from typing import Mapping
 from typing import Optional
+from typing import overload
 from typing import Sequence
 from typing import Set
 from typing import Tuple
 from typing import Type
 from typing import Union
-from typing import overload
 
 # Third-party
 import toml
 from pydantic import BaseModel
-from pydantic import ValidationError
 from pydantic import root_validator
+from pydantic import ValidationError
 from pydantic import validator
 
 # First-party
