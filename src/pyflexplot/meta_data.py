@@ -38,7 +38,7 @@ ValueT = TypeVar("ValueT", int, float, str, datetime, timedelta)
 
 
 @summarizable
-# pylint: disable=E0213  # no-self-argument (@validator)
+# pylint: disable=E0213  # no-self-argument (validator)
 class MetaDatum(GenericModel, Generic[ValueT]):
     """Individual piece of meta data."""
 

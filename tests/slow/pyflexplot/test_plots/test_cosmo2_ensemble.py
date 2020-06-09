@@ -80,14 +80,16 @@ class Test_EnsMean_TotalDeposition(_TestBase):
 #          "input_variable": "deposition",
 #          "ens_variable": "minimum",
 #          "plot_variable": "affected_area",
-#          "deposition_type": ["dry", "wet"],
+#
 #          "combine_deposition_types": True,
 #          "integrate": True,
 #          "combine_species": True,
 #          "ens_member_id": ENS_MEMBER_IDS,
 #          "lang": "de",
 #          "domain": "ch",
-#          "dimensions": {"species_id": (1, 2), "time": -1},
+#          "dimensions": {
+#              "species_id": (1, 2), "time": -1, "deposition_type": ["dry", "wet"]
+#          },
 #      }
 
 

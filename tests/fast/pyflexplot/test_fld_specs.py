@@ -74,8 +74,8 @@ class Test_Create_Deposition:
             "infile": "dummy.nc",
             "outfile": "dummy.png",
             "input_variable": "deposition",
-            "deposition_type": "dry",
             "integrate": False,
+            "dimensions": {"deposition_type": "dry"},
         },
     )
     n_vs = 1
@@ -112,9 +112,8 @@ class Test_Create_Deposition:
         n_vs = self.n_vs * 4
         setup = self.setup.derive(
             {
-                "deposition_type": ("dry", "wet"),
                 "combine_deposition_types": True,
-                "dimensions": {"species_id": [1, 2]},
+                "dimensions": {"species_id": [1, 2], "deposition_type": ("dry", "wet")},
             }
         )
         setups = InputSetupCollection([setup])

@@ -158,7 +158,7 @@ class FileReader:
                                 skip.append("dimensions.level")
                         elif input_variable == "deposition":
                             if combine_deposition_types:
-                                skip.append("deposition_type")
+                                skip.append("dimensions.deposition_type")
                         if combine_species:
                             skip.append("dimensions.species_id")
                         setups_field_lst = setups_loc.decompress_partially(

@@ -309,8 +309,8 @@ class TestReadFieldEnsemble_Multiple:
             ],
             setup_params={
                 "input_variable": "deposition",
-                "deposition_type": ("dry", "wet"),
                 "combine_deposition_types": True,
+                "dimensions": {"deposition_type": ("dry", "wet")},
             },
             ens_var=ens_var,
             fct_reduce_mem=fct_reduce_mem,

@@ -84,10 +84,9 @@ class Test_AffectedArea(_TestBase):
         "outfile": "plot.png",
         "input_variable": "deposition",
         "plot_variable": "affected_area_mono",
-        "deposition_type": ["dry", "wet"],
         "combine_deposition_types": True,
         "integrate": True,
         "lang": "en",
         "domain": "ch",
-        "dimensions": {"species_id": 1, "time": -1},
+        "dimensions": {"species_id": 1, "time": -1, "deposition_type": ["dry", "wet"]},
     }

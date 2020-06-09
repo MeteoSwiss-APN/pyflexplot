@@ -41,13 +41,13 @@ class Test_InputSetup_Decompress:
         return DEFAULT_SETUP.derive(
             {
                 "input_variable": "deposition",
-                "deposition_type": ["dry", "wet"],
                 "dimensions": {
-                    "time": [1, 2, 3],
-                    "species_id": [1, 2],
+                    "deposition_type": ["dry", "wet"],
                     "nageclass": (0,),
                     "noutrel": (0,),
                     "numpoint": (0,),
+                    "species_id": [1, 2],
+                    "time": [1, 2, 3],
                 },
             },
         )
@@ -59,7 +59,7 @@ class Test_InputSetup_Decompress:
         assert isinstance(setups, CoreInputSetupCollection)
         assert all(isinstance(setup, CoreInputSetup) for setup in setups)
         res = {
-            (s.deposition_type, s.dimensions.species_id, s.dimensions.time)
+            (s.dimensions.deposition_type, s.dimensions.species_id, s.dimensions.time)
             for s in setups
         }
         sol = {
@@ -85,22 +85,22 @@ class Test_InputSetup_Decompress:
         assert isinstance(setups, InputSetupCollection)
         assert all(isinstance(setup, InputSetup) for setup in setups)
         res = {
-            (s.deposition_type, s.dimensions.species_id, s.dimensions.time)
+            (s.dimensions.deposition_type, s.dimensions.species_id, s.dimensions.time)
             for s in setups
         }
         sol = {
-            (("dry",), 1, 1),
-            (("dry",), 1, 2),
-            (("dry",), 1, 3),
-            (("dry",), 2, 1),
-            (("dry",), 2, 2),
-            (("dry",), 2, 3),
-            (("wet",), 1, 1),
-            (("wet",), 1, 2),
-            (("wet",), 1, 3),
-            (("wet",), 2, 1),
-            (("wet",), 2, 2),
-            (("wet",), 2, 3),
+            ("dry", 1, 1),
+            ("dry", 1, 2),
+            ("dry", 1, 3),
+            ("dry", 2, 1),
+            ("dry", 2, 2),
+            ("dry", 2, 3),
+            ("wet", 1, 1),
+            ("wet", 1, 2),
+            ("wet", 1, 3),
+            ("wet", 2, 1),
+            ("wet", 2, 2),
+            ("wet", 2, 3),
         }
         assert res == sol
 
@@ -111,7 +111,7 @@ class Test_InputSetup_Decompress:
         assert all(isinstance(setup, InputSetup) for setup in setups)
         assert len(setups) == 2
         res = {
-            (s.deposition_type, s.dimensions.species_id, s.dimensions.time)
+            (s.dimensions.deposition_type, s.dimensions.species_id, s.dimensions.time)
             for s in setups
         }
         sol = {(("dry", "wet"), 1, (1, 2, 3)), (("dry", "wet"), 2, (1, 2, 3))}
@@ -119,21 +119,23 @@ class Test_InputSetup_Decompress:
 
     def test_select_two(self):
         """Decompress two select parameters."""
-        setups = self.setup.decompress_partially(["dimensions.time", "deposition_type"])
+        setups = self.setup.decompress_partially(
+            ["dimensions.time", "dimensions.deposition_type"]
+        )
         assert len(setups) == 6
         assert isinstance(setups, InputSetupCollection)
         assert all(isinstance(setup, InputSetup) for setup in setups)
         res = {
-            (s.deposition_type, s.dimensions.species_id, s.dimensions.time)
+            (s.dimensions.deposition_type, s.dimensions.species_id, s.dimensions.time)
             for s in setups
         }
         sol = {
-            (("dry",), (1, 2), 1),
-            (("dry",), (1, 2), 2),
-            (("dry",), (1, 2), 3),
-            (("wet",), (1, 2), 1),
-            (("wet",), (1, 2), 2),
-            (("wet",), (1, 2), 3),
+            ("dry", (1, 2), 1),
+            ("dry", (1, 2), 2),
+            ("dry", (1, 2), 3),
+            ("wet", (1, 2), 1),
+            ("wet", (1, 2), 2),
+            ("wet", (1, 2), 3),
         }
         assert res == sol
 

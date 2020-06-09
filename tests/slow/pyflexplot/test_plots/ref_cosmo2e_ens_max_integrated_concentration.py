@@ -24,7 +24,6 @@ field_summary = {
             "ens_variable": "maximum",
             "plot_type": "auto",
             "multipanel_param": None,
-            "deposition_type": None,
             "integrate": True,
             "combine_deposition_types": False,
             "combine_levels": False,
@@ -37,12 +36,13 @@ field_summary = {
             "domain": "ch",
             "dimensions": [
                 {
+                    "deposition_type": None,
+                    "level": 0,
                     "nageclass": 0,
                     "noutrel": None,
                     "numpoint": 0,
                     "species_id": 2,
                     "time": 10,
-                    "level": 0,
                 }
             ],
         }
@@ -2321,7 +2321,6 @@ plot_summary = {
                 "ens_variable": "maximum",
                 "plot_type": "auto",
                 "multipanel_param": None,
-                "deposition_type": None,
                 "integrate": True,
                 "combine_deposition_types": False,
                 "combine_levels": False,
@@ -2334,12 +2333,13 @@ plot_summary = {
                 "domain": "ch",
                 "dimensions": [
                     {
+                        "deposition_type": None,
+                        "level": 0,
                         "nageclass": 0,
                         "noutrel": None,
                         "numpoint": 0,
                         "species_id": 2,
                         "time": 10,
-                        "level": 0,
                     }
                 ],
             }

@@ -197,12 +197,12 @@ def _test_multiple_setups_core(conf, params):
                 [{"dimensions": {"level": 0, "species_id": 1, "time": 0}}],
                 [{"dimensions": {"level": 0, "species_id": 1, "time": 3}}],
                 [{"dimensions": {"level": 0, "species_id": 1, "time": 6}}],
-                [{"dimensions": {"level": 1, "species_id": 1, "time": 0}}],
-                [{"dimensions": {"level": 1, "species_id": 1, "time": 3}}],
-                [{"dimensions": {"level": 1, "species_id": 1, "time": 6}}],
                 [{"dimensions": {"level": 0, "species_id": 2, "time": 0}}],
                 [{"dimensions": {"level": 0, "species_id": 2, "time": 3}}],
                 [{"dimensions": {"level": 0, "species_id": 2, "time": 6}}],
+                [{"dimensions": {"level": 1, "species_id": 1, "time": 0}}],
+                [{"dimensions": {"level": 1, "species_id": 1, "time": 3}}],
+                [{"dimensions": {"level": 1, "species_id": 1, "time": 6}}],
                 [{"dimensions": {"level": 1, "species_id": 2, "time": 0}}],
                 [{"dimensions": {"level": 1, "species_id": 2, "time": 3}}],
                 [{"dimensions": {"level": 1, "species_id": 2, "time": 6}}],
@@ -228,96 +228,134 @@ def test_single_setup_concentration(datadir: str, conf: ConfSingleSetup):
     [
         ConfSingleSetup(  # [conf0]
             setup_dct={
-                "deposition_type": ("dry",),
-                "dimensions": {"species_id": 1, "time": 0},
+                "dimensions": {"species_id": 1, "time": 0, "deposition_type": "dry"},
             },
             sol=[
                 [
                     {
-                        "deposition_type": ("dry",),
-                        "dimensions": {"species_id": 1, "time": 0},
+                        "dimensions": {
+                            "species_id": 1,
+                            "time": 0,
+                            "deposition_type": "dry",
+                        },
                     }
                 ]
             ],
         ),
         ConfSingleSetup(  # [conf1]
             setup_dct={
-                "deposition_type": ("dry", "wet"),
                 "combine_deposition_types": False,
-                "dimensions": {"species_id": 1, "time": 0},
+                "dimensions": {
+                    "species_id": 1,
+                    "time": 0,
+                    "deposition_type": ("dry", "wet"),
+                },
             },
             sol=[
                 [
                     {
-                        "deposition_type": ("dry",),
-                        "dimensions": {"species_id": 1, "time": 0},
+                        "dimensions": {
+                            "species_id": 1,
+                            "time": 0,
+                            "deposition_type": "dry",
+                        },
                     }
                 ],
                 [
                     {
-                        "deposition_type": ("wet",),
-                        "dimensions": {"species_id": 1, "time": 0},
+                        "dimensions": {
+                            "species_id": 1,
+                            "time": 0,
+                            "deposition_type": "wet",
+                        },
                     }
                 ],
             ],
         ),
         ConfSingleSetup(  # [conf2]
             setup_dct={
-                "deposition_type": ("dry", "wet"),
                 "combine_deposition_types": True,
-                "dimensions": {"species_id": 1, "time": 0},
+                "dimensions": {
+                    "species_id": 1,
+                    "time": 0,
+                    "deposition_type": ("dry", "wet"),
+                },
             },
             sol=[
                 [
                     {
-                        "deposition_type": ("dry", "wet"),
-                        "dimensions": {"species_id": 1, "time": 0},
+                        "dimensions": {
+                            "species_id": 1,
+                            "time": 0,
+                            "deposition_type": ("dry", "wet"),
+                        },
                     }
                 ],
             ],
         ),
         ConfSingleSetup(  # [conf3]
             setup_dct={
-                "deposition_type": ("dry", "wet"),
                 "combine_deposition_types": False,
                 "combine_species": True,
-                "dimensions": {"species_id": (1, 2), "time": (0, 3, 6)},
+                "dimensions": {
+                    "species_id": (1, 2),
+                    "time": (0, 3, 6),
+                    "deposition_type": ("dry", "wet"),
+                },
             },
             sol=[
                 [
                     {
-                        "deposition_type": ("dry",),
-                        "dimensions": {"species_id": (1, 2), "time": 0},
+                        "dimensions": {
+                            "species_id": (1, 2),
+                            "time": 0,
+                            "deposition_type": "dry",
+                        },
                     }
                 ],
                 [
                     {
-                        "deposition_type": ("dry",),
-                        "dimensions": {"species_id": (1, 2), "time": 3},
+                        "dimensions": {
+                            "species_id": (1, 2),
+                            "time": 3,
+                            "deposition_type": "dry",
+                        },
                     }
                 ],
                 [
                     {
-                        "deposition_type": ("dry",),
-                        "dimensions": {"species_id": (1, 2), "time": 6},
+                        "dimensions": {
+                            "species_id": (1, 2),
+                            "time": 6,
+                            "deposition_type": "dry",
+                        },
                     }
                 ],
                 [
                     {
-                        "deposition_type": ("wet",),
-                        "dimensions": {"species_id": (1, 2), "time": 0},
+                        "dimensions": {
+                            "species_id": (1, 2),
+                            "time": 0,
+                            "deposition_type": "wet",
+                        },
                     }
                 ],
                 [
                     {
-                        "deposition_type": ("wet",),
-                        "dimensions": {"species_id": (1, 2), "time": 3},
+                        "dimensions": {
+                            "species_id": (1, 2),
+                            "time": 3,
+                            "deposition_type": "wet",
+                        },
                     }
                 ],
                 [
                     {
-                        "deposition_type": ("wet",),
-                        "dimensions": {"species_id": (1, 2), "time": 6},
+                        "dimensions": {
+                            "species_id": (1, 2),
+                            "time": 6,
+                            "deposition_type": "wet",
+                        },
                     }
                 ],
             ],
@@ -325,7 +363,7 @@ def test_single_setup_concentration(datadir: str, conf: ConfSingleSetup):
     ],
 )
 def test_single_setup_deposition(datadir: str, conf: ConfSingleSetup):
-    params = ["deposition_type", "dimensions.species_id", "dimensions.time"]
+    params = ["dimensions.deposition_type", "dimensions.species_id", "dimensions.time"]
     conf.setup_dct.update(
         {
             "infile": f"{datadir}/{datafilename1}",
@@ -348,8 +386,11 @@ def test_single_setup_deposition(datadir: str, conf: ConfSingleSetup):
                 },
                 {
                     "input_variable": "deposition",
-                    "deposition_type": ("dry",),
-                    "dimensions": {"species_id": 1, "time": 0},
+                    "dimensions": {
+                        "species_id": 1,
+                        "time": 0,
+                        "deposition_type": "dry",
+                    },
                 },
             ],
             sol=[
@@ -371,10 +412,13 @@ def test_single_setup_deposition(datadir: str, conf: ConfSingleSetup):
                 },
                 {
                     "input_variable": "deposition",
-                    "deposition_type": ("dry", "wet"),
                     "combine_deposition_types": True,
-                    "dimensions": {"species_id": (1, 2), "time": (3, 6)},
                     "combine_species": False,
+                    "dimensions": {
+                        "species_id": (1, 2),
+                        "time": (3, 6),
+                        "deposition_type": ("dry", "wet"),
+                    },
                 },
             ],
             sol=[
@@ -389,16 +433,18 @@ def test_single_setup_deposition(datadir: str, conf: ConfSingleSetup):
             + [
                 [
                     {
-                        **dct,  # type: ignore
                         "input_variable": "deposition",
-                        "deposition_type": ("dry", "wet"),  # type: ignore
+                        "dimensions": {  # type: ignore
+                            **dims,  # type: ignore
+                            "deposition_type": ("dry", "wet"),  # type: ignore
+                        },
                     }
                 ]
-                for dct in [
-                    {"dimensions": {"species_id": 1, "time": 3}},
-                    {"dimensions": {"species_id": 1, "time": 6}},
-                    {"dimensions": {"species_id": 2, "time": 3}},
-                    {"dimensions": {"species_id": 2, "time": 6}},
+                for dims in [
+                    {"species_id": 1, "time": 3},
+                    {"species_id": 1, "time": 6},
+                    {"species_id": 2, "time": 3},
+                    {"species_id": 2, "time": 6},
                 ]
             ],
         ),
@@ -435,7 +481,7 @@ def test_single_setup_deposition(datadir: str, conf: ConfSingleSetup):
 def test_multiple_setups(datadir: str, conf: ConfMultipleSetups):
     params = [
         "input_variable",
-        "deposition_type",
+        "dimensions.deposition_type",
         "dimensions.level",
         "dimensions.species_id",
         "dimensions.time",

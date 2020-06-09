@@ -24,7 +24,6 @@ field_summary = {
             "ens_variable": "none",
             "plot_type": "auto",
             "multipanel_param": None,
-            "deposition_type": ["dry", "wet"],
             "integrate": True,
             "combine_deposition_types": True,
             "combine_levels": False,
@@ -37,13 +36,23 @@ field_summary = {
             "domain": "ch",
             "dimensions": [
                 {
+                    "deposition_type": "dry",
+                    "level": None,
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
                     "species_id": 1,
                     "time": 11,
+                },
+                {
+                    "deposition_type": "wet",
                     "level": None,
-                }
+                    "nageclass": None,
+                    "noutrel": None,
+                    "numpoint": None,
+                    "species_id": None,
+                    "time": None,
+                },
             ],
         }
     ],
@@ -1809,7 +1818,6 @@ plot_summary = {
                 "ens_variable": "none",
                 "plot_type": "auto",
                 "multipanel_param": None,
-                "deposition_type": ["dry", "wet"],
                 "integrate": True,
                 "combine_deposition_types": True,
                 "combine_levels": False,
@@ -1822,13 +1830,23 @@ plot_summary = {
                 "domain": "ch",
                 "dimensions": [
                     {
+                        "deposition_type": "dry",
+                        "level": None,
                         "nageclass": 0,
                         "noutrel": 0,
                         "numpoint": 0,
                         "species_id": 1,
                         "time": 11,
+                    },
+                    {
+                        "deposition_type": "wet",
                         "level": None,
-                    }
+                        "nageclass": None,
+                        "noutrel": None,
+                        "numpoint": None,
+                        "species_id": None,
+                        "time": None,
+                    },
                 ],
             }
         ],

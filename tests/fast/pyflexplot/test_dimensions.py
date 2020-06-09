@@ -15,6 +15,7 @@ class Test_CoreDimensions_Init:
         cdims = CoreDimensions()
         res = cdims.dict()
         sol = {
+            "deposition_type": None,
             "nageclass": None,
             "noutrel": None,
             "numpoint": None,
@@ -26,6 +27,7 @@ class Test_CoreDimensions_Init:
 
     def test_all_args(self):
         params = {
+            "deposition_type": "dry",
             "nageclass": 0,
             "noutrel": 1,
             "numpoint": 3,
@@ -46,6 +48,7 @@ class Test_CoreDimensions_Init:
         cdims = CoreDimensions(**params)
         res = cdims.dict()
         sol = {
+            "deposition_type": None,
             "nageclass": None,
             "noutrel": 1,
             "numpoint": None,
@@ -63,6 +66,7 @@ class Test_Init:
         dims = Dimensions()
         res = dims.raw_dict()
         sol = {
+            "deposition_type": (None,),
             "nageclass": (None,),
             "noutrel": (None,),
             "numpoint": (None,),
@@ -74,11 +78,18 @@ class Test_Init:
 
     def test_single_core(self):
         cdims = CoreDimensions(
-            nageclass=0, noutrel=1, numpoint=3, species_id=2, time=0, level=2,
+            deposition_type="wet",
+            nageclass=0,
+            noutrel=1,
+            numpoint=3,
+            species_id=2,
+            time=0,
+            level=2,
         )
         dims = Dimensions([cdims])
         res = dims.raw_dict()
         sol = {
+            "deposition_type": ("wet",),
             "nageclass": (0,),
             "noutrel": (1,),
             "numpoint": (3,),
@@ -93,6 +104,7 @@ class Test_Init:
         dims = Dimensions(core)
         res = dims.raw_dict()
         sol = {
+            "deposition_type": (None, None),
             "nageclass": (None, None),
             "noutrel": (None, None),
             "numpoint": (None, None),
@@ -105,13 +117,23 @@ class Test_Init:
     def test_multi_core(self):
         core = [
             CoreDimensions(nageclass=0, time=0,),
-            CoreDimensions(),
-            CoreDimensions(nageclass=3, species_id=0, time=2, level=1,),
-            CoreDimensions(nageclass=0, noutrel=1, species_id=2, time=1, level=1,),
+            CoreDimensions(deposition_type="wet"),
+            CoreDimensions(
+                deposition_type="dry", nageclass=3, species_id=0, time=2, level=1
+            ),
+            CoreDimensions(
+                deposition_type="dry",
+                nageclass=0,
+                noutrel=1,
+                species_id=2,
+                time=1,
+                level=1,
+            ),
         ]
         dims = Dimensions(core)
         res = dims.raw_dict()
         sol = {
+            "deposition_type": (None, "wet", "dry", "dry"),
             "nageclass": (0, None, 3, 0),
             "noutrel": (None, None, None, 1),
             "numpoint": (None, None, None, None),
@@ -129,6 +151,7 @@ class Test_Dict:
         dims = Dimensions()
         res = dims.compact_dict()
         sol = {
+            "deposition_type": None,
             "nageclass": None,
             "noutrel": None,
             "numpoint": None,
@@ -140,11 +163,18 @@ class Test_Dict:
 
     def test_single_core(self):
         cdims = CoreDimensions(
-            nageclass=0, noutrel=1, numpoint=3, species_id=2, time=0, level=2,
+            deposition_type="dry",
+            nageclass=0,
+            noutrel=1,
+            numpoint=3,
+            species_id=2,
+            time=0,
+            level=2,
         )
         dims = Dimensions([cdims])
         res = dims.compact_dict()
         sol = {
+            "deposition_type": "dry",
             "nageclass": 0,
             "noutrel": 1,
             "numpoint": 3,
@@ -159,6 +189,7 @@ class Test_Dict:
         dims = Dimensions(core)
         res = dims.compact_dict()
         sol = {
+            "deposition_type": None,
             "nageclass": None,
             "noutrel": None,
             "numpoint": None,
@@ -171,13 +202,23 @@ class Test_Dict:
     def test_multi_core(self):
         core = [
             CoreDimensions(nageclass=0, time=0,),
-            CoreDimensions(),
-            CoreDimensions(nageclass=3, species_id=0, time=2, level=1,),
-            CoreDimensions(nageclass=0, noutrel=1, species_id=2, time=1, level=1,),
+            CoreDimensions(deposition_type="wet"),
+            CoreDimensions(
+                deposition_type="dry", nageclass=3, species_id=0, time=2, level=1
+            ),
+            CoreDimensions(
+                deposition_type="dry",
+                nageclass=0,
+                noutrel=1,
+                species_id=2,
+                time=1,
+                level=1,
+            ),
         ]
         dims = Dimensions(core)
         res = dims.compact_dict()
         sol = {
+            "deposition_type": ("dry", "wet"),
             "nageclass": (0, 3),
             "noutrel": 1,
             "numpoint": None,
@@ -195,6 +236,7 @@ class Test_Create:
         dims = Dimensions.create({})
         res = dims.compact_dict()
         sol = {
+            "deposition_type": None,
             "nageclass": None,
             "noutrel": None,
             "numpoint": None,
@@ -206,6 +248,7 @@ class Test_Create:
 
     def test_single_core(self):
         params = {
+            "deposition_type": "dry",
             "nageclass": 0,
             "noutrel": 1,
             "numpoint": 3,
@@ -220,16 +263,20 @@ class Test_Create:
 
     def test_multi_core(self):
         params = {
+            "deposition_type": ("wet", "dry"),
             "nageclass": (0, 3),
             "noutrel": 1,
             "numpoint": None,
             "species_id": (0, 2),
-            "time": (0, 1, 2),
+            "time": (2, 1, 0),
             "level": 1,
         }
         dims = Dimensions.create(params)
         res = dims.compact_dict()
-        sol = params
+        sol = {
+            key: (tuple(sorted(val)) if isinstance(val, tuple) else val)
+            for key, val in params.items()
+        }
         assert res == sol
 
 
@@ -237,6 +284,7 @@ class Test_Interact:
     """Acces and change paramters, derive new objects, etc."""
 
     params = {
+        "deposition_type": ("dry", "wet", None, "dry"),
         "nageclass": (3, None, 0),
         "noutrel": (1, 1),
         "numpoint": None,
@@ -253,15 +301,17 @@ class Test_Interact:
 
     def test_get_raw(self):
         dims = self.create_dims()
-        assert dims.get_raw("nageclass") == (3, None, 0)
-        assert dims.get_raw("noutrel") == (1, 1, None)
-        assert dims.get_raw("numpoint") == (None, None, None)
-        assert dims.get_raw("species_id") == (0, 2, None)
-        assert dims.get_raw("time") == (2, 0, 1)
-        assert dims.get_raw("level") == (1, None, None)
+        assert dims.get_raw("deposition_type") == ("dry", "wet", None, "dry")
+        assert dims.get_raw("nageclass") == (3, None, 0, None)
+        assert dims.get_raw("noutrel") == (1, 1, None, None)
+        assert dims.get_raw("numpoint") == (None, None, None, None)
+        assert dims.get_raw("species_id") == (0, 2, None, None)
+        assert dims.get_raw("time") == (2, 0, 1, None)
+        assert dims.get_raw("level") == (1, None, None, None)
 
     def test_get_compact(self):
         dims = self.create_dims()
+        assert dims.get_compact("deposition_type") == ("dry", "wet")
         assert dims.get_compact("nageclass") == (0, 3)
         assert dims.get_compact("noutrel") == 1
         assert dims.get_compact("numpoint") is None
@@ -271,6 +321,7 @@ class Test_Interact:
 
     def test_get_property(self):
         dims = self.create_dims()
+        assert dims.deposition_type == dims.get_compact("deposition_type")
         assert dims.nageclass == dims.get_compact("nageclass")
         assert dims.noutrel == dims.get_compact("noutrel")
         assert dims.numpoint == dims.get_compact("numpoint")
@@ -286,12 +337,13 @@ class Test_Interact:
     def test_set_raw(self):
         dims = Dimensions()
         self.assert_is_empty(dims)
-        dims.set("nageclass", (3, None, 0))
-        dims.set("noutrel", (1, 1, None))
-        dims.set("numpoint", (None, None, None))
-        dims.set("species_id", (0, 2, None))
-        dims.set("time", (2, 0, 1))
-        dims.set("level", (1, None, None))
+        dims.set("deposition_type", ("dry", "wet", None, "dry"))
+        dims.set("nageclass", (3, None, 0, None))
+        dims.set("noutrel", (1, 1, None, None))
+        dims.set("numpoint", (None, None, None, None))
+        dims.set("species_id", (0, 2, None, None))
+        dims.set("time", (2, 0, 1, None))
+        dims.set("level", (1, None, None, None))
         res = dims.compact_dict()
         sol = self.create_dims().compact_dict()
         assert res == sol
@@ -299,6 +351,7 @@ class Test_Interact:
     def test_set_compact(self):
         dims = Dimensions()
         self.assert_is_empty(dims)
+        dims.set("deposition_type", ("dry", "wet"))
         dims.set("nageclass", (0, 3))
         dims.set("noutrel", 1)
         dims.set("numpoint", None)
@@ -312,12 +365,13 @@ class Test_Interact:
     def test_set_property_raw(self):
         dims = Dimensions()
         self.assert_is_empty(dims)
-        dims.nageclass = (3, None, 0)
-        dims.noutrel = (1, 1, None)
-        dims.numpoint = (None, None, None)
-        dims.species_id = (0, 2, None)
-        dims.time = (2, 0, 1)
-        dims.level = (1, None, None)
+        dims.deposition_type = ("dry", "wet", None, "dry")
+        dims.nageclass = (3, None, 0, None)
+        dims.noutrel = (1, 1, None, None)
+        dims.numpoint = (None, None, None, None)
+        dims.species_id = (0, 2, None, None)
+        dims.time = (2, 0, 1, None)
+        dims.level = (1, None, None, None)
         res = dims.compact_dict()
         sol = self.create_dims().compact_dict()
         assert res == sol
@@ -325,6 +379,7 @@ class Test_Interact:
     def test_set_property_compact(self):
         dims = Dimensions()
         self.assert_is_empty(dims)
+        dims.deposition_type = ("dry", "wet")
         dims.nageclass = (0, 3)
         dims.noutrel = 1
         dims.numpoint = None
@@ -346,11 +401,13 @@ class Test_Interact:
     def test_update_empty_with_partial(self):
         dims = Dimensions()
         self.assert_is_empty(dims)
+        dims.update({"deposition_type": "wet"})
         dims.update({"nageclass": (3, None, 0)})
         dims.update({"noutrel": (1, 1)})
         dims.update({"level": 1})
         res = dims.compact_dict()
         sol = {
+            "deposition_type": "wet",
             "nageclass": (0, 3),
             "noutrel": 1,
             "numpoint": None,
@@ -369,7 +426,7 @@ class Test_Interact:
 
     def test_derive_some(self):
         dims = self.create_dims()
-        derived = dims.derive({"level": 2})
-        sol = {**dims.compact_dict(), "level": 2}
+        derived = dims.derive({"level": 2, "deposition_type": ("dry", "wet")})
+        sol = {**dims.compact_dict(), "deposition_type": ("dry", "wet"), "level": 2}
         res = derived.compact_dict()
         assert res == sol

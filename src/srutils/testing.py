@@ -397,7 +397,9 @@ def assert_nested_equal(
             if obj1.keys() != obj2.keys():
                 raise error(
                     f"mappings differ in keys: {obj1.keys()} vs. {obj2.keys()}",
-                    *[path, obj1, obj2],
+                    path,
+                    obj1,
+                    obj2,
                 )
             for key, val1 in obj1.items():
                 val2 = obj2[key]
@@ -408,8 +410,10 @@ def assert_nested_equal(
             if len(obj1) != len(obj2):
                 # pylint: disable=E1121  # too-many-function-args
                 raise error(
-                    "sequences differ in length",
-                    *[len(obj1), len(obj2), path, obj1, obj2],
+                    f"sequences differ in length: {len(obj1)} != {len(obj2)}",
+                    path,
+                    obj1,
+                    obj2,
                 )
             for idx, (ele1, ele2) in enumerate(zip(obj1, obj2)):
                 recurse(ele1, ele2, path + [f"idx: {idx}"])
@@ -419,8 +423,10 @@ def assert_nested_equal(
             if len(obj1) != len(obj2):
                 # pylint: disable=E1121  # too-many-function-args
                 raise error(
-                    "collections differ in length",
-                    *[len(obj1), len(obj2), path, obj1, obj2],
+                    f"collections differ in length: {len(obj1)} != {len(obj2)}",
+                    path,
+                    obj1,
+                    obj2,
                 )
             try:
                 obj1 = sorted(obj1)
@@ -435,7 +441,9 @@ def assert_nested_equal(
                 raise error(
                     f"unequivalent types (expected real numbers): "
                     f"{type_name(type(obj1))} vs. {type_name(type(obj2))}, ",
-                    *[path, obj1, obj2],
+                    path,
+                    obj1,
+                    obj2,
                 )
             if np.isnan(obj1) and np.isnan(obj2):
                 return

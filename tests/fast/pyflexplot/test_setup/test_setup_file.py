@@ -141,28 +141,41 @@ def test_multiple_nested_sections(tmp_path):
         lang = "de"
         """
     sol_base = {
-        **DEFAULT_KWARGS,
+        **DEFAULT_SETUP.dict(),
         "input_variable": "deposition",
-        "deposition_type": ("dry", "wet"),
         "combine_deposition_types": True,
-        "dimensions": {**DEFAULT_SETUP.dict()["dimensions"], "level": None},
+        "dimensions": {
+            **DEFAULT_SETUP.dict()["dimensions"],
+            "level": None,
+            "deposition_type": ("dry", "wet"),
+        },
         "lang": "de",
     }
     sol_specific = [
         {
             "input_variable": "concentration",
-            "deposition_type": None,
             "combine_deposition_types": False,
+            "dimensions": {"deposition_type": None},
         },
         {"domain": "ch", "lang": "en"},
         {"domain": "ch", "lang": "de"},
         {"domain": "auto", "lang": "en"},
         {"domain": "auto", "lang": "de"},
-        {"deposition_type": ("wet",)},
-        {"deposition_type": ("wet",), "lang": "en"},
-        {"deposition_type": ("wet",), "lang": "de"},
+        {"dimensions": {"deposition_type": "wet"}},
+        {"lang": "en", "dimensions": {"deposition_type": "wet"}},
+        {"lang": "de", "dimensions": {"deposition_type": "wet"}},
     ]
-    sol = [{**DEFAULT_SETUP.dict(), **sol_base, **d} for d in sol_specific]
+    sol = [
+        {
+            **sol_base,
+            **sol_spc,
+            "dimensions": {
+                **sol_base.get("dimensions", {}),
+                **sol_spc.get("dimensions", {}),
+            },
+        }
+        for sol_spc in sol_specific
+    ]
     setups = read_tmp_setup_file(tmp_path, content)
     assert setups == sol
 
@@ -212,26 +225,40 @@ def test_multiple_override(tmp_path):
         "lang": "de",
     }
     sol_base = {
-        **DEFAULT_KWARGS,
+        **DEFAULT_SETUP.dict(),
         "infile": "foo.nc",
         "input_variable": "deposition",
-        "deposition_type": ("dry", "wet"),
         "combine_deposition_types": True,
-        "dimensions": {**DEFAULT_SETUP.dict()["dimensions"], "level": None},
+        "dimensions": {
+            **DEFAULT_SETUP.dict()["dimensions"],
+            "level": None,
+            "deposition_type": ("dry", "wet"),
+        },
         "lang": "de",
     }
     sol_specific = [
         {
             "input_variable": "concentration",
-            "deposition_type": None,
             "combine_deposition_types": False,
+            "dimensions": {"deposition_type": None},
         },
         {"domain": "ch", "lang": "de"},
         {"domain": "auto", "lang": "de"},
-        {"deposition_type": ("wet",)},
-        {"deposition_type": ("wet",), "lang": "de"},
+        {"dimensions": {"deposition_type": "wet"}},
+        {"lang": "de", "dimensions": {"deposition_type": "wet"}},
     ]
-    sol = [{**DEFAULT_SETUP.dict(), **sol_base, **d} for d in sol_specific]
+    sol = [
+        {
+            **sol_base,
+            **sol_spc,
+            "dimensions": {
+                **sol_base.get("dimensions", {}),
+                **sol_spc.get("dimensions", {}),
+            },
+        }
+        for sol_spc in sol_specific
+    ]
+    setups = read_tmp_setup_file(tmp_path, content)
     setups = read_tmp_setup_file(tmp_path, content, override=override)
     assert setups == sol
 

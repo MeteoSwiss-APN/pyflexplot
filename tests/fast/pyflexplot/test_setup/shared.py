@@ -21,7 +21,6 @@ DEFAULT_SETUP = InputSetup.create(
         "combine_deposition_types": False,
         "combine_species": False,
         "combine_species": False,
-        "deposition_type": None,
         "domain": "auto",
         "ens_member_id": None,
         "ens_variable": "none",
@@ -29,6 +28,7 @@ DEFAULT_SETUP = InputSetup.create(
         "integrate": False,
         "lang": "en",
         "dimensions": {
+            "deposition_type": None,
             "level": None,
             "nageclass": None,
             "noutrel": None,

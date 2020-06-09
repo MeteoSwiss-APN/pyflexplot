@@ -19,6 +19,7 @@ from typing import Union
 # Third-party
 from pydantic import BaseModel
 from pydantic import ValidationError
+from pydantic import validator
 
 # First-party
 from srutils.str import join_multilines
@@ -29,10 +30,16 @@ from .pydantic import prepare_field_value
 
 
 # SR_TODO Clean up docstring -- where should format key hints go?
+# pylint: disable=E0213  # no-self-argument (validator)
 class CoreDimensions(BaseModel):
     """Selected dimensions.
 
     Args:
+        deposition_type: Type(s) of deposition. Part of the plot variable name
+            that may be embedded in ``outfile`` with the format key
+            '{variable}'. Choices: "none", "dry", "wet" (the latter may can be
+            combined).
+
         level: Index/indices of vertical level (zero-based, bottom-up). To sum
             up multiple levels, combine their indices with '+'. Use the format
             key '{level}' to embed it in ``outfile``.
@@ -58,12 +65,18 @@ class CoreDimensions(BaseModel):
         # allow_mutation = False
         extra = "forbid"
 
+    deposition_type: Optional[str] = None
+    level: Optional[int] = None
     nageclass: Optional[int] = None
     noutrel: Optional[int] = None
     numpoint: Optional[int] = None
     species_id: Optional[int] = None
     time: Optional[int] = None
-    level: Optional[int] = None
+
+    @validator("deposition_type", always=True)
+    def _check_deposition_type(cls, value: Optional[str]) -> Optional[str]:
+        assert value in [None, "dry", "wet"]
+        return value
 
     @classmethod
     def create(cls, params: Dict[str, Any]) -> "CoreDimensions":
@@ -88,6 +101,7 @@ class CoreDimensions(BaseModel):
         return cast_field_value(cls, param, value)
 
 
+# pylint: disable=R0902  # too-many-instance-attributes
 class Dimensions:
     """A collection of Domensions objects."""
 
@@ -156,11 +170,11 @@ class Dimensions:
         return f"{head}(\n{body}\n)"
 
     def __eq__(self, other) -> bool:
-        if isinstance(other, type(self)):
-            return self.compact_dict() == other.compact_dict()
-        raise NotImplementedError(
-            f"comparison of {type(self).__name__} and {type(other).__name__} objects"
-        )
+        try:
+            other_dict = other.compact_dict()
+        except AttributeError:
+            other_dict = dict(other)
+        return self.compact_dict() == other_dict
 
     def __iter__(self) -> Iterator[CoreDimensions]:
         return iter(self._core)
@@ -184,14 +198,14 @@ class Dimensions:
         for param, value in other.items():
             self.set(param, value)
 
-    def set(self, param: str, value: Optional[Union[int, Sequence[int]]]) -> None:
+    def set(self, param: str, value: Any) -> None:
         dct = self.compact_dict()
-        if isinstance(value, Sequence):
+        if isinstance(value, Sequence) and not isinstance(value, str):
             value = tuple(value)
         dct[param] = value
         self._core = list(type(self).create(dct))
 
-    def get_compact(self, param: str) -> Optional[Union[int, Tuple[int, ...]]]:
+    def get_compact(self, param: str) -> Optional[Union[Any, Tuple[Any, ...]]]:
         """Gather the value(s) of a parameter in compact form.
 
         The values are ordered, and duplicates and Nones are removed.
@@ -199,7 +213,7 @@ class Dimensions:
         In absence of values, None is returned.
 
         """
-        values: List[int] = []
+        values: List[Any] = []
         for value in self.get_raw(param):
             if value is not None and value not in values:
                 values.append(value)
@@ -210,7 +224,7 @@ class Dimensions:
         else:
             return tuple(sorted(values))
 
-    def get_raw(self, param: str) -> Tuple[Optional[int], ...]:
+    def get_raw(self, param: str) -> Tuple[Any, ...]:
         """Gather the values of a parameter in raw form.
 
         The values are neither sorted, nor are duplicates or Nones removed, and
@@ -234,7 +248,7 @@ class Dimensions:
         """
         return {param: self.get_compact(param) for param in self.params}
 
-    def raw_dict(self) -> Dict[str, Tuple[Optional[int], ...]]:
+    def raw_dict(self) -> Dict[str, Tuple[Any, ...]]:
         """Return a raw dictionary representation.
 
         The parameter values are unordered, with duplicates and Nones retained.
