@@ -19,14 +19,6 @@ from typing import Union
 import numpy as np
 
 
-class MaxIterationError(Exception):
-    """Maximum number of iterations of a loop exceeded."""
-
-
-class KeyConflictError(Exception):
-    """Conflicting dictionary keys."""
-
-
 def check_float_ok(f: float, ff0t: str) -> bool:
     if f != np.inf and f >= 1.0:
         return bool(re.match(f"^{int(f)}" + r"\.[0-9]+$", ff0t))

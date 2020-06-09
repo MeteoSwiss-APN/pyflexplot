@@ -36,7 +36,9 @@ from pydantic import validator
 from srutils.iter import isiterable
 
 # Local
-from .formatting import MaxIterationError
+from .exceptions import MaxIterationError
+from .exceptions import MinFontSizeReachedError
+from .exceptions import MinStrLenReachedError
 from .summarize import summarizable
 from .typing import ColorType
 from .typing import LocationType
@@ -1851,14 +1853,6 @@ class TextBoxAxes:
 
     def fit_text(self, s: str, size: float, **kwargs) -> str:
         return TextFitter(self.ax, dx_unit=self.dx_unit, **kwargs).fit(s, size)
-
-
-class MinFontSizeReachedError(Exception):
-    """Font size cannot be reduced further."""
-
-
-class MinStrLenReachedError(Exception):
-    """String cannot be further truncated."""
 
 
 class TextFitter:

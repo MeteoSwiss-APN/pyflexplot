@@ -20,13 +20,9 @@ from pydantic import BaseModel
 # First-party
 from srutils.iter import isiterable
 
-
-class NotSummarizableError(Exception):
-    """Object could not be summarized."""
-
-
-class AttributeConflictError(Exception):
-    """Conflicting object attributes."""
+# Local
+from .exceptions import AttributeConflictError
+from .exceptions import NotSummarizableError
 
 
 def default_summarize(

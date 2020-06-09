@@ -3,6 +3,7 @@ boxed_plot.py
 cli.py
 data.py
 dimensions.py
+exceptions.py
 formatting.py
 input.py
 meta_data.py

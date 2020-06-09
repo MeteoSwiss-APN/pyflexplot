@@ -20,22 +20,13 @@ import numpy as np
 from srutils.str import join_multilines
 
 # Local
+from .exceptions import ArrayDimensionError
+from .exceptions import FieldAllNaNError
+from .exceptions import InconsistentArrayShapesError
 from .meta_data import MetaData
 from .setup import InputSetupCollection
 from .summarize import default_summarize
 from .summarize import summarizable
-
-
-class FieldAllNaNError(Exception):
-    """Field contains only NaN values."""
-
-
-class ArrayDimensionError(Exception):
-    """Array has wrong dimensions."""
-
-
-class InconsistentArrayShapesError(Exception):
-    """Arrays have inconsistent shapes."""
 
 
 def summarize_field(obj: Any) -> Dict[str, Dict[str, Any]]:

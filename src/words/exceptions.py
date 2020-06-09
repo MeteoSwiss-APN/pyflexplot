@@ -4,13 +4,19 @@ Exceptions.
 """
 
 
+# Primary
+
+
 class WordsError(Exception):
-    pass
+    """Error related to words."""
 
 
-class MissingWordError(WordsError):
-    pass
+# Secondary
 
 
 class MissingLanguageError(WordsError):
-    pass
+    """Language is missing."""
+
+
+class MissingWordError(WordsError):
+    """Word is missing."""

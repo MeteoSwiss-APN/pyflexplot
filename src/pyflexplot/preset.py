@@ -23,13 +23,10 @@ from click import Context
 
 # Local
 from . import check_dir_exists
+from .exceptions import NoPresetFileFoundError
 from .typing import ClickParamType
 
 preset_paths: List[Union[str, Path]] = []
-
-
-class NoPresetFileFoundError(Exception):
-    """No preset file found in directory/ies."""
 
 
 def add_to_preset_paths(path: Union[Path, str], first: bool = True) -> None:
