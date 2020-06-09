@@ -73,11 +73,6 @@ class InputSetup(BaseModel):
         combine_species: Sum up over all specified species. Otherwise, each is
             plotted separately.
 
-        deposition_type: Type(s) of deposition. Part of the plot variable name
-            that may be embedded in ``outfile`` with the format key
-            '{variable}'. Choices: "none", "dry", "wet" (the latter may can be
-            combined).
-
         domain: Plot domain. Defaults to 'data', which derives the domain size
             from the input data. Use the format key '{domain}' to embed it in
             ``outfile``. Choices": "auto", "ch".
@@ -139,7 +134,6 @@ class InputSetup(BaseModel):
     multipanel_param: Optional[str] = None
 
     # Tweaks
-    deposition_type: Optional[Union[Tuple[str], Tuple[str, str]]] = None
     integrate: bool = False
     combine_deposition_types: bool = False
     combine_levels: bool = False
@@ -244,14 +238,6 @@ class InputSetup(BaseModel):
             )
         return values
 
-    @validator("deposition_type", always=True)
-    def _check_deposition_type(
-        cls, value: Optional[Union[Tuple[str], Tuple[str, str]]]
-    ) -> Optional[Union[Tuple[str], Tuple[str, str]]]:
-        if value is not None:
-            assert set(value) in [{"dry"}, {"wet"}, {"dry", "wet"}]
-        return value
-
     @validator("ens_param_mem_min", always=True)
     def _init_ens_param_mem_min(
         cls, value: Optional[int], values: Dict[str, Any],
@@ -290,18 +276,17 @@ class InputSetup(BaseModel):
     # SR_TMP <<<
     @property
     def deposition_type_str(self) -> str:
-        if self.deposition_type is None:
+        deposition_type = self.dimensions.deposition_type
+        if deposition_type is None:
             if self.input_variable == "deposition":
                 return "tot"
             return "none"
-        elif set(self.deposition_type) == {"dry", "wet"}:
+        elif set(deposition_type) == {"dry", "wet"}:
             return "tot"
-        elif self.deposition_type == ("dry",):
-            return "dry"
-        elif self.deposition_type == ("wet",):
-            return "wet"
+        elif deposition_type in ["dry", "wet"]:
+            return deposition_type
         else:
-            raise NotImplementedError(self.deposition_type)
+            raise NotImplementedError(deposition_type)
 
     # SR_TMP <<<
     def get_simulation_type(self) -> str:
@@ -314,10 +299,7 @@ class InputSetup(BaseModel):
         """Create an instance of ``InputSetup``.
 
         Args:
-            params: Parameters to instatiate ``InputSetup``. In contrast to
-                direct instatiation, all ``Tuple`` parameters may be passed
-                directly, e.g., as `{"deposition_type": "dry"}` instead of
-                `{"deposition_type": ("dry",)}`.
+            params: Parameters to instatiate ``InputSetup``.
 
         """
         params = dict(**params)
@@ -429,9 +411,9 @@ class InputSetup(BaseModel):
                 if "level" in dimensions:
                     obj.dimensions.level = tuple(range(dimensions["level"]["size"]))
 
-        if obj.deposition_type is None:
+        if obj.dimensions.deposition_type is None:
             if obj.input_variable == "deposition":
-                obj.deposition_type = ("dry", "wet")  # SR_HARDCODED
+                obj.dimensions.deposition_type = ("dry", "wet")
 
         if obj.dimensions.species_id is None:
             obj.dimensions.species_id = meta_data["analysis"]["species_ids"]
@@ -620,11 +602,13 @@ class InputSetup(BaseModel):
 
         dct = self.dict()
 
+        # SR_TMP < TODO Can this be moved to class Dimensions?!?
         # Handle deposition type
         if self.deposition_type_str == "tot":
-            if select is None or "deposition_type" in select:
-                if "deposition_type" not in (skip or []):
-                    dct["deposition_type"] = ("dry", "wet")
+            if select is None or "dimensions.deposition_type" in select:
+                if "dimensions.deposition_type" not in (skip or []):
+                    dct["dimensions"]["deposition_type"] = ("dry", "wet")
+        # SR_TMP >
 
         # Decompress dict
         dcts = []
@@ -685,7 +669,6 @@ class CoreInputSetup(BaseModel):
     multipanel_param: Optional[str] = None
 
     # Tweaks
-    deposition_type: Optional[str] = None
     integrate: bool = False
     combine_deposition_types: bool = False
     combine_levels: bool = False
@@ -708,7 +691,10 @@ class CoreInputSetup(BaseModel):
     # SR_TMP <<<
     @property
     def deposition_type_str(self) -> str:
-        return "none" if self.deposition_type is None else self.deposition_type
+        if self.dimensions.deposition_type is None:
+            return "none"
+        else:
+            return self.dimensions.deposition_type
 
     @classmethod
     def create(cls, params: Mapping[str, Any]) -> "CoreInputSetup":
@@ -755,9 +741,14 @@ class InputSetupCollection:
         return type(self)([setup.copy() for setup in self])
 
     def __repr__(self) -> str:
-        same = {}
-        diff = {}
+
+        same: Dict[str, Any] = {}
+        diff: Dict[str, Any] = {}
+
+        # Regular params
         for param in InputSetup.__fields__:
+            if param == "dimensions":
+                continue  # Handled below
             try:
                 value = self.collect_equal(param)
             except UnequalInputSetupParamValuesError:
@@ -765,13 +756,38 @@ class InputSetupCollection:
             else:
                 same[param] = value
 
+        # Dimensions
+        dims_same = {}
+        dims_diff = {}
+        for param in CoreDimensions.__fields__:
+            values = []
+            for dims in self.collect("dimensions"):
+                values.append(dims.get_compact(param))
+            if len(set(values)) == 1:
+                dims_same[param] = next(iter(values))
+            else:
+                dims_diff[param] = values
+        if dims_same:
+            same["dimensions"] = dims_same
+        if dims_diff:
+            diff["dimensions"] = dims_diff
+
         def format_params(params: Dict[str, Any], name: str) -> str:
             lines = []
             for param, value in params.items():
-                if param == "dimensions" and isinstance(value, Sequence):
-                    value = Dimensions.merge(value)
-                s_value = f"'{value}'" if isinstance(value, str) else str(value)
-                lines.append(f"{param}={s_value}")
+                if param == "dimensions":
+                    s_param = format_params(value, "dimensions")
+                else:
+                    if isinstance(value, str):
+                        s_value = f"'{value}'"
+                    elif isinstance(value, Sequence):
+                        s_value = ", ".join(
+                            [f"'{v}'" if isinstance(v, str) else str(v) for v in value]
+                        )
+                    else:
+                        s_value = str(value)
+                    s_param = f"{param}: {s_value}"
+                lines.append(s_param)
             if not lines:
                 return f"{name}: --"
             else:
