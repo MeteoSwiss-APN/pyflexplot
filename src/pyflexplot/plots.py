@@ -639,7 +639,6 @@ def fill_box_bottom(box: TextBoxAxes, plot: BoxedPlot) -> None:
 
 def create_plot(
     field_lst: Sequence[Field],
-    mdata_lst: Sequence[MetaData],
     prev_out_file_paths: Optional[List[str]] = None,
     *,
     dry_run: bool = False,
@@ -654,7 +653,8 @@ def create_plot(
         return DummyBoxedPlot(out_file_path)
     else:
         configs = [
-            create_plot_config(setup, WORDS, SYMBOLS, mdata) for mdata in mdata_lst
+            create_plot_config(setup, WORDS, SYMBOLS, field.mdata)
+            for field in field_lst
         ]
         plot = BoxedPlot(field_lst, configs, map_conf_lst)
         plot_add_text_boxes(plot)

@@ -20,6 +20,7 @@ import numpy as np
 from srutils.str import join_multilines
 
 # Local
+from .meta_data import MetaData
 from .setup import InputSetupCollection
 from .summarize import default_summarize
 from .summarize import summarizable
@@ -70,7 +71,7 @@ def summarize_field(obj: Any) -> Dict[str, Dict[str, Any]]:
 
 
 @summarizable(
-    attrs_skip=["fld", "lat", "lon"],
+    attrs_skip=["fld", "lat", "lon", "mdata"],
     post_summarize=lambda self, summary: {**summary, **summarize_field(self)},
 )
 @dataclass
@@ -93,6 +94,8 @@ class Field:
 
         nc_meta_data: Meta data from NetCDF input file.
 
+        mdata: Meta data for plot for labels etc.
+
     """
 
     fld: np.ndarray
@@ -102,6 +105,7 @@ class Field:
     var_setups: InputSetupCollection
     time_stats: Mapping[str, np.ndarray]
     nc_meta_data: Mapping[str, Any]
+    mdata: Optional[MetaData]
 
     def __post_init__(self):
         try:

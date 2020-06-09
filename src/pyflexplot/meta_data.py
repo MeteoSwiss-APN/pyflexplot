@@ -993,24 +993,29 @@ def fix_unit_meters_agl(unit: str, lang: str) -> str:
 def nc_var_name(
     setup: Union[InputSetup, CoreInputSetup], model: str
 ) -> Union[str, List[str]]:
-    assert setup.dimensions.species_id is not None  # mypy
+    # SR_TMP <
+    dimensions = setup.dimensions
+    input_variable = setup.input_variable
+    deposition_type = setup.deposition_type_str
+    # SR_TMP >
+    assert dimensions.species_id is not None  # mypy
     if isinstance(setup, CoreInputSetup):
-        species_id = setup.dimensions.species_id
+        species_id = dimensions.species_id
     else:
         assert isinstance(setup, InputSetup)  # mypy
-        assert len(setup.dimensions.species_id) == 1  # SR_TMP
-        species_id = next(iter(setup.dimensions.species_id))
-    if setup.input_variable == "concentration":
+        assert len(dimensions.species_id) == 1  # SR_TMP
+        species_id = next(iter(dimensions.species_id))
+    if input_variable == "concentration":
         if model in ["cosmo2", "cosmo1"]:
             return f"spec{species_id:03d}"
         elif model == "ifs":
             return f"spec{species_id:03d}_mr"
         else:
             raise ValueError("unknown model", model)
-    elif setup.input_variable == "deposition":
-        prefix = {"wet": "WD", "dry": "DD"}[setup.deposition_type_str]
+    elif input_variable == "deposition":
+        prefix = {"wet": "WD", "dry": "DD"}[deposition_type]
         return f"{prefix}_spec{species_id:03d}"
-    raise ValueError("unknown variable", setup.input_variable)
+    raise ValueError("unknown variable", input_variable)
 
 
 def get_integr_type(setup: InputSetup) -> str:

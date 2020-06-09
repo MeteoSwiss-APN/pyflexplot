@@ -234,7 +234,7 @@ def test_single(datadir, conf):  # noqa:F811
     setups = InputSetupCollection([conf.setup])
 
     # Read input field
-    field_lst_lst, mdata_lst_lst = read_fields(datafile, setups)
+    field_lst_lst = read_fields(datafile, setups)
     assert len(field_lst_lst) == 1
     assert len(field_lst_lst[0]) == 1
     fld = field_lst_lst[0][0].fld
@@ -429,12 +429,10 @@ def test_multiple(datadir, conf):  # noqa:F811
 
         # Read input fields
         var_setups_dicts_pre = var_setups.dicts()
-        field_lst_lst, mdata_lst_lst = read_fields(datafile, var_setups)
+        field_lst_lst = read_fields(datafile, var_setups)
         assert var_setups.dicts() == var_setups_dicts_pre
         assert len(field_lst_lst) == 1
-        assert len(mdata_lst_lst) == 1
         assert len(field_lst_lst[0]) == 1
-        assert len(mdata_lst_lst[0]) == 1
         fld = np.array(
             [field.fld for field_lst in field_lst_lst for field in field_lst]
         )

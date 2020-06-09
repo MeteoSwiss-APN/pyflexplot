@@ -246,18 +246,14 @@ def cli(
     for i_in, (in_file_path, sub_setups) in enumerate(setups_by_infile.items()):
         if ctx.obj["verbosity"] > 0:
             click.echo(f"[{i_in + 1}/{n_in}] input: {in_file_path}")
-        field_lst_lst, mdata_lst_lst = read_fields(
+        field_lst_lst = read_fields(
             in_file_path, sub_setups, add_ts0=True, dry_run=dry_run
         )
         n_fld = len(field_lst_lst)
         try:
-            for i_fld, (field_lst, mdata_lst) in enumerate(
-                zip(field_lst_lst, mdata_lst_lst)
-            ):
+            for i_fld, field_lst in enumerate(field_lst_lst):
                 i_tot += 1
-                plot = create_plot(
-                    field_lst, mdata_lst, out_file_paths, dry_run=dry_run
-                )
+                plot = create_plot(field_lst, out_file_paths, dry_run=dry_run)
                 click.echo(f"[{i_in + 1}/{n_in}][{i_fld + 1}/{n_fld}] {plot.file_path}")
 
                 if open_first_cmd and i_in + i_fld == 0:

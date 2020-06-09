@@ -74,26 +74,23 @@ class _TestBase:
         setup = InputSetup.create(self.setup_dct)
         return InputSetupCollection([setup])
 
-    def get_field_and_mdata(self, datadir):
+    def get_field(self, datadir):
         infile = f"{datadir}/{self.setup_dct['infile']}"
         setups = self.get_setups()
-        field_lst_lst, mdata_lst_lst = read_fields(infile, setups, add_ts0=True)
-        assert len(field_lst_lst) == len(mdata_lst_lst) == self.n_plots
+        field_lst_lst = read_fields(infile, setups, add_ts0=True)
+        assert len(field_lst_lst) == self.n_plots
         # SR_TMP <
         assert self.n_plots == 1
         field_lst = next(iter(field_lst_lst))
-        mdata_lst = next(iter(mdata_lst_lst))
-        assert len(field_lst) == len(mdata_lst) == 1
+        assert len(field_lst) == 1
         field = next(iter(field_lst))
-        mdata = next(iter(mdata_lst))
         # SR_TMP >
-        return field, mdata
+        return field
 
-    def get_plot(self, field, mdata):
+    def get_plot(self, field):
         field_lst = [field]
-        mdata_lst = [mdata]
         outfiles, plots = [], []
-        plots.append(create_plot(field_lst, mdata_lst, outfiles, write=False))
+        plots.append(create_plot(field_lst, outfiles, write=False))
         assert len(outfiles) == len(plots) == 1
         plot = next(iter(plots))
         return plot
@@ -106,7 +103,7 @@ class _TestBase:
         return ref
 
     def test(self, datadir):
-        field, mdata = self.get_field_and_mdata(datadir)
+        field = self.get_field(datadir)
         res = field.summarize()
         # SR_TODO Add support for multiple plots!
         sol = self.get_reference("field_summary")
@@ -116,7 +113,7 @@ class _TestBase:
             msg = f"field summaries differ (result vs. solution):\n\n {e}"
             raise AssertionError(msg)
 
-        plot = self.get_plot(field, mdata)
+        plot = self.get_plot(field)
         res = plot.summarize()
         sol = self.get_reference("plot_summary")
         try:
@@ -141,9 +138,9 @@ class _TestCreateReference(_TestBase):
         if black is None:
             raise ImportError("must install black to create test reference")
         ref_file = f"{self.reference}.py"
-        field, mdata = self.get_field_and_mdata(datadir)
+        field = self.get_field(datadir)
         field_summary = field.summarize()
-        plot = self.get_plot(field, mdata)
+        plot = self.get_plot(field)
         plot_summary = plot.summarize()
         module_path_rel = os.path.relpath(__file__, ".")
         cls_name = type(self).__name__
@@ -203,8 +200,8 @@ class _TestCreatePlot(_TestBase):
 
     def test(self, datadir):
         plot_file = f"{self.reference}.png"
-        field, mdata = self.get_field_and_mdata(datadir)
-        plot = self.get_plot(field, mdata)
+        field = self.get_field(datadir)
+        plot = self.get_plot(field)
         try:
             plot.save(plot_file)
         except Exception:
