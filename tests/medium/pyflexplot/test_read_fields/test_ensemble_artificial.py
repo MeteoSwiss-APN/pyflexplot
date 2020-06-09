@@ -26,7 +26,6 @@ class Conf:
     ens_var: str
 
 
-@pytest.mark.skip("WIP")
 @pytest.mark.parametrize(
     "conf",
     [
@@ -57,8 +56,10 @@ def test_one_setup_one_field(datadir, conf):  # noqa:F811
     }
     setup_dct_lst = [setup_dct]
     setups = InputSetupCollection.create(setup_dct_lst)
-    field_lst = reader.run(setups)
+    field_lst_lst = reader.run(setups)
 
+    assert len(field_lst_lst) == 1
+    field_lst = next(iter(field_lst_lst))
     assert len(field_lst) == 1
     field = next(iter(field_lst))
     fld = field.fld

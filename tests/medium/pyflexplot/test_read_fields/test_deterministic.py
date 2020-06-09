@@ -463,7 +463,7 @@ def test_multiple(datadir, conf):  # noqa:F811
 
 
 # test_single_add_ts0
-@pytest.mark.skip("test_single_add_ts0: TODO fix/implement")
+# @pytest.mark.skip("test_single_add_ts0: TODO fix/implement")
 @pytest.mark.parametrize(
     "conf",
     [
@@ -518,10 +518,11 @@ def test_single_add_ts0(datadir, conf):
     setups = InputSetupCollection([conf.setup])
 
     # Read fields with and without added time step 0
-    field_raw_lst_lst, _ = read_fields(datafile, setups, add_ts0=False)
-    field_ts0_lst_lst, _ = read_fields(datafile, setups, add_ts0=True)
-    field_raw_lst_lst, _ = read_fields(datafile, setups, add_ts0=False)
-    field_ts0_lst_lst, _ = read_fields(datafile, setups, add_ts0=True)
+    # Note: Check relies on ordered time steps, which is incidental
+    field_raw_lst_lst = read_fields(datafile, setups, add_ts0=False)
+    field_ts0_lst_lst = read_fields(datafile, setups, add_ts0=True)
+    field_raw_lst_lst = read_fields(datafile, setups, add_ts0=False)
+    field_ts0_lst_lst = read_fields(datafile, setups, add_ts0=True)
     assert len(field_ts0_lst_lst) == len(field_raw_lst_lst) + 1
     assert all(len(field_lst) == 1 for field_lst in field_ts0_lst_lst)
     assert all(len(field_lst) == 1 for field_lst in field_raw_lst_lst)

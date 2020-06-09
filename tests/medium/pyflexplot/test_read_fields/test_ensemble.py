@@ -8,7 +8,6 @@ from typing import Dict
 
 # Third-party
 import numpy as np
-import pytest  # type: ignore
 
 # First-party
 from pyflexplot.data import ensemble_probability
@@ -36,7 +35,6 @@ def get_var_name_ref(setup, var_names_ref):
     raise NotImplementedError(f"{setup}")
 
 
-@pytest.mark.skip("TestReadFieldEnsemble_Single: TODO fix!!")
 class TestReadFieldEnsemble_Single:
     """Read one ensemble of 2D fields from FLEXPART NetCDF files."""
 
@@ -94,11 +92,9 @@ class TestReadFieldEnsemble_Single:
         setups = InputSetupCollection([InputSetup.create(setup_dct)])
 
         # Read input fields
-        field_lst_lst, mdata_lst_lst = read_fields(datafile_fmt, setups)
+        field_lst_lst = read_fields(datafile_fmt, setups)
         assert len(field_lst_lst) == 1
-        assert len(mdata_lst_lst) == 1
         assert len(field_lst_lst[0]) == 1
-        assert len(mdata_lst_lst[0]) == 1
         fld = field_lst_lst[0][0].fld
 
         # SR_TMP <
@@ -148,7 +144,6 @@ class TestReadFieldEnsemble_Single:
         )
 
 
-@pytest.mark.skip("TestReadFieldEnsemble_Multiple: TODO fix!!")
 class TestReadFieldEnsemble_Multiple:
     """Read multiple 2D field ensembles from FLEXPART NetCDF files."""
 
@@ -214,7 +209,7 @@ class TestReadFieldEnsemble_Multiple:
         setups = InputSetupCollection(setup_lst)
 
         # Read input fields
-        field_lst_lst, mdata_lst_lst = read_fields(datafile_fmt, setups)
+        field_lst_lst = read_fields(datafile_fmt, setups)
         fld_arr = np.array(
             [field.fld for field_lst in field_lst_lst for field in field_lst]
         )
@@ -229,9 +224,6 @@ class TestReadFieldEnsemble_Multiple:
                 # SR_TMP <
                 assert len(sub_setups) == 1
                 sub_setup = next(iter(sub_setups))
-                assert not sub_setup.combine_deposition_types
-                assert not sub_setup.combine_levels
-                assert not sub_setup.combine_species
                 # SR_DBG >
                 fld_ref_mem_time.append([])
                 flds_mem = []

@@ -112,6 +112,7 @@ def check_summary_dict_is_subdict(
 
 
 # pylint: disable=R0913  # too-many-arguments
+# pylint: disable=R0914  # too-many-locals
 def check_summary_dict_element_is_subelement(
     obj_sub,
     obj_super,

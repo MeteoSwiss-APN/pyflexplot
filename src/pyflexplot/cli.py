@@ -63,7 +63,7 @@ def prepare_input_setup_params(ctx, param, value):
     if not value:
         return None
     try:
-        return InputSetup.cast_many(value, list_separator=",")
+        return InputSetup.cast_many(value)
     except ValueError as e:
         click.echo(f"Error: Invalid setup parameter: {e}", file=sys.stderr)
         ctx.exit(1)

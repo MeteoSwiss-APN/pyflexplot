@@ -13,6 +13,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
+from typing import cast
 
 # Third-party
 import matplotlib as mpl
@@ -653,7 +654,7 @@ def create_plot(
         return DummyBoxedPlot(out_file_path)
     else:
         configs = [
-            create_plot_config(setup, WORDS, SYMBOLS, field.mdata)
+            create_plot_config(setup, WORDS, SYMBOLS, cast(MetaData, field.mdata))
             for field in field_lst
         ]
         plot = BoxedPlot(field_lst, configs, map_conf_lst)

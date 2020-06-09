@@ -281,7 +281,7 @@ class Dimensions:
 
     @classmethod
     def merge(cls, objs: Sequence["Dimensions"]) -> "Dimensions":
-        return cls([core_setup for obj in objs for core_setup in obj._core])
+        return cls([core_setup for obj in objs for core_setup in obj])
 
     def derive(self, params: Mapping[str, Any]) -> "Dimensions":
         """Derive a new ``Dimensions`` object with some changed parameters."""
@@ -327,7 +327,7 @@ class Dimensions:
         if isinstance(value, Sequence):
             value = tuple(value)
         dct[param] = value
-        self._core = type(self).create(dct)._core
+        self._core = list(type(self).create(dct))
 
     def get_compact(self, param: str) -> Optional[Union[int, Tuple[int, ...]]]:
         """Gather the value(s) of a parameter in compact form.
@@ -617,7 +617,7 @@ class InputSetup(BaseModel):
         if self.deposition_type is None:
             if self.input_variable == "deposition":
                 return "tot"
-            return None
+            return "none"
         elif set(self.deposition_type) == {"dry", "wet"}:
             return "tot"
         elif self.deposition_type == ("dry",):
@@ -695,7 +695,7 @@ class InputSetup(BaseModel):
 
     @classmethod
     def cast_many(
-        cls, params: Union[Collection[Tuple[str, Any]], Mapping[str, Any]],
+        cls, params: Union[Collection[Tuple[str, Any]], Mapping[str, Any]]
     ) -> Dict[str, Any]:
         if not isinstance(params, Mapping):
             params_dct: Dict[str, Any] = {}
@@ -724,6 +724,7 @@ class InputSetup(BaseModel):
 
     # SR_TODO consider renaming this method (sth. containing 'dimensions')
     # pylint: disable=R0912  # too-many-branches
+    # pylint: disable=W0201  # attribute-defined-outside-init (dimensions.*)
     def complete_dimensions(self, meta_data: Mapping[str, Any]) -> "InputSetup":
         """Complete unconstrained dimensions based on available indices."""
         dimensions = meta_data["dimensions"]
@@ -915,6 +916,7 @@ class InputSetup(BaseModel):
     ) -> "InputSetupCollection":
         ...
 
+    # pylint: disable=R0914  # too-many-locals
     def _decompress(self, select=None, skip=None, cls_setup=None):
         """Create multiple ``InputSetup`` objects with one-value parameters only."""
 
@@ -1140,6 +1142,9 @@ class InputSetupCollection:
 
     def decompress(self) -> List["CoreInputSetupCollection"]:
         return self.decompress_partially(select=None, skip=None)
+
+    def derive(self, params: Mapping[str, Any]) -> "InputSetupCollection":
+        return type(self)([setup.derive(params) for setup in self])
 
     @overload
     def decompress_partially(

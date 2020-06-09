@@ -829,12 +829,8 @@ class RawReleaseMetaData(BaseModel):
         validate_assigment = True
 
     @classmethod
-    def from_file(
-        cls, fi: nc4.Dataset, setup: Union[InputSetup, CoreInputSetup]
-    ) -> "RawReleaseMetaData":
+    def from_file(cls, fi: nc4.Dataset, setup: CoreInputSetup) -> "RawReleaseMetaData":
         """Read information on a release from open file."""
-
-        # assert isinstance(setup, CoreInputSetup)  # TODO try this out!!!
 
         assert setup.dimensions.numpoint is not None  # mypy
         # SR_TMP < TODO proper implementation
@@ -925,10 +921,7 @@ class ReleaseMetaData(BaseModel):
 
     @classmethod
     def from_file(
-        cls,
-        fi: nc4.Dataset,
-        nc_meta_data: Dict[str, Any],
-        setup: Union[InputSetup, CoreInputSetup],
+        cls, fi: nc4.Dataset, nc_meta_data: Dict[str, Any], setup: CoreInputSetup,
     ) -> "ReleaseMetaData":
         """Read information on a release from open file."""
 
