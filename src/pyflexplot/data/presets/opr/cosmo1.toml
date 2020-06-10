@@ -6,33 +6,30 @@ infile = "data/cosmo-1_2019052800.nc"
 species_id = "*"
 
 [_base._concentration]
-input_variable = "concentration"
-level = 0
-combine_species = false
-
-[_base._concentration._instant]
 outfile = "concentration_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
-time = "*"
+input_variable = "concentration"
+combine_species = false
 integrate = false
+level = 0
+time = "*"
 
 [_base._concentration._integr]
 outfile = "integrated_concentration_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
-time = -1
 integrate = true
+time = -1
 
-[_base._deposition]
+[_base._tot_deposition]
 outfile = "deposition_tot_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
 input_variable = "deposition"
 deposition_type = ["dry", "wet"]
 combine_deposition_types = true
 combine_species = true
-time = -1
 integrate = true
+time = -1
 
-[_base._deposition._affected_area]
+[_base._tot_deposition._affected_area]
 outfile = "affected_area_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
 plot_variable = "affected_area_mono"
-time = -1
 
 # ["**"._auto.en]
 # domain = "auto"
