@@ -7,6 +7,7 @@ Command line interface.
 import functools
 import os
 import sys
+import traceback
 
 # Third-party
 import click
@@ -186,12 +187,29 @@ def prepare_input_setup_params(ctx, param, value):
 @click.option(
     "--open-all", "open_all_cmd", help="Like --open-first, but for all plots.",
 )
+@click.option(
+    "--pdb/--no-pdb", "use_pdb", help="Drop into debugger when an exception is raised.",
+)
 # ---
 @click.pass_context
+def cli(ctx, use_pdb, **kwargs):
+    if not use_pdb:
+        main(ctx, **kwargs)
+    else:
+        pdb = __import__("ipdb")  # trick pre-commit hook "debug-statements"
+        try:
+            main(ctx, **kwargs)
+        except Exception:  # pylint: disable=W0703  # broad-except
+            traceback.print_exc()
+            print()
+            pdb.post_mortem()
+            ctx.exit(1)
+
+
 # pylint: disable=R0913  # too-many-arguments
 # pylint: disable=R0912  # too-many-branches
 # pylint: disable=W0613  # unused-argument (preset_skip)
-def cli(
+def main(
     ctx,
     setup_file_paths,
     input_setup_params,
