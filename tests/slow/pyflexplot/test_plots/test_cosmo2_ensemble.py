@@ -2,9 +2,6 @@
 """
 Test the elements of complete plots based on ensemble COSMO-2 data.
 """
-# Third-party
-import pytest
-
 # Local
 from .shared import _TestBase
 from .shared import _TestCreatePlot  # noqa:F401
@@ -112,7 +109,6 @@ class Test_CloudArrivalTime(_TestBase):
     }
 
 
-@pytest.mark.skip(f"{__file__.split('/')[-1]}::Test_CloudDepartureTime: WIP")
 # class Test_CloudDepartureTime(_TestCreatePlot):
 # class Test_CloudDepartureTime(_TestCreateReference):
 class Test_CloudDepartureTime(_TestBase):
@@ -123,10 +119,12 @@ class Test_CloudDepartureTime(_TestBase):
         "ens_variable": "cloud_departure_time",
         "input_variable": "concentration",
         "integrate": True,
+        "combine_species": True,
+        "combine_levels": True,
         "ens_member_id": ENS_MEMBER_IDS,
-        "ens_param_mem_min": 4,
-        "ens_param_thr": 1e-7,
+        "ens_param_mem_min": 2,
+        "ens_param_thr": 1e-9,
         "lang": "de",
         "domain": "ch",
-        "dimensions": {"species_id": (1, 2), "time": 0, "level": (0, 1, 2)},
+        "dimensions": {"species_id": (1, 2), "time": 3, "level": (0, 1, 2)},
     }

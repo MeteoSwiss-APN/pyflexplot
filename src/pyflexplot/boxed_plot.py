@@ -220,7 +220,8 @@ class BoxedPlot:
         colors = self.config.colors
         extend = self.config.extend
         if self.config.levels_scale == "log":
-            arr = np.log10(arr)
+            with np.errstate(divide="ignore"):
+                arr = np.log10(arr)
             levels = np.log10(levels)
         elif extend in ["none", "min"]:
             # Areas beyond the closed upper bound are colored black

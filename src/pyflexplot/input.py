@@ -164,6 +164,13 @@ class FileReader:
                         setups_field_lst = setups_loc.decompress_partially(
                             None, skip=skip
                         )
+                        # SR_TMP <
+                        setups_field_lst = [
+                            InputSetupCollection([setup])
+                            for setups in setups_field_lst
+                            for setup in setups
+                        ]
+                        # SR_TMP >
                         setups_field_lst_lst.append(setups_field_lst)
 
         field_lst_lst: List[List[Field]] = []
@@ -192,13 +199,13 @@ class FileReader:
         ):
             with nc4.Dataset(file_path, "r") as fi:
                 setups_mem = setups.derive({"ens_member_id": ens_member_id})
+                self._read_grid(fi)
 
                 if idx_mem > 1:
                     # Ensure that meta data is the same for all members
                     self.nc_meta_data = self._read_nc_meta_data(fi, check=True)
 
                 if not self.dry_run:
-                    self._read_grid(fi)
 
                     # Read fields for all members at all time steps
                     fld_time_i = self._read_member_fields_over_time(fi, setups_mem)
@@ -327,35 +334,32 @@ class FileReader:
         self.lon = np.full((nlon,), np.nan)
         return (self._n_members, nts, nlat, nlon)
 
-    def _read_grid(self, fi):
+    def _read_grid(self, fi: nc4.Dataset) -> None:
+        """Read and prepare grid variables."""
         dim_names = self._dim_names()
         lat = fi.variables[dim_names["lat"]][:]
         lon = fi.variables[dim_names["lon"]][:]
         time = fi.variables[dim_names["time"]][:]
-        # SR_TMP <
+        time = self._prepare_time(fi, time)
+        self.lat = lat
+        self.lon = lon
+        self.time = time
+
+    def _prepare_time(self, fi: nc4.Dataset, time: np.ndarray) -> np.ndarray:
+        if self.add_ts0:
+            dts = time[1] - time[0]
+            ts0 = time[0] - dts
+            time = np.r_[ts0, time]
+
+        # Convert seconds to hours
+        dim_names = self._dim_names()
         time_unit = fi.variables[dim_names["time"]].units
         if time_unit.startswith("seconds since"):
             time = time / 3600.0
         else:
             raise NotImplementedError("unexpected time unit", time_unit)
-        # SR_TMP >
-        if self.add_ts0:
-            time = self._add_ts0_to_time(time)
-        try:
-            old_lat = self.lat
-            old_lon = self.lon
-            old_time = self.time
-        except AttributeError:
-            self.lat = lat
-            self.lon = lon
-            self.time = time
-        else:
-            if not (lat == old_lat).all():
-                raise Exception("inconsistent latitude", lat, old_lat)
-            if not (lon == old_lon).all():
-                raise Exception("inconsistent longitude", lon, old_lon)
-            if not (time == old_time).all():
-                raise Exception("inconsistent time", time, old_time)
+
+        return time
 
     def _insert_ts0_in_nc_meta_data(self, nc_meta_data: Dict[str, Any]) -> None:
         old_size = nc_meta_data["dimensions"]["time"]["size"]

@@ -15,6 +15,7 @@ import numpy as np
 import pytest  # type: ignore
 
 # First-party
+from pyflexplot.input import FileReader
 from pyflexplot.input import read_fields
 from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
@@ -463,7 +464,6 @@ def test_multiple(datadir, conf):  # noqa:F811
 
 
 # test_single_add_ts0
-# @pytest.mark.skip("test_single_add_ts0: TODO fix/implement")
 @pytest.mark.parametrize(
     "conf",
     [
@@ -519,12 +519,13 @@ def test_single_add_ts0(datadir, conf):
 
     # Read fields with and without added time step 0
     # Note: Check relies on ordered time steps, which is incidental
-    field_raw_lst_lst = read_fields(datafile, setups, add_ts0=False)
-    field_ts0_lst_lst = read_fields(datafile, setups, add_ts0=True)
-    field_raw_lst_lst = read_fields(datafile, setups, add_ts0=False)
-    field_ts0_lst_lst = read_fields(datafile, setups, add_ts0=True)
+    reader_raw = FileReader(datafile, add_ts0=False)
+    reader_ts0 = FileReader(datafile, add_ts0=True)
+    field_raw_lst_lst = reader_raw.run(setups)
+    field_ts0_lst_lst = reader_ts0.run(setups)
     assert len(field_ts0_lst_lst) == len(field_raw_lst_lst) + 1
     assert all(len(field_lst) == 1 for field_lst in field_ts0_lst_lst)
     assert all(len(field_lst) == 1 for field_lst in field_raw_lst_lst)
     assert (field_ts0_lst_lst[0][0].fld == 0.0).all()
     assert (field_ts0_lst_lst[1][0].fld == field_raw_lst_lst[0][0].fld).all()
+    assert reader_ts0.time.size == reader_raw.time.size + 1

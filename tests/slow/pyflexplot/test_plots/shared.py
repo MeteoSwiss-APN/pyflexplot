@@ -57,8 +57,8 @@ class _TestBase:
 
      *  Test reference files, as specified by the class attribute ``reference``,
         are created by changing the parent module of a test class temporarily
-        from ``_TestBase`` to ``_TestCreateReference`` and running the tests (which
-        will fail with ``ReferenceFileCreationSuccess`` if all goes well).
+        from ``_TestBase`` to ``_TestCreateReference`` and running the tests
+        (which fail with ``ReferenceFileCreationSuccess`` if all goes well).
 
         This creates a file for each test (``<reference>.py``) in the current
         directory. Move these new reference files to the appropriate directory
