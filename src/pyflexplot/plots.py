@@ -638,12 +638,10 @@ def fill_box_bottom(box: TextBoxAxes, plot: BoxedPlot) -> None:
     )
 
 
-def create_plot(
+def prepare_plot(
     field_lst: Sequence[Field],
     prev_out_file_paths: Optional[List[str]] = None,
-    *,
     dry_run: bool = False,
-    write: bool = True,
 ) -> Union[BoxedPlot, DummyBoxedPlot]:
     """Create plots while yielding them with the plot file path one by one."""
     var_setups_lst = [field.var_setups for field in field_lst]
@@ -657,11 +655,17 @@ def create_plot(
             create_plot_config(setup, WORDS, SYMBOLS, cast(MetaData, field.mdata))
             for field in field_lst
         ]
-        plot = BoxedPlot(field_lst, configs, map_conf_lst)
-        plot_add_text_boxes(plot)
-        plot_add_markers(plot)
-        plot.save(out_file_path, write=write)
-        return plot
+        return BoxedPlot(field_lst, out_file_path, configs, map_conf_lst)
+
+
+def create_plot(plot: BoxedPlot, write: bool = True) -> None:
+    plot.create()
+    plot_add_text_boxes(plot)
+    plot_add_markers(plot)
+    if write:
+        plot.write()
+    else:
+        plot.clean()
 
 
 def plot_add_text_boxes(plot: BoxedPlot) -> None:

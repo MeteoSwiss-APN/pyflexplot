@@ -19,6 +19,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.colors import Colormap
 from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.figure import Figure
 from pydantic import BaseModel
 
 # Local
@@ -168,10 +169,12 @@ class BoxedPlot:
     def __init__(
         self,
         fields: Sequence[Field],
+        file_path: str,
         configs: Sequence[BoxedPlotConfig],
         map_confs: Sequence[MapAxesConf],
     ) -> None:
         """Create an instance of ``BoxedPlot``."""
+
         # SR_TMP <
         assert len(fields) == len(map_confs)
         if len(fields) > 1:
@@ -180,37 +183,37 @@ class BoxedPlot:
         map_conf = map_confs[0]
         config = configs[0]
         # SR_TMP >
+
         self.field = field
+        self.file_path = file_path
         self.config = config
         self.map_conf = map_conf
         self.boxes: Dict[str, TextBoxAxes] = {}
         self.layout = BoxedPlotLayout(aspect=self.config.fig_aspect)
         self.levels = levels_from_time_stats(self.config, self.field.time_stats)
+
+        # Declarations
+        self.fig: Figure
+        self.ax_map: MapAxes
+
+    def create(self) -> None:
         self.fig = plt.figure(figsize=self.config.fig_size)
         self.ax_map = MapAxes.create(
             self.map_conf, fig=self.fig, rect=self.layout.rect_center, field=self.field,
         )
         self._draw_colors_contours()
-        self.file_path: Optional[str] = None
 
-    def save(self, file_path: str, *, write: bool = True) -> None:
-        """Save the plot to disk.
+    def write(self) -> None:
+        self.fig.savefig(
+            self.file_path,
+            facecolor=self.fig.get_facecolor(),
+            edgecolor=self.fig.get_edgecolor(),
+            bbox_inches="tight",
+            pad_inches=0.15,
+        )
+        self.clean()
 
-        Args:
-            file_path: Output file name, incl. path.
-
-            write (optional): Whether to actually write the plot to disk.
-
-        """
-        self.file_path = file_path
-        if write:
-            self.fig.savefig(
-                file_path,
-                facecolor=self.fig.get_facecolor(),
-                edgecolor=self.fig.get_edgecolor(),
-                bbox_inches="tight",
-                pad_inches=0.15,
-            )
+    def clean(self) -> None:
         plt.close(self.fig)
 
     # SR_TODO Replace checks with plot-specific config/setup object

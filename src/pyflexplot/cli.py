@@ -22,6 +22,7 @@ from .input import read_fields
 from .logging import log
 from .logging import set_log_level
 from .plots import create_plot
+from .plots import prepare_plot
 from .preset import add_to_preset_paths
 from .preset import click_add_to_preset_paths
 from .preset import click_cat_preset_and_exit
@@ -277,7 +278,7 @@ def main(
         try:
             for i_fld, field_lst in enumerate(field_lst_lst):
                 i_tot += 1
-                plot = create_plot(field_lst, out_file_paths, dry_run=dry_run)
+                plot = prepare_plot(field_lst, out_file_paths, dry_run=dry_run)
                 log(
                     inf=f"plot: {plot.file_path}",
                     vbs=(
@@ -285,6 +286,8 @@ def main(
                         f" plot: {plot.file_path}"
                     ),
                 )
+                if not dry_run:
+                    create_plot(plot)
 
                 if open_first_cmd and i_in + i_fld == 0:
                     open_plots(open_first_cmd, [plot.file_path], dry_run)
