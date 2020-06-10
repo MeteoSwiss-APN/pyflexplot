@@ -16,6 +16,9 @@ from typing import List
 # Third-party
 import matplotlib
 
+# Local
+from .logging import add_logging_level
+
 try:
     import cartopy  # isort:skip
 except Exception as e:  # pylint: disable=W0703  # broad-except
@@ -34,6 +37,11 @@ except Exception as e:  # pylint: disable=W0703  # broad-except
 
 
 __all__: List[str] = []
+
+verbose_level = 15
+
+
+add_logging_level("verbose", 15)
 
 
 def check_dir_exists(path):

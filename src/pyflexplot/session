@@ -6,6 +6,7 @@ dimensions.py
 exceptions.py
 formatting.py
 input.py
+logging.py
 meta_data.py
 nc_meta_data.py
 plot_elements.py

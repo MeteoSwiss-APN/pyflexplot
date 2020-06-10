@@ -19,6 +19,8 @@ from srutils.click import CharSepList
 from . import __version__
 from . import data_path
 from .input import read_fields
+from .logging import log
+from .logging import set_log_level
 from .plots import create_plot
 from .preset import add_to_preset_paths
 from .preset import click_add_to_preset_paths
@@ -223,6 +225,8 @@ def main(
 
     ctx.obj.update(cli_args)
 
+    set_log_level(ctx.obj["verbosity"])
+
     # Add preset setup file paths
     setup_file_paths = list(setup_file_paths)
     for path in ctx.obj.get("preset_setup_file_paths", []):
@@ -262,8 +266,10 @@ def main(
     n_in = len(setups_by_infile)
     i_tot = -1
     for i_in, (in_file_path, sub_setups) in enumerate(setups_by_infile.items()):
-        if ctx.obj["verbosity"] > 0:
-            click.echo(f"[{i_in + 1}/{n_in}] input: {in_file_path}")
+        log(
+            inf=f"input: {in_file_path}",
+            vbs=f"[{i_in + 1}/{n_in}] input: {in_file_path}",
+        )
         field_lst_lst = read_fields(
             in_file_path, sub_setups, add_ts0=True, dry_run=dry_run
         )
@@ -272,25 +278,31 @@ def main(
             for i_fld, field_lst in enumerate(field_lst_lst):
                 i_tot += 1
                 plot = create_plot(field_lst, out_file_paths, dry_run=dry_run)
-                click.echo(f"[{i_in + 1}/{n_in}][{i_fld + 1}/{n_fld}] {plot.file_path}")
+                log(
+                    inf=f"plot: {plot.file_path}",
+                    vbs=(
+                        f"[{i_in + 1}/{n_in}][{i_fld + 1}/{n_fld}]"
+                        f" plot: {plot.file_path}"
+                    ),
+                )
 
                 if open_first_cmd and i_in + i_fld == 0:
                     open_plots(open_first_cmd, [plot.file_path], dry_run)
 
                 n_plt_todo = n_fld - i_fld - 1
                 if n_plt_todo and each_only and (i_fld + 1) >= each_only:
-                    click.echo(f"skip remaining {n_plt_todo} plots")
+                    log(vbs=f"skip remaining {n_plt_todo} plots")
                     raise BreakInner()
                 if only and (i_tot + 1) >= only:
                     if n_plt_todo:
-                        click.echo(f"skip remaining {n_plt_todo} plots")
+                        log(vbs=f"skip remaining {n_plt_todo} plots")
                     raise BreakOuter()
         except BreakInner:
             continue
         except BreakOuter:
             remaining_files = n_in - i_in - 1
             if remaining_files:
-                click.echo(f"skip remaining {remaining_files} input files")
+                log(inf=f"skip remaining {remaining_files} input files")
             break
 
     if open_all_cmd:

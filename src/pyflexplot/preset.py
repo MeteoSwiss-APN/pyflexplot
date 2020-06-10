@@ -24,6 +24,7 @@ from click import Context
 # Local
 from . import check_dir_exists
 from .exceptions import NoPresetFileFoundError
+from .logging import log
 from .typing import ClickParamType
 
 preset_paths: List[Union[str, Path]] = []
@@ -182,11 +183,11 @@ def click_use_preset(ctx: Context, param: ClickParamType, value: Any) -> None:
         else:
             n = sum([len(files) for files in files_by_preset_path.values()])
             if n == 0:
-                click.echo("Collected no preset setup files")
+                log(vbs="Collected no preset setup files")
             elif n == 1:
-                click.echo(f"Collected {n} preset setup file:")
+                log(vbs=f"Collected {n} preset setup file:")
             else:
-                click.echo(f"Collected {n} preset setup files:")
+                log(vbs=f"Collected {n} preset setup files:")
             _click_list_presets(ctx, files_by_preset_path, indent_all=True)
         for files in files_by_preset_path.values():
             for path in files.values():
@@ -199,17 +200,14 @@ def _click_list_presets(
     files_by_preset_path: Mapping[Path, Mapping[str, Path]],
     indent_all: bool = False,
 ) -> None:
-    verbosity = ctx.obj["verbosity"]
     for preset_path, files in files_by_preset_path.items():
-        if verbosity > 0:
-            click.echo(f"{preset_path}:")
+        log(vbs=f"{preset_path}:")
         for name, path in files.items():
-            if verbosity == 0:
-                click.echo(f"{'  ' if indent_all else ''}{name}")
-            elif verbosity == 1:
-                click.echo(f"  {name}")
-            else:
-                click.echo(f"  {name:23}  {path}")
+            log(
+                inf=f"preset: {name}",
+                vbs=f"{'  ' if indent_all else ''} name",
+                dbg=f"  {name:23}  {path}",
+            )
 
 
 def _click_propose_alternatives(name: str) -> None:
