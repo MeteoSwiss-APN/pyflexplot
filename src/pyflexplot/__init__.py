@@ -8,6 +8,7 @@ __email__ = "stefan.ruedisuehli@env.ethz.ch"
 __version__ = "0.8.2"
 
 # Standard library
+import logging as pylogging
 import sys
 import warnings
 from pathlib import Path
@@ -41,6 +42,8 @@ __all__: List[str] = []
 verbose_level = 15
 
 
+pylogging.basicConfig(format="%(message)s")
+pylogging.getLogger().handlers = [pylogging.StreamHandler(sys.stdout)]
 add_logging_level("verbose", 15)
 
 

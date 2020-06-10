@@ -204,9 +204,7 @@ def _click_list_presets(
         log(vbs=f"{preset_path}:")
         for name, path in files.items():
             log(
-                inf=f"preset: {name}",
-                vbs=f"{'  ' if indent_all else ''} name",
-                dbg=f"  {name:23}  {path}",
+                vbs=f"{'  ' if indent_all else ''} name", dbg=f"  {name:23}  {path}",
             )
 
 

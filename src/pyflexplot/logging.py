@@ -6,8 +6,6 @@ Preset setup files.
 import logging
 from typing import Optional
 
-logging.basicConfig(level=logging.INFO, format="%(message)s")
-
 
 def get_log_level() -> int:
     return logging.getLogger().level

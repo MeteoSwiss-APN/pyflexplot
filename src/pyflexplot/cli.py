@@ -267,10 +267,7 @@ def main(
     n_in = len(setups_by_infile)
     i_tot = -1
     for i_in, (in_file_path, sub_setups) in enumerate(setups_by_infile.items()):
-        log(
-            inf=f"input: {in_file_path}",
-            vbs=f"[{i_in + 1}/{n_in}] input: {in_file_path}",
-        )
+        log(vbs=f"[{i_in + 1}/{n_in}] read {in_file_path}",)
         field_lst_lst = read_fields(
             in_file_path, sub_setups, add_ts0=True, dry_run=dry_run
         )
@@ -278,12 +275,13 @@ def main(
         try:
             for i_fld, field_lst in enumerate(field_lst_lst):
                 i_tot += 1
+                log(dbg=f"[{i_in + 1}/{n_in}][{i_fld + 1}/{n_fld}] prepare plot")
                 plot = prepare_plot(field_lst, out_file_paths, dry_run=dry_run)
                 log(
-                    inf=f"plot: {plot.file_path}",
+                    inf=f"{in_file_path} {plot.file_path}",
                     vbs=(
                         f"[{i_in + 1}/{n_in}][{i_fld + 1}/{n_fld}]"
-                        f" plot: {plot.file_path}"
+                        f" plot {plot.file_path}"
                     ),
                 )
                 if not dry_run:
@@ -300,12 +298,14 @@ def main(
                     if n_plt_todo:
                         log(vbs=f"skip remaining {n_plt_todo} plots")
                     raise BreakOuter()
+                log(dbg=f"done plotting {plot.file_path}")
+            log(dbg=f"done processing {in_file_path}")
         except BreakInner:
             continue
         except BreakOuter:
             remaining_files = n_in - i_in - 1
             if remaining_files:
-                log(inf=f"skip remaining {remaining_files} input files")
+                log(vbs=f"skip remaining {remaining_files} input files")
             break
 
     if open_all_cmd:

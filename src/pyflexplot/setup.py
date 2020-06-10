@@ -39,6 +39,7 @@ from srutils.str import join_multilines
 from .dimensions import CoreDimensions
 from .dimensions import Dimensions
 from .exceptions import UnequalInputSetupParamValuesError
+from .logging import log
 from .pydantic import cast_field_value
 from .pydantic import prepare_field_value
 
@@ -1059,11 +1060,14 @@ class FilePathFormatter:
         self._setup = setup
         assert self._setup is not None  # mypy
         template = setup.outfile
+        log(dbg=f"formatting path '{template}'")
         path = self._format_template(template)
         while path in self.previous:
             template = self.derive_unique_path(self._format_template(template))
+            path = self._format_template(template)
         self.previous.append(path)
         self._setup = None
+        log(dbg=f"formatted path '{path}'")
         return path
 
     def _format_template(self, template: str) -> str:
@@ -1122,6 +1126,7 @@ class FilePathFormatter:
     @staticmethod
     def derive_unique_path(path: str) -> str:
         """Add/increment a trailing number to a file path."""
+        log(dbg=f"deriving unique path from '{path}'")
 
         # Extract suffix
         if path.endswith(".png"):

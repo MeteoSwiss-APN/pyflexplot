@@ -30,6 +30,7 @@ from .data import Field
 from .data import FieldAllNaNError
 from .formatting import format_level_ranges
 from .formatting import format_range
+from .logging import log
 from .meta_data import format_unit
 from .meta_data import get_integr_type
 from .meta_data import MetaData
@@ -644,9 +645,11 @@ def prepare_plot(
     dry_run: bool = False,
 ) -> Union[BoxedPlot, DummyBoxedPlot]:
     """Create plots while yielding them with the plot file path one by one."""
+    log(dbg=f"preparing setups for plot based on {len(field_lst)} fields")
     var_setups_lst = [field.var_setups for field in field_lst]
     setup = InputSetupCollection.merge(var_setups_lst).compress()
     out_file_path = FilePathFormatter(prev_out_file_paths).format(setup)
+    log(dbg=f"preparing plot {out_file_path}")
     map_conf_lst = [create_map_conf(field) for field in field_lst]
     if dry_run:
         return DummyBoxedPlot(out_file_path)
@@ -659,6 +662,7 @@ def prepare_plot(
 
 
 def create_plot(plot: BoxedPlot, write: bool = True) -> None:
+    log(dbg=f"creating plot {plot.file_path}")
     plot.create()
     plot_add_text_boxes(plot)
     plot_add_markers(plot)
@@ -666,6 +670,7 @@ def create_plot(plot: BoxedPlot, write: bool = True) -> None:
         plot.write()
     else:
         plot.clean()
+    log(dbg=f"created plot {plot.file_path}")
 
 
 def plot_add_text_boxes(plot: BoxedPlot) -> None:

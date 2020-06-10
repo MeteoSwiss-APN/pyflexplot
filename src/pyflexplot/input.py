@@ -27,6 +27,7 @@ from .data import ensemble_probability
 from .data import EnsembleCloud
 from .data import Field
 from .data import merge_fields
+from .logging import log
 from .meta_data import collect_meta_data
 from .meta_data import get_integr_type
 from .meta_data import MetaData
@@ -62,10 +63,15 @@ def read_fields(
         dry_run (optional): Whether to skip reading the data from disk.
 
     """
+    log(dbg=f"reading fields from {in_file_path}")
     reader = FileReader(
         in_file_path, add_ts0=add_ts0, dry_run=dry_run, cls_fixer=FlexPartDataFixer,
     )
-    return reader.run(setups)
+    field_lst_lst = reader.run(setups)
+    n_plt = len(field_lst_lst)
+    n_tot = sum([len(field_lst) for field_lst in field_lst_lst])
+    log(dbg=f"don reading {in_file_path}: read {n_tot} fields for {n_plt} plots")
+    return field_lst_lst
 
 
 # pylint: disable=R0902  # too-many-instance-attributes
