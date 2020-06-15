@@ -1,0 +1,55 @@
+# PyFlexPlot setup file to create deterministic NAZ plots
+
+# Sample data directory: /scratch/ruestefa/shared/pyflexplot_test/
+#
+
+[concentration]
+infile = "data/cosmo-1_2019052800.nc"
+outfile = "cosmo1_concentration_species-{species_id}_domain-{domain}_lang-{lang}_ts{time:02d}.png"
+species_id = "*"
+input_variable = "concentration"
+combine_species = false
+integrate = false
+level = 0
+time = "*"
+domain = "auto"
+lang = "de"
+# domain = "ch"
+# lang = "de"
+
+[concentration_integrated]
+infile = "data/cosmo-1_2019052800.nc"
+outfile = "cosmo1_integr_concentration_species-{species_id}_domain-{domain}_lang-{lang}_ts{time:02d}.png"
+species_id = "*"
+input_variable = "concentration"
+combine_species = false
+integrate = true
+level = 0
+time = -1
+domain = "auto"
+lang = "de"
+# domain = "ch"
+# lang = "de"
+
+[tot_deposition]
+infile = "data/cosmo-1_2019052800.nc"
+species_id = "*"
+outfile = "cosmo1_tot_deposition_domain-{domain}_lang-{lang}_ts{time:02d}.png"
+input_variable = "deposition"
+deposition_type = ["dry", "wet"]
+combine_deposition_types = true
+combine_species = true
+integrate = true
+time = -1
+
+[tot_deposition_affected_area]
+outfile = "cosmo1_affected_area_domain-{domain}_lang-{lang}_ts{time:02d}.png"
+plot_variable = "affected_area_mono"
+infile = "data/cosmo-1_2019052800.nc"
+species_id = "*"
+input_variable = "deposition"
+deposition_type = ["dry", "wet"]
+combine_deposition_types = true
+combine_species = true
+integrate = true
+time = -1
