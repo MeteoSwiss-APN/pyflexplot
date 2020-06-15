@@ -4,10 +4,15 @@ Tests for module ``pyflexplot.setup.InputSetupFile``.
 """
 # Standard library
 from collections.abc import Sequence
+from pprint import pformat
 from textwrap import dedent
+
+# Third-party
+import pytest
 
 # First-party
 from pyflexplot.setup import InputSetupFile
+from srutils.testing import assert_nested_equal
 
 # Local
 from .shared import DEFAULT_KWARGS
@@ -319,6 +324,188 @@ def test_semi_realcase(tmp_path):
     setups = read_tmp_setup_file(tmp_path, content)
     # Note: Fails with tomlkit, but works with toml (2020-02-18)
     assert len(setups) == 16
+
+
+@pytest.mark.skip("TODO next")
+def test_realcase_opr_like(tmp_path):
+    """Setup based on real config for operational cosmo1 plots."""
+    content = """\
+        [concentration]
+        infile = "data/cosmo-1_2019052800.nc"
+        outfile = "concentration_{species_id}_{domain}_{lang}_{time:02d}.png"
+        species_id = "*"
+        input_variable = "concentration"
+        combine_species = false
+        integrate = false
+        level = 0
+        time = "*"
+        domain = "auto"
+        lang = "de"
+        # domain = "ch"
+        # lang = "de"
+
+        [concentration_integrated]
+        infile = "data/cosmo-1_2019052800.nc"
+        outfile = "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png"
+        species_id = "*"
+        input_variable = "concentration"
+        combine_species = false
+        integrate = true
+        level = 0
+        time = -1
+        domain = "auto"
+        lang = "de"
+        # domain = "ch"
+        # lang = "de"
+
+        [tot_deposition]
+        infile = "data/cosmo-1_2019052800.nc"
+        species_id = "*"
+        outfile = "tot_deposition_{domain}_{lang}_{time:02d}.png"
+        input_variable = "deposition"
+        deposition_type = ["dry", "wet"]
+        combine_deposition_types = true
+        combine_species = true
+        integrate = true
+        time = -1
+
+        [tot_deposition_affected_area]
+        outfile = "affected_area_{domain}_{lang}_{time:02d}.png"
+        plot_variable = "affected_area_mono"
+        infile = "data/cosmo-1_2019052800.nc"
+        species_id = "*"
+        input_variable = "deposition"
+        deposition_type = ["dry", "wet"]
+        combine_deposition_types = true
+        combine_species = true
+        integrate = true
+        time = -1
+        """
+    dcts_sol = [
+        {
+            "infile": "data/cosmo-1_2019052800.nc",
+            "outfile": "concentration_{species_id}_{domain}_{lang}_{time:02d}.png",
+            "input_variable": "concentration",
+            "plot_variable": "auto",
+            "ens_variable": "none",
+            "plot_type": "auto",
+            "multipanel_param": None,
+            "integrate": False,
+            "combine_deposition_types": False,
+            "combine_levels": False,
+            "combine_species": False,
+            "ens_member_id": None,
+            "ens_param_mem_min": None,
+            "ens_param_thr": None,
+            "ens_param_time_win": None,
+            "lang": "de",
+            "domain": "auto",
+            "dimensions": {
+                "deposition_type": None,
+                "level": 0,
+                "nageclass": None,
+                "noutrel": None,
+                "numpoint": None,
+                "species_id": None,
+                "time": None,
+            },
+        },
+        {
+            "infile": "data/cosmo-1_2019052800.nc",
+            "outfile": "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png",
+            "input_variable": "concentration",
+            "plot_variable": "auto",
+            "ens_variable": "none",
+            "plot_type": "auto",
+            "multipanel_param": None,
+            "integrate": True,
+            "combine_deposition_types": False,
+            "combine_levels": False,
+            "combine_species": False,
+            "ens_member_id": None,
+            "ens_param_mem_min": None,
+            "ens_param_thr": None,
+            "ens_param_time_win": None,
+            "lang": "de",
+            "domain": "auto",
+            "dimensions": {
+                "deposition_type": None,
+                "level": 0,
+                "nageclass": None,
+                "noutrel": None,
+                "numpoint": None,
+                "species_id": None,
+                "time": -1,
+            },
+        },
+        {
+            "infile": "data/cosmo-1_2019052800.nc",
+            "outfile": "tot_deposition_{domain}_{lang}_{time:02d}.png",
+            "input_variable": "deposition",
+            "plot_variable": "auto",
+            "ens_variable": "none",
+            "plot_type": "auto",
+            "multipanel_param": None,
+            "integrate": True,
+            "combine_deposition_types": True,
+            "combine_levels": False,
+            "combine_species": True,
+            "ens_member_id": None,
+            "ens_param_mem_min": None,
+            "ens_param_thr": None,
+            "ens_param_time_win": None,
+            "lang": "en",
+            "domain": "auto",
+            "dimensions": {
+                "deposition_type": ("dry", "wet"),
+                "level": None,
+                "nageclass": None,
+                "noutrel": None,
+                "numpoint": None,
+                "species_id": None,
+                "time": -1,
+            },
+        },
+        {
+            "infile": "data/cosmo-1_2019052800.nc",
+            "outfile": "affected_area_{domain}_{lang}_{time:02d}.png",
+            "input_variable": "deposition",
+            "plot_variable": "affected_area_mono",
+            "ens_variable": "none",
+            "plot_type": "auto",
+            "multipanel_param": None,
+            "integrate": True,
+            "combine_deposition_types": True,
+            "combine_levels": False,
+            "combine_species": True,
+            "ens_member_id": None,
+            "ens_param_mem_min": None,
+            "ens_param_thr": None,
+            "ens_param_time_win": None,
+            "lang": "en",
+            "domain": "auto",
+            "dimensions": {
+                "deposition_type": ("dry", "wet"),
+                "level": None,
+                "nageclass": None,
+                "noutrel": None,
+                "numpoint": None,
+                "species_id": None,
+                "time": -1,
+            },
+        },
+    ]
+    setups = read_tmp_setup_file(tmp_path, content)
+    dcts_res = setups.dicts()
+    assert len(dcts_res) == len(dcts_sol)
+    assert [d["outfile"] for d in dcts_res] == [d["outfile"] for d in dcts_sol]
+    for dct_res, dct_sol in zip(dcts_res, dcts_sol):
+        try:
+            assert_nested_equal(dct_res, dct_sol)
+        except AssertionError:
+            raise AssertionError(
+                f"setups differ:\n\n{pformat(dct_res)}\n\n{pformat(dct_sol)}\n"
+            )
 
 
 def test_wildcard_simple(tmp_path):
