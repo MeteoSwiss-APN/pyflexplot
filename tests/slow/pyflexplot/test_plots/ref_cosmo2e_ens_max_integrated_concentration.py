@@ -18,7 +18,8 @@ field_summary = {
     "var_setups": [
         {
             "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
-            "outfile": "plot.png",
+            "outfile": "ref_cosmo2e_ens_max_integrated_concentration.png",
+            "ens_member_id": [0, 1, 5, 10, 15, 20],
             "input_variable": "concentration",
             "plot_variable": "auto",
             "ens_variable": "maximum",
@@ -28,23 +29,20 @@ field_summary = {
             "combine_deposition_types": False,
             "combine_levels": False,
             "combine_species": False,
-            "ens_member_id": [0, 1, 5, 10, 15, 20],
             "ens_param_mem_min": None,
             "ens_param_thr": None,
             "ens_param_time_win": None,
             "lang": "de",
             "domain": "ch",
-            "dimensions": [
-                {
-                    "deposition_type": None,
-                    "level": 0,
-                    "nageclass": 0,
-                    "noutrel": None,
-                    "numpoint": 0,
-                    "species_id": 2,
-                    "time": 10,
-                }
-            ],
+            "dimensions": {
+                "deposition_type": None,
+                "level": 0,
+                "nageclass": 0,
+                "noutrel": None,
+                "numpoint": 0,
+                "species_id": 2,
+                "time": 10,
+            },
         }
     ],
     "time_stats": {
@@ -2315,7 +2313,8 @@ plot_summary = {
         "var_setups": [
             {
                 "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
-                "outfile": "plot.png",
+                "outfile": "ref_cosmo2e_ens_max_integrated_concentration.png",
+                "ens_member_id": [0, 1, 5, 10, 15, 20],
                 "input_variable": "concentration",
                 "plot_variable": "auto",
                 "ens_variable": "maximum",
@@ -2325,23 +2324,20 @@ plot_summary = {
                 "combine_deposition_types": False,
                 "combine_levels": False,
                 "combine_species": False,
-                "ens_member_id": [0, 1, 5, 10, 15, 20],
                 "ens_param_mem_min": None,
                 "ens_param_thr": None,
                 "ens_param_time_win": None,
                 "lang": "de",
                 "domain": "ch",
-                "dimensions": [
-                    {
-                        "deposition_type": None,
-                        "level": 0,
-                        "nageclass": 0,
-                        "noutrel": None,
-                        "numpoint": 0,
-                        "species_id": 2,
-                        "time": 10,
-                    }
-                ],
+                "dimensions": {
+                    "deposition_type": None,
+                    "level": 0,
+                    "nageclass": 0,
+                    "noutrel": None,
+                    "numpoint": 0,
+                    "species_id": 2,
+                    "time": 10,
+                },
             }
         ],
         "time_stats": {

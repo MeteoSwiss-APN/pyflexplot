@@ -19,7 +19,7 @@ from .shared import DEFAULT_SETUP
 
 def test_default_setup_dict():
     """Check the default setupuration dict."""
-    setup1 = InputSetup(**DEFAULT_KWARGS)
+    setup1 = InputSetup.create(DEFAULT_KWARGS)
     setup2 = DEFAULT_SETUP.dict()
     assert setup1 == setup2
 

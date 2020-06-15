@@ -18,7 +18,8 @@ field_summary = {
     "var_setups": [
         {
             "infile": "flexpart_cosmo-1_2019093012.nc",
-            "outfile": "plot.png",
+            "outfile": "ref_cosmo1_deterministic_concentration.png",
+            "ens_member_id": None,
             "input_variable": "concentration",
             "plot_variable": "auto",
             "ens_variable": "none",
@@ -28,23 +29,20 @@ field_summary = {
             "combine_deposition_types": False,
             "combine_levels": False,
             "combine_species": False,
-            "ens_member_id": None,
             "ens_param_mem_min": None,
             "ens_param_thr": None,
             "ens_param_time_win": None,
             "lang": "de",
             "domain": "auto",
-            "dimensions": [
-                {
-                    "deposition_type": None,
-                    "level": 0,
-                    "nageclass": 0,
-                    "noutrel": 0,
-                    "numpoint": 0,
-                    "species_id": 1,
-                    "time": 5,
-                }
-            ],
+            "dimensions": {
+                "deposition_type": None,
+                "level": 0,
+                "nageclass": 0,
+                "noutrel": 0,
+                "numpoint": 0,
+                "species_id": 1,
+                "time": 5,
+            },
         }
     ],
     "time_stats": {
@@ -2246,7 +2244,8 @@ plot_summary = {
         "var_setups": [
             {
                 "infile": "flexpart_cosmo-1_2019093012.nc",
-                "outfile": "plot.png",
+                "outfile": "ref_cosmo1_deterministic_concentration.png",
+                "ens_member_id": None,
                 "input_variable": "concentration",
                 "plot_variable": "auto",
                 "ens_variable": "none",
@@ -2256,23 +2255,20 @@ plot_summary = {
                 "combine_deposition_types": False,
                 "combine_levels": False,
                 "combine_species": False,
-                "ens_member_id": None,
                 "ens_param_mem_min": None,
                 "ens_param_thr": None,
                 "ens_param_time_win": None,
                 "lang": "de",
                 "domain": "auto",
-                "dimensions": [
-                    {
-                        "deposition_type": None,
-                        "level": 0,
-                        "nageclass": 0,
-                        "noutrel": 0,
-                        "numpoint": 0,
-                        "species_id": 1,
-                        "time": 5,
-                    }
-                ],
+                "dimensions": {
+                    "deposition_type": None,
+                    "level": 0,
+                    "nageclass": 0,
+                    "noutrel": 0,
+                    "numpoint": 0,
+                    "species_id": 1,
+                    "time": 5,
+                },
             }
         ],
         "time_stats": {

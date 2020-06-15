@@ -206,7 +206,7 @@ class _TestCreatePlot(_TestBase):
         field = self.get_field(datadir)
         plot = self.get_plot(field)
         try:
-            plot.save(plot_file)
+            plot.write()
         except Exception:
             raise PlotCreationError(plot_file)
         else:

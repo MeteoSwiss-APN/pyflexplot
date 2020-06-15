@@ -759,6 +759,7 @@ class Test_IndividualParams_SingleOrMultipleValues:
         assert setups.dicts() == sol
 
 
+@pytest.mark.skip("TODO multipanel")
 def test_multipanel_param_ens_variable(tmp_path):
     """Declare multi-panel plot based on ensemble variables."""
     content = """\

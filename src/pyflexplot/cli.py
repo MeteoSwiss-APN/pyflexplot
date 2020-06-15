@@ -59,7 +59,7 @@ def not_implemented(msg):
 def set_verbosity(ctx, param, value):  # pylint: disable=W0613  # unused-argument
     if ctx.obj is None:
         ctx.obj = {}
-    ctx.obj["verbosity"] = value
+    set_log_level(value)
 
 
 def prepare_input_setup_params(ctx, param, value):
@@ -226,8 +226,6 @@ def main(
 
     ctx.obj.update(cli_args)
 
-    set_log_level(ctx.obj["verbosity"])
-
     # Add preset setup file paths
     setup_file_paths = list(setup_file_paths)
     for path in ctx.obj.get("preset_setup_file_paths", []):
@@ -278,7 +276,7 @@ def main(
                 log(dbg=f"[{i_in + 1}/{n_in}][{i_fld + 1}/{n_fld}] prepare plot")
                 plot = prepare_plot(field_lst, out_file_paths, dry_run=dry_run)
                 log(
-                    inf=f"{in_file_path} {plot.file_path}",
+                    inf=f"{in_file_path} -> {plot.file_path}",
                     vbs=(
                         f"[{i_in + 1}/{n_in}][{i_fld + 1}/{n_fld}]"
                         f" plot {plot.file_path}"

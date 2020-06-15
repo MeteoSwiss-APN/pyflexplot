@@ -8,8 +8,6 @@ from typing import Dict
 from typing import List
 
 # First-party
-from pyflexplot.setup import CoreInputSetup
-from pyflexplot.setup import CoreInputSetupCollection
 from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
 from srutils.testing import check_summary_dict_is_subdict
@@ -56,8 +54,6 @@ class Test_InputSetup_Decompress:
         """Decompress all params."""
         setups = self.setup.decompress()
         assert len(setups) == 12
-        assert isinstance(setups, CoreInputSetupCollection)
-        assert all(isinstance(setup, CoreInputSetup) for setup in setups)
         res = {
             (s.dimensions.deposition_type, s.dimensions.species_id, s.dimensions.time)
             for s in setups

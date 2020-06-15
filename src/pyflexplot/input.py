@@ -33,7 +33,7 @@ from .meta_data import get_integr_type
 from .meta_data import MetaData
 from .meta_data import nc_var_name
 from .nc_meta_data import read_meta_data
-from .setup import CoreInputSetup
+from .setup import InputSetup
 from .setup import InputSetupCollection
 
 
@@ -271,9 +271,9 @@ class FileReader:
         timeless_setups = setups.derive({"dimensions": {"time": None}})
 
         fld_time_lst = []
-        for core_setups in timeless_setups.decompress():
-            for core_setup in core_setups:
-                fld_time_lst.append(self._read_fld(fi, core_setup))
+        for sub_setups in timeless_setups.decompress():
+            for sub_setup in sub_setups:
+                fld_time_lst.append(self._read_fld(fi, sub_setup))
         fld_time = merge_fields(fld_time_lst)
 
         if self.fixer and self.nc_meta_data["analysis"]["model"] in ["ifs"]:
@@ -292,10 +292,10 @@ class FileReader:
         mdata_lst: List[MetaData] = []
         for setups in setups_lst_time:
             mdata_i_lst = []
-            for core_setups in setups.decompress():
-                for core_setup in core_setups:
+            for sub_setups in setups.decompress():
+                for sub_setup in sub_setups:
                     mdata_ij = collect_meta_data(
-                        fi, core_setup, self.nc_meta_data, add_ts0=self.add_ts0
+                        fi, sub_setup, self.nc_meta_data, add_ts0=self.add_ts0
                     )
                     mdata_i_lst.append(mdata_ij)
             mdata_i = mdata_i_lst[0].merge_with(mdata_i_lst[1:])
@@ -469,7 +469,7 @@ class FileReader:
 
     # SR_TODO refactor to reduce branching and locals!
     # pylint: disable=R0912,R0914  # too-many-branches, too-many-locals
-    def _read_fld(self, fi: nc4.Dataset, setup: CoreInputSetup) -> np.ndarray:
+    def _read_fld(self, fi: nc4.Dataset, setup: InputSetup) -> np.ndarray:
         """Read an individual 2D field at a given time step from disk."""
 
         # SR_TMP <

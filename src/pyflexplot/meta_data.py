@@ -29,7 +29,6 @@ from pydantic import validator
 from pydantic.generics import GenericModel
 
 # Local
-from .setup import CoreInputSetup
 from .setup import InputSetup
 from .setup import InputSetupCollection
 from .summarize import summarizable
@@ -530,7 +529,7 @@ def format_unit(s: str) -> str:
 
 def collect_meta_data(
     fi: nc4.Dataset,
-    setup: CoreInputSetup,
+    setup: InputSetup,
     nc_meta_data: Mapping[str, Any],
     *,
     add_ts0: bool = False,
@@ -545,7 +544,7 @@ class MetaDataCollector:
     def __init__(
         self,
         fi: nc4.Dataset,
-        setup: CoreInputSetup,
+        setup: InputSetup,
         nc_meta_data: Mapping[str, Any],
         *,
         add_ts0: bool = False,
@@ -741,7 +740,7 @@ class MetaDataCollector:
 
 class TimeStepMetaDataCollector:
     def __init__(
-        self, fi: nc4.Dataset, setup: CoreInputSetup, *, add_ts0: bool = False
+        self, fi: nc4.Dataset, setup: InputSetup, *, add_ts0: bool = False
     ) -> None:
         self.fi = fi
         self.setup = setup
@@ -829,17 +828,12 @@ class RawReleaseMetaData(BaseModel):
         validate_assigment = True
 
     @classmethod
-    def from_file(cls, fi: nc4.Dataset, setup: CoreInputSetup) -> "RawReleaseMetaData":
+    def from_file(cls, fi: nc4.Dataset, setup: InputSetup) -> "RawReleaseMetaData":
         """Read information on a release from open file."""
 
         assert setup.dimensions.numpoint is not None  # mypy
         # SR_TMP < TODO proper implementation
-        if isinstance(setup, CoreInputSetup):
-            idx = setup.dimensions.numpoint
-        else:
-            assert isinstance(setup, InputSetup)
-            assert len(setup.dimensions.numpoint) == 1
-            idx = next(iter(setup.dimensions.numpoint))
+        idx = setup.dimensions.numpoint
         # SR_TMP >
 
         var_name: str = "RELCOM"  # SR_HC TODO un-hardcode
@@ -921,7 +915,7 @@ class ReleaseMetaData(BaseModel):
 
     @classmethod
     def from_file(
-        cls, fi: nc4.Dataset, nc_meta_data: Dict[str, Any], setup: CoreInputSetup,
+        cls, fi: nc4.Dataset, nc_meta_data: Dict[str, Any], setup: InputSetup,
     ) -> "ReleaseMetaData":
         """Read information on a release from open file."""
 
@@ -984,7 +978,7 @@ def fix_unit_meters_agl(unit: str, lang: str) -> str:
 
 
 def nc_var_name(
-    setup: Union[InputSetup, CoreInputSetup], model: str
+    setup: Union[InputSetup, InputSetup], model: str
 ) -> Union[str, List[str]]:
     # SR_TMP <
     dimensions = setup.dimensions
@@ -992,12 +986,7 @@ def nc_var_name(
     deposition_type = setup.deposition_type_str
     # SR_TMP >
     assert dimensions.species_id is not None  # mypy
-    if isinstance(setup, CoreInputSetup):
-        species_id = dimensions.species_id
-    else:
-        assert isinstance(setup, InputSetup)  # mypy
-        assert len(dimensions.species_id) == 1  # SR_TMP
-        species_id = next(iter(dimensions.species_id))
+    species_id = dimensions.species_id
     if input_variable == "concentration":
         if model in ["cosmo2", "cosmo1"]:
             return f"spec{species_id:03d}"

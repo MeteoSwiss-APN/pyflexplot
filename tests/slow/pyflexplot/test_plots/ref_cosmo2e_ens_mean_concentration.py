@@ -18,7 +18,8 @@ field_summary = {
     "var_setups": [
         {
             "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
-            "outfile": "dummy.png",
+            "outfile": "ref_cosmo2e_ens_mean_concentration.png",
+            "ens_member_id": [0, 1, 5, 10, 15, 20],
             "input_variable": "concentration",
             "plot_variable": "auto",
             "ens_variable": "median",
@@ -28,32 +29,20 @@ field_summary = {
             "combine_deposition_types": False,
             "combine_levels": False,
             "combine_species": True,
-            "ens_member_id": [0, 1, 5, 10, 15, 20],
             "ens_param_mem_min": None,
             "ens_param_thr": None,
             "ens_param_time_win": None,
             "lang": "en",
             "domain": "auto",
-            "dimensions": [
-                {
-                    "deposition_type": None,
-                    "level": 0,
-                    "nageclass": 0,
-                    "noutrel": None,
-                    "numpoint": 0,
-                    "species_id": 1,
-                    "time": 5,
-                },
-                {
-                    "deposition_type": None,
-                    "level": None,
-                    "nageclass": None,
-                    "noutrel": None,
-                    "numpoint": None,
-                    "species_id": 2,
-                    "time": None,
-                },
-            ],
+            "dimensions": {
+                "deposition_type": None,
+                "level": 0,
+                "nageclass": 0,
+                "noutrel": None,
+                "numpoint": 0,
+                "species_id": [1, 2],
+                "time": 5,
+            },
         }
     ],
     "time_stats": {
@@ -2324,7 +2313,8 @@ plot_summary = {
         "var_setups": [
             {
                 "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
-                "outfile": "dummy.png",
+                "outfile": "ref_cosmo2e_ens_mean_concentration.png",
+                "ens_member_id": [0, 1, 5, 10, 15, 20],
                 "input_variable": "concentration",
                 "plot_variable": "auto",
                 "ens_variable": "median",
@@ -2334,32 +2324,20 @@ plot_summary = {
                 "combine_deposition_types": False,
                 "combine_levels": False,
                 "combine_species": True,
-                "ens_member_id": [0, 1, 5, 10, 15, 20],
                 "ens_param_mem_min": None,
                 "ens_param_thr": None,
                 "ens_param_time_win": None,
                 "lang": "en",
                 "domain": "auto",
-                "dimensions": [
-                    {
-                        "deposition_type": None,
-                        "level": 0,
-                        "nageclass": 0,
-                        "noutrel": None,
-                        "numpoint": 0,
-                        "species_id": 1,
-                        "time": 5,
-                    },
-                    {
-                        "deposition_type": None,
-                        "level": None,
-                        "nageclass": None,
-                        "noutrel": None,
-                        "numpoint": None,
-                        "species_id": 2,
-                        "time": None,
-                    },
-                ],
+                "dimensions": {
+                    "deposition_type": None,
+                    "level": 0,
+                    "nageclass": 0,
+                    "noutrel": None,
+                    "numpoint": 0,
+                    "species_id": [1, 2],
+                    "time": 5,
+                },
             }
         ],
         "time_stats": {

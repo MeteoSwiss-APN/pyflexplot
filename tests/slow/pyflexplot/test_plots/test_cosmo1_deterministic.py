@@ -21,7 +21,7 @@ class Test_Concentration(_TestBase):
     reference = "ref_cosmo1_deterministic_concentration"
     setup_dct = {
         "infile": INFILE_NAME,
-        "outfile": "plot.png",
+        "outfile": f"{reference}.png",
         "input_variable": "concentration",
         "integrate": False,
         "lang": "de",
@@ -36,7 +36,7 @@ class Test_Concentration2(_TestCreateReference):
     reference = "ref_cosmo1_deterministic_concentration_2"
     setup_dct = {
         "infile": INFILE_NAME,
-        "outfile": "plot_{ts}.png",
+        "outfile": f"{reference}.png",
         "input_variable": "concentration",
         "lang": "en",
         "domain": "ch",
@@ -50,7 +50,7 @@ class Test_IntegratedConcentration(_TestBase):
     reference = "ref_cosmo1_deterministic_integrated_concentration"
     setup_dct = {
         "infile": INFILE_NAME,
-        "outfile": "plot.png",
+        "outfile": f"{reference}.png",
         "plot_type": "auto",
         "input_variable": "concentration",
         "integrate": True,
@@ -65,7 +65,7 @@ class Test_TotalDeposition(_TestBase):
     reference = "ref_cosmo1_deterministic_total_deposition"
     setup_dct = {
         "infile": INFILE_NAME,
-        "outfile": "plot.png",
+        "outfile": f"{reference}.png",
         "plot_type": "auto",
         "input_variable": "deposition",
         "combine_deposition_types": True,
@@ -81,7 +81,7 @@ class Test_AffectedArea(_TestBase):
     reference = "ref_cosmo1_deterministic_affected_area"
     setup_dct = {
         "infile": INFILE_NAME,
-        "outfile": "plot.png",
+        "outfile": f"{reference}.png",
         "input_variable": "deposition",
         "plot_variable": "affected_area_mono",
         "combine_deposition_types": True,

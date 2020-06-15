@@ -18,7 +18,8 @@ field_summary = {
     "var_setups": [
         {
             "infile": "flexpart_cosmo-1_2019093012.nc",
-            "outfile": "plot.png",
+            "outfile": "ref_cosmo1_deterministic_affected_area.png",
+            "ens_member_id": None,
             "input_variable": "deposition",
             "plot_variable": "affected_area_mono",
             "ens_variable": "none",
@@ -28,32 +29,20 @@ field_summary = {
             "combine_deposition_types": True,
             "combine_levels": False,
             "combine_species": False,
-            "ens_member_id": None,
             "ens_param_mem_min": None,
             "ens_param_thr": None,
             "ens_param_time_win": None,
             "lang": "en",
             "domain": "ch",
-            "dimensions": [
-                {
-                    "deposition_type": "dry",
-                    "level": None,
-                    "nageclass": 0,
-                    "noutrel": 0,
-                    "numpoint": 0,
-                    "species_id": 1,
-                    "time": 11,
-                },
-                {
-                    "deposition_type": "wet",
-                    "level": None,
-                    "nageclass": None,
-                    "noutrel": None,
-                    "numpoint": None,
-                    "species_id": None,
-                    "time": None,
-                },
-            ],
+            "dimensions": {
+                "deposition_type": ["dry", "wet"],
+                "level": None,
+                "nageclass": 0,
+                "noutrel": 0,
+                "numpoint": 0,
+                "species_id": 1,
+                "time": 11,
+            },
         }
     ],
     "time_stats": {
@@ -1812,7 +1801,8 @@ plot_summary = {
         "var_setups": [
             {
                 "infile": "flexpart_cosmo-1_2019093012.nc",
-                "outfile": "plot.png",
+                "outfile": "ref_cosmo1_deterministic_affected_area.png",
+                "ens_member_id": None,
                 "input_variable": "deposition",
                 "plot_variable": "affected_area_mono",
                 "ens_variable": "none",
@@ -1822,32 +1812,20 @@ plot_summary = {
                 "combine_deposition_types": True,
                 "combine_levels": False,
                 "combine_species": False,
-                "ens_member_id": None,
                 "ens_param_mem_min": None,
                 "ens_param_thr": None,
                 "ens_param_time_win": None,
                 "lang": "en",
                 "domain": "ch",
-                "dimensions": [
-                    {
-                        "deposition_type": "dry",
-                        "level": None,
-                        "nageclass": 0,
-                        "noutrel": 0,
-                        "numpoint": 0,
-                        "species_id": 1,
-                        "time": 11,
-                    },
-                    {
-                        "deposition_type": "wet",
-                        "level": None,
-                        "nageclass": None,
-                        "noutrel": None,
-                        "numpoint": None,
-                        "species_id": None,
-                        "time": None,
-                    },
-                ],
+                "dimensions": {
+                    "deposition_type": ["dry", "wet"],
+                    "level": None,
+                    "nageclass": 0,
+                    "noutrel": 0,
+                    "numpoint": 0,
+                    "species_id": 1,
+                    "time": 11,
+                },
             }
         ],
         "time_stats": {

@@ -8,6 +8,7 @@ import dataclasses
 import re
 from dataclasses import dataclass
 from typing import Any
+from typing import cast
 from typing import Collection
 from typing import Dict
 from typing import Iterator
@@ -18,7 +19,6 @@ from typing import overload
 from typing import Sequence
 from typing import Set
 from typing import Tuple
-from typing import Type
 from typing import Union
 
 # Third-party
@@ -42,6 +42,7 @@ from .exceptions import UnequalInputSetupParamValuesError
 from .logging import log
 from .pydantic import cast_field_value
 from .pydantic import prepare_field_value
+from .summarize import summarizable
 
 # Some plot-specific default values
 ENS_PROBABILITY_DEFAULT_PARAM_THR = 1e-8
@@ -50,87 +51,36 @@ ENS_CLOUD_TIME_DEFAULT_PARAM_THR = 1e-7
 ENS_CLOUD_PROB_DEFAULT_PARAM_TIME_WIN = 12
 
 
-def is_setup_param(param: str) -> bool:
+def is_core_setup_param(param: str) -> bool:
     return param in CoreInputSetup.__fields__
+
+
+def is_setup_param(param: str) -> bool:
+    return param in InputSetup.__fields__ or is_core_setup_param(param)
 
 
 def is_dimensions_param(param: str) -> bool:
     return param in CoreDimensions.__fields__
 
 
-# SR_TODO Clean up docstring -- where should format key hints go?
 # pylint: disable=E0213  # no-self-argument (validators)
-class InputSetup(BaseModel):
+class CoreInputSetup(BaseModel):
     """
-    PyFlexPlot setup.
+    PyFlexPlot core setup with exactly one value per parameter.
 
-    Args:
-        combine_deposition_types: Sum up dry and wet deposition. Otherwise, each
-            is plotted separately.
-
-        combine_levels: Sum up over multiple vertical levels. Otherwise, each is
-            plotted separately.
-
-        combine_species: Sum up over all specified species. Otherwise, each is
-            plotted separately.
-
-        domain: Plot domain. Defaults to 'data', which derives the domain size
-            from the input data. Use the format key '{domain}' to embed it in
-            ``outfile``. Choices": "auto", "ch".
-
-        ens_member_id: Ensemble member ids. Use the format key '{ens_member}'
-            to embed it in ``outfile``. Omit for deterministic simulations.
-
-        ens_param_mem_min: Minimum number of ensemble members used to compute
-            some ensemble variables. Its precise meaning depends on the
-            variable.
-
-        ens_param_thr: Threshold used to compute some ensemble variables. Its
-            precise meaning depends on the variable.
-
-        ens_param_time_win: Tim window used to compute some ensemble variables.
-            Its precise meaning depends on the variable.
-
-        ens_variable: Ensemble variable computed from plot variable. Use the
-            format key '{ens_variable}' to embed it in ``outfile``.
-
-        infile: Input file path(s). May contain format keys.
-
-        input_variable: Input variable. Choices: "concentration", "deposition".
-
-        integrate: Integrate field over time.
-
-        lang: Language. Use the format key '{lang}' to embed it in ``oufile``.
-            Choices: "en", "de".
-
-        multipanel_param: Parameter used to plot multiple panels. Only valid for
-            ``plot_type = "multipanel"``. The respective parameter must have one
-            value per panel. For example, a four-panel plot with one ensemble
-            statistic plot each may be specified with ``multipanel_param =
-            "ens_variable"`` and ``ens_variable = ["minimum", "maximum", "meam",
-            "median"]``.
-
-        outfile: Output file path. May contain format keys.
-
-        plot_type: Plot type. Use the format key '{plot_type}' to embed it in
-            ``outfile``.
-
-        plot_variable: Variable computed from input variable. Use the format key
-            '{plot_variable}' to embed it in ``outfile``.
+    See ``InputSetup`` for details on the parameters.
 
     """
 
     class Config:  # noqa
-        # allow_mutation = False
         arbitrary_types_allowed = True
+        allow_mutation = False
         extra = "forbid"
 
     # Basics
-    infile: str
-    outfile: str
     input_variable: str = "concentration"
     plot_variable: str = "auto"
-    ens_variable: Union[str, Tuple[str, ...]] = "none"
+    ens_variable: str = "none"
     plot_type: str = "auto"
     multipanel_param: Optional[str] = None
 
@@ -141,7 +91,6 @@ class InputSetup(BaseModel):
     combine_species: bool = False
 
     # Ensemble-related
-    ens_member_id: Optional[Tuple[int, ...]] = None
     ens_param_mem_min: Optional[int] = None
     ens_param_thr: Optional[float] = None
     ens_param_time_win: Optional[float] = None
@@ -151,7 +100,16 @@ class InputSetup(BaseModel):
     domain: str = "auto"
 
     # Dimensions
-    dimensions: Dimensions = Dimensions()
+    # dimensions: CoreDimensions = CoreDimensions()
+    dimensions: Dimensions = Dimensions()  # SR_TMP
+
+    # SR_TMP <<<
+    @property
+    def deposition_type_str(self) -> str:
+        if self.dimensions.deposition_type is None:
+            return "none"
+        else:
+            return self.dimensions.deposition_type
 
     @root_validator
     def _check_input_variable(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -239,6 +197,15 @@ class InputSetup(BaseModel):
             )
         return values
 
+    @validator("ens_param_time_win", always=True)
+    def _init_ens_param_time_win(
+        cls, value: Optional[float], values: Dict[str, Any],
+    ) -> Optional[float]:
+        if value is None:
+            if values["ens_variable"] == "cloud_occurrence_probability":
+                value = ENS_CLOUD_PROB_DEFAULT_PARAM_TIME_WIN
+        return value
+
     @validator("ens_param_mem_min", always=True)
     def _init_ens_param_mem_min(
         cls, value: Optional[int], values: Dict[str, Any],
@@ -251,28 +218,136 @@ class InputSetup(BaseModel):
                 value = ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN
         return value
 
-    @root_validator
-    def _init_ens_param_thr(cls, values: Dict[str, Any],) -> Dict[str, Any]:
-        value: Optional[float] = values["ens_param_thr"]
+    @validator("ens_param_thr", always=True)
+    def _init_ens_param_thr(
+        cls, value: Optional[float], values: Dict[str, Any],
+    ) -> Optional[float]:
         if value is None:
-            if values["ens_variable"] == "probability":
-                value = ENS_PROBABILITY_DEFAULT_PARAM_THR
-            elif values["ens_variable"] in [
+            if values["ens_variable"] in [
                 "cloud_arrival_time",
                 "cloud_departure_time",
             ]:
                 value = ENS_CLOUD_TIME_DEFAULT_PARAM_THR
-        values["ens_param_thr"] = value
-        return values
-
-    @validator("ens_param_time_win", always=True)
-    def _init_ens_param_time_win(
-        cls, value: Optional[float], values: Dict[str, Any],
-    ) -> Optional[float]:
-        if value is None:
-            if values["ens_variable"] == "cloud_occurrence_probability":
-                value = ENS_CLOUD_PROB_DEFAULT_PARAM_TIME_WIN
+            elif values["ens_variable"] == "probability":
+                value = ENS_PROBABILITY_DEFAULT_PARAM_THR
         return value
+
+    @classmethod
+    def create(cls, params: Mapping[str, Any]) -> "CoreInputSetup":
+        dimensions = Dimensions.create(params.get("dimensions", {}))
+        return cls(**{**params, "dimensions": dimensions})
+
+    def dict(self):
+        return {
+            **super().dict(),
+            "dimensions": self.dimensions.compact_dict(),
+        }
+
+    def __repr__(self) -> str:  # type: ignore
+        return setup_repr(self)
+
+    @classmethod
+    def as_setup(
+        cls, obj: Union[Mapping[str, Any], "CoreInputSetup"],
+    ) -> "CoreInputSetup":
+        if isinstance(obj, cls):
+            return obj
+        assert isinstance(obj, Mapping)  # mypy
+        return cls(**obj)
+
+
+# SR_TODO Clean up docstring -- where should format key hints go?
+# SR_TMP < TODO eliminate
+@summarizable(summarize=lambda self: self.dict())  # type: ignore
+# SR_TMP >
+class InputSetup(BaseModel):
+    """
+    PyFlexPlot setup.
+
+    Args:
+        combine_deposition_types: Sum up dry and wet deposition. Otherwise, each
+            is plotted separately.
+
+        combine_levels: Sum up over multiple vertical levels. Otherwise, each is
+            plotted separately.
+
+        combine_species: Sum up over all specified species. Otherwise, each is
+            plotted separately.
+
+        domain: Plot domain. Defaults to 'data', which derives the domain size
+            from the input data. Use the format key '{domain}' to embed it in
+            ``outfile``. Choices": "auto", "ch".
+
+        ens_member_id: Ensemble member ids. Use the format key '{ens_member}'
+            to embed it in ``outfile``. Omit for deterministic simulations.
+
+        ens_param_mem_min: Minimum number of ensemble members used to compute
+            some ensemble variables. Its precise meaning depends on the
+            variable.
+
+        ens_param_thr: Threshold used to compute some ensemble variables. Its
+            precise meaning depends on the variable.
+
+        ens_param_time_win: Tim window used to compute some ensemble variables.
+            Its precise meaning depends on the variable.
+
+        ens_variable: Ensemble variable computed from plot variable. Use the
+            format key '{ens_variable}' to embed it in ``outfile``.
+
+        infile: Input file path(s). May contain format keys.
+
+        input_variable: Input variable. Choices: "concentration", "deposition".
+
+        integrate: Integrate field over time.
+
+        lang: Language. Use the format key '{lang}' to embed it in ``oufile``.
+            Choices: "en", "de".
+
+        multipanel_param: Parameter used to plot multiple panels. Only valid for
+            ``plot_type = "multipanel"``. The respective parameter must have one
+            value per panel. For example, a four-panel plot with one ensemble
+            statistic plot each may be specified with ``multipanel_param =
+            "ens_variable"`` and ``ens_variable = ["minimum", "maximum", "meam",
+            "median"]``.
+
+        outfile: Output file path. May contain format keys.
+
+        plot_type: Plot type. Use the format key '{plot_type}' to embed it in
+            ``outfile``.
+
+        plot_variable: Variable computed from input variable. Use the format key
+            '{plot_variable}' to embed it in ``outfile``.
+
+    """
+
+    class Config:  # noqa
+        # allow_mutation = False
+        arbitrary_types_allowed = True
+        extra = "forbid"
+
+    # Basics
+    infile: str
+    outfile: str
+    ens_member_id: Optional[Tuple[int, ...]] = None
+    core: "CoreInputSetup"
+
+    # SR_TMP <
+    input_variable = property(lambda self: self.core.input_variable)
+    plot_variable = property(lambda self: self.core.plot_variable)
+    ens_variable = property(lambda self: self.core.ens_variable)
+    plot_type = property(lambda self: self.core.plot_type)
+    multipanel_param = property(lambda self: self.core.multipanel_param)
+    integrate = property(lambda self: self.core.integrate)
+    combine_deposition_types = property(lambda self: self.core.combine_deposition_types)
+    combine_levels = property(lambda self: self.core.combine_levels)
+    combine_species = property(lambda self: self.core.combine_species)
+    ens_param_mem_min = property(lambda self: self.core.ens_param_mem_min)
+    ens_param_thr = property(lambda self: self.core.ens_param_thr)
+    ens_param_time_win = property(lambda self: self.core.ens_param_time_win)
+    lang = property(lambda self: self.core.lang)
+    domain = property(lambda self: self.core.domain)
+    dimensions = property(lambda self: self.core.dimensions)
+    # SR_TMP >
 
     # SR_TMP <<<
     @property
@@ -296,7 +371,7 @@ class InputSetup(BaseModel):
         return "deterministic"
 
     @classmethod
-    def create(cls, params: Dict[str, Any]) -> "InputSetup":
+    def create(cls, params: Mapping[str, Any]) -> "InputSetup":
         """Create an instance of ``InputSetup``.
 
         Args:
@@ -304,17 +379,14 @@ class InputSetup(BaseModel):
 
         """
         params = dict(**params)
-
         dim_params = params.pop("dimensions", {})
         dimensions = Dimensions.create(dim_params)
-        for param, value in dict(**params).items():
-            if param in dimensions.params:
-                del params[param]
-                # dimensions.param = value
-                dimensions.update(Dimensions.create({param: value}))  # SR_TMP
-
+        core_params = {"dimensions": dimensions}
         singles = ["infile"]
         for param, value in dict(**params).items():
+            if param in CoreInputSetup.__fields__:
+                core_params[param] = params.pop(param)
+                continue
             if param in singles:
                 continue
             field = cls.__fields__[param]
@@ -322,8 +394,7 @@ class InputSetup(BaseModel):
                 params[param] = prepare_field_value(field, value, alias_none=["*"])
             except Exception:
                 raise ValueError("invalid parameter value", param, value)
-
-        params["dimensions"] = dimensions
+        params["core"] = CoreInputSetup.create(core_params)
         try:
             return cls(**params)
         except ValidationError as e:
@@ -343,13 +414,13 @@ class InputSetup(BaseModel):
     @classmethod
     def cast(cls, param: str, value: Any) -> Any:
         """Cast a parameter to the appropriate type."""
-        # SR_TMP < TODO move to Dimensions (?)
         if param == "dimensions":
             return {
                 dim_param: Dimensions.cast(dim_param, dim_value)
                 for dim_param, dim_value in value.items()
             }
-        # SR_TMP >
+        elif is_core_setup_param(param):
+            return cast_field_value(CoreInputSetup, param, value)
         return cast_field_value(cls, param, value)
 
     @classmethod
@@ -377,8 +448,10 @@ class InputSetup(BaseModel):
                 )
         # SR_TMP >
         return {
-            **super().dict(**kwargs),
-            "dimensions": self.dimensions.compact_dict(),
+            "infile": self.infile,
+            "outfile": self.outfile,
+            "ens_member_id": self.ens_member_id,
+            **self.core.dict(),
         }
 
     # SR_TODO consider renaming this method (sth. containing 'dimensions')
@@ -472,14 +545,19 @@ class InputSetup(BaseModel):
         return type(self).create(dct)
 
     @classmethod
-    def compress(cls, setups: "InputSetupCollection") -> "InputSetup":
+    def compress(
+        cls, setups: Union["InputSetupCollection", Sequence["InputSetup"]]
+    ) -> "InputSetup":
+        setups = list(setups)
         # SR_TMP <
-        try:
-            setups.collect_equal("input_variable")
-        except UnequalInputSetupParamValuesError:
-            raise ValueError("cannot compress setups: input_variable differs") from None
+        input_variables = [setup.input_variable for setup in setups]
+        if len(set(input_variables)) != 1:
+            raise ValueError(
+                "cannot compress setups: input_variable differs", input_variables
+            )
         # SR_TMP >
-        dct = compress_multival_dicts(setups.dicts(), cls_seq=tuple)
+        dcts = [setup.dict() for setup in setups]
+        dct = compress_multival_dicts(dcts, cls_seq=tuple)
         if isinstance(dct["dimensions"], Sequence):
             dct["dimensions"] = compress_multival_dicts(
                 dct["dimensions"], cls_seq=tuple
@@ -508,95 +586,23 @@ class InputSetup(BaseModel):
             setup_lst.append(cls.create(dct))
         return InputSetupCollection(setup_lst)
 
-    @overload
-    def decompress(self, skip: None = None) -> "CoreInputSetupCollection":
-        ...
-
-    @overload
-    def decompress(self, skip: List[str]) -> "InputSetupCollection":
-        ...
-
-    def decompress(self, skip=None):
+    def decompress(
+        self, skip: Optional[Collection[str]] = None
+    ) -> "InputSetupCollection":
         return self._decompress(select=None, skip=skip)
 
     def decompress_partially(
         self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None,
     ) -> "InputSetupCollection":
-        if (select, skip) == (None, None):
-            return self._decompress(None, None, InputSetup)
-        elif skip is None:
-            assert select is not None  # mypy
-            return self._decompress(select, None)
-        elif select is None:
-            assert skip is not None  # mypy
-            return self._decompress(None, skip)
-        else:
-            return self._decompress(select, skip)
-
-    @overload
-    def _decompress(
-        self,
-        select: None,
-        skip: None,
-        cls_setup: Optional[Type["CoreInputSetup"]] = None,
-    ) -> "CoreInputSetupCollection":
-        ...
-
-    @overload
-    def _decompress(
-        self, select: None, skip: None, cls_setup: Type["InputSetup"],
-    ) -> "InputSetupCollection":
-        ...
-
-    @overload
-    def _decompress(
-        self,
-        select: None,
-        skip: Collection[str],
-        cls_setup: Optional[Union[Type["CoreInputSetup"], Type["InputSetup"]]] = None,
-    ) -> "InputSetupCollection":
-        ...
-
-    @overload
-    def _decompress(
-        self,
-        select: Collection[str],
-        skip: None,
-        cls_setup: Optional[Union[Type["CoreInputSetup"], Type["InputSetup"]]] = None,
-    ) -> "InputSetupCollection":
-        ...
-
-    @overload
-    def _decompress(
-        self,
-        select: Collection[str],
-        skip: Collection[str],
-        cls_setup: Optional[Union[Type["CoreInputSetup"], Type["InputSetup"]]] = None,
-    ) -> "InputSetupCollection":
-        ...
+        return self._decompress(select, skip)
 
     # pylint: disable=R0914  # too-many-locals
-    def _decompress(self, select=None, skip=None, cls_setup=None):
+    def _decompress(
+        self,
+        select: Optional[Collection[str]] = None,
+        skip: Optional[Collection[str]] = None,
+    ):
         """Create multiple ``InputSetup`` objects with one-value parameters only."""
-
-        def get_cls_setup(cls_setup: Type, select: Optional, skip: Optional) -> Type:
-            if cls_setup is None:
-                if (select, skip) == (None, None):
-                    return CoreInputSetup
-                else:
-                    return InputSetup
-            return cls_setup
-
-        def get_cls_setup_collection(cls_setup: Type) -> Type:
-            if cls_setup is CoreInputSetup:
-                return CoreInputSetupCollection
-            elif cls_setup is InputSetup:
-                return InputSetupCollection
-            else:
-                raise ValueError("invalid cls_setup", cls_setup)
-
-        cls_setup = get_cls_setup(cls_setup, select, skip)
-        cls_setup_collection = get_cls_setup_collection(cls_setup)
 
         select_setup, select_dimensions = self._group_params(select)
         skip_setup, skip_dimensions = self._group_params(skip)
@@ -625,7 +631,7 @@ class InputSetup(BaseModel):
                     dct_ij = {**dct_i, "dimensions": dims_j}
                     dcts.append(dct_ij)
 
-        return cls_setup_collection([cls_setup.create(dct) for dct in dcts])
+        return InputSetupCollection([InputSetup.create(dct) for dct in dcts])
 
     def _group_params(
         self, params: Optional[Collection[str]]
@@ -647,75 +653,6 @@ class InputSetup(BaseModel):
         return (params_setup, params_dimensions)
 
 
-class CoreInputSetup(BaseModel):
-    """
-    PyFlexPlot core setup with exactly one value per parameter.
-
-    See ``InputSetup`` for details on the parameters.
-
-    """
-
-    class Config:  # noqa
-        arbitrary_types_allowed = True
-        allow_mutation = False
-        extra = "forbid"
-
-    # Basics
-    infile: str
-    outfile: str
-    input_variable: str = "concentration"
-    plot_variable: str = "auto"
-    ens_variable: str = "none"
-    plot_type: str = "auto"
-    multipanel_param: Optional[str] = None
-
-    # Tweaks
-    integrate: bool = False
-    combine_deposition_types: bool = False
-    combine_levels: bool = False
-    combine_species: bool = False
-
-    # Ensemble-related
-    ens_member_id: Optional[int] = None
-    ens_param_mem_min: Optional[int] = None
-    ens_param_thr: Optional[float] = None
-    ens_param_time_win: Optional[float] = None
-
-    # Plot appearance
-    lang: str = "en"
-    domain: str = "auto"
-
-    # Dimensions
-    # dimensions: CoreDimensions = CoreDimensions()
-    dimensions: Dimensions = Dimensions()  # SR_TMP
-
-    # SR_TMP <<<
-    @property
-    def deposition_type_str(self) -> str:
-        if self.dimensions.deposition_type is None:
-            return "none"
-        else:
-            return self.dimensions.deposition_type
-
-    @classmethod
-    def create(cls, params: Mapping[str, Any]) -> "CoreInputSetup":
-        dimensions = Dimensions.create(params.get("dimensions", {}))
-        return cls(**{**params, "dimensions": dimensions})
-
-    def __repr__(self) -> str:  # type: ignore
-        return setup_repr(self)
-
-    @classmethod
-    def as_setup(
-        cls, obj: Union[Mapping[str, Any], "CoreInputSetup"],
-    ) -> "CoreInputSetup":
-        if isinstance(obj, cls):
-            return obj
-        assert isinstance(obj, Mapping)  # mypy
-        return cls(**obj)
-
-
-# SR_TMP <<< TODO Consider merging with CoreInputSetupCollection (failed due to mypy)
 class InputSetupCollection:
     def __init__(self, setups: Collection[InputSetup]) -> None:
         if not isinstance(setups, Collection) or (
@@ -732,15 +669,28 @@ class InputSetupCollection:
     def create(
         cls, setups: Collection[Union[Mapping[str, Any], InputSetup]]
     ) -> "InputSetupCollection":
-        setup_objs: List[InputSetup] = []
+        setup_lst: List[InputSetup] = []
         for obj in setups:
-            setup_obj = InputSetup.as_setup(obj)
-            setup_objs.append(setup_obj)
-        return cls(setup_objs)
+            if isinstance(obj, InputSetup):
+                obj = obj.dict()
+            # SR_TMP <
+            # dcts = decompress_multival_dict(cast(dict, obj))
+            skip = ["dimensions"]
+            # SR_TMP <
+            skip.append("ens_member_id")
+            # SR_TMP >
+            dcts = decompress_multival_dict(cast(dict, obj), skip=skip)
+            # SR_TMP >
+            for dct in dcts:
+                setup = InputSetup.create(dct)
+                setup_lst.append(setup)
+        return cls(setup_lst)
 
     def copy(self) -> "InputSetupCollection":
         return type(self)([setup.copy() for setup in self])
 
+    # pylint: disable=R0912  # too-many-branches
+    # pylint: disable=R0915  # too-many-statements
     def __repr__(self) -> str:
 
         same: Dict[str, Any] = {}
@@ -748,7 +698,7 @@ class InputSetupCollection:
 
         # Regular params
         for param in InputSetup.__fields__:
-            if param == "dimensions":
+            if param == "core":
                 continue  # Handled below
             try:
                 value = self.collect_equal(param)
@@ -756,6 +706,23 @@ class InputSetupCollection:
                 diff[param] = self.collect(param)
             else:
                 same[param] = value
+
+        # Core params
+        core_same = {}
+        core_diff = {}
+        for param in CoreInputSetup.__fields__:
+            if param == "dimensions":
+                continue  # Handled below
+            try:
+                value = self.collect_equal(param)
+            except UnequalInputSetupParamValuesError:
+                core_diff[param] = self.collect(param)
+            else:
+                core_same[param] = value
+        if core_same:
+            same["core"] = core_same
+        if core_diff:
+            diff["core"] = core_diff
 
         # Dimensions
         dims_same = {}
@@ -769,15 +736,19 @@ class InputSetupCollection:
             else:
                 dims_diff[param] = values
         if dims_same:
-            same["dimensions"] = dims_same
+            if "core" not in same:
+                same["core"] = {}
+            same["core"]["dimensions"] = dims_same
         if dims_diff:
-            diff["dimensions"] = dims_diff
+            if "core" not in diff:
+                diff["core"] = {}
+            diff["core"]["dimensions"] = dims_diff
 
         def format_params(params: Dict[str, Any], name: str) -> str:
             lines = []
             for param, value in params.items():
-                if param == "dimensions":
-                    s_param = format_params(value, "dimensions")
+                if isinstance(value, dict):
+                    s_param = format_params(value, param)
                 else:
                     if isinstance(value, str):
                         s_value = f"'{value}'"
@@ -833,33 +804,17 @@ class InputSetupCollection:
     def compress(self) -> InputSetup:
         return InputSetup.compress(self)
 
-    def decompress(self) -> List["CoreInputSetupCollection"]:
+    def decompress(self) -> List["InputSetupCollection"]:
         return self.decompress_partially(select=None, skip=None)
 
     def derive(self, params: Mapping[str, Any]) -> "InputSetupCollection":
         return type(self)([setup.derive(params) for setup in self])
 
-    @overload
     def decompress_partially(
-        self, select: None, skip: None = None
-    ) -> List["CoreInputSetupCollection"]:
-        ...
-
-    @overload
-    def decompress_partially(
-        self, select: None, skip: Collection[str]
+        self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None
     ) -> List["InputSetupCollection"]:
-        ...
-
-    @overload
-    def decompress_partially(
-        self, select: Collection[str], skip: Optional[Collection[str]] = None
-    ) -> List["InputSetupCollection"]:
-        ...
-
-    def decompress_partially(self, select, skip=None):
         if (select, skip) == (None, None):
-            return [CoreInputSetupCollection(setup.decompress()) for setup in self]
+            return [setup.decompress() for setup in self]
         sub_setup_lst_lst: List[List[InputSetup]] = []
         for setup in self:
             sub_setups = setup.decompress_partially(select, skip)
@@ -873,19 +828,9 @@ class InputSetupCollection:
             InputSetupCollection(sub_setup_lst) for sub_setup_lst in sub_setup_lst_lst
         ]
 
-    @overload
     def decompress_twice(
-        self, outer, skip: None = None,
-    ) -> List["CoreInputSetupCollection"]:
-        ...
-
-    @overload
-    def decompress_twice(
-        self, outer, skip: Collection[str]
+        self, outer: str, skip: Optional[Collection[str]] = None
     ) -> List["InputSetupCollection"]:
-        ...
-
-    def decompress_twice(self, outer: str, skip=None):
         sub_setups_lst: List[InputSetupCollection] = []
         for setup in self:
             for sub_setup in setup.decompress_partially([outer], skip):
@@ -944,34 +889,6 @@ class InputSetupCollection:
         return type(self)(setup_lst)
 
 
-# SR_TMP <<< TODO Consider merging with InputSetupCollection (failed due to mypy)
-class CoreInputSetupCollection:
-    def __init__(self, setups: Collection[CoreInputSetup]) -> None:
-        self._setups: List[CoreInputSetup] = list(setups)
-
-    @classmethod
-    def create(
-        cls, setups: Collection[Union[Mapping[str, Any], CoreInputSetup]]
-    ) -> "CoreInputSetupCollection":
-        setup_objs: List[CoreInputSetup] = []
-        for obj in setups:
-            setup_obj = CoreInputSetup.as_setup(obj)
-            setup_objs.append(setup_obj)
-        return cls(setup_objs)
-
-    def __iter__(self) -> Iterator[CoreInputSetup]:
-        return iter(self._setups)
-
-    # SR_TMP < TODO clean this up!!!
-    __repr__ = InputSetupCollection.__repr__
-    __len__ = InputSetupCollection.__len__
-    __eq__ = InputSetupCollection.__eq__
-    dicts = InputSetupCollection.dicts
-    collect = InputSetupCollection.collect
-    collect_equal = InputSetupCollection.collect_equal
-    # SR_TMP >
-
-
 class InputSetupFile:
     """InputSetup file to be read from and/or written to disk."""
 
@@ -1002,6 +919,7 @@ class InputSetupFile:
                     setup_lst.append(setup)
         return InputSetupCollection(setup_lst)
 
+    # pylint: disable=R0914  # too-many-locals
     def read(
         self, *, override: Optional[Dict[str, Any]] = None, only: Optional[int] = None
     ) -> InputSetupCollection:
@@ -1018,15 +936,26 @@ class InputSetupFile:
         semi_raw_data = nested_dict_resolve_wildcards(
             raw_data, double_only_to_ends=True,
         )
-        params_lst = decompress_nested_dict(
+        raw_params_lst = decompress_nested_dict(
             semi_raw_data, branch_end_criterion=lambda key: not key.startswith("_"),
         )
         if override is not None:
-            params_lst, old_params_lst = [], params_lst
-            for old_params in old_params_lst:
-                params = {**old_params, **override}
-                if params not in params_lst:
-                    params_lst.append(params)
+            raw_params_lst, old_raw_params_lst = [], raw_params_lst
+            for old_raw_params in old_raw_params_lst:
+                raw_params = {**old_raw_params, **override}
+                if raw_params not in raw_params_lst:
+                    raw_params_lst.append(raw_params)
+        params_lst = []
+        for raw_params in raw_params_lst:
+            params = {}
+            for param, value in raw_params.items():
+                if not is_dimensions_param(param):
+                    params[param] = value
+                else:
+                    if "dimensions" not in params:
+                        params["dimensions"] = {}
+                    params["dimensions"][param] = value
+            params_lst.append(params)
         setups = InputSetupCollection.create(params_lst)
         if only is not None:
             if only < 0:

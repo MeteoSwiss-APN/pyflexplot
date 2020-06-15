@@ -20,7 +20,7 @@ class Test_EnsMedian_Concentration(_TestBase):
     reference = "ref_cosmo2e_ens_mean_concentration"
     setup_dct = {
         "infile": INFILE_NAME,
-        "outfile": "dummy.png",
+        "outfile": f"{reference}.png",
         "ens_variable": "median",
         "input_variable": "concentration",
         "integrate": False,
@@ -37,7 +37,7 @@ class Test_EnsMax_IntegratedConcentration(_TestBase):
     reference = "ref_cosmo2e_ens_max_integrated_concentration"
     setup_dct = {
         "infile": INFILE_NAME,
-        "outfile": "plot.png",
+        "outfile": f"{reference}.png",
         "ens_variable": "maximum",
         "input_variable": "concentration",
         "integrate": True,
@@ -53,7 +53,7 @@ class Test_EnsMean_TotalDeposition(_TestBase):
     reference = "ref_cosmo2e_ens_mean_total_deposition"
     setup_dct = {
         "infile": INFILE_NAME,
-        "outfile": "plot.png",
+        "outfile": f"{reference}.png",
         "ens_variable": "mean",
         "input_variable": "deposition",
         "combine_deposition_types": True,
@@ -66,6 +66,23 @@ class Test_EnsMean_TotalDeposition(_TestBase):
     }
 
 
+# class Test_EnsProbability_WetDeposition(_TestCreateReference):
+class Test_EnsProbability_WetDeposition(_TestBase):
+    reference = "ref_cosmo2e_ens_probability_wet_deposition"
+    setup_dct = {
+        "infile": INFILE_NAME,
+        "outfile": f"{reference}.png",
+        "ens_variable": "probability",
+        "input_variable": "deposition",
+        "integrate": True,
+        "combine_species": True,
+        "ens_member_id": ENS_MEMBER_IDS,
+        "lang": "en",
+        "domain": "auto",
+        "dimensions": {"deposition_type": "wet", "species_id": 2, "time": -1},
+    }
+
+
 # SR_TODO Implement new combinations such as this!
 # # class Test_EnsMin_AffectedArea(_TestCreateReference):
 # class Test_EnsMin_AffectedArea(_TestCreatePlot):
@@ -73,7 +90,7 @@ class Test_EnsMean_TotalDeposition(_TestBase):
 #      reference = "ref_cosmo2e_ens_min_affected_area"
 #      setup_dct = {
 #          "infile": INFILE_NAME,
-#          "outfile": "plot.png",
+#          "outfile": f"{reference}.png",
 #          "input_variable": "deposition",
 #          "ens_variable": "minimum",
 #          "plot_variable": "affected_area",
@@ -96,7 +113,7 @@ class Test_CloudArrivalTime(_TestBase):
     reference = "ref_cosmo2e_ens_cloud_arrival_time"
     setup_dct = {
         "infile": INFILE_NAME,
-        "outfile": "plot.png",
+        "outfile": f"{reference}.png",
         "ens_variable": "cloud_arrival_time",
         "input_variable": "concentration",
         "integrate": True,
@@ -115,7 +132,7 @@ class Test_CloudDepartureTime(_TestBase):
     reference = "ref_cosmo2e_ens_cloud_departure_time"
     setup_dct = {
         "infile": INFILE_NAME,
-        "outfile": "plot.png",
+        "outfile": f"{reference}.png",
         "ens_variable": "cloud_departure_time",
         "input_variable": "concentration",
         "integrate": True,
