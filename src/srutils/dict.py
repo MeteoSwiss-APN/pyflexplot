@@ -469,7 +469,7 @@ def decompress_nested_dict(dct, return_paths=False, branch_end_criterion=None):
 
 
 def nested_dict_resolve_wildcards(
-    dct, *, single=True, double=True, double_only_to_ends=False,
+    dct, *, single=True, double=True, double_criterion=None,
 ):
     """Update regular subdicts with single/double-star wildcard subdicts.
 
@@ -482,21 +482,20 @@ def nested_dict_resolve_wildcards(
         double (bool, optional): Resolve double-star wildcards. Defaults to
             True.
 
-        double_only_to_ends (bool, optional): Insert double-starred wildcard
-            dicts only at the ends of branches, i.e., update only dicts that do
-            not contain further nested dicts. Defaults to False.
+        double_criterion (optional): Function to determine wether a double-star
+            wildcard is applied to a dict key. Accepts a string (the key name)
+            and returns True or False.
 
     """
     if single and double:
         return nested_dict_resolve_double_star_wildcards(
-            nested_dict_resolve_single_star_wildcards(dct),
-            only_to_ends=double_only_to_ends,
+            nested_dict_resolve_single_star_wildcards(dct), criterion=double_criterion,
         )
     elif single:
         return nested_dict_resolve_single_star_wildcards(dct)
     elif double:
         return nested_dict_resolve_double_star_wildcards(
-            dct, only_to_ends=double_only_to_ends,
+            dct, criterion=double_criterion,
         )
     else:
         return deepcopy(dct)
@@ -540,29 +539,32 @@ def nested_dict_resolve_single_star_wildcards(dct):
     return dct
 
 
-def nested_dict_resolve_double_star_wildcards(dct, only_to_ends=False):
+def nested_dict_resolve_double_star_wildcards(dct, criterion=None):
     """Update regular subdicts with double-star wildcard subdicts.
 
     Args:
-        dct (Dict[str, Any]): Nested dict.
+        dct: Nested dict.
 
-        only_to_ends (bool, optional): Insert wildcard dicts only at the ends
-            of branches, i.e., update only dicts that do not contain further
-            nested dicts. Defaults to False.
+        criterion (optional): Function to determine wether a double-star
+            wildcard is applied to a dict key. Accepts a string (the key name)
+            and returns True or False.
 
     """
     dct = deepcopy(dct)
 
-    def _apply_double_star(dct, wild_val, depth=0):
-        subdcts = []
-        for val in dct.values():
-            if isinstance(val, Mapping):
-                subdcts.append(val)
+    def _apply_double_star(dct, wild_val, key=None):
+        subdcts = {}
+        for key_i, val_i in dct.items():
+            if key_i is None:
+                raise Exception("key must not be None", dct)
+            if isinstance(val_i, Mapping):
+                subdcts[key_i] = val_i
         if subdcts:
-            for subdct in subdcts:
-                _apply_double_star(subdct, wild_val, depth=depth + 1)
-        if depth > 0 and (not only_to_ends or not subdcts):
-            recursive_update(dct, wild_val)
+            for key_i, subdct in subdcts.items():
+                _apply_double_star(subdct, wild_val, key=key_i)
+        if key is not None:
+            if criterion is None or criterion(key):
+                recursive_update(dct, wild_val)
 
     wildcards = {}
     for key, val in dct.copy().items():
@@ -574,9 +576,7 @@ def nested_dict_resolve_double_star_wildcards(dct, only_to_ends=False):
 
     for key, val in dct.items():
         if isinstance(val, Mapping):
-            dct[key] = nested_dict_resolve_double_star_wildcards(
-                val, only_to_ends=only_to_ends,
-            )
+            dct[key] = nested_dict_resolve_double_star_wildcards(val, criterion)
 
     return dct
 

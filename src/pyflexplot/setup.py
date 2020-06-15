@@ -934,7 +934,7 @@ class InputSetupFile:
         if not raw_data:
             raise ValueError("empty setup file", self.path)
         semi_raw_data = nested_dict_resolve_wildcards(
-            raw_data, double_only_to_ends=True,
+            raw_data, double_criterion=lambda key: key.endswith("+")
         )
         raw_params_lst = decompress_nested_dict(
             semi_raw_data, branch_end_criterion=lambda key: not key.startswith("_"),

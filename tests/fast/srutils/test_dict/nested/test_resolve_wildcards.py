@@ -207,8 +207,8 @@ def test_double_star_linear_flat():
     assert res == sol
 
 
-def test_double_star_linear_flat_ends_only():
-    """Update end-of-branch dicts with the contents of flat double-star dicts."""
+def test_double_star_linear_flat_with_criterion():
+    """Update certain dicts with the contents of flat double-star dicts."""
     # fmt: off
     dct = {
         "foo": {
@@ -229,6 +229,7 @@ def test_double_star_linear_flat_ends_only():
             "a": 0,
             "bar": {
                 "b": 1,
+                "d": 3,  # "**"
                 "baz": {
                     "c": 2,
                     "d": 3,  # "**"
@@ -237,7 +238,9 @@ def test_double_star_linear_flat_ends_only():
         },
     }
     # fmt: on
-    res = nested_dict_resolve_wildcards(dct, double_only_to_ends=True)
+    res = nested_dict_resolve_wildcards(
+        dct, double_criterion=lambda key: key.startswith("b")
+    )
     assert res == sol
 
 
@@ -310,13 +313,13 @@ def test_double_star_nested_flat():
     assert res == sol
 
 
-def test_double_star_nested_linear_flat_ends_only():
-    """Update end-of-branch dicts with the contents of flat double-star dicts."""
+def test_double_star_nested_linear_flat_with_criterion():
+    """Update certain dicts with the contents of flat double-star dicts."""
     # fmt: off
     dct = {
-        "foo": {
+        "_foo": {
             "a": 0,
-            "bar": {
+            "_bar": {
                 "b": 1,
                 "baz": {
                     "c": 2,
@@ -332,7 +335,7 @@ def test_double_star_nested_linear_flat_ends_only():
         },
         "asdf": {
             "a": 6,
-            "fdsa": {
+            "_fdsa": {
                 "b": 7,
             },
             "**": {
@@ -344,9 +347,9 @@ def test_double_star_nested_linear_flat_ends_only():
         },
     }
     sol = {
-        "foo": {
+        "_foo": {
             "a": 0,
-            "bar": {
+            "_bar": {
                 "b": 1,
                 "baz": {
                     "c": 2,
@@ -363,15 +366,16 @@ def test_double_star_nested_linear_flat_ends_only():
         },
         "asdf": {
             "a": 6,
-            "fdsa": {
+            "e": 9,  # "**"
+            "_fdsa": {
                 "b": 7,
-                "c": 8,  # "**"
-                "e": 9,  # "**"
             },
         },
     }
     # fmt: on
-    res = nested_dict_resolve_wildcards(dct, double_only_to_ends=True)
+    res = nested_dict_resolve_wildcards(
+        dct, double_criterion=lambda key: not key.startswith("_")
+    )
     assert res == sol
 
 
@@ -481,8 +485,8 @@ def test_mixed_stars_flat():
     assert res == sol
 
 
-def test_mixed_stars_ends_only():
-    """Mixed single- and double-star wildcards; based on 'real' Setup case."""
+def test_mixed_stars_with_criterion():
+    """Mixed single- and double-star wildcards with double-star criterion."""
     # fmt: off
     dct = {
         "foo": {
@@ -490,11 +494,11 @@ def test_mixed_stars_ends_only():
             "bar": {
                 "b": 1,
             },
-            "baz": {
+            "baz+": {
                 "b": 2,
             },
             "*": {
-                "zab": {
+                "zab+": {
                     "c": 3,
                     "d": 5,
                 },
@@ -518,7 +522,7 @@ def test_mixed_stars_ends_only():
             "a": 0,
             "bar": {
                 "b": 1,
-                "zab": {  # "*"
+                "zab+": {  # "*"
                     "c": 3,
                     "d": 5,
                     "asdf": {  # "**"
@@ -531,17 +535,11 @@ def test_mixed_stars_ends_only():
                 "rab": {  # "*"
                     "c": 4,
                     "d": 6,
-                    "asdf": {  # "**"
-                        "e": 7,
-                    },
-                    "fdsa": {  # "**"
-                        "e": 8,
-                    },
                 },
             },
-            "baz": {
+            "baz+": {
                 "b": 2,
-                "zab": {  # "*"
+                "zab+": {  # "*"
                     "c": 3,
                     "d": 5,
                     "asdf": {  # "**"
@@ -554,16 +552,18 @@ def test_mixed_stars_ends_only():
                 "rab": {  # "*"
                     "c": 4,
                     "d": 6,
-                    "asdf": {  # "**"
-                        "e": 7,
-                    },
-                    "fdsa": {  # "**"
-                        "e": 8,
-                    },
+                },
+                "asdf": {  # "**"
+                    "e": 7,
+                },
+                "fdsa": {  # "**"
+                    "e": 8,
                 },
             },
         },
     }
     # fmt: on
-    res = nested_dict_resolve_wildcards(dct, double_only_to_ends=True)
+    res = nested_dict_resolve_wildcards(
+        dct, double_criterion=lambda key: key.endswith("+")
+    )
     assert res == sol

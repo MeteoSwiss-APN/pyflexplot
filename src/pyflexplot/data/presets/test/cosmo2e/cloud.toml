@@ -13,10 +13,10 @@ time = 0
 combine_species = true
 level = 0
 
-[_base._arrival_time]
+[_base."_arrival_time+"]
 ens_variable = "cloud_arrival_time"
 
-[_base._departure_time]
+[_base."_departure_time+"]
 ens_variable = "cloud_departure_time"
 
 # ["**"._auto.en]

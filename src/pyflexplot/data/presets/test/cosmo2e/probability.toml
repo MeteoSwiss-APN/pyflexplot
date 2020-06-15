@@ -9,28 +9,28 @@ ens_variable = "probability"
 combine_species = true
 time = 10
 
-[_base._concentration]
+[_base."_concentration+"]
 outfile = "{ens_variable}_concentration_{domain}_{lang}_ts-{time:02d}.png"
 input_variable = "concentration"
 level = 0
 
-[_base._deposition]
+[_base."_deposition+"]
 outfile = "{ens_variable}_tot_deposit_{domain}_{lang}_ts-{time:02d}.png"
 input_variable = "deposition"
 combine_deposition_types = true
 
-[_base."*"._auto.en]
+["**"._auto.en]
 domain = "auto"
 lang = "en"
 
-# [_base."*"._auto.de]
+# ["+*"._auto.de]
 # domain = "auto"
 # lang = "de"
 
-# [_base."*"._ch.en]
+# ["**"._ch.en]
 # domain = "ch"
 # lang = "en"
 
-[_base."*"._ch.de]
+["**"._ch.de]
 domain = "ch"
 lang = "de"

@@ -1,6 +1,6 @@
 # PyFlexPlot setup file to create deterministic NAZ plots
 
-[_base]
+["_base+"]
 # Sample data directory: /scratch/ruestefa/shared/pyflexplot_test/
 infile = "data/cosmo-1_2019052800.nc"
 outfile = "deposition_tot_domain-{domain}_lang-{lang}_ts-{time:02d}.png"

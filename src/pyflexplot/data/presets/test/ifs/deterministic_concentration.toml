@@ -10,7 +10,7 @@ input_variable = "concentration"
 level = 0
 integrate = false
 
-[_base._integrated]
+[_base."_integrated+"]
 outfile = "integrated_concentration_{domain}_{lang}_ts-{time:02d}.png"
 integrate = true
 time = -1

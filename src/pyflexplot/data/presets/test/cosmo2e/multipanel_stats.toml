@@ -13,11 +13,11 @@ ens_variable = ["minimum", "maximum", "mean", "median"]
 species_id = [1, 2]
 combine_species = true
 
-# [_base._concentration]
+# [_base."_concentration+"]
 # input_variable = "concentration"
 # level = 0
 
-[_base._total_deposition]
+[_base."_total_deposition+"]
 input_variable = "deposition"
 deposition_type = ["dry", "wet"]
 combine_deposition_types = true

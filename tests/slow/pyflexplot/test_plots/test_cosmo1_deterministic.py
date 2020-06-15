@@ -2,9 +2,6 @@
 """
 Test the elements of complete plots based on deterministic COSMO-1 data.
 """
-# Third-party
-import pytest
-
 # Local
 from .shared import _TestBase
 from .shared import _TestCreateReference  # noqa:F401
@@ -28,21 +25,6 @@ class Test_Concentration(_TestBase):
         "domain": "auto",
         "dimensions": {"species_id": 1, "time": 5, "level": 0},
     }
-
-
-@pytest.mark.skip(f"{__file__.split('/')[-1]}::Test_Concentration2: TODO implment")
-class Test_Concentration2(_TestCreateReference):
-    # class Test_Concentration2(_TestBase):
-    reference = "ref_cosmo1_deterministic_concentration_2"
-    setup_dct = {
-        "infile": INFILE_NAME,
-        "outfile": f"{reference}.png",
-        "input_variable": "concentration",
-        "lang": "en",
-        "domain": "ch",
-        "dimensions": {"species_id": 1, "time": (1, 6, 11), "level": 0},
-    }
-    n_plots = 3
 
 
 # class Test_IntegratedConcentration(_TestCreateReference):

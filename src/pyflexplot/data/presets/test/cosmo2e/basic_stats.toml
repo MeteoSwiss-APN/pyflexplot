@@ -12,66 +12,60 @@ input_variable = "concentration"
 species_id = 1
 level = 0
 
-[_base._integrated_concentration]
-input_variable = "concentration"
+[_base._concentration._integr]
 species_id = 2
-level = 0
 integrate = true
 
-[_base._total_deposition]
+[_base._deposition]
 input_variable = "deposition"
+integrate = true
+
+[_base._deposition._dry]
+deposition_type = "dry"
+species_id = 1
+
+[_base._deposition._wet]
+deposition_type = "wet"
+species_id = 2
+
+[_base._deposition._tot]
 deposition_type = ["dry", "wet"]
 combine_deposition_types = true
-species_id = 1
-integrate = true
-
-[_base._wet_deposition]
-input_variable = "deposition"
-deposition_type = "wet"
-integrate = true
 species_id = "*"
 combine_species = true
 
 # ["**"._mean]
-[_base._concentration._mean]
+[_base._concentration."_mean+"]
 outfile = "ens_mean_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time:02d}.png"
 ens_variable = "mean"
 
 # ["**"._median]
-[_base._integrated_concentration._median]
+[_base._concentration._integr."_median+"]
 outfile = "ens_median_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time:02d}.png"
 ens_variable = "median"
 
 # ["**"._min]
-[_base._total_deposition._min]
+[_base._deposition._tot."_min+"]
 outfile = "ens_min_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time:02d}.png"
 ens_variable = "minimum"
 
 # ["**"._max]
-[_base._wet_deposition._max]
+[_base._deposition._wet."_max+"]
 outfile = "ens_max_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time:02d}.png"
 ens_variable = "maximum"
 
-# ["**"._auto.de]
-# [_base."*"._mean._auto.de]  # TODO "*" should match only "_concentration" due to "_mean"
-[_base._concentration._mean._auto.de]
+["**"._auto.de]
 domain = "auto"
 lang = "de"
 
 # ["**"._auto.en]
-# [_base."*"._median._auto.en]  # TODO "*" should match only "_integrated_concentration" due to "_median"
-[_base._integrated_concentration._median._auto.en]
-domain = "auto"
-lang = "en"
+# domain = "auto"
+# lang = "en"
 
 # ["**"._ch.de]
-# [_base."*"._min._ch.de]  # TODO "*" should match only "_total_deposition" due to "_min"
-[_base._total_deposition._min._ch.de]
-domain = "ch"
-lang = "de"
+# domain = "ch"
+# lang = "de"
 
-# ["**"._ch.en]
-# [_base."*"._max._ch.en]  # TODO "*" should match only "_wet_deposition" due to "_max"
-[_base._wet_deposition._max._ch.en]
+["**"._ch.en]
 domain = "ch"
 lang = "en"

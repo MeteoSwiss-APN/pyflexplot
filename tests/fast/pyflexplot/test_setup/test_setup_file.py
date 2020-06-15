@@ -554,10 +554,10 @@ def test_double_wildcard_equal_depth(tmp_path):
         [_base]
         {DEFAULT_TOML}
 
-        [_base._concentration]
+        [_base."_concentration+"]
         input_variable = "concentration"
 
-        [_base._deposition]
+        [_base."_deposition+"]
         input_variable = "deposition"
 
         ["**"._ch.de]
@@ -600,13 +600,17 @@ def test_double_wildcard_variable_depth(tmp_path):
         [_base]
         {DEFAULT_TOML}
 
-        [_base._concentration]
+        [_base."_concentration"]
         input_variable = "concentration"
 
-        [_base._concentration._time10]
+
+        [_base._concentration."_middle+"]
+        time = 5
+
+        [_base._concentration."_end+"]
         time = 10
 
-        [_base._deposition]
+        [_base."_deposition+"]
         input_variable = "deposition"
 
         ["**"._ch.de]
@@ -631,6 +635,10 @@ def test_double_wildcard_variable_depth(tmp_path):
         for dct in [
             {
                 "input_variable": "concentration",
+                "dimensions": {**DEFAULT_SETUP.dict()["dimensions"], "time": 5},
+            },
+            {
+                "input_variable": "concentration",
                 "dimensions": {**DEFAULT_SETUP.dict()["dimensions"], "time": 10},
             },
             {
@@ -642,7 +650,8 @@ def test_double_wildcard_variable_depth(tmp_path):
         for lang in ["de", "en"]
     ]
     setups = read_tmp_setup_file(tmp_path, content)
-    assert setups.dicts() == sol
+    res = setups.dicts()
+    assert res == sol
 
 
 def test_combine_wildcards(tmp_path):
@@ -651,17 +660,17 @@ def test_combine_wildcards(tmp_path):
         [_base]
         infile = "data_{ens_member:02d}.nc"
 
-        [_base._concentration]
+        [_base."_concentration"]
         input_variable = "concentration"
 
-        [_base._deposition]
+        [_base."_deposition"]
         input_variable = "deposition"
 
-        [_base."*"._mean]
+        [_base."*"."_mean+"]
         ens_variable = "mean"
         outfile = "ensemble_mean_{lang}.png"
 
-        [_base."*"._max]
+        [_base."*"."_max+"]
         ens_variable = "maximum"
         outfile = "ensemble_maximum_{lang}.png"
 

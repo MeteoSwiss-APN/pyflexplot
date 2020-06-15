@@ -5,15 +5,15 @@
 infile = "data/cosmo-1_2019052800.nc"
 species_id = "*"
 
-[_base._deposition]
-# outfile = "deposition_tot_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
+[_base."_deposition+"]
+outfile = "deposition_tot_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
 input_variable = "deposition"
 combine_deposition_types = true
 combine_species = true
 time = -1
 integrate = true
 
-[_base._deposition._affected_area]
+[_base."_deposition+"."_affected_area+"]
 outfile = "affected_area_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
 plot_variable = "affected_area_mono"
 
