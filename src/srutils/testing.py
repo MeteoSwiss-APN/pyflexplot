@@ -388,7 +388,9 @@ def assert_nested_equal(
                     *[path, obj1, obj2],
                 )
 
-        if isinstance(obj1, str):
+        if obj1 is None or obj2 is None:
+            raise error("one is None, the other not", path, obj1, obj2)
+        elif isinstance(obj1, str):
             check_equivalent(obj1, obj2, str, path)
             # Must be unequal, otherwise already returned above
             raise error("unequal strings", path, obj1, obj2)
