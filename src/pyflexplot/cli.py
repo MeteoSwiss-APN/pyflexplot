@@ -6,6 +6,7 @@ Command line interface.
 # Standard library
 import functools
 import os
+import re
 import sys
 import traceback
 
@@ -18,6 +19,7 @@ from srutils.click import CharSepList
 # Local
 from . import __version__
 from . import data_path
+from .formatting import format_range
 from .input import read_fields
 from .logging import log
 from .logging import set_log_level
@@ -274,9 +276,10 @@ def main(
             for i_fld, field_lst in enumerate(field_lst_lst):
                 i_tot += 1
                 log(dbg=f"[{i_in + 1}/{n_in}][{i_fld + 1}/{n_fld}] prepare plot")
+                in_file_path_fmtd = format_in_file_path(in_file_path, field_lst)
                 plot = prepare_plot(field_lst, out_file_paths, dry_run=dry_run)
                 log(
-                    inf=f"{in_file_path} -> {plot.file_path}",
+                    inf=f"{in_file_path_fmtd} -> {plot.file_path}",
                     vbs=(
                         f"[{i_in + 1}/{n_in}][{i_fld + 1}/{n_fld}]"
                         f" plot {plot.file_path}"
@@ -310,6 +313,34 @@ def main(
         open_plots(open_all_cmd, out_file_paths, dry_run)
 
     return 0
+
+
+def format_in_file_path(in_file_path, field_lst):
+    def collect_ens_member_ids(field_lst):
+        ens_member_ids = None
+        for i, field in enumerate(field_lst):
+            ens_member_ids_i = field.var_setups.collect_equal("ens_member_id")
+            if i == 0:
+                ens_member_ids = ens_member_ids_i
+            elif ens_member_ids_i != ens_member_ids:
+                raise Exception(
+                    "ens_member_id differs between fields",
+                    ens_member_ids,
+                    ens_member_ids_i,
+                )
+        return ens_member_ids
+
+    ens_member_ids = collect_ens_member_ids(field_lst)
+    if ens_member_ids is None:
+        return in_file_path
+    match = re.match(
+        r"(?P<start>.*)(?P<pattern>{ens_member(:(?P<fmt>[0-9]*d))?})(?P<end>.*)",
+        in_file_path,
+    )
+    s_ids = format_range(
+        sorted(ens_member_ids), fmt=match.group("fmt"), join_range="..", join_others=","
+    )
+    return f"{match.group('start')}{{{s_ids}}}{match.group('end')}"
 
 
 def open_plots(cmd, file_paths, dry_run):
