@@ -767,7 +767,7 @@ class Test_IndividualParams_SingleOrMultipleValues:
         assert setups.dicts() == sol
 
 
-@pytest.mark.skip("TODO multipanel")
+@pytest.mark.skip("not quite ready yet")
 def test_multipanel_param_ens_variable(tmp_path):
     """Declare multi-panel plot based on ensemble variables."""
     content = """\
@@ -781,16 +781,18 @@ def test_multipanel_param_ens_variable(tmp_path):
         """
     setups = InputSetupFile(tmp_setup_file(tmp_path, content)).read()
     res = setups.dicts()
-    sol = [
-        {
-            **DEFAULT_SETUP.dict(),
-            "infile": "data_{ens_member:02d}.nc",
-            "outfile": "ens_stats_multipanel.png",
-            "ens_member_id": (1, 2, 3),
-            "plot_type": "multipanel",
-            "multipanel_param": "ens_variable",
-            "ens_variable": ("minimum", "maximum", "mean", "median"),
-        }
-    ]
+    # SR_TODO Figure out what the solution here should be
+    sol = []
+    # sol = [
+    #     {
+    #         **DEFAULT_SETUP.dict(),
+    #         "infile": "data_{ens_member:02d}.nc",
+    #         "outfile": "ens_stats_multipanel.png",
+    #         "ens_member_id": (1, 2, 3),
+    #         "plot_type": "multipanel",
+    #         "multipanel_param": "ens_variable",
+    #         "ens_variable": ("minimum", "maximum", "mean", "median"),
+    #     }
+    # ]
     assert len(res) == len(sol)
     assert res == sol
