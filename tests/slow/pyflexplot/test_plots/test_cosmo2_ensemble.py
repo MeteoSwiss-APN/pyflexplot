@@ -2,6 +2,9 @@
 """
 Test the elements of complete plots based on ensemble COSMO-2 data.
 """
+# Third-party
+import pytest
+
 # Local
 from .shared import _TestBase
 from .shared import _TestCreatePlot  # noqa:F401
@@ -11,11 +14,15 @@ from .shared import datadir  # noqa  # required by _TestBase.test
 INFILE_NAME = "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc"
 ENS_MEMBER_IDS = [0, 1, 5, 10, 15, 20]
 
-# Uncomment to recreate all references
+
+# Uncomment to create plots for all tests
+# _TestBase = _TestCreatePlot
+
+
+# Uncomment to references for all tests
 # _TestBase = _TestCreateReference
 
 
-# class Test_EnsMedian_Concentration(_TestCreateReference):
 class Test_EnsMedian_Concentration(_TestBase):
     reference = "ref_cosmo2e_ens_mean_concentration"
     setup_dct = {
@@ -32,7 +39,6 @@ class Test_EnsMedian_Concentration(_TestBase):
     }
 
 
-# class Test_EnsMax_IntegratedConcentration(_TestCreateReference):
 class Test_EnsMax_IntegratedConcentration(_TestBase):
     reference = "ref_cosmo2e_ens_max_integrated_concentration"
     setup_dct = {
@@ -48,7 +54,6 @@ class Test_EnsMax_IntegratedConcentration(_TestBase):
     }
 
 
-# class Test_EnsMean_TotalDeposition(_TestCreateReference):
 class Test_EnsMean_TotalDeposition(_TestBase):
     reference = "ref_cosmo2e_ens_mean_total_deposition"
     setup_dct = {
@@ -66,7 +71,6 @@ class Test_EnsMean_TotalDeposition(_TestBase):
     }
 
 
-# class Test_EnsProbability_WetDeposition(_TestCreateReference):
 class Test_EnsProbability_WetDeposition(_TestBase):
     reference = "ref_cosmo2e_ens_probability_wet_deposition"
     setup_dct = {
@@ -83,32 +87,29 @@ class Test_EnsProbability_WetDeposition(_TestBase):
     }
 
 
-# SR_TODO Implement new combinations such as this!
-# # class Test_EnsMin_AffectedArea(_TestCreateReference):
-# class Test_EnsMin_AffectedArea(_TestCreatePlot):
-# # class Test_EnsMin_AffectedArea(_TestBase):
-#      reference = "ref_cosmo2e_ens_min_affected_area"
-#      setup_dct = {
-#          "infile": INFILE_NAME,
-#          "outfile": f"{reference}.png",
-#          "input_variable": "deposition",
-#          "ens_variable": "minimum",
-#          "plot_variable": "affected_area",
-#
-#          "combine_deposition_types": True,
-#          "integrate": True,
-#          "combine_species": True,
-#          "ens_member_id": ENS_MEMBER_IDS,
-#          "lang": "de",
-#          "domain": "ch",
-#          "dimensions": {
-#              "species_id": (1, 2), "time": -1, "deposition_type": ["dry", "wet"]
-#          },
-#      }
+@pytest.mark.skip("TODO implement plots like ens min affected area")
+class Test_EnsMin_AffectedArea(_TestBase):
+    reference = "ref_cosmo2e_ens_min_affected_area"
+    setup_dct = {
+        "infile": INFILE_NAME,
+        "outfile": f"{reference}.png",
+        "input_variable": "deposition",
+        "ens_variable": "minimum",
+        "plot_variable": "affected_area",
+        "combine_deposition_types": True,
+        "integrate": True,
+        "combine_species": True,
+        "ens_member_id": ENS_MEMBER_IDS,
+        "lang": "de",
+        "domain": "ch",
+        "dimensions": {
+            "species_id": (1, 2),
+            "time": -1,
+            "deposition_type": ["dry", "wet"],
+        },
+    }
 
 
-# class Test_CloudArrivalTime(_TestCreatePlot):
-# class Test_CloudArrivalTime(_TestCreateReference):
 class Test_CloudArrivalTime(_TestBase):
     reference = "ref_cosmo2e_ens_cloud_arrival_time"
     setup_dct = {
@@ -126,8 +127,6 @@ class Test_CloudArrivalTime(_TestBase):
     }
 
 
-# class Test_CloudDepartureTime(_TestCreatePlot):
-# class Test_CloudDepartureTime(_TestCreateReference):
 class Test_CloudDepartureTime(_TestBase):
     reference = "ref_cosmo2e_ens_cloud_departure_time"
     setup_dct = {
