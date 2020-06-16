@@ -266,33 +266,30 @@ def main(
     out_file_paths = []
     n_in = len(setups_by_infile)
     i_tot = -1
-    for i_in, (in_file_path, sub_setups) in enumerate(setups_by_infile.items()):
-        log(vbs=f"[{i_in + 1}/{n_in}] read {in_file_path}",)
+    for ip_in, (in_file_path, sub_setups) in enumerate(setups_by_infile.items(), 1):
+        log(vbs=f"[{ip_in}/{n_in}] read {in_file_path}",)
         field_lst_lst = read_fields(
             in_file_path, sub_setups, add_ts0=True, dry_run=dry_run
         )
         n_fld = len(field_lst_lst)
         try:
-            for i_fld, field_lst in enumerate(field_lst_lst):
+            for ip_fld, field_lst in enumerate(field_lst_lst, 1):
                 i_tot += 1
-                log(dbg=f"[{i_in + 1}/{n_in}][{i_fld + 1}/{n_fld}] prepare plot")
+                log(dbg=f"[{ip_in}/{n_in}][{ip_fld}/{n_fld}] prepare plot")
                 in_file_path_fmtd = format_in_file_path(in_file_path, field_lst)
                 plot = prepare_plot(field_lst, out_file_paths, dry_run=dry_run)
                 log(
                     inf=f"{in_file_path_fmtd} -> {plot.file_path}",
-                    vbs=(
-                        f"[{i_in + 1}/{n_in}][{i_fld + 1}/{n_fld}]"
-                        f" plot {plot.file_path}"
-                    ),
+                    vbs=f"[{ip_in}/{n_in}][{ip_fld}/{n_fld}] plot {plot.file_path}",
                 )
                 if not dry_run:
                     create_plot(plot)
 
-                if open_first_cmd and i_in + i_fld == 0:
+                if open_first_cmd and (ip_in - 1) + (ip_fld - 1) == 0:
                     open_plots(open_first_cmd, [plot.file_path], dry_run)
 
-                n_plt_todo = n_fld - i_fld - 1
-                if n_plt_todo and each_only and (i_fld + 1) >= each_only:
+                n_plt_todo = n_fld - ip_fld
+                if n_plt_todo and each_only and ip_fld >= each_only:
                     log(vbs=f"skip remaining {n_plt_todo} plots")
                     raise BreakInner()
                 if only and (i_tot + 1) >= only:
@@ -304,7 +301,7 @@ def main(
         except BreakInner:
             continue
         except BreakOuter:
-            remaining_files = n_in - i_in - 1
+            remaining_files = n_in - ip_in
             if remaining_files:
                 log(vbs=f"skip remaining {remaining_files} input files")
             break
