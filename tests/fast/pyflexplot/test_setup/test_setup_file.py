@@ -33,10 +33,10 @@ def fmt_val(val):
 DEFAULT_TOML = "\n".join([f"{k} = {fmt_val(v)}" for k, v in DEFAULT_KWARGS.items()])
 
 
-def read_tmp_setup_file(tmp_path, content, **kwargs):
+def tmp_setup_file(tmp_path, content):
     tmp_file = tmp_path / "setup.toml"
     tmp_file.write_text(dedent(content))
-    return InputSetupFile(tmp_file).read(**kwargs)
+    return tmp_file
 
 
 def test_single_minimal_section(tmp_path):
@@ -45,7 +45,7 @@ def test_single_minimal_section(tmp_path):
         [plot]
         {DEFAULT_TOML}
         """
-    setups = read_tmp_setup_file(tmp_path, content)
+    setups = InputSetupFile(tmp_setup_file(tmp_path, content)).read()
     assert setups == [DEFAULT_SETUP.dict()]
 
 
@@ -55,7 +55,7 @@ def test_single_minimal_renamed_section(tmp_path):
         [foobar]
         {DEFAULT_TOML}
         """
-    setups = read_tmp_setup_file(tmp_path, content)
+    setups = InputSetupFile(tmp_setup_file(tmp_path, content)).read()
     assert setups == [DEFAULT_SETUP.dict()]
 
 
@@ -67,7 +67,7 @@ def test_single_section(tmp_path):
         input_variable = "deposition"
         lang = "de"
         """
-    setups = read_tmp_setup_file(tmp_path, content)
+    setups = InputSetupFile(tmp_setup_file(tmp_path, content)).read()
     assert len(setups) == 1
     res = next(iter(setups))
     assert res != DEFAULT_SETUP.dict()
@@ -89,7 +89,7 @@ def test_multiple_parallel_empty_sections(tmp_path):
         [plot2]
         {DEFAULT_TOML}
         """
-    setups = read_tmp_setup_file(tmp_path, content)
+    setups = InputSetupFile(tmp_setup_file(tmp_path, content)).read()
     assert setups == [DEFAULT_SETUP.dict()] * 2
 
 
@@ -101,7 +101,7 @@ def test_two_nested_empty_sections(tmp_path):
 
         [_base.plot]
         """
-    setups = read_tmp_setup_file(tmp_path, content)
+    setups = InputSetupFile(tmp_setup_file(tmp_path, content)).read()
     assert setups == [DEFAULT_SETUP.dict()]
 
 
@@ -181,7 +181,7 @@ def test_multiple_nested_sections(tmp_path):
         }
         for sol_spc in sol_specific
     ]
-    setups = read_tmp_setup_file(tmp_path, content)
+    setups = InputSetupFile(tmp_setup_file(tmp_path, content)).read()
     assert setups == sol
 
 
@@ -263,8 +263,8 @@ def test_multiple_override(tmp_path):
         }
         for sol_spc in sol_specific
     ]
-    setups = read_tmp_setup_file(tmp_path, content)
-    setups = read_tmp_setup_file(tmp_path, content, override=override)
+    setups = InputSetupFile(tmp_setup_file(tmp_path, content)).read()
+    setups = InputSetupFile(tmp_setup_file(tmp_path, content)).read(override=override)
     assert setups == sol
 
 
@@ -321,7 +321,7 @@ def test_semi_realcase(tmp_path):
         [_base._deposition._affected_area._ch.de]
 
         """
-    setups = read_tmp_setup_file(tmp_path, content)
+    setups = InputSetupFile(tmp_setup_file(tmp_path, content)).read()
     # Note: Fails with tomlkit, but works with toml (2020-02-18)
     assert len(setups) == 16
 
@@ -494,7 +494,7 @@ def test_realcase_opr_like(tmp_path):
             },
         },
     ]
-    setups = read_tmp_setup_file(tmp_path, content)
+    setups = InputSetupFile(tmp_setup_file(tmp_path, content)).read()
     dcts_res = setups.dicts()
     assert len(dcts_res) == len(dcts_sol)
     assert [d["outfile"] for d in dcts_res] == [d["outfile"] for d in dcts_sol]
@@ -543,7 +543,7 @@ def test_wildcard_simple(tmp_path):
             },
         ]
     ]
-    setups = read_tmp_setup_file(tmp_path, content)
+    setups = InputSetupFile(tmp_setup_file(tmp_path, content)).read()
     assert setups == sol
 
 
@@ -589,7 +589,7 @@ def test_double_wildcard_equal_depth(tmp_path):
         for domain in ["ch", "auto"]
         for lang in ["de", "en"]
     ]
-    setups = read_tmp_setup_file(tmp_path, content)
+    setups = InputSetupFile(tmp_setup_file(tmp_path, content)).read()
     assert setups.dicts() == sol
 
 
@@ -648,7 +648,7 @@ def test_double_wildcard_variable_depth(tmp_path):
         for domain in ["ch", "auto"]
         for lang in ["de", "en"]
     ]
-    setups = read_tmp_setup_file(tmp_path, content)
+    setups = InputSetupFile(tmp_setup_file(tmp_path, content)).read()
     res = setups.dicts()
     assert res == sol
 
@@ -693,7 +693,7 @@ def test_combine_wildcards(tmp_path):
         for ens_variable in ["mean", "maximum"]
         for lang in ["de", "en"]
     ]
-    setups = read_tmp_setup_file(tmp_path, content)
+    setups = InputSetupFile(tmp_setup_file(tmp_path, content)).read()
     res = setups.dicts()
     assert len(res) == len(sol)
     assert res == sol
@@ -712,7 +712,7 @@ class Test_IndividualParams_SingleOrMultipleValues:
             species_id = [1, 2, 3]
 
             """
-        setups = read_tmp_setup_file(tmp_path, content)
+        setups = InputSetupFile(tmp_setup_file(tmp_path, content)).read()
         res = setups.dicts()
         sol = [
             {
@@ -739,7 +739,7 @@ class Test_IndividualParams_SingleOrMultipleValues:
             level = [1, 2]
 
             """
-        setups = read_tmp_setup_file(tmp_path, content)
+        setups = InputSetupFile(tmp_setup_file(tmp_path, content)).read()
         sol = [
             {
                 **DEFAULT_SETUP.dict(),
@@ -756,7 +756,7 @@ class Test_IndividualParams_SingleOrMultipleValues:
             input_variable = "deposition"
 
             """
-        setups = read_tmp_setup_file(tmp_path, content)
+        setups = InputSetupFile(tmp_setup_file(tmp_path, content)).read()
         sol = [
             {
                 **DEFAULT_SETUP.dict(),
@@ -779,7 +779,7 @@ def test_multipanel_param_ens_variable(tmp_path):
         multipanel_param = "ens_variable"
         ens_variable = ["minimum", "maximum", "mean", "median"]
         """
-    setups = read_tmp_setup_file(tmp_path, content)
+    setups = InputSetupFile(tmp_setup_file(tmp_path, content)).read()
     res = setups.dicts()
     sol = [
         {
