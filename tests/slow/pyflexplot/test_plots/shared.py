@@ -147,7 +147,7 @@ class _TestCreateReference(_TestBase):
         plot_summary = plot.summarize()
         module_path_rel = os.path.relpath(__file__, ".")
         cls_name = type(self).__name__
-        content = f'''\
+        head = f'''\
             # -*- coding: utf-8 -*-
             # flake8: noqa
             """
@@ -161,21 +161,23 @@ class _TestCreateReference(_TestBase):
             ``{cls_name}``
             from ``_TestBase`` to ``_TestCreateReference`` and running pytest.
             """
-            import numpy as np
-
+            '''
+        body = f"""
             field_summary = {field_summary}
 
             plot_summary = {plot_summary}
-            '''
-        content = dedent(content)
+            """
+        head = dedent(head)
+        body = dedent(body)
+
         # Replace non-importable nan/inf objects by np.nan/np.inf
-        content_np = re.sub(r": (-?)\b(nan|inf)\b", r": \1np.\2", content)
-        if content_np != content:
-            content = content_np
-        else:
-            # No np.nan/np.inf: Remove obsolete numpy import
-            content = content.replace("import numpy as np\n", "")
-        content = black_format(content)
+        body_np = re.sub(r": (-?)\b(nan|inf)\b", r": \1np.\2", body)
+        imports = []
+        if body_np != body:
+            body = body_np
+            head += "# Third-party\nimport numpy as np"
+
+        content = black_format(f"{head}\n{body}")
         try:
             with open(ref_file, "w") as f:
                 f.write(content)

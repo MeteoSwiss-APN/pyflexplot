@@ -42,7 +42,6 @@ from .exceptions import UnequalInputSetupParamValuesError
 from .logging import log
 from .pydantic import cast_field_value
 from .pydantic import prepare_field_value
-from .summarize import summarizable
 
 # Some plot-specific default values
 ENS_PROBABILITY_DEFAULT_PARAM_THR = 1e-8
@@ -257,9 +256,6 @@ class CoreInputSetup(BaseModel):
 
 
 # SR_TODO Clean up docstring -- where should format key hints go?
-# SR_TMP < TODO eliminate
-@summarizable(summarize=lambda self: self.dict())  # type: ignore
-# SR_TMP >
 class InputSetup(BaseModel):
     """
     PyFlexPlot setup.

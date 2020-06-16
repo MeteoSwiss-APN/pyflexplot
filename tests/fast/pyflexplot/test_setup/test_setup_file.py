@@ -326,7 +326,6 @@ def test_semi_realcase(tmp_path):
     assert len(setups) == 16
 
 
-@pytest.mark.skip("TODO next")
 def test_realcase_opr_like(tmp_path):
     """Setup based on real config for operational cosmo1 plots."""
     content = """\
@@ -779,7 +778,6 @@ def test_multipanel_param_ens_variable(tmp_path):
         plot_type = "multipanel"
         multipanel_param = "ens_variable"
         ens_variable = ["minimum", "maximum", "mean", "median"]
-
         """
     setups = read_tmp_setup_file(tmp_path, content)
     res = setups.dicts()
