@@ -147,37 +147,36 @@ class FileReader:
         setups = setups.complete_dimensions(self.nc_meta_data)
 
         setups_field_lst_lst: List[List[InputSetupCollection]] = []
-        for input_variable, setups_var in setups.group("input_variable").items():
-            for combine_levels, setups_lvl in setups_var.group(
-                "combine_levels"
-            ).items():
-                for combine_deposition_types, setups_dep in setups_lvl.group(
-                    "combine_deposition_types"
-                ).items():
-                    for combine_species, setups_spc in setups_dep.group(
-                        "combine_species"
-                    ).items():
-                        setups_loc = setups_spc  # SR_TMP
-                        skip = ["dimensions.time", "ens_member_id"]
-                        if input_variable == "concentration":
-                            if combine_levels:
-                                skip.append("dimensions.level")
-                        elif input_variable == "deposition":
-                            if combine_deposition_types:
-                                skip.append("dimensions.deposition_type")
-                        if combine_species:
-                            skip.append("dimensions.species_id")
-                        setups_field_lst = setups_loc.decompress_partially(
-                            None, skip=skip
-                        )
-                        # SR_TMP <
-                        setups_field_lst = [
-                            InputSetupCollection([setup])
-                            for setups in setups_field_lst
-                            for setup in setups
-                        ]
-                        # SR_TMP >
-                        setups_field_lst_lst.append(setups_field_lst)
+        for (
+            (input_variable, combine_levels, combine_deposition_types, combine_species),
+            setups_spc,
+        ) in setups.group(
+            [
+                "input_variable",
+                "combine_levels",
+                "combine_deposition_types",
+                "combine_species",
+            ]
+        ).items():
+            setups_loc = setups_spc  # SR_TMP
+            skip = ["dimensions.time", "ens_member_id"]
+            if input_variable == "concentration":
+                if combine_levels:
+                    skip.append("dimensions.level")
+            elif input_variable == "deposition":
+                if combine_deposition_types:
+                    skip.append("dimensions.deposition_type")
+            if combine_species:
+                skip.append("dimensions.species_id")
+            setups_field_lst = setups_loc.decompress_partially(None, skip=skip)
+            # SR_TMP <
+            setups_field_lst = [
+                InputSetupCollection([setup])
+                for setups in setups_field_lst
+                for setup in setups
+            ]
+            # SR_TMP >
+            setups_field_lst_lst.append(setups_field_lst)
 
         field_lst_lst: List[List[Field]] = []
         for setups_field_lst in setups_field_lst_lst:

@@ -850,26 +850,51 @@ class InputSetupCollection:
             raise UnequalInputSetupParamValuesError(param, values)
         return next(iter(values))
 
+    @overload
     def group(self, param: str) -> Dict[Any, "InputSetupCollection"]:
-        """Group setups by the value of a parameter."""
-        grouped_raw: Dict[Any, List[InputSetup]] = {}
-        for setup in self:
-            try:
-                value = getattr(setup, param)
-            except AttributeError:
-                # SR_TMP <
+        ...
+
+    @overload
+    def group(
+        self, param: Sequence[str]
+    ) -> Dict[Tuple[Any, ...], "InputSetupCollection"]:
+        ...
+
+    def group(self, param):
+        """Group setups by the value of one or more parameters."""
+        if not isinstance(param, str):
+            grouped: Dict[Tuple[Any, ...], "InputSetupCollection"] = {}
+            params: List[str] = list(param)
+            for value, sub_setups in self.group(params[0]).items():
+                if len(params) == 1:
+                    key = (value,)
+                    grouped[key] = sub_setups
+                elif len(params) > 1:
+                    for values, sub_sub_setups in sub_setups.group(params[1:]).items():
+                        key = tuple([value] + list(values))
+                        grouped[key] = sub_sub_setups
+                else:
+                    raise NotImplementedError(f"{len(param)} sub_params", param)
+            return grouped
+        else:
+            grouped_raw: Dict[Any, List[InputSetup]] = {}
+            for setup in self:
                 try:
-                    value = getattr(setup.core, param)
+                    value = getattr(setup, param)
                 except AttributeError:
-                    raise ValueError("invalid input setup parameter", param)
-                # SR_TMP >
-            if value not in grouped_raw:
-                grouped_raw[value] = []
-            grouped_raw[value].append(setup)
-        grouped: Dict[Any, "InputSetupCollection"] = {
-            value: type(self)(setups) for value, setups in grouped_raw.items()
-        }
-        return grouped
+                    # SR_TMP <
+                    try:
+                        value = getattr(setup.core, param)
+                    except AttributeError:
+                        raise ValueError("invalid input setup parameter", param)
+                    # SR_TMP >
+                if value not in grouped_raw:
+                    grouped_raw[value] = []
+                grouped_raw[value].append(setup)
+            grouped: Dict[Any, "InputSetupCollection"] = {
+                value: type(self)(setups) for value, setups in grouped_raw.items()
+            }
+            return grouped
 
     def complete_dimensions(
         self, meta_data: Mapping[str, Any]
