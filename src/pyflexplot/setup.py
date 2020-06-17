@@ -50,16 +50,32 @@ ENS_CLOUD_TIME_DEFAULT_PARAM_THR = 1e-7
 ENS_CLOUD_PROB_DEFAULT_PARAM_TIME_WIN = 12
 
 
+# SR_TMP <<< TODO cleaner solution
+def is_dimensions_param(param: str) -> bool:
+    return param in CoreDimensions.__fields__
+
+
+# SR_TMP <<< TODO cleaner solution
 def is_core_setup_param(param: str) -> bool:
     return param in CoreInputSetup.__fields__
 
 
+# SR_TMP <<< TODO cleaner solution
 def is_setup_param(param: str) -> bool:
-    return param in InputSetup.__fields__ or is_core_setup_param(param)
+    return param in InputSetup.__fields__
 
 
-def is_dimensions_param(param: str) -> bool:
-    return param in CoreDimensions.__fields__
+# SR_TMP <<< TODO cleaner solution
+def get_setup_param_value(setup: "InputSetup", param: str) -> Any:
+    if is_setup_param(param):
+        return getattr(setup, param)
+    elif is_core_setup_param(param):
+        return getattr(setup.core, param)
+    elif param.startswith("dimensions."):
+        dim_param = param.split(".", 1)[-1]
+        if is_dimensions_param(dim_param):
+            return getattr(setup.core.dimensions, dim_param)
+    raise ValueError("invalid input setup parameter", param)
 
 
 # pylint: disable=E0213  # no-self-argument (validators)
@@ -625,7 +641,7 @@ class InputSetup(BaseModel):
         params_setup: List[str] = []
         params_dimensions: List[str] = []
         for param in params:
-            if is_setup_param(param):
+            if is_setup_param(param) or is_core_setup_param(param):
                 params_setup.append(param)
                 continue
             if param.startswith("dimensions."):
@@ -824,10 +840,8 @@ class InputSetupCollection:
 
     def collect(self, param: str) -> List[Any]:
         """Collect the values of a parameter for all setups."""
-        # SR_TMP <
         if is_core_setup_param(param):
             return [getattr(var_setup.core, param) for var_setup in self]
-        # SR_TMP >
         elif is_setup_param(param):
             return [getattr(var_setup, param) for var_setup in self]
         if param.startswith("dimensions."):
@@ -879,15 +893,7 @@ class InputSetupCollection:
         else:
             grouped_raw: Dict[Any, List[InputSetup]] = {}
             for setup in self:
-                try:
-                    value = getattr(setup, param)
-                except AttributeError:
-                    # SR_TMP <
-                    try:
-                        value = getattr(setup.core, param)
-                    except AttributeError:
-                        raise ValueError("invalid input setup parameter", param)
-                    # SR_TMP >
+                value = get_setup_param_value(setup, param)
                 if value not in grouped_raw:
                     grouped_raw[value] = []
                 grouped_raw[value].append(setup)
