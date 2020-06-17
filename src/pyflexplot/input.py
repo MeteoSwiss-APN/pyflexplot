@@ -473,9 +473,9 @@ class FileReader:
         """Read an individual 2D field at a given time step from disk."""
 
         # SR_TMP <
-        dimensions = setup.dimensions
-        input_variable = setup.input_variable
-        integrate = setup.integrate
+        dimensions = setup.core.dimensions
+        input_variable = setup.core.input_variable
+        integrate = setup.core.integrate
         var_name = nc_var_name(setup, self.nc_meta_data["analysis"]["model"])
         # SR_TMP >
 

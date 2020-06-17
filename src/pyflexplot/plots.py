@@ -130,7 +130,7 @@ def capitalize(s: str) -> str:
 def create_plot_config(
     setup: InputSetup, words: TranslatedWords, symbols: Words, mdata: MetaData,
 ) -> BoxedPlotConfig:
-    words.set_active_lang(setup.lang)
+    words.set_active_lang(setup.core.lang)
     new_config_dct: Dict[str, Any] = {
         "setup": setup,
         "mdata": mdata,
@@ -205,13 +205,13 @@ def create_plot_config(
     var_name = ""
     unit = mdata.format("variable_unit")
 
-    if setup.input_variable == "concentration":
+    if setup.core.input_variable == "concentration":
         new_config_dct["n_levels"] = 8
         new_config_dct["labels"]["right_middle"]["tc"] = (
             f"{words['level']}:" f" {escape_format_keys(format_level_label(mdata))}"
         )
         var_name = str(words["activity_concentration"])
-        if setup.integrate:
+        if setup.core.integrate:
             long_name = f"{words['integrated']} {var_name}"
             short_name = (
                 f"{words['integrated', 'abbr']} {words['concentration', 'abbr']}"
@@ -228,7 +228,7 @@ def create_plot_config(
             0, f"{words['level'].c}:\t{escape_format_keys(format_level_label(mdata))}"
         )
 
-    elif setup.input_variable == "deposition":
+    elif setup.core.input_variable == "deposition":
         dep_type_word = (
             "total" if setup.deposition_type_str == "tot" else setup.deposition_type_str
         )
@@ -245,9 +245,9 @@ def create_plot_config(
         new_config_dct["model_info"] = new_config_dct["labels"]["bottom"][
             "model_info_det"
         ]
-        if setup.plot_variable.startswith("affected_area"):
+        if setup.core.plot_variable.startswith("affected_area"):
             long_name = f"{words['affected_area']} {variable_rel}"
-            if setup.plot_variable == "affected_area_mono":
+            if setup.core.plot_variable == "affected_area_mono":
                 new_config_dct["extend"] = "none"
                 new_config_dct["n_levels"] = 1
 
@@ -255,13 +255,13 @@ def create_plot_config(
         new_config_dct["model_info"] = new_config_dct["labels"]["bottom"][
             "model_info_ens"
         ]
-        if setup.ens_variable == "minimum":
+        if setup.core.ens_variable == "minimum":
             long_name = f"{words['ensemble_minimum']} {variable_rel}"
-        elif setup.ens_variable == "maximum":
+        elif setup.core.ens_variable == "maximum":
             long_name = f"{words['ensemble_maximum']} {variable_rel}"
-        elif setup.ens_variable == "median":
+        elif setup.core.ens_variable == "median":
             long_name = f"{words['ensemble_median']} {variable_rel}"
-        elif setup.ens_variable == "mean":
+        elif setup.core.ens_variable == "mean":
             long_name = f"{words['ensemble_mean']} {variable_rel}"
         else:
             new_config_dct.update(
@@ -274,50 +274,50 @@ def create_plot_config(
                     "levels_scale": "lin",
                 }
             )
-            if setup.ens_variable == "probability":
+            if setup.core.ens_variable == "probability":
                 new_config_dct.update({"n_levels": 9, "d_level": 10})
                 new_config_dct["labels"]["right_top"]["lines"].append(
-                    f"{words['cloud']}:\t{symbols['geq']} {setup.ens_param_thr}"
+                    f"{words['cloud']}:\t{symbols['geq']} {setup.core.ens_param_thr}"
                     f" {mdata.format('variable_unit')}"
                 )
                 short_name = f"{words['probability']}"
                 unit = "%"
                 long_name = f"{words['probability']} {variable_rel}"
-            elif setup.ens_variable in [
+            elif setup.core.ens_variable in [
                 "cloud_arrival_time",
                 "cloud_departure_time",
             ]:
                 new_config_dct.update({"n_levels": 9, "d_level": 3})
                 new_config_dct["labels"]["right_top"]["lines"].append(
                     f"{words['cloud_density'].c}:\t{words['minimum', 'abbr']}"
-                    f" {setup.ens_param_thr} {mdata.format('variable_unit')}"
+                    f" {setup.core.ens_param_thr} {mdata.format('variable_unit')}"
                 )
-                n_min = setup.ens_param_mem_min or 1
+                n_min = setup.core.ens_param_mem_min or 1
                 n_tot = len((setup.ens_member_id or []))
                 new_config_dct["labels"]["right_top"]["lines"].append(
                     f"{words['number_of', 'abbr'].c} {words['member', 'pl']}:"
-                    f"\t{words['minimum', 'abbr']} {setup.ens_param_mem_min}"
+                    f"\t{words['minimum', 'abbr']} {setup.core.ens_param_mem_min}"
                     r"$\,/\,$"
                     f"{n_tot} ({n_min/(n_tot or 1):.0%})"
                 )
-                if setup.ens_variable == "cloud_arrival_time":
+                if setup.core.ens_variable == "cloud_arrival_time":
                     long_name = f"{words['cloud_arrival_time']}"
                     short_name = f"{words['arrival']}"
-                elif setup.ens_variable == "cloud_departure_time":
+                elif setup.core.ens_variable == "cloud_departure_time":
                     long_name = f"{words['cloud_departure_time']}"
                     short_name = f"{words['departure']}"
                 unit = f"{words['hour', 'pl']}"
-            elif setup.ens_variable == "cloud_occurrence_probability":
+            elif setup.core.ens_variable == "cloud_occurrence_probability":
                 new_config_dct.update({"n_levels": 9, "d_level": 10})
                 new_config_dct["labels"]["right_top"]["lines"].append(
                     f"{words['cloud_density'].c}:\t{words['minimum', 'abbr']}"
-                    f" {setup.ens_param_thr} {mdata.format('variable_unit')}"
+                    f" {setup.core.ens_param_thr} {mdata.format('variable_unit')}"
                 )
-                n_min = setup.ens_param_mem_min or 1
+                n_min = setup.core.ens_param_mem_min or 1
                 n_tot = len((setup.ens_member_id or []))
                 new_config_dct["labels"]["right_top"]["lines"].append(
                     f"{words['number_of', 'abbr'].c} {words['member', 'pl']}:"
-                    f"\t{words['minimum', 'abbr']} {setup.ens_param_mem_min}"
+                    f"\t{words['minimum', 'abbr']} {setup.core.ens_param_mem_min}"
                     r"$\,/\,$"
                     f"{n_tot} ({n_min/(n_tot or 1):.0%})"
                 )
@@ -355,7 +355,7 @@ def create_plot_config(
     n_levels = new_config_dct["n_levels"]
     extend = new_config_dct.get("extend", "max")
     cmap = new_config_dct.get("cmap", "flexplot")
-    if setup.plot_variable == "affected_area_mono":
+    if setup.core.plot_variable == "affected_area_mono":
         colors = (np.array([(200, 200, 200)]) / 255).tolist()
     elif cmap == "flexplot":
         colors = colors_flexplot(n_levels, extend)

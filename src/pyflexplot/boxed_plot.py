@@ -270,7 +270,7 @@ def levels_from_time_stats(
 
     assert plot_config.n_levels is not None  # mypy
     if plot_config.setup.get_simulation_type() == "ensemble":
-        if plot_config.setup.ens_variable == "probability":
+        if plot_config.setup.core.ens_variable == "probability":
             assert plot_config.d_level is not None  # mypy
             n_max = 90
             return np.arange(
@@ -278,13 +278,13 @@ def levels_from_time_stats(
                 n_max + plot_config.d_level,
                 plot_config.d_level,
             )
-        elif plot_config.setup.ens_variable in [
+        elif plot_config.setup.core.ens_variable in [
             "cloud_arrival_time",
             "cloud_departure_time",
         ]:
             assert plot_config.d_level is not None  # mypy
             return np.arange(0, plot_config.n_levels) * plot_config.d_level
-    elif plot_config.setup.plot_variable == "affected_area_mono":
+    elif plot_config.setup.core.plot_variable == "affected_area_mono":
         levels = _auto_levels_log10(n_levels=9, val_max=time_stats["max"])
         return np.array([levels[0], np.inf])
     return _auto_levels_log10(plot_config.n_levels, val_max=time_stats["max"])

@@ -48,35 +48,14 @@ def format_dictlike(obj, multiline=False, indent=1):
     return f"{type(obj).__name__}({s})"
 
 
-def merge_dicts(*dicts, unique_keys=True):
-    """Merge multiple dictionaries with or without shared keys.
-
-    Args:
-        dicts (list[dict]) Dictionaries to be merged.
-
-        unique_keys (bool, optional): Whether keys must be unique. If True,
-            duplicate keys raise a ``KeyConflictError`` exception. If False,
-            dicts take precedence in reverse order of ``dicts``, i.e., keys
-            occurring in multiple dicts will have the value of the last dict
-            containing that key.
-
-    Raises:
-        KeyConflictError: If ``unique_keys=True`` when a key occurs in multiple
-            dicts.
-
-    Returns:
-        dict: Merged dictionary.
-
-    """
-    merged = {}
+def merge_dicts(*dicts: Mapping[Any, Any]) -> Dict[Any, Any]:
+    """Merge multiple dicts recursively."""
+    merged: Dict[Any, Any] = {}
     for dict_ in dicts:
-        if not unique_keys:
-            merged.update(dict_)
-        else:
-            for key, val in dict_.items():
-                if key in merged:
-                    raise KeyConflictError(key)
-                merged[key] = val
+        for key, val in dict_.items():
+            if isinstance(val, Mapping):
+                val = merge_dicts(merged.get(key, {}), val)
+            merged[key] = val
     return merged
 
 

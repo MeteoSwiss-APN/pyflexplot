@@ -19,6 +19,7 @@ from pyflexplot.data import Field
 from pyflexplot.input import read_fields
 from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
+from srutils.dict import merge_dicts
 from srutils.testing import check_summary_dict_element_is_subelement
 
 # Local  isort:skip
@@ -422,7 +423,7 @@ def test_single_setup_deposition(datadir: str, conf: ConfSingleSetup):
                 },
             ],
             sol=[
-                [{**dct, "input_variable": "concentration"}]  # type: ignore
+                [merge_dicts(dct, {"input_variable": "concentration"})]
                 for dct in [
                     {"dimensions": {"level": 0, "species_id": (1, 2), "time": 0}},
                     {"dimensions": {"level": 0, "species_id": (1, 2), "time": 3}},
@@ -434,10 +435,9 @@ def test_single_setup_deposition(datadir: str, conf: ConfSingleSetup):
                 [
                     {
                         "input_variable": "deposition",
-                        "dimensions": {  # type: ignore
-                            **dims,  # type: ignore
-                            "deposition_type": ("dry", "wet"),  # type: ignore
-                        },
+                        "dimensions": merge_dicts(
+                            dims, {"deposition_type": ("dry", "wet")}
+                        ),
                     }
                 ]
                 for dims in [

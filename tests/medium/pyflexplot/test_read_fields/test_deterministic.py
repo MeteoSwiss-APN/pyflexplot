@@ -26,11 +26,11 @@ from shared import datadir_reduced as datadir  # noqa:F401 isort:skip
 
 
 def get_var_name_ref(setup, var_names_ref):
-    if setup.input_variable == "concentration":
+    if setup.core.input_variable == "concentration":
         assert len(var_names_ref) == 1
         return next(iter(var_names_ref))
-    elif setup.input_variable == "deposition":
-        species_id = setup.dimensions.species_id
+    elif setup.core.input_variable == "deposition":
+        species_id = setup.core.dimensions.species_id
         if isinstance(species_id, tuple):
             assert len(species_id) == 1
             species_id = next(iter(species_id))

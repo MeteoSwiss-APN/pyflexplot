@@ -5,8 +5,6 @@ Utilities for testing.
 # Standard library
 import distutils.dir_util
 import os
-from typing import Any
-from typing import Mapping
 
 # Third-party
 import netCDF4 as nc4
@@ -62,13 +60,6 @@ def _datadir_core(subdir, tmpdir, request):
     return tmpdir
 
 
-def merge_setup_dcts(
-    dct1: Mapping[str, Any], dct2: Mapping[str, Any]
-) -> Mapping[str, Any]:
-    dimensions = {**dct1.get("dimensions", {}), **dct2.get("dimensions", {})}
-    return {**dct1, **dct2, "dimensions": dimensions}
-
-
 def fix_nc_fld(fld, model):
     """Fix field read directly from NetCDF file."""
     if model in ["cosmo1", "cosmo2"]:
@@ -93,18 +84,21 @@ def read_nc_var(path, var_name, setup, model):
                 # Read all timesteps until the selected one
                 # SR_TMP <
                 if isinstance(setup, CoreInputSetup):
-                    idx = slice(setup.dimensions.time + 1)
+                    idx = slice(setup.core.dimensions.time + 1)
                 else:
-                    assert isinstance(setup.dimensions.time, int)
-                    idx = slice(setup.dimensions.time + 1)
+                    assert isinstance(setup.core.dimensions.time, int)
+                    idx = slice(setup.core.dimensions.time + 1)
                 # SR_TMP >
             elif dim_name in ["level", "height"]:
                 # SR_TMP <
-                if isinstance(setup, CoreInputSetup) or setup.dimensions.level is None:
-                    idx = setup.dimensions.level
+                if (
+                    isinstance(setup, CoreInputSetup)
+                    or setup.core.dimensions.level is None
+                ):
+                    idx = setup.core.dimensions.level
                 else:
-                    assert isinstance(setup.dimensions.level, int)
-                    idx = setup.dimensions.level
+                    assert isinstance(setup.core.dimensions.level, int)
+                    idx = setup.core.dimensions.level
                 # SR_TMP >
             elif dim_name in ["nageclass", "numpoint", "noutrel", "pointspec"]:
                 idx = 0  # SR_HC
@@ -120,16 +114,16 @@ def read_nc_var(path, var_name, setup, model):
         fix_nc_fld(fld, model)  # SR_TMP
 
         # Reduce time dimension
-        if setup.input_variable == "concentration":
-            if setup.integrate:
+        if setup.core.input_variable == "concentration":
+            if setup.core.integrate:
                 # Integrate concentration field over time
                 fld = np.cumsum(fld, axis=0)
-        elif setup.input_variable == "deposition":
-            if not setup.integrate:
+        elif setup.core.input_variable == "deposition":
+            if not setup.core.integrate:
                 # De-integrate deposition field over time
                 fld[1:] -= fld[:-1].copy()
         else:
-            raise NotImplementedError(f"variable '{setup.input_variable}'")
+            raise NotImplementedError(f"variable '{setup.core.input_variable}'")
         fld = fld[-1]
 
         return fld

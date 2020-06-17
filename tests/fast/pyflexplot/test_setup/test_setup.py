@@ -10,6 +10,7 @@ from typing import List
 # First-party
 from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
+from srutils.dict import merge_dicts
 from srutils.testing import check_summary_dict_is_subdict
 
 # Local
@@ -55,7 +56,11 @@ class Test_InputSetup_Decompress:
         setups = self.setup.decompress()
         assert len(setups) == 12
         res = {
-            (s.dimensions.deposition_type, s.dimensions.species_id, s.dimensions.time)
+            (
+                s.core.dimensions.deposition_type,
+                s.core.dimensions.species_id,
+                s.core.dimensions.time,
+            )
             for s in setups
         }
         sol = {
@@ -81,7 +86,11 @@ class Test_InputSetup_Decompress:
         assert isinstance(setups, InputSetupCollection)
         assert all(isinstance(setup, InputSetup) for setup in setups)
         res = {
-            (s.dimensions.deposition_type, s.dimensions.species_id, s.dimensions.time)
+            (
+                s.core.dimensions.deposition_type,
+                s.core.dimensions.species_id,
+                s.core.dimensions.time,
+            )
             for s in setups
         }
         sol = {
@@ -107,7 +116,11 @@ class Test_InputSetup_Decompress:
         assert all(isinstance(setup, InputSetup) for setup in setups)
         assert len(setups) == 2
         res = {
-            (s.dimensions.deposition_type, s.dimensions.species_id, s.dimensions.time)
+            (
+                s.core.dimensions.deposition_type,
+                s.core.dimensions.species_id,
+                s.core.dimensions.time,
+            )
             for s in setups
         }
         sol = {(("dry", "wet"), 1, (1, 2, 3)), (("dry", "wet"), 2, (1, 2, 3))}
@@ -122,7 +135,11 @@ class Test_InputSetup_Decompress:
         assert isinstance(setups, InputSetupCollection)
         assert all(isinstance(setup, InputSetup) for setup in setups)
         res = {
-            (s.dimensions.deposition_type, s.dimensions.species_id, s.dimensions.time)
+            (
+                s.core.dimensions.deposition_type,
+                s.core.dimensions.species_id,
+                s.core.dimensions.time,
+            )
             for s in setups
         }
         sol = {
@@ -139,7 +156,7 @@ class Test_InputSetup_Decompress:
 class Test_InputSetupCollection_Create:
     def create_partial_dicts(self):
         return [
-            {**DEFAULT_KWARGS, **dct}
+            merge_dicts(DEFAULT_KWARGS, dct)
             for dct in [
                 {"infile": "foo.nc", "input_variable": "concentration", "domain": "ch"},
                 {"infile": "bar.nc", "input_variable": "deposition", "lang": "de"},
@@ -148,7 +165,10 @@ class Test_InputSetupCollection_Create:
         ]
 
     def create_complete_dicts(self):
-        return [{**DEFAULT_SETUP.dict(), **dct} for dct in self.create_partial_dicts()]
+        return [
+            merge_dicts(DEFAULT_SETUP.dict(), dct)
+            for dct in self.create_partial_dicts()
+        ]
 
     def create_setup_lst(self):
         return [InputSetup.create(dct) for dct in self.create_partial_dicts()]
@@ -168,7 +188,7 @@ class Test_InputSetupCollection_Create:
 
 class Test_InputSetupCollection_Compress:
     dcts: List[Dict[str, Any]] = [
-        {**DEFAULT_KWARGS, **dct}
+        merge_dicts(DEFAULT_KWARGS, dct)
         for dct in [
             {
                 "infile": "foo.nc",

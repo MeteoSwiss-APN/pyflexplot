@@ -660,16 +660,16 @@ class MetaDataCollector:
 
         unit = self.ncattrs_field["units"]
         # SR_TMP <
-        unit = fix_unit_meters_agl(unit, self.setup.lang)
+        unit = fix_unit_meters_agl(unit, self.setup.core.lang)
         # SR_TMP >
 
         idx: int
-        if self.setup.dimensions.level is None:
+        if self.setup.core.dimensions.level is None:
             level_unit = ""
             level_bot = -1.0
             level_top = -1.0
         else:
-            idx = self.setup.dimensions.level
+            idx = self.setup.core.dimensions.level
             try:  # SR_TMP IFS
                 var = self.fi.variables["level"]
             except KeyError:  # SR_TMP IFS
@@ -678,7 +678,7 @@ class MetaDataCollector:
             level_top = float(var[idx])
             level_unit = var.getncattr("units")
             # SR_TMP <
-            level_unit = fix_unit_meters_agl(level_unit, self.setup.lang)
+            level_unit = fix_unit_meters_agl(level_unit, self.setup.core.lang)
             # SR_TMP >
 
         mdata_raw.update(
@@ -695,7 +695,7 @@ class MetaDataCollector:
         """Collect species meta data."""
 
         name_core = nc_var_name(self.setup, self.nc_meta_data["analysis"]["model"])
-        if self.setup.input_variable == "deposition":  # SR_TMP
+        if self.setup.core.input_variable == "deposition":  # SR_TMP
             name_core = name_core[3:]
         try:  # SR_TMP IFS
             deposit_vel = self.ncattrs_vars[f"DD_{name_core}"]["dryvel"]
@@ -788,7 +788,7 @@ class TimeStepMetaDataCollector:
     def ts_delta_integr(self) -> timedelta:
         """Compute timestep delta of integration period."""
         delta_tot = self.ts_delta_tot()
-        if self.setup.integrate:
+        if self.setup.core.integrate:
             return delta_tot
         n = self.ts_idx() + 1
         if n == 0:
@@ -798,10 +798,10 @@ class TimeStepMetaDataCollector:
     def ts_idx(self) -> int:
         """Index of current time step of current field."""
         # Default to timestep of current field
-        assert self.setup.dimensions.time is not None  # mypy
+        assert self.setup.core.dimensions.time is not None  # mypy
         if self.add_ts0:
-            return self.setup.dimensions.time - 1
-        return self.setup.dimensions.time
+            return self.setup.core.dimensions.time - 1
+        return self.setup.core.dimensions.time
 
 
 class RawReleaseMetaData(BaseModel):
@@ -831,9 +831,9 @@ class RawReleaseMetaData(BaseModel):
     def from_file(cls, fi: nc4.Dataset, setup: InputSetup) -> "RawReleaseMetaData":
         """Read information on a release from open file."""
 
-        assert setup.dimensions.numpoint is not None  # mypy
+        assert setup.core.dimensions.numpoint is not None  # mypy
         # SR_TMP < TODO proper implementation
-        idx = setup.dimensions.numpoint
+        idx = setup.core.dimensions.numpoint
         # SR_TMP >
 
         var_name: str = "RELCOM"  # SR_HC TODO un-hardcode
@@ -882,7 +882,7 @@ class RawReleaseMetaData(BaseModel):
             if key_out in store_units:
                 unit = fi.variables[key_in].getncattr("units")
                 # SR_TMP <
-                unit = fix_unit_meters_agl(unit, setup.lang)
+                unit = fix_unit_meters_agl(unit, setup.core.lang)
                 # SR_TMP >
                 params[f"{key_out}_unit"] = unit
         return cls(**params)
@@ -981,8 +981,8 @@ def nc_var_name(
     setup: Union[InputSetup, InputSetup], model: str
 ) -> Union[str, List[str]]:
     # SR_TMP <
-    dimensions = setup.dimensions
-    input_variable = setup.input_variable
+    dimensions = setup.core.dimensions
+    input_variable = setup.core.input_variable
     deposition_type = setup.deposition_type_str
     # SR_TMP >
     assert dimensions.species_id is not None  # mypy
@@ -1001,11 +1001,13 @@ def nc_var_name(
 
 
 def get_integr_type(setup: InputSetup) -> str:
-    if not setup.integrate:
+    if not setup.core.integrate:
         return "mean"
-    elif setup.input_variable == "concentration":
+    elif setup.core.input_variable == "concentration":
         return "sum"
-    elif setup.input_variable == "deposition":
+    elif setup.core.input_variable == "deposition":
         return "accum"
     else:
-        raise NotImplementedError("integration type for variable", setup.input_variable)
+        raise NotImplementedError(
+            "integration type for variable", setup.core.input_variable
+        )

@@ -210,10 +210,7 @@ class CoreInputSetup(BaseModel):
         cls, value: Optional[int], values: Dict[str, Any],
     ) -> Optional[int]:
         if value is None:
-            if values["ens_variable"] in [
-                "cloud_arrival_time",
-                "cloud_departure_time",
-            ]:
+            if values["ens_variable"] in ["cloud_arrival_time", "cloud_departure_time"]:
                 value = ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN
         return value
 
@@ -233,7 +230,8 @@ class CoreInputSetup(BaseModel):
 
     @classmethod
     def create(cls, params: Mapping[str, Any]) -> "CoreInputSetup":
-        dimensions = Dimensions.create(params.get("dimensions", {}))
+        params = dict(params)
+        dimensions = Dimensions.create(params.pop("dimensions", {}))
         return cls(**{**params, "dimensions": dimensions})
 
     def dict(self):
@@ -327,30 +325,12 @@ class InputSetup(BaseModel):
     ens_member_id: Optional[Tuple[int, ...]] = None
     core: "CoreInputSetup"
 
-    # SR_TMP <
-    input_variable = property(lambda self: self.core.input_variable)
-    plot_variable = property(lambda self: self.core.plot_variable)
-    ens_variable = property(lambda self: self.core.ens_variable)
-    plot_type = property(lambda self: self.core.plot_type)
-    multipanel_param = property(lambda self: self.core.multipanel_param)
-    integrate = property(lambda self: self.core.integrate)
-    combine_deposition_types = property(lambda self: self.core.combine_deposition_types)
-    combine_levels = property(lambda self: self.core.combine_levels)
-    combine_species = property(lambda self: self.core.combine_species)
-    ens_param_mem_min = property(lambda self: self.core.ens_param_mem_min)
-    ens_param_thr = property(lambda self: self.core.ens_param_thr)
-    ens_param_time_win = property(lambda self: self.core.ens_param_time_win)
-    lang = property(lambda self: self.core.lang)
-    domain = property(lambda self: self.core.domain)
-    dimensions = property(lambda self: self.core.dimensions)
-    # SR_TMP >
-
     # SR_TMP <<<
     @property
     def deposition_type_str(self) -> str:
-        deposition_type = self.dimensions.deposition_type
+        deposition_type = self.core.dimensions.deposition_type
         if deposition_type is None:
-            if self.input_variable == "deposition":
+            if self.core.input_variable == "deposition":
                 return "tot"
             return "none"
         elif set(deposition_type) == {"dry", "wet"}:
@@ -458,47 +438,55 @@ class InputSetup(BaseModel):
         dimensions = meta_data["dimensions"]
         obj = self.copy()
 
-        if obj.dimensions.time is None:
-            obj.dimensions.time = tuple(range(dimensions["time"]["size"]))
+        if obj.core.dimensions.time is None:
+            obj.core.dimensions.time = tuple(range(dimensions["time"]["size"]))
 
         # SR_TMP < does this belong here? and what does it do? TODO explain!
         nts = dimensions["time"]["size"]
         time_new = []
-        if isinstance(obj.dimensions.time, Sequence):
-            times = obj.dimensions.time
+        if isinstance(obj.core.dimensions.time, Sequence):
+            times = obj.core.dimensions.time
         else:
-            times = [obj.dimensions.time]
+            times = [obj.core.dimensions.time]
         for its in times:
             if its < 0:
                 its += nts
                 assert 0 <= its < nts
             time_new.append(its)
-        obj.dimensions.time = tuple(time_new)
+        obj.core.dimensions.time = tuple(time_new)
         # SR_TMP >
 
-        if obj.dimensions.level is None:
-            if obj.input_variable == "concentration":
+        if obj.core.dimensions.level is None:
+            if obj.core.input_variable == "concentration":
                 if "level" in dimensions:
-                    obj.dimensions.level = tuple(range(dimensions["level"]["size"]))
+                    obj.core.dimensions.level = tuple(
+                        range(dimensions["level"]["size"])
+                    )
 
-        if obj.dimensions.deposition_type is None:
-            if obj.input_variable == "deposition":
-                obj.dimensions.deposition_type = ("dry", "wet")
+        if obj.core.dimensions.deposition_type is None:
+            if obj.core.input_variable == "deposition":
+                obj.core.dimensions.deposition_type = ("dry", "wet")
 
-        if obj.dimensions.species_id is None:
-            obj.dimensions.species_id = meta_data["analysis"]["species_ids"]
+        if obj.core.dimensions.species_id is None:
+            obj.core.dimensions.species_id = meta_data["analysis"]["species_ids"]
 
-        if obj.dimensions.nageclass is None:
+        if obj.core.dimensions.nageclass is None:
             if "nageclass" in dimensions:
-                obj.dimensions.nageclass = tuple(range(dimensions["nageclass"]["size"]))
+                obj.core.dimensions.nageclass = tuple(
+                    range(dimensions["nageclass"]["size"])
+                )
 
-        if obj.dimensions.noutrel is None:
+        if obj.core.dimensions.noutrel is None:
             if "noutrel" in dimensions:
-                obj.dimensions.noutrel = tuple(range(dimensions["noutrel"]["size"]))
+                obj.core.dimensions.noutrel = tuple(
+                    range(dimensions["noutrel"]["size"])
+                )
 
-        if obj.dimensions.numpoint is None:
+        if obj.core.dimensions.numpoint is None:
             if "numpoint" in dimensions:
-                obj.dimensions.numpoint = tuple(range(dimensions["numpoint"]["size"]))
+                obj.core.dimensions.numpoint = tuple(
+                    range(dimensions["numpoint"]["size"])
+                )
 
         return obj
 
@@ -537,7 +525,7 @@ class InputSetup(BaseModel):
             return InputSetupCollection([self.derive(params_i) for params_i in params])
         dct = {**self.dict(), **params}
         if "dimensions" in params:
-            dct["dimensions"] = self.dimensions.derive(params["dimensions"])
+            dct["dimensions"] = self.core.dimensions.derive(params["dimensions"])
         return type(self).create(dct)
 
     @classmethod
@@ -546,7 +534,7 @@ class InputSetup(BaseModel):
     ) -> "InputSetup":
         setups = list(setups)
         # SR_TMP <
-        input_variables = [setup.input_variable for setup in setups]
+        input_variables = [setup.core.input_variable for setup in setups]
         if len(set(input_variables)) != 1:
             raise ValueError(
                 "cannot compress setups: input_variable differs", input_variables
@@ -836,7 +824,11 @@ class InputSetupCollection:
 
     def collect(self, param: str) -> List[Any]:
         """Collect the values of a parameter for all setups."""
-        if is_setup_param(param):
+        # SR_TMP <
+        if is_core_setup_param(param):
+            return [getattr(var_setup.core, param) for var_setup in self]
+        # SR_TMP >
+        elif is_setup_param(param):
             return [getattr(var_setup, param) for var_setup in self]
         if param.startswith("dimensions."):
             dims_param = param.split(".", 1)[-1]
@@ -865,11 +857,15 @@ class InputSetupCollection:
             try:
                 value = getattr(setup, param)
             except AttributeError:
-                raise ValueError("invalid input setup parameter", param)
-            else:
-                if value not in grouped_raw:
-                    grouped_raw[value] = []
-                grouped_raw[value].append(setup)
+                # SR_TMP <
+                try:
+                    value = getattr(setup.core, param)
+                except AttributeError:
+                    raise ValueError("invalid input setup parameter", param)
+                # SR_TMP >
+            if value not in grouped_raw:
+                grouped_raw[value] = []
+            grouped_raw[value].append(setup)
         grouped: Dict[Any, "InputSetupCollection"] = {
             value: type(self)(setups) for value, setups in grouped_raw.items()
         }
@@ -997,21 +993,21 @@ class FilePathFormatter:
 
     def _format_template(self, template: str) -> str:
         assert self._setup is not None  # mypy
-        input_variable = self._setup.input_variable
-        if self._setup.input_variable == "deposition":
+        input_variable = self._setup.core.input_variable
+        if self._setup.core.input_variable == "deposition":
             input_variable += f"_{self._setup.deposition_type_str}"
         kwargs = {
-            "nageclass": self._setup.dimensions.nageclass,
-            "domain": self._setup.domain,
-            "lang": self._setup.lang,
-            "level": self._setup.dimensions.level,
-            "noutrel": self._setup.dimensions.noutrel,
-            "species_id": self._setup.dimensions.species_id,
-            "time": self._setup.dimensions.time,
+            "nageclass": self._setup.core.dimensions.nageclass,
+            "domain": self._setup.core.domain,
+            "lang": self._setup.core.lang,
+            "level": self._setup.core.dimensions.level,
+            "noutrel": self._setup.core.dimensions.noutrel,
+            "species_id": self._setup.core.dimensions.species_id,
+            "time": self._setup.core.dimensions.time,
             "input_variable": input_variable,
-            "plot_variable": self._setup.plot_variable,
-            "plot_type": self._setup.plot_type,
-            "ens_variable": self._setup.ens_variable,
+            "plot_variable": self._setup.core.plot_variable,
+            "plot_type": self._setup.core.plot_type,
+            "ens_variable": self._setup.core.ens_variable,
         }
         # Format the file path
         # Don't use str.format in order to handle multival elements

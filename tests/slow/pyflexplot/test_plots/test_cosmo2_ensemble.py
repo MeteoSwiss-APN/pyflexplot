@@ -144,3 +144,23 @@ class Test_CloudDepartureTime(_TestBase):
         "domain": "ch",
         "dimensions": {"species_id": (1, 2), "time": 3, "level": (0, 1, 2)},
     }
+
+
+@pytest.mark.skip("WIP")
+# class Test_MultipanelEnsStats_Concentration(_TestBase):
+class Test_MultipanelEnsStats_Concentration(_TestCreatePlot):
+    reference = "ref_cosmo2e_multipanel_ens_stats_integr_concentration"
+    setup_dct = {
+        "infile": INFILE_NAME,
+        "outfile": f"{reference}.png",
+        "ens_member_id": ENS_MEMBER_IDS,
+        "input_variable": "concentration",
+        "ens_variable": ["minimum", "maximum", "median", "mean"],
+        "plot_type": "multipanel",
+        "multipanel_param": "ens_variable",
+        "integrate": True,
+        "combine_species": True,
+        "lang": "de",
+        "domain": "ch",
+        "dimensions": {"species_id": (1, 2), "time": -1, "level": 0},
+    }

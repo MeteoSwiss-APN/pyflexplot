@@ -11,6 +11,7 @@ import pytest  # type: ignore
 
 # First-party
 from pyflexplot.setup import InputSetup
+from srutils.dict import merge_dicts
 
 # Local
 from .shared import DEFAULT_KWARGS
@@ -41,37 +42,37 @@ class Test_ReplaceNoneByAvailable:
 
     def setup_create(self, params):
         assert "dimensions" not in DEFAULT_KWARGS
-        return InputSetup.create({**DEFAULT_KWARGS, **params})
+        return InputSetup.create(merge_dicts(DEFAULT_KWARGS, params))
 
     def test_time(self):
         setup = self.setup_create({"dimensions": {"time": "*"}})
-        assert setup.dimensions.time is None
+        assert setup.core.dimensions.time is None
         setup = setup.complete_dimensions(self.meta_data)
-        assert setup.dimensions.time == (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+        assert setup.core.dimensions.time == (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 
     def test_level(self):
         setup = self.setup_create({"dimensions": {"level": "*"}})
-        assert setup.dimensions.level is None
+        assert setup.core.dimensions.level is None
         setup = setup.complete_dimensions(self.meta_data)
-        assert setup.dimensions.level == (0, 1, 2)
+        assert setup.core.dimensions.level == (0, 1, 2)
 
     def test_species_id(self):
         setup = self.setup_create({"dimensions": {"species_id": "*"}})
-        assert setup.dimensions.species_id is None
+        assert setup.core.dimensions.species_id is None
         setup = setup.complete_dimensions(self.meta_data)
-        assert setup.dimensions.species_id == (1, 2)
+        assert setup.core.dimensions.species_id == (1, 2)
 
     def test_others(self):
         setup = self.setup_create(
             {"dimensions": {"nageclass": "*", "noutrel": "*", "numpoint": "*"}}
         )
-        assert setup.dimensions.nageclass is None
-        assert setup.dimensions.noutrel is None
-        assert setup.dimensions.numpoint is None
+        assert setup.core.dimensions.nageclass is None
+        assert setup.core.dimensions.noutrel is None
+        assert setup.core.dimensions.numpoint is None
         setup = setup.complete_dimensions(self.meta_data)
-        assert setup.dimensions.nageclass == 0
-        assert setup.dimensions.noutrel == 0
-        assert setup.dimensions.numpoint == (0, 1)
+        assert setup.core.dimensions.nageclass == 0
+        assert setup.core.dimensions.noutrel == 0
+        assert setup.core.dimensions.numpoint == (0, 1)
 
 
 class Test_WildcardToNone:
@@ -84,27 +85,27 @@ class Test_WildcardToNone:
     """
 
     def setup_create(self, params):
-        return InputSetup.create({**DEFAULT_KWARGS, **params})
+        return InputSetup.create(merge_dicts(DEFAULT_KWARGS, params))
 
     def test_species_id(self):
         setup = self.setup_create({"dimensions": {"species_id": "*"}})
-        assert setup.dimensions.species_id is None
+        assert setup.core.dimensions.species_id is None
 
     def test_time(self):
         setup = self.setup_create({"dimensions": {"time": "*"}})
-        assert setup.dimensions.time is None
+        assert setup.core.dimensions.time is None
 
     def test_level(self):
         setup = self.setup_create({"dimensions": {"level": "*"}})
-        assert setup.dimensions.level is None
+        assert setup.core.dimensions.level is None
 
     def test_others(self):
         setup = self.setup_create(
             {"dimensions": {"nageclass": "*", "noutrel": "*", "numpoint": "*"}}
         )
-        assert setup.dimensions.nageclass is None
-        assert setup.dimensions.noutrel is None
-        assert setup.dimensions.numpoint is None
+        assert setup.core.dimensions.nageclass is None
+        assert setup.core.dimensions.noutrel is None
+        assert setup.core.dimensions.numpoint is None
 
 
 class Test_Cast:
