@@ -881,8 +881,7 @@ class InputSetupCollection:
             params: List[str] = list(param)
             for value, sub_setups in self.group(params[0]).items():
                 if len(params) == 1:
-                    key = (value,)
-                    grouped[key] = sub_setups
+                    grouped[(value,)] = sub_setups
                 elif len(params) > 1:
                     for values, sub_sub_setups in sub_setups.group(params[1:]).items():
                         key = tuple([value] + list(values))

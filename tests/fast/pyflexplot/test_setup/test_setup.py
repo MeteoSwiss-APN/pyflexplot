@@ -3,9 +3,12 @@
 Tests for module ``pyflexplot.setup``.
 """
 # Standard library
+from itertools import product
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Sequence
+from typing import Tuple
 
 # First-party
 from pyflexplot.setup import InputSetup
@@ -16,6 +19,11 @@ from srutils.testing import check_summary_dict_is_subdict
 # Local
 from .shared import DEFAULT_KWARGS
 from .shared import DEFAULT_SETUP
+
+
+def tuples(objs: Sequence[Any]) -> List[Tuple[Any]]:
+    """Turn all elements in a sequence into one-element tuples."""
+    return [(obj,) for obj in objs]
 
 
 class Test_InputSetup_Create:
@@ -225,3 +233,232 @@ class Test_InputSetupCollection_Compress:
             {"dimensions": {"level": (0, 1, 2)}}
         )
         assert res == sol
+
+
+class Test_InputSetupCollection_Group:
+    """Group setups by the values of one or more params.
+
+    'Regular' params apply to all variables, while 'special' params are
+    variable-specific (e.g., deposition type).
+
+    """
+
+    infile_lst = ["foo.nc", "bar.nc"]
+    combine_species_lst = [True, False]
+    time_lst = [0, -1, (0, 5, 10)]
+
+    combine_levels_lst = [True, False]
+    default_combine_levels = DEFAULT_SETUP.core.combine_levels
+
+    deposition_type_lst = ["dry", "wet", ("dry", "wet")]
+    default_deposition_type = DEFAULT_SETUP.core.dimensions.deposition_type
+
+    n_infile = len(infile_lst)
+    n_combine_species = len(combine_species_lst)
+    n_time = len(time_lst)
+    n_base = n_infile * n_combine_species * n_time
+
+    n_combine_levels = len(combine_levels_lst)
+    n_concentration = n_combine_levels
+
+    n_deposition_type = len(deposition_type_lst)
+    n_deposition = n_deposition_type
+
+    n_setups = n_base * (n_concentration + n_deposition)
+
+    def get_setup_dcts(self):
+        base_dcts = [
+            {
+                "infile": infile,
+                "outfile": infile.replace(".nc", ".png"),
+                "combine_species": combine_species,
+                "dimensions": {"species_id": [1, 2], "time": time},
+            }
+            for infile in self.infile_lst
+            for combine_species in self.combine_species_lst
+            for time in self.time_lst
+        ]
+        assert len(base_dcts) == self.n_base
+        concentration_dcts = [
+            {
+                "input_variable": "concentration",
+                "combine_levels": combine_levels,
+                "dimensions": {"level": [0, 1, 2]},
+            }
+            for combine_levels in self.combine_levels_lst
+        ]
+        assert len(concentration_dcts) == self.n_concentration
+        deposition_dcts = [
+            {
+                "input_variable": "deposition",
+                "combine_deposition_types": True,
+                "dimensions": {"deposition_type": deposition_type},
+            }
+            for deposition_type in self.deposition_type_lst
+        ]
+        assert len(deposition_dcts) == self.n_deposition
+        return [
+            merge_dicts(base_dct, dct)
+            for base_dct in base_dcts
+            for dct in concentration_dcts + deposition_dcts
+        ]
+
+    def get_setups(self):
+        return InputSetupCollection.create(self.get_setup_dcts())
+
+    def test_reference_setups(self):
+        """Sanity check of the test reference setups."""
+        setups = self.get_setups()
+        assert isinstance(setups, InputSetupCollection)
+        assert len(setups) == self.n_setups
+
+    def test_one_regular(self):
+        """One regular param, passed as a string."""
+        setups = self.get_setups()
+
+        grouped = setups.group("infile")
+        assert len(grouped) == self.n_infile
+        assert set(grouped) == set(self.infile_lst)
+
+        grouped = setups.group("combine_species")
+        assert len(grouped) == self.n_combine_species
+        assert set(grouped) == set(self.combine_species_lst)
+
+        grouped = setups.group("dimensions.time")
+        assert len(grouped) == self.n_time
+        assert set(grouped) == set(self.time_lst)
+
+    def test_one_special(self):
+        """One special param, passed as a string."""
+        setups = self.get_setups()
+
+        grouped = setups.group("combine_levels")
+        assert len(grouped) == self.n_combine_levels
+        assert set(grouped) == set(self.combine_levels_lst)
+
+        grouped = setups.group("dimensions.deposition_type")
+        assert len(grouped) == self.n_deposition_type + 1
+        sol = set([self.default_deposition_type] + self.deposition_type_lst)
+        assert set(grouped) == sol
+
+    def test_one_seq_regular(self):
+        """One regular param, passed as a sequence."""
+        setups = self.get_setups()
+
+        grouped = setups.group(["infile"])
+        assert len(grouped) == self.n_infile
+        assert set(grouped) == set(tuples(self.infile_lst))
+
+        grouped = setups.group(["combine_species"])
+        assert len(grouped) == self.n_combine_species
+        assert set(grouped) == set(tuples(self.combine_species_lst))
+
+        grouped = setups.group(["dimensions.time"])
+        assert len(grouped) == self.n_time
+        assert set(grouped) == set(tuples(self.time_lst))
+
+    def test_one_seq_special(self):
+        """One special param, passed as a sequence."""
+        setups = self.get_setups()
+
+        grouped = setups.group(["combine_levels"])
+        assert len(grouped) == self.n_combine_levels
+        assert set(grouped) == set(tuples(self.combine_levels_lst))
+
+        grouped = setups.group(["dimensions.deposition_type"])
+        assert len(grouped) == self.n_deposition_type + 1
+        sol = set(tuples([self.default_deposition_type] + self.deposition_type_lst))
+        assert set(grouped) == sol
+
+    def test_two_regular(self):
+        """Two regular params."""
+        setups = self.get_setups()
+
+        grouped = setups.group(["infile", "combine_species"])
+        assert len(grouped) == self.n_infile * self.n_combine_species
+        assert set(grouped) == set(product(self.infile_lst, self.combine_species_lst))
+
+        grouped = setups.group(["dimensions.time", "combine_species"])
+        assert len(grouped) == self.n_time * self.n_combine_species
+        assert set(grouped) == set(product(self.time_lst, self.combine_species_lst))
+
+    def test_two_special(self):
+        """Two params, among them special params."""
+        setups = self.get_setups()
+
+        grouped = setups.group(["infile", "combine_levels"])
+        assert len(grouped) == self.n_infile * self.n_combine_species
+        assert set(grouped) == set(product(self.infile_lst, self.combine_levels_lst))
+
+        grouped = setups.group(["dimensions.time", "dimensions.deposition_type"])
+        assert len(grouped) == self.n_time * (self.n_deposition_type + 1)
+        sol = set(
+            product(
+                self.time_lst, [self.default_deposition_type] + self.deposition_type_lst
+            )
+        )
+        assert set(grouped) == sol
+
+    def test_two_exclusive(self):
+        """Two mutually special exclusive params."""
+        setups = self.get_setups()
+        grouped = setups.group(["combine_levels", "dimensions.deposition_type"])
+        assert len(grouped) == self.n_combine_levels + self.n_deposition_type
+        sol = set(
+            list(product(self.combine_levels_lst, [self.default_deposition_type]))
+            + list(product([self.default_combine_levels], self.deposition_type_lst))
+        )
+        assert set(grouped) == sol
+
+    def test_three_regular(self):
+        """Three regular params."""
+        setups = self.get_setups()
+
+        grouped = setups.group(["infile", "combine_species", "dimensions.time"])
+        assert len(grouped) == self.n_infile * self.n_combine_species * self.n_time
+        sol = set(product(self.infile_lst, self.combine_species_lst, self.time_lst))
+        assert set(grouped) == sol
+
+    def test_three_special(self):
+        """Three params, among them special params."""
+        setups = self.get_setups()
+
+        grouped = setups.group(["infile", "dimensions.time", "combine_levels"])
+        assert len(grouped) == self.n_infile * self.n_time * self.n_combine_levels
+        sol = set(product(self.infile_lst, self.time_lst, self.combine_species_lst))
+        assert set(grouped) == sol
+
+        grouped = setups.group(
+            ["dimensions.time", "combine_species", "dimensions.deposition_type"]
+        )
+        sol = self.n_time * self.n_combine_species * (self.n_deposition_type + 1)
+        assert len(grouped) == sol
+        sol = set(
+            product(
+                self.time_lst,
+                self.combine_species_lst,
+                [self.default_deposition_type] + self.deposition_type_lst,
+            )
+        )
+        assert set(grouped) == sol
+
+    def test_three_exclusive(self):
+        """Three params, among them mutually exclusive special params."""
+        setups = self.get_setups()
+
+        grouped = setups.group(
+            ["infile", "dimensions.deposition_type", "combine_levels"]
+        )
+        sol = self.n_infile * (self.n_combine_levels + self.n_deposition_type)
+        assert len(grouped) == sol
+        exclusive_combos = list(
+            product([self.default_deposition_type], self.combine_levels_lst)
+        ) + list(product(self.deposition_type_lst, [self.default_combine_levels]))
+        sol = set(
+            [
+                (infile, combine_levels, deposition_type)
+                for infile in self.infile_lst
+                for (combine_levels, deposition_type) in exclusive_combos
+            ]
+        )
+        assert set(grouped) == sol
