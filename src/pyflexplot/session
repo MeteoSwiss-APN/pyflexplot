@@ -4,6 +4,7 @@ cli.py
 data.py
 dimensions.py
 exceptions.py
+fix_nc_input.py
 formatting.py
 input.py
 logging.py

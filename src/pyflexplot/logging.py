@@ -22,7 +22,12 @@ def set_log_level(verbosity: int) -> None:
 
 
 def log(
-    *, dbg: Optional[str] = None, vbs: Optional[str] = None, inf: Optional[str] = None,
+    *,
+    err: Optional[str] = None,
+    wrn: Optional[str] = None,
+    inf: Optional[str] = None,
+    vbs: Optional[str] = None,
+    dbg: Optional[str] = None,
 ) -> None:
     """Log the message at the lowest available level.
 
@@ -31,6 +36,10 @@ def log(
     are passed, ``dbg`` wins.
 
     """
+    if err is not None:
+        logging.error(err)
+    if wrn is not None:
+        logging.error(wrn)
     level = get_log_level()
     if level <= logging.DEBUG and dbg is not None:
         logging.debug(dbg)
