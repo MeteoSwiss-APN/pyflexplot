@@ -2,7 +2,7 @@
 
 ["_base+"]
 # Sample data directory: /scratch/ruestefa/shared/pyflexplot_test/
-infile = "data/cosmo-1_2019052800.nc"
+infile = "data/cosmo1_20190528000000.nc"
 outfile = "concentration_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
 input_variable = "concentration"
 species_id = [1]
