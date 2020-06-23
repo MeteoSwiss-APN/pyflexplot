@@ -31,6 +31,7 @@ from pydantic.generics import GenericModel
 # Local
 from .setup import InputSetup
 from .setup import InputSetupCollection
+from .species import get_species
 from .summarize import summarizable
 
 ValueT = TypeVar("ValueT", int, float, str, datetime, timedelta)
@@ -693,47 +694,20 @@ class MetaDataCollector:
 
     def collect_species_mdata(self, mdata_raw: Dict[str, Any]) -> None:
         """Collect species meta data."""
-
-        name_core = nc_var_name(self.setup, self.nc_meta_data["analysis"]["model"])
-        if self.setup.core.input_variable == "deposition":  # SR_TMP
-            name_core = name_core[3:]
-        try:  # SR_TMP IFS
-            deposit_vel = self.ncattrs_vars[f"DD_{name_core}"]["dryvel"]
-            washout_coeff = self.ncattrs_vars[f"WD_{name_core}"]["weta"]
-            washout_exponent = self.ncattrs_vars[f"WD_{name_core}"]["wetb"]
-        except KeyError:  # SR_TMP IFS
-            deposit_vel = -1  # SR_TMP IFS
-            washout_coeff = -1  # SR_TMP IFS
-            washout_exponent = -1  # SR_TMP IFS
-
         name = self.ncattrs_field["long_name"].split("_")[0]
-
-        if name.startswith("Cs-137"):
-            half_life = 30.17  # SR_HC
-            half_life_unit = "a"  # SR_HC
-        elif name.startswith("I-131a"):
-            half_life = 8.02  # SR_HC
-            half_life_unit = "d"  # SR_HC
-        else:
-            raise NotImplementedError(f"half_life of '{name}'")
-
-        sediment_vel = 0.0  # SR_HC
-        deposit_vel_unit = "m s-1"  # SR_HC
-        sediment_vel_unit = "m s-1"  # SR_HC
-        washout_coeff_unit = "s-1"  # SR_HC
-
+        species = get_species(name=name)
         mdata_raw.update(
             {
                 "species_name": name,
-                "species_half_life": half_life,
-                "species_half_life_unit": half_life_unit,
-                "species_deposit_vel": deposit_vel,
-                "species_deposit_vel_unit": deposit_vel_unit,
-                "species_sediment_vel": sediment_vel,
-                "species_sediment_vel_unit": sediment_vel_unit,
-                "species_washout_coeff": washout_coeff,
-                "species_washout_coeff_unit": washout_coeff_unit,
-                "species_washout_exponent": washout_exponent,
+                "species_half_life": species.half_life.value,
+                "species_half_life_unit": species.half_life.unit,
+                "species_deposit_vel": species.deposition_velocity.value,
+                "species_deposit_vel_unit": species.deposition_velocity.unit,
+                "species_sediment_vel": species.sedimentation_velocity.value,
+                "species_sediment_vel_unit": species.sedimentation_velocity.unit,
+                "species_washout_coeff": species.washout_coefficient.value,
+                "species_washout_coeff_unit": species.washout_coefficient.unit,
+                "species_washout_exponent": species.washout_exponent.value,
             }
         )
 
@@ -832,9 +806,7 @@ class RawReleaseMetaData(BaseModel):
         """Read information on a release from open file."""
 
         assert setup.core.dimensions.numpoint is not None  # mypy
-        # SR_TMP < TODO proper implementation
         idx = setup.core.dimensions.numpoint
-        # SR_TMP >
 
         var_name: str = "RELCOM"  # SR_HC TODO un-hardcode
         var = fi.variables[var_name]
@@ -998,16 +970,3 @@ def nc_var_name(
         prefix = {"wet": "WD", "dry": "DD"}[deposition_type]
         return f"{prefix}_spec{species_id:03d}"
     raise ValueError("unknown variable", input_variable)
-
-
-def get_integr_type(setup: InputSetup) -> str:
-    if not setup.core.integrate:
-        return "mean"
-    elif setup.core.input_variable == "concentration":
-        return "sum"
-    elif setup.core.input_variable == "deposition":
-        return "accum"
-    else:
-        raise NotImplementedError(
-            "integration type for variable", setup.core.input_variable
-        )

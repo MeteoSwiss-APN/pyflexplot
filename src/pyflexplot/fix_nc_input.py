@@ -4,11 +4,11 @@ Fix issues with NetCDF input.
 """
 # Standard library
 from typing import Any
+from typing import cast
 from typing import Dict
 from typing import List
 from typing import Mapping
 from typing import Sequence
-from typing import Tuple
 from typing import Union
 
 # Third-party
@@ -16,23 +16,22 @@ import numpy as np
 
 # Local
 from .logging import log
-from .meta_data import get_integr_type
 from .meta_data import MetaData
+from .species import get_species
 
 
 class FlexPartDataFixer:
     """Fix issues with FlexPart NetCDF output."""
 
-    possible_var_names: List[Union[str, Tuple[str, ...]]] = [
-        "Cs-137",
-        "I-131a",
-        ("Cs-137", "I-131a"),
-        ("I-131a", "Cs-137"),
-    ]
-    conversion_factor_by_unit: Dict[str, float] = {
+    unit_conversion_factors: Dict[str, float] = {
         "ng kg-1": 1.0e-12,
         "1e-12 kg m-2": 1.0e-12,
     }
+    unit_replacement_names: Dict[str, str] = {
+        "ng kg-1": "Bq m-3",
+        "1e-12 kg m-2": "Bq m-2",
+    }
+    valid_units: List[str] = list(unit_replacement_names.values())
 
     def __init__(self, file_reader):
         self.file_reader = file_reader
@@ -128,41 +127,39 @@ class FlexPartDataFixer:
         name = var_ncattrs["long_name"]
         if name.endswith("_dry_deposition") or name.endswith("_wet_deposition"):
             name = name.split("_")[0]
-        unit = var_ncattrs["units"]
-        if name not in self.possible_var_names:
-            raise NotImplementedError("input_variable", name)
         try:
-            fact = self.conversion_factor_by_unit[unit]
-        except KeyError:
-            raise NotImplementedError("conversion factor", name, unit)
+            get_species(name=name)
+        except ValueError:
+            log(wrn=f"unrecognized variable name '{name}'; skip input data fixes")
+            return
+        unit = var_ncattrs["units"]
+        if unit in self.valid_units:
+            pass
+        else:
+            try:
+                fact = self.unit_conversion_factors[unit]
+            except KeyError:
+                raise NotImplementedError("conversion factor", name, unit)
         fld[:] *= fact
 
-    def _fix_meta_data_cosmo(self, mdata):
+    def _fix_meta_data_cosmo(self, mdata: Union[MetaData, Sequence[MetaData]]) -> None:
         if isinstance(mdata, Sequence):
             for mdata_i in mdata:
                 self._fix_meta_data_cosmo(mdata_i)
             return
         assert isinstance(mdata, MetaData)  # mypy
-
-        # Variable unit
-        var_name = mdata.species_name.value
-        if var_name not in self.possible_var_names:
-            raise NotImplementedError("input_variable", var_name)
-        integr_type = get_integr_type(mdata.setup)
-        old_unit = mdata.variable_unit.value
-        new_unit = "Bq"
-        if integr_type == "mean":
+        name = mdata.species_name.value
+        unit = mdata.variable_unit.value
+        try:
+            get_species(name=name)
+        except ValueError:
+            log(wrn=f"unrecognized variable name '{name}'; skip input meta data fixes")
+            return
+        if unit in self.valid_units:
             pass
-        elif integr_type in ["sum", "accum"]:
-            new_unit += " h"
         else:
-            raise NotImplementedError(
-                "integration type for variable", integr_type, var_name
-            )
-        if old_unit == "ng kg-1":
-            new_unit += " m-3"
-        elif old_unit == "1e-12 kg m-2":
-            new_unit += " m-2"
-        else:
-            raise NotImplementedError("unit for variable", old_unit, var_name)
-        mdata.variable_unit.value = new_unit
+            try:
+                new_unit = self.unit_replacement_names[cast(str, unit)]
+            except KeyError:
+                raise NotImplementedError("unit for variable", unit, name)
+            mdata.variable_unit.value = new_unit

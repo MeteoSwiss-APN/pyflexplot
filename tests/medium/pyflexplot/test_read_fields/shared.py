@@ -82,15 +82,12 @@ def read_nc_var(path, var_name, setup, model):
                 idx = slice(None)
             elif dim_name == "time":
                 # Read all timesteps until the selected one
-                # SR_TMP <
                 if isinstance(setup, CoreInputSetup):
                     idx = slice(setup.core.dimensions.time + 1)
                 else:
                     assert isinstance(setup.core.dimensions.time, int)
                     idx = slice(setup.core.dimensions.time + 1)
-                # SR_TMP >
             elif dim_name in ["level", "height"]:
-                # SR_TMP <
                 if (
                     isinstance(setup, CoreInputSetup)
                     or setup.core.dimensions.level is None
@@ -99,9 +96,8 @@ def read_nc_var(path, var_name, setup, model):
                 else:
                     assert isinstance(setup.core.dimensions.level, int)
                     idx = setup.core.dimensions.level
-                # SR_TMP >
             elif dim_name in ["nageclass", "numpoint", "noutrel", "pointspec"]:
-                idx = 0  # SR_HC
+                idx = 0
             else:
                 raise NotImplementedError(f"dimension '{dim_name}'")
             idcs.append(idx)

@@ -849,7 +849,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "min. 1e-06 Bq h m$^{-3}$",
+                    "s": "min. 1e-06 Bq m$^{-3}$",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

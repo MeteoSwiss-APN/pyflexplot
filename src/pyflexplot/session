@@ -15,6 +15,7 @@ plots.py
 preset.py
 pydantic.py
 setup.py
+species.py
 summarize.py
 typing.py
 words.py

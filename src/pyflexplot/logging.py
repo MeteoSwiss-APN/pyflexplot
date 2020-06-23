@@ -37,8 +37,10 @@ def log(
 
     """
     if err is not None:
+        err = f"error: {err}"
         logging.error(err)
     if wrn is not None:
+        wrn = f"wrnor: {wrn}"
         logging.error(wrn)
     level = get_log_level()
     if level <= logging.DEBUG and dbg is not None:

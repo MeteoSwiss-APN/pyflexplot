@@ -32,7 +32,6 @@ from .formatting import format_level_ranges
 from .formatting import format_range
 from .logging import log
 from .meta_data import format_unit
-from .meta_data import get_integr_type
 from .meta_data import MetaData
 from .plot_elements import MapAxesConf
 from .plot_elements import TextBoxAxes
@@ -827,12 +826,11 @@ def format_vertical_level_range(
 def format_integr_period(
     mdata: "MetaData", setup: InputSetup, words: TranslatedWords, cap: bool = False
 ) -> str:
-    integr_type = get_integr_type(setup)
-    if integr_type == "mean":
+    if not setup.core.integrate:
         operation = words["averaged_over"].s
-    elif integr_type == "sum":
+    elif setup.core.input_variable == "concentration":
         operation = words["summed_over"].s
-    elif integr_type == "accum":
+    elif setup.core.input_variable == "deposition":
         operation = words["accumulated_over"].s
     start = mdata.simulation_integr_start.value
     now = mdata.simulation_now.value
