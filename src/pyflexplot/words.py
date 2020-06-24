@@ -52,6 +52,7 @@ WORDS.add(
     en={"*": "concentration", "abbr": "concentr."},
     de={"*": "Konzentration", "abbr": "Konzentr."},
 )
+WORDS.add(en="control run", de="Kontrolllauf")
 # D
 WORDS.add(en="data", de="Daten")
 WORDS.add(en="departure", de="Abzug")

@@ -2443,7 +2443,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": "FLEXPART based on COSMO-2 ensemble (6 members: 00,01,05,10,15,20), 2019-07-27 12:00 UTC",
+                    "s": "FLEXPART based on COSMO-2E ensemble (6 members: 00,01,05,10,15,20), 2019-07-27 12:00 UTC",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

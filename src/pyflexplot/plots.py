@@ -47,7 +47,7 @@ from .words import Words
 
 def create_map_conf(field: Field) -> MapAxesConf:
     domain = field.var_setups.collect_equal("domain")
-    model = field.nc_meta_data["analysis"]["model"]
+    model = field.var_setups.collect_equal("model")
 
     conf_base: Dict[str, Any] = {"lang": field.var_setups.collect_equal("lang")}
 
@@ -79,14 +79,14 @@ def create_map_conf(field: Field) -> MapAxesConf:
     }
 
     conf: Dict[str, Any]
-    if (model, domain) in [("cosmo1", "auto"), ("cosmo2", "auto")]:
+    if model.startswith("cosmo") and domain == "auto":
         conf = {
             **conf_base,
             **conf_model_cosmo,
             **conf_scale_continent,
             "zoom_fact": 1.05,
         }
-    elif (model, domain) == ("cosmo1", "ch"):
+    elif model.startswith("cosmo1") and domain == "ch":
         conf = {
             **conf_base,
             **conf_model_cosmo,
@@ -94,7 +94,7 @@ def create_map_conf(field: Field) -> MapAxesConf:
             "zoom_fact": 3.6,
             "rel_offset": (-0.02, 0.045),
         }
-    elif (model, domain) == ("cosmo2", "ch"):
+    elif model.startswith("cosmo2") and domain == "ch":
         conf = {
             **conf_base,
             **conf_model_cosmo,
@@ -102,7 +102,7 @@ def create_map_conf(field: Field) -> MapAxesConf:
             "zoom_fact": 3.23,
             "rel_offset": (0.037, 0.1065),
         }
-    elif (model, domain) == ("ifs", "auto"):
+    elif model == "ifs" and domain == "auto":
         # SR_TMP < TODO Generalize IFS domains
         conf = {**conf_base, **conf_model_ifs, **conf_domain_japan}
         # SR_TMP >
@@ -182,20 +182,40 @@ def create_plot_config(
         "washout_coeff": words["washout_coeff"].s,
         "washout_exponent": words["washout_exponent"].s,
     }
-    _info_fmt_base = (
-        f"{words['flexpart']} {words['based_on']}"
-        f" {mdata.simulation_model_name}{{ens}},"
-        f" {mdata.simulation_start}"
+
+    if setup.model == "cosmo1":
+        model_name = "COSMO-1"
+    elif setup.model == "cosmo1e":
+        model_name = "COSMO-1E"
+    elif setup.model == "cosmo2":
+        model_name = "COSMO-2"
+    elif setup.model == "cosmo2e":
+        model_name = "COSMO-2E"
+    elif setup.model == "ifs":
+        model_name = "IFS"
+
+    model_info = None
+    if setup.get_simulation_type() == "deterministic":
+        if setup.model in ["cosmo1", "cosmo2", "ifs"]:
+            model_info = model_name
+        elif setup.model in ["cosmo1e", "cosmo2e"]:
+            model_info = f"{model_name} {words['control_run']}"
+    elif setup.get_simulation_type() == "ensemble":
+        model_info = (
+            f"{model_name} {words['ensemble']}"
+            f" ({len(setup.ens_member_id or [])} {words['member', 'pl']}:"
+            f" {format_range(setup.ens_member_id or [], fmt='02d')})"
+        )
+    if model_info is None:
+        raise NotImplementedError(
+            f"model setup '{setup.model}-{setup.get_simulation_type()}'"
+        )
+    model_info = (
+        f"{words['flexpart']} {words['based_on']} {model_info}"
+        f", {mdata.simulation_start}"
     )
     new_config_dct["labels"]["bottom"] = {
-        "model_info_det": _info_fmt_base.format(ens=""),
-        "model_info_ens": _info_fmt_base.format(
-            ens=(
-                f" {words['ensemble']}"
-                f" ({len(setup.ens_member_id or [])} {words['member', 'pl']}:"
-                f" {format_range(setup.ens_member_id or [], fmt='02d')})"
-            )
-        ),
+        "model_info": model_info,
         "copyright": f"{symbols['copyright']}{words['meteoswiss']}",
     }
 
@@ -241,9 +261,6 @@ def create_plot_config(
         new_config_dct["n_levels"] = 9
 
     if setup.get_simulation_type() == "deterministic":
-        new_config_dct["model_info"] = new_config_dct["labels"]["bottom"][
-            "model_info_det"
-        ]
         if setup.core.plot_variable.startswith("affected_area"):
             long_name = f"{words['affected_area']} {variable_rel}"
             if setup.core.plot_variable == "affected_area_mono":
@@ -251,9 +268,6 @@ def create_plot_config(
                 new_config_dct["n_levels"] = 1
 
     elif setup.get_simulation_type() == "ensemble":
-        new_config_dct["model_info"] = new_config_dct["labels"]["bottom"][
-            "model_info_ens"
-        ]
         if setup.core.ens_variable == "minimum":
             long_name = f"{words['ensemble_minimum']} {variable_rel}"
         elif setup.core.ens_variable == "maximum":
@@ -617,9 +631,8 @@ def fill_box_bottom(box: TextBoxAxes, plot: BoxedPlot) -> None:
     labels = plot.config.labels["bottom"]
 
     # FLEXPART/model info
-    s = plot.config.model_info
     box.text(
-        s=s,
+        s=labels["model_info"],
         loc="tl",
         dx=-0.7,
         dy=0.5,

@@ -3,6 +3,7 @@
 [_base]
 # Sample data directory: /scratch/ruestefa/shared/pyflexplot_test/
 infile = "data/cosmo1_20190528000000.nc"
+model = "cosmo1e"
 species_id = "*"
 
 [_base."_concentration+"]

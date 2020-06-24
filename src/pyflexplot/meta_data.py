@@ -309,8 +309,6 @@ class MetaData(BaseModel):
 
         simulation_integr_start: Integration period start.
 
-        simulation_model_name: Model name.
-
         simulation_now: Current timestep.
 
         simulation_now_rel: Current timestep relative to the simulation start.
@@ -368,7 +366,6 @@ class MetaData(BaseModel):
     simulation_end: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
     simulation_integr_start_rel: Union[MetaDatum[timedelta], MetaDatumCombo[timedelta]]
     simulation_integr_start: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
-    simulation_model_name: Union[MetaDatum[str], MetaDatumCombo[str]]
     simulation_now_rel: Union[MetaDatum[timedelta], MetaDatumCombo[timedelta]]
     simulation_now: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
     simulation_start: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
@@ -406,7 +403,6 @@ class MetaData(BaseModel):
     _init_simulation_integr_start_rel = init_mdatum(
         timedelta, "simulation_integr_start_rel",
     )
-    _init_simulation_model_name = init_mdatum(str, "simulation_model_name")
     _init_simulation_now = init_mdatum(datetime, "simulation_now")
     _init_simulation_now_rel = init_mdatum(timedelta, "simulation_now_rel")
     _init_simulation_start = init_mdatum(datetime, "simulation_start")
@@ -585,17 +581,6 @@ class MetaDataCollector:
     def collect_simulation_mdata(self, mdata_raw: Dict[str, Any]) -> None:
         """Collect simulation meta data."""
 
-        # Model name
-        model_name_raw = self.nc_meta_data["analysis"]["model"]
-        if model_name_raw == "cosmo1":
-            model_name = "COSMO-1"
-        elif model_name_raw == "cosmo2":
-            model_name = "COSMO-2"
-        elif model_name_raw == "ifs":
-            model_name = "IFS"
-        else:
-            raise Exception("unknown raw model name", model_name_raw)
-
         # Start and end timesteps of simulation
         ts_start = datetime(
             *time.strptime(
@@ -623,7 +608,6 @@ class MetaDataCollector:
 
         mdata_raw.update(
             {
-                "simulation_model_name": model_name,
                 "simulation_start": ts_start,
                 "simulation_end": ts_end,
                 "simulation_now": ts_now,
