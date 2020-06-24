@@ -13,12 +13,15 @@ import traceback
 # Third-party
 import click
 
-# First-party
-from srutils.click import CharSepList
-
 # Local
 from . import __version__
 from . import data_path
+from .cli_preset import click_add_to_preset_paths
+from .cli_preset import click_cat_preset_and_exit
+from .cli_preset import click_find_presets_and_exit
+from .cli_preset import click_list_presets_and_exit
+from .cli_preset import click_use_preset
+from .cli_utils import click_error
 from .formatting import format_range
 from .input import read_fields
 from .logging import log
@@ -26,11 +29,6 @@ from .logging import set_log_level
 from .plots import create_plot
 from .plots import prepare_plot
 from .preset import add_to_preset_paths
-from .preset import click_add_to_preset_paths
-from .preset import click_cat_preset_and_exit
-from .preset import click_find_presets_and_exit
-from .preset import click_list_presets_and_exit
-from .preset import click_use_preset
 from .setup import InputSetup
 from .setup import InputSetupFile
 
@@ -46,33 +44,42 @@ add_to_preset_paths(data_path / "presets")
 click.option = functools.partial(click.option, show_default=True)  # type: ignore
 
 
-# comma_sep_list_of_unique_ints = CharSepList(int, ",", unique=True)
-plus_sep_list_of_unique_ints = CharSepList(int, "+", unique=True)
-
-
-def not_implemented(msg):
-    def f(ctx, param, value):  # pylint: disable=W0613  # unused-argument
-        if value:
-            click.echo(f"not implemented: {msg}")
-
-    return f
-
-
-def set_verbosity(ctx, param, value):  # pylint: disable=W0613  # unused-argument
+# pylint: disable=W0613  # unused-argument (ctx, param)
+def click_set_verbosity(ctx, param, value):
     if ctx.obj is None:
         ctx.obj = {}
+    ctx.obj["verbosity"] = value
     set_log_level(value)
 
 
-def prepare_input_setup_params(ctx, param, value):
+# pylint: disable=W0613  # unused-argument (param)
+def click_set_raise(ctx, param, value):
+    if ctx.obj is None:
+        ctx.obj = {}
+    if value is None:
+        if "raise" not in ctx.obj:
+            ctx.obj["raise"] = False
+    else:
+        ctx.obj["raise"] = value
+
+
+# pylint: disable=W0613  # unused-argument (param)
+def click_set_pdb(ctx, param, value):
+    if ctx.obj is None:
+        ctx.obj = {}
+    ctx.obj["pdb"] = value
+    ctx.obj["raise"] = True
+
+
+# pylint: disable=W0613  # unused-argument (param)
+def click_prep_setup_params(ctx, param, value):
     # pylint: disable=W0613  # unused-argument
     if not value:
         return None
     try:
         return InputSetup.cast_many(value)
     except ValueError as e:
-        click.echo(f"Error: Invalid setup parameter: {e}", file=sys.stderr)
-        ctx.exit(1)
+        click_error(ctx, f"Invalid setup parameter ({e})")
 
 
 @click.command(context_settings={"help_option_names": ["-h", "--help"]},)
@@ -91,74 +98,13 @@ def prepare_input_setup_params(ctx, param, value):
     default=False,
 )
 @click.option(
-    "--verbose",
-    "-v",
-    "verbose",
-    help="Increase verbosity; specify multiple times for more.",
-    count=True,
-    callback=set_verbosity,
-    is_eager=True,
-)
-@click.option(
-    "--setup",
-    "input_setup_params",
-    help="Setup parameter overriding those in the setup file(s).",
-    metavar="PARAM VALUE",
-    nargs=2,
-    multiple=True,
-    callback=prepare_input_setup_params,
-)
-@click.option(
-    "--preset",
+    "--each-only",
     help=(
-        "Run with preset setup files matching PATTERN (wildcards: '*', '?')."
-        " A single '?' lists all available setups (like --setup-list)."
+        "Only create the first N plots (at most) for each input file. Useful "
+        "during development; not supposed to be used in production."
     ),
-    metavar="PATTERN",
-    multiple=True,
-    callback=click_use_preset,
-    expose_value=False,
-)
-@click.option(
-    "--preset-skip",
-    help=(
-        "Among preset setup files specified with --preset, skip those matching "
-        " PATTERN (wildcards: '*', '?')."
-    ),
-    metavar="PATTERN",
-    multiple=True,
-    is_eager=True,
-)
-@click.option(
-    "--preset-cat",
-    help=(
-        "Show the contents of preset setup files matching PATTERN (wildcards:"
-        " '*', '?')."
-    ),
-    metavar="PATTERN",
-    callback=click_cat_preset_and_exit,
-    expose_value=False,
-)
-@click.option(
-    "--preset-list",
-    help="List the names of all preset setup files.",
-    callback=click_list_presets_and_exit,
-    is_flag=True,
-)
-@click.option(
-    "--preset-find",
-    help="List preset setup file(s) by name (may contain wildcards).",
-    metavar="NAME",
-    callback=click_find_presets_and_exit,
-    multiple=True,
-)
-@click.option(
-    "--preset-add",
-    help="Add a directory containing preset setup files.",
-    type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    callback=click_add_to_preset_paths,
-    is_eager=True,
-    expose_value=False,
+    type=int,
+    metavar="N",
 )
 @click.option(
     "--only",
@@ -170,13 +116,7 @@ def prepare_input_setup_params(ctx, param, value):
     metavar="N",
 )
 @click.option(
-    "--each-only",
-    help=(
-        "Only create the first N plots (at most) for each input file. Useful "
-        "during development; not supposed to be used in production."
-    ),
-    type=int,
-    metavar="N",
+    "--open-all", "open_all_cmd", help="Like --open-first, but for all plots.",
 )
 @click.option(
     "--open-first",
@@ -190,15 +130,98 @@ def prepare_input_setup_params(ctx, param, value):
     ),
 )
 @click.option(
-    "--open-all", "open_all_cmd", help="Like --open-first, but for all plots.",
+    "--pdb/--no-pdb",
+    help="Drop into debugger when an exception is raised.",
+    callback=click_set_pdb,
+    is_eager=True,
+    expose_value=False,
 )
 @click.option(
-    "--pdb/--no-pdb", "use_pdb", help="Drop into debugger when an exception is raised.",
+    "--preset",
+    help=(
+        "Run with preset setup files matching PATTERN (wildcards: '*', '?')."
+        " A single '?' lists all available setups (like --setup-list)."
+    ),
+    metavar="PATTERN",
+    multiple=True,
+    callback=click_use_preset,
+    expose_value=False,
+)
+@click.option(
+    "--preset-add",
+    help="Add a directory containing preset setup files.",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    callback=click_add_to_preset_paths,
+    is_eager=True,
+    expose_value=False,
+)
+@click.option(
+    "--preset-cat",
+    help=(
+        "Show the contents of preset setup files matching PATTERN (wildcards:"
+        " '*', '?')."
+    ),
+    metavar="PATTERN",
+    callback=click_cat_preset_and_exit,
+    expose_value=False,
+)
+@click.option(
+    "--preset-find",
+    help="List preset setup file(s) by name (may contain wildcards).",
+    metavar="NAME",
+    callback=click_find_presets_and_exit,
+    multiple=True,
+    expose_value=False,
+)
+@click.option(
+    "--preset-list",
+    help="List the names of all preset setup files.",
+    callback=click_list_presets_and_exit,
+    is_flag=True,
+    expose_value=False,
+)
+@click.option(
+    "--preset-skip",
+    help=(
+        "Among preset setup files specified with --preset, skip those matching "
+        " PATTERN (wildcards: '*', '?')."
+    ),
+    metavar="PATTERN",
+    multiple=True,
+    is_eager=True,
+    expose_value=False,
+)
+@click.option(
+    "--raise/--no-raise",
+    help="Raise exception in place of user-friendly but uninformative error message.",
+    callback=click_set_raise,
+    is_eager=True,
+    default=None,
+    expose_value=False,
+)
+@click.option(
+    "--setup",
+    "input_setup_params",
+    help="Setup parameter overriding those in the setup file(s).",
+    metavar="PARAM VALUE",
+    nargs=2,
+    multiple=True,
+    callback=click_prep_setup_params,
+)
+@click.option(
+    "--verbose",
+    "-v",
+    "verbose",
+    help="Increase verbosity; specify multiple times for more.",
+    count=True,
+    callback=click_set_verbosity,
+    is_eager=True,
+    expose_value=False,
 )
 # ---
 @click.pass_context
-def cli(ctx, use_pdb, **kwargs):
-    if not use_pdb:
+def cli(ctx, **kwargs):
+    if not ctx.obj["pdb"]:
         main(ctx, **kwargs)
     else:
         pdb = __import__("ipdb")  # trick pre-commit hook "debug-statements"
@@ -206,14 +229,14 @@ def cli(ctx, use_pdb, **kwargs):
             main(ctx, **kwargs)
         except Exception:  # pylint: disable=W0703  # broad-except
             traceback.print_exc()
-            print()
+            click.echo()
             pdb.post_mortem()
             ctx.exit(1)
 
 
-# pylint: disable=R0913  # too-many-arguments
 # pylint: disable=R0912  # too-many-branches
-# pylint: disable=W0613  # unused-argument (preset_skip)
+# pylint: disable=R0913  # too-many-arguments
+# pylint: disable=R0915  # too-many-statements
 def main(
     ctx,
     setup_file_paths,
@@ -221,12 +244,10 @@ def main(
     dry_run,
     only,
     each_only,
-    preset_skip,
-    **cli_args,
+    open_first_cmd,
+    open_all_cmd,
 ):
     """Create dispersion plot as specified in CONFIG_FILE(S)."""
-
-    ctx.obj.update(cli_args)
 
     # Add preset setup file paths
     setup_file_paths = list(setup_file_paths)
@@ -234,10 +255,7 @@ def main(
         if path not in setup_file_paths:
             setup_file_paths.append(path)
     if not setup_file_paths:
-        click.echo(
-            "Error: Must pass explicit and/or preset setup file(s)", file=sys.stderr,
-        )
-        ctx.exit(1)
+        click_error(ctx, "Must pass explicit and/or preset setup file(s)")
 
     # Read setup files
     # Note: Already added argument `each_only` to `read_many` in order to plot
@@ -252,9 +270,6 @@ def main(
 
     # Group setups by input file(s)
     setups_by_infile = setups.group("infile")
-
-    open_first_cmd = ctx.obj["open_first_cmd"]
-    open_all_cmd = ctx.obj["open_all_cmd"]
 
     class BreakInner(Exception):
         """Break out of inner loop, but continue outer loop."""

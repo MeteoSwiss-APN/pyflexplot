@@ -1,6 +1,8 @@
 __init__.py
 boxed_plot.py
 cli.py
+cli_preset.py
+cli_utils.py
 data.py
 dimensions.py
 exceptions.py
