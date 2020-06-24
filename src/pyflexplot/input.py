@@ -31,14 +31,14 @@ from .meta_data import collect_meta_data
 from .meta_data import MetaData
 from .meta_data import nc_var_name
 from .nc_meta_data import read_meta_data
-from .setup import InputSetup
-from .setup import InputSetupCollection
+from .setup import Setup
+from .setup import SetupCollection
 
 
 # pylint: disable=R0914  # too-many-locals
 def read_fields(
     in_file_path: str,
-    setups: InputSetupCollection,
+    setups: SetupCollection,
     *,
     add_ts0: bool = False,
     dry_run: bool = False,
@@ -133,7 +133,7 @@ class FileReader:
 
     # pylint: disable=R0914  # too-many-locals
     # pylint: disable=R1702  # too-many-nested-blocks
-    def run(self, setups: InputSetupCollection) -> List[List[Field]]:
+    def run(self, setups: SetupCollection) -> List[List[Field]]:
 
         self.ens_member_ids = setups.collect_equal("ens_member_id") or None
         self._n_members = 1 if not self.ens_member_ids else len(self.ens_member_ids)
@@ -144,7 +144,7 @@ class FileReader:
 
         setups = setups.complete_dimensions(self.nc_meta_data)
 
-        setups_field_lst_lst: List[List[InputSetupCollection]] = []
+        setups_field_lst_lst: List[List[SetupCollection]] = []
         for (
             (input_variable, combine_levels, combine_deposition_types, combine_species),
             setups_spc,
@@ -169,7 +169,7 @@ class FileReader:
             setups_field_lst = setups_loc.decompress_partially(None, skip=skip)
             # SR_TMP <
             setups_field_lst = [
-                InputSetupCollection([setup])
+                SetupCollection([setup])
                 for setups in setups_field_lst
                 for setup in setups
             ]
@@ -187,7 +187,7 @@ class FileReader:
 
     # SR_TMP <<<
     # pylint: disable=R0914  # too-many-locals
-    def _run_core(self, setups: InputSetupCollection) -> List[List[Field]]:
+    def _run_core(self, setups: SetupCollection) -> List[List[Field]]:
         """Read one or more fields from a file from disc."""
 
         # Create individual setups at each requested time step
@@ -261,7 +261,7 @@ class FileReader:
         return nc_meta_data
 
     def _read_member_fields_over_time(
-        self, fi: nc4.Dataset, setups: InputSetupCollection
+        self, fi: nc4.Dataset, setups: SetupCollection
     ) -> np.ndarray:
         """Read field over all time steps for each member."""
 
@@ -283,7 +283,7 @@ class FileReader:
 
     # pylint: disable=R0914  # too-many-locals
     def _collect_meta_data(
-        self, fi: nc4.Dataset, setups_lst_time: Sequence[InputSetupCollection]
+        self, fi: nc4.Dataset, setups_lst_time: Sequence[SetupCollection]
     ) -> List[MetaData]:
         """Collect time-step-specific data meta data."""
         mdata_lst: List[MetaData] = []
@@ -384,7 +384,7 @@ class FileReader:
         return new_fld_time
 
     def _reduce_ensemble(
-        self, fld_time_mem: np.ndarray, var_setups: InputSetupCollection,
+        self, fld_time_mem: np.ndarray, var_setups: SetupCollection,
     ) -> np.ndarray:
         """Reduce the ensemble to a single field (time, lat, lon)."""
 
@@ -466,7 +466,7 @@ class FileReader:
 
     # SR_TODO refactor to reduce branching and locals!
     # pylint: disable=R0912,R0914  # too-many-branches, too-many-locals
-    def _read_fld(self, fi: nc4.Dataset, setup: InputSetup) -> np.ndarray:
+    def _read_fld(self, fi: nc4.Dataset, setup: Setup) -> np.ndarray:
         """Read an individual 2D field at a given time step from disk."""
 
         # SR_TMP <

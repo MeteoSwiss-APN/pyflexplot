@@ -12,7 +12,7 @@ import numpy as np
 import pytest  # type: ignore
 
 # First-party
-from pyflexplot.setup import CoreInputSetup
+from pyflexplot.setup import CoreSetup
 
 
 @pytest.fixture
@@ -71,7 +71,7 @@ def fix_nc_fld(fld, model):
 
 
 def read_nc_var(path, var_name, setup, model):
-    # + assert isinstance(setup, CoreInputSetup)  # SR_TODO (if that's indeed the goal)
+    # + assert isinstance(setup, CoreSetup)  # SR_TODO (if that's indeed the goal)
     with nc4.Dataset(path, "r") as fi:
         var = fi.variables[var_name]
 
@@ -82,16 +82,13 @@ def read_nc_var(path, var_name, setup, model):
                 idx = slice(None)
             elif dim_name == "time":
                 # Read all timesteps until the selected one
-                if isinstance(setup, CoreInputSetup):
+                if isinstance(setup, CoreSetup):
                     idx = slice(setup.core.dimensions.time + 1)
                 else:
                     assert isinstance(setup.core.dimensions.time, int)
                     idx = slice(setup.core.dimensions.time + 1)
             elif dim_name in ["level", "height"]:
-                if (
-                    isinstance(setup, CoreInputSetup)
-                    or setup.core.dimensions.level is None
-                ):
+                if isinstance(setup, CoreSetup) or setup.core.dimensions.level is None:
                     idx = setup.core.dimensions.level
                 else:
                     assert isinstance(setup.core.dimensions.level, int)

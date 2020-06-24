@@ -18,8 +18,8 @@ import pytest  # type: ignore
 from pyflexplot.input import read_fields
 from pyflexplot.plots import create_plot
 from pyflexplot.plots import prepare_plot
-from pyflexplot.setup import InputSetup
-from pyflexplot.setup import InputSetupCollection
+from pyflexplot.setup import Setup
+from pyflexplot.setup import SetupCollection
 from srutils.testing import assert_nested_equal
 
 try:
@@ -72,8 +72,8 @@ class _TestBase:
     n_plots: int = 1
 
     def get_setups(self):
-        setup = InputSetup.create(self.setup_dct)
-        return InputSetupCollection([setup])
+        setup = Setup.create(self.setup_dct)
+        return SetupCollection([setup])
 
     def get_field(self, datadir):
         infile = f"{datadir}/{self.setup_dct['infile']}"

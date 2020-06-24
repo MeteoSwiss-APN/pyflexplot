@@ -24,7 +24,7 @@ from .exceptions import ArrayDimensionError
 from .exceptions import FieldAllNaNError
 from .exceptions import InconsistentArrayShapesError
 from .meta_data import MetaData
-from .setup import InputSetupCollection
+from .setup import SetupCollection
 from .summarize import default_summarize
 from .summarize import summarizable
 
@@ -93,7 +93,7 @@ class Field:
     lat: np.ndarray
     lon: np.ndarray
     rotated_pole: bool
-    var_setups: InputSetupCollection
+    var_setups: SetupCollection
     time_stats: Mapping[str, np.ndarray]
     nc_meta_data: Mapping[str, Any]
     mdata: Optional[MetaData]

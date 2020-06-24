@@ -39,7 +39,7 @@ from srutils.str import join_multilines
 # Local
 from .dimensions import CoreDimensions
 from .dimensions import Dimensions
-from .exceptions import UnequalInputSetupParamValuesError
+from .exceptions import UnequalSetupParamValuesError
 from .logging import log
 from .pydantic import cast_field_value
 from .pydantic import prepare_field_value
@@ -58,16 +58,16 @@ def is_dimensions_param(param: str) -> bool:
 
 # SR_TMP <<< TODO cleaner solution
 def is_core_setup_param(param: str) -> bool:
-    return param in CoreInputSetup.__fields__
+    return param in CoreSetup.__fields__
 
 
 # SR_TMP <<< TODO cleaner solution
 def is_setup_param(param: str) -> bool:
-    return param in InputSetup.__fields__
+    return param in Setup.__fields__
 
 
 # SR_TMP <<< TODO cleaner solution
-def get_setup_param_value(setup: "InputSetup", param: str) -> Any:
+def get_setup_param_value(setup: "Setup", param: str) -> Any:
     if is_setup_param(param):
         return getattr(setup, param)
     elif is_core_setup_param(param):
@@ -80,11 +80,11 @@ def get_setup_param_value(setup: "InputSetup", param: str) -> Any:
 
 
 # pylint: disable=E0213  # no-self-argument (validators)
-class CoreInputSetup(BaseModel):
+class CoreSetup(BaseModel):
     """
     PyFlexPlot core setup with exactly one value per parameter.
 
-    See ``InputSetup`` for details on the parameters.
+    See ``Setup`` for details on the parameters.
 
     """
 
@@ -192,7 +192,7 @@ class CoreInputSetup(BaseModel):
                 #         fields are created (which contain only one value each of
                 #         the multipanel_param, but still retain plot_type
                 #         "multipanel")..
-                #         This issue illustrates that InputSetup and Setup should
+                #         This issue illustrates that Setup and Setup should
                 #         be separated again in some fashion!
                 return values  # SR_TMP
                 # SR_TMP >  SR_MULTIPANEL
@@ -246,7 +246,7 @@ class CoreInputSetup(BaseModel):
         return value
 
     @classmethod
-    def create(cls, params: Mapping[str, Any]) -> "CoreInputSetup":
+    def create(cls, params: Mapping[str, Any]) -> "CoreSetup":
         params = dict(params)
         dimensions = Dimensions.create(params.pop("dimensions", {}))
         return cls(**{**params, "dimensions": dimensions})
@@ -261,9 +261,7 @@ class CoreInputSetup(BaseModel):
         return setup_repr(self)
 
     @classmethod
-    def as_setup(
-        cls, obj: Union[Mapping[str, Any], "CoreInputSetup"],
-    ) -> "CoreInputSetup":
+    def as_setup(cls, obj: Union[Mapping[str, Any], "CoreSetup"],) -> "CoreSetup":
         if isinstance(obj, cls):
             return obj
         assert isinstance(obj, Mapping)  # mypy
@@ -272,7 +270,7 @@ class CoreInputSetup(BaseModel):
     @overload
     def complete_dimensions(
         self, meta_data, inplace: Literal[False] = False
-    ) -> "CoreInputSetup":
+    ) -> "CoreSetup":
         ...
 
     @overload
@@ -287,7 +285,7 @@ class CoreInputSetup(BaseModel):
 
 
 # SR_TODO Clean up docstring -- where should format key hints go?
-class InputSetup(BaseModel):
+class Setup(BaseModel):
     """
     PyFlexPlot setup.
 
@@ -356,7 +354,7 @@ class InputSetup(BaseModel):
     infile: str
     outfile: str
     ens_member_id: Optional[Tuple[int, ...]] = None
-    core: "CoreInputSetup"
+    core: "CoreSetup"
 
     # SR_TMP <<<
     @property
@@ -380,11 +378,11 @@ class InputSetup(BaseModel):
         return "deterministic"
 
     @classmethod
-    def create(cls, params: Mapping[str, Any]) -> "InputSetup":
-        """Create an instance of ``InputSetup``.
+    def create(cls, params: Mapping[str, Any]) -> "Setup":
+        """Create an instance of ``Setup``.
 
         Args:
-            params: Parameters to instatiate ``InputSetup``.
+            params: Parameters to instatiate ``Setup``.
 
         """
         params = dict(**params)
@@ -393,7 +391,7 @@ class InputSetup(BaseModel):
         core_params = {"dimensions": dimensions}
         singles = ["infile"]
         for param, value in dict(**params).items():
-            if param in CoreInputSetup.__fields__:
+            if param in CoreSetup.__fields__:
                 core_params[param] = params.pop(param)
                 continue
             if param in singles:
@@ -403,7 +401,7 @@ class InputSetup(BaseModel):
                 params[param] = prepare_field_value(field, value, alias_none=["*"])
             except Exception:
                 raise ValueError("invalid parameter value", param, value)
-        params["core"] = CoreInputSetup.create(core_params)
+        params["core"] = CoreSetup.create(core_params)
         try:
             return cls(**params)
         except ValidationError as e:
@@ -415,7 +413,7 @@ class InputSetup(BaseModel):
             raise Exception(msg)
 
     @classmethod
-    def as_setup(cls, obj: Union[Mapping[str, Any], "InputSetup"]) -> "InputSetup":
+    def as_setup(cls, obj: Union[Mapping[str, Any], "Setup"]) -> "Setup":
         if isinstance(obj, cls):
             return obj
         return cls.create(obj)  # type: ignore
@@ -429,7 +427,7 @@ class InputSetup(BaseModel):
                 for dim_param, dim_value in value.items()
             }
         elif is_core_setup_param(param):
-            return cast_field_value(CoreInputSetup, param, value)
+            return cast_field_value(CoreSetup, param, value)
         return cast_field_value(cls, param, value)
 
     @classmethod
@@ -483,28 +481,26 @@ class InputSetup(BaseModel):
         return self.dict() == other_dict
 
     @overload
-    def derive(self, params: Mapping[str, Any]) -> "InputSetup":
+    def derive(self, params: Mapping[str, Any]) -> "Setup":
         ...
 
     @overload
-    def derive(self, params: Sequence[Mapping[str, Any]]) -> "InputSetupCollection":
+    def derive(self, params: Sequence[Mapping[str, Any]]) -> "SetupCollection":
         ...
 
     def derive(
         self, params: Union[Mapping[str, Any], Sequence[Mapping[str, Any]]],
-    ) -> Union["InputSetup", "InputSetupCollection"]:
-        """Derive ``InputSetup`` object(s) with adapted parameters."""
+    ) -> Union["Setup", "SetupCollection"]:
+        """Derive ``Setup`` object(s) with adapted parameters."""
         if isinstance(params, Sequence):
-            return InputSetupCollection([self.derive(params_i) for params_i in params])
+            return SetupCollection([self.derive(params_i) for params_i in params])
         dct = {**self.dict(), **params}
         if "dimensions" in params:
             dct["dimensions"] = self.core.dimensions.derive(params["dimensions"])
         return type(self).create(dct)
 
     @classmethod
-    def compress(
-        cls, setups: Union["InputSetupCollection", Sequence["InputSetup"]]
-    ) -> "InputSetup":
+    def compress(cls, setups: Union["SetupCollection", Sequence["Setup"]]) -> "Setup":
         setups = list(setups)
         # SR_TMP <
         input_variables = [setup.core.input_variable for setup in setups]
@@ -523,8 +519,8 @@ class InputSetup(BaseModel):
 
     @classmethod
     def compress_partially(
-        cls, setups: "InputSetupCollection", skip: List[str],
-    ) -> "InputSetupCollection":
+        cls, setups: "SetupCollection", skip: List[str],
+    ) -> "SetupCollection":
         dcts: List[Dict[str, Any]] = setups.dicts()
         preserved_params_lst: List[Dict[str, Any]] = []
         for dct in dcts:
@@ -537,20 +533,18 @@ class InputSetup(BaseModel):
             if preserved_params not in preserved_params_lst:
                 preserved_params_lst.append(preserved_params)
         partial_dct = compress_multival_dicts(setups.dicts(), cls_seq=tuple)
-        setup_lst: List["InputSetup"] = []
+        setup_lst: List["Setup"] = []
         for preserved_params in preserved_params_lst:
             dct = {**partial_dct, **preserved_params}
             setup_lst.append(cls.create(dct))
-        return InputSetupCollection(setup_lst)
+        return SetupCollection(setup_lst)
 
-    def decompress(
-        self, skip: Optional[Collection[str]] = None
-    ) -> "InputSetupCollection":
+    def decompress(self, skip: Optional[Collection[str]] = None) -> "SetupCollection":
         return self._decompress(select=None, skip=skip)
 
     def decompress_partially(
         self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None,
-    ) -> "InputSetupCollection":
+    ) -> "SetupCollection":
         return self._decompress(select, skip)
 
     # pylint: disable=R0914  # too-many-locals
@@ -559,7 +553,7 @@ class InputSetup(BaseModel):
         select: Optional[Collection[str]] = None,
         skip: Optional[Collection[str]] = None,
     ):
-        """Create multiple ``InputSetup`` objects with one-value parameters only."""
+        """Create multiple ``Setup`` objects with one-value parameters only."""
 
         select_setup, select_dimensions = self._group_params(select)
         skip_setup, skip_dimensions = self._group_params(skip)
@@ -588,7 +582,7 @@ class InputSetup(BaseModel):
                     dct_ij = {**dct_i, "dimensions": dims_j}
                     dcts.append(dct_ij)
 
-        return InputSetupCollection([InputSetup.create(dct) for dct in dcts])
+        return SetupCollection([Setup.create(dct) for dct in dcts])
 
     def _group_params(
         self, params: Optional[Collection[str]]
@@ -610,25 +604,25 @@ class InputSetup(BaseModel):
         return (params_setup, params_dimensions)
 
 
-class InputSetupCollection:
-    def __init__(self, setups: Collection[InputSetup]) -> None:
+class SetupCollection:
+    def __init__(self, setups: Collection[Setup]) -> None:
         if not isinstance(setups, Collection) or (
-            setups and not isinstance(next(iter(setups)), InputSetup)
+            setups and not isinstance(next(iter(setups)), Setup)
         ):
             raise ValueError(
-                "setups is not an InputSetup collection",
+                "setups is not an Setup collection",
                 type(setups),
                 type(next(iter(setups))),
             )
-        self._setups: List[InputSetup] = list(setups)
+        self._setups: List[Setup] = list(setups)
 
     @classmethod
     def create(
-        cls, setups: Collection[Union[Mapping[str, Any], InputSetup]]
-    ) -> "InputSetupCollection":
-        setup_lst: List[InputSetup] = []
+        cls, setups: Collection[Union[Mapping[str, Any], Setup]]
+    ) -> "SetupCollection":
+        setup_lst: List[Setup] = []
         for obj in setups:
-            if isinstance(obj, InputSetup):
+            if isinstance(obj, Setup):
                 obj = obj.dict()
             # SR_TMP <
             # dcts = decompress_multival_dict(cast(dict, obj))
@@ -639,11 +633,11 @@ class InputSetupCollection:
             dcts = decompress_multival_dict(cast(dict, obj), skip=skip)
             # SR_TMP >
             for dct in dcts:
-                setup = InputSetup.create(dct)
+                setup = Setup.create(dct)
                 setup_lst.append(setup)
         return cls(setup_lst)
 
-    def copy(self) -> "InputSetupCollection":
+    def copy(self) -> "SetupCollection":
         return type(self)([setup.copy() for setup in self])
 
     # pylint: disable=R0912  # too-many-branches
@@ -654,12 +648,12 @@ class InputSetupCollection:
         diff: Dict[str, Any] = {}
 
         # Regular params
-        for param in InputSetup.__fields__:
+        for param in Setup.__fields__:
             if param == "core":
                 continue  # Handled below
             try:
                 value = self.collect_equal(param)
-            except UnequalInputSetupParamValuesError:
+            except UnequalSetupParamValuesError:
                 diff[param] = self.collect(param)
             else:
                 same[param] = value
@@ -667,12 +661,12 @@ class InputSetupCollection:
         # Core params
         core_same = {}
         core_diff = {}
-        for param in CoreInputSetup.__fields__:
+        for param in CoreSetup.__fields__:
             if param == "dimensions":
                 continue  # Handled below
             try:
                 value = self.collect_equal(param)
-            except UnequalInputSetupParamValuesError:
+            except UnequalSetupParamValuesError:
                 core_diff[param] = self.collect(param)
             else:
                 core_same[param] = value
@@ -735,7 +729,7 @@ class InputSetupCollection:
     def __len__(self) -> int:
         return len(self._setups)
 
-    def __iter__(self) -> Iterator[InputSetup]:
+    def __iter__(self) -> Iterator[Setup]:
         for setup in self._setups:
             yield setup
 
@@ -753,26 +747,24 @@ class InputSetupCollection:
         return [setup.dict() for setup in self]
 
     @classmethod
-    def merge(
-        cls, setups_lst: Sequence["InputSetupCollection"]
-    ) -> "InputSetupCollection":
+    def merge(cls, setups_lst: Sequence["SetupCollection"]) -> "SetupCollection":
         return cls([setup for setups in setups_lst for setup in setups])
 
-    def compress(self) -> InputSetup:
-        return InputSetup.compress(self)
+    def compress(self) -> Setup:
+        return Setup.compress(self)
 
-    def decompress(self) -> List["InputSetupCollection"]:
+    def decompress(self) -> List["SetupCollection"]:
         return self.decompress_partially(select=None, skip=None)
 
-    def derive(self, params: Mapping[str, Any]) -> "InputSetupCollection":
+    def derive(self, params: Mapping[str, Any]) -> "SetupCollection":
         return type(self)([setup.derive(params) for setup in self])
 
     def decompress_partially(
         self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None
-    ) -> List["InputSetupCollection"]:
+    ) -> List["SetupCollection"]:
         if (select, skip) == (None, None):
             return [setup.decompress() for setup in self]
-        sub_setup_lst_lst: List[List[InputSetup]] = []
+        sub_setup_lst_lst: List[List[Setup]] = []
         for setup in self:
             sub_setups = setup.decompress_partially(select, skip)
             if not sub_setup_lst_lst:
@@ -781,14 +773,12 @@ class InputSetupCollection:
                 assert len(sub_setups) == len(sub_setup_lst_lst)
                 for idx, sub_setup in enumerate(sub_setups):
                     sub_setup_lst_lst[idx].append(sub_setup)
-        return [
-            InputSetupCollection(sub_setup_lst) for sub_setup_lst in sub_setup_lst_lst
-        ]
+        return [SetupCollection(sub_setup_lst) for sub_setup_lst in sub_setup_lst_lst]
 
     def decompress_twice(
         self, outer: str, skip: Optional[Collection[str]] = None
-    ) -> List["InputSetupCollection"]:
-        sub_setups_lst: List[InputSetupCollection] = []
+    ) -> List["SetupCollection"]:
+        sub_setups_lst: List[SetupCollection] = []
         for setup in self:
             for sub_setup in setup.decompress_partially([outer], skip):
                 sub_sub_setups = sub_setup.decompress(skip)
@@ -818,23 +808,21 @@ class InputSetupCollection:
         """Collect the value of a parameter that is shared by all setups."""
         values = self.collect(param)
         if not all(value == values[0] for value in values[1:]):
-            raise UnequalInputSetupParamValuesError(param, values)
+            raise UnequalSetupParamValuesError(param, values)
         return next(iter(values))
 
     @overload
-    def group(self, param: str) -> Dict[Any, "InputSetupCollection"]:
+    def group(self, param: str) -> Dict[Any, "SetupCollection"]:
         ...
 
     @overload
-    def group(
-        self, param: Sequence[str]
-    ) -> Dict[Tuple[Any, ...], "InputSetupCollection"]:
+    def group(self, param: Sequence[str]) -> Dict[Tuple[Any, ...], "SetupCollection"]:
         ...
 
     def group(self, param):
         """Group setups by the value of one or more parameters."""
         if not isinstance(param, str):
-            grouped: Dict[Tuple[Any, ...], "InputSetupCollection"] = {}
+            grouped: Dict[Tuple[Any, ...], "SetupCollection"] = {}
             params: List[str] = list(param)
             for value, sub_setups in self.group(params[0]).items():
                 if len(params) == 1:
@@ -847,13 +835,13 @@ class InputSetupCollection:
                     raise NotImplementedError(f"{len(param)} sub_params", param)
             return grouped
         else:
-            grouped_raw: Dict[Any, List[InputSetup]] = {}
+            grouped_raw: Dict[Any, List[Setup]] = {}
             for setup in self:
                 value = get_setup_param_value(setup, param)
                 if value not in grouped_raw:
                     grouped_raw[value] = []
                 grouped_raw[value].append(setup)
-            grouped: Dict[Any, "InputSetupCollection"] = {
+            grouped: Dict[Any, "SetupCollection"] = {
                 value: type(self)(setups) for value, setups in grouped_raw.items()
             }
             return grouped
@@ -861,7 +849,7 @@ class InputSetupCollection:
     @overload
     def complete_dimensions(
         self, meta_data, inplace: Literal[False] = False
-    ) -> "InputSetupCollection":
+    ) -> "SetupCollection":
         ...
 
     @overload
@@ -876,8 +864,8 @@ class InputSetupCollection:
         return None if inplace else obj
 
 
-class InputSetupFile:
-    """InputSetup file to be read from and/or written to disk."""
+class SetupFile:
+    """Setup file to be read from and/or written to disk."""
 
     def __init__(self, path: str) -> None:
         self.path: str = path
@@ -889,7 +877,7 @@ class InputSetupFile:
         override: Optional[Dict[str, Any]] = None,
         only: Optional[int] = None,
         each_only: Optional[int] = None,
-    ) -> InputSetupCollection:
+    ) -> SetupCollection:
         if only is not None:
             if only < 0:
                 raise ValueError("only must not be negative", only)
@@ -897,19 +885,19 @@ class InputSetupFile:
         elif each_only is not None:
             if each_only < 0:
                 raise ValueError("each_only must not be negative", each_only)
-        setup_lst: List[InputSetup] = []
+        setup_lst: List[Setup] = []
         for path in paths:
             for setup in cls(path).read(override=override, only=each_only):
                 if only is not None and len(setup_lst) >= only:
                     break
                 if setup not in setup_lst:
                     setup_lst.append(setup)
-        return InputSetupCollection(setup_lst)
+        return SetupCollection(setup_lst)
 
     # pylint: disable=R0914  # too-many-locals
     def read(
         self, *, override: Optional[Dict[str, Any]] = None, only: Optional[int] = None
-    ) -> InputSetupCollection:
+    ) -> SetupCollection:
         """Read the setup from a text file in TOML format."""
         with open(self.path, "r") as f:
             try:
@@ -943,11 +931,11 @@ class InputSetupFile:
                         params["dimensions"] = {}
                     params["dimensions"][param] = value
             params_lst.append(params)
-        setups = InputSetupCollection.create(params_lst)
+        setups = SetupCollection.create(params_lst)
         if only is not None:
             if only < 0:
                 raise ValueError("only must not be negative", only)
-            setups = InputSetupCollection(list(setups)[:only])
+            setups = SetupCollection(list(setups)[:only])
         return setups
 
     def write(self, *args, **kwargs) -> None:
@@ -955,7 +943,7 @@ class InputSetupFile:
         raise NotImplementedError(f"{type(self).__name__}.write")
 
 
-def setup_repr(obj: Union["CoreInputSetup", "InputSetup"]) -> str:
+def setup_repr(obj: Union["CoreSetup", "Setup"]) -> str:
     def fmt(obj):
         if isinstance(obj, str):
             return f"'{obj}'"
@@ -969,10 +957,10 @@ def setup_repr(obj: Union["CoreInputSetup", "InputSetup"]) -> str:
 class FilePathFormatter:
     def __init__(self, previous: Optional[List[str]] = None) -> None:
         self.previous: List[str] = previous if previous is not None else []
-        self._setup: Optional[InputSetup] = None
+        self._setup: Optional[Setup] = None
 
     # pylint: disable=W0102  # dangerous-default-value ([])
-    def format(self, setup: InputSetup) -> str:
+    def format(self, setup: Setup) -> str:
         self._setup = setup
         assert self._setup is not None  # mypy
         template = setup.outfile

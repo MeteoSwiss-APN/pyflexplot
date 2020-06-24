@@ -3,8 +3,8 @@
 Tests for module ``pyflexplot.???``.
 """
 # First-party
-from pyflexplot.setup import InputSetup
-from pyflexplot.setup import InputSetupCollection
+from pyflexplot.setup import Setup
+from pyflexplot.setup import SetupCollection
 from srutils.testing import check_is_list_like
 
 # SR_TODO Turn these into meaningful tests for SetupCollection!!!
@@ -12,7 +12,7 @@ from srutils.testing import check_is_list_like
 
 class Test_Create_Concentration:
 
-    setup = InputSetup.create(
+    setup = Setup.create(
         {
             "infile": "dummy.nc",
             "outfile": "dummy.png",
@@ -26,12 +26,12 @@ class Test_Create_Concentration:
     def test_one_fld_one_var(self):
         """Single-value-only var specs, for one field, made of one var."""
         setup = self.setup.derive({"dimensions": {"species_id": 1, "level": 0}})
-        setups = InputSetupCollection([setup])
+        setups = SetupCollection([setup])
         var_setups_lst = setups.decompress_twice(
             "dimensions.time", skip=["ens_member_id"]
         )
         check_is_list_like(
-            var_setups_lst, len_=self.n_vs, t_children=InputSetupCollection,
+            var_setups_lst, len_=self.n_vs, t_children=SetupCollection,
         )
         var_setups = next(iter(var_setups_lst))
         assert len(var_setups) == 1
@@ -49,7 +49,7 @@ class Test_Create_Concentration:
         var_setups_lst = setups.decompress_twice(
             "dimensions.time", skip=["ens_member_id"]
         )
-        check_is_list_like(var_setups_lst, len_=4, t_children=InputSetupCollection)
+        check_is_list_like(var_setups_lst, len_=4, t_children=SetupCollection)
         for var_setups in var_setups_lst:
             assert len(var_setups) == 1
 
@@ -58,18 +58,18 @@ class Test_Create_Concentration:
         setup = self.setup.derive(
             {"dimensions": {"species_id": (1, 2), "level": (0, 1)}}
         )
-        setups = InputSetupCollection([setup])
+        setups = SetupCollection([setup])
         var_setups_lst = setups.decompress_twice(
             "dimensions.time", skip=["ens_member_id"]
         )
-        check_is_list_like(var_setups_lst, len_=1, t_children=InputSetupCollection)
+        check_is_list_like(var_setups_lst, len_=1, t_children=SetupCollection)
         var_setups = next(iter(var_setups_lst))
         assert len(var_setups) == 4
 
 
 class Test_Create_Deposition:
 
-    setup = InputSetup.create(
+    setup = Setup.create(
         {
             "infile": "dummy.nc",
             "outfile": "dummy.png",
@@ -83,11 +83,11 @@ class Test_Create_Deposition:
     def test_one_fld_one_var(self):
         """Single-value-only var specs, for one field, made of one var."""
         setup = self.setup.derive({"dimensions": {"time": 1, "species_id": 1}})
-        setups = InputSetupCollection([setup])
+        setups = SetupCollection([setup])
         var_setups_lst = setups.decompress_twice(
             "dimensions.time", skip=["ens_member_id"]
         )
-        check_is_list_like(var_setups_lst, len_=1, t_children=InputSetupCollection)
+        check_is_list_like(var_setups_lst, len_=1, t_children=SetupCollection)
         var_setups = next(iter(var_setups_lst))
         assert len(var_setups) == self.n_vs
 
@@ -103,7 +103,7 @@ class Test_Create_Deposition:
         var_setups_lst = setups.decompress_twice(
             "dimensions.time", skip=["ens_member_id"]
         )
-        check_is_list_like(var_setups_lst, len_=n, t_children=InputSetupCollection)
+        check_is_list_like(var_setups_lst, len_=n, t_children=SetupCollection)
         for var_setups in var_setups_lst:
             assert len(var_setups) == self.n_vs
 
@@ -116,10 +116,10 @@ class Test_Create_Deposition:
                 "dimensions": {"species_id": [1, 2], "deposition_type": ("dry", "wet")},
             }
         )
-        setups = InputSetupCollection([setup])
+        setups = SetupCollection([setup])
         var_setups_lst = setups.decompress_twice(
             "dimensions.time", skip=["ens_member_id"]
         )
-        check_is_list_like(var_setups_lst, len_=1, t_children=InputSetupCollection)
+        check_is_list_like(var_setups_lst, len_=1, t_children=SetupCollection)
         var_setups = next(iter(var_setups_lst))
         assert len(var_setups) == n_vs

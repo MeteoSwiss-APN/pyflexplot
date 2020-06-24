@@ -12,8 +12,8 @@ import numpy as np
 # First-party
 from pyflexplot.data import ensemble_probability
 from pyflexplot.input import read_fields
-from pyflexplot.setup import InputSetup
-from pyflexplot.setup import InputSetupCollection
+from pyflexplot.setup import Setup
+from pyflexplot.setup import SetupCollection
 from srutils.dict import decompress_multival_dict
 
 # Local  isort:skip
@@ -38,7 +38,7 @@ def get_var_name_ref(setup, var_names_ref):
 class TestReadFieldEnsemble_Single:
     """Read one ensemble of 2D fields from FLEXPART NetCDF files."""
 
-    # InputSetup parameters shared by all tests
+    # Setup parameters shared by all tests
     setup_params_shared: Dict[str, Any] = {
         "infile": "dummy.nc",
         "integrate": False,
@@ -89,7 +89,7 @@ class TestReadFieldEnsemble_Single:
         else:
             setup_dct["plot_type"] = f"ensemble_{ens_var}"
         # SR_TMP >
-        setups = InputSetupCollection([InputSetup.create(setup_dct)])
+        setups = SetupCollection([Setup.create(setup_dct)])
 
         # Read input fields
         field_lst_lst = read_fields(datafile_fmt, setups)
@@ -147,7 +147,7 @@ class TestReadFieldEnsemble_Single:
 class TestReadFieldEnsemble_Multiple:
     """Read multiple 2D field ensembles from FLEXPART NetCDF files."""
 
-    # InputSetup parameters arguments shared by all tests
+    # Setup parameters arguments shared by all tests
     shared_setup_params_compressed: Dict[str, Any] = {
         "infile": "dummy.nc",
         "integrate": True,
@@ -205,8 +205,8 @@ class TestReadFieldEnsemble_Multiple:
             else:
                 setup_params_i["plot_type"] = f"ensemble_{ens_var}"
             # SR_TMP >
-            setup_lst.append(InputSetup.create(setup_params_i))
-        setups = InputSetupCollection(setup_lst)
+            setup_lst.append(Setup.create(setup_params_i))
+        setups = SetupCollection(setup_lst)
 
         # Read input fields
         field_lst_lst = read_fields(datafile_fmt, setups)

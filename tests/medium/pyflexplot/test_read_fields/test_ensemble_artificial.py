@@ -14,7 +14,7 @@ import pytest  # type: ignore
 
 # First-party
 from pyflexplot.input import FileReader
-from pyflexplot.setup import InputSetupCollection
+from pyflexplot.setup import SetupCollection
 
 # Local  isort:skip
 from shared import datadir_artificial as datadir  # noqa:F401 isort:skip
@@ -55,7 +55,7 @@ def test_one_setup_one_field(datadir, conf):  # noqa:F811
         "ens_variable": conf.ens_var,
     }
     setup_dct_lst = [setup_dct]
-    setups = InputSetupCollection.create(setup_dct_lst)
+    setups = SetupCollection.create(setup_dct_lst)
     field_lst_lst = reader.run(setups)
 
     assert len(field_lst_lst) == 1

@@ -29,7 +29,7 @@ from .plot_elements import MapAxes
 from .plot_elements import MapAxesConf
 from .plot_elements import post_summarize_plot
 from .plot_elements import TextBoxAxes
-from .setup import InputSetup
+from .setup import Setup
 from .summarize import summarizable
 from .typing import ColorType
 from .typing import FontSizeType
@@ -48,7 +48,7 @@ class FontSizes:
 
 # pylint: disable=R0902  # too-many-instance-attributes
 class BoxedPlotConfig(BaseModel):
-    setup: InputSetup  # SR_TODO consider removing this
+    setup: Setup  # SR_TODO consider removing this
     mdata: MetaData  # SR_TODO consider removing this
     cmap: Union[str, Colormap] = "flexplot"
     colors: List[ColorType]

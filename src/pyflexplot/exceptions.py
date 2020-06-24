@@ -47,5 +47,5 @@ class NotSummarizableError(Exception):
     """Object could not be summarized."""
 
 
-class UnequalInputSetupParamValuesError(Exception):
+class UnequalSetupParamValuesError(Exception):
     """Values of a param differs between multiple setups."""

@@ -29,8 +29,8 @@ from .logging import set_log_level
 from .plots import create_plot
 from .plots import prepare_plot
 from .preset import add_to_preset_paths
-from .setup import InputSetup
-from .setup import InputSetupFile
+from .setup import Setup
+from .setup import SetupFile
 
 # # To debug segmentation fault, uncomment and run with PYTHONFAULTHANDLER=1
 # import faulthandler
@@ -77,7 +77,7 @@ def click_prep_setup_params(ctx, param, value):
     if not value:
         return None
     try:
-        return InputSetup.cast_many(value)
+        return Setup.cast_many(value)
     except ValueError as e:
         click_error(ctx, f"Invalid setup parameter ({e})")
 
@@ -266,7 +266,7 @@ def main(
     #       The setups would either have to be pre-expanded during reading, or
     #       this had to be solved some other way, but for now, let's just stick
     #       with the current implementation of N plots per input data file...
-    setups = InputSetupFile.read_many(setup_file_paths, override=input_setup_params)
+    setups = SetupFile.read_many(setup_file_paths, override=input_setup_params)
 
     # Group setups by input file(s)
     setups_by_infile = setups.group("infile")

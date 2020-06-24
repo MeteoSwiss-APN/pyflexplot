@@ -29,8 +29,8 @@ from pydantic import validator
 from pydantic.generics import GenericModel
 
 # Local
-from .setup import InputSetup
-from .setup import InputSetupCollection
+from .setup import Setup
+from .setup import SetupCollection
 from .species import get_species
 from .summarize import summarizable
 
@@ -351,7 +351,7 @@ class MetaData(BaseModel):
 
     """
 
-    setup: InputSetup
+    setup: Setup
     release_end_rel: Union[MetaDatum[timedelta], MetaDatumCombo[timedelta]]
     release_end: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
     release_height: Union[MetaDatum[float], MetaDatumCombo[float]]
@@ -469,7 +469,7 @@ class MetaData(BaseModel):
                 self_setup_dct,
                 other_setup_dcts,
             )
-        setup = InputSetupCollection([self.setup] + other_setups).compress()
+        setup = SetupCollection([self.setup] + other_setups).compress()
 
         kwargs = {}
         for name in self.__fields__:  # pylint: disable=E1101  # no-member
@@ -530,7 +530,7 @@ def format_unit(s: str) -> str:
 
 def collect_meta_data(
     fi: nc4.Dataset,
-    setup: InputSetup,
+    setup: Setup,
     nc_meta_data: Mapping[str, Any],
     *,
     add_ts0: bool = False,
@@ -545,7 +545,7 @@ class MetaDataCollector:
     def __init__(
         self,
         fi: nc4.Dataset,
-        setup: InputSetup,
+        setup: Setup,
         nc_meta_data: Mapping[str, Any],
         *,
         add_ts0: bool = False,
@@ -579,7 +579,7 @@ class MetaDataCollector:
         self.collect_release_mdata(mdata_raw)
         self.collect_species_mdata(mdata_raw)
         self.collect_variable_mdata(mdata_raw)
-        setup = InputSetup.as_setup(self.setup.dict())
+        setup = Setup.as_setup(self.setup.dict())
         return MetaData(setup=setup, **mdata_raw)
 
     def collect_simulation_mdata(self, mdata_raw: Dict[str, Any]) -> None:
@@ -713,9 +713,7 @@ class MetaDataCollector:
 
 
 class TimeStepMetaDataCollector:
-    def __init__(
-        self, fi: nc4.Dataset, setup: InputSetup, *, add_ts0: bool = False
-    ) -> None:
+    def __init__(self, fi: nc4.Dataset, setup: Setup, *, add_ts0: bool = False) -> None:
         self.fi = fi
         self.setup = setup
         self.add_ts0 = add_ts0
@@ -802,7 +800,7 @@ class RawReleaseMetaData(BaseModel):
         validate_assigment = True
 
     @classmethod
-    def from_file(cls, fi: nc4.Dataset, setup: InputSetup) -> "RawReleaseMetaData":
+    def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "RawReleaseMetaData":
         """Read information on a release from open file."""
 
         assert setup.core.dimensions.numpoint is not None  # mypy
@@ -887,7 +885,7 @@ class ReleaseMetaData(BaseModel):
 
     @classmethod
     def from_file(
-        cls, fi: nc4.Dataset, nc_meta_data: Dict[str, Any], setup: InputSetup,
+        cls, fi: nc4.Dataset, nc_meta_data: Dict[str, Any], setup: Setup,
     ) -> "ReleaseMetaData":
         """Read information on a release from open file."""
 
@@ -949,9 +947,7 @@ def fix_unit_meters_agl(unit: str, lang: str) -> str:
     return unit
 
 
-def nc_var_name(
-    setup: Union[InputSetup, InputSetup], model: str
-) -> Union[str, List[str]]:
+def nc_var_name(setup: Union[Setup, Setup], model: str) -> Union[str, List[str]]:
     # SR_TMP <
     dimensions = setup.core.dimensions
     input_variable = setup.core.input_variable

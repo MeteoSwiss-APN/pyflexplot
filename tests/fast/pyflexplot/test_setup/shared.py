@@ -7,7 +7,7 @@ from typing import Any
 from typing import Dict
 
 # First-party
-from pyflexplot.setup import InputSetup
+from pyflexplot.setup import Setup
 
 DEFAULT_KWARGS: Dict[str, Any] = {
     "infile": "foo.nc",
@@ -15,7 +15,7 @@ DEFAULT_KWARGS: Dict[str, Any] = {
 }
 
 
-DEFAULT_SETUP = InputSetup.create(
+DEFAULT_SETUP = Setup.create(
     {
         **DEFAULT_KWARGS,
         "combine_deposition_types": False,

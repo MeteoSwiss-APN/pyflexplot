@@ -36,8 +36,8 @@ from .meta_data import MetaData
 from .plot_elements import MapAxesConf
 from .plot_elements import TextBoxAxes
 from .setup import FilePathFormatter
-from .setup import InputSetup
-from .setup import InputSetupCollection
+from .setup import Setup
+from .setup import SetupCollection
 from .typing import ColorType
 from .words import SYMBOLS
 from .words import TranslatedWords
@@ -127,7 +127,7 @@ def capitalize(s: str) -> str:
 # pylint: disable=R0914  # too-many-locals
 # pylint: disable=R0915  # too-many-statements
 def create_plot_config(
-    setup: InputSetup, words: TranslatedWords, symbols: Words, mdata: MetaData,
+    setup: Setup, words: TranslatedWords, symbols: Words, mdata: MetaData,
 ) -> BoxedPlotConfig:
     words.set_active_lang(setup.core.lang)
     new_config_dct: Dict[str, Any] = {
@@ -646,7 +646,7 @@ def prepare_plot(
     """Create plots while yielding them with the plot file path one by one."""
     log(dbg=f"preparing setups for plot based on {len(field_lst)} fields")
     var_setups_lst = [field.var_setups for field in field_lst]
-    setup = InputSetupCollection.merge(var_setups_lst).compress()
+    setup = SetupCollection.merge(var_setups_lst).compress()
     out_file_path = FilePathFormatter(prev_out_file_paths).format(setup)
     log(dbg=f"preparing plot {out_file_path}")
     map_conf_lst = [create_map_conf(field) for field in field_lst]
@@ -824,7 +824,7 @@ def format_vertical_level_range(
 
 
 def format_integr_period(
-    mdata: "MetaData", setup: InputSetup, words: TranslatedWords, cap: bool = False
+    mdata: "MetaData", setup: Setup, words: TranslatedWords, cap: bool = False
 ) -> str:
     if not setup.core.integrate:
         operation = words["averaged_over"].s

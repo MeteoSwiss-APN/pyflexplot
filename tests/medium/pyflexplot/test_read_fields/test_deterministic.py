@@ -17,8 +17,8 @@ import pytest  # type: ignore
 # First-party
 from pyflexplot.input import FileReader
 from pyflexplot.input import read_fields
-from pyflexplot.setup import InputSetup
-from pyflexplot.setup import InputSetupCollection
+from pyflexplot.setup import Setup
+from pyflexplot.setup import SetupCollection
 
 # Local  isort:skip
 from shared import read_nc_var  # isort:skip
@@ -51,7 +51,7 @@ class Conf:
 
     @property
     def setup(self):
-        return InputSetup.create(self.setup_dct)
+        return Setup.create(self.setup_dct)
 
 
 datafilename1 = "flexpart_cosmo-1_2019052800.nc"
@@ -232,7 +232,7 @@ def test_single(datadir, conf):  # noqa:F811
     datafile = f"{datadir}/{conf.datafilename}"
 
     # Initialize field specifications
-    setups = InputSetupCollection([conf.setup])
+    setups = SetupCollection([conf.setup])
 
     # Read input field
     field_lst_lst = read_fields(datafile, setups)
@@ -420,10 +420,10 @@ def test_multiple(datadir, conf):  # noqa:F811
     setup_lst = list(conf.setup.decompress_partially(None))
     for setup in setup_lst.copy():
         setup_lst.extend(setup.derive(conf.derived_setup_params))
-    setups = InputSetupCollection(setup_lst)
+    setups = SetupCollection(setup_lst)
 
     # Process field specifications one after another
-    var_setups: InputSetupCollection
+    var_setups: SetupCollection
     for var_setups in setups.decompress_twice(
         "dimensions.time", skip=["ens_member_id"]
     ):
@@ -515,7 +515,7 @@ def test_single_add_ts0(datadir, conf):
     datafile = f"{datadir}/{conf.datafilename}"
 
     # Initialize field specifications
-    setups = InputSetupCollection([conf.setup])
+    setups = SetupCollection([conf.setup])
 
     # Read fields with and without added time step 0
     # Note: Check relies on ordered time steps, which is incidental
