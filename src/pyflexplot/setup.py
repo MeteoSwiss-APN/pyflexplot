@@ -426,6 +426,8 @@ class Setup(BaseModel):
                 dim_param: Dimensions.cast(dim_param, dim_value)
                 for dim_param, dim_value in value.items()
             }
+        elif is_dimensions_param(param):
+            return cast_field_value(CoreDimensions, param, value)
         elif is_core_setup_param(param):
             return cast_field_value(CoreSetup, param, value)
         return cast_field_value(cls, param, value)
