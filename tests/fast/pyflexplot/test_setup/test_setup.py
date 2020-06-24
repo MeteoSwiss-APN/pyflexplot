@@ -18,7 +18,7 @@ from srutils.dict import merge_dicts
 from srutils.testing import check_summary_dict_is_subdict
 
 # Local
-from .shared import DEFAULT_KWARGS
+from .shared import DEFAULT_PARAMS
 from .shared import DEFAULT_SETUP
 
 
@@ -42,30 +42,26 @@ class Test_CoreSetup_CompleteDimensions:
         "analysis": {"species_ids": (1, 2)},
     }
 
-    def core_setup_create(self, params):
-        assert "dimensions" not in DEFAULT_KWARGS
-        return CoreSetup.create(params)
-
     def test_time(self):
-        setup = self.core_setup_create({"dimensions": {"time": "*"}})
+        setup = CoreSetup.create({"dimensions": {"time": "*"}})
         assert setup.dimensions.time is None
         setup = setup.complete_dimensions(self.meta_data)
         assert setup.dimensions.time == (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 
     def test_level(self):
-        setup = self.core_setup_create({"dimensions": {"level": "*"}})
+        setup = CoreSetup.create({"dimensions": {"level": "*"}})
         assert setup.dimensions.level is None
         setup = setup.complete_dimensions(self.meta_data)
         assert setup.dimensions.level == (0, 1, 2)
 
     def test_species_id(self):
-        setup = self.core_setup_create({"dimensions": {"species_id": "*"}})
+        setup = CoreSetup.create({"dimensions": {"species_id": "*"}})
         assert setup.dimensions.species_id is None
         setup = setup.complete_dimensions(self.meta_data)
         assert setup.dimensions.species_id == (1, 2)
 
     def test_others(self):
-        setup = self.core_setup_create(
+        setup = CoreSetup.create(
             {"dimensions": {"nageclass": "*", "noutrel": "*", "numpoint": "*"}}
         )
         assert setup.dimensions.nageclass is None
@@ -215,19 +211,13 @@ class Test_Setup_Decompress:
 class Test_SetupCollection_Create:
     def create_partial_dicts(self):
         return [
-            merge_dicts(DEFAULT_KWARGS, dct)
-            for dct in [
-                {"infile": "foo.nc", "input_variable": "concentration", "domain": "ch"},
-                {"infile": "bar.nc", "input_variable": "deposition", "lang": "de"},
-                {"dimensions": {"nageclass": 1, "noutrel": 5, "numpoint": 3}},
-            ]
+            {"infile": "foo.nc", "input_variable": "concentration", "domain": "ch"},
+            {"infile": "bar.nc", "input_variable": "deposition", "lang": "de"},
+            {"dimensions": {"nageclass": 1, "noutrel": 5, "numpoint": 3}},
         ]
 
     def create_complete_dicts(self):
-        return [
-            merge_dicts(DEFAULT_SETUP.dict(), dct)
-            for dct in self.create_partial_dicts()
-        ]
+        return [merge_dicts(DEFAULT_PARAMS, dct) for dct in self.create_partial_dicts()]
 
     def create_setup_lst(self):
         return [Setup.create(dct) for dct in self.create_partial_dicts()]
@@ -247,24 +237,21 @@ class Test_SetupCollection_Create:
 
 class Test_SetupCollection_Compress:
     dcts: List[Dict[str, Any]] = [
-        merge_dicts(DEFAULT_KWARGS, dct)
-        for dct in [
-            {
-                "infile": "foo.nc",
-                "input_variable": "concentration",
-                "dimensions": {"level": 0},
-            },
-            {
-                "infile": "foo.nc",
-                "input_variable": "concentration",
-                "dimensions": {"level": 1},
-            },
-            {
-                "infile": "foo.nc",
-                "input_variable": "concentration",
-                "dimensions": {"level": (1, 2)},
-            },
-        ]
+        {
+            "infile": "foo.nc",
+            "input_variable": "concentration",
+            "dimensions": {"level": 0},
+        },
+        {
+            "infile": "foo.nc",
+            "input_variable": "concentration",
+            "dimensions": {"level": 1},
+        },
+        {
+            "infile": "foo.nc",
+            "input_variable": "concentration",
+            "dimensions": {"level": (1, 2)},
+        },
     ]
     setups_lst = [Setup.create(dct) for dct in dcts]
 

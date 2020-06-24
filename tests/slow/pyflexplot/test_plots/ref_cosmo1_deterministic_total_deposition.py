@@ -20,6 +20,7 @@ field_summary = {
         {
             "infile": "flexpart_cosmo-1_2019093012.nc",
             "outfile": "ref_cosmo1_deterministic_total_deposition.png",
+            "model": "cosmo1",
             "ens_member_id": None,
             "core": {
                 "input_variable": "deposition",
@@ -2245,6 +2246,7 @@ plot_summary = {
             {
                 "infile": "flexpart_cosmo-1_2019093012.nc",
                 "outfile": "ref_cosmo1_deterministic_total_deposition.png",
+                "model": "cosmo1",
                 "ens_member_id": None,
                 "core": {
                     "input_variable": "deposition",

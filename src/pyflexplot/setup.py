@@ -350,11 +350,11 @@ class Setup(BaseModel):
         arbitrary_types_allowed = True
         extra = "forbid"
 
-    # Basics
-    infile: str
-    outfile: str
+    infile: str = "none"
+    outfile: str = "none"
+    model: str = "none"
     ens_member_id: Optional[Tuple[int, ...]] = None
-    core: "CoreSetup"
+    core: "CoreSetup" = CoreSetup()
 
     # SR_TMP <<<
     @property
@@ -446,6 +446,10 @@ class Setup(BaseModel):
             params_cast[param] = cls.cast(param, value)
         return params_cast
 
+    def __repr__(self) -> str:  # type: ignore
+        return setup_repr(self)
+
+    # SR_TMP <<< TODO Don't merge core params!
     def dict(self, **kwargs) -> Dict[str, Any]:
         # SR_TMP < Catch args that MAY interfere with dimensions
         for arg in ["include", "exclude"]:
@@ -455,14 +459,13 @@ class Setup(BaseModel):
                 )
         # SR_TMP >
         return {
-            "infile": self.infile,
-            "outfile": self.outfile,
-            "ens_member_id": self.ens_member_id,
+            **{
+                param: getattr(self, param)
+                for param in self.__fields__
+                if param != "core"
+            },
             **self.core.dict(),
         }
-
-    def __repr__(self) -> str:  # type: ignore
-        return setup_repr(self)
 
     def copy(self):
         return self.create(self.dict())
@@ -470,14 +473,17 @@ class Setup(BaseModel):
     def __len__(self) -> int:
         return len(dict(self))
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: Any) -> bool:
         try:
-            other_dict = dict(other)  # type: ignore
-        except TypeError:
+            other_dict = other.dict()
+        except AttributeError:
             try:
-                other_dict = dataclasses.asdict(other)
+                other_dict = dict(other)  # type: ignore
             except TypeError:
-                return False
+                try:
+                    other_dict = dataclasses.asdict(other)
+                except TypeError:
+                    return False
         return self.dict() == other_dict
 
     @overload

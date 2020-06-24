@@ -21,6 +21,7 @@ field_summary = {
         {
             "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
             "outfile": "ref_cosmo2e_ens_cloud_departure_time.png",
+            "model": "cosmo2e",
             "ens_member_id": [0, 1, 5, 10, 15, 20],
             "core": {
                 "input_variable": "concentration",
@@ -2491,6 +2492,7 @@ plot_summary = {
             {
                 "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
                 "outfile": "ref_cosmo2e_ens_cloud_departure_time.png",
+                "model": "cosmo2e",
                 "ens_member_id": [0, 1, 5, 10, 15, 20],
                 "core": {
                     "input_variable": "concentration",

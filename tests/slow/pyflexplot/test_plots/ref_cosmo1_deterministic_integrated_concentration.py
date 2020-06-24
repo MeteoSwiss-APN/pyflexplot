@@ -20,6 +20,7 @@ field_summary = {
         {
             "infile": "flexpart_cosmo-1_2019093012.nc",
             "outfile": "ref_cosmo1_deterministic_integrated_concentration.png",
+            "model": "cosmo1",
             "ens_member_id": None,
             "core": {
                 "input_variable": "concentration",
@@ -2248,6 +2249,7 @@ plot_summary = {
             {
                 "infile": "flexpart_cosmo-1_2019093012.nc",
                 "outfile": "ref_cosmo1_deterministic_integrated_concentration.png",
+                "model": "cosmo1",
                 "ens_member_id": None,
                 "core": {
                     "input_variable": "concentration",

@@ -1,60 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Tests for class ``pyflexplot.setup.Setup``.
+Tests for class methods ``pyflexplot.setup.Setup.cast*``.
 """
 # Third-party
 import pytest  # type: ignore
 
 # First-party
 from pyflexplot.setup import Setup
-from srutils.dict import merge_dicts
-
-# Local
-from .shared import DEFAULT_KWARGS
-from .shared import DEFAULT_SETUP
 
 
-def test_default_setup_dict():
-    """Check the default setupuration dict."""
-    setup1 = Setup.create(DEFAULT_KWARGS)
-    setup2 = DEFAULT_SETUP.dict()
-    assert setup1 == setup2
-
-
-class Test_WildcardToNone:
-    """Wildcard values passed to ``Setup.create`` turn into None.
-
-    The wildcards can be used in a set file to explicitly specify that all
-    available values of a respective dimension (etc.) shall be read from a
-    NetCDF file, as es the case if the setup value is None (the default).
-
-    """
-
-    def setup_create(self, params):
-        return Setup.create(merge_dicts(DEFAULT_KWARGS, params))
-
-    def test_species_id(self):
-        setup = self.setup_create({"dimensions": {"species_id": "*"}})
-        assert setup.core.dimensions.species_id is None
-
-    def test_time(self):
-        setup = self.setup_create({"dimensions": {"time": "*"}})
-        assert setup.core.dimensions.time is None
-
-    def test_level(self):
-        setup = self.setup_create({"dimensions": {"level": "*"}})
-        assert setup.core.dimensions.level is None
-
-    def test_others(self):
-        setup = self.setup_create(
-            {"dimensions": {"nageclass": "*", "noutrel": "*", "numpoint": "*"}}
-        )
-        assert setup.core.dimensions.nageclass is None
-        assert setup.core.dimensions.noutrel is None
-        assert setup.core.dimensions.numpoint is None
-
-
-class Test_Cast:
+class Test_CastSingle:
     def test_infile(self):
         assert Setup.cast("infile", "foo.nc") == "foo.nc"
 

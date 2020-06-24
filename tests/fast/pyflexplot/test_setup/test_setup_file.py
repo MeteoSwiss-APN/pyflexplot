@@ -16,8 +16,7 @@ from srutils.dict import merge_dicts
 from srutils.testing import assert_nested_equal
 
 # Local
-from .shared import DEFAULT_KWARGS
-from .shared import DEFAULT_SETUP
+from .shared import DEFAULT_PARAMS
 
 
 def fmt_val(val):
@@ -31,9 +30,6 @@ def fmt_val(val):
         raise NotImplementedError(f"type {type(val).__name__}", val)
 
 
-DEFAULT_TOML = "\n".join([f"{k} = {fmt_val(v)}" for k, v in DEFAULT_KWARGS.items()])
-
-
 def tmp_setup_file(tmp_path, content):
     tmp_file = tmp_path / "setup.toml"
     tmp_file.write_text(dedent(content))
@@ -42,38 +38,35 @@ def tmp_setup_file(tmp_path, content):
 
 def test_single_minimal_section(tmp_path):
     """Read setup file with single minimal section."""
-    content = f"""\
+    content = """\
         [plot]
-        {DEFAULT_TOML}
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert setups == [DEFAULT_SETUP.dict()]
+    assert setups == [DEFAULT_PARAMS]
 
 
 def test_single_minimal_renamed_section(tmp_path):
     """Read setup file with single minimal section with arbitrary name."""
-    content = f"""\
+    content = """\
         [foobar]
-        {DEFAULT_TOML}
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert setups == [DEFAULT_SETUP.dict()]
+    assert setups == [DEFAULT_PARAMS]
 
 
 def test_single_section(tmp_path):
     """Read setup file with single non-empty section."""
-    content = f"""\
+    content = """\
         [plot]
-        {DEFAULT_TOML}
         input_variable = "deposition"
         lang = "de"
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
     assert len(setups) == 1
     res = next(iter(setups))
-    assert res != DEFAULT_SETUP.dict()
+    assert res != DEFAULT_PARAMS
     sol = merge_dicts(
-        DEFAULT_SETUP.dict(),
+        DEFAULT_PARAMS,
         {"input_variable": "deposition", "dimensions": {"level": None}, "lang": "de"},
     )
     assert res == sol
@@ -81,34 +74,30 @@ def test_single_section(tmp_path):
 
 def test_multiple_parallel_empty_sections(tmp_path):
     """Read setup file with multiple parallel empty sections."""
-    content = f"""\
+    content = """\
         [plot1]
-        {DEFAULT_TOML}
 
         [plot2]
-        {DEFAULT_TOML}
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert setups == [DEFAULT_SETUP.dict()] * 2
+    assert setups == [DEFAULT_PARAMS] * 2
 
 
 def test_two_nested_empty_sections(tmp_path):
     """Read setup file with two nested empty sections."""
-    content = f"""\
+    content = """\
         [_base]
-        {DEFAULT_TOML}
 
         [_base.plot]
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert setups == [DEFAULT_SETUP.dict()]
+    assert setups == [DEFAULT_PARAMS]
 
 
 def test_multiple_nested_sections(tmp_path):
     """Read setup file with two nested non-empty sections."""
-    content = f"""\
+    content = """\
         [_base]
-        {DEFAULT_TOML}
         lang = "de"
 
         [_base.con]
@@ -145,7 +134,7 @@ def test_multiple_nested_sections(tmp_path):
         lang = "de"
         """
     sol_base = merge_dicts(
-        DEFAULT_SETUP.dict(),
+        DEFAULT_PARAMS,
         {
             "input_variable": "deposition",
             "combine_deposition_types": True,
@@ -174,9 +163,8 @@ def test_multiple_nested_sections(tmp_path):
 
 def test_multiple_override(tmp_path):
     """Read setup file and override some parameters."""
-    content = f"""\
+    content = """\
         [_base]
-        {DEFAULT_TOML}
         lang = "de"
 
         [_base.con]
@@ -217,7 +205,7 @@ def test_multiple_override(tmp_path):
         "lang": "de",
     }
     sol_base = merge_dicts(
-        DEFAULT_SETUP.dict(),
+        DEFAULT_PARAMS,
         {
             "infile": "foo.nc",
             "input_variable": "deposition",
@@ -245,11 +233,10 @@ def test_multiple_override(tmp_path):
 
 def test_semi_realcase(tmp_path):
     """Test setup file based on a real case, with some groups indented."""
-    content = f"""\
+    content = """\
         # PyFlexPlot setup file to create deterministic NAZ plots
 
         [_base]
-        {DEFAULT_TOML}
 
         [_base._concentration]
 
@@ -307,6 +294,7 @@ def test_realcase_opr_like(tmp_path):
         [concentration]
         infile = "data/cosmo-1_2019052800.nc"
         outfile = "concentration_{species_id}_{domain}_{lang}_{time:02d}.png"
+        model = "cosmo1"
         species_id = "*"
         input_variable = "concentration"
         combine_species = false
@@ -321,6 +309,7 @@ def test_realcase_opr_like(tmp_path):
         [concentration_integrated]
         infile = "data/cosmo-1_2019052800.nc"
         outfile = "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png"
+        model = "cosmo1"
         species_id = "*"
         input_variable = "concentration"
         combine_species = false
@@ -334,6 +323,7 @@ def test_realcase_opr_like(tmp_path):
 
         [tot_deposition]
         infile = "data/cosmo-1_2019052800.nc"
+        model = "cosmo1"
         species_id = "*"
         outfile = "tot_deposition_{domain}_{lang}_{time:02d}.png"
         input_variable = "deposition"
@@ -345,6 +335,7 @@ def test_realcase_opr_like(tmp_path):
 
         [tot_deposition_affected_area]
         outfile = "affected_area_{domain}_{lang}_{time:02d}.png"
+        model = "cosmo1"
         plot_variable = "affected_area_mono"
         infile = "data/cosmo-1_2019052800.nc"
         species_id = "*"
@@ -359,6 +350,7 @@ def test_realcase_opr_like(tmp_path):
         {
             "infile": "data/cosmo-1_2019052800.nc",
             "outfile": "concentration_{species_id}_{domain}_{lang}_{time:02d}.png",
+            "model": "cosmo1",
             "input_variable": "concentration",
             "plot_variable": "auto",
             "ens_variable": "none",
@@ -387,6 +379,7 @@ def test_realcase_opr_like(tmp_path):
         {
             "infile": "data/cosmo-1_2019052800.nc",
             "outfile": "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png",
+            "model": "cosmo1",
             "input_variable": "concentration",
             "plot_variable": "auto",
             "ens_variable": "none",
@@ -415,6 +408,7 @@ def test_realcase_opr_like(tmp_path):
         {
             "infile": "data/cosmo-1_2019052800.nc",
             "outfile": "tot_deposition_{domain}_{lang}_{time:02d}.png",
+            "model": "cosmo1",
             "input_variable": "deposition",
             "plot_variable": "auto",
             "ens_variable": "none",
@@ -443,6 +437,7 @@ def test_realcase_opr_like(tmp_path):
         {
             "infile": "data/cosmo-1_2019052800.nc",
             "outfile": "affected_area_{domain}_{lang}_{time:02d}.png",
+            "model": "cosmo1",
             "input_variable": "deposition",
             "plot_variable": "affected_area_mono",
             "ens_variable": "none",
@@ -484,9 +479,10 @@ def test_realcase_opr_like(tmp_path):
 
 def test_wildcard_simple(tmp_path):
     """Apply a subgroup to multiple groups with a wildcard."""
-    content = f"""\
+    content = """\
         [_base]
-        {DEFAULT_TOML}
+        infile = "foo.nc"
+        outfile = "foo.png"
 
         [_base._concentration]
         input_variable = "concentration"
@@ -501,8 +497,9 @@ def test_wildcard_simple(tmp_path):
         lang = "en"
 
         """
+    base = {"infile": "foo.nc", "outfile": "foo.png"}
     sol = [
-        merge_dicts(DEFAULT_SETUP.dict(), dct)
+        merge_dicts(DEFAULT_PARAMS, base, dct)
         for dct in [
             {"input_variable": "concentration", "lang": "de"},
             {"input_variable": "concentration", "lang": "en"},
@@ -524,9 +521,9 @@ def test_wildcard_simple(tmp_path):
 
 def test_double_wildcard_equal_depth(tmp_path):
     """Apply a double-star wildcard subdict to an equal-depth nested dict."""
-    content = f"""\
+    content = """\
         [_base]
-        {DEFAULT_TOML}
+        infile = "foo.nc"
 
         [_base."_concentration+"]
         input_variable = "concentration"
@@ -551,8 +548,9 @@ def test_double_wildcard_equal_depth(tmp_path):
         lang = "en"
 
         """
+    base = {"infile": "foo.nc"}
     sol = [
-        merge_dicts(DEFAULT_SETUP.dict(), dct, {"domain": domain, "lang": lang})
+        merge_dicts(DEFAULT_PARAMS, base, dct, {"domain": domain, "lang": lang})
         for dct in [
             {"input_variable": "concentration", "integrate": False},
             {
@@ -570,13 +568,12 @@ def test_double_wildcard_equal_depth(tmp_path):
 
 def test_double_wildcard_variable_depth(tmp_path):
     """Apply a double-star wildcard subdict to a variable-depth nested dict."""
-    content = f"""\
+    content = """\
         [_base]
-        {DEFAULT_TOML}
+        infile = "foo.nc"
 
         [_base."_concentration"]
         input_variable = "concentration"
-
 
         [_base._concentration."_middle+"]
         time = 5
@@ -604,8 +601,9 @@ def test_double_wildcard_variable_depth(tmp_path):
         lang = "en"
 
         """
+    base = {"infile": "foo.nc"}
     sol = [
-        merge_dicts(DEFAULT_SETUP.dict(), dct, {"domain": domain, "lang": lang})
+        merge_dicts(DEFAULT_PARAMS, base, dct, {"domain": domain, "lang": lang})
         for dct in [
             {"input_variable": "concentration", "dimensions": {"time": 5}},
             {"input_variable": "concentration", "dimensions": {"time": 10}},
@@ -648,7 +646,7 @@ def test_combine_wildcards(tmp_path):
         """
     sol = [
         merge_dicts(
-            DEFAULT_SETUP.dict(),
+            DEFAULT_PARAMS,
             {
                 "infile": "data_{ens_member:02d}.nc",
                 "input_variable": input_variable,
@@ -669,9 +667,9 @@ def test_combine_wildcards(tmp_path):
 
 class Test_IndividualParams_SingleOrMultipleValues:
     def test_species_id(self, tmp_path):
-        content = f"""\
+        content = """\
             [_base]
-            {DEFAULT_TOML}
+            infile = "foo.nc"
 
             [_base.single]
             species_id = 1
@@ -682,16 +680,16 @@ class Test_IndividualParams_SingleOrMultipleValues:
             """
         setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
         res = setups.dicts()
+        base = {"infile": "foo.nc"}
         sol = [
-            merge_dicts(DEFAULT_SETUP.dict(), {"dimensions": {"species_id": value}})
+            merge_dicts(DEFAULT_PARAMS, base, {"dimensions": {"species_id": value}})
             for value in [1, (1, 2, 3)]
         ]
         assert res == sol
 
     def test_level(self, tmp_path):
-        content = f"""\
+        content = """\
             [_base]
-            {DEFAULT_TOML}
             input_variable = "concentration"
 
             [_base.single]
@@ -703,22 +701,20 @@ class Test_IndividualParams_SingleOrMultipleValues:
             """
         setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
         sol = [
-            merge_dicts(DEFAULT_SETUP.dict(), {"dimensions": {"level": value}})
+            merge_dicts(DEFAULT_PARAMS, {"dimensions": {"level": value}})
             for value in [0, (1, 2)]
         ]
         assert setups.dicts() == sol
 
     def test_level_none(self, tmp_path):
-        content = f"""\
+        content = """\
             [base]
-            {DEFAULT_TOML}
             input_variable = "deposition"
-
             """
         setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
         sol = [
             merge_dicts(
-                DEFAULT_SETUP.dict(),
+                DEFAULT_PARAMS,
                 {"input_variable": "deposition", "dimensions": {"level": None}},
             )
         ]
@@ -743,7 +739,7 @@ def test_multipanel_param_ens_variable(tmp_path):
     sol = []
     # sol = [
     #     merge_dicts(
-    #         DEFAULT_SETUP.dict(),
+    #         DEFAULT_PARAMS,
     #         {
     #             "infile": "data_{ens_member:02d}.nc",
     #             "outfile": "ens_stats_multipanel.png",
