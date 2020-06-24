@@ -2,10 +2,6 @@
 """
 Tests for class ``pyflexplot.setup.InputSetup``.
 """
-# Standard library
-from typing import Any
-from typing import Dict
-
 # Third-party
 import pytest  # type: ignore
 
@@ -23,56 +19,6 @@ def test_default_setup_dict():
     setup1 = InputSetup.create(DEFAULT_KWARGS)
     setup2 = DEFAULT_SETUP.dict()
     assert setup1 == setup2
-
-
-class Test_ReplaceNoneByAvailable:
-    meta_data: Dict[str, Any] = {
-        "dimensions": {
-            "time": {"name": "time", "size": 11},
-            "rlon": {"name": "rlon", "size": 40},
-            "rlat": {"name": "rlat", "size": 30},
-            "level": {"name": "level", "size": 3},
-            "nageclass": {"name": "nageclass", "size": 1},
-            "noutrel": {"name": "numpoint", "size": 1},
-            "numpoint": {"name": "numpoint", "size": 2},
-            "nchar": {"name": "nchar", "size": 45},
-        },
-        "analysis": {"species_ids": (1, 2)},
-    }
-
-    def setup_create(self, params):
-        assert "dimensions" not in DEFAULT_KWARGS
-        return InputSetup.create(merge_dicts(DEFAULT_KWARGS, params))
-
-    def test_time(self):
-        setup = self.setup_create({"dimensions": {"time": "*"}})
-        assert setup.core.dimensions.time is None
-        setup = setup.complete_dimensions(self.meta_data)
-        assert setup.core.dimensions.time == (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-
-    def test_level(self):
-        setup = self.setup_create({"dimensions": {"level": "*"}})
-        assert setup.core.dimensions.level is None
-        setup = setup.complete_dimensions(self.meta_data)
-        assert setup.core.dimensions.level == (0, 1, 2)
-
-    def test_species_id(self):
-        setup = self.setup_create({"dimensions": {"species_id": "*"}})
-        assert setup.core.dimensions.species_id is None
-        setup = setup.complete_dimensions(self.meta_data)
-        assert setup.core.dimensions.species_id == (1, 2)
-
-    def test_others(self):
-        setup = self.setup_create(
-            {"dimensions": {"nageclass": "*", "noutrel": "*", "numpoint": "*"}}
-        )
-        assert setup.core.dimensions.nageclass is None
-        assert setup.core.dimensions.noutrel is None
-        assert setup.core.dimensions.numpoint is None
-        setup = setup.complete_dimensions(self.meta_data)
-        assert setup.core.dimensions.nageclass == 0
-        assert setup.core.dimensions.noutrel == 0
-        assert setup.core.dimensions.numpoint == (0, 1)
 
 
 class Test_WildcardToNone:

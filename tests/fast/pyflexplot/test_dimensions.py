@@ -297,7 +297,7 @@ class Test_Interact:
         return Dimensions.create(self.params)
 
     def assert_is_empty(self, dims: Dimensions) -> None:
-        assert all(dims.get_compact(param) is None for param in self.params)
+        assert all(dims.get(param) is None for param in self.params)
 
     def test_get_raw(self):
         dims = self.create_dims()
@@ -309,30 +309,30 @@ class Test_Interact:
         assert dims.get_raw("time") == (2, 0, 1, None)
         assert dims.get_raw("level") == (1, None, None, None)
 
-    def test_get_compact(self):
+    def test_get(self):
         dims = self.create_dims()
-        assert dims.get_compact("deposition_type") == ("dry", "wet")
-        assert dims.get_compact("nageclass") == (0, 3)
-        assert dims.get_compact("noutrel") == 1
-        assert dims.get_compact("numpoint") is None
-        assert dims.get_compact("species_id") == (0, 2)
-        assert dims.get_compact("time") == (0, 1, 2)
-        assert dims.get_compact("level") == 1
+        assert dims.get("deposition_type") == ("dry", "wet")
+        assert dims.get("nageclass") == (0, 3)
+        assert dims.get("noutrel") == 1
+        assert dims.get("numpoint") is None
+        assert dims.get("species_id") == (0, 2)
+        assert dims.get("time") == (0, 1, 2)
+        assert dims.get("level") == 1
 
     def test_get_property(self):
         dims = self.create_dims()
-        assert dims.deposition_type == dims.get_compact("deposition_type")
-        assert dims.nageclass == dims.get_compact("nageclass")
-        assert dims.noutrel == dims.get_compact("noutrel")
-        assert dims.numpoint == dims.get_compact("numpoint")
-        assert dims.species_id == dims.get_compact("species_id")
-        assert dims.time == dims.get_compact("time")
-        assert dims.level == dims.get_compact("level")
+        assert dims.deposition_type == dims.get("deposition_type")
+        assert dims.nageclass == dims.get("nageclass")
+        assert dims.noutrel == dims.get("noutrel")
+        assert dims.numpoint == dims.get("numpoint")
+        assert dims.species_id == dims.get("species_id")
+        assert dims.time == dims.get("time")
+        assert dims.level == dims.get("level")
 
     def test_get_getattr(self):
         dims = self.create_dims()
         for param in self.params:
-            assert getattr(dims, param) == dims.get_compact(param)
+            assert getattr(dims, param) == dims.get(param)
 
     def test_set_raw(self):
         dims = Dimensions()

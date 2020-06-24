@@ -11,6 +11,7 @@ from typing import Sequence
 from typing import Tuple
 
 # First-party
+from pyflexplot.setup import CoreInputSetup
 from pyflexplot.setup import InputSetup
 from pyflexplot.setup import InputSetupCollection
 from srutils.dict import merge_dicts
@@ -24,6 +25,56 @@ from .shared import DEFAULT_SETUP
 def tuples(objs: Sequence[Any]) -> List[Tuple[Any]]:
     """Turn all elements in a sequence into one-element tuples."""
     return [(obj,) for obj in objs]
+
+
+class Test_CoreInputSetup_CompleteDimensions:
+    meta_data: Dict[str, Any] = {
+        "dimensions": {
+            "time": {"name": "time", "size": 11},
+            "rlon": {"name": "rlon", "size": 40},
+            "rlat": {"name": "rlat", "size": 30},
+            "level": {"name": "level", "size": 3},
+            "nageclass": {"name": "nageclass", "size": 1},
+            "noutrel": {"name": "numpoint", "size": 1},
+            "numpoint": {"name": "numpoint", "size": 2},
+            "nchar": {"name": "nchar", "size": 45},
+        },
+        "analysis": {"species_ids": (1, 2)},
+    }
+
+    def core_setup_create(self, params):
+        assert "dimensions" not in DEFAULT_KWARGS
+        return CoreInputSetup.create(params)
+
+    def test_time(self):
+        setup = self.core_setup_create({"dimensions": {"time": "*"}})
+        assert setup.dimensions.time is None
+        setup = setup.complete_dimensions(self.meta_data)
+        assert setup.dimensions.time == (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+
+    def test_level(self):
+        setup = self.core_setup_create({"dimensions": {"level": "*"}})
+        assert setup.dimensions.level is None
+        setup = setup.complete_dimensions(self.meta_data)
+        assert setup.dimensions.level == (0, 1, 2)
+
+    def test_species_id(self):
+        setup = self.core_setup_create({"dimensions": {"species_id": "*"}})
+        assert setup.dimensions.species_id is None
+        setup = setup.complete_dimensions(self.meta_data)
+        assert setup.dimensions.species_id == (1, 2)
+
+    def test_others(self):
+        setup = self.core_setup_create(
+            {"dimensions": {"nageclass": "*", "noutrel": "*", "numpoint": "*"}}
+        )
+        assert setup.dimensions.nageclass is None
+        assert setup.dimensions.noutrel is None
+        assert setup.dimensions.numpoint is None
+        setup = setup.complete_dimensions(self.meta_data)
+        assert setup.dimensions.nageclass == 0
+        assert setup.dimensions.noutrel == 0
+        assert setup.dimensions.numpoint == (0, 1)
 
 
 class Test_InputSetup_Create:

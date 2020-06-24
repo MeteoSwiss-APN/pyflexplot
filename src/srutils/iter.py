@@ -2,6 +2,8 @@
 """
 Iteration utilities.
 """
+# Standard library
+from typing import Sequence
 
 
 def flatten(obj, cls=None, max_depth=None, *, _depth=0):
@@ -49,3 +51,23 @@ def isiterable(obj, str_ok=True):
         return False
     else:
         return True
+
+
+def resolve_negative_indices(idcs: Sequence[int], n: int) -> Sequence[int]:
+    """Turn negative indices into positive ones, given the sequence length.
+
+    Args:
+        idcs: Indices. Not required to be consecutive, in order, or unique.
+            May be positive (from start) or negative (from end).
+
+        n: Length of the sequence which the indices refer to.
+
+    """
+    idcs_new = []
+    for i in idcs:
+        if i < 0:
+            i += n
+        if not 0 <= i < n:
+            raise ValueError("invalid index: not 0 <= {i} < n")
+        idcs_new.append(i)
+    return type(idcs)(idcs_new)  # type: ignore

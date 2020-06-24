@@ -27,6 +27,7 @@ from pydantic import BaseModel
 from pydantic import root_validator
 from pydantic import ValidationError
 from pydantic import validator
+from typing_extensions import Literal
 
 # First-party
 from srutils.dict import compress_multival_dicts
@@ -268,6 +269,22 @@ class CoreInputSetup(BaseModel):
         assert isinstance(obj, Mapping)  # mypy
         return cls(**obj)
 
+    @overload
+    def complete_dimensions(
+        self, meta_data, inplace: Literal[False] = False
+    ) -> "CoreInputSetup":
+        ...
+
+    @overload
+    def complete_dimensions(self, meta_data, inplace: Literal[True]) -> None:
+        ...
+
+    def complete_dimensions(self, meta_data: Mapping[str, Any], inplace: bool = False):
+        """Complete unconstrained dimensions based on available indices."""
+        obj = self if inplace else self.copy()
+        obj.dimensions.complete(meta_data, self.input_variable, inplace=True)
+        return None if inplace else obj
+
 
 # SR_TODO Clean up docstring -- where should format key hints go?
 class InputSetup(BaseModel):
@@ -445,66 +462,6 @@ class InputSetup(BaseModel):
             "ens_member_id": self.ens_member_id,
             **self.core.dict(),
         }
-
-    # SR_TODO consider renaming this method (sth. containing 'dimensions')
-    # pylint: disable=R0912  # too-many-branches
-    # pylint: disable=W0201  # attribute-defined-outside-init (dimensions.*)
-    def complete_dimensions(self, meta_data: Mapping[str, Any]) -> "InputSetup":
-        """Complete unconstrained dimensions based on available indices."""
-        dimensions = meta_data["dimensions"]
-        obj = self.copy()
-
-        if obj.core.dimensions.time is None:
-            obj.core.dimensions.time = tuple(range(dimensions["time"]["size"]))
-
-        # SR_TMP < does this belong here? and what does it do? TODO explain!
-        nts = dimensions["time"]["size"]
-        time_new = []
-        if isinstance(obj.core.dimensions.time, Sequence):
-            times = obj.core.dimensions.time
-        else:
-            times = [obj.core.dimensions.time]
-        for its in times:
-            if its < 0:
-                its += nts
-                assert 0 <= its < nts
-            time_new.append(its)
-        obj.core.dimensions.time = tuple(time_new)
-        # SR_TMP >
-
-        if obj.core.dimensions.level is None:
-            if obj.core.input_variable == "concentration":
-                if "level" in dimensions:
-                    obj.core.dimensions.level = tuple(
-                        range(dimensions["level"]["size"])
-                    )
-
-        if obj.core.dimensions.deposition_type is None:
-            if obj.core.input_variable == "deposition":
-                obj.core.dimensions.deposition_type = ("dry", "wet")
-
-        if obj.core.dimensions.species_id is None:
-            obj.core.dimensions.species_id = meta_data["analysis"]["species_ids"]
-
-        if obj.core.dimensions.nageclass is None:
-            if "nageclass" in dimensions:
-                obj.core.dimensions.nageclass = tuple(
-                    range(dimensions["nageclass"]["size"])
-                )
-
-        if obj.core.dimensions.noutrel is None:
-            if "noutrel" in dimensions:
-                obj.core.dimensions.noutrel = tuple(
-                    range(dimensions["noutrel"]["size"])
-                )
-
-        if obj.core.dimensions.numpoint is None:
-            if "numpoint" in dimensions:
-                obj.core.dimensions.numpoint = tuple(
-                    range(dimensions["numpoint"]["size"])
-                )
-
-        return obj
 
     def __repr__(self) -> str:  # type: ignore
         return setup_repr(self)
@@ -730,7 +687,7 @@ class InputSetupCollection:
         for param in CoreDimensions.__fields__:
             values = []
             for dims in self.collect("dimensions"):
-                values.append(dims.get_compact(param))
+                values.append(dims.get(param))
             if len(set(values)) == 1:
                 dims_same[param] = next(iter(values))
             else:
@@ -849,7 +806,7 @@ class InputSetupCollection:
             if is_dimensions_param(dims_param):
                 values: Set[Any] = set()
                 for dimensions in self.collect("dimensions"):
-                    value = dimensions.get_compact(dims_param)
+                    value = dimensions.get(dims_param)
                     try:
                         values |= set(value)
                     except TypeError:
@@ -901,14 +858,22 @@ class InputSetupCollection:
             }
             return grouped
 
+    @overload
     def complete_dimensions(
-        self, meta_data: Mapping[str, Any]
+        self, meta_data, inplace: Literal[False] = False
     ) -> "InputSetupCollection":
+        ...
+
+    @overload
+    def complete_dimensions(self, meta_data, inplace: Literal[True]) -> None:
+        ...
+
+    def complete_dimensions(self, meta_data: Mapping[str, Any], inplace: bool = False):
         """Complete unconstrained dimensions based on available indices."""
-        setup_lst = []
-        for setup in self:
-            setup_lst.append(setup.complete_dimensions(meta_data))
-        return type(self)(setup_lst)
+        obj = self if inplace else self.copy()
+        for setup in obj:
+            setup.core.complete_dimensions(meta_data, inplace=True)
+        return None if inplace else obj
 
 
 class InputSetupFile:
