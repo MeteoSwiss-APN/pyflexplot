@@ -55,20 +55,31 @@ def cast_field_value(cls: Type, param: str, value: Any) -> Any:
     try:
         field = cls.__fields__[param]
     except KeyError:
-        raise ValueError("invalid parameter name", param, sorted(cls.__fields__))
+        raise ValueError(
+            f"invalid parameter name: '{param}'; choices: {sorted(cls.__fields__)}"
+        )
+
+    def invalid_value_exception(type_: Type, param: str, value: Any) -> ValueError:
+        s_type = type_.__name__
+        s_value_type = type(value).__name__
+        return ValueError(
+            f"invalid value of {s_type} parameter '{param}' ({s_value_type}): {value}"
+        )
+
     if isinstance(value, Collection) and not isinstance(value, str):
         try:
             outer_type = field_get_outer_type(field, generic=True)
         except TypeError:
-            raise ValueError("invalid parameter value: collection", param, value)
+            raise invalid_value_exception(outer_type, param, value)
         if issubclass(outer_type, (str, bool)):
             raise ValueError(
-                "invalid parameter error: not '{outer_type.__name__}}'", param, value
+                f"invalid value type of {outer_type.__name__} parameter '{param}'"
+                f": {type(value).__name__} ({value})"
             )
         try:
             outer_type(value)
         except ValueError:
-            raise ValueError("invalid parameter value", param, value, outer_type)
+            raise invalid_value_exception(outer_type, param, value)
         else:
             return [cls.cast(param, val) for val in value]
     if issubclass(field.type_, bool):
@@ -81,7 +92,7 @@ def cast_field_value(cls: Type, param: str, value: Any) -> Any:
             return field.type_(value)
         except ValueError:
             pass
-    raise ValueError("invalid parameter value", param, value, field.type_)
+    raise invalid_value_exception(field.type_, param, value)
 
 
 def field_get_outer_type(field: ModelField, *, generic: bool = False) -> Type:
