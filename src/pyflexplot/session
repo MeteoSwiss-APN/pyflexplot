@@ -3,6 +3,7 @@ boxed_plot.py
 cli.py
 cli_preset.py
 cli_utils.py
+coord_trans.py
 data.py
 dimensions.py
 exceptions.py
