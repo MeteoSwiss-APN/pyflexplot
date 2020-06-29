@@ -515,7 +515,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": "Ensemble median of activity concentration of Cs-137 + I-131a",
+                    "s": "Ensemble median of activity concentration",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

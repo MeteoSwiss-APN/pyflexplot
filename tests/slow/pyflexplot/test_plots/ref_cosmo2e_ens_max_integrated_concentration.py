@@ -515,7 +515,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": 'Ensemble-Maximum der integrierten Aktivit$\\mathrm{\\"a}$tskonzentration von I-131a',
+                    "s": 'Ensemble-Maximum der integrierten Aktivit$\\mathrm{\\"a}$tskonzentration',
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

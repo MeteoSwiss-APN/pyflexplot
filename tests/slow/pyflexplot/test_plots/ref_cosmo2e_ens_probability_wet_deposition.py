@@ -515,7 +515,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": "Probability of wet surface deposition of I-131a",
+                    "s": "Probability of wet surface deposition",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

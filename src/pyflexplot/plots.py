@@ -1,6 +1,18 @@
 # -*- coding: utf-8 -*-
 """
 Plot types.
+
+Note that this file is currently a mess because it is the result of collecting
+all sorts of plot-type specific logic from throughout the code in order to
+centralize it.
+
+There's tons of nested if-statements etc. because the goal during the cleanup
+phase that included the centralization was to avoid falling into the trap of
+premature design/overdesign again (as has happened repeatedly during the early
+stages of development).
+
+Instead, all the logic is collected here in a straightforward but dirty way
+until sane design choices emerge from the code mess.
 """
 # Standard library
 import warnings
@@ -37,7 +49,9 @@ from .meta_data import MetaData
 from .plot_elements import MapAxes
 from .plot_elements import MapAxesConf
 from .plot_elements import TextBoxAxes
-from .plot_layouts import BoxedPlotLayout
+from .plot_layouts import BoxedPlotLayoutDeterministic
+from .plot_layouts import BoxedPlotLayoutEnsemble
+from .plot_layouts import BoxedPlotLayoutType
 from .setup import FilePathFormatter
 from .setup import Setup
 from .setup import SetupCollection
@@ -160,6 +174,10 @@ def create_plot_config(
             f" {words['release_start']}"
             # f" {words['at', 'place']} {mdata.release_site_name}"
         ),
+    }
+    new_config_dct["labels"]["title_2nd"] = {
+        "tc": f"{mdata.species_name}",
+        "bc": f"{mdata.release_site_name}",
     }
     new_config_dct["labels"]["right_top"] = {
         "title": f"{words['data'].c}",
@@ -357,9 +375,10 @@ def create_plot_config(
         raise Exception("no short name")
     # SR_TMP >
 
-    new_config_dct["labels"]["top"][
-        "tl"
-    ] = f"{long_name} {words['of']} {mdata.species_name}"
+    # new_config_dct["labels"]["top"][
+    #     "tl"
+    # ] = f"{long_name} {words['of']} {mdata.species_name}"
+    new_config_dct["labels"]["top"]["tl"] = long_name
     new_config_dct["labels"]["right_top"]["lines"].insert(
         0, f"{words['input_variable'].c}:\t{capitalize(var_name)}",
     )
@@ -432,8 +451,12 @@ def prepare_plot(
 
 def create_plot(plot: BoxedPlot, write: bool = True) -> None:
     log(dbg=f"creating plot {plot.file_path}")
-    layout = BoxedPlotLayout(aspect=plot.config.fig_aspect)
-    axs_map = plot.add_map_plot(layout.rect_center)
+    layout: BoxedPlotLayoutType
+    if plot.config.setup.get_simulation_type() == "deterministic":
+        layout = BoxedPlotLayoutDeterministic(aspect=plot.config.fig_aspect)
+    elif plot.config.setup.get_simulation_type() == "ensemble":
+        layout = BoxedPlotLayoutEnsemble(aspect=plot.config.fig_aspect)
+    axs_map = plot.add_map_plot(layout.rect_center())
     plot_add_text_boxes(plot, layout)
     plot_add_markers(plot, axs_map)
     if write:
@@ -445,9 +468,10 @@ def create_plot(plot: BoxedPlot, write: bool = True) -> None:
 
 # SR_TMP <<< TODO Clean up nested functions! Eventually introduce class(es) of some kind
 # pylint: disable=R0915  # too-many-statements
-def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayout) -> None:
+def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
     # pylint: disable=R0915  # too-many-statements
-    def fill_box_top(box: TextBoxAxes, plot: BoxedPlot) -> None:
+    def fill_box_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
+        """Fill the title box."""
         for position, label in plot.config.labels.get("top", {}).items():
             if position == "tl":
                 font_size = plot.config.font_sizes.title_large
@@ -457,8 +481,16 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayout) -> None:
                 label, loc=position, fontname=plot.config.font_name, size=font_size
             )
 
+    def fill_box_2nd_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
+        """Fill the secondary title box of the deterministic plot layout."""
+        font_size = plot.config.font_sizes.content_large
+        labels = plot.config.labels["title_2nd"]
+        box.text(labels["tc"], loc="tc", fontname=plot.config.font_name, size=font_size)
+        box.text(labels["bc"], loc="bc", fontname=plot.config.font_name, size=font_size)
+
     # pylint: disable=R0915  # too-many-statements
-    def fill_box_right_top(box: TextBoxAxes, plot: BoxedPlot) -> None:
+    def fill_box_data_info(box: TextBoxAxes, plot: BoxedPlot) -> None:
+        """Fill the data information box of the ensemble plot layout."""
         labels = plot.config.labels["right_top"]
         box.text(
             labels["title"],
@@ -478,8 +510,8 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayout) -> None:
     # pylint: disable=R0913  # too-many-arguments
     # pylint: disable=R0914  # too-many-locals
     # pylint: disable=R0915  # too-many-statements
-    def fill_box_right_middle(box: TextBoxAxes, plot: BoxedPlot) -> None:
-        """Fill the top box to the right of the map plot."""
+    def fill_box_legend(box: TextBoxAxes, plot: BoxedPlot) -> None:
+        """Fill the box containing the plot legend."""
 
         labels = plot.config.labels["right_middle"]
         mdata = plot.config.mdata
@@ -617,8 +649,8 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayout) -> None:
             )
 
     # pylint: disable=R0915  # too-many-statements
-    def fill_box_right_bottom(box: TextBoxAxes, plot: BoxedPlot) -> None:
-        """Fill the bottom box to the right of the map plot."""
+    def fill_box_release_info(box: TextBoxAxes, plot: BoxedPlot) -> None:
+        """Fill the box containing the release info."""
 
         labels = plot.config.labels["right_bottom"]
         mdata = plot.config.mdata
@@ -680,8 +712,8 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayout) -> None:
         )
 
     # pylint: disable=R0915  # too-many-statements
-    def fill_box_bottom(box: TextBoxAxes, plot: BoxedPlot) -> None:
-        """Fill the box to the bottom of the map plot."""
+    def fill_box_footer(box: TextBoxAxes, plot: BoxedPlot) -> None:
+        """Fill the footer box containing the copyright etc."""
 
         labels = plot.config.labels["bottom"]
 
@@ -705,11 +737,14 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayout) -> None:
             size=plot.config.font_sizes.content_small,
         )
 
-    plot.add_text_box("top", layout.rect_top, fill_box_top)
-    plot.add_text_box("right_top", layout.rect_right_top, fill_box_right_top)
-    plot.add_text_box("right_middle", layout.rect_right_middle, fill_box_right_middle)
-    plot.add_text_box("right_bottom", layout.rect_right_bottom, fill_box_right_bottom)
-    plot.add_text_box("bottom", layout.rect_bottom, fill_box_bottom, frame_on=False)
+    plot.add_text_box("top", layout.rect_top(), fill_box_title)
+    if isinstance(layout, BoxedPlotLayoutDeterministic):
+        plot.add_text_box("right_top", layout.rect_right_top(), fill_box_2nd_title)
+    elif isinstance(layout, BoxedPlotLayoutEnsemble):
+        plot.add_text_box("right_top", layout.rect_right_top(), fill_box_data_info)
+    plot.add_text_box("right_middle", layout.rect_right_middle(), fill_box_legend)
+    plot.add_text_box("right_bottom", layout.rect_right_bottom(), fill_box_release_info)
+    plot.add_text_box("bottom", layout.rect_bottom(), fill_box_footer, frame_on=False)
 
 
 def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
