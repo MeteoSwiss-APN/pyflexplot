@@ -25,6 +25,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
 from typing import Union
 
 # Third-party
@@ -140,9 +141,6 @@ def capitalize(s: str) -> str:
 
 
 # SR_TODO Create dataclass with default values for text box setup
-# pylint: disable=R0912  # too-many-branches
-# pylint: disable=R0914  # too-many-locals
-# pylint: disable=R0915  # too-many-statements
 def create_plot_config(
     setup: Setup, words: TranslatedWords, symbols: Words, mdata: MetaData,
 ) -> BoxedPlotConfig:
@@ -150,8 +148,87 @@ def create_plot_config(
     new_config_dct: Dict[str, Any] = {
         "setup": setup,
         "mdata": mdata,
-        "labels": {},
     }
+
+    if setup.core.input_variable == "concentration":
+        new_config_dct["n_levels"] = 8
+    elif setup.core.input_variable == "deposition":
+        new_config_dct["n_levels"] = 9
+    if setup.get_simulation_type() == "deterministic":
+        if setup.core.plot_variable == "affected_area_mono":
+            new_config_dct["extend"] = "none"
+            new_config_dct["n_levels"] = 1
+    elif setup.get_simulation_type() == "ensemble":
+        if setup.core.ens_variable not in ["minimum", "maximum", "median", "mean"]:
+            new_config_dct.update(
+                {
+                    "extend": "both",
+                    "legend_rstrip_zeros": False,
+                    "level_range_style": "int",
+                    "level_ranges_align": "left",
+                    "mark_field_max": False,
+                    "levels_scale": "lin",
+                }
+            )
+            if setup.core.ens_variable == "probability":
+                new_config_dct.update({"n_levels": 9, "d_level": 10})
+            elif setup.core.ens_variable in [
+                "cloud_arrival_time",
+                "cloud_departure_time",
+            ]:
+                new_config_dct.update({"n_levels": 9, "d_level": 3})
+            elif setup.core.ens_variable == "cloud_occurrence_probability":
+                new_config_dct.update({"n_levels": 9, "d_level": 10})
+
+    # Colors
+    n_levels = new_config_dct["n_levels"]
+    extend = new_config_dct.get("extend", "max")
+    cmap = new_config_dct.get("cmap", "flexplot")
+    if setup.core.plot_variable == "affected_area_mono":
+        colors = (np.array([(200, 200, 200)]) / 255).tolist()
+    elif cmap == "flexplot":
+        colors = colors_flexplot(n_levels, extend)
+    else:
+        cmap = mpl.cm.get_cmap(cmap)
+        colors = [cmap(i / (n_levels - 1)) for i in range(n_levels)]
+    new_config_dct["colors"] = colors
+
+    # Markers
+    new_config_dct["markers"] = {
+        "max": {
+            "marker": "+",
+            "color": "black",
+            "markersize": 10,
+            "markeredgewidth": 1.5,
+        },
+        "site": {
+            "marker": "^",
+            "markeredgecolor": "red",
+            "markerfacecolor": "white",
+            "markersize": 7.5,
+            "markeredgewidth": 1.5,
+        },
+    }
+
+    new_config_dct["labels"] = create_box_labels(setup, words, symbols, mdata)
+
+    return BoxedPlotConfig(**new_config_dct)
+
+
+# pylint: disable=R0914  # too-many-locals
+def create_box_labels(
+    setup: Setup, words: TranslatedWords, symbols: Words, mdata: MetaData,
+) -> Dict[str, Dict[str, Any]]:
+
+    # SR_TMP <
+    names = format_names_etc(setup, words, mdata)
+    short_name = names["short"]
+    long_name = names["long"]
+    var_name = names["var"]
+    unit = names["unit"]
+    # SR_TMP >
+
+    labels: Dict[str, Dict[str, Any]] = {}
     assert isinstance(mdata.simulation_integr_start.value, datetime)  # mypy
     assert isinstance(mdata.simulation_now.value, datetime)  # mypy
     integr_period = format_integr_period(
@@ -161,7 +238,7 @@ def create_plot_config(
         words,
         cap=True,
     )
-    new_config_dct["labels"]["top"] = {
+    labels["top"] = {
         "tl": "",  # SR_TMP force into 1st position of dict (for tests)
         "bl": (
             f"{integr_period}"
@@ -175,15 +252,15 @@ def create_plot_config(
             # f" {words['at', 'place']} {mdata.release_site_name}"
         ),
     }
-    new_config_dct["labels"]["title_2nd"] = {
+    labels["title_2nd"] = {
         "tc": f"{mdata.species_name}",
         "bc": f"{mdata.release_site_name}",
     }
-    new_config_dct["labels"]["right_top"] = {
+    labels["right_top"] = {
         "title": f"{words['data'].c}",
         "lines": [],
     }
-    new_config_dct["labels"]["right_middle"] = {
+    labels["right_middle"] = {
         "title": "",  # SR_TMP Force into 1st position in dict (for tests)
         "title_unit": "",  # SR_TMP Force into 2nd position in dict (for tests)
         "release_site": words["release_site"].s,
@@ -191,7 +268,7 @@ def create_plot_config(
         "max": words["maximum", "abbr"].s,
         "maximum": words["maximum"].s,
     }
-    new_config_dct["labels"]["right_bottom"] = {
+    labels["right_bottom"] = {
         "title": words["release"].t,
         "start": words["start"].s,
         "end": words["end"].s,
@@ -213,218 +290,172 @@ def create_plot_config(
         "washout_exponent": words["washout_exponent"].s,
     }
 
-    if setup.model == "cosmo1":
-        model_name = "COSMO-1"
-    elif setup.model == "cosmo1e":
-        model_name = "COSMO-1E"
-    elif setup.model == "cosmo2":
-        model_name = "COSMO-2"
-    elif setup.model == "cosmo2e":
-        model_name = "COSMO-2E"
-    elif setup.model == "ifs":
-        model_name = "IFS"
-
-    model_info = None
-    if setup.get_simulation_type() == "deterministic":
-        if setup.model in ["cosmo1", "cosmo2", "ifs"]:
-            model_info = model_name
-        elif setup.model in ["cosmo1e", "cosmo2e"]:
-            model_info = f"{model_name} {words['control_run']}"
-    elif setup.get_simulation_type() == "ensemble":
-        model_info = (
-            f"{model_name} {words['ensemble']}"
-            f" ({len(setup.ens_member_id or [])} {words['member', 'pl']}:"
-            f" {format_range(setup.ens_member_id or [], fmt='02d')})"
-        )
-    if model_info is None:
-        raise NotImplementedError(
-            f"model setup '{setup.model}-{setup.get_simulation_type()}'"
-        )
-    model_info = (
-        f"{words['flexpart']} {words['based_on']} {model_info}"
-        f", {mdata.simulation_start}"
-    )
-    new_config_dct["labels"]["bottom"] = {
-        "model_info": model_info,
+    labels["bottom"] = {
+        "model_info": format_model_info(setup, words, mdata),
         "copyright": f"{symbols['copyright']}{words['meteoswiss']}",
     }
 
-    long_name = ""
-    short_name = ""
-    var_name = ""
-    unit = mdata.format("variable_unit")
-
     if setup.core.input_variable == "concentration":
-        new_config_dct["n_levels"] = 8
-        new_config_dct["labels"]["right_middle"]["tc"] = (
+        labels["right_middle"]["tc"] = (
             f"{words['level']}:" f" {escape_format_keys(format_level_label(mdata))}"
         )
-        var_name = str(words["activity_concentration"])
+        labels["right_top"]["lines"].insert(
+            0, f"{words['level'].c}:\t{escape_format_keys(format_level_label(mdata))}"
+        )
+
+    if setup.get_simulation_type() == "ensemble":
+        if setup.core.ens_variable == "probability":
+            labels["right_top"]["lines"].append(
+                f"{words['cloud']}:\t{symbols['geq']} {setup.core.ens_param_thr}"
+                f" {mdata.format('variable_unit')}"
+            )
+        elif setup.core.ens_variable in [
+            "cloud_arrival_time",
+            "cloud_departure_time",
+        ]:
+            labels["right_top"]["lines"].append(
+                f"{words['cloud_density'].c}:\t{words['minimum', 'abbr']}"
+                f" {setup.core.ens_param_thr} {mdata.format('variable_unit')}"
+            )
+            n_min = setup.core.ens_param_mem_min or 1
+            n_tot = len((setup.ens_member_id or []))
+            labels["right_top"]["lines"].append(
+                f"{words['number_of', 'abbr'].c} {words['member', 'pl']}:"
+                f"\t{words['minimum', 'abbr']} {setup.core.ens_param_mem_min}"
+                r"$\,/\,$"
+                f"{n_tot} ({n_min/(n_tot or 1):.0%})"
+            )
+        elif setup.core.ens_variable == "cloud_occurrence_probability":
+            labels["right_top"]["lines"].append(
+                f"{words['cloud_density'].c}:\t{words['minimum', 'abbr']}"
+                f" {setup.core.ens_param_thr} {mdata.format('variable_unit')}"
+            )
+            n_min = setup.core.ens_param_mem_min or 1
+            n_tot = len((setup.ens_member_id or []))
+            labels["right_top"]["lines"].append(
+                f"{words['number_of', 'abbr'].c} {words['member', 'pl']}:"
+                f"\t{words['minimum', 'abbr']} {setup.core.ens_param_mem_min}"
+                r"$\,/\,$"
+                f"{n_tot} ({n_min/(n_tot or 1):.0%})"
+            )
+
+    # box_labels["top"]["tl"] = f"{long_name} {words['of']} {mdata.species_name}"
+    labels["top"]["tl"] = long_name
+    labels["right_top"]["lines"].insert(
+        0, f"{words['input_variable'].c}:\t{capitalize(var_name)}",
+    )
+    labels["right_middle"]["title"] = short_name
+    labels["right_middle"]["title_unit"] = f"{short_name} ({unit})"
+    labels["right_middle"]["unit"] = unit
+
+    # Capitalize all labels
+    for label_group in labels.values():
+        for name, label in label_group.items():
+            if name == "lines":
+                label = [capitalize(line) for line in label]
+            else:
+                label = capitalize(label)
+            label_group[name] = label
+
+    return labels
+
+
+# pylint: disable=R0912  # too-many-branches
+# pylint: disable=R0915  # too-many-statements
+def format_names_etc(
+    setup: Setup, words: TranslatedWords, mdata: MetaData
+) -> Dict[str, str]:
+    long_name = ""
+    short_name = ""
+
+    def format_var_names(setup: Setup, words: TranslatedWords) -> Tuple[str, str]:
+        if setup.core.input_variable == "concentration":
+            var_name = str(words["activity_concentration"])
+            if setup.core.integrate:
+                var_name_rel = (
+                    f"{words['of', 'fg']} {words['integrated', 'g']}"
+                    f" {words['activity_concentration']}"
+                )
+            else:
+                var_name_rel = f"{words['of', 'fg']} {words['activity_concentration']}"
+        elif setup.core.input_variable == "deposition":
+            dep_type_word = (
+                "total"
+                if setup.deposition_type_str == "tot"
+                else setup.deposition_type_str
+            )
+            var_name = f"{words[dep_type_word, 'f']} {words['surface_deposition']}"
+            var_name_rel = (
+                f"{words['of', 'fg']} {words[dep_type_word, 'g']}"
+                f" {words['surface_deposition']}"
+            )
+        return var_name, var_name_rel
+
+    # pylint: disable=W0621  # redefined-outer-name
+    def format_unit(setup: Setup, words: TranslatedWords, mdata: MetaData) -> str:
+        if setup.get_simulation_type() == "ensemble":
+            if setup.core.ens_variable == "probability":
+                return "%"
+            elif setup.core.ens_variable in [
+                "cloud_arrival_time",
+                "cloud_departure_time",
+            ]:
+                return f"{words['hour', 'pl']}"
+            elif setup.core.ens_variable == "cloud_occurrence_probability":
+                return "%"
+        return mdata.format("variable_unit")
+
+    unit = format_unit(setup, words, mdata)
+    var_name, var_name_rel = format_var_names(setup, words)
+
+    # Short/long names #1: By variable
+    if setup.core.input_variable == "concentration":
         if setup.core.integrate:
             long_name = f"{words['integrated']} {var_name}"
             short_name = (
                 f"{words['integrated', 'abbr']} {words['concentration', 'abbr']}"
             )
-            variable_rel = (
-                f"{words['of', 'fg']} {words['integrated', 'g']}"
-                f" {words['activity_concentration']}"
-            )
         else:
             long_name = var_name
             short_name = str(words["concentration"])
-            variable_rel = f"{words['of', 'fg']} {words['activity_concentration']}"
-        new_config_dct["labels"]["right_top"]["lines"].insert(
-            0, f"{words['level'].c}:\t{escape_format_keys(format_level_label(mdata))}"
-        )
-
     elif setup.core.input_variable == "deposition":
-        dep_type_word = (
-            "total" if setup.deposition_type_str == "tot" else setup.deposition_type_str
-        )
-        var_name = f"{words[dep_type_word, 'f']} {words['surface_deposition']}"
         long_name = var_name
         short_name = str(words["deposition"])
-        variable_rel = (
-            f"{words['of', 'fg']} {words[dep_type_word, 'g']}"
-            f" {words['surface_deposition']}"
-        )
-        new_config_dct["n_levels"] = 9
 
+    # Short/long names #2: By plot variable/type
     if setup.get_simulation_type() == "deterministic":
         if setup.core.plot_variable.startswith("affected_area"):
-            long_name = f"{words['affected_area']} {variable_rel}"
-            if setup.core.plot_variable == "affected_area_mono":
-                new_config_dct["extend"] = "none"
-                new_config_dct["n_levels"] = 1
-
+            long_name = f"{words['affected_area']} {var_name_rel}"
     elif setup.get_simulation_type() == "ensemble":
         if setup.core.ens_variable == "minimum":
-            long_name = f"{words['ensemble_minimum']} {variable_rel}"
+            long_name = f"{words['ensemble_minimum']} {var_name_rel}"
         elif setup.core.ens_variable == "maximum":
-            long_name = f"{words['ensemble_maximum']} {variable_rel}"
+            long_name = f"{words['ensemble_maximum']} {var_name_rel}"
         elif setup.core.ens_variable == "median":
-            long_name = f"{words['ensemble_median']} {variable_rel}"
+            long_name = f"{words['ensemble_median']} {var_name_rel}"
         elif setup.core.ens_variable == "mean":
-            long_name = f"{words['ensemble_mean']} {variable_rel}"
-        else:
-            new_config_dct.update(
-                {
-                    "extend": "both",
-                    "legend_rstrip_zeros": False,
-                    "level_range_style": "int",
-                    "level_ranges_align": "left",
-                    "mark_field_max": False,
-                    "levels_scale": "lin",
-                }
-            )
-            if setup.core.ens_variable == "probability":
-                new_config_dct.update({"n_levels": 9, "d_level": 10})
-                new_config_dct["labels"]["right_top"]["lines"].append(
-                    f"{words['cloud']}:\t{symbols['geq']} {setup.core.ens_param_thr}"
-                    f" {mdata.format('variable_unit')}"
-                )
-                short_name = f"{words['probability']}"
-                unit = "%"
-                long_name = f"{words['probability']} {variable_rel}"
-            elif setup.core.ens_variable in [
-                "cloud_arrival_time",
-                "cloud_departure_time",
-            ]:
-                new_config_dct.update({"n_levels": 9, "d_level": 3})
-                new_config_dct["labels"]["right_top"]["lines"].append(
-                    f"{words['cloud_density'].c}:\t{words['minimum', 'abbr']}"
-                    f" {setup.core.ens_param_thr} {mdata.format('variable_unit')}"
-                )
-                n_min = setup.core.ens_param_mem_min or 1
-                n_tot = len((setup.ens_member_id or []))
-                new_config_dct["labels"]["right_top"]["lines"].append(
-                    f"{words['number_of', 'abbr'].c} {words['member', 'pl']}:"
-                    f"\t{words['minimum', 'abbr']} {setup.core.ens_param_mem_min}"
-                    r"$\,/\,$"
-                    f"{n_tot} ({n_min/(n_tot or 1):.0%})"
-                )
-                if setup.core.ens_variable == "cloud_arrival_time":
-                    long_name = f"{words['cloud_arrival_time']}"
-                    short_name = f"{words['arrival']}"
-                elif setup.core.ens_variable == "cloud_departure_time":
-                    long_name = f"{words['cloud_departure_time']}"
-                    short_name = f"{words['departure']}"
-                unit = f"{words['hour', 'pl']}"
-            elif setup.core.ens_variable == "cloud_occurrence_probability":
-                new_config_dct.update({"n_levels": 9, "d_level": 10})
-                new_config_dct["labels"]["right_top"]["lines"].append(
-                    f"{words['cloud_density'].c}:\t{words['minimum', 'abbr']}"
-                    f" {setup.core.ens_param_thr} {mdata.format('variable_unit')}"
-                )
-                n_min = setup.core.ens_param_mem_min or 1
-                n_tot = len((setup.ens_member_id or []))
-                new_config_dct["labels"]["right_top"]["lines"].append(
-                    f"{words['number_of', 'abbr'].c} {words['member', 'pl']}:"
-                    f"\t{words['minimum', 'abbr']} {setup.core.ens_param_mem_min}"
-                    r"$\,/\,$"
-                    f"{n_tot} ({n_min/(n_tot or 1):.0%})"
-                )
-                short_name = f"{words['probability']}"
-                unit = "%"
-                long_name = f"{words['cloud_occurrence_probability']}"
+            long_name = f"{words['ensemble_mean']} {var_name_rel}"
+        elif setup.core.ens_variable == "probability":
+            short_name = f"{words['probability']}"
+            long_name = f"{words['probability']} {var_name_rel}"
+        elif setup.core.ens_variable == "cloud_arrival_time":
+            long_name = f"{words['cloud_arrival_time']}"
+            short_name = f"{words['arrival']}"
+        elif setup.core.ens_variable == "cloud_departure_time":
+            long_name = f"{words['cloud_departure_time']}"
+            short_name = f"{words['departure']}"
+        elif setup.core.ens_variable == "cloud_occurrence_probability":
+            short_name = f"{words['probability']}"
+            long_name = f"{words['cloud_occurrence_probability']}"
 
     # SR_TMP <
     if not short_name:
         raise Exception("no short name")
     if not long_name:
-        raise Exception("no short name")
+        raise Exception("no long name")
     # SR_TMP >
 
-    # new_config_dct["labels"]["top"][
-    #     "tl"
-    # ] = f"{long_name} {words['of']} {mdata.species_name}"
-    new_config_dct["labels"]["top"]["tl"] = long_name
-    new_config_dct["labels"]["right_top"]["lines"].insert(
-        0, f"{words['input_variable'].c}:\t{capitalize(var_name)}",
-    )
-    new_config_dct["labels"]["right_middle"]["title"] = short_name
-    new_config_dct["labels"]["right_middle"]["title_unit"] = f"{short_name} ({unit})"
-    new_config_dct["labels"]["right_middle"]["unit"] = unit
-
-    # Capitalize all labels
-    for labels in new_config_dct["labels"].values():
-        for name, label in labels.items():
-            if name == "lines":
-                label = [capitalize(line) for line in label]
-            else:
-                label = capitalize(label)
-            labels[name] = label
-
-    # Colors
-    n_levels = new_config_dct["n_levels"]
-    extend = new_config_dct.get("extend", "max")
-    cmap = new_config_dct.get("cmap", "flexplot")
-    if setup.core.plot_variable == "affected_area_mono":
-        colors = (np.array([(200, 200, 200)]) / 255).tolist()
-    elif cmap == "flexplot":
-        colors = colors_flexplot(n_levels, extend)
-    else:
-        cmap = mpl.cm.get_cmap(cmap)
-        colors = [cmap(i / (n_levels - 1)) for i in range(n_levels)]
-    new_config_dct["colors"] = colors
-
-    new_config_dct["markers"] = {
-        "max": {
-            "marker": "+",
-            "color": "black",
-            "markersize": 10,
-            "markeredgewidth": 1.5,
-        },
-        "site": {
-            "marker": "^",
-            "markeredgecolor": "red",
-            "markerfacecolor": "white",
-            "markersize": 7.5,
-            "markeredgewidth": 1.5,
-        },
-    }
-
-    return BoxedPlotConfig(**new_config_dct)
+    return {"short": short_name, "long": long_name, "var": var_name, "unit": unit}
 
 
 def prepare_plot(
@@ -438,15 +469,17 @@ def prepare_plot(
     setup = SetupCollection.merge(var_setups_lst).compress()
     out_file_path = FilePathFormatter(prev_out_file_paths).format(setup)
     log(dbg=f"preparing plot {out_file_path}")
-    map_conf_lst = [create_map_conf(field) for field in field_lst]
     if dry_run:
         return DummyBoxedPlot(out_file_path)
     else:
-        configs = [
-            create_plot_config(setup, WORDS, SYMBOLS, cast(MetaData, field.mdata))
-            for field in field_lst
-        ]
-        return BoxedPlot(field_lst, out_file_path, configs, map_conf_lst)
+        # SR_TMP <  SR_MULTIPANEL
+        if len(field_lst) > 1:
+            raise NotImplementedError("multipanel plot")
+        field = next(iter(field_lst))
+        map_conf = create_map_conf(field)
+        # SR_TMP >  SR_MULTIPANEL
+        config = create_plot_config(setup, WORDS, SYMBOLS, cast(MetaData, field.mdata))
+        return BoxedPlot(field, out_file_path, config, map_conf)
 
 
 def create_plot(plot: BoxedPlot, write: bool = True) -> None:
@@ -824,6 +857,40 @@ def colors_flexplot(n_levels: int, extend: str) -> Sequence[ColorType]:
     elif extend == "both":
         return [color_under] + colors_core + [color_over]
     raise ValueError(f"extend='{extend}'")
+
+
+def format_model_info(setup: Setup, words: TranslatedWords, mdata: MetaData) -> str:
+    if setup.model == "cosmo1":
+        model_name = "COSMO-1"
+    elif setup.model == "cosmo1e":
+        model_name = "COSMO-1E"
+    elif setup.model == "cosmo2":
+        model_name = "COSMO-2"
+    elif setup.model == "cosmo2e":
+        model_name = "COSMO-2E"
+    elif setup.model == "ifs":
+        model_name = "IFS"
+
+    model_info = None
+    if setup.get_simulation_type() == "deterministic":
+        if setup.model in ["cosmo1", "cosmo2", "ifs"]:
+            model_info = model_name
+        elif setup.model in ["cosmo1e", "cosmo2e"]:
+            model_info = f"{model_name} {words['control_run']}"
+    elif setup.get_simulation_type() == "ensemble":
+        model_info = (
+            f"{model_name} {words['ensemble']}"
+            f" ({len(setup.ens_member_id or [])} {words['member', 'pl']}:"
+            f" {format_range(setup.ens_member_id or [], fmt='02d')})"
+        )
+    if model_info is None:
+        raise NotImplementedError(
+            f"model setup '{setup.model}-{setup.get_simulation_type()}'"
+        )
+    return (
+        f"{words['flexpart']} {words['based_on']} {model_info}"
+        f", {mdata.simulation_start}"
+    )
 
 
 def format_level_label(mdata: MetaData) -> str:

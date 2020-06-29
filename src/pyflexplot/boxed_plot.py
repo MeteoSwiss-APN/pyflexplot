@@ -10,7 +10,6 @@ from typing import Dict
 from typing import List
 from typing import Mapping
 from typing import Optional
-from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -99,21 +98,12 @@ class BoxedPlot:
 
     def __init__(
         self,
-        fields: Sequence[Field],
+        field: Field,
         file_path: str,
-        configs: Sequence[BoxedPlotConfig],
-        map_confs: Sequence[MapAxesConf],
+        config: BoxedPlotConfig,
+        map_conf: MapAxesConf,
     ) -> None:
         """Create an instance of ``BoxedPlot``."""
-
-        # SR_TMP <
-        assert len(fields) == len(map_confs)
-        if len(fields) > 1:
-            raise NotImplementedError("multiple fields")
-        field = fields[0]
-        map_conf = map_confs[0]
-        config = configs[0]
-        # SR_TMP >
 
         self.field = field
         self.file_path = file_path
