@@ -778,7 +778,11 @@ class SetupCollection:
             if not sub_setup_lst_lst:
                 sub_setup_lst_lst = [[sub_setup] for sub_setup in sub_setups]
             else:
-                assert len(sub_setups) == len(sub_setup_lst_lst)
+                # SR_TMP <
+                assert len(sub_setups) == len(
+                    sub_setup_lst_lst
+                ), f"{len(sub_setups)} != {len(sub_setup_lst_lst)}"
+                # SR_TMP >
                 for idx, sub_setup in enumerate(sub_setups):
                     sub_setup_lst_lst[idx].append(sub_setup)
         return [SetupCollection(sub_setup_lst) for sub_setup_lst in sub_setup_lst_lst]
