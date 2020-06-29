@@ -45,10 +45,10 @@ from .formatting import escape_format_keys
 from .formatting import format_level_ranges
 from .formatting import format_range
 from .logging import log
+from .map_axes import MapAxes
+from .map_axes import MapAxesConf
 from .meta_data import format_unit
 from .meta_data import MetaData
-from .plot_elements import MapAxes
-from .plot_elements import MapAxesConf
 from .plot_layouts import BoxedPlotLayoutDeterministic
 from .plot_layouts import BoxedPlotLayoutEnsemble
 from .plot_layouts import BoxedPlotLayoutType

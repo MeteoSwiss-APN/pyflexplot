@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tests for module ``pyflexplot.plot_elements``.
+Tests for module ``pyflexplot.map_axes``.
 """
 # Third-party
 from matplotlib import pyplot as plt

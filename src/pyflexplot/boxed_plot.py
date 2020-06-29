@@ -23,10 +23,10 @@ from pydantic import BaseModel
 
 # Local
 from .data import Field
+from .map_axes import MapAxes
+from .map_axes import MapAxesConf
+from .map_axes import post_summarize_plot
 from .meta_data import MetaData
-from .plot_elements import MapAxes
-from .plot_elements import MapAxesConf
-from .plot_elements import post_summarize_plot
 from .setup import Setup
 from .summarize import summarizable
 from .text_box_axes import TextBoxAxes
