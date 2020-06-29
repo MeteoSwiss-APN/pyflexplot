@@ -261,8 +261,8 @@ def create_box_labels(
         "lines": [],
     }
     labels["right_middle"] = {
-        "title": "",  # SR_TMP Force into 1st position in dict (for tests)
-        "title_unit": "",  # SR_TMP Force into 2nd position in dict (for tests)
+        "title_long": "",  # SR_TMP Force into 2nd position in dict (for tests)
+        "title_short": "",  # SR_TMP Force into 2nd position in dict (for tests)
         "release_site": words["release_site"].s,
         "site": words["site"].s,
         "max": words["maximum", "abbr"].s,
@@ -344,8 +344,10 @@ def create_box_labels(
     labels["right_top"]["lines"].insert(
         0, f"{words['input_variable'].c}:\t{capitalize(var_name)}",
     )
-    labels["right_middle"]["title"] = short_name
-    labels["right_middle"]["title_unit"] = f"{short_name} ({unit})"
+    if setup.get_simulation_type() == "deterministic":
+        labels["right_middle"]["title"] = f"{short_name} ({unit})"
+    elif setup.get_simulation_type() == "ensemble":
+        labels["right_middle"]["title"] = f"{unit}"
     labels["right_middle"]["unit"] = unit
 
     # Capitalize all labels
@@ -551,7 +553,7 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
 
         # Box title
         box.text(
-            labels["title_unit"],
+            labels["title"],
             loc="tc",
             fontname=plot.config.font_name,
             size=plot.config.font_sizes.title_small,
@@ -559,13 +561,10 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
 
         # dy_line: float = 3.0
         dy_line: float = 2.5
-
         w_legend_box: float = 4.0
         h_legend_box: float = 2.0
-
         dx_legend_box: float = -10
         dx_legend_label: float = -3
-
         dx_marker: float = dx_legend_box + 0.5 * w_legend_box
         dx_marker_label: float = dx_legend_label - 0.5
 
@@ -624,30 +623,8 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
             box.marker(
                 loc="tc", dx=dx_marker, dy=dy_max_marker, **plot.config.markers["max"],
             )
-            if np.isnan(plot.field.fld).all():
-                s_val = "NaN"
-            else:
-                fld_max = np.nanmax(plot.field.fld)
-                if 0.001 <= fld_max < 0.01:
-                    s_val = f"{fld_max:.5f}"
-                elif 0.01 <= fld_max < 0.1:
-                    s_val = f"{fld_max:.4f}"
-                elif 0.1 <= fld_max < 1:
-                    s_val = f"{fld_max:.3f}"
-                elif 1 <= fld_max < 10:
-                    s_val = f"{fld_max:.2f}"
-                elif 10 <= fld_max < 100:
-                    s_val = f"{fld_max:.1f}"
-                elif 100 <= fld_max < 1000:
-                    s_val = f"{fld_max:.0f}"
-                else:
-                    s_val = f"{fld_max:.2E}"
-                # s_val += r"$\,$" + labels["unit"]
-            s = f"{labels['max']}: {s_val}"
-            # s = f"{labels['max']} ({s_val})"
-            # s = f"{labels['maximum']}:\n({s_val})"
             box.text(
-                s=s,
+                s=format_max_marker_label(labels, plot.field.fld),
                 loc="tc",
                 dx=dx_marker_label,
                 dy=dy_marker_label_max,
@@ -668,11 +645,8 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
                 dy=dy_site_marker,
                 **plot.config.markers["site"],
             )
-            # s = f"{labels['release_site']}"
-            # s = f"{labels['site']} ({mdata.release_site_name})"
-            s = f"{labels['site']}: {mdata.release_site_name}"
             box.text(
-                s=s,
+                s=f"{labels['site']}: {mdata.release_site_name}",
                 loc="tc",
                 dx=dx_marker_label,
                 dy=dy_site_label,
@@ -857,6 +831,31 @@ def colors_flexplot(n_levels: int, extend: str) -> Sequence[ColorType]:
     elif extend == "both":
         return [color_under] + colors_core + [color_over]
     raise ValueError(f"extend='{extend}'")
+
+
+def format_max_marker_label(labels: Dict[str, Any], fld: np.ndarray) -> str:
+    if np.isnan(fld).all():
+        s_val = "NaN"
+    else:
+        fld_max = np.nanmax(fld)
+        if 0.001 <= fld_max < 0.01:
+            s_val = f"{fld_max:.5f}"
+        elif 0.01 <= fld_max < 0.1:
+            s_val = f"{fld_max:.4f}"
+        elif 0.1 <= fld_max < 1:
+            s_val = f"{fld_max:.3f}"
+        elif 1 <= fld_max < 10:
+            s_val = f"{fld_max:.2f}"
+        elif 10 <= fld_max < 100:
+            s_val = f"{fld_max:.1f}"
+        elif 100 <= fld_max < 1000:
+            s_val = f"{fld_max:.0f}"
+        else:
+            s_val = f"{fld_max:.2E}"
+        # s_val += r"$\,$" + labels["unit"]
+    return f"{labels['max']}: {s_val}"
+    # return f"{labels['max']} ({s_val})"
+    # return f"{labels['maximum']}:\n({s_val})"
 
 
 def format_model_info(setup: Setup, words: TranslatedWords, mdata: MetaData) -> str:

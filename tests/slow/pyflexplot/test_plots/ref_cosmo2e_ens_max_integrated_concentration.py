@@ -813,7 +813,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "Int. Konzentr. (Bq m$^{-3}$)",
+                    "s": "Bq m$^{-3}$",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
