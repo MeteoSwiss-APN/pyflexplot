@@ -13,6 +13,7 @@ logging.py
 meta_data.py
 nc_meta_data.py
 plot_elements.py
+plot_layouts.py
 plots.py
 preset.py
 pydantic.py

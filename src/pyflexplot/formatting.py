@@ -267,6 +267,10 @@ def format_level_ranges(
     return formatter.format_multiple(levels)
 
 
+def escape_format_keys(s: str) -> str:
+    return s.replace("{", "{{").replace("}", "}}")
+
+
 @dataclass
 class Component:
     """Auxiliary class to pass results between formatter methods."""

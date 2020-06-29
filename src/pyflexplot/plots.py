@@ -28,13 +28,16 @@ from .boxed_plot import BoxedPlotConfig
 from .boxed_plot import DummyBoxedPlot
 from .data import Field
 from .data import FieldAllNaNError
+from .formatting import escape_format_keys
 from .formatting import format_level_ranges
 from .formatting import format_range
 from .logging import log
 from .meta_data import format_unit
 from .meta_data import MetaData
+from .plot_elements import MapAxes
 from .plot_elements import MapAxesConf
 from .plot_elements import TextBoxAxes
+from .plot_layouts import BoxedPlotLayout
 from .setup import FilePathFormatter
 from .setup import Setup
 from .setup import SetupCollection
@@ -135,10 +138,19 @@ def create_plot_config(
         "mdata": mdata,
         "labels": {},
     }
+    assert isinstance(mdata.simulation_integr_start.value, datetime)  # mypy
+    assert isinstance(mdata.simulation_now.value, datetime)  # mypy
+    integr_period = format_integr_period(
+        mdata.simulation_integr_start.value,
+        mdata.simulation_now.value,
+        setup,
+        words,
+        cap=True,
+    )
     new_config_dct["labels"]["top"] = {
         "tl": "",  # SR_TMP force into 1st position of dict (for tests)
         "bl": (
-            f"{format_integr_period(mdata, setup, words, cap=True)}"
+            f"{integr_period}"
             f" {words['since']}"
             f" +{mdata.simulation_integr_start_rel}"
         ),
@@ -396,261 +408,6 @@ def create_plot_config(
     return BoxedPlotConfig(**new_config_dct)
 
 
-def fill_box_top(box: TextBoxAxes, plot: BoxedPlot) -> None:
-    for position, label in plot.config.labels.get("top", {}).items():
-        if position == "tl":
-            font_size = plot.config.font_sizes.title_large
-        else:
-            font_size = plot.config.font_sizes.content_large
-        box.text(label, loc=position, fontname=plot.config.font_name, size=font_size)
-
-
-def fill_box_right_top(box: TextBoxAxes, plot: BoxedPlot) -> None:
-    labels = plot.config.labels["right_top"]
-    box.text(
-        labels["title"],
-        loc="tc",
-        fontname=plot.config.font_name,
-        size=plot.config.font_sizes.title_small,
-    )
-    box.text_block_hfill(
-        labels["lines"],
-        dy_unit=-4.0,
-        dy_line=2.5,
-        fontname=plot.config.font_name,
-        size=plot.config.font_sizes.content_small,
-    )
-
-
-# pylint: disable=R0912   # too-many-branches
-# pylint: disable=R0913   # too-many-arguments
-# pylint: disable=R0914   # too-many-locals
-# pylint: disable=R0915   # too-many-statements
-def fill_box_right_middle(box: TextBoxAxes, plot: BoxedPlot) -> None:
-    """Fill the top box to the right of the map plot."""
-
-    labels = plot.config.labels["right_middle"]
-    mdata = plot.config.mdata
-
-    # Box title
-    box.text(
-        labels["title_unit"],
-        loc="tc",
-        fontname=plot.config.font_name,
-        size=plot.config.font_sizes.title_small,
-    )
-
-    # dy_line: float = 3.0
-    dy_line: float = 2.5
-
-    w_legend_box: float = 4.0
-    h_legend_box: float = 2.0
-
-    dx_legend_box: float = -10
-    dx_legend_label: float = -3
-
-    dx_marker: float = dx_legend_box + 0.5 * w_legend_box
-    dx_marker_label: float = dx_legend_label - 0.5
-
-    # Vertical position of legend (depending on number of levels)
-    dy0_labels = -5.0
-    dy0_boxes = dy0_labels - 0.8 * h_legend_box
-
-    # Format level ranges (contour plot legend)
-    legend_labels = format_level_ranges(
-        levels=plot.levels,
-        style=plot.config.level_range_style,
-        extend=plot.config.extend,
-        rstrip_zeros=plot.config.legend_rstrip_zeros,
-        align=plot.config.level_ranges_align,
-    )
-
-    # Legend labels (level ranges)
-    box.text_block(
-        legend_labels[::-1],
-        loc="tc",
-        dy_unit=dy0_labels,
-        dy_line=dy_line,
-        dx=dx_legend_label,
-        ha="left",
-        fontname=plot.config.font_name,
-        size=plot.config.font_sizes.content_medium,
-        family="monospace",
-    )
-
-    # Legend color boxes
-    colors = plot.config.colors
-    dy = dy0_boxes
-    for color in colors[::-1]:
-        box.color_rect(
-            loc="tc",
-            x_anker="left",
-            dx=dx_legend_box,
-            dy=dy,
-            w=w_legend_box,
-            h=h_legend_box,
-            fc=color,
-            ec="black",
-            lw=1.0,
-        )
-        dy -= dy_line
-
-    dy0_markers = dy0_boxes - dy_line * (len(legend_labels) - 0.3)
-    dy0_marker = dy0_markers
-
-    # Field maximum marker
-    if plot.config.mark_field_max:
-        dy_marker_label_max = dy0_marker
-        dy0_marker -= dy_line
-        dy_max_marker = dy_marker_label_max - 0.7
-        assert plot.config.markers is not None  # mypy
-        box.marker(
-            loc="tc", dx=dx_marker, dy=dy_max_marker, **plot.config.markers["max"],
-        )
-        if np.isnan(plot.field.fld).all():
-            s_val = "NaN"
-        else:
-            fld_max = np.nanmax(plot.field.fld)
-            if 0.001 <= fld_max < 0.01:
-                s_val = f"{fld_max:.5f}"
-            elif 0.01 <= fld_max < 0.1:
-                s_val = f"{fld_max:.4f}"
-            elif 0.1 <= fld_max < 1:
-                s_val = f"{fld_max:.3f}"
-            elif 1 <= fld_max < 10:
-                s_val = f"{fld_max:.2f}"
-            elif 10 <= fld_max < 100:
-                s_val = f"{fld_max:.1f}"
-            elif 100 <= fld_max < 1000:
-                s_val = f"{fld_max:.0f}"
-            else:
-                s_val = f"{fld_max:.2E}"
-            # s_val += r"$\,$" + labels["unit"]
-        s = f"{labels['max']}: {s_val}"
-        # s = f"{labels['max']} ({s_val})"
-        # s = f"{labels['maximum']}:\n({s_val})"
-        box.text(
-            s=s,
-            loc="tc",
-            dx=dx_marker_label,
-            dy=dy_marker_label_max,
-            ha="left",
-            fontname=plot.config.font_name,
-            size=plot.config.font_sizes.content_medium,
-        )
-
-    # Release site marker
-    if plot.config.mark_release_site:
-        dy_site_label = dy0_marker
-        dy0_marker -= dy_line
-        dy_site_marker = dy_site_label - 0.7
-        assert plot.config.markers is not None  # mypy
-        box.marker(
-            loc="tc", dx=dx_marker, dy=dy_site_marker, **plot.config.markers["site"],
-        )
-        # s = f"{labels['release_site']}"
-        # s = f"{labels['site']} ({mdata.release_site_name})"
-        s = f"{labels['site']}: {mdata.release_site_name}"
-        box.text(
-            s=s,
-            loc="tc",
-            dx=dx_marker_label,
-            dy=dy_site_label,
-            ha="left",
-            fontname=plot.config.font_name,
-            size=plot.config.font_sizes.content_medium,
-        )
-
-
-def fill_box_right_bottom(box: TextBoxAxes, plot: BoxedPlot) -> None:
-    """Fill the bottom box to the right of the map plot."""
-
-    labels = plot.config.labels["right_bottom"]
-    mdata = plot.config.mdata
-
-    # Box title
-    box.text(
-        s=labels["title"],
-        loc="tc",
-        fontname=plot.config.font_name,
-        size=plot.config.font_sizes.title_small,
-    )
-
-    # Release site coordinates
-    lat = Degrees(mdata.release_site_lat.value)
-    lon = Degrees(mdata.release_site_lon.value)
-    lat_deg = labels["lat_deg_fmt"].format(d=lat.degs(), m=lat.mins(), f=lat.frac())
-    lon_deg = labels["lon_deg_fmt"].format(d=lon.degs(), m=lon.mins(), f=lon.frac())
-
-    # SR_TMP < TODO clean this up, especially for ComboMetaData (units messed up)!
-    height = mdata.format("release_height", add_unit=True)
-    rate = mdata.format("release_rate", add_unit=True)
-    mass = mdata.format("release_mass", add_unit=True)
-    substance = mdata.format("species_name", join_combo=" / ")
-    half_life = mdata.format("species_half_life", add_unit=True)
-    deposit_vel = mdata.format("species_deposit_vel", add_unit=True)
-    sediment_vel = mdata.format("species_sediment_vel", add_unit=True)
-    washout_coeff = mdata.format("species_washout_coeff", add_unit=True)
-    washout_exponent = mdata.format("species_washout_exponent")
-    # SR_TMP >
-
-    info_blocks = dedent(
-        f"""\
-        {labels['site']}:\t{mdata.release_site_name}
-        {labels['latitude']}:\t{lat_deg}
-        {labels['longitude']}:\t{lon_deg}
-        {labels['height']}:\t{height}
-
-        {labels['start']}:\t{mdata.release_start}
-        {labels['end']}:\t{mdata.release_end}
-        {labels['rate']}:\t{rate}
-        {labels['mass']}:\t{mass}
-
-        {labels['name']}:\t{substance}
-        {labels['half_life']}:\t{half_life}
-        {labels['deposit_vel']}:\t{deposit_vel}
-        {labels['sediment_vel']}:\t{sediment_vel}
-        {labels['washout_coeff']}:\t{washout_coeff}
-        {labels['washout_exponent']}:\t{washout_exponent}
-        """
-    )
-
-    # Add lines bottom-up (to take advantage of baseline alignment)
-    box.text_blocks_hfill(
-        info_blocks,
-        dy_unit=-4.0,
-        dy_line=2.5,
-        fontname=plot.config.font_name,
-        size=plot.config.font_sizes.content_small,
-    )
-
-
-def fill_box_bottom(box: TextBoxAxes, plot: BoxedPlot) -> None:
-    """Fill the box to the bottom of the map plot."""
-
-    labels = plot.config.labels["bottom"]
-
-    # FLEXPART/model info
-    box.text(
-        s=labels["model_info"],
-        loc="tl",
-        dx=-0.7,
-        dy=0.5,
-        fontname=plot.config.font_name,
-        size=plot.config.font_sizes.content_small,
-    )
-
-    # MeteoSwiss Copyright
-    box.text(
-        s=labels["copyright"],
-        loc="tr",
-        dx=0.7,
-        dy=0.5,
-        fontname=plot.config.font_name,
-        size=plot.config.font_sizes.content_small,
-    )
-
-
 def prepare_plot(
     field_lst: Sequence[Field],
     prev_out_file_paths: Optional[List[str]] = None,
@@ -675,9 +432,10 @@ def prepare_plot(
 
 def create_plot(plot: BoxedPlot, write: bool = True) -> None:
     log(dbg=f"creating plot {plot.file_path}")
-    plot.create()
-    plot_add_text_boxes(plot)
-    plot_add_markers(plot)
+    layout = BoxedPlotLayout(aspect=plot.config.fig_aspect)
+    axs_map = plot.add_map_plot(layout.rect_center)
+    plot_add_text_boxes(plot, layout)
+    plot_add_markers(plot, axs_map)
     if write:
         plot.write()
     else:
@@ -685,8 +443,268 @@ def create_plot(plot: BoxedPlot, write: bool = True) -> None:
     log(dbg=f"created plot {plot.file_path}")
 
 
-def plot_add_text_boxes(plot: BoxedPlot) -> None:
-    layout = plot.layout  # SR_TMP
+# SR_TMP <<< TODO Clean up nested functions! Eventually introduce class(es) of some kind
+# pylint: disable=R0915  # too-many-statements
+def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayout) -> None:
+    # pylint: disable=R0915  # too-many-statements
+    def fill_box_top(box: TextBoxAxes, plot: BoxedPlot) -> None:
+        for position, label in plot.config.labels.get("top", {}).items():
+            if position == "tl":
+                font_size = plot.config.font_sizes.title_large
+            else:
+                font_size = plot.config.font_sizes.content_large
+            box.text(
+                label, loc=position, fontname=plot.config.font_name, size=font_size
+            )
+
+    # pylint: disable=R0915  # too-many-statements
+    def fill_box_right_top(box: TextBoxAxes, plot: BoxedPlot) -> None:
+        labels = plot.config.labels["right_top"]
+        box.text(
+            labels["title"],
+            loc="tc",
+            fontname=plot.config.font_name,
+            size=plot.config.font_sizes.title_small,
+        )
+        box.text_block_hfill(
+            labels["lines"],
+            dy_unit=-4.0,
+            dy_line=2.5,
+            fontname=plot.config.font_name,
+            size=plot.config.font_sizes.content_small,
+        )
+
+    # pylint: disable=R0912  # too-many-branches
+    # pylint: disable=R0913  # too-many-arguments
+    # pylint: disable=R0914  # too-many-locals
+    # pylint: disable=R0915  # too-many-statements
+    def fill_box_right_middle(box: TextBoxAxes, plot: BoxedPlot) -> None:
+        """Fill the top box to the right of the map plot."""
+
+        labels = plot.config.labels["right_middle"]
+        mdata = plot.config.mdata
+
+        # Box title
+        box.text(
+            labels["title_unit"],
+            loc="tc",
+            fontname=plot.config.font_name,
+            size=plot.config.font_sizes.title_small,
+        )
+
+        # dy_line: float = 3.0
+        dy_line: float = 2.5
+
+        w_legend_box: float = 4.0
+        h_legend_box: float = 2.0
+
+        dx_legend_box: float = -10
+        dx_legend_label: float = -3
+
+        dx_marker: float = dx_legend_box + 0.5 * w_legend_box
+        dx_marker_label: float = dx_legend_label - 0.5
+
+        # Vertical position of legend (depending on number of levels)
+        dy0_labels = -5.0
+        dy0_boxes = dy0_labels - 0.8 * h_legend_box
+
+        # Format level ranges (contour plot legend)
+        legend_labels = format_level_ranges(
+            levels=plot.levels,
+            style=plot.config.level_range_style,
+            extend=plot.config.extend,
+            rstrip_zeros=plot.config.legend_rstrip_zeros,
+            align=plot.config.level_ranges_align,
+        )
+
+        # Legend labels (level ranges)
+        box.text_block(
+            legend_labels[::-1],
+            loc="tc",
+            dy_unit=dy0_labels,
+            dy_line=dy_line,
+            dx=dx_legend_label,
+            ha="left",
+            fontname=plot.config.font_name,
+            size=plot.config.font_sizes.content_medium,
+            family="monospace",
+        )
+
+        # Legend color boxes
+        colors = plot.config.colors
+        dy = dy0_boxes
+        for color in colors[::-1]:
+            box.color_rect(
+                loc="tc",
+                x_anker="left",
+                dx=dx_legend_box,
+                dy=dy,
+                w=w_legend_box,
+                h=h_legend_box,
+                fc=color,
+                ec="black",
+                lw=1.0,
+            )
+            dy -= dy_line
+
+        dy0_markers = dy0_boxes - dy_line * (len(legend_labels) - 0.3)
+        dy0_marker = dy0_markers
+
+        # Field maximum marker
+        if plot.config.mark_field_max:
+            dy_marker_label_max = dy0_marker
+            dy0_marker -= dy_line
+            dy_max_marker = dy_marker_label_max - 0.7
+            assert plot.config.markers is not None  # mypy
+            box.marker(
+                loc="tc", dx=dx_marker, dy=dy_max_marker, **plot.config.markers["max"],
+            )
+            if np.isnan(plot.field.fld).all():
+                s_val = "NaN"
+            else:
+                fld_max = np.nanmax(plot.field.fld)
+                if 0.001 <= fld_max < 0.01:
+                    s_val = f"{fld_max:.5f}"
+                elif 0.01 <= fld_max < 0.1:
+                    s_val = f"{fld_max:.4f}"
+                elif 0.1 <= fld_max < 1:
+                    s_val = f"{fld_max:.3f}"
+                elif 1 <= fld_max < 10:
+                    s_val = f"{fld_max:.2f}"
+                elif 10 <= fld_max < 100:
+                    s_val = f"{fld_max:.1f}"
+                elif 100 <= fld_max < 1000:
+                    s_val = f"{fld_max:.0f}"
+                else:
+                    s_val = f"{fld_max:.2E}"
+                # s_val += r"$\,$" + labels["unit"]
+            s = f"{labels['max']}: {s_val}"
+            # s = f"{labels['max']} ({s_val})"
+            # s = f"{labels['maximum']}:\n({s_val})"
+            box.text(
+                s=s,
+                loc="tc",
+                dx=dx_marker_label,
+                dy=dy_marker_label_max,
+                ha="left",
+                fontname=plot.config.font_name,
+                size=plot.config.font_sizes.content_medium,
+            )
+
+        # Release site marker
+        if plot.config.mark_release_site:
+            dy_site_label = dy0_marker
+            dy0_marker -= dy_line
+            dy_site_marker = dy_site_label - 0.7
+            assert plot.config.markers is not None  # mypy
+            box.marker(
+                loc="tc",
+                dx=dx_marker,
+                dy=dy_site_marker,
+                **plot.config.markers["site"],
+            )
+            # s = f"{labels['release_site']}"
+            # s = f"{labels['site']} ({mdata.release_site_name})"
+            s = f"{labels['site']}: {mdata.release_site_name}"
+            box.text(
+                s=s,
+                loc="tc",
+                dx=dx_marker_label,
+                dy=dy_site_label,
+                ha="left",
+                fontname=plot.config.font_name,
+                size=plot.config.font_sizes.content_medium,
+            )
+
+    # pylint: disable=R0915  # too-many-statements
+    def fill_box_right_bottom(box: TextBoxAxes, plot: BoxedPlot) -> None:
+        """Fill the bottom box to the right of the map plot."""
+
+        labels = plot.config.labels["right_bottom"]
+        mdata = plot.config.mdata
+
+        # Box title
+        box.text(
+            s=labels["title"],
+            loc="tc",
+            fontname=plot.config.font_name,
+            size=plot.config.font_sizes.title_small,
+        )
+
+        # Release site coordinates
+        lat = Degrees(mdata.release_site_lat.value)
+        lon = Degrees(mdata.release_site_lon.value)
+        lat_deg = labels["lat_deg_fmt"].format(d=lat.degs(), m=lat.mins(), f=lat.frac())
+        lon_deg = labels["lon_deg_fmt"].format(d=lon.degs(), m=lon.mins(), f=lon.frac())
+
+        # SR_TMP < TODO clean this up, especially for ComboMetaData (units messed up)!
+        height = mdata.format("release_height", add_unit=True)
+        rate = mdata.format("release_rate", add_unit=True)
+        mass = mdata.format("release_mass", add_unit=True)
+        substance = mdata.format("species_name", join_combo=" / ")
+        half_life = mdata.format("species_half_life", add_unit=True)
+        deposit_vel = mdata.format("species_deposit_vel", add_unit=True)
+        sediment_vel = mdata.format("species_sediment_vel", add_unit=True)
+        washout_coeff = mdata.format("species_washout_coeff", add_unit=True)
+        washout_exponent = mdata.format("species_washout_exponent")
+        # SR_TMP >
+
+        info_blocks = dedent(
+            f"""\
+            {labels['site']}:\t{mdata.release_site_name}
+            {labels['latitude']}:\t{lat_deg}
+            {labels['longitude']}:\t{lon_deg}
+            {labels['height']}:\t{height}
+
+            {labels['start']}:\t{mdata.release_start}
+            {labels['end']}:\t{mdata.release_end}
+            {labels['rate']}:\t{rate}
+            {labels['mass']}:\t{mass}
+
+            {labels['name']}:\t{substance}
+            {labels['half_life']}:\t{half_life}
+            {labels['deposit_vel']}:\t{deposit_vel}
+            {labels['sediment_vel']}:\t{sediment_vel}
+            {labels['washout_coeff']}:\t{washout_coeff}
+            {labels['washout_exponent']}:\t{washout_exponent}
+            """
+        )
+
+        # Add lines bottom-up (to take advantage of baseline alignment)
+        box.text_blocks_hfill(
+            info_blocks,
+            dy_unit=-4.0,
+            dy_line=2.5,
+            fontname=plot.config.font_name,
+            size=plot.config.font_sizes.content_small,
+        )
+
+    # pylint: disable=R0915  # too-many-statements
+    def fill_box_bottom(box: TextBoxAxes, plot: BoxedPlot) -> None:
+        """Fill the box to the bottom of the map plot."""
+
+        labels = plot.config.labels["bottom"]
+
+        # FLEXPART/model info
+        box.text(
+            s=labels["model_info"],
+            loc="tl",
+            dx=-0.7,
+            dy=0.5,
+            fontname=plot.config.font_name,
+            size=plot.config.font_sizes.content_small,
+        )
+
+        # MeteoSwiss Copyright
+        box.text(
+            s=labels["copyright"],
+            loc="tr",
+            dx=0.7,
+            dy=0.5,
+            fontname=plot.config.font_name,
+            size=plot.config.font_sizes.content_small,
+        )
+
     plot.add_text_box("top", layout.rect_top, fill_box_top)
     plot.add_text_box("right_top", layout.rect_right_top, fill_box_right_top)
     plot.add_text_box("right_middle", layout.rect_right_middle, fill_box_right_middle)
@@ -694,14 +712,14 @@ def plot_add_text_boxes(plot: BoxedPlot) -> None:
     plot.add_text_box("bottom", layout.rect_bottom, fill_box_bottom, frame_on=False)
 
 
-def plot_add_markers(plot: BoxedPlot) -> None:
+def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
     config = plot.config
 
     if config.mark_release_site:
         assert isinstance(config.mdata.release_site_lon.value, float)  # mypy
         assert isinstance(config.mdata.release_site_lat.value, float)  # mypy
         assert config.markers is not None  # mypy
-        plot.add_marker(
+        axs_map.marker(
             lat=config.mdata.release_site_lat.value,
             lon=config.mdata.release_site_lon.value,
             **config.markers["site"],
@@ -714,7 +732,7 @@ def plot_add_markers(plot: BoxedPlot) -> None:
         except FieldAllNaNError:
             warnings.warn("skip maximum marker (all-nan field)")
         else:
-            plot.ax_map.marker(lat=max_lat, lon=max_lon, **config.markers["max"])
+            axs_map.marker(lat=max_lat, lon=max_lon, **config.markers["max"])
 
 
 def colors_flexplot(n_levels: int, extend: str) -> Sequence[ColorType]:
@@ -773,22 +791,15 @@ def colors_flexplot(n_levels: int, extend: str) -> Sequence[ColorType]:
     raise ValueError(f"extend='{extend}'")
 
 
-def escape_format_keys(s: str) -> str:
-    return s.replace("{", "{{").replace("}", "}}")
-
-
 def format_level_label(mdata: MetaData) -> str:
-    unit = mdata.variable_level_bot_unit.value
-    if mdata.variable_level_top_unit.value != unit:
-        raise Exception(
-            "inconsistent level units",
-            mdata.variable_level_bot_unit,
-            mdata.variable_level_top_unit,
-        )
-    assert isinstance(unit, str)  # mypy
-    level = format_vertical_level_range(
-        mdata.variable_level_bot.value, mdata.variable_level_top.value, unit
-    )
+    bot_unit = mdata.variable_level_bot_unit.value
+    top_unit = mdata.variable_level_top_unit.value
+    bot_level = mdata.variable_level_bot.value
+    top_level = mdata.variable_level_top.value
+    if top_unit != bot_unit:
+        raise Exception("inconsistent level units", bot_unit, top_unit)
+    unit = cast(str, bot_unit)
+    level = format_vertical_level_range(bot_level, top_level, unit)
     if not level:
         return ""
     return f"{format_unit(level)}"
@@ -837,7 +848,11 @@ def format_vertical_level_range(
 
 
 def format_integr_period(
-    mdata: "MetaData", setup: Setup, words: TranslatedWords, cap: bool = False
+    start: datetime,
+    now: datetime,
+    setup: Setup,
+    words: TranslatedWords,
+    cap: bool = False,
 ) -> str:
     if not setup.core.integrate:
         operation = words["averaged_over"].s
@@ -845,10 +860,6 @@ def format_integr_period(
         operation = words["summed_over"].s
     elif setup.core.input_variable == "deposition":
         operation = words["accumulated_over"].s
-    start = mdata.simulation_integr_start.value
-    now = mdata.simulation_now.value
-    assert isinstance(start, datetime)  # mypy
-    assert isinstance(now, datetime)  # mypy
     period = now - start
     hours = int(period.total_seconds() / 3600)
     minutes = int((period.total_seconds() / 60) % 60)

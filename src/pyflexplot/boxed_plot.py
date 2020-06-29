@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Plots.
+Boxed plots.
 """
 # Standard library
 from dataclasses import dataclass
@@ -83,75 +83,6 @@ class BoxedPlotConfig(BaseModel):
 
 
 @dataclass
-# pylint: disable=R0902  # too-many-instance-attributes
-class BoxedPlotLayout:
-    aspect: float
-    x0_tot: float = 0.0
-    x1_tot: float = 1.0
-    y0_tot: float = 0.0
-    y1_tot: float = 1.0
-    y_pad: float = 0.02
-    h_top: float = 0.08
-    w_right: float = 0.2
-    h_rigtop: float = 0.15
-    h_rigbot: float = 0.42
-    h_bottom: float = 0.05
-
-    def __post_init__(self):
-        self.x_pad: float = self.y_pad / self.aspect
-        self.h_tot: float = self.y1_tot - self.y0_tot
-        self.y1_top: float = self.y1_tot
-        self.y0_top: float = self.y1_top - self.h_top
-        self.y1_center: float = self.y0_top - self.y_pad
-        self.y0_center: float = self.y0_tot + self.h_bottom
-        self.h_center: float = self.y1_center - self.y0_center
-        self.w_tot: float = self.x1_tot - self.x0_tot
-        self.x1_right: float = self.x1_tot
-        self.x0_right: float = self.x1_right - self.w_right
-        self.x1_left: float = self.x0_right - self.x_pad
-        self.x0_left: float = self.x0_tot
-        self.w_left: float = self.x1_left - self.x0_left
-        self.y0_rigbot: float = self.y0_center
-        self.y1_rigtop: float = self.y1_tot
-        self.y0_rigtop: float = self.y1_rigtop - self.h_rigtop
-        self.y1_rigbot: float = self.y0_rigbot + self.h_rigbot
-        self.y1_rigmid: float = self.y0_rigtop - self.y_pad
-        self.y0_rigmid: float = self.y1_rigbot + self.y_pad
-        self.h_rigmid: float = self.y1_rigmid - self.y0_rigmid
-        self.rect_top: RectType = (self.x0_left, self.y0_top, self.w_left, self.h_top)
-        self.rect_center: RectType = (
-            self.x0_left,
-            self.y0_center,
-            self.w_left,
-            self.h_center,
-        )
-        self.rect_right_top: RectType = (
-            self.x0_right,
-            self.y0_rigtop,
-            self.w_right,
-            self.h_rigtop,
-        )
-        self.rect_right_middle: RectType = (
-            self.x0_right,
-            self.y0_rigmid,
-            self.w_right,
-            self.h_rigmid,
-        )
-        self.rect_right_bottom: RectType = (
-            self.x0_right,
-            self.y0_rigbot,
-            self.w_right,
-            self.h_rigbot,
-        )
-        self.rect_bottom: RectType = (
-            self.x0_tot,
-            self.y0_tot,
-            self.w_tot,
-            self.h_bottom,
-        )
-
-
-@dataclass
 class DummyBoxedPlot:
     """Dummy for dry runs."""
 
@@ -188,20 +119,19 @@ class BoxedPlot:
         self.file_path = file_path
         self.config = config
         self.map_conf = map_conf
+
         self.boxes: Dict[str, TextBoxAxes] = {}
-        self.layout = BoxedPlotLayout(aspect=self.config.fig_aspect)
         self.levels = levels_from_time_stats(self.config, self.field.time_stats)
 
         # Declarations
-        self.fig: Figure
-        self.ax_map: MapAxes
+        self._fig: Optional[Figure] = None
+        self.ax_map: MapAxes  # SR_TMP TODO eliminate single centralized Map axes
 
-    def create(self) -> None:
-        self.fig = plt.figure(figsize=self.config.fig_size)
-        self.ax_map = MapAxes.create(
-            self.map_conf, fig=self.fig, rect=self.layout.rect_center, field=self.field,
-        )
-        self._draw_colors_contours()
+    @property
+    def fig(self) -> Figure:
+        if self._fig is None:
+            self._fig = plt.figure(figsize=self.config.fig_size)
+        return self._fig
 
     def write(self) -> None:
         self.fig.savefig(
@@ -216,6 +146,27 @@ class BoxedPlot:
     def clean(self) -> None:
         plt.close(self.fig)
 
+    def add_map_plot(self, rect: RectType,) -> MapAxes:
+        axs = MapAxes.create(self.map_conf, fig=self.fig, rect=rect, field=self.field,)
+        self.ax_map = axs  # SR_TMP
+        self._draw_colors_contours()
+        return axs
+
+    def add_text_box(
+        self,
+        name: str,
+        rect: RectType,
+        fill: Callable[[TextBoxAxes, "BoxedPlot"], None],
+        frame_on: bool = True,
+    ) -> TextBoxAxes:
+        lw_frame: Optional[float] = self.config.lw_frame if frame_on else None
+        box = TextBoxAxes(name=name, rect=rect, fig=self.fig, lw_frame=lw_frame)
+        fill(box, self)
+        box.draw()
+        self.boxes[name] = box
+        return box
+
+    # SR_TODO Pull out of BoxedPlot class to MapAxes or some MapAxesContent class
     # SR_TODO Replace checks with plot-specific config/setup object
     def _draw_colors_contours(self) -> None:
         arr = self.field.fld
@@ -238,22 +189,6 @@ class BoxedPlot:
             # SR_TMP >
         if self.config.draw_contours:
             self.ax_map.contour(arr, levels=levels, colors="black", linewidths=1)
-
-    def add_text_box(
-        self,
-        name: str,
-        rect: RectType,
-        fill: Callable[[TextBoxAxes, "BoxedPlot"], None],
-        frame_on: bool = True,
-    ) -> None:
-        lw_frame: Optional[float] = self.config.lw_frame if frame_on else None
-        box = TextBoxAxes(name=name, rect=rect, fig=self.fig, lw_frame=lw_frame)
-        fill(box, self)
-        box.draw()
-        self.boxes[name] = box
-
-    def add_marker(self, lat: float, lon: float, marker: str, **kwargs) -> None:
-        self.ax_map.marker(lat=lat, lon=lon, marker=marker, **kwargs)
 
 
 def levels_from_time_stats(
