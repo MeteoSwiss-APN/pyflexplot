@@ -29,6 +29,45 @@ class CoordinateTransformer:
     invalid_warn: bool = True
 
     @overload
+    def axes_to_geo(self, x: float, y: float) -> Tuple[float, float]:
+        ...
+
+    @overload
+    def axes_to_geo(
+        self, x: np.ndarray, y: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        ...
+
+    def axes_to_geo(self, x, y):
+        """Transform from axes to geographic coordinates."""
+
+        if isiterable(x) or isiterable(y):
+            check_same_sized_iterables(x, y)
+            assert isinstance(x, np.ndarray)  # mypy
+            assert isinstance(y, np.ndarray)  # mypy
+            # pylint: disable=E0633  # unpacking-non-sequence
+            x, y = np.array([self.axes_to_geo(xi, yi) for xi, yi in zip(x, y)]).T
+            return x, y
+
+        assert isinstance(x, float)  # mypy
+        assert isinstance(y, float)  # mypy
+        check_valid_coords((x, y), self.invalid_ok, self.invalid_warn)
+
+        # Axes -> Display
+        xy_dis = self.trans_axes.transform((x, y))
+        check_valid_coords(xy_dis, self.invalid_ok, self.invalid_warn)
+
+        # Display -> Plot
+        x_plt, y_plt = self.trans_data.inverted().transform(xy_dis)
+        check_valid_coords((x_plt, y_plt), self.invalid_ok, self.invalid_warn)
+
+        # Plot -> Geo
+        xy_geo = self.proj_geo.transform_point(x_plt, y_plt, self.proj_map, trap=True)
+        check_valid_coords(xy_geo, self.invalid_ok, self.invalid_warn)
+
+        return xy_geo
+
+    @overload
     def geo_to_axes(self, x: float, y: float) -> Tuple[float, float]:
         ...
 
@@ -73,45 +112,6 @@ class CoordinateTransformer:
         # SR_TMP >
 
         return xy_axs
-
-    @overload
-    def axes_to_geo(self, x: float, y: float) -> Tuple[float, float]:
-        ...
-
-    @overload
-    def axes_to_geo(
-        self, x: np.ndarray, y: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        ...
-
-    def axes_to_geo(self, x, y):
-        """Transform from axes to geographic coordinates."""
-
-        if isiterable(x) or isiterable(y):
-            check_same_sized_iterables(x, y)
-            assert isinstance(x, np.ndarray)  # mypy
-            assert isinstance(y, np.ndarray)  # mypy
-            # pylint: disable=E0633  # unpacking-non-sequence
-            x, y = np.array([self.axes_to_geo(xi, yi) for xi, yi in zip(x, y)]).T
-            return x, y
-
-        assert isinstance(x, float)  # mypy
-        assert isinstance(y, float)  # mypy
-        check_valid_coords((x, y), self.invalid_ok, self.invalid_warn)
-
-        # Axes -> Display
-        xy_dis = self.trans_axes.transform((x, y))
-        check_valid_coords(xy_dis, self.invalid_ok, self.invalid_warn)
-
-        # Display -> Plot
-        x_plt, y_plt = self.trans_data.inverted().transform(xy_dis)
-        check_valid_coords((x_plt, y_plt), self.invalid_ok, self.invalid_warn)
-
-        # Plot -> Geo
-        xy_geo = self.proj_geo.transform_point(x_plt, y_plt, self.proj_map, trap=True)
-        check_valid_coords(xy_geo, self.invalid_ok, self.invalid_warn)
-
-        return xy_geo
 
     @overload
     def data_to_geo(self, x: float, y: float) -> Tuple[float, float]:
