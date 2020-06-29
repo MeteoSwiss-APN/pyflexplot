@@ -17,8 +17,10 @@ plot_layouts.py
 plots.py
 preset.py
 pydantic.py
+ref_dist_indicator.py
 setup.py
 species.py
 summarize.py
+text_box_axes.py
 typing.py
 words.py

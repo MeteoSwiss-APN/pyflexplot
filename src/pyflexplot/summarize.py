@@ -15,6 +15,9 @@ from typing import Sequence
 from typing import Union
 
 # Third-party
+import matplotlib as mpl
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from pydantic import BaseModel
 
 # First-party
@@ -23,6 +26,11 @@ from srutils.iter import isiterable
 # Local
 from .exceptions import AttributeConflictError
 from .exceptions import NotSummarizableError
+
+
+def is_attrs_class(cls: Any) -> bool:
+    """Determine whether a class has been defined with ``@attr.attrs``."""
+    return isinstance(cls, type) and hasattr(cls, "__attrs_attrs__")
 
 
 def default_summarize(
@@ -63,6 +71,58 @@ def default_post_summarize(
         Modified summary dict.
 
     """
+    return summary
+
+
+def summarize_mpl_figure(obj: Any) -> Dict[str, Any]:
+    """Summarize a matplotlib ``Figure`` instance in a dict."""
+    summary = {
+        "type": type(obj).__name__,
+        # SR_TODO if necessary, add option for shallow summary (avoid loops)
+        "axes": [summarize_mpl_axes(a) for a in obj.get_axes()],
+        "bbox": summarize_mpl_bbox(obj.bbox),
+    }
+    return summary
+
+
+def summarize_mpl_axes(obj: Any) -> Dict[str, Any]:
+    """Summarize a matplotlib ``Axes`` instance in a dict."""
+    summary = {
+        "type": type(obj).__name__,
+        "bbox": summarize_mpl_bbox(obj.bbox),
+    }
+    return summary
+
+
+def summarize_mpl_bbox(obj: Any) -> Dict[str, Any]:
+    """Summarize a matplotlib ``Bbox`` instance in a dict."""
+    summary = {
+        "type": type(obj).__name__,
+        "bounds": obj.bounds,
+    }
+    return summary
+
+
+# pylint: disable=W0613  # unused argument (self)
+def post_summarize_plot(
+    self, summary: MutableMapping[str, Any]
+) -> MutableMapping[str, Any]:
+    """Method to post-process summary dict of plot class.
+
+    Convert elements like figures and axes into human-readable summaries of
+    themselves, provided that they have been specified as to be summarized.
+
+    """
+    cls_fig = Figure
+    cls_axs = Axes
+    cls_bbox = (mpl.transforms.Bbox, mpl.transforms.TransformedBbox)
+    for key, val in summary.items():
+        if isinstance(val, cls_fig):
+            summary[key] = summarize_mpl_figure(val)
+        elif isinstance(val, cls_axs):
+            summary[key] = summarize_mpl_axes(val)
+        elif isinstance(val, cls_bbox):
+            summary[key] = summarize_mpl_bbox(val)
     return summary
 
 
@@ -280,8 +340,3 @@ class Summarizer:
                 name = f"{obj_self.__class__.__name__}.{name}"
             return f"{type(obj).__name__}:{name}"
         raise NotSummarizableError("named", obj)
-
-
-def is_attrs_class(cls: Any) -> bool:
-    """Determine whether a class has been defined with ``@attr.attrs``."""
-    return isinstance(cls, type) and hasattr(cls, "__attrs_attrs__")

@@ -49,13 +49,13 @@ from .meta_data import format_unit
 from .meta_data import MetaData
 from .plot_elements import MapAxes
 from .plot_elements import MapAxesConf
-from .plot_elements import TextBoxAxes
 from .plot_layouts import BoxedPlotLayoutDeterministic
 from .plot_layouts import BoxedPlotLayoutEnsemble
 from .plot_layouts import BoxedPlotLayoutType
 from .setup import FilePathFormatter
 from .setup import Setup
 from .setup import SetupCollection
+from .text_box_axes import TextBoxAxes
 from .typing import ColorType
 from .words import SYMBOLS
 from .words import TranslatedWords

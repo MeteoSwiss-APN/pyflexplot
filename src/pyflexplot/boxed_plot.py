@@ -27,9 +27,9 @@ from .meta_data import MetaData
 from .plot_elements import MapAxes
 from .plot_elements import MapAxesConf
 from .plot_elements import post_summarize_plot
-from .plot_elements import TextBoxAxes
 from .setup import Setup
 from .summarize import summarizable
+from .text_box_axes import TextBoxAxes
 from .typing import ColorType
 from .typing import FontSizeType
 from .typing import RectType

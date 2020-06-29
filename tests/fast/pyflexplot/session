@@ -1,5 +1,5 @@
 test_data.py
 test_dimensions.py
 test_fld_specs.py
-test_plot_lib.py
+test_text_box_axes.py
 < test_setup/session
