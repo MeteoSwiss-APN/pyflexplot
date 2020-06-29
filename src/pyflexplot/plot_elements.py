@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from typing import Any
 from typing import Dict
 from typing import Optional
-from typing import overload
 from typing import Sequence
 from typing import Tuple
 
@@ -27,10 +26,8 @@ from pydantic import BaseModel
 from pydantic import root_validator
 from pydantic import validator
 
-# First-party
-from srutils.iter import isiterable
-
 # Local
+from .coord_trans import CoordinateTransformer
 from .ref_dist_indicator import RefDistIndConf
 from .ref_dist_indicator import ReferenceDistanceIndicator
 from .summarize import post_summarize_plot
@@ -164,6 +161,14 @@ class MapAxes:
         self.ax: Axes
         self._init_ax()
 
+        self.trans = CoordinateTransformer(
+            trans_axes=self.ax.transAxes,
+            trans_data=self.ax.transData,
+            proj_geo=self.proj_geo,
+            proj_map=self.proj_map,
+            proj_data=self.proj_data,
+        )
+
         self.ref_dist_box: Optional[ReferenceDistanceIndicator]
         self._init_ref_dist_box()
 
@@ -260,7 +265,7 @@ class MapAxes:
         **kwargs,
     ) -> Sequence[Line2D]:
         """Add a marker at a location in natural coordinates."""
-        lon, lat = self._transform_xy_geo_to_data(lon, lat)
+        lon, lat = self.trans.geo_to_data(lon, lat)
         if zorder is None:
             zorder = self.zorder["marker"]
         handle = self.ax.plot(
@@ -359,7 +364,7 @@ class MapAxes:
         else:
             self.ref_dist_box = ReferenceDistanceIndicator(
                 ax=self.ax,
-                axes_to_geo=self._transform_xy_axes_to_geo,
+                axes_to_geo=self.trans.axes_to_geo,
                 conf=self.conf.ref_dist_conf,
                 zorder=self.zorder["grid"],
             )
@@ -523,7 +528,7 @@ class MapAxes:
             )
 
             # Not behind reference distance indicator box
-            pxa, pya = self._transform_xy_geo_to_axes(lon, lat)
+            pxa, pya = self.trans.geo_to_axes(lon, lat)
             rdb = self.ref_dist_box
             assert rdb is not None  # mypy
             behind_rdb = is_in_box(
@@ -594,221 +599,6 @@ class MapAxes:
             ),
         )
 
-    @overload
-    def _transform_xy_axes_to_geo(self, x: float, y: float) -> Tuple[float, float]:
-        ...
-
-    @overload
-    def _transform_xy_axes_to_geo(
-        self, x: Sequence[float], y: Sequence[float]
-    ) -> Tuple[Sequence[float], Sequence[float]]:
-        ...
-
-    def _transform_xy_axes_to_geo(self, x, y):
-        return transform_xy_axes_to_geo(
-            x, y, self.ax.transAxes, self.ax.transData, self.proj_geo, self.proj_map,
-        )
-
-    @overload
-    def _transform_xy_geo_to_axes(self, x: float, y: float) -> Tuple[float, float]:
-        ...
-
-    @overload
-    def _transform_xy_geo_to_axes(
-        self, x: Sequence[float], y: Sequence[float]
-    ) -> Tuple[Sequence[float], Sequence[float]]:
-        ...
-
-    def _transform_xy_geo_to_axes(self, x, y):
-        return transform_xy_geo_to_axes(
-            x, y, self.proj_map, self.proj_geo, self.ax.transData, self.ax.transAxes,
-        )
-
-    @overload
-    def _transform_xy_geo_to_data(self, x: float, y: float) -> Tuple[float, float]:
-        ...
-
-    @overload
-    def _transform_xy_geo_to_data(
-        self, x: Sequence[float], y: Sequence[float]
-    ) -> Tuple[Sequence[float], Sequence[float]]:
-        ...
-
-    def _transform_xy_geo_to_data(self, x, y):
-        return self.proj_data.transform_point(x, y, self.proj_geo, trap=True)
-
-
-@overload
-# pylint: disable=R0913  # too-many-arguments
-def transform_xy_geo_to_axes(
-    x: float,
-    y: float,
-    proj_map,
-    proj_geo,
-    trans_data,
-    trans_axes,
-    invalid_ok=...,
-    invalid_warn=...,
-) -> Tuple[float, float]:
-    ...
-
-
-@overload
-# pylint: disable=R0913  # too-many-arguments
-def transform_xy_geo_to_axes(
-    x: np.ndarray,
-    y: np.ndarray,
-    proj_map,
-    proj_geo,
-    trans_data,
-    trans_axes,
-    invalid_ok=...,
-    invalid_warn=...,
-) -> Tuple[np.ndarray, np.ndarray]:
-    ...
-
-
-# SR_TODO Refactor to reduce number of arguments!
-# pylint: disable=R0913  # too-many-arguments
-def transform_xy_geo_to_axes(
-    x,
-    y,
-    proj_map: Projection,
-    proj_geo: Projection,
-    trans_data: Projection,
-    trans_axes: Projection,
-    invalid_ok: bool = True,
-    invalid_warn: bool = True,
-):
-    """Transform geographic coordinates to axes coordinates."""
-
-    def recurse(xi: float, yi: float) -> Tuple[float, float]:
-        return transform_xy_geo_to_axes(
-            xi,
-            yi,
-            proj_map,
-            proj_geo,
-            trans_data,
-            trans_axes,
-            invalid_ok,
-            invalid_warn,
-        )
-
-    if isiterable(x) or isiterable(y):
-        check_same_sized_iterables(x, y)
-        assert isinstance(x, np.ndarray)  # mypy
-        assert isinstance(y, np.ndarray)  # mypy
-        # pylint: disable=E0633  # unpacking-non-sequence
-        x, y = np.array([recurse(xi, yi) for xi, yi in zip(x, y)]).T
-        return x, y
-
-    check_valid_coords((x, y), invalid_ok, invalid_warn)
-
-    # Geo -> Plot
-    xy_plt = proj_map.transform_point(x, y, proj_geo, trap=True)
-    # SR_TMP < Suppress NaN warning TODO investigate origin of NaNs
-    # check_valid_coords(xy_plt, invalid_ok, invalid_warn)
-    check_valid_coords(xy_plt, invalid_ok, warn=False)
-    # SR_TMP >
-
-    # Plot -> Display
-    xy_dis = trans_data.transform(xy_plt)
-    # SR_TMP < Suppress NaN warning TODO investigate origin of NaNs
-    # check_valid_coords(xy_dis, invalid_ok, invalid_warn)
-    check_valid_coords(xy_dis, invalid_ok, warn=False)
-    # SR_TMP >
-
-    # Display -> Axes
-    xy_axs = trans_axes.inverted().transform(xy_dis)
-    # SR_TMP < Suppress NaN warning TODO investigate origin of NaNs
-    # check_valid_coords(xy_axs, invalid_ok, invalid_warn)
-    check_valid_coords(xy_axs, invalid_ok, warn=False)
-    # SR_TMP >
-
-    return xy_axs
-
-
-@overload
-# pylint: disable=R0913  # too-many-arguments
-def transform_xy_axes_to_geo(
-    x: float,
-    y: float,
-    trans_axes,
-    trans_data,
-    proj_geo,
-    proj_map,
-    invalid_ok=...,
-    invalid_warn=...,
-) -> Tuple[float, float]:
-    ...
-
-
-@overload
-# pylint: disable=R0913  # too-many-arguments
-def transform_xy_axes_to_geo(
-    x: np.ndarray,
-    y: np.ndarray,
-    trans_axes,
-    trans_data,
-    proj_geo,
-    proj_map,
-    invalid_ok=...,
-    invalid_warn=...,
-) -> Tuple[np.ndarray, np.ndarray]:
-    ...
-
-
-# SR_TODO Refactor to reduce number of arguments!
-# pylint: disable=R0913  # too-many-arguments
-def transform_xy_axes_to_geo(
-    x,
-    y,
-    trans_axes: Projection,
-    trans_data: Projection,
-    proj_geo: Projection,
-    proj_map: Projection,
-    invalid_ok: bool = True,
-    invalid_warn: bool = True,
-):
-    """Transform axes coordinates to geographic coordinates."""
-
-    def recurse(xi, yi):
-        return transform_xy_axes_to_geo(
-            xi,
-            yi,
-            trans_axes,
-            trans_data,
-            proj_geo,
-            proj_map,
-            invalid_ok,
-            invalid_warn,
-        )
-
-    if isiterable(x) or isiterable(y):
-        check_same_sized_iterables(x, y)
-        assert isinstance(x, np.ndarray)  # mypy
-        assert isinstance(y, np.ndarray)  # mypy
-        x, y = tuple(np.array([recurse(xi, yi) for xi, yi in zip(x, y)]).T)
-        return x, y
-
-    assert isinstance(x, float)  # mypy
-    assert isinstance(y, float)  # mypy
-    check_valid_coords((x, y), invalid_ok, invalid_warn)
-
-    # Axes -> Display
-    xy_dis = trans_axes.transform((x, y))
-    check_valid_coords(xy_dis, invalid_ok, invalid_warn)
-
-    # Display -> Plot
-    x_plt, y_plt = trans_data.inverted().transform(xy_dis)
-    check_valid_coords((x_plt, y_plt), invalid_ok, invalid_warn)
-
-    # Plot -> Geo
-    xy_geo = proj_geo.transform_point(x_plt, y_plt, proj_map, trap=True)
-    check_valid_coords(xy_geo, invalid_ok, invalid_warn)
-
-    return xy_geo
-
 
 @dataclass
 class MapAxesRotatedPole(MapAxes):
@@ -877,11 +667,17 @@ class MapAxesBoundingBox:
             lat1 (float): Latitude of north-eastern corner.
 
         """
-        # SR_TMP <
-        self.coord_types = ["data", "geo"]
-        # SR_TMP >
+        self.coord_types = ["data", "geo"]  # SR_TMP
         self.map_axes = map_axes
         self.set(coord_type, lon0, lon1, lat0, lat1)
+        self.trans = CoordinateTransformer(
+            trans_axes=map_axes.ax.transAxes,
+            trans_data=map_axes.ax.transData,
+            proj_geo=map_axes.proj_geo,
+            proj_map=map_axes.proj_map,
+            proj_data=map_axes.proj_data,
+            invalid_ok=False,
+        )
 
     def __repr__(self):
         return (
@@ -890,6 +686,14 @@ class MapAxesBoundingBox:
             f"lon0={self.lon0:.2f}, lon1={self.lon1:.2f}, "
             f"lat0={self.lat0:.2f}, lat1={self.lat1:.2f})"
         )
+
+    @property
+    def lon(self):
+        return np.asarray(self)[:2]
+
+    @property
+    def lat(self):
+        return np.asarray(self)[2:]
 
     @property
     def coord_type(self):
@@ -935,11 +739,7 @@ class MapAxesBoundingBox:
 
     def to_data(self):
         if self.coord_type == "geo":
-            coords = np.concatenate(
-                self._proj_data.transform_points(self._proj_geo, self.lon, self.lat)[
-                    :, :2
-                ].T
-            )
+            coords = np.concatenate(self.trans.geo_to_data(self.lon, self.lat))
         elif self.coord_type == "axes":
             return self.to_geo().to_data()
         else:
@@ -949,23 +749,9 @@ class MapAxesBoundingBox:
 
     def to_geo(self):
         if self.coord_type == "data":
-            coords = np.concatenate(
-                self._proj_geo.transform_points(self._proj_data, self.lon, self.lat)[
-                    :, :2
-                ].T
-            )
+            coords = np.concatenate(self.trans.data_to_geo(self.lon, self.lat))
         elif self.coord_type == "axes":
-            coords = np.concatenate(
-                transform_xy_axes_to_geo(
-                    self.lon,
-                    self.lat,
-                    self._trans_axes,
-                    self._trans_data,
-                    self._proj_geo,
-                    self._proj_map,
-                    invalid_ok=False,
-                )
-            )
+            coords = np.concatenate(self.trans.axes_to_geo(self.lon, self.lat))
         else:
             self._error("to_geo")
         self.set("geo", *coords)
@@ -973,17 +759,7 @@ class MapAxesBoundingBox:
 
     def to_axes(self):
         if self.coord_type == "geo":
-            coords = np.concatenate(
-                transform_xy_geo_to_axes(
-                    self.lon,
-                    self.lat,
-                    self._proj_map,
-                    self._proj_geo,
-                    self._trans_data,
-                    self._trans_axes,
-                    invalid_ok=False,
-                )
-            )
+            coords = np.concatenate(self.trans.geo_to_axes(self.lon, self.lat))
         elif self.coord_type == "data":
             return self.to_geo().to_axes()
         else:
@@ -1041,34 +817,6 @@ class MapAxesBoundingBox:
         self.set(self.coord_type, *coords)
         return self
 
-    @property
-    def lon(self):
-        return np.asarray(self)[:2]
-
-    @property
-    def lat(self):
-        return np.asarray(self)[2:]
-
-    @property
-    def _proj_data(self):
-        return self.map_axes.proj_data
-
-    @property
-    def _proj_geo(self):
-        return self.map_axes.proj_geo
-
-    @property
-    def _proj_map(self):
-        return self.map_axes.proj_map
-
-    @property
-    def _trans_axes(self):
-        return self.map_axes.ax.transAxes
-
-    @property
-    def _trans_data(self):
-        return self.map_axes.ax.transData
-
 
 def colors_from_cmap(cmap, n_levels, extend):
     """Get colors from cmap for given no. levels and extend param."""
@@ -1081,32 +829,3 @@ def colors_from_cmap(cmap, n_levels, extend):
         return colors[1:]
     else:
         return colors[1:-1]
-
-
-@overload
-def check_valid_coords(xy: Tuple[float, float], allow, warn):
-    ...
-
-
-@overload
-def check_valid_coords(xy: Tuple[np.ndarray, np.ndarray], allow, warn):
-    ...
-
-
-def check_valid_coords(xy, allow: bool, warn: bool) -> None:
-    """Check that xy coordinate is valid."""
-    if np.isnan(xy).any() or np.isinf(xy).any():
-        if not allow:
-            raise ValueError("invalid coordinates", xy)
-        elif warn:
-            warnings.warn(f"invalid coordinates: {xy}")
-
-
-def check_same_sized_iterables(x: np.ndarray, y: np.ndarray) -> None:
-    """Check that x and y are iterables of the same size."""
-    if isiterable(x) and not isiterable(y):
-        raise ValueError("x is iterable but y is not", (x, y))
-    if isiterable(y) and not isiterable(x):
-        raise ValueError("y is iterable but x is not", (x, y))
-    if len(x) != len(y):
-        raise ValueError("x and y differ in length", (len(x), len(y)), (x, y))

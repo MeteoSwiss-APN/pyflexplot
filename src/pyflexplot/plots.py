@@ -120,7 +120,7 @@ def create_map_conf(field: Field) -> MapAxesConf:
             "zoom_fact": 3.23,
             "rel_offset": (0.037, 0.1065),
         }
-    elif model == "ifs" and domain == "auto":
+    elif model == "ifs":
         # SR_TMP < TODO Generalize IFS domains
         conf = {**conf_base, **conf_model_ifs, **conf_domain_japan}
         # SR_TMP >
