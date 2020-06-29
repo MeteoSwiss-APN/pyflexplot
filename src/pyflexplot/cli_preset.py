@@ -75,7 +75,7 @@ def click_use_preset(ctx: Context, param: ClickParamType, value: Any) -> None:
         return
 
     if value == ("?",):
-        click.echo("Available presets ('?'):")
+        log(vbs="Available presets ('?'):")
         click_find_presets_and_exit(ctx, param, "*")
 
     patterns: Sequence[str] = value
