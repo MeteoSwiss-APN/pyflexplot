@@ -68,7 +68,8 @@ def click_set_pdb(ctx, param, value):
     if ctx.obj is None:
         ctx.obj = {}
     ctx.obj["pdb"] = value
-    ctx.obj["raise"] = True
+    if value:
+        ctx.obj["raise"] = True
 
 
 # pylint: disable=W0613  # unused-argument (param)
