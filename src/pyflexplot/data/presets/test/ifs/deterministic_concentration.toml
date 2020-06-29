@@ -3,6 +3,7 @@
 [_base]
 # Sample data directory: /scratch/ruestefa/shared/pyflexplot_test/
 infile = "data/ifs_20200317000000.nc"
+model = "cosmo1"
 outfile = "ifs_concentration_{domain}_{lang}_ts-{time:02d}.png"
 species_id = 2
 time = [1, 6, 11]

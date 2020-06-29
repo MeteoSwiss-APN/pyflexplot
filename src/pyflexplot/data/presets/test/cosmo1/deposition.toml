@@ -3,6 +3,7 @@
 ["_base+"]
 # Sample data directory: /scratch/ruestefa/shared/pyflexplot_test/
 infile = "data/cosmo1_20190528000000.nc"
+model = "cosmo1"
 outfile = "deposition_tot_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
 input_variable = "deposition"
 species_id = "*"
