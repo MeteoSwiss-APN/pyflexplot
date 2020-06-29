@@ -981,3 +981,16 @@ def format_coord_label(direction: str, words: TranslatedWords, symbols: Words) -
     else:
         raise NotImplementedError("unit for direction", direction)
     return f"{{d}}{deg_unit}{{m}}{min_unit}{dir_unit} ({{f:.4f}}{deg_dir_unit})"
+
+
+def colors_from_cmap(cmap, n_levels, extend):
+    """Get colors from cmap for given no. levels and extend param."""
+    colors = cmap(np.linspace(0, 1, n_levels + 1))
+    if extend == "both":
+        return colors
+    elif extend == "min":
+        return colors[:-1]
+    elif extend == "max":
+        return colors[1:]
+    else:
+        return colors[1:-1]

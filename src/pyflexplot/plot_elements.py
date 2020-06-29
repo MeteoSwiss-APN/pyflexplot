@@ -816,16 +816,3 @@ class MapAxesBoundingBox:
 
         self.set(self.coord_type, *coords)
         return self
-
-
-def colors_from_cmap(cmap, n_levels, extend):
-    """Get colors from cmap for given no. levels and extend param."""
-    colors = cmap(np.linspace(0, 1, n_levels + 1))
-    if extend == "both":
-        return colors
-    elif extend == "min":
-        return colors[:-1]
-    elif extend == "max":
-        return colors[1:]
-    else:
-        return colors[1:-1]
