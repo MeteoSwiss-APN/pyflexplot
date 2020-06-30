@@ -5,8 +5,10 @@ Data input.
 # Standard library
 import re
 import warnings
+from copy import deepcopy
 from typing import Any
 from typing import Dict
+from typing import Hashable
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -32,6 +34,7 @@ from .meta_data import nc_var_name
 from .nc_meta_data import read_meta_data
 from .setup import Setup
 from .setup import SetupCollection
+from .utils.exceptions import MissingCacheEntryError
 from .utils.logging import log
 
 
@@ -42,6 +45,7 @@ def read_fields(
     *,
     add_ts0: bool = False,
     dry_run: bool = False,
+    cache_on: bool = False,
 ) -> List[List[Field]]:
     """Read fields from an input file, or multiple files derived from one path.
 
@@ -60,10 +64,16 @@ def read_fields(
 
         dry_run (optional): Whether to skip reading the data from disk.
 
+        cache_on (optional): Whether to activate the cache.
+
     """
     log(dbg=f"reading fields from {in_file_path}")
     reader = FileReader(
-        in_file_path, add_ts0=add_ts0, dry_run=dry_run, cls_fixer=FlexPartDataFixer,
+        in_file_path,
+        add_ts0=add_ts0,
+        dry_run=dry_run,
+        cls_fixer=FlexPartDataFixer,
+        cache_on=cache_on,
     )
     field_lst_lst = reader.run(setups)
     n_plt = len(field_lst_lst)
@@ -91,6 +101,7 @@ class FileReader:
         add_ts0: bool = False,
         dry_run: bool = False,
         cls_fixer: Optional[Type["FlexPartDataFixer"]] = None,
+        cache_on: bool = False,
     ):
         """Create an instance of ``FileReader``.
 
@@ -110,10 +121,13 @@ class FileReader:
             cls_fixer (optional): Class providing methods to fix issues with the
                 input data. Is instatiated with this instance of ``FileReader``.
 
+            cache_on (optional): Activate cache.
+
         """
         self.in_file_path_fmt = in_file_path
         self.add_ts0 = add_ts0
         self.dry_run = dry_run
+        self.cache_on = cache_on
 
         # Declare some attributes
         self.ens_member_ids: Optional[List[int]]
@@ -126,6 +140,8 @@ class FileReader:
         # SR_TMP <
         self._n_members: int = -1
         # SR_TMP >
+
+        self._cache: Dict[Hashable, Any] = {}
 
         self.fixer: Optional["FlexPartDataFixer"] = None
         if cls_fixer is not None:
@@ -197,11 +213,27 @@ class FileReader:
         shape_mem_time = self._get_shape_mem_time()
         flds_time_mem: np.ndarray = np.full(shape_mem_time, np.nan, np.float32)
         mdata_time: np.ndarray = np.full(n_requested_times, None, object)
+        n_mem = len(self.file_path_lst)
         for idx_mem, (ens_member_id, file_path) in enumerate(
             zip((self.ens_member_ids or [None]), self.file_path_lst)  # type: ignore
         ):
+            setups_mem = setups.derive({"ens_member_id": ens_member_id})
+            timeless_setups_mem = setups_mem.derive({"dimensions": {"time": None}})
+
+            # Try to fetch the necessary data from cache
+            if self.cache_on:
+                cache_key = self._cache_key(file_path, timeless_setups_mem)
+                try:
+                    self._cache_get(cache_key, idx_mem, flds_time_mem, mdata_time)
+                except MissingCacheEntryError:
+                    pass
+                else:
+                    log(dbg=f"uncached file ({idx_mem + 1}/{n_mem}): {file_path}")
+                    continue
+
+            # Read the data from disk
+            log(dbg=f"reading file ({idx_mem + 1}/{n_mem}): {file_path}")
             with nc4.Dataset(file_path, "r") as fi:
-                setups_mem = setups.derive({"ens_member_id": ens_member_id})
                 self._read_grid(fi)
 
                 if idx_mem > 1:
@@ -211,7 +243,9 @@ class FileReader:
                 if not self.dry_run:
 
                     # Read fields for all members at all time steps
-                    fld_time_i = self._read_member_fields_over_time(fi, setups_mem)
+                    fld_time_i = self._read_member_fields_over_time(
+                        fi, timeless_setups_mem
+                    )
                     flds_time_mem[idx_mem][:] = fld_time_i[:]
 
                     # Read meta data at requested time steps
@@ -220,6 +254,9 @@ class FileReader:
                         mdata_time[:] = mdata_time_i
                     elif mdata_time_i != mdata_time.tolist():
                         raise Exception("meta data differ across members")
+
+                    if self.cache_on:
+                        self._cache_add(cache_key, fld_time_i, mdata_time_i)
 
         # Compute single field from all ensemble members
         fld_time: np.ndarray
@@ -250,6 +287,38 @@ class FileReader:
 
         return field_lst_lst
 
+    # SR_TMP <<< TODO Derive better key from setups! Make hashable?
+    @staticmethod
+    def _cache_key(file_path: str, setups: SetupCollection) -> Hashable:
+        return (file_path, repr(setups.collect("dimensions")))
+
+    def _cache_get(
+        self,
+        cache_key: Hashable,
+        idx_mem: int,
+        flds_time_mem: np.ndarray,
+        mdata_time: np.ndarray,
+    ) -> None:
+        try:
+            entry = self._cache[cache_key]
+        except KeyError:
+            raise MissingCacheEntryError(cache_key)
+        entry = deepcopy(entry)
+        self.lat, self.lon, self.time = entry["grid"]
+        self.nc_meta_data = entry["nc_meta_data"]
+        flds_time_mem[idx_mem][:] = entry["fld_time_i"]
+        mdata_time[:] = entry["mdata_time_i"]
+
+    def _cache_add(
+        self, cache_key: Hashable, fld_time_i: np.ndarray, mdata_time_i: np.ndarray
+    ) -> None:
+        self._cache[cache_key] = {
+            "grid": deepcopy((self.lat, self.lon, self.time)),
+            "nc_meta_data": deepcopy(self.nc_meta_data),
+            "fld_time_i": deepcopy(fld_time_i),
+            "mdata_time_i": deepcopy(mdata_time_i),
+        }
+
     def _read_nc_meta_data(
         self, fi: nc4.Dataset, check: bool = False
     ) -> Dict[str, Any]:
@@ -261,11 +330,9 @@ class FileReader:
         return nc_meta_data
 
     def _read_member_fields_over_time(
-        self, fi: nc4.Dataset, setups: SetupCollection
+        self, fi: nc4.Dataset, timeless_setups: SetupCollection
     ) -> np.ndarray:
         """Read field over all time steps for each member."""
-
-        timeless_setups = setups.derive({"dimensions": {"time": None}})
 
         fld_time_lst = []
         for sub_setups in timeless_setups.decompress():

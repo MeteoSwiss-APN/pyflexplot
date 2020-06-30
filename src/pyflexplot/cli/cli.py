@@ -73,12 +73,12 @@ def wrap_pdb(fct):
     def wrapper(*args, **kwargs):
         try:
             return fct(*args, **kwargs)
-        except Exception:  # pylint: disable=
+        except Exception:  # pylint: disable=W0703  # broad-except
             pdb = __import__("ipdb")  # trick pre-commit hook "debug-statements"
             traceback.print_exc()
             click.echo()
             pdb.post_mortem()
-            exit(1)
+            sys.exit(1)
 
     return wrapper
 
@@ -322,14 +322,16 @@ def main(
     for ip_in, (in_file_path, sub_setups) in enumerate(setups_by_infile.items(), 1):
         log(vbs=f"[{ip_in}/{n_in}] read {in_file_path}",)
         field_lst_lst = read_fields(
-            in_file_path, sub_setups, add_ts0=True, dry_run=dry_run
+            in_file_path, sub_setups, add_ts0=True, dry_run=dry_run, cache_on=True,
         )
         n_fld = len(field_lst_lst)
         try:
             for ip_fld, field_lst in enumerate(field_lst_lst, 1):
                 i_tot += 1
                 log(dbg=f"[{ip_in}/{n_in}][{ip_fld}/{n_fld}] prepare plot")
-                in_file_path_fmtd = format_in_file_path(in_file_path, field_lst)
+                in_file_path_fmtd = format_in_file_path(
+                    in_file_path, [field.var_setups for field in field_lst]
+                )
                 plot = prepare_plot(field_lst, out_file_paths, dry_run=dry_run)
                 log(
                     inf=f"{in_file_path_fmtd} -> {plot.file_path}",
@@ -365,22 +367,22 @@ def main(
     return 0
 
 
-def format_in_file_path(in_file_path, field_lst):
-    def collect_ens_member_ids(field_lst):
+def format_in_file_path(in_file_path, setups_lst):
+    def collect_ens_member_ids(setups_lst):
         ens_member_ids = None
-        for i, field in enumerate(field_lst):
-            ens_member_ids_i = field.var_setups.collect_equal("ens_member_id")
+        for i, setups in enumerate(setups_lst):
+            ens_member_ids_i = setups.collect_equal("ens_member_id")
             if i == 0:
                 ens_member_ids = ens_member_ids_i
             elif ens_member_ids_i != ens_member_ids:
                 raise Exception(
-                    "ens_member_id differs between fields",
+                    "ens_member_id differs between setups",
                     ens_member_ids,
                     ens_member_ids_i,
                 )
         return ens_member_ids
 
-    ens_member_ids = collect_ens_member_ids(field_lst)
+    ens_member_ids = collect_ens_member_ids(setups_lst)
     if ens_member_ids is None:
         return in_file_path
     match = re.match(

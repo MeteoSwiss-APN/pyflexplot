@@ -69,6 +69,7 @@ class TestReadFieldEnsemble_Single:
         setup_params,
         ens_var,
         fct_reduce_mem,
+        cache_on,
     ):
         """Run an individual test."""
         datafile_fmt = self.datafile_fmt(datadir)
@@ -92,7 +93,7 @@ class TestReadFieldEnsemble_Single:
         setups = SetupCollection([Setup.create(setup_dct)])
 
         # Read input fields
-        field_lst_lst = read_fields(datafile_fmt, setups)
+        field_lst_lst = read_fields(datafile_fmt, setups, cache_on=cache_on)
         assert len(field_lst_lst) == 1
         assert len(field_lst_lst[0]) == 1
         fld = field_lst_lst[0][0].fld
@@ -133,7 +134,7 @@ class TestReadFieldEnsemble_Single:
         assert fld.shape == fld_ref.shape
         np.testing.assert_allclose(fld, fld_ref, equal_nan=True, rtol=1e-6)
 
-    def test_ens_mean_concentration(self, datadir):  # noqa:F811
+    def test_ens_mean_concentration(self, datadir, cache_on=False):  # noqa:F811
         """Read concentration field."""
         self.run(
             datadir,
@@ -141,7 +142,11 @@ class TestReadFieldEnsemble_Single:
             setup_params={"dimensions": {"level": 1}},
             ens_var="mean",
             fct_reduce_mem=lambda arr: np.nanmean(arr, axis=0),
+            cache_on=cache_on,
         )
+
+    def test_ens_mean_concentration_cached(self, datadir):  # noqa:F811
+        self.test_ens_mean_concentration(datadir, cache_on=True)
 
 
 class TestReadFieldEnsemble_Multiple:
@@ -181,6 +186,7 @@ class TestReadFieldEnsemble_Multiple:
         setup_params,
         ens_var,
         fct_reduce_mem,
+        cache_on,
         scale_fld_ref=1.0,
     ):
         """Run an individual test, reading one field after another."""
@@ -209,7 +215,7 @@ class TestReadFieldEnsemble_Multiple:
         setups = SetupCollection(setup_lst)
 
         # Read input fields
-        field_lst_lst = read_fields(datafile_fmt, setups)
+        field_lst_lst = read_fields(datafile_fmt, setups, cache_on=cache_on)
         fld_arr = np.array(
             [field.fld for field_lst in field_lst_lst for field in field_lst]
         )
@@ -257,7 +263,7 @@ class TestReadFieldEnsemble_Multiple:
         np.testing.assert_allclose(fld_arr, fld_arr_ref, equal_nan=True, rtol=1e-6)
 
     def run_concentration(
-        self, datadir, ens_var, *, scale_fld_ref=1.0,  # noqa:F811
+        self, datadir, ens_var, *, cache_on=False, scale_fld_ref=1.0,  # noqa:F811
     ):
         """Read ensemble concentration field."""
 
@@ -284,6 +290,7 @@ class TestReadFieldEnsemble_Multiple:
             setup_params=setup_params,
             ens_var=ens_var,
             fct_reduce_mem=fct_reduce_mem,
+            cache_on=cache_on,
             scale_fld_ref=scale_fld_ref,
         )
 
@@ -291,11 +298,15 @@ class TestReadFieldEnsemble_Multiple:
         self.run_concentration(datadir, "mean", scale_fld_ref=3.0)
 
     def test_ens_probability_concentration(self, datadir):  # noqa:F811
-        self.run_concentration(
-            datadir, "probability", scale_fld_ref=3.0,
-        )
+        self.run_concentration(datadir, "probability", scale_fld_ref=3.0)
 
-    def run_deposition_tot(self, datadir, ens_var):  # noqa:F811
+    def test_ens_mean_concentration_cached(self, datadir):  # noqa:F811
+        self.run_concentration(datadir, "mean", cache_on=True, scale_fld_ref=3.0)
+
+    def test_ens_probability_concentration_cached(self, datadir):  # noqa:F811
+        self.run_concentration(datadir, "probability", cache_on=True, scale_fld_ref=3.0)
+
+    def run_deposition_tot(self, datadir, ens_var, cache_on=False):  # noqa:F811
         """Read ensemble total deposition field."""
         fct_reduce_mem = {
             "mean": lambda arr: np.nanmean(arr, axis=0),
@@ -313,6 +324,7 @@ class TestReadFieldEnsemble_Multiple:
                 "dimensions": {"deposition_type": ("dry", "wet")},
             },
             ens_var=ens_var,
+            cache_on=cache_on,
             fct_reduce_mem=fct_reduce_mem,
         )
 
@@ -321,3 +333,9 @@ class TestReadFieldEnsemble_Multiple:
 
     def test_ens_max_deposition_tot(self, datadir):  # noqa:F811
         self.run_deposition_tot(datadir, "maximum")
+
+    def test_ens_mean_deposition_tot_cached(self, datadir):  # noqa:F811
+        self.run_deposition_tot(datadir, "mean", cache_on=True)
+
+    def test_ens_max_deposition_tot_cached(self, datadir):  # noqa:F811
+        self.run_deposition_tot(datadir, "maximum", cache_on=True)

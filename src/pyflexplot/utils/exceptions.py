@@ -39,6 +39,10 @@ class MinStrLenReachedError(Exception):
     """String cannot be further truncated."""
 
 
+class MissingCacheEntryError(Exception):
+    """Entry missing in cache."""
+
+
 class NoPresetFileFoundError(Exception):
     """No preset file found in directory/ies."""
 
