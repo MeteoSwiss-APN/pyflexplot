@@ -644,9 +644,6 @@ class MetaDataCollector:
         """Collect variable meta data."""
 
         unit = self.ncattrs_field["units"]
-        # SR_TMP <
-        unit = fix_unit_meters_agl(unit, self.setup.core.lang)
-        # SR_TMP >
 
         idx: int
         if self.setup.core.dimensions.level is None:
@@ -662,9 +659,6 @@ class MetaDataCollector:
             level_bot = 0.0 if idx == 0 else float(var[idx - 1])
             level_top = float(var[idx])
             level_unit = var.getncattr("units")
-            # SR_TMP <
-            level_unit = fix_unit_meters_agl(level_unit, self.setup.core.lang)
-            # SR_TMP >
 
         mdata_raw.update(
             {
@@ -835,9 +829,6 @@ class RawReleaseMetaData(BaseModel):
             params[key_out] = fi.variables[key_in][idx].tolist()
             if key_out in store_units:
                 unit = fi.variables[key_in].getncattr("units")
-                # SR_TMP <
-                unit = fix_unit_meters_agl(unit, setup.core.lang)
-                # SR_TMP >
                 params[f"{key_out}_unit"] = unit
         return cls(**params)
 
@@ -906,29 +897,6 @@ class ReleaseMetaData(BaseModel):
             start=nc_meta_data["simulation_start"] + start_rel,
             start_rel=start_rel,
         )
-
-
-# SR_TMP <<< TODO Eliminate this dirty workaround!!!
-def fix_unit_meters_agl(unit: str, lang: str) -> str:
-    """Replace 'meters' by 'm AGL' or its German equivalent.
-
-    This fix is currently easiest to apply here, during meta data collection,
-    because later, it is not as easily available stand-alone, but may be part
-    of a MetaDataCombo or already concatenated with the value.
-
-    However, WORDS is no longer available during meta data collection, so as a
-    compromise (read: dirty workaround), this fix along with the necessary
-    import of WORDS has been put in this function.
-
-    TODO: Find a more appropriate solution!!!
-
-    """
-    if unit == "meters":
-        # pylint: disable=C0415  # import-outside-toplevel
-        from .words import WORDS  # isort:skip
-
-        unit = WORDS.get("m_agl", lang=lang).s
-    return unit
 
 
 def nc_var_name(setup: Union[Setup, Setup], model: str) -> Union[str, List[str]]:

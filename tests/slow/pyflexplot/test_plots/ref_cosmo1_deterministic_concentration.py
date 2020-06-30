@@ -1773,7 +1773,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": '100$\\,$m $\\mathrm{\\"u}$.G.',
+                    "s": '100$\\,$$\\,$m $\\mathrm{\\"u}$.G.',
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

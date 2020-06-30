@@ -10,6 +10,7 @@ from typing import Dict
 from typing import List
 from typing import Mapping
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -51,6 +52,7 @@ class BoxedPlotConfig(BaseModel):
     mdata: MetaData  # SR_TODO consider removing this
     cmap: Union[str, Colormap] = "flexplot"
     colors: List[ColorType]
+    color_above_closed: Optional[ColorType] = None  # SR_TODO better approach
     d_level: Optional[int] = None  # SR_TODO sensible default
     draw_colors: bool = True
     draw_contours: bool = False
@@ -163,16 +165,29 @@ class BoxedPlot:
         levels = self.levels
         colors = self.config.colors
         extend = self.config.extend
+        color_above_closed = self.config.color_above_closed
         if self.config.levels_scale == "log":
             with np.errstate(divide="ignore"):
                 arr = np.log10(arr)
             levels = np.log10(levels)
         elif extend in ["none", "min"]:
-            # Areas beyond the closed upper bound are colored black
-            colors = list(colors) + ["black"]
-            extend = {"none": "max", "min": "both"}[extend]
+            if color_above_closed:
+                # Areas beyond the closed upper bound are colored black
+                colors = list(colors) + [color_above_closed]
+                if extend == "none":
+                    extend = "max"
+                elif extend == "min":
+                    extend = "both"
         if self.config.draw_colors:
-            self.ax_map.contourf(arr, levels=levels, colors=colors, extend=extend)
+            # SR_TMP < TODO move this logic out of here!
+            if self.config.cmap != "flexplot":
+                if extend in ["min", "both"]:
+                    levels = np.r_[-np.inf, levels]
+                if extend in ["max", "both"]:
+                    levels = np.r_[levels, np.inf]
+                extend = "none"
+            # SR_TMP >
+            self.ax_map.contourf(arr, levels=levels, extend=extend, colors=colors)
             # SR_TMP <
             cmap_black = LinearSegmentedColormap.from_list("black", ["black", "black"])
             self.ax_map.contourf(
@@ -181,6 +196,12 @@ class BoxedPlot:
             # SR_TMP >
         if self.config.draw_contours:
             self.ax_map.contour(arr, levels=levels, colors="black", linewidths=1)
+
+
+def cmap_from_colors(
+    colors: Sequence[ColorType], extend: str
+) -> LinearSegmentedColormap:
+    colors = list(colors)
 
 
 def levels_from_time_stats(
@@ -197,7 +218,7 @@ def levels_from_time_stats(
 
     assert plot_config.n_levels is not None  # mypy
     if plot_config.setup.get_simulation_type() == "ensemble":
-        if plot_config.setup.core.ens_variable == "probability":
+        if plot_config.setup.core.ens_variable.endswith("probability"):
             assert plot_config.d_level is not None  # mypy
             n_max = 90
             return np.arange(

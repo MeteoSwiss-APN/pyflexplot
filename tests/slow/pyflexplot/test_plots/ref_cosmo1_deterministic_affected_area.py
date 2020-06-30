@@ -1388,7 +1388,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "100$\\,$m AGL",
+                    "s": "100$\\,$$\\,$m AGL",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

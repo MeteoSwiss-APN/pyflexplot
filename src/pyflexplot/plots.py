@@ -173,35 +173,56 @@ def create_plot_config(
                     "levels_scale": "lin",
                 }
             )
-            if setup.core.ens_variable == "probability":
+            if setup.core.ens_variable.endswith("probability"):
                 new_config_dct.update(
-                    {"n_levels": 9, "d_level": 10, "cmap": "viridis_r"}
+                    {"n_levels": 9, "d_level": 10, "cmap": "terrain_r"}
                 )
             elif setup.core.ens_variable in [
                 "cloud_arrival_time",
                 "cloud_departure_time",
             ]:
-                new_config_dct.update({"n_levels": 9, "d_level": 3})
-            elif setup.core.ens_variable == "cloud_occurrence_probability":
-                new_config_dct.update({"n_levels": 9, "d_level": 10})
+                new_config_dct.update({"n_levels": 8, "d_level": 3})
+                if setup.core.ens_variable == "cloud_arrival_time":
+                    new_config_dct.update(
+                        {
+                            "cmap": "viridis",
+                            "color_under": "slategray",
+                            "color_over": "lightgray",
+                        }
+                    )
+                if setup.core.ens_variable == "cloud_departure_time":
+                    new_config_dct.update(
+                        {
+                            "cmap": "viridis_r",
+                            "color_under": "lightgray",
+                            "color_over": "slategray",
+                        }
+                    )
 
     # Colors
     n_levels = new_config_dct["n_levels"]
     extend = new_config_dct.get("extend", "max")
     cmap = new_config_dct.get("cmap", "flexplot")
     if setup.core.plot_variable == "affected_area_mono":
-        colors = (np.array([(200, 200, 200)]) / 255).tolist()
+        new_config_dct["colors"] = (np.array([(200, 200, 200)]) / 255).tolist()
     elif cmap == "flexplot":
-        colors = colors_flexplot(n_levels, extend)
+        new_config_dct["colors"] = colors_flexplot(n_levels, extend)
+        new_config_dct["color_above_closed"] = "black"
     else:
         cmap = mpl.cm.get_cmap(cmap)
+        color_under = new_config_dct.get("color_under")
+        color_over = new_config_dct.get("color_over")
         n_colors = n_levels - 1
-        if extend in ["min", "both"]:
+        if extend in ["min", "both"] and not color_under:
             n_colors += 1
-        if extend in ["max", "both"]:
+        if extend in ["max", "both"] and not color_over:
             n_colors += 1
         colors = [cmap(i / (n_colors - 1)) for i in range(n_colors)]
-    new_config_dct["colors"] = colors
+        if extend in ["min", "both"] and color_under:
+            colors.insert(0, color_under)
+        if extend in ["max", "both"] and color_over:
+            colors.append(color_over)
+        new_config_dct["colors"] = colors
 
     # Markers
     new_config_dct["markers"] = {
@@ -268,7 +289,6 @@ def create_box_labels(
         "bc": f"{mdata.release_site_name}",
     }
     labels["data_info"] = {
-        "title": f"{words['data'].c}",
         "lines": [],
     }
     labels["legend"] = {
@@ -278,7 +298,7 @@ def create_box_labels(
         "max": words["maximum", "abbr"].s,
         "maximum": words["maximum"].s,
     }
-    labels["right_bottom"] = {
+    labels["release_info"] = {
         "title": words["release"].t,
         "start": words["start"].s,
         "end": words["end"].s,
@@ -287,6 +307,9 @@ def create_box_labels(
         "lat_deg_fmt": format_coord_label("north", words, symbols),
         "lon_deg_fmt": format_coord_label("east", words, symbols),
         "height": words["height"].s,
+        # SR_TMP <
+        "height_unit": r"$\,$" + words["m_agl"].s,
+        # SR_TMP >
         "rate": words["rate"].s,
         "mass": words["total_mass"].s,
         "site": words["site"].s,
@@ -307,16 +330,25 @@ def create_box_labels(
 
     if setup.core.input_variable == "concentration":
         labels["legend"]["tc"] = (
-            f"{words['height']}:" f" {escape_format_keys(format_level_label(mdata))}"
+            f"{words['height']}:"
+            f" {escape_format_keys(format_level_label(mdata, words))}"
         )
 
     labels["data_info"]["lines"].append(
         f"{words['input_variable'].c}:\t{capitalize(var_name_abbr)}",
     )
     if setup.get_simulation_type() == "ensemble":
-        labels["data_info"]["lines"].append(
-            f"{words['ensemble_variable']}:\t{ens_var_name}"
-        )
+        # SR_TMP <
+        if setup.core.ens_variable == "cloud_occurrence_probability":
+            labels["data_info"]["lines"].append(
+                f"{words['ensemble_variable', 'abbr']}:"
+                f"\t{words['cloud_probability', 'abbr']}"
+            )
+        else:
+            labels["data_info"]["lines"].append(
+                f"{words['ensemble_variable', 'abbr']}:\t{ens_var_name}"
+            )
+        # SR_TMP >
         if setup.core.ens_variable == "probability":
             labels["data_info"]["lines"].append(
                 f"{words['threshold']}:\t{symbols['geq']} {setup.core.ens_param_thr}"
@@ -328,23 +360,36 @@ def create_box_labels(
             "cloud_occurrence_probability",
         ]:
             labels["data_info"]["lines"].append(
-                f"{words['cloud_density']}:\t{words['minimum', 'abbr']}"
+                # f"{words['cloud_density']}:\t{words['minimum', 'abbr']}"
+                # f"{words['threshold']}:\t"
+                f"{words['cloud_threshold', 'abbr']}:\t"
                 f" {setup.core.ens_param_thr} {mdata.format('variable_unit')}"
             )
             n_min = setup.core.ens_param_mem_min or 0
             n_tot = len((setup.ens_member_id or []))
             labels["data_info"]["lines"].append(
-                f"{words['number_of', 'abbr'].c} {words['member', 'pl']}:"
-                f"\t{words['minimum', 'abbr']} {n_min}"
+                # f"{words['number_of', 'abbr'].c} {words['member', 'pl']}:"
+                # f"\t {n_min}"
+                f"{words['minimum', 'abbr'].c} {words['member', 'pl']}:"
+                f"\t{n_min}"
                 r"$\,/\,$"
                 f"{n_tot} ({n_min/(n_tot or 0.001):.0%})"
             )
-    labels["data_info"]["lines"].append(
-        f"{words['substance'].c}:\t{mdata.format('species_name', join_combo=' / ')}",
-    )
+            if setup.core.ens_variable == "cloud_occurrence_probability":
+                labels["data_info"]["lines"].append(
+                    f"{words['time_window']}:\t{setup.core.ens_param_time_win}"
+                    # SR_TMP < TODO Properly implement in hours (now steps, I think)!
+                    # f" {words['hour', 'abbr']}"
+                    "???"
+                    # SR_TMP >
+                )
+    # labels["data_info"]["lines"].append(
+    #     f"{words['substance'].c}:\t{mdata.format('species_name', join_combo=' / ')}",
+    # )
     if setup.core.input_variable == "concentration":
         labels["data_info"]["lines"].append(
-            f"{words['height'].c}:\t{escape_format_keys(format_level_label(mdata))}"
+            f"{words['height'].c}:"
+            f"\t{escape_format_keys(format_level_label(mdata, words))}"
         )
 
     # box_labels["top"]["tl"] = f"{long_name} {words['of']} {mdata.species_name}"
@@ -352,7 +397,22 @@ def create_box_labels(
     if setup.get_simulation_type() == "deterministic":
         labels["legend"]["title"] = f"{short_name} ({unit})"
     elif setup.get_simulation_type() == "ensemble":
-        labels["legend"]["title"] = "Percent" if unit == "%" else f"{unit}"
+        if setup.core.ens_variable == "cloud_arrival_time":
+            labels["legend"][
+                "title"
+            ] = f"{words['hour', 'pl']} {words['until']} {words['arrival']}"
+        elif setup.core.ens_variable == "cloud_departure_time":
+            labels["legend"][
+                "title"
+            ] = f"{words['hour', 'pl']} {words['until']} {words['departure']}"
+        else:
+            # SR_TMP <
+            if unit == "%":
+                labels["legend"]["title"] = f"{words['probability']} ({unit})"
+            else:
+                labels["legend"]["title"] = f"{unit}"
+
+            # SR_TMP >
     labels["legend"]["unit"] = unit
 
     # Capitalize all labels
@@ -547,18 +607,12 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
     def fill_box_data_info(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the data information box of the ensemble plot layout."""
         labels = plot.config.labels["data_info"]
-        box.text(
-            labels["title"],
-            loc="tc",
-            fontname=plot.config.font_name,
-            size=plot.config.font_sizes.title_small,
-        )
         box.text_block_hfill(
             labels["lines"],
-            dy_unit=-4.0,
-            dy_line=2.5,
+            dy_unit=-1.0,
+            dy_line=3.0,
             fontname=plot.config.font_name,
-            size=plot.config.font_sizes.content_small,
+            size=plot.config.font_sizes.content_medium,
         )
 
     # pylint: disable=R0912  # too-many-branches
@@ -679,7 +733,7 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
     def fill_box_release_info(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the box containing the release info."""
 
-        labels = plot.config.labels["right_bottom"]
+        labels = plot.config.labels["release_info"]
         mdata = plot.config.mdata
 
         # Box title
@@ -697,6 +751,9 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
         lon_deg = labels["lon_deg_fmt"].format(d=lon.degs(), m=lon.mins(), f=lon.frac())
 
         height = mdata.format("release_height", add_unit=True)
+        # SR_TMP <
+        height = height.replace("meters", labels["height_unit"])
+        # SR_TMP >
         rate = mdata.format("release_rate", add_unit=True)
         mass = mdata.format("release_mass", add_unit=True)
         substance = mdata.format("species_name", join_combo=" / ")
@@ -910,7 +967,7 @@ def format_model_info(setup: Setup, words: TranslatedWords, mdata: MetaData) -> 
     )
 
 
-def format_level_label(mdata: MetaData) -> str:
+def format_level_label(mdata: MetaData, words: TranslatedWords) -> str:
     bot_unit = mdata.variable_level_bot_unit.value
     top_unit = mdata.variable_level_top_unit.value
     bot_level = mdata.variable_level_bot.value
@@ -918,6 +975,8 @@ def format_level_label(mdata: MetaData) -> str:
     if top_unit != bot_unit:
         raise Exception("inconsistent level units", bot_unit, top_unit)
     unit = cast(str, bot_unit)
+    if unit == "meters":
+        unit = words["m_agl"].s
     level = format_vertical_level_range(bot_level, top_level, unit)
     if not level:
         return ""
@@ -1004,11 +1063,8 @@ def format_coord_label(direction: str, words: TranslatedWords, symbols: Words) -
 def colors_from_cmap(cmap, n_levels, extend):
     """Get colors from cmap for given no. levels and extend param."""
     colors = cmap(np.linspace(0, 1, n_levels + 1))
-    if extend == "both":
-        return colors
-    elif extend == "min":
-        return colors[:-1]
-    elif extend == "max":
-        return colors[1:]
-    else:
-        return colors[1:-1]
+    if extend not in ["min", "both"]:
+        colors.pop(0)
+    if extend not in ["max", "both"]:
+        colors.pop(-1)
+    return colors

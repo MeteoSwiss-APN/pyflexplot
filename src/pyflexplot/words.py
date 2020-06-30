@@ -42,13 +42,20 @@ WORDS.add(en="averaged over", de=f'gemittelt {s["ue"]}ber')
 WORDS.add(en="based on", de="basierend auf")
 # C
 WORDS.add(en="cloud", de="Wolke")
-WORDS.add(en="cloud probability", de="Wolkenwahrscheinlichkeit")
 WORDS.add(en="cloud arrival probability", de="Wolkenankunftswahrscheinlichkeit")
 WORDS.add(en="cloud arrival time", de="Wolkenankunftszeit")
+WORDS.add(en="cloud density", de="Wolkendichte")
 WORDS.add(en="cloud departure probability", de="Wolkenabzugswahrscheinlichkeit")
 WORDS.add(en="cloud departure time", de="Wolkenabzugszeit")
 WORDS.add(en="cloud occurrence probability", de="Wolkenauftretenswahrscheinlichkeit")
-WORDS.add(en="cloud density", de="Wolkendichte")
+WORDS.add(
+    en={"*": "cloud probability", "abbr": "cloud prob."},
+    de={"*": "Wolkenwahrscheinlichkeit", "abbr": "Wolkenwahrsch."},
+)
+WORDS.add(
+    en={"*": "cloud threshold", "abbr": "cloud thresh."},
+    de={"*": "Wolkengrenzwert", "abbr": "Wolkengrenzw."},
+)
 WORDS.add(
     en={"*": "concentration", "abbr": "concentr."},
     de={"*": "Konzentration", "abbr": "Konzentr."},
@@ -78,8 +85,8 @@ WORDS.add(en="ensemble mean", de="Ensemble-Mittel")
 WORDS.add(en="ensemble median", de="Ensemble-Median")
 WORDS.add(en="ensemble minimum", de="Ensemble-Minimum")
 WORDS.add(
-    en={"*": "ensemble variable", "abbr": "ensemble var."},
-    de={"*": "Ensemblevariable", "abbr": "Ensemblevar."},
+    en={"*": "ensemble variable", "abbr": "ens. variable"},
+    de={"*": "Ensemblevariable", "abbr": "Ens.-Variable"},
 )
 # F
 WORDS.add(en="field", de="Feld")
@@ -129,6 +136,7 @@ WORDS.add(en={"*": "number of", "abbr": "no."}, de={"*": "Anzahl", "abbr": "Anz.
 # O
 WORDS.add(en="of", de={"*": "von", "fg": "der"})
 # P
+WORDS.add(en="percent", de="Prozent")
 WORDS.add(en="probability", de="Wahrscheinlichkeit")
 # Q
 # R
@@ -155,7 +163,9 @@ WORDS.add(
 WORDS.add(en="threshold", de="Grenzwert")
 WORDS.add(en="total", de={"*": "total", "m": "totaler", "f": "totale", "g": "totalen"})
 WORDS.add(en="total mass", de="Totale Masse")
+WORDS.add(en="time window", de="Zeitfenster")
 # U
+WORDS.add(en="until", de="bis")
 # V
 WORDS.add(en="variable", de="Variable")
 # W
