@@ -13,8 +13,8 @@ from cartopy.crs import Projection  # type: ignore
 from matplotlib.axes import Axes
 
 # Local
-from .exceptions import MaxIterationError
-from .summarize import summarizable
+from ..utils.exceptions import MaxIterationError
+from ..utils.summarize import summarizable
 
 
 @summarizable

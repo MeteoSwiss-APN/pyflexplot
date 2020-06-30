@@ -32,7 +32,7 @@ from pydantic.generics import GenericModel
 from .setup import Setup
 from .setup import SetupCollection
 from .species import get_species
-from .summarize import summarizable
+from .utils.summarize import summarizable
 
 ValueT = TypeVar("ValueT", int, float, str, datetime, timedelta)
 

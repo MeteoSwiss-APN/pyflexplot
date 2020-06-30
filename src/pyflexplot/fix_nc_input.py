@@ -15,9 +15,9 @@ from typing import Union
 import numpy as np
 
 # Local
-from .logging import log
 from .meta_data import MetaData
 from .species import get_species
+from .utils.logging import log
 
 
 class FlexPartDataFixer:

@@ -18,7 +18,7 @@ from typing import List
 import matplotlib
 
 # Local
-from .logging import add_logging_level
+from .utils.logging import add_logging_level
 
 try:
     import cartopy  # isort:skip

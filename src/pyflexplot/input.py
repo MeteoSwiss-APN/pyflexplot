@@ -26,13 +26,13 @@ from .data import EnsembleCloud
 from .data import Field
 from .data import merge_fields
 from .fix_nc_input import FlexPartDataFixer
-from .logging import log
 from .meta_data import collect_meta_data
 from .meta_data import MetaData
 from .meta_data import nc_var_name
 from .nc_meta_data import read_meta_data
 from .setup import Setup
 from .setup import SetupCollection
+from .utils.logging import log
 
 
 # pylint: disable=R0914  # too-many-locals

@@ -14,15 +14,15 @@ import click
 from click import Context
 
 # Local
-from .cli_utils import click_error
-from .cli_utils import click_exit
-from .exceptions import NoPresetFileFoundError
-from .logging import log
+from ..utils.exceptions import NoPresetFileFoundError
+from ..utils.logging import log
+from ..utils.typing import ClickParamType
+from .click import click_error
+from .click import click_exit
 from .preset import add_to_preset_paths
 from .preset import cat_preset
 from .preset import collect_preset_files
 from .preset import collect_preset_files_flat
-from .typing import ClickParamType
 
 
 # pylint: disable=W0613  # unused-argument (ctx, param)

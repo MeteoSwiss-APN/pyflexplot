@@ -20,13 +20,13 @@ import numpy as np
 from srutils.str import join_multilines
 
 # Local
-from .exceptions import ArrayDimensionError
-from .exceptions import FieldAllNaNError
-from .exceptions import InconsistentArrayShapesError
 from .meta_data import MetaData
 from .setup import SetupCollection
-from .summarize import default_summarize
-from .summarize import summarizable
+from .utils.exceptions import ArrayDimensionError
+from .utils.exceptions import FieldAllNaNError
+from .utils.exceptions import InconsistentArrayShapesError
+from .utils.summarize import default_summarize
+from .utils.summarize import summarizable
 
 
 def summarize_field(obj: Any) -> Dict[str, Dict[str, Any]]:

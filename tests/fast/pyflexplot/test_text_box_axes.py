@@ -6,7 +6,7 @@ Tests for module ``pyflexplot.map_axes``.
 from matplotlib import pyplot as plt
 
 # First-party
-from pyflexplot.text_box_axes import TextBoxAxes
+from pyflexplot.plotting.text_box_axes import TextBoxAxes
 from srutils.testing import check_summary_dict_is_subdict
 
 

@@ -14,23 +14,23 @@ import traceback
 import click
 
 # Local
-from . import __version__
-from . import data_path
-from .cli_preset import click_add_to_preset_paths
-from .cli_preset import click_cat_preset_and_exit
-from .cli_preset import click_find_presets_and_exit
-from .cli_preset import click_list_presets_and_exit
-from .cli_preset import click_use_preset
-from .cli_utils import click_error
-from .formatting import format_range
-from .input import read_fields
-from .logging import log
-from .logging import set_log_level
-from .plots import create_plot
-from .plots import prepare_plot
+from .. import __version__
+from .. import data_path
+from ..input import read_fields
+from ..plots import create_plot
+from ..plots import prepare_plot
+from ..setup import Setup
+from ..setup import SetupFile
+from ..utils.formatting import format_range
+from ..utils.logging import log
+from ..utils.logging import set_log_level
+from .click import click_error
 from .preset import add_to_preset_paths
-from .setup import Setup
-from .setup import SetupFile
+from .preset_click import click_add_to_preset_paths
+from .preset_click import click_cat_preset_and_exit
+from .preset_click import click_find_presets_and_exit
+from .preset_click import click_list_presets_and_exit
+from .preset_click import click_use_preset
 
 # # To debug segmentation fault, uncomment and run with PYTHONFAULTHANDLER=1
 # import faulthandler

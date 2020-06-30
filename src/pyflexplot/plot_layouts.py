@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Union
 
 # Local
-from .typing import RectType
+from .utils.typing import RectType
 
 BoxedPlotLayoutType = Union[
     "BoxedPlotLayoutVintage", "BoxedPlotLayoutDeterministic", "BoxedPlotLayoutEnsemble",

@@ -1,27 +1,15 @@
 __init__.py
-boxed_plot.py
-cli.py
-cli_preset.py
-cli_utils.py
-coord_trans.py
 data.py
 dimensions.py
-exceptions.py
 fix_nc_input.py
-formatting.py
 input.py
-logging.py
-map_axes.py
 meta_data.py
 nc_meta_data.py
 plot_layouts.py
 plots.py
-preset.py
-pydantic.py
-ref_dist_indicator.py
 setup.py
 species.py
-summarize.py
-text_box_axes.py
-typing.py
 words.py
+< cli/session
+< plotting/session
+< utils/session

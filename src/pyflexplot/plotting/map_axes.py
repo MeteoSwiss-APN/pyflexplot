@@ -27,13 +27,13 @@ from pydantic import root_validator
 from pydantic import validator
 
 # Local
+from ..utils.summarize import post_summarize_plot
+from ..utils.summarize import summarizable
+from ..utils.typing import ColorType
+from ..utils.typing import RectType
 from .coord_trans import CoordinateTransformer
 from .ref_dist_indicator import RefDistIndConf
 from .ref_dist_indicator import ReferenceDistanceIndicator
-from .summarize import post_summarize_plot
-from .summarize import summarizable
-from .typing import ColorType
-from .typing import RectType
 
 
 @summarizable

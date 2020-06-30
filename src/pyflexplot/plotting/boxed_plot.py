@@ -22,17 +22,17 @@ from matplotlib.figure import Figure
 from pydantic import BaseModel
 
 # Local
-from .data import Field
+from ..data import Field
+from ..meta_data import MetaData
+from ..setup import Setup
+from ..utils.summarize import summarizable
+from ..utils.typing import ColorType
+from ..utils.typing import FontSizeType
+from ..utils.typing import RectType
 from .map_axes import MapAxes
 from .map_axes import MapAxesConf
 from .map_axes import post_summarize_plot
-from .meta_data import MetaData
-from .setup import Setup
-from .summarize import summarizable
 from .text_box_axes import TextBoxAxes
-from .typing import ColorType
-from .typing import FontSizeType
-from .typing import RectType
 
 
 @dataclass

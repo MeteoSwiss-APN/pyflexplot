@@ -15,17 +15,17 @@ import matplotlib as mpl
 from matplotlib.figure import Figure
 
 # Local
-from .exceptions import MinFontSizeReachedError
-from .exceptions import MinStrLenReachedError
-from .summarize import post_summarize_plot
-from .summarize import summarizable
-from .typing import ColorType
-from .typing import LocationType
-from .typing import MarkerStyleType
-from .typing import RawTextBlocksType
-from .typing import RawTextBlockType
-from .typing import RectType
-from .typing import TextBlocksType
+from ..utils.exceptions import MinFontSizeReachedError
+from ..utils.exceptions import MinStrLenReachedError
+from ..utils.summarize import post_summarize_plot
+from ..utils.summarize import summarizable
+from ..utils.typing import ColorType
+from ..utils.typing import LocationType
+from ..utils.typing import MarkerStyleType
+from ..utils.typing import RawTextBlocksType
+from ..utils.typing import RawTextBlockType
+from ..utils.typing import RectType
+from ..utils.typing import TextBlocksType
 
 
 @summarizable(post_summarize=post_summarize_plot)
