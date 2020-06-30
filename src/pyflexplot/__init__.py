@@ -46,6 +46,9 @@ pylogging.basicConfig(format="%(message)s")
 pylogging.getLogger().handlers = [pylogging.StreamHandler(sys.stdout)]
 add_logging_level("verbose", 15)
 
+# Disable third-party debug messages
+pylogging.getLogger("matplotlib").setLevel(pylogging.WARNING)
+
 
 def check_dir_exists(path):
     """Check that a directory exists."""
