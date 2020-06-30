@@ -315,20 +315,25 @@ check: ${_INSTALL_DEV}
 # Testing
 #==============================================================================
 
-.PHONY: test #CMD Run all tests.
-test: ${_INSTALL_TEST}
-	@echo -e "${ECHO_PREFIX}running tests"
-	${PREFIX}pytest
-
-.PHONY: test-fast #CMD Run fast tests.
+.PHONY: test-fast #CMD Run only fast tests.
 test-fast: ${_INSTALL_TEST}
 	@echo -e "${ECHO_PREFIX}running tests"
 	${PREFIX}pytest tests/fast
 
-.PHONY: test-medium #CMD Run fast and medium tests.
+.PHONY: test-medium #CMD Run only medium-fast tests.
 test-medium: ${_INSTALL_TEST}
 	@echo -e "${ECHO_PREFIX}running tests"
-	${PREFIX}pytest tests/fast tests/medium
+	${PREFIX}pytest tests/medium
+
+.PHONY: test-slow #CMD Run only slow tests.
+test-slow: ${_INSTALL_TEST}
+	@echo -e "${ECHO_PREFIX}running tests"
+	${PREFIX}pytest tests/slow
+
+.PHONY: test-fast test-medium test-slow #CMD Run all tests.
+test: ${_INSTALL_TEST}
+	@echo -e "${ECHO_PREFIX}running tests"
+	${PREFIX}pytest
 
 .PHONY: test-cov #CMD Check code coverage of tests.
 test-cov: ${_INSTALL_TEST}
