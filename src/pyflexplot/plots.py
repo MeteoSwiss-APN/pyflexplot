@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0302  # too-many-lines (>1000)
 """
 Plot types.
 
@@ -322,7 +323,7 @@ def create_box_labels(
                 f"{words['cloud_density'].c}:\t{words['minimum', 'abbr']}"
                 f" {setup.core.ens_param_thr} {mdata.format('variable_unit')}"
             )
-            n_min = setup.core.ens_param_mem_min
+            n_min = setup.core.ens_param_mem_min or 0
             n_tot = len((setup.ens_member_id or []))
             labels["data_info"]["lines"].append(
                 f"{words['number_of', 'abbr'].c} {words['member', 'pl']}:"
@@ -339,7 +340,7 @@ def create_box_labels(
     if setup.get_simulation_type() == "deterministic":
         labels["legend"]["title"] = f"{short_name} ({unit})"
     elif setup.get_simulation_type() == "ensemble":
-        labels["legend"]["title"] = f"{unit}"
+        labels["legend"]["title"] = "Percent" if unit == "%" else f"{unit}"
     labels["legend"]["unit"] = unit
 
     # Capitalize all labels

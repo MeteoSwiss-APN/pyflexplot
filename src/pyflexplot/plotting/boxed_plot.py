@@ -174,8 +174,10 @@ class BoxedPlot:
         if self.config.draw_colors:
             self.ax_map.contourf(arr, levels=levels, colors=colors, extend=extend)
             # SR_TMP <
-            cmap_black = LinearSegmentedColormap.from_list("black", ["black"])
-            self.ax_map.contourf(arr, levels=np.array([-0.01, 0.01]), colors=cmap_black)
+            cmap_black = LinearSegmentedColormap.from_list("black", ["black", "black"])
+            self.ax_map.contourf(
+                arr, levels=np.array([-0.01, 0.01]), cmap=cmap_black, extend="none"
+            )
             # SR_TMP >
         if self.config.draw_contours:
             self.ax_map.contour(arr, levels=levels, colors="black", linewidths=1)
