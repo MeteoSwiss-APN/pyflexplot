@@ -9,6 +9,10 @@ import os
 import re
 import sys
 import traceback
+from typing import Any
+from typing import Dict
+from typing import Sequence
+from typing import Tuple
 
 # Third-party
 import click
@@ -63,6 +67,32 @@ def click_set_raise(ctx, param, value):
         ctx.obj["raise"] = value
 
 
+def wrap_pdb(fct):
+    """Function decorator that drops into ipdb if an exception is raised."""
+
+    def wrapper(*args, **kwargs):
+        try:
+            return fct(*args, **kwargs)
+        except Exception:  # pylint: disable=
+            pdb = __import__("ipdb")  # trick pre-commit hook "debug-statements"
+            traceback.print_exc()
+            click.echo()
+            pdb.post_mortem()
+            exit(1)
+
+    return wrapper
+
+
+def wrap_callback(fct):
+    """Wrapper for click callback functions to conditionally drop into ipdb."""
+
+    def wrapper(ctx, param, value):
+        fct_loc = wrap_pdb(fct) if (ctx.obj or {}).get("pdb") else fct
+        return fct_loc(ctx, param, value)
+
+    return wrapper
+
+
 # pylint: disable=W0613  # unused-argument (param)
 def click_set_pdb(ctx, param, value):
     if ctx.obj is None:
@@ -77,8 +107,24 @@ def click_prep_setup_params(ctx, param, value):
     # pylint: disable=W0613  # unused-argument
     if not value:
         return None
+
+    def prepare_params(raw_params: Sequence[Tuple[str, str]]) -> Dict[str, Any]:
+        params: Dict[str, Any] = {}
+        value: Any
+        for param, value in raw_params:
+            if value == "*":
+                value = None
+            elif "," in value:
+                value = value.split(",")
+            elif re.match(r"[0-9]+-[0-9]+", value):
+                start, end = value.split("-")
+                value = range(int(start), int(end) + 1)
+            params[param] = value
+        return params
+
+    params = prepare_params(value)
     try:
-        return Setup.cast_many(value)
+        return Setup.cast_many(params)
     except ValueError as e:
         click_error(ctx, f"Invalid setup parameter ({e})")
 
@@ -145,14 +191,14 @@ def click_prep_setup_params(ctx, param, value):
     ),
     metavar="PATTERN",
     multiple=True,
-    callback=click_use_preset,
+    callback=wrap_callback(click_use_preset),
     expose_value=False,
 )
 @click.option(
     "--preset-add",
     help="Add a directory containing preset setup files.",
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    callback=click_add_to_preset_paths,
+    callback=wrap_callback(click_add_to_preset_paths),
     is_eager=True,
     expose_value=False,
 )
@@ -163,21 +209,21 @@ def click_prep_setup_params(ctx, param, value):
         " '*', '?')."
     ),
     metavar="PATTERN",
-    callback=click_cat_preset_and_exit,
+    callback=wrap_callback(click_cat_preset_and_exit),
     expose_value=False,
 )
 @click.option(
     "--preset-find",
     help="List preset setup file(s) by name (may contain wildcards).",
     metavar="NAME",
-    callback=click_find_presets_and_exit,
+    callback=wrap_callback(click_find_presets_and_exit),
     multiple=True,
     expose_value=False,
 )
 @click.option(
     "--preset-list",
     help="List the names of all preset setup files.",
-    callback=click_list_presets_and_exit,
+    callback=wrap_callback(click_list_presets_and_exit),
     is_flag=True,
     expose_value=False,
 )
@@ -195,7 +241,7 @@ def click_prep_setup_params(ctx, param, value):
 @click.option(
     "--raise/--no-raise",
     help="Raise exception in place of user-friendly but uninformative error message.",
-    callback=click_set_raise,
+    callback=wrap_callback(click_set_raise),
     is_eager=True,
     default=None,
     expose_value=False,
@@ -207,7 +253,7 @@ def click_prep_setup_params(ctx, param, value):
     metavar="PARAM VALUE",
     nargs=2,
     multiple=True,
-    callback=click_prep_setup_params,
+    callback=wrap_callback(click_prep_setup_params),
 )
 @click.option(
     "--verbose",
@@ -215,24 +261,15 @@ def click_prep_setup_params(ctx, param, value):
     "verbose",
     help="Increase verbosity; specify multiple times for more.",
     count=True,
-    callback=click_set_verbosity,
+    callback=wrap_callback(click_set_verbosity),
     is_eager=True,
     expose_value=False,
 )
 # ---
 @click.pass_context
 def cli(ctx, **kwargs):
-    if not ctx.obj["pdb"]:
-        main(ctx, **kwargs)
-    else:
-        pdb = __import__("ipdb")  # trick pre-commit hook "debug-statements"
-        try:
-            main(ctx, **kwargs)
-        except Exception:  # pylint: disable=W0703  # broad-except
-            traceback.print_exc()
-            click.echo()
-            pdb.post_mortem()
-            ctx.exit(1)
+    main_loc = wrap_pdb(main) if ctx.obj["raise"] else main
+    main_loc(ctx, **kwargs)
 
 
 # pylint: disable=R0912  # too-many-branches
