@@ -160,7 +160,9 @@ def create_plot_config(
             new_config_dct["extend"] = "none"
             new_config_dct["n_levels"] = 1
     elif setup.get_simulation_type() == "ensemble":
-        if setup.core.ens_variable not in ["minimum", "maximum", "median", "mean"]:
+        if setup.core.ens_variable in ["minimum", "maximum", "median", "mean"]:
+            pass
+        else:
             new_config_dct.update(
                 {
                     "extend": "both",
@@ -172,7 +174,9 @@ def create_plot_config(
                 }
             )
             if setup.core.ens_variable == "probability":
-                new_config_dct.update({"n_levels": 9, "d_level": 10})
+                new_config_dct.update(
+                    {"n_levels": 9, "d_level": 10, "cmap": "viridis_r"}
+                )
             elif setup.core.ens_variable in [
                 "cloud_arrival_time",
                 "cloud_departure_time",
@@ -191,7 +195,12 @@ def create_plot_config(
         colors = colors_flexplot(n_levels, extend)
     else:
         cmap = mpl.cm.get_cmap(cmap)
-        colors = [cmap(i / (n_levels - 1)) for i in range(n_levels)]
+        n_colors = n_levels - 1
+        if extend in ["min", "both"]:
+            n_colors += 1
+        if extend in ["max", "both"]:
+            n_colors += 1
+        colors = [cmap(i / (n_colors - 1)) for i in range(n_colors)]
     new_config_dct["colors"] = colors
 
     # Markers
@@ -310,7 +319,7 @@ def create_box_labels(
         )
         if setup.core.ens_variable == "probability":
             labels["data_info"]["lines"].append(
-                f"{words['cloud']}:\t{symbols['geq']} {setup.core.ens_param_thr}"
+                f"{words['threshold']}:\t{symbols['geq']} {setup.core.ens_param_thr}"
                 f" {mdata.format('variable_unit')}"
             )
         elif setup.core.ens_variable in [
@@ -319,7 +328,7 @@ def create_box_labels(
             "cloud_occurrence_probability",
         ]:
             labels["data_info"]["lines"].append(
-                f"{words['cloud_density'].c}:\t{words['minimum', 'abbr']}"
+                f"{words['cloud_density']}:\t{words['minimum', 'abbr']}"
                 f" {setup.core.ens_param_thr} {mdata.format('variable_unit')}"
             )
             n_min = setup.core.ens_param_mem_min or 0

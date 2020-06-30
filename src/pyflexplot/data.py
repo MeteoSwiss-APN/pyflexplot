@@ -169,7 +169,9 @@ def ensemble_probability(arr: np.ndarray, thr: float, n_mem: int) -> np.ndarray:
         Field with the number of members with a cloud at each grid point.
 
     """
-    return np.count_nonzero(arr >= thr, axis=0).astype(np.float32) * 100 / n_mem
+    arr = np.count_nonzero(arr >= thr, axis=0).astype(np.float32) * 100 / n_mem
+    arr[arr == 0] = np.nan
+    return arr
 
 
 @dataclass
