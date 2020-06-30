@@ -228,7 +228,7 @@ class FileReader:
                 except MissingCacheEntryError:
                     pass
                 else:
-                    log(dbg=f"uncached file ({idx_mem + 1}/{n_mem}): {file_path}")
+                    log(dbg=f"get cached ({idx_mem + 1}/{n_mem}): {file_path}")
                     continue
 
             # Read the data from disk
