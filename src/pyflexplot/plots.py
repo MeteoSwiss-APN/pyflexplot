@@ -224,7 +224,8 @@ def create_box_labels(
     names = format_names_etc(setup, words, mdata)
     short_name = names["short"]
     long_name = names["long"]
-    var_name = names["var"]
+    var_name_abbr = names["var_abbr"]
+    ens_var_name = names["ens_var"]
     unit = names["unit"]
     # SR_TMP >
 
@@ -256,11 +257,11 @@ def create_box_labels(
         "tc": f"{mdata.species_name}",
         "bc": f"{mdata.release_site_name}",
     }
-    labels["right_top"] = {
+    labels["data_info"] = {
         "title": f"{words['data'].c}",
         "lines": [],
     }
-    labels["right_middle"] = {
+    labels["legend"] = {
         "title_long": "",  # SR_TMP Force into 2nd position in dict (for tests)
         "title_short": "",  # SR_TMP Force into 2nd position in dict (for tests)
         "release_site": words["release_site"].s,
@@ -296,59 +297,50 @@ def create_box_labels(
     }
 
     if setup.core.input_variable == "concentration":
-        labels["right_middle"]["tc"] = (
-            f"{words['level']}:" f" {escape_format_keys(format_level_label(mdata))}"
+        labels["legend"]["tc"] = (
+            f"{words['height']}:" f" {escape_format_keys(format_level_label(mdata))}"
         )
-        labels["right_top"]["lines"].insert(
-            0, f"{words['level'].c}:\t{escape_format_keys(format_level_label(mdata))}"
+        labels["data_info"]["lines"].insert(
+            0, f"{words['height'].c}:\t{escape_format_keys(format_level_label(mdata))}"
         )
 
     if setup.get_simulation_type() == "ensemble":
+        labels["data_info"]["lines"].append(
+            f"{words['ensemble_variable', 'abbr']}:\t{ens_var_name}"
+        )
         if setup.core.ens_variable == "probability":
-            labels["right_top"]["lines"].append(
+            labels["data_info"]["lines"].append(
                 f"{words['cloud']}:\t{symbols['geq']} {setup.core.ens_param_thr}"
                 f" {mdata.format('variable_unit')}"
             )
         elif setup.core.ens_variable in [
             "cloud_arrival_time",
             "cloud_departure_time",
+            "cloud_occurrence_probability",
         ]:
-            labels["right_top"]["lines"].append(
+            labels["data_info"]["lines"].append(
                 f"{words['cloud_density'].c}:\t{words['minimum', 'abbr']}"
                 f" {setup.core.ens_param_thr} {mdata.format('variable_unit')}"
             )
-            n_min = setup.core.ens_param_mem_min or 1
+            n_min = setup.core.ens_param_mem_min
             n_tot = len((setup.ens_member_id or []))
-            labels["right_top"]["lines"].append(
+            labels["data_info"]["lines"].append(
                 f"{words['number_of', 'abbr'].c} {words['member', 'pl']}:"
-                f"\t{words['minimum', 'abbr']} {setup.core.ens_param_mem_min}"
+                f"\t{words['minimum', 'abbr']} {n_min}"
                 r"$\,/\,$"
-                f"{n_tot} ({n_min/(n_tot or 1):.0%})"
-            )
-        elif setup.core.ens_variable == "cloud_occurrence_probability":
-            labels["right_top"]["lines"].append(
-                f"{words['cloud_density'].c}:\t{words['minimum', 'abbr']}"
-                f" {setup.core.ens_param_thr} {mdata.format('variable_unit')}"
-            )
-            n_min = setup.core.ens_param_mem_min or 1
-            n_tot = len((setup.ens_member_id or []))
-            labels["right_top"]["lines"].append(
-                f"{words['number_of', 'abbr'].c} {words['member', 'pl']}:"
-                f"\t{words['minimum', 'abbr']} {setup.core.ens_param_mem_min}"
-                r"$\,/\,$"
-                f"{n_tot} ({n_min/(n_tot or 1):.0%})"
+                f"{n_tot} ({n_min/(n_tot or 0.001):.0%})"
             )
 
     # box_labels["top"]["tl"] = f"{long_name} {words['of']} {mdata.species_name}"
     labels["top"]["tl"] = long_name
-    labels["right_top"]["lines"].insert(
-        0, f"{words['input_variable'].c}:\t{capitalize(var_name)}",
+    labels["data_info"]["lines"].insert(
+        0, f"{words['input_variable'].c}:\t{capitalize(var_name_abbr)}",
     )
     if setup.get_simulation_type() == "deterministic":
-        labels["right_middle"]["title"] = f"{short_name} ({unit})"
+        labels["legend"]["title"] = f"{short_name} ({unit})"
     elif setup.get_simulation_type() == "ensemble":
-        labels["right_middle"]["title"] = f"{unit}"
-    labels["right_middle"]["unit"] = unit
+        labels["legend"]["title"] = f"{unit}"
+    labels["legend"]["unit"] = unit
 
     # Capitalize all labels
     for label_group in labels.values():
@@ -370,9 +362,10 @@ def format_names_etc(
     long_name = ""
     short_name = ""
 
-    def format_var_names(setup: Setup, words: TranslatedWords) -> Tuple[str, str]:
+    def format_var_names(setup: Setup, words: TranslatedWords) -> Tuple[str, str, str]:
         if setup.core.input_variable == "concentration":
             var_name = str(words["activity_concentration"])
+            var_name_abbr = str(words["activity_concentration", "abbr"])
             if setup.core.integrate:
                 var_name_rel = (
                     f"{words['of', 'fg']} {words['integrated', 'g']}"
@@ -387,11 +380,14 @@ def format_names_etc(
                 else setup.deposition_type_str
             )
             var_name = f"{words[dep_type_word, 'f']} {words['surface_deposition']}"
+            var_name_abbr = (
+                f"{words[dep_type_word, 'f']} {words['surface_deposition', 'abbr']}"
+            )
             var_name_rel = (
                 f"{words['of', 'fg']} {words[dep_type_word, 'g']}"
                 f" {words['surface_deposition']}"
             )
-        return var_name, var_name_rel
+        return var_name, var_name_abbr, var_name_rel
 
     # pylint: disable=W0621  # redefined-outer-name
     def format_unit(setup: Setup, words: TranslatedWords, mdata: MetaData) -> str:
@@ -408,7 +404,7 @@ def format_names_etc(
         return mdata.format("variable_unit")
 
     unit = format_unit(setup, words, mdata)
-    var_name, var_name_rel = format_var_names(setup, words)
+    var_name, var_name_abbr, var_name_rel = format_var_names(setup, words)
 
     # Short/long names #1: By variable
     if setup.core.input_variable == "concentration":
@@ -424,7 +420,8 @@ def format_names_etc(
         long_name = var_name
         short_name = str(words["deposition"])
 
-    # Short/long names #2: By plot variable/type
+    # Short/long names #2: By plot variable/type; ensemble variable name
+    ens_var_name = "none"
     if setup.get_simulation_type() == "deterministic":
         if setup.core.plot_variable.startswith("affected_area"):
             long_name = f"{words['affected_area']} {var_name_rel}"
@@ -449,6 +446,8 @@ def format_names_etc(
         elif setup.core.ens_variable == "cloud_occurrence_probability":
             short_name = f"{words['probability']}"
             long_name = f"{words['cloud_occurrence_probability']}"
+        if ens_var_name == "none":
+            ens_var_name = f"{words[setup.core.ens_variable].c}"
 
     # SR_TMP <
     if not short_name:
@@ -457,7 +456,15 @@ def format_names_etc(
         raise Exception("no long name")
     # SR_TMP >
 
-    return {"short": short_name, "long": long_name, "var": var_name, "unit": unit}
+    return {
+        "short": short_name,
+        "long": long_name,
+        "var": var_name,
+        "var_abbr": var_name_abbr,
+        "var_rel": var_name_rel,
+        "ens_var": ens_var_name,
+        "unit": unit,
+    }
 
 
 def prepare_plot(
@@ -526,7 +533,7 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
     # pylint: disable=R0915  # too-many-statements
     def fill_box_data_info(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the data information box of the ensemble plot layout."""
-        labels = plot.config.labels["right_top"]
+        labels = plot.config.labels["data_info"]
         box.text(
             labels["title"],
             loc="tc",
@@ -548,7 +555,7 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
     def fill_box_legend(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the box containing the plot legend."""
 
-        labels = plot.config.labels["right_middle"]
+        labels = plot.config.labels["legend"]
         mdata = plot.config.mdata
 
         # Box title

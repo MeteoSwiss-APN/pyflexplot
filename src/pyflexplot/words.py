@@ -35,6 +35,7 @@ WORDS.add(
 WORDS.add(en="arrival", de="Ankunft")
 WORDS.add(en="arrival time", de="Ankunftszeit")
 WORDS.add(en="affected area", de="Beaufschlagtes Gebiet")
+WORDS.add(en="m AGL", de=f'm {s["ue"]}.G.')
 WORDS.add(en="at", de={"level": "auf", "place": "in", "time": "um"})
 WORDS.add(en="averaged over", de=f'gemittelt {s["ue"]}ber')
 # B
@@ -76,6 +77,10 @@ WORDS.add(en="ensemble maximum", de="Ensemble-Maximum")
 WORDS.add(en="ensemble mean", de="Ensemble-Mittel")
 WORDS.add(en="ensemble median", de="Ensemble-Median")
 WORDS.add(en="ensemble minimum", de="Ensemble-Minimum")
+WORDS.add(
+    en={"*": "ensemble variable", "abbr": "ensemble var."},
+    de={"*": "Ensemble-Variable", "abbr": "Ensemble-Var."},
+)
 # F
 WORDS.add(en="field", de="Feld")
 WORDS.add(en="FLEXPART", de="FLEXPART")
@@ -111,11 +116,12 @@ WORDS.add(en="longitude", de=f'L{s["ae"]}nge')
 # M
 WORDS.add(en="m AGL", de=f'm {s["ue"]}.G.')
 WORDS.add(en={"*": "maximum", "abbr": "max."}, de={"*": "Maximum", "abbr": "Max."})
+WORDS.add(en="mean", de="Mittel")
+WORDS.add(en="median", de="Median")
 WORDS.add(en={"*": "member", "pl": "members"}, de={"*": "Member", "pl": "Members"})
 WORDS.add(en="MeteoSwiss", de="MeteoSchweiz")
 WORDS.add(
-    en={"*": "minimum", "abbr": "min."},
-    de={"*": "minimum", "n": "Minimum", "abbr": "min."},
+    en={"*": "minimum", "abbr": "min."}, de={"*": "Minimum", "abbr": "min."},
 )
 # N
 WORDS.add(en={"*": "north", "abbr": "N"}, de={"*": "Norden", "abbr": "N"})
