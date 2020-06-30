@@ -79,7 +79,7 @@ WORDS.add(en="ensemble median", de="Ensemble-Median")
 WORDS.add(en="ensemble minimum", de="Ensemble-Minimum")
 WORDS.add(
     en={"*": "ensemble variable", "abbr": "ensemble var."},
-    de={"*": "Ensemble-Variable", "abbr": "Ensemble-Var."},
+    de={"*": "Ensemblevariable", "abbr": "Ensemblevar."},
 )
 # F
 WORDS.add(en="field", de="Feld")

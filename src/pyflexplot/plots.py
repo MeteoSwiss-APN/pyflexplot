@@ -263,8 +263,7 @@ def create_box_labels(
         "lines": [],
     }
     labels["legend"] = {
-        "title_long": "",  # SR_TMP Force into 2nd position in dict (for tests)
-        "title_short": "",  # SR_TMP Force into 2nd position in dict (for tests)
+        "title": "",  # SR_TMP Force into 2nd position in dict (for tests)
         "release_site": words["release_site"].s,
         "site": words["site"].s,
         "max": words["maximum", "abbr"].s,
@@ -301,13 +300,13 @@ def create_box_labels(
         labels["legend"]["tc"] = (
             f"{words['height']}:" f" {escape_format_keys(format_level_label(mdata))}"
         )
-        labels["data_info"]["lines"].insert(
-            0, f"{words['height'].c}:\t{escape_format_keys(format_level_label(mdata))}"
-        )
 
+    labels["data_info"]["lines"].append(
+        f"{words['input_variable'].c}:\t{capitalize(var_name_abbr)}",
+    )
     if setup.get_simulation_type() == "ensemble":
         labels["data_info"]["lines"].append(
-            f"{words['ensemble_variable', 'abbr']}:\t{ens_var_name}"
+            f"{words['ensemble_variable']}:\t{ens_var_name}"
         )
         if setup.core.ens_variable == "probability":
             labels["data_info"]["lines"].append(
@@ -331,12 +330,16 @@ def create_box_labels(
                 r"$\,/\,$"
                 f"{n_tot} ({n_min/(n_tot or 0.001):.0%})"
             )
+    labels["data_info"]["lines"].append(
+        f"{words['substance'].c}:\t{mdata.format('species_name', join_combo=' / ')}",
+    )
+    if setup.core.input_variable == "concentration":
+        labels["data_info"]["lines"].append(
+            f"{words['height'].c}:\t{escape_format_keys(format_level_label(mdata))}"
+        )
 
     # box_labels["top"]["tl"] = f"{long_name} {words['of']} {mdata.species_name}"
     labels["top"]["tl"] = long_name
-    labels["data_info"]["lines"].insert(
-        0, f"{words['input_variable'].c}:\t{capitalize(var_name_abbr)}",
-    )
     if setup.get_simulation_type() == "deterministic":
         labels["legend"]["title"] = f"{short_name} ({unit})"
     elif setup.get_simulation_type() == "ensemble":
@@ -684,7 +687,6 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
         lat_deg = labels["lat_deg_fmt"].format(d=lat.degs(), m=lat.mins(), f=lat.frac())
         lon_deg = labels["lon_deg_fmt"].format(d=lon.degs(), m=lon.mins(), f=lon.frac())
 
-        # SR_TMP < TODO clean this up, especially for ComboMetaData (units messed up)!
         height = mdata.format("release_height", add_unit=True)
         rate = mdata.format("release_rate", add_unit=True)
         mass = mdata.format("release_mass", add_unit=True)
@@ -694,7 +696,6 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
         sediment_vel = mdata.format("species_sediment_vel", add_unit=True)
         washout_coeff = mdata.format("species_washout_coeff", add_unit=True)
         washout_exponent = mdata.format("species_washout_exponent")
-        # SR_TMP >
 
         info_blocks = dedent(
             f"""\
