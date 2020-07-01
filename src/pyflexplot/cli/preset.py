@@ -65,6 +65,8 @@ def collect_preset_files(
     for preset_path in collect_preset_paths():
         files_by_preset_path[preset_path] = {}
         for file_path in sorted(preset_path.rglob("*.toml")):
+            if file_path.name.startswith("_"):
+                continue
             file_path_rel = file_path.relative_to(preset_path)
             name = str(file_path_rel)[: -len(file_path.suffix)]
             for rx in rx_antipatterns:
