@@ -4,7 +4,7 @@
 # Sample data directory: /scratch/ruestefa/shared/pyflexplot_test/
 infile = "data/cosmo1_20190528000000.nc"
 model = "cosmo1"
-outfile = "concentration_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
+outfile = "cosmo1_{input_variable}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time:02d}.pdf"
 input_variable = "concentration"
 species_id = [1]
 combine_species = false
