@@ -172,7 +172,6 @@ class _TestCreateReference(_TestBase):
 
         # Replace non-importable nan/inf objects by np.nan/np.inf
         body_np = re.sub(r": (-?)\b(nan|inf)\b", r": \1np.\2", body)
-        imports = []
         if body_np != body:
             body = body_np
             head += "# Third-party\nimport numpy as np"
