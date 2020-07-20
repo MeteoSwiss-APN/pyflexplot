@@ -13,7 +13,7 @@ DEFAULT_PARAMS: Dict[str, Any] = {
     "combine_deposition_types": False,
     "combine_levels": False,
     "combine_species": False,
-    "domain": "auto",
+    "domain": "full",
     "ens_member_id": None,
     "ens_param_mem_min": None,
     "ens_param_thr": None,

@@ -116,12 +116,12 @@ def test_multiple_nested_sections(tmp_path):
         domain = "ch"
         lang = "de"
 
-        [_base._dep._tot._auto.en]
-        domain = "auto"
+        [_base._dep._tot._full.en]
+        domain = "full"
         lang = "en"
 
-        [_base._dep._tot._auto.de]
-        domain = "auto"
+        [_base._dep._tot._full.de]
+        domain = "full"
         lang = "de"
 
         [_base._dep.wet]
@@ -150,8 +150,8 @@ def test_multiple_nested_sections(tmp_path):
         },
         {"domain": "ch", "lang": "en"},
         {"domain": "ch", "lang": "de"},
-        {"domain": "auto", "lang": "en"},
-        {"domain": "auto", "lang": "de"},
+        {"domain": "full", "lang": "en"},
+        {"domain": "full", "lang": "de"},
         {"dimensions": {"deposition_type": "wet"}},
         {"lang": "en", "dimensions": {"deposition_type": "wet"}},
         {"lang": "de", "dimensions": {"deposition_type": "wet"}},
@@ -183,12 +183,12 @@ def test_multiple_override(tmp_path):
         domain = "ch"
         lang = "de"
 
-        [_base._dep._tot._auto.en]
-        domain = "auto"
+        [_base._dep._tot._full.en]
+        domain = "full"
         lang = "en"
 
-        [_base._dep._tot._auto.de]
-        domain = "auto"
+        [_base._dep._tot._full.de]
+        domain = "full"
         lang = "de"
 
         [_base._dep.wet]
@@ -221,7 +221,7 @@ def test_multiple_override(tmp_path):
             "dimensions": {"deposition_type": None},
         },
         {"domain": "ch", "lang": "de"},
-        {"domain": "auto", "lang": "de"},
+        {"domain": "full", "lang": "de"},
         {"dimensions": {"deposition_type": "wet"}},
         {"lang": "de", "dimensions": {"deposition_type": "wet"}},
     ]
@@ -240,11 +240,11 @@ def test_semi_realcase(tmp_path):
 
         [_base._concentration]
 
-            [_base._concentration._auto]
+            [_base._concentration._full]
 
-                [_base._concentration._auto.en]
+                [_base._concentration._full.en]
 
-                [_base._concentration._auto.de]
+                [_base._concentration._full.de]
 
             [_base._concentration._ch]
 
@@ -254,9 +254,9 @@ def test_semi_realcase(tmp_path):
 
             [_base._concentration._integr]
 
-                [_base._concentration._integr._auto.en]
+                [_base._concentration._integr._full.en]
 
-                [_base._concentration._integr._auto.de]
+                [_base._concentration._integr._full.de]
 
                 [_base._concentration._integr._ch.en]
 
@@ -266,17 +266,17 @@ def test_semi_realcase(tmp_path):
 
         [_base._deposition._affected_area]
 
-        [_base._deposition._auto.en]
+        [_base._deposition._full.en]
 
-        [_base._deposition._auto.de]
+        [_base._deposition._full.de]
 
         [_base._deposition._ch.en]
 
         [_base._deposition._ch.de]
 
-        [_base._deposition._affected_area._auto.en]
+        [_base._deposition._affected_area._full.en]
 
-        [_base._deposition._affected_area._auto.de]
+        [_base._deposition._affected_area._full.de]
 
         [_base._deposition._affected_area._ch.en]
 
@@ -301,7 +301,7 @@ def test_realcase_opr_like(tmp_path):
         integrate = false
         level = 0
         time = "*"
-        domain = "auto"
+        domain = "full"
         lang = "de"
         # domain = "ch"
         # lang = "de"
@@ -316,7 +316,7 @@ def test_realcase_opr_like(tmp_path):
         integrate = true
         level = 0
         time = -1
-        domain = "auto"
+        domain = "full"
         lang = "de"
         # domain = "ch"
         # lang = "de"
@@ -365,7 +365,7 @@ def test_realcase_opr_like(tmp_path):
             "ens_param_thr": None,
             "ens_param_time_win": None,
             "lang": "de",
-            "domain": "auto",
+            "domain": "full",
             "dimensions": {
                 "deposition_type": None,
                 "level": 0,
@@ -394,7 +394,7 @@ def test_realcase_opr_like(tmp_path):
             "ens_param_thr": None,
             "ens_param_time_win": None,
             "lang": "de",
-            "domain": "auto",
+            "domain": "full",
             "dimensions": {
                 "deposition_type": None,
                 "level": 0,
@@ -423,7 +423,7 @@ def test_realcase_opr_like(tmp_path):
             "ens_param_thr": None,
             "ens_param_time_win": None,
             "lang": "en",
-            "domain": "auto",
+            "domain": "full",
             "dimensions": {
                 "deposition_type": ("dry", "wet"),
                 "level": None,
@@ -452,7 +452,7 @@ def test_realcase_opr_like(tmp_path):
             "ens_param_thr": None,
             "ens_param_time_win": None,
             "lang": "en",
-            "domain": "auto",
+            "domain": "full",
             "dimensions": {
                 "deposition_type": ("dry", "wet"),
                 "level": None,
@@ -539,12 +539,12 @@ def test_double_wildcard_equal_depth(tmp_path):
         domain = "ch"
         lang = "en"
 
-        ["**"._auto.de]
-        domain = "auto"
+        ["**"._full.de]
+        domain = "full"
         lang = "de"
 
-        ["**"._auto.en]
-        domain = "auto"
+        ["**"._full.en]
+        domain = "full"
         lang = "en"
 
         """
@@ -559,7 +559,7 @@ def test_double_wildcard_equal_depth(tmp_path):
                 "integrate": False,
             },
         ]
-        for domain in ["ch", "auto"]
+        for domain in ["ch", "full"]
         for lang in ["de", "en"]
     ]
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
@@ -592,12 +592,12 @@ def test_double_wildcard_variable_depth(tmp_path):
         domain = "ch"
         lang = "en"
 
-        ["**"._auto.de]
-        domain = "auto"
+        ["**"._full.de]
+        domain = "full"
         lang = "de"
 
-        ["**"._auto.en]
-        domain = "auto"
+        ["**"._full.en]
+        domain = "full"
         lang = "en"
 
         """
@@ -609,7 +609,7 @@ def test_double_wildcard_variable_depth(tmp_path):
             {"input_variable": "concentration", "dimensions": {"time": 10}},
             {"input_variable": "deposition", "dimensions": {"level": None}},
         ]
-        for domain in ["ch", "auto"]
+        for domain in ["ch", "full"]
         for lang in ["de", "en"]
     ]
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()

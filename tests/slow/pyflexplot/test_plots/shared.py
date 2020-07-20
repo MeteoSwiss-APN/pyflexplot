@@ -44,7 +44,6 @@ def datadir(tmpdir, request):
     return tmpdir
 
 
-@dataclass
 class _TestBase:
     """Base class to test complete plots for their elements.
 
@@ -142,7 +141,7 @@ class _TestCreateReference(_TestBase):
     def test(self, datadir):
         if black is None:
             raise ImportError("must install black to create test reference")
-        ref_file = f"{self.reference}.py"
+        ref_file = f"{self.reference}.py"  # pylint: disable=no-member
         field = self.get_field(datadir)
         field_summary = field.summarize()
         plot = self.get_plot(field)
@@ -205,7 +204,7 @@ class _TestCreatePlot(_TestBase):
     """Test parent class to create plots based on a test setup."""
 
     def test(self, datadir):
-        plot_file = f"{self.reference}.png"
+        plot_file = f"{self.reference}.png"  # pylint: disable=no-member
         field = self.get_field(datadir)
         plot = self.get_plot(field)
         try:

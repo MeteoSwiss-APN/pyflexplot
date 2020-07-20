@@ -27,7 +27,7 @@ class Test_Concentration(_TestBase):
         "input_variable": "concentration",
         "integrate": False,
         "lang": "de",
-        "domain": "auto",
+        "domain": "full",
         "dimensions": {"species_id": 1, "time": 5, "level": 0},
     }
 
@@ -58,7 +58,7 @@ class Test_TotalDeposition(_TestBase):
         "combine_deposition_types": True,
         "integrate": True,
         "lang": "de",
-        "domain": "auto",
+        "domain": "full",
         "dimensions": {"species_id": 1, "time": -1},
     }
 

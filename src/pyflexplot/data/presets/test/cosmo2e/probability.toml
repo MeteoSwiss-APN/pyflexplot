@@ -20,12 +20,12 @@ outfile = "cosmo2e_{ens_variable}_{input_variable}_{domain}_{lang}_ts-{time:02d}
 input_variable = "deposition"
 combine_deposition_types = true
 
-["**"._auto.en]
-domain = "auto"
+["**"._full.en]
+domain = "full"
 lang = "en"
 
-# ["+*"._auto.de]
-# domain = "auto"
+# ["+*"._full.de]
+# domain = "full"
 # lang = "de"
 
 # ["**"._ch.en]

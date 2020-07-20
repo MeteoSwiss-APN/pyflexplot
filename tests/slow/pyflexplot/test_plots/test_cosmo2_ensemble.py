@@ -35,7 +35,7 @@ class Test_EnsMedian_Concentration(_TestBase):
         "combine_species": True,
         "ens_member_id": ENS_MEMBER_IDS,
         "lang": "en",
-        "domain": "auto",
+        "domain": "full",
         "dimensions": {"species_id": (1, 2), "time": 5, "level": 0},
     }
 
@@ -69,7 +69,7 @@ class Test_EnsMean_TotalDeposition(_TestBase):
         "combine_species": True,
         "ens_member_id": ENS_MEMBER_IDS,
         "lang": "en",
-        "domain": "auto",
+        "domain": "full",
         "dimensions": {"species_id": (1, 2), "time": -1},
     }
 
@@ -86,7 +86,7 @@ class Test_EnsProbability_WetDeposition(_TestBase):
         "combine_species": True,
         "ens_member_id": ENS_MEMBER_IDS,
         "lang": "en",
-        "domain": "auto",
+        "domain": "full",
         "dimensions": {"deposition_type": "wet", "species_id": 2, "time": -1},
     }
 
@@ -128,7 +128,7 @@ class Test_CloudArrivalTime(_TestBase):
         "ens_param_mem_min": 3,
         "ens_param_thr": 1e-6,
         "lang": "en",
-        "domain": "auto",
+        "domain": "full",
         "dimensions": {"species_id": 1, "time": 0, "level": 0},
     }
 

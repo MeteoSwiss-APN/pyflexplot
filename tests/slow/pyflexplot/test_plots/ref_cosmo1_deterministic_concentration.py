@@ -36,7 +36,7 @@ field_summary = {
                 "ens_param_thr": None,
                 "ens_param_time_win": None,
                 "lang": "de",
-                "domain": "auto",
+                "domain": "full",
                 "dimensions": {
                     "deposition_type": None,
                     "level": 0,
@@ -2177,7 +2177,7 @@ plot_summary = {
                     "ens_param_thr": None,
                     "ens_param_time_win": None,
                     "lang": "de",
-                    "domain": "auto",
+                    "domain": "full",
                     "dimensions": {
                         "deposition_type": None,
                         "level": 0,

@@ -113,7 +113,7 @@ class CoreSetup(BaseModel):
 
     # Plot appearance
     lang: str = "en"
-    domain: str = "auto"
+    domain: str = "full"
 
     # Dimensions
     # dimensions: CoreDimensions = CoreDimensions()
@@ -301,7 +301,7 @@ class Setup(BaseModel):
 
         domain: Plot domain. Defaults to 'data', which derives the domain size
             from the input data. Use the format key '{domain}' to embed it in
-            ``outfile``. Choices": "auto", "ch".
+            ``outfile``. Choices": "full", "ch".
 
         ens_member_id: Ensemble member ids. Use the format key '{ens_member}'
             to embed it in ``outfile``. Omit for deterministic simulations.

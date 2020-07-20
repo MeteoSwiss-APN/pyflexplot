@@ -32,12 +32,12 @@ time = -1
 outfile = "affected_area_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time:02d}.png"
 plot_variable = "affected_area_mono"
 
-# ["**"._auto.en]
-# domain = "auto"
+# ["**"._full.en]
+# domain = "full"
 # lang = "en"
 
-["**"._auto.de]
-domain = "auto"
+["**"._full.de]
+domain = "full"
 lang = "de"
 
 # ["**"._ch.en]

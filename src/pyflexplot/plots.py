@@ -98,7 +98,7 @@ def create_map_conf(field: Field) -> MapAxesConf:
     }
 
     conf: Dict[str, Any]
-    if model.startswith("cosmo") and domain == "auto":
+    if model.startswith("cosmo") and domain == "full":
         conf = {
             **conf_base,
             **conf_model_cosmo,

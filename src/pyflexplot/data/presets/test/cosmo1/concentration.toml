@@ -12,12 +12,12 @@ level = 0
 time = [1, 6, 11]
 integrate = false
 
-# ["**"._auto.en]
-# domain = "auto"
+# ["**"._full.en]
+# domain = "full"
 # lang = "en"
 
-["**"._auto.de]
-domain = "auto"
+["**"._full.de]
+domain = "full"
 lang = "de"
 
 ["**"._ch.en]

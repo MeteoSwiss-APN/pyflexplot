@@ -24,12 +24,12 @@ deposition_type = ["dry", "wet"]
 combine_deposition_types = true
 integrate = true
 
-# ["**"._auto.de]
-# domain = "auto"
+# ["**"._full.de]
+# domain = "full"
 # lang = "de"
 
-["**"._auto.en]
-domain = "auto"
+["**"._full.en]
+domain = "full"
 lang = "en"
 
 ["**"._ch.de]

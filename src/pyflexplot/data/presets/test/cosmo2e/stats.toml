@@ -55,12 +55,12 @@ ens_variable = "minimum"
 outfile = "cosmo2e_{ens_variable}_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time:02d}.pdf"
 ens_variable = "maximum"
 
-["**"._auto.de]
-domain = "auto"
+["**"._full.de]
+domain = "full"
 lang = "de"
 
-# ["**"._auto.en]
-# domain = "auto"
+# ["**"._full.en]
+# domain = "full"
 # lang = "en"
 
 # ["**"._ch.de]

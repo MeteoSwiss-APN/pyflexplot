@@ -36,7 +36,7 @@ field_summary = {
                 "ens_param_thr": 1e-08,
                 "ens_param_time_win": None,
                 "lang": "en",
-                "domain": "auto",
+                "domain": "full",
                 "dimensions": {
                     "deposition_type": "wet",
                     "level": None,
@@ -2451,7 +2451,7 @@ plot_summary = {
                     "ens_param_thr": 1e-08,
                     "ens_param_time_win": None,
                     "lang": "en",
-                    "domain": "auto",
+                    "domain": "full",
                     "dimensions": {
                         "deposition_type": "wet",
                         "level": None,
