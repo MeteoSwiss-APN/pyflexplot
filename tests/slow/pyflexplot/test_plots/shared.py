@@ -7,6 +7,7 @@ import distutils.dir_util
 import importlib
 import os
 import re
+from dataclasses import dataclass
 from textwrap import dedent
 from typing import Any
 from typing import Dict
@@ -43,6 +44,7 @@ def datadir(tmpdir, request):
     return tmpdir
 
 
+@dataclass
 class _TestBase:
     """Base class to test complete plots for their elements.
 

@@ -154,8 +154,8 @@ class Test_CloudDepartureTime(_TestBase):
 
 
 @pytest.mark.skip("WIP")
-# class Test_MultipanelEnsStats_Concentration(_TestBase):
-class Test_MultipanelEnsStats_Concentration(_TestCreatePlot):
+# class Test_MultipanelEnsStats_Concentration(_TestCreatePlot):
+class Test_MultipanelEnsStats_Concentration(_TestBase):
     reference = "ref_cosmo2e_multipanel_ens_stats_integr_concentration"
     setup_dct = {
         "infile": INFILE_NAME,
