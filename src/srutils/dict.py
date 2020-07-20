@@ -18,10 +18,14 @@ from typing import List
 from typing import Mapping
 from typing import MutableMapping
 from typing import Optional
+from typing import overload
 from typing import Sequence
 from typing import Tuple
 from typing import Type
 from typing import Union
+
+# Third-party
+from typing_extensions import Literal
 
 # Local
 from .exceptions import KeyConflictError
@@ -480,16 +484,42 @@ def nested_dict_resolve_wildcards(
         return deepcopy(dct)
 
 
-def recursive_update(dct1: MutableMapping[Any, Any], dct2: Mapping[Any, Any]) -> None:
+@overload
+def recursive_update(
+    dct1: MutableMapping[Any, Any], dct2: Mapping[Any, Any], inplace: Literal[True],
+) -> None:
+    ...
+
+
+@overload
+def recursive_update(
+    dct1: MutableMapping[Any, Any],
+    dct2: Mapping[Any, Any],
+    inplace: Literal[False] = False,
+) -> Dict[Any, Any]:
+    ...
+
+
+def recursive_update(dct1, dct2, inplace=False):
+    """Recursively update one dict with another."""
+    if not inplace:
+        dct1 = {**dct1}
     for key, val2 in dct2.items():
-        if key in dct1:
-            val1 = dct1[key]
-            if isinstance(val1, MutableMapping) and isinstance(val1, Mapping):
-                recursive_update(val1, val2)
-            else:
-                dct1[key] = val2
-        else:
+        if key not in dct1:
             dct1[key] = val2
+        else:
+            val1 = dct1[key]
+            if not (isinstance(val1, MutableMapping) and isinstance(val1, Mapping)):
+                dct1[key] = val2
+            else:
+                assert isinstance(val2, Mapping)  # mypy
+                if inplace:
+                    recursive_update(val1, val2, inplace=True)
+                else:
+                    dct1[key] = recursive_update(val1, val2)
+    if inplace:
+        return None
+    return dct1
 
 
 def nested_dict_resolve_single_star_wildcards(dct):
@@ -509,7 +539,7 @@ def nested_dict_resolve_single_star_wildcards(dct):
     for wild_val in wildcards.values():
         for key, val in dct.items():
             if isinstance(val, MutableMapping):
-                recursive_update(val, wild_val)
+                recursive_update(val, wild_val, inplace=True)
 
     for key, val in dct.items():
         if isinstance(val, Mapping):
@@ -543,7 +573,7 @@ def nested_dict_resolve_double_star_wildcards(dct, criterion=None):
                 _apply_double_star(subdct, wild_val, key=key_i)
         if key is not None:
             if criterion is None or criterion(key):
-                recursive_update(dct, wild_val)
+                recursive_update(dct, wild_val, inplace=True)
 
     wildcards = {}
     for key, val in dct.copy().items():
