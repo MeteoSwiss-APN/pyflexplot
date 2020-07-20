@@ -256,6 +256,15 @@ def click_prep_setup_params(ctx, param, value):
     callback=wrap_callback(click_prep_setup_params),
 )
 @click.option(
+    "--suffix",
+    "suffixes",
+    help=(
+        "Override suffix of output files. May be passed multiple times to"
+        " create plots in multiple formats."
+    ),
+    multiple=True,
+)
+@click.option(
     "--verbose",
     "-v",
     "verbose",
@@ -279,6 +288,7 @@ def main(
     ctx,
     setup_file_paths,
     input_setup_params,
+    suffixes,
     dry_run,
     only,
     each_only,
@@ -305,6 +315,9 @@ def main(
     #       this had to be solved some other way, but for now, let's just stick
     #       with the current implementation of N plots per input data file...
     setups = SetupFile.read_many(setup_file_paths, override=input_setup_params)
+
+    if suffixes:
+        setups.override_output_suffixes(suffixes)
 
     # Group setups by input file(s)
     setups_by_infile = setups.group("infile")

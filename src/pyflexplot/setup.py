@@ -875,6 +875,32 @@ class SetupCollection:
             setup.core.complete_dimensions(meta_data, inplace=True)
         return None if inplace else obj
 
+    def override_output_suffixes(self, suffix: Union[str, Collection[str]]) -> None:
+        """Override output file suffixes one or more times.
+
+        If multiple suffixes are passed, all setups are multiplied as many
+        times.
+
+        Args:
+            suffix: One or more replacement suffix.
+
+        """
+        suffixes: List[str] = list([suffix] if isinstance(suffix, str) else suffix)
+        if not suffixes:
+            raise ValueError("must pass one or more suffixes")
+        new_setups: List[Setup] = []
+        for setup in self:
+            outfile_base = setup.outfile
+            if any(outfile_base.endswith(f".{suffix}") for suffix in ["png", "pdf"]):
+                outfile_base = ".".join(outfile_base.split(".")[:-1])
+            for suffix_i in suffixes:
+                if suffix_i.startswith("."):
+                    suffix_i = suffix_i[1:]
+                new_outfile = f"{outfile_base}.{suffix_i}"
+                new_setup = setup.derive({"outfile": new_outfile})
+                new_setups.append(new_setup)
+        self._setups = new_setups
+
 
 class SetupFile:
     """Setup file to be read from and/or written to disk."""
