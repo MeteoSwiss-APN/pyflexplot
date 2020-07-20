@@ -995,40 +995,43 @@ def setup_repr(obj: Union["CoreSetup", "Setup"]) -> str:
 class FilePathFormatter:
     def __init__(self, previous: Optional[List[str]] = None) -> None:
         self.previous: List[str] = previous if previous is not None else []
-        self._setup: Optional[Setup] = None
 
     # pylint: disable=W0102  # dangerous-default-value ([])
-    def format(self, setup: Setup) -> str:
-        self._setup = setup
-        assert self._setup is not None  # mypy
+    def format(self, setup: Setup, nc_meta_data: Dict[str, Any]) -> str:
         template = setup.outfile
         log(dbg=f"formatting path '{template}'")
-        path = self._format_template(template)
+        path = self._format_template(template, setup, nc_meta_data)
         while path in self.previous:
-            template = self.derive_unique_path(self._format_template(template))
-            path = self._format_template(template)
+            template = self.derive_unique_path(
+                self._format_template(template, setup, nc_meta_data)
+            )
+            path = self._format_template(template, setup, nc_meta_data)
         self.previous.append(path)
-        self._setup = None
         log(dbg=f"formatted path '{path}'")
         return path
 
-    def _format_template(self, template: str) -> str:
-        assert self._setup is not None  # mypy
-        input_variable = self._setup.core.input_variable
-        if self._setup.core.input_variable == "deposition":
-            input_variable += f"_{self._setup.deposition_type_str}"
+    def _format_template(
+        self, template: str, setup: Setup, nc_meta_data: Dict[str, Any]
+    ) -> str:
+        input_variable = setup.core.input_variable
+        if setup.core.input_variable == "deposition":
+            input_variable += f"_{setup.deposition_type_str}"
+        time_steps = nc_meta_data["derived"]["time_steps"]
         kwargs = {
-            "nageclass": self._setup.core.dimensions.nageclass,
-            "domain": self._setup.core.domain,
-            "lang": self._setup.core.lang,
-            "level": self._setup.core.dimensions.level,
-            "noutrel": self._setup.core.dimensions.noutrel,
-            "species_id": self._setup.core.dimensions.species_id,
-            "time": self._setup.core.dimensions.time,
+            "domain": setup.core.domain,
+            "ens_variable": setup.core.ens_variable,
             "input_variable": input_variable,
-            "plot_variable": self._setup.core.plot_variable,
-            "plot_type": self._setup.core.plot_type,
-            "ens_variable": self._setup.core.ens_variable,
+            "lang": setup.core.lang,
+            "level": setup.core.dimensions.level,
+            "model": nc_meta_data["derived"]["model"],
+            "nageclass": setup.core.dimensions.nageclass,
+            "noutrel": setup.core.dimensions.noutrel,
+            "plot_type": setup.core.plot_type,
+            "plot_variable": setup.core.plot_variable,
+            "release_site": nc_meta_data["derived"]["release_site"],
+            "species_id": setup.core.dimensions.species_id,
+            "time_idx": setup.core.dimensions.time,
+            "time_step": time_steps[setup.core.dimensions.time],
         }
         # Format the file path
         # Don't use str.format in order to handle multival elements
@@ -1066,7 +1069,7 @@ class FilePathFormatter:
         return path
 
     @staticmethod
-    def derive_unique_path(path: str) -> str:
+    def derive_unique_path(path: str, sep: str = ".") -> str:
         """Add/increment a trailing number to a file path."""
         log(dbg=f"deriving unique path from '{path}'")
 
@@ -1078,7 +1081,7 @@ class FilePathFormatter:
         path_base = path[: -len(suffix)]
 
         # Reuse existing numbering if present
-        match = re.search(r"-(?P<i>[0-9]+)$", path_base)
+        match = re.search(f"{sep}(?P<i>[0-9]+)$", path_base)
         if match:
             i = int(match.group("i")) + 1
             w = len(match.group("i"))
@@ -1088,6 +1091,6 @@ class FilePathFormatter:
             w = 1
 
         # Add numbering and suffix
-        path = path_base + f"-{{i:0{w}}}{suffix}".format(i=i)
+        path = path_base + f"{sep}{{i:0{w}}}{suffix}".format(i=i)
 
         return path

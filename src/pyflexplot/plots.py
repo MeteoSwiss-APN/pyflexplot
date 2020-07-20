@@ -34,6 +34,7 @@ import matplotlib as mpl
 import numpy as np
 
 # First-party
+from srutils.dict import recursive_update
 from srutils.geo import Degrees
 
 # Local
@@ -550,9 +551,17 @@ def prepare_plot(
 ) -> Union[BoxedPlot, DummyBoxedPlot]:
     """Create plots while yielding them with the plot file path one by one."""
     log(dbg=f"preparing setups for plot based on {len(field_lst)} fields")
+
+    # Merge setups across Field objects
     var_setups_lst = [field.var_setups for field in field_lst]
     setup = SetupCollection.merge(var_setups_lst).compress()
-    out_file_path = FilePathFormatter(prev_out_file_paths).format(setup)
+
+    # Merge `nc_meta_data` across Field objects
+    nc_meta_data: Dict[str, Any] = {}
+    for field in field_lst:
+        recursive_update(nc_meta_data, field.nc_meta_data, inplace=True)
+
+    out_file_path = FilePathFormatter(prev_out_file_paths).format(setup, nc_meta_data)
     log(dbg=f"preparing plot {out_file_path}")
     if dry_run:
         return DummyBoxedPlot(out_file_path)
