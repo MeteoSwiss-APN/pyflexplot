@@ -10,7 +10,6 @@ from typing import Dict
 from typing import List
 from typing import Mapping
 from typing import Optional
-from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -196,12 +195,6 @@ class BoxedPlot:
             # SR_TMP >
         if self.config.draw_contours:
             self.ax_map.contour(arr, levels=levels, colors="black", linewidths=1)
-
-
-def cmap_from_colors(
-    colors: Sequence[ColorType], extend: str
-) -> LinearSegmentedColormap:
-    colors = list(colors)
 
 
 def levels_from_time_stats(

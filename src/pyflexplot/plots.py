@@ -142,6 +142,7 @@ def capitalize(s: str) -> str:
 
 
 # SR_TODO Create dataclass with default values for text box setup
+# pylint: disable=R0912  # too-many-branches
 def create_plot_config(
     setup: Setup, words: TranslatedWords, symbols: Words, mdata: MetaData,
 ) -> BoxedPlotConfig:
@@ -246,7 +247,9 @@ def create_plot_config(
     return BoxedPlotConfig(**new_config_dct)
 
 
+# pylint: disable=R0912  # too-many-branches
 # pylint: disable=R0914  # too-many-locals
+# pylint: disable=R0915  # too-many-statements
 def create_box_labels(
     setup: Setup, words: TranslatedWords, symbols: Words, mdata: MetaData,
 ) -> Dict[str, Dict[str, Any]]:
