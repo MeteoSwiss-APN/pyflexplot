@@ -39,7 +39,7 @@ class Test_CoreSetup_CompleteDimensions:
             "numpoint": {"name": "numpoint", "size": 2},
             "nchar": {"name": "nchar", "size": 45},
         },
-        "analysis": {"species_ids": (1, 2)},
+        "derived": {"species_ids": (1, 2)},
     }
 
     def test_time(self):

@@ -56,7 +56,7 @@ def read_meta_data(file_handle: nc4.Dataset) -> Dict[str, Any]:
     # Analyze the file
     model = determine_model(ncattrs)
     species_ids = determine_species_ids(model, variables)
-    analysis = {
+    derived = {
         "model": model,
         "rotated_pole": model.startswith("cosmo"),
         "species_ids": species_ids,
@@ -66,7 +66,7 @@ def read_meta_data(file_handle: nc4.Dataset) -> Dict[str, Any]:
         "ncattrs": ncattrs,
         "dimensions": dimensions,
         "variables": variables,
-        "analysis": analysis,
+        "derived": derived,
     }
     return meta_data
 

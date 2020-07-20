@@ -564,7 +564,7 @@ class MetaDataCollector:
             }
 
         # Select attributes of field variable
-        name = nc_var_name(self.setup, self.nc_meta_data["analysis"]["model"])
+        name = nc_var_name(self.setup, self.nc_meta_data["derived"]["model"])
         assert isinstance(name, str)  # mypy
         self.ncattrs_field = self.ncattrs_vars[name]
 

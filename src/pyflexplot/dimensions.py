@@ -272,7 +272,7 @@ class Dimensions:
                 obj.deposition_type = ("dry", "wet")
 
         if obj.species_id is None:
-            obj.species_id = meta_data["analysis"]["species_ids"]
+            obj.species_id = meta_data["derived"]["species_ids"]
 
         if obj.nageclass is None:
             if "nageclass" in raw_dimensions:

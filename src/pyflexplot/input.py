@@ -277,7 +277,7 @@ class FileReader:
                 fld=fld,
                 lat=self.lat,
                 lon=self.lon,
-                rotated_pole=self.nc_meta_data["analysis"]["rotated_pole"],
+                rotated_pole=self.nc_meta_data["derived"]["rotated_pole"],
                 var_setups=field_setups,
                 time_stats=time_stats,
                 nc_meta_data=self.nc_meta_data,
@@ -340,7 +340,7 @@ class FileReader:
                 fld_time_lst.append(self._read_fld(fi, sub_setup))
         fld_time = merge_fields(fld_time_lst)
 
-        if self.fixer and self.nc_meta_data["analysis"]["model"] in ["ifs"]:
+        if self.fixer and self.nc_meta_data["derived"]["model"] in ["ifs"]:
             self.fixer.fix_global_grid(self.lon, fld_time)
 
         if self.add_ts0:
@@ -366,7 +366,7 @@ class FileReader:
 
             # Fix some known issues with the NetCDF input data
             if self.fixer:
-                model_name = self.nc_meta_data["analysis"]["model"]
+                model_name = self.nc_meta_data["derived"]["model"]
                 self.fixer.fix_meta_data(model_name, mdata_i)
 
             mdata_lst.append(mdata_i)
@@ -508,7 +508,7 @@ class FileReader:
 
     def _dim_names(self) -> Dict[str, str]:
         """Model-specific dimension names."""
-        model = self.nc_meta_data["analysis"]["model"]
+        model = self.nc_meta_data["derived"]["model"]
         if model.startswith("cosmo"):
             return {
                 "lat": "rlat",
@@ -540,7 +540,7 @@ class FileReader:
         dimensions = setup.core.dimensions
         input_variable = setup.core.input_variable
         integrate = setup.core.integrate
-        var_name = nc_var_name(setup, self.nc_meta_data["analysis"]["model"])
+        var_name = nc_var_name(setup, self.nc_meta_data["derived"]["model"])
         # SR_TMP >
 
         # Indices of field along NetCDF dimensions
@@ -600,7 +600,7 @@ class FileReader:
         fld = nc_var[indices]
 
         # Fix known issues with NetCDF input data
-        model = self.nc_meta_data["analysis"]["model"]
+        model = self.nc_meta_data["derived"]["model"]
         var_ncattrs = {attr: nc_var.getncattr(attr) for attr in nc_var.ncattrs()}
         if self.fixer:
             self.fixer.fix_nc_var_fld(fld, model, var_ncattrs)

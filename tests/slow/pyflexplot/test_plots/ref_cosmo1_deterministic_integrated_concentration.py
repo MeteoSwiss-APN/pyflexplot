@@ -280,7 +280,7 @@ field_summary = {
                 },
             },
         },
-        "analysis": {"model": "cosmo1", "rotated_pole": True, "species_ids": [1]},
+        "derived": {"model": "cosmo1", "rotated_pole": True, "species_ids": [1]},
     },
     "fld": {
         "dtype": "float32",
@@ -2431,7 +2431,7 @@ plot_summary = {
                     },
                 },
             },
-            "analysis": {"model": "cosmo1", "rotated_pole": True, "species_ids": [1]},
+            "derived": {"model": "cosmo1", "rotated_pole": True, "species_ids": [1]},
         },
         "fld": {
             "dtype": "float32",

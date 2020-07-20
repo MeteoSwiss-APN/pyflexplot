@@ -34,15 +34,15 @@ class Test_COSMO1(_TestBase):
 
     def test_model(self, datadir):
         self.set_up(datadir)
-        assert self.meta_data["analysis"]["model"] == "cosmo1"
+        assert self.meta_data["derived"]["model"] == "cosmo1"
 
     def test_rotated_pole(self, datadir):
         self.set_up(datadir)
-        assert self.meta_data["analysis"]["rotated_pole"] is True
+        assert self.meta_data["derived"]["rotated_pole"] is True
 
     def test_species_ids(self, datadir):
         self.set_up(datadir)
-        assert self.meta_data["analysis"]["species_ids"] == (1, 2)
+        assert self.meta_data["derived"]["species_ids"] == (1, 2)
 
     def test_dimensions(self, datadir):
         self.set_up(datadir)
@@ -64,15 +64,15 @@ class Test_COSMO2(_TestBase):
 
     def test_model(self, datadir):
         self.set_up(datadir)
-        assert self.meta_data["analysis"]["model"] == "cosmo2"
+        assert self.meta_data["derived"]["model"] == "cosmo2"
 
     def test_rotated_pole(self, datadir):
         self.set_up(datadir)
-        assert self.meta_data["analysis"]["rotated_pole"] is True
+        assert self.meta_data["derived"]["rotated_pole"] is True
 
     def test_species_ids(self, datadir):
         self.set_up(datadir)
-        assert self.meta_data["analysis"]["species_ids"] == (1, 2)
+        assert self.meta_data["derived"]["species_ids"] == (1, 2)
 
     def test_dimensions(self, datadir):
         self.set_up(datadir)
@@ -94,15 +94,15 @@ class Test_IFS(_TestBase):
 
     def test_model(self, datadir):
         self.set_up(datadir)
-        assert self.meta_data["analysis"]["model"] == "ifs"
+        assert self.meta_data["derived"]["model"] == "ifs"
 
     def test_rotated_pole(self, datadir):
         self.set_up(datadir)
-        assert self.meta_data["analysis"]["rotated_pole"] is False
+        assert self.meta_data["derived"]["rotated_pole"] is False
 
     def test_species_ids(self, datadir):
         self.set_up(datadir)
-        assert self.meta_data["analysis"]["species_ids"] == (1,)
+        assert self.meta_data["derived"]["species_ids"] == (1,)
 
     def test_dimensions(self, datadir):
         self.set_up(datadir)
