@@ -28,28 +28,30 @@ plot_variable = "affected_area_mono"
 
 [_base._concentration."modelbrowser+"]
 outfile = "concentration_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
-
 [_base._concentration._integr."modelbrowser+"]
 outfile = "integrated_concentration_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
-
 [_base._tot_deposition."modelbrowser+"]
 outfile = "deposition_tot_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
-
 [_base._tot_deposition._affected_area."modelbrowser+"]
-# - outfile = "affected_area_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_idx:02d}.png"
  outfile = "affected_area_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
 
 [_base._concentration."naz+"]
 outfile = "Konzentration_Konz_{model}_{domain}_{release_site}.pdf"
-
 [_base._concentration._integr."naz+"]
 outfile = "Integrierte_Konz_{model}_domain_{release_site}.pdf"
-
 [_base._tot_deposition."naz+"]
 outfile = "Deposition_Konz_{model}_{domain}_{release_site}.pdf"
-
 [_base._tot_deposition._affected_area."naz+"]
 outfile = "Beaufschl_Gebiet_{model}_{domain}_{release_site}.pdf"
 
-# ["**".ch]
-# domain = "ch"
+[_base._concentration."ladm+"]
+outfile = "FLEXPART-{model}_Dispersion_Konzentration_{domain}.pdf"
+[_base._concentration._integr."ladm+"]
+outfile = "FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet_{domain}.pdf"
+[_base._tot_deposition."ladm+"]
+outfile = "FLEXPART-{model}_Dispersion_Deposition_{domain}.pdf"
+[_base._tot_deposition._affected_area."ladm+"]
+outfile = "FLEXPART-{model}_Dispersion_beaufschl_Gebiet_{domain}.pdf"
+
+["**".ch]
+domain = "ch"
