@@ -301,7 +301,7 @@ class Setup(BaseModel):
 
         domain: Plot domain. Defaults to 'data', which derives the domain size
             from the input data. Use the format key '{domain}' to embed it in
-            ``outfile``. Choices": "full", "ch".
+            ``outfile``. Choices": "full", "auto", "ch".
 
         ens_member_id: Ensemble member ids. Use the format key '{ens_member}'
             to embed it in ``outfile``. Omit for deterministic simulations.

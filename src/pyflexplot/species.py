@@ -97,6 +97,7 @@ defaults = {
 
 
 SPECIES: List[Species] = [
+    Species.create(id_=-99, name="N/A", **defaults),  # SR_TMP
     Species.create(id_=1, name="TRACER", **defaults),
     Species.create(id_=2, name="O3", **defaults),
     Species.create(id_=3, name="NO", **defaults),

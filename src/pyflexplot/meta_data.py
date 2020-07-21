@@ -672,7 +672,10 @@ class MetaDataCollector:
 
     def collect_species_mdata(self, mdata_raw: Dict[str, Any]) -> None:
         """Collect species meta data."""
-        name = self.ncattrs_field["long_name"].split("_")[0]
+        try:  # SR_TMP
+            name = self.ncattrs_field["long_name"].split("_")[0]
+        except KeyError:
+            name = "N/A"
         species = get_species(name=name)
         mdata_raw.update(
             {
