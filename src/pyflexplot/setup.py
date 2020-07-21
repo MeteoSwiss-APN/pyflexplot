@@ -1074,8 +1074,8 @@ class FilePathFormatter:
         log(dbg=f"deriving unique path from '{path}'")
 
         # Extract suffix
-        if path.endswith(".png"):
-            suffix = ".png"
+        if path.endswith(".png") or path.endswith(".pdf"):
+            suffix = f".{path.split('.')[-1]}"
         else:
             raise NotImplementedError(f"unknown suffix: {path}")
         path_base = path[: -len(suffix)]

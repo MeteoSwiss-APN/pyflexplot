@@ -840,7 +840,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "      $\\tt \\geq$ 10.0 ",
+                    "s": "      $\\tt \\geq$  10.0",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -870,7 +870,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "  1.0 $\\tt -$ 10.0 ",
+                    "s": "1.0   $\\tt -$  10.0",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -900,7 +900,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "  0.1 $\\tt -$ 1.0  ",
+                    "s": "0.1   $\\tt -$   1.0",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -930,7 +930,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": " 0.01 $\\tt -$ 0.1  ",
+                    "s": "0.01  $\\tt -$   0.1",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -960,7 +960,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "0.001 $\\tt -$ 0.01 ",
+                    "s": "0.001 $\\tt -$  0.01",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

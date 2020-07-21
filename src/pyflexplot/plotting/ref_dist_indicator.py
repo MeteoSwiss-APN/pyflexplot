@@ -60,18 +60,19 @@ class ReferenceDistanceIndicator:
             zorder: Vertical order in plot.
 
         """
-        self.conf = conf
+        self.conf: RefDistIndConf = conf
 
         # Position in the plot (one of the corners)
         pos_choices = ["tl", "bl", "br", "tr"]
         if conf.pos not in pos_choices:
             s_choices = ", ".join([f"'{p}'" for p in pos_choices])
             raise ValueError(f"invalid position '{conf.pos}' (choices: {s_choices}")
-        self.pos_y, self.pos_x = conf.pos
+        self.pos_y: str = conf.pos[0]
+        self.pos_x: str = conf.pos[1]
 
-        self.h_box = 0.06
-        self.xpad_box = 0.2 * self.h_box
-        self.ypad_box = 0.2 * self.h_box
+        self.h_box: float = 0.06
+        self.xpad_box: float = 0.2 * self.h_box
+        self.ypad_box: float = 0.2 * self.h_box
 
         self._calc_box_y_params()
         self._calc_box_x_params(axes_to_geo)

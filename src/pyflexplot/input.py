@@ -290,7 +290,8 @@ class FileReader:
     # SR_TMP <<< TODO Derive better key from setups! Make hashable?
     @staticmethod
     def _cache_key(file_path: str, setups: SetupCollection) -> Hashable:
-        return (file_path, repr(setups.collect("dimensions")))
+        params = ["input_variable", "integrate", "dimensions"]
+        return tuple([file_path] + [repr(setups.collect(param)) for param in params])
 
     def _cache_get(
         self,

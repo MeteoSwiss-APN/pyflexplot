@@ -9,13 +9,18 @@ import os
 import re
 import sys
 import traceback
+from pathlib import Path
 from typing import Any
 from typing import Dict
+from typing import List
+from typing import Optional
 from typing import Sequence
 from typing import Tuple
 
 # Third-party
 import click
+from PyPDF2 import PdfFileReader
+from PyPDF2 import PdfFileWriter
 
 # Local
 from .. import __version__
@@ -154,6 +159,10 @@ def click_prep_setup_params(ctx, param, value):
     metavar="N",
 )
 @click.option(
+    "--merge-pdfs/--no-merge-pdfs",
+    help="Merge PDF plots with the same output file name.",
+)
+@click.option(
     "--only",
     help=(
         "Only create the first N plots based on the given setup. Useful during "
@@ -274,7 +283,6 @@ def click_prep_setup_params(ctx, param, value):
     is_eager=True,
     expose_value=False,
 )
-# ---
 @click.pass_context
 def cli(ctx, **kwargs):
     main_loc = wrap_pdb(main) if ctx.obj["raise"] else main
@@ -286,14 +294,16 @@ def cli(ctx, **kwargs):
 # pylint: disable=R0915  # too-many-statements
 def main(
     ctx,
-    setup_file_paths,
-    input_setup_params,
-    suffixes,
+    *,
     dry_run,
-    only,
     each_only,
-    open_first_cmd,
+    input_setup_params,
+    merge_pdfs,
+    only,
     open_all_cmd,
+    open_first_cmd,
+    setup_file_paths,
+    suffixes,
 ):
     """Create dispersion plot as specified in CONFIG_FILE(S)."""
 
@@ -374,7 +384,12 @@ def main(
                 log(vbs=f"skip remaining {remaining_files} input files")
             break
 
+    if merge_pdfs:
+        log(vbs="merge PDF plots")
+        out_file_paths = merge_pdf_plots(out_file_paths, dry_run)
+
     if open_all_cmd:
+        log(vbs=f"open {len(out_file_paths)} plots:")
         open_plots(open_all_cmd, out_file_paths, dry_run)
 
     return 0
@@ -408,6 +423,85 @@ def format_in_file_path(in_file_path, setups_lst):
     return f"{match.group('start')}{{{s_ids}}}{match.group('end')}"
 
 
+def merge_pdf_plots(paths: Sequence[str], dry_run: bool = False) -> List[str]:
+    paths = list(paths)
+
+    # Collect PDFs
+    pdf_paths: List[str] = []
+    for path in paths:
+        if path.endswith(".pdf"):
+            pdf_paths.append(path)
+
+    # Group PDFs by shared base name
+    grouped_pdf_paths: List[List[str]] = []
+    rx_numbered = re.compile(r"\.[0-9]+.pdf$")
+    for path in list(pdf_paths):
+        if path not in pdf_paths:
+            # Already handled
+            continue
+        if rx_numbered.search(path):
+            # Numbered, so not the first
+            continue
+        path_base = re.sub(r"\.pdf$", "", path)
+        pdf_paths.remove(path)
+        grouped_pdf_paths.append([path])
+        rx_related = re.compile(path_base + r"\.[0-9]+\.pdf")
+        for other_path in list(pdf_paths):
+            if rx_related.search(other_path):
+                pdf_paths.remove(other_path)
+                grouped_pdf_paths[-1].append(other_path)
+    grouped_pdf_paths = [group for group in grouped_pdf_paths if len(group) > 1]
+
+    def merge_paths(paths: List[str]) -> str:
+        unnumbered = False
+        idcs: List[int] = []
+        rx = re.compile(r"(?P<base>^.*?)(\.(?P<idx>[0-9]+))?.pdf$")
+        base: Optional[str] = None
+        for path in paths:
+            match = rx.match(path)
+            if not match:
+                raise Exception(f"invalid path: {path}")
+            base_i = match.group("base")
+            if base is None:
+                base = base_i
+            elif base_i != base:
+                raise Exception(f"different path bases: {base_i} != {base}")
+            try:
+                idx = int(match.group("idx"))
+            except TypeError:
+                unnumbered = True
+            else:
+                idcs.append(idx)
+        if len(idcs) == 1:
+            s_idcs = str(next(iter(idcs)))
+        else:
+            s_idcs = (
+                f"{{{format_range(sorted(idcs), join_range='..', join_others=',')}}}"
+            )
+        if unnumbered:
+            s_idcs = f"{{,.{s_idcs}}}"
+        return f"{base}{s_idcs}.pdf"
+
+    # Merge PDFs with shared base name
+    for group in grouped_pdf_paths:
+        merged = group[0]
+        log(inf=f"{merge_paths(group)} -> {merged}")
+        if not dry_run:
+            writer = PdfFileWriter()
+            for path in group:
+                writer.addPage(PdfFileReader(path).getPage(0))
+            with open(merged, "wb") as fo:
+                writer.write(fo)
+        for path in group:
+            if path != merged:
+                log(dbg=f"remove {path}")
+                paths.remove(path)
+                if not dry_run:
+                    Path(path).unlink()
+
+    return paths
+
+
 def open_plots(cmd, file_paths, dry_run):
     """Open a plot file using a shell command."""
 
@@ -422,10 +516,9 @@ def open_plots(cmd, file_paths, dry_run):
         cmd += " &"
 
     # Run the command
-    cmd = cmd.format(file=" ".join(file_paths))
-    click.echo(cmd)
+    click.echo(cmd.format(file=" \\\n  ".join(file_paths)))
     if not dry_run:
-        os.system(cmd)
+        os.system(cmd.format(file=" ".join(file_paths)))
 
 
 if __name__ == "__main__":

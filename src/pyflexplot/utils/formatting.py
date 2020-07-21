@@ -373,7 +373,14 @@ class LevelRangeFormatter:
         s_r = cs.right.s
 
         dc = "^"
-        dl, dr = dict(left="<<", right=">>", center="><", edges="<>")[self.align]
+        if self.align == "left":
+            dl, dr = "<", "<"
+        elif self.align == "right":
+            dl, dr = ">", ">"
+        elif self.align == "center":
+            dl, dr = "<", ">"
+        elif self.align == "edges":
+            dl, dr = "<", "<"
 
         if self.rstrip_zeros:
 
