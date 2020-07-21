@@ -122,10 +122,18 @@ def create_map_conf(field: Field) -> MapAxesConf:
             "zoom_fact": 3.23,
             "rel_offset": (0.037, 0.1065),
         }
-    elif model == "ifs":
+    elif model == "ifs":  # SR_TMP
         # SR_TMP < TODO Generalize IFS domains
         conf = {**conf_base, **conf_model_ifs, **conf_domain_japan}
         # SR_TMP >
+    elif model == "ifs-hres":  # SR_TMP
+        conf = {
+            **conf_base,
+            **conf_model_ifs,
+            **conf_scale_continent,
+            "zoom_fact": 1.5,
+            "rel_offset": (-0.15, -0.1),
+        }
     else:
         raise Exception(f"unknown domain '{domain}' for model '{model}'")
 
@@ -956,10 +964,14 @@ def format_model_info(setup: Setup, words: TranslatedWords, mdata: MetaData) -> 
         model_name = "COSMO-2E"
     elif setup.model == "ifs":
         model_name = "IFS"
+    elif setup.model == "ifs-hres":
+        model_name = "IFS-HRES"
+    else:
+        raise NotImplementedError(f"model name for model '{setup.model}'")
 
     model_info = None
     if setup.get_simulation_type() == "deterministic":
-        if setup.model in ["cosmo1", "cosmo2", "ifs"]:
+        if setup.model in ["cosmo1", "cosmo2", "ifs", "ifs-hres"]:
             model_info = model_name
         elif setup.model in ["cosmo1e", "cosmo2e"]:
             model_info = f"{model_name} {words['control_run']}"

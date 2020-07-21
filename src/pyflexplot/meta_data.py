@@ -895,7 +895,7 @@ class ReleaseMetaData(BaseModel):
             mass=mass,
             mass_unit=mass_unit,
             name=name,
-            rate=mass / duration.total_seconds(),
+            rate=mass / duration.total_seconds() if duration else np.nan,
             rate_unit=f"{mass_unit} {duration_unit}-1",
             start=nc_meta_data["simulation_start"] + start_rel,
             start_rel=start_rel,
@@ -913,7 +913,7 @@ def nc_var_name(setup: Union[Setup, Setup], model: str) -> Union[str, List[str]]
     if input_variable == "concentration":
         if model in ["cosmo2", "cosmo1"]:
             return f"spec{species_id:03d}"
-        elif model == "ifs":
+        elif model in ["ifs", "ifs-hres"]:
             return f"spec{species_id:03d}_mr"
         else:
             raise ValueError("unknown model", model)

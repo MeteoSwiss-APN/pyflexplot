@@ -510,7 +510,7 @@ class FileReader:
     def _dim_names(self) -> Dict[str, str]:
         """Model-specific dimension names."""
         model = self.nc_meta_data["derived"]["model"]
-        if model.startswith("cosmo"):
+        if model in ["cosmo2", "cosmo1", "cosmo2e", "cosmo1e"]:
             return {
                 "lat": "rlat",
                 "lon": "rlon",
@@ -520,7 +520,7 @@ class FileReader:
                 "noutrel": "noutrel",
                 "numpoint": "numpoint",
             }
-        elif model == "ifs":
+        elif model in ["ifs", "ifs-hres"]:
             return {
                 "lat": "latitude",
                 "lon": "longitude",

@@ -41,7 +41,7 @@ class FlexPartDataFixer:
     ) -> None:
         if model in ["cosmo2", "cosmo1"]:
             self._fix_nc_var_cosmo(fld, var_ncattrs)
-        elif model == "ifs":
+        elif model in ["ifs", "ifs-hres"]:
             pass
         else:
             raise NotImplementedError("model", model)
@@ -51,7 +51,7 @@ class FlexPartDataFixer:
     ) -> None:
         if model in ["cosmo2", "cosmo1"]:
             self._fix_meta_data_cosmo(mdata)
-        elif model == "ifs":
+        elif model in ["ifs", "ifs-hres"]:
             pass
         else:
             raise NotImplementedError("model", model)
