@@ -6,6 +6,7 @@ Data input.
 import re
 import warnings
 from copy import deepcopy
+from dataclasses import dataclass
 from typing import Any
 from typing import cast
 from typing import Collection
@@ -102,8 +103,8 @@ class FieldInputOrganizer:
         *,
         add_ts0: bool = False,
         dry_run: bool = False,
-        cls_fixer: Optional[Type["FlexPartDataFixer"]] = None,
         cache_on: bool = False,
+        cls_fixer: Optional[Type["FlexPartDataFixer"]] = None,
     ):
         """Create an instance of ``FileReader``.
 
@@ -130,23 +131,7 @@ class FieldInputOrganizer:
         self.add_ts0 = add_ts0
         self.dry_run = dry_run
         self.cache_on = cache_on
-
-        # Declare some attributes
-        self.ens_member_ids: Optional[List[int]]
-        self.nc_meta_data: Dict[str, Any]
-        self.in_file_path_lst: Sequence[str]
-        self.lat: np.ndarray
-        self.lon: np.ndarray
-        self.time: np.ndarray
-        self.setups_lst_time: List[SetupCollection]
-        self.fld_time_mem: np.ndarray
-        self.mdata_time: np.ndarray
-
-        self._cache = FileReaderCache(self)
-
-        self.fixer: Optional["FlexPartDataFixer"] = None
-        if cls_fixer is not None:
-            self.fixer = cls_fixer(self)
+        self.cls_fixer = cls_fixer
 
     def run(self, setups: SetupCollection) -> List[List[Field]]:
         def prep_in_file_path_lst(
@@ -216,31 +201,83 @@ class FieldInputOrganizer:
                 setups_field_lst.extend(setups_plots)
             return setups_field_lst
 
-        self.ens_member_ids = setups.collect_equal("ens_member_id") or None
-        self.in_file_path_lst = prep_in_file_path_lst(
-            self.in_file_path_fmt, self.ens_member_ids
-        )
+        ens_member_ids = setups.collect_equal("ens_member_id") or None
+        in_file_path_lst = prep_in_file_path_lst(self.in_file_path_fmt, ens_member_ids)
 
-        with nc4.Dataset(next(iter(self.in_file_path_lst))) as fi:
-            self.nc_meta_data = self._read_nc_meta_data(fi)
-        setups = setups.complete_dimensions(self.nc_meta_data)
+        first_in_file_path = next(iter(in_file_path_lst))
+        with nc4.Dataset(first_in_file_path) as fi:
+            # SR_TMP < Find better solution! Maybe class NcMetaDataReader?
+            nc_meta_data = InputFileEnsemble.read_nc_meta_data(
+                cast(InputFileEnsemble, self), fi
+            )
+            # SR_TMP >
+        setups = setups.complete_dimensions(nc_meta_data)
         setups_for_plots_over_time = group_setups(setups)
 
+        files = InputFileEnsemble(
+            in_file_path_lst,
+            ens_member_ids or None,
+            add_ts0=self.add_ts0,
+            dry_run=self.dry_run,
+            cache_on=self.cache_on,
+            cls_fixer=self.cls_fixer,
+        )
         fields_for_plots: List[List[Field]] = []
         for setups_for_same_plot_over_time in setups_for_plots_over_time:
             fields_for_plots.extend(
-                self._read_fields_for_same_plot_over_time(
-                    setups_for_same_plot_over_time
-                )
+                files.read_fields_over_time(setups_for_same_plot_over_time)
+                #     self._read_fields_for_same_plot_over_time(
+                #         setups_for_same_plot_over_time
+                #     )
             )
 
         return fields_for_plots
 
+
+@dataclass
+class InputFileEnsemble:
+    def __init__(
+        self,
+        paths: Sequence[str],
+        ens_member_ids: Optional[Sequence[int]] = None,
+        *,
+        add_ts0: bool = False,
+        dry_run: bool = False,
+        cache_on: bool = False,
+        cls_fixer: Optional[Type["FlexPartDataFixer"]] = None,
+    ) -> None:
+        self.paths = paths
+        self.ens_member_ids = ens_member_ids
+        self.add_ts0 = add_ts0
+        self.dry_run = dry_run
+        self.cache_on = cache_on
+
+        if len(ens_member_ids or [0]) != len(paths):
+            raise ValueError(
+                "must pass same number of ens_member_ids and paths"
+                ", or omit ens_member_ids for single path",
+                paths,
+                ens_member_ids,
+            )
+
+        self.cache = FileReaderCache(self)
+
+        self.fixer: Optional["FlexPartDataFixer"] = (
+            cls_fixer(self) if cls_fixer else None
+        )
+
+        # Declare some attributes
+        self.fld_time_mem: np.ndarray
+        self.lat: np.ndarray
+        self.lon: np.ndarray
+        self.mdata_time: np.ndarray
+        self.nc_meta_data: Dict[str, Dict[str, Any]]
+        self.setups_lst_time: List[SetupCollection]
+        self.time: np.ndarray
+
     # SR_TMP <<<
     # pylint: disable=R0914  # too-many-locals
-    def _read_fields_for_same_plot_over_time(
-        self, setups: SetupCollection
-    ) -> List[List[Field]]:
+    def read_fields_over_time(self, setups: SetupCollection) -> List[List[Field]]:
         """Read fields for the same plot at multiple time steps.
 
         Return a list of lists of fields, whereby:
@@ -252,6 +289,11 @@ class FieldInputOrganizer:
 
         """
 
+        first_path = next(iter(self.paths))
+        with nc4.Dataset(first_path) as fi:
+            # SR_TMP < Find better solution! Maybe class NcMetaDataReader?
+            self.nc_meta_data = self.read_nc_meta_data(fi)
+
         # Create individual setups at each requested time step
         self.setups_lst_time = setups.decompress_partially(["dimensions.time"])
         n_requested_times = len(self.setups_lst_time)
@@ -259,7 +301,7 @@ class FieldInputOrganizer:
         self.fld_time_mem = np.full(self._get_shape_mem_time(), np.nan, np.float32)
         self.mdata_time = np.full(n_requested_times, None, object)
         for idx_mem, (ens_member_id, file_path) in enumerate(
-            zip((self.ens_member_ids or [None]), self.in_file_path_lst)  # type: ignore
+            zip((self.ens_member_ids or [None]), self.paths)  # type: ignore
         ):
             setups_mem = setups.derive({"ens_member_id": ens_member_id})
             timeless_setups_mem = setups_mem.derive({"dimensions": {"time": None}})
@@ -293,15 +335,15 @@ class FieldInputOrganizer:
     def _read_data(
         self, file_path: str, idx_mem: int, timeless_setups_mem: SetupCollection,
     ) -> None:
-        n_mem = len(self.in_file_path_lst)
+        n_mem = len(self.paths)
 
         # Try to fetch the necessary data from cache
         if not self.cache_on:
             cache_key = cast(Hashable, None)  # Prevent "potentially unbound"
         else:
-            cache_key = self._cache.create_key(file_path, timeless_setups_mem)
+            cache_key = self.cache.create_key(file_path, timeless_setups_mem)
             try:
-                self._cache.get(cache_key, idx_mem)
+                self.cache.get(cache_key, idx_mem)
             except MissingCacheEntryError:
                 pass
             else:
@@ -313,9 +355,9 @@ class FieldInputOrganizer:
         with nc4.Dataset(file_path, "r") as fi:
             self._read_grid(fi)
 
-            if idx_mem > 1:
+            if idx_mem > 0:
                 # Ensure that meta data is the same for all members
-                self.nc_meta_data = self._read_nc_meta_data(fi, check=True)
+                self.nc_meta_data = self.read_nc_meta_data(fi, check=True)
 
             if not self.dry_run:
 
@@ -331,11 +373,9 @@ class FieldInputOrganizer:
                     raise Exception("meta data differ across members")
 
                 if self.cache_on:
-                    self._cache.add(cache_key, fld_time_i, mdata_time_i)
+                    self.cache.add(cache_key, fld_time_i, mdata_time_i)
 
-    def _read_nc_meta_data(
-        self, fi: nc4.Dataset, check: bool = False
-    ) -> Dict[str, Any]:
+    def read_nc_meta_data(self, fi: nc4.Dataset, check: bool = False) -> Dict[str, Any]:
         nc_meta_data = read_meta_data(fi)
         if self.add_ts0:
             old_size = nc_meta_data["dimensions"]["time"]["size"]
@@ -633,8 +673,8 @@ class FieldInputOrganizer:
 
 
 class FileReaderCache:
-    def __init__(self, reader: FieldInputOrganizer) -> None:
-        self.reader: FieldInputOrganizer = reader
+    def __init__(self, files: InputFileEnsemble) -> None:
+        self.files = files
         self._cache: Dict[Hashable, Any] = {}
 
     # SR_TMP <<< TODO Derive better key from setups! Make hashable?
@@ -647,8 +687,8 @@ class FileReaderCache:
         self, cache_key: Hashable, fld_time_i: np.ndarray, mdata_time_i: np.ndarray
     ) -> None:
         self._cache[cache_key] = {
-            "grid": deepcopy((self.reader.lat, self.reader.lon, self.reader.time)),
-            "nc_meta_data": deepcopy(self.reader.nc_meta_data),
+            "grid": deepcopy((self.files.lat, self.files.lon, self.files.time)),
+            "nc_meta_data": deepcopy(self.files.nc_meta_data),
             "fld_time_i": deepcopy(fld_time_i),
             "mdata_time_i": deepcopy(mdata_time_i),
         }
@@ -659,7 +699,7 @@ class FileReaderCache:
         except KeyError:
             raise MissingCacheEntryError(key)
         entry = deepcopy(entry)
-        self.reader.lat, self.reader.lon, self.reader.time = entry["grid"]
-        self.reader.nc_meta_data = entry["nc_meta_data"]
-        self.reader.fld_time_mem[idx_mem][:] = entry["fld_time_i"]
-        self.reader.mdata_time[:] = entry["mdata_time_i"]
+        self.files.lat, self.files.lon, self.files.time = entry["grid"]
+        self.files.nc_meta_data = entry["nc_meta_data"]
+        self.files.fld_time_mem[idx_mem][:] = entry["fld_time_i"]
+        self.files.mdata_time[:] = entry["mdata_time_i"]

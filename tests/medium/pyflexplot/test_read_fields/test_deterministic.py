@@ -528,4 +528,3 @@ def test_single_add_ts0(datadir, conf):
     assert all(len(field_lst) == 1 for field_lst in field_raw_lst_lst)
     assert (field_ts0_lst_lst[0][0].fld == 0.0).all()
     assert (field_ts0_lst_lst[1][0].fld == field_raw_lst_lst[0][0].fld).all()
-    assert reader_ts0.time.size == reader_raw.time.size + 1
