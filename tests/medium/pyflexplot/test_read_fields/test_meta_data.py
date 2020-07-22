@@ -13,7 +13,7 @@ import netCDF4 as nc4
 from pyflexplot.nc_meta_data import read_meta_data
 
 # Local  isort:skip
-from shared import datadir_reduced as datadir  # noqa:F401 isort:skip
+from .shared import datadir_reduced as datadir  # noqa:F401 isort:skip
 
 
 class _TestBase:

@@ -13,11 +13,11 @@ import numpy as np
 import pytest  # type: ignore
 
 # First-party
-from pyflexplot.input import FileReader
+from pyflexplot.input import FieldInputOrganizer
 from pyflexplot.setup import SetupCollection
 
 # Local  isort:skip
-from shared import datadir_artificial as datadir  # noqa:F401 isort:skip
+from .shared import datadir_artificial as datadir  # noqa:F401 isort:skip
 
 
 @dataclass
@@ -44,7 +44,7 @@ class Conf:
 def test_one_setup_one_field(datadir, conf):  # noqa:F811
     datafile_fmt = f"{datadir}/flexpart_cosmo-2e_const_{{ens_member:03d}}.nc"
 
-    reader = FileReader(datafile_fmt)
+    reader = FieldInputOrganizer(datafile_fmt)
 
     setup_dct = {
         "infile": "foo.nc",

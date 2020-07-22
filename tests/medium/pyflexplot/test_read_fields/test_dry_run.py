@@ -23,7 +23,7 @@ from srutils.dict import merge_dicts
 from srutils.testing import check_summary_dict_element_is_subelement
 
 # Local  isort:skip
-from shared import datadir_reduced as datadir  # noqa:F401 isort:skip
+from .shared import datadir_reduced as datadir  # noqa:F401 isort:skip
 
 
 datafilename1 = "flexpart_cosmo-1_2019052800.nc"

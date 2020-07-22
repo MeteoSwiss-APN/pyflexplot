@@ -7,6 +7,8 @@ import re
 import warnings
 from copy import deepcopy
 from typing import Any
+from typing import cast
+from typing import Collection
 from typing import Dict
 from typing import Hashable
 from typing import List
@@ -16,7 +18,7 @@ from typing import Tuple
 from typing import Type
 
 # Third-party
-import netCDF4 as nc4
+import netCDF4 as nc4  # types: ignore  # pylance
 import numpy as np
 
 # First-party
@@ -68,7 +70,7 @@ def read_fields(
 
     """
     log(dbg=f"reading fields from {in_file_path}")
-    reader = FileReader(
+    reader = FieldInputOrganizer(
         in_file_path,
         add_ts0=add_ts0,
         dry_run=dry_run,
@@ -83,8 +85,8 @@ def read_fields(
 
 
 # pylint: disable=R0902  # too-many-instance-attributes
-class FileReader:
-    """Reader of NetCDF files containing FLEXPART data.
+class FieldInputOrganizer:
+    """Organize input of fields from FLEXPART NetCDF files.
 
     It represents a single input file for deterministic FLEXPART runs, or an
     ensemble of input files for ensemble FLEXPART runs (one file per ensemble
@@ -132,145 +134,146 @@ class FileReader:
         # Declare some attributes
         self.ens_member_ids: Optional[List[int]]
         self.nc_meta_data: Dict[str, Any]
-        self.file_path_lst: Sequence[str]
+        self.in_file_path_lst: Sequence[str]
         self.lat: np.ndarray
         self.lon: np.ndarray
         self.time: np.ndarray
+        self.setups_lst_time: List[SetupCollection]
+        self.fld_time_mem: np.ndarray
+        self.mdata_time: np.ndarray
 
-        # SR_TMP <
-        self._n_members: int = -1
-        # SR_TMP >
-
-        self._cache: Dict[Hashable, Any] = {}
+        self._cache = FileReaderCache(self)
 
         self.fixer: Optional["FlexPartDataFixer"] = None
         if cls_fixer is not None:
             self.fixer = cls_fixer(self)
 
-    # pylint: disable=R0914  # too-many-locals
-    # pylint: disable=R1702  # too-many-nested-blocks
     def run(self, setups: SetupCollection) -> List[List[Field]]:
+        def prep_in_file_path_lst(
+            path_fmt: str, ens_member_ids: Optional[Collection[int]]
+        ) -> List[str]:
+            path_lst: List[str]
+            if re.search(r"{ens_member(:[0-9]+d)?}", path_fmt):
+                if not ens_member_ids:
+                    raise ValueError(
+                        "input file path contains ensemble member format key, but no "
+                        "ensemble member ids have been passed",
+                        path_fmt,
+                        ens_member_ids,
+                    )
+                assert ens_member_ids is not None  # mypy
+                path_lst = [path_fmt.format(ens_member=id_) for id_ in ens_member_ids]
+            elif not ens_member_ids:
+                path_lst = [path_fmt]
+            else:
+                raise ValueError(
+                    "input file path missing format key", path_fmt, ens_member_ids,
+                )
+            return path_lst
+
+        def group_setups(setups: SetupCollection) -> List[SetupCollection]:
+            """Group the setups by plot type and time step.
+
+            Return a list of setup collections, each of which defines one plot type
+            (which may be based on on multiple fields if it has multiple panels) at
+            different time steps.
+
+            """
+            setups_field_lst: List[SetupCollection] = []
+            for (
+                (
+                    input_variable,
+                    combine_levels,
+                    combine_deposition_types,
+                    combine_species,
+                ),
+                sub_setups,
+            ) in setups.group(
+                [
+                    "input_variable",
+                    "combine_levels",
+                    "combine_deposition_types",
+                    "combine_species",
+                ]
+            ).items():
+                skip = ["dimensions.time", "ens_member_id"]
+                if input_variable == "concentration":
+                    if combine_levels:
+                        skip.append("dimensions.level")
+                elif input_variable == "deposition":
+                    if combine_deposition_types:
+                        skip.append("dimensions.deposition_type")
+                if combine_species:
+                    skip.append("dimensions.species_id")
+                setups_plots = sub_setups.decompress_partially(None, skip=skip)
+                # SR_TMP < SR_TODO Adapt for multipanel plots
+                setups_plots = [
+                    SetupCollection([setup])
+                    for setups in setups_plots
+                    for setup in setups
+                ]
+                # SR_TMP >
+                setups_field_lst.extend(setups_plots)
+            return setups_field_lst
 
         self.ens_member_ids = setups.collect_equal("ens_member_id") or None
-        self._n_members = 1 if not self.ens_member_ids else len(self.ens_member_ids)
-        self._prepare_in_file_path_lst()
+        self.in_file_path_lst = prep_in_file_path_lst(
+            self.in_file_path_fmt, self.ens_member_ids
+        )
 
-        with nc4.Dataset(next(iter(self.file_path_lst))) as fi:
+        with nc4.Dataset(next(iter(self.in_file_path_lst))) as fi:
             self.nc_meta_data = self._read_nc_meta_data(fi)
-
         setups = setups.complete_dimensions(self.nc_meta_data)
+        setups_for_plots_over_time = group_setups(setups)
 
-        setups_field_lst_lst: List[List[SetupCollection]] = []
-        for (
-            (input_variable, combine_levels, combine_deposition_types, combine_species),
-            setups_spc,
-        ) in setups.group(
-            [
-                "input_variable",
-                "combine_levels",
-                "combine_deposition_types",
-                "combine_species",
-            ]
-        ).items():
-            setups_loc = setups_spc  # SR_TMP
-            skip = ["dimensions.time", "ens_member_id"]
-            if input_variable == "concentration":
-                if combine_levels:
-                    skip.append("dimensions.level")
-            elif input_variable == "deposition":
-                if combine_deposition_types:
-                    skip.append("dimensions.deposition_type")
-            if combine_species:
-                skip.append("dimensions.species_id")
-            setups_field_lst = setups_loc.decompress_partially(None, skip=skip)
-            # SR_TMP <
-            setups_field_lst = [
-                SetupCollection([setup])
-                for setups in setups_field_lst
-                for setup in setups
-            ]
-            # SR_TMP >
-            setups_field_lst_lst.append(setups_field_lst)
+        fields_for_plots: List[List[Field]] = []
+        for setups_for_same_plot_over_time in setups_for_plots_over_time:
+            fields_for_plots.extend(
+                self._read_fields_for_same_plot_over_time(
+                    setups_for_same_plot_over_time
+                )
+            )
 
-        field_lst_lst: List[List[Field]] = []
-        for setups_field_lst in setups_field_lst_lst:
-            for setups_field in setups_field_lst:
-                # Each list of fields corresponds to one plot
-                # Each field therein corresponds to one panel in the plot
-                field_lst_lst.extend(self._run_core(setups_field))
-
-        return field_lst_lst
+        return fields_for_plots
 
     # SR_TMP <<<
     # pylint: disable=R0914  # too-many-locals
-    def _run_core(self, setups: SetupCollection) -> List[List[Field]]:
-        """Read one or more fields from a file from disc."""
+    def _read_fields_for_same_plot_over_time(
+        self, setups: SetupCollection
+    ) -> List[List[Field]]:
+        """Read fields for the same plot at multiple time steps.
+
+        Return a list of lists of fields, whereby:
+        - each field corresponds to a panel in a plot;
+        - each inner list of fields to a plot -- multipanel in case of multiple
+          fields -- at a specific time step; and
+        - the outer list to multiple plots of the same type at different time
+          steps.
+
+        """
 
         # Create individual setups at each requested time step
-        setups_lst_time = setups.decompress_partially(["dimensions.time"])
-        n_requested_times = len(setups_lst_time)
+        self.setups_lst_time = setups.decompress_partially(["dimensions.time"])
+        n_requested_times = len(self.setups_lst_time)
 
-        shape_mem_time = self._get_shape_mem_time()
-        flds_time_mem: np.ndarray = np.full(shape_mem_time, np.nan, np.float32)
-        mdata_time: np.ndarray = np.full(n_requested_times, None, object)
-        n_mem = len(self.file_path_lst)
+        self.fld_time_mem = np.full(self._get_shape_mem_time(), np.nan, np.float32)
+        self.mdata_time = np.full(n_requested_times, None, object)
         for idx_mem, (ens_member_id, file_path) in enumerate(
-            zip((self.ens_member_ids or [None]), self.file_path_lst)  # type: ignore
+            zip((self.ens_member_ids or [None]), self.in_file_path_lst)  # type: ignore
         ):
             setups_mem = setups.derive({"ens_member_id": ens_member_id})
             timeless_setups_mem = setups_mem.derive({"dimensions": {"time": None}})
-
-            # Try to fetch the necessary data from cache
-            if self.cache_on:
-                cache_key = self._cache_key(file_path, timeless_setups_mem)
-                try:
-                    self._cache_get(cache_key, idx_mem, flds_time_mem, mdata_time)
-                except MissingCacheEntryError:
-                    pass
-                else:
-                    log(dbg=f"get cached ({idx_mem + 1}/{n_mem}): {file_path}")
-                    continue
-
-            # Read the data from disk
-            log(dbg=f"reading file ({idx_mem + 1}/{n_mem}): {file_path}")
-            with nc4.Dataset(file_path, "r") as fi:
-                self._read_grid(fi)
-
-                if idx_mem > 1:
-                    # Ensure that meta data is the same for all members
-                    self.nc_meta_data = self._read_nc_meta_data(fi, check=True)
-
-                if not self.dry_run:
-
-                    # Read fields for all members at all time steps
-                    fld_time_i = self._read_member_fields_over_time(
-                        fi, timeless_setups_mem
-                    )
-                    flds_time_mem[idx_mem][:] = fld_time_i[:]
-
-                    # Read meta data at requested time steps
-                    mdata_time_i = self._collect_meta_data(fi, setups_lst_time)
-                    if idx_mem == 0:
-                        mdata_time[:] = mdata_time_i
-                    elif mdata_time_i != mdata_time.tolist():
-                        raise Exception("meta data differ across members")
-
-                    if self.cache_on:
-                        self._cache_add(cache_key, fld_time_i, mdata_time_i)
+            self._read_data(file_path, idx_mem, timeless_setups_mem)
 
         # Compute single field from all ensemble members
-        fld_time: np.ndarray
-        if self._n_members == 1 or self.dry_run:
-            fld_time = flds_time_mem[0]
-        else:
-            fld_time = self._reduce_ensemble(flds_time_mem, setups)
+        fld_time: np.ndarray = self._reduce_ensemble(setups)
 
         # Compute some statistics across all time steps
         time_stats: Dict[str, np.ndarray] = self._collect_time_stats(fld_time)
 
         # Create Field objects at requested time steps
         field_lst_lst: List[List[Field]] = []
-        for field_setups, mdata in zip(setups_lst_time, mdata_time):
+        for field_setups, mdata in zip(self.setups_lst_time, self.mdata_time):
             time_idx = field_setups.collect_equal("dimensions.time")
             fld: np.ndarray = fld_time[time_idx]
             field = Field(
@@ -287,45 +290,58 @@ class FileReader:
 
         return field_lst_lst
 
-    # SR_TMP <<< TODO Derive better key from setups! Make hashable?
-    @staticmethod
-    def _cache_key(file_path: str, setups: SetupCollection) -> Hashable:
-        params = ["input_variable", "integrate", "dimensions"]
-        return tuple([file_path] + [repr(setups.collect(param)) for param in params])
-
-    def _cache_get(
-        self,
-        cache_key: Hashable,
-        idx_mem: int,
-        flds_time_mem: np.ndarray,
-        mdata_time: np.ndarray,
+    def _read_data(
+        self, file_path: str, idx_mem: int, timeless_setups_mem: SetupCollection,
     ) -> None:
-        try:
-            entry = self._cache[cache_key]
-        except KeyError:
-            raise MissingCacheEntryError(cache_key)
-        entry = deepcopy(entry)
-        self.lat, self.lon, self.time = entry["grid"]
-        self.nc_meta_data = entry["nc_meta_data"]
-        flds_time_mem[idx_mem][:] = entry["fld_time_i"]
-        mdata_time[:] = entry["mdata_time_i"]
+        n_mem = len(self.in_file_path_lst)
 
-    def _cache_add(
-        self, cache_key: Hashable, fld_time_i: np.ndarray, mdata_time_i: np.ndarray
-    ) -> None:
-        self._cache[cache_key] = {
-            "grid": deepcopy((self.lat, self.lon, self.time)),
-            "nc_meta_data": deepcopy(self.nc_meta_data),
-            "fld_time_i": deepcopy(fld_time_i),
-            "mdata_time_i": deepcopy(mdata_time_i),
-        }
+        # Try to fetch the necessary data from cache
+        if not self.cache_on:
+            cache_key = cast(Hashable, None)  # Prevent "potentially unbound"
+        else:
+            cache_key = self._cache.create_key(file_path, timeless_setups_mem)
+            try:
+                self._cache.get(cache_key, idx_mem)
+            except MissingCacheEntryError:
+                pass
+            else:
+                log(dbg=f"get from cache ({idx_mem + 1}/{n_mem}): {file_path}")
+                return
+
+        # Read the data from disk
+        log(dbg=f"reading file ({idx_mem + 1}/{n_mem}): {file_path}")
+        with nc4.Dataset(file_path, "r") as fi:
+            self._read_grid(fi)
+
+            if idx_mem > 1:
+                # Ensure that meta data is the same for all members
+                self.nc_meta_data = self._read_nc_meta_data(fi, check=True)
+
+            if not self.dry_run:
+
+                # Read fields for all members at all time steps
+                fld_time_i = self._read_member_fields_over_time(fi, timeless_setups_mem)
+                self.fld_time_mem[idx_mem][:] = fld_time_i[:]
+
+                # Read meta data at requested time steps
+                mdata_time_i = self._collect_meta_data(fi)
+                if idx_mem == 0:
+                    self.mdata_time[:] = mdata_time_i
+                elif mdata_time_i != self.mdata_time.tolist():
+                    raise Exception("meta data differ across members")
+
+                if self.cache_on:
+                    self._cache.add(cache_key, fld_time_i, mdata_time_i)
 
     def _read_nc_meta_data(
         self, fi: nc4.Dataset, check: bool = False
     ) -> Dict[str, Any]:
         nc_meta_data = read_meta_data(fi)
         if self.add_ts0:
-            self._insert_ts0_in_nc_meta_data(nc_meta_data)
+            old_size = nc_meta_data["dimensions"]["time"]["size"]
+            new_size = old_size + 1
+            nc_meta_data["dimensions"]["time"]["size"] = new_size
+            nc_meta_data["variables"]["time"]["shape"] = (new_size,)
         if check and nc_meta_data != self.nc_meta_data:
             raise Exception("meta data differs", nc_meta_data, self.nc_meta_data)
         return nc_meta_data
@@ -350,12 +366,10 @@ class FileReader:
         return fld_time
 
     # pylint: disable=R0914  # too-many-locals
-    def _collect_meta_data(
-        self, fi: nc4.Dataset, setups_lst_time: Sequence[SetupCollection]
-    ) -> List[MetaData]:
+    def _collect_meta_data(self, fi: nc4.Dataset) -> List[MetaData]:
         """Collect time-step-specific data meta data."""
         mdata_lst: List[MetaData] = []
-        for setups in setups_lst_time:
+        for setups in self.setups_lst_time:
             mdata_i_lst = []
             for sub_setups in setups.decompress():
                 for sub_setup in sub_setups:
@@ -373,41 +387,20 @@ class FileReader:
             mdata_lst.append(mdata_i)
         return mdata_lst
 
-    def _prepare_in_file_path_lst(self) -> None:
-        ens_member_ids = self.ens_member_ids
-        path_fmt = self.in_file_path_fmt
-        path_lst: List[str]
-        if re.search(r"{ens_member(:[0-9]+d)?}", path_fmt):
-            if not ens_member_ids:
-                raise ValueError(
-                    "input file path contains ensemble member format key, but no "
-                    "ensemble member ids have been passed",
-                    path_fmt,
-                    ens_member_ids,
-                )
-            assert ens_member_ids is not None  # mypy
-            path_lst = [path_fmt.format(ens_member=id_) for id_ in ens_member_ids]
-        elif not ens_member_ids:
-            path_lst = [path_fmt]
-        else:
-            raise ValueError(
-                "input file path missing format key", path_fmt, ens_member_ids,
-            )
-        self.file_path_lst = path_lst
-
     def _get_shape_mem_time(self) -> Tuple[int, int, int, int]:
         """Get the shape of an array of fields across members and time steps."""
-        dim_names = self._dim_names()
+        dim_names = self._dim_names(self.nc_meta_data["derived"]["model"])
         nlat = self.nc_meta_data["dimensions"][dim_names["lat"]]["size"]
         nlon = self.nc_meta_data["dimensions"][dim_names["lon"]]["size"]
         nts = self.nc_meta_data["dimensions"][dim_names["time"]]["size"]
+        n_mem = len(self.ens_member_ids) if self.ens_member_ids else 1
         self.lat = np.full((nlat,), np.nan)
         self.lon = np.full((nlon,), np.nan)
-        return (self._n_members, nts, nlat, nlon)
+        return (n_mem, nts, nlat, nlon)
 
     def _read_grid(self, fi: nc4.Dataset) -> None:
         """Read and prepare grid variables."""
-        dim_names = self._dim_names()
+        dim_names = self._dim_names(self.nc_meta_data["derived"]["model"])
         lat = fi.variables[dim_names["lat"]][:]
         lon = fi.variables[dim_names["lon"]][:]
         time = fi.variables[dim_names["time"]][:]
@@ -423,7 +416,7 @@ class FileReader:
             time = np.r_[ts0, time]
 
         # Convert seconds to hours
-        dim_names = self._dim_names()
+        dim_names = self._dim_names(self.nc_meta_data["derived"]["model"])
         time_unit = fi.variables[dim_names["time"]].units
         if time_unit.startswith("seconds since"):
             time = time / 3600.0
@@ -432,29 +425,21 @@ class FileReader:
 
         return time
 
-    def _insert_ts0_in_nc_meta_data(self, nc_meta_data: Dict[str, Any]) -> None:
-        old_size = nc_meta_data["dimensions"]["time"]["size"]
-        new_size = old_size + 1
-        nc_meta_data["dimensions"]["time"]["size"] = new_size
-        nc_meta_data["variables"]["time"]["shape"] = (new_size,)
-
-    def _add_ts0_to_time(self, time: np.ndarray):
-        delta = time[1] - time[0]
-        if time[0] != delta:
-            raise ValueError("expecting first time to equal delta", time)
-        return np.array([0.0] + time.tolist(), time.dtype)
-
-    def _add_ts0_to_fld_time(self, fld_time: np.ndarray) -> np.ndarray:
+    @staticmethod
+    def _add_ts0_to_fld_time(fld_time: np.ndarray) -> np.ndarray:
         old_shape = fld_time.shape
         new_shape = tuple([old_shape[0] + 1] + list(old_shape[1:]))
         new_fld_time = np.zeros(new_shape, fld_time.dtype)
         new_fld_time[1:] = fld_time
         return new_fld_time
 
-    def _reduce_ensemble(
-        self, fld_time_mem: np.ndarray, var_setups: SetupCollection,
-    ) -> np.ndarray:
+    def _reduce_ensemble(self, var_setups: SetupCollection,) -> np.ndarray:
         """Reduce the ensemble to a single field (time, lat, lon)."""
+
+        fld_time_mem = self.fld_time_mem
+
+        if not self.ens_member_ids or self.dry_run:
+            return fld_time_mem[0]
 
         ens_variable = var_setups.collect_equal("ens_variable")
         ens_param_thr = var_setups.collect_equal("ens_param_thr")
@@ -462,6 +447,7 @@ class FileReader:
         ens_param_time_win = var_setups.collect_equal("ens_param_time_win")
         n_ens_mem = len(var_setups.collect_equal("ens_member_id"))
 
+        fld_time: np.ndarray
         if ens_variable == "mean":
             fld_time = np.nanmean(fld_time_mem, axis=0)
         elif ens_variable == "median":
@@ -480,11 +466,14 @@ class FileReader:
                 fld_time = cloud.departure_time(ens_param_mem_min)
             elif ens_variable == "cloud_occurrence_probability":
                 fld_time = cloud.occurrence_probability(ens_param_time_win)
+            else:
+                raise NotImplementedError("ens_variable", ens_variable)
         else:
             raise NotImplementedError("ens_variable", ens_variable)
         return fld_time
 
-    def _collect_time_stats(self, fld_time: np.ndarray,) -> Dict[str, np.ndarray]:
+    @staticmethod
+    def _collect_time_stats(fld_time: np.ndarray,) -> Dict[str, np.ndarray]:
         data = fld_time[np.isfinite(fld_time)]
         data_nz = data[data > 0]
         # Avoid zero-size errors below
@@ -507,9 +496,9 @@ class FileReader:
                 "max": np.nanmax(data),
             }
 
-    def _dim_names(self) -> Dict[str, str]:
+    @staticmethod
+    def _dim_names(model: str) -> Dict[str, str]:
         """Model-specific dimension names."""
-        model = self.nc_meta_data["derived"]["model"]
         if model in ["cosmo2", "cosmo1", "cosmo2e", "cosmo1e"]:
             return {
                 "lat": "rlat",
@@ -545,7 +534,7 @@ class FileReader:
         # SR_TMP >
 
         # Indices of field along NetCDF dimensions
-        dim_names = self._dim_names()
+        dim_names = self._dim_names(self.nc_meta_data["derived"]["model"])
         dim_idcs_by_name = {
             dim_names["lat"]: slice(None),
             dim_names["lon"]: slice(None),
@@ -613,10 +602,20 @@ class FileReader:
         self, fi: nc4.Dataset, fld: np.ndarray, input_variable: str, integrate: bool
     ) -> np.ndarray:
         """Integrate, or desintegrate, field over time."""
+
+        def comp_temporal_resolution(fi: nc4.Dataset) -> float:
+            time = fi.variables["time"]
+            dts = set(time[1:] - time[:-1])
+            if len(dts) > 1:
+                raise Exception(f"Non-uniform time resolution: {sorted(dts)} ({time})")
+            dt_min = next(iter(dts))
+            dt_hr = dt_min / 3600.0
+            return dt_hr
+
         if input_variable == "concentration":
             if integrate:
                 # Integrate field over time
-                dt_hr = self._compute_temporal_resolution(fi)
+                dt_hr = comp_temporal_resolution(fi)
                 return np.cumsum(fld, axis=0) * dt_hr
             else:
                 # Field is already instantaneous
@@ -627,16 +626,40 @@ class FileReader:
                 return fld
             else:
                 # Revert time integration of field
-                dt_hr = self._compute_temporal_resolution(fi)
+                dt_hr = comp_temporal_resolution(fi)
                 fld[1:] = (fld[1:] - fld[:-1]) / dt_hr
                 return fld
         raise NotImplementedError("unknown variable", input_variable)
 
-    def _compute_temporal_resolution(self, fi: nc4.Dataset) -> float:
-        time = fi.variables["time"]
-        dts = set(time[1:] - time[:-1])
-        if len(dts) > 1:
-            raise Exception(f"Non-uniform time resolution: {sorted(dts)} ({time})")
-        dt_min = next(iter(dts))
-        dt_hr = dt_min / 3600.0
-        return dt_hr
+
+class FileReaderCache:
+    def __init__(self, reader: FieldInputOrganizer) -> None:
+        self.reader: FieldInputOrganizer = reader
+        self._cache: Dict[Hashable, Any] = {}
+
+    # SR_TMP <<< TODO Derive better key from setups! Make hashable?
+    @staticmethod
+    def create_key(file_path: str, setups: SetupCollection) -> Hashable:
+        params = ["input_variable", "integrate", "dimensions"]
+        return tuple([file_path] + [repr(setups.collect(param)) for param in params])
+
+    def add(
+        self, cache_key: Hashable, fld_time_i: np.ndarray, mdata_time_i: np.ndarray
+    ) -> None:
+        self._cache[cache_key] = {
+            "grid": deepcopy((self.reader.lat, self.reader.lon, self.reader.time)),
+            "nc_meta_data": deepcopy(self.reader.nc_meta_data),
+            "fld_time_i": deepcopy(fld_time_i),
+            "mdata_time_i": deepcopy(mdata_time_i),
+        }
+
+    def get(self, key: Hashable, idx_mem: int,) -> None:
+        try:
+            entry = self._cache[key]
+        except KeyError:
+            raise MissingCacheEntryError(key)
+        entry = deepcopy(entry)
+        self.reader.lat, self.reader.lon, self.reader.time = entry["grid"]
+        self.reader.nc_meta_data = entry["nc_meta_data"]
+        self.reader.fld_time_mem[idx_mem][:] = entry["fld_time_i"]
+        self.reader.mdata_time[:] = entry["mdata_time_i"]

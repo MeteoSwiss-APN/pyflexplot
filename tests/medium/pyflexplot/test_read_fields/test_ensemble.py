@@ -17,8 +17,8 @@ from pyflexplot.setup import SetupCollection
 from srutils.dict import decompress_multival_dict
 
 # Local  isort:skip
-from shared import datadir_reduced as datadir  # noqa:F401 isort:skip
-from shared import read_nc_var  # isort:skip
+from .shared import datadir_reduced as datadir  # noqa:F401 isort:skip
+from .shared import read_nc_var  # isort:skip
 
 
 def get_var_name_ref(setup, var_names_ref):

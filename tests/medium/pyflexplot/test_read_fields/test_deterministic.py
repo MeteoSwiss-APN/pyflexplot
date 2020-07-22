@@ -15,14 +15,14 @@ import numpy as np
 import pytest  # type: ignore
 
 # First-party
-from pyflexplot.input import FileReader
+from pyflexplot.input import FieldInputOrganizer
 from pyflexplot.input import read_fields
 from pyflexplot.setup import Setup
 from pyflexplot.setup import SetupCollection
 
 # Local  isort:skip
-from shared import read_nc_var  # isort:skip
-from shared import datadir_reduced as datadir  # noqa:F401 isort:skip
+from .shared import read_nc_var  # isort:skip
+from .shared import datadir_reduced as datadir  # noqa:F401 isort:skip
 
 
 def get_var_name_ref(setup, var_names_ref):
@@ -519,8 +519,8 @@ def test_single_add_ts0(datadir, conf):
 
     # Read fields with and without added time step 0
     # Note: Check relies on ordered time steps, which is incidental
-    reader_raw = FileReader(datafile, add_ts0=False)
-    reader_ts0 = FileReader(datafile, add_ts0=True)
+    reader_raw = FieldInputOrganizer(datafile, add_ts0=False)
+    reader_ts0 = FieldInputOrganizer(datafile, add_ts0=True)
     field_raw_lst_lst = reader_raw.run(setups)
     field_ts0_lst_lst = reader_ts0.run(setups)
     assert len(field_ts0_lst_lst) == len(field_raw_lst_lst) + 1
