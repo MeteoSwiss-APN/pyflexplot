@@ -37,16 +37,17 @@ python = ">= 3.7"
 
 dependencies = [
     "cartopy @ git+ssh://git@github.com/MeteoSwiss-APN/cartopy.git",
-    "Click >= 6.0",
+    "click >= 6.0",
     "geopy",
     "matplotlib",
-    "netCDF4",
+    "netcdf4",
     "numpy",
     "pillow >= 6.2.0",
     "pydantic",
+    "pypdf2",
     "scipy",
-    "typing-extensions",
     "toml",
+    "typing-extensions",
 ]
 
 # Build shapely from source (dependency of Cartopy)
