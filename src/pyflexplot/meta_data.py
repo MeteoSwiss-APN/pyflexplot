@@ -6,6 +6,7 @@ Attributes.
 # Standard library
 import re
 import time
+import warnings
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
@@ -535,6 +536,16 @@ def collect_meta_data(
     return MetaDataCollector(fi, setup, nc_meta_data, add_ts0=add_ts0).run()
 
 
+def getncattr(nc_obj: Union[nc4.Dataset, nc4.Variable], attr: str) -> Any:
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            category=DeprecationWarning,
+            message="tostring() is deprecated. Use tobytes() instead.",
+        )
+        return nc_obj.getncattr(attr)
+
+
 class MetaDataCollector:
     """Collect meta data for a field from an open NetCDF file."""
 
@@ -552,15 +563,13 @@ class MetaDataCollector:
         self.add_ts0 = add_ts0
 
         # Collect all global attributes
-        self.ncattrs_global = {
-            attr: self.fi.getncattr(attr) for attr in self.fi.ncattrs()
-        }
+        self.ncattrs_global = {attr: getncattr(fi, attr) for attr in self.fi.ncattrs()}
 
         # Collect all variables attributes
         self.ncattrs_vars: Dict[str, Any] = {}
         for var in self.fi.variables.values():
             self.ncattrs_vars[var.name] = {
-                attr: var.getncattr(attr) for attr in var.ncattrs()
+                attr: getncattr(var, attr) for attr in var.ncattrs()
             }
 
         # Select attributes of field variable
@@ -658,7 +667,7 @@ class MetaDataCollector:
                 var = self.fi.variables["height"]  # SR_TMP IFS
             level_bot = 0.0 if idx == 0 else float(var[idx - 1])
             level_top = float(var[idx])
-            level_unit = var.getncattr("units")
+            level_unit = getncattr(var, "units")
 
         mdata_raw.update(
             {
@@ -831,7 +840,7 @@ class RawReleaseMetaData(BaseModel):
         for key_out, key_in in key_pairs:
             params[key_out] = fi.variables[key_in][idx].tolist()
             if key_out in store_units:
-                unit = fi.variables[key_in].getncattr("units")
+                unit = getncattr(fi.variables[key_in], "units")
                 params[f"{key_out}_unit"] = unit
         return cls(**params)
 
