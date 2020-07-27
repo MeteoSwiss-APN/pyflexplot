@@ -11,6 +11,16 @@ import pytest  # type: ignore
 from pyflexplot.data import ensemble_probability
 from pyflexplot.data import EnsembleCloud
 
+# Shorthands for special values
+N = np.nan
+I = np.inf
+J = -np.inf
+
+
+def a(*args, **kwargs):
+    """Shorthand function to create array."""
+    return np.array(*args, **kwargs)
+
 
 class TestEnsembleProbability2D:
     """Fraction of threshold exceedences along a 2D-array axis."""
@@ -53,17 +63,6 @@ class TestEnsembleProbability3D:
             np.array([[3, 2, 3], [0, 2, 1], [1, 1, 1], [3, 3, 1], [1, 2, 2]]) * 100 / n
         )
         assert np.allclose(res, sol)
-
-
-# Shorthands for special values
-N = np.nan
-I = np.inf
-J = -np.inf
-
-
-def a(*args, **kwargs):
-    """Shorthand to create array."""
-    return np.array(*args, **kwargs)
 
 
 class TestEnsembleCloud:
