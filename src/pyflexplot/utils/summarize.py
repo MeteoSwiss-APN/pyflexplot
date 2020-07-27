@@ -192,9 +192,9 @@ def summarizable(
         attrs_skip = list(attrs_skip or [])
     except TypeError:
         raise ValueError("`attrs_skip` is not iterable", type(attrs_skip), attrs_skip)
-    if summarize is None:
+    if summarize is None and not hasattr(cls, "summarize"):
         summarize = default_summarize
-    if post_summarize is None:
+    if post_summarize is None and not hasattr(cls, "post_summarize"):
         post_summarize = default_post_summarize
 
     if auto_collect:
@@ -215,9 +215,10 @@ def summarizable(
         ("summarize", summarize),
         ("post_summarize", post_summarize),
     ]:
-        if not overwrite and hasattr(cls, name):
-            raise AttributeConflictError(name, cls)
-        setattr(cls, name, attr)
+        if attr:
+            if not overwrite and hasattr(cls, name):
+                raise AttributeConflictError(name, cls)
+            setattr(cls, name, attr)
     return cls
 
 
@@ -311,9 +312,11 @@ class Summarizer:
             try:
                 obj = dict(obj)
             except (TypeError, ValueError):
-                raise NotSummarizableError("dict-like", obj)
-            else:
-                items = obj.items()
+                try:
+                    obj = obj.dict()
+                except AttributeError:
+                    raise NotSummarizableError("dict-like", obj)
+            items = obj.items()
         return {self._summarize(key): self._summarize(val) for key, val in items}
 
     def _try_list_like(self, obj: Any) -> Sequence[Any]:
