@@ -49,16 +49,22 @@ field_summary = {
             },
         }
     ],
-    "time_stats": {
-        "type": "FieldStats",
-        "min": -20.0,
-        "max": 31.0,
-        "mean": 8.605431309904153,
-        "median": 10.0,
-        "min_nz": 1.0,
-        "max_nz": 31.0,
-        "mean_nz": 13.412659123055162,
-        "median_nz": 13.0,
+    "time_props": {
+        "type": "FieldTimeProperties",
+        "stats": {
+            "type": "FieldStats",
+            "min": -20.0,
+            "max": 31.0,
+            "mean": 8.605431309904153,
+            "median": 10.0,
+        },
+        "stats_nz": {
+            "type": "FieldStats",
+            "min": 1.0,
+            "max": 31.0,
+            "mean": 13.412659123055162,
+            "median": 13.0,
+        },
     },
     "nc_meta_data": {
         "ncattrs": {
@@ -2526,16 +2532,22 @@ plot_summary = {
                 },
             }
         ],
-        "time_stats": {
-            "type": "FieldStats",
-            "min": -20.0,
-            "max": 31.0,
-            "mean": 8.605431309904153,
-            "median": 10.0,
-            "min_nz": 1.0,
-            "max_nz": 31.0,
-            "mean_nz": 13.412659123055162,
-            "median_nz": 13.0,
+        "time_props": {
+            "type": "FieldTimeProperties",
+            "stats": {
+                "type": "FieldStats",
+                "min": -20.0,
+                "max": 31.0,
+                "mean": 8.605431309904153,
+                "median": 10.0,
+            },
+            "stats_nz": {
+                "type": "FieldStats",
+                "min": 1.0,
+                "max": 31.0,
+                "mean": 13.412659123055162,
+                "median": 13.0,
+            },
         },
         "nc_meta_data": {
             "ncattrs": {

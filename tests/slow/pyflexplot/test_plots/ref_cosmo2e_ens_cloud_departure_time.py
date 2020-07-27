@@ -50,16 +50,22 @@ field_summary = {
             },
         }
     ],
-    "time_stats": {
-        "type": "FieldStats",
-        "min": np.nan,
-        "max": np.nan,
-        "mean": np.nan,
-        "median": np.nan,
-        "min_nz": np.nan,
-        "max_nz": np.nan,
-        "mean_nz": np.nan,
-        "median_nz": np.nan,
+    "time_props": {
+        "type": "FieldTimeProperties",
+        "stats": {
+            "type": "FieldStats",
+            "min": np.nan,
+            "max": np.nan,
+            "mean": np.nan,
+            "median": np.nan,
+        },
+        "stats_nz": {
+            "type": "FieldStats",
+            "min": np.nan,
+            "max": np.nan,
+            "mean": np.nan,
+            "median": np.nan,
+        },
     },
     "nc_meta_data": {
         "ncattrs": {
@@ -2527,16 +2533,22 @@ plot_summary = {
                 },
             }
         ],
-        "time_stats": {
-            "type": "FieldStats",
-            "min": np.nan,
-            "max": np.nan,
-            "mean": np.nan,
-            "median": np.nan,
-            "min_nz": np.nan,
-            "max_nz": np.nan,
-            "mean_nz": np.nan,
-            "median_nz": np.nan,
+        "time_props": {
+            "type": "FieldTimeProperties",
+            "stats": {
+                "type": "FieldStats",
+                "min": np.nan,
+                "max": np.nan,
+                "mean": np.nan,
+                "median": np.nan,
+            },
+            "stats_nz": {
+                "type": "FieldStats",
+                "min": np.nan,
+                "max": np.nan,
+                "mean": np.nan,
+                "median": np.nan,
+            },
         },
         "nc_meta_data": {
             "ncattrs": {

@@ -82,7 +82,7 @@ class Field:
 
         var_setups: Variables setups.
 
-        time_stats: Some statistics across all time steps.
+        time_props: Properties of the field across all time steps.
 
         nc_meta_data: Meta data from NetCDF input file.
 
@@ -95,7 +95,7 @@ class Field:
     lon: np.ndarray
     rotated_pole: bool
     var_setups: SetupCollection
-    time_stats: "FieldStats"
+    time_props: "FieldTimeProperties"
     nc_meta_data: Mapping[str, Any]
     mdata: Optional[MetaData]
 
@@ -133,8 +133,8 @@ class Field:
             ),
             f"var_setups={self.var_setups},",
             (
-                f"time_stats=dict[n={len(self.time_stats)},"
-                f" keys={tuple(self.time_stats)}],"
+                f"time_stats=dict[n={len(self.time_props)},"
+                f" keys={tuple(self.time_props)}],"
             ),
             (
                 f"nc_meta_data="
@@ -157,18 +157,19 @@ class Field:
 
 
 @summarizable
-# pylint: disable=R0902  # too-many-instance-attributes
+@dataclass
 class FieldStats:
-    """Standard statistics of a 2D field over time."""
+    min: float = np.nan
+    max: float = np.nan
+    mean: float = np.nan
+    median: float = np.nan
 
-    def __init__(self, arr: np.ndarray) -> None:
-        arr = arr[np.isfinite(arr)]
-        arr_nz = arr[arr > 0]
+    @classmethod
+    def create(cls, arr: np.ndarray) -> "FieldStats":
+        arr = np.where(np.isfinite(arr), arr, np.nan)
         # Avoid zero-size errors below
         if arr.size == 0:
-            arr = np.full([1], np.nan)
-        if arr_nz.size == 0:
-            arr_nz = np.full([1], np.nan)
+            return cls()
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", category=RuntimeWarning, message="All-NaN slice encountered"
@@ -176,26 +177,21 @@ class FieldStats:
             warnings.filterwarnings(
                 "ignore", category=RuntimeWarning, message="Mean of empty slice"
             )
-            self.min: float = np.nanmin(arr)
-            self.max: float = np.nanmax(arr)
-            self.mean: float = np.nanmean(arr)
-            self.median: float = np.nanmedian(arr)
-            self.min_nz: float = np.nanmin(arr_nz)
-            self.max_nz: float = np.nanmax(arr_nz)
-            self.mean_nz: float = np.nanmean(arr_nz)
-            self.median_nz: float = np.nanmedian(arr_nz)
+            return cls(
+                min=np.nanmin(arr),
+                max=np.nanmax(arr),
+                mean=np.nanmean(arr),
+                median=np.nanmedian(arr),
+            )
 
-    def dict(self) -> Dict[str, float]:
-        dct = {}
-        for suffix in ["", "_nz"]:
-            for attr in ["min", "max", "mean", "median"]:
-                key = f"{attr}{suffix}"
-                val = getattr(self, key)
-                dct[key] = val
-        return dct
 
-    def summarize(self) -> Dict[str, Any]:
-        return {"type": type(self).__name__, **self.dict()}
+@summarizable(attrs=["stats", "stats_nz"])
+class FieldTimeProperties:
+    """Standard statistics of a 2D field over time."""
+
+    def __init__(self, arr: np.ndarray) -> None:
+        self.stats = FieldStats.create(arr)
+        self.stats_nz = FieldStats.create(np.where(arr > 0, arr, np.nan))
 
 
 def ensemble_probability(arr: np.ndarray, thr: float, n_mem: int) -> np.ndarray:

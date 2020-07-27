@@ -28,7 +28,7 @@ from srutils.various import check_array_indices
 from .data import ensemble_probability
 from .data import EnsembleCloud
 from .data import Field
-from .data import FieldStats
+from .data import FieldTimeProperties
 from .data import merge_fields
 from .fix_nc_input import FlexPartDataFixer
 from .meta_data import collect_meta_data
@@ -311,7 +311,7 @@ class InputFileEnsemble:
         fld_time: np.ndarray = self._reduce_ensemble(setups)
 
         # Compute some statistics across all time steps
-        time_stats = FieldStats(fld_time)
+        time_stats = FieldTimeProperties(fld_time)
 
         # Create Field objects at requested time steps
         field_lst_lst: List[List[Field]] = []
@@ -324,7 +324,7 @@ class InputFileEnsemble:
                 lon=self.lon,
                 rotated_pole=self.nc_meta_data["derived"]["rotated_pole"],
                 var_setups=field_setups,
-                time_stats=time_stats,
+                time_props=time_stats,
                 nc_meta_data=self.nc_meta_data,
                 mdata=mdata,
             )

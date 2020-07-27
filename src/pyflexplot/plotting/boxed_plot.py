@@ -112,7 +112,7 @@ class BoxedPlot:
         self.map_conf = map_conf
 
         self.boxes: Dict[str, TextBoxAxes] = {}
-        self.levels = levels_from_time_stats(self.config, self.field.time_stats)
+        self.levels = levels_from_time_stats(self.config, self.field.time_props.stats)
 
         # Declarations
         self._fig: Optional[Figure] = None
