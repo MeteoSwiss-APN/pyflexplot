@@ -53,8 +53,6 @@ class BoxedPlotConfig(BaseModel):
     colors: List[ColorType]
     color_above_closed: Optional[ColorType] = None  # SR_TODO better approach
     d_level: Optional[int] = None  # SR_TODO sensible default
-    draw_colors: bool = True
-    draw_contours: bool = False
     extend: str = "max"
     # SR_NOTE Figure size may change when boxes etc. are added
     # SR_TODO Specify plot size in a robust way (what you want is what you get)
@@ -112,7 +110,9 @@ class BoxedPlot:
         self.map_conf = map_conf
 
         self.boxes: Dict[str, TextBoxAxes] = {}
-        self.levels = levels_from_time_stats(self.config, self.field.time_props.stats)
+        self.levels: np.ndarray = levels_from_time_stats(
+            self.config, self.field.time_props.stats
+        )
 
         # Declarations
         self._fig: Optional[Figure] = None
@@ -138,7 +138,7 @@ class BoxedPlot:
         plt.close(self.fig)
 
     def add_map_plot(self, rect: RectType,) -> MapAxes:
-        axs = MapAxes.create(self.map_conf, fig=self.fig, rect=rect, field=self.field,)
+        axs = MapAxes.create(self.map_conf, fig=self.fig, rect=rect, field=self.field)
         self.ax_map = axs  # SR_TMP
         self._draw_colors_contours()
         return axs
@@ -177,29 +177,82 @@ class BoxedPlot:
                     extend = "max"
                 elif extend == "min":
                     extend = "both"
-        if self.config.draw_colors:
-            # SR_TMP < TODO move this logic out of here!
-            if self.config.cmap != "flexplot":
-                if extend in ["min", "both"]:
-                    levels = np.r_[-np.inf, levels]
-                if extend in ["max", "both"]:
-                    levels = np.r_[levels, np.inf]
-                extend = "none"
-            # SR_TMP >
-            self.ax_map.contourf(arr, levels=levels, extend=extend, colors=colors)
-            # SR_TMP <
-            cmap_black = LinearSegmentedColormap.from_list("black", ["black", "black"])
-            self.ax_map.contourf(
-                arr, levels=np.array([-0.01, 0.01]), cmap=cmap_black, extend="none"
+        # SR_TMP < TODO move this logic out of here!
+        if self.config.cmap != "flexplot":
+            if extend in ["min", "both"]:
+                levels = np.r_[-np.inf, levels]
+            if extend in ["max", "both"]:
+                levels = np.r_[levels, np.inf]
+            extend = "none"
+        # SR_TMP >
+
+        arr = replace_infs(arr, levels)
+
+        def nothing_to_plot(arr, levels):
+            """Check if there's anything to plot.
+
+            This allows one to exit before calling contourf if there's nothing
+            to plot, and thus prevent an ugly error.
+            """
+            all_nan = np.nanmin(arr) == np.nanmax(arr)
+            all_below = np.nanmax(arr) < levels.min() and extend not in ["min", "both"]
+            all_above = np.nanmax(arr) > levels.max() and extend not in ["max", "both"]
+            return all_nan or all_below or all_above
+
+        if nothing_to_plot(arr, levels):
+            return
+
+        self.ax_map.ax.contourf(
+            self.field.lon,
+            self.field.lat,
+            arr,
+            transform=self.ax_map.proj_data,
+            levels=levels,
+            extend=extend,
+            zorder=self.ax_map.zorder["fld"],
+            colors=colors,
+        )
+
+        # SR_TMP < TODO Figure out if this is still necessary!
+        cmap_black = LinearSegmentedColormap.from_list("black", ["black", "black"])
+        levels_zero = np.array([-0.01, 0.01])
+        arr_zero = replace_infs(arr, levels_zero)
+        if not nothing_to_plot(arr_zero, levels_zero):
+            self.ax_map.ax.contourf(
+                self.field.lon,
+                self.field.lat,
+                arr_zero,
+                transform=self.ax_map.proj_data,
+                levels=levels_zero,
+                extend=extend,
+                zorder=self.ax_map.zorder["fld"],
+                cmap=cmap_black,
             )
-            # SR_TMP >
-        if self.config.draw_contours:
-            self.ax_map.contour(arr, levels=levels, colors="black", linewidths=1)
+        # SR_TMP >
+
+
+def replace_infs(fld: np.ndarray, levels: np.ndarray) -> np.ndarray:
+    """Replace inf by large values outside the data and level range.
+
+    Reason: Contourf apparently ignores inf values.
+
+    """
+    large_value = 999.9
+    vals = np.r_[fld.flatten(), levels]
+    thr = vals[np.isfinite(vals)].max()
+    max_ = np.finfo(np.float32).max
+    while large_value <= thr:
+        large_value = large_value * 10 + 0.9
+        if large_value > max_:
+            raise Exception("cannot derive large enough value", large_value, max_, thr)
+    fld = np.where(np.isneginf(fld), -large_value, fld)
+    fld = np.where(np.isposinf(fld), large_value, fld)
+    return fld
 
 
 def levels_from_time_stats(
     plot_config: BoxedPlotConfig, time_stats: FieldStats
-) -> List[float]:
+) -> np.ndarray:
     def _auto_levels_log10(n_levels: int, val_max: float) -> List[float]:
         if not np.isfinite(val_max):
             raise ValueError("val_max not finite", val_max)

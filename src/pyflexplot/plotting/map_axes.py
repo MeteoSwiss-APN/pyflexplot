@@ -18,13 +18,15 @@ import numpy as np
 from cartopy.crs import Projection  # type: ignore
 from cartopy.io.shapereader import Record  # type: ignore
 from matplotlib.axes import Axes
-from matplotlib.contour import ContourSet
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 from matplotlib.text import Text
 from pydantic import BaseModel
 from pydantic import root_validator
 from pydantic import validator
+
+# First-party
+from pyflexplot.data import Field
 
 # Local
 from ..utils.summarize import post_summarize_plot
@@ -131,11 +133,9 @@ class MapAxes:
     Args:
         fig: Figure to which to map axes is added.
 
-        rect: Rectangle in figure coordinates.
+        rect: Position of map plot panel in figure coordinates.
 
-        lat: Latitude coordinates.
-
-        lon: Longitude coordinates.
+        field: Field.
 
         conf: Map axes setup.
 
@@ -143,8 +143,7 @@ class MapAxes:
 
     fig: Figure
     rect: RectType
-    lat: np.ndarray
-    lon: np.ndarray
+    field: Field
     conf: MapAxesConf
 
     def __post_init__(self) -> None:
@@ -184,104 +183,46 @@ class MapAxes:
         if field.rotated_pole:
             return MapAxesRotatedPole.create(conf, fig=fig, rect=rect, field=field)
         else:
-            return cls(fig=fig, lat=field.lat, rect=rect, lon=field.lon, conf=conf)
-
-    def contour(self, fld: np.ndarray, **kwargs) -> Optional[ContourSet]:
-        """Plot a contour field on the map.
-
-        Args:
-            fld (ndarray[float, float]): Field to plot.
-
-            **kwargs: Arguments passed to ax.contourf().
-
-        Returns:
-            Plot handle.
-
-        """
-        if np.isnan(fld).all():
-            warnings.warn("skip contour plot (all-nan field)")
-            return None
-
-        # SR_TODO Test if check for empty plot is necessary as for contourf
-        handle = self.ax.contour(
-            self.lon,
-            self.lat,
-            fld,
-            transform=self.proj_data,
-            zorder=self.zorder["fld"],
-            **kwargs,
-        )
-        return handle
-
-    def contourf(
-        self, fld: np.ndarray, *, levels: np.ndarray, extend: str = "none", **kwargs
-    ) -> Optional[ContourSet]:
-        """Plot a filled-contour field on the map.
-
-        Args:
-            fld: Field.
-
-            levels: Levels.
-
-            extend (optional): Extend mode.
-
-            **kwargs: Additional arguments to ``contourf``.
-
-        Returns:
-            Plot handle.
-
-        """
-        if np.isnan(fld).all():
-            warnings.warn("skip filled contour plot (all-nan field)")
-            return None
-
-        # Check if there's anything to plot (prevent ugly failure of contourf)
-        if (
-            (np.nanmin(fld) == np.nanmax(fld))
-            or (np.nanmax(fld) < levels.min() and extend not in ["min", "both"])
-            or (np.nanmax(fld) > levels.max() and extend not in ["max", "both"])
-        ):
-            handle = None
-        else:
-            handle = self.ax.contourf(
-                self.lon,
-                self.lat,
-                self._replace_infs(fld, levels),
-                transform=self.proj_data,
-                levels=levels,
-                extend=extend,
-                zorder=self.zorder["fld"],
-                **kwargs,
-            )
-        return handle
+            return cls(fig=fig, rect=rect, field=field, conf=conf)
 
     def marker(
         self,
         *,
-        lon: float,
-        lat: float,
+        p_lon: float,
+        p_lat: float,
         marker: str,
         zorder: Optional[int] = None,
         **kwargs,
     ) -> Sequence[Line2D]:
         """Add a marker at a location in natural coordinates."""
-        lon, lat = self.trans.geo_to_data(lon, lat)
+        p_lon, p_lat = self.trans.geo_to_data(p_lon, p_lat)
         if zorder is None:
             zorder = self.zorder["marker"]
         handle = self.ax.plot(
-            lon, lat, marker=marker, transform=self.proj_data, zorder=zorder, **kwargs,
+            p_lon,
+            p_lat,
+            marker=marker,
+            transform=self.proj_data,
+            zorder=zorder,
+            **kwargs,
         )
         return handle
 
     def text(
-        self, lon: float, lat: float, s: str, *, zorder: Optional[int] = None, **kwargs,
+        self,
+        p_lon: float,
+        p_lat: float,
+        s: str,
+        *,
+        zorder: Optional[int] = None,
+        **kwargs,
     ) -> Text:
         """Add text at a geographical point.
 
         Args:
-            lon: Point longitude.
+            p_lon: Point longitude.
 
-            lat: Point latitude.
+            p_lat: Point latitude.
 
             s: Text string.
 
@@ -302,7 +243,7 @@ class MapAxes:
         transform = self.proj_geo._as_mpl_transform(self.ax)
         # -> see https://stackoverflow.com/a/25421922/4419816
         handle = self.ax.annotate(
-            s, xy=(lon, lat), xycoords=transform, zorder=zorder, **kwargs,
+            s, xy=(p_lon, p_lat), xycoords=transform, zorder=zorder, **kwargs,
         )
         return handle
 
@@ -345,14 +286,16 @@ class MapAxes:
 
     def _ax_set_extent(self) -> None:
         """Set the geographical map extent based on the grid and config."""
-        lllon: float = self.conf.lllon if self.conf.lllon is not None else self.lon[0]
-        urlon: float = self.conf.urlon if self.conf.urlon is not None else self.lon[-1]
-        lllat: float = self.conf.lllat if self.conf.lllat is not None else self.lat[0]
-        urlat: float = self.conf.urlat if self.conf.urlat is not None else self.lat[-1]
+        conf = self.conf
+        field = self.field
+        lllon: float = conf.lllon if conf.lllon is not None else field.lon[0]
+        urlon: float = conf.urlon if conf.urlon is not None else field.lon[-1]
+        lllat: float = conf.lllat if conf.lllat is not None else field.lat[0]
+        urlat: float = conf.urlat if conf.urlat is not None else field.lat[-1]
         bbox = (
             MapAxesBoundingBox(self, "data", lllon, urlon, lllat, urlat)
             .to_axes()
-            .zoom(self.conf.zoom_fact, self.conf.rel_offset)
+            .zoom(conf.zoom_fact, conf.rel_offset)
             .to_data()
         )
         self.ax.set_extent(bbox, self.proj_data)
@@ -376,26 +319,6 @@ class MapAxes:
         )
         gl.xlocator = mpl.ticker.FixedLocator(np.arange(-180, 180.1, 2))
         gl.ylocator = mpl.ticker.FixedLocator(np.arange(-90, 90.1, 2))
-
-    def _replace_infs(self, fld: np.ndarray, levels: np.ndarray) -> np.ndarray:
-        """Replace inf by large values outside the data and level range.
-
-        Reason: Contourf apparently ignores inf values.
-
-        """
-        large_value = 999.9
-        vals = np.r_[fld.flatten(), levels]
-        thr = vals[np.isfinite(vals)].max()
-        max_ = np.finfo(np.float32).max
-        while large_value <= thr:
-            large_value = large_value * 10 + 0.9
-            if large_value > max_:
-                raise Exception(
-                    "cannot derive large enough value", large_value, max_, thr
-                )
-        fld = np.where(np.isneginf(fld), -large_value, fld)
-        fld = np.where(np.isposinf(fld), large_value, fld)
-        return fld
 
     def _ax_add_geography(self) -> None:
         """Add geographic elements: coasts, countries, colors, etc."""
@@ -516,19 +439,24 @@ class MapAxes:
 
         def is_visible(city: Record) -> bool:
             """Check if a point is inside the domain."""
-            lon: float = city.geometry.x
-            lat: float = city.geometry.y
+            p_lon: float = city.geometry.x
+            p_lat: float = city.geometry.y
 
             # In domain
-            lon, lat = self.proj_data.transform_point(
-                lon, lat, self.proj_geo, trap=True,
+            p_lon, p_lat = self.proj_data.transform_point(
+                p_lon, p_lat, self.proj_geo, trap=True,
             )
             in_domain = is_in_box(
-                lon, lat, self.lon[0], self.lon[-1], self.lat[0], self.lat[-1],
+                p_lon,
+                p_lat,
+                self.field.lon[0],
+                self.field.lon[-1],
+                self.field.lat[0],
+                self.field.lat[-1],
             )
 
             # Not behind reference distance indicator box
-            pxa, pya = self.trans.geo_to_axes(lon, lat)
+            pxa, pya = self.trans.geo_to_axes(p_lon, p_lat)
             rdb = self.ref_dist_box
             assert rdb is not None  # mypy
             behind_rdb = is_in_box(
@@ -563,8 +491,8 @@ class MapAxes:
             lon, lat = city.geometry.x, city.geometry.y
             if is_visible(city) and is_of_interest(city):
                 self.marker(
-                    lat=lat,
-                    lon=lon,
+                    p_lat=lat,
+                    p_lon=lon,
                     marker="o",
                     color="black",
                     fillstyle="none",
@@ -577,8 +505,8 @@ class MapAxes:
 
     def _ax_add_data_domain_outline(self) -> None:
         """Add domain outlines to map plot."""
-        lon0, lon1 = self.lon[[0, -1]]
-        lat0, lat1 = self.lat[[0, -1]]
+        lon0, lon1 = self.field.lon[[0, -1]]
+        lat0, lat1 = self.field.lat[[0, -1]]
         xs = [lon0, lon1, lon1, lon0, lon0]
         ys = [lat0, lat0, lat1, lat1, lat0]
         self.ax.plot(xs, ys, transform=self.proj_data, c="black", lw=1)
@@ -609,7 +537,7 @@ class MapAxesRotatedPole(MapAxes):
 
     @classmethod
     def create(
-        cls, conf: MapAxesConf, *, fig: Figure, rect: RectType, field: np.ndarray
+        cls, conf: MapAxesConf, *, fig: Figure, rect: RectType, field: Field
     ) -> "MapAxesRotatedPole":
         if not field.rotated_pole:
             raise ValueError("not a rotated-pole field", field)
@@ -617,13 +545,7 @@ class MapAxesRotatedPole(MapAxes):
         pollat = rotated_pole["grid_north_pole_latitude"]
         pollon = rotated_pole["grid_north_pole_longitude"]
         return cls(
-            fig=fig,
-            rect=rect,
-            lat=field.lat,
-            lon=field.lon,
-            pollat=pollat,
-            pollon=pollon,
-            conf=conf,
+            fig=fig, rect=rect, field=field, pollat=pollat, pollon=pollon, conf=conf,
         )
 
     def _init_projs(self) -> None:
