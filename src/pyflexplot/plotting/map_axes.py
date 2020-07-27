@@ -282,16 +282,24 @@ class MapAxes:
         ax.set_adjustable("datalim")
         ax.outline_patch.set_edgecolor("none")
         self.ax = ax
-        self._ax_set_extent()
 
-    def _ax_set_extent(self) -> None:
-        """Set the geographical map extent based on the grid and config."""
-        conf = self.conf
-        field = self.field
-        lllon: float = conf.lllon if conf.lllon is not None else field.lon[0]
-        urlon: float = conf.urlon if conf.urlon is not None else field.lon[-1]
-        lllat: float = conf.lllat if conf.lllat is not None else field.lat[0]
-        urlat: float = conf.urlat if conf.urlat is not None else field.lat[-1]
+        # Set geographical extent
+        conf: MapAxesConf = self.conf
+        field: Field = self.field
+        domain_type: str = field.var_setups.collect_equal("domain")
+        if domain_type == "data":
+            assert (field.lat.size, field.lon.size) == field.time_props.mask_nz.shape
+            mask_lon = field.time_props.mask_nz.any(axis=0)
+            mask_lat = field.time_props.mask_nz.any(axis=1)
+            lllon = field.lon[mask_lon].min()
+            urlon = field.lon[mask_lon].max()
+            lllat = field.lat[mask_lat].min()
+            urlat = field.lat[mask_lat].max()
+        else:
+            lllon = conf.lllon if conf.lllon is not None else field.lon[0]
+            urlon = conf.urlon if conf.urlon is not None else field.lon[-1]
+            lllat = conf.lllat if conf.lllat is not None else field.lat[0]
+            urlat = conf.urlat if conf.urlat is not None else field.lat[-1]
         bbox = (
             MapAxesBoundingBox(self, "data", lllon, urlon, lllat, urlat)
             .to_axes()

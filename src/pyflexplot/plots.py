@@ -74,18 +74,6 @@ def create_map_conf(field: Field) -> MapAxesConf:
     conf_model_ifs: Dict[str, Any] = {"geo_res": "50m"}
     conf_model_cosmo: Dict[str, Any] = {"geo_res": "10m"}
 
-    # SR_TMP < TODO generalize based on meta data
-    conf_domain_japan: Dict[str, Any] = {
-        "geo_res_cities": "50m",
-        "geo_res_rivers": "50m",
-        "min_city_pop": 4_000_000,
-        "lllat": 20,
-        "urlat": 50,
-        "lllon": 110,
-        "urlon": 160,
-        "ref_dist_conf": {"dist": 500},
-    }
-    # SR_TMP >
     conf_scale_continent: Dict[str, Any] = {
         "geo_res_cities": "50m",
         "geo_res_rivers": "50m",
@@ -99,7 +87,21 @@ def create_map_conf(field: Field) -> MapAxesConf:
     }
 
     conf: Dict[str, Any]
-    if model.startswith("cosmo") and domain == "full":
+    if domain == "data" and model.startswith("cosmo"):
+        conf = {
+            **conf_base,
+            **conf_model_cosmo,
+            **conf_scale_continent,
+            "zoom_fact": 0.9,
+        }
+    elif domain == "data" and model.startswith("ifs"):
+        conf = {
+            **conf_base,
+            **conf_model_ifs,
+            **conf_scale_continent,
+            "zoom_fact": 0.9,
+        }
+    elif model.startswith("cosmo") and domain == "full":
         conf = {
             **conf_base,
             **conf_model_cosmo,
@@ -121,18 +123,6 @@ def create_map_conf(field: Field) -> MapAxesConf:
             **conf_scale_country,
             "zoom_fact": 3.23,
             "rel_offset": (0.037, 0.1065),
-        }
-    elif model == "ifs":  # SR_TMP
-        # SR_TMP < TODO Generalize IFS domains
-        conf = {**conf_base, **conf_model_ifs, **conf_domain_japan}
-        # SR_TMP >
-    elif model == "ifs-hres":  # SR_TMP
-        conf = {
-            **conf_base,
-            **conf_model_ifs,
-            **conf_scale_continent,
-            "zoom_fact": 1.5,
-            "rel_offset": (-0.15, -0.1),
         }
     else:
         raise Exception(f"unknown domain '{domain}' for model '{model}'")

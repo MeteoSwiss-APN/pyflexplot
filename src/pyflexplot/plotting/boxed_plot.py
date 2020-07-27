@@ -16,7 +16,6 @@ from typing import Union
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.colors import Colormap
-from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.figure import Figure
 from pydantic import BaseModel
 
@@ -212,23 +211,6 @@ class BoxedPlot:
             zorder=self.ax_map.zorder["fld"],
             colors=colors,
         )
-
-        # SR_TMP < TODO Figure out if this is still necessary!
-        cmap_black = LinearSegmentedColormap.from_list("black", ["black", "black"])
-        levels_zero = np.array([-0.01, 0.01])
-        arr_zero = replace_infs(arr, levels_zero)
-        if not nothing_to_plot(arr_zero, levels_zero):
-            self.ax_map.ax.contourf(
-                self.field.lon,
-                self.field.lat,
-                arr_zero,
-                transform=self.ax_map.proj_data,
-                levels=levels_zero,
-                extend=extend,
-                zorder=self.ax_map.zorder["fld"],
-                cmap=cmap_black,
-            )
-        # SR_TMP >
 
 
 def replace_infs(fld: np.ndarray, levels: np.ndarray) -> np.ndarray:

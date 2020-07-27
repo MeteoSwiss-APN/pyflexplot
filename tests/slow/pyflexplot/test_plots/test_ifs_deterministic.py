@@ -28,7 +28,7 @@ class Test_Concentration(_TestBase):
         "input_variable": "concentration",
         "integrate": False,
         "lang": "de",
-        "domain": "auto",
+        "domain": "data",
         "dimensions": {"species_id": 1, "time": 5, "level": 0},
     }
 
@@ -43,7 +43,7 @@ class Test_IntegratedConcentration(_TestBase):
         "input_variable": "concentration",
         "integrate": True,
         "lang": "en",
-        "domain": "auto",
+        "domain": "data",
         "dimensions": {"species_id": 1, "time": 10, "level": 0},
     }
 
@@ -59,7 +59,7 @@ class Test_TotalDeposition(_TestBase):
         "combine_deposition_types": True,
         "integrate": True,
         "lang": "de",
-        "domain": "auto",
+        "domain": "data",
         "dimensions": {"species_id": 1, "time": -1},
     }
 
@@ -75,6 +75,6 @@ class Test_AffectedArea(_TestBase):
         "combine_deposition_types": True,
         "integrate": True,
         "lang": "en",
-        "domain": "auto",
+        "domain": "data",
         "dimensions": {"species_id": 1, "time": -1, "deposition_type": ["dry", "wet"]},
     }

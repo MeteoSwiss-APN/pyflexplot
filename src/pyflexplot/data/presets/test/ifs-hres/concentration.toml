@@ -10,16 +10,15 @@ time = [1, 6, 11]
 input_variable = "concentration"
 level = 0
 integrate = false
+domain = "data"
 
 [_base."_integrated+"]
 integrate = true
 time = -1
 species_id = 1
 
-["**"._auto.en]
-domain = "auto"
+["**".en]
 lang = "en"
 
-["**"._auto.de]
-domain = "auto"
+["**".de]
 lang = "de"
