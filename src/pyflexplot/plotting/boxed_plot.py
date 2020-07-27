@@ -8,7 +8,6 @@ from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
-from typing import Mapping
 from typing import Optional
 from typing import Tuple
 from typing import Union
@@ -23,6 +22,7 @@ from pydantic import BaseModel
 
 # Local
 from ..data import Field
+from ..data import FieldStats
 from ..meta_data import MetaData
 from ..setup import Setup
 from ..utils.summarize import summarizable
@@ -198,7 +198,7 @@ class BoxedPlot:
 
 
 def levels_from_time_stats(
-    plot_config: BoxedPlotConfig, time_stats: Mapping[str, float]
+    plot_config: BoxedPlotConfig, time_stats: FieldStats
 ) -> List[float]:
     def _auto_levels_log10(n_levels: int, val_max: float) -> List[float]:
         if not np.isfinite(val_max):
@@ -226,6 +226,6 @@ def levels_from_time_stats(
             assert plot_config.d_level is not None  # mypy
             return np.arange(0, plot_config.n_levels) * plot_config.d_level
     elif plot_config.setup.core.plot_variable == "affected_area_mono":
-        levels = _auto_levels_log10(n_levels=9, val_max=time_stats["max"])
+        levels = _auto_levels_log10(n_levels=9, val_max=time_stats.max)
         return np.array([levels[0], np.inf])
-    return _auto_levels_log10(plot_config.n_levels, val_max=time_stats["max"])
+    return _auto_levels_log10(plot_config.n_levels, val_max=time_stats.max)

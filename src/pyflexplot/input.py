@@ -4,7 +4,6 @@ Data input.
 """
 # Standard library
 import re
-import warnings
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
@@ -29,6 +28,7 @@ from srutils.various import check_array_indices
 from .data import ensemble_probability
 from .data import EnsembleCloud
 from .data import Field
+from .data import FieldStats
 from .data import merge_fields
 from .fix_nc_input import FlexPartDataFixer
 from .meta_data import collect_meta_data
@@ -311,7 +311,7 @@ class InputFileEnsemble:
         fld_time: np.ndarray = self._reduce_ensemble(setups)
 
         # Compute some statistics across all time steps
-        time_stats: Dict[str, np.ndarray] = self._collect_time_stats(fld_time)
+        time_stats = FieldStats(fld_time)
 
         # Create Field objects at requested time steps
         field_lst_lst: List[List[Field]] = []
@@ -511,30 +511,6 @@ class InputFileEnsemble:
         else:
             raise NotImplementedError("ens_variable", ens_variable)
         return fld_time
-
-    @staticmethod
-    def _collect_time_stats(fld_time: np.ndarray,) -> Dict[str, np.ndarray]:
-        data = fld_time[np.isfinite(fld_time)]
-        data_nz = data[data > 0]
-        # Avoid zero-size errors below
-        if data.size == 0:
-            data = np.full([1], np.nan)
-        if data_nz.size == 0:
-            data_nz = np.full([1], np.nan)
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", category=RuntimeWarning, message="All-NaN slice encountered"
-            )
-            warnings.filterwarnings(
-                "ignore", category=RuntimeWarning, message="Mean of empty slice"
-            )
-            return {
-                "mean": np.nanmean(data),
-                "median": np.nanmedian(data),
-                "mean_nz": np.nanmean(data_nz),
-                "median_nz": np.nanmedian(data_nz),
-                "max": np.nanmax(data),
-            }
 
     @staticmethod
     def _dim_names(model: str) -> Dict[str, str]:

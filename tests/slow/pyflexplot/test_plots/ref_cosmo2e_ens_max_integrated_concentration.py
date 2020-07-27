@@ -50,11 +50,15 @@ field_summary = {
         }
     ],
     "time_stats": {
+        "type": "FieldStats",
+        "min": 0.0,
+        "max": 0.32722116,
         "mean": 0.000777545,
         "median": 0.0,
+        "min_nz": 6.293489e-16,
+        "max_nz": 0.32722116,
         "mean_nz": 0.0037213,
         "median_nz": 0.00034858542,
-        "max": 0.32722116,
     },
     "nc_meta_data": {
         "ncattrs": {
@@ -2405,11 +2409,15 @@ plot_summary = {
             }
         ],
         "time_stats": {
+            "type": "FieldStats",
+            "min": 0.0,
+            "max": 0.32722116,
             "mean": 0.000777545,
             "median": 0.0,
+            "min_nz": 6.293489e-16,
+            "max_nz": 0.32722116,
             "mean_nz": 0.0037213,
             "median_nz": 0.00034858542,
-            "max": 0.32722116,
         },
         "nc_meta_data": {
             "ncattrs": {

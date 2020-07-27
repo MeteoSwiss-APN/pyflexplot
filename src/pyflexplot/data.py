@@ -3,6 +3,7 @@
 Data structures.
 """
 # Standard library
+import warnings
 from dataclasses import dataclass
 from typing import Any
 from typing import Callable
@@ -94,7 +95,7 @@ class Field:
     lon: np.ndarray
     rotated_pole: bool
     var_setups: SetupCollection
-    time_stats: Mapping[str, np.ndarray]
+    time_stats: "FieldStats"
     nc_meta_data: Mapping[str, Any]
     mdata: Optional[MetaData]
 
@@ -153,6 +154,48 @@ class Field:
             self.lat[jmax],
             self.lon[imax],
         )
+
+
+@summarizable
+# pylint: disable=R0902  # too-many-instance-attributes
+class FieldStats:
+    """Standard statistics of a 2D field over time."""
+
+    def __init__(self, arr: np.ndarray) -> None:
+        arr = arr[np.isfinite(arr)]
+        arr_nz = arr[arr > 0]
+        # Avoid zero-size errors below
+        if arr.size == 0:
+            arr = np.full([1], np.nan)
+        if arr_nz.size == 0:
+            arr_nz = np.full([1], np.nan)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", category=RuntimeWarning, message="All-NaN slice encountered"
+            )
+            warnings.filterwarnings(
+                "ignore", category=RuntimeWarning, message="Mean of empty slice"
+            )
+            self.min: float = np.nanmin(arr)
+            self.max: float = np.nanmax(arr)
+            self.mean: float = np.nanmean(arr)
+            self.median: float = np.nanmedian(arr)
+            self.min_nz: float = np.nanmin(arr_nz)
+            self.max_nz: float = np.nanmax(arr_nz)
+            self.mean_nz: float = np.nanmean(arr_nz)
+            self.median_nz: float = np.nanmedian(arr_nz)
+
+    def dict(self) -> Dict[str, float]:
+        dct = {}
+        for suffix in ["", "_nz"]:
+            for attr in ["min", "max", "mean", "median"]:
+                key = f"{attr}{suffix}"
+                val = getattr(self, key)
+                dct[key] = val
+        return dct
+
+    def summarize(self) -> Dict[str, Any]:
+        return {"type": type(self).__name__, **self.dict()}
 
 
 def ensemble_probability(arr: np.ndarray, thr: float, n_mem: int) -> np.ndarray:
