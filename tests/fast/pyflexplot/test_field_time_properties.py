@@ -9,9 +9,16 @@ import numpy as np
 from pyflexplot.data import FieldTimeProperties
 from srutils.testing import assert_nested_equal
 
+N = np.nan
 
-class TestFieldTimeStats:
-    arr = np.array([[[0, 1, 1], [0, 2, 4]], [[0, 3, 9], [0, 4, 16]]], np.float32)
+
+class TestFieldTimeProperties:
+    arr = np.array(
+        [[[N, 0, N, 1, 1], [0, 2, 4, N, N]], [[0, N, N, 3, 9], [0, 4, N, 16, N]]],
+        np.float32,
+    )
+    mask = np.array([[1, 1, 0, 1, 1], [1, 1, 1, 1, 0]], np.bool)
+    mask_nz = np.array([[0, 0, 0, 1, 1], [0, 1, 1, 1, 0]], np.bool)
     stats = {
         "min": 0,
         "max": 16,
@@ -40,10 +47,18 @@ class TestFieldTimeStats:
         assert np.isclose(props.stats_nz.median, self.stats_nz["median"])
 
     def test_summarize(self):
-        stats = FieldTimeProperties(self.arr)
+        props = FieldTimeProperties(self.arr)
         summary = {
             "type": "FieldTimeProperties",
             "stats": {"type": "FieldStats", **self.stats},
             "stats_nz": {"type": "FieldStats", **self.stats_nz},
         }
-        assert_nested_equal(stats.summarize(), summary, float_close_ok=True)
+        assert_nested_equal(props.summarize(), summary, float_close_ok=True)
+
+    def test_mask(self):
+        props = FieldTimeProperties(self.arr)
+        assert (props.mask == self.mask).all()
+
+    def test_mask_nonzero(self):
+        props = FieldTimeProperties(self.arr)
+        assert (props.mask_nz == self.mask_nz).all()

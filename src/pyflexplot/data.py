@@ -185,13 +185,24 @@ class FieldStats:
             )
 
 
-@summarizable(attrs=["stats", "stats_nz"])
+@summarizable
 class FieldTimeProperties:
     """Standard statistics of a 2D field over time."""
 
+    summarizable_attrs = ["stats", "stats_nz"]
+
     def __init__(self, arr: np.ndarray) -> None:
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=RuntimeWarning,
+                message="Invalid value encountered in greater",
+            )
+            arr_nz = np.where(arr > 0, arr, np.nan)
         self.stats = FieldStats.create(arr)
-        self.stats_nz = FieldStats.create(np.where(arr > 0, arr, np.nan))
+        self.stats_nz = FieldStats.create(arr_nz)
+        self.mask: np.ndarray = (~np.isnan(arr)).sum(axis=0) > 0
+        self.mask_nz: np.ndarray = (~np.isnan(arr_nz)).sum(axis=0) > 0
 
 
 def ensemble_probability(arr: np.ndarray, thr: float, n_mem: int) -> np.ndarray:
