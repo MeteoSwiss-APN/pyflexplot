@@ -1875,7 +1875,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "-999$\\,$a",
+                    "s": "-99.9$\\,$a",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -1904,7 +1904,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "-999$\\,$m s$^{-1}$",
+                    "s": "-99.9$\\,$m s$^{-1}$",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -1933,7 +1933,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "-999$\\,$m s$^{-1}$",
+                    "s": "-99.9$\\,$m s$^{-1}$",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -1962,7 +1962,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "-999$\\,$s$^{-1}$",
+                    "s": "-99.9$\\,$s$^{-1}$",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -1991,7 +1991,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "-999",
+                    "s": "-99.9",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

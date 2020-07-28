@@ -2256,7 +2256,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "30.17$\\,$a",
+                    "s": "30$\\,$a",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

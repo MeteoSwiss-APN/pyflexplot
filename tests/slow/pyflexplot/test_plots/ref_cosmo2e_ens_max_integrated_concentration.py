@@ -2480,7 +2480,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "8.02$\\,$d",
+                    "s": "8.04$\\,$d",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

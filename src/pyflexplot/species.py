@@ -13,7 +13,6 @@ from typing import Optional
 from typing import overload
 from typing import Sequence
 from typing import Tuple
-from typing import Union
 
 # Third-party
 import numpy as np
@@ -44,33 +43,32 @@ class SpeciesAttribute:
         unit: Optional[str] = None if arg2 is None else str(arg2)
         return cls(value, unit)
 
-    @classmethod
-    def field(cls, **kwargs: Any) -> "SpeciesAttribute":
-        """Create a dataclass field that defaults to ``SpeciesAttribute()``.
-
-        The return type is "SpeciesAttribute" rather than "dataclasses.Field"
-        to prevent mypy error "incompatible types in assignment".
-
-        Example:
-        > @dataclass
-        > class Species:
-        >     age: SpeciesAttribute = SpeciesAttribute.field()
-
-        """
-        return dataclasses.field(default_factory=cls, **kwargs)  # type: ignore
-
 
 @dataclass
 class Species:
     """Chemical species."""
 
-    id_: int
-    name: str
-    half_life: SpeciesAttribute = SpeciesAttribute.field()
-    deposition_velocity: SpeciesAttribute = SpeciesAttribute.field()
-    sedimentation_velocity: SpeciesAttribute = SpeciesAttribute.field()
-    washout_coefficient: SpeciesAttribute = SpeciesAttribute.field()
-    washout_exponent: SpeciesAttribute = SpeciesAttribute.field()
+    id_cosmo: int = -99
+    id_ifs: int = -99
+    name: str = "N/A"
+    weight: SpeciesAttribute = dataclasses.field(
+        default=SpeciesAttribute(-99.9, "g mol-1")
+    )
+    half_life: SpeciesAttribute = dataclasses.field(
+        default=SpeciesAttribute(-99.9, "a")
+    )
+    deposition_velocity: SpeciesAttribute = dataclasses.field(
+        default=SpeciesAttribute(-99.9, "m s-1")
+    )
+    sedimentation_velocity: SpeciesAttribute = dataclasses.field(
+        default=SpeciesAttribute(-99.9, "m s-1")
+    )
+    washout_coefficient: SpeciesAttribute = dataclasses.field(
+        default=SpeciesAttribute(-99.9, "s-1")
+    )
+    washout_exponent: SpeciesAttribute = dataclasses.field(
+        default=SpeciesAttribute(-99.9)
+    )
 
     @classmethod
     def create(cls, **params: Any) -> "Species":
@@ -87,101 +85,286 @@ class Species:
         return cls(**params_prep)
 
 
-defaults = {
-    "half_life": (-999, "a"),
-    "deposition_velocity": (-999, "m s-1"),
-    "sedimentation_velocity": (-999, "m s-1"),
-    "washout_coefficient": (-999, "s-1"),
-    "washout_exponent": -999,
-}
-
-
+# See `flexpart/options/SPECIES/SPECIES_???`
+# Corresponding parameters:
+#   Species()               : SPECIES_???
+#   name                    : Tracer name
+#   weight                  : molweight
+#   half_life               : Species half life
+#   deposition_velocity     : Alternative: dry deposition velocity
+#   sedimentation_velocity  :
+#   washout_coefficient     : Wet deposition - A
+#   washout_exponent        : Wet deposition - B
 SPECIES: List[Species] = [
-    Species.create(id_=-99, name="N/A", **defaults),  # SR_TMP
-    Species.create(id_=1, name="TRACER", **defaults),
-    Species.create(id_=2, name="O3", **defaults),
-    Species.create(id_=3, name="NO", **defaults),
-    Species.create(id_=4, name="NO2", **defaults),
-    Species.create(id_=5, name="HNO3", **defaults),
-    Species.create(id_=6, name="HNO2", **defaults),
-    Species.create(id_=7, name="H2O2", **defaults),
-    Species.create(id_=9, name="HCHO", **defaults),
-    Species.create(id_=10, name="PAN", **defaults),
-    Species.create(id_=11, name="NH3", **defaults),
-    Species.create(id_=12, name="SO4", **defaults),
-    Species.create(id_=13, name="NO3", **defaults),
-    Species.create(id_=14, name="I2", **defaults),
+    Species.create(),
     Species.create(
-        id_=15,
+        id_cosmo=1,
+        id_ifs=1,
+        name="TRACER",
+        weight=(350.0, "g mol-1"),
+        washout_exponent=0.0,
+    ),
+    Species.create(id_cosmo=2, id_ifs=2, name="O3", weight=(48.0, "g mol-1")),
+    Species.create(
+        id_cosmo=3,
+        id_ifs=3,
+        name="NO",
+        weight=(30.0, "g mol-1"),
+        washout_coefficient=(8.0e-6, "s-1"),
+        washout_exponent=0.62,
+    ),
+    Species.create(
+        id_cosmo=4,
+        id_ifs=4,
+        name="NO2",
+        weight=(46.0, "g mol-1"),
+        washout_coefficient=(1.0e-5, "s-1"),
+        washout_exponent=0.62,
+    ),
+    Species.create(
+        id_cosmo=5,
+        id_ifs=5,
+        name="HNO3",
+        weight=(63.0, "g mol-1"),
+        washout_coefficient=(5.0e-5, "s-1"),
+        washout_exponent=0.62,
+    ),
+    Species.create(id_cosmo=6, id_ifs=6, name="HNO2", weight=(47.0, "g mol-1")),
+    Species.create(
+        id_cosmo=7,
+        id_ifs=7,
+        name="H2O2",
+        weight=(34.0, "g mol-1"),
+        washout_coefficient=(1.0e-4, "s-1"),
+        washout_exponent=0.62,
+    ),
+    Species.create(
+        id_cosmo=8,
+        id_ifs=23,
+        name="SO2",
+        weight=(64.0, "g mol-1"),
+        washout_exponent=0.62,
+    ),
+    Species.create(id_cosmo=9, id_ifs=9, name="HCHO", weight=(30.0, "g mol-1")),
+    Species.create(id_cosmo=10, id_ifs=10, name="PAN", weight=(121.0, "g mol-1")),
+    Species.create(
+        id_cosmo=11,
+        id_ifs=11,
+        name="NH3",
+        weight=(17.0, "g mol-1"),
+        washout_exponent=0.62,
+    ),
+    Species.create(
+        id_cosmo=12,
+        id_ifs=12,
+        name="SO4-aero",
+        washout_coefficient=(1.0e-4, "s-1"),
+        washout_exponent=0.8,
+    ),
+    Species.create(
+        id_cosmo=13,
+        id_ifs=13,
+        name="NO3-aero",
+        washout_coefficient=(5.0e-6, "s-1"),
+        washout_exponent=0.62,
+    ),
+    Species.create(
+        id_cosmo=14,
+        id_ifs=14,
+        name="I2-131",
+        half_life=(8.0, "d"),
+        washout_coefficient=(8.0e-5, "s-1"),
+        washout_exponent=0.62,
+    ),
+    Species.create(
+        id_cosmo=15,
+        id_ifs=15,
         name="I-131a",
-        half_life=(8.02, "d"),
+        # half_life=(8.02, "d"),
+        half_life=(8.04, "d"),
         deposition_velocity=(1.5e-3, "m s-1"),
         sedimentation_velocity=(0.0, "m s-1"),
         washout_coefficient=(7.0e-5, "s-1"),
         washout_exponent=0.8,
     ),
     Species.create(
-        id_=16,
+        id_cosmo=16,
+        id_ifs=16,
         name="Cs-137",
-        half_life=(30.17, "a"),
+        # half_life=(30.17, "a"),
+        half_life=(30.0, "a"),
         deposition_velocity=(1.5e-3, "m s-1"),
         sedimentation_velocity=(0.0, "m s-1"),
         washout_coefficient=(7.0e-5, "s-1"),
         washout_exponent=0.8,
     ),
-    Species.create(id_=17, name="Y", **defaults),
-    Species.create(id_=18, name="Ru", **defaults),
-    Species.create(id_=19, name="Kr", **defaults),
-    Species.create(id_=20, name="Sr", **defaults),
-    Species.create(id_=21, name="Xe", **defaults),
-    Species.create(id_=22, name="CO", **defaults),
-    Species.create(id_=23, name="SO2", **defaults),
-    Species.create(id_=24, name="AIRTRACER", **defaults),
-    Species.create(id_=25, name="AERO", **defaults),
-    Species.create(id_=26, name="CH4", **defaults),
-    Species.create(id_=27, name="C2H6", **defaults),
-    Species.create(id_=28, name="C3H8", **defaults),
-    Species.create(id_=29, name="Te", **defaults),
-    Species.create(id_=30, name="I2", **defaults),
-    Species.create(id_=31, name="PCB28", **defaults),
-    Species.create(id_=32, name="Norm", **defaults),
-    Species.create(id_=34, name="G", **defaults),
-    Species.create(id_=40, name="BC", **defaults),
+    Species.create(
+        id_cosmo=17,
+        id_ifs=17,
+        name="Y-91",
+        half_life=(58.3, "d"),
+        washout_coefficient=(1.0e-4, "s-1"),
+        washout_exponent=0.8,
+    ),
+    Species.create(
+        id_cosmo=18,
+        id_ifs=18,
+        name="Ru-106",
+        half_life=(1.0, "a"),
+        washout_coefficient=(1.0e-4, "s-1"),
+        washout_exponent=0.8,
+    ),
+    Species.create(id_cosmo=19, id_ifs=19, name="Kr-85"),
+    Species.create(
+        id_cosmo=20,
+        id_ifs=20,
+        name="Sr-90",
+        washout_coefficient=(1.0e-4, "s-1"),
+        washout_exponent=0.8,
+    ),
+    Species.create(
+        id_cosmo=21,
+        id_ifs=21,
+        name="Xe-133",
+        half_life=(5.245, "d"),
+        deposition_velocity=(0.0, "m s-1"),
+        washout_coefficient=(0.0, "s-1"),
+        washout_exponent=0.0,
+    ),
+    Species.create(id_cosmo=22, id_ifs=22, name="CO", weight=(28.0, "g mol-1")),
+    Species.create(
+        id_cosmo=24,
+        id_ifs=24,
+        name="AIRTRACER",
+        weight=(29.0, "g mol-1"),
+        washout_exponent=0.0,
+    ),
+    Species.create(
+        id_cosmo=25,
+        name="AERO-TRACER",
+        weight=(29.0, "g mol-1"),
+        washout_coefficient=(2.0e-5, "s-1"),
+        washout_exponent=0.8,
+    ),
+    Species.create(
+        id_cosmo=29,
+        id_ifs=29,
+        name="Te-132",
+        half_life=(3.258, "d"),
+        deposition_velocity=(1.5e-3, "m s-1"),
+        washout_coefficient=(7.0e-5, "s-1"),
+        washout_exponent=0.8,
+    ),
+    Species.create(
+        id_cosmo=30,
+        name="I-131e",
+        half_life=(8.04, "d"),
+        deposition_velocity=(1.5e-2, "m s-1"),
+        washout_coefficient=(7.0e-5, "s-1"),
+        washout_exponent=0.8,
+    ),
+    Species.create(
+        id_cosmo=31,
+        name="I-131o",
+        half_life=(8.04, "d"),
+        deposition_velocity=(1.5e-4, "m s-1"),
+        washout_coefficient=(7.0e-5, "s-1"),
+        washout_exponent=0.8,
+    ),
+    Species.create(
+        id_cosmo=32,
+        name="Co-60",
+        half_life=(5.271, "a"),
+        deposition_velocity=(1.5e-3, "m s-1"),
+        washout_coefficient=(7.0e-5, "s-1"),
+        washout_exponent=0.8,
+    ),
+    Species.create(
+        id_cosmo=33,
+        name="Ir-192",
+        half_life=(74.02, "d"),
+        deposition_velocity=(1.5e-3, "m s-1"),
+        washout_coefficient=(7.0e-5, "s-1"),
+        washout_exponent=0.8,
+    ),
+    Species.create(id_cosmo=34, name="H-3"),
+    Species.create(
+        id_cosmo=35,
+        name="Ba-140",
+        half_life=(12.74, "d"),
+        deposition_velocity=(1.5e-3, "m s-1"),
+        washout_coefficient=(7.0e-5, "s-1"),
+        washout_exponent=0.8,
+    ),
+    Species.create(
+        id_cosmo=36,
+        name="Zr-95",
+        half_life=(63.98, "d"),
+        deposition_velocity=(1.5e-3, "m s-1"),
+        washout_coefficient=(7.0e-5, "s-1"),
+        washout_exponent=0.8,
+    ),
+    Species.create(
+        id_cosmo=37,
+        name="Ru-103",
+        half_life=(39.28, "d"),
+        deposition_velocity=(1.5e-3, "m s-1"),
+        washout_coefficient=(7.0e-5, "s-1"),
+        washout_exponent=0.8,
+    ),
+    Species.create(
+        id_cosmo=38,
+        name="Pu-241",
+        half_life=(14.4, "a"),
+        deposition_velocity=(1.5e-3, "m s-1"),
+        washout_coefficient=(7.0e-5, "s-1"),
+        washout_exponent=0.8,
+    ),
+    Species.create(
+        id_cosmo=39,
+        id_ifs=32,
+        name="Norm",
+        half_life=(30.0, "a"),
+        deposition_velocity=(1.5e-3, "m s-1"),
+        washout_coefficient=(7.0e-5, "s-1"),
+        washout_exponent=0.8,
+    ),
+    Species.create(id_ifs=25, name="AERO-TRACE"),
+    Species.create(id_ifs=26, name="CH4"),
+    Species.create(id_ifs=27, name="C2H6"),
+    Species.create(id_ifs=28, name="C3H8"),
+    Species.create(id_ifs=30, name="I2"),
+    Species.create(id_ifs=31, name="PCB28"),
+    Species.create(id_ifs=34, name="G"),
+    Species.create(id_ifs=40, name="BC"),
 ]
 
 
 @overload
-def get_species(*, id_: None = None, name: str) -> Species:
+def get_species(*, id_cosmo: None = None, id_ifs: None = None, name: str) -> Species:
     ...
 
 
 @overload
-def get_species(*, id_: int, name: None = None) -> Species:
+def get_species(*, id_cosmo: None = None, id_ifs: int, name: None = None) -> Species:
     ...
 
 
 @overload
-def get_species(
-    *, id_: None = None, name: Union[List[str], Tuple[str, ...]]
-) -> Tuple[Species]:
+def get_species(*, id_cosmo: int, id_ifs: None = None, name: None = None) -> Species:
     ...
 
 
-@overload
-def get_species(*, id_: Sequence[int], name: None = None) -> Tuple[Species]:
-    ...
-
-
-def get_species(*, id_=None, name=None):
+def get_species(*, id_cosmo=None, id_ifs=None, name=None):
     """Identify one or more ``Species`` objects by an attribute."""
-    if id_ is not None:
-        attr, value = "id_", id_
+    if id_cosmo is not None:
+        attr, value = "id_cosmo", id_cosmo
+    elif id_ifs is not None:
+        attr, value = "id_ifs", id_ifs
     elif name is not None:
         attr, value = "name", name
     else:
         raise ValueError("must pass one argument")
-    if isinstance(value, Sequence) and not isinstance(value, str):
-        return [get_species(**{attr: value_i}) for value_i in value]
     global SPECIES  # pylint: disable=W0603  # global-statement
     species: Species
     for species in SPECIES:
