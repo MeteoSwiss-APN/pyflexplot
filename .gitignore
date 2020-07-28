@@ -103,3 +103,6 @@ venvs/
 # mypy
 .mypy_cache/
 .project
+
+# VS Code
+.vscode
