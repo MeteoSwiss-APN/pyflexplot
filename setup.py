@@ -42,7 +42,7 @@ dependencies = [
     "matplotlib",
     "netcdf4",
     "numpy",
-    "pillow >= 6.2.0",
+    "pillow >= 7.1.0",
     "pydantic",
     "pypdf2",
     "scipy",
