@@ -148,18 +148,12 @@ class FlexPartDataFixer:
                 self._fix_meta_data_cosmo(mdata_i)
             return
         assert isinstance(mdata, MetaData)  # mypy
-        name = mdata.species_name.value
-        unit = mdata.variable_unit.value
-        try:
-            get_species(name=name)
-        except ValueError:
-            log(wrn=f"unrecognized variable name '{name}'; skip input meta data fixes")
-            return
+        unit = mdata.variable.unit
         if unit in self.valid_units:
             pass
         else:
             try:
                 new_unit = self.unit_replacement_names[cast(str, unit)]
             except KeyError:
-                raise NotImplementedError("unit for variable", unit, name)
-            mdata.variable_unit.value = new_unit
+                raise NotImplementedError(f"unit '{unit}'")
+            mdata.variable.unit = new_unit

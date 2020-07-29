@@ -7,12 +7,13 @@ Attributes.
 import re
 import time
 import warnings
+from copy import copy
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 from typing import Any
-from typing import cast
 from typing import Collection
 from typing import Dict
 from typing import Generic
@@ -33,7 +34,6 @@ from pydantic.generics import GenericModel
 
 # Local
 from .setup import Setup
-from .setup import SetupCollection
 from .species import get_species
 from .species import Species
 from .utils.summarize import summarizable
@@ -213,10 +213,12 @@ class MetaDatumCombo(GenericModel, Generic[ValueT]):
         return type(self)(name=name, value=value, attrs=attrs)
 
     def as_datums(self) -> List[MetaDatum[ValueT]]:
-        return [
-            MetaDatum[ValueT](name=self.name, value=value, attrs=self.attrs)
-            for value in self.value
-        ]
+        datums: List[MetaDatum] = []
+        for value in self.value:
+            cls = MetaDatum[type(value)]  # type: ignore
+            datum = cls(name=self.name, value=value, attrs=self.attrs)
+            datums.append(datum)
+        return datums
 
     def merge_with(self, others, replace=None):
         raise NotImplementedError(f"{type(self).__name__}.merge_with")
@@ -247,7 +249,7 @@ class MetaDatumCombo(GenericModel, Generic[ValueT]):
         )
 
 
-def format_meta_datum(value: str, join: Optional[str] = None) -> str:
+def format_meta_datum(value: Any, join: Optional[str] = None) -> str:
     if isinstance(value, Collection) and not isinstance(value, str):
         # SR_TODO make sure this is covered by a test (it currently isn't)!
         return (join or " / ").join([format_meta_datum(v) for v in value])
@@ -261,225 +263,68 @@ def format_meta_datum(value: str, join: Optional[str] = None) -> str:
     return f"{{:{fmt}}}".format(value)
 
 
-def init_mdatum(type_: type, name: str, attrs: Optional[Mapping[str, Any]] = None):
-    """Pydantic validator to initialize ``MetaData`` attributes."""
+@dataclass
+class MetaData:
+    release: "ReleaseMetaData"
+    simulation: "SimulationMetaData"
+    variable: "VariableMetaData"
+    species: Union[Species, Tuple[Species, ...]]
 
-    def f(value):
-        if not isinstance(value, (MetaDatum, MetaDatumCombo)):
-            if isinstance(value, Collection) and not isinstance(value, str):
-                cls = MetaDatumCombo
-            else:
-                cls = MetaDatum
-            value = cls[type_](name=name, value=value, attrs=attrs)
-        return value
+    def merge_with(self, others: Collection["MetaData"],) -> "MetaData":
+        if not others:
+            return self
 
-    return validator(name, pre=True, allow_reuse=True)(f)
+        def merge_release():
+            if not all(other.release == self.release for other in others):
+                raise ValueError("release meta data differ")
+            return self.release
 
+        def merge_simulation():
+            if not all(other.simulation == self.simulation for other in others):
+                raise ValueError("simulation meta data differ")
+            return self.simulation
 
-class MetaData(BaseModel):
-    """Meta data.
-
-    Attributes:
-        release_end: End of the release.
-
-        release_end_rel: End of the release relative to the start of the simulation.
-
-        release_height: Release height value(s).
-
-        release_height_unit: Release height unit
-
-        release_mass: Release mass value(s).
-
-        release_mass_unit: Release mass unit.
-
-        release_rate: Release rate value(s).
-
-        release_rate_unit: Release rate unit.
-
-        release_site_lat: Latitude of release site.
-
-        release_site_lon: Longitude of release site.
-
-        release_site_name: Name of release site.
-
-        release_start_rel:  Release start relative to the simulation start.
-
-        release_start: Release start.
-
-        simulation_end: Simulation end.
-
-        simulation_integr_start_rel: Integration period start relative to the
-            simulation start.
-
-        simulation_integr_start: Integration period start.
-
-        simulation_now: Current timestep.
-
-        simulation_now_rel: Current timestep relative to the simulation start.
-
-        simulation_start: Simulation start.
-
-        species_deposit_vel: Deposition velocity value(s).
-
-        species_deposit_vel_unit: Deposition velocity unit.
-
-        species_half_life: Half life value(s).
-
-        species_half_life_unit: Half life unit.
-
-        species_name: Species name.
-
-        species_sediment_vel: Sedimentation velocity value(s).
-
-        species_sediment_vel_unit: Sedimentation velocity unit.
-
-        species_washout_coeff_unit: Washout coefficient unit.
-
-        species_washout_coeff: Washout coefficient value(s).
-
-        species_washout_exponent: Washout exponent value(s).
-
-        variable_level_bot: Bottom level value(s).
-
-        variable_level_bot_unit: Bottom level unit.
-
-        variable_level_top: Top level value(s).
-
-        variable_level_top_unit: Bottom level unit.
-
-        variable_name: Name of variable.
-
-        variable_unit: Unit of variable as a string (e.g., 'm-3' for m^3).
-
-    """
-
-    setup: Setup
-    release_end_rel: Union[MetaDatum[timedelta], MetaDatumCombo[timedelta]]
-    release_end: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
-    release_height: Union[MetaDatum[float], MetaDatumCombo[float]]
-    release_height_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    release_mass: Union[MetaDatum[float], MetaDatumCombo[float]]
-    release_mass_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    release_rate: Union[MetaDatum[float], MetaDatumCombo[float]]
-    release_rate_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    release_site_lat: Union[MetaDatum[float], MetaDatumCombo[float]]
-    release_site_lon: Union[MetaDatum[float], MetaDatumCombo[float]]
-    release_site_name: Union[MetaDatum[str], MetaDatumCombo[str]]
-    release_start_rel: Union[MetaDatum[timedelta], MetaDatumCombo[timedelta]]
-    release_start: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
-    simulation_end: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
-    simulation_integr_start_rel: Union[MetaDatum[timedelta], MetaDatumCombo[timedelta]]
-    simulation_integr_start: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
-    simulation_now_rel: Union[MetaDatum[timedelta], MetaDatumCombo[timedelta]]
-    simulation_now: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
-    simulation_start: Union[MetaDatum[datetime], MetaDatumCombo[datetime]]
-    species_deposit_vel: Union[MetaDatum[float], MetaDatumCombo[float]]
-    species_deposit_vel_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    species_half_life: Union[MetaDatum[float], MetaDatumCombo[float]]
-    species_half_life_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    species_name: Union[MetaDatum[str], MetaDatumCombo[str]]
-    species_sediment_vel: Union[MetaDatum[float], MetaDatumCombo[float]]
-    species_sediment_vel_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    species_washout_coeff: Union[MetaDatum[float], MetaDatumCombo[float]]
-    species_washout_coeff_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    species_washout_exponent: Union[MetaDatum[float], MetaDatumCombo[float]]
-    variable_level_bot: Union[MetaDatum[float], MetaDatumCombo[float]]
-    variable_level_bot_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    variable_level_top: Union[MetaDatum[float], MetaDatumCombo[float]]
-    variable_level_top_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-    variable_unit: Union[MetaDatum[str], MetaDatumCombo[str]]
-
-    _init_release_end = init_mdatum(datetime, "release_end")
-    _init_release_end_rel = init_mdatum(timedelta, "release_end_rel")
-    _init_release_height = init_mdatum(float, "release_height")
-    _init_release_height_unit = init_mdatum(str, "release_height_unit")
-    _init_release_mass = init_mdatum(float, "release_mass")
-    _init_release_mass_unit = init_mdatum(str, "release_mass_unit")
-    _init_release_rate = init_mdatum(float, "release_rate")
-    _init_release_rate_unit = init_mdatum(str, "release_rate_unit")
-    _init_release_site_lat = init_mdatum(float, "release_site_lat")
-    _init_release_site_lon = init_mdatum(float, "release_site_lon")
-    _init_release_site_name = init_mdatum(str, "release_site_name")
-    _init_release_start = init_mdatum(datetime, "release_start")
-    _init_release_start_rel = init_mdatum(timedelta, "release_start_rel")
-    _init_simulation_end = init_mdatum(datetime, "simulation_end")
-    _init_simulation_integr_start = init_mdatum(datetime, "simulation_integr_start")
-    _init_simulation_integr_start_rel = init_mdatum(
-        timedelta, "simulation_integr_start_rel",
-    )
-    _init_simulation_now = init_mdatum(datetime, "simulation_now")
-    _init_simulation_now_rel = init_mdatum(timedelta, "simulation_now_rel")
-    _init_simulation_start = init_mdatum(datetime, "simulation_start")
-    _init_species_deposit_vel = init_mdatum(float, "species_deposit_vel")
-    _init_species_deposit_vel_unit = init_mdatum(str, "species_deposit_vel_unit")
-    _init_species_half_life = init_mdatum(float, "species_half_life")
-    _init_species_half_life_unit = init_mdatum(str, "species_half_life_unit")
-    _init_species_name = init_mdatum(str, "species_name", attrs={"join": " + "})
-    _init_species_sediment_vel = init_mdatum(float, "species_sediment_vel")
-    _init_species_sediment_vel_unit = init_mdatum(str, "species_sediment_vel_unit")
-    _init_species_washout_coeff = init_mdatum(float, "species_washout_coeff")
-    _init_species_washout_coeff_unit = init_mdatum(str, "species_washout_coeff_unit")
-    _init_species_washout_exponent = init_mdatum(float, "species_washout_exponent")
-    _init_variable_level_bot = init_mdatum(float, "variable_level_bot")
-    _init_variable_level_bot_unit = init_mdatum(str, "variable_level_bot_unit")
-    _init_variable_level_top = init_mdatum(float, "variable_level_top")
-    _init_variable_level_top_unit = init_mdatum(str, "variable_level_top_unit")
-    _init_variable_unit = init_mdatum(str, "variable_unit")
-
-    class Config:  # noqa
-        extra = "forbid"
-
-    def merge_with(
-        self,
-        others: Collection["MetaData"],
-        replace: Optional[Mapping[str, Any]] = None,
-    ) -> "MetaData":
-        """Create a new instance by merging this instance with others.
-
-        Note that neither ``self`` nor ``others`` are changed.
-
-        Args:
-            others: Other instances of the same meta data class, to be merged
-                with this one.
-
-            replace (optional): Attributes to be replaced in the merged
-                instance. Must contain all meta data that differ between any
-                of the instances to be merged. Defaults to '{}'.
-
-        Returns:
-            Merged instance derived from ``self`` and ``others``.
-
-        """
-
-        if replace is None:
-            replace = {}
-
-        # Check setups
-        equal_setup_params = ["lang"]  # SR_TMP TODO add more keys
-        self_setup_dct = {k: self.setup.dict()[k] for k in equal_setup_params}
-        other_setups = [other.setup for other in others]
-        other_setup_dcts = [
-            {k: setup.dict()[k] for k in equal_setup_params} for setup in other_setups
-        ]
-        differing = [dct for dct in other_setup_dcts if dct != self_setup_dct]
-        if differing:
-            raise ValueError(
-                "setups of others differ",
-                equal_setup_params,
-                self_setup_dct,
-                other_setup_dcts,
+        def merge_variable():
+            unit = self.variable.unit
+            level_unit = self.variable.level_unit
+            bottom_level = self.variable.bottom_level
+            top_level = self.variable.top_level
+            for obj in others:
+                assert unit == obj.variable.unit
+                assert level_unit == obj.variable.level_unit
+                bottom_level = min([bottom_level, obj.variable.bottom_level])
+                top_level = max([top_level, obj.variable.top_level])
+            return type(self.variable)(
+                unit=unit,
+                level_unit=level_unit,
+                bottom_level=bottom_level,
+                top_level=top_level,
             )
-        setup = SetupCollection([self.setup] + other_setups).compress()
 
-        kwargs = {}
-        for name in self.__fields__:  # pylint: disable=E1101  # no-member
-            if name == "setup":
-                continue
-            datum = getattr(self, name)
-            other_data = [getattr(o, name) for o in others]
-            kwargs[name] = datum.merge_with(other_data, replace=replace.get(name))
+        def merge_species():
+            species_lst: List[Species] = []
+            for obj in [self] + list(others):
+                for species in (
+                    [obj.species] if isinstance(obj.species, Species) else obj.species
+                ):
+                    if species not in species_lst:
+                        species_lst.append(species)
+            return species_lst[0] if len(species_lst) == 1 else tuple(species_lst)
 
-        return type(self)(setup=setup, **kwargs)
+        return type(self)(
+            release=merge_release(),
+            simulation=merge_simulation(),
+            variable=merge_variable(),
+            species=merge_species(),
+        )
+
+    def __deepcopy__(self, memo):
+        return type(self)(
+            release=copy(self.release),
+            simulation=copy(self.simulation),
+            variable=copy(self.variable),
+            species=deepcopy(self.species, memo),
+        )
 
     def format(
         self,
@@ -510,9 +355,72 @@ class MetaData(BaseModel):
             contains_unit = False
         if isinstance(datum, MetaDatumCombo) and join_combo is not None:
             datum = datum.derive(attrs={**datum.attrs, "join": join_combo})
+        # SR_TMP <
+        if isinstance(datum, MetaDatumCombo):
+            datums = datum.as_datums()
+            if all(datum == datums[0] for datum in datums[1:]):
+                datum = datums[0]
+        # SR_TMP >
         if contains_unit:
             return format_unit(str(datum))
         return str(datum)
+
+    def __getattr__(self, attr):
+        try:
+            value = {
+                "release_end_rel": self.release.end_rel,
+                "release_height": self.release.height,
+                "release_height_unit": self.release.height_unit,
+                "release_mass": self.release.mass,
+                "release_mass_unit": self.release.mass_unit,
+                "release_rate": self.release.rate,
+                "release_rate_unit": self.release.rate_unit,
+                "release_site_lat": self.release.lat,
+                "release_site_lon": self.release.lon,
+                "release_site_name": self.release.site,
+                "release_start_rel": self.release.start_rel,
+                "simulation_end": self.simulation.end,
+                "simulation_integr_start_rel": self.simulation.integration_start_rel,
+                "simulation_integr_start": self.simulation.integration_start,
+                "simulation_now_rel": self.simulation.now_rel,
+                "simulation_now": self.simulation.now,
+                "simulation_start": self.simulation.start,
+                "variable_level_bot": self.variable.bottom_level,
+                "variable_level_bot_unit": self.variable.level_unit,
+                "variable_level_top": self.variable.top_level,
+                "variable_level_top_unit": self.variable.level_unit,
+                "variable_unit": self.variable.unit,
+            }[attr]
+        except KeyError:
+            if not attr.startswith("species_"):
+                raise AttributeError(attr)
+        else:
+            return MetaDatum[type(value)](name=attr, value=value)
+        values = []
+        for species in (
+            [self.species] if isinstance(self.species, Species) else self.species
+        ):
+            try:
+                value = {
+                    "species_deposit_vel": species.deposition_velocity.value,
+                    "species_deposit_vel_unit": species.deposition_velocity.unit,
+                    "species_half_life": species.half_life.value,
+                    "species_half_life_unit": species.half_life.unit,
+                    "species_name": species.name,
+                    "species_sediment_vel": species.sedimentation_velocity.value,
+                    "species_sediment_vel_unit": species.sedimentation_velocity.unit,
+                    "species_washout_coeff": species.washout_coefficient.value,
+                    "species_washout_coeff_unit": species.washout_coefficient.unit,
+                    "species_washout_exponent": species.washout_exponent.value,
+                }[attr]
+            except KeyError:
+                raise AttributeError(attr)
+            else:
+                values.append(value)
+        if len(values) == 1:
+            value = values[0]
+            return MetaDatum[type(value)](name=attr, value=value)
+        return MetaDatumCombo[type(values[0])](name=attr, value=values)
 
 
 def format_unit(s: str) -> str:
@@ -535,8 +443,13 @@ def collect_meta_data(
     *,
     add_ts0: bool = False,
 ) -> MetaData:
-    """Collect meta data in open NetCDF file."""
-    return MetaDataCollector(fi, setup, nc_meta_data, add_ts0=add_ts0).run()
+    assert issubclass(MetaData, MetaData)  # SR_TMP
+    return MetaData(
+        release=ReleaseMetaData.from_file(fi, setup),
+        simulation=SimulationMetaData.from_file(fi, setup, add_ts0),
+        variable=VariableMetaData.from_file(fi, setup, nc_meta_data),
+        species=species_from_file(fi, setup, nc_meta_data),
+    )
 
 
 def getncattr(nc_obj: Union[nc4.Dataset, nc4.Variable], attr: str) -> Any:
@@ -547,110 +460,6 @@ def getncattr(nc_obj: Union[nc4.Dataset, nc4.Variable], attr: str) -> Any:
             message="tostring() is deprecated. Use tobytes() instead.",
         )
         return nc_obj.getncattr(attr)
-
-
-class MetaDataCollector:
-    """Collect meta data for a field from an open NetCDF file."""
-
-    def __init__(
-        self,
-        fi: nc4.Dataset,
-        setup: Setup,
-        nc_meta_data: Mapping[str, Mapping[str, Any]],
-        *,
-        add_ts0: bool = False,
-    ) -> None:
-        self.fi = fi
-        self.setup = setup
-        self.nc_meta_data = nc_meta_data  # SR_TMP
-        self.add_ts0 = add_ts0
-
-        # Collect all global attributes
-        self.ncattrs_global = {attr: getncattr(fi, attr) for attr in self.fi.ncattrs()}
-
-        # Collect all variables attributes
-        self.ncattrs_vars: Dict[str, Any] = {}
-        for var in self.fi.variables.values():
-            self.ncattrs_vars[var.name] = {
-                attr: getncattr(var, attr) for attr in var.ncattrs()
-            }
-
-        # Select attributes of field variable
-        name = nc_var_name(self.setup, self.nc_meta_data["derived"]["model"])
-        assert isinstance(name, str)  # mypy
-        self.ncattrs_field = self.ncattrs_vars[name]
-
-    def run(self) -> MetaData:
-        """Collect meta data."""
-        mdata_raw: Dict[str, Any] = {}
-        self.collect_simulation_mdata(mdata_raw)
-        self.collect_release_mdata(mdata_raw)
-        self.collect_species_mdata(mdata_raw)
-        self.collect_variable_mdata(mdata_raw)
-        setup = Setup.as_setup(self.setup.dict())
-        return MetaData(setup=setup, **mdata_raw)
-
-    def collect_simulation_mdata(self, mdata_raw: Dict[str, Any]) -> None:
-        simulation = SimulationMetaData.from_file(self.fi, self.setup, self.add_ts0)
-        mdata_raw.update(
-            {
-                "simulation_start": simulation.start,
-                "simulation_end": simulation.end,
-                "simulation_now": simulation.now,
-                "simulation_now_rel": simulation.now_rel,
-                "simulation_integr_start": simulation.integration_start,
-                "simulation_integr_start_rel": simulation.integration_start_rel,
-            }
-        )
-
-    def collect_release_mdata(self, mdata_raw: Dict[str, Any]) -> None:
-        release = ReleaseMetaData.from_file(self.fi, self.setup, mdata_raw)
-        mdata_raw.update(
-            {
-                "release_end": release.end,
-                "release_end_rel": release.end_rel,
-                "release_height": release.height,
-                "release_height_unit": release.height_unit,
-                "release_mass": release.mass,
-                "release_mass_unit": release.mass_unit,
-                "release_rate": release.rate,
-                "release_rate_unit": release.rate_unit,
-                "release_site_lat": release.lat,
-                "release_site_lon": release.lon,
-                "release_site_name": release.name,
-                "release_start": release.start,
-                "release_start_rel": release.start_rel,
-            }
-        )
-
-    def collect_variable_mdata(self, mdata_raw: Dict[str, Any]) -> None:
-        variable = VariableMetaData.from_file(self.fi, self.setup, self.nc_meta_data)
-        mdata_raw.update(
-            {
-                "variable_unit": variable.unit,
-                "variable_level_bot": variable.bottom_level,
-                "variable_level_bot_unit": variable.level_unit,
-                "variable_level_top": variable.top_level,
-                "variable_level_top_unit": variable.level_unit,
-            }
-        )
-
-    def collect_species_mdata(self, mdata_raw: Dict[str, Any]) -> None:
-        species = SpeciesMetaData.from_file(self.fi, self.setup, self.nc_meta_data)
-        mdata_raw.update(
-            {
-                "species_name": species.name,
-                "species_half_life": species.half_life,
-                "species_half_life_unit": species.half_life_unit,
-                "species_deposit_vel": species.deposition_velocity,
-                "species_deposit_vel_unit": species.deposition_velocity_unit,
-                "species_sediment_vel": species.sedimentation_velocity,
-                "species_sediment_vel_unit": species.sedimentation_velocity_unit,
-                "species_washout_coeff": species.washout_coefficient,
-                "species_washout_coeff_unit": species.washout_coefficient_unit,
-                "species_washout_exponent": species.washout_exponent,
-            }
-        )
 
 
 @dataclass
@@ -689,69 +498,6 @@ class VariableMetaData:
             bottom_level=level_bot,
             top_level=level_top,
             level_unit=level_unit,
-        )
-
-
-@dataclass
-# pylint: disable=R0902  # too-many-instance-attributes
-class SpeciesMetaData:
-    name: str
-    half_life: float
-    half_life_unit: str
-    deposition_velocity: float
-    deposition_velocity_unit: str
-    sedimentation_velocity: float
-    sedimentation_velocity_unit: str
-    washout_coefficient: float
-    washout_coefficient_unit: str
-    washout_exponent: float
-
-    @classmethod
-    def from_file(
-        cls,
-        fi: nc4.Dataset,
-        setup: Setup,
-        nc_meta_data: Mapping[str, Mapping[str, Any]],
-    ) -> "SpeciesMetaData":
-        model: str = nc_meta_data["derived"]["model"]
-        name: str = nc_var_name(setup, model)
-        var: nc4.Variable = fi.variables[name]
-        try:  # SR_TMP
-            name = getncattr(var, "long_name")
-        except AttributeError:
-            # SR_TMP <
-            # name = "N/A"
-            if model.startswith("ifs"):
-                # In the IFS NetCDF files, the deposition variables are missing
-                # the basic meta data on species, like "long_name". Therefore,
-                # try to # obtain the name from the activity variable of the
-                # same species.
-                if name.startswith("DD_") or name.startswith("WD_"):
-                    alternative_name = f"{name[3:]}_mr"
-                    try:
-                        alternative_var = fi.variables[alternative_name]
-                        name = getncattr(alternative_var, "long_name")
-                    except (KeyError, AttributeError):
-                        name = "N/A"
-                    else:
-                        name = name.split("_")[0]
-            else:
-                name = "N/A"
-            # SR_TMP >
-        else:
-            name = name.split("_")[0]
-        species: Species = get_species(name=name)
-        return cls(
-            name=name,
-            half_life=species.half_life.value,
-            half_life_unit=cast(str, species.half_life.unit),
-            deposition_velocity=species.deposition_velocity.value,
-            deposition_velocity_unit=cast(str, species.deposition_velocity.unit),
-            sedimentation_velocity=species.sedimentation_velocity.value,
-            sedimentation_velocity_unit=cast(str, species.sedimentation_velocity.unit),
-            washout_coefficient=species.washout_coefficient.value,
-            washout_coefficient_unit=cast(str, species.washout_coefficient.unit),
-            washout_exponent=species.washout_exponent.value,
         )
 
 
@@ -799,16 +545,68 @@ class SimulationMetaData:
         )
 
 
+@dataclass
+# pylint: disable=R0902  # too-many-instance-attrbutes
+class ReleaseMetaData:
+    duration: timedelta
+    duration_unit: str
+    end_rel: timedelta
+    height: float
+    height_unit: str
+    lat: float
+    lon: float
+    mass: float
+    mass_unit: str
+    site: str
+    rate: float
+    rate_unit: str
+    start_rel: timedelta
+
+    @classmethod
+    def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "ReleaseMetaData":
+        """Read information on a release from open file."""
+        raw = RawReleaseMetaData.from_file(fi, setup)
+        site = raw.site
+        # SR_HC <
+        if site == "Goesgen":
+            site = r"G$\mathrm{\"o}$sgen"
+        # SR_HC >
+        start_rel = raw.rel_start
+        end_rel = raw.rel_end
+        duration = end_rel - start_rel
+        duration_unit = "s"  # SR_HC
+        assert raw.zbot_unit == raw.ztop_unit
+        height_unit = raw.zbot_unit
+        assert len(raw.ms_parts) == 1
+        mass = next(iter(raw.ms_parts))
+        mass_unit = "Bq"  # SR_HC
+        return cls(
+            duration=duration,
+            duration_unit=duration_unit,
+            end_rel=end_rel,
+            height=np.mean([raw.zbot, raw.ztop]),
+            height_unit=height_unit,
+            lat=np.mean([raw.lllat, raw.urlat]),
+            lon=np.mean([raw.lllon, raw.urlon]),
+            mass=mass,
+            mass_unit=mass_unit,
+            site=site,
+            rate=mass / duration.total_seconds() if duration else np.nan,
+            rate_unit=f"{mass_unit} {duration_unit}-1",
+            start_rel=start_rel,
+        )
+
+
 class RawReleaseMetaData(BaseModel):
     age_id: int
     kind: str
     lllat: float
     lllon: float
     ms_parts: Tuple[int, ...]
-    name: str
     n_parts: int
     rel_end: timedelta
     rel_start: timedelta
+    site: str
     urlat: float
     urlon: float
     zbot: float
@@ -851,7 +649,7 @@ class RawReleaseMetaData(BaseModel):
             )
 
         # Name: convert from byte character array
-        name = var[idx][~var[idx].mask].tostring().decode("utf-8").rstrip()
+        site = var[idx][~var[idx].mask].tostring().decode("utf-8").rstrip()
 
         # Other attributes
         key_pairs = [
@@ -869,79 +667,13 @@ class RawReleaseMetaData(BaseModel):
             ("ztop", "RELZZ2"),
         ]
         store_units = ["zbot", "ztop"]
-        params = {"name": name}
+        params = {"site": site}
         for key_out, key_in in key_pairs:
             params[key_out] = fi.variables[key_in][idx].tolist()
             if key_out in store_units:
                 unit = getncattr(fi.variables[key_in], "units")
                 params[f"{key_out}_unit"] = unit
         return cls(**params)
-
-
-class ReleaseMetaData(BaseModel):
-    """Release point information."""
-
-    duration: timedelta
-    duration_unit: str
-    end: datetime
-    end_rel: timedelta
-    height: float
-    height_unit: str
-    lat: float
-    lon: float
-    mass: float
-    mass_unit: str
-    name: str
-    rate: float
-    rate_unit: str
-    start: datetime
-    start_rel: timedelta
-
-    class Config:  # noqa
-        arbitrary_types_allowed = True
-        extra = "forbid"
-        validate_all = True
-        validate_assigment = True
-
-    @classmethod
-    def from_file(
-        cls, fi: nc4.Dataset, setup: Setup, raw_mdata: Mapping[str, Any],
-    ) -> "ReleaseMetaData":
-        """Read information on a release from open file."""
-
-        raw = RawReleaseMetaData.from_file(fi, setup)
-
-        name = raw.name
-        if name == "Goesgen":
-            name = r"G$\mathrm{\"o}$sgen"
-
-        start_rel = raw.rel_start
-        end_rel = raw.rel_end
-        duration = end_rel - start_rel
-        duration_unit = "s"  # SR_HC
-        assert raw.zbot_unit == raw.ztop_unit
-        height_unit = raw.zbot_unit
-        assert len(raw.ms_parts) == 1
-        mass = next(iter(raw.ms_parts))
-        mass_unit = "Bq"  # SR_HC
-
-        return cls(
-            duration=duration,
-            duration_unit=duration_unit,
-            end=raw_mdata["simulation_start"] + end_rel,
-            end_rel=end_rel,
-            height=np.mean([raw.zbot, raw.ztop]),
-            height_unit=height_unit,
-            lat=np.mean([raw.lllat, raw.urlat]),
-            lon=np.mean([raw.lllon, raw.urlon]),
-            mass=mass,
-            mass_unit=mass_unit,
-            name=name,
-            rate=mass / duration.total_seconds() if duration else np.nan,
-            rate_unit=f"{mass_unit} {duration_unit}-1",
-            start=raw_mdata["simulation_start"] + start_rel,
-            start_rel=start_rel,
-        )
 
 
 class TimeStepMetaDataCollector:
@@ -1011,7 +743,40 @@ class TimeStepMetaDataCollector:
         return self.setup.core.dimensions.time
 
 
-def nc_var_name(setup: Union[Setup, Setup], model: str) -> str:
+def species_from_file(
+    fi: nc4.Dataset, setup: Setup, nc_meta_data: Mapping[str, Mapping[str, Any]],
+) -> Species:
+    model: str = nc_meta_data["derived"]["model"]
+    name: str = nc_var_name(setup, model)
+    var: nc4.Variable = fi.variables[name]
+    try:  # SR_TMP
+        name = getncattr(var, "long_name")
+    except AttributeError:
+        # SR_TMP <
+        # name = "N/A"
+        if model.startswith("ifs"):
+            # In the IFS NetCDF files, the deposition variables are missing
+            # the basic meta data on species, like "long_name". Therefore,
+            # try to # obtain the name from the activity variable of the
+            # same species.
+            if name.startswith("DD_") or name.startswith("WD_"):
+                alternative_name = f"{name[3:]}_mr"
+                try:
+                    alternative_var = fi.variables[alternative_name]
+                    name = getncattr(alternative_var, "long_name")
+                except (KeyError, AttributeError):
+                    name = "N/A"
+                else:
+                    name = name.split("_")[0]
+        else:
+            name = "N/A"
+        # SR_TMP >
+    else:
+        name = name.split("_")[0]
+    return get_species(name=name)
+
+
+def nc_var_name(setup: Setup, model: str) -> str:
     # SR_TMP <
     dimensions = setup.core.dimensions
     input_variable = setup.core.input_variable

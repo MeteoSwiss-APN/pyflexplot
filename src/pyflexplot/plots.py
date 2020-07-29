@@ -18,6 +18,7 @@ until sane design choices emerge from the code mess.
 # Standard library
 import warnings
 from datetime import datetime
+from datetime import timedelta
 from textwrap import dedent
 from typing import Any
 from typing import cast
@@ -40,6 +41,7 @@ from srutils.geo import Degrees
 # Local
 from .data import Field
 from .data import FieldAllNaNError
+from .meta_data import format_meta_datum
 from .meta_data import format_unit
 from .meta_data import MetaData
 from .plot_layouts import BoxedPlotLayoutDeterministic
@@ -773,6 +775,16 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
         washout_coeff = mdata.format("species_washout_coeff", add_unit=True)
         washout_exponent = mdata.format("species_washout_exponent")
 
+        # SR_TMP <
+        release_start = format_meta_datum(
+            cast(datetime, mdata.simulation_start.value)
+            + cast(timedelta, mdata.release_start_rel.value)
+        )
+        release_end = format_meta_datum(
+            cast(datetime, mdata.simulation_start.value)
+            + cast(timedelta, mdata.release_end_rel.value)
+        )
+        # SR_TMP >
         info_blocks = dedent(
             f"""\
             {labels['site']}:\t{mdata.release_site_name}
@@ -780,8 +792,8 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
             {labels['longitude']}:\t{lon_deg}
             {labels['height']}:\t{height}
 
-            {labels['start']}:\t{mdata.release_start}
-            {labels['end']}:\t{mdata.release_end}
+            {labels['start']}:\t{release_start}
+            {labels['end']}:\t{release_end}
             {labels['rate']}:\t{rate}
             {labels['mass']}:\t{mass}
 

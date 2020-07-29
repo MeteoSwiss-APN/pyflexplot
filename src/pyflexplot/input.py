@@ -410,10 +410,10 @@ class InputFileEnsemble:
         """Collect time-step-specific data meta data."""
         mdata_lst: List[MetaData] = []
         for setups in self.setups_lst_time:
-            mdata_i_lst = []
+            mdata_i_lst: List[MetaData] = []
             for sub_setups in setups.decompress():
                 for sub_setup in sub_setups:
-                    mdata_ij = collect_meta_data(
+                    mdata_ij: MetaData = collect_meta_data(
                         fi, sub_setup, self.nc_meta_data, add_ts0=self.add_ts0
                     )
                     mdata_i_lst.append(mdata_ij)

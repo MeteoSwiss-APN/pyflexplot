@@ -2477,7 +2477,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "30$\\,$a / 8$\\,$d",
+                    "s": "30$\\,$a / 8.04$\\,$d",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
