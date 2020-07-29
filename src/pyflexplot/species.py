@@ -7,12 +7,14 @@ import dataclasses
 from dataclasses import dataclass
 from dataclasses import Field
 from typing import Any
+from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import overload
 from typing import Sequence
 from typing import Tuple
+from typing import Union
 
 # Third-party
 import numpy as np
@@ -45,6 +47,7 @@ class SpeciesAttribute:
 
 
 @dataclass
+# pylint: disable=R0902  # too-many-instance-attributes
 class Species:
     """Chemical species."""
 
@@ -341,31 +344,21 @@ SPECIES: List[Species] = [
 
 
 @overload
-def get_species(*, id_cosmo: None = None, id_ifs: None = None, name: str) -> Species:
+def get_species(*, name: str) -> Species:
     ...
 
 
 @overload
-def get_species(*, id_cosmo: None = None, id_ifs: int, name: None = None) -> Species:
+def get_species(*, name: Union[Tuple[str, ...], List[str]]) -> Tuple[Species, ...]:
     ...
 
 
-@overload
-def get_species(*, id_cosmo: int, id_ifs: None = None, name: None = None) -> Species:
-    ...
-
-
-def get_species(*, id_cosmo=None, id_ifs=None, name=None):
+def get_species(*, name=None):
     """Identify one or more ``Species`` objects by an attribute."""
-    if id_cosmo is not None:
-        attr, value = "id_cosmo", id_cosmo
-    elif id_ifs is not None:
-        attr, value = "id_ifs", id_ifs
-    elif name is not None:
-        attr, value = "name", name
-    else:
-        raise ValueError("must pass one argument")
+    if isinstance(name, (Tuple, List)):
+        return tuple([get_species(name=name_i) for name_i in name])
     global SPECIES  # pylint: disable=W0603  # global-statement
+    attr, value = "name", cast(str, name)
     species: Species
     for species in SPECIES:
         try:

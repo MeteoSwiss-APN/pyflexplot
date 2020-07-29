@@ -5,6 +5,7 @@
 infile = "data/cosmo1_20190528000000.nc"
 model = "cosmo1e"
 lang = "de"
+time_format = "%Y%m%d_%H%M"
 
 [_base._concentration]
 input_variable = "concentration"
@@ -36,22 +37,22 @@ outfile = "deposition_tot_site-{release_site}_species-{species_id}_domain-{domai
  outfile = "affected_area_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
 
 [_base._concentration."naz+"]
-outfile = "Konzentration_Konz_{model}_{domain}_{release_site}.pdf"
+outfile = "{base_time}_Konzentration_Konz_{model}_{domain}_{release_site}.pdf"
 [_base._concentration._integr."naz+"]
-outfile = "Integrierte_Konz_{model}_domain_{release_site}.pdf"
+outfile = "{base_time}_Integrierte_Konz_{model}_domain_{release_site}.pdf"
 [_base._tot_deposition."naz+"]
-outfile = "Deposition_Konz_{model}_{domain}_{release_site}.pdf"
+outfile = "{base_time}_Deposition_Konz_{model}_{domain}_{release_site}.pdf"
 [_base._tot_deposition._affected_area."naz+"]
-outfile = "Beaufschl_Gebiet_{model}_{domain}_{release_site}.pdf"
+outfile = "{base_time}_Beaufschl_Gebiet_{model}_{domain}_{release_site}.pdf"
 
 [_base._concentration."ladm+"]
-outfile = "FLEXPART-{model}_Dispersion_Konzentration_{domain}.pdf"
+outfile = "{base_time}_FLEXPART-{model}_Dispersion_Konzentration_{domain}_{release_site}.pdf"
 [_base._concentration._integr."ladm+"]
-outfile = "FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet_{domain}.pdf"
+outfile = "{base_time}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet_{domain}_{release_site}.pdf"
 [_base._tot_deposition."ladm+"]
-outfile = "FLEXPART-{model}_Dispersion_Deposition_{domain}.pdf"
+outfile = "{base_time}_FLEXPART-{model}_Dispersion_Deposition_{domain}_{release_site}.pdf"
 [_base._tot_deposition._affected_area."ladm+"]
-outfile = "FLEXPART-{model}_Dispersion_beaufschl_Gebiet_{domain}.pdf"
+outfile = "{base_time}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet_{domain}_{release_site}.pdf"
 
 ["**".ch]
 domain = "ch"

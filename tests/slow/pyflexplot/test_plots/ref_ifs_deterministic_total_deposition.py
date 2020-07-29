@@ -892,7 +892,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "N/A",
+                    "s": "Cs-137",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -2286,7 +2286,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "N/A",
+                    "s": "Cs-137",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -2315,7 +2315,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "-99.9$\\,$a",
+                    "s": "30$\\,$a",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -2344,7 +2344,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "-99.9$\\,$m s$^{-1}$",
+                    "s": "0.0015$\\,$m s$^{-1}$",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -2373,7 +2373,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "-99.9$\\,$m s$^{-1}$",
+                    "s": "0$\\,$m s$^{-1}$",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -2402,7 +2402,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "-99.9$\\,$s$^{-1}$",
+                    "s": "7e-05$\\,$s$^{-1}$",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -2431,7 +2431,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "-99.9",
+                    "s": "0.8",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

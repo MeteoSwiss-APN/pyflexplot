@@ -7,10 +7,12 @@ Attributes.
 import re
 import time
 import warnings
+from dataclasses import dataclass
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 from typing import Any
+from typing import cast
 from typing import Collection
 from typing import Dict
 from typing import Generic
@@ -33,6 +35,7 @@ from pydantic.generics import GenericModel
 from .setup import Setup
 from .setup import SetupCollection
 from .species import get_species
+from .species import Species
 from .utils.summarize import summarizable
 
 ValueT = TypeVar("ValueT", int, float, str, datetime, timedelta)
@@ -528,7 +531,7 @@ def format_unit(s: str) -> str:
 def collect_meta_data(
     fi: nc4.Dataset,
     setup: Setup,
-    nc_meta_data: Mapping[str, Any],
+    nc_meta_data: Mapping[str, Mapping[str, Any]],
     *,
     add_ts0: bool = False,
 ) -> MetaData:
@@ -553,7 +556,7 @@ class MetaDataCollector:
         self,
         fi: nc4.Dataset,
         setup: Setup,
-        nc_meta_data: Mapping[str, Any],
+        nc_meta_data: Mapping[str, Mapping[str, Any]],
         *,
         add_ts0: bool = False,
     ) -> None:
@@ -588,51 +591,22 @@ class MetaDataCollector:
         return MetaData(setup=setup, **mdata_raw)
 
     def collect_simulation_mdata(self, mdata_raw: Dict[str, Any]) -> None:
-        """Collect simulation meta data."""
-
-        # Start and end timesteps of simulation
-        ts_start = datetime(
-            *time.strptime(
-                self.ncattrs_global["ibdate"] + self.ncattrs_global["ibtime"],
-                "%Y%m%d%H%M%S",
-            )[:6],
-            tzinfo=timezone.utc,
-        )
-        ts_end = datetime(
-            *time.strptime(
-                self.ncattrs_global["iedate"] + self.ncattrs_global["ietime"],
-                "%Y%m%d%H%M%S",
-            )[:6],
-            tzinfo=timezone.utc,
-        )
-
-        # Current time step and start time step of current integration period
-        tsp = TimeStepMetaDataCollector(self.fi, self.setup, add_ts0=self.add_ts0)
-        ts_now = tsp.ts_now()
-        ts_integr_start = tsp.ts_integr_start()
-        ts_now_rel: timedelta = ts_now - ts_start
-        ts_integr_start_rel: timedelta = ts_integr_start - ts_start
-
-        # Type of integration (or, rather, reduction)
-
+        simulation = SimulationMetaData.from_file(self.fi, self.setup, self.add_ts0)
         mdata_raw.update(
             {
-                "simulation_start": ts_start,
-                "simulation_end": ts_end,
-                "simulation_now": ts_now,
-                "simulation_now_rel": ts_now_rel,
-                "simulation_integr_start": ts_integr_start,
-                "simulation_integr_start_rel": ts_integr_start_rel,
+                "simulation_start": simulation.start,
+                "simulation_end": simulation.end,
+                "simulation_now": simulation.now,
+                "simulation_now_rel": simulation.now_rel,
+                "simulation_integr_start": simulation.integration_start,
+                "simulation_integr_start_rel": simulation.integration_start_rel,
             }
         )
 
     def collect_release_mdata(self, mdata_raw: Dict[str, Any]) -> None:
-        """Collect release point meta data."""
-        release = ReleaseMetaData.from_file(self.fi, mdata_raw, self.setup)
+        release = ReleaseMetaData.from_file(self.fi, self.setup, mdata_raw)
         mdata_raw.update(
             {
-                # "release_duration": release.duration,
-                # "release_duration_unit": release.duration_unit,
                 "release_end": release.end,
                 "release_end_rel": release.end_rel,
                 "release_height": release.height,
@@ -650,120 +624,179 @@ class MetaDataCollector:
         )
 
     def collect_variable_mdata(self, mdata_raw: Dict[str, Any]) -> None:
-        """Collect variable meta data."""
-
-        unit = self.ncattrs_field["units"]
-
-        idx: int
-        if self.setup.core.dimensions.level is None:
-            level_unit = ""
-            level_bot = -1.0
-            level_top = -1.0
-        else:
-            idx = self.setup.core.dimensions.level
-            try:  # SR_TMP IFS
-                var = self.fi.variables["level"]
-            except KeyError:  # SR_TMP IFS
-                var = self.fi.variables["height"]  # SR_TMP IFS
-            level_bot = 0.0 if idx == 0 else float(var[idx - 1])
-            level_top = float(var[idx])
-            level_unit = getncattr(var, "units")
-
+        variable = VariableMetaData.from_file(self.fi, self.setup, self.nc_meta_data)
         mdata_raw.update(
             {
-                "variable_unit": unit,
-                "variable_level_bot": level_bot,
-                "variable_level_bot_unit": level_unit,
-                "variable_level_top": level_top,
-                "variable_level_top_unit": level_unit,
+                "variable_unit": variable.unit,
+                "variable_level_bot": variable.bottom_level,
+                "variable_level_bot_unit": variable.level_unit,
+                "variable_level_top": variable.top_level,
+                "variable_level_top_unit": variable.level_unit,
             }
         )
 
     def collect_species_mdata(self, mdata_raw: Dict[str, Any]) -> None:
-        """Collect species meta data."""
-        try:  # SR_TMP
-            name = self.ncattrs_field["long_name"].split("_")[0]
-        except KeyError:
-            name = "N/A"
-        species = get_species(name=name)
+        species = SpeciesMetaData.from_file(self.fi, self.setup, self.nc_meta_data)
         mdata_raw.update(
             {
-                "species_name": name,
-                "species_half_life": species.half_life.value,
-                "species_half_life_unit": species.half_life.unit,
-                "species_deposit_vel": species.deposition_velocity.value,
-                "species_deposit_vel_unit": species.deposition_velocity.unit,
-                "species_sediment_vel": species.sedimentation_velocity.value,
-                "species_sediment_vel_unit": species.sedimentation_velocity.unit,
-                "species_washout_coeff": species.washout_coefficient.value,
-                "species_washout_coeff_unit": species.washout_coefficient.unit,
-                "species_washout_exponent": species.washout_exponent.value,
+                "species_name": species.name,
+                "species_half_life": species.half_life,
+                "species_half_life_unit": species.half_life_unit,
+                "species_deposit_vel": species.deposition_velocity,
+                "species_deposit_vel_unit": species.deposition_velocity_unit,
+                "species_sediment_vel": species.sedimentation_velocity,
+                "species_sediment_vel_unit": species.sedimentation_velocity_unit,
+                "species_washout_coeff": species.washout_coefficient,
+                "species_washout_coeff_unit": species.washout_coefficient_unit,
+                "species_washout_exponent": species.washout_exponent,
             }
         )
 
 
-class TimeStepMetaDataCollector:
-    def __init__(self, fi: nc4.Dataset, setup: Setup, *, add_ts0: bool = False) -> None:
-        self.fi = fi
-        self.setup = setup
-        self.add_ts0 = add_ts0
+@dataclass
+class VariableMetaData:
+    unit: str
+    bottom_level: float
+    top_level: float
+    level_unit: str
 
-    def comp_ts_start(self) -> datetime:
-        """Compute the time step when the simulation started."""
-        var = self.fi.variables["time"]
-        rx = re.compile(
-            r"seconds since "
-            r"(?P<year>[12][0-9][0-9][0-9])-"
-            r"(?P<month>[01][0-9])-"
-            r"(?P<day>[0-3][0-9]) "
-            r"(?P<hour>[0-2][0-9]):"
-            r"(?P<minute>[0-6][0-9])"
+    @classmethod
+    def from_file(
+        cls,
+        fi: nc4.Dataset,
+        setup: Setup,
+        nc_meta_data: Mapping[str, Mapping[str, Any]],
+    ) -> "VariableMetaData":
+        name = nc_var_name(setup, nc_meta_data["derived"]["model"])
+        var = fi.variables[name]
+        unit = getncattr(var, "units")
+        idx: int
+        if setup.core.dimensions.level is None:
+            level_unit = ""
+            level_bot = -1.0
+            level_top = -1.0
+        else:
+            idx = setup.core.dimensions.level
+            try:  # SR_TMP IFS
+                var = fi.variables["level"]
+            except KeyError:  # SR_TMP IFS
+                var = fi.variables["height"]  # SR_TMP IFS
+            level_bot = 0.0 if idx == 0 else float(var[idx - 1])
+            level_top = float(var[idx])
+            level_unit = getncattr(var, "units")
+        return cls(
+            unit=unit,
+            bottom_level=level_bot,
+            top_level=level_top,
+            level_unit=level_unit,
         )
-        match = rx.match(var.units)
-        if not match:
-            raise Exception(f"cannot extract start from units '{var.units}'")
-        return datetime(
-            year=int(match["year"]),
-            month=int(match["month"]),
-            day=int(match["day"]),
-            hour=int(match["hour"]),
-            minute=int(match["minute"]),
+
+
+@dataclass
+# pylint: disable=R0902  # too-many-instance-attributes
+class SpeciesMetaData:
+    name: str
+    half_life: float
+    half_life_unit: str
+    deposition_velocity: float
+    deposition_velocity_unit: str
+    sedimentation_velocity: float
+    sedimentation_velocity_unit: str
+    washout_coefficient: float
+    washout_coefficient_unit: str
+    washout_exponent: float
+
+    @classmethod
+    def from_file(
+        cls,
+        fi: nc4.Dataset,
+        setup: Setup,
+        nc_meta_data: Mapping[str, Mapping[str, Any]],
+    ) -> "SpeciesMetaData":
+        model: str = nc_meta_data["derived"]["model"]
+        name: str = nc_var_name(setup, model)
+        var: nc4.Variable = fi.variables[name]
+        try:  # SR_TMP
+            name = getncattr(var, "long_name")
+        except AttributeError:
+            # SR_TMP <
+            # name = "N/A"
+            if model.startswith("ifs"):
+                # In the IFS NetCDF files, the deposition variables are missing
+                # the basic meta data on species, like "long_name". Therefore,
+                # try to # obtain the name from the activity variable of the
+                # same species.
+                if name.startswith("DD_") or name.startswith("WD_"):
+                    alternative_name = f"{name[3:]}_mr"
+                    try:
+                        alternative_var = fi.variables[alternative_name]
+                        name = getncattr(alternative_var, "long_name")
+                    except (KeyError, AttributeError):
+                        name = "N/A"
+                    else:
+                        name = name.split("_")[0]
+            else:
+                name = "N/A"
+            # SR_TMP >
+        else:
+            name = name.split("_")[0]
+        species: Species = get_species(name=name)
+        return cls(
+            name=name,
+            half_life=species.half_life.value,
+            half_life_unit=cast(str, species.half_life.unit),
+            deposition_velocity=species.deposition_velocity.value,
+            deposition_velocity_unit=cast(str, species.deposition_velocity.unit),
+            sedimentation_velocity=species.sedimentation_velocity.value,
+            sedimentation_velocity_unit=cast(str, species.sedimentation_velocity.unit),
+            washout_coefficient=species.washout_coefficient.value,
+            washout_coefficient_unit=cast(str, species.washout_coefficient.unit),
+            washout_exponent=species.washout_exponent.value,
+        )
+
+
+@dataclass
+class SimulationMetaData:
+    start: datetime
+    end: datetime
+    now: datetime
+    now_rel: timedelta
+    integration_start: datetime
+    integration_start_rel: timedelta
+
+    @classmethod
+    def from_file(
+        cls, fi: nc4.Dataset, setup: Setup, add_ts0: bool
+    ) -> "SimulationMetaData":
+
+        # Start and end timesteps of simulation
+        start = datetime(
+            *time.strptime(
+                getncattr(fi, "ibdate") + getncattr(fi, "ibtime"), "%Y%m%d%H%M%S"
+            )[:6],
+            tzinfo=timezone.utc,
+        )
+        end = datetime(
+            *time.strptime(
+                getncattr(fi, "iedate") + getncattr(fi, "ietime"), "%Y%m%d%H%M%S",
+            )[:6],
             tzinfo=timezone.utc,
         )
 
-    def ts_now(self) -> datetime:
-        """Compute current time step."""
-        return self.comp_ts_start() + self.ts_delta_tot()
-
-    def ts_integr_start(self) -> datetime:
-        """Compute the timestep when integration started."""
-        return self.ts_now() - self.ts_delta_integr()
-
-    def ts_delta_tot(self) -> timedelta:
-        """Compute time since start."""
-        var = self.fi.variables["time"]
-        idx = self.ts_idx()
-        if idx < 0:
-            return timedelta(0)
-        return timedelta(seconds=int(var[idx]))
-
-    def ts_delta_integr(self) -> timedelta:
-        """Compute timestep delta of integration period."""
-        delta_tot = self.ts_delta_tot()
-        if self.setup.core.integrate:
-            return delta_tot
-        n = self.ts_idx() + 1
-        if n == 0:
-            return timedelta(0)
-        return delta_tot / n
-
-    def ts_idx(self) -> int:
-        """Index of current time step of current field."""
-        # Default to timestep of current field
-        assert self.setup.core.dimensions.time is not None  # mypy
-        if self.add_ts0:
-            return self.setup.core.dimensions.time - 1
-        return self.setup.core.dimensions.time
+        # Current time step and start time step of current integration period
+        collector = TimeStepMetaDataCollector(fi, setup, add_ts0=add_ts0)
+        now = collector.now()
+        integration_start = collector.integration_start()
+        now_rel: timedelta = collector.now_rel()
+        integration_start_rel = collector.integration_start_rel()
+        return cls(
+            start=start,
+            end=end,
+            now=now,
+            now_rel=now_rel,
+            integration_start=integration_start,
+            integration_start_rel=integration_start_rel,
+        )
 
 
 class RawReleaseMetaData(BaseModel):
@@ -872,7 +905,7 @@ class ReleaseMetaData(BaseModel):
 
     @classmethod
     def from_file(
-        cls, fi: nc4.Dataset, nc_meta_data: Dict[str, Any], setup: Setup,
+        cls, fi: nc4.Dataset, setup: Setup, raw_mdata: Mapping[str, Any],
     ) -> "ReleaseMetaData":
         """Read information on a release from open file."""
 
@@ -895,7 +928,7 @@ class ReleaseMetaData(BaseModel):
         return cls(
             duration=duration,
             duration_unit=duration_unit,
-            end=nc_meta_data["simulation_start"] + end_rel,
+            end=raw_mdata["simulation_start"] + end_rel,
             end_rel=end_rel,
             height=np.mean([raw.zbot, raw.ztop]),
             height_unit=height_unit,
@@ -906,12 +939,79 @@ class ReleaseMetaData(BaseModel):
             name=name,
             rate=mass / duration.total_seconds() if duration else np.nan,
             rate_unit=f"{mass_unit} {duration_unit}-1",
-            start=nc_meta_data["simulation_start"] + start_rel,
+            start=raw_mdata["simulation_start"] + start_rel,
             start_rel=start_rel,
         )
 
 
-def nc_var_name(setup: Union[Setup, Setup], model: str) -> Union[str, List[str]]:
+class TimeStepMetaDataCollector:
+    def __init__(self, fi: nc4.Dataset, setup: Setup, *, add_ts0: bool = False) -> None:
+        self.fi = fi
+        self.setup = setup
+        self.add_ts0 = add_ts0
+
+    def start(self) -> datetime:
+        """Compute the time step when the simulation started."""
+        var = self.fi.variables["time"]
+        rx = re.compile(
+            r"seconds since "
+            r"(?P<year>[12][0-9][0-9][0-9])-"
+            r"(?P<month>[01][0-9])-"
+            r"(?P<day>[0-3][0-9]) "
+            r"(?P<hour>[0-2][0-9]):"
+            r"(?P<minute>[0-6][0-9])"
+        )
+        match = rx.match(var.units)
+        if not match:
+            raise Exception(f"cannot extract start from units '{var.units}'")
+        return datetime(
+            year=int(match["year"]),
+            month=int(match["month"]),
+            day=int(match["day"]),
+            hour=int(match["hour"]),
+            minute=int(match["minute"]),
+            tzinfo=timezone.utc,
+        )
+
+    def now(self) -> datetime:
+        """Current time step."""
+        return self.start() + self.now_rel()
+
+    def now_rel(self) -> timedelta:
+        """Time since start."""
+        var = self.fi.variables["time"]
+        idx = self.time_step_idx()
+        if idx < 0:
+            return timedelta(0)
+        return timedelta(seconds=int(var[idx]))
+
+    def integration_start(self) -> datetime:
+        """Time step when integration started."""
+        return self.now() - self.integration_duration()
+
+    def integration_start_rel(self) -> timedelta:
+        """Time between start of simulation and start of integration."""
+        return self.integration_start() - self.start()
+
+    def integration_duration(self) -> timedelta:
+        """Compute timestep delta of integration period."""
+        if self.setup.core.integrate:
+            return self.now_rel()
+        n = self.time_step_idx() + 1
+        if n == 0:
+            return timedelta(0)
+        return self.now_rel() / n
+
+    def time_step_idx(self) -> int:
+        """Index of current time step of current field."""
+        # Default to timestep of current field
+        assert self.setup.core.dimensions.time is not None  # mypy
+        if self.add_ts0:
+            return self.setup.core.dimensions.time - 1
+        return self.setup.core.dimensions.time
+
+
+def nc_var_name(setup: Union[Setup, Setup], model: str) -> str:
     # SR_TMP <
     dimensions = setup.core.dimensions
     input_variable = setup.core.input_variable
