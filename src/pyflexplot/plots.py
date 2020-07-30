@@ -265,11 +265,9 @@ def create_box_labels(
     # SR_TMP >
 
     labels: Dict[str, Dict[str, Any]] = {}
-    assert isinstance(mdata.simulation_integr_start.value, datetime)  # mypy
-    assert isinstance(mdata.simulation_now.value, datetime)  # mypy
     integr_period = format_integr_period(
-        mdata.simulation_integr_start.value,
-        mdata.simulation_now.value,
+        mdata.simulation.integration_start,
+        mdata.simulation.now,
         setup,
         words,
         cap=True,
@@ -279,18 +277,22 @@ def create_box_labels(
         "bl": (
             f"{integr_period}"
             f" {words['since']}"
-            f" +{mdata.simulation_integr_start_rel}"
+            f" +{format_meta_datum(mdata.simulation_integr_start_rel.value)}"
         ),
-        "tr": (f"{mdata.simulation_now} (+{mdata.simulation_now_rel})"),
+        "tr": (
+            f"{format_meta_datum(mdata.simulation_now.value)}"
+            f" (+{format_meta_datum(mdata.simulation_now_rel.value)})"
+        ),
         "br": (
-            f"{mdata.simulation_now_rel} {words['since']}"
+            f"{format_meta_datum(mdata.simulation_now_rel.value)} {words['since']}"
             f" {words['release_start']}"
-            # f" {words['at', 'place']} {mdata.release_site_name}"
+            # f" {words['at', 'place']}"
+            # f" {format_meta_datum(mdata.release_site_name.value)}"
         ),
     }
     labels["title_2nd"] = {
-        "tc": f"{mdata.species_name}",
-        "bc": f"{mdata.release_site_name}",
+        "tc": f"{format_meta_datum(mdata.species_name.value)}",
+        "bc": f"{format_meta_datum(mdata.release_site_name.value)}",
     }
     labels["data_info"] = {
         "lines": [],
@@ -396,7 +398,10 @@ def create_box_labels(
             f"\t{escape_format_keys(format_level_label(mdata, words))}"
         )
 
-    # box_labels["top"]["tl"] = f"{long_name} {words['of']} {mdata.species_name}"
+    # box_labels["top"]["tl"] = (
+    #     f"{long_name} {words['of']}"
+    #     f" {format_meta_datum(mdata.species_name.value)}"
+    # )
     labels["top"]["tl"] = long_name
     if setup.get_simulation_type() == "deterministic":
         labels["legend"]["title"] = f"{short_name} ({unit})"
@@ -464,6 +469,8 @@ def format_names_etc(
                 f"{words['of', 'fg']} {words[dep_type_word, 'g']}"
                 f" {words['surface_deposition']}"
             )
+        else:
+            raise NotImplementedError(f"input variable '{setup.core.input_variable}'")
         return var_name, var_name_abbr, var_name_rel
 
     # pylint: disable=W0621  # redefined-outer-name
@@ -583,6 +590,10 @@ def create_plot(plot: BoxedPlot, write: bool = True) -> None:
         layout = BoxedPlotLayoutDeterministic(aspect=plot.config.fig_aspect)
     elif plot.config.setup.get_simulation_type() == "ensemble":
         layout = BoxedPlotLayoutEnsemble(aspect=plot.config.fig_aspect)
+    else:
+        raise NotImplementedError(
+            f"simulation type '{plot.config.setup.get_simulation_type()}'"
+        )
     axs_map = plot.add_map_plot(layout.rect_center())
     plot_add_text_boxes(plot, layout)
     plot_add_markers(plot, axs_map)
@@ -732,7 +743,10 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
                 **plot.config.markers["site"],
             )
             box.text(
-                s=f"{labels['site']}: {mdata.release_site_name}",
+                s=(
+                    f"{labels['site']}:"
+                    f" {format_meta_datum(mdata.release_site_name.value)}"
+                ),
                 loc="tc",
                 dx=dx_marker_label,
                 dy=dy_site_label,
@@ -757,8 +771,8 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
         )
 
         # Release site coordinates
-        lat = Degrees(mdata.release_site_lat.value)
-        lon = Degrees(mdata.release_site_lon.value)
+        lat = Degrees(mdata.release.lat)
+        lon = Degrees(mdata.release.lon)
         lat_deg = labels["lat_deg_fmt"].format(d=lat.degs(), m=lat.mins(), f=lat.frac())
         lon_deg = labels["lon_deg_fmt"].format(d=lon.degs(), m=lon.mins(), f=lon.frac())
 
@@ -777,17 +791,17 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
 
         # SR_TMP <
         release_start = format_meta_datum(
-            cast(datetime, mdata.simulation_start.value)
-            + cast(timedelta, mdata.release_start_rel.value)
+            cast(datetime, mdata.simulation.start)
+            + cast(timedelta, mdata.release.start_rel)
         )
         release_end = format_meta_datum(
-            cast(datetime, mdata.simulation_start.value)
-            + cast(timedelta, mdata.release_end_rel.value)
+            cast(datetime, mdata.simulation.start)
+            + cast(timedelta, mdata.release.end_rel)
         )
         # SR_TMP >
         info_blocks = dedent(
             f"""\
-            {labels['site']}:\t{mdata.release_site_name}
+            {labels['site']}:\t{format_meta_datum(mdata.release_site_name.value)}
             {labels['latitude']}:\t{lat_deg}
             {labels['longitude']}:\t{lon_deg}
             {labels['height']}:\t{height}
@@ -853,17 +867,12 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
 
 def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
     config = plot.config
-
+    mdata = config.mdata
     if config.mark_release_site:
-        assert isinstance(config.mdata.release_site_lon.value, float)  # mypy
-        assert isinstance(config.mdata.release_site_lat.value, float)  # mypy
         assert config.markers is not None  # mypy
         axs_map.marker(
-            p_lat=config.mdata.release_site_lat.value,
-            p_lon=config.mdata.release_site_lon.value,
-            **config.markers["site"],
+            p_lat=mdata.release.lat, p_lon=mdata.release.lon, **config.markers["site"],
         )
-
     if config.mark_field_max:
         assert config.markers is not None  # mypy
         try:
@@ -989,21 +998,17 @@ def format_model_info(setup: Setup, words: TranslatedWords, mdata: MetaData) -> 
         )
     return (
         f"{words['flexpart']} {words['based_on']} {model_info}"
-        f", {mdata.simulation_start}"
+        f", {format_meta_datum(mdata.simulation_start.value)}"
     )
 
 
 def format_level_label(mdata: MetaData, words: TranslatedWords) -> str:
-    bot_unit = mdata.variable_level_bot_unit.value
-    top_unit = mdata.variable_level_top_unit.value
-    bot_level = mdata.variable_level_bot.value
-    top_level = mdata.variable_level_top.value
-    if top_unit != bot_unit:
-        raise Exception("inconsistent level units", bot_unit, top_unit)
-    unit = cast(str, bot_unit)
+    unit = mdata.variable.level_unit
     if unit == "meters":
         unit = words["m_agl"].s
-    level = format_vertical_level_range(bot_level, top_level, unit)
+    level = format_vertical_level_range(
+        mdata.variable.bottom_level, mdata.variable.top_level, unit
+    )
     if not level:
         return ""
     return f"{format_unit(level)}"

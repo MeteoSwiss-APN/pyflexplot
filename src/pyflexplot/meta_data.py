@@ -15,238 +15,35 @@ from datetime import timedelta
 from datetime import timezone
 from typing import Any
 from typing import Collection
-from typing import Dict
-from typing import Generic
 from typing import List
 from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
-from typing import TypeVar
 from typing import Union
 
 # Third-party
 import netCDF4 as nc4
 import numpy as np
 from pydantic import BaseModel
-from pydantic import validator
-from pydantic.generics import GenericModel
 
 # Local
 from .setup import Setup
 from .species import get_species
 from .species import Species
-from .utils.summarize import summarizable
 
-ValueT = TypeVar("ValueT", int, float, str, datetime, timedelta)
+MetaDatumType = Union[int, float, str, datetime, timedelta]
 
 
-@summarizable
+@dataclass
 # pylint: disable=E0213  # no-self-argument (validator)
-class MetaDatum(GenericModel, Generic[ValueT]):
-    """Individual piece of meta data."""
-
+class MetaDatum:
     name: str
-    value: ValueT
-    attrs: Dict[str, Any] = {}
+    value: Union[MetaDatumType, Tuple[MetaDatumType, ...]]
+    join: Optional[str] = None
 
-    class Config:  # noqa
-        extra = "forbid"
-        validate_all = True
-        validate_assigment = True
-
-    @validator("attrs", pre=True, always=True)
-    def _init_attrs(cls, value: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-        if value is None:
-            return {}
-        return value
-
-    @property
-    def type_(self) -> type:
-        return type(self.value)
-
-    @property
-    def cls_combo(self) -> type:
-        try:
-            return {
-                int: MetaDatumCombo[int],
-                float: MetaDatumCombo[float],
-                str: MetaDatumCombo[str],
-                datetime: MetaDatumCombo[datetime],
-                timedelta: MetaDatumCombo[timedelta],
-            }[self.type_]
-        except KeyError:
-            raise NotImplementedError(f"{type(self).__name__}.cls_combo")
-
-    def __str__(self):
-        return format_meta_datum(self.value)
-
-    def derive(
-        self,
-        *,
-        value: Optional[ValueT] = None,
-        name: Optional[str] = None,
-        attrs: Optional[Dict[str, Any]] = None,
-    ) -> "MetaDatum[ValueT]":
-        if name is None:
-            name = self.name
-        if value is None:
-            value = self.value
-        if attrs is None:
-            attrs = self.attrs
-        return type(self)(name=name, value=value, attrs=attrs)
-
-    def derive_combo(
-        self,
-        *,
-        value: Sequence[ValueT],
-        name: Optional[str] = None,
-        attrs: Optional[Dict[str, Any]] = None,
-    ) -> "MetaDatumCombo[ValueT]":
-        if name is None:
-            name = self.name
-        if attrs is None:
-            attrs = self.attrs
-        return self.cls_combo(name=name, value=value, attrs=attrs)
-
-    # SR_TODO Extract methods into separate class (e.g., AttrMerger)!
-    def merge_with(
-        self,
-        others: Collection["MetaDatum[ValueT]"],
-        replace: Optional[Mapping[str, Any]] = None,
-    ) -> Union["MetaDatum[ValueT]", "MetaDatumCombo[ValueT]"]:
-        if replace is None:
-            replace = {}
-
-        # Reduce names
-        try:
-            name = replace["name"]
-        except KeyError:
-            names = sorted(set([self.name] + [other.name for other in others]))
-            if len(names) > 1:
-                raise ValueError("names differ", names)
-            name = self.name
-
-        # Reduce values
-        try:
-            reduced_value = replace["value"]
-        except KeyError:
-            reduced_value = self._reduce_values(others)
-
-        # Reduce attrs dicts
-        attrs = self._merge_attrs(others)
-
-        if isinstance(reduced_value, Sequence) and not isinstance(reduced_value, str):
-            combo_value: Sequence[ValueT] = reduced_value  # mypy
-            return self.derive_combo(name=name, value=combo_value, attrs=attrs)
-        else:
-            value: ValueT = reduced_value  # type: ignore  # mypy
-            return self.derive(name=name, value=value, attrs=attrs)
-
-    def _reduce_values(
-        self, others: Collection["MetaDatum[ValueT]"],
-    ) -> Union[ValueT, Tuple[ValueT, ...]]:
-
-        # Collect unique values
-        values = [self.value]
-        for other in others:
-            if other.value not in values:
-                values.append(other.value)
-
-        if len(values) == 1:
-            return next(iter(values))
-
-        return next(iter(values)) if len(values) == 1 else tuple(values)
-
-    def _merge_attrs(self, others: Collection["MetaDatum"]) -> Dict[str, Any]:
-        assert all(o.attrs.keys() == self.attrs.keys() for o in others)
-        attrs = {}
-        for attr, value in self.attrs.items():
-            other_values = [o.attrs[attr] for o in others]
-            if all(other_value == value for other_value in other_values):
-                attrs[attr] = value
-            else:
-                raise NotImplementedError("values differ", attr, value, other_values)
-        return attrs
-
-    def combine_with(self, other: "MetaDatum", join: str = " ") -> "MetaDatum":
-        if not isinstance(other, MetaDatum):
-            raise ValueError(
-                f"wrong type to be combined with {type(self).__name__}", type(other)
-            )
-        combo_value = join.join([str(self), str(other)])
-        return MetaDatum[str](name=self.name, value=combo_value, attrs=self.attrs)
-
-
-@summarizable
-class MetaDatumCombo(GenericModel, Generic[ValueT]):
-    """Meta datum with multiple values."""
-
-    name: str
-    value: Tuple[ValueT, ...]
-    attrs: Dict[str, Any] = {}
-
-    class Config:  # noqa
-        extra = "forbid"
-        validate_all = True
-        validate_assignment = True
-
-    @property
-    def type_(self):
-        return type(next(iter(self.value)))
-
-    def __str__(self):
-        return format_meta_datum(self.value, self.attrs.get("join"))
-
-    def derive(
-        self,
-        name: Optional[str] = None,
-        value: Optional[Sequence[ValueT]] = None,
-        attrs: Optional[Dict[str, Any]] = None,
-    ) -> "MetaDatumCombo[ValueT]":
-        if name is None:
-            name = self.name
-        if value is None:
-            value = self.value
-        if attrs is None:
-            attrs = self.attrs
-        return type(self)(name=name, value=value, attrs=attrs)
-
-    def as_datums(self) -> List[MetaDatum[ValueT]]:
-        datums: List[MetaDatum] = []
-        for value in self.value:
-            cls = MetaDatum[type(value)]  # type: ignore
-            datum = cls(name=self.name, value=value, attrs=self.attrs)
-            datums.append(datum)
-        return datums
-
-    def merge_with(self, others, replace=None):
-        raise NotImplementedError(f"{type(self).__name__}.merge_with")
-
-    def combine_with(
-        self, other: Union[MetaDatum, "MetaDatumCombo"], join: str = " "
-    ) -> "MetaDatumCombo":
-        if isinstance(other, MetaDatum):
-            combo_value = [self.value] * len(self.value)
-            other = other.derive_combo(value=combo_value)
-        elif not isinstance(other, MetaDatumCombo):
-            raise ValueError(
-                "wrong type to be combined with {type(self).__name__}", type(other)
-            )
-        elif len(self.value) != len(other.value):
-            raise ValueError(
-                "number of combo values differs", len(self.value), len(other.value)
-            )
-        assert isinstance(other, MetaDatumCombo)  # mypy
-        combo_values = []
-        for self_datum, other_datum in zip(self.as_datums(), other.as_datums()):
-            combined_datum = self_datum.combine_with(other_datum, join=join)
-            combo_values.append(combined_datum.value)
-        return MetaDatumCombo[str](
-            name=f"{self.name}+{other.name}",
-            value=combo_values,
-            attrs={**other.attrs, **self.attrs},
-        )
+    def is_combo(self) -> bool:
+        return isinstance(self.value, Sequence) and not isinstance(self.value, str)
 
 
 def format_meta_datum(value: Any, join: Optional[str] = None) -> str:
@@ -259,8 +56,12 @@ def format_meta_datum(value: Any, join: Optional[str] = None) -> str:
         hours = int(value.total_seconds() / 3600)
         minutes = int((value.total_seconds() / 60) % 60)
         return f"{hours:d}:{minutes:02d}$\\,$h"
-    fmt = "g" if isinstance(value, (float, int)) else ""
-    return f"{{:{fmt}}}".format(value)
+    if isinstance(value, MetaDatum):
+        return format_meta_datum(value.value, join=value.join)
+    elif isinstance(value, (float, int)):
+        return f"{value:g}"
+    else:
+        return str(value)
 
 
 @dataclass
@@ -335,6 +136,16 @@ class MetaData:
         join_combo: Optional[str] = None,
     ) -> str:
         """Format a parameter, optionally adding the unit (`~_unit`)."""
+
+        def unpack_combo(datum: MetaDatum) -> List[MetaDatum]:
+            assert datum.is_combo()
+            assert isinstance(datum.value, Sequence)  # mypy
+            return [
+                MetaDatum(name=datum.name, value=value, join=datum.join)
+                for value in datum.value
+            ]
+
+        datum: MetaDatum
         if add_unit and param.endswith("_unit"):
             raise ValueError("cannot add unit to param ending in '_unit'", param)
         try:
@@ -349,21 +160,44 @@ class MetaData:
                 unit_datum = getattr(self, unit_param)
             except AttributeError:
                 raise Exception("no unit found for parameter", param, unit_param)
-            datum = datum.combine_with(unit_datum, join=r"$\,$")
+            assert isinstance(datum, MetaDatum)
+            if not datum.is_combo():
+                values_fmtd = [
+                    format_meta_datum(datum.value),
+                    format_meta_datum(unit_datum.value),
+                ]
+                datum = MetaDatum(name=datum.name, value=r"$\,$".join(values_fmtd))
+            else:
+                datum = MetaDatum(
+                    name=f"{datum.name}+{unit_datum.name}",
+                    value=tuple(
+                        [
+                            r"$\,$".join([format_meta_datum(d), format_meta_datum(u)])
+                            for d, u in zip(
+                                unpack_combo(datum), unpack_combo(unit_datum)
+                            )
+                        ]
+                    ),
+                    join=(datum.join or unit_datum.join),
+                )
+            # SR_TMP >
             contains_unit = True
         else:
             contains_unit = False
-        if isinstance(datum, MetaDatumCombo) and join_combo is not None:
-            datum = datum.derive(attrs={**datum.attrs, "join": join_combo})
+        if isinstance(datum, MetaDatum) and datum.is_combo() and join_combo is not None:
+            assert isinstance(datum.value, Sequence)
+            assert not isinstance(datum.value, str)
+            datum = MetaDatum(name=datum.name, value=datum.value, join=join_combo,)
         # SR_TMP <
-        if isinstance(datum, MetaDatumCombo):
-            datums = datum.as_datums()
+        if isinstance(datum, MetaDatum) and datum.is_combo():
+            datums = unpack_combo(datum)
             if all(datum == datums[0] for datum in datums[1:]):
                 datum = datums[0]
         # SR_TMP >
+        datum_fmtd: str = format_meta_datum(datum.value, join=datum.join)
         if contains_unit:
-            return format_unit(str(datum))
-        return str(datum)
+            return format_unit(datum_fmtd)
+        return datum_fmtd
 
     def __getattr__(self, attr):
         try:
@@ -395,7 +229,7 @@ class MetaData:
             if not attr.startswith("species_"):
                 raise AttributeError(attr)
         else:
-            return MetaDatum[type(value)](name=attr, value=value)
+            return MetaDatum(name=attr, value=value)
         values = []
         for species in (
             [self.species] if isinstance(self.species, Species) else self.species
@@ -419,8 +253,8 @@ class MetaData:
                 values.append(value)
         if len(values) == 1:
             value = values[0]
-            return MetaDatum[type(value)](name=attr, value=value)
-        return MetaDatumCombo[type(values[0])](name=attr, value=values)
+            return MetaDatum(name=attr, value=value)
+        return MetaDatum(name=attr, value=tuple(values))
 
 
 def format_unit(s: str) -> str:
