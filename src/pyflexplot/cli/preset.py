@@ -47,7 +47,7 @@ def collect_preset_paths() -> Iterator[Path]:
 def compile_patterns(patterns: Collection[str]) -> List[Pattern]:
     rx_patterns = []
     for pattern in patterns:
-        ch = "[a-zA-Z0-9_.-/]"
+        ch = "[a-zA-Z0-9_./-]"
         rx_pattern = re.compile(
             r"\A" + pattern.replace("*", f"{ch}*").replace("?", ch) + r"\Z"
         )
