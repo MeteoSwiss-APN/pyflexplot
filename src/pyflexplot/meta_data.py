@@ -36,8 +36,14 @@ MetaDatumType = Union[int, float, str, datetime, timedelta]
 
 
 @dataclass
-# pylint: disable=E0213  # no-self-argument (validator)
 class MetaDatum:
+    """Individual piece of meta data.
+
+    This bare-bones class is left over after eliminating the MetaDatum[Combo]
+    classes and will itself be eliminated soon.
+
+    """
+
     name: str
     value: Union[MetaDatumType, Tuple[MetaDatumType, ...]]
     join: Optional[str] = None
@@ -72,6 +78,12 @@ class MetaData:
     species: Union[Species, Tuple[Species, ...]]
 
     def merge_with(self, others: Collection["MetaData"],) -> "MetaData":
+        """Merge this `MetaData` instance with one or more others.
+
+        The nested functions are former methods that have been moved in here in
+        order to eventually eliminate them.
+
+        """
         if not others:
             return self
 
@@ -135,7 +147,13 @@ class MetaData:
         auto_format_unit: bool = True,
         join_combo: Optional[str] = None,
     ) -> str:
-        """Format a parameter, optionally adding the unit (`~_unit`)."""
+        """Format a parameter, optionally adding the unit (`~_unit`).
+
+        This is left over after eliminating the type-specific MetaDatum[Combo]
+        classes and will be cleaned up and likely turned into type-specific
+        functions to be used explicitly to format individual attributes.
+
+        """
 
         def unpack_combo(datum: MetaDatum) -> List[MetaDatum]:
             assert datum.is_combo()
@@ -187,7 +205,7 @@ class MetaData:
         if isinstance(datum, MetaDatum) and datum.is_combo() and join_combo is not None:
             assert isinstance(datum.value, Sequence)
             assert not isinstance(datum.value, str)
-            datum = MetaDatum(name=datum.name, value=datum.value, join=join_combo,)
+            datum = MetaDatum(name=datum.name, value=datum.value, join=join_combo)
         # SR_TMP <
         if isinstance(datum, MetaDatum) and datum.is_combo():
             datums = unpack_combo(datum)
@@ -200,6 +218,12 @@ class MetaData:
         return datum_fmtd
 
     def __getattr__(self, attr):
+        """Temporary compatibility layer for old interface during transition.
+
+        This will be eliminated step by step by replacing the old attributes
+        (e.g., `release_end_rel`) by the new ones (e.g., `release.end_rel`).
+
+        """
         try:
             value = {
                 "release_end_rel": self.release.end_rel,
