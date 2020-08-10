@@ -34,7 +34,7 @@ class Test_COSMO1(_TestBase):
 
     def test_model(self, datadir):
         self.set_up(datadir)
-        assert self.meta_data["derived"]["model"] == "cosmo1"
+        assert self.meta_data["derived"]["model"] == "COSMO-1"
 
     def test_rotated_pole(self, datadir):
         self.set_up(datadir)
@@ -64,7 +64,7 @@ class Test_COSMO2(_TestBase):
 
     def test_model(self, datadir):
         self.set_up(datadir)
-        assert self.meta_data["derived"]["model"] == "cosmo2"
+        assert self.meta_data["derived"]["model"] == "COSMO-2"
 
     def test_rotated_pole(self, datadir):
         self.set_up(datadir)
@@ -94,7 +94,7 @@ class Test_IFS(_TestBase):
 
     def test_model(self, datadir):
         self.set_up(datadir)
-        assert self.meta_data["derived"]["model"] == "ifs"
+        assert self.meta_data["derived"]["model"] == "IFS"
 
     def test_rotated_pole(self, datadir):
         self.set_up(datadir)

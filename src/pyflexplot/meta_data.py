@@ -612,7 +612,7 @@ def species_from_file(
     except AttributeError:
         # SR_TMP <
         # name = "N/A"
-        if model.startswith("ifs"):
+        if model.startswith("IFS"):
             # In the IFS NetCDF files, the deposition variables are missing
             # the basic meta data on species, like "long_name". Therefore,
             # try to # obtain the name from the activity variable of the
@@ -643,9 +643,9 @@ def nc_var_name(setup: Setup, model: str) -> str:
     assert dimensions.species_id is not None  # mypy
     species_id = dimensions.species_id
     if input_variable == "concentration":
-        if model in ["cosmo2", "cosmo1"]:
+        if model in ["COSMO-2", "COSMO-1"]:
             return f"spec{species_id:03d}"
-        elif model in ["ifs", "ifs-hres"]:
+        elif model in ["IFS", "IFS-HRES"]:
             return f"spec{species_id:03d}_mr"
         else:
             raise ValueError("unknown model", model)

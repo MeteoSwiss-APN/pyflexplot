@@ -3,7 +3,7 @@
 [_base]
 # Sample data directory: /scratch/ruestefa/shared/pyflexplot_test/
 infile = "data/ifs_eu_20200628000000.nc"
-model = "ifs-hres"
+model = "IFS-HRES"
 outfile = "{model}_{input_variable}_{domain}_{lang}_ts-{time_idx:02d}.pdf"
 species_id = 2
 time = [1, 6, 11]

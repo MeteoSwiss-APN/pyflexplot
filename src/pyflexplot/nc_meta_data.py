@@ -69,7 +69,7 @@ def read_meta_data(file_handle: nc4.Dataset) -> Dict[str, Dict[str, Any]]:
     derived: Dict[str, Any] = {
         "model": model,
         "release_site": determine_release_site(file_handle),
-        "rotated_pole": model.startswith("cosmo"),
+        "rotated_pole": model.startswith("COSMO"),
         "species_ids": determine_species_ids(model, variables),
         "time_steps": determine_time_steps(ncattrs),
     }
@@ -91,10 +91,10 @@ def determine_model(ncattrs: Dict[str, Any]) -> str:
     """
     dxout = ncattrs["dxout"]
     choices = {
-        type(dxout)(0.25): "ifs",
-        type(dxout)(0.10): "ifs-hres",
-        type(dxout)(0.02): "cosmo2",
-        type(dxout)(0.01): "cosmo1",
+        type(dxout)(0.25): "IFS",
+        type(dxout)(0.10): "IFS-HRES",
+        type(dxout)(0.02): "COSMO-2",
+        type(dxout)(0.01): "COSMO-1",
     }
     try:
         return choices[dxout]
@@ -113,7 +113,7 @@ def determine_release_site(file_handle: nc4.Dataset) -> str:
 
 def determine_species_ids(model: str, variables: Dict[str, Any]) -> Tuple[int, ...]:
     """Determine the species ids from the variables."""
-    if model in ["cosmo1", "cosmo2", "ifs", "ifs-hres"]:
+    if model in ["COSMO-1", "COSMO-2", "IFS", "IFS-HRES"]:
         rx = re.compile(r"\A[WD]D_spec(?P<species_id>[0-9][0-9][0-9])\Z")
         species_ids = set()
         for var_name in variables.keys():

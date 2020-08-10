@@ -289,12 +289,12 @@ def test_semi_realcase(tmp_path):
 
 
 def test_realcase_opr_like(tmp_path):
-    """Setup based on real config for operational cosmo1 plots."""
+    """Setup based on real config for operational cosmo-1 plots."""
     content = """\
         [concentration]
-        infile = "data/cosmo-1_2019052800.nc"
+        infile = "data/cosmo1_2019052800.nc"
         outfile = "concentration_{species_id}_{domain}_{lang}_{time:02d}.png"
-        model = "cosmo1"
+        model = "COSMO-1"
         species_id = "*"
         input_variable = "concentration"
         combine_species = false
@@ -307,9 +307,9 @@ def test_realcase_opr_like(tmp_path):
         # lang = "de"
 
         [concentration_integrated]
-        infile = "data/cosmo-1_2019052800.nc"
+        infile = "data/cosmo1_2019052800.nc"
         outfile = "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png"
-        model = "cosmo1"
+        model = "COSMO-1"
         species_id = "*"
         input_variable = "concentration"
         combine_species = false
@@ -322,8 +322,8 @@ def test_realcase_opr_like(tmp_path):
         # lang = "de"
 
         [tot_deposition]
-        infile = "data/cosmo-1_2019052800.nc"
-        model = "cosmo1"
+        infile = "data/cosmo1_2019052800.nc"
+        model = "COSMO-1"
         species_id = "*"
         outfile = "tot_deposition_{domain}_{lang}_{time:02d}.png"
         input_variable = "deposition"
@@ -335,9 +335,9 @@ def test_realcase_opr_like(tmp_path):
 
         [tot_deposition_affected_area]
         outfile = "affected_area_{domain}_{lang}_{time:02d}.png"
-        model = "cosmo1"
+        model = "COSMO-1"
         plot_variable = "affected_area_mono"
-        infile = "data/cosmo-1_2019052800.nc"
+        infile = "data/cosmo1_2019052800.nc"
         species_id = "*"
         input_variable = "deposition"
         deposition_type = ["dry", "wet"]
@@ -348,10 +348,10 @@ def test_realcase_opr_like(tmp_path):
         """
     dcts_sol = [
         {
-            "infile": "data/cosmo-1_2019052800.nc",
+            "infile": "data/cosmo1_2019052800.nc",
             "outfile": "concentration_{species_id}_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",
-            "model": "cosmo1",
+            "model": "COSMO-1",
             "input_variable": "concentration",
             "plot_variable": "auto",
             "ens_variable": "none",
@@ -378,10 +378,10 @@ def test_realcase_opr_like(tmp_path):
             },
         },
         {
-            "infile": "data/cosmo-1_2019052800.nc",
+            "infile": "data/cosmo1_2019052800.nc",
             "outfile": "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",
-            "model": "cosmo1",
+            "model": "COSMO-1",
             "input_variable": "concentration",
             "plot_variable": "auto",
             "ens_variable": "none",
@@ -408,10 +408,10 @@ def test_realcase_opr_like(tmp_path):
             },
         },
         {
-            "infile": "data/cosmo-1_2019052800.nc",
+            "infile": "data/cosmo1_2019052800.nc",
             "outfile": "tot_deposition_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",
-            "model": "cosmo1",
+            "model": "COSMO-1",
             "input_variable": "deposition",
             "plot_variable": "auto",
             "ens_variable": "none",
@@ -438,10 +438,10 @@ def test_realcase_opr_like(tmp_path):
             },
         },
         {
-            "infile": "data/cosmo-1_2019052800.nc",
+            "infile": "data/cosmo1_2019052800.nc",
             "outfile": "affected_area_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",
-            "model": "cosmo1",
+            "model": "COSMO-1",
             "input_variable": "deposition",
             "plot_variable": "affected_area_mono",
             "ens_variable": "none",

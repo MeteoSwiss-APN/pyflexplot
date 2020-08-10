@@ -21,7 +21,7 @@ field_summary = {
             "infile": "flexpart_cosmo-1_2019093012.nc",
             "outfile": "ref_cosmo1_deterministic_concentration.png",
             "outfile_time_format": "%Y%m%d%H%M",
-            "model": "cosmo1",
+            "model": "COSMO-1",
             "ens_member_id": None,
             "core": {
                 "input_variable": "concentration",
@@ -300,7 +300,7 @@ field_summary = {
             },
         },
         "derived": {
-            "model": "cosmo1",
+            "model": "COSMO-1",
             "release_site": "Goesgen",
             "rotated_pole": True,
             "species_ids": [1],
@@ -356,7 +356,7 @@ plot_summary = {
                     "infile": "flexpart_cosmo-1_2019093012.nc",
                     "outfile": "ref_cosmo1_deterministic_concentration.png",
                     "outfile_time_format": "%Y%m%d%H%M",
-                    "model": "cosmo1",
+                    "model": "COSMO-1",
                     "ens_member_id": None,
                     "core": {
                         "input_variable": "concentration",
@@ -648,7 +648,7 @@ plot_summary = {
                     },
                 },
                 "derived": {
-                    "model": "cosmo1",
+                    "model": "COSMO-1",
                     "release_site": "Goesgen",
                     "rotated_pole": True,
                     "species_ids": [1],
@@ -2473,7 +2473,7 @@ plot_summary = {
                 "infile": "flexpart_cosmo-1_2019093012.nc",
                 "outfile": "ref_cosmo1_deterministic_concentration.png",
                 "outfile_time_format": "%Y%m%d%H%M",
-                "model": "cosmo1",
+                "model": "COSMO-1",
                 "ens_member_id": None,
                 "core": {
                     "input_variable": "concentration",
@@ -2762,7 +2762,7 @@ plot_summary = {
                 },
             },
             "derived": {
-                "model": "cosmo1",
+                "model": "COSMO-1",
                 "release_site": "Goesgen",
                 "rotated_pole": True,
                 "species_ids": [1],

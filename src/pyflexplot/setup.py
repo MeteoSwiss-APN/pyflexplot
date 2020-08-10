@@ -1026,7 +1026,7 @@ class FilePathFormatter:
             "input_variable": input_variable,
             "lang": setup.core.lang,
             "level": setup.core.dimensions.level,
-            "model": nc_meta_data["derived"]["model"],
+            "model": setup.model,
             "nageclass": setup.core.dimensions.nageclass,
             "noutrel": setup.core.dimensions.noutrel,
             "plot_type": setup.core.plot_type,

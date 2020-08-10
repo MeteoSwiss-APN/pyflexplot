@@ -89,28 +89,28 @@ def create_map_conf(field: Field) -> MapAxesConf:
     }
 
     conf: Dict[str, Any]
-    if domain == "data" and model.startswith("cosmo"):
+    if domain == "data" and model.startswith("COSMO"):
         conf = {
             **conf_base,
             **conf_model_cosmo,
             **conf_scale_continent,
             "zoom_fact": 0.9,
         }
-    elif domain == "data" and model.startswith("ifs"):
+    elif domain == "data" and model.startswith("IFS"):
         conf = {
             **conf_base,
             **conf_model_ifs,
             **conf_scale_continent,
             "zoom_fact": 0.9,
         }
-    elif model.startswith("cosmo") and domain == "full":
+    elif model.startswith("COSMO") and domain == "full":
         conf = {
             **conf_base,
             **conf_model_cosmo,
             **conf_scale_continent,
             "zoom_fact": 1.05,
         }
-    elif model.startswith("cosmo1") and domain == "ch":
+    elif model.startswith("COSMO-1") and domain == "ch":
         conf = {
             **conf_base,
             **conf_model_cosmo,
@@ -118,7 +118,7 @@ def create_map_conf(field: Field) -> MapAxesConf:
             "zoom_fact": 3.6,
             "rel_offset": (-0.02, 0.045),
         }
-    elif model.startswith("cosmo2") and domain == "ch":
+    elif model.startswith("COSMO-2") and domain == "ch":
         conf = {
             **conf_base,
             **conf_model_cosmo,
@@ -965,26 +965,12 @@ def format_max_marker_label(labels: Dict[str, Any], fld: np.ndarray) -> str:
 
 
 def format_model_info(setup: Setup, words: TranslatedWords, mdata: MetaData) -> str:
-    if setup.model == "cosmo1":
-        model_name = "COSMO-1"
-    elif setup.model == "cosmo1e":
-        model_name = "COSMO-1E"
-    elif setup.model == "cosmo2":
-        model_name = "COSMO-2"
-    elif setup.model == "cosmo2e":
-        model_name = "COSMO-2E"
-    elif setup.model == "ifs":
-        model_name = "IFS"
-    elif setup.model == "ifs-hres":
-        model_name = "IFS-HRES"
-    else:
-        raise NotImplementedError(f"model name for model '{setup.model}'")
-
+    model_name = setup.model
     model_info = None
     if setup.get_simulation_type() == "deterministic":
-        if setup.model in ["cosmo1", "cosmo2", "ifs", "ifs-hres"]:
+        if setup.model in ["COSMO-1", "COSMO-2", "IFS", "IFS-HRES"]:
             model_info = model_name
-        elif setup.model in ["cosmo1e", "cosmo2e"]:
+        elif setup.model in ["COSMO-1E", "COSMO-2E"]:
             model_info = f"{model_name} {words['control_run']}"
     elif setup.get_simulation_type() == "ensemble":
         model_info = (
@@ -1069,6 +1055,11 @@ def format_integr_period(
         operation = words["summed_over"].s
     elif setup.core.input_variable == "deposition":
         operation = words["accumulated_over"].s
+    else:
+        raise NotImplementedError(
+            f"operation for {'' if setup.core.integrate else 'non-'}integrated"
+            f" input variable '{setup.core.input_variable}'"
+        )
     period = now - start
     hours = int(period.total_seconds() / 3600)
     minutes = int((period.total_seconds() / 60) % 60)

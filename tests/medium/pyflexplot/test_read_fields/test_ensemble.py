@@ -120,7 +120,7 @@ class TestReadFieldEnsemble_Single:
                             self.datafile(ens_member_id, datafile_fmt=datafile_fmt),
                             var_name,
                             setup,
-                            model="cosmo2",  # SR_TMP
+                            model="COSMO-2",  # SR_TMP
                         )
                         for ens_member_id in self.ens_member_ids
                     ]
@@ -239,7 +239,7 @@ class TestReadFieldEnsemble_Multiple:
                             self.datafile(ens_member_id, datafile_fmt=datafile_fmt),
                             get_var_name_ref(sub_setup, var_names_ref),
                             sub_setup,
-                            model="cosmo2",  # SR_TMP
+                            model="COSMO-2",  # SR_TMP
                         )
                         * scale_fld_ref
                     )

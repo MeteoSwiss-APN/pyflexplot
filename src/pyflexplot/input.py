@@ -397,7 +397,7 @@ class InputFileEnsemble:
                 fld_time_lst.append(self._read_fld(fi, sub_setup))
         fld_time = merge_fields(fld_time_lst)
 
-        if self.fixer and self.nc_meta_data["derived"]["model"] in ["ifs"]:
+        if self.fixer and self.nc_meta_data["derived"]["model"] in ["IFS"]:
             self.fixer.fix_global_grid(self.lon, fld_time)
 
         if self.add_ts0:
@@ -515,7 +515,7 @@ class InputFileEnsemble:
     @staticmethod
     def _dim_names(model: str) -> Dict[str, str]:
         """Model-specific dimension names."""
-        if model in ["cosmo2", "cosmo1", "cosmo2e", "cosmo1e"]:
+        if model in ["COSMO-2", "COSMO-1", "COSMO-2E", "COSMO-1E"]:
             return {
                 "lat": "rlat",
                 "lon": "rlon",
@@ -525,7 +525,7 @@ class InputFileEnsemble:
                 "noutrel": "noutrel",
                 "numpoint": "numpoint",
             }
-        elif model in ["ifs", "ifs-hres"]:
+        elif model in ["IFS", "IFS-HRES"]:
             return {
                 "lat": "latitude",
                 "lon": "longitude",

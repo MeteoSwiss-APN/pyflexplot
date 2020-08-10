@@ -28,7 +28,7 @@ class Test_EnsMedian_Concentration(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "cosmo2e",
+        "model": "COSMO-2E",
         "ens_variable": "median",
         "input_variable": "concentration",
         "integrate": False,
@@ -45,7 +45,7 @@ class Test_EnsMax_IntegratedConcentration(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "cosmo2e",
+        "model": "COSMO-2E",
         "ens_variable": "maximum",
         "input_variable": "concentration",
         "integrate": True,
@@ -61,7 +61,7 @@ class Test_EnsMean_TotalDeposition(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "cosmo2e",
+        "model": "COSMO-2E",
         "ens_variable": "mean",
         "input_variable": "deposition",
         "combine_deposition_types": True,
@@ -79,7 +79,7 @@ class Test_EnsProbability_WetDeposition(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "cosmo2e",
+        "model": "COSMO-2E",
         "ens_variable": "probability",
         "input_variable": "deposition",
         "integrate": True,
@@ -97,7 +97,7 @@ class Test_EnsMin_AffectedArea(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "cosmo2e",
+        "model": "COSMO-2E",
         "input_variable": "deposition",
         "ens_variable": "minimum",
         "plot_variable": "affected_area",
@@ -120,7 +120,7 @@ class Test_CloudArrivalTime(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "cosmo2e",
+        "model": "COSMO-2E",
         "ens_variable": "cloud_arrival_time",
         "input_variable": "concentration",
         "integrate": True,
@@ -138,7 +138,7 @@ class Test_CloudDepartureTime(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "cosmo2e",
+        "model": "COSMO-2E",
         "ens_variable": "cloud_departure_time",
         "input_variable": "concentration",
         "integrate": True,
@@ -160,7 +160,7 @@ class Test_MultipanelEnsStats_Concentration(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "cosmo2e",
+        "model": "COSMO-2E",
         "ens_member_id": ENS_MEMBER_IDS,
         "input_variable": "concentration",
         "ens_variable": ["minimum", "maximum", "median", "mean"],

@@ -21,7 +21,7 @@ field_summary = {
             "infile": "flexpart_ifs_20200317000000.nc",
             "outfile": "ref_ifs_deterministic_affected_area.png",
             "outfile_time_format": "%Y%m%d%H%M",
-            "model": "ifs",
+            "model": "IFS",
             "ens_member_id": None,
             "core": {
                 "input_variable": "deposition",
@@ -303,7 +303,7 @@ field_summary = {
             },
         },
         "derived": {
-            "model": "ifs",
+            "model": "IFS",
             "release_site": "Punggye-ri",
             "rotated_pole": False,
             "species_ids": [1],
@@ -364,7 +364,7 @@ plot_summary = {
                     "infile": "flexpart_ifs_20200317000000.nc",
                     "outfile": "ref_ifs_deterministic_affected_area.png",
                     "outfile_time_format": "%Y%m%d%H%M",
-                    "model": "ifs",
+                    "model": "IFS",
                     "ens_member_id": None,
                     "core": {
                         "input_variable": "deposition",
@@ -652,7 +652,7 @@ plot_summary = {
                     },
                 },
                 "derived": {
-                    "model": "ifs",
+                    "model": "IFS",
                     "release_site": "Punggye-ri",
                     "rotated_pole": False,
                     "species_ids": [1],
@@ -2092,7 +2092,7 @@ plot_summary = {
                 "infile": "flexpart_ifs_20200317000000.nc",
                 "outfile": "ref_ifs_deterministic_affected_area.png",
                 "outfile_time_format": "%Y%m%d%H%M",
-                "model": "ifs",
+                "model": "IFS",
                 "ens_member_id": None,
                 "core": {
                     "input_variable": "deposition",
@@ -2377,7 +2377,7 @@ plot_summary = {
                 },
             },
             "derived": {
-                "model": "ifs",
+                "model": "IFS",
                 "release_site": "Punggye-ri",
                 "rotated_pole": False,
                 "species_ids": [1],

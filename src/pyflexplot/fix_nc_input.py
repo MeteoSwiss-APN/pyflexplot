@@ -39,9 +39,9 @@ class FlexPartDataFixer:
     def fix_nc_var_fld(
         self, fld: np.ndarray, model: str, var_ncattrs: Mapping[str, Any]
     ) -> None:
-        if model in ["cosmo2", "cosmo1"]:
+        if model in ["COSMO-2", "COSMO-1"]:
             self._fix_nc_var_cosmo(fld, var_ncattrs)
-        elif model in ["ifs", "ifs-hres"]:
+        elif model in ["IFS", "IFS-HRES"]:
             pass
         else:
             raise NotImplementedError("model", model)
@@ -49,9 +49,9 @@ class FlexPartDataFixer:
     def fix_meta_data(
         self, model: str, mdata: Union[MetaData, Sequence[MetaData]],
     ) -> None:
-        if model in ["cosmo2", "cosmo1"]:
+        if model in ["COSMO-2", "COSMO-1"]:
             self._fix_meta_data_cosmo(mdata)
-        elif model in ["ifs", "ifs-hres"]:
+        elif model in ["IFS", "IFS-HRES"]:
             pass
         else:
             raise NotImplementedError("model", model)
