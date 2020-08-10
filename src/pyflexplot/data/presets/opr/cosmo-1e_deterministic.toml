@@ -35,18 +35,8 @@ outfile = "integrated_concentration_site-{release_site}_species-{species_id}_dom
 outfile = "deposition_tot_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
 [_base._tot_deposition._affected_area."png+"]
 outfile = "affected_area_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
-
 ["**".ch]
 domain = "ch"
-
-# [_base._concentration."naz+"]
-# outfile = "{base_time}_Konzentration_Konz_{model}_{domain}_{release_site}.pdf"
-# [_base._concentration._integr."naz+"]
-# outfile = "{base_time}_Integrierte_Konz_{model}_domain_{release_site}.pdf"
-# [_base._tot_deposition."naz+"]
-# outfile = "{base_time}_Deposition_Konz_{model}_{domain}_{release_site}.pdf"
-# [_base._tot_deposition._affected_area."naz+"]
-# outfile = "{base_time}_Beaufschl_Gebiet_{model}_{domain}_{release_site}.pdf"
 
 [_base._concentration._pdf.full]
 outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration.pdf"
