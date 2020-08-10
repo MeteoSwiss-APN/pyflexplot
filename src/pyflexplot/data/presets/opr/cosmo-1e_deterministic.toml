@@ -1,0 +1,58 @@
+# PyFlexPlot setup file to create deterministic NAZ plots
+
+[_base]
+# Sample data directory: /scratch/ruestefa/shared/pyflexplot_test/
+infile = "data/cosmo1_20190528000000.nc"
+model = "COSMO-1E"
+lang = "de"
+outfile_time_format = "%Y%m%dT%H%M"
+
+[_base._concentration]
+input_variable = "concentration"
+combine_species = false
+level = 0
+
+[_base._concentration._integr]
+integrate = true
+time = -1
+
+[_base._tot_deposition]
+input_variable = "deposition"
+deposition_type = ["dry", "wet"]
+combine_deposition_types = true
+combine_species = true
+integrate = true
+time = -1
+
+[_base._tot_deposition._affected_area]
+plot_variable = "affected_area_mono"
+
+[_base._concentration."png+"]
+outfile = "concentration_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
+[_base._concentration._integr."png+"]
+outfile = "integrated_concentration_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
+[_base._tot_deposition."png+"]
+outfile = "deposition_tot_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
+[_base._tot_deposition._affected_area."png+"]
+outfile = "affected_area_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
+
+# [_base._concentration."naz+"]
+# outfile = "{base_time}_Konzentration_Konz_{model}_{domain}_{release_site}.pdf"
+# [_base._concentration._integr."naz+"]
+# outfile = "{base_time}_Integrierte_Konz_{model}_domain_{release_site}.pdf"
+# [_base._tot_deposition."naz+"]
+# outfile = "{base_time}_Deposition_Konz_{model}_{domain}_{release_site}.pdf"
+# [_base._tot_deposition._affected_area."naz+"]
+# outfile = "{base_time}_Beaufschl_Gebiet_{model}_{domain}_{release_site}.pdf"
+
+[_base._concentration."pdf+"]
+outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration_{domain}.pdf"
+[_base._concentration._integr."pdf+"]
+outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet_{domain}.pdf"
+[_base._tot_deposition."pdf+"]
+outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Deposition_{domain}.pdf"
+[_base._tot_deposition._affected_area."pdf+"]
+outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet_{domain}.pdf"
+
+["**".ch]
+domain = "ch"
