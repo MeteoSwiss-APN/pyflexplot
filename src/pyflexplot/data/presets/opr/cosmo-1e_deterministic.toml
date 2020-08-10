@@ -36,6 +36,9 @@ outfile = "deposition_tot_site-{release_site}_species-{species_id}_domain-{domai
 [_base._tot_deposition._affected_area."png+"]
 outfile = "affected_area_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
 
+["**".ch]
+domain = "ch"
+
 # [_base._concentration."naz+"]
 # outfile = "{base_time}_Konzentration_Konz_{model}_{domain}_{release_site}.pdf"
 # [_base._concentration._integr."naz+"]
@@ -45,14 +48,28 @@ outfile = "affected_area_site-{release_site}_species-{species_id}_domain-{domain
 # [_base._tot_deposition._affected_area."naz+"]
 # outfile = "{base_time}_Beaufschl_Gebiet_{model}_{domain}_{release_site}.pdf"
 
-[_base._concentration."pdf+"]
-outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration_{domain}.pdf"
-[_base._concentration._integr."pdf+"]
-outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet_{domain}.pdf"
-[_base._tot_deposition."pdf+"]
-outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Deposition_{domain}.pdf"
-[_base._tot_deposition._affected_area."pdf+"]
-outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet_{domain}.pdf"
+[_base._concentration._pdf.full]
+outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration.pdf"
+domain = "full"
+[_base._concentration._integr._pdf.full]
+outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet.pdf"
+domain = "full"
+[_base._tot_deposition._pdf.full]
+outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Deposition.pdf"
+domain = "full"
+[_base._tot_deposition._affected_area._pdf.full]
+outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet.pdf"
+domain = "full"
 
-["**".ch]
+[_base._concentration._pdf.zom]
+outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration_zoom.pdf"
+domain = "ch"
+[_base._concentration._integr._pdf.zoom]
+outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet_zoom.pdf"
+domain = "ch"
+[_base._tot_deposition._pdf.zoom]
+outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Deposition_zoom.pdf"
+domain = "ch"
+[_base._tot_deposition._affected_area._pdf.zoom]
+outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet_zoom.pdf"
 domain = "ch"
