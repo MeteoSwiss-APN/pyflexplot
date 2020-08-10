@@ -7,6 +7,7 @@ Plot setup and setup files.
 import dataclasses
 import re
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 from typing import cast
 from typing import Collection
@@ -352,6 +353,7 @@ class Setup(BaseModel):
 
     infile: str = "none"
     outfile: str = "none"
+    outfile_time_format: str = "%Y%m%d%H%M"
     model: str = "none"
     ens_member_id: Optional[Tuple[int, ...]] = None
     core: "CoreSetup" = CoreSetup()
@@ -1016,8 +1018,9 @@ class FilePathFormatter:
         input_variable = setup.core.input_variable
         if setup.core.input_variable == "deposition":
             input_variable += f"_{setup.deposition_type_str}"
-        time_steps = nc_meta_data["derived"]["time_steps"]
+        time_steps = self._format_time_steps(setup, nc_meta_data)
         kwargs = {
+            "base_time": time_steps[0],
             "domain": setup.core.domain,
             "ens_variable": setup.core.ens_variable,
             "input_variable": input_variable,
@@ -1037,6 +1040,21 @@ class FilePathFormatter:
         # Don't use str.format in order to handle multival elements
         path = self._replace_format_keys(template, kwargs)
         return path
+
+    def _format_time_steps(
+        self, setup: Setup, nc_meta_data: Dict[str, Any]
+    ) -> List[str]:
+        fmt_in = "%Y%m%d%H%M"
+        fmt_out = setup.outfile_time_format
+        tss_int: Sequence[int] = nc_meta_data["derived"]["time_steps"]
+        tss_str_in: List[str] = [str(ts) for ts in tss_int]
+        if fmt_out == fmt_in:
+            return tss_str_in
+        tss_dt: List[datetime] = [
+            datetime.strptime(str(ts), fmt_in) for ts in tss_str_in
+        ]
+        tss_str_out: List[str] = [ts.strftime(fmt_out) for ts in tss_dt]
+        return tss_str_out
 
     def _replace_format_keys(self, path: str, kwargs: Mapping[str, Any]) -> str:
         for key, val in kwargs.items():

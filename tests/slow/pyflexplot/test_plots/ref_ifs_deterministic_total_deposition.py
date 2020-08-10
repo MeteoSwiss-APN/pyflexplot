@@ -20,6 +20,7 @@ field_summary = {
         {
             "infile": "flexpart_ifs_20200317000000.nc",
             "outfile": "ref_ifs_deterministic_total_deposition.png",
+            "outfile_time_format": "%Y%m%d%H%M",
             "model": "ifs",
             "ens_member_id": None,
             "core": {
@@ -362,6 +363,7 @@ plot_summary = {
                 {
                     "infile": "flexpart_ifs_20200317000000.nc",
                     "outfile": "ref_ifs_deterministic_total_deposition.png",
+                    "outfile_time_format": "%Y%m%d%H%M",
                     "model": "ifs",
                     "ens_member_id": None,
                     "core": {
@@ -2529,6 +2531,7 @@ plot_summary = {
             {
                 "infile": "flexpart_ifs_20200317000000.nc",
                 "outfile": "ref_ifs_deterministic_total_deposition.png",
+                "outfile_time_format": "%Y%m%d%H%M",
                 "model": "ifs",
                 "ens_member_id": None,
                 "core": {

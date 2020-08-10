@@ -26,6 +26,7 @@ DEFAULT_PARAMS: Dict[str, Any] = {
     "model": "none",
     "multipanel_param": None,
     "outfile": "none",
+    "outfile_time_format": "%Y%m%d%H%M",
     "plot_type": "auto",
     "plot_variable": "auto",
     "dimensions": {

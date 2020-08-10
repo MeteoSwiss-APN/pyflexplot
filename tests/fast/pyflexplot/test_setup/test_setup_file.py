@@ -350,6 +350,7 @@ def test_realcase_opr_like(tmp_path):
         {
             "infile": "data/cosmo-1_2019052800.nc",
             "outfile": "concentration_{species_id}_{domain}_{lang}_{time:02d}.png",
+            "outfile_time_format": "%Y%m%d%H%M",
             "model": "cosmo1",
             "input_variable": "concentration",
             "plot_variable": "auto",
@@ -379,6 +380,7 @@ def test_realcase_opr_like(tmp_path):
         {
             "infile": "data/cosmo-1_2019052800.nc",
             "outfile": "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png",
+            "outfile_time_format": "%Y%m%d%H%M",
             "model": "cosmo1",
             "input_variable": "concentration",
             "plot_variable": "auto",
@@ -408,6 +410,7 @@ def test_realcase_opr_like(tmp_path):
         {
             "infile": "data/cosmo-1_2019052800.nc",
             "outfile": "tot_deposition_{domain}_{lang}_{time:02d}.png",
+            "outfile_time_format": "%Y%m%d%H%M",
             "model": "cosmo1",
             "input_variable": "deposition",
             "plot_variable": "auto",
@@ -437,6 +440,7 @@ def test_realcase_opr_like(tmp_path):
         {
             "infile": "data/cosmo-1_2019052800.nc",
             "outfile": "affected_area_{domain}_{lang}_{time:02d}.png",
+            "outfile_time_format": "%Y%m%d%H%M",
             "model": "cosmo1",
             "input_variable": "deposition",
             "plot_variable": "affected_area_mono",

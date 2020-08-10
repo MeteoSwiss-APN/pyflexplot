@@ -20,6 +20,7 @@ field_summary = {
         {
             "infile": "flexpart_cosmo-1_2019093012.nc",
             "outfile": "ref_cosmo1_deterministic_concentration.png",
+            "outfile_time_format": "%Y%m%d%H%M",
             "model": "cosmo1",
             "ens_member_id": None,
             "core": {
@@ -354,6 +355,7 @@ plot_summary = {
                 {
                     "infile": "flexpart_cosmo-1_2019093012.nc",
                     "outfile": "ref_cosmo1_deterministic_concentration.png",
+                    "outfile_time_format": "%Y%m%d%H%M",
                     "model": "cosmo1",
                     "ens_member_id": None,
                     "core": {
@@ -2470,6 +2472,7 @@ plot_summary = {
             {
                 "infile": "flexpart_cosmo-1_2019093012.nc",
                 "outfile": "ref_cosmo1_deterministic_concentration.png",
+                "outfile_time_format": "%Y%m%d%H%M",
                 "model": "cosmo1",
                 "ens_member_id": None,
                 "core": {

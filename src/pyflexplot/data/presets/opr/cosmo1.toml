@@ -5,7 +5,7 @@
 infile = "data/cosmo1_20190528000000.nc"
 model = "cosmo1e"
 lang = "de"
-time_format = "%Y%m%d_%H%M"
+outfile_time_format = "%Y%m%dT%H%M"
 
 [_base._concentration]
 input_variable = "concentration"
