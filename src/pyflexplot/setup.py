@@ -367,6 +367,7 @@ class Setup(BaseModel):
     outfile: str = "none"
     outfile_time_format: str = "%Y%m%d%H%M"
     model: str = "none"
+    base_time: Optional[int] = None
     ens_member_id: Optional[Tuple[int, ...]] = None
     core: "CoreSetup" = CoreSetup()
 
@@ -887,19 +888,23 @@ class SetupCollection:
 
     @overload
     def complete_dimensions(
-        self, meta_data, inplace: Literal[False] = False
+        self, nc_meta_data, inplace: Literal[False] = False
     ) -> "SetupCollection":
         ...
 
     @overload
-    def complete_dimensions(self, meta_data, inplace: Literal[True]) -> None:
+    def complete_dimensions(self, nc_meta_data, inplace: Literal[True]) -> None:
         ...
 
-    def complete_dimensions(self, meta_data: Mapping[str, Any], inplace: bool = False):
+    def complete_dimensions(
+        self, nc_meta_data: Mapping[str, Any], inplace: bool = False
+    ):
         """Complete unconstrained dimensions based on available indices."""
         obj = self if inplace else self.copy()
         for setup in obj:
-            setup.core.complete_dimensions(meta_data, inplace=True)
+            setup.core.complete_dimensions(nc_meta_data, inplace=True)
+            if setup.base_time is None:
+                setup.base_time = nc_meta_data["derived"]["time_steps"][0]
         return None if inplace else obj
 
     def override_output_suffixes(self, suffix: Union[str, Collection[str]]) -> None:
@@ -920,12 +925,12 @@ class SetupCollection:
             outfile_base = setup.outfile
             if any(outfile_base.endswith(f".{suffix}") for suffix in ["png", "pdf"]):
                 outfile_base = ".".join(outfile_base.split(".")[:-1])
-            for suffix_i in suffixes:
-                if suffix_i.startswith("."):
-                    suffix_i = suffix_i[1:]
+                for suffix_i in suffixes:
+                    if suffix_i.startswith("."):
+                        suffix_i = suffix_i[1:]
                 new_outfile = f"{outfile_base}.{suffix_i}"
                 new_setup = setup.derive({"outfile": new_outfile})
-                new_setups.append(new_setup)
+            new_setups.append(new_setup)
         self._setups = new_setups
 
 
@@ -1043,9 +1048,12 @@ class FilePathFormatter:
         input_variable = setup.core.input_variable
         if setup.core.input_variable == "deposition":
             input_variable += f"_{setup.deposition_type_str}"
-        time_steps = self._format_time_steps(setup, nc_meta_data)
+        time_steps = self._format_time_steps(
+            nc_meta_data["derived"]["time_steps"], setup
+        )
+        base_time = self._format_time_steps([cast(int, setup.base_time)], setup)[0]
         kwargs = {
-            "base_time": time_steps[0],
+            "base_time": base_time,
             "domain": setup.core.domain,
             "ens_variable": setup.core.ens_variable,
             "input_variable": input_variable,
@@ -1066,12 +1074,9 @@ class FilePathFormatter:
         path = self._replace_format_keys(template, kwargs)
         return path
 
-    def _format_time_steps(
-        self, setup: Setup, nc_meta_data: Dict[str, Any]
-    ) -> List[str]:
+    def _format_time_steps(self, tss_int: Sequence[int], setup: Setup,) -> List[str]:
         fmt_in = "%Y%m%d%H%M"
         fmt_out = setup.outfile_time_format
-        tss_int: Sequence[int] = nc_meta_data["derived"]["time_steps"]
         tss_str_in: List[str] = [str(ts) for ts in tss_int]
         if fmt_out == fmt_in:
             return tss_str_in
