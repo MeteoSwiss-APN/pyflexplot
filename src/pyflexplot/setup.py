@@ -252,11 +252,17 @@ class CoreSetup(BaseModel):
         dimensions = Dimensions.create(params.pop("dimensions", {}))
         return cls(**{**params, "dimensions": dimensions})
 
-    def dict(self):
+    def dict(self) -> Dict[str, Any]:  # type: ignore
         return {
             **super().dict(),
             "dimensions": self.dimensions.dict(),
         }
+
+    def tuple(self) -> Tuple[Tuple[str, Any], ...]:
+        return tuple({**self.dict(), "dimensions": self.dimensions.tuple()}.items())
+
+    def __hash__(self) -> int:
+        return hash(self.tuple())
 
     def __repr__(self) -> str:  # type: ignore
         return setup_repr(self)
@@ -470,6 +476,19 @@ class Setup(BaseModel):
             },
             **self.core.dict(),
         }
+
+    def tuple(self) -> Tuple[Tuple[str, Any], ...]:
+        # + return tuple({**self.dict(), "core": self.core.tuple()}.items())
+        return tuple(
+            {
+                **self.dict(),
+                "dimensions": self.core.dimensions.tuple(),
+                "core": self.core.tuple(),
+            }.items()
+        )
+
+    def __hash__(self) -> int:
+        return hash(self.tuple())
 
     def copy(self):
         return self.create(self.dict())

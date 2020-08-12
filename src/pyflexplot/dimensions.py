@@ -244,6 +244,12 @@ class Dimensions:
         """
         return {param: self.get_raw(param) for param in self.params}
 
+    def tuple(self) -> Tuple[Tuple[str, Any], ...]:
+        return tuple(self.dict().items())
+
+    def __hash__(self) -> int:
+        return hash(self.tuple())
+
     # pylint: disable=R0912  # too-many-branches
     def complete(
         self, meta_data: Mapping[str, Any], input_variable: str, inplace: bool = False
