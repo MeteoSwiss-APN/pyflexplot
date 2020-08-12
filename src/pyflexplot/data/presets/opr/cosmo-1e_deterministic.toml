@@ -22,7 +22,6 @@ deposition_type = ["dry", "wet"]
 combine_deposition_types = true
 combine_species = true
 integrate = true
-time = -1
 
 [_base._tot_deposition._affected_area]
 plot_variable = "affected_area_mono"
