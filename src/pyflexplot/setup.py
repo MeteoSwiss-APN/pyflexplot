@@ -255,7 +255,7 @@ class CoreSetup(BaseModel):
     def dict(self):
         return {
             **super().dict(),
-            "dimensions": self.dimensions.compact_dict(),
+            "dimensions": self.dimensions.dict(),
         }
 
     def __repr__(self) -> str:  # type: ignore

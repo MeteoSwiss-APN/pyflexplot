@@ -149,7 +149,7 @@ class Test_Dict:
 
     def test_no_args(self):
         dims = Dimensions()
-        res = dims.compact_dict()
+        res = dims.dict()
         sol = {
             "deposition_type": None,
             "nageclass": None,
@@ -172,7 +172,7 @@ class Test_Dict:
             level=2,
         )
         dims = Dimensions([cdims])
-        res = dims.compact_dict()
+        res = dims.dict()
         sol = {
             "deposition_type": "dry",
             "nageclass": 0,
@@ -187,7 +187,7 @@ class Test_Dict:
     def test_double_default_core(self):
         core = [CoreDimensions(), CoreDimensions()]
         dims = Dimensions(core)
-        res = dims.compact_dict()
+        res = dims.dict()
         sol = {
             "deposition_type": None,
             "nageclass": None,
@@ -216,7 +216,7 @@ class Test_Dict:
             ),
         ]
         dims = Dimensions(core)
-        res = dims.compact_dict()
+        res = dims.dict()
         sol = {
             "deposition_type": ("dry", "wet"),
             "nageclass": (0, 3),
@@ -234,7 +234,7 @@ class Test_Create:
 
     def test_no_args(self):
         dims = Dimensions.create({})
-        res = dims.compact_dict()
+        res = dims.dict()
         sol = {
             "deposition_type": None,
             "nageclass": None,
@@ -257,7 +257,7 @@ class Test_Create:
             "level": 2,
         }
         dims = Dimensions.create(params)
-        res = dims.compact_dict()
+        res = dims.dict()
         sol = params
         assert res == sol
 
@@ -272,7 +272,7 @@ class Test_Create:
             "level": 1,
         }
         dims = Dimensions.create(params)
-        res = dims.compact_dict()
+        res = dims.dict()
         sol = {
             key: (tuple(sorted(val)) if isinstance(val, tuple) else val)
             for key, val in params.items()
@@ -344,8 +344,8 @@ class Test_Interact:
         dims.set("species_id", (0, 2, None, None))
         dims.set("time", (2, 0, 1, None))
         dims.set("level", (1, None, None, None))
-        res = dims.compact_dict()
-        sol = self.create_dims().compact_dict()
+        res = dims.dict()
+        sol = self.create_dims().dict()
         assert res == sol
 
     def test_set_compact(self):
@@ -358,8 +358,8 @@ class Test_Interact:
         dims.set("species_id", (0, 2))
         dims.set("time", (0, 1, 2))
         dims.set("level", 1)
-        res = dims.compact_dict()
-        sol = self.create_dims().compact_dict()
+        res = dims.dict()
+        sol = self.create_dims().dict()
         assert res == sol
 
     def test_set_property_raw(self):
@@ -372,8 +372,8 @@ class Test_Interact:
         dims.species_id = (0, 2, None, None)
         dims.time = (2, 0, 1, None)
         dims.level = (1, None, None, None)
-        res = dims.compact_dict()
-        sol = self.create_dims().compact_dict()
+        res = dims.dict()
+        sol = self.create_dims().dict()
         assert res == sol
 
     def test_set_property_compact(self):
@@ -386,16 +386,16 @@ class Test_Interact:
         dims.species_id = (0, 2)
         dims.time = (0, 1, 2)
         dims.level = 1
-        res = dims.compact_dict()
-        sol = self.create_dims().compact_dict()
+        res = dims.dict()
+        sol = self.create_dims().dict()
         assert res == sol
 
     def test_update_empty_with_full(self):
         dims = Dimensions()
         self.assert_is_empty(dims)
         dims.update(self.params)
-        res = dims.compact_dict()
-        sol = self.create_dims().compact_dict()
+        res = dims.dict()
+        sol = self.create_dims().dict()
         assert res == sol
 
     def test_update_empty_with_partial(self):
@@ -405,7 +405,7 @@ class Test_Interact:
         dims.update({"nageclass": (3, None, 0)})
         dims.update({"noutrel": (1, 1)})
         dims.update({"level": 1})
-        res = dims.compact_dict()
+        res = dims.dict()
         sol = {
             "deposition_type": "wet",
             "nageclass": (0, 3),
@@ -420,13 +420,13 @@ class Test_Interact:
     def test_derive_empty(self):
         dims = self.create_dims()
         derived = dims.derive({})
-        res = dims.compact_dict()
-        sol = derived.compact_dict()
+        res = dims.dict()
+        sol = derived.dict()
         assert res == sol
 
     def test_derive_some(self):
         dims = self.create_dims()
         derived = dims.derive({"level": 2, "deposition_type": ("dry", "wet")})
-        sol = {**dims.compact_dict(), "deposition_type": ("dry", "wet"), "level": 2}
-        res = derived.compact_dict()
+        sol = {**dims.dict(), "deposition_type": ("dry", "wet"), "level": 2}
+        res = derived.dict()
         assert res == sol

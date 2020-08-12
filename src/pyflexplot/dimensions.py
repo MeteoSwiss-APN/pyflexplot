@@ -103,7 +103,7 @@ class CoreDimensions(BaseModel):
         return cast_field_value(cls, param, value)
 
 
-@summarizable(summarize=lambda self: self.compact_dict())  # type: ignore
+@summarizable(summarize=lambda self: self.dict())  # type: ignore
 # pylint: disable=R0902  # too-many-instance-attributes
 class Dimensions:
     """A collection of Domensions objects."""
@@ -120,14 +120,14 @@ class Dimensions:
 
     def __repr__(self) -> str:
         head = f"{type(self).__name__}"
-        lines = [f"{param}={value}" for param, value in self.compact_dict().items()]
+        lines = [f"{param}={value}" for param, value in self.dict().items()]
         body = join_multilines(lines, indent=2)
         return f"{head}(\n{body}\n)"
 
     @classmethod
     def create(cls, params: Union["Dimensions", Mapping[str, Any]]) -> "Dimensions":
         if isinstance(params, cls):
-            params = params.compact_dict()
+            params = params.dict()
         else:
             assert isinstance(params, Mapping)  # mypy
             params = cast(MutableMapping, params)
@@ -170,7 +170,7 @@ class Dimensions:
 
     def derive(self, params: Mapping[str, Any]) -> "Dimensions":
         """Derive a new ``Dimensions`` object with some changed parameters."""
-        return type(self).create({**self.compact_dict(), **params})
+        return type(self).create({**self.dict(), **params})
 
     def get(
         self, param: str, *, unpack_single: bool = True
@@ -214,7 +214,7 @@ class Dimensions:
         return tuple(values)
 
     def set(self, param: str, value: Any) -> None:
-        dct = self.compact_dict()
+        dct = self.dict()
         if isinstance(value, Sequence) and not isinstance(value, str):
             value = tuple(value)
         dct[param] = value
@@ -222,12 +222,12 @@ class Dimensions:
 
     def update(self, other: Union["Dimensions", Mapping[str, Any]]) -> None:
         if isinstance(other, type(self)):
-            other = other.compact_dict()
+            other = other.dict()
         assert isinstance(other, Mapping)
         for param, value in other.items():
             self.set(param, value)
 
-    def compact_dict(self) -> Dict[str, Optional[Union[int, Tuple[int, ...]]]]:
+    def dict(self) -> Dict[str, Optional[Union[int, Tuple[int, ...]]]]:
         """Return a compact dictionary representation.
 
         See method ``get`` for information of how the values of each
@@ -290,10 +290,10 @@ class Dimensions:
 
     def __eq__(self, other) -> bool:
         try:
-            other_dict = other.compact_dict()
+            other_dict = other.dict()
         except AttributeError:
             other_dict = dict(other)
-        return self.compact_dict() == other_dict
+        return self.dict() == other_dict
 
     def __iter__(self) -> Iterator[CoreDimensions]:
         return iter(self._core)
