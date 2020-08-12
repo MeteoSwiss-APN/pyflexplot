@@ -5,6 +5,8 @@ String utilities.
 # Standard library
 import re
 from typing import Any
+from typing import List
+from typing import Optional
 from typing import Sequence
 
 
@@ -190,3 +192,62 @@ def join_multilines(lines: Sequence[str], *, indent: int = 0) -> str:
         s_line = "\n".join(s_sub_lines)
         s_lines.append(s_line)
     return "\n".join(s_lines)
+
+
+def split_outside_parens(
+    s: str,
+    sep: Optional[str] = None,
+    maxsplit: int = -1,
+    *,
+    opening: str = "(",
+    closing: str = ")",
+) -> List[str]:
+    """Split a string at delimiters outside parentheses.
+
+    Args:
+        s: String to split.
+
+        sep (optional): Separator at which the string is split. May be a
+            regular expression. None means whitespace.
+
+        maxsplit (optional): Maximum number of splits. -1 means no limit.
+
+        opening (optional): Opening character(s).
+
+        closing (optional): Closing characters.
+
+    """
+    if sep is None:
+        sep = " +"
+    elif any(ch in sep for chs in [opening, closing] for ch in chs):
+        raise ValueError(
+            f"separator must not contain parens '{opening}'/'{closing}': '{sep}'"
+        )
+    elif sep not in s:
+        return [s]
+
+    # Find nesting levels
+    levels: List[int] = []
+    level = 0
+    for ch in s:
+        if ch in opening:
+            level += 1
+        elif ch in closing:
+            level -= 1
+        levels.append(level)
+    if level != 0:
+        raise ValueError(f"non-matching parens '{opening}'/'{closing}': '{s}'")
+
+    # Split at nesting level zero only
+    raw_splits = re.split(sep, s)
+    splits: List[str] = [raw_splits.pop(0)]
+    for match in re.finditer(sep, s):
+        max_reached = maxsplit >= 0 and len(splits) > maxsplit
+        if levels[match.start()] == 0 and not max_reached:
+            splits.append("")
+        else:
+            splits[-1] += match.group()
+        splits[-1] += raw_splits.pop(0)
+    splits.extend(raw_splits)
+
+    return splits
