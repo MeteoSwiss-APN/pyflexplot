@@ -368,7 +368,7 @@ def main(
                     create_plot(plot, out_file_paths_i)
 
                 if open_first_cmd and (ip_in - 1) + (ip_fld - 1) == 0:
-                    open_plots(open_first_cmd, [plot.file_path], dry_run)
+                    open_plots(open_first_cmd, out_file_paths_i[0], dry_run)
 
                 n_plt_todo = n_fld - ip_fld
                 if n_plt_todo and each_only and ip_fld >= each_only:

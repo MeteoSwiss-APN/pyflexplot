@@ -4,8 +4,10 @@ Input file meta data.
 """
 # Standard library
 import re
+import time
 from datetime import datetime
 from datetime import timedelta
+from datetime import timezone
 from typing import Any
 from typing import Dict
 from typing import List
@@ -132,11 +134,15 @@ def determine_time_steps(ncattrs: Dict[str, Any]) -> Tuple[int, ...]:
     start_date: str = ncattrs["ibdate"]
     start_time: str = ncattrs["ibtime"]
     assert len(start_time) == 6
-    start: datetime = datetime.strptime(start_date + start_time, fmt_in)
+    start: datetime = datetime(
+        *time.strptime(start_date + start_time, fmt_in)[:6], tzinfo=timezone.utc
+    )
     end_date: str = ncattrs["iedate"]
     end_time: str = ncattrs["ietime"]
     assert len(end_time) == 6
-    end: datetime = datetime.strptime(end_date + end_time, fmt_in)
+    end: datetime = datetime(
+        *time.strptime(end_date + end_time, fmt_in)[:6], tzinfo=timezone.utc
+    )
     assert end > start
     delta: timedelta = timedelta(seconds=int(ncattrs["loutstep"]))
     time_steps: List[datetime] = [start]

@@ -16,9 +16,11 @@ Instead, all the logic is collected here in a straightforward but dirty way
 until sane design choices emerge from the code mess.
 """
 # Standard library
+import time
 import warnings
 from datetime import datetime
 from datetime import timedelta
+from datetime import timezone
 from textwrap import dedent
 from typing import Any
 from typing import cast
@@ -272,6 +274,9 @@ def create_box_labels(
         words,
         cap=True,
     )
+    time_since_release_start = (
+        mdata.simulation.now - mdata.simulation.start - mdata.release.start_rel
+    )
     labels["top"] = {
         "tl": "",  # SR_TMP force into 1st position of dict (for tests)
         "bl": (
@@ -284,7 +289,7 @@ def create_box_labels(
             f" (+{format_meta_datum(mdata.simulation_now_rel.value)})"
         ),
         "br": (
-            f"{format_meta_datum(mdata.simulation_now_rel.value)} {words['since']}"
+            f"{format_meta_datum(time_since_release_start)} {words['since']}"
             f" {words['release_start']}"
             # f" {words['at', 'place']}"
             # f" {format_meta_datum(mdata.release_site_name.value)}"
@@ -330,7 +335,7 @@ def create_box_labels(
     }
 
     labels["bottom"] = {
-        "model_info": format_model_info(setup, words, mdata),
+        "model_info": format_model_info(setup, words),
         "copyright": f"{symbols['copyright']}{words['meteoswiss']}",
     }
 
@@ -973,7 +978,7 @@ def format_max_marker_label(labels: Dict[str, Any], fld: np.ndarray) -> str:
     # return f"{labels['maximum']}:\n({s_val})"
 
 
-def format_model_info(setup: Setup, words: TranslatedWords, mdata: MetaData) -> str:
+def format_model_info(setup: Setup, words: TranslatedWords) -> str:
     model_name = setup.model
     model_info = None
     if setup.get_simulation_type() == "deterministic":
@@ -991,9 +996,12 @@ def format_model_info(setup: Setup, words: TranslatedWords, mdata: MetaData) -> 
         raise NotImplementedError(
             f"model setup '{setup.model}-{setup.get_simulation_type()}'"
         )
+    base_time = datetime(
+        *time.strptime(str(setup.base_time), "%Y%m%d%H%M")[:6], tzinfo=timezone.utc
+    )
     return (
         f"{words['flexpart']} {words['based_on']} {model_info}"
-        f", {format_meta_datum(mdata.simulation_start.value)}"
+        f", {format_meta_datum(base_time)}"
     )
 
 

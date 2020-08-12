@@ -242,7 +242,7 @@ def split_outside_parens(
     raw_splits = re.split(sep, s)
     splits: List[str] = [raw_splits.pop(0)]
     for match in re.finditer(sep, s):
-        max_reached = maxsplit >= 0 and len(splits) > maxsplit
+        max_reached = 0 <= maxsplit < len(splits)
         if levels[match.start()] == 0 and not max_reached:
             splits.append("")
         else:

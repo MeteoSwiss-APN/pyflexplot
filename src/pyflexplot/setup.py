@@ -6,8 +6,10 @@ Plot setup and setup files.
 # Standard library
 import dataclasses
 import re
+import time
 from dataclasses import dataclass
 from datetime import datetime
+from datetime import timezone
 from typing import Any
 from typing import cast
 from typing import Collection
@@ -951,7 +953,7 @@ class SetupCollection:
                 else list(setup.outfile)
             )
             new_outfiles: List[str] = []
-            for idx, old_outfile in enumerate(list(old_outfiles)):
+            for old_outfile in list(old_outfiles):
                 if any(old_outfile.endswith(f".{suffix}") for suffix in ["png", "pdf"]):
                     old_outfile = ".".join(old_outfile.split(".")[:-1])
                 for suffix_i in suffixes:
@@ -1115,7 +1117,8 @@ class FilePathFormatter:
         if fmt_out == fmt_in:
             return tss_str_in
         tss_dt: List[datetime] = [
-            datetime.strptime(str(ts), fmt_in) for ts in tss_str_in
+            datetime(*time.strptime(str(ts), fmt_in)[:6], tzinfo=timezone.utc)
+            for ts in tss_str_in
         ]
         tss_str_out: List[str] = [ts.strftime(fmt_out) for ts in tss_dt]
         return tss_str_out

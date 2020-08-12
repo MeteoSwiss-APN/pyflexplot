@@ -55,6 +55,7 @@ def prepare_field_value(
     return value
 
 
+# pylint: disable=R0912  # too-many-branches
 def cast_field_value(cls: Type, param: str, value: Any) -> Any:
     try:
         field: ModelField = cls.__fields__[param]
@@ -94,13 +95,12 @@ def cast_field_value(cls: Type, param: str, value: Any) -> Any:
                 continue
             try:
                 return sub_type(value)
-            except Exception:
+            except Exception:  # pylint: disable=W0703  # broad-except
                 continue
-        else:
-            raise Exception(
-                f"failed to cast value '{value}' of '{field.type_}' parameter '{param}'"
-                f" to one of {s_sub_types}"
-            )
+        raise Exception(
+            f"failed to cast value '{value}' of '{field.type_}' parameter '{param}'"
+            f" to one of {s_sub_types}"
+        )
 
     if isinstance(value, Collection) and not isinstance(value, str):
         try:
