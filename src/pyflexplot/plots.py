@@ -555,7 +555,7 @@ def prepare_plot(
     field_lst: Sequence[Field],
     prev_out_file_paths: Optional[List[str]] = None,
     dry_run: bool = False,
-) -> Union[BoxedPlot, DummyBoxedPlot]:
+) -> Tuple[List[str], Union[BoxedPlot, DummyBoxedPlot]]:
     """Create plots while yielding them with the plot file path one by one."""
     log(dbg=f"preparing setups for plot based on {len(field_lst)} fields")
 
@@ -568,10 +568,17 @@ def prepare_plot(
     for field in field_lst:
         recursive_update(nc_meta_data, field.nc_meta_data, inplace=True)
 
-    out_file_path = FilePathFormatter(prev_out_file_paths).format(setup, nc_meta_data)
-    log(dbg=f"preparing plot {out_file_path}")
+    out_file_paths: List[str] = []
+    for out_file_template in (
+        [setup.outfile] if isinstance(setup.outfile, str) else setup.outfile
+    ):
+        out_file_path = FilePathFormatter(prev_out_file_paths).format(
+            out_file_template, setup, nc_meta_data
+        )
+        log(dbg=f"preparing plot {out_file_path}")
+        out_file_paths.append(out_file_path)
     if dry_run:
-        return DummyBoxedPlot(out_file_path)
+        return out_file_paths, DummyBoxedPlot()
     else:
         # SR_TMP <  SR_MULTIPANEL
         if len(field_lst) > 1:
@@ -580,11 +587,12 @@ def prepare_plot(
         map_conf = create_map_conf(field)
         # SR_TMP >  SR_MULTIPANEL
         config = create_plot_config(setup, WORDS, SYMBOLS, cast(MetaData, field.mdata))
-        return BoxedPlot(field, out_file_path, config, map_conf)
+        return out_file_paths, BoxedPlot(field, config, map_conf)
 
 
-def create_plot(plot: BoxedPlot, write: bool = True) -> None:
-    log(dbg=f"creating plot {plot.file_path}")
+def create_plot(
+    plot: BoxedPlot, out_file_paths: Sequence[str], write: bool = True
+) -> None:
     layout: BoxedPlotLayoutType
     if plot.config.setup.get_simulation_type() == "deterministic":
         layout = BoxedPlotLayoutDeterministic(aspect=plot.config.fig_aspect)
@@ -597,11 +605,12 @@ def create_plot(plot: BoxedPlot, write: bool = True) -> None:
     axs_map = plot.add_map_plot(layout.rect_center())
     plot_add_text_boxes(plot, layout)
     plot_add_markers(plot, axs_map)
-    if write:
-        plot.write()
-    else:
-        plot.clean()
-    log(dbg=f"created plot {plot.file_path}")
+    for out_file_path in out_file_paths:
+        log(dbg=f"creating plot {out_file_path}")
+        if write:
+            plot.write(out_file_path)
+        log(dbg=f"created plot {out_file_path}")
+    plot.clean()
 
 
 # SR_TMP <<< TODO Clean up nested functions! Eventually introduce class(es) of some kind

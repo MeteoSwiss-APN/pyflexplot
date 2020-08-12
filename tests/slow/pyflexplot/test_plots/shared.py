@@ -92,8 +92,8 @@ class _TestBase:
     def get_plot(self, field):
         field_lst = [field]
         outfiles, plots = [], []
-        plot = prepare_plot(field_lst, outfiles)
-        create_plot(plot, write=False)
+        outfiles, plot = prepare_plot(field_lst, outfiles)
+        create_plot(plot, outfiles, write=False)
         plots.append(plot)
         assert len(outfiles) == len(plots) == 1
         plot = next(iter(plots))

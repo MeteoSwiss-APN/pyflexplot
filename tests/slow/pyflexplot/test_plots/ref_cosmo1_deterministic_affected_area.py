@@ -22,6 +22,7 @@ field_summary = {
             "outfile": "ref_cosmo1_deterministic_affected_area.png",
             "outfile_time_format": "%Y%m%d%H%M",
             "model": "COSMO-1",
+            "base_time": 201909301200,
             "ens_member_id": None,
             "core": {
                 "input_variable": "deposition",
@@ -357,6 +358,7 @@ plot_summary = {
                     "outfile": "ref_cosmo1_deterministic_affected_area.png",
                     "outfile_time_format": "%Y%m%d%H%M",
                     "model": "COSMO-1",
+                    "base_time": 201909301200,
                     "ens_member_id": None,
                     "core": {
                         "input_variable": "deposition",
@@ -2089,6 +2091,7 @@ plot_summary = {
                 "outfile": "ref_cosmo1_deterministic_affected_area.png",
                 "outfile_time_format": "%Y%m%d%H%M",
                 "model": "COSMO-1",
+                "base_time": 201909301200,
                 "ens_member_id": None,
                 "core": {
                     "input_variable": "deposition",

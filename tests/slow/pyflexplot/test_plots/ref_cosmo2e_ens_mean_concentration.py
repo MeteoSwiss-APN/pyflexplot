@@ -22,6 +22,7 @@ field_summary = {
             "outfile": "ref_cosmo2e_ens_mean_concentration.png",
             "outfile_time_format": "%Y%m%d%H%M",
             "model": "COSMO-2E",
+            "base_time": 201907271200,
             "ens_member_id": [0, 1, 5, 10, 15, 20],
             "core": {
                 "input_variable": "concentration",
@@ -416,6 +417,7 @@ plot_summary = {
                     "outfile": "ref_cosmo2e_ens_mean_concentration.png",
                     "outfile_time_format": "%Y%m%d%H%M",
                     "model": "COSMO-2E",
+                    "base_time": 201907271200,
                     "ens_member_id": [0, 1, 5, 10, 15, 20],
                     "core": {
                         "input_variable": "concentration",
@@ -2698,6 +2700,7 @@ plot_summary = {
                 "outfile": "ref_cosmo2e_ens_mean_concentration.png",
                 "outfile_time_format": "%Y%m%d%H%M",
                 "model": "COSMO-2E",
+                "base_time": 201907271200,
                 "ens_member_id": [0, 1, 5, 10, 15, 20],
                 "core": {
                     "input_variable": "concentration",

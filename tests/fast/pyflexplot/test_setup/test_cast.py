@@ -15,6 +15,8 @@ class Test_CastSingle:
 
     def test_outfile(self):
         assert Setup.cast("outfile", "foo.png") == "foo.png"
+        assert Setup.cast("outfile", ["foo.png"]) == ("foo.png",)
+        assert Setup.cast("outfile", ["foo.png", "bar.png"]) == ("foo.png", "bar.png")
 
     def test_lang(self):
         assert Setup.cast("lang", "de") == "de"
@@ -37,10 +39,6 @@ class Test_CastSequence:
     def test_infile_fail(self):
         with pytest.raises(ValueError):
             Setup.cast("infile", ["a.nc", "b.nc"])
-
-    def test_outfile_fail(self):
-        with pytest.raises(ValueError):
-            Setup.cast("outfile", ["a.png", "b.png"])
 
     def test_lang_fail(self):
         with pytest.raises(ValueError):

@@ -181,7 +181,7 @@ class FieldInputOrganizer:
                     "combine_species",
                 ]
             ).items():
-                skip = ["dimensions.time", "ens_member_id"]
+                skip = ["outfile", "dimensions.time", "ens_member_id"]
                 if input_variable == "concentration":
                     if combine_levels:
                         skip.append("dimensions.level")
@@ -292,7 +292,9 @@ class InputFileEnsemble:
             self.nc_meta_data = self.read_nc_meta_data(fi)
 
         # Create individual setups at each requested time step
-        self.setups_lst_time = setups.decompress_partially(["dimensions.time"])
+        self.setups_lst_time = setups.decompress_partially(
+            ["dimensions.time"], skip=["outfile"]
+        )
         n_requested_times = len(self.setups_lst_time)
 
         self.fld_time_mem = np.full(self._get_shape_mem_time(), np.nan, np.float32)
@@ -389,7 +391,7 @@ class InputFileEnsemble:
         """Read field over all time steps for each member."""
 
         fld_time_lst = []
-        for sub_setups in timeless_setups.decompress():
+        for sub_setups in timeless_setups.decompress_partially(None, skip=["outfile"]):
             for sub_setup in sub_setups:
                 fld_time_lst.append(self._read_fld(fi, sub_setup))
         fld_time = merge_fields(fld_time_lst)
@@ -408,7 +410,7 @@ class InputFileEnsemble:
         mdata_lst: List[MetaData] = []
         for setups in self.setups_lst_time:
             mdata_i_lst: List[MetaData] = []
-            for sub_setups in setups.decompress():
+            for sub_setups in setups.decompress_partially(None, skip=["outfile"]):
                 for sub_setup in sub_setups:
                     mdata_ij: MetaData = collect_meta_data(
                         fi, sub_setup, self.nc_meta_data, add_ts0=self.add_ts0

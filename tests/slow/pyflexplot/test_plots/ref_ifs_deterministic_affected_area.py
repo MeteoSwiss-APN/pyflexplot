@@ -22,6 +22,7 @@ field_summary = {
             "outfile": "ref_ifs_deterministic_affected_area.png",
             "outfile_time_format": "%Y%m%d%H%M",
             "model": "IFS",
+            "base_time": 202003170000,
             "ens_member_id": None,
             "core": {
                 "input_variable": "deposition",
@@ -365,6 +366,7 @@ plot_summary = {
                     "outfile": "ref_ifs_deterministic_affected_area.png",
                     "outfile_time_format": "%Y%m%d%H%M",
                     "model": "IFS",
+                    "base_time": 202003170000,
                     "ens_member_id": None,
                     "core": {
                         "input_variable": "deposition",
@@ -2093,6 +2095,7 @@ plot_summary = {
                 "outfile": "ref_ifs_deterministic_affected_area.png",
                 "outfile_time_format": "%Y%m%d%H%M",
                 "model": "IFS",
+                "base_time": 202003170000,
                 "ens_member_id": None,
                 "core": {
                     "input_variable": "deposition",

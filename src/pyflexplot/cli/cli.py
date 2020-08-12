@@ -325,6 +325,7 @@ def main(
     #       this had to be solved some other way, but for now, let's just stick
     #       with the current implementation of N plots per input data file...
     setups = SetupFile.read_many(setup_file_paths, override=input_setup_params)
+    setups = setups.compress_partially("outfile")
 
     if suffixes:
         setups.override_output_suffixes(suffixes)
@@ -339,7 +340,7 @@ def main(
         """Break out of inner and outer loop."""
 
     # Create plots input file(s) by input file(s)
-    out_file_paths = []
+    all_out_file_paths = []
     n_in = len(setups_by_infile)
     i_tot = -1
     for ip_in, (in_file_path, sub_setups) in enumerate(setups_by_infile.items(), 1):
@@ -355,13 +356,16 @@ def main(
                 in_file_path_fmtd = format_in_file_path(
                     in_file_path, [field.var_setups for field in field_lst]
                 )
-                plot = prepare_plot(field_lst, out_file_paths, dry_run=dry_run)
-                log(
-                    inf=f"{in_file_path_fmtd} -> {plot.file_path}",
-                    vbs=f"[{ip_in}/{n_in}][{ip_fld}/{n_fld}] plot {plot.file_path}",
+                out_file_paths_i, plot = prepare_plot(
+                    field_lst, all_out_file_paths, dry_run=dry_run
                 )
+                for out_file_path in out_file_paths_i:
+                    log(
+                        inf=f"{in_file_path_fmtd} -> {out_file_path}",
+                        vbs=f"[{ip_in}/{n_in}][{ip_fld}/{n_fld}] plot {out_file_path}",
+                    )
                 if not dry_run:
-                    create_plot(plot)
+                    create_plot(plot, out_file_paths_i)
 
                 if open_first_cmd and (ip_in - 1) + (ip_fld - 1) == 0:
                     open_plots(open_first_cmd, [plot.file_path], dry_run)
@@ -374,7 +378,8 @@ def main(
                     if n_plt_todo:
                         log(vbs=f"skip remaining {n_plt_todo} plots")
                     raise BreakOuter()
-                log(dbg=f"done plotting {plot.file_path}")
+                for out_file_path in out_file_paths_i:
+                    log(dbg=f"done plotting {out_file_path}")
             log(dbg=f"done processing {in_file_path}")
         except BreakInner:
             continue
@@ -386,11 +391,11 @@ def main(
 
     if merge_pdfs:
         log(vbs="merge PDF plots")
-        out_file_paths = merge_pdf_plots(out_file_paths, dry_run)
+        all_out_file_paths = merge_pdf_plots(all_out_file_paths, dry_run)
 
     if open_all_cmd:
-        log(vbs=f"open {len(out_file_paths)} plots:")
-        open_plots(open_all_cmd, out_file_paths, dry_run)
+        log(vbs=f"open {len(all_out_file_paths)} plots:")
+        open_plots(open_all_cmd, all_out_file_paths, dry_run)
 
     return 0
 

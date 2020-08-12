@@ -83,8 +83,6 @@ class BoxedPlotConfig(BaseModel):
 class DummyBoxedPlot:
     """Dummy for dry runs."""
 
-    file_path: str
-
 
 @summarizable(
     attrs=["ax_map", "boxes", "field", "fig", "map_conf"],
@@ -95,16 +93,11 @@ class BoxedPlot:
     """A FLEXPART dispersion plot."""
 
     def __init__(
-        self,
-        field: Field,
-        file_path: str,
-        config: BoxedPlotConfig,
-        map_conf: MapAxesConf,
+        self, field: Field, config: BoxedPlotConfig, map_conf: MapAxesConf
     ) -> None:
         """Create an instance of ``BoxedPlot``."""
 
         self.field = field
-        self.file_path = file_path
         self.config = config
         self.map_conf = map_conf
 
@@ -123,9 +116,9 @@ class BoxedPlot:
             self._fig = plt.figure(figsize=self.config.fig_size)
         return self._fig
 
-    def write(self) -> None:
+    def write(self, file_path: str) -> None:
         self.fig.savefig(
-            self.file_path,
+            file_path,
             facecolor=self.fig.get_facecolor(),
             edgecolor=self.fig.get_edgecolor(),
             bbox_inches="tight",

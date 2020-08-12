@@ -10,6 +10,7 @@ from typing import Dict
 from pyflexplot.setup import Setup
 
 DEFAULT_PARAMS: Dict[str, Any] = {
+    "base_time": None,
     "combine_deposition_types": False,
     "combine_levels": False,
     "combine_species": False,

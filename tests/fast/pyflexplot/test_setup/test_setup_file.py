@@ -348,6 +348,7 @@ def test_realcase_opr_like(tmp_path):
         """
     dcts_sol = [
         {
+            "base_time": None,
             "infile": "data/cosmo1_2019052800.nc",
             "outfile": "concentration_{species_id}_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",
@@ -378,6 +379,7 @@ def test_realcase_opr_like(tmp_path):
             },
         },
         {
+            "base_time": None,
             "infile": "data/cosmo1_2019052800.nc",
             "outfile": "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",
@@ -408,6 +410,7 @@ def test_realcase_opr_like(tmp_path):
             },
         },
         {
+            "base_time": None,
             "infile": "data/cosmo1_2019052800.nc",
             "outfile": "tot_deposition_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",
@@ -438,6 +441,7 @@ def test_realcase_opr_like(tmp_path):
             },
         },
         {
+            "base_time": None,
             "infile": "data/cosmo1_2019052800.nc",
             "outfile": "affected_area_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",

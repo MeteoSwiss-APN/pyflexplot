@@ -364,7 +364,7 @@ class Setup(BaseModel):
         extra = "forbid"
 
     infile: str = "none"
-    outfile: str = "none"
+    outfile: Union[str, Tuple[str, ...]] = "none"
     outfile_time_format: str = "%Y%m%d%H%M"
     model: str = "none"
     base_time: Optional[int] = None
@@ -789,6 +789,29 @@ class SetupCollection:
     def compress(self) -> Setup:
         return Setup.compress(self)
 
+    def compress_partially(self, param: Optional[str] = None) -> "SetupCollection":
+        if param == "outfile":
+            grouped_setups: Dict[Setup, List[Setup]] = {}
+            for setup in self:
+                key = setup.derive({"outfile": "none"})
+                if key not in grouped_setups:
+                    grouped_setups[key] = []
+                grouped_setups[key].append(setup)
+            new_setup_lst: List[Setup] = []
+            for setup_lst_i in grouped_setups.values():
+                outfiles: List[str] = []
+                for setup in setup_lst_i:
+                    if isinstance(setup.outfile, str):
+                        outfiles.append(setup.outfile)
+                    else:
+                        outfiles.extend(setup.outfile)
+                new_setup_lst.append(
+                    setup_lst_i[0].derive({"outfile": tuple(outfiles)})
+                )
+            return SetupCollection(new_setup_lst)
+        else:
+            raise NotImplementedError(f"{type(self).__name__}.compress('{param}')")
+
     def decompress(self) -> List["SetupCollection"]:
         return self.decompress_partially(select=None, skip=None)
 
@@ -922,14 +945,26 @@ class SetupCollection:
             raise ValueError("must pass one or more suffixes")
         new_setups: List[Setup] = []
         for setup in self:
-            outfile_base = setup.outfile
-            if any(outfile_base.endswith(f".{suffix}") for suffix in ["png", "pdf"]):
-                outfile_base = ".".join(outfile_base.split(".")[:-1])
+            old_outfiles: List[str] = (
+                [setup.outfile]
+                if isinstance(setup.outfile, str)
+                else list(setup.outfile)
+            )
+            new_outfiles: List[str] = []
+            for idx, old_outfile in enumerate(list(old_outfiles)):
+                if any(old_outfile.endswith(f".{suffix}") for suffix in ["png", "pdf"]):
+                    old_outfile = ".".join(old_outfile.split(".")[:-1])
                 for suffix_i in suffixes:
                     if suffix_i.startswith("."):
                         suffix_i = suffix_i[1:]
-                new_outfile = f"{outfile_base}.{suffix_i}"
-                new_setup = setup.derive({"outfile": new_outfile})
+                    new_outfiles.append(f"{old_outfile}.{suffix_i}")
+            new_setup = setup.derive(
+                {
+                    "outfile": next(iter(new_outfiles))
+                    if len(new_outfiles) == 1
+                    else tuple(new_outfiles)
+                }
+            )
             new_setups.append(new_setup)
         self._setups = new_setups
 
@@ -1029,8 +1064,7 @@ class FilePathFormatter:
         self.previous: List[str] = previous if previous is not None else []
 
     # pylint: disable=W0102  # dangerous-default-value ([])
-    def format(self, setup: Setup, nc_meta_data: Dict[str, Any]) -> str:
-        template = setup.outfile
+    def format(self, template: str, setup: Setup, nc_meta_data: Dict[str, Any]) -> str:
         log(dbg=f"formatting path '{template}'")
         path = self._format_template(template, setup, nc_meta_data)
         while path in self.previous:

@@ -10,11 +10,15 @@ from typing import Collection
 from typing import Optional
 from typing import Sequence
 from typing import Type
+from typing import Union
 
 # Third-party
 from pydantic import parse_obj_as
 from pydantic import ValidationError
 from pydantic.fields import ModelField
+
+# First-party
+from srutils.str import split_outside_parens
 
 
 def prepare_field_value(
@@ -53,24 +57,56 @@ def prepare_field_value(
 
 def cast_field_value(cls: Type, param: str, value: Any) -> Any:
     try:
-        field = cls.__fields__[param]
+        field: ModelField = cls.__fields__[param]
     except KeyError:
         raise ValueError(
             f"invalid parameter name: '{param}'; choices: {sorted(cls.__fields__)}"
         )
 
-    def invalid_value_exception(type_: Type, param: str, value: Any) -> ValueError:
-        s_type = type_.__name__
+    def invalid_value_exception(
+        type_: Union[Type, str], param: str, value: Any
+    ) -> ValueError:
+        if isinstance(type_, str):
+            s_type = type_
+        else:
+            s_type = type_.__name__
         s_value_type = type(value).__name__
         return ValueError(
             f"invalid value of {s_type} parameter '{param}' ({s_value_type}): {value}"
         )
 
+    if str(field.type_).startswith("typing.Union["):
+        union_content = str(field.type_).replace("typing.Union[", "")[:-1]
+        s_sub_types = [
+            s.strip()
+            for s in split_outside_parens(union_content, ",", opening="[", closing="]")
+        ]
+        if "str" in s_sub_types:
+            s_sub_types.remove("str")
+            s_sub_types.insert(0, "str")
+        for s_sub_type in s_sub_types:
+            sub_type = str_get_outer_type(s_sub_type, generic=True)
+            if (
+                issubclass(sub_type, str)
+                and isinstance(value, Sequence)
+                and not isinstance(value, str)
+            ):
+                continue
+            try:
+                return sub_type(value)
+            except Exception:
+                continue
+        else:
+            raise Exception(
+                f"failed to cast value '{value}' of '{field.type_}' parameter '{param}'"
+                f" to one of {s_sub_types}"
+            )
+
     if isinstance(value, Collection) and not isinstance(value, str):
         try:
             outer_type = field_get_outer_type(field, generic=True)
         except TypeError:
-            raise invalid_value_exception(outer_type, param, value)
+            raise invalid_value_exception("???", param, value)
         if issubclass(outer_type, (str, bool)):
             raise ValueError(
                 f"invalid value type of {outer_type.__name__} parameter '{param}'"
@@ -104,19 +140,27 @@ def field_get_outer_type(field: ModelField, *, generic: bool = False) -> Type:
     else:
         return field.outer_type_
     s_type = str(field.outer_type_)
-    prefix = "typing."
-    if not s_type.startswith(prefix):
-        raise TypeError(
-            f"<field>.outer_type_ does not start with '{prefix}'", s_type, field,
-        )
-    s_type = s_type[len(prefix) :]
-    s_type = s_type.split("[")[0]
+    return str_get_outer_type(s_type, generic=generic)
+
+
+def str_get_outer_type(s: str, *, generic: bool = False) -> Type:
+    """Obtain the outer type from a string."""
     try:
-        type_ = getattr(typing, s_type)
+        return {"tuple": tuple, "list": list, "set": set, "dict": dict, "str": str}[s]
+    except KeyError:
+        pass
+    prefix = "typing."
+    if not s.startswith(prefix):
+        raise ValueError(
+            f"type string '{s}' is neither generic (list, str etc.) nor starting with"
+            f" '{prefix}'"
+        )
+    s = s[len(prefix) :].split("[")[0]
+    try:
+        type_ = getattr(typing, s)
     except AttributeError:
         raise TypeError(
-            f"cannot derive type from <field>.outer_type_: typing.{s_type} not found",
-            field,
+            f"cannot derive type from <field>.outer_type_: typing.{s} not found",
         )
     if generic:
         generics = {
@@ -131,5 +175,5 @@ def field_get_outer_type(field: ModelField, *, generic: bool = False) -> Type:
         try:
             type_ = generics[type_]
         except KeyError:
-            raise NotImplementedError("generic type for tpying type", type_, generics)
+            raise NotImplementedError(f"generic type for '{type_}'")
     return type_
