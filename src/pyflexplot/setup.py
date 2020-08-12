@@ -297,6 +297,9 @@ class Setup(BaseModel):
     PyFlexPlot setup.
 
     Args:
+        base_time: Start of the model simulation on which the dispersion
+            simulation is based.
+
         combine_deposition_types: Sum up dry and wet deposition. Otherwise, each
             is plotted separately.
 
@@ -342,7 +345,10 @@ class Setup(BaseModel):
             "ens_variable"`` and ``ens_variable = ["minimum", "maximum", "meam",
             "median"]``.
 
-        outfile: Output file path. May contain format keys.
+        outfile: Output file path(s). May contain format keys.
+
+        outfile_time_format: Format specification (e.g., '%Y%m%d%H%M') for time
+            steps (``time_step``, ``base_time``) embedded in ``outfile``.
 
         plot_type: Plot type. Use the format key '{plot_type}' to embed it in
             ``outfile``.

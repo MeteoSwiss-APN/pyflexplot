@@ -343,7 +343,7 @@ def main(
     n_in = len(setups_by_infile)
     i_tot = -1
     for ip_in, (in_file_path, sub_setups) in enumerate(setups_by_infile.items(), 1):
-        log(vbs=f"[{ip_in}/{n_in}] read {in_file_path}",)
+        log(vbs=f"[{ip_in}/{n_in}] read {in_file_path}")
         field_lst_lst = read_fields(
             in_file_path, sub_setups, add_ts0=True, dry_run=dry_run, cache_on=True,
         )

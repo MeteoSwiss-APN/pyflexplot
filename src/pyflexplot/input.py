@@ -226,9 +226,6 @@ class FieldInputOrganizer:
         for setups_for_same_plot_over_time in setups_for_plots_over_time:
             fields_for_plots.extend(
                 files.read_fields_over_time(setups_for_same_plot_over_time)
-                #     self._read_fields_for_same_plot_over_time(
-                #         setups_for_same_plot_over_time
-                #     )
             )
 
         return fields_for_plots
