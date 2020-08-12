@@ -313,7 +313,7 @@ def main(
         if path not in setup_file_paths:
             setup_file_paths.append(path)
     if not setup_file_paths:
-        click_error(ctx, "Must pass explicit and/or preset setup file(s)")
+        click_error(ctx, "Missing setup file; specify as argument and/or with --preset")
 
     # Read setup files
     # Note: Already added argument `each_only` to `read_many` in order to plot
