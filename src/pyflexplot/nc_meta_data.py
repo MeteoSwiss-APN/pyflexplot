@@ -4,10 +4,8 @@ Input file meta data.
 """
 # Standard library
 import re
-import time
 from datetime import datetime
 from datetime import timedelta
-from datetime import timezone
 from typing import Any
 from typing import Dict
 from typing import List
@@ -15,6 +13,9 @@ from typing import Tuple
 
 # Third-party
 import netCDF4 as nc4
+
+# First-party
+from pyflexplot.utils.datetime import init_datetime
 
 
 def read_meta_data(file_handle: nc4.Dataset) -> Dict[str, Dict[str, Any]]:
@@ -129,20 +130,15 @@ def determine_species_ids(model: str, variables: Dict[str, Any]) -> Tuple[int, .
 
 
 def determine_time_steps(ncattrs: Dict[str, Any]) -> Tuple[int, ...]:
-    fmt_in = "%Y%m%d%H%M%S"
     fmt_out = "%Y%m%d%H%M"
     start_date: str = ncattrs["ibdate"]
     start_time: str = ncattrs["ibtime"]
     assert len(start_time) == 6
-    start: datetime = datetime(
-        *time.strptime(start_date + start_time, fmt_in)[:6], tzinfo=timezone.utc
-    )
+    start: datetime = init_datetime(start_date + start_time)
     end_date: str = ncattrs["iedate"]
     end_time: str = ncattrs["ietime"]
     assert len(end_time) == 6
-    end: datetime = datetime(
-        *time.strptime(end_date + end_time, fmt_in)[:6], tzinfo=timezone.utc
-    )
+    end: datetime = init_datetime(end_date + end_time)
     assert end > start
     delta: timedelta = timedelta(seconds=int(ncattrs["loutstep"]))
     time_steps: List[datetime] = [start]

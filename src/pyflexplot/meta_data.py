@@ -5,7 +5,6 @@ Attributes.
 """
 # Standard library
 import re
-import time
 import warnings
 from copy import copy
 from copy import deepcopy
@@ -26,6 +25,9 @@ from typing import Union
 import netCDF4 as nc4
 import numpy as np
 from pydantic import BaseModel
+
+# First-party
+from pyflexplot.utils.datetime import init_datetime
 
 # Local
 from .setup import Setup
@@ -374,18 +376,8 @@ class SimulationMetaData:
     ) -> "SimulationMetaData":
 
         # Start and end timesteps of simulation
-        start = datetime(
-            *time.strptime(
-                getncattr(fi, "ibdate") + getncattr(fi, "ibtime"), "%Y%m%d%H%M%S"
-            )[:6],
-            tzinfo=timezone.utc,
-        )
-        end = datetime(
-            *time.strptime(
-                getncattr(fi, "iedate") + getncattr(fi, "ietime"), "%Y%m%d%H%M%S",
-            )[:6],
-            tzinfo=timezone.utc,
-        )
+        start = init_datetime(getncattr(fi, "ibdate") + getncattr(fi, "ibtime"))
+        end = init_datetime(getncattr(fi, "iedate") + getncattr(fi, "ietime"))
 
         # Current time step and start time step of current integration period
         collector = TimeStepMetaDataCollector(fi, setup, add_ts0=add_ts0)

@@ -6,10 +6,8 @@ Plot setup and setup files.
 # Standard library
 import dataclasses
 import re
-import time
 from dataclasses import dataclass
 from datetime import datetime
-from datetime import timezone
 from typing import Any
 from typing import cast
 from typing import Collection
@@ -33,6 +31,7 @@ from pydantic import validator
 from typing_extensions import Literal
 
 # First-party
+from pyflexplot.utils.datetime import init_datetime
 from srutils.dict import compress_multival_dicts
 from srutils.dict import decompress_multival_dict
 from srutils.dict import decompress_nested_dict
@@ -1116,10 +1115,7 @@ class FilePathFormatter:
         tss_str_in: List[str] = [str(ts) for ts in tss_int]
         if fmt_out == fmt_in:
             return tss_str_in
-        tss_dt: List[datetime] = [
-            datetime(*time.strptime(str(ts), fmt_in)[:6], tzinfo=timezone.utc)
-            for ts in tss_str_in
-        ]
+        tss_dt: List[datetime] = [init_datetime(ts) for ts in tss_str_in]
         tss_str_out: List[str] = [ts.strftime(fmt_out) for ts in tss_dt]
         return tss_str_out
 

@@ -16,11 +16,9 @@ Instead, all the logic is collected here in a straightforward but dirty way
 until sane design choices emerge from the code mess.
 """
 # Standard library
-import time
 import warnings
 from datetime import datetime
 from datetime import timedelta
-from datetime import timezone
 from textwrap import dedent
 from typing import Any
 from typing import cast
@@ -37,6 +35,7 @@ import matplotlib as mpl
 import numpy as np
 
 # First-party
+from pyflexplot.utils.datetime import init_datetime
 from srutils.dict import recursive_update
 from srutils.geo import Degrees
 
@@ -996,9 +995,8 @@ def format_model_info(setup: Setup, words: TranslatedWords) -> str:
         raise NotImplementedError(
             f"model setup '{setup.model}-{setup.get_simulation_type()}'"
         )
-    base_time = datetime(
-        *time.strptime(str(setup.base_time), "%Y%m%d%H%M")[:6], tzinfo=timezone.utc
-    )
+    assert setup.base_time is not None  # mypy
+    base_time = init_datetime(setup.base_time)
     return (
         f"{words['flexpart']} {words['based_on']} {model_info}"
         f", {format_meta_datum(base_time)}"
