@@ -381,6 +381,8 @@ class LevelRangeFormatter:
             dl, dr = "<", ">"
         elif self.align == "edges":
             dl, dr = "<", "<"
+        else:
+            raise Exception(f"invalid value: self.align='{self.align}'")
 
         if self.rstrip_zeros:
 
