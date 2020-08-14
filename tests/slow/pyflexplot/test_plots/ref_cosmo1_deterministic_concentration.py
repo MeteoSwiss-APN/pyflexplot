@@ -787,7 +787,7 @@ plot_summary = {
                         "va": "baseline",
                         "ha": "left",
                     },
-                    "s": 'Gemittelt $\\mathrm{\\"u}$ber 3:00$\\,$h seit +12:00$\\,$h',
+                    "s": 'Gemittelt $\\mathrm{\\"u}$ber 3:00$\\,$h (seit 2019-10-01 00:00 UTC)',
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -815,7 +815,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2019-10-01 03:00 UTC (+15:00$\\,$h)",
+                    "s": "2019-10-01 03:00 UTC (+15:00$\\,$h Vorhersagezeit)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

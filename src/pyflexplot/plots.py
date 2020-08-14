@@ -273,19 +273,21 @@ def create_box_labels(
         words,
         cap=True,
     )
+    # SR_TMP < TODO move to mdata.simulation
     time_since_release_start = (
         mdata.simulation.now - mdata.simulation.start - mdata.release.start_rel
     )
+    lead_time = mdata.simulation.now - init_datetime(cast(int, setup.base_time))
+    # SR_TMP >
     labels["top"] = {
         "tl": "",  # SR_TMP force into 1st position of dict (for tests)
         "bl": (
-            f"{integr_period}"
-            f" {words['since']}"
-            f" +{format_meta_datum(mdata.simulation_integr_start_rel.value)}"
+            f"{integr_period} ({words['since']}"
+            f" {format_meta_datum(mdata.simulation_integr_start.value)})"
         ),
         "tr": (
             f"{format_meta_datum(mdata.simulation_now.value)}"
-            f" (+{format_meta_datum(mdata.simulation_now_rel.value)})"
+            f" (+{format_meta_datum(lead_time)} {words['lead_time']})"
         ),
         "br": (
             f"{format_meta_datum(time_since_release_start)} {words['since']}"

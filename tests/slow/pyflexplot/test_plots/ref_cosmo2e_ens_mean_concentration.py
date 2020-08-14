@@ -893,7 +893,7 @@ plot_summary = {
                         "va": "baseline",
                         "ha": "left",
                     },
-                    "s": "Averaged over 3:00$\\,$h since +12:00$\\,$h",
+                    "s": "Averaged over 3:00$\\,$h (since 2019-07-28 00:00 UTC)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -921,7 +921,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2019-07-28 03:00 UTC (+15:00$\\,$h)",
+                    "s": "2019-07-28 03:00 UTC (+15:00$\\,$h lead time)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

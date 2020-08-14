@@ -791,7 +791,7 @@ plot_summary = {
                         "va": "baseline",
                         "ha": "left",
                     },
-                    "s": "Summed over 30:00$\\,$h since +0:00$\\,$h",
+                    "s": "Summed over 30:00$\\,$h (since 2020-03-17 00:00 UTC)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -819,7 +819,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2020-03-18 06:00 UTC (+30:00$\\,$h)",
+                    "s": "2020-03-18 06:00 UTC (+30:00$\\,$h lead time)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

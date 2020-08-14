@@ -791,7 +791,7 @@ plot_summary = {
                         "va": "baseline",
                         "ha": "left",
                     },
-                    "s": 'Gemittelt $\\mathrm{\\"u}$ber 3:00$\\,$h seit +12:00$\\,$h',
+                    "s": 'Gemittelt $\\mathrm{\\"u}$ber 3:00$\\,$h (seit 2020-03-17 12:00 UTC)',
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -819,7 +819,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2020-03-17 15:00 UTC (+15:00$\\,$h)",
+                    "s": "2020-03-17 15:00 UTC (+15:00$\\,$h Vorhersagezeit)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

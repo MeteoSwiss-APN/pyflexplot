@@ -118,6 +118,7 @@ WORDS.add(
 # K
 # L
 WORDS.add(en="latitude", de="Breite")
+WORDS.add(en="lead time", de="Vorhersagezeit")
 WORDS.add(en="level", de="Level")
 WORDS.add(en="longitude", de=f'L{s["ae"]}nge')
 # M

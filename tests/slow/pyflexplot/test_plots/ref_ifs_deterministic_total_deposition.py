@@ -791,7 +791,7 @@ plot_summary = {
                         "va": "baseline",
                         "ha": "left",
                     },
-                    "s": 'Akkumuliert $\\mathrm{\\"u}$ber 48:00$\\,$h seit +0:00$\\,$h',
+                    "s": 'Akkumuliert $\\mathrm{\\"u}$ber 48:00$\\,$h (seit 2020-03-17 00:00 UTC)',
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -819,7 +819,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2020-03-19 00:00 UTC (+48:00$\\,$h)",
+                    "s": "2020-03-19 00:00 UTC (+48:00$\\,$h Vorhersagezeit)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
