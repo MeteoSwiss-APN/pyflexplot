@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Some utilities.
-
-TODO Split module up into `exceptions`, `summarize`, and `format`!
+Formatting utilities.
 """
 # Standard library
 import re
