@@ -25,6 +25,7 @@ integrate = true
 
 [_base._tot_deposition._affected_area]
 plot_variable = "affected_area_mono"
+time = -1
 
 [_base._concentration."png+"]
 outfile = "concentration_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
