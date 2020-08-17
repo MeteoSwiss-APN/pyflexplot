@@ -189,7 +189,13 @@ class _TestCreateReference(_TestBase):
 
 def black_format(code: str) -> str:
     """Format a string of code with black."""
-    return str(black.format_str(code, mode=black.FileMode()))
+    try:
+        return str(black.format_str(code, mode=black.FileMode()))
+    except black.InvalidInput as e:
+        msg = str(e)
+        if len(msg) > 400:
+            msg = f"{msg[:150]} ... {msg[-150:]}"
+        raise Exception("black cannot format code: {msg}") from None
 
 
 class PlotCreationSuccess(Exception):

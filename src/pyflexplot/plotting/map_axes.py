@@ -7,6 +7,8 @@ import warnings
 from dataclasses import dataclass
 from typing import Any
 from typing import Dict
+from typing import List
+from typing import MutableMapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -125,7 +127,7 @@ class MapAxesConf(BaseModel):
 
 
 # pylint: disable=R0902  # too-many-instance-attributes
-@summarizable(post_summarize=post_summarize_plot)
+@summarizable
 @dataclass
 class MapAxes:
     """Map plot axes for regular lat/lon data.
@@ -147,6 +149,9 @@ class MapAxes:
     conf: MapAxesConf
 
     def __post_init__(self) -> None:
+        self.elements: List[Tuple[str, Any]] = []
+        self._summarized_elements: List[Dict[str, Any]] = []
+
         self._water_color: ColorType = "lightskyblue"
 
         self.zorder: Dict[str, int]
@@ -185,6 +190,13 @@ class MapAxes:
         else:
             return cls(fig=fig, rect=rect, field=field, conf=conf)
 
+    def post_summarize(
+        self, summary: MutableMapping[str, Any]
+    ) -> MutableMapping[str, Any]:
+        summary = post_summarize_plot(self, summary)
+        summary["elements"] = self._summarized_elements
+        return summary
+
     def add_marker(
         self,
         *,
@@ -205,6 +217,18 @@ class MapAxes:
             transform=self.proj_data,
             zorder=zorder,
             **kwargs,
+        )
+        self.elements.append(handle)
+        self._summarized_elements.append(
+            {
+                "element_type": "marker",
+                "p_lon": p_lon,
+                "p_lat": p_lat,
+                "marker": marker,
+                "transform": f"{type(self.proj_data).__name__} instance",
+                "zorder": zorder,
+                **kwargs,
+            }
         )
         return handle
 
@@ -244,6 +268,17 @@ class MapAxes:
         # -> see https://stackoverflow.com/a/25421922/4419816
         handle = self.ax.annotate(
             s, xy=(p_lon, p_lat), xycoords=transform, zorder=zorder, **kwargs,
+        )
+        self.elements.append(handle)
+        self._summarized_elements.append(
+            {
+                "element_type": "text",
+                "s": s,
+                "xy": (p_lon, p_lat),
+                "xycoords": f"{type(transform).__name__} instance",
+                "zorder": zorder,
+                **kwargs,
+            }
         )
         return handle
 

@@ -130,6 +130,7 @@ def summarizable(
     cls: Optional[Callable] = None,
     *,
     attrs: Optional[Collection[str]] = None,
+    attrs_add: Optional[Collection[str]] = None,
     attrs_skip: Optional[Collection[str]] = None,
     summarize: Optional[
         Callable[[Any, MutableMapping[str, Any]], MutableMapping[str, Any]]
@@ -149,6 +150,9 @@ def summarizable(
             attribute ``summarizable_attrs``, which also contains all auto-
             collected attributes of special classes like dataclasse (unless
             ``auto_collect`` is False), but none specified in ``attrs_skip``.
+
+        attrs_add: Class attributes to summarize in addition to auto-collected
+            attributes of special classes like dataclasses.
 
         attrs_skip: Class attributes not to summarize. Affects attributes in
             ``attrs`` and, more importantly, auto-collected ones such as
@@ -177,6 +181,7 @@ def summarizable(
         return partial(
             summarizable,
             attrs=attrs,
+            attrs_add=attrs_add,
             attrs_skip=attrs_skip,
             summarize=summarize,
             post_summarize=post_summarize,
@@ -207,6 +212,7 @@ def summarizable(
         elif issubclass(cls, BaseModel):  # type: ignore
             # Collect model fields
             attrs = list(cls.__fields__) + attrs  # type: ignore
+    attrs.extend(list(attrs_add or []))
     attrs = [a for a in attrs if a not in attrs_skip]
 
     # Extend class
