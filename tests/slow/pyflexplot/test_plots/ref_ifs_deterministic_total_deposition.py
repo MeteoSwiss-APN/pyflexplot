@@ -819,7 +819,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2020-03-19 00:00 UTC (+48:00$\\,$h Vorhersagezeit)",
+                    "s": "2020-03-19 00:00 UTC (Vorhersagezeit +48:00$\\,$h)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

@@ -921,7 +921,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2019-07-28 03:00 UTC (+15:00$\\,$h lead time)",
+                    "s": "2019-07-28 03:00 UTC (lead time +15:00$\\,$h)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

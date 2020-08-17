@@ -815,7 +815,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2019-10-01 21:00 UTC (+33:00$\\,$h Vorhersagezeit)",
+                    "s": "2019-10-01 21:00 UTC (Vorhersagezeit +33:00$\\,$h)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

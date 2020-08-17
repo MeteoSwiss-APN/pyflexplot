@@ -922,7 +922,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2019-07-27 21:00 UTC (+9:00$\\,$h Vorhersagezeit)",
+                    "s": "2019-07-27 21:00 UTC (Vorhersagezeit +9:00$\\,$h)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

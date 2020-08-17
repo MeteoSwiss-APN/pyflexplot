@@ -287,7 +287,7 @@ def create_box_labels(
         ),
         "tr": (
             f"{format_meta_datum(mdata.simulation_now.value)}"
-            f" (+{format_meta_datum(lead_time)} {words['lead_time']})"
+            f" ({words['lead_time']} +{format_meta_datum(lead_time)})"
         ),
         "br": (
             f"{format_meta_datum(time_since_release_start)} {words['since']}"
