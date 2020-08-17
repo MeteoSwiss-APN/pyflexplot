@@ -185,7 +185,7 @@ class MapAxes:
         else:
             return cls(fig=fig, rect=rect, field=field, conf=conf)
 
-    def marker(
+    def add_marker(
         self,
         *,
         p_lon: float,
@@ -208,7 +208,7 @@ class MapAxes:
         )
         return handle
 
-    def text(
+    def add_text(
         self,
         p_lon: float,
         p_lat: float,
@@ -498,7 +498,7 @@ class MapAxes:
         for city in cities:
             lon, lat = city.geometry.x, city.geometry.y
             if is_visible(city) and is_of_interest(city):
-                self.marker(
+                self.add_marker(
                     p_lat=lat,
                     p_lon=lon,
                     marker="o",
@@ -509,7 +509,7 @@ class MapAxes:
                     zorder=self.zorder["geo_upper"],
                 )
                 name = get_name(city)
-                self.text(lon, lat, name, va="center", size="small", clip_on=True)
+                self.add_text(lon, lat, name, va="center", size="small", clip_on=True)
 
     def _ax_add_data_domain_outline(self) -> None:
         """Add domain outlines to map plot."""

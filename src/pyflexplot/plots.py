@@ -892,7 +892,7 @@ def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
     mdata = config.mdata
     if config.mark_release_site:
         assert config.markers is not None  # mypy
-        axs_map.marker(
+        axs_map.add_marker(
             p_lat=mdata.release.lat, p_lon=mdata.release.lon, **config.markers["site"],
         )
     if config.mark_field_max:
@@ -902,7 +902,7 @@ def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
         except FieldAllNaNError:
             warnings.warn("skip maximum marker (all-nan field)")
         else:
-            axs_map.marker(p_lat=max_lat, p_lon=max_lon, **config.markers["max"])
+            axs_map.add_marker(p_lat=max_lat, p_lon=max_lon, **config.markers["max"])
 
 
 def colors_flexplot(n_levels: int, extend: str) -> Sequence[ColorType]:
