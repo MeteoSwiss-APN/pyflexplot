@@ -15,6 +15,7 @@ from typing import Tuple
 from typing import Union
 
 # Third-party
+import cartopy
 import numpy as np
 
 # First-party
@@ -145,15 +146,23 @@ class Field:
         return "\n".join([f"{type(self).__name__}(", body, ")"])
 
     def locate_max(self) -> Tuple[float, float]:
+        """Find location of field maximum in geographical coordinates."""
         if np.isnan(self.fld).all():
             raise FieldAllNaNError(self.fld.shape)
         assert len(self.fld.shape) == 2  # pylint
         # pylint: disable=W0632  # unbalanced-tuple-unpacking
         jmax, imax = np.unravel_index(np.nanargmax(self.fld), self.fld.shape)
-        return (
-            self.lat[jmax],
-            self.lon[imax],
-        )
+        p_lat = self.lat[jmax]
+        p_lon = self.lon[imax]
+        if self.rotated_pole:
+            ncattrs = self.nc_meta_data["variables"]["rotated_pole"]["ncattrs"]
+            proj_rot = cartopy.crs.RotatedPole(
+                pole_latitude=ncattrs["grid_north_pole_latitude"],
+                pole_longitude=ncattrs["grid_north_pole_longitude"],
+            )
+            proj_geo = cartopy.crs.PlateCarree()
+            p_lon, p_lat = proj_geo.transform_point(p_lon, p_lat, proj_rot)
+        return (p_lat, p_lon)
 
 
 @summarizable
