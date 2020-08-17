@@ -127,6 +127,13 @@ def create_map_conf(field: Field) -> MapAxesConf:
             "zoom_fact": 3.23,
             "rel_offset": (0.037, 0.1065),
         }
+    elif model.startswith("COSMO") and domain == "w_europe":
+        conf = {
+            **conf_base,
+            **conf_model_cosmo,
+            **conf_scale_continent,
+            "zoom_fact": 0.5,
+        }
     else:
         raise Exception(f"unknown domain '{domain}' for model '{model}'")
 
