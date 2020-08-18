@@ -19,39 +19,9 @@ from ..utils.logging import log
 from ..utils.typing import ClickParamType
 from .click import click_error
 from .click import click_exit
-from .preset import add_to_preset_paths
 from .preset import cat_preset
 from .preset import collect_preset_files
 from .preset import collect_preset_files_flat
-
-
-# pylint: disable=W0613  # unused-argument (ctx, param)
-def click_add_to_preset_paths(ctx: Context, param: ClickParamType, value: Any) -> None:
-    if not value:
-        return
-    add_to_preset_paths(value)
-
-
-def click_list_presets_and_exit(
-    ctx: Context, param: ClickParamType, value: Any
-) -> None:
-    """List all presets setup files and exit."""
-    if not value:
-        return
-    click_find_presets_and_exit(ctx, param, "*")
-
-
-# pylint: disable=W0613  # unused-argument (param)
-def click_find_presets_and_exit(
-    ctx: Context, param: ClickParamType, value: Any
-) -> None:
-    """Find preset setup file(s) by name (optional wildcards) and exit."""
-    if not value:
-        return
-    assert isinstance(value, Sequence)  # mypy
-    assert isinstance(value[0], str)  # mypy
-    _click_list_presets(ctx, collect_preset_files(value))
-    ctx.exit(0)
 
 
 # pylint: disable=W0613  # unused-argument (param)
@@ -76,7 +46,8 @@ def click_use_preset(ctx: Context, param: ClickParamType, value: Any) -> None:
 
     if value == ("?",):
         log(vbs="Available presets ('?'):")
-        click_find_presets_and_exit(ctx, param, "*")
+        _click_list_presets(ctx, collect_preset_files("*"))
+        ctx.exit(0)
 
     patterns: Sequence[str] = value
     antipatterns: Sequence[str] = ctx.params.get("preset_skip", [])

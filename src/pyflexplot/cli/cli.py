@@ -35,10 +35,7 @@ from ..utils.logging import log
 from ..utils.logging import set_log_level
 from .click import click_error
 from .preset import add_to_preset_paths
-from .preset_click import click_add_to_preset_paths
 from .preset_click import click_cat_preset_and_exit
-from .preset_click import click_find_presets_and_exit
-from .preset_click import click_list_presets_and_exit
 from .preset_click import click_use_preset
 
 # # To debug segmentation fault, uncomment and run with PYTHONFAULTHANDLER=1
@@ -204,14 +201,6 @@ def click_prep_setup_params(ctx, param, value):
     expose_value=False,
 )
 @click.option(
-    "--preset-add",
-    help="Add a directory containing preset setup files.",
-    type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    callback=wrap_callback(click_add_to_preset_paths),
-    is_eager=True,
-    expose_value=False,
-)
-@click.option(
     "--preset-cat",
     help=(
         "Show the contents of preset setup files matching PATTERN (wildcards:"
@@ -219,21 +208,6 @@ def click_prep_setup_params(ctx, param, value):
     ),
     metavar="PATTERN",
     callback=wrap_callback(click_cat_preset_and_exit),
-    expose_value=False,
-)
-@click.option(
-    "--preset-find",
-    help="List preset setup file(s) by name (may contain wildcards).",
-    metavar="NAME",
-    callback=wrap_callback(click_find_presets_and_exit),
-    multiple=True,
-    expose_value=False,
-)
-@click.option(
-    "--preset-list",
-    help="List the names of all preset setup files.",
-    callback=wrap_callback(click_list_presets_and_exit),
-    is_flag=True,
     expose_value=False,
 )
 @click.option(
