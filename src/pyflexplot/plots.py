@@ -851,12 +851,8 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
             size=plot.config.font_sizes.content_small,
         )
 
-    # pylint: disable=R0915  # too-many-statements
-    def fill_box_footer(box: TextBoxAxes, plot: BoxedPlot) -> None:
-        """Fill the footer box containing the copyright etc."""
-
+    def fill_box_bottom_left(box: TextBoxAxes, plot: BoxedPlot) -> None:
         labels = plot.config.labels["bottom"]
-
         # FLEXPART/model info
         box.text(
             s=labels["model_info"],
@@ -867,6 +863,8 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
             size=plot.config.font_sizes.content_small,
         )
 
+    def fill_box_bottom_right(box: TextBoxAxes, plot: BoxedPlot) -> None:
+        labels = plot.config.labels["bottom"]
         # MeteoSwiss Copyright
         box.text(
             s=labels["copyright"],
@@ -884,7 +882,15 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
         plot.add_text_box("right_top", layout.rect_right_top(), fill_box_data_info)
     plot.add_text_box("right_middle", layout.rect_right_middle(), fill_box_legend)
     plot.add_text_box("right_bottom", layout.rect_right_bottom(), fill_box_release_info)
-    plot.add_text_box("bottom", layout.rect_bottom(), fill_box_footer, frame_on=False)
+    plot.add_text_box(
+        "bottom_left", layout.rect_bottom_left(), fill_box_bottom_left, frame_on=False
+    )
+    plot.add_text_box(
+        "bottom_right",
+        layout.rect_bottom_right(),
+        fill_box_bottom_right,
+        frame_on=False,
+    )
 
 
 def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:

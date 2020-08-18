@@ -2803,7 +2803,7 @@ plot_summary = {
                 },
             ],
         },
-        "bottom": {
+        "bottom_left": {
             "type": "TextBoxAxes",
             "fig": {
                 "type": "Figure",
@@ -2813,13 +2813,13 @@ plot_summary = {
                     "bounds": [0.0, 0.0, 1250.0, 800.0],
                 },
             },
-            "rect": [0.0, 0.0, 1.0, 0.05],
-            "name": "bottom",
+            "rect": [0.0, 0.0, 0.7872, 0.05],
+            "name": "bottom_left",
             "lw_frame": None,
             "ec": "black",
             "fc": "none",
             "show_baselines": False,
-            "dx_unit": 0.0075,
+            "dx_unit": 0.009527439024390244,
             "dy_unit": 0.17999999999999997,
             "elements": [
                 {
@@ -2829,13 +2829,13 @@ plot_summary = {
                         "loc": "tl",
                         "loc_y": "t",
                         "loc_x": "l",
-                        "dx_unit": 0.0075,
+                        "dx_unit": 0.009527439024390244,
                         "dy_unit": 0.17999999999999997,
                         "dx": -0.7,
                         "dy": 0.5,
-                        "x0": 0.0075,
+                        "x0": 0.009527439024390244,
                         "y0": 0.8200000000000001,
-                        "x": 0.0022500000000000003,
+                        "x": 0.002858231707317073,
                         "y": 0.91,
                         "va": "top",
                         "ha": "left",
@@ -2849,7 +2849,28 @@ plot_summary = {
                         "ha": "left",
                         "va": "top",
                     },
+                }
+            ],
+        },
+        "bottom_right": {
+            "type": "TextBoxAxes",
+            "fig": {
+                "type": "Figure",
+                "axes": {"type": "bbox"},
+                "bbox": {
+                    "type": "TransformedBbox",
+                    "bounds": [0.0, 0.0, 1250.0, 800.0],
                 },
+            },
+            "rect": [0.8, 0.0, 0.2, 0.05],
+            "name": "bottom_right",
+            "lw_frame": None,
+            "ec": "black",
+            "fc": "none",
+            "show_baselines": False,
+            "dx_unit": 0.037500000000000006,
+            "dy_unit": 0.17999999999999997,
+            "elements": [
                 {
                     "type": "TextBoxElementText",
                     "loc": {
@@ -2857,13 +2878,13 @@ plot_summary = {
                         "loc": "tr",
                         "loc_y": "t",
                         "loc_x": "r",
-                        "dx_unit": 0.0075,
+                        "dx_unit": 0.037500000000000006,
                         "dy_unit": 0.17999999999999997,
                         "dx": 0.7,
                         "dy": 0.5,
-                        "x0": 0.9925,
+                        "x0": 0.9625,
                         "y0": 0.8200000000000001,
-                        "x": 0.99775,
+                        "x": 0.98875,
                         "y": 0.91,
                         "va": "top",
                         "ha": "right",
@@ -2877,7 +2898,7 @@ plot_summary = {
                         "ha": "right",
                         "va": "top",
                     },
-                },
+                }
             ],
         },
     },
@@ -3313,7 +3334,14 @@ plot_summary = {
             },
             {
                 "type": "Axes",
-                "bbox": {"type": "TransformedBbox", "bounds": (0.0, 0.0, 1250.0, 40.0)},
+                "bbox": {"type": "TransformedBbox", "bounds": (0.0, 0.0, 984.0, 40.0)},
+            },
+            {
+                "type": "Axes",
+                "bbox": {
+                    "type": "TransformedBbox",
+                    "bounds": (1000.0, 0.0, 250.0, 40.0),
+                },
             },
         ],
         "bbox": {"type": "TransformedBbox", "bounds": (0.0, 0.0, 1250.0, 800.0)},

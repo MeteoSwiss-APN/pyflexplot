@@ -75,11 +75,19 @@ class BoxedPlotLayoutVintage:
             self.h_rigbot,
         )
 
-    def rect_bottom(self) -> RectType:
+    def rect_bottom_left(self) -> RectType:
         return (
-            self.x0_tot,
+            self._x0_left,
             self.y0_tot,
-            self._w_tot,
+            self._w_left,
+            self.h_bottom,
+        )
+
+    def rect_bottom_right(self) -> RectType:
+        return (
+            self._x0_right,
+            self.y0_tot,
+            self.w_right,
             self.h_bottom,
         )
 
@@ -156,11 +164,19 @@ class BoxedPlotLayoutModern:
             self.h_rigbot,
         )
 
-    def rect_bottom(self) -> RectType:
+    def rect_bottom_left(self) -> RectType:
         return (
-            self.x0_tot,
+            self._x0_left,
             self.y0_tot,
-            self._w_tot,
+            self._w_left,
+            self.h_bottom,
+        )
+
+    def rect_bottom_right(self) -> RectType:
+        return (
+            self._x0_right,
+            self.y0_tot,
+            self.w_right,
             self.h_bottom,
         )
 
