@@ -140,8 +140,13 @@ def click_prep_setup_params(ctx, param, value):
     nargs=-1,
 )
 @click.option(
+    "--cache/--no-cache",
+    help="Cache input fields to avoid reading the same data multiple times.",
+    is_flag=True,
+    default=True,
+)
+@click.option(
     "--dry-run",
-    "dry_run",
     help="Perform a trial run with no changes made.",
     is_flag=True,
     default=False,
@@ -269,6 +274,7 @@ def cli(ctx, **kwargs):
 def main(
     ctx,
     *,
+    cache,
     dry_run,
     each_only,
     input_setup_params,
@@ -320,7 +326,7 @@ def main(
     for ip_in, (in_file_path, sub_setups) in enumerate(setups_by_infile.items(), 1):
         log(vbs=f"[{ip_in}/{n_in}] read {in_file_path}")
         field_lst_lst = read_fields(
-            in_file_path, sub_setups, add_ts0=True, dry_run=dry_run, cache_on=True,
+            in_file_path, sub_setups, add_ts0=True, dry_run=dry_run, cache_on=cache,
         )
         n_fld = len(field_lst_lst)
         try:
