@@ -40,6 +40,7 @@ from srutils.dict import recursive_update
 from srutils.geo import Degrees
 
 # Local
+from . import __version__
 from .data import Field
 from .data import FieldAllNaNError
 from .meta_data import format_meta_datum
@@ -604,7 +605,10 @@ def prepare_plot(
 
 
 def create_plot(
-    plot: BoxedPlot, out_file_paths: Sequence[str], write: bool = True
+    plot: BoxedPlot,
+    out_file_paths: Sequence[str],
+    write: bool = True,
+    show_version: bool = True,
 ) -> None:
     layout: BoxedPlotLayoutType
     if plot.config.setup.get_simulation_type() == "deterministic":
@@ -616,7 +620,7 @@ def create_plot(
             f"simulation type '{plot.config.setup.get_simulation_type()}'"
         )
     axs_map = plot.add_map_plot(layout.rect_center())
-    plot_add_text_boxes(plot, layout)
+    plot_add_text_boxes(plot, layout, show_version)
     plot_add_markers(plot, axs_map)
     for out_file_path in out_file_paths:
         log(dbg=f"creating plot {out_file_path}")
@@ -628,7 +632,9 @@ def create_plot(
 
 # SR_TMP <<< TODO Clean up nested functions! Eventually introduce class(es) of some kind
 # pylint: disable=R0915  # too-many-statements
-def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
+def plot_add_text_boxes(
+    plot: BoxedPlot, layout: BoxedPlotLayoutType, show_version: bool = True
+) -> None:
     # pylint: disable=R0915  # too-many-statements
     def fill_box_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the title box."""
@@ -865,6 +871,15 @@ def plot_add_text_boxes(plot: BoxedPlot, layout: BoxedPlotLayoutType) -> None:
 
     def fill_box_bottom_right(box: TextBoxAxes, plot: BoxedPlot) -> None:
         labels = plot.config.labels["bottom"]
+        if show_version:
+            box.text(
+                s=f"v{__version__}",
+                loc="tl",
+                dx=-0.7,
+                dy=0.5,
+                fontname=plot.config.font_name,
+                size=plot.config.font_sizes.content_small,
+            )
         # MeteoSwiss Copyright
         box.text(
             s=labels["copyright"],

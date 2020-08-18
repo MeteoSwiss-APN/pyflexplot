@@ -28,7 +28,6 @@ try:
 except ImportError:
     black = None
 
-
 PACKAGE = "test_plots"
 
 
@@ -93,7 +92,7 @@ class _TestBase:
         field_lst = [field]
         outfiles, plots = [], []
         outfiles, plot = prepare_plot(field_lst, outfiles)
-        create_plot(plot, outfiles, write=False)
+        create_plot(plot, outfiles, write=False, show_version=False)
         plots.append(plot)
         assert len(outfiles) == len(plots) == 1
         plot = next(iter(plots))
