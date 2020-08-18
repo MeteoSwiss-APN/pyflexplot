@@ -75,7 +75,9 @@ def wrap_pdb(fct):
     def wrapper(*args, **kwargs):
         try:
             return fct(*args, **kwargs)
-        except Exception:  # pylint: disable=W0703  # broad-except
+        except Exception as e:  # pylint: disable=W0703  # broad-except
+            if isinstance(e, click.exceptions.Exit) and e.exit_code == 0:
+                exit(0)
             pdb = __import__("ipdb")  # trick pre-commit hook "debug-statements"
             traceback.print_exc()
             click.echo()
