@@ -116,7 +116,7 @@ def click_prep_setup_params(ctx, param, value):
         params: Dict[str, Any] = {}
         value: Any
         for param, value in raw_params:
-            if value == "*":
+            if value in ["None", "*"]:
                 value = None
             elif "," in value:
                 value = value.split(",")

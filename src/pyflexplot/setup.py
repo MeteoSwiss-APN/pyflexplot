@@ -439,11 +439,12 @@ class Setup(BaseModel):
         """Cast a parameter to the appropriate type."""
         if param == "dimensions":
             return {
-                dim_param: Dimensions.cast(dim_param, dim_value)
+                dim_param: Dimensions.cast(dim_param, dim_value, many_ok=True)
                 for dim_param, dim_value in value.items()
             }
         elif is_dimensions_param(param):
-            return cast_field_value(CoreDimensions, param, value)
+            # return cast_field_value(CoreDimensions, param, value, many_ok=True)
+            return Dimensions.cast(param, value, many_ok=True)
         elif is_core_setup_param(param):
             return cast_field_value(CoreSetup, param, value)
         return cast_field_value(cls, param, value)

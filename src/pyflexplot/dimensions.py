@@ -99,8 +99,10 @@ class CoreDimensions(BaseModel):
             raise Exception(msg)
 
     @classmethod
-    def cast(cls, param: str, value: Any) -> Any:
-        return cast_field_value(cls, param, value)
+    def cast(cls, param: str, value: Any, many_ok: bool = False) -> Any:
+        if value is None:
+            return None
+        return cast_field_value(cls, param, value, many_ok)
 
 
 @summarizable(summarize=lambda self: self.dict())  # type: ignore
@@ -153,16 +155,16 @@ class Dimensions:
         return cls(core_dims_lst)
 
     @classmethod
-    def cast(cls, param: str, value: Any) -> Any:
+    def cast(cls, param: str, value: Any, many_ok: bool = False) -> Any:
         """Cast a parameter to the appropriate type."""
         if isinstance(value, Sequence) and not isinstance(value, str):
             sub_values = []
             for sub_value in value:
-                sub_values.append(cls.cast(param, sub_value))
+                sub_values.append(cls.cast(param, sub_value, many_ok))
             if len(sub_values) == 1:
                 return next(iter(sub_values))
             return tuple(sub_values)
-        return CoreDimensions.cast(param, value)
+        return CoreDimensions.cast(param, value, many_ok)
 
     @classmethod
     def merge(cls, objs: Sequence["Dimensions"]) -> "Dimensions":

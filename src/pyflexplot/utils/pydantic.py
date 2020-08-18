@@ -56,7 +56,7 @@ def prepare_field_value(
 
 
 # pylint: disable=R0912  # too-many-branches
-def cast_field_value(cls: Type, param: str, value: Any) -> Any:
+def cast_field_value(cls: Type, param: str, value: Any, many_ok: bool = False) -> Any:
     try:
         field: ModelField = cls.__fields__[param]
     except KeyError:
@@ -114,7 +114,14 @@ def cast_field_value(cls: Type, param: str, value: Any) -> Any:
             )
         try:
             outer_type(value)
-        except ValueError:
+        except (ValueError, TypeError):
+            if many_ok:
+                try:
+                    _values = [cast_field_value(cls, param, v) for v in value]
+                except TypeError:
+                    raise invalid_value_exception(outer_type, param, value)
+                else:
+                    return type(value)(_values)  # type: ignore
             raise invalid_value_exception(outer_type, param, value)
         else:
             return [cls.cast(param, val) for val in value]
@@ -126,9 +133,8 @@ def cast_field_value(cls: Type, param: str, value: Any) -> Any:
     else:
         try:
             return field.type_(value)
-        except ValueError:
-            pass
-    raise invalid_value_exception(field.type_, param, value)
+        except (TypeError, ValueError):
+            raise invalid_value_exception(field.type_, param, value)
 
 
 def field_get_outer_type(field: ModelField, *, generic: bool = False) -> Type:
