@@ -1,11 +1,12 @@
 black
 bump2version
-# flake8-black  # handled by pre-commit
+flake8-black
 ipdb
 ipython
-isort
+isort<5  # constraint by pylint==2.5.3
 mypy
-# pluggy
 pylint
-# Sphinx
-# watchdog
+rope
+rstcheck
+sphinx
+sphinx-autobuild
