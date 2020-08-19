@@ -616,9 +616,10 @@ class InputFileEnsemble:
     def _handle_time_integration(
         self, fi: nc4.Dataset, fld: np.ndarray, input_variable: str, integrate: bool
     ) -> np.ndarray:
-        """Integrate, or desintegrate, field over time."""
+        """Integrate or desintegrate the field over time."""
 
-        def comp_temporal_resolution(fi: nc4.Dataset) -> float:
+        def get_temp_res_hrs(fi: nc4.Dataset) -> float:
+            """Determine the (constant) temporal resolution in hours."""
             time = fi.variables["time"]
             dts = set(time[1:] - time[:-1])
             if len(dts) > 1:
@@ -630,7 +631,7 @@ class InputFileEnsemble:
         if input_variable == "concentration":
             if integrate:
                 # Integrate field over time
-                dt_hr = comp_temporal_resolution(fi)
+                dt_hr = get_temp_res_hrs(fi)
                 return np.cumsum(fld, axis=0) * dt_hr
             else:
                 # Field is already instantaneous
@@ -641,7 +642,7 @@ class InputFileEnsemble:
                 return fld
             else:
                 # Revert time integration of field
-                dt_hr = comp_temporal_resolution(fi)
+                dt_hr = get_temp_res_hrs(fi)
                 fld[1:] = (fld[1:] - fld[:-1]) / dt_hr
                 return fld
         raise NotImplementedError("unknown variable", input_variable)
