@@ -421,7 +421,8 @@ class InputFileEnsemble:
             # Fix some known issues with the NetCDF input data
             if self.fixer:
                 model_name = self.nc_meta_data["derived"]["model"]
-                self.fixer.fix_meta_data(model_name, mdata_i)
+                integrate = setups.collect_equal("integrate")
+                self.fixer.fix_meta_data(model_name, integrate, mdata_i)
 
             mdata_lst.append(mdata_i)
         return mdata_lst

@@ -4,9 +4,6 @@ Fix issues with NetCDF input.
 """
 # Standard library
 from typing import Any
-from typing import cast
-from typing import Dict
-from typing import List
 from typing import Mapping
 from typing import Sequence
 from typing import Union
@@ -23,16 +20,6 @@ from .utils.logging import log
 class FlexPartDataFixer:
     """Fix issues with FlexPart NetCDF output."""
 
-    unit_conversion_factors: Dict[str, float] = {
-        "ng kg-1": 1.0e-12,
-        "1e-12 kg m-2": 1.0e-12,
-    }
-    unit_replacement_names: Dict[str, str] = {
-        "ng kg-1": "Bq m-3",
-        "1e-12 kg m-2": "Bq m-2",
-    }
-    valid_units: List[str] = list(unit_replacement_names.values())
-
     def __init__(self, file_reader):
         self.file_reader = file_reader
 
@@ -47,10 +34,10 @@ class FlexPartDataFixer:
             raise NotImplementedError("model", model)
 
     def fix_meta_data(
-        self, model: str, mdata: Union[MetaData, Sequence[MetaData]],
+        self, model: str, integrate: bool, mdata: Union[MetaData, Sequence[MetaData]],
     ) -> None:
         if model in ["COSMO-2", "COSMO-1"]:
-            self._fix_meta_data_cosmo(mdata)
+            self._fix_meta_data_cosmo(integrate, mdata)
         elif model in ["IFS", "IFS-HRES"]:
             pass
         else:
@@ -133,27 +120,25 @@ class FlexPartDataFixer:
             log(wrn=f"unrecognized variable name '{name}'; skip input data fixes")
             return
         unit = var_ncattrs["units"]
-        if unit in self.valid_units:
-            pass
+        if unit in ["ng kg-1", "1e-12 kg m-2"]:
+            fact = 1.0e-12
         else:
-            try:
-                fact = self.unit_conversion_factors[unit]
-            except KeyError:
-                raise NotImplementedError("conversion factor", name, unit)
+            return
         fld[:] *= fact
 
-    def _fix_meta_data_cosmo(self, mdata: Union[MetaData, Sequence[MetaData]]) -> None:
+    def _fix_meta_data_cosmo(
+        self, integrate: bool, mdata: Union[MetaData, Sequence[MetaData]]
+    ) -> None:
         if isinstance(mdata, Sequence):
             for mdata_i in mdata:
-                self._fix_meta_data_cosmo(mdata_i)
+                self._fix_meta_data_cosmo(integrate, mdata_i)
             return
         assert isinstance(mdata, MetaData)  # mypy
-        unit = mdata.variable.unit
-        if unit in self.valid_units:
-            pass
+        unit = str(mdata.variable.unit)
+        if unit == "ng kg-1":
+            new_unit = "Bq h m-3" if integrate else "Bq m-3"
+        elif unit == "1e-12 kg m-2":
+            new_unit = "Bq h m-2" if integrate else "Bq m-2"
         else:
-            try:
-                new_unit = self.unit_replacement_names[cast(str, unit)]
-            except KeyError:
-                raise NotImplementedError(f"unit '{unit}'")
-            mdata.variable.unit = new_unit
+            return
+        mdata.variable.unit = new_unit

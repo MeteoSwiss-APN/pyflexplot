@@ -1888,7 +1888,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": " 1e-09 Bq m$^{-3}$",
+                    "s": " 1e-09 Bq h m$^{-3}$",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
