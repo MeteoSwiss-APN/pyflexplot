@@ -75,15 +75,14 @@ def create_map_conf(field: Field) -> MapAxesConf:
 
     conf_base: Dict[str, Any] = {"lang": field.var_setups.collect_equal("lang")}
 
-    conf_model_ifs: Dict[str, Any] = {"geo_res": "50m"}
-    conf_model_cosmo: Dict[str, Any] = {"geo_res": "10m"}
-
     conf_scale_continent: Dict[str, Any] = {
+        "geo_res": "50m",
         "geo_res_cities": "50m",
         "geo_res_rivers": "50m",
         "min_city_pop": 300_000,
     }
     conf_scale_country: Dict[str, Any] = {
+        "geo_res": "10m",
         "geo_res_cities": "10m",
         "geo_res_rivers": "10m",
         "min_city_pop": 0,
@@ -94,28 +93,37 @@ def create_map_conf(field: Field) -> MapAxesConf:
     if domain == "data" and model.startswith("COSMO"):
         conf = {
             **conf_base,
-            **conf_model_cosmo,
             **conf_scale_continent,
             "zoom_fact": 0.9,
         }
     elif domain == "data" and model.startswith("IFS"):
         conf = {
             **conf_base,
-            **conf_model_ifs,
             **conf_scale_continent,
             "zoom_fact": 0.9,
+        }
+    elif model == "IFS-HRES-EU" and domain == "full":
+        conf = {
+            **conf_base,
+            **conf_scale_continent,
+            "zoom_fact": 1.05,
+        }
+    elif model == "IFS-HRES-EU" and domain == "ch":
+        conf = {
+            **conf_base,
+            **conf_scale_country,
+            "zoom_fact": 11.0,
+            "rel_offset": (-0.18, -0.11),
         }
     elif model.startswith("COSMO") and domain == "full":
         conf = {
             **conf_base,
-            **conf_model_cosmo,
             **conf_scale_continent,
             "zoom_fact": 1.05,
         }
     elif model.startswith("COSMO-1") and domain == "ch":
         conf = {
             **conf_base,
-            **conf_model_cosmo,
             **conf_scale_country,
             "zoom_fact": 3.6,
             "rel_offset": (-0.02, 0.045),
@@ -123,7 +131,6 @@ def create_map_conf(field: Field) -> MapAxesConf:
     elif model.startswith("COSMO-2") and domain == "ch":
         conf = {
             **conf_base,
-            **conf_model_cosmo,
             **conf_scale_country,
             "zoom_fact": 3.23,
             "rel_offset": (0.037, 0.1065),
@@ -131,7 +138,6 @@ def create_map_conf(field: Field) -> MapAxesConf:
     elif model.startswith("COSMO") and domain == "w_europe":
         conf = {
             **conf_base,
-            **conf_model_cosmo,
             **conf_scale_continent,
             "zoom_fact": 0.5,
         }
