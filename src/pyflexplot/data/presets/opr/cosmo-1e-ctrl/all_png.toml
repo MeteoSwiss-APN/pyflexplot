@@ -1,4 +1,4 @@
-# PyFlexPlot setup file to create deterministic NAZ plots
+# PyFlexPlot setup file to create deterministic COSMO-1E-CTRL plots
 
 [_base]
 # Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
