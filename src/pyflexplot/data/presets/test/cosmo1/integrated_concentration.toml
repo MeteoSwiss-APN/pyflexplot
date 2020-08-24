@@ -1,8 +1,8 @@
 # PyFlexPlot setup file to create deterministic NAZ plots
 
 ["_base+"]
-# Sample data directory: /scratch/ruestefa/shared/pyflexplot_test/
-infile = "data/cosmo1_20190528000000.nc"
+# Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
+infile = "data/cosmo-1/grid_conc_xxx_20190528000000.nc"
 model = "COSMO-1"
 outfile = "cosmo-1_{input_variable}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_idx:02d}.pdf"
 input_variable = "concentration"
