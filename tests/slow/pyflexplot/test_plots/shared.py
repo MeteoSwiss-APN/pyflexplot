@@ -111,7 +111,7 @@ class _TestBase:
         # SR_TODO Add support for multiple plots!
         sol = self.get_reference("field_summary")
         try:
-            assert_nested_equal(res, sol, float_close_ok=True)
+            assert_nested_equal(res, sol, "res", "sol", float_close_ok=True)
         except AssertionError as e:
             msg = f"field summaries differ (result vs. solution):\n\n {e}"
             raise AssertionError(msg)
@@ -120,7 +120,7 @@ class _TestBase:
         res = plot.summarize()
         sol = self.get_reference("plot_summary")
         try:
-            assert_nested_equal(res, sol, float_close_ok=True)
+            assert_nested_equal(res, sol, "res", "sol", float_close_ok=True)
         except AssertionError as e:
             msg = f"plot summaries differ (result vs. solution):\n\n{e}"
             raise AssertionError(msg)

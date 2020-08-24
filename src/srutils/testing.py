@@ -330,6 +330,9 @@ def type_name(type_) -> str:
 def assert_nested_equal(
     obj1: Collection,
     obj2: Collection,
+    name1: Optional[str] = None,
+    name2: Optional[str] = None,
+    *,
     float_close_ok: bool = False,
     kwargs_close: Optional[Dict[str, Any]] = None,
 ) -> None:
@@ -339,6 +342,10 @@ def assert_nested_equal(
         obj1: Object compared against ``obj2``.
 
         obj2: Object compared against ``obj1``.
+
+        name1 (optional): Descriptive name for ``obj1`` (e.g., "result").
+
+        name2 (optional): Descriptive name for ``obj2`` (e.g., "solution").
 
         float_close_ok (optional): Whether it is sufficient for floats to be
             close instead of identical.
@@ -360,9 +367,11 @@ def assert_nested_equal(
     def error(msg, path, obj1=None, obj2=None):
         err = f"\n{msg}\n\nPath ({len(path)}):\n{pformat(path)}\n"
         if obj1 is not None:
-            err += f"\nobj1 ({type_name(type(obj1))}):\n{format_obj(obj1)}\n"
+            err += f"\n[{name1 or 'obj1'}] ({type_name(type(obj1))}):"
+            err += f"\n{format_obj(obj1)}\n"
         if obj2 is not None:
-            err += f"\nobj2 ({type_name(type(obj2))}):\n{format_obj(obj2)}\n"
+            err += f"\n[{name2 or 'obj2'}] ({type_name(type(obj2))}):"
+            err += f"\n{format_obj(obj2)}\n"
         return AssertionError(err)
 
     # pylint: disable=R0912  # too-many-branches

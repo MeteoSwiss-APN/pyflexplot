@@ -478,7 +478,7 @@ def test_realcase_opr_like(tmp_path):
     assert [d["outfile"] for d in dcts_res] == [d["outfile"] for d in dcts_sol]
     for dct_res, dct_sol in zip(dcts_res, dcts_sol):
         try:
-            assert_nested_equal(dct_res, dct_sol)
+            assert_nested_equal(dct_res, dct_sol, "res", "sol")
         except AssertionError:
             raise AssertionError(
                 f"setups differ:\n\n{pformat(dct_res)}\n\n{pformat(dct_sol)}\n"
