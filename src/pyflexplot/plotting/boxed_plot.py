@@ -231,6 +231,10 @@ def levels_from_time_stats(
     def _auto_levels_log10(n_levels: int, val_max: float) -> List[float]:
         if not np.isfinite(val_max):
             raise ValueError("val_max not finite", val_max)
+        # SR_TMP <
+        if val_max == 0.0:
+            val_max = 1e-6
+        # SR_TMP >
         log10_max = int(np.floor(np.log10(val_max)))
         log10_d = 1
         return 10 ** np.arange(
