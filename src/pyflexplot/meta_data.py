@@ -561,7 +561,7 @@ def nc_var_name(setup: Setup, model: str) -> str:
     if input_variable == "concentration":
         if model in ["COSMO-2", "COSMO-1"]:
             return f"spec{species_id:03d}"
-        elif model in ["IFS", "IFS-HRES"]:
+        elif model in ["IFS-HRES", "IFS-HRES-EU"]:
             return f"spec{species_id:03d}_mr"
         else:
             raise ValueError("unknown model", model)

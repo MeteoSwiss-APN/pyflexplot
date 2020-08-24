@@ -396,7 +396,8 @@ class InputFileEnsemble:
                 fld_time_lst.append(self._read_fld(fi, sub_setup))
         fld_time = merge_fields(fld_time_lst)
 
-        if self.fixer and self.nc_meta_data["derived"]["model"] in ["IFS"]:
+        global_models = ["IFS-HRES"]
+        if self.fixer and self.nc_meta_data["derived"]["model"] in global_models:
             self.fixer.fix_global_grid(self.lon, fld_time)
 
         if self.add_ts0:
@@ -525,7 +526,7 @@ class InputFileEnsemble:
                 "noutrel": "noutrel",
                 "numpoint": "numpoint",
             }
-        elif model in ["IFS", "IFS-HRES"]:
+        elif model in ["IFS-HRES", "IFS-HRES-EU"]:
             return {
                 "lat": "latitude",
                 "lon": "longitude",
@@ -535,7 +536,8 @@ class InputFileEnsemble:
                 "noutrel": "noutrel",
                 "numpoint": "pointspec",
             }
-        raise NotImplementedError("dimension names for model", model)
+        else:
+            raise NotImplementedError("dimension names for model", model)
 
     # SR_TODO refactor to reduce branching and locals!
     # pylint: disable=R0912,R0914  # too-many-branches, too-many-locals

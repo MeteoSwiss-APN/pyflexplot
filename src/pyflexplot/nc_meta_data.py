@@ -94,8 +94,8 @@ def determine_model(ncattrs: Dict[str, Any]) -> str:
     """
     dxout = ncattrs["dxout"]
     choices = {
-        type(dxout)(0.25): "IFS",
-        type(dxout)(0.10): "IFS-HRES",
+        type(dxout)(0.25): "IFS-HRES",
+        type(dxout)(0.10): "IFS-HRES-EU",
         type(dxout)(0.02): "COSMO-2",
         type(dxout)(0.01): "COSMO-1",
     }
@@ -116,7 +116,7 @@ def determine_release_site(file_handle: nc4.Dataset) -> str:
 
 def determine_species_ids(model: str, variables: Dict[str, Any]) -> Tuple[int, ...]:
     """Determine the species ids from the variables."""
-    if model in ["COSMO-1", "COSMO-2", "IFS", "IFS-HRES"]:
+    if model in ["COSMO-1", "COSMO-2", "IFS-HRES", "IFS-HRES-EU"]:
         rx = re.compile(r"\A[WD]D_spec(?P<species_id>[0-9][0-9][0-9])\Z")
         species_ids = set()
         for var_name in variables.keys():
