@@ -13,7 +13,9 @@ from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 from typing import Any
+from typing import cast
 from typing import Collection
+from typing import Dict
 from typing import List
 from typing import Mapping
 from typing import Optional
@@ -37,23 +39,6 @@ from .species import Species
 MetaDatumType = Union[int, float, str, datetime, timedelta]
 
 
-@dataclass
-class MetaDatum:
-    """Individual piece of meta data.
-
-    This bare-bones class is left over after eliminating the MetaDatum[Combo]
-    classes and will itself be eliminated soon.
-
-    """
-
-    name: str
-    value: Union[MetaDatumType, Tuple[MetaDatumType, ...]]
-    join: Optional[str] = None
-
-    def is_combo(self) -> bool:
-        return isinstance(self.value, Sequence) and not isinstance(self.value, str)
-
-
 def format_meta_datum(value: Any, join: Optional[str] = None) -> str:
     if isinstance(value, Collection) and not isinstance(value, str):
         # SR_TODO make sure this is covered by a test (it currently isn't)!
@@ -64,8 +49,6 @@ def format_meta_datum(value: Any, join: Optional[str] = None) -> str:
         hours = int(value.total_seconds() / 3600)
         minutes = int((value.total_seconds() / 60) % 60)
         return f"{hours:d}:{minutes:02d}$\\,$h"
-    if isinstance(value, MetaDatum):
-        return format_meta_datum(value.value, join=value.join)
     elif isinstance(value, (float, int)):
         return f"{value:g}"
     else:
@@ -77,7 +60,7 @@ class MetaData:
     release: "ReleaseMetaData"
     simulation: "SimulationMetaData"
     variable: "VariableMetaData"
-    species: Union[Species, Tuple[Species, ...]]
+    species: "SpeciesMetaData"
 
     def merge_with(self, others: Collection["MetaData"],) -> "MetaData":
         """Merge this `MetaData` instance with one or more others.
@@ -100,31 +83,10 @@ class MetaData:
             return self.simulation
 
         def merge_variable():
-            unit = self.variable.unit
-            level_unit = self.variable.level_unit
-            bottom_level = self.variable.bottom_level
-            top_level = self.variable.top_level
-            for obj in others:
-                assert unit == obj.variable.unit
-                assert level_unit == obj.variable.level_unit
-                bottom_level = min([bottom_level, obj.variable.bottom_level])
-                top_level = max([top_level, obj.variable.top_level])
-            return type(self.variable)(
-                unit=unit,
-                level_unit=level_unit,
-                bottom_level=bottom_level,
-                top_level=top_level,
-            )
+            return self.variable.merge_with([other.variable for other in others])
 
         def merge_species():
-            species_lst: List[Species] = []
-            for obj in [self] + list(others):
-                for species in (
-                    [obj.species] if isinstance(obj.species, Species) else obj.species
-                ):
-                    if species not in species_lst:
-                        species_lst.append(species)
-            return species_lst[0] if len(species_lst) == 1 else tuple(species_lst)
+            return self.species.merge_with([other.species for other in others])
 
         return type(self)(
             release=merge_release(),
@@ -142,12 +104,7 @@ class MetaData:
         )
 
     def format(
-        self,
-        param: str,
-        *,
-        add_unit: bool = False,
-        auto_format_unit: bool = True,
-        join_combo: Optional[str] = None,
+        self, param: str, *, add_unit: bool = False, join_combo: Optional[str] = None,
     ) -> str:
         """Format a parameter, optionally adding the unit (`~_unit`).
 
@@ -156,131 +113,39 @@ class MetaData:
         functions to be used explicitly to format individual attributes.
 
         """
-
-        def unpack_combo(datum: MetaDatum) -> List[MetaDatum]:
-            assert datum.is_combo()
-            assert isinstance(datum.value, Sequence)  # mypy
-            return [
-                MetaDatum(name=datum.name, value=value, join=datum.join)
-                for value in datum.value
-            ]
-
-        datum: MetaDatum
-        if add_unit and param.endswith("_unit"):
-            raise ValueError("cannot add unit to param ending in '_unit'", param)
+        data_param, datum_param = param.split(".")
         try:
-            datum = getattr(self, param)
+            datum = getattr(getattr(self, data_param), datum_param)
         except AttributeError:
             raise ValueError("invalid param", param)
-        if auto_format_unit and param.endswith("_unit"):
+
+        if param.endswith(".unit"):
             contains_unit = True
-        elif add_unit:
-            unit_param = f"{param}_unit"
-            try:
-                unit_datum = getattr(self, unit_param)
-            except AttributeError:
-                raise Exception("no unit found for parameter", param, unit_param)
-            assert isinstance(datum, MetaDatum)
-            if not datum.is_combo():
-                values_fmtd = [
-                    format_meta_datum(datum.value),
-                    format_meta_datum(unit_datum.value),
-                ]
-                datum = MetaDatum(name=datum.name, value=r"$\,$".join(values_fmtd))
-            else:
-                datum = MetaDatum(
-                    name=f"{datum.name}+{unit_datum.name}",
-                    value=tuple(
-                        [
-                            r"$\,$".join([format_meta_datum(d), format_meta_datum(u)])
-                            for d, u in zip(
-                                unpack_combo(datum), unpack_combo(unit_datum)
-                            )
-                        ]
-                    ),
-                    join=(datum.join or unit_datum.join),
-                )
-            # SR_TMP >
-            contains_unit = True
-        else:
+        elif not add_unit:
             contains_unit = False
-        if isinstance(datum, MetaDatum) and datum.is_combo() and join_combo is not None:
-            assert isinstance(datum.value, Sequence)
-            assert not isinstance(datum.value, str)
-            datum = MetaDatum(name=datum.name, value=datum.value, join=join_combo)
-        # SR_TMP <
-        if isinstance(datum, MetaDatum) and datum.is_combo():
-            datums = unpack_combo(datum)
-            if all(datum == datums[0] for datum in datums[1:]):
-                datum = datums[0]
-        # SR_TMP >
-        datum_fmtd: str = format_meta_datum(datum.value, join=datum.join)
+        else:
+            try:
+                unit_datum = getattr(getattr(self, data_param), f"{datum_param}_unit")
+            except AttributeError:
+                raise Exception(f"missing unit {param}.unit of parameter {param}")
+            if not isinstance(datum, tuple):
+                values_fmtd = [format_meta_datum(datum), format_meta_datum(unit_datum)]
+                datum = r"$\,$".join(values_fmtd)
+            else:
+                value = [
+                    r"$\,$".join([format_meta_datum(d), format_meta_datum(u)])
+                    for d, u in zip(datum, unit_datum)
+                ]
+                datum = tuple(value)
+            contains_unit = True
+
+        if isinstance(datum, tuple) and join_combo is not None:
+            datum = join_combo.join(datum)
+
+        datum_fmtd: str = format_meta_datum(datum)
         if contains_unit:
             return format_unit(datum_fmtd)
         return datum_fmtd
-
-    def __getattr__(self, attr):
-        """Temporary compatibility layer for old interface during transition.
-
-        This will be eliminated step by step by replacing the old attributes
-        (e.g., `release_end_rel`) by the new ones (e.g., `release.end_rel`).
-
-        """
-        try:
-            value = {
-                "release_end_rel": self.release.end_rel,
-                "release_height": self.release.height,
-                "release_height_unit": self.release.height_unit,
-                "release_mass": self.release.mass,
-                "release_mass_unit": self.release.mass_unit,
-                "release_rate": self.release.rate,
-                "release_rate_unit": self.release.rate_unit,
-                "release_site_lat": self.release.lat,
-                "release_site_lon": self.release.lon,
-                "release_site_name": self.release.site,
-                "release_start_rel": self.release.start_rel,
-                "simulation_end": self.simulation.end,
-                "simulation_integr_start_rel": self.simulation.integration_start_rel,
-                "simulation_integr_start": self.simulation.integration_start,
-                "simulation_now_rel": self.simulation.now_rel,
-                "simulation_now": self.simulation.now,
-                "simulation_start": self.simulation.start,
-                "variable_level_bot": self.variable.bottom_level,
-                "variable_level_bot_unit": self.variable.level_unit,
-                "variable_level_top": self.variable.top_level,
-                "variable_level_top_unit": self.variable.level_unit,
-                "variable_unit": self.variable.unit,
-            }[attr]
-        except KeyError:
-            if not attr.startswith("species_"):
-                raise AttributeError(attr)
-        else:
-            return MetaDatum(name=attr, value=value)
-        values = []
-        for species in (
-            [self.species] if isinstance(self.species, Species) else self.species
-        ):
-            try:
-                value = {
-                    "species_deposit_vel": species.deposition_velocity.value,
-                    "species_deposit_vel_unit": species.deposition_velocity.unit,
-                    "species_half_life": species.half_life.value,
-                    "species_half_life_unit": species.half_life.unit,
-                    "species_name": species.name,
-                    "species_sediment_vel": species.sedimentation_velocity.value,
-                    "species_sediment_vel_unit": species.sedimentation_velocity.unit,
-                    "species_washout_coeff": species.washout_coefficient.value,
-                    "species_washout_coeff_unit": species.washout_coefficient.unit,
-                    "species_washout_exponent": species.washout_exponent.value,
-                }[attr]
-            except KeyError:
-                raise AttributeError(attr)
-            else:
-                values.append(value)
-        if len(values) == 1:
-            value = values[0]
-            return MetaDatum(name=attr, value=value)
-        return MetaDatum(name=attr, value=tuple(values))
 
 
 def format_unit(s: str) -> str:
@@ -308,7 +173,7 @@ def collect_meta_data(
         release=ReleaseMetaData.from_file(fi, setup),
         simulation=SimulationMetaData.from_file(fi, setup, add_ts0),
         variable=VariableMetaData.from_file(fi, setup, nc_meta_data),
-        species=species_from_file(fi, setup, nc_meta_data),
+        species=SpeciesMetaData.from_file(fi, setup, nc_meta_data),
     )
 
 
@@ -360,6 +225,23 @@ class VariableMetaData:
             level_unit=level_unit,
         )
 
+    def merge_with(self, others: Sequence["VariableMetaData"]) -> "VariableMetaData":
+        unit = self.unit
+        level_unit = self.level_unit
+        bottom_level = self.bottom_level
+        top_level = self.top_level
+        for obj in others:
+            assert unit == obj.unit
+            assert level_unit == obj.level_unit
+            bottom_level = min([bottom_level, obj.bottom_level])
+            top_level = max([top_level, obj.top_level])
+        return type(self)(
+            unit=unit,
+            level_unit=level_unit,
+            bottom_level=bottom_level,
+            top_level=top_level,
+        )
+
 
 @dataclass
 class SimulationMetaData:
@@ -367,8 +249,8 @@ class SimulationMetaData:
     end: datetime
     now: datetime
     now_rel: timedelta
-    integration_start: datetime
-    integration_start_rel: timedelta
+    reduction_start: datetime
+    reduction_start_rel: timedelta
 
     @classmethod
     def from_file(
@@ -382,16 +264,16 @@ class SimulationMetaData:
         # Current time step and start time step of current integration period
         collector = TimeStepMetaDataCollector(fi, setup, add_ts0=add_ts0)
         now = collector.now()
-        integration_start = collector.integration_start()
+        reduction_start = collector.reduction_start()
         now_rel: timedelta = collector.now_rel()
-        integration_start_rel = collector.integration_start_rel()
+        reduction_start_rel = collector.reduction_start_rel()
         return cls(
             start=start,
             end=end,
             now=now,
             now_rel=now_rel,
-            integration_start=integration_start,
-            integration_start_rel=integration_start_rel,
+            reduction_start=reduction_start,
+            reduction_start_rel=reduction_start_rel,
         )
 
 
@@ -567,13 +449,13 @@ class TimeStepMetaDataCollector:
             return timedelta(0)
         return timedelta(seconds=int(var[idx]))
 
-    def integration_start(self) -> datetime:
-        """Time step when integration started."""
+    def reduction_start(self) -> datetime:
+        """Time step when reduction (mean/sum) started."""
         return self.now() - self.integration_duration()
 
-    def integration_start_rel(self) -> timedelta:
-        """Time between start of simulation and start of integration."""
-        return self.integration_start() - self.start()
+    def reduction_start_rel(self) -> timedelta:
+        """Time between simulation start and start of reduction (mean/sum)."""
+        return self.reduction_start() - self.start()
 
     def integration_duration(self) -> timedelta:
         """Compute timestep delta of integration period."""
@@ -593,37 +475,79 @@ class TimeStepMetaDataCollector:
         return self.setup.core.dimensions.time
 
 
-def species_from_file(
-    fi: nc4.Dataset, setup: Setup, nc_meta_data: Mapping[str, Mapping[str, Any]],
-) -> Species:
-    model: str = nc_meta_data["derived"]["model"]
-    name: str = nc_var_name(setup, model)
-    var: nc4.Variable = fi.variables[name]
-    try:  # SR_TMP
-        name = getncattr(var, "long_name")
-    except AttributeError:
-        # SR_TMP <
-        # name = "N/A"
-        if model.startswith("IFS"):
-            # In the IFS NetCDF files, the deposition variables are missing
-            # the basic meta data on species, like "long_name". Therefore,
-            # try to # obtain the name from the activity variable of the
-            # same species.
-            if name.startswith("DD_") or name.startswith("WD_"):
-                alternative_name = f"{name[3:]}_mr"
-                try:
-                    alternative_var = fi.variables[alternative_name]
-                    name = getncattr(alternative_var, "long_name")
-                except (KeyError, AttributeError):
-                    name = "N/A"
-                else:
-                    name = name.split("_")[0]
+@dataclass
+# pylint: disable=R0902  # too-many-instance-attributes
+class SpeciesMetaData:
+    name: Union[str, Tuple[str, ...]]
+    half_life: Union[float, Tuple[float, ...]]
+    half_life_unit: Union[str, Tuple[str, ...]]
+    deposition_velocity: Union[float, Tuple[float, ...]]
+    deposition_velocity_unit: Union[str, Tuple[str, ...]]
+    sedimentation_velocity: Union[float, Tuple[float, ...]]
+    sedimentation_velocity_unit: Union[str, Tuple[str, ...]]
+    washout_coefficient: Union[float, Tuple[float, ...]]
+    washout_coefficient_unit: Union[str, Tuple[str, ...]]
+    washout_exponent: Union[float, Tuple[float, ...]]
+
+    @classmethod
+    def from_file(
+        cls,
+        fi: nc4.Dataset,
+        setup: Setup,
+        nc_meta_data: Mapping[str, Mapping[str, Any]],
+    ) -> "SpeciesMetaData":
+        model: str = nc_meta_data["derived"]["model"]
+        name: str = nc_var_name(setup, model)
+        var: nc4.Variable = fi.variables[name]
+        try:  # SR_TMP
+            name = getncattr(var, "long_name")
+        except AttributeError:
+            # SR_TMP <
+            # name = "N/A"
+            if model.startswith("IFS"):
+                # In the IFS NetCDF files, the deposition variables are missing
+                # the basic meta data on species, like "long_name". Therefore,
+                # try to # obtain the name from the activity variable of the
+                # same species.
+                if name.startswith("DD_") or name.startswith("WD_"):
+                    alternative_name = f"{name[3:]}_mr"
+                    try:
+                        alternative_var = fi.variables[alternative_name]
+                        name = getncattr(alternative_var, "long_name")
+                    except (KeyError, AttributeError):
+                        name = "N/A"
+                    else:
+                        name = name.split("_")[0]
+            else:
+                name = "N/A"
+            # SR_TMP >
         else:
-            name = "N/A"
-        # SR_TMP >
-    else:
-        name = name.split("_")[0]
-    return get_species(name=name)
+            name = name.split("_")[0]
+        species: Species = get_species(name=name)
+        return cls(
+            name=species.name,
+            half_life=species.half_life.value,
+            half_life_unit=cast(str, species.half_life.unit),
+            deposition_velocity=species.deposition_velocity.value,
+            deposition_velocity_unit=cast(str, species.deposition_velocity.unit),
+            sedimentation_velocity=species.sedimentation_velocity.value,
+            sedimentation_velocity_unit=cast(str, species.sedimentation_velocity.unit),
+            washout_coefficient=species.washout_coefficient.value,
+            washout_coefficient_unit=cast(str, species.washout_coefficient.unit),
+            washout_exponent=species.washout_exponent.value,
+        )
+
+    def merge_with(self, others: Sequence["SpeciesMetaData"]) -> "SpeciesMetaData":
+        kwargs: Dict[str, Any] = {}
+        for param in self.__dataclass_fields__:  # type: ignore
+            vals: List[Union[float, str]] = []
+            for obj in [self] + list(others):
+                val = getattr(obj, param)
+                for sub_val in val if isinstance(val, tuple) else [val]:
+                    if sub_val not in vals:
+                        vals.append(sub_val)
+            kwargs[param] = tuple(vals)
+        return type(self)(**kwargs)
 
 
 def nc_var_name(setup: Setup, model: str) -> str:

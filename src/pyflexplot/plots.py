@@ -275,11 +275,7 @@ def create_box_labels(
 
     labels: Dict[str, Dict[str, Any]] = {}
     integr_period = format_integr_period(
-        mdata.simulation.integration_start,
-        mdata.simulation.now,
-        setup,
-        words,
-        cap=True,
+        mdata.simulation.reduction_start, mdata.simulation.now, setup, words, cap=True
     )
     # SR_TMP < TODO move to mdata.simulation
     time_since_release_start = (
@@ -291,22 +287,21 @@ def create_box_labels(
         "tl": "",  # SR_TMP force into 1st position of dict (for tests)
         "bl": (
             f"{integr_period} ({words['since']}"
-            f" {format_meta_datum(mdata.simulation_integr_start.value)})"
+            f" {format_meta_datum(mdata.simulation.reduction_start)})"
         ),
         "tr": (
-            f"{format_meta_datum(mdata.simulation_now.value)}"
+            f"{format_meta_datum(mdata.simulation.now)}"
             f" ({words['lead_time']} +{format_meta_datum(lead_time)})"
         ),
         "br": (
             f"{format_meta_datum(time_since_release_start)} {words['since']}"
             f" {words['release_start']}"
-            # f" {words['at', 'place']}"
-            # f" {format_meta_datum(mdata.release_site_name.value)}"
+            # f" {words['at', 'place']} {format_meta_datum(mdata.release.site)}"
         ),
     }
     labels["title_2nd"] = {
-        "tc": f"{format_meta_datum(mdata.species_name.value)}",
-        "bc": f"{format_meta_datum(mdata.release_site_name.value)}",
+        "tc": f"{format_meta_datum(mdata.species.name)}",
+        "bc": f"{format_meta_datum(mdata.release.site)}",
     }
     labels["data_info"] = {
         "lines": [],
@@ -372,7 +367,7 @@ def create_box_labels(
         if setup.core.ens_variable == "probability":
             labels["data_info"]["lines"].append(
                 f"{words['threshold']}:\t{symbols['geq']} {setup.core.ens_param_thr}"
-                f" {mdata.format('variable_unit')}"
+                f" {mdata.format('variable.unit')}"
             )
         elif setup.core.ens_variable in [
             "cloud_arrival_time",
@@ -383,7 +378,7 @@ def create_box_labels(
                 # f"{words['cloud_density']}:\t{words['minimum', 'abbr']}"
                 # f"{words['threshold']}:\t"
                 f"{words['cloud_threshold', 'abbr']}:\t"
-                f" {setup.core.ens_param_thr} {mdata.format('variable_unit')}"
+                f" {setup.core.ens_param_thr} {mdata.format('variable.unit')}"
             )
             n_min = setup.core.ens_param_mem_min or 0
             n_tot = len((setup.ens_member_id or []))
@@ -404,7 +399,7 @@ def create_box_labels(
                     # SR_TMP >
                 )
     # labels["data_info"]["lines"].append(
-    #     f"{words['substance'].c}:\t{mdata.format('species_name', join_combo=' / ')}",
+    #     f"{words['substance'].c}:\t{mdata.format('species.name', join_combo=' / ')}",
     # )
     if setup.core.input_variable == "concentration":
         labels["data_info"]["lines"].append(
@@ -414,7 +409,7 @@ def create_box_labels(
 
     # box_labels["top"]["tl"] = (
     #     f"{long_name} {words['of']}"
-    #     f" {format_meta_datum(mdata.species_name.value)}"
+    #     f" {format_meta_datum(mdata.species.name)}"
     # )
     labels["top"]["tl"] = long_name
     if setup.get_simulation_type() == "deterministic":
@@ -499,7 +494,7 @@ def format_names_etc(
                 return f"{words['hour', 'pl']}"
             elif setup.core.ens_variable == "cloud_occurrence_probability":
                 return "%"
-        return mdata.format("variable_unit")
+        return mdata.format("variable.unit")
 
     unit = format_unit(setup, words, mdata)
     var_name, var_name_abbr, var_name_rel = format_var_names(setup, words)
@@ -771,10 +766,7 @@ def plot_add_text_boxes(
                 **plot.config.markers["site"],
             )
             box.text(
-                s=(
-                    f"{labels['site']}:"
-                    f" {format_meta_datum(mdata.release_site_name.value)}"
-                ),
+                s=f"{labels['site']}: {format_meta_datum(mdata.release.site)}",
                 loc="tc",
                 dx=dx_marker_label,
                 dy=dy_site_label,
@@ -804,18 +796,18 @@ def plot_add_text_boxes(
         lat_deg = labels["lat_deg_fmt"].format(d=lat.degs(), m=lat.mins(), f=lat.frac())
         lon_deg = labels["lon_deg_fmt"].format(d=lon.degs(), m=lon.mins(), f=lon.frac())
 
-        height = mdata.format("release_height", add_unit=True)
+        height = mdata.format("release.height", add_unit=True)
         # SR_TMP <
         height = height.replace("meters", labels["height_unit"])
         # SR_TMP >
-        rate = mdata.format("release_rate", add_unit=True)
-        mass = mdata.format("release_mass", add_unit=True)
-        substance = mdata.format("species_name", join_combo=" / ")
-        half_life = mdata.format("species_half_life", add_unit=True)
-        deposit_vel = mdata.format("species_deposit_vel", add_unit=True)
-        sediment_vel = mdata.format("species_sediment_vel", add_unit=True)
-        washout_coeff = mdata.format("species_washout_coeff", add_unit=True)
-        washout_exponent = mdata.format("species_washout_exponent")
+        rate = mdata.format("release.rate", add_unit=True)
+        mass = mdata.format("release.mass", add_unit=True)
+        substance = mdata.format("species.name", join_combo=" / ")
+        half_life = mdata.format("species.half_life", add_unit=True)
+        deposit_vel = mdata.format("species.deposition_velocity", add_unit=True)
+        sediment_vel = mdata.format("species.sedimentation_velocity", add_unit=True)
+        washout_coeff = mdata.format("species.washout_coefficient", add_unit=True)
+        washout_exponent = mdata.format("species.washout_exponent")
 
         # SR_TMP <
         release_start = format_meta_datum(
@@ -829,7 +821,7 @@ def plot_add_text_boxes(
         # SR_TMP >
         info_blocks = dedent(
             f"""\
-            {labels['site']}:\t{format_meta_datum(mdata.release_site_name.value)}
+            {labels['site']}:\t{format_meta_datum(mdata.release.site)}
             {labels['latitude']}:\t{lat_deg}
             {labels['longitude']}:\t{lon_deg}
             {labels['height']}:\t{height}
