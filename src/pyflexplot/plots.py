@@ -129,10 +129,7 @@ def create_map_conf(field: Field) -> MapAxesConfig:
         if model_name.startswith("IFS"):
             domain = Domain(zoom_fact=0.9)
     if domain_type == "full":
-        if model_name == "IFS-HRES":
-            domain = Domain(zoom_fact=1.00)
-        else:
-            domain = Domain(zoom_fact=1.01)
+        domain = Domain()
     if domain_type == "ch":
         if model_name.startswith("COSMO-1"):
             domain = Domain(zoom_fact=3.6, rel_offset=(-0.02, 0.045))

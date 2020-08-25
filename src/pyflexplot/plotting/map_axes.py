@@ -370,6 +370,7 @@ class MapAxes:
             .zoom(conf.domain.zoom_fact, conf.domain.rel_offset)
             .to_data()
         )
+        self.ax.set_aspect("auto")
         self.ax.set_extent(bbox, self.proj_data)
 
     def _init_ref_dist_box(self) -> None:

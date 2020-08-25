@@ -16,6 +16,7 @@ from typing import Union
 
 # Third-party
 import matplotlib as mpl
+import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from pydantic import BaseModel
@@ -87,9 +88,39 @@ def summarize_mpl_figure(obj: Any) -> Dict[str, Any]:
 
 def summarize_mpl_axes(obj: Any) -> Dict[str, Any]:
     """Summarize a matplotlib ``Axes`` instance in a dict."""
+    # Note: Hand-picked selection of attributes (not very systematically)
     summary = {
         "type": type(obj).__name__,
+        "adjustable": obj.get_adjustable(),
+        "aspect": obj.get_aspect(),
         "bbox": summarize_mpl_bbox(obj.bbox),
+        "data_ratio": obj.get_data_ratio(),
+        "facecolor": obj.get_facecolor(),
+        "fc": obj.get_fc(),
+        "frame_on": obj.get_frame_on(),
+        "label": obj.get_label(),
+        "lines": list(
+            map(lambda l: np.asarray(l.get_data()).tolist(), obj.get_lines())
+        ),
+        "position": summarize_mpl_bbox(obj.get_position()),
+        "title": obj.get_title(),
+        "visible": obj.get_visible(),
+        "window_extent": summarize_mpl_bbox(obj.get_window_extent()),
+        "xlabel": obj.get_xlabel(),
+        "xlim": obj.get_xlim(),
+        "xmajorticklabels": list(map(str, obj.get_xmajorticklabels())),
+        "xminorticklabels": list(map(str, obj.get_xminorticklabels())),
+        "xscale": obj.get_xscale(),
+        "xticklabels": list(map(str, obj.get_xticklabels())),
+        "xticks": list(obj.get_xticks()),
+        "ylabel": obj.get_ylabel(),
+        "ylim": obj.get_ylim(),
+        "ymajorticklabels": list(map(str, obj.get_ymajorticklabels())),
+        "yminorticklabels": list(map(str, obj.get_yminorticklabels())),
+        "yscale": obj.get_yscale(),
+        "yticklabels": list(map(str, obj.get_yticklabels())),
+        "yticks": list(obj.get_yticks()),
+        "zorder": obj.get_zorder(),
     }
     return summary
 

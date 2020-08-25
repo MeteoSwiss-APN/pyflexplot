@@ -130,10 +130,10 @@ class BoxedPlot:
         plt.close(self.fig)
 
     def add_map_plot(self, rect: RectType,) -> MapAxes:
-        axs = MapAxes.create(self.map_conf, fig=self.fig, rect=rect, field=self.field)
-        self.ax_map = axs  # SR_TMP
+        ax = MapAxes.create(self.map_conf, fig=self.fig, rect=rect, field=self.field)
+        self.ax_map = ax  # SR_TMP
         self._draw_colors_contours()
-        return axs
+        return ax
 
     def add_text_box(
         self,
