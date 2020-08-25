@@ -699,7 +699,7 @@ plot_summary = {
         },
         "conf": {
             "type": "MapAxesConfig",
-            "geo_res": "50m",
+            "geo_res": "10m",
             "geo_res_cities": "50m",
             "geo_res_rivers": "50m",
             "lang": "de",
@@ -3077,7 +3077,7 @@ plot_summary = {
     },
     "map_conf": {
         "type": "MapAxesConfig",
-        "geo_res": "50m",
+        "geo_res": "10m",
         "geo_res_cities": "50m",
         "geo_res_rivers": "50m",
         "lang": "de",

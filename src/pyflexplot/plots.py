@@ -76,7 +76,7 @@ def create_map_conf(field: Field) -> MapAxesConfig:
     conf_base: Dict[str, Any] = {"lang": field.var_setups.collect_equal("lang")}
 
     conf_scale_continent: Dict[str, Any] = {
-        "geo_res": "50m",
+        "geo_res": "10m",
         "geo_res_cities": "50m",
         "geo_res_rivers": "50m",
         "min_city_pop": 300_000,
