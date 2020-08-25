@@ -805,16 +805,21 @@ plot_summary = {
         },
         "conf": {
             "type": "MapAxesConfig",
+            "domain": {
+                "type": "Domain",
+                "lllat": None,
+                "lllon": None,
+                "urlat": None,
+                "urlon": None,
+                "rel_offset": [0.0, 0.0],
+                "zoom_fact": 1.05,
+            },
             "geo_res": "10m",
             "geo_res_cities": "50m",
             "geo_res_rivers": "50m",
             "lang": "en",
-            "lllat": None,
-            "lllon": None,
             "lw_frame": 1.0,
             "min_city_pop": 300000,
-            "urlat": None,
-            "urlon": None,
             "ref_dist_conf": {
                 "type": "RefDistIndConfig",
                 "dist": 100,
@@ -823,8 +828,6 @@ plot_summary = {
                 "unit": "km",
             },
             "ref_dist_on": True,
-            "rel_offset": [0.0, 0.0],
-            "zoom_fact": 1.05,
         },
         "elements": [
             {
@@ -3458,16 +3461,21 @@ plot_summary = {
     },
     "map_conf": {
         "type": "MapAxesConfig",
+        "domain": {
+            "type": "Domain",
+            "lllat": None,
+            "lllon": None,
+            "urlat": None,
+            "urlon": None,
+            "rel_offset": [0.0, 0.0],
+            "zoom_fact": 1.05,
+        },
         "geo_res": "10m",
         "geo_res_cities": "50m",
         "geo_res_rivers": "50m",
         "lang": "en",
-        "lllat": None,
-        "lllon": None,
         "lw_frame": 1.0,
         "min_city_pop": 300000,
-        "urlat": None,
-        "urlon": None,
         "ref_dist_conf": {
             "type": "RefDistIndConfig",
             "dist": 100,
@@ -3476,7 +3484,5 @@ plot_summary = {
             "unit": "km",
         },
         "ref_dist_on": True,
-        "rel_offset": [0.0, 0.0],
-        "zoom_fact": 1.05,
     },
 }

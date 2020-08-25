@@ -41,35 +41,18 @@ from .ref_dist_indicator import ReferenceDistanceIndicator
 
 
 @summarizable
-# pylint: disable=E0213  # no-self-argument (validators)
-class MapAxesConfig(BaseModel):
-    """
-    Configuration of ``MapAxesPlot``.
+@dataclass
+class Domain:
+    """Plot domain.
 
     Args:
-        geo_res: Resolution of geographic map elements.
-
-        geo_res_cities: Scale for cities shown on map. Defaults to ``geo_res``.
-
-        geo_res_rivers: Scale for rivers shown on map. Defaults to ``geo_res``.
-
-        lang: Language ('en' for English, 'de' for German).
-
         lllat: Latitude of lower-left corner.
 
         lllon: Longitude of lower-left corner.
 
-        lw_frame: Line width of frames.
-
-        min_city_pop: Minimum population of cities shown.
-
         urlat: Latitude of upper-right corner.
 
         urlon: Longitude of upper-right corner.
-
-        ref_dist_conf: Reference distance indicator setup.
-
-        ref_dist_on: Whether to add a reference distance indicator.
 
         rel_offset: Relative offset in x and y direction as a fraction of the
             respective domain extent.
@@ -78,20 +61,50 @@ class MapAxesConfig(BaseModel):
 
     """
 
+    lllat: Optional[float] = None
+    lllon: Optional[float] = None
+    urlat: Optional[float] = None
+    urlon: Optional[float] = None
+    rel_offset: Tuple[float, float] = (0.0, 0.0)
+    zoom_fact: float = 1.0
+
+
+@summarizable
+# pylint: disable=E0213  # no-self-argument (validators)
+class MapAxesConfig(BaseModel):
+    """
+    Configuration of ``MapAxesPlot``.
+
+    Args:
+        domain: Plot domain.
+
+        geo_res: Resolution of geographic map elements.
+
+        geo_res_cities: Scale for cities shown on map. Defaults to ``geo_res``.
+
+        geo_res_rivers: Scale for rivers shown on map. Defaults to ``geo_res``.
+
+        lang: Language ('en' for English, 'de' for German).
+
+        lw_frame: Line width of frames.
+
+        min_city_pop: Minimum population of cities shown.
+
+        ref_dist_conf: Reference distance indicator setup.
+
+        ref_dist_on: Whether to add a reference distance indicator.
+
+    """
+
+    domain: Domain = Domain()
     geo_res: str = "50m"
     geo_res_cities: str = "none"
     geo_res_rivers: str = "none"
     lang: str = "en"
-    lllat: Optional[float] = None
-    lllon: Optional[float] = None
     lw_frame: float = 1.0
     min_city_pop: int = 0
-    urlat: Optional[float] = None
-    urlon: Optional[float] = None
     ref_dist_conf: RefDistIndConfig = RefDistIndConfig()
     ref_dist_on: bool = True
-    rel_offset: Tuple[float, float] = (0.0, 0.0)
-    zoom_fact: float = 1.0
 
     class Config:  # noqa
         arbitrary_types_allowed = True
@@ -331,14 +344,14 @@ class MapAxes:
             lllat = field.lat[mask_lat].min()
             urlat = field.lat[mask_lat].max()
         else:
-            lllon = conf.lllon if conf.lllon is not None else field.lon[0]
-            urlon = conf.urlon if conf.urlon is not None else field.lon[-1]
-            lllat = conf.lllat if conf.lllat is not None else field.lat[0]
-            urlat = conf.urlat if conf.urlat is not None else field.lat[-1]
+            lllon = field.lon[0] if conf.domain.lllon is None else conf.domain.lllon
+            urlon = field.lon[-1] if conf.domain.urlon is None else conf.domain.urlon
+            lllat = field.lat[0] if conf.domain.lllat is None else conf.domain.lllat
+            urlat = field.lat[-1] if conf.domain.urlat is None else conf.domain.urlat
         bbox = (
             MapAxesBoundingBox(self, "data", lllon, urlon, lllat, urlat)
             .to_axes()
-            .zoom(conf.zoom_fact, conf.rel_offset)
+            .zoom(conf.domain.zoom_fact, conf.domain.rel_offset)
             .to_data()
         )
         self.ax.set_extent(bbox, self.proj_data)

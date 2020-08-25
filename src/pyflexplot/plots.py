@@ -52,6 +52,7 @@ from .plot_layouts import BoxedPlotLayoutType
 from .plotting.boxed_plot import BoxedPlot
 from .plotting.boxed_plot import BoxedPlotConfig
 from .plotting.boxed_plot import DummyBoxedPlot
+from .plotting.map_axes import Domain
 from .plotting.map_axes import MapAxes
 from .plotting.map_axes import MapAxesConfig
 from .plotting.text_box_axes import TextBoxAxes
@@ -70,10 +71,8 @@ from .words import Words
 
 
 def create_map_conf(field: Field) -> MapAxesConfig:
-    domain = field.var_setups.collect_equal("domain")
-    model = field.var_setups.collect_equal("model")
-
-    conf_base: Dict[str, Any] = {"lang": field.var_setups.collect_equal("lang")}
+    domain_type = field.var_setups.collect_equal("domain")
+    model_name = field.var_setups.collect_equal("model")
 
     conf_scale_continent: Dict[str, Any] = {
         "geo_res": "10m",
@@ -89,62 +88,37 @@ def create_map_conf(field: Field) -> MapAxesConfig:
         "ref_dist_conf": {"dist": 25},
     }
 
-    conf: Dict[str, Any]
-    if domain == "data" and model.startswith("COSMO"):
-        conf = {
-            **conf_base,
-            **conf_scale_continent,
-            "zoom_fact": 0.9,
-        }
-    elif domain == "data" and model.startswith("IFS"):
-        conf = {
-            **conf_base,
-            **conf_scale_continent,
-            "zoom_fact": 0.9,
-        }
-    elif model == "IFS-HRES-EU" and domain == "full":
-        conf = {
-            **conf_base,
-            **conf_scale_continent,
-            "zoom_fact": 1.05,
-        }
-    elif model == "IFS-HRES-EU" and domain == "ch":
-        conf = {
-            **conf_base,
-            **conf_scale_country,
-            "zoom_fact": 11.0,
-            "rel_offset": (-0.18, -0.11),
-        }
-    elif model.startswith("COSMO") and domain == "full":
-        conf = {
-            **conf_base,
-            **conf_scale_continent,
-            "zoom_fact": 1.05,
-        }
-    elif model.startswith("COSMO-1") and domain == "ch":
-        conf = {
-            **conf_base,
-            **conf_scale_country,
-            "zoom_fact": 3.6,
-            "rel_offset": (-0.02, 0.045),
-        }
-    elif model.startswith("COSMO-2") and domain == "ch":
-        conf = {
-            **conf_base,
-            **conf_scale_country,
-            "zoom_fact": 3.23,
-            "rel_offset": (0.037, 0.1065),
-        }
-    elif model.startswith("COSMO") and domain == "w_europe":
-        conf = {
-            **conf_base,
-            **conf_scale_continent,
-            "zoom_fact": 0.5,
-        }
+    map_axes_conf: Dict[str, Any]
+    if domain_type == "full":
+        map_axes_conf = conf_scale_continent
+    elif domain_type == "data":
+        map_axes_conf = conf_scale_continent
+    elif domain_type == "ch":
+        map_axes_conf = conf_scale_country
     else:
-        raise Exception(f"unknown domain '{domain}' for model '{model}'")
+        raise Exception(f"unknown domain type '{domain_type}'")
 
-    return MapAxesConfig(**conf)
+    domain: Domain
+    if model_name.startswith("COSMO") and domain_type == "data":
+        domain = Domain(zoom_fact=0.9)
+    elif model_name.startswith("IFS") and domain_type == "data":
+        domain = Domain(zoom_fact=0.9)
+    elif model_name == "IFS-HRES-EU" and domain_type == "full":
+        domain = Domain(zoom_fact=1.05)
+    elif model_name.startswith("COSMO") and domain_type == "full":
+        domain = Domain(zoom_fact=1.05)
+    elif model_name == "IFS-HRES-EU" and domain_type == "ch":
+        domain = Domain(zoom_fact=11.0, rel_offset=(-0.18, -0.11))
+    elif model_name.startswith("COSMO-1") and domain_type == "ch":
+        domain = Domain(zoom_fact=3.6, rel_offset=(-0.02, 0.045))
+    elif model_name.startswith("COSMO-2") and domain_type == "ch":
+        domain = Domain(zoom_fact=3.23, rel_offset=(0.037, 0.1065))
+    else:
+        raise Exception(f"unknown domain '{domain_type}' for model '{model_name}'")
+
+    return MapAxesConfig(
+        lang=field.var_setups.collect_equal("lang"), domain=domain, **map_axes_conf,
+    )
 
 
 def capitalize(s: str) -> str:
