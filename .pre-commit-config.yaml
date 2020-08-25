@@ -37,6 +37,7 @@ repos:
     hooks:
     -   id: mypy
         files: ^(.*\.py|(src|tests|docs)/(.*/)*.*\.py)$
-        args: [--no-strict-optional, --ignore-missing-imports]
+        exclude: ^tests/(.*/)*ref_.*.py$
+        args: [--no-strict-optional, --ignore-missing-imports, --pretty]
         additional_dependencies:
         -   "pydantic"
