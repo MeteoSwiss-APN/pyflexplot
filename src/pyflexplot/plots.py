@@ -75,13 +75,29 @@ def create_map_conf(field: Field) -> MapAxesConfig:
     domain_type = field.var_setups.collect_equal("domain")
     model_name = field.var_setups.collect_equal("model")
 
-    conf_scale_continent: Dict[str, Any] = {
+    conf_global_scale: Dict[str, Any] = {
+        "geo_res": "110m",
+        "geo_res_cities": "110m",
+        "geo_res_rivers": "110m",
+        "min_city_pop": 1_000_000,
+        # Note: Ref dist indicator seems not to work properly at global scale!
+        "ref_dist_on": False,
+    }
+    conf_continental_scale: Dict[str, Any] = {
+        "geo_res": "50m",
+        "geo_res_cities": "110m",
+        "geo_res_rivers": "110m",
+        "min_city_pop": 1_000_000,
+        "ref_dist_conf": {"dist": 250},
+    }
+    conf_regional_scale: Dict[str, Any] = {
         "geo_res": "10m",
         "geo_res_cities": "50m",
         "geo_res_rivers": "50m",
         "min_city_pop": 300_000,
+        "ref_dist_conf": {"dist": 100},
     }
-    conf_scale_country: Dict[str, Any] = {
+    conf_country_scale: Dict[str, Any] = {
         "geo_res": "10m",
         "geo_res_cities": "10m",
         "geo_res_rivers": "10m",
@@ -89,37 +105,45 @@ def create_map_conf(field: Field) -> MapAxesConfig:
         "ref_dist_conf": {"dist": 25},
     }
 
-    map_axes_conf: Dict[str, Any]
+    map_axes_conf: Optional[Dict[str, Any]] = None
     if domain_type == "full":
-        map_axes_conf = conf_scale_continent
-    elif domain_type == "cloud":
-        map_axes_conf = conf_scale_continent
-    elif domain_type == "ch":
-        map_axes_conf = conf_scale_country
-    else:
-        raise Exception(f"unknown domain type '{domain_type}'")
+        if model_name.startswith("COSMO"):
+            map_axes_conf = conf_regional_scale
+        if model_name == "IFS-HRES-EU":
+            map_axes_conf = conf_continental_scale
+        if model_name == "IFS-HRES":
+            map_axes_conf = conf_global_scale
+    if domain_type == "cloud":
+        map_axes_conf = conf_regional_scale
+    if domain_type == "ch":
+        map_axes_conf = conf_country_scale
+    if map_axes_conf is None:
+        raise NotImplementedError(
+            f"map axes config for model '{model_name}' and domain type '{domain_type}'"
+        )
 
     domain: Optional[Domain] = None
-    if model_name.startswith("COSMO"):
-        if domain_type == "cloud":
+    if domain_type == "cloud":
+        if model_name.startswith("COSMO"):
             domain = Domain(zoom_fact=0.9)
-        elif domain_type == "full":
-            domain = Domain(zoom_fact=1.05)
-        elif domain_type == "ch":
-            if model_name.startswith("COSMO-1"):
-                domain = Domain(zoom_fact=3.6, rel_offset=(-0.02, 0.045))
-            elif model_name.startswith("COSMO-2"):
-                domain = Domain(zoom_fact=3.23, rel_offset=(0.037, 0.1065))
-    elif model_name.startswith("IFS"):
-        if domain_type == "cloud":
+        if model_name.startswith("IFS"):
             domain = Domain(zoom_fact=0.9)
-        elif model_name == "IFS-HRES-EU":
-            if domain_type == "full":
-                domain = Domain(zoom_fact=1.05)
-            elif domain_type == "ch":
-                domain = Domain(zoom_fact=11.0, rel_offset=(-0.18, -0.11))
+    if domain_type == "full":
+        if model_name == "IFS-HRES":
+            domain = Domain(zoom_fact=1.00)
+        else:
+            domain = Domain(zoom_fact=1.01)
+    if domain_type == "ch":
+        if model_name.startswith("COSMO-1"):
+            domain = Domain(zoom_fact=3.6, rel_offset=(-0.02, 0.045))
+        if model_name.startswith("COSMO-2"):
+            domain = Domain(zoom_fact=3.23, rel_offset=(0.037, 0.1065))
+        if model_name == "IFS-HRES-EU":
+            domain = Domain(zoom_fact=11.0, rel_offset=(-0.18, -0.11))
     if domain is None:
-        raise Exception(f"unknown domain '{domain_type}' for model '{model_name}'")
+        raise NotImplementedError(
+            f"domain config for model '{model_name}' and domain type '{domain_type}'"
+        )
 
     return MapAxesConfig(
         lang=field.var_setups.collect_equal("lang"), domain=domain, **map_axes_conf,

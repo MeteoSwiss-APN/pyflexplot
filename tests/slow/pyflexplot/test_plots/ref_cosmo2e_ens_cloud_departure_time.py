@@ -820,6 +820,7 @@ plot_summary = {
             "geo_res_rivers": "10m",
             "lang": "de",
             "lw_frame": 1.0,
+            "projection": "data",
             "min_city_pop": 0,
             "ref_dist_conf": {
                 "type": "RefDistIndConfig",
@@ -3980,6 +3981,7 @@ plot_summary = {
         "geo_res_rivers": "10m",
         "lang": "de",
         "lw_frame": 1.0,
+        "projection": "data",
         "min_city_pop": 0,
         "ref_dist_conf": {
             "type": "RefDistIndConfig",

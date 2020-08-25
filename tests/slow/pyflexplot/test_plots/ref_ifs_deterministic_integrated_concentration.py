@@ -717,6 +717,7 @@ plot_summary = {
             "geo_res_rivers": "50m",
             "lang": "en",
             "lw_frame": 1.0,
+            "projection": "data",
             "min_city_pop": 300000,
             "ref_dist_conf": {
                 "type": "RefDistIndConfig",
@@ -19604,6 +19605,7 @@ plot_summary = {
         "geo_res_rivers": "50m",
         "lang": "en",
         "lw_frame": 1.0,
+        "projection": "data",
         "min_city_pop": 300000,
         "ref_dist_conf": {
             "type": "RefDistIndConfig",

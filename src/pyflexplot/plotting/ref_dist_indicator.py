@@ -196,7 +196,6 @@ class MapDistanceCalculator:
     def reset(self, dist=None, dir_=None):
         self._set_dist(dist)
         self._set_dir(dir_)
-
         self._step_ax_rel = 0.1
 
     def _set_dist(self, dist):
@@ -236,7 +235,7 @@ class MapDistanceCalculator:
         dist0 = 0.0
         x, y = x0, y0
 
-        iter_max = 99999
+        iter_max = 9999
         for _ in range(iter_max):
 
             # Step away from point until target distance exceeded

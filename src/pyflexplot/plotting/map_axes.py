@@ -88,6 +88,8 @@ class MapAxesConfig(BaseModel):
 
         lw_frame: Line width of frames.
 
+        projection: Map projection. Defaults to that of the input data.
+
         min_city_pop: Minimum population of cities shown.
 
         ref_dist_conf: Reference distance indicator setup.
@@ -102,6 +104,7 @@ class MapAxesConfig(BaseModel):
     geo_res_rivers: str = "none"
     lang: str = "en"
     lw_frame: float = 1.0
+    projection: str = "data"
     min_city_pop: int = 0
     ref_dist_conf: RefDistIndConfig = RefDistIndConfig()
     ref_dist_on: bool = True
@@ -314,15 +317,28 @@ class MapAxes:
 
     def _init_projs(self) -> None:
         """Prepare projections to transform the data for plotting."""
+        self._init_proj_data()
+        self._init_proj_map()
+        self.proj_geo = cartopy.crs.PlateCarree()
 
-        # Projection of input data
+    def _init_proj_data(self) -> None:
+        """Initialize projection of input data."""
         self.proj_data = cartopy.crs.PlateCarree()
 
-        # Projection of plot
-        self.proj_map = cartopy.crs.PlateCarree()  # SR_TMP
-
-        # Geographical projection
-        self.proj_geo = cartopy.crs.PlateCarree()
+    def _init_proj_map(self) -> None:
+        """Initialize projection of map plot."""
+        projection: str = self.conf.projection
+        if projection == "data":
+            self.proj_map = self.proj_data
+        elif projection == "mercator":
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.proj_map = cartopy.crs.TransverseMercator(
+                    central_longitude=self.field.lon.mean(), approx=True,
+                )
+        else:
+            choices = ["data", "mercator"]
+            raise NotImplementedError(f"projection '{projection}'; choices: {choices}")
 
     def _init_ax(self) -> None:
         """Initialize Axes."""
@@ -463,6 +479,8 @@ class MapAxes:
             # SR_WORKAROUND < TODO revert once bugfix in Cartopy master
             # self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
             # SR_WORKAROUND >
+        else:
+            minor_rivers = None
 
         # SR_WORKAROUND <<< TODO remove once bugfix in Cartopy master
         try:
@@ -514,9 +532,12 @@ class MapAxes:
             # Not behind reference distance indicator box
             pxa, pya = self.trans.geo_to_axes(p_lon, p_lat)
             rdb = self.ref_dist_box
-            assert rdb is not None  # mypy
-            behind_rdb = is_in_box(
-                pxa, pya, rdb.x0_box, rdb.x1_box, rdb.y0_box, rdb.y1_box,
+            behind_rdb = (
+                False
+                if rdb is None
+                else is_in_box(
+                    pxa, pya, rdb.x0_box, rdb.x1_box, rdb.y0_box, rdb.y1_box,
+                )
             )
 
             return in_domain and not behind_rdb
@@ -604,24 +625,11 @@ class MapAxesRotatedPole(MapAxes):
             fig=fig, rect=rect, field=field, pollat=pollat, pollon=pollon, conf=conf,
         )
 
-    def _init_projs(self) -> None:
-        """Prepare projections to transform the data for plotting."""
-
-        # Projection of input data: Rotated Pole
+    def _init_proj_data(self) -> None:
+        """Initialize projection of input data."""
         self.proj_data = cartopy.crs.RotatedPole(
             pole_latitude=self.pollat, pole_longitude=self.pollon
         )
-
-        # Projection of plot
-        clon = 180 + self.pollon
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            self.proj_map = cartopy.crs.TransverseMercator(
-                central_longitude=clon, approx=True,
-            )
-
-        # Geographical projection
-        self.proj_geo = cartopy.crs.PlateCarree()
 
 
 class MapAxesBoundingBox:
