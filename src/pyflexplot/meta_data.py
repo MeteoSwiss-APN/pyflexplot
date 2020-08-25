@@ -539,6 +539,7 @@ class SpeciesMetaData:
 
     def merge_with(self, others: Sequence["SpeciesMetaData"]) -> "SpeciesMetaData":
         kwargs: Dict[str, Any] = {}
+        # pylint: disable=E1101  # no-member
         for param in self.__dataclass_fields__:  # type: ignore
             vals: List[Union[float, str]] = []
             for obj in [self] + list(others):

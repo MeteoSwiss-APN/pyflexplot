@@ -21,7 +21,7 @@ field_summary = {
             "infile": "flexpart_ifs_20200317000000.nc",
             "outfile": "ref_ifs_deterministic_total_deposition.png",
             "outfile_time_format": "%Y%m%d%H%M",
-            "model": "IFS",
+            "model": "IFS-HRES",
             "base_time": 202003170000,
             "ens_member_id": None,
             "core": {
@@ -304,7 +304,7 @@ field_summary = {
             },
         },
         "derived": {
-            "model": "IFS",
+            "model": "IFS-HRES",
             "release_site": "Punggye-ri",
             "rotated_pole": False,
             "species_ids": [1],
@@ -365,7 +365,7 @@ plot_summary = {
                     "infile": "flexpart_ifs_20200317000000.nc",
                     "outfile": "ref_ifs_deterministic_total_deposition.png",
                     "outfile_time_format": "%Y%m%d%H%M",
-                    "model": "IFS",
+                    "model": "IFS-HRES",
                     "base_time": 202003170000,
                     "ens_member_id": None,
                     "core": {
@@ -654,7 +654,7 @@ plot_summary = {
                     },
                 },
                 "derived": {
-                    "model": "IFS",
+                    "model": "IFS-HRES",
                     "release_site": "Punggye-ri",
                     "rotated_pole": False,
                     "species_ids": [1],
@@ -702,7 +702,7 @@ plot_summary = {
             },
         },
         "conf": {
-            "type": "MapAxesConf",
+            "type": "MapAxesConfig",
             "geo_res": "50m",
             "geo_res_cities": "50m",
             "geo_res_rivers": "50m",
@@ -714,7 +714,7 @@ plot_summary = {
             "urlat": None,
             "urlon": None,
             "ref_dist_conf": {
-                "type": "RefDistIndConf",
+                "type": "RefDistIndConfig",
                 "dist": 100,
                 "font_size": 11.0,
                 "pos": "bl",
@@ -19190,7 +19190,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": "FLEXPART basierend auf IFS, 2020-03-17 00:00 UTC",
+                    "s": "FLEXPART basierend auf IFS-HRES, 2020-03-17 00:00 UTC",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -19260,7 +19260,7 @@ plot_summary = {
                 "infile": "flexpart_ifs_20200317000000.nc",
                 "outfile": "ref_ifs_deterministic_total_deposition.png",
                 "outfile_time_format": "%Y%m%d%H%M",
-                "model": "IFS",
+                "model": "IFS-HRES",
                 "base_time": 202003170000,
                 "ens_member_id": None,
                 "core": {
@@ -19546,7 +19546,7 @@ plot_summary = {
                 },
             },
             "derived": {
-                "model": "IFS",
+                "model": "IFS-HRES",
                 "release_site": "Punggye-ri",
                 "rotated_pole": False,
                 "species_ids": [1],
@@ -19641,7 +19641,7 @@ plot_summary = {
         "bbox": {"type": "TransformedBbox", "bounds": (0.0, 0.0, 1250.0, 800.0)},
     },
     "map_conf": {
-        "type": "MapAxesConf",
+        "type": "MapAxesConfig",
         "geo_res": "50m",
         "geo_res_cities": "50m",
         "geo_res_rivers": "50m",
@@ -19653,7 +19653,7 @@ plot_summary = {
         "urlat": None,
         "urlon": None,
         "ref_dist_conf": {
-            "type": "RefDistIndConf",
+            "type": "RefDistIndConfig",
             "dist": 100,
             "font_size": 11.0,
             "pos": "bl",

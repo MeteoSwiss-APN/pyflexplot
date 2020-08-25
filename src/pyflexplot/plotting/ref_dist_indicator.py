@@ -19,7 +19,7 @@ from ..utils.summarize import summarizable
 
 @summarizable
 @dataclass
-class RefDistIndConf:
+class RefDistIndConfig:
     """
     Configuration of ``ReferenceDistanceIndicator``.
 
@@ -45,7 +45,7 @@ class ReferenceDistanceIndicator:
     """Reference distance indicator on a map plot."""
 
     def __init__(
-        self, ax: Axes, axes_to_geo: Projection, conf: RefDistIndConf, zorder: int
+        self, ax: Axes, axes_to_geo: Projection, conf: RefDistIndConfig, zorder: int
     ) -> None:
         """Create an instance of ``ReferenceDistanceIndicator``.
 
@@ -60,7 +60,7 @@ class ReferenceDistanceIndicator:
             zorder: Vertical order in plot.
 
         """
-        self.conf: RefDistIndConf = conf
+        self.conf: RefDistIndConfig = conf
 
         # Position in the plot (one of the corners)
         pos_choices = ["tl", "bl", "br", "tr"]

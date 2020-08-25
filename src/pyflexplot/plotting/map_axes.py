@@ -36,13 +36,13 @@ from ..utils.summarize import summarizable
 from ..utils.typing import ColorType
 from ..utils.typing import RectType
 from .coord_trans import CoordinateTransformer
-from .ref_dist_indicator import RefDistIndConf
+from .ref_dist_indicator import RefDistIndConfig
 from .ref_dist_indicator import ReferenceDistanceIndicator
 
 
 @summarizable
 # pylint: disable=E0213  # no-self-argument (validators)
-class MapAxesConf(BaseModel):
+class MapAxesConfig(BaseModel):
     """
     Configuration of ``MapAxesPlot``.
 
@@ -88,7 +88,7 @@ class MapAxesConf(BaseModel):
     min_city_pop: int = 0
     urlat: Optional[float] = None
     urlon: Optional[float] = None
-    ref_dist_conf: RefDistIndConf = RefDistIndConf()
+    ref_dist_conf: RefDistIndConfig = RefDistIndConfig()
     ref_dist_on: bool = True
     rel_offset: Tuple[float, float] = (0.0, 0.0)
     zoom_fact: float = 1.0
@@ -99,7 +99,7 @@ class MapAxesConf(BaseModel):
     @root_validator(pre=True)
     def _init_ref_dist_conf(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         param = "ref_dist_conf"
-        type_ = RefDistIndConf
+        type_ = RefDistIndConfig
         try:
             value = values[param]
         except KeyError:
@@ -146,7 +146,7 @@ class MapAxes:
     fig: Figure
     rect: RectType
     field: Field
-    conf: MapAxesConf
+    conf: MapAxesConfig
 
     def __post_init__(self) -> None:
         self.elements: List[Tuple[str, Any]] = []
@@ -183,7 +183,7 @@ class MapAxes:
 
     @classmethod
     def create(
-        cls, conf: MapAxesConf, *, fig: Figure, rect: RectType, field: np.ndarray,
+        cls, conf: MapAxesConfig, *, fig: Figure, rect: RectType, field: np.ndarray,
     ) -> "MapAxes":
         if field.rotated_pole:
             return MapAxesRotatedPole.create(conf, fig=fig, rect=rect, field=field)
@@ -319,7 +319,7 @@ class MapAxes:
         self.ax = ax
 
         # Set geographical extent
-        conf: MapAxesConf = self.conf
+        conf: MapAxesConfig = self.conf
         field: Field = self.field
         domain_type: str = field.var_setups.collect_equal("domain")
         if domain_type == "data":
@@ -580,7 +580,7 @@ class MapAxesRotatedPole(MapAxes):
 
     @classmethod
     def create(
-        cls, conf: MapAxesConf, *, fig: Figure, rect: RectType, field: Field
+        cls, conf: MapAxesConfig, *, fig: Figure, rect: RectType, field: Field
     ) -> "MapAxesRotatedPole":
         if not field.rotated_pole:
             raise ValueError("not a rotated-pole field", field)

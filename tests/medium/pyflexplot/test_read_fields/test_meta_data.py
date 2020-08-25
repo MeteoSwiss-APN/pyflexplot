@@ -94,7 +94,7 @@ class Test_IFS(_TestBase):
 
     def test_model(self, datadir):
         self.set_up(datadir)
-        assert self.meta_data["derived"]["model"] == "IFS"
+        assert self.meta_data["derived"]["model"] == "IFS-HRES"
 
     def test_rotated_pole(self, datadir):
         self.set_up(datadir)

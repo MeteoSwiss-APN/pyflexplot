@@ -53,7 +53,7 @@ from .plotting.boxed_plot import BoxedPlot
 from .plotting.boxed_plot import BoxedPlotConfig
 from .plotting.boxed_plot import DummyBoxedPlot
 from .plotting.map_axes import MapAxes
-from .plotting.map_axes import MapAxesConf
+from .plotting.map_axes import MapAxesConfig
 from .plotting.text_box_axes import TextBoxAxes
 from .setup import FilePathFormatter
 from .setup import Setup
@@ -69,7 +69,7 @@ from .words import WORDS
 from .words import Words
 
 
-def create_map_conf(field: Field) -> MapAxesConf:
+def create_map_conf(field: Field) -> MapAxesConfig:
     domain = field.var_setups.collect_equal("domain")
     model = field.var_setups.collect_equal("model")
 
@@ -144,7 +144,7 @@ def create_map_conf(field: Field) -> MapAxesConf:
     else:
         raise Exception(f"unknown domain '{domain}' for model '{model}'")
 
-    return MapAxesConf(**conf)
+    return MapAxesConfig(**conf)
 
 
 def capitalize(s: str) -> str:

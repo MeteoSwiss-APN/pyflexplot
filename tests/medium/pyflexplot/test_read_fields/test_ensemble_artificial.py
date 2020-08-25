@@ -21,7 +21,7 @@ from .shared import datadir_artificial as datadir  # noqa:F401 isort:skip
 
 
 @dataclass
-class Conf:
+class Config:
     ens_mem_ids: List[int]
     ens_var: str
 
@@ -29,16 +29,16 @@ class Conf:
 @pytest.mark.parametrize(
     "conf",
     [
-        Conf(ens_mem_ids=[0], ens_var="mean"),  # conf[0]
-        Conf(ens_mem_ids=[1], ens_var="mean"),  # conf[1]
-        Conf(ens_mem_ids=[0, 10], ens_var="minimum"),  # [conf2]
-        Conf(ens_mem_ids=[0, 10], ens_var="mean"),  # [conf3]
-        Conf(ens_mem_ids=[0, 10], ens_var="median"),  # conf[4]
-        Conf(ens_mem_ids=[0, 10], ens_var="maximum"),  # [conf5]
-        Conf(ens_mem_ids=[2, 4, 8, 16], ens_var="minimum"),  # [conf6]
-        Conf(ens_mem_ids=[2, 4, 8, 16], ens_var="mean"),  # [conf7]
-        Conf(ens_mem_ids=[2, 4, 8, 16], ens_var="median"),  # conf8]
-        Conf(ens_mem_ids=[2, 4, 8, 16], ens_var="maximum"),  # [conf9]
+        Config(ens_mem_ids=[0], ens_var="mean"),  # conf[0]
+        Config(ens_mem_ids=[1], ens_var="mean"),  # conf[1]
+        Config(ens_mem_ids=[0, 10], ens_var="minimum"),  # [conf2]
+        Config(ens_mem_ids=[0, 10], ens_var="mean"),  # [conf3]
+        Config(ens_mem_ids=[0, 10], ens_var="median"),  # conf[4]
+        Config(ens_mem_ids=[0, 10], ens_var="maximum"),  # [conf5]
+        Config(ens_mem_ids=[2, 4, 8, 16], ens_var="minimum"),  # [conf6]
+        Config(ens_mem_ids=[2, 4, 8, 16], ens_var="mean"),  # [conf7]
+        Config(ens_mem_ids=[2, 4, 8, 16], ens_var="median"),  # conf8]
+        Config(ens_mem_ids=[2, 4, 8, 16], ens_var="maximum"),  # [conf9]
     ],
 )
 def test_one_setup_one_field(datadir, conf):  # noqa:F811

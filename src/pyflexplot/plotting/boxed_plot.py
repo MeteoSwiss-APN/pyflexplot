@@ -29,7 +29,7 @@ from ..utils.typing import ColorType
 from ..utils.typing import FontSizeType
 from ..utils.typing import RectType
 from .map_axes import MapAxes
-from .map_axes import MapAxesConf
+from .map_axes import MapAxesConfig
 from .map_axes import post_summarize_plot
 from .text_box_axes import TextBoxAxes
 
@@ -93,7 +93,7 @@ class BoxedPlot:
     """A FLEXPART dispersion plot."""
 
     def __init__(
-        self, field: Field, config: BoxedPlotConfig, map_conf: MapAxesConf
+        self, field: Field, config: BoxedPlotConfig, map_conf: MapAxesConfig
     ) -> None:
         """Create an instance of ``BoxedPlot``."""
 

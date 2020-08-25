@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Test the elements of complete plots based on deterministic IFS data.
+Test the elements of complete plots based on deterministic IFS-HRES data.
 """
 # Local
 from .shared import _TestBase
@@ -24,7 +24,7 @@ class Test_Concentration(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "IFS",
+        "model": "IFS-HRES",
         "input_variable": "concentration",
         "integrate": False,
         "lang": "de",
@@ -38,7 +38,7 @@ class Test_IntegratedConcentration(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "IFS",
+        "model": "IFS-HRES",
         "plot_type": "auto",
         "input_variable": "concentration",
         "integrate": True,
@@ -53,7 +53,7 @@ class Test_TotalDeposition(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "IFS",
+        "model": "IFS-HRES",
         "plot_type": "auto",
         "input_variable": "deposition",
         "combine_deposition_types": True,
@@ -69,7 +69,7 @@ class Test_AffectedArea(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "IFS",
+        "model": "IFS-HRES",
         "input_variable": "deposition",
         "plot_variable": "affected_area_mono",
         "combine_deposition_types": True,

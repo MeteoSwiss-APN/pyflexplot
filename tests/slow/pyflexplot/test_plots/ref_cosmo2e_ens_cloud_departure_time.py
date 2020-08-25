@@ -805,7 +805,7 @@ plot_summary = {
             "lon": {"dtype": "float32", "shape": [50], "min": -2.42, "max": 2.4799995},
         },
         "conf": {
-            "type": "MapAxesConf",
+            "type": "MapAxesConfig",
             "geo_res": "10m",
             "geo_res_cities": "10m",
             "geo_res_rivers": "10m",
@@ -817,7 +817,7 @@ plot_summary = {
             "urlat": None,
             "urlon": None,
             "ref_dist_conf": {
-                "type": "RefDistIndConf",
+                "type": "RefDistIndConfig",
                 "dist": 25,
                 "font_size": 11.0,
                 "pos": "bl",
@@ -3962,7 +3962,7 @@ plot_summary = {
         "bbox": {"type": "TransformedBbox", "bounds": (0.0, 0.0, 1250.0, 800.0)},
     },
     "map_conf": {
-        "type": "MapAxesConf",
+        "type": "MapAxesConfig",
         "geo_res": "10m",
         "geo_res_cities": "10m",
         "geo_res_rivers": "10m",
@@ -3974,7 +3974,7 @@ plot_summary = {
         "urlat": None,
         "urlon": None,
         "ref_dist_conf": {
-            "type": "RefDistIndConf",
+            "type": "RefDistIndConfig",
             "dist": 25,
             "font_size": 11.0,
             "pos": "bl",
