@@ -636,21 +636,29 @@ class MapAxesBoundingBox:
     """Bounding box of a ``MapAxes``."""
 
     # pylint: disable=R0913  # too-many-arguments
-    def __init__(self, map_axes, coord_type, lon0, lon1, lat0, lat1):
+    def __init__(
+        self,
+        map_axes: MapAxes,
+        coord_type: str,
+        lon0: float,
+        lon1: float,
+        lat0: float,
+        lat1: float,
+    ) -> None:
         """Create an instance of ``MapAxesBoundingBox``.
 
         Args:
-            map_axes (MapAxes): Parent map axes object.
+            map_axes: Parent map axes object.
 
-            coord_type (str): Coordinates type.
+            coord_type: Coordinates type.
 
-            lon0 (float): Longitude of south-western corner.
+            lon0: Longitude of south-western corner.
 
-            lon1 (float): Longitude of north-eastern corner.
+            lon1: Longitude of north-eastern corner.
 
-            lat0 (float): Latitude of south-western corner.
+            lat0: Latitude of south-western corner.
 
-            lat1 (float): Latitude of north-eastern corner.
+            lat1: Latitude of north-eastern corner.
 
         """
         self.coord_types = ["data", "geo"]  # SR_TMP
@@ -667,10 +675,18 @@ class MapAxesBoundingBox:
 
     def __repr__(self):
         return (
-            f"{type(self).__name__}("
-            f'map_axes={self.map_axes}, coord_type="{self.coord_type}", '
-            f"lon0={self.lon0:.2f}, lon1={self.lon1:.2f}, "
-            f"lat0={self.lat0:.2f}, lat1={self.lat1:.2f})"
+            f"{type(self).__name__}(\n  "
+            + ",\n  ".join(
+                [
+                    f"map_axes={self.map_axes}",
+                    f"coord_type='{self.coord_type}'",
+                    f"lon0={self.lon0:.2f}",
+                    f"lon1={self.lon1:.2f}",
+                    f"lat0={self.lat0:.2f}",
+                    f"lat1={self.lat1:.2f}",
+                ]
+            )
+            + ",\n)"
         )
 
     @property

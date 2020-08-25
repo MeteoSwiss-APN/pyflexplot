@@ -133,10 +133,7 @@ class Field:
                 f" rotated_pole={self.rotated_pole},"
             ),
             f"var_setups={self.var_setups},",
-            (
-                f"time_stats=dict[n={len(self.time_props)},"
-                f" keys={tuple(self.time_props)}],"
-            ),
+            f"time_stats={self.time_props},",
             (
                 f"nc_meta_data="
                 f"dict[n={len(self.nc_meta_data)}, keys={tuple(self.nc_meta_data)}],"
