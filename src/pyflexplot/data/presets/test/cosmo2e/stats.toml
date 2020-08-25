@@ -37,22 +37,22 @@ combine_species = true
 
 # ["**"._mean]
 [_base._concentration."_mean+"]
-outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_level-{level}_{domain}_{lang}_ts-{time_idx:02d}.pdf"
+outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_level-{level}_{domain}_{lang}_ts-{time_idx:02d}.png"
 ens_variable = "mean"
 
 # ["**"._median]
 [_base._concentration._integr."_median+"]
-outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_level-{level}_{domain}_{lang}_ts-{time_idx:02d}.pdf"
+outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_level-{level}_{domain}_{lang}_ts-{time_idx:02d}.png"
 ens_variable = "median"
 
 # ["**"._min]
 [_base._deposition._tot."_min+"]
-outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.pdf"
+outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
 ens_variable = "minimum"
 
 # ["**"._max]
 [_base._deposition._wet."_max+"]
-outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.pdf"
+outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
 ens_variable = "maximum"
 
 ["**"._full.de]

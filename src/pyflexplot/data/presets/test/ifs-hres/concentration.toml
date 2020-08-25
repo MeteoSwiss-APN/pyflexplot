@@ -4,7 +4,7 @@
 # Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
 infile = "data/ifs-hres/grid_conc_929_20200317000000.nc"
 model = "IFS-HRES"
-outfile = "ifs_{input_variable}_{domain}_{lang}_ts-{time_idx:02d}.pdf"
+outfile = "ifs_{input_variable}_{domain}_{lang}_ts-{time_idx:02d}.png"
 species_id = 2
 time = [1, 6, 11]
 input_variable = "concentration"
@@ -13,7 +13,7 @@ integrate = false
 domain = "data"
 
 [_base."_integrated+"]
-outfile = "ifs_{input_variable}_{domain}_{lang}_ts-{time_idx:02d}.pdf"
+outfile = "ifs_{input_variable}_{domain}_{lang}_ts-{time_idx:02d}.png"
 integrate = true
 time = -1
 species_id = 1

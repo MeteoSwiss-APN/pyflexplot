@@ -7,7 +7,7 @@ model = "COSMO-1"
 species_id = "*"
 
 [_base."_deposition+"]
-outfile = "cosmo-1_{input_variable}_domain-{domain}_lang-{lang}_ts-{time_idx:02d}.pdf"
+outfile = "cosmo-1_{input_variable}_domain-{domain}_lang-{lang}_ts-{time_idx:02d}.png"
 input_variable = "deposition"
 combine_deposition_types = true
 combine_species = true
@@ -15,7 +15,7 @@ time = -1
 integrate = true
 
 [_base."_deposition+"."_affected_area+"]
-outfile = "cosmo-1_{plot_variable}_domain-{domain}_lang-{lang}_ts-{time_idx:02d}.pdf"
+outfile = "cosmo-1_{plot_variable}_domain-{domain}_lang-{lang}_ts-{time_idx:02d}.png"
 plot_variable = "affected_area_mono"
 
 ["**"._full.en]
