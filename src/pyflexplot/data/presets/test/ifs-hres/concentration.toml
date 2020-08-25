@@ -10,7 +10,7 @@ time = [1, 6, 11]
 input_variable = "concentration"
 level = 0
 integrate = false
-domain = "data"
+domain = "cloud"
 
 [_base."_integrated+"]
 outfile = "ifs_{input_variable}_{domain}_{lang}_ts-{time_idx:02d}.png"

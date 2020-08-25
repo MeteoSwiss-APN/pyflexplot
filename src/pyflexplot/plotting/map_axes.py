@@ -335,7 +335,7 @@ class MapAxes:
         conf: MapAxesConfig = self.conf
         field: Field = self.field
         domain_type: str = field.var_setups.collect_equal("domain")
-        if domain_type == "data":
+        if domain_type == "cloud":
             assert (field.lat.size, field.lon.size) == field.time_props.mask_nz.shape
             mask_lon = field.time_props.mask_nz.any(axis=0)
             mask_lat = field.time_props.mask_nz.any(axis=1)

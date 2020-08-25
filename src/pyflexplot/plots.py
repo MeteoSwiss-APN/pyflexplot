@@ -70,6 +70,7 @@ from .words import WORDS
 from .words import Words
 
 
+# pylint: disable=R0912  # too-many-branches
 def create_map_conf(field: Field) -> MapAxesConfig:
     domain_type = field.var_setups.collect_equal("domain")
     model_name = field.var_setups.collect_equal("model")
@@ -91,29 +92,33 @@ def create_map_conf(field: Field) -> MapAxesConfig:
     map_axes_conf: Dict[str, Any]
     if domain_type == "full":
         map_axes_conf = conf_scale_continent
-    elif domain_type == "data":
+    elif domain_type == "cloud":
         map_axes_conf = conf_scale_continent
     elif domain_type == "ch":
         map_axes_conf = conf_scale_country
     else:
         raise Exception(f"unknown domain type '{domain_type}'")
 
-    domain: Domain
-    if model_name.startswith("COSMO") and domain_type == "data":
-        domain = Domain(zoom_fact=0.9)
-    elif model_name.startswith("IFS") and domain_type == "data":
-        domain = Domain(zoom_fact=0.9)
-    elif model_name == "IFS-HRES-EU" and domain_type == "full":
-        domain = Domain(zoom_fact=1.05)
-    elif model_name.startswith("COSMO") and domain_type == "full":
-        domain = Domain(zoom_fact=1.05)
-    elif model_name == "IFS-HRES-EU" and domain_type == "ch":
-        domain = Domain(zoom_fact=11.0, rel_offset=(-0.18, -0.11))
-    elif model_name.startswith("COSMO-1") and domain_type == "ch":
-        domain = Domain(zoom_fact=3.6, rel_offset=(-0.02, 0.045))
-    elif model_name.startswith("COSMO-2") and domain_type == "ch":
-        domain = Domain(zoom_fact=3.23, rel_offset=(0.037, 0.1065))
-    else:
+    domain: Optional[Domain] = None
+    if model_name.startswith("COSMO"):
+        if domain_type == "cloud":
+            domain = Domain(zoom_fact=0.9)
+        elif domain_type == "full":
+            domain = Domain(zoom_fact=1.05)
+        elif domain_type == "ch":
+            if model_name.startswith("COSMO-1"):
+                domain = Domain(zoom_fact=3.6, rel_offset=(-0.02, 0.045))
+            elif model_name.startswith("COSMO-2"):
+                domain = Domain(zoom_fact=3.23, rel_offset=(0.037, 0.1065))
+    elif model_name.startswith("IFS"):
+        if domain_type == "cloud":
+            domain = Domain(zoom_fact=0.9)
+        elif model_name == "IFS-HRES-EU":
+            if domain_type == "full":
+                domain = Domain(zoom_fact=1.05)
+            elif domain_type == "ch":
+                domain = Domain(zoom_fact=11.0, rel_offset=(-0.18, -0.11))
+    if domain is None:
         raise Exception(f"unknown domain '{domain_type}' for model '{model_name}'")
 
     return MapAxesConfig(
