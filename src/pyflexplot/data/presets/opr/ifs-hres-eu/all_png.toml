@@ -35,5 +35,6 @@ outfile = "integrated_concentration_site-{release_site}_species-{species_id}_dom
 outfile = "deposition_tot_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
 [_base._tot_deposition._affected_area."png+"]
 outfile = "affected_area_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
-# + ["**".zoom]
-# + domain = "alps"
+
+["**".zoom]
+domain = "alps"

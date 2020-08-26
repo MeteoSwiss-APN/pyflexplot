@@ -122,6 +122,8 @@ def create_map_conf(field: Field) -> MapAxesConfig:
         map_axes_conf = conf_regional_scale
     if domain_type == "cloud":
         map_axes_conf = conf_regional_scale
+    if domain_type == "alps":
+        map_axes_conf = conf_regional_scale
     if domain_type == "ch":
         map_axes_conf = conf_country_scale
     if map_axes_conf is None:
@@ -157,6 +159,9 @@ def create_map_conf(field: Field) -> MapAxesConfig:
             urlon, urlat = field.proj.transform_point(urlon, urlat, PlateCarree())
         # SR_TMP >
         domain = Domain(lllat=lllat, lllon=lllon, urlat=urlat, urlon=urlon)
+    if domain_type == "alps":
+        if model_name == "IFS-HRES-EU":
+            domain = Domain(zoom_fact=3.4, rel_offset=(-0.165, -0.11))
     if domain_type == "cloud":
         if model_name.startswith("COSMO"):
             domain = Domain(zoom_fact=0.9)
