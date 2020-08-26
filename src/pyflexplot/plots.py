@@ -183,7 +183,7 @@ def capitalize(s: str) -> str:
     try:
         return s[0].upper() + s[1:]
     except Exception:
-        raise ValueError("s not capitalizable", s)
+        raise ValueError(f"string not capitalizable: '{s}'")
 
 
 # SR_TODO Create dataclass with default values for text box setup
@@ -390,7 +390,10 @@ def create_box_labels(
         )
 
     labels["data_info"]["lines"].append(
-        f"{words['input_variable'].c}:\t{capitalize(var_name_abbr)}",
+        f"{words['substance'].c}:\t{mdata.format('species.name', join_combo=' / ')}",
+    )
+    labels["data_info"]["lines"].append(
+        f"{words['input_variable'].c}:\t{capitalize(var_name_abbr)}"
     )
     if setup.get_simulation_type() == "ensemble":
         # SR_TMP <
@@ -438,9 +441,6 @@ def create_box_labels(
                     "???"
                     # SR_TMP >
                 )
-    # labels["data_info"]["lines"].append(
-    #     f"{words['substance'].c}:\t{mdata.format('species.name', join_combo=' / ')}",
-    # )
     if setup.core.input_variable == "concentration":
         labels["data_info"]["lines"].append(
             f"{words['height'].c}:"
