@@ -1,0 +1,40 @@
+# PyFlexPlot setup file to create deterministic IFS-HRES-EU plots
+
+[_base]
+# Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
+infile = "data/ifs-hres/grid_conc_1000_20200818000000_bushehr_2spec.nc"
+model = "IFS-HRES"
+lang = "de"
+outfile_time_format = "%Y%m%dT%H%M"
+combine_species = false
+domain = "release_site"
+
+[_base._concentration]
+input_variable = "concentration"
+level = 0
+
+[_base._concentration._integr]
+integrate = true
+time = -1
+
+[_base._tot_deposition]
+input_variable = "deposition"
+deposition_type = ["dry", "wet"]
+combine_deposition_types = true
+integrate = true
+
+[_base._tot_deposition._affected_area]
+plot_variable = "affected_area_mono"
+combine_species = true
+time = -1
+
+[_base._concentration."png+"]
+outfile = "concentration_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
+[_base._concentration._integr."png+"]
+outfile = "integrated_concentration_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
+[_base._tot_deposition."png+"]
+outfile = "deposition_tot_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
+[_base._tot_deposition._affected_area."png+"]
+outfile = "affected_area_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
+# + ["**".zoom]
+# + domain = "alps"
