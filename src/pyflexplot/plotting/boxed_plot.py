@@ -186,7 +186,7 @@ class BoxedPlot:
             This allows one to exit before calling contourf if there's nothing
             to plot, and thus prevent an ugly error.
             """
-            all_nan = np.nanmin(arr) == np.nanmax(arr)
+            all_nan = np.isnan(arr).all()
             all_below = np.nanmax(arr) < levels.min() and extend not in ["min", "both"]
             all_above = np.nanmax(arr) > levels.max() and extend not in ["max", "both"]
             return all_nan or all_below or all_above
