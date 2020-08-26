@@ -169,6 +169,7 @@ class FieldInputOrganizer:
             setups_field_lst: List[SetupCollection] = []
             for (
                 (
+                    ens_member_id,
                     input_variable,
                     combine_levels,
                     combine_deposition_types,
@@ -177,6 +178,7 @@ class FieldInputOrganizer:
                 sub_setups,
             ) in setups.group(
                 [
+                    "ens_member_id",
                     "input_variable",
                     "combine_levels",
                     "combine_deposition_types",
@@ -203,8 +205,12 @@ class FieldInputOrganizer:
                 setups_field_lst.extend(setups_plots)
             return setups_field_lst
 
-        ens_member_ids = setups.collect_equal("ens_member_id") or None
-        in_file_path_lst = prep_in_file_path_lst(self.in_file_path_fmt, ens_member_ids)
+        all_ens_member_ids = (
+            setups.collect("ens_member_id", flatten=True, exclude_nones=True) or None
+        )
+        in_file_path_lst = prep_in_file_path_lst(
+            self.in_file_path_fmt, all_ens_member_ids
+        )
 
         first_in_file_path = next(iter(in_file_path_lst))
         with nc4.Dataset(first_in_file_path) as fi:
@@ -218,7 +224,7 @@ class FieldInputOrganizer:
 
         files = InputFileEnsemble(
             in_file_path_lst,
-            ens_member_ids or None,
+            all_ens_member_ids,
             add_ts0=self.add_ts0,
             dry_run=self.dry_run,
             cache_on=self.cache_on,
@@ -227,7 +233,10 @@ class FieldInputOrganizer:
         fields_for_plots: List[List[Field]] = []
         for setups_for_same_plot_over_time in setups_for_plots_over_time:
             fields_for_plots.extend(
-                files.read_fields_over_time(setups_for_same_plot_over_time)
+                files.read_fields_over_time(
+                    setups_for_same_plot_over_time,
+                    setups_for_same_plot_over_time.collect_equal("ens_member_id"),
+                )
             )
 
         return fields_for_plots
@@ -276,7 +285,9 @@ class InputFileEnsemble:
 
     # SR_TMP <<<
     # pylint: disable=R0914  # too-many-locals
-    def read_fields_over_time(self, setups: SetupCollection) -> List[List[Field]]:
+    def read_fields_over_time(
+        self, setups: SetupCollection, ens_member_ids: Optional[Sequence[int]] = None
+    ) -> List[List[Field]]:
         """Read fields for the same plot at multiple time steps.
 
         Return a list of lists of fields, whereby:
@@ -304,6 +315,8 @@ class InputFileEnsemble:
         for idx_mem, (ens_member_id, file_path) in enumerate(
             zip((self.ens_member_ids or [None]), self.paths)  # type: ignore
         ):
+            if ens_member_ids is not None and ens_member_id not in ens_member_ids:
+                continue
             setups_mem = setups.derive({"ens_member_id": ens_member_id})
             timeless_setups_mem = setups_mem.derive({"dimensions": {"time": None}})
             self._read_data(file_path, idx_mem, timeless_setups_mem)

@@ -873,16 +873,40 @@ class SetupCollection:
                 sub_setups_lst.append(sub_sub_setups)
         return sub_setups_lst
 
-    def collect(self, param: str) -> List[Any]:
-        """Collect the values of a parameter for all setups."""
-        if is_core_setup_param(param):
-            return [getattr(var_setup.core, param) for var_setup in self]
-        elif is_setup_param(param):
-            return [getattr(var_setup, param) for var_setup in self]
+    def collect(
+        self, param: str, flatten: bool = False, exclude_nones: bool = False
+    ) -> List[Any]:
+        """Collect all unique values of a parameter for all setups.
+
+        Args:
+            param: Name of parameter.
+
+            flatten (optional): Unpack values that are collection of sub-values.
+
+            exclude_nones (optional): Exclude values -- and, if ``flatten`` is
+                true, also sub-values -- that are None.
+
+        """
+        values: Set[Any] = set()
+        if is_core_setup_param(param) or is_setup_param(param):
+            for var_setup in self:
+                if is_core_setup_param(param):
+                    value = getattr(var_setup.core, param)
+                else:
+                    value = getattr(var_setup, param)
+                if isinstance(value, Collection) and flatten:
+                    for sub_value in value:
+                        if sub_value is None and exclude_nones:
+                            continue
+                        values.add(sub_value)
+                else:
+                    if value is None and exclude_nones:
+                        continue
+                    values.add(value)
+            return sorted(values)
         if param.startswith("dimensions."):
             dims_param = param.split(".", 1)[-1]
             if is_dimensions_param(dims_param):
-                values: Set[Any] = set()
                 for dimensions in self.collect("dimensions"):
                     value = dimensions.get(dims_param)
                     try:
