@@ -40,6 +40,7 @@ from cartopy.crs import RotatedPole
 from pyflexplot.utils.datetime import init_datetime
 from srutils.dict import recursive_update
 from srutils.geo import Degrees
+from srutils.plotting import truncate_cmap
 
 # Local
 from . import __version__
@@ -220,7 +221,12 @@ def create_plot_config(
             )
             if setup.core.ens_variable.endswith("probability"):
                 new_config_dct.update(
-                    {"n_levels": 9, "d_level": 10, "cmap": "terrain_r"}
+                    {
+                        "n_levels": 9,
+                        "d_level": 10,
+                        "cmap": truncate_cmap("terrain_r", 0.05),
+                        "extend": "max",
+                    }
                 )
             elif setup.core.ens_variable in [
                 "cloud_arrival_time",
