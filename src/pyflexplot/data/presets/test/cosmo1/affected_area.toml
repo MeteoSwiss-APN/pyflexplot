@@ -2,7 +2,7 @@
 
 [_base]
 # Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
-infile = "data/cosmo-1/grid_conc_xxx_20190528000000.nc"
+infile = "data/cosmo-1/grid_conc_xxxx_20190528000000.nc"
 model = "COSMO-1"
 species_id = "*"
 

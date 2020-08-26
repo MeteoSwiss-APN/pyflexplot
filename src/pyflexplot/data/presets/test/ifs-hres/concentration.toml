@@ -2,7 +2,7 @@
 
 [_base]
 # Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
-infile = "data/ifs-hres/grid_conc_929_20200317000000.nc"
+infile = "data/ifs-hres/grid_conc_0929_20200317000000.nc"
 model = "IFS-HRES"
 outfile = "ifs_{input_variable}_{domain}_{lang}_ts-{time_idx:02d}.png"
 species_id = 2

@@ -2,9 +2,10 @@
 
 [_base]
 # Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
-infile = "data/cosmo-2e/grid_conc_xxx_20190731000000_{ens_member:03d}.nc"
-ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+infile = "data/cosmo-2e/grid_conc_xxxx_20190731000000_{ens_member:03d}.nc"
+# ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 # ens_member_id = [0, 2, 5, 8, 11, 14, 17, 20]
+ens_member_id = [0, 5, 11, 17]
 model = "COSMO-2E"
 ens_variable = "probability"
 combine_species = false

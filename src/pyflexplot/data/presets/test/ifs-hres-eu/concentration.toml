@@ -2,7 +2,7 @@
 
 [_base]
 # Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
-infile = "data/ifs-hres-eu/grid_conc_969_20200628000000.nc"
+infile = "data/ifs-hres-eu/grid_conc_0969_20200628000000.nc"
 model = "IFS-HRES-EU"
 outfile = "{model}_{input_variable}_{domain}_{lang}_ts-{time_idx:02d}.png"
 time = [1, 6, 11]
