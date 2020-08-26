@@ -131,9 +131,12 @@ def create_map_conf(field: Field) -> MapAxesConfig:
 
     domain: Optional[Domain] = None
     if domain_type == "full":
-        domain = Domain()
+        if model_name == "IFS_HRES":
+            domain = Domain()
+        else:
+            domain = Domain(zoom_fact=1.01)
     if domain_type == "release_site":
-        # SR_TMP <
+        # SR_TMP < TODO move to Domain (sub-) class
         d_lat = field.var_setups.collect_equal("domain_size_lat")
         d_lon = field.var_setups.collect_equal("domain_size_lon")
         assert field.mdata is not None  # mypy
