@@ -1,0 +1,54 @@
+# PyFlexPlot setup file to create deterministic IFS-HRES-EU plots
+
+[_base]
+# Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
+infile = "data/ifs-hres-eu/grid_conc_993_20200818000000.nc"
+model = "IFS-HRES-EU"
+lang = "de"
+outfile_time_format = "%Y%m%dT%H%M"
+combine_species = false
+
+[_base._concentration]
+input_variable = "concentration"
+level = 0
+
+[_base._concentration._integr]
+integrate = true
+time = -1
+
+[_base._tot_deposition]
+input_variable = "deposition"
+deposition_type = ["dry", "wet"]
+combine_deposition_types = true
+integrate = true
+
+[_base._tot_deposition._affected_area]
+plot_variable = "affected_area_mono"
+combine_species = true
+time = -1
+
+[_base._concentration._pdf.full]
+outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration.pdf"
+domain = "full"
+[_base._concentration._integr._pdf.full]
+outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet.pdf"
+domain = "full"
+[_base._tot_deposition._pdf.full]
+outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Deposition.pdf"
+domain = "full"
+[_base._tot_deposition._affected_area._pdf.full]
+outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet.pdf"
+domain = "full"
+
+# + [_base._concentration._pdf.zoom]
+# + outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration_zoom.pdf"
+# + domain = "alps"
+# + [_base._concentration._integr._pdf.zoom]
+# + outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet_zoom.pdf"
+# + domain = "alps"
+# + [_base._tot_deposition._pdf.zoom]
+# + outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Deposition_zoom.pdf"
+# + domain = "alps"
+# + [_base._tot_deposition._affected_area._pdf.zoom]
+# + outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet_zoom.pdf"
+# + domain = "alps"
