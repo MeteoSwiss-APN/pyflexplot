@@ -18,6 +18,7 @@ import cartopy
 import matplotlib as mpl
 import numpy as np
 from cartopy.crs import Projection  # type: ignore
+from cartopy.crs import RotatedPole
 from cartopy.io.shapereader import Record  # type: ignore
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
@@ -201,7 +202,7 @@ class MapAxes:
     def create(
         cls, conf: MapAxesConfig, *, fig: Figure, rect: RectType, field: np.ndarray,
     ) -> "MapAxes":
-        if field.rotated_pole:
+        if isinstance(field.proj, RotatedPole):
             return MapAxesRotatedPole.create(conf, fig=fig, rect=rect, field=field)
         else:
             return cls(fig=fig, rect=rect, field=field, conf=conf)
@@ -353,23 +354,29 @@ class MapAxes:
         domain_type: str = field.var_setups.collect_equal("domain")
         if domain_type == "cloud":
             assert (field.lat.size, field.lon.size) == field.time_props.mask_nz.shape
-            mask_lon = field.time_props.mask_nz.any(axis=0)
             mask_lat = field.time_props.mask_nz.any(axis=1)
-            lllon = field.lon[mask_lon].min()
-            urlon = field.lon[mask_lon].max()
+            mask_lon = field.time_props.mask_nz.any(axis=0)
             lllat = field.lat[mask_lat].min()
             urlat = field.lat[mask_lat].max()
+            lllon = field.lon[mask_lon].min()
+            urlon = field.lon[mask_lon].max()
+        elif domain_type == "release_site":
+            urlon = conf.domain.urlon
+            urlat = conf.domain.urlat
+            lllon = conf.domain.lllon
+            lllat = conf.domain.lllat
         else:
-            lllon = field.lon[0] if conf.domain.lllon is None else conf.domain.lllon
-            urlon = field.lon[-1] if conf.domain.urlon is None else conf.domain.urlon
             lllat = field.lat[0] if conf.domain.lllat is None else conf.domain.lllat
             urlat = field.lat[-1] if conf.domain.urlat is None else conf.domain.urlat
-        bbox = (
-            MapAxesBoundingBox(self, "data", lllon, urlon, lllat, urlat)
-            .to_axes()
-            .zoom(conf.domain.zoom_fact, conf.domain.rel_offset)
-            .to_data()
-        )
+            lllon = field.lon[0] if conf.domain.lllon is None else conf.domain.lllon
+            urlon = field.lon[-1] if conf.domain.urlon is None else conf.domain.urlon
+        bbox = MapAxesBoundingBox(self, "data", lllon, urlon, lllat, urlat)
+        if conf.domain.zoom_fact != 1.0:
+            bbox = (
+                bbox.to_axes()
+                .zoom(conf.domain.zoom_fact, conf.domain.rel_offset)
+                .to_data()
+            )
         self.ax.set_aspect("auto")
         self.ax.set_extent(bbox, self.proj_data)
 
@@ -617,7 +624,7 @@ class MapAxesRotatedPole(MapAxes):
     def create(
         cls, conf: MapAxesConfig, *, fig: Figure, rect: RectType, field: Field
     ) -> "MapAxesRotatedPole":
-        if not field.rotated_pole:
+        if not isinstance(field.proj, RotatedPole):
             raise ValueError("not a rotated-pole field", field)
         rotated_pole = field.nc_meta_data["variables"]["rotated_pole"]["ncattrs"]
         pollat = rotated_pole["grid_north_pole_latitude"]

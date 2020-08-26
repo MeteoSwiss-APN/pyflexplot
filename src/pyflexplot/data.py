@@ -15,8 +15,9 @@ from typing import Tuple
 from typing import Union
 
 # Third-party
-import cartopy
 import numpy as np
+from cartopy.crs import PlateCarree
+from cartopy.crs import Projection
 
 # First-party
 from srutils.str import join_multilines
@@ -59,6 +60,7 @@ def summarize_field(obj: Any) -> Dict[str, Dict[str, Any]]:
             "min": obj.lon.min(),
             "max": obj.lon.max(),
         },
+        "proj": {"type": type(obj.proj).__name__},
     }
     return default_summarize(dct)
 
@@ -79,7 +81,7 @@ class Field:
 
         lon: Longitude array (1D).
 
-        rotated_pole: Whether pole is rotated.
+        proj: Projection of input field.
 
         var_setups: Variables setups.
 
@@ -94,7 +96,7 @@ class Field:
     fld: np.ndarray
     lat: np.ndarray
     lon: np.ndarray
-    rotated_pole: bool
+    proj: Projection
     var_setups: SetupCollection
     time_props: "FieldTimeProperties"
     nc_meta_data: Mapping[str, Any]
@@ -130,7 +132,7 @@ class Field:
                 f"fld=array[shape={self.fld.shape}, dtype={self.fld.dtype}],"
                 f" lat=array[shape={self.lat.shape}, dtype={self.lat.dtype}],"
                 f" lon=array[shape={self.lon.shape}, dtype={self.lon.dtype}],"
-                f" rotated_pole={self.rotated_pole},"
+                f" proj={type(self.proj).__name__}(...),"
             ),
             f"var_setups={self.var_setups},",
             f"time_stats={self.time_props},",
@@ -149,16 +151,9 @@ class Field:
         assert len(self.fld.shape) == 2  # pylint
         # pylint: disable=W0632  # unbalanced-tuple-unpacking
         jmax, imax = np.unravel_index(np.nanargmax(self.fld), self.fld.shape)
-        p_lat = self.lat[jmax]
-        p_lon = self.lon[imax]
-        if self.rotated_pole:
-            ncattrs = self.nc_meta_data["variables"]["rotated_pole"]["ncattrs"]
-            proj_rot = cartopy.crs.RotatedPole(
-                pole_latitude=ncattrs["grid_north_pole_latitude"],
-                pole_longitude=ncattrs["grid_north_pole_longitude"],
-            )
-            proj_geo = cartopy.crs.PlateCarree()
-            p_lon, p_lat = proj_geo.transform_point(p_lon, p_lat, proj_rot)
+        p_lon, p_lat = PlateCarree().transform_point(
+            self.lon[imax], self.lat[jmax], self.proj
+        )
         return (p_lat, p_lon)
 
 

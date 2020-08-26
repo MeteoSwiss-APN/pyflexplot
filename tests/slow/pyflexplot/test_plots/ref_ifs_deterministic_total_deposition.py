@@ -15,7 +15,7 @@ from ``_TestBase`` to ``_TestCreateReference`` and running pytest.
 
 field_summary = {
     "type": "Field",
-    "rotated_pole": False,
+    "proj": {"type": "PlateCarree"},
     "var_setups": [
         {
             "infile": "flexpart_ifs_20200317000000.nc",
@@ -39,6 +39,8 @@ field_summary = {
                 "ens_param_time_win": None,
                 "lang": "de",
                 "domain": "cloud",
+                "domain_size_lat": None,
+                "domain_size_lon": None,
                 "dimensions": {
                     "deposition_type": ["dry", "wet"],
                     "level": None,
@@ -1537,7 +1539,7 @@ plot_summary = {
         "rect": [0.0, 0.05, 0.7872, 0.85],
         "field": {
             "type": "Field",
-            "rotated_pole": False,
+            "proj": {"type": "PlateCarree"},
             "var_setups": [
                 {
                     "infile": "flexpart_ifs_20200317000000.nc",
@@ -1561,6 +1563,8 @@ plot_summary = {
                         "ens_param_time_win": None,
                         "lang": "de",
                         "domain": "cloud",
+                        "domain_size_lat": None,
+                        "domain_size_lon": None,
                         "dimensions": {
                             "deposition_type": ["dry", "wet"],
                             "level": None,
@@ -27600,7 +27604,7 @@ plot_summary = {
     },
     "field": {
         "type": "Field",
-        "rotated_pole": False,
+        "proj": {"type": "PlateCarree"},
         "var_setups": [
             {
                 "infile": "flexpart_ifs_20200317000000.nc",
@@ -27624,6 +27628,8 @@ plot_summary = {
                     "ens_param_time_win": None,
                     "lang": "de",
                     "domain": "cloud",
+                    "domain_size_lat": None,
+                    "domain_size_lon": None,
                     "dimensions": {
                         "deposition_type": ["dry", "wet"],
                         "level": None,

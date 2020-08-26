@@ -5,17 +5,19 @@
 infile = "data/ifs-hres-eu/grid_conc_969_20200628000000.nc"
 model = "IFS-HRES-EU"
 outfile = "{model}_{input_variable}_{domain}_{lang}_ts-{time_idx:02d}.png"
-species_id = 2
 time = [1, 6, 11]
 input_variable = "concentration"
 level = 0
 integrate = false
 domain = "cloud"
 
-[_base."_integrated+"]
-integrate = true
-time = -1
-species_id = 1
+[_base."_release_site_domain+"]
+domain = "release_site"
+domain_size_lat = 15
+domain_size_lon = 20
+
+[_base."_data_domain+"]
+domain = "data"
 
 ["**".en]
 lang = "en"

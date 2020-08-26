@@ -15,7 +15,7 @@ from ``_TestBase`` to ``_TestCreateReference`` and running pytest.
 
 field_summary = {
     "type": "Field",
-    "rotated_pole": True,
+    "proj": {"type": "RotatedPole"},
     "var_setups": [
         {
             "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
@@ -39,6 +39,8 @@ field_summary = {
                 "ens_param_time_win": None,
                 "lang": "de",
                 "domain": "ch",
+                "domain_size_lat": None,
+                "domain_size_lon": None,
                 "dimensions": {
                     "deposition_type": None,
                     "level": 0,
@@ -934,7 +936,7 @@ plot_summary = {
         "rect": [0.0, 0.05, 0.7872, 0.85],
         "field": {
             "type": "Field",
-            "rotated_pole": True,
+            "proj": {"type": "RotatedPole"},
             "var_setups": [
                 {
                     "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
@@ -958,6 +960,8 @@ plot_summary = {
                         "ens_param_time_win": None,
                         "lang": "de",
                         "domain": "ch",
+                        "domain_size_lat": None,
+                        "domain_size_lon": None,
                         "dimensions": {
                             "deposition_type": None,
                             "level": 0,
@@ -7179,7 +7183,7 @@ plot_summary = {
     },
     "field": {
         "type": "Field",
-        "rotated_pole": True,
+        "proj": {"type": "RotatedPole"},
         "var_setups": [
             {
                 "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
@@ -7203,6 +7207,8 @@ plot_summary = {
                     "ens_param_time_win": None,
                     "lang": "de",
                     "domain": "ch",
+                    "domain_size_lat": None,
+                    "domain_size_lon": None,
                     "dimensions": {
                         "deposition_type": None,
                         "level": 0,

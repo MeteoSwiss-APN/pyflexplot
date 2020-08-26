@@ -116,10 +116,11 @@ class CoreSetup(BaseModel):
     # Plot appearance
     lang: str = "en"
     domain: str = "full"
+    domain_size_lat: Optional[float]
+    domain_size_lon: Optional[float]
 
     # Dimensions
-    # dimensions: CoreDimensions = CoreDimensions()
-    dimensions: Dimensions = Dimensions()  # SR_TMP
+    dimensions: Dimensions = Dimensions()
 
     # SR_TMP <<<
     @property
@@ -235,7 +236,7 @@ class CoreSetup(BaseModel):
 
     @validator("ens_param_thr", always=True)
     def _init_ens_param_thr(
-        cls, value: Optional[float], values: Dict[str, Any],
+        cls, value: Optional[float], values: Dict[str, Any]
     ) -> Optional[float]:
         if value is None:
             if values["ens_variable"] in [
@@ -245,6 +246,22 @@ class CoreSetup(BaseModel):
                 value = ENS_CLOUD_TIME_DEFAULT_PARAM_THR
             elif values["ens_variable"] == "probability":
                 value = ENS_PROBABILITY_DEFAULT_PARAM_THR
+        return value
+
+    @validator("domain_size_lat", always=True)
+    def _init_domain_size_lat(
+        cls, value: Optional[float], values: Dict[str, Any]
+    ) -> Optional[float]:
+        if value is None and values["domain"] == "release_site":
+            return 15.0
+        return value
+
+    @validator("domain_size_lon", always=True)
+    def _init_domain_size_lon(
+        cls, value: Optional[float], values: Dict[str, Any]
+    ) -> Optional[float]:
+        if value is None and values["domain"] == "release_site":
+            return 30.0
         return value
 
     @classmethod
@@ -312,7 +329,13 @@ class Setup(BaseModel):
 
         domain: Plot domain. Defaults to 'data', which derives the domain size
             from the input data. Use the format key '{domain}' to embed it in
-            ``outfile``. Choices": "full", "auto", "ch".
+            ``outfile``. Choices": "auto", "full", "data", "release_site", "ch".
+
+        domain_size_lat: Latitudinal extent of domain in degrees. Defaults
+            depend on ``domain``.
+
+        domain_size_lon: Longitudinal extent of domain in degrees. Defaults
+            depend on ``domain``.
 
         ens_member_id: Ensemble member ids. Use the format key '{ens_member}'
             to embed it in ``outfile``. Omit for deterministic simulations.

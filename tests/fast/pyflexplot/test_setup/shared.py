@@ -15,6 +15,8 @@ DEFAULT_PARAMS: Dict[str, Any] = {
     "combine_levels": False,
     "combine_species": False,
     "domain": "full",
+    "domain_size_lat": None,
+    "domain_size_lon": None,
     "ens_member_id": None,
     "ens_param_mem_min": None,
     "ens_param_thr": None,

@@ -15,7 +15,7 @@ from ``_TestBase`` to ``_TestCreateReference`` and running pytest.
 
 field_summary = {
     "type": "Field",
-    "rotated_pole": True,
+    "proj": {"type": "RotatedPole"},
     "var_setups": [
         {
             "infile": "flexpart_cosmo-1_2019093012.nc",
@@ -39,6 +39,8 @@ field_summary = {
                 "ens_param_time_win": None,
                 "lang": "de",
                 "domain": "full",
+                "domain_size_lat": None,
+                "domain_size_lon": None,
                 "dimensions": {
                     "deposition_type": None,
                     "level": 0,
@@ -354,7 +356,7 @@ plot_summary = {
                         "type": "TransformedBbox",
                         "bounds": [0.0, 40.0, 984.0, 680.0],
                     },
-                    "data_ratio": 0.7435898407754938,
+                    "data_ratio": 0.7435898407754982,
                     "facecolor": [1.0, 1.0, 1.0, 0.0],
                     "fc": [1.0, 1.0, 1.0, 0.0],
                     "frame_on": True,
@@ -393,7 +395,7 @@ plot_summary = {
                         "bounds": [0.0, 40.0, 984.0, 680.0],
                     },
                     "xlabel": {},
-                    "xlim": [-1.7999997138977066, 4.0499997138977095],
+                    "xlim": [-1.7999997138977062, 4.049999713897706],
                     "xmajorticklabels": [
                         "Text(0, 0, '')",
                         "Text(0, 0, '')",
@@ -418,7 +420,7 @@ plot_summary = {
                     ],
                     "xticks": [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
                     "ylabel": {},
-                    "ylim": [-1.4000003337860147, 2.9499998092651087],
+                    "ylim": [-1.4000003337860147, 2.9499998092651314],
                     "ymajorticklabels": [
                         "Text(0, 0, '')",
                         "Text(0, 0, '')",
@@ -822,7 +824,7 @@ plot_summary = {
         "rect": [0.0, 0.05, 0.7872, 0.85],
         "field": {
             "type": "Field",
-            "rotated_pole": True,
+            "proj": {"type": "RotatedPole"},
             "var_setups": [
                 {
                     "infile": "flexpart_cosmo-1_2019093012.nc",
@@ -846,6 +848,8 @@ plot_summary = {
                         "ens_param_time_win": None,
                         "lang": "de",
                         "domain": "full",
+                        "domain_size_lat": None,
+                        "domain_size_lon": None,
                         "dimensions": {
                             "deposition_type": None,
                             "level": 0,
@@ -1355,7 +1359,7 @@ plot_summary = {
                             "type": "TransformedBbox",
                             "bounds": [0.0, 40.0, 984.0, 680.0],
                         },
-                        "data_ratio": 0.7435898407754938,
+                        "data_ratio": 0.7435898407754982,
                         "facecolor": [1.0, 1.0, 1.0, 0.0],
                         "fc": [1.0, 1.0, 1.0, 0.0],
                         "frame_on": True,
@@ -1397,7 +1401,7 @@ plot_summary = {
                             "bounds": [0.0, 40.0, 984.0, 680.0],
                         },
                         "xlabel": {},
-                        "xlim": [-1.7999997138977066, 4.0499997138977095],
+                        "xlim": [-1.7999997138977062, 4.049999713897706],
                         "xmajorticklabels": [
                             "Text(0, 0, '')",
                             "Text(0, 0, '')",
@@ -1422,7 +1426,7 @@ plot_summary = {
                         ],
                         "xticks": [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
                         "ylabel": {},
-                        "ylim": [-1.4000003337860147, 2.9499998092651087],
+                        "ylim": [-1.4000003337860147, 2.9499998092651314],
                         "ymajorticklabels": [
                             "Text(0, 0, '')",
                             "Text(0, 0, '')",
@@ -1975,7 +1979,7 @@ plot_summary = {
                             "type": "TransformedBbox",
                             "bounds": [0.0, 40.0, 984.0, 680.0],
                         },
-                        "data_ratio": 0.7435898407754938,
+                        "data_ratio": 0.7435898407754982,
                         "facecolor": [1.0, 1.0, 1.0, 0.0],
                         "fc": [1.0, 1.0, 1.0, 0.0],
                         "frame_on": True,
@@ -2017,7 +2021,7 @@ plot_summary = {
                             "bounds": [0.0, 40.0, 984.0, 680.0],
                         },
                         "xlabel": {},
-                        "xlim": [-1.7999997138977066, 4.0499997138977095],
+                        "xlim": [-1.7999997138977062, 4.049999713897706],
                         "xmajorticklabels": [
                             "Text(0, 0, '')",
                             "Text(0, 0, '')",
@@ -2042,7 +2046,7 @@ plot_summary = {
                         ],
                         "xticks": [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
                         "ylabel": {},
-                        "ylim": [-1.4000003337860147, 2.9499998092651087],
+                        "ylim": [-1.4000003337860147, 2.9499998092651314],
                         "ymajorticklabels": [
                             "Text(0, 0, '')",
                             "Text(0, 0, '')",
@@ -2539,7 +2543,7 @@ plot_summary = {
                             "type": "TransformedBbox",
                             "bounds": [0.0, 40.0, 984.0, 680.0],
                         },
-                        "data_ratio": 0.7435898407754938,
+                        "data_ratio": 0.7435898407754982,
                         "facecolor": [1.0, 1.0, 1.0, 0.0],
                         "fc": [1.0, 1.0, 1.0, 0.0],
                         "frame_on": True,
@@ -2581,7 +2585,7 @@ plot_summary = {
                             "bounds": [0.0, 40.0, 984.0, 680.0],
                         },
                         "xlabel": {},
-                        "xlim": [-1.7999997138977066, 4.0499997138977095],
+                        "xlim": [-1.7999997138977062, 4.049999713897706],
                         "xmajorticklabels": [
                             "Text(0, 0, '')",
                             "Text(0, 0, '')",
@@ -2606,7 +2610,7 @@ plot_summary = {
                         ],
                         "xticks": [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
                         "ylabel": {},
-                        "ylim": [-1.4000003337860147, 2.9499998092651087],
+                        "ylim": [-1.4000003337860147, 2.9499998092651314],
                         "ymajorticklabels": [
                             "Text(0, 0, '')",
                             "Text(0, 0, '')",
@@ -3622,7 +3626,7 @@ plot_summary = {
                             "type": "TransformedBbox",
                             "bounds": [0.0, 40.0, 984.0, 680.0],
                         },
-                        "data_ratio": 0.7435898407754938,
+                        "data_ratio": 0.7435898407754982,
                         "facecolor": [1.0, 1.0, 1.0, 0.0],
                         "fc": [1.0, 1.0, 1.0, 0.0],
                         "frame_on": True,
@@ -3664,7 +3668,7 @@ plot_summary = {
                             "bounds": [0.0, 40.0, 984.0, 680.0],
                         },
                         "xlabel": {},
-                        "xlim": [-1.7999997138977066, 4.0499997138977095],
+                        "xlim": [-1.7999997138977062, 4.049999713897706],
                         "xmajorticklabels": [
                             "Text(0, 0, '')",
                             "Text(0, 0, '')",
@@ -3689,7 +3693,7 @@ plot_summary = {
                         ],
                         "xticks": [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
                         "ylabel": {},
-                        "ylim": [-1.4000003337860147, 2.9499998092651087],
+                        "ylim": [-1.4000003337860147, 2.9499998092651314],
                         "ymajorticklabels": [
                             "Text(0, 0, '')",
                             "Text(0, 0, '')",
@@ -4970,7 +4974,7 @@ plot_summary = {
                             "type": "TransformedBbox",
                             "bounds": [0.0, 40.0, 984.0, 680.0],
                         },
-                        "data_ratio": 0.7435898407754938,
+                        "data_ratio": 0.7435898407754982,
                         "facecolor": [1.0, 1.0, 1.0, 0.0],
                         "fc": [1.0, 1.0, 1.0, 0.0],
                         "frame_on": True,
@@ -5012,7 +5016,7 @@ plot_summary = {
                             "bounds": [0.0, 40.0, 984.0, 680.0],
                         },
                         "xlabel": {},
-                        "xlim": [-1.7999997138977066, 4.0499997138977095],
+                        "xlim": [-1.7999997138977062, 4.049999713897706],
                         "xmajorticklabels": [
                             "Text(0, 0, '')",
                             "Text(0, 0, '')",
@@ -5037,7 +5041,7 @@ plot_summary = {
                         ],
                         "xticks": [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
                         "ylabel": {},
-                        "ylim": [-1.4000003337860147, 2.9499998092651087],
+                        "ylim": [-1.4000003337860147, 2.9499998092651314],
                         "ymajorticklabels": [
                             "Text(0, 0, '')",
                             "Text(0, 0, '')",
@@ -5506,7 +5510,7 @@ plot_summary = {
                             "type": "TransformedBbox",
                             "bounds": [0.0, 40.0, 984.0, 680.0],
                         },
-                        "data_ratio": 0.7435898407754938,
+                        "data_ratio": 0.7435898407754982,
                         "facecolor": [1.0, 1.0, 1.0, 0.0],
                         "fc": [1.0, 1.0, 1.0, 0.0],
                         "frame_on": True,
@@ -5548,7 +5552,7 @@ plot_summary = {
                             "bounds": [0.0, 40.0, 984.0, 680.0],
                         },
                         "xlabel": {},
-                        "xlim": [-1.7999997138977066, 4.0499997138977095],
+                        "xlim": [-1.7999997138977062, 4.049999713897706],
                         "xmajorticklabels": [
                             "Text(0, 0, '')",
                             "Text(0, 0, '')",
@@ -5573,7 +5577,7 @@ plot_summary = {
                         ],
                         "xticks": [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
                         "ylabel": {},
-                        "ylim": [-1.4000003337860147, 2.9499998092651087],
+                        "ylim": [-1.4000003337860147, 2.9499998092651314],
                         "ymajorticklabels": [
                             "Text(0, 0, '')",
                             "Text(0, 0, '')",
@@ -6032,7 +6036,7 @@ plot_summary = {
     },
     "field": {
         "type": "Field",
-        "rotated_pole": True,
+        "proj": {"type": "RotatedPole"},
         "var_setups": [
             {
                 "infile": "flexpart_cosmo-1_2019093012.nc",
@@ -6056,6 +6060,8 @@ plot_summary = {
                     "ens_param_time_win": None,
                     "lang": "de",
                     "domain": "full",
+                    "domain_size_lat": None,
+                    "domain_size_lon": None,
                     "dimensions": {
                         "deposition_type": None,
                         "level": 0,
@@ -6376,7 +6382,7 @@ plot_summary = {
                     "type": "TransformedBbox",
                     "bounds": (0.0, 40.0, 984.0, 680.0),
                 },
-                "data_ratio": 0.7435898407754938,
+                "data_ratio": 0.7435898407754982,
                 "facecolor": (1.0, 1.0, 1.0, 0.0),
                 "fc": (1.0, 1.0, 1.0, 0.0),
                 "frame_on": True,
@@ -6415,7 +6421,7 @@ plot_summary = {
                     "bounds": (0.0, 40.0, 984.0, 680.0),
                 },
                 "xlabel": "",
-                "xlim": (-1.7999997138977066, 4.0499997138977095),
+                "xlim": (-1.7999997138977062, 4.049999713897706),
                 "xmajorticklabels": [
                     "Text(0, 0, '')",
                     "Text(0, 0, '')",
@@ -6440,7 +6446,7 @@ plot_summary = {
                 ],
                 "xticks": [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
                 "ylabel": "",
-                "ylim": (-1.4000003337860147, 2.9499998092651087),
+                "ylim": (-1.4000003337860147, 2.9499998092651314),
                 "ymajorticklabels": [
                     "Text(0, 0, '')",
                     "Text(0, 0, '')",

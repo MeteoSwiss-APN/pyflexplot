@@ -33,6 +33,8 @@ from typing import Union
 # Third-party
 import matplotlib as mpl
 import numpy as np
+from cartopy.crs import PlateCarree
+from cartopy.crs import RotatedPole
 
 # First-party
 from pyflexplot.utils.datetime import init_datetime
@@ -71,6 +73,8 @@ from .words import Words
 
 
 # pylint: disable=R0912  # too-many-branches
+# pylint: disable=R0914  # too-many-locals
+# pylint: disable=R0915  # too-many-statements
 def create_map_conf(field: Field) -> MapAxesConfig:
     domain_type = field.var_setups.collect_equal("domain")
     model_name = field.var_setups.collect_equal("model")
@@ -113,6 +117,8 @@ def create_map_conf(field: Field) -> MapAxesConfig:
             map_axes_conf = conf_continental_scale
         if model_name == "IFS-HRES":
             map_axes_conf = conf_global_scale
+    if domain_type == "release_site":
+        map_axes_conf = conf_regional_scale
     if domain_type == "cloud":
         map_axes_conf = conf_regional_scale
     if domain_type == "ch":
@@ -123,13 +129,35 @@ def create_map_conf(field: Field) -> MapAxesConfig:
         )
 
     domain: Optional[Domain] = None
+    if domain_type == "full":
+        domain = Domain()
+    if domain_type == "release_site":
+        # SR_TMP <
+        d_lat = field.var_setups.collect_equal("domain_size_lat")
+        d_lon = field.var_setups.collect_equal("domain_size_lon")
+        assert field.mdata is not None  # mypy
+        if isinstance(field.proj, RotatedPole):
+            c_lon, c_lat = field.proj.transform_point(
+                field.mdata.release.lon, field.mdata.release.lat, PlateCarree()
+            )
+            lllat = c_lat - 0.5 * d_lat
+            lllon = c_lon - 0.5 * d_lon
+            urlat = c_lat + 0.5 * d_lat
+            urlon = c_lon + 0.5 * d_lon
+        else:
+            lllat = field.mdata.release.lat - 0.5 * d_lat
+            lllon = field.mdata.release.lon - 0.5 * d_lon
+            urlat = field.mdata.release.lat + 0.5 * d_lat
+            urlon = field.mdata.release.lon + 0.5 * d_lon
+            lllon, lllat = field.proj.transform_point(lllon, lllat, PlateCarree())
+            urlon, urlat = field.proj.transform_point(urlon, urlat, PlateCarree())
+        # SR_TMP >
+        domain = Domain(lllat=lllat, lllon=lllon, urlat=urlat, urlon=urlon)
     if domain_type == "cloud":
         if model_name.startswith("COSMO"):
             domain = Domain(zoom_fact=0.9)
         if model_name.startswith("IFS"):
             domain = Domain(zoom_fact=0.9)
-    if domain_type == "full":
-        domain = Domain()
     if domain_type == "ch":
         if model_name.startswith("COSMO-1"):
             domain = Domain(zoom_fact=3.6, rel_offset=(-0.02, 0.045))
