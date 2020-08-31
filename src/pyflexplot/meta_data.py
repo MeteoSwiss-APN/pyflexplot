@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=C0302  # too-many-lines (>1000)
 """
-Attributes.
+Meta data.
+
+Note that these meta data should eventually be merged with the raw ones in
+module ``pyflexplot.nc_meta_data`` because the two very different data
+structures serve very similar purposes in parallel.
+
 """
 # Standard library
 import re

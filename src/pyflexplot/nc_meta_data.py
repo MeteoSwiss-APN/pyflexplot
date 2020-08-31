@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 Input file meta data.
+
+Note that these raw meta data should eventually be merged with those in module
+``pyflexplot.meta_data`` because the two very different data structures serve
+very similar purposes in parallel.
+
 """
 # Standard library
 import re
