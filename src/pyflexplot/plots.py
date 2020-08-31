@@ -141,7 +141,7 @@ def create_map_config(field: Field) -> MapAxesConfig:
         else:
             domain = Domain(zoom_fact=1.01)
     if domain_type == "release_site":
-        # SR_TMP < TODO move to Domain (sub-) class
+        # SR_TMP < TODO move logic into Domain* classes
         d_lat = field.var_setups.collect_equal("domain_size_lat")
         d_lon = field.var_setups.collect_equal("domain_size_lon")
         assert field.mdata is not None  # mypy

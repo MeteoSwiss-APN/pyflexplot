@@ -305,6 +305,13 @@ class MapAxes:
         )
         return handle
 
+    def get_aspect_ratio(self) -> float:
+        """Get aspect ratio (height by width) of map plot."""
+        bbox = self.ax.get_window_extent().transformed(
+            self.fig.dpi_scale_trans.inverted()
+        )
+        return bbox.width / bbox.height
+
     def __repr__(self) -> str:
         return f"{type(self).__name__}(<TODO>)"  # SR_TODO
 
@@ -358,6 +365,7 @@ class MapAxes:
         config: MapAxesConfig = self.config
         field: Field = self.field
         domain_type: str = field.var_setups.collect_equal("domain")
+        # SR_TMP < TODO move logic into Domain* classes
         if domain_type == "cloud":
             assert (field.lat.size, field.lon.size) == field.time_props.mask_nz.shape
             mask_lat = field.time_props.mask_nz.any(axis=1)
@@ -366,6 +374,18 @@ class MapAxes:
             urlat = field.lat[mask_lat].max()
             lllon = field.lon[mask_lon].min()
             urlon = field.lon[mask_lon].max()
+            # Adjust aspect ratio to avoid distortion
+            aspect = self.get_aspect_ratio()
+            dlat = urlat - lllat
+            dlon = urlon - lllon
+            if dlon / dlat < aspect:
+                dlon_new = dlat * aspect
+                lllon -= 0.5 * (dlon_new - dlon)
+                urlon += 0.5 * (dlon_new - dlon)
+            elif dlon / dlat > aspect:
+                dlat_new = dlon / aspect
+                lllat -= 0.5 * (dlat_new - dlat)
+                urlat += 0.5 * (dlat_new - dlat)
         elif domain_type == "release_site":
             urlon = config.domain.urlon
             urlat = config.domain.urlat
@@ -380,6 +400,7 @@ class MapAxes:
             urlon = (
                 field.lon[-1] if config.domain.urlon is None else config.domain.urlon
             )
+        # SR_TMP >
         bbox = MapAxesBoundingBox(self, "data", lllon, urlon, lllat, urlat)
         if config.domain.zoom_fact != 1.0:
             bbox = (
