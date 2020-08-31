@@ -36,30 +36,8 @@ from .utils.summarize import summarizable
 class CoreDimensions(BaseModel):
     """Selected dimensions.
 
-    Args:
-        deposition_type: Type(s) of deposition. Part of the plot variable name
-            that may be embedded in ``outfile`` with the format key
-            '{variable}'. Choices: "none", "dry", "wet" (the latter may can be
-            combined).
-
-        level: Index/indices of vertical level (zero-based, bottom-up). To sum
-            up multiple levels, combine their indices with '+'. Use the format
-            key '{level}' to embed it in ``outfile``.
-
-        nageclass: Index of age class (zero-based). Use the format key
-            '{nageclass}' to embed it in ``outfile``.
-
-        noutrel: Index of noutrel (zero-based). Use the format key
-            '{noutrel}' to embed it in ``outfile``.
-
-        numpoint: Index of release point (zero-based).
-
-        species_id: Species id(s). To sum up multiple species, combine their
-            ids with '+'. Use the format key '{species_id}' to embed it in
-            ``outfile``.
-
-        time: Time step indices (zero-based). Use the format key '{time}'
-            to embed one in ``outfile``.
+    See docstring of ``Setup.create`` (in module ``pyflexplot.setup``) for a
+    description of the parameters.
 
     """
 
@@ -108,7 +86,7 @@ class CoreDimensions(BaseModel):
 @summarizable(summarize=lambda self: self.dict())  # type: ignore
 # pylint: disable=R0902  # too-many-instance-attributes
 class Dimensions:
-    """A collection of Domensions objects."""
+    """A collection of Dimensions objects."""
 
     params: Tuple[str, ...] = tuple(CoreDimensions.__fields__)
 

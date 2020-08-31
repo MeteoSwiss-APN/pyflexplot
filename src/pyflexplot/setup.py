@@ -2,6 +2,10 @@
 # pylint: disable=C0302  # too-many-lines
 """
 Plot setup and setup files.
+
+The setup parameters that are exposed in the setup files are all described in
+the docstring of the class method ``Setup.create``.
+
 """
 # Standard library
 import dataclasses
@@ -87,7 +91,7 @@ class CoreSetup(BaseModel):
     """
     PyFlexPlot core setup with exactly one value per parameter.
 
-    See ``Setup`` for details on the parameters.
+    See docstring of ``Setup.create`` for a description of the parameters.
 
     """
 
@@ -312,74 +316,9 @@ class CoreSetup(BaseModel):
 
 # SR_TODO Clean up docstring -- where should format key hints go?
 class Setup(BaseModel):
-    """
-    PyFlexPlot setup.
+    """PyFlexPlot setup.
 
-    Args:
-        base_time: Start of the model simulation on which the dispersion
-            simulation is based.
-
-        combine_deposition_types: Sum up dry and wet deposition. Otherwise, each
-            is plotted separately.
-
-        combine_levels: Sum up over multiple vertical levels. Otherwise, each is
-            plotted separately.
-
-        combine_species: Sum up over all specified species. Otherwise, each is
-            plotted separately.
-
-        domain: Plot domain. Defaults to 'data', which derives the domain size
-            from the input data. Use the format key '{domain}' to embed it in
-            ``outfile``. Choices": "auto", "full", "data", "release_site", "ch".
-
-        domain_size_lat: Latitudinal extent of domain in degrees. Defaults
-            depend on ``domain``.
-
-        domain_size_lon: Longitudinal extent of domain in degrees. Defaults
-            depend on ``domain``.
-
-        ens_member_id: Ensemble member ids. Use the format key '{ens_member}'
-            to embed it in ``outfile``. Omit for deterministic simulations.
-
-        ens_param_mem_min: Minimum number of ensemble members used to compute
-            some ensemble variables. Its precise meaning depends on the
-            variable.
-
-        ens_param_thr: Threshold used to compute some ensemble variables. Its
-            precise meaning depends on the variable.
-
-        ens_param_time_win: Tim window used to compute some ensemble variables.
-            Its precise meaning depends on the variable.
-
-        ens_variable: Ensemble variable computed from plot variable. Use the
-            format key '{ens_variable}' to embed it in ``outfile``.
-
-        infile: Input file path(s). May contain format keys.
-
-        input_variable: Input variable. Choices: "concentration", "deposition".
-
-        integrate: Integrate field over time.
-
-        lang: Language. Use the format key '{lang}' to embed it in ``oufile``.
-            Choices: "en", "de".
-
-        multipanel_param: Parameter used to plot multiple panels. Only valid for
-            ``plot_type = "multipanel"``. The respective parameter must have one
-            value per panel. For example, a four-panel plot with one ensemble
-            statistic plot each may be specified with ``multipanel_param =
-            "ens_variable"`` and ``ens_variable = ["minimum", "maximum", "meam",
-            "median"]``.
-
-        outfile: Output file path(s). May contain format keys.
-
-        outfile_time_format: Format specification (e.g., '%Y%m%d%H%M') for time
-            steps (``time_step``, ``base_time``) embedded in ``outfile``.
-
-        plot_type: Plot type. Use the format key '{plot_type}' to embed it in
-            ``outfile``.
-
-        plot_variable: Variable computed from input variable. Use the format key
-            '{plot_variable}' to embed it in ``outfile``.
+    See docstring of ``Setup.create`` for details on parameters.
 
     """
 
@@ -422,7 +361,111 @@ class Setup(BaseModel):
         """Create an instance of ``Setup``.
 
         Args:
-            params: Parameters to instatiate ``Setup``.
+            params: Parameters to create an instance of ``Setup``, including
+                parameters to create the ``CoreSetup`` instance ``Setup.core``
+                and the ``Dimensions`` instance ``Setup.core.dimensions``. See
+                below for a description of each parameter.
+
+        The parameter descriptions are (for now) collected here because they are
+        all directly exposed in the setup files without reflecting the internal
+        composition hierarchy ``Setup -> CoreSetup -> Dimensions``. This
+        docstring thus serves as a single point of reference for all parameters.
+        The docstrings of the individual classes, were the parameters should be
+        described as arguments, refer to this docstring to avoid duplication.
+
+        Params:
+            base_time: Start of the model simulation on which the dispersion
+                simulation is based.
+
+            combine_deposition_types: Sum up dry and wet deposition. Otherwise,
+                each is plotted separately.
+
+            combine_levels: Sum up over multiple vertical levels. Otherwise,
+                each is plotted separately.
+
+            combine_species: Sum up over all specified species. Otherwise, each
+                is plotted separately.
+
+            deposition_type: Type(s) of deposition. Part of the plot variable
+                name that may be embedded in ``outfile`` with the format key
+                '{variable}'. Choices: "none", "dry", "wet" (the latter may can
+                be combined).
+
+            domain: Plot domain. Defaults to 'data', which derives the domain
+                size from the input data. Use the format key '{domain}' to embed
+                it in ``outfile``. Choices": "auto", "full", "data",
+                "release_site", "ch".
+
+            domain_size_lat: Latitudinal extent of domain in degrees. Defaults
+                depend on ``domain``.
+
+            domain_size_lon: Longitudinal extent of domain in degrees. Defaults
+                depend on ``domain``.
+
+            ens_member_id: Ensemble member ids. Use the format key
+                '{ens_member}' to embed it in ``outfile``. Omit for
+                deterministic simulations.
+
+            ens_param_mem_min: Minimum number of ensemble members used to
+                compute some ensemble variables. Its precise meaning depends on
+                the variable.
+
+            ens_param_thr: Threshold used to compute some ensemble variables.
+                Its precise meaning depends on the variable.
+
+            ens_param_time_win: Tim window used to compute some ensemble
+                variables. Its precise meaning depends on the variable.
+
+            ens_variable: Ensemble variable computed from plot variable. Use the
+                format key '{ens_variable}' to embed it in ``outfile``.
+
+            infile: Input file path(s). May contain format keys.
+
+            input_variable: Input variable. Choices: "concentration",
+                "deposition".
+
+            integrate: Integrate field over time.
+
+            lang: Language. Use the format key '{lang}' to embed it in
+                ``outfile``. Choices: "en", "de".
+
+            level: Index/indices of vertical level (zero-based, bottom-up). To
+                sum up multiple levels, combine their indices with '+'. Use the
+                format key '{level}' to embed it in ``outfile``.
+
+            multipanel_param: Parameter used to plot multiple panels. Only valid
+                for ``plot_type = "multipanel"``. The respective parameter must
+                have one value per panel. For example, a four-panel plot with
+                one ensemble statistic plot each may be specified with
+                ``multipanel_param = "ens_variable"`` and ``ens_variable =
+                ["minimum", "maximum", "meam", "median"]``.
+
+            nageclass: Index of age class (zero-based). Use the format key
+                '{nageclass}' to embed it in ``outfile``.
+
+            noutrel: Index of noutrel (zero-based). Use the format key
+                '{noutrel}' to embed it in ``outfile``.
+
+            numpoint: Index of release point (zero-based).
+
+            outfile: Output file path(s). May contain format keys.
+
+            outfile_time_format: Format specification (e.g., '%Y%m%d%H%M') for
+                time steps (``time_step``, ``base_time``) embedded in
+                ``outfile``.
+
+            plot_type: Plot type. Use the format key '{plot_type}' to embed it
+                in ``outfile``.
+
+            plot_variable: Variable computed from input variable. Use the format
+                key '{plot_variable}' to embed it in ``outfile``.
+
+            species_id: Species id(s). To sum up multiple species, combine their
+                ids with '+'. Use the format key '{species_id}' to embed it in
+                ``outfile``.
+
+            time: Time step indices (zero-based). Use the format key '{time}'
+                to embed one in ``outfile``.
 
         """
         params = dict(**params)
