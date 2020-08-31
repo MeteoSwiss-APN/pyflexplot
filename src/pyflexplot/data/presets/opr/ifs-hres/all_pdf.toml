@@ -27,28 +27,28 @@ plot_variable = "affected_area_mono"
 combine_species = true
 time = -1
 
-[_base._concentration._pdf.full]
+[_base._concentration._pdf.cloud]
 outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration.pdf"
-domain = "release_site"
-[_base._concentration._integr._pdf.full]
+domain = "cloud"
+[_base._concentration._integr._pdf.cloud]
 outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet.pdf"
-domain = "release_site"
-[_base._tot_deposition._pdf.full]
+domain = "cloud"
+[_base._tot_deposition._pdf.cloud]
 outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Deposition.pdf"
-domain = "release_site"
-[_base._tot_deposition._affected_area._pdf.full]
+domain = "cloud"
+[_base._tot_deposition._affected_area._pdf.cloud]
 outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet.pdf"
-domain = "release_site"
+domain = "cloud"
 
-# + [_base._concentration._pdf.zoom]
-# + outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration_zoom.pdf"
-# + domain = "alps"
-# + [_base._concentration._integr._pdf.zoom]
-# + outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet_zoom.pdf"
-# + domain = "alps"
-# + [_base._tot_deposition._pdf.zoom]
-# + outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Deposition_zoom.pdf"
-# + domain = "alps"
-# + [_base._tot_deposition._affected_area._pdf.zoom]
-# + outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet_zoom.pdf"
-# + domain = "alps"
+[_base._concentration._pdf.site]
+outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration_zoom.pdf"
+domain = "release_site"
+[_base._concentration._integr._pdf.site]
+outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet_zoom.pdf"
+domain = "release_site"
+[_base._tot_deposition._pdf.site]
+outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Deposition_zoom.pdf"
+domain = "release_site"
+[_base._tot_deposition._affected_area._pdf.site]
+outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet_zoom.pdf"
+domain = "release_site"
