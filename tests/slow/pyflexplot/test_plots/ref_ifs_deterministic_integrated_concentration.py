@@ -41,7 +41,7 @@ field_summary = {
                 "lang": "en",
                 "domain": "cloud",
                 "domain_size_lat": None,
-                "domain_size_lon": None,
+                "domain_size_lon": 20.0,
                 "dimensions": {
                     "deposition_type": None,
                     "level": 0,
@@ -1564,7 +1564,7 @@ plot_summary = {
                         "lang": "en",
                         "domain": "cloud",
                         "domain_size_lat": None,
-                        "domain_size_lon": None,
+                        "domain_size_lon": 20.0,
                         "dimensions": {
                             "deposition_type": None,
                             "level": 0,
@@ -27589,7 +27589,7 @@ plot_summary = {
                     "lang": "en",
                     "domain": "cloud",
                     "domain_size_lat": None,
-                    "domain_size_lon": None,
+                    "domain_size_lon": 20.0,
                     "dimensions": {
                         "deposition_type": None,
                         "level": 0,

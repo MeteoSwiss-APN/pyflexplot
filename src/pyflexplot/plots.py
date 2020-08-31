@@ -33,8 +33,6 @@ from typing import Union
 # Third-party
 import matplotlib as mpl
 import numpy as np
-from cartopy.crs import PlateCarree
-from cartopy.crs import RotatedPole
 
 # First-party
 from pyflexplot.utils.datetime import init_datetime
@@ -141,31 +139,13 @@ def create_map_config(field: Field) -> MapAxesConfig:
         else:
             domain = Domain(zoom_fact=1.01)
     if domain_type == "release_site":
-        # SR_TMP < TODO move logic into Domain* classes
-        d_lat = field.var_setups.collect_equal("domain_size_lat")
-        d_lon = field.var_setups.collect_equal("domain_size_lon")
-        assert field.mdata is not None  # mypy
-        if isinstance(field.proj, RotatedPole):
-            c_lon, c_lat = field.proj.transform_point(
-                field.mdata.release.lon, field.mdata.release.lat, PlateCarree()
-            )
-            lllat = c_lat - 0.5 * d_lat
-            lllon = c_lon - 0.5 * d_lon
-            urlat = c_lat + 0.5 * d_lat
-            urlon = c_lon + 0.5 * d_lon
-        else:
-            lllat = field.mdata.release.lat - 0.5 * d_lat
-            lllon = field.mdata.release.lon - 0.5 * d_lon
-            urlat = field.mdata.release.lat + 0.5 * d_lat
-            urlon = field.mdata.release.lon + 0.5 * d_lon
-            lllon, lllat = field.proj.transform_point(lllon, lllat, PlateCarree())
-            urlon, urlat = field.proj.transform_point(urlon, urlat, PlateCarree())
-        # SR_TMP >
-        domain = Domain(lllat=lllat, lllon=lllon, urlat=urlat, urlon=urlon)
+        # SR_NOTE Logic currently in MapAxes._init_axes to be moved to Domain*
+        domain = Domain()
     if domain_type == "alps":
         if model_name == "IFS-HRES-EU":
             domain = Domain(zoom_fact=3.4, rel_offset=(-0.165, -0.11))
     if domain_type == "cloud":
+        # SR_NOTE Logic currently in MapAxes._init_axes to be moved to Domain*
         if model_name.startswith("COSMO"):
             domain = Domain(zoom_fact=0.9)
         if model_name.startswith("IFS"):

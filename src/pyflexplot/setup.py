@@ -253,21 +253,15 @@ class CoreSetup(BaseModel):
                 value = ENS_PROBABILITY_DEFAULT_PARAM_THR
         return value
 
-    @validator("domain_size_lat", always=True)
-    def _init_domain_size_lat(
-        cls, value: Optional[float], values: Dict[str, Any]
-    ) -> Optional[float]:
-        if value is None and values["domain"] == "release_site":
-            return 15.0
-        return value
-
-    @validator("domain_size_lon", always=True)
-    def _init_domain_size_lon(
-        cls, value: Optional[float], values: Dict[str, Any]
-    ) -> Optional[float]:
-        if value is None and values["domain"] == "release_site":
-            return 30.0
-        return value
+    @root_validator()
+    def _init_domain_size_lat_lon(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        lat = values["domain_size_lat"]
+        lon = values["domain_size_lon"]
+        if lat is None and lon is None:
+            if values["domain"] in ["release_site", "cloud"]:
+                # Lat size derived from lon size and map aspect ratio
+                values["domain_size_lon"] = 20.0
+        return values
 
     @classmethod
     def create(cls, params: Mapping[str, Any]) -> "CoreSetup":

@@ -17,7 +17,8 @@ from typing import Tuple
 import cartopy
 import matplotlib as mpl
 import numpy as np
-from cartopy.crs import Projection  # type: ignore
+from cartopy.crs import PlateCarree  # type: ignore
+from cartopy.crs import Projection
 from cartopy.crs import RotatedPole
 from cartopy.io.shapereader import Record  # type: ignore
 from matplotlib.axes import Axes
@@ -354,6 +355,9 @@ class MapAxes:
             choices = ["data", "mercator"]
             raise NotImplementedError(f"projection '{projection}'; choices: {choices}")
 
+    # pylint: disable=R0912  # too-many-branches
+    # pylint: disable=R0914  # too-many-locals
+    # pylint: disable=R0915  # too-many-statements
     def _init_ax(self) -> None:
         """Initialize Axes."""
         ax: Axes = self.fig.add_axes(self.rect, projection=self.proj_map)
@@ -374,23 +378,65 @@ class MapAxes:
             urlat = field.lat[mask_lat].max()
             lllon = field.lon[mask_lon].min()
             urlon = field.lon[mask_lon].max()
+
+            # Increase size if minimum specified
+            d_lat = urlat - lllat
+            d_lon = urlon - lllon
+            d_lat_min = field.var_setups.collect_equal("domain_size_lat")
+            d_lon_min = field.var_setups.collect_equal("domain_size_lon")
+            if d_lat_min is not None and d_lat_min > d_lat:
+                d_lat_new = d_lat_min
+                lllat -= 0.5 * (d_lat_min - d_lat)
+                urlat += 0.5 * (d_lat_min - d_lat)
+            if d_lon_min is not None and d_lon_min > d_lon:
+                lllon -= 0.5 * (d_lon_min - d_lon)
+                urlon += 0.5 * (d_lon_min - d_lon)
+
             # Adjust aspect ratio to avoid distortion
+            d_lat = urlat - lllat
+            d_lon = urlon - lllon
             aspect = self.get_aspect_ratio()
-            dlat = urlat - lllat
-            dlon = urlon - lllon
-            if dlon / dlat < aspect:
-                dlon_new = dlat * aspect
-                lllon -= 0.5 * (dlon_new - dlon)
-                urlon += 0.5 * (dlon_new - dlon)
-            elif dlon / dlat > aspect:
-                dlat_new = dlon / aspect
-                lllat -= 0.5 * (dlat_new - dlat)
-                urlat += 0.5 * (dlat_new - dlat)
+            if d_lon / d_lat < aspect:
+                d_lon_new = d_lat * aspect
+                lllon -= 0.5 * (d_lon_new - d_lon)
+                urlon += 0.5 * (d_lon_new - d_lon)
+            elif d_lon / d_lat > aspect:
+                d_lat_new = d_lon / aspect
+                lllat -= 0.5 * (d_lat_new - d_lat)
+                urlat += 0.5 * (d_lat_new - d_lat)
+
         elif domain_type == "release_site":
             urlon = config.domain.urlon
             urlat = config.domain.urlat
             lllon = config.domain.lllon
             lllat = config.domain.lllat
+            d_lat = field.var_setups.collect_equal("domain_size_lat")
+            d_lon = field.var_setups.collect_equal("domain_size_lon")
+            if d_lat is None and d_lon is None:
+                raise Exception(
+                    "domain type 'release_site': setup params 'domain_size_(lat|lon)'"
+                    " are both None; one or both is required"
+                )
+            elif d_lat is None:
+                d_lat = d_lon / self.get_aspect_ratio()
+            elif d_lon is None:
+                d_lon = d_lat / self.get_aspect_ratio()
+            assert field.mdata is not None  # mypy
+            if isinstance(field.proj, RotatedPole):
+                c_lon, c_lat = field.proj.transform_point(
+                    field.mdata.release.lon, field.mdata.release.lat, PlateCarree()
+                )
+                lllat = c_lat - 0.5 * d_lat
+                lllon = c_lon - 0.5 * d_lon
+                urlat = c_lat + 0.5 * d_lat
+                urlon = c_lon + 0.5 * d_lon
+            else:
+                lllat = field.mdata.release.lat - 0.5 * d_lat
+                lllon = field.mdata.release.lon - 0.5 * d_lon
+                urlat = field.mdata.release.lat + 0.5 * d_lat
+                urlon = field.mdata.release.lon + 0.5 * d_lon
+                lllon, lllat = field.proj.transform_point(lllon, lllat, PlateCarree())
+                urlon, urlat = field.proj.transform_point(urlon, urlat, PlateCarree())
         else:
             lllat = field.lat[0] if config.domain.lllat is None else config.domain.lllat
             urlat = (
