@@ -7,6 +7,7 @@ import pytest  # type: ignore
 
 # First-party
 from pyflexplot.setup import Setup
+from pyflexplot.utils.pydantic import InvalidParameterValueError
 
 
 class Test_CastSingle:
@@ -81,7 +82,7 @@ class Test_CastMany:
             "dimensions": {"species_id": "1,2"},
             "integrate": "False",
         }
-        with pytest.raises(ValueError):
+        with pytest.raises(InvalidParameterValueError):
             Setup.cast_many(params)
 
     def test_tuple_duplicates_fail(self):

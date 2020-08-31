@@ -22,6 +22,9 @@ import click
 from PyPDF2 import PdfFileReader
 from PyPDF2 import PdfFileWriter
 
+# First-party
+from pyflexplot.utils.pydantic import InvalidParameterNameError
+
 # Local
 from .. import __version__
 from .. import data_path
@@ -29,6 +32,7 @@ from ..input import read_fields
 from ..plots import create_plot
 from ..plots import prepare_plot
 from ..setup import Setup
+from ..setup import SetupCollection
 from ..setup import SetupFile
 from ..utils.formatting import format_range
 from ..utils.logging import log
@@ -130,8 +134,8 @@ def click_prep_setup_params(ctx, param, value):
     params = prepare_params(value)
     try:
         return Setup.cast_many(params)
-    except ValueError as e:
-        click_error(ctx, f"Invalid setup parameter ({e})")
+    except InvalidParameterNameError as e:
+        click_error(ctx, f"Invalid setup parameter name: {e}")
 
 
 @click.command(context_settings={"help_option_names": ["-h", "--help"]},)
@@ -296,18 +300,18 @@ def main(
         if path not in setup_file_paths:
             setup_file_paths.append(path)
     if not setup_file_paths:
-        click_error(ctx, "Missing setup file; specify as argument and/or with --preset")
-
-    # Read setup files
-    # Note: Already added argument `each_only` to `read_many` in order to plot
-    #       N plots per input setup file instead of per input data file, as it
-    #       is done now, but this does not yet work because it would select
-    #       n unexpanded setups per setup file, which may well correspond to a
-    #       large number of plots, e.g., in case of many time steps!
-    #       The setups would either have to be pre-expanded during reading, or
-    #       this had to be solved some other way, but for now, let's just stick
-    #       with the current implementation of N plots per input data file...
-    setups = SetupFile.read_many(setup_file_paths, override=input_setup_params)
+        setups = SetupCollection.from_raw_params([input_setup_params])
+    else:
+        # Read setup files
+        # Note: Already added argument `each_only` to `read_many` in order to
+        # plot N plots per input setup file instead of per input data file, as
+        # it is done now, but this does not yet work because it would select N
+        # unexpanded setups per setup file, which may well correspond to a large
+        # number of plots, e.g., in case of many time steps!
+        # The setups would either have to be pre-expanded during reading, or
+        # this had to be solved some other way, but for now, let's just stick
+        # with the current implementation of N plots per input data file...
+        setups = SetupFile.read_many(setup_file_paths, override=input_setup_params)
     setups = setups.compress_partially("outfile")
 
     if suffixes:

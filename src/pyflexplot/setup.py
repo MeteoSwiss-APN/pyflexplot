@@ -44,6 +44,7 @@ from .dimensions import Dimensions
 from .utils.exceptions import UnequalSetupParamValuesError
 from .utils.logging import log
 from .utils.pydantic import cast_field_value
+from .utils.pydantic import InvalidParameterNameError
 from .utils.pydantic import prepare_field_value
 
 # Some plot-specific default values
@@ -460,17 +461,36 @@ class Setup(BaseModel):
     @classmethod
     def cast(cls, param: str, value: Any) -> Any:
         """Cast a parameter to the appropriate type."""
+        param_choices = sorted(
+            [param for param in cls.__fields__ if param != "core"]
+            + [param for param in CoreSetup.__fields__ if param != "dimensions"]
+            + list(CoreDimensions.__fields__)
+        )
+        param_choices_fmtd = ", ".join([f"'{param}'" for param in param_choices])
         if param == "dimensions":
-            return {
-                dim_param: Dimensions.cast(dim_param, dim_value, many_ok=True)
-                for dim_param, dim_value in value.items()
-            }
-        elif is_dimensions_param(param):
-            # return cast_field_value(CoreDimensions, param, value, many_ok=True)
-            return Dimensions.cast(param, value, many_ok=True)
-        elif is_core_setup_param(param):
-            return cast_field_value(CoreSetup, param, value)
-        return cast_field_value(cls, param, value)
+            result: Dict[str, Any] = {}
+            for dim_param, dim_value in value.items():
+                try:
+                    result[dim_param] = Dimensions.cast(
+                        dim_param, dim_value, many_ok=True
+                    )
+                except InvalidParameterNameError:
+                    raise InvalidParameterNameError(
+                        f"{dim_param} ({type(dim_value).__name__}: {dim_value})"
+                        f"; choices: {param_choices_fmtd}"
+                    )
+            return result
+        try:
+            if is_dimensions_param(param):
+                return Dimensions.cast(param, value, many_ok=True)
+            elif is_core_setup_param(param):
+                return cast_field_value(CoreSetup, param, value)
+            return cast_field_value(cls, param, value)
+        except InvalidParameterNameError:
+            raise InvalidParameterNameError(
+                f"{param} ({type(value).__name__}: {value})"
+                f"; choices: {param_choices_fmtd}"
+            )
 
     @classmethod
     def cast_many(
@@ -697,6 +717,23 @@ class SetupCollection:
                 setup = Setup.create(dct)
                 setup_lst.append(setup)
         return cls(setup_lst)
+
+    @classmethod
+    def from_raw_params(
+        cls, raw_params_lst: Sequence[Mapping[str, Any]]
+    ) -> "SetupCollection":
+        params_lst = []
+        for raw_params in raw_params_lst:
+            params = {}
+            for param, value in raw_params.items():
+                if not is_dimensions_param(param):
+                    params[param] = value
+                else:
+                    if "dimensions" not in params:
+                        params["dimensions"] = {}
+                    params["dimensions"][param] = value
+            params_lst.append(params)
+        return cls.create(params_lst)
 
     def copy(self) -> "SetupCollection":
         return type(self)([setup.copy() for setup in self])
@@ -1074,21 +1111,10 @@ class SetupFile:
                 raw_params = {**old_raw_params, **override}
                 if raw_params not in raw_params_lst:
                     raw_params_lst.append(raw_params)
-        params_lst = []
-        for raw_params in raw_params_lst:
-            params = {}
-            for param, value in raw_params.items():
-                if not is_dimensions_param(param):
-                    params[param] = value
-                else:
-                    if "dimensions" not in params:
-                        params["dimensions"] = {}
-                    params["dimensions"][param] = value
-            params_lst.append(params)
-        setups = SetupCollection.create(params_lst)
+        setups = SetupCollection.from_raw_params(raw_params_lst)
         if only is not None:
             if only < 0:
-                raise ValueError("only must not be negative", only)
+                raise ValueError(f"only must not be negative ({only})")
             setups = SetupCollection(list(setups)[:only])
         return setups
 

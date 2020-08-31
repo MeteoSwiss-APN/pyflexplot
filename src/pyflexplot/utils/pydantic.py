@@ -55,25 +55,37 @@ def prepare_field_value(
     return value
 
 
+class InvalidParameterError(Exception):
+    """Parameter is invalid."""
+
+
+class InvalidParameterNameError(InvalidParameterError):
+    """Parameter has invalid name."""
+
+
+class InvalidParameterValueError(InvalidParameterError):
+    """Parameter has invalid value."""
+
+
 # pylint: disable=R0912  # too-many-branches
 def cast_field_value(cls: Type, param: str, value: Any, many_ok: bool = False) -> Any:
     try:
         field: ModelField = cls.__fields__[param]
     except KeyError:
-        raise ValueError(
-            f"invalid parameter name: '{param}'; choices: {sorted(cls.__fields__)}"
+        raise InvalidParameterNameError(
+            f"{param} ({value} [{type(value).__name__}])"
+            f"; choices: {sorted(cls.__fields__)}"
         )
 
     def invalid_value_exception(
         type_: Union[Type, str], param: str, value: Any
-    ) -> ValueError:
+    ) -> InvalidParameterValueError:
         if isinstance(type_, str):
             s_type = type_
         else:
             s_type = type_.__name__
-        s_value_type = type(value).__name__
-        return ValueError(
-            f"invalid value of {s_type} parameter '{param}' ({s_value_type}): {value}"
+        return InvalidParameterValueError(
+            f"{type(value).__name__}: {value} ({s_type}: {param})"
         )
 
     if str(field.type_).startswith("typing.Union["):
@@ -126,9 +138,9 @@ def cast_field_value(cls: Type, param: str, value: Any, many_ok: bool = False) -
         else:
             return [cls.cast(param, val) for val in value]
     if issubclass(field.type_, bool):
-        if value in [True, "True"]:
+        if value in [True, "True", "true"]:
             return True
-        elif value in [False, "False"]:
+        elif value in [False, "False", "false"]:
             return False
     else:
         try:

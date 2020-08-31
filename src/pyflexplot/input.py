@@ -169,7 +169,7 @@ class FieldInputOrganizer:
             setups_field_lst: List[SetupCollection] = []
             for (
                 (
-                    ens_member_id,
+                    _,  # ens_member_id,
                     input_variable,
                     combine_levels,
                     combine_deposition_types,

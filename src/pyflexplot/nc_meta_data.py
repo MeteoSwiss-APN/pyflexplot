@@ -111,7 +111,7 @@ def determine_release_site(file_handle: nc4.Dataset) -> str:
     assert len(var) == 1
     idx = 0
     # SR_TMP >
-    return var[idx][~var[idx].mask].tostring().decode("utf-8").rstrip()
+    return var[idx][~var[idx].mask].tobytes().decode("utf-8").rstrip()
 
 
 def determine_species_ids(model: str, variables: Dict[str, Any]) -> Tuple[int, ...]:
