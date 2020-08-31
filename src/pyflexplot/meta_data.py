@@ -15,8 +15,6 @@ from datetime import timezone
 from typing import Any
 from typing import cast
 from typing import Collection
-from typing import Dict
-from typing import List
 from typing import Mapping
 from typing import Optional
 from typing import Sequence
@@ -29,12 +27,13 @@ import numpy as np
 from pydantic import BaseModel
 
 # First-party
-from pyflexplot.utils.datetime import init_datetime
+from srutils.dataclasses import dataclass_merge
 
 # Local
 from .setup import Setup
 from .species import get_species
 from .species import Species
+from .utils.datetime import init_datetime
 
 MetaDatumType = Union[int, float, str, datetime, timedelta]
 
@@ -50,7 +49,10 @@ def format_meta_datum(value: Any, join: Optional[str] = None) -> str:
         minutes = int((value.total_seconds() / 60) % 60)
         return f"{hours:d}:{minutes:02d}$\\,$h"
     elif isinstance(value, (float, int)):
-        return f"{value:g}"
+        if 1e-5 < value < 1e6:
+            return f"{value:g}"
+        else:
+            return f"{value:.2g}"
     else:
         return str(value)
 
@@ -73,9 +75,7 @@ class MetaData:
             return self
 
         def merge_release():
-            if not all(other.release == self.release for other in others):
-                raise ValueError("release meta data differ")
-            return self.release
+            return self.release.merge_with([other.release for other in others])
 
         def merge_simulation():
             if not all(other.simulation == self.simulation for other in others):
@@ -132,6 +132,8 @@ class MetaData:
                 values_fmtd = [format_meta_datum(datum), format_meta_datum(unit_datum)]
                 datum = r"$\,$".join(values_fmtd)
             else:
+                if not isinstance(unit_datum, tuple):
+                    unit_datum = tuple([unit_datum] * len(datum))
                 value = [
                     r"$\,$".join([format_meta_datum(d), format_meta_datum(u)])
                     for d, u in zip(datum, unit_datum)
@@ -287,10 +289,10 @@ class ReleaseMetaData:
     height_unit: str
     lat: float
     lon: float
-    mass: float
+    mass: Union[float, Tuple[float, ...]]
     mass_unit: str
     site: str
-    rate: float
+    rate: Union[float, Tuple[float, ...]]
     rate_unit: str
     start_rel: timedelta
 
@@ -309,8 +311,7 @@ class ReleaseMetaData:
         duration_unit = "s"  # SR_HC
         assert raw.zbot_unit == raw.ztop_unit
         height_unit = raw.zbot_unit
-        assert len(raw.ms_parts) == 1
-        mass = next(iter(raw.ms_parts))
+        mass = raw.ms_parts
         mass_unit = "Bq"  # SR_HC
         return cls(
             duration=duration,
@@ -328,13 +329,18 @@ class ReleaseMetaData:
             start_rel=start_rel,
         )
 
+    def merge_with(self, others: Sequence["ReleaseMetaData"]) -> "ReleaseMetaData":
+        return dataclass_merge(
+            [self] + list(others), expect_equal_except=["mass", "rate"]
+        )
+
 
 class RawReleaseMetaData(BaseModel):
     age_id: int
     kind: str
     lllat: float
     lllon: float
-    ms_parts: Tuple[int, ...]
+    ms_parts: float
     n_parts: int
     rel_end: timedelta
     rel_start: timedelta
@@ -352,12 +358,22 @@ class RawReleaseMetaData(BaseModel):
         validate_all = True
         validate_assigment = True
 
+    # pylint: disable=R0914  # too-many-locals
     @classmethod
     def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "RawReleaseMetaData":
         """Read information on a release from open file."""
 
         assert setup.core.dimensions.numpoint is not None  # mypy
-        idx = setup.core.dimensions.numpoint
+        idx_point = setup.core.dimensions.numpoint
+
+        assert setup.core.dimensions.species_id is not None  # mypy
+        # SR_TMP <
+        idx_spec = setup.core.dimensions.species_id - 1
+        assert 0 <= idx_spec < fi.dimensions["numspec"].size
+        # SR_TMP >
+
+        assert setup.core.dimensions.nageclass is not None  # mypy
+        idx_age = setup.core.dimensions.nageclass
 
         var_name: str = "RELCOM"  # SR_HC TODO un-hardcode
         var = fi.variables[var_name]
@@ -367,21 +383,21 @@ class RawReleaseMetaData(BaseModel):
         if n == 0:
             raise ValueError(f"file '{fi.name}': no release points ('{var_name}')")
         elif n == 1:
-            if idx is None:
-                idx = 0
+            if idx_point is None:
+                idx_point = 0
         elif n > 1:
-            if idx is None:
+            if idx_point is None:
                 raise ValueError(
                     f"file '{fi.name}': idx is None despite {n} release points"
                 )
-        assert idx is not None  # mypy
-        if idx < 0 or idx >= n:
+        assert idx_point is not None  # mypy
+        if idx_point < 0 or idx_point >= n:
             raise ValueError(
-                f"file '{fi.name}': invalid index {idx} for {n} release points"
+                f"file '{fi.name}': invalid index {idx_point} for {n} release points"
             )
 
         # Name: convert from byte character array
-        site = var[idx][~var[idx].mask].tostring().decode("utf-8").rstrip()
+        site = var[idx_point][~var[idx_point].mask].tobytes().decode("utf-8").rstrip()
 
         # Other attributes
         key_pairs = [
@@ -401,7 +417,19 @@ class RawReleaseMetaData(BaseModel):
         store_units = ["zbot", "ztop"]
         params = {"site": site}
         for key_out, key_in in key_pairs:
-            params[key_out] = fi.variables[key_in][idx].tolist()
+            var = fi.variables[key_in]
+            # SR_TMP < TODO more flexible solution w/o hardcoding so much
+            if var.dimensions == ("numpoint",):
+                params[key_out] = var[idx_point].tolist()
+            elif var.dimensions == ("numspec", "numpoint"):
+                params[key_out] = var[idx_spec, idx_point].tolist()
+            elif var.dimensions == ("nageclass",):
+                params[key_out] = var[idx_age].tolist()
+            else:
+                raise NotImplementedError(
+                    f"dimensions {var.dimensions} (variable {var.name})"
+                )
+            # SR_TMP >
             if key_out in store_units:
                 unit = getncattr(fi.variables[key_in], "units")
                 params[f"{key_out}_unit"] = unit
@@ -538,17 +566,7 @@ class SpeciesMetaData:
         )
 
     def merge_with(self, others: Sequence["SpeciesMetaData"]) -> "SpeciesMetaData":
-        kwargs: Dict[str, Any] = {}
-        # pylint: disable=E1101  # no-member
-        for param in self.__dataclass_fields__:  # type: ignore
-            vals: List[Union[float, str]] = []
-            for obj in [self] + list(others):
-                val = getattr(obj, param)
-                for sub_val in val if isinstance(val, tuple) else [val]:
-                    if sub_val not in vals:
-                        vals.append(sub_val)
-            kwargs[param] = tuple(vals)
-        return type(self)(**kwargs)
+        return dataclass_merge([self] + list(others))
 
 
 def nc_var_name(setup: Setup, model: str) -> str:

@@ -5072,7 +5072,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "34722.2$\\,$Bq s$^{-1}$",
+                    "s": "34722.2$\\,$Bq s$^{-1}$ / 1e+07$\\,$Bq s$^{-1}$",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -5101,7 +5101,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "1e+09$\\,$Bq",
+                    "s": "1e+09$\\,$Bq / 2.9e+11$\\,$Bq",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

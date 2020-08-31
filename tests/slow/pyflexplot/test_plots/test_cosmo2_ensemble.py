@@ -83,11 +83,10 @@ class Test_EnsProbability_WetDeposition(_TestBase):
         "ens_variable": "probability",
         "input_variable": "deposition",
         "integrate": True,
-        "combine_species": True,
         "ens_member_id": ENS_MEMBER_IDS,
         "lang": "en",
         "domain": "full",
-        "dimensions": {"deposition_type": "wet", "species_id": 2, "time": -1},
+        "dimensions": {"deposition_type": "wet", "species_id": 1, "time": -1},
     }
 
 
