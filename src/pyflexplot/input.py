@@ -612,7 +612,9 @@ class InputFileEnsemble:
 
             # Check that the index along the dimension is valid
             if dim_idx is None:
-                raise Exception("dimension is None", idx, err_dct)
+                raise Exception(
+                    f"value of dimension '{err_dct['dim_name']} is None", idx, err_dct
+                )
 
             indices[idx] = dim_idx
 

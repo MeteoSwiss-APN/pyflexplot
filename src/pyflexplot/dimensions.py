@@ -252,6 +252,8 @@ class Dimensions:
             if input_variable == "concentration":
                 if "level" in raw_dimensions:
                     obj.level = tuple(range(raw_dimensions["level"]["size"]))
+                elif "height" in raw_dimensions:
+                    obj.level = tuple(range(raw_dimensions["height"]["size"]))
 
         if obj.deposition_type is None:
             if input_variable == "deposition":
