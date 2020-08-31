@@ -24,6 +24,7 @@ field_summary = {
             "model": "COSMO-1",
             "base_time": 201909301200,
             "ens_member_id": None,
+            "scale_fact": 1.0,
             "core": {
                 "input_variable": "deposition",
                 "plot_variable": "auto",
@@ -833,6 +834,7 @@ plot_summary = {
                     "model": "COSMO-1",
                     "base_time": 201909301200,
                     "ens_member_id": None,
+                    "scale_fact": 1.0,
                     "core": {
                         "input_variable": "deposition",
                         "plot_variable": "auto",
@@ -1172,7 +1174,7 @@ plot_summary = {
                 "max": 4.0499997,
             },
         },
-        "conf": {
+        "config": {
             "type": "MapAxesConfig",
             "domain": {
                 "type": "Domain",
@@ -1190,14 +1192,16 @@ plot_summary = {
             "lw_frame": 1.0,
             "projection": "data",
             "min_city_pop": 300000,
-            "ref_dist_conf": {
+            "ref_dist_config": {
                 "type": "RefDistIndConfig",
                 "dist": 100,
                 "font_size": 11.0,
+                "line_width": 2.0,
                 "pos": "bl",
                 "unit": "km",
             },
             "ref_dist_on": True,
+            "scale_fact": 1.0,
         },
         "elements": [
             {
@@ -1209,8 +1213,8 @@ plot_summary = {
                 "zorder": 4,
                 "color": "black",
                 "fillstyle": "none",
-                "markeredgewidth": 1,
-                "markersize": 3,
+                "markeredgewidth": 1.0,
+                "markersize": 3.0,
             },
             {
                 "element_type": "text",
@@ -1221,7 +1225,7 @@ plot_summary = {
                 "xytext": [5, 1],
                 "textcoords": "offset points",
                 "va": "center",
-                "size": "small",
+                "size": 9.0,
                 "clip_on": True,
             },
             {
@@ -1233,8 +1237,8 @@ plot_summary = {
                 "zorder": 4,
                 "color": "black",
                 "fillstyle": "none",
-                "markeredgewidth": 1,
-                "markersize": 3,
+                "markeredgewidth": 1.0,
+                "markersize": 3.0,
             },
             {
                 "element_type": "text",
@@ -1245,7 +1249,7 @@ plot_summary = {
                 "xytext": [5, 1],
                 "textcoords": "offset points",
                 "va": "center",
-                "size": "small",
+                "size": 9.0,
                 "clip_on": True,
             },
             {
@@ -1257,8 +1261,8 @@ plot_summary = {
                 "zorder": 4,
                 "color": "black",
                 "fillstyle": "none",
-                "markeredgewidth": 1,
-                "markersize": 3,
+                "markeredgewidth": 1.0,
+                "markersize": 3.0,
             },
             {
                 "element_type": "text",
@@ -1269,7 +1273,7 @@ plot_summary = {
                 "xytext": [5, 1],
                 "textcoords": "offset points",
                 "va": "center",
-                "size": "small",
+                "size": 9.0,
                 "clip_on": True,
             },
             {
@@ -1281,8 +1285,8 @@ plot_summary = {
                 "zorder": 4,
                 "color": "black",
                 "fillstyle": "none",
-                "markeredgewidth": 1,
-                "markersize": 3,
+                "markeredgewidth": 1.0,
+                "markersize": 3.0,
             },
             {
                 "element_type": "text",
@@ -1293,7 +1297,7 @@ plot_summary = {
                 "xytext": [5, 1],
                 "textcoords": "offset points",
                 "va": "center",
-                "size": "small",
+                "size": 9.0,
                 "clip_on": True,
             },
             {
@@ -1305,8 +1309,8 @@ plot_summary = {
                 "zorder": 4,
                 "color": "black",
                 "fillstyle": "none",
-                "markeredgewidth": 1,
-                "markersize": 3,
+                "markeredgewidth": 1.0,
+                "markersize": 3.0,
             },
             {
                 "element_type": "text",
@@ -1317,7 +1321,7 @@ plot_summary = {
                 "xytext": [5, 1],
                 "textcoords": "offset points",
                 "va": "center",
-                "size": "small",
+                "size": 9.0,
                 "clip_on": True,
             },
             {
@@ -1340,7 +1344,7 @@ plot_summary = {
                 "transform": "RotatedPole instance",
                 "zorder": 6,
                 "color": "black",
-                "markersize": 10,
+                "markersize": 10.0,
                 "markeredgewidth": 1.5,
             },
         ],
@@ -3580,7 +3584,7 @@ plot_summary = {
                     "m": "+",
                     "kwargs": {
                         "color": "black",
-                        "markersize": 10,
+                        "markersize": 10.0,
                         "markeredgewidth": 1.5,
                     },
                 },
@@ -6100,6 +6104,7 @@ plot_summary = {
                 "model": "COSMO-1",
                 "base_time": 201909301200,
                 "ens_member_id": None,
+                "scale_fact": 1.0,
                 "core": {
                     "input_variable": "deposition",
                     "plot_variable": "auto",
@@ -6891,7 +6896,7 @@ plot_summary = {
         ],
         "bbox": {"type": "TransformedBbox", "bounds": (0.0, 0.0, 1250.0, 800.0)},
     },
-    "map_conf": {
+    "map_config": {
         "type": "MapAxesConfig",
         "domain": {
             "type": "Domain",
@@ -6909,13 +6914,15 @@ plot_summary = {
         "lw_frame": 1.0,
         "projection": "data",
         "min_city_pop": 300000,
-        "ref_dist_conf": {
+        "ref_dist_config": {
             "type": "RefDistIndConfig",
             "dist": 100,
             "font_size": 11.0,
+            "line_width": 2.0,
             "pos": "bl",
             "unit": "km",
         },
         "ref_dist_on": True,
+        "scale_fact": 1.0,
     },
 }

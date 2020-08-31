@@ -27,13 +27,13 @@ class Config:
 
 
 @pytest.mark.parametrize(
-    "conf",
+    "config",
     [
-        Config(ens_mem_ids=[0], ens_var="mean"),  # conf[0]
-        Config(ens_mem_ids=[1], ens_var="mean"),  # conf[1]
+        Config(ens_mem_ids=[0], ens_var="mean"),  # config[0]
+        Config(ens_mem_ids=[1], ens_var="mean"),  # config[1]
         Config(ens_mem_ids=[0, 10], ens_var="minimum"),  # [conf2]
         Config(ens_mem_ids=[0, 10], ens_var="mean"),  # [conf3]
-        Config(ens_mem_ids=[0, 10], ens_var="median"),  # conf[4]
+        Config(ens_mem_ids=[0, 10], ens_var="median"),  # config[4]
         Config(ens_mem_ids=[0, 10], ens_var="maximum"),  # [conf5]
         Config(ens_mem_ids=[2, 4, 8, 16], ens_var="minimum"),  # [conf6]
         Config(ens_mem_ids=[2, 4, 8, 16], ens_var="mean"),  # [conf7]
@@ -41,7 +41,7 @@ class Config:
         Config(ens_mem_ids=[2, 4, 8, 16], ens_var="maximum"),  # [conf9]
     ],
 )
-def test_one_setup_one_field(datadir, conf):  # noqa:F811
+def test_one_setup_one_field(datadir, config):  # noqa:F811
     datafile_fmt = f"{datadir}/flexpart_cosmo-2e_const_{{ens_member:03d}}.nc"
 
     reader = FieldInputOrganizer(datafile_fmt)
@@ -50,9 +50,9 @@ def test_one_setup_one_field(datadir, conf):  # noqa:F811
         "infile": "foo.nc",
         "outfile": "bar.png",
         "input_variable": "concentration",
-        "ens_member_id": conf.ens_mem_ids,
+        "ens_member_id": config.ens_mem_ids,
         "dimensions": {"time": -1, "species_id": 1, "level": 0},
-        "ens_variable": conf.ens_var,
+        "ens_variable": config.ens_var,
     }
     setup_dct_lst = [setup_dct]
     setups = SetupCollection.create(setup_dct_lst)
@@ -71,8 +71,8 @@ def test_one_setup_one_field(datadir, conf):  # noqa:F811
         "maximum": np.max,
         "mean": np.mean,
         "median": np.median,
-    }[conf.ens_var]
+    }[config.ens_var]
 
     res = f_reduce(fld)
-    sol = f_reduce(conf.ens_mem_ids)
+    sol = f_reduce(config.ens_mem_ids)
     assert np.isclose(res, sol)

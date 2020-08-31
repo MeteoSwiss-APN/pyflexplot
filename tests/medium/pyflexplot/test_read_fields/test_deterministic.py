@@ -61,7 +61,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
 
 # test_single
 @pytest.mark.parametrize(
-    "conf",
+    "config",
     [
         Config(  # [conf0]
             datafilename=datafilename1,
@@ -226,13 +226,13 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
         ),
     ],
 )
-def test_single(datadir, conf):  # noqa:F811
+def test_single(datadir, config):  # noqa:F811
     """Read a single field."""
 
-    datafile = f"{datadir}/{conf.datafilename}"
+    datafile = f"{datadir}/{config.datafilename}"
 
     # Initialize field specifications
-    setups = SetupCollection([conf.setup])
+    setups = SetupCollection([config.setup])
 
     # Read input field
     field_lst_lst = read_fields(datafile, setups)
@@ -251,15 +251,15 @@ def test_single(datadir, conf):  # noqa:F811
             [
                 read_nc_var(
                     datafile,
-                    get_var_name_ref(setup, conf.var_names_ref),
+                    get_var_name_ref(setup, config.var_names_ref),
                     setup,
-                    conf.model,
+                    config.model,
                 )
                 for setup in var_setups
             ],
             axis=0,
         )
-        * conf.scale_fld_ref
+        * config.scale_fld_ref
     )
 
     # Check array
@@ -269,7 +269,7 @@ def test_single(datadir, conf):  # noqa:F811
 
 # test_multiple
 @pytest.mark.parametrize(
-    "conf",
+    "config",
     [
         Config(  # [conf0]
             datafilename=datafilename1,
@@ -411,15 +411,15 @@ def test_single(datadir, conf):  # noqa:F811
         ),
     ],
 )
-def test_multiple(datadir, conf):  # noqa:F811
+def test_multiple(datadir, config):  # noqa:F811
     """Read multiple fields."""
 
-    datafile = f"{datadir}/{conf.datafilename}"
+    datafile = f"{datadir}/{config.datafilename}"
 
     # Create setups
-    setup_lst = list(conf.setup.decompress_partially(None))
+    setup_lst = list(config.setup.decompress_partially(None))
     for setup in setup_lst.copy():
-        setup_lst.extend(setup.derive(conf.derived_setup_params))
+        setup_lst.extend(setup.derive(config.derived_setup_params))
     setups = SetupCollection(setup_lst)
 
     # Process field specifications one after another
@@ -446,9 +446,9 @@ def test_multiple(datadir, conf):  # noqa:F811
             flds_ref_i = [
                 read_nc_var(
                     datafile,
-                    get_var_name_ref(var_setup, conf.var_names_ref),
+                    get_var_name_ref(var_setup, config.var_names_ref),
                     var_setup,
-                    conf.model,
+                    config.model,
                 )
             ]
             fld_ref_i = np.nansum(flds_ref_i, axis=0)
@@ -456,7 +456,7 @@ def test_multiple(datadir, conf):  # noqa:F811
                 fld_ref = fld_ref_i
             else:
                 fld_ref += fld_ref_i
-        fld_ref *= conf.scale_fld_ref
+        fld_ref *= config.scale_fld_ref
 
         assert fld.shape == fld_ref.shape
         assert np.isclose(np.nanmean(fld), np.nanmean(fld_ref), rtol=1e-6)
@@ -465,7 +465,7 @@ def test_multiple(datadir, conf):  # noqa:F811
 
 # test_single_add_ts0
 @pytest.mark.parametrize(
-    "conf",
+    "config",
     [
         Config(
             datafilename=datafilename1,
@@ -509,13 +509,13 @@ def test_multiple(datadir, conf):  # noqa:F811
         ),
     ],
 )
-def test_single_add_ts0(datadir, conf):
+def test_single_add_ts0(datadir, config):
     """Insert an additional time step 0 in the beginning, with empty fields."""
 
-    datafile = f"{datadir}/{conf.datafilename}"
+    datafile = f"{datadir}/{config.datafilename}"
 
     # Initialize field specifications
-    setups = SetupCollection([conf.setup])
+    setups = SetupCollection([config.setup])
 
     # Read fields with and without added time step 0
     # Note: Check relies on ordered time steps, which is incidental

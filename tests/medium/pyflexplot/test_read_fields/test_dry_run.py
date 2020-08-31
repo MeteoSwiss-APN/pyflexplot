@@ -97,21 +97,21 @@ class ConfMultipleSetups:
     sol: List[List[Dict[str, Any]]]
 
 
-def _test_single_setup_core(conf, params):
-    setup = Setup.create(conf.setup_dct)
+def _test_single_setup_core(config, params):
+    setup = Setup.create(config.setup_dct)
     setups = SetupCollection([setup])
-    _test_setups_core(setups, params, conf.sol)
+    _test_setups_core(setups, params, config.sol)
 
 
-def _test_multiple_setups_core(conf, params):
-    setup_lst = [Setup.create(setup_dct) for setup_dct in conf.setup_dct_lst]
+def _test_multiple_setups_core(config, params):
+    setup_lst = [Setup.create(setup_dct) for setup_dct in config.setup_dct_lst]
     setups = SetupCollection(setup_lst)
-    _test_setups_core(setups, params, conf.sol)
+    _test_setups_core(setups, params, config.sol)
 
 
 # test_single_setup_concentration
 @pytest.mark.parametrize(
-    "conf",
+    "config",
     [
         ConfSingleSetup(  # [conf0]
             setup_dct={"dimensions": {"species_id": 1, "level": 0, "time": 0}},
@@ -211,21 +211,21 @@ def _test_multiple_setups_core(conf, params):
         ),
     ],
 )
-def test_single_setup_concentration(datadir: str, conf: ConfSingleSetup):
+def test_single_setup_concentration(datadir: str, config: ConfSingleSetup):
     params = ["dimensions.species_id", "dimensions.level", "dimensions.time"]
-    conf.setup_dct.update(
+    config.setup_dct.update(
         {
             "infile": f"{datadir}/{datafilename1}",
             "outfile": "foo.png",
             "input_variable": "concentration",
         }
     )
-    _test_single_setup_core(conf, params)
+    _test_single_setup_core(config, params)
 
 
 # test_single_setup_deposition
 @pytest.mark.parametrize(
-    "conf",
+    "config",
     [
         ConfSingleSetup(  # [conf0]
             setup_dct={
@@ -363,21 +363,21 @@ def test_single_setup_concentration(datadir: str, conf: ConfSingleSetup):
         ),
     ],
 )
-def test_single_setup_deposition(datadir: str, conf: ConfSingleSetup):
+def test_single_setup_deposition(datadir: str, config: ConfSingleSetup):
     params = ["dimensions.deposition_type", "dimensions.species_id", "dimensions.time"]
-    conf.setup_dct.update(
+    config.setup_dct.update(
         {
             "infile": f"{datadir}/{datafilename1}",
             "outfile": "foo.png",
             "input_variable": "deposition",
         }
     )
-    _test_single_setup_core(conf, params)
+    _test_single_setup_core(config, params)
 
 
 # test_multiple_setups
 @pytest.mark.parametrize(
-    "conf",
+    "config",
     [
         ConfMultipleSetups(  # [conf0]
             setup_dct_lst=[
@@ -478,7 +478,7 @@ def test_single_setup_deposition(datadir: str, conf: ConfSingleSetup):
         ),
     ],
 )
-def test_multiple_setups(datadir: str, conf: ConfMultipleSetups):
+def test_multiple_setups(datadir: str, config: ConfMultipleSetups):
     params = [
         "input_variable",
         "dimensions.deposition_type",
@@ -486,6 +486,6 @@ def test_multiple_setups(datadir: str, conf: ConfMultipleSetups):
         "dimensions.species_id",
         "dimensions.time",
     ]
-    for setup_dct in conf.setup_dct_lst:
+    for setup_dct in config.setup_dct_lst:
         setup_dct.update({"infile": f"{datadir}/{datafilename1}", "outfile": "foo.png"})
-    _test_multiple_setups_core(conf, params)
+    _test_multiple_setups_core(config, params)

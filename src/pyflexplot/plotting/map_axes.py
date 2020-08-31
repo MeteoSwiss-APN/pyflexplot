@@ -93,9 +93,11 @@ class MapAxesConfig(BaseModel):
 
         min_city_pop: Minimum population of cities shown.
 
-        ref_dist_conf: Reference distance indicator setup.
+        ref_dist_config: Reference distance indicator setup.
 
         ref_dist_on: Whether to add a reference distance indicator.
+
+        scale_fact: Scaling factor for plot elements (fonts, lines, etc.)
 
     """
 
@@ -107,29 +109,33 @@ class MapAxesConfig(BaseModel):
     lw_frame: float = 1.0
     projection: str = "data"
     min_city_pop: int = 0
-    ref_dist_conf: RefDistIndConfig = RefDistIndConfig()
+    ref_dist_config: RefDistIndConfig
     ref_dist_on: bool = True
+    scale_fact: float = 1.0
 
     class Config:  # noqa
         arbitrary_types_allowed = True
 
     @root_validator(pre=True)
-    def _init_ref_dist_conf(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        param = "ref_dist_conf"
-        type_ = RefDistIndConfig
+    def _init_ref_dist_config(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         try:
-            value = values[param]
+            value = values["ref_dist_config"]
         except KeyError:
-            values[param] = type_()
+            # Not passed as argument; use default
+            values["ref_dist_config"] = RefDistIndConfig()
         else:
-            if isinstance(value, dict):
-                values[param] = type_(**value)
-            elif not isinstance(value, type_):
+            if isinstance(value, MutableMapping):
+                # Passed a dict as argument; turn into ``RefDistIndConfig``
+                values["ref_dist_config"] = RefDistIndConfig(**value)
+            elif not isinstance(value, RefDistIndConfig):
+                # Passed neither a dict nor a ``RefDistIndConfig`` as argument
                 raise TypeError(
-                    f"ref_dist_conf: expected dict or {type_.__name__}, got "
+                    f"ref_dist_config: expected dict or RefDistIndConfig, got "
                     f"{type(value).__name__}",
                     value,
                 )
+        scale_fact = values.get("scale_fact", 1.0)
+        values["ref_dist_config"] = values["ref_dist_config"].scale(scale_fact)
         return values
 
     @validator("geo_res_cities", always=True, allow_reuse=True)
@@ -156,14 +162,14 @@ class MapAxes:
 
         field: Field.
 
-        conf: Map axes setup.
+        config: Map axes setup.
 
     """
 
     fig: Figure
     rect: RectType
     field: Field
-    conf: MapAxesConfig
+    config: MapAxesConfig
 
     def __post_init__(self) -> None:
         self.elements: List[Tuple[str, Any]] = []
@@ -200,12 +206,12 @@ class MapAxes:
 
     @classmethod
     def create(
-        cls, conf: MapAxesConfig, *, fig: Figure, rect: RectType, field: np.ndarray,
+        cls, config: MapAxesConfig, *, fig: Figure, rect: RectType, field: np.ndarray,
     ) -> "MapAxes":
         if isinstance(field.proj, RotatedPole):
-            return MapAxesRotatedPole.create(conf, fig=fig, rect=rect, field=field)
+            return MapAxesRotatedPole.create(config, fig=fig, rect=rect, field=field)
         else:
-            return cls(fig=fig, rect=rect, field=field, conf=conf)
+            return cls(fig=fig, rect=rect, field=field, config=config)
 
     def post_summarize(
         self, summary: MutableMapping[str, Any]
@@ -328,7 +334,7 @@ class MapAxes:
 
     def _init_proj_map(self) -> None:
         """Initialize projection of map plot."""
-        projection: str = self.conf.projection
+        projection: str = self.config.projection
         if projection == "data":
             self.proj_map = self.proj_data
         elif projection == "mercator":
@@ -349,7 +355,7 @@ class MapAxes:
         self.ax = ax
 
         # Set geographical extent
-        conf: MapAxesConfig = self.conf
+        config: MapAxesConfig = self.config
         field: Field = self.field
         domain_type: str = field.var_setups.collect_equal("domain")
         if domain_type == "cloud":
@@ -361,20 +367,24 @@ class MapAxes:
             lllon = field.lon[mask_lon].min()
             urlon = field.lon[mask_lon].max()
         elif domain_type == "release_site":
-            urlon = conf.domain.urlon
-            urlat = conf.domain.urlat
-            lllon = conf.domain.lllon
-            lllat = conf.domain.lllat
+            urlon = config.domain.urlon
+            urlat = config.domain.urlat
+            lllon = config.domain.lllon
+            lllat = config.domain.lllat
         else:
-            lllat = field.lat[0] if conf.domain.lllat is None else conf.domain.lllat
-            urlat = field.lat[-1] if conf.domain.urlat is None else conf.domain.urlat
-            lllon = field.lon[0] if conf.domain.lllon is None else conf.domain.lllon
-            urlon = field.lon[-1] if conf.domain.urlon is None else conf.domain.urlon
+            lllat = field.lat[0] if config.domain.lllat is None else config.domain.lllat
+            urlat = (
+                field.lat[-1] if config.domain.urlat is None else config.domain.urlat
+            )
+            lllon = field.lon[0] if config.domain.lllon is None else config.domain.lllon
+            urlon = (
+                field.lon[-1] if config.domain.urlon is None else config.domain.urlon
+            )
         bbox = MapAxesBoundingBox(self, "data", lllon, urlon, lllat, urlat)
-        if conf.domain.zoom_fact != 1.0:
+        if config.domain.zoom_fact != 1.0:
             bbox = (
                 bbox.to_axes()
-                .zoom(conf.domain.zoom_fact, conf.domain.rel_offset)
+                .zoom(config.domain.zoom_fact, config.domain.rel_offset)
                 .to_data()
             )
         self.ax.set_aspect("auto")
@@ -382,13 +392,13 @@ class MapAxes:
 
     def _init_ref_dist_box(self) -> None:
         """Initialize the reference distance indicator (if activated)."""
-        if not self.conf.ref_dist_on:
+        if not self.config.ref_dist_on:
             self.ref_dist_box = None
         else:
             self.ref_dist_box = ReferenceDistanceIndicator(
                 ax=self.ax,
                 axes_to_geo=self.trans.axes_to_geo,
-                conf=self.conf.ref_dist_conf,
+                config=self.config.ref_dist_config,
                 zorder=self.zorder["grid"],
             )
 
@@ -402,7 +412,7 @@ class MapAxes:
 
     def _ax_add_geography(self) -> None:
         """Add geographic elements: coasts, countries, colors, etc."""
-        self.ax.coastlines(resolution=self.conf.geo_res)
+        self.ax.coastlines(resolution=self.config.geo_res)
         self.ax.background_patch.set_facecolor(self._water_color)
         self._ax_add_countries("lowest")
         self._ax_add_lakes("lowest")
@@ -417,7 +427,7 @@ class MapAxes:
             cartopy.feature.NaturalEarthFeature(
                 category="cultural",
                 name="admin_0_countries_lakes",
-                scale=self.conf.geo_res,
+                scale=self.config.geo_res,
                 edgecolor="black",
                 facecolor=facecolor,
                 linewidth=linewidth,
@@ -430,18 +440,18 @@ class MapAxes:
             cartopy.feature.NaturalEarthFeature(
                 category="physical",
                 name="lakes",
-                scale=self.conf.geo_res,
+                scale=self.config.geo_res,
                 edgecolor="none",
                 facecolor=self._water_color,
             ),
             zorder=self.zorder[zorder_key],
         )
-        if self.conf.geo_res == "10m":
+        if self.config.geo_res == "10m":
             self.ax.add_feature(
                 cartopy.feature.NaturalEarthFeature(
                     category="physical",
                     name="lakes_europe",
-                    scale=self.conf.geo_res,
+                    scale=self.config.geo_res,
                     edgecolor="none",
                     facecolor=self._water_color,
                 ),
@@ -466,7 +476,7 @@ class MapAxes:
         major_rivers = cartopy.feature.NaturalEarthFeature(
             category="physical",
             name="rivers_lake_centerlines",
-            scale=self.conf.geo_res,
+            scale=self.config.geo_res,
             edgecolor=self._water_color,
             facecolor=(0, 0, 0, 0),
             linewidth=linewidth,
@@ -475,11 +485,11 @@ class MapAxes:
         # self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
         # SR_WORKAROUND >
 
-        if self.conf.geo_res_rivers == "10m":
+        if self.config.geo_res_rivers == "10m":
             minor_rivers = cartopy.feature.NaturalEarthFeature(
                 category="physical",
                 name="rivers_europe",
-                scale=self.conf.geo_res,
+                scale=self.config.geo_res,
                 edgecolor=self._water_color,
                 facecolor=(0, 0, 0, 0),
                 linewidth=linewidth,
@@ -506,7 +516,7 @@ class MapAxes:
             #     "TODO: remove workaround and pin minimum Cartopy version!"
             # )
             self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
-            if self.conf.geo_res_rivers == "10m":
+            if self.config.geo_res_rivers == "10m":
                 self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
         # SR_WORKAROUND >
 
@@ -553,12 +563,12 @@ class MapAxes:
         def is_of_interest(city: Record) -> bool:
             """Check if a city fulfils certain importance criteria."""
             is_capital = city.attributes["FEATURECLA"].startswith("Admin-0 capital")
-            is_large = city.attributes["GN_POP"] > self.conf.min_city_pop
+            is_large = city.attributes["GN_POP"] > self.config.min_city_pop
             return is_capital or is_large
 
         def get_name(city: Record) -> str:
             """Fetch city name in current language, hand-correcting some."""
-            name = city.attributes[f"name_{self.conf.lang}"]
+            name = city.attributes[f"name_{self.config.lang}"]
             if name.startswith("Freiburg im ") and name.endswith("echtland"):
                 name = "Freiburg"
             return name
@@ -568,7 +578,7 @@ class MapAxes:
             cartopy.io.shapereader.natural_earth(
                 category="cultural",
                 name="populated_places",
-                resolution=self.conf.geo_res_cities,
+                resolution=self.config.geo_res_cities,
             )
         ).records()
 
@@ -581,12 +591,18 @@ class MapAxes:
                     marker="o",
                     color="black",
                     fillstyle="none",
-                    markeredgewidth=1,
-                    markersize=3,
+                    markeredgewidth=1 * self.config.scale_fact,
+                    markersize=3 * self.config.scale_fact,
                     zorder=self.zorder["geo_upper"],
                 )
-                name = get_name(city)
-                self.add_text(lon, lat, name, va="center", size="small", clip_on=True)
+                self.add_text(
+                    lon,
+                    lat,
+                    get_name(city),
+                    va="center",
+                    size=9 * self.config.scale_fact,
+                    clip_on=True,
+                )
 
     def _ax_add_data_domain_outline(self) -> None:
         """Add domain outlines to map plot."""
@@ -607,7 +623,7 @@ class MapAxes:
                 zorder=self.zorder["frames"],
                 facecolor="none",
                 edgecolor="black",
-                linewidth=self.conf.lw_frame,
+                linewidth=self.config.lw_frame,
                 clip_on=False,
             ),
         )
@@ -622,7 +638,7 @@ class MapAxesRotatedPole(MapAxes):
 
     @classmethod
     def create(
-        cls, conf: MapAxesConfig, *, fig: Figure, rect: RectType, field: Field
+        cls, config: MapAxesConfig, *, fig: Figure, rect: RectType, field: Field
     ) -> "MapAxesRotatedPole":
         if not isinstance(field.proj, RotatedPole):
             raise ValueError("not a rotated-pole field", field)
@@ -630,7 +646,12 @@ class MapAxesRotatedPole(MapAxes):
         pollat = rotated_pole["grid_north_pole_latitude"]
         pollon = rotated_pole["grid_north_pole_longitude"]
         return cls(
-            fig=fig, rect=rect, field=field, pollat=pollat, pollon=pollon, conf=conf,
+            fig=fig,
+            rect=rect,
+            field=field,
+            pollat=pollat,
+            pollon=pollon,
+            config=config,
         )
 
     def _init_proj_data(self) -> None:

@@ -55,6 +55,7 @@ from .plot_layouts import BoxedPlotLayoutType
 from .plotting.boxed_plot import BoxedPlot
 from .plotting.boxed_plot import BoxedPlotConfig
 from .plotting.boxed_plot import DummyBoxedPlot
+from .plotting.boxed_plot import FontSizes
 from .plotting.map_axes import Domain
 from .plotting.map_axes import MapAxes
 from .plotting.map_axes import MapAxesConfig
@@ -76,9 +77,10 @@ from .words import Words
 # pylint: disable=R0912  # too-many-branches
 # pylint: disable=R0914  # too-many-locals
 # pylint: disable=R0915  # too-many-statements
-def create_map_conf(field: Field) -> MapAxesConfig:
+def create_map_config(field: Field) -> MapAxesConfig:
     domain_type = field.var_setups.collect_equal("domain")
     model_name = field.var_setups.collect_equal("model")
+    scale_fact = field.var_setups.collect_equal("scale_fact")
 
     conf_global_scale: Dict[str, Any] = {
         "geo_res": "110m",
@@ -93,43 +95,44 @@ def create_map_conf(field: Field) -> MapAxesConfig:
         "geo_res_cities": "110m",
         "geo_res_rivers": "110m",
         "min_city_pop": 1_000_000,
-        "ref_dist_conf": {"dist": 250},
+        "ref_dist_config": {"dist": 250},
     }
     conf_regional_scale: Dict[str, Any] = {
         "geo_res": "10m",
         "geo_res_cities": "50m",
         "geo_res_rivers": "50m",
         "min_city_pop": 300_000,
-        "ref_dist_conf": {"dist": 100},
+        "ref_dist_config": {"dist": 100},
     }
     conf_country_scale: Dict[str, Any] = {
         "geo_res": "10m",
         "geo_res_cities": "10m",
         "geo_res_rivers": "10m",
         "min_city_pop": 0,
-        "ref_dist_conf": {"dist": 25},
+        "ref_dist_config": {"dist": 25},
     }
 
-    map_axes_conf: Optional[Dict[str, Any]] = None
+    map_axes_config: Optional[Dict[str, Any]] = None
     if domain_type == "full":
         if model_name.startswith("COSMO"):
-            map_axes_conf = conf_regional_scale
+            map_axes_config = conf_regional_scale
         if model_name == "IFS-HRES-EU":
-            map_axes_conf = conf_continental_scale
+            map_axes_config = conf_continental_scale
         if model_name == "IFS-HRES":
-            map_axes_conf = conf_global_scale
+            map_axes_config = conf_global_scale
     if domain_type == "release_site":
-        map_axes_conf = conf_regional_scale
+        map_axes_config = conf_regional_scale
     if domain_type == "cloud":
-        map_axes_conf = conf_regional_scale
+        map_axes_config = conf_regional_scale
     if domain_type == "alps":
-        map_axes_conf = conf_regional_scale
+        map_axes_config = conf_regional_scale
     if domain_type == "ch":
-        map_axes_conf = conf_country_scale
-    if map_axes_conf is None:
+        map_axes_config = conf_country_scale
+    if map_axes_config is None:
         raise NotImplementedError(
             f"map axes config for model '{model_name}' and domain type '{domain_type}'"
         )
+    map_axes_config["scale_fact"] = scale_fact
 
     domain: Optional[Domain] = None
     if domain_type == "full":
@@ -180,7 +183,7 @@ def create_map_conf(field: Field) -> MapAxesConfig:
         )
 
     return MapAxesConfig(
-        lang=field.var_setups.collect_equal("lang"), domain=domain, **map_axes_conf,
+        lang=field.var_setups.collect_equal("lang"), domain=domain, **map_axes_config,
     )
 
 
@@ -203,6 +206,8 @@ def create_plot_config(
     new_config_dct: Dict[str, Any] = {
         "setup": setup,
         "mdata": mdata,
+        "fig_size": (12.5 * setup.scale_fact, 8.0 * setup.scale_fact),
+        "font_sizes": FontSizes().scale(setup.scale_fact),
     }
 
     if setup.core.input_variable == "concentration":
@@ -288,15 +293,15 @@ def create_plot_config(
         "max": {
             "marker": "+",
             "color": "black",
-            "markersize": 10,
-            "markeredgewidth": 1.5,
+            "markersize": 10 * setup.scale_fact,
+            "markeredgewidth": 1.5 * setup.scale_fact,
         },
         "site": {
             "marker": "^",
             "markeredgecolor": "red",
             "markerfacecolor": "white",
-            "markersize": 7.5,
-            "markeredgewidth": 1.5,
+            "markersize": 7.5 * setup.scale_fact,
+            "markeredgewidth": 1.5 * setup.scale_fact,
         },
     }
 
@@ -641,10 +646,10 @@ def prepare_plot(
         if len(field_lst) > 1:
             raise NotImplementedError("multipanel plot")
         field = next(iter(field_lst))
-        map_conf = create_map_conf(field)
+        map_config = create_map_config(field)
         # SR_TMP >  SR_MULTIPANEL
         config = create_plot_config(setup, WORDS, SYMBOLS, cast(MetaData, field.mdata))
-        return out_file_paths, BoxedPlot(field, config, map_conf)
+        return out_file_paths, BoxedPlot(field, config, map_config)
 
 
 def create_plot(

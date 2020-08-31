@@ -379,6 +379,7 @@ def test_realcase_opr_like(tmp_path):
             "outfile_time_format": "%Y%m%d%H%M",
             "plot_type": "auto",
             "plot_variable": "auto",
+            "scale_fact": 1.0,
         },
         {
             "base_time": None,
@@ -412,6 +413,7 @@ def test_realcase_opr_like(tmp_path):
             "outfile_time_format": "%Y%m%d%H%M",
             "plot_type": "auto",
             "plot_variable": "auto",
+            "scale_fact": 1.0,
         },
         {
             "base_time": None,
@@ -445,6 +447,7 @@ def test_realcase_opr_like(tmp_path):
             "outfile_time_format": "%Y%m%d%H%M",
             "plot_type": "auto",
             "plot_variable": "auto",
+            "scale_fact": 1.0,
         },
         {
             "base_time": None,
@@ -478,6 +481,7 @@ def test_realcase_opr_like(tmp_path):
             "outfile_time_format": "%Y%m%d%H%M",
             "plot_type": "auto",
             "plot_variable": "affected_area_mono",
+            "scale_fact": 1.0,
         },
     ]
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()

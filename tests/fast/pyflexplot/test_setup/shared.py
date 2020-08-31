@@ -14,6 +14,15 @@ DEFAULT_PARAMS: Dict[str, Any] = {
     "combine_deposition_types": False,
     "combine_levels": False,
     "combine_species": False,
+    "dimensions": {
+        "deposition_type": None,
+        "level": None,
+        "nageclass": None,
+        "noutrel": None,
+        "numpoint": None,
+        "species_id": None,
+        "time": None,
+    },
     "domain": "full",
     "domain_size_lat": None,
     "domain_size_lon": None,
@@ -32,15 +41,7 @@ DEFAULT_PARAMS: Dict[str, Any] = {
     "outfile_time_format": "%Y%m%d%H%M",
     "plot_type": "auto",
     "plot_variable": "auto",
-    "dimensions": {
-        "deposition_type": None,
-        "level": None,
-        "nageclass": None,
-        "noutrel": None,
-        "numpoint": None,
-        "species_id": None,
-        "time": None,
-    },
+    "scale_fact": 1.0,
 }
 
 

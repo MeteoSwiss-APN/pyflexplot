@@ -43,6 +43,11 @@ class FontSizes:
     content_medium: FontSizeType = 10.0
     content_small: FontSizeType = 9.0
 
+    def scale(self, factor: float) -> "FontSizes":
+        # pylint: disable=E1101  # no-member (__dataclass_fields__)
+        params = list(self.__dataclass_fields__)  # type: ignore
+        return type(self)(**{param: getattr(self, param) * factor for param in params})
+
 
 # pylint: disable=R0902  # too-many-instance-attributes
 class BoxedPlotConfig(BaseModel):
@@ -85,7 +90,7 @@ class DummyBoxedPlot:
 
 
 @summarizable(
-    attrs=["ax_map", "boxes", "field", "fig", "map_conf"],
+    attrs=["ax_map", "boxes", "field", "fig", "map_config"],
     post_summarize=post_summarize_plot,
 )
 # pylint: disable=R0902  # too-many-instance-attributes
@@ -93,13 +98,13 @@ class BoxedPlot:
     """A FLEXPART dispersion plot."""
 
     def __init__(
-        self, field: Field, config: BoxedPlotConfig, map_conf: MapAxesConfig
+        self, field: Field, config: BoxedPlotConfig, map_config: MapAxesConfig
     ) -> None:
         """Create an instance of ``BoxedPlot``."""
 
         self.field = field
         self.config = config
-        self.map_conf = map_conf
+        self.map_config = map_config
 
         self.boxes: Dict[str, TextBoxAxes] = {}
         self.levels: np.ndarray = levels_from_time_stats(
@@ -130,7 +135,7 @@ class BoxedPlot:
         plt.close(self.fig)
 
     def add_map_plot(self, rect: RectType,) -> MapAxes:
-        ax = MapAxes.create(self.map_conf, fig=self.fig, rect=rect, field=self.field)
+        ax = MapAxes.create(self.map_config, fig=self.fig, rect=rect, field=self.field)
         self.ax_map = ax  # SR_TMP
         self._draw_colors_contours()
         return ax

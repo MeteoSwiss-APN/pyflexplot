@@ -333,6 +333,7 @@ class Setup(BaseModel):
     model: str = "none"
     base_time: Optional[int] = None
     ens_member_id: Optional[Tuple[int, ...]] = None
+    scale_fact: float = 1.0
     core: "CoreSetup" = CoreSetup()
 
     # SR_TMP <<<

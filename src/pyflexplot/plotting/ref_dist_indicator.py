@@ -4,6 +4,8 @@ Reference distance indicator for map plot.
 """
 # Standard library
 from dataclasses import dataclass
+from typing import Any
+from typing import Dict
 from typing import Optional
 
 # Third-party
@@ -26,6 +28,10 @@ class RefDistIndConfig:
     Args:
         dist: Reference distance in ``unit``.
 
+        font_size: Font size of distance label.
+
+        line_width: Line width of distance indicator.
+
         pos: Position of reference distance indicator box (corners of the plot).
             Options: "tl" (top-left), "tr" (top-right), "bl" (bottom-left), "br"
             (bottom-right).
@@ -36,8 +42,22 @@ class RefDistIndConfig:
 
     dist: int = 100
     font_size: float = 11.0
+    line_width: float = 2.0
     pos: str = "bl"
     unit: str = "km"
+
+    def scale(self, factor: float) -> "RefDistIndConfig":
+        kwargs: Dict[str, Any] = {
+            **self.dict(),
+            "font_size": self.font_size * factor,
+            "line_width": self.line_width * factor,
+        }
+        return type(self)(**kwargs)
+
+    def dict(self) -> Dict[str, Any]:
+        # pylint: disable=E1101  # no-member (__dataclass_fields__)
+        params = list(self.__dataclass_fields__)  # type: ignore
+        return {param: getattr(self, param) for param in params}
 
 
 # pylint: disable=R0902  # too-many-instance-attributes
@@ -45,7 +65,7 @@ class ReferenceDistanceIndicator:
     """Reference distance indicator on a map plot."""
 
     def __init__(
-        self, ax: Axes, axes_to_geo: Projection, conf: RefDistIndConfig, zorder: int
+        self, ax: Axes, axes_to_geo: Projection, config: RefDistIndConfig, zorder: int
     ) -> None:
         """Create an instance of ``ReferenceDistanceIndicator``.
 
@@ -55,20 +75,20 @@ class ReferenceDistanceIndicator:
             axes_to_geo: Projection to convert from axes to geographical
                 coordinates.
 
-            conf: Configuration.
+            config: Configuration.
 
             zorder: Vertical order in plot.
 
         """
-        self.conf: RefDistIndConfig = conf
+        self.config: RefDistIndConfig = config
 
         # Position in the plot (one of the corners)
         pos_choices = ["tl", "bl", "br", "tr"]
-        if conf.pos not in pos_choices:
+        if config.pos not in pos_choices:
             s_choices = ", ".join([f"'{p}'" for p in pos_choices])
-            raise ValueError(f"invalid position '{conf.pos}' (choices: {s_choices}")
-        self.pos_y: str = conf.pos[0]
-        self.pos_x: str = conf.pos[1]
+            raise ValueError(f"invalid position '{config.pos}' (choices: {s_choices}")
+        self.pos_y: str = config.pos[0]
+        self.pos_x: str = config.pos[1]
 
         self.h_box: float = 0.06
         self.xpad_box: float = 0.2 * self.h_box
@@ -111,7 +131,7 @@ class ReferenceDistanceIndicator:
             transform=ax.transAxes,
             zorder=zorder,
             linestyle="-",
-            linewidth=2.0,
+            linewidth=self.config.line_width,
             color="k",
         )
 
@@ -119,12 +139,12 @@ class ReferenceDistanceIndicator:
         ax.text(
             x=self.x_text,
             y=self.y_text,
-            s=f"{self.conf.dist:g} {self.conf.unit}",
+            s=f"{self.config.dist:g} {self.config.unit}",
             transform=ax.transAxes,
             zorder=zorder,
             ha="center",
             va="top",
-            fontsize=self.conf.font_size,
+            fontsize=self.config.font_size,
         )
 
     def _calc_box_y_params(self) -> None:
@@ -158,8 +178,8 @@ class ReferenceDistanceIndicator:
     def _calc_horiz_dist(
         self, x0: float, direction: str, axes_to_geo: Projection
     ) -> float:
-        calculator = MapDistanceCalculator(axes_to_geo, self.conf.unit)
-        x1, _, _ = calculator.run(x0, self.y_line, self.conf.dist, direction)
+        calculator = MapDistanceCalculator(axes_to_geo, self.config.unit)
+        x1, _, _ = calculator.run(x0, self.y_line, self.config.dist, direction)
         return x1
 
 
