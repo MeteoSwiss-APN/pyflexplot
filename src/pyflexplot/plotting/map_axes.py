@@ -48,27 +48,124 @@ class Domain:
     """Plot domain.
 
     Args:
-        lllat: Latitude of lower-left corner.
+        field: Field to be plotted on the domain.
 
-        lllon: Longitude of lower-left corner.
+        zoom_fact (optional): Zoom factor. Use values above/below 1.0 to zoom
+            in/out.
 
-        urlat: Latitude of upper-right corner.
-
-        urlon: Longitude of upper-right corner.
-
-        rel_offset: Relative offset in x and y direction as a fraction of the
-            respective domain extent.
-
-        zoom_fact: Zoom factor. Use values above/below 1.0 to zoom in/out.
+        rel_offset (optional): Relative offset in x and y direction as a
+            fraction of the respective domain extent.
 
     """
 
-    lllat: Optional[float] = None
-    lllon: Optional[float] = None
-    urlat: Optional[float] = None
-    urlon: Optional[float] = None
-    rel_offset: Tuple[float, float] = (0.0, 0.0)
+    field: Field
     zoom_fact: float = 1.0
+    rel_offset: Tuple[float, float] = (0.0, 0.0)
+
+    def get_bbox(self, map_axes: "MapAxes") -> "MapAxesBoundingBox":
+        """Get bounding box of domain."""
+        lllon, urlon, lllat, urlat = self._get_bbox_corners(map_axes)
+        bbox = MapAxesBoundingBox(map_axes, "data", lllon, urlon, lllat, urlat)
+        if self.zoom_fact != 1.0:
+            bbox = bbox.to_axes().zoom(self.zoom_fact, self.rel_offset).to_data()
+        return bbox
+
+    # pylint: disable=W0613  # unused-argument (map_axes)
+    def _get_bbox_corners(
+        self, map_axes: "MapAxes"
+    ) -> Tuple[float, float, float, float]:
+        """Return corners of domain: [lllon, lllat, urlon, urlat]."""
+        lllat = self.field.lat[0]
+        urlat = self.field.lat[-1]
+        lllon = self.field.lon[0]
+        urlon = self.field.lon[-1]
+        return lllon, urlon, lllat, urlat
+
+
+class CloudDomain(Domain):
+    """Domain derived from spatial distribution of cloud over time."""
+
+    def _get_bbox_corners(
+        self, map_axes: "MapAxes"
+    ) -> Tuple[float, float, float, float]:
+        """Return corners of domain: [lllon, lllat, urlon, urlat]."""
+        lat: np.ndarray = self.field.lat
+        lon: np.ndarray = self.field.lon
+        assert (lat.size, lon.size) == self.field.time_props.mask_nz.shape
+        mask_lat = self.field.time_props.mask_nz.any(axis=1)
+        mask_lon = self.field.time_props.mask_nz.any(axis=0)
+        lllat = lat[mask_lat].min()
+        urlat = lat[mask_lat].max()
+        lllon = lon[mask_lon].min()
+        urlon = lon[mask_lon].max()
+
+        # Increase size if minimum specified
+        d_lat = urlat - lllat
+        d_lon = urlon - lllon
+        d_lat_min = self.field.var_setups.collect_equal("domain_size_lat")
+        d_lon_min = self.field.var_setups.collect_equal("domain_size_lon")
+        if d_lat_min is not None and d_lat_min > d_lat:
+            d_lat_new = d_lat_min
+            lllat -= 0.5 * (d_lat_min - d_lat)
+            urlat += 0.5 * (d_lat_min - d_lat)
+        if d_lon_min is not None and d_lon_min > d_lon:
+            lllon -= 0.5 * (d_lon_min - d_lon)
+            urlon += 0.5 * (d_lon_min - d_lon)
+
+        # Adjust aspect ratio to avoid distortion
+        d_lat = urlat - lllat
+        d_lon = urlon - lllon
+        aspect = map_axes.get_aspect_ratio()
+        if d_lon / d_lat < aspect:
+            d_lon_new = d_lat * aspect
+            lllon -= 0.5 * (d_lon_new - d_lon)
+            urlon += 0.5 * (d_lon_new - d_lon)
+        elif d_lon / d_lat > aspect:
+            d_lat_new = d_lon / aspect
+            lllat -= 0.5 * (d_lat_new - d_lat)
+            urlat += 0.5 * (d_lat_new - d_lat)
+
+        return lllon, urlon, lllat, urlat
+
+
+class ReleaseSiteDomain(Domain):
+    """Domain relative to release point."""
+
+    def _get_bbox_corners(
+        self, map_axes: "MapAxes"
+    ) -> Tuple[float, float, float, float]:
+        """Return corners of domain: [lllon, lllat, urlon, urlat]."""
+        assert self.field.mdata is not None  # mypy
+        release_lat: float = self.field.mdata.release.lat
+        release_lon: float = self.field.mdata.release.lon
+        d_lat = self.field.var_setups.collect_equal("domain_size_lat")
+        d_lon = self.field.var_setups.collect_equal("domain_size_lon")
+        if d_lat is None and d_lon is None:
+            raise Exception(
+                "domain type 'release_site': setup params 'domain_size_(lat|lon)'"
+                " are both None; one or both is required"
+            )
+        elif d_lat is None:
+            d_lat = d_lon / map_axes.get_aspect_ratio()
+        elif d_lon is None:
+            d_lon = d_lat / map_axes.get_aspect_ratio()
+        assert self.field.mdata is not None  # mypy
+        if isinstance(self.field.proj, RotatedPole):
+            c_lon, c_lat = self.field.proj.transform_point(
+                release_lon, release_lat, PlateCarree(),
+            )
+            lllat = c_lat - 0.5 * d_lat
+            lllon = c_lon - 0.5 * d_lon
+            urlat = c_lat + 0.5 * d_lat
+            urlon = c_lon + 0.5 * d_lon
+        else:
+            lllat = release_lat - 0.5 * d_lat
+            lllon = release_lon - 0.5 * d_lon
+            urlat = release_lat + 0.5 * d_lat
+            urlon = release_lon + 0.5 * d_lon
+            lllon, lllat = self.field.proj.transform_point(lllon, lllat, PlateCarree())
+            urlon, urlat = self.field.proj.transform_point(urlon, urlat, PlateCarree())
+        return lllon, urlon, lllat, urlat
 
 
 @summarizable
@@ -102,7 +199,7 @@ class MapAxesConfig(BaseModel):
 
     """
 
-    domain: Domain = Domain()
+    domain: Domain
     geo_res: str = "50m"
     geo_res_cities: str = "none"
     geo_res_rivers: str = "none"
@@ -366,94 +463,7 @@ class MapAxes:
         self.ax = ax
 
         # Set geographical extent
-        config: MapAxesConfig = self.config
-        field: Field = self.field
-        domain_type: str = field.var_setups.collect_equal("domain")
-        # SR_TMP < TODO move logic into Domain* classes
-        if domain_type == "cloud":
-            assert (field.lat.size, field.lon.size) == field.time_props.mask_nz.shape
-            mask_lat = field.time_props.mask_nz.any(axis=1)
-            mask_lon = field.time_props.mask_nz.any(axis=0)
-            lllat = field.lat[mask_lat].min()
-            urlat = field.lat[mask_lat].max()
-            lllon = field.lon[mask_lon].min()
-            urlon = field.lon[mask_lon].max()
-
-            # Increase size if minimum specified
-            d_lat = urlat - lllat
-            d_lon = urlon - lllon
-            d_lat_min = field.var_setups.collect_equal("domain_size_lat")
-            d_lon_min = field.var_setups.collect_equal("domain_size_lon")
-            if d_lat_min is not None and d_lat_min > d_lat:
-                d_lat_new = d_lat_min
-                lllat -= 0.5 * (d_lat_min - d_lat)
-                urlat += 0.5 * (d_lat_min - d_lat)
-            if d_lon_min is not None and d_lon_min > d_lon:
-                lllon -= 0.5 * (d_lon_min - d_lon)
-                urlon += 0.5 * (d_lon_min - d_lon)
-
-            # Adjust aspect ratio to avoid distortion
-            d_lat = urlat - lllat
-            d_lon = urlon - lllon
-            aspect = self.get_aspect_ratio()
-            if d_lon / d_lat < aspect:
-                d_lon_new = d_lat * aspect
-                lllon -= 0.5 * (d_lon_new - d_lon)
-                urlon += 0.5 * (d_lon_new - d_lon)
-            elif d_lon / d_lat > aspect:
-                d_lat_new = d_lon / aspect
-                lllat -= 0.5 * (d_lat_new - d_lat)
-                urlat += 0.5 * (d_lat_new - d_lat)
-
-        elif domain_type == "release_site":
-            urlon = config.domain.urlon
-            urlat = config.domain.urlat
-            lllon = config.domain.lllon
-            lllat = config.domain.lllat
-            d_lat = field.var_setups.collect_equal("domain_size_lat")
-            d_lon = field.var_setups.collect_equal("domain_size_lon")
-            if d_lat is None and d_lon is None:
-                raise Exception(
-                    "domain type 'release_site': setup params 'domain_size_(lat|lon)'"
-                    " are both None; one or both is required"
-                )
-            elif d_lat is None:
-                d_lat = d_lon / self.get_aspect_ratio()
-            elif d_lon is None:
-                d_lon = d_lat / self.get_aspect_ratio()
-            assert field.mdata is not None  # mypy
-            if isinstance(field.proj, RotatedPole):
-                c_lon, c_lat = field.proj.transform_point(
-                    field.mdata.release.lon, field.mdata.release.lat, PlateCarree()
-                )
-                lllat = c_lat - 0.5 * d_lat
-                lllon = c_lon - 0.5 * d_lon
-                urlat = c_lat + 0.5 * d_lat
-                urlon = c_lon + 0.5 * d_lon
-            else:
-                lllat = field.mdata.release.lat - 0.5 * d_lat
-                lllon = field.mdata.release.lon - 0.5 * d_lon
-                urlat = field.mdata.release.lat + 0.5 * d_lat
-                urlon = field.mdata.release.lon + 0.5 * d_lon
-                lllon, lllat = field.proj.transform_point(lllon, lllat, PlateCarree())
-                urlon, urlat = field.proj.transform_point(urlon, urlat, PlateCarree())
-        else:
-            lllat = field.lat[0] if config.domain.lllat is None else config.domain.lllat
-            urlat = (
-                field.lat[-1] if config.domain.urlat is None else config.domain.urlat
-            )
-            lllon = field.lon[0] if config.domain.lllon is None else config.domain.lllon
-            urlon = (
-                field.lon[-1] if config.domain.urlon is None else config.domain.urlon
-            )
-        # SR_TMP >
-        bbox = MapAxesBoundingBox(self, "data", lllon, urlon, lllat, urlat)
-        if config.domain.zoom_fact != 1.0:
-            bbox = (
-                bbox.to_axes()
-                .zoom(config.domain.zoom_fact, config.domain.rel_offset)
-                .to_data()
-            )
+        bbox = self.config.domain.get_bbox(self)
         self.ax.set_aspect("auto")
         self.ax.set_extent(bbox, self.proj_data)
 

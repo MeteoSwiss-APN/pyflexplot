@@ -54,9 +54,11 @@ from .plotting.boxed_plot import BoxedPlot
 from .plotting.boxed_plot import BoxedPlotConfig
 from .plotting.boxed_plot import DummyBoxedPlot
 from .plotting.boxed_plot import FontSizes
+from .plotting.map_axes import CloudDomain
 from .plotting.map_axes import Domain
 from .plotting.map_axes import MapAxes
 from .plotting.map_axes import MapAxesConfig
+from .plotting.map_axes import ReleaseSiteDomain
 from .plotting.text_box_axes import TextBoxAxes
 from .setup import FilePathFormatter
 from .setup import Setup
@@ -135,28 +137,28 @@ def create_map_config(field: Field) -> MapAxesConfig:
     domain: Optional[Domain] = None
     if domain_type == "full":
         if model_name == "IFS_HRES":
-            domain = Domain()
+            domain = Domain(field)
         else:
-            domain = Domain(zoom_fact=1.01)
+            domain = Domain(field, zoom_fact=1.01)
     if domain_type == "release_site":
         # SR_NOTE Logic currently in MapAxes._init_axes to be moved to Domain*
-        domain = Domain()
+        domain = ReleaseSiteDomain(field)
     if domain_type == "alps":
         if model_name == "IFS-HRES-EU":
-            domain = Domain(zoom_fact=3.4, rel_offset=(-0.165, -0.11))
+            domain = Domain(field, zoom_fact=3.4, rel_offset=(-0.165, -0.11))
     if domain_type == "cloud":
         # SR_NOTE Logic currently in MapAxes._init_axes to be moved to Domain*
         if model_name.startswith("COSMO"):
-            domain = Domain(zoom_fact=0.9)
+            domain = CloudDomain(field, zoom_fact=0.9)
         if model_name.startswith("IFS"):
-            domain = Domain(zoom_fact=0.9)
+            domain = CloudDomain(field, zoom_fact=0.9)
     if domain_type == "ch":
         if model_name.startswith("COSMO-1"):
-            domain = Domain(zoom_fact=3.6, rel_offset=(-0.02, 0.045))
+            domain = Domain(field, zoom_fact=3.6, rel_offset=(-0.02, 0.045))
         if model_name.startswith("COSMO-2"):
-            domain = Domain(zoom_fact=3.23, rel_offset=(0.037, 0.1065))
+            domain = Domain(field, zoom_fact=3.23, rel_offset=(0.037, 0.1065))
         if model_name == "IFS-HRES-EU":
-            domain = Domain(zoom_fact=11.0, rel_offset=(-0.18, -0.11))
+            domain = Domain(field, zoom_fact=11.0, rel_offset=(-0.18, -0.11))
     if domain is None:
         raise NotImplementedError(
             f"domain config for model '{model_name}' and domain type '{domain_type}'"
