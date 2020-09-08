@@ -20,15 +20,18 @@ from .utils.logging import log
 class FlexPartDataFixer:
     """Fix issues with FlexPart NetCDF output."""
 
+    cosmo_models = ["COSMO-2", "COSMO-1", "COSMO-1E", "COSMO-2E"]
+    ifs_models = ["IFS-HRES", "IFS-HRES-EU"]
+
     def __init__(self, file_reader):
         self.file_reader = file_reader
 
     def fix_nc_var_fld(
         self, fld: np.ndarray, model: str, var_ncattrs: Mapping[str, Any]
     ) -> None:
-        if model in ["COSMO-2", "COSMO-1"]:
+        if model in self.cosmo_models:
             self._fix_nc_var_cosmo(fld, var_ncattrs)
-        elif model in ["IFS-HRES", "IFS-HRES-EU"]:
+        elif model in self.ifs_models:
             pass
         else:
             raise NotImplementedError("model", model)
@@ -36,9 +39,9 @@ class FlexPartDataFixer:
     def fix_meta_data(
         self, model: str, integrate: bool, mdata: Union[MetaData, Sequence[MetaData]],
     ) -> None:
-        if model in ["COSMO-2", "COSMO-1"]:
+        if model in self.cosmo_models:
             self._fix_meta_data_cosmo(integrate, mdata)
-        elif model in ["IFS-HRES", "IFS-HRES-EU"]:
+        elif model in self.ifs_models:
             pass
         else:
             raise NotImplementedError("model", model)
