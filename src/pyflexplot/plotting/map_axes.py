@@ -98,11 +98,11 @@ class CloudDomain(Domain):
             lllat = lat.min()
             urlat = lat.max()
         else:
-            lllat = lat.min()
-            urlat = lat.max()
+            lllat = lat[mask_lat].min()
+            urlat = lat[mask_lat].max()
         if not any(mask_lon):
-            lllon = lon[int(lon.size / 2)]
-            urlon = lon[int(lon.size / 2) + 1]
+            lllon = lon.min()
+            urlon = lon.max()
         else:
             lllon = lon[mask_lon].min()
             urlon = lon[mask_lon].max()

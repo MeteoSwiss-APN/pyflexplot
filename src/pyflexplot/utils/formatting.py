@@ -468,11 +468,8 @@ class LevelRangeFormatterInt(LevelRangeFormatter):
     def _format_components(
         self, lvl0: Optional[float], lvl1: Optional[float],
     ) -> Components:
-        # if lvl1 is not None:
         if lvl1 is not None:
-            # SR_DBG <
             if lvl0 is not None:
-                # SR_DBG >
                 lvl1 = lvl1 - 1
                 if lvl0 == lvl1:
                     return Components.create("", "", self._format_level(lvl1))

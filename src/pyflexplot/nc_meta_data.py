@@ -32,8 +32,8 @@ def read_meta_data(file_handle: nc4.Dataset) -> Dict[str, Dict[str, Any]]:
     """
     # Select global NetCDF attributes
     attrs_select: List[str] = [
-        "dxout",
-        "dyout",
+        # "dxout",
+        # "dyout",
         "ibdate",
         "ibtime",
         "iedate",

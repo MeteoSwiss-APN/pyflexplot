@@ -232,7 +232,7 @@ class TestReadFieldEnsemble_Multiple:
                 # SR_TMP <
                 assert len(sub_setups) == 1
                 sub_setup = next(iter(sub_setups))
-                # SR_DBG >
+                # SR_TMP >
                 fld_ref_mem_time.append([])
                 flds_mem = []
                 for ens_member_id in self.ens_member_ids:

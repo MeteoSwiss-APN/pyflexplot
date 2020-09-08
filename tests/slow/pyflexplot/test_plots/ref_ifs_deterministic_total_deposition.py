@@ -73,8 +73,6 @@ field_summary = {
     },
     "nc_meta_data": {
         "ncattrs": {
-            "dxout": 0.25,
-            "dyout": 0.25,
             "ibdate": "20200317",
             "ibtime": "000000",
             "iedate": "20200319",
@@ -1578,8 +1576,6 @@ plot_summary = {
             },
             "nc_meta_data": {
                 "ncattrs": {
-                    "dxout": 0.25,
-                    "dyout": 0.25,
                     "ibdate": "20200317",
                     "ibtime": "000000",
                     "iedate": "20200319",
@@ -1928,8 +1924,6 @@ plot_summary = {
                     },
                     "nc_meta_data": {
                         "ncattrs": {
-                            "dxout": 0.25,
-                            "dyout": 0.25,
                             "ibdate": "20200317",
                             "ibtime": "000000",
                             "iedate": "20200319",
@@ -27905,8 +27899,6 @@ plot_summary = {
         },
         "nc_meta_data": {
             "ncattrs": {
-                "dxout": 0.25,
-                "dyout": 0.25,
                 "ibdate": "20200317",
                 "ibtime": "000000",
                 "iedate": "20200319",
@@ -29400,8 +29392,6 @@ plot_summary = {
                 },
                 "nc_meta_data": {
                     "ncattrs": {
-                        "dxout": 0.25,
-                        "dyout": 0.25,
                         "ibdate": "20200317",
                         "ibtime": "000000",
                         "iedate": "20200319",
