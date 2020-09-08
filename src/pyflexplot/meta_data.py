@@ -108,51 +108,32 @@ class MetaData:
             species=deepcopy(self.species, memo),
         )
 
-    def format(
-        self, param: str, *, add_unit: bool = False, join_combo: Optional[str] = None,
-    ) -> str:
-        """Format a parameter, optionally adding the unit (`~_unit`).
-
-        This is left over after eliminating the type-specific MetaDatum[Combo]
-        classes and will be cleaned up and likely turned into type-specific
-        functions to be used explicitly to format individual attributes.
-
-        """
+    def format_combo(self, param: str, join: str) -> str:
         data_param, datum_param = param.split(".")
+        datum = getattr(getattr(self, data_param), datum_param)
+        if isinstance(datum, tuple):
+            datum = join.join(datum)
+        return format_meta_datum(datum)
+
+    def format_with_unit(self, param: str) -> str:
+        data_param, datum_param = param.split(".")
+        datum = getattr(getattr(self, data_param), datum_param)
         try:
-            datum = getattr(getattr(self, data_param), datum_param)
+            unit_datum = getattr(getattr(self, data_param), f"{datum_param}_unit")
         except AttributeError:
-            raise ValueError("invalid param", param)
-
-        if param.endswith(".unit"):
-            contains_unit = True
-        elif not add_unit:
-            contains_unit = False
+            raise Exception(f"missing unit {param}.unit of parameter {param}")
+        if not isinstance(datum, tuple):
+            values_fmtd = [format_meta_datum(datum), format_meta_datum(unit_datum)]
+            datum = r"$\,$".join(values_fmtd)
         else:
-            try:
-                unit_datum = getattr(getattr(self, data_param), f"{datum_param}_unit")
-            except AttributeError:
-                raise Exception(f"missing unit {param}.unit of parameter {param}")
-            if not isinstance(datum, tuple):
-                values_fmtd = [format_meta_datum(datum), format_meta_datum(unit_datum)]
-                datum = r"$\,$".join(values_fmtd)
-            else:
-                if not isinstance(unit_datum, tuple):
-                    unit_datum = tuple([unit_datum] * len(datum))
-                value = [
-                    r"$\,$".join([format_meta_datum(d), format_meta_datum(u)])
-                    for d, u in zip(datum, unit_datum)
-                ]
-                datum = tuple(value)
-            contains_unit = True
-
-        if isinstance(datum, tuple) and join_combo is not None:
-            datum = join_combo.join(datum)
-
-        datum_fmtd: str = format_meta_datum(datum)
-        if contains_unit:
-            return format_unit(datum_fmtd)
-        return datum_fmtd
+            if not isinstance(unit_datum, tuple):
+                unit_datum = tuple([unit_datum] * len(datum))
+            value = [
+                r"$\,$".join([format_meta_datum(d), format_meta_datum(u)])
+                for d, u in zip(datum, unit_datum)
+            ]
+            datum = tuple(value)
+        return format_unit(format_meta_datum(datum))
 
 
 def format_unit(s: str) -> str:

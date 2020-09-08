@@ -310,18 +310,18 @@ def plot_add_text_boxes(
         lat_deg = labels["lat_deg_fmt"].format(d=lat.degs(), m=lat.mins(), f=lat.frac())
         lon_deg = labels["lon_deg_fmt"].format(d=lon.degs(), m=lon.mins(), f=lon.frac())
 
-        height = mdata.format("release.height", add_unit=True)
+        height = mdata.format_with_unit("release.height")
         # SR_TMP <
         height = height.replace("meters", labels["height_unit"])
         # SR_TMP >
-        rate = mdata.format("release.rate", add_unit=True)
-        mass = mdata.format("release.mass", add_unit=True)
-        substance = mdata.format("species.name", join_combo=" / ")
-        half_life = mdata.format("species.half_life", add_unit=True)
-        deposit_vel = mdata.format("species.deposition_velocity", add_unit=True)
-        sediment_vel = mdata.format("species.sedimentation_velocity", add_unit=True)
-        washout_coeff = mdata.format("species.washout_coefficient", add_unit=True)
-        washout_exponent = mdata.format("species.washout_exponent")
+        rate = mdata.format_with_unit("release.rate")
+        mass = mdata.format_with_unit("release.mass")
+        substance = mdata.format_combo("species.name", " / ")
+        half_life = mdata.format_with_unit("species.half_life")
+        deposit_vel = mdata.format_with_unit("species.deposition_velocity")
+        sediment_vel = mdata.format_with_unit("species.sedimentation_velocity")
+        washout_coeff = mdata.format_with_unit("species.washout_coefficient")
+        washout_exponent = format_meta_datum(mdata.species.washout_exponent)
 
         # SR_TMP <
         release_start = format_meta_datum(
@@ -728,7 +728,7 @@ def create_box_labels(
         )
 
     labels["data_info"]["lines"].append(
-        f"{words['substance'].c}:\t{mdata.format('species.name', join_combo=' / ')}",
+        f"{words['substance'].c}:\t{mdata.format_combo('species.name', ' / ')}",
     )
     labels["data_info"]["lines"].append(
         f"{words['input_variable'].c}:\t{capitalize(var_name_abbr)}"
@@ -748,7 +748,7 @@ def create_box_labels(
         if setup.core.ens_variable == "probability":
             labels["data_info"]["lines"].append(
                 f"{words['threshold']}:\t{symbols['geq']} {setup.core.ens_param_thr}"
-                f" {mdata.format('variable.unit')}"
+                f" {format_unit(format_meta_datum(mdata.variable.unit))}"
             )
         elif setup.core.ens_variable in [
             "cloud_arrival_time",
@@ -759,7 +759,8 @@ def create_box_labels(
                 # f"{words['cloud_density']}:\t{words['minimum', 'abbr']}"
                 # f"{words['threshold']}:\t"
                 f"{words['cloud_threshold', 'abbr']}:\t"
-                f" {setup.core.ens_param_thr} {mdata.format('variable.unit')}"
+                f" {setup.core.ens_param_thr}"
+                f" {format_unit(format_meta_datum(mdata.variable.unit))}"
             )
             n_min = setup.core.ens_param_mem_min or 0
             n_tot = len((setup.ens_member_id or []))
@@ -861,7 +862,7 @@ def format_names_etc(
         return var_name, var_name_abbr, var_name_rel
 
     # pylint: disable=W0621  # redefined-outer-name
-    def format_unit(setup: Setup, words: TranslatedWords, mdata: MetaData) -> str:
+    def _format_unit(setup: Setup, words: TranslatedWords, mdata: MetaData) -> str:
         if setup.get_simulation_type() == "ensemble":
             if setup.core.ens_variable == "probability":
                 return "%"
@@ -872,9 +873,9 @@ def format_names_etc(
                 return f"{words['hour', 'pl']}"
             elif setup.core.ens_variable == "cloud_occurrence_probability":
                 return "%"
-        return mdata.format("variable.unit")
+        return format_unit(format_meta_datum(mdata.variable.unit))
 
-    unit = format_unit(setup, words, mdata)
+    unit = _format_unit(setup, words, mdata)
     var_name, var_name_abbr, var_name_rel = format_var_names(setup, words)
 
     # Short/long names #1: By variable
