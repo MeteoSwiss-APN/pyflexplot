@@ -74,6 +74,364 @@ from .words import WORDS
 from .words import Words
 
 
+def prepare_plot(
+    field_lst: Sequence[Field],
+    prev_out_file_paths: Optional[List[str]] = None,
+    dry_run: bool = False,
+) -> Tuple[List[str], Union[BoxedPlot, DummyBoxedPlot]]:
+    """Create plots while yielding them with the plot file path one by one."""
+    log(dbg=f"preparing setups for plot based on {len(field_lst)} fields")
+
+    # Merge setups across Field objects
+    var_setups_lst = [field.var_setups for field in field_lst]
+    setup = SetupCollection.merge(var_setups_lst).compress()
+
+    # Merge `nc_meta_data` across Field objects
+    nc_meta_data: Dict[str, Any] = {}
+    for field in field_lst:
+        recursive_update(nc_meta_data, field.nc_meta_data, inplace=True)
+
+    out_file_paths: List[str] = []
+    for out_file_template in (
+        [setup.outfile] if isinstance(setup.outfile, str) else setup.outfile
+    ):
+        out_file_path = FilePathFormatter(prev_out_file_paths).format(
+            out_file_template, setup, nc_meta_data
+        )
+        log(dbg=f"preparing plot {out_file_path}")
+        out_file_paths.append(out_file_path)
+    if dry_run:
+        return out_file_paths, DummyBoxedPlot()
+    else:
+        # SR_TMP <  SR_MULTIPANEL
+        if len(field_lst) > 1:
+            raise NotImplementedError("multipanel plot")
+        field = next(iter(field_lst))
+        map_config = create_map_config(field)
+        # SR_TMP >  SR_MULTIPANEL
+        config = create_plot_config(setup, WORDS, SYMBOLS, cast(MetaData, field.mdata))
+        return out_file_paths, BoxedPlot(field, config, map_config)
+
+
+def create_plot(
+    plot: BoxedPlot,
+    out_file_paths: Sequence[str],
+    write: bool = True,
+    show_version: bool = True,
+) -> None:
+    layout: BoxedPlotLayoutType
+    if plot.config.setup.get_simulation_type() == "deterministic":
+        layout = BoxedPlotLayoutDeterministic(aspect=plot.config.fig_aspect)
+    elif plot.config.setup.get_simulation_type() == "ensemble":
+        layout = BoxedPlotLayoutEnsemble(aspect=plot.config.fig_aspect)
+    else:
+        raise NotImplementedError(
+            f"simulation type '{plot.config.setup.get_simulation_type()}'"
+        )
+    axs_map = plot.add_map_plot(layout.rect_center())
+    plot_add_text_boxes(plot, layout, show_version)
+    plot_add_markers(plot, axs_map)
+    for out_file_path in out_file_paths:
+        log(dbg=f"creating plot {out_file_path}")
+        if write:
+            plot.write(out_file_path)
+        log(dbg=f"created plot {out_file_path}")
+    plot.clean()
+
+
+# SR_TMP <<< TODO Clean up nested functions! Eventually introduce class(es) of some kind
+# pylint: disable=R0915  # too-many-statements
+def plot_add_text_boxes(
+    plot: BoxedPlot, layout: BoxedPlotLayoutType, show_version: bool = True
+) -> None:
+    # pylint: disable=R0915  # too-many-statements
+    def fill_box_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
+        """Fill the title box."""
+        for position, label in plot.config.labels.get("top", {}).items():
+            if position == "tl":
+                font_size = plot.config.font_sizes.title_large
+            else:
+                font_size = plot.config.font_sizes.content_large
+            box.text(
+                label, loc=position, fontname=plot.config.font_name, size=font_size
+            )
+
+    def fill_box_2nd_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
+        """Fill the secondary title box of the deterministic plot layout."""
+        font_size = plot.config.font_sizes.content_large
+        labels = plot.config.labels["title_2nd"]
+        box.text(labels["tc"], loc="tc", fontname=plot.config.font_name, size=font_size)
+        box.text(labels["bc"], loc="bc", fontname=plot.config.font_name, size=font_size)
+
+    # pylint: disable=R0915  # too-many-statements
+    def fill_box_data_info(box: TextBoxAxes, plot: BoxedPlot) -> None:
+        """Fill the data information box of the ensemble plot layout."""
+        labels = plot.config.labels["data_info"]
+        box.text_block_hfill(
+            labels["lines"],
+            dy_unit=-1.0,
+            dy_line=3.0,
+            fontname=plot.config.font_name,
+            size=plot.config.font_sizes.content_medium,
+        )
+
+    # pylint: disable=R0912  # too-many-branches
+    # pylint: disable=R0913  # too-many-arguments
+    # pylint: disable=R0914  # too-many-locals
+    # pylint: disable=R0915  # too-many-statements
+    def fill_box_legend(box: TextBoxAxes, plot: BoxedPlot) -> None:
+        """Fill the box containing the plot legend."""
+
+        labels = plot.config.labels["legend"]
+        mdata = plot.config.mdata
+
+        # Box title
+        box.text(
+            labels["title"],
+            loc="tc",
+            fontname=plot.config.font_name,
+            size=plot.config.font_sizes.title_small,
+        )
+
+        # dy_line: float = 3.0
+        dy_line: float = 2.5
+        w_legend_box: float = 4.0
+        h_legend_box: float = 2.0
+        dx_legend_box: float = -10
+        dx_legend_label: float = -3
+        dx_marker: float = dx_legend_box + 0.5 * w_legend_box
+        dx_marker_label: float = dx_legend_label - 0.5
+
+        # Vertical position of legend (depending on number of levels)
+        dy0_labels = -5.0
+        dy0_boxes = dy0_labels - 0.8 * h_legend_box
+
+        # Format level ranges (contour plot legend)
+        legend_labels = format_level_ranges(
+            levels=plot.levels,
+            style=plot.config.level_range_style,
+            extend=plot.config.extend,
+            rstrip_zeros=plot.config.legend_rstrip_zeros,
+            align=plot.config.level_ranges_align,
+        )
+
+        # Legend labels (level ranges)
+        box.text_block(
+            legend_labels[::-1],
+            loc="tc",
+            dy_unit=dy0_labels,
+            dy_line=dy_line,
+            dx=dx_legend_label,
+            ha="left",
+            fontname=plot.config.font_name,
+            size=plot.config.font_sizes.content_medium,
+            family="monospace",
+        )
+
+        # Legend color boxes
+        colors = plot.config.colors
+        dy = dy0_boxes
+        for color in colors[::-1]:
+            box.color_rect(
+                loc="tc",
+                x_anker="left",
+                dx=dx_legend_box,
+                dy=dy,
+                w=w_legend_box,
+                h=h_legend_box,
+                fc=color,
+                ec="black",
+                lw=1.0,
+            )
+            dy -= dy_line
+
+        dy0_markers = dy0_boxes - dy_line * (len(legend_labels) - 0.3)
+        dy0_marker = dy0_markers
+
+        # Field maximum marker
+        if plot.config.mark_field_max:
+            dy_marker_label_max = dy0_marker
+            dy0_marker -= dy_line
+            dy_max_marker = dy_marker_label_max - 0.7
+            assert plot.config.markers is not None  # mypy
+            box.marker(
+                loc="tc", dx=dx_marker, dy=dy_max_marker, **plot.config.markers["max"],
+            )
+            box.text(
+                s=format_max_marker_label(labels, plot.field.fld),
+                loc="tc",
+                dx=dx_marker_label,
+                dy=dy_marker_label_max,
+                ha="left",
+                fontname=plot.config.font_name,
+                size=plot.config.font_sizes.content_medium,
+            )
+
+        # Release site marker
+        if plot.config.mark_release_site:
+            dy_site_label = dy0_marker
+            dy0_marker -= dy_line
+            dy_site_marker = dy_site_label - 0.7
+            assert plot.config.markers is not None  # mypy
+            box.marker(
+                loc="tc",
+                dx=dx_marker,
+                dy=dy_site_marker,
+                **plot.config.markers["site"],
+            )
+            box.text(
+                s=f"{labels['site']}: {format_meta_datum(mdata.release.site)}",
+                loc="tc",
+                dx=dx_marker_label,
+                dy=dy_site_label,
+                ha="left",
+                fontname=plot.config.font_name,
+                size=plot.config.font_sizes.content_medium,
+            )
+
+    # pylint: disable=R0915  # too-many-statements
+    def fill_box_release_info(box: TextBoxAxes, plot: BoxedPlot) -> None:
+        """Fill the box containing the release info."""
+
+        labels = plot.config.labels["release_info"]
+        mdata = plot.config.mdata
+
+        # Box title
+        box.text(
+            s=labels["title"],
+            loc="tc",
+            fontname=plot.config.font_name,
+            size=plot.config.font_sizes.title_small,
+        )
+
+        # Release site coordinates
+        lat = Degrees(mdata.release.lat)
+        lon = Degrees(mdata.release.lon)
+        lat_deg = labels["lat_deg_fmt"].format(d=lat.degs(), m=lat.mins(), f=lat.frac())
+        lon_deg = labels["lon_deg_fmt"].format(d=lon.degs(), m=lon.mins(), f=lon.frac())
+
+        height = mdata.format("release.height", add_unit=True)
+        # SR_TMP <
+        height = height.replace("meters", labels["height_unit"])
+        # SR_TMP >
+        rate = mdata.format("release.rate", add_unit=True)
+        mass = mdata.format("release.mass", add_unit=True)
+        substance = mdata.format("species.name", join_combo=" / ")
+        half_life = mdata.format("species.half_life", add_unit=True)
+        deposit_vel = mdata.format("species.deposition_velocity", add_unit=True)
+        sediment_vel = mdata.format("species.sedimentation_velocity", add_unit=True)
+        washout_coeff = mdata.format("species.washout_coefficient", add_unit=True)
+        washout_exponent = mdata.format("species.washout_exponent")
+
+        # SR_TMP <
+        release_start = format_meta_datum(
+            cast(datetime, mdata.simulation.start)
+            + cast(timedelta, mdata.release.start_rel)
+        )
+        release_end = format_meta_datum(
+            cast(datetime, mdata.simulation.start)
+            + cast(timedelta, mdata.release.end_rel)
+        )
+        # SR_TMP >
+        info_blocks = dedent(
+            f"""\
+            {labels['site']}:\t{format_meta_datum(mdata.release.site)}
+            {labels['latitude']}:\t{lat_deg}
+            {labels['longitude']}:\t{lon_deg}
+            {labels['height']}:\t{height}
+
+            {labels['start']}:\t{release_start}
+            {labels['end']}:\t{release_end}
+            {labels['rate']}:\t{rate}
+            {labels['mass']}:\t{mass}
+
+            {labels['name']}:\t{substance}
+            {labels['half_life']}:\t{half_life}
+            {labels['deposit_vel']}:\t{deposit_vel}
+            {labels['sediment_vel']}:\t{sediment_vel}
+            {labels['washout_coeff']}:\t{washout_coeff}
+            {labels['washout_exponent']}:\t{washout_exponent}
+            """
+        )
+
+        # Add lines bottom-up (to take advantage of baseline alignment)
+        box.text_blocks_hfill(
+            info_blocks,
+            dy_unit=-4.0,
+            dy_line=2.5,
+            fontname=plot.config.font_name,
+            size=plot.config.font_sizes.content_small,
+        )
+
+    def fill_box_bottom_left(box: TextBoxAxes, plot: BoxedPlot) -> None:
+        labels = plot.config.labels["bottom"]
+        # FLEXPART/model info
+        box.text(
+            s=labels["model_info"],
+            loc="tl",
+            dx=-0.7,
+            dy=0.5,
+            fontname=plot.config.font_name,
+            size=plot.config.font_sizes.content_small,
+        )
+
+    def fill_box_bottom_right(box: TextBoxAxes, plot: BoxedPlot) -> None:
+        labels = plot.config.labels["bottom"]
+        if show_version:
+            box.text(
+                s=f"v{__version__}",
+                loc="tl",
+                dx=-0.7,
+                dy=0.5,
+                fontname=plot.config.font_name,
+                size=plot.config.font_sizes.content_small,
+            )
+        # MeteoSwiss Copyright
+        box.text(
+            s=labels["copyright"],
+            loc="tr",
+            dx=0.7,
+            dy=0.5,
+            fontname=plot.config.font_name,
+            size=plot.config.font_sizes.content_small,
+        )
+
+    plot.add_text_box("top", layout.rect_top(), fill_box_title)
+    if isinstance(layout, BoxedPlotLayoutDeterministic):
+        plot.add_text_box("right_top", layout.rect_right_top(), fill_box_2nd_title)
+    elif isinstance(layout, BoxedPlotLayoutEnsemble):
+        plot.add_text_box("right_top", layout.rect_right_top(), fill_box_data_info)
+    plot.add_text_box("right_middle", layout.rect_right_middle(), fill_box_legend)
+    plot.add_text_box("right_bottom", layout.rect_right_bottom(), fill_box_release_info)
+    plot.add_text_box(
+        "bottom_left", layout.rect_bottom_left(), fill_box_bottom_left, frame_on=False
+    )
+    plot.add_text_box(
+        "bottom_right",
+        layout.rect_bottom_right(),
+        fill_box_bottom_right,
+        frame_on=False,
+    )
+
+
+def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
+    config = plot.config
+    mdata = config.mdata
+    if config.mark_release_site:
+        assert config.markers is not None  # mypy
+        axs_map.add_marker(
+            p_lat=mdata.release.lat, p_lon=mdata.release.lon, **config.markers["site"],
+        )
+    if config.mark_field_max:
+        assert config.markers is not None  # mypy
+        try:
+            max_lat, max_lon = plot.field.locate_max()
+        except FieldAllNaNError:
+            warnings.warn("skip maximum marker (all-nan field)")
+        else:
+            axs_map.add_marker(p_lat=max_lat, p_lon=max_lon, **config.markers["max"])
+
+
 # pylint: disable=R0912  # too-many-branches
 # pylint: disable=R0914  # too-many-locals
 # pylint: disable=R0915  # too-many-statements
@@ -162,16 +520,6 @@ def create_map_config(field: Field) -> MapAxesConfig:
     return MapAxesConfig(
         lang=field.var_setups.collect_equal("lang"), domain=domain, **map_axes_config,
     )
-
-
-def capitalize(s: str) -> str:
-    """Capitalize the first letter while leaving all others as they are."""
-    if not s:
-        return s
-    try:
-        return s[0].upper() + s[1:]
-    except Exception:
-        raise ValueError(f"string not capitalizable: '{s}'")
 
 
 # SR_TODO Create dataclass with default values for text box setup
@@ -590,418 +938,14 @@ def format_names_etc(
     }
 
 
-def prepare_plot(
-    field_lst: Sequence[Field],
-    prev_out_file_paths: Optional[List[str]] = None,
-    dry_run: bool = False,
-) -> Tuple[List[str], Union[BoxedPlot, DummyBoxedPlot]]:
-    """Create plots while yielding them with the plot file path one by one."""
-    log(dbg=f"preparing setups for plot based on {len(field_lst)} fields")
-
-    # Merge setups across Field objects
-    var_setups_lst = [field.var_setups for field in field_lst]
-    setup = SetupCollection.merge(var_setups_lst).compress()
-
-    # Merge `nc_meta_data` across Field objects
-    nc_meta_data: Dict[str, Any] = {}
-    for field in field_lst:
-        recursive_update(nc_meta_data, field.nc_meta_data, inplace=True)
-
-    out_file_paths: List[str] = []
-    for out_file_template in (
-        [setup.outfile] if isinstance(setup.outfile, str) else setup.outfile
-    ):
-        out_file_path = FilePathFormatter(prev_out_file_paths).format(
-            out_file_template, setup, nc_meta_data
-        )
-        log(dbg=f"preparing plot {out_file_path}")
-        out_file_paths.append(out_file_path)
-    if dry_run:
-        return out_file_paths, DummyBoxedPlot()
-    else:
-        # SR_TMP <  SR_MULTIPANEL
-        if len(field_lst) > 1:
-            raise NotImplementedError("multipanel plot")
-        field = next(iter(field_lst))
-        map_config = create_map_config(field)
-        # SR_TMP >  SR_MULTIPANEL
-        config = create_plot_config(setup, WORDS, SYMBOLS, cast(MetaData, field.mdata))
-        return out_file_paths, BoxedPlot(field, config, map_config)
-
-
-def create_plot(
-    plot: BoxedPlot,
-    out_file_paths: Sequence[str],
-    write: bool = True,
-    show_version: bool = True,
-) -> None:
-    layout: BoxedPlotLayoutType
-    if plot.config.setup.get_simulation_type() == "deterministic":
-        layout = BoxedPlotLayoutDeterministic(aspect=plot.config.fig_aspect)
-    elif plot.config.setup.get_simulation_type() == "ensemble":
-        layout = BoxedPlotLayoutEnsemble(aspect=plot.config.fig_aspect)
-    else:
-        raise NotImplementedError(
-            f"simulation type '{plot.config.setup.get_simulation_type()}'"
-        )
-    axs_map = plot.add_map_plot(layout.rect_center())
-    plot_add_text_boxes(plot, layout, show_version)
-    plot_add_markers(plot, axs_map)
-    for out_file_path in out_file_paths:
-        log(dbg=f"creating plot {out_file_path}")
-        if write:
-            plot.write(out_file_path)
-        log(dbg=f"created plot {out_file_path}")
-    plot.clean()
-
-
-# SR_TMP <<< TODO Clean up nested functions! Eventually introduce class(es) of some kind
-# pylint: disable=R0915  # too-many-statements
-def plot_add_text_boxes(
-    plot: BoxedPlot, layout: BoxedPlotLayoutType, show_version: bool = True
-) -> None:
-    # pylint: disable=R0915  # too-many-statements
-    def fill_box_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
-        """Fill the title box."""
-        for position, label in plot.config.labels.get("top", {}).items():
-            if position == "tl":
-                font_size = plot.config.font_sizes.title_large
-            else:
-                font_size = plot.config.font_sizes.content_large
-            box.text(
-                label, loc=position, fontname=plot.config.font_name, size=font_size
-            )
-
-    def fill_box_2nd_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
-        """Fill the secondary title box of the deterministic plot layout."""
-        font_size = plot.config.font_sizes.content_large
-        labels = plot.config.labels["title_2nd"]
-        box.text(labels["tc"], loc="tc", fontname=plot.config.font_name, size=font_size)
-        box.text(labels["bc"], loc="bc", fontname=plot.config.font_name, size=font_size)
-
-    # pylint: disable=R0915  # too-many-statements
-    def fill_box_data_info(box: TextBoxAxes, plot: BoxedPlot) -> None:
-        """Fill the data information box of the ensemble plot layout."""
-        labels = plot.config.labels["data_info"]
-        box.text_block_hfill(
-            labels["lines"],
-            dy_unit=-1.0,
-            dy_line=3.0,
-            fontname=plot.config.font_name,
-            size=plot.config.font_sizes.content_medium,
-        )
-
-    # pylint: disable=R0912  # too-many-branches
-    # pylint: disable=R0913  # too-many-arguments
-    # pylint: disable=R0914  # too-many-locals
-    # pylint: disable=R0915  # too-many-statements
-    def fill_box_legend(box: TextBoxAxes, plot: BoxedPlot) -> None:
-        """Fill the box containing the plot legend."""
-
-        labels = plot.config.labels["legend"]
-        mdata = plot.config.mdata
-
-        # Box title
-        box.text(
-            labels["title"],
-            loc="tc",
-            fontname=plot.config.font_name,
-            size=plot.config.font_sizes.title_small,
-        )
-
-        # dy_line: float = 3.0
-        dy_line: float = 2.5
-        w_legend_box: float = 4.0
-        h_legend_box: float = 2.0
-        dx_legend_box: float = -10
-        dx_legend_label: float = -3
-        dx_marker: float = dx_legend_box + 0.5 * w_legend_box
-        dx_marker_label: float = dx_legend_label - 0.5
-
-        # Vertical position of legend (depending on number of levels)
-        dy0_labels = -5.0
-        dy0_boxes = dy0_labels - 0.8 * h_legend_box
-
-        # Format level ranges (contour plot legend)
-        legend_labels = format_level_ranges(
-            levels=plot.levels,
-            style=plot.config.level_range_style,
-            extend=plot.config.extend,
-            rstrip_zeros=plot.config.legend_rstrip_zeros,
-            align=plot.config.level_ranges_align,
-        )
-
-        # Legend labels (level ranges)
-        box.text_block(
-            legend_labels[::-1],
-            loc="tc",
-            dy_unit=dy0_labels,
-            dy_line=dy_line,
-            dx=dx_legend_label,
-            ha="left",
-            fontname=plot.config.font_name,
-            size=plot.config.font_sizes.content_medium,
-            family="monospace",
-        )
-
-        # Legend color boxes
-        colors = plot.config.colors
-        dy = dy0_boxes
-        for color in colors[::-1]:
-            box.color_rect(
-                loc="tc",
-                x_anker="left",
-                dx=dx_legend_box,
-                dy=dy,
-                w=w_legend_box,
-                h=h_legend_box,
-                fc=color,
-                ec="black",
-                lw=1.0,
-            )
-            dy -= dy_line
-
-        dy0_markers = dy0_boxes - dy_line * (len(legend_labels) - 0.3)
-        dy0_marker = dy0_markers
-
-        # Field maximum marker
-        if plot.config.mark_field_max:
-            dy_marker_label_max = dy0_marker
-            dy0_marker -= dy_line
-            dy_max_marker = dy_marker_label_max - 0.7
-            assert plot.config.markers is not None  # mypy
-            box.marker(
-                loc="tc", dx=dx_marker, dy=dy_max_marker, **plot.config.markers["max"],
-            )
-            box.text(
-                s=format_max_marker_label(labels, plot.field.fld),
-                loc="tc",
-                dx=dx_marker_label,
-                dy=dy_marker_label_max,
-                ha="left",
-                fontname=plot.config.font_name,
-                size=plot.config.font_sizes.content_medium,
-            )
-
-        # Release site marker
-        if plot.config.mark_release_site:
-            dy_site_label = dy0_marker
-            dy0_marker -= dy_line
-            dy_site_marker = dy_site_label - 0.7
-            assert plot.config.markers is not None  # mypy
-            box.marker(
-                loc="tc",
-                dx=dx_marker,
-                dy=dy_site_marker,
-                **plot.config.markers["site"],
-            )
-            box.text(
-                s=f"{labels['site']}: {format_meta_datum(mdata.release.site)}",
-                loc="tc",
-                dx=dx_marker_label,
-                dy=dy_site_label,
-                ha="left",
-                fontname=plot.config.font_name,
-                size=plot.config.font_sizes.content_medium,
-            )
-
-    # pylint: disable=R0915  # too-many-statements
-    def fill_box_release_info(box: TextBoxAxes, plot: BoxedPlot) -> None:
-        """Fill the box containing the release info."""
-
-        labels = plot.config.labels["release_info"]
-        mdata = plot.config.mdata
-
-        # Box title
-        box.text(
-            s=labels["title"],
-            loc="tc",
-            fontname=plot.config.font_name,
-            size=plot.config.font_sizes.title_small,
-        )
-
-        # Release site coordinates
-        lat = Degrees(mdata.release.lat)
-        lon = Degrees(mdata.release.lon)
-        lat_deg = labels["lat_deg_fmt"].format(d=lat.degs(), m=lat.mins(), f=lat.frac())
-        lon_deg = labels["lon_deg_fmt"].format(d=lon.degs(), m=lon.mins(), f=lon.frac())
-
-        height = mdata.format("release.height", add_unit=True)
-        # SR_TMP <
-        height = height.replace("meters", labels["height_unit"])
-        # SR_TMP >
-        rate = mdata.format("release.rate", add_unit=True)
-        mass = mdata.format("release.mass", add_unit=True)
-        substance = mdata.format("species.name", join_combo=" / ")
-        half_life = mdata.format("species.half_life", add_unit=True)
-        deposit_vel = mdata.format("species.deposition_velocity", add_unit=True)
-        sediment_vel = mdata.format("species.sedimentation_velocity", add_unit=True)
-        washout_coeff = mdata.format("species.washout_coefficient", add_unit=True)
-        washout_exponent = mdata.format("species.washout_exponent")
-
-        # SR_TMP <
-        release_start = format_meta_datum(
-            cast(datetime, mdata.simulation.start)
-            + cast(timedelta, mdata.release.start_rel)
-        )
-        release_end = format_meta_datum(
-            cast(datetime, mdata.simulation.start)
-            + cast(timedelta, mdata.release.end_rel)
-        )
-        # SR_TMP >
-        info_blocks = dedent(
-            f"""\
-            {labels['site']}:\t{format_meta_datum(mdata.release.site)}
-            {labels['latitude']}:\t{lat_deg}
-            {labels['longitude']}:\t{lon_deg}
-            {labels['height']}:\t{height}
-
-            {labels['start']}:\t{release_start}
-            {labels['end']}:\t{release_end}
-            {labels['rate']}:\t{rate}
-            {labels['mass']}:\t{mass}
-
-            {labels['name']}:\t{substance}
-            {labels['half_life']}:\t{half_life}
-            {labels['deposit_vel']}:\t{deposit_vel}
-            {labels['sediment_vel']}:\t{sediment_vel}
-            {labels['washout_coeff']}:\t{washout_coeff}
-            {labels['washout_exponent']}:\t{washout_exponent}
-            """
-        )
-
-        # Add lines bottom-up (to take advantage of baseline alignment)
-        box.text_blocks_hfill(
-            info_blocks,
-            dy_unit=-4.0,
-            dy_line=2.5,
-            fontname=plot.config.font_name,
-            size=plot.config.font_sizes.content_small,
-        )
-
-    def fill_box_bottom_left(box: TextBoxAxes, plot: BoxedPlot) -> None:
-        labels = plot.config.labels["bottom"]
-        # FLEXPART/model info
-        box.text(
-            s=labels["model_info"],
-            loc="tl",
-            dx=-0.7,
-            dy=0.5,
-            fontname=plot.config.font_name,
-            size=plot.config.font_sizes.content_small,
-        )
-
-    def fill_box_bottom_right(box: TextBoxAxes, plot: BoxedPlot) -> None:
-        labels = plot.config.labels["bottom"]
-        if show_version:
-            box.text(
-                s=f"v{__version__}",
-                loc="tl",
-                dx=-0.7,
-                dy=0.5,
-                fontname=plot.config.font_name,
-                size=plot.config.font_sizes.content_small,
-            )
-        # MeteoSwiss Copyright
-        box.text(
-            s=labels["copyright"],
-            loc="tr",
-            dx=0.7,
-            dy=0.5,
-            fontname=plot.config.font_name,
-            size=plot.config.font_sizes.content_small,
-        )
-
-    plot.add_text_box("top", layout.rect_top(), fill_box_title)
-    if isinstance(layout, BoxedPlotLayoutDeterministic):
-        plot.add_text_box("right_top", layout.rect_right_top(), fill_box_2nd_title)
-    elif isinstance(layout, BoxedPlotLayoutEnsemble):
-        plot.add_text_box("right_top", layout.rect_right_top(), fill_box_data_info)
-    plot.add_text_box("right_middle", layout.rect_right_middle(), fill_box_legend)
-    plot.add_text_box("right_bottom", layout.rect_right_bottom(), fill_box_release_info)
-    plot.add_text_box(
-        "bottom_left", layout.rect_bottom_left(), fill_box_bottom_left, frame_on=False
-    )
-    plot.add_text_box(
-        "bottom_right",
-        layout.rect_bottom_right(),
-        fill_box_bottom_right,
-        frame_on=False,
-    )
-
-
-def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
-    config = plot.config
-    mdata = config.mdata
-    if config.mark_release_site:
-        assert config.markers is not None  # mypy
-        axs_map.add_marker(
-            p_lat=mdata.release.lat, p_lon=mdata.release.lon, **config.markers["site"],
-        )
-    if config.mark_field_max:
-        assert config.markers is not None  # mypy
-        try:
-            max_lat, max_lon = plot.field.locate_max()
-        except FieldAllNaNError:
-            warnings.warn("skip maximum marker (all-nan field)")
-        else:
-            axs_map.add_marker(p_lat=max_lat, p_lon=max_lon, **config.markers["max"])
-
-
-def colors_flexplot(n_levels: int, extend: str) -> Sequence[ColorType]:
-
-    color_under = "darkgray"
-    color_over = "lightgray"
-
-    # def rgb(*vals):
-    #     return np.array(vals, float) / 255
-
-    # colors_core_8_old = [
-    #     rgb(224, 196, 172),
-    #     rgb(221, 127, 215),
-    #     rgb(99, 0, 255),
-    #     rgb(100, 153, 199),
-    #     rgb(34, 139, 34),
-    #     rgb(93, 255, 2),
-    #     rgb(199, 255, 0),
-    #     rgb(255, 239, 57),
-    # ]
-    colors_core_8 = [
-        "bisque",
-        "violet",
-        "rebeccapurple",
-        "cornflowerblue",
-        "forestgreen",
-        "yellowgreen",
-        "greenyellow",
-        "yellow",
-    ]
-
-    colors_core_7 = [colors_core_8[i] for i in (0, 1, 2, 3, 5, 6, 7)]
-    colors_core_6 = [colors_core_8[i] for i in (1, 2, 3, 4, 5, 7)]
-    colors_core_5 = [colors_core_8[i] for i in (1, 2, 4, 5, 7)]
-    colors_core_4 = [colors_core_8[i] for i in (1, 2, 4, 7)]
-
+def capitalize(s: str) -> str:
+    """Capitalize the first letter while leaving all others as they are."""
+    if not s:
+        return s
     try:
-        colors_core = {
-            5: colors_core_4,
-            6: colors_core_5,
-            7: colors_core_6,
-            8: colors_core_7,
-            9: colors_core_8,
-        }[n_levels]
-    except KeyError:
-        raise ValueError(f"n_levels={n_levels}")
-
-    if extend == "none":
-        return colors_core
-    elif extend == "min":
-        return [color_under] + colors_core
-    elif extend == "max":
-        return colors_core + [color_over]
-    elif extend == "both":
-        return [color_under] + colors_core + [color_over]
-    raise ValueError(f"extend='{extend}'")
+        return s[0].upper() + s[1:]
+    except Exception:
+        raise ValueError(f"string not capitalizable: '{s}'")
 
 
 def format_max_marker_label(labels: Dict[str, Any], fld: np.ndarray) -> str:
@@ -1149,6 +1093,62 @@ def format_coord_label(direction: str, words: TranslatedWords, symbols: Words) -
     else:
         raise NotImplementedError("unit for direction", direction)
     return f"{{d}}{deg_unit}{{m}}{min_unit}{dir_unit} ({{f:.4f}}{deg_dir_unit})"
+
+
+def colors_flexplot(n_levels: int, extend: str) -> Sequence[ColorType]:
+
+    color_under = "darkgray"
+    color_over = "lightgray"
+
+    # def rgb(*vals):
+    #     return np.array(vals, float) / 255
+
+    # colors_core_8_old = [
+    #     rgb(224, 196, 172),
+    #     rgb(221, 127, 215),
+    #     rgb(99, 0, 255),
+    #     rgb(100, 153, 199),
+    #     rgb(34, 139, 34),
+    #     rgb(93, 255, 2),
+    #     rgb(199, 255, 0),
+    #     rgb(255, 239, 57),
+    # ]
+    colors_core_8 = [
+        "bisque",
+        "violet",
+        "rebeccapurple",
+        "cornflowerblue",
+        "forestgreen",
+        "yellowgreen",
+        "greenyellow",
+        "yellow",
+    ]
+
+    colors_core_7 = [colors_core_8[i] for i in (0, 1, 2, 3, 5, 6, 7)]
+    colors_core_6 = [colors_core_8[i] for i in (1, 2, 3, 4, 5, 7)]
+    colors_core_5 = [colors_core_8[i] for i in (1, 2, 4, 5, 7)]
+    colors_core_4 = [colors_core_8[i] for i in (1, 2, 4, 7)]
+
+    try:
+        colors_core = {
+            5: colors_core_4,
+            6: colors_core_5,
+            7: colors_core_6,
+            8: colors_core_7,
+            9: colors_core_8,
+        }[n_levels]
+    except KeyError:
+        raise ValueError(f"n_levels={n_levels}")
+
+    if extend == "none":
+        return colors_core
+    elif extend == "min":
+        return [color_under] + colors_core
+    elif extend == "max":
+        return colors_core + [color_over]
+    elif extend == "both":
+        return [color_under] + colors_core + [color_over]
+    raise ValueError(f"extend='{extend}'")
 
 
 def colors_from_cmap(cmap, n_levels, extend):
