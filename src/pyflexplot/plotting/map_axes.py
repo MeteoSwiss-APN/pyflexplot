@@ -94,10 +94,18 @@ class CloudDomain(Domain):
         assert (lat.size, lon.size) == self.field.time_props.mask_nz.shape
         mask_lat = self.field.time_props.mask_nz.any(axis=1)
         mask_lon = self.field.time_props.mask_nz.any(axis=0)
-        lllat = lat[mask_lat].min()
-        urlat = lat[mask_lat].max()
-        lllon = lon[mask_lon].min()
-        urlon = lon[mask_lon].max()
+        if not any(mask_lat):
+            lllat = lat.min()
+            urlat = lat.max()
+        else:
+            lllat = lat.min()
+            urlat = lat.max()
+        if not any(mask_lon):
+            lllon = lon[int(lon.size / 2)]
+            urlon = lon[int(lon.size / 2) + 1]
+        else:
+            lllon = lon[mask_lon].min()
+            urlon = lon[mask_lon].max()
 
         # Increase latitudinal size if minimum specified
         d_lat_min = self.field.var_setups.collect_equal("domain_size_lat")
