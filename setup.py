@@ -17,7 +17,7 @@ description_files = ["README.rst", "HISTORY.rst"]
 
 metadata = {
     "name": "pyflexplot",
-    "version": "0.9.11",
+    "version": "0.10.0",
     "description": "PyFlexPlot visualizes FLEXPART particle dispersion simulations.",
     "long_description": "\n\n".join([read_file(f) for f in description_files]),
     "author": "Stefan Ruedisuehli",
