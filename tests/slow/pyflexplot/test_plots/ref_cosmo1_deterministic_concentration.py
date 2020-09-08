@@ -20,8 +20,8 @@ field_summary = {
         {
             "infile": "flexpart_cosmo-1_2019093012.nc",
             "outfile": "ref_cosmo1_deterministic_concentration.png",
-            "outfile_time_format": "%Y%m%d%H%M",
             "model": "COSMO-1",
+            "outfile_time_format": "%Y%m%d%H%M",
             "base_time": 201909301200,
             "ens_member_id": None,
             "scale_fact": 1.0,
@@ -304,7 +304,6 @@ field_summary = {
             },
         },
         "derived": {
-            "model": "COSMO-1",
             "release_site": "Goesgen",
             "rotated_pole": True,
             "species_ids": [1],
@@ -830,8 +829,8 @@ plot_summary = {
                 {
                     "infile": "flexpart_cosmo-1_2019093012.nc",
                     "outfile": "ref_cosmo1_deterministic_concentration.png",
-                    "outfile_time_format": "%Y%m%d%H%M",
                     "model": "COSMO-1",
+                    "outfile_time_format": "%Y%m%d%H%M",
                     "base_time": 201909301200,
                     "ens_member_id": None,
                     "scale_fact": 1.0,
@@ -1127,7 +1126,6 @@ plot_summary = {
                     },
                 },
                 "derived": {
-                    "model": "COSMO-1",
                     "release_site": "Goesgen",
                     "rotated_pole": True,
                     "species_ids": [1],
@@ -1185,8 +1183,8 @@ plot_summary = {
                         {
                             "infile": "flexpart_cosmo-1_2019093012.nc",
                             "outfile": "ref_cosmo1_deterministic_concentration.png",
-                            "outfile_time_format": "%Y%m%d%H%M",
                             "model": "COSMO-1",
+                            "outfile_time_format": "%Y%m%d%H%M",
                             "base_time": 201909301200,
                             "ens_member_id": None,
                             "scale_fact": 1.0,
@@ -1497,7 +1495,6 @@ plot_summary = {
                             },
                         },
                         "derived": {
-                            "model": "COSMO-1",
                             "release_site": "Goesgen",
                             "rotated_pole": True,
                             "species_ids": [1],
@@ -6407,8 +6404,8 @@ plot_summary = {
             {
                 "infile": "flexpart_cosmo-1_2019093012.nc",
                 "outfile": "ref_cosmo1_deterministic_concentration.png",
-                "outfile_time_format": "%Y%m%d%H%M",
                 "model": "COSMO-1",
+                "outfile_time_format": "%Y%m%d%H%M",
                 "base_time": 201909301200,
                 "ens_member_id": None,
                 "scale_fact": 1.0,
@@ -6701,7 +6698,6 @@ plot_summary = {
                 },
             },
             "derived": {
-                "model": "COSMO-1",
                 "release_site": "Goesgen",
                 "rotated_pole": True,
                 "species_ids": [1],
@@ -7214,8 +7210,8 @@ plot_summary = {
                     {
                         "infile": "flexpart_cosmo-1_2019093012.nc",
                         "outfile": "ref_cosmo1_deterministic_concentration.png",
-                        "outfile_time_format": "%Y%m%d%H%M",
                         "model": "COSMO-1",
+                        "outfile_time_format": "%Y%m%d%H%M",
                         "base_time": 201909301200,
                         "ens_member_id": None,
                         "scale_fact": 1.0,
@@ -7523,7 +7519,6 @@ plot_summary = {
                         },
                     },
                     "derived": {
-                        "model": "COSMO-1",
                         "release_site": "Goesgen",
                         "rotated_pole": True,
                         "species_ids": [1],

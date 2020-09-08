@@ -70,6 +70,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
+                "model": "COSMO-1",
                 "input_variable": "concentration",
                 "integrate": False,
                 "dimensions": {
@@ -89,6 +90,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
+                "model": "COSMO-1",
                 "input_variable": "deposition",
                 "integrate": False,
                 "dimensions": {
@@ -109,6 +111,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
+                "model": "COSMO-1",
                 "input_variable": "deposition",
                 "integrate": False,
                 "dimensions": {
@@ -129,6 +132,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
+                "model": "COSMO-1",
                 "input_variable": "deposition",
                 "combine_deposition_types": True,
                 "integrate": False,
@@ -150,6 +154,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
+                "model": "COSMO-1",
                 "input_variable": "concentration",
                 "integrate": False,
                 "dimensions": {
@@ -169,6 +174,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
+                "model": "COSMO-1",
                 "input_variable": "deposition",
                 "combine_deposition_types": True,
                 "integrate": False,
@@ -190,6 +196,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
+                "model": "COSMO-1",
                 "input_variable": "deposition",
                 "combine_deposition_types": True,
                 "combine_species": True,
@@ -207,11 +214,12 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
         ),
         Config(  # [conf7]
             datafilename=datafilename3,
-            model="IFS",
+            model="IFS-HRES",
             var_names_ref=["spec001_mr"],
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
+                "model": "IFS-HRES",
                 "input_variable": "concentration",
                 "integrate": False,
                 "dimensions": {
@@ -278,6 +286,7 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
+                "model": "COSMO-1",
                 "input_variable": "concentration",
                 "integrate": True,
                 "dimensions": {
@@ -298,6 +307,7 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
+                "model": "COSMO-1",
                 "input_variable": "concentration",
                 "integrate": True,
                 "dimensions": {
@@ -318,6 +328,7 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
+                "model": "COSMO-1",
                 "input_variable": "deposition",
                 "integrate": True,
                 "dimensions": {
@@ -337,6 +348,7 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
+                "model": "COSMO-1",
                 "input_variable": "deposition",
                 "integrate": True,
                 "dimensions": {
@@ -356,6 +368,7 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
+                "model": "COSMO-1",
                 "input_variable": "deposition",
                 "combine_deposition_types": True,
                 "integrate": True,
@@ -376,6 +389,7 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
+                "model": "COSMO-1",
                 "input_variable": "concentration",
                 "integrate": True,
                 "dimensions": {
@@ -397,6 +411,7 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
+                "model": "COSMO-1",
                 "input_variable": "deposition",
                 "integrate": True,
                 "dimensions": {
@@ -474,6 +489,7 @@ def test_multiple(datadir, config):  # noqa:F811
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
+                "model": "COSMO-1",
                 "input_variable": "concentration",
                 "integrate": False,
                 "dimensions": {
@@ -493,6 +509,7 @@ def test_multiple(datadir, config):  # noqa:F811
             setup_dct={
                 "infile": "dummy.nc",
                 "outfile": "dummy.png",
+                "model": "COSMO-1",
                 "input_variable": "deposition",
                 "combine_deposition_types": True,
                 "integrate": False,

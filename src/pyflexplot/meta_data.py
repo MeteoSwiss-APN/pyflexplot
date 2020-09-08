@@ -20,7 +20,6 @@ from datetime import timezone
 from typing import Any
 from typing import cast
 from typing import Collection
-from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -69,7 +68,7 @@ class MetaData:
     variable: "VariableMetaData"
     species: "SpeciesMetaData"
 
-    def merge_with(self, others: Collection["MetaData"],) -> "MetaData":
+    def merge_with(self, others: Collection["MetaData"]) -> "MetaData":
         """Merge this `MetaData` instance with one or more others.
 
         The nested functions are former methods that have been moved in here in
@@ -150,18 +149,14 @@ def format_unit(s: str) -> str:
 
 
 def collect_meta_data(
-    fi: nc4.Dataset,
-    setup: Setup,
-    nc_meta_data: Mapping[str, Mapping[str, Any]],
-    *,
-    add_ts0: bool = False,
+    fi: nc4.Dataset, setup: Setup, *, add_ts0: bool = False,
 ) -> MetaData:
     assert issubclass(MetaData, MetaData)  # SR_TMP
     return MetaData(
         release=ReleaseMetaData.from_file(fi, setup),
         simulation=SimulationMetaData.from_file(fi, setup, add_ts0),
-        variable=VariableMetaData.from_file(fi, setup, nc_meta_data),
-        species=SpeciesMetaData.from_file(fi, setup, nc_meta_data),
+        variable=VariableMetaData.from_file(fi, setup),
+        species=SpeciesMetaData.from_file(fi, setup),
     )
 
 
@@ -183,13 +178,8 @@ class VariableMetaData:
     level_unit: str
 
     @classmethod
-    def from_file(
-        cls,
-        fi: nc4.Dataset,
-        setup: Setup,
-        nc_meta_data: Mapping[str, Mapping[str, Any]],
-    ) -> "VariableMetaData":
-        name = nc_var_name(setup, nc_meta_data["derived"]["model"])
+    def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "VariableMetaData":
+        name = nc_var_name(setup, setup.model)
         var = fi.variables[name]
         unit = getncattr(var, "units")
         idx: int
@@ -504,13 +494,8 @@ class SpeciesMetaData:
     washout_exponent: Union[float, Tuple[float, ...]]
 
     @classmethod
-    def from_file(
-        cls,
-        fi: nc4.Dataset,
-        setup: Setup,
-        nc_meta_data: Mapping[str, Mapping[str, Any]],
-    ) -> "SpeciesMetaData":
-        model: str = nc_meta_data["derived"]["model"]
+    def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "SpeciesMetaData":
+        model: str = setup.model
         name: str = nc_var_name(setup, model)
         var: nc4.Variable = fi.variables[name]
         try:  # SR_TMP
@@ -556,6 +541,8 @@ class SpeciesMetaData:
 
 
 def nc_var_name(setup: Setup, model: str) -> str:
+    cosmo_models = ["COSMO-2", "COSMO-1", "COSMO-2E", "COSMO-1E"]
+    ifs_models = ["IFS-HRES", "IFS-HRES-EU"]
     # SR_TMP <
     dimensions = setup.core.dimensions
     input_variable = setup.core.input_variable
@@ -564,9 +551,9 @@ def nc_var_name(setup: Setup, model: str) -> str:
     assert dimensions.species_id is not None  # mypy
     species_id = dimensions.species_id
     if input_variable == "concentration":
-        if model in ["COSMO-2", "COSMO-1"]:
+        if model in cosmo_models:
             return f"spec{species_id:03d}"
-        elif model in ["IFS-HRES", "IFS-HRES-EU"]:
+        elif model in ifs_models:
             return f"spec{species_id:03d}_mr"
         else:
             raise ValueError("unknown model", model)

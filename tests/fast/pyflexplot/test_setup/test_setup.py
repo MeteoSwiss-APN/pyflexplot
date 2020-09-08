@@ -77,8 +77,9 @@ class Test_Setup_Create:
     def test_some_dimensions(self):
         params = {
             "infile": "dummy.nc",
-            "integrate": False,
             "outfile": "dummy.png",
+            "model": "COSMO-1",
+            "integrate": False,
             "ens_variable": "mean",
             "dimensions": {"time": 10, "level": 1},
             "input_variable": "concentration",
@@ -210,10 +211,11 @@ class Test_Setup_Decompress:
 
 class Test_SetupCollection_Create:
     def create_partial_dicts(self):
+        base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
         return [
-            {"infile": "foo.nc", "input_variable": "concentration", "domain": "ch"},
-            {"infile": "bar.nc", "input_variable": "deposition", "lang": "de"},
-            {"dimensions": {"nageclass": 1, "noutrel": 5, "numpoint": 3}},
+            {**base, "input_variable": "concentration", "domain": "ch"},
+            {**base, "input_variable": "deposition", "lang": "de"},
+            {**base, "dimensions": {"nageclass": 1, "noutrel": 5, "numpoint": 3}},
         ]
 
     def create_complete_dicts(self):
@@ -239,16 +241,22 @@ class Test_SetupCollection_Compress:
     dcts: List[Dict[str, Any]] = [
         {
             "infile": "foo.nc",
+            "outfile": "bar.png",
+            "model": "COSMO-1",
             "input_variable": "concentration",
             "dimensions": {"level": 0},
         },
         {
             "infile": "foo.nc",
+            "outfile": "bar.png",
+            "model": "COSMO-1",
             "input_variable": "concentration",
             "dimensions": {"level": 1},
         },
         {
             "infile": "foo.nc",
+            "outfile": "bar.png",
+            "model": "COSMO-1",
             "input_variable": "concentration",
             "dimensions": {"level": (1, 2)},
         },
@@ -307,6 +315,7 @@ class Test_SetupCollection_Group:
             {
                 "infile": infile,
                 "outfile": infile.replace(".nc", ".png"),
+                "model": "COSMO-1",
                 "combine_species": combine_species,
                 "dimensions": {"species_id": [1, 2], "time": time},
             }

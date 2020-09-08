@@ -73,12 +73,10 @@ def read_meta_data(file_handle: nc4.Dataset) -> Dict[str, Dict[str, Any]]:
         }
 
     # Derive some custom attributes
-    model: str = determine_model(ncattrs)
     derived: Dict[str, Any] = {
-        "model": model,
         "release_site": determine_release_site(file_handle),
-        "rotated_pole": model.startswith("COSMO"),
-        "species_ids": determine_species_ids(model, variables),
+        "rotated_pole": determine_rotated_pole(dimensions),
+        "species_ids": determine_species_ids(variables),
         "time_steps": determine_time_steps(ncattrs),
     }
 
@@ -90,26 +88,6 @@ def read_meta_data(file_handle: nc4.Dataset) -> Dict[str, Dict[str, Any]]:
     }
 
 
-def determine_model(ncattrs: Dict[str, Any]) -> str:
-    """Determine the model from global NetCDF attributes.
-
-    For lack of an explicit model type attribute, use the grid resolution as a
-    proxy.
-
-    """
-    dxout = ncattrs["dxout"]
-    choices = {
-        type(dxout)(0.25): "IFS-HRES",
-        type(dxout)(0.10): "IFS-HRES-EU",
-        type(dxout)(0.02): "COSMO-2",
-        type(dxout)(0.01): "COSMO-1",
-    }
-    try:
-        return choices[dxout]
-    except KeyError:
-        raise Exception("no model defined for dxout", dxout, choices)
-
-
 def determine_release_site(file_handle: nc4.Dataset) -> str:
     var = file_handle.variables["RELCOM"]
     # SR_TMP <
@@ -119,19 +97,25 @@ def determine_release_site(file_handle: nc4.Dataset) -> str:
     return var[idx][~var[idx].mask].tobytes().decode("utf-8").rstrip()
 
 
-def determine_species_ids(model: str, variables: Dict[str, Any]) -> Tuple[int, ...]:
-    """Determine the species ids from the variables."""
-    if model in ["COSMO-1", "COSMO-2", "IFS-HRES", "IFS-HRES-EU"]:
-        rx = re.compile(r"\A[WD]D_spec(?P<species_id>[0-9][0-9][0-9])\Z")
-        species_ids = set()
-        for var_name in variables.keys():
-            match = rx.match(var_name)
-            if match:
-                species_id = int(match.group("species_id"))
-                species_ids.add(species_id)
-        return tuple(sorted(species_ids))
+def determine_rotated_pole(dimensions: Dict[str, Any]) -> bool:
+    if "rlat" in dimensions and "rlon" in dimensions:
+        return True
+    elif "latitude" in dimensions and "longitude" in dimensions:
+        return False
     else:
-        raise ValueError("unexpected model", model)
+        raise NotImplementedError("unexpected dimensions: {list(dimensions)}")
+
+
+def determine_species_ids(variables: Dict[str, Any]) -> Tuple[int, ...]:
+    """Determine the species ids from the variables."""
+    rx = re.compile(r"\A[WD]D_spec(?P<species_id>[0-9][0-9][0-9])\Z")
+    species_ids = set()
+    for var_name in variables.keys():
+        match = rx.match(var_name)
+        if match:
+            species_id = int(match.group("species_id"))
+            species_ids.add(species_id)
+    return tuple(sorted(species_ids))
 
 
 def determine_time_steps(ncattrs: Dict[str, Any]) -> Tuple[int, ...]:

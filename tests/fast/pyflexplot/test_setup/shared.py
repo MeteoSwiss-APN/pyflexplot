@@ -9,6 +9,12 @@ from typing import Dict
 # First-party
 from pyflexplot.setup import Setup
 
+DUMMY_PARAMS: Dict[str, Any] = {
+    "infile": "none",
+    "outfile": "none",
+    "model": "none",
+}
+
 DEFAULT_PARAMS: Dict[str, Any] = {
     "base_time": None,
     "combine_deposition_types": False,
@@ -31,13 +37,10 @@ DEFAULT_PARAMS: Dict[str, Any] = {
     "ens_param_thr": None,
     "ens_param_time_win": None,
     "ens_variable": "none",
-    "infile": "none",
     "input_variable": "concentration",
     "integrate": False,
     "lang": "en",
-    "model": "none",
     "multipanel_param": None,
-    "outfile": "none",
     "outfile_time_format": "%Y%m%d%H%M",
     "plot_type": "auto",
     "plot_variable": "auto",
@@ -45,4 +48,4 @@ DEFAULT_PARAMS: Dict[str, Any] = {
 }
 
 
-DEFAULT_SETUP: Setup = Setup.create(DEFAULT_PARAMS)
+DEFAULT_SETUP: Setup = Setup.create({**DUMMY_PARAMS, **DEFAULT_PARAMS})

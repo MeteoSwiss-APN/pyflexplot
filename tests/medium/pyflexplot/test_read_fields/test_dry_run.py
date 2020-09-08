@@ -217,6 +217,7 @@ def test_single_setup_concentration(datadir: str, config: ConfSingleSetup):
         {
             "infile": f"{datadir}/{datafilename1}",
             "outfile": "foo.png",
+            "model": "COSMO-1",
             "input_variable": "concentration",
         }
     )
@@ -369,6 +370,7 @@ def test_single_setup_deposition(datadir: str, config: ConfSingleSetup):
         {
             "infile": f"{datadir}/{datafilename1}",
             "outfile": "foo.png",
+            "model": "COSMO-1",
             "input_variable": "deposition",
         }
     )
@@ -487,5 +489,11 @@ def test_multiple_setups(datadir: str, config: ConfMultipleSetups):
         "dimensions.time",
     ]
     for setup_dct in config.setup_dct_lst:
-        setup_dct.update({"infile": f"{datadir}/{datafilename1}", "outfile": "foo.png"})
+        setup_dct.update(
+            {
+                "infile": f"{datadir}/{datafilename1}",
+                "outfile": "foo.png",
+                "model": "COSMO-1",
+            }
+        )
     _test_multiple_setups_core(config, params)

@@ -321,10 +321,10 @@ class Setup(BaseModel):
         arbitrary_types_allowed = True
         extra = "forbid"
 
-    infile: str = "none"
-    outfile: Union[str, Tuple[str, ...]] = "none"
+    infile: str  # = "none"
+    outfile: Union[str, Tuple[str, ...]]  # = "none"
+    model: str  # = "none"
     outfile_time_format: str = "%Y%m%d%H%M"
-    model: str = "none"
     base_time: Optional[int] = None
     ens_member_id: Optional[Tuple[int, ...]] = None
     scale_fact: float = 1.0

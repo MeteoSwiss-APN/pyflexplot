@@ -41,8 +41,9 @@ class TestReadFieldEnsemble_Single:
     # Setup parameters shared by all tests
     setup_params_shared: Dict[str, Any] = {
         "infile": "dummy.nc",
-        "integrate": False,
         "outfile": "dummy.png",
+        "model": "COSMO-2E",
+        "integrate": False,
         "ens_variable": "mean",
         "dimensions": {"time": 10, "species_id": 2},
         "input_variable": "concentration",
@@ -155,8 +156,9 @@ class TestReadFieldEnsemble_Multiple:
     # Setup parameters arguments shared by all tests
     shared_setup_params_compressed: Dict[str, Any] = {
         "infile": "dummy.nc",
-        "integrate": True,
         "outfile": "dummy.png",
+        "model": "COSMO-2E",
+        "integrate": True,
         "dimensions": {"species_id": 1, "time": [0, 3, 9]},
     }
 

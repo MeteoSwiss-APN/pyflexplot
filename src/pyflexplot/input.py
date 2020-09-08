@@ -310,7 +310,8 @@ class InputFileEnsemble:
         )
         n_requested_times = len(self.setups_lst_time)
 
-        self.fld_time_mem = np.full(self._get_shape_mem_time(), np.nan, np.float32)
+        model = setups.collect_equal("model")
+        self.fld_time_mem = np.full(self._get_shape_mem_time(model), np.nan, np.float32)
         self.mdata_time = np.full(n_requested_times, None, object)
         for idx_mem, (ens_member_id, file_path) in enumerate(
             zip((self.ens_member_ids or [None]), self.paths)  # type: ignore
@@ -358,6 +359,7 @@ class InputFileEnsemble:
         self, file_path: str, idx_mem: int, timeless_setups_mem: SetupCollection,
     ) -> None:
         n_mem = len(self.paths)
+        model = timeless_setups_mem.collect_equal("model")
 
         # Try to fetch the necessary data from cache
         if not self.cache_on:
@@ -375,7 +377,7 @@ class InputFileEnsemble:
         # Read the data from disk
         log(dbg=f"reading file ({idx_mem + 1}/{n_mem}): {file_path}")
         with nc4.Dataset(file_path, "r") as fi:
-            self._read_grid(fi)
+            self._read_grid(fi, model)
 
             if idx_mem > 0:
                 # Ensure that meta data is the same for all members
@@ -420,7 +422,7 @@ class InputFileEnsemble:
         fld_time = merge_fields(fld_time_lst)
 
         global_models = ["IFS-HRES"]
-        if self.fixer and self.nc_meta_data["derived"]["model"] in global_models:
+        if self.fixer and timeless_setups.collect_equal("model") in global_models:
             self.fixer.fix_global_grid(self.lon, fld_time)
 
         if self.add_ts0:
@@ -437,23 +439,23 @@ class InputFileEnsemble:
             for sub_setups in setups.decompress_partially(None, skip=["outfile"]):
                 for sub_setup in sub_setups:
                     mdata_ij: MetaData = collect_meta_data(
-                        fi, sub_setup, self.nc_meta_data, add_ts0=self.add_ts0
+                        fi, sub_setup, add_ts0=self.add_ts0
                     )
                     mdata_i_lst.append(mdata_ij)
             mdata_i = mdata_i_lst[0].merge_with(mdata_i_lst[1:])
 
             # Fix some known issues with the NetCDF input data
             if self.fixer:
-                model_name = self.nc_meta_data["derived"]["model"]
+                model_name = setups.collect_equal("model")
                 integrate = setups.collect_equal("integrate")
                 self.fixer.fix_meta_data(model_name, integrate, mdata_i)
 
             mdata_lst.append(mdata_i)
         return mdata_lst
 
-    def _get_shape_mem_time(self) -> Tuple[int, int, int, int]:
+    def _get_shape_mem_time(self, model: str) -> Tuple[int, int, int, int]:
         """Get the shape of an array of fields across members and time steps."""
-        dim_names = self._dim_names(self.nc_meta_data["derived"]["model"])
+        dim_names = self._dim_names(model)
         nlat = self.nc_meta_data["dimensions"][dim_names["lat"]]["size"]
         nlon = self.nc_meta_data["dimensions"][dim_names["lon"]]["size"]
         nts = self.nc_meta_data["dimensions"][dim_names["time"]]["size"]
@@ -462,31 +464,31 @@ class InputFileEnsemble:
         self.lon = np.full((nlon,), np.nan)
         return (n_mem, nts, nlat, nlon)
 
-    def _read_grid(self, fi: nc4.Dataset) -> None:
+    def _read_grid(self, fi: nc4.Dataset, model: str) -> None:
         """Read and prepare grid variables."""
-        dim_names = self._dim_names(self.nc_meta_data["derived"]["model"])
+        dim_names = self._dim_names(model)
         lat = fi.variables[dim_names["lat"]][:]
         lon = fi.variables[dim_names["lon"]][:]
         time = fi.variables[dim_names["time"]][:]
-        time = self._prepare_time(fi, time)
+        time = self._prepare_time(fi, time, model)
         self.lat = lat
         self.lon = lon
         self.time = time
 
-    def _prepare_time(self, fi: nc4.Dataset, time: np.ndarray) -> np.ndarray:
+    def _prepare_time(
+        self, fi: nc4.Dataset, time: np.ndarray, model: str
+    ) -> np.ndarray:
         if self.add_ts0:
             dts = time[1] - time[0]
             ts0 = time[0] - dts
             time = np.r_[ts0, time]
-
         # Convert seconds to hours
-        dim_names = self._dim_names(self.nc_meta_data["derived"]["model"])
+        dim_names = self._dim_names(model)
         time_unit = fi.variables[dim_names["time"]].units
         if time_unit.startswith("seconds since"):
             time = time / 3600.0
         else:
             raise NotImplementedError("unexpected time unit", time_unit)
-
         return time
 
     @staticmethod
@@ -571,11 +573,12 @@ class InputFileEnsemble:
         dimensions = setup.core.dimensions
         input_variable = setup.core.input_variable
         integrate = setup.core.integrate
-        var_name = nc_var_name(setup, self.nc_meta_data["derived"]["model"])
+        model = setup.model
+        var_name = nc_var_name(setup, model)
         # SR_TMP >
 
         # Indices of field along NetCDF dimensions
-        dim_names = self._dim_names(self.nc_meta_data["derived"]["model"])
+        dim_names = self._dim_names(model)
         dim_idcs_by_name = {
             dim_names["lat"]: slice(None),
             dim_names["lon"]: slice(None),
@@ -633,7 +636,7 @@ class InputFileEnsemble:
         fld = nc_var[indices]
 
         # Fix known issues with NetCDF input data
-        model = self.nc_meta_data["derived"]["model"]
+        model = setup.model
         var_ncattrs = {attr: nc_var.getncattr(attr) for attr in nc_var.ncattrs()}
         if self.fixer:
             self.fixer.fix_nc_var_fld(fld, model, var_ncattrs)

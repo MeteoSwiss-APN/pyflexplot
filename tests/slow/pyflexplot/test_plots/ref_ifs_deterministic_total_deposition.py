@@ -20,8 +20,8 @@ field_summary = {
         {
             "infile": "flexpart_ifs_20200317000000.nc",
             "outfile": "ref_ifs_deterministic_total_deposition.png",
-            "outfile_time_format": "%Y%m%d%H%M",
             "model": "IFS-HRES",
+            "outfile_time_format": "%Y%m%d%H%M",
             "base_time": 202003170000,
             "ens_member_id": None,
             "scale_fact": 1.0,
@@ -307,7 +307,6 @@ field_summary = {
             },
         },
         "derived": {
-            "model": "IFS-HRES",
             "release_site": "Punggye-ri",
             "rotated_pole": False,
             "species_ids": [1],
@@ -1526,8 +1525,8 @@ plot_summary = {
                 {
                     "infile": "flexpart_ifs_20200317000000.nc",
                     "outfile": "ref_ifs_deterministic_total_deposition.png",
-                    "outfile_time_format": "%Y%m%d%H%M",
                     "model": "IFS-HRES",
+                    "outfile_time_format": "%Y%m%d%H%M",
                     "base_time": 202003170000,
                     "ens_member_id": None,
                     "scale_fact": 1.0,
@@ -1819,7 +1818,6 @@ plot_summary = {
                     },
                 },
                 "derived": {
-                    "model": "IFS-HRES",
                     "release_site": "Punggye-ri",
                     "rotated_pole": False,
                     "species_ids": [1],
@@ -1877,8 +1875,8 @@ plot_summary = {
                         {
                             "infile": "flexpart_ifs_20200317000000.nc",
                             "outfile": "ref_ifs_deterministic_total_deposition.png",
-                            "outfile_time_format": "%Y%m%d%H%M",
                             "model": "IFS-HRES",
+                            "outfile_time_format": "%Y%m%d%H%M",
                             "base_time": 202003170000,
                             "ens_member_id": None,
                             "scale_fact": 1.0,
@@ -2173,7 +2171,6 @@ plot_summary = {
                             },
                         },
                         "derived": {
-                            "model": "IFS-HRES",
                             "release_site": "Punggye-ri",
                             "rotated_pole": False,
                             "species_ids": [1],
@@ -27855,8 +27852,8 @@ plot_summary = {
             {
                 "infile": "flexpart_ifs_20200317000000.nc",
                 "outfile": "ref_ifs_deterministic_total_deposition.png",
-                "outfile_time_format": "%Y%m%d%H%M",
                 "model": "IFS-HRES",
+                "outfile_time_format": "%Y%m%d%H%M",
                 "base_time": 202003170000,
                 "ens_member_id": None,
                 "scale_fact": 1.0,
@@ -28145,7 +28142,6 @@ plot_summary = {
                 },
             },
             "derived": {
-                "model": "IFS-HRES",
                 "release_site": "Punggye-ri",
                 "rotated_pole": False,
                 "species_ids": [1],
@@ -29351,8 +29347,8 @@ plot_summary = {
                     {
                         "infile": "flexpart_ifs_20200317000000.nc",
                         "outfile": "ref_ifs_deterministic_total_deposition.png",
-                        "outfile_time_format": "%Y%m%d%H%M",
                         "model": "IFS-HRES",
+                        "outfile_time_format": "%Y%m%d%H%M",
                         "base_time": 202003170000,
                         "ens_member_id": None,
                         "scale_fact": 1.0,
@@ -29644,7 +29640,6 @@ plot_summary = {
                         },
                     },
                     "derived": {
-                        "model": "IFS-HRES",
                         "release_site": "Punggye-ri",
                         "rotated_pole": False,
                         "species_ids": [1],

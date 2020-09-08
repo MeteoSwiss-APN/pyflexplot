@@ -40,32 +40,45 @@ def test_single_minimal_section(tmp_path):
     """Read setup file with single minimal section."""
     content = """\
         [plot]
+        infile = "foo.nc"
+        outfile = "bar.png"
+        model = "COSMO-baz"
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert setups == [DEFAULT_PARAMS]
+    base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
+    assert setups == [{**base, **DEFAULT_PARAMS}]
 
 
 def test_single_minimal_renamed_section(tmp_path):
     """Read setup file with single minimal section with arbitrary name."""
     content = """\
         [foobar]
+        infile = "foo.nc"
+        outfile = "bar.png"
+        model = "COSMO-baz"
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert setups == [DEFAULT_PARAMS]
+    base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
+    assert setups == [{**base, **DEFAULT_PARAMS}]
 
 
 def test_single_section(tmp_path):
     """Read setup file with single non-empty section."""
     content = """\
         [plot]
+        infile = "foo.nc"
+        outfile = "bar.png"
+        model = "COSMO-baz"
         input_variable = "deposition"
         lang = "de"
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
     assert len(setups) == 1
     res = next(iter(setups))
-    assert res != DEFAULT_PARAMS
+    base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
+    assert res != {**base, **DEFAULT_PARAMS}
     sol = merge_dicts(
+        base,
         DEFAULT_PARAMS,
         {"input_variable": "deposition", "dimensions": {"level": None}, "lang": "de"},
     )
@@ -76,28 +89,42 @@ def test_multiple_parallel_empty_sections(tmp_path):
     """Read setup file with multiple parallel empty sections."""
     content = """\
         [plot1]
+        infile = "foo.nc"
+        outfile = "bar.png"
+        model = "COSMO-baz"
 
         [plot2]
+        infile = "foo.nc"
+        outfile = "bar.png"
+        model = "COSMO-baz"
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert setups == [DEFAULT_PARAMS] * 2
+    base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
+    assert setups == [{**base, **DEFAULT_PARAMS}] * 2
 
 
 def test_two_nested_empty_sections(tmp_path):
     """Read setup file with two nested empty sections."""
     content = """\
         [_base]
+        infile = "foo.nc"
+        outfile = "bar.png"
+        model = "COSMO-baz"
 
         [_base.plot]
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert setups == [DEFAULT_PARAMS]
+    base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
+    assert setups == [{**base, **DEFAULT_PARAMS}]
 
 
 def test_multiple_nested_sections(tmp_path):
     """Read setup file with two nested non-empty sections."""
     content = """\
         [_base]
+        infile = "foo.nc"
+        outfile = "bar.png"
+        model = "COSMO-baz"
         lang = "de"
 
         [_base.con]
@@ -133,7 +160,9 @@ def test_multiple_nested_sections(tmp_path):
         [_base._dep.wet.de]
         lang = "de"
         """
+    base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
     sol_base = merge_dicts(
+        base,
         DEFAULT_PARAMS,
         {
             "input_variable": "deposition",
@@ -165,6 +194,9 @@ def test_multiple_override(tmp_path):
     """Read setup file and override some parameters."""
     content = """\
         [_base]
+        infile = "foo.nc"
+        outfile = "bar.png"
+        model = "COSMO-baz"
         lang = "de"
 
         [_base.con]
@@ -200,14 +232,12 @@ def test_multiple_override(tmp_path):
         [_base._dep.wet.de]
         lang = "de"
         """
-    override = {
-        "infile": "foo.nc",
-        "lang": "de",
-    }
+    override = {"lang": "de"}
+    base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
     sol_base = merge_dicts(
+        base,
         DEFAULT_PARAMS,
         {
-            "infile": "foo.nc",
             "input_variable": "deposition",
             "combine_deposition_types": True,
             "dimensions": {"level": None, "deposition_type": ("dry", "wet")},
@@ -226,7 +256,6 @@ def test_multiple_override(tmp_path):
         {"lang": "de", "dimensions": {"deposition_type": "wet"}},
     ]
     sol = [merge_dicts(sol_base, sol_spc) for sol_spc in sol_specific]
-    setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read(override=override)
     assert setups == sol
 
@@ -237,6 +266,9 @@ def test_semi_realcase(tmp_path):
         # PyFlexPlot setup file to create deterministic NAZ plots
 
         [_base]
+        infile = "foo.nc"
+        outfile = "bar.png"
+        model = "COSMO-baz"
 
         [_base._concentration]
 
@@ -502,7 +534,8 @@ def test_wildcard_simple(tmp_path):
     content = """\
         [_base]
         infile = "foo.nc"
-        outfile = "foo.png"
+        outfile = "bar.png"
+        model = "COSMO-baz"
 
         [_base._concentration]
         input_variable = "concentration"
@@ -517,7 +550,7 @@ def test_wildcard_simple(tmp_path):
         lang = "en"
 
         """
-    base = {"infile": "foo.nc", "outfile": "foo.png"}
+    base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
     sol = [
         merge_dicts(DEFAULT_PARAMS, base, dct)
         for dct in [
@@ -544,6 +577,8 @@ def test_double_wildcard_equal_depth(tmp_path):
     content = """\
         [_base]
         infile = "foo.nc"
+        outfile = "bar.png"
+        model = "COSMO-baz"
 
         [_base."_concentration+"]
         input_variable = "concentration"
@@ -568,7 +603,7 @@ def test_double_wildcard_equal_depth(tmp_path):
         lang = "en"
 
         """
-    base = {"infile": "foo.nc"}
+    base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
     sol = [
         merge_dicts(DEFAULT_PARAMS, base, dct, {"domain": domain, "lang": lang})
         for dct in [
@@ -591,6 +626,8 @@ def test_double_wildcard_variable_depth(tmp_path):
     content = """\
         [_base]
         infile = "foo.nc"
+        outfile = "bar.png"
+        model = "COSMO-baz"
 
         [_base."_concentration"]
         input_variable = "concentration"
@@ -621,7 +658,7 @@ def test_double_wildcard_variable_depth(tmp_path):
         lang = "en"
 
         """
-    base = {"infile": "foo.nc"}
+    base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
     sol = [
         merge_dicts(DEFAULT_PARAMS, base, dct, {"domain": domain, "lang": lang})
         for dct in [
@@ -641,7 +678,8 @@ def test_combine_wildcards(tmp_path):
     """Apply single- and double-star wildcards in combination."""
     content = """\
         [_base]
-        infile = "data_{ens_member:02d}.nc"
+        infile = "foo_{ens_member:02d}.nc"
+        model = "COSMO-baz"
 
         [_base."_concentration"]
         input_variable = "concentration"
@@ -651,11 +689,11 @@ def test_combine_wildcards(tmp_path):
 
         [_base."*"."_mean+"]
         ens_variable = "mean"
-        outfile = "ensemble_mean_{lang}.png"
+        outfile = "bar_mean_{lang}.png"
 
         [_base."*"."_max+"]
         ens_variable = "maximum"
-        outfile = "ensemble_maximum_{lang}.png"
+        outfile = "bar_maximum_{lang}.png"
 
         ["**".de]
         lang = "de"
@@ -668,10 +706,11 @@ def test_combine_wildcards(tmp_path):
         merge_dicts(
             DEFAULT_PARAMS,
             {
-                "infile": "data_{ens_member:02d}.nc",
+                "infile": "foo_{ens_member:02d}.nc",
+                "outfile": f"bar_{ens_variable}_{{lang}}.png",
+                "model": "COSMO-baz",
                 "input_variable": input_variable,
                 "ens_variable": ens_variable,
-                "outfile": f"ensemble_{ens_variable}_{{lang}}.png",
                 "lang": lang,
             },
         )
@@ -690,6 +729,8 @@ class Test_IndividualParams_SingleOrMultipleValues:
         content = """\
             [_base]
             infile = "foo.nc"
+            outfile = "bar.png"
+            model = "COSMO-baz"
 
             [_base.single]
             species_id = 1
@@ -700,7 +741,7 @@ class Test_IndividualParams_SingleOrMultipleValues:
             """
         setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
         res = setups.dicts()
-        base = {"infile": "foo.nc"}
+        base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
         sol = [
             merge_dicts(DEFAULT_PARAMS, base, {"dimensions": {"species_id": value}})
             for value in [1, (1, 2, 3)]
@@ -710,6 +751,9 @@ class Test_IndividualParams_SingleOrMultipleValues:
     def test_level(self, tmp_path):
         content = """\
             [_base]
+            infile = "foo.nc"
+            outfile = "bar.png"
+            model = "COSMO-baz"
             input_variable = "concentration"
 
             [_base.single]
@@ -720,8 +764,9 @@ class Test_IndividualParams_SingleOrMultipleValues:
 
             """
         setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
+        base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
         sol = [
-            merge_dicts(DEFAULT_PARAMS, {"dimensions": {"level": value}})
+            merge_dicts(DEFAULT_PARAMS, base, {"dimensions": {"level": value}})
             for value in [0, (1, 2)]
         ]
         assert setups.dicts() == sol
@@ -729,12 +774,17 @@ class Test_IndividualParams_SingleOrMultipleValues:
     def test_level_none(self, tmp_path):
         content = """\
             [base]
+            infile = "foo.nc"
+            outfile = "bar.png"
+            model = "COSMO-baz"
             input_variable = "deposition"
             """
         setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
+        base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
         sol = [
             merge_dicts(
                 DEFAULT_PARAMS,
+                base,
                 {"input_variable": "deposition", "dimensions": {"level": None}},
             )
         ]
@@ -746,8 +796,9 @@ def test_multipanel_param_ens_variable(tmp_path):
     """Declare multi-panel plot based on ensemble variables."""
     content = """\
         [plot]
-        infile = "data_{ens_member:02d}.nc"
-        outfile = "ens_stats_multipanel.png"
+        infile = "foo_{ens_member:02d}.nc"
+        outfile = "bar_ens_stats_multipanel.png"
+        model = "COSMO-baz"
         ens_member_id = [1, 2, 3]
         plot_type = "multipanel"
         multipanel_param = "ens_variable"
@@ -759,6 +810,7 @@ def test_multipanel_param_ens_variable(tmp_path):
     sol = []
     # sol = [
     #     merge_dicts(
+    #         DUMMY_PARAMS,
     #         DEFAULT_PARAMS,
     #         {
     #             "infile": "data_{ens_member:02d}.nc",

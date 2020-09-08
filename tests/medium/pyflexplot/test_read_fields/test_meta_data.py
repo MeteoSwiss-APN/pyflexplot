@@ -32,10 +32,6 @@ class _TestBase:
 class Test_COSMO1(_TestBase):
     datafilename = "flexpart_cosmo-1_2019052800.nc"
 
-    def test_model(self, datadir):
-        self.set_up(datadir)
-        assert self.meta_data["derived"]["model"] == "COSMO-1"
-
     def test_rotated_pole(self, datadir):
         self.set_up(datadir)
         assert self.meta_data["derived"]["rotated_pole"] is True
@@ -62,10 +58,6 @@ class Test_COSMO1(_TestBase):
 class Test_COSMO2(_TestBase):
     datafilename = "flexpart_cosmo-2e_2019072712_000.nc"
 
-    def test_model(self, datadir):
-        self.set_up(datadir)
-        assert self.meta_data["derived"]["model"] == "COSMO-2"
-
     def test_rotated_pole(self, datadir):
         self.set_up(datadir)
         assert self.meta_data["derived"]["rotated_pole"] is True
@@ -91,10 +83,6 @@ class Test_COSMO2(_TestBase):
 
 class Test_IFS(_TestBase):
     datafilename = "flexpart_ifs_20200317000000.nc"
-
-    def test_model(self, datadir):
-        self.set_up(datadir)
-        assert self.meta_data["derived"]["model"] == "IFS-HRES"
 
     def test_rotated_pole(self, datadir):
         self.set_up(datadir)
