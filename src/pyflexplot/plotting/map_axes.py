@@ -99,31 +99,32 @@ class CloudDomain(Domain):
         lllon = lon[mask_lon].min()
         urlon = lon[mask_lon].max()
 
-        # Increase size if minimum specified
-        d_lat = urlat - lllat
-        d_lon = urlon - lllon
+        # Increase latitudinal size if minimum specified
         d_lat_min = self.field.var_setups.collect_equal("domain_size_lat")
+        if d_lat_min is not None:
+            d_lat = urlat - lllat
+            if d_lat < d_lat_min:
+                lllat -= 0.5 * (d_lat_min - d_lat)
+                urlat += 0.5 * (d_lat_min - d_lat)
+
+        # Increase latitudinal size if minimum specified
         d_lon_min = self.field.var_setups.collect_equal("domain_size_lon")
-        if d_lat_min is not None and d_lat_min > d_lat:
-            d_lat_new = d_lat_min
-            lllat -= 0.5 * (d_lat_min - d_lat)
-            urlat += 0.5 * (d_lat_min - d_lat)
-        if d_lon_min is not None and d_lon_min > d_lon:
-            lllon -= 0.5 * (d_lon_min - d_lon)
-            urlon += 0.5 * (d_lon_min - d_lon)
+        if d_lon_min is not None:
+            d_lon = urlon - lllon
+            if d_lon < d_lon_min:
+                lllon -= 0.5 * (d_lon_min - d_lon)
+                urlon += 0.5 * (d_lon_min - d_lon)
 
         # Adjust aspect ratio to avoid distortion
         d_lat = urlat - lllat
         d_lon = urlon - lllon
         aspect = map_axes.get_aspect_ratio()
-        if d_lon / d_lat < aspect:
-            d_lon_new = d_lat * aspect
-            lllon -= 0.5 * (d_lon_new - d_lon)
-            urlon += 0.5 * (d_lon_new - d_lon)
-        elif d_lon / d_lat > aspect:
-            d_lat_new = d_lon / aspect
-            lllat -= 0.5 * (d_lat_new - d_lat)
-            urlat += 0.5 * (d_lat_new - d_lat)
+        if d_lon < d_lat * aspect:
+            lllon -= 0.5 * (d_lat * aspect - d_lon)
+            urlon += 0.5 * (d_lat * aspect - d_lon)
+        elif d_lat < d_lon / aspect:
+            lllat -= 0.5 * (d_lon / aspect - d_lat)
+            urlat += 0.5 * (d_lon / aspect - d_lat)
 
         return lllon, urlon, lllat, urlat
 
@@ -463,8 +464,8 @@ class MapAxes:
         self.ax = ax
 
         # Set geographical extent
-        bbox = self.config.domain.get_bbox(self)
         self.ax.set_aspect("auto")
+        bbox: MapAxesBoundingBox = self.config.domain.get_bbox(self)
         self.ax.set_extent(bbox, self.proj_data)
 
     def _init_ref_dist_box(self) -> None:

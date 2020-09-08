@@ -112,52 +112,47 @@ def create_map_config(field: Field) -> MapAxesConfig:
         "ref_dist_config": {"dist": 25},
     }
 
+    # Derive configuration of map axes from domain and model
     map_axes_config: Optional[Dict[str, Any]] = None
     if domain_type == "full":
         if model_name.startswith("COSMO"):
             map_axes_config = conf_regional_scale
-        if model_name == "IFS-HRES-EU":
+        elif model_name == "IFS-HRES-EU":
             map_axes_config = conf_continental_scale
-        if model_name == "IFS-HRES":
+        elif model_name == "IFS-HRES":
             map_axes_config = conf_global_scale
-    if domain_type == "release_site":
+    elif domain_type in ["release_site", "cloud", "alps"]:
         map_axes_config = conf_regional_scale
-    if domain_type == "cloud":
-        map_axes_config = conf_regional_scale
-    if domain_type == "alps":
-        map_axes_config = conf_regional_scale
-    if domain_type == "ch":
+    elif domain_type == "ch":
         map_axes_config = conf_country_scale
     if map_axes_config is None:
         raise NotImplementedError(
             f"map axes config for model '{model_name}' and domain type '{domain_type}'"
         )
+
+    # Set scaling factor of plot elements
     map_axes_config["scale_fact"] = scale_fact
 
+    # Initialize domain (projection and extent)
     domain: Optional[Domain] = None
     if domain_type == "full":
-        if model_name == "IFS_HRES":
-            domain = Domain(field)
-        else:
+        if model_name.startswith("COSMO"):
             domain = Domain(field, zoom_fact=1.01)
-    if domain_type == "release_site":
-        # SR_NOTE Logic currently in MapAxes._init_axes to be moved to Domain*
+        else:
+            domain = Domain(field)
+    elif domain_type == "release_site":
         domain = ReleaseSiteDomain(field)
-    if domain_type == "alps":
+    elif domain_type == "alps":
         if model_name == "IFS-HRES-EU":
             domain = Domain(field, zoom_fact=3.4, rel_offset=(-0.165, -0.11))
-    if domain_type == "cloud":
-        # SR_NOTE Logic currently in MapAxes._init_axes to be moved to Domain*
-        if model_name.startswith("COSMO"):
-            domain = CloudDomain(field, zoom_fact=0.9)
-        if model_name.startswith("IFS"):
-            domain = CloudDomain(field, zoom_fact=0.9)
-    if domain_type == "ch":
+    elif domain_type == "cloud":
+        domain = CloudDomain(field, zoom_fact=0.9)
+    elif domain_type == "ch":
         if model_name.startswith("COSMO-1"):
             domain = Domain(field, zoom_fact=3.6, rel_offset=(-0.02, 0.045))
-        if model_name.startswith("COSMO-2"):
+        elif model_name.startswith("COSMO-2"):
             domain = Domain(field, zoom_fact=3.23, rel_offset=(0.037, 0.1065))
-        if model_name == "IFS-HRES-EU":
+        elif model_name == "IFS-HRES-EU":
             domain = Domain(field, zoom_fact=11.0, rel_offset=(-0.18, -0.11))
     if domain is None:
         raise NotImplementedError(
