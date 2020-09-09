@@ -21,6 +21,7 @@ from typing import Any
 from typing import cast
 from typing import Collection
 from typing import Optional
+from typing import overload
 from typing import Sequence
 from typing import Tuple
 from typing import Union
@@ -39,26 +40,99 @@ from .species import get_species
 from .species import Species
 from .utils.datetime import init_datetime
 
-MetaDatumType = Union[int, float, str, datetime, timedelta]
+CoreMetaDatumType = Union[int, float, str, datetime, timedelta]
+MetaDatumType = Union[CoreMetaDatumType, Tuple[CoreMetaDatumType, ...]]
 
 
-def format_meta_datum(value: Any, join: Optional[str] = None) -> str:
-    if isinstance(value, Collection) and not isinstance(value, str):
-        # SR_TODO make sure this is covered by a test (it currently isn't)!
-        return (join or " / ").join([format_meta_datum(v) for v in value])
-    elif isinstance(value, datetime):
-        return value.strftime("%Y-%m-%d %H:%M %Z")
-    elif isinstance(value, timedelta):
-        hours = int(value.total_seconds() / 3600)
-        minutes = int((value.total_seconds() / 60) % 60)
-        return f"{hours:d}:{minutes:02d}$\\,$h"
-    elif isinstance(value, (float, int)):
-        if 1e-5 < value < 1e6:
-            return f"{value:g}"
+@overload
+def format_meta_datum(
+    value: MetaDatumType,
+    unit: Optional[Union[str, Tuple[str, ...]]] = None,
+    *,
+    join_values: str = ...,
+) -> str:
+    ...
+
+
+@overload
+def format_meta_datum(
+    value: None = None,
+    unit: Union[str, Tuple[str, ...]] = ...,
+    *,
+    join_values: str = ...,
+) -> str:
+    ...
+
+
+# pylint: disable=R0911  # too-many-return-statements
+# pylint: disable=F0912  # too-many-branches
+def format_meta_datum(value=None, unit=None, *, join_values=" / "):
+    if value is None and unit is None:
+        raise ValueError("value and unit cannot both be None")
+    elif value is None and unit is not None:
+        if isinstance(unit, tuple):
+            raise NotImplementedError(f"multiple units without value: {unit}")
         else:
-            return f"{value:.2g}"
+            return _format_unit(unit)
     else:
-        return str(value)
+        assert value is not None  # mypy
+        if unit is not None:
+            return _format_meta_datum_with_unit(value, unit, join_values=join_values)
+        if isinstance(value, tuple):
+            # SR_TODO make sure this is covered by a test (it currently isn't)!
+            return join_values.join([format_meta_datum(v) for v in value])
+        elif isinstance(value, datetime):
+            return value.strftime("%Y-%m-%d %H:%M %Z")
+        elif isinstance(value, timedelta):
+            hours = int(value.total_seconds() / 3600)
+            minutes = int((value.total_seconds() / 60) % 60)
+            return f"{hours:d}:{minutes:02d}$\\,$h"
+        elif isinstance(value, (float, int)):
+            if 1e-5 < value < 1e6:
+                return f"{value:g}"
+            else:
+                return f"{value:.2g}"
+        else:
+            return str(value)
+
+
+def _format_meta_datum_with_unit(
+    value: MetaDatumType,
+    unit: Union[str, Tuple[str, ...]],
+    *,
+    join_values: str = " / ",
+    join_unit: str = r"$\,$",
+) -> str:
+    if not isinstance(value, tuple):
+        if isinstance(unit, tuple):
+            raise ValueError(f"multiple units for single value: {value}, {unit}")
+        # Single value, single unit
+        value = (value,)
+        unit = (unit,)
+    elif not isinstance(unit, tuple):
+        # Create a copy of the unit for each of the multiple values
+        unit = tuple([unit] * len(value))
+    elif len(value) != len(unit):
+        raise ValueError(
+            f"different number of values ({len(value)} and units ({len(unit)}"
+        )
+    kwargs = {"join_values": join_values}
+    value_fmtd = tuple(map(lambda v: format_meta_datum(v, **kwargs), value))
+    unit_fmtd = tuple(map(lambda u: _format_unit(format_meta_datum(u, **kwargs)), unit))
+    return format_meta_datum(tuple(map(join_unit.join, zip(value_fmtd, unit_fmtd))))
+
+
+def _format_unit(s: str) -> str:
+    """Auto-format the unit by elevating superscripts etc."""
+    s = str(s)
+    old_new = [
+        ("m-2", "m$^{-2}$"),
+        ("m-3", "m$^{-3}$"),
+        ("s-1", "s$^{-1}$"),
+    ]
+    for old, new in old_new:
+        s = s.replace(old, new)
+    return s
 
 
 @dataclass
@@ -106,46 +180,6 @@ class MetaData:
             variable=copy(self.variable),
             species=deepcopy(self.species, memo),
         )
-
-    def format_combo(self, param: str, join: str) -> str:
-        data_param, datum_param = param.split(".")
-        datum = getattr(getattr(self, data_param), datum_param)
-        if isinstance(datum, tuple):
-            datum = join.join(datum)
-        return format_meta_datum(datum)
-
-    def format_with_unit(self, param: str) -> str:
-        data_param, datum_param = param.split(".")
-        datum = getattr(getattr(self, data_param), datum_param)
-        try:
-            unit_datum = getattr(getattr(self, data_param), f"{datum_param}_unit")
-        except AttributeError:
-            raise Exception(f"missing unit {param}.unit of parameter {param}")
-        if not isinstance(datum, tuple):
-            values_fmtd = [format_meta_datum(datum), format_meta_datum(unit_datum)]
-            datum = r"$\,$".join(values_fmtd)
-        else:
-            if not isinstance(unit_datum, tuple):
-                unit_datum = tuple([unit_datum] * len(datum))
-            value = [
-                r"$\,$".join([format_meta_datum(d), format_meta_datum(u)])
-                for d, u in zip(datum, unit_datum)
-            ]
-            datum = tuple(value)
-        return format_unit(format_meta_datum(datum))
-
-
-def format_unit(s: str) -> str:
-    """Auto-format the unit by elevating superscripts etc."""
-    s = str(s)
-    old_new = [
-        ("m-2", "m$^{-2}$"),
-        ("m-3", "m$^{-3}$"),
-        ("s-1", "s$^{-1}$"),
-    ]
-    for old, new in old_new:
-        s = s.replace(old, new)
-    return s
 
 
 def collect_meta_data(
