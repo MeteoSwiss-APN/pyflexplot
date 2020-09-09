@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Summarize objects as a dict for testing etc.
 """

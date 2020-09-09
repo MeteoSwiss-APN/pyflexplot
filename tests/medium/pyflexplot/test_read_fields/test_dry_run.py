@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Tests for function ``pyflexplot.input.read_fields`` in dry-run mode.
 """

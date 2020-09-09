@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Custom types for type hints.
 """

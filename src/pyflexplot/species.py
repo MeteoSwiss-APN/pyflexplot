@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Chemical species and their attributes.
 """

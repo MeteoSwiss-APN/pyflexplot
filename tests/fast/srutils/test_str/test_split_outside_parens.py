@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Tests for function ``srutils.str.split_outside_parens``.
 """

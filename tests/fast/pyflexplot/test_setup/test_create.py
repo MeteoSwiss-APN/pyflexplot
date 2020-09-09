@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Tests for class ``pyflexplot.setup.Setup.create``.
 """

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 CLI for preset setup files.
 """

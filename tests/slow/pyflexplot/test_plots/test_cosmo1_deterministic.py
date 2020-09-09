@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Test the elements of complete plots based on deterministic COSMO-1 data.
 """

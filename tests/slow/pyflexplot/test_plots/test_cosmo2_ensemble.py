@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Test the elements of complete plots based on ensemble COSMO-2 data.
 """

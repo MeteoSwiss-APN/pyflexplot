@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # pylint: disable=C0302  # too-many-lines (>1000)
 """
 Meta data.

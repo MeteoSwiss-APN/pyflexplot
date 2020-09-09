@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Some utility functions and classes for testing.
 """

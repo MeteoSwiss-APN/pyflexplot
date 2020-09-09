@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Some tools."""
 
 __author__ = """Stefan Ruedisuehli"""

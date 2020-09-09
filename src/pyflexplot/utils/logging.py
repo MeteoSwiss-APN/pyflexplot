@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # pylint: disable=E1101  # no-member (logging.verbose, logging.VERBOSE)
 """
 Preset setup files.

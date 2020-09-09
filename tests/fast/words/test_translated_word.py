@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Tests for class ``TranslatedWord`` in module ``words.word``.
 """

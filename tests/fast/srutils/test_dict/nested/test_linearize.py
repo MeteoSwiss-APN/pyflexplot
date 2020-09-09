@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Tests for function ``srutils.dict.linearize_nested_dict``.
 """

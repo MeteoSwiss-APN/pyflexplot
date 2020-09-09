@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Crop fields in a NetCDF file.
 """

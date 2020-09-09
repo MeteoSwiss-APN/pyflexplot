@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Tests for function ``srutils.dict.decompress_nested_dict``.
 """

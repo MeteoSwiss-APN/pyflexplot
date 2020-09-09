@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Wrappers for ``TranslatedWord`` and ``TranslatedWords`` with testing-friendly interface.
 """

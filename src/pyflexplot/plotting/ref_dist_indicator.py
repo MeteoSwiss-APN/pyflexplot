@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Reference distance indicator for map plot.
 """

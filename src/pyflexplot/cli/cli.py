@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # pylint: disable=R0914  # too-many-locals
 """
 Command line interface.
