@@ -33,7 +33,6 @@ from .data import Field
 from .data import FieldTimeProperties
 from .data import merge_fields
 from .fix_nc_input import FlexPartDataFixer
-from .meta_data import collect_meta_data
 from .meta_data import MetaData
 from .meta_data import nc_var_name
 from .nc_meta_data import read_meta_data
@@ -438,7 +437,7 @@ class InputFileEnsemble:
             mdata_i_lst: List[MetaData] = []
             for sub_setups in setups.decompress_partially(None, skip=["outfile"]):
                 for sub_setup in sub_setups:
-                    mdata_ij: MetaData = collect_meta_data(
+                    mdata_ij: MetaData = MetaData.collect(
                         fi, sub_setup, add_ts0=self.add_ts0
                     )
                     mdata_i_lst.append(mdata_ij)

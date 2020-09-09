@@ -181,17 +181,17 @@ class MetaData:
             species=deepcopy(self.species, memo),
         )
 
-
-def collect_meta_data(
-    fi: nc4.Dataset, setup: Setup, *, add_ts0: bool = False,
-) -> MetaData:
-    assert issubclass(MetaData, MetaData)  # SR_TMP
-    return MetaData(
-        release=ReleaseMetaData.from_file(fi, setup),
-        simulation=SimulationMetaData.from_file(fi, setup, add_ts0),
-        variable=VariableMetaData.from_file(fi, setup),
-        species=SpeciesMetaData.from_file(fi, setup),
-    )
+    @classmethod
+    def collect(
+        cls, fi: nc4.Dataset, setup: Setup, *, add_ts0: bool = False,
+    ) -> "MetaData":
+        """Collect meta data from file."""
+        return cls(
+            release=ReleaseMetaData.from_file(fi, setup),
+            simulation=SimulationMetaData.from_file(fi, setup, add_ts0),
+            variable=VariableMetaData.from_file(fi, setup),
+            species=SpeciesMetaData.from_file(fi, setup),
+        )
 
 
 def getncattr(nc_obj: Union[nc4.Dataset, nc4.Variable], attr: str) -> Any:
