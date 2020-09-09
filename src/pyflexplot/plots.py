@@ -117,6 +117,7 @@ def create_plot(
     write: bool = True,
     show_version: bool = True,
 ) -> None:
+
     layout: BoxedPlotLayoutType
     if plot.config.setup.get_simulation_type() == "deterministic":
         layout = BoxedPlotLayoutDeterministic(aspect=plot.config.fig_aspect)
@@ -142,27 +143,73 @@ def create_plot(
 def plot_add_text_boxes(
     plot: BoxedPlot, layout: BoxedPlotLayoutType, show_version: bool = True
 ) -> None:
+
     # pylint: disable=R0915  # too-many-statements
-    def fill_box_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
+    def fill_box_title(box: TextBoxAxes, plot: BoxedPlot,) -> None:
         """Fill the title box."""
-        for position, label in plot.config.labels.get("top", {}).items():
-            if position == "tl":
-                font_size = plot.config.font_sizes.title_large
-            else:
-                font_size = plot.config.font_sizes.content_large
+
+        words = WORDS  # SR_TMP
+
+        setup = plot.field.var_setups.compress()
+        mdata = plot.config.mdata
+
+        box.text(
+            capitalize(format_names_etc(setup, words, mdata)["long"]),
+            loc="tl",
+            fontname=plot.config.font_name,
+            size=plot.config.font_sizes.title_large,
+        )
+
+        # SR_TMP <
+        labels = {}
+        integr_period = format_integr_period(
+            mdata.simulation.reduction_start,
+            mdata.simulation.now,
+            setup,
+            words,
+            cap=True,
+        )
+        labels["bl"] = capitalize(
+            f"{integr_period} ({words['since']}"
+            f" {format_meta_datum(mdata.simulation.reduction_start)})"
+        )
+        labels["tr"] = capitalize(
+            f"{format_meta_datum(mdata.simulation.now)}"
+            f" ({words['lead_time']} +{format_meta_datum(mdata.simulation.lead_time)})"
+        )
+        labels["br"] = capitalize(
+            f"{format_meta_datum(mdata.simulation.now_rel - mdata.release.start_rel)}"
+            f" {words['since']} {words['release_start']}"
+        )
+        # SR_TMP >
+
+        for position, label in labels.items():
             box.text(
-                label, loc=position, fontname=plot.config.font_name, size=font_size
+                label,
+                loc=position,
+                fontname=plot.config.font_name,
+                size=plot.config.font_sizes.content_large,
             )
 
-    def fill_box_2nd_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
+    def fill_box_2nd_title(box: TextBoxAxes, plot: BoxedPlot,) -> None:
         """Fill the secondary title box of the deterministic plot layout."""
         font_size = plot.config.font_sizes.content_large
-        labels = plot.config.labels["title_2nd"]
-        box.text(labels["tc"], loc="tc", fontname=plot.config.font_name, size=font_size)
-        box.text(labels["bc"], loc="bc", fontname=plot.config.font_name, size=font_size)
+        mdata = plot.config.mdata
+        box.text(
+            capitalize(format_meta_datum(mdata.species.name)),
+            loc="tc",
+            fontname=plot.config.font_name,
+            size=font_size,
+        )
+        box.text(
+            capitalize(format_meta_datum(mdata.release.site)),
+            loc="bc",
+            fontname=plot.config.font_name,
+            size=font_size,
+        )
 
     # pylint: disable=R0915  # too-many-statements
-    def fill_box_data_info(box: TextBoxAxes, plot: BoxedPlot) -> None:
+    def fill_box_data_info(box: TextBoxAxes, plot: BoxedPlot,) -> None:
         """Fill the data information box of the ensemble plot layout."""
         labels = plot.config.labels["data_info"]
         box.text_block_hfill(
@@ -177,7 +224,7 @@ def plot_add_text_boxes(
     # pylint: disable=R0913  # too-many-arguments
     # pylint: disable=R0914  # too-many-locals
     # pylint: disable=R0915  # too-many-statements
-    def fill_box_legend(box: TextBoxAxes, plot: BoxedPlot) -> None:
+    def fill_box_legend(box: TextBoxAxes, plot: BoxedPlot,) -> None:
         """Fill the box containing the plot legend."""
 
         labels = plot.config.labels["legend"]
@@ -288,28 +335,32 @@ def plot_add_text_boxes(
             )
 
     # pylint: disable=R0915  # too-many-statements
-    def fill_box_release_info(box: TextBoxAxes, plot: BoxedPlot) -> None:
+    def fill_box_release_info(box: TextBoxAxes, plot: BoxedPlot,) -> None:
         """Fill the box containing the release info."""
 
-        labels = plot.config.labels["release_info"]
+        words = WORDS  # SR_TMP
+        symbols = SYMBOLS  # SR_TMP
+
         mdata = plot.config.mdata
 
         # Box title
         box.text(
-            s=labels["title"],
+            s=capitalize(words["release"].t),
             loc="tc",
             fontname=plot.config.font_name,
             size=plot.config.font_sizes.title_small,
         )
 
         # Release site coordinates
+        lat_deg_fmt = capitalize(format_coord_label("north", words, symbols))
+        lon_deg_fmt = capitalize(format_coord_label("east", words, symbols))
         lat = Degrees(mdata.release.lat)
         lon = Degrees(mdata.release.lon)
-        lat_deg = labels["lat_deg_fmt"].format(d=lat.degs(), m=lat.mins(), f=lat.frac())
-        lon_deg = labels["lon_deg_fmt"].format(d=lon.degs(), m=lon.mins(), f=lon.frac())
+        lat_deg = lat_deg_fmt.format(d=lat.degs(), m=lat.mins(), f=lat.frac())
+        lon_deg = lon_deg_fmt.format(d=lon.degs(), m=lon.mins(), f=lon.frac())
 
         height = format_meta_datum(mdata.release.height, mdata.release.height_unit)
-        height = height.replace("meters", labels["height_unit"])  # SR_TMP
+        height = height.replace("meters", r"$\,$" + words["m_agl"].s)  # SR_TMP
         rate = format_meta_datum(mdata.release.rate, mdata.release.rate_unit)
         mass = format_meta_datum(mdata.release.mass, mdata.release.mass_unit)
         substance = format_meta_datum(mdata.species.name, join_values=" / ")
@@ -338,24 +389,25 @@ def plot_add_text_boxes(
             + cast(timedelta, mdata.release.end_rel)
         )
         # SR_TMP >
+
         info_blocks = dedent(
             f"""\
-            {labels['site']}:\t{format_meta_datum(mdata.release.site)}
-            {labels['latitude']}:\t{lat_deg}
-            {labels['longitude']}:\t{lon_deg}
-            {labels['height']}:\t{height}
+            {capitalize(words["site"].s)}:\t{format_meta_datum(mdata.release.site)}
+            {capitalize(words["latitude"].s)}:\t{lat_deg}
+            {capitalize(words["longitude"].s)}:\t{lon_deg}
+            {capitalize(words["height"].s)}:\t{height}
 
-            {labels['start']}:\t{release_start}
-            {labels['end']}:\t{release_end}
-            {labels['rate']}:\t{rate}
-            {labels['mass']}:\t{mass}
+            {capitalize(words["start"].s)}:\t{release_start}
+            {capitalize(words["end"].s)}:\t{release_end}
+            {capitalize(words["rate"].s)}:\t{rate}
+            {capitalize(words["total_mass"].s)}:\t{mass}
 
-            {labels['name']}:\t{substance}
-            {labels['half_life']}:\t{half_life}
-            {labels['deposit_vel']}:\t{deposit_vel}
-            {labels['sediment_vel']}:\t{sediment_vel}
-            {labels['washout_coeff']}:\t{washout_coeff}
-            {labels['washout_exponent']}:\t{washout_exponent}
+            {capitalize(words["substance"].s)}:\t{substance}
+            {capitalize(words["half_life"].s)}:\t{half_life}
+            {capitalize(words["deposition_velocity", "abbr"].s)}:\t{deposit_vel}
+            {capitalize(words["sedimentation_velocity", "abbr"].s)}:\t{sediment_vel}
+            {capitalize(words["washout_coeff"].s)}:\t{washout_coeff}
+            {capitalize(words["washout_exponent"].s)}:\t{washout_exponent}
             """
         )
 
@@ -368,7 +420,7 @@ def plot_add_text_boxes(
             size=plot.config.font_sizes.content_small,
         )
 
-    def fill_box_bottom_left(box: TextBoxAxes, plot: BoxedPlot) -> None:
+    def fill_box_bottom_left(box: TextBoxAxes, plot: BoxedPlot,) -> None:
         labels = plot.config.labels["bottom"]
         # FLEXPART/model info
         box.text(
@@ -380,7 +432,7 @@ def plot_add_text_boxes(
             size=plot.config.font_sizes.content_small,
         )
 
-    def fill_box_bottom_right(box: TextBoxAxes, plot: BoxedPlot) -> None:
+    def fill_box_bottom_right(box: TextBoxAxes, plot: BoxedPlot,) -> None:
         labels = plot.config.labels["bottom"]
         if show_version:
             box.text(
@@ -650,42 +702,12 @@ def create_box_labels(
     # SR_TMP <
     names = format_names_etc(setup, words, mdata)
     short_name = names["short"]
-    long_name = names["long"]
     var_name_abbr = names["var_abbr"]
     ens_var_name = names["ens_var"]
     unit = names["unit"]
     # SR_TMP >
 
     labels: Dict[str, Dict[str, Any]] = {}
-    integr_period = format_integr_period(
-        mdata.simulation.reduction_start, mdata.simulation.now, setup, words, cap=True
-    )
-    # SR_TMP < TODO move to mdata.simulation
-    time_since_release_start = (
-        mdata.simulation.now - mdata.simulation.start - mdata.release.start_rel
-    )
-    lead_time = mdata.simulation.now - init_datetime(cast(int, setup.base_time))
-    # SR_TMP >
-    labels["top"] = {
-        "tl": "",  # SR_TMP force into 1st position of dict (for tests)
-        "bl": (
-            f"{integr_period} ({words['since']}"
-            f" {format_meta_datum(mdata.simulation.reduction_start)})"
-        ),
-        "tr": (
-            f"{format_meta_datum(mdata.simulation.now)}"
-            f" ({words['lead_time']} +{format_meta_datum(lead_time)})"
-        ),
-        "br": (
-            f"{format_meta_datum(time_since_release_start)} {words['since']}"
-            f" {words['release_start']}"
-            # f" {words['at', 'place']} {format_meta_datum(mdata.release.site)}"
-        ),
-    }
-    labels["title_2nd"] = {
-        "tc": f"{format_meta_datum(mdata.species.name)}",
-        "bc": f"{format_meta_datum(mdata.release.site)}",
-    }
     labels["data_info"] = {
         "lines": [],
     }
@@ -695,30 +717,6 @@ def create_box_labels(
         "site": words["site"].s,
         "max": words["maximum", "abbr"].s,
         "maximum": words["maximum"].s,
-    }
-    labels["release_info"] = {
-        "title": words["release"].t,
-        "start": words["start"].s,
-        "end": words["end"].s,
-        "latitude": words["latitude"].s,
-        "longitude": words["longitude"].s,
-        "lat_deg_fmt": format_coord_label("north", words, symbols),
-        "lon_deg_fmt": format_coord_label("east", words, symbols),
-        "height": words["height"].s,
-        # SR_TMP <
-        "height_unit": r"$\,$" + words["m_agl"].s,
-        # SR_TMP >
-        "rate": words["rate"].s,
-        "mass": words["total_mass"].s,
-        "site": words["site"].s,
-        "release_site": words["release_site"].s,
-        "max": words["maximum", "abbr"].s,
-        "name": words["substance"].s,
-        "half_life": words["half_life"].s,
-        "deposit_vel": words["deposition_velocity", "abbr"].s,
-        "sediment_vel": words["sedimentation_velocity", "abbr"].s,
-        "washout_coeff": words["washout_coeff"].s,
-        "washout_exponent": words["washout_exponent"].s,
     }
 
     labels["bottom"] = {
@@ -792,11 +790,6 @@ def create_box_labels(
             f"\t{escape_format_keys(format_level_label(mdata, words))}"
         )
 
-    # box_labels["top"]["tl"] = (
-    #     f"{long_name} {words['of']}"
-    #     f" {format_meta_datum(mdata.species.name)}"
-    # )
-    labels["top"]["tl"] = long_name
     if setup.get_simulation_type() == "deterministic":
         labels["legend"]["title"] = f"{short_name} ({unit})"
     elif setup.get_simulation_type() == "ensemble":

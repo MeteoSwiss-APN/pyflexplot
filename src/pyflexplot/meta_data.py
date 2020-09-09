@@ -64,7 +64,7 @@ def format_meta_datum(
 
 
 # pylint: disable=R0911  # too-many-return-statements
-# pylint: disable=F0912  # too-many-branches
+# pylint: disable=R0912  # too-many-branches
 def format_meta_datum(value=None, unit=None, *, join_values=" / "):
     if value is None and unit is None:
         raise ValueError("value and unit cannot both be None")
@@ -260,6 +260,7 @@ class SimulationMetaData:
     end: datetime
     now: datetime
     now_rel: timedelta
+    lead_time: timedelta
     reduction_start: datetime
     reduction_start_rel: timedelta
 
@@ -278,11 +279,15 @@ class SimulationMetaData:
         reduction_start = collector.reduction_start()
         now_rel: timedelta = collector.now_rel()
         reduction_start_rel = collector.reduction_start_rel()
+
+        lead_time = now - init_datetime(cast(int, setup.base_time))
+
         return cls(
             start=start,
             end=end,
             now=now,
             now_rel=now_rel,
+            lead_time=lead_time,
             reduction_start=reduction_start,
             reduction_start_rel=reduction_start_rel,
         )

@@ -144,6 +144,7 @@ class BoxedPlot:
         name: str,
         rect: RectType,
         fill: Callable[[TextBoxAxes, "BoxedPlot"], None],
+        *,
         frame_on: bool = True,
     ) -> TextBoxAxes:
         lw_frame: Optional[float] = self.config.lw_frame if frame_on else None
