@@ -160,7 +160,7 @@ class ReleaseSiteDomain(Domain):
         assert self.field.mdata is not None  # mypy
         if isinstance(self.field.proj, RotatedPole):
             c_lon, c_lat = self.field.proj.transform_point(
-                release_lon, release_lat, PlateCarree(),
+                release_lon, release_lat, PlateCarree()
             )
             lllat = c_lat - 0.5 * d_lat
             lllon = c_lon - 0.5 * d_lon
@@ -312,7 +312,7 @@ class MapAxes:
 
     @classmethod
     def create(
-        cls, config: MapAxesConfig, *, fig: Figure, rect: RectType, field: np.ndarray,
+        cls, config: MapAxesConfig, *, fig: Figure, rect: RectType, field: np.ndarray
     ) -> "MapAxes":
         if isinstance(field.proj, RotatedPole):
             return MapAxesRotatedPole.create(config, fig=fig, rect=rect, field=field)
@@ -396,7 +396,7 @@ class MapAxes:
         transform = self.proj_geo._as_mpl_transform(self.ax)
         # -> see https://stackoverflow.com/a/25421922/4419816
         handle = self.ax.annotate(
-            s, xy=(p_lon, p_lat), xycoords=transform, zorder=zorder, **kwargs,
+            s, xy=(p_lon, p_lat), xycoords=transform, zorder=zorder, **kwargs
         )
         self.elements.append(handle)
         self._summarized_elements.append(
@@ -454,7 +454,7 @@ class MapAxes:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 self.proj_map = cartopy.crs.TransverseMercator(
-                    central_longitude=self.field.lon.mean(), approx=True,
+                    central_longitude=self.field.lon.mean(), approx=True
                 )
         else:
             choices = ["data", "mercator"]
@@ -490,7 +490,7 @@ class MapAxes:
     def _ax_add_grid(self) -> None:
         """Show grid lines on map."""
         gl = self.ax.gridlines(
-            linestyle=":", linewidth=1, color="black", zorder=self.zorder["grid"],
+            linestyle=":", linewidth=1, color="black", zorder=self.zorder["grid"]
         )
         gl.xlocator = mpl.ticker.FixedLocator(np.arange(-180, 180.1, 2))
         gl.ylocator = mpl.ticker.FixedLocator(np.arange(-90, 90.1, 2))
@@ -621,7 +621,7 @@ class MapAxes:
 
             # In domain
             p_lon, p_lat = self.proj_data.transform_point(
-                p_lon, p_lat, self.proj_geo, trap=True,
+                p_lon, p_lat, self.proj_geo, trap=True
             )
             in_domain = is_in_box(
                 p_lon,
@@ -638,9 +638,7 @@ class MapAxes:
             behind_rdb = (
                 False
                 if rdb is None
-                else is_in_box(
-                    pxa, pya, rdb.x0_box, rdb.x1_box, rdb.y0_box, rdb.y1_box,
-                )
+                else is_in_box(pxa, pya, rdb.x0_box, rdb.x1_box, rdb.y0_box, rdb.y1_box)
             )
 
             return in_domain and not behind_rdb

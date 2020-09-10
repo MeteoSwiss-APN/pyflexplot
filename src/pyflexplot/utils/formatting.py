@@ -403,7 +403,7 @@ class LevelRangeFormatter:
         return f"{s_l}{s_c}{s_r}"
 
     def _format_components(
-        self, lvl0: Optional[float], lvl1: Optional[float],
+        self, lvl0: Optional[float], lvl1: Optional[float]
     ) -> Components:
         open_left = lvl0 in (None, np.inf)
         open_right = lvl1 in (None, np.inf)
@@ -461,11 +461,11 @@ class LevelRangeFormatterInt(LevelRangeFormatter):
             warnings.warn(f"{type(self).__name__}: force rstrip_zeros=False")
             rstrip_zeros = False
         super().__init__(
-            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros,
+            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros
         )
 
     def _format_components(
-        self, lvl0: Optional[float], lvl1: Optional[float],
+        self, lvl0: Optional[float], lvl1: Optional[float]
     ) -> Components:
         if lvl1 is not None:
             if lvl0 is not None:
@@ -495,11 +495,11 @@ class LevelRangeFormatterMath(LevelRangeFormatter):
         if widths is None:
             widths = (6, 2, 6)
         super().__init__(
-            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros,
+            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros
         )
 
     def _format_components(
-        self, lvl0: Optional[float], lvl1: Optional[float],
+        self, lvl0: Optional[float], lvl1: Optional[float]
     ) -> Components:
         return Components.create(
             "-inf" if lvl0 is None else f"[{self._format_level(lvl0)}",
@@ -520,7 +520,7 @@ class LevelRangeFormatterUp(LevelRangeFormatter):
         if widths is None:
             widths = (0, 2, 5)
         super().__init__(
-            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros,
+            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros
         )
 
     def _format_closed(self, lvl0: float, lvl1: float) -> Components:
@@ -543,7 +543,7 @@ class LevelRangeFormatterDown(LevelRangeFormatter):
         if widths is None:
             widths = (0, 2, 5)
         super().__init__(
-            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros,
+            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros
         )
 
     def _format_closed(self, lvl0: float, lvl1: float) -> Components:
@@ -566,7 +566,7 @@ class LevelRangeFormatterAnd(LevelRangeFormatter):
         if widths is None:
             widths = (8, 3, 8)
         super().__init__(
-            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros,
+            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros
         )
 
     def _format_closed(self, lvl0: float, lvl1: float) -> Components:
@@ -615,7 +615,7 @@ class LevelRangeFormatterVar(LevelRangeFormatter):
         if widths is None:
             widths = (5, 9, 5)
         super().__init__(
-            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros,
+            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros
         )
         if var is None:
             var = "v"

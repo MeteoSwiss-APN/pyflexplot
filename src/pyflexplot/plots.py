@@ -145,7 +145,7 @@ def plot_add_text_boxes(
 ) -> None:
 
     # pylint: disable=R0915  # too-many-statements
-    def fill_box_title(box: TextBoxAxes, plot: BoxedPlot,) -> None:
+    def fill_box_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the title box."""
 
         words = WORDS  # SR_TMP
@@ -191,7 +191,7 @@ def plot_add_text_boxes(
                 size=plot.config.font_sizes.content_large,
             )
 
-    def fill_box_2nd_title(box: TextBoxAxes, plot: BoxedPlot,) -> None:
+    def fill_box_2nd_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the secondary title box of the deterministic plot layout."""
         font_size = plot.config.font_sizes.content_large
         mdata = plot.config.mdata
@@ -209,7 +209,7 @@ def plot_add_text_boxes(
         )
 
     # pylint: disable=R0915  # too-many-statements
-    def fill_box_data_info(box: TextBoxAxes, plot: BoxedPlot,) -> None:
+    def fill_box_data_info(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the data information box of the ensemble plot layout."""
         labels = plot.config.labels["data_info"]
         box.text_block_hfill(
@@ -224,7 +224,7 @@ def plot_add_text_boxes(
     # pylint: disable=R0913  # too-many-arguments
     # pylint: disable=R0914  # too-many-locals
     # pylint: disable=R0915  # too-many-statements
-    def fill_box_legend(box: TextBoxAxes, plot: BoxedPlot,) -> None:
+    def fill_box_legend(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the box containing the plot legend."""
 
         labels = plot.config.labels["legend"]
@@ -300,7 +300,7 @@ def plot_add_text_boxes(
             dy_max_marker = dy_marker_label_max - 0.7
             assert plot.config.markers is not None  # mypy
             box.marker(
-                loc="tc", dx=dx_marker, dy=dy_max_marker, **plot.config.markers["max"],
+                loc="tc", dx=dx_marker, dy=dy_max_marker, **plot.config.markers["max"]
             )
             box.text(
                 s=format_max_marker_label(labels, plot.field.fld),
@@ -335,7 +335,7 @@ def plot_add_text_boxes(
             )
 
     # pylint: disable=R0915  # too-many-statements
-    def fill_box_release_info(box: TextBoxAxes, plot: BoxedPlot,) -> None:
+    def fill_box_release_info(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the box containing the release info."""
 
         words = WORDS  # SR_TMP
@@ -420,7 +420,7 @@ def plot_add_text_boxes(
             size=plot.config.font_sizes.content_small,
         )
 
-    def fill_box_bottom_left(box: TextBoxAxes, plot: BoxedPlot,) -> None:
+    def fill_box_bottom_left(box: TextBoxAxes, plot: BoxedPlot) -> None:
         labels = plot.config.labels["bottom"]
         # FLEXPART/model info
         box.text(
@@ -432,7 +432,7 @@ def plot_add_text_boxes(
             size=plot.config.font_sizes.content_small,
         )
 
-    def fill_box_bottom_right(box: TextBoxAxes, plot: BoxedPlot,) -> None:
+    def fill_box_bottom_right(box: TextBoxAxes, plot: BoxedPlot) -> None:
         labels = plot.config.labels["bottom"]
         if show_version:
             box.text(
@@ -477,7 +477,7 @@ def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
     if config.mark_release_site:
         assert config.markers is not None  # mypy
         axs_map.add_marker(
-            p_lat=mdata.release.lat, p_lon=mdata.release.lon, **config.markers["site"],
+            p_lat=mdata.release.lat, p_lon=mdata.release.lon, **config.markers["site"]
         )
     if config.mark_field_max:
         assert config.markers is not None  # mypy
@@ -575,14 +575,14 @@ def create_map_config(field: Field) -> MapAxesConfig:
         )
 
     return MapAxesConfig(
-        lang=field.var_setups.collect_equal("lang"), domain=domain, **map_axes_config,
+        lang=field.var_setups.collect_equal("lang"), domain=domain, **map_axes_config
     )
 
 
 # SR_TODO Create dataclass with default values for text box setup
 # pylint: disable=R0912  # too-many-branches
 def create_plot_config(
-    setup: Setup, words: TranslatedWords, symbols: Words, mdata: MetaData,
+    setup: Setup, words: TranslatedWords, symbols: Words, mdata: MetaData
 ) -> BoxedPlotConfig:
     words.set_active_lang(setup.core.lang)
     new_config_dct: Dict[str, Any] = {
@@ -696,7 +696,7 @@ def create_plot_config(
 # pylint: disable=R0914  # too-many-locals
 # pylint: disable=R0915  # too-many-statements
 def create_box_labels(
-    setup: Setup, words: TranslatedWords, symbols: Words, mdata: MetaData,
+    setup: Setup, words: TranslatedWords, symbols: Words, mdata: MetaData
 ) -> Dict[str, Dict[str, Any]]:
 
     # SR_TMP <

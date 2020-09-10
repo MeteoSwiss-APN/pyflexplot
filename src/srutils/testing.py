@@ -242,7 +242,7 @@ def return_or_raise(msg, kwargs, raise_):
 
 
 def is_list_like(
-    obj, *, len_=None, not_=None, t_children=None, f_children=None, raise_=False,
+    obj, *, len_=None, not_=None, t_children=None, f_children=None, raise_=False
 ):
     """Assert that an object is list-like, with optional additional checks.
 
@@ -281,7 +281,7 @@ def is_list_like(
     if len_ is not None:
         if len(obj) != len_:
             return_or_raise(
-                f"obj has wrong length: {len(obj)} != {len_}", kwargs, raise_,
+                f"obj has wrong length: {len(obj)} != {len_}", kwargs, raise_
             )
 
     if not_ is not None:

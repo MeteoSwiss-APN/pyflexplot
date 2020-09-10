@@ -115,7 +115,7 @@ class Test_Init:
 
     def test_multi_core(self):
         core = [
-            CoreDimensions(nageclass=0, time=0,),
+            CoreDimensions(nageclass=0, time=0),
             CoreDimensions(deposition_type="wet"),
             CoreDimensions(
                 deposition_type="dry", nageclass=3, species_id=0, time=2, level=1
@@ -200,7 +200,7 @@ class Test_Dict:
 
     def test_multi_core(self):
         core = [
-            CoreDimensions(nageclass=0, time=0,),
+            CoreDimensions(nageclass=0, time=0),
             CoreDimensions(deposition_type="wet"),
             CoreDimensions(
                 deposition_type="dry", nageclass=3, species_id=0, time=2, level=1

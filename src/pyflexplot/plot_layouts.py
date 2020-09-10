@@ -9,7 +9,9 @@ from typing import Union
 from .utils.typing import RectType
 
 BoxedPlotLayoutType = Union[
-    "BoxedPlotLayoutVintage", "BoxedPlotLayoutDeterministic", "BoxedPlotLayoutEnsemble",
+    "BoxedPlotLayoutVintage",
+    "BoxedPlotLayoutDeterministic",
+    "BoxedPlotLayoutEnsemble",
 ]
 
 

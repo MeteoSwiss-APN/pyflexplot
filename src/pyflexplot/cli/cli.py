@@ -137,7 +137,7 @@ def click_prep_setup_params(ctx, param, value):
         click_error(ctx, f"Invalid setup parameter name: {e}")
 
 
-@click.command(context_settings={"help_option_names": ["-h", "--help"]},)
+@click.command(context_settings={"help_option_names": ["-h", "--help"]})
 @click.version_option(__version__, "--version", "-V", message="%(version)s")
 @click.argument(
     "setup_file_paths",
@@ -180,7 +180,9 @@ def click_prep_setup_params(ctx, param, value):
     metavar="N",
 )
 @click.option(
-    "--open-all", "open_all_cmd", help="Like --open-first, but for all plots.",
+    "--open-all",
+    "open_all_cmd",
+    help="Like --open-first, but for all plots.",
 )
 @click.option(
     "--open-first",
@@ -332,7 +334,7 @@ def main(
     for ip_in, (in_file_path, sub_setups) in enumerate(setups_by_infile.items(), 1):
         log(vbs=f"[{ip_in}/{n_in}] read {in_file_path}")
         field_lst_lst = read_fields(
-            in_file_path, sub_setups, add_ts0=True, dry_run=dry_run, cache_on=cache,
+            in_file_path, sub_setups, add_ts0=True, dry_run=dry_run, cache_on=cache
         )
         n_fld = len(field_lst_lst)
         try:

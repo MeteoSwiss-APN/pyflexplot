@@ -231,6 +231,7 @@ class Dimensions:
         return hash(self.tuple())
 
     # pylint: disable=R0912  # too-many-branches
+    # pylint: disable=R0915  # too-many-statements
     def complete(
         self,
         meta_data: Mapping[str, Any],

@@ -127,9 +127,7 @@ WORDS.add(en="mean", de="Mittel")
 WORDS.add(en="median", de="Median")
 WORDS.add(en={"*": "member", "pl": "members"}, de={"*": "Member", "pl": "Members"})
 WORDS.add(en="MeteoSwiss", de="MeteoSchweiz")
-WORDS.add(
-    en={"*": "minimum", "abbr": "min."}, de={"*": "Minimum", "abbr": "min."},
-)
+WORDS.add(en={"*": "minimum", "abbr": "min."}, de={"*": "Minimum", "abbr": "min."})
 # N
 WORDS.add(en={"*": "north", "abbr": "N"}, de={"*": "Norden", "abbr": "N"})
 WORDS.add(en={"*": "number of", "abbr": "no."}, de={"*": "Anzahl", "abbr": "Anz."})

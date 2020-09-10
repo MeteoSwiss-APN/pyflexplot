@@ -36,7 +36,7 @@ class FlexPartDataFixer:
             raise NotImplementedError("model", model)
 
     def fix_meta_data(
-        self, model: str, integrate: bool, mdata: Union[MetaData, Sequence[MetaData]],
+        self, model: str, integrate: bool, mdata: Union[MetaData, Sequence[MetaData]]
     ) -> None:
         if model in self.cosmo_models:
             self._fix_meta_data_cosmo(integrate, mdata)
@@ -76,7 +76,7 @@ class FlexPartDataFixer:
                 lon[:] = np.r_[lon[0] - dlon, lon[:-1]]
                 if lon[0] < -180.0 or n_shift >= lon.size:
                     raise Exception(
-                        "unexpected error while shifting lon eastward", lon, n_shift,
+                        "unexpected error while shifting lon eastward", lon, n_shift
                     )
                 idcs = np.arange(fld_time.shape[idx_lon] - 1)
                 fld_time[:] = np.concatenate(
@@ -97,7 +97,7 @@ class FlexPartDataFixer:
                 lon[:] = np.r_[lon[1:], lon[-1] + dlon]
                 if lon[-1] < -180.0 or n_shift >= lon.size:
                     raise Exception(
-                        "unexpected error while shifting lon eastward", lon, n_shift,
+                        "unexpected error while shifting lon eastward", lon, n_shift
                     )
                 idcs = np.arange(1, fld_time.shape[idx_lon])
                 fld_time[:] = np.concatenate(

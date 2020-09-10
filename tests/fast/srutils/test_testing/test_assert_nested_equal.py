@@ -23,19 +23,22 @@ def test_mixed_list_tuple():
 
 def test_array_list_tuple():
     assert_nested_equal(
-        [np.array([1, 2, 3]), (4, [5, 6])], [[1, 2, 3], [4, np.array([5, 6])]],
+        [np.array([1, 2, 3]), (4, [5, 6])],
+        [[1, 2, 3], [4, np.array([5, 6])]],
     )
 
 
 def test_flat_dict():
     assert_nested_equal(
-        {"a": 1, "b": "c", 2: "d", 3: 4}, {3: 4, "a": 1, "b": "c", 2: "d"},
+        {"a": 1, "b": "c", 2: "d", 3: 4},
+        {3: 4, "a": 1, "b": "c", 2: "d"},
     )
 
 
 def test_nested_dict():
     assert_nested_equal(
-        {1: {2: "a", "b": 3}, "c": "d", 4: 5}, {"c": "d", 1: {2: "a", "b": 3}, 4: 5},
+        {1: {2: "a", "b": 3}, "c": "d", 4: 5},
+        {"c": "d", 1: {2: "a", "b": 3}, 4: 5},
     )
 
 

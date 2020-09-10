@@ -124,7 +124,7 @@ class Test_MatchEnd:
 
     def test_return_paths(self):
         res_values, res_paths = decompress_nested_dict(
-            self.dct, branch_end_criterion=self.branch_end_criterion, return_paths=True,
+            self.dct, branch_end_criterion=self.branch_end_criterion, return_paths=True
         )
         assert res_values == self.sol_match
         assert res_paths == self.sol_paths

@@ -22,7 +22,9 @@ from pyflexplot.setup import Setup
 from pyflexplot.setup import SetupCollection
 from srutils.testing import assert_nested_equal
 
+# Black is only required to create test reference files, not to run the tests
 try:
+    # Third-party
     import black
 except ImportError:
     black = None

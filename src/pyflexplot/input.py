@@ -152,7 +152,7 @@ class FieldInputOrganizer:
                 path_lst = [path_fmt]
             else:
                 raise ValueError(
-                    "input file path missing format key", path_fmt, ens_member_ids,
+                    "input file path missing format key", path_fmt, ens_member_ids
                 )
             return path_lst
 
@@ -354,7 +354,7 @@ class InputFileEnsemble:
         return field_lst_lst
 
     def _read_data(
-        self, file_path: str, idx_mem: int, timeless_setups_mem: SetupCollection,
+        self, file_path: str, idx_mem: int, timeless_setups_mem: SetupCollection
     ) -> None:
         n_mem = len(self.paths)
         model = timeless_setups_mem.collect_equal("model")
@@ -497,7 +497,7 @@ class InputFileEnsemble:
         new_fld_time[1:] = fld_time
         return new_fld_time
 
-    def _reduce_ensemble(self, var_setups: SetupCollection,) -> np.ndarray:
+    def _reduce_ensemble(self, var_setups: SetupCollection) -> np.ndarray:
         """Reduce the ensemble to a single field (time, lat, lon)."""
 
         fld_time_mem = self.fld_time_mem
@@ -698,7 +698,7 @@ class FileReaderCache:
             "mdata_time_i": deepcopy(mdata_time_i),
         }
 
-    def get(self, key: Hashable, idx_mem: int,) -> None:
+    def get(self, key: Hashable, idx_mem: int) -> None:
         try:
             entry = self._cache[key]
         except KeyError:

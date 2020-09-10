@@ -30,16 +30,12 @@ class Setup:
 # Show default values of options by default
 click.option = functools.partial(click.option, show_default=True)  # type: ignore
 
-CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"],)
+CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument(
-    "in_file_path", metavar="infile", nargs=1, type=click.Path(exists=True),
-)
-@click.argument(
-    "out_file_path", metavar="outfile", nargs=1, type=click.Path(),
-)
+@click.argument("in_file_path", metavar="infile", nargs=1, type=click.Path(exists=True))
+@click.argument("out_file_path", metavar="outfile", nargs=1, type=click.Path())
 @click.option(
     "--lat",
     "lat_slice",
@@ -146,7 +142,7 @@ def transfer_variable(fo, var, setup):
 
     # Create variable
     new_var = fo.createVariable(
-        varname=var.name, datatype=var.datatype, dimensions=var.dimensions,
+        varname=var.name, datatype=var.datatype, dimensions=var.dimensions
     )
 
     # Transfer data, slicing along lat/lon

@@ -223,7 +223,7 @@ class CoreSetup(BaseModel):
 
     @validator("ens_param_time_win", always=True)
     def _init_ens_param_time_win(
-        cls, value: Optional[float], values: Dict[str, Any],
+        cls, value: Optional[float], values: Dict[str, Any]
     ) -> Optional[float]:
         if value is None:
             if values["ens_variable"] == "cloud_occurrence_probability":
@@ -232,7 +232,7 @@ class CoreSetup(BaseModel):
 
     @validator("ens_param_mem_min", always=True)
     def _init_ens_param_mem_min(
-        cls, value: Optional[int], values: Dict[str, Any],
+        cls, value: Optional[int], values: Dict[str, Any]
     ) -> Optional[int]:
         if value is None:
             if values["ens_variable"] in ["cloud_arrival_time", "cloud_departure_time"]:
@@ -285,7 +285,7 @@ class CoreSetup(BaseModel):
         return setup_repr(self)
 
     @classmethod
-    def as_setup(cls, obj: Union[Mapping[str, Any], "CoreSetup"],) -> "CoreSetup":
+    def as_setup(cls, obj: Union[Mapping[str, Any], "CoreSetup"]) -> "CoreSetup":
         if isinstance(obj, cls):
             return obj
         assert isinstance(obj, Mapping)  # mypy
@@ -293,7 +293,7 @@ class CoreSetup(BaseModel):
 
     @overload
     def complete_dimensions(
-        self, meta_data: Mapping[str, Any], *, inplace: Literal[False] = ...,
+        self, meta_data: Mapping[str, Any], *, inplace: Literal[False] = ...
     ) -> "CoreSetup":
         ...
 
@@ -307,7 +307,7 @@ class CoreSetup(BaseModel):
         """Complete unconstrained dimensions based on available indices."""
         obj: "CoreSetup" = self if inplace else self.copy()
         obj.dimensions.complete(
-            meta_data, self.input_variable, mode=obj.dimensions_default, inplace=True,
+            meta_data, self.input_variable, mode=obj.dimensions_default, inplace=True
         )
         return None if inplace else obj
 
@@ -616,7 +616,7 @@ class Setup(BaseModel):
         ...
 
     def derive(
-        self, params: Union[Mapping[str, Any], Sequence[Mapping[str, Any]]],
+        self, params: Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]
     ) -> Union["Setup", "SetupCollection"]:
         """Derive ``Setup`` object(s) with adapted parameters."""
         if isinstance(params, Sequence):
@@ -646,7 +646,7 @@ class Setup(BaseModel):
 
     @classmethod
     def compress_partially(
-        cls, setups: "SetupCollection", skip: List[str],
+        cls, setups: "SetupCollection", skip: List[str]
     ) -> "SetupCollection":
         dcts: List[Dict[str, Any]] = setups.dicts()
         preserved_params_lst: List[Dict[str, Any]] = []
@@ -670,7 +670,7 @@ class Setup(BaseModel):
         return self._decompress(select=None, skip=skip)
 
     def decompress_partially(
-        self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None,
+        self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None
     ) -> "SetupCollection":
         return self._decompress(select, skip)
 
@@ -1043,13 +1043,13 @@ class SetupCollection:
 
     @overload
     def complete_dimensions(
-        self, nc_meta_data: Mapping[str, Any], *, inplace: Literal[False] = ...,
+        self, nc_meta_data: Mapping[str, Any], *, inplace: Literal[False] = ...
     ) -> "SetupCollection":
         ...
 
     @overload
     def complete_dimensions(
-        self, nc_meta_data: Mapping[str, Any], *, inplace: Literal[True],
+        self, nc_meta_data: Mapping[str, Any], *, inplace: Literal[True]
     ) -> None:
         ...
 
@@ -1149,7 +1149,7 @@ class SetupFile:
             raw_data, double_criterion=lambda key: key.endswith("+")
         )
         raw_params_lst = decompress_nested_dict(
-            semi_raw_data, branch_end_criterion=lambda key: not key.startswith("_"),
+            semi_raw_data, branch_end_criterion=lambda key: not key.startswith("_")
         )
         if override is not None:
             raw_params_lst, old_raw_params_lst = [], raw_params_lst
@@ -1229,7 +1229,7 @@ class FilePathFormatter:
         path = self._replace_format_keys(template, kwargs)
         return path
 
-    def _format_time_steps(self, tss_int: Sequence[int], setup: Setup,) -> List[str]:
+    def _format_time_steps(self, tss_int: Sequence[int], setup: Setup) -> List[str]:
         fmt_in = "%Y%m%d%H%M"
         fmt_out = setup.outfile_time_format
         tss_str_in: List[str] = [str(ts) for ts in tss_int]
@@ -1264,7 +1264,7 @@ class FilePathFormatter:
         # Check that all keys have been formatted
         if "{" in path or "}" in path:
             raise Exception(
-                "formatted output file path still contains format keys", path,
+                "formatted output file path still contains format keys", path
             )
 
         return path

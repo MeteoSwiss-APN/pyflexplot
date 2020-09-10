@@ -55,7 +55,7 @@ def compile_patterns(patterns: Collection[str]) -> List[Pattern]:
 
 
 def collect_preset_files(
-    patterns: Collection[str] = "*", antipatterns: Optional[Collection[str]] = None,
+    patterns: Collection[str] = "*", antipatterns: Optional[Collection[str]] = None
 ) -> Dict[Path, Dict[str, Path]]:
     """Collect all setup files in locations specified in ``preset_paths``."""
     rx_patterns = compile_patterns(patterns)

@@ -72,7 +72,7 @@ class CoordinateTransformer:
 
     @overload
     def geo_to_axes(
-        self, x: np.ndarray, y: np.ndarray,
+        self, x: np.ndarray, y: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
         ...
 

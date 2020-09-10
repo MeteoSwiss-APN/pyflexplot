@@ -113,9 +113,7 @@ def test_branched_notie(dct, sol):
     assert flatten_nested_dict(dct) == sol
 
 
-@pytest.mark.parametrize(
-    "dct, sol", [({"foo": {"a": 1}, "bar": {"a": 2}}, Exception)],
-)
+@pytest.mark.parametrize("dct, sol", [({"foo": {"a": 1}, "bar": {"a": 2}}, Exception)])
 def test_branched_notie_fail(dct, sol):
     """Fail without tie breaker in case of key conflict at same nesting level."""
     with pytest.raises(sol):

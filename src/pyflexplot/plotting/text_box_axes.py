@@ -479,7 +479,7 @@ class TextBoxAxes:
         self.text_blocks_hfill(blocks, loc_y, **kwargs)
 
     def text_blocks_hfill(
-        self, blocks: RawTextBlocksType, loc_y: LocationType = "t", **kwargs,
+        self, blocks: RawTextBlocksType, loc_y: LocationType = "t", **kwargs
     ) -> None:
         r"""Add blocks of horizontally-filling lines.
 

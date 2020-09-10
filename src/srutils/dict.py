@@ -294,7 +294,7 @@ def _merge_children(children, tie_breaker):
                 elif val_flat["depth"] == val["depth"]:
                     if tie_breaker is None:
                         raise KeyConflictError(
-                            f"key conflict at depth {val_flat['depth']}", key,
+                            f"key conflict at depth {val_flat['depth']}", key
                         )
                     raise NotImplementedError("tie_breaker is not None", tie_breaker)
             flat[key] = val
@@ -360,7 +360,7 @@ class NestedDictLinearizer:
         return linearize_subdicts(*separate_subdicts(dct))
 
     def _apply_branch_end_criterion(
-        self, dcts: List[Dict[str, Any]], criterion: Callable[[str], bool],
+        self, dcts: List[Dict[str, Any]], criterion: Callable[[str], bool]
     ) -> List[Dict[str, Any]]:
         """
         Create a sub-branch copy up to each subdict key matching the criterion.
@@ -451,7 +451,7 @@ def decompress_nested_dict(dct, return_paths=False, branch_end_criterion=None):
 
 
 def nested_dict_resolve_wildcards(
-    dct, *, single=True, double=True, double_criterion=None,
+    dct, *, single=True, double=True, double_criterion=None
 ):
     """Update regular subdicts with single/double-star wildcard subdicts.
 
@@ -471,13 +471,13 @@ def nested_dict_resolve_wildcards(
     """
     if single and double:
         return nested_dict_resolve_double_star_wildcards(
-            nested_dict_resolve_single_star_wildcards(dct), criterion=double_criterion,
+            nested_dict_resolve_single_star_wildcards(dct), criterion=double_criterion
         )
     elif single:
         return nested_dict_resolve_single_star_wildcards(dct)
     elif double:
         return nested_dict_resolve_double_star_wildcards(
-            dct, criterion=double_criterion,
+            dct, criterion=double_criterion
         )
     else:
         return deepcopy(dct)
@@ -485,7 +485,7 @@ def nested_dict_resolve_wildcards(
 
 @overload
 def recursive_update(
-    dct1: MutableMapping[Any, Any], dct2: Mapping[Any, Any], inplace: Literal[True],
+    dct1: MutableMapping[Any, Any], dct2: Mapping[Any, Any], inplace: Literal[True]
 ) -> None:
     ...
 

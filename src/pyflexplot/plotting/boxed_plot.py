@@ -133,7 +133,7 @@ class BoxedPlot:
     def clean(self) -> None:
         plt.close(self.fig)
 
-    def add_map_plot(self, rect: RectType,) -> MapAxes:
+    def add_map_plot(self, rect: RectType) -> MapAxes:
         ax = MapAxes.create(self.map_config, fig=self.fig, rect=rect, field=self.field)
         self.ax_map = ax  # SR_TMP
         self._draw_colors_contours()

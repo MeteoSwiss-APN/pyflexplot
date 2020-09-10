@@ -368,7 +368,7 @@ class EnsembleCloud:
 
 
 def merge_fields(
-    flds: Sequence[np.ndarray], op: Union[Callable, Sequence[Callable]] = np.nansum,
+    flds: Sequence[np.ndarray], op: Union[Callable, Sequence[Callable]] = np.nansum
 ) -> np.ndarray:
     """Merge fields by applying a single operator or an operator chain.
 
@@ -393,9 +393,7 @@ def merge_fields(
     elif isinstance(op, Sequence):
         op_lst = op
         if not len(flds) == len(op_lst) + 1:
-            raise ValueError(
-                "wrong number of fields", len(flds), len(op_lst) + 1,
-            )
+            raise ValueError("wrong number of fields", len(flds), len(op_lst) + 1)
         fld = flds[0]
         for i, fld_i in enumerate(flds[1:]):
             _op = op_lst[i]

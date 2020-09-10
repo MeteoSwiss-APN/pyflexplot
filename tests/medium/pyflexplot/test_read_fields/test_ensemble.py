@@ -195,7 +195,7 @@ class TestReadFieldEnsemble_Multiple:
         # Create field specifications list
         setup_lst = []
         for shared_setup_params in decompress_multival_dict(
-            self.shared_setup_params_compressed, skip=["infile"],
+            self.shared_setup_params_compressed, skip=["infile"]
         ):
             setup_params_i = {
                 **shared_setup_params,
@@ -264,7 +264,7 @@ class TestReadFieldEnsemble_Multiple:
         np.testing.assert_allclose(fld_arr, fld_arr_ref, equal_nan=True, rtol=1e-6)
 
     def run_concentration(
-        self, datadir, ens_var, *, cache_on=False, scale_fld_ref=1.0,  # noqa:F811
+        self, datadir, ens_var, *, cache_on=False, scale_fld_ref=1.0  # noqa:F811
     ):
         """Read ensemble concentration field."""
 

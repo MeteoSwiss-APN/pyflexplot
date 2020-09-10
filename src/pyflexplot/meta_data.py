@@ -182,7 +182,7 @@ class MetaData:
 
     @classmethod
     def collect(
-        cls, fi: nc4.Dataset, setup: Setup, *, add_ts0: bool = False,
+        cls, fi: nc4.Dataset, setup: Setup, *, add_ts0: bool = False
     ) -> "MetaData":
         """Collect meta data from file."""
         return cls(
