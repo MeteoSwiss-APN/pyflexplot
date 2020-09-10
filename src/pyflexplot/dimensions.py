@@ -19,6 +19,7 @@ from typing import Union
 from pydantic import BaseModel
 from pydantic import ValidationError
 from pydantic import validator
+from typing_extensions import Literal
 
 # First-party
 from srutils.iter import resolve_negative_indices
@@ -231,47 +232,89 @@ class Dimensions:
 
     # pylint: disable=R0912  # too-many-branches
     def complete(
-        self, meta_data: Mapping[str, Any], input_variable: str, inplace: bool = False
+        self,
+        meta_data: Mapping[str, Any],
+        input_variable: str,
+        inplace: bool = False,
+        mode: Union[Literal["all"], Literal["first"]] = "all",
     ) -> Optional["Dimensions"]:
         """Complete unconstrained dimensions based on available indices."""
+        mode_choices = ["all", "first"]
+        if mode not in mode_choices:
+            raise ValueError(
+                f"invalid mode: {mode} (choices: {', '.join(mode_choices)})"
+            )
+
         obj = self if inplace else self.copy()
 
         raw_dimensions: Mapping[str, Mapping[str, Any]] = meta_data["dimensions"]
 
         if obj.time is None:
-            obj.time = tuple(range(raw_dimensions["time"]["size"]))
-
-        # Make negative (end-relative) time indices positive (absolute)
-        obj.time = resolve_negative_indices(
-            idcs=obj.get("time", unpack_single=False),  # type: ignore
-            n=raw_dimensions["time"]["size"],
-        )
+            values = range(raw_dimensions["time"]["size"])
+            if mode == "all":
+                obj.time = tuple(values)
+            elif mode == "first":
+                obj.time = next(iter(values))
+        else:
+            # Make negative (end-relative) time indices positive (absolute)
+            obj.time = resolve_negative_indices(
+                idcs=obj.get("time", unpack_single=False),  # type: ignore
+                n=raw_dimensions["time"]["size"],
+            )
 
         if obj.level is None:
             if input_variable == "concentration":
                 if "level" in raw_dimensions:
-                    obj.level = tuple(range(raw_dimensions["level"]["size"]))
+                    values = range(raw_dimensions["level"]["size"])
                 elif "height" in raw_dimensions:
-                    obj.level = tuple(range(raw_dimensions["height"]["size"]))
+                    values = range(raw_dimensions["height"]["size"])
+                else:
+                    raise Exception(
+                        f"missing vertical dimensions: neither 'level' nor 'height'"
+                        f" among dimensions ({', '.join(raw_dimensions)})"
+                    )
+                if mode == "all":
+                    obj.level = tuple(values)
+                elif mode == "first":
+                    obj.level = next(iter(values))
 
         if obj.deposition_type is None:
             if input_variable == "deposition":
-                obj.deposition_type = ("dry", "wet")
+                if mode == "all":
+                    obj.deposition_type = ("dry", "wet")
+                elif mode == "first":
+                    obj.deposition_type = "dry"
 
         if obj.species_id is None:
-            obj.species_id = meta_data["derived"]["species_ids"]
+            values = meta_data["derived"]["species_ids"]
+            if mode == "all":
+                obj.species_id = tuple(values)
+            elif mode == "first":
+                obj.species_id = next(iter(values))
 
         if obj.nageclass is None:
             if "nageclass" in raw_dimensions:
-                obj.nageclass = tuple(range(raw_dimensions["nageclass"]["size"]))
+                values = range(raw_dimensions["nageclass"]["size"])
+                if mode == "all":
+                    obj.nageclass = tuple(values)
+                elif mode == "first":
+                    obj.nageclass = next(iter(values))
 
         if obj.noutrel is None:
             if "noutrel" in raw_dimensions:
-                obj.noutrel = tuple(range(raw_dimensions["noutrel"]["size"]))
+                values = range(raw_dimensions["noutrel"]["size"])
+                if mode == "all":
+                    obj.noutrel = tuple(values)
+                elif mode == "first":
+                    obj.noutrel = next(iter(values))
 
         if obj.numpoint is None:
             if "numpoint" in raw_dimensions:
-                obj.numpoint = tuple(range(raw_dimensions["numpoint"]["size"]))
+                values = range(raw_dimensions["numpoint"]["size"])
+                if mode == "all":
+                    obj.numpoint = tuple(values)
+                elif mode == "first":
+                    obj.numpoint = next(iter(values))
 
         return None if inplace else obj
 
