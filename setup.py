@@ -36,13 +36,17 @@ metadata = {
 python = ">= 3.7"
 
 dependencies = [
-    "cartopy @ git+ssh://git@github.com/MeteoSwiss-APN/cartopy.git",
-    "click >= 6.0",
+    (
+        "cartopy"
+        "@git+ssh://git@github.com/MeteoSwiss-APN/cartopy.git"
+        "#v0.18.0-MeteoSwiss-APN"
+    ),
+    "click>=6.0",
     "geopy",
     "matplotlib",
     "netcdf4",
     "numpy",
-    "pillow >= 7.1.0",
+    "pillow>=7.1.0",
     "pydantic",
     "pypdf2",
     "scipy",
