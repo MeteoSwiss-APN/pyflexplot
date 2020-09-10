@@ -127,6 +127,7 @@ class BoxedPlot:
             edgecolor=self.fig.get_edgecolor(),
             bbox_inches="tight",
             pad_inches=0.15,
+            dpi=300,
         )
         self.clean()
 
@@ -199,7 +200,7 @@ class BoxedPlot:
         if nothing_to_plot(arr, levels):
             return
 
-        self.ax_map.ax.contourf(
+        contours = self.ax_map.ax.contourf(
             self.field.lon,
             self.field.lat,
             arr,
@@ -209,6 +210,8 @@ class BoxedPlot:
             zorder=self.ax_map.zorder["fld"],
             colors=colors,
         )
+        for contour in contours.collections:
+            contour.set_rasterized(True)
 
 
 def replace_infs(fld: np.ndarray, levels: np.ndarray) -> np.ndarray:

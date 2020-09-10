@@ -19,6 +19,7 @@ from datetime import timezone
 from typing import Any
 from typing import cast
 from typing import Collection
+from typing import List
 from typing import Optional
 from typing import overload
 from typing import Sequence
@@ -32,6 +33,7 @@ from pydantic import BaseModel
 
 # First-party
 from srutils.dataclasses import dataclass_merge
+from srutils.dataclasses import get_dataclass_fields
 
 # Local
 from .setup import Setup
@@ -113,7 +115,7 @@ def _format_meta_datum_with_unit(
         unit = tuple([unit] * len(value))
     elif len(value) != len(unit):
         raise ValueError(
-            f"different number of values ({len(value)} and units ({len(unit)}"
+            f"different number of values ({len(value)}) and units ({len(unit)})"
         )
     kwargs = {"join_values": join_values}
     value_fmtd = tuple(map(lambda v: format_meta_datum(v, **kwargs), value))
@@ -148,6 +150,14 @@ class MetaData:
         order to eventually eliminate them.
 
         """
+        unique_others: List["MetaData"] = []
+        for other in others:
+            if other != self and not any(
+                unique_other == other for unique_other in unique_others
+            ):
+                unique_others.append(other)
+        others = unique_others
+
         if not others:
             return self
 
@@ -344,9 +354,32 @@ class ReleaseMetaData:
         )
 
     def merge_with(self, others: Sequence["ReleaseMetaData"]) -> "ReleaseMetaData":
-        return dataclass_merge(
-            [self] + list(others), expect_equal_except=["mass", "rate"]
-        )
+        merged = dataclass_merge([self] + list(others))
+        # SR_TMP < TODO turn into function
+        differing = ["mass", "rate"]
+        for param in get_dataclass_fields(self):
+            values = getattr(merged, param)
+            if param not in differing:
+                if len(set(values)) > 1:
+                    raise Exception(
+                        f"values of parameter '{param}' differ among {len(others) + 1}"
+                        f" {type(self).__name__} objects"
+                    )
+                setattr(merged, param, next(iter(values)))
+            # SR_TMP < TODO get rid of this!
+            else:
+                unique_values = [
+                    value
+                    for idx, value in enumerate(values)
+                    if value not in values[:idx]
+                ]
+                if len(unique_values) == 1:
+                    setattr(merged, param, next(iter(unique_values)))
+                else:
+                    setattr(merged, param, tuple(unique_values))
+            # SR_TMP >
+        # SR_TMP >
+        return merged
 
 
 class RawReleaseMetaData(BaseModel):
@@ -575,7 +608,22 @@ class SpeciesMetaData:
         )
 
     def merge_with(self, others: Sequence["SpeciesMetaData"]) -> "SpeciesMetaData":
-        return dataclass_merge([self] + list(others))
+        merged = dataclass_merge(
+            [self] + list(others),
+            # eliminate_dups=True,
+        )
+        # SR_TMP < TODO get rid of this!
+        for param in get_dataclass_fields(self):
+            values = getattr(merged, param)
+            unique_values = [
+                value for idx, value in enumerate(values) if value not in values[:idx]
+            ]
+            if len(unique_values) == 1:
+                setattr(merged, param, next(iter(unique_values)))
+            else:
+                setattr(merged, param, tuple(unique_values))
+        # SR_TMP >
+        return merged
 
 
 def nc_var_name(setup: Setup, model: str) -> str:
