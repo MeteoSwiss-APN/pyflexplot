@@ -503,7 +503,7 @@ class Setup(BaseModel):
             + [param for param in CoreSetup.__fields__ if param != "dimensions"]
             + list(CoreDimensions.__fields__)
         )
-        param_choices_fmtd = ", ".join([f"'{param}'" for param in param_choices])
+        param_choices_fmtd = ", ".join(map(str, param_choices))
         if param == "dimensions":
             result: Dict[str, Any] = {}
             for dim_param, dim_value in value.items():
