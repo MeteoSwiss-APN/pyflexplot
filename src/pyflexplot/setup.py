@@ -124,6 +124,7 @@ class CoreSetup(BaseModel):
     domain_size_lon: Optional[float]
 
     # Dimensions
+    dimensions_default: str = "all"
     dimensions: Dimensions = Dimensions()
 
     # SR_TMP <<<
@@ -292,18 +293,22 @@ class CoreSetup(BaseModel):
 
     @overload
     def complete_dimensions(
-        self, meta_data, inplace: Literal[False] = False
+        self, meta_data: Mapping[str, Any], *, inplace: Literal[False] = ...,
     ) -> "CoreSetup":
         ...
 
     @overload
-    def complete_dimensions(self, meta_data, inplace: Literal[True]) -> None:
+    def complete_dimensions(
+        self, meta_data: Mapping[str, Any], *, inplace: Literal[True]
+    ) -> None:
         ...
 
-    def complete_dimensions(self, meta_data: Mapping[str, Any], inplace: bool = False):
+    def complete_dimensions(self, meta_data, *, inplace=False):
         """Complete unconstrained dimensions based on available indices."""
-        obj = self if inplace else self.copy()
-        obj.dimensions.complete(meta_data, self.input_variable, inplace=True)
+        obj: "CoreSetup" = self if inplace else self.copy()
+        obj.dimensions.complete(
+            meta_data, self.input_variable, mode=obj.dimensions_default, inplace=True,
+        )
         return None if inplace else obj
 
 
@@ -384,6 +389,10 @@ class Setup(BaseModel):
                 name that may be embedded in ``outfile`` with the format key
                 '{variable}'. Choices: "none", "dry", "wet" (the latter may can
                 be combined).
+
+            dimensions_default: How to complete unspecified dimensions based
+                on the values available in the input file. Choices: 'all',
+                'first.
 
             domain: Plot domain. Defaults to 'data', which derives the domain
                 size from the input data. Use the format key '{domain}' to embed
@@ -1034,17 +1043,17 @@ class SetupCollection:
 
     @overload
     def complete_dimensions(
-        self, nc_meta_data, inplace: Literal[False] = False
+        self, nc_meta_data: Mapping[str, Any], *, inplace: Literal[False] = ...,
     ) -> "SetupCollection":
         ...
 
     @overload
-    def complete_dimensions(self, nc_meta_data, inplace: Literal[True]) -> None:
+    def complete_dimensions(
+        self, nc_meta_data: Mapping[str, Any], *, inplace: Literal[True],
+    ) -> None:
         ...
 
-    def complete_dimensions(
-        self, nc_meta_data: Mapping[str, Any], inplace: bool = False
-    ):
+    def complete_dimensions(self, nc_meta_data, *, inplace=False):
         """Complete unconstrained dimensions based on available indices."""
         obj = self if inplace else self.copy()
         for setup in obj:

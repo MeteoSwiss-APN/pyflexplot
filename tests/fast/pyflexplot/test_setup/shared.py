@@ -19,6 +19,7 @@ DEFAULT_PARAMS: Dict[str, Any] = {
     "combine_deposition_types": False,
     "combine_levels": False,
     "combine_species": False,
+    "dimensions_default": "all",
     "dimensions": {
         "deposition_type": None,
         "level": None,

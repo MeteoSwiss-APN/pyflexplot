@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # flake8: noqa
 """
 Test reference for pytest test.
@@ -41,6 +42,7 @@ field_summary = {
                 "domain": "ch",
                 "domain_size_lat": None,
                 "domain_size_lon": None,
+                "dimensions_default": "all",
                 "dimensions": {
                     "deposition_type": None,
                     "level": 0,
@@ -925,6 +927,7 @@ plot_summary = {
                         "domain": "ch",
                         "domain_size_lat": None,
                         "domain_size_lon": None,
+                        "dimensions_default": "all",
                         "dimensions": {
                             "deposition_type": None,
                             "level": 0,
@@ -1277,6 +1280,7 @@ plot_summary = {
                                 "domain": "ch",
                                 "domain_size_lat": None,
                                 "domain_size_lon": None,
+                                "dimensions_default": "all",
                                 "dimensions": {
                                     "deposition_type": None,
                                     "level": 0,
@@ -8254,6 +8258,7 @@ plot_summary = {
                     "domain": "ch",
                     "domain_size_lat": None,
                     "domain_size_lon": None,
+                    "dimensions_default": "all",
                     "dimensions": {
                         "deposition_type": None,
                         "level": 0,
@@ -9135,6 +9140,7 @@ plot_summary = {
                             "domain": "ch",
                             "domain_size_lat": None,
                             "domain_size_lon": None,
+                            "dimensions_default": "all",
                             "dimensions": {
                                 "deposition_type": None,
                                 "level": 0,
