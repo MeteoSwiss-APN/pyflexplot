@@ -465,9 +465,13 @@ class MapAxes:
     # pylint: disable=R0915  # too-many-statements
     def _init_ax(self) -> None:
         """Initialize Axes."""
-        ax: Axes = self.fig.add_axes(self.rect, projection=self.proj_map)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", category=RuntimeWarning, message="numpy.ufunc size changed"
+            )
+            ax: Axes = self.fig.add_axes(self.rect, projection=self.proj_map)
         ax.set_adjustable("datalim")
-        ax.outline_patch.set_edgecolor("none")
+        ax.spines["geo"].set_edgecolor("none")
         self.ax = ax
 
         # Set geographical extent
@@ -498,7 +502,7 @@ class MapAxes:
     def _ax_add_geography(self) -> None:
         """Add geographic elements: coasts, countries, colors, etc."""
         self.ax.coastlines(resolution=self.config.geo_res)
-        self.ax.background_patch.set_facecolor(self._water_color)
+        self.ax.patch.set_facecolor(self._water_color)
         self._ax_add_countries("lowest")
         self._ax_add_lakes("lowest")
         self._ax_add_rivers("lowest")
