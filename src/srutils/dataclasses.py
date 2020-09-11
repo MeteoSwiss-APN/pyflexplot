@@ -40,7 +40,7 @@ def dataclass_merge(
                 [getattr(obj, param) for obj in objs], reduce_equal=reduce_equal
             )
         else:
-            values = tuple(map(lambda obj: getattr(obj, param), objs))
+            values = tuple([getattr(obj, param) for obj in objs])
             if reduce_equal and all(value == values[0] for value in values[1:]):
                 kwargs[param] = values[0]
             else:

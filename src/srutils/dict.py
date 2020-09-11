@@ -62,16 +62,39 @@ def merge_dicts(*dicts: Mapping[Any, Any]) -> Dict[Any, Any]:
     return merged
 
 
+# SR_TODO Add tests for dedip, skip_comp, skip_comp_keys, expect_equal!!!
+# pylint: disable=R0912  # too-many-branches
 def compress_multival_dicts(
     dcts: Sequence[Mapping[str, Any]],
     cls_seq: Type[Union[List[Any], Tuple[Any, ...]]] = list,
+    *,
+    dedup: bool = True,
+    skip_compr: bool = False,
+    skip_compr_keys: Optional[Collection[str]] = None,
+    expect_equal: bool = False,
 ) -> Dict[str, Any]:
-    """Compress multiple dicts with shared keys into one multi-value dict.
+    """Compress multiple dicts with the same keys into one multi-value dict.
+
+    For each key, if all values are the same, keep only that value. If the
+    values differ, by default keep all unique values as a list.
 
     Args:
         dcts: Dicts.
 
         cls_seq (optional): Type of sequence for multi-values.
+
+        dedup (optional): Only keep unique values, i.e., if for a given key some
+            values differ but others are the same, only keep one copy of the
+            latter.
+
+        skip_compr (optional): Skip compression, i.e., retain all values
+            regardless of whether they are the same or differ.
+
+        skip_compr_keys (optional): Skip compression only for these keys.
+
+        expect_equal (optional): Expect all values of a given key to be equal.
+            If they differ, raise an exception. Keys in ``skip_compr_keys`` are
+            exempt, i.e., allowed to differ.
 
     """
     if not dcts:
@@ -98,8 +121,20 @@ def compress_multival_dicts(
             else:
                 val_i = [val_i]
             for val_ij in val_i:
-                if val_ij not in val:
-                    val.append(val_ij)
+                if not skip_compr and key not in (skip_compr_keys or []):
+                    if dedup and val_ij in val:
+                        continue
+                val.append(val_ij)
+    if not skip_compr:
+        for key, val in dct.items():
+            if key in (skip_compr_keys or []):
+                continue
+            if all(val_i == val[0] for val_i in val):
+                val_i = next(iter(val))
+                val.clear()
+                val.append(val_i)
+            elif expect_equal:
+                raise Exception(f"values of key '{key}' differ: {val}")
     dct = {
         key: next(iter(val)) if len(val) == 1 else cls_seq(val)
         for key, val in dct.items()
