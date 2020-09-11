@@ -10,31 +10,41 @@ from typing import List
 from typing import Sequence
 from typing import TypeVar
 
-# First-party
-from srutils.str import sfmt
-
 DataclassT = TypeVar("DataclassT")
 
 
 def get_dataclass_fields(obj: DataclassT) -> List[str]:
     if not is_dataclass(obj):
-        raise ValueError(f"not a dataclass: {type(obj).__name__}")
+        raise ValueError(f"expected dataclass, not {type(obj).__name__}: {obj}")
     # Use getattr to prevent mypy from complaining
     # pylint: disable=E1101  # no-member
     return getattr(obj, "__dataclass_fields__")
 
 
-def dataclass_merge(objs: Sequence[DataclassT]) -> DataclassT:
+def dataclass_merge(
+    objs: Sequence[DataclassT], reduce_equal: bool = False
+) -> DataclassT:
     """Merge multiple dataclass objects by merging their values into tuples."""
-    cls = type(objs[0])
-    if not is_dataclass(cls):
-        raise ValueError(f"not a dataclass: {cls.__name__}")
-    for obj in objs:
+    obj0 = objs[0]
+    cls = type(obj0)
+    objs1 = objs[1:]
+    if not is_dataclass(obj0):
+        raise ValueError(f"first obj is a {cls.__name__}, not a dataclass: {obj0}")
+    for obj in objs1:
         if not isinstance(obj, cls):
             raise ValueError(f"classes differ: {cls.__name__} != {type(obj).__name__}")
     kwargs: Dict[str, Any] = {}
     for param in get_dataclass_fields(cls):
-        kwargs[param] = tuple(map(lambda obj: getattr(obj, param), objs))
+        if is_dataclass(type(getattr(obj0, param))):
+            kwargs[param] = dataclass_merge(
+                [getattr(obj, param) for obj in objs], reduce_equal=reduce_equal
+            )
+        else:
+            values = tuple(map(lambda obj: getattr(obj, param), objs))
+            if reduce_equal and all(value == values[0] for value in values[1:]):
+                kwargs[param] = values[0]
+            else:
+                kwargs[param] = values
     return cls(**kwargs)  # type: ignore
 
 
@@ -43,7 +53,7 @@ def dataclass_repr(
     indent: int = 2,
     *,
     nested: int = 0,
-    fmt: Callable[[Any], str] = sfmt,
+    fmt: Callable[[Any], str] = repr,
 ) -> str:
     """Create string representation with one argument per line."""
     body: List[str] = []
