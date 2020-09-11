@@ -4,10 +4,14 @@ Dataclasses utilities.
 # Standard library
 from dataclasses import is_dataclass
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Sequence
 from typing import TypeVar
+
+# First-party
+from srutils.str import sfmt
 
 DataclassT = TypeVar("DataclassT")
 
@@ -20,7 +24,6 @@ def get_dataclass_fields(obj: DataclassT) -> List[str]:
     return getattr(obj, "__dataclass_fields__")
 
 
-# SR_TODO Add option to retain duplicate values
 def dataclass_merge(objs: Sequence[DataclassT]) -> DataclassT:
     """Merge multiple dataclass objects by merging their values into tuples."""
     cls = type(objs[0])
@@ -33,3 +36,20 @@ def dataclass_merge(objs: Sequence[DataclassT]) -> DataclassT:
     for param in get_dataclass_fields(cls):
         kwargs[param] = tuple(map(lambda obj: getattr(obj, param), objs))
     return cls(**kwargs)  # type: ignore
+
+
+def dataclass_repr(
+    obj: DataclassT,
+    indent: int = 2,
+    *,
+    nested: int = 0,
+    fmt: Callable[[Any], str] = sfmt,
+) -> str:
+    """Create string representation with one argument per line."""
+    body: List[str] = []
+    for field in get_dataclass_fields(obj):
+        value = getattr(obj, field)
+        body.append(f"{field}={fmt(value)},")
+    head = f"{type(obj).__name__}("
+    foot = f"\n{' ' * indent * nested})"
+    return f"\n{' ' * indent * (nested + 1)}".join([head] + body) + foot
