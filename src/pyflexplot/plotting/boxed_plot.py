@@ -165,7 +165,7 @@ class BoxedPlot:
         color_above_closed = self.config.color_above_closed
         if self.config.levels_scale == "log":
             with np.errstate(divide="ignore"):
-                arr = np.log10(arr)
+                arr = np.log10(np.where(arr > 0, arr, np.nan))
             levels = np.log10(levels)
         elif extend in ["none", "min"]:
             if color_above_closed:
@@ -192,10 +192,11 @@ class BoxedPlot:
             This allows one to exit before calling contourf if there's nothing
             to plot, and thus prevent an ugly error.
             """
-            all_nan = np.isnan(arr).all()
+            if np.isnan(arr).all():
+                return True
             all_below = np.nanmax(arr) < levels.min() and extend not in ["min", "both"]
             all_above = np.nanmax(arr) > levels.max() and extend not in ["max", "both"]
-            return all_nan or all_below or all_above
+            return all_below or all_above
 
         if nothing_to_plot(arr, levels):
             return
