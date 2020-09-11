@@ -33,6 +33,7 @@ from pydantic import BaseModel
 
 # First-party
 from srutils.dataclasses import dataclass_merge
+from srutils.dataclasses import dataclass_repr
 from srutils.dataclasses import get_dataclass_fields
 
 # Local
@@ -116,6 +117,7 @@ def _format_meta_datum_with_unit(
     elif len(value) != len(unit):
         raise ValueError(
             f"different number of values ({len(value)}) and units ({len(unit)})"
+            f": {value}, {unit}"
         )
     kwargs = {"join_values": join_values}
     value_fmtd = tuple(map(lambda v: format_meta_datum(v, **kwargs), value))
@@ -142,6 +144,9 @@ class MetaData:
     simulation: "SimulationMetaData"
     variable: "VariableMetaData"
     species: "SpeciesMetaData"
+
+    def __repr__(self) -> str:
+        return dataclass_repr(self, fmt=lambda obj: dataclass_repr(obj, nested=1))
 
     def merge_with(self, others: Collection["MetaData"]) -> "MetaData":
         """Merge this `MetaData` instance with one or more others.
@@ -220,6 +225,9 @@ class VariableMetaData:
     top_level: float
     level_unit: str
 
+    def __repr__(self) -> str:
+        return dataclass_repr(self)
+
     @classmethod
     def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "VariableMetaData":
         name = nc_var_name(setup, setup.model)
@@ -274,6 +282,9 @@ class SimulationMetaData:
     reduction_start: datetime
     reduction_start_rel: timedelta
 
+    def __repr__(self) -> str:
+        return dataclass_repr(self)
+
     @classmethod
     def from_file(
         cls, fi: nc4.Dataset, setup: Setup, add_ts0: bool
@@ -319,6 +330,9 @@ class ReleaseMetaData:
     rate: Union[float, Tuple[float, ...]]
     rate_unit: str
     start_rel: timedelta
+
+    def __repr__(self) -> str:
+        return dataclass_repr(self)
 
     @classmethod
     def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "ReleaseMetaData":
@@ -563,6 +577,9 @@ class SpeciesMetaData:
     washout_coefficient: Union[float, Tuple[float, ...]]
     washout_coefficient_unit: Union[str, Tuple[str, ...]]
     washout_exponent: Union[float, Tuple[float, ...]]
+
+    def __repr__(self) -> str:
+        return dataclass_repr(self)
 
     @classmethod
     def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "SpeciesMetaData":
