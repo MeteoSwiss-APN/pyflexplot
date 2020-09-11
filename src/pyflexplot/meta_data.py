@@ -16,13 +16,14 @@ from dataclasses import dataclass
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
+from pprint import pformat
 from typing import Any
 from typing import cast
 from typing import Collection
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import overload
-from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -32,9 +33,9 @@ import numpy as np
 from pydantic import BaseModel
 
 # First-party
-from srutils.dataclasses import dataclass_merge
 from srutils.dataclasses import dataclass_repr
 from srutils.dataclasses import get_dataclass_fields
+from srutils.dict import compress_multival_dicts
 
 # Local
 from .setup import Setup
@@ -142,12 +143,19 @@ def _format_unit(s: str) -> str:
 class MetaData:
     release: "ReleaseMetaData"
     simulation: "SimulationMetaData"
-    variable: "VariableMetaData"
     species: "SpeciesMetaData"
+    variable: "VariableMetaData"
 
     def __repr__(self) -> str:
         return dataclass_repr(self, fmt=lambda obj: dataclass_repr(obj, nested=1))
 
+    def dict(self) -> Dict[str, Dict[str, Any]]:
+        return {
+            field: getattr(self, field).dict()
+            for field in get_dataclass_fields(type(self))
+        }
+
+    # pylint: disable=R0914  # too-many-locals
     def merge_with(self, others: Collection["MetaData"]) -> "MetaData":
         """Merge this `MetaData` instance with one or more others.
 
@@ -164,27 +172,132 @@ class MetaData:
         others = unique_others
 
         if not others:
-            return self
+            return type(self)(
+                release=self.release,
+                simulation=self.simulation,
+                variable=self.variable,
+                species=self.species,
+            )
 
-        def merge_release():
-            return self.release.merge_with([other.release for other in others])
+        # Extract parameter values from objects
+        grouped_params: Dict[str, List[Dict[str, Any]]] = {
+            group: [getattr(obj, group).dict() for obj in [self] + list(others)]
+            for group in get_dataclass_fields(type(self))
+        }
 
-        def merge_simulation():
-            if not all(other.simulation == self.simulation for other in others):
-                raise ValueError("simulation meta data differ")
-            return self.simulation
+        #
+        # The meta data may differ in two aspects:
+        # - the input variable, specifically the vertical level range; and
+        # - the release meta data, i.e., which substance has been released.
+        #
+        # Release meta data values (for given set of input variable meta data)
+        # are retained in a tuple (e.g., `"name": ("Cs-137", "I-131a")`).
+        #
+        # Adjacent level ranges, on the other hand, are merged (provided the
+        # release meta data don't differ, otherwise an exception is raised).
+        # This reduces the number of parameters in the merged MetaData object.
+        #
 
-        def merge_variable():
-            return self.variable.merge_with([other.variable for other in others])
+        # Group meta data indices by level ranges
+        params_lst = grouped_params["variable"]
+        level_ranges: Dict[Tuple[float, float], List[int]] = {}
+        for idx, params in enumerate(params_lst):
+            level_range = (params["bottom_level"], params["top_level"])
+            if level_range not in level_ranges:
+                level_ranges[level_range] = []
+            level_ranges[level_range].append(idx)
+        level_ranges_lst = sorted(level_ranges.items())
 
-        def merge_species():
-            return self.species.merge_with([other.species for other in others])
+        # SR_TMP < TODO implement non-adjacent level ranges (with test)
+        # Make sure that multiple level ranges are adjacent
+        bottoms = [bottom for (bottom, _), _ in level_ranges_lst]
+        tops = [top for (_, top), _ in level_ranges_lst]
+        if bottoms[1:] != tops[:-1]:
+            raise NotImplementedError("non-adjacent level ranges: {list(level_ranges)}")
+        # SR_TMP >
+
+        # SR_TMP < TODO implement different meta data per level (if required)
+        # Ensure the number of meta data per level range are all equal
+        if len(set(map(len, level_ranges.values()))) != 1:
+            raise NotImplementedError(
+                f"number of meta data differ betwenen level ranges: {level_ranges}"
+            )
+        # SR_TMP >
+
+        # Variable meta data: merge across adjacent level ranges
+        params_ref = None
+        for idx, params in enumerate(grouped_params["variable"][1:]):
+            params = {
+                **grouped_params["variable"][0],
+                "bottom_level": None,
+                "top_level": None,
+            }
+            if idx == 0:
+                params_ref = params
+            elif params != params_ref:
+                raise Exception(
+                    f"variable meta data differ:\n\n{pformat(params)}"
+                    f"\n\n!=\n\n{params_ref}\n\n(idx={idx})"
+                )
+        variable_params: Dict[str, Any] = {
+            **grouped_params["variable"][0],
+            "bottom_level": level_ranges_lst[0][0][0],
+            "top_level": level_ranges_lst[-1][0][1],
+        }
+        variable_mdata = VariableMetaData(**variable_params)
+
+        # For each merged levels range, collect all non-variable meta data
+        merged_params_lst: List[Dict[str, Dict[str, Any]]] = []
+        for idx_idx in range(len(level_ranges_lst[0][1])):
+            merged_params_lst.append({})
+            idx_ref = level_ranges_lst[0][1][idx_idx]
+            for group, params_lst in grouped_params.items():
+                if group == "variable":
+                    continue
+                params_ref = params_lst[idx_ref]
+                for level_range, idcs in level_ranges_lst[1:]:
+                    idx = idcs[idx_idx]
+                    params = params_lst[idx]
+                    # SR_TMP < TODO implement support for reordering (with test)
+                    # Make sure for each range the other meta data are identical
+                    if params != params_ref:
+                        raise Exception(
+                            f"{group} meta data differ:"
+                            f"\n\n{pformat(params)}\n\n!=\n\n{pformat(params_ref)}"
+                            f"\n\n(idx_idx={idx_idx}, idx_ref={idx_ref}, idx={idx}"
+                            f", group='{group}')"
+                        )
+                    # SR_TMP >
+                if group not in merged_params_lst[-1]:
+                    merged_params_lst[-1][group] = params_ref
+
+        # Simulation meta data
+        simulation_params = compress_multival_dicts(
+            [params["simulation"] for params in merged_params_lst],
+            tuple,
+        )
+        simulation_mdata = SimulationMetaData(**simulation_params)
+
+        # Species meta data
+        species_params = compress_multival_dicts(
+            [params["species"] for params in merged_params_lst], tuple, skip_compr=True
+        )
+        species_mdata = SpeciesMetaData(**species_params)
+
+        # Release meta data
+        release_params = compress_multival_dicts(
+            [params["release"] for params in merged_params_lst],
+            tuple,
+            skip_compr_keys=["mass", "mass_unit", "rate", "rate_unit"],
+            expect_equal=True,
+        )
+        release_mdata = ReleaseMetaData(**release_params)
 
         return type(self)(
-            release=merge_release(),
-            simulation=merge_simulation(),
-            variable=merge_variable(),
-            species=merge_species(),
+            release=release_mdata,
+            simulation=simulation_mdata,
+            variable=variable_mdata,
+            species=species_mdata,
         )
 
     def __deepcopy__(self, memo):
@@ -218,15 +331,23 @@ def getncattr(nc_obj: Union[nc4.Dataset, nc4.Variable], attr: str) -> Any:
         return nc_obj.getncattr(attr)
 
 
+class _MetaDataBase:
+    def __repr__(self) -> str:
+        return dataclass_repr(self)
+
+    def dict(self) -> Dict[str, Any]:
+        dct: Dict[str, Any] = {}
+        for field in get_dataclass_fields(type(self)):
+            dct[field] = getattr(self, field)
+        return dct
+
+
 @dataclass
-class VariableMetaData:
+class VariableMetaData(_MetaDataBase):
     unit: str
     bottom_level: float
     top_level: float
     level_unit: str
-
-    def __repr__(self) -> str:
-        return dataclass_repr(self)
 
     @classmethod
     def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "VariableMetaData":
@@ -254,26 +375,9 @@ class VariableMetaData:
             level_unit=level_unit,
         )
 
-    def merge_with(self, others: Sequence["VariableMetaData"]) -> "VariableMetaData":
-        unit = self.unit
-        level_unit = self.level_unit
-        bottom_level = self.bottom_level
-        top_level = self.top_level
-        for obj in others:
-            assert unit == obj.unit
-            assert level_unit == obj.level_unit
-            bottom_level = min([bottom_level, obj.bottom_level])
-            top_level = max([top_level, obj.top_level])
-        return type(self)(
-            unit=unit,
-            level_unit=level_unit,
-            bottom_level=bottom_level,
-            top_level=top_level,
-        )
-
 
 @dataclass
-class SimulationMetaData:
+class SimulationMetaData(_MetaDataBase):
     start: datetime
     end: datetime
     now: datetime
@@ -281,9 +385,6 @@ class SimulationMetaData:
     lead_time: timedelta
     reduction_start: datetime
     reduction_start_rel: timedelta
-
-    def __repr__(self) -> str:
-        return dataclass_repr(self)
 
     @classmethod
     def from_file(
@@ -316,7 +417,7 @@ class SimulationMetaData:
 
 @dataclass
 # pylint: disable=R0902  # too-many-instance-attrbutes
-class ReleaseMetaData:
+class ReleaseMetaData(_MetaDataBase):
     duration: timedelta
     duration_unit: str
     end_rel: timedelta
@@ -330,9 +431,6 @@ class ReleaseMetaData:
     rate: Union[float, Tuple[float, ...]]
     rate_unit: str
     start_rel: timedelta
-
-    def __repr__(self) -> str:
-        return dataclass_repr(self)
 
     @classmethod
     def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "ReleaseMetaData":
@@ -367,33 +465,63 @@ class ReleaseMetaData:
             start_rel=start_rel,
         )
 
-    def merge_with(self, others: Sequence["ReleaseMetaData"]) -> "ReleaseMetaData":
-        merged = dataclass_merge([self] + list(others))
-        # SR_TMP < TODO turn into function
-        differing = ["mass", "rate"]
-        for param in get_dataclass_fields(self):
-            values = getattr(merged, param)
-            if param not in differing:
-                if len(set(values)) > 1:
-                    raise Exception(
-                        f"values of parameter '{param}' differ among {len(others) + 1}"
-                        f" {type(self).__name__} objects"
-                    )
-                setattr(merged, param, next(iter(values)))
-            # SR_TMP < TODO get rid of this!
+
+@dataclass
+# pylint: disable=R0902  # too-many-instance-attributes
+class SpeciesMetaData(_MetaDataBase):
+    name: Union[str, Tuple[str, ...]]
+    half_life: Union[float, Tuple[float, ...]]
+    half_life_unit: Union[str, Tuple[str, ...]]
+    deposition_velocity: Union[float, Tuple[float, ...]]
+    deposition_velocity_unit: Union[str, Tuple[str, ...]]
+    sedimentation_velocity: Union[float, Tuple[float, ...]]
+    sedimentation_velocity_unit: Union[str, Tuple[str, ...]]
+    washout_coefficient: Union[float, Tuple[float, ...]]
+    washout_coefficient_unit: Union[str, Tuple[str, ...]]
+    washout_exponent: Union[float, Tuple[float, ...]]
+
+    @classmethod
+    def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "SpeciesMetaData":
+        model: str = setup.model
+        name: str = nc_var_name(setup, model)
+        var: nc4.Variable = fi.variables[name]
+        try:  # SR_TMP
+            name = getncattr(var, "long_name")
+        except AttributeError:
+            # SR_TMP <
+            # name = "N/A"
+            if model.startswith("IFS"):
+                # In the IFS NetCDF files, the deposition variables are missing
+                # the basic meta data on species, like "long_name". Therefore,
+                # try to # obtain the name from the activity variable of the
+                # same species.
+                if name.startswith("DD_") or name.startswith("WD_"):
+                    alternative_name = f"{name[3:]}_mr"
+                    try:
+                        alternative_var = fi.variables[alternative_name]
+                        name = getncattr(alternative_var, "long_name")
+                    except (KeyError, AttributeError):
+                        name = "N/A"
+                    else:
+                        name = name.split("_")[0]
             else:
-                unique_values = [
-                    value
-                    for idx, value in enumerate(values)
-                    if value not in values[:idx]
-                ]
-                if len(unique_values) == 1:
-                    setattr(merged, param, next(iter(unique_values)))
-                else:
-                    setattr(merged, param, tuple(unique_values))
+                name = "N/A"
             # SR_TMP >
-        # SR_TMP >
-        return merged
+        else:
+            name = name.split("_")[0]
+        species: Species = get_species(name=name)
+        return cls(
+            name=species.name,
+            half_life=species.half_life.value,
+            half_life_unit=cast(str, species.half_life.unit),
+            deposition_velocity=species.deposition_velocity.value,
+            deposition_velocity_unit=cast(str, species.deposition_velocity.unit),
+            sedimentation_velocity=species.sedimentation_velocity.value,
+            sedimentation_velocity_unit=cast(str, species.sedimentation_velocity.unit),
+            washout_coefficient=species.washout_coefficient.value,
+            washout_coefficient_unit=cast(str, species.washout_coefficient.unit),
+            washout_exponent=species.washout_exponent.value,
+        )
 
 
 class RawReleaseMetaData(BaseModel):
@@ -562,85 +690,6 @@ class TimeStepMetaDataCollector:
         if self.add_ts0:
             return self.setup.core.dimensions.time - 1
         return self.setup.core.dimensions.time
-
-
-@dataclass
-# pylint: disable=R0902  # too-many-instance-attributes
-class SpeciesMetaData:
-    name: Union[str, Tuple[str, ...]]
-    half_life: Union[float, Tuple[float, ...]]
-    half_life_unit: Union[str, Tuple[str, ...]]
-    deposition_velocity: Union[float, Tuple[float, ...]]
-    deposition_velocity_unit: Union[str, Tuple[str, ...]]
-    sedimentation_velocity: Union[float, Tuple[float, ...]]
-    sedimentation_velocity_unit: Union[str, Tuple[str, ...]]
-    washout_coefficient: Union[float, Tuple[float, ...]]
-    washout_coefficient_unit: Union[str, Tuple[str, ...]]
-    washout_exponent: Union[float, Tuple[float, ...]]
-
-    def __repr__(self) -> str:
-        return dataclass_repr(self)
-
-    @classmethod
-    def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "SpeciesMetaData":
-        model: str = setup.model
-        name: str = nc_var_name(setup, model)
-        var: nc4.Variable = fi.variables[name]
-        try:  # SR_TMP
-            name = getncattr(var, "long_name")
-        except AttributeError:
-            # SR_TMP <
-            # name = "N/A"
-            if model.startswith("IFS"):
-                # In the IFS NetCDF files, the deposition variables are missing
-                # the basic meta data on species, like "long_name". Therefore,
-                # try to # obtain the name from the activity variable of the
-                # same species.
-                if name.startswith("DD_") or name.startswith("WD_"):
-                    alternative_name = f"{name[3:]}_mr"
-                    try:
-                        alternative_var = fi.variables[alternative_name]
-                        name = getncattr(alternative_var, "long_name")
-                    except (KeyError, AttributeError):
-                        name = "N/A"
-                    else:
-                        name = name.split("_")[0]
-            else:
-                name = "N/A"
-            # SR_TMP >
-        else:
-            name = name.split("_")[0]
-        species: Species = get_species(name=name)
-        return cls(
-            name=species.name,
-            half_life=species.half_life.value,
-            half_life_unit=cast(str, species.half_life.unit),
-            deposition_velocity=species.deposition_velocity.value,
-            deposition_velocity_unit=cast(str, species.deposition_velocity.unit),
-            sedimentation_velocity=species.sedimentation_velocity.value,
-            sedimentation_velocity_unit=cast(str, species.sedimentation_velocity.unit),
-            washout_coefficient=species.washout_coefficient.value,
-            washout_coefficient_unit=cast(str, species.washout_coefficient.unit),
-            washout_exponent=species.washout_exponent.value,
-        )
-
-    def merge_with(self, others: Sequence["SpeciesMetaData"]) -> "SpeciesMetaData":
-        merged = dataclass_merge(
-            [self] + list(others),
-            # eliminate_dups=True,
-        )
-        # SR_TMP < TODO get rid of this!
-        for param in get_dataclass_fields(self):
-            values = getattr(merged, param)
-            unique_values = [
-                value for idx, value in enumerate(values) if value not in values[:idx]
-            ]
-            if len(unique_values) == 1:
-                setattr(merged, param, next(iter(unique_values)))
-            else:
-                setattr(merged, param, tuple(unique_values))
-        # SR_TMP >
-        return merged
 
 
 def nc_var_name(setup: Setup, model: str) -> str:

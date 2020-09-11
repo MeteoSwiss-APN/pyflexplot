@@ -27,7 +27,7 @@ try:
     # Third-party
     import black
 except ImportError:
-    black = None
+    black = None  # type: ignore
 
 PACKAGE = "test_plots"
 
