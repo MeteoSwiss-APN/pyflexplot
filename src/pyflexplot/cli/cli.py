@@ -180,19 +180,13 @@ def click_prep_setup_params(ctx, param, value):
     metavar="N",
 )
 @click.option(
-    "--open-all",
-    "open_all_cmd",
-    help="Like --open-first, but for all plots.",
-)
-@click.option(
-    "--open-first",
-    "open_first_cmd",
+    "--open",
+    "open_cmd",
     help=(
-        "Shell command to open the first plot as soon as it is available. The file "
-        "path is appended to the command, unless explicitly embedded with the format "
-        "key '{file}', which allows one to use more complex commands than simple "
-        "application names (example: 'eog {file} >/dev/null 2>&1' instead of 'eog' to "
-        "silence the application 'eog')."
+        "Shell command to all plots. The file paths are appended to the command, unless"
+        " explicitly embedded with the format key '{file}', which allows one to use"
+        " more complex commands than simple application names (example: 'eog {file}"
+        " >/dev/null 2>&1' instead of 'eog' to silence the application 'eog')."
     ),
 )
 @click.option(
@@ -288,8 +282,7 @@ def main(
     input_setup_params,
     merge_pdfs,
     only,
-    open_all_cmd,
-    open_first_cmd,
+    open_cmd,
     setup_file_paths,
     suffixes,
 ):
@@ -355,9 +348,6 @@ def main(
                 if not dry_run:
                     create_plot(plot, out_file_paths_i)
 
-                if open_first_cmd and (ip_in - 1) + (ip_fld - 1) == 0:
-                    open_plots(open_first_cmd, out_file_paths_i[0], dry_run)
-
                 n_plt_todo = n_fld - ip_fld
                 if n_plt_todo and each_only and ip_fld >= each_only:
                     log(vbs=f"skip remaining {n_plt_todo} plots")
@@ -381,9 +371,9 @@ def main(
         log(vbs="merge PDF plots")
         all_out_file_paths = merge_pdf_plots(all_out_file_paths, dry_run)
 
-    if open_all_cmd:
+    if open_cmd:
         log(vbs=f"open {len(all_out_file_paths)} plots:")
-        open_plots(open_all_cmd, all_out_file_paths, dry_run)
+        open_plots(open_cmd, all_out_file_paths, dry_run)
 
     return 0
 
