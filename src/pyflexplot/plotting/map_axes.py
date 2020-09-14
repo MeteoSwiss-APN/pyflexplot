@@ -424,14 +424,14 @@ class MapAxes:
     def _init_zorder(self) -> None:
         """Determine zorder of unique plot elements, from low to high."""
         zorders_const = [
-            "lowest",
-            "geo_lower",
-            "fld",
-            "geo_upper",
-            "grid",
-            "marker",
             "frames",
-        ]
+            "marker",
+            "grid",
+            "geo_upper",
+            "fld",
+            "geo_lower",
+            "lowest",
+        ][::-1]
         d0, dz = 1, 1
         self.zorder = {name: d0 + idx * dz for idx, name in enumerate(zorders_const)}
 
