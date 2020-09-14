@@ -503,13 +503,13 @@ class MapAxes:
         """Add geographic elements: coasts, countries, colors, etc."""
         self.ax.coastlines(resolution=self.config.geo_res)
         self.ax.patch.set_facecolor(self._water_color)
-        self._ax_add_countries("lowest")
-        self._ax_add_lakes("lowest")
-        self._ax_add_rivers("lowest")
-        self._ax_add_countries("geo_upper")
-        self._ax_add_cities()
+        self._ax_add_countries("lowest", rasterized=True)
+        self._ax_add_lakes("lowest", rasterized=True)
+        self._ax_add_rivers("lowest", rasterized=True)
+        self._ax_add_countries("geo_upper", rasterized=True)
+        self._ax_add_cities(rasterized=False)
 
-    def _ax_add_countries(self, zorder_key: str) -> None:
+    def _ax_add_countries(self, zorder_key: str, rasterized: bool = False) -> None:
         facecolor = "white" if zorder_key == "lowest" else "none"
         linewidth = 1 if zorder_key == "lowest" else 1 / 3
         self.ax.add_feature(
@@ -520,11 +520,13 @@ class MapAxes:
                 edgecolor="black",
                 facecolor=facecolor,
                 linewidth=linewidth,
+                rasterized=rasterized,
             ),
             zorder=self.zorder[zorder_key],
+            rasterized=rasterized,
         )
 
-    def _ax_add_lakes(self, zorder_key: str) -> None:
+    def _ax_add_lakes(self, zorder_key: str, rasterized: bool = False) -> None:
         self.ax.add_feature(
             cartopy.feature.NaturalEarthFeature(
                 category="physical",
@@ -532,8 +534,10 @@ class MapAxes:
                 scale=self.config.geo_res,
                 edgecolor="none",
                 facecolor=self._water_color,
+                rasterized=rasterized,
             ),
             zorder=self.zorder[zorder_key],
+            rasterized=rasterized,
         )
         if self.config.geo_res == "10m":
             self.ax.add_feature(
@@ -543,11 +547,13 @@ class MapAxes:
                     scale=self.config.geo_res,
                     edgecolor="none",
                     facecolor=self._water_color,
+                    rasterized=rasterized,
                 ),
                 zorder=self.zorder[zorder_key],
+                rasterized=rasterized,
             )
 
-    def _ax_add_rivers(self, zorder_key: str) -> None:
+    def _ax_add_rivers(self, zorder_key: str, rasterized: bool = False) -> None:
         linewidth = {"lowest": 1, "geo_lower": 1, "geo_upper": 2 / 3}[zorder_key]
 
         # SR_WORKAROUND <
@@ -569,6 +575,7 @@ class MapAxes:
             edgecolor=self._water_color,
             facecolor=(0, 0, 0, 0),
             linewidth=linewidth,
+            rasterized=rasterized,
         )
         # SR_WORKAROUND < TODO revert once bugfix in Cartopy master
         # self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
@@ -582,6 +589,7 @@ class MapAxes:
                 edgecolor=self._water_color,
                 facecolor=(0, 0, 0, 0),
                 linewidth=linewidth,
+                rasterized=rasterized,
             )
             # SR_WORKAROUND < TODO revert once bugfix in Cartopy master
             # self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
@@ -604,12 +612,16 @@ class MapAxes:
             #     f"successfully added major rivers; "
             #     "TODO: remove workaround and pin minimum Cartopy version!"
             # )
-            self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
+            self.ax.add_feature(
+                major_rivers, zorder=self.zorder[zorder_key], rasterized=rasterized
+            )
             if self.config.geo_res_rivers == "10m":
-                self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
+                self.ax.add_feature(
+                    minor_rivers, zorder=self.zorder[zorder_key], rasterized=rasterized
+                )
         # SR_WORKAROUND >
 
-    def _ax_add_cities(self) -> None:
+    def _ax_add_cities(self, rasterized: bool = False) -> None:
         """Add major cities, incl. all capitals."""
 
         # pylint: disable=R0913  # too-many-arguments
@@ -681,6 +693,7 @@ class MapAxes:
                     markeredgewidth=1 * self.config.scale_fact,
                     markersize=3 * self.config.scale_fact,
                     zorder=self.zorder["geo_upper"],
+                    rasterized=rasterized,
                 )
                 self.add_text(
                     lon,
@@ -689,6 +702,7 @@ class MapAxes:
                     va="center",
                     size=9 * self.config.scale_fact,
                     clip_on=True,
+                    rasterized=rasterized,
                 )
 
     def _ax_add_data_domain_outline(self) -> None:

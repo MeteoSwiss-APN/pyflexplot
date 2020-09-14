@@ -1551,7 +1551,7 @@ plot_summary = {
                 "zoom_fact": 1.01,
                 "rel_offset": [0.0, 0.0],
             },
-            "geo_res": "10m",
+            "geo_res": "50m",
             "geo_res_cities": "50m",
             "geo_res_rivers": "50m",
             "lang": "de",
@@ -1581,6 +1581,7 @@ plot_summary = {
                 "fillstyle": "none",
                 "markeredgewidth": 1.0,
                 "markersize": 3.0,
+                "rasterized": False,
             },
             {
                 "element_type": "text",
@@ -1593,6 +1594,7 @@ plot_summary = {
                 "va": "center",
                 "size": 9.0,
                 "clip_on": True,
+                "rasterized": False,
             },
             {
                 "element_type": "marker",
@@ -1605,6 +1607,7 @@ plot_summary = {
                 "fillstyle": "none",
                 "markeredgewidth": 1.0,
                 "markersize": 3.0,
+                "rasterized": False,
             },
             {
                 "element_type": "text",
@@ -1617,6 +1620,7 @@ plot_summary = {
                 "va": "center",
                 "size": 9.0,
                 "clip_on": True,
+                "rasterized": False,
             },
             {
                 "element_type": "marker",
@@ -1629,6 +1633,7 @@ plot_summary = {
                 "fillstyle": "none",
                 "markeredgewidth": 1.0,
                 "markersize": 3.0,
+                "rasterized": False,
             },
             {
                 "element_type": "text",
@@ -1641,6 +1646,7 @@ plot_summary = {
                 "va": "center",
                 "size": 9.0,
                 "clip_on": True,
+                "rasterized": False,
             },
             {
                 "element_type": "marker",
@@ -1653,6 +1659,7 @@ plot_summary = {
                 "fillstyle": "none",
                 "markeredgewidth": 1.0,
                 "markersize": 3.0,
+                "rasterized": False,
             },
             {
                 "element_type": "text",
@@ -1665,6 +1672,7 @@ plot_summary = {
                 "va": "center",
                 "size": 9.0,
                 "clip_on": True,
+                "rasterized": False,
             },
             {
                 "element_type": "marker",
@@ -1677,6 +1685,7 @@ plot_summary = {
                 "fillstyle": "none",
                 "markeredgewidth": 1.0,
                 "markersize": 3.0,
+                "rasterized": False,
             },
             {
                 "element_type": "text",
@@ -1689,6 +1698,7 @@ plot_summary = {
                 "va": "center",
                 "size": 9.0,
                 "clip_on": True,
+                "rasterized": False,
             },
             {
                 "element_type": "marker",
@@ -7693,7 +7703,7 @@ plot_summary = {
             "zoom_fact": 1.01,
             "rel_offset": [0.0, 0.0],
         },
-        "geo_res": "10m",
+        "geo_res": "50m",
         "geo_res_cities": "50m",
         "geo_res_rivers": "50m",
         "lang": "de",

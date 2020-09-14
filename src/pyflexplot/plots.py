@@ -505,7 +505,7 @@ def create_map_config(field: Field) -> MapAxesConfig:
         "ref_dist_config": {"dist": 250},
     }
     conf_regional_scale: Dict[str, Any] = {
-        "geo_res": "10m",
+        "geo_res": "50m",
         "geo_res_cities": "50m",
         "geo_res_rivers": "50m",
         "min_city_pop": 300_000,

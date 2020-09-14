@@ -127,7 +127,7 @@ class BoxedPlot:
             edgecolor=self.fig.get_edgecolor(),
             bbox_inches="tight",
             pad_inches=0.15,
-            dpi=300,
+            dpi=90,
         )
         self.clean()
 
