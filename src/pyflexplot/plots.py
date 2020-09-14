@@ -497,14 +497,6 @@ def create_map_config(field: Field) -> MapAxesConfig:
     model_name = field.var_setups.collect_equal("model")
     scale_fact = field.var_setups.collect_equal("scale_fact")
 
-    conf_global_scale: Dict[str, Any] = {
-        "geo_res": "110m",
-        "geo_res_cities": "110m",
-        "geo_res_rivers": "110m",
-        "min_city_pop": 1_000_000,
-        # Note: Ref dist indicator seems not to work properly at global scale!
-        "ref_dist_on": False,
-    }
     conf_continental_scale: Dict[str, Any] = {
         "geo_res": "50m",
         "geo_res_cities": "110m",
@@ -535,7 +527,7 @@ def create_map_config(field: Field) -> MapAxesConfig:
         elif model_name == "IFS-HRES-EU":
             map_axes_config = conf_continental_scale
         elif model_name == "IFS-HRES":
-            map_axes_config = conf_global_scale
+            raise NotImplementedError("global IFS-HRES domain")
     elif domain_type in ["release_site", "cloud", "alps"]:
         map_axes_config = conf_regional_scale
     elif domain_type == "ch":
