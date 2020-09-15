@@ -4,10 +4,12 @@ Command line interface.
 """
 # Standard library
 import functools
+import multiprocessing
 import os
 import re
 import sys
 import traceback
+from functools import partial
 from pathlib import Path
 from typing import Any
 from typing import Dict
@@ -27,9 +29,11 @@ from pyflexplot.utils.pydantic import InvalidParameterNameError
 # Local
 from .. import __version__
 from .. import data_path
+from ..data import Field
 from ..input import read_fields
 from ..plots import create_plot
 from ..plots import prepare_plot
+from ..plotting.boxed_plot import BoxedPlot
 from ..setup import Setup
 from ..setup import SetupCollection
 from ..setup import SetupFile
@@ -162,6 +166,17 @@ def click_prep_setup_params(ctx, param, value):
     help="Merge PDF plots with the same output file name.",
 )
 @click.option(
+    "--num-procs",
+    "-P",
+    help=(
+        "Number of parallel processes. Note that only the creation of plots for"
+        " a given input file (ensemble) is parallelized, while the input files"
+        " (or ensembles) themselves are processed sequentially."
+    ),
+    type=int,
+    default=1,
+)
+@click.option(
     "--only",
     help=(
         "Only create the first N plots based on the given setup. Useful during "
@@ -261,6 +276,53 @@ def cli(ctx, **kwargs):
     main_loc(ctx, **kwargs)
 
 
+class SharedIterationState:
+    def __init__(
+        self,
+        ip_tot: int = 0,
+        n_in: int = -1,
+        ip_in: int = 0,
+        n_fld: int = -1,
+    ) -> None:
+        self._dict: Dict[str, Any] = multiprocessing.Manager().dict()
+        self.ip_tot = ip_tot
+        self.n_in = n_in
+        self.ip_in = ip_in
+        self.n_fld = n_fld
+
+    @property
+    def ip_tot(self) -> int:
+        return self._dict["ip_tot"]
+
+    @ip_tot.setter
+    def ip_tot(self, value: int) -> None:
+        self._dict["ip_tot"] = value
+
+    @property
+    def n_in(self) -> int:
+        return self._dict["n_in"]
+
+    @n_in.setter
+    def n_in(self, value: int) -> None:
+        self._dict["n_in"] = value
+
+    @property
+    def ip_in(self) -> int:
+        return self._dict["ip_in"]
+
+    @ip_in.setter
+    def ip_in(self, value: int) -> None:
+        self._dict["ip_in"] = value
+
+    @property
+    def n_fld(self) -> int:
+        return self._dict["n_fld"]
+
+    @n_fld.setter
+    def n_fld(self, value: int) -> None:
+        self._dict["n_fld"] = value
+
+
 # pylint: disable=R0912  # too-many-branches
 # pylint: disable=R0913  # too-many-arguments
 # pylint: disable=R0915  # too-many-statements
@@ -271,6 +333,7 @@ def main(
     dry_run,
     input_setup_params,
     merge_pdfs,
+    num_procs,
     only,
     open_cmd,
     setup_file_paths,
@@ -303,67 +366,34 @@ def main(
         s_skip = "\n   ".join([""] + skip)
         log(vbs=f"[only:{only}] skip {len(skip)}/{n_old} infiles:{s_skip}")
 
+    pool = multiprocessing.Pool(processes=num_procs)
+
     # Create plots input file(s) by input file(s)
-    all_out_file_paths = []
-    n_in = len(setups_by_infile)
-    ip_tot = 0
-    for ip_in, (in_file_path, sub_setups) in enumerate(
+    all_out_file_paths: List[str] = multiprocessing.Manager().list()
+    istat = SharedIterationState(ip_tot=0, n_in=len(setups_by_infile))
+    for istat.ip_in, (in_file_path, sub_setups) in enumerate(
         setups_by_infile.items(), start=1
     ):
-        if only and ip_tot >= only:
+        if only and istat.ip_tot >= only:
             continue
         if only and len(sub_setups) > only:
             n_old = len(sub_setups)
             sub_setups = SetupCollection(list(sub_setups)[:only])
             n_skip = n_old - len(sub_setups)
             log(vbs=f"[only:{only}] skip {n_skip}/{n_old} sub-setups")
-        log(vbs=f"[{ip_in}/{n_in}] read {in_file_path}")
+        log(vbs=f"[{istat.ip_in}/{istat.n_in}] read {in_file_path}")
         field_lst_lst = read_fields(
             in_file_path, sub_setups, add_ts0=True, dry_run=dry_run, cache_on=cache
         )
-        n_fld = len(field_lst_lst)
-        for ip_fld, field_lst in enumerate(field_lst_lst, start=1):
-            if only and ip_tot >= only:
-                continue
-            log(dbg=f"[{ip_in}/{n_in}][{ip_fld}/{n_fld}] prepare plot")
-            in_file_path_fmtd = format_in_file_path(
-                in_file_path, [field.var_setups for field in field_lst]
-            )
-            out_file_paths_i, plot = prepare_plot(
-                field_lst, all_out_file_paths, dry_run=dry_run
-            )
-            if only:
-                only_i = only - ip_tot
-                if len(out_file_paths_i) > only_i:
-                    n_old = len(out_file_paths_i)
-                    out_file_paths_i, skip = (
-                        out_file_paths_i[:only_i],
-                        out_file_paths_i[only_i:],
-                    )
-                    n_skip = len(skip)
-                    s_skip = "\n   ".join([""] + skip)
-                    log(vbs=f"[only:{only}] skip {n_skip}/{n_old} plot files:{s_skip}")
-            n_out = len(out_file_paths_i)
-            ip_tot += n_out
-            for ip_out, out_file_path in enumerate(out_file_paths_i, start=1):
-                log(
-                    inf=f"{in_file_path_fmtd} -> {out_file_path}",
-                    vbs=(
-                        f"[{ip_in}/{n_in}][{ip_fld}/{n_fld}][{ip_out}/{n_out}]"
-                        f" plot {out_file_path}"
-                    ),
-                )
-            if not dry_run:
-                create_plot(plot, out_file_paths_i)
-            n_plt_todo = n_fld - ip_fld
-            if only and ip_tot >= only:
-                if n_plt_todo:
-                    log(vbs=f"[only:{only}] skip remaining {n_plt_todo} plot fields")
-            for out_file_path in out_file_paths_i:
-                log(dbg=f"done plotting {out_file_path}")
+        istat.n_fld = len(field_lst_lst)
+        fct = partial(
+            create_plots, in_file_path, all_out_file_paths, only, dry_run, istat
+        )
+        pool.starmap(fct, enumerate(field_lst_lst, start=1))
+        # SR_TMP >
         log(dbg=f"done processing {in_file_path}")
-        if only and ip_tot >= only:
-            remaining_files = n_in - ip_in
+        if only and istat.ip_tot >= only:
+            remaining_files = istat.n_in - istat.ip_in
             if remaining_files:
                 log(vbs=f"[only:{only}] skip remaining {remaining_files} input files")
             break
@@ -377,6 +407,71 @@ def main(
         open_plots(open_cmd, all_out_file_paths, dry_run)
 
     return 0
+
+
+def get_pid() -> int:
+    name = multiprocessing.current_process().name
+    if name.startswith("ForkPoolWorker-"):
+        return int(name.split("-")[1])
+    else:
+        raise NotImplementedError(f"cannot derive pid from process name: {name}")
+
+
+def create_plots(
+    in_file_path: str,
+    all_out_file_paths: List[str],
+    only: Optional[int],
+    dry_run: bool,
+    istat: SharedIterationState,
+    ip_fld: int,
+    field_lst: List[Field],
+):
+    pid = get_pid()
+    if only and istat.ip_tot >= only:
+        return
+
+    log(
+        dbg=(
+            f"[P{pid}][{istat.ip_in}/{istat.n_in}][{ip_fld}/{istat.n_fld}]"
+            " prepare plot"
+        )
+    )
+
+    setups_lst = [field.var_setups for field in field_lst]
+    in_file_path_fmtd = format_in_file_path(in_file_path, setups_lst)
+    out_file_paths_i, plot = prepare_plot(
+        field_lst, all_out_file_paths, dry_run=dry_run
+    )
+    if only:
+        only_i = only - istat.ip_tot
+        if len(out_file_paths_i) > only_i:
+            n_old = len(out_file_paths_i)
+            out_file_paths_i, skip = (
+                out_file_paths_i[:only_i],
+                out_file_paths_i[only_i:],
+            )
+            n_skip = len(skip)
+            s_skip = "\n   ".join([""] + skip)
+            log(vbs=f"[only:{only}] skip {n_skip}/{n_old} plot files:{s_skip}")
+    n_out = len(out_file_paths_i)
+    istat.ip_tot += n_out
+    for ip_out, out_file_path in enumerate(out_file_paths_i, start=1):
+        log(
+            inf=f"{in_file_path_fmtd} -> {out_file_path}",
+            vbs=(
+                f"[P{pid}][{istat.ip_in}/{istat.n_in}][{ip_fld}/{istat.n_fld}]"
+                f"[{ip_out}/{n_out}] plot {out_file_path}"
+            ),
+        )
+    if not dry_run:
+        assert isinstance(plot, BoxedPlot)  # mypy
+        create_plot(plot, out_file_paths_i)
+    n_plt_todo = istat.n_fld - ip_fld
+    if only and istat.ip_tot >= only:
+        if n_plt_todo:
+            log(vbs=f"[only:{only}] skip remaining {n_plt_todo} plot fields")
+    for out_file_path in out_file_paths_i:
+        log(dbg=f"done plotting {out_file_path}")
 
 
 def format_in_file_path(in_file_path, setups_lst):
