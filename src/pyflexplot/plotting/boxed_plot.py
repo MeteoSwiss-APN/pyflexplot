@@ -186,33 +186,25 @@ class BoxedPlot:
 
         arr = replace_infs(arr, levels)
 
-        def nothing_to_plot(arr, levels):
-            """Check if there's anything to plot.
-
-            This allows one to exit before calling contourf if there's nothing
-            to plot, and thus prevent an ugly error.
-            """
-            if np.isnan(arr).all():
-                return True
-            all_below = np.nanmax(arr) < levels.min() and extend not in ["min", "both"]
-            all_above = np.nanmax(arr) > levels.max() and extend not in ["max", "both"]
-            return all_below or all_above
-
-        if nothing_to_plot(arr, levels):
-            return
-
-        contours = self.ax_map.ax.contourf(
-            self.field.lon,
-            self.field.lat,
-            arr,
-            transform=self.ax_map.proj_data,
-            levels=levels,
-            extend=extend,
-            zorder=self.ax_map.zorder["fld"],
-            colors=colors,
-        )
-        for contour in contours.collections:
-            contour.set_rasterized(True)
+        try:
+            contours = self.ax_map.ax.contourf(
+                self.field.lon,
+                self.field.lat,
+                arr,
+                transform=self.ax_map.proj_data,
+                levels=levels,
+                extend=extend,
+                zorder=self.ax_map.zorder["fld"],
+                colors=colors,
+            )
+        except ValueError as e:
+            if str(e) == "'bboxes'cannot be empty":
+                # Nothing to plot (expected error)
+                return
+            raise e
+        else:
+            for contour in contours.collections:
+                contour.set_rasterized(True)
 
 
 def replace_infs(fld: np.ndarray, levels: np.ndarray) -> np.ndarray:
