@@ -3,6 +3,7 @@ Plots.
 """
 # Standard library
 import warnings
+from copy import copy
 from dataclasses import dataclass
 from typing import Any
 from typing import Dict
@@ -32,6 +33,7 @@ from pydantic import validator
 from pyflexplot.data import Field
 
 # Local
+from ..utils.logging import log
 from ..utils.summarize import post_summarize_plot
 from ..utils.summarize import summarizable
 from ..utils.typing import ColorType
@@ -91,6 +93,11 @@ class CloudDomain(Domain):
         lat: np.ndarray = self.field.lat
         lon: np.ndarray = self.field.lon
         assert (lat.size, lon.size) == self.field.time_props.mask_nz.shape
+        lat_min, lat_max = lat[0], lat[-1]
+        lon_min, lon_max = lon[0], lon[-1]
+        d_lat_max = lat_max - lat_min
+        d_lon_max = lon_max - lon_min
+
         mask_lat = self.field.time_props.mask_nz.any(axis=1)
         mask_lon = self.field.time_props.mask_nz.any(axis=0)
         if not any(mask_lat):
@@ -105,33 +112,45 @@ class CloudDomain(Domain):
         else:
             lllon = lon[mask_lon].min()
             urlon = lon[mask_lon].max()
+        lllat = max([lllat, lat_min])
+        urlat = min([urlat, lat_max])
+        lllon = max([lllon, lon_min])
+        urlon = min([urlon, lon_max])
 
         # Increase latitudinal size if minimum specified
         d_lat_min = self.field.var_setups.collect_equal("domain_size_lat")
         if d_lat_min is not None:
             d_lat = urlat - lllat
             if d_lat < d_lat_min:
-                lllat -= 0.5 * (d_lat_min - d_lat)
-                urlat += 0.5 * (d_lat_min - d_lat)
+                lllat -= 0.5 * min([d_lat_min - d_lat, d_lat_max - d_lat])
+                urlat += 0.5 * min([d_lat_min - d_lat, d_lat_max - d_lat])
 
         # Increase latitudinal size if minimum specified
         d_lon_min = self.field.var_setups.collect_equal("domain_size_lon")
         if d_lon_min is not None:
             d_lon = urlon - lllon
             if d_lon < d_lon_min:
-                lllon -= 0.5 * (d_lon_min - d_lon)
-                urlon += 0.5 * (d_lon_min - d_lon)
+                lllon -= 0.5 * min([d_lon_min - d_lon, d_lon_max - d_lon])
+                urlon += 0.5 * min([d_lon_min - d_lon, d_lon_max - d_lon])
 
         # Adjust aspect ratio to avoid distortion
         d_lat = urlat - lllat
         d_lon = urlon - lllon
         aspect = map_axes.get_aspect_ratio()
         if d_lon < d_lat * aspect:
-            lllon -= 0.5 * (d_lat * aspect - d_lon)
-            urlon += 0.5 * (d_lat * aspect - d_lon)
+            lllon -= 0.5 * min([d_lat * aspect - d_lon, d_lon_max - d_lon])
+            urlon += 0.5 * min([d_lat * aspect - d_lon, d_lon_max - d_lon])
         elif d_lat < d_lon / aspect:
-            lllat -= 0.5 * (d_lon / aspect - d_lat)
-            urlat += 0.5 * (d_lon / aspect - d_lat)
+            lllat -= 0.5 * min([d_lon / aspect - d_lat, d_lat_max - d_lat])
+            urlat += 0.5 * min([d_lon / aspect - d_lat, d_lat_max - d_lat])
+
+        # Adjust latitudinal range if necessary
+        if urlat > lat_max:
+            urlat -= urlat - lat_max
+            lllat -= urlat - lat_max
+        elif lllat < lat_min:
+            urlat += lat_min - lllat
+            lllat += lat_min - lllat
 
         return lllon, urlon, lllat, urlat
 
@@ -849,7 +868,8 @@ class MapAxesBoundingBox:
 
     # pylint: disable=R0913  # too-many-arguments
     def set(self, coord_type, lon0, lon1, lat0, lat1):
-        assert not any(np.isnan(c) for c in (lon0, lon1, lat0, lat1))
+        if not all(np.isfinite(c) for c in (lon0, lon1, lat0, lat1)):
+            raise ValueError(f"invalid coordinates: ({lon0}, {lon1}, {lat0}, {lat1}")
         self._curr_coord_type = coord_type
         self._curr_lon0 = lon0
         self._curr_lon1 = lon1
@@ -925,14 +945,23 @@ class MapAxesBoundingBox:
             raise ValueError(
                 f"rel_offset expected to be a pair of floats, not {rel_offset}"
             )
-        lon0, lon1, lat0, lat1 = iter(self)
 
+        # Restrict zoom to geographical latitude range [-90, 90]
+        _, _, lat0_geo, lat1_geo = iter(copy(self).to_geo())
+        lat0_geo_min = -90
+        lat1_geo_max = 90
+        d_lat_geo_max = min([lat0_geo - lat0_geo_min, lat1_geo_max - lat1_geo])
+        d_lat_geo = lat1_geo - lat0_geo
+        fact_min = d_lat_geo / (2 * d_lat_geo_max + d_lat_geo)
+        if fact < fact_min:
+            log(dbg=f"zoom factor {fact} adjusted to {fact_min} (too small for domain)")
+            fact = fact_min
+
+        lon0, lon1, lat0, lat1 = iter(self)
         dlon = lon1 - lon0
         dlat = lat1 - lat0
-
         clon = lon0 + (0.5 + rel_x_offset) * dlon
         clat = lat0 + (0.5 + rel_y_offset) * dlat
-
         dlon_zm = dlon / fact
         dlat_zm = dlat / fact
 
