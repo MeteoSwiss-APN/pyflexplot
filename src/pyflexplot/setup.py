@@ -21,7 +21,6 @@ from typing import Mapping
 from typing import Optional
 from typing import overload
 from typing import Sequence
-from typing import Set
 from typing import Tuple
 from typing import Union
 
@@ -737,9 +736,8 @@ class SetupCollection:
             setups and not isinstance(next(iter(setups)), Setup)
         ):
             raise ValueError(
-                "setups is not an Setup collection",
-                type(setups),
-                type(next(iter(setups))),
+                "setups is not an collection of Setup objects, but a"
+                f" {type(setups).__name__} of {type(next(iter(setups))).__name__}"
             )
         self._setups: List[Setup] = list(setups)
 
@@ -970,7 +968,7 @@ class SetupCollection:
                 true, also sub-values -- that are None.
 
         """
-        values: Set[Any] = set()
+        values: List[Any] = []
         if is_core_setup_param(param) or is_setup_param(param):
             for var_setup in self:
                 if is_core_setup_param(param):
@@ -979,25 +977,32 @@ class SetupCollection:
                     value = getattr(var_setup, param)
                 if isinstance(value, Collection) and flatten:
                     for sub_value in value:
-                        if sub_value is None and exclude_nones:
+                        if exclude_nones and sub_value is None:
                             continue
-                        values.add(sub_value)
+                        if sub_value not in values:
+                            values.append(sub_value)
                 else:
-                    if value is None and exclude_nones:
+                    if exclude_nones and value is None:
                         continue
-                    values.add(value)
-            return sorted(values)
-        if param.startswith("dimensions."):
+                    if value not in values:
+                        values.append(value)
+        elif param.startswith("dimensions."):
             dims_param = param.split(".", 1)[-1]
             if is_dimensions_param(dims_param):
                 for dimensions in self.collect("dimensions"):
                     value = dimensions.get(dims_param)
-                    try:
-                        values |= set(value)
-                    except TypeError:
-                        values.add(value)
-                return sorted(values)
-        raise ValueError("invalid param", param)
+                    for sub_value in (
+                        value if isinstance(value, Collection) else [value]
+                    ):
+                        if exclude_nones and sub_value is None:
+                            continue
+                        if sub_value not in values:
+                            values.append(sub_value)
+            else:
+                raise ValueError("invalid param", param)
+        else:
+            raise ValueError("invalid param", param)
+        return values
 
     def collect_equal(self, param: str) -> Any:
         """Collect the value of a parameter that is shared by all setups."""

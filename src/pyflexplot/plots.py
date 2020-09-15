@@ -75,6 +75,7 @@ from .words import Words
 def prepare_plot(
     field_lst: Sequence[Field],
     prev_out_file_paths: Optional[List[str]] = None,
+    *,
     dry_run: bool = False,
 ) -> Tuple[List[str], Union[BoxedPlot, DummyBoxedPlot]]:
     """Create plots while yielding them with the plot file path one by one."""

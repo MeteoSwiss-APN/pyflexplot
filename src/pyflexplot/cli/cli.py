@@ -158,15 +158,6 @@ def click_prep_setup_params(ctx, param, value):
     default=False,
 )
 @click.option(
-    "--each-only",
-    help=(
-        "Only create the first N plots (at most) for each input file. Useful "
-        "during development; not supposed to be used in production."
-    ),
-    type=int,
-    metavar="N",
-)
-@click.option(
     "--merge-pdfs/--no-merge-pdfs",
     help="Merge PDF plots with the same output file name.",
 )
@@ -278,7 +269,6 @@ def main(
     *,
     cache,
     dry_run,
-    each_only,
     input_setup_params,
     merge_pdfs,
     only,
@@ -296,15 +286,6 @@ def main(
     if not setup_file_paths:
         setups = SetupCollection.from_raw_params([input_setup_params])
     else:
-        # Read setup files
-        # Note: Already added argument `each_only` to `read_many` in order to
-        # plot N plots per input setup file instead of per input data file, as
-        # it is done now, but this does not yet work because it would select N
-        # unexpanded setups per setup file, which may well correspond to a large
-        # number of plots, e.g., in case of many time steps!
-        # The setups would either have to be pre-expanded during reading, or
-        # this had to be solved some other way, but for now, let's just stick
-        # with the current implementation of N plots per input data file...
         setups = SetupFile.read_many(setup_file_paths, override=input_setup_params)
     setups = setups.compress_partially("outfile")
 
@@ -313,58 +294,78 @@ def main(
 
     # Group setups by input file(s)
     setups_by_infile = setups.group("infile")
-
-    class BreakInner(Exception):
-        """Break out of inner loop, but continue outer loop."""
-
-    class BreakOuter(Exception):
-        """Break out of inner and outer loop."""
+    if only and len(setups_by_infile) > only:
+        n_old = len(setups_by_infile)
+        setups_by_infile, skip = (
+            dict(list(setups_by_infile.items())[:only]),
+            list(setups_by_infile)[only:],
+        )
+        s_skip = "\n   ".join([""] + skip)
+        log(vbs=f"[only:{only}] skip {len(skip)}/{n_old} infiles:{s_skip}")
 
     # Create plots input file(s) by input file(s)
     all_out_file_paths = []
     n_in = len(setups_by_infile)
-    i_tot = -1
-    for ip_in, (in_file_path, sub_setups) in enumerate(setups_by_infile.items(), 1):
+    ip_tot = 0
+    for ip_in, (in_file_path, sub_setups) in enumerate(
+        setups_by_infile.items(), start=1
+    ):
+        if only and ip_tot >= only:
+            continue
+        if only and len(sub_setups) > only:
+            n_old = len(sub_setups)
+            sub_setups = SetupCollection(list(sub_setups)[:only])
+            n_skip = n_old - len(sub_setups)
+            log(vbs=f"[only:{only}] skip {n_skip}/{n_old} sub-setups")
         log(vbs=f"[{ip_in}/{n_in}] read {in_file_path}")
         field_lst_lst = read_fields(
             in_file_path, sub_setups, add_ts0=True, dry_run=dry_run, cache_on=cache
         )
         n_fld = len(field_lst_lst)
-        try:
-            for ip_fld, field_lst in enumerate(field_lst_lst, 1):
-                i_tot += 1
-                log(dbg=f"[{ip_in}/{n_in}][{ip_fld}/{n_fld}] prepare plot")
-                in_file_path_fmtd = format_in_file_path(
-                    in_file_path, [field.var_setups for field in field_lst]
-                )
-                out_file_paths_i, plot = prepare_plot(
-                    field_lst, all_out_file_paths, dry_run=dry_run
-                )
-                for out_file_path in out_file_paths_i:
-                    log(
-                        inf=f"{in_file_path_fmtd} -> {out_file_path}",
-                        vbs=f"[{ip_in}/{n_in}][{ip_fld}/{n_fld}] plot {out_file_path}",
+        for ip_fld, field_lst in enumerate(field_lst_lst, start=1):
+            if only and ip_tot >= only:
+                continue
+            log(dbg=f"[{ip_in}/{n_in}][{ip_fld}/{n_fld}] prepare plot")
+            in_file_path_fmtd = format_in_file_path(
+                in_file_path, [field.var_setups for field in field_lst]
+            )
+            out_file_paths_i, plot = prepare_plot(
+                field_lst, all_out_file_paths, dry_run=dry_run
+            )
+            if only:
+                only_i = only - ip_tot
+                if len(out_file_paths_i) > only_i:
+                    n_old = len(out_file_paths_i)
+                    out_file_paths_i, skip = (
+                        out_file_paths_i[:only_i],
+                        out_file_paths_i[only_i:],
                     )
-                if not dry_run:
-                    create_plot(plot, out_file_paths_i)
-
-                n_plt_todo = n_fld - ip_fld
-                if n_plt_todo and each_only and ip_fld >= each_only:
-                    log(vbs=f"skip remaining {n_plt_todo} plots")
-                    raise BreakInner()
-                if only and (i_tot + 1) >= only:
-                    if n_plt_todo:
-                        log(vbs=f"skip remaining {n_plt_todo} plots")
-                    raise BreakOuter()
-                for out_file_path in out_file_paths_i:
-                    log(dbg=f"done plotting {out_file_path}")
-            log(dbg=f"done processing {in_file_path}")
-        except BreakInner:
-            continue
-        except BreakOuter:
+                    n_skip = len(skip)
+                    s_skip = "\n   ".join([""] + skip)
+                    log(vbs=f"[only:{only}] skip {n_skip}/{n_old} plot files:{s_skip}")
+            n_out = len(out_file_paths_i)
+            ip_tot += n_out
+            for ip_out, out_file_path in enumerate(out_file_paths_i, start=1):
+                log(
+                    inf=f"{in_file_path_fmtd} -> {out_file_path}",
+                    vbs=(
+                        f"[{ip_in}/{n_in}][{ip_fld}/{n_fld}][{ip_out}/{n_out}]"
+                        f" plot {out_file_path}"
+                    ),
+                )
+            if not dry_run:
+                create_plot(plot, out_file_paths_i)
+            n_plt_todo = n_fld - ip_fld
+            if only and ip_tot >= only:
+                if n_plt_todo:
+                    log(vbs=f"[only:{only}] skip remaining {n_plt_todo} plot fields")
+            for out_file_path in out_file_paths_i:
+                log(dbg=f"done plotting {out_file_path}")
+        log(dbg=f"done processing {in_file_path}")
+        if only and ip_tot >= only:
             remaining_files = n_in - ip_in
             if remaining_files:
-                log(vbs=f"skip remaining {remaining_files} input files")
+                log(vbs=f"[only:{only}] skip remaining {remaining_files} input files")
             break
 
     if merge_pdfs:
