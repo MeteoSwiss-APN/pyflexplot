@@ -389,8 +389,11 @@ def main(
         fct = partial(
             create_plots, in_file_path, all_out_file_paths, only, dry_run, istat
         )
-        pool.starmap(fct, enumerate(field_lst_lst, start=1))
-        # SR_TMP >
+        if num_procs > 1:
+            pool.starmap(fct, enumerate(field_lst_lst, start=1))
+        else:
+            for args in enumerate(field_lst_lst, start=1):
+                fct(*args)
         log(dbg=f"done processing {in_file_path}")
         if only and istat.ip_tot >= only:
             remaining_files = istat.n_in - istat.ip_in
@@ -411,7 +414,9 @@ def main(
 
 def get_pid() -> int:
     name = multiprocessing.current_process().name
-    if name.startswith("ForkPoolWorker-"):
+    if name == "MainProcess":
+        return 0
+    elif name.startswith("ForkPoolWorker-"):
         return int(name.split("-")[1])
     else:
         raise NotImplementedError(f"cannot derive pid from process name: {name}")
