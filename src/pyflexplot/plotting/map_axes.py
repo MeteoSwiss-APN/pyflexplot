@@ -86,6 +86,8 @@ class Domain:
 class CloudDomain(Domain):
     """Domain derived from spatial distribution of cloud over time."""
 
+    # pylint: disable=R0914  # too-many-locals
+    # pylint: disable=R0915  # too-many-statements
     def _get_bbox_corners(
         self, map_axes: "MapAxes"
     ) -> Tuple[float, float, float, float]:
