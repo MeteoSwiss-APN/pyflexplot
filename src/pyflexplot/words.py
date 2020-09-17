@@ -25,10 +25,10 @@ WORDS = TranslatedWords("words", {})
 # A
 WORDS.add(en="accumulated over", de=f'akkumuliert {s["ue"]}ber')
 WORDS.add(
-    en={"*": "activity concentration", "abbr": "activity concentr."},
+    en={"*": "air activity concentration", "abbr": "air activ. concentr."},
     de={
-        "*": f'Aktivit{s["ae"]}tskonzentration',
-        "abbr": f'Aktivit{s["ae"]}tskonzentr.',
+        "*": f'Luftaktivit{s["ae"]}tskonzentration',
+        "abbr": "Luftaktiv.-Konzentr.",
     },
 )
 WORDS.add(en="arrival", de="Ankunft")

@@ -3134,7 +3134,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": 'Ensemble-Maximum der integrierten Aktivit$\\mathrm{\\"a}$tskonzentration',
+                    "s": 'Ensemble-Maximum der integrierten Luftaktivit$\\mathrm{\\"a}$tskonzentration',
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3962,7 +3962,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": 'Aktivit$\\mathrm{\\"a}$tskonzentr.',
+                    "s": "Luftaktiv.-Konzentr.",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

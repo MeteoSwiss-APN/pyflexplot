@@ -826,15 +826,17 @@ def format_names_etc(
 
     def format_var_names(setup: Setup, words: TranslatedWords) -> Tuple[str, str, str]:
         if setup.core.input_variable == "concentration":
-            var_name = str(words["activity_concentration"])
-            var_name_abbr = str(words["activity_concentration", "abbr"])
+            var_name = str(words["air_activity_concentration"])
+            var_name_abbr = str(words["air_activity_concentration", "abbr"])
             if setup.core.integrate:
                 var_name_rel = (
                     f"{words['of', 'fg']} {words['integrated', 'g']}"
-                    f" {words['activity_concentration']}"
+                    f" {words['air_activity_concentration']}"
                 )
             else:
-                var_name_rel = f"{words['of', 'fg']} {words['activity_concentration']}"
+                var_name_rel = (
+                    f"{words['of', 'fg']} {words['air_activity_concentration']}"
+                )
         elif setup.core.input_variable == "deposition":
             dep_type_word = (
                 "total"

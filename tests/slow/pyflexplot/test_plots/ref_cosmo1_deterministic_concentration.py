@@ -2260,7 +2260,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": 'Aktivit$\\mathrm{\\"a}$tskonzentration',
+                    "s": 'Luftaktivit$\\mathrm{\\"a}$tskonzentration',
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
