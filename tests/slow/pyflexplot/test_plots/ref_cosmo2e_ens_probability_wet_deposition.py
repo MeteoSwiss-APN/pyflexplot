@@ -1759,7 +1759,6 @@ plot_summary = {
                 "textcoords": "offset points",
                 "va": "center",
                 "size": 9.0,
-                "clip_on": True,
                 "rasterized": False,
             },
             {
@@ -1785,7 +1784,6 @@ plot_summary = {
                 "textcoords": "offset points",
                 "va": "center",
                 "size": 9.0,
-                "clip_on": True,
                 "rasterized": False,
             },
             {
@@ -1811,7 +1809,6 @@ plot_summary = {
                 "textcoords": "offset points",
                 "va": "center",
                 "size": 9.0,
-                "clip_on": True,
                 "rasterized": False,
             },
             {
@@ -1837,7 +1834,6 @@ plot_summary = {
                 "textcoords": "offset points",
                 "va": "center",
                 "size": 9.0,
-                "clip_on": True,
                 "rasterized": False,
             },
             {
@@ -1863,7 +1859,6 @@ plot_summary = {
                 "textcoords": "offset points",
                 "va": "center",
                 "size": 9.0,
-                "clip_on": True,
                 "rasterized": False,
             },
             {
@@ -1889,7 +1884,6 @@ plot_summary = {
                 "textcoords": "offset points",
                 "va": "center",
                 "size": 9.0,
-                "clip_on": True,
                 "rasterized": False,
             },
             {
@@ -1915,7 +1909,6 @@ plot_summary = {
                 "textcoords": "offset points",
                 "va": "center",
                 "size": 9.0,
-                "clip_on": True,
                 "rasterized": False,
             },
             {

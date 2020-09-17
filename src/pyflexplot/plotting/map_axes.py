@@ -702,6 +702,9 @@ class MapAxes:
             )
         ).records()
 
+        plot_domain = mpl.patches.Rectangle(
+            xy=(0, 0), width=1.0, height=1.0, transform=self.ax.transAxes
+        )
         for city in cities:
             lon, lat = city.geometry.x, city.geometry.y
             if is_visible(city) and is_of_interest(city):
@@ -716,15 +719,16 @@ class MapAxes:
                     zorder=self.zorder["geo_upper"],
                     rasterized=rasterized,
                 )
-                self.add_text(
+                text = self.add_text(
                     lon,
                     lat,
                     get_name(city),
                     va="center",
                     size=9 * self.config.scale_fact,
-                    clip_on=True,
                     rasterized=rasterized,
                 )
+                # Note: `clip_on=True` doesn't work in cartopy v0.18
+                text.set_clip_path(plot_domain)
 
     def _ax_add_data_domain_outline(self) -> None:
         """Add domain outlines to map plot."""
