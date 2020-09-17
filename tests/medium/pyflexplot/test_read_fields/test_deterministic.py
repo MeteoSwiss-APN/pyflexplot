@@ -62,7 +62,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
 @pytest.mark.parametrize(
     "config",
     [
-        Config(  # [conf0]
+        Config(  # [config0]
             datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["spec002"],
@@ -82,7 +82,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
                 },
             },
         ),
-        Config(  # [conf1]
+        Config(  # [config1]
             datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["DD_spec002"],
@@ -103,7 +103,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             },
             scale_fld_ref=1 / 3,
         ),
-        Config(  # [conf2]
+        Config(  # [config2]
             datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["WD_spec002"],
@@ -124,7 +124,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             },
             scale_fld_ref=1 / 3,
         ),
-        Config(  # [conf3]
+        Config(  # [config3]
             datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["WD_spec002", "DD_spec002"],
@@ -146,7 +146,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             },
             scale_fld_ref=1 / 3,
         ),
-        Config(  # [conf4]
+        Config(  # [config4]
             datafilename=datafilename2,
             model="COSMO-1",
             var_names_ref=["spec001"],
@@ -166,7 +166,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
                 },
             },
         ),
-        Config(  # [conf5]
+        Config(  # [config5]
             datafilename=datafilename2,
             model="COSMO-1",
             var_names_ref=["WD_spec001", "DD_spec001"],
@@ -188,7 +188,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             },
             scale_fld_ref=1 / 3,
         ),
-        Config(  # [conf6]
+        Config(  # [config6]
             datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["DD_spec001", "DD_spec002", "WD_spec001", "WD_spec002"],
@@ -211,7 +211,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             },
             scale_fld_ref=1 / 3,
         ),
-        Config(  # [conf7]
+        Config(  # [config7]
             datafilename=datafilename3,
             model="IFS-HRES",
             var_names_ref=["spec001_mr"],
@@ -278,7 +278,7 @@ def test_single(datadir, config):  # noqa:F811
 @pytest.mark.parametrize(
     "config",
     [
-        Config(  # [conf0]
+        Config(  # [config0]
             datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["spec002"],
@@ -299,7 +299,7 @@ def test_single(datadir, config):  # noqa:F811
             },
             scale_fld_ref=3.0,
         ),
-        Config(  # [conf1]
+        Config(  # [config1]
             datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["spec002"],
@@ -320,7 +320,7 @@ def test_single(datadir, config):  # noqa:F811
             },
             scale_fld_ref=3.0,
         ),
-        Config(  # [conf2]
+        Config(  # [config2]
             datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["DD_spec002"],
@@ -340,7 +340,7 @@ def test_single(datadir, config):  # noqa:F811
                 },
             },
         ),
-        Config(  # [conf3]
+        Config(  # [config3]
             datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["WD_spec002"],
@@ -360,7 +360,7 @@ def test_single(datadir, config):  # noqa:F811
                 },
             },
         ),
-        Config(  # [conf4]
+        Config(  # [config4]
             datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["WD_spec001", "DD_spec001"],
@@ -381,7 +381,7 @@ def test_single(datadir, config):  # noqa:F811
                 },
             },
         ),
-        Config(  # [conf5]
+        Config(  # [config5]
             datafilename=datafilename2,
             model="COSMO-1",
             var_names_ref=["spec001"],
@@ -403,7 +403,7 @@ def test_single(datadir, config):  # noqa:F811
             derived_setup_params=[{"dimensions": {"level": 2}}],
             scale_fld_ref=3.0,
         ),
-        Config(  # [conf6]
+        Config(  # [config6]
             datafilename=datafilename2,
             model="COSMO-1",
             var_names_ref=["WD_spec001", "DD_spec001"],

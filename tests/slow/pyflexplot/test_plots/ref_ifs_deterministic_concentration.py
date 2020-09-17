@@ -24243,7 +24243,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "Konzentration (ng m$^{-3}$)",
+                    "s": "Konzentration (Bq m$^{-3}$)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

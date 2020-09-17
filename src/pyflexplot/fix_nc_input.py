@@ -12,7 +12,6 @@ import numpy as np
 
 # Local
 from .meta_data import MetaData
-from .species import get_species
 from .utils.logging import log
 
 
@@ -28,22 +27,55 @@ class FlexPartDataFixer:
     def fix_nc_var_fld(
         self, fld: np.ndarray, model: str, var_ncattrs: Mapping[str, Any]
     ) -> None:
+        unit = var_ncattrs["units"]
         if model in self.cosmo_models:
-            self._fix_nc_var_cosmo(fld, var_ncattrs)
+            if unit in ["ng kg-1", "1e-12 kg m-2"]:
+                fact = 1.0e-12
+            else:
+                msg = f"model {model}: unrecognized unit '{unit}'; skip variable fixes"
+                log(wrn=msg)
+                return
         elif model in self.ifs_models:
-            pass
+            if unit in ["ng m-3", "1e-12 kg m-2"]:
+                fact = 1.0
+            else:
+                msg = f"model {model}: unrecognized unit '{unit}'; skip variable fixes"
+                log(wrn=msg)
+                return
         else:
             raise NotImplementedError("model", model)
+        fld[:] *= fact
+        return
 
     def fix_meta_data(
         self, model: str, integrate: bool, mdata: Union[MetaData, Sequence[MetaData]]
     ) -> None:
+        if isinstance(mdata, Sequence):
+            for mdata_i in mdata:
+                self.fix_meta_data(model, integrate, mdata_i)
+            return
+        unit = str(mdata.variable.unit)
         if model in self.cosmo_models:
-            self._fix_meta_data_cosmo(integrate, mdata)
+            if unit == "ng kg-1":
+                new_unit = "Bq h m-3" if integrate else "Bq m-3"
+            elif unit == "1e-12 kg m-2":
+                new_unit = "Bq h m-2" if integrate else "Bq m-2"
+            else:
+                msg = f"model {model}: unrecognized unit '{unit}'; skip meta data fixes"
+                log(wrn=msg)
+                return
         elif model in self.ifs_models:
-            pass
+            if unit == "ng m-3":
+                new_unit = "Bq h m-3" if integrate else "Bq m-3"
+            elif unit == "1e-12 kg m-2":
+                new_unit = "Bq h m-2" if integrate else "Bq m-2"
+            else:
+                msg = f"model {model}: unrecognized unit '{unit}'; skip meta data fixes"
+                log(wrn=msg)
+                return
         else:
             raise NotImplementedError("model", model)
+        mdata.variable.unit = new_unit
 
     def fix_global_grid(self, lon, fld_time, idx_lon=-1):
         """Shift global grid longitudinally to fit into (-180..180) range."""
@@ -109,38 +141,3 @@ class FlexPartDataFixer:
                 )
             log(wrn=f"fix global data: shift westward by {n_shift} * {dlon} deg")
             return
-
-    def _fix_nc_var_cosmo(
-        self, fld: np.ndarray, var_ncattrs: Mapping[str, Any]
-    ) -> None:
-        name = var_ncattrs["long_name"]
-        if name.endswith("_dry_deposition") or name.endswith("_wet_deposition"):
-            name = name.split("_")[0]
-        try:
-            get_species(name=name)
-        except ValueError:
-            log(wrn=f"unrecognized variable name '{name}'; skip input data fixes")
-            return
-        unit = var_ncattrs["units"]
-        if unit in ["ng kg-1", "1e-12 kg m-2"]:
-            fact = 1.0e-12
-        else:
-            return
-        fld[:] *= fact
-
-    def _fix_meta_data_cosmo(
-        self, integrate: bool, mdata: Union[MetaData, Sequence[MetaData]]
-    ) -> None:
-        if isinstance(mdata, Sequence):
-            for mdata_i in mdata:
-                self._fix_meta_data_cosmo(integrate, mdata_i)
-            return
-        assert isinstance(mdata, MetaData)  # mypy
-        unit = str(mdata.variable.unit)
-        if unit == "ng kg-1":
-            new_unit = "Bq h m-3" if integrate else "Bq m-3"
-        elif unit == "1e-12 kg m-2":
-            new_unit = "Bq h m-2" if integrate else "Bq m-2"
-        else:
-            return
-        mdata.variable.unit = new_unit

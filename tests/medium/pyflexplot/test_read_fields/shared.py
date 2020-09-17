@@ -64,7 +64,7 @@ def fix_nc_fld(fld, model):
     if model.startswith("COSMO-"):
         fld[:] *= 1e-12
     elif model.startswith("IFS-"):
-        pass
+        fld[:] *= 1.0
     else:
         raise NotImplementedError("model", model)
 

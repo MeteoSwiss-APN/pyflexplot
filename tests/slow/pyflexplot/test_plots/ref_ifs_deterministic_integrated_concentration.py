@@ -24243,7 +24243,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "Int. concentr. (ng m$^{-3}$)",
+                    "s": "Int. concentr. (Bq h m$^{-3}$)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

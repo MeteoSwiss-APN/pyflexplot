@@ -24175,7 +24175,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "Deposition (1e-12 kg m$^{-2}$)",
+                    "s": "Deposition (Bq h m$^{-2}$)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
