@@ -17,6 +17,7 @@ import pytest  # type: ignore
 # First-party
 from pyflexplot.input import read_fields
 from pyflexplot.plots import create_plot
+from pyflexplot.plots import format_out_file_paths
 from pyflexplot.plots import prepare_plot
 from pyflexplot.setup import Setup
 from pyflexplot.setup import SetupCollection
@@ -90,9 +91,9 @@ class _TestBase:
         return field
 
     def get_plot(self, field):
-        field_lst = [field]
         outfiles, plots = [], []
-        outfiles, plot = prepare_plot(field_lst, prev_paths=outfiles)
+        outfiles = format_out_file_paths(field, prev_paths=outfiles)
+        plot = prepare_plot(field)
         create_plot(plot, outfiles, write=False, show_version=False)
         plots.append(plot)
         assert len(outfiles) == len(plots) == 1

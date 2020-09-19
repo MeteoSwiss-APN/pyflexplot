@@ -35,7 +35,6 @@ import matplotlib as mpl
 import numpy as np
 
 # First-party
-from srutils.dict import recursive_update
 from srutils.geo import Degrees
 from srutils.plotting import truncate_cmap
 
@@ -60,7 +59,6 @@ from .plotting.map_axes import MapAxesConfig
 from .plotting.map_axes import ReleaseSiteDomain
 from .plotting.text_box_axes import TextBoxAxes
 from .setup import Setup
-from .setup import SetupCollection
 from .utils.datetime import init_datetime
 from .utils.formatting import escape_format_keys
 from .utils.formatting import format_level_ranges
@@ -73,29 +71,10 @@ from .words import WORDS
 from .words import Words
 
 
-def prepare_plot(
-    field_lst: Sequence[Field],
-    *,
-    prev_paths: Optional[List[str]] = None,
-    dest_dir: Optional[str] = None,
-    dry_run: bool = False,
-) -> Tuple[List[str], Union[BoxedPlot, DummyBoxedPlot]]:
-    """Create plots while yielding them with the plot file path one by one."""
-    log(dbg=f"preparing setups for plot based on {len(field_lst)} fields")
-
-    # Merge setups across Field objects
-    var_setups_lst = [field.var_setups for field in field_lst]
-    setup = SetupCollection.merge(var_setups_lst).compress()
-
-    # Merge mdata and nc_meta_data across Field objects
-    nc_meta_data: Dict[str, Any] = {}
-    mdata_lst: List[MetaData] = []
-    for field in field_lst:
-        recursive_update(nc_meta_data, field.nc_meta_data, inplace=True)
-        if field.mdata is not None:
-            mdata_lst.append(field.mdata)
-    mdata = mdata_lst[0].merge_with(mdata_lst[1:])
-
+def format_out_file_paths(
+    field: Field, prev_paths: List[str], dest_dir: Optional[str] = None
+) -> List[str]:
+    setup = field.var_setups.compress()
     out_file_paths: List[str] = []
     for out_file_template in (
         [setup.outfile] if isinstance(setup.outfile, str) else setup.outfile
@@ -110,21 +89,24 @@ def prepare_plot(
                 os.path.abspath(f"{dest_dir}/{out_file_template}")
             )
         out_file_path = FilePathFormatter(prev_paths).format(
-            out_file_template, setup, mdata, nc_meta_data
+            out_file_template, setup, field.mdata, field.nc_meta_data
         )
         log(dbg=f"preparing plot '{out_file_path}'")
         out_file_paths.append(out_file_path)
+    return out_file_paths
+
+
+def prepare_plot(
+    field: Field, *, dry_run: bool = False
+) -> Union[BoxedPlot, DummyBoxedPlot]:
+    """Create plots while yielding them with the plot file path one by one."""
+    log(dbg="preparing setups for plot")
     if dry_run:
-        return out_file_paths, DummyBoxedPlot()
+        return DummyBoxedPlot()
     else:
-        # SR_TMP <  SR_MULTIPANEL
-        if len(field_lst) > 1:
-            raise NotImplementedError("multipanel plot")
-        field = next(iter(field_lst))
+        config = create_plot_config(field, WORDS, SYMBOLS)
         map_config = create_map_config(field)
-        # SR_TMP >  SR_MULTIPANEL
-        config = create_plot_config(setup, WORDS, SYMBOLS, cast(MetaData, field.mdata))
-        return out_file_paths, BoxedPlot(field, config, map_config)
+        return BoxedPlot(field, config, map_config)
 
 
 def create_plot(
@@ -149,7 +131,9 @@ def create_plot(
     for file_path in file_paths:
         log(dbg=f"creating plot {file_path}")
         if write:
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            dir_path = os.path.dirname(file_path)
+            if dir_path:
+                os.makedirs(dir_path, exist_ok=True)
             plot.write(file_path)
         log(dbg=f"created plot {file_path}")
     plot.clean()
@@ -591,8 +575,10 @@ def create_map_config(field: Field) -> MapAxesConfig:
 # SR_TODO Create dataclass with default values for text box setup
 # pylint: disable=R0912  # too-many-branches
 def create_plot_config(
-    setup: Setup, words: TranslatedWords, symbols: Words, mdata: MetaData
+    field: Field, words: TranslatedWords, symbols: Words
 ) -> BoxedPlotConfig:
+    setup = field.var_setups.compress()
+    mdata = field.mdata
     words.set_active_lang(setup.core.lang)
     new_config_dct: Dict[str, Any] = {
         "setup": setup,

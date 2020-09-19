@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 from typing import cast
-from typing import Dict
 from typing import List
 from typing import Mapping
 from typing import Optional
@@ -28,7 +27,11 @@ class FilePathFormatter:
 
     # pylint: disable=W0102  # dangerous-default-value ([])
     def format(
-        self, template: str, setup: Setup, mdata: MetaData, nc_meta_data: Dict[str, Any]
+        self,
+        template: str,
+        setup: Setup,
+        mdata: MetaData,
+        nc_meta_data: Mapping[str, Any],
     ) -> str:
         log(dbg=f"formatting path '{template}'")
         path = self._format_template(template, setup, mdata, nc_meta_data)
@@ -42,7 +45,11 @@ class FilePathFormatter:
         return path
 
     def _format_template(
-        self, template: str, setup: Setup, mdata: MetaData, nc_meta_data: Dict[str, Any]
+        self,
+        template: str,
+        setup: Setup,
+        mdata: MetaData,
+        nc_meta_data: Mapping[str, Any],
     ) -> str:
         input_variable = setup.core.input_variable
         if setup.core.input_variable == "deposition":

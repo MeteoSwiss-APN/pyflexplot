@@ -10,8 +10,8 @@ import re
 import sys
 import time
 import traceback
-from os.path import abspath
 from functools import partial
+from os.path import abspath
 from pathlib import Path
 from typing import Any
 from typing import Dict
@@ -34,12 +34,13 @@ from .. import data_path
 from ..data import Field
 from ..input import read_fields
 from ..plots import create_plot
+from ..plots import format_out_file_paths
 from ..plots import prepare_plot
-from ..utils.exceptions import PDFFileReadError
 from ..plotting.boxed_plot import BoxedPlot
 from ..setup import Setup
 from ..setup import SetupCollection
 from ..setup import SetupFile
+from ..utils.exceptions import PDFFileReadError
 from ..utils.formatting import format_range
 from ..utils.logging import log
 from ..utils.logging import set_log_level
@@ -425,20 +426,35 @@ def main(
         field_lst_lst = read_fields(
             in_file_path, sub_setups, add_ts0=True, dry_run=dry_run, cache_on=cache
         )
-        istat.n_fld = len(field_lst_lst)
-        fct = partial(
-            create_plots,
-            in_file_path,
-            all_out_file_paths,
-            (tmp_dir or dest_dir),
-            only,
-            dry_run,
-            istat,
+        # SR_TMP <  SR_MULTIPANEL
+        for field_lst in field_lst_lst:
+            if len(field_lst) > 1:
+                raise NotImplementedError("multipanel plot")
+        field_lst = [next(iter(field_lst)) for field_lst in field_lst_lst]
+        # SR_TMP >  SR_MULTIPANEL
+        in_file_path_lst = [
+            format_in_file_path(in_file_path, field.var_setups) for field in field_lst
+        ]
+        out_file_paths_lst = [
+            format_out_file_paths(
+                field,
+                prev_paths=all_out_file_paths,
+                dest_dir=(tmp_dir or dest_dir or "."),
+            )
+            for field in field_lst
+        ]
+        istat.n_fld = len(field_lst)
+        fct = partial(create_plots, only, dry_run, istat)
+        iter_args = zip(
+            range(1, len(field_lst) + 1),
+            in_file_path_lst,
+            out_file_paths_lst,
+            field_lst,
         )
         if num_procs > 1:
-            pool.starmap(fct, enumerate(field_lst_lst, start=1))
+            pool.starmap(fct, iter_args)
         else:
-            for args in enumerate(field_lst_lst, start=1):
+            for args in iter_args:
                 fct(*args)
         log(dbg=f"done processing {in_file_path}")
         if only and istat.ip_tot >= only:
@@ -514,14 +530,13 @@ def get_pid() -> int:
 
 
 def create_plots(
-    in_file_path: str,
-    all_out_file_paths: List[str],
-    dest_dir: Optional[str],
     only: Optional[int],
     dry_run: bool,
     istat: SharedIterationState,
     ip_fld: int,
-    field_lst: List[Field],
+    in_file_path: str,
+    out_file_paths: List[str],
+    field: Field,
 ):
     pid = get_pid()
     if only and istat.ip_tot >= only:
@@ -534,27 +549,23 @@ def create_plots(
         )
     )
 
-    setups_lst = [field.var_setups for field in field_lst]
-    in_file_path_fmtd = format_in_file_path(in_file_path, setups_lst)
-    out_file_paths_i, plot = prepare_plot(
-        field_lst, prev_paths=all_out_file_paths, dest_dir=dest_dir, dry_run=dry_run
-    )
+    plot = prepare_plot(field, dry_run=dry_run)
     if only:
         only_i = only - istat.ip_tot
-        if len(out_file_paths_i) > only_i:
-            n_old = len(out_file_paths_i)
-            out_file_paths_i, skip = (
-                out_file_paths_i[:only_i],
-                out_file_paths_i[only_i:],
+        if len(out_file_paths) > only_i:
+            n_old = len(out_file_paths)
+            out_file_paths, skip = (
+                out_file_paths[:only_i],
+                out_file_paths[only_i:],
             )
             n_skip = len(skip)
             s_skip = "\n   ".join([""] + skip)
             log(vbs=f"[only:{only}] skip {n_skip}/{n_old} plot files:{s_skip}")
-    n_out = len(out_file_paths_i)
+    n_out = len(out_file_paths)
     istat.ip_tot += n_out
-    for ip_out, out_file_path in enumerate(out_file_paths_i, start=1):
+    for ip_out, out_file_path in enumerate(out_file_paths, start=1):
         log(
-            inf=f"{in_file_path_fmtd} -> {out_file_path}",
+            inf=f"{in_file_path} -> {out_file_path}",
             vbs=(
                 f"[P{pid}][{istat.ip_in}/{istat.n_in}][{ip_fld}/{istat.n_fld}]"
                 f"[{ip_out}/{n_out}] plot {out_file_path}"
@@ -562,37 +573,23 @@ def create_plots(
         )
     if not dry_run:
         assert isinstance(plot, BoxedPlot)  # mypy
-        create_plot(plot, out_file_paths_i)
+        create_plot(plot, out_file_paths)
     n_plt_todo = istat.n_fld - ip_fld
     if only and istat.ip_tot >= only:
         if n_plt_todo:
             log(vbs=f"[only:{only}] skip remaining {n_plt_todo} plot fields")
-    for out_file_path in out_file_paths_i:
+    for out_file_path in out_file_paths:
         log(dbg=f"done plotting {out_file_path}")
 
 
-def format_in_file_path(in_file_path, setups_lst):
-    def collect_ens_member_ids(setups_lst):
-        ens_member_ids = None
-        for i, setups in enumerate(setups_lst):
-            ens_member_ids_i = setups.collect_equal("ens_member_id")
-            if i == 0:
-                ens_member_ids = ens_member_ids_i
-            elif ens_member_ids_i != ens_member_ids:
-                raise Exception(
-                    "ens_member_id differs between setups",
-                    ens_member_ids,
-                    ens_member_ids_i,
-                )
-        return ens_member_ids
-
-    ens_member_ids = collect_ens_member_ids(setups_lst)
+def format_in_file_path(in_file_path, setups: SetupCollection) -> str:
+    ens_member_ids = setups.collect_equal("ens_member_id")
     if ens_member_ids is None:
         return in_file_path
-    match = re.match(
-        r"(?P<start>.*)(?P<pattern>{ens_member(:(?P<fmt>[0-9]*d))?})(?P<end>.*)",
-        in_file_path,
-    )
+    pattern = r"(?P<start>.*)(?P<pattern>{ens_member(:(?P<fmt>[0-9]*d))?})(?P<end>.*)"
+    match = re.match(pattern, in_file_path)
+    if not match:
+        raise Exception("file path did not match '{pattern}': {in_file_path}")
     s_ids = format_range(
         sorted(ens_member_ids), fmt=match.group("fmt"), join_range="..", join_others=","
     )
