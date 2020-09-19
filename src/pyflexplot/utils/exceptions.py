@@ -50,5 +50,9 @@ class NotSummarizableError(Exception):
     """Object could not be summarized."""
 
 
+class PDFFileReadError(Exception):
+    """Error while reading a PDF file."""
+
+
 class UnequalSetupParamValuesError(Exception):
     """Values of a param differs between multiple setups."""

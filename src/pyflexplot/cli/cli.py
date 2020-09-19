@@ -8,7 +8,9 @@ import multiprocessing
 import os
 import re
 import sys
+import time
 import traceback
+from os.path import abspath
 from functools import partial
 from pathlib import Path
 from typing import Any
@@ -33,6 +35,7 @@ from ..data import Field
 from ..input import read_fields
 from ..plots import create_plot
 from ..plots import prepare_plot
+from ..utils.exceptions import PDFFileReadError
 from ..plotting.boxed_plot import BoxedPlot
 from ..setup import Setup
 from ..setup import SetupCollection
@@ -283,11 +286,11 @@ def click_prep_setup_params(ctx, param, value):
 @click.option(
     "--tmp-dir",
     help=(
-        "Temporary directory in which the plots are created before being moved"
-        " to DEST_DIR in the end. Defaults to DEST_DIR."
+        "Temporary directory in which the plots are created before being moved to"
+        " DEST_DIR in the end."
     ),
     metavar="TMP_DIR",
-    default=None,
+    default=f"tmp-pyflexplot-{int(time.time())}",
 )
 @click.option(
     "--verbose",
@@ -450,26 +453,41 @@ def main(
 
     if merge_pdfs:
         log(vbs="merge PDF plots")
-        all_out_file_paths = merge_pdf_plots(
-            all_out_file_paths,
-            dest_dir=(dest_dir or "."),
-            keep_merged=keep_merged_pdfs,
-            dry_run=(dry_run and not merge_pdfs_dry),
-        )
+        pdf_dry_run = dry_run and not merge_pdfs_dry
+        iter_max = 1 if abspath(dest_dir or ".") == abspath(tmp_dir) else 10
+        for iter_i in range(iter_max):
+            try:
+                pdf_page_paths = merge_pdf_plots(
+                    all_out_file_paths,
+                    dest_dir=(dest_dir or "."),
+                    keep_merged=keep_merged_pdfs,
+                    dry_run=pdf_dry_run,
+                )
+            except PDFFileReadError as e:
+                log(err=f"Error merging PDFs ({e}); retry {iter_i + 1}/{iter_max}")
+                continue
+            else:
+                for path in pdf_page_paths:
+                    if not pdf_dry_run and not keep_merged_pdfs:
+                        log(dbg=f"remove {path}")
+                        Path(path).unlink()
+                break
+        else:
+            log(err="Could not merge PDFs in {iter_max} attempts")
 
     # Remove remaining (after PDF merging) output files  to destination
     if dest_dir or tmp_dir:
         for file_path in all_out_file_paths:
             file_path_rel = os.path.relpath(file_path, start=(dest_dir or "."))
             file_path_dest = f"{dest_dir or '.'}/{file_path_rel}"
-            if os.path.abspath(file_path) == os.path.abspath(file_path_dest):
+            if abspath(file_path) == abspath(file_path_dest):
                 continue
             log(vbs=f"{file_path} -> {file_path_dest}")
             os.makedirs(os.path.dirname(file_path_dest), exist_ok=True)
             os.replace(file_path, file_path_dest)
 
     # Remove temporary directory (if given) unless it already existed before
-    remove_tmpdir = tmp_dir and not os.listdir(tmp_dir) and not dry_run
+    remove_tmpdir = tmp_dir and not dry_run and not os.listdir(tmp_dir)
     if remove_tmpdir:
         log(
             dbg=f"recursively removing temporary directory '{tmp_dir}'",
@@ -582,13 +600,12 @@ def format_in_file_path(in_file_path, setups_lst):
 
 
 def merge_pdf_plots(
-    paths: Sequence[str],
+    paths: List[str],
     *,
     dest_dir: Optional[str] = None,
     keep_merged: bool = True,
     dry_run: bool = False,
 ) -> List[str]:
-    paths = list(paths)
 
     # Collect PDFs
     pdf_paths: List[str] = []
@@ -614,7 +631,11 @@ def merge_pdf_plots(
             if rx_related.search(other_path):
                 pdf_paths.remove(other_path)
                 grouped_pdf_paths[-1].append(other_path)
-    grouped_pdf_paths = [group for group in grouped_pdf_paths if len(group) > 1]
+    grouped_pdf_paths = [
+        sorted_paths(group, dup_sep=".")
+        for group in grouped_pdf_paths
+        if len(group) > 1
+    ]
 
     def merge_paths(paths: List[str]) -> str:
         unnumbered = False
@@ -647,11 +668,12 @@ def merge_pdf_plots(
         return f"{base}{s_idcs}.pdf"
 
     # Merge PDFs with shared base name
+    merged_pages: List[str] = []
     for group in grouped_pdf_paths:
         merged = group[0]
         if dest_dir:
             merged = f"{dest_dir}/{os.path.basename(merged)}"
-        if keep_merged and os.path.abspath(merged) == os.path.abspath(group[0]):
+        if keep_merged and abspath(merged) == abspath(group[0]):
             raise Exception(
                 "input and output files are the same file, which is not allowed for"
                 f" remove_merged=T: '{merged}'"
@@ -661,17 +683,23 @@ def merge_pdf_plots(
         if not dry_run:
             writer = PdfFileWriter()
             for path in group:
-                writer.addPage(PdfFileReader(path).getPage(0))
+                try:
+                    file = PdfFileReader(path)
+                except ValueError as e:
+                    if str(e).startswith("invalid literal for int() with base 10"):
+                        # Occurs sporadically; likely a file system issue
+                        raise PDFFileReadError(path) from e
+                    else:
+                        raise e
+                page = file.getPage(0)
+                writer.addPage(page)
             with open(merged, "wb") as fo:
                 writer.write(fo)
         for path in group:
-            if path != merged:
-                paths.remove(path)
-                if not dry_run and not keep_merged:
-                    log(dbg=f"remove {path}")
-                    Path(path).unlink()
-
-    return paths
+            paths.remove(path)
+            if abspath(path) != abspath(merged):
+                merged_pages.append(path)
+    return merged_pages
 
 
 def open_plots(cmd, file_paths, dry_run):
