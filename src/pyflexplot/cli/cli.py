@@ -24,6 +24,7 @@ from typing import Tuple
 import click
 from PyPDF2 import PdfFileReader
 from PyPDF2 import PdfFileWriter
+from PyPDF2.utils import PdfReadError
 
 # First-party
 from srutils.str import sorted_paths
@@ -40,7 +41,6 @@ from ..plotting.boxed_plot import BoxedPlot
 from ..setup import Setup
 from ..setup import SetupCollection
 from ..setup import SetupFile
-from ..utils.exceptions import PDFFileReadError
 from ..utils.formatting import format_range
 from ..utils.logging import log
 from ..utils.logging import set_log_level
@@ -480,7 +480,7 @@ def main(
                     keep_merged=keep_merged_pdfs,
                     dry_run=pdf_dry_run,
                 )
-            except PDFFileReadError as e:
+            except PdfReadError as e:
                 log(err=f"Error merging PDFs ({e}); retry {iter_i + 1}/{iter_max}")
                 continue
             else:
@@ -684,16 +684,9 @@ def merge_pdf_plots(
             for path in group:
                 try:
                     file = PdfFileReader(path)
-                except (ValueError, TypeError) as e:
-                    msgs = [
-                        "invalid literal for int() with base 10",
-                        "'NumberObject' object is not subscriptable",
-                    ]
-                    if any(str(e).startswith(msg) for msg in msgs):
-                        # Occur sporadically; likely a file system issue
-                        raise PDFFileReadError(path) from e
-                    else:
-                        raise e
+                except (ValueError, TypeError, PdfReadError) as e:
+                    # Occur sporadically; likely a file system issue
+                    raise PdfReadError(path) from e
                 page = file.getPage(0)
                 writer.addPage(page)
             dir_path = os.path.dirname(merged)
