@@ -180,7 +180,7 @@ def plot_add_text_boxes(
         )
         labels["br"] = capitalize(
             f"{format_meta_datum(mdata.simulation.now_rel - mdata.release.start_rel)}"
-            f" {words['since']} {words['release_start']}"
+            f" {words['after']} {words['release_start']}"
         )
         # SR_TMP >
 

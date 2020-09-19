@@ -24,6 +24,7 @@ WORDS = TranslatedWords("words", {})
 
 # A
 WORDS.add(en="accumulated over", de=f'akkumuliert {s["ue"]}ber')
+WORDS.add(en="after", de="nach")
 WORDS.add(
     en={"*": "air activity concentration", "abbr": "air activ. concentr."},
     de={

@@ -21017,7 +21017,7 @@ plot_summary = {
                         "va": "baseline",
                         "ha": "right",
                     },
-                    "s": "15:00$\\,$h seit Freisetzungsbeginn",
+                    "s": "15:00$\\,$h nach Freisetzungsbeginn",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
