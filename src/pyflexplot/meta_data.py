@@ -376,12 +376,14 @@ class VariableMetaData(_MetaDataBase):
         )
 
 
+# pylint: disable=R0902  # too-many-instance-attributes
 @dataclass
 class SimulationMetaData(_MetaDataBase):
     start: datetime
     end: datetime
     now: datetime
     now_rel: timedelta
+    base_time: datetime
     lead_time: timedelta
     reduction_start: datetime
     reduction_start_rel: timedelta
@@ -402,13 +404,15 @@ class SimulationMetaData(_MetaDataBase):
         now_rel: timedelta = collector.now_rel()
         reduction_start_rel = collector.reduction_start_rel()
 
-        lead_time = now - init_datetime(cast(int, setup.base_time))
+        base_time = init_datetime(cast(int, setup.base_time))
+        lead_time = now - base_time
 
         return cls(
             start=start,
             end=end,
             now=now,
             now_rel=now_rel,
+            base_time=base_time,
             lead_time=lead_time,
             reduction_start=reduction_start,
             reduction_start_rel=reduction_start_rel,

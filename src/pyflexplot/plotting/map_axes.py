@@ -29,10 +29,8 @@ from pydantic import BaseModel
 from pydantic import root_validator
 from pydantic import validator
 
-# First-party
-from pyflexplot.data import Field
-
 # Local
+from ..data import Field
 from ..utils.logging import log
 from ..utils.summarize import post_summarize_plot
 from ..utils.summarize import summarizable

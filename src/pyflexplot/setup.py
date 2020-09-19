@@ -7,10 +7,7 @@ the docstring of the class method ``Setup.create``.
 
 """
 # Standard library
-import dataclasses
-import re
-from dataclasses import dataclass
-from datetime import datetime
+from dataclasses import asdict
 from typing import Any
 from typing import cast
 from typing import Collection
@@ -33,7 +30,6 @@ from pydantic import validator
 from typing_extensions import Literal
 
 # First-party
-from pyflexplot.utils.datetime import init_datetime
 from srutils.dict import compress_multival_dicts
 from srutils.dict import decompress_multival_dict
 from srutils.dict import decompress_nested_dict
@@ -44,7 +40,6 @@ from srutils.str import join_multilines
 from .dimensions import CoreDimensions
 from .dimensions import Dimensions
 from .utils.exceptions import UnequalSetupParamValuesError
-from .utils.logging import log
 from .utils.pydantic import cast_field_value
 from .utils.pydantic import InvalidParameterNameError
 from .utils.pydantic import prepare_field_value
@@ -601,7 +596,7 @@ class Setup(BaseModel):
                 other_dict = dict(other)  # type: ignore
             except TypeError:
                 try:
-                    other_dict = dataclasses.asdict(other)
+                    other_dict = asdict(other)
                 except TypeError:
                     return False
         return self.dict() == other_dict
@@ -1182,121 +1177,3 @@ def setup_repr(obj: Union["CoreSetup", "Setup"]) -> str:
 
     s_attrs = ",\n  ".join(f"{k}={fmt(v)}" for k, v in obj.dict().items())
     return f"{type(obj).__name__}(\n  {s_attrs},\n)"
-
-
-@dataclass
-class FilePathFormatter:
-    def __init__(self, previous: Optional[List[str]] = None) -> None:
-        self.previous: List[str] = previous if previous is not None else []
-
-    # pylint: disable=W0102  # dangerous-default-value ([])
-    def format(self, template: str, setup: Setup, nc_meta_data: Dict[str, Any]) -> str:
-        log(dbg=f"formatting path '{template}'")
-        path = self._format_template(template, setup, nc_meta_data)
-        while path in self.previous:
-            template = self.derive_unique_path(
-                self._format_template(template, setup, nc_meta_data)
-            )
-            path = self._format_template(template, setup, nc_meta_data)
-        self.previous.append(path)
-        log(dbg=f"formatted path '{path}'")
-        return path
-
-    def _format_template(
-        self, template: str, setup: Setup, nc_meta_data: Dict[str, Any]
-    ) -> str:
-        input_variable = setup.core.input_variable
-        if setup.core.input_variable == "deposition":
-            input_variable += f"_{setup.deposition_type_str}"
-        time_steps = self._format_time_steps(
-            nc_meta_data["derived"]["time_steps"], setup
-        )
-        base_time = self._format_time_steps([cast(int, setup.base_time)], setup)[0]
-        kwargs = {
-            "base_time": base_time,
-            "domain": setup.core.domain,
-            "ens_variable": setup.core.ens_variable,
-            "input_variable": input_variable,
-            "lang": setup.core.lang,
-            "level": setup.core.dimensions.level,
-            "model": setup.model,
-            "nageclass": setup.core.dimensions.nageclass,
-            "noutrel": setup.core.dimensions.noutrel,
-            "plot_type": setup.core.plot_type,
-            "plot_variable": setup.core.plot_variable,
-            "release_site": nc_meta_data["derived"]["release_site"],
-            "species_id": setup.core.dimensions.species_id,
-            "time_idx": setup.core.dimensions.time,
-            "time_step": time_steps[setup.core.dimensions.time],
-        }
-        # Format the file path
-        # Don't use str.format in order to handle multival elements
-        path = self._replace_format_keys(template, kwargs)
-        return path
-
-    def _format_time_steps(self, tss_int: Sequence[int], setup: Setup) -> List[str]:
-        fmt_in = "%Y%m%d%H%M"
-        fmt_out = setup.outfile_time_format
-        tss_str_in: List[str] = [str(ts) for ts in tss_int]
-        if fmt_out == fmt_in:
-            return tss_str_in
-        tss_dt: List[datetime] = [init_datetime(ts) for ts in tss_str_in]
-        tss_str_out: List[str] = [ts.strftime(fmt_out) for ts in tss_dt]
-        return tss_str_out
-
-    def _replace_format_keys(self, path: str, kwargs: Mapping[str, Any]) -> str:
-        for key, val in kwargs.items():
-            if not (isinstance(val, Sequence) and not isinstance(val, str)):
-                val = [val]
-            # Iterate over relevant format keys
-            rxs = r"{" + key + r"(:[^}]*)?}"
-            re.finditer(rxs, path)
-            for m in re.finditer(rxs, path):
-
-                # Obtain format specifier (if there is one)
-                try:
-                    f = m.group(1) or ""
-                except IndexError:
-                    f = ""
-
-                # Format the string that replaces this format key in the path
-                formatted_key = "+".join([f"{{{f}}}".format(v) for v in val])
-
-                # Replace format key in the path by the just formatted string
-                start, end = path[: m.span()[0]], path[m.span()[1] :]
-                path = f"{start}{formatted_key}{end}"
-
-        # Check that all keys have been formatted
-        if "{" in path or "}" in path:
-            raise Exception(
-                "formatted output file path still contains format keys", path
-            )
-
-        return path
-
-    @staticmethod
-    def derive_unique_path(path: str, sep: str = ".") -> str:
-        """Add/increment a trailing number to a file path."""
-        log(dbg=f"deriving unique path from '{path}'")
-
-        # Extract suffix
-        if path.endswith(".png") or path.endswith(".pdf"):
-            suffix = f".{path.split('.')[-1]}"
-        else:
-            raise NotImplementedError(f"unknown suffix: {path}")
-        path_base = path[: -len(suffix)]
-
-        # Reuse existing numbering if present
-        match = re.search(f"{sep}(?P<i>[0-9]+)$", path_base)
-        if match:
-            i = int(match.group("i")) + 1
-            w = len(match.group("i"))
-            path_base = path_base[: -w - 1]
-        else:
-            i = 1
-            w = 1
-
-        # Add numbering and suffix
-        path = path_base + f"{sep}{{i:0{w}}}{suffix}".format(i=i)
-
-        return path

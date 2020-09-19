@@ -50,6 +50,7 @@ class TestMerge:
         "start_rel": dt.timedelta(0),
     }
     raw_simulation_params = {
+        "base_time": dt.datetime(2019, 7, 27, 9, 0, tzinfo=dt.timezone.utc),
         "start": dt.datetime(2019, 7, 27, 12, 0, tzinfo=dt.timezone.utc),
         "end": dt.datetime(2019, 7, 28, 21, 0, tzinfo=dt.timezone.utc),
         "now": dt.datetime(2019, 7, 27, 21, 0, tzinfo=dt.timezone.utc),
@@ -120,6 +121,7 @@ class TestMerge:
         merged_mdata = self.create_merged_mdata()
         merged_simulation_params = merged_mdata.simulation.dict()
         sol_simulation = {
+            "base_time": dt.datetime(2019, 7, 27, 9, 0, tzinfo=dt.timezone.utc),
             "start": dt.datetime(2019, 7, 27, 12, 0, tzinfo=dt.timezone.utc),
             "end": dt.datetime(2019, 7, 28, 21, 0, tzinfo=dt.timezone.utc),
             "now": dt.datetime(2019, 7, 27, 21, 0, tzinfo=dt.timezone.utc),

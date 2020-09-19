@@ -99,7 +99,7 @@ class Field:
     var_setups: SetupCollection
     time_props: "FieldTimeProperties"
     nc_meta_data: Mapping[str, Any]
-    mdata: Optional[MetaData]
+    mdata: MetaData
 
     def __post_init__(self):
         try:

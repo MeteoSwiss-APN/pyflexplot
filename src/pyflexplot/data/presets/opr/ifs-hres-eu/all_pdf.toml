@@ -28,27 +28,27 @@ combine_species = true
 time = -1
 
 [_base._concentration._pdf.full]
-outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration.pdf"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration.pdf"
 domain = "full"
 [_base._concentration._integr._pdf.full]
-outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet.pdf"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet.pdf"
 domain = "full"
 [_base._tot_deposition._pdf.full]
-outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Deposition.pdf"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition.pdf"
 domain = "full"
 [_base._tot_deposition._affected_area._pdf.full]
-outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet.pdf"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet.pdf"
 domain = "full"
 
 [_base._concentration._pdf.zoom]
-outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration_zoom.pdf"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration_zoom.pdf"
 domain = "alps"
 [_base._concentration._integr._pdf.zoom]
-outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet_zoom.pdf"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet_zoom.pdf"
 domain = "alps"
 [_base._tot_deposition._pdf.zoom]
-outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_Deposition_zoom.pdf"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition_zoom.pdf"
 domain = "alps"
 [_base._tot_deposition._affected_area._pdf.zoom]
-outfile = "{base_time}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet_zoom.pdf"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet_zoom.pdf"
 domain = "alps"

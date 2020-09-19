@@ -34,7 +34,6 @@ import matplotlib as mpl
 import numpy as np
 
 # First-party
-from pyflexplot.utils.datetime import init_datetime
 from srutils.dict import recursive_update
 from srutils.geo import Degrees
 from srutils.plotting import truncate_cmap
@@ -45,6 +44,7 @@ from .data import Field
 from .data import FieldAllNaNError
 from .meta_data import format_meta_datum
 from .meta_data import MetaData
+from .output import FilePathFormatter
 from .plot_layouts import BoxedPlotLayoutDeterministic
 from .plot_layouts import BoxedPlotLayoutEnsemble
 from .plot_layouts import BoxedPlotLayoutType
@@ -58,9 +58,9 @@ from .plotting.map_axes import MapAxes
 from .plotting.map_axes import MapAxesConfig
 from .plotting.map_axes import ReleaseSiteDomain
 from .plotting.text_box_axes import TextBoxAxes
-from .setup import FilePathFormatter
 from .setup import Setup
 from .setup import SetupCollection
+from .utils.datetime import init_datetime
 from .utils.formatting import escape_format_keys
 from .utils.formatting import format_level_ranges
 from .utils.formatting import format_range
@@ -85,17 +85,21 @@ def prepare_plot(
     var_setups_lst = [field.var_setups for field in field_lst]
     setup = SetupCollection.merge(var_setups_lst).compress()
 
-    # Merge `nc_meta_data` across Field objects
+    # Merge mdata and nc_meta_data across Field objects
     nc_meta_data: Dict[str, Any] = {}
+    mdata_lst: List[MetaData] = []
     for field in field_lst:
         recursive_update(nc_meta_data, field.nc_meta_data, inplace=True)
+        if field.mdata is not None:
+            mdata_lst.append(field.mdata)
+    mdata = mdata_lst[0].merge_with(mdata_lst[1:])
 
     out_file_paths: List[str] = []
     for out_file_template in (
         [setup.outfile] if isinstance(setup.outfile, str) else setup.outfile
     ):
         out_file_path = FilePathFormatter(prev_out_file_paths).format(
-            out_file_template, setup, nc_meta_data
+            out_file_template, setup, mdata, nc_meta_data
         )
         log(dbg=f"preparing plot {out_file_path}")
         out_file_paths.append(out_file_path)

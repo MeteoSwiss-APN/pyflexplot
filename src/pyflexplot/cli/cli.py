@@ -23,9 +23,6 @@ import click
 from PyPDF2 import PdfFileReader
 from PyPDF2 import PdfFileWriter
 
-# First-party
-from pyflexplot.utils.pydantic import InvalidParameterNameError
-
 # Local
 from .. import __version__
 from .. import data_path
@@ -40,6 +37,7 @@ from ..setup import SetupFile
 from ..utils.formatting import format_range
 from ..utils.logging import log
 from ..utils.logging import set_log_level
+from ..utils.pydantic import InvalidParameterNameError
 from .click import click_error
 from .preset import add_to_preset_paths
 from .preset_click import click_cat_preset_and_exit

@@ -18,8 +18,8 @@ from typing import Tuple
 # Third-party
 import netCDF4 as nc4
 
-# First-party
-from pyflexplot.utils.datetime import init_datetime
+# Local
+from .utils.datetime import init_datetime
 
 
 def read_meta_data(file_handle: nc4.Dataset) -> Dict[str, Dict[str, Any]]:

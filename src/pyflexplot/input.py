@@ -276,7 +276,7 @@ class InputFileEnsemble:
         self.fld_time_mem: np.ndarray
         self.lat: np.ndarray
         self.lon: np.ndarray
-        self.mdata_time: np.ndarray
+        self.mdata_tss: List[MetaData]
         self.nc_meta_data: Dict[str, Dict[str, Any]]
         self.setups_lst_time: List[SetupCollection]
         self.time: np.ndarray
@@ -306,11 +306,9 @@ class InputFileEnsemble:
         self.setups_lst_time = setups.decompress_partially(
             ["dimensions.time"], skip=["outfile"]
         )
-        n_requested_times = len(self.setups_lst_time)
 
         model = setups.collect_equal("model")
         self.fld_time_mem = np.full(self._get_shape_mem_time(model), np.nan, np.float32)
-        self.mdata_time = np.full(n_requested_times, None, object)
         for idx_mem, (ens_member_id, file_path) in enumerate(
             zip((self.ens_member_ids or [None]), self.paths)  # type: ignore
         ):
@@ -328,7 +326,7 @@ class InputFileEnsemble:
 
         # Create Field objects at requested time steps
         field_lst_lst: List[List[Field]] = []
-        for field_setups, mdata in zip(self.setups_lst_time, self.mdata_time):
+        for field_setups, mdata in zip(self.setups_lst_time, self.mdata_tss):
             time_idx = field_setups.collect_equal("dimensions.time")
             fld: np.ndarray = fld_time[time_idx]
             if self.nc_meta_data["derived"]["rotated_pole"]:
@@ -381,21 +379,21 @@ class InputFileEnsemble:
                 # Ensure that meta data is the same for all members
                 self.nc_meta_data = self.read_nc_meta_data(fi, check=True)
 
+            # Read meta data at requested time steps
+            mdata_tss_i = self._collect_meta_data_tss(fi)
+            if idx_mem == 0:
+                self.mdata_tss = mdata_tss_i
+            elif mdata_tss_i != self.mdata_tss:
+                raise Exception("meta data differ across members")
+
             if not self.dry_run:
 
                 # Read fields for all members at all time steps
                 fld_time_i = self._read_member_fields_over_time(fi, timeless_setups_mem)
                 self.fld_time_mem[idx_mem][:] = fld_time_i[:]
 
-                # Read meta data at requested time steps
-                mdata_time_i = self._collect_meta_data(fi)
-                if idx_mem == 0:
-                    self.mdata_time[:] = mdata_time_i
-                elif mdata_time_i != self.mdata_time.tolist():
-                    raise Exception("meta data differ across members")
-
                 if self.cache_on:
-                    self.cache.add(cache_key, fld_time_i, mdata_time_i)
+                    self.cache.add(cache_key, fld_time_i, mdata_tss_i)
 
     def read_nc_meta_data(self, fi: nc4.Dataset, check: bool = False) -> Dict[str, Any]:
         nc_meta_data = read_meta_data(fi)
@@ -429,7 +427,7 @@ class InputFileEnsemble:
         return fld_time
 
     # pylint: disable=R0914  # too-many-locals
-    def _collect_meta_data(self, fi: nc4.Dataset) -> List[MetaData]:
+    def _collect_meta_data_tss(self, fi: nc4.Dataset) -> List[MetaData]:
         """Collect time-step-specific data meta data."""
         mdata_lst: List[MetaData] = []
         for setups in self.setups_lst_time:
@@ -689,13 +687,13 @@ class FileReaderCache:
         return tuple([file_path] + [repr(setups.collect(param)) for param in params])
 
     def add(
-        self, cache_key: Hashable, fld_time_i: np.ndarray, mdata_time_i: np.ndarray
+        self, cache_key: Hashable, fld_time_i: np.ndarray, mdata_tss_i: List[MetaData]
     ) -> None:
         self._cache[cache_key] = {
             "grid": deepcopy((self.files.lat, self.files.lon, self.files.time)),
             "nc_meta_data": deepcopy(self.files.nc_meta_data),
             "fld_time_i": deepcopy(fld_time_i),
-            "mdata_time_i": deepcopy(mdata_time_i),
+            "mdata_tss_i": deepcopy(mdata_tss_i),
         }
 
     def get(self, key: Hashable, idx_mem: int) -> None:
@@ -707,4 +705,4 @@ class FileReaderCache:
         self.files.lat, self.files.lon, self.files.time = entry["grid"]
         self.files.nc_meta_data = entry["nc_meta_data"]
         self.files.fld_time_mem[idx_mem][:] = entry["fld_time_i"]
-        self.files.mdata_time[:] = entry["mdata_time_i"]
+        self.files.mdata_tss = entry["mdata_tss_i"]
