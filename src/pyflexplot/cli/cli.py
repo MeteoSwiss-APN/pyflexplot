@@ -472,9 +472,10 @@ def main(
         pdf_dry_run = dry_run and not merge_pdfs_dry
         iter_max = 1 if abspath(dest_dir or ".") == abspath(tmp_dir) else 10
         for iter_i in range(iter_max):
+            all_out_file_paths_tmp = list(all_out_file_paths)
             try:
                 pdf_page_paths = merge_pdf_plots(
-                    all_out_file_paths,
+                    all_out_file_paths_tmp,
                     dest_dir=(dest_dir or "."),
                     keep_merged=keep_merged_pdfs,
                     dry_run=pdf_dry_run,
@@ -483,6 +484,7 @@ def main(
                 log(err=f"Error merging PDFs ({e}); retry {iter_i + 1}/{iter_max}")
                 continue
             else:
+                all_out_file_paths = all_out_file_paths_tmp
                 for path in pdf_page_paths:
                     if not pdf_dry_run and not keep_merged_pdfs:
                         log(dbg=f"remove {path}")
@@ -694,12 +696,16 @@ def merge_pdf_plots(
                         raise e
                 page = file.getPage(0)
                 writer.addPage(page)
+            dir_path = os.path.dirname(merged)
+            if dir_path:
+                os.makedirs(dir_path, exist_ok=True)
             with open(merged, "wb") as fo:
                 writer.write(fo)
         for path in group:
             paths.remove(path)
             if abspath(path) != abspath(merged):
                 merged_pages.append(path)
+        paths.append(merged)
     return merged_pages
 
 
