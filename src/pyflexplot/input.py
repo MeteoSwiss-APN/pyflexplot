@@ -81,7 +81,7 @@ def read_fields(
     field_lst_lst = reader.run(setups)
     n_plt = len(field_lst_lst)
     n_tot = sum([len(field_lst) for field_lst in field_lst_lst])
-    log(dbg=f"don reading {in_file_path}: read {n_tot} fields for {n_plt} plots")
+    log(dbg=f"done reading {in_file_path}: read {n_tot} fields for {n_plt} plots")
     return field_lst_lst
 
 

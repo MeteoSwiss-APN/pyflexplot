@@ -160,11 +160,21 @@ def click_prep_setup_params(ctx, param, value):
     default=False,
 )
 @click.option(
+    "--dest-dir",
+    help=(
+        "Directory where the plots are saved to. Defaults to the current directory."
+        " Note that this option is incompatible with absolute paths specified in the"
+        " setup parameter 'outfile'."
+    ),
+    metavar="DEST_DIR",
+    default=None,
+)
+@click.option(
     "--merge-pdfs/--no-merge-pdfs",
     help="Merge PDF plots with the same output file name.",
 )
 @click.option(
-    "--merge-pdfs-nodry",
+    "--merge-pdfs-dry",
     help="Merge PDF plots even in a dry run.",
     is_flag=True,
 )
@@ -246,8 +256,8 @@ def click_prep_setup_params(ctx, param, value):
     expose_value=False,
 )
 @click.option(
-    "--remove-merged-pdfs/--keep-merged-pdfs",
-    help="Remove individual PDF files after merging them with --merge-pdfs.",
+    "--keep-merged-pdfs/--remove-merged-pdfs",
+    help="Keep individual PDF files after merging them with --merge-pdfs.",
 )
 @click.option(
     "--setup",
@@ -266,6 +276,15 @@ def click_prep_setup_params(ctx, param, value):
         " create plots in multiple formats."
     ),
     multiple=True,
+)
+@click.option(
+    "--tmp-dir",
+    help=(
+        "Temporary directory in which the plots are created before being moved"
+        " to DEST_DIR in the end. Defaults to DEST_DIR."
+    ),
+    metavar="TMP_DIR",
+    default=None,
 )
 @click.option(
     "--verbose",
@@ -337,18 +356,24 @@ def main(
     ctx,
     *,
     cache,
+    dest_dir,
     dry_run,
     input_setup_params,
     merge_pdfs,
-    merge_pdfs_nodry,
+    merge_pdfs_dry,
     num_procs,
     only,
     open_cmd,
-    remove_merged_pdfs,
+    keep_merged_pdfs,
     setup_file_paths,
     suffixes,
+    tmp_dir,
 ):
     """Create dispersion plot as specified in CONFIG_FILE(S)."""
+
+    # Check if temporary directory (if given) already exists
+    if tmp_dir and os.path.exists(tmp_dir):
+        log(dbg="using existing temporary directory '{tmp_dir}'")
 
     # Add preset setup file paths
     setup_file_paths = list(setup_file_paths)
@@ -396,7 +421,13 @@ def main(
         )
         istat.n_fld = len(field_lst_lst)
         fct = partial(
-            create_plots, in_file_path, all_out_file_paths, only, dry_run, istat
+            create_plots,
+            in_file_path,
+            all_out_file_paths,
+            (tmp_dir or dest_dir),
+            only,
+            dry_run,
+            istat,
         )
         if num_procs > 1:
             pool.starmap(fct, enumerate(field_lst_lst, start=1))
@@ -414,9 +445,31 @@ def main(
         log(vbs="merge PDF plots")
         all_out_file_paths = merge_pdf_plots(
             all_out_file_paths,
-            remove_merged=remove_merged_pdfs,
-            dry_run=(dry_run and not merge_pdfs_nodry),
+            dest_dir=(dest_dir or "."),
+            keep_merged=keep_merged_pdfs,
+            dry_run=(dry_run and not merge_pdfs_dry),
         )
+
+    # Remove remaining (after PDF merging) output files  to destination
+    if dest_dir or tmp_dir:
+        for file_path in all_out_file_paths:
+            file_path_rel = os.path.relpath(file_path, start=(dest_dir or "."))
+            file_path_dest = f"{dest_dir or '.'}/{file_path_rel}"
+            if os.path.abspath(file_path) == os.path.abspath(file_path_dest):
+                continue
+            log(vbs=f"{file_path} -> {file_path_dest}")
+            os.makedirs(os.path.dirname(file_path_dest), exist_ok=True)
+            os.replace(file_path, file_path_dest)
+
+    # Remove temporary directory (if given) unless it already existed before
+    remove_tmpdir = tmp_dir and not os.listdir(tmp_dir) and not dry_run
+    if remove_tmpdir:
+        log(
+            dbg=f"recursively removing temporary directory '{tmp_dir}'",
+        )
+        for dir_path, _, _ in os.walk(tmp_dir, topdown=False):
+            log(vbs=f"rmdir '{dir_path}'")
+            os.rmdir(dir_path)
 
     if open_cmd:
         log(vbs=f"open {len(all_out_file_paths)} plots:")
@@ -438,6 +491,7 @@ def get_pid() -> int:
 def create_plots(
     in_file_path: str,
     all_out_file_paths: List[str],
+    dest_dir: Optional[str],
     only: Optional[int],
     dry_run: bool,
     istat: SharedIterationState,
@@ -458,7 +512,7 @@ def create_plots(
     setups_lst = [field.var_setups for field in field_lst]
     in_file_path_fmtd = format_in_file_path(in_file_path, setups_lst)
     out_file_paths_i, plot = prepare_plot(
-        field_lst, all_out_file_paths, dry_run=dry_run
+        field_lst, prev_paths=all_out_file_paths, dest_dir=dest_dir, dry_run=dry_run
     )
     if only:
         only_i = only - istat.ip_tot
@@ -521,7 +575,11 @@ def format_in_file_path(in_file_path, setups_lst):
 
 
 def merge_pdf_plots(
-    paths: Sequence[str], *, remove_merged: bool = True, dry_run: bool = False
+    paths: Sequence[str],
+    *,
+    dest_dir: Optional[str] = None,
+    keep_merged: bool = True,
+    dry_run: bool = False,
 ) -> List[str]:
     paths = list(paths)
 
@@ -584,6 +642,14 @@ def merge_pdf_plots(
     # Merge PDFs with shared base name
     for group in grouped_pdf_paths:
         merged = group[0]
+        if dest_dir:
+            merged = f"{dest_dir}/{os.path.basename(merged)}"
+        if keep_merged and os.path.abspath(merged) == os.path.abspath(group[0]):
+            raise Exception(
+                "input and output files are the same file, which is not allowed for"
+                f" remove_merged=T: '{merged}'"
+                + ("" if merged == group[0] else f" == '{merged[0]}'")
+            )
         log(inf=f"{merge_paths(group)} -> {merged}")
         if not dry_run:
             writer = PdfFileWriter()
@@ -593,9 +659,9 @@ def merge_pdf_plots(
                 writer.write(fo)
         for path in group:
             if path != merged:
-                log(dbg=f"remove {path}")
                 paths.remove(path)
-                if not dry_run and remove_merged:
+                if not dry_run and not keep_merged:
+                    log(dbg=f"remove {path}")
                     Path(path).unlink()
 
     return paths

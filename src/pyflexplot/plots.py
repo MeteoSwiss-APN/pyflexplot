@@ -15,6 +15,7 @@ Instead, all the logic is collected here in a straightforward but dirty way
 until sane design choices emerge from the code mess.
 """
 # Standard library
+import os
 import warnings
 from datetime import datetime
 from datetime import timedelta
@@ -74,8 +75,9 @@ from .words import Words
 
 def prepare_plot(
     field_lst: Sequence[Field],
-    prev_out_file_paths: Optional[List[str]] = None,
     *,
+    prev_paths: Optional[List[str]] = None,
+    dest_dir: Optional[str] = None,
     dry_run: bool = False,
 ) -> Tuple[List[str], Union[BoxedPlot, DummyBoxedPlot]]:
     """Create plots while yielding them with the plot file path one by one."""
@@ -98,10 +100,19 @@ def prepare_plot(
     for out_file_template in (
         [setup.outfile] if isinstance(setup.outfile, str) else setup.outfile
     ):
-        out_file_path = FilePathFormatter(prev_out_file_paths).format(
+        if dest_dir:
+            if out_file_template.startswith("/"):
+                raise Exception(
+                    "passing a dest_dir ('{dest_dir}') is incompatible with absolute"
+                    " plot paths ('{out_file_template}')"
+                )
+            out_file_template = os.path.relpath(
+                os.path.abspath(f"{dest_dir}/{out_file_template}")
+            )
+        out_file_path = FilePathFormatter(prev_paths).format(
             out_file_template, setup, mdata, nc_meta_data
         )
-        log(dbg=f"preparing plot {out_file_path}")
+        log(dbg=f"preparing plot '{out_file_path}'")
         out_file_paths.append(out_file_path)
     if dry_run:
         return out_file_paths, DummyBoxedPlot()
@@ -118,7 +129,7 @@ def prepare_plot(
 
 def create_plot(
     plot: BoxedPlot,
-    out_file_paths: Sequence[str],
+    file_paths: Sequence[str],
     write: bool = True,
     show_version: bool = True,
 ) -> None:
@@ -135,11 +146,12 @@ def create_plot(
     axs_map = plot.add_map_plot(layout.rect_center())
     plot_add_text_boxes(plot, layout, show_version)
     plot_add_markers(plot, axs_map)
-    for out_file_path in out_file_paths:
-        log(dbg=f"creating plot {out_file_path}")
+    for file_path in file_paths:
+        log(dbg=f"creating plot {file_path}")
         if write:
-            plot.write(out_file_path)
-        log(dbg=f"created plot {out_file_path}")
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            plot.write(file_path)
+        log(dbg=f"created plot {file_path}")
     plot.clean()
 
 
