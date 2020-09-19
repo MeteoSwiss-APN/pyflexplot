@@ -23,6 +23,9 @@ import click
 from PyPDF2 import PdfFileReader
 from PyPDF2 import PdfFileWriter
 
+# First-party
+from srutils.str import sorted_paths
+
 # Local
 from .. import __version__
 from .. import data_path
@@ -440,6 +443,10 @@ def main(
             if remaining_files:
                 log(vbs=f"[only:{only}] skip remaining {remaining_files} input files")
             break
+
+    # Sort output file paths with numbered duplicates are in the correct order
+    # The latter is necessary because parallel execution randomizes their order
+    all_out_file_paths = sorted_paths(all_out_file_paths, dup_sep=".")
 
     if merge_pdfs:
         log(vbs="merge PDF plots")
