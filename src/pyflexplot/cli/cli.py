@@ -685,9 +685,13 @@ def merge_pdf_plots(
             for path in group:
                 try:
                     file = PdfFileReader(path)
-                except ValueError as e:
-                    if str(e).startswith("invalid literal for int() with base 10"):
-                        # Occurs sporadically; likely a file system issue
+                except (ValueError, TypeError) as e:
+                    msgs = [
+                        "invalid literal for int() with base 10",
+                        "'NumberObject' object is not subscriptable",
+                    ]
+                    if any(str(e).startswith(msg) for msg in msgs):
+                        # Occur sporadically; likely a file system issue
                         raise PDFFileReadError(path) from e
                     else:
                         raise e
