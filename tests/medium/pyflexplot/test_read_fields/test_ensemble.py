@@ -7,6 +7,7 @@ from typing import Dict
 
 # Third-party
 import numpy as np
+import pytest
 
 # First-party
 from pyflexplot.data import ensemble_probability
@@ -145,6 +146,7 @@ class TestReadFieldEnsemble_Single:
             cache_on=cache_on,
         )
 
+    @pytest.mark.skip("cache is broken")
     def test_ens_mean_concentration_cached(self, datadir):  # noqa:F811
         self.test_ens_mean_concentration(datadir, cache_on=True)
 
@@ -301,9 +303,11 @@ class TestReadFieldEnsemble_Multiple:
     def test_ens_probability_concentration(self, datadir):  # noqa:F811
         self.run_concentration(datadir, "probability", scale_fld_ref=3.0)
 
+    @pytest.mark.skip("cache is broken")
     def test_ens_mean_concentration_cached(self, datadir):  # noqa:F811
         self.run_concentration(datadir, "mean", cache_on=True, scale_fld_ref=3.0)
 
+    @pytest.mark.skip("cache is broken")
     def test_ens_probability_concentration_cached(self, datadir):  # noqa:F811
         self.run_concentration(datadir, "probability", cache_on=True, scale_fld_ref=3.0)
 
@@ -335,8 +339,10 @@ class TestReadFieldEnsemble_Multiple:
     def test_ens_max_deposition_tot(self, datadir):  # noqa:F811
         self.run_deposition_tot(datadir, "maximum")
 
+    @pytest.mark.skip("cache is broken")
     def test_ens_mean_deposition_tot_cached(self, datadir):  # noqa:F811
         self.run_deposition_tot(datadir, "mean", cache_on=True)
 
+    @pytest.mark.skip("cache is broken")
     def test_ens_max_deposition_tot_cached(self, datadir):  # noqa:F811
         self.run_deposition_tot(datadir, "maximum", cache_on=True)

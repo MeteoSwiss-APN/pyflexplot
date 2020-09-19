@@ -158,7 +158,10 @@ def click_prep_setup_params(ctx, param, value):
     "--cache/--no-cache",
     help="Cache input fields to avoid reading the same data multiple times.",
     is_flag=True,
-    default=True,
+    # SR_TMP < TODO fix the input file cache (currently broken)
+    # +default=True,
+    default=False,
+    # SR_TMP >
 )
 @click.option(
     "--dry-run",
@@ -410,7 +413,7 @@ def main(
     pool = multiprocessing.Pool(processes=num_procs)
 
     # Create plots input file(s) by input file(s)
-    all_out_file_paths: List[str] = multiprocessing.Manager().list()
+    all_out_file_paths: List[str] = []
     istat = SharedIterationState(ip_tot=0, n_in=len(setups_by_infile))
     for istat.ip_in, (in_file_path, sub_setups) in enumerate(
         setups_by_infile.items(), start=1

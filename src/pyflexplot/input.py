@@ -258,6 +258,10 @@ class InputFileEnsemble:
         self.dry_run = dry_run
         self.cache_on = cache_on
 
+        # SR_TMP < TODO Fix the cache!!!
+        if cache_on:
+            raise NotImplementedError("input file cache is currently broken!")
+
         if len(ens_member_ids or [0]) != len(paths):
             raise ValueError(
                 "must pass same number of ens_member_ids and paths"
@@ -387,13 +391,14 @@ class InputFileEnsemble:
                 raise Exception("meta data differ across members")
 
             if not self.dry_run:
-
                 # Read fields for all members at all time steps
                 fld_time_i = self._read_member_fields_over_time(fi, timeless_setups_mem)
                 self.fld_time_mem[idx_mem][:] = fld_time_i[:]
+            else:
+                fld_time_i = np.empty(self.fld_time_mem.shape[1:])
 
-                if self.cache_on:
-                    self.cache.add(cache_key, fld_time_i, mdata_tss_i)
+            if self.cache_on:
+                self.cache.add(cache_key, fld_time_i, mdata_tss_i)
 
     def read_nc_meta_data(self, fi: nc4.Dataset, check: bool = False) -> Dict[str, Any]:
         nc_meta_data = read_meta_data(fi)
