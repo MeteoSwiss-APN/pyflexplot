@@ -4,6 +4,9 @@ String utilities.
 # Standard library
 import re
 from typing import Any
+from typing import Callable
+from typing import Collection
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -52,6 +55,21 @@ def to_varname(s, filter_invalid=None):
         def filter_invalid(s):
             return "_"
 
+    def _filter_s(s, filter_invalid):
+        rx_valid = re.compile("[a-zA-Z0-9_]")
+        varname = ""
+        for c in s:
+            if not rx_valid.match(c):
+                try:
+                    c = filter_invalid(c)
+                except TypeError as e:
+                    raise ValueError("invalid filter", e, filter_invalid, c)
+                else:
+                    if not isinstance(c, str):
+                        raise ValueError("filter must return str", c, filter_invalid, c)
+            varname += c
+        return varname
+
     # Filter all characters, ignoring potential leading numbers
     varname = _filter_s(s, filter_invalid)
 
@@ -60,22 +78,6 @@ def to_varname(s, filter_invalid=None):
         varname = filter_invalid(varname[0]) + varname[1:]
 
     check_is_valid_varname(varname)
-    return varname
-
-
-def _filter_s(s, filter_invalid):
-    rx_valid = re.compile("[a-zA-Z0-9_]")
-    varname = ""
-    for c in s:
-        if not rx_valid.match(c):
-            try:
-                c = filter_invalid(c)
-            except TypeError as e:
-                raise ValueError("invalid filter", e, filter_invalid, c)
-            else:
-                if not isinstance(c, str):
-                    raise ValueError("filter must return str", c, filter_invalid, c)
-        varname += c
     return varname
 
 
@@ -250,3 +252,65 @@ def split_outside_parens(
     splits.extend(raw_splits)
 
     return splits
+
+
+def sorted_paths(
+    paths: Collection[str],
+    dup_sep: Optional[str] = "-",
+    *,
+    key: Optional[Callable[[Any], Any]] = None,
+    reverse: bool = False,
+) -> List[str]:
+    """Sort paths, with numbered duplicates in numerical order.
+
+    Duplicate paths are indicated with a trailing number ahead of the suffix,
+    separated from the main part of the path by, e.g., a dash, which may be
+    omitted for the first duplicate.
+
+    Args:
+        paths: Paths to be sorted.
+
+        dup_sep (optional): Character(s) separating the main part of duplicate
+            paths (minus suffix) from the number of the duplicate. If multiple
+            characters are passed, each is used as a separator individually. If
+            None is passed, duplicate paths are not treated specially and the
+            result is identical to ``sorted(paths)``.
+
+        key (optional): Function applied to each element before sorting.
+
+        reverse (optional): Reverse sorting order.
+
+    Example:
+        >>> paths = ["foo.png", "foo-1.png", "foo-2.png", ..., "foo-10.png"]
+        >>> sorted(paths)
+        ["foo-1.png", "foo-10.png", "foo-2.png", ..., "foo-0.png", "foo.png"]
+        >>> sort_paths(paths)
+        ["foo.png", "foo-1.png", "foo-2.png", ..., "foo-10.png"]
+
+    """
+    if dup_sep is None:
+        return sorted(paths, key=key, reverse=reverse)
+    if "-" in dup_sep:
+        # Move "-" to the end for compatibility with regex brackets
+        dup_sep = dup_sep.replace("-", "") + "-"
+    grouped_paths: Dict[str, Dict[int, str]] = {}
+    rx = re.compile(
+        r"\b(?P<base>.*?)([" + str(dup_sep) + r"](?P<num>[0-9]+))?(?P<suffix>\.\w+)\b"
+    )
+    for path in paths:
+        match = rx.match(path)
+        if match:
+            base_path = match.group("base") + match.group("suffix")
+            num = int(match.group("num")) if match.group("num") else -1
+            if base_path not in grouped_paths:
+                grouped_paths[base_path] = {}
+            grouped_paths[base_path][num] = path
+        else:
+            raise ValueError(f"invalid path (not matching '{rx.pattern}'): {path}")
+    sorted_paths_: List[str] = []
+    for base_path in sorted(grouped_paths.keys(), key=key, reverse=reverse):
+        paths_by_num = grouped_paths[base_path]
+        for num in sorted(paths_by_num.keys(), reverse=reverse):
+            path = paths_by_num[num]
+            sorted_paths_.append(path)
+    return sorted_paths_
