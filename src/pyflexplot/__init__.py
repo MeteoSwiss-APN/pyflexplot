@@ -4,7 +4,7 @@ Top-level package for PyFlexPlot.
 
 __author__ = """Stefan Ruedisuehli"""
 __email__ = "stefan.ruedisuehli@env.ethz.ch"
-__version__ = "0.12.1"
+__version__ = "0.13.0"
 
 # Standard library
 import logging as pylogging
