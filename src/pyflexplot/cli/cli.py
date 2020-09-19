@@ -164,6 +164,11 @@ def click_prep_setup_params(ctx, param, value):
     help="Merge PDF plots with the same output file name.",
 )
 @click.option(
+    "--merge-pdfs-nodry",
+    help="Merge PDF plots even in a dry run.",
+    is_flag=True,
+)
+@click.option(
     "--num-procs",
     "-P",
     help=(
@@ -239,6 +244,10 @@ def click_prep_setup_params(ctx, param, value):
     is_eager=True,
     default=None,
     expose_value=False,
+)
+@click.option(
+    "--remove-merged-pdfs/--keep-merged-pdfs",
+    help="Remove individual PDF files after merging them with --merge-pdfs.",
 )
 @click.option(
     "--setup",
@@ -331,9 +340,11 @@ def main(
     dry_run,
     input_setup_params,
     merge_pdfs,
+    merge_pdfs_nodry,
     num_procs,
     only,
     open_cmd,
+    remove_merged_pdfs,
     setup_file_paths,
     suffixes,
 ):
@@ -401,7 +412,11 @@ def main(
 
     if merge_pdfs:
         log(vbs="merge PDF plots")
-        all_out_file_paths = merge_pdf_plots(all_out_file_paths, dry_run)
+        all_out_file_paths = merge_pdf_plots(
+            all_out_file_paths,
+            remove_merged=remove_merged_pdfs,
+            dry_run=(dry_run and not merge_pdfs_nodry),
+        )
 
     if open_cmd:
         log(vbs=f"open {len(all_out_file_paths)} plots:")
@@ -505,7 +520,9 @@ def format_in_file_path(in_file_path, setups_lst):
     return f"{match.group('start')}{{{s_ids}}}{match.group('end')}"
 
 
-def merge_pdf_plots(paths: Sequence[str], dry_run: bool = False) -> List[str]:
+def merge_pdf_plots(
+    paths: Sequence[str], *, remove_merged: bool = True, dry_run: bool = False
+) -> List[str]:
     paths = list(paths)
 
     # Collect PDFs
@@ -578,7 +595,7 @@ def merge_pdf_plots(paths: Sequence[str], dry_run: bool = False) -> List[str]:
             if path != merged:
                 log(dbg=f"remove {path}")
                 paths.remove(path)
-                if not dry_run:
+                if not dry_run and remove_merged:
                     Path(path).unlink()
 
     return paths
