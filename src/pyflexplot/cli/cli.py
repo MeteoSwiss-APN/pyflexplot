@@ -12,6 +12,7 @@ import time
 import traceback
 from functools import partial
 from os.path import abspath
+from os.path import relpath
 from pathlib import Path
 from typing import Any
 from typing import Dict
@@ -380,9 +381,13 @@ def main(
     tmp_dir,
 ):
     """Create dispersion plot as specified in CONFIG_FILE(S)."""
+    if dest_dir is None:
+        dest_dir = "."
+    if tmp_dir is None:
+        tmp_dir = dest_dir
 
     # Check if temporary directory (if given) already exists
-    if tmp_dir and os.path.exists(tmp_dir):
+    if tmp_dir != "." and os.path.exists(tmp_dir):
         log(dbg="using existing temporary directory '{tmp_dir}'")
 
     # Add preset setup file paths
@@ -442,7 +447,7 @@ def main(
             format_out_file_paths(
                 field,
                 prev_paths=all_out_file_paths,
-                dest_dir=(tmp_dir or dest_dir or "."),
+                dest_dir=tmp_dir,
             )
             for field in field_lst
         ]
@@ -473,13 +478,14 @@ def main(
     if merge_pdfs:
         log(vbs="merge PDF plots")
         pdf_dry_run = dry_run and not merge_pdfs_dry
-        iter_max = 1 if abspath(dest_dir or ".") == abspath(tmp_dir) else 10
+        iter_max = 1 if abspath(dest_dir) == abspath(tmp_dir) else 10
         for iter_i in range(iter_max):
             all_out_file_paths_tmp = list(all_out_file_paths)
             try:
                 pdf_page_paths = merge_pdf_plots(
                     all_out_file_paths_tmp,
-                    dest_dir=(dest_dir or "."),
+                    tmp_dir=tmp_dir,
+                    dest_dir=dest_dir,
                     keep_merged=keep_merged_pdfs,
                     dry_run=pdf_dry_run,
                 )
@@ -497,15 +503,15 @@ def main(
             log(err="Could not merge PDFs in {iter_max} attempts")
 
     # Remove remaining output files (after PDF merging) to destination
-    if dest_dir or tmp_dir:
+    if abspath(dest_dir) != abspath(tmp_dir):
         for file_path in all_out_file_paths:
-            file_path_rel = os.path.relpath(file_path, start=(tmp_dir or dest_dir))
-            file_path_dest = f"{dest_dir or '.'}/{file_path_rel}"
-            if abspath(file_path) == abspath(file_path_dest):
+            if not abspath(file_path).startswith(abspath(tmp_dir)):
                 continue
+            file_path_dest = f"{dest_dir}/{relpath(file_path, start=tmp_dir)}"
             log(vbs=f"{file_path} -> {file_path_dest}")
-            os.makedirs(os.path.dirname(file_path_dest), exist_ok=True)
-            os.replace(file_path, file_path_dest)
+            if not dry_run:
+                os.makedirs(os.path.dirname(file_path_dest), exist_ok=True)
+                os.replace(file_path, file_path_dest)
 
     # Remove temporary directory (if given) unless it already existed before
     remove_tmpdir = tmp_dir and not dry_run and not os.listdir(tmp_dir)
@@ -604,7 +610,8 @@ def format_in_file_path(in_file_path, setups: SetupCollection) -> str:
 def merge_pdf_plots(
     paths: List[str],
     *,
-    dest_dir: Optional[str] = None,
+    tmp_dir: str = None,
+    dest_dir: str = None,
     keep_merged: bool = True,
     dry_run: bool = False,
 ) -> List[str]:
@@ -672,9 +679,7 @@ def merge_pdf_plots(
     # Merge PDFs with shared base name
     merged_pages: List[str] = []
     for group in grouped_pdf_paths:
-        merged = group[0]
-        if dest_dir:
-            merged = f"{dest_dir}/{os.path.basename(merged)}"
+        merged = f"{dest_dir}/{relpath(group[0], start=tmp_dir)}"
         if keep_merged and abspath(merged) == abspath(group[0]):
             raise Exception(
                 "input and output files are the same file, which is not allowed for"
