@@ -496,10 +496,10 @@ def main(
         else:
             log(err="Could not merge PDFs in {iter_max} attempts")
 
-    # Remove remaining (after PDF merging) output files  to destination
+    # Remove remaining output files (after PDF merging) to destination
     if dest_dir or tmp_dir:
         for file_path in all_out_file_paths:
-            file_path_rel = os.path.relpath(file_path, start=(dest_dir or "."))
+            file_path_rel = os.path.relpath(file_path, start=(tmp_dir or dest_dir))
             file_path_dest = f"{dest_dir or '.'}/{file_path_rel}"
             if abspath(file_path) == abspath(file_path_dest):
                 continue

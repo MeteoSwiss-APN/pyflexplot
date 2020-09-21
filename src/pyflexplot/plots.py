@@ -134,6 +134,7 @@ def create_plot(
             dir_path = os.path.dirname(file_path)
             if dir_path:
                 os.makedirs(dir_path, exist_ok=True)
+            log(dbg=f"writing plot {file_path}")
             plot.write(file_path)
         log(dbg=f"created plot {file_path}")
     plot.clean()
