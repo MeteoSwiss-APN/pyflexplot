@@ -37,7 +37,7 @@ class FlexPartDataFixer:
                 return
         elif model in self.ifs_models:
             if unit in ["ng m-3", "1e-12 kg m-2"]:
-                fact = 1.0
+                fact = 1.0e-12
             else:
                 msg = f"model {model}: unrecognized unit '{unit}'; skip variable fixes"
                 log(wrn=msg)

@@ -62,9 +62,9 @@ def _datadir_core(subdir, tmpdir, request):
 def fix_nc_fld(fld, model):
     """Fix field read directly from NetCDF file."""
     if model.startswith("COSMO-"):
-        fld[:] *= 1e-12
+        fld[:] *= 1.0e-12
     elif model.startswith("IFS-"):
-        fld[:] *= 1.0
+        fld[:] *= 1.0e-12
     else:
         raise NotImplementedError("model", model)
 
