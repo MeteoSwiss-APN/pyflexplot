@@ -59,7 +59,8 @@ class FlexPartDataFixer:
             if unit == "ng kg-1":
                 new_unit = "Bq h m-3" if integrate else "Bq m-3"
             elif unit == "1e-12 kg m-2":
-                new_unit = "Bq h m-2" if integrate else "Bq m-2"
+                # new_unit = "Bq h m-2" if integrate else "Bq m-2"
+                new_unit = "Bq m-2"
             else:
                 msg = f"model {model}: unrecognized unit '{unit}'; skip meta data fixes"
                 log(wrn=msg)
@@ -68,7 +69,8 @@ class FlexPartDataFixer:
             if unit == "ng m-3":
                 new_unit = "Bq h m-3" if integrate else "Bq m-3"
             elif unit == "1e-12 kg m-2":
-                new_unit = "Bq h m-2" if integrate else "Bq m-2"
+                # new_unit = "Bq h m-2" if integrate else "Bq m-2"
+                new_unit = "Bq m-2"
             else:
                 msg = f"model {model}: unrecognized unit '{unit}'; skip meta data fixes"
                 log(wrn=msg)
