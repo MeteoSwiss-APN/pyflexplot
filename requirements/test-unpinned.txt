@@ -1,9 +1,0 @@
-black
-flake8
-pre-commit
-pydocstyle
-# pylint
-pytest
-pytest-cov
-pytest-mypy
-tox

@@ -46,26 +46,20 @@ ifeq (${CHAIN}, 0)
 	_VENV :=
 	_INSTALL :=
 	_INSTALL_EDIT :=
-	_INSTALL_TEST :=
 	_INSTALL_DEV :=
 	_INSTALL_PINNED :=
-	_INSTALL_TEST_PINNED :=
 else
 	_VENV := venv
 	_INSTALL := install
 	_INSTALL_EDIT := install-edit
-	_INSTALL_TEST := install-test
 	_INSTALL_DEV := install-dev
 	_INSTALL_PINNED := install-pinned
-	_INSTALL_TEST_PINNED := install-test-pinned
 endif
 export _VENV
 export _INSTALL
 export _INSTALL_EDIT
-export _INSTALL_TEST
 export _INSTALL_DEV
 export _INSTALL_PINNED
-export _INSTALL_TEST_PINNED
 
 #==============================================================================
 # Python script: Print help
@@ -216,34 +210,23 @@ endif
 .PHONY: install #CMD Install the package with unpinned runtime dependencies.
 install: venv
 	@echo -e "${ECHO_PREFIX}installing the package"
-	${PREFIX}python -m pip install .
+	${PREFIX}python -m pip install . --use-feature=2020-resolver
 
 .PHONY: install-edit #CMD Install the package as editable with unpinned runtime dependencies.
 install-edit: venv
 	@echo -e "${ECHO_PREFIX}installing the package as editable"
-	${PREFIX}python -m pip install -e .
+	${PREFIX}python -m pip install -e . --use-feature=2020-resolver
 
 .PHONY: install-pinned #CMD Install the package with pinned runtime dependencies.
 install-pinned: venv
 	@echo -e "${ECHO_PREFIX}installing the package with pinned dependencies"
-	${PREFIX}python -m pip install -r requirements/run-pinned.txt
-	${PREFIX}python -m pip install .
+	${PREFIX}python -m pip install -r requirements/run-pinned.txt --use-feature=2020-resolver
+	${PREFIX}python -m pip install . --use-feature=2020-resolver
 
-.PHONY: install-test-pinned #CMD Install the package with pinned runtime and testing dependencies.
-install-test-pinned: venv
-	@echo -e "${ECHO_PREFIX}installing the package as editable with pinned testing dependencies"
-	${PREFIX}python -m pip install -r requirements/test-pinned.txt
-	${PREFIX}python -m pip install -e .
-
-.PHONY: install-test #CMD Install the package with unpinned runtime and testing dependencies.
-install-test: install-edit
-	@echo -e "${ECHO_PREFIX}installing the package with testing dependencies"
-	${PREFIX}python -m pip install -r requirements/test-unpinned.txt
-
-.PHONY: install-dev #CMD Install the package as editable with unpinned runtime,\ntesting, and development dependencies.
-install-dev: install-test
-	@echo -e "${ECHO_PREFIX}installing the package as editable with testing and development dependencies"
-	${PREFIX}python -m pip install -r requirements/dev-unpinned.txt
+.PHONY: install-dev #CMD Install the package as editable with unpinned runtime\n and development dependencies.
+install-dev: install-edit
+	@echo -e "${ECHO_PREFIX}installing the package as editable with runtime and development dependencies"
+	${PREFIX}python -m pip install -r requirements/dev-unpinned.txt --use-feature=2020-resolver
 	${PREFIX}pre-commit install
 
 #==============================================================================
@@ -317,34 +300,23 @@ check: ${_INSTALL_DEV}
 
 .PHONY: test-fast #CMD Run only fast tests.
 test-fast: ${_INSTALL_TEST}
-	@echo -e "${ECHO_PREFIX}running tests"
-	${PREFIX}pytest tests/fast
+	@echo -e "${ECHO_PREFIX}running fast tests"
+	${PREFIX}tox -e py37 --skip-pkg-install -- tests/fast
 
 .PHONY: test-medium #CMD Run only medium-fast tests.
 test-medium: ${_INSTALL_TEST}
-	@echo -e "${ECHO_PREFIX}running tests"
-	${PREFIX}pytest tests/medium
+	@echo -e "${ECHO_PREFIX}running medium-fast tests"
+	${PREFIX}tox -e py37 --skip-pkg-install -- tests/medium
 
 .PHONY: test-slow #CMD Run only slow tests.
 test-slow: ${_INSTALL_TEST}
 	@echo -e "${ECHO_PREFIX}running tests"
-	${PREFIX}pytest tests/slow
+	${PREFIX}tox -e py37 --skip-pkg-install -- tests/slow
 
-.PHONY: test-fast test-medium test-slow #CMD Run all tests.
+.PHONY: test #CMD Run all tests in isolation.
 test: ${_INSTALL_TEST}
-	@echo -e "${ECHO_PREFIX}running tests"
-	${PREFIX}pytest
-
-.PHONY: test-cov #CMD Check code coverage of tests.
-test-cov: ${_INSTALL_TEST}
-	@echo -e "${ECHO_PREFIX}running tests with coverage check"
-	${PREFIX}pytest --cov=src
-
-.PHONY: test-cov-html #CMD Check code coverage of tests and show results in browser.
-test-cov-html: ${_INSTALL_TEST}
-	@echo -e "${ECHO_PREFIX}running tests with coverage check and browser report"
-	${PREFIX}pytest --cov=src --cov-report=html
-	${browser} htmlcov/index.html
+	@echo -e "${ECHO_PREFIX}running all tests in isolation"
+	${PREFIX}tox -e py37
 
 .PHONY: test-all #CMD Run tests on all specified Python versions with tox.
 test-all: ${_INSTALL_TEST}
