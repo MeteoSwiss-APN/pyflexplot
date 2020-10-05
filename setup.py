@@ -38,8 +38,7 @@ python = ">= 3.7"
 dependencies = [
     (
         "cartopy"
-        "@git+ssh://git@github.com/MeteoSwiss-APN/cartopy.git"
-        "#v0.18.0-MeteoSwiss-APN"
+        "@git+ssh://git@github.com/MeteoSwiss-APN/cartopy.git#v0.18.0-MeteoSwiss-APN"
     ),
     "click>=6.0",
     "geopy",
@@ -55,7 +54,7 @@ dependencies = [
 ]
 
 # Build shapely from source (dependency of Cartopy)
-dependencies.append("shapely @ git+ssh://git@github.com/Toblerity/shapely.git")
+dependencies.append("shapely@git+ssh://git@github.com/Toblerity/shapely.git@1.7.1")
 
 scripts = [
     "pyflexplot=pyflexplot.cli.cli:cli",
