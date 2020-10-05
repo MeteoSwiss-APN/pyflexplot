@@ -207,26 +207,16 @@ endif
 # Installation
 #==============================================================================
 
-.PHONY: install #CMD Install the package with unpinned runtime dependencies.
+.PHONY: install #CMD Install the package with pinned runtime dependencies.
 install: venv
 	@echo -e "${ECHO_PREFIX}installing the package"
 	${PREFIX}python -m pip install . --use-feature=2020-resolver
 
-.PHONY: install-edit #CMD Install the package as editable with unpinned runtime dependencies.
-install-edit: venv
-	@echo -e "${ECHO_PREFIX}installing the package as editable"
+.PHONY: install-dev #CMD Install the package as editable with pinned runtime and development dependencies.
+install-dev: venv
+	@echo -e "${ECHO_PREFIX}installing the package as editable with development dependencies"
+	${PREFIX}python -m pip install -r requirements/dev-pinned.txt --use-feature=2020-resolver
 	${PREFIX}python -m pip install -e . --use-feature=2020-resolver
-
-.PHONY: install-pinned #CMD Install the package with pinned runtime dependencies.
-install-pinned: venv
-	@echo -e "${ECHO_PREFIX}installing the package with pinned dependencies"
-	${PREFIX}python -m pip install -r requirements/run-pinned.txt --use-feature=2020-resolver
-	${PREFIX}python -m pip install . --use-feature=2020-resolver
-
-.PHONY: install-dev #CMD Install the package as editable with unpinned runtime and development dependencies.
-install-dev: install-edit
-	@echo -e "${ECHO_PREFIX}installing the package as editable with runtime and development dependencies"
-	${PREFIX}python -m pip install -r requirements/dev-unpinned.txt --use-feature=2020-resolver
 	${PREFIX}pre-commit install
 
 #==============================================================================
