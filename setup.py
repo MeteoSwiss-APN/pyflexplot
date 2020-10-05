@@ -35,26 +35,35 @@ metadata = {
 
 python = ">= 3.7"
 
-dependencies = [
-    (
-        "cartopy"
-        "@git+ssh://git@github.com/MeteoSwiss-APN/cartopy.git#v0.18.0-MeteoSwiss-APN"
-    ),
-    "click>=6.0",
-    "geopy",
-    "matplotlib",
-    "netcdf4",
-    "numpy",
-    "pillow>=7.1.0",
-    "pydantic",
-    "pypdf2",
-    "scipy",
-    "toml",
-    "typing-extensions",
-]
-
-# Build shapely from source (dependency of Cartopy)
-dependencies.append("shapely@git+ssh://git@github.com/Toblerity/shapely.git@1.7.1")
+# Runtime dependencies
+try:
+    # Try to read pinned dependencies from requirements.txt
+    with open("requirements.txt") as fi:
+        dependencies = [line.strip() for line in fi.readlines()]
+except Exception:
+    # Otherwise, use specified unpinned dependencies
+    dependencies = [
+        # Install cartopy from github to build it against installed C libraries
+        # Forked to add a pyproject.toml to specify cython as build dependency
+        (
+            "cartopy"
+            "@git+ssh://git@github.com/MeteoSwiss-APN/cartopy.git#v0.18.0-MeteoSwiss-APN"
+        ),
+        # Specify shapely as dependency because cartopy depends on it
+        # Install shapely from github to build it against installed C libraries
+        "shapely@git+ssh://git@github.com/Toblerity/shapely.git@1.7.1",
+        "click>=6.0",
+        "geopy",
+        "matplotlib",
+        "netcdf4",
+        "numpy",
+        "pillow>=7.1.0",
+        "pydantic",
+        "pypdf2",
+        "scipy",
+        "toml",
+        "typing-extensions",
+    ]
 
 scripts = [
     "pyflexplot=pyflexplot.cli.cli:cli",

@@ -242,7 +242,9 @@ update-run-deps:
 	@echo -e "temporary virtual environment: ${_TMP_VENV}"
 	python -m venv ${_TMP_VENV}
 	${_TMP_VENV}/bin/python -m pip install -U pip
-	${_TMP_VENV}/bin/python -m pip install . --use-feature=2020-resolver
+	\rm -fv requirements.txt
+	${_TMP_VENV}/bin/python -m pip install . --use-feature=2020-resolver; \
+		ln -sfv requirements/run-pinned.txt requirements.txt
 	${_TMP_VENV}/bin/python -m pip freeze | \grep -v '\<file:' > requirements/run-pinned.txt
 	\rm -rf ${_TMP_VENV}
 
@@ -335,23 +337,28 @@ check: ${_INSTALL_DEV}
 # Run the tests
 #==============================================================================
 
-.PHONY: test-fast #CMD Run only fast tests.
+.PHONY: test-fast #CMD Run only fast tests
 test-fast: ${_INSTALL_TEST}
 	@echo -e "${ECHO_PREFIX}running fast tests"
 	${PREFIX}tox -e py37 --skip-pkg-install -- tests/fast
 
-.PHONY: test-medium #CMD Run only medium-fast tests.
+.PHONY: test-medium #CMD Run only medium-fast tests
 test-medium: ${_INSTALL_TEST}
 	@echo -e "${ECHO_PREFIX}running medium-fast tests"
 	${PREFIX}tox -e py37 --skip-pkg-install -- tests/medium
 
-.PHONY: test-slow #CMD Run only slow tests.
+.PHONY: test-slow #CMD Run only slow tests
 test-slow: ${_INSTALL_TEST}
 	@echo -e "${ECHO_PREFIX}running tests"
 	${PREFIX}tox -e py37 --skip-pkg-install -- tests/slow
 
-.PHONY: test #CMD Run all tests in isolation.
+.PHONY: test #CMD Run all tests
 test: ${_INSTALL_TEST}
+	@echo -e "${ECHO_PREFIX}running all tests"
+	${PREFIX}tox -e py37 --skip-pkg-install
+
+.PHONY: test-iso #CMD Run all tests in isolation
+test-iso: ${_INSTALL_TEST}
 	@echo -e "${ECHO_PREFIX}running all tests in isolation"
 	${PREFIX}tox -e py37
 
