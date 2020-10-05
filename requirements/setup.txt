@@ -1,3 +1,0 @@
--U pip
-cython>=0.28
-numpy>=1.10
