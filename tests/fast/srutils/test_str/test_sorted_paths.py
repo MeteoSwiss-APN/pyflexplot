@@ -21,7 +21,7 @@ def test_nodup():
 
 
 @dataclass
-class TestCase:
+class _TestCase:
     description: str
     paths: List[str]  # in same order as expected after ``sorted_paths(...)``
     dup_sep: Optional[str] = "-"
@@ -50,36 +50,36 @@ class TestCase:
 
 
 def test_TestCase():
-    case = TestCase("test", ["foo.png", "bar.png", "bar-1.png", "bar-10.png"])
+    case = _TestCase("test", ["foo.png", "bar.png", "bar-1.png", "bar-10.png"])
     assert sorted_paths(case.paths) == case.sorted()
 
 
 @pytest.mark.parametrize(
     "case",
     [
-        TestCase(
+        _TestCase(
             "one duplicate type, all numbered, all same magnitude",
             ["foo-1.png", "foo-2.png", "foo-3.png"],
             builtin_ok=True,
         ),
-        TestCase(
+        _TestCase(
             "one duplicate type, first unnumbered, all same magnitude",
             ["foo.png", "foo-1.png", "foo-2.png"],
         ),
-        TestCase(
+        _TestCase(
             "one duplicate type, different magnitudes",
             ["foo.png"] + list(map("foo-{}.png".format, range(1, 21))),
         ),
-        TestCase(
+        _TestCase(
             "two duplicate types, plus a non-duplicate",
             ["bar.c", "bar-1.c", "bar-10.c", "baz.c", "foo-1.c", "foo-10.c"],
         ),
-        TestCase(
+        _TestCase(
             "different separator",
             ["bar.f", "bar.1.f", "bar.10.f", "foo-1.c", "foo-10.c", "foo.c"],
             dup_sep=".",
         ),
-        TestCase(
+        _TestCase(
             "multiple separators",
             ["bar.f", "bar.1.f", "bar.10.f", "foo.c", "foo-1.c", "foo-10.c"],
             dup_sep="-.",
