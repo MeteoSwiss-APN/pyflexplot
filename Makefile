@@ -280,22 +280,21 @@ bump-major-dry: ${_INSTALL_DEV}
 	${PREFIX}bumpversion major --no-commit --no-tag
 
 #==============================================================================
-# Formatting and linting
+# Format and check the code
 #==============================================================================
 
-.PHONY: format #CMD Format the code to conform with PEP 8 etc.
+.PHONY: format #CMD Check and fix the code formatting
 format: ${_INSTALL_DEV}
-	@echo -e "${ECHO_PREFIX}formatting the code using pre-commit hooks"
-	${PREFIX}pre-commit run isort -v --all-files || :  # Ignore non-zero exit status
-	${PREFIX}pre-commit run black -v --all-files || :  # Ignore non-zero exit status
-
-.PHONY: check #CMD Format and check the code.
-check: ${_INSTALL_DEV}
-	@echo -e "${ECHO_PREFIX}formatting and checking the code using pre-commit hooks"
+	@echo -e "${ECHO_PREFIX}checking and fixing code formatting"
 	${PREFIX}pre-commit run --all-files
 
+.PHONY: check # CMD
+check: ${_INSTALL_DEV}
+	@echo -e "${ECHO_PREFIX}checking code correctness and quality"
+	${PREFIX}tox --parallel -e mypy -e flake8 -e pylint
+
 #==============================================================================
-# Testing
+# Run the tests
 #==============================================================================
 
 .PHONY: test-fast #CMD Run only fast tests.

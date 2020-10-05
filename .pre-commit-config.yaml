@@ -26,17 +26,3 @@ repos:
     hooks:
     -   id: pydocstyle
         files: ^(src|tests)/(.*/)*.*\.py$
--   repo: https://github.com/PyCQA/flake8
-    rev: 3.8.3
-    hooks:
-    -   id: flake8
-        files: ^(.*\.py|(src|tests|docs)/(.*/)*.*\.py)$
--   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.782
-    hooks:
-    -   id: mypy
-        files: ^(.*\.py|(src|tests|docs)/(.*/)*.*\.py)$
-        exclude: ^tests/(.*/)*ref_.*.py$
-        args: [--no-strict-optional, --ignore-missing-imports, --pretty]
-        additional_dependencies:
-        -   "pydantic"
