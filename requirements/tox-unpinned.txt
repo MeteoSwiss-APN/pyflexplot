@@ -1,5 +1,6 @@
 flake8
 mypy
+pre-commit
 pylint
 pytest
-pytest-cov
+# pytest-cov
