@@ -58,7 +58,7 @@ pycodestyle==2.6.0
 pydantic==1.6.1
 pydocstyle==5.1.1
 pyflakes==2.2.0
--e git+git@github.com:MeteoSwiss-APN/pyflexplot.git@b3f3218e31fd6bbd8071df76ba97ab28c1284a93#egg=pyflexplot
+-e git+git@github.com:MeteoSwiss-APN/pyflexplot.git@40365412f8afeb23b0a2364dc57991a7ac3cd34e#egg=pyflexplot
 Pygments==2.7.1
 pylint==2.6.0
 pyparsing==2.4.7
@@ -73,7 +73,7 @@ requests==2.24.0
 rope==0.17.0
 rstcheck==3.3.1
 scipy==1.5.2
-Shapely==1.8.dev0
+Shapely==1.7.1
 six==1.15.0
 snowballstemmer==2.0.0
 Sphinx==3.2.1
