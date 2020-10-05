@@ -243,7 +243,7 @@ update-run-deps:
 	python -m venv ${_TMP_VENV}
 	${_TMP_VENV}/bin/python -m pip install -U pip
 	${_TMP_VENV}/bin/python -m pip install . --use-feature=2020-resolver
-	${_TMP_VENV}/bin/python -m pip freeze > requirements/run-pinned.txt
+	${_TMP_VENV}/bin/python -m pip freeze | \grep -v '\<file:' > requirements/run-pinned.txt
 	\rm -rf ${_TMP_VENV}
 
 .PHONY: update-dev-deps #CMD Update pinned development dependencies based on\nrequirements/run-pinned.txt and requitements/dev-unpinned.txt
@@ -254,7 +254,6 @@ update-dev-deps:
 	${_TMP_VENV}/bin/python -m pip install -U pip
 	${_TMP_VENV}/bin/python -m pip install -r requirements/dev-unpinned.txt --use-feature=2020-resolver
 	${_TMP_VENV}/bin/python -m pip install -r requirements/run-pinned.txt --no-deps --use-feature=2020-resolver
-	${_TMP_VENV}/bin/python -m pip install -e . --no-deps
 	${_TMP_VENV}/bin/python -m pip freeze > requirements/dev-pinned.txt
 	\rm -rf ${_TMP_VENV}
 

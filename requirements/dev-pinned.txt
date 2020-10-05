@@ -58,7 +58,6 @@ pycodestyle==2.6.0
 pydantic==1.6.1
 pydocstyle==5.1.1
 pyflakes==2.2.0
--e git+git@github.com:MeteoSwiss-APN/pyflexplot.git@40365412f8afeb23b0a2364dc57991a7ac3cd34e#egg=pyflexplot
 Pygments==2.7.1
 pylint==2.6.0
 pyparsing==2.4.7
