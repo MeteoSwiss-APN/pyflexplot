@@ -47,7 +47,8 @@ except Exception:
         # Forked to add a pyproject.toml to specify cython as build dependency
         (
             "cartopy"
-            "@git+ssh://git@github.com/MeteoSwiss-APN/cartopy.git#v0.18.0-MeteoSwiss-APN"
+            "@git+ssh://git@github.com/MeteoSwiss-APN/cartopy.git"
+            "#v0.18.0-MeteoSwiss-APN"
         ),
         # Specify shapely as dependency because cartopy depends on it
         # Install shapely from github to build it against installed C libraries
