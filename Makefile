@@ -279,35 +279,43 @@ endif
 # Versioning
 #==============================================================================
 
-.PHONY: bump-patch #CMD Bump patch component of version number (x.y.Z), incl. git commit and tag
+# Note:
+# Bump2version v1.0.0 is incompatible with pre-commit hook fix-trailing-whitespace
+# (https://ithub.com/c4urself/bump2version/issues/124), therefore we pre-commit,
+# commit, and tag manually. Once the whitespace problem is fixed, this can again
+# be done in one command:
+#	@read -p "Please annotate new tag: " msg \
+# 	&& ${PREFIX}bumpversion patch --verbose --tag-message="$${msg}"
+
+.PHONY: bump-patch #CMD Increment patch component Z of version number X.Y.Z,\nincl. git commit and tag
 bump-patch: ${_INSTALL_DEV}
-	@echo -e "${ECHO_PREFIX}bumping version number: increment patch component"
-	${PREFIX}bumpversion patch
+	@echo -e "${ECHO_PREFIX}bumping version number: increment patch component\n"
+	@${PREFIX}bumpversion patch --verbose --no-commit --no-tag && echo
+	@${PREFIX}pre-commit run --files $$(git diff --name-only) && git add -u
+	@git commit -m "new version v$$(cat VERSION) (patch bump)" --no-verify && echo
+	@read -p "Please annotate new tag: " msg && git tag v$$(cat VERSION) -a  -m "$${msg}"
+	@echo -e "\ngit tag -n v$$(cat VERSION)" && git tag -n v$$(cat VERSION)
+	@echo -e "\ngit log -n1" && git log -n1
 
-.PHONY: bump-minor #CMD Bump minor component of version number (x.Y.z), incl. git commit and tag
+.PHONY: bump-minor #CMD Increment minor component Y of version number X.Y.Z,\nincl. git commit and tag
 bump-minor: ${_INSTALL_DEV}
-	@echo -e "${ECHO_PREFIX}bumping version number: increment minor component"
-	${PREFIX}bumpversion minor
+	@echo -e "${ECHO_PREFIX}bumping version number: increment minor component\n"
+	@${PREFIX}bumpversion minor --verbose --no-commit --no-tag && echo
+	@${PREFIX}pre-commit run --files $$(git diff --name-only) && git add -u
+	@git commit -m "new version v$$(cat VERSION) (minor bump)" --no-verify && echo
+	@read -p "Please annotate new tag: " msg && git tag v$$(cat VERSION) -a  -m "$${msg}"
+	@echo -e "\ngit tag -n v$$(cat VERSION)" && git tag -n v$$(cat VERSION)
+	@echo -e "\ngit log -n1" && git log -n1
 
-.PHONY: bump-major #CMD Bump minor component of version number (X.y.z), incl. git commit and tag
+.PHONY: bump-major #CMD Increment major component X of version number X.Y.Z,\nincl. git commit and tag
 bump-major: ${_INSTALL_DEV}
-	@echo -e "${ECHO_PREFIX}bumping version number: increment major component"
-	${PREFIX}bumpversion major
-
-.PHONY: bump-patch-dry #CMD Bump patch component of version number (x.y.Z), without git commit and tag
-bump-patch-dry: ${_INSTALL_DEV}
-	@echo -e "${ECHO_PREFIX}bumping version number: increment patch component (dry run)"
-	${PREFIX}bumpversion patch --no-commit --no-tag
-
-.PHONY: bump-minor-dry #CMD Bump minor component of version number (x.Y.z), without git commit and tag
-bump-minor-dry: ${_INSTALL_DEV}
-	@echo -e "${ECHO_PREFIX}bumping version number: increment minor component (dry run)"
-	${PREFIX}bumpversion minor --no-commit --no-tag
-
-.PHONY: bump-major-dry #CMD Bump minor component of version number (X.y.z), without git commit and tag
-bump-major-dry: ${_INSTALL_DEV}
-	@echo -e "${ECHO_PREFIX}bumping version number: increment major component (dry run)"
-	${PREFIX}bumpversion major --no-commit --no-tag
+	@echo -e "${ECHO_PREFIX}bumping version number: increment major component\n"
+	@${PREFIX}bumpversion major --verbose --no-commit --no-tag && echo
+	@${PREFIX}pre-commit run --files $$(git diff --name-only) && git add -u
+	@git commit -m "new version v$$(cat VERSION) (major bump)" --no-verify && echo
+	@read -p "Please annotate new tag: " msg && git tag v$$(cat VERSION) -a  -m "$${msg}"
+	@echo -e "\ngit tag -n v$$(cat VERSION)" && git tag -n v$$(cat VERSION)
+	@echo -e "\ngit log -n1" && git log -n1
 
 #==============================================================================
 # Format and check the code
