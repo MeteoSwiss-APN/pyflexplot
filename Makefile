@@ -47,19 +47,16 @@ ifeq (${CHAIN}, 0)
 	_INSTALL :=
 	_INSTALL_EDIT :=
 	_INSTALL_DEV :=
-	_INSTALL_PINNED :=
 else
 	_VENV := venv
 	_INSTALL := install
 	_INSTALL_EDIT := install-edit
 	_INSTALL_DEV := install-dev
-	_INSTALL_PINNED := install-pinned
 endif
 export _VENV
 export _INSTALL
 export _INSTALL_EDIT
 export _INSTALL_DEV
-export _INSTALL_PINNED
 
 #==============================================================================
 # Python script: Print help
@@ -175,7 +172,7 @@ clean-pyc:
 	@\rm -rf $(\find . -not -path './venv*' -and -not -path './ENV*' -name '*~'          -exec echo "rm -rf '{}'" \;)
 	@\rm -rf $(\find . -not -path './venv*' -and -not -path './ENV*' -name '__pycache__' -exec echo "rm -rf '{}'" \;)
 
-.PHYNO: clean-test #CMD Remove testing artifacts.
+.PHONY: clean-test #CMD Remove testing artifacts.
 clean-test:
 	@echo -e "${ECHO_PREFIX}removing testing artifacts"
 	\rm -rf ".tox/"
@@ -183,7 +180,8 @@ clean-test:
 	\rm -rf "htmlcov/"
 	\rm -rf ".pytest_cache"
 
-clean-venv: #CMD Remove virtual environment.
+.PHONY: clean-venv #CMD Remove virtual environment.
+clean-venv:
 	@echo -e "${ECHO_PREFIX}removing virtual environment at '${VENV_DIR}'"
 	\rm -rf "${VENV_DIR}"
 
@@ -228,12 +226,12 @@ endif
 #==============================================================================
 
 .PHONY: install #CMD Install the package with pinned runtime dependencies.
-install: venv
+install: ${_VENV}
 	@echo -e "${ECHO_PREFIX}installing the package"
 	${PREFIX}python -m pip install . --use-feature=2020-resolver
 
 .PHONY: install-dev #CMD Install the package as editable with pinned runtime and development dependencies.
-install-dev: venv
+install-dev: ${_VENV}
 	@echo -e "${ECHO_PREFIX}installing the package as editable with development dependencies"
 	${PREFIX}python -m pip install -r requirements/dev-pinned.txt --use-feature=2020-resolver
 	${PREFIX}python -m pip install -e . --use-feature=2020-resolver
