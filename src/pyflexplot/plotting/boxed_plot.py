@@ -200,7 +200,7 @@ class BoxedPlot:
         except ValueError as e:
             if str(e) == "'bboxes' cannot be empty":
                 # Expected error when there are no contours to plot
-                # (Easier to catch error than exlicitly detect 'empty' array)
+                # (Easier to catch error than explicitly detect 'empty' array)
                 return
             raise e
         else:

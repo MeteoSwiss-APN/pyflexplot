@@ -280,7 +280,7 @@ class Test_Create:
 
 
 class Test_Interact:
-    """Acces and change paramters, derive new objects, etc."""
+    """Access and change parameters, derive new objects, etc."""
 
     params = {
         "deposition_type": ("dry", "wet", None, "dry"),

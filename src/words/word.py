@@ -192,7 +192,7 @@ class TranslatedWord:
         return ctxs
 
     def set_active_lang(self, lang=None, query=None):
-        """Set the active language, either hard-coded or queriable.
+        """Set the active language, either hard-coded or queryable.
 
         Args:
             lang (str, None): Default language. Overridden by ``query`` if the

@@ -499,7 +499,7 @@ def nested_dict_resolve_wildcards(
         double (bool, optional): Resolve double-star wildcards. Defaults to
             True.
 
-        double_criterion (optional): Function to determine wether a double-star
+        double_criterion (optional): Function to determine whether a double-star
             wildcard is applied to a dict key. Accepts a string (the key name)
             and returns True or False.
 
@@ -588,7 +588,7 @@ def nested_dict_resolve_double_star_wildcards(dct, criterion=None):
     Args:
         dct: Nested dict.
 
-        criterion (optional): Function to determine wether a double-star
+        criterion (optional): Function to determine whether a double-star
             wildcard is applied to a dict key. Accepts a string (the key name)
             and returns True or False.
 

@@ -265,7 +265,7 @@ class Summarizer:
     a list of attribute names to be collected.
 
     If attribute values possess a ``summarize`` method themselves, the output
-    of that is collected. Otherwise, it is attemted to convert the values to
+    of that is collected. Otherwise, it is attempted to convert the values to
     common types like dicts or lists. If all attempts fail, the raw value is
     added to the summary dict.
 

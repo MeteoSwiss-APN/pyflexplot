@@ -225,7 +225,7 @@ def ensemble_probability(arr: np.ndarray, thr: float, n_mem: int) -> np.ndarray:
 
 @dataclass
 class EnsembleCloud:
-    """Partical cloud in an ensemble simulation.
+    """Particle cloud in an ensemble simulation.
 
     Args:
         arr: Data array with dimensions (members, time, space), where space
@@ -354,7 +354,7 @@ class EnsembleCloud:
         return self.arr.shape[0]
 
     def _init_result(self, val: float) -> np.ndarray:
-        """Initalize results array."""
+        """Initialize results array."""
         shape = tuple([self.arr.shape[1]] + list(self.arr.shape[2:]))
         return np.full(shape, val)
 

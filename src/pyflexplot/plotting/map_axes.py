@@ -582,7 +582,7 @@ class MapAxes:
         #       -> Branch: https://github.com/shevawen/cartopy/tree/patch-1
         #       -> PR: https://github.com/SciTools/cartopy/pull/1411
         #  - Fixed it in our fork MeteoSwiss-APN/cartopy
-        #       -> Fork fixes setup depencies issue (with  pyproject.toml)
+        #       -> Fork fixes setup dependencies issue (with  pyproject.toml)
         #  - For now, check validity of rivers geometry objects when adding
         #  - Once it works with the master branch, remove these workarounds
         # SR_WORKAROUND >
