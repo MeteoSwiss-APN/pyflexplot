@@ -188,11 +188,30 @@ clean-venv: #CMD Remove virtual environment.
 	\rm -rf "${VENV_DIR}"
 
 #==============================================================================
+# Version control
+#==============================================================================
+
+.PHONY: git #CMD Initialize a git repository and make initial commit.
+git: clean-all
+ifeq ($(shell git tag >/dev/null 2>&1 && echo 0 || echo 1), 0)
+	@echo -e "${ECHO_PREFIX}git already initialized"
+else
+	@echo -e "${ECHO_PREFIX}initializing Git repository"
+	\git init
+	\git add .
+	\git commit -m 'initial commit'
+	\git --no-pager log -n1 --stat
+endif
+
+#==============================================================================
 # Virtual Environments
 #==============================================================================
 
 .PHONY: venv #CMD Create a virtual environment.
 venv:
+ifneq ($(shell git tag >/dev/null 2>&1 && echo 0 || echo 1), 0)
+	@echo -e "${ECHO_PREFIX}error: git not initialized (run `make git`)"
+else
 ifeq (${IGNORE_VENV}, 0)
 	$(eval PREFIX = ${PREFIX_VENV})
 	@export PREFIX
@@ -200,6 +219,7 @@ ifeq (${VIRTUAL_ENV},)
 	@echo -e "${ECHO_PREFIX}creating virtual environment '${VENV_NAME}' at '${VENV_DIR}'"
 	python -m venv ${VENV_DIR} --prompt='${VENV_NAME}'
 	${PREFIX}python -m pip install -U pip
+endif
 endif
 endif
 
@@ -260,22 +280,6 @@ update-tox-deps:
 	\rm -rf ${_TMP_VENV}
 
 #==============================================================================
-# Version control
-#==============================================================================
-
-.PHONY: git #CMD Initialize a git repository and make initial commit.
-git: clean-all
-ifeq ($(shell git tag >/dev/null 2>&1 && echo 0 || echo 1), 0)
-	@echo -e "${ECHO_PREFIX}git already initialized"
-else
-	@echo -e "${ECHO_PREFIX}initializing Git repository"
-	\git init
-	\git add .
-	\git commit -m 'initial commit'
-	\git --no-pager log -n1 --stat
-endif
-
-#==============================================================================
 # Versioning
 #==============================================================================
 
@@ -326,9 +330,9 @@ format: ${_INSTALL_DEV}
 	@echo -e "${ECHO_PREFIX}checking and fixing code formatting"
 	${PREFIX}pre-commit run --all-files
 
-.PHONY: check # CMD
+.PHONY: check # CMD Check the code for correctness and best practices
 check: ${_INSTALL_DEV}
-	@echo -e "${ECHO_PREFIX}checking code correctness and quality"
+	@echo -e "${ECHO_PREFIX}checking code correctness and best practices"
 	${PREFIX}tox --parallel -e mypy -e flake8 -e pylint
 
 #==============================================================================
