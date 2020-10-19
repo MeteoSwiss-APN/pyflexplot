@@ -20,6 +20,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from warnings import warn
 
 # Third-party
 import click
@@ -156,6 +157,14 @@ def click_prep_setup_params(ctx, param, value):
     nargs=-1,
 )
 @click.option(
+    "--auto-tmp/--no-auto-tmp",
+    help=(
+        "Use a temporary directory with an automatically generated name. Overridden by"
+        " --tmp=TMP_DIR."
+    ),
+    default=False,
+)
+@click.option(
     "--cache/--no-cache",
     help="Cache input fields to avoid reading the same data multiple times.",
     is_flag=True,
@@ -170,8 +179,18 @@ def click_prep_setup_params(ctx, param, value):
     is_flag=True,
     default=False,
 )
+# SR_TMP < TODO Remove once OSM replaces --dest-dir by --dest
 @click.option(
     "--dest-dir",
+    "dest_dir_old",
+    help="Replaced by --dest.",
+    metavar="DEST_DIR",
+    default=None,
+)
+# SR_TMP >
+@click.option(
+    "--dest",
+    "dest_dir",
     help=(
         "Directory where the plots are saved to. Defaults to the current directory."
         " Note that this option is incompatible with absolute paths specified in the"
@@ -288,14 +307,23 @@ def click_prep_setup_params(ctx, param, value):
     ),
     multiple=True,
 )
+# SR_TMP < TODO Remove once OSM replaces --tmp-dir by --tmp
 @click.option(
     "--tmp-dir",
+    "tmp_dir_old",
+    help="Replaced by --tmp.",
+    metavar="TMP_DIR",
+    default=None,
+)
+@click.option(
+    "--tmp",
+    "tmp_dir",
     help=(
         "Temporary directory in which the plots are created before being moved to"
         " DEST_DIR in the end."
     ),
     metavar="TMP_DIR",
-    default=f"tmp-pyflexplot-{int(time.time())}",
+    default=None,
 )
 @click.option(
     "--verbose",
@@ -366,7 +394,9 @@ class SharedIterationState:
 def main(
     ctx,
     *,
+    auto_tmp,
     cache,
+    dest_dir_old,  # SR_TMP TODO Remove once OSM replaces --dest-dir by --dest
     dest_dir,
     dry_run,
     input_setup_params,
@@ -378,13 +408,33 @@ def main(
     keep_merged_pdfs,
     setup_file_paths,
     suffixes,
+    tmp_dir_old,  # SR_TMP TODO Remove once OSM replaces --tmp-dir by --tmp
     tmp_dir,
 ):
     """Create dispersion plot as specified in CONFIG_FILE(S)."""
+    # SR_TMP < TODO Remove once OSM replaces --dest-dir by --dest
+    if dest_dir_old:
+        warn("--dest-dir has been replaced by --dest", DeprecationWarning)
+        if dest_dir:
+            click.echo("error: incompatible options: --dest-dir, --dest", err=True)
+            ctx.exit(1)
+        dest_dir = dest_dir_old
+    # SR_TMP >
+    # SR_TMP < TODO Remove once OSM replaces --tmp-dir by --tmp
+    if tmp_dir_old:
+        warn("--tmp-dir has been replaced by --tmp", DeprecationWarning)
+        if tmp_dir:
+            click.echo("error: incompatible options: --tmp-dir, --tmp", err=True)
+            ctx.exit(1)
+        tmp_dir = tmp_dir_old
+    # SR_TMP >
     if dest_dir is None:
         dest_dir = "."
     if tmp_dir is None:
-        tmp_dir = dest_dir
+        if auto_tmp:
+            tmp_dir = f"tmp-pyflexplot-{int(time.time())}"
+        else:
+            tmp_dir = dest_dir
 
     # Check if temporary directory (if given) already exists
     if tmp_dir != "." and os.path.exists(tmp_dir):
