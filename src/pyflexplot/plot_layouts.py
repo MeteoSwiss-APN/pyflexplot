@@ -191,4 +191,4 @@ class BoxedPlotLayoutDeterministic(BoxedPlotLayoutModern):
 @dataclass
 # pylint: disable=R0902  # too-many-instance-attributes
 class BoxedPlotLayoutEnsemble(BoxedPlotLayoutModern):
-    h_rigtop: float = 0.17
+    h_rigtop: float = 0.2

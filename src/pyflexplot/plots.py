@@ -613,10 +613,11 @@ def create_plot_config(
             if setup.core.ens_variable.endswith("probability"):
                 new_config_dct.update(
                     {
-                        "n_levels": 9,
                         "d_level": 10,
-                        "cmap": truncate_cmap("terrain_r", 0.05),
+                        "n_levels": 9,
+                        "cmap": truncate_cmap("nipy_spectral_r", 0.275, 0.95),
                         "extend": "max",
+                        "color_over": "black",
                     }
                 )
             elif setup.core.ens_variable in [
@@ -733,6 +734,11 @@ def create_box_labels(
     labels["data_info"]["lines"].append(
         f"{words['input_variable'].c}:\t{capitalize(var_name_abbr)}"
     )
+    if setup.core.input_variable == "concentration":
+        labels["data_info"]["lines"].append(
+            f"{words['height'].c}:"
+            f"\t{escape_format_keys(format_level_label(mdata, words))}"
+        )
     if setup.get_simulation_type() == "ensemble":
         # SR_TMP <
         if setup.core.ens_variable == "cloud_occurrence_probability":
@@ -775,16 +781,8 @@ def create_box_labels(
             if setup.core.ens_variable == "cloud_occurrence_probability":
                 labels["data_info"]["lines"].append(
                     f"{words['time_window']}:\t{setup.core.ens_param_time_win}"
-                    # SR_TMP < TODO Properly implement in hours (now steps, I think)!
-                    # f" {words['hour', 'abbr']}"
-                    "???"
-                    # SR_TMP >
+                    f" {words['hour', 'abbr']}"
                 )
-    if setup.core.input_variable == "concentration":
-        labels["data_info"]["lines"].append(
-            f"{words['height'].c}:"
-            f"\t{escape_format_keys(format_level_label(mdata, words))}"
-        )
 
     if setup.get_simulation_type() == "deterministic":
         labels["legend"]["title"] = f"{short_name} ({unit})"

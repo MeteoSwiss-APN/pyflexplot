@@ -3,56 +3,56 @@
 [_base]
 # Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
 infile = "data/cosmo-2e/grid_conc_xxxx_20190731000000_{ens_member:03d}.nc"
-# ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-ens_member_id = [0, 2, 5, 8, 11, 14, 17, 20]
+ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+# ens_member_id = [0, 2, 5, 8, 11, 14, 17, 20]
 model = "COSMO-2E"
 time = 6
+species_id = "*"
+combine_deposition_types = true
 
 [_base._concentration]
 input_variable = "concentration"
-species_id = 1
+outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_level-{level}_{domain}_{lang}_ts-{time_idx:02d}.png"
 level = 0
 
 [_base._concentration._integr]
-species_id = 2
 integrate = true
 
 [_base._deposition]
 input_variable = "deposition"
+outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
 integrate = true
 
 [_base._deposition._dry]
 deposition_type = "dry"
-species_id = 1
 
 [_base._deposition._wet]
 deposition_type = "wet"
-species_id = 2
 
 [_base._deposition._tot]
 deposition_type = ["dry", "wet"]
-combine_deposition_types = true
-species_id = "*"
-combine_species = true
 
-# ["**"._mean]
-[_base._concentration."_mean+"]
-outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_level-{level}_{domain}_{lang}_ts-{time_idx:02d}.png"
-ens_variable = "mean"
+# ["**"._pctl_10]
+[_base._concentration."_pctl_10+"]
+ens_variable = "percentile"
+ens_param_percentile = 10
+
+# ["**"._pctl_50]
+[_base._concentration."_pctl_50+"]
+ens_variable = "percentile"
+ens_param_percentile = 50
+
+# ["**"._pctl_90]
+[_base._concentration."_pctl_90+"]
+ens_variable = "percentile"
+ens_param_percentile = 90
 
 # ["**"._median]
 [_base._concentration._integr."_median+"]
-outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_level-{level}_{domain}_{lang}_ts-{time_idx:02d}.png"
 ens_variable = "median"
-
-# ["**"._min]
-[_base._deposition._tot."_min+"]
-outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
-ens_variable = "minimum"
 
 # ["**"._max]
 [_base._deposition._wet."_max+"]
-outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
 ens_variable = "maximum"
 
 ["**"._full.de]
@@ -63,10 +63,10 @@ lang = "de"
 # domain = "full"
 # lang = "en"
 
-# ["**"._ch.de]
-# domain = "ch"
-# lang = "de"
-
-["**"._ch.en]
+["**"._ch.de]
 domain = "ch"
-lang = "en"
+lang = "de"
+
+# ["**"._ch.en]
+# domain = "ch"
+# lang = "en"
