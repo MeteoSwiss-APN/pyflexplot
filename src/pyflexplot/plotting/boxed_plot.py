@@ -55,7 +55,6 @@ class BoxedPlotConfig(BaseModel):
     cmap: Union[str, Colormap] = "flexplot"
     colors: List[ColorType]
     color_above_closed: Optional[ColorType] = None  # SR_TODO better approach
-    d_level: Optional[int] = None  # SR_TODO sensible default
     extend: str = "max"
     # SR_NOTE Figure size may change when boxes etc. are added
     # SR_TODO Specify plot size in a robust way (what you want is what you get)
@@ -66,6 +65,7 @@ class BoxedPlotConfig(BaseModel):
     legend_rstrip_zeros: bool = True
     level_ranges_align: str = "center"
     level_range_style: str = "base"
+    levels: Optional[np.ndarray] = None
     levels_scale: str = "log"
     lw_frame: float = 1.0
     mark_field_max: bool = True
@@ -243,23 +243,19 @@ def levels_from_time_stats(
             log10_max - (n_levels - 1) * log10_d, log10_max + 0.5 * log10_d, log10_d
         )
 
-    assert plot_config.n_levels is not None  # mypy
     if plot_config.setup.get_simulation_type() == "ensemble":
-        if plot_config.setup.core.ens_variable.endswith("probability"):
-            assert plot_config.d_level is not None  # mypy
-            n_max = 90
-            return np.arange(
-                n_max - plot_config.d_level * (plot_config.n_levels - 1),
-                n_max + plot_config.d_level,
-                plot_config.d_level,
-            )
-        elif plot_config.setup.core.ens_variable in [
+        if plot_config.setup.core.ens_variable.endswith(
+            "probability"
+        ) or plot_config.setup.core.ens_variable in [
             "cloud_arrival_time",
             "cloud_departure_time",
         ]:
-            assert plot_config.d_level is not None  # mypy
-            return np.arange(0, plot_config.n_levels) * plot_config.d_level
-    elif plot_config.setup.core.plot_variable == "affected_area_mono":
-        levels = _auto_levels_log10(n_levels=9, val_max=time_stats.max)
-        return np.array([levels[0], np.inf])
-    return _auto_levels_log10(plot_config.n_levels, val_max=time_stats.max)
+            assert plot_config.levels is not None  # mypy
+            return plot_config.levels
+    else:
+        assert plot_config.n_levels is not None  # mypy
+        if plot_config.setup.core.plot_variable == "affected_area_mono":
+            levels = _auto_levels_log10(n_levels=9, val_max=time_stats.max)
+            return np.array([levels[0], np.inf])
+        else:
+            return _auto_levels_log10(plot_config.n_levels, val_max=time_stats.max)

@@ -33,7 +33,7 @@ class TestEnsembleProbability2D:
         ]
     )
 
-    thr = 5
+    thr = 4
 
     def test(self):
         n = self.arr.shape[0]
@@ -53,7 +53,7 @@ class TestEnsembleProbability3D:
         ]
     )
 
-    thr = 3
+    thr = 2
 
     def test(self):
         n = self.arr.shape[0]

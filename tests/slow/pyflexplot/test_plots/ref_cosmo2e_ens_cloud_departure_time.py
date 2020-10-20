@@ -4718,7 +4718,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "   $\\tt \\geq$ 21",
+                    "s": "   $\\tt \\geq$ 42",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4748,7 +4748,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "18 $\\tt -$ 20",
+                    "s": "36 $\\tt -$ 41",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4778,7 +4778,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "15 $\\tt -$ 17",
+                    "s": "30 $\\tt -$ 35",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4808,7 +4808,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "12 $\\tt -$ 14",
+                    "s": "24 $\\tt -$ 29",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4838,7 +4838,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": " 9 $\\tt -$ 11",
+                    "s": "18 $\\tt -$ 23",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4868,7 +4868,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": " 6 $\\tt -$  8",
+                    "s": "12 $\\tt -$ 17",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4898,7 +4898,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": " 3 $\\tt -$  5",
+                    "s": " 6 $\\tt -$ 11",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4928,7 +4928,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": " 0 $\\tt -$  2",
+                    "s": " 0 $\\tt -$  5",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

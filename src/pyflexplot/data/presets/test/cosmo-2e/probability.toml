@@ -7,19 +7,29 @@ ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 1
 # ens_member_id = [0, 2, 5, 8, 11, 14, 17, 20]
 model = "COSMO-2E"
 ens_variable = "probability"
-combine_species = false
+combine_species = true
+# species_id = "*"
 species_id = 1
-time = [0, 6, 11]
+integrate = true
+time = -1
 
-[_base."_concentration+"]
+[_base."_integrated_concentration+"]
 outfile = "cosmo-2e_{ens_variable}_{input_variable}_level-{level}_{domain}_{lang}_ts-{time_idx:02d}.png"
 input_variable = "concentration"
 level = 0
+ens_param_thr = 1e-5
 
-[_base."_deposition+"]
+[_base._deposition]
 outfile = "cosmo-2e_{ens_variable}_{input_variable}_{domain}_{lang}_ts-{time_idx:02d}.png"
 input_variable = "deposition"
 combine_deposition_types = true
+ens_param_thr = 1e-5
+
+[_base._deposition."_tot+"]
+deposition_type = "*"
+
+[_base._deposition."_wet+"]
+deposition_type = "wet"
 
 # ["**"._full.en]
 # domain = "full"
@@ -33,6 +43,6 @@ lang = "de"
 # domain = "ch"
 # lang = "en"
 
-["**"._ch.de]
-domain = "ch"
-lang = "de"
+# ["**"._ch.de]
+# domain = "ch"
+# lang = "de"

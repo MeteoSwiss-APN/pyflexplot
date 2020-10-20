@@ -212,7 +212,7 @@ def ensemble_probability(arr: np.ndarray, thr: float, n_mem: int) -> np.ndarray:
     Args:
         arr: Data array with dimensions (member, ...).
 
-        thr: Minimum threshold value defining a cloud.
+        thr: Threshold value defining a cloud.
 
         n_mem: Total number of members.
 
@@ -220,7 +220,7 @@ def ensemble_probability(arr: np.ndarray, thr: float, n_mem: int) -> np.ndarray:
         Field with the number of members with a cloud at each grid point.
 
     """
-    arr = np.count_nonzero(arr >= thr, axis=0).astype(np.float32) * 100 / n_mem
+    arr = np.count_nonzero(arr > thr, axis=0).astype(np.float32) * 100 / n_mem
     return arr
 
 
@@ -234,7 +234,7 @@ class EnsembleCloud:
 
         time: Time dimension values.
 
-        thr: Minimum threshold value defining a cloud in a single member.
+        thr: Threshold value defining a cloud in a single member.
 
     """
 
@@ -335,7 +335,7 @@ class EnsembleCloud:
 
         """
         # SR_TMP < TODO Add tests to ensure it's working correctly!
-        log(wrn="warning: cloud occurrence probability may still be buggy!")
+        log(wrn="cloud occurrence probability may still be buggy!")
         # SR_TMP >
         win_idx: int
         for idx, time_i in enumerate(self.time):
@@ -372,7 +372,7 @@ class EnsembleCloud:
 
     def _count_cloudy_members(self) -> np.ndarray:
         """Count the members with a cloud at each grid point and time step."""
-        return np.count_nonzero(self.arr >= self.thr, axis=0)
+        return np.count_nonzero(self.arr > self.thr, axis=0)
 
 
 def merge_fields(

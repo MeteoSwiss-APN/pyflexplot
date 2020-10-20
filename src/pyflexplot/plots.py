@@ -613,18 +613,18 @@ def create_plot_config(
             if setup.core.ens_variable.endswith("probability"):
                 new_config_dct.update(
                     {
-                        "d_level": 10,
-                        "n_levels": 9,
-                        "cmap": truncate_cmap("nipy_spectral_r", 0.275, 0.95),
+                        "n_levels": None,
+                        "levels": np.arange(5, 96, 15),
+                        # "cmap": truncate_cmap("nipy_spectral_r", 0.275, 0.95),
+                        "cmap": truncate_cmap("terrain_r", 0.075),
                         "extend": "max",
-                        "color_over": "black",
                     }
                 )
             elif setup.core.ens_variable in [
                 "cloud_arrival_time",
                 "cloud_departure_time",
             ]:
-                new_config_dct.update({"n_levels": 8, "d_level": 3})
+                new_config_dct.update({"n_levels": None, "levels": np.arange(0, 8) * 6})
                 if setup.core.ens_variable == "cloud_arrival_time":
                     new_config_dct.update(
                         {
@@ -643,15 +643,20 @@ def create_plot_config(
                     )
 
     # Colors
-    n_levels = new_config_dct["n_levels"]
     extend = new_config_dct.get("extend", "max")
     cmap = new_config_dct.get("cmap", "flexplot")
     if setup.core.plot_variable == "affected_area_mono":
+        assert new_config_dct["n_levels"] is not None
+        n_levels = new_config_dct["n_levels"]
         new_config_dct["colors"] = (np.array([(200, 200, 200)]) / 255).tolist()
     elif cmap == "flexplot":
+        assert new_config_dct["n_levels"] is not None
+        n_levels = new_config_dct["n_levels"]
         new_config_dct["colors"] = colors_flexplot(n_levels, extend)
         new_config_dct["color_above_closed"] = "black"
     else:
+        assert new_config_dct["levels"] is not None
+        n_levels = len(new_config_dct["levels"])
         cmap = mpl.cm.get_cmap(cmap)
         color_under = new_config_dct.get("color_under")
         color_over = new_config_dct.get("color_over")
@@ -753,7 +758,7 @@ def create_box_labels(
         # SR_TMP >
         if setup.core.ens_variable == "probability":
             labels["data_info"]["lines"].append(
-                f"{words['threshold']}:\t{symbols['geq']} {setup.core.ens_param_thr}"
+                f"{words['threshold']}:\t{symbols['ge']} {setup.core.ens_param_thr}"
                 f" {format_meta_datum(unit=format_meta_datum(mdata.variable.unit))}"
             )
         elif setup.core.ens_variable in [
