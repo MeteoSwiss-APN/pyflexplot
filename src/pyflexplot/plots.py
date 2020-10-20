@@ -159,7 +159,10 @@ def plot_add_text_boxes(
             capitalize(format_names_etc(setup, words, mdata)["long"]),
             loc="tl",
             fontname=plot.config.font_name,
-            size=plot.config.font_sizes.title_large,
+            # SR_TMP < SR_DBG
+            # size=plot.config.font_sizes.title_large,
+            size=plot.config.font_sizes.content_large,
+            # SR_TMP >
         )
 
         # SR_TMP <
@@ -593,11 +596,21 @@ def create_plot_config(
     elif setup.core.input_variable == "deposition":
         new_config_dct["n_levels"] = 9
     if setup.get_simulation_type() == "deterministic":
+        new_config_dct["mark_field_max"] = True
         if setup.core.plot_variable == "affected_area_mono":
             new_config_dct["extend"] = "none"
             new_config_dct["n_levels"] = 1
     elif setup.get_simulation_type() == "ensemble":
-        if setup.core.ens_variable in ["minimum", "maximum", "median", "mean"]:
+        # SR_TMP < TODO Re-enable once there's enough space in the legend box
+        new_config_dct["mark_field_max"] = False
+        # SR_TMP >
+        if setup.core.ens_variable in [
+            "mean",
+            "minimum",
+            "maximum",
+            "median",
+            "percentile",
+        ]:
             pass
         else:
             new_config_dct.update(
@@ -902,10 +915,19 @@ def format_names_etc(
             long_name = f"{words['ensemble_minimum']} {var_name_rel}"
         elif setup.core.ens_variable == "maximum":
             long_name = f"{words['ensemble_maximum']} {var_name_rel}"
-        elif setup.core.ens_variable == "median":
-            long_name = f"{words['ensemble_median']} {var_name_rel}"
         elif setup.core.ens_variable == "mean":
             long_name = f"{words['ensemble_mean']} {var_name_rel}"
+        elif setup.core.ens_variable == "median":
+            long_name = f"{words['ensemble_median']} {var_name_rel}"
+        elif setup.core.ens_variable == "percentile":
+            assert setup.core.ens_param_pctl is not None  # mypy
+            pctl = setup.core.ens_param_pctl
+            th = {1: "st", 2: "nd", 3: "rd"}.get(pctl)  # type: ignore
+            long_name = (
+                f"{pctl:g}{words['th', th]}"
+                f" {words['ensemble_percentile']} {var_name_rel}"
+            )
+            ens_var_name = f"{pctl:g}{words['th', th]} {words['percentile']}"
         elif setup.core.ens_variable == "probability":
             short_name = f"{words['probability']}"
             long_name = f"{words['probability']} {var_name_rel}"

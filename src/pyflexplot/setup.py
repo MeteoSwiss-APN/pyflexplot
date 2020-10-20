@@ -108,6 +108,7 @@ class CoreSetup(BaseModel):
 
     # Ensemble-related
     ens_param_mem_min: Optional[int] = None
+    ens_param_pctl: Optional[float] = None
     ens_param_thr: Optional[float] = None
     ens_param_time_win: Optional[float] = None
 
@@ -147,15 +148,16 @@ class CoreSetup(BaseModel):
     def _check_ens_variable(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         value = values["ens_variable"]
         choices = [
-            "none",
-            "probability",
-            "minimum",
-            "maximum",
-            "mean",
-            "median",
             "cloud_arrival_time",
             "cloud_departure_time",
             "cloud_occurrence_probability",
+            "maximum",
+            "mean",
+            "median",
+            "minimum",
+            "none",
+            "percentile",
+            "probability",
         ]
         if isinstance(value, str):
             assert value in choices, value
@@ -215,15 +217,6 @@ class CoreSetup(BaseModel):
             )
         return values
 
-    @validator("ens_param_time_win", always=True)
-    def _init_ens_param_time_win(
-        cls, value: Optional[float], values: Dict[str, Any]
-    ) -> Optional[float]:
-        if value is None:
-            if values["ens_variable"] == "cloud_occurrence_probability":
-                value = ENS_CLOUD_PROB_DEFAULT_PARAM_TIME_WIN
-        return value
-
     @validator("ens_param_mem_min", always=True)
     def _init_ens_param_mem_min(
         cls, value: Optional[int], values: Dict[str, Any]
@@ -231,6 +224,23 @@ class CoreSetup(BaseModel):
         if value is None:
             if values["ens_variable"] in ["cloud_arrival_time", "cloud_departure_time"]:
                 value = ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN
+        return value
+
+    @validator("ens_param_pctl", always=True)
+    def _init_ens_param_pctl(
+        cls, value: Optional[float], values: Dict[str, Any]
+    ) -> Optional[float]:
+        if values["ens_variable"] == "percentile":
+            assert value is not None
+        return value
+
+    @validator("ens_param_time_win", always=True)
+    def _init_ens_param_time_win(
+        cls, value: Optional[float], values: Dict[str, Any]
+    ) -> Optional[float]:
+        if value is None:
+            if values["ens_variable"] == "cloud_occurrence_probability":
+                value = ENS_CLOUD_PROB_DEFAULT_PARAM_TIME_WIN
         return value
 
     @validator("ens_param_thr", always=True)
@@ -406,6 +416,8 @@ class Setup(BaseModel):
             ens_param_mem_min: Minimum number of ensemble members used to
                 compute some ensemble variables. Its precise meaning depends on
                 the variable.
+
+            ens_param_pctl: Percentile for ``ens_variable = 'percentile'``.
 
             ens_param_thr: Threshold used to compute some ensemble variables.
                 Its precise meaning depends on the variable.

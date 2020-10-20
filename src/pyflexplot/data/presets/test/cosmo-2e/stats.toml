@@ -7,7 +7,9 @@ ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 1
 # ens_member_id = [0, 2, 5, 8, 11, 14, 17, 20]
 model = "COSMO-2E"
 time = 6
-species_id = "*"
+combine_species = true
+# species_id = "*"
+species_id = 1
 combine_deposition_types = true
 
 [_base._concentration]
@@ -33,19 +35,19 @@ deposition_type = "wet"
 deposition_type = ["dry", "wet"]
 
 # ["**"._pctl_10]
-[_base._concentration."_pctl_10+"]
+[_base._concentration._integr."_pctl_10+"]
 ens_variable = "percentile"
-ens_param_percentile = 10
+ens_param_pctl = 10
 
 # ["**"._pctl_50]
-[_base._concentration."_pctl_50+"]
+[_base._concentration._integr."_pctl_50+"]
 ens_variable = "percentile"
-ens_param_percentile = 50
+ens_param_pctl = 50
 
 # ["**"._pctl_90]
-[_base._concentration."_pctl_90+"]
+[_base._concentration._integr."_pctl_90+"]
 ens_variable = "percentile"
-ens_param_percentile = 90
+ens_param_pctl = 90
 
 # ["**"._median]
 [_base._concentration._integr."_median+"]
@@ -63,9 +65,9 @@ lang = "de"
 # domain = "full"
 # lang = "en"
 
-["**"._ch.de]
-domain = "ch"
-lang = "de"
+# ["**"._ch.de]
+# domain = "ch"
+# lang = "de"
 
 # ["**"._ch.en]
 # domain = "ch"

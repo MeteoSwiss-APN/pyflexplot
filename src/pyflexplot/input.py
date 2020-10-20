@@ -500,6 +500,7 @@ class InputFileEnsemble:
         new_fld_time[1:] = fld_time
         return new_fld_time
 
+    # pylint: disable=R0912  # too-many-branches
     def _reduce_ensemble(self, var_setups: SetupCollection) -> np.ndarray:
         """Reduce the ensemble to a single field (time, lat, lon)."""
 
@@ -508,10 +509,11 @@ class InputFileEnsemble:
         if not self.ens_member_ids or self.dry_run:
             return fld_time_mem[0]
 
-        ens_variable = var_setups.collect_equal("ens_variable")
-        ens_param_thr = var_setups.collect_equal("ens_param_thr")
         ens_param_mem_min = var_setups.collect_equal("ens_param_mem_min")
+        ens_param_pctl = var_setups.collect_equal("ens_param_pctl")
+        ens_param_thr = var_setups.collect_equal("ens_param_thr")
         ens_param_time_win = var_setups.collect_equal("ens_param_time_win")
+        ens_variable = var_setups.collect_equal("ens_variable")
         n_ens_mem = len(var_setups.collect_equal("ens_member_id"))
 
         fld_time: np.ndarray
@@ -523,6 +525,9 @@ class InputFileEnsemble:
             fld_time = np.nanmin(fld_time_mem, axis=0)
         elif ens_variable == "maximum":
             fld_time = np.nanmax(fld_time_mem, axis=0)
+        elif ens_variable == "percentile":
+            assert ens_param_pctl is not None  # mypy
+            fld_time = np.percentile(fld_time_mem, ens_param_pctl, axis=0)
         elif ens_variable == "probability":
             fld_time = ensemble_probability(fld_time_mem, ens_param_thr, n_ens_mem)
         elif ens_variable.startswith("cloud_"):

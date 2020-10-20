@@ -34,6 +34,7 @@ DEFAULT_PARAMS: Dict[str, Any] = {
     "domain_size_lon": None,
     "ens_member_id": None,
     "ens_param_mem_min": None,
+    "ens_param_pctl": None,
     "ens_param_thr": None,
     "ens_param_time_win": None,
     "ens_variable": "none",

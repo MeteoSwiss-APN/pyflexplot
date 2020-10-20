@@ -87,6 +87,7 @@ WORDS.add(en="ensemble maximum", de="Ensemble-Maximum")
 WORDS.add(en="ensemble mean", de="Ensemble-Mittel")
 WORDS.add(en="ensemble median", de="Ensemble-Median")
 WORDS.add(en="ensemble minimum", de="Ensemble-Minimum")
+WORDS.add(en="ensemble percentile", de="Ensemble-Perzentil")
 WORDS.add(
     en={"*": "ensemble variable", "abbr": "ens. variable"},
     de={"*": "Ensemblevariable", "abbr": "Ens.-Variable"},
@@ -139,6 +140,7 @@ WORDS.add(en={"*": "number of", "abbr": "no."}, de={"*": "Anzahl", "abbr": "Anz.
 WORDS.add(en="of", de={"*": "von", "fg": "der"})
 # P
 WORDS.add(en="percent", de="Prozent")
+WORDS.add(en="percentile", de="Perzentil")
 WORDS.add(en="probability", de="Wahrscheinlichkeit")
 # Q
 # R
@@ -162,6 +164,16 @@ WORDS.add(
     de={"*": "Bodendeposition", "abbr": "Bodendep."},
 )
 # T
+WORDS.add(
+    "th",
+    en={
+        "st": r"$^\mathrm{st}$",
+        "nd": r"$^\mathrm{nd}$",
+        "rd": r"$^\mathrm{rd}$",
+        "*": r"$^\mathrm{th}$",
+    },
+    de="-tes",
+)
 WORDS.add(en="threshold", de="Grenzwert")
 WORDS.add(en="total", de={"*": "total", "m": "totaler", "f": "totale", "g": "totalen"})
 WORDS.add(en="total mass", de="Totale Masse")

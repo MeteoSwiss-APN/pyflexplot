@@ -36,6 +36,7 @@ field_summary = {
                 "combine_levels": False,
                 "combine_species": False,
                 "ens_param_mem_min": None,
+                "ens_param_pctl": None,
                 "ens_param_thr": None,
                 "ens_param_time_win": None,
                 "lang": "de",
@@ -476,7 +477,6 @@ plot_summary = {
                             ],
                         ],
                         [[-1.3747163632263937], [0.38780989215744266]],
-                        [[-1.8200001716613767], [-0.4200000762939422]],
                     ],
                     "position": {"type": "Bbox", "bounds": [0.0, 0.05, 0.7872, 0.85]},
                     "title": {},
@@ -710,10 +710,7 @@ plot_summary = {
                     "fc": [1.0, 1.0, 1.0, 1.0],
                     "frame_on": True,
                     "label": {},
-                    "lines": [
-                        [[0.19999999999999996], [0.14500000000000024]],
-                        [[0.19999999999999996], [0.06741379310344853]],
-                    ],
+                    "lines": [[[0.19999999999999996], [0.14500000000000024]]],
                     "position": {
                         "type": "Bbox",
                         "bounds": [0.8, 0.49, 0.19999999999999996, 0.29000000000000004],
@@ -968,6 +965,7 @@ plot_summary = {
                         "combine_levels": False,
                         "combine_species": False,
                         "ens_param_mem_min": None,
+                        "ens_param_pctl": None,
                         "ens_param_thr": None,
                         "ens_param_time_win": None,
                         "lang": "de",
@@ -1368,6 +1366,7 @@ plot_summary = {
                                 "combine_levels": False,
                                 "combine_species": False,
                                 "ens_param_mem_min": None,
+                                "ens_param_pctl": None,
                                 "ens_param_thr": None,
                                 "ens_param_time_win": None,
                                 "lang": "de",
@@ -2507,17 +2506,6 @@ plot_summary = {
                 "markersize": 7.5,
                 "markeredgewidth": 1.5,
             },
-            {
-                "element_type": "marker",
-                "p_lon": -1.8200001716613767,
-                "p_lat": -0.4200000762939422,
-                "marker": "+",
-                "transform": "RotatedPole instance",
-                "zorder": 6,
-                "color": "black",
-                "markersize": 10.0,
-                "markeredgewidth": 1.5,
-            },
         ],
     },
     "boxes": {
@@ -2596,7 +2584,6 @@ plot_summary = {
                                 ],
                             ],
                             [[-1.3747163632263937], [0.38780989215744266]],
-                            [[-1.8200001716613767], [-0.4200000762939422]],
                         ],
                         "position": {
                             "type": "Bbox",
@@ -2838,10 +2825,7 @@ plot_summary = {
                         "fc": [1.0, 1.0, 1.0, 1.0],
                         "frame_on": True,
                         "label": {},
-                        "lines": [
-                            [[0.19999999999999996], [0.14500000000000024]],
-                            [[0.19999999999999996], [0.06741379310344853]],
-                        ],
+                        "lines": [[[0.19999999999999996], [0.14500000000000024]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": [
@@ -3115,7 +3099,7 @@ plot_summary = {
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
                         "fontname": "Liberation Sans",
-                        "size": 14.0,
+                        "size": 12.0,
                         "ha": "left",
                         "va": "top",
                     },
@@ -3281,7 +3265,6 @@ plot_summary = {
                                 ],
                             ],
                             [[-1.3747163632263937], [0.38780989215744266]],
-                            [[-1.8200001716613767], [-0.4200000762939422]],
                         ],
                         "position": {
                             "type": "Bbox",
@@ -3523,10 +3506,7 @@ plot_summary = {
                         "fc": [1.0, 1.0, 1.0, 1.0],
                         "frame_on": True,
                         "label": {},
-                        "lines": [
-                            [[0.19999999999999996], [0.14500000000000024]],
-                            [[0.19999999999999996], [0.06741379310344853]],
-                        ],
+                        "lines": [[[0.19999999999999996], [0.14500000000000024]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": [
@@ -4086,7 +4066,6 @@ plot_summary = {
                                 ],
                             ],
                             [[-1.3747163632263937], [0.38780989215744266]],
-                            [[-1.8200001716613767], [-0.4200000762939422]],
                         ],
                         "position": {
                             "type": "Bbox",
@@ -4328,10 +4307,7 @@ plot_summary = {
                         "fc": [1.0, 1.0, 1.0, 1.0],
                         "frame_on": True,
                         "label": {},
-                        "lines": [
-                            [[0.19999999999999996], [0.14500000000000024]],
-                            [[0.19999999999999996], [0.06741379310344853]],
-                        ],
+                        "lines": [[[0.19999999999999996], [0.14500000000000024]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": [
@@ -5068,59 +5044,6 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "m": "+",
-                    "kwargs": {
-                        "color": "black",
-                        "markersize": 10.0,
-                        "markeredgewidth": 1.5,
-                    },
-                },
-                {
-                    "type": "TextBoxElementText",
-                    "loc": {
-                        "type": "TextBoxLocation",
-                        "loc": "tc",
-                        "loc_y": "t",
-                        "loc_x": "c",
-                        "dx_unit": 0.037500000000000006,
-                        "dy_unit": 0.031034482758620682,
-                        "dx": -3.5,
-                        "dy": -25.85,
-                        "x0": 0.5,
-                        "y0": 0.9689655172413794,
-                        "x": 0.36874999999999997,
-                        "y": 0.1667241379310347,
-                        "va": "top",
-                        "ha": "center",
-                    },
-                    "s": "Max.: 0.327",
-                    "replace_edge_spaces": False,
-                    "edge_spaces_replacement_char": "␣",
-                    "kwargs": {
-                        "ha": "left",
-                        "fontname": "Liberation Sans",
-                        "size": 10.0,
-                        "va": "top",
-                    },
-                },
-                {
-                    "type": "TextBoxElementMarker",
-                    "loc": {
-                        "type": "TextBoxLocation",
-                        "loc": "tc",
-                        "loc_y": "t",
-                        "loc_x": "c",
-                        "dx_unit": 0.037500000000000006,
-                        "dy_unit": 0.031034482758620682,
-                        "dx": -8.0,
-                        "dy": -29.05,
-                        "x0": 0.5,
-                        "y0": 0.9689655172413794,
-                        "x": 0.19999999999999996,
-                        "y": 0.06741379310344853,
-                        "va": "top",
-                        "ha": "center",
-                    },
                     "m": "^",
                     "kwargs": {
                         "markeredgecolor": "red",
@@ -5139,11 +5062,11 @@ plot_summary = {
                         "dx_unit": 0.037500000000000006,
                         "dy_unit": 0.031034482758620682,
                         "dx": -3.5,
-                        "dy": -28.35,
+                        "dy": -25.85,
                         "x0": 0.5,
                         "y0": 0.9689655172413794,
                         "x": 0.36874999999999997,
-                        "y": 0.08913793103448298,
+                        "y": 0.1667241379310347,
                         "va": "top",
                         "ha": "center",
                     },
@@ -5234,7 +5157,6 @@ plot_summary = {
                                 ],
                             ],
                             [[-1.3747163632263937], [0.38780989215744266]],
-                            [[-1.8200001716613767], [-0.4200000762939422]],
                         ],
                         "position": {
                             "type": "Bbox",
@@ -5476,10 +5398,7 @@ plot_summary = {
                         "fc": [1.0, 1.0, 1.0, 1.0],
                         "frame_on": True,
                         "label": {},
-                        "lines": [
-                            [[0.19999999999999996], [0.14500000000000024]],
-                            [[0.19999999999999996], [0.06741379310344853]],
-                        ],
+                        "lines": [[[0.19999999999999996], [0.14500000000000024]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": [
@@ -6647,7 +6566,6 @@ plot_summary = {
                                 ],
                             ],
                             [[-1.3747163632263937], [0.38780989215744266]],
-                            [[-1.8200001716613767], [-0.4200000762939422]],
                         ],
                         "position": {
                             "type": "Bbox",
@@ -6889,10 +6807,7 @@ plot_summary = {
                         "fc": [1.0, 1.0, 1.0, 1.0],
                         "frame_on": True,
                         "label": {},
-                        "lines": [
-                            [[0.19999999999999996], [0.14500000000000024]],
-                            [[0.19999999999999996], [0.06741379310344853]],
-                        ],
+                        "lines": [[[0.19999999999999996], [0.14500000000000024]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": [
@@ -7248,7 +7163,6 @@ plot_summary = {
                                 ],
                             ],
                             [[-1.3747163632263937], [0.38780989215744266]],
-                            [[-1.8200001716613767], [-0.4200000762939422]],
                         ],
                         "position": {
                             "type": "Bbox",
@@ -7490,10 +7404,7 @@ plot_summary = {
                         "fc": [1.0, 1.0, 1.0, 1.0],
                         "frame_on": True,
                         "label": {},
-                        "lines": [
-                            [[0.19999999999999996], [0.14500000000000024]],
-                            [[0.19999999999999996], [0.06741379310344853]],
-                        ],
+                        "lines": [[[0.19999999999999996], [0.14500000000000024]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": [
@@ -7798,6 +7709,7 @@ plot_summary = {
                     "combine_levels": False,
                     "combine_species": False,
                     "ens_param_mem_min": None,
+                    "ens_param_pctl": None,
                     "ens_param_thr": None,
                     "ens_param_time_win": None,
                     "lang": "de",
@@ -8236,7 +8148,6 @@ plot_summary = {
                         ],
                     ],
                     [[-1.3747163632263937], [0.38780989215744266]],
-                    [[-1.8200001716613767], [-0.4200000762939422]],
                 ],
                 "position": {"type": "Bbox", "bounds": (0.0, 0.05, 0.7872, 0.85)},
                 "title": "",
@@ -8466,10 +8377,7 @@ plot_summary = {
                 "fc": (1.0, 1.0, 1.0, 1.0),
                 "frame_on": True,
                 "label": "",
-                "lines": [
-                    [[0.19999999999999996], [0.14500000000000024]],
-                    [[0.19999999999999996], [0.06741379310344853]],
-                ],
+                "lines": [[[0.19999999999999996], [0.14500000000000024]]],
                 "position": {
                     "type": "Bbox",
                     "bounds": (0.8, 0.49, 0.19999999999999996, 0.29000000000000004),
@@ -8724,6 +8632,7 @@ plot_summary = {
                             "combine_levels": False,
                             "combine_species": False,
                             "ens_param_mem_min": None,
+                            "ens_param_pctl": None,
                             "ens_param_thr": None,
                             "ens_param_time_win": None,
                             "lang": "de",
