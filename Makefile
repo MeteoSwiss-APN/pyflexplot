@@ -337,35 +337,39 @@ check: ${_INSTALL_DEV}
 # Run the tests
 #==============================================================================
 
-.PHONY: test-fast #CMD Run only fast tests
+.PHONY: test-fast #CMD Run only fast tests in the development environment
 test-fast: ${_INSTALL_TEST}
-	@echo -e "${ECHO_PREFIX}running fast tests"
-	${PREFIX}tox -e py37 --skip-pkg-install -- tests/fast
+	@echo -e "${ECHO_PREFIX}running fast tests locally"
+	# ${PREFIX}tox -e py37 -- tests/fast
+	${PREFIX}pytest tests/fast
 
-.PHONY: test-medium #CMD Run only medium-fast tests
+.PHONY: test-medium #CMD Run only medium-fast tests in the development environment
 test-medium: ${_INSTALL_TEST}
-	@echo -e "${ECHO_PREFIX}running medium-fast tests"
-	${PREFIX}tox -e py37 --skip-pkg-install -- tests/medium
+	@echo -e "${ECHO_PREFIX}running medium-fast tests locally"
+	# ${PREFIX}tox -e py37 -- tests/medium
+	${PREFIX}pytest tests/medium
 
-.PHONY: test-slow #CMD Run only slow tests
+.PHONY: test-slow #CMD Run only slow tests in the development environment
 test-slow: ${_INSTALL_TEST}
-	@echo -e "${ECHO_PREFIX}running tests"
-	${PREFIX}tox -e py37 --skip-pkg-install -- tests/slow
+	@echo -e "${ECHO_PREFIX}running slow tests locally"
+	# ${PREFIX}tox -e py37 -- tests/slow
+	${PREFIX}pytest tests/slow
 
-.PHONY: test #CMD Run all tests
+.PHONY: test #CMD Run all tests in the development environment
 test: ${_INSTALL_TEST}
-	@echo -e "${ECHO_PREFIX}running all tests"
-	${PREFIX}tox -e py37 --skip-pkg-install
+	@echo -e "${ECHO_PREFIX}running all tests locally"
+	# ${PREFIX}tox -e py37
+	${PREFIX}pytest tests
 
-.PHONY: test-iso #CMD Run all tests in isolation
+.PHONY: test-iso #CMD Run all tests in an isolated environment
 test-iso: ${_INSTALL_TEST}
 	@echo -e "${ECHO_PREFIX}running all tests in isolation"
 	${PREFIX}tox -e py37
 
-.PHONY: test-all #CMD Run tests on all specified Python versions with tox.
-test-all: ${_INSTALL_TEST}
-	@echo -e "${ECHO_PREFIX}running tests in isolated environments"
-	${PREFIX}tox
+.PHONY: test-check #CMD Run tests and checks in an isolated environment
+test-check: ${_INSTALL_TEST}
+	@echo -e "${ECHO_PREFIX}running tests and checks in isolated environments"
+	${PREFIX}tox --parallel
 
 #==============================================================================
 # Documentation
