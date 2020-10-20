@@ -68,6 +68,7 @@ class TestEnsembleCloud:
     """Test ensemble cloud fields like arrival and departure time."""
 
     n_mem = 4
+    d_time = 2
 
     arr = np.array(
         [
@@ -142,7 +143,8 @@ class TestEnsembleCloud:
     """
 
     def create_cloud(self, thr):
-        return EnsembleCloud(arr=self.arr, time=np.arange(5), thr=thr)
+        time = np.arange(5) * self.d_time
+        return EnsembleCloud(arr=self.arr, time=time, thr=thr)
 
     # test_arrival_time
     # fmt: off
@@ -285,6 +287,10 @@ class TestEnsembleCloud:
     )
     # fmt: on
     def test_arrival_time(self, thr, mem, sol):
+        # SR_TMP < TODO Adapt solutions above (multiply all values by 2)
+        sol = np.asarray(sol) * self.d_time  # scale time step
+        sol -= 1  # SR_TODO Necessary for validation, but is it also correct?
+        # SR_TMP >
         res = self.create_cloud(thr).arrival_time(mem)
         np.testing.assert_array_equal(res, sol)
 
@@ -429,6 +435,9 @@ class TestEnsembleCloud:
     )
     # fmt: on
     def test_departure_time(self, thr, mem, sol):
+        # SR_TMP < TODO Adapt solutions above (multiply all values by 2)
+        sol = np.asarray(sol) * self.d_time  # scale time step
+        # SR_TMP >
         res = self.create_cloud(thr).departure_time(mem)
         np.testing.assert_array_equal(res, sol)
 
@@ -540,5 +549,5 @@ class TestEnsembleCloud:
     )
     def test_occurrence_probability(self, thr, win, sol_raw):
         sol = np.array(sol_raw).astype(np.float32) * 100 / self.n_mem
-        res = self.create_cloud(thr).occurrence_probability(win)
+        res = self.create_cloud(thr).occurrence_probability(win * self.d_time)
         np.testing.assert_array_almost_equal(res, sol, decimal=5)

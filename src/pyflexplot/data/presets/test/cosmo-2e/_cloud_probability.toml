@@ -1,0 +1,60 @@
+# PyFlexPlot setup file to plot cloud arrival time.
+
+# SR_NOTE Currently disabled as it may not work correctly and is not required!
+
+[_base]
+# Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
+infile = "data/cosmo-2e/grid_conc_xxxx_20190731000000_{ens_member:03d}.nc"
+ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+# ens_member_id = [0, 2, 5, 8, 11, 14, 17, 20]
+model = "COSMO-2E"
+outfile = "cosmo-2e_{ens_variable}_{domain}_{lang}_ts-{time_idx:02d}.png"
+input_variable = "concentration"
+ens_param_mem_min = 5
+ens_param_thr = 1e-7
+ens_param_time_win = 12
+time = 0
+combine_species = true
+# species_id = "*"
+species_id = 1
+level = 0
+
+[_base."_occurrence_probability+"]
+ens_variable = "cloud_occurrence_probability"
+
+# SR_TMP < Note: Cloud probability should in principle and in the right setup
+#                be the forward-equivalent of the backward-looking air activity
+#                probability! However, currently that's not the case, either
+#                because the cloud probability is buggy, or beause the test/ref
+#                setups are not equivalent...
+[_base.test]
+outfile = "cloud_occurrence_probability_test.png"
+ens_variable = "cloud_occurrence_probability"
+integrate = true
+time = 0
+ens_param_mem_min = 1
+ens_param_thr = 1e-7
+ens_param_time_win = 12
+[_base.ref]
+outfile = "cloud_occurrence_probability_ref.png"
+ens_variable = "probability"
+integrate = true
+time = 4
+ens_param_thr = 1e-7
+# SR_TMP >
+
+# ["**"._full.en]
+# domain = "full"
+# lang = "en"
+
+["**"._full.de]
+domain = "full"
+lang = "de"
+
+# ["**"._ch.en]
+# domain = "ch"
+# lang = "en"
+
+# ["**"._ch.de]
+# domain = "ch"
+# lang = "de"
