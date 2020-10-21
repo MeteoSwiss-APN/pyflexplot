@@ -13,7 +13,7 @@ combine_deposition_types = true
 
 [_base._concentration]
 input_variable = "concentration"
-outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_level-{level}_{domain}_{lang}_ts-{time_idx:02d}.png"
+outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
 level = 0
 time = "*"
 
@@ -36,26 +36,28 @@ deposition_type = "wet"
 [_base._deposition._tot]
 deposition_type = ["dry", "wet"]
 
-# ["**"._pctl_10]
 [_base._concentration._integr."_pctl_10+"]
 ens_variable = "percentile"
 ens_param_pctl = 10
 
-# ["**"._pctl_50]
 [_base._concentration._integr."_pctl_50+"]
 ens_variable = "percentile"
 ens_param_pctl = 50
 
-# ["**"._pctl_90]
+[_base._concentration._integr."_pctl_70+"]
+ens_variable = "percentile"
+ens_param_pctl = 70
+
 [_base._concentration._integr."_pctl_90+"]
 ens_variable = "percentile"
 ens_param_pctl = 90
 
-# # ["**"._median]
+# [_base._deposition._wet."_min+"]
+# ens_variable = "minimum"
+
 # [_base._concentration._integr."_median+"]
 # ens_variable = "median"
 
-# ["**"._max]
 [_base._deposition._wet."_max+"]
 ens_variable = "maximum"
 
