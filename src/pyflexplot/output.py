@@ -51,20 +51,35 @@ class FilePathFormatter:
         mdata: MetaData,
         nc_meta_data: Mapping[str, Any],
     ) -> str:
+        # Prepare base time
+        base_time = self._format_time_step(cast(int, setup.base_time), setup)[0]
+
+        # Prepare ens variable
+        ens_variable = setup.core.ens_variable
+        if ens_variable == "percentile":
+            ens_variable += f"-{setup.core.ens_param_pctl:g}"
+
+        # Prepare input variable
         input_variable = setup.core.input_variable
         if setup.core.input_variable == "deposition":
             input_variable += f"_{setup.deposition_type_str}"
-        time_steps = self._format_time_steps(
-            nc_meta_data["derived"]["time_steps"], setup
-        )
-        base_time = self._format_time_step(cast(int, setup.base_time), setup)[0]
+
+        # Prepare release start
         release_start = self._format_time_step(
             mdata.simulation.start + mdata.release.start_rel, setup
         )
+
+        # Prepare time steps
+        time_steps = self._format_time_steps(
+            nc_meta_data["derived"]["time_steps"], setup
+        )
+
+        # Format the file path
+        # Don't use str.format in order to handle multival elements
         kwargs = {
             "base_time": base_time,
             "domain": setup.core.domain,
-            "ens_variable": setup.core.ens_variable,
+            "ens_variable": ens_variable,
             "input_variable": input_variable,
             "lang": setup.core.lang,
             "level": setup.core.dimensions.level,
@@ -79,10 +94,7 @@ class FilePathFormatter:
             "time_idx": setup.core.dimensions.time,
             "time_step": time_steps[setup.core.dimensions.time],
         }
-        # Format the file path
-        # Don't use str.format in order to handle multival elements
-        path = self._replace_format_keys(template, kwargs)
-        return path
+        return self._replace_format_keys(template, kwargs)
 
     def _format_time_steps(
         self, tss_int: Sequence[Union[int, datetime]], setup: Setup
