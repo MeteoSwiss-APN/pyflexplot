@@ -45,9 +45,9 @@ from .utils.pydantic import InvalidParameterNameError
 from .utils.pydantic import prepare_field_value
 
 # Some plot-specific default values
-ENS_PROBABILITY_DEFAULT_PARAM_THR = 1e-8
-ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN = 10
-ENS_CLOUD_TIME_DEFAULT_PARAM_THR = 1e-7
+ENS_PROBABILITY_DEFAULT_PARAM_THR = 0.0
+ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN = 1
+ENS_CLOUD_TIME_DEFAULT_PARAM_THR = 0.0
 ENS_CLOUD_PROB_DEFAULT_PARAM_TIME_WIN = 12
 
 
