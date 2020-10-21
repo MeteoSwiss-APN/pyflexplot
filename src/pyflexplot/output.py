@@ -64,10 +64,10 @@ class FilePathFormatter:
         if setup.core.input_variable == "deposition":
             input_variable += f"-{setup.deposition_type_str}"
             if not setup.core.integrate:
-                input_variable += f"-instant"
+                input_variable += "-instant"
         elif setup.core.input_variable == "concentration":
             if setup.core.integrate:
-                input_variable += f"-integr"
+                input_variable += "-integr"
 
         # Prepare release start
         release_start = self._format_time_step(
