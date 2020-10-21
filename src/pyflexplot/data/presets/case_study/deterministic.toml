@@ -1,0 +1,43 @@
+# PyFlexPlot setup file to create deterministic COSMO-1E-CTRL plots
+
+[_base]
+# Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
+infile = "data/cosmo-2e/grid_conc_xxxx_20190731000000_000.nc"
+model = "COSMO-2E"
+outfile = "case_study/cosmo-2e-ctrl_{input_variable}_{plot_variable}_{release_site}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
+combine_species = true
+# species_id = "*"
+species_id = 1
+
+[_base."_concentration+"]
+input_variable = "concentration"
+level = 0
+time = "*"
+[_base."_concentration+"."_integr+"]
+integrate = true
+time = 11
+
+[_base._deposition]
+input_variable = "deposition"
+combine_deposition_types = true
+integrate = true
+time = 11
+[_base._deposition."_wet+"]
+deposition_type = "wet"
+[_base._deposition."_tot+"]
+deposition_type = ["dry", "wet"]
+[_base._deposition."_tot+"."_affected_area+"]
+plot_variable = "affected_area_mono"
+
+["**"._full.de]
+domain = "full"
+lang = "de"
+# ["**"._ch.de]
+# domain = "ch"
+# lang = "de"
+# ["**"._full.en]
+# domain = "full"
+# lang = "en"
+# ["**"._ch.en]
+# domain = "ch"
+# lang = "en"
