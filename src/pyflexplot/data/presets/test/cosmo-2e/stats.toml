@@ -6,7 +6,6 @@ infile = "data/cosmo-2e/grid_conc_xxxx_20190731000000_{ens_member:03d}.nc"
 ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 # ens_member_id = [0, 2, 5, 8, 11, 14, 17, 20]
 model = "COSMO-2E"
-time = 6
 combine_species = true
 # species_id = "*"
 species_id = 1
@@ -16,14 +15,17 @@ combine_deposition_types = true
 input_variable = "concentration"
 outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_level-{level}_{domain}_{lang}_ts-{time_idx:02d}.png"
 level = 0
+time = "*"
 
 [_base._concentration._integr]
 integrate = true
+time = -1
 
 [_base._deposition]
 input_variable = "deposition"
 outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
 integrate = true
+time = -1
 
 [_base._deposition._dry]
 deposition_type = "dry"
@@ -49,9 +51,9 @@ ens_param_pctl = 50
 ens_variable = "percentile"
 ens_param_pctl = 90
 
-# ["**"._median]
-[_base._concentration._integr."_median+"]
-ens_variable = "median"
+# # ["**"._median]
+# [_base._concentration._integr."_median+"]
+# ens_variable = "median"
 
 # ["**"._max]
 [_base._deposition._wet."_max+"]
