@@ -107,13 +107,15 @@ def determine_rotated_pole(dimensions: Dict[str, Any]) -> bool:
 
 def determine_species_ids(variables: Dict[str, Any]) -> Tuple[int, ...]:
     """Determine the species ids from the variables."""
-    rx = re.compile(r"\A[WD]D_spec(?P<species_id>[0-9][0-9][0-9])\Z")
+    rx = re.compile(r"\A([WD]D_)?spec(?P<species_id>[0-9][0-9][0-9])\Z")
     species_ids = set()
     for var_name in variables.keys():
         match = rx.match(var_name)
         if match:
             species_id = int(match.group("species_id"))
             species_ids.add(species_id)
+    if not species_ids:
+        raise Exception("could not identify species ids")
     return tuple(sorted(species_ids))
 
 
