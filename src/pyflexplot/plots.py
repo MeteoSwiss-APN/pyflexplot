@@ -894,7 +894,7 @@ def format_names_etc(
     # Short/long names #1: By variable
     if setup.core.input_variable == "concentration":
         if setup.core.integrate:
-            long_name = f"{words['integrated']} {var_name}"
+            long_name = f"{words['integrated', 'f']} {var_name}"
             short_name = (
                 f"{words['integrated', 'abbr']} {words['concentration', 'abbr']}"
             )
