@@ -137,7 +137,7 @@ class FilePathFormatter:
         path_base = path[: -len(suffix)]
 
         # Reuse existing numbering if present
-        match = re.search(f"{sep}(?P<i>[0-9]+)$", path_base)
+        match = re.search(sep.replace(".", r"\.") + r"(?P<i>[0-9]+)$", path_base)
         if match:
             i = int(match.group("i")) + 1
             w = len(match.group("i"))
