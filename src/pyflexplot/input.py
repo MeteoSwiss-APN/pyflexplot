@@ -49,6 +49,7 @@ def read_fields(
     add_ts0: bool = False,
     dry_run: bool = False,
     cache_on: bool = False,
+    missing_ok: bool = False,
 ) -> List[List[Field]]:
     """Read fields from an input file, or multiple files derived from one path.
 
@@ -71,7 +72,8 @@ def read_fields(
         cache_on (optional): Cache input fields to avoid reading the same field
             multiple times.
 
-        cache_on (optional): Whether to activate the cache.
+        missing_ok (optional): When fields are missing in the input, instead of
+            failing, return an empty field.
 
     """
     log(dbg=f"reading fields from {in_file_path}")
@@ -81,6 +83,7 @@ def read_fields(
         dry_run=dry_run,
         cls_fixer=FlexPartDataFixer,
         cache_on=cache_on,
+        missing_ok=missing_ok,
     )
     field_lst_lst = reader.run(setups)
     n_plt = len(field_lst_lst)
@@ -108,6 +111,7 @@ class FieldInputOrganizer:
         add_ts0: bool = False,
         dry_run: bool = False,
         cache_on: bool = False,
+        missing_ok: bool = False,
         cls_fixer: Optional[Type["FlexPartDataFixer"]] = None,
     ):
         """Create an instance of ``FileReader``.
@@ -129,16 +133,18 @@ class FieldInputOrganizer:
             cache_on (optional): Cache input fields to avoid reading the same
                 field multiple times.
 
+            missing_ok (optional): When fields are missing in the input, instead
+                of failing, return an empty field.
+
             cls_fixer (optional): Class providing methods to fix issues with the
                 input data. Is instatiated with this instance of ``FileReader``.
-
-            cache_on (optional): Activate cache.
 
         """
         self.in_file_path_fmt = in_file_path
         self.add_ts0 = add_ts0
         self.dry_run = dry_run
         self.cache_on = cache_on
+        self.missing_ok = missing_ok
         self.cls_fixer = cls_fixer
 
     def run(self, setups: SetupCollection) -> List[List[Field]]:
@@ -234,6 +240,7 @@ class FieldInputOrganizer:
             add_ts0=self.add_ts0,
             dry_run=self.dry_run,
             cache_on=self.cache_on,
+            missing_ok=self.missing_ok,
             cls_fixer=self.cls_fixer,
         )
         fields_for_plots: List[List[Field]] = []
@@ -258,12 +265,14 @@ class InputFileEnsemble:
         add_ts0: bool = False,
         dry_run: bool = False,
         cache_on: bool = False,
+        missing_ok: bool = False,
         cls_fixer: Optional[Type["FlexPartDataFixer"]] = None,
     ) -> None:
         self.paths = paths
         self.ens_member_ids = ens_member_ids
         self.add_ts0 = add_ts0
         self.dry_run = dry_run
+        self.missing_ok = missing_ok
         self.cache_on = cache_on
 
         # SR_TMP < TODO Fix the cache!!!
@@ -578,7 +587,6 @@ class InputFileEnsemble:
         else:
             raise NotImplementedError("dimension names for model", model)
 
-    # SR_TODO refactor to reduce branching and locals!
     # pylint: disable=R0912,R0914  # too-many-branches, too-many-locals
     def _read_fld(self, fi: nc4.Dataset, setup: Setup) -> np.ndarray:
         """Read an individual 2D field at a given time step from disk."""
@@ -605,7 +613,14 @@ class InputFileEnsemble:
             dim_idcs_by_name[dim_names[dim_name]] = idcs
 
         # Select variable in file
-        nc_var = fi.variables[var_name]
+        try:
+            nc_var = fi.variables[var_name]
+        except KeyError:
+            if not self.missing_ok:
+                raise Exception(f"missing variable '{var_name}'")
+            nx = fi.dimensions["rlat"].size
+            ny = fi.dimensions["rlon"].size
+            return np.zeros([nx, ny], np.float32)
 
         # Assemble indices for slicing
         indices: List[Any] = [None] * len(nc_var.dimensions)

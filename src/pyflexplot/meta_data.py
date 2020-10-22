@@ -352,8 +352,12 @@ class VariableMetaData(_MetaDataBase):
     @classmethod
     def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "VariableMetaData":
         name = nc_var_name(setup, setup.model)
-        var = fi.variables[name]
-        unit = getncattr(var, "units")
+        try:
+            var = fi.variables[name]
+        except KeyError:
+            unit = "N/A"
+        else:
+            unit = getncattr(var, "units")
         idx: int
         if setup.core.dimensions.level is None:
             level_unit = ""
@@ -487,11 +491,12 @@ class SpeciesMetaData(_MetaDataBase):
     @classmethod
     def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "SpeciesMetaData":
         model: str = setup.model
-        name: str = nc_var_name(setup, model)
-        var: nc4.Variable = fi.variables[name]
-        try:  # SR_TMP
+        var_name: str = nc_var_name(setup, model)
+        name: str
+        try:
+            var: nc4.Variable = fi.variables[var_name]
             name = getncattr(var, "long_name")
-        except AttributeError:
+        except (KeyError, AttributeError):
             # SR_TMP <
             # name = "N/A"
             if model.startswith("IFS"):
@@ -499,8 +504,8 @@ class SpeciesMetaData(_MetaDataBase):
                 # the basic meta data on species, like "long_name". Therefore,
                 # try to # obtain the name from the activity variable of the
                 # same species.
-                if name.startswith("DD_") or name.startswith("WD_"):
-                    alternative_name = f"{name[3:]}_mr"
+                if var_name.startswith("DD_") or var_name.startswith("WD_"):
+                    alternative_name = f"{var_name[3:]}_mr"
                     try:
                         alternative_var = fi.variables[alternative_name]
                         name = getncattr(alternative_var, "long_name")
@@ -508,6 +513,8 @@ class SpeciesMetaData(_MetaDataBase):
                         name = "N/A"
                     else:
                         name = name.split("_")[0]
+                else:
+                    name = "N/A"
             else:
                 name = "N/A"
             # SR_TMP >

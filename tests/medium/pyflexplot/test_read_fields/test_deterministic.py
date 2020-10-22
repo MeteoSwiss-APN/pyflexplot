@@ -527,3 +527,38 @@ def test_single_add_ts0(datadir, config):
     assert all(len(field_lst) == 1 for field_lst in field_raw_lst_lst)
     assert (field_ts0_lst_lst[0][0].fld == 0.0).all()
     assert (field_ts0_lst_lst[1][0].fld == field_raw_lst_lst[0][0].fld).all()
+
+
+def test_missing_deposition(datadir):  # noqa:F811
+    """Read deposition field from file that does not contain one."""
+
+    setup_dct = {
+        "infile": datafilename4,
+        "outfile": "dummy.png",
+        "model": "COSMO-1E",
+        "input_variable": "deposition",
+        "integrate": True,
+        "combine_deposition_types": True,
+        "dimensions": {
+            "deposition_type": ("dry", "wet"),
+            "nageclass": 0,
+            "noutrel": 0,
+            "numpoint": 0,
+            "species_id": 1,
+            "time": 10,
+        },
+    }
+    setup = Setup.create(setup_dct)
+
+    datafile = f"{datadir}/{setup_dct['infile']}"
+
+    # Initialize field specifications
+    setups = SetupCollection([setup])
+
+    # Read input field
+    field_lst_lst = read_fields(datafile, setups, missing_ok=True)
+    assert len(field_lst_lst) == 1
+    assert len(field_lst_lst[0]) == 1
+    fld = field_lst_lst[0][0].fld
+
+    assert (fld == 0.0).all()

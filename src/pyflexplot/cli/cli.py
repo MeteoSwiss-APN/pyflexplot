@@ -482,7 +482,12 @@ def main(
             log(vbs=f"[only:{only}] skip {n_skip}/{n_old} sub-setups")
         log(vbs=f"[{istat.ip_in}/{istat.n_in}] read {in_file_path}")
         field_lst_lst = read_fields(
-            in_file_path, sub_setups, add_ts0=True, dry_run=dry_run, cache_on=cache
+            in_file_path,
+            sub_setups,
+            add_ts0=True,
+            missing_ok=True,
+            dry_run=dry_run,
+            cache_on=cache,
         )
         # SR_TMP <  SR_MULTIPANEL
         for field_lst in field_lst_lst:
