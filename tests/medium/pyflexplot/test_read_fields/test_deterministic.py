@@ -41,7 +41,6 @@ def get_var_name_ref(setup, var_names_ref):
 
 @dataclass
 class Config:
-    datafilename: str
     model: str
     var_names_ref: List[str]
     setup_dct: Dict[str, Any]
@@ -63,11 +62,10 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
     "config",
     [
         Config(  # [config0]
-            datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["spec002"],
             setup_dct={
-                "infile": "dummy.nc",
+                "infile": datafilename1,
                 "outfile": "dummy.png",
                 "model": "COSMO-1",
                 "input_variable": "concentration",
@@ -83,11 +81,10 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             },
         ),
         Config(  # [config1]
-            datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["DD_spec002"],
             setup_dct={
-                "infile": "dummy.nc",
+                "infile": datafilename1,
                 "outfile": "dummy.png",
                 "model": "COSMO-1",
                 "input_variable": "deposition",
@@ -104,11 +101,10 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             scale_fld_ref=1 / 3,
         ),
         Config(  # [config2]
-            datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["WD_spec002"],
             setup_dct={
-                "infile": "dummy.nc",
+                "infile": datafilename1,
                 "outfile": "dummy.png",
                 "model": "COSMO-1",
                 "input_variable": "deposition",
@@ -125,11 +121,10 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             scale_fld_ref=1 / 3,
         ),
         Config(  # [config3]
-            datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["WD_spec002", "DD_spec002"],
             setup_dct={
-                "infile": "dummy.nc",
+                "infile": datafilename1,
                 "outfile": "dummy.png",
                 "model": "COSMO-1",
                 "input_variable": "deposition",
@@ -147,11 +142,10 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             scale_fld_ref=1 / 3,
         ),
         Config(  # [config4]
-            datafilename=datafilename2,
             model="COSMO-1",
             var_names_ref=["spec001"],
             setup_dct={
-                "infile": "dummy.nc",
+                "infile": datafilename2,
                 "outfile": "dummy.png",
                 "model": "COSMO-1",
                 "input_variable": "concentration",
@@ -167,11 +161,10 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             },
         ),
         Config(  # [config5]
-            datafilename=datafilename2,
             model="COSMO-1",
             var_names_ref=["WD_spec001", "DD_spec001"],
             setup_dct={
-                "infile": "dummy.nc",
+                "infile": datafilename2,
                 "outfile": "dummy.png",
                 "model": "COSMO-1",
                 "input_variable": "deposition",
@@ -189,11 +182,10 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             scale_fld_ref=1 / 3,
         ),
         Config(  # [config6]
-            datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["DD_spec001", "DD_spec002", "WD_spec001", "WD_spec002"],
             setup_dct={
-                "infile": "dummy.nc",
+                "infile": datafilename1,
                 "outfile": "dummy.png",
                 "model": "COSMO-1",
                 "input_variable": "deposition",
@@ -212,11 +204,10 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             scale_fld_ref=1 / 3,
         ),
         Config(  # [config7]
-            datafilename=datafilename3,
             model="IFS-HRES",
             var_names_ref=["spec001_mr"],
             setup_dct={
-                "infile": "dummy.nc",
+                "infile": datafilename3,
                 "outfile": "dummy.png",
                 "model": "IFS-HRES",
                 "input_variable": "concentration",
@@ -236,7 +227,7 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
 def test_single(datadir, config):  # noqa:F811
     """Read a single field."""
 
-    datafile = f"{datadir}/{config.datafilename}"
+    datafile = f"{datadir}/{config.setup_dct['infile']}"
 
     # Initialize field specifications
     setups = SetupCollection([config.setup])
@@ -279,11 +270,10 @@ def test_single(datadir, config):  # noqa:F811
     "config",
     [
         Config(  # [config0]
-            datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["spec002"],
             setup_dct={
-                "infile": "dummy.nc",
+                "infile": datafilename1,
                 "outfile": "dummy.png",
                 "model": "COSMO-1",
                 "input_variable": "concentration",
@@ -300,11 +290,10 @@ def test_single(datadir, config):  # noqa:F811
             scale_fld_ref=3.0,
         ),
         Config(  # [config1]
-            datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["spec002"],
             setup_dct={
-                "infile": "dummy.nc",
+                "infile": datafilename1,
                 "outfile": "dummy.png",
                 "model": "COSMO-1",
                 "input_variable": "concentration",
@@ -321,11 +310,10 @@ def test_single(datadir, config):  # noqa:F811
             scale_fld_ref=3.0,
         ),
         Config(  # [config2]
-            datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["DD_spec002"],
             setup_dct={
-                "infile": "dummy.nc",
+                "infile": datafilename1,
                 "outfile": "dummy.png",
                 "model": "COSMO-1",
                 "input_variable": "deposition",
@@ -341,11 +329,10 @@ def test_single(datadir, config):  # noqa:F811
             },
         ),
         Config(  # [config3]
-            datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["WD_spec002"],
             setup_dct={
-                "infile": "dummy.nc",
+                "infile": datafilename1,
                 "outfile": "dummy.png",
                 "model": "COSMO-1",
                 "input_variable": "deposition",
@@ -361,11 +348,10 @@ def test_single(datadir, config):  # noqa:F811
             },
         ),
         Config(  # [config4]
-            datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["WD_spec001", "DD_spec001"],
             setup_dct={
-                "infile": "dummy.nc",
+                "infile": datafilename1,
                 "outfile": "dummy.png",
                 "model": "COSMO-1",
                 "input_variable": "deposition",
@@ -382,11 +368,10 @@ def test_single(datadir, config):  # noqa:F811
             },
         ),
         Config(  # [config5]
-            datafilename=datafilename2,
             model="COSMO-1",
             var_names_ref=["spec001"],
             setup_dct={
-                "infile": "dummy.nc",
+                "infile": datafilename2,
                 "outfile": "dummy.png",
                 "model": "COSMO-1",
                 "input_variable": "concentration",
@@ -404,11 +389,10 @@ def test_single(datadir, config):  # noqa:F811
             scale_fld_ref=3.0,
         ),
         Config(  # [config6]
-            datafilename=datafilename2,
             model="COSMO-1",
             var_names_ref=["WD_spec001", "DD_spec001"],
             setup_dct={
-                "infile": "dummy.nc",
+                "infile": datafilename2,
                 "outfile": "dummy.png",
                 "model": "COSMO-1",
                 "input_variable": "deposition",
@@ -428,7 +412,7 @@ def test_single(datadir, config):  # noqa:F811
 def test_multiple(datadir, config):  # noqa:F811
     """Read multiple fields."""
 
-    datafile = f"{datadir}/{config.datafilename}"
+    datafile = f"{datadir}/{config.setup_dct['infile']}"
 
     # Create setups
     setup_lst = list(config.setup.decompress_partially(None))
@@ -482,11 +466,10 @@ def test_multiple(datadir, config):  # noqa:F811
     "config",
     [
         Config(
-            datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["spec002"],
             setup_dct={
-                "infile": "dummy.nc",
+                "infile": datafilename1,
                 "outfile": "dummy.png",
                 "model": "COSMO-1",
                 "input_variable": "concentration",
@@ -502,11 +485,10 @@ def test_multiple(datadir, config):  # noqa:F811
             },
         ),
         Config(
-            datafilename=datafilename1,
             model="COSMO-1",
             var_names_ref=["WD_spec002", "DD_spec002"],
             setup_dct={
-                "infile": "dummy.nc",
+                "infile": datafilename1,
                 "outfile": "dummy.png",
                 "model": "COSMO-1",
                 "input_variable": "deposition",
@@ -528,7 +510,7 @@ def test_multiple(datadir, config):  # noqa:F811
 def test_single_add_ts0(datadir, config):
     """Insert an additional time step 0 in the beginning, with empty fields."""
 
-    datafile = f"{datadir}/{config.datafilename}"
+    datafile = f"{datadir}/{config.setup_dct['infile']}"
 
     # Initialize field specifications
     setups = SetupCollection([config.setup])
