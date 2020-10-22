@@ -214,6 +214,24 @@ datafilename4 = "flexpart_cosmo-1e-ctrl_2020102105.nc"
                 },
             },
         ),
+        Config(  # [config8]
+            var_names_ref=["spec001"],
+            setup_dct={
+                "infile": datafilename4,
+                "outfile": "dummy.png",
+                "model": "COSMO-1E",
+                "input_variable": "concentration",
+                "integrate": False,
+                "dimensions": {
+                    "level": 0,
+                    "nageclass": 0,
+                    "noutrel": 0,
+                    "numpoint": 0,
+                    "species_id": 1,
+                    "time": 10,
+                },
+            },
+        ),
     ],
 )
 def test_single(datadir, config):  # noqa:F811
