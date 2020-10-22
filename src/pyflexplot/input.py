@@ -60,12 +60,16 @@ def read_fields(
         setups: Collection variable setups, containing among other things the
             ensemble member IDs in case of an ensemble simulation.
 
-        add_ts0: Whether to insert an additional time step 0 in the beginning
-            with empty fields, given that the first data time step may not
-            correspond to the beginning of the simulation, but constitute the
-            sum over the first few hours of the simulation.
+        add_ts0: Insert an additional time step 0 in the beginning with empty
+            fields, given that the first data time step may not correspond to
+            the beginning of the simulation, but constitute the sum over the
+            first few hours of the simulation.
 
-        dry_run (optional): Whether to skip reading the data from disk.
+        dry_run (optional): Perform dry run without reading the fields from disk
+            (meta data are still read).
+
+        cache_on (optional): Cache input fields to avoid reading the same field
+            multiple times.
 
         cache_on (optional): Whether to activate the cache.
 
@@ -114,12 +118,16 @@ class FieldInputOrganizer:
 
             ens_member_ids (optional): Ensemble member ids.
 
-            add_ts0: Whether to insert an additional time step 0 in the
-                beginning with empty fields, given that the first data time step
-                may not correspond to the beginning of the simulation, but
-                constitute the sum over the first few hours of the simulation.
+            add_ts0: Insert an additional time step 0 in the beginning with
+                empty fields, given that the first data time step may not
+                correspond to the beginning of the simulation, but constitute
+                the sum over the first few hours of the simulation.
 
-            dry_run (optional): Whether to skip reading the data from disk.
+            dry_run (optional): Perform dry run without reading the fields from
+                disk (meta data are still read).
+
+            cache_on (optional): Cache input fields to avoid reading the same
+                field multiple times.
 
             cls_fixer (optional): Class providing methods to fix issues with the
                 input data. Is instatiated with this instance of ``FileReader``.
