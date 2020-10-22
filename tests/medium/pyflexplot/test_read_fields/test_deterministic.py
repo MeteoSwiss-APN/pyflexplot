@@ -41,7 +41,6 @@ def get_var_name_ref(setup, var_names_ref):
 
 @dataclass
 class Config:
-    model: str
     var_names_ref: List[str]
     setup_dct: Dict[str, Any]
     derived_setup_params: List[Dict[str, Any]] = field(default_factory=list)
@@ -55,6 +54,7 @@ class Config:
 datafilename1 = "flexpart_cosmo-1_2019052800.nc"
 datafilename2 = "flexpart_cosmo-1_2019093012.nc"
 datafilename3 = "flexpart_ifs_20200317000000.nc"
+datafilename4 = "flexpart_cosmo-1e-ctrl_2020102105.nc"
 
 
 # test_single
@@ -62,7 +62,6 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
     "config",
     [
         Config(  # [config0]
-            model="COSMO-1",
             var_names_ref=["spec002"],
             setup_dct={
                 "infile": datafilename1,
@@ -81,7 +80,6 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             },
         ),
         Config(  # [config1]
-            model="COSMO-1",
             var_names_ref=["DD_spec002"],
             setup_dct={
                 "infile": datafilename1,
@@ -101,7 +99,6 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             scale_fld_ref=1 / 3,
         ),
         Config(  # [config2]
-            model="COSMO-1",
             var_names_ref=["WD_spec002"],
             setup_dct={
                 "infile": datafilename1,
@@ -121,7 +118,6 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             scale_fld_ref=1 / 3,
         ),
         Config(  # [config3]
-            model="COSMO-1",
             var_names_ref=["WD_spec002", "DD_spec002"],
             setup_dct={
                 "infile": datafilename1,
@@ -142,7 +138,6 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             scale_fld_ref=1 / 3,
         ),
         Config(  # [config4]
-            model="COSMO-1",
             var_names_ref=["spec001"],
             setup_dct={
                 "infile": datafilename2,
@@ -161,7 +156,6 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             },
         ),
         Config(  # [config5]
-            model="COSMO-1",
             var_names_ref=["WD_spec001", "DD_spec001"],
             setup_dct={
                 "infile": datafilename2,
@@ -182,7 +176,6 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             scale_fld_ref=1 / 3,
         ),
         Config(  # [config6]
-            model="COSMO-1",
             var_names_ref=["DD_spec001", "DD_spec002", "WD_spec001", "WD_spec002"],
             setup_dct={
                 "infile": datafilename1,
@@ -204,7 +197,6 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
             scale_fld_ref=1 / 3,
         ),
         Config(  # [config7]
-            model="IFS-HRES",
             var_names_ref=["spec001_mr"],
             setup_dct={
                 "infile": datafilename3,
@@ -251,7 +243,7 @@ def test_single(datadir, config):  # noqa:F811
                     datafile,
                     get_var_name_ref(setup, config.var_names_ref),
                     setup,
-                    config.model,
+                    config.setup_dct["model"],
                 )
                 for setup in var_setups
             ],
@@ -270,7 +262,6 @@ def test_single(datadir, config):  # noqa:F811
     "config",
     [
         Config(  # [config0]
-            model="COSMO-1",
             var_names_ref=["spec002"],
             setup_dct={
                 "infile": datafilename1,
@@ -290,7 +281,6 @@ def test_single(datadir, config):  # noqa:F811
             scale_fld_ref=3.0,
         ),
         Config(  # [config1]
-            model="COSMO-1",
             var_names_ref=["spec002"],
             setup_dct={
                 "infile": datafilename1,
@@ -310,7 +300,6 @@ def test_single(datadir, config):  # noqa:F811
             scale_fld_ref=3.0,
         ),
         Config(  # [config2]
-            model="COSMO-1",
             var_names_ref=["DD_spec002"],
             setup_dct={
                 "infile": datafilename1,
@@ -329,7 +318,6 @@ def test_single(datadir, config):  # noqa:F811
             },
         ),
         Config(  # [config3]
-            model="COSMO-1",
             var_names_ref=["WD_spec002"],
             setup_dct={
                 "infile": datafilename1,
@@ -348,7 +336,6 @@ def test_single(datadir, config):  # noqa:F811
             },
         ),
         Config(  # [config4]
-            model="COSMO-1",
             var_names_ref=["WD_spec001", "DD_spec001"],
             setup_dct={
                 "infile": datafilename1,
@@ -368,7 +355,6 @@ def test_single(datadir, config):  # noqa:F811
             },
         ),
         Config(  # [config5]
-            model="COSMO-1",
             var_names_ref=["spec001"],
             setup_dct={
                 "infile": datafilename2,
@@ -389,7 +375,6 @@ def test_single(datadir, config):  # noqa:F811
             scale_fld_ref=3.0,
         ),
         Config(  # [config6]
-            model="COSMO-1",
             var_names_ref=["WD_spec001", "DD_spec001"],
             setup_dct={
                 "infile": datafilename2,
@@ -446,7 +431,7 @@ def test_multiple(datadir, config):  # noqa:F811
                     datafile,
                     get_var_name_ref(var_setup, config.var_names_ref),
                     var_setup,
-                    config.model,
+                    config.setup_dct["model"],
                 )
             ]
             fld_ref_i = np.nansum(flds_ref_i, axis=0)
@@ -466,7 +451,6 @@ def test_multiple(datadir, config):  # noqa:F811
     "config",
     [
         Config(
-            model="COSMO-1",
             var_names_ref=["spec002"],
             setup_dct={
                 "infile": datafilename1,
@@ -485,7 +469,6 @@ def test_multiple(datadir, config):  # noqa:F811
             },
         ),
         Config(
-            model="COSMO-1",
             var_names_ref=["WD_spec002", "DD_spec002"],
             setup_dct={
                 "infile": datafilename1,
