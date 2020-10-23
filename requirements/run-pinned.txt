@@ -9,13 +9,13 @@ kiwisolver==1.2.0
 matplotlib==3.3.2
 netCDF4==1.5.4
 numpy==1.19.2
-Pillow==7.2.0
+Pillow==8.0.1
 pydantic==1.6.1
 pyparsing==2.4.7
 PyPDF2==1.26.0
 pyshp==2.1.2
 python-dateutil==2.8.1
-scipy==1.5.2
+scipy==1.5.3
 Shapely==1.7.1
 six==1.15.0
 toml==0.10.1
