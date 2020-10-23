@@ -3,28 +3,33 @@
 # Script directory
 DIR="$(dirname "$(readlink -f "$0")")"
 
-# Optional argument: Working directory (existing or not)
-work_dir="${1}"
-
-# Set default working directory
-if [ "${work_dir}" = "" ]; then
-    work_dir="test_opr_plots"
+# Check arguments
+if [ ${#} -lt 2 ] || [ ${#} -gt 3 ]; then
+    echo "error: wrong number of arguments (${#})" >&2
+    echo "usage: $(basename "${0}") PRESET INFILE_PATH [WORK_DIR]" >&2
+    exit 1
 fi
 
-data_dir="${work_dir}/data"
+# 1st argument: Preset name
+preset="${1}"
+
+# 2nd argument: Input file path
+infile_path="${2}"
+infile_path="$(readlink -f "${infile_path}")"
+
+# 3rd argument (optional): Working directory (existing or not)
+work_dir="${3:-test_preset_plots/${preset}}"
+
 ref_dir="${work_dir}/ref"
 test_dir="${work_dir}/test"
 diff_dir="${work_dir}/diff"
 
 echo
-echo "working directory   : ${work_dir}"
-echo "test data directory : ${data_dir}"
-echo "reference directory : ${ref_dir}"
-echo "test directory      : ${test_dir}"
-echo "diffs directory     : ${diff_dir}"
+echo "work dir : ${work_dir}"
+echo "ref dir  : ${ref_dir}"
+echo "test dir : ${test_dir}"
+echo "diff dir : ${diff_dir}"
 echo
-
-preset="opr/cosmo-1e-ctrl/all_png"
 
 # Check the name of the local git repository
 function check_git_repo()
@@ -80,30 +85,20 @@ function prepare_dest_dir()
     fi
 }
 
-# Prepare (link to) data directory
-function prepare_data_dir()
+# Get reference revision (tag/commit)
+function get_ref_rev()
 {
-    local data_dir_rel="${1}"
-    if [ ! -d "${data_dir_rel}" ] && [ ! -L "${data_dir_rel}" ]; then
-        echo -e "\nmissing data directory (or link): ${data_dir_rel}"
-        # Ask for test data directory and create a symlink to it
-        echo "pwd : ${PWD}"
-        echo
-        while read -p "path to test data directory? " reply; do
-            if [ ! -d "${reply}" ]; then
-                echo "invalid directory '${reply}'"
-                continue
-            fi
-            break
-        done
-        echo "ln -s '${reply}' '${data_dir_rel}'"
-        ln -s "${reply}" "${data_dir_rel}"
-        echo
-    fi
-    echo -e "\ntest data directory:"
-    \ls -ld "${data_dir_rel}"
-    [ -L "${data_dir_rel}" ] && readlink -f "$(readlink "${data_dir_rel}")"
-    echo
+    ref_rev="$(git describe --abbrev=0)"
+    while read -p "reference tag/commit [${ref_rev}]? " reply; do
+        [ "${reply}" = "" ] && break
+        if ! git rev-parse "${reply}" >/dev/null 2>&1; then
+            echo "invalid tag/commit '${reply}'" >&2
+            continue
+        fi
+        ref_rev="${reply}"
+        break
+    done
+    echo "${ref_rev}"
 }
 
 # Handle existing reference directory
@@ -135,47 +130,37 @@ if [ "${comp_ref}" = "true" ]; then
     prepare_dest_dir "${ref_dir}" "reference"
 
     # Ask for reference tag/commit (default: latest tag)
-    ref_rev="$(git describe --abbrev=0)"
-    while read -p "reference tag/commit [${ref_rev}]? " reply; do
-        [ "${reply}" = "" ] && break
-        if ! git rev-parse "${reply}" >/dev/null 2>&1; then
-            echo "invalid tag/commit '${reply}'"
-            continue
-        fi
-        ref_rev="${reply}"
-        break
-    done
+    ref_rev="$(get_ref_rev)"
 
     # Switch to reference tag/commit
     echo -e "\nswitching to reference tag/commit '${ref_rev}'"
     echo "git checkout '${ref_rev}'"
-    git -c advice.detachedHead=false checkout "${ref_rev}"
+    git -c advice.detachedHead=false checkout "${ref_rev}" || exit 1
 
     # Enter working directory
     curr_dir="${PWD}"
     echo -e "\nentering working directory"
-    cd "${work_dir}"
+    cd "${work_dir}" || exit 1
     pwd
-
-    prepare_data_dir "${data_dir#${work_dir}/}"
 
     # Create plots
     ref_dir_rel="${ref_dir#${work_dir}/}"
     version=$(pyflexplot -V)
     echo -e "\ncomputing reference plots with pyflexplot ${version}:"
-    cmd="pyflexplot -P8 --preset='${preset}' --dest-dir='${ref_dir_rel}'"
+    # + cmd="pyflexplot -P8 --preset='${preset}' --setup infile '${infile_path}' --dest='${ref_dir_rel}' --no-show-version" || exit 1
+    cmd="pyflexplot -P8 --preset='${preset}' --setup infile '${infile_path}' --dest-dir='${ref_dir_rel}'" || exit 1
     echo -e "${cmd}\n"
     eval "${cmd}"
 
     # Exit working directory
     echo -e "\nexiting working directory"
-    cd "${curr_dir}"
+    cd "${curr_dir}" || exit 1
     pwd
 
     # Switch back to previous branch/commit
     echo -e "\nswitching back from reference tag/commit"
     echo "git switch -"
-    git switch -
+    git switch - || exit 1
 fi
 
 # Handle existing test directory
@@ -209,25 +194,23 @@ if [ "${comp_test}" = "true" ]; then
     # Enter working directory
     curr_dir="${PWD}"
     echo -e "\nentering working directory"
-    cd "${work_dir}"
+    cd "${work_dir}" || exit 1
     pwd
-
-    prepare_data_dir "${data_dir#${work_dir}/}"
 
     # Create plots
     test_dir_rel="${test_dir#${work_dir}/}"
     version=$(pyflexplot -V)
     echo -e "\ncomputing test plots with pyflexplot ${version}:"
     # SR_TMP < TODO Change to --dest once old versions are no longer relevant
-    # cmd="pyflexplot -P8 --preset='${preset}' --dest='${test_dir_rel}'"
-    cmd="pyflexplot -P8 --preset='${preset}' --dest-dir='${test_dir_rel}'"
+    # + cmd="pyflexplot -P8 --preset='${preset}' --setup infile '${infile_path}' --dest='${test_dir_rel}' --no-show-version" || exit 1
+    cmd="pyflexplot -P8 --preset='${preset}' --setup infile '${infile_path}' --dest-dir='${test_dir_rel}'" || exit 1
     # SR_TMP >
     echo -e "${cmd}\n"
     eval "${cmd}"
 
     # Exit working directory
     echo -e "\nexiting working directory"
-    cd "${curr_dir}"
+    cd "${curr_dir}" || exit 1
     pwd
 fi
 
