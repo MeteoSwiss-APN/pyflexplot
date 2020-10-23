@@ -299,6 +299,11 @@ def click_prep_setup_params(ctx, param, value):
     callback=wrap_callback(click_prep_setup_params),
 )
 @click.option(
+    "--show-version/--no-show-version",
+    help="Show version number on plot.",
+    default=True,
+)
+@click.option(
     "--suffix",
     "suffixes",
     help=(
@@ -407,6 +412,7 @@ def main(
     open_cmd,
     keep_merged_pdfs,
     setup_file_paths,
+    show_version,
     suffixes,
     tmp_dir_old,  # SR_TMP TODO Remove once OSM replaces --tmp-dir by --tmp
     tmp_dir,
@@ -507,7 +513,7 @@ def main(
             for field in field_lst
         ]
         istat.n_fld = len(field_lst)
-        fct = partial(create_plots, only, dry_run, istat)
+        fct = partial(create_plots, only, dry_run, show_version, istat)
         iter_args = zip(
             range(1, len(field_lst) + 1),
             in_file_path_lst,
@@ -599,6 +605,7 @@ def get_pid() -> int:
 def create_plots(
     only: Optional[int],
     dry_run: bool,
+    show_version: bool,
     istat: SharedIterationState,
     ip_fld: int,
     in_file_path: str,
@@ -640,7 +647,7 @@ def create_plots(
         )
     if not dry_run:
         assert isinstance(plot, BoxedPlot)  # mypy
-        create_plot(plot, out_file_paths)
+        create_plot(plot, out_file_paths, show_version=show_version)
     n_plt_todo = istat.n_fld - ip_fld
     if only and istat.ip_tot >= only:
         if n_plt_todo:
