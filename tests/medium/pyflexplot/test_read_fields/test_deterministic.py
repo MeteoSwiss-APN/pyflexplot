@@ -562,3 +562,39 @@ def test_missing_deposition(datadir):  # noqa:F811
     fld = field_lst_lst[0][0].fld
 
     assert (fld == 0.0).all()
+
+
+def test_affected_area(datadir):  # noqa:F811
+    """Read affected area field, combining concentration and deposition."""
+
+    setup_dct = {
+        "infile": datafilename4,
+        "outfile": "dummy.png",
+        "model": "COSMO-1E",
+        "input_variable": "affected_area",
+        "integrate": True,
+        "combine_deposition_types": True,
+        "dimensions": {
+            "deposition_type": ("dry", "wet"),
+            "level": 0,
+            "nageclass": 0,
+            "noutrel": 0,
+            "numpoint": 0,
+            "species_id": 1,
+            "time": -1,
+        },
+    }
+    setup = Setup.create(setup_dct)
+
+    datafile = f"{datadir}/{setup_dct['infile']}"
+
+    # Initialize field specifications
+    setups = SetupCollection([setup])
+
+    # Read input field
+    field_lst_lst = read_fields(datafile, setups, missing_ok=True)
+    assert len(field_lst_lst) == 1
+    assert len(field_lst_lst[0]) == 1
+    fld = field_lst_lst[0][0].fld
+
+    assert ((fld == 0) | (fld == 1)).all()

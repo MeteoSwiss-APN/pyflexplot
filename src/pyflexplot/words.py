@@ -37,7 +37,10 @@ WORDS.add(
 )
 WORDS.add(en="arrival", de="Ankunft")
 WORDS.add(en="arrival time", de="Ankunftszeit")
-WORDS.add(en="affected area", de="Beaufschlagtes Gebiet")
+WORDS.add(
+    en="affected area",
+    de={"*": "beaufschlagtes Gebiet", "g": "beaufschlagten Gebietes"},
+)
 WORDS.add(en="m AGL", de=f'm {s["ue"]}.G.')
 WORDS.add(en="at", de={"level": "auf", "place": "in", "time": "um"})
 WORDS.add(en="averaged over", de=f'gemittelt {s["ue"]}ber')
@@ -137,7 +140,7 @@ WORDS.add(en={"*": "minimum", "abbr": "min."}, de={"*": "Minimum", "abbr": "min.
 WORDS.add(en={"*": "north", "abbr": "N"}, de={"*": "Norden", "abbr": "N"})
 WORDS.add(en={"*": "number of", "abbr": "no."}, de={"*": "Anzahl", "abbr": "Anz."})
 # O
-WORDS.add(en="of", de={"*": "von", "fg": "der"})
+WORDS.add(en="of", de={"*": "von", "fg": "der", "ng": "des"})
 # P
 WORDS.add(en="percent", de="Prozent")
 WORDS.add(en="percentile", de="Perzentil")

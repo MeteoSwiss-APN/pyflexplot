@@ -109,7 +109,6 @@ class BoxedPlot:
         self.levels: np.ndarray = levels_from_time_stats(
             self.config, self.field.time_props.stats
         )
-        assert self.levels is not None  # SR_DBG
 
         # Declarations
         self._fig: Optional[Figure] = None
@@ -254,7 +253,10 @@ def levels_from_time_stats(
             assert plot_config.levels is not None  # mypy
             return plot_config.levels
     assert plot_config.n_levels is not None  # mypy
-    if plot_config.setup.core.plot_variable == "affected_area_mono":
+    if (
+        plot_config.setup.core.plot_variable == "affected_area_mono"
+        or plot_config.setup.core.input_variable == "affected_area"
+    ):
         levels = _auto_levels_log10(n_levels=9, val_max=time_stats.max)
         return np.array([levels[0], np.inf])
     else:

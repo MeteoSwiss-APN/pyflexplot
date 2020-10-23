@@ -351,13 +351,16 @@ class VariableMetaData(_MetaDataBase):
 
     @classmethod
     def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "VariableMetaData":
-        name = nc_var_name(setup, setup.model)
-        try:
-            var = fi.variables[name]
-        except KeyError:
-            unit = "N/A"
+        if setup.core.input_variable == "affected_area":
+            unit = "N/A"  # SR_TMP TODO Chose appropriate unit
         else:
-            unit = getncattr(var, "units")
+            var_name = nc_var_name(setup, setup.model)
+            try:
+                var = fi.variables[var_name]
+            except KeyError:
+                unit = "N/A"
+            else:
+                unit = getncattr(var, "units")
         idx: int
         if setup.core.dimensions.level is None:
             level_unit = ""
@@ -491,35 +494,22 @@ class SpeciesMetaData(_MetaDataBase):
     @classmethod
     def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "SpeciesMetaData":
         model: str = setup.model
-        var_name: str = nc_var_name(setup, model)
         name: str
-        try:
-            var: nc4.Variable = fi.variables[var_name]
-            name = getncattr(var, "long_name")
-        except (KeyError, AttributeError):
-            # SR_TMP <
-            # name = "N/A"
-            if model.startswith("IFS"):
-                # In the IFS NetCDF files, the deposition variables are missing
-                # the basic meta data on species, like "long_name". Therefore,
-                # try to # obtain the name from the activity variable of the
-                # same species.
-                if var_name.startswith("DD_") or var_name.startswith("WD_"):
-                    alternative_name = f"{var_name[3:]}_mr"
-                    try:
-                        alternative_var = fi.variables[alternative_name]
-                        name = getncattr(alternative_var, "long_name")
-                    except (KeyError, AttributeError):
-                        name = "N/A"
-                    else:
-                        name = name.split("_")[0]
+        if setup.core.input_variable == "affected_area":
+            alt_setup = setup.derive({"input_variable": "concentration"})
+            return cls.from_file(fi, alt_setup)
+        else:
+            var_name: str = nc_var_name(setup, model)
+            try:
+                var: nc4.Variable = fi.variables[var_name]
+                name = getncattr(var, "long_name")
+            except (KeyError, AttributeError):
+                if model.startswith("IFS"):
+                    name = cls._get_species_name_ifs(fi, var_name)
                 else:
                     name = "N/A"
             else:
-                name = "N/A"
-            # SR_TMP >
-        else:
-            name = name.split("_")[0]
+                name = name.split("_")[0]
         species: Species = get_species(name=name)
         return cls(
             name=species.name,
@@ -533,6 +523,26 @@ class SpeciesMetaData(_MetaDataBase):
             washout_coefficient_unit=cast(str, species.washout_coefficient.unit),
             washout_exponent=species.washout_exponent.value,
         )
+
+    @staticmethod
+    def _get_species_name_ifs(fi: nc4.Dataset, var_name: str) -> str:
+        """Get the species name from an IFS simulation.
+
+        In the IFS NetCDF files, the deposition variables are missing the basic
+        meta data on species, like "long_name". Therefore, try to obtain the
+        name from the activity variable of the same species.
+
+        """
+        if not var_name.startswith("DD_") and not var_name.startswith("WD_"):
+            return "N/A"
+        alt_name = f"{var_name[3:]}_mr"
+        try:
+            alt_var = fi.variables[alt_name]
+            name = getncattr(alt_var, "long_name")
+        except (KeyError, AttributeError):
+            return "N/A"
+        else:
+            return name.split("_")[0]
 
 
 class RawReleaseMetaData(BaseModel):

@@ -201,9 +201,11 @@ class FieldInputOrganizer:
                 if input_variable == "concentration":
                     if combine_levels:
                         skip.append("dimensions.level")
-                elif input_variable == "deposition":
+                elif input_variable in ["deposition", "affected_area"]:
                     if combine_deposition_types:
                         skip.append("dimensions.deposition_type")
+                if input_variable == "affected_area":
+                    skip.append("input_variable")
                 if combine_species:
                     skip.append("dimensions.species_id")
                 setups_plots = sub_setups.decompress_partially(None, skip=skip)
@@ -245,11 +247,9 @@ class FieldInputOrganizer:
         )
         fields_for_plots: List[List[Field]] = []
         for setups_for_same_plot_over_time in setups_for_plots_over_time:
+            ens_mem_ids = setups_for_same_plot_over_time.collect_equal("ens_member_id")
             fields_for_plots.extend(
-                files.read_fields_over_time(
-                    setups_for_same_plot_over_time,
-                    setups_for_same_plot_over_time.collect_equal("ens_member_id"),
-                )
+                files.read_fields_over_time(setups_for_same_plot_over_time, ens_mem_ids)
             )
 
         return fields_for_plots
@@ -324,9 +324,10 @@ class InputFileEnsemble:
             self.nc_meta_data = self.read_nc_meta_data(fi)
 
         # Create individual setups at each requested time step
-        self.setups_lst_time = setups.decompress_partially(
-            ["dimensions.time"], skip=["outfile"]
-        )
+        select = ["dimensions.time"]
+        skip = ["outfile"]
+        skip.append("input_variable")  # For "affected_area"
+        self.setups_lst_time = setups.decompress_partially(select, skip=skip)
 
         model = setups.collect_equal("model")
         self.fld_time_mem = np.full(self._get_shape_mem_time(model), np.nan, np.float32)
@@ -432,29 +433,33 @@ class InputFileEnsemble:
         self, fi: nc4.Dataset, timeless_setups: SetupCollection
     ) -> np.ndarray:
         """Read field over all time steps for each member."""
-
         fld_time_lst = []
+        input_variable = timeless_setups.collect_equal("input_variable")
         for sub_setups in timeless_setups.decompress_partially(None, skip=["outfile"]):
             for sub_setup in sub_setups:
-                fld_time_lst.append(self._read_fld(fi, sub_setup))
-        fld_time = merge_fields(fld_time_lst)
-
+                fld_time_lst.append(self._read_fld_over_time(fi, sub_setup))
+        if input_variable == "affected_area":
+            shapes = [fld.shape for fld in fld_time_lst]
+            assert len(set(shapes)) == 1, f"shapes differ: {shapes}"
+            fld_time = (np.array(fld_time_lst) > 0.0).any(axis=0)
+        else:
+            fld_time = merge_fields(fld_time_lst)
         global_models = ["IFS-HRES"]
         if self.fixer and timeless_setups.collect_equal("model") in global_models:
             self.fixer.fix_global_grid(self.lon, fld_time)
-
         if self.add_ts0:
             fld_time = self._add_ts0_to_fld_time(fld_time)
-
         return fld_time
 
     # pylint: disable=R0914  # too-many-locals
     def _collect_meta_data_tss(self, fi: nc4.Dataset) -> List[MetaData]:
         """Collect time-step-specific data meta data."""
         mdata_lst: List[MetaData] = []
+        skip = ["outfile"]
+        skip.append("input_variable")  # For "affected_area"
         for setups in self.setups_lst_time:
             mdata_i_lst: List[MetaData] = []
-            for sub_setups in setups.decompress_partially(None, skip=["outfile"]):
+            for sub_setups in setups.decompress_partially(None, skip=skip):
                 for sub_setup in sub_setups:
                     mdata_ij: MetaData = MetaData.collect(
                         fi, sub_setup, add_ts0=self.add_ts0
@@ -588,19 +593,11 @@ class InputFileEnsemble:
             raise NotImplementedError("dimension names for model", model)
 
     # pylint: disable=R0912,R0914  # too-many-branches, too-many-locals
-    def _read_fld(self, fi: nc4.Dataset, setup: Setup) -> np.ndarray:
-        """Read an individual 2D field at a given time step from disk."""
-
-        # SR_TMP <
-        dimensions = setup.core.dimensions
-        input_variable = setup.core.input_variable
-        integrate = setup.core.integrate
-        model = setup.model
-        var_name = nc_var_name(setup, model)
-        # SR_TMP >
+    def _read_fld_over_time(self, fi: nc4.Dataset, setup: Setup) -> np.ndarray:
+        """Read a 2D field at all time steps from disk."""
 
         # Indices of field along NetCDF dimensions
-        dim_names = self._dim_names(model)
+        dim_names = self._dim_names(setup.model)
         dim_idcs_by_name = {
             dim_names["lat"]: slice(None),
             dim_names["lon"]: slice(None),
@@ -609,18 +606,22 @@ class InputFileEnsemble:
             if dim_name in ["lat", "lon", "time"]:
                 idcs = slice(None)
             else:
-                idcs = getattr(dimensions, dim_name)
+                idcs = getattr(setup.core.dimensions, dim_name)
             dim_idcs_by_name[dim_names[dim_name]] = idcs
 
         # Select variable in file
+        var_name = nc_var_name(setup, setup.model)
         try:
             nc_var = fi.variables[var_name]
         except KeyError:
             if not self.missing_ok:
                 raise Exception(f"missing variable '{var_name}'")
-            nx = fi.dimensions["rlat"].size
-            ny = fi.dimensions["rlon"].size
-            return np.zeros([nx, ny], np.float32)
+            shape = (
+                fi.dimensions["time"].size,
+                fi.dimensions["rlat"].size,
+                fi.dimensions["rlon"].size,
+            )
+            return np.zeros(shape, np.float32)
 
         # Assemble indices for slicing
         indices: List[Any] = [None] * len(nc_var.dimensions)
@@ -665,13 +666,13 @@ class InputFileEnsemble:
         fld = nc_var[indices]
 
         # Fix known issues with NetCDF input data
-        model = setup.model
         var_ncattrs = {attr: nc_var.getncattr(attr) for attr in nc_var.ncattrs()}
         if self.fixer:
-            self.fixer.fix_nc_var_fld(fld, model, var_ncattrs)
+            self.fixer.fix_nc_var_fld(fld, setup.model, var_ncattrs)
 
-        fld = self._handle_time_integration(fi, fld, input_variable, integrate)
-        return fld
+        return self._handle_time_integration(
+            fi, fld, setup.core.input_variable, setup.core.integrate
+        )
 
     def _handle_time_integration(
         self, fi: nc4.Dataset, fld: np.ndarray, input_variable: str, integrate: bool

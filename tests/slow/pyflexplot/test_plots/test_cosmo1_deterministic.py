@@ -65,14 +65,20 @@ class Test_TotalDeposition(_TestBase):
 class Test_AffectedArea(_TestBase):
     reference = "ref_cosmo1_deterministic_affected_area"
     setup_dct = {
-        "infile": INFILE_NAME,
-        "outfile": f"{reference}.png",
-        "model": "COSMO-1",
-        "input_variable": "deposition",
-        "plot_variable": "affected_area_mono",
         "combine_deposition_types": True,
+        "domain": "ch",
+        "infile": INFILE_NAME,
+        # "input_variable": "deposition",
+        # "plot_variable": "affected_area_mono",
+        "input_variable": "affected_area",
         "integrate": True,
         "lang": "en",
-        "domain": "ch",
-        "dimensions": {"species_id": 1, "time": -1, "deposition_type": ["dry", "wet"]},
+        "model": "COSMO-1",
+        "outfile": f"{reference}.png",
+        "dimensions": {
+            "deposition_type": ["dry", "wet"],
+            "level": 0,
+            "species_id": 1,
+            "time": -1,
+        },
     }

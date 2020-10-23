@@ -159,10 +159,8 @@ def plot_add_text_boxes(
             capitalize(format_names_etc(setup, words, mdata)["long"]),
             loc="tl",
             fontname=plot.config.font_name,
-            # SR_TMP < SR_DBG
             # size=plot.config.font_sizes.title_large,
-            size=plot.config.font_sizes.content_large,
-            # SR_TMP >
+            size=plot.config.font_sizes.title_medium,
         )
 
         # SR_TMP <
@@ -595,6 +593,9 @@ def create_plot_config(
         new_config_dct["n_levels"] = 8
     elif setup.core.input_variable == "deposition":
         new_config_dct["n_levels"] = 9
+    elif setup.core.input_variable == "affected_area":
+        new_config_dct["extend"] = "none"
+        new_config_dct["n_levels"] = 1
     if setup.get_simulation_type() == "deterministic":
         new_config_dct["mark_field_max"] = True
         if setup.core.plot_variable == "affected_area_mono":
@@ -658,7 +659,10 @@ def create_plot_config(
     # Colors
     extend = new_config_dct.get("extend", "max")
     cmap = new_config_dct.get("cmap", "flexplot")
-    if setup.core.plot_variable == "affected_area_mono":
+    if (
+        setup.core.plot_variable == "affected_area_mono"
+        or setup.core.input_variable == "affected_area"
+    ):
         assert new_config_dct["n_levels"] is not None
         n_levels = new_config_dct["n_levels"]
         new_config_dct["colors"] = (np.array([(200, 200, 200)]) / 255).tolist()
@@ -845,8 +849,8 @@ def format_names_etc(
 
     def format_var_names(setup: Setup, words: TranslatedWords) -> Tuple[str, str, str]:
         if setup.core.input_variable == "concentration":
-            var_name = str(words["air_activity_concentration"])
-            var_name_abbr = str(words["air_activity_concentration", "abbr"])
+            var_name = words["air_activity_concentration"].s
+            var_name_abbr = words["air_activity_concentration", "abbr"].s
             if setup.core.integrate:
                 var_name_rel = (
                     f"{words['of', 'fg']} {words['integrated', 'g']}"
@@ -870,6 +874,10 @@ def format_names_etc(
                 f"{words['of', 'fg']} {words[dep_type_word, 'g']}"
                 f" {words['surface_deposition']}"
             )
+        elif setup.core.input_variable == "affected_area":
+            var_name = words["affected_area"].s
+            var_name_abbr = words["affected_area", "abbr"].s
+            var_name_rel = f"{words['of', 'ng']} {words['affected_area', 'g']}"
         else:
             raise NotImplementedError(f"input variable '{setup.core.input_variable}'")
         return var_name, var_name_abbr, var_name_rel
@@ -900,15 +908,21 @@ def format_names_etc(
             )
         else:
             long_name = var_name
-            short_name = str(words["concentration"])
+            short_name = words["concentration"].s
     elif setup.core.input_variable == "deposition":
         long_name = var_name
-        short_name = str(words["deposition"])
+        short_name = words["deposition"].s
+    elif setup.core.input_variable == "affected_area":
+        long_name = words["affected_area"].s
+        short_name = words["affected_area", "abbr"].s
 
     # Short/long names #2: By plot variable/type; ensemble variable name
     ens_var_name = "none"
     if setup.get_simulation_type() == "deterministic":
-        if setup.core.plot_variable.startswith("affected_area"):
+        if (
+            setup.core.plot_variable.startswith("affected_area")
+            or setup.core.input_variable == "affected_area"
+        ):
             long_name = f"{words['affected_area']} {var_name_rel}"
     elif setup.get_simulation_type() == "ensemble":
         if setup.core.ens_variable == "minimum":
@@ -1091,6 +1105,8 @@ def format_integr_period(
         operation = words["summed_over"].s
     elif setup.core.input_variable == "deposition":
         operation = words["accumulated_over"].s
+    elif setup.core.input_variable == "affected_area":
+        operation = words["summed_over"].s
     else:
         raise NotImplementedError(
             f"operation for {'' if setup.core.integrate else 'non-'}integrated"
@@ -1110,9 +1126,9 @@ def format_coord_label(direction: str, words: TranslatedWords, symbols: Words) -
     min_unit = f"'{symbols['short_space']}"
     dir_unit = words[direction, "abbr"]
     if direction == "north":
-        deg_dir_unit = words["degN"]
+        deg_dir_unit = words["degN"].s
     elif direction == "east":
-        deg_dir_unit = words["degE"]
+        deg_dir_unit = words["degE"].s
     else:
         raise NotImplementedError("unit for direction", direction)
     return f"{{d}}{deg_unit}{{m}}{min_unit}{dir_unit} ({{f:.4f}}{deg_dir_unit})"

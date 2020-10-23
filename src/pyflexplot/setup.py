@@ -133,7 +133,7 @@ class CoreSetup(BaseModel):
     @root_validator
     def _check_input_variable(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         value = values["input_variable"]
-        choices = ["concentration", "deposition"]
+        choices = ["concentration", "deposition", "affected_area"]
         assert value in choices, value
         return values
 
@@ -701,6 +701,13 @@ class Setup(BaseModel):
                     dct["dimensions"]["deposition_type"] = ("dry", "wet")
         # SR_TMP >
 
+        if (
+            (select and "input_variable" in select)
+            or (not skip or "input_variable" not in skip)
+            and dct["input_variable"] == "affected_area"
+        ):
+            dct["input_variable"] = ("concentration", "deposition")
+
         # Decompress dict
         dcts = []
         for dct_i in decompress_multival_dict(
@@ -713,6 +720,19 @@ class Setup(BaseModel):
                     dct_i["dimensions"], select=select_dimensions, skip=skip_dimensions
                 ):
                     dct_ij = {**dct_i, "dimensions": dims_j}
+                    # SR_TMP <
+                    # Handle affected area
+                    if (
+                        dct_ij["input_variable"] == "concentration"
+                        and dct_ij["dimensions"]["deposition_type"]
+                    ):
+                        dct_ij["dimensions"] = {
+                            **dct_ij["dimensions"],
+                            "deposition_type": None,
+                        }
+                        if dct_ij in dcts:
+                            continue
+                    # SR_TMP >
                     dcts.append(dct_ij)
 
         return SetupCollection([Setup.create(dct) for dct in dcts])
