@@ -58,6 +58,9 @@ export _INSTALL
 export _INSTALL_EDIT
 export _INSTALL_DEV
 
+_TMP_VENV := $(shell date +venv-tmp-%s)
+export _TMP_VENV
+
 #==============================================================================
 # Python script: Print help
 #==============================================================================
@@ -241,9 +244,6 @@ install-dev: ${_VENV}
 # Dependencies
 #==============================================================================
 
-_TMP_VENV != echo venv-tmp-$$(date +%s)
-export _TMP_VENV
-
 .PHONY: update-run-deps #CMD Update pinned runtime dependencies based on setup.py
 update-run-deps:
 	@echo -e "${ECHO_PREFIX}updating pinned runtime dependencies"
@@ -286,8 +286,8 @@ update-tox-deps:
 # (https://ithub.com/c4urself/bump2version/issues/124), therefore we pre-commit,
 # commit, and tag manually. Once the whitespace problem is fixed, this can again
 # be done in one command:
-#	@read -p "Please annotate new tag: " msg \
-# 	&& ${PREFIX}bumpversion patch --verbose --tag-message="$${msg}"
+#  @read -p "Please annotate new tag: " msg \
+#  && ${PREFIX}bumpversion patch --verbose --tag-message="$${msg}"
 
 .PHONY: bump-patch #CMD Increment patch component Z of version number X.Y.Z,\nincl. git commit and tag
 bump-patch: ${_INSTALL_DEV}
@@ -377,7 +377,7 @@ test-check: ${_INSTALL_TEST}
 
 # .PHONY: docs #CMD Generate HTML documentation, including API docs.
 # docs: ${_INSTALL_DEV}
-#	@echo -e "${ECHO_PREFIX}generating HTML documentation"
+# 	@echo -e "${ECHO_PREFIX}generating HTML documentation"
 # 	\rm -f docs/{{ cookiecutter.project_slug }}.rst
 # 	\rm -f docs/modules.rst
 # 	${PREFIX}sphinx-apidoc -o docs/ src/{{ cookiecutter.project_slug }}
@@ -387,7 +387,7 @@ test-check: ${_INSTALL_TEST}
 
 # .PHONY: servedocs #CMD Compile the docs watching for changes.
 # servedocs: docs
-#	@echo -e "${ECHO_PREFIX}continuously regenerating HTML documentation"
+# 	@echo -e "${ECHO_PREFIX}continuously regenerating HTML documentation"
 # 	${PREFIX}watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
 #==============================================================================
