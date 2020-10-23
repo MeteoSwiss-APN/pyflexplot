@@ -371,6 +371,8 @@ class LevelRangeFormatter:
 
     def format(self, lvl0: Optional[float], lvl1: Optional[float]) -> str:
         if self._max_val is None:
+            assert lvl0 is not None
+            assert lvl1 is not None
             self._max_val = max([lvl0, lvl1])
 
         cs = self._format_components(lvl0, lvl1)
