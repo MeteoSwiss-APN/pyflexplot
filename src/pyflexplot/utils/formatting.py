@@ -733,9 +733,9 @@ class LevelRangeFormatterVar(LevelRangeFormatter):
     def _format_open_left(self, lvl: float) -> Components:
         op0 = " "
         if self.include == "lower":
-            op1 = "$\tt <$"
+            op1 = r"$\tt <$"
         elif self.include == "upper":
-            op1 = "$\tt \leq$"
+            op1 = r"$\tt \leq$"
         else:
             raise Exception(f"wrong value of include: '{self.include}'")
         op_fmtd = f"{op0} {self.var} {op1}"

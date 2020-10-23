@@ -157,6 +157,7 @@ class BoxedPlot:
 
     # SR_TODO Pull out of BoxedPlot class to MapAxes or some MapAxesContent class
     # SR_TODO Replace checks with plot-specific config/setup object
+    # pylint: disable=R0912  # too-many-branches
     def _draw_colors_contours(self) -> None:
         arr = self.field.fld
         levels = self.levels
