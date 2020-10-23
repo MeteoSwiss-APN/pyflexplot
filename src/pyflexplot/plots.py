@@ -163,7 +163,6 @@ def plot_add_text_boxes(
             size=plot.config.font_sizes.title_medium,
         )
 
-        # SR_TMP <
         labels = {}
         integr_period = format_integr_period(
             mdata.simulation.reduction_start,
@@ -184,7 +183,6 @@ def plot_add_text_boxes(
             f"{format_meta_datum(mdata.simulation.now_rel - mdata.release.start_rel)}"
             f" {words['after']} {words['release_start']}"
         )
-        # SR_TMP >
 
         for position, label in labels.items():
             box.text(
@@ -254,6 +252,13 @@ def plot_add_text_boxes(
         dy0_labels = -5.0
         dy0_boxes = dy0_labels - 0.8 * h_legend_box
 
+        # SR_TMP < TODO clean solution
+        if plot.config.setup.core.input_variable == "affected_area":
+            include = "upper"
+        else:
+            include = "lower"
+        # SR_TMP >
+
         # Format level ranges (contour plot legend)
         legend_labels = format_level_ranges(
             levels=plot.levels,
@@ -261,6 +266,7 @@ def plot_add_text_boxes(
             extend=plot.config.extend,
             rstrip_zeros=plot.config.legend_rstrip_zeros,
             align=plot.config.level_ranges_align,
+            include=include,
         )
 
         # Legend labels (level ranges)
@@ -593,10 +599,13 @@ def create_plot_config(
         new_config_dct["n_levels"] = 8
     elif setup.core.input_variable == "deposition":
         new_config_dct["n_levels"] = 9
-    elif setup.core.input_variable == "affected_area":
-        new_config_dct["extend"] = "none"
-        new_config_dct["n_levels"] = 1
-    if setup.get_simulation_type() == "deterministic":
+    # elif setup.core.input_variable == "affected_area":
+    if setup.core.input_variable == "affected_area":
+        new_config_dct["extend"] = "max"
+        new_config_dct["levels"] = np.array([0.0])
+        new_config_dct["mark_field_max"] = False
+    # if setup.get_simulation_type() == "deterministic":
+    elif setup.get_simulation_type() == "deterministic":
         new_config_dct["mark_field_max"] = True
         if setup.core.plot_variable == "affected_area_mono":
             new_config_dct["extend"] = "none"
@@ -663,8 +672,6 @@ def create_plot_config(
         setup.core.plot_variable == "affected_area_mono"
         or setup.core.input_variable == "affected_area"
     ):
-        assert new_config_dct["n_levels"] is not None
-        n_levels = new_config_dct["n_levels"]
         new_config_dct["colors"] = (np.array([(200, 200, 200)]) / 255).tolist()
     elif cmap == "flexplot":
         assert new_config_dct["n_levels"] is not None
@@ -807,7 +814,10 @@ def create_box_labels(
                 )
 
     if setup.get_simulation_type() == "deterministic":
-        labels["legend"]["title"] = f"{short_name} ({unit})"
+        if unit:
+            labels["legend"]["title"] = f"{short_name} ({unit})"
+        else:
+            labels["legend"]["title"] = f"{short_name}"
     elif setup.get_simulation_type() == "ensemble":
         if setup.core.ens_variable == "cloud_arrival_time":
             labels["legend"][
@@ -923,7 +933,7 @@ def format_names_etc(
             setup.core.plot_variable.startswith("affected_area")
             or setup.core.input_variable == "affected_area"
         ):
-            long_name = f"{words['affected_area']} {var_name_rel}"
+            long_name = var_name
     elif setup.get_simulation_type() == "ensemble":
         if setup.core.ens_variable == "minimum":
             long_name = f"{words['ensemble_minimum']} {var_name_rel}"

@@ -182,6 +182,7 @@ def format_level_ranges(
     widths: Optional[Tuple[int, int, int]] = None,
     extend: Optional[str] = None,
     align: Optional[str] = None,
+    include: Optional[str] = None,
     **kwargs,
 ) -> List[str]:
     """Format a list of level ranges in a certain style.
@@ -208,6 +209,9 @@ def format_level_ranges(
             components right-aligned), 'center', (left/right component
             right/left-aligned), and 'edges' (left/right component left/right-
             aligned). Defaults to 'center'.
+
+        include (optional): Which boundary to include in the range. Options:
+            "lower", "upper". Defaults to "lower".
 
         **kwargs: Additional style-specific keyword arguments used to
             initialize the respective formatter class. See individual formatter
@@ -260,7 +264,9 @@ def format_level_ranges(
     except AttributeError:
         raise ValueError(f"unknown style '{style}'; options: {sorted(formatters)}")
     else:
-        formatter = cls(widths=widths, extend=extend, align=align, **kwargs)
+        formatter = cls(
+            widths=widths, extend=extend, align=align, include=include, **kwargs
+        )
     return formatter.format_multiple(levels)
 
 
@@ -317,6 +323,7 @@ class LevelRangeFormatter:
         extend: Optional[str] = None,
         align: Optional[str] = None,
         rstrip_zeros: Optional[bool] = None,
+        include: Optional[str] = None,
     ) -> None:
         """Create an instance of ``LevelRangeFormatter``.
 
@@ -331,10 +338,13 @@ class LevelRangeFormatter:
             align = "center"
         if rstrip_zeros is None:
             rstrip_zeros = False
+        if include is None:
+            include = "lower"
         self.widths: Tuple[int, int, int] = widths
         self.extend: str = extend
         self.align: str = align
         self.rstrip_zeros: bool = rstrip_zeros
+        self.include: str = include
 
         # Declare attributes
         self._max_val: Optional[float] = None
@@ -430,10 +440,22 @@ class LevelRangeFormatter:
         return Components.create(s_l, (s_c, ntex_c), s_r)
 
     def _format_open_left(self, lvl: float) -> Components:
-        return self._format_open_core(lvl, r"$\tt <$")
+        if self.include == "lower":
+            op = r"$\tt <$"
+        elif self.include == "upper":
+            op = r"$\tt \leq$"
+        else:
+            raise Exception(f"wrong value of include: '{self.include}'")
+        return self._format_open_core(lvl, op)
 
     def _format_open_right(self, lvl: float) -> Components:
-        return self._format_open_core(lvl, r"$\tt \geq$")
+        if self.include == "lower":
+            op = r"$\tt \geq$"
+        elif self.include == "upper":
+            op = r"$\tt >$"
+        else:
+            raise Exception(f"wrong value of include: '{self.include}'")
+        return self._format_open_core(lvl, op)
 
     def _format_open_core(self, lvl: float, op: str, *, len_op: int = 1) -> Components:
         lvl_fmtd = self._format_level(lvl)
@@ -454,6 +476,7 @@ class LevelRangeFormatterInt(LevelRangeFormatter):
         extend: Optional[str] = None,
         align: Optional[str] = None,
         rstrip_zeros: Optional[bool] = None,
+        include: Optional[str] = None,
     ) -> None:
         if widths is None:
             widths = (2, 3, 2)
@@ -461,7 +484,11 @@ class LevelRangeFormatterInt(LevelRangeFormatter):
             warnings.warn(f"{type(self).__name__}: force rstrip_zeros=False")
             rstrip_zeros = False
         super().__init__(
-            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros
+            widths=widths,
+            extend=extend,
+            align=align,
+            rstrip_zeros=rstrip_zeros,
+            include=include,
         )
 
     def _format_components(
@@ -491,11 +518,16 @@ class LevelRangeFormatterMath(LevelRangeFormatter):
         extend: Optional[str] = None,
         align: Optional[str] = None,
         rstrip_zeros: Optional[bool] = None,
+        include: Optional[str] = None,
     ) -> None:
         if widths is None:
             widths = (6, 2, 6)
         super().__init__(
-            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros
+            widths=widths,
+            extend=extend,
+            align=align,
+            rstrip_zeros=rstrip_zeros,
+            include=include,
         )
 
     def _format_components(
@@ -516,15 +548,25 @@ class LevelRangeFormatterUp(LevelRangeFormatter):
         extend: Optional[str] = None,
         align: Optional[str] = None,
         rstrip_zeros: Optional[bool] = None,
+        include: Optional[str] = None,
     ) -> None:
         if widths is None:
             widths = (0, 2, 5)
         super().__init__(
-            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros
+            widths=widths,
+            extend=extend,
+            align=align,
+            rstrip_zeros=rstrip_zeros,
+            include=include,
         )
 
     def _format_closed(self, lvl0: float, lvl1: float) -> Components:
-        op_fmtd = r"$\tt \geq$"
+        if self.include == "lower":
+            op_fmtd = r"$\tt \geq$"
+        elif self.include == "upper":
+            op_fmtd = r"$\tt >$"
+        else:
+            raise Exception(f"wrong value of include: '{self.include}'")
         ntex_c = len(op_fmtd) - 1
         s_c = op_fmtd
         s_r = self._format_level(lvl0)
@@ -539,15 +581,25 @@ class LevelRangeFormatterDown(LevelRangeFormatter):
         extend: Optional[str] = None,
         align: Optional[str] = None,
         rstrip_zeros: Optional[bool] = None,
+        include: Optional[str] = None,
     ) -> None:
         if widths is None:
             widths = (0, 2, 5)
         super().__init__(
-            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros
+            widths=widths,
+            extend=extend,
+            align=align,
+            rstrip_zeros=rstrip_zeros,
+            include=include,
         )
 
     def _format_closed(self, lvl0: float, lvl1: float) -> Components:
-        op_fmtd = r"$\tt <$"
+        if self.include == "lower":
+            op_fmtd = r"$\tt <$"
+        elif self.include == "upper":
+            op_fmtd = r"$\tt \leq$"
+        else:
+            raise Exception(f"wrong value of include: '{self.include}'")
         ntex_c = len(op_fmtd) - 1
         s_c = op_fmtd
         s_r = self._format_level(lvl1)
@@ -562,23 +614,35 @@ class LevelRangeFormatterAnd(LevelRangeFormatter):
         extend: Optional[str] = None,
         align: Optional[str] = None,
         rstrip_zeros: Optional[bool] = None,
+        include: Optional[str] = None,
     ) -> None:
         if widths is None:
             widths = (8, 3, 8)
         super().__init__(
-            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros
+            widths=widths,
+            extend=extend,
+            align=align,
+            rstrip_zeros=rstrip_zeros,
+            include=include,
         )
 
     def _format_closed(self, lvl0: float, lvl1: float) -> Components:
 
-        op0_fmtd = r"$\tt \geq$"
+        if self.include == "lower":
+            op0_fmtd = r"$\tt \geq$"
+            op1_fmtd = r"$\tt <$ "
+        elif self.include == "upper":
+            op0_fmtd = r"$\tt >$"
+            op1_fmtd = r"$\tt \leq$ "
+        else:
+            raise Exception(f"wrong value of include: '{self.include}'")
+
         lvl0_fmtd = f"{op0_fmtd} {self._format_level(lvl0)}"
         ntex_l = len(op0_fmtd) - 1
 
         op_fmtd = r"$\tt &$"
         ntex_c = len(op_fmtd) - 1
 
-        op1_fmtd = r"$<$ "
         lvl1_fmtd = op1_fmtd + self._format_level(lvl1)
         ntex_r = len(op1_fmtd) - 1
 
@@ -588,14 +652,24 @@ class LevelRangeFormatterAnd(LevelRangeFormatter):
         return Components.create((s_l, ntex_l), (s_c, ntex_c), (s_r, ntex_r))
 
     def _format_open_left(self, lvl: float) -> Components:
-        op_fmtd = r"\tt $<$"
+        if self.include == "lower":
+            op_fmtd = r"$\tt <$"
+        elif self.include == "upper":
+            op_fmtd = r"$\tt \leq$"
+        else:
+            raise Exception(f"wrong value of include: '{self.include}'")
         lvl_fmtd = f"{op_fmtd} {self._format_level(lvl)}"
         ntex_r = len(op_fmtd) - 1
         s_r = lvl_fmtd
         return Components.create("", "", (s_r, ntex_r))
 
     def _format_open_right(self, lvl: float) -> Components:
-        op0_fmtd = r"$\tt \geq$"
+        if self.include == "lower":
+            op0_fmtd = r"$\tt \geq$"
+        elif self.include == "upper":
+            op0_fmtd = r"$\tt >$"
+        else:
+            raise Exception(f"wrong value of include: '{self.include}'")
         lvl_fmtd = f"{op0_fmtd} {self._format_level(lvl)}"
         ntex_l = len(op0_fmtd) - 1
         s_l = lvl_fmtd
@@ -610,20 +684,31 @@ class LevelRangeFormatterVar(LevelRangeFormatter):
         extend: Optional[str] = None,
         align: Optional[str] = None,
         rstrip_zeros: Optional[bool] = None,
+        include: Optional[str] = None,
         var: Optional[str] = None,
     ):
         if widths is None:
             widths = (5, 9, 5)
         super().__init__(
-            widths=widths, extend=extend, align=align, rstrip_zeros=rstrip_zeros
+            widths=widths,
+            extend=extend,
+            align=align,
+            rstrip_zeros=rstrip_zeros,
+            include=include,
         )
         if var is None:
             var = "v"
         self.var: str = var
 
     def _format_closed(self, lvl0: float, lvl1: float) -> Components:
-        op0 = r"$\tt \leq$"
-        op1 = r"$\tt <$"
+        if self.include == "lower":
+            op0 = r"$\tt \leq$"
+            op1 = r"$\tt <$"
+        elif self.include == "upper":
+            op0 = r"$\tt <$"
+            op1 = r"$\tt \leq$"
+        else:
+            raise Exception(f"wrong value of include: '{self.include}'")
         op_fmtd = f"{op0} {self.var} {op1}"
         ntex_c = len(op0) + len(op1) - 2
         s_l = self._format_level(lvl0)
@@ -632,7 +717,12 @@ class LevelRangeFormatterVar(LevelRangeFormatter):
         return Components.create(s_l, (s_c, ntex_c), s_r)
 
     def _format_open_right(self, lvl: float) -> Components:
-        op0 = r"$\tt \leq$"
+        if self.include == "lower":
+            op0 = r"$\tt \leq$"
+        elif self.include == "upper":
+            op0 = r"$\tt <$"
+        else:
+            raise Exception(f"wrong value of include: '{self.include}'")
         op1 = ""
         op_fmtd = f"{op0} {self.var} {op1}"
         ntex_c = len(op0) + len(op1) - 2
@@ -642,7 +732,12 @@ class LevelRangeFormatterVar(LevelRangeFormatter):
 
     def _format_open_left(self, lvl: float) -> Components:
         op0 = " "
-        op1 = "$\tt <$"
+        if self.include == "lower":
+            op1 = "$\tt <$"
+        elif self.include == "upper":
+            op1 = "$\tt \leq$"
+        else:
+            raise Exception(f"wrong value of include: '{self.include}'")
         op_fmtd = f"{op0} {self.var} {op1}"
         ntex_c = len(op0) + len(op1) - 2
         s_c = op_fmtd

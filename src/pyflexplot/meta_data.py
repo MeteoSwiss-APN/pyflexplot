@@ -352,7 +352,7 @@ class VariableMetaData(_MetaDataBase):
     @classmethod
     def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "VariableMetaData":
         if setup.core.input_variable == "affected_area":
-            unit = "N/A"  # SR_TMP TODO Chose appropriate unit
+            unit = ""
         else:
             var_name = nc_var_name(setup, setup.model)
             try:

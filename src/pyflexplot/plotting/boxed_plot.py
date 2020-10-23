@@ -186,6 +186,21 @@ class BoxedPlot:
 
         arr = replace_infs(arr, levels)
 
+        if len(levels) == 1:
+            # SR_TMP < TODO Cleaner implementation!
+            if extend == "none":
+                raise NotImplementedError("one level and not extend")
+            elif extend in ["min", "max"]:
+                assert len(colors) == 1, colors
+            elif extend in "both":
+                assert len(colors) == 2, colors
+            # SR_TMP >
+            if extend in ["min", "both"]:
+                levels = [-np.inf] + np.asarray(levels).tolist()
+            if extend in ["max", "both"]:
+                levels = np.asarray(levels).tolist() + [np.inf]
+            extend = "none"
+
         try:
             contours = self.ax_map.ax.contourf(
                 self.field.lon,
@@ -193,7 +208,7 @@ class BoxedPlot:
                 arr,
                 transform=self.ax_map.proj_data,
                 levels=levels,
-                extend=extend,
+                # extend=extend,
                 zorder=self.ax_map.zorder["fld"],
                 colors=colors,
             )
@@ -252,12 +267,14 @@ def levels_from_time_stats(
         ]:
             assert plot_config.levels is not None  # mypy
             return plot_config.levels
-    assert plot_config.n_levels is not None  # mypy
-    if (
-        plot_config.setup.core.plot_variable == "affected_area_mono"
-        or plot_config.setup.core.input_variable == "affected_area"
-    ):
+
+    # SR_TMP < TODO Clean this up!
+    if plot_config.setup.core.plot_variable == "affected_area_mono":
         levels = _auto_levels_log10(n_levels=9, val_max=time_stats.max)
         return np.array([levels[0], np.inf])
-    else:
+    elif plot_config.n_levels is not None:
         return _auto_levels_log10(plot_config.n_levels, val_max=time_stats.max)
+    else:
+        assert plot_config.levels is not None  # mypy
+        return plot_config.levels
+    # SR_TMP >
