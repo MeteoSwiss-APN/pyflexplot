@@ -88,7 +88,7 @@ function prepare_dest_dir()
 # Get reference revision (tag/commit)
 function get_ref_rev()
 {
-    ref_rev="$(git describe --abbrev=0)"
+    local ref_rev="$(git describe --abbrev=0)"
     while read -p "reference tag/commit [${ref_rev}]? " reply; do
         [ "${reply}" = "" ] && break
         if ! git rev-parse "${reply}" >/dev/null 2>&1; then
@@ -99,6 +99,17 @@ function get_ref_rev()
         break
     done
     echo "${ref_rev}"
+}
+
+# Get current revision (branch/commit)
+function get_curr_rev()
+{
+    local rev=$(git rev-parse --abbrev-ref HEAD)
+    if [ "${rev}" = "HEAD" ] ; then
+        # Detached head; obtain commit hash
+        rev=$(git rev-parse HEAD)
+    fi
+    echo "${rev}"
 }
 
 # Handle existing reference directory
@@ -133,7 +144,8 @@ if [ "${comp_ref}" = "true" ]; then
     ref_rev="$(get_ref_rev)"
 
     # Switch to reference tag/commit
-    echo -e "\nswitching to reference tag/commit '${ref_rev}'"
+    curr_rev="$(get_curr_rev)"
+    echo -e "\nswitching from branch/commit ${curr_rev} to reference tag/commit '${ref_rev}'"
     echo "git checkout '${ref_rev}'"
     git -c advice.detachedHead=false checkout "${ref_rev}" || exit 1
 
@@ -158,9 +170,9 @@ if [ "${comp_ref}" = "true" ]; then
     pwd
 
     # Switch back to previous branch/commit
-    echo -e "\nswitching back from reference tag/commit"
-    echo "git switch -"
-    git switch - || exit 1
+    echo -e "\nswitching back from reference tag/commit ${ref_rev} to branch/commit ${curr_rev}"
+    echo "git checkout '${curr_rev}'"
+    git checkout "${curr_rev}" || exit 1
 fi
 
 # Handle existing test directory
