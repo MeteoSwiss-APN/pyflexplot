@@ -57,7 +57,7 @@ class FlexPartDataFixer:
     ) -> None:
         if isinstance(mdata, Sequence):
             for mdata_i in mdata:
-                self.fix_meta_data(model, integrate, mdata_i)
+                self.fix_meta_data(model, input_variable, integrate, mdata_i)
             return
         unit = str(mdata.variable.unit)
         if model in self.cosmo_models:
