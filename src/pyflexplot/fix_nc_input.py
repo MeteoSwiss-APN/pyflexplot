@@ -47,6 +47,7 @@ class FlexPartDataFixer:
         fld[:] *= fact
         return
 
+    # pylint: disable=R0912  # too-many-branches
     def fix_meta_data(
         self,
         model: str,
