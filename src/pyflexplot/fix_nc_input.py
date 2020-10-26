@@ -48,7 +48,11 @@ class FlexPartDataFixer:
         return
 
     def fix_meta_data(
-        self, model: str, integrate: bool, mdata: Union[MetaData, Sequence[MetaData]]
+        self,
+        model: str,
+        input_variable: str,
+        integrate: bool,
+        mdata: Union[MetaData, Sequence[MetaData]],
     ) -> None:
         if isinstance(mdata, Sequence):
             for mdata_i in mdata:
@@ -61,6 +65,10 @@ class FlexPartDataFixer:
             elif unit == "1e-12 kg m-2":
                 # new_unit = "Bq h m-2" if integrate else "Bq m-2"
                 new_unit = "Bq m-2"
+            # SR_TMP <
+            elif input_variable == "affected_area":
+                new_unit = unit
+            # SR_TMP >
             else:
                 msg = f"model {model}: unrecognized unit '{unit}'; skip meta data fixes"
                 log(wrn=msg)
@@ -71,6 +79,10 @@ class FlexPartDataFixer:
             elif unit == "1e-12 kg m-2":
                 # new_unit = "Bq h m-2" if integrate else "Bq m-2"
                 new_unit = "Bq m-2"
+            # SR_TMP <
+            elif input_variable == "affected_area":
+                new_unit = unit
+            # SR_TMP >
             else:
                 msg = f"model {model}: unrecognized unit '{unit}'; skip meta data fixes"
                 log(wrn=msg)

@@ -470,8 +470,9 @@ class InputFileEnsemble:
             # Fix some known issues with the NetCDF input data
             if self.fixer:
                 model_name = setups.collect_equal("model")
+                input_variable = setups.collect_equal("input_variable")
                 integrate = setups.collect_equal("integrate")
-                self.fixer.fix_meta_data(model_name, integrate, mdata_i)
+                self.fixer.fix_meta_data(model_name, input_variable, integrate, mdata_i)
 
             mdata_lst.append(mdata_i)
         return mdata_lst
