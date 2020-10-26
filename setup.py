@@ -45,6 +45,7 @@ except Exception:
     dependencies = [
         # Install cartopy from github to build it against installed C libraries
         # Forked to add a pyproject.toml to specify cython as build dependency
+        # Minimum requirement: Cartopy >= 0.18.0
         (
             "cartopy"
             "@git+ssh://git@github.com/MeteoSwiss-APN/cartopy.git"

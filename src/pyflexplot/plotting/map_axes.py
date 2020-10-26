@@ -574,18 +574,10 @@ class MapAxes:
 
     def _ax_add_rivers(self, zorder_key: str, rasterized: bool = False) -> None:
         linewidth = {"lowest": 1, "geo_lower": 1, "geo_upper": 2 / 3}[zorder_key]
-
-        # SR_WORKAROUND <
         # Note:
         #  - Bug in Cartopy with recent shapefiles triggers errors (NULL geometry)
-        #  - Issue fixed in a branch but pull request still pending
-        #       -> Branch: https://github.com/shevawen/cartopy/tree/patch-1
-        #       -> PR: https://github.com/SciTools/cartopy/pull/1411
-        #  - Fixed it in our fork MeteoSwiss-APN/cartopy
-        #       -> Fork fixes setup dependencies issue (with  pyproject.toml)
-        #  - For now, check validity of rivers geometry objects when adding
-        #  - Once it works with the master branch, remove these workarounds
-        # SR_WORKAROUND >
+        #    -> PR: https://github.com/SciTools/cartopy/pull/1411
+        #  - Issue fixed in Cartopy 0.18.0
 
         major_rivers = cartopy.feature.NaturalEarthFeature(
             category="physical",
@@ -596,9 +588,7 @@ class MapAxes:
             linewidth=linewidth,
             rasterized=rasterized,
         )
-        # SR_WORKAROUND < TODO revert once bugfix in Cartopy master
-        # self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
-        # SR_WORKAROUND >
+        self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
 
         if self.config.geo_res_rivers == "10m":
             minor_rivers = cartopy.feature.NaturalEarthFeature(
@@ -610,35 +600,7 @@ class MapAxes:
                 linewidth=linewidth,
                 rasterized=rasterized,
             )
-            # SR_WORKAROUND < TODO revert once bugfix in Cartopy master
-            # self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
-            # SR_WORKAROUND >
-        else:
-            minor_rivers = None
-
-        # SR_WORKAROUND <<< TODO remove once bugfix in Cartopy master
-        try:
-            major_rivers.geometries()
-        except Exception:  # pylint: disable=W0703  # broad-except
-            warnings.warn(
-                "cannot add major rivers due to shapely issue with "
-                "'rivers_lake_centerline; pending bugfix: "
-                "https://github.com/SciTools/cartopy/pull/1411; workaround: use "
-                "https://github.com/shevawen/cartopy/tree/patch-1"
-            )
-        else:
-            # warnings.warn(
-            #     f"successfully added major rivers; "
-            #     "TODO: remove workaround and pin minimum Cartopy version!"
-            # )
-            self.ax.add_feature(
-                major_rivers, zorder=self.zorder[zorder_key], rasterized=rasterized
-            )
-            if self.config.geo_res_rivers == "10m":
-                self.ax.add_feature(
-                    minor_rivers, zorder=self.zorder[zorder_key], rasterized=rasterized
-                )
-        # SR_WORKAROUND >
+            self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
 
     def _ax_add_cities(self, rasterized: bool = False) -> None:
         """Add major cities, incl. all capitals."""
