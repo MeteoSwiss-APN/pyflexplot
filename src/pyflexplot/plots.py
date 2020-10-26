@@ -284,6 +284,7 @@ def plot_add_text_boxes(
 
         # Legend color boxes
         colors = plot.config.colors
+        assert colors is not None  # SR_TMP
         dy = dy0_boxes
         for color in colors[::-1]:
             box.color_rect(
@@ -668,6 +669,10 @@ def create_plot_config(
     # Colors
     extend = new_config_dct.get("extend", "max")
     cmap = new_config_dct.get("cmap", "flexplot")
+    # SR_TMP < TODO Cleaner solution, e.g., define cmap directly via in function
+    color_under = new_config_dct.pop("color_under", None)
+    color_over = new_config_dct.pop("color_over", None)
+    # SR_TMP >
     if (
         setup.core.plot_variable == "affected_area_mono"
         or setup.core.input_variable == "affected_area"
@@ -682,8 +687,6 @@ def create_plot_config(
         assert new_config_dct["levels"] is not None
         n_levels = len(new_config_dct["levels"])
         cmap = mpl.cm.get_cmap(cmap)
-        color_under = new_config_dct.get("color_under")
-        color_over = new_config_dct.get("color_over")
         n_colors = n_levels - 1
         if extend in ["min", "both"] and not color_under:
             n_colors += 1

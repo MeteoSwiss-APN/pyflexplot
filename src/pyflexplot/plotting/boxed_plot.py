@@ -2,6 +2,7 @@
 Boxed plots.
 """
 # Standard library
+import dataclasses
 from dataclasses import dataclass
 from typing import Any
 from typing import Callable
@@ -16,7 +17,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.colors import Colormap
 from matplotlib.figure import Figure
-from pydantic import BaseModel
 
 # Local
 from ..data import Field
@@ -49,11 +49,12 @@ class FontSizes:
 
 
 # pylint: disable=R0902  # too-many-instance-attributes
-class BoxedPlotConfig(BaseModel):
+@dataclass
+class BoxedPlotConfig:
     setup: Setup  # SR_TODO consider removing this
     mdata: MetaData  # SR_TODO consider removing this
     cmap: Union[str, Colormap] = "flexplot"
-    colors: List[ColorType]
+    colors: Optional[List[ColorType]] = None
     color_above_closed: Optional[ColorType] = None  # SR_TODO better approach
     extend: str = "max"
     # SR_NOTE Figure size may change when boxes etc. are added
@@ -61,7 +62,7 @@ class BoxedPlotConfig(BaseModel):
     fig_size: Tuple[float, float] = (12.5, 8.0)
     font_name: str = "Liberation Sans"
     font_sizes: FontSizes = FontSizes()
-    labels: Dict[str, Any] = {}
+    labels: Dict[str, Any] = dataclasses.field(default_factory=dict)
     legend_rstrip_zeros: bool = True
     level_ranges_align: str = "center"
     level_range_style: str = "base"
@@ -162,6 +163,7 @@ class BoxedPlot:
         arr = self.field.fld
         levels = self.levels
         colors = self.config.colors
+        assert colors is not None  # SR_TMP
         extend = self.config.extend
         color_above_closed = self.config.color_above_closed
         if self.config.levels_scale == "log":
