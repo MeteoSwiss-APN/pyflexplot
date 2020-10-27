@@ -69,6 +69,8 @@ class FlexPartDataFixer:
             # SR_TMP <
             elif input_variable == "affected_area":
                 new_unit = unit
+            elif input_variable == "deposition" and unit == "N/A":
+                new_unit = "Bq m-2"
             # SR_TMP >
             else:
                 msg = f"model {model}: unrecognized unit '{unit}'; skip meta data fixes"
@@ -83,6 +85,8 @@ class FlexPartDataFixer:
             # SR_TMP <
             elif input_variable == "affected_area":
                 new_unit = unit
+            elif input_variable == "deposition" and unit == "N/A":
+                new_unit = "Bq m-2"
             # SR_TMP >
             else:
                 msg = f"model {model}: unrecognized unit '{unit}'; skip meta data fixes"
