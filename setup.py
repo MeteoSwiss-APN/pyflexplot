@@ -1,8 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-The setup script.
-"""
+"""Set up the project."""
 # Third-party
 from setuptools import find_packages
 from setuptools import setup
@@ -35,37 +32,39 @@ metadata = {
 
 python = ">= 3.7"
 
-# Runtime dependencies
+# Unpinned runtime dependencies
+unpinned_dependencies = [
+    # Install cartopy from github to build it against installed C libraries
+    # Forked to add a pyproject.toml to specify cython as build dependency
+    # Minimum requirement: Cartopy >= 0.18.0
+    (
+        "cartopy"
+        "@git+ssh://git@github.com/MeteoSwiss-APN/cartopy.git"
+        "#v0.18.0-MeteoSwiss-APN"
+    ),
+    # Specify shapely as dependency (although it is not used directly) because
+    # cartopy depends on it, and install it from github instead of PyPI in order
+    # to build (compile) it against installed C libraries
+    "shapely@git+ssh://git@github.com/Toblerity/shapely.git@1.7.1",
+    "click>=6.0",
+    "geopy",
+    "matplotlib",
+    "netcdf4",
+    "numpy",
+    "pillow>=7.1.0",
+    "pydantic",
+    "pypdf2",
+    "scipy",
+    "toml",
+    "typing-extensions",
+]
+
+# If available, use pinned dependencies instead
 try:
-    # Try to read pinned dependencies from requirements.txt
     with open("requirements.txt") as fi:
         dependencies = [line.strip() for line in fi.readlines()]
 except Exception:
-    # Otherwise, use specified unpinned dependencies
-    dependencies = [
-        # Install cartopy from github to build it against installed C libraries
-        # Forked to add a pyproject.toml to specify cython as build dependency
-        # Minimum requirement: Cartopy >= 0.18.0
-        (
-            "cartopy"
-            "@git+ssh://git@github.com/MeteoSwiss-APN/cartopy.git"
-            "#v0.18.0-MeteoSwiss-APN"
-        ),
-        # Specify shapely as dependency because cartopy depends on it
-        # Install shapely from github to build it against installed C libraries
-        "shapely@git+ssh://git@github.com/Toblerity/shapely.git@1.7.1",
-        "click>=6.0",
-        "geopy",
-        "matplotlib",
-        "netcdf4",
-        "numpy",
-        "pillow>=7.1.0",
-        "pydantic",
-        "pypdf2",
-        "scipy",
-        "toml",
-        "typing-extensions",
-    ]
+    dependencies = unpinned_dependencies
 
 scripts = [
     "pyflexplot=pyflexplot.cli.cli:cli",
