@@ -328,7 +328,7 @@ format: ${_INSTALL_DEV}
 	@echo -e "${ECHO_PREFIX}checking and fixing code formatting"
 	${PREFIX}pre-commit run --all-files
 
-.PHONY: check # CMD Check the code for correctness and best practices
+.PHONY: check #CMD Check the code for correctness and best practices
 check: ${_INSTALL_DEV}
 	@echo -e "${ECHO_PREFIX}checking code correctness and best practices"
 	${PREFIX}tox --parallel -e mypy -e flake8 -e pylint
