@@ -6,7 +6,6 @@ import distutils.dir_util
 import importlib
 import os
 import re
-from dataclasses import dataclass
 from textwrap import dedent
 from typing import Any
 from typing import Dict
@@ -80,7 +79,7 @@ class _TestBase:
     def get_field(self, datadir):
         infile = f"{datadir}/{self.setup_dct['infile']}"
         setups = self.get_setups()
-        field_lst_lst = read_fields(infile, setups, add_ts0=True)
+        field_lst_lst = read_fields(infile, setups, add_ts0=True, missing_ok=True)
         assert len(field_lst_lst) == self.n_plots
         # SR_TMP <
         assert self.n_plots == 1

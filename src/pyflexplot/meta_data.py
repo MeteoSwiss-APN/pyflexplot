@@ -506,6 +506,10 @@ class SpeciesMetaData(_MetaDataBase):
             except (KeyError, AttributeError):
                 if model.startswith("IFS"):
                     name = cls._get_species_name_ifs(fi, var_name)
+                elif setup.core.input_variable == "deposition":
+                    # Deposition field may be missing
+                    alt_setup = setup.derive({"input_variable": "concentration"})
+                    return cls.from_file(fi, alt_setup)
                 else:
                     name = "N/A"
             else:
