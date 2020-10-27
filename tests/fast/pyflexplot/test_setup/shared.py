@@ -1,6 +1,4 @@
-"""
-Shared resources for setup tests.
-"""
+"""Shared resources for setup tests."""
 # Standard library
 from typing import Any
 from typing import Dict

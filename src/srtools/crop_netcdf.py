@@ -1,6 +1,4 @@
-"""
-Crop fields in a NetCDF file.
-"""
+"""Crop fields in a NetCDF file."""
 # Standard library
 import dataclasses
 import functools
@@ -93,7 +91,6 @@ def transfer_dimensions(fi, fo, setup):
 
 def transfer_dimension(fi, fo, dim, setup):
     """Transfer single dimension from in- to outfile."""
-
     # Determine dimension size
     if dim.isunlimited():
         size = None
@@ -139,7 +136,6 @@ def transfer_variables(fi, fo, setup):
 
 def transfer_variable(fo, var, setup):
     """Transfer single variable from in- to outfile."""
-
     # Create variable
     new_var = fo.createVariable(
         varname=var.name, datatype=var.datatype, dimensions=var.dimensions

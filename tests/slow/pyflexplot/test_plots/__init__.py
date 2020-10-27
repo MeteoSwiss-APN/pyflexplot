@@ -1,3 +1,1 @@
-"""
-Tests for package ``pyflexplot``.
-"""
+"""Test package ``pyflexplot``."""

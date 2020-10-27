@@ -1,6 +1,4 @@
-"""
-Plotting utilities.
-"""
+"""Plotting utilities."""
 # Standard library
 from typing import Union
 

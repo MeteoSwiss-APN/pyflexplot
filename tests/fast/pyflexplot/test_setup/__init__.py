@@ -1,6 +1,4 @@
-"""
-Tests for ``pyflexplot.setup``.
-"""
+"""Test module ``pyflexplot.setup``."""
 
 # Standard library
 from typing import List

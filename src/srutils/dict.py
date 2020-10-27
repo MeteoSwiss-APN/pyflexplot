@@ -1,6 +1,4 @@
-"""
-Dictionary utilities.
-"""
+"""Dictionary utilities."""
 # Standard library
 import itertools
 from collections import namedtuple
@@ -261,8 +259,7 @@ def nested_dict_set(dct, keys, val):
 def flatten_nested_dict(
     dct, *, return_paths=False, return_depths=False, tie_breaker=None
 ):
-    """
-    Flatten a nested dict by updating inward-out.
+    """Flatten a nested dict by updating inward-out.
 
     Args:
         dct (dict): Nested dict.
@@ -354,8 +351,7 @@ class NestedDictLinearizer:
         self.dct = dct
 
     def run(self, branch_end_criterion=None):
-        """
-        Linearize the nested dict.
+        """Linearize the nested dict.
 
         Args:
             branch_end_criterion (callable, optional): Function to match branch
@@ -397,8 +393,7 @@ class NestedDictLinearizer:
     def _apply_branch_end_criterion(
         self, dcts: List[Dict[str, Any]], criterion: Callable[[str], bool]
     ) -> List[Dict[str, Any]]:
-        """
-        Create a sub-branch copy up to each subdict key matching the criterion.
+        """Create a sub-branch copy up to each subdict key matching the criterion.
 
         The criterion is given by ``criterion`` and may be a check whether
         the key starts with an underscore. If so, each linear nested dict is
@@ -406,6 +401,7 @@ class NestedDictLinearizer:
         encountered, a copy is made from the part of the branch that has
         already been traversed. This copy branch includes all non-dict elements
         of the dict with the matching key, but no further-nested dict elements.
+
         """
 
         @dataclass
@@ -448,7 +444,8 @@ class NestedDictLinearizer:
 
         return result
 
-    def _nondict_to_head(self, state):
+    @staticmethod
+    def _nondict_to_head(state):
         """Copy non-dict elements from subdct to head."""
         for key, val in state.subdct.items():
             if not isinstance(val, Mapping):
@@ -456,8 +453,7 @@ class NestedDictLinearizer:
 
 
 def decompress_nested_dict(dct, return_paths=False, branch_end_criterion=None):
-    """
-    Convert a nested dict with N branches into N unnested dicts.
+    """Convert a nested dict with N branches into N unnested dicts.
 
     Args:
         dct (dict): Nested dict.

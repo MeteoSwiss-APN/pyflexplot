@@ -1,7 +1,5 @@
 # pylint: disable=E1101  # no-member (logging.verbose, logging.VERBOSE)
-"""
-Preset setup files.
-"""
+"""Preset setup files."""
 # Standard library
 import logging
 from typing import Optional

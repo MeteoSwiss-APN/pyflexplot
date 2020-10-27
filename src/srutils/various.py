@@ -1,6 +1,4 @@
-"""
-Various utilities.
-"""
+"""Various utilities."""
 # Standard library
 import functools
 

@@ -1,7 +1,7 @@
-"""
-Tests for function ``pyflexplot.input.read_fields`` for artificial ensemble data.
+"""Test function ``pyflexplot.input.read_fields`` with artificial ensemble data.
 
 The input fields are constant and equal to the respective ensemble member id.
+
 """
 # Standard library
 from dataclasses import dataclass

@@ -1,6 +1,4 @@
-"""
-Tests for function ``srutils.dict.decompress_nested_dict``.
-"""
+"""Test function ``srutils.dict.decompress_nested_dict``."""
 # Third-party
 import pytest  # type: ignore
 

@@ -1,6 +1,4 @@
-"""
-Summarize objects as a dict for testing etc.
-"""
+"""Summarize objects as a dict for testing etc."""
 # Standard library
 from dataclasses import is_dataclass
 from functools import partial
@@ -38,7 +36,9 @@ def default_summarize(
     addl: Optional[Collection[str]] = None,
     skip: Optional[Collection[str]] = None,
 ) -> Dict[str, Any]:
-    """Default summarize method; see docstring of ``summarizable``.
+    """Summarize an object.
+
+    Default summarize method; see docstring of ``summarizable``.
 
     Args:
         self: The class instance to be summarized.
@@ -60,7 +60,9 @@ def default_summarize(
 def default_post_summarize(
     self: Any, summary: MutableMapping[str, Any]
 ) -> MutableMapping[str, Any]:
-    """Default post_summarize method; see docstring of ``summarizable``.
+    """Post-process the summary of an object.
+
+    Default post_summarize method; see docstring of ``summarizable``.
 
     Args:
         self: The class instance to be summarized.
@@ -137,7 +139,7 @@ def summarize_mpl_bbox(obj: Any) -> Dict[str, Any]:
 def post_summarize_plot(
     self, summary: MutableMapping[str, Any]
 ) -> MutableMapping[str, Any]:
-    """Method to post-process summary dict of plot class.
+    """Post-process the summary dict of plot class.
 
     Convert elements like figures and axes into human-readable summaries of
     themselves, provided that they have been specified as to be summarized.
@@ -171,7 +173,7 @@ def summarizable(
     auto_collect: bool = True,
     overwrite: bool = False,
 ) -> Callable:
-    """Decorator to make a class summarizable.
+    """Decorate a class to make it summarizable.
 
     Args:
         cls: Class to be decorated.
@@ -221,12 +223,14 @@ def summarizable(
 
     try:
         attrs = list(attrs or [])
-    except TypeError:
-        raise ValueError("`attrs` is not iterable", type(attrs), attrs)
+    except TypeError as e:
+        raise ValueError("`attrs` is not iterable", type(attrs), attrs) from e
     try:
         attrs_skip = list(attrs_skip or [])
-    except TypeError:
-        raise ValueError("`attrs_skip` is not iterable", type(attrs_skip), attrs_skip)
+    except TypeError as e:
+        raise ValueError(
+            "`attrs_skip` is not iterable", type(attrs_skip), attrs_skip
+        ) from e
     if summarize is None and not hasattr(cls, "summarize"):
         summarize = default_summarize
     if post_summarize is None and not hasattr(cls, "post_summarize"):
@@ -301,11 +305,11 @@ class Summarizer:
 
         try:
             attrs = list(obj.summarizable_attrs)
-        except AttributeError:
+        except AttributeError as e:
             if addl is not None or skip is not None:
                 raise ValueError(
                     "arguments addl and skip invalid without obj.summarizable_attrs"
-                )
+                ) from e
             return self._summarize(obj)
 
         if addl is not None:
@@ -335,8 +339,8 @@ class Summarizer:
         """Try to summarize ``obj`` as a summarizable object."""
         try:
             data = obj.summarize()
-        except AttributeError:
-            raise NotSummarizableError("summarizable", obj)
+        except AttributeError as e:
+            raise NotSummarizableError("summarizable", obj) from e
         else:
             return self._summarize(data)
 
@@ -350,8 +354,8 @@ class Summarizer:
             except (TypeError, ValueError):
                 try:
                     obj = obj.dict()
-                except AttributeError:
-                    raise NotSummarizableError("dict-like", obj)
+                except AttributeError as e:
+                    raise NotSummarizableError("dict-like", obj) from e
             items = obj.items()
         return {self._summarize(key): self._summarize(val) for key, val in items}
 
@@ -364,7 +368,8 @@ class Summarizer:
             data.append(self._summarize(item))
         return data
 
-    def _try_named(self, obj: Any) -> str:
+    @staticmethod
+    def _try_named(obj: Any) -> str:
         """Try to summarize ``obj`` as a named object (e.g., function/method)."""
         try:
             name = obj.__name__

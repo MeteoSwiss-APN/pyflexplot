@@ -1,6 +1,4 @@
-"""
-Test formatting methods of ``TranslatedWord`` class.
-"""
+"""Test formatting methods of ``TranslatedWord`` class."""
 # First-party
 from words import TranslatedWord
 

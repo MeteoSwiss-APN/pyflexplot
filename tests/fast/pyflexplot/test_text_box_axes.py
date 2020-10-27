@@ -1,6 +1,4 @@
-"""
-Tests for module ``pyflexplot.map_axes``.
-"""
+"""Test module ``pyflexplot.map_axes``."""
 # Third-party
 from matplotlib import pyplot as plt
 

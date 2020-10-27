@@ -1,6 +1,5 @@
 # pylint: disable=C0302  # too-many-lines (>1000)
-"""
-Meta data.
+"""Meta data.
 
 Note that these meta data should eventually be merged with the raw ones in
 module ``pyflexplot.nc_meta_data`` because the two very different data
@@ -576,16 +575,18 @@ class RawReleaseMetaData(BaseModel):
     @classmethod
     def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "RawReleaseMetaData":
         """Read information on a release from open file."""
-
+        # Fetch numpoint
         assert setup.core.dimensions.numpoint is not None  # mypy
         idx_point = setup.core.dimensions.numpoint
 
+        # Fetch species_id
         assert setup.core.dimensions.species_id is not None  # mypy
         # SR_TMP <
         idx_spec = setup.core.dimensions.species_id - 1
         assert 0 <= idx_spec < fi.dimensions["numspec"].size
         # SR_TMP >
 
+        # Fetch nageclass
         assert setup.core.dimensions.nageclass is not None  # mypy
         idx_age = setup.core.dimensions.nageclass
 
@@ -651,7 +652,10 @@ class RawReleaseMetaData(BaseModel):
 
 
 class TimeStepMetaDataCollector:
+    """Collect time step meta data from file."""
+
     def __init__(self, fi: nc4.Dataset, setup: Setup, *, add_ts0: bool = False) -> None:
+        """Create an instance of ``TimeStepMetaDataCollector``."""
         self.fi = fi
         self.setup = setup
         self.add_ts0 = add_ts0
@@ -680,11 +684,11 @@ class TimeStepMetaDataCollector:
         )
 
     def now(self) -> datetime:
-        """Current time step."""
+        """Return the current time step."""
         return self.start() + self.now_rel()
 
     def now_rel(self) -> timedelta:
-        """Time since start."""
+        """Return the time since start."""
         var = self.fi.variables["time"]
         idx = self.time_step_idx()
         if idx < 0:
@@ -692,11 +696,11 @@ class TimeStepMetaDataCollector:
         return timedelta(seconds=int(var[idx]))
 
     def reduction_start(self) -> datetime:
-        """Time step when reduction (mean/sum) started."""
+        """Return the time step when reduction (mean/sum) started."""
         return self.now() - self.integration_duration()
 
     def reduction_start_rel(self) -> timedelta:
-        """Time between simulation start and start of reduction (mean/sum)."""
+        """Return the time between simulation start and start of reduction."""
         return self.reduction_start() - self.start()
 
     def integration_duration(self) -> timedelta:

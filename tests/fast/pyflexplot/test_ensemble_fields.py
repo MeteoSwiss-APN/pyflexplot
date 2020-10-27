@@ -1,7 +1,5 @@
 # flake8: noqa
-"""
-Tests for module ``pyflexplot.data``.
-"""
+"""Test module ``pyflexplot.data``."""
 # Third-party
 import numpy as np
 import pytest  # type: ignore

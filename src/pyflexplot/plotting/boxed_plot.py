@@ -1,6 +1,4 @@
-"""
-Boxed plots.
-"""
+"""Boxed plots."""
 # Standard library
 import dataclasses
 from dataclasses import dataclass
@@ -101,17 +99,13 @@ class BoxedPlot:
         self, field: Field, config: BoxedPlotConfig, map_config: MapAxesConfig
     ) -> None:
         """Create an instance of ``BoxedPlot``."""
-
         self.field = field
         self.config = config
         self.map_config = map_config
-
         self.boxes: Dict[str, TextBoxAxes] = {}
         self.levels: np.ndarray = levels_from_time_stats(
             self.config, self.field.time_props.stats
         )
-
-        # Declarations
         self._fig: Optional[Figure] = None
         self.ax_map: MapAxes  # SR_TMP TODO eliminate single centralized Map axes
 

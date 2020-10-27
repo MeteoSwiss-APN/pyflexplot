@@ -1,6 +1,5 @@
 # pylint: disable=C0302  # too-many-lines (>1000)
-"""
-Plot types.
+"""Plot types.
 
 Note that this file is currently a mess because it is the result of collecting
 all sorts of plot-type specific logic from throughout the code in order to
@@ -13,6 +12,7 @@ stages of development).
 
 Instead, all the logic is collected here in a straightforward but dirty way
 until sane design choices emerge from the code mess.
+
 """
 # Standard library
 import os
@@ -149,9 +149,9 @@ def plot_add_text_boxes(
     # pylint: disable=R0915  # too-many-statements
     def fill_box_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the title box."""
-
-        words = WORDS  # SR_TMP
-
+        # SR_TMP <
+        words = WORDS
+        # SR_TMP >
         setup = plot.field.var_setups.compress()
         mdata = plot.config.mdata
 
@@ -227,7 +227,6 @@ def plot_add_text_boxes(
     # pylint: disable=R0915  # too-many-statements
     def fill_box_legend(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the box containing the plot legend."""
-
         labels = plot.config.labels["legend"]
         mdata = plot.config.mdata
 
@@ -347,10 +346,10 @@ def plot_add_text_boxes(
     # pylint: disable=R0915  # too-many-statements
     def fill_box_release_info(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the box containing the release info."""
-
-        words = WORDS  # SR_TMP
-        symbols = SYMBOLS  # SR_TMP
-
+        # SR_TMP <
+        words = WORDS
+        symbols = SYMBOLS
+        # SR_TMP >
         mdata = plot.config.mdata
 
         # Box title
@@ -994,8 +993,8 @@ def capitalize(s: str) -> str:
         return s
     try:
         return s[0].upper() + s[1:]
-    except Exception:
-        raise ValueError(f"string not capitalizable: '{s}'")
+    except Exception as e:
+        raise ValueError(f"string not capitalizable: '{s}'") from e
 
 
 def format_max_marker_label(labels: Dict[str, Any], fld: np.ndarray) -> str:
@@ -1189,8 +1188,8 @@ def colors_flexplot(n_levels: int, extend: str) -> Sequence[ColorType]:
             8: colors_core_7,
             9: colors_core_8,
         }[n_levels]
-    except KeyError:
-        raise ValueError(f"n_levels={n_levels}")
+    except KeyError as e:
+        raise ValueError(f"n_levels={n_levels}") from e
 
     if extend == "none":
         return colors_core

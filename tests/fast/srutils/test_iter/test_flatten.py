@@ -1,6 +1,4 @@
-"""
-Tests for function ``srutils.iter.flatten``.
-"""
+"""Test function ``srutils.iter.flatten``."""
 
 # First-party
 from srutils.iter import flatten

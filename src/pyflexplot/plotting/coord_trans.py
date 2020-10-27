@@ -1,6 +1,4 @@
-"""
-Matplotlib coordinate transformations.
-"""
+"""Matplotlib coordinate transformations."""
 # Standard library
 import warnings
 from dataclasses import dataclass
@@ -39,7 +37,6 @@ class CoordinateTransformer:
 
     def axes_to_geo(self, x, y):
         """Transform from axes to geographic coordinates."""
-
         if isiterable(x) or isiterable(y):
             check_same_sized_iterables(x, y)
             assert isinstance(x, np.ndarray)  # mypy
@@ -78,7 +75,6 @@ class CoordinateTransformer:
 
     def geo_to_axes(self, x, y):
         """Transform from geographic to axes coordinates."""
-
         if isiterable(x) or isiterable(y):
             check_same_sized_iterables(x, y)
             assert isinstance(x, np.ndarray)  # mypy

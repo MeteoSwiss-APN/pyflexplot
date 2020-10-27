@@ -1,3 +1,1 @@
-"""
-Tests for ``srutils.dict``.
-"""
+"""Test module ``srutils.dict``."""

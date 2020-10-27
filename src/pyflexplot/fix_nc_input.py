@@ -1,6 +1,4 @@
-"""
-Fix issues with NetCDF input.
-"""
+"""Fix issues with NetCDF input."""
 # Standard library
 from typing import Any
 from typing import Mapping
@@ -22,6 +20,7 @@ class FlexPartDataFixer:
     ifs_models = ["IFS-HRES", "IFS-HRES-EU"]
 
     def __init__(self, file_reader):
+        """Create an instance of ``FlexPartDataFixer``."""
         self.file_reader = file_reader
 
     def fix_nc_var_fld(
@@ -96,9 +95,9 @@ class FlexPartDataFixer:
             raise NotImplementedError("model", model)
         mdata.variable.unit = new_unit
 
-    def fix_global_grid(self, lon, fld_time, idx_lon=-1):
+    @staticmethod
+    def fix_global_grid(lon, fld_time, idx_lon=-1):
         """Shift global grid longitudinally to fit into (-180..180) range."""
-
         # Check longitude dimension index
         if (
             (idx_lon < 0 and -idx_lon > len(fld_time.shape))

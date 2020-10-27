@@ -1,13 +1,10 @@
-"""
-Iteration utilities.
-"""
+"""Iteration utilities."""
 # Standard library
 from typing import Sequence
 
 
 def flatten(obj, cls=None, max_depth=None, *, _depth=0):
     """Flatten a nested sequence recursively."""
-
     max_depth_reached = max_depth is not None and 0 <= max_depth < _depth
 
     def is_expandable(obj):

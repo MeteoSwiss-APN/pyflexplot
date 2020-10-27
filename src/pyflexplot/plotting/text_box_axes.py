@@ -1,6 +1,4 @@
-"""
-Text boxes.
-"""
+"""Text boxes."""
 # Standard library
 from dataclasses import dataclass
 from typing import List
@@ -32,6 +30,7 @@ class TextBoxElement:
     """Base class for elements in text box."""
 
     def __init__(self, *args, **kwargs):
+        """Create an instance of ``TextBoxElement``."""
         raise Exception(f"{type(self).__name__} must be subclassed")
 
 
@@ -303,7 +302,6 @@ class TextBoxAxes:
 
     def draw(self):
         """Draw the defined text boxes onto the plot axes."""
-
         # Create box without frame
         p = mpl.patches.Rectangle(
             xy=(0, 0),
@@ -315,11 +313,9 @@ class TextBoxAxes:
             clip_on=False,
         )
         self.ax.add_patch(p)
-
         if self.lw_frame:
             # Enable frame around box
             p.set(edgecolor=self.ec, linewidth=self.lw_frame)
-
         for element in self.elements:
             element.draw()
 
@@ -514,7 +510,8 @@ class TextBoxAxes:
         self.text_blocks(blocks_l, f"{loc_y}l", **kwargs)
         self.text_blocks(blocks_r, f"{loc_y}r", **kwargs)
 
-    def _prepare_text_blocks(self, blocks: RawTextBlocksType) -> TextBlocksType:
+    @staticmethod
+    def _prepare_text_blocks(blocks: RawTextBlocksType) -> TextBlocksType:
         """Turn multiline strings (shorthand notation) into lists of strings."""
         blocks_lst: TextBlocksType = []
         block_or_blocks: Union[Sequence[str], Sequence[Sequence[str]]]
@@ -538,8 +535,9 @@ class TextBoxAxes:
                     blocks_lst[-1].append(line)
         return blocks_lst
 
+    @staticmethod
     def _split_lines_horizontally(
-        self, blocks: Sequence[Sequence[str]]
+        blocks: Sequence[Sequence[str]],
     ) -> Tuple[List[List[str]], List[List[str]]]:
         blocks_l: TextBlocksType = []
         blocks_r: TextBlocksType = []
@@ -687,11 +685,11 @@ class TextFitter:
         if n_shrink_max is not None:
             try:
                 n_shrink_max = int(n_shrink_max)
-            except ValueError:
+            except ValueError as e:
                 raise ValueError(
                     f"n_shrink_max of type {type(n_shrink_max).__name__} not "
                     f"int-compatible: {n_shrink_max}"
-                )
+                ) from e
             if n_shrink_max < 0:
                 n_shrink_max = None
         self.n_shrink_max = n_shrink_max
@@ -703,8 +701,7 @@ class TextFitter:
         self.dots = dots
 
     def fit(self, s, size):
-        """
-        Fit a string with a certain target size into the box.
+        """Fit a string with a certain target size into the box.
 
         Args:
             s (str): Text string to fit into the box.
@@ -728,17 +725,14 @@ class TextFitter:
         return s, size
 
     def w_rel(self, s, size):
-        """Returns the width of a string as a fraction of the box width."""
-
+        """Return the width of a string as a fraction of the box width."""
         # Determine width of text in display coordinates
         # src: https://stackoverflow.com/a/36959454
         renderer = self.ax.get_figure().canvas.get_renderer()
         txt = self.ax.text(0, 0, s, size=size)
         w_disp = txt.get_window_extent(renderer=renderer).width
-
         # Remove the text again from the axes
         self.ax.texts.pop()
-
         return w_disp / self.ax.bbox.width
 
     # pylint: disable=W0102  # dangerous-default-value
@@ -837,7 +831,8 @@ class TextBoxLocation:
         self.loc_x = self._standardize_loc_x(loc_x)
         self.loc = f"{self.loc_y}{self.loc_x}"
 
-    def _standardize_loc_y(self, loc):
+    @staticmethod
+    def _standardize_loc_y(loc):
         """Standardize vertical location component."""
         if loc in (0, "0", "b", "bottom"):
             return "b"
@@ -847,7 +842,8 @@ class TextBoxLocation:
             return "t"
         raise ValueError(f"invalid vertical location component '{loc}'")
 
-    def _standardize_loc_x(self, loc):
+    @staticmethod
+    def _standardize_loc_x(loc):
         """Standardize horizontal location component."""
         if loc in (0, "0", "l", "left"):
             return "l"

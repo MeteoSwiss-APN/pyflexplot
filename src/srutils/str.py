@@ -1,6 +1,4 @@
-"""
-String utilities.
-"""
+"""String utilities."""
 # Standard library
 import re
 from typing import Any
@@ -42,7 +40,6 @@ def to_varname(s, filter_invalid=None):
             ``filter_special=lambda c: "_" if c in "- " else ""``
 
     """
-
     # Check input is valid string
     if not s:
         raise ValueError("s is empty", s)
@@ -63,7 +60,7 @@ def to_varname(s, filter_invalid=None):
                 try:
                     c = filter_invalid(c)
                 except TypeError as e:
-                    raise ValueError("invalid filter", e, filter_invalid, c)
+                    raise ValueError("invalid filter", e, filter_invalid, c) from e
                 else:
                     if not isinstance(c, str):
                         raise ValueError("filter must return str", c, filter_invalid, c)
@@ -83,10 +80,8 @@ def to_varname(s, filter_invalid=None):
 
 def check_is_valid_varname(s):
     """Raise ``ValueError`` if ``s`` is not a valid variable name."""
-
     if re.match(r"^[0-9]", s):
         raise ValueError("starts with number")
-
     if not re.match(r"^[a-zA-Z0-9_]*$", s):
         raise ValueError("contains invalid characters")
 

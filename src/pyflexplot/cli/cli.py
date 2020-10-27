@@ -1,7 +1,5 @@
 # pylint: disable=R0914  # too-many-locals
-"""
-Command line interface.
-"""
+"""Command line interface."""
 # Standard library
 import functools
 import multiprocessing
@@ -84,7 +82,7 @@ def click_set_raise(ctx, param, value):
 
 
 def wrap_pdb(fct):
-    """Function decorator that drops into ipdb if an exception is raised."""
+    """Decorate a function to drop into ipdb if an exception is raised."""
 
     def wrapper(*args, **kwargs):
         try:
@@ -103,7 +101,7 @@ def wrap_pdb(fct):
 
 
 def wrap_callback(fct):
-    """Wrapper for click callback functions to conditionally drop into ipdb."""
+    """Wrapp click callback functions to conditionally drop into ipdb."""
 
     def wrapper(ctx, param, value):
         fct_loc = wrap_pdb(fct) if (ctx.obj or {}).get("pdb") else fct
@@ -347,6 +345,8 @@ def cli(ctx, **kwargs):
 
 
 class SharedIterationState:
+    """Shared iteration state."""
+
     def __init__(
         self,
         ip_tot: int = 0,
@@ -354,6 +354,7 @@ class SharedIterationState:
         ip_in: int = 0,
         n_fld: int = -1,
     ) -> None:
+        """Create an instance of ``SharedIterationState``."""
         self._dict: Dict[str, Any] = multiprocessing.Manager().dict()
         self.ip_tot = ip_tot
         self.n_in = n_in
@@ -775,7 +776,6 @@ def merge_pdf_plots(
 
 def open_plots(cmd, file_paths, dry_run):
     """Open a plot file using a shell command."""
-
     file_paths = sorted(file_paths)
 
     # If not yet included, append the output file path

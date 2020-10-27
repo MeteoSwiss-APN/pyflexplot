@@ -1,6 +1,4 @@
-"""
-Tests for class ``pyflexplot.setup.Dimensions``.
-"""
+"""Test class ``pyflexplot.setup.Dimensions``."""
 
 # First-party
 from pyflexplot.dimensions import CoreDimensions

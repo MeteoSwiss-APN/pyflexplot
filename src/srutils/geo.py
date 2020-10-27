@@ -1,6 +1,4 @@
-"""
-Geometric/geographic utilities.
-"""
+"""Geometric/geographic utilities."""
 
 
 class Degrees:
@@ -17,7 +15,6 @@ class Degrees:
                 tuple[int*3]: Full degrees/minutes/seconds.
 
         """
-
         # Check for fraction
         if isinstance(deg, (int, float)):
             self._frac = float(deg)

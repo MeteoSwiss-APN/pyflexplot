@@ -1,6 +1,4 @@
-"""
-Test the elements of complete plots based on ensemble COSMO-2 data.
-"""
+"""Test the elements of complete plots based on ensemble COSMO-2 data."""
 # Third-party
 import pytest
 

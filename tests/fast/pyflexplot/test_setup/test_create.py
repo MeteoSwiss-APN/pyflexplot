@@ -1,6 +1,4 @@
-"""
-Tests for class ``pyflexplot.setup.Setup.create``.
-"""
+"""Test class ``pyflexplot.setup.Setup.create``."""
 # First-party
 from pyflexplot.setup import Setup
 

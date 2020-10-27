@@ -1,6 +1,4 @@
-"""
-Data structures.
-"""
+"""Data structures."""
 # Standard library
 import warnings
 from dataclasses import dataclass
@@ -106,11 +104,10 @@ class Field:
         try:
             self.check_consistency()
         except Exception as e:
-            raise ValueError(f"{type(e).__name__}: {e}")
+            raise ValueError(f"{type(e).__name__}: {e}") from e
 
     def check_consistency(self):
         """Check consistency of field, dimensions, etc."""
-
         # Check dimensionalities
         for name, arr, ndim in [
             ("fld", self.fld, 2),
@@ -193,6 +190,7 @@ class FieldTimeProperties:
     summarizable_attrs = ["stats", "stats_nz"]
 
     def __init__(self, arr: np.ndarray) -> None:
+        """Create an instance of ``FieldTimeProperties``."""
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore",
@@ -282,7 +280,6 @@ class EnsembleCloud:
                 - nan: The point never encounters a cloud.
 
         """
-
         # Points that never encounter a cloud will retain NaN
         departure_time = self._init_result(np.nan)
 
@@ -358,7 +355,7 @@ class EnsembleCloud:
         return occurr_prob
 
     def _n_members(self):
-        """Number of ensemble members."""
+        """Return the number of ensemble members."""
         return self.arr.shape[0]
 
     def _init_result(self, val: float) -> np.ndarray:

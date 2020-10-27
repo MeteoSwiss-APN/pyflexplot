@@ -1,6 +1,4 @@
-"""
-Tests for class methods ``pyflexplot.setup.Setup.cast*``.
-"""
+"""Test casting methods of class ``pyflexplot.setup.Setup``."""
 # Third-party
 import pytest  # type: ignore
 

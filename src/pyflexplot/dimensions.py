@@ -1,7 +1,5 @@
 # pylint: disable=C0302  # too-many-lines
-"""
-Plot setup and setup files.
-"""
+"""Plot setup and setup files."""
 # Standard library
 from typing import Any
 from typing import cast
@@ -53,6 +51,7 @@ class CoreDimensions(BaseModel):
     species_id: Optional[int] = None
     time: Optional[int] = None
 
+    # pylint: disable=R0201  # no-self-use
     @validator("deposition_type", always=True)
     def _check_deposition_type(cls, value: Optional[str]) -> Optional[str]:
         assert value in [None, "dry", "wet"]
@@ -74,7 +73,7 @@ class CoreDimensions(BaseModel):
             if error_params["type"] == "value_error.missing":
                 param = next(iter(error_params["loc"]))
                 msg += f": missing parameter: {param}"
-            raise Exception(msg)
+            raise Exception(msg) from error
 
     @classmethod
     def cast(cls, param: str, value: Any, many_ok: bool = False) -> Any:

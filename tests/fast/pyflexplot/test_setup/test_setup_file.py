@@ -1,6 +1,4 @@
-"""
-Tests for module ``pyflexplot.setup.SetupFile``.
-"""
+"""Test module ``pyflexplot.setup.SetupFile``."""
 # Standard library
 from collections.abc import Sequence
 from pprint import pformat

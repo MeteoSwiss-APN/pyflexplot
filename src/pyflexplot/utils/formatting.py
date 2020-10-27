@@ -1,6 +1,4 @@
-"""
-Formatting utilities.
-"""
+"""Formatting utilities."""
 # Standard library
 import re
 import warnings
@@ -122,6 +120,7 @@ def format_float(
 
 
 # pylint: disable=R0913  # too-many-arguments
+# pylint: disable=R0914  # too-many-locals
 def format_range(
     numbers: Collection[float],
     fmt: str = "g",
@@ -170,8 +169,10 @@ def format_range(
         for number in numbers_to_format:
             try:
                 formatted_numbers.append(template.format(num=number))
-            except ValueError:
-                raise Exception("cannot format number with template", number, template)
+            except ValueError as e:
+                raise Exception(
+                    "cannot format number with template", number, template
+                ) from e
         formatted_numbers_and_ranges.append(join.join(formatted_numbers))
     return join_others.join(formatted_numbers_and_ranges)
 
@@ -261,8 +262,10 @@ def format_level_ranges(
     }
     try:
         cls = formatters[style]
-    except AttributeError:
-        raise ValueError(f"unknown style '{style}'; options: {sorted(formatters)}")
+    except AttributeError as e:
+        raise ValueError(
+            f"unknown style '{style}'; options: {sorted(formatters)}"
+        ) from e
     else:
         formatter = cls(
             widths=widths, extend=extend, align=align, include=include, **kwargs
@@ -351,12 +354,13 @@ class LevelRangeFormatter:
 
         self._check_widths(self.widths)
 
-    def _check_widths(self, widths: Tuple[int, int, int]) -> None:
+    @staticmethod
+    def _check_widths(widths: Tuple[int, int, int]) -> None:
         try:
             # pylint: disable=W0612  # unused-variable
             wl, wc, wr = [int(w) for w in widths]
-        except (ValueError, TypeError):
-            raise ValueError(f"widths is not a tree-int tuple: {widths}")
+        except (ValueError, TypeError) as e:
+            raise ValueError(f"widths is not a tree-int tuple: {widths}") from e
 
     def format_multiple(self, levels: Sequence[float]) -> List[str]:
         labels: List[str] = []
@@ -466,11 +470,14 @@ class LevelRangeFormatter:
         s_r = lvl_fmtd
         return Components.create("", (s_c, ntex_c), s_r)
 
+    # pylint: disable=R0201  # no-self-use
     def _format_level(self, lvl: float) -> str:
         return format_float(lvl, "{f:.0E}")
 
 
 class LevelRangeFormatterInt(LevelRangeFormatter):
+    """Format level ranges in integer style."""
+
     def __init__(
         self,
         *,
@@ -480,6 +487,7 @@ class LevelRangeFormatterInt(LevelRangeFormatter):
         rstrip_zeros: Optional[bool] = None,
         include: Optional[str] = None,
     ) -> None:
+        """Create an instance of ``LevelRangeFormatterInt``."""
         if widths is None:
             widths = (2, 3, 2)
         if rstrip_zeros is True:
@@ -513,6 +521,8 @@ class LevelRangeFormatterInt(LevelRangeFormatter):
 
 
 class LevelRangeFormatterMath(LevelRangeFormatter):
+    """Format a range of levels in 'math' style."""
+
     def __init__(
         self,
         *,
@@ -522,6 +532,7 @@ class LevelRangeFormatterMath(LevelRangeFormatter):
         rstrip_zeros: Optional[bool] = None,
         include: Optional[str] = None,
     ) -> None:
+        """Create an instance of ``LevelRangeFormatterMath``."""
         if widths is None:
             widths = (6, 2, 6)
         super().__init__(
@@ -543,6 +554,8 @@ class LevelRangeFormatterMath(LevelRangeFormatter):
 
 
 class LevelRangeFormatterUp(LevelRangeFormatter):
+    """Format a range of level in 'up' style."""
+
     def __init__(
         self,
         *,
@@ -552,6 +565,7 @@ class LevelRangeFormatterUp(LevelRangeFormatter):
         rstrip_zeros: Optional[bool] = None,
         include: Optional[str] = None,
     ) -> None:
+        """Create an instance of ``LevelRangeFormatterUp``."""
         if widths is None:
             widths = (0, 2, 5)
         super().__init__(
@@ -576,6 +590,8 @@ class LevelRangeFormatterUp(LevelRangeFormatter):
 
 
 class LevelRangeFormatterDown(LevelRangeFormatter):
+    """Format a range of levels in 'down' style."""
+
     def __init__(
         self,
         *,
@@ -585,6 +601,7 @@ class LevelRangeFormatterDown(LevelRangeFormatter):
         rstrip_zeros: Optional[bool] = None,
         include: Optional[str] = None,
     ) -> None:
+        """Create an instance of ``LevelRangeFormatterDown``."""
         if widths is None:
             widths = (0, 2, 5)
         super().__init__(
@@ -609,6 +626,8 @@ class LevelRangeFormatterDown(LevelRangeFormatter):
 
 
 class LevelRangeFormatterAnd(LevelRangeFormatter):
+    """Format a range of levels in 'and' style."""
+
     def __init__(
         self,
         *,
@@ -618,6 +637,7 @@ class LevelRangeFormatterAnd(LevelRangeFormatter):
         rstrip_zeros: Optional[bool] = None,
         include: Optional[str] = None,
     ) -> None:
+        """Create an instance of ``LevelRangeFormatterAnd``."""
         if widths is None:
             widths = (8, 3, 8)
         super().__init__(
@@ -679,6 +699,8 @@ class LevelRangeFormatterAnd(LevelRangeFormatter):
 
 
 class LevelRangeFormatterVar(LevelRangeFormatter):
+    """Format a range of levels in 'var' style."""
+
     def __init__(
         self,
         *,
@@ -689,6 +711,7 @@ class LevelRangeFormatterVar(LevelRangeFormatter):
         include: Optional[str] = None,
         var: Optional[str] = None,
     ):
+        """Create an instance of ``LevelRangeFormatterVar``."""
         if widths is None:
             widths = (5, 9, 5)
         super().__init__(

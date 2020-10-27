@@ -1,6 +1,4 @@
-"""
-Tests for function ``srutils.str.split_outside_parens``.
-"""
+"""Test function ``srutils.str.split_outside_parens``."""
 # First-party
 from srutils.str import split_outside_parens
 

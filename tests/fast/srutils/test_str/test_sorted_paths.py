@@ -1,6 +1,4 @@
-"""
-Tests for function ``srutils.str.sorted_paths``.
-"""
+"""Test function ``srutils.str.sorted_paths``."""
 # Standard library
 from dataclasses import dataclass
 from typing import List

@@ -1,6 +1,4 @@
-"""
-Test the elements of complete plots based on deterministic COSMO-1 data.
-"""
+"""Test the elements of complete plots based on deterministic COSMO-1 data."""
 # Local
 from .shared import _TestBase
 from .shared import _TestCreateReference  # noqa:F401

@@ -1,6 +1,4 @@
-"""
-Tests for function ``srutils.dict.decompress_multival_dict``.
-"""
+"""Test function ``srutils.dict.decompress_multival_dict``."""
 # Third-party
 import pytest  # type: ignore
 

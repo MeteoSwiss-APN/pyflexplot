@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
 # flake8: noqa
-"""
-Test reference for pytest test.
+"""Test reference for pytest test.
 
 tests/slow/pyflexplot/test_plots/shared.py
     ::Test_TotalDeposition
@@ -10,8 +8,8 @@ tests/slow/pyflexplot/test_plots/shared.py
 Created by temporarily changing the parent class of
 ``Test_TotalDeposition``
 from ``_TestBase`` to ``_TestCreateReference`` and running pytest.
-"""
 
+"""
 
 field_summary = {
     "type": "Field",
@@ -331,7 +329,7 @@ field_summary = {
         "nanmedian": 1.5417452e-05,
         "nanmax": 0.15455633,
         "nanmin_nonzero": 4.145933e-09,
-        "nanmean_nonzero": 0.0016001214,
+        "nanmean_nonzero": 0.0016001211,
         "nanmedian_nonzero": 0.0003491032,
         "nanmax_nonzero": 0.15455633,
         "n_nan": 0,
@@ -1163,7 +1161,7 @@ plot_summary = {
                 "nanmedian": 1.5417452e-05,
                 "nanmax": 0.15455633,
                 "nanmin_nonzero": 4.145933e-09,
-                "nanmean_nonzero": 0.0016001214,
+                "nanmean_nonzero": 0.0016001211,
                 "nanmedian_nonzero": 0.0003491032,
                 "nanmax_nonzero": 0.15455633,
                 "n_nan": 0,
@@ -1532,7 +1530,7 @@ plot_summary = {
                         "nanmedian": 1.5417452e-05,
                         "nanmax": 0.15455633,
                         "nanmin_nonzero": 4.145933e-09,
-                        "nanmean_nonzero": 0.0016001214,
+                        "nanmean_nonzero": 0.0016001211,
                         "nanmedian_nonzero": 0.0003491032,
                         "nanmax_nonzero": 0.15455633,
                         "n_nan": 0,
@@ -6855,7 +6853,7 @@ plot_summary = {
             "nanmedian": 1.5417452e-05,
             "nanmax": 0.15455633,
             "nanmin_nonzero": 4.145933e-09,
-            "nanmean_nonzero": 0.0016001214,
+            "nanmean_nonzero": 0.0016001211,
             "nanmedian_nonzero": 0.0003491032,
             "nanmax_nonzero": 0.15455633,
             "n_nan": 0,
@@ -7681,7 +7679,7 @@ plot_summary = {
                     "nanmedian": 1.5417452e-05,
                     "nanmax": 0.15455633,
                     "nanmin_nonzero": 4.145933e-09,
-                    "nanmean_nonzero": 0.0016001214,
+                    "nanmean_nonzero": 0.0016001211,
                     "nanmedian_nonzero": 0.0003491032,
                     "nanmax_nonzero": 0.15455633,
                     "n_nan": 0,

@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
 # flake8: noqa
-"""
-Test reference for pytest test.
+"""Test reference for pytest test.
 
 tests/slow/pyflexplot/test_plots/shared.py
     ::Test_EnsMedian_Concentration
@@ -10,8 +8,8 @@ tests/slow/pyflexplot/test_plots/shared.py
 Created by temporarily changing the parent class of
 ``Test_EnsMedian_Concentration``
 from ``_TestBase`` to ``_TestCreateReference`` and running pytest.
-"""
 
+"""
 
 field_summary = {
     "type": "Field",

@@ -1,7 +1,5 @@
 # pylint: disable=C0302  # too-many-lines
-"""
-Plot setup and setup files.
-"""
+"""Plot setup and setup files."""
 # Standard library
 import typing
 from typing import Any
@@ -40,17 +38,17 @@ def prepare_field_value(
             try:
                 # Try again, with the value in a sequence
                 parse_obj_as(field_type, [value])
-            except ValidationError:
+            except ValidationError as e2:
                 # Still not working; let's give up!
                 raise ValueError(
                     f"value '{value}' with type {type(value).__name__} is incompatible"
                     f" with field type {field_type}, both directly and in a sequence"
-                )
+                ) from e2
             else:
                 # Now it worked; wrapping value in list and we're good!
                 value = [value]
         else:
-            raise NotImplementedError("unknown ValidationError", error_type, e)
+            raise NotImplementedError("unknown ValidationError", error_type) from e
     return value
 
 
@@ -70,11 +68,11 @@ class InvalidParameterValueError(InvalidParameterError):
 def cast_field_value(cls: Type, param: str, value: Any, many_ok: bool = False) -> Any:
     try:
         field: ModelField = cls.__fields__[param]
-    except KeyError:
+    except KeyError as e:
         raise InvalidParameterNameError(
             f"{param} ({value} [{type(value).__name__}])"
             f"; choices: {sorted(cls.__fields__)}"
-        )
+        ) from e
 
     def invalid_value_exception(
         type_: Union[Type, str], param: str, value: Any
@@ -116,8 +114,8 @@ def cast_field_value(cls: Type, param: str, value: Any, many_ok: bool = False) -
     if isinstance(value, Collection) and not isinstance(value, str):
         try:
             outer_type = field_get_outer_type(field, generic=True)
-        except TypeError:
-            raise invalid_value_exception("???", param, value)
+        except TypeError as e:
+            raise invalid_value_exception("???", param, value) from e
         if issubclass(outer_type, (str, bool)):
             raise ValueError(
                 f"invalid value type of {outer_type.__name__} parameter '{param}'"
@@ -125,15 +123,15 @@ def cast_field_value(cls: Type, param: str, value: Any, many_ok: bool = False) -
             )
         try:
             outer_type(value)
-        except (ValueError, TypeError):
+        except (ValueError, TypeError) as e:
             if many_ok:
                 try:
                     _values = [cast_field_value(cls, param, v) for v in value]
-                except TypeError:
-                    raise invalid_value_exception(outer_type, param, value)
+                except TypeError as e2:
+                    raise invalid_value_exception(outer_type, param, value) from e2
                 else:
                     return type(value)(_values)  # type: ignore
-            raise invalid_value_exception(outer_type, param, value)
+            raise invalid_value_exception(outer_type, param, value) from e
         else:
             return [cls.cast(param, val) for val in value]
     if issubclass(field.type_, bool):
@@ -144,8 +142,8 @@ def cast_field_value(cls: Type, param: str, value: Any, many_ok: bool = False) -
     else:
         try:
             return field.type_(value)
-        except (TypeError, ValueError):
-            raise invalid_value_exception(field.type_, param, value)
+        except (TypeError, ValueError) as e:
+            raise invalid_value_exception(field.type_, param, value) from e
 
 
 def field_get_outer_type(field: ModelField, *, generic: bool = False) -> Type:
@@ -175,10 +173,10 @@ def str_get_outer_type(s: str, *, generic: bool = False) -> Type:
     s = s[len(prefix) :].split("[")[0]
     try:
         type_ = getattr(typing, s)
-    except AttributeError:
+    except AttributeError as e:
         raise TypeError(
             f"cannot derive type from <field>.outer_type_: typing.{s} not found",
-        )
+        ) from e
     if generic:
         generics = {
             typing.Tuple: tuple,
@@ -191,6 +189,6 @@ def str_get_outer_type(s: str, *, generic: bool = False) -> Type:
         }
         try:
             type_ = generics[type_]
-        except KeyError:
-            raise NotImplementedError(f"generic type for '{type_}'")
+        except KeyError as e:
+            raise NotImplementedError(f"generic type for '{type_}'") from e
     return type_

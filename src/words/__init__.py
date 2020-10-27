@@ -1,6 +1,4 @@
-"""
-Top-level package for words.
-"""
+"""Top-level package for words."""
 
 __author__ = """Stefan Ruedisuehli"""
 __email__ = "stefan.ruedisuehli@env.ethz.ch"

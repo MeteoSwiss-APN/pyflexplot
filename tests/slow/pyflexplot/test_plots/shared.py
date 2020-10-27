@@ -1,6 +1,4 @@
-"""
-Shared functions and classes for tests of elements of complete plots.
-"""
+"""Shared functions and classes for tests of elements of complete plots."""
 # Standard library
 import distutils.dir_util
 import importlib
@@ -149,10 +147,8 @@ class _TestCreateReference(_TestBase):
         module_path_rel = os.path.relpath(__file__, ".")
         cls_name = type(self).__name__
         head = f'''\
-            # -*- coding: utf-8 -*-
             # flake8: noqa
-            """
-            Test reference for pytest test.
+            """Test reference for pytest test.
 
             {module_path_rel}
                 ::{cls_name}
@@ -161,9 +157,10 @@ class _TestCreateReference(_TestBase):
             Created by temporarily changing the parent class of
             ``{cls_name}``
             from ``_TestBase`` to ``_TestCreateReference`` and running pytest.
+
             """
             '''
-        body = f"""
+        body = f"""\
             field_summary = {field_summary}
 
             plot_summary = {plot_summary}

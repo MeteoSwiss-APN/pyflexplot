@@ -1,6 +1,4 @@
-"""
-Data input.
-"""
+"""Data input."""
 # Standard library
 import re
 from copy import deepcopy
@@ -257,6 +255,8 @@ class FieldInputOrganizer:
 
 @dataclass
 class InputFileEnsemble:
+    """An ensemble (of size one or more) of input files."""
+
     def __init__(
         self,
         paths: Sequence[str],
@@ -268,6 +268,7 @@ class InputFileEnsemble:
         missing_ok: bool = False,
         cls_fixer: Optional[Type["FlexPartDataFixer"]] = None,
     ) -> None:
+        """Create an instance of ``InputFileEnsemble``."""
         self.paths = paths
         self.ens_member_ids = ens_member_ids
         self.add_ts0 = add_ts0
@@ -317,7 +318,6 @@ class InputFileEnsemble:
           steps.
 
         """
-
         first_path = next(iter(self.paths))
         with nc4.Dataset(first_path) as fi:
             # SR_TMP < Find better solution! Maybe class NcMetaDataReader?
@@ -526,7 +526,6 @@ class InputFileEnsemble:
     # pylint: disable=R0912  # too-many-branches
     def _reduce_ensemble(self, var_setups: SetupCollection) -> np.ndarray:
         """Reduce the ensemble to a single field (time, lat, lon)."""
-
         fld_time_mem = self.fld_time_mem
 
         if not self.ens_member_ids or self.dry_run:
@@ -596,7 +595,6 @@ class InputFileEnsemble:
     # pylint: disable=R0912,R0914  # too-many-branches, too-many-locals
     def _read_fld_over_time(self, fi: nc4.Dataset, setup: Setup) -> np.ndarray:
         """Read a 2D field at all time steps from disk."""
-
         # Indices of field along NetCDF dimensions
         dim_names = self._dim_names(setup.model)
         dim_idcs_by_name = {
@@ -614,9 +612,9 @@ class InputFileEnsemble:
         var_name = nc_var_name(setup, setup.model)
         try:
             nc_var = fi.variables[var_name]
-        except KeyError:
+        except KeyError as e:
             if not self.missing_ok:
-                raise Exception(f"missing variable '{var_name}'")
+                raise Exception(f"missing variable '{var_name}'") from e
             shape = (
                 fi.dimensions["time"].size,
                 fi.dimensions["rlat"].size,
@@ -635,14 +633,14 @@ class InputFileEnsemble:
             # Get the index of the dimension for this variable
             try:
                 idx = nc_var.dimensions.index(dim_name)
-            except ValueError:
+            except ValueError as e:
                 # Potential issue: Dimension is not among the variable dimensions!
                 if dim_idx in (None, 0):
                     continue  # Zero-index: We're good after all!
                 raise Exception(
                     "dimension with non-zero index missing",
                     {**err_dct, "dimensions": nc_var.dimensions, "var_name": var_name},
-                )
+                ) from e
 
             # Check that the index along the dimension is valid
             if dim_idx is None:
@@ -675,8 +673,9 @@ class InputFileEnsemble:
             fi, fld, setup.core.input_variable, setup.core.integrate
         )
 
+    @staticmethod
     def _handle_time_integration(
-        self, fi: nc4.Dataset, fld: np.ndarray, input_variable: str, integrate: bool
+        fi: nc4.Dataset, fld: np.ndarray, input_variable: str, integrate: bool
     ) -> np.ndarray:
         """Integrate or desintegrate the field over time."""
 
@@ -711,7 +710,10 @@ class InputFileEnsemble:
 
 
 class FileReaderCache:
+    """Cache for file reader."""
+
     def __init__(self, files: InputFileEnsemble) -> None:
+        """Create an instance of ``FileReaderCache``."""
         self.files = files
         self._cache: Dict[Hashable, Any] = {}
 
@@ -734,8 +736,8 @@ class FileReaderCache:
     def get(self, key: Hashable, idx_mem: int) -> None:
         try:
             entry = self._cache[key]
-        except KeyError:
-            raise MissingCacheEntryError(key)
+        except KeyError as e:
+            raise MissingCacheEntryError(key) from e
         entry = deepcopy(entry)
         self.files.lat, self.files.lon, self.files.time = entry["grid"]
         self.files.nc_meta_data = entry["nc_meta_data"]

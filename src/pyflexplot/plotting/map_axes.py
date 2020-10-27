@@ -1,6 +1,4 @@
-"""
-Plots.
-"""
+"""Plots."""
 # Standard library
 import warnings
 from copy import copy
@@ -199,8 +197,7 @@ class ReleaseSiteDomain(Domain):
 @summarizable
 @dataclass
 class MapAxesConfig:
-    """
-    Configuration of ``MapAxesPlot``.
+    """Configuration of ``MapAxesPlot``.
 
     Args:
         domain: Plot domain.
@@ -587,7 +584,6 @@ class MapAxes:
 
     def _ax_add_cities(self, rasterized: bool = False) -> None:
         """Add major cities, incl. all capitals."""
-
         # pylint: disable=R0913  # too-many-arguments
         def is_in_box(
             x: float, y: float, x0: float, x1: float, y0: float, y1: float
@@ -636,7 +632,8 @@ class MapAxes:
                 name = "Freiburg"
             return name
 
-        # src: https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-populated-places/lk  # noqa
+        # src: https://www.naturalearthdata.com/downloads/50m-cultural-vectors/...
+        # .../50m-populated-places/lk
         cities: Sequence[Record] = cartopy.io.shapereader.Reader(
             cartopy.io.shapereader.natural_earth(
                 category="cultural",
@@ -890,10 +887,10 @@ class MapAxesBoundingBox:
         """
         try:
             rel_x_offset, rel_y_offset = [float(i) for i in rel_offset]
-        except Exception:
+        except Exception as e:
             raise ValueError(
                 f"rel_offset expected to be a pair of floats, not {rel_offset}"
-            )
+            ) from e
 
         # Restrict zoom to geographical latitude range [-90, 90]
         _, _, lat0_geo, lat1_geo = iter(copy(self).to_geo())

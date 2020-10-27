@@ -1,6 +1,4 @@
-"""
-Reference distance indicator for map plot.
-"""
+"""Reference distance indicator for map plot."""
 # Standard library
 from dataclasses import dataclass
 from typing import Any
@@ -21,8 +19,7 @@ from ..utils.summarize import summarizable
 @summarizable
 @dataclass
 class RefDistIndConfig:
-    """
-    Configuration of ``ReferenceDistanceIndicator``.
+    """Configuration of ``ReferenceDistanceIndicator``.
 
     Args:
         dist: Reference distance in ``unit``.
@@ -287,12 +284,11 @@ class MapDistanceCalculator:
 
     def _overstep(self, x0_ax, y0_ax, dist0, step_ax_rel):
         """Move stepwise until the target distance is exceeded."""
+        path_ax = [(x0_ax, y0_ax)]
+        dists = [dist0]
 
         # Transform starting point to geographical coordinates
         x0_geo, y0_geo = self.axes_to_geo(x0_ax, y0_ax)
-
-        path_ax = [(x0_ax, y0_ax)]
-        dists = [dist0]
 
         # Step away until target distance exceeded
         dist = 0.0
