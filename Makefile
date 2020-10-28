@@ -342,6 +342,16 @@ check: ${_INSTALL_DEV}
 	@echo -e "${ECHO_PREFIX}checking code correctness and best practices"
 	${PREFIX}tox --parallel -e mypy -e flake8 -e pylint
 
+.PHONY: spellcheck #CMD Check for spelling errors
+spellcheck: ${_INSTALL_DEV}
+	@echo -e "${ECHO_PREFIX}checking for spelling errors"
+	${PREFIX}codespell *.rst
+	find src tests docs -name '*.rst' -exec ${PREFIX}codespell {} \+
+	${PREFIX}codespell *.md
+	find src tests docs -name '*.md' -exec ${PREFIX}codespell {} \+
+	${PREFIX}codespell *.py
+	find src tests docs -name '*.py' -exec ${PREFIX}codespell {} \+
+
 #==============================================================================
 # Run the tests
 #==============================================================================
