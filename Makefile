@@ -209,7 +209,7 @@ endif
 #==============================================================================
 
 .PHONY: venv #CMD Create a virtual environment.
-venv:
+venv: git
 ifneq ($(shell git tag >/dev/null 2>&1 && echo 0 || echo 1), 0)
 	@echo -e "${ECHO_PREFIX}error: git not initialized (run `make git`)"
 else
@@ -278,8 +278,9 @@ update-tox-deps:
 	\rm -rf ${_TMP_VENV}-tox
 
 .PHONY: update-precommit-deps #CMD Update pinned pre-commit dependencies\nspecified in .pre-commit-config.yaml
-update-precommit-deps:
+update-precommit-deps: ${_VENV}
 	@echo -e "${ECHO_PREFIX}updating pinned tox testing dependencies in .pre-commit-config.yaml"
+	${PREFIX}python -m pip install pre-commit  # ensure pre-commit is installed
 	${PREFIX}pre-commit autoupdate
 
 .PHONY: update-deps #CMD Update all pinned dependencies (run, dev, tox, precommit)
