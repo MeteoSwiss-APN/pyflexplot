@@ -246,36 +246,45 @@ install-dev: ${_VENV}
 
 .PHONY: update-run-deps #CMD Update pinned runtime dependencies based on setup.py
 update-run-deps:
-	@echo -e "${ECHO_PREFIX}updating pinned runtime dependencies"
-	@echo -e "temporary virtual environment: ${_TMP_VENV}"
-	python -m venv ${_TMP_VENV}
-	${_TMP_VENV}/bin/python -m pip install -U pip
+	@echo -e "${ECHO_PREFIX}updating pinned runtime dependencies in requirements/run-pinned.txt"
+	@echo -e "temporary virtual environment: ${_TMP_VENV}-run"
+	python -m venv ${_TMP_VENV}-run
+	${_TMP_VENV}-run/bin/python -m pip install -U pip
 	\rm -fv requirements.txt
-	${_TMP_VENV}/bin/python -m pip install . --use-feature=2020-resolver; \
+	${_TMP_VENV}-run/bin/python -m pip install . --use-feature=2020-resolver; \
 		ln -sfv requirements/run-pinned.txt requirements.txt
-	${_TMP_VENV}/bin/python -m pip freeze | \grep -v '\<file:' > requirements/run-pinned.txt
-	\rm -rf ${_TMP_VENV}
+	${_TMP_VENV}-run/bin/python -m pip freeze | \grep -v '\<file:' > requirements/run-pinned.txt
+	\rm -rf ${_TMP_VENV}-run
 
 .PHONY: update-dev-deps #CMD Update pinned development dependencies based on\nrequirements/run-pinned.txt and requitements/dev-unpinned.txt
 update-dev-deps:
-	@echo -e "${ECHO_PREFIX}updating pinned development dependencies"
-	@echo -e "temporary virtual environment: ${_TMP_VENV}"
-	python -m venv ${_TMP_VENV}
-	${_TMP_VENV}/bin/python -m pip install -U pip
-	${_TMP_VENV}/bin/python -m pip install -r requirements/dev-unpinned.txt --use-feature=2020-resolver
-	${_TMP_VENV}/bin/python -m pip install -r requirements/run-pinned.txt --no-deps --use-feature=2020-resolver
-	${_TMP_VENV}/bin/python -m pip freeze > requirements/dev-pinned.txt
-	\rm -rf ${_TMP_VENV}
+	@echo -e "${ECHO_PREFIX}updating pinned development dependencies in requirements/dev-pinned.txt"
+	@echo -e "temporary virtual environment: ${_TMP_VENV}-dev"
+	python -m venv ${_TMP_VENV}-dev
+	${_TMP_VENV}-dev/bin/python -m pip install -U pip
+	${_TMP_VENV}-dev/bin/python -m pip install -r requirements/dev-unpinned.txt --use-feature=2020-resolver
+	${_TMP_VENV}-dev/bin/python -m pip install -r requirements/run-pinned.txt --no-deps --use-feature=2020-resolver
+	${_TMP_VENV}-dev/bin/python -m pip freeze > requirements/dev-pinned.txt
+	\rm -rf ${_TMP_VENV}-dev
 
 .PHONY: update-tox-deps #CMD Update pinned tox testing dependencies based on\nrequirements/tox-unpinned.txt
 update-tox-deps:
-	@echo -e "${ECHO_PREFIX}updating pinned tox testing dependencies"
-	@echo -e "temporary virtual environment: ${_TMP_VENV}"
-	python -m venv ${_TMP_VENV}
-	${_TMP_VENV}/bin/python -m pip install -U pip
-	${_TMP_VENV}/bin/python -m pip install -r requirements/tox-unpinned.txt --use-feature=2020-resolver
-	${_TMP_VENV}/bin/python -m pip freeze > requirements/tox-pinned.txt
-	\rm -rf ${_TMP_VENV}
+	@echo -e "${ECHO_PREFIX}updating pinned tox testing dependencies in requirements/tox-pinned.txt"
+	@echo -e "temporary virtual environment: ${_TMP_VENV}-tox"
+	python -m venv ${_TMP_VENV}-tox
+	${_TMP_VENV}-tox/bin/python -m pip install -U pip
+	${_TMP_VENV}-tox/bin/python -m pip install -r requirements/tox-unpinned.txt --use-feature=2020-resolver
+	${_TMP_VENV}-tox/bin/python -m pip freeze > requirements/tox-pinned.txt
+	\rm -rf ${_TMP_VENV}-tox
+
+.PHONY: update-precommit-deps #CMD Update pinned pre-commit dependencies\nspecified in .pre-commit-config.yaml
+update-precommit-deps:
+	@echo -e "${ECHO_PREFIX}updating pinned tox testing dependencies in .pre-commit-config.yaml"
+	${PREFIX}pre-commit autoupdate
+
+.PHONY: update-deps #CMD Update all pinned dependencies (run, dev, tox, precommit)
+update-deps: update-run-deps update-dev-deps update-tox-deps update-precommit-deps
+	@echo -e "${ECHO_PREFIX}updating all pinned dependencies (run, dev, tox, precommit)"
 
 #==============================================================================
 # Versioning
