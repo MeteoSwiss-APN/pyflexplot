@@ -63,7 +63,7 @@ click.option = functools.partial(click.option, show_default=True)  # type: ignor
 
 
 # pylint: disable=W0613  # unused-argument (ctx, param)
-def click_set_verbosity(ctx, param, value):
+def click_set_verbosity(ctx, param, value) -> None:
     if ctx.obj is None:
         ctx.obj = {}
     ctx.obj["verbosity"] = value
@@ -71,7 +71,7 @@ def click_set_verbosity(ctx, param, value):
 
 
 # pylint: disable=W0613  # unused-argument (param)
-def click_set_raise(ctx, param, value):
+def click_set_raise(ctx, param, value) -> None:
     if ctx.obj is None:
         ctx.obj = {}
     if value is None:
@@ -790,7 +790,3 @@ def open_plots(cmd, file_paths, dry_run):
     click.echo(cmd.format(file=" \\\n  ".join(file_paths)))
     if not dry_run:
         os.system(cmd.format(file=" ".join(file_paths)))
-
-
-if __name__ == "__main__":
-    sys.exit(1)  # pragma: no cover
