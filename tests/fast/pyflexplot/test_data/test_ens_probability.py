@@ -9,7 +9,6 @@ from pyflexplot.data import ensemble_probability
 # Shorthands for special values
 N = np.nan
 I = np.inf  # noqa: E741  # ambiguous variable name
-J = -np.inf
 
 
 def a(*args, **kwargs):
