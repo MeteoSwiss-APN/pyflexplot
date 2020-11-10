@@ -25,7 +25,6 @@ from .setup import SetupCollection
 from .utils.exceptions import ArrayDimensionError
 from .utils.exceptions import FieldAllNaNError
 from .utils.exceptions import InconsistentArrayShapesError
-from .utils.logging import log
 from .utils.summarize import default_summarize
 from .utils.summarize import summarizable
 
@@ -257,10 +256,10 @@ class Cloud:
 
         """
         arr_bak = self.arr.copy()
-        self.arr = self.arr[::-1]
-        arr = self.departure_time()[::-1]
-        self.arr = arr_bak
-        return np.where(~np.isnan(arr), -arr + 1, arr)
+        self.arr[:] = self.arr[::-1]
+        arrival_time = 2 - self.departure_time()[::-1]
+        self.arr[:] = arr_bak
+        return arrival_time
 
     def departure_time(self) -> np.ndarray:
         """Time until the cloud departs.
