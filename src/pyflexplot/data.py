@@ -6,7 +6,6 @@ from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import Mapping
-from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Union
@@ -221,158 +220,143 @@ def ensemble_probability(arr: np.ndarray, thr: float, n_mem: int) -> np.ndarray:
     return arr
 
 
-@dataclass
 class Cloud:
     """Particle cloud."""
 
     def __init__(
         self,
-        arr: np.ndarray,
-        time: np.ndarray,
-        thr: float = 0.0,
+        mask: np.ndarray,
+        ts: float = 1.0,
     ) -> None:
         """Create an instance of ``Cloud``.
 
         Args:
-            arr: Data array with dimensions (time, space), where space
-                represents at least one spatial dimension.
+            mask: Cloud mask array with two or more dimensions (time plus one or
+                more spatial dimensions).
 
-            time: Time dimension values.
+            ts: Time step duration.
 
             thr (optional): Threshold value defining a cloud.
 
         """
-        self.arr = arr
-        self.time = time
-        self.thr = thr
-        self.n_time: int = arr.shape[0]
-
-    def arrival_time(self) -> np.ndarray:
-        """Time until the cloud arrives.
-
-        Returns:
-            Field over time with the time until/since the first cloud arrival:
-                - > 0: Time until the point encounters its first cloud.
-                - 0: Time step when the point encounters its first cloud.
-                - < 0: Time since the point has encountered its first cloud.
-                - -inf: The point is already cloudy at the first time step.
-                - nan: The point never encounters a cloud.
-
-        """
-        arr_bak = self.arr.copy()
-        self.arr[:] = self.arr[::-1]
-        arrival_time = 2 - self.departure_time()[::-1]
-        self.arr[:] = arr_bak
-        return arrival_time
+        self.mask = np.asarray(mask, np.bool)
+        self.ts = ts
+        if len(self.mask.shape) < 2:
+            raise ValueError(f"mask must be 2D or more, not {len(self.mask.shape)}D")
 
     def departure_time(self) -> np.ndarray:
-        """Time until the cloud departs.
+        """Time until the last cloud has departed.
 
         Returns:
-            Field over time with the time since/until the first cloud departure:
-                - > 0: Time until its last cloud leaves the point.
-                - 0: Time step when the point has just been left its last cloud.
-                - < 0: Time since its last cloud has left the point.
-                - inf: The point is still cloudy at the last time step.
-                - nan: The point never encounters a cloud.
+            Array with the same shape as ``mask`` containing:
+
+                - nan: Cloud-free until the end, regardless of what was before.
+                - > 0: Time until the last cloud will have departed.
+                - inf: A cloud is still present at the last time step.
 
         """
-        # Points that never encounter a cloud will retain NaN
-        departure_time = np.full(self.arr.shape, np.nan)
+        arr = np.full(self.mask.shape, np.nan, np.float32)
 
-        # Mark points where cloud has just departed with 0
-        m_cloud = self.arr > self.thr
-        m_departed = np.full(m_cloud.shape, False)
-        m_departed[1:] = m_cloud[:-1] & ~m_cloud[1:]
-        departure_time[m_departed] = 0
+        # Set points with a cloud at the last time step to +INF at all steps
+        arr[:, self.mask[-1]] = np.inf
 
-        # Iterate backward in time
-        departure_time[-1][m_cloud[-1]] = np.inf
-        for time_idx in range(self.n_time - 2, -1, -1):
-            d_time = self.time[time_idx + 1] - self.time[time_idx]
+        # Points without a cloud until the last time step
+        m_clear_till_end = self.mask[::-1].cumsum(axis=0)[::-1] == 0
 
-            # Set points where cloud will vanish to the time until it does so
-            m_fin_next = np.isfinite(departure_time[time_idx + 1])
-            m_will_depart = np.where(m_fin_next, departure_time[time_idx + 1], -1) >= 0
-            departure_time[time_idx][m_will_depart] = (
-                departure_time[time_idx + 1][m_will_depart] + d_time
-            )
+        # Points where the last cloud disappears at the next time step
+        m_last_cloud = np.concatenate(
+            [
+                (m_clear_till_end[1:].astype(int) - m_clear_till_end[:-1]),
+                np.zeros([1] + list(self.mask.shape[1:])),
+            ],
+            axis=0,
+        ).astype(bool)
 
-            # Set points where cloud will never depart for good to INF
-            m_wont_depart = np.isinf(departure_time[time_idx + 1])
-            departure_time[time_idx][m_wont_depart] = np.inf
+        # Points where a cloud will disappear before the last time step
+        m_will_disappear = m_last_cloud[::-1].cumsum(axis=0)[::-1].astype(np.bool)
 
-        # Iterate forward in time
-        for time_idx in range(1, self.n_time):
-            d_time = self.time[time_idx] - self.time[time_idx - 1]
+        # Set points where a cloud will disappear to the time until it's gone
+        arr[:] = np.where(
+            m_will_disappear,
+            m_will_disappear[::-1].cumsum(axis=0)[::-1] * self.ts,
+            arr,
+        )
 
-            # Mark points where cloud has vanished with the time since then
-            m_nan_prev = np.isnan(departure_time[time_idx - 1])
-            m_has_departed = ~m_cloud[time_idx] & (
-                np.where(m_nan_prev, np.inf, departure_time[time_idx - 1]) <= 0
-            )
-            departure_time[time_idx][m_has_departed] = (
-                departure_time[time_idx - 1][m_has_departed] - d_time
-            )
+        return arr
 
-        return departure_time
+    def arrival_time(self) -> np.ndarray:
+        """Time until the first cloud has arrived.
+
+        Returns:
+            Array with the same shape as ``mask`` containing:
+
+                - nan: Cloud-free until the end, regardless of what was before.
+                - > 0: Time until the first cloud will have arrived.
+                - < 0: Time since the before first cloud has arrived.
+                - -inf: A cloud has been present since the first time step.
+
+        """
+        arr = np.full(self.mask.shape, np.nan, np.float32)
+
+        # Points without a cloud since the first time step
+        m_clear_since_start = self.mask.cumsum(axis=0) == 0
+
+        # Points without a cloud until the last time step
+        m_clear_till_end = self.mask[::-1].cumsum(axis=0)[::-1] == 0
+
+        # Set points that have been cloudy since the start to -INF
+        arr[self.mask[:1] & ~m_clear_till_end] = -np.inf
+
+        # Points where the first cloud has appeard during the previous time step
+        m_first_cloud = np.concatenate(
+            [
+                (m_clear_since_start[1:].astype(int) - m_clear_since_start[:-1]),
+                np.zeros([1] + list(self.mask.shape[1:])),
+            ],
+            axis=0,
+        ).astype(bool)
+
+        # Points where first cloud will appear before the last time step
+        m_will_appear = m_first_cloud[::-1].cumsum(axis=0)[::-1].astype(np.bool)
+
+        # Set points where first cloud will appear to the time until it's there
+        arr[:] = np.where(
+            m_will_appear, m_will_appear[::-1].cumsum(axis=0)[::-1] * self.ts, arr
+        )
+
+        # Points where first cloud has appeared before the current time step
+        m_has_appeared = (
+            ~m_clear_since_start & ~m_will_appear & ~m_clear_till_end & ~self.mask[:1]
+        )
+
+        # Set points where first cloud has appeared to time since before it has
+        arr[:] = np.where(m_has_appeared, -m_has_appeared.cumsum(axis=0) * self.ts, arr)
+
+        return arr
 
 
 # SR_TODO Eliminate EnsembleCloud once Cloud works
-class EnsembleCloud:
+class EnsembleCloud(Cloud):
     """Particle cloud in an ensemble simulation."""
 
-    def __init__(self, arr: np.ndarray, time: np.ndarray, thr: float = 0.0) -> None:
+    def __init__(self, mask: np.ndarray, mem_min: int = 1, ts: float = 1.0) -> None:
         """Create in instance of ``EnsembleCloud``.
 
         Args:
-            arr: Data array with dimensions (members, time, space), where space
-                represents at least one spatial dimension.
+            mask: Cloud mask array with at least three dimensions (ensemble
+                members, time and one or more spatial dimensions).
 
-            time: Time dimension values.
+            mem_min: Minimum number of members required per grid point to define
+                the ensemble cloud.
 
-            thr (optional): Threshold value defining a cloud in a single member.
-
-        """
-        self.arr = arr
-        self.time = time
-        self.thr = thr
-
-    def arrival_time(self, mem: int) -> np.ndarray:
-        """Time until the cloud arrives.
-
-        Args:
-            mem: Minimum number of members defining the ensemble cloud.
-
-        Returns:
-            Field over time with the time until/since the first cloud arrival:
-                - > 0: Time until the point encounters its first cloud.
-                - 0: Time step when the point encounters its first cloud.
-                - < 0: Time since the point has encountered its first cloud.
-                - -inf: The point is already cloudy at the first time step.
-                - nan: The point never encounters a cloud.
+            ts (optional): Time step duration.
 
         """
-        arr = (np.count_nonzero(self.arr > self.thr, axis=0) >= mem).astype(float)
-        return Cloud(arr, self.time, 0.0).arrival_time()
-
-    def departure_time(self, mem: int) -> np.ndarray:
-        """Time until the cloud departs.
-
-        Args:
-            mem: Minimum number of members defining the ensemble cloud.
-
-        Returns:
-            Field over time with the time since/until the first cloud departure:
-                - > 0: Time until its last cloud leaves the point.
-                - 0: Time step when the point has just been left its last cloud.
-                - < 0: Time since its last cloud has left the point.
-                - inf: The point is still cloudy at the last time step.
-                - nan: The point never encounters a cloud.
-
-        """
-        arr = (np.count_nonzero(self.arr > self.thr, axis=0) >= mem).astype(float)
-        return Cloud(arr, self.time, 0.0).departure_time()
+        mask = np.asarray(mask, np.bool)
+        if len(mask.shape) < 3:
+            raise ValueError(f"mask must be 3D or more, not {len(mask.shape)}D")
+        mask = np.count_nonzero(mask, axis=0) >= mem_min
+        super().__init__(mask=mask, ts=ts)
 
 
 def merge_fields(

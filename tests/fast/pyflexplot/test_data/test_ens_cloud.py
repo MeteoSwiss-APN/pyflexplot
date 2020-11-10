@@ -111,10 +111,10 @@ ARR = np.array(
             sol_norm=np.array(
                 [  #  0  1  2  3  4  5  6
                     [-I, 1,-I,-I,-I,-I,-I],  # time: 0
-                    [-I, 0,-I,-I,-I,-I,-I],  # time: 1
-                    [-I,-1,-I,-I,-I,-I,-I],  # time: 2
-                    [-I,-2,-I,-I,-I,-I,-I],  # time: 3
-                    [-I,-3,-I,-I,-I,-I,-I],  # time: 4
+                    [-I,-1,-I,-I,-I,-I,-I],  # time: 1
+                    [-I,-2,-I,-I,-I,-I,-I],  # time: 2
+                    [-I,-3,-I,-I,-I,-I,-I],  # time: 3
+                    [ N,-4,-I,-I,-I,-I,-I],  # time: 4
                 ],
             ),
         ),
@@ -124,10 +124,10 @@ ARR = np.array(
             sol_norm=np.array(
                 [  #  0  1  2  3  4  5  6
                     [ 1, 4, 3, 2,-I, 1,-I],  # time: 0
-                    [ 0, 3, 2, 1,-I, 0,-I],  # time: 1
-                    [-1, 2, 1, 0,-I,-1,-I],  # time: 2
-                    [-2, 1, 0,-1,-I,-2,-I],  # time: 3
-                    [-3, 0,-1,-2,-I,-3,-I],  # time: 4
+                    [-1, 3, 2, 1,-I,-1,-I],  # time: 1
+                    [ N, 2, 1,-1,-I,-2, N],  # time: 2
+                    [ N, 1,-1,-2,-I,-3, N],  # time: 3
+                    [ N,-1,-2,-3,-I, N, N],  # time: 4
                 ],
             ),
         ),
@@ -137,10 +137,10 @@ ARR = np.array(
             sol_norm=np.array(
                 [  #  0  1  2  3  4  5  6
                     [ N, N, 3, 2, 1, 1, 1],  # time: 0
-                    [ N, N, 2, 1, 0, 0, 0],  # time: 1
-                    [ N, N, 1, 0,-1,-1,-1],  # time: 2
-                    [ N, N, 0,-1,-2,-2,-2],  # time: 3
-                    [ N, N,-1,-2,-3,-3,-3],  # time: 4
+                    [ N, N, 2, 1,-1,-1,-1],  # time: 1
+                    [ N, N, 1,-1,-2, N, N],  # time: 2
+                    [ N, N,-1,-2,-3, N, N],  # time: 3
+                    [ N, N, N,-3,-4, N, N],  # time: 4
                 ],
             ),
         ),
@@ -150,10 +150,10 @@ ARR = np.array(
             sol_norm=np.array(
                 [  #  0  1  2  3  4  5  6
                     [ N, N, 3, 3, 3, 1, N],  # time: 0
-                    [ N, N, 2, 2, 2, 0, N],  # time: 1
-                    [ N, N, 1, 1, 1,-1, N],  # time: 2
-                    [ N, N, 0, 0, 0,-2, N],  # time: 3
-                    [ N, N,-1,-1,-1,-3, N],  # time: 4
+                    [ N, N, 2, 2, 2,-1, N],  # time: 1
+                    [ N, N, 1, 1, 1, N, N],  # time: 2
+                    [ N, N,-1,-1,-1, N, N],  # time: 3
+                    [ N, N, N,-2, N, N, N],  # time: 4
                 ],
             ),
         ),
@@ -176,10 +176,10 @@ ARR = np.array(
             sol_norm=np.array(
                 [  #  0  1  2  3  4  5  6
                     [ 1, N, 2,-I, 1,-I,-I],  # time: 0
-                    [ 0, N, 1,-I, 0,-I,-I],  # time: 1
-                    [-1, N, 0,-I,-1,-I,-I],  # time: 2
-                    [-2, N,-1,-I,-2,-I,-I],  # time: 3
-                    [-3, N,-2,-I,-3,-I,-I],  # time: 4
+                    [-1, N, 1,-I,-1,-I,-I],  # time: 1
+                    [ N, N,-1,-I,-2,-I,-I],  # time: 2
+                    [ N, N,-2,-I,-3,-I,-I],  # time: 3
+                    [ N, N,-3,-I,-4,-I, N],  # time: 4
                 ],
             ),
         ),
@@ -189,10 +189,10 @@ ARR = np.array(
             sol_norm=np.array(
                 [  #  0  1  2  3  4  5  6
                     [ N, N, 4, 2, 1, 1, N],  # time: 0
-                    [ N, N, 3, 1, 0, 0, N],  # time: 1
-                    [ N, N, 2, 0,-1,-1, N],  # time: 2
-                    [ N, N, 1,-1,-2,-2, N],  # time: 3
-                    [ N, N, 0,-2,-3,-3, N],  # time: 4
+                    [ N, N, 3, 1,-1,-1, N],  # time: 1
+                    [ N, N, 2,-1,-2, N, N],  # time: 2
+                    [ N, N, 1,-2,-3, N, N],  # time: 3
+                    [ N, N,-1,-3, N, N, N],  # time: 4
                 ],
             ),
         ),
@@ -203,9 +203,9 @@ ARR = np.array(
                 [  #  0  1  2  3  4  5  6
                     [ N, N, N, 3, 2, N, N],  # time: 0
                     [ N, N, N, 2, 1, N, N],  # time: 1
-                    [ N, N, N, 1, 0, N, N],  # time: 2
-                    [ N, N, N, 0,-1, N, N],  # time: 3
-                    [ N, N, N,-1,-2, N, N],  # time: 4
+                    [ N, N, N, 1,-1, N, N],  # time: 2
+                    [ N, N, N,-1,-2, N, N],  # time: 3
+                    [ N, N, N,-2, N, N, N],  # time: 4
                 ],
             ),
         ),
@@ -217,8 +217,8 @@ ARR = np.array(
                     [ N, N, N, 3, N, N, N],  # time: 0
                     [ N, N, N, 2, N, N, N],  # time: 1
                     [ N, N, N, 1, N, N, N],  # time: 2
-                    [ N, N, N, 0, N, N, N],  # time: 3
-                    [ N, N, N,-1, N, N, N],  # time: 4
+                    [ N, N, N,-1, N, N, N],  # time: 3
+                    [ N, N, N, N, N, N, N],  # time: 4
                 ],
             ),
         ),
@@ -229,9 +229,9 @@ ARR = np.array(
                 [  #  0  1  2  3  4  5  6
                     [ N, N, 2,-I, 2,-I, N],  # time: 0
                     [ N, N, 1,-I, 1,-I, N],  # time: 1
-                    [ N, N, 0,-I, 0,-I, N],  # time: 2
-                    [ N, N,-1,-I,-1,-I, N],  # time: 3
-                    [ N, N,-2,-I,-2,-I, N],  # time: 4
+                    [ N, N,-1,-I,-1,-I, N],  # time: 2
+                    [ N, N,-2,-I,-2,-I, N],  # time: 3
+                    [ N, N,-3,-I,-3,-I, N],  # time: 4
                 ],
             ),
         ),
@@ -242,9 +242,9 @@ ARR = np.array(
                 [  #  0  1  2  3  4  5  6
                     [ N, N, N, 2, 2, N, N],  # time: 0
                     [ N, N, N, 1, 1, N, N],  # time: 1
-                    [ N, N, N, 0, 0, N, N],  # time: 2
-                    [ N, N, N,-1,-1, N, N],  # time: 3
-                    [ N, N, N,-2,-2, N, N],  # time: 4
+                    [ N, N, N,-1,-1, N, N],  # time: 2
+                    [ N, N, N, N, N, N, N],  # time: 3
+                    [ N, N, N, N, N, N, N],  # time: 4
                 ],
             ),
         ),
@@ -266,10 +266,13 @@ ARR = np.array(
 # fmt: on
 def test_arrival_time(config):
     res = EnsembleCloud(
-        arr=ARR, time=np.arange(5) * D_TIME, thr=config.thr  # scale time step
-    ).arrival_time(config.mem_min)
+        mask=ARR > config.thr,
+        ts=D_TIME,
+        mem_min=config.mem_min,
+    ).arrival_time()
     sol = config.sol_norm * D_TIME  # scale time step
-    np.testing.assert_array_equal(res, sol)
+    msg = f"test_departure_time:\n{config}\n"
+    np.testing.assert_array_almost_equal(res, sol, decimal=5, err_msg=msg)
 
 
 # test_departure_time
@@ -286,7 +289,7 @@ def test_arrival_time(config):
                     [ 3, I, I, I, I, I, I],  # time: 1
                     [ 2, I, I, I, I, I, I],  # time: 2
                     [ 1, I, I, I, I, I, I],  # time: 3
-                    [ 0, I, I, I, I, I, I],  # time: 4
+                    [ N, I, I, I, I, I, I],  # time: 4
                 ],
             ),
         ),
@@ -297,9 +300,9 @@ def test_arrival_time(config):
                 [  #  0  1  2  3  4  5  6
                     [ 2, I, I, I, I, 4, 2],  # time: 0
                     [ 1, I, I, I, I, 3, 1],  # time: 1
-                    [ 0, I, I, I, I, 2, 0],  # time: 2
-                    [-1, I, I, I, I, 1,-1],  # time: 3
-                    [-2, I, I, I, I, 0,-2],  # time: 4
+                    [ N, I, I, I, I, 2, N],  # time: 2
+                    [ N, I, I, I, I, 1, N],  # time: 3
+                    [ N, I, I, I, I, N, N],  # time: 4
                 ],
             ),
         ),
@@ -310,9 +313,9 @@ def test_arrival_time(config):
                 [  #  0  1  2  3  4  5  6
                     [ N, N, 4, I, I, 2, 2],  # time: 0
                     [ N, N, 3, I, I, 1, 1],  # time: 1
-                    [ N, N, 2, I, I, 0, 0],  # time: 2
-                    [ N, N, 1, I, I,-1,-1],  # time: 3
-                    [ N, N, 0, I, I,-2,-2],  # time: 4
+                    [ N, N, 2, I, I, N, N],  # time: 2
+                    [ N, N, 1, I, I, N, N],  # time: 3
+                    [ N, N, N, I, I, N, N],  # time: 4
                 ],
             ),
         ),
@@ -323,9 +326,9 @@ def test_arrival_time(config):
                 [  #  0  1  2  3  4  5  6
                     [ N, N, 4, I, 4, 2, N],  # time: 0
                     [ N, N, 3, I, 3, 1, N],  # time: 1
-                    [ N, N, 2, I, 2, 0, N],  # time: 2
-                    [ N, N, 1, I, 1,-1, N],  # time: 3
-                    [ N, N, 0, I, 0,-2, N],  # time: 4
+                    [ N, N, 2, I, 2, N, N],  # time: 2
+                    [ N, N, 1, I, 1, N, N],  # time: 3
+                    [ N, N, N, I, N, N, N],  # time: 4
                 ],
             ),
         ),
@@ -349,9 +352,9 @@ def test_arrival_time(config):
                 [  #  0  1  2  3  4  5  6
                     [ 2, N, I, I, I, I, 4],  # time: 0
                     [ 1, N, I, I, I, I, 3],  # time: 1
-                    [ 0, N, I, I, I, I, 2],  # time: 2
-                    [-1, N, I, I, I, I, 1],  # time: 3
-                    [-2, N, I, I, I, I, 0],  # time: 4
+                    [ N, N, I, I, I, I, 2],  # time: 2
+                    [ N, N, I, I, I, I, 1],  # time: 3
+                    [ N, N, I, I, I, I, N],  # time: 4
                 ],
             ),
         ),
@@ -362,9 +365,9 @@ def test_arrival_time(config):
                 [  # 0  1  2  3  4  5  6
                     [ N, N, I, I, 4, 2, N],  # time: 0
                     [ N, N, I, I, 3, 1, N],  # time: 1
-                    [ N, N, I, I, 2, 0, N],  # time: 2
-                    [ N, N, I, I, 1,-1, N],  # time: 3
-                    [ N, N, I, I, 0,-2, N],  # time: 4
+                    [ N, N, I, I, 2, N, N],  # time: 2
+                    [ N, N, I, I, 1, N, N],  # time: 3
+                    [ N, N, I, I, N, N, N],  # time: 4
                 ],
             ),
         ),
@@ -377,7 +380,7 @@ def test_arrival_time(config):
                     [ N, N, N, I, 3, N, N],  # time: 1
                     [ N, N, N, I, 2, N, N],  # time: 2
                     [ N, N, N, I, 1, N, N],  # time: 3
-                    [ N, N, N, I, 0, N, N],  # time: 4
+                    [ N, N, N, I, N, N, N],  # time: 4
                 ],
             ),
         ),
@@ -390,7 +393,7 @@ def test_arrival_time(config):
                     [ N, N, N, 3, N, N, N],  # time: 1
                     [ N, N, N, 2, N, N, N],  # time: 2
                     [ N, N, N, 1, N, N, N],  # time: 3
-                    [ N, N, N, 0, N, N, N],  # time: 4
+                    [ N, N, N, N, N, N, N],  # time: 4
                 ],
             ),
         ),
@@ -415,8 +418,8 @@ def test_arrival_time(config):
                     [ N, N, N, 3, 3, N, N],  # time: 0
                     [ N, N, N, 2, 2, N, N],  # time: 1
                     [ N, N, N, 1, 1, N, N],  # time: 2
-                    [ N, N, N, 0, 0, N, N],  # time: 3
-                    [ N, N, N,-1,-1, N, N],  # time: 4
+                    [ N, N, N, N, N, N, N],  # time: 3
+                    [ N, N, N, N, N, N, N],  # time: 4
                 ],
             ),
         ),
@@ -438,7 +441,10 @@ def test_arrival_time(config):
 # fmt: on
 def test_departure_time(config):
     res = EnsembleCloud(
-        arr=ARR, time=np.arange(5) * D_TIME, thr=config.thr  # scale time step
-    ).departure_time(config.mem_min)
+        mask=ARR > config.thr,
+        ts=D_TIME,
+        mem_min=config.mem_min,
+    ).departure_time()
     sol = config.sol_norm * D_TIME  # scale time step
-    np.testing.assert_array_equal(res, sol)
+    msg = f"test_departure_time:\n{config}\n"
+    np.testing.assert_array_almost_equal(res, sol, decimal=5, err_msg=msg)

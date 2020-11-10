@@ -383,7 +383,7 @@ field_summary = {
         },
     },
     "fld": {
-        "dtype": "float64",
+        "dtype": "float32",
         "shape": [30, 50],
         "nanmin": np.inf,
         "nanmean": np.inf,
@@ -1318,7 +1318,7 @@ plot_summary = {
                 },
             },
             "fld": {
-                "dtype": "float64",
+                "dtype": "float32",
                 "shape": [30, 50],
                 "nanmin": np.inf,
                 "nanmean": np.inf,
@@ -1746,7 +1746,7 @@ plot_summary = {
                         },
                     },
                     "fld": {
-                        "dtype": "float64",
+                        "dtype": "float32",
                         "shape": [30, 50],
                         "nanmin": np.inf,
                         "nanmean": np.inf,
@@ -8230,7 +8230,7 @@ plot_summary = {
             },
         },
         "fld": {
-            "dtype": "float64",
+            "dtype": "float32",
             "shape": [30, 50],
             "nanmin": np.inf,
             "nanmean": np.inf,
@@ -9180,7 +9180,7 @@ plot_summary = {
                     },
                 },
                 "fld": {
-                    "dtype": "float64",
+                    "dtype": "float32",
                     "shape": [30, 50],
                     "nanmin": np.inf,
                     "nanmean": np.inf,
