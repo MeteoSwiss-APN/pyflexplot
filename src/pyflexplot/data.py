@@ -223,25 +223,29 @@ def ensemble_probability(arr: np.ndarray, thr: float, n_mem: int) -> np.ndarray:
 
 @dataclass
 class Cloud:
-    """Particle cloud.
+    """Particle cloud."""
 
-    Args:
-        arr: Data array with dimensions (time, space), where space
-            represents at least one spatial dimension.
+    def __init__(
+        self,
+        arr: np.ndarray,
+        time: np.ndarray,
+        thr: float = 0.0,
+    ) -> None:
+        """Create an instance of ``Cloud``.
 
-        time: Time dimension values.
+        Args:
+            arr: Data array with dimensions (time, space), where space
+                represents at least one spatial dimension.
 
-        thr (optional): Threshold value defining a cloud.
+            time: Time dimension values.
 
-    """
+            thr (optional): Threshold value defining a cloud.
 
-    arr: np.ndarray
-    time: np.ndarray
-    thr: float = 0.0
-
-    def __post_init__(self):
-        self._n_time: int = self.arr.shape[0]
-        self.m_cloud_prev: Optional[np.ndarray] = None
+        """
+        self.arr = arr
+        self.time = time
+        self.thr = thr
+        self.n_time: int = arr.shape[0]
 
     def arrival_time(self) -> np.ndarray:
         """Time until the cloud arrives.
@@ -284,7 +288,7 @@ class Cloud:
 
         # Iterate backward in time
         departure_time[-1][m_cloud[-1]] = np.inf
-        for time_idx in range(self._n_time - 2, -1, -1):
+        for time_idx in range(self.n_time - 2, -1, -1):
             d_time = self.time[time_idx + 1] - self.time[time_idx]
 
             # Set points where cloud will vanish to the time until it does so
@@ -299,7 +303,7 @@ class Cloud:
             departure_time[time_idx][m_wont_depart] = np.inf
 
         # Iterate forward in time
-        for time_idx in range(1, self._n_time):
+        for time_idx in range(1, self.n_time):
             d_time = self.time[time_idx] - self.time[time_idx - 1]
 
             # Mark points where cloud has vanished with the time since then
@@ -315,7 +319,6 @@ class Cloud:
 
 
 # SR_TODO Eliminate EnsembleCloud once Cloud works
-@dataclass
 class EnsembleCloud:
     """Particle cloud in an ensemble simulation."""
 
