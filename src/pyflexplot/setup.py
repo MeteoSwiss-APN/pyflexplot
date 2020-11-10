@@ -47,7 +47,6 @@ from .utils.pydantic import prepare_field_value
 ENS_PROBABILITY_DEFAULT_PARAM_THR = 0.0
 ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN = 1
 ENS_CLOUD_TIME_DEFAULT_PARAM_THR = 0.0
-ENS_CLOUD_PROB_DEFAULT_PARAM_TIME_WIN = 12
 
 
 # SR_TMP <<< TODO cleaner solution
@@ -109,7 +108,6 @@ class CoreSetup(BaseModel):
     ens_param_mem_min: Optional[int] = None
     ens_param_pctl: Optional[float] = None
     ens_param_thr: Optional[float] = None
-    ens_param_time_win: Optional[float] = None
 
     # Plot appearance
     lang: str = "en"
@@ -149,7 +147,6 @@ class CoreSetup(BaseModel):
         choices = [
             "cloud_arrival_time",
             "cloud_departure_time",
-            "cloud_occurrence_probability",
             "maximum",
             "mean",
             "median",
@@ -231,15 +228,6 @@ class CoreSetup(BaseModel):
     ) -> Optional[float]:
         if values["ens_variable"] == "percentile":
             assert value is not None
-        return value
-
-    @validator("ens_param_time_win", always=True)
-    def _init_ens_param_time_win(
-        cls, value: Optional[float], values: Dict[str, Any]
-    ) -> Optional[float]:
-        if value is None:
-            if values["ens_variable"] == "cloud_occurrence_probability":
-                value = ENS_CLOUD_PROB_DEFAULT_PARAM_TIME_WIN
         return value
 
     @validator("ens_param_thr", always=True)
@@ -420,9 +408,6 @@ class Setup(BaseModel):
 
             ens_param_thr: Threshold used to compute some ensemble variables.
                 Its precise meaning depends on the variable.
-
-            ens_param_time_win: Tim window used to compute some ensemble
-                variables. Its precise meaning depends on the variable.
 
             ens_variable: Ensemble variable computed from plot variable. Use the
                 format key '{ens_variable}' to embed it in ``outfile``.

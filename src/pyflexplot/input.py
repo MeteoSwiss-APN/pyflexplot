@@ -534,7 +534,6 @@ class InputFileEnsemble:
         ens_param_mem_min = var_setups.collect_equal("ens_param_mem_min")
         ens_param_pctl = var_setups.collect_equal("ens_param_pctl")
         ens_param_thr = var_setups.collect_equal("ens_param_thr")
-        ens_param_time_win = var_setups.collect_equal("ens_param_time_win")
         ens_variable = var_setups.collect_equal("ens_variable")
         n_ens_mem = len(var_setups.collect_equal("ens_member_id"))
 
@@ -565,8 +564,6 @@ class InputFileEnsemble:
                 fld_time = cloud.arrival_time()
             elif ens_variable == "cloud_departure_time":
                 fld_time = cloud.departure_time()
-            elif ens_variable == "cloud_occurrence_probability":
-                fld_time = cloud.occurrence_probability(ens_param_time_win)
             else:
                 raise NotImplementedError("ens_variable", ens_variable)
         else:

@@ -771,17 +771,9 @@ def create_box_labels(
             f"\t{escape_format_keys(format_level_label(mdata, words))}"
         )
     if setup.get_simulation_type() == "ensemble":
-        # SR_TMP <
-        if setup.core.ens_variable == "cloud_occurrence_probability":
-            labels["data_info"]["lines"].append(
-                f"{words['ensemble_variable', 'abbr']}:"
-                f"\t{words['cloud_probability', 'abbr']}"
-            )
-        else:
-            labels["data_info"]["lines"].append(
-                f"{words['ensemble_variable', 'abbr']}:\t{ens_var_name}"
-            )
-        # SR_TMP >
+        labels["data_info"]["lines"].append(
+            f"{words['ensemble_variable', 'abbr']}:\t{ens_var_name}"
+        )
         if setup.core.ens_variable == "probability":
             labels["data_info"]["lines"].append(
                 f"{words['threshold']}:\t{symbols['ge']} {setup.core.ens_param_thr}"
@@ -790,7 +782,6 @@ def create_box_labels(
         elif setup.core.ens_variable in [
             "cloud_arrival_time",
             "cloud_departure_time",
-            "cloud_occurrence_probability",
         ]:
             labels["data_info"]["lines"].append(
                 # f"{words['cloud_density']}:\t{words['minimum', 'abbr']}"
@@ -809,11 +800,6 @@ def create_box_labels(
                 r"$\,/\,$"
                 f"{n_tot} ({n_min/(n_tot or 0.001):.0%})"
             )
-            if setup.core.ens_variable == "cloud_occurrence_probability":
-                labels["data_info"]["lines"].append(
-                    f"{words['time_window']}:\t{setup.core.ens_param_time_win}"
-                    f" {words['hour', 'abbr']}"
-                )
 
     if setup.get_simulation_type() == "deterministic":
         if unit:
@@ -904,8 +890,6 @@ def format_names_etc(
                 "cloud_departure_time",
             ]:
                 return f"{words['hour', 'pl']}"
-            elif setup.core.ens_variable == "cloud_occurrence_probability":
-                return "%"
         return format_meta_datum(unit=format_meta_datum(mdata.variable.unit))
 
     unit = _format_unit(setup, words, mdata)
@@ -963,9 +947,6 @@ def format_names_etc(
         elif setup.core.ens_variable == "cloud_departure_time":
             long_name = f"{words['cloud_departure_time']}"
             short_name = f"{words['departure']}"
-        elif setup.core.ens_variable == "cloud_occurrence_probability":
-            short_name = f"{words['probability']}"
-            long_name = f"{words['cloud_occurrence_probability']}"
         if ens_var_name == "none":
             ens_var_name = f"{words[setup.core.ens_variable].c}"
 
