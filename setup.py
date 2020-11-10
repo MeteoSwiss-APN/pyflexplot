@@ -1,22 +1,40 @@
-#!/usr/bin/env python
 """Set up the project."""
+# Standard library
+from typing import List
+from typing import Optional
+from typing import Sequence
+
 # Third-party
 from setuptools import find_packages
 from setuptools import setup
 
 
-def read_file(path):
-    with open(path, "r") as f:
-        return "\n".join([l.strip() for l in f.readlines()])
+def read_present_files(paths: Sequence[str]) -> str:
+    """Read the content of those files that are present."""
+    contents: List[str] = []
+    for path in paths:
+        try:
+            with open(path, "r") as f:
+                contents += ["\n".join(map(str.strip, f.readlines()))]
+        except FileNotFoundError:
+            continue
+    return "\n\n".join(contents)
 
 
-description_files = ["README.rst", "HISTORY.rst"]
+description_files = [
+    "README",
+    "README.rst",
+    "README.md",
+    "HISTORY",
+    "HISTORY.rst",
+    "HISTORY.md",
+]
 
 metadata = {
     "name": "pyflexplot",
     "version": "0.13.9",
     "description": "PyFlexPlot visualizes FLEXPART particle dispersion simulations.",
-    "long_description": "\n\n".join([read_file(f) for f in description_files]),
+    "long_description": read_present_files(description_files),
     "author": "Stefan Ruedisuehli",
     "author_email": "stefan.ruedisuehli@env.ethz.ch",
     "url": "https://github.com/ruestefa/pyflexplot",
@@ -32,8 +50,8 @@ metadata = {
 
 python = ">= 3.7"
 
-# Unpinned runtime dependencies
-unpinned_dependencies = [
+# Runtime dependencies (unpinned: only critical version restrictions)
+requirements = [
     # Install cartopy from github to build it against installed C libraries
     # Forked to add a pyproject.toml to specify cython as build dependency
     # Minimum requirement: Cartopy >= 0.18.0
@@ -59,13 +77,6 @@ unpinned_dependencies = [
     "typing-extensions",
 ]
 
-# If available, use pinned dependencies instead
-try:
-    with open("requirements.txt") as fi:
-        dependencies = [line.strip() for line in fi.readlines()]
-except Exception:
-    dependencies = unpinned_dependencies
-
 scripts = [
     "pyflexplot=pyflexplot.cli.cli:cli",
     "crop-netcdf=srtools.crop_netcdf:main",
@@ -73,7 +84,7 @@ scripts = [
 
 setup(
     python_requires=python,
-    install_requires=dependencies,
+    install_requires=requirements,
     entry_points={"console_scripts": scripts},
     packages=find_packages("src"),
     package_dir={"": "src"},
