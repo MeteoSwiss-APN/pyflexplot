@@ -1,16 +1,15 @@
-"""Tests for class ``pyflexplot.data.Cloud``."""
+"""Tests for class ``pyflexplot.data.EnsembleCloud``."""
 # flake8: noqa  # complains about code in "fmt: off/on" blocks
 # Third-party
 import numpy as np
 import pytest  # noqa: F401  # imported but unused
 
 # First-party
-from pyflexplot.data import EnsembleCloud  # SR_TODO remove once Cloud works
+from pyflexplot.data import EnsembleCloud
 
 # Shorthands for special values
 N = np.nan
 I = np.inf  # noqa: E741  # ambiguous variable name
-J = -np.inf
 
 
 def a(*args, **kwargs):
@@ -100,22 +99,22 @@ ARR = np.array(
             0.5,
             1,
             [  #  0  1  2  3  4  5  6
-                [ J, 1, J, J, J, J, J],  # time: 0
-                [ J, 0, J, J, J, J, J],  # time: 1
-                [ J,-1, J, J, J, J, J],  # time: 2
-                [ J,-2, J, J, J, J, J],  # time: 3
-                [ J,-3, J, J, J, J, J],  # time: 4
+                [-I, 1,-I,-I,-I,-I,-I],  # time: 0
+                [-I, 0,-I,-I,-I,-I,-I],  # time: 1
+                [-I,-1,-I,-I,-I,-I,-I],  # time: 2
+                [-I,-2,-I,-I,-I,-I,-I],  # time: 3
+                [-I,-3,-I,-I,-I,-I,-I],  # time: 4
             ],
         ),
         (
             0.5,
             2,
             [  #  0  1  2  3  4  5  6
-                [ 1, 4, 3, 2, J, 1, J],  # time: 0
-                [ 0, 3, 2, 1, J, 0, J],  # time: 1
-                [-1, 2, 1, 0, J,-1, J],  # time: 2
-                [-2, 1, 0,-1, J,-2, J],  # time: 3
-                [-3, 0,-1,-2, J,-3, J],  # time: 4
+                [ 1, 4, 3, 2,-I, 1,-I],  # time: 0
+                [ 0, 3, 2, 1,-I, 0,-I],  # time: 1
+                [-1, 2, 1, 0,-I,-1,-I],  # time: 2
+                [-2, 1, 0,-1,-I,-2,-I],  # time: 3
+                [-3, 0,-1,-2,-I,-3,-I],  # time: 4
             ],
         ),
         (
@@ -155,11 +154,11 @@ ARR = np.array(
             1.5,
             1,
             [  #  0  1  2  3  4  5  6
-                [ 1, N, 2, J, 1, J, J],  # time: 0
-                [ 0, N, 1, J, 0, J, J],  # time: 1
-                [-1, N, 0, J,-1, J, J],  # time: 2
-                [-2, N,-1, J,-2, J, J],  # time: 3
-                [-3, N,-2, J,-3, J, J],  # time: 4
+                [ 1, N, 2,-I, 1,-I,-I],  # time: 0
+                [ 0, N, 1,-I, 0,-I,-I],  # time: 1
+                [-1, N, 0,-I,-1,-I,-I],  # time: 2
+                [-2, N,-1,-I,-2,-I,-I],  # time: 3
+                [-3, N,-2,-I,-3,-I,-I],  # time: 4
             ],
         ),
         (
@@ -199,11 +198,11 @@ ARR = np.array(
             2.5,
             1,
             [  #  0  1  2  3  4  5  6
-                [ N, N, 2, J, 2, J, N],  # time: 0
-                [ N, N, 1, J, 1, J, N],  # time: 1
-                [ N, N, 0, J, 0, J, N],  # time: 2
-                [ N, N,-1, J,-1, J, N],  # time: 3
-                [ N, N,-2, J,-2, J, N],  # time: 4
+                [ N, N, 2,-I, 2,-I, N],  # time: 0
+                [ N, N, 1,-I, 1,-I, N],  # time: 1
+                [ N, N, 0,-I, 0,-I, N],  # time: 2
+                [ N, N,-1,-I,-1,-I, N],  # time: 3
+                [ N, N,-2,-I,-2,-I, N],  # time: 4
             ],
         ),
         (
@@ -316,66 +315,66 @@ def test_arrival_time(thr, mem, sol):
             1.5,
             2,
             [  # 0  1  2  3  4  5  6
-                [N, N, I, I, 4, 2, N],  # time: 0
-                [N, N, I, I, 3, 1, N],  # time: 1
-                [N, N, I, I, 2, 0, N],  # time: 2
-                [N, N, I, I, 1,-1, N],  # time: 3
-                [N, N, I, I, 0,-2, N],  # time: 4
+                [ N, N, I, I, 4, 2, N],  # time: 0
+                [ N, N, I, I, 3, 1, N],  # time: 1
+                [ N, N, I, I, 2, 0, N],  # time: 2
+                [ N, N, I, I, 1,-1, N],  # time: 3
+                [ N, N, I, I, 0,-2, N],  # time: 4
             ],
         ),
         (
             1.5,
             3,
             [  # 0  1  2  3  4  5  6
-                [N, N, N, I, 4, N, N],  # time: 0
-                [N, N, N, I, 3, N, N],  # time: 1
-                [N, N, N, I, 2, N, N],  # time: 2
-                [N, N, N, I, 1, N, N],  # time: 3
-                [N, N, N, I, 0, N, N],  # time: 4
+                [ N, N, N, I, 4, N, N],  # time: 0
+                [ N, N, N, I, 3, N, N],  # time: 1
+                [ N, N, N, I, 2, N, N],  # time: 2
+                [ N, N, N, I, 1, N, N],  # time: 3
+                [ N, N, N, I, 0, N, N],  # time: 4
             ],
         ),
         (
             1.5,
             4,
             [  # 0  1  2  3  4  5  6
-                [N, N, N, 4, N, N, N],  # time: 0
-                [N, N, N, 3, N, N, N],  # time: 1
-                [N, N, N, 2, N, N, N],  # time: 2
-                [N, N, N, 1, N, N, N],  # time: 3
-                [N, N, N, 0, N, N, N],  # time: 4
+                [ N, N, N, 4, N, N, N],  # time: 0
+                [ N, N, N, 3, N, N, N],  # time: 1
+                [ N, N, N, 2, N, N, N],  # time: 2
+                [ N, N, N, 1, N, N, N],  # time: 3
+                [ N, N, N, 0, N, N, N],  # time: 4
             ],
         ),
         (
             2.5,
             1,
             [  # 0  1  2  3  4  5  6
-                [N, N, I, I, I, I, N],  # time: 0
-                [N, N, I, I, I, I, N],  # time: 1
-                [N, N, I, I, I, I, N],  # time: 2
-                [N, N, I, I, I, I, N],  # time: 3
-                [N, N, I, I, I, I, N],  # time: 4
+                [ N, N, I, I, I, I, N],  # time: 0
+                [ N, N, I, I, I, I, N],  # time: 1
+                [ N, N, I, I, I, I, N],  # time: 2
+                [ N, N, I, I, I, I, N],  # time: 3
+                [ N, N, I, I, I, I, N],  # time: 4
             ],
         ),
         (
             2.5,
             2,
             [  # 0  1  2  3  4  5  6
-                [N, N, N, 3, 3, N, N],  # time: 0
-                [N, N, N, 2, 2, N, N],  # time: 1
-                [N, N, N, 1, 1, N, N],  # time: 2
-                [N, N, N, 0, 0, N, N],  # time: 3
-                [N, N, N,-1,-1, N, N],  # time: 4
+                [ N, N, N, 3, 3, N, N],  # time: 0
+                [ N, N, N, 2, 2, N, N],  # time: 1
+                [ N, N, N, 1, 1, N, N],  # time: 2
+                [ N, N, N, 0, 0, N, N],  # time: 3
+                [ N, N, N,-1,-1, N, N],  # time: 4
             ],
         ),
         (
             3.5,
             1,
             [  # 0  1  2  3  4  5  6
-                [N, N, N, N, N, N, N],  # time: 0
-                [N, N, N, N, N, N, N],  # time: 1
-                [N, N, N, N, N, N, N],  # time: 2
-                [N, N, N, N, N, N, N],  # time: 3
-                [N, N, N, N, N, N, N],  # time: 4
+                [ N, N, N, N, N, N, N],  # time: 0
+                [ N, N, N, N, N, N, N],  # time: 1
+                [ N, N, N, N, N, N, N],  # time: 2
+                [ N, N, N, N, N, N, N],  # time: 3
+                [ N, N, N, N, N, N, N],  # time: 4
             ],
         ),
     ],
