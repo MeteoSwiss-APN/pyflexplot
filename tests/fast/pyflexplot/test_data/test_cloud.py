@@ -18,9 +18,9 @@ def a(*args, **kwargs):
     return np.array(*args, **kwargs)
 
 
-n_mem = 4
-d_time = 2
-arr = np.array(
+N_MEM = 4
+D_TIME = 2
+ARR = np.array(
     [
         [  # 0  1  2  3  4  5  6
             [1, 0, 0, 0, 0, 0, 1],  # mem: 0, time: 0, x: 0-6
@@ -89,11 +89,6 @@ arr = np.array(
 #        [0, 0, 0, 0, 0, 0, 0],  # time: 2
 #        [0, 0, 0, 0, 0, 0, 0],  # time: 3
 #        [0, 0, 0, 0, 0, 0, 0]]) # time: 4)
-
-
-def create_cloud(thr):
-    time = np.arange(5) * d_time
-    return EnsembleCloud(arr=arr, time=time, thr=thr)
 
 
 # test_arrival_time
@@ -238,10 +233,11 @@ def create_cloud(thr):
 # fmt: on
 def test_arrival_time(thr, mem, sol):
     # SR_TMP < TODO Adapt solutions above (multiply all values by 2)
-    sol = np.asarray(sol) * d_time  # scale time step
+    sol = np.asarray(sol) * D_TIME  # scale time step
     sol -= 1  # SR_TODO Necessary for validation, but is it also correct?
     # SR_TMP >
-    res = create_cloud(thr).arrival_time(mem)
+    time = np.arange(5) * D_TIME
+    res = EnsembleCloud(arr=ARR, time=time, thr=thr).arrival_time(mem)
     np.testing.assert_array_equal(res, sol)
 
 
@@ -387,7 +383,8 @@ def test_arrival_time(thr, mem, sol):
 # fmt: on
 def test_departure_time(thr, mem, sol):
     # SR_TMP < TODO Adapt solutions above (multiply all values by 2)
-    sol = np.asarray(sol) * d_time  # scale time step
+    sol = np.asarray(sol) * D_TIME  # scale time step
     # SR_TMP >
-    res = create_cloud(thr).departure_time(mem)
+    time = np.arange(5) * D_TIME
+    res = EnsembleCloud(arr=ARR, time=time, thr=thr).departure_time(mem)
     np.testing.assert_array_equal(res, sol)
