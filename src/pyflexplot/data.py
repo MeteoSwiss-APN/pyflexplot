@@ -320,40 +320,6 @@ class EnsembleCloud:
 
         return departure_time
 
-    def occurrence_probability(self, win: float) -> np.ndarray:
-        """Probability that a cloud occurs in a time window.
-
-        Args:
-            win: Time window for the cloud to occur in same unit as ``time``.
-
-        Returns:
-            Field over time with the probability that a cloud occurs:
-                - TODO
-
-        """
-        # SR_TMP < TODO Add tests to ensure it's working correctly!
-        log(wrn="cloud occurrence probability may still be buggy!")
-        # SR_TMP >
-        win_idx: int
-        for idx, time_i in enumerate(self.time):
-            if time_i > win:
-                win_idx = idx
-                break
-        else:
-            win_idx = len(self.time) + 1
-        occurr_prob = self._init_result(np.nan)
-        cloudy_members = self._count_cloudy_members()
-        occurr_prob[:] = cloudy_members[:]
-        n_ts = self._init_result(win_idx)
-        for idx in range(1, win_idx):
-            try:
-                occurr_prob[:-idx] += cloudy_members[idx:]
-                n_ts[-idx] = idx
-            except IndexError:
-                break
-        occurr_prob *= 100 / (n_ts * self._n_members())
-        return occurr_prob
-
     def _n_members(self):
         """Return the number of ensemble members."""
         return self.arr.shape[0]
