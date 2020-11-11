@@ -843,10 +843,7 @@ def format_names_etc(
                 word = "integrated_air_activity_concentration"
             else:
                 word = "air_activity_concentration"
-            # SR_TMP < TODO Is this the way to go?
-            # var_name_abbr = words[word, "abbr"].s
-            var_name_abbr = words["air_activity_concentration", "abbr"].s
-            # SR_TMP >
+            var_name_abbr = words[word, "abbr"].s
             var_name = words[word].s
             var_name_rel = words[word, "of"].s
         elif setup.core.input_variable == "deposition":

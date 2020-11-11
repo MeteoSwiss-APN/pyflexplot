@@ -3286,7 +3286,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "Air activ. concentr.",
+                    "s": "Int. air activ. concentr.",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

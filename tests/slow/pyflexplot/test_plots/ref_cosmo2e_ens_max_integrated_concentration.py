@@ -3912,7 +3912,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "Luftaktiv.-Konzentr.",
+                    "s": "Int. Luftaktiv.-Konzentr.",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
