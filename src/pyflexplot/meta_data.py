@@ -352,6 +352,11 @@ class VariableMetaData(_MetaDataBase):
     def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "VariableMetaData":
         if setup.core.input_variable == "affected_area":
             unit = ""
+        elif setup.core.input_variable in [
+            "cloud_arrival_time",
+            "cloud_departure_time",
+        ]:
+            unit = "h"
         else:
             var_name = nc_var_name(setup, setup.model)
             try:
@@ -494,7 +499,11 @@ class SpeciesMetaData(_MetaDataBase):
     def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "SpeciesMetaData":
         model: str = setup.model
         name: str
-        if setup.core.input_variable == "affected_area":
+        if setup.core.input_variable in [
+            "affected_area",
+            "cloud_arrival_time",
+            "cloud_departure_time",
+        ]:
             alt_setup = setup.derive({"input_variable": "concentration"})
             return cls.from_file(fi, alt_setup)
         else:

@@ -109,3 +109,21 @@ class Test_TotalDeposition_MissingField(_TestBase):
             "time": -1,
         },
     }
+
+
+class Test_CloudArrivalTime(_TestBase):
+    reference = "ref_cosmo1_deterministic_cloud_arrival_time"
+    setup_dct = {
+        "infile": INFILE_1,
+        "outfile": f"{reference}.png",
+        "model": "COSMO-1",
+        "input_variable": "cloud_arrival_time",
+        "integrate": False,
+        "lang": "en",
+        "domain": "ch",
+        "dimensions": {
+            "species_id": 1,
+            "time": 0,
+            "level": 0,
+        },
+    }

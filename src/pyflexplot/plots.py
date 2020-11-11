@@ -638,27 +638,34 @@ def create_plot_config(
                         "extend": "max",
                     }
                 )
-            elif setup.core.ens_variable in [
-                "ens_cloud_arrival_time",
-                "ens_cloud_departure_time",
-            ]:
-                new_config_dct.update({"n_levels": None, "levels": np.arange(0, 8) * 6})
-                if setup.core.ens_variable == "ens_cloud_arrival_time":
-                    new_config_dct.update(
-                        {
-                            "cmap": "viridis",
-                            "color_under": "slategray",
-                            "color_over": "lightgray",
-                        }
-                    )
-                if setup.core.ens_variable == "ens_cloud_departure_time":
-                    new_config_dct.update(
-                        {
-                            "cmap": "viridis_r",
-                            "color_under": "lightgray",
-                            "color_over": "slategray",
-                        }
-                    )
+    if setup.core.input_variable in [
+        "cloud_arrival_time",
+        "cloud_departure_time",
+    ] or setup.core.ens_variable in [
+        "ens_cloud_arrival_time",
+        "ens_cloud_departure_time",
+    ]:
+        new_config_dct.update({"n_levels": None, "levels": np.arange(0, 8) * 6})
+        if setup.core.input_variable == "cloud_arrival_time" or (
+            setup.core.ens_variable == "ens_cloud_arrival_time"
+        ):
+            new_config_dct.update(
+                {
+                    "cmap": "viridis",
+                    "color_under": "slategray",
+                    "color_over": "lightgray",
+                }
+            )
+        if setup.core.input_variable == "cloud_departure_time" or (
+            setup.core.ens_variable == "ens_cloud_departure_time"
+        ):
+            new_config_dct.update(
+                {
+                    "cmap": "viridis_r",
+                    "color_under": "lightgray",
+                    "color_over": "slategray",
+                }
+            )
 
     # Colors
     extend = new_config_dct.get("extend", "max")
@@ -838,29 +845,24 @@ def format_names_etc(
     short_name = ""
 
     def format_var_names(setup: Setup, words: TranslatedWords) -> Tuple[str, str, str]:
-        if setup.core.input_variable == "concentration":
-            if setup.core.integrate:
-                word = "integrated_air_activity_concentration"
-            else:
-                word = "air_activity_concentration"
-            var_name_abbr = words[word, "abbr"].s
-            var_name = words[word].s
-            var_name_rel = words[word, "of"].s
-        elif setup.core.input_variable == "deposition":
+        if setup.core.input_variable == "deposition":
             dep_type_word = (
                 "total"
                 if setup.deposition_type_str == "tot"
                 else setup.deposition_type_str
             )
-            var_name = words[f"{dep_type_word}_surface_deposition"].s
-            var_name_abbr = words[f"{dep_type_word}_surface_deposition", "abbr"].s
-            var_name_rel = words[f"{dep_type_word}_surface_deposition", "of"].s
-        elif setup.core.input_variable == "affected_area":
-            var_name = words["affected_area"].s
-            var_name_abbr = words["affected_area", "abbr"].s
-            var_name_rel = words["affected_area", "of"].s
+            word = f"{dep_type_word}_surface_deposition"
+            if not setup.core.integrate:
+                word = f"incremental_{word}"
+        elif setup.core.input_variable == "concentration":
+            word = "air_activity_concentration"
+            if setup.core.integrate:
+                word = f"integrated_{word}"
         else:
-            raise NotImplementedError(f"input variable '{setup.core.input_variable}'")
+            word = setup.core.input_variable
+        var_name_abbr = words[word, "abbr"].s
+        var_name = words[word].s
+        var_name_rel = words[word, "of"].s
         return var_name, var_name_abbr, var_name_rel
 
     # pylint: disable=W0621  # redefined-outer-name
@@ -889,16 +891,18 @@ def format_names_etc(
     elif setup.core.input_variable == "deposition":
         long_name = var_name
         short_name = words["deposition"].s
-    elif setup.core.input_variable == "affected_area":
-        long_name = words["affected_area"].s
-        short_name = words["affected_area", "abbr"].s
+    elif setup.core.input_variable in [
+        "affected_area",
+        "cloud_arrival_time",
+        "cloud_departure_time",
+    ]:
+        word = setup.core.input_variable
+        long_name = words[word].s
+        short_name = words[word, "abbr"].s
 
-    # Short/long names #2: By plot variable/type; ensemble variable name
+    # Short/long names #2: By ensemble variable type
     ens_var_name = "none"
-    if setup.get_simulation_type() == "deterministic":
-        if setup.core.input_variable == "affected_area":
-            long_name = var_name
-    elif setup.get_simulation_type() == "ensemble":
+    if setup.get_simulation_type() == "ensemble":
         if setup.core.ens_variable in ["minimum", "maximum", "mean", "median"]:
             long_name = f"{words[f'ensemble_{setup.core.ens_variable}']} {var_name_rel}"
         elif setup.core.ens_variable == "percentile":
@@ -1071,6 +1075,8 @@ def format_integr_period(
     elif setup.core.input_variable in [
         "concentration",
         "affected_area",
+        "cloud_arrival_time",
+        "cloud_departure_time",
     ]:
         operation = words["summed_over"].s
     elif setup.core.input_variable == "deposition":

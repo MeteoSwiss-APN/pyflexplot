@@ -66,7 +66,11 @@ class FlexPartDataFixer:
                 # new_unit = "Bq h m-2" if integrate else "Bq m-2"
                 new_unit = "Bq m-2"
             # SR_TMP <
-            elif input_variable == "affected_area":
+            elif input_variable in [
+                "affected_area",
+                "cloud_arrival_time",
+                "cloud_departure_time",
+            ]:
                 new_unit = unit
             elif input_variable == "deposition" and unit == "N/A":
                 new_unit = "Bq m-2"

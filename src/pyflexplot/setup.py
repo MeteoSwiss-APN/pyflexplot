@@ -133,6 +133,8 @@ class CoreSetup(BaseModel):
             "concentration",
             "deposition",
             "affected_area",
+            "cloud_arrival_time",
+            "cloud_departure_time",
         ]
         assert value in choices, value
         return values
@@ -679,11 +681,14 @@ class Setup(BaseModel):
                     dct["dimensions"]["deposition_type"] = ("dry", "wet")
         # SR_TMP >
 
-        if (select and "input_variable" in select) or (
-            not skip or "input_variable" not in skip
-        ):
+        if "input_variable" in (select or []) or "input_variable" not in (skip or []):
             if dct["input_variable"] == "affected_area":
                 dct["input_variable"] = ("concentration", "deposition")
+            elif dct["input_variable"] in [
+                "cloud_arrival_time",
+                "cloud_departure_time",
+            ]:
+                dct["input_variable"] = "concentration"
 
         # Decompress dict
         dcts = []

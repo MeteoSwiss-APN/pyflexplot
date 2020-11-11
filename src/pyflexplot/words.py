@@ -1,4 +1,9 @@
-"""TranslatedWords."""
+"""TranslatedWords.
+
+TODO:
+    Split into primary and derived words/expressions to remove duplication
+
+"""
 # First-party
 from words import TranslatedWords
 from words import Words
@@ -55,8 +60,15 @@ WORDS.add(en="averaged over", de=f'gemittelt {s["ue"]}ber')
 WORDS.add(en="based on", de="basierend auf")
 # C
 WORDS.add(en="cloud", de="Wolke")
-WORDS.add(en="cloud arrival time", de="Wolkenankunftszeit")
+WORDS.add(
+    en={"*": "cloud arrival time", "of": "of cloud arrival time"},
+    de={"*": "Wolkenankunftszeit", "of": "der Wolkenankunftszeit"},
+)
 WORDS.add(en="cloud density", de="Wolkendichte")
+WORDS.add(
+    en={"*": "cloud departure time", "of": "of cloud departure time"},
+    de={"*": "Wolkenabzugszeit", "of": "der Wolkenabzugszeit"},
+)
 WORDS.add(en="cloud occurrence probability", de="Wolkenauftretenswahrscheinlichkeit")
 WORDS.add(
     en={"*": "cloud probability", "abbr": "cloud prob."},
@@ -134,6 +146,42 @@ WORDS.add(
 # I
 WORDS.add(en="in", de="in")
 WORDS.add(en="input variable", de="Inputvariable")
+WORDS.add(
+    en={
+        "*": "incremental dry surface deposition",
+        "abbr": "incr. dry surface dep.",
+        "of": "of incremental dry surface deposition",
+    },
+    de={
+        "*": "inkrementelle trockene Bodendeposition",
+        "abbr": "inkr. trockene Bodendep.",
+        "of": "der incrementellen trockenen Bodendeposition",
+    },
+)
+WORDS.add(
+    en={
+        "*": "incremental total surface deposition",
+        "abbr": "incr. total surface dep.",
+        "of": "of incremental total surface deposition",
+    },
+    de={
+        "*": "inkrementelle totale Bodendeposition",
+        "abbr": "inkr. totale Bodendep.",
+        "of": "der incrementellen total Bodendeposition",
+    },
+)
+WORDS.add(
+    en={
+        "*": "incremental wet surface deposition",
+        "abbr": "incr. wet surface dep.",
+        "of": "of incremental wet surface deposition",
+    },
+    de={
+        "*": "inkrementelle nasse Bodendeposition",
+        "abbr": "inkr. nasse Bodendep.",
+        "of": "der incrementellen nassen Bodendeposition",
+    },
+)
 WORDS.add(
     en={"*": "integrated", "abbr": "int."},
     de={

@@ -90,3 +90,21 @@ class Test_AffectedArea(_TestBase):
             "deposition_type": ["dry", "wet"],
         },
     }
+
+
+class Test_CloudDepartureTime(_TestBase):
+    reference = "ref_ifs_deterministic_cloud_departure_time"
+    setup_dct = {
+        "infile": INFILE_NAME,
+        "outfile": f"{reference}.png",
+        "model": "IFS-HRES",
+        "input_variable": "cloud_departure_time",
+        "integrate": False,
+        "lang": "en",
+        "domain": "cloud",
+        "dimensions": {
+            "species_id": 1,
+            "time": 0,
+            "level": 0,
+        },
+    }

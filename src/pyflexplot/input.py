@@ -24,6 +24,7 @@ from cartopy.crs import RotatedPole
 from srutils.various import check_array_indices
 
 # Local
+from .data import Cloud
 from .data import ensemble_probability
 from .data import EnsembleCloud
 from .data import Field
@@ -37,6 +38,9 @@ from .setup import Setup
 from .setup import SetupCollection
 from .utils.exceptions import MissingCacheEntryError
 from .utils.logging import log
+
+AFFECTED_AREA_THRESHOLD = 0.0
+CLOUD_THRESHOLD = 0.0
 
 
 # pylint: disable=R0914  # too-many-locals
@@ -196,13 +200,21 @@ class FieldInputOrganizer:
                 ]
             ).items():
                 skip = ["outfile", "dimensions.time", "ens_member_id"]
-                if input_variable == "concentration":
+                if input_variable in [
+                    "concentration",
+                    "cloud_arrival_time",
+                    "cloud_departure_time",
+                ]:
                     if combine_levels:
                         skip.append("dimensions.level")
                 elif input_variable in ["deposition", "affected_area"]:
                     if combine_deposition_types:
                         skip.append("dimensions.deposition_type")
-                if input_variable == "affected_area":
+                if input_variable in [
+                    "affected_area",
+                    "cloud_arrival_time",
+                    "cloud_departure_time",
+                ]:
                     skip.append("input_variable")
                 if combine_species:
                     skip.append("dimensions.species_id")
@@ -322,6 +334,7 @@ class InputFileEnsemble:
         with nc4.Dataset(first_path) as fi:
             # SR_TMP < Find better solution! Maybe class NcMetaDataReader?
             self.nc_meta_data = self.read_nc_meta_data(fi)
+            ts_hrs = self.get_temp_res_hrs(fi)
 
         # Create individual setups at each requested time step
         select = ["dimensions.time"]
@@ -341,7 +354,7 @@ class InputFileEnsemble:
             self._read_data(file_path, idx_mem, timeless_setups_mem)
 
         # Compute single field from all ensemble members
-        fld_time: np.ndarray = self._reduce_ensemble(setups)
+        fld_time: np.ndarray = self._reduce_ensemble(setups, ts_hrs)
 
         # Compute some statistics across all time steps
         time_stats = FieldTimeProperties(fld_time)
@@ -440,15 +453,24 @@ class InputFileEnsemble:
                 fld_time_lst.append(self._read_fld_over_time(fi, sub_setup))
         if input_variable == "affected_area":
             shapes = [fld.shape for fld in fld_time_lst]
+            # SR_TMP < TODO proper check
             assert len(set(shapes)) == 1, f"shapes differ: {shapes}"
-            fld_time = (np.array(fld_time_lst) > 0.0).any(axis=0)
+            # SR_TMP >
+            fld_time = (np.array(fld_time_lst) > AFFECTED_AREA_THRESHOLD).any(axis=0)
         else:
             fld_time = merge_fields(fld_time_lst)
-        global_models = ["IFS-HRES"]
-        if self.fixer and timeless_setups.collect_equal("model") in global_models:
+        if self.fixer and timeless_setups.collect_equal("model") == "IFS-HRES":
+            # Note: IFS-HRES-EU is not global, so doesn't need this fix
             self.fixer.fix_global_grid(self.lon, fld_time)
         if self.add_ts0:
             fld_time = self._add_ts0_to_fld_time(fld_time)
+        if input_variable in ["cloud_arrival_time", "cloud_departure_time"]:
+            ts_hrs = self.get_temp_res_hrs(fi)
+            cloud = Cloud(mask=np.array(fld_time) > CLOUD_THRESHOLD, ts=ts_hrs)
+            if input_variable == "cloud_arrival_time":
+                fld_time = cloud.arrival_time()
+            else:
+                fld_time = cloud.departure_time()
         return fld_time
 
     # pylint: disable=R0914  # too-many-locals
@@ -524,7 +546,9 @@ class InputFileEnsemble:
         return new_fld_time
 
     # pylint: disable=R0912  # too-many-branches
-    def _reduce_ensemble(self, var_setups: SetupCollection) -> np.ndarray:
+    def _reduce_ensemble(
+        self, var_setups: SetupCollection, ts_hrs: float
+    ) -> np.ndarray:
         """Reduce the ensemble to a single field (time, lat, lon)."""
         fld_time_mem = self.fld_time_mem
 
@@ -552,13 +576,8 @@ class InputFileEnsemble:
         elif ens_variable == "probability":
             fld_time = ensemble_probability(fld_time_mem, ens_param_thr, n_ens_mem)
         elif ens_variable.startswith("ens_cloud_"):
-            # SR_TMP <
-            tss = set((self.time[1:] - self.time[:-1]).tolist())
-            assert len(tss) == 1, f"timsteps differ: {tss}"
-            ts = next(iter(tss))
-            # SR_TMP >
             cloud = EnsembleCloud(
-                mask=fld_time_mem > ens_param_thr, mem_min=ens_param_mem_min, ts=ts
+                mask=fld_time_mem > ens_param_thr, mem_min=ens_param_mem_min, ts=ts_hrs
             )
             if ens_variable == "ens_cloud_arrival_time":
                 fld_time = cloud.arrival_time()
@@ -677,26 +696,14 @@ class InputFileEnsemble:
             fi, fld, setup.core.input_variable, setup.core.integrate
         )
 
-    @staticmethod
     def _handle_time_integration(
-        fi: nc4.Dataset, fld: np.ndarray, input_variable: str, integrate: bool
+        self, fi: nc4.Dataset, fld: np.ndarray, input_variable: str, integrate: bool
     ) -> np.ndarray:
         """Integrate or desintegrate the field over time."""
-
-        def get_temp_res_hrs(fi: nc4.Dataset) -> float:
-            """Determine the (constant) temporal resolution in hours."""
-            time = fi.variables["time"]
-            dts = set(time[1:] - time[:-1])
-            if len(dts) > 1:
-                raise Exception(f"Non-uniform time resolution: {sorted(dts)} ({time})")
-            dt_min = next(iter(dts))
-            dt_hr = dt_min / 3600.0
-            return dt_hr
-
         if input_variable == "concentration":
             if integrate:
                 # Integrate field over time
-                dt_hr = get_temp_res_hrs(fi)
+                dt_hr = self.get_temp_res_hrs(fi)
                 return np.cumsum(fld, axis=0) * dt_hr
             else:
                 # Field is already instantaneous
@@ -707,10 +714,21 @@ class InputFileEnsemble:
                 return fld
             else:
                 # Revert time integration of field
-                dt_hr = get_temp_res_hrs(fi)
+                dt_hr = self.get_temp_res_hrs(fi)
                 fld[1:] = (fld[1:] - fld[:-1]) / dt_hr
                 return fld
         raise NotImplementedError("unknown variable", input_variable)
+
+    @staticmethod
+    def get_temp_res_hrs(fi: nc4.Dataset) -> float:
+        """Determine the (constant) temporal resolution in hours."""
+        time = fi.variables["time"]
+        dts = set(time[1:] - time[:-1])
+        if len(dts) > 1:
+            raise Exception(f"Non-uniform time resolution: {sorted(dts)} ({time})")
+        dt_min = next(iter(dts))
+        dt_hr = dt_min / 3600.0
+        return dt_hr
 
 
 class FileReaderCache:
