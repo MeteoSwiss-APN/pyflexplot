@@ -607,9 +607,6 @@ def create_plot_config(
     # if setup.get_simulation_type() == "deterministic":
     elif setup.get_simulation_type() == "deterministic":
         new_config_dct["mark_field_max"] = True
-        if setup.core.plot_variable == "affected_area_mono":
-            new_config_dct["extend"] = "none"
-            new_config_dct["n_levels"] = 1
     elif setup.get_simulation_type() == "ensemble":
         # SR_TMP < TODO Re-enable once there's enough space in the legend box
         new_config_dct["mark_field_max"] = False
@@ -672,10 +669,7 @@ def create_plot_config(
     color_under = new_config_dct.pop("color_under", None)
     color_over = new_config_dct.pop("color_over", None)
     # SR_TMP >
-    if (
-        setup.core.plot_variable == "affected_area_mono"
-        or setup.core.input_variable == "affected_area"
-    ):
+    if setup.core.input_variable == "affected_area":
         new_config_dct["colors"] = (np.array([(200, 200, 200)]) / 255).tolist()
     elif cmap == "flexplot":
         assert new_config_dct["n_levels"] is not None
@@ -915,10 +909,7 @@ def format_names_etc(
     # Short/long names #2: By plot variable/type; ensemble variable name
     ens_var_name = "none"
     if setup.get_simulation_type() == "deterministic":
-        if (
-            setup.core.plot_variable.startswith("affected_area")
-            or setup.core.input_variable == "affected_area"
-        ):
+        if setup.core.input_variable == "affected_area":
             long_name = var_name
     elif setup.get_simulation_type() == "ensemble":
         if setup.core.ens_variable == "minimum":

@@ -26,7 +26,11 @@ class Test_Concentration(_TestBase):
         "integrate": False,
         "lang": "de",
         "domain": "cloud",
-        "dimensions": {"species_id": 1, "time": 5, "level": 0},
+        "dimensions": {
+            "species_id": 1,
+            "time": 5,
+            "level": 0,
+        },
     }
 
 
@@ -41,7 +45,11 @@ class Test_IntegratedConcentration(_TestBase):
         "integrate": True,
         "lang": "en",
         "domain": "cloud",
-        "dimensions": {"species_id": 1, "time": 10, "level": 0},
+        "dimensions": {
+            "species_id": 1,
+            "time": 10,
+            "level": 0,
+        },
     }
 
 
@@ -57,7 +65,10 @@ class Test_TotalDeposition(_TestBase):
         "integrate": True,
         "lang": "de",
         "domain": "cloud",
-        "dimensions": {"species_id": 1, "time": -1},
+        "dimensions": {
+            "species_id": 1,
+            "time": -1,
+        },
     }
 
 
@@ -67,11 +78,15 @@ class Test_AffectedArea(_TestBase):
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
         "model": "IFS-HRES",
-        "input_variable": "deposition",
-        "plot_variable": "affected_area_mono",
+        "input_variable": "affected_area",
         "combine_deposition_types": True,
         "integrate": True,
         "lang": "en",
         "domain": "cloud",
-        "dimensions": {"species_id": 1, "time": -1, "deposition_type": ["dry", "wet"]},
+        "dimensions": {
+            "species_id": 1,
+            "level": 0,
+            "time": -1,
+            "deposition_type": ["dry", "wet"],
+        },
     }

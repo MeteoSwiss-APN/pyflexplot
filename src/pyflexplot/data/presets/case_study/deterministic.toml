@@ -26,8 +26,14 @@ time = 11
 deposition_type = "wet"
 [_base._deposition."_tot+"]
 deposition_type = ["dry", "wet"]
-[_base._deposition."_tot+"."_affected_area+"]
-plot_variable = "affected_area_mono"
+
+[_base."_affected_area+"]
+combine_deposition_types = true
+input_variable = "affected_area"
+level = 0
+deposition_type = ["dry", "wet"]
+time = 11
+integrate = true
 
 ["**"._full.de]
 domain = "full"

@@ -26,7 +26,11 @@ class Test_Concentration(_TestBase):
         "integrate": False,
         "lang": "de",
         "domain": "full",
-        "dimensions": {"species_id": 1, "time": 5, "level": 0},
+        "dimensions": {
+            "species_id": 1,
+            "time": 5,
+            "level": 0,
+        },
     }
 
 
@@ -41,7 +45,11 @@ class Test_IntegratedConcentration(_TestBase):
         "integrate": True,
         "lang": "en",
         "domain": "ch",
-        "dimensions": {"species_id": 1, "time": 10, "level": 0},
+        "dimensions": {
+            "species_id": 1,
+            "time": 10,
+            "level": 0,
+        },
     }
 
 
@@ -57,7 +65,10 @@ class Test_TotalDeposition(_TestBase):
         "integrate": True,
         "lang": "de",
         "domain": "full",
-        "dimensions": {"species_id": 1, "time": -1},
+        "dimensions": {
+            "species_id": 1,
+            "time": -1,
+        },
     }
 
 
@@ -93,5 +104,8 @@ class Test_TotalDeposition_MissingField(_TestBase):
         "integrate": True,
         "lang": "de",
         "domain": "full",
-        "dimensions": {"species_id": 1, "time": -1},
+        "dimensions": {
+            "species_id": 1,
+            "time": -1,
+        },
     }

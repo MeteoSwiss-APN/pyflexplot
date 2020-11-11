@@ -137,7 +137,7 @@ class CoreSetup(BaseModel):
     @root_validator
     def _check_plot_variable(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         value = values["plot_variable"]
-        choices = ["auto", "affected_area", "affected_area_mono"]
+        choices = ["auto"]
         assert value in choices, value
         return values
 

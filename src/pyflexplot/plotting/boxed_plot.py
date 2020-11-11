@@ -265,13 +265,8 @@ def levels_from_time_stats(
             assert plot_config.levels is not None  # mypy
             return plot_config.levels
 
-    # SR_TMP < TODO Clean this up!
-    if plot_config.setup.core.plot_variable == "affected_area_mono":
-        levels = _auto_levels_log10(n_levels=9, val_max=time_stats.max)
-        return np.array([levels[0], np.inf])
-    elif plot_config.n_levels is not None:
+    if plot_config.n_levels is not None:
         return _auto_levels_log10(plot_config.n_levels, val_max=time_stats.max)
-    else:
-        assert plot_config.levels is not None  # mypy
-        return plot_config.levels
-    # SR_TMP >
+
+    assert plot_config.levels is not None  # mypy
+    return plot_config.levels

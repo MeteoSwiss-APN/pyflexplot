@@ -362,13 +362,13 @@ def test_realcase_opr_like(tmp_path):
         integrate = true
         time = -1
 
-        [tot_deposition_affected_area]
+        [affected_area]
         outfile = "affected_area_{domain}_{lang}_{time:02d}.png"
         model = "COSMO-1"
-        plot_variable = "affected_area_mono"
         infile = "data/cosmo1_2019052800.nc"
+        level = 0
         species_id = "*"
-        input_variable = "deposition"
+        input_variable = "affected_area"
         deposition_type = ["dry", "wet"]
         combine_deposition_types = true
         combine_species = true
@@ -488,7 +488,7 @@ def test_realcase_opr_like(tmp_path):
             "combine_species": True,
             "dimensions": {
                 "deposition_type": ("dry", "wet"),
-                "level": None,
+                "level": 0,
                 "nageclass": None,
                 "noutrel": None,
                 "numpoint": None,
@@ -505,7 +505,7 @@ def test_realcase_opr_like(tmp_path):
             "ens_param_thr": None,
             "ens_variable": "none",
             "infile": "data/cosmo1_2019052800.nc",
-            "input_variable": "deposition",
+            "input_variable": "affected_area",
             "integrate": True,
             "lang": "en",
             "model": "COSMO-1",
@@ -513,7 +513,7 @@ def test_realcase_opr_like(tmp_path):
             "outfile": "affected_area_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",
             "plot_type": "auto",
-            "plot_variable": "affected_area_mono",
+            "plot_variable": "auto",
             "scale_fact": 1.0,
         },
     ]
