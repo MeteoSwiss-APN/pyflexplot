@@ -408,7 +408,6 @@ def test_realcase_opr_like(tmp_path):
             "outfile": "concentration_{species_id}_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",
             "plot_type": "auto",
-            "plot_variable": "auto",
             "scale_fact": 1.0,
         },
         {
@@ -443,7 +442,6 @@ def test_realcase_opr_like(tmp_path):
             "outfile": "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",
             "plot_type": "auto",
-            "plot_variable": "auto",
             "scale_fact": 1.0,
         },
         {
@@ -478,7 +476,6 @@ def test_realcase_opr_like(tmp_path):
             "outfile": "tot_deposition_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",
             "plot_type": "auto",
-            "plot_variable": "auto",
             "scale_fact": 1.0,
         },
         {
@@ -513,7 +510,6 @@ def test_realcase_opr_like(tmp_path):
             "outfile": "affected_area_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",
             "plot_type": "auto",
-            "plot_variable": "auto",
             "scale_fact": 1.0,
         },
     ]

@@ -41,7 +41,6 @@ DEFAULT_PARAMS: Dict[str, Any] = {
     "multipanel_param": None,
     "outfile_time_format": "%Y%m%d%H%M",
     "plot_type": "auto",
-    "plot_variable": "auto",
     "scale_fact": 1.0,
 }
 

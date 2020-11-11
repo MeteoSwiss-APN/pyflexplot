@@ -27,7 +27,6 @@ field_summary = {
             "scale_fact": 1.0,
             "core": {
                 "input_variable": "deposition",
-                "plot_variable": "auto",
                 "ens_variable": "none",
                 "plot_type": "auto",
                 "multipanel_param": None,
@@ -823,7 +822,6 @@ plot_summary = {
                     "scale_fact": 1.0,
                     "core": {
                         "input_variable": "deposition",
-                        "plot_variable": "auto",
                         "ens_variable": "none",
                         "plot_type": "auto",
                         "multipanel_param": None,
@@ -1141,7 +1139,6 @@ plot_summary = {
                             "scale_fact": 1.0,
                             "core": {
                                 "input_variable": "deposition",
-                                "plot_variable": "auto",
                                 "ens_variable": "none",
                                 "plot_type": "auto",
                                 "multipanel_param": None,
@@ -6753,7 +6750,6 @@ plot_summary = {
                 "scale_fact": 1.0,
                 "core": {
                     "input_variable": "deposition",
-                    "plot_variable": "auto",
                     "ens_variable": "none",
                     "plot_type": "auto",
                     "multipanel_param": None,
@@ -7541,7 +7537,6 @@ plot_summary = {
                         "scale_fact": 1.0,
                         "core": {
                             "input_variable": "deposition",
-                            "plot_variable": "auto",
                             "ens_variable": "none",
                             "plot_type": "auto",
                             "multipanel_param": None,

@@ -93,7 +93,6 @@ class CoreSetup(BaseModel):
 
     # Basics
     input_variable: str = "concentration"
-    plot_variable: str = "auto"
     ens_variable: str = "none"
     plot_type: str = "auto"
     multipanel_param: Optional[str] = None
@@ -131,13 +130,6 @@ class CoreSetup(BaseModel):
     def _check_input_variable(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         value = values["input_variable"]
         choices = ["concentration", "deposition", "affected_area"]
-        assert value in choices, value
-        return values
-
-    @root_validator
-    def _check_plot_variable(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        value = values["plot_variable"]
-        choices = ["auto"]
         assert value in choices, value
         return values
 
@@ -449,9 +441,6 @@ class Setup(BaseModel):
 
             plot_type: Plot type. Use the format key '{plot_type}' to embed it
                 in ``outfile``.
-
-            plot_variable: Variable computed from input variable. Use the format
-                key '{plot_variable}' to embed it in ``outfile``.
 
             species_id: Species id(s). To sum up multiple species, combine their
                 ids with '+'. Use the format key '{species_id}' to embed it in

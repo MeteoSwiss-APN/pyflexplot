@@ -93,7 +93,6 @@ class FilePathFormatter:
             "nageclass": setup.core.dimensions.nageclass,
             "noutrel": setup.core.dimensions.noutrel,
             "plot_type": setup.core.plot_type,
-            "plot_variable": setup.core.plot_variable,
             "release_site": nc_meta_data["derived"]["release_site"],
             "release_start": release_start,
             "species_id": setup.core.dimensions.species_id,

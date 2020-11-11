@@ -4,7 +4,7 @@
 # Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
 infile = "data/cosmo-2e/grid_conc_xxxx_20190731000000_000.nc"
 model = "COSMO-2E"
-outfile = "case_study/cosmo-2e-ctrl_{input_variable}_{plot_variable}_{release_site}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
+outfile = "case_study/cosmo-2e-ctrl_{input_variable}_variable}_{release_site}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
 combine_species = true
 # species_id = "*"
 species_id = 1

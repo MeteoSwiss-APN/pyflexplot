@@ -25,7 +25,6 @@ field_summary = {
             "scale_fact": 1.0,
             "core": {
                 "input_variable": "concentration",
-                "plot_variable": "auto",
                 "ens_variable": "cloud_arrival_time",
                 "plot_type": "auto",
                 "multipanel_param": None,
@@ -900,7 +899,6 @@ plot_summary = {
                     "scale_fact": 1.0,
                     "core": {
                         "input_variable": "concentration",
-                        "plot_variable": "auto",
                         "ens_variable": "cloud_arrival_time",
                         "plot_type": "auto",
                         "multipanel_param": None,
@@ -1300,7 +1298,6 @@ plot_summary = {
                             "scale_fact": 1.0,
                             "core": {
                                 "input_variable": "concentration",
-                                "plot_variable": "auto",
                                 "ens_variable": "cloud_arrival_time",
                                 "plot_type": "auto",
                                 "multipanel_param": None,
@@ -6970,7 +6967,6 @@ plot_summary = {
                 "scale_fact": 1.0,
                 "core": {
                     "input_variable": "concentration",
-                    "plot_variable": "auto",
                     "ens_variable": "cloud_arrival_time",
                     "plot_type": "auto",
                     "multipanel_param": None,
@@ -7839,7 +7835,6 @@ plot_summary = {
                         "scale_fact": 1.0,
                         "core": {
                             "input_variable": "concentration",
-                            "plot_variable": "auto",
                             "ens_variable": "cloud_arrival_time",
                             "plot_type": "auto",
                             "multipanel_param": None,
