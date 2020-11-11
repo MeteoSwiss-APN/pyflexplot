@@ -27,17 +27,26 @@ WORDS = TranslatedWords("words", {})
 WORDS.add(en="accumulated over", de=f'akkumuliert {s["ue"]}ber')
 WORDS.add(en="after", de="nach")
 WORDS.add(
-    en={"*": "air activity concentration", "abbr": "air activ. concentr."},
+    en={
+        "*": "air activity concentration",
+        "abbr": "air activ. concentr.",
+        "of": "of air activity concentration",
+    },
     de={
-        "*": f'Luftaktivit{s["ae"]}tskonzentration',
+        "*": f"Luftaktivit{s['ae']}tskonzentration",
         "abbr": "Luftaktiv.-Konzentr.",
+        "of": f"der Luftaktivit{s['ae']}tskonzentration",
     },
 )
 WORDS.add(en="arrival", de="Ankunft")
 WORDS.add(en="arrival time", de="Ankunftszeit")
 WORDS.add(
-    en="affected area",
-    de={"*": "beaufschlagtes Gebiet", "g": "beaufschlagten Gebietes"},
+    en={"*": "affected area", "of": "of affected area"},
+    de={
+        "*": "beaufschlagtes Gebiet",
+        "g": "beaufschlagten Gebietes",
+        "of": "des beaufschlagten Gebietes",
+    },
 )
 WORDS.add(en="m AGL", de=f'm {s["ue"]}.G.')
 WORDS.add(en="at", de={"level": "auf", "place": "in", "time": "um"})
@@ -77,6 +86,18 @@ WORDS.add(
 )
 WORDS.add(en="deposition", de="Deposition")
 WORDS.add(en="dry", de={"*": "trocken", "f": "trockene", "g": "trockenen"})
+WORDS.add(
+    en={
+        "*": "dry surface deposition",
+        "abbr": "dry surface dep.",
+        "of": "of dry surface deposition",
+    },
+    de={
+        "*": "trockene Bodendeposition",
+        "abbr": "trockene Bodendep.",
+        "of": "der trockenen Bodendeposition",
+    },
+)
 # E
 WORDS.add(en={"*": "east", "abbr": "E"}, de={"*": "Ost", "abbr": "O"})
 WORDS.add(en="end", de="Ende")
@@ -124,6 +145,30 @@ WORDS.add(
         "g": "integrierten",
     },
 )
+WORDS.add(
+    en={
+        "*": "integrated concentration",
+        "abbr": "int. concentr.",
+        "of": "of integrated concentration",
+    },
+    de={
+        "*": "integrierte Konzentration",
+        "abbr": "int. Konzentr.",
+        "of": "der integrierten Konzentration",
+    },
+)
+WORDS.add(
+    en={
+        "*": "integrated air activity concentration",
+        "abbr": "int. air activ. concentr.",
+        "of": "of integrated air activity concentration",
+    },
+    de={
+        "*": f"integrierte Luftaktivit{s['ae']}tskonzentration",
+        "abbr": "int. Luftaktiv.-Konzentr.",
+        "of": f"der integrierten Luftaktivit{s['ae']}tskonzentration",
+    },
+)
 # J
 # K
 # L
@@ -143,7 +188,7 @@ WORDS.add(en={"*": "minimum", "abbr": "min."}, de={"*": "Minimum", "abbr": "min.
 WORDS.add(en={"*": "north", "abbr": "N"}, de={"*": "Norden", "abbr": "N"})
 WORDS.add(en={"*": "number of", "abbr": "no."}, de={"*": "Anzahl", "abbr": "Anz."})
 # O
-WORDS.add(en="of", de={"*": "von", "fg": "der", "ng": "des"})
+# WORDS.add(en="of", de={"*": "von", "fg": "der", "ng": "des"})
 # P
 WORDS.add(en="percent", de="Prozent")
 WORDS.add(en="percentile", de="Perzentil")
@@ -166,8 +211,12 @@ WORDS.add(en="start", de="Start")
 WORDS.add(en="substance", de="Substanz")
 WORDS.add(en="summed over", de=f'aufsummiert {s["ue"]}ber')
 WORDS.add(
-    en={"*": "surface deposition", "abbr": "surface dep."},
-    de={"*": "Bodendeposition", "abbr": "Bodendep."},
+    en={
+        "*": "surface deposition",
+        "abbr": "surface dep.",
+        "of": "of surface deposition",
+    },
+    de={"*": "Bodendeposition", "abbr": "Bodendep.", "of": "der Bodendeposition"},
 )
 # T
 WORDS.add(
@@ -181,9 +230,21 @@ WORDS.add(
     de="-tes",
 )
 WORDS.add(en="threshold", de="Grenzwert")
+WORDS.add(en="time window", de="Zeitfenster")
 WORDS.add(en="total", de={"*": "total", "m": "totaler", "f": "totale", "g": "totalen"})
 WORDS.add(en="total mass", de="Totale Masse")
-WORDS.add(en="time window", de="Zeitfenster")
+WORDS.add(
+    en={
+        "*": "total surface deposition",
+        "abbr": "total surface dep.",
+        "of": "of total surface deposition",
+    },
+    de={
+        "*": "totale Bodendeposition",
+        "abbr": "totale Bodendep.",
+        "of": "der totalen Bodendeposition",
+    },
+)
 # U
 WORDS.add(en="until", de="bis")
 # V
@@ -193,6 +254,18 @@ WORDS.add(en="washout coeff.", de="Auswaschkoeff.")
 WORDS.add(en="washout exponent", de="Auswaschexponent")
 WORDS.add(en={"*": "west", "abbr": "W"}, de={"*": "Westen", "abbr": "W"})
 WORDS.add(en="wet", de={"*": "nass", "f": "nasse", "g": "nassen"})
+WORDS.add(
+    en={
+        "*": "wet surface deposition",
+        "abbr": "wet surface dep.",
+        "of": "of wet surface deposition",
+    },
+    de={
+        "*": "nasse Bodendeposition",
+        "abbr": "nasse Bodendep.",
+        "of": "der nassen Bodendeposition",
+    },
+)
 # X
 # Y
 # Z

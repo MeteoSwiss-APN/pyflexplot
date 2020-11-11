@@ -599,12 +599,10 @@ def create_plot_config(
         new_config_dct["n_levels"] = 8
     elif setup.core.input_variable == "deposition":
         new_config_dct["n_levels"] = 9
-    # elif setup.core.input_variable == "affected_area":
     if setup.core.input_variable == "affected_area":
         new_config_dct["extend"] = "max"
         new_config_dct["levels"] = np.array([0.0])
         new_config_dct["mark_field_max"] = False
-    # if setup.get_simulation_type() == "deterministic":
     elif setup.get_simulation_type() == "deterministic":
         new_config_dct["mark_field_max"] = True
     elif setup.get_simulation_type() == "ensemble":
@@ -841,35 +839,29 @@ def format_names_etc(
 
     def format_var_names(setup: Setup, words: TranslatedWords) -> Tuple[str, str, str]:
         if setup.core.input_variable == "concentration":
-            var_name = words["air_activity_concentration"].s
-            var_name_abbr = words["air_activity_concentration", "abbr"].s
             if setup.core.integrate:
-                var_name_rel = (
-                    f"{words['of', 'fg']} {words['integrated', 'g']}"
-                    f" {words['air_activity_concentration']}"
-                )
+                word = "integrated_air_activity_concentration"
             else:
-                var_name_rel = (
-                    f"{words['of', 'fg']} {words['air_activity_concentration']}"
-                )
+                word = "air_activity_concentration"
+            # SR_TMP < TODO Is this the way to go?
+            # var_name_abbr = words[word, "abbr"].s
+            var_name_abbr = words["air_activity_concentration", "abbr"].s
+            # SR_TMP >
+            var_name = words[word].s
+            var_name_rel = words[word, "of"].s
         elif setup.core.input_variable == "deposition":
             dep_type_word = (
                 "total"
                 if setup.deposition_type_str == "tot"
                 else setup.deposition_type_str
             )
-            var_name = f"{words[dep_type_word, 'f']} {words['surface_deposition']}"
-            var_name_abbr = (
-                f"{words[dep_type_word, 'f']} {words['surface_deposition', 'abbr']}"
-            )
-            var_name_rel = (
-                f"{words['of', 'fg']} {words[dep_type_word, 'g']}"
-                f" {words['surface_deposition']}"
-            )
+            var_name = words[f"{dep_type_word}_surface_deposition"].s
+            var_name_abbr = words[f"{dep_type_word}_surface_deposition", "abbr"].s
+            var_name_rel = words[f"{dep_type_word}_surface_deposition", "of"].s
         elif setup.core.input_variable == "affected_area":
             var_name = words["affected_area"].s
             var_name_abbr = words["affected_area", "abbr"].s
-            var_name_rel = f"{words['of', 'ng']} {words['affected_area', 'g']}"
+            var_name_rel = words["affected_area", "of"].s
         else:
             raise NotImplementedError(f"input variable '{setup.core.input_variable}'")
         return var_name, var_name_abbr, var_name_rel
@@ -892,10 +884,8 @@ def format_names_etc(
     # Short/long names #1: By variable
     if setup.core.input_variable == "concentration":
         if setup.core.integrate:
-            long_name = f"{words['integrated', 'f']} {var_name}"
-            short_name = (
-                f"{words['integrated', 'abbr']} {words['concentration', 'abbr']}"
-            )
+            long_name = var_name
+            short_name = words["integrated_concentration", "abbr"].s
         else:
             long_name = var_name
             short_name = words["concentration"].s
@@ -912,14 +902,8 @@ def format_names_etc(
         if setup.core.input_variable == "affected_area":
             long_name = var_name
     elif setup.get_simulation_type() == "ensemble":
-        if setup.core.ens_variable == "minimum":
-            long_name = f"{words['ensemble_minimum']} {var_name_rel}"
-        elif setup.core.ens_variable == "maximum":
-            long_name = f"{words['ensemble_maximum']} {var_name_rel}"
-        elif setup.core.ens_variable == "mean":
-            long_name = f"{words['ensemble_mean']} {var_name_rel}"
-        elif setup.core.ens_variable == "median":
-            long_name = f"{words['ensemble_median']} {var_name_rel}"
+        if setup.core.ens_variable in ["minimum", "maximum", "mean", "median"]:
+            long_name = f"{words[f'ensemble_{setup.core.ens_variable}']} {var_name_rel}"
         elif setup.core.ens_variable == "percentile":
             assert setup.core.ens_param_pctl is not None  # mypy
             pctl = setup.core.ens_param_pctl
@@ -930,18 +914,18 @@ def format_names_etc(
             )
             ens_var_name = f"{pctl:g}{words['th', th]} {words['percentile']}"
         elif setup.core.ens_variable == "probability":
-            short_name = f"{words['probability']}"
+            short_name = words["probability"].s
             long_name = f"{words['probability']} {var_name_rel}"
         elif setup.core.ens_variable == "ens_cloud_arrival_time":
-            long_name = f"{words['ensemble_cloud_arrival_time']}"
-            short_name = f"{words['arrival']}"
-            ens_var_name = f"{words['ensemble_cloud_departure_time', 'abbr']}"
+            long_name = words["ensemble_cloud_arrival_time"].s
+            short_name = words["arrival"].s
+            ens_var_name = words["ensemble_cloud_departure_time", "abbr"].s
         elif setup.core.ens_variable == "ens_cloud_departure_time":
-            long_name = f"{words['ensemble_cloud_departure_time']}"
-            short_name = f"{words['departure']}"
-            ens_var_name = f"{words['ensemble_cloud_departure_time', 'abbr']}"
+            long_name = words["ensemble_cloud_departure_time"].s
+            short_name = words["departure"].s
+            ens_var_name = words["ensemble_cloud_departure_time", "abbr"].s
         if ens_var_name == "none":
-            ens_var_name = f"{words[setup.core.ens_variable].c}"
+            ens_var_name = words[setup.core.ens_variable].c
 
     # SR_TMP <
     if not short_name:
@@ -1087,12 +1071,13 @@ def format_integr_period(
 ) -> str:
     if not setup.core.integrate:
         operation = words["averaged_over"].s
-    elif setup.core.input_variable == "concentration":
+    elif setup.core.input_variable in [
+        "concentration",
+        "affected_area",
+    ]:
         operation = words["summed_over"].s
     elif setup.core.input_variable == "deposition":
         operation = words["accumulated_over"].s
-    elif setup.core.input_variable == "affected_area":
-        operation = words["summed_over"].s
     else:
         raise NotImplementedError(
             f"operation for {'' if setup.core.integrate else 'non-'}integrated"

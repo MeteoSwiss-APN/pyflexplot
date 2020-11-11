@@ -679,12 +679,11 @@ class Setup(BaseModel):
                     dct["dimensions"]["deposition_type"] = ("dry", "wet")
         # SR_TMP >
 
-        if (
-            (select and "input_variable" in select)
-            or (not skip or "input_variable" not in skip)
-            and dct["input_variable"] == "affected_area"
+        if (select and "input_variable" in select) or (
+            not skip or "input_variable" not in skip
         ):
-            dct["input_variable"] = ("concentration", "deposition")
+            if dct["input_variable"] == "affected_area":
+                dct["input_variable"] = ("concentration", "deposition")
 
         # Decompress dict
         dcts = []
