@@ -1,4 +1,4 @@
-# pylint: disable=C0302  # too-many-lines
+# pylint: disable=C0302  # too-many-lines (>1000)
 """Plot setup and setup files.
 
 The setup parameters that are exposed in the setup files are all described in
@@ -129,7 +129,11 @@ class CoreSetup(BaseModel):
     @root_validator
     def _check_input_variable(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         value = values["input_variable"]
-        choices = ["concentration", "deposition", "affected_area"]
+        choices = [
+            "concentration",
+            "deposition",
+            "affected_area",
+        ]
         assert value in choices, value
         return values
 
@@ -137,8 +141,8 @@ class CoreSetup(BaseModel):
     def _check_ens_variable(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         value = values["ens_variable"]
         choices = [
-            "cloud_arrival_time",
-            "cloud_departure_time",
+            "ens_cloud_arrival_time",
+            "ens_cloud_departure_time",
             "maximum",
             "mean",
             "median",
@@ -210,7 +214,10 @@ class CoreSetup(BaseModel):
         cls, value: Optional[int], values: Dict[str, Any]
     ) -> Optional[int]:
         if value is None:
-            if values["ens_variable"] in ["cloud_arrival_time", "cloud_departure_time"]:
+            if values["ens_variable"] in [
+                "ens_cloud_arrival_time",
+                "ens_cloud_departure_time",
+            ]:
                 value = ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN
         return value
 
@@ -228,8 +235,8 @@ class CoreSetup(BaseModel):
     ) -> Optional[float]:
         if value is None:
             if values["ens_variable"] in [
-                "cloud_arrival_time",
-                "cloud_departure_time",
+                "ens_cloud_arrival_time",
+                "ens_cloud_departure_time",
             ]:
                 value = ENS_CLOUD_TIME_DEFAULT_PARAM_THR
             elif values["ens_variable"] == "probability":

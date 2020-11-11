@@ -25,7 +25,7 @@ field_summary = {
             "scale_fact": 1.0,
             "core": {
                 "input_variable": "concentration",
-                "ens_variable": "cloud_arrival_time",
+                "ens_variable": "ens_cloud_arrival_time",
                 "plot_type": "auto",
                 "multipanel_param": None,
                 "integrate": True,
@@ -899,7 +899,7 @@ plot_summary = {
                     "scale_fact": 1.0,
                     "core": {
                         "input_variable": "concentration",
-                        "ens_variable": "cloud_arrival_time",
+                        "ens_variable": "ens_cloud_arrival_time",
                         "plot_type": "auto",
                         "multipanel_param": None,
                         "integrate": True,
@@ -1298,7 +1298,7 @@ plot_summary = {
                             "scale_fact": 1.0,
                             "core": {
                                 "input_variable": "concentration",
-                                "ens_variable": "cloud_arrival_time",
+                                "ens_variable": "ens_cloud_arrival_time",
                                 "plot_type": "auto",
                                 "multipanel_param": None,
                                 "integrate": True,
@@ -2455,7 +2455,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": "Cloud arrival time",
+                    "s": "Ensemble cloud arrival time",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3344,7 +3344,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "Cloud arrival time",
+                    "s": "ens. cloud dep. t.",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -6967,7 +6967,7 @@ plot_summary = {
                 "scale_fact": 1.0,
                 "core": {
                     "input_variable": "concentration",
-                    "ens_variable": "cloud_arrival_time",
+                    "ens_variable": "ens_cloud_arrival_time",
                     "plot_type": "auto",
                     "multipanel_param": None,
                     "integrate": True,
@@ -7835,7 +7835,7 @@ plot_summary = {
                         "scale_fact": 1.0,
                         "core": {
                             "input_variable": "concentration",
-                            "ens_variable": "cloud_arrival_time",
+                            "ens_variable": "ens_cloud_arrival_time",
                             "plot_type": "auto",
                             "multipanel_param": None,
                             "integrate": True,

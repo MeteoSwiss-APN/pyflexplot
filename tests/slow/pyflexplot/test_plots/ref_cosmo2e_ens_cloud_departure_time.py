@@ -27,7 +27,7 @@ field_summary = {
             "scale_fact": 1.0,
             "core": {
                 "input_variable": "concentration",
-                "ens_variable": "cloud_departure_time",
+                "ens_variable": "ens_cloud_departure_time",
                 "plot_type": "auto",
                 "multipanel_param": None,
                 "integrate": True,
@@ -954,7 +954,7 @@ plot_summary = {
                     "scale_fact": 1.0,
                     "core": {
                         "input_variable": "concentration",
-                        "ens_variable": "cloud_departure_time",
+                        "ens_variable": "ens_cloud_departure_time",
                         "plot_type": "auto",
                         "multipanel_param": None,
                         "integrate": True,
@@ -1353,7 +1353,7 @@ plot_summary = {
                             "scale_fact": 1.0,
                             "core": {
                                 "input_variable": "concentration",
-                                "ens_variable": "cloud_departure_time",
+                                "ens_variable": "ens_cloud_departure_time",
                                 "plot_type": "auto",
                                 "multipanel_param": None,
                                 "integrate": True,
@@ -3088,7 +3088,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": "Wolkenabzugszeit",
+                    "s": "Ensemble-Wolkenabzugszeit",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4030,7 +4030,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "Wolkenabzugszeit",
+                    "s": "Ens.-Wolkenabzugsz.",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -7865,7 +7865,7 @@ plot_summary = {
                 "scale_fact": 1.0,
                 "core": {
                     "input_variable": "concentration",
-                    "ens_variable": "cloud_departure_time",
+                    "ens_variable": "ens_cloud_departure_time",
                     "plot_type": "auto",
                     "multipanel_param": None,
                     "integrate": True,
@@ -8786,7 +8786,7 @@ plot_summary = {
                         "scale_fact": 1.0,
                         "core": {
                             "input_variable": "concentration",
-                            "ens_variable": "cloud_departure_time",
+                            "ens_variable": "ens_cloud_departure_time",
                             "plot_type": "auto",
                             "multipanel_param": None,
                             "integrate": True,

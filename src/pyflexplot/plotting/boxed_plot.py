@@ -259,8 +259,8 @@ def levels_from_time_stats(
         if plot_config.setup.core.ens_variable.endswith(
             "probability"
         ) or plot_config.setup.core.ens_variable in [
-            "cloud_arrival_time",
-            "cloud_departure_time",
+            "ens_cloud_arrival_time",
+            "ens_cloud_departure_time",
         ]:
             assert plot_config.levels is not None  # mypy
             return plot_config.levels

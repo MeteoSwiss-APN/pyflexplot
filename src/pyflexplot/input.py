@@ -551,7 +551,7 @@ class InputFileEnsemble:
             fld_time = np.percentile(fld_time_mem, ens_param_pctl, axis=0)
         elif ens_variable == "probability":
             fld_time = ensemble_probability(fld_time_mem, ens_param_thr, n_ens_mem)
-        elif ens_variable.startswith("cloud_"):
+        elif ens_variable.startswith("ens_cloud_"):
             # SR_TMP <
             tss = set((self.time[1:] - self.time[:-1]).tolist())
             assert len(tss) == 1, f"timsteps differ: {tss}"
@@ -560,9 +560,9 @@ class InputFileEnsemble:
             cloud = EnsembleCloud(
                 mask=fld_time_mem > ens_param_thr, mem_min=ens_param_mem_min, ts=ts
             )
-            if ens_variable == "cloud_arrival_time":
+            if ens_variable == "ens_cloud_arrival_time":
                 fld_time = cloud.arrival_time()
-            elif ens_variable == "cloud_departure_time":
+            elif ens_variable == "ens_cloud_departure_time":
                 fld_time = cloud.departure_time()
             else:
                 raise NotImplementedError("ens_variable", ens_variable)

@@ -641,11 +641,11 @@ def create_plot_config(
                     }
                 )
             elif setup.core.ens_variable in [
-                "cloud_arrival_time",
-                "cloud_departure_time",
+                "ens_cloud_arrival_time",
+                "ens_cloud_departure_time",
             ]:
                 new_config_dct.update({"n_levels": None, "levels": np.arange(0, 8) * 6})
-                if setup.core.ens_variable == "cloud_arrival_time":
+                if setup.core.ens_variable == "ens_cloud_arrival_time":
                     new_config_dct.update(
                         {
                             "cmap": "viridis",
@@ -653,7 +653,7 @@ def create_plot_config(
                             "color_over": "lightgray",
                         }
                     )
-                if setup.core.ens_variable == "cloud_departure_time":
+                if setup.core.ens_variable == "ens_cloud_departure_time":
                     new_config_dct.update(
                         {
                             "cmap": "viridis_r",
@@ -774,8 +774,8 @@ def create_box_labels(
                 f" {format_meta_datum(unit=format_meta_datum(mdata.variable.unit))}"
             )
         elif setup.core.ens_variable in [
-            "cloud_arrival_time",
-            "cloud_departure_time",
+            "ens_cloud_arrival_time",
+            "ens_cloud_departure_time",
         ]:
             labels["data_info"]["lines"].append(
                 # f"{words['cloud_density']}:\t{words['minimum', 'abbr']}"
@@ -801,11 +801,11 @@ def create_box_labels(
         else:
             labels["legend"]["title"] = f"{short_name}"
     elif setup.get_simulation_type() == "ensemble":
-        if setup.core.ens_variable == "cloud_arrival_time":
+        if setup.core.ens_variable == "ens_cloud_arrival_time":
             labels["legend"][
                 "title"
             ] = f"{words['hour', 'pl']} {words['until']} {words['arrival']}"
-        elif setup.core.ens_variable == "cloud_departure_time":
+        elif setup.core.ens_variable == "ens_cloud_departure_time":
             labels["legend"][
                 "title"
             ] = f"{words['hour', 'pl']} {words['until']} {words['departure']}"
@@ -880,8 +880,8 @@ def format_names_etc(
             if setup.core.ens_variable == "probability":
                 return "%"
             elif setup.core.ens_variable in [
-                "cloud_arrival_time",
-                "cloud_departure_time",
+                "ens_cloud_arrival_time",
+                "ens_cloud_departure_time",
             ]:
                 return f"{words['hour', 'pl']}"
         return format_meta_datum(unit=format_meta_datum(mdata.variable.unit))
@@ -932,12 +932,14 @@ def format_names_etc(
         elif setup.core.ens_variable == "probability":
             short_name = f"{words['probability']}"
             long_name = f"{words['probability']} {var_name_rel}"
-        elif setup.core.ens_variable == "cloud_arrival_time":
-            long_name = f"{words['cloud_arrival_time']}"
+        elif setup.core.ens_variable == "ens_cloud_arrival_time":
+            long_name = f"{words['ensemble_cloud_arrival_time']}"
             short_name = f"{words['arrival']}"
-        elif setup.core.ens_variable == "cloud_departure_time":
-            long_name = f"{words['cloud_departure_time']}"
+            ens_var_name = f"{words['ensemble_cloud_departure_time', 'abbr']}"
+        elif setup.core.ens_variable == "ens_cloud_departure_time":
+            long_name = f"{words['ensemble_cloud_departure_time']}"
             short_name = f"{words['departure']}"
+            ens_var_name = f"{words['ensemble_cloud_departure_time', 'abbr']}"
         if ens_var_name == "none":
             ens_var_name = f"{words[setup.core.ens_variable].c}"
 
