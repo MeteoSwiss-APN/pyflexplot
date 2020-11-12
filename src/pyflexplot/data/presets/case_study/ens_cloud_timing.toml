@@ -20,15 +20,16 @@ ens_variable = "ens_cloud_arrival_time"
 [_base."_departure_time+"]
 ens_variable = "ens_cloud_departure_time"
 
-# ["**"._full.en]
+# ["**"._full.de]
 # domain = "full"
-# lang = "en"
-["**"._full.de]
-domain = "full"
-lang = "de"
-# ["**"._ch.en]
-# domain = "ch"
-# lang = "en"
+# lang = "de"
 # ["**"._ch.de]
 # domain = "ch"
 # lang = "de"
+
+["**"._full.en]
+domain = "full"
+lang = "en"
+# ["**"._ch.en]
+# domain = "ch"
+# lang = "en"

@@ -43,15 +43,16 @@ deposition_type = ["dry", "wet"]
 time = 11
 integrate = true
 
-["**"._full.de]
-domain = "full"
-lang = "de"
+# ["**"._full.de]
+# domain = "full"
+# lang = "de"
 # ["**"._ch.de]
 # domain = "ch"
 # lang = "de"
-# ["**"._full.en]
-# domain = "full"
-# lang = "en"
+
+["**"._full.en]
+domain = "full"
+lang = "en"
 # ["**"._ch.en]
 # domain = "ch"
 # lang = "en"
