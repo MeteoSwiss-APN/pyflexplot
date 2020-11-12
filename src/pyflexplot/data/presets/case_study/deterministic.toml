@@ -17,6 +17,14 @@ time = "*"
 integrate = true
 time = 11
 
+[_base._cloud]
+level = 0
+time = 0
+[_base._cloud."_arrival_time+"]
+input_variable = "cloud_arrival_time"
+[_base._cloud."_departure_time+"]
+input_variable = "cloud_departure_time"
+
 [_base._deposition]
 input_variable = "deposition"
 combine_deposition_types = true
