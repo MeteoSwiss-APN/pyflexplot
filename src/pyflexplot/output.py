@@ -113,7 +113,8 @@ class FilePathFormatter:
         return ts.strftime(setup.outfile_time_format)
 
     @staticmethod
-    def _replace_format_keys(path: str, kwargs: Mapping[str, Any]) -> str:
+    def _replace_format_keys(template: str, kwargs: Mapping[str, Any]) -> str:
+        path = template
         for key, val in kwargs.items():
             if not (isinstance(val, Sequence) and not isinstance(val, str)):
                 val = [val]
@@ -138,7 +139,8 @@ class FilePathFormatter:
         # Check that all keys have been formatted
         if "{" in path or "}" in path:
             raise Exception(
-                "formatted output file path still contains format keys", path
+                "formatted output file path still appears to contain format keys:"
+                f" {path} (template: {template})"
             )
 
         return path
