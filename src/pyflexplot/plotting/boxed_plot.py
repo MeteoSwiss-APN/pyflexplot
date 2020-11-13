@@ -31,6 +31,7 @@ from .map_axes import post_summarize_plot
 from .text_box_axes import TextBoxAxes
 
 
+@summarizable
 @dataclass
 class FontSizes:
     title_large: FontSizeType = 14.0
@@ -46,39 +47,67 @@ class FontSizes:
         return type(self)(**{param: getattr(self, param) * factor for param in params})
 
 
-# pylint: disable=R0902  # too-many-instance-attributes
+@summarizable
+@dataclass
+class FontConfig:
+    name: str = "Liberation Sans"
+    sizes: FontSizes = FontSizes()
+
+
+@summarizable
+@dataclass
+class ContourLevelsLegendConfig:
+    ranges_align: str = "center"
+    range_style: str = "base"
+    rstrip_zeros: bool = True
+
+
+@summarizable
+@dataclass
+class ContourLevelsConfig:
+    extend: str = "max"
+    include_lower: bool = True
+    legend: ContourLevelsLegendConfig = ContourLevelsLegendConfig()
+    levels: Optional[np.ndarray] = None
+    n: int = 0
+    scale: str = "log"
+
+
+@summarizable
+@dataclass
+class MarkersConfig:
+    markers: Optional[Dict[str, Dict[str, Any]]] = None
+    mark_field_max: bool = True
+    mark_release_site: bool = True
+
+
+# pylint: disable=R0902  # too-many-instance-attributes (>7)
+@summarizable
 @dataclass
 class BoxedPlotConfig:
     setup: Setup  # SR_TODO consider removing this
     mdata: MetaData  # SR_TODO consider removing this
+    # ---
+    font: FontConfig = FontConfig()
+    levels: ContourLevelsConfig = ContourLevelsConfig()
+    markers: MarkersConfig = MarkersConfig()
+    # ---
     cmap: Union[str, Colormap] = "flexplot"
     colors: Optional[List[ColorType]] = None
     color_above_closed: Optional[ColorType] = None  # SR_TODO better approach
-    extend: str = "max"
     # SR_NOTE Figure size may change when boxes etc. are added
     # SR_TODO Specify plot size in a robust way (what you want is what you get)
     fig_size: Tuple[float, float] = (12.5, 8.0)
-    font_name: str = "Liberation Sans"
-    font_sizes: FontSizes = FontSizes()
     labels: Dict[str, Any] = dataclasses.field(default_factory=dict)
-    legend_rstrip_zeros: bool = True
-    level_ranges_align: str = "center"
-    level_range_style: str = "base"
-    levels: Optional[np.ndarray] = None
-    levels_include_lower: bool = True
-    levels_scale: str = "log"
     lw_frame: float = 1.0
-    mark_field_max: bool = True
-    mark_release_site: bool = True
-    markers: Optional[Dict[str, Dict[str, Any]]] = None
     model_info: str = ""  # SR_TODO sensible default
-    n_levels: Optional[int] = None  # SR_TODO sensible default
 
     @property
     def fig_aspect(self):
         return np.divide(*self.fig_size)
 
 
+@summarizable
 @dataclass
 class DummyBoxedPlot:
     """Dummy for dry runs."""
@@ -155,8 +184,8 @@ class BoxedPlot:
         levels = np.asarray(self.levels)
         colors = self.config.colors
         assert colors is not None  # SR_TMP
-        extend = self.config.extend
-        if self.config.levels_scale == "log":
+        extend = self.config.levels.extend
+        if self.config.levels.scale == "log":
             with np.errstate(divide="ignore"):
                 arr = np.log10(np.where(arr > 0, arr, np.nan))
             levels = np.log10(levels)
@@ -172,7 +201,7 @@ class BoxedPlot:
                     extend = "both"
             # SR_TMP >
 
-        if not self.config.levels_include_lower:
+        if not self.config.levels.include_lower:
             # Turn levels from lower- to upped-bound inclusive
             # by infitesimally increasing them
             levels = levels + np.finfo(np.float32).eps
@@ -226,11 +255,11 @@ def levels_from_time_stats(
             "ens_cloud_arrival_time",
             "ens_cloud_departure_time",
         ]:
-            assert plot_config.levels is not None  # mypy
-            return plot_config.levels
+            assert plot_config.levels.levels is not None  # mypy
+            return plot_config.levels.levels
 
-    if plot_config.n_levels is not None:
-        return _auto_levels_log10(plot_config.n_levels, val_max=time_stats.max)
+    if plot_config.levels.n:
+        return _auto_levels_log10(plot_config.levels.n, val_max=time_stats.max)
 
-    assert plot_config.levels is not None  # mypy
-    return plot_config.levels
+    assert plot_config.levels.levels is not None  # mypy
+    return plot_config.levels.levels

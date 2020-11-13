@@ -50,8 +50,12 @@ from .plot_layouts import BoxedPlotLayoutEnsemble
 from .plot_layouts import BoxedPlotLayoutType
 from .plotting.boxed_plot import BoxedPlot
 from .plotting.boxed_plot import BoxedPlotConfig
+from .plotting.boxed_plot import ContourLevelsConfig
+from .plotting.boxed_plot import ContourLevelsLegendConfig
 from .plotting.boxed_plot import DummyBoxedPlot
+from .plotting.boxed_plot import FontConfig
 from .plotting.boxed_plot import FontSizes
+from .plotting.boxed_plot import MarkersConfig
 from .plotting.map_axes import CloudDomain
 from .plotting.map_axes import Domain
 from .plotting.map_axes import MapAxes
@@ -158,9 +162,9 @@ def plot_add_text_boxes(
         box.text(
             capitalize(format_names_etc(setup, words, mdata)["long"]),
             loc="tl",
-            fontname=plot.config.font_name,
-            # size=plot.config.font_sizes.title_large,
-            size=plot.config.font_sizes.title_medium,
+            fontname=plot.config.font.name,
+            # size=plot.config.font.sizes.title_large,
+            size=plot.config.font.sizes.title_medium,
         )
 
         labels = {}
@@ -188,24 +192,24 @@ def plot_add_text_boxes(
             box.text(
                 label,
                 loc=position,
-                fontname=plot.config.font_name,
-                size=plot.config.font_sizes.content_large,
+                fontname=plot.config.font.name,
+                size=plot.config.font.sizes.content_large,
             )
 
     def fill_box_2nd_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the secondary title box of the deterministic plot layout."""
-        font_size = plot.config.font_sizes.content_large
+        font_size = plot.config.font.sizes.content_large
         mdata = plot.config.mdata
         box.text(
             capitalize(format_meta_datum(mdata.species.name)),
             loc="tc",
-            fontname=plot.config.font_name,
+            fontname=plot.config.font.name,
             size=font_size,
         )
         box.text(
             capitalize(format_meta_datum(mdata.release.site)),
             loc="bc",
-            fontname=plot.config.font_name,
+            fontname=plot.config.font.name,
             size=font_size,
         )
 
@@ -217,8 +221,8 @@ def plot_add_text_boxes(
             labels["lines"],
             dy_unit=-1.0,
             dy_line=3.0,
-            fontname=plot.config.font_name,
-            size=plot.config.font_sizes.content_medium,
+            fontname=plot.config.font.name,
+            size=plot.config.font.sizes.content_medium,
         )
 
     # pylint: disable=R0912  # too-many-branches
@@ -234,8 +238,8 @@ def plot_add_text_boxes(
         box.text(
             labels["title"],
             loc="tc",
-            fontname=plot.config.font_name,
-            size=plot.config.font_sizes.title_small,
+            fontname=plot.config.font.name,
+            size=plot.config.font.sizes.title_small,
         )
 
         # dy_line: float = 3.0
@@ -253,12 +257,12 @@ def plot_add_text_boxes(
 
         # Format level ranges (contour plot legend)
         legend_labels = format_level_ranges(
-            levels=plot.levels,
-            style=plot.config.level_range_style,
-            extend=plot.config.extend,
-            rstrip_zeros=plot.config.legend_rstrip_zeros,
-            align=plot.config.level_ranges_align,
-            include="lower" if plot.config.levels_include_lower else "upper",
+            levels=plot.levels,  # SR_TMP TODO use plot.config.levels.levels
+            style=plot.config.levels.legend.range_style,
+            extend=plot.config.levels.extend,
+            rstrip_zeros=plot.config.levels.legend.rstrip_zeros,
+            align=plot.config.levels.legend.ranges_align,
+            include="lower" if plot.config.levels.include_lower else "upper",
         )
 
         # Legend labels (level ranges)
@@ -269,8 +273,8 @@ def plot_add_text_boxes(
             dy_line=dy_line,
             dx=dx_legend_label,
             ha="left",
-            fontname=plot.config.font_name,
-            size=plot.config.font_sizes.content_medium,
+            fontname=plot.config.font.name,
+            size=plot.config.font.sizes.content_medium,
             family="monospace",
         )
 
@@ -296,13 +300,16 @@ def plot_add_text_boxes(
         dy0_marker = dy0_markers
 
         # Field maximum marker
-        if plot.config.mark_field_max:
+        if plot.config.markers.mark_field_max:
             dy_marker_label_max = dy0_marker
             dy0_marker -= dy_line
             dy_max_marker = dy_marker_label_max - 0.7
-            assert plot.config.markers is not None  # mypy
+            assert plot.config.markers.markers is not None  # mypy
             box.marker(
-                loc="tc", dx=dx_marker, dy=dy_max_marker, **plot.config.markers["max"]
+                loc="tc",
+                dx=dx_marker,
+                dy=dy_max_marker,
+                **plot.config.markers.markers["max"],
             )
             box.text(
                 s=format_max_marker_label(labels, plot.field.fld),
@@ -310,21 +317,21 @@ def plot_add_text_boxes(
                 dx=dx_marker_label,
                 dy=dy_marker_label_max,
                 ha="left",
-                fontname=plot.config.font_name,
-                size=plot.config.font_sizes.content_medium,
+                fontname=plot.config.font.name,
+                size=plot.config.font.sizes.content_medium,
             )
 
         # Release site marker
-        if plot.config.mark_release_site:
+        if plot.config.markers.mark_release_site:
             dy_site_label = dy0_marker
             dy0_marker -= dy_line
             dy_site_marker = dy_site_label - 0.7
-            assert plot.config.markers is not None  # mypy
+            assert plot.config.markers.markers is not None  # mypy
             box.marker(
                 loc="tc",
                 dx=dx_marker,
                 dy=dy_site_marker,
-                **plot.config.markers["site"],
+                **plot.config.markers.markers["site"],
             )
             box.text(
                 s=f"{labels['site']}: {format_meta_datum(mdata.release.site)}",
@@ -332,8 +339,8 @@ def plot_add_text_boxes(
                 dx=dx_marker_label,
                 dy=dy_site_label,
                 ha="left",
-                fontname=plot.config.font_name,
-                size=plot.config.font_sizes.content_medium,
+                fontname=plot.config.font.name,
+                size=plot.config.font.sizes.content_medium,
             )
 
     # pylint: disable=R0915  # too-many-statements
@@ -349,8 +356,8 @@ def plot_add_text_boxes(
         box.text(
             s=capitalize(words["release"].t),
             loc="tc",
-            fontname=plot.config.font_name,
-            size=plot.config.font_sizes.title_small,
+            fontname=plot.config.font.name,
+            size=plot.config.font.sizes.title_small,
         )
 
         # Release site coordinates
@@ -418,8 +425,8 @@ def plot_add_text_boxes(
             info_blocks,
             dy_unit=-4.0,
             dy_line=2.5,
-            fontname=plot.config.font_name,
-            size=plot.config.font_sizes.content_small,
+            fontname=plot.config.font.name,
+            size=plot.config.font.sizes.content_small,
         )
 
     def fill_box_bottom_left(box: TextBoxAxes, plot: BoxedPlot) -> None:
@@ -430,8 +437,8 @@ def plot_add_text_boxes(
             loc="tl",
             dx=-0.7,
             dy=0.5,
-            fontname=plot.config.font_name,
-            size=plot.config.font_sizes.content_small,
+            fontname=plot.config.font.name,
+            size=plot.config.font.sizes.content_small,
         )
 
     def fill_box_bottom_right(box: TextBoxAxes, plot: BoxedPlot) -> None:
@@ -442,8 +449,8 @@ def plot_add_text_boxes(
                 loc="tl",
                 dx=-0.7,
                 dy=0.5,
-                fontname=plot.config.font_name,
-                size=plot.config.font_sizes.content_small,
+                fontname=plot.config.font.name,
+                size=plot.config.font.sizes.content_small,
             )
         # MeteoSwiss Copyright
         box.text(
@@ -451,8 +458,8 @@ def plot_add_text_boxes(
             loc="tr",
             dx=0.7,
             dy=0.5,
-            fontname=plot.config.font_name,
-            size=plot.config.font_sizes.content_small,
+            fontname=plot.config.font.name,
+            size=plot.config.font.sizes.content_small,
         )
 
     plot.add_text_box("top", layout.rect_top(), fill_box_title)
@@ -476,19 +483,23 @@ def plot_add_text_boxes(
 def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
     config = plot.config
     mdata = config.mdata
-    if config.mark_release_site:
-        assert config.markers is not None  # mypy
+    if config.markers.mark_release_site:
+        assert config.markers.markers is not None  # mypy
         axs_map.add_marker(
-            p_lat=mdata.release.lat, p_lon=mdata.release.lon, **config.markers["site"]
+            p_lat=mdata.release.lat,
+            p_lon=mdata.release.lon,
+            **config.markers.markers["site"],
         )
-    if config.mark_field_max:
-        assert config.markers is not None  # mypy
+    if config.markers.mark_field_max:
+        assert config.markers.markers is not None  # mypy
         try:
             max_lat, max_lon = plot.field.locate_max()
         except FieldAllNaNError:
             warnings.warn("skip maximum marker (all-nan field)")
         else:
-            axs_map.add_marker(p_lat=max_lat, p_lon=max_lon, **config.markers["max"])
+            axs_map.add_marker(
+                p_lat=max_lat, p_lon=max_lon, **config.markers.markers["max"]
+            )
 
 
 def init_map_axes_config(model_name: str, domain_type: str) -> Dict[str, Any]:
@@ -578,37 +589,42 @@ def create_map_config(field: Field) -> MapAxesConfig:
 
 # SR_TODO Create dataclass with default values for text box setup
 # pylint: disable=R0912  # too-many-branches
+# pylint: disable=R0914  # too-many-locals (>15)
 def create_plot_config(
     field: Field, words: TranslatedWords, symbols: Words
 ) -> BoxedPlotConfig:
     setup = field.var_setups.compress()
     mdata = field.mdata
     words.set_active_lang(setup.core.lang)
-    new_config_dct: Dict[str, Any] = {
-        "setup": setup,
-        "mdata": mdata,
+    plot_config_dct: Dict[str, Any] = {
         "fig_size": (12.5 * setup.scale_fact, 8.0 * setup.scale_fact),
-        "font_sizes": FontSizes().scale(setup.scale_fact),
-        "levels_scale": "log",
-        "levels_include_lower": False,
+        "font": {
+            "sizes": FontSizes().scale(setup.scale_fact),
+        },
+        "levels": {
+            "legend": {},
+            "include_lower": False,
+            "scale": "log",
+        },
+        "markers": {},
     }
 
     if setup.core.input_variable == "concentration":
-        new_config_dct["n_levels"] = 8
+        plot_config_dct["levels"]["n"] = 8
     elif setup.core.input_variable == "deposition":
-        new_config_dct["n_levels"] = 9
+        plot_config_dct["levels"]["n"] = 9
     if setup.get_simulation_type() == "deterministic":
         if setup.core.input_variable == "affected_area":
-            new_config_dct["extend"] = "none"
-            new_config_dct["levels"] = np.array([0.0, np.inf])
-            new_config_dct["mark_field_max"] = False
-            new_config_dct["cmap"] = "mono"
-            new_config_dct["levels_scale"] = "lin"
+            plot_config_dct["levels"]["extend"] = "none"
+            plot_config_dct["levels"]["levels"] = np.array([0.0, np.inf])
+            plot_config_dct["levels"]["scale"] = "lin"
+            plot_config_dct["markers"]["mark_field_max"] = False
+            plot_config_dct["cmap"] = "mono"
         else:
-            new_config_dct["mark_field_max"] = True
+            plot_config_dct["markers"]["mark_field_max"] = True
     elif setup.get_simulation_type() == "ensemble":
         # SR_TMP < TODO Re-enable once there's enough space in the legend box
-        new_config_dct["mark_field_max"] = False
+        plot_config_dct["markers"]["mark_field_max"] = False
         # SR_TMP >
         if setup.core.ens_variable in [
             "minimum",
@@ -621,26 +637,18 @@ def create_plot_config(
         ]:
             pass
         else:
-            new_config_dct.update(
-                {
-                    "extend": "both",
-                    "legend_rstrip_zeros": False,
-                    "level_range_style": "int",
-                    "level_ranges_align": "left",
-                    "mark_field_max": False,
-                    "levels_scale": "lin",
-                }
-            )
+            plot_config_dct["levels"]["extend"] = "both"
+            plot_config_dct["levels"]["legend"]["range_style"] = "int"
+            plot_config_dct["levels"]["legend"]["ranges_align"] = "left"
+            plot_config_dct["levels"]["legend"]["rstrip_zeros"] = False
+            plot_config_dct["levels"]["scale"] = "lin"
+            plot_config_dct["markers"]["mark_field_max"] = False
             if setup.core.ens_variable.endswith("probability"):
-                new_config_dct.update(
-                    {
-                        "n_levels": None,
-                        "levels": np.arange(5, 96, 15),
-                        # "cmap": truncate_cmap("nipy_spectral_r", 0.275, 0.95),
-                        "cmap": truncate_cmap("terrain_r", 0.075),
-                        "extend": "max",
-                    }
-                )
+                plot_config_dct["levels"]["n"] = 0
+                plot_config_dct["levels"]["levels"] = np.arange(5, 96, 15)
+                # new_config_dct["cmap"] = truncate_cmap("nipy_spectral_r", 0.275, 0.95)
+                plot_config_dct["cmap"] = truncate_cmap("terrain_r", 0.075)
+                plot_config_dct["levels"]["extend"] = "max"
     if setup.core.input_variable in [
         "cloud_arrival_time",
         "cloud_departure_time",
@@ -648,45 +656,38 @@ def create_plot_config(
         "ens_cloud_arrival_time",
         "ens_cloud_departure_time",
     ]:
-        new_config_dct.update({"n_levels": None, "levels": np.arange(0, 8) * 6})
+        plot_config_dct["levels"]["n"] = 0
+        plot_config_dct["levels"]["levels"] = np.arange(0, 8) * 6
         if setup.core.input_variable == "cloud_arrival_time" or (
             setup.core.ens_variable == "ens_cloud_arrival_time"
         ):
-            new_config_dct.update(
-                {
-                    "cmap": "viridis",
-                    "color_under": "slategray",
-                    "color_over": "lightgray",
-                }
-            )
+            plot_config_dct["cmap"] = "viridis"
+            plot_config_dct["color_under"] = "slategray"
+            plot_config_dct["color_over"] = "lightgray"
         if setup.core.input_variable == "cloud_departure_time" or (
             setup.core.ens_variable == "ens_cloud_departure_time"
         ):
-            new_config_dct.update(
-                {
-                    "cmap": "viridis_r",
-                    "color_under": "lightgray",
-                    "color_over": "slategray",
-                }
-            )
+            plot_config_dct["cmap"] = "viridis_r"
+            plot_config_dct["color_under"] = "lightgray"
+            plot_config_dct["color_over"] = "slategray"
 
     # Colors
-    extend = new_config_dct.get("extend", "max")
-    cmap = new_config_dct.get("cmap", "flexplot")
+    extend = plot_config_dct.get("levels", {}).get("extend", "max")
+    cmap = plot_config_dct.get("cmap", "flexplot")
     # SR_TMP < TODO Cleaner solution, e.g., define cmap directly via in function
-    color_under = new_config_dct.pop("color_under", None)
-    color_over = new_config_dct.pop("color_over", None)
+    color_under = plot_config_dct.pop("color_under", None)
+    color_over = plot_config_dct.pop("color_over", None)
     # SR_TMP >
     if cmap == "mono":
-        new_config_dct["colors"] = (np.array([(200, 200, 200)]) / 255).tolist()
+        plot_config_dct["colors"] = (np.array([(200, 200, 200)]) / 255).tolist()
     elif cmap == "flexplot":
-        assert new_config_dct["n_levels"] is not None
-        n_levels = new_config_dct["n_levels"]
-        new_config_dct["colors"] = colors_flexplot(n_levels, extend)
-        new_config_dct["color_above_closed"] = "black"
+        assert plot_config_dct["levels"]["n"]
+        n_levels = plot_config_dct["levels"]["n"]
+        plot_config_dct["colors"] = colors_flexplot(n_levels, extend)
+        plot_config_dct["color_above_closed"] = "black"
     else:
-        assert new_config_dct["levels"] is not None
-        n_levels = len(new_config_dct["levels"])
+        assert plot_config_dct["levels"]["levels"] is not None
+        n_levels = len(plot_config_dct["levels"]["levels"])
         cmap = mpl.cm.get_cmap(cmap)
         n_colors = n_levels - 1
         if extend in ["min", "both"] and not color_under:
@@ -698,28 +699,41 @@ def create_plot_config(
             colors.insert(0, color_under)
         if extend in ["max", "both"] and color_over:
             colors.append(color_over)
-        new_config_dct["colors"] = colors
+        plot_config_dct["colors"] = colors
 
     # Markers
-    new_config_dct["markers"] = {
-        "max": {
-            "marker": "+",
-            "color": "black",
-            "markersize": 10 * setup.scale_fact,
-            "markeredgewidth": 1.5 * setup.scale_fact,
-        },
-        "site": {
-            "marker": "^",
-            "markeredgecolor": "red",
-            "markerfacecolor": "white",
-            "markersize": 7.5 * setup.scale_fact,
-            "markeredgewidth": 1.5 * setup.scale_fact,
-        },
+    markers = {}
+    markers["max"] = {
+        "marker": "+",
+        "color": "black",
+        "markersize": 10 * setup.scale_fact,
+        "markeredgewidth": 1.5 * setup.scale_fact,
+    }
+    markers["site"] = {
+        "marker": "^",
+        "markeredgecolor": "red",
+        "markerfacecolor": "white",
+        "markersize": 7.5 * setup.scale_fact,
+        "markeredgewidth": 1.5 * setup.scale_fact,
     }
 
-    new_config_dct["labels"] = create_box_labels(setup, words, symbols, mdata)
+    # SR_TMP <
+    font_config_dct = plot_config_dct.pop("font", {})
+    levels_config_dct = plot_config_dct.pop("levels", {})
+    legend_config_dct = levels_config_dct.pop("legend", {})
+    legend_config_dct["legend"] = ContourLevelsLegendConfig(**legend_config_dct)
+    markers_config_dct = plot_config_dct.pop("markers", {})
+    # SR_TMP >
 
-    return BoxedPlotConfig(**new_config_dct)
+    return BoxedPlotConfig(
+        setup=setup,
+        mdata=mdata,
+        labels=create_box_labels(setup, words, symbols, mdata),
+        font=FontConfig(**font_config_dct),
+        levels=ContourLevelsConfig(**levels_config_dct),
+        markers=MarkersConfig(markers=markers, **markers_config_dct),
+        **plot_config_dct,
+    )
 
 
 # pylint: disable=R0912  # too-many-branches
