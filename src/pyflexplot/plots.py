@@ -251,13 +251,6 @@ def plot_add_text_boxes(
         dy0_labels = -5.0
         dy0_boxes = dy0_labels - 0.8 * h_legend_box
 
-        # SR_TMP < TODO clean solution
-        if plot.config.setup.core.input_variable == "affected_area":
-            include = "upper"
-        else:
-            include = "lower"
-        # SR_TMP >
-
         # Format level ranges (contour plot legend)
         legend_labels = format_level_ranges(
             levels=plot.levels,
@@ -265,7 +258,7 @@ def plot_add_text_boxes(
             extend=plot.config.extend,
             rstrip_zeros=plot.config.legend_rstrip_zeros,
             align=plot.config.level_ranges_align,
-            include=include,
+            include="lower" if plot.config.levels_include_lower else "upper",
         )
 
         # Legend labels (level ranges)
@@ -593,6 +586,11 @@ def create_plot_config(
         "mdata": mdata,
         "fig_size": (12.5 * setup.scale_fact, 8.0 * setup.scale_fact),
         "font_sizes": FontSizes().scale(setup.scale_fact),
+        "levels_scale": "log",
+        # SR_TMP <
+        # "levels_include_lower": False,
+        "levels_include_lower": True,
+        # SR_TMP >
     }
 
     if setup.core.input_variable == "concentration":
@@ -601,10 +599,12 @@ def create_plot_config(
         new_config_dct["n_levels"] = 9
     if setup.get_simulation_type() == "deterministic":
         if setup.core.input_variable == "affected_area":
-            new_config_dct["extend"] = "max"
-            new_config_dct["levels"] = np.array([0.0])
+            new_config_dct["extend"] = "none"
+            new_config_dct["levels"] = np.array([0.0, np.inf])
+            new_config_dct["levels_include_lower"] = False  # SR_TMP
             new_config_dct["mark_field_max"] = False
             new_config_dct["cmap"] = "mono"
+            new_config_dct["levels_scale"] = "lin"
         else:
             new_config_dct["mark_field_max"] = True
     elif setup.get_simulation_type() == "ensemble":

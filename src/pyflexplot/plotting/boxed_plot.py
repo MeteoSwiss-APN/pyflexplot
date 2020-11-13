@@ -65,6 +65,7 @@ class BoxedPlotConfig:
     level_ranges_align: str = "center"
     level_range_style: str = "base"
     levels: Optional[np.ndarray] = None
+    levels_include_lower: bool = True
     levels_scale: str = "log"
     lw_frame: float = 1.0
     mark_field_max: bool = True
@@ -154,52 +155,35 @@ class BoxedPlot:
     # SR_TODO Replace checks with plot-specific config/setup object
     # pylint: disable=R0912  # too-many-branches
     def _draw_colors_contours(self) -> None:
-        arr = self.field.fld
-        levels = self.levels
+        arr = np.asarray(self.field.fld)
+        levels = np.asarray(self.levels)
         colors = self.config.colors
         assert colors is not None  # SR_TMP
         extend = self.config.extend
-        color_above_closed = self.config.color_above_closed
         if self.config.levels_scale == "log":
             with np.errstate(divide="ignore"):
                 arr = np.log10(np.where(arr > 0, arr, np.nan))
             levels = np.log10(levels)
-        elif extend in ["none", "min"]:
+        if extend in ["none", "min"]:
+            # SR_TMP < TODO Eliminate color_above_closed!!
+            color_above_closed = self.config.color_above_closed
             if color_above_closed:
-                # Areas beyond the closed upper bound are colored black
+                # Color values above the closed upper bound
                 colors = list(colors) + [color_above_closed]
                 if extend == "none":
                     extend = "max"
                 elif extend == "min":
                     extend = "both"
-        # SR_TMP < TODO move this logic out of here!
-        if self.config.cmap != "flexplot":
-            if extend in ["min", "both"]:
-                levels = np.r_[-np.inf, levels]
-            if extend in ["max", "both"]:
-                levels = np.r_[levels, np.inf]
-            extend = "none"
-        # SR_TMP >
+            # SR_TMP >
+
+        if not self.config.levels_include_lower:
+            # Turn levels from lower- to upped-bound inclusive
+            # by infitesimally increasing them
+            levels = levels + np.finfo(np.float32).eps
 
         # Replace infs (apparently ignored by contourf)
-        large_value = np.finfo(np.float32).max
-        arr = np.where(np.isneginf(arr), -large_value, arr)
-        arr = np.where(np.isposinf(arr), large_value, arr)
-
-        if len(levels) == 1:
-            # SR_TMP < TODO Cleaner implementation!
-            if extend == "none":
-                raise NotImplementedError("one level and not extend")
-            elif extend in ["min", "max"]:
-                assert len(colors) == 1, colors
-            elif extend in "both":
-                assert len(colors) == 2, colors
-            # SR_TMP >
-            if extend in ["min", "both"]:
-                levels = [-np.inf] + np.asarray(levels).tolist()
-            if extend in ["max", "both"]:
-                levels = np.asarray(levels).tolist() + [np.inf]
-            extend = "none"
+        arr = np.where(np.isneginf(arr), np.finfo(np.float32).min, arr)
+        arr = np.where(np.isposinf(arr), np.finfo(np.float32).max, arr)
 
         try:
             contours = self.ax_map.ax.contourf(
@@ -208,7 +192,7 @@ class BoxedPlot:
                 arr,
                 transform=self.ax_map.proj_data,
                 levels=levels,
-                # extend=extend,
+                extend=extend,
                 zorder=self.ax_map.zorder["fld"],
                 colors=colors,
             )
