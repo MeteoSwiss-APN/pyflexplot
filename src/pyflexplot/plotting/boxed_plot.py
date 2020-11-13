@@ -181,7 +181,10 @@ class BoxedPlot:
             extend = "none"
         # SR_TMP >
 
-        arr = replace_infs(arr, levels)
+        # Replace infs (apparently ignored by contourf)
+        large_value = np.finfo(np.float32).max
+        arr = np.where(np.isneginf(arr), -large_value, arr)
+        arr = np.where(np.isposinf(arr), large_value, arr)
 
         if len(levels) == 1:
             # SR_TMP < TODO Cleaner implementation!
@@ -218,25 +221,6 @@ class BoxedPlot:
         else:
             for contour in contours.collections:
                 contour.set_rasterized(True)
-
-
-def replace_infs(fld: np.ndarray, levels: np.ndarray) -> np.ndarray:
-    """Replace inf by large values outside the data and level range.
-
-    Reason: Contourf apparently ignores inf values.
-
-    """
-    large_value = 999.9
-    vals = np.r_[fld.flatten(), levels]
-    thr = vals[np.isfinite(vals)].max()
-    max_ = np.finfo(np.float32).max
-    while large_value <= thr:
-        large_value = large_value * 10 + 0.9
-        if large_value > max_:
-            raise Exception("cannot derive large enough value", large_value, max_, thr)
-    fld = np.where(np.isneginf(fld), -large_value, fld)
-    fld = np.where(np.isposinf(fld), large_value, fld)
-    return fld
 
 
 def levels_from_time_stats(
