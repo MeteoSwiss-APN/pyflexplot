@@ -5,7 +5,7 @@
 infile = "data/cosmo-2e/grid_conc_xxxx_20190731000000_{ens_member:03d}.nc"
 ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 # ens_member_id = [0, 2, 5, 8, 11, 14, 17, 20]
-outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
+outfile = "test_ens_stats/cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
 model = "COSMO-2E"
 combine_species = true
 # species_id = "*"
@@ -31,6 +31,13 @@ time = -1
 # [_base._deposition._tot]
 # deposition_type = ["dry", "wet"]
 
+[_base._affected_area]
+input_variable = "affected_area"
+integrate = true
+level = 0
+deposition_type = ["dry", "wet"]
+time = -1
+
 [_base._concentration._integr._pctl]
 ens_variable = "percentile"
 [_base._concentration._integr._pctl."_10+"]
@@ -42,6 +49,17 @@ ens_param_pctl = 70
 [_base._concentration._integr._pctl."_90+"]
 ens_param_pctl = 90
 
+# [_base._affected_area._pctl]
+# ens_variable = "percentile"
+# [_base._affected_area._pctl."_10+"]
+# ens_param_pctl = 10
+# [_base._affected_area._pctl."_50+"]
+# ens_param_pctl = 50
+# [_base._affected_area._pctl."_70+"]
+# ens_param_pctl = 70
+# [_base._affected_area._pctl."_90+"]
+# ens_param_pctl = 90
+
 # [_base._deposition._wet."_min+"]
 # ens_variable = "minimum"
 # [_base._deposition._wet."_max+"]
@@ -50,6 +68,8 @@ ens_param_pctl = 90
 # ens_variable = "median"
 # [_base._concentration._integr."_mean+"]
 # ens_variable = "mean"
+# [_base._concentration._integr."_stddev+"]
+# ens_variable = "stddev"
 
 ["**"._de.full]
 domain = "full"
@@ -61,6 +81,6 @@ lang = "de"
 # ["**"._en.full]
 # domain = "full"
 # lang = "en"
-["**"._en.ch]
-domain = "ch"
-lang = "en"
+# ["**"._en.ch]
+# domain = "ch"
+# lang = "en"

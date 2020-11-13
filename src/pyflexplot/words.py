@@ -127,6 +127,7 @@ WORDS.add(en="ensemble mean", de="Ensemble-Mittel")
 WORDS.add(en="ensemble median", de="Ensemble-Median")
 WORDS.add(en="ensemble minimum", de="Ensemble-Minimum")
 WORDS.add(en="ensemble percentile", de="Ensemble-Perzentil")
+WORDS.add(en="ensemble standard deviation", de="Ensemble-Standardabweichung")
 WORDS.add(
     en={"*": "ensemble variable", "abbr": "ens. variable"},
     de={"*": "Ensemblevariable", "abbr": "Ens.-Variable"},
@@ -255,6 +256,7 @@ WORDS.add(
 WORDS.add(en="since", de="seit")
 WORDS.add(en="site", de="Ort")
 WORDS.add(en={"*": "south", "abbr": "S"}, de={"*": "S{s['ue']}den", "abbr": "S"})
+WORDS.add(en="standard deviation", de="Standardabweichung")
 WORDS.add(en="start", de="Start")
 WORDS.add(en="substance", de="Substanz")
 WORDS.add(en="summed over", de=f'aufsummiert {s["ue"]}ber')

@@ -599,21 +599,24 @@ def create_plot_config(
         new_config_dct["n_levels"] = 8
     elif setup.core.input_variable == "deposition":
         new_config_dct["n_levels"] = 9
-    if setup.core.input_variable == "affected_area":
-        new_config_dct["extend"] = "max"
-        new_config_dct["levels"] = np.array([0.0])
-        new_config_dct["mark_field_max"] = False
-    elif setup.get_simulation_type() == "deterministic":
-        new_config_dct["mark_field_max"] = True
+    if setup.get_simulation_type() == "deterministic":
+        if setup.core.input_variable == "affected_area":
+            new_config_dct["extend"] = "max"
+            new_config_dct["levels"] = np.array([0.0])
+            new_config_dct["mark_field_max"] = False
+            new_config_dct["cmap"] = "mono"
+        else:
+            new_config_dct["mark_field_max"] = True
     elif setup.get_simulation_type() == "ensemble":
         # SR_TMP < TODO Re-enable once there's enough space in the legend box
         new_config_dct["mark_field_max"] = False
         # SR_TMP >
         if setup.core.ens_variable in [
-            "mean",
             "minimum",
             "maximum",
             "median",
+            "mean",
+            "stddev",
             "percentile",
         ]:
             pass
@@ -674,7 +677,7 @@ def create_plot_config(
     color_under = new_config_dct.pop("color_under", None)
     color_over = new_config_dct.pop("color_over", None)
     # SR_TMP >
-    if setup.core.input_variable == "affected_area":
+    if cmap == "mono":
         new_config_dct["colors"] = (np.array([(200, 200, 200)]) / 255).tolist()
     elif cmap == "flexplot":
         assert new_config_dct["n_levels"] is not None
@@ -903,8 +906,16 @@ def format_names_etc(
     # Short/long names #2: By ensemble variable type
     ens_var_name = "none"
     if setup.get_simulation_type() == "ensemble":
-        if setup.core.ens_variable in ["minimum", "maximum", "mean", "median"]:
+        if setup.core.ens_variable in [
+            "minimum",
+            "maximum",
+            "median",
+            "mean",
+        ]:
             long_name = f"{words[f'ensemble_{setup.core.ens_variable}']} {var_name_rel}"
+        elif setup.core.ens_variable == "stddev":
+            ens_var_name = words["standard_deviation"].s
+            long_name = f"{words['ensemble_standard_deviation']} {var_name_rel}"
         elif setup.core.ens_variable == "percentile":
             assert setup.core.ens_param_pctl is not None  # mypy
             pctl = setup.core.ens_param_pctl

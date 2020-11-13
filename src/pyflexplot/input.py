@@ -104,7 +104,7 @@ class FieldInputOrganizer:
 
     """
 
-    choices_ens_var = ["mean", "median", "min", "max"]
+    choices_ens_var = ["min", "max", "median", "mean", "stddev"]
 
     def __init__(
         self,
@@ -562,14 +562,16 @@ class InputFileEnsemble:
         n_ens_mem = len(var_setups.collect_equal("ens_member_id"))
 
         fld_time: np.ndarray
-        if ens_variable == "mean":
-            fld_time = np.nanmean(fld_time_mem, axis=0)
-        elif ens_variable == "median":
-            fld_time = np.nanmedian(fld_time_mem, axis=0)
-        elif ens_variable == "minimum":
+        if ens_variable == "minimum":
             fld_time = np.nanmin(fld_time_mem, axis=0)
         elif ens_variable == "maximum":
             fld_time = np.nanmax(fld_time_mem, axis=0)
+        elif ens_variable == "median":
+            fld_time = np.nanmedian(fld_time_mem, axis=0)
+        elif ens_variable == "mean":
+            fld_time = np.nanmean(fld_time_mem, axis=0)
+        elif ens_variable == "stddev":
+            fld_time = np.nanstd(fld_time_mem, axis=0)
         elif ens_variable == "percentile":
             assert ens_param_pctl is not None  # mypy
             fld_time = np.percentile(fld_time_mem, ens_param_pctl, axis=0)

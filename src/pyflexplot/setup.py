@@ -152,6 +152,7 @@ class CoreSetup(BaseModel):
             "none",
             "percentile",
             "probability",
+            "stddev",
         ]
         if isinstance(value, str):
             assert value in choices, value
@@ -331,7 +332,7 @@ class Setup(BaseModel):
     def deposition_type_str(self) -> str:
         deposition_type = self.core.dimensions.deposition_type
         if deposition_type is None:
-            if self.core.input_variable == "deposition":
+            if self.core.input_variable in ["deposition", "affected_area"]:
                 return "tot"
             return "none"
         elif set(deposition_type) == {"dry", "wet"}:
@@ -432,7 +433,7 @@ class Setup(BaseModel):
                 have one value per panel. For example, a four-panel plot with
                 one ensemble statistic plot each may be specified with
                 ``multipanel_param = "ens_variable"`` and ``ens_variable =
-                ["minimum", "maximum", "meam", "median"]``.
+                ["minimum", "maximum", "median", "mean", "stddev"]``.
 
             nageclass: Index of age class (zero-based). Use the format key
                 '{nageclass}' to embed it in ``outfile``.
