@@ -908,7 +908,7 @@ def format_names_etc(
         elif setup.core.ens_variable == "percentile":
             assert setup.core.ens_param_pctl is not None  # mypy
             pctl = setup.core.ens_param_pctl
-            th = {1: "st", 2: "nd", 3: "rd"}.get(pctl)  # type: ignore
+            th = {1: "st", 2: "nd", 3: "rd"}.get(pctl, "th")  # type: ignore
             long_name = (
                 f"{pctl:g}{words['th', th]}"
                 f" {words['ensemble_percentile']} {var_name_rel}"
