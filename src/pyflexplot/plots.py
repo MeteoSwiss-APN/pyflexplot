@@ -587,10 +587,7 @@ def create_plot_config(
         "fig_size": (12.5 * setup.scale_fact, 8.0 * setup.scale_fact),
         "font_sizes": FontSizes().scale(setup.scale_fact),
         "levels_scale": "log",
-        # SR_TMP <
-        # "levels_include_lower": False,
-        "levels_include_lower": True,
-        # SR_TMP >
+        "levels_include_lower": False,
     }
 
     if setup.core.input_variable == "concentration":
@@ -601,7 +598,6 @@ def create_plot_config(
         if setup.core.input_variable == "affected_area":
             new_config_dct["extend"] = "none"
             new_config_dct["levels"] = np.array([0.0, np.inf])
-            new_config_dct["levels_include_lower"] = False  # SR_TMP
             new_config_dct["mark_field_max"] = False
             new_config_dct["cmap"] = "mono"
             new_config_dct["levels_scale"] = "lin"

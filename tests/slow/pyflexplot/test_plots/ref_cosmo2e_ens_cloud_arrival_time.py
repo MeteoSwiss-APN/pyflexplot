@@ -3975,7 +3975,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "   $\\tt \\geq$ 42",
+                    "s": "   $\\tt >$ 42",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4215,7 +4215,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "   $\\tt <$  0",
+                    "s": "   $\\tt \\leq$  0",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
