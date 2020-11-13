@@ -5,6 +5,7 @@
 infile = "data/cosmo-2e/grid_conc_xxxx_20190731000000_{ens_member:03d}.nc"
 ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 # ens_member_id = [0, 2, 5, 8, 11, 14, 17, 20]
+outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
 model = "COSMO-2E"
 combine_species = true
 # species_id = "*"
@@ -13,66 +14,53 @@ combine_deposition_types = true
 
 [_base._concentration]
 input_variable = "concentration"
-outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
 level = 0
 time = "*"
-
 [_base._concentration._integr]
 integrate = true
 time = -1
 
-[_base._deposition]
-input_variable = "deposition"
-outfile = "cosmo-2e_{ens_variable}_{input_variable}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
-integrate = true
-time = -1
+# [_base._deposition]
+# input_variable = "deposition"
+# integrate = true
+# time = -1
+# [_base._deposition._dry]
+# deposition_type = "dry"
+# [_base._deposition._wet]
+# deposition_type = "wet"
+# [_base._deposition._tot]
+# deposition_type = ["dry", "wet"]
 
-[_base._deposition._dry]
-deposition_type = "dry"
-
-[_base._deposition._wet]
-deposition_type = "wet"
-
-[_base._deposition._tot]
-deposition_type = ["dry", "wet"]
-
-[_base._concentration._integr."_pctl_10+"]
+[_base._concentration._integr._pctl]
 ens_variable = "percentile"
+[_base._concentration._integr._pctl."_10+"]
 ens_param_pctl = 10
-
-[_base._concentration._integr."_pctl_50+"]
-ens_variable = "percentile"
+[_base._concentration._integr._pctl."_50+"]
 ens_param_pctl = 50
-
-[_base._concentration._integr."_pctl_70+"]
-ens_variable = "percentile"
+[_base._concentration._integr._pctl."_70+"]
 ens_param_pctl = 70
-
-[_base._concentration._integr."_pctl_90+"]
-ens_variable = "percentile"
+[_base._concentration._integr._pctl."_90+"]
 ens_param_pctl = 90
 
 # [_base._deposition._wet."_min+"]
 # ens_variable = "minimum"
-
+# [_base._deposition._wet."_max+"]
+# ens_variable = "maximum"
 # [_base._concentration._integr."_median+"]
 # ens_variable = "median"
+# [_base._concentration._integr."_mean+"]
+# ens_variable = "mean"
 
-[_base._deposition._wet."_max+"]
-ens_variable = "maximum"
-
-["**"._full.de]
+["**"._de.full]
 domain = "full"
 lang = "de"
-
-# ["**"._full.en]
-# domain = "full"
-# lang = "en"
-
-# ["**"._ch.de]
+# ["**"._de.ch]
 # domain = "ch"
 # lang = "de"
 
-# ["**"._ch.en]
-# domain = "ch"
+# ["**"._en.full]
+# domain = "full"
 # lang = "en"
+["**"._en.ch]
+domain = "ch"
+lang = "en"
