@@ -1,12 +1,9 @@
-"""
-Shared functions and classes for tests of elements of complete plots.
-"""
+"""Shared functions and classes for tests of elements of complete plots."""
 # Standard library
 import distutils.dir_util
 import importlib
 import os
 import re
-from dataclasses import dataclass
 from textwrap import dedent
 from typing import Any
 from typing import Dict
@@ -80,7 +77,7 @@ class _TestBase:
     def get_field(self, datadir):
         infile = f"{datadir}/{self.setup_dct['infile']}"
         setups = self.get_setups()
-        field_lst_lst = read_fields(infile, setups, add_ts0=True)
+        field_lst_lst = read_fields(infile, setups, add_ts0=True, missing_ok=True)
         assert len(field_lst_lst) == self.n_plots
         # SR_TMP <
         assert self.n_plots == 1
@@ -150,10 +147,8 @@ class _TestCreateReference(_TestBase):
         module_path_rel = os.path.relpath(__file__, ".")
         cls_name = type(self).__name__
         head = f'''\
-            # -*- coding: utf-8 -*-
             # flake8: noqa
-            """
-            Test reference for pytest test.
+            """Test reference for pytest test.
 
             {module_path_rel}
                 ::{cls_name}
@@ -162,9 +157,10 @@ class _TestCreateReference(_TestBase):
             Created by temporarily changing the parent class of
             ``{cls_name}``
             from ``_TestBase`` to ``_TestCreateReference`` and running pytest.
+
             """
             '''
-        body = f"""
+        body = f"""\
             field_summary = {field_summary}
 
             plot_summary = {plot_summary}

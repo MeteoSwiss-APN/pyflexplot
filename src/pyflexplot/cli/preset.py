@@ -1,6 +1,4 @@
-"""
-Preset setup files.
-"""
+"""Preset setup files."""
 # Standard library
 import re
 from pathlib import Path
@@ -97,5 +95,5 @@ def cat_preset(name: str, include_source: bool = False) -> str:
         if include_source:
             lines.append(f"# source: {path}\n")
         with open(path) as f:
-            lines.extend([l.strip() for l in f.readlines()])
+            lines.extend([line.strip() for line in f.readlines()])
     return "\n".join(lines)

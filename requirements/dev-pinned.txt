@@ -30,7 +30,7 @@ iniconfig==1.1.1
 ipdb==0.13.4
 ipython==7.18.1
 ipython-genutils==0.2.0
-isort==4.3.21
+isort==5.6.4
 jedi==0.17.2
 Jinja2==2.11.2
 kiwisolver==1.2.0
@@ -59,7 +59,7 @@ pycodestyle==2.6.0
 pydantic==1.6.1
 pydocstyle==5.1.1
 pyflakes==2.2.0
-Pygments==2.7.1
+Pygments==2.7.2
 pylint==2.6.0
 pyparsing==2.4.7
 PyPDF2==1.26.0
@@ -91,7 +91,7 @@ traitlets==5.0.5
 typed-ast==1.4.1
 typing-extensions==3.7.4.3
 urllib3==1.25.11
-virtualenv==20.0.35
+virtualenv==20.1.0
 wcwidth==0.2.5
 wrapt==1.12.1
-zipp==3.3.1
+zipp==3.4.0

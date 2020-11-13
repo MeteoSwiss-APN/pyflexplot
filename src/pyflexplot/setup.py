@@ -1,6 +1,5 @@
 # pylint: disable=C0302  # too-many-lines
-"""
-Plot setup and setup files.
+"""Plot setup and setup files.
 
 The setup parameters that are exposed in the setup files are all described in
 the docstring of the class method ``Setup.create``.
@@ -48,7 +47,6 @@ from .utils.pydantic import prepare_field_value
 ENS_PROBABILITY_DEFAULT_PARAM_THR = 0.0
 ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN = 1
 ENS_CLOUD_TIME_DEFAULT_PARAM_THR = 0.0
-ENS_CLOUD_PROB_DEFAULT_PARAM_TIME_WIN = 12
 
 
 # SR_TMP <<< TODO cleaner solution
@@ -79,10 +77,10 @@ def get_setup_param_value(setup: "Setup", param: str) -> Any:
     raise ValueError("invalid input setup parameter", param)
 
 
+# pylint: disable=R0201  # no-self-use (root validators)
 # pylint: disable=E0213  # no-self-argument (validators)
 class CoreSetup(BaseModel):
-    """
-    PyFlexPlot core setup with exactly one value per parameter.
+    """PyFlexPlot core setup with exactly one value per parameter.
 
     See docstring of ``Setup.create`` for a description of the parameters.
 
@@ -95,7 +93,6 @@ class CoreSetup(BaseModel):
 
     # Basics
     input_variable: str = "concentration"
-    plot_variable: str = "auto"
     ens_variable: str = "none"
     plot_type: str = "auto"
     multipanel_param: Optional[str] = None
@@ -110,7 +107,6 @@ class CoreSetup(BaseModel):
     ens_param_mem_min: Optional[int] = None
     ens_param_pctl: Optional[float] = None
     ens_param_thr: Optional[float] = None
-    ens_param_time_win: Optional[float] = None
 
     # Plot appearance
     lang: str = "en"
@@ -138,19 +134,11 @@ class CoreSetup(BaseModel):
         return values
 
     @root_validator
-    def _check_plot_variable(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        value = values["plot_variable"]
-        choices = ["auto", "affected_area", "affected_area_mono"]
-        assert value in choices, value
-        return values
-
-    @root_validator
     def _check_ens_variable(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         value = values["ens_variable"]
         choices = [
             "cloud_arrival_time",
             "cloud_departure_time",
-            "cloud_occurrence_probability",
             "maximum",
             "mean",
             "median",
@@ -232,15 +220,6 @@ class CoreSetup(BaseModel):
     ) -> Optional[float]:
         if values["ens_variable"] == "percentile":
             assert value is not None
-        return value
-
-    @validator("ens_param_time_win", always=True)
-    def _init_ens_param_time_win(
-        cls, value: Optional[float], values: Dict[str, Any]
-    ) -> Optional[float]:
-        if value is None:
-            if values["ens_variable"] == "cloud_occurrence_probability":
-                value = ENS_CLOUD_PROB_DEFAULT_PARAM_TIME_WIN
         return value
 
     @validator("ens_param_thr", always=True)
@@ -422,9 +401,6 @@ class Setup(BaseModel):
             ens_param_thr: Threshold used to compute some ensemble variables.
                 Its precise meaning depends on the variable.
 
-            ens_param_time_win: Tim window used to compute some ensemble
-                variables. Its precise meaning depends on the variable.
-
             ens_variable: Ensemble variable computed from plot variable. Use the
                 format key '{ens_variable}' to embed it in ``outfile``.
 
@@ -466,9 +442,6 @@ class Setup(BaseModel):
             plot_type: Plot type. Use the format key '{plot_type}' to embed it
                 in ``outfile``.
 
-            plot_variable: Variable computed from input variable. Use the format
-                key '{plot_variable}' to embed it in ``outfile``.
-
             species_id: Species id(s). To sum up multiple species, combine their
                 ids with '+'. Use the format key '{species_id}' to embed it in
                 ``outfile``.
@@ -491,8 +464,8 @@ class Setup(BaseModel):
             field = cls.__fields__[param]
             try:
                 params[param] = prepare_field_value(field, value, alias_none=["*"])
-            except Exception:
-                raise ValueError("invalid parameter value", param, value)
+            except Exception as e:
+                raise ValueError("invalid parameter value", param, value) from e
         params["core"] = CoreSetup.create(core_params)
         try:
             return cls(**params)
@@ -502,7 +475,7 @@ class Setup(BaseModel):
             if error["type"] == "value_error.missing":
                 param = next(iter(error["loc"]))
                 msg += f": missing parameter: {param}"
-            raise Exception(msg)
+            raise Exception(msg) from e
 
     @classmethod
     def as_setup(cls, obj: Union[Mapping[str, Any], "Setup"]) -> "Setup":
@@ -526,11 +499,11 @@ class Setup(BaseModel):
                     result[dim_param] = Dimensions.cast(
                         dim_param, dim_value, many_ok=True
                     )
-                except InvalidParameterNameError:
+                except InvalidParameterNameError as e:
                     raise InvalidParameterNameError(
                         f"{dim_param} ({type(dim_value).__name__}: {dim_value})"
                         f"; choices: {param_choices_fmtd}"
-                    )
+                    ) from e
             return result
         try:
             if is_dimensions_param(param):
@@ -538,11 +511,11 @@ class Setup(BaseModel):
             elif is_core_setup_param(param):
                 return cast_field_value(CoreSetup, param, value)
             return cast_field_value(cls, param, value)
-        except InvalidParameterNameError:
+        except InvalidParameterNameError as e:
             raise InvalidParameterNameError(
                 f"{param} ({type(value).__name__}: {value})"
                 f"; choices: {param_choices_fmtd}"
-            )
+            ) from e
 
     @classmethod
     def cast_many(
@@ -661,8 +634,8 @@ class Setup(BaseModel):
             for param in skip:
                 try:
                     preserved_params[param] = dct.pop(param)
-                except ValueError:
-                    raise ValueError("invalid param", param)
+                except ValueError as e:
+                    raise ValueError("invalid param", param) from e
             if preserved_params not in preserved_params_lst:
                 preserved_params_lst.append(preserved_params)
         partial_dct = compress_multival_dicts(setups.dicts(), cls_seq=tuple)
@@ -687,10 +660,8 @@ class Setup(BaseModel):
         skip: Optional[Collection[str]] = None,
     ):
         """Create multiple ``Setup`` objects with one-value parameters only."""
-
         select_setup, select_dimensions = self._group_params(select)
         skip_setup, skip_dimensions = self._group_params(skip)
-
         dct = self.dict()
 
         # SR_TMP < TODO Can this be moved to class Dimensions?!?
@@ -758,7 +729,10 @@ class Setup(BaseModel):
 
 
 class SetupCollection:
+    """A collection of ``Setup`` objects."""
+
     def __init__(self, setups: Collection[Setup]) -> None:
+        """Create an instance of ``SetupCollection``."""
         if not isinstance(setups, Collection) or (
             setups and not isinstance(next(iter(setups)), Setup)
         ):
@@ -1137,6 +1111,7 @@ class SetupFile:
     """Setup file to be read from and/or written to disk."""
 
     def __init__(self, path: str) -> None:
+        """Create an instance of ``SetupFile``."""
         self.path: str = path
 
     @classmethod
@@ -1174,7 +1149,7 @@ class SetupFile:
             except Exception as e:
                 raise Exception(
                     f"error parsing TOML file {self.path} ({type(e).__name__}: {e})"
-                )
+                ) from e
         if not raw_data:
             raise ValueError("empty setup file", self.path)
         semi_raw_data = nested_dict_resolve_wildcards(

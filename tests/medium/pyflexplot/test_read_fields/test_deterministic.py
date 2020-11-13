@@ -1,6 +1,4 @@
-"""
-Tests for function ``pyflexplot.input.read_fields`` for deterministic data.
-"""
+"""Test function ``pyflexplot.input.read_fields`` with deterministic data."""
 # Standard library
 from dataclasses import dataclass
 from dataclasses import field
@@ -510,7 +508,6 @@ def test_multiple(datadir, config):  # noqa:F811
 )
 def test_single_add_ts0(datadir, config):
     """Insert an additional time step 0 in the beginning, with empty fields."""
-
     datafile = f"{datadir}/{config.setup_dct['infile']}"
 
     # Initialize field specifications

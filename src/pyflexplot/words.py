@@ -1,6 +1,4 @@
-"""
-TranslatedWords.
-"""
+"""TranslatedWords."""
 # First-party
 from words import TranslatedWords
 from words import Words

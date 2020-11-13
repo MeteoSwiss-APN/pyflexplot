@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
 # flake8: noqa
-"""
-Test reference for pytest test.
+"""Test reference for pytest test.
 
 tests/slow/pyflexplot/test_plots/shared.py
     ::Test_AffectedArea
@@ -10,8 +8,8 @@ tests/slow/pyflexplot/test_plots/shared.py
 Created by temporarily changing the parent class of
 ``Test_AffectedArea``
 from ``_TestBase`` to ``_TestCreateReference`` and running pytest.
-"""
 
+"""
 
 field_summary = {
     "type": "Field",
@@ -26,8 +24,7 @@ field_summary = {
             "ens_member_id": None,
             "scale_fact": 1.0,
             "core": {
-                "input_variable": "deposition",
-                "plot_variable": "affected_area_mono",
+                "input_variable": "affected_area",
                 "ens_variable": "none",
                 "plot_type": "auto",
                 "multipanel_param": None,
@@ -38,7 +35,6 @@ field_summary = {
                 "ens_param_mem_min": None,
                 "ens_param_pctl": None,
                 "ens_param_thr": None,
-                "ens_param_time_win": None,
                 "lang": "en",
                 "domain": "cloud",
                 "domain_size_lat": None,
@@ -46,7 +42,7 @@ field_summary = {
                 "dimensions_default": "all",
                 "dimensions": {
                     "deposition_type": ["dry", "wet"],
-                    "level": None,
+                    "level": 0,
                     "nageclass": 0,
                     "noutrel": None,
                     "numpoint": 0,
@@ -61,16 +57,16 @@ field_summary = {
         "stats": {
             "type": "FieldStats",
             "min": 0.0,
-            "max": 0.0030210696,
-            "mean": 1.2564966e-07,
+            "max": 1.0,
+            "mean": 0.0013556986,
             "median": 0.0,
         },
         "stats_nz": {
             "type": "FieldStats",
-            "min": 2.5513577e-10,
-            "max": 0.0030210696,
-            "mean": 9.9786004e-05,
-            "median": 3.94398e-06,
+            "min": 1.0,
+            "max": 1.0,
+            "mean": 1.0,
+            "median": 1.0,
         },
     },
     "nc_meta_data": {
@@ -335,15 +331,15 @@ field_summary = {
         "dtype": "float32",
         "shape": [80, 160],
         "nanmin": 0.0,
-        "nanmean": 2.9834897e-07,
+        "nanmean": 0.004765625,
         "nanmedian": 0.0,
-        "nanmax": 0.0030210696,
-        "nanmin_nonzero": 2.402929e-09,
-        "nanmean_nonzero": 6.584252e-05,
-        "nanmedian_nonzero": 4.2333522e-06,
-        "nanmax_nonzero": 0.0030210696,
+        "nanmax": 1.0,
+        "nanmin_nonzero": 1.0,
+        "nanmean_nonzero": 1.0,
+        "nanmedian_nonzero": 1.0,
+        "nanmax_nonzero": 1.0,
         "n_nan": 0,
-        "n_zero": 12742,
+        "n_zero": 12739,
     },
     "lat": {"dtype": "float32", "shape": [80], "min": -89.875, "max": 87.875},
     "lon": {"dtype": "float32", "shape": [160], "min": -179.375, "max": 178.375},
@@ -1082,7 +1078,6 @@ plot_summary = {
                             [-89.875, -89.875, 87.875, 87.875, -89.875],
                         ],
                         [[129.08999633789062], [41.279998779296875]],
-                        [[140.125], [38.375]],
                     ],
                     "position": {"type": "Bbox", "bounds": [0.0, 0.05, 0.7872, 0.85]},
                     "title": {},
@@ -1293,10 +1288,7 @@ plot_summary = {
                     "fc": [1.0, 1.0, 1.0, 1.0],
                     "frame_on": True,
                     "label": {},
-                    "lines": [
-                        [[0.19999999999999996], [0.779390243902439]],
-                        [[0.19999999999999996], [0.7245121951219513]],
-                    ],
+                    "lines": [[[0.19999999999999996], [0.779390243902439]]],
                     "position": {
                         "type": "Bbox",
                         "bounds": [0.8, 0.49, 0.19999999999999996, 0.41000000000000003],
@@ -1541,8 +1533,7 @@ plot_summary = {
                     "ens_member_id": None,
                     "scale_fact": 1.0,
                     "core": {
-                        "input_variable": "deposition",
-                        "plot_variable": "affected_area_mono",
+                        "input_variable": "affected_area",
                         "ens_variable": "none",
                         "plot_type": "auto",
                         "multipanel_param": None,
@@ -1553,7 +1544,6 @@ plot_summary = {
                         "ens_param_mem_min": None,
                         "ens_param_pctl": None,
                         "ens_param_thr": None,
-                        "ens_param_time_win": None,
                         "lang": "en",
                         "domain": "cloud",
                         "domain_size_lat": None,
@@ -1561,7 +1551,7 @@ plot_summary = {
                         "dimensions_default": "all",
                         "dimensions": {
                             "deposition_type": ["dry", "wet"],
-                            "level": None,
+                            "level": 0,
                             "nageclass": 0,
                             "noutrel": None,
                             "numpoint": 0,
@@ -1576,16 +1566,16 @@ plot_summary = {
                 "stats": {
                     "type": "FieldStats",
                     "min": 0.0,
-                    "max": 0.0030210696,
-                    "mean": 1.2564966e-07,
+                    "max": 1.0,
+                    "mean": 0.0013556986,
                     "median": 0.0,
                 },
                 "stats_nz": {
                     "type": "FieldStats",
-                    "min": 2.5513577e-10,
-                    "max": 0.0030210696,
-                    "mean": 9.9786004e-05,
-                    "median": 3.94398e-06,
+                    "min": 1.0,
+                    "max": 1.0,
+                    "mean": 1.0,
+                    "median": 1.0,
                 },
             },
             "nc_meta_data": {
@@ -1856,15 +1846,15 @@ plot_summary = {
                 "dtype": "float32",
                 "shape": [80, 160],
                 "nanmin": 0.0,
-                "nanmean": 2.9834897e-07,
+                "nanmean": 0.004765625,
                 "nanmedian": 0.0,
-                "nanmax": 0.0030210696,
-                "nanmin_nonzero": 2.402929e-09,
-                "nanmean_nonzero": 6.584252e-05,
-                "nanmedian_nonzero": 4.2333522e-06,
-                "nanmax_nonzero": 0.0030210696,
+                "nanmax": 1.0,
+                "nanmin_nonzero": 1.0,
+                "nanmean_nonzero": 1.0,
+                "nanmedian_nonzero": 1.0,
+                "nanmax_nonzero": 1.0,
                 "n_nan": 0,
-                "n_zero": 12742,
+                "n_zero": 12739,
             },
             "lat": {"dtype": "float32", "shape": [80], "min": -89.875, "max": 87.875},
             "lon": {
@@ -1891,8 +1881,7 @@ plot_summary = {
                             "ens_member_id": None,
                             "scale_fact": 1.0,
                             "core": {
-                                "input_variable": "deposition",
-                                "plot_variable": "affected_area_mono",
+                                "input_variable": "affected_area",
                                 "ens_variable": "none",
                                 "plot_type": "auto",
                                 "multipanel_param": None,
@@ -1903,7 +1892,6 @@ plot_summary = {
                                 "ens_param_mem_min": None,
                                 "ens_param_pctl": None,
                                 "ens_param_thr": None,
-                                "ens_param_time_win": None,
                                 "lang": "en",
                                 "domain": "cloud",
                                 "domain_size_lat": None,
@@ -1911,7 +1899,7 @@ plot_summary = {
                                 "dimensions_default": "all",
                                 "dimensions": {
                                     "deposition_type": ["dry", "wet"],
-                                    "level": None,
+                                    "level": 0,
                                     "nageclass": 0,
                                     "noutrel": None,
                                     "numpoint": 0,
@@ -1926,16 +1914,16 @@ plot_summary = {
                         "stats": {
                             "type": "FieldStats",
                             "min": 0.0,
-                            "max": 0.0030210696,
-                            "mean": 1.2564966e-07,
+                            "max": 1.0,
+                            "mean": 0.0013556986,
                             "median": 0.0,
                         },
                         "stats_nz": {
                             "type": "FieldStats",
-                            "min": 2.5513577e-10,
-                            "max": 0.0030210696,
-                            "mean": 9.9786004e-05,
-                            "median": 3.94398e-06,
+                            "min": 1.0,
+                            "max": 1.0,
+                            "mean": 1.0,
+                            "median": 1.0,
                         },
                     },
                     "nc_meta_data": {
@@ -2209,15 +2197,15 @@ plot_summary = {
                         "dtype": "float32",
                         "shape": [80, 160],
                         "nanmin": 0.0,
-                        "nanmean": 2.9834897e-07,
+                        "nanmean": 0.004765625,
                         "nanmedian": 0.0,
-                        "nanmax": 0.0030210696,
-                        "nanmin_nonzero": 2.402929e-09,
-                        "nanmean_nonzero": 6.584252e-05,
-                        "nanmedian_nonzero": 4.2333522e-06,
-                        "nanmax_nonzero": 0.0030210696,
+                        "nanmax": 1.0,
+                        "nanmin_nonzero": 1.0,
+                        "nanmean_nonzero": 1.0,
+                        "nanmedian_nonzero": 1.0,
+                        "nanmax_nonzero": 1.0,
                         "n_nan": 0,
-                        "n_zero": 12742,
+                        "n_zero": 12739,
                     },
                     "lat": {
                         "dtype": "float32",
@@ -19666,17 +19654,6 @@ plot_summary = {
                 "markersize": 7.5,
                 "markeredgewidth": 1.5,
             },
-            {
-                "element_type": "marker",
-                "p_lon": 140.125,
-                "p_lat": 38.375,
-                "marker": "+",
-                "transform": "PlateCarree instance",
-                "zorder": 6,
-                "color": "black",
-                "markersize": 10.0,
-                "markeredgewidth": 1.5,
-            },
         ],
     },
     "boxes": {
@@ -20411,7 +20388,6 @@ plot_summary = {
                                 [-89.875, -89.875, 87.875, 87.875, -89.875],
                             ],
                             [[129.08999633789062], [41.279998779296875]],
-                            [[140.125], [38.375]],
                         ],
                         "position": {
                             "type": "Bbox",
@@ -20630,10 +20606,7 @@ plot_summary = {
                         "fc": [1.0, 1.0, 1.0, 1.0],
                         "frame_on": True,
                         "label": {},
-                        "lines": [
-                            [[0.19999999999999996], [0.779390243902439]],
-                            [[0.19999999999999996], [0.7245121951219513]],
-                        ],
+                        "lines": [[[0.19999999999999996], [0.779390243902439]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": [
@@ -20902,7 +20875,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": "Total surface deposition",
+                    "s": "Affected area",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -20930,7 +20903,7 @@ plot_summary = {
                         "va": "baseline",
                         "ha": "left",
                     },
-                    "s": "Accumulated over 48:00$\\,$h (since 2020-03-17 00:00 UTC)",
+                    "s": "Summed over 48:00$\\,$h (since 2020-03-17 00:00 UTC)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -21729,7 +21702,6 @@ plot_summary = {
                                 [-89.875, -89.875, 87.875, 87.875, -89.875],
                             ],
                             [[129.08999633789062], [41.279998779296875]],
-                            [[140.125], [38.375]],
                         ],
                         "position": {
                             "type": "Bbox",
@@ -21948,10 +21920,7 @@ plot_summary = {
                         "fc": [1.0, 1.0, 1.0, 1.0],
                         "frame_on": True,
                         "label": {},
-                        "lines": [
-                            [[0.19999999999999996], [0.779390243902439]],
-                            [[0.19999999999999996], [0.7245121951219513]],
-                        ],
+                        "lines": [[[0.19999999999999996], [0.779390243902439]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": [
@@ -22991,7 +22960,6 @@ plot_summary = {
                                 [-89.875, -89.875, 87.875, 87.875, -89.875],
                             ],
                             [[129.08999633789062], [41.279998779296875]],
-                            [[140.125], [38.375]],
                         ],
                         "position": {
                             "type": "Bbox",
@@ -23210,10 +23178,7 @@ plot_summary = {
                         "fc": [1.0, 1.0, 1.0, 1.0],
                         "frame_on": True,
                         "label": {},
-                        "lines": [
-                            [[0.19999999999999996], [0.779390243902439]],
-                            [[0.19999999999999996], [0.7245121951219513]],
-                        ],
+                        "lines": [[[0.19999999999999996], [0.779390243902439]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": [
@@ -23482,7 +23447,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "Deposition (Bq m$^{-2}$)",
+                    "s": "Affected area",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -23510,7 +23475,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "      $\\tt \\geq$ 1E-11",
+                    "s": "      $\\tt >$   0.0",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -23565,59 +23530,6 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "m": "+",
-                    "kwargs": {
-                        "color": "black",
-                        "markersize": 10.0,
-                        "markeredgewidth": 1.5,
-                    },
-                },
-                {
-                    "type": "TextBoxElementText",
-                    "loc": {
-                        "type": "TextBoxLocation",
-                        "loc": "tc",
-                        "loc_y": "t",
-                        "loc_x": "c",
-                        "dx_unit": 0.037500000000000006,
-                        "dy_unit": 0.021951219512195117,
-                        "dx": -3.5,
-                        "dy": -8.35,
-                        "x0": 0.5,
-                        "y0": 0.9780487804878049,
-                        "x": 0.36874999999999997,
-                        "y": 0.7947560975609756,
-                        "va": "top",
-                        "ha": "center",
-                    },
-                    "s": "Max.: 0.00302",
-                    "replace_edge_spaces": False,
-                    "edge_spaces_replacement_char": "␣",
-                    "kwargs": {
-                        "ha": "left",
-                        "fontname": "Liberation Sans",
-                        "size": 10.0,
-                        "va": "top",
-                    },
-                },
-                {
-                    "type": "TextBoxElementMarker",
-                    "loc": {
-                        "type": "TextBoxLocation",
-                        "loc": "tc",
-                        "loc_y": "t",
-                        "loc_x": "c",
-                        "dx_unit": 0.037500000000000006,
-                        "dy_unit": 0.021951219512195117,
-                        "dx": -8.0,
-                        "dy": -11.549999999999999,
-                        "x0": 0.5,
-                        "y0": 0.9780487804878049,
-                        "x": 0.19999999999999996,
-                        "y": 0.7245121951219513,
-                        "va": "top",
-                        "ha": "center",
-                    },
                     "m": "^",
                     "kwargs": {
                         "markeredgecolor": "red",
@@ -23636,11 +23548,11 @@ plot_summary = {
                         "dx_unit": 0.037500000000000006,
                         "dy_unit": 0.021951219512195117,
                         "dx": -3.5,
-                        "dy": -10.85,
+                        "dy": -8.35,
                         "x0": 0.5,
                         "y0": 0.9780487804878049,
                         "x": 0.36874999999999997,
-                        "y": 0.7398780487804879,
+                        "y": 0.7947560975609756,
                         "va": "top",
                         "ha": "center",
                     },
@@ -24387,7 +24299,6 @@ plot_summary = {
                                 [-89.875, -89.875, 87.875, 87.875, -89.875],
                             ],
                             [[129.08999633789062], [41.279998779296875]],
-                            [[140.125], [38.375]],
                         ],
                         "position": {
                             "type": "Bbox",
@@ -24606,10 +24517,7 @@ plot_summary = {
                         "fc": [1.0, 1.0, 1.0, 1.0],
                         "frame_on": True,
                         "label": {},
-                        "lines": [
-                            [[0.19999999999999996], [0.779390243902439]],
-                            [[0.19999999999999996], [0.7245121951219513]],
-                        ],
+                        "lines": [[[0.19999999999999996], [0.779390243902439]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": [
@@ -26433,7 +26341,6 @@ plot_summary = {
                                 [-89.875, -89.875, 87.875, 87.875, -89.875],
                             ],
                             [[129.08999633789062], [41.279998779296875]],
-                            [[140.125], [38.375]],
                         ],
                         "position": {
                             "type": "Bbox",
@@ -26652,10 +26559,7 @@ plot_summary = {
                         "fc": [1.0, 1.0, 1.0, 1.0],
                         "frame_on": True,
                         "label": {},
-                        "lines": [
-                            [[0.19999999999999996], [0.779390243902439]],
-                            [[0.19999999999999996], [0.7245121951219513]],
-                        ],
+                        "lines": [[[0.19999999999999996], [0.779390243902439]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": [
@@ -27667,7 +27571,6 @@ plot_summary = {
                                 [-89.875, -89.875, 87.875, 87.875, -89.875],
                             ],
                             [[129.08999633789062], [41.279998779296875]],
-                            [[140.125], [38.375]],
                         ],
                         "position": {
                             "type": "Bbox",
@@ -27886,10 +27789,7 @@ plot_summary = {
                         "fc": [1.0, 1.0, 1.0, 1.0],
                         "frame_on": True,
                         "label": {},
-                        "lines": [
-                            [[0.19999999999999996], [0.779390243902439]],
-                            [[0.19999999999999996], [0.7245121951219513]],
-                        ],
+                        "lines": [[[0.19999999999999996], [0.779390243902439]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": [
@@ -28184,8 +28084,7 @@ plot_summary = {
                 "ens_member_id": None,
                 "scale_fact": 1.0,
                 "core": {
-                    "input_variable": "deposition",
-                    "plot_variable": "affected_area_mono",
+                    "input_variable": "affected_area",
                     "ens_variable": "none",
                     "plot_type": "auto",
                     "multipanel_param": None,
@@ -28196,7 +28095,6 @@ plot_summary = {
                     "ens_param_mem_min": None,
                     "ens_param_pctl": None,
                     "ens_param_thr": None,
-                    "ens_param_time_win": None,
                     "lang": "en",
                     "domain": "cloud",
                     "domain_size_lat": None,
@@ -28204,7 +28102,7 @@ plot_summary = {
                     "dimensions_default": "all",
                     "dimensions": {
                         "deposition_type": ["dry", "wet"],
-                        "level": None,
+                        "level": 0,
                         "nageclass": 0,
                         "noutrel": None,
                         "numpoint": 0,
@@ -28219,16 +28117,16 @@ plot_summary = {
             "stats": {
                 "type": "FieldStats",
                 "min": 0.0,
-                "max": 0.0030210696,
-                "mean": 1.2564966e-07,
+                "max": 1.0,
+                "mean": 0.0013556986,
                 "median": 0.0,
             },
             "stats_nz": {
                 "type": "FieldStats",
-                "min": 2.5513577e-10,
-                "max": 0.0030210696,
-                "mean": 9.9786004e-05,
-                "median": 3.94398e-06,
+                "min": 1.0,
+                "max": 1.0,
+                "mean": 1.0,
+                "median": 1.0,
             },
         },
         "nc_meta_data": {
@@ -28496,15 +28394,15 @@ plot_summary = {
             "dtype": "float32",
             "shape": [80, 160],
             "nanmin": 0.0,
-            "nanmean": 2.9834897e-07,
+            "nanmean": 0.004765625,
             "nanmedian": 0.0,
-            "nanmax": 0.0030210696,
-            "nanmin_nonzero": 2.402929e-09,
-            "nanmean_nonzero": 6.584252e-05,
-            "nanmedian_nonzero": 4.2333522e-06,
-            "nanmax_nonzero": 0.0030210696,
+            "nanmax": 1.0,
+            "nanmin_nonzero": 1.0,
+            "nanmean_nonzero": 1.0,
+            "nanmedian_nonzero": 1.0,
+            "nanmax_nonzero": 1.0,
             "n_nan": 0,
-            "n_zero": 12742,
+            "n_zero": 12739,
         },
         "lat": {"dtype": "float32", "shape": [80], "min": -89.875, "max": 87.875},
         "lon": {"dtype": "float32", "shape": [160], "min": -179.375, "max": 178.375},
@@ -29233,7 +29131,6 @@ plot_summary = {
                         [-89.875, -89.875, 87.875, 87.875, -89.875],
                     ],
                     [[129.08999633789062], [41.279998779296875]],
-                    [[140.125], [38.375]],
                 ],
                 "position": {"type": "Bbox", "bounds": (0.0, 0.05, 0.7872, 0.85)},
                 "title": "",
@@ -29436,10 +29333,7 @@ plot_summary = {
                 "fc": (1.0, 1.0, 1.0, 1.0),
                 "frame_on": True,
                 "label": "",
-                "lines": [
-                    [[0.19999999999999996], [0.779390243902439]],
-                    [[0.19999999999999996], [0.7245121951219513]],
-                ],
+                "lines": [[[0.19999999999999996], [0.779390243902439]]],
                 "position": {
                     "type": "Bbox",
                     "bounds": (0.8, 0.49, 0.19999999999999996, 0.41000000000000003),
@@ -29684,8 +29578,7 @@ plot_summary = {
                         "ens_member_id": None,
                         "scale_fact": 1.0,
                         "core": {
-                            "input_variable": "deposition",
-                            "plot_variable": "affected_area_mono",
+                            "input_variable": "affected_area",
                             "ens_variable": "none",
                             "plot_type": "auto",
                             "multipanel_param": None,
@@ -29696,7 +29589,6 @@ plot_summary = {
                             "ens_param_mem_min": None,
                             "ens_param_pctl": None,
                             "ens_param_thr": None,
-                            "ens_param_time_win": None,
                             "lang": "en",
                             "domain": "cloud",
                             "domain_size_lat": None,
@@ -29704,7 +29596,7 @@ plot_summary = {
                             "dimensions_default": "all",
                             "dimensions": {
                                 "deposition_type": ["dry", "wet"],
-                                "level": None,
+                                "level": 0,
                                 "nageclass": 0,
                                 "noutrel": None,
                                 "numpoint": 0,
@@ -29719,16 +29611,16 @@ plot_summary = {
                     "stats": {
                         "type": "FieldStats",
                         "min": 0.0,
-                        "max": 0.0030210696,
-                        "mean": 1.2564966e-07,
+                        "max": 1.0,
+                        "mean": 0.0013556986,
                         "median": 0.0,
                     },
                     "stats_nz": {
                         "type": "FieldStats",
-                        "min": 2.5513577e-10,
-                        "max": 0.0030210696,
-                        "mean": 9.9786004e-05,
-                        "median": 3.94398e-06,
+                        "min": 1.0,
+                        "max": 1.0,
+                        "mean": 1.0,
+                        "median": 1.0,
                     },
                 },
                 "nc_meta_data": {
@@ -29999,15 +29891,15 @@ plot_summary = {
                     "dtype": "float32",
                     "shape": [80, 160],
                     "nanmin": 0.0,
-                    "nanmean": 2.9834897e-07,
+                    "nanmean": 0.004765625,
                     "nanmedian": 0.0,
-                    "nanmax": 0.0030210696,
-                    "nanmin_nonzero": 2.402929e-09,
-                    "nanmean_nonzero": 6.584252e-05,
-                    "nanmedian_nonzero": 4.2333522e-06,
-                    "nanmax_nonzero": 0.0030210696,
+                    "nanmax": 1.0,
+                    "nanmin_nonzero": 1.0,
+                    "nanmean_nonzero": 1.0,
+                    "nanmedian_nonzero": 1.0,
+                    "nanmax_nonzero": 1.0,
                     "n_nan": 0,
-                    "n_zero": 12742,
+                    "n_zero": 12739,
                 },
                 "lat": {
                     "dtype": "float32",

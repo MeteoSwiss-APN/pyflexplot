@@ -1,6 +1,4 @@
-"""
-Custom types for type hints.
-"""
+"""Custom types for type hints."""
 # Standard library
 from typing import List
 from typing import Sequence

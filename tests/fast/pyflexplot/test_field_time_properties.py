@@ -1,6 +1,4 @@
-"""
-Tests for class ``pyflexplot.data.FieldTimeProperties``.
-"""
+"""Test class ``pyflexplot.data.FieldTimeProperties``."""
 # Third-party
 import numpy as np
 

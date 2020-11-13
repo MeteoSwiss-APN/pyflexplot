@@ -1,6 +1,4 @@
-"""
-Tests for module ``words.testing``.
-"""
+"""Test module ``words.test``."""
 # Standard library
 import functools
 

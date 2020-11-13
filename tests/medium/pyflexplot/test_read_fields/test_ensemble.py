@@ -1,6 +1,4 @@
-"""
-Tests for function ``pyflexplot.input.read_fields`` for ensemble data.
-"""
+"""Test function ``pyflexplot.input.read_fields`` with ensemble data."""
 # Standard library
 from typing import Any
 from typing import Dict
@@ -193,7 +191,6 @@ class TestReadFieldEnsemble_Multiple:
         scale_fld_ref=1.0,
     ):
         """Run an individual test, reading one field after another."""
-
         # Create field specifications list
         setup_lst = []
         for shared_setup_params in decompress_multival_dict(
@@ -269,7 +266,6 @@ class TestReadFieldEnsemble_Multiple:
         self, datadir, ens_var, *, cache_on=False, scale_fld_ref=1.0  # noqa:F811
     ):
         """Read ensemble concentration field."""
-
         fct_reduce_mem = {
             "mean": lambda arr: np.nanmean(arr, axis=0),
             "maximum": lambda arr: np.nanmax(arr, axis=0),

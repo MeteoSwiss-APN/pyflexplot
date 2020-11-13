@@ -1,6 +1,4 @@
-"""
-Utilities for testing.
-"""
+"""Utilities for testing."""
 # Standard library
 import distutils.dir_util
 import os

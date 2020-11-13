@@ -1,6 +1,4 @@
-"""
-Plot layouts.
-"""
+"""Plot layouts."""
 # Standard library
 from dataclasses import dataclass
 from typing import Union

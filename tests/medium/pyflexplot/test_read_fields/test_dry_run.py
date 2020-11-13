@@ -1,6 +1,4 @@
-"""
-Tests for function ``pyflexplot.input.read_fields`` in dry-run mode.
-"""
+"""Test function ``pyflexplot.input.read_fields`` in dry-run mode."""
 # Standard library
 from dataclasses import dataclass
 from typing import Any

@@ -1,6 +1,4 @@
-"""
-CLI for preset setup files.
-"""
+"""CLI for preset setup files."""
 # Standard library
 import sys
 from pathlib import Path
@@ -58,10 +56,10 @@ def click_use_preset(ctx: Context, param: ClickParamType, value: Any) -> None:
     for pattern in patterns:
         try:
             files_by_preset_path = collect_preset_files([pattern], antipatterns)
-        except NoPresetFileFoundError:
+        except NoPresetFileFoundError as e:
             msg = f"no preset setup file found for '{pattern}'"
             if ctx.obj["raise"]:
-                raise Exception(msg)
+                raise Exception(msg) from e
             else:
                 click.echo(f"Error: {msg}", file=sys.stderr)
                 _click_propose_alternatives(pattern)

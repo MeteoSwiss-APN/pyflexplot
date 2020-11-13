@@ -23,9 +23,13 @@ level = 0
 # combine_deposition_types = true
 # integrate = true
 
-# [_base._tot_deposition._affected_area]
-# plot_variable = "affected_area_mono"
+# [_base._affected_area]
+# combine_deposition_types = true
 # combine_species = true
+# deposition_type = ["dry", "wet"]
+# input_variable = "affected_area"
+# integrate = true
+# level = 0
 # time = -1
 
 [_base._concentration._pdf.full]
@@ -37,7 +41,7 @@ domain = "full"
 # [_base._tot_deposition._pdf.full]
 # outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition.pdf"
 # domain = "full"
-# [_base._tot_deposition._affected_area._pdf.full]
+# [_base._affected_area._pdf.full]
 # outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet.pdf"
 # domain = "full"
 
@@ -50,6 +54,6 @@ domain = "full"
 # [_base._tot_deposition._pdf.zoom]
 # outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition_zoom.pdf"
 # domain = "alps"
-# [_base._tot_deposition._affected_area._pdf.zoom]
+# [_base._affected_area._pdf.zoom]
 # outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet_zoom.pdf"
 # domain = "alps"

@@ -1,6 +1,4 @@
-"""
-Tests for module ``pyflexplot.meta_data``.
-"""
+"""Test module ``pyflexplot.meta_data``."""
 # Standard library
 import datetime as dt
 from typing import Any

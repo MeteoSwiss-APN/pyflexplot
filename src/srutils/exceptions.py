@@ -1,6 +1,4 @@
-"""
-Exceptions.
-"""
+"""Exceptions."""
 
 
 class KeyConflictError(KeyError):

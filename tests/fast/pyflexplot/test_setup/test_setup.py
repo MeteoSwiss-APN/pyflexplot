@@ -1,6 +1,4 @@
-"""
-Tests for module ``pyflexplot.setup``.
-"""
+"""Test module ``pyflexplot.setup``."""
 # Standard library
 from itertools import product
 from typing import Any

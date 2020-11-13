@@ -1,6 +1,4 @@
-"""
-Test the elements of complete plots based on ensemble COSMO-2 data.
-"""
+"""Test the elements of complete plots based on ensemble COSMO-2 data."""
 # Third-party
 import pytest
 
@@ -35,7 +33,11 @@ class Test_EnsMedian_Concentration(_TestBase):
         "ens_member_id": ENS_MEMBER_IDS,
         "lang": "en",
         "domain": "full",
-        "dimensions": {"species_id": (1, 2), "time": 5, "level": 0},
+        "dimensions": {
+            "species_id": (1, 2),
+            "time": 5,
+            "level": 0,
+        },
     }
 
 
@@ -51,7 +53,11 @@ class Test_EnsMax_IntegratedConcentration(_TestBase):
         "ens_member_id": ENS_MEMBER_IDS,
         "lang": "de",
         "domain": "ch",
-        "dimensions": {"species_id": 2, "time": 10, "level": 0},
+        "dimensions": {
+            "species_id": 2,
+            "time": 10,
+            "level": 0,
+        },
     }
 
 
@@ -69,7 +75,10 @@ class Test_EnsMean_TotalDeposition(_TestBase):
         "ens_member_id": ENS_MEMBER_IDS,
         "lang": "en",
         "domain": "full",
-        "dimensions": {"species_id": (1, 2), "time": -1},
+        "dimensions": {
+            "species_id": (1, 2),
+            "time": -1,
+        },
     }
 
 
@@ -85,7 +94,11 @@ class Test_EnsProbability_WetDeposition(_TestBase):
         "ens_member_id": ENS_MEMBER_IDS,
         "lang": "en",
         "domain": "full",
-        "dimensions": {"deposition_type": "wet", "species_id": 1, "time": -1},
+        "dimensions": {
+            "deposition_type": "wet",
+            "species_id": 1,
+            "time": -1,
+        },
     }
 
 
@@ -96,9 +109,8 @@ class Test_EnsMin_AffectedArea(_TestBase):
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
         "model": "COSMO-2E",
-        "input_variable": "deposition",
+        "input_variable": "affected_area",
         "ens_variable": "minimum",
-        "plot_variable": "affected_area",
         "combine_deposition_types": True,
         "integrate": True,
         "combine_species": True,
@@ -108,6 +120,7 @@ class Test_EnsMin_AffectedArea(_TestBase):
         "dimensions": {
             "species_id": (1, 2),
             "time": -1,
+            "level": 0,
             "deposition_type": ["dry", "wet"],
         },
     }

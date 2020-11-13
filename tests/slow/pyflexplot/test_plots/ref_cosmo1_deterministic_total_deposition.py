@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
 # flake8: noqa
-"""
-Test reference for pytest test.
+"""Test reference for pytest test.
 
 tests/slow/pyflexplot/test_plots/shared.py
     ::Test_TotalDeposition
@@ -10,8 +8,8 @@ tests/slow/pyflexplot/test_plots/shared.py
 Created by temporarily changing the parent class of
 ``Test_TotalDeposition``
 from ``_TestBase`` to ``_TestCreateReference`` and running pytest.
-"""
 
+"""
 
 field_summary = {
     "type": "Field",
@@ -27,7 +25,6 @@ field_summary = {
             "scale_fact": 1.0,
             "core": {
                 "input_variable": "deposition",
-                "plot_variable": "auto",
                 "ens_variable": "none",
                 "plot_type": "auto",
                 "multipanel_param": None,
@@ -38,7 +35,6 @@ field_summary = {
                 "ens_param_mem_min": None,
                 "ens_param_pctl": None,
                 "ens_param_thr": None,
-                "ens_param_time_win": None,
                 "lang": "de",
                 "domain": "full",
                 "domain_size_lat": None,
@@ -331,7 +327,7 @@ field_summary = {
         "nanmedian": 1.5417452e-05,
         "nanmax": 0.15455633,
         "nanmin_nonzero": 4.145933e-09,
-        "nanmean_nonzero": 0.0016001214,
+        "nanmean_nonzero": 0.0016001211,
         "nanmedian_nonzero": 0.0003491032,
         "nanmax_nonzero": 0.15455633,
         "n_nan": 0,
@@ -846,7 +842,6 @@ plot_summary = {
                     "scale_fact": 1.0,
                     "core": {
                         "input_variable": "deposition",
-                        "plot_variable": "auto",
                         "ens_variable": "none",
                         "plot_type": "auto",
                         "multipanel_param": None,
@@ -857,7 +852,6 @@ plot_summary = {
                         "ens_param_mem_min": None,
                         "ens_param_pctl": None,
                         "ens_param_thr": None,
-                        "ens_param_time_win": None,
                         "lang": "de",
                         "domain": "full",
                         "domain_size_lat": None,
@@ -1163,7 +1157,7 @@ plot_summary = {
                 "nanmedian": 1.5417452e-05,
                 "nanmax": 0.15455633,
                 "nanmin_nonzero": 4.145933e-09,
-                "nanmean_nonzero": 0.0016001214,
+                "nanmean_nonzero": 0.0016001211,
                 "nanmedian_nonzero": 0.0003491032,
                 "nanmax_nonzero": 0.15455633,
                 "n_nan": 0,
@@ -1200,7 +1194,6 @@ plot_summary = {
                             "scale_fact": 1.0,
                             "core": {
                                 "input_variable": "deposition",
-                                "plot_variable": "auto",
                                 "ens_variable": "none",
                                 "plot_type": "auto",
                                 "multipanel_param": None,
@@ -1211,7 +1204,6 @@ plot_summary = {
                                 "ens_param_mem_min": None,
                                 "ens_param_pctl": None,
                                 "ens_param_thr": None,
-                                "ens_param_time_win": None,
                                 "lang": "de",
                                 "domain": "full",
                                 "domain_size_lat": None,
@@ -1532,7 +1524,7 @@ plot_summary = {
                         "nanmedian": 1.5417452e-05,
                         "nanmax": 0.15455633,
                         "nanmin_nonzero": 4.145933e-09,
-                        "nanmean_nonzero": 0.0016001214,
+                        "nanmean_nonzero": 0.0016001211,
                         "nanmedian_nonzero": 0.0003491032,
                         "nanmax_nonzero": 0.15455633,
                         "n_nan": 0,
@@ -6541,7 +6533,6 @@ plot_summary = {
                 "scale_fact": 1.0,
                 "core": {
                     "input_variable": "deposition",
-                    "plot_variable": "auto",
                     "ens_variable": "none",
                     "plot_type": "auto",
                     "multipanel_param": None,
@@ -6552,7 +6543,6 @@ plot_summary = {
                     "ens_param_mem_min": None,
                     "ens_param_pctl": None,
                     "ens_param_thr": None,
-                    "ens_param_time_win": None,
                     "lang": "de",
                     "domain": "full",
                     "domain_size_lat": None,
@@ -6855,7 +6845,7 @@ plot_summary = {
             "nanmedian": 1.5417452e-05,
             "nanmax": 0.15455633,
             "nanmin_nonzero": 4.145933e-09,
-            "nanmean_nonzero": 0.0016001214,
+            "nanmean_nonzero": 0.0016001211,
             "nanmedian_nonzero": 0.0003491032,
             "nanmax_nonzero": 0.15455633,
             "n_nan": 0,
@@ -7352,7 +7342,6 @@ plot_summary = {
                         "scale_fact": 1.0,
                         "core": {
                             "input_variable": "deposition",
-                            "plot_variable": "auto",
                             "ens_variable": "none",
                             "plot_type": "auto",
                             "multipanel_param": None,
@@ -7363,7 +7352,6 @@ plot_summary = {
                             "ens_param_mem_min": None,
                             "ens_param_pctl": None,
                             "ens_param_thr": None,
-                            "ens_param_time_win": None,
                             "lang": "de",
                             "domain": "full",
                             "domain_size_lat": None,
@@ -7681,7 +7669,7 @@ plot_summary = {
                     "nanmedian": 1.5417452e-05,
                     "nanmax": 0.15455633,
                     "nanmin_nonzero": 4.145933e-09,
-                    "nanmean_nonzero": 0.0016001214,
+                    "nanmean_nonzero": 0.0016001211,
                     "nanmedian_nonzero": 0.0003491032,
                     "nanmax_nonzero": 0.15455633,
                     "n_nan": 0,

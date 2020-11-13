@@ -1,6 +1,4 @@
-"""
-Fix issues with NetCDF input.
-"""
+"""Fix issues with NetCDF input."""
 # Standard library
 from typing import Any
 from typing import Mapping
@@ -22,6 +20,7 @@ class FlexPartDataFixer:
     ifs_models = ["IFS-HRES", "IFS-HRES-EU"]
 
     def __init__(self, file_reader):
+        """Create an instance of ``FlexPartDataFixer``."""
         self.file_reader = file_reader
 
     def fix_nc_var_fld(
@@ -47,12 +46,17 @@ class FlexPartDataFixer:
         fld[:] *= fact
         return
 
+    # pylint: disable=R0912  # too-many-branches
     def fix_meta_data(
-        self, model: str, integrate: bool, mdata: Union[MetaData, Sequence[MetaData]]
+        self,
+        model: str,
+        input_variable: str,
+        integrate: bool,
+        mdata: Union[MetaData, Sequence[MetaData]],
     ) -> None:
         if isinstance(mdata, Sequence):
             for mdata_i in mdata:
-                self.fix_meta_data(model, integrate, mdata_i)
+                self.fix_meta_data(model, input_variable, integrate, mdata_i)
             return
         unit = str(mdata.variable.unit)
         if model in self.cosmo_models:
@@ -61,6 +65,12 @@ class FlexPartDataFixer:
             elif unit == "1e-12 kg m-2":
                 # new_unit = "Bq h m-2" if integrate else "Bq m-2"
                 new_unit = "Bq m-2"
+            # SR_TMP <
+            elif input_variable == "affected_area":
+                new_unit = unit
+            elif input_variable == "deposition" and unit == "N/A":
+                new_unit = "Bq m-2"
+            # SR_TMP >
             else:
                 msg = f"model {model}: unrecognized unit '{unit}'; skip meta data fixes"
                 log(wrn=msg)
@@ -71,6 +81,12 @@ class FlexPartDataFixer:
             elif unit == "1e-12 kg m-2":
                 # new_unit = "Bq h m-2" if integrate else "Bq m-2"
                 new_unit = "Bq m-2"
+            # SR_TMP <
+            elif input_variable == "affected_area":
+                new_unit = unit
+            elif input_variable == "deposition" and unit == "N/A":
+                new_unit = "Bq m-2"
+            # SR_TMP >
             else:
                 msg = f"model {model}: unrecognized unit '{unit}'; skip meta data fixes"
                 log(wrn=msg)
@@ -79,9 +95,9 @@ class FlexPartDataFixer:
             raise NotImplementedError("model", model)
         mdata.variable.unit = new_unit
 
-    def fix_global_grid(self, lon, fld_time, idx_lon=-1):
+    @staticmethod
+    def fix_global_grid(lon, fld_time, idx_lon=-1):
         """Shift global grid longitudinally to fit into (-180..180) range."""
-
         # Check longitude dimension index
         if (
             (idx_lon < 0 and -idx_lon > len(fld_time.shape))

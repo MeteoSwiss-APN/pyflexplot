@@ -1,6 +1,4 @@
-"""
-Tests for function ``srutils.dict.flatten_nested_dict``.
-"""
+"""Test function ``srutils.dict.flatten_nested_dict``."""
 # Third-party
 import pytest  # type: ignore
 
@@ -91,10 +89,10 @@ from srutils.dict import flatten_nested_dict
     ],
 )
 def test_linear_nesting(dct, sol):
-    """
-    Basic functionality for linearly nested dicts.
+    """Basic functionality for linearly nested dicts.
 
     In case of conflicting keys, the value at the deeper nesting level wins.
+
     """
     assert flatten_nested_dict(dct) == sol
 

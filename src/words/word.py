@@ -1,6 +1,4 @@
-"""
-TranslatedWord.
-"""
+"""TranslatedWord."""
 # First-party
 from srutils.str import capitalize
 from srutils.str import check_is_valid_varname
@@ -162,25 +160,21 @@ class TranslatedWord:
 
     def _check_langs(self, translations):
         """Check validity of languages and words."""
-
         if not translations:
             raise ValueError("must pass the word in at least one language")
-
         for lang, word in translations.items():
-
             if lang in self.__dict__:
                 # Name clash between language and class attribute
                 raise ValueError("invalid language specifier", lang)
-
             if not isinstance(word, (Word, str, dict)):
                 # Wrong word type
                 raise ValueError("word must be of type str or dict", type(word), word)
-
             if not word:
                 # Undefined word
                 raise ValueError("empty word passed in language", word, lang)
 
-    def _collect_contexts(self, translations):
+    @staticmethod
+    def _collect_contexts(translations):
         ctxs = []
         for word in translations.values():
             try:
@@ -230,11 +224,11 @@ class TranslatedWord:
             lang = self.active_lang
         try:
             return self._translations[lang]
-        except KeyError:
+        except KeyError as e:
             raise ValueError(
                 f"word '{self.name}' not defined in language '{lang}', only in "
                 f"{self.langs}"
-            )
+            ) from e
 
     def ctx(self, *args, **kwargs):
         return self.get_in(self.active_lang).ctx(*args, **kwargs)
@@ -250,7 +244,9 @@ class TranslatedWord:
         return w.s
 
     def __repr__(self):
-        s_langs = ", ".join([f"{l}={repr(v)}" for l, v in self._translations.items()])
+        s_langs = ", ".join(
+            [f"{lang}={repr(word)}" for lang, word in self._translations.items()]
+        )
         return (
             f"{type(self).__name__}({self.name}, {s_langs}, lang='{self.active_lang}')"
         )

@@ -1,6 +1,4 @@
-"""
-Chemical species and their attributes.
-"""
+"""Chemical species and their attributes."""
 # Standard library
 import dataclasses
 from dataclasses import dataclass
@@ -79,8 +77,8 @@ class Species:
         for param, value in params.items():
             try:
                 field: Field = fields[param]
-            except KeyError:
-                raise ValueError(param)
+            except KeyError as e:
+                raise ValueError(param) from e
             if issubclass(field.type, SpeciesAttribute):
                 value = SpeciesAttribute.create(value)
             params_prep[param] = value
@@ -362,8 +360,8 @@ def get_species(*, name=None):
     for species in SPECIES:
         try:
             value_i = getattr(species, attr)
-        except AttributeError:
-            raise ValueError(f"invalid attribute: {attr}")
+        except AttributeError as e:
+            raise ValueError(f"invalid attribute: {attr}") from e
         if value_i == value:
             return species
     s_value = f"'{value}'" if isinstance(value, str) else str(value)

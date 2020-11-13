@@ -1,6 +1,4 @@
-"""
-Tests for class ``TranslatedWord`` in module ``words.word``.
-"""
+"""Test class ``words.word.TranslatedWord``."""
 # Standard library
 import functools
 from dataclasses import dataclass

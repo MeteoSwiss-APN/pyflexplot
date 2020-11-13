@@ -1,6 +1,4 @@
-"""
-Plots.
-"""
+"""Plots."""
 # Standard library
 import warnings
 from copy import copy
@@ -8,10 +6,12 @@ from dataclasses import dataclass
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Mapping
 from typing import MutableMapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from typing import Union
 
 # Third-party
 import cartopy
@@ -25,9 +25,6 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 from matplotlib.text import Text
-from pydantic import BaseModel
-from pydantic import root_validator
-from pydantic import validator
 
 # Local
 from ..data import Field
@@ -195,11 +192,12 @@ class ReleaseSiteDomain(Domain):
         return lllon, urlon, lllat, urlat
 
 
-@summarizable
 # pylint: disable=E0213  # no-self-argument (validators)
-class MapAxesConfig(BaseModel):
-    """
-    Configuration of ``MapAxesPlot``.
+# pylint: disable=?R0902  # too-many-instance-attributes
+@summarizable
+@dataclass
+class MapAxesConfig:
+    """Configuration of ``MapAxesPlot``.
 
     Args:
         domain: Plot domain.
@@ -234,44 +232,25 @@ class MapAxesConfig(BaseModel):
     lw_frame: float = 1.0
     projection: str = "data"
     min_city_pop: int = 0
-    ref_dist_config: RefDistIndConfig
+    ref_dist_config: Optional[Union[RefDistIndConfig, Mapping[str, Any]]] = None
     ref_dist_on: bool = True
     scale_fact: float = 1.0
 
-    class Config:  # noqa
-        arbitrary_types_allowed = True
+    def __post_init__(self) -> None:
+        # geo_res*
+        if self.geo_res_cities == "none":
+            self.geo_res_cities = self.geo_res
+        if self.geo_res_rivers == "none":
+            self.geo_res_rivers = self.geo_res
 
-    @root_validator(pre=True)
-    def _init_ref_dist_config(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        try:
-            value = values["ref_dist_config"]
-        except KeyError:
-            # Not passed as argument; use default
-            values["ref_dist_config"] = RefDistIndConfig()
-        else:
-            if isinstance(value, MutableMapping):
-                # Passed a dict as argument; turn into ``RefDistIndConfig``
-                values["ref_dist_config"] = RefDistIndConfig(**value)
-            elif not isinstance(value, RefDistIndConfig):
-                # Passed neither a dict nor a ``RefDistIndConfig`` as argument
-                raise TypeError(
-                    f"ref_dist_config: expected dict or RefDistIndConfig, got "
-                    f"{type(value).__name__}",
-                    value,
-                )
-        scale_fact = values.get("scale_fact", 1.0)
-        values["ref_dist_config"] = values["ref_dist_config"].scale(scale_fact)
-        return values
-
-    @validator("geo_res_cities", always=True, allow_reuse=True)
-    def _init_geo_res_cities(cls, value: str, values: Dict[str, Any]) -> str:
-        if value == "none":
-            value = values["geo_res"]
-        return value
-
-    _init_geo_res_rivers = validator("geo_res_rivers", always=True)(
-        _init_geo_res_cities  # type: ignore
-    )
+        # ref_dist_config
+        if self.ref_dist_config is None:
+            self.ref_dist_config = RefDistIndConfig()
+        elif isinstance(self.ref_dist_config, Mapping):
+            # Passed a dict as argument; turn into ``RefDistIndConfig``
+            self.ref_dist_config = RefDistIndConfig(**self.ref_dist_config)
+        assert isinstance(self.ref_dist_config, RefDistIndConfig)
+        self.ref_dist_config = self.ref_dist_config.scale(self.scale_fact)
 
 
 # pylint: disable=R0902  # too-many-instance-attributes
@@ -503,6 +482,7 @@ class MapAxes:
         if not self.config.ref_dist_on:
             self.ref_dist_box = None
         else:
+            assert isinstance(self.config.ref_dist_config, RefDistIndConfig)  # mypy
             self.ref_dist_box = ReferenceDistanceIndicator(
                 ax=self.ax,
                 axes_to_geo=self.trans.axes_to_geo,
@@ -574,18 +554,10 @@ class MapAxes:
 
     def _ax_add_rivers(self, zorder_key: str, rasterized: bool = False) -> None:
         linewidth = {"lowest": 1, "geo_lower": 1, "geo_upper": 2 / 3}[zorder_key]
-
-        # SR_WORKAROUND <
         # Note:
         #  - Bug in Cartopy with recent shapefiles triggers errors (NULL geometry)
-        #  - Issue fixed in a branch but pull request still pending
-        #       -> Branch: https://github.com/shevawen/cartopy/tree/patch-1
-        #       -> PR: https://github.com/SciTools/cartopy/pull/1411
-        #  - Fixed it in our fork MeteoSwiss-APN/cartopy
-        #       -> Fork fixes setup dependencies issue (with  pyproject.toml)
-        #  - For now, check validity of rivers geometry objects when adding
-        #  - Once it works with the master branch, remove these workarounds
-        # SR_WORKAROUND >
+        #    -> PR: https://github.com/SciTools/cartopy/pull/1411
+        #  - Issue fixed in Cartopy 0.18.0
 
         major_rivers = cartopy.feature.NaturalEarthFeature(
             category="physical",
@@ -596,9 +568,7 @@ class MapAxes:
             linewidth=linewidth,
             rasterized=rasterized,
         )
-        # SR_WORKAROUND < TODO revert once bugfix in Cartopy master
-        # self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
-        # SR_WORKAROUND >
+        self.ax.add_feature(major_rivers, zorder=self.zorder[zorder_key])
 
         if self.config.geo_res_rivers == "10m":
             minor_rivers = cartopy.feature.NaturalEarthFeature(
@@ -610,39 +580,10 @@ class MapAxes:
                 linewidth=linewidth,
                 rasterized=rasterized,
             )
-            # SR_WORKAROUND < TODO revert once bugfix in Cartopy master
-            # self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
-            # SR_WORKAROUND >
-        else:
-            minor_rivers = None
-
-        # SR_WORKAROUND <<< TODO remove once bugfix in Cartopy master
-        try:
-            major_rivers.geometries()
-        except Exception:  # pylint: disable=W0703  # broad-except
-            warnings.warn(
-                "cannot add major rivers due to shapely issue with "
-                "'rivers_lake_centerline; pending bugfix: "
-                "https://github.com/SciTools/cartopy/pull/1411; workaround: use "
-                "https://github.com/shevawen/cartopy/tree/patch-1"
-            )
-        else:
-            # warnings.warn(
-            #     f"successfully added major rivers; "
-            #     "TODO: remove workaround and pin minimum Cartopy version!"
-            # )
-            self.ax.add_feature(
-                major_rivers, zorder=self.zorder[zorder_key], rasterized=rasterized
-            )
-            if self.config.geo_res_rivers == "10m":
-                self.ax.add_feature(
-                    minor_rivers, zorder=self.zorder[zorder_key], rasterized=rasterized
-                )
-        # SR_WORKAROUND >
+            self.ax.add_feature(minor_rivers, zorder=self.zorder[zorder_key])
 
     def _ax_add_cities(self, rasterized: bool = False) -> None:
         """Add major cities, incl. all capitals."""
-
         # pylint: disable=R0913  # too-many-arguments
         def is_in_box(
             x: float, y: float, x0: float, x1: float, y0: float, y1: float
@@ -691,7 +632,8 @@ class MapAxes:
                 name = "Freiburg"
             return name
 
-        # src: https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-populated-places/lk  # noqa
+        # src: https://www.naturalearthdata.com/downloads/50m-cultural-vectors/...
+        # .../50m-populated-places/lk
         cities: Sequence[Record] = cartopy.io.shapereader.Reader(
             cartopy.io.shapereader.natural_earth(
                 category="cultural",
@@ -945,10 +887,10 @@ class MapAxesBoundingBox:
         """
         try:
             rel_x_offset, rel_y_offset = [float(i) for i in rel_offset]
-        except Exception:
+        except Exception as e:
             raise ValueError(
                 f"rel_offset expected to be a pair of floats, not {rel_offset}"
-            )
+            ) from e
 
         # Restrict zoom to geographical latitude range [-90, 90]
         _, _, lat0_geo, lat1_geo = iter(copy(self).to_geo())

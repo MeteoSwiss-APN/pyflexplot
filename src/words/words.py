@@ -1,6 +1,4 @@
-"""
-TranslatedWords.
-"""
+"""TranslatedWords."""
 # Standard library
 from pprint import pformat
 
@@ -43,8 +41,8 @@ class TranslatedWords:
         for word_name, word_langs in words_langs.items():
             try:
                 {**word_langs}
-            except TypeError:
-                raise ValueError(f"word '{word_name}' not a dict: {word_langs}")
+            except TypeError as e:
+                raise ValueError(f"word '{word_name}' not a dict: {word_langs}") from e
             self.add(word_name, **word_langs)
             if active_lang is None:
                 active_lang = next(iter(self._langs))
@@ -67,17 +65,18 @@ class TranslatedWords:
         self.words[name] = word
         return word
 
-    def _prepare_word_name(self, name, word_langs):
+    @staticmethod
+    def _prepare_word_name(name, word_langs):
         if name is None:
             name = next(iter(word_langs.values()))
             if isinstance(name, dict):
                 try:
                     name = str(next(iter(name.values())))
-                except Exception:
+                except Exception as e:
                     raise ValueError(
                         f"cannot derive name of {word_langs} from {name} of type "
                         f"{type(name).__name__}: neither a string nor a non-empty dict"
-                    )
+                    ) from e
             name = to_varname(
                 name, filter_invalid=lambda c: "_" if c in "- " else ""
             ).lower()
@@ -97,8 +96,8 @@ class TranslatedWords:
     def get(self, name, *, ctx=None, lang=None, chain=True):
         try:
             word = self.words[name]
-        except KeyError:
-            raise MissingWordError(name)
+        except KeyError as e:
+            raise MissingWordError(name) from e
         if chain:
             if lang is None and ctx is None:
                 return word
@@ -146,6 +145,7 @@ class TranslatedWords:
 
 class Words(TranslatedWords):  # SR_TMP TODO remove parent
     def __init__(self, name, words):
+        """Create an instance of ``Words``."""
         # SR_TMP <
         lang = "None"
         words_langs = {name: {lang: word} for name, word in words.items()}

@@ -1,6 +1,4 @@
-"""
-Tests for function ``srutils.str.to_varname``.
-"""
+"""Test function ``srutils.str.to_varname``."""
 # Third-party
 import pytest  # type: ignore
 

@@ -1,6 +1,4 @@
-"""
-Dataclasses utilities.
-"""
+"""Dataclasses utilities."""
 # Standard library
 from dataclasses import is_dataclass
 from typing import Any

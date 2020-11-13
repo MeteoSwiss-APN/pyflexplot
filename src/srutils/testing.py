@@ -1,6 +1,4 @@
-"""
-Some testing utils.
-"""
+"""Some testing utils."""
 # Standard library
 from dataclasses import dataclass
 from pprint import pformat
@@ -48,7 +46,6 @@ def property_obj(cls, *args, **kwargs):
         ...     w = property_word(en='train', de='Zug')
 
     """
-
     # pylint: disable=W0613  # unused-argument (self)
     def create_obj(self):
         return cls(*args, **kwargs)
@@ -60,6 +57,7 @@ class IgnoredElement:
     """Element that is ignored in comparisons."""
 
     def __init__(self, description=None):
+        """Create an instance of ``IgnoredElement``."""
         self.description = description
 
     def __repr__(self):
@@ -70,6 +68,7 @@ class UnequalElement:
     """Element unequal to any other; useful for force-fail tests."""
 
     def __init__(self, description=None):
+        """Create an instance of ``UnequalElement``."""
         self.description = description
 
     def __repr__(self):
@@ -87,22 +86,18 @@ def check_summary_dict_is_subdict(
     subdict, superdict, subname="sub", supername="super", idx_list=None
 ):
     """Check that one summary dict is a subdict of another."""
-
     if ignored(subdict) or ignored(superdict):
         return
-
     if not isinstance(subdict, dict):
         raise CheckFailedError(
             f"subdict `{subname}` is not a dict, but a {type(subdict).__name__}",
             {"subdict": subdict},
         )
-
     if not isinstance(superdict, dict):
         raise CheckFailedError(
             f"`superdict` ('{supername}') is a {type(superdict).__name__}, not a dict",
             {"superdict": superdict},
         )
-
     for idx, (key, val_sub) in enumerate(subdict.items()):
         val_super = get_dict_element(superdict, key, "superdict", CheckFailedError)
         check_summary_dict_element_is_subelement(
@@ -200,7 +195,7 @@ def check_summary_dict_element_is_subelement(
                         "sub_obj_super": subobj_super,
                         "sub_obj_sub": subobj_sub,
                     },
-                )
+                ) from error
 
     else:
         raise exception(f"elements differ ('{name_sub}' vs. '{name_super}')", err_objs)
@@ -264,7 +259,6 @@ def is_list_like(
             Defaults to False.
 
     """
-
     kwargs = {
         "obj": obj,
         "len_": len_,
@@ -319,10 +313,10 @@ def _check_children(obj, t_children, f_children, kwargs, raise_):
 def type_name(type_) -> str:
     try:
         return type_.__name__
-    except AttributeError:
+    except AttributeError as e:
         if str(type_).startswith("typing."):
             return str(type_).split(".")[1]
-        raise ValueError(type_)
+        raise ValueError(type_) from e
 
 
 # pylint: disable=R0915  # too-many-statements
@@ -441,8 +435,10 @@ def assert_nested_equal(
             try:
                 obj1 = sorted(obj1)
                 obj2 = sorted(obj2)
-            except Exception:
-                raise error("unequal collections are unsortable", path, obj1, obj2)
+            except Exception as e:
+                raise error(
+                    "unequal collections are unsortable", path, obj1, obj2
+                ) from e
             for idx, (ele1, ele2) in enumerate(zip(obj1, obj2)):
                 recurse(ele1, ele2, path + [f"idx: {idx}"])
 

@@ -17,15 +17,19 @@ combine_species = false
 # integrate = true
 # time = -1
 
-[_base._tot_deposition]
-input_variable = "deposition"
-deposition_type = ["dry", "wet"]
-combine_deposition_types = true
-integrate = true
+# [_base._tot_deposition]
+# input_variable = "deposition"
+# deposition_type = ["dry", "wet"]
+# combine_deposition_types = true
+# integrate = true
 
-[_base._tot_deposition._affected_area]
-plot_variable = "affected_area_mono"
+[_base._affected_area]
+combine_deposition_types = true
 combine_species = true
+deposition_type = ["dry", "wet"]
+input_variable = "affected_area"
+integrate = true
+level = 0
 time = -1
 
 # [_base._concentration._pdf.cloud]
@@ -37,7 +41,7 @@ time = -1
 # [_base._tot_deposition._pdf.cloud]
 # outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition.pdf"
 # domain = "cloud"
-[_base._tot_deposition._affected_area._pdf.cloud]
+[_base._affected_area._pdf.cloud]
 outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet.pdf"
 domain = "cloud"
 
@@ -50,6 +54,6 @@ domain = "cloud"
 # [_base._tot_deposition._pdf.site]
 # outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition_zoom.pdf"
 # domain = "release_site"
-# [_base._tot_deposition._affected_area._pdf.site]
+# [_base._affected_area._pdf.site]
 # outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet_zoom.pdf"
 # domain = "release_site"

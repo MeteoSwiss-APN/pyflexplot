@@ -5,11 +5,11 @@ flake8
 flake8-black
 ipdb
 ipython
-isort<5  # constraint by pylint==2.5.3
+isort >= 5
 mypy
 pre-commit
 pydocstyle
-pylint
+pylint >= 2.6.0
 pytest
 rope
 rstcheck

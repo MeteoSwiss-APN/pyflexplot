@@ -1,6 +1,4 @@
-"""
-Tests for <TODO> in module ``pyflexplot.input``.
-"""
+"""Test function ``pyflexplot.nc_meta_data.read_meta_data``."""
 # Standard library
 from typing import Dict
 from typing import Optional

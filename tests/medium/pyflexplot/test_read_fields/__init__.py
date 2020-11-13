@@ -1,3 +1,1 @@
-"""
-Tests for ``pyflexplot.input``.
-"""
+"""Test module ``pyflexplot.input``."""

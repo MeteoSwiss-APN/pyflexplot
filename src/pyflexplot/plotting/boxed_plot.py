@@ -1,7 +1,6 @@
-"""
-Boxed plots.
-"""
+"""Boxed plots."""
 # Standard library
+import dataclasses
 from dataclasses import dataclass
 from typing import Any
 from typing import Callable
@@ -16,7 +15,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.colors import Colormap
 from matplotlib.figure import Figure
-from pydantic import BaseModel
 
 # Local
 from ..data import Field
@@ -49,11 +47,12 @@ class FontSizes:
 
 
 # pylint: disable=R0902  # too-many-instance-attributes
-class BoxedPlotConfig(BaseModel):
+@dataclass
+class BoxedPlotConfig:
     setup: Setup  # SR_TODO consider removing this
     mdata: MetaData  # SR_TODO consider removing this
     cmap: Union[str, Colormap] = "flexplot"
-    colors: List[ColorType]
+    colors: Optional[List[ColorType]] = None
     color_above_closed: Optional[ColorType] = None  # SR_TODO better approach
     extend: str = "max"
     # SR_NOTE Figure size may change when boxes etc. are added
@@ -61,7 +60,7 @@ class BoxedPlotConfig(BaseModel):
     fig_size: Tuple[float, float] = (12.5, 8.0)
     font_name: str = "Liberation Sans"
     font_sizes: FontSizes = FontSizes()
-    labels: Dict[str, Any] = {}
+    labels: Dict[str, Any] = dataclasses.field(default_factory=dict)
     legend_rstrip_zeros: bool = True
     level_ranges_align: str = "center"
     level_range_style: str = "base"
@@ -100,17 +99,13 @@ class BoxedPlot:
         self, field: Field, config: BoxedPlotConfig, map_config: MapAxesConfig
     ) -> None:
         """Create an instance of ``BoxedPlot``."""
-
         self.field = field
         self.config = config
         self.map_config = map_config
-
         self.boxes: Dict[str, TextBoxAxes] = {}
         self.levels: np.ndarray = levels_from_time_stats(
             self.config, self.field.time_props.stats
         )
-
-        # Declarations
         self._fig: Optional[Figure] = None
         self.ax_map: MapAxes  # SR_TMP TODO eliminate single centralized Map axes
 
@@ -162,6 +157,7 @@ class BoxedPlot:
         arr = self.field.fld
         levels = self.levels
         colors = self.config.colors
+        assert colors is not None  # SR_TMP
         extend = self.config.extend
         color_above_closed = self.config.color_above_closed
         if self.config.levels_scale == "log":
@@ -269,13 +265,8 @@ def levels_from_time_stats(
             assert plot_config.levels is not None  # mypy
             return plot_config.levels
 
-    # SR_TMP < TODO Clean this up!
-    if plot_config.setup.core.plot_variable == "affected_area_mono":
-        levels = _auto_levels_log10(n_levels=9, val_max=time_stats.max)
-        return np.array([levels[0], np.inf])
-    elif plot_config.n_levels is not None:
+    if plot_config.n_levels is not None:
         return _auto_levels_log10(plot_config.n_levels, val_max=time_stats.max)
-    else:
-        assert plot_config.levels is not None  # mypy
-        return plot_config.levels
-    # SR_TMP >
+
+    assert plot_config.levels is not None  # mypy
+    return plot_config.levels

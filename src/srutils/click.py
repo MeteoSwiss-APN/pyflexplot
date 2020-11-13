@@ -1,6 +1,4 @@
-"""
-Click utilities.
-"""
+"""Click utilities."""
 # Standard library
 import functools
 
@@ -9,8 +7,7 @@ import click
 
 
 def click_options(f_options):
-    """
-    Define a list of click options that can be shared by multiple commands.
+    """Define a list of click options that can be shared by multiple commands.
 
     Args:
         f_options (function): Function returning a list of ``click.option``
@@ -162,13 +159,13 @@ class DerivChoice(click.ParamType):
                 derived_choice = [derived_choice]
             try:
                 it = iter(derived_choice)
-            except TypeError:
+            except TypeError as e:
                 raise ValueError(
                     "derived choice is defined as non-iterable "
                     f"{type(derived_choice).__name__} object",
                     name=name,
                     derived_choice=derived_choice,
-                )
+                ) from e
             else:
                 for element in it:
                     if element not in self.base_choices:

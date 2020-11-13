@@ -1,6 +1,5 @@
 # pylint: disable=C0302  # too-many-lines (>1000)
-"""
-Plot types.
+"""Plot types.
 
 Note that this file is currently a mess because it is the result of collecting
 all sorts of plot-type specific logic from throughout the code in order to
@@ -13,6 +12,7 @@ stages of development).
 
 Instead, all the logic is collected here in a straightforward but dirty way
 until sane design choices emerge from the code mess.
+
 """
 # Standard library
 import os
@@ -149,9 +149,9 @@ def plot_add_text_boxes(
     # pylint: disable=R0915  # too-many-statements
     def fill_box_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the title box."""
-
-        words = WORDS  # SR_TMP
-
+        # SR_TMP <
+        words = WORDS
+        # SR_TMP >
         setup = plot.field.var_setups.compress()
         mdata = plot.config.mdata
 
@@ -227,7 +227,6 @@ def plot_add_text_boxes(
     # pylint: disable=R0915  # too-many-statements
     def fill_box_legend(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the box containing the plot legend."""
-
         labels = plot.config.labels["legend"]
         mdata = plot.config.mdata
 
@@ -284,6 +283,7 @@ def plot_add_text_boxes(
 
         # Legend color boxes
         colors = plot.config.colors
+        assert colors is not None  # SR_TMP
         dy = dy0_boxes
         for color in colors[::-1]:
             box.color_rect(
@@ -346,10 +346,10 @@ def plot_add_text_boxes(
     # pylint: disable=R0915  # too-many-statements
     def fill_box_release_info(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the box containing the release info."""
-
-        words = WORDS  # SR_TMP
-        symbols = SYMBOLS  # SR_TMP
-
+        # SR_TMP <
+        words = WORDS
+        symbols = SYMBOLS
+        # SR_TMP >
         mdata = plot.config.mdata
 
         # Box title
@@ -607,9 +607,6 @@ def create_plot_config(
     # if setup.get_simulation_type() == "deterministic":
     elif setup.get_simulation_type() == "deterministic":
         new_config_dct["mark_field_max"] = True
-        if setup.core.plot_variable == "affected_area_mono":
-            new_config_dct["extend"] = "none"
-            new_config_dct["n_levels"] = 1
     elif setup.get_simulation_type() == "ensemble":
         # SR_TMP < TODO Re-enable once there's enough space in the legend box
         new_config_dct["mark_field_max"] = False
@@ -668,10 +665,11 @@ def create_plot_config(
     # Colors
     extend = new_config_dct.get("extend", "max")
     cmap = new_config_dct.get("cmap", "flexplot")
-    if (
-        setup.core.plot_variable == "affected_area_mono"
-        or setup.core.input_variable == "affected_area"
-    ):
+    # SR_TMP < TODO Cleaner solution, e.g., define cmap directly via in function
+    color_under = new_config_dct.pop("color_under", None)
+    color_over = new_config_dct.pop("color_over", None)
+    # SR_TMP >
+    if setup.core.input_variable == "affected_area":
         new_config_dct["colors"] = (np.array([(200, 200, 200)]) / 255).tolist()
     elif cmap == "flexplot":
         assert new_config_dct["n_levels"] is not None
@@ -682,8 +680,6 @@ def create_plot_config(
         assert new_config_dct["levels"] is not None
         n_levels = len(new_config_dct["levels"])
         cmap = mpl.cm.get_cmap(cmap)
-        color_under = new_config_dct.get("color_under")
-        color_over = new_config_dct.get("color_over")
         n_colors = n_levels - 1
         if extend in ["min", "both"] and not color_under:
             n_colors += 1
@@ -769,17 +765,9 @@ def create_box_labels(
             f"\t{escape_format_keys(format_level_label(mdata, words))}"
         )
     if setup.get_simulation_type() == "ensemble":
-        # SR_TMP <
-        if setup.core.ens_variable == "cloud_occurrence_probability":
-            labels["data_info"]["lines"].append(
-                f"{words['ensemble_variable', 'abbr']}:"
-                f"\t{words['cloud_probability', 'abbr']}"
-            )
-        else:
-            labels["data_info"]["lines"].append(
-                f"{words['ensemble_variable', 'abbr']}:\t{ens_var_name}"
-            )
-        # SR_TMP >
+        labels["data_info"]["lines"].append(
+            f"{words['ensemble_variable', 'abbr']}:\t{ens_var_name}"
+        )
         if setup.core.ens_variable == "probability":
             labels["data_info"]["lines"].append(
                 f"{words['threshold']}:\t{symbols['ge']} {setup.core.ens_param_thr}"
@@ -788,7 +776,6 @@ def create_box_labels(
         elif setup.core.ens_variable in [
             "cloud_arrival_time",
             "cloud_departure_time",
-            "cloud_occurrence_probability",
         ]:
             labels["data_info"]["lines"].append(
                 # f"{words['cloud_density']}:\t{words['minimum', 'abbr']}"
@@ -807,11 +794,6 @@ def create_box_labels(
                 r"$\,/\,$"
                 f"{n_tot} ({n_min/(n_tot or 0.001):.0%})"
             )
-            if setup.core.ens_variable == "cloud_occurrence_probability":
-                labels["data_info"]["lines"].append(
-                    f"{words['time_window']}:\t{setup.core.ens_param_time_win}"
-                    f" {words['hour', 'abbr']}"
-                )
 
     if setup.get_simulation_type() == "deterministic":
         if unit:
@@ -902,8 +884,6 @@ def format_names_etc(
                 "cloud_departure_time",
             ]:
                 return f"{words['hour', 'pl']}"
-            elif setup.core.ens_variable == "cloud_occurrence_probability":
-                return "%"
         return format_meta_datum(unit=format_meta_datum(mdata.variable.unit))
 
     unit = _format_unit(setup, words, mdata)
@@ -929,10 +909,7 @@ def format_names_etc(
     # Short/long names #2: By plot variable/type; ensemble variable name
     ens_var_name = "none"
     if setup.get_simulation_type() == "deterministic":
-        if (
-            setup.core.plot_variable.startswith("affected_area")
-            or setup.core.input_variable == "affected_area"
-        ):
+        if setup.core.input_variable == "affected_area":
             long_name = var_name
     elif setup.get_simulation_type() == "ensemble":
         if setup.core.ens_variable == "minimum":
@@ -961,9 +938,6 @@ def format_names_etc(
         elif setup.core.ens_variable == "cloud_departure_time":
             long_name = f"{words['cloud_departure_time']}"
             short_name = f"{words['departure']}"
-        elif setup.core.ens_variable == "cloud_occurrence_probability":
-            short_name = f"{words['probability']}"
-            long_name = f"{words['cloud_occurrence_probability']}"
         if ens_var_name == "none":
             ens_var_name = f"{words[setup.core.ens_variable].c}"
 
@@ -991,8 +965,8 @@ def capitalize(s: str) -> str:
         return s
     try:
         return s[0].upper() + s[1:]
-    except Exception:
-        raise ValueError(f"string not capitalizable: '{s}'")
+    except Exception as e:
+        raise ValueError(f"string not capitalizable: '{s}'") from e
 
 
 def format_max_marker_label(labels: Dict[str, Any], fld: np.ndarray) -> str:
@@ -1186,8 +1160,8 @@ def colors_flexplot(n_levels: int, extend: str) -> Sequence[ColorType]:
             8: colors_core_7,
             9: colors_core_8,
         }[n_levels]
-    except KeyError:
-        raise ValueError(f"n_levels={n_levels}")
+    except KeyError as e:
+        raise ValueError(f"n_levels={n_levels}") from e
 
     if extend == "none":
         return colors_core

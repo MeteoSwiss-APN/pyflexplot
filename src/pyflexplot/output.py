@@ -1,6 +1,4 @@
-"""
-Output.
-"""
+"""Output."""
 # Standard library
 import re
 from dataclasses import dataclass
@@ -22,7 +20,10 @@ from .utils.logging import log
 
 @dataclass
 class FilePathFormatter:
+    """Format file paths."""
+
     def __init__(self, previous: Optional[List[str]] = None) -> None:
+        """Create an instance of ``FilePathFormatter``."""
         self.previous: List[str] = previous if previous is not None else []
 
     # pylint: disable=W0102  # dangerous-default-value ([])
@@ -92,7 +93,6 @@ class FilePathFormatter:
             "nageclass": setup.core.dimensions.nageclass,
             "noutrel": setup.core.dimensions.noutrel,
             "plot_type": setup.core.plot_type,
-            "plot_variable": setup.core.plot_variable,
             "release_site": nc_meta_data["derived"]["release_site"],
             "release_start": release_start,
             "species_id": setup.core.dimensions.species_id,
@@ -106,12 +106,14 @@ class FilePathFormatter:
     ) -> List[str]:
         return [self._format_time_step(ts, setup) for ts in tss_int]
 
-    def _format_time_step(self, ts: Union[int, datetime], setup: Setup) -> str:
+    @staticmethod
+    def _format_time_step(ts: Union[int, datetime], setup: Setup) -> str:
         if not isinstance(ts, datetime):
             ts = init_datetime(str(ts))
         return ts.strftime(setup.outfile_time_format)
 
-    def _replace_format_keys(self, path: str, kwargs: Mapping[str, Any]) -> str:
+    @staticmethod
+    def _replace_format_keys(path: str, kwargs: Mapping[str, Any]) -> str:
         for key, val in kwargs.items():
             if not (isinstance(val, Sequence) and not isinstance(val, str)):
                 val = [val]

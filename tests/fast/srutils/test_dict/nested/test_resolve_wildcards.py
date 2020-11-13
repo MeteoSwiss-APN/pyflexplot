@@ -1,6 +1,4 @@
-"""
-Tests for function ``srutils.dict.nested_dict_resolve_wildcards``.
-"""
+"""Test function ``srutils.dict.nested_dict_resolve_wildcards``."""
 # First-party
 from srutils.dict import nested_dict_resolve_wildcards
 

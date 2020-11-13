@@ -1,6 +1,4 @@
-"""
-CLI utils.
-"""
+"""CLI utils."""
 # Standard library
 import sys
 from typing import Type

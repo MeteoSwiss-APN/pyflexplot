@@ -6,11 +6,11 @@ SHELL := /bin/bash
 # Options
 #==============================================================================
 
-ECHO_PREFIX ?= \nMAKE: #OPT Prefix of command echos
-IGNORE_VENV ?= 0#OPT Don't create and/or use a virtual environment.
-CHAIN ?= 0#OPT Whether to chain targets, e.g., let test depend on install-test.
-VENV_DIR ?= venv#OPT Path to virtual environment to be created and/or used.
-VENV_NAME ?= pyflexplot#OPT Name of virtual environment if one is created.
+IGNORE_VENV ?= 0#OPT Don't create and/or use a virtual environment
+CHAIN ?= 0#OPT Whether to chain targets, e.g., let test depend on install-test
+MSG ?= ""#OPT Message used as, e.g., tag annotation in version bump commands
+VENV_DIR ?= venv#OPT Path to virtual environment to be created and/or used
+VENV_NAME ?= pyflexplot#OPT Name of virtual environment if one is created
 
 #------------------------------------------------------------------------------
 
@@ -30,6 +30,11 @@ PREFIX = ${PREFIX_VENV}
 endif
 endif
 export PREFIX
+
+# Options for all calls to up-do-date pip (i.e., AFTER `pip install -U pip`)
+# Example: `--use-feature=2020-resolver` before the new resolver became the default
+PIP_OPTS = --use-feature=2020-resolver
+export PIP_OPTS
 
 #
 # Targets conditional on ${CHAIN}.
@@ -156,11 +161,11 @@ help:
 
 .PHONY: clean-all #CMD Remove all build, test, coverage and Python artifacts.
 clean-all: clean-venv clean-test clean-build clean-pyc
-	@echo -e "${ECHO_PREFIX}cleaning up"
+	@echo -e "\n[make clean-all] cleaning up"
 
 .PHONY: clean-build #CMD Remove build artifacts.
 clean-build:
-	@echo -e "${ECHO_PREFIX}removing build artifacts"
+	@echo -e "\n[make clean-build] removing build artifacts"
 	\rm -rf "build/"
 	\rm -rf "dist/"
 	\rm -rf ".eggs/"
@@ -169,7 +174,7 @@ clean-build:
 
 .PHONY: clean-pyc #CMD Remove Python file artifacts.
 clean-pyc:
-	@echo -e "${ECHO_PREFIX}removing Python file artifacts"
+	@echo -e "\n[make clean-pyc] removing Python file artifacts"
 	@\rm -rf $(\find . -not -path './venv*' -and -not -path './ENV*' -name '*.pyc'       -exec echo "rm -rf '{}'" \;)
 	@\rm -rf $(\find . -not -path './venv*' -and -not -path './ENV*' -name '*.pyo'       -exec echo "rm -rf '{}'" \;)
 	@\rm -rf $(\find . -not -path './venv*' -and -not -path './ENV*' -name '*~'          -exec echo "rm -rf '{}'" \;)
@@ -177,50 +182,55 @@ clean-pyc:
 
 .PHONY: clean-test #CMD Remove testing artifacts.
 clean-test:
-	@echo -e "${ECHO_PREFIX}removing testing artifacts"
+	@echo -e "\n[make clean-test] removing testing artifacts"
 	\rm -rf ".tox/"
 	\rm -f ".coverage"
 	\rm -rf "htmlcov/"
 	\rm -rf ".pytest_cache"
+	\rm -rf ".mypy_cache"
 
 .PHONY: clean-venv #CMD Remove virtual environment.
 clean-venv:
-	@echo -e "${ECHO_PREFIX}removing virtual environment at '${VENV_DIR}'"
+	@echo -e "\n[make clean-venv] removing virtual environment at '${VENV_DIR}'"
 	\rm -rf "${VENV_DIR}"
 
 #==============================================================================
 # Version control
 #==============================================================================
 
+# Note: Check if git is initialized by checking error status of git rev-parse
 .PHONY: git #CMD Initialize a git repository and make initial commit.
-git: clean-all
-ifeq ($(shell git tag >/dev/null 2>&1 && echo 0 || echo 1), 0)
-	@echo -e "${ECHO_PREFIX}git already initialized"
-else
-	@echo -e "${ECHO_PREFIX}initializing Git repository"
+git:
+	@git rev-parse 2>&1 && $(MAKE) _git_ok || $(MAKE) _git_init
+
+# Hidden target called when git is already initialized
+.PHONY: _git_ok
+_git_ok:
+	@echo -e "\n[make git] git already initialized"
+
+# Hidden target called when git is not yet initialized
+.PHONY: _git_init
+_git_init:
+	$(MAKE) clean-all
+	@echo -e "\n[make git] initializing git repository"
 	\git init
 	\git add .
 	\git commit -m 'initial commit'
 	\git --no-pager log -n1 --stat
-endif
 
 #==============================================================================
 # Virtual Environments
 #==============================================================================
 
 .PHONY: venv #CMD Create a virtual environment.
-venv:
-ifneq ($(shell git tag >/dev/null 2>&1 && echo 0 || echo 1), 0)
-	@echo -e "${ECHO_PREFIX}error: git not initialized (run `make git`)"
-else
+venv: git
 ifeq (${IGNORE_VENV}, 0)
 	$(eval PREFIX = ${PREFIX_VENV})
 	@export PREFIX
 ifeq (${VIRTUAL_ENV},)
-	@echo -e "${ECHO_PREFIX}creating virtual environment '${VENV_NAME}' at '${VENV_DIR}'"
+	@echo -e "\n[make venv] creating virtual environment '${VENV_NAME}' at '${VENV_DIR}'"
 	python -m venv ${VENV_DIR} --prompt='${VENV_NAME}'
 	${PREFIX}python -m pip install -U pip
-endif
 endif
 endif
 
@@ -230,52 +240,73 @@ endif
 
 .PHONY: install #CMD Install the package with pinned runtime dependencies.
 install: ${_VENV}
-	@echo -e "${ECHO_PREFIX}installing the package"
-	${PREFIX}python -m pip install . --use-feature=2020-resolver
+	@echo -e "\n[make install] installing the package"
+	${PREFIX}python -m pip install -r requirements/run-pinned.txt ${PIP_OPTS}
+	${PREFIX}python -m pip install . ${PIP_OPTS}
 
-.PHONY: install-dev #CMD Install the package as editable with pinned runtime and development dependencies.
+.PHONY: install-dev #CMD Install the package as editable with pinned runtime and\ndevelopment dependencies.
 install-dev: ${_VENV}
-	@echo -e "${ECHO_PREFIX}installing the package as editable with development dependencies"
-	${PREFIX}python -m pip install -r requirements/dev-pinned.txt --use-feature=2020-resolver
-	${PREFIX}python -m pip install -e . --use-feature=2020-resolver
+	@echo -e "\n[make install-dev] installing the package as editable with development dependencies"
+	${PREFIX}python -m pip install -r requirements/dev-pinned.txt ${PIP_OPTS}
+	${PREFIX}python -m pip install -e . ${PIP_OPTS}
 	${PREFIX}pre-commit install
 
 #==============================================================================
 # Dependencies
 #==============================================================================
 
-.PHONY: update-run-deps #CMD Update pinned runtime dependencies based on setup.py
-update-run-deps:
-	@echo -e "${ECHO_PREFIX}updating pinned runtime dependencies"
-	@echo -e "temporary virtual environment: ${_TMP_VENV}"
-	python -m venv ${_TMP_VENV}
-	${_TMP_VENV}/bin/python -m pip install -U pip
-	\rm -fv requirements.txt
-	${_TMP_VENV}/bin/python -m pip install . --use-feature=2020-resolver; \
-		ln -sfv requirements/run-pinned.txt requirements.txt
-	${_TMP_VENV}/bin/python -m pip freeze | \grep -v '\<file:' > requirements/run-pinned.txt
-	\rm -rf ${_TMP_VENV}
+.PHONY: update-run-deps #CMD Update pinned runtime dependencies based on setup.py;\nshould be followed by update-dev-deps (consider update-run-dev-deps)
+update-run-deps: git
+	@echo -e "\n[make update-run-deps] updating pinned runtime dependencies in requirements/run-pinned.txt"
+	\rm -f requirements/run-pinned.txt
+	@echo -e "temporary virtual environment: ${_TMP_VENV}-run"
+	python -m venv ${_TMP_VENV}-run
+	${_TMP_VENV}-run/bin/python -m pip install -U pip
+	${_TMP_VENV}-run/bin/python -m pip install . ${PIP_OPTS}
+	${_TMP_VENV}-run/bin/python -m pip freeze | \grep -v '\<file:' > requirements/run-pinned.txt
+	\rm -rf ${_TMP_VENV}-run
 
-.PHONY: update-dev-deps #CMD Update pinned development dependencies based on\nrequirements/run-pinned.txt and requitements/dev-unpinned.txt
-update-dev-deps:
-	@echo -e "${ECHO_PREFIX}updating pinned development dependencies"
-	@echo -e "temporary virtual environment: ${_TMP_VENV}"
-	python -m venv ${_TMP_VENV}
-	${_TMP_VENV}/bin/python -m pip install -U pip
-	${_TMP_VENV}/bin/python -m pip install -r requirements/dev-unpinned.txt --use-feature=2020-resolver
-	${_TMP_VENV}/bin/python -m pip install -r requirements/run-pinned.txt --no-deps --use-feature=2020-resolver
-	${_TMP_VENV}/bin/python -m pip freeze > requirements/dev-pinned.txt
-	\rm -rf ${_TMP_VENV}
+.PHONY: update-dev-deps #CMD Update pinned development dependencies based on\nrequirements/dev-unpinned.txt; includes runtime dependencies in\nrequirements/run-pinned.txt
+update-dev-deps: git
+	@echo -e "\n[make update-dev-deps] updating pinned development dependencies in requirements/dev-pinned.txt"
+	\rm -f requirements/dev-pinned.txt
+	@echo -e "temporary virtual environment: ${_TMP_VENV}-dev"
+	python -m venv ${_TMP_VENV}-dev
+	${_TMP_VENV}-dev/bin/python -m pip install -U pip
+	${_TMP_VENV}-dev/bin/python -m pip install -r requirements/dev-unpinned.txt ${PIP_OPTS}
+	${_TMP_VENV}-dev/bin/python -m pip install -r requirements/run-pinned.txt --no-deps ${PIP_OPTS}
+	${_TMP_VENV}-dev/bin/python -m pip freeze > requirements/dev-pinned.txt
+	\rm -rf ${_TMP_VENV}-dev
+
+# Note: Updating run and dev deps MUST be done in sequence
+.PHONY: update-run-dev-deps #CMD Update pinned runtime and development dependencies
+update-run-dev-deps:
+	$(MAKE) update-run-deps
+	$(MAKE) update-dev-deps
 
 .PHONY: update-tox-deps #CMD Update pinned tox testing dependencies based on\nrequirements/tox-unpinned.txt
-update-tox-deps:
-	@echo -e "${ECHO_PREFIX}updating pinned tox testing dependencies"
-	@echo -e "temporary virtual environment: ${_TMP_VENV}"
-	python -m venv ${_TMP_VENV}
-	${_TMP_VENV}/bin/python -m pip install -U pip
-	${_TMP_VENV}/bin/python -m pip install -r requirements/tox-unpinned.txt --use-feature=2020-resolver
-	${_TMP_VENV}/bin/python -m pip freeze > requirements/tox-pinned.txt
-	\rm -rf ${_TMP_VENV}
+update-tox-deps: git
+	\rm -f requirements/tox-pinned.txt
+	@echo -e "\n[make update-tox-deps] updating pinned tox testing dependencies in requirements/tox-pinned.txt"
+	@echo -e "temporary virtual environment: ${_TMP_VENV}-tox"
+	python -m venv ${_TMP_VENV}-tox
+	${_TMP_VENV}-tox/bin/python -m pip install -U pip
+	${_TMP_VENV}-tox/bin/python -m pip install -r requirements/tox-unpinned.txt ${PIP_OPTS}
+	${_TMP_VENV}-tox/bin/python -m pip freeze > requirements/tox-pinned.txt
+	\rm -rf ${_TMP_VENV}-tox
+
+.PHONY: update-precommit-deps #CMD Update pinned pre-commit dependencies specified in\n.pre-commit-config.yaml
+update-precommit-deps: git
+	@echo -e "\n[make update-precommit-deps] updating pinned tox testing dependencies in .pre-commit-config.yaml"
+	python -m venv ${_TMP_VENV}-precommit
+	${_TMP_VENV}-precommit/bin/python -m pip install -U pip
+	${_TMP_VENV}-precommit/bin/python -m pip install pre-commit
+	${_TMP_VENV}-precommit/bin/pre-commit autoupdate
+	\rm -rf ${_TMP_VENV}-precommit
+
+.PHONY: update-deps #CMD Update all pinned dependencies (run, dev, tox, precommit)
+update-deps: update-run-dev-deps update-tox-deps update-precommit-deps
+	@echo -e "\n[make update-deps] updating all pinned dependencies (run, dev, tox, precommit)"
 
 #==============================================================================
 # Versioning
@@ -291,33 +322,49 @@ update-tox-deps:
 
 .PHONY: bump-patch #CMD Increment patch component Z of version number X.Y.Z,\nincl. git commit and tag
 bump-patch: ${_INSTALL_DEV}
-	@echo -e "${ECHO_PREFIX}bumping version number: increment patch component\n"
+ifeq ($(MSG), "")
+	@echo -e "\n[make bump-patch] Error: Please provide a description with MSG='...' (use '"'\\n'"' for multiple lines)"
+else
+	@echo -e "\n[make bump-patch] bumping version number: increment patch component\n"
+	@echo -e '\nTag annotation:\n\n$(subst ',",$(MSG))\n'
 	@${PREFIX}bumpversion patch --verbose --no-commit --no-tag && echo
 	@${PREFIX}pre-commit run --files $$(git diff --name-only) && git add -u
-	@git commit -m "new version v$$(cat VERSION) (patch bump)" --no-verify && echo
-	@read -p "Please annotate new tag: " msg && git tag v$$(cat VERSION) -a  -m "$${msg}"
-	@echo -e "\ngit tag -n v$$(cat VERSION)" && git tag -n v$$(cat VERSION)
+	@git commit -m "new version v$$(cat VERSION.txt) (patch bump)"$$'\n\n$(subst ',",$(MSG))' --no-verify && echo
+	@git tag -a v$$(cat VERSION.txt) -m $$'$(subst ',",$(MSG))'
+	@echo -e "\ngit tag -n -l v$$(cat VERSION.txt)" && git tag -n -l v$$(cat VERSION.txt)
 	@echo -e "\ngit log -n1" && git log -n1
+endif
+# ' (close quote that vim thinks is still open to get the syntax highlighting back in order)
 
 .PHONY: bump-minor #CMD Increment minor component Y of version number X.Y.Z,\nincl. git commit and tag
 bump-minor: ${_INSTALL_DEV}
-	@echo -e "${ECHO_PREFIX}bumping version number: increment minor component\n"
+ifeq ($(MSG), "")
+	@echo -e "\n[make bump-minor] Error: Please provide a description with MSG='...' (use '"'\\n'"' for multiple lines)"
+	@echo -e '\nTag annotation:\n\n$(subst ',",$(MSG))\n'
 	@${PREFIX}bumpversion minor --verbose --no-commit --no-tag && echo
 	@${PREFIX}pre-commit run --files $$(git diff --name-only) && git add -u
-	@git commit -m "new version v$$(cat VERSION) (minor bump)" --no-verify && echo
-	@read -p "Please annotate new tag: " msg && git tag v$$(cat VERSION) -a  -m "$${msg}"
-	@echo -e "\ngit tag -n v$$(cat VERSION)" && git tag -n v$$(cat VERSION)
+	@git commit -m "new version v$$(cat VERSION.txt) (minor bump)"$$'\n\n$(subst ',",$(MSG))' --no-verify && echo
+	@git tag -a v$$(cat VERSION.txt) -m $$'$(subst ',",$(MSG))'
+	@echo -e "\ngit tag -n -l v$$(cat VERSION.txt)" && git tag -n -l v$$(cat VERSION.txt)
 	@echo -e "\ngit log -n1" && git log -n1
+else
+endif
+# ' (close quote that vim thinks is still open to get the syntax highlighting back in order)
 
 .PHONY: bump-major #CMD Increment major component X of version number X.Y.Z,\nincl. git commit and tag
 bump-major: ${_INSTALL_DEV}
-	@echo -e "${ECHO_PREFIX}bumping version number: increment major component\n"
+ifeq ($(MSG), "")
+	@echo -e "\n[make bump-major] Error: Please provide a description with MSG='...' (use '"'\\n'"' for multiple lines)"
+	@echo -e '\nTag annotation:\n\n$(subst ',",$(MSG))\n'
 	@${PREFIX}bumpversion major --verbose --no-commit --no-tag && echo
 	@${PREFIX}pre-commit run --files $$(git diff --name-only) && git add -u
-	@git commit -m "new version v$$(cat VERSION) (major bump)" --no-verify && echo
-	@read -p "Please annotate new tag: " msg && git tag v$$(cat VERSION) -a  -m "$${msg}"
-	@echo -e "\ngit tag -n v$$(cat VERSION)" && git tag -n v$$(cat VERSION)
+	@git commit -m "new version v$$(cat VERSION.txt) (major bump)"$$'\n\n$(subst ',",$(MSG))' --no-verify && echo
+	@git tag -a v$$(cat VERSION.txt) -m $$'$(subst ',",$(MSG))'
+	@echo -e "\ngit tag -n -l v$$(cat VERSION.txt)" && git tag -n -l v$$(cat VERSION.txt)
 	@echo -e "\ngit log -n1" && git log -n1
+else
+endif
+# ' (close quote that vim thinks is still open to get the syntax highlighting back in order)
 
 #==============================================================================
 # Format and check the code
@@ -325,50 +372,60 @@ bump-major: ${_INSTALL_DEV}
 
 .PHONY: format #CMD Check and fix the code formatting
 format: ${_INSTALL_DEV}
-	@echo -e "${ECHO_PREFIX}checking and fixing code formatting"
+	@echo -e "\n[make format] checking and fixing code formatting"
 	${PREFIX}pre-commit run --all-files
 
-.PHONY: check # CMD Check the code for correctness and best practices
+.PHONY: check #CMD Check the code for correctness and best practices
 check: ${_INSTALL_DEV}
-	@echo -e "${ECHO_PREFIX}checking code correctness and best practices"
+	@echo -e "\n[make check] checking code correctness and best practices"
 	${PREFIX}tox --parallel -e mypy -e flake8 -e pylint
+
+.PHONY: spellcheck #CMD Check for spelling errors
+spellcheck: ${_INSTALL_DEV}
+	@echo -e "\n[make spellcheck] checking for spelling errors"
+	${PREFIX}codespell *.rst
+	find src tests docs -name '*.rst' -exec ${PREFIX}codespell {} \+
+	${PREFIX}codespell *.md
+	find src tests docs -name '*.md' -exec ${PREFIX}codespell {} \+
+	${PREFIX}codespell *.py
+	find src tests docs -name '*.py' -exec ${PREFIX}codespell {} \+
 
 #==============================================================================
 # Run the tests
 #==============================================================================
 
 .PHONY: test-fast #CMD Run only fast tests in the development environment
-test-fast: ${_INSTALL_TEST}
-	@echo -e "${ECHO_PREFIX}running fast tests locally"
+test-fast: ${_INSTALL_DEV}
+	@echo -e "\n[make test-fast] running fast tests locally"
 	# ${PREFIX}tox -e py37 -- tests/fast
 	${PREFIX}pytest tests/fast
 
 .PHONY: test-medium #CMD Run only medium-fast tests in the development environment
 test-medium: ${_INSTALL_TEST}
-	@echo -e "${ECHO_PREFIX}running medium-fast tests locally"
+	@echo -e "\n[make test-medium] running medium-fast tests locally"
 	# ${PREFIX}tox -e py37 -- tests/medium
 	${PREFIX}pytest tests/medium
 
 .PHONY: test-slow #CMD Run only slow tests in the development environment
-test-slow: ${_INSTALL_TEST}
-	@echo -e "${ECHO_PREFIX}running slow tests locally"
+test-slow: ${_INSTALL_DEV}
+	@echo -e "\n[make test-slow] running slow tests locally"
 	# ${PREFIX}tox -e py37 -- tests/slow
 	${PREFIX}pytest tests/slow
 
 .PHONY: test #CMD Run all tests in the development environment
-test: ${_INSTALL_TEST}
-	@echo -e "${ECHO_PREFIX}running all tests locally"
+test: ${_INSTALL_DEV}
+	@echo -e "\n[make test] running all tests locally"
 	# ${PREFIX}tox -e py37
 	${PREFIX}pytest tests
 
 .PHONY: test-iso #CMD Run all tests in an isolated environment
-test-iso: ${_INSTALL_TEST}
-	@echo -e "${ECHO_PREFIX}running all tests in isolation"
+test-iso: ${_INSTALL_DEV}
+	@echo -e "\n[make test-iso] running all tests in isolation"
 	${PREFIX}tox -e py37
 
 .PHONY: test-check #CMD Run tests and checks in an isolated environment
-test-check: ${_INSTALL_TEST}
-	@echo -e "${ECHO_PREFIX}running tests and checks in isolated environments"
+test-check: ${_INSTALL_DEV}
+	@echo -e "\n[make test-check] running tests and checks in isolated environments"
 	${PREFIX}tox --parallel
 
 #==============================================================================
@@ -377,7 +434,7 @@ test-check: ${_INSTALL_TEST}
 
 # .PHONY: docs #CMD Generate HTML documentation, including API docs.
 # docs: ${_INSTALL_DEV}
-# 	@echo -e "${ECHO_PREFIX}generating HTML documentation"
+# 	@echo -e "\n[make docs] generating HTML documentation"
 # 	\rm -f docs/{{ cookiecutter.project_slug }}.rst
 # 	\rm -f docs/modules.rst
 # 	${PREFIX}sphinx-apidoc -o docs/ src/{{ cookiecutter.project_slug }}
@@ -387,7 +444,7 @@ test-check: ${_INSTALL_TEST}
 
 # .PHONY: servedocs #CMD Compile the docs watching for changes.
 # servedocs: docs
-# 	@echo -e "${ECHO_PREFIX}continuously regenerating HTML documentation"
+# 	@echo -e "\n[make servedocs] continuously regenerating HTML documentation"
 # 	${PREFIX}watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
 #==============================================================================
