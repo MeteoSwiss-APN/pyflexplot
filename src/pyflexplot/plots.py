@@ -491,14 +491,8 @@ def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
             axs_map.add_marker(p_lat=max_lat, p_lon=max_lon, **config.markers["max"])
 
 
-# pylint: disable=R0912  # too-many-branches
-# pylint: disable=R0914  # too-many-locals
-# pylint: disable=R0915  # too-many-statements
-def create_map_config(field: Field) -> MapAxesConfig:
-    domain_type = field.var_setups.collect_equal("domain")
-    model_name = field.var_setups.collect_equal("model")
-    scale_fact = field.var_setups.collect_equal("scale_fact")
-
+def init_map_axes_config(model_name: str, domain_type: str) -> Dict[str, Any]:
+    """Initialize map axes configuration based on model and domain type."""
     conf_continental_scale: Dict[str, Any] = {
         "geo_res": "50m",
         "geo_res_cities": "110m",
@@ -520,8 +514,6 @@ def create_map_config(field: Field) -> MapAxesConfig:
         "min_city_pop": 0,
         "ref_dist_config": {"dist": 25},
     }
-
-    # Derive configuration of map axes from domain and model
     map_axes_config: Optional[Dict[str, Any]] = None
     if domain_type == "full":
         if model_name.startswith("COSMO"):
@@ -536,13 +528,15 @@ def create_map_config(field: Field) -> MapAxesConfig:
         map_axes_config = conf_country_scale
     if map_axes_config is None:
         raise NotImplementedError(
-            f"map axes config for model '{model_name}' and domain type '{domain_type}'"
+            f"map axes config for model '{model_name}' and domain '{domain_type}'"
         )
+    return map_axes_config
 
-    # Set scaling factor of plot elements
-    map_axes_config["scale_fact"] = scale_fact
 
-    # Initialize domain (projection and extent)
+def init_domain(field: Field) -> Domain:
+    """Initialize Domain object (projection and extent)."""
+    model_name = field.var_setups.collect_equal("model")
+    domain_type = field.var_setups.collect_equal("domain")
     domain: Optional[Domain] = None
     if domain_type == "full":
         if model_name.startswith("COSMO"):
@@ -565,11 +559,20 @@ def create_map_config(field: Field) -> MapAxesConfig:
             domain = Domain(field, zoom_fact=11.0, rel_offset=(-0.18, -0.11))
     if domain is None:
         raise NotImplementedError(
-            f"domain config for model '{model_name}' and domain type '{domain_type}'"
+            f"domain for model '{model_name}' and domain type '{domain_type}'"
         )
+    return domain
 
+
+def create_map_config(field: Field) -> MapAxesConfig:
     return MapAxesConfig(
-        lang=field.var_setups.collect_equal("lang"), domain=domain, **map_axes_config
+        lang=field.var_setups.collect_equal("lang"),
+        domain=init_domain(field),
+        scale_fact=field.var_setups.collect_equal("scale_fact"),
+        **init_map_axes_config(
+            model_name=field.var_setups.collect_equal("model"),
+            domain_type=field.var_setups.collect_equal("domain"),
+        ),
     )
 
 
