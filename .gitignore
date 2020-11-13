@@ -1,6 +1,9 @@
 # Local files
 local/
 
+# Plot test directory
+test_preset_plots/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
