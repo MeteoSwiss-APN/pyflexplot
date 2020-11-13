@@ -74,10 +74,6 @@ class BoxedPlotConfig:
     model_info: str = ""  # SR_TODO sensible default
     n_levels: Optional[int] = None  # SR_TODO sensible default
 
-    class Config:  # noqa
-        allow_extra = False
-        arbitrary_types_allowed = True
-
     @property
     def fig_aspect(self):
         return np.divide(*self.fig_size)
