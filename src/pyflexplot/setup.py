@@ -147,6 +147,7 @@ class CoreSetup(BaseModel):
             "ens_cloud_departure_time",
             "maximum",
             "mean",
+            "med_abs_dev",
             "median",
             "minimum",
             "none",
@@ -433,7 +434,8 @@ class Setup(BaseModel):
                 have one value per panel. For example, a four-panel plot with
                 one ensemble statistic plot each may be specified with
                 ``multipanel_param = "ens_variable"`` and ``ens_variable =
-                ["minimum", "maximum", "median", "mean", "std_dev"]``.
+                ["minimum", "maximum", "median", "mean", "std_dev",
+                "med_abs_dev"]``.
 
             nageclass: Index of age class (zero-based). Use the format key
                 '{nageclass}' to embed it in ``outfile``.

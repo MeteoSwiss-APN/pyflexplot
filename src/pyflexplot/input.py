@@ -17,6 +17,7 @@ from typing import Type
 # Third-party
 import netCDF4 as nc4  # types: ignore  # pylance
 import numpy as np
+import scipy.stats as sp_stats
 from cartopy.crs import PlateCarree
 from cartopy.crs import RotatedPole
 
@@ -572,6 +573,8 @@ class InputFileEnsemble:
             fld_time = np.nanmean(fld_time_mem, axis=0)
         elif ens_variable == "std_dev":
             fld_time = np.nanstd(fld_time_mem, axis=0)
+        elif ens_variable == "med_abs_dev":
+            fld_time = sp_stats.median_abs_deviation(fld_time_mem, axis=0)
         elif ens_variable == "percentile":
             assert ens_param_pctl is not None  # mypy
             fld_time = np.percentile(fld_time_mem, ens_param_pctl, axis=0)

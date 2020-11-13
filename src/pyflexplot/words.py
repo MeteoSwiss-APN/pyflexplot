@@ -125,6 +125,16 @@ WORDS.add(
 WORDS.add(en="ensemble maximum", de="Ensemble-Maximum")
 WORDS.add(en="ensemble mean", de="Ensemble-Mittel")
 WORDS.add(en="ensemble median", de="Ensemble-Median")
+WORDS.add(
+    en={
+        "*": "ensemble median absolute deviation",
+        "abbr": "ens. median abs. deviation",
+    },
+    de={
+        "*": "Mittlere absolute Abweichung vom Ensemble-Median",
+        "abbr": "Mittlere abs. Abw. vom Ens.-Median",
+    },
+)
 WORDS.add(en="ensemble minimum", de="Ensemble-Minimum")
 WORDS.add(en="ensemble percentile", de="Ensemble-Perzentil")
 WORDS.add(en="ensemble standard deviation", de="Ensemble-Standardabweichung")
@@ -230,6 +240,16 @@ WORDS.add(en="m AGL", de=f'm {s["ue"]}.G.')
 WORDS.add(en={"*": "maximum", "abbr": "max."}, de={"*": "Maximum", "abbr": "Max."})
 WORDS.add(en="mean", de="Mittel")
 WORDS.add(en="median", de="Median")
+WORDS.add(
+    en={
+        "*": "median absolute deviation",
+        "abbr": "median abs. deviation",
+    },
+    de={
+        "*": "Mittlere absolute Abweichung vom Median",
+        "abbr": "Mittlere abs. Abw. vom Median",
+    },
+)
 WORDS.add(en={"*": "member", "pl": "members"}, de={"*": "Member", "pl": "Members"})
 WORDS.add(en="MeteoSwiss", de="MeteoSchweiz")
 WORDS.add(en={"*": "minimum", "abbr": "min."}, de={"*": "Minimum", "abbr": "min."})

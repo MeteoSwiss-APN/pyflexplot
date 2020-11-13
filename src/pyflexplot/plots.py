@@ -617,6 +617,7 @@ def create_plot_config(
             "median",
             "mean",
             "std_dev",
+            "med_abs_dev",
             "percentile",
         ]:
             pass
@@ -916,6 +917,11 @@ def format_names_etc(
         elif setup.core.ens_variable == "std_dev":
             ens_var_name = words["standard_deviation"].s
             long_name = f"{words['ensemble_standard_deviation']} {var_name_rel}"
+        elif setup.core.ens_variable == "med_abs_dev":
+            ens_var_name = words["median_absolute_deviation"].s
+            long_name = (
+                f"{words['ensemble_median_absolute_deviation', 'abbr']} {var_name_rel}"
+            )
         elif setup.core.ens_variable == "percentile":
             assert setup.core.ens_param_pctl is not None  # mypy
             pctl = setup.core.ens_param_pctl
