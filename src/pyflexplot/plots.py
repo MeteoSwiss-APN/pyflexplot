@@ -616,7 +616,7 @@ def create_plot_config(
             "maximum",
             "median",
             "mean",
-            "stddev",
+            "std_dev",
             "percentile",
         ]:
             pass
@@ -913,7 +913,7 @@ def format_names_etc(
             "mean",
         ]:
             long_name = f"{words[f'ensemble_{setup.core.ens_variable}']} {var_name_rel}"
-        elif setup.core.ens_variable == "stddev":
+        elif setup.core.ens_variable == "std_dev":
             ens_var_name = words["standard_deviation"].s
             long_name = f"{words['ensemble_standard_deviation']} {var_name_rel}"
         elif setup.core.ens_variable == "percentile":
@@ -921,8 +921,7 @@ def format_names_etc(
             pctl = setup.core.ens_param_pctl
             th = {1: "st", 2: "nd", 3: "rd"}.get(pctl, "th")  # type: ignore
             long_name = (
-                f"{pctl:g}{words['th', th]}"
-                f" {words['ensemble_percentile']} {var_name_rel}"
+                f"{pctl:g}{words['th', th]}" f" {words['percentile']} {var_name_rel}"
             )
             ens_var_name = f"{pctl:g}{words['th', th]} {words['percentile']}"
         elif setup.core.ens_variable == "probability":

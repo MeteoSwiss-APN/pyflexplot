@@ -152,7 +152,7 @@ class CoreSetup(BaseModel):
             "none",
             "percentile",
             "probability",
-            "stddev",
+            "std_dev",
         ]
         if isinstance(value, str):
             assert value in choices, value
@@ -433,7 +433,7 @@ class Setup(BaseModel):
                 have one value per panel. For example, a four-panel plot with
                 one ensemble statistic plot each may be specified with
                 ``multipanel_param = "ens_variable"`` and ``ens_variable =
-                ["minimum", "maximum", "median", "mean", "stddev"]``.
+                ["minimum", "maximum", "median", "mean", "std_dev"]``.
 
             nageclass: Index of age class (zero-based). Use the format key
                 '{nageclass}' to embed it in ``outfile``.
