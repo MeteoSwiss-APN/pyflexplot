@@ -125,6 +125,23 @@ class Config:
                 "include": "lower",
             },
         ),
+        Config(  # [config8]
+            cls=LevelRangeFormatterInt,
+            sol=[
+                "   $\\tt \\leq$  3",
+                " 4 $\\tt -$  6",
+                " 7 $\\tt -$  9",
+                "10 $\\tt -$ 12",
+                "13 $\\tt -$ 15",
+                "16 $\\tt -$ 18",
+                "19 $\\tt -$ 21",
+                "   $\\tt >$ 21",
+            ],
+            kwargs={
+                "extend": "both",
+                "include": "upper",
+            },
+        ),
     ],
 )
 def test_base(config):

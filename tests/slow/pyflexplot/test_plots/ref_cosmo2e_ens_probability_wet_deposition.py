@@ -3889,7 +3889,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "80 $\\tt -$ 94",
+                    "s": "81 $\\tt -$ 95",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3919,7 +3919,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "65 $\\tt -$ 79",
+                    "s": "66 $\\tt -$ 80",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3949,7 +3949,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "50 $\\tt -$ 64",
+                    "s": "51 $\\tt -$ 65",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3979,7 +3979,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "35 $\\tt -$ 49",
+                    "s": "36 $\\tt -$ 50",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4009,7 +4009,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "20 $\\tt -$ 34",
+                    "s": "21 $\\tt -$ 35",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4039,7 +4039,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": " 5 $\\tt -$ 19",
+                    "s": " 6 $\\tt -$ 20",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

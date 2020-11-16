@@ -508,7 +508,10 @@ class LevelRangeFormatterInt(LevelRangeFormatter):
     ) -> Components:
         if lvl1 is not None:
             if lvl0 is not None:
-                lvl1 = lvl1 - 1
+                if self.include == "lower":
+                    lvl1 = lvl1 - 1
+                elif self.include == "upper":
+                    lvl0 = lvl0 + 1
                 if lvl0 == lvl1:
                     return Components.create("", "", self._format_level(lvl1))
         return super()._format_components(lvl0, lvl1)
