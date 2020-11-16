@@ -708,7 +708,7 @@ plot_summary = {
                     "fc": [1.0, 1.0, 1.0, 1.0],
                     "frame_on": True,
                     "label": {},
-                    "lines": [[[0.19999999999999996], [0.06741379310344853]]],
+                    "lines": [[[0.19999999999999996], [0.14500000000000024]]],
                     "position": {
                         "type": "Bbox",
                         "bounds": [0.8, 0.49, 0.19999999999999996, 0.29000000000000004],
@@ -2819,7 +2819,7 @@ plot_summary = {
                         "fc": [1.0, 1.0, 1.0, 1.0],
                         "frame_on": True,
                         "label": {},
-                        "lines": [[[0.19999999999999996], [0.06741379310344853]]],
+                        "lines": [[[0.19999999999999996], [0.14500000000000024]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": [
@@ -3500,7 +3500,7 @@ plot_summary = {
                         "fc": [1.0, 1.0, 1.0, 1.0],
                         "frame_on": True,
                         "label": {},
-                        "lines": [[[0.19999999999999996], [0.06741379310344853]]],
+                        "lines": [[[0.19999999999999996], [0.14500000000000024]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": [
@@ -4417,7 +4417,7 @@ plot_summary = {
                         "fc": [1.0, 1.0, 1.0, 1.0],
                         "frame_on": True,
                         "label": {},
-                        "lines": [[[0.19999999999999996], [0.06741379310344853]]],
+                        "lines": [[[0.19999999999999996], [0.14500000000000024]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": [
@@ -4714,7 +4714,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "   $\\tt >$ 42",
+                    "s": "   $\\tt >$ 33",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4744,7 +4744,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "37 $\\tt -$ 42",
+                    "s": "25 $\\tt -$ 33",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4774,7 +4774,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "31 $\\tt -$ 36",
+                    "s": "19 $\\tt -$ 24",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4804,7 +4804,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "25 $\\tt -$ 30",
+                    "s": "13 $\\tt -$ 18",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4834,7 +4834,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "19 $\\tt -$ 24",
+                    "s": "10 $\\tt -$ 12",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4864,7 +4864,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": "13 $\\tt -$ 18",
+                    "s": " 7 $\\tt -$  9",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4894,7 +4894,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": " 7 $\\tt -$ 12",
+                    "s": " 4 $\\tt -$  6",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4924,37 +4924,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "center",
                     },
-                    "s": " 1 $\\tt -$  6",
-                    "replace_edge_spaces": False,
-                    "edge_spaces_replacement_char": "␣",
-                    "kwargs": {
-                        "color": "black",
-                        "ha": "left",
-                        "fontname": "Liberation Sans",
-                        "size": 10.0,
-                        "family": "monospace",
-                        "va": "top",
-                    },
-                },
-                {
-                    "type": "TextBoxElementText",
-                    "loc": {
-                        "type": "TextBoxLocation",
-                        "loc": "tc",
-                        "loc_y": "t",
-                        "loc_x": "c",
-                        "dx_unit": 0.037500000000000006,
-                        "dy_unit": 0.031034482758620682,
-                        "dx": -3,
-                        "dy": -25.0,
-                        "x0": 0.5,
-                        "y0": 0.9689655172413794,
-                        "x": 0.38749999999999996,
-                        "y": 0.19310344827586234,
-                        "va": "top",
-                        "ha": "center",
-                    },
-                    "s": "   $\\tt \\leq$  0",
+                    "s": " 1 $\\tt -$  3",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -5167,31 +5137,6 @@ plot_summary = {
                     "kwargs": {"lw": 1.0},
                 },
                 {
-                    "type": "TextBoxElementColorRect",
-                    "loc": {
-                        "type": "TextBoxLocation",
-                        "loc": "tc",
-                        "loc_y": "t",
-                        "loc_x": "c",
-                        "dx_unit": 0.037500000000000006,
-                        "dy_unit": 0.031034482758620682,
-                        "dx": -10,
-                        "dy": -26.6,
-                        "x0": 0.5,
-                        "y0": 0.9689655172413794,
-                        "x": 0.12499999999999994,
-                        "y": 0.1434482758620692,
-                        "va": "top",
-                        "ha": "center",
-                    },
-                    "w": 4.0,
-                    "h": 2.0,
-                    "fc": "lightgray",
-                    "ec": "black",
-                    "x_anker": "left",
-                    "kwargs": {"lw": 1.0},
-                },
-                {
                     "type": "TextBoxElementMarker",
                     "loc": {
                         "type": "TextBoxLocation",
@@ -5201,11 +5146,11 @@ plot_summary = {
                         "dx_unit": 0.037500000000000006,
                         "dy_unit": 0.031034482758620682,
                         "dx": -8.0,
-                        "dy": -29.05,
+                        "dy": -26.55,
                         "x0": 0.5,
                         "y0": 0.9689655172413794,
                         "x": 0.19999999999999996,
-                        "y": 0.06741379310344853,
+                        "y": 0.14500000000000024,
                         "va": "top",
                         "ha": "center",
                     },
@@ -5227,11 +5172,11 @@ plot_summary = {
                         "dx_unit": 0.037500000000000006,
                         "dy_unit": 0.031034482758620682,
                         "dx": -3.5,
-                        "dy": -28.35,
+                        "dy": -25.85,
                         "x0": 0.5,
                         "y0": 0.9689655172413794,
                         "x": 0.36874999999999997,
-                        "y": 0.08913793103448298,
+                        "y": 0.1667241379310347,
                         "va": "top",
                         "ha": "center",
                     },
@@ -5563,7 +5508,7 @@ plot_summary = {
                         "fc": [1.0, 1.0, 1.0, 1.0],
                         "frame_on": True,
                         "label": {},
-                        "lines": [[[0.19999999999999996], [0.06741379310344853]]],
+                        "lines": [[[0.19999999999999996], [0.14500000000000024]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": [
@@ -6972,7 +6917,7 @@ plot_summary = {
                         "fc": [1.0, 1.0, 1.0, 1.0],
                         "frame_on": True,
                         "label": {},
-                        "lines": [[[0.19999999999999996], [0.06741379310344853]]],
+                        "lines": [[[0.19999999999999996], [0.14500000000000024]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": [
@@ -7569,7 +7514,7 @@ plot_summary = {
                         "fc": [1.0, 1.0, 1.0, 1.0],
                         "frame_on": True,
                         "label": {},
-                        "lines": [[[0.19999999999999996], [0.06741379310344853]]],
+                        "lines": [[[0.19999999999999996], [0.14500000000000024]]],
                         "position": {
                             "type": "Bbox",
                             "bounds": [
@@ -8540,7 +8485,7 @@ plot_summary = {
                 "fc": (1.0, 1.0, 1.0, 1.0),
                 "frame_on": True,
                 "label": "",
-                "lines": [[[0.19999999999999996], [0.06741379310344853]]],
+                "lines": [[[0.19999999999999996], [0.14500000000000024]]],
                 "position": {
                     "type": "Bbox",
                     "bounds": (0.8, 0.49, 0.19999999999999996, 0.29000000000000004),

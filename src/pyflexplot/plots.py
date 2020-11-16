@@ -616,20 +616,14 @@ def create_plot_config(
             levels_config_dct["levels"] = np.array([0.0, np.inf])
             levels_config_dct["scale"] = "lin"
     elif setup.get_simulation_type() == "ensemble":
-        if setup.core.ens_variable in [
-            "ens_cloud_arrival_time",
-            "ens_cloud_departure_time",
-            "probability",
-        ]:
+        if setup.core.ens_variable == "probability":
             levels_config_dct["extend"] = "both"
             levels_config_dct["scale"] = "lin"
+            levels_config_dct["levels"] = np.arange(5, 96, 15)
+            levels_config_dct["extend"] = "max"
             legend_config_dct["range_style"] = "int"
             legend_config_dct["ranges_align"] = "left"
             legend_config_dct["rstrip_zeros"] = False
-            if setup.core.ens_variable == "probability":
-                levels_config_dct["n"] = 0
-                levels_config_dct["levels"] = np.arange(5, 96, 15)
-                levels_config_dct["extend"] = "max"
     if setup.core.input_variable in [
         "cloud_arrival_time",
         "cloud_departure_time",
@@ -637,8 +631,21 @@ def create_plot_config(
         "ens_cloud_arrival_time",
         "ens_cloud_departure_time",
     ]:
-        levels_config_dct["n"] = 0
-        levels_config_dct["levels"] = np.arange(0, 8) * 6
+        levels_config_dct["scale"] = "lin"
+        legend_config_dct["range_style"] = "int"
+        legend_config_dct["ranges_align"] = "left"
+        legend_config_dct["rstrip_zeros"] = False
+        # SR_TMP < Adapt to simulation duration (not always 33 h)!
+        levels_config_dct["levels"] = [0, 3, 6, 9, 12, 18, 24, 33]
+        # SR_TMP >
+        if setup.core.input_variable == "cloud_arrival_time" or (
+            setup.core.ens_variable == "ens_cloud_arrival_time"
+        ):
+            levels_config_dct["extend"] = "min"
+        elif setup.core.input_variable == "cloud_departure_time" or (
+            setup.core.ens_variable == "ens_cloud_departure_time"
+        ):
+            levels_config_dct["extend"] = "max"
     levels_config_dct["levels"] = levels_from_time_stats(
         setup, field.time_props.stats, levels_config_dct
     )
