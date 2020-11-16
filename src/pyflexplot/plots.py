@@ -839,28 +839,24 @@ def create_box_labels(
                 f"{n_tot} ({n_min/(n_tot or 0.001):.0%})"
             )
 
-    if setup.get_simulation_type() == "deterministic":
-        if unit:
-            labels["legend"]["title"] = f"{short_name} ({unit})"
-        else:
-            labels["legend"]["title"] = f"{short_name}"
-    elif setup.get_simulation_type() == "ensemble":
-        if setup.core.ens_variable == "ens_cloud_arrival_time":
-            labels["legend"][
-                "title"
-            ] = f"{words['hour', 'pl']} {words['until']} {words['arrival']}"
-        elif setup.core.ens_variable == "ens_cloud_departure_time":
-            labels["legend"][
-                "title"
-            ] = f"{words['hour', 'pl']} {words['until']} {words['departure']}"
-        else:
-            # SR_TMP <
-            if unit == "%":
-                labels["legend"]["title"] = f"{words['probability']} ({unit})"
-            else:
-                labels["legend"]["title"] = f"{unit}"
-
-            # SR_TMP >
+    # Legend box title
+    if not unit:
+        title = f"{short_name}"
+    elif unit == "%":
+        title = f"{words['probability']} ({unit})"
+    elif (
+        setup.core.input_variable == "cloud_arrival_time"
+        or setup.core.ens_variable == "ens_cloud_arrival_time"
+    ):
+        title = f"{words['hour', 'pl']} {words['until']} {words['arrival']}"
+    elif (
+        setup.core.input_variable == "cloud_departure_time"
+        or setup.core.ens_variable == "ens_cloud_departure_time"
+    ):
+        title = f"{words['hour', 'pl']} {words['until']} {words['departure']}"
+    else:
+        title = f"{short_name} ({unit})"
+    labels["legend"]["title"] = title
     labels["legend"]["unit"] = unit
 
     # Capitalize all labels
