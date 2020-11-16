@@ -251,6 +251,8 @@ def format_level_ranges(
                 f"invalid value '{align}' of argument align; "
                 f"must be one of {','.join(align_choices)}"
             )
+    if include is None:
+        include = "lower"
     formatters = {
         "base": LevelRangeFormatter,
         "int": LevelRangeFormatterInt,
