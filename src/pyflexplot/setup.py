@@ -107,6 +107,7 @@ class CoreSetup(BaseModel):
     ens_param_mem_min: Optional[int] = None
     ens_param_pctl: Optional[float] = None
     ens_param_thr: Optional[float] = None
+    ens_param_thr_type: str = "lower"
 
     # Plot appearance
     lang: str = "en"
@@ -245,6 +246,13 @@ class CoreSetup(BaseModel):
                 value = ENS_CLOUD_TIME_DEFAULT_PARAM_THR
             elif values["ens_variable"] == "probability":
                 value = ENS_PROBABILITY_DEFAULT_PARAM_THR
+        return value
+
+    @validator("ens_param_thr_type", always=True)
+    def _init_ens_param_thr_type(
+        cls, value: Optional[float], values: Dict[str, Any]
+    ) -> Optional[float]:
+        assert value in ["lower", "upper"]
         return value
 
     @root_validator()
@@ -411,6 +419,8 @@ class Setup(BaseModel):
 
             ens_param_thr: Threshold used to compute some ensemble variables.
                 Its precise meaning depends on the variable.
+
+            ens_param_thr_type: Type of threshold, either 'lower' or 'upper'.
 
             ens_variable: Ensemble variable computed from plot variable. Use the
                 format key '{ens_variable}' to embed it in ``outfile``.

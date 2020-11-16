@@ -202,21 +202,32 @@ class FieldTimeProperties:
         self.mask_nz: np.ndarray = (~np.isnan(arr_nz)).sum(axis=0) > 0
 
 
-def ensemble_probability(arr: np.ndarray, thr: float, n_mem: int) -> np.ndarray:
+def ensemble_probability(
+    arr: np.ndarray, thr: float = 0.0, thr_type: str = "lower"
+) -> np.ndarray:
     """Ensemble-based probability of threshold exceedence at each point.
 
     Args:
-        arr: Data array with dimensions (member, ...).
+        arr: Data array with ensemble members as the first dimension.
 
-        thr: Threshold value defining a cloud.
+        thr (optional): Threshold value for data selection in each member.
 
-        n_mem: Total number of members.
+        thr_type (optional): Threshold type (lower or upper).
 
     Returns:
         Field with the number of members with a cloud at each grid point.
 
     """
-    arr = np.count_nonzero(arr > thr, axis=0).astype(np.float32) * 100 / n_mem
+    if thr_type == "lower":
+        mask = arr > thr
+    elif thr_type == "upper":
+        mask = arr < thr
+    else:
+        raise ValueError(
+            f"invalid threshold type '{thr_type}' (neither 'lower' nor 'upper')"
+        )
+    n_mem = arr.shape[0]
+    arr = np.count_nonzero(mask, axis=0).astype(np.float32) * 100 / n_mem
     return arr
 
 

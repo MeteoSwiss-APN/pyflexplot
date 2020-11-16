@@ -559,8 +559,8 @@ class InputFileEnsemble:
         ens_param_mem_min = var_setups.collect_equal("ens_param_mem_min")
         ens_param_pctl = var_setups.collect_equal("ens_param_pctl")
         ens_param_thr = var_setups.collect_equal("ens_param_thr")
+        ens_param_thr_type = var_setups.collect_equal("ens_param_thr_type")
         ens_variable = var_setups.collect_equal("ens_variable")
-        n_ens_mem = len(var_setups.collect_equal("ens_member_id"))
 
         fld_time: np.ndarray
         if ens_variable == "minimum":
@@ -579,7 +579,9 @@ class InputFileEnsemble:
             assert ens_param_pctl is not None  # mypy
             fld_time = np.percentile(fld_time_mem, ens_param_pctl, axis=0)
         elif ens_variable == "probability":
-            fld_time = ensemble_probability(fld_time_mem, ens_param_thr, n_ens_mem)
+            fld_time = ensemble_probability(
+                fld_time_mem, ens_param_thr, ens_param_thr_type
+            )
         elif ens_variable.startswith("ens_cloud_"):
             cloud = EnsembleCloud(
                 mask=fld_time_mem > ens_param_thr, mem_min=ens_param_mem_min, ts=ts_hrs

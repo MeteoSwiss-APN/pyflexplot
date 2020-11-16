@@ -30,10 +30,14 @@ class TestEnsembleProbability2D:
 
     thr = 4
 
-    def test(self):
-        n = self.arr.shape[0]
-        res = ensemble_probability(self.arr, self.thr, n)
-        sol = np.array([2, 2, 2, 1, 2, 1, 1, 2]) * 100 / n
+    def test_default(self):
+        res = ensemble_probability(self.arr, self.thr)
+        sol = np.array([2, 2, 2, 1, 2, 1, 1, 2]) * 100 / self.arr.shape[0]
+        assert np.allclose(res, sol)
+
+    def test_upper(self):
+        res = ensemble_probability(self.arr, self.thr, "upper")
+        sol = np.array([2, 2, 0, 2, 1, 3, 2, 2]) * 100 / self.arr.shape[0]
         assert np.allclose(res, sol)
 
 
@@ -50,10 +54,36 @@ class TestEnsembleProbability3D:
 
     thr = 2
 
-    def test(self):
-        n = self.arr.shape[0]
-        res = ensemble_probability(self.arr, self.thr, n)
+    def test_default(self):
+        res = ensemble_probability(self.arr, self.thr)
         sol = (
-            np.array([[3, 2, 3], [0, 2, 1], [1, 1, 1], [3, 3, 1], [1, 2, 2]]) * 100 / n
+            np.array(
+                [
+                    [3, 2, 3],
+                    [0, 2, 1],
+                    [1, 1, 1],
+                    [3, 3, 1],
+                    [1, 2, 2],
+                ]
+            )
+            * 100
+            / self.arr.shape[0]
+        )
+        assert np.allclose(res, sol)
+
+    def test_upper(self):
+        res = ensemble_probability(self.arr, self.thr, "upper")
+        sol = (
+            np.array(
+                [
+                    [0, 0, 0],
+                    [3, 1, 2],
+                    [0, 2, 1],
+                    [0, 0, 0],
+                    [1, 1, 0],
+                ]
+            )
+            * 100
+            / self.arr.shape[0]
         )
         assert np.allclose(res, sol)

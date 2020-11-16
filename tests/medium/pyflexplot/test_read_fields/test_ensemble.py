@@ -270,9 +270,7 @@ class TestReadFieldEnsemble_Multiple:
             "mean": lambda arr: np.nanmean(arr, axis=0),
             "maximum": lambda arr: np.nanmax(arr, axis=0),
             "probability": (
-                lambda arr: ensemble_probability(
-                    arr, self.ens_prob_thr_concentration, len(self.ens_member_ids)
-                )
+                lambda arr: ensemble_probability(arr, self.ens_prob_thr_concentration)
             ),
         }[ens_var]
 
