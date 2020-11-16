@@ -697,7 +697,11 @@ def create_plot_config(
     # Markers
     markers_config_dct: Dict[str, Any] = {}
     if setup.get_simulation_type() == "deterministic":
-        if setup.core.input_variable == "affected_area":
+        if setup.core.input_variable in [
+            "affected_area",
+            "cloud_arrival_time",
+            "cloud_departure_time",
+        ]:
             markers_config_dct["mark_field_max"] = False
         else:
             markers_config_dct["mark_field_max"] = True
