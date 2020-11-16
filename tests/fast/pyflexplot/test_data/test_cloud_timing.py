@@ -11,7 +11,6 @@ import pytest  # noqa: F401  # imported but unused
 from pyflexplot.data import Cloud
 
 # Shorthands for special values
-N = np.nan
 I = np.inf  # noqa: E741  # ambiguous variable name
 
 
@@ -89,11 +88,11 @@ ARR = (
                 time_idx=0,
                 sol_norm=np.array(
                     [  #  0  1  2  3  4  5  6
-                        [-I, N, 3, 3, 1, 1,-I],  # x: 0, y: 0-6
-                        [-I,-I, N, 3, 1,-I,-I],  # x: 1, y: 0-6
+                        [-I, I, 3, 3, 1, 1,-I],  # x: 0, y: 0-6
+                        [-I,-I, I, 3, 1,-I,-I],  # x: 1, y: 0-6
                         [-I, 3, 3, 1, 1,-I,-I],  # x: 2, y: 0-6
-                        [ 2, N,-I,-I,-I,-I,-I],  # x: 3, y: 0-6
-                        [ N, 1, 1,-I,-I,-I,-I],  # x: 4, y: 0-6
+                        [ 2, I,-I,-I,-I,-I,-I],  # x: 3, y: 0-6
+                        [ I, 1, 1,-I,-I,-I,-I],  # x: 4, y: 0-6
                     ],
                 ),
             ),
@@ -103,11 +102,11 @@ ARR = (
                 time_idx=2,
                 sol_norm=np.array(
                     [  #  0  1  2  3  4  5  6
-                        [ N, N, 1, 1,-2, N, N],  # x: 0, y: 0-6
-                        [ N, N, N, 1,-2,-I,-I],  # x: 1, y: 0-6
-                        [ N, 1, 1,-2,-2, N, N],  # x: 2, y: 0-6
-                        [-1, N,-I,-I,-I, N, N],  # x: 3, y: 0-6
-                        [ N,-2,-2,-I,-I, N, N],  # x: 4, y: 0-6
+                        [ I, I, 1, 1,-2, I, I],  # x: 0, y: 0-6
+                        [ I, I, I, 1,-2,-I,-I],  # x: 1, y: 0-6
+                        [ I, 1, 1,-2,-2, I, I],  # x: 2, y: 0-6
+                        [-1, I,-I,-I,-I, I, I],  # x: 3, y: 0-6
+                        [ I,-2,-2,-I,-I, I, I],  # x: 4, y: 0-6
                     ],
                 ),
             ),
@@ -117,11 +116,11 @@ ARR = (
                 time_idx=1,
                 sol_norm=np.array(
                     [  #  0  1  2  3  4  5  6
-                        [ N, N, N, 2, N,-1,-1],  # x: 0, y: 0-6
-                        [ N, N, N, 2,-1,-1, 1],  # x: 1, y: 0-6
-                        [ N, 3, 2, 1,-1,-1, N],  # x: 2, y: 0-6
-                        [ N, N, 1,-I,-I, N, N],  # x: 3, y: 0-6
-                        [ N, N,-1,-I, N, N, N],  # x: 4, y: 0-6
+                        [ I, I, I, 2, I,-1,-1],  # x: 0, y: 0-6
+                        [ I, I, I, 2,-1,-1, 1],  # x: 1, y: 0-6
+                        [ I, 3, 2, 1,-1,-1, I],  # x: 2, y: 0-6
+                        [ I, I, 1,-I,-I, I, I],  # x: 3, y: 0-6
+                        [ I, I,-1,-I, I, I, I],  # x: 4, y: 0-6
                     ],
                 ),
             ),
@@ -131,11 +130,11 @@ ARR = (
                 time_idx=3,
                 sol_norm=np.array(
                     [  #  0  1  2  3  4  5  6
-                        [ N, N, N,-1, N, N, N],  # x: 0, y: 0-6
-                        [ N, N, N,-1, N, N, N],  # x: 1, y: 0-6
-                        [ N, 1,-1,-2,-3, N, N],  # x: 2, y: 0-6
-                        [ N, N, N,-I, N, N, N],  # x: 3, y: 0-6
-                        [ N, N,-3, N, N, N, N],  # x: 4, y: 0-6
+                        [ I, I, I,-1, I, I, I],  # x: 0, y: 0-6
+                        [ I, I, I,-1, I, I, I],  # x: 1, y: 0-6
+                        [ I, 1,-1,-2,-3, I, I],  # x: 2, y: 0-6
+                        [ I, I, I,-I, I, I, I],  # x: 3, y: 0-6
+                        [ I, I,-3, I, I, I, I],  # x: 4, y: 0-6
                     ],
                 ),
             ),
@@ -145,11 +144,11 @@ ARR = (
                 time_idx=0,
                 sol_norm=np.array(
                     [  #  0  1  2  3  4  5  6
-                        [ N, N, N, 3, N, 1, N],  # x: 0, y: 0-6
-                        [ N, N, N, N, N, N, N],  # x: 1, y: 0-6
-                        [ N, N, 3, 2, 1, 1, N],  # x: 2, y: 0-6
-                        [ N, N, N, 2,-I, N, N],  # x: 3, y: 0-6
-                        [ N, N, 3, 1,-I,-I, N],  # x: 4, y: 0-6
+                        [ I, I, I, 3, I, 1, I],  # x: 0, y: 0-6
+                        [ I, I, I, I, I, I, I],  # x: 1, y: 0-6
+                        [ I, I, 3, 2, 1, 1, I],  # x: 2, y: 0-6
+                        [ I, I, I, 2,-I, I, I],  # x: 3, y: 0-6
+                        [ I, I, 3, 1,-I,-I, I],  # x: 4, y: 0-6
                     ],
                 ),
             ),
@@ -159,11 +158,11 @@ ARR = (
                 time_idx=2,
                 sol_norm=np.array(
                     [  #  0  1  2  3  4  5  6
-                        [ N, N, N, 1, N, N, N],  # x: 0, y: 0-6
-                        [ N, N, N, N, N, N, N],  # x: 1, y: 0-6
-                        [ N, N, 1,-1,-2, N, N],  # x: 2, y: 0-6
-                        [ N, N, N,-1, N, N, N],  # x: 3, y: 0-6
-                        [ N, N, 1, N, N, N, N],  # x: 4, y: 0-6
+                        [ I, I, I, 1, I, I, I],  # x: 0, y: 0-6
+                        [ I, I, I, I, I, I, I],  # x: 1, y: 0-6
+                        [ I, I, 1,-1,-2, I, I],  # x: 2, y: 0-6
+                        [ I, I, I,-1, I, I, I],  # x: 3, y: 0-6
+                        [ I, I, 1, I, I, I, I],  # x: 4, y: 0-6
                     ],
                 ),
             ),
@@ -173,11 +172,11 @@ ARR = (
                 time_idx=0,
                 sol_norm=np.array(
                     [  #  0  1  2  3  4  5  6
-                        [ N, N, N, N, N, N, N],  # x: 0, y: 0-6
-                        [ N, N, N, N, N, N, N],  # x: 1, y: 0-6
-                        [ N, N, N, N, N, N, N],  # x: 2, y: 0-6
-                        [ N, N, N, N, N, N, N],  # x: 3, y: 0-6
-                        [ N, N, N, N, N, N, N],  # x: 4, y: 0-6
+                        [ I, I, I, I, I, I, I],  # x: 0, y: 0-6
+                        [ I, I, I, I, I, I, I],  # x: 1, y: 0-6
+                        [ I, I, I, I, I, I, I],  # x: 2, y: 0-6
+                        [ I, I, I, I, I, I, I],  # x: 3, y: 0-6
+                        [ I, I, I, I, I, I, I],  # x: 4, y: 0-6
                     ],
                 ),
             ),
@@ -206,11 +205,11 @@ def test_arrival_time(config):
                 time_idx=0,
                 sol_norm=np.array(  # [config0]
                     [  #  0  1  2  3  4  5  6
-                        [ 1, N, 4, I, I, 2, 2],  # x: 0, y: 0-6
-                        [ 2, 1, N, I, 4, 4, 3],  # x: 1, y: 0-6
+                        [ 1,-I, 4, I, I, 2, 2],  # x: 0, y: 0-6
+                        [ 2, 1,-I, I, 4, 4, 3],  # x: 1, y: 0-6
                         [ 1, I, I, I, 4, 2, 1],  # x: 2, y: 0-6
-                        [ 3, N, 4, I, 4, 2, 1],  # x: 3, y: 0-6
-                        [ N, 4, 4, 4, 3, 1, 1],  # x: 4, y: 0-6
+                        [ 3,-I, 4, I, 4, 2, 1],  # x: 3, y: 0-6
+                        [-I, 4, 4, 4, 3, 1, 1],  # x: 4, y: 0-6
                     ],
                 ),
             ),
@@ -220,11 +219,11 @@ def test_arrival_time(config):
                 time_idx=2,
                 sol_norm=np.array(  # [config1]
                     [  #  0  1  2  3  4  5  6
-                        [ N, N, 2, I, I, N, N],  # x: 0, y: 0-6
-                        [ N, N, N, I, 2, 2, 1],  # x: 1, y: 0-6
-                        [ N, I, I, I, 2, N, N],  # x: 2, y: 0-6
-                        [ 1, N, 2, I, 2, N, N],  # x: 3, y: 0-6
-                        [ N, 2, 2, 2, 1, N, N],  # x: 4, y: 0-6
+                        [-I,-I, 2, I, I,-I,-I],  # x: 0, y: 0-6
+                        [-I,-I,-I, I, 2, 2, 1],  # x: 1, y: 0-6
+                        [-I, I, I, I, 2,-I,-I],  # x: 2, y: 0-6
+                        [ 1,-I, 2, I, 2,-I,-I],  # x: 3, y: 0-6
+                        [-I, 2, 2, 2, 1,-I,-I],  # x: 4, y: 0-6
                     ],
                 ),
             ),
@@ -234,11 +233,11 @@ def test_arrival_time(config):
                 time_idx=1,
                 sol_norm=np.array(  # [config2]
                     [  #  0  1  2  3  4  5  6
-                        [ N, N, N, I, N, 1, 1],  # x: 0, y: 0-6
-                        [ N, N, N, 3, 2, 2, 2],  # x: 1, y: 0-6
-                        [ N, I, I, I, 3, 1, N],  # x: 2, y: 0-6
-                        [ N, N, 2, 3, 2, N, N],  # x: 3, y: 0-6
-                        [ N, N, 3, 2, N, N, N],  # x: 4, y: 0-6
+                        [-I,-I,-I, I,-I, 1, 1],  # x: 0, y: 0-6
+                        [-I,-I,-I, 3, 2, 2, 2],  # x: 1, y: 0-6
+                        [-I, I, I, I, 3, 1,-I],  # x: 2, y: 0-6
+                        [-I,-I, 2, 3, 2,-I,-I],  # x: 3, y: 0-6
+                        [-I,-I, 3, 2,-I,-I,-I],  # x: 4, y: 0-6
                     ],
                 ),
             ),
@@ -248,11 +247,11 @@ def test_arrival_time(config):
                 time_idx=3,
                 sol_norm=np.array(  # [config3]
                     [  #  0  1  2  3  4  5  6
-                        [ N, N, N, I, N, N, N],  # x: 0, y: 0-6
-                        [ N, N, N, 1, N, N, N],  # x: 1, y: 0-6
-                        [ N, I, I, I, 1, N, N],  # x: 2, y: 0-6
-                        [ N, N, N, 1, N, N, N],  # x: 3, y: 0-6
-                        [ N, N, 1, N, N, N, N],  # x: 4, y: 0-6
+                        [-I,-I,-I, I,-I,-I,-I],  # x: 0, y: 0-6
+                        [-I,-I,-I, 1,-I,-I,-I],  # x: 1, y: 0-6
+                        [-I, I, I, I, 1,-I,-I],  # x: 2, y: 0-6
+                        [-I,-I,-I, 1,-I,-I,-I],  # x: 3, y: 0-6
+                        [-I,-I, 1,-I,-I,-I,-I],  # x: 4, y: 0-6
                     ],
                 ),
             ),
@@ -262,11 +261,11 @@ def test_arrival_time(config):
                 time_idx=0,
                 sol_norm=np.array(  # [config4]
                     [  #  0  1  2  3  4  5  6
-                        [ N, N, N, 4, N, 2, N],  # x: 0, y: 0-6
-                        [ N, N, N, N, N, N, N],  # x: 1, y: 0-6
-                        [ N, N, I, 4, 3, 2, N],  # x: 2, y: 0-6
-                        [ N, N, N, 3, 1, N, N],  # x: 3, y: 0-6
-                        [ N, N, 4, 2, 1, 1, N],  # x: 4, y: 0-6
+                        [-I,-I,-I, 4,-I, 2,-I],  # x: 0, y: 0-6
+                        [-I,-I,-I,-I,-I,-I,-I],  # x: 1, y: 0-6
+                        [-I,-I, I, 4, 3, 2,-I],  # x: 2, y: 0-6
+                        [-I,-I,-I, 3, 1,-I,-I],  # x: 3, y: 0-6
+                        [-I,-I, 4, 2, 1, 1,-I],  # x: 4, y: 0-6
                     ],
                 ),
             ),
@@ -276,11 +275,11 @@ def test_arrival_time(config):
                 time_idx=2,
                 sol_norm=np.array(  # [config5]
                     [  #  0  1  2  3  4  5  6
-                        [ N, N, N, 2, N, N, N],  # x: 0, y: 0-6
-                        [ N, N, N, N, N, N, N],  # x: 1, y: 0-6
-                        [ N, N, I, 2, 1, N, N],  # x: 2, y: 0-6
-                        [ N, N, N, 1, N, N, N],  # x: 3, y: 0-6
-                        [ N, N, 2, N, N, N, N],  # x: 4, y: 0-6
+                        [-I,-I,-I, 2,-I,-I,-I],  # x: 0, y: 0-6
+                        [-I,-I,-I,-I,-I,-I,-I],  # x: 1, y: 0-6
+                        [-I,-I, I, 2, 1,-I,-I],  # x: 2, y: 0-6
+                        [-I,-I,-I, 1,-I,-I,-I],  # x: 3, y: 0-6
+                        [-I,-I, 2,-I,-I,-I,-I],  # x: 4, y: 0-6
                     ],
                 ),
             ),
@@ -290,11 +289,11 @@ def test_arrival_time(config):
                 time_idx=0,
                 sol_norm=np.array(  # [config6]
                     [  #  0  1  2  3  4  5  6
-                        [ N, N, N, N, N, N, N],  # x: 0, y: 0-6
-                        [ N, N, N, N, N, N, N],  # x: 1, y: 0-6
-                        [ N, N, N, N, N, N, N],  # x: 2, y: 0-6
-                        [ N, N, N, N, N, N, N],  # x: 3, y: 0-6
-                        [ N, N, N, N, N, N, N],  # x: 4, y: 0-6
+                        [-I,-I,-I,-I,-I,-I,-I],  # x: 0, y: 0-6
+                        [-I,-I,-I,-I,-I,-I,-I],  # x: 1, y: 0-6
+                        [-I,-I,-I,-I,-I,-I,-I],  # x: 2, y: 0-6
+                        [-I,-I,-I,-I,-I,-I,-I],  # x: 3, y: 0-6
+                        [-I,-I,-I,-I,-I,-I,-I],  # x: 4, y: 0-6
                     ],
                 ),
             ),

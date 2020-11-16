@@ -250,12 +250,12 @@ class Cloud:
         Returns:
             Array with the same shape as ``mask`` containing:
 
-                - nan: Cloud-free until the end, regardless of what was before.
+                - -inf: Cloud-free until the end, regardless of what was before.
                 - > 0: Time until the last cloud will have departed.
                 - inf: A cloud is still present at the last time step.
 
         """
-        arr = np.full(self.mask.shape, np.nan, np.float32)
+        arr = np.full(self.mask.shape, -np.inf, np.float32)
 
         # Set points with a cloud at the last time step to +INF at all steps
         arr[:, self.mask[-1]] = np.inf
@@ -290,13 +290,13 @@ class Cloud:
         Returns:
             Array with the same shape as ``mask`` containing:
 
-                - nan: Cloud-free until the end, regardless of what was before.
+                - inf: Cloud-free until the end, regardless of what was before.
                 - > 0: Time until the first cloud will have arrived.
                 - < 0: Time since the before first cloud has arrived.
                 - -inf: A cloud has been present since the first time step.
 
         """
-        arr = np.full(self.mask.shape, np.nan, np.float32)
+        arr = np.full(self.mask.shape, np.inf, np.float32)
 
         # Points without a cloud since the first time step
         m_clear_since_start = self.mask.cumsum(axis=0) == 0
