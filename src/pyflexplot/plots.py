@@ -43,6 +43,7 @@ from srutils.plotting import truncate_cmap
 from . import __version__
 from .data import Field
 from .data import FieldAllNaNError
+from .data import FieldStats
 from .meta_data import format_meta_datum
 from .meta_data import MetaData
 from .output import FilePathFormatter
@@ -257,14 +258,7 @@ def plot_add_text_boxes(
         dy0_boxes = dy0_labels - 0.8 * h_legend_box
 
         # Format level ranges (contour plot legend)
-        legend_labels = format_level_ranges(
-            levels=plot.levels,  # SR_TMP TODO use plot.config.levels.levels
-            style=plot.config.levels.legend.range_style,
-            extend=plot.config.levels.extend,
-            rstrip_zeros=plot.config.levels.legend.rstrip_zeros,
-            align=plot.config.levels.legend.ranges_align,
-            include="lower" if plot.config.levels.include_lower else "upper",
-        )
+        legend_labels = plot.config.levels.legend.labels
 
         # Legend labels (level ranges)
         box.text_block(
@@ -645,6 +639,17 @@ def create_plot_config(
     ]:
         levels_config_dct["n"] = 0
         levels_config_dct["levels"] = np.arange(0, 8) * 6
+    levels_config_dct["levels"] = levels_from_time_stats(
+        setup, field.time_props.stats, levels_config_dct
+    )
+    legend_config_dct["labels"] = format_level_ranges(
+        levels=levels_config_dct["levels"],
+        style=legend_config_dct.get("range_style", "base"),
+        extend=levels_config_dct.get("extend", "max"),
+        rstrip_zeros=legend_config_dct.get("rstrip_zeros", True),
+        align=legend_config_dct.get("ranges_align", "center"),
+        include="lower" if levels_config_dct.get("include_lower", True) else "upper",
+    )
     levels_config_dct["legend"] = ContourLevelsLegendConfig(**legend_config_dct)
 
     # Colors
@@ -1211,3 +1216,32 @@ def colors_from_cmap(cmap, n_levels, extend):
     if extend not in ["max", "both"]:
         colors.pop(-1)
     return colors
+
+
+def levels_from_time_stats(
+    setup: Setup, time_stats: FieldStats, levels_config_dct: Dict[str, Any]
+) -> np.ndarray:
+    def _auto_levels_log10(n_levels: int, val_max: float) -> List[float]:
+        if not np.isfinite(val_max):
+            raise ValueError("val_max not finite", val_max)
+        # SR_TMP <
+        if val_max == 0.0:
+            val_max = 1e-6
+        # SR_TMP >
+        log10_max = int(np.floor(np.log10(val_max)))
+        log10_d = 1
+        return 10 ** np.arange(
+            log10_max - (n_levels - 1) * log10_d, log10_max + 0.5 * log10_d, log10_d
+        )
+
+    if setup.get_simulation_type() == "ensemble":
+        if setup.core.ens_variable.endswith(
+            "probability"
+        ) or setup.core.ens_variable in [
+            "ens_cloud_arrival_time",
+            "ens_cloud_departure_time",
+        ]:
+            return levels_config_dct["levels"]
+    if levels_config_dct.get("n"):
+        return _auto_levels_log10(levels_config_dct["n"], val_max=time_stats.max)
+    return levels_config_dct["levels"]

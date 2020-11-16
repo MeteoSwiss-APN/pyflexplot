@@ -16,7 +16,6 @@ from matplotlib.figure import Figure
 
 # Local
 from ..data import Field
-from ..data import FieldStats
 from ..meta_data import MetaData
 from ..setup import Setup
 from ..utils.summarize import summarizable
@@ -58,6 +57,7 @@ class ContourLevelsLegendConfig:
     ranges_align: str = "center"
     range_style: str = "base"
     rstrip_zeros: bool = True
+    labels: List[str] = dataclasses.field(default_factory=list)
 
 
 @summarizable
@@ -125,9 +125,6 @@ class BoxedPlot:
         self.config = config
         self.map_config = map_config
         self.boxes: Dict[str, TextBoxAxes] = {}
-        self.levels: np.ndarray = levels_from_time_stats(
-            self.config, self.field.time_props.stats
-        )
         self._fig: Optional[Figure] = None
         self.ax_map: MapAxes  # SR_TMP TODO eliminate single centralized Map axes
 
@@ -177,7 +174,7 @@ class BoxedPlot:
     # pylint: disable=R0912  # too-many-branches
     def _draw_colors_contours(self) -> None:
         arr = np.asarray(self.field.fld)
-        levels = np.asarray(self.levels)
+        levels = np.asarray(self.config.levels.levels)
         colors = self.config.colors
         assert colors is not None  # SR_TMP
         extend = self.config.levels.extend
@@ -215,36 +212,3 @@ class BoxedPlot:
         else:
             for contour in contours.collections:
                 contour.set_rasterized(True)
-
-
-def levels_from_time_stats(
-    plot_config: BoxedPlotConfig, time_stats: FieldStats
-) -> np.ndarray:
-    def _auto_levels_log10(n_levels: int, val_max: float) -> List[float]:
-        if not np.isfinite(val_max):
-            raise ValueError("val_max not finite", val_max)
-        # SR_TMP <
-        if val_max == 0.0:
-            val_max = 1e-6
-        # SR_TMP >
-        log10_max = int(np.floor(np.log10(val_max)))
-        log10_d = 1
-        return 10 ** np.arange(
-            log10_max - (n_levels - 1) * log10_d, log10_max + 0.5 * log10_d, log10_d
-        )
-
-    if plot_config.setup.get_simulation_type() == "ensemble":
-        if plot_config.setup.core.ens_variable.endswith(
-            "probability"
-        ) or plot_config.setup.core.ens_variable in [
-            "ens_cloud_arrival_time",
-            "ens_cloud_departure_time",
-        ]:
-            assert plot_config.levels.levels is not None  # mypy
-            return plot_config.levels.levels
-
-    if plot_config.levels.n:
-        return _auto_levels_log10(plot_config.levels.n, val_max=time_stats.max)
-
-    assert plot_config.levels.levels is not None  # mypy
-    return plot_config.levels.levels
