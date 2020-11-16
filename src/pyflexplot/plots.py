@@ -33,6 +33,7 @@ from typing import Union
 # Third-party
 import matplotlib as mpl
 import numpy as np
+from matplotlib.colors import Colormap
 
 # First-party
 from srutils.geo import Degrees
@@ -648,7 +649,7 @@ def create_plot_config(
 
     # Colors
     extend = levels_config_dct.get("extend", "max")
-    cmap: Union[str, mpl.cm.Colormap] = "flexplot"
+    cmap: Union[str, Colormap] = "flexplot"
     color_under: Optional[str] = None
     color_over: Optional[str] = None
     if setup.get_simulation_type() == "deterministic":

@@ -8,12 +8,10 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
-from typing import Union
 
 # Third-party
 import numpy as np
 from matplotlib import pyplot as plt
-from matplotlib.colors import Colormap
 from matplotlib.figure import Figure
 
 # Local
