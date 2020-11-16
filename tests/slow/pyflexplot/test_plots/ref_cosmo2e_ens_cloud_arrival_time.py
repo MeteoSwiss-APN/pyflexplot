@@ -3175,7 +3175,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": "Ens. variable:",
+                    "s": "Cloud thresh.:",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3204,7 +3204,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": "Cloud thresh.:",
+                    "s": "Min. members:",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3233,7 +3233,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": "Min. members:",
+                    "s": "Ens. variable:",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3349,7 +3349,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "ens. cloud dep. t.",
+                    "s": " 1e-06 Bq h m$^{-3}$",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3378,7 +3378,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": " 1e-06 Bq h m$^{-3}$",
+                    "s": "3$\\,/\\,$6 (50%)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3407,7 +3407,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "3$\\,/\\,$6 (50%)",
+                    "s": "ens. cloud dep. t.",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

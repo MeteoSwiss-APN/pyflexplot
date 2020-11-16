@@ -667,14 +667,18 @@ def create_plot_config(
     cmap: Union[str, Colormap] = "flexplot"
     color_under: Optional[str] = None
     color_over: Optional[str] = None
-    if setup.get_simulation_type() == "deterministic":
-        if setup.core.input_variable == "affected_area":
-            cmap = "mono"
-    elif setup.get_simulation_type() == "ensemble":
-        if setup.core.ens_variable.endswith("probability"):
-            # cmap = truncate_cmap("nipy_spectral_r", 0.275, 0.95)
-            cmap = truncate_cmap("terrain_r", 0.075)
-    if setup.core.input_variable == "cloud_arrival_time" or (
+    if (
+        setup.get_simulation_type() == "deterministic"
+        and setup.core.input_variable == "affected_area"
+    ):
+        cmap = "mono"
+    elif (
+        setup.get_simulation_type() == "ensemble"
+        and setup.core.ens_variable == "probability"
+    ):
+        # cmap = truncate_cmap("nipy_spectral_r", 0.275, 0.95)
+        cmap = truncate_cmap("terrain_r", 0.075)
+    elif setup.core.input_variable == "cloud_arrival_time" or (
         setup.core.ens_variable == "ens_cloud_arrival_time"
     ):
         cmap = "viridis"
@@ -812,12 +816,10 @@ def create_box_labels(
             f"\t{escape_format_keys(format_level_label(mdata, words))}"
         )
     if setup.get_simulation_type() == "ensemble":
-        labels["data_info"]["lines"].append(
-            f"{words['ensemble_variable', 'abbr']}:\t{ens_var_name}"
-        )
         if setup.core.ens_variable == "probability":
+            op = {"lower": "gt", "upper": "lt"}[setup.core.ens_param_thr_type]
             labels["data_info"]["lines"].append(
-                f"{words['threshold']}:\t{symbols['ge']} {setup.core.ens_param_thr}"
+                f"{words['selection']}:\t{symbols[op]} {setup.core.ens_param_thr}"
                 f" {format_meta_datum(unit=format_meta_datum(mdata.variable.unit))}"
             )
         elif setup.core.ens_variable in [
@@ -841,6 +843,9 @@ def create_box_labels(
                 r"$\,/\,$"
                 f"{n_tot} ({n_min/(n_tot or 0.001):.0%})"
             )
+        labels["data_info"]["lines"].append(
+            f"{words['ensemble_variable', 'abbr']}:\t{ens_var_name}"
+        )
 
     # Legend box title
     if not unit:

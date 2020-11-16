@@ -248,6 +248,7 @@ class CoreSetup(BaseModel):
                 value = ENS_PROBABILITY_DEFAULT_PARAM_THR
         return value
 
+    # pylint: disable=W0613  # unused-argument (values)
     @validator("ens_param_thr_type", always=True)
     def _init_ens_param_thr_type(
         cls, value: Optional[float], values: Dict[str, Any]

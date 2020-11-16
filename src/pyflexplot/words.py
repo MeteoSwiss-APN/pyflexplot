@@ -14,9 +14,9 @@ SYMBOLS = Words(
         "ae": r"$\mathrm{\"a}$",
         "copyright": "\u00a9",
         "deg": r"$^\circ$",
-        "ge": r"$>$",
+        "gt": r"$>$",
         "geq": r"$\geq$",
-        "le": r"$<$",
+        "lt": r"$<$",
         "leq": r"$\leq$",
         "oe": r"$\mathrm{\"o}$",
         "short_space": r"$\,$",
@@ -273,6 +273,7 @@ WORDS.add(
     en={"*": "sedimentation velocity", "abbr": "sediment. vel."},
     de={"*": "Sedimentiergeschwindigkeit", "abbr": "Sediment.-Geschw."},
 )
+WORDS.add(en="selection", de="Auswahl")
 WORDS.add(en="since", de="seit")
 WORDS.add(en="site", de="Ort")
 WORDS.add(en={"*": "south", "abbr": "S"}, de={"*": "S{s['ue']}den", "abbr": "S"})

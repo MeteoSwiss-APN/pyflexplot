@@ -3859,7 +3859,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": "Ens.-Variable:",
+                    "s": "Wolkengrenzw.:",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3888,7 +3888,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": "Wolkengrenzw.:",
+                    "s": "Min. Members:",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3917,7 +3917,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": "Min. Members:",
+                    "s": "Ens.-Variable:",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4033,7 +4033,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "Ens.-Wolkenabzugsz.",
+                    "s": " 1e-09 Bq h m$^{-3}$",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4062,7 +4062,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": " 1e-09 Bq h m$^{-3}$",
+                    "s": "2$\\,/\\,$6 (33%)",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -4091,7 +4091,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "2$\\,/\\,$6 (33%)",
+                    "s": "Ens.-Wolkenabzugsz.",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

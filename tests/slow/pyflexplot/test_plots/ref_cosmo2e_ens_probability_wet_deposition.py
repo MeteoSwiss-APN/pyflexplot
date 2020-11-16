@@ -3144,7 +3144,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": "Ens. variable:",
+                    "s": "Selection:",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3173,7 +3173,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": "Threshold:",
+                    "s": "Ens. variable:",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3260,7 +3260,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "Probability",
+                    "s": "$>$ 0.0 Bq m$^{-2}$",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -3289,7 +3289,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "$>$ 0.0 Bq m$^{-2}$",
+                    "s": "Probability",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
