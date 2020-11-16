@@ -674,7 +674,6 @@ def create_plot_config(
         n_levels = levels_config_dct["n"]
         assert n_levels  # SR_TMP
         colors = colors_flexplot(n_levels, extend)
-        plot_config_dct["color_above_closed"] = "black"
     elif cmap == "mono":
         colors = (np.array([(200, 200, 200)]) / 255).tolist()
     else:

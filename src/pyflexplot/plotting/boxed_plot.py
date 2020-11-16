@@ -93,7 +93,6 @@ class BoxedPlotConfig:
     markers: MarkersConfig = MarkersConfig()
     # ---
     colors: Optional[List[ColorType]] = None
-    color_above_closed: Optional[ColorType] = None  # SR_TODO better approach
     # SR_NOTE Figure size may change when boxes etc. are added
     # SR_TODO Specify plot size in a robust way (what you want is what you get)
     fig_size: Tuple[float, float] = (12.5, 8.0)
@@ -188,17 +187,6 @@ class BoxedPlot:
             with np.errstate(divide="ignore"):
                 arr = np.log10(np.where(arr > 0, arr, np.nan))
             levels = np.log10(levels)
-        if extend in ["none", "min"]:
-            # SR_TMP < TODO Eliminate color_above_closed!!
-            color_above_closed = self.config.color_above_closed
-            if color_above_closed:
-                # Color values above the closed upper bound
-                colors = list(colors) + [color_above_closed]
-                if extend == "none":
-                    extend = "max"
-                elif extend == "min":
-                    extend = "both"
-            # SR_TMP >
 
         if not self.config.levels.include_lower:
             # Turn levels from lower- to upped-bound inclusive
