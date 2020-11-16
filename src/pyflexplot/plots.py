@@ -610,21 +610,24 @@ def create_plot_config(
         levels_config_dct["n"] = 8
     elif setup.core.input_variable == "deposition":
         levels_config_dct["n"] = 9
-    if setup.get_simulation_type() == "deterministic":
-        if setup.core.input_variable == "affected_area":
-            levels_config_dct["extend"] = "none"
-            levels_config_dct["levels"] = np.array([0.0, np.inf])
-            levels_config_dct["scale"] = "lin"
-    elif setup.get_simulation_type() == "ensemble":
-        if setup.core.ens_variable == "probability":
-            levels_config_dct["extend"] = "both"
-            levels_config_dct["scale"] = "lin"
-            levels_config_dct["levels"] = np.arange(5, 96, 15)
-            levels_config_dct["extend"] = "max"
-            legend_config_dct["range_style"] = "int"
-            legend_config_dct["ranges_align"] = "left"
-            legend_config_dct["rstrip_zeros"] = False
-    if setup.core.input_variable in [
+    if (
+        setup.get_simulation_type() == "deterministic"
+        and setup.core.input_variable == "affected_area"
+    ):
+        levels_config_dct["extend"] = "none"
+        levels_config_dct["levels"] = np.array([0.0, np.inf])
+        levels_config_dct["scale"] = "lin"
+    elif (
+        setup.get_simulation_type() == "ensemble"
+        and setup.core.ens_variable == "probability"
+    ):
+        levels_config_dct["extend"] = "max"
+        levels_config_dct["scale"] = "lin"
+        levels_config_dct["levels"] = np.arange(5, 95.1, 15)
+        legend_config_dct["range_style"] = "up"
+        legend_config_dct["ranges_align"] = "right"
+        legend_config_dct["rstrip_zeros"] = True
+    elif setup.core.input_variable in [
         "cloud_arrival_time",
         "cloud_departure_time",
     ] or setup.core.ens_variable in [
