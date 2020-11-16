@@ -598,57 +598,43 @@ def create_plot_config(
     words.set_active_lang(setup.core.lang)
     plot_config_dct: Dict[str, Any] = {
         "fig_size": (12.5 * setup.scale_fact, 8.0 * setup.scale_fact),
-        "font": {
-            "sizes": FontSizes().scale(setup.scale_fact),
-        },
-        "levels": {
-            "legend": {},
-            "include_lower": False,
-            "scale": "log",
-        },
-        "markers": {},
     }
 
+    # Fonts
+    font_config_dct: Dict[str, Any] = {
+        "sizes": FontSizes().scale(setup.scale_fact),
+    }
+
+    # Levels and legend
+    levels_config_dct: Dict[str, Any] = {
+        "include_lower": False,
+        "scale": "log",
+    }
+    legend_config_dct: Dict[str, Any] = {}
     if setup.core.input_variable == "concentration":
-        plot_config_dct["levels"]["n"] = 8
+        levels_config_dct["n"] = 8
     elif setup.core.input_variable == "deposition":
-        plot_config_dct["levels"]["n"] = 9
+        levels_config_dct["n"] = 9
     if setup.get_simulation_type() == "deterministic":
         if setup.core.input_variable == "affected_area":
-            plot_config_dct["levels"]["extend"] = "none"
-            plot_config_dct["levels"]["levels"] = np.array([0.0, np.inf])
-            plot_config_dct["levels"]["scale"] = "lin"
-            plot_config_dct["markers"]["mark_field_max"] = False
-            plot_config_dct["cmap"] = "mono"
-        else:
-            plot_config_dct["markers"]["mark_field_max"] = True
+            levels_config_dct["extend"] = "none"
+            levels_config_dct["levels"] = np.array([0.0, np.inf])
+            levels_config_dct["scale"] = "lin"
     elif setup.get_simulation_type() == "ensemble":
-        # SR_TMP < TODO Re-enable once there's enough space in the legend box
-        plot_config_dct["markers"]["mark_field_max"] = False
-        # SR_TMP >
         if setup.core.ens_variable in [
-            "minimum",
-            "maximum",
-            "median",
-            "mean",
-            "std_dev",
-            "med_abs_dev",
-            "percentile",
+            "ens_cloud_arrival_time",
+            "ens_cloud_departure_time",
+            "probability",
         ]:
-            pass
-        else:
-            plot_config_dct["levels"]["extend"] = "both"
-            plot_config_dct["levels"]["legend"]["range_style"] = "int"
-            plot_config_dct["levels"]["legend"]["ranges_align"] = "left"
-            plot_config_dct["levels"]["legend"]["rstrip_zeros"] = False
-            plot_config_dct["levels"]["scale"] = "lin"
-            plot_config_dct["markers"]["mark_field_max"] = False
-            if setup.core.ens_variable.endswith("probability"):
-                plot_config_dct["levels"]["n"] = 0
-                plot_config_dct["levels"]["levels"] = np.arange(5, 96, 15)
-                # new_config_dct["cmap"] = truncate_cmap("nipy_spectral_r", 0.275, 0.95)
-                plot_config_dct["cmap"] = truncate_cmap("terrain_r", 0.075)
-                plot_config_dct["levels"]["extend"] = "max"
+            levels_config_dct["extend"] = "both"
+            levels_config_dct["scale"] = "lin"
+            legend_config_dct["range_style"] = "int"
+            legend_config_dct["ranges_align"] = "left"
+            legend_config_dct["rstrip_zeros"] = False
+            if setup.core.ens_variable == "probability":
+                levels_config_dct["n"] = 0
+                levels_config_dct["levels"] = np.arange(5, 96, 15)
+                levels_config_dct["extend"] = "max"
     if setup.core.input_variable in [
         "cloud_arrival_time",
         "cloud_departure_time",
@@ -656,38 +642,45 @@ def create_plot_config(
         "ens_cloud_arrival_time",
         "ens_cloud_departure_time",
     ]:
-        plot_config_dct["levels"]["n"] = 0
-        plot_config_dct["levels"]["levels"] = np.arange(0, 8) * 6
-        if setup.core.input_variable == "cloud_arrival_time" or (
-            setup.core.ens_variable == "ens_cloud_arrival_time"
-        ):
-            plot_config_dct["cmap"] = "viridis"
-            plot_config_dct["color_under"] = "slategray"
-            plot_config_dct["color_over"] = "lightgray"
-        if setup.core.input_variable == "cloud_departure_time" or (
-            setup.core.ens_variable == "ens_cloud_departure_time"
-        ):
-            plot_config_dct["cmap"] = "viridis_r"
-            plot_config_dct["color_under"] = "lightgray"
-            plot_config_dct["color_over"] = "slategray"
+        levels_config_dct["n"] = 0
+        levels_config_dct["levels"] = np.arange(0, 8) * 6
+    levels_config_dct["legend"] = ContourLevelsLegendConfig(**legend_config_dct)
 
     # Colors
-    extend = plot_config_dct.get("levels", {}).get("extend", "max")
-    cmap = plot_config_dct.get("cmap", "flexplot")
-    # SR_TMP < TODO Cleaner solution, e.g., define cmap directly via in function
-    color_under = plot_config_dct.pop("color_under", None)
-    color_over = plot_config_dct.pop("color_over", None)
-    # SR_TMP >
-    if cmap == "mono":
-        plot_config_dct["colors"] = (np.array([(200, 200, 200)]) / 255).tolist()
-    elif cmap == "flexplot":
-        assert plot_config_dct["levels"]["n"]
-        n_levels = plot_config_dct["levels"]["n"]
-        plot_config_dct["colors"] = colors_flexplot(n_levels, extend)
+    extend = levels_config_dct.get("extend", "max")
+    cmap: Union[str, mpl.cm.Colormap] = "flexplot"
+    color_under: Optional[str] = None
+    color_over: Optional[str] = None
+    if setup.get_simulation_type() == "deterministic":
+        if setup.core.input_variable == "affected_area":
+            cmap = "mono"
+    elif setup.get_simulation_type() == "ensemble":
+        if setup.core.ens_variable.endswith("probability"):
+            # cmap = truncate_cmap("nipy_spectral_r", 0.275, 0.95)
+            cmap = truncate_cmap("terrain_r", 0.075)
+    if setup.core.input_variable == "cloud_arrival_time" or (
+        setup.core.ens_variable == "ens_cloud_arrival_time"
+    ):
+        cmap = "viridis"
+        color_under = "slategray"
+        color_over = "lightgray"
+    elif setup.core.input_variable == "cloud_departure_time" or (
+        setup.core.ens_variable == "ens_cloud_departure_time"
+    ):
+        cmap = "viridis_r"
+        color_under = "lightgray"
+        color_over = "slategray"
+    if cmap == "flexplot":
+        n_levels = levels_config_dct["n"]
+        assert n_levels  # SR_TMP
+        colors = colors_flexplot(n_levels, extend)
         plot_config_dct["color_above_closed"] = "black"
+    elif cmap == "mono":
+        colors = (np.array([(200, 200, 200)]) / 255).tolist()
     else:
-        assert plot_config_dct["levels"]["levels"] is not None
-        n_levels = len(plot_config_dct["levels"]["levels"])
+        levels = levels_config_dct["levels"]
+        assert levels is not None  # mypy
+        n_levels = len(levels)
         cmap = mpl.cm.get_cmap(cmap)
         n_colors = n_levels - 1
         if extend in ["min", "both"] and not color_under:
@@ -699,9 +692,29 @@ def create_plot_config(
             colors.insert(0, color_under)
         if extend in ["max", "both"] and color_over:
             colors.append(color_over)
-        plot_config_dct["colors"] = colors
+    plot_config_dct["colors"] = colors
 
     # Markers
+    markers_config_dct: Dict[str, Any] = {}
+    if setup.get_simulation_type() == "deterministic":
+        if setup.core.input_variable == "affected_area":
+            markers_config_dct["mark_field_max"] = False
+        else:
+            markers_config_dct["mark_field_max"] = True
+    elif setup.get_simulation_type() == "ensemble":
+        markers_config_dct["mark_field_max"] = False
+        if setup.core.ens_variable in [
+            "minimum",
+            "maximum",
+            "median",
+            "mean",
+            "std_dev",
+            "med_abs_dev",
+            "percentile",
+        ]:
+            pass
+        else:
+            markers_config_dct["mark_field_max"] = False
     markers = {}
     markers["max"] = {
         "marker": "+",
@@ -716,14 +729,7 @@ def create_plot_config(
         "markersize": 7.5 * setup.scale_fact,
         "markeredgewidth": 1.5 * setup.scale_fact,
     }
-
-    # SR_TMP <
-    font_config_dct = plot_config_dct.pop("font", {})
-    levels_config_dct = plot_config_dct.pop("levels", {})
-    legend_config_dct = levels_config_dct.pop("legend", {})
-    legend_config_dct["legend"] = ContourLevelsLegendConfig(**legend_config_dct)
-    markers_config_dct = plot_config_dct.pop("markers", {})
-    # SR_TMP >
+    markers_config_dct["markers"] = markers
 
     return BoxedPlotConfig(
         setup=setup,
@@ -731,7 +737,7 @@ def create_plot_config(
         labels=create_box_labels(setup, words, symbols, mdata),
         font=FontConfig(**font_config_dct),
         levels=ContourLevelsConfig(**levels_config_dct),
-        markers=MarkersConfig(markers=markers, **markers_config_dct),
+        markers=MarkersConfig(**markers_config_dct),
         **plot_config_dct,
     )
 

@@ -69,7 +69,7 @@ class ContourLevelsConfig:
     include_lower: bool = True
     legend: ContourLevelsLegendConfig = ContourLevelsLegendConfig()
     levels: Optional[np.ndarray] = None
-    n: int = 0
+    n: int = 0  # SR_TMP TODO eliminate
     scale: str = "log"
 
 
@@ -92,7 +92,6 @@ class BoxedPlotConfig:
     levels: ContourLevelsConfig = ContourLevelsConfig()
     markers: MarkersConfig = MarkersConfig()
     # ---
-    cmap: Union[str, Colormap] = "flexplot"
     colors: Optional[List[ColorType]] = None
     color_above_closed: Optional[ColorType] = None  # SR_TODO better approach
     # SR_NOTE Figure size may change when boxes etc. are added
