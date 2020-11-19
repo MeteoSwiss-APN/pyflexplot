@@ -75,7 +75,7 @@ def read_nc_meta_data(file_handle: nc4.Dataset) -> Dict[str, Dict[str, Any]]:
     derived: Dict[str, Any] = {
         "release_site": determine_release_site(file_handle),
         "rotated_pole": determine_rotated_pole(dimensions),
-        "species_ids": collect_species_ids(variables.keys()),
+        "species_ids": derive_species_ids(variables.keys()),
         "time_steps": collect_time_steps(ncattrs),
     }
 
@@ -125,8 +125,8 @@ def collect_time_steps(ncattrs: Dict[str, Any]) -> Tuple[int, ...]:
     return tuple(map(lambda ts: int(ts.strftime(fmt_out)), time_steps))
 
 
-def collect_species_ids(variable_names: Collection[str]) -> Tuple[int, ...]:
-    """Determine the species ids from the variables."""
+def derive_species_ids(variable_names: Collection[str]) -> Tuple[int, ...]:
+    """Derive the species ids from the NetCDF variable names."""
     rx = re.compile(r"\A([WD]D_)?spec(?P<species_id>[0-9][0-9][0-9])(_mr)?\Z")
     species_ids = set()
     for var_name in variable_names:
