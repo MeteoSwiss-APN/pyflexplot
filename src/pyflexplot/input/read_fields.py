@@ -37,8 +37,8 @@ from .data import FieldTimeProperties
 from .data import merge_fields
 from .fix_nc_input import FlexPartDataFixer
 from .meta_data import MetaData
-from .meta_data import nc_var_name
-from .nc_meta_data import read_meta_data
+from .nc_meta_data import nc_var_name
+from .nc_meta_data import read_nc_meta_data
 
 AFFECTED_AREA_THRESHOLD = 0.0
 CLOUD_THRESHOLD = 0.0
@@ -433,7 +433,7 @@ class InputFileEnsemble:
                 self.cache.add(cache_key, fld_time_i, mdata_tss_i)
 
     def read_nc_meta_data(self, fi: nc4.Dataset, check: bool = False) -> Dict[str, Any]:
-        nc_meta_data = read_meta_data(fi)
+        nc_meta_data = read_nc_meta_data(fi)
         if self.add_ts0:
             old_size = nc_meta_data["dimensions"]["time"]["size"]
             new_size = old_size + 1

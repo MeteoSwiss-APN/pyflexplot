@@ -18,10 +18,11 @@ from typing import Tuple
 import netCDF4 as nc4
 
 # Local
+from ..setup import Setup
 from ..utils.datetime import init_datetime
 
 
-def read_meta_data(file_handle: nc4.Dataset) -> Dict[str, Dict[str, Any]]:
+def read_nc_meta_data(file_handle: nc4.Dataset) -> Dict[str, Dict[str, Any]]:
     """Read meta data (variables, dimensions, attributes) from a NetCDF file.
 
     Args:
@@ -106,20 +107,6 @@ def determine_rotated_pole(dimensions: Dict[str, Any]) -> bool:
         raise NotImplementedError("unexpected dimensions: {list(dimensions)}")
 
 
-def collect_species_ids(variables: Dict[str, Any]) -> Tuple[int, ...]:
-    """Determine the species ids from the variables."""
-    rx = re.compile(r"\A([WD]D_)?spec(?P<species_id>[0-9][0-9][0-9])(_mr)?\Z")
-    species_ids = set()
-    for var_name in variables.keys():
-        match = rx.match(var_name)
-        if match:
-            species_id = int(match.group("species_id"))
-            species_ids.add(species_id)
-    if not species_ids:
-        raise Exception("could not identify species ids")
-    return tuple(sorted(species_ids))
-
-
 def collect_time_steps(ncattrs: Dict[str, Any]) -> Tuple[int, ...]:
     fmt_out = "%Y%m%d%H%M"
     start_date: str = ncattrs["ibdate"]
@@ -136,3 +123,39 @@ def collect_time_steps(ncattrs: Dict[str, Any]) -> Tuple[int, ...]:
     while time_steps[-1] < end:
         time_steps.append(time_steps[-1] + delta)
     return tuple(map(lambda ts: int(ts.strftime(fmt_out)), time_steps))
+
+
+def collect_species_ids(variables: Dict[str, Any]) -> Tuple[int, ...]:
+    """Determine the species ids from the variables."""
+    rx = re.compile(r"\A([WD]D_)?spec(?P<species_id>[0-9][0-9][0-9])(_mr)?\Z")
+    species_ids = set()
+    for var_name in variables.keys():
+        match = rx.match(var_name)
+        if match:
+            species_id = int(match.group("species_id"))
+            species_ids.add(species_id)
+    if not species_ids:
+        raise Exception("could not identify species ids")
+    return tuple(sorted(species_ids))
+
+
+def nc_var_name(setup: Setup, model: str) -> str:
+    # SR_TMP <
+    input_variable = setup.core.input_variable
+    species_id = setup.core.dimensions.species_id
+    assert species_id is not None  # mypy
+    deposition_type = setup.deposition_type_str
+    # SR_TMP >
+    cosmo_models = ["COSMO-2", "COSMO-1", "COSMO-2E", "COSMO-1E"]
+    ifs_models = ["IFS-HRES", "IFS-HRES-EU"]
+    if input_variable == "concentration":
+        if model in cosmo_models:
+            return f"spec{species_id:03d}"
+        elif model in ifs_models:
+            return f"spec{species_id:03d}_mr"
+        else:
+            raise ValueError("unknown model", model)
+    elif input_variable == "deposition":
+        prefix = {"wet": "WD", "dry": "DD"}[deposition_type]
+        return f"{prefix}_spec{species_id:03d}"
+    raise ValueError("unknown variable", input_variable)

@@ -7,7 +7,7 @@ from typing import Optional
 import netCDF4 as nc4
 
 # First-party
-from pyflexplot.input.nc_meta_data import read_meta_data
+from pyflexplot.input.nc_meta_data import read_nc_meta_data
 
 # Local  isort:skip
 from .shared import datadir_reduced as datadir  # noqa:F401 isort:skip
@@ -23,7 +23,7 @@ class _TestBase:
             if cls.meta_data is not None:
                 return None
         with nc4.Dataset(f"{datadir}/{cls.datafilename}", "r") as f:
-            cls.meta_data = read_meta_data(f)
+            cls.meta_data = read_nc_meta_data(f)
 
 
 class Test_COSMO1(_TestBase):

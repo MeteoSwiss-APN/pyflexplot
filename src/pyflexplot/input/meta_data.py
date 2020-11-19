@@ -1,4 +1,3 @@
-# pylint: disable=C0302  # too-many-lines (>1000)
 """Meta data.
 
 Note that these meta data should eventually be merged with the raw ones in
@@ -39,6 +38,7 @@ from srutils.dict import compress_multival_dicts
 # Local
 from ..setup import Setup
 from ..utils.datetime import init_datetime
+from .nc_meta_data import nc_var_name
 from .species import get_species
 from .species import Species
 
@@ -728,26 +728,3 @@ class TimeStepMetaDataCollector:
         if self.add_ts0:
             return self.setup.core.dimensions.time - 1
         return self.setup.core.dimensions.time
-
-
-def nc_var_name(setup: Setup, model: str) -> str:
-    cosmo_models = ["COSMO-2", "COSMO-1", "COSMO-2E", "COSMO-1E"]
-    ifs_models = ["IFS-HRES", "IFS-HRES-EU"]
-    # SR_TMP <
-    dimensions = setup.core.dimensions
-    input_variable = setup.core.input_variable
-    deposition_type = setup.deposition_type_str
-    # SR_TMP >
-    assert dimensions.species_id is not None  # mypy
-    species_id = dimensions.species_id
-    if input_variable == "concentration":
-        if model in cosmo_models:
-            return f"spec{species_id:03d}"
-        elif model in ifs_models:
-            return f"spec{species_id:03d}_mr"
-        else:
-            raise ValueError("unknown model", model)
-    elif input_variable == "deposition":
-        prefix = {"wet": "WD", "dry": "DD"}[deposition_type]
-        return f"{prefix}_spec{species_id:03d}"
-    raise ValueError("unknown variable", input_variable)
