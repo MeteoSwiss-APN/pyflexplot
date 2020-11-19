@@ -74,8 +74,8 @@ def read_meta_data(file_handle: nc4.Dataset) -> Dict[str, Dict[str, Any]]:
     derived: Dict[str, Any] = {
         "release_site": determine_release_site(file_handle),
         "rotated_pole": determine_rotated_pole(dimensions),
-        "species_ids": determine_species_ids(variables),
-        "time_steps": determine_time_steps(ncattrs),
+        "species_ids": collect_species_ids(variables),
+        "time_steps": collect_time_steps(ncattrs),
     }
 
     return {
@@ -88,10 +88,12 @@ def read_meta_data(file_handle: nc4.Dataset) -> Dict[str, Dict[str, Any]]:
 
 def determine_release_site(file_handle: nc4.Dataset) -> str:
     var = file_handle.variables["RELCOM"]
-    # SR_TMP <
-    assert len(var) == 1
-    idx = 0
-    # SR_TMP >
+    if len(var) == 0:
+        raise Exception("no release sites")
+    elif len(var) == 1:
+        idx = 0
+    else:
+        raise NotImplementedError("multiple release sites")
     return var[idx][~var[idx].mask].tobytes().decode("utf-8").rstrip()
 
 
@@ -104,7 +106,7 @@ def determine_rotated_pole(dimensions: Dict[str, Any]) -> bool:
         raise NotImplementedError("unexpected dimensions: {list(dimensions)}")
 
 
-def determine_species_ids(variables: Dict[str, Any]) -> Tuple[int, ...]:
+def collect_species_ids(variables: Dict[str, Any]) -> Tuple[int, ...]:
     """Determine the species ids from the variables."""
     rx = re.compile(r"\A([WD]D_)?spec(?P<species_id>[0-9][0-9][0-9])(_mr)?\Z")
     species_ids = set()
@@ -118,7 +120,7 @@ def determine_species_ids(variables: Dict[str, Any]) -> Tuple[int, ...]:
     return tuple(sorted(species_ids))
 
 
-def determine_time_steps(ncattrs: Dict[str, Any]) -> Tuple[int, ...]:
+def collect_time_steps(ncattrs: Dict[str, Any]) -> Tuple[int, ...]:
     fmt_out = "%Y%m%d%H%M"
     start_date: str = ncattrs["ibdate"]
     start_time: str = ncattrs["ibtime"]
