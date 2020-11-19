@@ -18,7 +18,6 @@ from typing import Tuple
 import netCDF4 as nc4
 
 # Local
-from ..setup import Setup
 from ..utils.datetime import init_datetime
 
 
@@ -139,13 +138,9 @@ def collect_species_ids(variables: Dict[str, Any]) -> Tuple[int, ...]:
     return tuple(sorted(species_ids))
 
 
-def nc_var_name(setup: Setup, model: str) -> str:
-    # SR_TMP <
-    input_variable = setup.core.input_variable
-    species_id = setup.core.dimensions.species_id
-    assert species_id is not None  # mypy
-    deposition_type = setup.deposition_type_str
-    # SR_TMP >
+def nc_var_name(
+    model: str, input_variable: str, species_id: int, deposition_type: str
+) -> str:
     cosmo_models = ["COSMO-2", "COSMO-1", "COSMO-2E", "COSMO-1E"]
     ifs_models = ["IFS-HRES", "IFS-HRES-EU"]
     if input_variable == "concentration":

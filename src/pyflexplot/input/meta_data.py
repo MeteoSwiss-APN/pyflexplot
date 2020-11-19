@@ -358,7 +358,13 @@ class VariableMetaData(_MetaDataBase):
         ]:
             unit = "h"
         else:
-            var_name = nc_var_name(setup, setup.model)
+            assert setup.core.dimensions.species_id is not None  # mypy
+            var_name = nc_var_name(
+                model=setup.model,
+                input_variable=setup.core.input_variable,
+                species_id=setup.core.dimensions.species_id,
+                deposition_type=setup.deposition_type_str,
+            )
             try:
                 var = fi.variables[var_name]
             except KeyError:
@@ -497,7 +503,6 @@ class SpeciesMetaData(_MetaDataBase):
 
     @classmethod
     def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "SpeciesMetaData":
-        model: str = setup.model
         name: str
         if setup.core.input_variable in [
             "affected_area",
@@ -507,12 +512,18 @@ class SpeciesMetaData(_MetaDataBase):
             alt_setup = setup.derive({"input_variable": "concentration"})
             return cls.from_file(fi, alt_setup)
         else:
-            var_name: str = nc_var_name(setup, model)
+            assert setup.core.dimensions.species_id is not None  # mypy
+            var_name = nc_var_name(
+                model=setup.model,
+                input_variable=setup.core.input_variable,
+                species_id=setup.core.dimensions.species_id,
+                deposition_type=setup.deposition_type_str,
+            )
             try:
                 var: nc4.Variable = fi.variables[var_name]
                 name = getncattr(var, "long_name")
             except (KeyError, AttributeError):
-                if model.startswith("IFS"):
+                if setup.model.startswith("IFS"):
                     name = cls._get_species_name_ifs(fi, var_name)
                 elif setup.core.input_variable == "deposition":
                     # Deposition field may be missing

@@ -639,7 +639,13 @@ class InputFileEnsemble:
             dim_idcs_by_name[dim_names[dim_name]] = idcs
 
         # Select variable in file
-        var_name = nc_var_name(setup, setup.model)
+        assert setup.core.dimensions.species_id is not None  # mypy
+        var_name = nc_var_name(
+            model=setup.model,
+            input_variable=setup.core.input_variable,
+            species_id=setup.core.dimensions.species_id,
+            deposition_type=setup.deposition_type_str,
+        )
         try:
             nc_var = fi.variables[var_name]
         except KeyError as e:
