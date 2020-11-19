@@ -10,6 +10,7 @@ import re
 from datetime import datetime
 from datetime import timedelta
 from typing import Any
+from typing import Collection
 from typing import Dict
 from typing import List
 from typing import Tuple
@@ -74,7 +75,7 @@ def read_nc_meta_data(file_handle: nc4.Dataset) -> Dict[str, Dict[str, Any]]:
     derived: Dict[str, Any] = {
         "release_site": determine_release_site(file_handle),
         "rotated_pole": determine_rotated_pole(dimensions),
-        "species_ids": collect_species_ids(variables),
+        "species_ids": collect_species_ids(variables.keys()),
         "time_steps": collect_time_steps(ncattrs),
     }
 
@@ -124,11 +125,11 @@ def collect_time_steps(ncattrs: Dict[str, Any]) -> Tuple[int, ...]:
     return tuple(map(lambda ts: int(ts.strftime(fmt_out)), time_steps))
 
 
-def collect_species_ids(variables: Dict[str, Any]) -> Tuple[int, ...]:
+def collect_species_ids(variable_names: Collection[str]) -> Tuple[int, ...]:
     """Determine the species ids from the variables."""
     rx = re.compile(r"\A([WD]D_)?spec(?P<species_id>[0-9][0-9][0-9])(_mr)?\Z")
     species_ids = set()
-    for var_name in variables.keys():
+    for var_name in variable_names:
         match = rx.match(var_name)
         if match:
             species_id = int(match.group("species_id"))
