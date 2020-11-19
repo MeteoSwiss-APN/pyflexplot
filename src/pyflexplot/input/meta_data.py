@@ -37,10 +37,10 @@ from srutils.dataclasses import get_dataclass_fields
 from srutils.dict import compress_multival_dicts
 
 # Local
-from .setup import Setup
+from ..setup import Setup
+from ..utils.datetime import init_datetime
 from .species import get_species
 from .species import Species
-from .utils.datetime import init_datetime
 
 CoreMetaDatumType = Union[int, float, str, datetime, timedelta]
 MetaDatumType = Union[CoreMetaDatumType, Tuple[CoreMetaDatumType, ...]]

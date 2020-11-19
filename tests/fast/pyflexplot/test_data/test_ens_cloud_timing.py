@@ -8,7 +8,7 @@ import numpy as np
 import pytest  # noqa: F401  # imported but unused
 
 # First-party
-from pyflexplot.data import EnsembleCloud
+from pyflexplot.input.data import EnsembleCloud
 
 # Shorthands for special values
 I = np.inf  # noqa: E741  # ambiguous variable name

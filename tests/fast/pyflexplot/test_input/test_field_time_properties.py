@@ -1,9 +1,9 @@
-"""Test class ``pyflexplot.data.FieldTimeProperties``."""
+"""Test class ``pyflexplot.input.data.FieldTimeProperties``."""
 # Third-party
 import numpy as np
 
 # First-party
-from pyflexplot.data import FieldTimeProperties
+from pyflexplot.input.data import FieldTimeProperties
 from srutils.testing import assert_nested_equal
 
 N = np.nan

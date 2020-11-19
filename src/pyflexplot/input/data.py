@@ -19,13 +19,13 @@ from cartopy.crs import Projection
 from srutils.str import join_multilines
 
 # Local
+from ..setup import SetupCollection
+from ..utils.exceptions import ArrayDimensionError
+from ..utils.exceptions import FieldAllNaNError
+from ..utils.exceptions import InconsistentArrayShapesError
+from ..utils.summarize import default_summarize
+from ..utils.summarize import summarizable
 from .meta_data import MetaData
-from .setup import SetupCollection
-from .utils.exceptions import ArrayDimensionError
-from .utils.exceptions import FieldAllNaNError
-from .utils.exceptions import InconsistentArrayShapesError
-from .utils.summarize import default_summarize
-from .utils.summarize import summarizable
 
 
 def summarize_field(obj: Any) -> Dict[str, Dict[str, Any]]:

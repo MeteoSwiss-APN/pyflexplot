@@ -12,7 +12,7 @@ from typing import Dict
 import pytest  # type: ignore
 
 # First-party
-from pyflexplot.input import read_fields
+from pyflexplot.input.read_fields import read_fields
 from pyflexplot.plots import create_plot
 from pyflexplot.plots import format_out_file_paths
 from pyflexplot.plots import prepare_plot

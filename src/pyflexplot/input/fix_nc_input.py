@@ -9,8 +9,8 @@ from typing import Union
 import numpy as np
 
 # Local
+from ..utils.logging import log
 from .meta_data import MetaData
-from .utils.logging import log
 
 
 class FlexPartDataFixer:

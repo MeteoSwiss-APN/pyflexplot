@@ -12,7 +12,7 @@ from typing import Sequence
 from typing import Union
 
 # Local
-from .meta_data import MetaData
+from .input.meta_data import MetaData
 from .setup import Setup
 from .utils.datetime import init_datetime
 from .utils.logging import log

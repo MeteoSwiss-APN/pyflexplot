@@ -1,4 +1,4 @@
-"""Test module ``pyflexplot.meta_data``."""
+"""Tests for module ``pyflexplot.input.meta_data``."""
 # Standard library
 import datetime as dt
 from typing import Any
@@ -6,11 +6,11 @@ from typing import Dict
 from typing import List
 
 # First-party
-from pyflexplot.meta_data import MetaData
-from pyflexplot.meta_data import ReleaseMetaData
-from pyflexplot.meta_data import SimulationMetaData
-from pyflexplot.meta_data import SpeciesMetaData
-from pyflexplot.meta_data import VariableMetaData
+from pyflexplot.input.meta_data import MetaData
+from pyflexplot.input.meta_data import ReleaseMetaData
+from pyflexplot.input.meta_data import SimulationMetaData
+from pyflexplot.input.meta_data import SpeciesMetaData
+from pyflexplot.input.meta_data import VariableMetaData
 
 
 def expand_singles(dct: Dict[Any, Any], n: int) -> List[Dict[Any, Any]]:

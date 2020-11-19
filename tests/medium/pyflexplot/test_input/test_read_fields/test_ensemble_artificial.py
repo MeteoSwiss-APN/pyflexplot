@@ -1,6 +1,7 @@
-"""Test function ``pyflexplot.input.read_fields`` with artificial ensemble data.
+"""Tests for module ``pyflexplot.input.read_fields``.
 
-The input fields are constant and equal to the respective ensemble member id.
+These tests use artificial ensemble data comprised of input fields that are
+constant and equal in value to the respective ensemble member id.
 
 """
 # Standard library
@@ -12,11 +13,11 @@ import numpy as np
 import pytest  # type: ignore
 
 # First-party
-from pyflexplot.input import FieldInputOrganizer
+from pyflexplot.input.read_fields import FieldInputOrganizer
 from pyflexplot.setup import SetupCollection
 
 # Local  isort:skip
-from .shared import datadir_artificial as datadir  # noqa:F401 isort:skip
+from ..shared import datadir_artificial as datadir  # noqa:F401 isort:skip
 
 
 @dataclass

@@ -32,8 +32,8 @@ from srutils.str import sorted_paths
 # Local
 from .. import __version__
 from .. import data_path
-from ..data import Field
-from ..input import read_fields
+from ..input.data import Field
+from ..input.read_fields import read_fields
 from ..plots import create_plot
 from ..plots import format_out_file_paths
 from ..plots import prepare_plot

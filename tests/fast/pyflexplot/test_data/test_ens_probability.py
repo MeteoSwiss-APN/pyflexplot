@@ -4,7 +4,7 @@ import numpy as np
 import pytest  # noqa: F401  # imported but unused
 
 # First-party
-from pyflexplot.data import ensemble_probability
+from pyflexplot.input.data import ensemble_probability
 
 # Shorthands for special values
 N = np.nan

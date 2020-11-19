@@ -1,4 +1,8 @@
-"""Test function ``pyflexplot.input.read_fields`` with deterministic data."""
+"""Tests for module ``pyflexplot.input.read_fields``.
+
+These tests use deterministic data.
+
+"""
 # Standard library
 from dataclasses import dataclass
 from dataclasses import field
@@ -12,14 +16,14 @@ import numpy as np
 import pytest  # type: ignore
 
 # First-party
-from pyflexplot.input import FieldInputOrganizer
-from pyflexplot.input import read_fields
+from pyflexplot.input.read_fields import FieldInputOrganizer
+from pyflexplot.input.read_fields import read_fields
 from pyflexplot.setup import Setup
 from pyflexplot.setup import SetupCollection
 
 # Local  isort:skip
-from .shared import read_nc_var  # isort:skip
-from .shared import datadir_reduced as datadir  # noqa:F401 isort:skip
+from ..shared import read_nc_var  # isort:skip
+from ..shared import datadir_reduced as datadir  # noqa:F401 isort:skip
 
 
 def get_var_name_ref(setup, var_names_ref):

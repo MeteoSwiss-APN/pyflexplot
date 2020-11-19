@@ -15,8 +15,8 @@ from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 
 # Local
-from ..data import Field
-from ..meta_data import MetaData
+from ..input.data import Field
+from ..input.meta_data import MetaData
 from ..setup import Setup
 from ..utils.summarize import summarizable
 from ..utils.typing import ColorType

@@ -1,7 +1,8 @@
-"""Utilities for testing."""
+"""Utilities for tests for module ``pyflexplot.input``."""
 # Standard library
 import distutils.dir_util
 import os
+from pathlib import Path
 
 # Third-party
 import netCDF4 as nc4
@@ -48,11 +49,8 @@ def datadir_reduced(tmpdir, request):
 
 
 def _datadir_core(subdir, tmpdir, request):
-    file = request.module.__file__
-    dir, _ = os.path.splitext(file)
-    data_root = os.path.abspath(f"{os.path.abspath(dir)}/../../../../data")
-    data_dir = f"{data_root}/pyflexplot/input/{subdir}"
-    if os.path.isdir(data_dir):
+    data_dir = Path(__file__).parents[3] / "data/pyflexplot/input" / subdir
+    if data_dir.is_dir():
         distutils.dir_util.copy_tree(data_dir, str(tmpdir))
     return tmpdir
 

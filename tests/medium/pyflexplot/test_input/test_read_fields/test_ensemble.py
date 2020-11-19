@@ -1,4 +1,8 @@
-"""Test function ``pyflexplot.input.read_fields`` with ensemble data."""
+"""Tests for module ``pyflexplot.input.read_fields``.
+
+These tests use ensemble data.
+
+"""
 # Standard library
 from typing import Any
 from typing import Dict
@@ -8,15 +12,15 @@ import numpy as np
 import pytest
 
 # First-party
-from pyflexplot.data import ensemble_probability
-from pyflexplot.input import read_fields
+from pyflexplot.input.data import ensemble_probability
+from pyflexplot.input.read_fields import read_fields
 from pyflexplot.setup import Setup
 from pyflexplot.setup import SetupCollection
 from srutils.dict import decompress_multival_dict
 
 # Local  isort:skip
-from .shared import datadir_reduced as datadir  # noqa:F401 isort:skip
-from .shared import read_nc_var  # isort:skip
+from ..shared import datadir_reduced as datadir  # noqa:F401 isort:skip
+from ..shared import read_nc_var  # isort:skip
 
 
 def get_var_name_ref(setup, var_names_ref):

@@ -27,7 +27,7 @@ from matplotlib.lines import Line2D
 from matplotlib.text import Text
 
 # Local
-from ..data import Field
+from ..input.data import Field
 from ..utils.logging import log
 from ..utils.summarize import post_summarize_plot
 from ..utils.summarize import summarizable

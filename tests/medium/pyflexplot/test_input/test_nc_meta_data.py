@@ -1,4 +1,4 @@
-"""Test function ``pyflexplot.nc_meta_data.read_meta_data``."""
+"""Tests for module ``pyflexplot.input.nc_meta_data``."""
 # Standard library
 from typing import Dict
 from typing import Optional
@@ -7,7 +7,7 @@ from typing import Optional
 import netCDF4 as nc4
 
 # First-party
-from pyflexplot.nc_meta_data import read_meta_data
+from pyflexplot.input.nc_meta_data import read_meta_data
 
 # Local  isort:skip
 from .shared import datadir_reduced as datadir  # noqa:F401 isort:skip

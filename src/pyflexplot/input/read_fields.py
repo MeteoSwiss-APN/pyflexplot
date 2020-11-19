@@ -25,6 +25,10 @@ from cartopy.crs import RotatedPole
 from srutils.various import check_array_indices
 
 # Local
+from ..setup import Setup
+from ..setup import SetupCollection
+from ..utils.exceptions import MissingCacheEntryError
+from ..utils.logging import log
 from .data import Cloud
 from .data import ensemble_probability
 from .data import EnsembleCloud
@@ -35,10 +39,6 @@ from .fix_nc_input import FlexPartDataFixer
 from .meta_data import MetaData
 from .meta_data import nc_var_name
 from .nc_meta_data import read_meta_data
-from .setup import Setup
-from .setup import SetupCollection
-from .utils.exceptions import MissingCacheEntryError
-from .utils.logging import log
 
 AFFECTED_AREA_THRESHOLD = 0.0
 CLOUD_THRESHOLD = 0.0

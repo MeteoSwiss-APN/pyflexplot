@@ -18,7 +18,7 @@ from typing import Tuple
 import netCDF4 as nc4
 
 # Local
-from .utils.datetime import init_datetime
+from ..utils.datetime import init_datetime
 
 
 def read_meta_data(file_handle: nc4.Dataset) -> Dict[str, Dict[str, Any]]:
