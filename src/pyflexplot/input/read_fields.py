@@ -37,7 +37,7 @@ from .data import FieldTimeProperties
 from .data import merge_fields
 from .fix_nc_input import FlexPartDataFixer
 from .meta_data import MetaData
-from .nc_meta_data import nc_var_name
+from .nc_meta_data import derive_variable_name
 from .nc_meta_data import read_nc_meta_data
 
 AFFECTED_AREA_THRESHOLD = 0.0
@@ -640,7 +640,7 @@ class InputFileEnsemble:
 
         # Select variable in file
         assert setup.core.dimensions.species_id is not None  # mypy
-        var_name = nc_var_name(
+        var_name = derive_variable_name(
             model=setup.model,
             input_variable=setup.core.input_variable,
             species_id=setup.core.dimensions.species_id,

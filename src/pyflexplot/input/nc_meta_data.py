@@ -139,9 +139,10 @@ def derive_species_ids(variable_names: Collection[str]) -> Tuple[int, ...]:
     return tuple(sorted(species_ids))
 
 
-def nc_var_name(
+def derive_variable_name(
     model: str, input_variable: str, species_id: int, deposition_type: str
 ) -> str:
+    """Derive the NetCDF variable name given some attributes."""
     cosmo_models = ["COSMO-2", "COSMO-1", "COSMO-2E", "COSMO-1E"]
     ifs_models = ["IFS-HRES", "IFS-HRES-EU"]
     if input_variable == "concentration":

@@ -38,7 +38,7 @@ from srutils.dict import compress_multival_dicts
 # Local
 from ..setup import Setup
 from ..utils.datetime import init_datetime
-from .nc_meta_data import nc_var_name
+from .nc_meta_data import derive_variable_name
 from .species import get_species
 from .species import Species
 
@@ -359,7 +359,7 @@ class VariableMetaData(_MetaDataBase):
             unit = "h"
         else:
             assert setup.core.dimensions.species_id is not None  # mypy
-            var_name = nc_var_name(
+            var_name = derive_variable_name(
                 model=setup.model,
                 input_variable=setup.core.input_variable,
                 species_id=setup.core.dimensions.species_id,
@@ -513,7 +513,7 @@ class SpeciesMetaData(_MetaDataBase):
             return cls.from_file(fi, alt_setup)
         else:
             assert setup.core.dimensions.species_id is not None  # mypy
-            var_name = nc_var_name(
+            var_name = derive_variable_name(
                 model=setup.model,
                 input_variable=setup.core.input_variable,
                 species_id=setup.core.dimensions.species_id,
