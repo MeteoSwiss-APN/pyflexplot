@@ -2,7 +2,7 @@
 
 __author__ = """Stefan Ruedisuehli"""
 __email__ = "stefan.ruedisuehli@env.ethz.ch"
-__version__ = "0.13.10"
+__version__ = "0.13.11"
 
 # Standard library
 import logging as pylogging
