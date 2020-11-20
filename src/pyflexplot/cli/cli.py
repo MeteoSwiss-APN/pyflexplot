@@ -177,15 +177,6 @@ def click_prep_setup_params(ctx, param, value):
     is_flag=True,
     default=False,
 )
-# SR_TMP < TODO Remove once OSM replaces --dest-dir by --dest
-@click.option(
-    "--dest-dir",
-    "dest_dir_old",
-    help="Replaced by --dest.",
-    metavar="DEST_DIR",
-    default=None,
-)
-# SR_TMP >
 @click.option(
     "--dest",
     "dest_dir",
@@ -310,14 +301,6 @@ def click_prep_setup_params(ctx, param, value):
     ),
     multiple=True,
 )
-# SR_TMP < TODO Remove once OSM replaces --tmp-dir by --tmp
-@click.option(
-    "--tmp-dir",
-    "tmp_dir_old",
-    help="Replaced by --tmp.",
-    metavar="TMP_DIR",
-    default=None,
-)
 @click.option(
     "--tmp",
     "tmp_dir",
@@ -402,7 +385,6 @@ def main(
     *,
     auto_tmp,
     cache,
-    dest_dir_old,  # SR_TMP TODO Remove once OSM replaces --dest-dir by --dest
     dest_dir,
     dry_run,
     input_setup_params,
@@ -415,26 +397,9 @@ def main(
     setup_file_paths,
     show_version,
     suffixes,
-    tmp_dir_old,  # SR_TMP TODO Remove once OSM replaces --tmp-dir by --tmp
     tmp_dir,
 ):
     """Create dispersion plot as specified in CONFIG_FILE(S)."""
-    # SR_TMP < TODO Remove once OSM replaces --dest-dir by --dest
-    if dest_dir_old:
-        warn("--dest-dir has been replaced by --dest", DeprecationWarning)
-        if dest_dir:
-            click.echo("error: incompatible options: --dest-dir, --dest", err=True)
-            ctx.exit(1)
-        dest_dir = dest_dir_old
-    # SR_TMP >
-    # SR_TMP < TODO Remove once OSM replaces --tmp-dir by --tmp
-    if tmp_dir_old:
-        warn("--tmp-dir has been replaced by --tmp", DeprecationWarning)
-        if tmp_dir:
-            click.echo("error: incompatible options: --tmp-dir, --tmp", err=True)
-            ctx.exit(1)
-        tmp_dir = tmp_dir_old
-    # SR_TMP >
     if dest_dir is None:
         dest_dir = "."
     if tmp_dir is None:
