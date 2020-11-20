@@ -616,9 +616,9 @@ class InputFileEnsemble:
             if not self.missing_ok:
                 raise Exception(f"missing variable '{var_name}'") from e
             shape = (
-                fi.dimensions["time"].size,
-                fi.dimensions["rlat"].size,
-                fi.dimensions["rlon"].size,
+                fi.dimensions[dim_names["time"]].size,
+                fi.dimensions[dim_names["lat"]].size,
+                fi.dimensions[dim_names["lon"]].size,
             )
             return np.zeros(shape, np.float32)
 
