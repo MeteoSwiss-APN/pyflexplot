@@ -57,6 +57,7 @@ datafilename1 = "flexpart_cosmo-1_2019052800.nc"
 datafilename2 = "flexpart_cosmo-1_2019093012.nc"
 datafilename3 = "flexpart_ifs_20200317000000.nc"
 datafilename4 = "flexpart_cosmo-1e-ctrl_2020102105.nc"
+datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
 
 
 # test_single
@@ -530,9 +531,8 @@ def test_single_add_ts0(datadir, config):
     assert (field_ts0_lst_lst[1][0].fld == field_raw_lst_lst[0][0].fld).all()
 
 
-def test_missing_deposition(datadir):  # noqa:F811
+def test_missing_deposition_cosmo(datadir):  # noqa:F811
     """Read deposition field from file that does not contain one."""
-
     setup_dct = {
         "infile": datafilename4,
         "outfile": "dummy.png",
@@ -550,7 +550,39 @@ def test_missing_deposition(datadir):  # noqa:F811
         },
     }
     setup = Setup.create(setup_dct)
+    datafile = f"{datadir}/{setup_dct['infile']}"
 
+    # Initialize field specifications
+    setups = SetupCollection([setup])
+
+    # Read input field
+    field_lst_lst = read_fields(datafile, setups, missing_ok=True)
+    assert len(field_lst_lst) == 1
+    assert len(field_lst_lst[0]) == 1
+    fld = field_lst_lst[0][0].fld
+
+    assert (fld == 0.0).all()
+
+
+def test_missing_deposition_ifs(datadir):  # noqa:F811
+    """Read deposition field from file that does not contain one."""
+    setup_dct = {
+        "infile": datafilename5,
+        "outfile": "dummy.png",
+        "model": "IFS-HRES-EU",
+        "input_variable": "deposition",
+        "integrate": True,
+        "combine_deposition_types": True,
+        "dimensions": {
+            "deposition_type": ("dry", "wet"),
+            "nageclass": 0,
+            "noutrel": 0,
+            "numpoint": 0,
+            "species_id": 1,
+            "time": 10,
+        },
+    }
+    setup = Setup.create(setup_dct)
     datafile = f"{datadir}/{setup_dct['infile']}"
 
     # Initialize field specifications
@@ -567,7 +599,6 @@ def test_missing_deposition(datadir):  # noqa:F811
 
 def test_affected_area(datadir):  # noqa:F811
     """Read affected area field, combining concentration and deposition."""
-
     setup_dct = {
         "infile": datafilename4,
         "outfile": "dummy.png",
@@ -586,7 +617,6 @@ def test_affected_area(datadir):  # noqa:F811
         },
     }
     setup = Setup.create(setup_dct)
-
     datafile = f"{datadir}/{setup_dct['infile']}"
 
     # Initialize field specifications
