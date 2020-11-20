@@ -32,8 +32,18 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument("in_file_path", metavar="infile", nargs=1, type=click.Path(exists=True))
-@click.argument("out_file_path", metavar="outfile", nargs=1, type=click.Path())
+@click.argument(
+    "in_file_path",
+    metavar="infile",
+    nargs=1,
+    type=click.Path(exists=True),
+)
+@click.argument(
+    "out_file_path",
+    metavar="outfile",
+    nargs=1,
+    type=click.Path(),
+)
 @click.option(
     "--lat",
     "lat_slice",
@@ -50,10 +60,21 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     metavar="START STOP STEP",
     default=(None, None, None),
 )
-@click.option("--lat-name", help="Name of latitude dimension.", default="lat")
-@click.option("--lon-name", help="Name of longitude dimension.", default="lon")
 @click.option(
-    "--set-const", help="Set field to constant value.", type=float, default=None
+    "--lat-name",
+    help="Name of latitude dimension.",
+    default="lat",
+)
+@click.option(
+    "--lon-name",
+    help="Name of longitude dimension.",
+    default="lon",
+)
+@click.option(
+    "--set-const",
+    help="Set field to constant value.",
+    type=float,
+    default=None,
 )
 def main(in_file_path, out_file_path, **kwargs_setup):
     kwargs_setup["lat_slice"] = slice(*kwargs_setup["lat_slice"])
