@@ -241,13 +241,16 @@ endif
 .PHONY: install #CMD Install the package with pinned runtime dependencies.
 install: ${_VENV}
 	@echo -e "\n[make install] installing the package"
-	${PREFIX}python -m pip install -r requirements/run-pinned.txt ${PIP_OPTS}
+	# SR_NOTE Pinned deps fail on tsa, probably due to cartopy/shapely vs. geos/proj
+	# ${PREFIX}python -m pip install -r requirements/run-pinned.txt ${PIP_OPTS}
 	${PREFIX}python -m pip install . ${PIP_OPTS}
 
 .PHONY: install-dev #CMD Install the package as editable with pinned runtime and\ndevelopment dependencies.
 install-dev: ${_VENV}
 	@echo -e "\n[make install-dev] installing the package as editable with development dependencies"
-	${PREFIX}python -m pip install -r requirements/dev-pinned.txt ${PIP_OPTS}
+	# SR_NOTE Pinned deps fail on tsa, probably due to cartopy/shapely vs. geos/proj
+	# ${PREFIX}python -m pip install -r requirements/dev-pinned.txt ${PIP_OPTS}
+	${PREFIX}python -m pip install -r requirements/dev-unpinned.txt ${PIP_OPTS}
 	${PREFIX}python -m pip install -e . ${PIP_OPTS}
 	${PREFIX}pre-commit install
 
