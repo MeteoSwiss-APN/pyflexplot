@@ -21,9 +21,9 @@ from pyflexplot.input.read_fields import read_fields
 from pyflexplot.setup import Setup
 from pyflexplot.setup import SetupCollection
 
-# Local  isort:skip
-from ..shared import read_nc_var  # isort:skip
-from ..shared import datadir_reduced as datadir  # noqa:F401 isort:skip
+# Local
+from .shared import datadir_reduced as datadir  # noqa:F401
+from .shared import read_flexpart_field
 
 
 def get_var_name_ref(setup, var_names_ref):
@@ -260,7 +260,7 @@ def test_single(datadir, config):  # noqa:F811
     fld_ref = (
         np.nansum(
             [
-                read_nc_var(
+                read_flexpart_field(
                     datafile,
                     get_var_name_ref(setup, config.var_names_ref),
                     setup,
@@ -448,7 +448,7 @@ def test_multiple(datadir, config):  # noqa:F811
         fld_ref = None
         for var_setup in var_setups:
             flds_ref_i = [
-                read_nc_var(
+                read_flexpart_field(
                     datafile,
                     get_var_name_ref(var_setup, config.var_names_ref),
                     var_setup,

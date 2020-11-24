@@ -18,9 +18,9 @@ from pyflexplot.setup import Setup
 from pyflexplot.setup import SetupCollection
 from srutils.dict import decompress_multival_dict
 
-# Local  isort:skip
-from ..shared import datadir_reduced as datadir  # noqa:F401 isort:skip
-from ..shared import read_nc_var  # isort:skip
+# Local
+from .shared import datadir_reduced as datadir  # noqa:F401
+from .shared import read_flexpart_field
 
 
 def get_var_name_ref(setup, var_names_ref):
@@ -119,7 +119,7 @@ class TestReadFieldEnsemble_Single:
             np.nansum(
                 [
                     [
-                        read_nc_var(
+                        read_flexpart_field(
                             self.datafile(ens_member_id, datafile_fmt=datafile_fmt),
                             var_name,
                             setup,
@@ -239,7 +239,7 @@ class TestReadFieldEnsemble_Multiple:
                 flds_mem = []
                 for ens_member_id in self.ens_member_ids:
                     fld = (
-                        read_nc_var(
+                        read_flexpart_field(
                             self.datafile(ens_member_id, datafile_fmt=datafile_fmt),
                             get_var_name_ref(sub_setup, var_names_ref),
                             sub_setup,

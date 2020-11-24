@@ -23,9 +23,8 @@ from pyflexplot.setup import SetupCollection
 from srutils.dict import merge_dicts
 from srutils.testing import check_summary_dict_element_is_subelement
 
-# Local  isort:skip
-from ..shared import datadir_reduced as datadir  # noqa:F401 isort:skip
-
+# Local
+from .shared import datadir_reduced as datadir  # noqa:F401
 
 datafilename1 = "flexpart_cosmo-1_2019052800.nc"
 datafilename2 = "flexpart_cosmo-1_2019093012.nc"

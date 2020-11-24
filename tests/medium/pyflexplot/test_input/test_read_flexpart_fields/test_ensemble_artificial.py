@@ -16,8 +16,8 @@ import pytest  # type: ignore
 from pyflexplot.input.read_fields import FieldInputOrganizer
 from pyflexplot.setup import SetupCollection
 
-# Local  isort:skip
-from ..shared import datadir_artificial as datadir  # noqa:F401 isort:skip
+# Local
+from .shared import datadir_artificial as datadir  # noqa:F401
 
 
 @dataclass
