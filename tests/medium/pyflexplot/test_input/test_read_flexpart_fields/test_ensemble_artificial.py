@@ -13,7 +13,7 @@ import numpy as np
 import pytest  # type: ignore
 
 # First-party
-from pyflexplot.input.read_fields import InputFile
+from pyflexplot.input.read_fields import read_fields
 from pyflexplot.setup import SetupCollection
 
 # Local
@@ -44,8 +44,6 @@ class Config:
 def test_one_setup_one_field(datadir, config):  # noqa:F811
     datafile_fmt = f"{datadir}/flexpart_cosmo-2e_const_{{ens_member:03d}}.nc"
 
-    reader = InputFile(datafile_fmt)
-
     setup_dct = {
         "infile": "foo.nc",
         "outfile": "bar.png",
@@ -57,7 +55,7 @@ def test_one_setup_one_field(datadir, config):  # noqa:F811
     }
     setup_dct_lst = [setup_dct]
     setups = SetupCollection.create(setup_dct_lst)
-    field_lst_lst = reader.read(setups)
+    field_lst_lst = read_fields(datafile_fmt, setups, cls_fixer=None)
 
     assert len(field_lst_lst) == 1
     field_lst = next(iter(field_lst_lst))

@@ -16,7 +16,6 @@ import numpy as np
 import pytest  # type: ignore
 
 # First-party
-from pyflexplot.input.read_fields import InputFile
 from pyflexplot.input.read_fields import read_fields
 from pyflexplot.setup import Setup
 from pyflexplot.setup import SetupCollection
@@ -520,10 +519,8 @@ def test_single_add_ts0(datadir, config):
 
     # Read fields with and without added time step 0
     # Note: Check relies on ordered time steps, which is incidental
-    reader_raw = InputFile(datafile, add_ts0=False)
-    reader_ts0 = InputFile(datafile, add_ts0=True)
-    field_raw_lst_lst = reader_raw.read(setups)
-    field_ts0_lst_lst = reader_ts0.read(setups)
+    field_raw_lst_lst = read_fields(datafile, setups, add_ts0=False)
+    field_ts0_lst_lst = read_fields(datafile, setups, add_ts0=True)
     assert len(field_ts0_lst_lst) == len(field_raw_lst_lst) + 1
     assert all(len(field_lst) == 1 for field_lst in field_ts0_lst_lst)
     assert all(len(field_lst) == 1 for field_lst in field_raw_lst_lst)
