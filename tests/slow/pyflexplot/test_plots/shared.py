@@ -36,7 +36,7 @@ def datadir(tmpdir, request):
     file = request.module.__file__
     dir, _ = os.path.splitext(file)
     data_root = os.path.abspath(f"{os.path.abspath(dir)}/../../../../data")
-    data_dir = f"{data_root}/pyflexplot/input/reduced"
+    data_dir = f"{data_root}/pyflexplot/flexpart/reduced"
     if os.path.isdir(data_dir):
         distutils.dir_util.copy_tree(data_dir, str(tmpdir))
     return tmpdir

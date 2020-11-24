@@ -49,7 +49,7 @@ def datadir_reduced(tmpdir, request):
 
 
 def _datadir_core(subdir, tmpdir, request):
-    data_dir = Path(__file__).parents[3] / "data/pyflexplot/input" / subdir
+    data_dir = Path(__file__).parents[3] / "data/pyflexplot/flexpart" / subdir
     if data_dir.is_dir():
         distutils.dir_util.copy_tree(data_dir, str(tmpdir))
     return tmpdir

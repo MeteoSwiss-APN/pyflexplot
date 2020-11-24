@@ -121,7 +121,6 @@ def create_plot(
     write: bool = True,
     show_version: bool = True,
 ) -> None:
-
     layout: BoxedPlotLayoutType
     if plot.config.setup.get_simulation_type() == "deterministic":
         layout = BoxedPlotLayoutDeterministic(aspect=plot.config.fig_aspect)
@@ -151,7 +150,6 @@ def create_plot(
 def plot_add_text_boxes(
     plot: BoxedPlot, layout: BoxedPlotLayoutType, show_version: bool = True
 ) -> None:
-
     # pylint: disable=R0915  # too-many-statements
     def fill_box_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the title box."""
@@ -497,48 +495,6 @@ def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
             )
 
 
-def init_map_axes_config(model_name: str, domain_type: str) -> Dict[str, Any]:
-    """Initialize map axes configuration based on model and domain type."""
-    conf_continental_scale: Dict[str, Any] = {
-        "geo_res": "50m",
-        "geo_res_cities": "110m",
-        "geo_res_rivers": "110m",
-        "min_city_pop": 1_000_000,
-        "ref_dist_config": {"dist": 250},
-    }
-    conf_regional_scale: Dict[str, Any] = {
-        "geo_res": "50m",
-        "geo_res_cities": "50m",
-        "geo_res_rivers": "50m",
-        "min_city_pop": 300_000,
-        "ref_dist_config": {"dist": 100},
-    }
-    conf_country_scale: Dict[str, Any] = {
-        "geo_res": "10m",
-        "geo_res_cities": "10m",
-        "geo_res_rivers": "10m",
-        "min_city_pop": 0,
-        "ref_dist_config": {"dist": 25},
-    }
-    map_axes_config: Optional[Dict[str, Any]] = None
-    if domain_type == "full":
-        if model_name.startswith("COSMO"):
-            map_axes_config = conf_regional_scale
-        elif model_name == "IFS-HRES-EU":
-            map_axes_config = conf_continental_scale
-        elif model_name == "IFS-HRES":
-            raise NotImplementedError("global IFS-HRES domain")
-    elif domain_type in ["release_site", "cloud", "alps"]:
-        map_axes_config = conf_regional_scale
-    elif domain_type == "ch":
-        map_axes_config = conf_country_scale
-    if map_axes_config is None:
-        raise NotImplementedError(
-            f"map axes config for model '{model_name}' and domain '{domain_type}'"
-        )
-    return map_axes_config
-
-
 def init_domain(field: Field) -> Domain:
     """Initialize Domain object (projection and extent)."""
     model_name = field.var_setups.collect_equal("model")
@@ -571,15 +527,50 @@ def init_domain(field: Field) -> Domain:
 
 
 def create_map_config(field: Field) -> MapAxesConfig:
-    return MapAxesConfig(
-        lang=field.var_setups.collect_equal("lang"),
-        domain=init_domain(field),
-        scale_fact=field.var_setups.collect_equal("scale_fact"),
-        **init_map_axes_config(
-            model_name=field.var_setups.collect_equal("model"),
-            domain_type=field.var_setups.collect_equal("domain"),
-        ),
-    )
+    config_dct: Dict[str, Any] = {
+        "lang": field.var_setups.collect_equal("lang"),
+        "domain": init_domain(field),
+        "scale_fact": field.var_setups.collect_equal("scale_fact"),
+    }
+    conf_continental_scale: Dict[str, Any] = {
+        "geo_res": "50m",
+        "geo_res_cities": "110m",
+        "geo_res_rivers": "110m",
+        "min_city_pop": 1_000_000,
+        "ref_dist_config": {"dist": 250},
+    }
+    conf_regional_scale: Dict[str, Any] = {
+        "geo_res": "50m",
+        "geo_res_cities": "50m",
+        "geo_res_rivers": "50m",
+        "min_city_pop": 300_000,
+        "ref_dist_config": {"dist": 100},
+    }
+    conf_country_scale: Dict[str, Any] = {
+        "geo_res": "10m",
+        "geo_res_cities": "10m",
+        "geo_res_rivers": "10m",
+        "min_city_pop": 0,
+        "ref_dist_config": {"dist": 25},
+    }
+    model_name = field.var_setups.collect_equal("model")
+    domain_type = field.var_setups.collect_equal("domain")
+    if domain_type == "full":
+        if model_name.startswith("COSMO"):
+            config_dct.update(conf_regional_scale)
+        elif model_name == "IFS-HRES-EU":
+            config_dct.update(conf_continental_scale)
+        elif model_name == "IFS-HRES":
+            raise NotImplementedError("global IFS-HRES domain")
+    elif domain_type in ["release_site", "cloud", "alps"]:
+        config_dct.update(conf_regional_scale)
+    elif domain_type == "ch":
+        config_dct.update(conf_country_scale)
+    else:
+        raise NotImplementedError(
+            f"map axes config for model '{model_name}' and domain '{domain_type}'"
+        )
+    return MapAxesConfig(**config_dct)
 
 
 # SR_TODO Create dataclass with default values for text box setup
@@ -596,9 +587,7 @@ def create_plot_config(
     }
 
     # Fonts
-    font_config_dct: Dict[str, Any] = {
-        "sizes": FontSizes().scale(setup.scale_fact),
-    }
+    font_config = FontConfig(sizes=FontSizes().scale(setup.scale_fact))
 
     # Levels and legend
     levels_config_dct: Dict[str, Any] = {
@@ -661,9 +650,10 @@ def create_plot_config(
         include="lower" if levels_config_dct.get("include_lower", True) else "upper",
     )
     levels_config_dct["legend"] = ContourLevelsLegendConfig(**legend_config_dct)
+    levels_config = ContourLevelsConfig(**levels_config_dct)
 
     # Colors
-    extend = levels_config_dct.get("extend", "max")
+    extend = levels_config.extend
     cmap: Union[str, Colormap] = "flexplot"
     color_under: Optional[str] = None
     color_over: Optional[str] = None
@@ -691,13 +681,13 @@ def create_plot_config(
         color_under = "lightgray"
         color_over = "slategray"
     if cmap == "flexplot":
-        n_levels = levels_config_dct["n"]
+        n_levels = levels_config.n
         assert n_levels  # SR_TMP
         colors = colors_flexplot(n_levels, extend)
     elif cmap == "mono":
         colors = (np.array([(200, 200, 200)]) / 255).tolist()
     else:
-        levels = levels_config_dct["levels"]
+        levels = levels_config.levels
         assert levels is not None  # mypy
         n_levels = len(levels)
         cmap = mpl.cm.get_cmap(cmap)
@@ -753,14 +743,15 @@ def create_plot_config(
         "markeredgewidth": 1.5 * setup.scale_fact,
     }
     markers_config_dct["markers"] = markers
+    markers_config = MarkersConfig(**markers_config_dct)
 
     return BoxedPlotConfig(
         setup=setup,
         mdata=mdata,
         labels=create_box_labels(setup, words, symbols, mdata),
-        font=FontConfig(**font_config_dct),
-        levels=ContourLevelsConfig(**levels_config_dct),
-        markers=MarkersConfig(**markers_config_dct),
+        font=font_config,
+        levels=levels_config,
+        markers=markers_config,
         **plot_config_dct,
     )
 
