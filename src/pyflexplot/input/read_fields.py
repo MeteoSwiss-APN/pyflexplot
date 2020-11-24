@@ -3,7 +3,6 @@
 import re
 from dataclasses import dataclass
 from typing import Any
-from typing import cast
 from typing import Collection
 from typing import Dict
 from typing import List
@@ -128,11 +127,7 @@ class InputFile:
         in_file_path_lst = self._prep_in_file_path_lst(all_ens_member_ids)
         first_in_file_path = next(iter(in_file_path_lst))
         with nc4.Dataset(first_in_file_path) as fi:
-            # SR_TMP < Find better solution! Maybe class NcMetaDataReader?
-            nc_meta_data = InputFileEnsemble.read_nc_meta_data(
-                cast(InputFileEnsemble, self), fi
-            )
-            # SR_TMP >
+            nc_meta_data = read_nc_meta_data(fi, add_ts0=self.config.add_ts0)
         setups = setups.complete_dimensions(nc_meta_data)
         setups_for_plots_over_time = self._group_setups(setups)
         files = InputFileEnsemble(in_file_path_lst, self.config, all_ens_member_ids)
@@ -274,8 +269,7 @@ class InputFileEnsemble:
         """
         first_path = next(iter(self.paths))
         with nc4.Dataset(first_path) as fi:
-            # SR_TMP < Find better solution! Maybe class NcMetaDataReader?
-            self.nc_meta_data = self.read_nc_meta_data(fi)
+            self.nc_meta_data = read_nc_meta_data(fi, add_ts0=self.config.add_ts0)
             ts_hrs = self.get_temp_res_hrs(fi)
 
         # Create individual setups at each requested time step
@@ -341,7 +335,11 @@ class InputFileEnsemble:
 
             if idx_mem > 0:
                 # Ensure that meta data is the same for all members
-                self.nc_meta_data = self.read_nc_meta_data(fi, check=True)
+                nc_meta_data = read_nc_meta_data(fi, add_ts0=self.config.add_ts0)
+                if nc_meta_data != self.nc_meta_data:
+                    raise Exception(
+                        f"meta data differs:\n{nc_meta_data}\n!=\n{self.nc_meta_data}"
+                    )
 
             # Read meta data at requested time steps
             mdata_tss_i = self._collect_meta_data_tss(fi)
@@ -356,17 +354,6 @@ class InputFileEnsemble:
                 self.fld_time_mem[idx_mem][:] = fld_time_i[:]
             else:
                 fld_time_i = np.empty(self.fld_time_mem.shape[1:])
-
-    def read_nc_meta_data(self, fi: nc4.Dataset, check: bool = False) -> Dict[str, Any]:
-        nc_meta_data = read_nc_meta_data(fi)
-        if self.config.add_ts0:
-            old_size = nc_meta_data["dimensions"]["time"]["size"]
-            new_size = old_size + 1
-            nc_meta_data["dimensions"]["time"]["size"] = new_size
-            nc_meta_data["variables"]["time"]["shape"] = (new_size,)
-        if check and nc_meta_data != self.nc_meta_data:
-            raise Exception("meta data differs", nc_meta_data, self.nc_meta_data)
-        return nc_meta_data
 
     def _read_member_fields_over_time(
         self, fi: nc4.Dataset, timeless_setups: SetupCollection

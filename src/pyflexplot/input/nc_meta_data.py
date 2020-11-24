@@ -21,12 +21,19 @@ import netCDF4 as nc4
 # Local
 from ..utils.datetime import init_datetime
 
+NcMetaDataT = Dict[str, Dict[str, Any]]
 
-def read_nc_meta_data(file_handle: nc4.Dataset) -> Dict[str, Dict[str, Any]]:
+
+def read_nc_meta_data(file_handle: nc4.Dataset, add_ts0: bool = False) -> NcMetaDataT:
     """Read meta data (variables, dimensions, attributes) from a NetCDF file.
 
     Args:
         file_handle: Open NetCDF file handle.
+
+        add_ts0 (optional): Insert an additional time step 0 in the beginning
+            with empty fields, given that the first data time step may not
+            correspond to the beginning of the simulation, but constitute the
+            sum over the first few hours of the simulation.
 
     """
     # Select global NetCDF attributes
@@ -70,6 +77,12 @@ def read_nc_meta_data(file_handle: nc4.Dataset) -> Dict[str, Dict[str, Any]]:
                 attr: var_handle.getncattr(attr) for attr in var_handle.ncattrs()
             },
         }
+
+    if add_ts0:
+        old_size = dimensions["time"]["size"]
+        new_size = old_size + 1
+        dimensions["time"]["size"] = new_size
+        variables["time"]["shape"] = (new_size,)
 
     # Derive some custom attributes
     derived: Dict[str, Any] = {
