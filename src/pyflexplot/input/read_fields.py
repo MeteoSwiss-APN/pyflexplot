@@ -1,13 +1,11 @@
 """Data input."""
 # Standard library
 import re
-from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
 from typing import cast
 from typing import Collection
 from typing import Dict
-from typing import Hashable
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -27,7 +25,6 @@ from srutils.various import check_array_indices
 # Local
 from ..setup import Setup
 from ..setup import SetupCollection
-from ..utils.exceptions import MissingCacheEntryError
 from ..utils.logging import log
 from .data import Cloud
 from .data import ensemble_probability
@@ -237,7 +234,7 @@ class InputFileEnsemble:
     def __post_init__(self):
         # SR_TMP < TODO Fix the cache!!!
         if self.config.cache_on:
-            raise NotImplementedError("input file cache is currently broken!")
+            raise NotImplementedError("input file cache")
 
         if len(self.ens_member_ids or [0]) != len(self.paths):
             raise ValueError(
@@ -246,8 +243,6 @@ class InputFileEnsemble:
                 self.paths,
                 self.ens_member_ids,
             )
-
-        self.cache = FileReaderCache(self)
 
         self.fixer: Optional["FlexPartDataFixer"] = (
             self.config.cls_fixer(self) if self.config.cls_fixer else None
@@ -339,19 +334,6 @@ class InputFileEnsemble:
         n_mem = len(self.paths)
         model = timeless_setups_mem.collect_equal("model")
 
-        # Try to fetch the necessary data from cache
-        if not self.config.cache_on:
-            cache_key = cast(Hashable, None)  # Prevent "potentially unbound"
-        else:
-            cache_key = self.cache.create_key(file_path, timeless_setups_mem)
-            try:
-                self.cache.get(cache_key, idx_mem)
-            except MissingCacheEntryError:
-                pass
-            else:
-                log(dbg=f"get from cache ({idx_mem + 1}/{n_mem}): {file_path}")
-                return
-
         # Read the data from disk
         log(dbg=f"reading file ({idx_mem + 1}/{n_mem}): {file_path}")
         with nc4.Dataset(file_path, "r") as fi:
@@ -374,9 +356,6 @@ class InputFileEnsemble:
                 self.fld_time_mem[idx_mem][:] = fld_time_i[:]
             else:
                 fld_time_i = np.empty(self.fld_time_mem.shape[1:])
-
-            if self.config.cache_on:
-                self.cache.add(cache_key, fld_time_i, mdata_tss_i)
 
     def read_nc_meta_data(self, fi: nc4.Dataset, check: bool = False) -> Dict[str, Any]:
         nc_meta_data = read_nc_meta_data(fi)
@@ -688,39 +667,3 @@ class InputFileEnsemble:
         dt_min = next(iter(dts))
         dt_hr = dt_min / 3600.0
         return dt_hr
-
-
-class FileReaderCache:
-    """Cache for file reader."""
-
-    def __init__(self, files: InputFileEnsemble) -> None:
-        """Create an instance of ``FileReaderCache``."""
-        self.files = files
-        self._cache: Dict[Hashable, Any] = {}
-
-    # SR_TMP <<< TODO Derive better key from setups! Make hashable?
-    @staticmethod
-    def create_key(file_path: str, setups: SetupCollection) -> Hashable:
-        params = ["input_variable", "integrate", "dimensions"]
-        return tuple([file_path] + [repr(setups.collect(param)) for param in params])
-
-    def add(
-        self, cache_key: Hashable, fld_time_i: np.ndarray, mdata_tss_i: List[MetaData]
-    ) -> None:
-        self._cache[cache_key] = {
-            "grid": deepcopy((self.files.lat, self.files.lon, self.files.time)),
-            "nc_meta_data": deepcopy(self.files.nc_meta_data),
-            "fld_time_i": deepcopy(fld_time_i),
-            "mdata_tss_i": deepcopy(mdata_tss_i),
-        }
-
-    def get(self, key: Hashable, idx_mem: int) -> None:
-        try:
-            entry = self._cache[key]
-        except KeyError as e:
-            raise MissingCacheEntryError(key) from e
-        entry = deepcopy(entry)
-        self.files.lat, self.files.lon, self.files.time = entry["grid"]
-        self.files.nc_meta_data = entry["nc_meta_data"]
-        self.files.fld_time_mem[idx_mem][:] = entry["fld_time_i"]
-        self.files.mdata_tss = entry["mdata_tss_i"]
