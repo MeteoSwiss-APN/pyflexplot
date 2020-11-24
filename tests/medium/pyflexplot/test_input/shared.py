@@ -1,7 +1,6 @@
 """Utilities for tests for module ``pyflexplot.input``."""
 # Standard library
 import distutils.dir_util
-import os
 from pathlib import Path
 
 # Third-party
@@ -11,29 +10,6 @@ import pytest  # type: ignore
 
 # First-party
 from pyflexplot.setup import CoreSetup
-
-
-@pytest.fixture
-def datadir_rel(tmpdir, request):
-    """Return path to temporary data directory named like test file.
-
-    Pytest fixture to find a data folder with the same name as the test
-    module and -- if found -- mirror it to a temporary directory, which
-    allows the tests to use the data files freely, even in parallel.
-
-    Adapted from `https://stackoverflow.com/a/29631801`.
-    """
-    file = request.module.__file__
-    dir, _ = os.path.splitext(file)
-    if os.path.isdir(dir):
-        distutils.dir_util.copy_tree(dir, str(tmpdir))
-    return tmpdir
-
-
-@pytest.fixture
-def datadir_original(tmpdir, request):
-    """Return path to temporary data directory with original data files."""
-    return _datadir_core("original", tmpdir, request)
 
 
 @pytest.fixture
@@ -53,16 +29,6 @@ def _datadir_core(subdir, tmpdir, request):
     if data_dir.is_dir():
         distutils.dir_util.copy_tree(data_dir, str(tmpdir))
     return tmpdir
-
-
-def fix_nc_fld(fld, model):
-    """Fix field read directly from NetCDF file."""
-    if model.startswith("COSMO-"):
-        fld[:] *= 1.0e-12
-    elif model.startswith("IFS-"):
-        fld[:] *= 1.0e-12
-    else:
-        raise NotImplementedError("model", model)
 
 
 def read_nc_var(path, var_name, setup, model):
@@ -99,7 +65,7 @@ def read_nc_var(path, var_name, setup, model):
         assert len(fld.shape) == 3
 
         # Fix some issues with the input data
-        fix_nc_fld(fld, model)  # SR_TMP
+        fix_nc_fld(fld, model)
 
         # Reduce time dimension
         if setup.core.input_variable == "concentration":
@@ -115,3 +81,11 @@ def read_nc_var(path, var_name, setup, model):
         fld = fld[-1]
 
         return fld
+
+
+def fix_nc_fld(fld, model):
+    """Fix field read directly from NetCDF file."""
+    if model.startswith(("COSMO-", "IFS-")):
+        fld[:] *= 1.0e-12
+    else:
+        raise NotImplementedError("model", model)

@@ -18,7 +18,6 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
-from warnings import warn
 
 # Third-party
 import click
