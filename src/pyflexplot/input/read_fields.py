@@ -45,8 +45,8 @@ CLOUD_THRESHOLD = 0.0
 
 
 @dataclass
-class FieldInputConfig:
-    """Field input configuration.
+class InputConfig:
+    """Input configuration.
 
     Args:
         add_ts0 (optional): Insert an additional time step 0 in the beginning
@@ -98,8 +98,8 @@ def read_fields(
     log(dbg=f"reading fields from {in_file_path}")
     if "cls_fixer" not in config_kwargs:
         config_kwargs["cls_fixer"] = FlexPartDataFixer
-    reader = FieldInputOrganizer(in_file_path, **config_kwargs)
-    field_lst_lst = reader.run(setups)
+    reader = InputFile(in_file_path, **config_kwargs)
+    field_lst_lst = reader.read(setups)
     n_plt = len(field_lst_lst)
     n_tot = sum([len(field_lst) for field_lst in field_lst_lst])
     log(dbg=f"done reading {in_file_path}: read {n_tot} fields for {n_plt} plots")
@@ -107,114 +107,28 @@ def read_fields(
 
 
 # pylint: disable=R0902  # too-many-instance-attributes
-class FieldInputOrganizer:
-    """Organize input of fields from FLEXPART NetCDF files.
+class InputFile:
+    """Organize input of fields from FLEXPART NetCDF files."""
 
-    It represents a single input file for deterministic FLEXPART runs, or an
-    ensemble of input files for ensemble FLEXPART runs (one file per ensemble
-    member).
-
-    """
-
-    def __init__(self, in_file_path: str, **config_kwargs: Any):
-        """Create an instance of ``FieldInputOrganizer``.
+    def __init__(self, path: str, **config_kwargs: Any):
+        """Create an instance of ``InputFile``.
 
         Args:
-            in_file_path: File path. In case of ensemble data, it must contain the
+            path: File path. In case of ensemble data, it must contain the
                 format key '{ens_member[:0?d]}'.
 
             config_kwargs (optional): Keyword arguments used to create an instance
-                of ``FieldInputConfig``.
+                of ``InputConfig``.
 
         """
-        self.in_file_path = in_file_path
-        self.config = FieldInputConfig(**config_kwargs)
+        self.path = path
+        self.config = InputConfig(**config_kwargs)
 
-    def run(self, setups: SetupCollection) -> List[List[Field]]:
-        def prep_in_file_path_lst(
-            path_fmt: str, ens_member_ids: Optional[Collection[int]]
-        ) -> List[str]:
-            path_lst: List[str]
-            if re.search(r"{ens_member(:[0-9]+d)?}", path_fmt):
-                if not ens_member_ids:
-                    raise ValueError(
-                        "input file path contains ensemble member format key, but no "
-                        "ensemble member ids have been passed",
-                        path_fmt,
-                        ens_member_ids,
-                    )
-                assert ens_member_ids is not None  # mypy
-                path_lst = [path_fmt.format(ens_member=id_) for id_ in ens_member_ids]
-            elif not ens_member_ids:
-                path_lst = [path_fmt]
-            else:
-                raise ValueError(
-                    "input file path missing format key", path_fmt, ens_member_ids
-                )
-            return path_lst
-
-        def group_setups(setups: SetupCollection) -> List[SetupCollection]:
-            """Group the setups by plot type and time step.
-
-            Return a list of setup collections, each of which defines one plot type
-            (which may be based on on multiple fields if it has multiple panels) at
-            different time steps.
-
-            """
-            setups_field_lst: List[SetupCollection] = []
-            for (
-                (
-                    _,  # ens_member_id,
-                    input_variable,
-                    combine_levels,
-                    combine_deposition_types,
-                    combine_species,
-                ),
-                sub_setups,
-            ) in setups.group(
-                [
-                    "ens_member_id",
-                    "input_variable",
-                    "combine_levels",
-                    "combine_deposition_types",
-                    "combine_species",
-                ]
-            ).items():
-                skip = ["outfile", "dimensions.time", "ens_member_id"]
-                if input_variable in [
-                    "concentration",
-                    "cloud_arrival_time",
-                    "cloud_departure_time",
-                ]:
-                    if combine_levels:
-                        skip.append("dimensions.level")
-                elif input_variable in ["deposition", "affected_area"]:
-                    if combine_deposition_types:
-                        skip.append("dimensions.deposition_type")
-                if input_variable in [
-                    "affected_area",
-                    "cloud_arrival_time",
-                    "cloud_departure_time",
-                ]:
-                    skip.append("input_variable")
-                if combine_species:
-                    skip.append("dimensions.species_id")
-                setups_plots = sub_setups.decompress_partially(None, skip=skip)
-                # SR_TMP < SR_TODO Adapt for multipanel plots
-                setups_plots = [
-                    SetupCollection([setup])
-                    for setups in setups_plots
-                    for setup in setups
-                ]
-                # SR_TMP >
-                setups_field_lst.extend(setups_plots)
-            return setups_field_lst
-
+    def read(self, setups: SetupCollection) -> List[List[Field]]:
         all_ens_member_ids = (
             setups.collect("ens_member_id", flatten=True, exclude_nones=True) or None
         )
-        in_file_path_lst = prep_in_file_path_lst(self.in_file_path, all_ens_member_ids)
-
+        in_file_path_lst = self._prep_in_file_path_lst(all_ens_member_ids)
         first_in_file_path = next(iter(in_file_path_lst))
         with nc4.Dataset(first_in_file_path) as fi:
             # SR_TMP < Find better solution! Maybe class NcMetaDataReader?
@@ -223,8 +137,7 @@ class FieldInputOrganizer:
             )
             # SR_TMP >
         setups = setups.complete_dimensions(nc_meta_data)
-        setups_for_plots_over_time = group_setups(setups)
-
+        setups_for_plots_over_time = self._group_setups(setups)
         files = InputFileEnsemble(in_file_path_lst, self.config, all_ens_member_ids)
         fields_for_plots: List[List[Field]] = []
         for setups_for_same_plot_over_time in setups_for_plots_over_time:
@@ -232,8 +145,85 @@ class FieldInputOrganizer:
             fields_for_plots.extend(
                 files.read_fields_over_time(setups_for_same_plot_over_time, ens_mem_ids)
             )
-
         return fields_for_plots
+
+    def _prep_in_file_path_lst(
+        self, ens_member_ids: Optional[Collection[int]]
+    ) -> List[str]:
+        path_lst: List[str]
+        if re.search(r"{ens_member(:[0-9]+d)?}", self.path):
+            if not ens_member_ids:
+                raise ValueError(
+                    "input file path contains ensemble member format key, but no "
+                    "ensemble member ids have been passed",
+                    self.path,
+                    ens_member_ids,
+                )
+            assert ens_member_ids is not None  # mypy
+            path_lst = [self.path.format(ens_member=id_) for id_ in ens_member_ids]
+        elif not ens_member_ids:
+            path_lst = [self.path]
+        else:
+            raise ValueError(
+                "input file path missing format key", self.path, ens_member_ids
+            )
+        return path_lst
+
+    @staticmethod
+    def _group_setups(setups: SetupCollection) -> List[SetupCollection]:
+        """Group the setups by plot type and time step.
+
+        Return a list of setup collections, each of which defines one plot type
+        (which may be based on on multiple fields if it has multiple panels) at
+        different time steps.
+
+        """
+        setups_field_lst: List[SetupCollection] = []
+        for (
+            (
+                _,  # ens_member_id,
+                input_variable,
+                combine_levels,
+                combine_deposition_types,
+                combine_species,
+            ),
+            sub_setups,
+        ) in setups.group(
+            [
+                "ens_member_id",
+                "input_variable",
+                "combine_levels",
+                "combine_deposition_types",
+                "combine_species",
+            ]
+        ).items():
+            skip = ["outfile", "dimensions.time", "ens_member_id"]
+            if input_variable in [
+                "concentration",
+                "cloud_arrival_time",
+                "cloud_departure_time",
+            ]:
+                if combine_levels:
+                    skip.append("dimensions.level")
+            elif input_variable in ["deposition", "affected_area"]:
+                if combine_deposition_types:
+                    skip.append("dimensions.deposition_type")
+            if input_variable in [
+                "affected_area",
+                "cloud_arrival_time",
+                "cloud_departure_time",
+            ]:
+                skip.append("input_variable")
+            if combine_species:
+                skip.append("dimensions.species_id")
+            setups_plots = sub_setups.decompress_partially(None, skip=skip)
+            # SR_TMP < SR_TODO Adapt for multipanel plots
+            setups_plots = [
+                SetupCollection([setup]) for setups in setups_plots for setup in setups
+            ]
+            # SR_TMP >
+            setups_field_lst.extend(setups_plots)
+        return setups_field_lst
 
 
 @dataclass
@@ -241,7 +231,7 @@ class InputFileEnsemble:
     """An ensemble (of size one or more) of input files."""
 
     paths: Sequence[str]
-    config: FieldInputConfig
+    config: InputConfig
     ens_member_ids: Optional[Sequence[int]] = None
 
     def __post_init__(self):
