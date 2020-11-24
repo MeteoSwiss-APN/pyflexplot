@@ -44,15 +44,42 @@ AFFECTED_AREA_THRESHOLD = 0.0
 CLOUD_THRESHOLD = 0.0
 
 
+@dataclass
+class FieldInputConfig:
+    """Field input configuration.
+
+    Args:
+        add_ts0 (optional): Insert an additional time step 0 in the beginning
+            with empty fields, given that the first data time step may not
+            correspond to the beginning of the simulation, but constitute the
+            sum over the first few hours of the simulation.
+
+        dry_run (optional): Perform dry run without reading the fields from disk
+            (meta data are still read).
+
+        cache_on (optional): Cache input fields to avoid reading the same field
+            multiple times.
+
+        missing_ok (optional): When fields are missing in the input, instead of
+            failing, return an empty field.
+
+        cls_fixer (optional): Class providing methods to fix issues with the
+            input data. Is instatiated with this instance of ``FileReader``.
+
+    """
+
+    add_ts0: bool = False
+    dry_run: bool = False
+    cache_on: bool = False
+    missing_ok: bool = False
+    cls_fixer: Optional[Type["FlexPartDataFixer"]] = None
+
+
 # pylint: disable=R0914  # too-many-locals
 def read_fields(
     in_file_path: str,
     setups: SetupCollection,
-    *,
-    add_ts0: bool = False,
-    dry_run: bool = False,
-    cache_on: bool = False,
-    missing_ok: bool = False,
+    **config_kwargs: Any,
 ) -> List[List[Field]]:
     """Read fields from an input file, or multiple files derived from one path.
 
@@ -64,30 +91,14 @@ def read_fields(
         setups: Collection variable setups, containing among other things the
             ensemble member IDs in case of an ensemble simulation.
 
-        add_ts0: Insert an additional time step 0 in the beginning with empty
-            fields, given that the first data time step may not correspond to
-            the beginning of the simulation, but constitute the sum over the
-            first few hours of the simulation.
-
-        dry_run (optional): Perform dry run without reading the fields from disk
-            (meta data are still read).
-
-        cache_on (optional): Cache input fields to avoid reading the same field
-            multiple times.
-
-        missing_ok (optional): When fields are missing in the input, instead of
-            failing, return an empty field.
+        config_kwargs (optional): Keyword arguments used to create an instance
+            of ``FieldInputConfig``.
 
     """
     log(dbg=f"reading fields from {in_file_path}")
-    reader = FieldInputOrganizer(
-        in_file_path,
-        add_ts0=add_ts0,
-        dry_run=dry_run,
-        cls_fixer=FlexPartDataFixer,
-        cache_on=cache_on,
-        missing_ok=missing_ok,
-    )
+    if "cls_fixer" not in config_kwargs:
+        config_kwargs["cls_fixer"] = FlexPartDataFixer
+    reader = FieldInputOrganizer(in_file_path, **config_kwargs)
     field_lst_lst = reader.run(setups)
     n_plt = len(field_lst_lst)
     n_tot = sum([len(field_lst) for field_lst in field_lst_lst])
@@ -105,50 +116,19 @@ class FieldInputOrganizer:
 
     """
 
-    choices_ens_var = ["min", "max", "median", "mean", "std_dev"]
-
-    def __init__(
-        self,
-        in_file_path: str,
-        *,
-        add_ts0: bool = False,
-        dry_run: bool = False,
-        cache_on: bool = False,
-        missing_ok: bool = False,
-        cls_fixer: Optional[Type["FlexPartDataFixer"]] = None,
-    ):
-        """Create an instance of ``FileReader``.
+    def __init__(self, in_file_path: str, **config_kwargs: Any):
+        """Create an instance of ``FieldInputOrganizer``.
 
         Args:
-            in_file_path: File path. In case of ensemble data, it must
-                contain the format key '{ens_member[:0?d]}'.
+            in_file_path: File path. In case of ensemble data, it must contain the
+                format key '{ens_member[:0?d]}'.
 
-            ens_member_ids (optional): Ensemble member ids.
-
-            add_ts0: Insert an additional time step 0 in the beginning with
-                empty fields, given that the first data time step may not
-                correspond to the beginning of the simulation, but constitute
-                the sum over the first few hours of the simulation.
-
-            dry_run (optional): Perform dry run without reading the fields from
-                disk (meta data are still read).
-
-            cache_on (optional): Cache input fields to avoid reading the same
-                field multiple times.
-
-            missing_ok (optional): When fields are missing in the input, instead
-                of failing, return an empty field.
-
-            cls_fixer (optional): Class providing methods to fix issues with the
-                input data. Is instatiated with this instance of ``FileReader``.
+            config_kwargs (optional): Keyword arguments used to create an instance
+                of ``FieldInputConfig``.
 
         """
-        self.in_file_path_fmt = in_file_path
-        self.add_ts0 = add_ts0
-        self.dry_run = dry_run
-        self.cache_on = cache_on
-        self.missing_ok = missing_ok
-        self.cls_fixer = cls_fixer
+        self.in_file_path = in_file_path
+        self.config = FieldInputConfig(**config_kwargs)
 
     def run(self, setups: SetupCollection) -> List[List[Field]]:
         def prep_in_file_path_lst(
@@ -233,9 +213,7 @@ class FieldInputOrganizer:
         all_ens_member_ids = (
             setups.collect("ens_member_id", flatten=True, exclude_nones=True) or None
         )
-        in_file_path_lst = prep_in_file_path_lst(
-            self.in_file_path_fmt, all_ens_member_ids
-        )
+        in_file_path_lst = prep_in_file_path_lst(self.in_file_path, all_ens_member_ids)
 
         first_in_file_path = next(iter(in_file_path_lst))
         with nc4.Dataset(first_in_file_path) as fi:
@@ -247,15 +225,7 @@ class FieldInputOrganizer:
         setups = setups.complete_dimensions(nc_meta_data)
         setups_for_plots_over_time = group_setups(setups)
 
-        files = InputFileEnsemble(
-            in_file_path_lst,
-            all_ens_member_ids,
-            add_ts0=self.add_ts0,
-            dry_run=self.dry_run,
-            cache_on=self.cache_on,
-            missing_ok=self.missing_ok,
-            cls_fixer=self.cls_fixer,
-        )
+        files = InputFileEnsemble(in_file_path_lst, self.config, all_ens_member_ids)
         fields_for_plots: List[List[Field]] = []
         for setups_for_same_plot_over_time in setups_for_plots_over_time:
             ens_mem_ids = setups_for_same_plot_over_time.collect_equal("ens_member_id")
@@ -270,41 +240,27 @@ class FieldInputOrganizer:
 class InputFileEnsemble:
     """An ensemble (of size one or more) of input files."""
 
-    def __init__(
-        self,
-        paths: Sequence[str],
-        ens_member_ids: Optional[Sequence[int]] = None,
-        *,
-        add_ts0: bool = False,
-        dry_run: bool = False,
-        cache_on: bool = False,
-        missing_ok: bool = False,
-        cls_fixer: Optional[Type["FlexPartDataFixer"]] = None,
-    ) -> None:
-        """Create an instance of ``InputFileEnsemble``."""
-        self.paths = paths
-        self.ens_member_ids = ens_member_ids
-        self.add_ts0 = add_ts0
-        self.dry_run = dry_run
-        self.missing_ok = missing_ok
-        self.cache_on = cache_on
+    paths: Sequence[str]
+    config: FieldInputConfig
+    ens_member_ids: Optional[Sequence[int]] = None
 
+    def __post_init__(self):
         # SR_TMP < TODO Fix the cache!!!
-        if cache_on:
+        if self.config.cache_on:
             raise NotImplementedError("input file cache is currently broken!")
 
-        if len(ens_member_ids or [0]) != len(paths):
+        if len(self.ens_member_ids or [0]) != len(self.paths):
             raise ValueError(
                 "must pass same number of ens_member_ids and paths"
                 ", or omit ens_member_ids for single path",
-                paths,
-                ens_member_ids,
+                self.paths,
+                self.ens_member_ids,
             )
 
         self.cache = FileReaderCache(self)
 
         self.fixer: Optional["FlexPartDataFixer"] = (
-            cls_fixer(self) if cls_fixer else None
+            self.config.cls_fixer(self) if self.config.cls_fixer else None
         )
 
         # Declare some attributes
@@ -394,7 +350,7 @@ class InputFileEnsemble:
         model = timeless_setups_mem.collect_equal("model")
 
         # Try to fetch the necessary data from cache
-        if not self.cache_on:
+        if not self.config.cache_on:
             cache_key = cast(Hashable, None)  # Prevent "potentially unbound"
         else:
             cache_key = self.cache.create_key(file_path, timeless_setups_mem)
@@ -422,19 +378,19 @@ class InputFileEnsemble:
             elif mdata_tss_i != self.mdata_tss:
                 raise Exception("meta data differ across members")
 
-            if not self.dry_run:
+            if not self.config.dry_run:
                 # Read fields for all members at all time steps
                 fld_time_i = self._read_member_fields_over_time(fi, timeless_setups_mem)
                 self.fld_time_mem[idx_mem][:] = fld_time_i[:]
             else:
                 fld_time_i = np.empty(self.fld_time_mem.shape[1:])
 
-            if self.cache_on:
+            if self.config.cache_on:
                 self.cache.add(cache_key, fld_time_i, mdata_tss_i)
 
     def read_nc_meta_data(self, fi: nc4.Dataset, check: bool = False) -> Dict[str, Any]:
         nc_meta_data = read_nc_meta_data(fi)
-        if self.add_ts0:
+        if self.config.add_ts0:
             old_size = nc_meta_data["dimensions"]["time"]["size"]
             new_size = old_size + 1
             nc_meta_data["dimensions"]["time"]["size"] = new_size
@@ -463,7 +419,7 @@ class InputFileEnsemble:
         if self.fixer and timeless_setups.collect_equal("model") == "IFS-HRES":
             # Note: IFS-HRES-EU is not global, so doesn't need this fix
             self.fixer.fix_global_grid(self.lon, fld_time)
-        if self.add_ts0:
+        if self.config.add_ts0:
             fld_time = self._add_ts0_to_fld_time(fld_time)
         if input_variable in ["cloud_arrival_time", "cloud_departure_time"]:
             ts_hrs = self.get_temp_res_hrs(fi)
@@ -485,7 +441,7 @@ class InputFileEnsemble:
             for sub_setups in setups.decompress_partially(None, skip=skip):
                 for sub_setup in sub_setups:
                     mdata_ij: MetaData = MetaData.collect(
-                        fi, sub_setup, add_ts0=self.add_ts0
+                        fi, sub_setup, add_ts0=self.config.add_ts0
                     )
                     mdata_i_lst.append(mdata_ij)
             mdata_i = mdata_i_lst[0].merge_with(mdata_i_lst[1:])
@@ -525,7 +481,7 @@ class InputFileEnsemble:
     def _prepare_time(
         self, fi: nc4.Dataset, time: np.ndarray, model: str
     ) -> np.ndarray:
-        if self.add_ts0:
+        if self.config.add_ts0:
             dts = time[1] - time[0]
             ts0 = time[0] - dts
             time = np.r_[ts0, time]
@@ -553,7 +509,7 @@ class InputFileEnsemble:
         """Reduce the ensemble to a single field (time, lat, lon)."""
         fld_time_mem = self.fld_time_mem
 
-        if not self.ens_member_ids or self.dry_run:
+        if not self.ens_member_ids or self.config.dry_run:
             return fld_time_mem[0]
 
         ens_param_mem_min = var_setups.collect_equal("ens_param_mem_min")
@@ -649,7 +605,7 @@ class InputFileEnsemble:
         try:
             nc_var = fi.variables[var_name]
         except KeyError as e:
-            if not self.missing_ok:
+            if not self.config.missing_ok:
                 raise Exception(f"missing variable '{var_name}'") from e
             shape = (
                 fi.dimensions[dim_names["time"]].size,
