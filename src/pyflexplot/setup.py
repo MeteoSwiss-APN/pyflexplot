@@ -6,6 +6,7 @@ the docstring of the class method ``Setup.create``.
 
 """
 # Standard library
+import re
 from dataclasses import asdict
 from typing import Any
 from typing import cast
@@ -555,6 +556,22 @@ class Setup(BaseModel):
         for param, value in params.items():
             params_cast[param] = cls.cast(param, value)
         return params_cast
+
+    @classmethod
+    def prepare_params(cls, raw_params: Sequence[Tuple[str, str]]) -> Dict[str, Any]:
+        """Prepare raw input params and cast them to their appropriate types."""
+        params: Dict[str, Any] = {}
+        value: Any
+        for param, value in raw_params:
+            if value in ["None", "*"]:
+                value = None
+            elif "," in value:
+                value = value.split(",")
+            elif re.match(r"[0-9]+-[0-9]+", value):
+                start, end = value.split("-")
+                value = range(int(start), int(end) + 1)
+            params[param] = value
+        return cls.cast_many(params)
 
     def __repr__(self) -> str:  # type: ignore
         return setup_repr(self)

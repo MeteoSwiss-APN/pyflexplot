@@ -1,13 +1,11 @@
 # pylint: disable=R0914  # too-many-locals
-"""Command line interface."""
+"""Command line interface of PyFlexPlot."""
 # Standard library
 import functools
 import multiprocessing
 import os
 import re
-import sys
 import time
-import traceback
 from functools import partial
 from os.path import abspath
 from os.path import relpath
@@ -16,8 +14,6 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Sequence
-from typing import Tuple
 
 # Third-party
 import click
@@ -37,14 +33,16 @@ from ..plots import create_plot
 from ..plots import format_out_file_paths
 from ..plots import prepare_plot
 from ..plotting.boxed_plot import BoxedPlot
-from ..setup import Setup
 from ..setup import SetupCollection
 from ..setup import SetupFile
 from ..utils.formatting import format_range
 from ..utils.logging import log
-from ..utils.logging import set_log_level
-from ..utils.pydantic import InvalidParameterNameError
-from .click import click_error
+from .click import click_prepare_setup_params
+from .click import click_set_pdb
+from .click import click_set_raise
+from .click import click_set_verbosity
+from .click import wrap_callback
+from .click import wrap_pdb
 from .preset import add_to_preset_paths
 from .preset_click import click_cat_preset_and_exit
 from .preset_click import click_use_preset
@@ -59,90 +57,6 @@ add_to_preset_paths(data_path / "presets")
 
 # Show default values of options by default
 click.option = functools.partial(click.option, show_default=True)  # type: ignore
-
-
-# pylint: disable=W0613  # unused-argument (ctx, param)
-def click_set_verbosity(ctx, param, value) -> None:
-    if ctx.obj is None:
-        ctx.obj = {}
-    ctx.obj["verbosity"] = value
-    set_log_level(value)
-
-
-# pylint: disable=W0613  # unused-argument (param)
-def click_set_raise(ctx, param, value) -> None:
-    if ctx.obj is None:
-        ctx.obj = {}
-    if value is None:
-        if "raise" not in ctx.obj:
-            ctx.obj["raise"] = False
-    else:
-        ctx.obj["raise"] = value
-
-
-def wrap_pdb(fct):
-    """Decorate a function to drop into ipdb if an exception is raised."""
-
-    def wrapper(*args, **kwargs):
-        try:
-            return fct(*args, **kwargs)
-        except Exception as e:  # pylint: disable=W0703  # broad-except
-            if isinstance(e, click.exceptions.Exit):
-                if e.exit_code == 0:  # pylint: disable=E1101  # no-member
-                    sys.exit(0)
-            pdb = __import__("ipdb")  # trick pre-commit hook "debug-statements"
-            traceback.print_exc()
-            click.echo()
-            pdb.post_mortem()
-            sys.exit(1)
-
-    return wrapper
-
-
-def wrap_callback(fct):
-    """Wrapp click callback functions to conditionally drop into ipdb."""
-
-    def wrapper(ctx, param, value):
-        fct_loc = wrap_pdb(fct) if (ctx.obj or {}).get("pdb") else fct
-        return fct_loc(ctx, param, value)
-
-    return wrapper
-
-
-# pylint: disable=W0613  # unused-argument (param)
-def click_set_pdb(ctx, param, value):
-    if ctx.obj is None:
-        ctx.obj = {}
-    ctx.obj["pdb"] = value
-    if value:
-        ctx.obj["raise"] = True
-
-
-# pylint: disable=W0613  # unused-argument (param)
-def click_prep_setup_params(ctx, param, value):
-    # pylint: disable=W0613  # unused-argument
-    if not value:
-        return None
-
-    def prepare_params(raw_params: Sequence[Tuple[str, str]]) -> Dict[str, Any]:
-        params: Dict[str, Any] = {}
-        value: Any
-        for param, value in raw_params:
-            if value in ["None", "*"]:
-                value = None
-            elif "," in value:
-                value = value.split(",")
-            elif re.match(r"[0-9]+-[0-9]+", value):
-                start, end = value.split("-")
-                value = range(int(start), int(end) + 1)
-            params[param] = value
-        return params
-
-    params = prepare_params(value)
-    try:
-        return Setup.cast_many(params)
-    except InvalidParameterNameError as e:
-        click_error(ctx, f"Invalid setup parameter name: {e}")
 
 
 @click.command(context_settings={"help_option_names": ["-h", "--help"]})
@@ -284,7 +198,7 @@ def click_prep_setup_params(ctx, param, value):
     metavar="PARAM VALUE",
     nargs=2,
     multiple=True,
-    callback=wrap_callback(click_prep_setup_params),
+    callback=wrap_callback(click_prepare_setup_params),
 )
 @click.option(
     "--show-version/--no-show-version",
