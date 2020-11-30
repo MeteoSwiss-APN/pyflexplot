@@ -5,20 +5,20 @@ __email__ = "stefan.ruedisuehli@env.ethz.ch"
 __version__ = "0.13.11"
 
 # Standard library
-import logging as pylogging
-import sys
-import warnings
-from pathlib import Path
-from typing import List
+import logging as _logging
+import sys as _sys
+import warnings as _warnings
+from pathlib import Path as _Path
+from typing import List as _List
 
 # Third-party
-import matplotlib
+import matplotlib as _mpl
 
 # Local
-from .utils.logging import add_logging_level
+from .utils.logging import add_logging_level as _add_logging_level
 
 try:
-    import cartopy  # isort:skip
+    import cartopy as _cartopy  # isort:skip
 except Exception as e:  # pylint: disable=W0703  # broad-except
     if "libproj" in str(e):
         dep = "proj"
@@ -30,24 +30,24 @@ except Exception as e:  # pylint: disable=W0703  # broad-except
         f"Cannot import 'cartopy': missing external dependency '{dep}'! -- "
         f'{type(e).__name__}("{e}")'
     )
-    print(msg, file=sys.stderr)
-    sys.exit(1)
+    print(msg, file=_sys.stderr)
+    _sys.exit(1)
 
 
-__all__: List[str] = []
+__all__: _List[str] = []
 
 verbose_level = 15
 
 
-pylogging.basicConfig(format="%(message)s")
-pylogging.getLogger().handlers = [pylogging.StreamHandler(sys.stdout)]
-add_logging_level("verbose", 15)
+_logging.basicConfig(format="%(message)s")
+_logging.getLogger().handlers = [_logging.StreamHandler(_sys.stdout)]
+_add_logging_level("verbose", 15)
 
 # Disable third-party debug messages
-pylogging.getLogger("matplotlib").setLevel(pylogging.WARNING)
+_logging.getLogger("matplotlib").setLevel(_logging.WARNING)
 
 
-def check_dir_exists(path):
+def _check_dir_exists(path):
     """Check that a directory exists."""
     if not path.exists():
         raise Exception("data directory is missing", path)
@@ -69,18 +69,18 @@ _cartopy.config["pre_existing_data_dir"] = earth_data_path
 
 
 # Set matplotlib backend
-matplotlib.use("Agg")
+_mpl.use("Agg")
 
 
 # pylint: disable=R0913,W0613  # too-many-arguments, unused-argument (line)
-def custom_showwarnings(message, category, filename, lineno, file=None, line=None):
+def _custom_showwarnings(message, category, filename, lineno, file=None, line=None):
     """Show warnings without code excerpt.
 
     See https://docs.python.org/3/library/warnings.html#warnings.showwarning
 
     """
     if file is None:
-        file = sys.stderr
+        file = _sys.stderr
     key = "src/pyflexplot/"
     if key in filename:
         filename = f"pyflexplot.{filename.split(key)[-1].replace('/', '.')}"
@@ -89,13 +89,13 @@ def custom_showwarnings(message, category, filename, lineno, file=None, line=Non
 
 
 # Custom warnings formatting
-warnings.showwarning = custom_showwarnings
+_warnings.showwarning = _custom_showwarnings
 
 
 # Shorthand to embed IPython shell (handy during development/debugging)
 try:
     import IPython  # isort:skip
 except ImportError:
-    ipy = None
+    _ipy = None
 else:
-    ipy = IPython.terminal.embed.embed
+    _ipy = IPython.terminal.embed.embed

@@ -11,7 +11,7 @@ from typing import Pattern
 from typing import Union
 
 # Local
-from .. import check_dir_exists
+from .. import _check_dir_exists
 from ..utils.exceptions import NoPresetFileFoundError
 
 preset_paths: List[Union[str, Path]] = []
@@ -28,7 +28,7 @@ def add_to_preset_paths(path: Union[Path, str], first: bool = True) -> None:
     """
     global preset_paths  # pylint: disable=W0603  # global-statement
     path = Path(path)
-    check_dir_exists(path)
+    _check_dir_exists(path)
     idx = 0 if first else -1
     preset_paths.insert(idx, path)
 
@@ -37,7 +37,7 @@ def collect_preset_paths() -> Iterator[Path]:
     """Collect all setup file paths as specified in ``preset_paths``."""
     global preset_paths  # pylint: disable=W0603  # global-statement
     for path in preset_paths:
-        check_dir_exists(path)
+        _check_dir_exists(path)
         yield Path(path)
 
 

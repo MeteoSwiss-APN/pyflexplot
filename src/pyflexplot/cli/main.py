@@ -35,9 +35,10 @@ from ..utils.formatting import format_range
 from ..utils.logging import log
 
 
-# pylint: disable=R0912  # too-many-branches
-# pylint: disable=R0913  # too-many-arguments
-# pylint: disable=R0915  # too-many-statements
+# pylint: disable=R0912  # too-many-branches (>12)
+# pylint: disable=R0913  # too-many-arguments (>5)
+# pylint: disable=R0914  # too-many-locals (>15)
+# pylint: disable=R0915  # too-many-statements (>50)
 def main(
     ctx,
     *,
@@ -276,6 +277,7 @@ class SharedIterationState:
         self._dict["n_fld"] = value
 
 
+# pylint: disable=R0914  # too-many-locals (>15)
 def create_plots(
     only: Optional[int],
     dry_run: bool,
@@ -344,6 +346,7 @@ def format_in_file_path(in_file_path, setups: SetupCollection) -> str:
     return f"{match.group('start')}{{{s_ids}}}{match.group('end')}"
 
 
+# pylint: disable=R0914  # too-many-locals (>15)
 def merge_pdf_plots(
     paths: List[str],
     *,

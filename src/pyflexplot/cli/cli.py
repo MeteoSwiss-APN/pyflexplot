@@ -2,9 +2,11 @@
 """Command line interface of PyFlexPlot."""
 # Standard library
 import functools
+from typing import Any
 
 # Third-party
 import click
+from click import Context
 
 # Local
 from .. import __version__
@@ -208,6 +210,6 @@ click.option = functools.partial(click.option, show_default=True)  # type: ignor
     expose_value=False,
 )
 @click.pass_context
-def cli(ctx, **kwargs):
-    main_loc = wrap_pdb(main) if ctx.obj["raise"] else main
-    main_loc(ctx, **kwargs)
+def cli(ctx: Context, **kwargs: Any) -> None:
+    wrapped_main = wrap_pdb(main) if ctx.obj["raise"] else main
+    wrapped_main(ctx, **kwargs)
