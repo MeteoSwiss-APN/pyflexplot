@@ -18,6 +18,7 @@ from pyflexplot.cli.preset import add_to_preset_paths
 # Local
 from . import __version__
 from . import presets_data_path
+from .main import main
 
 add_to_preset_paths(presets_data_path)
 
@@ -57,8 +58,3 @@ click.option = functools.partial(click.option, show_default=True)  # type: ignor
 def cli(ctx: Context, **kwargs: Any) -> None:
     wrapped_main = wrap_pdb(main) if ctx.obj["raise"] else main
     wrapped_main(ctx, **kwargs)
-
-
-# pylint: disable=W0613  # unused-argument  SR_TMP
-def main(ctx: Context, **kwargs: Any) -> None:
-    pass
