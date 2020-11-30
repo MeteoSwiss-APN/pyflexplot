@@ -79,6 +79,7 @@ requirements = [
 
 scripts = [
     "pyflexplot=pyflexplot.cli.cli:cli",
+    "pytrajplot=pytrajplot.cli:cli",
     "crop-netcdf=srtools.crop_netcdf:main",
 ]
 
