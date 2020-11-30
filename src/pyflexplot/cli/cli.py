@@ -8,7 +8,7 @@ import click
 
 # Local
 from .. import __version__
-from .. import data_path
+from .. import presets_data_path
 from .click import click_prepare_setup_params
 from .click import click_set_pdb
 from .click import click_set_raise
@@ -25,7 +25,7 @@ from .preset_click import click_use_preset
 # faulthandler.enable()
 
 
-add_to_preset_paths(data_path / "presets")
+add_to_preset_paths(presets_data_path)
 
 
 # Show default values of options by default

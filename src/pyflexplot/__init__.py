@@ -55,14 +55,17 @@ def check_dir_exists(path):
         raise Exception("data directory is not a directory", path)
 
 
-# Set some paths
-root_path: Path = Path(__file__).parent
-data_path: Path = root_path / "data"
-check_dir_exists(data_path)
+# Set data paths
+_data_path = _Path(__file__).parent / "data"
+earth_data_path = _data_path / "naturalearthdata"
+presets_data_path = _data_path / "presets"
+_check_dir_exists(_data_path)
+_check_dir_exists(earth_data_path)
+_check_dir_exists(presets_data_path)
 
 
 # Point cartopy to storerd offline data
-cartopy.config["pre_existing_data_dir"] = data_path
+_cartopy.config["pre_existing_data_dir"] = earth_data_path
 
 
 # Set matplotlib backend
