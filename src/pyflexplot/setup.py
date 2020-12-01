@@ -6,8 +6,10 @@ the docstring of the class method ``Setup.create``.
 
 """
 # Standard library
+import dataclasses
 import re
 from dataclasses import asdict
+from dataclasses import dataclass
 from typing import Any
 from typing import cast
 from typing import Collection
@@ -24,9 +26,7 @@ from typing import Union
 # Third-party
 import toml
 from pydantic import BaseModel
-from pydantic import root_validator
 from pydantic import ValidationError
-from pydantic import validator
 from typing_extensions import Literal
 
 # First-party
@@ -57,7 +57,7 @@ def is_dimensions_param(param: str) -> bool:
 
 # SR_TMP <<< TODO cleaner solution
 def is_core_setup_param(param: str) -> bool:
-    return param in CoreSetup.__fields__
+    return param in CoreSetup.get_params()
 
 
 # SR_TMP <<< TODO cleaner solution
@@ -78,19 +78,14 @@ def get_setup_param_value(setup: "Setup", param: str) -> Any:
     raise ValueError("invalid input setup parameter", param)
 
 
-# pylint: disable=R0201  # no-self-use (root validators)
-# pylint: disable=E0213  # no-self-argument (validators)
-class CoreSetup(BaseModel):
+# pylint: disable=R0902  # too-many-instance-attributes (>7)
+@dataclass
+class CoreSetup:
     """PyFlexPlot core setup with exactly one value per parameter.
 
     See docstring of ``Setup.create`` for a description of the parameters.
 
     """
-
-    class Config:  # noqa
-        arbitrary_types_allowed = True
-        allow_mutation = False
-        extra = "forbid"
 
     # Basics
     input_variable: str = "concentration"
@@ -113,24 +108,18 @@ class CoreSetup(BaseModel):
     # Plot appearance
     lang: str = "en"
     domain: str = "full"
-    domain_size_lat: Optional[float]
-    domain_size_lon: Optional[float]
+    domain_size_lat: Optional[float] = None
+    domain_size_lon: Optional[float] = None
 
     # Dimensions
     dimensions_default: str = "all"
     dimensions: Dimensions = Dimensions()
 
-    # SR_TMP <<<
-    @property
-    def deposition_type_str(self) -> str:
-        if self.dimensions.deposition_type is None:
-            return "none"
-        else:
-            return self.dimensions.deposition_type
+    # pylint: disable=R0912  # too-many-branches (>12)
+    def __post_init__(self) -> None:
+        assert isinstance(self.dimensions, Dimensions)  # SR_DBG
 
-    @root_validator
-    def _check_input_variable(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        value = values["input_variable"]
+        # Check input_variable
         choices = [
             "concentration",
             "deposition",
@@ -138,12 +127,9 @@ class CoreSetup(BaseModel):
             "cloud_arrival_time",
             "cloud_departure_time",
         ]
-        assert value in choices, value
-        return values
+        assert self.input_variable in choices, self.input_variable
 
-    @root_validator
-    def _check_ens_variable(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        value = values["ens_variable"]
+        # Check ens_variable
         choices = [
             "ens_cloud_arrival_time",
             "ens_cloud_departure_time",
@@ -157,37 +143,31 @@ class CoreSetup(BaseModel):
             "probability",
             "std_dev",
         ]
-        if isinstance(value, str):
-            assert value in choices, value
+        if isinstance(self.ens_variable, str):
+            assert self.ens_variable in choices, self.ens_variable
         else:
-            for sub_value in value:
+            for sub_value in self.ens_variable:
                 assert sub_value in choices, sub_value
-        return values
 
-    @root_validator
-    def _check_plot_type(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        value = values["plot_type"]
+        # Check plot_type
         choices = ["auto", "multipanel"]
-        assert value in choices, value
-        return values
+        assert self.plot_type in choices, self.plot_type
 
-    @root_validator
-    def _check_multipanel_param(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        value = values["multipanel_param"]
+        # Check multipanel_param
         # SR_TODO Consider a generic alternative to the hard-coded list
         multipanel_param_choices = ["ens_variable"]
-        if value is None:
+        if self.multipanel_param is None:
             pass
-        elif value in multipanel_param_choices:
+        elif self.multipanel_param in multipanel_param_choices:
             if not (
-                isinstance(values[value], Sequence)
-                and not isinstance(values[value], str)
+                isinstance(getattr(self, self.multipanel_param), Sequence)
+                and not isinstance(getattr(self, self.multipanel_param), str)
             ):
                 # SR_TMP <  SR_MULTIPANEL
                 # raise ValueError(
                 #     "multipanel_param parameter must be a sequence",
-                #     value,
-                #     values[value],
+                #     self.multipanel_param,
+                #     getattr(self, self.multipanel_param),
                 # )
                 # SR_NOTE The exception should be raised when the input is parsed,
                 #         but not afterward when the setup objects for the individual
@@ -196,88 +176,84 @@ class CoreSetup(BaseModel):
                 #         "multipanel")..
                 #         This issue illustrates that Setup and Setup should
                 #         be separated again in some fashion!
-                return values  # SR_TMP
+                pass  # SR_TMP
                 # SR_TMP >  SR_MULTIPANEL
-            # SR_TODO Consider a generic alternative to the hard-coded list
-            n_panels_choices = [4]
-            n_panels = len(values[value])
-            if n_panels not in n_panels_choices:
-                raise NotImplementedError(
-                    "unexpected number of multipanel_param parameter values",
-                    value,
-                    n_panels,
-                    values[value],
-                )
+            else:
+                # SR_TODO Consider a generic alternative to the hard-coded list
+                n_panels_choices = [4]
+                n_panels = len(getattr(self, self.multipanel_param))
+                if n_panels not in n_panels_choices:
+                    raise NotImplementedError(
+                        "unexpected number of multipanel_param parameter values",
+                        self.multipanel_param,
+                        n_panels,
+                        getattr(self, self.multipanel_param),
+                    )
         else:
             raise NotImplementedError(
-                f"unknown multipanel_param '{value}'"
+                f"unknown multipanel_param '{self.multipanel_param}'"
                 f"; choices: {', '.join(multipanel_param_choices)}"
             )
-        return values
 
-    @validator("ens_param_mem_min", always=True)
-    def _init_ens_param_mem_min(
-        cls, value: Optional[int], values: Dict[str, Any]
-    ) -> Optional[int]:
-        if value is None:
-            if values["ens_variable"] in [
-                "ens_cloud_arrival_time",
-                "ens_cloud_departure_time",
-            ]:
-                value = ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN
-        return value
-
-    @validator("ens_param_pctl", always=True)
-    def _init_ens_param_pctl(
-        cls, value: Optional[float], values: Dict[str, Any]
-    ) -> Optional[float]:
-        if values["ens_variable"] == "percentile":
-            assert value is not None
-        return value
-
-    @validator("ens_param_thr", always=True)
-    def _init_ens_param_thr(
-        cls, value: Optional[float], values: Dict[str, Any]
-    ) -> Optional[float]:
-        if value is None:
-            if values["ens_variable"] in [
-                "ens_cloud_arrival_time",
-                "ens_cloud_departure_time",
-            ]:
-                value = ENS_CLOUD_TIME_DEFAULT_PARAM_THR
-            elif values["ens_variable"] == "probability":
-                value = ENS_PROBABILITY_DEFAULT_PARAM_THR
-        return value
-
-    # pylint: disable=W0613  # unused-argument (values)
-    @validator("ens_param_thr_type", always=True)
-    def _init_ens_param_thr_type(
-        cls, value: Optional[float], values: Dict[str, Any]
-    ) -> Optional[float]:
-        assert value in ["lower", "upper"]
-        return value
-
-    @root_validator()
-    def _init_domain_size_lat_lon(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        lat = values["domain_size_lat"]
-        lon = values["domain_size_lon"]
+        # Init domain_size_lat_lon
+        lat = self.domain_size_lat
+        lon = self.domain_size_lon
         if lat is None and lon is None:
-            if values["domain"] in ["release_site", "cloud"]:
+            if self.domain in ["release_site", "cloud"]:
                 # Lat size derived from lon size and map aspect ratio
-                values["domain_size_lon"] = 20.0
-        return values
+                self.domain_size_lon = 20.0
+
+        # Init ens_param_mem_min
+        if self.ens_param_mem_min is None:
+            if self.ens_variable in [
+                "ens_cloud_arrival_time",
+                "ens_cloud_departure_time",
+            ]:
+                self.ens_param_mem_min = ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN
+
+        # Init ens_param_pctl
+        if self.ens_variable == "percentile":
+            assert self.ens_param_pctl is not None
+
+        # Init ens_param_thr
+        if self.ens_param_thr is None:
+            if self.ens_variable in [
+                "ens_cloud_arrival_time",
+                "ens_cloud_departure_time",
+            ]:
+                self.ens_param_thr = ENS_CLOUD_TIME_DEFAULT_PARAM_THR
+            elif self.ens_variable == "probability":
+                self.ens_param_thr = ENS_PROBABILITY_DEFAULT_PARAM_THR
+
+        # Init ens_param_thr_type
+        assert self.ens_param_thr_type in ["lower", "upper"]
+
+    # SR_TMP <<<
+    @property
+    def deposition_type_str(self) -> str:
+        if self.dimensions.deposition_type is None:
+            return "none"
+        else:
+            return self.dimensions.deposition_type
+
+    @classmethod
+    def get_params(cls) -> List[str]:
+        return list(cls.__dataclass_fields__)  # type: ignore  # pylint: disable=E1101
 
     @classmethod
     def create(cls, params: Mapping[str, Any]) -> "CoreSetup":
         params = dict(params)
-        dimensions = Dimensions.create(params.pop("dimensions", {}))
-        return cls(**{**params, "dimensions": dimensions})
+        params["dimensions"] = Dimensions.create(params.pop("dimensions", {}))
+        return cls(**params)
 
     def dict(self) -> Dict[str, Any]:  # type: ignore
         return {
-            **super().dict(),
+            **asdict(self),
             "dimensions": self.dimensions.dict(),
         }
+
+    def copy(self) -> "CoreSetup":
+        return self.create(self.dict())
 
     def tuple(self) -> Tuple[Tuple[str, Any], ...]:
         return tuple({**self.dict(), "dimensions": self.dimensions.tuple()}.items())
@@ -475,12 +451,11 @@ class Setup(BaseModel):
 
         """
         params = dict(**params)
-        dim_params = params.pop("dimensions", {})
-        dimensions = Dimensions.create(dim_params)
+        dimensions = Dimensions.create(params.pop("dimensions", {}))
         core_params = {"dimensions": dimensions}
         singles = ["infile"]
         for param, value in dict(**params).items():
-            if param in CoreSetup.__fields__:
+            if param in CoreSetup.get_params():
                 core_params[param] = params.pop(param)
                 continue
             if param in singles:
@@ -512,7 +487,7 @@ class Setup(BaseModel):
         """Cast a parameter to the appropriate type."""
         param_choices = sorted(
             [param for param in cls.__fields__ if param != "core"]
-            + [param for param in CoreSetup.__fields__ if param != "dimensions"]
+            + [param for param in CoreSetup.get_params() if param != "dimensions"]
             + list(CoreDimensions.__fields__)
         )
         param_choices_fmtd = ", ".join(map(str, param_choices))
@@ -614,6 +589,10 @@ class Setup(BaseModel):
         return len(dict(self))
 
     def __eq__(self, other: Any) -> bool:
+        # SR_DBG <
+        if isinstance(other, dataclasses._MISSING_TYPE):
+            return False
+        # SR_DBG >
         try:
             other_dict = other.dict()
         except AttributeError:
@@ -750,8 +729,9 @@ class Setup(BaseModel):
 
         return SetupCollection([Setup.create(dct) for dct in dcts])
 
+    @staticmethod
     def _group_params(
-        self, params: Optional[Collection[str]]
+        params: Optional[Collection[str]],
     ) -> Tuple[Optional[List[str]], ...]:
         if params is None:
             return (None, None)
@@ -823,7 +803,7 @@ class SetupCollection:
         return cls.create(params_lst)
 
     def copy(self) -> "SetupCollection":
-        return type(self)([setup.copy() for setup in self])
+        return self.create(self.dicts())
 
     # pylint: disable=R0912  # too-many-branches
     # pylint: disable=R0915  # too-many-statements
@@ -846,7 +826,7 @@ class SetupCollection:
         # Core params
         core_same = {}
         core_diff = {}
-        for param in CoreSetup.__fields__:
+        for param in CoreSetup.get_params():
             if param == "dimensions":
                 continue  # Handled below
             try:
@@ -919,6 +899,10 @@ class SetupCollection:
             yield setup
 
     def __eq__(self, other: object) -> bool:
+        # SR_DBG <
+        if isinstance(other, dataclasses._MISSING_TYPE):
+            return False
+        # SR_DBG >
         try:
             other_dicts = other.as_dicts()  # type: ignore
         except AttributeError:

@@ -31,8 +31,8 @@ def cast_field_value(cls: Type, field: str, value: Any, **kwargs: Any) -> Any:
     """
     try:
         type_ = get_type_hints(cls)[field]
-    except KeyError:
-        raise InvalidParameterNameError(field)
+    except KeyError as e:
+        raise InvalidParameterNameError(field) from e
     try:
         return cast_value(type_, value, **kwargs)
     except ValueError as e:
@@ -42,6 +42,9 @@ def cast_field_value(cls: Type, field: str, value: Any, **kwargs: Any) -> Any:
         raise InvalidParameterValueError(msg) from e
 
 
+# pylint: disable=R0911  # too-many-return-statements (>6)
+# pylint: disable=R0912  # too-many-branches (>12)
+# pylint: disable=R0915  # too-many-statements (>50)
 def cast_value(
     type_: Union[Type, str],
     value: Any,

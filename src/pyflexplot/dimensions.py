@@ -1,6 +1,7 @@
 # pylint: disable=C0302  # too-many-lines
 """Plot setup and setup files."""
 # Standard library
+import dataclasses
 from typing import Any
 from typing import cast
 from typing import Dict
@@ -158,6 +159,7 @@ class Dimensions:
 
     # pylint: disable=R0912  # too-many-branches
     # pylint: disable=R0915  # too-many-statements
+    # pylint: disable=W0201  # attribute-defined-outside-init
     def complete(
         self,
         meta_data: Mapping[str, Any],
@@ -272,6 +274,10 @@ class Dimensions:
         return hash(self.tuple())
 
     def __eq__(self, other) -> bool:
+        # SR_DBG <
+        if isinstance(other, dataclasses._MISSING_TYPE):
+            return False
+        # SR_DBG >
         try:
             other_dict = other.dict()
         except AttributeError:

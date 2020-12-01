@@ -20,6 +20,10 @@ class InconsistentArrayShapesError(Exception):
     """Arrays have inconsistent shapes."""
 
 
+class InvalidParameterError(Exception):
+    """Parameter is invalid."""
+
+
 class KeyConflictError(Exception):
     """Conflicting dictionary keys."""
 
@@ -50,3 +54,14 @@ class NotSummarizableError(Exception):
 
 class UnequalSetupParamValuesError(Exception):
     """Values of a param differs between multiple setups."""
+
+
+# Derived
+
+
+class InvalidParameterNameError(InvalidParameterError):
+    """Parameter has invalid name."""
+
+
+class InvalidParameterValueError(InvalidParameterError):
+    """Parameter has invalid value."""

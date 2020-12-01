@@ -10,12 +10,18 @@ from typing import Type
 from typing import Union
 
 # Third-party
+from pydantic import BaseModel
 from pydantic import parse_obj_as
 from pydantic import ValidationError
 from pydantic.fields import ModelField
 
 # First-party
 from srutils.str import split_outside_parens
+
+# Local
+from .dataclasses import cast_field_value as cast_dataclass_field_value
+from .exceptions import InvalidParameterNameError
+from .exceptions import InvalidParameterValueError
 
 
 def prepare_field_value(
@@ -52,27 +58,26 @@ def prepare_field_value(
     return value
 
 
-class InvalidParameterError(Exception):
-    """Parameter is invalid."""
-
-
-class InvalidParameterNameError(InvalidParameterError):
-    """Parameter has invalid name."""
-
-
-class InvalidParameterValueError(InvalidParameterError):
-    """Parameter has invalid value."""
-
-
+# pylint: disable=R0911  # too-many-return-statements (>6)
 # pylint: disable=R0912  # too-many-branches
 def cast_field_value(cls: Type, param: str, value: Any, many_ok: bool = False) -> Any:
-    try:
-        field: ModelField = cls.__fields__[param]
-    except KeyError as e:
-        raise InvalidParameterNameError(
-            f"{param} ({value} [{type(value).__name__}])"
-            f"; choices: {sorted(cls.__fields__)}"
-        ) from e
+    if isinstance(cls, BaseModel):
+        try:
+            field: ModelField = cls.__fields__[param]
+        except KeyError as e:
+            raise InvalidParameterNameError(
+                f"{param} ({value} [{type(value).__name__}])"
+                f"; choices: {sorted(cls.__fields__)}"
+            ) from e
+    else:
+        return cast_dataclass_field_value(
+            cls,
+            param,
+            value,
+            auto_wrap=True,
+            bool_mode="intuitive",
+            unpack_str=False,
+        )
 
     def invalid_value_exception(
         type_: Union[Type, str], param: str, value: Any

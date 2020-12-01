@@ -20,7 +20,7 @@ class Test_CastSingle:
         assert Setup.cast("lang", "de") == "de"
 
     def test_ens_member_id(self):
-        assert Setup.cast("ens_member_id", "004") == 4
+        assert Setup.cast("ens_member_id", "004") == (4,)
 
     def test_integrate(self):
         assert Setup.cast("integrate", "True") is True
@@ -35,18 +35,18 @@ class Test_CastSingle:
 
 class Test_CastSequence:
     def test_infile_fail(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(InvalidParameterValueError):
             Setup.cast("infile", ["a.nc", "b.nc"])
 
     def test_lang_fail(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(InvalidParameterValueError):
             Setup.cast("lang", ["en", "de"])
 
     def test_ens_member_id(self):
-        assert Setup.cast("ens_member_id", ["01", "02", "03"]) == [1, 2, 3]
+        assert Setup.cast("ens_member_id", ["01", "02", "03"]) == (1, 2, 3)
 
     def test_integrate_fail(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(InvalidParameterValueError):
             Setup.cast("integrate", ["True", "False"])
 
     def test_level(self):
