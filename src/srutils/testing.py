@@ -29,7 +29,7 @@ class CheckFailedError(Exception):
 
 @contextmanager
 def not_raises(
-    exception: Union[Type[Exception], Tuple[Type[Exception]]]
+    unexpected_exception: Union[Type[Exception], Tuple[Type[Exception]]]
 ) -> Generator[None, None, None]:
     """Test that an exception is not raised.
 
@@ -38,8 +38,8 @@ def not_raises(
     """
     try:
         yield
-    except exception:
-        raise pytest.fail(f"DID RAISE {exception}")
+    except unexpected_exception:
+        raise pytest.fail(f"DID RAISE {unexpected_exception}")
 
 
 def property_obj(cls, *args, **kwargs):
