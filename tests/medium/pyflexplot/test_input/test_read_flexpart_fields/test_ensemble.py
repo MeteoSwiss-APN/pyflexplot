@@ -45,13 +45,15 @@ class TestReadFieldEnsemble_Single:
         "infile": "dummy.nc",
         "outfile": "dummy.png",
         "model": "COSMO-2E",
-        "integrate": False,
-        "ens_variable": "mean",
-        "dimensions": {"time": 10, "species_id": 2},
-        "input_variable": "concentration",
+        "core": {
+            "integrate": False,
+            "ens_variable": "mean",
+            "dimensions": {"time": 10, "species_id": 2},
+            "input_variable": "concentration",
+        },
     }
 
-    species_id = setup_params_shared["dimensions"]["species_id"]
+    species_id = setup_params_shared["core"]["dimensions"]["species_id"]
 
     # Ensemble member ids
     ens_member_ids = [0, 1, 5, 10, 15, 20]
@@ -81,17 +83,21 @@ class TestReadFieldEnsemble_Single:
         setup_dct = {
             **self.setup_params_shared,
             **setup_params,
-            "dimensions": {
-                **self.setup_params_shared.get("dimensions", {}),
-                **setup_params.get("dimensions", {}),
+            "core": {
+                **self.setup_params_shared.get("core", {}),
+                **setup_params.get("core", {}),
+                "dimensions": {
+                    **self.setup_params_shared.get("core", {}).get("dimensions", {}),
+                    **setup_params.get("core", {}).get("dimensions", {}),
+                },
             },
             "ens_member_id": self.ens_member_ids,
         }
         # SR_TMP <
         if ens_var in ["probability", "minimum", "maximum", "mean", "median"]:
-            setup_dct["ens_variable"] = ens_var
+            setup_dct["core"]["ens_variable"] = ens_var
         else:
-            setup_dct["plot_type"] = f"ensemble_{ens_var}"
+            setup_dct["core"]["plot_type"] = f"ensemble_{ens_var}"
         # SR_TMP >
         setups = SetupCollection([Setup.create(setup_dct)])
 
@@ -142,7 +148,7 @@ class TestReadFieldEnsemble_Single:
         self.run(
             datadir,
             var_names_ref=[f"spec{self.species_id:03d}"],
-            setup_params={"dimensions": {"level": 1}},
+            setup_params={"core": {"dimensions": {"level": 1}}},
             ens_var="mean",
             fct_reduce_mem=lambda arr: np.nanmean(arr, axis=0),
             cache_on=cache_on,
@@ -161,12 +167,14 @@ class TestReadFieldEnsemble_Multiple:
         "infile": "dummy.nc",
         "outfile": "dummy.png",
         "model": "COSMO-2E",
-        "integrate": True,
-        "dimensions": {"species_id": 1, "time": [0, 3, 9]},
+        "core": {
+            "integrate": True,
+            "dimensions": {"species_id": 1, "time": [0, 3, 9]},
+        },
     }
 
     # Species ID
-    species_id = shared_setup_params_compressed["dimensions"]["species_id"]
+    species_id = shared_setup_params_compressed["core"]["dimensions"]["species_id"]
 
     # Ensemble member ids
     ens_member_ids = [0, 1, 5, 10, 15, 20]
@@ -198,24 +206,31 @@ class TestReadFieldEnsemble_Multiple:
         # Create field specifications list
         setup_lst = []
         for shared_setup_params in decompress_multival_dict(
-            self.shared_setup_params_compressed, skip=["infile"]
+            self.shared_setup_params_compressed, skip=["infile", "core"]
         ):
-            setup_params_i = {
-                **shared_setup_params,
-                **setup_params,
-                "dimensions": {
-                    **shared_setup_params.get("dimensions", {}),
-                    **setup_params.get("dimensions", {}),
-                },
-                "ens_member_id": self.ens_member_ids,
-            }
-            # SR_TMP <
-            if ens_var in ["probability", "minimum", "maximum", "mean", "median"]:
-                setup_params_i["ens_variable"] = ens_var
-            else:
-                setup_params_i["plot_type"] = f"ensemble_{ens_var}"
-            # SR_TMP >
-            setup_lst.append(Setup.create(setup_params_i))
+            if "core" not in shared_setup_params:
+                shared_setup_params["core"] = {}
+            for shared_core in decompress_multival_dict(shared_setup_params["core"]):
+                setup_params_i = {
+                    **shared_setup_params,
+                    **setup_params,
+                    "core": {
+                        **shared_core,
+                        **setup_params.get("core", {}),
+                        "dimensions": {
+                            **shared_core.get("dimensions", {}),
+                            **setup_params.get("core", {}).get("dimensions", {}),
+                        },
+                    },
+                    "ens_member_id": self.ens_member_ids,
+                }
+                # SR_TMP <
+                if ens_var in ["probability", "minimum", "maximum", "mean", "median"]:
+                    setup_params_i["core"]["ens_variable"] = ens_var
+                else:
+                    setup_params_i["core"]["plot_type"] = f"ensemble_{ens_var}"
+                # SR_TMP >
+                setup_lst.append(Setup.create(setup_params_i))
         setups = SetupCollection(setup_lst)
 
         # Read input fields
@@ -279,11 +294,13 @@ class TestReadFieldEnsemble_Multiple:
         }[ens_var]
 
         setup_params = {
-            "dimensions": {"level": 1},
-            "input_variable": "concentration",
+            "core": {
+                "dimensions": {"level": 1},
+                "input_variable": "concentration",
+            },
         }
         if ens_var == "probability":
-            setup_params["ens_param_thr"] = self.ens_prob_thr_concentration
+            setup_params["core"]["ens_param_thr"] = self.ens_prob_thr_concentration
 
         self.run(
             datafile_fmt=self.datafile_fmt(datadir),
@@ -322,9 +339,11 @@ class TestReadFieldEnsemble_Multiple:
                 f"DD_spec{self.species_id:03d}",
             ],
             setup_params={
-                "input_variable": "deposition",
-                "combine_deposition_types": True,
-                "dimensions": {"deposition_type": ("dry", "wet")},
+                "core": {
+                    "input_variable": "deposition",
+                    "combine_deposition_types": True,
+                    "dimensions": {"deposition_type": ("dry", "wet")},
+                },
             },
             ens_var=ens_var,
             cache_on=cache_on,

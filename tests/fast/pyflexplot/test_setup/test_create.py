@@ -56,24 +56,24 @@ class Test_WildcardToNone:
     """
 
     def test_species_id(self):
-        params = {**DUMMY_PARAMS, "dimensions": {"species_id": "*"}}
+        params = {**DUMMY_PARAMS, "core": {"dimensions": {"species_id": "*"}}}
         setup = Setup.create(params)
         assert setup.core.dimensions.species_id is None
 
     def test_time(self):
-        params = {**DUMMY_PARAMS, "dimensions": {"time": "*"}}
+        params = {**DUMMY_PARAMS, "core": {"dimensions": {"time": "*"}}}
         setup = Setup.create(params)
         assert setup.core.dimensions.time is None
 
     def test_level(self):
-        params = {**DUMMY_PARAMS, "dimensions": {"level": "*"}}
+        params = {**DUMMY_PARAMS, "core": {"dimensions": {"level": "*"}}}
         setup = Setup.create(params)
         assert setup.core.dimensions.level is None
 
     def test_others(self):
         params = {
             **DUMMY_PARAMS,
-            "dimensions": {"nageclass": "*", "noutrel": "*", "numpoint": "*"},
+            "core": {"dimensions": {"nageclass": "*", "noutrel": "*", "numpoint": "*"}},
         }
         setup = Setup.create(params)
         assert setup.core.dimensions.nageclass is None

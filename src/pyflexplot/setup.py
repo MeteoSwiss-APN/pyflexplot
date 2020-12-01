@@ -42,7 +42,6 @@ from .dimensions import Dimensions
 from .utils.exceptions import UnequalSetupParamValuesError
 from .utils.pydantic import cast_field_value
 from .utils.pydantic import InvalidParameterNameError
-from .utils.pydantic import prepare_field_value
 
 # Some plot-specific default values
 ENS_PROBABILITY_DEFAULT_PARAM_THR = 0.0
@@ -451,28 +450,13 @@ class Setup(BaseModel):
 
         """
         params = dict(**params)
-        if "core" in params:
-            core_params = params.pop("core")
-            params = {
-                param: cast_field_value(cls, param, value)
-                for param, value in params.items()
-            }
-        else:
-            dimensions = Dimensions.create(params.pop("dimensions", {}))
-            core_params = {"dimensions": dimensions}
-            singles = ["infile"]
-            for param, value in dict(**params).items():
-                if param in CoreSetup.get_params():
-                    core_params[param] = params.pop(param)
-                    continue
-                if param in singles:
-                    continue
-                field = cls.__fields__[param]
-                try:
-                    params[param] = prepare_field_value(field, value, alias_none=["*"])
-                except Exception as e:
-                    raise ValueError("invalid parameter value", param, value) from e
-        params["core"] = CoreSetup.create(core_params)
+        core_params = params.pop("core", {})
+        params = {
+            param: cast_field_value(cls, param, value)
+            for param, value in params.items()
+        }
+        if core_params:
+            params["core"] = CoreSetup.create(core_params)
         try:
             return cls(**params)
         except ValidationError as e:
@@ -562,18 +546,6 @@ class Setup(BaseModel):
     def __repr__(self) -> str:  # type: ignore
         return setup_repr(self)
 
-    # SR_TMP <<< TODO Eliminate
-    def flat_dict(self) -> Dict[str, Any]:
-        dct: Dict[str, Any] = {
-            **{
-                param: getattr(self, param)
-                for param in self.get_params()
-                if param != "core"
-            },
-            **self.core.dict(),
-        }
-        return dct
-
     def dict(self) -> Dict[str, Any]:
         dct: Dict[str, Any] = {}
         for param in self.get_params():
@@ -585,20 +557,24 @@ class Setup(BaseModel):
         return dct
 
     def copy(self):
-        return self.create(self.flat_dict())
+        return self.create(self.dict())
 
-    def tuple(self) -> Tuple[Tuple[str, Any], ...]:
-        # + return tuple({**self.dict(), "core": self.core.tuple()}.items())
+    def _tuple(self) -> Tuple[Tuple[str, Any], ...]:
+        dct = self.dict()
+        core = dct.pop("core")
+        dims = core.pop("dimensions")
         return tuple(
-            {
-                **self.flat_dict(),
-                "dimensions": self.core.dimensions.tuple(),
-                "core": self.core.tuple(),
-            }.items()
+            list(dct.items())
+            + [
+                (
+                    "core",
+                    tuple(list(core.items()) + ["dimensions", tuple(dims.items())]),
+                )
+            ]
         )
 
     def __hash__(self) -> int:
-        return hash(self.tuple())
+        return hash(self._tuple())
 
     def __len__(self) -> int:
         return len(dict(self))
@@ -656,38 +632,18 @@ class Setup(BaseModel):
         input_variables = [setup.core.input_variable for setup in setups]
         if len(set(input_variables)) != 1:
             raise ValueError(
-                "cannot compress setups: input_variable differs", input_variables
+                f"cannot compress setups: input_variable differs: {input_variables}"
             )
         # SR_TMP >
-        dcts = [setup.flat_dict() for setup in setups]
+        dcts = [setup.dict() for setup in setups]
         dct = compress_multival_dicts(dcts, cls_seq=tuple)
-        if isinstance(dct["dimensions"], Sequence):
-            dct["dimensions"] = compress_multival_dicts(
-                dct["dimensions"], cls_seq=tuple
+        if isinstance(dct["core"], Sequence):
+            dct["core"] = compress_multival_dicts(dct["core"], cls_seq=tuple)
+        if isinstance(dct["core"]["dimensions"], Sequence):
+            dct["core"]["dimensions"] = compress_multival_dicts(
+                dct["core"]["dimensions"], cls_seq=tuple
             )
         return cls.create(dct)
-
-    @classmethod
-    def compress_partially(
-        cls, setups: "SetupCollection", skip: List[str]
-    ) -> "SetupCollection":
-        dcts: List[Dict[str, Any]] = setups.flat_dicts()
-        preserved_params_lst: List[Dict[str, Any]] = []
-        for dct in dcts:
-            preserved_params = {}
-            for param in skip:
-                try:
-                    preserved_params[param] = dct.pop(param)
-                except ValueError as e:
-                    raise ValueError("invalid param", param) from e
-            if preserved_params not in preserved_params_lst:
-                preserved_params_lst.append(preserved_params)
-        partial_dct = compress_multival_dicts(setups.flat_dicts(), cls_seq=tuple)
-        setup_lst: List["Setup"] = []
-        for preserved_params in preserved_params_lst:
-            dct = {**partial_dct, **preserved_params}
-            setup_lst.append(cls.create(dct))
-        return SetupCollection(setup_lst)
 
     def decompress(self, skip: Optional[Collection[str]] = None) -> "SetupCollection":
         return self._decompress(select=None, skip=skip)
@@ -697,6 +653,7 @@ class Setup(BaseModel):
     ) -> "SetupCollection":
         return self._decompress(select, skip)
 
+    # pylint: disable=R0912  # too-many-branches (>12)
     # pylint: disable=R0914  # too-many-locals
     def _decompress(
         self,
@@ -704,66 +661,80 @@ class Setup(BaseModel):
         skip: Optional[Collection[str]] = None,
     ):
         """Create multiple ``Setup`` objects with one-value parameters only."""
-        select_setup, select_dimensions = self._group_params(select)
-        skip_setup, skip_dimensions = self._group_params(skip)
-        dct = self.flat_dict()
+        select_setup, select_core, select_dimensions = self._group_params(select)
+        skip_setup, skip_core, skip_dimensions = self._group_params(skip)
+        dct = self.dict()
 
         # SR_TMP < TODO Can this be moved to class Dimensions?!?
         # Handle deposition type
         if self.deposition_type_str == "tot":
             if select is None or "dimensions.deposition_type" in select:
                 if "dimensions.deposition_type" not in (skip or []):
-                    dct["dimensions"]["deposition_type"] = ("dry", "wet")
+                    dct["core"]["dimensions"]["deposition_type"] = ("dry", "wet")
         # SR_TMP >
 
         if "input_variable" in (select or []) or "input_variable" not in (skip or []):
-            if dct["input_variable"] == "affected_area":
-                dct["input_variable"] = ("concentration", "deposition")
-            elif dct["input_variable"] in [
+            if dct["core"]["input_variable"] == "affected_area":
+                dct["core"]["input_variable"] = ("concentration", "deposition")
+            elif dct["core"]["input_variable"] in [
                 "cloud_arrival_time",
                 "cloud_departure_time",
             ]:
-                dct["input_variable"] = "concentration"
+                dct["core"]["input_variable"] = "concentration"
 
         # Decompress dict
-        dcts = []
+        dcts: List[Mapping[str, Any]] = []
         for dct_i in decompress_multival_dict(
             dct, select=select_setup, skip=skip_setup
         ):
-            if "dimensions" not in dct_i:
+            if "core" not in dct_i:
                 dcts.append(dct_i)
-            else:
-                for dims_j in decompress_multival_dict(
-                    dct_i["dimensions"], select=select_dimensions, skip=skip_dimensions
+                continue
+            for core_j in decompress_multival_dict(
+                dct_i["core"], select=select_core, skip=skip_core
+            ):
+                dct_ij: Dict[str, Any] = {**dct_i, "core": core_j}
+                if "dimensions" not in core_j:
+                    dcts.append(dct_i)
+                    continue
+                for dims_k in decompress_multival_dict(
+                    core_j["dimensions"], select=select_dimensions, skip=skip_dimensions
                 ):
-                    dct_ij = {**dct_i, "dimensions": dims_j}
+                    dct_ijk: Dict[str, Any] = {
+                        **dct_ij,
+                        "core": {**dct_ij["core"], "dimensions": dims_k},
+                    }
                     # SR_TMP <
                     # Handle affected area
                     if (
-                        dct_ij["input_variable"] == "concentration"
-                        and dct_ij["dimensions"]["deposition_type"]
+                        dct_ijk["core"]["input_variable"] == "concentration"
+                        and dct_ijk["core"]["dimensions"]["deposition_type"]
                     ):
-                        dct_ij["dimensions"] = {
-                            **dct_ij["dimensions"],
+                        dct_ijk["core"]["dimensions"] = {
+                            **dct_ijk["core"]["dimensions"],
                             "deposition_type": None,
                         }
-                        if dct_ij in dcts:
+                        if dct_ijk in dcts:
                             continue
                     # SR_TMP >
-                    dcts.append(dct_ij)
+                    dcts.append(dct_ijk)
 
         return SetupCollection([Setup.create(dct) for dct in dcts])
 
     @staticmethod
     def _group_params(
         params: Optional[Collection[str]],
-    ) -> Tuple[Optional[List[str]], ...]:
+    ) -> Tuple[Optional[List[str]], Optional[List[str]], Optional[List[str]]]:
         if params is None:
-            return (None, None)
+            return (None, None, None)
         params_setup: List[str] = []
+        params_core: List[str] = []
         params_dimensions: List[str] = []
         for param in params:
-            if is_setup_param(param) or is_core_setup_param(param):
+            if is_setup_param(param):
+                params_setup.append(param)
+                continue
+            if is_core_setup_param(param):
                 params_setup.append(param)
                 continue
             if param.startswith("dimensions."):
@@ -772,7 +743,7 @@ class Setup(BaseModel):
                     params_dimensions.append(dims_param)
                     continue
             raise ValueError("invalid param", param)
-        return (params_setup, params_dimensions)
+        return (params_setup, params_core, params_dimensions)
 
 
 class SetupCollection:
@@ -796,15 +767,12 @@ class SetupCollection:
         setup_lst: List[Setup] = []
         for obj in setups:
             if isinstance(obj, Setup):
-                obj = obj.flat_dict()
-            # SR_TMP <
-            # dcts = decompress_multival_dict(cast(dict, obj))
-            skip = ["dimensions"]
-            # SR_TMP <
-            skip.append("ens_member_id")
-            # SR_TMP >
-            dcts = decompress_multival_dict(cast(dict, obj), skip=skip)
-            # SR_TMP >
+                # ? dcts = obj.decompress(["dimensions", "ens_member_id"])
+                raise NotImplementedError("obj is Setup")
+            else:
+                skip = ["dimensions", "ens_member_id"]
+                assert isinstance(obj, dict)  # mypy
+                dcts = decompress_multival_dict(cast(dict, obj), skip=skip)
             for dct in dcts:
                 setup = Setup.create(dct)
                 setup_lst.append(setup)
@@ -818,17 +786,22 @@ class SetupCollection:
         for raw_params in raw_params_lst:
             params = {}
             for param, value in raw_params.items():
-                if not is_dimensions_param(param):
+                if not (is_core_setup_param(param) or is_dimensions_param(param)):
                     params[param] = value
                 else:
-                    if "dimensions" not in params:
-                        params["dimensions"] = {}
-                    params["dimensions"][param] = value
+                    if "core" not in params:
+                        params["core"] = {}
+                    if is_core_setup_param(param):
+                        params["core"][param] = value
+                    else:
+                        if "dimensions" not in params["core"]:
+                            params["core"]["dimensions"] = {}
+                        params["core"]["dimensions"][param] = value
             params_lst.append(params)
         return cls.create(params_lst)
 
     def copy(self) -> "SetupCollection":
-        return self.create(self.flat_dicts())
+        return self.create(self.dicts())
 
     # pylint: disable=R0912  # too-many-branches
     # pylint: disable=R0915  # too-many-statements
@@ -939,10 +912,6 @@ class SetupCollection:
                 all(obj in self_dicts for obj in other_dicts),
             ]
         )
-
-    # SR_TMP <<< TODO eliminate
-    def flat_dicts(self) -> List[Dict[str, Any]]:
-        return [setup.flat_dict() for setup in self]
 
     def dicts(self) -> List[Dict[str, Any]]:
         return [setup.dict() for setup in self]
@@ -1240,5 +1209,5 @@ def setup_repr(obj: Union["CoreSetup", "Setup"]) -> str:
             return f"'{obj}'"
         return str(obj)
 
-    s_attrs = ",\n  ".join(f"{k}={fmt(v)}" for k, v in obj.flat_dict().items())
+    s_attrs = ",\n  ".join(f"{k}={fmt(v)}" for k, v in obj.dict().items())
     return f"{type(obj).__name__}(\n  {s_attrs},\n)"
