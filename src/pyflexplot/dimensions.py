@@ -82,6 +82,10 @@ class CoreDimensions(BaseModel):
             return None
         return cast_field_value(cls, param, value, many_ok)
 
+    @classmethod
+    def get_params(cls) -> List[str]:
+        return list(cls.__fields__)
+
 
 @summarizable(summarize=lambda self: self.dict())  # type: ignore
 # pylint: disable=R0902  # too-many-instance-attributes

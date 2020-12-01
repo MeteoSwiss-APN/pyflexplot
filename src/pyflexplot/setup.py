@@ -52,7 +52,7 @@ ENS_CLOUD_TIME_DEFAULT_PARAM_THR = 0.0
 
 # SR_TMP <<< TODO cleaner solution
 def is_dimensions_param(param: str) -> bool:
-    return param in CoreDimensions.__fields__
+    return param in CoreDimensions.get_params()
 
 
 # SR_TMP <<< TODO cleaner solution
@@ -62,7 +62,7 @@ def is_core_setup_param(param: str) -> bool:
 
 # SR_TMP <<< TODO cleaner solution
 def is_setup_param(param: str) -> bool:
-    return param in Setup.__fields__
+    return param in Setup.get_params()
 
 
 # SR_TMP <<< TODO cleaner solution
@@ -477,6 +477,10 @@ class Setup(BaseModel):
             raise Exception(msg) from e
 
     @classmethod
+    def get_params(cls) -> List[str]:
+        return list(cls.__fields__)
+
+    @classmethod
     def as_setup(cls, obj: Union[Mapping[str, Any], "Setup"]) -> "Setup":
         if isinstance(obj, cls):
             return obj
@@ -486,9 +490,9 @@ class Setup(BaseModel):
     def cast(cls, param: str, value: Any) -> Any:
         """Cast a parameter to the appropriate type."""
         param_choices = sorted(
-            [param for param in cls.__fields__ if param != "core"]
+            [param for param in cls.get_params() if param != "core"]
             + [param for param in CoreSetup.get_params() if param != "dimensions"]
-            + list(CoreDimensions.__fields__)
+            + list(CoreDimensions.get_params())
         )
         param_choices_fmtd = ", ".join(map(str, param_choices))
         if param == "dimensions":
@@ -563,7 +567,7 @@ class Setup(BaseModel):
         return {
             **{
                 param: getattr(self, param)
-                for param in self.__fields__
+                for param in self.get_params()
                 if param != "core"
             },
             **self.core.dict(),
@@ -813,7 +817,7 @@ class SetupCollection:
         diff: Dict[str, Any] = {}
 
         # Regular params
-        for param in Setup.__fields__:
+        for param in Setup.get_params():
             if param == "core":
                 continue  # Handled below
             try:
@@ -843,7 +847,7 @@ class SetupCollection:
         # Dimensions
         dims_same = {}
         dims_diff = {}
-        for param in CoreDimensions.__fields__:
+        for param in CoreDimensions.get_params():
             values = []
             for dims in self.collect("dimensions"):
                 values.append(dims.get(param))
