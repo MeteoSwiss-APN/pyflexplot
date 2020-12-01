@@ -88,8 +88,7 @@ def cast_field_value(cls: Type, param: str, value: Any, many_ok: bool = False) -
     if str(field.type_).startswith("typing.Union["):
         union_content = str(field.type_).replace("typing.Union[", "")[:-1]
         s_sub_types = [
-            s.strip()
-            for s in split_outside_parens(union_content, ",", opening="[", closing="]")
+            s.strip() for s in split_outside_parens(union_content, ",", parens="[]")
         ]
         if "str" in s_sub_types:
             s_sub_types.remove("str")

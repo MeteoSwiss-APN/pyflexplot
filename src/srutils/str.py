@@ -8,6 +8,8 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
+from typing import Union
 
 
 def sfmt(obj: Any, q: str = "'", *, none: str = "None") -> str:
@@ -195,8 +197,7 @@ def split_outside_parens(
     sep: Optional[str] = None,
     maxsplit: int = -1,
     *,
-    opening: str = "(",
-    closing: str = ")",
+    parens: Union[str, Tuple[str, str]] = "()",
 ) -> List[str]:
     """Split a string at delimiters outside parentheses.
 
@@ -208,18 +209,23 @@ def split_outside_parens(
 
         maxsplit (optional): Maximum number of splits. -1 means no limit.
 
-        opening (optional): Opening character(s).
-
-        closing (optional): Closing characters.
+        parens (optional): Type of parentheses; either a string of two
+            characters representing the opening and closing parenthesis,
+            resprctively; or a tuple of two non-empty strings representing
+            collections of opening and closing parentheses, respectively.
 
     """
     if sep is None:
         sep = " +"
-    elif any(ch in sep for chs in [opening, closing] for ch in chs):
-        raise ValueError(
-            f"separator must not contain parens '{opening}'/'{closing}': '{sep}'"
-        )
-    elif sep not in s:
+    msg = "parens neither a two-element string nor a tuple of two non-empty strings"
+    if len(parens) != 2:
+        raise ValueError(f"{msg}: '{parens}'")
+    opening, closing = parens  # type: ignore  # "unpacking a string is disallowed"
+    if not opening or not closing:
+        raise ValueError(f"{msg}: '{parens}'")
+    if any(chr in sep for chrs in [opening, closing] for chr in chrs):
+        raise ValueError(f"separator contains parens ('{opening}{closing}'): '{sep}'")
+    if not re.findall(sep, s):
         return [s]
 
     # Find nesting levels
