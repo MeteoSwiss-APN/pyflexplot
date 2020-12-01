@@ -451,20 +451,27 @@ class Setup(BaseModel):
 
         """
         params = dict(**params)
-        dimensions = Dimensions.create(params.pop("dimensions", {}))
-        core_params = {"dimensions": dimensions}
-        singles = ["infile"]
-        for param, value in dict(**params).items():
-            if param in CoreSetup.get_params():
-                core_params[param] = params.pop(param)
-                continue
-            if param in singles:
-                continue
-            field = cls.__fields__[param]
-            try:
-                params[param] = prepare_field_value(field, value, alias_none=["*"])
-            except Exception as e:
-                raise ValueError("invalid parameter value", param, value) from e
+        if "core" in params:
+            core_params = params.pop("core")
+            params = {
+                param: cast_field_value(cls, param, value)
+                for param, value in params.items()
+            }
+        else:
+            dimensions = Dimensions.create(params.pop("dimensions", {}))
+            core_params = {"dimensions": dimensions}
+            singles = ["infile"]
+            for param, value in dict(**params).items():
+                if param in CoreSetup.get_params():
+                    core_params[param] = params.pop(param)
+                    continue
+                if param in singles:
+                    continue
+                field = cls.__fields__[param]
+                try:
+                    params[param] = prepare_field_value(field, value, alias_none=["*"])
+                except Exception as e:
+                    raise ValueError("invalid parameter value", param, value) from e
         params["core"] = CoreSetup.create(core_params)
         try:
             return cls(**params)
@@ -555,8 +562,7 @@ class Setup(BaseModel):
     def __repr__(self) -> str:  # type: ignore
         return setup_repr(self)
 
-    # SR_TMP <<< TODO Don't merge core params!
-        # SR_TMP >
+    # SR_TMP <<< TODO Eliminate
     def flat_dict(self) -> Dict[str, Any]:
         dct: Dict[str, Any] = {
             **{
@@ -569,8 +575,14 @@ class Setup(BaseModel):
         return dct
 
     def dict(self) -> Dict[str, Any]:
-        raise DeprecationWarning()
-        return self.flat_dict()
+        dct: Dict[str, Any] = {}
+        for param in self.get_params():
+            value = getattr(self, param)
+            try:
+                dct[param] = value.dict()
+            except AttributeError:
+                dct[param] = value
+        return dct
 
     def copy(self):
         return self.create(self.flat_dict())
@@ -597,7 +609,7 @@ class Setup(BaseModel):
             return False
         # SR_DBG >
         try:
-            other_dict = other.flat_dict()
+            other_dict = other.dict()
         except AttributeError:
             try:
                 other_dict = dict(other)  # type: ignore
@@ -606,7 +618,7 @@ class Setup(BaseModel):
                     other_dict = asdict(other)
                 except TypeError:
                     return False
-        return self.flat_dict() == other_dict
+        return self.dict() == other_dict
 
     @overload
     def derive(self, params: Mapping[str, Any]) -> "Setup":
@@ -621,10 +633,20 @@ class Setup(BaseModel):
     ) -> Union["Setup", "SetupCollection"]:
         """Derive ``Setup`` object(s) with adapted parameters."""
         if isinstance(params, Sequence):
-            return SetupCollection([self.derive(params_i) for params_i in params])
-        dct = {**self.flat_dict(), **params}
-        if "dimensions" in params:
-            dct["dimensions"] = self.core.dimensions.derive(params["dimensions"])
+            return SetupCollection([self.derive(sub_params) for sub_params in params])
+        dct = self.dict()
+        dct = {
+            **dct,
+            **params,
+            "core": {
+                **dct["core"],
+                **params.get("core", {}),
+                "dimensions": {
+                    **dct["core"]["dimensions"],
+                    **params.get("core", {}).get("dimensions", {}),
+                },
+            },
+        }
         return type(self).create(dct)
 
     @classmethod
@@ -649,7 +671,7 @@ class Setup(BaseModel):
     def compress_partially(
         cls, setups: "SetupCollection", skip: List[str]
     ) -> "SetupCollection":
-        dcts: List[Dict[str, Any]] = setups.dicts()
+        dcts: List[Dict[str, Any]] = setups.flat_dicts()
         preserved_params_lst: List[Dict[str, Any]] = []
         for dct in dcts:
             preserved_params = {}
@@ -660,7 +682,7 @@ class Setup(BaseModel):
                     raise ValueError("invalid param", param) from e
             if preserved_params not in preserved_params_lst:
                 preserved_params_lst.append(preserved_params)
-        partial_dct = compress_multival_dicts(setups.dicts(), cls_seq=tuple)
+        partial_dct = compress_multival_dicts(setups.flat_dicts(), cls_seq=tuple)
         setup_lst: List["Setup"] = []
         for preserved_params in preserved_params_lst:
             dct = {**partial_dct, **preserved_params}
@@ -806,7 +828,7 @@ class SetupCollection:
         return cls.create(params_lst)
 
     def copy(self) -> "SetupCollection":
-        return self.create(self.dicts())
+        return self.create(self.flat_dicts())
 
     # pylint: disable=R0912  # too-many-branches
     # pylint: disable=R0915  # too-many-statements
@@ -907,16 +929,23 @@ class SetupCollection:
             return False
         # SR_DBG >
         try:
-            other_dicts = other.as_dicts()  # type: ignore
+            other_dicts = other.dicts()  # type: ignore
         except AttributeError:
             other_dicts = [dict(obj) for obj in other]  # type: ignore
         self_dicts = self.dicts()
-        return all(obj in other_dicts for obj in self_dicts) and all(
-            obj in self_dicts for obj in other_dicts
+        return all(
+            [
+                all(obj in other_dicts for obj in self_dicts),
+                all(obj in self_dicts for obj in other_dicts),
+            ]
         )
 
-    def dicts(self) -> List[Dict[str, Any]]:
+    # SR_TMP <<< TODO eliminate
+    def flat_dicts(self) -> List[Dict[str, Any]]:
         return [setup.flat_dict() for setup in self]
+
+    def dicts(self) -> List[Dict[str, Any]]:
+        return [setup.dict() for setup in self]
 
     @classmethod
     def merge(cls, setups_lst: Sequence["SetupCollection"]) -> "SetupCollection":

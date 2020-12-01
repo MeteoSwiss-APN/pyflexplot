@@ -262,7 +262,9 @@ class InputFileEnsemble:
             if ens_member_ids is not None and ens_member_id not in ens_member_ids:
                 continue
             setups_mem = setups.derive({"ens_member_id": ens_member_id})
-            timeless_setups_mem = setups_mem.derive({"dimensions": {"time": None}})
+            timeless_setups_mem = setups_mem.derive(
+                {"core": {"dimensions": {"time": None}}}
+            )
             self._read_data(file_path, idx_mem, timeless_setups_mem)
 
         # Compute single field from all ensemble members

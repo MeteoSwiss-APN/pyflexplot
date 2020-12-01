@@ -128,14 +128,16 @@ class Test_Setup_Create:
             "infile": "dummy.nc",
             "outfile": "dummy.png",
             "model": "COSMO-1",
-            "integrate": False,
-            "ens_variable": "mean",
-            "dimensions": {"time": 10, "level": 1},
-            "input_variable": "concentration",
             "ens_member_id": (0, 1, 5, 10, 15, 20),
+            "core": {
+                "integrate": False,
+                "ens_variable": "mean",
+                "dimensions": {"time": 10, "level": 1},
+                "input_variable": "concentration",
+            },
         }
         setup = Setup.create(params)
-        res = setup.flat_dict()
+        res = setup.dict()
         check_summary_dict_is_subdict(superdict=res, subdict=params)
 
 
@@ -144,14 +146,16 @@ class Test_Setup_Decompress:
     def setup(self):
         return DEFAULT_SETUP.derive(
             {
-                "input_variable": "deposition",
-                "dimensions": {
-                    "deposition_type": ["dry", "wet"],
-                    "nageclass": (0,),
-                    "noutrel": (0,),
-                    "numpoint": (0,),
-                    "species_id": [1, 2],
-                    "time": [1, 2, 3],
+                "core": {
+                    "input_variable": "deposition",
+                    "dimensions": {
+                        "deposition_type": ["dry", "wet"],
+                        "nageclass": (0,),
+                        "noutrel": (0,),
+                        "numpoint": (0,),
+                        "species_id": [1, 2],
+                        "time": [1, 2, 3],
+                    },
                 },
             },
         )
@@ -262,9 +266,12 @@ class Test_SetupCollection_Create:
     def create_partial_dicts(self):
         base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
         return [
-            {**base, "input_variable": "concentration", "domain": "ch"},
-            {**base, "input_variable": "deposition", "lang": "de"},
-            {**base, "dimensions": {"nageclass": 1, "noutrel": 5, "numpoint": 3}},
+            {**base, "core": {"input_variable": "concentration", "domain": "ch"}},
+            {**base, "core": {"input_variable": "deposition", "lang": "de"}},
+            {
+                **base,
+                "core": {"dimensions": {"nageclass": 1, "noutrel": 5, "numpoint": 3}},
+            },
         ]
 
     def create_complete_dicts(self):
@@ -292,39 +299,49 @@ class Test_SetupCollection_Compress:
             "infile": "foo.nc",
             "outfile": "bar.png",
             "model": "COSMO-1",
-            "input_variable": "concentration",
-            "dimensions": {"level": 0},
+            "core": {
+                "input_variable": "concentration",
+                "dimensions": {"level": 0},
+            },
         },
         {
             "infile": "foo.nc",
             "outfile": "bar.png",
             "model": "COSMO-1",
-            "input_variable": "concentration",
-            "dimensions": {"level": 1},
+            "core": {
+                "input_variable": "concentration",
+                "dimensions": {"level": 1},
+            },
         },
         {
             "infile": "foo.nc",
             "outfile": "bar.png",
             "model": "COSMO-1",
-            "input_variable": "concentration",
-            "dimensions": {"level": (1, 2)},
+            "core": {
+                "input_variable": "concentration",
+                "dimensions": {"level": (1, 2)},
+            },
         },
     ]
     setups_lst = [Setup.create(dct) for dct in dcts]
 
     def test_one(self):
-        res = SetupCollection(self.setups_lst[:1]).compress().flat_dict()
+        res = SetupCollection(self.setups_lst[:1]).compress().dict()
         sol = self.setups_lst[0]
         assert res == sol
 
     def test_two(self):
-        res = SetupCollection(self.setups_lst[:2]).compress().flat_dict()
-        sol = Setup.create(self.dcts[0]).derive({"dimensions": {"level": (0, 1)}})
+        res = SetupCollection(self.setups_lst[:2]).compress().dict()
+        sol = Setup.create(self.dcts[0]).derive(
+            {"core": {"dimensions": {"level": (0, 1)}}}
+        )
         assert res == sol
 
     def test_three(self):
-        res = SetupCollection(self.setups_lst[:3]).compress().flat_dict()
-        sol = Setup.create(self.dcts[0]).derive({"dimensions": {"level": (0, 1, 2)}})
+        res = SetupCollection(self.setups_lst[:3]).compress().dict()
+        sol = Setup.create(self.dcts[0]).derive(
+            {"core": {"dimensions": {"level": (0, 1, 2)}}}
+        )
         assert res == sol
 
 
@@ -365,8 +382,10 @@ class Test_SetupCollection_Group:
                 "infile": infile,
                 "outfile": infile.replace(".nc", ".png"),
                 "model": "COSMO-1",
-                "combine_species": combine_species,
-                "dimensions": {"species_id": [1, 2], "time": time},
+                "core": {
+                    "combine_species": combine_species,
+                    "dimensions": {"species_id": [1, 2], "time": time},
+                },
             }
             for infile in self.infile_lst
             for combine_species in self.combine_species_lst
@@ -375,18 +394,22 @@ class Test_SetupCollection_Group:
         assert len(base_dcts) == self.n_base
         concentration_dcts = [
             {
-                "input_variable": "concentration",
-                "combine_levels": combine_levels,
-                "dimensions": {"level": [0, 1, 2]},
+                "core": {
+                    "input_variable": "concentration",
+                    "combine_levels": combine_levels,
+                    "dimensions": {"level": [0, 1, 2]},
+                },
             }
             for combine_levels in self.combine_levels_lst
         ]
         assert len(concentration_dcts) == self.n_concentration
         deposition_dcts = [
             {
-                "input_variable": "deposition",
-                "combine_deposition_types": True,
-                "dimensions": {"deposition_type": deposition_type},
+                "core": {
+                    "input_variable": "deposition",
+                    "combine_deposition_types": True,
+                    "dimensions": {"deposition_type": deposition_type},
+                },
             }
             for deposition_type in self.deposition_type_lst
         ]

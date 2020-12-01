@@ -77,7 +77,13 @@ def test_single_section(tmp_path):
     sol = merge_dicts(
         base,
         DEFAULT_PARAMS,
-        {"input_variable": "deposition", "dimensions": {"level": None}, "lang": "de"},
+        {
+            "core": {
+                "input_variable": "deposition",
+                "dimensions": {"level": None},
+                "lang": "de",
+            }
+        },
     )
     assert res == sol
 
@@ -162,25 +168,29 @@ def test_multiple_nested_sections(tmp_path):
         base,
         DEFAULT_PARAMS,
         {
-            "input_variable": "deposition",
-            "combine_deposition_types": True,
-            "dimensions": {"level": None, "deposition_type": ("dry", "wet")},
-            "lang": "de",
+            "core": {
+                "input_variable": "deposition",
+                "combine_deposition_types": True,
+                "dimensions": {"level": None, "deposition_type": ("dry", "wet")},
+                "lang": "de",
+            }
         },
     )
     sol_specific = [
         {
-            "input_variable": "concentration",
-            "combine_deposition_types": False,
-            "dimensions": {"deposition_type": None},
+            "core": {
+                "input_variable": "concentration",
+                "combine_deposition_types": False,
+                "dimensions": {"deposition_type": None},
+            }
         },
-        {"domain": "ch", "lang": "en"},
-        {"domain": "ch", "lang": "de"},
-        {"domain": "full", "lang": "en"},
-        {"domain": "full", "lang": "de"},
-        {"dimensions": {"deposition_type": "wet"}},
-        {"lang": "en", "dimensions": {"deposition_type": "wet"}},
-        {"lang": "de", "dimensions": {"deposition_type": "wet"}},
+        {"core": {"domain": "ch", "lang": "en"}},
+        {"core": {"domain": "ch", "lang": "de"}},
+        {"core": {"domain": "full", "lang": "en"}},
+        {"core": {"domain": "full", "lang": "de"}},
+        {"core": {"dimensions": {"deposition_type": "wet"}}},
+        {"core": {"lang": "en", "dimensions": {"deposition_type": "wet"}}},
+        {"core": {"lang": "de", "dimensions": {"deposition_type": "wet"}}},
     ]
     sol = [merge_dicts(sol_base, sol_spc) for sol_spc in sol_specific]
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
@@ -235,22 +245,26 @@ def test_multiple_override(tmp_path):
         base,
         DEFAULT_PARAMS,
         {
-            "input_variable": "deposition",
-            "combine_deposition_types": True,
-            "dimensions": {"level": None, "deposition_type": ("dry", "wet")},
-            "lang": "de",
+            "core": {
+                "input_variable": "deposition",
+                "combine_deposition_types": True,
+                "dimensions": {"level": None, "deposition_type": ("dry", "wet")},
+                "lang": "de",
+            }
         },
     )
     sol_specific = [
         {
-            "input_variable": "concentration",
-            "combine_deposition_types": False,
-            "dimensions": {"deposition_type": None},
+            "core": {
+                "input_variable": "concentration",
+                "combine_deposition_types": False,
+                "dimensions": {"deposition_type": None},
+            }
         },
-        {"domain": "ch", "lang": "de"},
-        {"domain": "full", "lang": "de"},
-        {"dimensions": {"deposition_type": "wet"}},
-        {"lang": "de", "dimensions": {"deposition_type": "wet"}},
+        {"core": {"domain": "ch", "lang": "de"}},
+        {"core": {"domain": "full", "lang": "de"}},
+        {"core": {"dimensions": {"deposition_type": "wet"}}},
+        {"core": {"lang": "de", "dimensions": {"deposition_type": "wet"}}},
     ]
     sol = [merge_dicts(sol_base, sol_spc) for sol_spc in sol_specific]
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read(override=override)
@@ -378,142 +392,150 @@ def test_realcase_opr_like(tmp_path):
     dcts_sol = [
         {
             "base_time": None,
-            "combine_deposition_types": False,
-            "combine_levels": False,
-            "combine_species": False,
-            "dimensions": {
-                "deposition_type": None,
-                "level": 0,
-                "nageclass": None,
-                "noutrel": None,
-                "numpoint": None,
-                "species_id": None,
-                "time": None,
+            "core": {
+                "combine_deposition_types": False,
+                "combine_levels": False,
+                "combine_species": False,
+                "dimensions": {
+                    "deposition_type": None,
+                    "level": 0,
+                    "nageclass": None,
+                    "noutrel": None,
+                    "numpoint": None,
+                    "species_id": None,
+                    "time": None,
+                },
+                "dimensions_default": "all",
+                "domain": "full",
+                "domain_size_lat": None,
+                "domain_size_lon": None,
+                "ens_param_mem_min": None,
+                "ens_param_pctl": None,
+                "ens_param_thr": None,
+                "ens_param_thr_type": "lower",
+                "ens_variable": "none",
+                "input_variable": "concentration",
+                "integrate": False,
+                "lang": "de",
+                "multipanel_param": None,
+                "plot_type": "auto",
             },
-            "dimensions_default": "all",
-            "domain": "full",
-            "domain_size_lat": None,
-            "domain_size_lon": None,
             "ens_member_id": None,
-            "ens_param_mem_min": None,
-            "ens_param_pctl": None,
-            "ens_param_thr": None,
-            "ens_param_thr_type": "lower",
-            "ens_variable": "none",
             "infile": "data/cosmo1_2019052800.nc",
-            "input_variable": "concentration",
-            "integrate": False,
-            "lang": "de",
             "model": "COSMO-1",
-            "multipanel_param": None,
             "outfile": "concentration_{species_id}_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",
-            "plot_type": "auto",
             "scale_fact": 1.0,
         },
         {
             "base_time": None,
-            "combine_deposition_types": False,
-            "combine_levels": False,
-            "combine_species": False,
-            "dimensions": {
-                "deposition_type": None,
-                "level": 0,
-                "nageclass": None,
-                "noutrel": None,
-                "numpoint": None,
-                "species_id": None,
-                "time": -1,
+            "core": {
+                "combine_deposition_types": False,
+                "combine_levels": False,
+                "combine_species": False,
+                "dimensions": {
+                    "deposition_type": None,
+                    "level": 0,
+                    "nageclass": None,
+                    "noutrel": None,
+                    "numpoint": None,
+                    "species_id": None,
+                    "time": -1,
+                },
+                "dimensions_default": "all",
+                "domain": "full",
+                "domain_size_lat": None,
+                "domain_size_lon": None,
+                "ens_param_mem_min": None,
+                "ens_param_pctl": None,
+                "ens_param_thr": None,
+                "ens_param_thr_type": "lower",
+                "ens_variable": "none",
+                "input_variable": "concentration",
+                "integrate": True,
+                "lang": "de",
+                "multipanel_param": None,
+                "plot_type": "auto",
             },
-            "dimensions_default": "all",
-            "domain": "full",
-            "domain_size_lat": None,
-            "domain_size_lon": None,
             "ens_member_id": None,
-            "ens_param_mem_min": None,
-            "ens_param_pctl": None,
-            "ens_param_thr": None,
-            "ens_param_thr_type": "lower",
-            "ens_variable": "none",
             "infile": "data/cosmo1_2019052800.nc",
-            "input_variable": "concentration",
-            "integrate": True,
-            "lang": "de",
             "model": "COSMO-1",
-            "multipanel_param": None,
             "outfile": "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",
-            "plot_type": "auto",
             "scale_fact": 1.0,
         },
         {
             "base_time": None,
-            "combine_deposition_types": True,
-            "combine_levels": False,
-            "combine_species": True,
-            "dimensions": {
-                "deposition_type": ("dry", "wet"),
-                "level": None,
-                "nageclass": None,
-                "noutrel": None,
-                "numpoint": None,
-                "species_id": None,
-                "time": -1,
+            "core": {
+                "combine_deposition_types": True,
+                "combine_levels": False,
+                "combine_species": True,
+                "dimensions": {
+                    "deposition_type": ("dry", "wet"),
+                    "level": None,
+                    "nageclass": None,
+                    "noutrel": None,
+                    "numpoint": None,
+                    "species_id": None,
+                    "time": -1,
+                },
+                "dimensions_default": "all",
+                "domain": "full",
+                "domain_size_lat": None,
+                "domain_size_lon": None,
+                "ens_param_mem_min": None,
+                "ens_param_pctl": None,
+                "ens_param_thr": None,
+                "ens_param_thr_type": "lower",
+                "ens_variable": "none",
+                "input_variable": "deposition",
+                "integrate": True,
+                "lang": "en",
+                "multipanel_param": None,
+                "plot_type": "auto",
             },
-            "dimensions_default": "all",
-            "domain": "full",
-            "domain_size_lat": None,
-            "domain_size_lon": None,
             "ens_member_id": None,
-            "ens_param_mem_min": None,
-            "ens_param_pctl": None,
-            "ens_param_thr": None,
-            "ens_param_thr_type": "lower",
-            "ens_variable": "none",
             "infile": "data/cosmo1_2019052800.nc",
-            "input_variable": "deposition",
-            "integrate": True,
-            "lang": "en",
             "model": "COSMO-1",
-            "multipanel_param": None,
             "outfile": "tot_deposition_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",
-            "plot_type": "auto",
             "scale_fact": 1.0,
         },
         {
             "base_time": None,
-            "combine_deposition_types": True,
-            "combine_levels": False,
-            "combine_species": True,
-            "dimensions": {
-                "deposition_type": ("dry", "wet"),
-                "level": 0,
-                "nageclass": None,
-                "noutrel": None,
-                "numpoint": None,
-                "species_id": None,
-                "time": -1,
+            "core": {
+                "combine_deposition_types": True,
+                "combine_levels": False,
+                "combine_species": True,
+                "dimensions": {
+                    "deposition_type": ("dry", "wet"),
+                    "level": 0,
+                    "nageclass": None,
+                    "noutrel": None,
+                    "numpoint": None,
+                    "species_id": None,
+                    "time": -1,
+                },
+                "dimensions_default": "all",
+                "domain": "full",
+                "domain_size_lat": None,
+                "domain_size_lon": None,
+                "ens_param_mem_min": None,
+                "ens_param_pctl": None,
+                "ens_param_thr": None,
+                "ens_param_thr_type": "lower",
+                "ens_variable": "none",
+                "input_variable": "affected_area",
+                "integrate": True,
+                "lang": "en",
+                "multipanel_param": None,
+                "plot_type": "auto",
             },
-            "dimensions_default": "all",
-            "domain": "full",
-            "domain_size_lat": None,
-            "domain_size_lon": None,
             "ens_member_id": None,
-            "ens_param_mem_min": None,
-            "ens_param_pctl": None,
-            "ens_param_thr": None,
-            "ens_param_thr_type": "lower",
-            "ens_variable": "none",
             "infile": "data/cosmo1_2019052800.nc",
-            "input_variable": "affected_area",
-            "integrate": True,
-            "lang": "en",
             "model": "COSMO-1",
-            "multipanel_param": None,
             "outfile": "affected_area_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",
-            "plot_type": "auto",
             "scale_fact": 1.0,
         },
     ]
@@ -555,17 +577,21 @@ def test_wildcard_simple(tmp_path):
     sol = [
         merge_dicts(DEFAULT_PARAMS, base, dct)
         for dct in [
-            {"input_variable": "concentration", "lang": "de"},
-            {"input_variable": "concentration", "lang": "en"},
+            {"core": {"input_variable": "concentration", "lang": "de"}},
+            {"core": {"input_variable": "concentration", "lang": "en"}},
             {
-                "input_variable": "deposition",
-                "dimensions": {"level": None},
-                "lang": "de",
+                "core": {
+                    "input_variable": "deposition",
+                    "dimensions": {"level": None},
+                    "lang": "de",
+                }
             },
             {
-                "input_variable": "deposition",
-                "dimensions": {"level": None},
-                "lang": "en",
+                "core": {
+                    "input_variable": "deposition",
+                    "dimensions": {"level": None},
+                    "lang": "en",
+                }
             },
         ]
     ]
@@ -606,13 +632,17 @@ def test_double_wildcard_equal_depth(tmp_path):
         """
     base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
     sol = [
-        merge_dicts(DEFAULT_PARAMS, base, dct, {"domain": domain, "lang": lang})
+        merge_dicts(
+            DEFAULT_PARAMS, base, dct, {"core": {"domain": domain, "lang": lang}}
+        )
         for dct in [
-            {"input_variable": "concentration", "integrate": False},
+            {"core": {"input_variable": "concentration", "integrate": False}},
             {
-                "input_variable": "deposition",
-                "dimensions": {"level": None},
-                "integrate": False,
+                "core": {
+                    "input_variable": "deposition",
+                    "dimensions": {"level": None},
+                    "integrate": False,
+                }
             },
         ]
         for domain in ["ch", "full"]
@@ -661,11 +691,13 @@ def test_double_wildcard_variable_depth(tmp_path):
         """
     base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
     sol = [
-        merge_dicts(DEFAULT_PARAMS, base, dct, {"domain": domain, "lang": lang})
+        merge_dicts(
+            DEFAULT_PARAMS, base, dct, {"core": {"domain": domain, "lang": lang}}
+        )
         for dct in [
-            {"input_variable": "concentration", "dimensions": {"time": 5}},
-            {"input_variable": "concentration", "dimensions": {"time": 10}},
-            {"input_variable": "deposition", "dimensions": {"level": None}},
+            {"core": {"input_variable": "concentration", "dimensions": {"time": 5}}},
+            {"core": {"input_variable": "concentration", "dimensions": {"time": 10}}},
+            {"core": {"input_variable": "deposition", "dimensions": {"level": None}}},
         ]
         for domain in ["ch", "full"]
         for lang in ["de", "en"]
@@ -710,9 +742,11 @@ def test_combine_wildcards(tmp_path):
                 "infile": "foo_{ens_member:02d}.nc",
                 "outfile": f"bar_{ens_variable}_{{lang}}.png",
                 "model": "COSMO-baz",
-                "input_variable": input_variable,
-                "ens_variable": ens_variable,
-                "lang": lang,
+                "core": {
+                    "input_variable": input_variable,
+                    "ens_variable": ens_variable,
+                    "lang": lang,
+                },
             },
         )
         for input_variable in ["concentration", "deposition"]
@@ -744,7 +778,9 @@ class Test_IndividualParams_SingleOrMultipleValues:
         res = setups.dicts()
         base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
         sol = [
-            merge_dicts(DEFAULT_PARAMS, base, {"dimensions": {"species_id": value}})
+            merge_dicts(
+                DEFAULT_PARAMS, base, {"core": {"dimensions": {"species_id": value}}}
+            )
             for value in [1, (1, 2, 3)]
         ]
         assert res == sol
@@ -767,7 +803,9 @@ class Test_IndividualParams_SingleOrMultipleValues:
         setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
         base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
         sol = [
-            merge_dicts(DEFAULT_PARAMS, base, {"dimensions": {"level": value}})
+            merge_dicts(
+                DEFAULT_PARAMS, base, {"core": {"dimensions": {"level": value}}}
+            )
             for value in [0, (1, 2)]
         ]
         assert setups.dicts() == sol
@@ -786,7 +824,12 @@ class Test_IndividualParams_SingleOrMultipleValues:
             merge_dicts(
                 DEFAULT_PARAMS,
                 base,
-                {"input_variable": "deposition", "dimensions": {"level": None}},
+                {
+                    "core": {
+                        "input_variable": "deposition",
+                        "dimensions": {"level": None},
+                    }
+                },
             )
         ]
         assert setups.dicts() == sol
@@ -817,11 +860,13 @@ def test_multipanel_param_ens_variable(tmp_path):
     #             "infile": "data_{ens_member:02d}.nc",
     #             "outfile": "ens_stats_multipanel.png",
     #             "ens_member_id": (1, 2, 3),
-    #             "plot_type": "multipanel",
-    #             "multipanel_param": "ens_variable",
-    #             "ens_variable": ("minimum", "maximum", "mean", "median"),
-    #         }
-    #     )
+    #             "core": {
+    #                 "plot_type": "multipanel",
+    #                 "multipanel_param": "ens_variable",
+    #                 "ens_variable": ("minimum", "maximum", "mean", "median"),
+    #             },
+    #         },
+    #     ),
     # ]
     assert len(res) == len(sol)
     assert res == sol

@@ -10,25 +10,25 @@ from .shared import DUMMY_PARAMS
 
 class Test_Empty:
     def test_init_dict_vs_init(self):
-        assert Setup(**DUMMY_PARAMS).flat_dict() == Setup(**DUMMY_PARAMS)
+        assert Setup(**DUMMY_PARAMS).dict() == Setup(**DUMMY_PARAMS)
 
     def test_init_dict_vs_create_dict(self):
-        assert Setup(**DUMMY_PARAMS).flat_dict() == Setup.create({**DUMMY_PARAMS}).flat_dict()
+        assert Setup(**DUMMY_PARAMS).dict() == Setup.create({**DUMMY_PARAMS}).dict()
 
     def test_init_dict_vs_create(self):
-        assert Setup(**DUMMY_PARAMS).flat_dict() == Setup.create({**DUMMY_PARAMS})
+        assert Setup(**DUMMY_PARAMS).dict() == Setup.create({**DUMMY_PARAMS})
 
     def test_init_dict_vs_default_setup_dict(self):
-        assert Setup(**DUMMY_PARAMS).flat_dict() == DEFAULT_SETUP.flat_dict()
+        assert Setup(**DUMMY_PARAMS).dict() == DEFAULT_SETUP.dict()
 
     def test_init_dict_vs_default_setup(self):
-        assert Setup(**DUMMY_PARAMS).flat_dict() == DEFAULT_SETUP
+        assert Setup(**DUMMY_PARAMS).dict() == DEFAULT_SETUP
 
     def test_init_dict_vs_default_params_dict(self):
-        assert Setup(**DUMMY_PARAMS).flat_dict() == {**DUMMY_PARAMS, **DEFAULT_PARAMS}
+        assert Setup(**DUMMY_PARAMS).dict() == {**DUMMY_PARAMS, **DEFAULT_PARAMS}
 
     def test_init_vs_init_dict(self):
-        assert Setup(**DUMMY_PARAMS) == Setup(**DUMMY_PARAMS).flat_dict()
+        assert Setup(**DUMMY_PARAMS) == Setup(**DUMMY_PARAMS).dict()
 
     def test_init_vs_create(self):
         assert Setup(**DUMMY_PARAMS) == Setup.create({**DUMMY_PARAMS})
@@ -40,10 +40,10 @@ class Test_Empty:
         assert Setup(**DUMMY_PARAMS) == {**DUMMY_PARAMS, **DEFAULT_PARAMS}
 
     def test_create_vs_create_dict(self):
-        assert Setup.create({**DUMMY_PARAMS}) == Setup.create({**DUMMY_PARAMS}).flat_dict()
+        assert Setup.create({**DUMMY_PARAMS}) == Setup.create({**DUMMY_PARAMS}).dict()
 
     def test_default_setup_vs_default_setup_dict(self):
-        assert DEFAULT_SETUP == DEFAULT_SETUP.flat_dict()
+        assert DEFAULT_SETUP == DEFAULT_SETUP.dict()
 
 
 class Test_WildcardToNone:
