@@ -1,4 +1,4 @@
-"""Tests for module ``pyflexplot.setup``."""
+"""Tests for module ``srutils.str``."""
 
 # Standard library
 from typing import List
