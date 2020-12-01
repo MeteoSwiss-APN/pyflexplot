@@ -556,15 +556,9 @@ class Setup(BaseModel):
         return setup_repr(self)
 
     # SR_TMP <<< TODO Don't merge core params!
-    def dict(self, **kwargs) -> Dict[str, Any]:
-        # SR_TMP < Catch args that MAY interfere with dimensions
-        for arg in ["include", "exclude"]:
-            if kwargs.get(arg) is not None:
-                raise NotImplementedError(
-                    f"{type(self).__name__}.dict with argument '{arg}'", kwargs[arg]
-                )
         # SR_TMP >
-        return {
+    def flat_dict(self) -> Dict[str, Any]:
+        dct: Dict[str, Any] = {
             **{
                 param: getattr(self, param)
                 for param in self.get_params()
@@ -572,12 +566,20 @@ class Setup(BaseModel):
             },
             **self.core.dict(),
         }
+        return dct
+
+    def dict(self) -> Dict[str, Any]:
+        raise DeprecationWarning()
+        return self.flat_dict()
+
+    def copy(self):
+        return self.create(self.flat_dict())
 
     def tuple(self) -> Tuple[Tuple[str, Any], ...]:
         # + return tuple({**self.dict(), "core": self.core.tuple()}.items())
         return tuple(
             {
-                **self.dict(),
+                **self.flat_dict(),
                 "dimensions": self.core.dimensions.tuple(),
                 "core": self.core.tuple(),
             }.items()
@@ -585,9 +587,6 @@ class Setup(BaseModel):
 
     def __hash__(self) -> int:
         return hash(self.tuple())
-
-    def copy(self):
-        return self.create(self.dict())
 
     def __len__(self) -> int:
         return len(dict(self))
@@ -598,7 +597,7 @@ class Setup(BaseModel):
             return False
         # SR_DBG >
         try:
-            other_dict = other.dict()
+            other_dict = other.flat_dict()
         except AttributeError:
             try:
                 other_dict = dict(other)  # type: ignore
@@ -607,7 +606,7 @@ class Setup(BaseModel):
                     other_dict = asdict(other)
                 except TypeError:
                     return False
-        return self.dict() == other_dict
+        return self.flat_dict() == other_dict
 
     @overload
     def derive(self, params: Mapping[str, Any]) -> "Setup":
@@ -623,7 +622,7 @@ class Setup(BaseModel):
         """Derive ``Setup`` object(s) with adapted parameters."""
         if isinstance(params, Sequence):
             return SetupCollection([self.derive(params_i) for params_i in params])
-        dct = {**self.dict(), **params}
+        dct = {**self.flat_dict(), **params}
         if "dimensions" in params:
             dct["dimensions"] = self.core.dimensions.derive(params["dimensions"])
         return type(self).create(dct)
@@ -638,7 +637,7 @@ class Setup(BaseModel):
                 "cannot compress setups: input_variable differs", input_variables
             )
         # SR_TMP >
-        dcts = [setup.dict() for setup in setups]
+        dcts = [setup.flat_dict() for setup in setups]
         dct = compress_multival_dicts(dcts, cls_seq=tuple)
         if isinstance(dct["dimensions"], Sequence):
             dct["dimensions"] = compress_multival_dicts(
@@ -685,7 +684,7 @@ class Setup(BaseModel):
         """Create multiple ``Setup`` objects with one-value parameters only."""
         select_setup, select_dimensions = self._group_params(select)
         skip_setup, skip_dimensions = self._group_params(skip)
-        dct = self.dict()
+        dct = self.flat_dict()
 
         # SR_TMP < TODO Can this be moved to class Dimensions?!?
         # Handle deposition type
@@ -775,7 +774,7 @@ class SetupCollection:
         setup_lst: List[Setup] = []
         for obj in setups:
             if isinstance(obj, Setup):
-                obj = obj.dict()
+                obj = obj.flat_dict()
             # SR_TMP <
             # dcts = decompress_multival_dict(cast(dict, obj))
             skip = ["dimensions"]
@@ -917,7 +916,7 @@ class SetupCollection:
         )
 
     def dicts(self) -> List[Dict[str, Any]]:
-        return [setup.dict() for setup in self]
+        return [setup.flat_dict() for setup in self]
 
     @classmethod
     def merge(cls, setups_lst: Sequence["SetupCollection"]) -> "SetupCollection":
@@ -1212,5 +1211,5 @@ def setup_repr(obj: Union["CoreSetup", "Setup"]) -> str:
             return f"'{obj}'"
         return str(obj)
 
-    s_attrs = ",\n  ".join(f"{k}={fmt(v)}" for k, v in obj.dict().items())
+    s_attrs = ",\n  ".join(f"{k}={fmt(v)}" for k, v in obj.flat_dict().items())
     return f"{type(obj).__name__}(\n  {s_attrs},\n)"

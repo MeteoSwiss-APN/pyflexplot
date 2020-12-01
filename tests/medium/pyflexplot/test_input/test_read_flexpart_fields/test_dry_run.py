@@ -60,7 +60,7 @@ def fields_to_setup_dcts(obj, params: Optional[List[str]] = None):
         return result
     else:
         assert isinstance(obj, Field)
-        dct_all = obj.var_setups.compress().dict()
+        dct_all = obj.var_setups.compress().flat_dict()
         if params is None:
             return dct_all
         else:

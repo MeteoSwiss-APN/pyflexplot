@@ -135,7 +135,7 @@ class Test_Setup_Create:
             "ens_member_id": (0, 1, 5, 10, 15, 20),
         }
         setup = Setup.create(params)
-        res = setup.dict()
+        res = setup.flat_dict()
         check_summary_dict_is_subdict(superdict=res, subdict=params)
 
 
@@ -313,17 +313,17 @@ class Test_SetupCollection_Compress:
     setups_lst = [Setup.create(dct) for dct in dcts]
 
     def test_one(self):
-        res = SetupCollection(self.setups_lst[:1]).compress().dict()
+        res = SetupCollection(self.setups_lst[:1]).compress().flat_dict()
         sol = self.setups_lst[0]
         assert res == sol
 
     def test_two(self):
-        res = SetupCollection(self.setups_lst[:2]).compress().dict()
+        res = SetupCollection(self.setups_lst[:2]).compress().flat_dict()
         sol = Setup.create(self.dcts[0]).derive({"dimensions": {"level": (0, 1)}})
         assert res == sol
 
     def test_three(self):
-        res = SetupCollection(self.setups_lst[:3]).compress().dict()
+        res = SetupCollection(self.setups_lst[:3]).compress().flat_dict()
         sol = Setup.create(self.dcts[0]).derive({"dimensions": {"level": (0, 1, 2)}})
         assert res == sol
 
