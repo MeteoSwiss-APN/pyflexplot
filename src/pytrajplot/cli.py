@@ -14,6 +14,7 @@ from pyflexplot.cli.click import click_set_verbosity
 from pyflexplot.cli.click import wrap_callback
 from pyflexplot.cli.click import wrap_pdb
 from pyflexplot.cli.preset import add_to_preset_paths
+from pyflexplot.cli.preset_click import click_use_preset
 
 # Local
 from . import __version__
@@ -34,6 +35,17 @@ click.option = functools.partial(click.option, show_default=True)  # type: ignor
     help="Drop into debugger when an exception is raised.",
     callback=click_set_pdb,
     is_eager=True,
+    expose_value=False,
+)
+@click.option(
+    "--preset",
+    help=(
+        "Run with preset setup files matching PATTERN (wildcards: '*', '?')."
+        " A single '?' lists all available setups (like --setup-list)."
+    ),
+    metavar="PATTERN",
+    multiple=True,
+    callback=wrap_callback(click_use_preset),
     expose_value=False,
 )
 @click.option(
