@@ -4,7 +4,9 @@ import pytest
 
 # First-party
 from srutils.str import split_outside_parens
-from srutils.testing import not_raises
+
+# Local
+from .utils import not_raises
 
 
 def test_no_parens():

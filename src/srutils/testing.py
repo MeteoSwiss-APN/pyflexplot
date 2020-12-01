@@ -1,22 +1,16 @@
 """Some testing utils."""
 # Standard library
-from contextlib import contextmanager
 from dataclasses import dataclass
 from pprint import pformat
 from typing import Any
 from typing import Collection
 from typing import Dict
-from typing import Generator
 from typing import Mapping
 from typing import Optional
 from typing import Sequence
-from typing import Tuple
-from typing import Type
-from typing import Union
 
 # Third-party
 import numpy as np
-import pytest
 
 # Local
 from .iter import isiterable
@@ -25,21 +19,6 @@ from .str import sfmt
 
 class CheckFailedError(Exception):
     pass
-
-
-@contextmanager
-def not_raises(
-    unexpected_exception: Union[Type[Exception], Tuple[Type[Exception]]]
-) -> Generator[None, None, None]:
-    """Test that an exception is not raised.
-
-    Based on: https://stackoverflow.com/a/42327075/4419816
-
-    """
-    try:
-        yield
-    except unexpected_exception:
-        raise pytest.fail(f"DID RAISE {unexpected_exception}")
 
 
 def property_obj(cls, *args, **kwargs):
