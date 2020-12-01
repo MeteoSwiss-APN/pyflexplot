@@ -97,60 +97,6 @@ class Dimensions:
         assert all(isinstance(obj, CoreDimensions) for obj in core)
         self._core: List[CoreDimensions] = list(core)
 
-    def __repr__(self) -> str:
-        head = f"{type(self).__name__}"
-        lines = [f"{param}={value}" for param, value in self.dict().items()]
-        body = join_multilines(lines, indent=2)
-        return f"{head}(\n{body}\n)"
-
-    @classmethod
-    def create(cls, params: Union["Dimensions", Mapping[str, Any]]) -> "Dimensions":
-        if isinstance(params, cls):
-            params = params.dict()
-        else:
-            assert isinstance(params, Mapping)  # mypy
-            params = cast(MutableMapping, params)
-            params = dict(**params)
-        n_max = 1
-        for param, value in params.items():
-            if not isinstance(value, Sequence) or isinstance(value, str):
-                assert isinstance(params, MutableMapping)  # mypy
-                params[param] = [value]
-            else:
-                n_max = max(n_max, len(value))
-        core_dims_lst: List[CoreDimensions] = []
-        for idx in range(n_max):
-            core_params = {}
-            for param, values in params.items():
-                assert isinstance(values, Sequence)  # mypy
-                try:
-                    core_params[param] = values[idx]
-                except IndexError:
-                    pass
-            core_dims = CoreDimensions.create(core_params)
-            core_dims_lst.append(core_dims)
-        return cls(core_dims_lst)
-
-    @classmethod
-    def cast(cls, param: str, value: Any, many_ok: bool = False) -> Any:
-        """Cast a parameter to the appropriate type."""
-        if isinstance(value, Sequence) and not isinstance(value, str):
-            sub_values = []
-            for sub_value in value:
-                sub_values.append(cls.cast(param, sub_value, many_ok))
-            if len(sub_values) == 1:
-                return next(iter(sub_values))
-            return tuple(sub_values)
-        return CoreDimensions.cast(param, value, many_ok)
-
-    @classmethod
-    def merge(cls, objs: Sequence["Dimensions"]) -> "Dimensions":
-        return cls([core_setup for obj in objs for core_setup in obj])
-
-    def derive(self, params: Mapping[str, Any]) -> "Dimensions":
-        """Derive a new ``Dimensions`` object with some changed parameters."""
-        return type(self).create({**self.dict(), **params})
-
     def get(
         self, param: str, *, unpack_single: bool = True
     ) -> Optional[Union[Any, Tuple[Any, ...]]]:
@@ -206,28 +152,9 @@ class Dimensions:
         for param, value in other.items():
             self.set(param, value)
 
-    def dict(self) -> Dict[str, Optional[Union[int, Tuple[int, ...]]]]:
-        """Return a compact dictionary representation.
-
-        See method ``get`` for information of how the values of each
-        parameter are compacted.
-
-        """
-        return {param: self.get(param) for param in self.params}
-
-    def raw_dict(self) -> Dict[str, Tuple[Any, ...]]:
-        """Return a raw dictionary representation.
-
-        The parameter values are unordered, with duplicates and Nones retained.
-
-        """
-        return {param: self.get_raw(param) for param in self.params}
-
-    def tuple(self) -> Tuple[Tuple[str, Any], ...]:
-        return tuple(self.dict().items())
-
-    def __hash__(self) -> int:
-        return hash(self.tuple())
+    def derive(self, params: Mapping[str, Any]) -> "Dimensions":
+        """Derive a new ``Dimensions`` object with some changed parameters."""
+        return type(self).create({**self.dict(), **params})
 
     # pylint: disable=R0912  # too-many-branches
     # pylint: disable=R0915  # too-many-statements
@@ -318,6 +245,32 @@ class Dimensions:
 
         return None if inplace else obj
 
+    def dict(self) -> Dict[str, Optional[Union[int, Tuple[int, ...]]]]:
+        """Return a compact dictionary representation.
+
+        See method ``get`` for information of how the values of each
+        parameter are compacted.
+
+        """
+        return {param: self.get(param) for param in self.params}
+
+    def raw_dict(self) -> Dict[str, Tuple[Any, ...]]:
+        """Return a raw dictionary representation.
+
+        The parameter values are unordered, with duplicates and Nones retained.
+
+        """
+        return {param: self.get_raw(param) for param in self.params}
+
+    def tuple(self) -> Tuple[Tuple[str, Any], ...]:
+        return tuple(self.dict().items())
+
+    def copy(self) -> "Dimensions":
+        return self.create(self.dict())
+
+    def __hash__(self) -> int:
+        return hash(self.tuple())
+
     def __eq__(self, other) -> bool:
         try:
             other_dict = other.dict()
@@ -339,3 +292,53 @@ class Dimensions:
             self.set(name, value)
         else:
             super().__setattr__(name, value)
+
+    def __repr__(self) -> str:
+        head = f"{type(self).__name__}"
+        lines = [f"{param}={value}" for param, value in self.dict().items()]
+        body = join_multilines(lines, indent=2)
+        return f"{head}(\n{body}\n)"
+
+    @classmethod
+    def create(cls, params: Union["Dimensions", Mapping[str, Any]]) -> "Dimensions":
+        if isinstance(params, cls):
+            params = params.dict()
+        else:
+            assert isinstance(params, Mapping)  # mypy
+            params = cast(MutableMapping, params)
+            params = dict(**params)
+        n_max = 1
+        for param, value in params.items():
+            if not isinstance(value, Sequence) or isinstance(value, str):
+                assert isinstance(params, MutableMapping)  # mypy
+                params[param] = [value]
+            else:
+                n_max = max(n_max, len(value))
+        core_dims_lst: List[CoreDimensions] = []
+        for idx in range(n_max):
+            core_params = {}
+            for param, values in params.items():
+                assert isinstance(values, Sequence)  # mypy
+                try:
+                    core_params[param] = values[idx]
+                except IndexError:
+                    pass
+            core_dims = CoreDimensions.create(core_params)
+            core_dims_lst.append(core_dims)
+        return cls(core_dims_lst)
+
+    @classmethod
+    def cast(cls, param: str, value: Any, many_ok: bool = False) -> Any:
+        """Cast a parameter to the appropriate type."""
+        if isinstance(value, Sequence) and not isinstance(value, str):
+            sub_values = []
+            for sub_value in value:
+                sub_values.append(cls.cast(param, sub_value, many_ok))
+            if len(sub_values) == 1:
+                return next(iter(sub_values))
+            return tuple(sub_values)
+        return CoreDimensions.cast(param, value, many_ok)
+
+    @classmethod
+    def merge(cls, objs: Sequence["Dimensions"]) -> "Dimensions":
+        return cls([core_setup for obj in objs for core_setup in obj])
