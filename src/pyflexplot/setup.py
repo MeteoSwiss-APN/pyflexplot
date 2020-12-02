@@ -360,27 +360,6 @@ class Setup:
         }
         return type(self).create(dct)
 
-    def dict(self) -> Dict[str, Any]:
-        dct: Dict[str, Any] = {}
-        for param in self.get_params():
-            value = getattr(self, param)
-            try:
-                dct[param] = value.dict()
-            except AttributeError:
-                dct[param] = value
-        return dct
-
-    def copy(self):
-        return self.create(self.dict())
-
-    def decompress(self, skip: Optional[Collection[str]] = None) -> "SetupCollection":
-        return self._decompress(select=None, skip=skip)
-
-    def decompress_partially(
-        self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None
-    ) -> "SetupCollection":
-        return self._decompress(select, skip)
-
     # pylint: disable=R0912  # too-many-branches (>12)
     # pylint: disable=R0914  # too-many-locals
     def _decompress(
@@ -448,6 +427,23 @@ class Setup:
                     dcts.append(dct_ijk)
 
         return SetupCollection([Setup.create(dct) for dct in dcts])
+
+    def dict(self) -> Dict[str, Any]:
+        return {
+            **asdict(self),
+            "core": self.core.dict(),
+        }
+
+    def copy(self):
+        return self.create(self.dict())
+
+    def decompress(self, skip: Optional[Collection[str]] = None) -> "SetupCollection":
+        return self._decompress(select=None, skip=skip)
+
+    def decompress_partially(
+        self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None
+    ) -> "SetupCollection":
+        return self._decompress(select, skip)
 
     def _tuple(self) -> Tuple[Tuple[str, Any], ...]:
         dct = self.dict()
