@@ -2,6 +2,8 @@
 """Plot setup and setup files."""
 # Standard library
 import dataclasses
+from dataclasses import asdict
+from dataclasses import dataclass
 from typing import Any
 from typing import cast
 from typing import Dict
@@ -15,9 +17,6 @@ from typing import Tuple
 from typing import Union
 
 # Third-party
-from pydantic import BaseModel
-from pydantic import ValidationError
-from pydantic import validator
 from typing_extensions import Literal
 
 # First-party
@@ -26,23 +25,18 @@ from srutils.str import join_multilines
 
 # Local
 from .utils.pydantic import cast_field_value
-from .utils.pydantic import prepare_field_value
 from .utils.summarize import summarizable
 
 
 # SR_TODO Clean up docstring -- where should format key hints go?
-# pylint: disable=E0213  # no-self-argument (validator)
-class CoreDimensions(BaseModel):
+@dataclass
+class CoreDimensions:
     """Selected dimensions.
 
     See docstring of ``Setup.create`` (in module ``pyflexplot.setup``) for a
     description of the parameters.
 
     """
-
-    class Config:  # noqa
-        # allow_mutation = False
-        extra = "forbid"
 
     deposition_type: Optional[str] = None
     level: Optional[int] = None
@@ -52,29 +46,24 @@ class CoreDimensions(BaseModel):
     species_id: Optional[int] = None
     time: Optional[int] = None
 
-    # pylint: disable=R0201  # no-self-use
-    @validator("deposition_type", always=True)
-    def _check_deposition_type(cls, value: Optional[str]) -> Optional[str]:
-        assert value in [None, "dry", "wet"]
-        return value
+    def __post_init__(self) -> None:
+        # Check deposition_type
+        choices = [None, "dry", "wet"]
+        if self.deposition_type not in choices:
+            raise ValueError(
+                f"deposition_type '{self.deposition_type}' not among {choices}"
+            )
+
+    def dict(self) -> Dict[str, Any]:
+        return asdict(self)
 
     @classmethod
     def create(cls, params: Dict[str, Any]) -> "CoreDimensions":
         for param, value in params.items():
-            field = cls.__fields__[param]
-            try:
-                params[param] = prepare_field_value(field, value, alias_none=["*"])
-            except Exception as error:
-                raise ValueError("invalid parameter value", param, value) from error
-        try:
-            return cls(**params)
-        except ValidationError as error:
-            msg = f"error creating {cls.__name__} object"
-            error_params = next(iter(error.errors()))
-            if error_params["type"] == "value_error.missing":
-                param = next(iter(error_params["loc"]))
-                msg += f": missing parameter: {param}"
-            raise Exception(msg) from error
+            if value == "*":
+                value = None
+            params[param] = cls.cast(param, value)
+        return cls(**params)
 
     @classmethod
     def cast(cls, param: str, value: Any, many_ok: bool = False) -> Any:
@@ -84,7 +73,7 @@ class CoreDimensions(BaseModel):
 
     @classmethod
     def get_params(cls) -> List[str]:
-        return list(cls.__fields__)
+        return list(cls.__dataclass_fields__)  # type: ignore  # pylint: disable=E1101
 
 
 @summarizable(summarize=lambda self: self.dict())  # type: ignore
@@ -92,7 +81,7 @@ class CoreDimensions(BaseModel):
 class Dimensions:
     """A collection of Dimensions objects."""
 
-    params: Tuple[str, ...] = tuple(CoreDimensions.__fields__)
+    params: Tuple[str, ...] = tuple(CoreDimensions.get_params())
 
     def __init__(self, core: Optional[Sequence[CoreDimensions]] = None) -> None:
         """Create an instance of ``Dimensions``."""
