@@ -25,7 +25,6 @@ from typing import Union
 
 # Third-party
 import toml
-from pydantic import BaseModel
 from pydantic import ValidationError
 from typing_extensions import Literal
 
@@ -292,17 +291,13 @@ class CoreSetup:
 
 
 # SR_TODO Clean up docstring -- where should format key hints go?
-class Setup(BaseModel):
+@dataclass
+class Setup:
     """PyFlexPlot setup.
 
     See docstring of ``Setup.create`` for details on parameters.
 
     """
-
-    class Config:  # noqa
-        # allow_mutation = False
-        arbitrary_types_allowed = True
-        extra = "forbid"
 
     infile: str  # = "none"
     outfile: Union[str, Tuple[str, ...]]  # = "none"
@@ -469,7 +464,7 @@ class Setup(BaseModel):
 
     @classmethod
     def get_params(cls) -> List[str]:
-        return list(cls.__fields__)
+        return list(cls.__dataclass_fields__)  # type: ignore  # pylint: disable=E1101
 
     @classmethod
     def as_setup(cls, obj: Union[Mapping[str, Any], "Setup"]) -> "Setup":
@@ -577,7 +572,7 @@ class Setup(BaseModel):
         return hash(self._tuple())
 
     def __len__(self) -> int:
-        return len(dict(self))
+        return len(self.dict())
 
     def __eq__(self, other: Any) -> bool:
         # SR_DBG <
