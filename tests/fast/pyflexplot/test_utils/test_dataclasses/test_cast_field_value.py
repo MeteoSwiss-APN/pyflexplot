@@ -2,6 +2,8 @@
 # Standard library
 from dataclasses import dataclass
 from dataclasses import field
+from datetime import datetime
+from datetime import timedelta
 from typing import Any
 from typing import Dict
 from typing import Optional
@@ -316,6 +318,45 @@ class TestUnion:
         "cfg",
         [
             Cfg("str_int", [1]),  # [cfg0]
+        ],
+    )
+    def test_fail(self, cfg):
+        with pytest.raises(cfg.sol or InvalidParameterValueError):
+            cast_field_value(self.Params, cfg.param, cfg.val)
+
+
+class TestDatetime:
+    @dataclass
+    class Params:
+        dt: datetime
+        td: timedelta
+        opt_dt: Optional[datetime]
+        opt_td: Optional[timedelta]
+        tup_dts: Tuple[datetime, ...]
+        tup_tds: Tuple[timedelta, ...]
+
+    @pytest.mark.parametrize(
+        "cfg",
+        [
+            Cfg("dt", "202012021308", datetime(2020, 12, 2, 13, 8)),  # [cfg0]
+            Cfg("dt", 202012021308, datetime(2020, 12, 2, 13, 8)),  # [cfg1]
+            Cfg("dt", 2020120213, datetime(2020, 12, 2, 1, 3)),  # [cfg2]
+        ],
+    )
+    def test_ok(self, cfg):
+        res = cast_field_value(self.Params, cfg.param, cfg.val, **cfg.kw)
+        if isinstance(cfg.sol, Sequence):
+            assert isinstance(res, type(cfg.sol))
+            assert len(res) == len(cfg.sol)
+            assert all([isinstance(r, type(s)) for r, s in zip(res, cfg.sol)])
+            assert res == cfg.sol
+        else:
+            assert res == cfg.sol
+
+    @pytest.mark.parametrize(
+        "cfg",
+        [
+            Cfg("dt", "2020-12-02"),  # [cfg0]
         ],
     )
     def test_fail(self, cfg):

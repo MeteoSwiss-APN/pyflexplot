@@ -1,10 +1,13 @@
 """Utilities for dataclasses."""
 # Standard library
+from datetime import datetime
+from datetime import timedelta
 from typing import Any
 from typing import Collection
 from typing import Dict
 from typing import get_type_hints
 from typing import Sequence
+from typing import Tuple
 from typing import Type
 from typing import Union
 
@@ -51,6 +54,7 @@ def cast_value(
     *,
     auto_wrap: bool = False,
     bool_mode: str = "native",
+    datetime_fmt: Union[str, Tuple[str, ...]] = "%Y%m%d%H%M",
     unpack_str: bool = True,
 ) -> Any:
     """Cast a value to a type.
@@ -65,6 +69,9 @@ def cast_value(
 
         bool_mode (optional): Whether cast the string "False" to True ('native')
             or to False ('intuitive').
+
+        datetime_fmt (optional): One or more format strings to convert datetime
+            ints or strings to datetime objects.
 
         unpack_str (optional): Unpack strings, i.e., treat a string as a
             sequence of one-character strings, as is their default behavior.
@@ -180,5 +187,14 @@ def cast_value(
             except ValueError:
                 pass
         raise value_error(value, type_, f"no compatible inner type: {inner_types}")
+
+    elif type_ == "datetime":
+        for fmt in [datetime_fmt] if isinstance(datetime_fmt, str) else datetime_fmt:
+            try:
+                return datetime.strptime(str(value), fmt)
+            except ValueError:
+                pass
+        raise value_error(value, type_, f"no compatible datetime_fmt: {datetime_fmt}")
+
     else:
         raise NotImplementedError(f"type '{type_}'")
