@@ -25,4 +25,4 @@ repos:
     rev: 5.1.1
     hooks:
     -   id: pydocstyle
-        files: ^(src|tests)/(.*/)*.*\.py$
+        files: ^src/(.*/)*.*\.py$
