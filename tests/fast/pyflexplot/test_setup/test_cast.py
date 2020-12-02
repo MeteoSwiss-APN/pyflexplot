@@ -4,7 +4,7 @@ import pytest  # type: ignore
 
 # First-party
 from pyflexplot.setup import Setup
-from pyflexplot.utils.pydantic import InvalidParameterValueError
+from pyflexplot.utils.exceptions import InvalidParameterValueError
 
 
 class Test_CastSingle:

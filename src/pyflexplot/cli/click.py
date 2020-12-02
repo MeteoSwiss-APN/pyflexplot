@@ -10,8 +10,8 @@ from click import Context
 
 # Local
 from ..setup import Setup
+from ..utils.exceptions import InvalidParameterNameError
 from ..utils.logging import set_log_level
-from ..utils.pydantic import InvalidParameterNameError
 
 
 def click_error(

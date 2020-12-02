@@ -24,7 +24,7 @@ from srutils.iter import resolve_negative_indices
 from srutils.str import join_multilines
 
 # Local
-from .utils.pydantic import cast_field_value
+from .utils.dataclasses import cast_field_value
 from .utils.summarize import summarizable
 
 
@@ -66,10 +66,17 @@ class CoreDimensions:
         return cls(**params)
 
     @classmethod
-    def cast(cls, param: str, value: Any, many_ok: bool = False) -> Any:
+    def cast(cls, param: str, value: Any) -> Any:
         if value is None:
             return None
-        return cast_field_value(cls, param, value, many_ok)
+        return cast_field_value(
+            cls,
+            param,
+            value,
+            auto_wrap=True,
+            bool_mode="intuitive",
+            unpack_str=False,
+        )
 
     @classmethod
     def get_params(cls) -> List[str]:
@@ -327,16 +334,16 @@ class Dimensions:
         return cls(core_dims_lst)
 
     @classmethod
-    def cast(cls, param: str, value: Any, many_ok: bool = False) -> Any:
+    def cast(cls, param: str, value: Any) -> Any:
         """Cast a parameter to the appropriate type."""
         if isinstance(value, Sequence) and not isinstance(value, str):
             sub_values = []
             for sub_value in value:
-                sub_values.append(cls.cast(param, sub_value, many_ok))
+                sub_values.append(cls.cast(param, sub_value))
             if len(sub_values) == 1:
                 return next(iter(sub_values))
             return tuple(sub_values)
-        return CoreDimensions.cast(param, value, many_ok)
+        return CoreDimensions.cast(param, value)
 
     @classmethod
     def merge(cls, objs: Sequence["Dimensions"]) -> "Dimensions":

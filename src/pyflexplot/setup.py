@@ -38,9 +38,9 @@ from srutils.str import join_multilines
 # Local
 from .dimensions import CoreDimensions
 from .dimensions import Dimensions
+from .utils.dataclasses import cast_field_value
+from .utils.exceptions import InvalidParameterNameError
 from .utils.exceptions import UnequalSetupParamValuesError
-from .utils.pydantic import cast_field_value
-from .utils.pydantic import InvalidParameterNameError
 
 # Some plot-specific default values
 ENS_PROBABILITY_DEFAULT_PARAM_THR = 0.0
@@ -627,7 +627,14 @@ class Setup:
         params = dict(**params)
         core_params = params.pop("core", {})
         params = {
-            param: cast_field_value(cls, param, value)
+            param: cast_field_value(
+                cls,
+                param,
+                value,
+                auto_wrap=True,
+                bool_mode="intuitive",
+                unpack_str=False,
+            )
             for param, value in params.items()
         }
         if core_params:
@@ -665,9 +672,7 @@ class Setup:
             result: Dict[str, Any] = {}
             for dim_param, dim_value in value.items():
                 try:
-                    result[dim_param] = Dimensions.cast(
-                        dim_param, dim_value, many_ok=True
-                    )
+                    result[dim_param] = Dimensions.cast(dim_param, dim_value)
                 except InvalidParameterNameError as e:
                     raise InvalidParameterNameError(
                         f"{dim_param} ({type(dim_value).__name__}: {dim_value})"
@@ -676,10 +681,24 @@ class Setup:
             return result
         try:
             if is_dimensions_param(param):
-                return Dimensions.cast(param, value, many_ok=True)
+                return Dimensions.cast(param, value)
             elif is_core_setup_param(param):
-                return cast_field_value(CoreSetup, param, value)
-            return cast_field_value(cls, param, value)
+                return cast_field_value(
+                    CoreSetup,
+                    param,
+                    value,
+                    auto_wrap=True,
+                    bool_mode="intuitive",
+                    unpack_str=False,
+                )
+            return cast_field_value(
+                cls,
+                param,
+                value,
+                auto_wrap=True,
+                bool_mode="intuitive",
+                unpack_str=False,
+            )
         except InvalidParameterNameError as e:
             raise InvalidParameterNameError(
                 f"{param} ({type(value).__name__}: {value})"
