@@ -268,14 +268,14 @@ class Dimensions:
         """
         return {param: self.get_raw(param) for param in self.params}
 
-    def tuple(self) -> Tuple[Tuple[str, Any], ...]:
-        return tuple(self.dict().items())
-
     def copy(self) -> "Dimensions":
         return self.create(self.dict())
 
+    def _tuple(self) -> Tuple[Tuple[str, Any], ...]:
+        return tuple(self.dict().items())
+
     def __hash__(self) -> int:
-        return hash(self.tuple())
+        return hash(self._tuple())
 
     def __eq__(self, other) -> bool:
         # SR_DBG <
