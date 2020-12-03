@@ -270,7 +270,7 @@ class OptionalTuple:
     )
     def test_fail(self, cfg):
         with pytest.raises(cfg.sol or InvalidParameterValueError):
-            cast_field_value(self.Params, cfg.param, cfg.val)
+            cast_field_value(self.Params, cfg.param, cfg.val, **cfg.kw)
 
 
 class TestUnion:
@@ -322,7 +322,7 @@ class TestUnion:
     )
     def test_fail(self, cfg):
         with pytest.raises(cfg.sol or InvalidParameterValueError):
-            cast_field_value(self.Params, cfg.param, cfg.val)
+            cast_field_value(self.Params, cfg.param, cfg.val, **cfg.kw)
 
 
 class TestDatetime:
@@ -361,4 +361,4 @@ class TestDatetime:
     )
     def test_fail(self, cfg):
         with pytest.raises(cfg.sol or InvalidParameterValueError):
-            cast_field_value(self.Params, cfg.param, cfg.val)
+            cast_field_value(self.Params, cfg.param, cfg.val, **cfg.kw)
