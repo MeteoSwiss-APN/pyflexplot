@@ -22,6 +22,8 @@ from pyflexplot.utils.exceptions import InvalidParameterValueError
 # Abbreviations
 T = True
 F = False
+dt = datetime
+td = timedelta
 
 
 @dataclass
@@ -329,18 +331,25 @@ class TestDatetime:
     @dataclass
     class Params:
         dt: datetime
-        td: timedelta
         opt_dt: Optional[datetime]
-        opt_td: Optional[timedelta]
         tup_dts: Tuple[datetime, ...]
-        tup_tds: Tuple[timedelta, ...]
 
     @pytest.mark.parametrize(
         "cfg",
         [
-            Cfg("dt", "202012021308", datetime(2020, 12, 2, 13, 8)),  # [cfg0]
-            Cfg("dt", 202012021308, datetime(2020, 12, 2, 13, 8)),  # [cfg1]
-            Cfg("dt", 2020120213, datetime(2020, 12, 2, 1, 3)),  # [cfg2]
+            Cfg("dt", "202012021308", dt(2020, 12, 2, 13, 8)),  # [cfg0]
+            Cfg("dt", 202012021308, dt(2020, 12, 2, 13, 8)),  # [cfg1]
+            # SR_TODO < Find out how to avoid this! Why not 2020-12-01-13?!?
+            Cfg("dt", 2020120213, dt(2020, 12, 2, 1, 3)),  # [cfg2]
+            # SR_TODO >
+            Cfg(
+                "dt", "2020-12-02", dt(2020, 12, 2), kw={"datetime_fmt": "%Y-%m-%d"}
+            ),  # [cfg3]
+            Cfg("opt_dt", None, None),  # [cfg4]
+            Cfg("opt_dt", "202012021308", dt(2020, 12, 2, 13, 8)),  # [cfg5]
+            Cfg("opt_dt", 202012021308, dt(2020, 12, 2, 13, 8)),  # [cfg6]
+            Cfg("opt_dt", "None", None),  # [cfg7]
+            Cfg("tup_dts", ["202012021308"], (dt(2020, 12, 2, 13, 8),)),  # [cfg5]
         ],
     )
     def test_ok(self, cfg):
@@ -357,6 +366,42 @@ class TestDatetime:
         "cfg",
         [
             Cfg("dt", "2020-12-02"),  # [cfg0]
+            Cfg("dt", "202012021308", kw={"datetime_fmt": "%Y-%m-%d"}),  # [cfg1]
+            Cfg("tup_dts", "202012021308"),  # [cfg2]
+        ],
+    )
+    def test_fail(self, cfg):
+        with pytest.raises(cfg.sol or InvalidParameterValueError):
+            cast_field_value(self.Params, cfg.param, cfg.val, **cfg.kw)
+
+
+class TestTimedelta:
+    @dataclass
+    class Params:
+        td: timedelta
+        opt_td: Optional[timedelta]
+        tup_tds: Tuple[timedelta, ...]
+
+    @pytest.mark.parametrize(
+        "cfg",
+        [
+            # Cfg("td", 0, td(0))),  # [cfg0]
+        ],
+    )
+    def test_ok(self, cfg):
+        res = cast_field_value(self.Params, cfg.param, cfg.val, **cfg.kw)
+        if isinstance(cfg.sol, Sequence):
+            assert isinstance(res, type(cfg.sol))
+            assert len(res) == len(cfg.sol)
+            assert all([isinstance(r, type(s)) for r, s in zip(res, cfg.sol)])
+            assert res == cfg.sol
+        else:
+            assert res == cfg.sol
+
+    @pytest.mark.parametrize(
+        "cfg",
+        [
+            # Cfg("td", "X"),  # [cfg0]
         ],
     )
     def test_fail(self, cfg):

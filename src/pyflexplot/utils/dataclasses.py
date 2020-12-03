@@ -108,6 +108,10 @@ def cast_value(
                 "NoneType": type(None),
                 "typing.Tuple": tuple,
                 "typing.List": list,
+                "datetime": datetime,
+                "timedelta": timedelta,
+                "datetime.datetime": datetime,
+                "datetime.timedelta": timedelta,
             }[type_.split("[")[0]]
         except KeyError as e:
             raise NotImplementedError(f"type check for '{type_}'") from e
@@ -188,7 +192,7 @@ def cast_value(
                 pass
         raise value_error(value, type_, f"no compatible inner type: {inner_types}")
 
-    elif type_ == "datetime":
+    elif type_ in ["datetime", "datetime.datetime"]:
         for fmt in [datetime_fmt] if isinstance(datetime_fmt, str) else datetime_fmt:
             try:
                 return datetime.strptime(str(value), fmt)
