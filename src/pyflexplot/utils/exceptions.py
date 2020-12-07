@@ -1,7 +1,7 @@
 """Exceptions."""
 
 
-# Primary
+# Derived from ``Exception``
 
 
 class ArrayDimensionError(Exception):
@@ -52,11 +52,15 @@ class NotSummarizableError(Exception):
     """Object could not be summarized."""
 
 
+class TypeCastError(Exception):
+    """Error casting a value to a type."""
+
+
 class UnequalSetupParamValuesError(Exception):
     """Values of a param differs between multiple setups."""
 
 
-# Derived
+# Derived from custom exceptions
 
 
 class InvalidParameterNameError(InvalidParameterError):

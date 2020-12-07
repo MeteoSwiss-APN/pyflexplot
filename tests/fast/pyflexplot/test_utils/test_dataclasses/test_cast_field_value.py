@@ -339,17 +339,14 @@ class TestDatetime:
         [
             Cfg("dt", "202012021308", dt(2020, 12, 2, 13, 8)),  # [cfg0]
             Cfg("dt", 202012021308, dt(2020, 12, 2, 13, 8)),  # [cfg1]
-            # SR_TODO < Find out how to avoid this! Why not 2020-12-01-13?!?
-            Cfg("dt", 2020120213, dt(2020, 12, 2, 1, 3)),  # [cfg2]
-            # SR_TODO >
             Cfg(
                 "dt", "2020-12-02", dt(2020, 12, 2), kw={"datetime_fmt": "%Y-%m-%d"}
-            ),  # [cfg3]
-            Cfg("opt_dt", None, None),  # [cfg4]
-            Cfg("opt_dt", "202012021308", dt(2020, 12, 2, 13, 8)),  # [cfg5]
-            Cfg("opt_dt", 202012021308, dt(2020, 12, 2, 13, 8)),  # [cfg6]
-            Cfg("opt_dt", "None", None),  # [cfg7]
-            Cfg("tup_dts", ["202012021308"], (dt(2020, 12, 2, 13, 8),)),  # [cfg5]
+            ),  # [cfg2]
+            Cfg("opt_dt", None, None),  # [cfg3]
+            Cfg("opt_dt", "202012021308", dt(2020, 12, 2, 13, 8)),  # [cfg4]
+            Cfg("opt_dt", 202012021308, dt(2020, 12, 2, 13, 8)),  # [cfg5]
+            Cfg("opt_dt", "None", None),  # [cfg6]
+            Cfg("tup_dts", ["202012021308"], (dt(2020, 12, 2, 13, 8),)),  # [cfg7]
         ],
     )
     def test_ok(self, cfg):
@@ -366,8 +363,9 @@ class TestDatetime:
         "cfg",
         [
             Cfg("dt", "2020-12-02"),  # [cfg0]
-            Cfg("dt", "202012021308", kw={"datetime_fmt": "%Y-%m-%d"}),  # [cfg1]
-            Cfg("tup_dts", "202012021308"),  # [cfg2]
+            Cfg("dt", "2020-12-02", kw={"datetime_fmt": "auto"}),  # [cfg1]
+            Cfg("dt", "202012021308", kw={"datetime_fmt": "%Y-%m-%d"}),  # [cfg2]
+            Cfg("tup_dts", "202012021308"),  # [cfg3]
         ],
     )
     def test_fail(self, cfg):
@@ -385,7 +383,20 @@ class TestTimedelta:
     @pytest.mark.parametrize(
         "cfg",
         [
-            # Cfg("td", 0, td(0))),  # [cfg0]
+            Cfg("td", 0, td(0)),  # [cfg0]
+            Cfg("td", 1, td(hours=24)),  # [cfg1]
+            Cfg("td", 1, td(1), kw={"timedelta_unit": "days"}),  # [cfg2]
+            Cfg("td", 1, td(hours=1), kw={"timedelta_unit": "hours"}),  # [cfg3]
+            Cfg("opt_td", "None", None),  # [cfg4]
+            Cfg("opt_td", 0, td(0)),  # [cfg5]
+            Cfg("opt_td", 7, td(weeks=1)),  # [cfg6]
+            Cfg(
+                "tup_tds",
+                [1, 2, 3],
+                (td(1 / 24), td(2 / 24), td(3 / 24)),
+                kw={"timedelta_unit": "hours"},
+            ),  # [cfg7]
+            Cfg("tup_tds", 4, (td(4),), kw={"auto_wrap": True}),  # [cfg8]
         ],
     )
     def test_ok(self, cfg):
@@ -401,7 +412,10 @@ class TestTimedelta:
     @pytest.mark.parametrize(
         "cfg",
         [
-            # Cfg("td", "X"),  # [cfg0]
+            Cfg("td", "foo"),  # [cfg0]
+            Cfg("td", 1, ValueError, kw={"timedelta_unit": "hour"}),  # [cfg1]
+            Cfg("td", None),  # [cfg2]
+            Cfg("tup_tds", 4),  # [cfg3]
         ],
     )
     def test_fail(self, cfg):

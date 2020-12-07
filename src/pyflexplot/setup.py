@@ -633,6 +633,7 @@ class Setup:
                 value,
                 auto_wrap=True,
                 bool_mode="intuitive",
+                timedelta_unit="hours",
                 unpack_str=False,
             )
             for param, value in params.items()
@@ -689,6 +690,7 @@ class Setup:
                     value,
                     auto_wrap=True,
                     bool_mode="intuitive",
+                    timedelta_unit="hours",
                     unpack_str=False,
                 )
             return cast_field_value(
@@ -697,6 +699,7 @@ class Setup:
                 value,
                 auto_wrap=True,
                 bool_mode="intuitive",
+                timedelta_unit="hours",
                 unpack_str=False,
             )
         except InvalidParameterNameError as e:

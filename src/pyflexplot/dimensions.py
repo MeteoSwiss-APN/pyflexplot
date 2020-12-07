@@ -75,6 +75,7 @@ class CoreDimensions:
             value,
             auto_wrap=True,
             bool_mode="intuitive",
+            timedelta_unit="hours",
             unpack_str=False,
         )
 

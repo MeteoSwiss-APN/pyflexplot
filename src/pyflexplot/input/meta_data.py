@@ -28,9 +28,9 @@ from typing import Union
 # Third-party
 import netCDF4 as nc4
 import numpy as np
-from pydantic import BaseModel
 
 # First-party
+from pyflexplot.utils.dataclasses import cast_field_value
 from srutils.dataclasses import dataclass_repr
 from srutils.dataclasses import get_dataclass_fields
 from srutils.dict import compress_multival_dicts
@@ -570,7 +570,8 @@ class SpeciesMetaData(_MetaDataBase):
             return name.split("_")[0]
 
 
-class RawReleaseMetaData(BaseModel):
+@dataclass
+class RawReleaseMetaData:
     age_id: int
     kind: str
     lllat: float
@@ -587,11 +588,21 @@ class RawReleaseMetaData(BaseModel):
     ztop: float
     ztop_unit: str
 
-    class Config:  # noqa
-        arbitrary_types_allowed = True
-        extra = "forbid"
-        validate_all = True
-        validate_assigment = True
+    @classmethod
+    def create(cls, params: Dict[str, Any]) -> "RawReleaseMetaData":
+        params = {
+            param: cast_field_value(
+                cls,
+                param,
+                value,
+                auto_wrap=True,
+                bool_mode="intuitive",
+                timedelta_unit="seconds",
+                unpack_str=False,
+            )
+            for param, value in params.items()
+        }
+        return cls(**params)
 
     # pylint: disable=R0914  # too-many-locals
     @classmethod
@@ -670,7 +681,7 @@ class RawReleaseMetaData(BaseModel):
             if key_out in store_units:
                 unit = getncattr(fi.variables[key_in], "units")
                 params[f"{key_out}_unit"] = unit
-        return cls(**params)
+        return cls.create(params)
 
 
 class TimeStepMetaDataCollector:

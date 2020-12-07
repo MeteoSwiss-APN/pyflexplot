@@ -15,8 +15,10 @@ from typing import Union
 from srutils.str import split_outside_parens
 
 # Local
+from .datetime import derive_datetime_fmt
 from .exceptions import InvalidParameterNameError
 from .exceptions import InvalidParameterValueError
+from .exceptions import TypeCastError
 
 
 def cast_field_value(cls: Type, field: str, value: Any, **kwargs: Any) -> Any:
@@ -38,7 +40,7 @@ def cast_field_value(cls: Type, field: str, value: Any, **kwargs: Any) -> Any:
         raise InvalidParameterNameError(field) from e
     try:
         return cast_value(type_, value, **kwargs)
-    except ValueError as e:
+    except TypeCastError as e:
         msg = (
             f"value {{}} incompatible with type {type_} of param {cls.__name__}.{field}"
         ).format(f"'{value}'" if isinstance(value, str) else value)
@@ -47,6 +49,7 @@ def cast_field_value(cls: Type, field: str, value: Any, **kwargs: Any) -> Any:
 
 # pylint: disable=R0911  # too-many-return-statements (>6)
 # pylint: disable=R0912  # too-many-branches (>12)
+# pylint: disable=R0914  # too-many-variables (>15)
 # pylint: disable=R0915  # too-many-statements (>50)
 def cast_value(
     type_: Union[Type, str],
@@ -54,7 +57,8 @@ def cast_value(
     *,
     auto_wrap: bool = False,
     bool_mode: str = "native",
-    datetime_fmt: Union[str, Tuple[str, ...]] = "%Y%m%d%H%M",
+    datetime_fmt: Union[str, Tuple[str, ...]] = "auto",
+    timedelta_unit: str = "days",
     unpack_str: bool = True,
 ) -> Any:
     """Cast a value to a type.
@@ -71,7 +75,12 @@ def cast_value(
             or to False ('intuitive').
 
         datetime_fmt (optional): One or more format strings to convert datetime
-            ints or strings to datetime objects.
+            ints or strings to datetime objects; for 'auto', the format is
+            derived from the number of digits assuming a format of the form
+            "%Y[%m[%d[%H[%M[%s]]]]]".
+
+        timedelta_unit (optional): Unit of timedelta values: 'weeks', 'days',
+            'hours', 'seconds', 'milliseconds' or 'microseconds'.
 
         unpack_str (optional): Unpack strings, i.e., treat a string as a
             sequence of one-character strings, as is their default behavior.
@@ -83,17 +92,32 @@ def cast_value(
         type_ = str(type_)
     if bool_mode not in ["native", "intuitive"]:
         raise ValueError(f"bool_mode neither 'native' nor 'intuitive': {bool_mode}")
+    timedelta_unit_choices = [
+        "weeks",
+        "days",
+        "hours",
+        "seconds",
+        "milliseconds",
+        "microseconds",
+    ]
+    if timedelta_unit not in timedelta_unit_choices:
+        raise ValueError(
+            f"invalid timedelta_unit '{timedelta_unit}'; choices: "
+            + ", ".join(map("'{}'".format, timedelta_unit_choices))
+        )
 
     # Bundle keyword arguments to pass to recursive calls
     kwargs: Dict[str, Any] = {
         "auto_wrap": auto_wrap,
         "bool_mode": bool_mode,
+        "datetime_fmt": datetime_fmt,
+        "timedelta_unit": timedelta_unit,
         "unpack_str": unpack_str,
     }
 
-    def value_error(value: Any, type_: str, msg: str = "") -> ValueError:
+    def error(value: Any, type_: str, msg: str = "") -> Exception:
         msg = f": {msg}" if msg else ""
-        return ValueError(
+        return TypeCastError(
             f"type '{type(value).__name__}' incompatible with '{type_}'{msg}"
         )
 
@@ -109,8 +133,8 @@ def cast_value(
                 "typing.Tuple": tuple,
                 "typing.List": list,
                 "datetime": datetime,
-                "timedelta": timedelta,
                 "datetime.datetime": datetime,
+                "timedelta": timedelta,
                 "datetime.timedelta": timedelta,
             }[type_.split("[")[0]]
         except KeyError as e:
@@ -121,7 +145,7 @@ def cast_value(
     if type_ == "NoneType":
         if isinstance(value, type(None)) or value == "None":
             return None
-        raise value_error(value, type_)
+        raise error(value, type_)
 
     elif type_ == "bool":
         if isinstance(value, str):
@@ -129,34 +153,32 @@ def cast_value(
                 return False
             return bool(value)
         elif isinstance(value, Collection):
-            raise value_error(value, type_, "is a collection")
+            raise error(value, type_, "is a collection")
         else:
             return bool(value)
 
     elif type_ == "str":
         if isinstance(value, Collection) and not isinstance(value, str):
-            raise value_error(value, type_, "is a collection")
+            raise error(value, type_, "is a collection")
         return str(value)
 
     elif type_ in ["int", "float"]:
         try:
             return {"int": int, "float": float}[type_](value)
         except (TypeError, ValueError) as e:
-            raise value_error(value, type_) from e
+            raise error(value, type_) from e
 
     elif type_.startswith("typing.Tuple["):
         if not isinstance(value, Sequence):
             if auto_wrap:
                 value = [value]
             else:
-                raise value_error(value, type_, "not a sequence")
+                raise error(value, type_, "not a sequence")
         elif isinstance(value, str) and not unpack_str:
             if auto_wrap:
                 value = [value]
             else:
-                raise value_error(
-                    value, type_, "to unpack strings, pass unpack_str=True"
-                )
+                raise error(value, type_, "to unpack strings, pass unpack_str=True")
         if type_.endswith(", ...]"):
             inner_type = type_[len("typing.Tuple[") : -len(", ...]")]
             inner_values = [
@@ -168,7 +190,7 @@ def cast_value(
                 type_[len("typing.Tuple[") : -len("]")], ", ", parens="[]"
             )
             if len(value) != len(inner_types):
-                raise value_error(value, type_, "wrong length")
+                raise error(value, type_, "wrong length")
             inner_values = [
                 cast_value(inner_type, inner_value, **kwargs)
                 for inner_type, inner_value in zip(inner_types, value)
@@ -188,17 +210,32 @@ def cast_value(
         for inner_type in inner_types:
             try:
                 return cast_value(inner_type, value, **kwargs)
-            except ValueError:
+            except TypeCastError:
                 pass
-        raise value_error(value, type_, f"no compatible inner type: {inner_types}")
+        raise error(value, type_, f"no compatible inner type: {inner_types}")
 
     elif type_ in ["datetime", "datetime.datetime"]:
-        for fmt in [datetime_fmt] if isinstance(datetime_fmt, str) else datetime_fmt:
+        if isinstance(datetime_fmt, str):
+            datetime_fmt = (datetime_fmt,)  # type: ignore
+        assert isinstance(datetime_fmt, Sequence)  # mypy
+        assert not isinstance(datetime_fmt, str)  # mypy
+        for fmt in datetime_fmt:
+            if fmt == "auto":
+                try:
+                    fmt = derive_datetime_fmt(value)
+                except ValueError as e:
+                    raise error(value, type_, "cannot derive datetime_fmt") from e
             try:
                 return datetime.strptime(str(value), fmt)
             except ValueError:
                 pass
-        raise value_error(value, type_, f"no compatible datetime_fmt: {datetime_fmt}")
+        raise error(value, type_, f"no compatible datetime_fmt: {datetime_fmt}")
+
+    elif type_ in ["timedelta", "datetime.timedelta"]:
+        try:
+            return timedelta(**{timedelta_unit: value})
+        except TypeError as e:
+            raise error(value, type_, f"timedelta_unit: {timedelta_unit}") from e
 
     else:
         raise NotImplementedError(f"type '{type_}'")
