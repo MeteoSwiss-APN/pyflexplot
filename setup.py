@@ -69,7 +69,6 @@ requirements = [
     "netcdf4",
     "numpy",
     "pillow>=7.1.0",
-    "pydantic",
     "pypdf2",
     "scipy",
     "toml",

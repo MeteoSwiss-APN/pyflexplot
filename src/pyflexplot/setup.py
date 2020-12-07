@@ -25,7 +25,6 @@ from typing import Union
 
 # Third-party
 import toml
-from pydantic import ValidationError
 from typing_extensions import Literal
 
 # First-party
@@ -640,15 +639,7 @@ class Setup:
         }
         if core_params:
             params["core"] = CoreSetup.create(core_params)
-        try:
-            return cls(**params)
-        except ValidationError as e:
-            error = next(iter(e.errors()))
-            msg = f"error creating {cls.__name__} object"
-            if error["type"] == "value_error.missing":
-                param = next(iter(error["loc"]))
-                msg += f": missing parameter: {param}"
-            raise Exception(msg) from e
+        return cls(**params)
 
     @classmethod
     def get_params(cls) -> List[str]:

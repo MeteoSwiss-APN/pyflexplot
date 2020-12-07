@@ -16,7 +16,6 @@ import matplotlib as mpl
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from pydantic import BaseModel
 
 # First-party
 from srutils.iter import isiterable
@@ -243,9 +242,6 @@ def summarizable(
         elif is_dataclass(cls):
             # Collect dataclass fields
             attrs = list(cls.__dataclass_fields__) + attrs  # type: ignore
-        elif issubclass(cls, BaseModel):  # type: ignore
-            # Collect model fields
-            attrs = list(cls.__fields__) + attrs  # type: ignore
     attrs.extend(list(attrs_add or []))
     attrs = [a for a in attrs if a not in attrs_skip]
 
