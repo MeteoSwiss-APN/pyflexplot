@@ -6,6 +6,7 @@ from datetime import datetime
 from datetime import timedelta
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -222,11 +223,12 @@ class TestTuple:
         "cfg",
         [
             Cfg("strs", 1, ("1",)),  # [cfg0]
-            Cfg("ints", "004", (0, 0, 4)),  # [cfg1]
-            Cfg("ints", "004", (4,), kw={"unpack_str": False}),  # [cfg2]
-            Cfg("floats", "3", (3.0,)),  # [cfg3]
-            Cfg("bools", "False", (T, T, T, T, T)),  # [cfg4]
-            Cfg("bools", "False", (T,), kw={"unpack_str": False}),  # [cfg5]
+            Cfg("ints", "004", (0, 0, 4), kw={"auto_wrap": False}),  # [cfg1]
+            Cfg("ints", "004", (4,)),  # [cfg2]
+            Cfg("ints", "004", (4,), kw={"unpack_str": False}),  # [cfg3]
+            Cfg("floats", "3", (3.0,)),  # [cfg4]
+            Cfg("bools", "False", (T, T, T, T, T), kw={"auto_wrap": False}),  # [cfg5]
+            Cfg("bools", "False", (T,), kw={"unpack_str": False}),  # [cfg6]
         ],
     )
     def test_auto_wrap(self, cfg):
@@ -268,6 +270,95 @@ class OptionalTuple:
         "cfg",
         [
             Cfg("str_", [[None]]),  # [cfg0]
+        ],
+    )
+    def test_fail(self, cfg):
+        with pytest.raises(cfg.sol or InvalidParameterValueError):
+            cast_field_value(self.Params, cfg.param, cfg.val, **cfg.kw)
+
+
+class TestList:
+    @dataclass
+    class Params:
+        strs: List[str]
+        ints: List[int]
+        floats: List[float]
+        bools: List[bool]
+        tups: List[Tuple]
+
+    @pytest.mark.parametrize(
+        "cfg",
+        [
+            Cfg("strs", ["foo"], ["foo"]),  # [cfg0]
+            Cfg("strs", "foo", ["f", "o", "o"], kw={"auto_wrap": False}),  # [cfg1]
+            Cfg("strs", "foo", ["foo"], kw={"auto_wrap": True}),  # [cfg2]
+            Cfg(
+                "strs", "foo", ["foo"], kw={"auto_wrap": True, "unpack_str": False}
+            ),  # [cfg3]
+            Cfg("ints", (1, 2), [1, 2]),  # [cfg4]
+            Cfg("ints", ["123"], [123]),  # [cfg5]
+            Cfg("ints", "123", [1, 2, 3]),  # [cfg6]
+            Cfg("ints", "123", [123], kw={"auto_wrap": True}),  # [cfg7]
+            Cfg("floats", "123", [1.0, 2.0, 3.0]),  # cfg8
+            Cfg("bools", ["False"], [T]),  # cfg9
+            Cfg("bools", "False", [T, T, T, T, T]),  # cfg10
+            Cfg("bools", 0, [False], kw={"auto_wrap": True}),  # cfg11
+            Cfg("tups", [[0]], [(0,)]),  # cfg12
+            Cfg("tups", ["foo"], [("f", "o", "o")]),  # cfg13
+        ],
+    )
+    def test_ok(self, cfg):
+        res = cast_field_value(self.Params, cfg.param, cfg.val, **cfg.kw)
+        assert isinstance(res, type(cfg.sol))
+        assert len(res) == len(cfg.sol)
+        assert all([isinstance(r, type(s)) for r, s in zip(res, cfg.sol)])
+        assert res == cfg.sol
+
+    @pytest.mark.parametrize(
+        "cfg",
+        [
+            Cfg("strs", "123", kw={"unpack_str": False}),  # [cfg0]
+        ],
+    )
+    def test_fail(self, cfg):
+        with pytest.raises(cfg.sol or InvalidParameterValueError):
+            cast_field_value(self.Params, cfg.param, cfg.val, **cfg.kw)
+
+
+class TestSequence:
+    @dataclass
+    class Params:
+        blank: Sequence
+        anys: Sequence[Any]
+        ints: Sequence[int]
+        strs: Sequence[str]
+
+    @pytest.mark.parametrize(
+        "cfg",
+        [
+            Cfg("blank", [], []),  # [cfg0]
+            Cfg("blank", "foo", "foo"),  # [cfg1]
+            Cfg("blank", 1, [1], kw={"auto_wrap": True}),  # [cfg2]
+            Cfg("anys", tuple(), tuple()),  # [cfg3]
+            Cfg("anys", (1, "2", (3.0,)), (1, "2", (3.0,))),  # [cfg4]
+            Cfg("anys", 1.0, [1.0], kw={"auto_wrap": True}),  # [cfg5]
+            Cfg("ints", "123", [1, 2, 3]),  # [cfg6]
+            Cfg("strs", "abc", ["a", "b", "c"]),  # [cfg7]
+            Cfg("strs", ["abc"], ["abc"]),  # [cfg8]
+            Cfg("strs", (1, 2, 3), ("1", "2", "3")),  # [cfg9]
+        ],
+    )
+    def test_ok(self, cfg):
+        res = cast_field_value(self.Params, cfg.param, cfg.val, **cfg.kw)
+        assert isinstance(res, type(cfg.sol))
+        assert len(res) == len(cfg.sol)
+        assert all([isinstance(r, type(s)) for r, s in zip(res, cfg.sol)])
+        assert res == cfg.sol
+
+    @pytest.mark.parametrize(
+        "cfg",
+        [
+            Cfg("blank", None),  # [cfg0]
         ],
     )
     def test_fail(self, cfg):

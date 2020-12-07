@@ -3,9 +3,12 @@
 from datetime import datetime
 from datetime import timedelta
 from typing import Any
+from typing import Callable
 from typing import Collection
 from typing import Dict
 from typing import get_type_hints
+from typing import Iterable
+from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Type
@@ -130,7 +133,9 @@ def cast_value(
                 "float": float,
                 "bool": bool,
                 "NoneType": type(None),
+                "tuple": tuple,
                 "typing.Tuple": tuple,
+                "list": list,
                 "typing.List": list,
                 "datetime": datetime,
                 "datetime.datetime": datetime,
@@ -142,7 +147,41 @@ def cast_value(
         else:
             return isinstance(value, equiv_type)
 
-    if type_ == "NoneType":
+    def prepare_wrapped_value(
+        value: Any, type_: str, cls: Optional[Callable[[Iterable], Sequence]] = None
+    ) -> Sequence[Any]:
+        if isinstance(value, Sequence) and not isinstance(value, str):
+            if cls is not None:
+                value = cls(value)
+        elif isinstance(value, str):
+            if cls is None:
+                pass
+            elif auto_wrap:
+                value = [value]
+            elif unpack_str:
+                value = list(value)
+                if cls is not None:
+                    value = cls(value)
+            else:
+                msg = (
+                    "auto-wrap strings with auto_wrap=True"
+                    " or unpack them with unpack_str=True"
+                )
+                raise error(value, type_, msg)
+        else:
+            if auto_wrap:
+                value = [value]
+                if cls is not None:
+                    value = cls(value)
+            else:
+                msg = "auto-wrap non-sequences with auto_wrap=True"
+                raise error(value, type_, msg)
+        return value
+
+    if type_ == "typing.Any":
+        return value
+
+    elif type_ == "NoneType":
         if isinstance(value, type(None)) or value == "None":
             return None
         raise error(value, type_)
@@ -168,35 +207,6 @@ def cast_value(
         except (TypeError, ValueError) as e:
             raise error(value, type_) from e
 
-    elif type_.startswith("typing.Tuple["):
-        if not isinstance(value, Sequence):
-            if auto_wrap:
-                value = [value]
-            else:
-                raise error(value, type_, "not a sequence")
-        elif isinstance(value, str) and not unpack_str:
-            if auto_wrap:
-                value = [value]
-            else:
-                raise error(value, type_, "to unpack strings, pass unpack_str=True")
-        if type_.endswith(", ...]"):
-            inner_type = type_[len("typing.Tuple[") : -len(", ...]")]
-            inner_values = [
-                cast_value(inner_type, inner_value, **kwargs) for inner_value in value
-            ]
-            return tuple(inner_values)
-        else:
-            inner_types = split_outside_parens(
-                type_[len("typing.Tuple[") : -len("]")], ", ", parens="[]"
-            )
-            if len(value) != len(inner_types):
-                raise error(value, type_, "wrong length")
-            inner_values = [
-                cast_value(inner_type, inner_value, **kwargs)
-                for inner_type, inner_value in zip(inner_types, value)
-            ]
-            return tuple(inner_values)
-
     elif type_.startswith("typing.Union["):
         inner_types = split_outside_parens(
             type_[len("typing.Union[") : -len("]")], ", ", parens="[]"
@@ -206,7 +216,7 @@ def cast_value(
             inner_types.insert(0, "NoneType")
         for inner_type in inner_types:
             if has_same_type(value, inner_type):
-                return cast_value(inner_type, value, **kwargs)
+                return value
         for inner_type in inner_types:
             try:
                 return cast_value(inner_type, value, **kwargs)
@@ -236,6 +246,50 @@ def cast_value(
             return timedelta(**{timedelta_unit: value})
         except TypeError as e:
             raise error(value, type_, f"timedelta_unit: {timedelta_unit}") from e
+
+    if type_ in ["tuple", "typing.Tuple"]:
+        return prepare_wrapped_value(value, type_, tuple)
+
+    elif type_.startswith("typing.Tuple["):
+        value = prepare_wrapped_value(value, type_, tuple)
+        if type_.endswith(", ...]"):
+            inner_type = type_[len("typing.Tuple[") : -len(", ...]")]
+            inner_values = [
+                cast_value(inner_type, inner_value, **kwargs) for inner_value in value
+            ]
+            return tuple(inner_values)
+        else:
+            inner_types = split_outside_parens(
+                type_[len("typing.Tuple[") : -len("]")], ", ", parens="[]"
+            )
+            if len(value) != len(inner_types):
+                raise error(value, type_, "wrong length")
+            inner_values = [
+                cast_value(inner_type, inner_value, **kwargs)
+                for inner_type, inner_value in zip(inner_types, value)
+            ]
+            return tuple(inner_values)
+
+    if type_ in ["list", "typing.List"]:
+        return prepare_wrapped_value(value, type_, list)
+
+    elif type_.startswith("typing.List["):
+        value = prepare_wrapped_value(value, type_, list)
+        inner_type = type_[len("typing.List[") : -len("]")]
+        return [cast_value(inner_type, inner_value, **kwargs) for inner_value in value]
+
+    elif type_ == "typing.Sequence":
+        return prepare_wrapped_value(value, type_)
+
+    elif type_.startswith("typing.Sequence["):
+        value = prepare_wrapped_value(value, type_)
+        inner_type = type_[len("typing.Sequence[") : -len("]")]
+        cls: Callable[[Iterable], Sequence] = (
+            list if isinstance(value, str) else type(value)  # type: ignore
+        )
+        return cls(
+            [cast_value(inner_type, inner_value, **kwargs) for inner_value in value]
+        )
 
     else:
         raise NotImplementedError(f"type '{type_}'")
