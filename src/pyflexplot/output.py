@@ -11,10 +11,12 @@ from typing import Optional
 from typing import Sequence
 from typing import Union
 
+# First-party
+from srutils.datetime import init_datetime
+
 # Local
 from .input.meta_data import MetaData
 from .setup import Setup
-from .utils.datetime import init_datetime
 from .utils.logging import log
 
 

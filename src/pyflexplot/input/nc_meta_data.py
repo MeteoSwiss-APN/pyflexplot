@@ -18,8 +18,8 @@ from typing import Tuple
 # Third-party
 import netCDF4 as nc4
 
-# Local
-from ..utils.datetime import init_datetime
+# First-party
+from srutils.datetime import init_datetime
 
 NcMetaDataT = Dict[str, Dict[str, Any]]
 

@@ -36,6 +36,7 @@ import numpy as np
 from matplotlib.colors import Colormap
 
 # First-party
+from srutils.datetime import init_datetime
 from srutils.geo import Degrees
 from srutils.plotting import truncate_cmap
 
@@ -65,7 +66,6 @@ from .plotting.map_axes import MapAxesConfig
 from .plotting.map_axes import ReleaseSiteDomain
 from .plotting.text_box_axes import TextBoxAxes
 from .setup import Setup
-from .utils.datetime import init_datetime
 from .utils.formatting import escape_format_keys
 from .utils.formatting import format_level_ranges
 from .utils.formatting import format_range

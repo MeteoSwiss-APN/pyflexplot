@@ -20,11 +20,11 @@ from typing import Union
 from typing_extensions import Literal
 
 # First-party
+from srutils.dataclasses import cast_field_value
 from srutils.iter import resolve_negative_indices
 from srutils.str import join_multilines
 
 # Local
-from .utils.dataclasses import cast_field_value
 from .utils.summarize import summarizable
 
 

@@ -30,14 +30,14 @@ import netCDF4 as nc4
 import numpy as np
 
 # First-party
-from pyflexplot.utils.dataclasses import cast_field_value
+from srutils.dataclasses import cast_field_value
 from srutils.dataclasses import dataclass_repr
 from srutils.dataclasses import get_dataclass_fields
+from srutils.datetime import init_datetime
 from srutils.dict import compress_multival_dicts
 
 # Local
 from ..setup import Setup
-from ..utils.datetime import init_datetime
 from .nc_meta_data import derive_variable_name
 from .species import get_species
 from .species import Species

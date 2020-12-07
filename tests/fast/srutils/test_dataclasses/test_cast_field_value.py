@@ -16,9 +16,9 @@ from typing import Union
 import pytest
 
 # First-party
-from pyflexplot.utils.dataclasses import cast_field_value
-from pyflexplot.utils.exceptions import InvalidParameterNameError
-from pyflexplot.utils.exceptions import InvalidParameterValueError
+from srutils.dataclasses import cast_field_value
+from srutils.exceptions import InvalidParameterNameError
+from srutils.exceptions import InvalidParameterValueError
 
 # Abbreviations
 T = True

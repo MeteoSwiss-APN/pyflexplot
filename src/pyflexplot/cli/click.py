@@ -8,9 +8,11 @@ from typing import Type
 import click
 from click import Context
 
+# First-party
+from srutils.exceptions import InvalidParameterNameError
+
 # Local
 from ..setup import Setup
-from ..utils.exceptions import InvalidParameterNameError
 from ..utils.logging import set_log_level
 
 

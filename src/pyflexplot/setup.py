@@ -29,17 +29,17 @@ from pydantic import ValidationError
 from typing_extensions import Literal
 
 # First-party
+from srutils.dataclasses import cast_field_value
 from srutils.dict import compress_multival_dicts
 from srutils.dict import decompress_multival_dict
 from srutils.dict import decompress_nested_dict
 from srutils.dict import nested_dict_resolve_wildcards
+from srutils.exceptions import InvalidParameterNameError
 from srutils.str import join_multilines
 
 # Local
 from .dimensions import CoreDimensions
 from .dimensions import Dimensions
-from .utils.dataclasses import cast_field_value
-from .utils.exceptions import InvalidParameterNameError
 from .utils.exceptions import UnequalSetupParamValuesError
 
 # Some plot-specific default values
