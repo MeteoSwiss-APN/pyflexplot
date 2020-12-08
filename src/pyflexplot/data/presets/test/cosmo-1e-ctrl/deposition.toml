@@ -33,27 +33,27 @@ integrate = true
 # time = -1
 
 # [_base._concentration._pdf.full]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration.pdf"
+# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration.png"
 # domain = "full"
 # [_base._concentration._integr._pdf.full]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet.pdf"
+# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet.png"
 # domain = "full"
 [_base._tot_deposition._pdf.full]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition.pdf"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition.png"
 domain = "full"
 # [_base._affected_area._pdf.full]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet.pdf"
+# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet.png"
 # domain = "full"
 
 # [_base._concentration._pdf.zom]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration_zoom.pdf"
+# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration_zoom.png"
 # domain = "ch"
 # [_base._concentration._integr._pdf.zoom]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet_zoom.pdf"
+# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet_zoom.png"
 # domain = "ch"
 # [_base._tot_deposition._pdf.zoom]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition_zoom.pdf"
+# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition_zoom.png"
 # domain = "ch"
 # [_base._affected_area._pdf.zoom]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet_zoom.pdf"
+# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet_zoom.png"
 # domain = "ch"

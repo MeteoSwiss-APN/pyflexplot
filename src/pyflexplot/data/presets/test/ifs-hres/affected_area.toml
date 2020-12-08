@@ -33,27 +33,27 @@ level = 0
 time = -1
 
 # [_base._concentration._pdf.cloud]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration.pdf"
+# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration.png"
 # domain = "cloud"
 # [_base._concentration._integr._pdf.cloud]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet.pdf"
+# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet.png"
 # domain = "cloud"
 # [_base._tot_deposition._pdf.cloud]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition.pdf"
+# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition.png"
 # domain = "cloud"
 [_base._affected_area._pdf.cloud]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet.pdf"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet.png"
 domain = "cloud"
 
 # [_base._concentration._pdf.site]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration_zoom.pdf"
+# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration_zoom.png"
 # domain = "release_site"
 # [_base._concentration._integr._pdf.site]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet_zoom.pdf"
+# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet_zoom.png"
 # domain = "release_site"
 # [_base._tot_deposition._pdf.site]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition_zoom.pdf"
+# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition_zoom.png"
 # domain = "release_site"
 # [_base._affected_area._pdf.site]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet_zoom.pdf"
+# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet_zoom.png"
 # domain = "release_site"
