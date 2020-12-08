@@ -131,6 +131,10 @@ class BoxedPlotLayoutModern:
     def rect_top(self) -> RectType:
         return self._x0_left, self._y0_top, self._w_left, self.h_top
 
+    def aspect_top(self) -> float:
+        _, _, w, h = self.rect_top()
+        return w / h
+
     def rect_center(self) -> RectType:
         return (
             self._x0_left,
@@ -138,6 +142,10 @@ class BoxedPlotLayoutModern:
             self._w_left,
             self._h_center,
         )
+
+    def aspect_center(self) -> float:
+        _, _, w, h = self.rect_center()
+        return w / h
 
     def rect_right_top(self) -> RectType:
         return (
@@ -147,6 +155,10 @@ class BoxedPlotLayoutModern:
             self.h_rigtop,
         )
 
+    def aspect_right_top(self) -> float:
+        _, _, w, h = self.rect_right_top()
+        return w / h
+
     def rect_right_middle(self) -> RectType:
         return (
             self._x0_right,
@@ -154,6 +166,10 @@ class BoxedPlotLayoutModern:
             self.w_right,
             self._h_rigmid,
         )
+
+    def aspect_right_middle(self) -> float:
+        _, _, w, h = self.rect_right_middle()
+        return w / h
 
     def rect_right_bottom(self) -> RectType:
         return (
@@ -163,6 +179,10 @@ class BoxedPlotLayoutModern:
             self.h_rigbot,
         )
 
+    def aspect_right_bottom(self) -> float:
+        _, _, w, h = self.rect_right_bottom()
+        return w / h
+
     def rect_bottom_left(self) -> RectType:
         return (
             self._x0_left,
@@ -171,6 +191,10 @@ class BoxedPlotLayoutModern:
             self.h_bottom,
         )
 
+    def aspect_bottom_left(self) -> float:
+        _, _, w, h = self.rect_bottom_left()
+        return w / h
+
     def rect_bottom_right(self) -> RectType:
         return (
             self._x0_right,
@@ -178,6 +202,10 @@ class BoxedPlotLayoutModern:
             self.w_right,
             self.h_bottom,
         )
+
+    def aspect_bottom_right(self) -> float:
+        _, _, w, h = self.rect_bottom_right()
+        return w / h
 
 
 @dataclass
