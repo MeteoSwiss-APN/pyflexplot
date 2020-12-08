@@ -13,7 +13,7 @@ BoxedPlotLayoutType = Union[
 ]
 
 
-# TODO: Find a cleaner solution to define these layouts!
+# SR_TODO: Find a cleaner solution to define these layouts!
 # This is again a case of misuse of classes...
 
 

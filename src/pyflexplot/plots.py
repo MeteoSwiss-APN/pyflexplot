@@ -111,7 +111,7 @@ def prepare_plot(
         return DummyBoxedPlot()
     else:
         config = create_plot_config(field, WORDS, SYMBOLS)
-        map_config = create_map_config(field)
+        map_config = create_map_config(field, config.layout.aspect_center())
         return BoxedPlot(field, config, map_config)
 
 
@@ -121,17 +121,8 @@ def create_plot(
     write: bool = True,
     show_version: bool = True,
 ) -> None:
-    layout: BoxedPlotLayoutType
-    if plot.config.setup.get_simulation_type() == "deterministic":
-        layout = BoxedPlotLayoutDeterministic(aspect=plot.config.fig_aspect)
-    elif plot.config.setup.get_simulation_type() == "ensemble":
-        layout = BoxedPlotLayoutEnsemble(aspect=plot.config.fig_aspect)
-    else:
-        raise NotImplementedError(
-            f"simulation type '{plot.config.setup.get_simulation_type()}'"
-        )
-    axs_map = plot.add_map_plot(layout.rect_center())
-    plot_add_text_boxes(plot, layout, show_version)
+    axs_map = plot.add_map_plot(plot.config.layout.rect_center())
+    plot_add_text_boxes(plot, plot.config.layout, show_version)
     plot_add_markers(plot, axs_map)
     for file_path in file_paths:
         log(dbg=f"creating plot {file_path}")
@@ -495,7 +486,7 @@ def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
             )
 
 
-def init_domain(field: Field) -> Domain:
+def init_domain(field: Field, aspect: float) -> Domain:
     """Initialize Domain object (projection and extent)."""
     lat = field.lat
     lon = field.lon
@@ -518,11 +509,12 @@ def init_domain(field: Field) -> Domain:
         domain = ReleaseSiteDomain(
             lat,
             lon,
-            domain_size_lat=domain_size_lat,
-            domain_size_lon=domain_size_lon,
+            aspect=aspect,
+            field_proj=field_proj,
+            min_size_lat=domain_size_lat,
+            min_size_lon=domain_size_lon,
             release_lat=release_lat,
             release_lon=release_lon,
-            field_proj=field_proj,
         )
     elif domain_type == "alps":
         if model_name == "IFS-HRES-EU":
@@ -531,10 +523,11 @@ def init_domain(field: Field) -> Domain:
         domain = CloudDomain(
             lat,
             lon,
-            zoom_fact=0.9,
-            domain_size_lat=domain_size_lat,
-            domain_size_lon=domain_size_lon,
+            aspect=aspect,
             mask_nz=mask_nz,
+            min_size_lat=domain_size_lat,
+            min_size_lon=domain_size_lon,
+            zoom_fact=0.9,
         )
     elif domain_type == "ch":
         if model_name.startswith("COSMO-1"):
@@ -550,10 +543,10 @@ def init_domain(field: Field) -> Domain:
     return domain
 
 
-def create_map_config(field: Field) -> MapAxesConfig:
+def create_map_config(field: Field, aspect: float) -> MapAxesConfig:
     config_dct: Dict[str, Any] = {
         "lang": field.var_setups.collect_equal("lang"),
-        "domain": init_domain(field),
+        "domain": init_domain(field, aspect),
         "scale_fact": field.var_setups.collect_equal("scale_fact"),
     }
     conf_continental_scale: Dict[str, Any] = {
@@ -609,6 +602,19 @@ def create_plot_config(
     plot_config_dct: Dict[str, Any] = {
         "fig_size": (12.5 * setup.scale_fact, 8.0 * setup.scale_fact),
     }
+
+    # Layout
+    fig_aspect = np.divide(*plot_config_dct["fig_size"])
+    layout: BoxedPlotLayoutType
+    if setup.get_simulation_type() == "deterministic":
+        layout = BoxedPlotLayoutDeterministic(aspect=fig_aspect)
+    elif setup.get_simulation_type() == "ensemble":
+        layout = BoxedPlotLayoutEnsemble(aspect=fig_aspect)
+    else:
+        raise NotImplementedError(
+            f"layout for simulation type '{setup.get_simulation_type()}'"
+        )
+    plot_config_dct["layout"] = layout
 
     # Fonts
     font_config = FontConfig(sizes=FontSizes().scale(setup.scale_fact))

@@ -17,6 +17,7 @@ from matplotlib.figure import Figure
 # Local
 from ..input.data import Field
 from ..input.meta_data import MetaData
+from ..plot_layouts import BoxedPlotLayoutType
 from ..setup import Setup
 from ..utils.summarize import summarizable
 from ..utils.typing import ColorType
@@ -84,22 +85,17 @@ class MarkersConfig:
 class BoxedPlotConfig:
     setup: Setup  # SR_TODO consider removing this
     mdata: MetaData  # SR_TODO consider removing this
+    layout: BoxedPlotLayoutType
     # ---
     font: FontConfig = FontConfig()
     levels: ContourLevelsConfig = ContourLevelsConfig()
     markers: MarkersConfig = MarkersConfig()
     # ---
     colors: Optional[List[ColorType]] = None
-    # SR_NOTE Figure size may change when boxes etc. are added
-    # SR_TODO Specify plot size in a robust way (what you want is what you get)
-    fig_size: Tuple[float, float] = (12.5, 8.0)
+    fig_size: Optional[Tuple[float, float]] = None
     labels: Dict[str, Any] = dataclasses.field(default_factory=dict)
     lw_frame: float = 1.0
-    model_info: str = ""  # SR_TODO sensible default
-
-    @property
-    def fig_aspect(self):
-        return np.divide(*self.fig_size)
+    model_info: str = "N/A"
 
 
 @summarizable

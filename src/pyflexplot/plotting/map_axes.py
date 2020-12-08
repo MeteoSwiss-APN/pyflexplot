@@ -298,7 +298,7 @@ class MapAxes:
         # Set geographical extent
         self.ax.set_aspect("auto")
         domain = self.config.domain
-        bbox = domain.get_bbox(ax, self.projs, self.get_aspect_ratio())
+        bbox = domain.get_bbox(ax, self.projs)
         self.ax.set_extent(bbox, self.projs.data)
 
     def _init_ref_dist_box(self) -> None:
