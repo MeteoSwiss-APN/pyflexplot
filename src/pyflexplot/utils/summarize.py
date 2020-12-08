@@ -174,7 +174,7 @@ def summarizable(
 
     if attrs_add:
         # Don't directly extend cls.summarizable_attrs in order not to add
-        # attributes of a subclass to summarizable_attrs of its subperclass
+        # attributes of a subclass to summarizable_attrs of its superclass
         setattr(
             cls,
             "summarizable_attrs",
