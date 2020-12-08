@@ -19,6 +19,7 @@ from matplotlib.transforms import Bbox
 from matplotlib.transforms import TransformedBbox
 
 # First-party
+from srutils.dataclasses import asdict
 from srutils.iter import isiterable
 
 # Local
@@ -298,7 +299,10 @@ class Summarizer:
                 try:
                     obj = obj.dict()
                 except AttributeError as e:
-                    raise NotSummarizableError("dict-like", obj) from e
+                    try:
+                        obj = asdict(obj, shallow=True)
+                    except TypeError:
+                        raise NotSummarizableError("dict-like", obj) from e
             items = obj.items()
         return {self._summarize(key): self._summarize(val) for key, val in items}
 
