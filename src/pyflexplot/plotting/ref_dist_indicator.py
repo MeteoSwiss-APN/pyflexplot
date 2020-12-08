@@ -1,5 +1,6 @@
 """Reference distance indicator for map plot."""
 # Standard library
+from dataclasses import asdict
 from dataclasses import dataclass
 from typing import Any
 from typing import Dict
@@ -44,16 +45,11 @@ class RefDistIndConfig:
 
     def scale(self, factor: float) -> "RefDistIndConfig":
         kwargs: Dict[str, Any] = {
-            **self.dict(),
+            **asdict(self),
             "font_size": self.font_size * factor,
             "line_width": self.line_width * factor,
         }
         return type(self)(**kwargs)
-
-    def dict(self) -> Dict[str, Any]:
-        # pylint: disable=E1101  # no-member (__dataclass_fields__)
-        params = list(self.__dataclass_fields__)  # type: ignore
-        return {param: getattr(self, param) for param in params}
 
 
 # pylint: disable=R0902  # too-many-instance-attributes
