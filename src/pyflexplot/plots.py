@@ -497,28 +497,52 @@ def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
 
 def init_domain(field: Field) -> Domain:
     """Initialize Domain object (projection and extent)."""
+    lat = field.lat
+    lon = field.lon
     model_name = field.var_setups.collect_equal("model")
     domain_type = field.var_setups.collect_equal("domain")
+    domain_size_lat = field.var_setups.collect_equal("domain_size_lat")
+    domain_size_lon = field.var_setups.collect_equal("domain_size_lon")
+    assert field.mdata is not None  # mypy
+    release_lat = field.mdata.release.lat
+    release_lon = field.mdata.release.lon
+    field_proj = field.proj
+    mask_nz = field.time_props.mask_nz
     domain: Optional[Domain] = None
     if domain_type == "full":
         if model_name.startswith("COSMO"):
-            domain = Domain(field, zoom_fact=1.01)
+            domain = Domain(lat, lon, zoom_fact=1.01)
         else:
-            domain = Domain(field)
+            domain = Domain(lat, lon)
     elif domain_type == "release_site":
-        domain = ReleaseSiteDomain(field)
+        domain = ReleaseSiteDomain(
+            lat,
+            lon,
+            domain_size_lat=domain_size_lat,
+            domain_size_lon=domain_size_lon,
+            release_lat=release_lat,
+            release_lon=release_lon,
+            field_proj=field_proj,
+        )
     elif domain_type == "alps":
         if model_name == "IFS-HRES-EU":
-            domain = Domain(field, zoom_fact=3.4, rel_offset=(-0.165, -0.11))
+            domain = Domain(lat, lon, zoom_fact=3.4, rel_offset=(-0.165, -0.11))
     elif domain_type == "cloud":
-        domain = CloudDomain(field, zoom_fact=0.9)
+        domain = CloudDomain(
+            lat,
+            lon,
+            zoom_fact=0.9,
+            domain_size_lat=domain_size_lat,
+            domain_size_lon=domain_size_lon,
+            mask_nz=mask_nz,
+        )
     elif domain_type == "ch":
         if model_name.startswith("COSMO-1"):
-            domain = Domain(field, zoom_fact=3.6, rel_offset=(-0.02, 0.045))
+            domain = Domain(lat, lon, zoom_fact=3.6, rel_offset=(-0.02, 0.045))
         elif model_name.startswith("COSMO-2"):
-            domain = Domain(field, zoom_fact=3.23, rel_offset=(0.037, 0.1065))
+            domain = Domain(lat, lon, zoom_fact=3.23, rel_offset=(0.037, 0.1065))
         elif model_name == "IFS-HRES-EU":
-            domain = Domain(field, zoom_fact=11.0, rel_offset=(-0.18, -0.11))
+            domain = Domain(lat, lon, zoom_fact=11.0, rel_offset=(-0.18, -0.11))
     if domain is None:
         raise NotImplementedError(
             f"domain for model '{model_name}' and domain type '{domain_type}'"

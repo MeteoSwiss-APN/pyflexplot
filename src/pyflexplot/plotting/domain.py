@@ -1,16 +1,17 @@
 """Domains."""
 # Standard library
+from typing import Any
 from typing import Optional
 from typing import Tuple
 
 # Third-party
 import numpy as np
 from cartopy.crs import PlateCarree  # type: ignore
+from cartopy.crs import Projection
 from cartopy.crs import RotatedPole
 from matplotlib.axes import Axes
 
 # Local
-from ..input.data import Field
 from ..utils.summarize import summarizable
 from .bbox import MapAxesBoundingBox
 from .projs import MapAxesProjections
@@ -23,13 +24,18 @@ class Domain:
 
     def __init__(
         self,
-        field: Field,
+        lat: np.ndarray,
+        lon: np.ndarray,
         zoom_fact: float = 1.0,
         rel_offset: Tuple[float, float] = (0.0, 0.0),
     ) -> None:
         """Create an instance of ``domain``.
 
         Args:
+            lat: 1D latitude array.
+
+            lon: 1D longitude array.
+
             field: Field to be plotted on the domain.
 
             zoom_fact (optional): Zoom factor. Use values above/below 1.0 to
@@ -39,18 +45,14 @@ class Domain:
                 fraction of the respective domain extent.
 
         """
-        self.field = field
+        self.lat = lat
+        self.lon = lon
         self.zoom_fact = zoom_fact
         self.rel_offset = rel_offset
-        self.__post_init__()
-
-    def __post_init__(self) -> None:
-        self.lat: np.ndarray = self.field.lat
-        self.lon: np.ndarray = self.field.lon
 
     def get_bbox(
         self, ax: Axes, projs: MapAxesProjections, aspect: float
-    ) -> "MapAxesBoundingBox":
+    ) -> MapAxesBoundingBox:
         """Get bounding box of domain."""
         lllon, urlon, lllat, urlat = self._get_bbox_corners(aspect)
         bbox = MapAxesBoundingBox(ax, projs, "data", lllon, urlon, lllat, urlat)
@@ -72,12 +74,40 @@ class Domain:
 class CloudDomain(Domain):
     """Domain derived from spatial distribution of cloud over time."""
 
-    def __post_init__(self) -> None:
-        super().__post_init__()
-        self.domain_size_lat = self.field.var_setups.collect_equal("domain_size_lat")
-        self.domain_size_lon = self.field.var_setups.collect_equal("domain_size_lon")
-        self.mask_nz: np.ndarray = self.field.time_props.mask_nz
-        assert (self.lat.size, self.lon.size) == self.mask_nz.shape
+    def __init__(
+        self,
+        lat: np.ndarray,
+        lon: np.ndarray,
+        domain_size_lat: float,
+        domain_size_lon: float,
+        mask_nz: np.ndarray,
+        **kwargs: Any,
+    ) -> None:
+        """Create an instance of ``CloudDomain``.
+
+        Args:
+            lat: 1D latitude array.
+
+            lon: 1D longitude array.
+
+            domain_size_lat: Latitudinal extent of the domain in degrees.
+
+            domain_size_lon: Longitudinal extent of the domain in degrees.
+
+            mask_nz: Mask with dimensions (lat, lon) of non-zero field values.
+
+            **kwargs: Keyword arguments passed to ``Domain``.
+
+        """
+        super().__init__(lat, lon, **kwargs)
+        self.domain_size_lat = domain_size_lat
+        self.domain_size_lon = domain_size_lon
+        self.mask_nz = mask_nz
+        if self.mask_nz.shape != (self.lat.size, self.lon.size):
+            raise ValueError(
+                "shape of mask_nz inconsistent with lat/lon"
+                f": {self.mask_nz.shape} != ({self.lat.size}, {self.lon.size}"
+            )
 
     # pylint: disable=R0914  # too-many-locals
     # pylint: disable=R0915  # too-many-statements
@@ -150,18 +180,43 @@ class CloudDomain(Domain):
 class ReleaseSiteDomain(Domain):
     """Domain relative to release point."""
 
-    def __post_init__(self):
-        super().__post_init__()
-        self.domain_size_lat: Optional[float] = self.field.var_setups.collect_equal(
-            "domain_size_lat"
-        )
-        self.domain_size_lon: Optional[float] = self.field.var_setups.collect_equal(
-            "domain_size_lon"
-        )
-        assert self.field.mdata is not None  # mypy
-        self.release_lat: float = self.field.mdata.release.lat
-        self.release_lon: float = self.field.mdata.release.lon
-        self.field_proj = self.field.proj
+    def __init__(
+        self,
+        lat: np.ndarray,
+        lon: np.ndarray,
+        domain_size_lat: Optional[float],
+        domain_size_lon: Optional[float],
+        release_lat: float,
+        release_lon: float,
+        field_proj: Projection,
+        **kwargs: Any,
+    ) -> None:
+        """Create an instance of ``CloudDomain``.
+
+        Args:
+            lat: 1D latitude array.
+
+            lon: 1D longitude array.
+
+            domain_size_lat: Latitudinal extent of the domain in degrees.
+
+            domain_size_lon: Longitudinal extent of the domain in degrees.
+
+            release_lat: Latitude of release point.
+
+            release_lon: Longitude of release point.
+
+            field_proj: Field projection.
+
+            **kwargs: Keyword arguments passed to ``Domain``.
+
+        """
+        super().__init__(lat, lon, **kwargs)
+        self.domain_size_lat = domain_size_lat
+        self.domain_size_lon = domain_size_lon
+        self.release_lat = release_lat
+        self.release_lon = release_lon
+        self.field_proj = field_proj
 
     def _get_bbox_corners(self, aspect: float) -> Tuple[float, float, float, float]:
         """Return corners of domain: [lllon, lllat, urlon, urlat]."""
