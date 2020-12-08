@@ -76,6 +76,7 @@ def default_post_summarize(
     return summary
 
 
+# pylint: disable=R0912  # too-many-branches (>12)
 def summarizable(
     cls: Optional[Callable] = None,
     *,
@@ -265,6 +266,7 @@ class Summarizer:
             return str(obj)
         return obj
 
+    # pylint: disable=R0201  # no-self-use
     def _try_mpl(self, obj: Any) -> Dict[str, Any]:
         """Try to summarize ``obj`` as a matplotlib object."""
         if isinstance(obj, Figure):
@@ -327,19 +329,21 @@ class Summarizer:
         raise NotSummarizableError("named", obj)
 
     # pylint: disable=R0201  # no-self-use
+    # pylint: disable=W0123  # eval-used
     def _try_eval(self, obj: Any) -> Any:
         try:
             eval(str(obj))
-        except (SyntaxError, NameError):
-            raise NotSummarizableError("eval", obj)
+        except (SyntaxError, NameError) as e:
+            raise NotSummarizableError("eval", obj) from e
         return obj
 
     # pylint: disable=R0201  # no-self-use
+    # pylint: disable=W0123  # eval-used
     def _try_eval_np(self, obj: Any) -> Any:
         try:
             eval(f"np.{obj}")
-        except (SyntaxError, NameError):
-            raise NotSummarizableError("eval_np", obj)
+        except (SyntaxError, NameError) as e:
+            raise NotSummarizableError("eval_np", obj) from e
         return obj
 
 
