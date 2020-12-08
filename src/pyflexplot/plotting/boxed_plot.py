@@ -24,7 +24,6 @@ from ..utils.typing import FontSizeType
 from ..utils.typing import RectType
 from .map_axes import MapAxes
 from .map_axes import MapAxesConfig
-from .map_axes import post_summarize_plot
 from .text_box_axes import TextBoxAxes
 
 
@@ -109,10 +108,7 @@ class DummyBoxedPlot:
     """Dummy for dry runs."""
 
 
-@summarizable(
-    attrs=["ax_map", "boxes", "field", "fig", "map_config"],
-    post_summarize=post_summarize_plot,
-)
+@summarizable(attrs=["ax_map", "boxes", "field", "fig", "map_config"])
 # pylint: disable=R0902  # too-many-instance-attributes
 class BoxedPlot:
     """A FLEXPART dispersion plot."""

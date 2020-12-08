@@ -14,7 +14,6 @@ from matplotlib.figure import Figure
 # Local
 from ..utils.exceptions import MinFontSizeReachedError
 from ..utils.exceptions import MinStrLenReachedError
-from ..utils.summarize import post_summarize_plot
 from ..utils.summarize import summarizable
 from ..utils.typing import ColorType
 from ..utils.typing import LocationType
@@ -25,7 +24,7 @@ from ..utils.typing import RectType
 from ..utils.typing import TextBlocksType
 
 
-@summarizable(post_summarize=post_summarize_plot)
+@summarizable
 class TextBoxElement:
     """Base class for elements in text box."""
 
@@ -246,7 +245,7 @@ class TextBoxElementHLine(TextBoxElement):
 @summarizable(
     attrs=["name", "rect", "lw_frame", "dx_unit", "dy_unit"],
     post_summarize=lambda self, summary: {
-        **post_summarize_plot(self, summary),
+        **summary,
         "elements": [e.summarize() for e in self.elements],
     },
 )
@@ -770,7 +769,6 @@ class TextFitter:
         "va",
         "ha",
     ],
-    post_summarize=post_summarize_plot,
 )
 # SR_TODO Refactor to remove number of instance attributes!
 # pylint: disable=R0902  # too-many-instance-attributes

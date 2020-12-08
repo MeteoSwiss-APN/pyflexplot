@@ -25,7 +25,6 @@ from matplotlib.text import Text
 
 # Local
 from ..input.data import Field
-from ..utils.summarize import post_summarize_plot
 from ..utils.summarize import summarizable
 from ..utils.typing import ColorType
 from ..utils.typing import RectType
@@ -171,9 +170,7 @@ class MapAxes:
     def post_summarize(
         self, summary: MutableMapping[str, Any]
     ) -> MutableMapping[str, Any]:
-        summary = post_summarize_plot(self, summary)
-        summary["elements"] = self._summarized_elements
-        return summary
+        return {**summary, "elements": self._summarized_elements}
 
     def add_marker(
         self,

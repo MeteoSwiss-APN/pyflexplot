@@ -12,10 +12,11 @@ from typing import Sequence
 from typing import Union
 
 # Third-party
-import matplotlib as mpl
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from matplotlib.transforms import Bbox
+from matplotlib.transforms import TransformedBbox
 
 # First-party
 from srutils.iter import isiterable
@@ -72,88 +73,6 @@ def default_post_summarize(
         Modified summary dict.
 
     """
-    return summary
-
-
-def summarize_mpl_figure(obj: Any) -> Dict[str, Any]:
-    """Summarize a matplotlib ``Figure`` instance in a dict."""
-    summary = {
-        "type": type(obj).__name__,
-        # SR_TODO if necessary, add option for shallow summary (avoid loops)
-        "axes": [summarize_mpl_axes(a) for a in obj.get_axes()],
-        "bbox": summarize_mpl_bbox(obj.bbox),
-    }
-    return summary
-
-
-def summarize_mpl_axes(obj: Any) -> Dict[str, Any]:
-    """Summarize a matplotlib ``Axes`` instance in a dict."""
-    # Note: Hand-picked selection of attributes (not very systematically)
-    summary = {
-        "type": type(obj).__name__,
-        "adjustable": obj.get_adjustable(),
-        "aspect": obj.get_aspect(),
-        "bbox": summarize_mpl_bbox(obj.bbox),
-        "data_ratio": obj.get_data_ratio(),
-        "facecolor": obj.get_facecolor(),
-        "fc": obj.get_fc(),
-        "frame_on": obj.get_frame_on(),
-        "label": obj.get_label(),
-        "lines": list(
-            map(lambda l: np.asarray(l.get_data()).tolist(), obj.get_lines())
-        ),
-        "position": summarize_mpl_bbox(obj.get_position()),
-        "title": obj.get_title(),
-        "visible": obj.get_visible(),
-        "window_extent": summarize_mpl_bbox(obj.get_window_extent()),
-        "xlabel": obj.get_xlabel(),
-        "xlim": obj.get_xlim(),
-        "xmajorticklabels": list(map(str, obj.get_xmajorticklabels())),
-        "xminorticklabels": list(map(str, obj.get_xminorticklabels())),
-        "xscale": obj.get_xscale(),
-        "xticklabels": list(map(str, obj.get_xticklabels())),
-        "xticks": list(obj.get_xticks()),
-        "ylabel": obj.get_ylabel(),
-        "ylim": obj.get_ylim(),
-        "ymajorticklabels": list(map(str, obj.get_ymajorticklabels())),
-        "yminorticklabels": list(map(str, obj.get_yminorticklabels())),
-        "yscale": obj.get_yscale(),
-        "yticklabels": list(map(str, obj.get_yticklabels())),
-        "yticks": list(obj.get_yticks()),
-        "zorder": obj.get_zorder(),
-    }
-    return summary
-
-
-def summarize_mpl_bbox(obj: Any) -> Dict[str, Any]:
-    """Summarize a matplotlib ``Bbox`` instance in a dict."""
-    summary = {
-        "type": type(obj).__name__,
-        "bounds": obj.bounds,
-    }
-    return summary
-
-
-# pylint: disable=W0613  # unused argument (self)
-def post_summarize_plot(
-    self, summary: MutableMapping[str, Any]
-) -> MutableMapping[str, Any]:
-    """Post-process the summary dict of plot class.
-
-    Convert elements like figures and axes into human-readable summaries of
-    themselves, provided that they have been specified as to be summarized.
-
-    """
-    cls_fig = Figure
-    cls_axs = Axes
-    cls_bbox = (mpl.transforms.Bbox, mpl.transforms.TransformedBbox)
-    for key, val in summary.items():
-        if isinstance(val, cls_fig):
-            summary[key] = summarize_mpl_figure(val)
-        elif isinstance(val, cls_axs):
-            summary[key] = summarize_mpl_axes(val)
-        elif isinstance(val, cls_bbox):
-            summary[key] = summarize_mpl_bbox(val)
     return summary
 
 
@@ -224,12 +143,6 @@ def summarizable(
         attrs = list(attrs or [])
     except TypeError as e:
         raise ValueError("`attrs` is not iterable", type(attrs), attrs) from e
-    try:
-        attrs_skip = list(attrs_skip or [])
-    except TypeError as e:
-        raise ValueError(
-            "`attrs_skip` is not iterable", type(attrs_skip), attrs_skip
-        ) from e
     if summarize is None and not hasattr(cls, "summarize"):
         summarize = default_summarize
     if post_summarize is None and not hasattr(cls, "post_summarize"):
@@ -242,10 +155,12 @@ def summarizable(
         elif is_dataclass(cls):
             # Collect dataclass fields
             attrs = list(cls.__dataclass_fields__) + attrs  # type: ignore
-    attrs.extend(list(attrs_add or []))
-    attrs = [a for a in attrs if a not in attrs_skip]
 
-    # Extend class
+    if attrs_skip:
+        attrs = [a for a in attrs if a not in attrs_skip]
+        if attrs_add:
+            attrs_add = [a for a in attrs_add if a not in attrs_skip]
+
     for name, attr in [
         ("summarizable_attrs", attrs),
         ("summarize", summarize),
@@ -255,6 +170,16 @@ def summarizable(
             if not overwrite and hasattr(cls, name):
                 raise AttributeConflictError(name, cls)
             setattr(cls, name, attr)
+
+    if attrs_add:
+        # Don't directly extend cls.summarizable_attrs in order not to add
+        # attributes of a subclass to summarizable_attrs of its subperclass
+        setattr(
+            cls,
+            "summarizable_attrs",
+            list(getattr(cls, "summarizable_attrs")) + list(attrs_add),
+        )
+
     return cls
 
 
@@ -318,27 +243,47 @@ class Summarizer:
 
     def _summarize(self, obj: Any) -> Union[Dict[str, Any], Any]:
         """Try to summarize the object in various ways."""
+        if isinstance(obj, str):
+            return obj
         methods = [
+            self._try_mpl,
             self._try_summarizable,
             self._try_dict_like,
             self._try_list_like,
             self._try_named,
+            self._try_eval,
+            self._try_eval_np,
         ]
         for method in methods:
             try:
-                return method(obj)
+                obj = method(obj)
             except NotSummarizableError:
                 continue
+            else:
+                break
+        else:
+            return str(obj)
         return obj
+
+    def _try_mpl(self, obj: Any) -> Dict[str, Any]:
+        """Try to summarize ``obj`` as a matplotlib object."""
+        if isinstance(obj, Figure):
+            return summarize_mpl_figure(obj)
+        elif isinstance(obj, Axes):
+            return summarize_mpl_axes(obj)
+        elif isinstance(obj, (Bbox, TransformedBbox)):
+            return summarize_mpl_bbox(obj)
+        raise NotSummarizableError("mpl", obj)
 
     def _try_summarizable(self, obj: Any) -> Dict[str, Any]:
         """Try to summarize ``obj`` as a summarizable object."""
         try:
-            data = obj.summarize()
+            obj.summarize
         except AttributeError as e:
             raise NotSummarizableError("summarizable", obj) from e
         else:
-            return self._summarize(data)
+            dct = obj.summarize()
+        return self._summarize(dct)
 
     def _try_dict_like(self, obj: Any) -> Dict[Any, Any]:
         """Try to summarize ``obj`` as a dict-like object."""
@@ -364,8 +309,8 @@ class Summarizer:
             data.append(self._summarize(item))
         return data
 
-    @staticmethod
-    def _try_named(obj: Any) -> str:
+    # pylint: disable=R0201  # no-self-use
+    def _try_named(self, obj: Any) -> str:
         """Try to summarize ``obj`` as a named object (e.g., function/method)."""
         try:
             name = obj.__name__
@@ -380,3 +325,78 @@ class Summarizer:
                 name = f"{obj_self.__class__.__name__}.{name}"
             return f"{type(obj).__name__}:{name}"
         raise NotSummarizableError("named", obj)
+
+    # pylint: disable=R0201  # no-self-use
+    def _try_eval(self, obj: Any) -> Any:
+        try:
+            eval(str(obj))
+        except (SyntaxError, NameError):
+            raise NotSummarizableError("eval", obj)
+        return obj
+
+    # pylint: disable=R0201  # no-self-use
+    def _try_eval_np(self, obj: Any) -> Any:
+        try:
+            eval(f"np.{obj}")
+        except (SyntaxError, NameError):
+            raise NotSummarizableError("eval_np", obj)
+        return obj
+
+
+def summarize_mpl_figure(obj: Any) -> Dict[str, Any]:
+    """Summarize a matplotlib ``Figure`` instance in a dict."""
+    summary = {
+        "type": type(obj).__name__,
+        # SR_TODO if necessary, add option for shallow summary (avoid loops)
+        "axes": [summarize_mpl_axes(a) for a in obj.get_axes()],
+        "bbox": summarize_mpl_bbox(obj.bbox),
+    }
+    return summary
+
+
+def summarize_mpl_axes(obj: Any) -> Dict[str, Any]:
+    """Summarize a matplotlib ``Axes`` instance in a dict."""
+    # Note: Hand-picked selection of attributes (not very systematically)
+    summary = {
+        "type": type(obj).__name__,
+        "adjustable": obj.get_adjustable(),
+        "aspect": obj.get_aspect(),
+        "bbox": summarize_mpl_bbox(obj.bbox),
+        "data_ratio": obj.get_data_ratio(),
+        "facecolor": obj.get_facecolor(),
+        "fc": obj.get_fc(),
+        "frame_on": obj.get_frame_on(),
+        "label": obj.get_label(),
+        "lines": list(
+            map(lambda l: np.asarray(l.get_data()).tolist(), obj.get_lines())
+        ),
+        "position": summarize_mpl_bbox(obj.get_position()),
+        "title": obj.get_title(),
+        "visible": obj.get_visible(),
+        "window_extent": summarize_mpl_bbox(obj.get_window_extent()),
+        "xlabel": obj.get_xlabel(),
+        "xlim": obj.get_xlim(),
+        "xmajorticklabels": list(map(str, obj.get_xmajorticklabels())),
+        "xminorticklabels": list(map(str, obj.get_xminorticklabels())),
+        "xscale": obj.get_xscale(),
+        "xticklabels": list(map(str, obj.get_xticklabels())),
+        "xticks": list(obj.get_xticks()),
+        "ylabel": obj.get_ylabel(),
+        "ylim": obj.get_ylim(),
+        "ymajorticklabels": list(map(str, obj.get_ymajorticklabels())),
+        "yminorticklabels": list(map(str, obj.get_yminorticklabels())),
+        "yscale": obj.get_yscale(),
+        "yticklabels": list(map(str, obj.get_yticklabels())),
+        "yticks": list(obj.get_yticks()),
+        "zorder": obj.get_zorder(),
+    }
+    return summary
+
+
+def summarize_mpl_bbox(obj: Any) -> Dict[str, Any]:
+    """Summarize a matplotlib ``Bbox`` instance in a dict."""
+    summary = {
+        "type": type(obj).__name__,
+        "bounds": obj.bounds,
+    }
+    return summary
