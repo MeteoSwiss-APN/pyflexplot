@@ -1,7 +1,6 @@
-"""Plots."""
+"""Map axes."""
 # Standard library
 import warnings
-from copy import copy
 from dataclasses import dataclass
 from typing import Any
 from typing import Dict
@@ -17,8 +16,6 @@ from typing import Union
 import cartopy
 import matplotlib as mpl
 import numpy as np
-from cartopy.crs import PlateCarree  # type: ignore
-from cartopy.crs import Projection
 from cartopy.crs import RotatedPole
 from cartopy.io.shapereader import Record  # type: ignore
 from matplotlib.axes import Axes
@@ -28,168 +25,16 @@ from matplotlib.text import Text
 
 # Local
 from ..input.data import Field
-from ..utils.logging import log
 from ..utils.summarize import post_summarize_plot
 from ..utils.summarize import summarizable
 from ..utils.typing import ColorType
 from ..utils.typing import RectType
 from .coord_trans import CoordinateTransformer
+from .domain import Domain
+from .projs import MapAxesProjections
+from .projs import RotPoleMapAxesProjections
 from .ref_dist_indicator import RefDistIndConfig
 from .ref_dist_indicator import ReferenceDistanceIndicator
-
-
-@summarizable
-@dataclass
-class Domain:
-    """Plot domain.
-
-    Args:
-        field: Field to be plotted on the domain.
-
-        zoom_fact (optional): Zoom factor. Use values above/below 1.0 to zoom
-            in/out.
-
-        rel_offset (optional): Relative offset in x and y direction as a
-            fraction of the respective domain extent.
-
-    """
-
-    field: Field
-    zoom_fact: float = 1.0
-    rel_offset: Tuple[float, float] = (0.0, 0.0)
-
-    def get_bbox(self, map_axes: "MapAxes") -> "MapAxesBoundingBox":
-        """Get bounding box of domain."""
-        lllon, urlon, lllat, urlat = self._get_bbox_corners(map_axes)
-        bbox = MapAxesBoundingBox(map_axes, "data", lllon, urlon, lllat, urlat)
-        if self.zoom_fact != 1.0:
-            bbox = bbox.to_axes().zoom(self.zoom_fact, self.rel_offset).to_data()
-        return bbox
-
-    # pylint: disable=W0613  # unused-argument (map_axes)
-    def _get_bbox_corners(
-        self, map_axes: "MapAxes"
-    ) -> Tuple[float, float, float, float]:
-        """Return corners of domain: [lllon, lllat, urlon, urlat]."""
-        lllat = self.field.lat[0]
-        urlat = self.field.lat[-1]
-        lllon = self.field.lon[0]
-        urlon = self.field.lon[-1]
-        return lllon, urlon, lllat, urlat
-
-
-class CloudDomain(Domain):
-    """Domain derived from spatial distribution of cloud over time."""
-
-    # pylint: disable=R0914  # too-many-locals
-    # pylint: disable=R0915  # too-many-statements
-    def _get_bbox_corners(
-        self, map_axes: "MapAxes"
-    ) -> Tuple[float, float, float, float]:
-        """Return corners of domain: [lllon, lllat, urlon, urlat]."""
-        lat: np.ndarray = self.field.lat
-        lon: np.ndarray = self.field.lon
-        assert (lat.size, lon.size) == self.field.time_props.mask_nz.shape
-        lat_min, lat_max = lat[0], lat[-1]
-        lon_min, lon_max = lon[0], lon[-1]
-        d_lat_max = lat_max - lat_min
-        d_lon_max = lon_max - lon_min
-
-        mask_lat = self.field.time_props.mask_nz.any(axis=1)
-        mask_lon = self.field.time_props.mask_nz.any(axis=0)
-        if not any(mask_lat):
-            lllat = lat.min()
-            urlat = lat.max()
-        else:
-            lllat = lat[mask_lat].min()
-            urlat = lat[mask_lat].max()
-        if not any(mask_lon):
-            lllon = lon.min()
-            urlon = lon.max()
-        else:
-            lllon = lon[mask_lon].min()
-            urlon = lon[mask_lon].max()
-        lllat = max([lllat, lat_min])
-        urlat = min([urlat, lat_max])
-        lllon = max([lllon, lon_min])
-        urlon = min([urlon, lon_max])
-
-        # Increase latitudinal size if minimum specified
-        d_lat_min = self.field.var_setups.collect_equal("domain_size_lat")
-        if d_lat_min is not None:
-            d_lat = urlat - lllat
-            if d_lat < d_lat_min:
-                lllat -= 0.5 * min([d_lat_min - d_lat, d_lat_max - d_lat])
-                urlat += 0.5 * min([d_lat_min - d_lat, d_lat_max - d_lat])
-
-        # Increase latitudinal size if minimum specified
-        d_lon_min = self.field.var_setups.collect_equal("domain_size_lon")
-        if d_lon_min is not None:
-            d_lon = urlon - lllon
-            if d_lon < d_lon_min:
-                lllon -= 0.5 * min([d_lon_min - d_lon, d_lon_max - d_lon])
-                urlon += 0.5 * min([d_lon_min - d_lon, d_lon_max - d_lon])
-
-        # Adjust aspect ratio to avoid distortion
-        d_lat = urlat - lllat
-        d_lon = urlon - lllon
-        aspect = map_axes.get_aspect_ratio()
-        if d_lon < d_lat * aspect:
-            lllon -= 0.5 * min([d_lat * aspect - d_lon, d_lon_max - d_lon])
-            urlon += 0.5 * min([d_lat * aspect - d_lon, d_lon_max - d_lon])
-        elif d_lat < d_lon / aspect:
-            lllat -= 0.5 * min([d_lon / aspect - d_lat, d_lat_max - d_lat])
-            urlat += 0.5 * min([d_lon / aspect - d_lat, d_lat_max - d_lat])
-
-        # Adjust latitudinal range if necessary
-        if urlat > lat_max:
-            urlat -= urlat - lat_max
-            lllat -= urlat - lat_max
-        elif lllat < lat_min:
-            urlat += lat_min - lllat
-            lllat += lat_min - lllat
-
-        return lllon, urlon, lllat, urlat
-
-
-class ReleaseSiteDomain(Domain):
-    """Domain relative to release point."""
-
-    def _get_bbox_corners(
-        self, map_axes: "MapAxes"
-    ) -> Tuple[float, float, float, float]:
-        """Return corners of domain: [lllon, lllat, urlon, urlat]."""
-        assert self.field.mdata is not None  # mypy
-        release_lat: float = self.field.mdata.release.lat
-        release_lon: float = self.field.mdata.release.lon
-        d_lat = self.field.var_setups.collect_equal("domain_size_lat")
-        d_lon = self.field.var_setups.collect_equal("domain_size_lon")
-        if d_lat is None and d_lon is None:
-            raise Exception(
-                "domain type 'release_site': setup params 'domain_size_(lat|lon)'"
-                " are both None; one or both is required"
-            )
-        elif d_lat is None:
-            d_lat = d_lon / map_axes.get_aspect_ratio()
-        elif d_lon is None:
-            d_lon = d_lat / map_axes.get_aspect_ratio()
-        assert self.field.mdata is not None  # mypy
-        if isinstance(self.field.proj, RotatedPole):
-            c_lon, c_lat = self.field.proj.transform_point(
-                release_lon, release_lat, PlateCarree()
-            )
-            lllat = c_lat - 0.5 * d_lat
-            lllon = c_lon - 0.5 * d_lon
-            urlat = c_lat + 0.5 * d_lat
-            urlon = c_lon + 0.5 * d_lon
-        else:
-            lllat = release_lat - 0.5 * d_lat
-            lllon = release_lon - 0.5 * d_lon
-            urlat = release_lat + 0.5 * d_lat
-            urlon = release_lon + 0.5 * d_lon
-            lllon, lllat = self.field.proj.transform_point(lllon, lllat, PlateCarree())
-            urlon, urlat = self.field.proj.transform_point(urlon, urlat, PlateCarree())
-        return lllon, urlon, lllat, urlat
 
 
 # pylint: disable=E0213  # no-self-argument (validators)
@@ -266,6 +111,8 @@ class MapAxes:
 
         field: Field.
 
+        projs: Projections.
+
         config: Map axes setup.
 
     """
@@ -273,6 +120,7 @@ class MapAxes:
     fig: Figure
     rect: RectType
     field: Field
+    projs: MapAxesProjections
     config: MapAxesConfig
 
     def __post_init__(self) -> None:
@@ -284,20 +132,15 @@ class MapAxes:
         self.zorder: Dict[str, int]
         self._init_zorder()
 
-        self.proj_data: Projection
-        self.proj_map: Projection
-        self.proj_geo: Projection
-        self._init_projs()
-
         self.ax: Axes
         self._init_ax()
 
         self.trans = CoordinateTransformer(
             trans_axes=self.ax.transAxes,
             trans_data=self.ax.transData,
-            proj_geo=self.proj_geo,
-            proj_map=self.proj_map,
-            proj_data=self.proj_data,
+            proj_geo=self.projs.geo,
+            proj_map=self.projs.map,
+            proj_data=self.projs.data,
         )
 
         self.ref_dist_box: Optional[ReferenceDistanceIndicator]
@@ -312,10 +155,18 @@ class MapAxes:
     def create(
         cls, config: MapAxesConfig, *, fig: Figure, rect: RectType, field: np.ndarray
     ) -> "MapAxes":
+        projs_kwargs = {"proj_type": config.projection, "central_lon": field.lon.mean()}
+        projs: MapAxesProjections
         if isinstance(field.proj, RotatedPole):
-            return MapAxesRotatedPole.create(config, fig=fig, rect=rect, field=field)
+            rotpol_attrs = field.nc_meta_data["variables"]["rotated_pole"]["ncattrs"]
+            projs = RotPoleMapAxesProjections(
+                pollat=rotpol_attrs["grid_north_pole_latitude"],
+                pollon=rotpol_attrs["grid_north_pole_longitude"],
+                **projs_kwargs,
+            )
         else:
-            return cls(fig=fig, rect=rect, field=field, config=config)
+            projs = MapAxesProjections(**projs_kwargs)
+        return cls(fig=fig, rect=rect, field=field, projs=projs, config=config)
 
     def post_summarize(
         self, summary: MutableMapping[str, Any]
@@ -341,7 +192,7 @@ class MapAxes:
             p_lon,
             p_lat,
             marker=marker,
-            transform=self.proj_data,
+            transform=self.projs.data,
             zorder=zorder,
             **kwargs,
         )
@@ -352,7 +203,7 @@ class MapAxes:
                 "p_lon": p_lon,
                 "p_lat": p_lat,
                 "marker": marker,
-                "transform": f"{type(self.proj_data).__name__} instance",
+                "transform": f"{type(self.projs.data).__name__} instance",
                 "zorder": zorder,
                 **kwargs,
             }
@@ -391,7 +242,7 @@ class MapAxes:
         kwargs_default = {"xytext": (5, 1), "textcoords": "offset points"}
         kwargs = {**kwargs_default, **kwargs}
         # pylint: disable=W0212  # protected-access
-        transform = self.proj_geo._as_mpl_transform(self.ax)
+        transform = self.projs.geo._as_mpl_transform(self.ax)
         # -> see https://stackoverflow.com/a/25421922/4419816
         handle = self.ax.annotate(
             s, xy=(p_lon, p_lat), xycoords=transform, zorder=zorder, **kwargs
@@ -433,31 +284,6 @@ class MapAxes:
         d0, dz = 1, 1
         self.zorder = {name: d0 + idx * dz for idx, name in enumerate(zorders_const)}
 
-    def _init_projs(self) -> None:
-        """Prepare projections to transform the data for plotting."""
-        self._init_proj_data()
-        self._init_proj_map()
-        self.proj_geo = cartopy.crs.PlateCarree()
-
-    def _init_proj_data(self) -> None:
-        """Initialize projection of input data."""
-        self.proj_data = cartopy.crs.PlateCarree()
-
-    def _init_proj_map(self) -> None:
-        """Initialize projection of map plot."""
-        projection: str = self.config.projection
-        if projection == "data":
-            self.proj_map = self.proj_data
-        elif projection == "mercator":
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                self.proj_map = cartopy.crs.TransverseMercator(
-                    central_longitude=self.field.lon.mean(), approx=True
-                )
-        else:
-            choices = ["data", "mercator"]
-            raise NotImplementedError(f"projection '{projection}'; choices: {choices}")
-
     # pylint: disable=R0912  # too-many-branches
     # pylint: disable=R0914  # too-many-locals
     # pylint: disable=R0915  # too-many-statements
@@ -467,15 +293,16 @@ class MapAxes:
             warnings.filterwarnings(
                 "ignore", category=RuntimeWarning, message="numpy.ufunc size changed"
             )
-            ax: Axes = self.fig.add_axes(self.rect, projection=self.proj_map)
+            ax: Axes = self.fig.add_axes(self.rect, projection=self.projs.map)
         ax.set_adjustable("datalim")
         ax.spines["geo"].set_edgecolor("none")
         self.ax = ax
 
         # Set geographical extent
         self.ax.set_aspect("auto")
-        bbox: MapAxesBoundingBox = self.config.domain.get_bbox(self)
-        self.ax.set_extent(bbox, self.proj_data)
+        domain = self.config.domain
+        bbox = domain.get_bbox(ax, self.projs, self.get_aspect_ratio())
+        self.ax.set_extent(bbox, self.projs.data)
 
     def _init_ref_dist_box(self) -> None:
         """Initialize the reference distance indicator (if activated)."""
@@ -596,8 +423,8 @@ class MapAxes:
             p_lat: float = city.geometry.y
 
             # In domain
-            p_lon, p_lat = self.proj_data.transform_point(
-                p_lon, p_lat, self.proj_geo, trap=True
+            p_lon, p_lat = self.projs.data.transform_point(
+                p_lon, p_lat, self.projs.geo, trap=True
             )
             in_domain = is_in_box(
                 p_lon,
@@ -676,7 +503,7 @@ class MapAxes:
         lat0, lat1 = self.field.lat[[0, -1]]
         xs = [lon0, lon1, lon1, lon0, lon0]
         ys = [lat0, lat0, lat1, lat1, lat0]
-        self.ax.plot(xs, ys, transform=self.proj_data, c="black", lw=1)
+        self.ax.plot(xs, ys, transform=self.projs.data, c="black", lw=1)
 
     def _ax_add_frame(self) -> None:
         """Draw frame around map plot."""
@@ -693,233 +520,3 @@ class MapAxes:
                 clip_on=False,
             ),
         )
-
-
-@dataclass
-class MapAxesRotatedPole(MapAxes):
-    """Map plot axes for rotated-pole data."""
-
-    pollon: float
-    pollat: float
-
-    @classmethod
-    def create(
-        cls, config: MapAxesConfig, *, fig: Figure, rect: RectType, field: Field
-    ) -> "MapAxesRotatedPole":
-        if not isinstance(field.proj, RotatedPole):
-            raise ValueError("not a rotated-pole field", field)
-        rotated_pole = field.nc_meta_data["variables"]["rotated_pole"]["ncattrs"]
-        pollat = rotated_pole["grid_north_pole_latitude"]
-        pollon = rotated_pole["grid_north_pole_longitude"]
-        return cls(
-            fig=fig,
-            rect=rect,
-            field=field,
-            pollat=pollat,
-            pollon=pollon,
-            config=config,
-        )
-
-    def _init_proj_data(self) -> None:
-        """Initialize projection of input data."""
-        self.proj_data = cartopy.crs.RotatedPole(
-            pole_latitude=self.pollat, pole_longitude=self.pollon
-        )
-
-
-class MapAxesBoundingBox:
-    """Bounding box of a ``MapAxes``."""
-
-    # pylint: disable=R0913  # too-many-arguments
-    def __init__(
-        self,
-        map_axes: MapAxes,
-        coord_type: str,
-        lon0: float,
-        lon1: float,
-        lat0: float,
-        lat1: float,
-    ) -> None:
-        """Create an instance of ``MapAxesBoundingBox``.
-
-        Args:
-            map_axes: Parent map axes object.
-
-            coord_type: Coordinates type.
-
-            lon0: Longitude of south-western corner.
-
-            lon1: Longitude of north-eastern corner.
-
-            lat0: Latitude of south-western corner.
-
-            lat1: Latitude of north-eastern corner.
-
-        """
-        self.coord_types = ["data", "geo"]  # SR_TMP
-        self.map_axes = map_axes
-        self.set(coord_type, lon0, lon1, lat0, lat1)
-        self.trans = CoordinateTransformer(
-            trans_axes=map_axes.ax.transAxes,
-            trans_data=map_axes.ax.transData,
-            proj_geo=map_axes.proj_geo,
-            proj_map=map_axes.proj_map,
-            proj_data=map_axes.proj_data,
-            invalid_ok=False,
-        )
-
-    def __repr__(self):
-        return (
-            f"{type(self).__name__}(\n  "
-            + ",\n  ".join(
-                [
-                    f"map_axes={self.map_axes}",
-                    f"coord_type='{self.coord_type}'",
-                    f"lon0={self.lon0:.2f}",
-                    f"lon1={self.lon1:.2f}",
-                    f"lat0={self.lat0:.2f}",
-                    f"lat1={self.lat1:.2f}",
-                ]
-            )
-            + ",\n)"
-        )
-
-    @property
-    def lon(self):
-        return np.asarray(self)[:2]
-
-    @property
-    def lat(self):
-        return np.asarray(self)[2:]
-
-    @property
-    def coord_type(self):
-        return self._curr_coord_type
-
-    @property
-    def lon0(self):
-        return self._curr_lon0
-
-    @property
-    def lon1(self):
-        return self._curr_lon1
-
-    @property
-    def lat0(self):
-        return self._curr_lat0
-
-    @property
-    def lat1(self):
-        return self._curr_lat1
-
-    # pylint: disable=R0913  # too-many-arguments
-    def set(self, coord_type, lon0, lon1, lat0, lat1):
-        if not all(np.isfinite(c) for c in (lon0, lon1, lat0, lat1)):
-            raise ValueError(f"invalid coordinates: ({lon0}, {lon1}, {lat0}, {lat1}")
-        self._curr_coord_type = coord_type
-        self._curr_lon0 = lon0
-        self._curr_lon1 = lon1
-        self._curr_lat0 = lat0
-        self._curr_lat1 = lat1
-
-    def __iter__(self):
-        """Iterate over the rotated corner coordinates."""
-        yield self._curr_lon0
-        yield self._curr_lon1
-        yield self._curr_lat0
-        yield self._curr_lat1
-
-    def __len__(self):
-        return len(list(iter(self)))
-
-    def __getitem__(self, idx):
-        return list(iter(self))[idx]
-
-    def to_data(self):
-        if self.coord_type == "geo":
-            coords = np.concatenate(self.trans.geo_to_data(self.lon, self.lat))
-        elif self.coord_type == "axes":
-            return self.to_geo().to_data()
-        else:
-            self._error("to_data")
-        self.set("data", *coords)
-        return self
-
-    def to_geo(self):
-        if self.coord_type == "data":
-            coords = np.concatenate(self.trans.data_to_geo(self.lon, self.lat))
-        elif self.coord_type == "axes":
-            coords = np.concatenate(self.trans.axes_to_geo(self.lon, self.lat))
-        else:
-            self._error("to_geo")
-        self.set("geo", *coords)
-        return self
-
-    def to_axes(self):
-        if self.coord_type == "geo":
-            coords = np.concatenate(self.trans.geo_to_axes(self.lon, self.lat))
-        elif self.coord_type == "data":
-            return self.to_geo().to_axes()
-        else:
-            self._error("to_axes")
-        self.set("axes", *coords)
-        return self
-
-    def _error(self, method):
-        raise NotImplementedError(
-            f"{type(self).__name__}.{method} from '{self.coord_type}'"
-        )
-
-    # pylint: disable=R0914  # too-many-locals
-    def zoom(self, fact, rel_offset):
-        """Zoom into or out of the domain.
-
-        Args:
-            fact (float): Zoom factor, > 1.0 to zoom in, < 1.0 to zoom out.
-
-            rel_offset (tuple[float, float], optional): Relative offset in x
-                and y direction as a fraction of the respective domain extent.
-                Defaults to (0.0, 0.0).
-
-        Returns:
-            ndarray[float, n=4]: Zoomed bounding box.
-
-        """
-        try:
-            rel_x_offset, rel_y_offset = [float(i) for i in rel_offset]
-        except Exception as e:
-            raise ValueError(
-                f"rel_offset expected to be a pair of floats, not {rel_offset}"
-            ) from e
-
-        # Restrict zoom to geographical latitude range [-90, 90]
-        _, _, lat0_geo, lat1_geo = iter(copy(self).to_geo())
-        lat0_geo_min = -90
-        lat1_geo_max = 90
-        d_lat_geo_max = min([lat0_geo - lat0_geo_min, lat1_geo_max - lat1_geo])
-        d_lat_geo = lat1_geo - lat0_geo
-        fact_min = d_lat_geo / (2 * d_lat_geo_max + d_lat_geo)
-        if fact < fact_min:
-            log(dbg=f"zoom factor {fact} adjusted to {fact_min} (too small for domain)")
-            fact = fact_min
-
-        lon0, lon1, lat0, lat1 = iter(self)
-        dlon = lon1 - lon0
-        dlat = lat1 - lat0
-        clon = lon0 + (0.5 + rel_x_offset) * dlon
-        clat = lat0 + (0.5 + rel_y_offset) * dlat
-        dlon_zm = dlon / fact
-        dlat_zm = dlat / fact
-
-        coords = np.array(
-            [
-                clon - 0.5 * dlon_zm,
-                clon + 0.5 * dlon_zm,
-                clat - 0.5 * dlat_zm,
-                clat + 0.5 * dlat_zm,
-            ],
-            float,
-        )
-
-        self.set(self.coord_type, *coords)
-        return self

@@ -1870,6 +1870,11 @@ plot_summary = {
                 "max": 178.375,
             },
         },
+        "projs": {
+            "type": "MapAxesProjections",
+            "proj_type": "data",
+            "central_lon": -0.5,
+        },
         "config": {
             "type": "MapAxesConfig",
             "domain": {

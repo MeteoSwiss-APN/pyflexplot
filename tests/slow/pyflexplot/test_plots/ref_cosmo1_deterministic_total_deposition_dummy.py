@@ -313,7 +313,7 @@ field_summary = {
 plot_summary = {
     "type": "BoxedPlot",
     "ax_map": {
-        "type": "MapAxesRotatedPole",
+        "type": "MapAxes",
         "fig": {
             "type": "Figure",
             "axes": [
@@ -1122,6 +1122,13 @@ plot_summary = {
                 "max": 3.3399997,
             },
             "lon": {"dtype": "float32", "shape": [41], "min": -3.86, "max": 4.1400003},
+        },
+        "projs": {
+            "type": "RotPoleMapAxesProjections",
+            "proj_type": "data",
+            "central_lon": 0.14000005,
+            "pollat": 43.0,
+            "pollon": -170.0,
         },
         "config": {
             "type": "MapAxesConfig",

@@ -59,11 +59,11 @@ from .plotting.boxed_plot import DummyBoxedPlot
 from .plotting.boxed_plot import FontConfig
 from .plotting.boxed_plot import FontSizes
 from .plotting.boxed_plot import MarkersConfig
-from .plotting.map_axes import CloudDomain
-from .plotting.map_axes import Domain
+from .plotting.domain import CloudDomain
+from .plotting.domain import Domain
+from .plotting.domain import ReleaseSiteDomain
 from .plotting.map_axes import MapAxes
 from .plotting.map_axes import MapAxesConfig
-from .plotting.map_axes import ReleaseSiteDomain
 from .plotting.text_box_axes import TextBoxAxes
 from .setup import Setup
 from .utils.formatting import escape_format_keys

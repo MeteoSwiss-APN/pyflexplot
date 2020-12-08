@@ -197,7 +197,7 @@ class BoxedPlot:
                 self.field.lon,
                 self.field.lat,
                 arr,
-                transform=self.ax_map.proj_data,
+                transform=self.ax_map.projs.data,
                 levels=levels,
                 extend=extend,
                 zorder=self.ax_map.zorder["fld"],
