@@ -1,6 +1,6 @@
 """Dataclasses utilities."""
 # Standard library
-# Standard library
+import dataclasses
 from dataclasses import is_dataclass
 from datetime import datetime
 from datetime import timedelta
@@ -26,6 +26,33 @@ from srutils.exceptions import TypeCastError
 from srutils.str import split_outside_parens
 
 DataclassT = TypeVar("DataclassT")
+
+
+def asdict(obj: Any, *, shallow: bool = False) -> Dict[str, Any]:
+    """Like ``dataclasses.asdict`` but with option for shallow copy."""
+    if shallow:
+        return asdict_shallow(obj)
+    try:
+        return dataclasses.asdict(obj)
+    except TypeError as e:
+        raise e
+    except NotImplementedError as e:
+        if "can not be copied" not in str(e):
+            raise e
+        raise TypeError(
+            f"asdict with depcopy of {type(obj).__name__} instance failed"
+            "; consider passing shallow=True"
+        ) from e
+
+
+def asdict_shallow(obj: Any) -> Dict[str, Any]:
+    """Like ``dateclasses.asdict`` but with shallow instead of deep copy."""
+    try:
+        fields = obj.__dataclass_fields__
+    except AttributeError as e:
+        raise TypeError(f"obj of type {type(obj).__name__} is not a dataclass") from e
+    else:
+        return {name: getattr(obj, name) for name in fields.keys()}
 
 
 def get_dataclass_fields(obj: DataclassT) -> List[str]:
