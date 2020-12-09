@@ -133,6 +133,7 @@ class CloudDomain(Domain):
         d_lat_max = lat_max - lat_min
         d_lon_max = lon_max - lon_min
 
+        # Latitude
         mask_lat = self.mask_nz.any(axis=1)
         if not any(mask_lat):
             lllat = self.lat.min()
@@ -143,6 +144,7 @@ class CloudDomain(Domain):
         lllat = max([lllat, lat_min])
         urlat = min([urlat, lat_max])
 
+        # Longitude
         mask_lon = self.mask_nz.any(axis=0)
         crossing_dateline = (
             self.periodic_lon and mask_lon[0] and mask_lon[-1] and not mask_lon.all()
@@ -303,11 +305,11 @@ class ReleaseSiteDomain(Domain):
         d_lat = self.min_size_lat
         d_lon = self.min_size_lon
         if d_lon and not d_lat:
-            assert self.aspect
+            assert self.aspect  # proper check in __init__
             assert d_lon is not None  # mypy
             d_lat = d_lon / self.aspect
         elif d_lat and not d_lon:
-            assert self.aspect
+            assert self.aspect  # proper check in __init__
             d_lon = d_lat / self.aspect
         if isinstance(self.field_proj, RotatedPole):
             c_lon, c_lat = self.field_proj.transform_point(
@@ -322,6 +324,4 @@ class ReleaseSiteDomain(Domain):
             lllon = self.release_lon - 0.5 * d_lon
             urlat = self.release_lat + 0.5 * d_lat
             urlon = self.release_lon + 0.5 * d_lon
-            lllon, lllat = self.field_proj.transform_point(lllon, lllat, PlateCarree())
-            urlon, urlat = self.field_proj.transform_point(urlon, urlat, PlateCarree())
         return lllon, urlon, lllat, urlat

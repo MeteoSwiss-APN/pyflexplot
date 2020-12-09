@@ -30,11 +30,13 @@ class MapAxesProjections:
     # pylint: disable=R0201  # no-self-use
     def _init_proj_data(self) -> Projection:
         """Initialize projection of input data."""
-        return self._init_proj_geo()
+        return cartopy.crs.PlateCarree()
 
     def _init_proj_map(self) -> Projection:
         """Initialize projection of map plot."""
         if self.proj_type == "data":
+            if isinstance(self.data, cartopy.crs.PlateCarree):
+                return cartopy.crs.PlateCarree(central_longitude=self.central_lon)
             return self.data
         elif self.proj_type == "mercator":
             with warnings.catch_warnings():

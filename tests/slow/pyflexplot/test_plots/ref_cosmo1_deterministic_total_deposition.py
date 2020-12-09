@@ -1181,7 +1181,7 @@ plot_summary = {
         "projs": {
             "type": "RotPoleMapAxesProjections",
             "proj_type": "data",
-            "central_lon": 1.125,
+            "central_lon": 7.966800212860107,
             "pollat": 43.0,
             "pollon": -170.0,
         },

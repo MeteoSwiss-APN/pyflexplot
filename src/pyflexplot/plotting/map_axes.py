@@ -16,6 +16,7 @@ from typing import Union
 import cartopy
 import matplotlib as mpl
 import numpy as np
+from cartopy.crs import PlateCarree
 from cartopy.crs import RotatedPole
 from cartopy.io.shapereader import Record  # type: ignore
 from matplotlib.axes import Axes
@@ -154,17 +155,20 @@ class MapAxes:
     def create(
         cls, config: MapAxesConfig, *, fig: Figure, rect: RectType, field: np.ndarray
     ) -> "MapAxes":
-        projs_kwargs = {"proj_type": config.projection, "central_lon": field.lon.mean()}
         projs: MapAxesProjections
         if isinstance(field.proj, RotatedPole):
             rotpol_attrs = field.nc_meta_data["variables"]["rotated_pole"]["ncattrs"]
             projs = RotPoleMapAxesProjections(
+                proj_type=config.projection,
+                central_lon=field.mdata.release.lon,
                 pollat=rotpol_attrs["grid_north_pole_latitude"],
                 pollon=rotpol_attrs["grid_north_pole_longitude"],
-                **projs_kwargs,
             )
         else:
-            projs = MapAxesProjections(**projs_kwargs)
+            projs = MapAxesProjections(
+                proj_type=config.projection,
+                central_lon=field.mdata.release.lon,
+            )
         return cls(fig=fig, rect=rect, field=field, projs=projs, config=config)
 
     def post_summarize(
@@ -309,7 +313,7 @@ class MapAxes:
         gl = self.ax.gridlines(
             linestyle=":", linewidth=1, color="black", zorder=self.zorder["grid"]
         )
-        gl.xlocator = mpl.ticker.FixedLocator(np.arange(-180, 180.1, 2))
+        gl.xlocator = mpl.ticker.FixedLocator(np.arange(-180, 180, 2))
         gl.ylocator = mpl.ticker.FixedLocator(np.arange(-90, 90.1, 2))
 
     def _ax_add_geography(self) -> None:
