@@ -527,6 +527,7 @@ def init_domain(field: Field, aspect: float) -> Domain:
             mask_nz=mask_nz,
             min_size_lat=domain_size_lat,
             min_size_lon=domain_size_lon,
+            periodic_lon=(model_name == "IFS-HRES"),
             zoom_fact=0.9,
         )
     elif domain_type == "ch":
