@@ -21,27 +21,19 @@ class Cfg:
     c_data: float = 0.0
     c_geo: float = 0.0
 
-    @property
-    def clons(self):
-        return {
-            "clon_map": self.c_map,
-            "clon_data": self.c_data,
-            "clon_geo": self.c_geo,
-        }
-
 
 class TestRegLatLon:
     fig, ax = plt.subplots()
     ax.set_xlim(-20, 80)
     ax.set_ylim(20, 60)
 
-    def trans(self, clon_map=0.0, clon_data=0.0, clon_geo=0.0):
+    def trans(self, cfg: Cfg) -> CoordinateTransformer:
         return CoordinateTransformer(
             trans_axes=self.ax.transAxes,
             trans_data=self.ax.transData,
-            proj_map=PlateCarree(central_longitude=clon_map),
-            proj_data=PlateCarree(central_longitude=clon_data),
-            proj_geo=PlateCarree(central_longitude=clon_geo),
+            proj_map=PlateCarree(central_longitude=cfg.c_map),
+            proj_data=PlateCarree(central_longitude=cfg.c_data),
+            proj_geo=PlateCarree(central_longitude=cfg.c_geo),
             invalid_ok=False,
         )
 
@@ -56,7 +48,7 @@ class TestRegLatLon:
         ],
     )
     def test_axes_to_geo(self, cfg):
-        trans = self.trans(**cfg.clons)
+        trans = self.trans(cfg)
         assert np.allclose(trans.axes_to_geo(*cfg.xy_in), cfg.xy_out)
 
     @pytest.mark.parametrize(
@@ -70,7 +62,7 @@ class TestRegLatLon:
         ],
     )
     def test_geo_to_axes(self, cfg):
-        trans = self.trans(**cfg.clons)
+        trans = self.trans(cfg)
         assert np.allclose(trans.geo_to_axes(*cfg.xy_in), cfg.xy_out)
 
     @pytest.mark.parametrize(
@@ -83,7 +75,7 @@ class TestRegLatLon:
         ],
     )
     def test_data_to_geo(self, cfg):
-        trans = self.trans(**cfg.clons)
+        trans = self.trans(cfg)
         assert np.allclose(trans.data_to_geo(*cfg.xy_in), cfg.xy_out)
 
     @pytest.mark.parametrize(
@@ -96,5 +88,5 @@ class TestRegLatLon:
         ],
     )
     def test_geo_to_data(self, cfg):
-        trans = self.trans(**cfg.clons)
+        trans = self.trans(cfg)
         assert np.allclose(trans.geo_to_data(*cfg.xy_in), cfg.xy_out)
