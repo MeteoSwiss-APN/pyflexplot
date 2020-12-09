@@ -16,7 +16,6 @@ from typing import Union
 import cartopy
 import matplotlib as mpl
 import numpy as np
-from cartopy.crs import PlateCarree
 from cartopy.crs import RotatedPole
 from cartopy.io.shapereader import Record  # type: ignore
 from matplotlib.axes import Axes
