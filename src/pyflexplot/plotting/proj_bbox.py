@@ -12,28 +12,28 @@ from .coord_trans import CoordinateTransformer
 from .projs import MapAxesProjections
 
 
-class MapAxesBoundingBox:
-    """Bounding box of a ``MapAxes``."""
+class ProjectedBoundingBox:
+    """Bounding box of a ``MapAxes`` in a certain projection."""
 
     # pylint: disable=R0913  # too-many-arguments
     def __init__(
         self,
         ax: Axes,
         projs: MapAxesProjections,
-        coord_type: str,
+        curr_proj: str,
         lon0: float,
         lon1: float,
         lat0: float,
         lat1: float,
     ) -> None:
-        """Create an instance of ``MapAxesBoundingBox``.
+        """Create an instance of ``ProjectedBoundingBox``.
 
         Args:
             ax: Axes object.
 
             projs: Map axes projections.
 
-            coord_type: Coordinates type.
+            curr_proj: Current projection type.
 
             lon0: Longitude of south-western corner.
 
@@ -44,8 +44,7 @@ class MapAxesBoundingBox:
             lat1: Latitude of north-eastern corner.
 
         """
-        self.coord_types = ["data", "geo"]  # SR_TMP
-        self.set(coord_type, lon0, lon1, lat0, lat1)
+        self.set(curr_proj, lon0, lon1, lat0, lat1)
         self.trans = CoordinateTransformer(
             trans_axes=ax.transAxes,
             trans_data=ax.transData,

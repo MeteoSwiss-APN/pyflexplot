@@ -13,7 +13,7 @@ from matplotlib.axes import Axes
 
 # Local
 from ..utils.summarize import summarizable
-from .bbox import MapAxesBoundingBox
+from .proj_bbox import ProjectedBoundingBox
 from .projs import MapAxesProjections
 
 
@@ -50,10 +50,10 @@ class Domain:
         self.zoom_fact = zoom_fact
         self.rel_offset = rel_offset
 
-    def get_bbox(self, ax: Axes, projs: MapAxesProjections) -> MapAxesBoundingBox:
+    def get_bbox(self, ax: Axes, projs: MapAxesProjections) -> ProjectedBoundingBox:
         """Get bounding box of domain."""
         lllon, urlon, lllat, urlat = self.get_bbox_corners()
-        bbox = MapAxesBoundingBox(ax, projs, "data", lllon, urlon, lllat, urlat)
+        bbox = ProjectedBoundingBox(ax, projs, "data", lllon, urlon, lllat, urlat)
         if self.zoom_fact != 1.0:
             bbox = bbox.to_axes().zoom(self.zoom_fact, self.rel_offset).to_data()
         return bbox
