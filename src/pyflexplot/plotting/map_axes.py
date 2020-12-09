@@ -257,13 +257,6 @@ class MapAxes:
         )
         return handle
 
-    def get_aspect_ratio(self) -> float:
-        """Get aspect ratio (height by width) of map plot."""
-        bbox = self.ax.get_window_extent().transformed(
-            self.fig.dpi_scale_trans.inverted()
-        )
-        return bbox.width / bbox.height
-
     def __repr__(self) -> str:
         return f"{type(self).__name__}(<TODO>)"  # SR_TODO
 
