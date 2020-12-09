@@ -7,7 +7,8 @@ from typing import Tuple
 
 # Third-party
 import numpy as np
-from cartopy.crs import Projection  # type: ignore
+from cartopy.crs import PlateCarree
+from cartopy.crs import Projection
 
 # First-party
 from srutils.iter import isiterable
@@ -15,13 +16,33 @@ from srutils.iter import isiterable
 
 @dataclass
 class CoordinateTransformer:
-    """Transform points between different matplotlib coordinate types."""
+    """Transform points between different matplotlib coordinate types.
+
+    Args:
+        trans_axes: Coordinate system of the axes, ranging from (0, 0) in the
+            bottom-left corner to (1, 1) in the top-right corner.
+
+        trans_data: Coordinate system for the data, controlled by xlim and ylim.
+
+        proj_map: Projection of the map plot.
+
+        proj_data: Projection of the input data.
+
+        proj_geo (optional): Geographical projection.
+
+        invalid_ok (bool): Don't raise an exception when encountering invalid
+            coordinates.
+
+        invalid_warn (bool): Show a warning when encountering invalid
+            coordinates.
+
+    """
 
     trans_axes: Projection
     trans_data: Projection
-    proj_geo: Projection
-    proj_map: Projection
-    proj_data: Projection
+    proj_map: Projection = PlateCarree(central_longitude=0.0)
+    proj_data: Projection = PlateCarree(central_longitude=0.0)
+    proj_geo: Projection = PlateCarree(central_longitude=0.0)
     invalid_ok: bool = True
     invalid_warn: bool = True
 
