@@ -274,9 +274,6 @@ class MapAxes:
         d0, dz = 1, 1
         self.zorder = {name: d0 + idx * dz for idx, name in enumerate(zorders_const)}
 
-    # pylint: disable=R0912  # too-many-branches
-    # pylint: disable=R0914  # too-many-locals
-    # pylint: disable=R0915  # too-many-statements
     def _init_ax(self) -> None:
         """Initialize Axes."""
         with warnings.catch_warnings():
