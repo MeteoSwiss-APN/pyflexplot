@@ -30,7 +30,7 @@ class MapAxesProjections:
     # pylint: disable=R0201  # no-self-use
     def _init_proj_data(self) -> Projection:
         """Initialize projection of input data."""
-        return cartopy.crs.PlateCarree()
+        return cartopy.crs.PlateCarree(central_longitude=0.0)
 
     def _init_proj_map(self) -> Projection:
         """Initialize projection of map plot."""
