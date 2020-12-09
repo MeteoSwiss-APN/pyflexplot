@@ -12,17 +12,18 @@ from cartopy.crs import Projection
 class MapAxesProjections:
     """Projections of a ``MapAxes`` for data on a regular lat/lon grid."""
 
-    def __init__(self, proj_type: str, central_lon: float) -> None:
+    def __init__(self, proj_type: str = "data", central_lon: float = 0.0) -> None:
         """Create instance of ``MapAxesProjections``.
 
         Args:
-            proj_type: type of projection.
+            proj_type (optional): Type of projection.
 
-            central_lon: Central longitude.
+            central_lon (optional): Central longitude.
 
         """
-        self.proj_type = proj_type
-        self.central_lon = central_lon
+        self.proj_type: str = proj_type
+        self.central_lon: float = central_lon
+
         self.data: Projection = self._init_proj_data()
         self.map: Projection = self._init_proj_map()
         self.geo: Projection = self._init_proj_geo()
@@ -67,18 +68,22 @@ class RotPoleMapAxesProjections(MapAxesProjections):
     """Projections of a ``MapAxes`` for data on a rotated-pole grid."""
 
     def __init__(
-        self, proj_type: str, central_lon: float, pollat: float, pollon: float
+        self,
+        proj_type: str = "data",
+        central_lon: float = 0.0,
+        pollat: float = 90.0,
+        pollon: float = 180.0,
     ) -> None:
         """Create instance of ``RotPoleMapAxesProjections``.
 
         Args:
-            proj_type: type of projection.
+            proj_type (optional): Type of projection.
 
-            central_lon: Central longitude.
+            central_lon (optional): Central longitude.
 
-            pollat: Latitude of rotated north pole.
+            pollat (optional): Latitude of rotated north pole.
 
-            pollon: Longitude of rotated north pole.
+            pollon (optional): Longitude of rotated north pole.
 
         """
         self.pollat = pollat
