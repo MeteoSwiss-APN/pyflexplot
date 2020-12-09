@@ -64,7 +64,7 @@ class BoxedPlotLayoutVintage:
 
     def aspect_center(self) -> float:
         _, _, w, h = self.rect_center()
-        return w / h
+        return w / h * self.aspect
 
     def rect_right_middle(self) -> RectType:
         return (
@@ -149,7 +149,7 @@ class BoxedPlotLayoutModern:
 
     def aspect_center(self) -> float:
         _, _, w, h = self.rect_center()
-        return w / h
+        return w / h * self.aspect
 
     def rect_right_top(self) -> RectType:
         return (
