@@ -125,12 +125,12 @@ class MapAxesBoundingBox:
     def to_data(self):
         if self.coord_type == "geo":
             coords = np.concatenate(self.trans.geo_to_data(self.lon, self.lat))
+            self.set("data", *coords)
+            return self
         elif self.coord_type == "axes":
             return self.to_geo().to_data()
         else:
             raise self._error("to_data")
-        self.set("data", *coords)
-        return self
 
     def to_geo(self):
         if self.coord_type == "data":
@@ -149,7 +149,8 @@ class MapAxesBoundingBox:
             return self
         elif self.coord_type == "data":
             return self.to_geo().to_axes()
-        raise self._error("to_axes")
+        else:
+            raise self._error("to_axes")
 
     def _error(self, method) -> Exception:
         return NotImplementedError(
