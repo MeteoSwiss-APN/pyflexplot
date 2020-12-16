@@ -53,7 +53,9 @@ class Domain:
     def get_bbox(self, ax: Axes, projs: MapAxesProjections) -> ProjectedBoundingBox:
         """Get bounding box of domain."""
         lllon, urlon, lllat, urlat = self.get_bbox_corners()
-        bbox = ProjectedBoundingBox(ax, projs, "data", lllon, urlon, lllat, urlat)
+        bbox = ProjectedBoundingBox(
+            ax, projs, lon0=lllon, lon1=urlon, lat0=lllat, lat1=urlat
+        )
         if self.zoom_fact != 1.0:
             bbox = bbox.to_axes().zoom(self.zoom_fact, self.rel_offset).to_data()
         return bbox

@@ -97,28 +97,35 @@ class MapAxesConfig:
 
 
 # pylint: disable=R0902  # too-many-instance-attributes
-@summarizable(attrs_add=["projs"])
-@dataclass
+@summarizable(attrs=["fig", "rect", "field", "config", "trans"])
 class MapAxes:
-    """Map plot axes for regular lat/lon data.
+    """Map plot axes for regular lat/lon data."""
 
-    Args:
-        fig: Figure to which to map axes is added.
+    def __init__(
+        self,
+        *,
+        config: MapAxesConfig,
+        field: Field,
+        fig: Figure,
+        rect: RectType,
+    ) -> None:
+        """Create an instance of ``MapAxes``.
 
-        rect: Position of map plot panel in figure coordinates.
+        Args:
+            fig: Figure to which to map axes is added.
 
-        field: Field.
+            rect: Position of map plot panel in figure coordinates.
 
-        config: Map axes setup.
+            field: Field.
 
-    """
+            config: Map axes setup.
 
-    config: MapAxesConfig
-    field: Field
-    fig: Figure
-    rect: RectType
+        """
+        self.config: MapAxesConfig = config
+        self.field: Field = field
+        self.fig: Figure = fig
+        self.rect: RectType = rect
 
-    def __post_init__(self) -> None:
         self.elements: List[Tuple[str, Any]] = []
         self._summarized_elements: List[Dict[str, Any]] = []
 
@@ -128,7 +135,7 @@ class MapAxes:
         self._init_zorder()
 
         # SR_TMP <<< TODO Clean this up!
-        def _create_projs(field: Field, config: MapAxesConfig) -> MapAxesProjections:
+        def _create_projs(field: Field) -> MapAxesProjections:
             proj_geo = cartopy.crs.PlateCarree()
             if isinstance(field.proj, RotatedPole):
                 rotpol_attrs = field.nc_meta_data["variables"]["rotated_pole"][
@@ -144,20 +151,44 @@ class MapAxes:
                 proj_map = cartopy.crs.PlateCarree(
                     central_longitude=field.mdata.release.lon
                 )
-            return MapAxesProjections(
-                data=proj_data, map=proj_map, geo=proj_geo, curr_proj=config.projection
-            )
+            return MapAxesProjections(data=proj_data, map=proj_map, geo=proj_geo)
 
-        self.projs: MapAxesProjections = _create_projs(self.field, self.config)
+        projs: MapAxesProjections = _create_projs(self.field)
 
-        self.ax: Axes = self._init_ax()
+        # SR_TMP <<< TODO Clean this up!
+        def _create_ax(
+            fig: Figure,
+            rect: RectType,
+            projs: MapAxesProjections,
+            config: MapAxesConfig,
+        ) -> Axes:
+            """Initialize Axes."""
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    category=RuntimeWarning,
+                    message="numpy.ufunc size changed",
+                )
+                ax: Axes = fig.add_axes(rect, projection=projs.map)
+            ax.set_adjustable("datalim")
+            ax.spines["geo"].set_edgecolor("none")
+
+            # Set geographical extent
+            ax.set_aspect("auto")
+            domain = config.domain
+            bbox = domain.get_bbox(ax, projs)
+            ax.set_extent(bbox, projs.data)
+
+            return ax
+
+        self.ax: Axes = _create_ax(self.fig, self.rect, projs, self.config)
 
         self.trans = CoordinateTransformer(
             trans_axes=self.ax.transAxes,
             trans_data=self.ax.transData,
-            proj_geo=self.projs.geo,
-            proj_map=self.projs.map,
-            proj_data=self.projs.data,
+            proj_geo=projs.geo,
+            proj_map=projs.map,
+            proj_data=projs.data,
         )
 
         self.ref_dist_box: Optional[ReferenceDistanceIndicator]
@@ -190,7 +221,7 @@ class MapAxes:
             p_lon,
             p_lat,
             marker=marker,
-            transform=self.projs.data,
+            transform=self.trans.proj_data,
             zorder=zorder,
             **kwargs,
         )
@@ -201,7 +232,7 @@ class MapAxes:
                 "p_lon": p_lon,
                 "p_lat": p_lat,
                 "marker": marker,
-                "transform": f"{type(self.projs.data).__name__} instance",
+                "transform": f"{type(self.trans.proj_data).__name__} instance",
                 "zorder": zorder,
                 **kwargs,
             }
@@ -240,7 +271,7 @@ class MapAxes:
         kwargs_default = {"xytext": (5, 1), "textcoords": "offset points"}
         kwargs = {**kwargs_default, **kwargs}
         # pylint: disable=W0212  # protected-access
-        transform = self.projs.geo._as_mpl_transform(self.ax)
+        transform = self.trans.proj_geo._as_mpl_transform(self.ax)
         # -> see https://stackoverflow.com/a/25421922/4419816
         handle = self.ax.annotate(
             s, xy=(p_lon, p_lat), xycoords=transform, zorder=zorder, **kwargs
@@ -274,29 +305,6 @@ class MapAxes:
         ][::-1]
         d0, dz = 1, 1
         self.zorder = {name: d0 + idx * dz for idx, name in enumerate(zorders_const)}
-
-    def _init_ax(self) -> Axes:
-        """Initialize Axes."""
-        fig = self.fig
-        rect = self.rect
-        projs = self.projs
-        config = self.config
-
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", category=RuntimeWarning, message="numpy.ufunc size changed"
-            )
-            ax: Axes = fig.add_axes(rect, projection=projs.map)
-        ax.set_adjustable("datalim")
-        ax.spines["geo"].set_edgecolor("none")
-
-        # Set geographical extent
-        ax.set_aspect("auto")
-        domain = config.domain
-        bbox = domain.get_bbox(ax, projs)
-        ax.set_extent(bbox, projs.data)
-
-        return ax
 
     def _init_ref_dist_box(self) -> None:
         """Initialize the reference distance indicator (if activated)."""
@@ -417,8 +425,8 @@ class MapAxes:
             p_lat: float = city.geometry.y
 
             # In domain
-            p_lon, p_lat = self.projs.data.transform_point(
-                p_lon, p_lat, self.projs.geo, trap=True
+            p_lon, p_lat = self.trans.proj_data.transform_point(
+                p_lon, p_lat, self.trans.proj_geo, trap=True
             )
             in_domain = is_in_box(
                 p_lon,
@@ -497,7 +505,7 @@ class MapAxes:
         lat0, lat1 = self.field.lat[[0, -1]]
         xs = [lon0, lon1, lon1, lon0, lon0]
         ys = [lat0, lat0, lat1, lat1, lat0]
-        self.ax.plot(xs, ys, transform=self.projs.data, c="black", lw=1)
+        self.ax.plot(xs, ys, transform=self.trans.proj_data, c="black", lw=1)
 
     def _ax_add_frame(self) -> None:
         """Draw frame around map plot."""

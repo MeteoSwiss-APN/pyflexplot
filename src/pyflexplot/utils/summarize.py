@@ -17,6 +17,7 @@ from cartopy.crs import Projection
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.transforms import Bbox
+from matplotlib.transforms import Transform
 from matplotlib.transforms import TransformedBbox
 
 # First-party
@@ -206,7 +207,7 @@ class Summarizer:
         addl: Optional[Collection[str]] = None,
         skip: Optional[Collection[str]] = None,
     ) -> Dict[str, Any]:
-        """Summarize specified attributes of ``obj`` in a dict.
+        """Summarize specified attributes of ``obj`` as a dict.
 
         The attributes to be summarized must be specified by name in the
         attribute ``obj.summarizable_attrs``.
@@ -278,6 +279,8 @@ class Summarizer:
             return summarize_mpl_axes(obj)
         elif isinstance(obj, (Bbox, TransformedBbox)):
             return summarize_mpl_bbox(obj)
+        elif isinstance(obj, (Bbox, Transform)):
+            return summarize_mpl_transform(obj)
         raise NotSummarizableError("mpl", obj)
 
     # pylint: disable=R0201  # no-self-use
@@ -361,7 +364,7 @@ class Summarizer:
 
 
 def summarize_mpl_figure(obj: Any) -> Dict[str, Any]:
-    """Summarize a matplotlib ``Figure`` instance in a dict."""
+    """Summarize a matplotlib ``Figure`` instance as a dict."""
     summary = {
         "type": type(obj).__name__,
         # SR_TODO if necessary, add option for shallow summary (avoid loops)
@@ -372,7 +375,7 @@ def summarize_mpl_figure(obj: Any) -> Dict[str, Any]:
 
 
 def summarize_mpl_axes(obj: Any) -> Dict[str, Any]:
-    """Summarize a matplotlib ``Axes`` instance in a dict."""
+    """Summarize a matplotlib ``Axes`` instance as a dict."""
     # Note: Hand-picked selection of attributes (not very systematically)
     summary = {
         "type": type(obj).__name__,
@@ -384,11 +387,11 @@ def summarize_mpl_axes(obj: Any) -> Dict[str, Any]:
         "fc": obj.get_fc(),
         "frame_on": obj.get_frame_on(),
         "label": obj.get_label(),
-        "lines": list(
-            map(lambda l: np.asarray(l.get_data()).tolist(), obj.get_lines())
-        ),
+        "lines": [np.asarray(line.get_data()).tolist() for line in obj.get_lines()],
         "position": summarize_mpl_bbox(obj.get_position()),
         "title": obj.get_title(),
+        "transAxes": summarize_mpl_transform(obj.transAxes),
+        "transData": summarize_mpl_transform(obj.transData),
         "visible": obj.get_visible(),
         "window_extent": summarize_mpl_bbox(obj.get_window_extent()),
         "xlabel": obj.get_xlabel(),
@@ -411,10 +414,18 @@ def summarize_mpl_axes(obj: Any) -> Dict[str, Any]:
 
 
 def summarize_mpl_bbox(obj: Any) -> Dict[str, Any]:
-    """Summarize a matplotlib ``Bbox`` instance in a dict."""
+    """Summarize a matplotlib ``Bbox`` instance as a dict."""
     summary = {
         "type": type(obj).__name__,
         "bounds": obj.bounds,
+    }
+    return summary
+
+
+def summarize_mpl_transform(obj: Any) -> Dict[str, Any]:
+    """Summarize a matplotlib ``Transform`` instance as a dict."""
+    summary = {
+        "type": type(obj).__name__,
     }
     return summary
 

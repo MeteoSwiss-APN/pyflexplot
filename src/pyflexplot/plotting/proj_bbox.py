@@ -22,7 +22,6 @@ class MapAxesProjections:
     data: Projection
     map: Projection
     geo: Projection
-    curr_proj: str = "data"
 
 
 class ProjectedBoundingBox:
@@ -33,11 +32,12 @@ class ProjectedBoundingBox:
         self,
         ax: Axes,
         projs: MapAxesProjections,
-        curr_proj: str,
-        lon0: float,
-        lon1: float,
-        lat0: float,
-        lat1: float,
+        *,
+        curr_proj: str = "data",
+        lon0: float = -180.0,
+        lon1: float = 180.0,
+        lat0: float = -90.0,
+        lat1: float = 90.0,
     ) -> None:
         """Create an instance of ``ProjectedBoundingBox``.
 
@@ -46,15 +46,15 @@ class ProjectedBoundingBox:
 
             projs: Map axes projections.
 
-            curr_proj: Current projection type.
+            curr_proj (optional): Current projection type.
 
-            lon0: Longitude of south-western corner.
+            lon0 (optional): Longitude of south-western corner.
 
-            lon1: Longitude of north-eastern corner.
+            lon1 (optional): Longitude of north-eastern corner.
 
-            lat0: Latitude of south-western corner.
+            lat0 (optional): Latitude of south-western corner.
 
-            lat1: Latitude of north-eastern corner.
+            lat1 (optional): Latitude of north-eastern corner.
 
         """
         self.set(curr_proj, lon0, lon1, lat0, lat1)
