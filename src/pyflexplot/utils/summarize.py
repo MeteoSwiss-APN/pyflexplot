@@ -86,9 +86,7 @@ def summarizable(
     attrs: Optional[Collection[str]] = None,
     attrs_add: Optional[Collection[str]] = None,
     attrs_skip: Optional[Collection[str]] = None,
-    summarize: Optional[
-        Callable[[Any, MutableMapping[str, Any]], MutableMapping[str, Any]]
-    ] = None,
+    summarize: Optional[Callable[[Any], Dict[str, Any]]] = None,
     post_summarize: Optional[
         Callable[[Any, MutableMapping[str, Any]], MutableMapping[str, Any]]
     ] = None,
@@ -112,11 +110,9 @@ def summarizable(
             ``attrs`` and, more importantly, auto-collected ones such as
             dataclass attributes.
 
-        summarize: Custom function to summarize the class. Returns a dict
-            containing the summarized attributes, which is then used to update
-            the existing summary dict that has been created based on ``attrs``.
-            Replaces ``default_summarize``. Added to ``cls`` as method
-            ``summarize``.
+        summarize: Custom function to summarize the class as a dict containing
+            the summarized attributes. Replaces``default_summarize``. Added to
+            ``cls`` as method ``summarize``.
 
         post_summarize: Custom function to post-process the summary dict.
             Replaces ``default_post_summarize``. Added to ``cls`` as method
