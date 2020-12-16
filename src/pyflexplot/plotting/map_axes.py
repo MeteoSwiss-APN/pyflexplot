@@ -96,7 +96,13 @@ class MapAxesConfig:
 
 
 # pylint: disable=R0902  # too-many-instance-attributes
-@summarizable(attrs=["fig", "rect", "field", "config", "trans"])
+@summarizable(
+    attrs=["fig", "rect", "field", "config", "trans"],
+    post_summarize=lambda self, summary: {
+        **summary,
+        "elements": self._summarized_elements,
+    },
+)
 class MapAxes:
     """Map plot axes for regular lat/lon data."""
 
@@ -178,11 +184,6 @@ class MapAxes:
         self._ax_add_geography()
         self._ax_add_data_domain_outline()
         self._ax_add_frame()
-
-    def post_summarize(
-        self, summary: MutableMapping[str, Any]
-    ) -> MutableMapping[str, Any]:
-        return {**summary, "elements": self._summarized_elements}
 
     def add_marker(
         self,

@@ -25,7 +25,6 @@ from srutils.dataclasses import asdict
 from srutils.iter import isiterable
 
 # Local
-from .exceptions import AttributeConflictError
 from .exceptions import NotSummarizableError
 
 
@@ -34,7 +33,7 @@ def is_attrs_class(cls: Any) -> bool:
     return isinstance(cls, type) and hasattr(cls, "__attrs_attrs__")
 
 
-def default_summarize(
+def summarize(
     self: Any,
     addl: Optional[Collection[str]] = None,
     skip: Optional[Collection[str]] = None,
@@ -60,7 +59,7 @@ def default_summarize(
 
 
 # pylint: disable=W0613  # unused-argument (self)
-def default_post_summarize(
+def post_summarize(
     self: Any, summary: MutableMapping[str, Any]
 ) -> MutableMapping[str, Any]:
     """Post-process the summary of an object.
@@ -86,10 +85,10 @@ def summarizable(
     attrs: Optional[Collection[str]] = None,
     attrs_add: Optional[Collection[str]] = None,
     attrs_skip: Optional[Collection[str]] = None,
-    summarize: Optional[Callable[[Any], Dict[str, Any]]] = None,
-    post_summarize: Optional[
-        Callable[[Any, MutableMapping[str, Any]], MutableMapping[str, Any]]
-    ] = None,
+    summarize: Callable[[Any], Dict[str, Any]] = summarize,
+    post_summarize: Callable[
+        [Any, MutableMapping[str, Any]], MutableMapping[str, Any]
+    ] = post_summarize,
     auto_collect: bool = True,
     overwrite: bool = False,
 ) -> Callable:
@@ -111,11 +110,11 @@ def summarizable(
             dataclass attributes.
 
         summarize: Custom function to summarize the class as a dict containing
-            the summarized attributes. Replaces``default_summarize``. Added to
-            ``cls`` as method ``summarize``.
+            the summarized attributes. Replaces``summarize``. Added to ``cls``
+            as method ``summarize``.
 
         post_summarize: Custom function to post-process the summary dict.
-            Replaces ``default_post_summarize``. Added to ``cls`` as method
+            Replaces ``post_summarize``. Added to ``cls`` as method
             ``post_summarize``.
 
         auto_collect: Auto-collect attributes of certain types of classes, such
@@ -143,10 +142,6 @@ def summarizable(
         attrs = list(attrs or [])
     except TypeError as e:
         raise ValueError("`attrs` is not iterable", type(attrs), attrs) from e
-    if summarize is None and not hasattr(cls, "summarize"):
-        summarize = default_summarize
-    if post_summarize is None and not hasattr(cls, "post_summarize"):
-        post_summarize = default_post_summarize
 
     if auto_collect:
         if is_attrs_class(cls):
@@ -167,8 +162,6 @@ def summarizable(
         ("post_summarize", post_summarize),
     ]:
         if attr:
-            if not overwrite and hasattr(cls, name):
-                raise AttributeConflictError(name, cls)
             setattr(cls, name, attr)
 
     if attrs_add:

@@ -25,12 +25,12 @@ from ..setup import SetupCollection
 from ..utils.exceptions import ArrayDimensionError
 from ..utils.exceptions import FieldAllNaNError
 from ..utils.exceptions import InconsistentArrayShapesError
-from ..utils.summarize import default_summarize
 from ..utils.summarize import summarizable
+from ..utils.summarize import summarize
 from .meta_data import MetaData
 
 
-def summarize_field(obj: Any) -> Dict[str, Dict[str, Any]]:
+def summarize_field(obj: Any) -> Dict[str, Any]:
     dct = {
         "fld": {
             "dtype": str(obj.fld.dtype),
@@ -60,7 +60,7 @@ def summarize_field(obj: Any) -> Dict[str, Dict[str, Any]]:
         },
         "proj": obj.proj,
     }
-    return default_summarize(dct)
+    return summarize(dct)
 
 
 @summarizable(
