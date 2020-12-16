@@ -13,17 +13,22 @@ from ``_TestBase`` to ``_TestCreateReference`` and running pytest.
 
 field_summary = {
     "type": "Field",
-    "proj": {
-        "type": "PlateCarree",
-        "x_limits": (-180.0, 180.0),
-        "y_limits": (-90.0, 90.0),
-        "proj4_params": {
-            "ellps": "WGS84",
-            "a": 57.29577951308232,
-            "proj": "eqc",
-            "lon_0": 0.0,
-        },
+    "fld": {
+        "dtype": "float32",
+        "shape": [80, 160],
+        "nanmin": 0.0,
+        "nanmean": 1.1403092e-08,
+        "nanmedian": 0.0,
+        "nanmax": 4.5312503e-05,
+        "nanmin_nonzero": 1.1891268e-09,
+        "nanmean_nonzero": 9.122474e-06,
+        "nanmedian_nonzero": 1.3973697e-06,
+        "nanmax_nonzero": 4.5312503e-05,
+        "n_nan": 0,
+        "n_zero": 12784,
     },
+    "lat": {"dtype": "float32", "shape": [80], "min": -89.875, "max": 87.875},
+    "lon": {"dtype": "float32", "shape": [160], "min": -179.375, "max": 178.375},
     "var_setups": [
         {
             "infile": "flexpart_ifs_20200317000000.nc",
@@ -338,22 +343,42 @@ field_summary = {
             ],
         },
     },
-    "fld": {
-        "dtype": "float32",
-        "shape": [80, 160],
-        "nanmin": 0.0,
-        "nanmean": 1.1403092e-08,
-        "nanmedian": 0.0,
-        "nanmax": 4.5312503e-05,
-        "nanmin_nonzero": 1.1891268e-09,
-        "nanmean_nonzero": 9.122474e-06,
-        "nanmedian_nonzero": 1.3973697e-06,
-        "nanmax_nonzero": 4.5312503e-05,
-        "n_nan": 0,
-        "n_zero": 12784,
+    "projs": {
+        "type": "MapAxesProjections",
+        "data": {
+            "type": "PlateCarree",
+            "x_limits": [-180.0, 180.0],
+            "y_limits": [-90.0, 90.0],
+            "proj4_params": {
+                "ellps": "WGS84",
+                "a": 57.29577951308232,
+                "proj": "eqc",
+                "lon_0": 0.0,
+            },
+        },
+        "map": {
+            "type": "PlateCarree",
+            "x_limits": [-180.0, 180.0],
+            "y_limits": [-90.0, 90.0],
+            "proj4_params": {
+                "ellps": "WGS84",
+                "a": 57.29577951308232,
+                "proj": "eqc",
+                "lon_0": 129.08999633789062,
+            },
+        },
+        "geo": {
+            "type": "PlateCarree",
+            "x_limits": [-180.0, 180.0],
+            "y_limits": [-90.0, 90.0],
+            "proj4_params": {
+                "ellps": "WGS84",
+                "a": 57.29577951308232,
+                "proj": "eqc",
+                "lon_0": 0.0,
+            },
+        },
     },
-    "lat": {"dtype": "float32", "shape": [80], "min": -89.875, "max": 87.875},
-    "lon": {"dtype": "float32", "shape": [160], "min": -179.375, "max": 178.375},
 }
 
 plot_summary = {
@@ -1556,16 +1581,26 @@ plot_summary = {
         "rect": [0.0, 0.05, 0.7872, 0.85],
         "field": {
             "type": "Field",
-            "proj": {
-                "type": "PlateCarree",
-                "x_limits": [-180.0, 180.0],
-                "y_limits": [-90.0, 90.0],
-                "proj4_params": {
-                    "ellps": "WGS84",
-                    "a": 57.29577951308232,
-                    "proj": "eqc",
-                    "lon_0": 0.0,
-                },
+            "fld": {
+                "dtype": "float32",
+                "shape": [80, 160],
+                "nanmin": 0.0,
+                "nanmean": 1.1403092e-08,
+                "nanmedian": 0.0,
+                "nanmax": 4.5312503e-05,
+                "nanmin_nonzero": 1.1891268e-09,
+                "nanmean_nonzero": 9.122474e-06,
+                "nanmedian_nonzero": 1.3973697e-06,
+                "nanmax_nonzero": 4.5312503e-05,
+                "n_nan": 0,
+                "n_zero": 12784,
+            },
+            "lat": {"dtype": "float32", "shape": [80], "min": -89.875, "max": 87.875},
+            "lon": {
+                "dtype": "float32",
+                "shape": [160],
+                "min": -179.375,
+                "max": 178.375,
             },
             "var_setups": [
                 {
@@ -1887,26 +1922,41 @@ plot_summary = {
                     ],
                 },
             },
-            "fld": {
-                "dtype": "float32",
-                "shape": [80, 160],
-                "nanmin": 0.0,
-                "nanmean": 1.1403092e-08,
-                "nanmedian": 0.0,
-                "nanmax": 4.5312503e-05,
-                "nanmin_nonzero": 1.1891268e-09,
-                "nanmean_nonzero": 9.122474e-06,
-                "nanmedian_nonzero": 1.3973697e-06,
-                "nanmax_nonzero": 4.5312503e-05,
-                "n_nan": 0,
-                "n_zero": 12784,
-            },
-            "lat": {"dtype": "float32", "shape": [80], "min": -89.875, "max": 87.875},
-            "lon": {
-                "dtype": "float32",
-                "shape": [160],
-                "min": -179.375,
-                "max": 178.375,
+            "projs": {
+                "type": "MapAxesProjections",
+                "data": {
+                    "type": "PlateCarree",
+                    "x_limits": [-180.0, 180.0],
+                    "y_limits": [-90.0, 90.0],
+                    "proj4_params": {
+                        "ellps": "WGS84",
+                        "a": 57.29577951308232,
+                        "proj": "eqc",
+                        "lon_0": 0.0,
+                    },
+                },
+                "map": {
+                    "type": "PlateCarree",
+                    "x_limits": [-180.0, 180.0],
+                    "y_limits": [-90.0, 90.0],
+                    "proj4_params": {
+                        "ellps": "WGS84",
+                        "a": 57.29577951308232,
+                        "proj": "eqc",
+                        "lon_0": 129.08999633789062,
+                    },
+                },
+                "geo": {
+                    "type": "PlateCarree",
+                    "x_limits": [-180.0, 180.0],
+                    "y_limits": [-90.0, 90.0],
+                    "proj4_params": {
+                        "ellps": "WGS84",
+                        "a": 57.29577951308232,
+                        "proj": "eqc",
+                        "lon_0": 0.0,
+                    },
+                },
             },
         },
         "config": {
@@ -28640,17 +28690,22 @@ plot_summary = {
     },
     "field": {
         "type": "Field",
-        "proj": {
-            "type": "PlateCarree",
-            "x_limits": [-180.0, 180.0],
-            "y_limits": [-90.0, 90.0],
-            "proj4_params": {
-                "ellps": "WGS84",
-                "a": 57.29577951308232,
-                "proj": "eqc",
-                "lon_0": 0.0,
-            },
+        "fld": {
+            "dtype": "float32",
+            "shape": [80, 160],
+            "nanmin": 0.0,
+            "nanmean": 1.1403092e-08,
+            "nanmedian": 0.0,
+            "nanmax": 4.5312503e-05,
+            "nanmin_nonzero": 1.1891268e-09,
+            "nanmean_nonzero": 9.122474e-06,
+            "nanmedian_nonzero": 1.3973697e-06,
+            "nanmax_nonzero": 4.5312503e-05,
+            "n_nan": 0,
+            "n_zero": 12784,
         },
+        "lat": {"dtype": "float32", "shape": [80], "min": -89.875, "max": 87.875},
+        "lon": {"dtype": "float32", "shape": [160], "min": -179.375, "max": 178.375},
         "var_setups": [
             {
                 "infile": "flexpart_ifs_20200317000000.nc",
@@ -28968,22 +29023,42 @@ plot_summary = {
                 ],
             },
         },
-        "fld": {
-            "dtype": "float32",
-            "shape": [80, 160],
-            "nanmin": 0.0,
-            "nanmean": 1.1403092e-08,
-            "nanmedian": 0.0,
-            "nanmax": 4.5312503e-05,
-            "nanmin_nonzero": 1.1891268e-09,
-            "nanmean_nonzero": 9.122474e-06,
-            "nanmedian_nonzero": 1.3973697e-06,
-            "nanmax_nonzero": 4.5312503e-05,
-            "n_nan": 0,
-            "n_zero": 12784,
+        "projs": {
+            "type": "MapAxesProjections",
+            "data": {
+                "type": "PlateCarree",
+                "x_limits": [-180.0, 180.0],
+                "y_limits": [-90.0, 90.0],
+                "proj4_params": {
+                    "ellps": "WGS84",
+                    "a": 57.29577951308232,
+                    "proj": "eqc",
+                    "lon_0": 0.0,
+                },
+            },
+            "map": {
+                "type": "PlateCarree",
+                "x_limits": [-180.0, 180.0],
+                "y_limits": [-90.0, 90.0],
+                "proj4_params": {
+                    "ellps": "WGS84",
+                    "a": 57.29577951308232,
+                    "proj": "eqc",
+                    "lon_0": 129.08999633789062,
+                },
+            },
+            "geo": {
+                "type": "PlateCarree",
+                "x_limits": [-180.0, 180.0],
+                "y_limits": [-90.0, 90.0],
+                "proj4_params": {
+                    "ellps": "WGS84",
+                    "a": 57.29577951308232,
+                    "proj": "eqc",
+                    "lon_0": 0.0,
+                },
+            },
         },
-        "lat": {"dtype": "float32", "shape": [80], "min": -89.875, "max": 87.875},
-        "lon": {"dtype": "float32", "shape": [160], "min": -179.375, "max": 178.375},
     },
     "fig": {
         "type": "Figure",
