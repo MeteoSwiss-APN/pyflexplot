@@ -30,7 +30,7 @@ from ..utils.typing import ColorType
 from ..utils.typing import RectType
 from .coord_trans import CoordinateTransformer
 from .domain import Domain
-from .projs import MapAxesProjections
+from .proj_bbox import MapAxesProjections
 from .ref_dist_indicator import RefDistIndConfig
 from .ref_dist_indicator import ReferenceDistanceIndicator
 

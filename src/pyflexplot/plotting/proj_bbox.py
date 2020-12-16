@@ -1,15 +1,28 @@
 """Bounding box."""
 # Standard library
 from copy import copy
+from dataclasses import dataclass
 
 # Third-party
 import numpy as np
+from cartopy.crs import Projection
 from matplotlib.axes import Axes
 
 # Local
 from ..utils.logging import log
+from ..utils.summarize import summarizable
 from .coord_trans import CoordinateTransformer
-from .projs import MapAxesProjections
+
+
+@summarizable
+@dataclass
+class MapAxesProjections:
+    """Projections of a ``MapAxes``."""
+
+    data: Projection
+    map: Projection
+    geo: Projection
+    curr_proj: str = "data"
 
 
 class ProjectedBoundingBox:

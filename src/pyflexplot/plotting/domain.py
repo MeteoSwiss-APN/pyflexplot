@@ -13,8 +13,8 @@ from matplotlib.axes import Axes
 
 # Local
 from ..utils.summarize import summarizable
+from .proj_bbox import MapAxesProjections
 from .proj_bbox import ProjectedBoundingBox
-from .projs import MapAxesProjections
 
 
 # @summarizable(attrs=["zoom_fact", "rel_offset"])
