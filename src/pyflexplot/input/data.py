@@ -32,6 +32,7 @@ from .meta_data import MetaData
 
 def summarize_field(obj: Any) -> Dict[str, Any]:
     dct = {
+        "type": type(obj).__name__,
         "fld": {
             "dtype": str(obj.fld.dtype),
             "shape": obj.fld.shape,
@@ -58,49 +59,56 @@ def summarize_field(obj: Any) -> Dict[str, Any]:
             "min": obj.lon.min(),
             "max": obj.lon.max(),
         },
-        "proj": obj.proj,
+        "var_setups": obj.var_setups,
+        "time_props": obj.time_props,
+        "nc_meta_data": obj.nc_meta_data,
+        "proj": obj.get_proj(),
+        # "projs": obj.get_projs(),
     }
     return summarize(dct)
 
 
-@summarizable(
-    attrs_skip=["fld", "lat", "lon", "mdata"],
-    post_summarize=lambda self, summary: {**summary, **summarize_field(self)},
-)
-@dataclass
+@summarizable(summarize=summarize_field)
 # pylint: disable=R0902  # too-many-instance-attributes
 class Field:
-    """FLEXPART field on rotated-pole grid.
+    """FLEXPART field on rotated-pole grid."""
 
-    Args:
-        fld: Field array (2D) with dimensions (lat, lon).
+    def __init__(
+        self,
+        fld: np.ndarray,
+        lat: np.ndarray,
+        lon: np.ndarray,
+        *,
+        var_setups: SetupCollection,
+        time_props: "FieldTimeProperties",
+        nc_meta_data: Mapping[str, Any],
+        mdata: MetaData,
+    ) -> None:
+        """Create an instance of ``Field``.
 
-        lat: Latitude array (1D).
+        Args:
+            fld: Field array (2D) with dimensions (lat, lon).
 
-        lon: Longitude array (1D).
+            lat: Latitude array (1D).
 
-        proj: Projection of input field.
+            lon: Longitude array (1D).
 
-        var_setups: Variables setups.
+            var_setups: Variables setups.
 
-        time_props: Properties of the field across all time steps.
+            time_props: Properties of the field across all time steps.
 
-        nc_meta_data: Meta data from NetCDF input file.
+            nc_meta_data: Meta data from NetCDF input file.
 
-        mdata: Meta data for plot for labels etc.
+            mdata: Meta data for plot for labels etc.
 
-    """
-
-    fld: np.ndarray
-    lat: np.ndarray
-    lon: np.ndarray
-    proj: Projection
-    var_setups: SetupCollection
-    time_props: "FieldTimeProperties"
-    nc_meta_data: Mapping[str, Any]
-    mdata: MetaData
-
-    def __post_init__(self):
+        """
+        self.fld: np.ndarray = fld
+        self.lat: np.ndarray = lat
+        self.lon: np.ndarray = lon
+        self.var_setups: SetupCollection = var_setups
+        self.time_props: "FieldTimeProperties" = time_props
+        self.nc_meta_data: Mapping[str, Any] = nc_meta_data
+        self.mdata: MetaData = mdata
         try:
             self.check_consistency()
         except Exception as e:
@@ -122,6 +130,16 @@ class Field:
         grid_shape = (self.lat.size, self.lon.size)
         if self.fld.shape[-2:] != grid_shape:
             raise InconsistentArrayShapesError(f"{self.fld.shape} != {grid_shape}")
+
+    def get_proj(self) -> Projection:
+        if self.nc_meta_data["derived"]["rotated_pole"]:
+            ncattrs = self.nc_meta_data["variables"]["rotated_pole"]["ncattrs"]
+            return cartopy.crs.RotatedPole(
+                pole_latitude=ncattrs["grid_north_pole_latitude"],
+                pole_longitude=ncattrs["grid_north_pole_longitude"],
+            )
+        else:
+            return cartopy.crs.PlateCarree()
 
     def __repr__(self):
         lines = [
@@ -149,13 +167,13 @@ class Field:
         # pylint: disable=W0632  # unbalanced-tuple-unpacking
         jmax, imax = np.unravel_index(np.nanargmax(self.fld), self.fld.shape)
         p_lon, p_lat = PlateCarree().transform_point(
-            self.lon[imax], self.lat[jmax], self.proj
+            self.lon[imax], self.lat[jmax], self.get_proj()
         )
         return (p_lat, p_lon)
 
     def get_projs(self) -> MapAxesProjections:
         proj_geo = cartopy.crs.PlateCarree()
-        if isinstance(self.proj, cartopy.crs.RotatedPole):
+        if isinstance(self.get_proj(), cartopy.crs.RotatedPole):
             rotpol_attrs = self.nc_meta_data["variables"]["rotated_pole"]["ncattrs"]
             proj_data = cartopy.crs.RotatedPole(
                 pole_latitude=rotpol_attrs["grid_north_pole_latitude"],

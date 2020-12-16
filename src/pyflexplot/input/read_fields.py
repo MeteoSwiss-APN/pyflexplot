@@ -277,20 +277,10 @@ class InputFileEnsemble:
         field_lst_lst: List[List[Field]] = []
         for field_setups, mdata in zip(self.setups_lst_time, self.mdata_tss):
             time_idx = field_setups.collect_equal("dimensions.time")
-            fld: np.ndarray = fld_time[time_idx]
-            if self.nc_meta_data["derived"]["rotated_pole"]:
-                ncattrs = self.nc_meta_data["variables"]["rotated_pole"]["ncattrs"]
-                proj = RotatedPole(
-                    pole_latitude=ncattrs["grid_north_pole_latitude"],
-                    pole_longitude=ncattrs["grid_north_pole_longitude"],
-                )
-            else:
-                proj = PlateCarree()
             field = Field(
-                fld=fld,
+                fld=fld_time[time_idx],
                 lat=self.lat,
                 lon=self.lon,
-                proj=proj,
                 var_setups=field_setups,
                 time_props=time_stats,
                 nc_meta_data=self.nc_meta_data,
