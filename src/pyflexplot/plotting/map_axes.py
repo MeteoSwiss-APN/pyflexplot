@@ -6,7 +6,6 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Mapping
-from typing import MutableMapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -100,7 +99,7 @@ class MapAxesConfig:
     attrs=["fig", "rect", "field", "config", "trans"],
     post_summarize=lambda self, summary: {
         **summary,
-        "elements": self._summarized_elements,
+        "elements": self.summarized_elements,
     },
 )
 class MapAxes:
@@ -132,7 +131,7 @@ class MapAxes:
         self.rect: RectType = rect
 
         self.elements: List[Tuple[str, Any]] = []
-        self._summarized_elements: List[Dict[str, Any]] = []
+        self.summarized_elements: List[Dict[str, Any]] = []
 
         self._water_color: ColorType = "lightskyblue"
 
@@ -207,7 +206,7 @@ class MapAxes:
             **kwargs,
         )
         self.elements.append(handle)
-        self._summarized_elements.append(
+        self.summarized_elements.append(
             {
                 "element_type": "marker",
                 "p_lon": p_lon,
@@ -258,7 +257,7 @@ class MapAxes:
             s, xy=(p_lon, p_lat), xycoords=transform, zorder=zorder, **kwargs
         )
         self.elements.append(handle)
-        self._summarized_elements.append(
+        self.summarized_elements.append(
             {
                 "element_type": "text",
                 "s": s,

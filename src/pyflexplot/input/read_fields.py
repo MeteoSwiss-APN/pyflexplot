@@ -14,8 +14,6 @@ from typing import Type
 import netCDF4 as nc4  # types: ignore  # pylance
 import numpy as np
 import scipy.stats as sp_stats
-from cartopy.crs import PlateCarree
-from cartopy.crs import RotatedPole
 
 # First-party
 from srutils.various import check_array_indices

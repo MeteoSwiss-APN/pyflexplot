@@ -79,6 +79,7 @@ def post_summarize(
 
 
 # pylint: disable=R0912  # too-many-branches (>12)
+# pylint: disable=W0621  # redefined-outer-name
 def summarizable(
     cls: Optional[Callable] = None,
     *,

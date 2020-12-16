@@ -13,8 +13,6 @@ from typing import Union
 # Third-party
 import cartopy
 import numpy as np
-from cartopy.crs import PlateCarree
-from cartopy.crs import Projection
 
 # First-party
 from srutils.str import join_multilines
@@ -137,43 +135,31 @@ class Field:
         assert len(self.fld.shape) == 2  # pylint
         # pylint: disable=W0632  # unbalanced-tuple-unpacking
         jmax, imax = np.unravel_index(np.nanargmax(self.fld), self.fld.shape)
-        p_lon, p_lat = PlateCarree().transform_point(
-            self.lon[imax], self.lat[jmax], self.get_proj()
+        projs = self.get_projs()
+        p_lon, p_lat = projs.geo.transform_point(
+            self.lon[imax], self.lat[jmax], projs.data
         )
         return (p_lat, p_lon)
 
-    def get_proj(self) -> Projection:
+    def get_projs(self) -> MapAxesProjections:
         if self.nc_meta_data["derived"]["rotated_pole"]:
             ncattrs = self.nc_meta_data["variables"]["rotated_pole"]["ncattrs"]
-            return cartopy.crs.RotatedPole(
+            proj_data = cartopy.crs.RotatedPole(
                 pole_latitude=ncattrs["grid_north_pole_latitude"],
                 pole_longitude=ncattrs["grid_north_pole_longitude"],
             )
-        else:
-            return cartopy.crs.PlateCarree()
-
-    def get_projs(self) -> MapAxesProjections:
-        proj_geo = cartopy.crs.PlateCarree()
-        if isinstance(self.get_proj(), cartopy.crs.RotatedPole):
-            rotpol_attrs = self.nc_meta_data["variables"]["rotated_pole"]["ncattrs"]
-            proj_data = cartopy.crs.RotatedPole(
-                pole_latitude=rotpol_attrs["grid_north_pole_latitude"],
-                pole_longitude=rotpol_attrs["grid_north_pole_longitude"],
-            )
             proj_map = proj_data
         else:
-            proj_data = cartopy.crs.PlateCarree(central_longitude=0.0)
+            proj_data = cartopy.crs.PlateCarree()
             proj_map = cartopy.crs.PlateCarree(central_longitude=self.mdata.release.lon)
+        proj_geo = cartopy.crs.PlateCarree()
         return MapAxesProjections(data=proj_data, map=proj_map, geo=proj_geo)
 
     def __repr__(self):
         lines = [
-            (
-                f"fld=array[shape={self.fld.shape}, dtype={self.fld.dtype}],"
-                f" lat=array[shape={self.lat.shape}, dtype={self.lat.dtype}],"
-                f" lon=array[shape={self.lon.shape}, dtype={self.lon.dtype}],"
-                f" proj={type(self.proj).__name__}(...),"
-            ),
+            f"fld=array[shape={self.fld.shape}, dtype={self.fld.dtype}],",
+            f"lat=array[shape={self.lat.shape}, dtype={self.lat.dtype}],",
+            f"lon=array[shape={self.lon.shape}, dtype={self.lon.dtype}],",
             f"var_setups={self.var_setups},",
             f"time_stats={self.time_props},",
             (
