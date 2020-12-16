@@ -56,7 +56,7 @@ def summarize_field(obj: Any) -> Dict[str, Dict[str, Any]]:
             "min": obj.lon.min(),
             "max": obj.lon.max(),
         },
-        "proj": {"type": type(obj.proj).__name__},
+        "proj": obj.proj,
     }
     return default_summarize(dct)
 

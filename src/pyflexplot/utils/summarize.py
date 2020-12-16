@@ -13,6 +13,7 @@ from typing import Union
 
 # Third-party
 import numpy as np
+from cartopy.crs import Projection
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.transforms import Bbox
@@ -249,6 +250,7 @@ class Summarizer:
             return obj
         methods = [
             self._try_mpl,
+            self._try_cartopy,
             self._try_summarizable,
             self._try_dict_like,
             self._try_list_like,
@@ -277,6 +279,13 @@ class Summarizer:
         elif isinstance(obj, (Bbox, TransformedBbox)):
             return summarize_mpl_bbox(obj)
         raise NotSummarizableError("mpl", obj)
+
+    # pylint: disable=R0201  # no-self-use
+    def _try_cartopy(self, obj: Any) -> Dict[str, Any]:
+        """Try to summarize ``obj`` as a cartopy object."""
+        if isinstance(obj, Projection):
+            return summarize_cartopy_projection(obj)
+        raise NotSummarizableError("cartopy", obj)
 
     def _try_summarizable(self, obj: Any) -> Dict[str, Any]:
         """Try to summarize ``obj`` as a summarizable object."""
@@ -406,5 +415,16 @@ def summarize_mpl_bbox(obj: Any) -> Dict[str, Any]:
     summary = {
         "type": type(obj).__name__,
         "bounds": obj.bounds,
+    }
+    return summary
+
+
+def summarize_cartopy_projection(obj: Any) -> Dict[str, Any]:
+    """Summarize cartopy ``Projection`` objects."""
+    summary = {
+        "type": type(obj).__name__,
+        "x_limits": obj.x_limits,
+        "y_limits": obj.y_limits,
+        "proj4_params": obj.proj4_params,
     }
     return summary

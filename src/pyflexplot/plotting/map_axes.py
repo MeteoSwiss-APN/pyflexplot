@@ -31,7 +31,6 @@ from ..utils.typing import RectType
 from .coord_trans import CoordinateTransformer
 from .domain import Domain
 from .projs import MapAxesProjections
-from .projs import RotPoleMapAxesProjections
 from .ref_dist_indicator import RefDistIndConfig
 from .ref_dist_indicator import ReferenceDistanceIndicator
 
@@ -98,7 +97,7 @@ class MapAxesConfig:
 
 
 # pylint: disable=R0902  # too-many-instance-attributes
-@summarizable
+@summarizable(attrs_add=["projs"])
 @dataclass
 class MapAxes:
     """Map plot axes for regular lat/lon data.
@@ -110,17 +109,14 @@ class MapAxes:
 
         field: Field.
 
-        projs: Projections.
-
         config: Map axes setup.
 
     """
 
+    config: MapAxesConfig
+    field: Field
     fig: Figure
     rect: RectType
-    field: Field
-    projs: MapAxesProjections
-    config: MapAxesConfig
 
     def __post_init__(self) -> None:
         self.elements: List[Tuple[str, Any]] = []
@@ -131,8 +127,30 @@ class MapAxes:
         self.zorder: Dict[str, int]
         self._init_zorder()
 
-        self.ax: Axes
-        self._init_ax()
+        # SR_TMP <<< TODO Clean this up!
+        def _create_projs(field: Field, config: MapAxesConfig) -> MapAxesProjections:
+            proj_geo = cartopy.crs.PlateCarree()
+            if isinstance(field.proj, RotatedPole):
+                rotpol_attrs = field.nc_meta_data["variables"]["rotated_pole"][
+                    "ncattrs"
+                ]
+                proj_data = cartopy.crs.RotatedPole(
+                    pole_latitude=rotpol_attrs["grid_north_pole_latitude"],
+                    pole_longitude=rotpol_attrs["grid_north_pole_longitude"],
+                )
+                proj_map = proj_data
+            else:
+                proj_data = cartopy.crs.PlateCarree(central_longitude=0.0)
+                proj_map = cartopy.crs.PlateCarree(
+                    central_longitude=field.mdata.release.lon
+                )
+            return MapAxesProjections(
+                data=proj_data, map=proj_map, geo=proj_geo, curr_proj=config.projection
+            )
+
+        self.projs: MapAxesProjections = _create_projs(self.field, self.config)
+
+        self.ax: Axes = self._init_ax()
 
         self.trans = CoordinateTransformer(
             trans_axes=self.ax.transAxes,
@@ -149,26 +167,6 @@ class MapAxes:
         self._ax_add_geography()
         self._ax_add_data_domain_outline()
         self._ax_add_frame()
-
-    @classmethod
-    def create(
-        cls, config: MapAxesConfig, *, fig: Figure, rect: RectType, field: np.ndarray
-    ) -> "MapAxes":
-        projs: MapAxesProjections
-        if isinstance(field.proj, RotatedPole):
-            rotpol_attrs = field.nc_meta_data["variables"]["rotated_pole"]["ncattrs"]
-            projs = RotPoleMapAxesProjections(
-                proj_type=config.projection,
-                central_lon=field.mdata.release.lon,
-                pollat=rotpol_attrs["grid_north_pole_latitude"],
-                pollon=rotpol_attrs["grid_north_pole_longitude"],
-            )
-        else:
-            projs = MapAxesProjections(
-                proj_type=config.projection,
-                central_lon=field.mdata.release.lon,
-            )
-        return cls(fig=fig, rect=rect, field=field, projs=projs, config=config)
 
     def post_summarize(
         self, summary: MutableMapping[str, Any]
@@ -277,22 +275,28 @@ class MapAxes:
         d0, dz = 1, 1
         self.zorder = {name: d0 + idx * dz for idx, name in enumerate(zorders_const)}
 
-    def _init_ax(self) -> None:
+    def _init_ax(self) -> Axes:
         """Initialize Axes."""
+        fig = self.fig
+        rect = self.rect
+        projs = self.projs
+        config = self.config
+
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", category=RuntimeWarning, message="numpy.ufunc size changed"
             )
-            ax: Axes = self.fig.add_axes(self.rect, projection=self.projs.map)
+            ax: Axes = fig.add_axes(rect, projection=projs.map)
         ax.set_adjustable("datalim")
         ax.spines["geo"].set_edgecolor("none")
-        self.ax = ax
 
         # Set geographical extent
-        self.ax.set_aspect("auto")
-        domain = self.config.domain
-        bbox = domain.get_bbox(ax, self.projs)
-        self.ax.set_extent(bbox, self.projs.data)
+        ax.set_aspect("auto")
+        domain = config.domain
+        bbox = domain.get_bbox(ax, projs)
+        ax.set_extent(bbox, projs.data)
+
+        return ax
 
     def _init_ref_dist_box(self) -> None:
         """Initialize the reference distance indicator (if activated)."""
