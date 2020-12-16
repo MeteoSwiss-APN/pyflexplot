@@ -16,7 +16,6 @@ from typing import Union
 import cartopy
 import matplotlib as mpl
 import numpy as np
-from cartopy.crs import RotatedPole
 from cartopy.io.shapereader import Record  # type: ignore
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
@@ -135,27 +134,6 @@ class MapAxes:
         self._init_zorder()
 
         # SR_TMP <<< TODO Clean this up!
-        def _create_projs(field: Field) -> MapAxesProjections:
-            proj_geo = cartopy.crs.PlateCarree()
-            if isinstance(field.proj, RotatedPole):
-                rotpol_attrs = field.nc_meta_data["variables"]["rotated_pole"][
-                    "ncattrs"
-                ]
-                proj_data = cartopy.crs.RotatedPole(
-                    pole_latitude=rotpol_attrs["grid_north_pole_latitude"],
-                    pole_longitude=rotpol_attrs["grid_north_pole_longitude"],
-                )
-                proj_map = proj_data
-            else:
-                proj_data = cartopy.crs.PlateCarree(central_longitude=0.0)
-                proj_map = cartopy.crs.PlateCarree(
-                    central_longitude=field.mdata.release.lon
-                )
-            return MapAxesProjections(data=proj_data, map=proj_map, geo=proj_geo)
-
-        projs: MapAxesProjections = _create_projs(self.field)
-
-        # SR_TMP <<< TODO Clean this up!
         def _create_ax(
             fig: Figure,
             rect: RectType,
@@ -180,6 +158,8 @@ class MapAxes:
             ax.set_extent(bbox, projs.data)
 
             return ax
+
+        projs: MapAxesProjections = field.get_projs()
 
         self.ax: Axes = _create_ax(self.fig, self.rect, projs, self.config)
 

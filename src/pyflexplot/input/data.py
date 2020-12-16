@@ -11,6 +11,7 @@ from typing import Tuple
 from typing import Union
 
 # Third-party
+import cartopy
 import numpy as np
 from cartopy.crs import PlateCarree
 from cartopy.crs import Projection
@@ -19,6 +20,7 @@ from cartopy.crs import Projection
 from srutils.str import join_multilines
 
 # Local
+from ..plotting.proj_bbox import MapAxesProjections
 from ..setup import SetupCollection
 from ..utils.exceptions import ArrayDimensionError
 from ..utils.exceptions import FieldAllNaNError
@@ -150,6 +152,20 @@ class Field:
             self.lon[imax], self.lat[jmax], self.proj
         )
         return (p_lat, p_lon)
+
+    def get_projs(self) -> MapAxesProjections:
+        proj_geo = cartopy.crs.PlateCarree()
+        if isinstance(self.proj, cartopy.crs.RotatedPole):
+            rotpol_attrs = self.nc_meta_data["variables"]["rotated_pole"]["ncattrs"]
+            proj_data = cartopy.crs.RotatedPole(
+                pole_latitude=rotpol_attrs["grid_north_pole_latitude"],
+                pole_longitude=rotpol_attrs["grid_north_pole_longitude"],
+            )
+            proj_map = proj_data
+        else:
+            proj_data = cartopy.crs.PlateCarree(central_longitude=0.0)
+            proj_map = cartopy.crs.PlateCarree(central_longitude=self.mdata.release.lon)
+        return MapAxesProjections(data=proj_data, map=proj_map, geo=proj_geo)
 
 
 @summarizable
