@@ -5,7 +5,9 @@ from dataclasses import dataclass
 
 # Third-party
 import numpy as np
+from cartopy.crs import PlateCarree
 from cartopy.crs import Projection
+from cartopy.crs import RotatedPole
 from matplotlib.axes import Axes
 
 # Local
@@ -16,12 +18,30 @@ from .coord_trans import CoordinateTransformer
 
 @summarizable
 @dataclass
-class MapAxesProjections:
+class Projections:
     """Projections of a ``MapAxes``."""
 
     data: Projection
     map: Projection
     geo: Projection
+
+    @classmethod
+    def create_regular(cls, *, clon: float = 0.0) -> "Projections":
+        return cls(
+            data=PlateCarree(central_longitude=0.0),
+            map=PlateCarree(central_longitude=clon),
+            geo=PlateCarree(central_longitude=0.0),
+        )
+
+    @classmethod
+    def create_rotated(
+        cls, *, pollat: float = 90.0, pollon: float = 180.0
+    ) -> "Projections":
+        return cls(
+            data=RotatedPole(pole_latitude=pollat, pole_longitude=pollon),
+            map=RotatedPole(pole_latitude=pollat, pole_longitude=pollon),
+            geo=PlateCarree(central_longitude=0.0),
+        )
 
 
 class ProjectedBoundingBox:
@@ -31,7 +51,7 @@ class ProjectedBoundingBox:
     def __init__(
         self,
         ax: Axes,
-        projs: MapAxesProjections,
+        projs: Projections,
         *,
         curr_proj: str = "data",
         lon0: float = -180.0,

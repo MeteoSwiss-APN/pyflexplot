@@ -344,7 +344,7 @@ field_summary = {
         },
     },
     "projs": {
-        "type": "MapAxesProjections",
+        "type": "Projections",
         "data": {
             "type": "PlateCarree",
             "x_limits": [-180.0, 180.0],
@@ -1901,7 +1901,7 @@ plot_summary = {
                 },
             },
             "projs": {
-                "type": "MapAxesProjections",
+                "type": "Projections",
                 "data": {
                     "type": "PlateCarree",
                     "x_limits": [-180.0, 180.0],
@@ -28421,7 +28421,7 @@ plot_summary = {
             },
         },
         "projs": {
-            "type": "MapAxesProjections",
+            "type": "Projections",
             "data": {
                 "type": "PlateCarree",
                 "x_limits": [-180.0, 180.0],

@@ -11,14 +11,13 @@ from typing import Tuple
 from typing import Union
 
 # Third-party
-import cartopy
 import numpy as np
 
 # First-party
 from srutils.str import join_multilines
 
 # Local
-from ..plotting.proj_bbox import MapAxesProjections
+from ..plotting.proj_bbox import Projections
 from ..setup import SetupCollection
 from ..utils.exceptions import ArrayDimensionError
 from ..utils.exceptions import FieldAllNaNError
@@ -141,19 +140,16 @@ class Field:
         )
         return (p_lat, p_lon)
 
-    def get_projs(self) -> MapAxesProjections:
+    def get_projs(self) -> Projections:
         if self.nc_meta_data["derived"]["rotated_pole"]:
             ncattrs = self.nc_meta_data["variables"]["rotated_pole"]["ncattrs"]
-            proj_data = cartopy.crs.RotatedPole(
-                pole_latitude=ncattrs["grid_north_pole_latitude"],
-                pole_longitude=ncattrs["grid_north_pole_longitude"],
+            return Projections.create_rotated(
+                pollat=ncattrs["grid_north_pole_latitude"],
+                pollon=ncattrs["grid_north_pole_longitude"],
+                clon=self.mdata.release.lon,
             )
-            proj_map = proj_data
         else:
-            proj_data = cartopy.crs.PlateCarree()
-            proj_map = cartopy.crs.PlateCarree(central_longitude=self.mdata.release.lon)
-        proj_geo = cartopy.crs.PlateCarree()
-        return MapAxesProjections(data=proj_data, map=proj_map, geo=proj_geo)
+            return Projections.create_regular(clon=self.mdata.release.lon)
 
     def __repr__(self):
         lines = [

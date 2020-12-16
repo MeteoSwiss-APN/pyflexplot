@@ -336,7 +336,7 @@ field_summary = {
         },
     },
     "projs": {
-        "type": "MapAxesProjections",
+        "type": "Projections",
         "data": {
             "type": "RotatedPole",
             "x_limits": [-180, 180],
@@ -1232,7 +1232,7 @@ plot_summary = {
                 },
             },
             "projs": {
-                "type": "MapAxesProjections",
+                "type": "Projections",
                 "data": {
                     "type": "RotatedPole",
                     "x_limits": [-180, 180],
@@ -6737,7 +6737,7 @@ plot_summary = {
             },
         },
         "projs": {
-            "type": "MapAxesProjections",
+            "type": "Projections",
             "data": {
                 "type": "RotatedPole",
                 "x_limits": [-180, 180],

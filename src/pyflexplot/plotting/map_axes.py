@@ -28,7 +28,7 @@ from ..utils.typing import ColorType
 from ..utils.typing import RectType
 from .coord_trans import CoordinateTransformer
 from .domain import Domain
-from .proj_bbox import MapAxesProjections
+from .proj_bbox import Projections
 from .ref_dist_indicator import RefDistIndConfig
 from .ref_dist_indicator import ReferenceDistanceIndicator
 
@@ -142,7 +142,7 @@ class MapAxes:
         def _create_ax(
             fig: Figure,
             rect: RectType,
-            projs: MapAxesProjections,
+            projs: Projections,
             config: MapAxesConfig,
         ) -> Axes:
             """Initialize Axes."""
@@ -164,7 +164,7 @@ class MapAxes:
 
             return ax
 
-        projs: MapAxesProjections = field.get_projs()
+        projs: Projections = field.get_projs()
 
         self.ax: Axes = _create_ax(self.fig, self.rect, projs, self.config)
 
