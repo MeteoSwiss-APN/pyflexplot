@@ -146,7 +146,6 @@ class Field:
             return Projections.create_rotated(
                 pollat=ncattrs["grid_north_pole_latitude"],
                 pollon=ncattrs["grid_north_pole_longitude"],
-                clon=self.mdata.release.lon,
             )
         else:
             return Projections.create_regular(clon=self.mdata.release.lon)

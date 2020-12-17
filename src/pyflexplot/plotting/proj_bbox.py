@@ -2,6 +2,8 @@
 # Standard library
 from copy import copy
 from dataclasses import dataclass
+from typing import Iterator
+from typing import Tuple
 
 # Third-party
 import numpy as np
@@ -87,48 +89,32 @@ class ProjectedBoundingBox:
             invalid_ok=False,
         )
 
-    def __repr__(self):
-        return (
-            f"{type(self).__name__}(\n  "
-            + ",\n  ".join(
-                [
-                    f"coord_type='{self.coord_type}'",
-                    f"lon0={self.lon0:.2f}",
-                    f"lon1={self.lon1:.2f}",
-                    f"lat0={self.lat0:.2f}",
-                    f"lat1={self.lat1:.2f}",
-                    f"trans={self.trans}",
-                ]
-            )
-            + ",\n)"
-        )
-
     @property
-    def lon(self):
+    def lon(self) -> np.ndarray:
         return np.asarray(self)[:2]
 
     @property
-    def lat(self):
+    def lat(self) -> np.ndarray:
         return np.asarray(self)[2:]
 
     @property
-    def coord_type(self):
+    def coord_type(self) -> str:
         return self._curr_coord_type
 
     @property
-    def lon0(self):
+    def lon0(self) -> float:
         return self._curr_lon0
 
     @property
-    def lon1(self):
+    def lon1(self) -> float:
         return self._curr_lon1
 
     @property
-    def lat0(self):
+    def lat0(self) -> float:
         return self._curr_lat0
 
     @property
-    def lat1(self):
+    def lat1(self) -> float:
         return self._curr_lat1
 
     # pylint: disable=R0913  # too-many-arguments
@@ -141,56 +127,68 @@ class ProjectedBoundingBox:
         self._curr_lat0 = lat0
         self._curr_lat1 = lat1
 
-    def __iter__(self):
-        """Iterate over the rotated corner coordinates."""
-        yield self._curr_lon0
-        yield self._curr_lon1
-        yield self._curr_lat0
-        yield self._curr_lat1
+    def to(self, proj: str) -> "ProjectedBoundingBox":
+        if proj == "axes":
+            return self.to_axes()
+        elif proj == "data":
+            return self.to_data()
+        elif proj == "geo":
+            return self.to_geo()
+        elif proj == "map":
+            return self.to_map()
+        else:
+            raise self._error(f"to('{proj}'")
 
-    def __len__(self):
-        return len(list(iter(self)))
+    def to_axes(self) -> "ProjectedBoundingBox":
+        if self.coord_type == "data":
+            coords = np.concatenate(self.trans.data_to_axes(self.lon, self.lat))
+        elif self.coord_type == "geo":
+            coords = np.concatenate(self.trans.geo_to_axes(self.lon, self.lat))
+        elif self.coord_type == "map":
+            coords = np.concatenate(self.trans.map_to_axes(self.lon, self.lat))
+        else:
+            raise self._error("to_axes")
+        self.set("axes", *coords)
+        return self
 
-    def __getitem__(self, idx):
-        return list(iter(self))[idx]
-
-    def to_data(self):
-        if self.coord_type == "geo":
+    def to_data(self) -> "ProjectedBoundingBox":
+        if self.coord_type == "axes":
+            coords = np.concatenate(self.trans.axes_to_data(self.lon, self.lat))
+        elif self.coord_type == "geo":
             coords = np.concatenate(self.trans.geo_to_data(self.lon, self.lat))
-            self.set("data", *coords)
-            return self
-        elif self.coord_type == "axes":
-            return self.to_geo().to_data()
+        elif self.coord_type == "map":
+            coords = np.concatenate(self.trans.data_to_map(self.lon, self.lat))
         else:
             raise self._error("to_data")
+        self.set("data", *coords)
+        return self
 
-    def to_geo(self):
-        if self.coord_type == "data":
-            coords = np.concatenate(self.trans.data_to_geo(self.lon, self.lat))
-        elif self.coord_type == "axes":
+    def to_geo(self) -> "ProjectedBoundingBox":
+        if self.coord_type == "axes":
             coords = np.concatenate(self.trans.axes_to_geo(self.lon, self.lat))
+        elif self.coord_type == "data":
+            coords = np.concatenate(self.trans.data_to_geo(self.lon, self.lat))
+        elif self.coord_type == "map":
+            coords = np.concatenate(self.trans.map_to_geo(self.lon, self.lat))
         else:
             raise self._error("to_geo")
         self.set("geo", *coords)
         return self
 
-    def to_axes(self):
-        if self.coord_type == "geo":
-            coords = np.concatenate(self.trans.geo_to_axes(self.lon, self.lat))
-            self.set("axes", *coords)
-            return self
+    def to_map(self) -> "ProjectedBoundingBox":
+        if self.coord_type == "axes":
+            coords = np.concatenate(self.trans.axes_to_map(self.lon, self.lat))
         elif self.coord_type == "data":
-            return self.to_geo().to_axes()
+            coords = np.concatenate(self.trans.data_to_map(self.lon, self.lat))
+        elif self.coord_type == "geo":
+            coords = np.concatenate(self.trans.geo_to_map(self.lon, self.lat))
         else:
-            raise self._error("to_axes")
-
-    def _error(self, method) -> Exception:
-        return NotImplementedError(
-            f"{type(self).__name__}.{method} from '{self.coord_type}'"
-        )
+            raise self._error("to_map")
+        self.set("map", *coords)
+        return self
 
     # pylint: disable=R0914  # too-many-locals
-    def zoom(self, fact, rel_offset):
+    def zoom(self, fact, rel_offset) -> "ProjectedBoundingBox":
         """Zoom into or out of the domain.
 
         Args:
@@ -212,7 +210,9 @@ class ProjectedBoundingBox:
             ) from e
 
         # Restrict zoom to geographical latitude range [-90, 90]
-        _, _, lat0_geo, lat1_geo = iter(copy(self).to_geo())
+        geo = copy(self).to_geo()
+        lat0_geo = geo.lat0
+        lat1_geo = geo.lat1
         lat0_geo_min = -90
         lat1_geo_max = 90
         d_lat_geo_max = min([lat0_geo - lat0_geo_min, lat1_geo_max - lat1_geo])
@@ -222,7 +222,7 @@ class ProjectedBoundingBox:
             log(dbg=f"zoom factor {fact} adjusted to {fact_min} (too small for domain)")
             fact = fact_min
 
-        lon0, lon1, lat0, lat1 = iter(self)
+        lon0, lon1, lat0, lat1 = self._corners
         dlon = lon1 - lon0
         dlat = lat1 - lat0
         clon = lon0 + (0.5 + rel_x_offset) * dlon
@@ -242,3 +242,41 @@ class ProjectedBoundingBox:
 
         self.set(self.coord_type, *coords)
         return self
+
+    @property
+    def _corners(self) -> Tuple[float, float, float, float]:
+        return (
+            self._curr_lon0,
+            self._curr_lon1,
+            self._curr_lat0,
+            self._curr_lat1,
+        )
+
+    def _error(self, method) -> Exception:
+        return NotImplementedError(f"{type(self).__name__}[{self.coord_type}].{method}")
+
+    def __iter__(self) -> Iterator[float]:
+        """Iterate over the rotated corner coordinates."""
+        return iter(self._corners)
+
+    def __len__(self) -> int:
+        return 4
+
+    def __getitem__(self, idx: int) -> float:
+        return list(iter(self))[idx]
+
+    def __repr__(self) -> str:
+        return (
+            f"{type(self).__name__}(\n  "
+            + ",\n  ".join(
+                [
+                    f"coord_type='{self.coord_type}'",
+                    f"lon0={self.lon0:.2f}",
+                    f"lon1={self.lon1:.2f}",
+                    f"lat0={self.lat0:.2f}",
+                    f"lat1={self.lat1:.2f}",
+                    f"trans={self.trans}",
+                ]
+            )
+            + ",\n)"
+        )

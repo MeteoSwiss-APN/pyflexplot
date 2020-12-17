@@ -159,8 +159,8 @@ class MapAxes:
             # Set geographical extent
             ax.set_aspect("auto")
             domain = config.domain
-            bbox = domain.get_bbox(ax, projs)
-            ax.set_extent(bbox, projs.data)
+            bbox = domain.get_bbox(ax, projs, "map")
+            ax.set_extent(bbox, projs.map)
 
             return ax
 

@@ -47,6 +47,21 @@ class CoordinateTransformer:
     invalid_warn: bool = True
 
     @overload
+    def axes_to_data(self, x: float, y: float) -> Tuple[float, float]:
+        ...
+
+    @overload
+    def axes_to_data(
+        self, x: np.ndarray, y: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        ...
+
+    def axes_to_data(self, x, y):
+        """Transform from axes to data coordinates."""
+        x_geo, y_geo = self.axes_to_geo(x, y)
+        return self.geo_to_data(x_geo, y_geo)
+
+    @overload
     def axes_to_geo(self, x: float, y: float) -> Tuple[float, float]:
         ...
 
@@ -66,8 +81,8 @@ class CoordinateTransformer:
             x, y = np.array([self.axes_to_geo(xi, yi) for xi, yi in zip(x, y)]).T
             return x, y
 
-        assert isinstance(x, float)  # mypy
-        assert isinstance(y, float)  # mypy
+        x = float(x)
+        y = float(y)
         check_valid_coords((x, y), self.invalid_ok, self.invalid_warn)
 
         # Axes -> Display
@@ -83,6 +98,69 @@ class CoordinateTransformer:
         check_valid_coords(xy_geo, self.invalid_ok, self.invalid_warn)
 
         return xy_geo
+
+    @overload
+    def axes_to_map(self, x: float, y: float) -> Tuple[float, float]:
+        ...
+
+    @overload
+    def axes_to_map(
+        self, x: np.ndarray, y: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        ...
+
+    def axes_to_map(self, x, y):
+        """Transform from axes to map coordinates."""
+        x_geo, y_geo = self.axes_to_geo(x, y)
+        return self.geo_to_map(x_geo, y_geo)
+
+    @overload
+    def data_to_axes(self, x: float, y: float) -> Tuple[float, float]:
+        ...
+
+    @overload
+    def data_to_axes(
+        self, x: np.ndarray, y: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        ...
+
+    def data_to_axes(self, x, y):
+        """Transform from data to axes coordinates."""
+        x_geo, y_geo = self.data_to_geo(x, y)
+        return self.geo_to_axes(x_geo, y_geo)
+
+    @overload
+    def data_to_geo(self, x: float, y: float) -> Tuple[float, float]:
+        ...
+
+    @overload
+    def data_to_geo(
+        self, x: np.ndarray, y: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        ...
+
+    def data_to_geo(self, x, y):
+        """Transform from data to geographic coordinates."""
+        if isiterable(x) or isiterable(y):
+            check_same_sized_iterables(x, y)
+            x, y = self.proj_geo.transform_points(self.proj_data, x, y)[:, :2].T
+            return x, y
+        return self.proj_geo.transform_point(x, y, self.proj_data, trap=True)
+
+    @overload
+    def data_to_map(self, x: float, y: float) -> Tuple[float, float]:
+        ...
+
+    @overload
+    def data_to_map(
+        self, x: np.ndarray, y: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        ...
+
+    def data_to_map(self, x, y):
+        """Transform from data to map coordinates."""
+        x_geo, y_geo = self.data_to_geo(x, y)
+        return self.geo_to_map(x_geo, y_geo)
 
     @overload
     def geo_to_axes(self, x: float, y: float) -> Tuple[float, float]:
@@ -130,24 +208,6 @@ class CoordinateTransformer:
         return xy_axs
 
     @overload
-    def data_to_geo(self, x: float, y: float) -> Tuple[float, float]:
-        ...
-
-    @overload
-    def data_to_geo(
-        self, x: np.ndarray, y: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        ...
-
-    def data_to_geo(self, x, y):
-        """Transform from data to geographic coordinates."""
-        if isiterable(x) or isiterable(y):
-            check_same_sized_iterables(x, y)
-            x, y = self.proj_geo.transform_points(self.proj_data, x, y)[:, :2].T
-            return x, y
-        return self.proj_geo.transform_point(x, y, self.proj_data, trap=True)
-
-    @overload
     def geo_to_data(self, x: float, y: float) -> Tuple[float, float]:
         ...
 
@@ -164,6 +224,68 @@ class CoordinateTransformer:
             x, y = self.proj_data.transform_points(self.proj_geo, x, y)[:, :2].T
             return x, y
         return self.proj_data.transform_point(x, y, self.proj_geo, trap=True)
+
+    @overload
+    def geo_to_map(self, x: float, y: float) -> Tuple[float, float]:
+        ...
+
+    @overload
+    def geo_to_map(self, x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        ...
+
+    def geo_to_map(self, x, y):
+        """Transform from geographical to map coordinates."""
+        if isiterable(x) or isiterable(y):
+            check_same_sized_iterables(x, y)
+            x, y = self.proj_map.transform_points(self.proj_geo, x, y)[:, :2].T
+            return x, y
+        return self.proj_map.transform_point(x, y, self.proj_geo, trap=True)
+
+    @overload
+    def map_to_axes(self, x: float, y: float) -> Tuple[float, float]:
+        ...
+
+    @overload
+    def map_to_axes(
+        self, x: np.ndarray, y: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        ...
+
+    def map_to_axes(self, x, y):
+        """Transform from map to axes coordinates."""
+        x_geo, y_geo = self.map_to_geo(x, y)
+        return self.geo_to_axes(x_geo, y_geo)
+
+    @overload
+    def map_to_data(self, x: float, y: float) -> Tuple[float, float]:
+        ...
+
+    @overload
+    def map_to_data(
+        self, x: np.ndarray, y: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        ...
+
+    def map_to_data(self, x, y):
+        """Transform from map to data coordinates."""
+        x_geo, y_geo = self.map_to_geo(x, y)
+        return self.geo_to_data(x_geo, y_geo)
+
+    @overload
+    def map_to_geo(self, x: float, y: float) -> Tuple[float, float]:
+        ...
+
+    @overload
+    def map_to_geo(self, x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        ...
+
+    def map_to_geo(self, x, y):
+        """Transform from map to geographical coordinates."""
+        if isiterable(x) or isiterable(y):
+            check_same_sized_iterables(x, y)
+            x, y = self.proj_geo.transform_points(self.proj_map, x, y)[:, :2].T
+            return x, y
+        return self.proj_geo.transform_point(x, y, self.proj_map, trap=True)
 
 
 @overload

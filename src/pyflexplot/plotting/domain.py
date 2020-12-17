@@ -50,15 +50,22 @@ class Domain:
         self.zoom_fact = zoom_fact
         self.rel_offset = rel_offset
 
-    def get_bbox(self, ax: Axes, projs: Projections) -> ProjectedBoundingBox:
+    def get_bbox(
+        self, ax: Axes, projs: Projections, curr_proj: str = "data"
+    ) -> ProjectedBoundingBox:
         """Get bounding box of domain."""
         lllon, urlon, lllat, urlat = self.get_bbox_corners()
         bbox = ProjectedBoundingBox(
-            ax, projs, lon0=lllon, lon1=urlon, lat0=lllat, lat1=urlat
+            ax=ax,
+            projs=projs,
+            lon0=lllon,
+            lon1=urlon,
+            lat0=lllat,
+            lat1=urlat,
         )
         if self.zoom_fact != 1.0:
-            bbox = bbox.to_axes().zoom(self.zoom_fact, self.rel_offset).to_data()
-        return bbox
+            bbox.to_axes().zoom(self.zoom_fact, self.rel_offset)
+        return bbox.to(curr_proj)
 
     def get_bbox_corners(self) -> Tuple[float, float, float, float]:
         """Return corners of domain: [lllon, lllat, urlon, urlat]."""
