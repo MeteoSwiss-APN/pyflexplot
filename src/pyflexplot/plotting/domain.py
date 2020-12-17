@@ -201,7 +201,7 @@ class CloudDomain(Domain):
             # Adjust self.aspect ratio to avoid distortion
             if crossing_dateline:
                 d_lat = urlat - lllat
-                d_lon = lllon - urlon
+                d_lon = 360.0 - (lllon - urlon)
                 if d_lon < d_lat * self.aspect:
                     urlon -= 0.5 * min([d_lat * self.aspect - d_lon, d_lon_max - d_lon])
                     lllon += 0.5 * min([d_lat * self.aspect - d_lon, d_lon_max - d_lon])
