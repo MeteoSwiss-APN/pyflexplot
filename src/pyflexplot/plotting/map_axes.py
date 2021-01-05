@@ -22,7 +22,7 @@ from matplotlib.lines import Line2D
 from matplotlib.text import Text
 
 # Local
-from ..input.data import Field
+from ..input.field import Field
 from ..utils.summarize import summarizable
 from ..utils.typing import ColorType
 from ..utils.typing import RectType

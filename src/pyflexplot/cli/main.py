@@ -23,7 +23,7 @@ from PyPDF2.utils import PdfReadError
 from srutils.str import sorted_paths
 
 # Local
-from ..input.data import Field
+from ..input.field import Field
 from ..input.read_fields import read_fields
 from ..plots import create_plot
 from ..plots import format_out_file_paths

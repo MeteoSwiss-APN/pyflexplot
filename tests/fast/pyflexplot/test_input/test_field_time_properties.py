@@ -3,7 +3,7 @@
 import numpy as np
 
 # First-party
-from pyflexplot.input.data import FieldTimeProperties
+from pyflexplot.input.field import FieldTimeProperties
 from srutils.testing import assert_nested_equal
 
 N = np.nan

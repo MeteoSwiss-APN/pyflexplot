@@ -25,9 +25,9 @@ from ..utils.logging import log
 from .data import Cloud
 from .data import ensemble_probability
 from .data import EnsembleCloud
-from .data import Field
-from .data import FieldTimeProperties
 from .data import merge_fields
+from .field import Field
+from .field import FieldTimeProperties
 from .fix_nc_input import FlexPartDataFixer
 from .meta_data import MetaData
 from .nc_meta_data import derive_variable_name

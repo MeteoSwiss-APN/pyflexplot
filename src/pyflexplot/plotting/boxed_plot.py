@@ -15,7 +15,7 @@ from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 
 # Local
-from ..input.data import Field
+from ..input.field import Field
 from ..input.meta_data import MetaData
 from ..plot_layouts import BoxedPlotLayoutType
 from ..setup import Setup

@@ -16,7 +16,7 @@ from typing import Sequence
 import pytest
 
 # First-party
-from pyflexplot.input.data import Field
+from pyflexplot.input.field import Field
 from pyflexplot.input.read_fields import read_fields
 from pyflexplot.setup import is_core_setup_param
 from pyflexplot.setup import is_setup_param

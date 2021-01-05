@@ -42,9 +42,8 @@ from srutils.plotting import truncate_cmap
 
 # Local
 from . import __version__
-from .input.data import Field
-from .input.data import FieldAllNaNError
-from .input.data import FieldStats
+from .input.field import Field
+from .input.field import FieldStats
 from .input.meta_data import format_meta_datum
 from .input.meta_data import MetaData
 from .output import FilePathFormatter
@@ -66,6 +65,7 @@ from .plotting.map_axes import MapAxes
 from .plotting.map_axes import MapAxesConfig
 from .plotting.text_box_axes import TextBoxAxes
 from .setup import Setup
+from .utils.exceptions import FieldAllNaNError
 from .utils.formatting import escape_format_keys
 from .utils.formatting import format_level_ranges
 from .utils.formatting import format_range
