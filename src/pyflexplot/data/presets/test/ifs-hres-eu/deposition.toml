@@ -31,13 +31,13 @@ integrate = true
 # time = -1
 # combine_species = true
 
-# [_base._concentration."png+"]
+# [_base._concentration."_png+"]
 # outfile = "concentration_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
-# [_base._concentration._integr."png+"]
+# [_base._concentration._integr."_png+"]
 # outfile = "integrated_concentration_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
-[_base._tot_deposition."png+"]
+[_base._tot_deposition."_png+"]
 outfile = "deposition_tot_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
-# [_base._affected_area."png+"]
+# [_base._affected_area."_png+"]
 # outfile = "affected_area_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
 
 ["**"._de.alps]
