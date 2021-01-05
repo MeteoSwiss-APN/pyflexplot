@@ -93,7 +93,7 @@ class TranslatedWords:
             raise MissingLanguageError(f"{lang} not in {self.langs}")
         self._active_lang = lang
 
-    def get(self, name, *, ctx=None, lang=None, chain=True):
+    def get(self, name, ctx=None, lang=None, *, chain=True):
         try:
             word = self.words[name]
         except KeyError as e:
