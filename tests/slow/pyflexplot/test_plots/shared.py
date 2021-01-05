@@ -76,13 +76,13 @@ class _TestBase:
     def get_field(self, datadir):
         infile = f"{datadir}/{self.setup_dct['infile']}"
         setups = self.get_setups()
-        field_lst_lst = read_fields(infile, setups, add_ts0=True, missing_ok=True)
-        assert len(field_lst_lst) == self.n_plots
+        field_groups = read_fields(infile, setups, add_ts0=True, missing_ok=True)
+        assert len(field_groups) == self.n_plots
         # SR_TMP <
         assert self.n_plots == 1
-        field_lst = next(iter(field_lst_lst))
-        assert len(field_lst) == 1
-        field = next(iter(field_lst))
+        field_group = next(iter(field_groups))
+        assert len(field_group) == 1
+        field = next(iter(field_group))
         # SR_TMP >
         return field
 

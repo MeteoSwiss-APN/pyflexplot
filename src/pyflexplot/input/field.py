@@ -4,7 +4,10 @@ import warnings
 from dataclasses import dataclass
 from typing import Any
 from typing import Dict
+from typing import Iterator
+from typing import List
 from typing import Mapping
+from typing import Sequence
 from typing import Tuple
 
 # Third-party
@@ -194,7 +197,7 @@ class FieldStats:
 
 @summarizable
 class FieldTimeProperties:
-    """Standard statistics of a 2D field over time."""
+    """Properties of a 2D field over time."""
 
     summarizable_attrs = ["stats", "stats_nz"]
 
@@ -211,3 +214,17 @@ class FieldTimeProperties:
         self.stats_nz = FieldStats.create(arr_nz)
         self.mask: np.ndarray = (~np.isnan(arr)).sum(axis=0) > 0
         self.mask_nz: np.ndarray = (~np.isnan(arr_nz)).sum(axis=0) > 0
+
+
+class FieldGroup:
+    """A group of related ``Field`` objects."""
+
+    def __init__(self, fields: Sequence[Field]) -> None:
+        """Create an instance of ``FieldGroup``."""
+        self.fields: List[Field] = list(fields)
+
+    def __len__(self) -> int:
+        return len(self.fields)
+
+    def __iter__(self) -> Iterator[Field]:
+        return iter(self.fields)

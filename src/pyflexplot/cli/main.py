@@ -112,7 +112,7 @@ def main(
             n_skip = n_old - len(sub_setups)
             log(vbs=f"[only:{only}] skip {n_skip}/{n_old} sub-setups")
         log(vbs=f"[{istat.ip_in}/{istat.n_in}] read {in_file_path}")
-        field_lst_lst = read_fields(
+        field_groups = read_fields(
             in_file_path,
             sub_setups,
             add_ts0=True,
@@ -121,13 +121,13 @@ def main(
             cache_on=cache,
         )
         # SR_TMP <  SR_MULTIPANEL
-        for field_lst in field_lst_lst:
-            if len(field_lst) > 1:
+        for field_group in field_groups:
+            if len(field_group) > 1:
                 raise NotImplementedError("multipanel plot")
-        field_lst = [next(iter(field_lst)) for field_lst in field_lst_lst]
+        fields = [next(iter(field_lst)) for field_lst in field_groups]
         # SR_TMP >  SR_MULTIPANEL
         in_file_path_lst = [
-            format_in_file_path(in_file_path, field.var_setups) for field in field_lst
+            format_in_file_path(in_file_path, field.var_setups) for field in fields
         ]
         out_file_paths_lst = [
             format_out_file_paths(
@@ -135,15 +135,15 @@ def main(
                 prev_paths=all_out_file_paths,
                 dest_dir=tmp_dir,
             )
-            for field in field_lst
+            for field in fields
         ]
-        istat.n_fld = len(field_lst)
+        istat.n_fld = len(fields)
         fct = partial(create_plots, only, dry_run, show_version, istat)
         iter_args = zip(
-            range(1, len(field_lst) + 1),
+            range(1, len(fields) + 1),
             in_file_path_lst,
             out_file_paths_lst,
-            field_lst,
+            fields,
         )
         if num_procs > 1:
             pool.starmap(fct, iter_args)

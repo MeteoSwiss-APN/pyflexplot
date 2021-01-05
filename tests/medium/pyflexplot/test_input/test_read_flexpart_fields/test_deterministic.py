@@ -263,10 +263,10 @@ def test_single(datadir, config):  # noqa:F811
     setups = SetupCollection([config.setup])
 
     # Read input field
-    field_lst_lst = read_fields(datafile, setups)
-    assert len(field_lst_lst) == 1
-    assert len(field_lst_lst[0]) == 1
-    fld = field_lst_lst[0][0].fld
+    field_groups = read_fields(datafile, setups)
+    assert len(field_groups) == 1
+    assert len(field_groups[0]) == 1
+    fld = next(iter(field_groups[0])).fld
 
     # Initialize individual setup objects
     var_setups_lst = setups.decompress_twice("dimensions.time", skip=["ens_member_id"])
@@ -465,12 +465,12 @@ def test_multiple(datadir, config):  # noqa:F811
 
         # Read input fields
         var_setups_dicts_pre = var_setups.dicts()
-        field_lst_lst = read_fields(datafile, var_setups)
+        field_groups = read_fields(datafile, var_setups)
         assert var_setups.dicts() == var_setups_dicts_pre
-        assert len(field_lst_lst) == 1
-        assert len(field_lst_lst[0]) == 1
+        assert len(field_groups) == 1
+        assert len(field_groups[0]) == 1
         fld = np.array(
-            [field.fld for field_lst in field_lst_lst for field in field_lst]
+            [field.fld for field_group in field_groups for field in field_group]
         )
         assert fld.shape[0] == 1
         fld = fld[0]
@@ -555,13 +555,15 @@ def test_single_add_ts0(datadir, config):
 
     # Read fields with and without added time step 0
     # Note: Check relies on ordered time steps, which is incidental
-    field_raw_lst_lst = read_fields(datafile, setups, add_ts0=False)
-    field_ts0_lst_lst = read_fields(datafile, setups, add_ts0=True)
-    assert len(field_ts0_lst_lst) == len(field_raw_lst_lst) + 1
-    assert all(len(field_lst) == 1 for field_lst in field_ts0_lst_lst)
-    assert all(len(field_lst) == 1 for field_lst in field_raw_lst_lst)
-    assert (field_ts0_lst_lst[0][0].fld == 0.0).all()
-    assert (field_ts0_lst_lst[1][0].fld == field_raw_lst_lst[0][0].fld).all()
+    field_groups_raw = read_fields(datafile, setups, add_ts0=False)
+    field_groups_ts0 = read_fields(datafile, setups, add_ts0=True)
+    assert len(field_groups_ts0) == len(field_groups_raw) + 1
+    assert all(len(field_group) == 1 for field_group in field_groups_ts0)
+    assert all(len(field_group) == 1 for field_group in field_groups_raw)
+    flds_ts0 = [next(iter(field_group)).fld for field_group in field_groups_ts0]
+    fld_raw = next(iter(field_groups_raw[0])).fld
+    assert (flds_ts0[0] == 0.0).all()
+    assert (flds_ts0[1] == fld_raw).all()
 
 
 def test_missing_deposition_cosmo(datadir):  # noqa:F811
@@ -591,10 +593,10 @@ def test_missing_deposition_cosmo(datadir):  # noqa:F811
     setups = SetupCollection([setup])
 
     # Read input field
-    field_lst_lst = read_fields(datafile, setups, missing_ok=True)
-    assert len(field_lst_lst) == 1
-    assert len(field_lst_lst[0]) == 1
-    fld = field_lst_lst[0][0].fld
+    field_groups = read_fields(datafile, setups, missing_ok=True)
+    assert len(field_groups) == 1
+    assert len(field_groups[0]) == 1
+    fld = next(iter(field_groups[0])).fld
 
     assert (fld == 0.0).all()
 
@@ -626,10 +628,10 @@ def test_missing_deposition_ifs(datadir):  # noqa:F811
     setups = SetupCollection([setup])
 
     # Read input field
-    field_lst_lst = read_fields(datafile, setups, missing_ok=True)
-    assert len(field_lst_lst) == 1
-    assert len(field_lst_lst[0]) == 1
-    fld = field_lst_lst[0][0].fld
+    field_groups = read_fields(datafile, setups, missing_ok=True)
+    assert len(field_groups) == 1
+    assert len(field_groups[0]) == 1
+    fld = next(iter(field_groups[0])).fld
 
     assert (fld == 0.0).all()
 
@@ -662,9 +664,9 @@ def test_affected_area(datadir):  # noqa:F811
     setups = SetupCollection([setup])
 
     # Read input field
-    field_lst_lst = read_fields(datafile, setups, missing_ok=True)
-    assert len(field_lst_lst) == 1
-    assert len(field_lst_lst[0]) == 1
-    fld = field_lst_lst[0][0].fld
+    field_groups = read_fields(datafile, setups, missing_ok=True)
+    assert len(field_groups) == 1
+    assert len(field_groups[0]) == 1
+    fld = next(iter(field_groups[0])).fld
 
     assert ((fld == 0) | (fld == 1)).all()

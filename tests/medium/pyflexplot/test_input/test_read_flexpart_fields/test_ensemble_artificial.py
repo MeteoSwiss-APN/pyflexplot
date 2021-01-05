@@ -57,12 +57,12 @@ def test_one_setup_one_field(datadir, config):  # noqa:F811
     }
     setup_dct_lst = [setup_dct]
     setups = SetupCollection.create(setup_dct_lst)
-    field_lst_lst = read_fields(datafile_fmt, setups, cls_fixer=None)
+    field_groups = read_fields(datafile_fmt, setups, cls_fixer=None)
 
-    assert len(field_lst_lst) == 1
-    field_lst = next(iter(field_lst_lst))
-    assert len(field_lst) == 1
-    field = next(iter(field_lst))
+    assert len(field_groups) == 1
+    field_group = next(iter(field_groups))
+    assert len(field_group) == 1
+    field = next(iter(field_group))
     fld = field.fld
 
     assert np.allclose([fld.min(), fld.max()], fld.mean())

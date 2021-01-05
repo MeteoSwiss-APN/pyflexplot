@@ -27,6 +27,7 @@ from .data import ensemble_probability
 from .data import EnsembleCloud
 from .data import merge_fields
 from .field import Field
+from .field import FieldGroup
 from .field import FieldTimeProperties
 from .fix_nc_input import FlexPartDataFixer
 from .meta_data import MetaData
@@ -73,7 +74,7 @@ def read_fields(
     in_file_path: str,
     setups: SetupCollection,
     **config_kwargs: Any,
-) -> List[List[Field]]:
+) -> List[FieldGroup]:
     """Read fields from an input file, or multiple files derived from one path.
 
     Args:
@@ -107,17 +108,17 @@ def read_fields(
     setups_for_plots_over_time = group_setups_for_plots(setups)
 
     files = InputFileEnsemble(paths, config, all_ens_member_ids)
-    field_lst_lst: List[List[Field]] = []
+    field_groups: List[FieldGroup] = []
     for setups_for_same_plot_over_time in setups_for_plots_over_time:
         ens_mem_ids = setups_for_same_plot_over_time.collect_equal("ens_member_id")
-        field_lst_lst.extend(
+        field_groups.extend(
             files.read_fields_over_time(setups_for_same_plot_over_time, ens_mem_ids)
         )
 
-    n_plt = len(field_lst_lst)
-    n_tot = sum([len(field_lst) for field_lst in field_lst_lst])
+    n_plt = len(field_groups)
+    n_tot = sum([len(field_group) for field_group in field_groups])
     log(dbg=f"done reading {in_file_path}: read {n_tot} fields for {n_plt} plots")
-    return field_lst_lst
+    return field_groups
 
 
 def prepare_paths(path: str, ens_member_ids: Optional[Sequence[int]]) -> List[str]:
@@ -230,7 +231,7 @@ class InputFileEnsemble:
     # pylint: disable=R0914  # too-many-locals
     def read_fields_over_time(
         self, setups: SetupCollection, ens_member_ids: Optional[Sequence[int]] = None
-    ) -> List[List[Field]]:
+    ) -> List[FieldGroup]:
         """Read fields for the same plot at multiple time steps.
 
         Return a list of lists of fields, whereby:
@@ -272,7 +273,7 @@ class InputFileEnsemble:
         time_stats = FieldTimeProperties(fld_time)
 
         # Create Field objects at requested time steps
-        field_lst_lst: List[List[Field]] = []
+        field_groups: List[FieldGroup] = []
         for field_setups, mdata in zip(self.setups_lst_time, self.mdata_tss):
             time_idx = field_setups.collect_equal("dimensions.time")
             field = Field(
@@ -284,9 +285,10 @@ class InputFileEnsemble:
                 nc_meta_data=self.nc_meta_data,
                 mdata=mdata,
             )
-            field_lst_lst.append([field])  # SR_TMP TODO SR_MULTIPANEL
+            field_group = FieldGroup([field])  # SR_TMP TODO SR_MULTIPANEL
+            field_groups.append(field_group)
 
-        return field_lst_lst
+        return field_groups
 
     def _read_data(
         self, file_path: str, idx_mem: int, timeless_setups_mem: SetupCollection

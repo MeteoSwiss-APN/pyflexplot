@@ -17,6 +17,7 @@ import pytest
 
 # First-party
 from pyflexplot.input.field import Field
+from pyflexplot.input.field import FieldGroup
 from pyflexplot.input.read_fields import read_fields
 from pyflexplot.setup import is_core_setup_param
 from pyflexplot.setup import is_setup_param
@@ -34,31 +35,33 @@ datafilename3 = "flexpart_ifs_20200317000000.nc"
 
 
 @overload
-def fields_to_setup_dcts(obj: Field, params=...) -> Dict[str, Any]:
+def field_groups_to_setup_dcts(obj: Field, params=...) -> Dict[str, Any]:
     ...
 
 
 @overload
-def fields_to_setup_dcts(obj: Sequence[Field], params=...) -> Sequence[Dict[str, Any]]:
+def field_groups_to_setup_dcts(obj: FieldGroup, params=...) -> Sequence[Dict[str, Any]]:
     ...
 
 
 @overload
-def fields_to_setup_dcts(obj: Sequence[Sequence], params=...) -> Sequence[Sequence]:
+def field_groups_to_setup_dcts(
+    obj: Sequence[FieldGroup], params=...
+) -> Sequence[Sequence[Dict[str, Any]]]:
     ...
 
 
-def fields_to_setup_dcts(obj, params: Optional[List[str]] = None):
+def field_groups_to_setup_dcts(obj, params: Optional[List[str]] = None):
     """Extract input setups from one or more ``Field`` objects.
 
     Multiple ``Field`` objects may be passed as arbitrarily nested sequences,
     in which case the nesting is retained in the result.
 
     """
-    if isinstance(obj, Sequence):
+    if isinstance(obj, (Sequence, FieldGroup)):
         result = []
         for sub_obj in obj:
-            result.append(fields_to_setup_dcts(sub_obj, params))
+            result.append(field_groups_to_setup_dcts(sub_obj, params))
         return result
     assert isinstance(obj, Field)
     dct_all = obj.var_setups.compress().dict()
@@ -88,8 +91,8 @@ def _test_setups_core(
     setups: SetupCollection, params: List[str], sol: List[List[Dict[str, Any]]]
 ):
     infile = setups.collect_equal("infile")
-    field_lst_lst = read_fields(infile, setups, dry_run=True)
-    res = fields_to_setup_dcts(field_lst_lst, params)
+    field_groups = read_fields(infile, setups, dry_run=True)
+    res = field_groups_to_setup_dcts(field_groups, params)
     check_summary_dict_element_is_subelement(obj_super=res, obj_sub=sol)
 
 
