@@ -73,7 +73,7 @@ class _TestBase:
         setup = Setup.create(self.setup_dct)
         return SetupCollection([setup])
 
-    def get_field(self, datadir):
+    def get_field_group(self, datadir):
         infile = f"{datadir}/{self.setup_dct['infile']}"
         setups = self.get_setups()
         field_groups = read_fields(infile, setups, add_ts0=True, missing_ok=True)
@@ -81,15 +81,13 @@ class _TestBase:
         # SR_TMP <
         assert self.n_plots == 1
         field_group = next(iter(field_groups))
-        assert len(field_group) == 1
-        field = next(iter(field_group))
         # SR_TMP >
-        return field
+        return field_group
 
-    def get_plot(self, field):
+    def get_plot(self, field_group):
         outfiles, plots = [], []
-        outfiles = format_out_file_paths(field, prev_paths=outfiles)
-        plot = prepare_plot(field)
+        outfiles = format_out_file_paths(field_group, prev_paths=outfiles)
+        plot = prepare_plot(field_group)
         create_plot(plot, outfiles, write=False, show_version=False)
         plots.append(plot)
         assert len(outfiles) == len(plots) == 1
@@ -104,9 +102,13 @@ class _TestBase:
         return ref
 
     def test(self, datadir):
-        field = self.get_field(datadir)
+        field_group = self.get_field_group(datadir)
+
+        # SR_TMP < TODO Add support for multiple plots!
+        assert len(field_group) == 1
+        field = next(iter(field_group))
+        # SR_TMP >
         res = field.summarize()
-        # SR_TODO Add support for multiple plots!
         sol = self.get_reference("field_summary")
         try:
             assert_nested_equal(res, sol, "res", "sol", float_close_ok=True)
@@ -114,7 +116,7 @@ class _TestBase:
             msg = f"field summaries differ (result vs. solution):\n\n {e}"
             raise AssertionError(msg)
 
-        plot = self.get_plot(field)
+        plot = self.get_plot(field_group)
         res = plot.summarize()
         sol = self.get_reference("plot_summary")
         try:
@@ -139,10 +141,16 @@ class _TestCreateReference(_TestBase):
         if black is None:
             raise ImportError("must install black to create test reference")
         ref_file = f"{self.reference}.py"  # pylint: disable=no-member
-        field = self.get_field(datadir)
+        field_group = self.get_field_group(datadir)
+        plot = self.get_plot(field_group)
+
+        # SR_TMP < TODO Add support for multiple plots!
+        assert len(field_group) == 1
+        field = next(iter(field_group))
+        # SR_TMP >
         field_summary = field.summarize()
-        plot = self.get_plot(field)
         plot_summary = plot.summarize()
+
         module_path_rel = os.path.relpath(__file__, ".")
         cls_name = type(self).__name__
         head = f'''\
@@ -207,8 +215,8 @@ class _TestCreatePlot(_TestBase):
 
     def test(self, datadir):
         plot_file = f"{self.reference}.png"  # pylint: disable=no-member
-        field = self.get_field(datadir)
-        plot = self.get_plot(field)
+        field_group = self.get_field_group(datadir)
+        plot = self.get_plot(field_group)
         try:
             plot.write(plot_file)
         except Exception:

@@ -7,6 +7,7 @@ from typing import Dict
 from typing import Iterator
 from typing import List
 from typing import Mapping
+from typing import Optional
 from typing import Sequence
 from typing import Tuple
 
@@ -222,6 +223,14 @@ class FieldGroup:
     def __init__(self, fields: Sequence[Field]) -> None:
         """Create an instance of ``FieldGroup``."""
         self.fields: List[Field] = list(fields)
+
+        self.ens_member_ids: Optional[List[int]] = self._collect_ens_member_ids()
+
+    def _collect_ens_member_ids(self) -> Optional[List[int]]:
+        setups = SetupCollection(
+            [setup for field in self for setup in field.var_setups]
+        )
+        return setups.collect_equal("ens_member_id")
 
     def __len__(self) -> int:
         return len(self.fields)

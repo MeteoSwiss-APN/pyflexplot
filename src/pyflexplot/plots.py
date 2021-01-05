@@ -43,6 +43,7 @@ from srutils.plotting import truncate_cmap
 # Local
 from . import __version__
 from .input.field import Field
+from .input.field import FieldGroup
 from .input.field import FieldStats
 from .input.meta_data import format_meta_datum
 from .input.meta_data import MetaData
@@ -78,13 +79,19 @@ from .words import Words
 
 
 def format_out_file_paths(
-    field: Field, prev_paths: List[str], dest_dir: Optional[str] = None
+    field_group: FieldGroup, prev_paths: List[str], dest_dir: Optional[str] = None
 ) -> List[str]:
+    # SR_TMP <  SR_MULTIPANEL
+    if len(field_group) > 1:
+        raise NotImplementedError("multipanel plot")
+    field = next(iter(field_group))
+    # SR_TMP >  SR_MULTIPANEL
     setup = field.var_setups.compress()
     out_file_paths: List[str] = []
-    for out_file_template in (
+    out_file_templates: Sequence[str] = (
         [setup.outfile] if isinstance(setup.outfile, str) else setup.outfile
-    ):
+    )
+    for out_file_template in out_file_templates:
         if dest_dir:
             if out_file_template.startswith("/"):
                 raise Exception(
@@ -103,13 +110,18 @@ def format_out_file_paths(
 
 
 def prepare_plot(
-    field: Field, *, dry_run: bool = False
+    field_group: FieldGroup, *, dry_run: bool = False
 ) -> Union[BoxedPlot, DummyBoxedPlot]:
     """Create plots while yielding them with the plot file path one by one."""
     log(dbg="preparing setups for plot")
     if dry_run:
         return DummyBoxedPlot()
     else:
+        # SR_TMP <  SR_MULTIPANEL
+        if len(field_group) > 1:
+            raise NotImplementedError("multipanel plot")
+        field = next(iter(field_group))
+        # SR_TMP >  SR_MULTIPANEL
         config = create_plot_config(field, WORDS, SYMBOLS)
         map_config = create_map_config(field, config.layout.aspect_center())
         return BoxedPlot(field, config, map_config)

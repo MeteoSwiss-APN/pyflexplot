@@ -12,6 +12,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 
 # Third-party
 import click
@@ -23,7 +24,7 @@ from PyPDF2.utils import PdfReadError
 from srutils.str import sorted_paths
 
 # Local
-from ..input.field import Field
+from ..input.field import FieldGroup
 from ..input.read_fields import read_fields
 from ..plots import create_plot
 from ..plots import format_out_file_paths
@@ -120,30 +121,25 @@ def main(
             dry_run=dry_run,
             cache_on=cache,
         )
-        # SR_TMP <  SR_MULTIPANEL
-        for field_group in field_groups:
-            if len(field_group) > 1:
-                raise NotImplementedError("multipanel plot")
-        fields = [next(iter(field_lst)) for field_lst in field_groups]
-        # SR_TMP >  SR_MULTIPANEL
         in_file_path_lst = [
-            format_in_file_path(in_file_path, field.var_setups) for field in fields
+            format_in_file_path(in_file_path, field_group.ens_member_ids)
+            for field_group in field_groups
         ]
         out_file_paths_lst = [
             format_out_file_paths(
-                field,
+                field_group,
                 prev_paths=all_out_file_paths,
                 dest_dir=tmp_dir,
             )
-            for field in fields
+            for field_group in field_groups
         ]
-        istat.n_fld = len(fields)
+        istat.n_fld = len(field_groups)
         fct = partial(create_plots, only, dry_run, show_version, istat)
         iter_args = zip(
-            range(1, len(fields) + 1),
+            range(1, istat.n_fld + 1),
             in_file_path_lst,
             out_file_paths_lst,
-            fields,
+            field_groups,
         )
         if num_procs > 1:
             pool.starmap(fct, iter_args)
@@ -228,7 +224,7 @@ def get_pid() -> int:
 
 
 class SharedIterationState:
-    """Shared iteration state."""
+    """Shared iteration state in parallel loop."""
 
     def __init__(
         self,
@@ -286,20 +282,18 @@ def create_plots(
     ip_fld: int,
     in_file_path: str,
     out_file_paths: List[str],
-    field: Field,
+    field_group: FieldGroup,
 ):
     pid = get_pid()
     if only and istat.ip_tot >= only:
         return
-
     log(
         dbg=(
             f"[P{pid}][{istat.ip_in}/{istat.n_in}][{ip_fld}/{istat.n_fld}]"
             " prepare plot"
         )
     )
-
-    plot = prepare_plot(field, dry_run=dry_run)
+    plot = prepare_plot(field_group, dry_run=dry_run)
     if only:
         only_i = only - istat.ip_tot
         if len(out_file_paths) > only_i:
@@ -332,8 +326,7 @@ def create_plots(
         log(dbg=f"done plotting {out_file_path}")
 
 
-def format_in_file_path(in_file_path, setups: SetupCollection) -> str:
-    ens_member_ids = setups.collect_equal("ens_member_id")
+def format_in_file_path(in_file_path, ens_member_ids: Optional[Sequence[int]]) -> str:
     if ens_member_ids is None:
         return in_file_path
     pattern = r"(?P<start>.*)(?P<pattern>{ens_member(:(?P<fmt>[0-9]*d))?})(?P<end>.*)"
