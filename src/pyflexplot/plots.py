@@ -122,7 +122,14 @@ def prepare_plot(
             raise NotImplementedError("multipanel plot")
         field = next(iter(field_group))
         # SR_TMP >  SR_MULTIPANEL
-        config = create_plot_config(field, WORDS, SYMBOLS)
+        setup = field.var_setups.compress()
+        time_stats = field.time_props.stats
+        mdata = field.mdata
+        words = WORDS
+        symbols = SYMBOLS
+        words.set_active_lang(setup.core.lang)
+        labels = create_box_labels(setup, words, symbols, mdata)
+        config = create_plot_config(setup=setup, time_stats=time_stats, labels=labels)
         map_config = create_map_config(field, config.layout.aspect_center())
         return BoxedPlot(field, config, map_config)
 
@@ -160,7 +167,7 @@ def plot_add_text_boxes(
         words = WORDS
         # SR_TMP >
         setup = plot.field.var_setups.compress()
-        mdata = plot.config.mdata
+        mdata = plot.field.mdata
 
         box.text(
             capitalize(format_names_etc(setup, words, mdata)["long"]),
@@ -202,7 +209,7 @@ def plot_add_text_boxes(
     def fill_box_2nd_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the secondary title box of the deterministic plot layout."""
         font_size = plot.config.font.sizes.content_large
-        mdata = plot.config.mdata
+        mdata = plot.field.mdata
         box.text(
             capitalize(format_meta_datum(mdata.species.name)),
             loc="tc",
@@ -235,7 +242,7 @@ def plot_add_text_boxes(
     def fill_box_legend(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the box containing the plot legend."""
         labels = plot.config.labels["legend"]
-        mdata = plot.config.mdata
+        mdata = plot.field.mdata
 
         # Box title
         box.text(
@@ -346,7 +353,7 @@ def plot_add_text_boxes(
         words = WORDS
         symbols = SYMBOLS
         # SR_TMP >
-        mdata = plot.config.mdata
+        mdata = plot.field.mdata
 
         # Box title
         box.text(
@@ -478,7 +485,7 @@ def plot_add_text_boxes(
 
 def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
     config = plot.config
-    mdata = config.mdata
+    mdata = plot.field.mdata
     if config.markers.mark_release_site:
         assert config.markers.markers is not None  # mypy
         axs_map.add_marker(
@@ -607,11 +614,10 @@ def create_map_config(field: Field, aspect: float) -> MapAxesConfig:
 # pylint: disable=R0912  # too-many-branches
 # pylint: disable=R0914  # too-many-locals (>15)
 def create_plot_config(
-    field: Field, words: TranslatedWords, symbols: Words
+    setup: Setup,
+    time_stats: FieldStats,
+    labels: Dict[str, Dict[str, Any]],
 ) -> BoxedPlotConfig:
-    setup = field.var_setups.compress()
-    mdata = field.mdata
-    words.set_active_lang(setup.core.lang)
     plot_config_dct: Dict[str, Any] = {
         "fig_size": (12.5 * setup.scale_fact, 8.0 * setup.scale_fact),
     }
@@ -682,7 +688,7 @@ def create_plot_config(
         ):
             levels_config_dct["extend"] = "max"
     levels_config_dct["levels"] = levels_from_time_stats(
-        setup, field.time_props.stats, levels_config_dct
+        setup, time_stats, levels_config_dct
     )
     legend_config_dct["labels"] = format_level_ranges(
         levels=levels_config_dct["levels"],
@@ -790,8 +796,7 @@ def create_plot_config(
 
     return BoxedPlotConfig(
         setup=setup,
-        mdata=mdata,
-        labels=create_box_labels(setup, words, symbols, mdata),
+        labels=labels,
         font=font_config,
         levels=levels_config,
         markers=markers_config,

@@ -16,7 +16,6 @@ from matplotlib.figure import Figure
 
 # Local
 from ..input.field import Field
-from ..input.meta_data import MetaData
 from ..plot_layouts import BoxedPlotLayoutType
 from ..setup import Setup
 from ..utils.summarize import summarizable
@@ -84,7 +83,6 @@ class MarkersConfig:
 @dataclass
 class BoxedPlotConfig:
     setup: Setup  # SR_TODO consider removing this
-    mdata: MetaData  # SR_TODO consider removing this
     layout: BoxedPlotLayoutType
     # ---
     font: FontConfig = FontConfig()
