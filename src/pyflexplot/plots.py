@@ -39,6 +39,7 @@ from matplotlib.colors import Colormap
 from srutils.datetime import init_datetime
 from srutils.geo import Degrees
 from srutils.plotting import truncate_cmap
+from words import Word
 
 # Local
 from . import __version__
@@ -349,83 +350,19 @@ def plot_add_text_boxes(
     # pylint: disable=R0915  # too-many-statements
     def fill_box_release_info(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the box containing the release info."""
-        # SR_TMP <
-        words = WORDS
-        symbols = SYMBOLS
-        # SR_TMP >
-        mdata = plot.field.mdata
+        labels = plot.config.labels["release_info"]
 
         # Box title
         box.text(
-            s=capitalize(words["release"].t),
+            s=labels["title"],
             loc="tc",
             fontname=plot.config.font.name,
             size=plot.config.font.sizes.title_small,
         )
 
-        # Release site coordinates
-        lat_deg_fmt = capitalize(format_coord_label("north", words, symbols))
-        lon_deg_fmt = capitalize(format_coord_label("east", words, symbols))
-        lat = Degrees(mdata.release.lat)
-        lon = Degrees(mdata.release.lon)
-        lat_deg = lat_deg_fmt.format(d=lat.degs(), m=lat.mins(), f=lat.frac())
-        lon_deg = lon_deg_fmt.format(d=lon.degs(), m=lon.mins(), f=lon.frac())
-
-        height = format_meta_datum(mdata.release.height, mdata.release.height_unit)
-        height = height.replace("meters", r"$\,$" + words["m_agl"].s)  # SR_TMP
-        rate = format_meta_datum(mdata.release.rate, mdata.release.rate_unit)
-        mass = format_meta_datum(mdata.release.mass, mdata.release.mass_unit)
-        substance = format_meta_datum(mdata.species.name, join_values=" / ")
-        half_life = format_meta_datum(
-            mdata.species.half_life, mdata.species.half_life_unit
-        )
-        deposit_vel = format_meta_datum(
-            mdata.species.deposition_velocity, mdata.species.deposition_velocity_unit
-        )
-        sediment_vel = format_meta_datum(
-            mdata.species.sedimentation_velocity,
-            mdata.species.sedimentation_velocity_unit,
-        )
-        washout_coeff = format_meta_datum(
-            mdata.species.washout_coefficient, mdata.species.washout_coefficient_unit
-        )
-        washout_exponent = format_meta_datum(mdata.species.washout_exponent)
-
-        # SR_TMP <
-        release_start = format_meta_datum(
-            cast(datetime, mdata.simulation.start)
-            + cast(timedelta, mdata.release.start_rel)
-        )
-        release_end = format_meta_datum(
-            cast(datetime, mdata.simulation.start)
-            + cast(timedelta, mdata.release.end_rel)
-        )
-        # SR_TMP >
-
-        info_blocks = dedent(
-            f"""\
-            {capitalize(words["site"].s)}:\t{format_meta_datum(mdata.release.site)}
-            {capitalize(words["latitude"].s)}:\t{lat_deg}
-            {capitalize(words["longitude"].s)}:\t{lon_deg}
-            {capitalize(words["height"].s)}:\t{height}
-
-            {capitalize(words["start"].s)}:\t{release_start}
-            {capitalize(words["end"].s)}:\t{release_end}
-            {capitalize(words["rate"].s)}:\t{rate}
-            {capitalize(words["total_mass"].s)}:\t{mass}
-
-            {capitalize(words["substance"].s)}:\t{substance}
-            {capitalize(words["half_life"].s)}:\t{half_life}
-            {capitalize(words["deposition_velocity", "abbr"].s)}:\t{deposit_vel}
-            {capitalize(words["sedimentation_velocity", "abbr"].s)}:\t{sediment_vel}
-            {capitalize(words["washout_coeff"].s)}:\t{washout_coeff}
-            {capitalize(words["washout_exponent"].s)}:\t{washout_exponent}
-            """
-        )
-
         # Add lines bottom-up (to take advantage of baseline alignment)
         box.text_blocks_hfill(
-            info_blocks,
+            labels["lines_str"],
             dy_unit=-4.0,
             dy_line=2.5,
             fontname=plot.config.font.name,
@@ -906,12 +843,74 @@ def create_box_labels(
     labels["legend"]["title"] = title
     labels["legend"]["unit"] = unit
 
+    # Release info
+    site_name = format_meta_datum(mdata.release.site)
+    site_lat_lon = format_release_site_coords_labels(words, symbols, mdata)
+    release_height = format_meta_datum(
+        mdata.release.height, mdata.release.height_unit
+    ).replace("meters", r"$\,$" + words["m_agl"].s)
+    release_start = format_meta_datum(
+        cast(datetime, mdata.simulation.start)
+        + cast(timedelta, mdata.release.start_rel)
+    )
+    release_end = format_meta_datum(
+        cast(datetime, mdata.simulation.start) + cast(timedelta, mdata.release.end_rel)
+    )
+    release_rate = format_meta_datum(mdata.release.rate, mdata.release.rate_unit)
+    release_mass = format_meta_datum(mdata.release.mass, mdata.release.mass_unit)
+    substance = format_meta_datum(mdata.species.name, join_values=" / ")
+    half_life = format_meta_datum(mdata.species.half_life, mdata.species.half_life_unit)
+    deposit_vel = format_meta_datum(
+        mdata.species.deposition_velocity,
+        mdata.species.deposition_velocity_unit,
+    )
+    sediment_vel = format_meta_datum(
+        mdata.species.sedimentation_velocity,
+        mdata.species.sedimentation_velocity_unit,
+    )
+    washout_coeff = format_meta_datum(
+        mdata.species.washout_coefficient,
+        mdata.species.washout_coefficient_unit,
+    )
+    washout_exponent = format_meta_datum(mdata.species.washout_exponent)
+    lines_parts: List[Optional[Tuple[Word, str]]] = [
+        (words["site"], site_name),
+        (words["latitude"], site_lat_lon[0]),
+        (words["longitude"], site_lat_lon[1]),
+        (words["height"], release_height),
+        None,
+        (words["start"], release_start),
+        (words["end"], release_end),
+        (words["rate"], release_rate),
+        (words["total_mass"], release_mass),
+        None,
+        (words["substance"], substance),
+        (words["half_life"], half_life),
+        (words["deposition_velocity", "abbr"], deposit_vel),
+        (words["sedimentation_velocity", "abbr"], sediment_vel),
+        (words["washout_coeff"], washout_coeff),
+        (words["washout_exponent"], washout_exponent),
+    ]
+    lines_str = ""
+    for line_parts in lines_parts:
+        if line_parts is None:
+            lines_str += "\n\n"
+        else:
+            left, right = line_parts
+            lines_str += f"{capitalize(left)}:\t{right}\n"
+    labels["release_info"] = {
+        "title": capitalize(words["release"].t),
+        "lines_str": lines_str,
+    }
+
     # Capitalize all labels
     for label_group in labels.values():
         for name, label in label_group.items():
             if name == "lines":
                 label = [capitalize(line) for line in label]
-            else:
+            elif name == "blocks":
+                label = [[capitalize(line) for line in block] for block in label]
+            elif isinstance(label, str):
                 label = capitalize(label)
             label_group[name] = label
 
@@ -1040,8 +1039,9 @@ def format_names_etc(
     }
 
 
-def capitalize(s: str) -> str:
+def capitalize(s: Union[str, Word]) -> str:
     """Capitalize the first letter while leaving all others as they are."""
+    s = str(s)
     if not s:
         return s
     try:
@@ -1073,6 +1073,18 @@ def format_max_marker_label(labels: Dict[str, Any], fld: np.ndarray) -> str:
     return f"{labels['max']}: {s_val}"
     # return f"{labels['max']} ({s_val})"
     # return f"{labels['maximum']}:\n({s_val})"
+
+
+def format_release_site_coords_labels(
+    words: TranslatedWords, symbols: Words, mdata: MetaData
+) -> Tuple[str, str]:
+    lat_deg_fmt = capitalize(format_coord_label("north", words, symbols))
+    lon_deg_fmt = capitalize(format_coord_label("east", words, symbols))
+    lat = Degrees(mdata.release.lat)
+    lon = Degrees(mdata.release.lon)
+    lat_deg = lat_deg_fmt.format(d=lat.degs(), m=lat.mins(), f=lat.frac())
+    lon_deg = lon_deg_fmt.format(d=lon.degs(), m=lon.mins(), f=lon.frac())
+    return (lat_deg, lon_deg)
 
 
 def format_model_info(setup: Setup, words: TranslatedWords) -> str:
