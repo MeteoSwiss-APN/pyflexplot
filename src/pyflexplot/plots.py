@@ -19,7 +19,6 @@ import os
 import warnings
 from datetime import datetime
 from datetime import timedelta
-from textwrap import dedent
 from typing import Any
 from typing import cast
 from typing import Collection
@@ -126,10 +125,7 @@ def prepare_plot(
         setup = field.var_setups.compress()
         time_stats = field.time_props.stats
         mdata = field.mdata
-        words = WORDS
-        symbols = SYMBOLS
-        words.set_active_lang(setup.core.lang)
-        labels = create_box_labels(setup, words, symbols, mdata)
+        labels = create_box_labels(setup, mdata)
         config = create_plot_config(setup=setup, time_stats=time_stats, labels=labels)
         map_config = create_map_config(field, config.layout.aspect_center())
         return BoxedPlot(field, config, map_config)
@@ -164,47 +160,17 @@ def plot_add_text_boxes(
     # pylint: disable=R0915  # too-many-statements
     def fill_box_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the title box."""
-        # SR_TMP <
-        words = WORDS
-        # SR_TMP >
-        setup = plot.field.var_setups.compress()
-        mdata = plot.field.mdata
-
-        box.text(
-            capitalize(format_names_etc(setup, words, mdata)["long"]),
-            loc="tl",
-            fontname=plot.config.font.name,
-            # size=plot.config.font.sizes.title_large,
-            size=plot.config.font.sizes.title_medium,
-        )
-
-        labels = {}
-        integr_period = format_integr_period(
-            mdata.simulation.reduction_start,
-            mdata.simulation.now,
-            setup,
-            words,
-            cap=True,
-        )
-        labels["bl"] = capitalize(
-            f"{integr_period} ({words['since']}"
-            f" {format_meta_datum(mdata.simulation.reduction_start)})"
-        )
-        labels["tr"] = capitalize(
-            f"{format_meta_datum(mdata.simulation.now)}"
-            f" ({words['lead_time']} +{format_meta_datum(mdata.simulation.lead_time)})"
-        )
-        labels["br"] = capitalize(
-            f"{format_meta_datum(mdata.simulation.now_rel - mdata.release.start_rel)}"
-            f" {words['after']} {words['release_start']}"
-        )
-
+        labels = plot.config.labels["title"]
         for position, label in labels.items():
+            if "position" == "tl":
+                size = plot.config.font.sizes.title_medium
+            else:
+                size = plot.config.font.sizes.content_large
             box.text(
                 label,
                 loc=position,
                 fontname=plot.config.font.name,
-                size=plot.config.font.sizes.content_large,
+                size=size,
             )
 
     def fill_box_2nd_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
@@ -744,41 +710,48 @@ def create_plot_config(
 # pylint: disable=R0912  # too-many-branches
 # pylint: disable=R0914  # too-many-locals
 # pylint: disable=R0915  # too-many-statements
-def create_box_labels(
-    setup: Setup, words: TranslatedWords, symbols: Words, mdata: MetaData
-) -> Dict[str, Dict[str, Any]]:
+def create_box_labels(setup: Setup, mdata: MetaData) -> Dict[str, Dict[str, Any]]:
+    words = WORDS
+    symbols = SYMBOLS
+    words.set_active_lang(setup.core.lang)
 
-    # SR_TMP <
+    # Format variable name in various ways
     names = format_names_etc(setup, words, mdata)
     short_name = names["short"]
     var_name_abbr = names["var_abbr"]
     ens_var_name = names["ens_var"]
     unit = names["unit"]
-    # SR_TMP >
 
     labels: Dict[str, Dict[str, Any]] = {}
+
+    # Title box
+    integr_period = format_integr_period(
+        mdata.simulation.reduction_start,
+        mdata.simulation.now,
+        setup,
+        words,
+        cap=True,
+    )
+    labels["title"] = {
+        "tl": capitalize(format_names_etc(setup, words, mdata)["long"]),
+        "bl": capitalize(
+            f"{integr_period} ({words['since']}"
+            f" {format_meta_datum(mdata.simulation.reduction_start)})"
+        ),
+        "tr": capitalize(
+            f"{format_meta_datum(mdata.simulation.now)}"
+            f" ({words['lead_time']} +{format_meta_datum(mdata.simulation.lead_time)})"
+        ),
+        "br": capitalize(
+            f"{format_meta_datum(mdata.simulation.now_rel - mdata.release.start_rel)}"
+            f" {words['after']} {words['release_start']}"
+        ),
+    }
+
+    # Data info box
     labels["data_info"] = {
         "lines": [],
     }
-    labels["legend"] = {
-        "title": "",  # SR_TMP Force into 2nd position in dict (for tests)
-        "release_site": words["release_site"].s,
-        "site": words["site"].s,
-        "max": words["maximum", "abbr"].s,
-        "maximum": words["maximum"].s,
-    }
-
-    labels["bottom"] = {
-        "model_info": format_model_info(setup, words),
-        "copyright": f"{symbols['copyright']}{words['meteoswiss']}",
-    }
-
-    if setup.core.input_variable == "concentration":
-        labels["legend"]["tc"] = (
-            f"{words['height']}:"
-            f" {escape_format_keys(format_level_label(mdata, words))}"
-        )
-
     labels["data_info"]["lines"].append(
         f"{words['substance'].c}:"
         f"\t{format_meta_datum(mdata.species.name, join_values=' / ')}",
@@ -823,6 +796,19 @@ def create_box_labels(
             f"{words['ensemble_variable', 'abbr']}:\t{ens_var_name}"
         )
 
+    # Legend box
+    labels["legend"] = {
+        "title": "",  # SR_TMP Force into 2nd position in dict (for tests)
+        "release_site": words["release_site"].s,
+        "site": words["site"].s,
+        "max": words["maximum", "abbr"].s,
+        "maximum": words["maximum"].s,
+    }
+    if setup.core.input_variable == "concentration":
+        labels["legend"]["tc"] = (
+            f"{words['height']}:"
+            f" {escape_format_keys(format_level_label(mdata, words))}"
+        )
     # Legend box title
     if not unit:
         title = f"{short_name}"
@@ -842,6 +828,12 @@ def create_box_labels(
         title = f"{short_name} ({unit})"
     labels["legend"]["title"] = title
     labels["legend"]["unit"] = unit
+
+    # Bottom box
+    labels["bottom"] = {
+        "model_info": format_model_info(setup, words),
+        "copyright": f"{symbols['copyright']}{words['meteoswiss']}",
+    }
 
     # Release info
     site_name = format_meta_datum(mdata.release.site)
