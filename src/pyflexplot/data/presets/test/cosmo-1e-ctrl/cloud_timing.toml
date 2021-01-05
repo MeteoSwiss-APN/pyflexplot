@@ -18,15 +18,6 @@ input_variable = "cloud_arrival_time"
 [_base._cloud."_departure+"]
 input_variable = "cloud_departure_time"
 
-["**"._full.de]
-domain = "full"
+["**"._de.ch]
 lang = "de"
-# ["**"._full.en]
-# domain = "full"
-# lang = "en"
-# ["**"._ch.de]
-# domain = "ch"
-# lang = "de"
-# ["**"._ch.en]
-# domain = "ch"
-# lang = "en"
+domain = "ch"

@@ -1,11 +1,10 @@
 # PyFlexPlot setup file to create deterministic COSMO-1E-CTRL plots
-# Derived from opr/cosmo-1e-ctrl/all_pdf.toml
+# Derived from opr/cosmo-1e-ctrl/all_png.toml
 
 [_base]
 # Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
 infile = "data/cosmo-1e-ctrl/grid_conc_0910_20200216000000.nc"
 model = "COSMO-1E"
-lang = "de"
 outfile_time_format = "%Y%m%dT%H%M"
 combine_species = false
 
@@ -24,36 +23,23 @@ time = -1
 # integrate = true
 
 # [_base._affected_area]
-# combine_deposition_types = true
-# combine_species = true
+# input_variable = "affected_area"
 # deposition_type = ["dry", "wet"]
+# combine_deposition_types = true
 # integrate = true
 # level = 0
-# input_variable = "affected_area"
 # time = -1
+# combine_species = true
 
-# [_base._concentration._pdf.full]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration.png"
-# domain = "full"
-[_base._concentration._integr._pdf.full]
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet.png"
-domain = "full"
-# [_base._tot_deposition._pdf.full]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition.png"
-# domain = "full"
-# [_base._affected_area._pdf.full]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet.png"
-# domain = "full"
+# [_base._concentration."png+"]
+# outfile = "concentration_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
+[_base._concentration._integr."png+"]
+outfile = "integrated_concentration_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
+# [_base._tot_deposition."png+"]
+# outfile = "deposition_tot_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
+# [_base._affected_area."png+"]
+# outfile = "affected_area_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
 
-# [_base._concentration._pdf.zom]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Konzentration_zoom.png"
-# domain = "ch"
-# [_base._concentration._integr._pdf.zoom]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_integrierte_Luftaktivitaet_zoom.png"
-# domain = "ch"
-# [_base._tot_deposition._pdf.zoom]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_Deposition_zoom.png"
-# domain = "ch"
-# [_base._affected_area._pdf.zoom]
-# outfile = "{release_start}_{release_site}_FLEXPART-{model}_Dispersion_beaufschl_Gebiet_zoom.png"
-# domain = "ch"
+["**"._de.ch]
+lang = "de"
+domain = "ch"
