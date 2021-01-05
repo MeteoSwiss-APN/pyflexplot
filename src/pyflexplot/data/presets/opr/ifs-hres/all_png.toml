@@ -4,10 +4,8 @@
 # Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
 infile = "data/ifs-hres/grid_conc_1000_20200818000000_bushehr_2spec.nc"
 model = "IFS-HRES"
-lang = "de"
 outfile_time_format = "%Y%m%dT%H%M"
 combine_species = false
-domain = "cloud"
 
 [_base._concentration]
 input_variable = "concentration"
@@ -41,5 +39,6 @@ outfile = "deposition_tot_site-{release_site}_species-{species_id}_domain-{domai
 [_base._affected_area."png+"]
 outfile = "affected_area_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
 
-["**".zoom]
+["**"._de.release_site]
+lang = "de"
 domain = "release_site"
