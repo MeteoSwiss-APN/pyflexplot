@@ -42,7 +42,6 @@ from words import Word
 
 # Local
 from . import __version__
-from .input.field import Field
 from .input.field import FieldGroup
 from .input.field import FieldStats
 from .input.meta_data import format_meta_datum
@@ -59,13 +58,11 @@ from .plotting.boxed_plot import DummyBoxedPlot
 from .plotting.boxed_plot import FontConfig
 from .plotting.boxed_plot import FontSizes
 from .plotting.boxed_plot import MarkersConfig
-from .plotting.domain import CloudDomain
-from .plotting.domain import Domain
-from .plotting.domain import ReleaseSiteDomain
 from .plotting.map_axes import MapAxes
 from .plotting.map_axes import MapAxesConfig
 from .plotting.text_box_axes import TextBoxAxes
 from .setup import Setup
+from .setup import SetupCollection
 from .utils.exceptions import FieldAllNaNError
 from .utils.formatting import escape_format_keys
 from .utils.formatting import format_level_ranges
@@ -126,9 +123,13 @@ def prepare_plot(
         time_stats = field.time_props.stats
         mdata = field.mdata
         labels = create_box_labels(setup, mdata)
-        config = create_plot_config(setup=setup, time_stats=time_stats, labels=labels)
-        map_config = create_map_config(field, config.layout.aspect_center())
-        return BoxedPlot(field, config, map_config)
+        plot_config = create_plot_config(
+            setup=setup, time_stats=time_stats, labels=labels
+        )
+        map_config = create_map_config(
+            field.var_setups, plot_config.layout.aspect_center()
+        )
+        return BoxedPlot(field, plot_config, map_config)
 
 
 def create_plot(
@@ -408,69 +409,11 @@ def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
             )
 
 
-def init_domain(field: Field, aspect: float) -> Domain:
-    """Initialize Domain object (projection and extent)."""
-    lat = field.lat
-    lon = field.lon
-    model_name = field.var_setups.collect_equal("model")
-    domain_type = field.var_setups.collect_equal("domain")
-    domain_size_lat = field.var_setups.collect_equal("domain_size_lat")
-    domain_size_lon = field.var_setups.collect_equal("domain_size_lon")
-    assert field.mdata is not None  # mypy
-    release_lat = field.mdata.release.lat
-    release_lon = field.mdata.release.lon
-    field_proj = field.get_projs().data
-    mask_nz = field.time_props.mask_nz
-    domain: Optional[Domain] = None
-    if domain_type == "full":
-        if model_name.startswith("COSMO"):
-            domain = Domain(lat, lon, zoom_fact=1.01)
-        else:
-            domain = Domain(lat, lon)
-    elif domain_type == "release_site":
-        domain = ReleaseSiteDomain(
-            lat,
-            lon,
-            aspect=aspect,
-            field_proj=field_proj,
-            min_size_lat=domain_size_lat,
-            min_size_lon=domain_size_lon,
-            release_lat=release_lat,
-            release_lon=release_lon,
-        )
-    elif domain_type == "alps":
-        if model_name == "IFS-HRES-EU":
-            domain = Domain(lat, lon, zoom_fact=3.4, rel_offset=(-0.165, -0.11))
-    elif domain_type == "cloud":
-        domain = CloudDomain(
-            lat,
-            lon,
-            aspect=aspect,
-            mask_nz=mask_nz,
-            min_size_lat=domain_size_lat,
-            min_size_lon=domain_size_lon,
-            periodic_lon=(model_name == "IFS-HRES"),
-            zoom_fact=0.9,
-        )
-    elif domain_type == "ch":
-        if model_name.startswith("COSMO-1"):
-            domain = Domain(lat, lon, zoom_fact=3.6, rel_offset=(-0.02, 0.045))
-        elif model_name.startswith("COSMO-2"):
-            domain = Domain(lat, lon, zoom_fact=3.23, rel_offset=(0.037, 0.1065))
-        elif model_name == "IFS-HRES-EU":
-            domain = Domain(lat, lon, zoom_fact=11.0, rel_offset=(-0.18, -0.11))
-    if domain is None:
-        raise NotImplementedError(
-            f"domain for model '{model_name}' and domain type '{domain_type}'"
-        )
-    return domain
-
-
-def create_map_config(field: Field, aspect: float) -> MapAxesConfig:
+def create_map_config(setups: SetupCollection, aspect: float) -> MapAxesConfig:
     config_dct: Dict[str, Any] = {
-        "lang": field.var_setups.collect_equal("lang"),
-        "domain": init_domain(field, aspect),
-        "scale_fact": field.var_setups.collect_equal("scale_fact"),
+        "aspect": aspect,
+        "lang": setups.collect_equal("lang"),
+        "scale_fact": setups.collect_equal("scale_fact"),
     }
     conf_continental_scale: Dict[str, Any] = {
         "geo_res": "50m",
@@ -493,8 +436,8 @@ def create_map_config(field: Field, aspect: float) -> MapAxesConfig:
         "min_city_pop": 0,
         "ref_dist_config": {"dist": 25},
     }
-    model_name = field.var_setups.collect_equal("model")
-    domain_type = field.var_setups.collect_equal("domain")
+    model_name = setups.collect_equal("model")
+    domain_type = setups.collect_equal("domain")
     if domain_type == "full":
         if model_name.startswith("COSMO"):
             config_dct.update(conf_regional_scale)

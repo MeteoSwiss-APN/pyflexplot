@@ -41,31 +41,35 @@ class MapAxesConfig:
     """Configuration of ``MapAxesPlot``.
 
     Args:
-        domain: Plot domain.
+        aspect (optional): Aspect ratio; width by height.
 
-        geo_res: Resolution of geographic map elements.
+        geo_res (optional): Resolution of geographic map elements.
 
-        geo_res_cities: Scale for cities shown on map. Defaults to ``geo_res``.
+        geo_res_cities (optional): Scale for cities shown on map. Defaults to
+            ``geo_res``.
 
-        geo_res_rivers: Scale for rivers shown on map. Defaults to ``geo_res``.
+        geo_res_rivers (optional): Scale for rivers shown on map. Defaults to
+            ``geo_res``.
 
-        lang: Language ('en' for English, 'de' for German).
+        lang (optional): Language; 'en' for English, 'de' for German.
 
-        lw_frame: Line width of frames.
+        lw_frame (optional): Line width of frames.
 
-        projection: Map projection. Defaults to that of the input data.
+        projection (optional): Map projection. Defaults to that of the input
+            data.
 
-        min_city_pop: Minimum population of cities shown.
+        min_city_pop (optional): Minimum population of cities shown.
 
-        ref_dist_config: Reference distance indicator setup.
+        ref_dist_config (optional): Reference distance indicator setup.
 
-        ref_dist_on: Whether to add a reference distance indicator.
+        ref_dist_on (optional): Whether to add a reference distance indicator.
 
-        scale_fact: Scaling factor for plot elements (fonts, lines, etc.)
+        scale_fact (optional): Scaling factor for plot elements (fonts, lines,
+            etc.)
 
     """
 
-    domain: Domain
+    aspect: float = 1.0
     geo_res: str = "50m"
     geo_res_cities: str = "none"
     geo_res_rivers: str = "none"
@@ -96,7 +100,14 @@ class MapAxesConfig:
 
 # pylint: disable=R0902  # too-many-instance-attributes
 @summarizable(
-    attrs=["fig", "rect", "field", "config", "trans"],
+    attrs=[
+        "config",
+        "domain",
+        "field",
+        "fig",
+        "rect",
+        "trans",
+    ],
     post_summarize=lambda self, summary: {
         **summary,
         "elements": self.summarized_elements,
@@ -130,6 +141,8 @@ class MapAxes:
         self.fig: Figure = fig
         self.rect: RectType = rect
 
+        self.domain: Domain = self.field.get_domain(self.config.aspect)
+
         self.elements: List[Tuple[str, Any]] = []
         self.summarized_elements: List[Dict[str, Any]] = []
 
@@ -143,7 +156,7 @@ class MapAxes:
             fig: Figure,
             rect: RectType,
             projs: Projections,
-            config: MapAxesConfig,
+            domain: Domain,
         ) -> Axes:
             """Initialize Axes."""
             with warnings.catch_warnings():
@@ -155,18 +168,14 @@ class MapAxes:
                 ax: Axes = fig.add_axes(rect, projection=projs.map)
             ax.set_adjustable("datalim")
             ax.spines["geo"].set_edgecolor("none")
-
-            # Set geographical extent
             ax.set_aspect("auto")
-            domain = config.domain
             bbox = domain.get_bbox(ax, projs, "map")
             ax.set_extent(bbox, projs.map)
-
             return ax
 
         projs: Projections = field.get_projs()
 
-        self.ax: Axes = _create_ax(self.fig, self.rect, projs, self.config)
+        self.ax: Axes = _create_ax(self.fig, self.rect, projs, self.domain)
 
         self.trans = CoordinateTransformer(
             trans_axes=self.ax.transAxes,
