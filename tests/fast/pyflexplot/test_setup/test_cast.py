@@ -20,7 +20,7 @@ class Test_CastSingle:
         assert Setup.cast("lang", "de") == "de"
 
     def test_ens_member_id(self):
-        assert Setup.cast("ens_member_id", "004") == (4,)
+        assert Setup.cast("model", {"ens_member_id": "004"}) == {"ens_member_id": (4,)}
 
     def test_integrate(self):
         assert Setup.cast("integrate", "True") is True
@@ -43,7 +43,8 @@ class Test_CastSequence:
             Setup.cast("lang", ["en", "de"])
 
     def test_ens_member_id(self):
-        assert Setup.cast("ens_member_id", ["01", "02", "03"]) == (1, 2, 3)
+        res = Setup.cast("model", {"ens_member_id": ["01", "02", "03"]})
+        assert res == {"ens_member_id": (1, 2, 3)}
 
     def test_integrate_fail(self):
         with pytest.raises(InvalidParameterValueError):

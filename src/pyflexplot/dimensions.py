@@ -65,6 +65,7 @@ class CoreDimensions:
             params[param] = cls.cast(param, value)
         return cls(**params)
 
+    # SR_TMP Identical to ModelSetup.cast
     @classmethod
     def cast(cls, param: str, value: Any) -> Any:
         if value is None:
@@ -79,6 +80,7 @@ class CoreDimensions:
             unpack_str=False,
         )
 
+    # SR_TMP Identical to CoreSetup.get_params and ModelSetup.get_params
     @classmethod
     def get_params(cls) -> List[str]:
         return list(cls.__dataclass_fields__)  # type: ignore  # pylint: disable=E1101

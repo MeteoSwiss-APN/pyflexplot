@@ -68,7 +68,9 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
             setup_dct={
                 "infile": datafilename1,
                 "outfile": "dummy.png",
-                "model": "COSMO-1",
+                "model": {
+                    "name": "COSMO-1",
+                },
                 "core": {
                     "input_variable": "concentration",
                     "integrate": False,
@@ -88,7 +90,9 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
             setup_dct={
                 "infile": datafilename1,
                 "outfile": "dummy.png",
-                "model": "COSMO-1",
+                "model": {
+                    "name": "COSMO-1",
+                },
                 "core": {
                     "input_variable": "deposition",
                     "integrate": False,
@@ -109,7 +113,9 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
             setup_dct={
                 "infile": datafilename1,
                 "outfile": "dummy.png",
-                "model": "COSMO-1",
+                "model": {
+                    "name": "COSMO-1",
+                },
                 "core": {
                     "input_variable": "deposition",
                     "integrate": False,
@@ -130,7 +136,9 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
             setup_dct={
                 "infile": datafilename1,
                 "outfile": "dummy.png",
-                "model": "COSMO-1",
+                "model": {
+                    "name": "COSMO-1",
+                },
                 "core": {
                     "input_variable": "deposition",
                     "combine_deposition_types": True,
@@ -152,7 +160,9 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
             setup_dct={
                 "infile": datafilename2,
                 "outfile": "dummy.png",
-                "model": "COSMO-1",
+                "model": {
+                    "name": "COSMO-1",
+                },
                 "core": {
                     "input_variable": "concentration",
                     "integrate": False,
@@ -172,7 +182,9 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
             setup_dct={
                 "infile": datafilename2,
                 "outfile": "dummy.png",
-                "model": "COSMO-1",
+                "model": {
+                    "name": "COSMO-1",
+                },
                 "core": {
                     "input_variable": "deposition",
                     "combine_deposition_types": True,
@@ -194,7 +206,9 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
             setup_dct={
                 "infile": datafilename1,
                 "outfile": "dummy.png",
-                "model": "COSMO-1",
+                "model": {
+                    "name": "COSMO-1",
+                },
                 "core": {
                     "input_variable": "deposition",
                     "combine_deposition_types": True,
@@ -217,7 +231,9 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
             setup_dct={
                 "infile": datafilename3,
                 "outfile": "dummy.png",
-                "model": "IFS-HRES",
+                "model": {
+                    "name": "IFS-HRES",
+                },
                 "core": {
                     "input_variable": "concentration",
                     "integrate": False,
@@ -237,7 +253,9 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
             setup_dct={
                 "infile": datafilename4,
                 "outfile": "dummy.png",
-                "model": "COSMO-1E",
+                "model": {
+                    "name": "COSMO-1E",
+                },
                 "core": {
                     "input_variable": "concentration",
                     "integrate": False,
@@ -269,7 +287,9 @@ def test_single(datadir, config):  # noqa:F811
     fld = next(iter(field_groups[0])).fld
 
     # Initialize individual setup objects
-    var_setups_lst = setups.decompress_twice("dimensions.time", skip=["ens_member_id"])
+    var_setups_lst = setups.decompress_twice(
+        "dimensions.time", skip=["model.ens_member_id"]
+    )
     assert len(var_setups_lst) == 1
     var_setups = next(iter(var_setups_lst))
 
@@ -281,7 +301,7 @@ def test_single(datadir, config):  # noqa:F811
                     datafile,
                     get_var_name_ref(setup, config.var_names_ref),
                     setup,
-                    config.setup_dct["model"],
+                    config.setup_dct["model"]["name"],
                 )
                 for setup in var_setups
             ],
@@ -304,7 +324,9 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "infile": datafilename1,
                 "outfile": "dummy.png",
-                "model": "COSMO-1",
+                "model": {
+                    "name": "COSMO-1",
+                },
                 "core": {
                     "input_variable": "concentration",
                     "integrate": True,
@@ -325,7 +347,9 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "infile": datafilename1,
                 "outfile": "dummy.png",
-                "model": "COSMO-1",
+                "model": {
+                    "name": "COSMO-1",
+                },
                 "core": {
                     "input_variable": "concentration",
                     "integrate": True,
@@ -346,7 +370,9 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "infile": datafilename1,
                 "outfile": "dummy.png",
-                "model": "COSMO-1",
+                "model": {
+                    "name": "COSMO-1",
+                },
                 "core": {
                     "input_variable": "deposition",
                     "integrate": True,
@@ -366,7 +392,9 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "infile": datafilename1,
                 "outfile": "dummy.png",
-                "model": "COSMO-1",
+                "model": {
+                    "name": "COSMO-1",
+                },
                 "core": {
                     "input_variable": "deposition",
                     "integrate": True,
@@ -386,7 +414,9 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "infile": datafilename1,
                 "outfile": "dummy.png",
-                "model": "COSMO-1",
+                "model": {
+                    "name": "COSMO-1",
+                },
                 "core": {
                     "input_variable": "deposition",
                     "combine_deposition_types": True,
@@ -407,7 +437,9 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "infile": datafilename2,
                 "outfile": "dummy.png",
-                "model": "COSMO-1",
+                "model": {
+                    "name": "COSMO-1",
+                },
                 "core": {
                     "input_variable": "concentration",
                     "integrate": True,
@@ -429,7 +461,9 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "infile": datafilename2,
                 "outfile": "dummy.png",
-                "model": "COSMO-1",
+                "model": {
+                    "name": "COSMO-1",
+                },
                 "core": {
                     "input_variable": "deposition",
                     "integrate": True,
@@ -460,7 +494,7 @@ def test_multiple(datadir, config):  # noqa:F811
     # Process field specifications one after another
     var_setups: SetupGroup
     for var_setups in setups.decompress_twice(
-        "dimensions.time", skip=["ens_member_id"]
+        "dimensions.time", skip=["model.ens_member_id"]
     ):
 
         # Read input fields
@@ -483,7 +517,7 @@ def test_multiple(datadir, config):  # noqa:F811
                     datafile,
                     get_var_name_ref(var_setup, config.var_names_ref),
                     var_setup,
-                    config.setup_dct["model"],
+                    config.setup_dct["model"]["name"],
                 )
             ]
             fld_ref_i = np.nansum(flds_ref_i, axis=0)
@@ -507,7 +541,9 @@ def test_multiple(datadir, config):  # noqa:F811
             setup_dct={
                 "infile": datafilename1,
                 "outfile": "dummy.png",
-                "model": "COSMO-1",
+                "model": {
+                    "name": "COSMO-1",
+                },
                 "core": {
                     "input_variable": "concentration",
                     "integrate": False,
@@ -527,7 +563,9 @@ def test_multiple(datadir, config):  # noqa:F811
             setup_dct={
                 "infile": datafilename1,
                 "outfile": "dummy.png",
-                "model": "COSMO-1",
+                "model": {
+                    "name": "COSMO-1",
+                },
                 "core": {
                     "input_variable": "deposition",
                     "combine_deposition_types": True,
@@ -571,7 +609,9 @@ def test_missing_deposition_cosmo(datadir):  # noqa:F811
     setup_dct = {
         "infile": datafilename4,
         "outfile": "dummy.png",
-        "model": "COSMO-1E",
+        "model": {
+            "name": "COSMO-1E",
+        },
         "core": {
             "input_variable": "deposition",
             "integrate": True,
@@ -606,7 +646,9 @@ def test_missing_deposition_ifs(datadir):  # noqa:F811
     setup_dct = {
         "infile": datafilename5,
         "outfile": "dummy.png",
-        "model": "IFS-HRES-EU",
+        "model": {
+            "name": "IFS-HRES-EU",
+        },
         "core": {
             "input_variable": "deposition",
             "integrate": True,
@@ -641,7 +683,9 @@ def test_affected_area(datadir):  # noqa:F811
     setup_dct = {
         "infile": datafilename4,
         "outfile": "dummy.png",
-        "model": "COSMO-1E",
+        "model": {
+            "name": "COSMO-1E",
+        },
         "core": {
             "input_variable": "affected_area",
             "integrate": True,

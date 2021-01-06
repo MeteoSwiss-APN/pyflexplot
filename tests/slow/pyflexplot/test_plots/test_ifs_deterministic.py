@@ -21,7 +21,9 @@ class Test_Concentration(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "IFS-HRES",
+        "model": {
+            "name": "IFS-HRES",
+        },
         "core": {
             "input_variable": "concentration",
             "integrate": False,
@@ -41,7 +43,9 @@ class Test_IntegratedConcentration(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "IFS-HRES",
+        "model": {
+            "name": "IFS-HRES",
+        },
         "core": {
             "plot_type": "auto",
             "input_variable": "concentration",
@@ -62,7 +66,9 @@ class Test_TotalDeposition(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "IFS-HRES",
+        "model": {
+            "name": "IFS-HRES",
+        },
         "core": {
             "plot_type": "auto",
             "input_variable": "deposition",
@@ -83,7 +89,9 @@ class Test_AffectedArea(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "IFS-HRES",
+        "model": {
+            "name": "IFS-HRES",
+        },
         "core": {
             "input_variable": "affected_area",
             "combine_deposition_types": True,
@@ -105,7 +113,9 @@ class Test_CloudDepartureTime(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "IFS-HRES",
+        "model": {
+            "name": "IFS-HRES",
+        },
         "core": {
             "input_variable": "cloud_departure_time",
             "integrate": False,

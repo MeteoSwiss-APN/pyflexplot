@@ -15,8 +15,8 @@ from srutils.dict import merge_dicts
 from srutils.testing import check_summary_dict_is_subdict
 
 # Local
-from .shared import DEFAULT_PARAMS
 from .shared import DEFAULT_SETUP
+from .shared import OPTIONAL_RAW_DEFAULT_PARAMS
 
 
 def tuples(objs: Sequence[Any]) -> List[Tuple[Any]]:
@@ -127,8 +127,10 @@ class Test_Setup_Create:
         params = {
             "infile": "dummy.nc",
             "outfile": "dummy.png",
-            "model": "COSMO-1",
-            "ens_member_id": (0, 1, 5, 10, 15, 20),
+            "model": {
+                "name": "COSMO-1",
+                "ens_member_id": (0, 1, 5, 10, 15, 20),
+            },
             "core": {
                 "integrate": False,
                 "ens_variable": "mean",
@@ -264,7 +266,11 @@ class Test_Setup_Decompress:
 
 class Test_SetupCollection_Create:
     def create_partial_dicts(self):
-        base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
+        base = {
+            "infile": "foo.nc",
+            "outfile": "bar.png",
+            "model": {"name": "COSMO-baz"},
+        }
         return [
             {**base, "core": {"input_variable": "concentration", "domain": "ch"}},
             {**base, "core": {"input_variable": "deposition", "lang": "de"}},
@@ -275,7 +281,10 @@ class Test_SetupCollection_Create:
         ]
 
     def create_complete_dicts(self):
-        return [merge_dicts(DEFAULT_PARAMS, dct) for dct in self.create_partial_dicts()]
+        return [
+            merge_dicts(OPTIONAL_RAW_DEFAULT_PARAMS, dct)
+            for dct in self.create_partial_dicts()
+        ]
 
     def create_setup_lst(self):
         return [Setup.create(dct) for dct in self.create_partial_dicts()]
@@ -298,7 +307,9 @@ class Test_SetupCollection_Compress:
         {
             "infile": "foo.nc",
             "outfile": "bar.png",
-            "model": "COSMO-1",
+            "model": {
+                "name": "COSMO-1",
+            },
             "core": {
                 "input_variable": "concentration",
                 "dimensions": {"level": 0},
@@ -307,7 +318,9 @@ class Test_SetupCollection_Compress:
         {
             "infile": "foo.nc",
             "outfile": "bar.png",
-            "model": "COSMO-1",
+            "model": {
+                "name": "COSMO-1",
+            },
             "core": {
                 "input_variable": "concentration",
                 "dimensions": {"level": 1},
@@ -316,7 +329,9 @@ class Test_SetupCollection_Compress:
         {
             "infile": "foo.nc",
             "outfile": "bar.png",
-            "model": "COSMO-1",
+            "model": {
+                "name": "COSMO-1",
+            },
             "core": {
                 "input_variable": "concentration",
                 "dimensions": {"level": (1, 2)},
@@ -381,7 +396,9 @@ class Test_SetupCollection_Group:
             {
                 "infile": infile,
                 "outfile": infile.replace(".nc", ".png"),
-                "model": "COSMO-1",
+                "model": {
+                    "name": "COSMO-1",
+                },
                 "core": {
                     "combine_species": combine_species,
                     "dimensions": {"species_id": [1, 2], "time": time},

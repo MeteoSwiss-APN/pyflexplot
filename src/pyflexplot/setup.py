@@ -32,6 +32,7 @@ from srutils.dataclasses import cast_field_value
 from srutils.dict import compress_multival_dicts
 from srutils.dict import decompress_multival_dict
 from srutils.dict import decompress_nested_dict
+from srutils.dict import merge_dicts
 from srutils.dict import nested_dict_resolve_wildcards
 from srutils.exceptions import InvalidParameterNameError
 from srutils.str import join_multilines
@@ -58,6 +59,11 @@ def is_core_setup_param(param: str) -> bool:
 
 
 # SR_TMP <<< TODO cleaner solution
+def is_model_setup_param(param: str) -> bool:
+    return param in ModelSetup.get_params()
+
+
+# SR_TMP <<< TODO cleaner solution
 def is_setup_param(param: str) -> bool:
     return param in Setup.get_params()
 
@@ -68,6 +74,10 @@ def get_setup_param_value(setup: "Setup", param: str) -> Any:
         return getattr(setup, param)
     elif is_core_setup_param(param):
         return getattr(setup.core, param)
+    elif param.startswith("model."):
+        dim_param = param.split(".", 1)[-1]
+        if is_model_setup_param(dim_param):
+            return getattr(setup.model, dim_param)
     elif param.startswith("dimensions."):
         dim_param = param.split(".", 1)[-1]
         if is_dimensions_param(dim_param):
@@ -291,6 +301,62 @@ class CoreSetup:
         return cls(**obj)
 
 
+# SR_TODO
+@dataclass
+class ModelSetup:
+    name: str = "N/A"
+    base_time: Optional[int] = None
+    ens_member_id: Optional[Tuple[int, ...]] = None
+    simulation_type: str = "N/A"
+
+    @classmethod
+    def create(cls, params: Mapping[str, Any]) -> "ModelSetup":
+        params = cls.cast_many(params)
+        if "simulation_type" not in params:
+            if params.get("ens_member_id"):
+                params["simulation_type"] = "ensemble"
+            else:
+                params["simulation_type"] = "deterministic"
+        return cls(**params)
+
+    # SR_TMP Identical to CoreDimensions.cast
+    @classmethod
+    def cast(cls, param: str, value: Any) -> Any:
+        if value is None:
+            return None
+        return cast_field_value(
+            cls,
+            param,
+            value,
+            auto_wrap=True,
+            bool_mode="intuitive",
+            timedelta_unit="hours",
+            unpack_str=False,
+        )
+
+    # SR_TMP Identical to ModelSetup.cast_many
+    @classmethod
+    def cast_many(
+        cls, params: Union[Collection[Tuple[str, Any]], Mapping[str, Any]]
+    ) -> Dict[str, Any]:
+        if not isinstance(params, Mapping):
+            params_dct: Dict[str, Any] = {}
+            for param, value in params:
+                if param in params_dct:
+                    raise ValueError("duplicate parameter", param)
+                params_dct[param] = value
+            return cls.cast_many(params_dct)
+        params_cast = {}
+        for param, value in params.items():
+            params_cast[param] = cls.cast(param, value)
+        return params_cast
+
+    # SR_TMP Identical to CoreSetup.get_params and CoreDimensions.get_params
+    @classmethod
+    def get_params(cls) -> List[str]:
+        return list(cls.__dataclass_fields__)  # type: ignore  # pylint: disable=E1101
+
+
 # SR_TODO Clean up docstring -- where should format key hints go?
 @dataclass
 class Setup:
@@ -302,12 +368,22 @@ class Setup:
 
     infile: str  # = "none"
     outfile: Union[str, Tuple[str, ...]]  # = "none"
-    model: str  # = "none"
     outfile_time_format: str = "%Y%m%d%H%M"
-    base_time: Optional[int] = None
-    ens_member_id: Optional[Tuple[int, ...]] = None
     scale_fact: float = 1.0
-    core: "CoreSetup" = CoreSetup()
+    model: ModelSetup = ModelSetup()
+    core: CoreSetup = CoreSetup()
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.model, ModelSetup):
+            raise ValueError(
+                "'model' has wrong type: expected ModelSetup, got "
+                + type(self.model).__name__
+            )
+        if not isinstance(self.model, ModelSetup):
+            raise ValueError(
+                "'core' has wrong type: expected CoreSetup, got "
+                + type(self.core).__name__
+            )
 
     # SR_TMP <<<
     @property
@@ -324,12 +400,6 @@ class Setup:
         else:
             raise NotImplementedError(deposition_type)
 
-    # SR_TMP <<<
-    def get_simulation_type(self) -> str:
-        if self.ens_member_id:
-            return "ensemble"
-        return "deterministic"
-
     @overload
     def derive(self, params: Mapping[str, Any]) -> "Setup":
         ...
@@ -344,19 +414,7 @@ class Setup:
         """Derive ``Setup`` object(s) with adapted parameters."""
         if isinstance(params, Sequence):
             return SetupGroup([self.derive(sub_params) for sub_params in params])
-        dct = self.dict()
-        dct = {
-            **dct,
-            **params,
-            "core": {
-                **dct["core"],
-                **params.get("core", {}),
-                "dimensions": {
-                    **dct["core"]["dimensions"],
-                    **params.get("core", {}).get("dimensions", {}),
-                },
-            },
-        }
+        dct = merge_dicts(self.dict(), params)
         return type(self).create(dct)
 
     # pylint: disable=R0912  # too-many-branches (>12)
@@ -430,6 +488,7 @@ class Setup:
     def dict(self) -> Dict[str, Any]:
         return {
             **asdict(self),
+            "model": asdict(self.model),
             "core": self.core.dict(),
         }
 
@@ -446,15 +505,20 @@ class Setup:
 
     def _tuple(self) -> Tuple[Tuple[str, Any], ...]:
         dct = self.dict()
+        model = dct.pop("model")
         core = dct.pop("core")
         dims = core.pop("dimensions")
         return tuple(
             list(dct.items())
             + [
                 (
+                    "model",
+                    tuple(model.items()),
+                ),
+                (
                     "core",
                     tuple(list(core.items()) + ["dimensions", tuple(dims.items())]),
-                )
+                ),
             ]
         )
 
@@ -494,12 +558,14 @@ class Setup:
         params_core: List[str] = []
         params_dimensions: List[str] = []
         for param in params:
-            if is_setup_param(param):
+            if is_setup_param(param) or is_core_setup_param(param):
                 params_setup.append(param)
                 continue
-            if is_core_setup_param(param):
-                params_setup.append(param)
-                continue
+            if param.startswith("model."):
+                dims_param = param.split(".", 1)[-1]
+                if is_model_setup_param(dims_param):
+                    params_dimensions.append(dims_param)
+                    continue
             if param.startswith("dimensions."):
                 dims_param = param.split(".", 1)[-1]
                 if is_dimensions_param(dims_param):
@@ -625,6 +691,7 @@ class Setup:
         """
         params = dict(**params)
         core_params = params.pop("core", {})
+        model_params = params.pop("model", {})
         params = {
             param: cast_field_value(
                 cls,
@@ -639,6 +706,8 @@ class Setup:
         }
         if core_params:
             params["core"] = CoreSetup.create(core_params)
+        if model_params:
+            params["model"] = ModelSetup.create(model_params)
         return cls(**params)
 
     @classmethod
@@ -660,20 +729,34 @@ class Setup:
             + list(CoreDimensions.get_params())
         )
         param_choices_fmtd = ", ".join(map(str, param_choices))
-        if param == "dimensions":
+        sub_cls_by_name = {"model": ModelSetup, "dimensions": Dimensions}
+        try:
+            sub_cls = sub_cls_by_name[param]
+        except KeyError:
+            pass
+        else:
             result: Dict[str, Any] = {}
-            for dim_param, dim_value in value.items():
+            for sub_param, sub_value in value.items():
                 try:
-                    result[dim_param] = Dimensions.cast(dim_param, dim_value)
+                    # Ignore type to prevent mypy error "has no attribute"
+                    sub_value = sub_cls.cast(sub_param, sub_value)  # type: ignore
+                    # Don't assign directly to result[sub_param] to prevent the
+                    # line from becoming too long, which causes black to disable
+                    # the "type: ignore" by moving it to the wrong line
+                    # Versions: mypy==0.790; black==20.8b1 (2021-01-06)
                 except InvalidParameterNameError as e:
                     raise InvalidParameterNameError(
-                        f"{dim_param} ({type(dim_value).__name__}: {dim_value})"
+                        f"{sub_param} ({type(sub_value).__name__}: {sub_value})"
                         f"; choices: {param_choices_fmtd}"
                     ) from e
+                else:
+                    result[sub_param] = sub_value
             return result
         try:
             if is_dimensions_param(param):
                 return Dimensions.cast(param, value)
+            elif is_model_setup_param(param):
+                return ModelSetup.cast(param, value)
             elif is_core_setup_param(param):
                 return cast_field_value(
                     CoreSetup,
@@ -699,6 +782,7 @@ class Setup:
                 f"; choices: {param_choices_fmtd}"
             ) from e
 
+    # SR_TMP Identical to ModelSetup.cast_many
     @classmethod
     def cast_many(
         cls, params: Union[Collection[Tuple[str, Any]], Mapping[str, Any]]
@@ -861,22 +945,29 @@ class SetupGroup:
                         continue
                     if value not in values:
                         values.append(value)
-        elif param.startswith("dimensions."):
-            dims_param = param.split(".", 1)[-1]
-            if is_dimensions_param(dims_param):
-                for dimensions in self.collect("dimensions"):
-                    value = dimensions.get(dims_param)
-                    for sub_value in (
-                        value if isinstance(value, Collection) else [value]
-                    ):
-                        if exclude_nones and sub_value is None:
-                            continue
-                        if sub_value not in values:
-                            values.append(sub_value)
-            else:
-                raise ValueError("invalid param", param)
+        elif param.startswith("model.") or param.startswith("dimensions."):
+            sub_param = param.split(".", 1)[-1]
+            for sub_params in self.collect(param.split(".")[0]):
+                if is_model_setup_param(sub_param):
+                    value = getattr(sub_params, sub_param)
+                    if not flatten:
+                        values.append(value)
+                        continue
+                elif is_dimensions_param(sub_param):
+                    value = sub_params.get(sub_param)
+                else:
+                    raise ValueError(f"invalid param '{param}'")
+                if isinstance(value, Collection) and not isinstance(value, str):
+                    sub_values = value
+                else:
+                    sub_values = [value]
+                for sub_value in sub_values:
+                    if exclude_nones and sub_value is None:
+                        continue
+                    if sub_value not in values:
+                        values.append(sub_value)
         else:
-            raise ValueError("invalid param", param)
+            raise ValueError(f"invalid param '{param}'")
         return values
 
     def collect_equal(self, param: str) -> Any:
@@ -913,6 +1004,13 @@ class SetupGroup:
             grouped_raw: Dict[Any, List[Setup]] = {}
             for setup in self:
                 value = get_setup_param_value(setup, param)
+                try:
+                    hash(value)
+                except TypeError as e:
+                    raise Exception(
+                        f"cannot group by param '{param}': value has unhashable"
+                        f" type {type(value).__name__}: {value}"
+                    ) from e
                 if value not in grouped_raw:
                     grouped_raw[value] = []
                 grouped_raw[value].append(setup)
@@ -938,8 +1036,8 @@ class SetupGroup:
         obj = self if inplace else self.copy()
         for setup in obj:
             setup.core.complete_dimensions(nc_meta_data, inplace=True)
-            if setup.base_time is None:
-                setup.base_time = nc_meta_data["derived"]["time_steps"][0]
+            if setup.model.base_time is None:
+                setup.model.base_time = nc_meta_data["derived"]["time_steps"][0]
         return None if inplace else obj
 
     def override_output_suffixes(self, suffix: Union[str, Collection[str]]) -> None:
@@ -1106,7 +1204,7 @@ class SetupGroup:
                 # ? dcts = obj.decompress(["dimensions", "ens_member_id"])
                 raise NotImplementedError("obj is Setup")
             else:
-                skip = ["dimensions", "ens_member_id"]
+                skip = ["model", "dimensions"]
                 assert isinstance(obj, dict)  # mypy
                 dcts = decompress_multival_dict(cast(dict, obj), skip=skip)
             for dct in dcts:
@@ -1120,19 +1218,26 @@ class SetupGroup:
     ) -> "SetupGroup":
         params_lst = []
         for raw_params in raw_params_lst:
-            params = {}
+            params: Dict[str, Any] = {}
             for param, value in raw_params.items():
-                if not (is_core_setup_param(param) or is_dimensions_param(param)):
-                    params[param] = value
-                else:
+                if param == "model":
+                    param = "name"
+                if is_model_setup_param(param):
+                    if "model" not in params:
+                        params["model"] = {}
+                    params["model"][param] = value
+                elif is_core_setup_param(param):
                     if "core" not in params:
                         params["core"] = {}
-                    if is_core_setup_param(param):
-                        params["core"][param] = value
-                    else:
-                        if "dimensions" not in params["core"]:
-                            params["core"]["dimensions"] = {}
-                        params["core"]["dimensions"][param] = value
+                    params["core"][param] = value
+                elif is_dimensions_param(param):
+                    if "core" not in params:
+                        params["core"] = {}
+                    if "dimensions" not in params["core"]:
+                        params["core"]["dimensions"] = {}
+                    params["core"]["dimensions"][param] = value
+                else:
+                    params[param] = value
             params_lst.append(params)
         return cls.create(params_lst)
 

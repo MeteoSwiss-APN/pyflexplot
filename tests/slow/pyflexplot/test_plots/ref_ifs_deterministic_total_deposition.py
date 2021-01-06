@@ -33,11 +33,14 @@ field_summary = {
         {
             "infile": "flexpart_ifs_20200317000000.nc",
             "outfile": "ref_ifs_deterministic_total_deposition.png",
-            "model": "IFS-HRES",
             "outfile_time_format": "%Y%m%d%H%M",
-            "base_time": 202003170000,
-            "ens_member_id": None,
             "scale_fact": 1.0,
+            "model": {
+                "name": "IFS-HRES",
+                "base_time": 202003170000,
+                "ens_member_id": None,
+                "simulation_type": "deterministic",
+            },
             "core": {
                 "input_variable": "deposition",
                 "ens_variable": "none",
@@ -686,11 +689,14 @@ plot_summary = {
                 {
                     "infile": "flexpart_ifs_20200317000000.nc",
                     "outfile": "ref_ifs_deterministic_total_deposition.png",
-                    "model": "IFS-HRES",
                     "outfile_time_format": "%Y%m%d%H%M",
-                    "base_time": 202003170000,
-                    "ens_member_id": None,
                     "scale_fact": 1.0,
+                    "model": {
+                        "name": "IFS-HRES",
+                        "base_time": 202003170000,
+                        "ens_member_id": None,
+                        "simulation_type": "deterministic",
+                    },
                     "core": {
                         "input_variable": "deposition",
                         "ens_variable": "none",
@@ -28640,11 +28646,14 @@ plot_summary = {
             {
                 "infile": "flexpart_ifs_20200317000000.nc",
                 "outfile": "ref_ifs_deterministic_total_deposition.png",
-                "model": "IFS-HRES",
                 "outfile_time_format": "%Y%m%d%H%M",
-                "base_time": 202003170000,
-                "ens_member_id": None,
                 "scale_fact": 1.0,
+                "model": {
+                    "name": "IFS-HRES",
+                    "base_time": 202003170000,
+                    "ens_member_id": None,
+                    "simulation_type": "deterministic",
+                },
                 "core": {
                     "input_variable": "deposition",
                     "ens_variable": "none",

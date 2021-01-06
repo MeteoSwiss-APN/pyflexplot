@@ -21,7 +21,9 @@ class Test_Concentration(_TestBase):
     setup_dct = {
         "infile": INFILE_1,
         "outfile": f"{reference}.png",
-        "model": "COSMO-1",
+        "model": {
+            "name": "COSMO-1",
+        },
         "core": {
             "input_variable": "concentration",
             "integrate": False,
@@ -41,7 +43,9 @@ class Test_IntegratedConcentration(_TestBase):
     setup_dct = {
         "infile": INFILE_1,
         "outfile": f"{reference}.png",
-        "model": "COSMO-1",
+        "model": {
+            "name": "COSMO-1",
+        },
         "core": {
             "plot_type": "auto",
             "input_variable": "concentration",
@@ -62,7 +66,9 @@ class Test_TotalDeposition(_TestBase):
     setup_dct = {
         "infile": INFILE_1,
         "outfile": f"{reference}.png",
-        "model": "COSMO-1",
+        "model": {
+            "name": "COSMO-1",
+        },
         "core": {
             "plot_type": "auto",
             "input_variable": "deposition",
@@ -82,7 +88,9 @@ class Test_AffectedArea(_TestBase):
     reference = "ref_cosmo1_deterministic_affected_area"
     setup_dct = {
         "infile": INFILE_1,
-        "model": "COSMO-1",
+        "model": {
+            "name": "COSMO-1",
+        },
         "outfile": f"{reference}.png",
         "core": {
             "combine_deposition_types": True,
@@ -105,7 +113,9 @@ class Test_TotalDeposition_MissingField(_TestBase):
     setup_dct = {
         "infile": INFILE_2,
         "outfile": f"{reference}.png",
-        "model": "COSMO-1",
+        "model": {
+            "name": "COSMO-1",
+        },
         "core": {
             "plot_type": "auto",
             "input_variable": "deposition",
@@ -126,7 +136,9 @@ class Test_CloudArrivalTime(_TestBase):
     setup_dct = {
         "infile": INFILE_1,
         "outfile": f"{reference}.png",
-        "model": "COSMO-1",
+        "model": {
+            "name": "COSMO-1",
+        },
         "core": {
             "input_variable": "cloud_arrival_time",
             "integrate": False,

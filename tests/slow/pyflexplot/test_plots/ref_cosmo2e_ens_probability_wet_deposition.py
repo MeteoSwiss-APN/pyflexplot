@@ -33,11 +33,14 @@ field_summary = {
         {
             "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
             "outfile": "ref_cosmo2e_ens_probability_wet_deposition.png",
-            "model": "COSMO-2E",
             "outfile_time_format": "%Y%m%d%H%M",
-            "base_time": 201907271200,
-            "ens_member_id": [0, 1, 5, 10, 15, 20],
             "scale_fact": 1.0,
+            "model": {
+                "name": "COSMO-2E",
+                "base_time": 201907271200,
+                "ens_member_id": [0, 1, 5, 10, 15, 20],
+                "simulation_type": "ensemble",
+            },
             "core": {
                 "input_variable": "deposition",
                 "ens_variable": "probability",
@@ -579,11 +582,14 @@ plot_summary = {
                 {
                     "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
                     "outfile": "ref_cosmo2e_ens_probability_wet_deposition.png",
-                    "model": "COSMO-2E",
                     "outfile_time_format": "%Y%m%d%H%M",
-                    "base_time": 201907271200,
-                    "ens_member_id": [0, 1, 5, 10, 15, 20],
                     "scale_fact": 1.0,
+                    "model": {
+                        "name": "COSMO-2E",
+                        "base_time": 201907271200,
+                        "ens_member_id": [0, 1, 5, 10, 15, 20],
+                        "simulation_type": "ensemble",
+                    },
                     "core": {
                         "input_variable": "deposition",
                         "ens_variable": "probability",
@@ -6669,11 +6675,14 @@ plot_summary = {
             {
                 "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
                 "outfile": "ref_cosmo2e_ens_probability_wet_deposition.png",
-                "model": "COSMO-2E",
                 "outfile_time_format": "%Y%m%d%H%M",
-                "base_time": 201907271200,
-                "ens_member_id": [0, 1, 5, 10, 15, 20],
                 "scale_fact": 1.0,
+                "model": {
+                    "name": "COSMO-2E",
+                    "base_time": 201907271200,
+                    "ens_member_id": [0, 1, 5, 10, 15, 20],
+                    "simulation_type": "ensemble",
+                },
                 "core": {
                     "input_variable": "deposition",
                     "ens_variable": "probability",

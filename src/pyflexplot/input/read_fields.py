@@ -96,7 +96,7 @@ def read_fields(
     config = InputConfig(**config_kwargs)
 
     all_ens_member_ids: Optional[Sequence[int]] = (
-        setups.collect("ens_member_id", flatten=True, exclude_nones=True) or None
+        setups.collect("model.ens_member_id", flatten=True, exclude_nones=True) or None
     )
     paths = prepare_paths(in_file_path, all_ens_member_ids)
 
@@ -110,7 +110,9 @@ def read_fields(
     files = InputFileEnsemble(paths, config, all_ens_member_ids)
     field_groups: List[FieldGroup] = []
     for setups_for_same_plot_over_time in setups_for_plots_over_time:
-        ens_mem_ids = setups_for_same_plot_over_time.collect_equal("ens_member_id")
+        ens_mem_ids = setups_for_same_plot_over_time.collect_equal(
+            "model.ens_member_id"
+        )
         field_groups.extend(
             files.read_fields_over_time(setups_for_same_plot_over_time, ens_mem_ids)
         )
@@ -156,14 +158,14 @@ def group_setups_for_plots(setups: SetupGroup) -> List[SetupGroup]:
         sub_setups,
     ) in setups.group(
         [
-            "ens_member_id",
+            "model.ens_member_id",
             "input_variable",
             "combine_levels",
             "combine_deposition_types",
             "combine_species",
         ]
     ).items():
-        skip = ["outfile", "dimensions.time", "ens_member_id"]
+        skip = ["outfile", "dimensions.time", "model.ens_member_id"]
         if input_variable in [
             "concentration",
             "cloud_arrival_time",
@@ -253,14 +255,14 @@ class InputFileEnsemble:
         skip.append("input_variable")  # For "affected_area"
         self.setups_lst_time = setups.decompress_partially(select, skip=skip)
 
-        model = setups.collect_equal("model")
+        model = setups.collect_equal("model.name")
         self.fld_time_mem = np.full(self._get_shape_mem_time(model), np.nan, np.float32)
         for idx_mem, (ens_member_id, file_path) in enumerate(
             zip((self.ens_member_ids or [None]), self.paths)  # type: ignore
         ):
             if ens_member_ids is not None and ens_member_id not in ens_member_ids:
                 continue
-            setups_mem = setups.derive({"ens_member_id": ens_member_id})
+            setups_mem = setups.derive({"model": {"ens_member_id": ens_member_id}})
             timeless_setups_mem = setups_mem.derive(
                 {"core": {"dimensions": {"time": None}}}
             )
@@ -294,7 +296,7 @@ class InputFileEnsemble:
         self, file_path: str, idx_mem: int, timeless_setups_mem: SetupGroup
     ) -> None:
         n_mem = len(self.paths)
-        model = timeless_setups_mem.collect_equal("model")
+        model = timeless_setups_mem.collect_equal("model.name")
 
         # Read the data from disk
         log(dbg=f"reading file ({idx_mem + 1}/{n_mem}): {file_path}")
@@ -340,7 +342,7 @@ class InputFileEnsemble:
             fld_time = (np.array(fld_time_lst) > AFFECTED_AREA_THRESHOLD).any(axis=0)
         else:
             fld_time = merge_fields(fld_time_lst)
-        if self.fixer and timeless_setups.collect_equal("model") == "IFS-HRES":
+        if self.fixer and timeless_setups.collect_equal("model.name") == "IFS-HRES":
             # Note: IFS-HRES-EU is not global, so doesn't need this fix
             self.fixer.fix_global_grid(self.lon, fld_time)
         if self.config.add_ts0:
@@ -372,7 +374,7 @@ class InputFileEnsemble:
 
             # Fix some known issues with the NetCDF input data
             if self.fixer:
-                model_name = setups.collect_equal("model")
+                model_name = setups.collect_equal("model.name")
                 input_variable = setups.collect_equal("input_variable")
                 integrate = setups.collect_equal("integrate")
                 self.fixer.fix_meta_data(model_name, input_variable, integrate, mdata_i)
@@ -504,7 +506,7 @@ class InputFileEnsemble:
     def _read_fld_over_time(self, fi: nc4.Dataset, setup: Setup) -> np.ndarray:
         """Read a 2D field at all time steps from disk."""
         # Indices of field along NetCDF dimensions
-        dim_names = self._dim_names(setup.model)
+        dim_names = self._dim_names(setup.model.name)
         dim_idcs_by_name = {
             dim_names["lat"]: slice(None),
             dim_names["lon"]: slice(None),
@@ -519,7 +521,7 @@ class InputFileEnsemble:
         # Select variable in file
         assert setup.core.dimensions.species_id is not None  # mypy
         var_name = derive_variable_name(
-            model=setup.model,
+            model=setup.model.name,
             input_variable=setup.core.input_variable,
             species_id=setup.core.dimensions.species_id,
             deposition_type=setup.deposition_type_str,
@@ -581,7 +583,7 @@ class InputFileEnsemble:
         # Fix known issues with NetCDF input data
         var_ncattrs = {attr: nc_var.getncattr(attr) for attr in nc_var.ncattrs()}
         if self.fixer:
-            self.fixer.fix_nc_var_fld(fld, setup.model, var_ncattrs)
+            self.fixer.fix_nc_var_fld(fld, setup.model.name, var_ncattrs)
 
         return self._handle_time_integration(
             fi, fld, setup.core.input_variable, setup.core.integrate

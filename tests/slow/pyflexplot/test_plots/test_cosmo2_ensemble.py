@@ -25,8 +25,10 @@ class Test_EnsMedian_Concentration(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "COSMO-2E",
-        "ens_member_id": ENS_MEMBER_IDS,
+        "model": {
+            "name": "COSMO-2E",
+            "ens_member_id": ENS_MEMBER_IDS,
+        },
         "core": {
             "ens_variable": "median",
             "input_variable": "concentration",
@@ -48,8 +50,10 @@ class Test_EnsMax_IntegratedConcentration(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "COSMO-2E",
-        "ens_member_id": ENS_MEMBER_IDS,
+        "model": {
+            "name": "COSMO-2E",
+            "ens_member_id": ENS_MEMBER_IDS,
+        },
         "core": {
             "ens_variable": "maximum",
             "input_variable": "concentration",
@@ -70,8 +74,10 @@ class Test_EnsMean_TotalDeposition(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "COSMO-2E",
-        "ens_member_id": ENS_MEMBER_IDS,
+        "model": {
+            "name": "COSMO-2E",
+            "ens_member_id": ENS_MEMBER_IDS,
+        },
         "core": {
             "ens_variable": "mean",
             "input_variable": "deposition",
@@ -93,8 +99,10 @@ class Test_EnsProbability_WetDeposition(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "COSMO-2E",
-        "ens_member_id": ENS_MEMBER_IDS,
+        "model": {
+            "name": "COSMO-2E",
+            "ens_member_id": ENS_MEMBER_IDS,
+        },
         "core": {
             "ens_variable": "probability",
             "input_variable": "deposition",
@@ -116,8 +124,10 @@ class Test_EnsMin_AffectedArea(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "COSMO-2E",
-        "ens_member_id": ENS_MEMBER_IDS,
+        "model": {
+            "name": "COSMO-2E",
+            "ens_member_id": ENS_MEMBER_IDS,
+        },
         "core": {
             "input_variable": "affected_area",
             "ens_variable": "minimum",
@@ -141,8 +151,10 @@ class Test_CloudArrivalTime(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "COSMO-2E",
-        "ens_member_id": ENS_MEMBER_IDS,
+        "model": {
+            "name": "COSMO-2E",
+            "ens_member_id": ENS_MEMBER_IDS,
+        },
         "core": {
             "ens_variable": "ens_cloud_arrival_time",
             "input_variable": "concentration",
@@ -165,8 +177,10 @@ class Test_CloudDepartureTime(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "COSMO-2E",
-        "ens_member_id": ENS_MEMBER_IDS,
+        "model": {
+            "name": "COSMO-2E",
+            "ens_member_id": ENS_MEMBER_IDS,
+        },
         "core": {
             "ens_variable": "ens_cloud_departure_time",
             "input_variable": "concentration",
@@ -193,8 +207,10 @@ class Test_MultipanelEnsStats_Concentration(_TestBase):
     setup_dct = {
         "infile": INFILE_NAME,
         "outfile": f"{reference}.png",
-        "model": "COSMO-2E",
-        "ens_member_id": ENS_MEMBER_IDS,
+        "model": {
+            "name": "COSMO-2E",
+            "ens_member_id": ENS_MEMBER_IDS,
+        },
         "core": {
             "input_variable": "concentration",
             "ens_variable": ["minimum", "maximum", "median", "mean"],

@@ -436,7 +436,7 @@ def create_map_config(setups: SetupGroup, aspect: float) -> MapAxesConfig:
         "min_city_pop": 0,
         "ref_dist_config": {"dist": 25},
     }
-    model_name = setups.collect_equal("model")
+    model_name = setups.collect_equal("model.name")
     domain_type = setups.collect_equal("domain")
     if domain_type == "full":
         if model_name.startswith("COSMO"):
@@ -471,13 +471,13 @@ def create_plot_config(
     # Layout
     fig_aspect = np.divide(*plot_config_dct["fig_size"])
     layout: BoxedPlotLayoutType
-    if setup.get_simulation_type() == "deterministic":
+    if setup.model.simulation_type == "deterministic":
         layout = BoxedPlotLayoutDeterministic(aspect=fig_aspect)
-    elif setup.get_simulation_type() == "ensemble":
+    elif setup.model.simulation_type == "ensemble":
         layout = BoxedPlotLayoutEnsemble(aspect=fig_aspect)
     else:
         raise NotImplementedError(
-            f"layout for simulation type '{setup.get_simulation_type()}'"
+            f"layout for simulation type '{setup.model.simulation_type}'"
         )
     plot_config_dct["layout"] = layout
 
@@ -495,14 +495,14 @@ def create_plot_config(
     elif setup.core.input_variable == "deposition":
         levels_config_dct["n"] = 9
     if (
-        setup.get_simulation_type() == "deterministic"
+        setup.model.simulation_type == "deterministic"
         and setup.core.input_variable == "affected_area"
     ):
         levels_config_dct["extend"] = "none"
         levels_config_dct["levels"] = np.array([0.0, np.inf])
         levels_config_dct["scale"] = "lin"
     elif (
-        setup.get_simulation_type() == "ensemble"
+        setup.model.simulation_type == "ensemble"
         and setup.core.ens_variable == "probability"
     ):
         levels_config_dct["extend"] = "max"
@@ -553,12 +553,12 @@ def create_plot_config(
     color_under: Optional[str] = None
     color_over: Optional[str] = None
     if (
-        setup.get_simulation_type() == "deterministic"
+        setup.model.simulation_type == "deterministic"
         and setup.core.input_variable == "affected_area"
     ):
         cmap = "mono"
     elif (
-        setup.get_simulation_type() == "ensemble"
+        setup.model.simulation_type == "ensemble"
         and setup.core.ens_variable == "probability"
     ):
         # cmap = truncate_cmap("nipy_spectral_r", 0.275, 0.95)
@@ -600,7 +600,7 @@ def create_plot_config(
 
     # Markers
     markers_config_dct: Dict[str, Any] = {}
-    if setup.get_simulation_type() == "deterministic":
+    if setup.model.simulation_type == "deterministic":
         if setup.core.input_variable in [
             "affected_area",
             "cloud_arrival_time",
@@ -609,7 +609,7 @@ def create_plot_config(
             markers_config_dct["mark_field_max"] = False
         else:
             markers_config_dct["mark_field_max"] = True
-    elif setup.get_simulation_type() == "ensemble":
+    elif setup.model.simulation_type == "ensemble":
         markers_config_dct["mark_field_max"] = False
         if setup.core.ens_variable in [
             "minimum",
@@ -707,7 +707,7 @@ def create_box_labels(setup: Setup, mdata: MetaData) -> Dict[str, Dict[str, Any]
             f"{words['height'].c}:"
             f"\t{escape_format_keys(format_level_label(mdata, words))}"
         )
-    if setup.get_simulation_type() == "ensemble":
+    if setup.model.simulation_type == "ensemble":
         if setup.core.ens_variable == "probability":
             op = {"lower": "gt", "upper": "lt"}[setup.core.ens_param_thr_type]
             labels["data_info"]["lines"].append(
@@ -726,7 +726,7 @@ def create_box_labels(setup: Setup, mdata: MetaData) -> Dict[str, Dict[str, Any]
                 f" {format_meta_datum(unit=format_meta_datum(mdata.variable.unit))}"
             )
             n_min = setup.core.ens_param_mem_min or 0
-            n_tot = len((setup.ens_member_id or []))
+            n_tot = len((setup.model.ens_member_id or []))
             labels["data_info"]["lines"].append(
                 # f"{words['number_of', 'abbr'].c} {words['member', 'pl']}:"
                 # f"\t {n_min}"
@@ -883,7 +883,7 @@ def format_names_etc(
 
     # pylint: disable=W0621  # redefined-outer-name
     def _format_unit(setup: Setup, words: TranslatedWords, mdata: MetaData) -> str:
-        if setup.get_simulation_type() == "ensemble":
+        if setup.model.simulation_type == "ensemble":
             if setup.core.ens_variable == "probability":
                 return "%"
             elif setup.core.ens_variable in [
@@ -918,7 +918,7 @@ def format_names_etc(
 
     # Short/long names #2: By ensemble variable type
     ens_var_name = "none"
-    if setup.get_simulation_type() == "ensemble":
+    if setup.model.simulation_type == "ensemble":
         if setup.core.ens_variable in [
             "minimum",
             "maximum",
@@ -1023,30 +1023,35 @@ def format_release_site_coords_labels(
 
 
 def format_model_info(setup: Setup, words: TranslatedWords) -> str:
-    model_name = setup.model
+    # SR_TMP <
+    simulation_type = setup.model.simulation_type
+    model_name = setup.model.name
+    base_time = setup.model.base_time
+    ens_member_id = setup.model.ens_member_id
+    # SR_TMP >
     model_info = None
-    if setup.get_simulation_type() == "deterministic":
-        if setup.model in ["COSMO-1", "COSMO-2", "IFS-HRES", "IFS-HRES-EU"]:
+    if simulation_type == "deterministic":
+        if model_name in ["COSMO-1", "COSMO-2", "IFS-HRES", "IFS-HRES-EU"]:
             model_info = model_name
-        elif setup.model in ["COSMO-1E", "COSMO-2E"]:
+        elif model_name in ["COSMO-1E", "COSMO-2E"]:
             model_info = f"{model_name} {words['control_run']}"
         else:
-            raise NotImplementedError(f"model '{setup.model}'")
-    elif setup.get_simulation_type() == "ensemble":
+            raise NotImplementedError(f"model '{model_name}'")
+    elif simulation_type == "ensemble":
         model_info = (
             f"{model_name} {words['ensemble']}"
-            f" ({len(setup.ens_member_id or [])} {words['member', 'pl']}:"
-            f" {format_range(setup.ens_member_id or [], fmt='02d')})"
+            f" ({len(ens_member_id or [])} {words['member', 'pl']}:"
+            f" {format_range(ens_member_id or [], fmt='02d')})"
         )
     if model_info is None:
         raise NotImplementedError(
-            f"model setup '{setup.model}-{setup.get_simulation_type()}'"
+            f"model_name='{model_name}' and simulation_type='{simulation_type}'"
         )
-    assert setup.base_time is not None  # mypy
-    base_time = init_datetime(setup.base_time)
+    assert base_time is not None  # mypy
+    base_time_dt = init_datetime(base_time)
     return (
         f"{words['flexpart']} {words['based_on']} {model_info}"
-        f", {format_meta_datum(base_time)}"
+        f", {format_meta_datum(base_time_dt)}"
     )
 
 
@@ -1231,7 +1236,7 @@ def levels_from_time_stats(
             log10_max - (n_levels - 1) * log10_d, log10_max + 0.5 * log10_d, log10_d
         )
 
-    if setup.get_simulation_type() == "ensemble":
+    if setup.model.simulation_type == "ensemble":
         if setup.core.ens_variable.endswith(
             "probability"
         ) or setup.core.ens_variable in [

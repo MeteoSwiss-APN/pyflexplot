@@ -4,16 +4,22 @@ from typing import Any
 from typing import Dict
 
 # First-party
+from pyflexplot.dimensions import CoreDimensions
+from pyflexplot.dimensions import Dimensions
+from pyflexplot.setup import CoreSetup
+from pyflexplot.setup import ModelSetup
 from pyflexplot.setup import Setup
+from srutils.dict import merge_dicts
 
-DUMMY_PARAMS: Dict[str, Any] = {
+MANDATORY_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
     "infile": "none",
     "outfile": "none",
-    "model": "none",
+    "model": {
+        "name": "none",
+    },
 }
 
-DEFAULT_PARAMS: Dict[str, Any] = {
-    "base_time": None,
+OPTIONAL_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
     "core": {
         "combine_deposition_types": False,
         "combine_levels": False,
@@ -42,10 +48,39 @@ DEFAULT_PARAMS: Dict[str, Any] = {
         "multipanel_param": None,
         "plot_type": "auto",
     },
-    "ens_member_id": None,
+    "model": {
+        "base_time": None,
+        "ens_member_id": None,
+        "simulation_type": "deterministic",
+    },
     "outfile_time_format": "%Y%m%d%H%M",
     "scale_fact": 1.0,
 }
 
 
-DEFAULT_SETUP: Setup = Setup.create({**DUMMY_PARAMS, **DEFAULT_PARAMS})
+RAW_DEFAULT_PARAMS = merge_dicts(
+    MANDATORY_RAW_DEFAULT_PARAMS, OPTIONAL_RAW_DEFAULT_PARAMS
+)
+
+
+DEFAULT_PARAMS = merge_dicts(
+    RAW_DEFAULT_PARAMS,
+    {
+        "model": ModelSetup(**RAW_DEFAULT_PARAMS["model"]),
+        "core": CoreSetup(
+            **merge_dicts(
+                RAW_DEFAULT_PARAMS["core"],
+                {
+                    "dimensions": Dimensions(
+                        [
+                            CoreDimensions(**RAW_DEFAULT_PARAMS["core"]["dimensions"]),
+                        ]
+                    )
+                },
+            ),
+        ),
+    },
+)
+
+
+DEFAULT_SETUP: Setup = Setup.create(RAW_DEFAULT_PARAMS)

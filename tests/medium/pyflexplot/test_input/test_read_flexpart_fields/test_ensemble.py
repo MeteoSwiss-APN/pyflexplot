@@ -17,6 +17,7 @@ from pyflexplot.input.read_fields import read_fields
 from pyflexplot.setup import Setup
 from pyflexplot.setup import SetupGroup
 from srutils.dict import decompress_multival_dict
+from srutils.dict import merge_dicts
 
 # Local
 from .shared import datadir_reduced as datadir  # noqa:F401
@@ -44,7 +45,9 @@ class TestReadFieldEnsemble_Single:
     setup_params_shared: Dict[str, Any] = {
         "infile": "dummy.nc",
         "outfile": "dummy.png",
-        "model": "COSMO-2E",
+        "model": {
+            "name": "COSMO-2E",
+        },
         "core": {
             "integrate": False,
             "ens_variable": "mean",
@@ -56,7 +59,7 @@ class TestReadFieldEnsemble_Single:
     species_id = setup_params_shared["core"]["dimensions"]["species_id"]
 
     # Ensemble member ids
-    ens_member_ids = [0, 1, 5, 10, 15, 20]
+    ens_member_ids = (0, 1, 5, 10, 15, 20)
 
     def datafile_fmt(self, datadir):  # noqa:F811
         return f"{datadir}/flexpart_cosmo-2e_2019072712_{{ens_member:03d}}.nc"
@@ -80,19 +83,15 @@ class TestReadFieldEnsemble_Single:
         datafile_fmt = self.datafile_fmt(datadir)
 
         # Initialize specifications
-        setup_dct = {
-            **self.setup_params_shared,
-            **setup_params,
-            "core": {
-                **self.setup_params_shared.get("core", {}),
-                **setup_params.get("core", {}),
-                "dimensions": {
-                    **self.setup_params_shared.get("core", {}).get("dimensions", {}),
-                    **setup_params.get("core", {}).get("dimensions", {}),
+        setup_dct = merge_dicts(
+            self.setup_params_shared,
+            setup_params,
+            {
+                "model": {
+                    "ens_member_id": self.ens_member_ids,
                 },
             },
-            "ens_member_id": self.ens_member_ids,
-        }
+        )
         # SR_TMP <
         if ens_var in ["probability", "minimum", "maximum", "mean", "median"]:
             setup_dct["core"]["ens_variable"] = ens_var
@@ -109,12 +108,12 @@ class TestReadFieldEnsemble_Single:
 
         # SR_TMP <
         var_setups_lst = setups.decompress_twice(
-            "dimensions.time", skip=["ens_member_id"]
+            "dimensions.time", skip=["model.ens_member_id"]
         )
         assert len(var_setups_lst) == 1
         var_setups = next(iter(var_setups_lst))
         setups = var_setups.compress().decompress_partially(
-            None, skip=["ens_member_id"]
+            None, skip=["model.ens_member_id"]
         )
         # SR_TMP >
         assert len(setups) == 1
@@ -166,7 +165,9 @@ class TestReadFieldEnsemble_Multiple:
     shared_setup_params_compressed: Dict[str, Any] = {
         "infile": "dummy.nc",
         "outfile": "dummy.png",
-        "model": "COSMO-2E",
+        "model": {
+            "name": "COSMO-2E",
+        },
         "core": {
             "integrate": True,
             "dimensions": {"species_id": 1, "time": [0, 3, 9]},
@@ -177,7 +178,7 @@ class TestReadFieldEnsemble_Multiple:
     species_id = shared_setup_params_compressed["core"]["dimensions"]["species_id"]
 
     # Ensemble member ids
-    ens_member_ids = [0, 1, 5, 10, 15, 20]
+    ens_member_ids = (0, 1, 5, 10, 15, 20)
 
     # Thresholds for ensemble probability
     ens_prob_thr_concentration = 1e-7  # SR_TMP
@@ -211,19 +212,15 @@ class TestReadFieldEnsemble_Multiple:
             if "core" not in shared_setup_params:
                 shared_setup_params["core"] = {}
             for shared_core in decompress_multival_dict(shared_setup_params["core"]):
-                setup_params_i = {
-                    **shared_setup_params,
-                    **setup_params,
-                    "core": {
-                        **shared_core,
-                        **setup_params.get("core", {}),
-                        "dimensions": {
-                            **shared_core.get("dimensions", {}),
-                            **setup_params.get("core", {}).get("dimensions", {}),
+                setup_params_i = merge_dicts(
+                    shared_setup_params,
+                    setup_params,
+                    {
+                        "model": {
+                            "ens_member_id": self.ens_member_ids,
                         },
                     },
-                    "ens_member_id": self.ens_member_ids,
-                }
+                )
                 # SR_TMP <
                 if ens_var in ["probability", "minimum", "maximum", "mean", "median"]:
                     setup_params_i["core"]["ens_variable"] = ens_var
@@ -244,7 +241,7 @@ class TestReadFieldEnsemble_Multiple:
         for sub_setups_time in setups.decompress_partially(["dimensions.time"]):
             fld_ref_mem_time = []
             for sub_setups in sub_setups_time.decompress_partially(
-                None, skip=["ens_member_id"]
+                None, skip=["model.ens_member_id"]
             ):
                 # SR_TMP <
                 assert len(sub_setups) == 1

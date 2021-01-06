@@ -13,7 +13,7 @@ from srutils.dict import merge_dicts
 from srutils.testing import assert_nested_equal
 
 # Local
-from .shared import DEFAULT_PARAMS
+from .shared import OPTIONAL_RAW_DEFAULT_PARAMS
 
 
 def fmt_val(val):
@@ -42,8 +42,8 @@ def test_single_minimal_section(tmp_path):
         model = "COSMO-baz"
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
-    assert setups == [{**base, **DEFAULT_PARAMS}]
+    base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
+    assert setups == [merge_dicts(base, OPTIONAL_RAW_DEFAULT_PARAMS)]
 
 
 def test_single_minimal_renamed_section(tmp_path):
@@ -55,8 +55,8 @@ def test_single_minimal_renamed_section(tmp_path):
         model = "COSMO-baz"
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
-    assert setups == [{**base, **DEFAULT_PARAMS}]
+    base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
+    assert setups == [merge_dicts(base, OPTIONAL_RAW_DEFAULT_PARAMS)]
 
 
 def test_single_section(tmp_path):
@@ -72,11 +72,11 @@ def test_single_section(tmp_path):
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
     assert len(setups) == 1
     res = next(iter(setups))
-    base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
-    assert res != {**base, **DEFAULT_PARAMS}
+    base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
+    assert res != merge_dicts(base, OPTIONAL_RAW_DEFAULT_PARAMS)
     sol = merge_dicts(
         base,
-        DEFAULT_PARAMS,
+        OPTIONAL_RAW_DEFAULT_PARAMS,
         {
             "core": {
                 "input_variable": "deposition",
@@ -102,8 +102,8 @@ def test_multiple_parallel_empty_sections(tmp_path):
         model = "COSMO-baz"
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
-    assert setups == [{**base, **DEFAULT_PARAMS}] * 2
+    base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
+    assert setups == [merge_dicts(base, OPTIONAL_RAW_DEFAULT_PARAMS)] * 2
 
 
 def test_two_nested_empty_sections(tmp_path):
@@ -117,8 +117,8 @@ def test_two_nested_empty_sections(tmp_path):
         [_base.plot]
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
-    assert setups == [{**base, **DEFAULT_PARAMS}]
+    base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
+    assert setups == [merge_dicts(base, OPTIONAL_RAW_DEFAULT_PARAMS)]
 
 
 def test_multiple_nested_sections(tmp_path):
@@ -163,10 +163,10 @@ def test_multiple_nested_sections(tmp_path):
         [_base._dep.wet.de]
         lang = "de"
         """
-    base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
+    base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
     sol_base = merge_dicts(
         base,
-        DEFAULT_PARAMS,
+        OPTIONAL_RAW_DEFAULT_PARAMS,
         {
             "core": {
                 "input_variable": "deposition",
@@ -240,10 +240,10 @@ def test_multiple_override(tmp_path):
         lang = "de"
         """
     override = {"lang": "de"}
-    base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
+    base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
     sol_base = merge_dicts(
         base,
-        DEFAULT_PARAMS,
+        OPTIONAL_RAW_DEFAULT_PARAMS,
         {
             "core": {
                 "input_variable": "deposition",
@@ -391,7 +391,6 @@ def test_realcase_opr_like(tmp_path):
         """
     dcts_sol = [
         {
-            "base_time": None,
             "core": {
                 "combine_deposition_types": False,
                 "combine_levels": False,
@@ -420,15 +419,18 @@ def test_realcase_opr_like(tmp_path):
                 "multipanel_param": None,
                 "plot_type": "auto",
             },
-            "ens_member_id": None,
+            "model": {
+                "base_time": None,
+                "ens_member_id": None,
+                "name": "COSMO-1",
+                "simulation_type": "deterministic",
+            },
             "infile": "data/cosmo1_2019052800.nc",
-            "model": "COSMO-1",
             "outfile": "concentration_{species_id}_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",
             "scale_fact": 1.0,
         },
         {
-            "base_time": None,
             "core": {
                 "combine_deposition_types": False,
                 "combine_levels": False,
@@ -457,15 +459,18 @@ def test_realcase_opr_like(tmp_path):
                 "multipanel_param": None,
                 "plot_type": "auto",
             },
-            "ens_member_id": None,
+            "model": {
+                "base_time": None,
+                "ens_member_id": None,
+                "name": "COSMO-1",
+                "simulation_type": "deterministic",
+            },
             "infile": "data/cosmo1_2019052800.nc",
-            "model": "COSMO-1",
             "outfile": "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",
             "scale_fact": 1.0,
         },
         {
-            "base_time": None,
             "core": {
                 "combine_deposition_types": True,
                 "combine_levels": False,
@@ -494,15 +499,18 @@ def test_realcase_opr_like(tmp_path):
                 "multipanel_param": None,
                 "plot_type": "auto",
             },
-            "ens_member_id": None,
+            "model": {
+                "base_time": None,
+                "ens_member_id": None,
+                "name": "COSMO-1",
+                "simulation_type": "deterministic",
+            },
             "infile": "data/cosmo1_2019052800.nc",
-            "model": "COSMO-1",
             "outfile": "tot_deposition_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",
             "scale_fact": 1.0,
         },
         {
-            "base_time": None,
             "core": {
                 "combine_deposition_types": True,
                 "combine_levels": False,
@@ -531,9 +539,13 @@ def test_realcase_opr_like(tmp_path):
                 "multipanel_param": None,
                 "plot_type": "auto",
             },
-            "ens_member_id": None,
+            "model": {
+                "base_time": None,
+                "ens_member_id": None,
+                "name": "COSMO-1",
+                "simulation_type": "deterministic",
+            },
             "infile": "data/cosmo1_2019052800.nc",
-            "model": "COSMO-1",
             "outfile": "affected_area_{domain}_{lang}_{time:02d}.png",
             "outfile_time_format": "%Y%m%d%H%M",
             "scale_fact": 1.0,
@@ -573,9 +585,9 @@ def test_wildcard_simple(tmp_path):
         lang = "en"
 
         """
-    base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
+    base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
     sol = [
-        merge_dicts(DEFAULT_PARAMS, base, dct)
+        merge_dicts(OPTIONAL_RAW_DEFAULT_PARAMS, base, dct)
         for dct in [
             {"core": {"input_variable": "concentration", "lang": "de"}},
             {"core": {"input_variable": "concentration", "lang": "en"}},
@@ -630,10 +642,13 @@ def test_double_wildcard_equal_depth(tmp_path):
         lang = "en"
 
         """
-    base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
+    base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
     sol = [
         merge_dicts(
-            DEFAULT_PARAMS, base, dct, {"core": {"domain": domain, "lang": lang}}
+            OPTIONAL_RAW_DEFAULT_PARAMS,
+            base,
+            dct,
+            {"core": {"domain": domain, "lang": lang}},
         )
         for dct in [
             {"core": {"input_variable": "concentration", "integrate": False}},
@@ -689,10 +704,13 @@ def test_double_wildcard_variable_depth(tmp_path):
         lang = "en"
 
         """
-    base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
+    base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
     sol = [
         merge_dicts(
-            DEFAULT_PARAMS, base, dct, {"core": {"domain": domain, "lang": lang}}
+            OPTIONAL_RAW_DEFAULT_PARAMS,
+            base,
+            dct,
+            {"core": {"domain": domain, "lang": lang}},
         )
         for dct in [
             {"core": {"input_variable": "concentration", "dimensions": {"time": 5}}},
@@ -737,11 +755,13 @@ def test_combine_wildcards(tmp_path):
         """
     sol = [
         merge_dicts(
-            DEFAULT_PARAMS,
+            OPTIONAL_RAW_DEFAULT_PARAMS,
             {
                 "infile": "foo_{ens_member:02d}.nc",
                 "outfile": f"bar_{ens_variable}_{{lang}}.png",
-                "model": "COSMO-baz",
+                "model": {
+                    "name": "COSMO-baz",
+                },
                 "core": {
                     "input_variable": input_variable,
                     "ens_variable": ens_variable,
@@ -776,10 +796,16 @@ class Test_IndividualParams_SingleOrMultipleValues:
             """
         setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
         res = setups.dicts()
-        base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
+        base = {
+            "infile": "foo.nc",
+            "outfile": "bar.png",
+            "model": {"name": "COSMO-baz"},
+        }
         sol = [
             merge_dicts(
-                DEFAULT_PARAMS, base, {"core": {"dimensions": {"species_id": value}}}
+                OPTIONAL_RAW_DEFAULT_PARAMS,
+                base,
+                {"core": {"dimensions": {"species_id": value}}},
             )
             for value in [1, (1, 2, 3)]
         ]
@@ -801,10 +827,16 @@ class Test_IndividualParams_SingleOrMultipleValues:
 
             """
         setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-        base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
+        base = {
+            "infile": "foo.nc",
+            "outfile": "bar.png",
+            "model": {"name": "COSMO-baz"},
+        }
         sol = [
             merge_dicts(
-                DEFAULT_PARAMS, base, {"core": {"dimensions": {"level": value}}}
+                OPTIONAL_RAW_DEFAULT_PARAMS,
+                base,
+                {"core": {"dimensions": {"level": value}}},
             )
             for value in [0, (1, 2)]
         ]
@@ -819,10 +851,14 @@ class Test_IndividualParams_SingleOrMultipleValues:
             input_variable = "deposition"
             """
         setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-        base = {"infile": "foo.nc", "outfile": "bar.png", "model": "COSMO-baz"}
+        base = {
+            "infile": "foo.nc",
+            "outfile": "bar.png",
+            "model": {"name": "COSMO-baz"},
+        }
         sol = [
             merge_dicts(
-                DEFAULT_PARAMS,
+                OPTIONAL_RAW_DEFAULT_PARAMS,
                 base,
                 {
                     "core": {
@@ -859,7 +895,7 @@ def test_multipanel_param_ens_variable(tmp_path):
     #         {
     #             "infile": "data_{ens_member:02d}.nc",
     #             "outfile": "ens_stats_multipanel.png",
-    #             "ens_member_id": (1, 2, 3),
+    #             "model": {"ens_member_id": (1, 2, 3),},
     #             "core": {
     #                 "plot_type": "multipanel",
     #                 "multipanel_param": "ens_variable",

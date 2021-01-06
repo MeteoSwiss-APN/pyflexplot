@@ -20,6 +20,8 @@ from pyflexplot.input.field import Field
 from pyflexplot.input.field import FieldGroup
 from pyflexplot.input.read_fields import read_fields
 from pyflexplot.setup import is_core_setup_param
+from pyflexplot.setup import is_dimensions_param
+from pyflexplot.setup import is_model_setup_param
 from pyflexplot.setup import is_setup_param
 from pyflexplot.setup import Setup
 from pyflexplot.setup import SetupGroup
@@ -75,15 +77,20 @@ def field_groups_to_setup_dcts(obj, params: Optional[List[str]] = None):
         # SR_TMP >
         if is_setup_param(param):
             dct_sel[param] = dct_all[param]
-            continue
-        if "core" not in dct_sel:
-            dct_sel["core"] = {}
-        if is_core_setup_param(param):
+        elif is_model_setup_param(param):
+            if "model" not in dct_sel:
+                dct_sel["model"] = {}
+            dct_sel["model"][param] = dct_all["model"][param]
+        elif is_core_setup_param(param):
+            if "core" not in dct_sel:
+                dct_sel["core"] = {}
             dct_sel["core"][param] = dct_all["core"][param]
-            continue
-        if "dimensions" not in dct_sel["core"]:
-            dct_sel["core"]["dimensions"] = {}
-        dct_sel["core"]["dimensions"][param] = dct_all["core"]["dimensions"][param]
+        elif is_dimensions_param(param):
+            if "core" not in dct_sel:
+                dct_sel["core"] = {}
+            if "dimensions" not in dct_sel["core"]:
+                dct_sel["core"]["dimensions"] = {}
+            dct_sel["core"]["dimensions"][param] = dct_all["core"]["dimensions"][param]
     return dct_sel
 
 
@@ -255,7 +262,9 @@ def test_single_setup_concentration(datadir: str, config: ConfSingleSetup):
         {
             "infile": f"{datadir}/{datafilename1}",
             "outfile": "foo.png",
-            "model": "COSMO-1",
+            "model": {
+                "name": "COSMO-1",
+            },
             "core": {
                 "input_variable": "concentration",
             },
@@ -443,7 +452,9 @@ def test_single_setup_deposition(datadir: str, config: ConfSingleSetup):
         {
             "infile": f"{datadir}/{datafilename1}",
             "outfile": "foo.png",
-            "model": "COSMO-1",
+            "model": {
+                "name": "COSMO-1",
+            },
             "core": {
                 "input_variable": "deposition",
             },
@@ -638,7 +649,9 @@ def test_multiple_setups(datadir: str, config: ConfMultipleSetups):
             {
                 "infile": f"{datadir}/{datafilename1}",
                 "outfile": "foo.png",
-                "model": "COSMO-1",
+                "model": {
+                    "name": "COSMO-1",
+                },
             }
         )
     _test_multiple_setups_core(config, params)

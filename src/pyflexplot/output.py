@@ -55,7 +55,7 @@ class FilePathFormatter:
         nc_meta_data: Mapping[str, Any],
     ) -> str:
         # Prepare base time
-        base_time = self._format_time_step(cast(int, setup.base_time), setup)[0]
+        base_time = self._format_time_step(cast(int, setup.model.base_time), setup)[0]
 
         # Prepare ens variable
         ens_variable = setup.core.ens_variable
@@ -97,7 +97,7 @@ class FilePathFormatter:
             "input_variable": input_variable,
             "lang": setup.core.lang,
             "level": setup.core.dimensions.level,
-            "model": setup.model,
+            "model": setup.model.name,
             "nageclass": setup.core.dimensions.nageclass,
             "noutrel": setup.core.dimensions.noutrel,
             "plot_type": setup.core.plot_type,

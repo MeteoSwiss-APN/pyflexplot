@@ -360,7 +360,7 @@ class VariableMetaData(_MetaDataBase):
         else:
             assert setup.core.dimensions.species_id is not None  # mypy
             var_name = derive_variable_name(
-                model=setup.model,
+                model=setup.model.name,
                 input_variable=setup.core.input_variable,
                 species_id=setup.core.dimensions.species_id,
                 deposition_type=setup.deposition_type_str,
@@ -421,7 +421,7 @@ class SimulationMetaData(_MetaDataBase):
         now_rel: timedelta = collector.now_rel()
         reduction_start_rel = collector.reduction_start_rel()
 
-        base_time = init_datetime(cast(int, setup.base_time))
+        base_time = init_datetime(cast(int, setup.model.base_time))
         lead_time = now - base_time
 
         return cls(
@@ -514,7 +514,7 @@ class SpeciesMetaData(_MetaDataBase):
         else:
             assert setup.core.dimensions.species_id is not None  # mypy
             var_name = derive_variable_name(
-                model=setup.model,
+                model=setup.model.name,
                 input_variable=setup.core.input_variable,
                 species_id=setup.core.dimensions.species_id,
                 deposition_type=setup.deposition_type_str,
@@ -523,7 +523,7 @@ class SpeciesMetaData(_MetaDataBase):
                 var: nc4.Variable = fi.variables[var_name]
                 name = getncattr(var, "long_name")
             except (KeyError, AttributeError):
-                if setup.model.startswith("IFS"):
+                if setup.model.name.startswith("IFS"):
                     name = cls._get_species_name_ifs(fi, var_name)
                 elif setup.core.input_variable == "deposition":
                     # Deposition field may be missing

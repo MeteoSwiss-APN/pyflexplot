@@ -158,7 +158,7 @@ class Field:
         """Initialize Domain object (projection and extent)."""
         lat = self.lat
         lon = self.lon
-        model_name = self.var_setups.collect_equal("model")
+        model_name = self.var_setups.collect_equal("model.name")
         domain_type = self.var_setups.collect_equal("domain")
         domain_size_lat = self.var_setups.collect_equal("domain_size_lat")
         domain_size_lon = self.var_setups.collect_equal("domain_size_lon")
@@ -288,7 +288,7 @@ class FieldGroup:
 
     def _collect_ens_member_ids(self) -> Optional[List[int]]:
         setups = SetupGroup([setup for field in self for setup in field.var_setups])
-        return setups.collect_equal("ens_member_id")
+        return setups.collect_equal("model.ens_member_id")
 
     def __len__(self) -> int:
         return len(self.fields)

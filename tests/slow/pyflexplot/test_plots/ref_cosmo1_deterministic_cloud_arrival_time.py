@@ -35,11 +35,14 @@ field_summary = {
         {
             "infile": "flexpart_cosmo-1_2019093012.nc",
             "outfile": "ref_cosmo1_deterministic_cloud_arrival_time.png",
-            "model": "COSMO-1",
             "outfile_time_format": "%Y%m%d%H%M",
-            "base_time": 201909301200,
-            "ens_member_id": None,
             "scale_fact": 1.0,
+            "model": {
+                "name": "COSMO-1",
+                "base_time": 201909301200,
+                "ens_member_id": None,
+                "simulation_type": "deterministic",
+            },
             "core": {
                 "input_variable": "cloud_arrival_time",
                 "ens_variable": "none",
@@ -517,11 +520,14 @@ plot_summary = {
                 {
                     "infile": "flexpart_cosmo-1_2019093012.nc",
                     "outfile": "ref_cosmo1_deterministic_cloud_arrival_time.png",
-                    "model": "COSMO-1",
                     "outfile_time_format": "%Y%m%d%H%M",
-                    "base_time": 201909301200,
-                    "ens_member_id": None,
                     "scale_fact": 1.0,
+                    "model": {
+                        "name": "COSMO-1",
+                        "base_time": 201909301200,
+                        "ens_member_id": None,
+                        "simulation_type": "deterministic",
+                    },
                     "core": {
                         "input_variable": "cloud_arrival_time",
                         "ens_variable": "none",
@@ -8224,11 +8230,14 @@ plot_summary = {
             {
                 "infile": "flexpart_cosmo-1_2019093012.nc",
                 "outfile": "ref_cosmo1_deterministic_cloud_arrival_time.png",
-                "model": "COSMO-1",
                 "outfile_time_format": "%Y%m%d%H%M",
-                "base_time": 201909301200,
-                "ens_member_id": None,
                 "scale_fact": 1.0,
+                "model": {
+                    "name": "COSMO-1",
+                    "base_time": 201909301200,
+                    "ens_member_id": None,
+                    "simulation_type": "deterministic",
+                },
                 "core": {
                     "input_variable": "cloud_arrival_time",
                     "ens_variable": "none",
