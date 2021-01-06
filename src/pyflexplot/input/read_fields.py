@@ -20,7 +20,7 @@ from srutils.various import check_array_indices
 
 # Local
 from ..setup import Setup
-from ..setup import SetupCollection
+from ..setup import SetupGroup
 from ..utils.logging import log
 from .data import Cloud
 from .data import ensemble_probability
@@ -72,7 +72,7 @@ class InputConfig:
 # pylint: disable=R0914  # too-many-locals
 def read_fields(
     in_file_path: str,
-    setups: SetupCollection,
+    setups: SetupGroup,
     **config_kwargs: Any,
 ) -> List[FieldGroup]:
     """Read fields from an input file, or multiple files derived from one path.
@@ -136,15 +136,15 @@ def prepare_paths(path: str, ens_member_ids: Optional[Sequence[int]]) -> List[st
     raise ValueError(f"input file path missing format key: {path}")
 
 
-def group_setups_for_plots(setups: SetupCollection) -> List[SetupCollection]:
+def group_setups_for_plots(setups: SetupGroup) -> List[SetupGroup]:
     """Group the setups by plot type and time step.
 
-    Return a list of setup collections, each of which defines one plot type
+    Return a list of setup groups, each of which defines one plot type
     (which may be based on on multiple fields if it has multiple panels) at
     different time steps.
 
     """
-    setups_field_lst: List[SetupCollection] = []
+    setups_field_lst: List[SetupGroup] = []
     for (
         (
             _,  # ens_member_id,
@@ -185,7 +185,7 @@ def group_setups_for_plots(setups: SetupCollection) -> List[SetupCollection]:
         setups_plots = sub_setups.decompress_partially(None, skip=skip)
         # SR_TMP < SR_TODO Adapt for multipanel plots
         setups_plots = [
-            SetupCollection([setup]) for setups in setups_plots for setup in setups
+            SetupGroup([setup]) for setups in setups_plots for setup in setups
         ]
         # SR_TMP >
         setups_field_lst.extend(setups_plots)
@@ -224,13 +224,13 @@ class InputFileEnsemble:
         self.lon: np.ndarray
         self.mdata_tss: List[MetaData]
         self.nc_meta_data: Dict[str, Dict[str, Any]]
-        self.setups_lst_time: List[SetupCollection]
+        self.setups_lst_time: List[SetupGroup]
         self.time: np.ndarray
 
     # SR_TMP <<<
     # pylint: disable=R0914  # too-many-locals
     def read_fields_over_time(
-        self, setups: SetupCollection, ens_member_ids: Optional[Sequence[int]] = None
+        self, setups: SetupGroup, ens_member_ids: Optional[Sequence[int]] = None
     ) -> List[FieldGroup]:
         """Read fields for the same plot at multiple time steps.
 
@@ -291,7 +291,7 @@ class InputFileEnsemble:
         return field_groups
 
     def _read_data(
-        self, file_path: str, idx_mem: int, timeless_setups_mem: SetupCollection
+        self, file_path: str, idx_mem: int, timeless_setups_mem: SetupGroup
     ) -> None:
         n_mem = len(self.paths)
         model = timeless_setups_mem.collect_equal("model")
@@ -324,7 +324,7 @@ class InputFileEnsemble:
                 fld_time_i = np.empty(self.fld_time_mem.shape[1:])
 
     def _read_member_fields_over_time(
-        self, fi: nc4.Dataset, timeless_setups: SetupCollection
+        self, fi: nc4.Dataset, timeless_setups: SetupGroup
     ) -> np.ndarray:
         """Read field over all time steps for each member."""
         fld_time_lst = []
@@ -427,9 +427,7 @@ class InputFileEnsemble:
         return new_fld_time
 
     # pylint: disable=R0912  # too-many-branches
-    def _reduce_ensemble(
-        self, var_setups: SetupCollection, ts_hrs: float
-    ) -> np.ndarray:
+    def _reduce_ensemble(self, var_setups: SetupGroup, ts_hrs: float) -> np.ndarray:
         """Reduce the ensemble to a single field (time, lat, lon)."""
         fld_time_mem = self.fld_time_mem
 

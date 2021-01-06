@@ -14,7 +14,7 @@ import pytest  # type: ignore
 
 # First-party
 from pyflexplot.input.read_fields import read_fields
-from pyflexplot.setup import SetupCollection
+from pyflexplot.setup import SetupGroup
 
 # Local
 from .shared import datadir_artificial as datadir  # noqa:F401
@@ -56,7 +56,7 @@ def test_one_setup_one_field(datadir, config):  # noqa:F811
         },
     }
     setup_dct_lst = [setup_dct]
-    setups = SetupCollection.create(setup_dct_lst)
+    setups = SetupGroup.create(setup_dct_lst)
     field_groups = read_fields(datafile_fmt, setups, cls_fixer=None)
 
     assert len(field_groups) == 1

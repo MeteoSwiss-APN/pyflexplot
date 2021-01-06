@@ -15,7 +15,7 @@ import pytest
 from pyflexplot.input.data import ensemble_probability
 from pyflexplot.input.read_fields import read_fields
 from pyflexplot.setup import Setup
-from pyflexplot.setup import SetupCollection
+from pyflexplot.setup import SetupGroup
 from srutils.dict import decompress_multival_dict
 
 # Local
@@ -99,7 +99,7 @@ class TestReadFieldEnsemble_Single:
         else:
             setup_dct["core"]["plot_type"] = f"ensemble_{ens_var}"
         # SR_TMP >
-        setups = SetupCollection([Setup.create(setup_dct)])
+        setups = SetupGroup([Setup.create(setup_dct)])
 
         # Read input fields
         field_groups = read_fields(datafile_fmt, setups, cache_on=cache_on)
@@ -231,7 +231,7 @@ class TestReadFieldEnsemble_Multiple:
                     setup_params_i["core"]["plot_type"] = f"ensemble_{ens_var}"
                 # SR_TMP >
                 setup_lst.append(Setup.create(setup_params_i))
-        setups = SetupCollection(setup_lst)
+        setups = SetupGroup(setup_lst)
 
         # Read input fields
         field_groups = read_fields(datafile_fmt, setups, cache_on=cache_on)

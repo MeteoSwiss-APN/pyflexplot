@@ -335,15 +335,15 @@ class Setup:
         ...
 
     @overload
-    def derive(self, params: Sequence[Mapping[str, Any]]) -> "SetupCollection":
+    def derive(self, params: Sequence[Mapping[str, Any]]) -> "SetupGroup":
         ...
 
     def derive(
         self, params: Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]
-    ) -> Union["Setup", "SetupCollection"]:
+    ) -> Union["Setup", "SetupGroup"]:
         """Derive ``Setup`` object(s) with adapted parameters."""
         if isinstance(params, Sequence):
-            return SetupCollection([self.derive(sub_params) for sub_params in params])
+            return SetupGroup([self.derive(sub_params) for sub_params in params])
         dct = self.dict()
         dct = {
             **dct,
@@ -425,7 +425,7 @@ class Setup:
                     # SR_TMP >
                     dcts.append(dct_ijk)
 
-        return SetupCollection([Setup.create(dct) for dct in dcts])
+        return SetupGroup([Setup.create(dct) for dct in dcts])
 
     def dict(self) -> Dict[str, Any]:
         return {
@@ -436,12 +436,12 @@ class Setup:
     def copy(self):
         return self.create(self.dict())
 
-    def decompress(self, skip: Optional[Collection[str]] = None) -> "SetupCollection":
+    def decompress(self, skip: Optional[Collection[str]] = None) -> "SetupGroup":
         return self._decompress(select=None, skip=skip)
 
     def decompress_partially(
         self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None
-    ) -> "SetupCollection":
+    ) -> "SetupGroup":
         return self._decompress(select, skip)
 
     def _tuple(self) -> Tuple[Tuple[str, Any], ...]:
@@ -732,7 +732,7 @@ class Setup:
         return cls.cast_many(params)
 
     @classmethod
-    def compress(cls, setups: Union["SetupCollection", Sequence["Setup"]]) -> "Setup":
+    def compress(cls, setups: Union["SetupGroup", Sequence["Setup"]]) -> "Setup":
         setups = list(setups)
         # SR_TMP <
         input_variables = [setup.core.input_variable for setup in setups]
@@ -752,11 +752,11 @@ class Setup:
         return cls.create(dct)
 
 
-class SetupCollection:
-    """A collection of ``Setup`` objects."""
+class SetupGroup:
+    """A group of ``Setup`` objects."""
 
     def __init__(self, setups: Collection[Setup]) -> None:
-        """Create an instance of ``SetupCollection``."""
+        """Create an instance of ``SetupGroup``."""
         if not isinstance(setups, Collection) or (
             setups and not isinstance(next(iter(setups)), Setup)
         ):
@@ -769,7 +769,7 @@ class SetupCollection:
     def compress(self) -> Setup:
         return Setup.compress(self)
 
-    def compress_partially(self, param: Optional[str] = None) -> "SetupCollection":
+    def compress_partially(self, param: Optional[str] = None) -> "SetupGroup":
         if param == "outfile":
             grouped_setups: Dict[Setup, List[Setup]] = {}
             for setup in self:
@@ -788,19 +788,19 @@ class SetupCollection:
                 new_setup_lst.append(
                     setup_lst_i[0].derive({"outfile": tuple(outfiles)})
                 )
-            return SetupCollection(new_setup_lst)
+            return SetupGroup(new_setup_lst)
         else:
             raise NotImplementedError(f"{type(self).__name__}.compress('{param}')")
 
-    def decompress(self) -> List["SetupCollection"]:
+    def decompress(self) -> List["SetupGroup"]:
         return self.decompress_partially(select=None, skip=None)
 
-    def derive(self, params: Mapping[str, Any]) -> "SetupCollection":
+    def derive(self, params: Mapping[str, Any]) -> "SetupGroup":
         return type(self)([setup.derive(params) for setup in self])
 
     def decompress_partially(
         self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None
-    ) -> List["SetupCollection"]:
+    ) -> List["SetupGroup"]:
         if (select, skip) == (None, None):
             return [setup.decompress() for setup in self]
         sub_setup_lst_lst: List[List[Setup]] = []
@@ -816,12 +816,12 @@ class SetupCollection:
                 # SR_TMP >
                 for idx, sub_setup in enumerate(sub_setups):
                     sub_setup_lst_lst[idx].append(sub_setup)
-        return [SetupCollection(sub_setup_lst) for sub_setup_lst in sub_setup_lst_lst]
+        return [SetupGroup(sub_setup_lst) for sub_setup_lst in sub_setup_lst_lst]
 
     def decompress_twice(
         self, outer: str, skip: Optional[Collection[str]] = None
-    ) -> List["SetupCollection"]:
-        sub_setups_lst: List[SetupCollection] = []
+    ) -> List["SetupGroup"]:
+        sub_setups_lst: List[SetupGroup] = []
         for setup in self:
             for sub_setup in setup.decompress_partially([outer], skip):
                 sub_sub_setups = sub_setup.decompress(skip)
@@ -887,17 +887,17 @@ class SetupCollection:
         return next(iter(values))
 
     @overload
-    def group(self, param: str) -> Dict[Any, "SetupCollection"]:
+    def group(self, param: str) -> Dict[Any, "SetupGroup"]:
         ...
 
     @overload
-    def group(self, param: Sequence[str]) -> Dict[Tuple[Any, ...], "SetupCollection"]:
+    def group(self, param: Sequence[str]) -> Dict[Tuple[Any, ...], "SetupGroup"]:
         ...
 
     def group(self, param):
         """Group setups by the value of one or more parameters."""
         if not isinstance(param, str):
-            grouped: Dict[Tuple[Any, ...], "SetupCollection"] = {}
+            grouped: Dict[Tuple[Any, ...], "SetupGroup"] = {}
             params: List[str] = list(param)
             for value, sub_setups in self.group(params[0]).items():
                 if len(params) == 1:
@@ -916,7 +916,7 @@ class SetupCollection:
                 if value not in grouped_raw:
                     grouped_raw[value] = []
                 grouped_raw[value].append(setup)
-            grouped: Dict[Any, "SetupCollection"] = {
+            grouped: Dict[Any, "SetupGroup"] = {
                 value: type(self)(setups) for value, setups in grouped_raw.items()
             }
             return grouped
@@ -924,7 +924,7 @@ class SetupCollection:
     @overload
     def complete_dimensions(
         self, nc_meta_data: Mapping[str, Any], *, inplace: Literal[False] = ...
-    ) -> "SetupCollection":
+    ) -> "SetupGroup":
         ...
 
     @overload
@@ -980,7 +980,7 @@ class SetupCollection:
             new_setups.append(new_setup)
         self._setups = new_setups
 
-    def copy(self) -> "SetupCollection":
+    def copy(self) -> "SetupGroup":
         return self.create(self.dicts())
 
     # pylint: disable=R0912  # too-many-branches (>12)
@@ -1099,7 +1099,7 @@ class SetupCollection:
     @classmethod
     def create(
         cls, setups: Collection[Union[Mapping[str, Any], Setup]]
-    ) -> "SetupCollection":
+    ) -> "SetupGroup":
         setup_lst: List[Setup] = []
         for obj in setups:
             if isinstance(obj, Setup):
@@ -1117,7 +1117,7 @@ class SetupCollection:
     @classmethod
     def from_raw_params(
         cls, raw_params_lst: Sequence[Mapping[str, Any]]
-    ) -> "SetupCollection":
+    ) -> "SetupGroup":
         params_lst = []
         for raw_params in raw_params_lst:
             params = {}
@@ -1137,7 +1137,7 @@ class SetupCollection:
         return cls.create(params_lst)
 
     @classmethod
-    def merge(cls, setups_lst: Sequence["SetupCollection"]) -> "SetupCollection":
+    def merge(cls, setups_lst: Sequence["SetupGroup"]) -> "SetupGroup":
         return cls([setup for setups in setups_lst for setup in setups])
 
 
@@ -1151,7 +1151,7 @@ class SetupFile:
     # pylint: disable=R0914  # too-many-locals
     def read(
         self, *, override: Optional[Dict[str, Any]] = None, only: Optional[int] = None
-    ) -> SetupCollection:
+    ) -> SetupGroup:
         """Read the setup from a text file in TOML format."""
         with open(self.path, "r") as f:
             try:
@@ -1174,11 +1174,11 @@ class SetupFile:
                 raw_params = {**old_raw_params, **override}
                 if raw_params not in raw_params_lst:
                     raw_params_lst.append(raw_params)
-        setups = SetupCollection.from_raw_params(raw_params_lst)
+        setups = SetupGroup.from_raw_params(raw_params_lst)
         if only is not None:
             if only < 0:
                 raise ValueError(f"only must not be negative ({only})")
-            setups = SetupCollection(list(setups)[:only])
+            setups = SetupGroup(list(setups)[:only])
         return setups
 
     def write(self, *args, **kwargs) -> None:
@@ -1192,7 +1192,7 @@ class SetupFile:
         override: Optional[Dict[str, Any]] = None,
         only: Optional[int] = None,
         each_only: Optional[int] = None,
-    ) -> SetupCollection:
+    ) -> SetupGroup:
         if only is not None:
             if only < 0:
                 raise ValueError("only must not be negative", only)
@@ -1207,7 +1207,7 @@ class SetupFile:
                     break
                 if setup not in setup_lst:
                     setup_lst.append(setup)
-        return SetupCollection(setup_lst)
+        return SetupGroup(setup_lst)
 
 
 def setup_repr(obj: Union["CoreSetup", "Setup"]) -> str:

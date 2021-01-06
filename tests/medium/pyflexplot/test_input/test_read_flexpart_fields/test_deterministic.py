@@ -18,7 +18,7 @@ import pytest  # type: ignore
 # First-party
 from pyflexplot.input.read_fields import read_fields
 from pyflexplot.setup import Setup
-from pyflexplot.setup import SetupCollection
+from pyflexplot.setup import SetupGroup
 
 # Local
 from .shared import datadir_reduced as datadir  # noqa:F401
@@ -260,7 +260,7 @@ def test_single(datadir, config):  # noqa:F811
     datafile = f"{datadir}/{config.setup_dct['infile']}"
 
     # Initialize field specifications
-    setups = SetupCollection([config.setup])
+    setups = SetupGroup([config.setup])
 
     # Read input field
     field_groups = read_fields(datafile, setups)
@@ -455,10 +455,10 @@ def test_multiple(datadir, config):  # noqa:F811
     setup_lst = list(config.setup.decompress_partially(None))
     for setup in setup_lst.copy():
         setup_lst.extend(setup.derive(config.derived_setup_params))
-    setups = SetupCollection(setup_lst)
+    setups = SetupGroup(setup_lst)
 
     # Process field specifications one after another
-    var_setups: SetupCollection
+    var_setups: SetupGroup
     for var_setups in setups.decompress_twice(
         "dimensions.time", skip=["ens_member_id"]
     ):
@@ -551,7 +551,7 @@ def test_single_add_ts0(datadir, config):
     datafile = f"{datadir}/{config.setup_dct['infile']}"
 
     # Initialize field specifications
-    setups = SetupCollection([config.setup])
+    setups = SetupGroup([config.setup])
 
     # Read fields with and without added time step 0
     # Note: Check relies on ordered time steps, which is incidental
@@ -590,7 +590,7 @@ def test_missing_deposition_cosmo(datadir):  # noqa:F811
     datafile = f"{datadir}/{setup_dct['infile']}"
 
     # Initialize field specifications
-    setups = SetupCollection([setup])
+    setups = SetupGroup([setup])
 
     # Read input field
     field_groups = read_fields(datafile, setups, missing_ok=True)
@@ -625,7 +625,7 @@ def test_missing_deposition_ifs(datadir):  # noqa:F811
     datafile = f"{datadir}/{setup_dct['infile']}"
 
     # Initialize field specifications
-    setups = SetupCollection([setup])
+    setups = SetupGroup([setup])
 
     # Read input field
     field_groups = read_fields(datafile, setups, missing_ok=True)
@@ -661,7 +661,7 @@ def test_affected_area(datadir):  # noqa:F811
     datafile = f"{datadir}/{setup_dct['infile']}"
 
     # Initialize field specifications
-    setups = SetupCollection([setup])
+    setups = SetupGroup([setup])
 
     # Read input field
     field_groups = read_fields(datafile, setups, missing_ok=True)

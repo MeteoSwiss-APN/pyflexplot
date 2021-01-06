@@ -30,8 +30,8 @@ from ..plots import create_plot
 from ..plots import format_out_file_paths
 from ..plots import prepare_plot
 from ..plotting.boxed_plot import BoxedPlot
-from ..setup import SetupCollection
 from ..setup import SetupFile
+from ..setup import SetupGroup
 from ..utils.formatting import format_range
 from ..utils.logging import log
 
@@ -78,7 +78,7 @@ def main(
         if path not in setup_file_paths:
             setup_file_paths.append(path)
     if not setup_file_paths:
-        setups = SetupCollection.from_raw_params([input_setup_params])
+        setups = SetupGroup.from_raw_params([input_setup_params])
     else:
         setups = SetupFile.read_many(setup_file_paths, override=input_setup_params)
     setups = setups.compress_partially("outfile")
@@ -109,7 +109,7 @@ def main(
             continue
         if only and len(sub_setups) > only:
             n_old = len(sub_setups)
-            sub_setups = SetupCollection(list(sub_setups)[:only])
+            sub_setups = SetupGroup(list(sub_setups)[:only])
             n_skip = n_old - len(sub_setups)
             log(vbs=f"[only:{only}] skip {n_skip}/{n_old} sub-setups")
         log(vbs=f"[{istat.ip_in}/{istat.n_in}] read {in_file_path}")

@@ -22,7 +22,7 @@ from ..plotting.domain import CloudDomain
 from ..plotting.domain import Domain
 from ..plotting.domain import ReleaseSiteDomain
 from ..plotting.proj_bbox import Projections
-from ..setup import SetupCollection
+from ..setup import SetupGroup
 from ..utils.exceptions import ArrayDimensionError
 from ..utils.exceptions import FieldAllNaNError
 from ..utils.exceptions import InconsistentArrayShapesError
@@ -79,7 +79,7 @@ class Field:
         lat: np.ndarray,
         lon: np.ndarray,
         *,
-        var_setups: SetupCollection,
+        var_setups: SetupGroup,
         time_props: "FieldTimeProperties",
         nc_meta_data: Mapping[str, Any],
         mdata: MetaData,
@@ -105,7 +105,7 @@ class Field:
         self.fld: np.ndarray = fld
         self.lat: np.ndarray = lat
         self.lon: np.ndarray = lon
-        self.var_setups: SetupCollection = var_setups
+        self.var_setups: SetupGroup = var_setups
         self.time_props: "FieldTimeProperties" = time_props
         self.nc_meta_data: Mapping[str, Any] = nc_meta_data
         self.mdata: MetaData = mdata
@@ -287,9 +287,7 @@ class FieldGroup:
         self.ens_member_ids: Optional[List[int]] = self._collect_ens_member_ids()
 
     def _collect_ens_member_ids(self) -> Optional[List[int]]:
-        setups = SetupCollection(
-            [setup for field in self for setup in field.var_setups]
-        )
+        setups = SetupGroup([setup for field in self for setup in field.var_setups])
         return setups.collect_equal("ens_member_id")
 
     def __len__(self) -> int:

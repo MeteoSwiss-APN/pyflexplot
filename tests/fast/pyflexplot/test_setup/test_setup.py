@@ -10,7 +10,7 @@ from typing import Tuple
 # First-party
 from pyflexplot.setup import CoreSetup
 from pyflexplot.setup import Setup
-from pyflexplot.setup import SetupCollection
+from pyflexplot.setup import SetupGroup
 from srutils.dict import merge_dicts
 from srutils.testing import check_summary_dict_is_subdict
 
@@ -192,7 +192,7 @@ class Test_Setup_Decompress:
         """Decompress all params."""
         setups = self.setup.decompress_partially(None)
         assert len(setups) == 12
-        assert isinstance(setups, SetupCollection)
+        assert isinstance(setups, SetupGroup)
         assert all(isinstance(setup, Setup) for setup in setups)
         res = {
             (
@@ -221,7 +221,7 @@ class Test_Setup_Decompress:
     def test_partially_one(self):
         """Decompress only one select parameter."""
         setups = self.setup.decompress_partially(["dimensions.species_id"])
-        assert isinstance(setups, SetupCollection)
+        assert isinstance(setups, SetupGroup)
         assert all(isinstance(setup, Setup) for setup in setups)
         assert len(setups) == 2
         res = {
@@ -241,7 +241,7 @@ class Test_Setup_Decompress:
             ["dimensions.time", "dimensions.deposition_type"]
         )
         assert len(setups) == 6
-        assert isinstance(setups, SetupCollection)
+        assert isinstance(setups, SetupGroup)
         assert all(isinstance(setup, Setup) for setup in setups)
         res = {
             (
@@ -281,15 +281,15 @@ class Test_SetupCollection_Create:
         return [Setup.create(dct) for dct in self.create_partial_dicts()]
 
     def create_setups(self):
-        return SetupCollection(self.create_setup_lst())
+        return SetupGroup(self.create_setup_lst())
 
     def test_create_empty(self):
-        setups = SetupCollection([])
+        setups = SetupGroup([])
         assert len(setups) == 0
 
     def test_from_setups(self):
         partial_dicts = self.create_partial_dicts()
-        setups = SetupCollection.create(partial_dicts)
+        setups = SetupGroup.create(partial_dicts)
         assert len(setups) == len(partial_dicts)
 
 
@@ -326,19 +326,19 @@ class Test_SetupCollection_Compress:
     setups_lst = [Setup.create(dct) for dct in dcts]
 
     def test_one(self):
-        res = SetupCollection(self.setups_lst[:1]).compress().dict()
+        res = SetupGroup(self.setups_lst[:1]).compress().dict()
         sol = self.setups_lst[0]
         assert res == sol
 
     def test_two(self):
-        res = SetupCollection(self.setups_lst[:2]).compress().dict()
+        res = SetupGroup(self.setups_lst[:2]).compress().dict()
         sol = Setup.create(self.dcts[0]).derive(
             {"core": {"dimensions": {"level": (0, 1)}}}
         )
         assert res == sol
 
     def test_three(self):
-        res = SetupCollection(self.setups_lst[:3]).compress().dict()
+        res = SetupGroup(self.setups_lst[:3]).compress().dict()
         sol = Setup.create(self.dcts[0]).derive(
             {"core": {"dimensions": {"level": (0, 1, 2)}}}
         )
@@ -421,12 +421,12 @@ class Test_SetupCollection_Group:
         ]
 
     def get_setups(self):
-        return SetupCollection.create(self.get_setup_dcts())
+        return SetupGroup.create(self.get_setup_dcts())
 
     def test_reference_setups(self):
         """Sanity check of the test reference setups."""
         setups = self.get_setups()
-        assert isinstance(setups, SetupCollection)
+        assert isinstance(setups, SetupGroup)
         assert len(setups) == self.n_setups
 
     def test_one_regular(self):
