@@ -61,6 +61,7 @@ from .plotting.boxed_plot import MarkersConfig
 from .plotting.map_axes import MapAxes
 from .plotting.map_axes import MapAxesConfig
 from .plotting.text_box_axes import TextBoxAxes
+from .setup import ModelSetup
 from .setup import Setup
 from .setup import SetupGroup
 from .utils.exceptions import FieldAllNaNError
@@ -410,10 +411,15 @@ def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
 
 
 def create_map_config(setups: SetupGroup, aspect: float) -> MapAxesConfig:
+    domain_type = setups.collect_equal("domain")
+    lang = setups.collect_equal("lang")
+    model_name = setups.collect_equal("model.name")
+    scale_fact = setups.collect_equal("scale_fact")
+
     config_dct: Dict[str, Any] = {
         "aspect": aspect,
-        "lang": setups.collect_equal("lang"),
-        "scale_fact": setups.collect_equal("scale_fact"),
+        "lang": lang,
+        "scale_fact": scale_fact,
     }
     conf_continental_scale: Dict[str, Any] = {
         "geo_res": "50m",
@@ -436,8 +442,6 @@ def create_map_config(setups: SetupGroup, aspect: float) -> MapAxesConfig:
         "min_city_pop": 0,
         "ref_dist_config": {"dist": 25},
     }
-    model_name = setups.collect_equal("model.name")
-    domain_type = setups.collect_equal("domain")
     if domain_type == "full":
         if model_name.startswith("COSMO"):
             config_dct.update(conf_regional_scale)
@@ -774,7 +778,7 @@ def create_box_labels(setup: Setup, mdata: MetaData) -> Dict[str, Dict[str, Any]
 
     # Bottom box
     labels["bottom"] = {
-        "model_info": format_model_info(setup, words),
+        "model_info": format_model_info(setup.model, words),
         "copyright": f"{symbols['copyright']}{words['meteoswiss']}",
     }
 
@@ -1022,12 +1026,12 @@ def format_release_site_coords_labels(
     return (lat_deg, lon_deg)
 
 
-def format_model_info(setup: Setup, words: TranslatedWords) -> str:
+def format_model_info(model_setup: ModelSetup, words: TranslatedWords) -> str:
     # SR_TMP <
-    simulation_type = setup.model.simulation_type
-    model_name = setup.model.name
-    base_time = setup.model.base_time
-    ens_member_id = setup.model.ens_member_id
+    simulation_type = model_setup.simulation_type
+    model_name = model_setup.name
+    base_time = model_setup.base_time
+    ens_member_id = model_setup.ens_member_id
     # SR_TMP >
     model_info = None
     if simulation_type == "deterministic":
