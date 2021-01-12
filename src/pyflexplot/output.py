@@ -15,7 +15,6 @@ from typing import Union
 from srutils.datetime import init_datetime
 
 # Local
-from .input.meta_data import MetaData
 from .setup import Setup
 from .utils.logging import log
 
@@ -33,16 +32,36 @@ class FilePathFormatter:
         self,
         template: str,
         setup: Setup,
-        mdata: MetaData,
-        nc_meta_data: Mapping[str, Any],
+        *,
+        release_site: str,
+        release_start: datetime,
+        time_steps: Sequence[Union[int, datetime]],
     ) -> str:
         log(dbg=f"formatting path '{template}'")
-        path = self._format_template(template, setup, mdata, nc_meta_data)
+        path = self._format_template(
+            template,
+            setup,
+            release_site=release_site,
+            release_start=release_start,
+            time_steps=time_steps,
+        )
         while path in self.previous:
             template = self.derive_unique_path(
-                self._format_template(template, setup, mdata, nc_meta_data)
+                self._format_template(
+                    template,
+                    setup,
+                    release_site=release_site,
+                    release_start=release_start,
+                    time_steps=time_steps,
+                )
             )
-            path = self._format_template(template, setup, mdata, nc_meta_data)
+            path = self._format_template(
+                template,
+                setup,
+                release_site=release_site,
+                release_start=release_start,
+                time_steps=time_steps,
+            )
         self.previous.append(path)
         log(dbg=f"formatted path '{path}'")
         return path
@@ -51,8 +70,10 @@ class FilePathFormatter:
         self,
         template: str,
         setup: Setup,
-        mdata: MetaData,
-        nc_meta_data: Mapping[str, Any],
+        *,
+        release_site: str,
+        release_start: datetime,
+        time_steps: Sequence[Union[int, datetime]],
     ) -> str:
         # Prepare base time
         base_time = self._format_time_step(
@@ -81,13 +102,13 @@ class FilePathFormatter:
                 input_variable += "-integr"
 
         # Prepare release start
-        release_start = self._format_time_step(
-            mdata.simulation.start + mdata.release.start_rel, setup.outfile_time_format
+        release_start_fmtd: str = self._format_time_step(
+            release_start, setup.outfile_time_format
         )
 
         # Prepare time steps
-        time_steps = self._format_time_steps(
-            nc_meta_data["derived"]["time_steps"], setup.outfile_time_format
+        time_steps_fmtd: List[str] = self._format_time_steps(
+            time_steps, setup.outfile_time_format
         )
 
         # Format the file path
@@ -103,11 +124,11 @@ class FilePathFormatter:
             "nageclass": setup.core.dimensions.nageclass,
             "noutrel": setup.core.dimensions.noutrel,
             "plot_type": setup.core.plot_type,
-            "release_site": nc_meta_data["derived"]["release_site"],
-            "release_start": release_start,
+            "release_site": release_site,
+            "release_start": release_start_fmtd,
             "species_id": setup.core.dimensions.species_id,
             "time_idx": setup.core.dimensions.time,
-            "time_step": time_steps[setup.core.dimensions.time],
+            "time_step": time_steps_fmtd[setup.core.dimensions.time],
         }
         return self._replace_format_keys(template, kwargs)
 

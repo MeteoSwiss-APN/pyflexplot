@@ -65,10 +65,21 @@ def summarize_field(obj: Any) -> Dict[str, Any]:
         },
         "var_setups": obj.var_setups,
         "time_props": obj.time_props,
-        "nc_meta_data": obj.nc_meta_data,
+        "grid_attrs": obj.grid_attrs,
         "projs": obj.get_projs(),
     }
     return summarize(dct)
+
+
+@dc.dataclass
+class GridAttrs:
+    """Grid attributes."""
+
+    north_pole_lat: float
+    north_pole_lon: float
+
+    def is_rotated(self):
+        return (self.north_pole_lat, self.north_pole_lon) != (90.0, 180.0)
 
 
 @summarizable(summarize=summarize_field)
@@ -84,8 +95,8 @@ class Field:
         *,
         var_setups: SetupGroup,
         time_props: "FieldTimeProperties",
-        nc_meta_data: Mapping[str, Any],
         mdata: MetaData,
+        nc_meta_data: Mapping[str, Any],
     ) -> None:
         """Create an instance of ``Field``.
 
@@ -110,12 +121,19 @@ class Field:
         self.lon: np.ndarray = lon
         self.var_setups: SetupGroup = var_setups
         self.time_props: "FieldTimeProperties" = time_props
-        self.nc_meta_data: Mapping[str, Any] = nc_meta_data
         self.mdata: MetaData = mdata
         try:
             self.check_consistency()
         except Exception as e:
             raise ValueError(f"{type(e).__name__}: {e}") from e
+
+        # SR_TMP <
+        _ncattrs = nc_meta_data["variables"].get("rotated_pole", {}).get("ncattrs", {})
+        self.grid_attrs = GridAttrs(
+            north_pole_lat=_ncattrs.get("grid_north_pole_latitude", 90.0),
+            north_pole_lon=_ncattrs.get("grid_north_pole_longitude", 180.0),
+        )
+        # SR_TMP >
 
     def check_consistency(self):
         """Check consistency of field, dimensions, etc."""
@@ -148,11 +166,10 @@ class Field:
         return (p_lat, p_lon)
 
     def get_projs(self) -> Projections:
-        if self.nc_meta_data["derived"]["rotated_pole"]:
-            ncattrs = self.nc_meta_data["variables"]["rotated_pole"]["ncattrs"]
+        if self.grid_attrs.is_rotated():
             return Projections.create_rotated(
-                pollat=ncattrs["grid_north_pole_latitude"],
-                pollon=ncattrs["grid_north_pole_longitude"],
+                pollat=self.grid_attrs.north_pole_lat,
+                pollon=self.grid_attrs.north_pole_lon,
             )
         else:
             return Projections.create_regular(clon=self.mdata.release.lon)
@@ -221,10 +238,7 @@ class Field:
             f"lon=array[shape={self.lon.shape}, dtype={self.lon.dtype}],",
             f"var_setups={self.var_setups},",
             f"time_stats={self.time_props},",
-            (
-                f"nc_meta_data="
-                f"dict[n={len(self.nc_meta_data)}, keys={tuple(self.nc_meta_data)}],"
-            ),
+            f"grid_attrs={self.grid_attrs},",
         ]
         body = join_multilines(lines, indent=2)
         return "\n".join([f"{type(self).__name__}(", body, ")"])
@@ -295,7 +309,11 @@ class FieldGroup:
     """A group of related ``Field`` objects."""
 
     def __init__(
-        self, fields: Sequence[Field], attrs=Union[FieldGroupAttrs, Dict[str, Any]]
+        self,
+        fields: Sequence[Field],
+        attrs=Union[FieldGroupAttrs, Dict[str, Any]],
+        *,
+        nc_meta_data: Mapping[str, Any],
     ) -> None:
         """Create an instance of ``FieldGroup``."""
         if not isinstance(attrs, FieldGroupAttrs):
@@ -303,6 +321,7 @@ class FieldGroup:
 
         self.fields: List[Field] = list(fields)
         self.attrs: FieldGroupAttrs = attrs
+        self.nc_meta_data: Dict[str, Any] = dict(**nc_meta_data)
 
         setups = SetupGroup([setup for field in fields for setup in field.var_setups])
         self.shared_setup: Setup = setups.compress()

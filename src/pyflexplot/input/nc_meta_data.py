@@ -86,7 +86,7 @@ def read_nc_meta_data(file_handle: nc4.Dataset, add_ts0: bool = False) -> NcMeta
         start=ncattrs["ibdate"] + ncattrs["ibtime"],
         end=ncattrs["iedate"] + ncattrs["ietime"],
         step=ncattrs["loutstep"],
-        convert=int,
+        convert=str,
         fmt="%Y%m%d%H%M",
     )
 

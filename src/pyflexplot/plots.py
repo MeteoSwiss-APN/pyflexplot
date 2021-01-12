@@ -86,8 +86,8 @@ def format_out_file_paths(
     field = next(iter(field_group))
     # SR_TMP >  SR_MULTIPANEL
     # SR_TMP <
-    mdata = field.mdata
-    nc_meta_data = field.nc_meta_data
+    release_mdata = field.mdata.release
+    simulation_mdata = field.mdata.simulation
     # SR_TMP >
     out_file_templates: Sequence[str] = (
         [setup.outfile] if isinstance(setup.outfile, str) else setup.outfile
@@ -104,7 +104,11 @@ def format_out_file_paths(
                 os.path.abspath(f"{dest_dir}/{out_file_template}")
             )
         out_file_path = FilePathFormatter(prev_paths).format(
-            out_file_template, setup, mdata, nc_meta_data
+            out_file_template,
+            setup,
+            release_site=release_mdata.site,
+            release_start=simulation_mdata.start + release_mdata.start_rel,
+            time_steps=tuple(simulation_mdata.time_steps),
         )
         log(dbg=f"preparing plot '{out_file_path}'")
         out_file_paths.append(out_file_path)

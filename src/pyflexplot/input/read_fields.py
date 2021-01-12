@@ -294,7 +294,11 @@ class InputFileEnsemble:
                 "ens_member_ids": self.ens_member_ids,
                 "ens_paths": self.paths,
             }
-            field_group = FieldGroup(group_fields, attrs=group_attrs)
+            field_group = FieldGroup(
+                group_fields,
+                attrs=group_attrs,
+                nc_meta_data=self.nc_meta_data,
+            )
             field_groups.append(field_group)
 
         return field_groups
