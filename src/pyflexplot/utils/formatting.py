@@ -773,3 +773,17 @@ class LevelRangeFormatterVar(LevelRangeFormatter):
         s_c = op_fmtd
         s_r = self._format_level(lvl)
         return Components.create("", (s_c, ntex_c), s_r)
+
+
+def format_ens_file_path(in_file_path, ens_member_ids: Optional[Sequence[int]]) -> str:
+    """Format ensemble file paths in condensed form, e.g., 'mem{00..21}.nc'."""
+    if ens_member_ids is None:
+        return in_file_path
+    pattern = r"(?P<start>.*)(?P<pattern>{ens_member(:(?P<fmt>[0-9]*d))?})(?P<end>.*)"
+    match = re.match(pattern, in_file_path)
+    if not match:
+        raise Exception("file path did not match '{pattern}': {in_file_path}")
+    s_ids = format_range(
+        sorted(ens_member_ids), fmt=match.group("fmt"), join_range="..", join_others=","
+    )
+    return f"{match.group('start')}{{{s_ids}}}{match.group('end')}"

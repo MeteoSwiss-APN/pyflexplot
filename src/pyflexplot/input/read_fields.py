@@ -287,7 +287,14 @@ class InputFileEnsemble:
                 nc_meta_data=self.nc_meta_data,
                 mdata=mdata,
             )
-            field_group = FieldGroup([field])  # SR_TMP TODO SR_MULTIPANEL
+            # SR_TMP < TODO SR_MULTIPANEL
+            group_fields = [field]
+            # SR_TMP >
+            group_attrs = {
+                "ens_member_ids": self.ens_member_ids,
+                "ens_paths": self.paths,
+            }
+            field_group = FieldGroup(group_fields, attrs=group_attrs)
             field_groups.append(field_group)
 
         return field_groups

@@ -1,7 +1,7 @@
 """Data structures."""
 # Standard library
+import dataclasses as dc
 import warnings
-from dataclasses import dataclass
 from typing import Any
 from typing import Dict
 from typing import Iterator
@@ -10,6 +10,7 @@ from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from typing import Union
 
 # Third-party
 import numpy as np
@@ -22,10 +23,12 @@ from ..plotting.domain import CloudDomain
 from ..plotting.domain import Domain
 from ..plotting.domain import ReleaseSiteDomain
 from ..plotting.proj_bbox import Projections
+from ..setup import Setup
 from ..setup import SetupGroup
 from ..utils.exceptions import ArrayDimensionError
 from ..utils.exceptions import FieldAllNaNError
 from ..utils.exceptions import InconsistentArrayShapesError
+from ..utils.formatting import format_ens_file_path
 from ..utils.summarize import summarizable
 from ..utils.summarize import summarize
 from .meta_data import MetaData
@@ -228,7 +231,7 @@ class Field:
 
 
 @summarizable
-@dataclass
+@dc.dataclass
 class FieldStats:
     min: float = np.nan
     max: float = np.nan
@@ -277,18 +280,32 @@ class FieldTimeProperties:
         self.mask_nz: np.ndarray = (~np.isnan(arr_nz)).sum(axis=0) > 0
 
 
+@dc.dataclass
+class FieldGroupAttrs:
+    """Attributes of a ``FieldGroup`` instance."""
+
+    ens_member_ids: Optional[List[int]]
+    ens_paths: List[str]
+
+    def format_ens_paths(self) -> str:
+        return format_ens_file_path(self.ens_paths, self.ens_member_ids)
+
+
 class FieldGroup:
     """A group of related ``Field`` objects."""
 
-    def __init__(self, fields: Sequence[Field]) -> None:
+    def __init__(
+        self, fields: Sequence[Field], attrs=Union[FieldGroupAttrs, Dict[str, Any]]
+    ) -> None:
         """Create an instance of ``FieldGroup``."""
+        if not isinstance(attrs, FieldGroupAttrs):
+            attrs = FieldGroupAttrs(**attrs)
+
         self.fields: List[Field] = list(fields)
+        self.attrs: FieldGroupAttrs = attrs
 
-        self.ens_member_ids: Optional[List[int]] = self._collect_ens_member_ids()
-
-    def _collect_ens_member_ids(self) -> Optional[List[int]]:
-        setups = SetupGroup([setup for field in self for setup in field.var_setups])
-        return setups.collect_equal("model.ens_member_id")
+        setups = SetupGroup([setup for field in fields for setup in field.var_setups])
+        self.shared_setup: Setup = setups.compress()
 
     def __len__(self) -> int:
         return len(self.fields)

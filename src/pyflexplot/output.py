@@ -55,7 +55,9 @@ class FilePathFormatter:
         nc_meta_data: Mapping[str, Any],
     ) -> str:
         # Prepare base time
-        base_time = self._format_time_step(cast(int, setup.model.base_time), setup)[0]
+        base_time = self._format_time_step(
+            cast(int, setup.model.base_time), setup.outfile_time_format
+        )[0]
 
         # Prepare ens variable
         ens_variable = setup.core.ens_variable
@@ -80,12 +82,12 @@ class FilePathFormatter:
 
         # Prepare release start
         release_start = self._format_time_step(
-            mdata.simulation.start + mdata.release.start_rel, setup
+            mdata.simulation.start + mdata.release.start_rel, setup.outfile_time_format
         )
 
         # Prepare time steps
         time_steps = self._format_time_steps(
-            nc_meta_data["derived"]["time_steps"], setup
+            nc_meta_data["derived"]["time_steps"], setup.outfile_time_format
         )
 
         # Format the file path
@@ -110,15 +112,15 @@ class FilePathFormatter:
         return self._replace_format_keys(template, kwargs)
 
     def _format_time_steps(
-        self, tss_int: Sequence[Union[int, datetime]], setup: Setup
+        self, tss_int: Sequence[Union[int, datetime]], outfile_time_format: str
     ) -> List[str]:
-        return [self._format_time_step(ts, setup) for ts in tss_int]
+        return [self._format_time_step(ts, outfile_time_format) for ts in tss_int]
 
     @staticmethod
-    def _format_time_step(ts: Union[int, datetime], setup: Setup) -> str:
+    def _format_time_step(ts: Union[int, datetime], outfile_time_format: str) -> str:
         if not isinstance(ts, datetime):
             ts = init_datetime(str(ts))
-        return ts.strftime(setup.outfile_time_format)
+        return ts.strftime(outfile_time_format)
 
     @staticmethod
     def _replace_format_keys(template: str, kwargs: Mapping[str, Any]) -> str:

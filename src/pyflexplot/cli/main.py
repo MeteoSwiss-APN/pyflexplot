@@ -118,10 +118,6 @@ def main(
             dry_run=dry_run,
             cache_on=cache,
         )
-        in_file_path_lst = [
-            format_ens_file_path(in_file_path, field_group.ens_member_ids)
-            for field_group in field_groups
-        ]
         out_file_paths_lst: List[str] = []
         i_out_file = 0
         n_plots = len(field_groups)
@@ -143,7 +139,6 @@ def main(
         fct = partial(create_plots, only, dry_run, show_version, istat)
         iter_args = zip(
             range(1, istat.n_fld + 1),
-            in_file_path_lst,
             out_file_paths_lst,
             field_groups,
         )
@@ -285,7 +280,6 @@ def create_plots(
     show_version: bool,
     istat: SharedIterationState,
     ip_fld: int,
-    in_file_path: str,
     out_file_paths: List[str],
     field_group: FieldGroup,
 ):
@@ -314,7 +308,7 @@ def create_plots(
     istat.ip_tot += n_out
     for ip_out, out_file_path in enumerate(out_file_paths, start=1):
         log(
-            inf=f"{in_file_path} -> {out_file_path}",
+            inf=f"{field_group.attrs.format_ens_paths()} -> {out_file_path}",
             vbs=(
                 f"[P{pid}][{istat.ip_in}/{istat.n_in}][{ip_fld}/{istat.n_fld}]"
                 f"[{ip_out}/{n_out}] plot {out_file_path}"
@@ -329,20 +323,6 @@ def create_plots(
             log(vbs=f"[only:{only}] skip remaining {n_fld_todo} plot fields")
     for out_file_path in out_file_paths:
         log(dbg=f"done plotting {out_file_path}")
-
-
-def format_ens_file_path(in_file_path, ens_member_ids: Optional[Sequence[int]]) -> str:
-    """Format ensemble file paths in condensed form, e.g., 'mem{00..21}.nc'."""
-    if ens_member_ids is None:
-        return in_file_path
-    pattern = r"(?P<start>.*)(?P<pattern>{ens_member(:(?P<fmt>[0-9]*d))?})(?P<end>.*)"
-    match = re.match(pattern, in_file_path)
-    if not match:
-        raise Exception("file path did not match '{pattern}': {in_file_path}")
-    s_ids = format_range(
-        sorted(ens_member_ids), fmt=match.group("fmt"), join_range="..", join_others=","
-    )
-    return f"{match.group('start')}{{{s_ids}}}{match.group('end')}"
 
 
 # pylint: disable=R0914  # too-many-locals (>15)

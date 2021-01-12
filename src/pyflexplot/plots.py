@@ -79,16 +79,20 @@ from .words import Words
 def format_out_file_paths(
     field_group: FieldGroup, prev_paths: List[str], dest_dir: Optional[str] = None
 ) -> List[str]:
+    setup = field_group.shared_setup
     # SR_TMP <  SR_MULTIPANEL
     if len(field_group) > 1:
         raise NotImplementedError("multipanel plot")
     field = next(iter(field_group))
     # SR_TMP >  SR_MULTIPANEL
-    setup = field.var_setups.compress()
-    out_file_paths: List[str] = []
+    # SR_TMP <
+    mdata = field.mdata
+    nc_meta_data = field.nc_meta_data
+    # SR_TMP >
     out_file_templates: Sequence[str] = (
         [setup.outfile] if isinstance(setup.outfile, str) else setup.outfile
     )
+    out_file_paths: List[str] = []
     for out_file_template in out_file_templates:
         if dest_dir:
             if out_file_template.startswith("/"):
@@ -100,7 +104,7 @@ def format_out_file_paths(
                 os.path.abspath(f"{dest_dir}/{out_file_template}")
             )
         out_file_path = FilePathFormatter(prev_paths).format(
-            out_file_template, setup, field.mdata, field.nc_meta_data
+            out_file_template, setup, mdata, nc_meta_data
         )
         log(dbg=f"preparing plot '{out_file_path}'")
         out_file_paths.append(out_file_path)
