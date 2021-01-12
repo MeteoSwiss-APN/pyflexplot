@@ -7,8 +7,6 @@ very similar purposes in parallel.
 """
 # Standard library
 import re
-from datetime import datetime
-from datetime import timedelta
 from typing import Any
 from typing import Collection
 from typing import Dict
@@ -19,7 +17,7 @@ from typing import Tuple
 import netCDF4 as nc4
 
 # First-party
-from srutils.datetime import init_datetime
+from srutils.datetime import datetime_range
 
 NcMetaDataT = Dict[str, Dict[str, Any]]
 
@@ -84,12 +82,20 @@ def read_nc_meta_data(file_handle: nc4.Dataset, add_ts0: bool = False) -> NcMeta
         dimensions["time"]["size"] = new_size
         variables["time"]["shape"] = (new_size,)
 
+    time_steps = datetime_range(
+        start=ncattrs["ibdate"] + ncattrs["ibtime"],
+        end=ncattrs["iedate"] + ncattrs["ietime"],
+        step=ncattrs["loutstep"],
+        convert=int,
+        fmt="%Y%m%d%H%M",
+    )
+
     # Derive some custom attributes
     derived: Dict[str, Any] = {
         "release_site": determine_release_site(file_handle),
         "rotated_pole": determine_rotated_pole(dimensions),
         "species_ids": derive_species_ids(variables.keys()),
-        "time_steps": collect_time_steps(ncattrs),
+        "time_steps": tuple(time_steps),
     }
 
     return {
@@ -118,24 +124,6 @@ def determine_rotated_pole(dimensions: Dict[str, Any]) -> bool:
         return False
     else:
         raise NotImplementedError("unexpected dimensions: {list(dimensions)}")
-
-
-def collect_time_steps(ncattrs: Dict[str, Any]) -> Tuple[int, ...]:
-    fmt_out = "%Y%m%d%H%M"
-    start_date: str = ncattrs["ibdate"]
-    start_time: str = ncattrs["ibtime"]
-    assert len(start_time) == 6
-    start: datetime = init_datetime(start_date + start_time)
-    end_date: str = ncattrs["iedate"]
-    end_time: str = ncattrs["ietime"]
-    assert len(end_time) == 6
-    end: datetime = init_datetime(end_date + end_time)
-    assert end > start
-    delta: timedelta = timedelta(seconds=int(ncattrs["loutstep"]))
-    time_steps: List[datetime] = [start]
-    while time_steps[-1] < end:
-        time_steps.append(time_steps[-1] + delta)
-    return tuple(map(lambda ts: int(ts.strftime(fmt_out)), time_steps))
 
 
 def derive_species_ids(variable_names: Collection[str]) -> Tuple[int, ...]:
