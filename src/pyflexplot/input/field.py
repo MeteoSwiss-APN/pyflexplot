@@ -63,23 +63,12 @@ def summarize_field(obj: Any) -> Dict[str, Any]:
             "min": obj.lon.min(),
             "max": obj.lon.max(),
         },
-        "var_setups": obj.var_setups,
+        "mdata": obj.mdata,
         "time_props": obj.time_props,
-        "grid_attrs": obj.grid_attrs,
-        "projs": obj.get_projs(),
+        "var_setups": obj.var_setups,
+        "projs": obj.projs,
     }
     return summarize(dct)
-
-
-@dc.dataclass
-class GridAttrs:
-    """Grid attributes."""
-
-    north_pole_lat: float
-    north_pole_lon: float
-
-    def is_rotated(self):
-        return (self.north_pole_lat, self.north_pole_lon) != (90.0, 180.0)
 
 
 @summarizable(summarize=summarize_field)
@@ -96,7 +85,6 @@ class Field:
         var_setups: SetupGroup,
         time_props: "FieldTimeProperties",
         mdata: MetaData,
-        nc_meta_data: Mapping[str, Any],
     ) -> None:
         """Create an instance of ``Field``.
 
@@ -107,33 +95,25 @@ class Field:
 
             lon: Longitude array (1D).
 
-            var_setups: Variables setups.
+            mdata: Meta data for plot for labels etc.
 
             time_props: Properties of the field across all time steps.
 
-            nc_meta_data: Meta data from NetCDF input file.
-
-            mdata: Meta data for plot for labels etc.
+            var_setups: Variables setups.
 
         """
         self.fld: np.ndarray = fld
         self.lat: np.ndarray = lat
         self.lon: np.ndarray = lon
-        self.var_setups: SetupGroup = var_setups
-        self.time_props: "FieldTimeProperties" = time_props
         self.mdata: MetaData = mdata
+        self.time_props: "FieldTimeProperties" = time_props
+        self.var_setups: SetupGroup = var_setups
         try:
             self.check_consistency()
         except Exception as e:
             raise ValueError(f"{type(e).__name__}: {e}") from e
 
-        # SR_TMP <
-        _ncattrs = nc_meta_data["variables"].get("rotated_pole", {}).get("ncattrs", {})
-        self.grid_attrs = GridAttrs(
-            north_pole_lat=_ncattrs.get("grid_north_pole_latitude", 90.0),
-            north_pole_lon=_ncattrs.get("grid_north_pole_longitude", 180.0),
-        )
-        # SR_TMP >
+        self.projs: Projections = self._init_projs()
 
     def check_consistency(self):
         """Check consistency of field, dimensions, etc."""
@@ -159,20 +139,10 @@ class Field:
         assert len(self.fld.shape) == 2  # pylint
         # pylint: disable=W0632  # unbalanced-tuple-unpacking
         jmax, imax = np.unravel_index(np.nanargmax(self.fld), self.fld.shape)
-        projs = self.get_projs()
-        p_lon, p_lat = projs.geo.transform_point(
-            self.lon[imax], self.lat[jmax], projs.data
+        p_lon, p_lat = self.projs.geo.transform_point(
+            self.lon[imax], self.lat[jmax], self.projs.data
         )
         return (p_lat, p_lon)
-
-    def get_projs(self) -> Projections:
-        if self.grid_attrs.is_rotated():
-            return Projections.create_rotated(
-                pollat=self.grid_attrs.north_pole_lat,
-                pollon=self.grid_attrs.north_pole_lon,
-            )
-        else:
-            return Projections.create_regular(clon=self.mdata.release.lon)
 
     def get_domain(self, aspect: float) -> Domain:
         """Initialize Domain object (projection and extent)."""
@@ -185,7 +155,7 @@ class Field:
         assert self.mdata is not None  # mypy
         release_lat = self.mdata.release.lat
         release_lon = self.mdata.release.lon
-        field_proj = self.get_projs().data
+        field_proj = self.projs.data
         mask_nz = self.time_props.mask_nz
         domain: Optional[Domain] = None
         if domain_type == "full":
@@ -236,12 +206,22 @@ class Field:
             f"fld=array[shape={self.fld.shape}, dtype={self.fld.dtype}],",
             f"lat=array[shape={self.lat.shape}, dtype={self.lat.dtype}],",
             f"lon=array[shape={self.lon.shape}, dtype={self.lon.dtype}],",
-            f"var_setups={self.var_setups},",
+            f"mdata={self.mdata},",
             f"time_stats={self.time_props},",
-            f"grid_attrs={self.grid_attrs},",
+            f"var_setups={self.var_setups},",
+            f"projs={self.projs},",
         ]
         body = join_multilines(lines, indent=2)
         return "\n".join([f"{type(self).__name__}(", body, ")"])
+
+    def _init_projs(self) -> Projections:
+        if self.mdata.simulation.grid_is_rotated:
+            return Projections.create_rotated(
+                pollat=self.mdata.simulation.grid_north_pole_lat,
+                pollon=self.mdata.simulation.grid_north_pole_lon,
+            )
+        else:
+            return Projections.create_regular(clon=self.mdata.release.lon)
 
 
 @summarizable

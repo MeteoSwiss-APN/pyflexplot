@@ -282,10 +282,9 @@ class InputFileEnsemble:
                 fld=fld_time[time_idx],
                 lat=self.lat,
                 lon=self.lon,
-                var_setups=field_setups,
-                time_props=time_stats,
-                nc_meta_data=self.nc_meta_data,
                 mdata=mdata,
+                time_props=time_stats,
+                var_setups=field_setups,
             )
             # SR_TMP < TODO SR_MULTIPANEL
             group_fields = [field]

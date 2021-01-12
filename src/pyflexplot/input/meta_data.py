@@ -224,7 +224,6 @@ class MetaData:
             )
         # SR_TMP >
 
-        # Variable meta data: merge across adjacent level ranges
         params_ref = None
         for idx, params in enumerate(grouped_params["variable"][1:]):
             params = {
@@ -395,6 +394,7 @@ class VariableMetaData(_MetaDataBase):
 
 
 # pylint: disable=R0902  # too-many-instance-attributes
+# pylint: disable=R0914  # too-many-instance-locals (>15)
 @dataclass
 class SimulationMetaData(_MetaDataBase):
     start: datetime
@@ -403,9 +403,12 @@ class SimulationMetaData(_MetaDataBase):
     now_rel: timedelta
     base_time: datetime
     lead_time: timedelta
-    time_steps: List[int]
     reduction_start: datetime
     reduction_start_rel: timedelta
+    time_steps: List[int]
+    grid_is_rotated: bool
+    grid_north_pole_lat: float
+    grid_north_pole_lon: float
 
     @classmethod
     def from_file(
@@ -435,6 +438,18 @@ class SimulationMetaData(_MetaDataBase):
         base_time = init_datetime(cast(int, setup.model.base_time))
         lead_time = now - base_time
 
+        # Grid
+        try:
+            var = fi.variables["rotated_pole"]
+        except KeyError:
+            grid_is_rotated = False
+            grid_north_pole_lat = 90.0
+            grid_north_pole_lon = 180.0
+        else:
+            grid_is_rotated = True
+            grid_north_pole_lat = getncattr(var, "grid_north_pole_latitude")
+            grid_north_pole_lon = getncattr(var, "grid_north_pole_longitude")
+
         return cls(
             start=start,
             end=end,
@@ -445,6 +460,9 @@ class SimulationMetaData(_MetaDataBase):
             time_steps=time_steps,
             reduction_start=reduction_start,
             reduction_start_rel=reduction_start_rel,
+            grid_is_rotated=grid_is_rotated,
+            grid_north_pole_lat=grid_north_pole_lat,
+            grid_north_pole_lon=grid_north_pole_lon,
         )
 
 

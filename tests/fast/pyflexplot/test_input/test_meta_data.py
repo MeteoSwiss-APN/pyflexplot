@@ -54,6 +54,8 @@ class TestMerge:
         "now": dt.datetime(2019, 7, 27, 21, 0, tzinfo=dt.timezone.utc),
         "now_rel": dt.timedelta(seconds=32400),
         "lead_time": dt.timedelta(seconds=32400),
+        "reduction_start": dt.datetime(2019, 7, 27, 12, 0, tzinfo=dt.timezone.utc),
+        "reduction_start_rel": dt.timedelta(seconds=0),
         "time_steps": [
             2019072712,
             2019072715,
@@ -68,8 +70,9 @@ class TestMerge:
             2019072818,
             2019072821,
         ],
-        "reduction_start": dt.datetime(2019, 7, 27, 12, 0, tzinfo=dt.timezone.utc),
-        "reduction_start_rel": dt.timedelta(seconds=0),
+        "grid_is_rotated": True,
+        "grid_north_pole_lat": 40.0,
+        "grid_north_pole_lon": 170.0,
     }
     raw_species_params = {
         "name": ("Cs-137", "I-131a", "Cs-137", "I-131a", "Cs-137", "I-131a"),
@@ -139,6 +142,8 @@ class TestMerge:
             "now": dt.datetime(2019, 7, 27, 21, 0, tzinfo=dt.timezone.utc),
             "now_rel": dt.timedelta(seconds=32400),
             "lead_time": dt.timedelta(seconds=32400),
+            "reduction_start": dt.datetime(2019, 7, 27, 12, 0, tzinfo=dt.timezone.utc),
+            "reduction_start_rel": dt.timedelta(seconds=0),
             "time_steps": [
                 2019072712,
                 2019072715,
@@ -153,8 +158,9 @@ class TestMerge:
                 2019072818,
                 2019072821,
             ],
-            "reduction_start": dt.datetime(2019, 7, 27, 12, 0, tzinfo=dt.timezone.utc),
-            "reduction_start_rel": dt.timedelta(seconds=0),
+            "grid_is_rotated": True,
+            "grid_north_pole_lat": 40.0,
+            "grid_north_pole_lon": 170.0,
         }
         assert merged_simulation_params == sol_simulation
 

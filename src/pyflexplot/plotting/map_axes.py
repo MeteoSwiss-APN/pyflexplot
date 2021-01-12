@@ -173,16 +173,14 @@ class MapAxes:
             ax.set_extent(bbox, projs.map)
             return ax
 
-        projs: Projections = field.get_projs()
-
-        self.ax: Axes = _create_ax(self.fig, self.rect, projs, self.domain)
+        self.ax: Axes = _create_ax(self.fig, self.rect, field.projs, self.domain)
 
         self.trans = CoordinateTransformer(
             trans_axes=self.ax.transAxes,
             trans_data=self.ax.transData,
-            proj_geo=projs.geo,
-            proj_map=projs.map,
-            proj_data=projs.data,
+            proj_geo=field.projs.geo,
+            proj_map=field.projs.map,
+            proj_data=field.projs.data,
         )
 
         self.ref_dist_box: Optional[ReferenceDistanceIndicator]
