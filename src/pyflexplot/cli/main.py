@@ -21,6 +21,7 @@ from PyPDF2 import PdfFileWriter
 from PyPDF2.utils import PdfReadError
 
 # First-party
+from srutils.str import ordinal
 from srutils.str import sorted_paths
 
 # Local
@@ -106,12 +107,8 @@ def main(
         setups_by_infile.items(), start=1
     ):
         if only and istat.ip_tot >= only:
-            continue
-        if only and len(sub_setups) > only:
-            n_old = len(sub_setups)
-            sub_setups = SetupGroup(list(sub_setups)[:only])
-            n_skip = n_old - len(sub_setups)
-            log(vbs=f"[only:{only}] skip {n_skip}/{n_old} sub-setups")
+            log(dbg=f"[only:{only}] skip {ordinal(istat.ip_tot)} input files")
+            break
         log(vbs=f"[{istat.ip_in}/{istat.n_in}] read {in_file_path}")
         field_groups = read_fields(
             in_file_path,
@@ -122,17 +119,26 @@ def main(
             cache_on=cache,
         )
         in_file_path_lst = [
-            format_in_file_path(in_file_path, field_group.ens_member_ids)
+            format_ens_file_path(in_file_path, field_group.ens_member_ids)
             for field_group in field_groups
         ]
-        out_file_paths_lst = [
-            format_out_file_paths(
+        out_file_paths_lst: List[str] = []
+        i_out_file = 0
+        n_plots = len(field_groups)
+        for i_plot, field_group in enumerate(field_groups):
+            out_file_paths_i = format_out_file_paths(
                 field_group,
                 prev_paths=all_out_file_paths,
                 dest_dir=tmp_dir,
             )
-            for field_group in field_groups
-        ]
+            n_plt_i = len(out_file_paths_i)
+            if only and i_out_file + n_plt_i >= only:
+                n_plots_todo = n_plots - i_plot - 1
+                log(vbs=f"[only:{only}] skip remaining {n_plots_todo} plots")
+                out_file_paths_lst.append(out_file_paths_i[: only - i_out_file])
+                break
+            out_file_paths_lst.append(out_file_paths_i)
+            i_out_file += n_plt_i
         istat.n_fld = len(field_groups)
         fct = partial(create_plots, only, dry_run, show_version, istat)
         iter_args = zip(
@@ -147,10 +153,9 @@ def main(
             for args in iter_args:
                 fct(*args)
         log(dbg=f"done processing {in_file_path}")
-        if only and istat.ip_tot >= only:
-            remaining_files = istat.n_in - istat.ip_in
-            if remaining_files:
-                log(vbs=f"[only:{only}] skip remaining {remaining_files} input files")
+        n_files_todo = istat.n_in - istat.ip_in
+        if only and istat.ip_tot >= only and n_files_todo:
+            log(vbs=f"[only:{only}] skip remaining {n_files_todo} input files")
             break
 
     # Sort output file paths with numbered duplicates are in the correct order
@@ -318,15 +323,16 @@ def create_plots(
     if not dry_run:
         assert isinstance(plot, BoxedPlot)  # mypy
         create_plot(plot, out_file_paths, show_version=show_version)
-    n_plt_todo = istat.n_fld - ip_fld
     if only and istat.ip_tot >= only:
-        if n_plt_todo:
-            log(vbs=f"[only:{only}] skip remaining {n_plt_todo} plot fields")
+        n_fld_todo = istat.n_fld - ip_fld
+        if n_fld_todo:
+            log(vbs=f"[only:{only}] skip remaining {n_fld_todo} plot fields")
     for out_file_path in out_file_paths:
         log(dbg=f"done plotting {out_file_path}")
 
 
-def format_in_file_path(in_file_path, ens_member_ids: Optional[Sequence[int]]) -> str:
+def format_ens_file_path(in_file_path, ens_member_ids: Optional[Sequence[int]]) -> str:
+    """Format ensemble file paths in condensed form, e.g., 'mem{00..21}.nc'."""
     if ens_member_ids is None:
         return in_file_path
     pattern = r"(?P<start>.*)(?P<pattern>{ens_member(:(?P<fmt>[0-9]*d))?})(?P<end>.*)"

@@ -166,8 +166,9 @@ def titlecase(s, preserve=True):
     return " ".join(words_title)
 
 
-def ordinal(i):
+def ordinal(i: Union[int, str]) -> str:
     """Format an integer as an ordinal number."""
+    i = int(i)
     if abs(i) % 10 == 1:
         sfx = {11: "th"}.get(abs(i) % 100, "st")
     elif abs(i) % 10 == 2:
