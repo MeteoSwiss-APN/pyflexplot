@@ -33,6 +33,7 @@ import numpy as np
 from srutils.dataclasses import cast_field_value
 from srutils.dataclasses import dataclass_repr
 from srutils.dataclasses import get_dataclass_fields
+from srutils.datetime import datetime_range
 from srutils.datetime import init_datetime
 from srutils.dict import compress_multival_dicts
 
@@ -156,7 +157,7 @@ class MetaData:
 
     # pylint: disable=R0914  # too-many-locals
     def merge_with(self, others: Collection["MetaData"]) -> "MetaData":
-        """Merge this `MetaData` instance with one or more others.
+        """Merge this ``MetaData`` instance with one or more others.
 
         The nested functions are former methods that have been moved in here in
         order to eventually eliminate them.
@@ -402,6 +403,7 @@ class SimulationMetaData(_MetaDataBase):
     now_rel: timedelta
     base_time: datetime
     lead_time: timedelta
+    time_steps: List[int]
     reduction_start: datetime
     reduction_start_rel: timedelta
 
@@ -414,12 +416,21 @@ class SimulationMetaData(_MetaDataBase):
         start = init_datetime(getncattr(fi, "ibdate") + getncattr(fi, "ibtime"))
         end = init_datetime(getncattr(fi, "iedate") + getncattr(fi, "ietime"))
 
+        # Formatted time steps
+        time_steps: List[int] = datetime_range(
+            start=start,
+            end=end,
+            step=getncattr(fi, "loutstep"),
+            convert=int,
+            fmt="%Y%m%d%H%M",
+        )
+
         # Current time step and start time step of current integration period
         collector = TimeStepMetaDataCollector(fi, setup, add_ts0=add_ts0)
         now = collector.now()
-        reduction_start = collector.reduction_start()
+        reduction_start = collector.integration_start()
         now_rel: timedelta = collector.now_rel()
-        reduction_start_rel = collector.reduction_start_rel()
+        reduction_start_rel = collector.integration_start_rel()
 
         base_time = init_datetime(cast(int, setup.model.base_time))
         lead_time = now - base_time
@@ -431,6 +442,7 @@ class SimulationMetaData(_MetaDataBase):
             now_rel=now_rel,
             base_time=base_time,
             lead_time=lead_time,
+            time_steps=time_steps,
             reduction_start=reduction_start,
             reduction_start_rel=reduction_start_rel,
         )
@@ -728,13 +740,13 @@ class TimeStepMetaDataCollector:
             return timedelta(0)
         return timedelta(seconds=int(var[idx]))
 
-    def reduction_start(self) -> datetime:
-        """Return the time step when reduction (mean/sum) started."""
+    def integration_start(self) -> datetime:
+        """Return start time step of integration period."""
         return self.now() - self.integration_duration()
 
-    def reduction_start_rel(self) -> timedelta:
-        """Return the time between simulation start and start of reduction."""
-        return self.reduction_start() - self.start()
+    def integration_start_rel(self) -> timedelta:
+        """Return time between starts of simulation and integration period."""
+        return self.integration_start() - self.start()
 
     def integration_duration(self) -> timedelta:
         """Compute timestep delta of integration period."""
