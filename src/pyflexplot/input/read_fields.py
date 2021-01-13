@@ -1,7 +1,7 @@
 """Data input."""
 # Standard library
+import dataclasses as dc
 import re
-from dataclasses import dataclass
 from typing import Any
 from typing import Dict
 from typing import List
@@ -9,6 +9,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Type
+from typing import Union
 
 # Third-party
 import netCDF4 as nc4  # types: ignore  # pylance
@@ -38,7 +39,7 @@ AFFECTED_AREA_THRESHOLD = 0.0
 CLOUD_THRESHOLD = 0.0
 
 
-@dataclass
+@dc.dataclass
 class InputConfig:
     """Input configuration.
 
@@ -57,23 +58,20 @@ class InputConfig:
         missing_ok (optional): When fields are missing in the input, instead of
             failing, return an empty field.
 
-        cls_fixer (optional): Class providing methods to fix issues with the
-            input data. Is instatiated with this instance of ``FileReader``.
-
     """
 
     add_ts0: bool = False
     dry_run: bool = False
     cache_on: bool = False
     missing_ok: bool = False
-    cls_fixer: Optional[Type["FlexPartDataFixer"]] = None
+    cls_fixer: Optional[Type["FlexPartDataFixer"]] = FlexPartDataFixer
 
 
 # pylint: disable=R0914  # too-many-locals
 def read_fields(
     in_file_path: str,
     setups: SetupGroup,
-    **config_kwargs: Any,
+    config: Optional[Union[InputConfig, Dict[str, Any]]] = None,
 ) -> List[FieldGroup]:
     """Read fields from an input file, or multiple files derived from one path.
 
@@ -85,15 +83,14 @@ def read_fields(
         setups: Collection variable setups, containing among other things the
             ensemble member IDs in case of an ensemble simulation.
 
-        config_kwargs (optional): Keyword arguments used to create an instance
-            of ``FieldInputConfig``.
+        config (optional): Instance of ``InputConfig``, or dict with parameters
+            used to create one.
 
     """
     log(dbg=f"reading fields from {in_file_path}")
 
-    if "cls_fixer" not in config_kwargs:
-        config_kwargs["cls_fixer"] = FlexPartDataFixer
-    config = InputConfig(**config_kwargs)
+    if not isinstance(config, InputConfig):
+        config = InputConfig(**(config or {}))
 
     all_ens_member_ids: Optional[Sequence[int]] = (
         setups.collect("model.ens_member_id", flatten=True, exclude_nones=True) or None
@@ -195,7 +192,7 @@ def group_setups_for_plots(setups: SetupGroup) -> List[SetupGroup]:
 
 
 # pylint: disable=R0902  # too-many-instance-attributes (>7)
-@dataclass
+@dc.dataclass
 class InputFileEnsemble:
     """An ensemble (of size one or more) of input files."""
 
@@ -216,9 +213,9 @@ class InputFileEnsemble:
                 self.ens_member_ids,
             )
 
-        self.fixer: Optional["FlexPartDataFixer"] = (
-            self.config.cls_fixer(self) if self.config.cls_fixer else None
-        )
+        self.fixer: Optional["FlexPartDataFixer"] = None
+        if self.config.cls_fixer:
+            self.fixer = self.config.cls_fixer(self)
 
         # Declare some attributes
         self.fld_time_mem: np.ndarray

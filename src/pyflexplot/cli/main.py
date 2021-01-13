@@ -112,10 +112,12 @@ def main(
         field_groups = read_fields(
             in_file_path,
             sub_setups,
-            add_ts0=True,
-            missing_ok=True,
-            dry_run=dry_run,
-            cache_on=cache,
+            config={
+                "add_ts0": True,
+                "missing_ok": True,
+                "dry_run": dry_run,
+                "cache_on": cache,
+            },
         )
         out_file_paths_lst: List[str] = []
         i_out_file = 0

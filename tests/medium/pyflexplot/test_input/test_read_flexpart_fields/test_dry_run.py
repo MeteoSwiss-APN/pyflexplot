@@ -98,7 +98,7 @@ def _test_setups_core(
     setups: SetupGroup, params: List[str], sol: List[List[Dict[str, Any]]]
 ):
     infile = setups.collect_equal("infile")
-    field_groups = read_fields(infile, setups, dry_run=True)
+    field_groups = read_fields(infile, setups, {"dry_run": True})
     res = field_groups_to_setup_dcts(field_groups, params)
     check_summary_dict_element_is_subelement(obj_super=res, obj_sub=sol)
 

@@ -76,7 +76,9 @@ class _TestBase:
     def get_field_group(self, datadir):
         infile = f"{datadir}/{self.setup_dct['infile']}"
         setups = self.get_setups()
-        field_groups = read_fields(infile, setups, add_ts0=True, missing_ok=True)
+        field_groups = read_fields(
+            infile, setups, {"add_ts0": True, "missing_ok": True}
+        )
         assert len(field_groups) == self.n_plots
         # SR_TMP <
         assert self.n_plots == 1

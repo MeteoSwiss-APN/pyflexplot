@@ -59,7 +59,7 @@ def test_one_setup_one_field(datadir, config):  # noqa:F811
     }
     setup_dct_lst = [setup_dct]
     setups = SetupGroup.create(setup_dct_lst)
-    field_groups = read_fields(datafile_fmt, setups, cls_fixer=None)
+    field_groups = read_fields(datafile_fmt, setups, {"cls_fixer": None})
 
     assert len(field_groups) == 1
     field_group = next(iter(field_groups))
