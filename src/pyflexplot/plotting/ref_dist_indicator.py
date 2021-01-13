@@ -162,6 +162,8 @@ class ReferenceDistanceIndicator:
         else:
             raise ValueError(f"invalid x-position '{self.pos_x}'")
         self.w_box = self.x1_line - self.x0_line + 2 * self.xpad_box
+        if self.w_box > 1.0:
+            raise Exception(f"ref dist indicator box too wide: {self.w_box} > 1.0")
         if self.pos_x == "l":
             self.x1_box = self.x0_box + self.w_box
         elif self.pos_x == "r":
