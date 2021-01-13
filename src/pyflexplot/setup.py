@@ -1079,7 +1079,7 @@ class SetupGroup:
         self._setups = new_setups
 
     def copy(self) -> "SetupGroup":
-        return self.create(self.dicts())
+        return type(self)([setup.copy() for setup in self])
 
     # pylint: disable=R0912  # too-many-branches (>12)
     # pylint: disable=R0915  # too-many-statements
