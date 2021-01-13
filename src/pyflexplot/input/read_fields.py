@@ -72,6 +72,8 @@ def read_fields(
     in_file_path: str,
     setups: SetupGroup,
     config: Optional[Union[InputConfig, Dict[str, Any]]] = None,
+    *,
+    only: Optional[int] = None,
 ) -> List[FieldGroup]:
     """Read fields from an input file, or multiple files derived from one path.
 
@@ -86,6 +88,8 @@ def read_fields(
         config (optional): Instance of ``InputConfig``, or dict with parameters
             used to create one.
 
+        only (optional): Restrict the number of fields that are read.
+
     """
     log(dbg=f"reading fields from {in_file_path}")
 
@@ -95,24 +99,31 @@ def read_fields(
     all_ens_member_ids: Optional[Sequence[int]] = (
         setups.collect("model.ens_member_id", flatten=True, exclude_nones=True) or None
     )
-    paths = prepare_paths(in_file_path, all_ens_member_ids)
+    files = InputFileEnsemble(in_file_path, config, all_ens_member_ids)
 
-    first_path = next(iter(paths))
+    first_path = next(iter(files.paths))
     with nc4.Dataset(first_path) as fi:
         nc_meta_data = read_nc_meta_data(fi, add_ts0=config.add_ts0)
 
     setups = setups.complete_dimensions(nc_meta_data)
+    if only and len(setups) > only:
+        log(dbg=f"[only:{only}] skip {len(setups) - only}/{len(setups)}")
+        setups = SetupGroup(list(setups)[:only])
     setups_for_plots_over_time = group_setups_for_plots(setups)
 
-    files = InputFileEnsemble(paths, config, all_ens_member_ids)
     field_groups: List[FieldGroup] = []
     for setups_for_same_plot_over_time in setups_for_plots_over_time:
         ens_mem_ids = setups_for_same_plot_over_time.collect_equal(
             "model.ens_member_id"
         )
-        field_groups.extend(
-            files.read_fields_over_time(setups_for_same_plot_over_time, ens_mem_ids)
+        field_groups_i = files.read_fields_over_time(
+            setups_for_same_plot_over_time, ens_mem_ids
         )
+        if only and len(field_groups) + len(field_groups_i) > only:
+            log(dbg=f"[only:{only}] skip reading remaining fields after {only}")
+            field_groups.extend(field_groups_i[: only - len(field_groups)])
+            break
+        field_groups.extend(field_groups_i)
 
     n_plt = len(field_groups)
     n_tot = sum([len(field_group) for field_group in field_groups])
@@ -196,21 +207,21 @@ def group_setups_for_plots(setups: SetupGroup) -> List[SetupGroup]:
 class InputFileEnsemble:
     """An ensemble (of size one or more) of input files."""
 
-    paths: Sequence[str]
+    path_fmt: str
     config: InputConfig
     ens_member_ids: Optional[Sequence[int]] = None
 
     def __post_init__(self):
-        # SR_TMP < TODO Fix the cache!!!
+        self.paths: List[str] = prepare_paths(self.path_fmt, self.ens_member_ids)
+
+        # SR_TMP TODO Fix the cache!!!
         if self.config.cache_on:
             raise NotImplementedError("input file cache")
 
         if len(self.ens_member_ids or [0]) != len(self.paths):
             raise ValueError(
-                "must pass same number of ens_member_ids and paths"
-                ", or omit ens_member_ids for single path",
-                self.paths,
-                self.ens_member_ids,
+                f"must pass same number of ens_member_ids ({len(self.ens_member_ids)}"
+                f" and paths ({len(self.paths)}), or omit ens_member_ids (single path)"
             )
 
         self.fixer: Optional["FlexPartDataFixer"] = None
@@ -226,10 +237,11 @@ class InputFileEnsemble:
         self.setups_lst_time: List[SetupGroup]
         self.time: np.ndarray
 
-    # SR_TMP <<<
     # pylint: disable=R0914  # too-many-locals
     def read_fields_over_time(
-        self, setups: SetupGroup, ens_member_ids: Optional[Sequence[int]] = None
+        self,
+        setups: SetupGroup,
+        ens_member_ids: Optional[Sequence[int]] = None,
     ) -> List[FieldGroup]:
         """Read fields for the same plot at multiple time steps.
 
@@ -288,7 +300,7 @@ class InputFileEnsemble:
             # SR_TMP >
             group_attrs = {
                 "ens_member_ids": self.ens_member_ids,
-                "ens_paths": self.paths,
+                "path": self.path_fmt,
             }
             field_group = FieldGroup(
                 group_fields,

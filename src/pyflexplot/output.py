@@ -179,7 +179,7 @@ class FilePathFormatter:
     @staticmethod
     def derive_unique_path(path: str, sep: str = ".") -> str:
         """Add/increment a trailing number to a file path."""
-        log(dbg=f"deriving unique path from '{path}'")
+        # log(dbg=f"deriving unique path from '{path}'")
 
         # Extract suffix
         if path.endswith(".png") or path.endswith(".pdf"):

@@ -1171,8 +1171,7 @@ class SetupGroup:
         return len(self._setups)
 
     def __iter__(self) -> Iterator[Setup]:
-        for setup in self._setups:
-            yield setup
+        return iter(self._setups)
 
     def __eq__(self, other: object) -> bool:
         # SR_DBG <

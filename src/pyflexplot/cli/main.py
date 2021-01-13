@@ -4,6 +4,7 @@ import multiprocessing
 import os
 import re
 import time
+from copy import copy
 from functools import partial
 from os.path import abspath
 from os.path import relpath
@@ -21,6 +22,7 @@ from PyPDF2.utils import PdfReadError
 
 # First-party
 from srutils.str import ordinal
+from srutils.str import sfmt
 from srutils.str import sorted_paths
 
 # Local
@@ -74,7 +76,14 @@ def main(
 
     # Add preset setup file paths
     setup_file_paths = list(setup_file_paths)
-    for path in ctx.obj.get("preset_setup_file_paths", []):
+    preset_setup_file_paths = ctx.obj.get("preset_setup_file_paths", [])
+    log(
+        vbs=(
+            f"prepare setups from {len(preset_setup_file_paths)} preset and"
+            f" {len(setup_file_paths)} input files"
+        )
+    )
+    for path in preset_setup_file_paths:
         if path not in setup_file_paths:
             setup_file_paths.append(path)
     if not setup_file_paths:
@@ -87,28 +96,59 @@ def main(
         setups.override_output_suffixes(suffixes)
 
     # Group setups by input file(s)
+    log(dbg=f"group {len(setups)} setups by infile")
     setups_by_infile = setups.group("infile")
-    if only and len(setups_by_infile) > only:
-        n_old = len(setups_by_infile)
-        setups_by_infile, skip = (
-            dict(list(setups_by_infile.items())[:only]),
-            list(setups_by_infile)[only:],
-        )
-        s_skip = "\n   ".join([""] + skip)
-        log(vbs=f"[only:{only}] skip {len(skip)}/{n_old} infiles:{s_skip}")
+    if only:
+        # Restrict number of setups to ``only``
+        # Note that the number of plots is likely still higher than only because
+        # each setup can define many plots, but it's a first elimination step
+        all_setups_by_infile = copy(setups_by_infile)
+        setups_by_infile = {}
+        n_setups_old = sum([len(setups) for setups in all_setups_by_infile.values()])
+        n_setups_new = 0
+        for infile, setups in all_setups_by_infile.items():
+            if n_setups_new + len(setups) > only:
+                setups = SetupGroup(list(setups)[: only - n_setups_new])
+                setups_by_infile[infile] = setups
+                n_setups_new += len(setups)
+                assert n_setups_new == only
+                break
+            n_setups_new += len(setups)
+            setups_by_infile[infile] = setups
+        n_input_files_old = len(all_setups_by_infile)
+        n_input_files_new = len(setups_by_infile)
+        if n_setups_new < n_setups_old:
+            log(
+                dbg=(
+                    f"[only:{only}] skip {n_setups_old - n_setups_new}/{n_setups_old}"
+                    f" setups and {n_input_files_old - n_input_files_new}"
+                    f"/{n_input_files_old} files"
+                )
+            )
 
     pool = multiprocessing.Pool(processes=num_procs)
 
     # Create plots input file(s) by input file(s)
+    log(vbs="read fields and create plots")
     all_out_file_paths: List[str] = []
-    istat = SharedIterationState(ip_tot=0, n_in=len(setups_by_infile))
-    for istat.ip_in, (in_file_path, sub_setups) in enumerate(
+    iter_state = SharedIterationState(n_input_files=len(setups_by_infile))
+    for iter_state.i_input_file, (in_file_path, sub_setups) in enumerate(
         setups_by_infile.items(), start=1
     ):
-        if only and istat.ip_tot >= only:
-            log(dbg=f"[only:{only}] skip {ordinal(istat.ip_tot)} input files")
+        if only and iter_state.n_field_groups_curr >= only:
+            log(
+                dbg=(
+                    f"[only:{only}] skip {ordinal(iter_state.n_field_groups_curr)}"
+                    " field group"
+                )
+            )
             break
-        log(vbs=f"[{istat.ip_in}/{istat.n_in}] read {in_file_path}")
+        log(
+            vbs=(
+                f"[{iter_state.i_input_file + 1}/{iter_state.n_input_files}]"
+                f" read {in_file_path}"
+            )
+        )
         field_groups = read_fields(
             in_file_path,
             sub_setups,
@@ -118,28 +158,21 @@ def main(
                 "dry_run": dry_run,
                 "cache_on": cache,
             },
+            only=(None if not only else only - iter_state.n_field_groups_curr),
         )
-        out_file_paths_lst: List[str] = []
-        i_out_file = 0
-        n_plots = len(field_groups)
-        for i_plot, field_group in enumerate(field_groups):
-            out_file_paths_i = format_out_file_paths(
+        iter_state.n_field_groups_curr += len(field_groups)
+        iter_state.n_field_groups_i = len(field_groups)
+        out_file_paths_lst: List[str] = [
+            format_out_file_paths(
                 field_group,
                 prev_paths=all_out_file_paths,
                 dest_dir=tmp_dir,
             )
-            n_plt_i = len(out_file_paths_i)
-            if only and i_out_file + n_plt_i >= only:
-                n_plots_todo = n_plots - i_plot - 1
-                log(vbs=f"[only:{only}] skip remaining {n_plots_todo} plots")
-                out_file_paths_lst.append(out_file_paths_i[: only - i_out_file])
-                break
-            out_file_paths_lst.append(out_file_paths_i)
-            i_out_file += n_plt_i
-        istat.n_fld = len(field_groups)
-        fct = partial(create_plots, only, dry_run, show_version, istat)
+            for field_group in field_groups
+        ]
+        fct = partial(create_plots, dry_run, show_version, iter_state)
         iter_args = zip(
-            range(1, istat.n_fld + 1),
+            range(1, iter_state.n_field_groups_i + 1),
             out_file_paths_lst,
             field_groups,
         )
@@ -149,9 +182,9 @@ def main(
             for args in iter_args:
                 fct(*args)
         log(dbg=f"done processing {in_file_path}")
-        n_files_todo = istat.n_in - istat.ip_in
-        if only and istat.ip_tot >= only and n_files_todo:
-            log(vbs=f"[only:{only}] skip remaining {n_files_todo} input files")
+        n_input_files_todo = iter_state.n_input_files - iter_state.i_input_file
+        if only and iter_state.n_field_groups_curr >= only and n_input_files_todo:
+            log(vbs=f"[only:{only}] skip remaining {n_input_files_todo} input files")
             break
 
     # Sort output file paths with numbered duplicates are in the correct order
@@ -229,99 +262,100 @@ class SharedIterationState:
 
     def __init__(
         self,
-        ip_tot: int = 0,
-        n_in: int = -1,
-        ip_in: int = 0,
-        n_fld: int = -1,
+        *,
+        n_plot_files_curr: int = 0,
+        n_input_files: int = -1,
+        i_input_file: int = 0,
+        n_field_groups_curr: int = 0,
+        n_field_groups_i: int = -1,
     ) -> None:
         """Create an instance of ``SharedIterationState``."""
         self._dict: Dict[str, Any] = multiprocessing.Manager().dict()
-        self.ip_tot = ip_tot
-        self.n_in = n_in
-        self.ip_in = ip_in
-        self.n_fld = n_fld
+        self.n_plot_files_curr = n_plot_files_curr
+        self.n_input_files = n_input_files
+        self.i_input_file = i_input_file
+        self.n_field_groups_curr = n_field_groups_curr
+        self.n_field_groups_i = n_field_groups_i
 
     @property
-    def ip_tot(self) -> int:
-        return self._dict["ip_tot"]
+    def n_plot_files_curr(self) -> int:
+        return self._dict["n_plot_files_curr"]
 
-    @ip_tot.setter
-    def ip_tot(self, value: int) -> None:
-        self._dict["ip_tot"] = value
-
-    @property
-    def n_in(self) -> int:
-        return self._dict["n_in"]
-
-    @n_in.setter
-    def n_in(self, value: int) -> None:
-        self._dict["n_in"] = value
+    @n_plot_files_curr.setter
+    def n_plot_files_curr(self, value: int) -> None:
+        self._dict["n_plot_files_curr"] = value
 
     @property
-    def ip_in(self) -> int:
-        return self._dict["ip_in"]
+    def n_input_files(self) -> int:
+        return self._dict["n_input_files"]
 
-    @ip_in.setter
-    def ip_in(self, value: int) -> None:
-        self._dict["ip_in"] = value
+    @n_input_files.setter
+    def n_input_files(self, value: int) -> None:
+        self._dict["n_input_files"] = value
 
     @property
-    def n_fld(self) -> int:
-        return self._dict["n_fld"]
+    def i_input_file(self) -> int:
+        return self._dict["i_input_file"]
 
-    @n_fld.setter
-    def n_fld(self, value: int) -> None:
-        self._dict["n_fld"] = value
+    @i_input_file.setter
+    def i_input_file(self, value: int) -> None:
+        self._dict["i_input_file"] = value
+
+    @property
+    def n_field_groups_curr(self) -> int:
+        return self._dict["n_field_groups_curr"]
+
+    @n_field_groups_curr.setter
+    def n_field_groups_curr(self, value: int) -> None:
+        self._dict["n_field_groups_curr"] = value
+
+    @property
+    def n_field_groups_i(self) -> int:
+        return self._dict["n_field_groups_i"]
+
+    @n_field_groups_i.setter
+    def n_field_groups_i(self, value: int) -> None:
+        self._dict["n_field_groups_i"] = value
+
+    def __repr__(self) -> str:
+        return (
+            f"{type(self).__name__}("
+            + ", ".join([f"{key}={sfmt(value)}" for key, value in self._dict.items()])
+            + ")"
+        )
 
 
 # pylint: disable=R0914  # too-many-locals (>15)
 def create_plots(
-    only: Optional[int],
     dry_run: bool,
     show_version: bool,
-    istat: SharedIterationState,
+    iter_state: SharedIterationState,
     ip_fld: int,
     out_file_paths: List[str],
     field_group: FieldGroup,
 ):
     pid = get_pid()
-    if only and istat.ip_tot >= only:
-        return
     log(
         dbg=(
-            f"[P{pid}][{istat.ip_in}/{istat.n_in}][{ip_fld}/{istat.n_fld}]"
-            " prepare plot"
+            f"[P{pid}][{iter_state.i_input_file}/{iter_state.n_input_files}][{ip_fld}"
+            f"/{iter_state.n_field_groups_i}] prepare plot"
         )
     )
     plot = prepare_plot(field_group, dry_run=dry_run)
-    if only:
-        only_i = only - istat.ip_tot
-        if len(out_file_paths) > only_i:
-            n_old = len(out_file_paths)
-            out_file_paths, skip = (
-                out_file_paths[:only_i],
-                out_file_paths[only_i:],
-            )
-            n_skip = len(skip)
-            s_skip = "\n   ".join([""] + skip)
-            log(vbs=f"[only:{only}] skip {n_skip}/{n_old} plot files:{s_skip}")
     n_out = len(out_file_paths)
-    istat.ip_tot += n_out
+    iter_state.n_plot_files_curr += n_out
     for ip_out, out_file_path in enumerate(out_file_paths, start=1):
         log(
-            inf=f"{field_group.attrs.format_ens_paths()} -> {out_file_path}",
+            inf=f"{field_group.attrs.format_path()} -> {out_file_path}",
             vbs=(
-                f"[P{pid}][{istat.ip_in}/{istat.n_in}][{ip_fld}/{istat.n_fld}]"
-                f"[{ip_out}/{n_out}] plot {out_file_path}"
+                f"[P{pid}][{iter_state.i_input_file}/{iter_state.n_input_files}]"
+                f"[{ip_fld}{iter_state.n_field_groups_i}][{ip_out}/{n_out}]"
+                f" plot {out_file_path}"
             ),
         )
     if not dry_run:
         assert isinstance(plot, BoxedPlot)  # mypy
         create_plot(plot, out_file_paths, show_version=show_version)
-    if only and istat.ip_tot >= only:
-        n_fld_todo = istat.n_fld - ip_fld
-        if n_fld_todo:
-            log(vbs=f"[only:{only}] skip remaining {n_fld_todo} plot fields")
     for out_file_path in out_file_paths:
         log(dbg=f"done plotting {out_file_path}")
 

@@ -4,6 +4,7 @@
 # Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
 infile = "data/cosmo-1e-ctrl/grid_conc_0910_20200216000000.nc"
 model = "COSMO-1E"
+lang = "de"
 outfile_time_format = "%Y%m%dT%H%M"
 combine_species = false
 
@@ -39,6 +40,8 @@ outfile = "deposition_tot_site-{release_site}_species-{species_id}_domain-{domai
 [_base._affected_area."_png+"]
 outfile = "affected_area_site-{release_site}_species-{species_id}_domain-{domain}_lang-{lang}_ts-{time_step}.png"
 
-["**"._de.ch]
-lang = "de"
+["**".full]
+domain = "full"
+
+["**".ch]
 domain = "ch"
