@@ -160,41 +160,53 @@ class Field:
         domain: Optional[Domain] = None
         if domain_type == "full":
             if model_name.startswith("COSMO"):
-                domain = Domain(lat, lon, zoom_fact=1.01)
+                domain = Domain(lat, lon, config={"zoom_fact": 1.01})
             else:
                 domain = Domain(lat, lon)
         elif domain_type == "release_site":
             domain = ReleaseSiteDomain(
                 lat,
                 lon,
-                aspect=aspect,
-                field_proj=field_proj,
-                min_size_lat=domain_size_lat,
-                min_size_lon=domain_size_lon,
-                release_lat=release_lat,
-                release_lon=release_lon,
+                config={
+                    "aspect": aspect,
+                    "field_proj": field_proj,
+                    "min_size_lat": domain_size_lat,
+                    "min_size_lon": domain_size_lon,
+                    "release_lat": release_lat,
+                    "release_lon": release_lon,
+                },
             )
         elif domain_type == "alps":
             if model_name == "IFS-HRES-EU":
-                domain = Domain(lat, lon, zoom_fact=3.4, rel_offset=(-0.165, -0.11))
+                domain = Domain(
+                    lat, lon, config={"zoom_fact": 3.4, "rel_offset": (-0.165, -0.11)}
+                )
         elif domain_type == "cloud":
             domain = CloudDomain(
                 lat,
                 lon,
-                aspect=aspect,
-                mask_nz=mask_nz,
-                min_size_lat=domain_size_lat,
-                min_size_lon=domain_size_lon,
-                periodic_lon=(model_name == "IFS-HRES"),
-                zoom_fact=0.9,
+                mask=mask_nz,
+                config={
+                    "zoom_fact": 0.9,
+                    "aspect": aspect,
+                    "min_size_lat": domain_size_lat,
+                    "min_size_lon": domain_size_lon,
+                    "periodic_lon": (model_name == "IFS-HRES"),
+                },
             )
         elif domain_type == "ch":
             if model_name.startswith("COSMO-1"):
-                domain = Domain(lat, lon, zoom_fact=3.6, rel_offset=(-0.02, 0.045))
+                domain = Domain(
+                    lat, lon, config={"zoom_fact": 3.6, "rel_offset": (-0.02, 0.045)}
+                )
             elif model_name.startswith("COSMO-2"):
-                domain = Domain(lat, lon, zoom_fact=3.23, rel_offset=(0.037, 0.1065))
+                domain = Domain(
+                    lat, lon, config={"zoom_fact": 3.23, "rel_offset": (0.037, 0.1065)}
+                )
             elif model_name == "IFS-HRES-EU":
-                domain = Domain(lat, lon, zoom_fact=11.0, rel_offset=(-0.18, -0.11))
+                domain = Domain(
+                    lat, lon, config={"zoom_fact": 11.0, "rel_offset": (-0.18, -0.11)}
+                )
         if domain is None:
             raise NotImplementedError(
                 f"domain for model '{model_name}' and domain type '{domain_type}'"

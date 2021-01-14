@@ -307,8 +307,11 @@ plot_summary = {
                 2.38,
                 2.4799995,
             ],
-            "zoom_fact": 1.01,
-            "rel_offset": [0.0, 0.0],
+            "config": {
+                "type": "DomainConfig",
+                "rel_offset": [0.0, 0.0],
+                "zoom_fact": 1.01,
+            },
         },
         "field": {
             "type": "Field",

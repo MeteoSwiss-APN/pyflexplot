@@ -17,12 +17,16 @@ class TestCloudAcrossDateline:
 
     def test_dateline_wrong(self):
         """Results are wrong if domain is not specified as periodic."""
-        domain = CloudDomain(self.lat, self.lon, mask_nz=self.mask, periodic_lon=False)
-        bbox = domain.get_bbox_corners()
+        domain = CloudDomain(
+            self.lat, self.lon, mask=self.mask, config={"periodic_lon": False}
+        )
+        bbox = domain.find_bbox_corners()
         assert bbox == (-185.0, 185.0, 25.0, 55.0)
 
     def test_dateline_ok(self):
         """Results are correct if domain is specified as periodic."""
-        domain = CloudDomain(self.lat, self.lon, mask_nz=self.mask, periodic_lon=True)
-        bbox = domain.get_bbox_corners()
+        domain = CloudDomain(
+            self.lat, self.lon, mask=self.mask, config={"periodic_lon": True}
+        )
+        bbox = domain.find_bbox_corners()
         assert bbox == (155.0, -155.0, 25.0, 55.0)
