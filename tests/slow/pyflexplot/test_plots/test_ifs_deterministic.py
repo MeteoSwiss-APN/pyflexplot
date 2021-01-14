@@ -6,6 +6,7 @@ from .shared import _TestCreateReference  # noqa:F401
 from .shared import datadir  # noqa:F401  # required by _TestBase.test
 
 INFILE_1 = "flexpart_ifs_20200317000000.nc"
+INFILE_2 = "flexpart_ifs-hres_1018_20200921000000.nc"
 
 
 # Uncomment to create plots for all tests
@@ -79,6 +80,29 @@ class Test_TotalDeposition(_TestBase):
             "dimensions": {
                 "species_id": 1,
                 "time": -1,
+            },
+        },
+    }
+
+
+class Test_TotalDeposition_EmptyField(_TestBase):
+    reference = "ref_ifs_deterministic_total_deposition_empty_field"
+    setup_dct = {
+        "infile": INFILE_2,
+        "outfile": f"{reference}.png",
+        "model": {
+            "name": "IFS-HRES",
+        },
+        "core": {
+            "plot_type": "auto",
+            "input_variable": "deposition",
+            "combine_deposition_types": True,
+            "integrate": True,
+            "lang": "de",
+            "domain": "cloud",
+            "dimensions": {
+                "species_id": 3,
+                "time": 0,
             },
         },
     }

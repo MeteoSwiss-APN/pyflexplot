@@ -184,6 +184,20 @@ class CloudDomain(Domain):
         d_lat_min: Optional[float] = self.config.min_size_lat
         d_lon_min: Optional[float] = self.config.min_size_lon
 
+        if not self.mask.any():
+            domain = ReleaseSiteDomain(
+                self.lat,
+                self.lon,
+                config={
+                    "aspect": self.config.aspect,
+                    "min_size_lat": self.config.min_size_lat,
+                    "min_size_lon": self.config.min_size_lon,
+                    "release_lat": self.config.release_lat,
+                    "release_lon": self.config.release_lon,
+                },
+            )
+            return domain.find_bbox_corners()
+
         # Latitude
         mask_lat = self.mask.any(axis=1)
         if not any(mask_lat):

@@ -472,8 +472,8 @@ plot_summary = {
                 "min_size_lat": None,
                 "min_size_lon": 20.0,
                 "periodic_lon": True,
-                "release_lat": None,
-                "release_lon": None,
+                "release_lat": 41.279998779296875,
+                "release_lon": 129.08999633789062,
             },
         },
         "field": {

@@ -192,6 +192,8 @@ class Field:
                     "min_size_lat": domain_size_lat,
                     "min_size_lon": domain_size_lon,
                     "periodic_lon": (model_name == "IFS-HRES"),
+                    "release_lat": release_lat,
+                    "release_lon": release_lon,
                 },
             )
         elif domain_type == "ch":
