@@ -106,7 +106,7 @@ def format_out_file_paths(
         out_file_path = FilePathFormatter(prev_paths).format(
             out_file_template,
             setup,
-            release_site=release_mdata.site,
+            release_site=release_mdata.raw_site_name,
             release_start=simulation_mdata.start + release_mdata.start_rel,
             time_steps=tuple(simulation_mdata.time_steps),
         )
@@ -194,7 +194,7 @@ def plot_add_text_boxes(
             size=font_size,
         )
         box.text(
-            capitalize(format_meta_datum(mdata.release.site)),
+            capitalize(format_meta_datum(mdata.release.site_name)),
             loc="bc",
             fontname=plot.config.font.name,
             size=font_size,
@@ -314,7 +314,7 @@ def plot_add_text_boxes(
                 **plot.config.markers.markers["site"],
             )
             box.text(
-                s=f"{labels['site']}: {format_meta_datum(mdata.release.site)}",
+                s=f"{labels['site']}: {format_meta_datum(mdata.release.site_name)}",
                 loc="tc",
                 dx=dx_marker_label,
                 dy=dy_site_label,
@@ -791,7 +791,7 @@ def create_box_labels(setup: Setup, mdata: MetaData) -> Dict[str, Dict[str, Any]
     }
 
     # Release info
-    site_name = format_meta_datum(mdata.release.site)
+    site_name = format_meta_datum(mdata.release.site_name)
     site_lat_lon = format_release_site_coords_labels(words, symbols, mdata)
     release_height = format_meta_datum(
         mdata.release.height, mdata.release.height_unit

@@ -39,6 +39,7 @@ from srutils.dict import compress_multival_dicts
 
 # Local
 from ..setup import Setup
+from ..words import SYMBOLS
 from .nc_meta_data import derive_variable_name
 from .species import get_species
 from .species import Species
@@ -478,20 +479,22 @@ class ReleaseMetaData(_MetaDataBase):
     lon: float
     mass: Union[float, Tuple[float, ...]]
     mass_unit: str
-    site: str
     rate: Union[float, Tuple[float, ...]]
     rate_unit: str
+    raw_site_name: str
+    site_name: str
     start_rel: timedelta
 
     @classmethod
     def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "ReleaseMetaData":
         """Read information on a release from open file."""
         raw = RawReleaseMetaData.from_file(fi, setup)
-        site = raw.site
-        # SR_HC <
-        if site == "Goesgen":
-            site = r"G$\mathrm{\"o}$sgen"
-        # SR_HC >
+        raw_site_name = raw.site
+        site_name = (
+            raw_site_name.replace("ae", SYMBOLS["ae"].s)
+            .replace("oe", SYMBOLS["oe"].s)
+            .replace("ue", SYMBOLS["ue"].s)
+        )
         start_rel = raw.rel_start
         end_rel = raw.rel_end
         duration = end_rel - start_rel
@@ -510,9 +513,10 @@ class ReleaseMetaData(_MetaDataBase):
             lon=np.mean([raw.lllon, raw.urlon]),
             mass=mass,
             mass_unit=mass_unit,
-            site=site,
             rate=mass / duration.total_seconds() if duration else np.nan,
             rate_unit=f"{mass_unit} {duration_unit}-1",
+            raw_site_name=raw_site_name,
+            site_name=site_name,
             start_rel=start_rel,
         )
 
