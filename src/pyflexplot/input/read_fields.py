@@ -34,7 +34,9 @@ from .field import FieldTimeProperties
 from .fix_nc_input import FlexPartDataFixer
 from .meta_data import derive_variable_name
 from .meta_data import MetaData
-from .meta_data import read_nc_meta_data
+from .meta_data import read_dimensions
+from .meta_data import read_species_ids
+from .meta_data import read_time_steps
 
 AFFECTED_AREA_THRESHOLD = 0.0
 CLOUD_THRESHOLD = 0.0
@@ -104,16 +106,18 @@ def read_fields(
 
     first_path = next(iter(files.paths))
     with nc4.Dataset(first_path) as fi:
-        nc_meta_data = read_nc_meta_data(fi, add_ts0=config.add_ts0)
-    raw_dimensions = nc_meta_data["dimensions"]
-    species_ids = nc_meta_data["derived"]["species_ids"]
-    time_steps = nc_meta_data["derived"]["time_steps"]
+        raw_dimensions = read_dimensions(fi, add_ts0=config.add_ts0)
+        species_ids = read_species_ids(fi)
+        time_steps = read_time_steps(fi)
 
     setups = setups.complete_dimensions(
         raw_dimensions=raw_dimensions,
         species_ids=species_ids,
-        time_steps=time_steps,
     )
+    for setup in setups:
+        if setup.model.base_time is None:
+            setup.model.base_time = int(time_steps[0])
+
     if only and len(setups) > only:
         log(dbg=f"[only:{only}] skip {len(setups) - only}/{len(setups)}")
         setups = SetupGroup(list(setups)[:only])
@@ -262,9 +266,8 @@ class InputFileEnsemble:
         """
         first_path = next(iter(self.paths))
         with nc4.Dataset(first_path) as fi:
-            nc_meta_data = read_nc_meta_data(fi, add_ts0=self.config.add_ts0)
+            raw_dimensions = read_dimensions(fi, add_ts0=self.config.add_ts0)
             ts_hrs = self.get_temp_res_hrs(fi)
-        raw_dimensions = nc_meta_data["dimensions"]
 
         # Create individual setups at each requested time step
         select = ["dimensions.time"]
@@ -336,7 +339,7 @@ class InputFileEnsemble:
             if idx_mem == 0:
                 self.mdata_tss = mdata_tss_i
             elif mdata_tss_i != self.mdata_tss:
-                raise Exception("meta data differ across members")
+                raise Exception("meta data differ between members")
 
             if not self.config.dry_run:
                 # Read fields for all members at all time steps

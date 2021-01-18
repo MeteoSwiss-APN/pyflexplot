@@ -1036,7 +1036,6 @@ class SetupGroup:
         self,
         raw_dimensions: Mapping[str, Mapping[str, Any]],
         species_ids: Sequence[int],
-        time_steps: Sequence[int],
         *,
         inplace: Literal[False] = ...,
     ) -> "SetupGroup":
@@ -1047,21 +1046,16 @@ class SetupGroup:
         self,
         raw_dimensions: Mapping[str, Mapping[str, Any]],
         species_ids: Sequence[int],
-        time_steps: Sequence[int],
         *,
         inplace: Literal[True],
     ) -> None:
         ...
 
-    def complete_dimensions(
-        self, raw_dimensions, species_ids, time_steps, *, inplace=False
-    ):
+    def complete_dimensions(self, raw_dimensions, species_ids, *, inplace=False):
         """Complete unconstrained dimensions based on available indices."""
         obj = self if inplace else self.copy()
         for setup in obj:
             setup.core.complete_dimensions(raw_dimensions, species_ids, inplace=True)
-            if setup.model.base_time is None:
-                setup.model.base_time = time_steps[0]
         return None if inplace else obj
 
     def override_output_suffixes(self, suffix: Union[str, Collection[str]]) -> None:

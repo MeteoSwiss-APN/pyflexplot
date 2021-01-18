@@ -1,10 +1,4 @@
-"""Meta data.
-
-Note that these meta data should eventually be merged with the raw ones in
-module ``pyflexplot.nc_meta_data`` because the two very different data
-structures serve very similar purposes in parallel.
-
-"""
+"""Meta data."""
 # Standard library
 import re
 import warnings
@@ -416,14 +410,17 @@ class SimulationMetaData(_MetaDataBase):
     ) -> "SimulationMetaData":
 
         # Start and end timesteps of simulation
-        start = init_datetime(getncattr(fi, "ibdate") + getncattr(fi, "ibtime"))
-        end = init_datetime(getncattr(fi, "iedate") + getncattr(fi, "ietime"))
+        start = init_datetime(
+            str(getncattr(fi, "ibdate")) + str(getncattr(fi, "ibtime"))
+        )
+        end = init_datetime(str(getncattr(fi, "iedate")) + str(getncattr(fi, "ietime")))
+        step = int(getncattr(fi, "loutstep"))
 
         # Formatted time steps
         time_steps: List[int] = datetime_range(
             start=start,
             end=end,
-            step=getncattr(fi, "loutstep"),
+            step=step,
             convert=int,
             fmt="%Y%m%d%H%M",
         )
@@ -806,10 +803,8 @@ def derive_variable_name(
     raise ValueError("unknown variable", input_variable)
 
 
-def read_nc_meta_data(
-    file_handle: nc4.Dataset, add_ts0: bool = True
-) -> Dict[str, Dict[str, Any]]:
-    """Read meta data (variables, dimensions, attributes) from a NetCDF file.
+def read_dimensions(file_handle: nc4.Dataset, add_ts0: bool = True) -> Dict[str, Any]:
+    """Read dimensions from a NetCDF file.
 
     Args:
         file_handle: Open NetCDF file handle.
@@ -820,7 +815,6 @@ def read_nc_meta_data(
             sum over the first few hours of the simulation.
 
     """
-    # Dimensions
     dimensions: Dict[str, Any] = {}
     for dim_handle in file_handle.dimensions.values():
         dimensions[dim_handle.name] = {
@@ -828,39 +822,19 @@ def read_nc_meta_data(
             "size": dim_handle.size,
         }
 
-    # Variables
-    variables: Dict[str, Any] = {}
-    for var_handle in file_handle.variables.values():
-        variables[var_handle.name] = {
-            "name": var_handle.name,
-            "dimensions": var_handle.dimensions,
-            "shape": tuple(
-                [dimensions[dim_name]["size"] for dim_name in var_handle.dimensions]
-            ),
-            "ncattrs": {
-                attr: var_handle.getncattr(attr) for attr in var_handle.ncattrs()
-            },
-        }
-
     if add_ts0:
-        old_size = dimensions["time"]["size"]
-        new_size = old_size + 1
-        dimensions["time"]["size"] = new_size
-        variables["time"]["shape"] = (new_size,)
+        dimensions["time"]["size"] += 1
 
-    # Derive some custom attributes
-    derived: Dict[str, Any] = {
-        "species_ids": derive_species_ids(variables.keys()),
-        "time_steps": tuple(read_time_steps(file_handle)),
-    }
-
-    return {
-        "dimensions": dimensions,
-        "derived": derived,
-    }
+    return dimensions
 
 
 def read_time_steps(file_handle: nc4.Dataset) -> List[str]:
+    """Derive the formatted time steps from the NetCDF global attributes.
+
+    Args:
+        file_handle: Open NetCDF file handle.
+
+    """
     attrs_select: List[str] = ["ibdate", "ibtime", "iedate", "ietime", "loutstep"]
     attrs_try_select: List[str] = []
     ncattrs: Dict[str, Any] = {}
@@ -880,11 +854,16 @@ def read_time_steps(file_handle: nc4.Dataset) -> List[str]:
     )
 
 
-def derive_species_ids(variable_names: Collection[str]) -> Tuple[int, ...]:
-    """Derive the species ids from the NetCDF variable names."""
+def read_species_ids(file_handle: nc4.Dataset) -> Tuple[int, ...]:
+    """Derive the species ids from the NetCDF variable names.
+
+    Args:
+        file_handle: Open NetCDF file handle.
+
+    """
     rx = re.compile(r"\A([WD]D_)?spec(?P<species_id>[0-9][0-9][0-9])(_mr)?\Z")
     species_ids = set()
-    for var_name in variable_names:
+    for var_name in file_handle.variables:
         match = rx.match(var_name)
         if match:
             species_id = int(match.group("species_id"))
