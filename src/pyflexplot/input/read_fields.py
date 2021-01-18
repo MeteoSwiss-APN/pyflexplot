@@ -5,6 +5,7 @@ import re
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -104,11 +105,14 @@ def read_fields(
     first_path = next(iter(files.paths))
     with nc4.Dataset(first_path) as fi:
         nc_meta_data = read_nc_meta_data(fi, add_ts0=config.add_ts0)
+    raw_dimensions = nc_meta_data["dimensions"]
+    species_ids = nc_meta_data["derived"]["species_ids"]
+    time_steps = nc_meta_data["derived"]["time_steps"]
 
     setups = setups.complete_dimensions(
-        raw_dimensions=nc_meta_data["dimensions"],
-        species_ids=nc_meta_data["derived"]["species_ids"],
-        time_steps=nc_meta_data["derived"]["time_steps"],
+        raw_dimensions=raw_dimensions,
+        species_ids=species_ids,
+        time_steps=time_steps,
     )
     if only and len(setups) > only:
         log(dbg=f"[only:{only}] skip {len(setups) - only}/{len(setups)}")
@@ -237,7 +241,6 @@ class InputFileEnsemble:
         self.lat: np.ndarray
         self.lon: np.ndarray
         self.mdata_tss: List[MetaData]
-        self.nc_meta_data: Dict[str, Dict[str, Any]]
         self.setups_lst_time: List[SetupGroup]
         self.time: np.ndarray
 
@@ -259,8 +262,9 @@ class InputFileEnsemble:
         """
         first_path = next(iter(self.paths))
         with nc4.Dataset(first_path) as fi:
-            self.nc_meta_data = read_nc_meta_data(fi, add_ts0=self.config.add_ts0)
+            nc_meta_data = read_nc_meta_data(fi, add_ts0=self.config.add_ts0)
             ts_hrs = self.get_temp_res_hrs(fi)
+        raw_dimensions = nc_meta_data["dimensions"]
 
         # Create individual setups at each requested time step
         select = ["dimensions.time"]
@@ -269,7 +273,9 @@ class InputFileEnsemble:
         self.setups_lst_time = setups.decompress_partially(select, skip=skip)
 
         model = setups.collect_equal("model.name")
-        self.fld_time_mem = np.full(self._get_shape_mem_time(model), np.nan, np.float32)
+        self.fld_time_mem = np.full(
+            self._get_shape_mem_time(model, raw_dimensions), np.nan, np.float32
+        )
         for idx_mem, (ens_member_id, file_path) in enumerate(
             zip((self.ens_member_ids or [None]), self.paths)  # type: ignore
         ):
@@ -324,14 +330,6 @@ class InputFileEnsemble:
         log(dbg=f"reading file ({idx_mem + 1}/{n_mem}): {file_path}")
         with nc4.Dataset(file_path, "r") as fi:
             self._read_grid(fi, model)
-
-            if idx_mem > 0:
-                # Ensure that meta data is the same for all members
-                nc_meta_data = read_nc_meta_data(fi, add_ts0=self.config.add_ts0)
-                if nc_meta_data != self.nc_meta_data:
-                    raise Exception(
-                        f"meta data differs:\n{nc_meta_data}\n!=\n{self.nc_meta_data}"
-                    )
 
             # Read meta data at requested time steps
             mdata_tss_i = self._collect_meta_data_tss(fi)
@@ -404,12 +402,14 @@ class InputFileEnsemble:
             mdata_lst.append(mdata_i)
         return mdata_lst
 
-    def _get_shape_mem_time(self, model: str) -> Tuple[int, int, int, int]:
+    def _get_shape_mem_time(
+        self, model: str, raw_dimensions: Mapping[str, Mapping[str, Any]]
+    ) -> Tuple[int, int, int, int]:
         """Get the shape of an array of fields across members and time steps."""
         dim_names = self._dim_names(model)
-        nlat = self.nc_meta_data["dimensions"][dim_names["lat"]]["size"]
-        nlon = self.nc_meta_data["dimensions"][dim_names["lon"]]["size"]
-        nts = self.nc_meta_data["dimensions"][dim_names["time"]]["size"]
+        nlat = raw_dimensions[dim_names["lat"]]["size"]
+        nlon = raw_dimensions[dim_names["lon"]]["size"]
+        nts = raw_dimensions[dim_names["time"]]["size"]
         n_mem = len(self.ens_member_ids) if self.ens_member_ids else 1
         self.lat = np.full((nlat,), np.nan)
         self.lon = np.full((nlon,), np.nan)
