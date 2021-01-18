@@ -92,38 +92,14 @@ def read_nc_meta_data(file_handle: nc4.Dataset, add_ts0: bool = True) -> NcMetaD
 
     # Derive some custom attributes
     derived: Dict[str, Any] = {
-        "release_site": determine_release_site(file_handle),
-        "rotated_pole": determine_rotated_pole(dimensions),
         "species_ids": derive_species_ids(variables.keys()),
         "time_steps": tuple(time_steps),
     }
 
     return {
-        "ncattrs": ncattrs,
         "dimensions": dimensions,
-        "variables": variables,
         "derived": derived,
     }
-
-
-def determine_release_site(file_handle: nc4.Dataset) -> str:
-    var = file_handle.variables["RELCOM"]
-    if len(var) == 0:
-        raise Exception("no release sites")
-    elif len(var) == 1:
-        idx = 0
-    else:
-        raise NotImplementedError("multiple release sites")
-    return var[idx][~var[idx].mask].tobytes().decode("utf-8").rstrip()
-
-
-def determine_rotated_pole(dimensions: Dict[str, Any]) -> bool:
-    if "rlat" in dimensions and "rlon" in dimensions:
-        return True
-    elif "latitude" in dimensions and "longitude" in dimensions:
-        return False
-    else:
-        raise NotImplementedError("unexpected dimensions: {list(dimensions)}")
 
 
 def derive_species_ids(variable_names: Collection[str]) -> Tuple[int, ...]:

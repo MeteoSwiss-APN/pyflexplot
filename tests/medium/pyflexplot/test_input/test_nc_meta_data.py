@@ -1,5 +1,6 @@
 """Tests for module ``pyflexplot.input.nc_meta_data``."""
 # Standard library
+from typing import Any
 from typing import Dict
 from typing import Optional
 
@@ -15,30 +16,22 @@ from .shared import datadir_flexpart_reduced as datadir  # noqa:F401 isort:skip
 
 class _TestBase:
     datafilename: Optional[str] = None
-    meta_data: Optional[Dict] = None
 
     @classmethod
-    def set_up(cls, datadir, cache=True):
-        if cache:
-            if cls.meta_data is not None:
-                return None
+    def read(cls, datadir) -> Dict[str, Any]:
         with nc4.Dataset(f"{datadir}/{cls.datafilename}", "r") as f:
-            cls.meta_data = read_nc_meta_data(f, add_ts0=False)
+            return read_nc_meta_data(f, add_ts0=False)
 
 
 class Test_COSMO1(_TestBase):
     datafilename = "flexpart_cosmo-1_2019052800.nc"
 
-    def test_rotated_pole(self, datadir):
-        self.set_up(datadir)
-        assert self.meta_data["derived"]["rotated_pole"] is True
-
     def test_species_ids(self, datadir):
-        self.set_up(datadir)
-        assert self.meta_data["derived"]["species_ids"] == (1, 2)
+        nc_meta_data = self.read(datadir)
+        assert nc_meta_data["derived"]["species_ids"] == (1, 2)
 
     def test_dimensions(self, datadir):
-        self.set_up(datadir)
+        nc_meta_data = self.read(datadir)
         dimensions = {
             "time": {"name": "time", "size": 11},
             "rlon": {"name": "rlon", "size": 40},
@@ -49,22 +42,18 @@ class Test_COSMO1(_TestBase):
             "nageclass": {"name": "nageclass", "size": 1},
             "nchar": {"name": "nchar", "size": 45},
         }
-        assert self.meta_data["dimensions"] == dimensions
+        assert nc_meta_data["dimensions"] == dimensions
 
 
 class Test_COSMO2(_TestBase):
     datafilename = "flexpart_cosmo-2e_2019072712_000.nc"
 
-    def test_rotated_pole(self, datadir):
-        self.set_up(datadir)
-        assert self.meta_data["derived"]["rotated_pole"] is True
-
     def test_species_ids(self, datadir):
-        self.set_up(datadir)
-        assert self.meta_data["derived"]["species_ids"] == (1, 2)
+        nc_meta_data = self.read(datadir)
+        assert nc_meta_data["derived"]["species_ids"] == (1, 2)
 
     def test_dimensions(self, datadir):
-        self.set_up(datadir)
+        nc_meta_data = self.read(datadir)
         dimensions = {
             "time": {"name": "time", "size": 11},
             "rlon": {"name": "rlon", "size": 50},
@@ -75,22 +64,18 @@ class Test_COSMO2(_TestBase):
             "nageclass": {"name": "nageclass", "size": 1},
             "nchar": {"name": "nchar", "size": 45},
         }
-        assert self.meta_data["dimensions"] == dimensions
+        assert nc_meta_data["dimensions"] == dimensions
 
 
 class Test_IFS(_TestBase):
     datafilename = "flexpart_ifs_20200317000000.nc"
 
-    def test_rotated_pole(self, datadir):
-        self.set_up(datadir)
-        assert self.meta_data["derived"]["rotated_pole"] is False
-
     def test_species_ids(self, datadir):
-        self.set_up(datadir)
-        assert self.meta_data["derived"]["species_ids"] == (1,)
+        nc_meta_data = self.read(datadir)
+        assert nc_meta_data["derived"]["species_ids"] == (1,)
 
     def test_dimensions(self, datadir):
-        self.set_up(datadir)
+        nc_meta_data = self.read(datadir)
         dimensions = {
             "time": {"name": "time", "size": 16},
             "longitude": {"name": "longitude", "size": 160},
@@ -102,4 +87,4 @@ class Test_IFS(_TestBase):
             "nchar": {"name": "nchar", "size": 45},
             "numpoint": {"name": "numpoint", "size": 1},
         }
-        assert self.meta_data["dimensions"] == dimensions
+        assert nc_meta_data["dimensions"] == dimensions
