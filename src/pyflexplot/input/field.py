@@ -6,7 +6,6 @@ from typing import Any
 from typing import Dict
 from typing import Iterator
 from typing import List
-from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -306,8 +305,6 @@ class FieldGroup:
         self,
         fields: Sequence[Field],
         attrs=Union[FieldGroupAttrs, Dict[str, Any]],
-        *,
-        nc_meta_data: Mapping[str, Any],
     ) -> None:
         """Create an instance of ``FieldGroup``."""
         if not isinstance(attrs, FieldGroupAttrs):
@@ -315,7 +312,6 @@ class FieldGroup:
 
         self.fields: List[Field] = list(fields)
         self.attrs: FieldGroupAttrs = attrs
-        self.nc_meta_data: Dict[str, Any] = dict(**nc_meta_data)
 
         setups = SetupGroup([setup for field in fields for setup in field.var_setups])
         self.shared_setup: Setup = setups.compress()

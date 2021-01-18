@@ -309,7 +309,6 @@ class InputFileEnsemble:
             field_group = FieldGroup(
                 group_fields,
                 attrs=group_attrs,
-                nc_meta_data=self.nc_meta_data,
             )
             field_groups.append(field_group)
 
