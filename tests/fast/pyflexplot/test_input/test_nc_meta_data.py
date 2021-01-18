@@ -3,7 +3,7 @@
 import pytest
 
 # First-party
-from pyflexplot.input.nc_meta_data import derive_species_ids
+from pyflexplot.input.meta_data import derive_species_ids
 
 
 @pytest.mark.parametrize(

@@ -31,9 +31,9 @@ from .field import Field
 from .field import FieldGroup
 from .field import FieldTimeProperties
 from .fix_nc_input import FlexPartDataFixer
+from .meta_data import derive_variable_name
 from .meta_data import MetaData
-from .nc_meta_data import derive_variable_name
-from .nc_meta_data import read_nc_meta_data
+from .meta_data import read_nc_meta_data
 
 AFFECTED_AREA_THRESHOLD = 0.0
 CLOUD_THRESHOLD = 0.0

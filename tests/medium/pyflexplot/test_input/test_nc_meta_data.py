@@ -8,7 +8,7 @@ from typing import Optional
 import netCDF4 as nc4
 
 # First-party
-from pyflexplot.input.nc_meta_data import read_nc_meta_data
+from pyflexplot.input.meta_data import read_nc_meta_data
 
 # Local  isort:skip
 from .shared import datadir_flexpart_reduced as datadir  # noqa:F401 isort:skip
