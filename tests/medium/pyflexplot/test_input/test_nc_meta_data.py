@@ -23,7 +23,7 @@ class _TestBase:
             if cls.meta_data is not None:
                 return None
         with nc4.Dataset(f"{datadir}/{cls.datafilename}", "r") as f:
-            cls.meta_data = read_nc_meta_data(f)
+            cls.meta_data = read_nc_meta_data(f, add_ts0=False)
 
 
 class Test_COSMO1(_TestBase):

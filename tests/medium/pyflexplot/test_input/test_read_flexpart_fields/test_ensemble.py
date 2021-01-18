@@ -101,7 +101,9 @@ class TestReadFieldEnsemble_Single:
         setups = SetupGroup([Setup.create(setup_dct)])
 
         # Read input fields
-        field_groups = read_fields(datafile_fmt, setups, {"cache_on": cache_on})
+        field_groups = read_fields(
+            datafile_fmt, setups, {"add_ts0": False, "cache_on": cache_on}
+        )
         assert len(field_groups) == 1
         assert len(field_groups[0]) == 1
         fld = next(iter(field_groups[0])).fld
@@ -231,7 +233,9 @@ class TestReadFieldEnsemble_Multiple:
         setups = SetupGroup(setup_lst)
 
         # Read input fields
-        field_groups = read_fields(datafile_fmt, setups, {"cache_on": cache_on})
+        field_groups = read_fields(
+            datafile_fmt, setups, {"add_ts0": False, "cache_on": cache_on}
+        )
         fld_arr = np.array(
             [field.fld for field_group in field_groups for field in field_group]
         )

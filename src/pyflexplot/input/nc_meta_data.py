@@ -22,7 +22,7 @@ from srutils.datetime import datetime_range
 NcMetaDataT = Dict[str, Dict[str, Any]]
 
 
-def read_nc_meta_data(file_handle: nc4.Dataset, add_ts0: bool = False) -> NcMetaDataT:
+def read_nc_meta_data(file_handle: nc4.Dataset, add_ts0: bool = True) -> NcMetaDataT:
     """Read meta data (variables, dimensions, attributes) from a NetCDF file.
 
     Args:

@@ -310,7 +310,7 @@ class MetaData:
 
     @classmethod
     def collect(
-        cls, fi: nc4.Dataset, setup: Setup, *, add_ts0: bool = False
+        cls, fi: nc4.Dataset, setup: Setup, *, add_ts0: bool = True
     ) -> "MetaData":
         """Collect meta data from file."""
         return cls(
@@ -721,7 +721,7 @@ class RawReleaseMetaData:
 class TimeStepMetaDataCollector:
     """Collect time step meta data from file."""
 
-    def __init__(self, fi: nc4.Dataset, setup: Setup, *, add_ts0: bool = False) -> None:
+    def __init__(self, fi: nc4.Dataset, setup: Setup, *, add_ts0: bool = True) -> None:
         """Create an instance of ``TimeStepMetaDataCollector``."""
         self.fi = fi
         self.setup = setup

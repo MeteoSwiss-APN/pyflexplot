@@ -60,7 +60,7 @@ class InputConfig:
 
     """
 
-    add_ts0: bool = False
+    add_ts0: bool = True
     dry_run: bool = False
     cache_on: bool = False
     missing_ok: bool = False

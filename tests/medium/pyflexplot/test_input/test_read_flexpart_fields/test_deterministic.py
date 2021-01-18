@@ -281,7 +281,7 @@ def test_single(datadir, config):  # noqa:F811
     setups = SetupGroup([config.setup])
 
     # Read input field
-    field_groups = read_fields(datafile, setups)
+    field_groups = read_fields(datafile, setups, {"add_ts0": False})
     assert len(field_groups) == 1
     assert len(field_groups[0]) == 1
     fld = next(iter(field_groups[0])).fld
@@ -499,7 +499,7 @@ def test_multiple(datadir, config):  # noqa:F811
 
         # Read input fields
         var_setups_dicts_pre = var_setups.dicts()
-        field_groups = read_fields(datafile, var_setups)
+        field_groups = read_fields(datafile, var_setups, {"add_ts0": False})
         assert var_setups.dicts() == var_setups_dicts_pre
         assert len(field_groups) == 1
         assert len(field_groups[0]) == 1
