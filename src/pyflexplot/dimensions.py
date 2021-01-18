@@ -161,11 +161,13 @@ class Dimensions:
         return type(self).create({**self.dict(), **params})
 
     # pylint: disable=R0912  # too-many-branches
+    # pylint: disable=R0913  # too-many-arguments (>5)
     # pylint: disable=R0915  # too-many-statements
     # pylint: disable=W0201  # attribute-defined-outside-init
     def complete(
         self,
-        meta_data: Mapping[str, Any],
+        raw_dimensions: Mapping[str, Any],
+        species_ids: Sequence[int],
         input_variable: str,
         inplace: bool = False,
         mode: Union[Literal["all"], Literal["first"]] = "all",
@@ -178,8 +180,6 @@ class Dimensions:
             )
 
         obj = self if inplace else self.copy()
-
-        raw_dimensions: Mapping[str, Mapping[str, Any]] = meta_data["dimensions"]
 
         if obj.time is None:
             values = range(raw_dimensions["time"]["size"])
@@ -218,11 +218,10 @@ class Dimensions:
                     obj.deposition_type = "dry"
 
         if obj.species_id is None:
-            values = meta_data["derived"]["species_ids"]
             if mode == "all":
-                obj.species_id = tuple(values)
+                obj.species_id = tuple(species_ids)
             elif mode == "first":
-                obj.species_id = next(iter(values))
+                obj.species_id = next(iter(species_ids))
 
         if obj.nageclass is None:
             if "nageclass" in raw_dimensions:

@@ -245,21 +245,33 @@ class CoreSetup:
 
     @overload
     def complete_dimensions(
-        self, meta_data: Mapping[str, Any], *, inplace: Literal[False] = ...
+        self,
+        raw_dimensions: Mapping[str, Any],
+        species_ids: Sequence[int],
+        *,
+        inplace: Literal[False] = ...,
     ) -> "CoreSetup":
         ...
 
     @overload
     def complete_dimensions(
-        self, meta_data: Mapping[str, Any], *, inplace: Literal[True]
+        self,
+        raw_dimensions: Mapping[str, Any],
+        species_ids: Sequence[int],
+        *,
+        inplace: Literal[True],
     ) -> None:
         ...
 
-    def complete_dimensions(self, meta_data, *, inplace=False):
+    def complete_dimensions(self, raw_dimensions, species_ids, *, inplace=False):
         """Complete unconstrained dimensions based on available indices."""
         obj: "CoreSetup" = self if inplace else self.copy()
         obj.dimensions.complete(
-            meta_data, self.input_variable, mode=obj.dimensions_default, inplace=True
+            raw_dimensions,
+            species_ids,
+            self.input_variable,
+            mode=obj.dimensions_default,
+            inplace=True,
         )
         return None if inplace else obj
 
@@ -1021,23 +1033,35 @@ class SetupGroup:
 
     @overload
     def complete_dimensions(
-        self, nc_meta_data: Mapping[str, Any], *, inplace: Literal[False] = ...
+        self,
+        raw_dimensions: Mapping[str, Mapping[str, Any]],
+        species_ids: Sequence[int],
+        time_steps: Sequence[int],
+        *,
+        inplace: Literal[False] = ...,
     ) -> "SetupGroup":
         ...
 
     @overload
     def complete_dimensions(
-        self, nc_meta_data: Mapping[str, Any], *, inplace: Literal[True]
+        self,
+        raw_dimensions: Mapping[str, Mapping[str, Any]],
+        species_ids: Sequence[int],
+        time_steps: Sequence[int],
+        *,
+        inplace: Literal[True],
     ) -> None:
         ...
 
-    def complete_dimensions(self, nc_meta_data, *, inplace=False):
+    def complete_dimensions(
+        self, raw_dimensions, species_ids, time_steps, *, inplace=False
+    ):
         """Complete unconstrained dimensions based on available indices."""
         obj = self if inplace else self.copy()
         for setup in obj:
-            setup.core.complete_dimensions(nc_meta_data, inplace=True)
+            setup.core.complete_dimensions(raw_dimensions, species_ids, inplace=True)
             if setup.model.base_time is None:
-                setup.model.base_time = nc_meta_data["derived"]["time_steps"][0]
+                setup.model.base_time = time_steps[0]
         return None if inplace else obj
 
     def override_output_suffixes(self, suffix: Union[str, Collection[str]]) -> None:

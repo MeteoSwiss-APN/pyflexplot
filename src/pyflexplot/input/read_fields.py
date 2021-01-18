@@ -105,7 +105,11 @@ def read_fields(
     with nc4.Dataset(first_path) as fi:
         nc_meta_data = read_nc_meta_data(fi, add_ts0=config.add_ts0)
 
-    setups = setups.complete_dimensions(nc_meta_data)
+    setups = setups.complete_dimensions(
+        raw_dimensions=nc_meta_data["dimensions"],
+        species_ids=nc_meta_data["derived"]["species_ids"],
+        time_steps=nc_meta_data["derived"]["time_steps"],
+    )
     if only and len(setups) > only:
         log(dbg=f"[only:{only}] skip {len(setups) - only}/{len(setups)}")
         setups = SetupGroup(list(setups)[:only])
