@@ -281,7 +281,7 @@ def test_single(datadir, config):  # noqa:F811
     setups = SetupGroup([config.setup])
 
     # Read input field
-    field_groups = read_fields(datafile, setups, {"add_ts0": False})
+    field_groups = read_fields(datafile, setups, {"add_ts0": True})
     assert len(field_groups) == 1
     assert len(field_groups[0]) == 1
     fld = next(iter(field_groups[0])).fld
@@ -301,7 +301,8 @@ def test_single(datadir, config):  # noqa:F811
                     datafile,
                     get_var_name_ref(setup, config.var_names_ref),
                     setup,
-                    config.setup_dct["model"]["name"],
+                    model=config.setup_dct["model"]["name"],
+                    add_ts0=True,
                 )
                 for setup in var_setups
             ],
@@ -517,7 +518,8 @@ def test_multiple(datadir, config):  # noqa:F811
                     datafile,
                     get_var_name_ref(var_setup, config.var_names_ref),
                     var_setup,
-                    config.setup_dct["model"]["name"],
+                    model=config.setup_dct["model"]["name"],
+                    add_ts0=False,
                 )
             ]
             fld_ref_i = np.nansum(flds_ref_i, axis=0)

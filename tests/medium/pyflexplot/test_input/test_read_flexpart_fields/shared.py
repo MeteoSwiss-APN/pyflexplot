@@ -12,7 +12,7 @@ from ..shared import datadir_flexpart_artificial as datadir_artificial  # noqa:F
 from ..shared import datadir_flexpart_reduced as datadir_reduced  # noqa:F401
 
 
-def read_flexpart_field(path, var_name, setup, model):
+def read_flexpart_field(path, var_name, setup, *, model, add_ts0):
     with nc4.Dataset(path, "r") as fi:
         var = fi.variables[var_name]
 
@@ -24,10 +24,10 @@ def read_flexpart_field(path, var_name, setup, model):
             elif dim_name == "time":
                 # Read all timesteps until the selected one
                 if isinstance(setup, CoreSetup):
-                    idx = slice(setup.core.dimensions.time + 1)
+                    idx = slice(setup.core.dimensions.time + (0 if add_ts0 else 1))
                 else:
                     assert isinstance(setup.core.dimensions.time, int)
-                    idx = slice(setup.core.dimensions.time + 1)
+                    idx = slice(setup.core.dimensions.time + (0 if add_ts0 else 1))
             elif dim_name in ["level", "height"]:
                 if isinstance(setup, CoreSetup) or setup.core.dimensions.level is None:
                     idx = setup.core.dimensions.level
@@ -47,7 +47,7 @@ def read_flexpart_field(path, var_name, setup, model):
         # Fix some issues with the input data
         fix_flexpart_field(fld, model)
 
-        # Reduce time dimension
+        # Handle time integration of data
         if setup.core.input_variable == "concentration":
             if setup.core.integrate:
                 # Integrate concentration field over time

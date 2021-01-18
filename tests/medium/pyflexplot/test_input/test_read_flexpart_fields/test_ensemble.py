@@ -102,7 +102,7 @@ class TestReadFieldEnsemble_Single:
 
         # Read input fields
         field_groups = read_fields(
-            datafile_fmt, setups, {"add_ts0": False, "cache_on": cache_on}
+            datafile_fmt, setups, {"add_ts0": True, "cache_on": cache_on}
         )
         assert len(field_groups) == 1
         assert len(field_groups[0]) == 1
@@ -131,6 +131,7 @@ class TestReadFieldEnsemble_Single:
                             var_name,
                             setup,
                             model="COSMO-2",  # SR_TMP
+                            add_ts0=True,
                         )
                         for ens_member_id in self.ens_member_ids
                     ]
@@ -260,6 +261,7 @@ class TestReadFieldEnsemble_Multiple:
                             get_var_name_ref(sub_setup, var_names_ref),
                             sub_setup,
                             model="COSMO-2",  # SR_TMP
+                            add_ts0=False,
                         )
                         * scale_fld_ref
                     )
