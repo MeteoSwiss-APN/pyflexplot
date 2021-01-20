@@ -10,7 +10,7 @@ from .format import format_numbers_range
 from .str import sorted_paths
 
 
-class PathOrganizer:
+class PathsOrganizer:
     """Organize paths that share some characteristics."""
 
     def __init__(self, suffix: str = "", dup_sep: str = ".") -> None:

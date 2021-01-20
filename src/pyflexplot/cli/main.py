@@ -20,7 +20,7 @@ import click
 # First-party
 from srutils.format import ordinal
 from srutils.format import sfmt
-from srutils.paths import PathOrganizer
+from srutils.paths import PathsOrganizer
 from srutils.pdf import MultiPagePDF
 from srutils.pdf import PdfReadError
 from srutils.str import sorted_paths
@@ -395,18 +395,18 @@ def merge_pdf_plots(
         if path.endswith(".pdf"):
             pdf_paths.append(path)
 
-    organizer = PathOrganizer(suffix="pdf", dup_sep=".")
-    grouped_pdf_paths = organizer.group_related(pdf_paths)
+    paths_organizer = PathsOrganizer(suffix="pdf", dup_sep=".")
+    grouped_pdf_paths = paths_organizer.group_related(pdf_paths)
     merged_pages: List[str] = []
     for group in grouped_pdf_paths:
-        merged = f"{dest_dir}/{relpath(organizer.merge(group), start=tmp_dir)}"
+        merged = f"{dest_dir}/{relpath(paths_organizer.merge(group), start=tmp_dir)}"
         if keep_merged and abspath(merged) == abspath(group[0]):
             raise Exception(
                 "input and output files are the same file, which is not allowed for"
                 f" remove_merged=T: '{merged}'"
                 + ("" if merged == group[0] else f" == '{merged[0]}'")
             )
-        log(inf=f"{organizer.format_compact(group)} -> {merged}")
+        log(inf=f"{paths_organizer.format_compact(group)} -> {merged}")
         if not dry_run:
             MultiPagePDF.from_files(group).write(merged)
         for path in group:
