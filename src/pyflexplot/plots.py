@@ -36,6 +36,7 @@ from matplotlib.colors import Colormap
 
 # First-party
 from srutils.datetime import init_datetime
+from srutils.format import format_numbers_range
 from srutils.geo import Degrees
 from srutils.plotting import truncate_cmap
 from words import Word
@@ -67,7 +68,6 @@ from .setup import SetupGroup
 from .utils.exceptions import FieldAllNaNError
 from .utils.formatting import escape_format_keys
 from .utils.formatting import format_level_ranges
-from .utils.formatting import format_range
 from .utils.logging import log
 from .utils.typing import ColorType
 from .words import SYMBOLS
@@ -1053,7 +1053,7 @@ def format_model_info(model_setup: ModelSetup, words: TranslatedWords) -> str:
         model_info = (
             f"{model_name} {words['ensemble']}"
             f" ({len(ens_member_id or [])} {words['member', 'pl']}:"
-            f" {format_range(ens_member_id or [], fmt='02d')})"
+            f" {format_numbers_range(ens_member_id or [], fmt='02d')})"
         )
     if model_info is None:
         raise NotImplementedError(

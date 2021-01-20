@@ -1272,7 +1272,10 @@ class SetupFile:
 
     # pylint: disable=R0914  # too-many-locals
     def read(
-        self, *, override: Optional[Dict[str, Any]] = None, only: Optional[int] = None
+        self,
+        *,
+        override: Optional[Mapping[str, Any]] = None,
+        only: Optional[int] = None,
     ) -> SetupGroup:
         """Read the setup from a text file in TOML format."""
         with open(self.path, "r") as f:
@@ -1311,7 +1314,7 @@ class SetupFile:
     def read_many(
         cls,
         paths: Sequence[str],
-        override: Optional[Dict[str, Any]] = None,
+        override: Optional[Mapping[str, Any]] = None,
         only: Optional[int] = None,
         each_only: Optional[int] = None,
     ) -> SetupGroup:
