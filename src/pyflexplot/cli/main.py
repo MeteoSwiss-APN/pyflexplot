@@ -21,8 +21,8 @@ from PyPDF2 import PdfFileWriter
 from PyPDF2.utils import PdfReadError
 
 # First-party
-from srutils.str import ordinal
-from srutils.str import sfmt
+from srutils.format import ordinal
+from srutils.format import sfmt
 from srutils.str import sorted_paths
 
 # Local

@@ -1,62 +1,63 @@
-"""Test function ``srutils.str.to_varname``."""
+"""Test method ``srutils.str.VariableName.format``."""
 # Third-party
 import pytest  # type: ignore
 
 # First-party
-from srutils.str import to_varname
+from srutils.varname import VariableName
 
 
 class Test_Default:
     """By default, all invalid characters are replaced by underscores."""
 
     def test_unchanged(self):
-        assert to_varname("foo_bar") == "foo_bar"
+        assert VariableName("foo_bar").format() == "foo_bar"
 
     class Test_Spaces:
         """Test spaces."""
 
         def test_single_space(self):
-            assert to_varname("foo bar") == "foo_bar"
+            assert VariableName("foo bar").format() == "foo_bar"
 
         def test_multiple_spaces(self):
-            assert to_varname("foo bar baz") == "foo_bar_baz"
+            assert VariableName("foo bar baz").format() == "foo_bar_baz"
 
         def test_repeated_spaces(self):
-            assert to_varname("foo   bar  baz") == "foo___bar__baz"
+            assert VariableName("foo   bar  baz").format() == "foo___bar__baz"
 
         def test_leading_space(self):
-            assert to_varname(" foo") == "_foo"
+            assert VariableName(" foo").format() == "_foo"
 
         def test_trailing_space(self):
-            assert to_varname("bar ") == "bar_"
+            assert VariableName("bar ").format() == "bar_"
 
     class Test_Dashes:
         """Test dashes."""
 
         def test_single_dash(self):
-            assert to_varname("foo-bar") == "foo_bar"
+            assert VariableName("foo-bar").format() == "foo_bar"
 
         def test_multiple_dashes(self):
-            assert to_varname("-foo--bar-baz---") == "_foo__bar_baz___"
+            assert VariableName("-foo--bar-baz---").format() == "_foo__bar_baz___"
 
     class Test_Numbers:
         """Test numbers."""
 
         def test_leading_number(self):
-            assert to_varname("1foo") == "_foo"
-            assert to_varname(" 1foo") == "_1foo"
+            assert VariableName("1foo").format() == "_foo"
+            assert VariableName(" 1foo").format() == "_1foo"
 
         def test_internal_numbers(self):
-            assert to_varname("foo1bar2baz3") == "foo1bar2baz3"
+            assert VariableName("foo1bar2baz3").format() == "foo1bar2baz3"
 
     class Test_Others:
         """Test others."""
 
         def test_periods(self):
-            assert to_varname("foo. bar.baz.") == "foo__bar_baz_"
+            assert VariableName("foo. bar.baz.").format() == "foo__bar_baz_"
 
         def test_various(self):
-            assert to_varname("#foo@ +bar/-baz 123$") == "_foo___bar__baz_123_"
+            res = VariableName("#foo@ +bar/-baz 123$").format()
+            assert res == "_foo___bar__baz_123_"
 
 
 class Test_FilterInvalid:
@@ -64,14 +65,14 @@ class Test_FilterInvalid:
 
     def test_default_none(self):
         for s in ["foo", "hello world", "1-foo_2-bar@baz66_+"]:
-            assert to_varname(s, filter_invalid=None) == to_varname(s)
+            assert VariableName(s).format(c_filter=None) == VariableName(s).format()
 
     class Test_Success:
         """Successful conversions."""
 
         @staticmethod
         def run(s, f):
-            return to_varname(s, filter_invalid=f)
+            return VariableName(s).format(c_filter=f)
 
         def test_drop_all(self):
             f = lambda c: ""  # noqa:E731
@@ -94,7 +95,7 @@ class Test_FilterInvalid:
         @staticmethod
         def run(E, f):
             with pytest.raises(E):
-                to_varname("1-Hello World! 0", filter_invalid=f)
+                VariableName("1-Hello World! 0").format(c_filter=f)
 
         def test_replacement_none(self):
             self.run(ValueError, lambda c: None)

@@ -1,4 +1,4 @@
-"""Tests for function ``srutils.str.ordinal``."""
+"""Tests for function ``srutils.format.ordinal``."""
 # Standard library
 import dataclasses as dc
 
@@ -6,7 +6,7 @@ import dataclasses as dc
 import pytest
 
 # First-party
-from srutils.str import ordinal
+from srutils.format import ordinal
 
 
 @dc.dataclass

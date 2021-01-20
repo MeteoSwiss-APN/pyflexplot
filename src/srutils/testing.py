@@ -13,8 +13,8 @@ from typing import Sequence
 import numpy as np
 
 # Local
+from .format import sfmt
 from .iter import isiterable
-from .str import sfmt
 
 
 class CheckFailedError(Exception):
@@ -43,7 +43,7 @@ def property_obj(cls, *args, **kwargs):
         ...         return TranslatedWord(en='train', de='Zug')
 
         >>> class C2:
-        ...     w = property_word(en='train', de='Zug')
+        ...     w = property_obj(en='train', de='Zug')
 
     """
     # pylint: disable=W0613  # unused-argument (self)
