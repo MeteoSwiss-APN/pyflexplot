@@ -369,7 +369,7 @@ class Test_SetupCollection_Group:
 
     """
 
-    infile_lst = ["foo.nc", "bar.nc"]
+    outfile_lst = ["foo.png", "bar.pdf"]
     combine_species_lst = [True, False]
     time_lst = [0, -1, (0, 5, 10)]
 
@@ -379,10 +379,10 @@ class Test_SetupCollection_Group:
     deposition_type_lst = ["dry", "wet", ("dry", "wet")]
     default_deposition_type = DEFAULT_SETUP.core.dimensions.deposition_type
 
-    n_infile = len(infile_lst)
+    n_outfile = len(outfile_lst)
     n_combine_species = len(combine_species_lst)
     n_time = len(time_lst)
-    n_base = n_infile * n_combine_species * n_time
+    n_base = n_outfile * n_combine_species * n_time
 
     n_combine_levels = len(combine_levels_lst)
     n_concentration = n_combine_levels
@@ -395,8 +395,8 @@ class Test_SetupCollection_Group:
     def get_setup_dcts(self):
         base_dcts = [
             {
-                "infile": infile,
-                "outfile": infile.replace(".nc", ".png"),
+                "infile": "foo.nc",
+                "outfile": outfile,
                 "model": {
                     "name": "COSMO-1",
                 },
@@ -405,7 +405,7 @@ class Test_SetupCollection_Group:
                     "dimensions": {"species_id": [1, 2], "time": time},
                 },
             }
-            for infile in self.infile_lst
+            for outfile in self.outfile_lst
             for combine_species in self.combine_species_lst
             for time in self.time_lst
         ]
@@ -451,9 +451,9 @@ class Test_SetupCollection_Group:
         """One regular param, passed as a string."""
         setups = self.get_setups()
 
-        grouped = setups.group("infile")
-        assert len(grouped) == self.n_infile
-        assert set(grouped) == set(self.infile_lst)
+        grouped = setups.group("outfile")
+        assert len(grouped) == self.n_outfile
+        assert set(grouped) == set(self.outfile_lst)
 
         grouped = setups.group("combine_species")
         assert len(grouped) == self.n_combine_species
@@ -480,9 +480,9 @@ class Test_SetupCollection_Group:
         """One regular param, passed as a sequence."""
         setups = self.get_setups()
 
-        grouped = setups.group(["infile"])
-        assert len(grouped) == self.n_infile
-        assert set(grouped) == set(tuples(self.infile_lst))
+        grouped = setups.group(["outfile"])
+        assert len(grouped) == self.n_outfile
+        assert set(grouped) == set(tuples(self.outfile_lst))
 
         grouped = setups.group(["combine_species"])
         assert len(grouped) == self.n_combine_species
@@ -509,9 +509,9 @@ class Test_SetupCollection_Group:
         """Two regular params."""
         setups = self.get_setups()
 
-        grouped = setups.group(["infile", "combine_species"])
-        assert len(grouped) == self.n_infile * self.n_combine_species
-        assert set(grouped) == set(product(self.infile_lst, self.combine_species_lst))
+        grouped = setups.group(["outfile", "combine_species"])
+        assert len(grouped) == self.n_outfile * self.n_combine_species
+        assert set(grouped) == set(product(self.outfile_lst, self.combine_species_lst))
 
         grouped = setups.group(["dimensions.time", "combine_species"])
         assert len(grouped) == self.n_time * self.n_combine_species
@@ -521,9 +521,9 @@ class Test_SetupCollection_Group:
         """Two params, among them special params."""
         setups = self.get_setups()
 
-        grouped = setups.group(["infile", "combine_levels"])
-        assert len(grouped) == self.n_infile * self.n_combine_species
-        assert set(grouped) == set(product(self.infile_lst, self.combine_levels_lst))
+        grouped = setups.group(["outfile", "combine_levels"])
+        assert len(grouped) == self.n_outfile * self.n_combine_species
+        assert set(grouped) == set(product(self.outfile_lst, self.combine_levels_lst))
 
         grouped = setups.group(["dimensions.time", "dimensions.deposition_type"])
         assert len(grouped) == self.n_time * (self.n_deposition_type + 1)
@@ -549,18 +549,18 @@ class Test_SetupCollection_Group:
         """Three regular params."""
         setups = self.get_setups()
 
-        grouped = setups.group(["infile", "combine_species", "dimensions.time"])
-        assert len(grouped) == self.n_infile * self.n_combine_species * self.n_time
-        sol = set(product(self.infile_lst, self.combine_species_lst, self.time_lst))
+        grouped = setups.group(["outfile", "combine_species", "dimensions.time"])
+        assert len(grouped) == self.n_outfile * self.n_combine_species * self.n_time
+        sol = set(product(self.outfile_lst, self.combine_species_lst, self.time_lst))
         assert set(grouped) == sol
 
     def test_three_special(self):
         """Three params, among them special params."""
         setups = self.get_setups()
 
-        grouped = setups.group(["infile", "dimensions.time", "combine_levels"])
-        assert len(grouped) == self.n_infile * self.n_time * self.n_combine_levels
-        sol = set(product(self.infile_lst, self.time_lst, self.combine_species_lst))
+        grouped = setups.group(["outfile", "dimensions.time", "combine_levels"])
+        assert len(grouped) == self.n_outfile * self.n_time * self.n_combine_levels
+        sol = set(product(self.outfile_lst, self.time_lst, self.combine_species_lst))
         assert set(grouped) == sol
 
         grouped = setups.group(
@@ -582,17 +582,17 @@ class Test_SetupCollection_Group:
         setups = self.get_setups()
 
         grouped = setups.group(
-            ["infile", "dimensions.deposition_type", "combine_levels"]
+            ["outfile", "dimensions.deposition_type", "combine_levels"]
         )
-        sol = self.n_infile * (self.n_combine_levels + self.n_deposition_type)
+        sol = self.n_outfile * (self.n_combine_levels + self.n_deposition_type)
         assert len(grouped) == sol
         exclusive_combos = list(
             product([self.default_deposition_type], self.combine_levels_lst)
         ) + list(product(self.deposition_type_lst, [self.default_combine_levels]))
         sol = set(
             [
-                (infile, combine_levels, deposition_type)
-                for infile in self.infile_lst
+                (outfile, combine_levels, deposition_type)
+                for outfile in self.outfile_lst
                 for (combine_levels, deposition_type) in exclusive_combos
             ]
         )
