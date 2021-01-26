@@ -93,17 +93,16 @@ def read_fields(
             used outside of tests.
 
     """
-    infile = _override_infile or setup_group.infile
-    log(dbg=f"reading fields from {infile}")
+    raw_infile = _override_infile or setup_group.infile
+    ens_member_ids = setup_group.ens_member_ids
+    infiles = prepare_paths(raw_infile, ens_member_ids)
+
+    log(dbg=f"reading fields from {len(infiles)} derived from {raw_infile}")
 
     if not isinstance(config, InputConfig):
         config = InputConfig(**(config or {}))
 
-    all_ens_member_ids: Optional[Sequence[int]] = (
-        setup_group.collect("model.ens_member_id", flatten=True, exclude_nones=True)
-        or None
-    )
-    files = InputFileEnsemble(infile, config, all_ens_member_ids)
+    files = InputFileEnsemble(infiles, config)
 
     first_path = next(iter(files.paths))
     with nc4.Dataset(first_path) as fi:
@@ -126,13 +125,7 @@ def read_fields(
 
     field_groups: List[FieldGroup] = []
     for setups_for_same_plot_over_time in setups_for_plots_over_time:
-        ens_mem_ids = setups_for_same_plot_over_time.collect_equal(
-            "model.ens_member_id"
-        )
-        # breakpoint()
-        field_groups_i = files.read_fields_over_time(
-            setups_for_same_plot_over_time, ens_mem_ids
-        )
+        field_groups_i = files.read_fields_over_time(setups_for_same_plot_over_time)
         if only and len(field_groups) + len(field_groups_i) > only:
             log(dbg=f"[only:{only}] skip reading remaining fields after {only}")
             field_groups.extend(field_groups_i[: only - len(field_groups)])
@@ -141,7 +134,12 @@ def read_fields(
 
     n_plt = len(field_groups)
     n_tot = sum([len(field_group) for field_group in field_groups])
-    log(dbg=f"done reading {infile}: read {n_tot} fields for {n_plt} plots")
+    log(
+        dbg=(
+            f"done reading {len(infiles)} infiles:"
+            f" read {n_tot} fields for {n_plt} plots"
+        )
+    )
     return field_groups
 
 
@@ -154,10 +152,17 @@ def prepare_paths(path: str, ens_member_ids: Optional[Sequence[int]]) -> List[st
                 f"ensemble member ids have been passed: {path}"
             )
         assert ens_member_ids is not None  # mypy
-        return [path.format(ens_member=id_) for id_ in ens_member_ids]
+        paths = [path.format(ens_member=id_) for id_ in ens_member_ids]
     elif not ens_member_ids:
-        return [path]
-    raise ValueError(f"input file path missing format key: {path}")
+        paths = [path]
+    else:
+        raise ValueError(f"input file path missing format key: {path}")
+    if ens_member_ids and len(ens_member_ids) != len(paths):
+        raise ValueError(
+            f"must pass same number of ens_member_ids ({len(ens_member_ids)}"
+            f" and paths ({len(paths)}), or omit ens_member_ids (single path)"
+        )
+    return paths
 
 
 def group_setups_for_plots(setups: SetupGroup) -> List[SetupGroup]:
@@ -222,37 +227,23 @@ class InputFileEnsemble:
 
     def __init__(
         self,
-        path_fmt: str,
+        paths: Sequence[str],
         config: InputConfig,
-        ens_member_ids: Optional[Sequence[int]] = None,
     ):
         """Create an instance of ``InputFileEnsemble``.
 
         Args:
-            path_fmt: File path; must contain format key '{ens_member[:0?d]}'
-                if ensemble member ids are passed, in which case a separate path
-                is derived for each member.
+            paths: File paths (one for deterministic, multiple for ensemble).
 
             config: Input configuration.
 
-            ens_member_ids (optional): Ensemble member ids.
-
         """
-        self.path_fmt: str = path_fmt
+        self.paths: List[str] = list(paths)
         self.config: InputConfig = config
-        self.ens_member_ids: Optional[Sequence[int]] = ens_member_ids
-
-        self.paths: List[str] = prepare_paths(path_fmt, ens_member_ids)
 
         # SR_TMP TODO Fix the cache!!!
         if self.config.cache_on:
             raise NotImplementedError("input file cache")
-
-        if self.ens_member_ids and len(self.ens_member_ids) != len(self.paths):
-            raise ValueError(
-                f"must pass same number of ens_member_ids ({len(self.ens_member_ids)}"
-                f" and paths ({len(self.paths)}), or omit ens_member_ids (single path)"
-            )
 
         self.fixer: Optional["FlexPartDataFixer"] = None
         if self.config.cls_fixer:
@@ -267,11 +258,7 @@ class InputFileEnsemble:
         self.time: np.ndarray
 
     # pylint: disable=R0914  # too-many-locals
-    def read_fields_over_time(
-        self,
-        setups: SetupGroup,
-        ens_member_ids: Optional[Sequence[int]] = None,
-    ) -> List[FieldGroup]:
+    def read_fields_over_time(self, setups: SetupGroup) -> List[FieldGroup]:
         """Read fields for the same plot at multiple time steps.
 
         Return a list of lists of fields, whereby:
@@ -297,16 +284,9 @@ class InputFileEnsemble:
         self.fld_time_mem = np.full(
             self._get_shape_mem_time(model, raw_dimensions), np.nan, np.float32
         )
-        for idx_mem, (ens_member_id, file_path) in enumerate(
-            zip((self.ens_member_ids or [None]), self.paths)  # type: ignore
-        ):
-            if ens_member_ids is not None and ens_member_id not in ens_member_ids:
-                continue
-            setups_mem = setups.derive({"model": {"ens_member_id": ens_member_id}})
-            timeless_setups_mem = setups_mem.derive(
-                {"core": {"dimensions": {"time": None}}}
-            )
-            self._read_data(file_path, idx_mem, timeless_setups_mem)
+        for idx_mem, file_path in enumerate(self.paths):
+            timeless_setups = setups.derive({"core": {"dimensions": {"time": None}}})
+            self._read_data(file_path, idx_mem, timeless_setups)
 
         # Compute single field from all ensemble members
         fld_time: np.ndarray = self._reduce_ensemble(setups, ts_hrs)
@@ -330,13 +310,11 @@ class InputFileEnsemble:
             group_fields = [field]
             # SR_TMP >
             group_attrs = {
-                "ens_member_ids": self.ens_member_ids,
-                "path": self.path_fmt,
+                "raw_path": setups.infile,
+                "paths": self.paths,
+                "ens_member_ids": setups.ens_member_ids,
             }
-            field_group = FieldGroup(
-                group_fields,
-                attrs=group_attrs,
-            )
+            field_group = FieldGroup(group_fields, attrs=group_attrs)
             field_groups.append(field_group)
 
         return field_groups
@@ -431,7 +409,7 @@ class InputFileEnsemble:
         nlat = raw_dimensions[dim_names["lat"]]["size"]
         nlon = raw_dimensions[dim_names["lon"]]["size"]
         nts = raw_dimensions[dim_names["time"]]["size"]
-        n_mem = len(self.ens_member_ids) if self.ens_member_ids else 1
+        n_mem = len(self.paths)
         self.lat = np.full((nlat,), np.nan)
         self.lon = np.full((nlon,), np.nan)
         return (n_mem, nts, nlat, nlon)
@@ -477,7 +455,7 @@ class InputFileEnsemble:
         """Reduce the ensemble to a single field (time, lat, lon)."""
         fld_time_mem = self.fld_time_mem
 
-        if not self.ens_member_ids or self.config.dry_run:
+        if len(self.paths) == 1 or self.config.dry_run:
             return fld_time_mem[0]
 
         ens_param_mem_min = var_setups.collect_equal("ens_param_mem_min")

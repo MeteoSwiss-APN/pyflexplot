@@ -291,11 +291,12 @@ class FieldTimeProperties:
 class FieldGroupAttrs:
     """Attributes of a ``FieldGroup`` instance."""
 
-    path: str
-    ens_member_ids: Optional[List[int]]
+    raw_path: str
+    paths: Sequence[str]
+    ens_member_ids: Optional[Sequence[int]]
 
     def format_path(self) -> str:
-        return format_ens_file_path(self.path, self.ens_member_ids)
+        return format_ens_file_path(self.raw_path, self.ens_member_ids)
 
 
 class FieldGroup:
