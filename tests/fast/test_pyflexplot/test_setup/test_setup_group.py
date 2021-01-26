@@ -4,6 +4,7 @@ import pytest
 
 # First-party
 from pyflexplot.setup import Setup
+from pyflexplot.setup import SetupFile
 from pyflexplot.setup import SetupGroup
 from srutils.testing import check_is_sub_element
 
@@ -25,7 +26,7 @@ class TestCopy:
 class Test_FromRawParams:
     def test_empty(self):
         with pytest.raises(ValueError):
-            SetupGroup.from_raw_params([])
+            SetupGroup.create([])
 
     def test_one_variable(self):
         raw_params = {
@@ -35,7 +36,7 @@ class Test_FromRawParams:
             "species_id": [1, 2],
             "combine_species": False,
         }
-        setups = SetupGroup.from_raw_params(raw_params)
+        setups = SetupGroup.create(SetupFile.prepare_raw_params(raw_params))
         res = setups.dicts()
         sol = [
             {

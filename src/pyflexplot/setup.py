@@ -36,6 +36,7 @@ from srutils.dict import decompress_nested_dict
 from srutils.dict import merge_dicts
 from srutils.dict import nested_dict_resolve_wildcards
 from srutils.exceptions import InvalidParameterNameError
+from srutils.format import sfmt
 from srutils.str import join_multilines
 
 # Local
@@ -878,6 +879,23 @@ class SetupGroup:
             )
         self._setups: List[Setup] = list(setups)
 
+        # Collect shared setup params
+        self.infile: str
+        self.ens_member_ids: Optional[Tuple[int, ...]]
+        for attr, param in [
+            ("infile", "infile"),
+            ("ens_member_ids", "model.ens_member_id"),
+        ]:
+            try:
+                value = self.collect_equal(param)
+            except UnequalSetupParamValuesError as e:
+                raise ValueError(
+                    f"value of '{param}' differs between {len(self)} setups: "
+                    + ", ".join(map(sfmt, self.collect(param)))
+                ) from e
+            else:
+                setattr(self, attr, value)
+
     def compress(self) -> Setup:
         return Setup.compress(self)
 
@@ -1117,6 +1135,9 @@ class SetupGroup:
     def copy(self) -> "SetupGroup":
         return type(self)([setup.copy() for setup in self])
 
+    def dicts(self) -> List[Dict[str, Any]]:
+        return [setup.dict() for setup in self]
+
     # pylint: disable=R0912  # too-many-branches (>12)
     # pylint: disable=R0915  # too-many-statements
     def __repr__(self) -> str:
@@ -1226,9 +1247,6 @@ class SetupGroup:
             ]
         )
 
-    def dicts(self) -> List[Dict[str, Any]]:
-        return [setup.dict() for setup in self]
-
     @classmethod
     def create(
         cls, setups: Collection[Union[Setup, Mapping[str, Any]]]
@@ -1248,9 +1266,94 @@ class SetupGroup:
         return cls(setup_lst)
 
     @classmethod
-    def from_raw_params(
-        cls, raw_params: Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]
-    ) -> "SetupGroup":
+    def merge(cls, setups_lst: Sequence["SetupGroup"]) -> "SetupGroup":
+        return cls([setup for setups in setups_lst for setup in setups])
+
+
+class SetupFile:
+    """Setup file to be read from and/or written to disk."""
+
+    def __init__(self, path: Union[Path, str]) -> None:
+        """Create an instance of ``SetupFile``."""
+        self.path: Path = Path(path)
+
+    # pylint: disable=R0914  # too-many-locals
+    def read(
+        self,
+        *,
+        override: Optional[Mapping[str, Any]] = None,
+        only: Optional[int] = None,
+    ) -> List[Setup]:
+        """Read the setup from a text file in TOML format."""
+        with open(self.path, "r") as f:
+            try:
+                raw_data = toml.load(f)
+            except Exception as e:
+                raise Exception(
+                    f"error parsing TOML file {self.path} ({type(e).__name__}: {e})"
+                ) from e
+        if not raw_data:
+            raise ValueError("empty setup file", self.path)
+        semi_raw_data = nested_dict_resolve_wildcards(
+            raw_data, double_criterion=lambda key: key.endswith("+")
+        )
+        raw_params_lst = decompress_nested_dict(
+            semi_raw_data, branch_end_criterion=lambda key: not key.startswith("_")
+        )
+        if override is not None:
+            raw_params_lst, old_raw_params_lst = [], raw_params_lst
+            for old_raw_params in old_raw_params_lst:
+                raw_params = {**old_raw_params, **override}
+                if raw_params not in raw_params_lst:
+                    raw_params_lst.append(raw_params)
+        setups = [
+            Setup.create(params) for params in self.prepare_raw_params(raw_params_lst)
+        ]
+        if only is not None:
+            if only < 0:
+                raise ValueError(f"only must not be negative ({only})")
+            setups = setups[:only]
+        return setups
+
+    def write(self, *args, **kwargs) -> None:
+        """Write the setup to a text file in TOML format."""
+        raise NotImplementedError(f"{type(self).__name__}.write")
+
+    @classmethod
+    def read_many(
+        cls,
+        paths: Sequence[Union[Path, str]],
+        override: Optional[Mapping[str, Any]] = None,
+        only: Optional[int] = None,
+        each_only: Optional[int] = None,
+    ) -> List[SetupGroup]:
+        if only is not None:
+            if only < 0:
+                raise ValueError("only must not be negative", only)
+            each_only = only
+        elif each_only is not None:
+            if each_only < 0:
+                raise ValueError("each_only must not be negative", each_only)
+        KeyT = Tuple[str, Optional[Tuple[int, ...]]]
+        setups_by_infiles: Dict[KeyT, List[Setup]] = {}
+        n_setups = 0
+        for path in paths:
+            for setup in cls(path).read(override=override, only=each_only):
+                if only is not None and n_setups >= only:
+                    break
+                key: KeyT = (setup.infile, setup.model.ens_member_id)
+                if key not in setups_by_infiles:
+                    setups_by_infiles[key] = []
+                if setup not in setups_by_infiles[key]:
+                    setups_by_infiles[key].append(setup)
+                    n_setups += 1
+        return [SetupGroup(setup_lst) for setup_lst in setups_by_infiles.values()]
+
+    # pylint: disable=R0912  # too-many-branches (>12)
+    @staticmethod
+    def prepare_raw_params(
+        raw_params: Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]
+    ) -> List[Dict[str, Any]]:
         raw_params_lst: List[Mapping[str, Any]]
         if isinstance(raw_params, Mapping):
             raw_params_lst = [raw_params]
@@ -1279,83 +1382,7 @@ class SetupGroup:
                 else:
                     params[param] = value
             params_lst.append(params)
-        return cls.create(params_lst)
-
-    @classmethod
-    def merge(cls, setups_lst: Sequence["SetupGroup"]) -> "SetupGroup":
-        return cls([setup for setups in setups_lst for setup in setups])
-
-
-class SetupFile:
-    """Setup file to be read from and/or written to disk."""
-
-    def __init__(self, path: Union[Path, str]) -> None:
-        """Create an instance of ``SetupFile``."""
-        self.path: Path = Path(path)
-
-    # pylint: disable=R0914  # too-many-locals
-    def read(
-        self,
-        *,
-        override: Optional[Mapping[str, Any]] = None,
-        only: Optional[int] = None,
-    ) -> SetupGroup:
-        """Read the setup from a text file in TOML format."""
-        with open(self.path, "r") as f:
-            try:
-                raw_data = toml.load(f)
-            except Exception as e:
-                raise Exception(
-                    f"error parsing TOML file {self.path} ({type(e).__name__}: {e})"
-                ) from e
-        if not raw_data:
-            raise ValueError("empty setup file", self.path)
-        semi_raw_data = nested_dict_resolve_wildcards(
-            raw_data, double_criterion=lambda key: key.endswith("+")
-        )
-        raw_params_lst = decompress_nested_dict(
-            semi_raw_data, branch_end_criterion=lambda key: not key.startswith("_")
-        )
-        if override is not None:
-            raw_params_lst, old_raw_params_lst = [], raw_params_lst
-            for old_raw_params in old_raw_params_lst:
-                raw_params = {**old_raw_params, **override}
-                if raw_params not in raw_params_lst:
-                    raw_params_lst.append(raw_params)
-        setups = SetupGroup.from_raw_params(raw_params_lst)
-        if only is not None:
-            if only < 0:
-                raise ValueError(f"only must not be negative ({only})")
-            setups = SetupGroup(list(setups)[:only])
-        return setups
-
-    def write(self, *args, **kwargs) -> None:
-        """Write the setup to a text file in TOML format."""
-        raise NotImplementedError(f"{type(self).__name__}.write")
-
-    @classmethod
-    def read_many(
-        cls,
-        paths: Sequence[Union[Path, str]],
-        override: Optional[Mapping[str, Any]] = None,
-        only: Optional[int] = None,
-        each_only: Optional[int] = None,
-    ) -> SetupGroup:
-        if only is not None:
-            if only < 0:
-                raise ValueError("only must not be negative", only)
-            each_only = only
-        elif each_only is not None:
-            if each_only < 0:
-                raise ValueError("each_only must not be negative", each_only)
-        setup_lst: List[Setup] = []
-        for path in paths:
-            for setup in cls(path).read(override=override, only=each_only):
-                if only is not None and len(setup_lst) >= only:
-                    break
-                if setup not in setup_lst:
-                    setup_lst.append(setup)
-        return SetupGroup(setup_lst)
+        return params_lst
 
 
 def setup_repr(obj: Union["CoreSetup", "Setup"]) -> str:

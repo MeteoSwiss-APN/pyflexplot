@@ -87,6 +87,7 @@ class TestReadFieldEnsemble_Single:
             self.setup_params_shared,
             setup_params,
             {
+                "infile": datafile_fmt,
                 "model": {
                     "ens_member_id": self.ens_member_ids,
                 },
@@ -101,9 +102,7 @@ class TestReadFieldEnsemble_Single:
         setups = SetupGroup([Setup.create(setup_dct)])
 
         # Read input fields
-        field_groups = read_fields(
-            datafile_fmt, setups, {"add_ts0": True, "cache_on": cache_on}
-        )
+        field_groups = read_fields(setups, {"add_ts0": True, "cache_on": cache_on})
         assert len(field_groups) == 1
         assert len(field_groups[0]) == 1
         fld = next(iter(field_groups[0])).fld
@@ -234,9 +233,7 @@ class TestReadFieldEnsemble_Multiple:
         setups = SetupGroup(setup_lst)
 
         # Read input fields
-        field_groups = read_fields(
-            datafile_fmt, setups, {"add_ts0": False, "cache_on": cache_on}
-        )
+        field_groups = read_fields(setups, {"add_ts0": False, "cache_on": cache_on})
         fld_arr = np.array(
             [field.fld for field_group in field_groups for field in field_group]
         )
@@ -288,6 +285,8 @@ class TestReadFieldEnsemble_Multiple:
         self, datadir, ens_var, *, cache_on=False, scale_fld_ref=1.0  # noqa:F811
     ):
         """Read ensemble concentration field."""
+        datafile_fmt = self.datafile_fmt(datadir)
+
         fct_reduce_mem = {
             "mean": lambda arr: np.nanmean(arr, axis=0),
             "maximum": lambda arr: np.nanmax(arr, axis=0),
@@ -297,6 +296,7 @@ class TestReadFieldEnsemble_Multiple:
         }[ens_var]
 
         setup_params = {
+            "infile": datafile_fmt,
             "core": {
                 "dimensions": {"level": 1},
                 "input_variable": "concentration",
@@ -306,7 +306,7 @@ class TestReadFieldEnsemble_Multiple:
             setup_params["core"]["ens_param_thr"] = self.ens_prob_thr_concentration
 
         self.run(
-            datafile_fmt=self.datafile_fmt(datadir),
+            datafile_fmt=datafile_fmt,
             var_names_ref=[f"spec{self.species_id:03d}"],
             setup_params=setup_params,
             ens_var=ens_var,
@@ -331,17 +331,19 @@ class TestReadFieldEnsemble_Multiple:
 
     def run_deposition_tot(self, datadir, ens_var, cache_on=False):  # noqa:F811
         """Read ensemble total deposition field."""
+        datafile_fmt = self.datafile_fmt(datadir)
         fct_reduce_mem = {
             "mean": lambda arr: np.nanmean(arr, axis=0),
             "maximum": lambda arr: np.nanmax(arr, axis=0),
         }[ens_var]
         self.run(
-            datafile_fmt=self.datafile_fmt(datadir),
+            datafile_fmt=datafile_fmt,
             var_names_ref=[
                 f"WD_spec{self.species_id:03d}",
                 f"DD_spec{self.species_id:03d}",
             ],
             setup_params={
+                "infile": datafile_fmt,
                 "core": {
                     "input_variable": "deposition",
                     "combine_deposition_types": True,

@@ -78,7 +78,7 @@ def main(
         log(dbg="using existing temporary directory '{tmp_dir}'")
 
     preset_setup_file_paths = ctx.obj.get("preset_setup_file_paths", [])
-    setups_by_infile = prepare_setups(
+    setup_groups = prepare_setups(
         setup_file_paths, preset_setup_file_paths, input_setup_params, suffixes, only
     )
 
@@ -87,10 +87,8 @@ def main(
     # Create plots input file(s) by input file(s)
     log(vbs="read fields and create plots")
     all_out_file_paths: List[str] = []
-    iter_state = SharedIterationState(n_input_files=len(setups_by_infile))
-    for iter_state.i_input_file, (in_file_path, sub_setups) in enumerate(
-        setups_by_infile.items(), start=1
-    ):
+    iter_state = SharedIterationState(n_input_files=len(setup_groups))
+    for iter_state.i_input_file, setup_group in enumerate(setup_groups, start=1):
         if only and iter_state.n_field_groups_curr >= only:
             log(
                 dbg=(
@@ -102,12 +100,11 @@ def main(
         log(
             vbs=(
                 f"[{iter_state.i_input_file + 1}/{iter_state.n_input_files}]"
-                f" read {in_file_path}"
+                f" read {setup_group.infile}"
             )
         )
         field_groups = read_fields(
-            in_file_path,
-            sub_setups,
+            setup_group,
             config={
                 "add_ts0": True,
                 "missing_ok": True,
@@ -137,7 +134,7 @@ def main(
         else:
             for args in iter_args:
                 fct(*args)
-        log(dbg=f"done processing {in_file_path}")
+        log(dbg=f"done processing {setup_group.infile}")
         n_input_files_todo = iter_state.n_input_files - iter_state.i_input_file
         if only and iter_state.n_field_groups_curr >= only and n_input_files_todo:
             log(vbs=f"[only:{only}] skip remaining {n_input_files_todo} input files")
@@ -209,38 +206,40 @@ def prepare_setups(
     input_setup_params: Mapping[str, Any],
     suffixes: Optional[Union[str, Collection[str]]],
     only: Optional[int],
-) -> Dict[str, SetupGroup]:
+) -> List[SetupGroup]:
 
     # Extend preset setup file paths
     setup_file_paths = list(setup_file_paths)
 
     # Read setups from infile(s) and/or preset(s)
-    setups = read_setups(setup_file_paths, preset_setup_file_paths, input_setup_params)
+    setup_groups = read_setup_groups(
+        setup_file_paths, preset_setup_file_paths, input_setup_params
+    )
 
     if suffixes:
-        setups.override_output_suffixes(suffixes)
+        # Replace outfile suffixes by one or more; may increase oufile number
+        for setup_group in setup_groups:
+            setup_group.override_output_suffixes(suffixes)
 
-    # Separate setups with different outfiles
-    setups = setups.compress_partially("outfile")
+    # Combine setups that only differ in outfile
+    setup_groups = [
+        setup_group.compress_partially("outfile") for setup_group in setup_groups
+    ]
 
-    # Group setups by input file(s)
-    log(dbg=f"grouping {len(setups)} setups by infile")
-    setups_by_infile = setups.group("infile")
     if only:
+        # Restrict the total number of setup objects in the setup groups
         # Note that the number of plots is likely still higher than only because
         # each setup can define many plots, but it's a first elimination step
-        setups_by_infile = restrict_grouped_setups(
-            setups_by_infile, only, grouped_by="infile"
-        )
+        setup_groups = restrict_grouped_setups(setup_groups, only, grouped_by="infile")
 
-    return setups_by_infile
+    return setup_groups
 
 
-def read_setups(
+def read_setup_groups(
     setup_file_paths: Sequence[Union[Path, str]],
     preset_setup_file_paths: Sequence[Union[Path, str]],
     input_setup_params: Mapping[str, Any],
-) -> SetupGroup:
+) -> List[SetupGroup]:
     log(
         vbs=(
             f"reading setups from {len(preset_setup_file_paths)} preset and"
@@ -252,29 +251,29 @@ def read_setups(
         if path not in setup_file_paths:
             setup_file_paths.append(path)
     if not setup_file_paths:
-        return SetupGroup.from_raw_params(input_setup_params)
+        return [SetupGroup.create(SetupFile.prepare_raw_params(input_setup_params))]
     return SetupFile.read_many(setup_file_paths, override=input_setup_params)
 
 
 def restrict_grouped_setups(
-    grouped_setups: Mapping[str, SetupGroup], only: int, *, grouped_by: str = "group"
-) -> Dict[str, SetupGroup]:
-    """Restrict total number of ``Setup``s among grouped ``SetupGroup``s."""
-    old_grouped_setups = copy(grouped_setups)
-    new_grouped_setups = {}
-    n_setups_old = sum([len(setups) for setups in old_grouped_setups.values()])
+    setup_groups: Sequence[SetupGroup], only: int, *, grouped_by: str = "group"
+) -> List[SetupGroup]:
+    """Restrict total number of ``Setup``s in ``SetupGroup``s."""
+    old_setup_groups = copy(setup_groups)
+    new_setup_groups: List[SetupGroup] = []
+    n_setups_old = sum(map(len, old_setup_groups))
     n_setups_new = 0
-    for group_name, setups in old_grouped_setups.items():
-        if n_setups_new + len(setups) > only:
-            setups = SetupGroup(list(setups)[: only - n_setups_new])
-            new_grouped_setups[group_name] = setups
-            n_setups_new += len(setups)
+    for setup_group in old_setup_groups:
+        if n_setups_new + len(setup_group) > only:
+            setup_group = SetupGroup(list(setup_group)[: only - n_setups_new])
+            new_setup_groups.append(setup_group)
+            n_setups_new += len(setup_group)
             assert n_setups_new == only
             break
-        n_setups_new += len(setups)
-        new_grouped_setups[group_name] = setups
-    n_groups_old = len(old_grouped_setups)
-    n_groups_new = len(new_grouped_setups)
+        n_setups_new += len(setup_group)
+        new_setup_groups.append(setup_group)
+    n_groups_old = len(old_setup_groups)
+    n_groups_new = len(new_setup_groups)
     if n_setups_new < n_setups_old:
         log(
             dbg=(
@@ -283,7 +282,7 @@ def restrict_grouped_setups(
                 f"/{n_groups_old} {grouped_by}s"
             )
         )
-    return new_grouped_setups
+    return new_setup_groups
 
 
 def get_pid() -> int:

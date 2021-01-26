@@ -230,13 +230,12 @@ def test_multiple_override(tmp_path):
         domain = "full"
         lang = "de"
 
-        [_base._dep.wet]
+        [_base._dep._wet.en]
         deposition_type = "wet"
-
-        [_base._dep.wet.en]
         lang = "en"
 
-        [_base._dep.wet.de]
+        [_base._dep._wet.de]
+        deposition_type = "wet"
         lang = "de"
         """
     override = {"lang": "de"}
@@ -248,8 +247,11 @@ def test_multiple_override(tmp_path):
             "core": {
                 "input_variable": "deposition",
                 "combine_deposition_types": True,
-                "dimensions": {"level": None, "deposition_type": ("dry", "wet")},
                 "lang": "de",
+                "dimensions": {
+                    "level": None,
+                    "deposition_type": ("dry", "wet"),
+                },
             }
         },
     )
@@ -258,17 +260,35 @@ def test_multiple_override(tmp_path):
             "core": {
                 "input_variable": "concentration",
                 "combine_deposition_types": False,
-                "dimensions": {"deposition_type": None},
+                "dimensions": {
+                    "deposition_type": None,
+                },
             }
         },
-        {"core": {"domain": "ch", "lang": "de"}},
-        {"core": {"domain": "full", "lang": "de"}},
-        {"core": {"dimensions": {"deposition_type": "wet"}}},
-        {"core": {"lang": "de", "dimensions": {"deposition_type": "wet"}}},
+        {
+            "core": {
+                "domain": "ch",
+                "lang": "de",
+            },
+        },
+        {
+            "core": {
+                "domain": "full",
+                "lang": "de",
+            },
+        },
+        {
+            "core": {
+                "dimensions": {
+                    "deposition_type": "wet",
+                },
+            },
+        },
     ]
     sol = [merge_dicts(sol_base, sol_spc) for sol_spc in sol_specific]
-    setups = SetupFile(tmp_setup_file(tmp_path, content)).read(override=override)
-    assert setups == sol
+    res = SetupFile(tmp_setup_file(tmp_path, content)).read(override=override)
+    assert len(res) == len(sol)
+    assert res == sol
 
 
 def test_semi_realcase(tmp_path):
@@ -552,7 +572,7 @@ def test_realcase_opr_like(tmp_path):
         },
     ]
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    dcts_res = setups.dicts()
+    dcts_res = [setup.dict() for setup in setups]
     assert len(dcts_res) == len(dcts_sol)
     assert [d["outfile"] for d in dcts_res] == [d["outfile"] for d in dcts_sol]
     for dct_res, dct_sol in zip(dcts_res, dcts_sol):
@@ -664,7 +684,7 @@ def test_double_wildcard_equal_depth(tmp_path):
         for lang in ["de", "en"]
     ]
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert setups.dicts() == sol
+    assert setups == sol
 
 
 def test_double_wildcard_variable_depth(tmp_path):
@@ -720,8 +740,7 @@ def test_double_wildcard_variable_depth(tmp_path):
         for domain in ["ch", "full"]
         for lang in ["de", "en"]
     ]
-    setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    res = setups.dicts()
+    res = SetupFile(tmp_setup_file(tmp_path, content)).read()
     assert res == sol
 
 
@@ -773,8 +792,7 @@ def test_combine_wildcards(tmp_path):
         for ens_variable in ["mean", "maximum"]
         for lang in ["de", "en"]
     ]
-    setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    res = setups.dicts()
+    res = SetupFile(tmp_setup_file(tmp_path, content)).read()
     assert len(res) == len(sol)
     assert res == sol
 
@@ -794,8 +812,7 @@ class Test_IndividualParams_SingleOrMultipleValues:
             species_id = [1, 2, 3]
 
             """
-        setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-        res = setups.dicts()
+        res = SetupFile(tmp_setup_file(tmp_path, content)).read()
         base = {
             "infile": "foo.nc",
             "outfile": "bar.png",
@@ -840,7 +857,7 @@ class Test_IndividualParams_SingleOrMultipleValues:
             )
             for value in [0, (1, 2)]
         ]
-        assert setups.dicts() == sol
+        assert setups == sol
 
     def test_level_none(self, tmp_path):
         content = """\
@@ -868,7 +885,7 @@ class Test_IndividualParams_SingleOrMultipleValues:
                 },
             )
         ]
-        assert setups.dicts() == sol
+        assert setups == sol
 
 
 @pytest.mark.skip("not quite ready yet")
@@ -885,7 +902,7 @@ def test_multipanel_param_ens_variable(tmp_path):
         ens_variable = ["minimum", "maximum", "mean", "median"]
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    res = setups.dicts()
+    res = setups
     # SR_TODO Figure out what the solution here should be
     sol = []
     # sol = [

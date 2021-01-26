@@ -281,7 +281,7 @@ def test_single(datadir, config):  # noqa:F811
     setups = SetupGroup([config.setup])
 
     # Read input field
-    field_groups = read_fields(datafile, setups, {"add_ts0": True})
+    field_groups = read_fields(setups, {"add_ts0": True}, _override_infile=datafile)
     assert len(field_groups) == 1
     assert len(field_groups[0]) == 1
     fld = next(iter(field_groups[0])).fld
@@ -500,7 +500,9 @@ def test_multiple(datadir, config):  # noqa:F811
 
         # Read input fields
         var_setups_dicts_pre = var_setups.dicts()
-        field_groups = read_fields(datafile, var_setups, {"add_ts0": False})
+        field_groups = read_fields(
+            var_setups, {"add_ts0": False}, _override_infile=datafile
+        )
         assert var_setups.dicts() == var_setups_dicts_pre
         assert len(field_groups) == 1
         assert len(field_groups[0]) == 1
@@ -595,8 +597,10 @@ def test_single_add_ts0(datadir, config):
 
     # Read fields with and without added time step 0
     # Note: Check relies on ordered time steps, which is incidental
-    field_groups_raw = read_fields(datafile, setups, {"add_ts0": False})
-    field_groups_ts0 = read_fields(datafile, setups, {"add_ts0": True})
+    field_groups_raw = read_fields(
+        setups, {"add_ts0": False}, _override_infile=datafile
+    )
+    field_groups_ts0 = read_fields(setups, {"add_ts0": True}, _override_infile=datafile)
     assert len(field_groups_ts0) == len(field_groups_raw) + 1
     assert all(len(field_group) == 1 for field_group in field_groups_ts0)
     assert all(len(field_group) == 1 for field_group in field_groups_raw)
@@ -635,7 +639,7 @@ def test_missing_deposition_cosmo(datadir):  # noqa:F811
     setups = SetupGroup([setup])
 
     # Read input field
-    field_groups = read_fields(datafile, setups, {"missing_ok": True})
+    field_groups = read_fields(setups, {"missing_ok": True}, _override_infile=datafile)
     assert len(field_groups) == 1
     assert len(field_groups[0]) == 1
     fld = next(iter(field_groups[0])).fld
@@ -672,7 +676,7 @@ def test_missing_deposition_ifs(datadir):  # noqa:F811
     setups = SetupGroup([setup])
 
     # Read input field
-    field_groups = read_fields(datafile, setups, {"missing_ok": True})
+    field_groups = read_fields(setups, {"missing_ok": True}, _override_infile=datafile)
     assert len(field_groups) == 1
     assert len(field_groups[0]) == 1
     fld = next(iter(field_groups[0])).fld
@@ -710,7 +714,7 @@ def test_affected_area(datadir):  # noqa:F811
     setups = SetupGroup([setup])
 
     # Read input field
-    field_groups = read_fields(datafile, setups, {"missing_ok": True})
+    field_groups = read_fields(setups, {"missing_ok": True}, _override_infile=datafile)
     assert len(field_groups) == 1
     assert len(field_groups[0]) == 1
     fld = next(iter(field_groups[0])).fld

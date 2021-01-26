@@ -45,7 +45,7 @@ def test_one_setup_one_field(datadir, config):  # noqa:F811
     datafile_fmt = f"{datadir}/flexpart_cosmo-2e_const_{{ens_member:03d}}.nc"
 
     setup_dct = {
-        "infile": "foo.nc",
+        "infile": datafile_fmt,
         "outfile": "bar.png",
         "model": {
             "name": "COSMO-2E",
@@ -59,7 +59,7 @@ def test_one_setup_one_field(datadir, config):  # noqa:F811
     }
     setup_dct_lst = [setup_dct]
     setups = SetupGroup.create(setup_dct_lst)
-    field_groups = read_fields(datafile_fmt, setups, {"cls_fixer": None})
+    field_groups = read_fields(setups, {"cls_fixer": None})
 
     assert len(field_groups) == 1
     field_group = next(iter(field_groups))

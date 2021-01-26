@@ -72,37 +72,38 @@ class InputConfig:
 
 # pylint: disable=R0914  # too-many-locals
 def read_fields(
-    in_file_path: str,
-    setups: SetupGroup,
+    setup_group: SetupGroup,
     config: Optional[Union[InputConfig, Dict[str, Any]]] = None,
     *,
     only: Optional[int] = None,
+    _override_infile: Optional[str] = None,
 ) -> List[FieldGroup]:
     """Read fields from an input file, or multiple files derived from one path.
 
     Args:
-        in_file_path: Input file path. In case of ensemble data, it must contain
-            the format key '{ens_member[:0?d]}', in which case a separate path
-            is derived for each member.
-
-        setups: Collection variable setups, containing among other things the
-            ensemble member IDs in case of an ensemble simulation.
+        setup_group: Group of setups, containing among other things the input
+            file name and the ensemble member ids (if there are any).
 
         config (optional): Instance of ``InputConfig``, or dict with parameters
             used to create one.
 
         only (optional): Restrict the number of fields that are read.
 
+        _override_infile (optional): Override ``setups.infile``; should not be
+            used outside of tests.
+
     """
-    log(dbg=f"reading fields from {in_file_path}")
+    infile = _override_infile or setup_group.infile
+    log(dbg=f"reading fields from {infile}")
 
     if not isinstance(config, InputConfig):
         config = InputConfig(**(config or {}))
 
     all_ens_member_ids: Optional[Sequence[int]] = (
-        setups.collect("model.ens_member_id", flatten=True, exclude_nones=True) or None
+        setup_group.collect("model.ens_member_id", flatten=True, exclude_nones=True)
+        or None
     )
-    files = InputFileEnsemble(in_file_path, config, all_ens_member_ids)
+    files = InputFileEnsemble(infile, config, all_ens_member_ids)
 
     first_path = next(iter(files.paths))
     with nc4.Dataset(first_path) as fi:
@@ -110,24 +111,25 @@ def read_fields(
         species_ids = read_species_ids(fi)
         time_steps = read_time_steps(fi)
 
-    setups = setups.complete_dimensions(
+    setup_group = setup_group.complete_dimensions(
         raw_dimensions=raw_dimensions,
         species_ids=species_ids,
     )
-    for setup in setups:
+    for setup in setup_group:
         if setup.model.base_time is None:
             setup.model.base_time = int(time_steps[0])
 
-    if only and len(setups) > only:
-        log(dbg=f"[only:{only}] skip {len(setups) - only}/{len(setups)}")
-        setups = SetupGroup(list(setups)[:only])
-    setups_for_plots_over_time = group_setups_for_plots(setups)
+    if only and len(setup_group) > only:
+        log(dbg=f"[only:{only}] skip {len(setup_group) - only}/{len(setup_group)}")
+        setup_group = SetupGroup(list(setup_group)[:only])
+    setups_for_plots_over_time = group_setups_for_plots(setup_group)
 
     field_groups: List[FieldGroup] = []
     for setups_for_same_plot_over_time in setups_for_plots_over_time:
         ens_mem_ids = setups_for_same_plot_over_time.collect_equal(
             "model.ens_member_id"
         )
+        # breakpoint()
         field_groups_i = files.read_fields_over_time(
             setups_for_same_plot_over_time, ens_mem_ids
         )
@@ -139,7 +141,7 @@ def read_fields(
 
     n_plt = len(field_groups)
     n_tot = sum([len(field_group) for field_group in field_groups])
-    log(dbg=f"done reading {in_file_path}: read {n_tot} fields for {n_plt} plots")
+    log(dbg=f"done reading {infile}: read {n_tot} fields for {n_plt} plots")
     return field_groups
 
 
@@ -470,6 +472,7 @@ class InputFileEnsemble:
         return new_fld_time
 
     # pylint: disable=R0912  # too-many-branches
+    # pylint: disable=R1702  # too-many-nested-blocks (>5)
     def _reduce_ensemble(self, var_setups: SetupGroup, ts_hrs: float) -> np.ndarray:
         """Reduce the ensemble to a single field (time, lat, lon)."""
         fld_time_mem = self.fld_time_mem
