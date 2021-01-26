@@ -19,6 +19,7 @@ from typing import Union
 
 # Third-party
 import click
+from click import Context
 
 # First-party
 from srutils.format import ordinal
@@ -45,23 +46,23 @@ from ..utils.logging import log
 # pylint: disable=R0914  # too-many-locals (>15)
 # pylint: disable=R0915  # too-many-statements (>50)
 def main(
-    ctx,
+    ctx: Context,
     *,
-    auto_tmp,
-    cache,
-    dest_dir,
-    dry_run,
-    input_setup_params,
-    merge_pdfs,
-    merge_pdfs_dry,
-    num_procs,
-    only,
-    open_cmd,
-    keep_merged_pdfs,
-    setup_file_paths,
-    show_version,
-    suffixes,
-    tmp_dir,
+    auto_tmp: bool,
+    cache: bool,
+    dest_dir: Optional[str],
+    dry_run: bool,
+    input_setup_params: Mapping[str, Any],
+    merge_pdfs: bool,
+    merge_pdfs_dry: bool,
+    num_procs: int,
+    only: Optional[int],
+    open_cmd: Optional[str],
+    keep_merged_pdfs: bool,
+    setup_file_paths: Sequence[str],
+    show_version: bool,
+    suffixes: Collection[str],
+    tmp_dir: Optional[str],
 ):
     """Create dispersion plot as specified in CONFIG_FILE(S)."""
     if dest_dir is None:
@@ -73,7 +74,7 @@ def main(
             tmp_dir = dest_dir
 
     # Check if temporary directory (if given) already exists
-    if tmp_dir != "." and os.path.exists(tmp_dir):
+    if tmp_dir != "." and Path(tmp_dir).exists():
         log(dbg="using existing temporary directory '{tmp_dir}'")
 
     preset_setup_file_paths = ctx.obj.get("preset_setup_file_paths", [])
@@ -117,7 +118,7 @@ def main(
         )
         iter_state.n_field_groups_curr += len(field_groups)
         iter_state.n_field_groups_i = len(field_groups)
-        out_file_paths_lst: List[str] = [
+        out_file_paths_lst: List[List[str]] = [
             format_out_file_paths(
                 field_group,
                 prev_paths=all_out_file_paths,
@@ -435,7 +436,7 @@ def merge_pdf_plots(
     return merged_pages
 
 
-def open_plots(cmd, file_paths, dry_run):
+def open_plots(cmd: str, file_paths: Collection[str], dry_run: bool) -> None:
     """Open a plot file using a shell command."""
     file_paths = sorted(file_paths)
 

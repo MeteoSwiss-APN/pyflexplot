@@ -74,6 +74,7 @@ click.option = functools.partial(click.option, show_default=True)  # type: ignor
         " setup parameter 'outfile'."
     ),
     metavar="DEST_DIR",
+    type=click.Path(exists=False),
     default=None,
 )
 @click.option(
@@ -197,6 +198,7 @@ click.option = functools.partial(click.option, show_default=True)  # type: ignor
         " DEST_DIR in the end."
     ),
     metavar="TMP_DIR",
+    type=click.Path(exists=False),
     default=None,
 )
 @click.option(
