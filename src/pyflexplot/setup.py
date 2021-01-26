@@ -430,9 +430,18 @@ class Setup:
     ) -> Union["Setup", "SetupGroup"]:
         """Derive ``Setup`` object(s) with adapted parameters."""
         if isinstance(params, Sequence):
-            return SetupGroup([self.derive(sub_params) for sub_params in params])
-        dct = merge_dicts(self.dict(), params)
-        return type(self).create(dct)
+            if not params:
+                setup_lst = [self.copy()]
+            else:
+                setup_lst = [self.derive(sub_params) for sub_params in params]
+            return SetupGroup(setup_lst)
+        elif isinstance(params, Mapping):
+            dct = merge_dicts(self.dict(), params)
+            return type(self).create(dct)
+        else:
+            raise ValueError(
+                f"params must be sequence or mapping, not {type(params).__name__}"
+            )
 
     # pylint: disable=R0912  # too-many-branches (>12)
     # pylint: disable=R0914  # too-many-locals
@@ -1248,9 +1257,9 @@ class SetupGroup:
         else:
             raw_params_lst = list(raw_params)
         params_lst = []
-        for raw_params in raw_params_lst:
+        for raw_params_i in raw_params_lst:
             params: Dict[str, Any] = {}
-            for param, value in raw_params.items():
+            for param, value in raw_params_i.items():
                 if param == "model":
                     param = "name"
                 if is_model_setup_param(param):

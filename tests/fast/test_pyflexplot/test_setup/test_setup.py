@@ -7,6 +7,9 @@ from typing import List
 from typing import Sequence
 from typing import Tuple
 
+# Third-party
+import pytest
+
 # First-party
 from pyflexplot.setup import CoreSetup
 from pyflexplot.setup import Setup
@@ -287,12 +290,12 @@ class Test_SetupCollection_Create:
     def create_setup_lst(self):
         return [Setup.create(dct) for dct in self.create_partial_dicts()]
 
-    def create_setups(self):
+    def create_setup_group(self):
         return SetupGroup(self.create_setup_lst())
 
-    def test_create_empty(self):
-        setups = SetupGroup([])
-        assert len(setups) == 0
+    def test_create_empty_setup_group(self):
+        with pytest.raises(ValueError):
+            SetupGroup([])
 
     def test_from_setups(self):
         partial_dicts = self.create_partial_dicts()
