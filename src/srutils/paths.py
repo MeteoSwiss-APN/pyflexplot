@@ -93,7 +93,7 @@ class PathsOrganizer:
 
         Example:
             >>> org = PathsOrganizer(suffix="x", dup_sep=".")
-            >>> org.merge_paths(["bar.x", "bar.1.x", "bar.2.x"])
+            >>> org.format_compact(["bar.x", "bar.1.x", "bar.2.x"])
             "bar.{,1,2}.x"
 
         """
