@@ -215,22 +215,38 @@ def group_setups_for_plots(setups: SetupGroup) -> List[SetupGroup]:
 
 
 # pylint: disable=R0902  # too-many-instance-attributes (>7)
-@dc.dataclass
 class InputFileEnsemble:
     """An ensemble (of size one or more) of input files."""
 
-    path_fmt: str
-    config: InputConfig
-    ens_member_ids: Optional[Sequence[int]] = None
+    def __init__(
+        self,
+        path_fmt: str,
+        config: InputConfig,
+        ens_member_ids: Optional[Sequence[int]] = None,
+    ):
+        """Create an instance of ``InputFileEnsemble``.
 
-    def __post_init__(self):
-        self.paths: List[str] = prepare_paths(self.path_fmt, self.ens_member_ids)
+        Args:
+            path_fmt: File path; must contain format key '{ens_member[:0?d]}'
+                if ensemble member ids are passed, in which case a separate path
+                is derived for each member.
+
+            config: Input configuration.
+
+            ens_member_ids (optional): Ensemble member ids.
+
+        """
+        self.path_fmt: str = path_fmt
+        self.config: InputConfig = config
+        self.ens_member_ids: Optional[Sequence[int]] = ens_member_ids
+
+        self.paths: List[str] = prepare_paths(path_fmt, ens_member_ids)
 
         # SR_TMP TODO Fix the cache!!!
         if self.config.cache_on:
             raise NotImplementedError("input file cache")
 
-        if len(self.ens_member_ids or [0]) != len(self.paths):
+        if self.ens_member_ids and len(self.ens_member_ids) != len(self.paths):
             raise ValueError(
                 f"must pass same number of ens_member_ids ({len(self.ens_member_ids)}"
                 f" and paths ({len(self.paths)}), or omit ens_member_ids (single path)"
