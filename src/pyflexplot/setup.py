@@ -10,6 +10,7 @@ import dataclasses
 import re
 from dataclasses import asdict
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 from typing import cast
 from typing import Collection
@@ -202,38 +203,7 @@ class CoreSetup:
                 f"; choices: {', '.join(multipanel_param_choices)}"
             )
 
-        # Init domain_size_lat_lon
-        lat = self.domain_size_lat
-        lon = self.domain_size_lon
-        if lat is None and lon is None:
-            if self.domain in ["release_site", "cloud"]:
-                # Lat size derived from lon size and map aspect ratio
-                self.domain_size_lon = 20.0
-
-        # Init ens_param_mem_min
-        if self.ens_param_mem_min is None:
-            if self.ens_variable in [
-                "ens_cloud_arrival_time",
-                "ens_cloud_departure_time",
-            ]:
-                self.ens_param_mem_min = ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN
-
-        # Init ens_param_pctl
-        if self.ens_variable == "percentile":
-            assert self.ens_param_pctl is not None
-
-        # Init ens_param_thr
-        if self.ens_param_thr is None:
-            if self.ens_variable in [
-                "ens_cloud_arrival_time",
-                "ens_cloud_departure_time",
-            ]:
-                self.ens_param_thr = ENS_CLOUD_TIME_DEFAULT_PARAM_THR
-            elif self.ens_variable == "probability":
-                self.ens_param_thr = ENS_PROBABILITY_DEFAULT_PARAM_THR
-
-        # Init ens_param_thr_type
-        assert self.ens_param_thr_type in ["lower", "upper"]
+        self._init_defaults()
 
     # SR_TMP <<<
     @property
@@ -283,6 +253,41 @@ class CoreSetup:
 
     def copy(self) -> "CoreSetup":
         return self.create(self.dict())
+
+    def _init_defaults(self) -> None:
+        """Set some default values depending on other parameters."""
+        # Init domain_size_lat_lon
+        lat = self.domain_size_lat
+        lon = self.domain_size_lon
+        if lat is None and lon is None:
+            if self.domain in ["release_site", "cloud"]:
+                # Lat size derived from lon size and map aspect ratio
+                self.domain_size_lon = 20.0
+
+        # Init ens_param_mem_min
+        if self.ens_param_mem_min is None:
+            if self.ens_variable in [
+                "ens_cloud_arrival_time",
+                "ens_cloud_departure_time",
+            ]:
+                self.ens_param_mem_min = ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN
+
+        # Init ens_param_pctl
+        if self.ens_variable == "percentile":
+            assert self.ens_param_pctl is not None
+
+        # Init ens_param_thr
+        if self.ens_param_thr is None:
+            if self.ens_variable in [
+                "ens_cloud_arrival_time",
+                "ens_cloud_departure_time",
+            ]:
+                self.ens_param_thr = ENS_CLOUD_TIME_DEFAULT_PARAM_THR
+            elif self.ens_variable == "probability":
+                self.ens_param_thr = ENS_PROBABILITY_DEFAULT_PARAM_THR
+
+        # Init ens_param_thr_type
+        assert self.ens_param_thr_type in ["lower", "upper"]
 
     def _tuple(self) -> Tuple[Tuple[str, Any], ...]:
         dct = self.dict()
@@ -853,6 +858,8 @@ class SetupGroup:
 
     def __init__(self, setups: Collection[Setup]) -> None:
         """Create an instance of ``SetupGroup``."""
+        if not setups:
+            raise ValueError(f"setups {type(setups).__name__} is empty")
         if not isinstance(setups, Collection) or (
             setups and not isinstance(next(iter(setups)), Setup)
         ):
@@ -985,6 +992,8 @@ class SetupGroup:
     def collect_equal(self, param: str) -> Any:
         """Collect the value of a parameter that is shared by all setups."""
         values = self.collect(param)
+        if not values:
+            return None
         if not all(value == values[0] for value in values[1:]):
             raise UnequalSetupParamValuesError(param, values)
         return next(iter(values))
@@ -1213,7 +1222,7 @@ class SetupGroup:
 
     @classmethod
     def create(
-        cls, setups: Collection[Union[Mapping[str, Any], Setup]]
+        cls, setups: Collection[Union[Setup, Mapping[str, Any]]]
     ) -> "SetupGroup":
         setup_lst: List[Setup] = []
         for obj in setups:
@@ -1231,8 +1240,13 @@ class SetupGroup:
 
     @classmethod
     def from_raw_params(
-        cls, raw_params_lst: Sequence[Mapping[str, Any]]
+        cls, raw_params: Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]
     ) -> "SetupGroup":
+        raw_params_lst: List[Mapping[str, Any]]
+        if isinstance(raw_params, Mapping):
+            raw_params_lst = [raw_params]
+        else:
+            raw_params_lst = list(raw_params)
         params_lst = []
         for raw_params in raw_params_lst:
             params: Dict[str, Any] = {}
@@ -1266,9 +1280,9 @@ class SetupGroup:
 class SetupFile:
     """Setup file to be read from and/or written to disk."""
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: Union[Path, str]) -> None:
         """Create an instance of ``SetupFile``."""
-        self.path: str = path
+        self.path: Path = Path(path)
 
     # pylint: disable=R0914  # too-many-locals
     def read(
@@ -1313,7 +1327,7 @@ class SetupFile:
     @classmethod
     def read_many(
         cls,
-        paths: Sequence[str],
+        paths: Sequence[Union[Path, str]],
         override: Optional[Mapping[str, Any]] = None,
         only: Optional[int] = None,
         each_only: Optional[int] = None,

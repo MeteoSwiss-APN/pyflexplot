@@ -9,10 +9,13 @@ from os.path import abspath
 from os.path import relpath
 from pathlib import Path
 from typing import Any
+from typing import Collection
 from typing import Dict
 from typing import List
 from typing import Mapping
+from typing import Optional
 from typing import Sequence
+from typing import Union
 
 # Third-party
 import click
@@ -73,28 +76,10 @@ def main(
     if tmp_dir != "." and os.path.exists(tmp_dir):
         log(dbg="using existing temporary directory '{tmp_dir}'")
 
-    # Extend preset setup file paths
-    setup_file_paths = list(setup_file_paths)
     preset_setup_file_paths = ctx.obj.get("preset_setup_file_paths", [])
-
-    # Read setups from infile(s) and/or preset(s)
-    setups = read_setups(setup_file_paths, preset_setup_file_paths, input_setup_params)
-
-    if suffixes:
-        setups.override_output_suffixes(suffixes)
-
-    # Separate setups with different outfiles
-    setups = setups.compress_partially("outfile")
-
-    # Group setups by input file(s)
-    log(dbg=f"grouping {len(setups)} setups by infile")
-    setups_by_infile = setups.group("infile")
-    if only:
-        # Note that the number of plots is likely still higher than only because
-        # each setup can define many plots, but it's a first elimination step
-        setups_by_infile = restrict_grouped_setups(
-            setups_by_infile, only, grouped_by="infile"
-        )
+    setups_by_infile = prepare_setups(
+        setup_file_paths, preset_setup_file_paths, input_setup_params, suffixes, only
+    )
 
     pool = multiprocessing.Pool(processes=num_procs)
 
@@ -217,9 +202,42 @@ def main(
     return 0
 
 
+def prepare_setups(
+    setup_file_paths: Sequence[Union[Path, str]],
+    preset_setup_file_paths: Sequence[Union[Path, str]],
+    input_setup_params: Mapping[str, Any],
+    suffixes: Optional[Union[str, Collection[str]]],
+    only: Optional[int],
+) -> Dict[str, SetupGroup]:
+
+    # Extend preset setup file paths
+    setup_file_paths = list(setup_file_paths)
+
+    # Read setups from infile(s) and/or preset(s)
+    setups = read_setups(setup_file_paths, preset_setup_file_paths, input_setup_params)
+
+    if suffixes:
+        setups.override_output_suffixes(suffixes)
+
+    # Separate setups with different outfiles
+    setups = setups.compress_partially("outfile")
+
+    # Group setups by input file(s)
+    log(dbg=f"grouping {len(setups)} setups by infile")
+    setups_by_infile = setups.group("infile")
+    if only:
+        # Note that the number of plots is likely still higher than only because
+        # each setup can define many plots, but it's a first elimination step
+        setups_by_infile = restrict_grouped_setups(
+            setups_by_infile, only, grouped_by="infile"
+        )
+
+    return setups_by_infile
+
+
 def read_setups(
-    setup_file_paths: Sequence[str],
-    preset_setup_file_paths: Sequence[str],
+    setup_file_paths: Sequence[Union[Path, str]],
+    preset_setup_file_paths: Sequence[Union[Path, str]],
     input_setup_params: Mapping[str, Any],
 ) -> SetupGroup:
     log(
@@ -233,7 +251,7 @@ def read_setups(
         if path not in setup_file_paths:
             setup_file_paths.append(path)
     if not setup_file_paths:
-        return SetupGroup.from_raw_params([input_setup_params])
+        return SetupGroup.from_raw_params(input_setup_params)
     return SetupFile.read_many(setup_file_paths, override=input_setup_params)
 
 
