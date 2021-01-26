@@ -32,9 +32,9 @@ integrate = true
 domain = "full"
 lang = "en"
 
-["**"._ch.de]
-domain = "ch"
-lang = "de"
+# ["**"._ch.de]
+# domain = "ch"
+# lang = "de"
 
 # ["**"._ch.en]
 # domain = "ch"
