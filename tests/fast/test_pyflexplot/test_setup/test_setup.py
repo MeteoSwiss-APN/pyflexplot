@@ -15,7 +15,7 @@ from pyflexplot.setup import CoreSetup
 from pyflexplot.setup import Setup
 from pyflexplot.setup import SetupGroup
 from srutils.dict import merge_dicts
-from srutils.testing import check_summary_dict_is_subdict
+from srutils.testing import check_is_sub_element
 
 # Local
 from .shared import DEFAULT_SETUP
@@ -141,7 +141,7 @@ class Test_Setup_Create:
         }
         setup = Setup.create(params)
         res = setup.dict()
-        check_summary_dict_is_subdict(superdict=res, subdict=params)
+        check_is_sub_element(obj_super=res, obj_sub=params)
 
 
 class Test_Setup_Decompress:

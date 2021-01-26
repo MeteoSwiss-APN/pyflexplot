@@ -26,7 +26,7 @@ from pyflexplot.setup import is_setup_param
 from pyflexplot.setup import Setup
 from pyflexplot.setup import SetupGroup
 from srutils.dict import merge_dicts
-from srutils.testing import check_summary_dict_element_is_subelement
+from srutils.testing import check_is_sub_element
 
 # Local
 from .shared import datadir_reduced as datadir  # noqa:F401
@@ -100,7 +100,7 @@ def _test_setups_core(
     infile = setups.collect_equal("infile")
     field_groups = read_fields(infile, setups, {"dry_run": True})
     res = field_groups_to_setup_dcts(field_groups, params)
-    check_summary_dict_element_is_subelement(obj_super=res, obj_sub=sol)
+    check_is_sub_element(obj_super=res, obj_sub=sol)
 
 
 @dataclass

@@ -82,32 +82,10 @@ def ignored(obj):
     return isinstance(obj, IgnoredElement)
 
 
-def check_summary_dict_is_subdict(
-    subdict, superdict, subname="sub", supername="super", idx_list=None
-):
-    """Check that one summary dict is a subdict of another."""
-    if ignored(subdict) or ignored(superdict):
-        return
-    if not isinstance(subdict, dict):
-        raise CheckFailedError(
-            f"subdict `{subname}` is not a dict, but a {type(subdict).__name__}",
-            {"subdict": subdict},
-        )
-    if not isinstance(superdict, dict):
-        raise CheckFailedError(
-            f"`superdict` ('{supername}') is a {type(superdict).__name__}, not a dict",
-            {"superdict": superdict},
-        )
-    for idx, (key, val_sub) in enumerate(subdict.items()):
-        val_super = get_dict_element(superdict, key, "superdict", CheckFailedError)
-        check_summary_dict_element_is_subelement(
-            val_sub, val_super, subname, supername, idx_dict=idx, idx_list=idx_list
-        )
-
-
+# pylint: disable=R0912  # too-many-branches (>12)
 # pylint: disable=R0913  # too-many-arguments
 # pylint: disable=R0914  # too-many-locals
-def check_summary_dict_element_is_subelement(
+def check_is_sub_element(
     obj_sub,
     obj_super,
     name_sub="sub",
@@ -115,7 +93,38 @@ def check_summary_dict_element_is_subelement(
     idx_list=None,
     idx_dict=None,
 ):
+    """Check recursively that ``obj_sub`` is a sub-element of ``obj_super``.
 
+    Args:
+        obj_sub: Any object, but generally a nested structure comprised of
+            containers like dicts, lists etc.; all elements in ``obj_sub`` must
+            be present in ``obj_super`` at the same nesting level and position.
+
+        obj_super: Like ``obj_sub``; all elements in ``obj_sub`` must be present
+            in ``obj_sub`` at the same nesting level and position, but dict
+            elements in ``obj_super`` may be omitted in ``obj_sub``.
+
+        name_sub (optional): Name of ``obj_sub`` used in error messages.
+
+        name_super (optional): Name of ``obj_super`` used in error messages.
+
+        idx_list (optional): List index of the current objects (if they are
+            elements in a sequence) used in error messages; generally only used
+            in recursive calls.
+
+        idx_dict (optional): Dict index of the current objects (if they are
+            elements in a dict) used in error messages; generally only used
+            in recursive calls
+
+    Notes:
+        Elements of ``subdict`` of certain types recieve special treatment:
+            ``IgnoredElement``: Not not compared to the respective ``superdict``
+                elements.
+
+            ``UnequalElement``: Must be unequal to the respective ``superdict``
+                elements.
+
+    """
     if ignored(obj_sub) or ignored(obj_super):
         return
 
@@ -158,10 +167,11 @@ def check_summary_dict_element_is_subelement(
             )
 
     if isinstance(obj_sub, dict):
-        # Compare dicts
-        check_summary_dict_is_subdict(
-            obj_sub, obj_super, name_sub, name_super, idx_list=idx_list
-        )
+        for idx_dict_i, (key, val_sub) in enumerate(obj_sub.items()):
+            val_super = get_dict_element(obj_super, key, "superdict", CheckFailedError)
+            check_is_sub_element(
+                val_sub, val_super, name_sub, name_super, idx_list, idx_dict_i
+            )
 
     elif isiterable(obj_sub, str_ok=False):
         # Compare other (non-str) iterables
@@ -178,7 +188,7 @@ def check_summary_dict_element_is_subelement(
 
         for idx, (subobj_sub, subobj_super) in enumerate(zip(obj_sub, obj_super)):
             try:
-                check_summary_dict_element_is_subelement(
+                check_is_sub_element(
                     subobj_sub,
                     subobj_super,
                     name_sub,

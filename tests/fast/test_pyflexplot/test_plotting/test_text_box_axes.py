@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 
 # First-party
 from pyflexplot.plotting.text_box_axes import TextBoxAxes
-from srutils.testing import check_summary_dict_is_subdict
+from srutils.testing import check_is_sub_element
 
 
 class Test_TextBoxAxes_Summarize:
@@ -58,7 +58,7 @@ class Test_TextBoxAxes_Summarize:
                 }
             ],
         }
-        check_summary_dict_is_subdict(superdict=res, subdict=sol)
+        check_is_sub_element(obj_super=res, obj_sub=sol)
 
     def test_text_block(self):
         box = self.create_text_box("text_block")
@@ -71,7 +71,7 @@ class Test_TextBoxAxes_Summarize:
                 {"type": "TextBoxElementText", "s": ("hello", "world")},
             ],
         }
-        check_summary_dict_is_subdict(superdict=res, subdict=sol)
+        check_is_sub_element(obj_super=res, obj_sub=sol)
 
     def test_color_rect(self):
         box = self.create_text_box("color_rect")
@@ -84,4 +84,4 @@ class Test_TextBoxAxes_Summarize:
                 {"type": "TextBoxElementColorRect", "fc": "red", "ec": "black"}
             ],
         }
-        check_summary_dict_is_subdict(superdict=res, subdict=sol)
+        check_is_sub_element(obj_super=res, obj_sub=sol)
