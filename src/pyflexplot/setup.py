@@ -444,6 +444,50 @@ class Setup:
                 f"params must be sequence or mapping, not {type(params).__name__}"
             )
 
+    def decompress(self, skip: Optional[Collection[str]] = None) -> "SetupGroup":
+        return self._decompress(select=None, skip=skip)
+
+    def decompress_partially(
+        self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None
+    ) -> "SetupGroup":
+        return self._decompress(select, skip)
+
+    def dict(self) -> Dict[str, Any]:
+        return {
+            **asdict(self),
+            "model": asdict(self.model),
+            "core": self.core.dict(),
+        }
+
+    def copy(self):
+        return self.create(self.dict())
+
+    def __hash__(self) -> int:
+        return hash(self._tuple())
+
+    def __len__(self) -> int:
+        return len(self.dict())
+
+    def __eq__(self, other: Any) -> bool:
+        # SR_DBG <
+        if isinstance(other, dataclasses._MISSING_TYPE):
+            return False
+        # SR_DBG >
+        try:
+            other_dict = other.dict()
+        except AttributeError:
+            try:
+                other_dict = dict(other)  # type: ignore
+            except TypeError:
+                try:
+                    other_dict = asdict(other)
+                except TypeError:
+                    return False
+        return self.dict() == other_dict
+
+    def __repr__(self) -> str:  # type: ignore
+        return setup_repr(self)
+
     # pylint: disable=R0912  # too-many-branches (>12)
     # pylint: disable=R0914  # too-many-locals
     def _decompress(
@@ -512,24 +556,6 @@ class Setup:
 
         return SetupGroup([Setup.create(dct) for dct in dcts])
 
-    def dict(self) -> Dict[str, Any]:
-        return {
-            **asdict(self),
-            "model": asdict(self.model),
-            "core": self.core.dict(),
-        }
-
-    def copy(self):
-        return self.create(self.dict())
-
-    def decompress(self, skip: Optional[Collection[str]] = None) -> "SetupGroup":
-        return self._decompress(select=None, skip=skip)
-
-    def decompress_partially(
-        self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None
-    ) -> "SetupGroup":
-        return self._decompress(select, skip)
-
     def _tuple(self) -> Tuple[Tuple[str, Any], ...]:
         dct = self.dict()
         model = dct.pop("model")
@@ -548,58 +574,6 @@ class Setup:
                 ),
             ]
         )
-
-    def __hash__(self) -> int:
-        return hash(self._tuple())
-
-    def __len__(self) -> int:
-        return len(self.dict())
-
-    def __eq__(self, other: Any) -> bool:
-        # SR_DBG <
-        if isinstance(other, dataclasses._MISSING_TYPE):
-            return False
-        # SR_DBG >
-        try:
-            other_dict = other.dict()
-        except AttributeError:
-            try:
-                other_dict = dict(other)  # type: ignore
-            except TypeError:
-                try:
-                    other_dict = asdict(other)
-                except TypeError:
-                    return False
-        return self.dict() == other_dict
-
-    def __repr__(self) -> str:  # type: ignore
-        return setup_repr(self)
-
-    @staticmethod
-    def _group_params(
-        params: Optional[Collection[str]],
-    ) -> Tuple[Optional[List[str]], Optional[List[str]], Optional[List[str]]]:
-        if params is None:
-            return (None, None, None)
-        params_setup: List[str] = []
-        params_core: List[str] = []
-        params_dimensions: List[str] = []
-        for param in params:
-            if is_setup_param(param) or is_core_setup_param(param):
-                params_setup.append(param)
-                continue
-            if param.startswith("model."):
-                dims_param = param.split(".", 1)[-1]
-                if is_model_setup_param(dims_param):
-                    params_dimensions.append(dims_param)
-                    continue
-            if param.startswith("dimensions."):
-                dims_param = param.split(".", 1)[-1]
-                if is_dimensions_param(dims_param):
-                    params_dimensions.append(dims_param)
-                    continue
-            raise ValueError("invalid param", param)
-        return (params_setup, params_core, params_dimensions)
 
     @classmethod
     def create(cls, params: Mapping[str, Any]) -> "Setup":
@@ -861,6 +835,32 @@ class Setup:
                 dct["core"]["dimensions"], cls_seq=tuple
             )
         return cls.create(dct)
+
+    @staticmethod
+    def _group_params(
+        params: Optional[Collection[str]],
+    ) -> Tuple[Optional[List[str]], Optional[List[str]], Optional[List[str]]]:
+        if params is None:
+            return (None, None, None)
+        params_setup: List[str] = []
+        params_core: List[str] = []
+        params_dimensions: List[str] = []
+        for param in params:
+            if is_setup_param(param) or is_core_setup_param(param):
+                params_setup.append(param)
+                continue
+            if param.startswith("model."):
+                dims_param = param.split(".", 1)[-1]
+                if is_model_setup_param(dims_param):
+                    params_dimensions.append(dims_param)
+                    continue
+            if param.startswith("dimensions."):
+                dims_param = param.split(".", 1)[-1]
+                if is_dimensions_param(dims_param):
+                    params_dimensions.append(dims_param)
+                    continue
+            raise ValueError("invalid param", param)
+        return (params_setup, params_core, params_dimensions)
 
 
 class SetupGroup:
