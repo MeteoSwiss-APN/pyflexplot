@@ -4,7 +4,7 @@ import pytest
 
 # First-party
 from pyflexplot.setup import PlotSetup
-from pyflexplot.setup import SetupGroup
+from pyflexplot.setup import PlotSetupGroup
 from srutils.dict import merge_dicts
 from srutils.testing import check_is_sub_element
 
@@ -106,7 +106,7 @@ class Test_Setup_Decompress:
         """Decompress all params."""
         setups = self.setup.decompress_partially(None)
         assert len(setups) == 12
-        assert isinstance(setups, SetupGroup)
+        assert isinstance(setups, PlotSetupGroup)
         assert all(isinstance(setup, PlotSetup) for setup in setups)
         res = {
             (
@@ -135,7 +135,7 @@ class Test_Setup_Decompress:
     def test_partially_one(self):
         """Decompress only one select parameter."""
         setups = self.setup.decompress_partially(["dimensions.species_id"])
-        assert isinstance(setups, SetupGroup)
+        assert isinstance(setups, PlotSetupGroup)
         assert all(isinstance(setup, PlotSetup) for setup in setups)
         assert len(setups) == 2
         res = {
@@ -155,7 +155,7 @@ class Test_Setup_Decompress:
             ["dimensions.time", "dimensions.deposition_type"]
         )
         assert len(setups) == 6
-        assert isinstance(setups, SetupGroup)
+        assert isinstance(setups, PlotSetupGroup)
         assert all(isinstance(setup, PlotSetup) for setup in setups)
         res = {
             (

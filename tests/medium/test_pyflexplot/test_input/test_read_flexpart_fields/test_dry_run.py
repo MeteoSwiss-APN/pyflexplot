@@ -24,7 +24,7 @@ from pyflexplot.setup import is_dimensions_param
 from pyflexplot.setup import is_model_setup_param
 from pyflexplot.setup import is_setup_param
 from pyflexplot.setup import PlotSetup
-from pyflexplot.setup import SetupGroup
+from pyflexplot.setup import PlotSetupGroup
 from srutils.dict import merge_dicts
 from srutils.testing import check_is_sub_element
 
@@ -95,7 +95,7 @@ def field_groups_to_setup_dcts(obj, params: Optional[List[str]] = None):
 
 
 def _test_setups_core(
-    setups: SetupGroup, params: List[str], sol: List[List[Dict[str, Any]]]
+    setups: PlotSetupGroup, params: List[str], sol: List[List[Dict[str, Any]]]
 ):
     field_groups = read_fields(setups, {"dry_run": True})
     res = field_groups_to_setup_dcts(field_groups, params)
@@ -116,13 +116,13 @@ class ConfMultipleSetups:
 
 def _test_single_setup_core(config, params):
     setup = PlotSetup.create(config.setup_dct)
-    setups = SetupGroup([setup])
+    setups = PlotSetupGroup([setup])
     _test_setups_core(setups, params, config.sol)
 
 
 def _test_multiple_setups_core(config, params):
     setup_lst = [PlotSetup.create(setup_dct) for setup_dct in config.setup_dct_lst]
-    setups = SetupGroup(setup_lst)
+    setups = PlotSetupGroup(setup_lst)
     _test_setups_core(setups, params, config.sol)
 
 

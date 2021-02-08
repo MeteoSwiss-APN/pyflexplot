@@ -22,7 +22,7 @@ from srutils.various import check_array_indices
 
 # Local
 from ..setup import PlotSetup
-from ..setup import SetupGroup
+from ..setup import PlotSetupGroup
 from ..utils.logging import log
 from .data import Cloud
 from .data import ensemble_probability
@@ -72,7 +72,7 @@ class InputConfig:
 
 # pylint: disable=R0914  # too-many-locals
 def read_fields(
-    setup_group: SetupGroup,
+    setup_group: PlotSetupGroup,
     config: Optional[Union[InputConfig, Dict[str, Any]]] = None,
     *,
     only: Optional[int] = None,
@@ -120,7 +120,7 @@ def read_fields(
 
     if only and len(setup_group) > only:
         log(dbg=f"[only:{only}] skip {len(setup_group) - only}/{len(setup_group)}")
-        setup_group = SetupGroup(list(setup_group)[:only])
+        setup_group = PlotSetupGroup(list(setup_group)[:only])
     setups_for_plots_over_time = group_setups_for_plots(setup_group)
 
     field_groups: List[FieldGroup] = []
@@ -165,7 +165,7 @@ def prepare_paths(path: str, ens_member_ids: Optional[Sequence[int]]) -> List[st
     return paths
 
 
-def group_setups_for_plots(setups: SetupGroup) -> List[SetupGroup]:
+def group_setups_for_plots(setups: PlotSetupGroup) -> List[PlotSetupGroup]:
     """Group the setups by plot type and time step.
 
     Return a list of setup groups, each of which defines one plot type
@@ -173,7 +173,7 @@ def group_setups_for_plots(setups: SetupGroup) -> List[SetupGroup]:
     different time steps.
 
     """
-    setups_field_lst: List[SetupGroup] = []
+    setups_field_lst: List[PlotSetupGroup] = []
     for (
         (
             _,  # ens_member_id,
@@ -214,7 +214,7 @@ def group_setups_for_plots(setups: SetupGroup) -> List[SetupGroup]:
         setups_plots = sub_setups.decompress_partially(None, skip=skip)
         # SR_TMP < SR_TODO Adapt for multipanel plots
         setups_plots = [
-            SetupGroup([setup]) for setups in setups_plots for setup in setups
+            PlotSetupGroup([setup]) for setups in setups_plots for setup in setups
         ]
         # SR_TMP >
         setups_field_lst.extend(setups_plots)
@@ -254,11 +254,11 @@ class InputFileEnsemble:
         self.lat: np.ndarray
         self.lon: np.ndarray
         self.mdata_tss: List[MetaData]
-        self.setups_lst_time: List[SetupGroup]
+        self.setups_lst_time: List[PlotSetupGroup]
         self.time: np.ndarray
 
     # pylint: disable=R0914  # too-many-locals
-    def read_fields_over_time(self, setups: SetupGroup) -> List[FieldGroup]:
+    def read_fields_over_time(self, setups: PlotSetupGroup) -> List[FieldGroup]:
         """Read fields for the same plot at multiple time steps.
 
         Return a list of lists of fields, whereby:
@@ -320,7 +320,7 @@ class InputFileEnsemble:
         return field_groups
 
     def _read_data(
-        self, file_path: str, idx_mem: int, timeless_setups_mem: SetupGroup
+        self, file_path: str, idx_mem: int, timeless_setups_mem: PlotSetupGroup
     ) -> None:
         n_mem = len(self.paths)
         model = timeless_setups_mem.collect_equal("model.name")
@@ -345,7 +345,7 @@ class InputFileEnsemble:
                 fld_time_i = np.empty(self.fld_time_mem.shape[1:])
 
     def _read_member_fields_over_time(
-        self, fi: nc4.Dataset, timeless_setups: SetupGroup
+        self, fi: nc4.Dataset, timeless_setups: PlotSetupGroup
     ) -> np.ndarray:
         """Read field over all time steps for each member."""
         fld_time_lst = []
@@ -451,7 +451,7 @@ class InputFileEnsemble:
 
     # pylint: disable=R0912  # too-many-branches
     # pylint: disable=R1702  # too-many-nested-blocks (>5)
-    def _reduce_ensemble(self, var_setups: SetupGroup, ts_hrs: float) -> np.ndarray:
+    def _reduce_ensemble(self, var_setups: PlotSetupGroup, ts_hrs: float) -> np.ndarray:
         """Reduce the ensemble to a single field (time, lat, lon)."""
         fld_time_mem = self.fld_time_mem
 

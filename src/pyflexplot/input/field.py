@@ -23,7 +23,7 @@ from ..plotting.domain import Domain
 from ..plotting.domain import ReleaseSiteDomain
 from ..plotting.proj_bbox import Projections
 from ..setup import PlotSetup
-from ..setup import SetupGroup
+from ..setup import PlotSetupGroup
 from ..utils.exceptions import ArrayDimensionError
 from ..utils.exceptions import FieldAllNaNError
 from ..utils.exceptions import InconsistentArrayShapesError
@@ -81,7 +81,7 @@ class Field:
         lat: np.ndarray,
         lon: np.ndarray,
         *,
-        var_setups: SetupGroup,
+        var_setups: PlotSetupGroup,
         time_props: "FieldTimeProperties",
         mdata: MetaData,
     ) -> None:
@@ -106,7 +106,7 @@ class Field:
         self.lon: np.ndarray = lon
         self.mdata: MetaData = mdata
         self.time_props: "FieldTimeProperties" = time_props
-        self.var_setups: SetupGroup = var_setups
+        self.var_setups: PlotSetupGroup = var_setups
         try:
             self.check_consistency()
         except Exception as e:
@@ -314,7 +314,9 @@ class FieldGroup:
         self.fields: List[Field] = list(fields)
         self.attrs: FieldGroupAttrs = attrs
 
-        setups = SetupGroup([setup for field in fields for setup in field.var_setups])
+        setups = PlotSetupGroup(
+            [setup for field in fields for setup in field.var_setups]
+        )
         self.shared_setup: PlotSetup = setups.compress()
 
     def __len__(self) -> int:

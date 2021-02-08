@@ -36,8 +36,8 @@ from ..plots import create_plot
 from ..plots import format_out_file_paths
 from ..plots import prepare_plot
 from ..plotting.boxed_plot import BoxedPlot
+from ..setup import PlotSetupGroup
 from ..setup import SetupFile
-from ..setup import SetupGroup
 from ..utils.logging import log
 
 
@@ -206,7 +206,7 @@ def prepare_setups(
     input_setup_params: Mapping[str, Any],
     suffixes: Optional[Union[str, Collection[str]]],
     only: Optional[int],
-) -> List[SetupGroup]:
+) -> List[PlotSetupGroup]:
 
     # Extend preset setup file paths
     setup_file_paths = list(setup_file_paths)
@@ -239,7 +239,7 @@ def read_setup_groups(
     setup_file_paths: Sequence[Union[Path, str]],
     preset_setup_file_paths: Sequence[Union[Path, str]],
     input_setup_params: Mapping[str, Any],
-) -> List[SetupGroup]:
+) -> List[PlotSetupGroup]:
     log(
         vbs=(
             f"reading setups from {len(preset_setup_file_paths)} preset and"
@@ -251,21 +251,21 @@ def read_setup_groups(
         if path not in setup_file_paths:
             setup_file_paths.append(path)
     if not setup_file_paths:
-        return [SetupGroup.create(SetupFile.prepare_raw_params(input_setup_params))]
+        return [PlotSetupGroup.create(SetupFile.prepare_raw_params(input_setup_params))]
     return SetupFile.read_many(setup_file_paths, override=input_setup_params)
 
 
 def restrict_grouped_setups(
-    setup_groups: Sequence[SetupGroup], only: int, *, grouped_by: str = "group"
-) -> List[SetupGroup]:
+    setup_groups: Sequence[PlotSetupGroup], only: int, *, grouped_by: str = "group"
+) -> List[PlotSetupGroup]:
     """Restrict total number of ``Setup``s in ``SetupGroup``s."""
     old_setup_groups = copy(setup_groups)
-    new_setup_groups: List[SetupGroup] = []
+    new_setup_groups: List[PlotSetupGroup] = []
     n_setups_old = sum(map(len, old_setup_groups))
     n_setups_new = 0
     for setup_group in old_setup_groups:
         if n_setups_new + len(setup_group) > only:
-            setup_group = SetupGroup(list(setup_group)[: only - n_setups_new])
+            setup_group = PlotSetupGroup(list(setup_group)[: only - n_setups_new])
             new_setup_groups.append(setup_group)
             n_setups_new += len(setup_group)
             assert n_setups_new == only

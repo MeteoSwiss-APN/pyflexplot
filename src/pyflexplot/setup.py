@@ -461,19 +461,19 @@ class PlotSetup:
         ...
 
     @overload
-    def derive(self, params: Sequence[Mapping[str, Any]]) -> "SetupGroup":
+    def derive(self, params: Sequence[Mapping[str, Any]]) -> "PlotSetupGroup":
         ...
 
     def derive(
         self, params: Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]
-    ) -> Union["PlotSetup", "SetupGroup"]:
+    ) -> Union["PlotSetup", "PlotSetupGroup"]:
         """Derive ``Setup`` object(s) with adapted parameters."""
         if isinstance(params, Sequence):
             if not params:
                 setup_lst = [self.copy()]
             else:
                 setup_lst = [self.derive(sub_params) for sub_params in params]
-            return SetupGroup(setup_lst)
+            return PlotSetupGroup(setup_lst)
         elif isinstance(params, Mapping):
             dct = merge_dicts(self.dict(), params)
             return type(self).create(dct)
@@ -482,12 +482,12 @@ class PlotSetup:
                 f"params must be sequence or mapping, not {type(params).__name__}"
             )
 
-    def decompress(self, skip: Optional[Collection[str]] = None) -> "SetupGroup":
+    def decompress(self, skip: Optional[Collection[str]] = None) -> "PlotSetupGroup":
         return self._decompress(select=None, skip=skip)
 
     def decompress_partially(
         self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None
-    ) -> "SetupGroup":
+    ) -> "PlotSetupGroup":
         return self._decompress(select, skip)
 
     def dict(self, rec: bool = True) -> Dict[str, Any]:
@@ -607,7 +607,7 @@ class PlotSetup:
                     # SR_TMP >
                     dcts.append(dct_ijk)
 
-        return SetupGroup([PlotSetup.create(dct) for dct in dcts])
+        return PlotSetupGroup([PlotSetup.create(dct) for dct in dcts])
 
     @classmethod
     def create(cls, params: Mapping[str, Any]) -> "PlotSetup":
@@ -852,7 +852,7 @@ class PlotSetup:
 
     @classmethod
     def compress(
-        cls, setups: Union["SetupGroup", Sequence["PlotSetup"]]
+        cls, setups: Union["PlotSetupGroup", Sequence["PlotSetup"]]
     ) -> "PlotSetup":
         setups = list(setups)
         # SR_TMP <
@@ -899,7 +899,7 @@ class PlotSetup:
         return (params_setup, params_core, params_dimensions)
 
 
-class SetupGroup:
+class PlotSetupGroup:
     """A group of ``Setup`` objects."""
 
     def __init__(self, setups: Collection[PlotSetup]) -> None:
@@ -935,7 +935,7 @@ class SetupGroup:
     def compress(self) -> PlotSetup:
         return PlotSetup.compress(self)
 
-    def compress_partially(self, param: Optional[str] = None) -> "SetupGroup":
+    def compress_partially(self, param: Optional[str] = None) -> "PlotSetupGroup":
         if param == "outfile":
             grouped_setups: Dict[PlotSetup, List[PlotSetup]] = {}
             for setup in self:
@@ -954,19 +954,19 @@ class SetupGroup:
                 new_setup_lst.append(
                     setup_lst_i[0].derive({"outfile": tuple(outfiles)})
                 )
-            return SetupGroup(new_setup_lst)
+            return PlotSetupGroup(new_setup_lst)
         else:
             raise NotImplementedError(f"{type(self).__name__}.compress('{param}')")
 
-    def decompress(self) -> List["SetupGroup"]:
+    def decompress(self) -> List["PlotSetupGroup"]:
         return self.decompress_partially(select=None, skip=None)
 
-    def derive(self, params: Mapping[str, Any]) -> "SetupGroup":
+    def derive(self, params: Mapping[str, Any]) -> "PlotSetupGroup":
         return type(self)([setup.derive(params) for setup in self])
 
     def decompress_partially(
         self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None
-    ) -> List["SetupGroup"]:
+    ) -> List["PlotSetupGroup"]:
         if (select, skip) == (None, None):
             return [setup.decompress() for setup in self]
         sub_setup_lst_lst: List[List[PlotSetup]] = []
@@ -982,12 +982,12 @@ class SetupGroup:
                 # SR_TMP >
                 for idx, sub_setup in enumerate(sub_setups):
                     sub_setup_lst_lst[idx].append(sub_setup)
-        return [SetupGroup(sub_setup_lst) for sub_setup_lst in sub_setup_lst_lst]
+        return [PlotSetupGroup(sub_setup_lst) for sub_setup_lst in sub_setup_lst_lst]
 
     def decompress_twice(
         self, outer: str, skip: Optional[Collection[str]] = None
-    ) -> List["SetupGroup"]:
-        sub_setups_lst: List[SetupGroup] = []
+    ) -> List["PlotSetupGroup"]:
+        sub_setups_lst: List[PlotSetupGroup] = []
         for setup in self:
             for sub_setup in setup.decompress_partially([outer], skip):
                 sub_sub_setups = sub_setup.decompress(skip)
@@ -1062,17 +1062,17 @@ class SetupGroup:
         return next(iter(values))
 
     @overload
-    def group(self, param: str) -> Dict[Any, "SetupGroup"]:
+    def group(self, param: str) -> Dict[Any, "PlotSetupGroup"]:
         ...
 
     @overload
-    def group(self, param: Sequence[str]) -> Dict[Tuple[Any, ...], "SetupGroup"]:
+    def group(self, param: Sequence[str]) -> Dict[Tuple[Any, ...], "PlotSetupGroup"]:
         ...
 
     def group(self, param):
         """Group setups by the value of one or more parameters."""
         if not isinstance(param, str):
-            grouped: Dict[Tuple[Any, ...], "SetupGroup"] = {}
+            grouped: Dict[Tuple[Any, ...], "PlotSetupGroup"] = {}
             params: List[str] = list(param)
             for value, sub_setups in self.group(params[0]).items():
                 if len(params) == 1:
@@ -1098,7 +1098,7 @@ class SetupGroup:
                 if value not in grouped_raw:
                     grouped_raw[value] = []
                 grouped_raw[value].append(setup)
-            grouped: Dict[Any, "SetupGroup"] = {
+            grouped: Dict[Any, "PlotSetupGroup"] = {
                 value: type(self)(setups) for value, setups in grouped_raw.items()
             }
             return grouped
@@ -1110,7 +1110,7 @@ class SetupGroup:
         species_ids: Sequence[int],
         *,
         inplace: Literal[False] = ...,
-    ) -> "SetupGroup":
+    ) -> "PlotSetupGroup":
         ...
 
     @overload
@@ -1168,7 +1168,7 @@ class SetupGroup:
             new_setups.append(new_setup)
         self._setups = new_setups
 
-    def copy(self) -> "SetupGroup":
+    def copy(self) -> "PlotSetupGroup":
         return type(self)([setup.copy() for setup in self])
 
     def dicts(self) -> List[Dict[str, Any]]:
@@ -1286,7 +1286,7 @@ class SetupGroup:
     @classmethod
     def create(
         cls, setups: Collection[Union[PlotSetup, Mapping[str, Any]]]
-    ) -> "SetupGroup":
+    ) -> "PlotSetupGroup":
         setup_lst: List[PlotSetup] = []
         for obj in setups:
             if isinstance(obj, PlotSetup):
@@ -1302,7 +1302,7 @@ class SetupGroup:
         return cls(setup_lst)
 
     @classmethod
-    def merge(cls, setups_lst: Sequence["SetupGroup"]) -> "SetupGroup":
+    def merge(cls, setups_lst: Sequence["PlotSetupGroup"]) -> "PlotSetupGroup":
         return cls([setup for setups in setups_lst for setup in setups])
 
 
@@ -1363,7 +1363,7 @@ class SetupFile:
         override: Optional[Mapping[str, Any]] = None,
         only: Optional[int] = None,
         each_only: Optional[int] = None,
-    ) -> List[SetupGroup]:
+    ) -> List[PlotSetupGroup]:
         if only is not None:
             if only < 0:
                 raise ValueError("only must not be negative", only)
@@ -1385,7 +1385,7 @@ class SetupFile:
                 if setup not in setups_by_infiles[key]:
                     setups_by_infiles[key].append(setup)
                     n_setups += 1
-        return [SetupGroup(setup_lst) for setup_lst in setups_by_infiles.values()]
+        return [PlotSetupGroup(setup_lst) for setup_lst in setups_by_infiles.values()]
 
     # pylint: disable=R0912  # too-many-branches (>12)
     @staticmethod

@@ -12,8 +12,8 @@ import pytest
 
 # First-party
 from pyflexplot.setup import PlotSetup
+from pyflexplot.setup import PlotSetupGroup
 from pyflexplot.setup import SetupFile
-from pyflexplot.setup import SetupGroup
 from srutils.dict import merge_dicts
 from srutils.testing import check_is_sub_element
 
@@ -35,7 +35,7 @@ class Test_Copy:
             "outfile": ("foo.png", "bar.pdf"),
         }
         setup = PlotSetup.create(params)
-        setups = SetupGroup([setup])
+        setups = PlotSetupGroup([setup])
         copied_setups = setups.copy()
         assert len(copied_setups) == len(setups)
         assert copied_setups == setups
@@ -44,7 +44,7 @@ class Test_Copy:
 class Test_FromRawParams:
     def test_empty(self):
         with pytest.raises(ValueError):
-            SetupGroup.create([])
+            PlotSetupGroup.create([])
 
     def test_one_variable(self):
         raw_params = {
@@ -54,7 +54,7 @@ class Test_FromRawParams:
             "species_id": [1, 2],
             "combine_species": False,
         }
-        setups = SetupGroup.create(SetupFile.prepare_raw_params(raw_params))
+        setups = PlotSetupGroup.create(SetupFile.prepare_raw_params(raw_params))
         res = setups.dicts()
         sol = [
             {
@@ -104,15 +104,15 @@ class Test_SetupGroup_Create:
         return [PlotSetup.create(dct) for dct in self.create_partial_dicts()]
 
     def create_setup_group(self):
-        return SetupGroup(self.create_setup_lst())
+        return PlotSetupGroup(self.create_setup_lst())
 
     def test_create_empty_setup_group(self):
         with pytest.raises(ValueError):
-            SetupGroup([])
+            PlotSetupGroup([])
 
     def test_from_setups(self):
         partial_dicts = self.create_partial_dicts()
-        setups = SetupGroup.create(partial_dicts)
+        setups = PlotSetupGroup.create(partial_dicts)
         assert len(setups) == len(partial_dicts)
 
 
@@ -155,19 +155,19 @@ class Test_SetupGroup_Compress:
     setups_lst = [PlotSetup.create(dct) for dct in dcts]
 
     def test_one(self):
-        res = SetupGroup(self.setups_lst[:1]).compress().dict()
+        res = PlotSetupGroup(self.setups_lst[:1]).compress().dict()
         sol = self.setups_lst[0]
         assert res == sol
 
     def test_two(self):
-        res = SetupGroup(self.setups_lst[:2]).compress().dict()
+        res = PlotSetupGroup(self.setups_lst[:2]).compress().dict()
         sol = PlotSetup.create(self.dcts[0]).derive(
             {"core": {"dimensions": {"level": (0, 1)}}}
         )
         assert res == sol
 
     def test_three(self):
-        res = SetupGroup(self.setups_lst[:3]).compress().dict()
+        res = PlotSetupGroup(self.setups_lst[:3]).compress().dict()
         sol = PlotSetup.create(self.dcts[0]).derive(
             {"core": {"dimensions": {"level": (0, 1, 2)}}}
         )
@@ -252,12 +252,12 @@ class Test_SetupGroup_Group:
         ]
 
     def get_setups(self):
-        return SetupGroup.create(self.get_setup_dcts())
+        return PlotSetupGroup.create(self.get_setup_dcts())
 
     def test_reference_setups(self):
         """Sanity check of the test reference setups."""
         setups = self.get_setups()
-        assert isinstance(setups, SetupGroup)
+        assert isinstance(setups, PlotSetupGroup)
         assert len(setups) == self.n_setups
 
     def test_one_regular(self):

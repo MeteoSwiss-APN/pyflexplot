@@ -64,7 +64,7 @@ from .plotting.map_axes import MapAxesConfig
 from .plotting.text_box_axes import TextBoxAxes
 from .setup import ModelSetup
 from .setup import PlotSetup
-from .setup import SetupGroup
+from .setup import PlotSetupGroup
 from .utils.exceptions import FieldAllNaNError
 from .utils.formatting import escape_format_keys
 from .utils.formatting import format_level_ranges
@@ -418,7 +418,7 @@ def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
             )
 
 
-def create_map_config(setups: SetupGroup, aspect: float) -> MapAxesConfig:
+def create_map_config(setups: PlotSetupGroup, aspect: float) -> MapAxesConfig:
     domain_type = setups.collect_equal("domain")
     lang = setups.collect_equal("lang")
     model_name = setups.collect_equal("model.name")
