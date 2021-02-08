@@ -1,11 +1,16 @@
 """Test module ``pyflexplot.setup``."""
+# Third-party
+import pytest
+
 # First-party
 from pyflexplot.setup import Setup
 from pyflexplot.setup import SetupGroup
+from srutils.dict import merge_dicts
 from srutils.testing import check_is_sub_element
 
 # Local
 from .shared import DEFAULT_SETUP
+from .shared import MANDATORY_RAW_DEFAULT_PARAMS
 
 
 class Test_Setup_Create:
@@ -27,6 +32,28 @@ class Test_Setup_Create:
         setup = Setup.create(params)
         res = setup.dict()
         check_is_sub_element(obj_super=res, obj_sub=params)
+
+    @pytest.mark.parametrize(
+        "dct",
+        [
+            {"core": {"input_variable": ["concentration", "deposition"]}},  # [dct0]
+            {"core": {"ens_variable": ["minimum", "maximum"]}},  # [dct1]
+            {"core": {"plot_type": ["auto", "multipanel"]}},  # [dct2]
+            {"core": {"integrate": [True, False]}},  # [dct3]
+            {"core": {"combine_deposition_types": [True, False]}},  # [dct4]
+            {"core": {"combine_levels": [True, False]}},  # [dct5]
+            {"core": {"combine_species": [True, False]}},  # [dct6]
+            {"core": {"lang": ["en", "de"]}},  # [dct7]
+            {"core": {"domain": ["full", "ch"]}},  # [dct8]
+            {"core": {"domain_size_lat": [None, 100]}},  # [dct9]
+            {"core": {"domain_size_lon": [None, 100]}},  # [dct10]
+            {"core": {"dimensions_default": ["all", "first"]}},  # [dct11]
+        ],
+    )
+    def test_multiple_values_fail(self, dct):
+        params = merge_dicts(MANDATORY_RAW_DEFAULT_PARAMS, dct)
+        with pytest.raises(ValueError):
+            Setup.create(params)
 
 
 class Test_Setup_Decompress:

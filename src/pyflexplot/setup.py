@@ -36,6 +36,7 @@ from srutils.dict import decompress_nested_dict
 from srutils.dict import merge_dicts
 from srutils.dict import nested_dict_resolve_wildcards
 from srutils.exceptions import InvalidParameterNameError
+from srutils.exceptions import InvalidParameterValueError
 from srutils.format import sfmt
 from srutils.str import join_multilines
 
@@ -127,6 +128,8 @@ class CoreSetup:
     # pylint: disable=R0912  # too-many-branches (>12)
     def __post_init__(self) -> None:
         assert isinstance(self.dimensions, Dimensions)  # SR_DBG
+
+        self._check_types()
 
         # Check input_variable
         choices = [
@@ -266,6 +269,17 @@ class CoreSetup:
         dct = self.dict(rec=False)
         dims = dct.pop("dimensions")
         return tuple(list(dct.items()) + [("dimensions", dims.tuple())])
+
+    def _check_types(self) -> None:
+        for param, value in self.dict(rec=False).items():
+            if param == "dimensions":
+                continue
+            try:
+                cast_field_value(type(self), param, value)
+            except InvalidParameterValueError as e:
+                raise ValueError(
+                    f"param {param} has invalid value {sfmt(value)}"
+                ) from e
 
     def _init_defaults(self) -> None:
         """Set some default values depending on other parameters."""
