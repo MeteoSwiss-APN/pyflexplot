@@ -22,7 +22,7 @@ from ..plotting.domain import CloudDomain
 from ..plotting.domain import Domain
 from ..plotting.domain import ReleaseSiteDomain
 from ..plotting.proj_bbox import Projections
-from ..setup import Setup
+from ..setup import PlotSetup
 from ..setup import SetupGroup
 from ..utils.exceptions import ArrayDimensionError
 from ..utils.exceptions import FieldAllNaNError
@@ -315,7 +315,7 @@ class FieldGroup:
         self.attrs: FieldGroupAttrs = attrs
 
         setups = SetupGroup([setup for field in fields for setup in field.var_setups])
-        self.shared_setup: Setup = setups.compress()
+        self.shared_setup: PlotSetup = setups.compress()
 
     def __len__(self) -> int:
         return len(self.fields)

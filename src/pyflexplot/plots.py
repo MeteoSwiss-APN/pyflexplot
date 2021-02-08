@@ -63,7 +63,7 @@ from .plotting.map_axes import MapAxes
 from .plotting.map_axes import MapAxesConfig
 from .plotting.text_box_axes import TextBoxAxes
 from .setup import ModelSetup
-from .setup import Setup
+from .setup import PlotSetup
 from .setup import SetupGroup
 from .utils.exceptions import FieldAllNaNError
 from .utils.formatting import escape_format_keys
@@ -472,7 +472,7 @@ def create_map_config(setups: SetupGroup, aspect: float) -> MapAxesConfig:
 # pylint: disable=R0912  # too-many-branches
 # pylint: disable=R0914  # too-many-locals (>15)
 def create_plot_config(
-    setup: Setup,
+    setup: PlotSetup,
     time_stats: FieldStats,
     labels: Dict[str, Dict[str, Any]],
 ) -> BoxedPlotConfig:
@@ -665,7 +665,7 @@ def create_plot_config(
 # pylint: disable=R0912  # too-many-branches
 # pylint: disable=R0914  # too-many-locals
 # pylint: disable=R0915  # too-many-statements
-def create_box_labels(setup: Setup, mdata: MetaData) -> Dict[str, Dict[str, Any]]:
+def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, Any]]:
     words = WORDS
     symbols = SYMBOLS
     words.set_active_lang(setup.core.lang)
@@ -867,12 +867,14 @@ def create_box_labels(setup: Setup, mdata: MetaData) -> Dict[str, Dict[str, Any]
 # pylint: disable=R0912  # too-many-branches
 # pylint: disable=R0915  # too-many-statements
 def format_names_etc(
-    setup: Setup, words: TranslatedWords, mdata: MetaData
+    setup: PlotSetup, words: TranslatedWords, mdata: MetaData
 ) -> Dict[str, str]:
     long_name = ""
     short_name = ""
 
-    def format_var_names(setup: Setup, words: TranslatedWords) -> Tuple[str, str, str]:
+    def format_var_names(
+        setup: PlotSetup, words: TranslatedWords
+    ) -> Tuple[str, str, str]:
         if setup.core.input_variable == "deposition":
             dep_type_word = (
                 "total"
@@ -894,7 +896,7 @@ def format_names_etc(
         return var_name, var_name_abbr, var_name_rel
 
     # pylint: disable=W0621  # redefined-outer-name
-    def _format_unit(setup: Setup, words: TranslatedWords, mdata: MetaData) -> str:
+    def _format_unit(setup: PlotSetup, words: TranslatedWords, mdata: MetaData) -> str:
         if setup.model.simulation_type == "ensemble":
             if setup.core.ens_variable == "probability":
                 return "%"
@@ -1124,7 +1126,7 @@ def format_vertical_level_range(
 def format_integr_period(
     start: datetime,
     now: datetime,
-    setup: Setup,
+    setup: PlotSetup,
     words: TranslatedWords,
     cap: bool = False,
 ) -> str:
@@ -1233,7 +1235,7 @@ def colors_from_cmap(cmap, n_levels, extend):
 
 
 def levels_from_time_stats(
-    setup: Setup, time_stats: FieldStats, levels_config_dct: Dict[str, Any]
+    setup: PlotSetup, time_stats: FieldStats, levels_config_dct: Dict[str, Any]
 ) -> np.ndarray:
     def _auto_levels_log10(n_levels: int, val_max: float) -> List[float]:
         if not np.isfinite(val_max):

@@ -3,7 +3,7 @@
 import pytest
 
 # First-party
-from pyflexplot.setup import Setup
+from pyflexplot.setup import PlotSetup
 from pyflexplot.setup import SetupGroup
 from srutils.dict import merge_dicts
 from srutils.testing import check_is_sub_element
@@ -29,7 +29,7 @@ class Test_Setup_Create:
                 "input_variable": "concentration",
             },
         }
-        setup = Setup.create(params)
+        setup = PlotSetup.create(params)
         res = setup.dict()
         check_is_sub_element(obj_super=res, obj_sub=params)
 
@@ -53,7 +53,7 @@ class Test_Setup_Create:
     def test_multiple_values_fail(self, dct):
         params = merge_dicts(MANDATORY_RAW_DEFAULT_PARAMS, dct)
         with pytest.raises(ValueError):
-            Setup.create(params)
+            PlotSetup.create(params)
 
 
 class Test_Setup_Decompress:
@@ -108,7 +108,7 @@ class Test_Setup_Decompress:
         setups = self.setup.decompress_partially(None)
         assert len(setups) == 12
         assert isinstance(setups, SetupGroup)
-        assert all(isinstance(setup, Setup) for setup in setups)
+        assert all(isinstance(setup, PlotSetup) for setup in setups)
         res = {
             (
                 s.core.dimensions.deposition_type,
@@ -137,7 +137,7 @@ class Test_Setup_Decompress:
         """Decompress only one select parameter."""
         setups = self.setup.decompress_partially(["dimensions.species_id"])
         assert isinstance(setups, SetupGroup)
-        assert all(isinstance(setup, Setup) for setup in setups)
+        assert all(isinstance(setup, PlotSetup) for setup in setups)
         assert len(setups) == 2
         res = {
             (
@@ -157,7 +157,7 @@ class Test_Setup_Decompress:
         )
         assert len(setups) == 6
         assert isinstance(setups, SetupGroup)
-        assert all(isinstance(setup, Setup) for setup in setups)
+        assert all(isinstance(setup, PlotSetup) for setup in setups)
         res = {
             (
                 s.core.dimensions.deposition_type,

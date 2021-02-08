@@ -17,7 +17,7 @@ from matplotlib.figure import Figure
 # Local
 from ..input.field import Field
 from ..plot_layouts import BoxedPlotLayoutType
-from ..setup import Setup
+from ..setup import PlotSetup
 from ..utils.summarize import summarizable
 from ..utils.typing import ColorType
 from ..utils.typing import FontSizeType
@@ -82,7 +82,7 @@ class MarkersConfig:
 @summarizable
 @dataclass
 class BoxedPlotConfig:
-    setup: Setup  # SR_TODO consider removing this
+    setup: PlotSetup  # SR_TODO consider removing this
     layout: BoxedPlotLayoutType
     # ---
     font: FontConfig = FontConfig()

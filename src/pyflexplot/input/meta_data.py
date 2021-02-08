@@ -32,7 +32,7 @@ from srutils.datetime import init_datetime
 from srutils.dict import compress_multival_dicts
 
 # Local
-from ..setup import Setup
+from ..setup import PlotSetup
 from ..words import SYMBOLS
 from .species import get_species
 from .species import Species
@@ -303,7 +303,7 @@ class MetaData:
 
     @classmethod
     def collect(
-        cls, fi: nc4.Dataset, setup: Setup, *, add_ts0: bool = True
+        cls, fi: nc4.Dataset, setup: PlotSetup, *, add_ts0: bool = True
     ) -> "MetaData":
         """Collect meta data from file."""
         return cls(
@@ -343,7 +343,7 @@ class VariableMetaData(_MetaDataBase):
     level_unit: str
 
     @classmethod
-    def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "VariableMetaData":
+    def from_file(cls, fi: nc4.Dataset, setup: PlotSetup) -> "VariableMetaData":
         if setup.core.input_variable == "affected_area":
             unit = ""
         elif setup.core.input_variable in [
@@ -406,7 +406,7 @@ class SimulationMetaData(_MetaDataBase):
 
     @classmethod
     def from_file(
-        cls, fi: nc4.Dataset, setup: Setup, add_ts0: bool
+        cls, fi: nc4.Dataset, setup: PlotSetup, add_ts0: bool
     ) -> "SimulationMetaData":
 
         # Start and end timesteps of simulation
@@ -482,7 +482,7 @@ class ReleaseMetaData(_MetaDataBase):
     start_rel: timedelta
 
     @classmethod
-    def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "ReleaseMetaData":
+    def from_file(cls, fi: nc4.Dataset, setup: PlotSetup) -> "ReleaseMetaData":
         """Read information on a release from open file."""
         raw = RawReleaseMetaData.from_file(fi, setup)
         raw_site_name = raw.site
@@ -532,7 +532,7 @@ class SpeciesMetaData(_MetaDataBase):
     washout_exponent: Union[float, Tuple[float, ...]]
 
     @classmethod
-    def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "SpeciesMetaData":
+    def from_file(cls, fi: nc4.Dataset, setup: PlotSetup) -> "SpeciesMetaData":
         name: str
         if setup.core.input_variable in [
             "affected_area",
@@ -636,7 +636,7 @@ class RawReleaseMetaData:
 
     # pylint: disable=R0914  # too-many-locals
     @classmethod
-    def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "RawReleaseMetaData":
+    def from_file(cls, fi: nc4.Dataset, setup: PlotSetup) -> "RawReleaseMetaData":
         """Read information on a release from open file."""
         # Fetch numpoint
         assert setup.core.dimensions.numpoint is not None  # mypy
@@ -717,7 +717,9 @@ class RawReleaseMetaData:
 class TimeStepMetaDataCollector:
     """Collect time step meta data from file."""
 
-    def __init__(self, fi: nc4.Dataset, setup: Setup, *, add_ts0: bool = True) -> None:
+    def __init__(
+        self, fi: nc4.Dataset, setup: PlotSetup, *, add_ts0: bool = True
+    ) -> None:
         """Create an instance of ``TimeStepMetaDataCollector``."""
         self.fi = fi
         self.setup = setup

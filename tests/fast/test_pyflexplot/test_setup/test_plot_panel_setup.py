@@ -4,7 +4,7 @@ from typing import Any
 from typing import Dict
 
 # First-party
-from pyflexplot.setup import CoreSetup
+from pyflexplot.setup import PlotPanelSetup
 
 
 class Test_CompleteDimensions:
@@ -21,25 +21,25 @@ class Test_CompleteDimensions:
     species_ids = (1, 2)
 
     def test_time(self):
-        setup = CoreSetup.create({"dimensions": {"time": "*"}})
+        setup = PlotPanelSetup.create({"dimensions": {"time": "*"}})
         assert setup.dimensions.time is None
         setup = setup.complete_dimensions(self.raw_dimensions, self.species_ids)
         assert setup.dimensions.time == (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 
     def test_level(self):
-        setup = CoreSetup.create({"dimensions": {"level": "*"}})
+        setup = PlotPanelSetup.create({"dimensions": {"level": "*"}})
         assert setup.dimensions.level is None
         setup = setup.complete_dimensions(self.raw_dimensions, self.species_ids)
         assert setup.dimensions.level == (0, 1, 2)
 
     def test_species_id(self):
-        setup = CoreSetup.create({"dimensions": {"species_id": "*"}})
+        setup = PlotPanelSetup.create({"dimensions": {"species_id": "*"}})
         assert setup.dimensions.species_id is None
         setup = setup.complete_dimensions(self.raw_dimensions, self.species_ids)
         assert setup.dimensions.species_id == (1, 2)
 
     def test_others(self):
-        setup = CoreSetup.create(
+        setup = PlotPanelSetup.create(
             {"dimensions": {"nageclass": "*", "noutrel": "*", "numpoint": "*"}}
         )
         assert setup.dimensions.nageclass is None
@@ -59,7 +59,7 @@ class Test_CompleteDimensions:
             "noutrel": "*",
             "numpoint": "*",
         }
-        setup = CoreSetup.create(
+        setup = PlotPanelSetup.create(
             {"dimensions": dimensions, "dimensions_default": "all"}
         )
         assert setup.dimensions.time is None
@@ -85,7 +85,7 @@ class Test_CompleteDimensions:
             "noutrel": "*",
             "numpoint": "*",
         }
-        setup = CoreSetup.create(
+        setup = PlotPanelSetup.create(
             {"dimensions": dimensions, "dimensions_default": "first"}
         )
         assert setup.dimensions.time is None

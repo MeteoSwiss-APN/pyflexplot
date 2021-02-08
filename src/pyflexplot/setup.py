@@ -58,7 +58,7 @@ def is_dimensions_param(param: str) -> bool:
 
 # SR_TMP <<< TODO cleaner solution
 def is_core_setup_param(param: str) -> bool:
-    return param in CoreSetup.get_params()
+    return param in PlotPanelSetup.get_params()
 
 
 # SR_TMP <<< TODO cleaner solution
@@ -68,11 +68,11 @@ def is_model_setup_param(param: str) -> bool:
 
 # SR_TMP <<< TODO cleaner solution
 def is_setup_param(param: str) -> bool:
-    return param in Setup.get_params()
+    return param in PlotSetup.get_params()
 
 
 # SR_TMP <<< TODO cleaner solution
-def get_setup_param_value(setup: "Setup", param: str) -> Any:
+def get_setup_param_value(setup: "PlotSetup", param: str) -> Any:
     if is_setup_param(param):
         return getattr(setup, param)
     elif is_core_setup_param(param):
@@ -90,10 +90,10 @@ def get_setup_param_value(setup: "Setup", param: str) -> Any:
 
 # pylint: disable=R0902  # too-many-instance-attributes (>7)
 @dataclass
-class CoreSetup:
-    """PyFlexPlot core setup with exactly one value per parameter.
+class PlotPanelSetup:
+    """Setup of an individual panel of a plot.
 
-    See docstring of ``Setup.create`` for a description of the parameters.
+    See docstring of ``PlotSetup.create`` for a description of the parameters.
 
     """
 
@@ -224,7 +224,7 @@ class CoreSetup:
         species_ids: Sequence[int],
         *,
         inplace: Literal[False] = ...,
-    ) -> "CoreSetup":
+    ) -> "PlotPanelSetup":
         ...
 
     @overload
@@ -239,7 +239,7 @@ class CoreSetup:
 
     def complete_dimensions(self, raw_dimensions, species_ids, *, inplace=False):
         """Complete unconstrained dimensions based on available indices."""
-        obj: "CoreSetup" = self if inplace else self.copy()
+        obj: "PlotPanelSetup" = self if inplace else self.copy()
         obj.dimensions.complete(
             raw_dimensions,
             species_ids,
@@ -262,7 +262,7 @@ class CoreSetup:
             "dimensions": self.dimensions.dict() if rec else self.dimensions,
         }
 
-    def copy(self) -> "CoreSetup":
+    def copy(self) -> "PlotPanelSetup":
         return self.create(self.dict())
 
     def tuple(self) -> Tuple[Tuple[str, Any], ...]:
@@ -332,13 +332,15 @@ class CoreSetup:
         return list(cls.__dataclass_fields__)  # type: ignore  # pylint: disable=E1101
 
     @classmethod
-    def create(cls, params: Mapping[str, Any]) -> "CoreSetup":
+    def create(cls, params: Mapping[str, Any]) -> "PlotPanelSetup":
         params = dict(params)
         params["dimensions"] = Dimensions.create(params.pop("dimensions", {}))
         return cls(**params)
 
     @classmethod
-    def as_setup(cls, obj: Union[Mapping[str, Any], "CoreSetup"]) -> "CoreSetup":
+    def as_setup(
+        cls, obj: Union[Mapping[str, Any], "PlotPanelSetup"]
+    ) -> "PlotPanelSetup":
         if isinstance(obj, cls):
             return obj
         assert isinstance(obj, Mapping)  # mypy
@@ -407,10 +409,15 @@ class ModelSetup:
 
 # SR_TODO Clean up docstring -- where should format key hints go?
 @dataclass
-class Setup:
-    """PyFlexPlot setup.
+class PlotSetup:
+    """Setup of a whole plot.
 
     See docstring of ``Setup.create`` for details on parameters.
+
+    Note that until all the dimensions have been completed etc., a ``PlotSetup``
+    object may ultimately correspond to multiple plots, but at plotting time,
+    each ``PlotSetup`` object corresponds to one plot (which may be multiple
+    times with different names/formats, though).
 
     """
 
@@ -419,7 +426,7 @@ class Setup:
     outfile_time_format: str = "%Y%m%d%H%M"
     scale_fact: float = 1.0
     model: ModelSetup = ModelSetup()
-    core: CoreSetup = CoreSetup()
+    core: PlotPanelSetup = PlotPanelSetup()
 
     def __post_init__(self) -> None:
         if not isinstance(self.model, ModelSetup):
@@ -449,7 +456,7 @@ class Setup:
             raise NotImplementedError(deposition_type)
 
     @overload
-    def derive(self, params: Mapping[str, Any]) -> "Setup":
+    def derive(self, params: Mapping[str, Any]) -> "PlotSetup":
         ...
 
     @overload
@@ -458,7 +465,7 @@ class Setup:
 
     def derive(
         self, params: Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]
-    ) -> Union["Setup", "SetupGroup"]:
+    ) -> Union["PlotSetup", "SetupGroup"]:
         """Derive ``Setup`` object(s) with adapted parameters."""
         if isinstance(params, Sequence):
             if not params:
@@ -599,10 +606,10 @@ class Setup:
                     # SR_TMP >
                     dcts.append(dct_ijk)
 
-        return SetupGroup([Setup.create(dct) for dct in dcts])
+        return SetupGroup([PlotSetup.create(dct) for dct in dcts])
 
     @classmethod
-    def create(cls, params: Mapping[str, Any]) -> "Setup":
+    def create(cls, params: Mapping[str, Any]) -> "PlotSetup":
         """Create an instance of ``Setup``.
 
         Args:
@@ -732,7 +739,7 @@ class Setup:
             for param, value in params.items()
         }
         if core_params:
-            params["core"] = CoreSetup.create(core_params)
+            params["core"] = PlotPanelSetup.create(core_params)
         if model_params:
             params["model"] = ModelSetup.create(model_params)
         return cls(**params)
@@ -742,7 +749,7 @@ class Setup:
         return list(cls.__dataclass_fields__)  # type: ignore  # pylint: disable=E1101
 
     @classmethod
-    def as_setup(cls, obj: Union[Mapping[str, Any], "Setup"]) -> "Setup":
+    def as_setup(cls, obj: Union[Mapping[str, Any], "PlotSetup"]) -> "PlotSetup":
         if isinstance(obj, cls):
             return obj
         return cls.create(obj)  # type: ignore
@@ -752,7 +759,7 @@ class Setup:
         """Cast a parameter to the appropriate type."""
         param_choices = sorted(
             [param for param in cls.get_params() if param != "core"]
-            + [param for param in CoreSetup.get_params() if param != "dimensions"]
+            + [param for param in PlotPanelSetup.get_params() if param != "dimensions"]
             + list(CoreDimensions.get_params())
         )
         param_choices_fmtd = ", ".join(map(str, param_choices))
@@ -786,7 +793,7 @@ class Setup:
                 return ModelSetup.cast(param, value)
             elif is_core_setup_param(param):
                 return cast_field_value(
-                    CoreSetup,
+                    PlotPanelSetup,
                     param,
                     value,
                     auto_wrap=True,
@@ -843,7 +850,9 @@ class Setup:
         return cls.cast_many(params)
 
     @classmethod
-    def compress(cls, setups: Union["SetupGroup", Sequence["Setup"]]) -> "Setup":
+    def compress(
+        cls, setups: Union["SetupGroup", Sequence["PlotSetup"]]
+    ) -> "PlotSetup":
         setups = list(setups)
         # SR_TMP <
         input_variables = [setup.core.input_variable for setup in setups]
@@ -892,18 +901,18 @@ class Setup:
 class SetupGroup:
     """A group of ``Setup`` objects."""
 
-    def __init__(self, setups: Collection[Setup]) -> None:
+    def __init__(self, setups: Collection[PlotSetup]) -> None:
         """Create an instance of ``SetupGroup``."""
         if not setups:
             raise ValueError(f"setups {type(setups).__name__} is empty")
         if not isinstance(setups, Collection) or (
-            setups and not isinstance(next(iter(setups)), Setup)
+            setups and not isinstance(next(iter(setups)), PlotSetup)
         ):
             raise ValueError(
                 "setups is not an collection of Setup objects, but a"
                 f" {type(setups).__name__} of {type(next(iter(setups))).__name__}"
             )
-        self._setups: List[Setup] = list(setups)
+        self._setups: List[PlotSetup] = list(setups)
 
         # Collect shared setup params
         self.infile: str
@@ -922,18 +931,18 @@ class SetupGroup:
             else:
                 setattr(self, attr, value)
 
-    def compress(self) -> Setup:
-        return Setup.compress(self)
+    def compress(self) -> PlotSetup:
+        return PlotSetup.compress(self)
 
     def compress_partially(self, param: Optional[str] = None) -> "SetupGroup":
         if param == "outfile":
-            grouped_setups: Dict[Setup, List[Setup]] = {}
+            grouped_setups: Dict[PlotSetup, List[PlotSetup]] = {}
             for setup in self:
                 key = setup.derive({"outfile": "none"})
                 if key not in grouped_setups:
                     grouped_setups[key] = []
                 grouped_setups[key].append(setup)
-            new_setup_lst: List[Setup] = []
+            new_setup_lst: List[PlotSetup] = []
             for setup_lst_i in grouped_setups.values():
                 outfiles: List[str] = []
                 for setup in setup_lst_i:
@@ -959,7 +968,7 @@ class SetupGroup:
     ) -> List["SetupGroup"]:
         if (select, skip) == (None, None):
             return [setup.decompress() for setup in self]
-        sub_setup_lst_lst: List[List[Setup]] = []
+        sub_setup_lst_lst: List[List[PlotSetup]] = []
         for setup in self:
             sub_setups = setup.decompress_partially(select, skip)
             if not sub_setup_lst_lst:
@@ -1075,7 +1084,7 @@ class SetupGroup:
                     raise NotImplementedError(f"{len(param)} sub_params", param)
             return grouped
         else:
-            grouped_raw: Dict[Any, List[Setup]] = {}
+            grouped_raw: Dict[Any, List[PlotSetup]] = {}
             for setup in self:
                 value = get_setup_param_value(setup, param)
                 try:
@@ -1133,7 +1142,7 @@ class SetupGroup:
         suffixes: List[str] = list([suffix] if isinstance(suffix, str) else suffix)
         if not suffixes:
             raise ValueError("must pass one or more suffixes")
-        new_setups: List[Setup] = []
+        new_setups: List[PlotSetup] = []
         for setup in self:
             old_outfiles: List[str] = (
                 [setup.outfile]
@@ -1172,7 +1181,7 @@ class SetupGroup:
         diff: Dict[str, Any] = {}
 
         # Regular params
-        for param in Setup.get_params():
+        for param in PlotSetup.get_params():
             if param == "core":
                 continue  # Handled below
             try:
@@ -1185,7 +1194,7 @@ class SetupGroup:
         # Core params
         core_same = {}
         core_diff = {}
-        for param in CoreSetup.get_params():
+        for param in PlotPanelSetup.get_params():
             if param == "dimensions":
                 continue  # Handled below
             try:
@@ -1253,7 +1262,7 @@ class SetupGroup:
     def __len__(self) -> int:
         return len(self._setups)
 
-    def __iter__(self) -> Iterator[Setup]:
+    def __iter__(self) -> Iterator[PlotSetup]:
         return iter(self._setups)
 
     def __eq__(self, other: object) -> bool:
@@ -1275,11 +1284,11 @@ class SetupGroup:
 
     @classmethod
     def create(
-        cls, setups: Collection[Union[Setup, Mapping[str, Any]]]
+        cls, setups: Collection[Union[PlotSetup, Mapping[str, Any]]]
     ) -> "SetupGroup":
-        setup_lst: List[Setup] = []
+        setup_lst: List[PlotSetup] = []
         for obj in setups:
-            if isinstance(obj, Setup):
+            if isinstance(obj, PlotSetup):
                 # ? dcts = obj.decompress(["dimensions", "ens_member_id"])
                 raise NotImplementedError("obj is Setup")
             else:
@@ -1287,7 +1296,7 @@ class SetupGroup:
                 assert isinstance(obj, dict)  # mypy
                 dcts = decompress_multival_dict(cast(dict, obj), skip=skip)
             for dct in dcts:
-                setup = Setup.create(dct)
+                setup = PlotSetup.create(dct)
                 setup_lst.append(setup)
         return cls(setup_lst)
 
@@ -1309,7 +1318,7 @@ class SetupFile:
         *,
         override: Optional[Mapping[str, Any]] = None,
         only: Optional[int] = None,
-    ) -> List[Setup]:
+    ) -> List[PlotSetup]:
         """Read the setup from a text file in TOML format."""
         with open(self.path, "r") as f:
             try:
@@ -1333,7 +1342,8 @@ class SetupFile:
                 if raw_params not in raw_params_lst:
                     raw_params_lst.append(raw_params)
         setups = [
-            Setup.create(params) for params in self.prepare_raw_params(raw_params_lst)
+            PlotSetup.create(params)
+            for params in self.prepare_raw_params(raw_params_lst)
         ]
         if only is not None:
             if only < 0:
@@ -1361,7 +1371,7 @@ class SetupFile:
             if each_only < 0:
                 raise ValueError("each_only must not be negative", each_only)
         KeyT = Tuple[str, Optional[Tuple[int, ...]]]
-        setups_by_infiles: Dict[KeyT, List[Setup]] = {}
+        setups_by_infiles: Dict[KeyT, List[PlotSetup]] = {}
         n_setups = 0
         for path in paths:
             setups = cls(path).read(override=override, only=each_only)
@@ -1412,7 +1422,7 @@ class SetupFile:
         return params_lst
 
 
-def setup_repr(obj: Union["CoreSetup", "Setup"]) -> str:
+def setup_repr(obj: Union["PlotPanelSetup", "PlotSetup"]) -> str:
     s_attrs_lst: List[str] = []
     for param in obj.get_params():
         s_value = sfmt(getattr(obj, param))

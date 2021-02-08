@@ -5,7 +5,7 @@ import netCDF4 as nc4
 import numpy as np
 
 # First-party
-from pyflexplot.setup import CoreSetup
+from pyflexplot.setup import PlotPanelSetup
 
 # Local
 from ..shared import datadir_flexpart_artificial as datadir_artificial  # noqa:F401
@@ -23,13 +23,16 @@ def read_flexpart_field(path, var_name, setup, *, model, add_ts0):
                 idx = slice(None)
             elif dim_name == "time":
                 # Read all timesteps until the selected one
-                if isinstance(setup, CoreSetup):
+                if isinstance(setup, PlotPanelSetup):
                     idx = slice(setup.core.dimensions.time + (0 if add_ts0 else 1))
                 else:
                     assert isinstance(setup.core.dimensions.time, int)
                     idx = slice(setup.core.dimensions.time + (0 if add_ts0 else 1))
             elif dim_name in ["level", "height"]:
-                if isinstance(setup, CoreSetup) or setup.core.dimensions.level is None:
+                if (
+                    isinstance(setup, PlotPanelSetup)
+                    or setup.core.dimensions.level is None
+                ):
                     idx = setup.core.dimensions.level
                 else:
                     assert isinstance(setup.core.dimensions.level, int)

@@ -17,7 +17,7 @@ import pytest  # type: ignore
 
 # First-party
 from pyflexplot.input.read_fields import read_fields
-from pyflexplot.setup import Setup
+from pyflexplot.setup import PlotSetup
 from pyflexplot.setup import SetupGroup
 
 # Local
@@ -49,7 +49,7 @@ class Config:
 
     @property
     def setup(self):
-        return Setup.create(self.setup_dct)
+        return PlotSetup.create(self.setup_dct)
 
 
 datafilename1 = "flexpart_cosmo-1_2019052800.nc"
@@ -632,7 +632,7 @@ def test_missing_deposition_cosmo(datadir):  # noqa:F811
             },
         },
     }
-    setup = Setup.create(setup_dct)
+    setup = PlotSetup.create(setup_dct)
     datafile = f"{datadir}/{setup_dct['infile']}"
 
     # Initialize field specifications
@@ -669,7 +669,7 @@ def test_missing_deposition_ifs(datadir):  # noqa:F811
             },
         },
     }
-    setup = Setup.create(setup_dct)
+    setup = PlotSetup.create(setup_dct)
     datafile = f"{datadir}/{setup_dct['infile']}"
 
     # Initialize field specifications
@@ -707,7 +707,7 @@ def test_affected_area(datadir):  # noqa:F811
             },
         },
     }
-    setup = Setup.create(setup_dct)
+    setup = PlotSetup.create(setup_dct)
     datafile = f"{datadir}/{setup_dct['infile']}"
 
     # Initialize field specifications

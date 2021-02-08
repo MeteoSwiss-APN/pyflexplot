@@ -6,9 +6,9 @@ from typing import Dict
 # First-party
 from pyflexplot.dimensions import CoreDimensions
 from pyflexplot.dimensions import Dimensions
-from pyflexplot.setup import CoreSetup
 from pyflexplot.setup import ModelSetup
-from pyflexplot.setup import Setup
+from pyflexplot.setup import PlotPanelSetup
+from pyflexplot.setup import PlotSetup
 from srutils.dict import merge_dicts
 
 MANDATORY_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
@@ -67,7 +67,7 @@ DEFAULT_PARAMS = merge_dicts(
     RAW_DEFAULT_PARAMS,
     {
         "model": ModelSetup(**RAW_DEFAULT_PARAMS["model"]),
-        "core": CoreSetup(
+        "core": PlotPanelSetup(
             **merge_dicts(
                 RAW_DEFAULT_PARAMS["core"],
                 {
@@ -83,4 +83,4 @@ DEFAULT_PARAMS = merge_dicts(
 )
 
 
-DEFAULT_SETUP: Setup = Setup.create(RAW_DEFAULT_PARAMS)
+DEFAULT_SETUP: PlotSetup = PlotSetup.create(RAW_DEFAULT_PARAMS)

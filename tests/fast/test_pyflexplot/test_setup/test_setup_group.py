@@ -11,7 +11,7 @@ from typing import Tuple
 import pytest
 
 # First-party
-from pyflexplot.setup import Setup
+from pyflexplot.setup import PlotSetup
 from pyflexplot.setup import SetupFile
 from pyflexplot.setup import SetupGroup
 from srutils.dict import merge_dicts
@@ -34,7 +34,7 @@ class Test_Copy:
             "model": {"name": "IFS-HRES"},
             "outfile": ("foo.png", "bar.pdf"),
         }
-        setup = Setup.create(params)
+        setup = PlotSetup.create(params)
         setups = SetupGroup([setup])
         copied_setups = setups.copy()
         assert len(copied_setups) == len(setups)
@@ -101,7 +101,7 @@ class Test_SetupGroup_Create:
         ]
 
     def create_setup_lst(self):
-        return [Setup.create(dct) for dct in self.create_partial_dicts()]
+        return [PlotSetup.create(dct) for dct in self.create_partial_dicts()]
 
     def create_setup_group(self):
         return SetupGroup(self.create_setup_lst())
@@ -152,7 +152,7 @@ class Test_SetupGroup_Compress:
             },
         },
     ]
-    setups_lst = [Setup.create(dct) for dct in dcts]
+    setups_lst = [PlotSetup.create(dct) for dct in dcts]
 
     def test_one(self):
         res = SetupGroup(self.setups_lst[:1]).compress().dict()
@@ -161,14 +161,14 @@ class Test_SetupGroup_Compress:
 
     def test_two(self):
         res = SetupGroup(self.setups_lst[:2]).compress().dict()
-        sol = Setup.create(self.dcts[0]).derive(
+        sol = PlotSetup.create(self.dcts[0]).derive(
             {"core": {"dimensions": {"level": (0, 1)}}}
         )
         assert res == sol
 
     def test_three(self):
         res = SetupGroup(self.setups_lst[:3]).compress().dict()
-        sol = Setup.create(self.dcts[0]).derive(
+        sol = PlotSetup.create(self.dcts[0]).derive(
             {"core": {"dimensions": {"level": (0, 1, 2)}}}
         )
         assert res == sol

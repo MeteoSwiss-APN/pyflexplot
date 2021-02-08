@@ -17,7 +17,7 @@ from pyflexplot.input.read_fields import read_fields
 from pyflexplot.plots import create_plot
 from pyflexplot.plots import format_out_file_paths
 from pyflexplot.plots import prepare_plot
-from pyflexplot.setup import Setup
+from pyflexplot.setup import PlotSetup
 from pyflexplot.setup import SetupGroup
 from srutils.testing import assert_nested_equal
 
@@ -70,7 +70,7 @@ class _TestBase:
     n_plots: int = 1
 
     def get_setups(self):
-        setup = Setup.create(self.setup_dct)
+        setup = PlotSetup.create(self.setup_dct)
         return SetupGroup([setup])
 
     def get_field_group(self, datadir):

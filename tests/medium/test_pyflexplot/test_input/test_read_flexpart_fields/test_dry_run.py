@@ -23,7 +23,7 @@ from pyflexplot.setup import is_core_setup_param
 from pyflexplot.setup import is_dimensions_param
 from pyflexplot.setup import is_model_setup_param
 from pyflexplot.setup import is_setup_param
-from pyflexplot.setup import Setup
+from pyflexplot.setup import PlotSetup
 from pyflexplot.setup import SetupGroup
 from srutils.dict import merge_dicts
 from srutils.testing import check_is_sub_element
@@ -115,13 +115,13 @@ class ConfMultipleSetups:
 
 
 def _test_single_setup_core(config, params):
-    setup = Setup.create(config.setup_dct)
+    setup = PlotSetup.create(config.setup_dct)
     setups = SetupGroup([setup])
     _test_setups_core(setups, params, config.sol)
 
 
 def _test_multiple_setups_core(config, params):
-    setup_lst = [Setup.create(setup_dct) for setup_dct in config.setup_dct_lst]
+    setup_lst = [PlotSetup.create(setup_dct) for setup_dct in config.setup_dct_lst]
     setups = SetupGroup(setup_lst)
     _test_setups_core(setups, params, config.sol)
 

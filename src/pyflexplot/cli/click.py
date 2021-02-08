@@ -12,7 +12,7 @@ from click import Context
 from srutils.exceptions import InvalidParameterNameError
 
 # Local
-from ..setup import Setup
+from ..setup import PlotSetup
 from ..utils.logging import set_log_level
 
 
@@ -41,7 +41,7 @@ def click_prepare_setup_params(ctx, param, value):
     if not value:
         return None
     try:
-        return Setup.prepare_params(value)
+        return PlotSetup.prepare_params(value)
     except InvalidParameterNameError as e:
         click_error(ctx, f"Invalid setup parameter name: {e}")
 

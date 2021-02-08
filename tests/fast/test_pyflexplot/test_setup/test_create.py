@@ -1,6 +1,6 @@
 """Test class ``pyflexplot.setup.Setup.create``."""
 # First-party
-from pyflexplot.setup import Setup
+from pyflexplot.setup import PlotSetup
 from srutils.dict import merge_dicts
 
 # Local
@@ -13,44 +13,46 @@ from .shared import RAW_DEFAULT_PARAMS
 
 class Test_Empty:
     def test_init_dict_vs_init(self):
-        assert Setup(**DEFAULT_PARAMS).dict() == Setup(**DEFAULT_PARAMS)
+        assert PlotSetup(**DEFAULT_PARAMS).dict() == PlotSetup(**DEFAULT_PARAMS)
 
     def test_init_dict_vs_create_dict(self):
-        res = Setup(**DEFAULT_PARAMS).dict()
-        sol = Setup.create(MANDATORY_RAW_DEFAULT_PARAMS).dict()
+        res = PlotSetup(**DEFAULT_PARAMS).dict()
+        sol = PlotSetup.create(MANDATORY_RAW_DEFAULT_PARAMS).dict()
         assert res == sol
 
     def test_init_dict_vs_create(self):
-        res = Setup(**DEFAULT_PARAMS).dict()
-        sol = Setup.create(MANDATORY_RAW_DEFAULT_PARAMS)
+        res = PlotSetup(**DEFAULT_PARAMS).dict()
+        sol = PlotSetup.create(MANDATORY_RAW_DEFAULT_PARAMS)
         assert res == sol
 
     def test_init_dict_vs_default_setup_dict(self):
-        assert Setup(**DEFAULT_PARAMS).dict() == DEFAULT_SETUP.dict()
+        assert PlotSetup(**DEFAULT_PARAMS).dict() == DEFAULT_SETUP.dict()
 
     def test_init_dict_vs_default_setup(self):
-        assert Setup(**DEFAULT_PARAMS).dict() == DEFAULT_SETUP
+        assert PlotSetup(**DEFAULT_PARAMS).dict() == DEFAULT_SETUP
 
     def test_init_dict_vs_default_params_dict(self):
-        assert Setup(**DEFAULT_PARAMS).dict() == RAW_DEFAULT_PARAMS
+        assert PlotSetup(**DEFAULT_PARAMS).dict() == RAW_DEFAULT_PARAMS
 
     def test_init_vs_init_dict(self):
-        assert Setup(**DEFAULT_PARAMS) == Setup(**DEFAULT_PARAMS).dict()
+        assert PlotSetup(**DEFAULT_PARAMS) == PlotSetup(**DEFAULT_PARAMS).dict()
 
     def test_init_vs_create(self):
-        assert Setup(**DEFAULT_PARAMS) == Setup.create(MANDATORY_RAW_DEFAULT_PARAMS)
+        assert PlotSetup(**DEFAULT_PARAMS) == PlotSetup.create(
+            MANDATORY_RAW_DEFAULT_PARAMS
+        )
 
     def test_init_vs_default_setup(self):
-        assert Setup(**DEFAULT_PARAMS) == DEFAULT_SETUP
+        assert PlotSetup(**DEFAULT_PARAMS) == DEFAULT_SETUP
 
     def test_init_vs_default_params_dict(self):
-        assert Setup(**DEFAULT_PARAMS) == merge_dicts(
+        assert PlotSetup(**DEFAULT_PARAMS) == merge_dicts(
             MANDATORY_RAW_DEFAULT_PARAMS, OPTIONAL_RAW_DEFAULT_PARAMS
         )
 
     def test_create_vs_create_dict(self):
-        res = Setup.create(MANDATORY_RAW_DEFAULT_PARAMS)
-        sol = Setup.create(MANDATORY_RAW_DEFAULT_PARAMS).dict()
+        res = PlotSetup.create(MANDATORY_RAW_DEFAULT_PARAMS)
+        sol = PlotSetup.create(MANDATORY_RAW_DEFAULT_PARAMS).dict()
         assert res == sol
 
     def test_default_setup_vs_default_setup_dict(self):
@@ -70,21 +72,21 @@ class Test_WildcardToNone:
         params = merge_dicts(
             MANDATORY_RAW_DEFAULT_PARAMS, {"core": {"dimensions": {"species_id": "*"}}}
         )
-        setup = Setup.create(params)
+        setup = PlotSetup.create(params)
         assert setup.core.dimensions.species_id is None
 
     def test_time(self):
         params = merge_dicts(
             MANDATORY_RAW_DEFAULT_PARAMS, {"core": {"dimensions": {"time": "*"}}}
         )
-        setup = Setup.create(params)
+        setup = PlotSetup.create(params)
         assert setup.core.dimensions.time is None
 
     def test_level(self):
         params = merge_dicts(
             MANDATORY_RAW_DEFAULT_PARAMS, {"core": {"dimensions": {"level": "*"}}}
         )
-        setup = Setup.create(params)
+        setup = PlotSetup.create(params)
         assert setup.core.dimensions.level is None
 
     def test_others(self):
@@ -100,7 +102,7 @@ class Test_WildcardToNone:
                 },
             },
         )
-        setup = Setup.create(params)
+        setup = PlotSetup.create(params)
         assert setup.core.dimensions.nageclass is None
         assert setup.core.dimensions.noutrel is None
         assert setup.core.dimensions.numpoint is None

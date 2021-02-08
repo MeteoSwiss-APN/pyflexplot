@@ -21,7 +21,7 @@ import scipy.stats as sp_stats
 from srutils.various import check_array_indices
 
 # Local
-from ..setup import Setup
+from ..setup import PlotSetup
 from ..setup import SetupGroup
 from ..utils.logging import log
 from .data import Cloud
@@ -525,7 +525,7 @@ class InputFileEnsemble:
             raise NotImplementedError("dimension names for model", model)
 
     # pylint: disable=R0912,R0914  # too-many-branches, too-many-locals
-    def _read_fld_over_time(self, fi: nc4.Dataset, setup: Setup) -> np.ndarray:
+    def _read_fld_over_time(self, fi: nc4.Dataset, setup: PlotSetup) -> np.ndarray:
         """Read a 2D field at all time steps from disk."""
         # Indices of field along NetCDF dimensions
         dim_names = self._dim_names(setup.model.name)

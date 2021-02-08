@@ -15,7 +15,7 @@ from typing import Union
 from srutils.datetime import init_datetime
 
 # Local
-from .setup import Setup
+from .setup import PlotSetup
 from .utils.logging import log
 
 
@@ -31,7 +31,7 @@ class FilePathFormatter:
     def format(
         self,
         template: str,
-        setup: Setup,
+        setup: PlotSetup,
         *,
         release_site: str,
         release_start: datetime,
@@ -69,7 +69,7 @@ class FilePathFormatter:
     def _format_template(
         self,
         template: str,
-        setup: Setup,
+        setup: PlotSetup,
         *,
         release_site: str,
         release_start: datetime,
