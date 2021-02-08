@@ -80,9 +80,9 @@ class Test_Setup_Decompress:
         assert len(setups) == 12
         res = {
             (
-                s.panels.dimensions.deposition_type,
-                s.panels.dimensions.species_id,
-                s.panels.dimensions.time,
+                s.panels.collect_equal("dimensions").deposition_type,
+                s.panels.collect_equal("dimensions").species_id,
+                s.panels.collect_equal("dimensions").time,
             )
             for s in setups
         }
@@ -110,9 +110,9 @@ class Test_Setup_Decompress:
         assert all(isinstance(setup, PlotSetup) for setup in setups)
         res = {
             (
-                s.panels.dimensions.deposition_type,
-                s.panels.dimensions.species_id,
-                s.panels.dimensions.time,
+                s.panels.collect_equal("dimensions").deposition_type,
+                s.panels.collect_equal("dimensions").species_id,
+                s.panels.collect_equal("dimensions").time,
             )
             for s in setups
         }
@@ -140,9 +140,9 @@ class Test_Setup_Decompress:
         assert len(setups) == 2
         res = {
             (
-                s.panels.dimensions.deposition_type,
-                s.panels.dimensions.species_id,
-                s.panels.dimensions.time,
+                s.panels.collect_equal("dimensions").deposition_type,
+                s.panels.collect_equal("dimensions").species_id,
+                s.panels.collect_equal("dimensions").time,
             )
             for s in setups
         }
@@ -159,9 +159,9 @@ class Test_Setup_Decompress:
         assert all(isinstance(setup, PlotSetup) for setup in setups)
         res = {
             (
-                s.panels.dimensions.deposition_type,
-                s.panels.dimensions.species_id,
-                s.panels.dimensions.time,
+                s.panels.collect_equal("dimensions").deposition_type,
+                s.panels.collect_equal("dimensions").species_id,
+                s.panels.collect_equal("dimensions").time,
             )
             for s in setups
         }

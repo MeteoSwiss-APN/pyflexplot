@@ -68,7 +68,10 @@ def get_setup_param_value(setup: "PlotSetup", param: str) -> Any:
     if is_plot_setup_param(param):
         return getattr(setup, param)
     elif is_plot_panel_setup_param(param):
-        return getattr(setup.panels, param)
+        # SR_TMP <
+        # return getattr(setup.panels, param)
+        return setup.panels.collect_equal(param)
+        # SR_TMP >
     elif param.startswith("model."):
         dim_param = param.split(".", 1)[-1]
         if is_model_setup_param(dim_param):
@@ -76,7 +79,7 @@ def get_setup_param_value(setup: "PlotSetup", param: str) -> Any:
     elif param.startswith("dimensions."):
         dim_param = param.split(".", 1)[-1]
         if is_dimensions_param(dim_param):
-            return getattr(setup.panels.dimensions, dim_param)
+            return getattr(setup.panels.collect_equal("dimensions"), dim_param)
     raise ValueError("invalid input setup parameter", param)
 
 
@@ -168,9 +171,12 @@ class PlotSetup:
     # SR_TMP <<<
     @property
     def deposition_type_str(self) -> str:
-        deposition_type = self.panels.dimensions.deposition_type
+        deposition_type = self.panels.collect_equal("dimensions").deposition_type
         if deposition_type is None:
-            if self.panels.input_variable in ["deposition", "affected_area"]:
+            if self.panels.collect_equal("input_variable") in [
+                "deposition",
+                "affected_area",
+            ]:
                 return "tot"
             return "none"
         elif set(deposition_type) == {"dry", "wet"}:
@@ -582,7 +588,9 @@ class PlotSetup:
     ) -> "PlotSetup":
         setups = list(setups)
         # SR_TMP <
-        input_variables = [setup.panels.input_variable for setup in setups]
+        input_variables = [
+            setup.panels.collect_equal("input_variable") for setup in setups
+        ]
         if len(set(input_variables)) != 1:
             raise ValueError(
                 f"cannot compress setups: input_variable differs: {input_variables}"
@@ -739,7 +747,7 @@ class PlotSetupGroup:
         if is_plot_panel_setup_param(param) or is_plot_setup_param(param):
             for var_setup in self:
                 if is_plot_panel_setup_param(param):
-                    value = getattr(var_setup.panels, param)
+                    value = var_setup.panels.collect_equal(param)
                 else:
                     value = getattr(var_setup, param)
                 if isinstance(value, Collection) and flatten:
@@ -852,8 +860,11 @@ class PlotSetupGroup:
     def complete_dimensions(self, raw_dimensions, species_ids, *, inplace=False):
         """Complete unconstrained dimensions based on available indices."""
         obj = self if inplace else self.copy()
-        for setup in obj:
-            setup.panels.complete_dimensions(raw_dimensions, species_ids, inplace=True)
+        for plot_setup in obj:
+            for panel_setup in plot_setup.panels:
+                panel_setup.complete_dimensions(
+                    raw_dimensions, species_ids, inplace=True
+                )
         return None if inplace else obj
 
     def override_output_suffixes(self, suffix: Union[str, Collection[str]]) -> None:

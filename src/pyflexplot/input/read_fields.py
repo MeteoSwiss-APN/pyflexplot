@@ -526,6 +526,10 @@ class InputFileEnsemble:
     # pylint: disable=R0912,R0914  # too-many-branches, too-many-locals
     def _read_fld_over_time(self, fi: nc4.Dataset, setup: PlotSetup) -> np.ndarray:
         """Read a 2D field at all time steps from disk."""
+        dimensions = setup.panels.collect_equal("dimensions")
+        input_variable = setup.panels.collect_equal("input_variable")
+        integrate = setup.panels.collect_equal("integrate")
+
         # Indices of field along NetCDF dimensions
         dim_names = self._dim_names(setup.model.name)
         dim_idcs_by_name = {
@@ -536,15 +540,15 @@ class InputFileEnsemble:
             if dim_name in ["lat", "lon", "time"]:
                 idcs = slice(None)
             else:
-                idcs = getattr(setup.panels.dimensions, dim_name)
+                idcs = getattr(dimensions, dim_name)
             dim_idcs_by_name[dim_names[dim_name]] = idcs
 
         # Select variable in file
-        assert setup.panels.dimensions.species_id is not None  # mypy
+        assert dimensions.species_id is not None  # mypy
         var_name = derive_variable_name(
             model=setup.model.name,
-            input_variable=setup.panels.input_variable,
-            species_id=setup.panels.dimensions.species_id,
+            input_variable=input_variable,
+            species_id=dimensions.species_id,
             deposition_type=setup.deposition_type_str,
         )
         try:
@@ -606,9 +610,7 @@ class InputFileEnsemble:
         if self.fixer:
             self.fixer.fix_nc_var_fld(fld, setup.model.name, var_ncattrs)
 
-        return self._handle_time_integration(
-            fi, fld, setup.panels.input_variable, setup.panels.integrate
-        )
+        return self._handle_time_integration(fi, fld, input_variable, integrate)
 
     def _handle_time_integration(
         self, fi: nc4.Dataset, fld: np.ndarray, input_variable: str, integrate: bool

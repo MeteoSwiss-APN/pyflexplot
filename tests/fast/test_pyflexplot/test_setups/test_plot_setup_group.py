@@ -187,10 +187,12 @@ class Test_SetupGroup_Group:
     time_lst = [0, -1, (0, 5, 10)]
 
     combine_levels_lst = [True, False]
-    default_combine_levels = DEFAULT_SETUP.panels.combine_levels
+    default_combine_levels = DEFAULT_SETUP.panels.collect_equal("combine_levels")
 
     deposition_type_lst = ["dry", "wet", ("dry", "wet")]
-    default_deposition_type = DEFAULT_SETUP.panels.dimensions.deposition_type
+    default_deposition_type = DEFAULT_SETUP.panels.collect_equal(
+        "dimensions"
+    ).deposition_type
 
     n_outfile = len(outfile_lst)
     n_combine_species = len(combine_species_lst)

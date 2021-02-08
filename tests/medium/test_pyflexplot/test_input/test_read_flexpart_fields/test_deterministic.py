@@ -26,11 +26,13 @@ from .shared import read_flexpart_field
 
 
 def get_var_name_ref(setup, var_names_ref):
-    if setup.panels.input_variable == "concentration":
+    dimensions = setup.panels.collect_equal("dimensions")
+    input_variable = setup.panels.collect_equal("input_variable")
+    if input_variable == "concentration":
         assert len(var_names_ref) == 1
         return next(iter(var_names_ref))
-    elif setup.panels.input_variable == "deposition":
-        species_id = setup.panels.dimensions.species_id
+    elif input_variable == "deposition":
+        species_id = dimensions.species_id
         if isinstance(species_id, tuple):
             assert len(species_id) == 1
             species_id = next(iter(species_id))

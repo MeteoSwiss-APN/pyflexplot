@@ -25,10 +25,11 @@ from .shared import read_flexpart_field
 
 
 def get_var_name_ref(setup, var_names_ref):
-    if setup.panels.input_variable == "concentration":
+    input_variable = setup.panels.collect_equal("input_variable")
+    if input_variable == "concentration":
         assert len(var_names_ref) == 1
         return next(iter(var_names_ref))
-    elif setup.panels.input_variable == "deposition":
+    elif input_variable == "deposition":
         for var_name in var_names_ref:
             if (setup.deposition_type_str, var_name[:2]) in [
                 ("dry", "DD"),

@@ -255,23 +255,36 @@ class PlotPanelSetupGroup:
         # SR_TMP >
         self._panels = panels
 
-    def __iter__(self) -> Iterator[PlotPanelSetup]:
-        return iter(self._panels)
-
-    def __len__(self) -> int:
-        return len(self._panels)
-
-    def __getattr__(self, name: str) -> Any:
+    def collect_equal(self, param: str) -> Any:
+        """Get a plot panel setup parameter value."""
         # SR_TMP <
         if len(self._panels) > 1:
             raise NotImplementedError("multipanel")
         assert len(self) == 1
         panel = self._panels[0]
         try:
-            return getattr(panel, name)
+            return getattr(panel, param)
         except AttributeError as e:
             raise e
         # SR_TMP >
+
+    # SR_TMP <<< TODO Eliminate or adapt
+    def dict(self) -> Dict[str, Any]:
+        # SR_TMP <
+        if len(self._panels) > 1:
+            raise NotImplementedError("multipanel")
+        assert len(self) == 1
+        return self._panels[0].dict()
+        # SR_TMP >
+
+    def tuple(self) -> Tuple[Tuple[Tuple[str, Any], ...], ...]:
+        return tuple(map(PlotPanelSetup.tuple, self))
+
+    def __iter__(self) -> Iterator[PlotPanelSetup]:
+        return iter(self._panels)
+
+    def __len__(self) -> int:
+        return len(self._panels)
 
     @classmethod
     def create(cls, params: Mapping[str, Any]) -> "PlotPanelSetupGroup":

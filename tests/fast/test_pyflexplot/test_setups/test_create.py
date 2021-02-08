@@ -74,21 +74,21 @@ class Test_WildcardToNone:
             {"panels": {"dimensions": {"species_id": "*"}}},
         )
         setup = PlotSetup.create(params)
-        assert setup.panels.dimensions.species_id is None
+        assert setup.panels.collect_equal("dimensions").species_id is None
 
     def test_time(self):
         params = merge_dicts(
             MANDATORY_RAW_DEFAULT_PARAMS, {"panels": {"dimensions": {"time": "*"}}}
         )
         setup = PlotSetup.create(params)
-        assert setup.panels.dimensions.time is None
+        assert setup.panels.collect_equal("dimensions").time is None
 
     def test_level(self):
         params = merge_dicts(
             MANDATORY_RAW_DEFAULT_PARAMS, {"panels": {"dimensions": {"level": "*"}}}
         )
         setup = PlotSetup.create(params)
-        assert setup.panels.dimensions.level is None
+        assert setup.panels.collect_equal("dimensions").level is None
 
     def test_others(self):
         params = merge_dicts(
@@ -104,6 +104,6 @@ class Test_WildcardToNone:
             },
         )
         setup = PlotSetup.create(params)
-        assert setup.panels.dimensions.nageclass is None
-        assert setup.panels.dimensions.noutrel is None
-        assert setup.panels.dimensions.numpoint is None
+        assert setup.panels.collect_equal("dimensions").nageclass is None
+        assert setup.panels.collect_equal("dimensions").noutrel is None
+        assert setup.panels.collect_equal("dimensions").numpoint is None
