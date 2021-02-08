@@ -1,7 +1,7 @@
 # flake8: noqa
 """Test reference for pytest test.
 
-tests/slow/pyflexplot/test_plots/shared.py
+tests/slow/test_pyflexplot/test_plots/shared.py
     ::Test_CloudArrivalTime
     ::test
 
@@ -117,6 +117,8 @@ field_summary = {
             "outfile": "ref_cosmo2e_ens_cloud_arrival_time.png",
             "outfile_time_format": "%Y%m%d%H%M",
             "scale_fact": 1.0,
+            "plot_type": "auto",
+            "multipanel_param": None,
             "model": {
                 "name": "COSMO-2E",
                 "base_time": 201907271200,
@@ -126,8 +128,6 @@ field_summary = {
             "core": {
                 "input_variable": "concentration",
                 "ens_variable": "ens_cloud_arrival_time",
-                "plot_type": "auto",
-                "multipanel_param": None,
                 "integrate": True,
                 "combine_deposition_types": False,
                 "combine_levels": False,
@@ -423,6 +423,8 @@ plot_summary = {
                     "outfile": "ref_cosmo2e_ens_cloud_arrival_time.png",
                     "outfile_time_format": "%Y%m%d%H%M",
                     "scale_fact": 1.0,
+                    "plot_type": "auto",
+                    "multipanel_param": None,
                     "model": {
                         "name": "COSMO-2E",
                         "base_time": 201907271200,
@@ -432,8 +434,6 @@ plot_summary = {
                     "core": {
                         "input_variable": "concentration",
                         "ens_variable": "ens_cloud_arrival_time",
-                        "plot_type": "auto",
-                        "multipanel_param": None,
                         "integrate": True,
                         "combine_deposition_types": False,
                         "combine_levels": False,
@@ -6405,6 +6405,8 @@ plot_summary = {
                 "outfile": "ref_cosmo2e_ens_cloud_arrival_time.png",
                 "outfile_time_format": "%Y%m%d%H%M",
                 "scale_fact": 1.0,
+                "plot_type": "auto",
+                "multipanel_param": None,
                 "model": {
                     "name": "COSMO-2E",
                     "base_time": 201907271200,
@@ -6414,8 +6416,6 @@ plot_summary = {
                 "core": {
                     "input_variable": "concentration",
                     "ens_variable": "ens_cloud_arrival_time",
-                    "plot_type": "auto",
-                    "multipanel_param": None,
                     "integrate": True,
                     "combine_deposition_types": False,
                     "combine_levels": False,

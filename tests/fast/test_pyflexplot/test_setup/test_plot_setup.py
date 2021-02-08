@@ -38,16 +38,15 @@ class Test_Setup_Create:
         [
             {"core": {"input_variable": ["concentration", "deposition"]}},  # [dct0]
             {"core": {"ens_variable": ["minimum", "maximum"]}},  # [dct1]
-            {"core": {"plot_type": ["auto", "multipanel"]}},  # [dct2]
-            {"core": {"integrate": [True, False]}},  # [dct3]
-            {"core": {"combine_deposition_types": [True, False]}},  # [dct4]
-            {"core": {"combine_levels": [True, False]}},  # [dct5]
-            {"core": {"combine_species": [True, False]}},  # [dct6]
-            {"core": {"lang": ["en", "de"]}},  # [dct7]
-            {"core": {"domain": ["full", "ch"]}},  # [dct8]
-            {"core": {"domain_size_lat": [None, 100]}},  # [dct9]
-            {"core": {"domain_size_lon": [None, 100]}},  # [dct10]
-            {"core": {"dimensions_default": ["all", "first"]}},  # [dct11]
+            {"core": {"integrate": [True, False]}},  # [dct2]
+            {"core": {"combine_deposition_types": [True, False]}},  # [dct3]
+            {"core": {"combine_levels": [True, False]}},  # [dct4]
+            {"core": {"combine_species": [True, False]}},  # [dct5]
+            {"core": {"lang": ["en", "de"]}},  # [dct6]
+            {"core": {"domain": ["full", "ch"]}},  # [dct7]
+            {"core": {"domain_size_lat": [None, 100]}},  # [dct8]
+            {"core": {"domain_size_lon": [None, 100]}},  # [dct9]
+            {"core": {"dimensions_default": ["all", "first"]}},  # [dct10]
         ],
     )
     def test_multiple_values_fail(self, dct):

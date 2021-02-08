@@ -123,7 +123,7 @@ class FilePathFormatter:
             "model": setup.model.name,
             "nageclass": setup.core.dimensions.nageclass,
             "noutrel": setup.core.dimensions.noutrel,
-            "plot_type": setup.core.plot_type,
+            "plot_type": setup.plot_type,
             "release_site": release_site,
             "release_start": release_start_fmtd,
             "species_id": setup.core.dimensions.species_id,

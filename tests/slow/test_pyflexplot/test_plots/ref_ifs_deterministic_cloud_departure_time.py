@@ -1,7 +1,7 @@
 # flake8: noqa
 """Test reference for pytest test.
 
-tests/slow/pyflexplot/test_plots/shared.py
+tests/slow/test_pyflexplot/test_plots/shared.py
     ::Test_CloudDepartureTime
     ::test
 
@@ -122,6 +122,8 @@ field_summary = {
             "outfile": "ref_ifs_deterministic_cloud_departure_time.png",
             "outfile_time_format": "%Y%m%d%H%M",
             "scale_fact": 1.0,
+            "plot_type": "auto",
+            "multipanel_param": None,
             "model": {
                 "name": "IFS-HRES",
                 "base_time": 202003170000,
@@ -131,8 +133,6 @@ field_summary = {
             "core": {
                 "input_variable": "cloud_departure_time",
                 "ens_variable": "none",
-                "plot_type": "auto",
-                "multipanel_param": None,
                 "integrate": False,
                 "combine_deposition_types": False,
                 "combine_levels": False,
@@ -593,6 +593,8 @@ plot_summary = {
                     "outfile": "ref_ifs_deterministic_cloud_departure_time.png",
                     "outfile_time_format": "%Y%m%d%H%M",
                     "scale_fact": 1.0,
+                    "plot_type": "auto",
+                    "multipanel_param": None,
                     "model": {
                         "name": "IFS-HRES",
                         "base_time": 202003170000,
@@ -602,8 +604,6 @@ plot_summary = {
                     "core": {
                         "input_variable": "cloud_departure_time",
                         "ens_variable": "none",
-                        "plot_type": "auto",
-                        "multipanel_param": None,
                         "integrate": False,
                         "combine_deposition_types": False,
                         "combine_levels": False,
@@ -28333,6 +28333,8 @@ plot_summary = {
                 "outfile": "ref_ifs_deterministic_cloud_departure_time.png",
                 "outfile_time_format": "%Y%m%d%H%M",
                 "scale_fact": 1.0,
+                "plot_type": "auto",
+                "multipanel_param": None,
                 "model": {
                     "name": "IFS-HRES",
                     "base_time": 202003170000,
@@ -28342,8 +28344,6 @@ plot_summary = {
                 "core": {
                     "input_variable": "cloud_departure_time",
                     "ens_variable": "none",
-                    "plot_type": "auto",
-                    "multipanel_param": None,
                     "integrate": False,
                     "combine_deposition_types": False,
                     "combine_levels": False,

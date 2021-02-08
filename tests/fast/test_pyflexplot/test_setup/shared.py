@@ -45,14 +45,14 @@ OPTIONAL_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
         "input_variable": "concentration",
         "integrate": False,
         "lang": "en",
-        "multipanel_param": None,
-        "plot_type": "auto",
     },
     "model": {
         "base_time": None,
         "ens_member_id": None,
         "simulation_type": "deterministic",
     },
+    "multipanel_param": None,
+    "plot_type": "auto",
     "outfile_time_format": "%Y%m%d%H%M",
     "scale_fact": 1.0,
 }

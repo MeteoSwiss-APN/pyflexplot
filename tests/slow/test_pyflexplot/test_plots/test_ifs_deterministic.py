@@ -44,11 +44,11 @@ class Test_IntegratedConcentration(_TestBase):
     setup_dct = {
         "infile": INFILE_1,
         "outfile": f"{reference}.png",
+        "plot_type": "auto",
         "model": {
             "name": "IFS-HRES",
         },
         "core": {
-            "plot_type": "auto",
             "input_variable": "concentration",
             "integrate": True,
             "lang": "en",
@@ -67,11 +67,11 @@ class Test_TotalDeposition(_TestBase):
     setup_dct = {
         "infile": INFILE_1,
         "outfile": f"{reference}.png",
+        "plot_type": "auto",
         "model": {
             "name": "IFS-HRES",
         },
         "core": {
-            "plot_type": "auto",
             "input_variable": "deposition",
             "combine_deposition_types": True,
             "integrate": True,
@@ -90,11 +90,11 @@ class Test_TotalDeposition_EmptyField(_TestBase):
     setup_dct = {
         "infile": INFILE_2,
         "outfile": f"{reference}.png",
+        "plot_type": "auto",
         "model": {
             "name": "IFS-HRES",
         },
         "core": {
-            "plot_type": "auto",
             "input_variable": "deposition",
             "combine_deposition_types": True,
             "integrate": True,

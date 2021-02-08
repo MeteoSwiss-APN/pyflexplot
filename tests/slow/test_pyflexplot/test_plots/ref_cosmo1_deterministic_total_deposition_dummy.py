@@ -1,7 +1,7 @@
 # flake8: noqa
 """Test reference for pytest test.
 
-tests/slow/pyflexplot/test_plots/shared.py
+tests/slow/test_pyflexplot/test_plots/shared.py
     ::Test_TotalDeposition_MissingField
     ::test
 
@@ -117,6 +117,8 @@ field_summary = {
             "outfile": "ref_cosmo1_deterministic_total_deposition_dummy.png",
             "outfile_time_format": "%Y%m%d%H%M",
             "scale_fact": 1.0,
+            "plot_type": "auto",
+            "multipanel_param": None,
             "model": {
                 "name": "COSMO-1",
                 "base_time": 202010210500,
@@ -126,8 +128,6 @@ field_summary = {
             "core": {
                 "input_variable": "deposition",
                 "ens_variable": "none",
-                "plot_type": "auto",
-                "multipanel_param": None,
                 "integrate": True,
                 "combine_deposition_types": True,
                 "combine_levels": False,
@@ -415,6 +415,8 @@ plot_summary = {
                     "outfile": "ref_cosmo1_deterministic_total_deposition_dummy.png",
                     "outfile_time_format": "%Y%m%d%H%M",
                     "scale_fact": 1.0,
+                    "plot_type": "auto",
+                    "multipanel_param": None,
                     "model": {
                         "name": "COSMO-1",
                         "base_time": 202010210500,
@@ -424,8 +426,6 @@ plot_summary = {
                     "core": {
                         "input_variable": "deposition",
                         "ens_variable": "none",
-                        "plot_type": "auto",
-                        "multipanel_param": None,
                         "integrate": True,
                         "combine_deposition_types": True,
                         "combine_levels": False,
@@ -6505,6 +6505,8 @@ plot_summary = {
                 "outfile": "ref_cosmo1_deterministic_total_deposition_dummy.png",
                 "outfile_time_format": "%Y%m%d%H%M",
                 "scale_fact": 1.0,
+                "plot_type": "auto",
+                "multipanel_param": None,
                 "model": {
                     "name": "COSMO-1",
                     "base_time": 202010210500,
@@ -6514,8 +6516,6 @@ plot_summary = {
                 "core": {
                     "input_variable": "deposition",
                     "ens_variable": "none",
-                    "plot_type": "auto",
-                    "multipanel_param": None,
                     "integrate": True,
                     "combine_deposition_types": True,
                     "combine_levels": False,
