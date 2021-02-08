@@ -62,7 +62,7 @@ from .plotting.boxed_plot import MarkersConfig
 from .plotting.map_axes import MapAxes
 from .plotting.map_axes import MapAxesConfig
 from .plotting.text_box_axes import TextBoxAxes
-from .setups.setup import ModelSetup
+from .setups.model_setup import ModelSetup
 from .setups.setup import PlotSetup
 from .setups.setup import PlotSetupGroup
 from .utils.exceptions import FieldAllNaNError

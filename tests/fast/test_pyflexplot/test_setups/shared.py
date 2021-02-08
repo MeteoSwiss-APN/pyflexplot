@@ -6,9 +6,9 @@ from typing import Dict
 # First-party
 from pyflexplot.setups.dimensions import CoreDimensions
 from pyflexplot.setups.dimensions import Dimensions
+from pyflexplot.setups.model_setup import ModelSetup
 from pyflexplot.setups.plot_panel_setup import EnsembleParams
 from pyflexplot.setups.plot_panel_setup import PlotPanelSetup
-from pyflexplot.setups.setup import ModelSetup
 from pyflexplot.setups.setup import PlotSetup
 from srutils.dict import merge_dicts
 
