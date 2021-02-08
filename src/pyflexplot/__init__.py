@@ -1,4 +1,4 @@
-"""Top-level package for PyFlexPlot."""
+"""Top-level package ``pyflexplot``."""
 
 __author__ = """Stefan Ruedisuehli"""
 __email__ = "stefan.ruedisuehli@env.ethz.ch"
