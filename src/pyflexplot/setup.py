@@ -1338,7 +1338,8 @@ class SetupFile:
         setups_by_infiles: Dict[KeyT, List[Setup]] = {}
         n_setups = 0
         for path in paths:
-            for setup in cls(path).read(override=override, only=each_only):
+            setups = cls(path).read(override=override, only=each_only)
+            for setup in setups:
                 if only is not None and n_setups >= only:
                     break
                 key: KeyT = (setup.infile, setup.model.ens_member_id)
