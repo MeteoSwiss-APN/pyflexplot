@@ -452,11 +452,18 @@ class Setup:
     ) -> "SetupGroup":
         return self._decompress(select, skip)
 
-    def dict(self) -> Dict[str, Any]:
+    def dict(self, rec: bool = True) -> Dict[str, Any]:
+        """Return the parameter names and values as a dict.
+
+        Args:
+            rec (optional): Recursively return sub-objects like ``CoreSetup`` as
+                dicts.
+
+        """
         return {
             **asdict(self),
-            "model": asdict(self.model),
-            "core": self.core.dict(),
+            "model": asdict(self.model) if rec else self.model,
+            "core": self.core.dict() if rec else self.core,
         }
 
     def copy(self):
