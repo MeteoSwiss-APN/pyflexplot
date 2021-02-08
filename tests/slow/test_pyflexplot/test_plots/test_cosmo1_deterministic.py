@@ -24,7 +24,7 @@ class Test_Concentration(_TestBase):
         "model": {
             "name": "COSMO-1",
         },
-        "core": {
+        "panels": {
             "input_variable": "concentration",
             "integrate": False,
             "lang": "de",
@@ -47,7 +47,7 @@ class Test_IntegratedConcentration(_TestBase):
         "model": {
             "name": "COSMO-1",
         },
-        "core": {
+        "panels": {
             "input_variable": "concentration",
             "integrate": True,
             "lang": "en",
@@ -70,7 +70,7 @@ class Test_TotalDeposition(_TestBase):
         "model": {
             "name": "COSMO-1",
         },
-        "core": {
+        "panels": {
             "input_variable": "deposition",
             "combine_deposition_types": True,
             "integrate": True,
@@ -92,7 +92,7 @@ class Test_AffectedArea(_TestBase):
             "name": "COSMO-1",
         },
         "outfile": f"{reference}.png",
-        "core": {
+        "panels": {
             "combine_deposition_types": True,
             "domain": "ch",
             "input_variable": "affected_area",
@@ -117,7 +117,7 @@ class Test_TotalDeposition_MissingField(_TestBase):
         "model": {
             "name": "COSMO-1",
         },
-        "core": {
+        "panels": {
             "input_variable": "deposition",
             "combine_deposition_types": True,
             "integrate": True,
@@ -139,7 +139,7 @@ class Test_CloudArrivalTime(_TestBase):
         "model": {
             "name": "COSMO-1",
         },
-        "core": {
+        "panels": {
             "input_variable": "cloud_arrival_time",
             "integrate": False,
             "lang": "en",

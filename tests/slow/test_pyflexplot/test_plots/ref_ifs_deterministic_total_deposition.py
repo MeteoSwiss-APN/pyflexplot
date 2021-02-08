@@ -128,7 +128,7 @@ field_summary = {
                 "ens_member_id": None,
                 "simulation_type": "deterministic",
             },
-            "core": {
+            "panels": {
                 "input_variable": "deposition",
                 "ens_variable": "none",
                 "integrate": True,
@@ -601,7 +601,7 @@ plot_summary = {
                         "ens_member_id": None,
                         "simulation_type": "deterministic",
                     },
-                    "core": {
+                    "panels": {
                         "input_variable": "deposition",
                         "ens_variable": "none",
                         "integrate": True,
@@ -28364,7 +28364,7 @@ plot_summary = {
                     "ens_member_id": None,
                     "simulation_type": "deterministic",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "deposition",
                     "ens_variable": "none",
                     "integrate": True,

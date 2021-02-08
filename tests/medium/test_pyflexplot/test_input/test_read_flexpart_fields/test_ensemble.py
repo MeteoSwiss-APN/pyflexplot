@@ -25,10 +25,10 @@ from .shared import read_flexpart_field
 
 
 def get_var_name_ref(setup, var_names_ref):
-    if setup.core.input_variable == "concentration":
+    if setup.panels.input_variable == "concentration":
         assert len(var_names_ref) == 1
         return next(iter(var_names_ref))
-    elif setup.core.input_variable == "deposition":
+    elif setup.panels.input_variable == "deposition":
         for var_name in var_names_ref:
             if (setup.deposition_type_str, var_name[:2]) in [
                 ("dry", "DD"),
@@ -48,7 +48,7 @@ class TestReadFieldEnsemble_Single:
         "model": {
             "name": "COSMO-2E",
         },
-        "core": {
+        "panels": {
             "integrate": False,
             "ens_variable": "mean",
             "dimensions": {"time": 10, "species_id": 2},
@@ -56,7 +56,7 @@ class TestReadFieldEnsemble_Single:
         },
     }
 
-    species_id = setup_params_shared["core"]["dimensions"]["species_id"]
+    species_id = setup_params_shared["panels"]["dimensions"]["species_id"]
 
     # Ensemble member ids
     ens_member_ids = (0, 1, 5, 10, 15, 20)
@@ -95,9 +95,9 @@ class TestReadFieldEnsemble_Single:
         )
         # SR_TMP <
         if ens_var in ["probability", "minimum", "maximum", "mean", "median"]:
-            setup_dct["core"]["ens_variable"] = ens_var
+            setup_dct["panels"]["ens_variable"] = ens_var
         else:
-            setup_dct["core"]["plot_type"] = f"ensemble_{ens_var}"
+            setup_dct["panels"]["plot_type"] = f"ensemble_{ens_var}"
         # SR_TMP >
         setups = PlotSetupGroup([PlotSetup.create(setup_dct)])
 
@@ -149,7 +149,7 @@ class TestReadFieldEnsemble_Single:
         self.run(
             datadir,
             var_names_ref=[f"spec{self.species_id:03d}"],
-            setup_params={"core": {"dimensions": {"level": 1}}},
+            setup_params={"panels": {"dimensions": {"level": 1}}},
             ens_var="mean",
             fct_reduce_mem=lambda arr: np.nanmean(arr, axis=0),
             cache_on=cache_on,
@@ -170,14 +170,14 @@ class TestReadFieldEnsemble_Multiple:
         "model": {
             "name": "COSMO-2E",
         },
-        "core": {
+        "panels": {
             "integrate": True,
             "dimensions": {"species_id": 1, "time": [0, 3, 9]},
         },
     }
 
     # Species ID
-    species_id = shared_setup_params_compressed["core"]["dimensions"]["species_id"]
+    species_id = shared_setup_params_compressed["panels"]["dimensions"]["species_id"]
 
     # Ensemble member ids
     ens_member_ids = (0, 1, 5, 10, 15, 20)
@@ -209,11 +209,11 @@ class TestReadFieldEnsemble_Multiple:
         # Create field specifications list
         setup_lst = []
         for shared_setup_params in decompress_multival_dict(
-            self.shared_setup_params_compressed, skip=["infile", "core"]
+            self.shared_setup_params_compressed, skip=["infile", "panels"]
         ):
-            if "core" not in shared_setup_params:
-                shared_setup_params["core"] = {}
-            for shared_core in decompress_multival_dict(shared_setup_params["core"]):
+            if "panels" not in shared_setup_params:
+                shared_setup_params["panels"] = {}
+            for shared_core in decompress_multival_dict(shared_setup_params["panels"]):
                 setup_params_i = merge_dicts(
                     shared_setup_params,
                     setup_params,
@@ -225,9 +225,9 @@ class TestReadFieldEnsemble_Multiple:
                 )
                 # SR_TMP <
                 if ens_var in ["probability", "minimum", "maximum", "mean", "median"]:
-                    setup_params_i["core"]["ens_variable"] = ens_var
+                    setup_params_i["panels"]["ens_variable"] = ens_var
                 else:
-                    setup_params_i["core"]["plot_type"] = f"ensemble_{ens_var}"
+                    setup_params_i["panels"]["plot_type"] = f"ensemble_{ens_var}"
                 # SR_TMP >
                 setup_lst.append(PlotSetup.create(setup_params_i))
         setups = PlotSetupGroup(setup_lst)
@@ -297,13 +297,13 @@ class TestReadFieldEnsemble_Multiple:
 
         setup_params = {
             "infile": datafile_fmt,
-            "core": {
+            "panels": {
                 "dimensions": {"level": 1},
                 "input_variable": "concentration",
             },
         }
         if ens_var == "probability":
-            setup_params["core"]["ens_params"] = {
+            setup_params["panels"]["ens_params"] = {
                 "thr": self.ens_prob_thr_concentration
             }
 
@@ -346,7 +346,7 @@ class TestReadFieldEnsemble_Multiple:
             ],
             setup_params={
                 "infile": datafile_fmt,
-                "core": {
+                "panels": {
                     "input_variable": "deposition",
                     "combine_deposition_types": True,
                     "dimensions": {"deposition_type": ("dry", "wet")},

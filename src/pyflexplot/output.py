@@ -81,24 +81,24 @@ class FilePathFormatter:
         )[0]
 
         # Prepare ens variable
-        ens_variable = setup.core.ens_variable
+        ens_variable = setup.panels.ens_variable
         if ens_variable == "percentile":
-            ens_variable += f"-{setup.core.ens_params.pctl:g}"
+            ens_variable += f"-{setup.panels.ens_params.pctl:g}"
         elif ens_variable == "probability":
-            if setup.core.ens_params.thr_type == "lower":
+            if setup.panels.ens_params.thr_type == "lower":
                 ens_variable += "-gt"
-            elif setup.core.ens_params.thr_type == "upper":
+            elif setup.panels.ens_params.thr_type == "upper":
                 ens_variable += "-lt"
-            ens_variable += f"-{setup.core.ens_params.thr:g}"
+            ens_variable += f"-{setup.panels.ens_params.thr:g}"
 
         # Prepare input variable
-        input_variable = setup.core.input_variable
-        if setup.core.input_variable == "deposition":
+        input_variable = setup.panels.input_variable
+        if setup.panels.input_variable == "deposition":
             input_variable += f"-{setup.deposition_type_str}"
-            if not setup.core.integrate:
+            if not setup.panels.integrate:
                 input_variable += "-instant"
-        elif setup.core.input_variable == "concentration":
-            if setup.core.integrate:
+        elif setup.panels.input_variable == "concentration":
+            if setup.panels.integrate:
                 input_variable += "-integr"
 
         # Prepare release start
@@ -115,20 +115,20 @@ class FilePathFormatter:
         # Don't use str.format in order to handle multival elements
         kwargs = {
             "base_time": base_time,
-            "domain": setup.core.domain,
+            "domain": setup.panels.domain,
             "ens_variable": ens_variable,
             "input_variable": input_variable,
-            "lang": setup.core.lang,
-            "level": setup.core.dimensions.level,
+            "lang": setup.panels.lang,
+            "level": setup.panels.dimensions.level,
             "model": setup.model.name,
-            "nageclass": setup.core.dimensions.nageclass,
-            "noutrel": setup.core.dimensions.noutrel,
+            "nageclass": setup.panels.dimensions.nageclass,
+            "noutrel": setup.panels.dimensions.noutrel,
             "plot_type": setup.plot_type,
             "release_site": release_site,
             "release_start": release_start_fmtd,
-            "species_id": setup.core.dimensions.species_id,
-            "time_idx": setup.core.dimensions.time,
-            "time_step": time_steps_fmtd[setup.core.dimensions.time],
+            "species_id": setup.panels.dimensions.species_id,
+            "time_idx": setup.panels.dimensions.time,
+            "time_step": time_steps_fmtd[setup.panels.dimensions.time],
         }
         return self._replace_format_keys(template, kwargs)
 

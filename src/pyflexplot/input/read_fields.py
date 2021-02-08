@@ -285,7 +285,7 @@ class InputFileEnsemble:
             self._get_shape_mem_time(model, raw_dimensions), np.nan, np.float32
         )
         for idx_mem, file_path in enumerate(self.paths):
-            timeless_setups = setups.derive({"core": {"dimensions": {"time": None}}})
+            timeless_setups = setups.derive({"panels": {"dimensions": {"time": None}}})
             self._read_data(file_path, idx_mem, timeless_setups)
 
         # Compute single field from all ensemble members
@@ -536,15 +536,15 @@ class InputFileEnsemble:
             if dim_name in ["lat", "lon", "time"]:
                 idcs = slice(None)
             else:
-                idcs = getattr(setup.core.dimensions, dim_name)
+                idcs = getattr(setup.panels.dimensions, dim_name)
             dim_idcs_by_name[dim_names[dim_name]] = idcs
 
         # Select variable in file
-        assert setup.core.dimensions.species_id is not None  # mypy
+        assert setup.panels.dimensions.species_id is not None  # mypy
         var_name = derive_variable_name(
             model=setup.model.name,
-            input_variable=setup.core.input_variable,
-            species_id=setup.core.dimensions.species_id,
+            input_variable=setup.panels.input_variable,
+            species_id=setup.panels.dimensions.species_id,
             deposition_type=setup.deposition_type_str,
         )
         try:
@@ -607,7 +607,7 @@ class InputFileEnsemble:
             self.fixer.fix_nc_var_fld(fld, setup.model.name, var_ncattrs)
 
         return self._handle_time_integration(
-            fi, fld, setup.core.input_variable, setup.core.integrate
+            fi, fld, setup.panels.input_variable, setup.panels.integrate
         )
 
     def _handle_time_integration(

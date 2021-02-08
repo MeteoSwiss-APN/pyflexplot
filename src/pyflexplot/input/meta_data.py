@@ -344,19 +344,19 @@ class VariableMetaData(_MetaDataBase):
 
     @classmethod
     def from_file(cls, fi: nc4.Dataset, setup: PlotSetup) -> "VariableMetaData":
-        if setup.core.input_variable == "affected_area":
+        if setup.panels.input_variable == "affected_area":
             unit = ""
-        elif setup.core.input_variable in [
+        elif setup.panels.input_variable in [
             "cloud_arrival_time",
             "cloud_departure_time",
         ]:
             unit = "h"
         else:
-            assert setup.core.dimensions.species_id is not None  # mypy
+            assert setup.panels.dimensions.species_id is not None  # mypy
             var_name = derive_variable_name(
                 model=setup.model.name,
-                input_variable=setup.core.input_variable,
-                species_id=setup.core.dimensions.species_id,
+                input_variable=setup.panels.input_variable,
+                species_id=setup.panels.dimensions.species_id,
                 deposition_type=setup.deposition_type_str,
             )
             try:
@@ -366,12 +366,12 @@ class VariableMetaData(_MetaDataBase):
             else:
                 unit = getncattr(var, "units")
         idx: int
-        if setup.core.dimensions.level is None:
+        if setup.panels.dimensions.level is None:
             level_unit = ""
             level_bot = -1.0
             level_top = -1.0
         else:
-            idx = setup.core.dimensions.level
+            idx = setup.panels.dimensions.level
             try:  # SR_TMP IFS
                 var = fi.variables["level"]
             except KeyError:  # SR_TMP IFS
@@ -534,19 +534,19 @@ class SpeciesMetaData(_MetaDataBase):
     @classmethod
     def from_file(cls, fi: nc4.Dataset, setup: PlotSetup) -> "SpeciesMetaData":
         name: str
-        if setup.core.input_variable in [
+        if setup.panels.input_variable in [
             "affected_area",
             "cloud_arrival_time",
             "cloud_departure_time",
         ]:
-            alt_setup = setup.derive({"core": {"input_variable": "concentration"}})
+            alt_setup = setup.derive({"panels": {"input_variable": "concentration"}})
             return cls.from_file(fi, alt_setup)
         else:
-            assert setup.core.dimensions.species_id is not None  # mypy
+            assert setup.panels.dimensions.species_id is not None  # mypy
             var_name = derive_variable_name(
                 model=setup.model.name,
-                input_variable=setup.core.input_variable,
-                species_id=setup.core.dimensions.species_id,
+                input_variable=setup.panels.input_variable,
+                species_id=setup.panels.dimensions.species_id,
                 deposition_type=setup.deposition_type_str,
             )
             try:
@@ -555,10 +555,10 @@ class SpeciesMetaData(_MetaDataBase):
             except (KeyError, AttributeError):
                 if setup.model.name.startswith("IFS"):
                     name = cls._get_species_name_ifs(fi, var_name)
-                elif setup.core.input_variable == "deposition":
+                elif setup.panels.input_variable == "deposition":
                     # Deposition field may be missing
                     alt_setup = setup.derive(
-                        {"core": {"input_variable": "concentration"}}
+                        {"panels": {"input_variable": "concentration"}}
                     )
                     return cls.from_file(fi, alt_setup)
                 else:
@@ -639,19 +639,19 @@ class RawReleaseMetaData:
     def from_file(cls, fi: nc4.Dataset, setup: PlotSetup) -> "RawReleaseMetaData":
         """Read information on a release from open file."""
         # Fetch numpoint
-        assert setup.core.dimensions.numpoint is not None  # mypy
-        idx_point = setup.core.dimensions.numpoint
+        assert setup.panels.dimensions.numpoint is not None  # mypy
+        idx_point = setup.panels.dimensions.numpoint
 
         # Fetch species_id
-        assert setup.core.dimensions.species_id is not None  # mypy
+        assert setup.panels.dimensions.species_id is not None  # mypy
         # SR_TMP <
-        idx_spec = setup.core.dimensions.species_id - 1
+        idx_spec = setup.panels.dimensions.species_id - 1
         assert 0 <= idx_spec < fi.dimensions["numspec"].size
         # SR_TMP >
 
         # Fetch nageclass
-        assert setup.core.dimensions.nageclass is not None  # mypy
-        idx_age = setup.core.dimensions.nageclass
+        assert setup.panels.dimensions.nageclass is not None  # mypy
+        idx_age = setup.panels.dimensions.nageclass
 
         var_name: str = "RELCOM"  # SR_HC TODO un-hardcode
         var = fi.variables[var_name]
@@ -770,7 +770,7 @@ class TimeStepMetaDataCollector:
 
     def integration_duration(self) -> timedelta:
         """Compute timestep delta of integration period."""
-        if self.setup.core.integrate:
+        if self.setup.panels.integrate:
             return self.now_rel()
         n = self.time_step_idx() + 1
         if n == 0:
@@ -780,10 +780,10 @@ class TimeStepMetaDataCollector:
     def time_step_idx(self) -> int:
         """Index of current time step of current field."""
         # Default to timestep of current field
-        assert self.setup.core.dimensions.time is not None  # mypy
+        assert self.setup.panels.dimensions.time is not None  # mypy
         if self.add_ts0:
-            return self.setup.core.dimensions.time - 1
-        return self.setup.core.dimensions.time
+            return self.setup.panels.dimensions.time - 1
+        return self.setup.panels.dimensions.time
 
 
 def derive_variable_name(

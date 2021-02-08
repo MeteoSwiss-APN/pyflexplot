@@ -40,6 +40,7 @@ from .dimensions import CoreDimensions
 from .dimensions import Dimensions
 from .model_setup import ModelSetup
 from .plot_panel_setup import PlotPanelSetup
+from .plot_panel_setup import PlotPanelSetupGroup
 
 
 # SR_TMP <<< TODO cleaner solution
@@ -48,7 +49,7 @@ def is_dimensions_param(param: str) -> bool:
 
 
 # SR_TMP <<< TODO cleaner solution
-def is_core_setup_param(param: str) -> bool:
+def is_plot_panel_setup_param(param: str) -> bool:
     return param in PlotPanelSetup.get_params()
 
 
@@ -58,16 +59,16 @@ def is_model_setup_param(param: str) -> bool:
 
 
 # SR_TMP <<< TODO cleaner solution
-def is_setup_param(param: str) -> bool:
+def is_plot_setup_param(param: str) -> bool:
     return param in PlotSetup.get_params()
 
 
 # SR_TMP <<< TODO cleaner solution
 def get_setup_param_value(setup: "PlotSetup", param: str) -> Any:
-    if is_setup_param(param):
+    if is_plot_setup_param(param):
         return getattr(setup, param)
-    elif is_core_setup_param(param):
-        return getattr(setup.core, param)
+    elif is_plot_panel_setup_param(param):
+        return getattr(setup.panels, param)
     elif param.startswith("model."):
         dim_param = param.split(".", 1)[-1]
         if is_model_setup_param(dim_param):
@@ -75,7 +76,7 @@ def get_setup_param_value(setup: "PlotSetup", param: str) -> Any:
     elif param.startswith("dimensions."):
         dim_param = param.split(".", 1)[-1]
         if is_dimensions_param(dim_param):
-            return getattr(setup.core.dimensions, dim_param)
+            return getattr(setup.panels.dimensions, dim_param)
     raise ValueError("invalid input setup parameter", param)
 
 
@@ -100,7 +101,7 @@ class PlotSetup:
     plot_type: str = "auto"
     multipanel_param: Optional[str] = None
     model: ModelSetup = ModelSetup()
-    core: PlotPanelSetup = PlotPanelSetup()
+    panels: PlotPanelSetupGroup = PlotPanelSetupGroup([PlotPanelSetup()])
 
     def __post_init__(self) -> None:
 
@@ -157,19 +158,19 @@ class PlotSetup:
                 + type(self.model).__name__
             )
 
-        # Check core
-        if not isinstance(self.core, PlotPanelSetup):
+        # Check panels
+        if not isinstance(self.panels, PlotPanelSetupGroup):
             raise ValueError(
-                "'core' has wrong type: expected CoreSetup, got "
-                + type(self.core).__name__
+                "'panels' has wrong type: expected PlotPanelSetupGroup, got "
+                + type(self.panels).__name__
             )
 
     # SR_TMP <<<
     @property
     def deposition_type_str(self) -> str:
-        deposition_type = self.core.dimensions.deposition_type
+        deposition_type = self.panels.dimensions.deposition_type
         if deposition_type is None:
-            if self.core.input_variable in ["deposition", "affected_area"]:
+            if self.panels.input_variable in ["deposition", "affected_area"]:
                 return "tot"
             return "none"
         elif set(deposition_type) == {"dry", "wet"}:
@@ -224,15 +225,15 @@ class PlotSetup:
         return {
             **dc.asdict(self),
             "model": dc.asdict(self.model) if rec else self.model,
-            "core": self.core.dict() if rec else self.core,
+            "panels": self.panels.dict() if rec else self.panels,
         }
 
     def tuple(self) -> Tuple[Tuple[str, Any], ...]:
         dct = self.dict(rec=False)
         model = dct.pop("model")
-        core = dct.pop("core")
+        panels = dct.pop("panels")
         return tuple(
-            list(dct.items()) + [("model", model.tuple()), ("core", core.tuple())]
+            list(dct.items()) + [("model", model.tuple()), ("panels", panels.tuple())]
         )
 
     def copy(self):
@@ -281,48 +282,50 @@ class PlotSetup:
         if self.deposition_type_str == "tot":
             if select is None or "dimensions.deposition_type" in select:
                 if "dimensions.deposition_type" not in (skip or []):
-                    dct["core"]["dimensions"]["deposition_type"] = ("dry", "wet")
+                    dct["panels"]["dimensions"]["deposition_type"] = ("dry", "wet")
         # SR_TMP >
 
         if "input_variable" in (select or []) or "input_variable" not in (skip or []):
-            if dct["core"]["input_variable"] == "affected_area":
-                dct["core"]["input_variable"] = ("concentration", "deposition")
-            elif dct["core"]["input_variable"] in [
+            if dct["panels"]["input_variable"] == "affected_area":
+                dct["panels"]["input_variable"] = ("concentration", "deposition")
+            elif dct["panels"]["input_variable"] in [
                 "cloud_arrival_time",
                 "cloud_departure_time",
             ]:
-                dct["core"]["input_variable"] = "concentration"
+                dct["panels"]["input_variable"] = "concentration"
 
         # Decompress dict
         dcts: List[Mapping[str, Any]] = []
         for dct_i in decompress_multival_dict(
             dct, select=select_setup, skip=skip_setup
         ):
-            if "core" not in dct_i:
+            if "panels" not in dct_i:
                 dcts.append(dct_i)
                 continue
-            for core_j in decompress_multival_dict(
-                dct_i["core"], select=select_core, skip=skip_core
+            for panels_j in decompress_multival_dict(
+                dct_i["panels"], select=select_core, skip=skip_core
             ):
-                dct_ij: Dict[str, Any] = {**dct_i, "core": core_j}
-                if "dimensions" not in core_j:
+                dct_ij: Dict[str, Any] = {**dct_i, "panels": panels_j}
+                if "dimensions" not in panels_j:
                     dcts.append(dct_i)
                     continue
                 for dims_k in decompress_multival_dict(
-                    core_j["dimensions"], select=select_dimensions, skip=skip_dimensions
+                    panels_j["dimensions"],
+                    select=select_dimensions,
+                    skip=skip_dimensions,
                 ):
                     dct_ijk: Dict[str, Any] = {
                         **dct_ij,
-                        "core": {**dct_ij["core"], "dimensions": dims_k},
+                        "panels": {**dct_ij["panels"], "dimensions": dims_k},
                     }
                     # SR_TMP <
                     # Handle affected area
                     if (
-                        dct_ijk["core"]["input_variable"] == "concentration"
-                        and dct_ijk["core"]["dimensions"]["deposition_type"]
+                        dct_ijk["panels"]["input_variable"] == "concentration"
+                        and dct_ijk["panels"]["dimensions"]["deposition_type"]
                     ):
-                        dct_ijk["core"]["dimensions"] = {
-                            **dct_ijk["core"]["dimensions"],
+                        dct_ijk["panels"]["dimensions"] = {
+                            **dct_ijk["panels"]["dimensions"],
                             "deposition_type": None,
                         }
                         if dct_ijk in dcts:
@@ -338,8 +341,8 @@ class PlotSetup:
 
         Args:
             params: Parameters to create an instance of ``Setup``, including
-                parameters to create the ``CoreSetup`` instance ``Setup.core``
-                and the ``Dimensions`` instance ``Setup.core.dimensions``. See
+                parameters to create the ``CoreSetup`` instance ``Setup.panels``
+                and the ``Dimensions`` instance ``Setup.panels.dimensions``. See
                 below for a description of each parameter.
 
         The parameter descriptions are (for now) collected here because they are
@@ -448,7 +451,7 @@ class PlotSetup:
 
         """
         params = dict(**params)
-        panel_params = params.pop("core", {})
+        panel_params = params.pop("panels", {})
         model_params = params.pop("model", {})
         params = {
             param: cast_field_value(
@@ -463,7 +466,7 @@ class PlotSetup:
             for param, value in params.items()
         }
         if panel_params:
-            params["core"] = PlotPanelSetup.create(panel_params)
+            params["panels"] = PlotPanelSetupGroup.create(panel_params)
         if model_params:
             params["model"] = ModelSetup.create(model_params)
         return cls(**params)
@@ -482,7 +485,7 @@ class PlotSetup:
     def cast(cls, param: str, value: Any) -> Any:
         """Cast a parameter to the appropriate type."""
         param_choices = sorted(
-            [param for param in cls.get_params() if param != "core"]
+            [param for param in cls.get_params() if param != "panels"]
             + [param for param in PlotPanelSetup.get_params() if param != "dimensions"]
             + list(CoreDimensions.get_params())
         )
@@ -515,7 +518,7 @@ class PlotSetup:
                 return Dimensions.cast(param, value)
             elif is_model_setup_param(param):
                 return ModelSetup.cast(param, value)
-            elif is_core_setup_param(param):
+            elif is_plot_panel_setup_param(param):
                 return cast_field_value(
                     PlotPanelSetup,
                     param,
@@ -579,7 +582,7 @@ class PlotSetup:
     ) -> "PlotSetup":
         setups = list(setups)
         # SR_TMP <
-        input_variables = [setup.core.input_variable for setup in setups]
+        input_variables = [setup.panels.input_variable for setup in setups]
         if len(set(input_variables)) != 1:
             raise ValueError(
                 f"cannot compress setups: input_variable differs: {input_variables}"
@@ -587,11 +590,11 @@ class PlotSetup:
         # SR_TMP >
         dcts = [setup.dict() for setup in setups]
         dct = compress_multival_dicts(dcts, cls_seq=tuple)
-        if isinstance(dct["core"], Sequence):
-            dct["core"] = compress_multival_dicts(dct["core"], cls_seq=tuple)
-        if isinstance(dct["core"]["dimensions"], Sequence):
-            dct["core"]["dimensions"] = compress_multival_dicts(
-                dct["core"]["dimensions"], cls_seq=tuple
+        if isinstance(dct["panels"], Sequence):
+            dct["panels"] = compress_multival_dicts(dct["panels"], cls_seq=tuple)
+        if isinstance(dct["panels"]["dimensions"], Sequence):
+            dct["panels"]["dimensions"] = compress_multival_dicts(
+                dct["panels"]["dimensions"], cls_seq=tuple
             )
         return cls.create(dct)
 
@@ -605,7 +608,7 @@ class PlotSetup:
         params_core: List[str] = []
         params_dimensions: List[str] = []
         for param in params:
-            if is_setup_param(param) or is_core_setup_param(param):
+            if is_plot_setup_param(param) or is_plot_panel_setup_param(param):
                 params_setup.append(param)
                 continue
             if param.startswith("model."):
@@ -733,10 +736,10 @@ class PlotSetupGroup:
 
         """
         values: List[Any] = []
-        if is_core_setup_param(param) or is_setup_param(param):
+        if is_plot_panel_setup_param(param) or is_plot_setup_param(param):
             for var_setup in self:
-                if is_core_setup_param(param):
-                    value = getattr(var_setup.core, param)
+                if is_plot_panel_setup_param(param):
+                    value = getattr(var_setup.panels, param)
                 else:
                     value = getattr(var_setup, param)
                 if isinstance(value, Collection) and flatten:
@@ -850,7 +853,7 @@ class PlotSetupGroup:
         """Complete unconstrained dimensions based on available indices."""
         obj = self if inplace else self.copy()
         for setup in obj:
-            setup.core.complete_dimensions(raw_dimensions, species_ids, inplace=True)
+            setup.panels.complete_dimensions(raw_dimensions, species_ids, inplace=True)
         return None if inplace else obj
 
     def override_output_suffixes(self, suffix: Union[str, Collection[str]]) -> None:
@@ -906,7 +909,7 @@ class PlotSetupGroup:
 
         # Regular params
         for param in PlotSetup.get_params():
-            if param == "core":
+            if param == "panels":
                 continue  # Handled below
             try:
                 value = self.collect_equal(param)
@@ -928,9 +931,9 @@ class PlotSetupGroup:
             else:
                 core_same[param] = value
         if core_same:
-            same["core"] = core_same
+            same["panels"] = core_same
         if core_diff:
-            diff["core"] = core_diff
+            diff["panels"] = core_diff
 
         # Dimensions
         dims_same = {}
@@ -944,13 +947,13 @@ class PlotSetupGroup:
             else:
                 dims_diff[param] = values
         if dims_same:
-            if "core" not in same:
-                same["core"] = {}
-            same["core"]["dimensions"] = dims_same
+            if "panels" not in same:
+                same["panels"] = {}
+            same["panels"]["dimensions"] = dims_same
         if dims_diff:
-            if "core" not in diff:
-                diff["core"] = {}
-            diff["core"]["dimensions"] = dims_diff
+            if "panels" not in diff:
+                diff["panels"] = {}
+            diff["panels"]["dimensions"] = dims_diff
 
         def format_params(params: Dict[str, Any], name: str) -> str:
             lines = []

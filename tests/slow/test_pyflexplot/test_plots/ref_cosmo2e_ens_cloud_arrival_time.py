@@ -125,7 +125,7 @@ field_summary = {
                 "ens_member_id": [0, 1, 5, 10, 15, 20],
                 "simulation_type": "ensemble",
             },
-            "core": {
+            "panels": {
                 "input_variable": "concentration",
                 "ens_variable": "ens_cloud_arrival_time",
                 "integrate": True,
@@ -433,7 +433,7 @@ plot_summary = {
                         "ens_member_id": [0, 1, 5, 10, 15, 20],
                         "simulation_type": "ensemble",
                     },
-                    "core": {
+                    "panels": {
                         "input_variable": "concentration",
                         "ens_variable": "ens_cloud_arrival_time",
                         "integrate": True,
@@ -6417,7 +6417,7 @@ plot_summary = {
                     "ens_member_id": [0, 1, 5, 10, 15, 20],
                     "simulation_type": "ensemble",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "concentration",
                     "ens_variable": "ens_cloud_arrival_time",
                     "integrate": True,

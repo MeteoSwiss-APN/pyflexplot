@@ -9,6 +9,7 @@ the docstring of the class method ``Setup.create``.
 import dataclasses as dc
 from typing import Any
 from typing import Dict
+from typing import Iterator
 from typing import List
 from typing import Mapping
 from typing import Optional
@@ -243,3 +244,38 @@ class PlotPanelSetup:
             return obj
         assert isinstance(obj, Mapping)  # mypy
         return cls(**obj)
+
+
+class PlotPanelSetupGroup:
+    def __init__(self, panels: Sequence[PlotPanelSetup]) -> None:
+        """Create an instance of ``PlotPanelSetupGroup``."""
+        # SR_TMP <
+        if len(panels) > 1:
+            raise NotImplementedError("multipanel")
+        # SR_TMP >
+        self._panels = panels
+
+    def __iter__(self) -> Iterator[PlotPanelSetup]:
+        return iter(self._panels)
+
+    def __len__(self) -> int:
+        return len(self._panels)
+
+    def __getattr__(self, name: str) -> Any:
+        # SR_TMP <
+        if len(self._panels) > 1:
+            raise NotImplementedError("multipanel")
+        assert len(self) == 1
+        panel = self._panels[0]
+        try:
+            return getattr(panel, name)
+        except AttributeError as e:
+            raise e
+        # SR_TMP >
+
+    @classmethod
+    def create(cls, params: Mapping[str, Any]) -> "PlotPanelSetupGroup":
+        # SR_TMP <
+        panel = PlotPanelSetup.create(params)
+        return cls([panel])
+        # SR_TMP >

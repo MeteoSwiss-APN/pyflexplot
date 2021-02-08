@@ -26,11 +26,11 @@ from .shared import read_flexpart_field
 
 
 def get_var_name_ref(setup, var_names_ref):
-    if setup.core.input_variable == "concentration":
+    if setup.panels.input_variable == "concentration":
         assert len(var_names_ref) == 1
         return next(iter(var_names_ref))
-    elif setup.core.input_variable == "deposition":
-        species_id = setup.core.dimensions.species_id
+    elif setup.panels.input_variable == "deposition":
+        species_id = setup.panels.dimensions.species_id
         if isinstance(species_id, tuple):
             assert len(species_id) == 1
             species_id = next(iter(species_id))
@@ -71,7 +71,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 "model": {
                     "name": "COSMO-1",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "concentration",
                     "integrate": False,
                     "dimensions": {
@@ -93,7 +93,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 "model": {
                     "name": "COSMO-1",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "deposition",
                     "integrate": False,
                     "dimensions": {
@@ -116,7 +116,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 "model": {
                     "name": "COSMO-1",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "deposition",
                     "integrate": False,
                     "dimensions": {
@@ -139,7 +139,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 "model": {
                     "name": "COSMO-1",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "deposition",
                     "combine_deposition_types": True,
                     "integrate": False,
@@ -163,7 +163,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 "model": {
                     "name": "COSMO-1",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "concentration",
                     "integrate": False,
                     "dimensions": {
@@ -185,7 +185,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 "model": {
                     "name": "COSMO-1",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "deposition",
                     "combine_deposition_types": True,
                     "integrate": False,
@@ -209,7 +209,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 "model": {
                     "name": "COSMO-1",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "deposition",
                     "combine_deposition_types": True,
                     "combine_species": True,
@@ -234,7 +234,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 "model": {
                     "name": "IFS-HRES",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "concentration",
                     "integrate": False,
                     "dimensions": {
@@ -256,7 +256,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 "model": {
                     "name": "COSMO-1E",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "concentration",
                     "integrate": False,
                     "dimensions": {
@@ -328,7 +328,7 @@ def test_single(datadir, config):  # noqa:F811
                 "model": {
                     "name": "COSMO-1",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "concentration",
                     "integrate": True,
                     "dimensions": {
@@ -351,7 +351,7 @@ def test_single(datadir, config):  # noqa:F811
                 "model": {
                     "name": "COSMO-1",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "concentration",
                     "integrate": True,
                     "dimensions": {
@@ -374,7 +374,7 @@ def test_single(datadir, config):  # noqa:F811
                 "model": {
                     "name": "COSMO-1",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "deposition",
                     "integrate": True,
                     "dimensions": {
@@ -396,7 +396,7 @@ def test_single(datadir, config):  # noqa:F811
                 "model": {
                     "name": "COSMO-1",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "deposition",
                     "integrate": True,
                     "dimensions": {
@@ -418,7 +418,7 @@ def test_single(datadir, config):  # noqa:F811
                 "model": {
                     "name": "COSMO-1",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "deposition",
                     "combine_deposition_types": True,
                     "integrate": True,
@@ -441,7 +441,7 @@ def test_single(datadir, config):  # noqa:F811
                 "model": {
                     "name": "COSMO-1",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "concentration",
                     "integrate": True,
                     "dimensions": {
@@ -454,7 +454,7 @@ def test_single(datadir, config):  # noqa:F811
                     },
                 },
             },
-            derived_setup_params=[{"core": {"dimensions": {"level": 2}}}],
+            derived_setup_params=[{"panels": {"dimensions": {"level": 2}}}],
             scale_fld_ref=3.0,
         ),
         Config(  # [config6]
@@ -465,7 +465,7 @@ def test_single(datadir, config):  # noqa:F811
                 "model": {
                     "name": "COSMO-1",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "deposition",
                     "integrate": True,
                     "dimensions": {
@@ -548,7 +548,7 @@ def test_multiple(datadir, config):  # noqa:F811
                 "model": {
                     "name": "COSMO-1",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "concentration",
                     "integrate": False,
                     "dimensions": {
@@ -570,7 +570,7 @@ def test_multiple(datadir, config):  # noqa:F811
                 "model": {
                     "name": "COSMO-1",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "deposition",
                     "combine_deposition_types": True,
                     "integrate": False,
@@ -618,7 +618,7 @@ def test_missing_deposition_cosmo(datadir):  # noqa:F811
         "model": {
             "name": "COSMO-1E",
         },
-        "core": {
+        "panels": {
             "input_variable": "deposition",
             "integrate": True,
             "combine_deposition_types": True,
@@ -655,7 +655,7 @@ def test_missing_deposition_ifs(datadir):  # noqa:F811
         "model": {
             "name": "IFS-HRES-EU",
         },
-        "core": {
+        "panels": {
             "input_variable": "deposition",
             "integrate": True,
             "combine_deposition_types": True,
@@ -692,7 +692,7 @@ def test_affected_area(datadir):  # noqa:F811
         "model": {
             "name": "COSMO-1E",
         },
-        "core": {
+        "panels": {
             "input_variable": "affected_area",
             "integrate": True,
             "combine_deposition_types": True,

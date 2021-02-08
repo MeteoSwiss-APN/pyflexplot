@@ -19,9 +19,9 @@ from srutils.dict import decompress_nested_dict
 from srutils.dict import nested_dict_resolve_wildcards
 
 # Local
-from .setup import is_core_setup_param
 from .setup import is_dimensions_param
 from .setup import is_model_setup_param
+from .setup import is_plot_panel_setup_param
 from .setup import PlotSetup
 from .setup import PlotSetupGroup
 
@@ -128,23 +128,23 @@ class SetupFile:
                     if "model" not in params:
                         params["model"] = {}
                     params["model"][param] = value
-                elif is_core_setup_param(param):
-                    if "core" not in params:
-                        params["core"] = {}
-                    params["core"][param] = value
+                elif is_plot_panel_setup_param(param):
+                    if "panels" not in params:
+                        params["panels"] = {}
+                    params["panels"][param] = value
                 elif is_dimensions_param(param):
-                    if "core" not in params:
-                        params["core"] = {}
-                    if "dimensions" not in params["core"]:
-                        params["core"]["dimensions"] = {}
-                    params["core"]["dimensions"][param] = value
+                    if "panels" not in params:
+                        params["panels"] = {}
+                    if "dimensions" not in params["panels"]:
+                        params["panels"]["dimensions"] = {}
+                    params["panels"]["dimensions"][param] = value
                 elif param.startswith("ens_param_"):
                     ens_params[param.lstrip("ens_param_")] = value
                 else:
                     params[param] = value
             if ens_params:
-                if "core" not in params:
-                    params["core"] = {}
-                params["core"]["ens_params"] = ens_params
+                if "panels" not in params:
+                    params["panels"] = {}
+                params["panels"]["ens_params"] = ens_params
             params_lst.append(params)
         return params_lst

@@ -60,7 +60,7 @@ class Test_FromRawParams:
             {
                 "infile": "foo.nc",
                 "outfile": "foo.png",
-                "core": {
+                "panels": {
                     "input_variable": "concentration",
                     "combine_species": False,
                     "dimensions": {
@@ -82,15 +82,15 @@ class Test_SetupGroup_Create:
         return [
             {
                 **base,
-                "core": {"input_variable": "concentration", "domain": "ch"},
+                "panels": {"input_variable": "concentration", "domain": "ch"},
             },
             {
                 **base,
-                "core": {"input_variable": "deposition", "lang": "de"},
+                "panels": {"input_variable": "deposition", "lang": "de"},
             },
             {
                 **base,
-                "core": {"dimensions": {"nageclass": 1, "noutrel": 5, "numpoint": 3}},
+                "panels": {"dimensions": {"nageclass": 1, "noutrel": 5, "numpoint": 3}},
             },
         ]
 
@@ -124,7 +124,7 @@ class Test_SetupGroup_Compress:
             "model": {
                 "name": "COSMO-1",
             },
-            "core": {
+            "panels": {
                 "input_variable": "concentration",
                 "dimensions": {"level": 0},
             },
@@ -135,7 +135,7 @@ class Test_SetupGroup_Compress:
             "model": {
                 "name": "COSMO-1",
             },
-            "core": {
+            "panels": {
                 "input_variable": "concentration",
                 "dimensions": {"level": 1},
             },
@@ -146,7 +146,7 @@ class Test_SetupGroup_Compress:
             "model": {
                 "name": "COSMO-1",
             },
-            "core": {
+            "panels": {
                 "input_variable": "concentration",
                 "dimensions": {"level": (1, 2)},
             },
@@ -162,14 +162,14 @@ class Test_SetupGroup_Compress:
     def test_two(self):
         res = PlotSetupGroup(self.setups_lst[:2]).compress().dict()
         sol = PlotSetup.create(self.dcts[0]).derive(
-            {"core": {"dimensions": {"level": (0, 1)}}}
+            {"panels": {"dimensions": {"level": (0, 1)}}}
         )
         assert res == sol
 
     def test_three(self):
         res = PlotSetupGroup(self.setups_lst[:3]).compress().dict()
         sol = PlotSetup.create(self.dcts[0]).derive(
-            {"core": {"dimensions": {"level": (0, 1, 2)}}}
+            {"panels": {"dimensions": {"level": (0, 1, 2)}}}
         )
         assert res == sol
 
@@ -187,10 +187,10 @@ class Test_SetupGroup_Group:
     time_lst = [0, -1, (0, 5, 10)]
 
     combine_levels_lst = [True, False]
-    default_combine_levels = DEFAULT_SETUP.core.combine_levels
+    default_combine_levels = DEFAULT_SETUP.panels.combine_levels
 
     deposition_type_lst = ["dry", "wet", ("dry", "wet")]
-    default_deposition_type = DEFAULT_SETUP.core.dimensions.deposition_type
+    default_deposition_type = DEFAULT_SETUP.panels.dimensions.deposition_type
 
     n_outfile = len(outfile_lst)
     n_combine_species = len(combine_species_lst)
@@ -213,7 +213,7 @@ class Test_SetupGroup_Group:
                 "model": {
                     "name": "COSMO-1",
                 },
-                "core": {
+                "panels": {
                     "combine_species": combine_species,
                     "dimensions": {"species_id": [1, 2], "time": time},
                 },
@@ -225,7 +225,7 @@ class Test_SetupGroup_Group:
         assert len(base_dcts) == self.n_base
         concentration_dcts = [
             {
-                "core": {
+                "panels": {
                     "input_variable": "concentration",
                     "combine_levels": combine_levels,
                     "dimensions": {"level": [0, 1, 2]},
@@ -236,7 +236,7 @@ class Test_SetupGroup_Group:
         assert len(concentration_dcts) == self.n_concentration
         deposition_dcts = [
             {
-                "core": {
+                "panels": {
                     "input_variable": "deposition",
                     "combine_deposition_types": True,
                     "dimensions": {"deposition_type": deposition_type},

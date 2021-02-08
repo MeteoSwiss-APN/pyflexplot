@@ -25,7 +25,7 @@ class Test_Concentration(_TestBase):
         "model": {
             "name": "IFS-HRES",
         },
-        "core": {
+        "panels": {
             "input_variable": "concentration",
             "integrate": False,
             "lang": "de",
@@ -48,7 +48,7 @@ class Test_IntegratedConcentration(_TestBase):
         "model": {
             "name": "IFS-HRES",
         },
-        "core": {
+        "panels": {
             "input_variable": "concentration",
             "integrate": True,
             "lang": "en",
@@ -71,7 +71,7 @@ class Test_TotalDeposition(_TestBase):
         "model": {
             "name": "IFS-HRES",
         },
-        "core": {
+        "panels": {
             "input_variable": "deposition",
             "combine_deposition_types": True,
             "integrate": True,
@@ -94,7 +94,7 @@ class Test_TotalDeposition_EmptyField(_TestBase):
         "model": {
             "name": "IFS-HRES",
         },
-        "core": {
+        "panels": {
             "input_variable": "deposition",
             "combine_deposition_types": True,
             "integrate": True,
@@ -116,7 +116,7 @@ class Test_AffectedArea(_TestBase):
         "model": {
             "name": "IFS-HRES",
         },
-        "core": {
+        "panels": {
             "input_variable": "affected_area",
             "combine_deposition_types": True,
             "integrate": True,
@@ -140,7 +140,7 @@ class Test_CloudDepartureTime(_TestBase):
         "model": {
             "name": "IFS-HRES",
         },
-        "core": {
+        "panels": {
             "input_variable": "cloud_departure_time",
             "integrate": False,
             "lang": "en",

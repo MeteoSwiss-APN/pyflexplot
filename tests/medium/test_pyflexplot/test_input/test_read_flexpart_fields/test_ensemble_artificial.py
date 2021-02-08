@@ -51,7 +51,7 @@ def test_one_setup_one_field(datadir, config):  # noqa:F811
             "name": "COSMO-2E",
             "ens_member_id": config.ens_mem_ids,
         },
-        "core": {
+        "panels": {
             "input_variable": "concentration",
             "dimensions": {"time": -1, "species_id": 1, "level": 0},
             "ens_variable": config.ens_var,

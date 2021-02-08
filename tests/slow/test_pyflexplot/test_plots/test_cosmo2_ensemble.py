@@ -29,7 +29,7 @@ class Test_EnsMedian_Concentration(_TestBase):
             "name": "COSMO-2E",
             "ens_member_id": ENS_MEMBER_IDS,
         },
-        "core": {
+        "panels": {
             "ens_variable": "median",
             "input_variable": "concentration",
             "integrate": False,
@@ -54,7 +54,7 @@ class Test_EnsMax_IntegratedConcentration(_TestBase):
             "name": "COSMO-2E",
             "ens_member_id": ENS_MEMBER_IDS,
         },
-        "core": {
+        "panels": {
             "ens_variable": "maximum",
             "input_variable": "concentration",
             "integrate": True,
@@ -78,7 +78,7 @@ class Test_EnsMean_TotalDeposition(_TestBase):
             "name": "COSMO-2E",
             "ens_member_id": ENS_MEMBER_IDS,
         },
-        "core": {
+        "panels": {
             "ens_variable": "mean",
             "input_variable": "deposition",
             "combine_deposition_types": True,
@@ -103,7 +103,7 @@ class Test_EnsProbability_WetDeposition(_TestBase):
             "name": "COSMO-2E",
             "ens_member_id": ENS_MEMBER_IDS,
         },
-        "core": {
+        "panels": {
             "ens_variable": "probability",
             "input_variable": "deposition",
             "integrate": True,
@@ -128,7 +128,7 @@ class Test_EnsMin_AffectedArea(_TestBase):
             "name": "COSMO-2E",
             "ens_member_id": ENS_MEMBER_IDS,
         },
-        "core": {
+        "panels": {
             "input_variable": "affected_area",
             "ens_variable": "minimum",
             "combine_deposition_types": True,
@@ -155,7 +155,7 @@ class Test_CloudArrivalTime(_TestBase):
             "name": "COSMO-2E",
             "ens_member_id": ENS_MEMBER_IDS,
         },
-        "core": {
+        "panels": {
             "ens_variable": "ens_cloud_arrival_time",
             "input_variable": "concentration",
             "integrate": True,
@@ -183,7 +183,7 @@ class Test_CloudDepartureTime(_TestBase):
             "name": "COSMO-2E",
             "ens_member_id": ENS_MEMBER_IDS,
         },
-        "core": {
+        "panels": {
             "ens_variable": "ens_cloud_departure_time",
             "input_variable": "concentration",
             "integrate": True,
@@ -215,7 +215,7 @@ class Test_MultipanelEnsStats_Concentration(_TestBase):
             "name": "COSMO-2E",
             "ens_member_id": ENS_MEMBER_IDS,
         },
-        "core": {
+        "panels": {
             "input_variable": "concentration",
             "ens_variable": ["minimum", "maximum", "median", "mean"],
             "plot_type": "multipanel",

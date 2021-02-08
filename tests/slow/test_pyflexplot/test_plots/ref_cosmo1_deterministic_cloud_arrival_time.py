@@ -125,7 +125,7 @@ field_summary = {
                 "ens_member_id": None,
                 "simulation_type": "deterministic",
             },
-            "core": {
+            "panels": {
                 "input_variable": "cloud_arrival_time",
                 "ens_variable": "none",
                 "integrate": False,
@@ -428,7 +428,7 @@ plot_summary = {
                         "ens_member_id": None,
                         "simulation_type": "deterministic",
                     },
-                    "core": {
+                    "panels": {
                         "input_variable": "cloud_arrival_time",
                         "ens_variable": "none",
                         "integrate": False,
@@ -7940,7 +7940,7 @@ plot_summary = {
                     "ens_member_id": None,
                     "simulation_type": "deterministic",
                 },
-                "core": {
+                "panels": {
                     "input_variable": "cloud_arrival_time",
                     "ens_variable": "none",
                     "integrate": False,

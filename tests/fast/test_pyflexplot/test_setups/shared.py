@@ -9,6 +9,7 @@ from pyflexplot.setups.dimensions import Dimensions
 from pyflexplot.setups.model_setup import ModelSetup
 from pyflexplot.setups.plot_panel_setup import EnsembleParams
 from pyflexplot.setups.plot_panel_setup import PlotPanelSetup
+from pyflexplot.setups.plot_panel_setup import PlotPanelSetupGroup
 from pyflexplot.setups.setup import PlotSetup
 from srutils.dict import merge_dicts
 
@@ -21,7 +22,7 @@ MANDATORY_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
 }
 
 OPTIONAL_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
-    "core": {
+    "panels": {
         "combine_deposition_types": False,
         "combine_levels": False,
         "combine_species": False,
@@ -70,18 +71,26 @@ DEFAULT_PARAMS = merge_dicts(
     RAW_DEFAULT_PARAMS,
     {
         "model": ModelSetup(**RAW_DEFAULT_PARAMS["model"]),
-        "core": PlotPanelSetup(
-            **merge_dicts(
-                RAW_DEFAULT_PARAMS["core"],
-                {
-                    "dimensions": Dimensions(
-                        [CoreDimensions(**RAW_DEFAULT_PARAMS["core"]["dimensions"])]
+        "panels": PlotPanelSetupGroup(
+            [
+                PlotPanelSetup(
+                    **merge_dicts(
+                        RAW_DEFAULT_PARAMS["panels"],
+                        {
+                            "dimensions": Dimensions(
+                                [
+                                    CoreDimensions(
+                                        **RAW_DEFAULT_PARAMS["panels"]["dimensions"]
+                                    )
+                                ]
+                            ),
+                            "ens_params": EnsembleParams(
+                                **RAW_DEFAULT_PARAMS["panels"]["ens_params"]
+                            ),
+                        },
                     ),
-                    "ens_params": EnsembleParams(
-                        **RAW_DEFAULT_PARAMS["core"]["ens_params"]
-                    ),
-                },
-            ),
+                ),
+            ],
         ),
     },
 )

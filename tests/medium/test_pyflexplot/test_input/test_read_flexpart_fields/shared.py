@@ -24,19 +24,19 @@ def read_flexpart_field(path, var_name, setup, *, model, add_ts0):
             elif dim_name == "time":
                 # Read all timesteps until the selected one
                 if isinstance(setup, PlotPanelSetup):
-                    idx = slice(setup.core.dimensions.time + (0 if add_ts0 else 1))
+                    idx = slice(setup.panels.dimensions.time + (0 if add_ts0 else 1))
                 else:
-                    assert isinstance(setup.core.dimensions.time, int)
-                    idx = slice(setup.core.dimensions.time + (0 if add_ts0 else 1))
+                    assert isinstance(setup.panels.dimensions.time, int)
+                    idx = slice(setup.panels.dimensions.time + (0 if add_ts0 else 1))
             elif dim_name in ["level", "height"]:
                 if (
                     isinstance(setup, PlotPanelSetup)
-                    or setup.core.dimensions.level is None
+                    or setup.panels.dimensions.level is None
                 ):
-                    idx = setup.core.dimensions.level
+                    idx = setup.panels.dimensions.level
                 else:
-                    assert isinstance(setup.core.dimensions.level, int)
-                    idx = setup.core.dimensions.level
+                    assert isinstance(setup.panels.dimensions.level, int)
+                    idx = setup.panels.dimensions.level
             elif dim_name in ["nageclass", "numpoint", "noutrel", "pointspec"]:
                 idx = 0
             else:
@@ -51,16 +51,16 @@ def read_flexpart_field(path, var_name, setup, *, model, add_ts0):
         fix_flexpart_field(fld, model)
 
         # Handle time integration of data
-        if setup.core.input_variable == "concentration":
-            if setup.core.integrate:
+        if setup.panels.input_variable == "concentration":
+            if setup.panels.integrate:
                 # Integrate concentration field over time
                 fld = np.cumsum(fld, axis=0)
-        elif setup.core.input_variable == "deposition":
-            if not setup.core.integrate:
+        elif setup.panels.input_variable == "deposition":
+            if not setup.panels.integrate:
                 # De-integrate deposition field over time
                 fld[1:] -= fld[:-1].copy()
         else:
-            raise NotImplementedError(f"variable '{setup.core.input_variable}'")
+            raise NotImplementedError(f"variable '{setup.panels.input_variable}'")
         fld = fld[-1]
 
         return fld

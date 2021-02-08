@@ -22,7 +22,7 @@ class Test_Setup_Create:
                 "name": "COSMO-1",
                 "ens_member_id": (0, 1, 5, 10, 15, 20),
             },
-            "core": {
+            "panels": {
                 "integrate": False,
                 "ens_variable": "mean",
                 "dimensions": {"time": 10, "level": 1},
@@ -36,17 +36,17 @@ class Test_Setup_Create:
     @pytest.mark.parametrize(
         "dct",
         [
-            {"core": {"input_variable": ["concentration", "deposition"]}},  # [dct0]
-            {"core": {"ens_variable": ["minimum", "maximum"]}},  # [dct1]
-            {"core": {"integrate": [True, False]}},  # [dct2]
-            {"core": {"combine_deposition_types": [True, False]}},  # [dct3]
-            {"core": {"combine_levels": [True, False]}},  # [dct4]
-            {"core": {"combine_species": [True, False]}},  # [dct5]
-            {"core": {"lang": ["en", "de"]}},  # [dct6]
-            {"core": {"domain": ["full", "ch"]}},  # [dct7]
-            {"core": {"domain_size_lat": [None, 100]}},  # [dct8]
-            {"core": {"domain_size_lon": [None, 100]}},  # [dct9]
-            {"core": {"dimensions_default": ["all", "first"]}},  # [dct10]
+            {"panels": {"input_variable": ["concentration", "deposition"]}},  # [dct0]
+            {"panels": {"ens_variable": ["minimum", "maximum"]}},  # [dct1]
+            {"panels": {"integrate": [True, False]}},  # [dct2]
+            {"panels": {"combine_deposition_types": [True, False]}},  # [dct3]
+            {"panels": {"combine_levels": [True, False]}},  # [dct4]
+            {"panels": {"combine_species": [True, False]}},  # [dct5]
+            {"panels": {"lang": ["en", "de"]}},  # [dct6]
+            {"panels": {"domain": ["full", "ch"]}},  # [dct7]
+            {"panels": {"domain_size_lat": [None, 100]}},  # [dct8]
+            {"panels": {"domain_size_lon": [None, 100]}},  # [dct9]
+            {"panels": {"dimensions_default": ["all", "first"]}},  # [dct10]
         ],
     )
     def test_multiple_values_fail(self, dct):
@@ -60,7 +60,7 @@ class Test_Setup_Decompress:
     def setup(self):
         return DEFAULT_SETUP.derive(
             {
-                "core": {
+                "panels": {
                     "input_variable": "deposition",
                     "dimensions": {
                         "deposition_type": ["dry", "wet"],
@@ -80,9 +80,9 @@ class Test_Setup_Decompress:
         assert len(setups) == 12
         res = {
             (
-                s.core.dimensions.deposition_type,
-                s.core.dimensions.species_id,
-                s.core.dimensions.time,
+                s.panels.dimensions.deposition_type,
+                s.panels.dimensions.species_id,
+                s.panels.dimensions.time,
             )
             for s in setups
         }
@@ -110,9 +110,9 @@ class Test_Setup_Decompress:
         assert all(isinstance(setup, PlotSetup) for setup in setups)
         res = {
             (
-                s.core.dimensions.deposition_type,
-                s.core.dimensions.species_id,
-                s.core.dimensions.time,
+                s.panels.dimensions.deposition_type,
+                s.panels.dimensions.species_id,
+                s.panels.dimensions.time,
             )
             for s in setups
         }
@@ -140,9 +140,9 @@ class Test_Setup_Decompress:
         assert len(setups) == 2
         res = {
             (
-                s.core.dimensions.deposition_type,
-                s.core.dimensions.species_id,
-                s.core.dimensions.time,
+                s.panels.dimensions.deposition_type,
+                s.panels.dimensions.species_id,
+                s.panels.dimensions.time,
             )
             for s in setups
         }
@@ -159,9 +159,9 @@ class Test_Setup_Decompress:
         assert all(isinstance(setup, PlotSetup) for setup in setups)
         res = {
             (
-                s.core.dimensions.deposition_type,
-                s.core.dimensions.species_id,
-                s.core.dimensions.time,
+                s.panels.dimensions.deposition_type,
+                s.panels.dimensions.species_id,
+                s.panels.dimensions.time,
             )
             for s in setups
         }
