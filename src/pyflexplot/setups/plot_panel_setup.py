@@ -23,11 +23,11 @@ from typing_extensions import Literal
 # First-party
 from srutils.dataclasses import cast_field_value
 from srutils.exceptions import InvalidParameterValueError
+from srutils.format import nested_repr
 from srutils.format import sfmt
 
 # Local
 from .dimensions import Dimensions
-from .utils import setup_repr
 
 # Some plot-specific default values
 ENS_PROBABILITY_DEFAULT_PARAM_THR = 0.0
@@ -222,7 +222,7 @@ class PlotPanelSetup:
         return hash(self._tuple())
 
     def __repr__(self) -> str:  # type: ignore
-        return setup_repr(self)
+        return nested_repr(self)
 
     @classmethod
     def get_params(cls) -> List[str]:

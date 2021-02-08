@@ -34,6 +34,7 @@ from srutils.dict import decompress_nested_dict
 from srutils.dict import merge_dicts
 from srutils.dict import nested_dict_resolve_wildcards
 from srutils.exceptions import InvalidParameterNameError
+from srutils.format import nested_repr
 from srutils.format import sfmt
 from srutils.str import join_multilines
 
@@ -42,7 +43,6 @@ from ..utils.exceptions import UnequalSetupParamValuesError
 from .dimensions import CoreDimensions
 from .dimensions import Dimensions
 from .plot_panel_setup import PlotPanelSetup
-from .utils import setup_repr
 
 
 # SR_TMP <<< TODO cleaner solution
@@ -325,7 +325,7 @@ class PlotSetup:
         return self.dict() == other_dict
 
     def __repr__(self) -> str:  # type: ignore
-        return setup_repr(self)
+        return nested_repr(self)
 
     # pylint: disable=R0912  # too-many-branches (>12)
     # pylint: disable=R0914  # too-many-locals

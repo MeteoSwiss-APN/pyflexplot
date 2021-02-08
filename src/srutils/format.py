@@ -99,6 +99,28 @@ def ordinal(i: Union[int, str]) -> str:
     return f"{i}{sfx}"
 
 
+def nested_repr(obj: Any) -> str:
+    """Format (optionally) nested object representations on multiple lines.
+
+    Example:
+        ClassA(
+            param1: 1,
+            b: ClassB(
+                param2: "2",
+            ),
+        )
+
+    """
+    s_attrs_lst: List[str] = []
+    for param in obj.get_params():
+        s_value = sfmt(getattr(obj, param))
+        if "\n" in s_value:
+            s_value = s_value.replace("\n", "\n  ")
+        s_attrs_lst.append(f"{param}={s_value}")
+    s_attrs = ",\n  ".join(s_attrs_lst)
+    return f"{type(obj).__name__}(\n  {s_attrs},\n)"
+
+
 # pylint: disable=R0913  # too-many-arguments
 # pylint: disable=R0914  # too-many-locals
 def format_numbers_range(
