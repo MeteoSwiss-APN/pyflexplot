@@ -1,6 +1,6 @@
 """Test class ``pyflexplot.setup.Setup.create``."""
 # First-party
-from pyflexplot.setup import PlotSetup
+from pyflexplot.setups.setup import PlotSetup
 from srutils.dict import merge_dicts
 
 # Local

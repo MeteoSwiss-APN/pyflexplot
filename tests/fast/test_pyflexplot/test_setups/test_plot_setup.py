@@ -3,8 +3,8 @@
 import pytest
 
 # First-party
-from pyflexplot.setup import PlotSetup
-from pyflexplot.setup import PlotSetupGroup
+from pyflexplot.setups.setup import PlotSetup
+from pyflexplot.setups.setup import PlotSetupGroup
 from srutils.dict import merge_dicts
 from srutils.testing import check_is_sub_element
 

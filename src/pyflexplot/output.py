@@ -15,7 +15,7 @@ from typing import Union
 from srutils.datetime import init_datetime
 
 # Local
-from .setup import PlotSetup
+from .setups.setup import PlotSetup
 from .utils.logging import log
 
 

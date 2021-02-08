@@ -4,12 +4,12 @@ from typing import Any
 from typing import Dict
 
 # First-party
-from pyflexplot.dimensions import CoreDimensions
-from pyflexplot.dimensions import Dimensions
-from pyflexplot.setup import EnsembleParams
-from pyflexplot.setup import ModelSetup
-from pyflexplot.setup import PlotPanelSetup
-from pyflexplot.setup import PlotSetup
+from pyflexplot.setups.dimensions import CoreDimensions
+from pyflexplot.setups.dimensions import Dimensions
+from pyflexplot.setups.setup import EnsembleParams
+from pyflexplot.setups.setup import ModelSetup
+from pyflexplot.setups.setup import PlotPanelSetup
+from pyflexplot.setups.setup import PlotSetup
 from srutils.dict import merge_dicts
 
 MANDATORY_RAW_DEFAULT_PARAMS: Dict[str, Any] = {

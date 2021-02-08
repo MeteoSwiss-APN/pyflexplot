@@ -5,7 +5,7 @@ import netCDF4 as nc4
 import numpy as np
 
 # First-party
-from pyflexplot.setup import PlotPanelSetup
+from pyflexplot.setups.setup import PlotPanelSetup
 
 # Local
 from ..shared import datadir_flexpart_artificial as datadir_artificial  # noqa:F401

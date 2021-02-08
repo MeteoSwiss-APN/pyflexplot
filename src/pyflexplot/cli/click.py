@@ -12,7 +12,7 @@ from click import Context
 from srutils.exceptions import InvalidParameterNameError
 
 # Local
-from ..setup import PlotSetup
+from ..setups.setup import PlotSetup
 from ..utils.logging import set_log_level
 
 

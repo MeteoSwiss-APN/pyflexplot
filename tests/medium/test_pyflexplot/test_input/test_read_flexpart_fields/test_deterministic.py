@@ -17,8 +17,8 @@ import pytest  # type: ignore
 
 # First-party
 from pyflexplot.input.read_fields import read_fields
-from pyflexplot.setup import PlotSetup
-from pyflexplot.setup import PlotSetupGroup
+from pyflexplot.setups.setup import PlotSetup
+from pyflexplot.setups.setup import PlotSetupGroup
 
 # Local
 from .shared import datadir_reduced as datadir  # noqa:F401

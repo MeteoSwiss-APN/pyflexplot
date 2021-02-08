@@ -19,12 +19,12 @@ import pytest
 from pyflexplot.input.field import Field
 from pyflexplot.input.field import FieldGroup
 from pyflexplot.input.read_fields import read_fields
-from pyflexplot.setup import is_core_setup_param
-from pyflexplot.setup import is_dimensions_param
-from pyflexplot.setup import is_model_setup_param
-from pyflexplot.setup import is_setup_param
-from pyflexplot.setup import PlotSetup
-from pyflexplot.setup import PlotSetupGroup
+from pyflexplot.setups.setup import is_core_setup_param
+from pyflexplot.setups.setup import is_dimensions_param
+from pyflexplot.setups.setup import is_model_setup_param
+from pyflexplot.setups.setup import is_setup_param
+from pyflexplot.setups.setup import PlotSetup
+from pyflexplot.setups.setup import PlotSetupGroup
 from srutils.dict import merge_dicts
 from srutils.testing import check_is_sub_element
 

@@ -4,7 +4,7 @@ from typing import Any
 from typing import Dict
 
 # First-party
-from pyflexplot.setup import PlotPanelSetup
+from pyflexplot.setups.setup import PlotPanelSetup
 
 
 class Test_CompleteDimensions:

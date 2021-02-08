@@ -25,7 +25,7 @@ from srutils.iter import resolve_negative_indices
 from srutils.str import join_multilines
 
 # Local
-from .utils.summarize import summarizable
+from ..utils.summarize import summarizable
 
 
 # SR_TODO Clean up docstring -- where should format key hints go?

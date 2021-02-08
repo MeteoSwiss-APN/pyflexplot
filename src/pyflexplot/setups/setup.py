@@ -39,9 +39,9 @@ from srutils.format import sfmt
 from srutils.str import join_multilines
 
 # Local
+from ..utils.exceptions import UnequalSetupParamValuesError
 from .dimensions import CoreDimensions
 from .dimensions import Dimensions
-from .utils.exceptions import UnequalSetupParamValuesError
 
 # Some plot-specific default values
 ENS_PROBABILITY_DEFAULT_PARAM_THR = 0.0

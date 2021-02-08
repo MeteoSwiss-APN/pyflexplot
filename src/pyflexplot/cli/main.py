@@ -36,8 +36,8 @@ from ..plots import create_plot
 from ..plots import format_out_file_paths
 from ..plots import prepare_plot
 from ..plotting.boxed_plot import BoxedPlot
-from ..setup import PlotSetupGroup
-from ..setup import SetupFile
+from ..setups.setup import PlotSetupGroup
+from ..setups.setup import SetupFile
 from ..utils.logging import log
 
 

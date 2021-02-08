@@ -8,7 +8,7 @@ from textwrap import dedent
 import pytest
 
 # First-party
-from pyflexplot.setup import SetupFile
+from pyflexplot.setups.setup import SetupFile
 from srutils.dict import merge_dicts
 from srutils.testing import assert_nested_equal
 

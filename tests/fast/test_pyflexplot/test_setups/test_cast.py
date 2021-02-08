@@ -3,7 +3,7 @@
 import pytest  # type: ignore
 
 # First-party
-from pyflexplot.setup import PlotSetup
+from pyflexplot.setups.setup import PlotSetup
 from srutils.exceptions import InvalidParameterValueError
 
 
