@@ -1394,19 +1394,11 @@ class SetupFile:
 
 
 def setup_repr(obj: Union["CoreSetup", "Setup"]) -> str:
-    def fmt(obj):
-        if isinstance(obj, str):
-            return f"'{obj}'"
-        return str(obj)
-
     s_attrs_lst: List[str] = []
     for param in obj.get_params():
-        value = getattr(obj, param)
-        s_value = str(value)
+        s_value = sfmt(getattr(obj, param))
         if "\n" in s_value:
             s_value = s_value.replace("\n", "\n  ")
-        elif isinstance(value, str):
-            s_value = f"'{value}'"
         s_attrs_lst.append(f"{param}={s_value}")
     s_attrs = ",\n  ".join(s_attrs_lst)
     return f"{type(obj).__name__}(\n  {s_attrs},\n)"
