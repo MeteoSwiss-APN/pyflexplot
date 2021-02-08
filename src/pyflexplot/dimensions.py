@@ -269,11 +269,11 @@ class Dimensions:
     def copy(self) -> "Dimensions":
         return self.create(self.dict())
 
-    def _tuple(self) -> Tuple[Tuple[str, Any], ...]:
+    def tuple(self) -> Tuple[Tuple[str, Any], ...]:
         return tuple(self.dict().items())
 
     def __hash__(self) -> int:
-        return hash(self._tuple())
+        return hash(self.tuple())
 
     def __eq__(self, other) -> bool:
         # SR_DBG <

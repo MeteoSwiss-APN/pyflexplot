@@ -246,14 +246,26 @@ class CoreSetup:
         )
         return None if inplace else obj
 
-    def dict(self) -> Dict[str, Any]:  # type: ignore
+    def dict(self, rec: bool = True) -> Dict[str, Any]:
+        """Return the parameter names and values as a dict.
+
+        Args:
+            rec (optional): Recursively return sub-objects like ``Dimensions``
+                as dicts.
+
+        """
         return {
             **asdict(self),
-            "dimensions": self.dimensions.dict(),
+            "dimensions": self.dimensions.dict() if rec else self.dimensions,
         }
 
     def copy(self) -> "CoreSetup":
         return self.create(self.dict())
+
+    def tuple(self) -> Tuple[Tuple[str, Any], ...]:
+        dct = self.dict(rec=False)
+        dims = dct.pop("dimensions")
+        return tuple(list(dct.items()) + [("dimensions", dims.tuple())])
 
     def _init_defaults(self) -> None:
         """Set some default values depending on other parameters."""
@@ -326,6 +338,12 @@ class ModelSetup:
     base_time: Optional[int] = None
     ens_member_id: Optional[Tuple[int, ...]] = None
     simulation_type: str = "N/A"
+
+    def dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+    def tuple(self) -> Tuple[Tuple[str, Any], ...]:
+        return tuple(self.dict().items())
 
     @classmethod
     def create(cls, params: Mapping[str, Any]) -> "ModelSetup":
@@ -466,11 +484,19 @@ class Setup:
             "core": self.core.dict() if rec else self.core,
         }
 
+    def tuple(self) -> Tuple[Tuple[str, Any], ...]:
+        dct = self.dict(rec=False)
+        model = dct.pop("model")
+        core = dct.pop("core")
+        return tuple(
+            list(dct.items()) + [("model", model.tuple()), ("core", core.tuple())]
+        )
+
     def copy(self):
         return self.create(self.dict())
 
     def __hash__(self) -> int:
-        return hash(self._tuple())
+        return hash(self.tuple())
 
     def __len__(self) -> int:
         return len(self.dict())
@@ -562,25 +588,6 @@ class Setup:
                     dcts.append(dct_ijk)
 
         return SetupGroup([Setup.create(dct) for dct in dcts])
-
-    def _tuple(self) -> Tuple[Tuple[str, Any], ...]:
-        dct = self.dict()
-        model = dct.pop("model")
-        core = dct.pop("core")
-        dims = core.pop("dimensions")
-        return tuple(
-            list(dct.items())
-            + [
-                (
-                    "model",
-                    tuple(model.items()),
-                ),
-                (
-                    "core",
-                    tuple(list(core.items()) + ["dimensions", tuple(dims.items())]),
-                ),
-            ]
-        )
 
     @classmethod
     def create(cls, params: Mapping[str, Any]) -> "Setup":
