@@ -358,8 +358,6 @@ class ModelSetup:
     # SR_TMP Identical to CoreDimensions.cast
     @classmethod
     def cast(cls, param: str, value: Any) -> Any:
-        if value is None:
-            return None
         return cast_field_value(
             cls,
             param,
