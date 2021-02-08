@@ -721,9 +721,9 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
         )
     if setup.model.simulation_type == "ensemble":
         if setup.core.ens_variable == "probability":
-            op = {"lower": "gt", "upper": "lt"}[setup.core.ens_param_thr_type]
+            op = {"lower": "gt", "upper": "lt"}[setup.core.ens_params.thr_type]
             labels["data_info"]["lines"].append(
-                f"{words['selection']}:\t{symbols[op]} {setup.core.ens_param_thr}"
+                f"{words['selection']}:\t{symbols[op]} {setup.core.ens_params.thr}"
                 f" {format_meta_datum(unit=format_meta_datum(mdata.variable.unit))}"
             )
         elif setup.core.ens_variable in [
@@ -734,10 +734,10 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
                 # f"{words['cloud_density']}:\t{words['minimum', 'abbr']}"
                 # f"{words['threshold']}:\t"
                 f"{words['cloud_threshold', 'abbr']}:\t"
-                f" {setup.core.ens_param_thr}"
+                f" {setup.core.ens_params.thr}"
                 f" {format_meta_datum(unit=format_meta_datum(mdata.variable.unit))}"
             )
-            n_min = setup.core.ens_param_mem_min or 0
+            n_min = setup.core.ens_params.mem_min or 0
             n_tot = len((setup.model.ens_member_id or []))
             labels["data_info"]["lines"].append(
                 # f"{words['number_of', 'abbr'].c} {words['member', 'pl']}:"
@@ -949,8 +949,8 @@ def format_names_etc(
                 f"{words['ensemble_median_absolute_deviation', 'abbr']} {var_name_rel}"
             )
         elif setup.core.ens_variable == "percentile":
-            assert setup.core.ens_param_pctl is not None  # mypy
-            pctl = setup.core.ens_param_pctl
+            assert setup.core.ens_params.pctl is not None  # mypy
+            pctl = setup.core.ens_params.pctl
             th = {1: "st", 2: "nd", 3: "rd"}.get(pctl, "th")  # type: ignore
             long_name = (
                 f"{pctl:g}{words['th', th]}" f" {words['percentile']} {var_name_rel}"

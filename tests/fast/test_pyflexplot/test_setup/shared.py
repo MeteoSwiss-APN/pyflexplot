@@ -6,6 +6,7 @@ from typing import Dict
 # First-party
 from pyflexplot.dimensions import CoreDimensions
 from pyflexplot.dimensions import Dimensions
+from pyflexplot.setup import EnsembleParams
 from pyflexplot.setup import ModelSetup
 from pyflexplot.setup import PlotPanelSetup
 from pyflexplot.setup import PlotSetup
@@ -37,10 +38,12 @@ OPTIONAL_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
         "domain": "full",
         "domain_size_lat": None,
         "domain_size_lon": None,
-        "ens_param_mem_min": None,
-        "ens_param_pctl": None,
-        "ens_param_thr": None,
-        "ens_param_thr_type": "lower",
+        "ens_params": {
+            "mem_min": None,
+            "pctl": None,
+            "thr": None,
+            "thr_type": "lower",
+        },
         "ens_variable": "none",
         "input_variable": "concentration",
         "integrate": False,
@@ -72,10 +75,11 @@ DEFAULT_PARAMS = merge_dicts(
                 RAW_DEFAULT_PARAMS["core"],
                 {
                     "dimensions": Dimensions(
-                        [
-                            CoreDimensions(**RAW_DEFAULT_PARAMS["core"]["dimensions"]),
-                        ]
-                    )
+                        [CoreDimensions(**RAW_DEFAULT_PARAMS["core"]["dimensions"])]
+                    ),
+                    "ens_params": EnsembleParams(
+                        **RAW_DEFAULT_PARAMS["core"]["ens_params"]
+                    ),
                 },
             ),
         ),

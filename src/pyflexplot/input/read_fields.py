@@ -458,10 +458,7 @@ class InputFileEnsemble:
         if len(self.paths) == 1 or self.config.dry_run:
             return fld_time_mem[0]
 
-        ens_param_mem_min = var_setups.collect_equal("ens_param_mem_min")
-        ens_param_pctl = var_setups.collect_equal("ens_param_pctl")
-        ens_param_thr = var_setups.collect_equal("ens_param_thr")
-        ens_param_thr_type = var_setups.collect_equal("ens_param_thr_type")
+        ens_params = var_setups.collect_equal("ens_params")
         ens_variable = var_setups.collect_equal("ens_variable")
 
         fld_time: np.ndarray
@@ -478,15 +475,17 @@ class InputFileEnsemble:
         elif ens_variable == "med_abs_dev":
             fld_time = sp_stats.median_abs_deviation(fld_time_mem, axis=0)
         elif ens_variable == "percentile":
-            assert ens_param_pctl is not None  # mypy
-            fld_time = np.percentile(fld_time_mem, ens_param_pctl, axis=0)
+            assert ens_params.pctl is not None  # mypy
+            fld_time = np.percentile(fld_time_mem, ens_params.pctl, axis=0)
         elif ens_variable == "probability":
             fld_time = ensemble_probability(
-                fld_time_mem, ens_param_thr, ens_param_thr_type
+                fld_time_mem, ens_params.thr, ens_params.thr_type
             )
         elif ens_variable.startswith("ens_cloud_"):
             cloud = EnsembleCloud(
-                mask=fld_time_mem > ens_param_thr, mem_min=ens_param_mem_min, ts=ts_hrs
+                mask=fld_time_mem > ens_params.thr,
+                mem_min=ens_params.mem_min,
+                ts=ts_hrs,
             )
             if ens_variable == "ens_cloud_arrival_time":
                 fld_time = cloud.arrival_time()

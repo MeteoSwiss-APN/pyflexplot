@@ -6,10 +6,8 @@ the docstring of the class method ``Setup.create``.
 
 """
 # Standard library
-import dataclasses
+import dataclasses as dc
 import re
-from dataclasses import asdict
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 from typing import cast
@@ -88,8 +86,16 @@ def get_setup_param_value(setup: "PlotSetup", param: str) -> Any:
     raise ValueError("invalid input setup parameter", param)
 
 
+@dc.dataclass
+class EnsembleParams:
+    mem_min: Optional[int] = None
+    pctl: Optional[float] = None
+    thr: Optional[float] = None
+    thr_type: str = "lower"
+
+
 # pylint: disable=R0902  # too-many-instance-attributes (>7)
-@dataclass
+@dc.dataclass
 class PlotPanelSetup:
     """Setup of an individual panel of a plot.
 
@@ -108,10 +114,7 @@ class PlotPanelSetup:
     combine_species: bool = False
 
     # Ensemble-related
-    ens_param_mem_min: Optional[int] = None
-    ens_param_pctl: Optional[float] = None
-    ens_param_thr: Optional[float] = None
-    ens_param_thr_type: str = "lower"
+    ens_params: EnsembleParams = EnsembleParams()
 
     # Plot appearance
     lang: str = "en"
@@ -209,7 +212,7 @@ class PlotPanelSetup:
 
         """
         return {
-            **asdict(self),
+            **dc.asdict(self),
             "dimensions": self.dimensions.dict() if rec else self.dimensions,
         }
 
@@ -223,7 +226,7 @@ class PlotPanelSetup:
 
     def _check_types(self) -> None:
         for param, value in self.dict(rec=False).items():
-            if param == "dimensions":
+            if param in ["dimensions", "ens_params"]:
                 continue
             try:
                 cast_field_value(type(self), param, value)
@@ -242,30 +245,24 @@ class PlotPanelSetup:
                 # Lat size derived from lon size and map aspect ratio
                 self.domain_size_lon = 20.0
 
-        # Init ens_param_mem_min
-        if self.ens_param_mem_min is None:
+        # Init ens_params
+        if self.ens_params.mem_min is None:
             if self.ens_variable in [
                 "ens_cloud_arrival_time",
                 "ens_cloud_departure_time",
             ]:
-                self.ens_param_mem_min = ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN
-
-        # Init ens_param_pctl
+                self.ens_params.mem_min = ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN
         if self.ens_variable == "percentile":
-            assert self.ens_param_pctl is not None
-
-        # Init ens_param_thr
-        if self.ens_param_thr is None:
+            assert self.ens_params.pctl is not None
+        if self.ens_params.thr is None:
             if self.ens_variable in [
                 "ens_cloud_arrival_time",
                 "ens_cloud_departure_time",
             ]:
-                self.ens_param_thr = ENS_CLOUD_TIME_DEFAULT_PARAM_THR
+                self.ens_params.thr = ENS_CLOUD_TIME_DEFAULT_PARAM_THR
             elif self.ens_variable == "probability":
-                self.ens_param_thr = ENS_PROBABILITY_DEFAULT_PARAM_THR
-
-        # Init ens_param_thr_type
-        assert self.ens_param_thr_type in ["lower", "upper"]
+                self.ens_params.thr = ENS_PROBABILITY_DEFAULT_PARAM_THR
+        assert self.ens_params.thr_type in ["lower", "upper"]
 
     def _tuple(self) -> Tuple[Tuple[str, Any], ...]:
         dct = self.dict()
@@ -286,6 +283,7 @@ class PlotPanelSetup:
     def create(cls, params: Mapping[str, Any]) -> "PlotPanelSetup":
         params = dict(params)
         params["dimensions"] = Dimensions.create(params.pop("dimensions", {}))
+        params["ens_params"] = EnsembleParams(**params.pop("ens_params", {}))
         return cls(**params)
 
     @classmethod
@@ -299,7 +297,7 @@ class PlotPanelSetup:
 
 
 # SR_TODO
-@dataclass
+@dc.dataclass
 class ModelSetup:
     name: str = "N/A"
     base_time: Optional[int] = None
@@ -307,7 +305,7 @@ class ModelSetup:
     simulation_type: str = "N/A"
 
     def dict(self) -> Dict[str, Any]:
-        return asdict(self)
+        return dc.asdict(self)
 
     def tuple(self) -> Tuple[Tuple[str, Any], ...]:
         return tuple(self.dict().items())
@@ -359,7 +357,7 @@ class ModelSetup:
 
 
 # SR_TODO Clean up docstring -- where should format key hints go?
-@dataclass
+@dc.dataclass
 class PlotSetup:
     """Setup of a whole plot.
 
@@ -501,8 +499,8 @@ class PlotSetup:
 
         """
         return {
-            **asdict(self),
-            "model": asdict(self.model) if rec else self.model,
+            **dc.asdict(self),
+            "model": dc.asdict(self.model) if rec else self.model,
             "core": self.core.dict() if rec else self.core,
         }
 
@@ -525,7 +523,7 @@ class PlotSetup:
 
     def __eq__(self, other: Any) -> bool:
         # SR_DBG <
-        if isinstance(other, dataclasses._MISSING_TYPE):
+        if isinstance(other, dc._MISSING_TYPE):
             return False
         # SR_DBG >
         try:
@@ -535,7 +533,7 @@ class PlotSetup:
                 other_dict = dict(other)  # type: ignore
             except TypeError:
                 try:
-                    other_dict = asdict(other)
+                    other_dict = dc.asdict(other)
                 except TypeError:
                     return False
         return self.dict() == other_dict
@@ -727,7 +725,7 @@ class PlotSetup:
 
         """
         params = dict(**params)
-        core_params = params.pop("core", {})
+        panel_params = params.pop("core", {})
         model_params = params.pop("model", {})
         params = {
             param: cast_field_value(
@@ -741,8 +739,8 @@ class PlotSetup:
             )
             for param, value in params.items()
         }
-        if core_params:
-            params["core"] = PlotPanelSetup.create(core_params)
+        if panel_params:
+            params["core"] = PlotPanelSetup.create(panel_params)
         if model_params:
             params["model"] = ModelSetup.create(model_params)
         return cls(**params)
@@ -1270,7 +1268,7 @@ class SetupGroup:
 
     def __eq__(self, other: object) -> bool:
         # SR_DBG <
-        if isinstance(other, dataclasses._MISSING_TYPE):
+        if isinstance(other, dc._MISSING_TYPE):
             return False
         # SR_DBG >
         try:
@@ -1402,6 +1400,7 @@ class SetupFile:
         params_lst = []
         for raw_params_i in raw_params_lst:
             params: Dict[str, Any] = {}
+            ens_params: Dict[str, Any] = {}
             for param, value in raw_params_i.items():
                 if param == "model":
                     param = "name"
@@ -1419,8 +1418,14 @@ class SetupFile:
                     if "dimensions" not in params["core"]:
                         params["core"]["dimensions"] = {}
                     params["core"]["dimensions"][param] = value
+                elif param.startswith("ens_param_"):
+                    ens_params[param.lstrip("ens_param_")] = value
                 else:
                     params[param] = value
+            if ens_params:
+                if "core" not in params:
+                    params["core"] = {}
+                params["core"]["ens_params"] = ens_params
             params_lst.append(params)
         return params_lst
 

@@ -159,8 +159,10 @@ class Test_CloudArrivalTime(_TestBase):
             "ens_variable": "ens_cloud_arrival_time",
             "input_variable": "concentration",
             "integrate": True,
-            "ens_param_mem_min": 3,
-            "ens_param_thr": 1e-6,
+            "ens_params": {
+                "mem_min": 3,
+                "thr": 1e-6,
+            },
             "lang": "en",
             "domain": "full",
             "dimensions": {
@@ -187,8 +189,10 @@ class Test_CloudDepartureTime(_TestBase):
             "integrate": True,
             "combine_species": True,
             "combine_levels": True,
-            "ens_param_mem_min": 2,
-            "ens_param_thr": 1e-9,
+            "ens_params": {
+                "mem_min": 2,
+                "thr": 1e-9,
+            },
             "lang": "de",
             "domain": "ch",
             "dimensions": {

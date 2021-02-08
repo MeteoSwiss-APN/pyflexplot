@@ -83,13 +83,13 @@ class FilePathFormatter:
         # Prepare ens variable
         ens_variable = setup.core.ens_variable
         if ens_variable == "percentile":
-            ens_variable += f"-{setup.core.ens_param_pctl:g}"
+            ens_variable += f"-{setup.core.ens_params.pctl:g}"
         elif ens_variable == "probability":
-            if setup.core.ens_param_thr_type == "lower":
+            if setup.core.ens_params.thr_type == "lower":
                 ens_variable += "-gt"
-            elif setup.core.ens_param_thr_type == "upper":
+            elif setup.core.ens_params.thr_type == "upper":
                 ens_variable += "-lt"
-            ens_variable += f"-{setup.core.ens_param_thr:g}"
+            ens_variable += f"-{setup.core.ens_params.thr:g}"
 
         # Prepare input variable
         input_variable = setup.core.input_variable

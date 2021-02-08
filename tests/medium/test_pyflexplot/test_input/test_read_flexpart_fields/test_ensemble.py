@@ -303,7 +303,9 @@ class TestReadFieldEnsemble_Multiple:
             },
         }
         if ens_var == "probability":
-            setup_params["core"]["ens_param_thr"] = self.ens_prob_thr_concentration
+            setup_params["core"]["ens_params"] = {
+                "thr": self.ens_prob_thr_concentration
+            }
 
         self.run(
             datafile_fmt=datafile_fmt,
