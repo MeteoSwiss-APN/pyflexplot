@@ -49,14 +49,95 @@ def format_dictlike(obj, multiline=False, indent=1):
     return f"{type(obj).__name__}({s})"
 
 
-def merge_dicts(*dicts: Mapping[Any, Any]) -> Dict[Any, Any]:
-    """Merge multiple dicts recursively."""
+def merge_dicts(
+    *dicts: Mapping[Any, Any],
+    rec_seqs: bool = True,
+    overwrite_seqs: bool = False,
+    overwrite_seq_dicts: bool = False,
+) -> Dict[Any, Any]:
+    """Merge multiple dicts recursively.
+
+    Args:
+        *dicts: Dicts to be merged.
+
+        rec_seqs (optional): Recurse into sequences to merge dicts therein.
+
+        overwrite_seqs (optional): If ``req_seqs`` is true, and a certain
+            element in some but not all the dicts (or other mappings) is a
+            sequence, then treat it like all non-mapping-non-sequence elements
+            and select the value from the last dict (mapping), instead of
+            raising an exception.
+
+        overwrite_seq_dicts (optional): If ``req_seqs`` is true, and the i-th
+            element of a set of sequences that are being merged is a dict (or
+            other mapping) in some but not all of them, then treat it like all
+            non-mapping elements and overwrite the element with that from the
+            last sequence, instead of raising an exception.
+
+    """
+
+    def merge_seqs(*seqs: Sequence[Any]) -> Sequence[Any]:
+        if len(seqs) == 1:
+            return next(iter(seqs))
+        if not all(isinstance(seq, Sequence) for seq in seqs):
+            if overwrite_seqs:
+                return seqs[-1]
+            raise TypeError(
+                f"some but not all arguments are sequences: {list(map(type, seqs))}\n"
+                + "\n".join(map(str, seqs))
+            )
+        cls = type(seqs[0])
+        seq_lens = list(map(len, seqs))
+        if len(set(seq_lens)) > 1:
+            raise ValueError(
+                f"sequences have unequal lengths ({seq_lens}):\n"
+                + "\n".join(map(str, seqs))
+            )
+        seq_len = next(iter(seq_lens))
+        merged_seq: List[Any] = []
+        for idx in range(seq_len):
+            elements = [seq[idx] for seq in seqs]
+            is_map_lst = [isinstance(seq[idx], Mapping) for seq in seqs]
+            if all(is_map_lst):
+                merged_seq.append(
+                    merge_dicts(
+                        *elements,
+                        rec_seqs=True,
+                        overwrite_seqs=overwrite_seqs,
+                        overwrite_seq_dicts=overwrite_seq_dicts,
+                    )
+                )
+            elif any(is_map_lst) and not overwrite_seq_dicts:
+                raise TypeError(
+                    f"element #{idx} is a mapping in some but not all sequences:\n"
+                    + "\n".join(map(str, elements))
+                )
+            elif any(isinstance(seq[idx], Sequence) for seq in seqs):
+                merged_seq.append(merge_seqs(*elements))
+            else:
+                merged_seq.append(elements[-1])
+        return cls(merged_seq)  # type: ignore
+
     merged: Dict[Any, Any] = {}
+    seq_keys: List[str] = []
     for dict_ in dicts:
         for key, val in dict_.items():
             if isinstance(val, Mapping):
-                val = merge_dicts(merged.get(key, {}), val)
+                val = merge_dicts(
+                    merged.get(key, {}),
+                    val,
+                    rec_seqs=rec_seqs,
+                    overwrite_seqs=overwrite_seqs,
+                    overwrite_seq_dicts=overwrite_seq_dicts,
+                )
+            elif rec_seqs and isinstance(val, Sequence) and not isinstance(val, str):
+                if key not in seq_keys:
+                    seq_keys.append(key)
+                merged[key] = None  # placeholder
             merged[key] = val
+    for key in seq_keys:
+        seqs = [dict_[key] for dict_ in dicts if key in dict_]
+        merged[key] = merge_seqs(*seqs)
     return merged
 
 
