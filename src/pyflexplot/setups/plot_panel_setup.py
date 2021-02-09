@@ -7,6 +7,7 @@ the docstring of the class method ``Setup.create``.
 """
 # Standard library
 import dataclasses as dc
+from pprint import pformat
 from typing import Any
 from typing import Dict
 from typing import Iterator
@@ -26,8 +27,11 @@ from srutils.dataclasses import cast_field_value
 from srutils.exceptions import InvalidParameterValueError
 from srutils.format import nested_repr
 from srutils.format import sfmt
+from srutils.str import join_multilines
 
 # Local
+from ..utils.exceptions import UnequalSetupParamValuesError
+from .dimensions import CoreDimensions
 from .dimensions import Dimensions
 
 # Some plot-specific default values
@@ -42,6 +46,12 @@ class EnsembleParams:
     pctl: Optional[float] = None
     thr: Optional[float] = None
     thr_type: str = "lower"
+
+    def dict(self) -> Dict[str, Any]:
+        return dc.asdict(self)
+
+    def tuple(self) -> Tuple[Tuple[str, Any], ...]:
+        return tuple(self.dict().items())
 
 
 # pylint: disable=R0902  # too-many-instance-attributes (>7)
@@ -163,6 +173,7 @@ class PlotPanelSetup:
         """
         return {
             **dc.asdict(self),
+            "ens_params": self.ens_params.dict() if rec else self.ens_params,
             "dimensions": self.dimensions.dict() if rec else self.dimensions,
         }
 
@@ -171,8 +182,12 @@ class PlotPanelSetup:
 
     def tuple(self) -> Tuple[Tuple[str, Any], ...]:
         dct = self.dict(rec=False)
+        ens_params = dct.pop("ens_params")
         dims = dct.pop("dimensions")
-        return tuple(list(dct.items()) + [("dimensions", dims.tuple())])
+        return tuple(
+            list(dct.items())
+            + [("ens_params", ens_params.tuple()), ("dimensions", dims.tuple())]
+        )
 
     def _check_types(self) -> None:
         for param, value in self.dict(rec=False).items():
@@ -255,6 +270,17 @@ class PlotPanelSetupGroup:
         # SR_TMP >
         self._panels = panels
 
+    def collect(self, param: str) -> List[Any]:
+        """Collect all unique values of a parameter for all setups."""
+        # SR_TMP <
+        try:
+            return [self.collect_equal(param)]
+        except Exception as e:
+            raise NotImplementedError(
+                f"{type(self).__name__}.collect for multiple values"
+            ) from e
+        # SR_TMP >
+
     def collect_equal(self, param: str) -> Any:
         """Get a plot panel setup parameter value."""
         # SR_TMP <
@@ -285,6 +311,16 @@ class PlotPanelSetupGroup:
 
     def __len__(self) -> int:
         return len(self._panels)
+
+    def __repr__(self) -> str:
+        try:
+            return PlotPanelSetupGroupFormatter(self).repr()
+        # pylint: disable=W0703  # broad-except
+        except Exception as e:
+            return (
+                f"<exception in PlotPanelSetupGroupFormatter(self).repr(): {repr(e)}"
+                f" {pformat(self.dict())}>"
+            )
 
     @classmethod
     def create(
@@ -321,3 +357,106 @@ class PlotPanelSetupGroup:
             params_i: Dict[str, Any] = {**params, multipanel_param: value}
             panel_setups.append(PlotPanelSetup.create(params_i))
         return cls(panel_setups)
+
+
+class SetupGroupFormatter:
+    """Format a human-readable representation of a ``*SetupGroup``.
+
+    Parameters with shared values between all setup objects are shown
+    separately from those with differing values.
+
+    Note that the representation is human-readable only, i.e., not
+    formatted as valid code.
+
+    """
+
+    group_methods: List[str] = []
+
+    def __init__(self, obj: Any) -> None:
+        """Create an instance of ``SetupGroupFormatter``.
+
+        Args:
+            obj: An object of type ``PlotSetupGroup``, ``PlotPanelSetupGroup``
+                or the like.
+
+        """
+        if "SetupGroup" not in type(obj).__name__:
+            # Note: Proper typing w/o restructuring causes curcular dependencies
+            raise ValueError(
+                f"obj of type {type(obj).__name__} does not appear to be a setup group"
+                " ('SetupGroup' not in type name)"
+            )
+        self.obj = obj
+
+    def repr(self) -> str:
+        """Return a human-readable representation string of ``self.obj``."""
+        same: Dict[str, Any] = {}
+        diff: Dict[str, Any] = {}
+        self._group_params(same, diff)
+        lines = [
+            f"n: {len(self.obj)}",
+            self._format_params(same, "same"),
+            self._format_params(diff, "diff"),
+        ]
+        body = join_multilines(lines, indent=2)
+        return "\n".join([f"{type(self.obj).__name__}[", body, "]"])
+
+    def _group_params(self, same: Dict[str, Any], diff: Dict[str, Any]) -> None:
+        pass  # override
+
+    def _format_params(self, params: Dict[str, Any], name: str) -> str:
+        lines = []
+        for param, value in params.items():
+            if isinstance(value, dict):
+                s_param = self._format_params(value, param)
+            else:
+                if isinstance(value, str):
+                    s_value = f"'{value}'"
+                elif isinstance(value, Sequence):
+                    s_value = ", ".join(
+                        [f"'{v}'" if isinstance(v, str) else str(v) for v in value]
+                    )
+                else:
+                    s_value = str(value)
+                s_param = f"{param}: {s_value}"
+            lines.append(s_param)
+        if not lines:
+            return f"{name}: --"
+        else:
+            body = join_multilines(lines, indent=2)
+            return f"{name}:\n{body}"
+
+
+class PlotPanelSetupGroupFormatter(SetupGroupFormatter):
+    """Format a human-readable representation of a ``PlotPanelSetupGroup``."""
+
+    def _group_params(self, same: Dict[str, Any], diff: Dict[str, Any]) -> None:
+        self._group_panel_params(same, diff)
+        self._group_dims_params(same, diff)
+
+    def _group_panel_params(self, same: Dict[str, Any], diff: Dict[str, Any]) -> None:
+        for param in PlotPanelSetup.get_params():
+            if param == "dimensions":
+                continue  # Handled below
+            try:
+                value = self.obj.collect_equal(param)
+            except UnequalSetupParamValuesError:
+                diff[param] = self.obj.collect(param)
+            else:
+                same[param] = value
+
+    def _group_dims_params(self, same: Dict[str, Any], diff: Dict[str, Any]) -> None:
+        dims_same: Dict[str, Any] = {}
+        dims_diff: Dict[str, Any] = {}
+        for param in CoreDimensions.get_params():
+            values = []
+            for dims in self.obj.collect("dimensions"):
+                values.append(dims.get(param))
+            if len(set(values)) == 1:
+                dims_same[param] = next(iter(values))
+            else:
+                dims_diff[param] = values
+        if dims_same:
+            same["dimensions"] = dims_same
+        if dims_diff:
+            diff["dimensions"] = dims_diff

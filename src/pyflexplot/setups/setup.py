@@ -8,6 +8,7 @@ the docstring of the class method ``Setup.create``.
 # Standard library
 import dataclasses as dc
 import re
+from pprint import pformat
 from typing import Any
 from typing import cast
 from typing import Collection
@@ -32,7 +33,6 @@ from srutils.dict import merge_dicts
 from srutils.exceptions import InvalidParameterNameError
 from srutils.format import nested_repr
 from srutils.format import sfmt
-from srutils.str import join_multilines
 
 # Local
 from ..utils.exceptions import UnequalSetupParamValuesError
@@ -41,6 +41,7 @@ from .dimensions import Dimensions
 from .model_setup import ModelSetup
 from .plot_panel_setup import PlotPanelSetup
 from .plot_panel_setup import PlotPanelSetupGroup
+from .plot_panel_setup import PlotPanelSetupGroupFormatter
 
 
 # SR_TMP <<< TODO cleaner solution
@@ -894,90 +895,15 @@ class PlotSetupGroup:
     def dicts(self) -> List[Dict[str, Any]]:
         return [setup.dict() for setup in self]
 
-    # pylint: disable=R0915  # too-many-statements (>50)
     def __repr__(self) -> str:
-        def sort_plot_params(same: Dict[str, Any], diff: Dict[str, Any]) -> None:
-            for param in PlotSetup.get_params():
-                if param == "panels":
-                    continue  # Handled below
-                try:
-                    value = self.collect_equal(param)
-                except UnequalSetupParamValuesError:
-                    diff[param] = self.collect(param)
-                else:
-                    same[param] = value
-
-        def sort_panel_params(same: Dict[str, Any], diff: Dict[str, Any]) -> None:
-            panel_same: Dict[str, Any] = {}
-            panel_diff: Dict[str, Any] = {}
-            for param in PlotPanelSetup.get_params():
-                if param == "dimensions":
-                    continue  # Handled below
-                try:
-                    value = self.collect_equal(param)
-                except UnequalSetupParamValuesError:
-                    panel_diff[param] = self.collect(param)
-                else:
-                    panel_same[param] = value
-            if panel_same:
-                same["panels"] = panel_same
-            if panel_diff:
-                diff["panels"] = panel_diff
-
-        def sort_dims_params(same: Dict[str, Any], diff: Dict[str, Any]) -> None:
-            dims_same: Dict[str, Any] = {}
-            dims_diff: Dict[str, Any] = {}
-            for param in CoreDimensions.get_params():
-                values = []
-                for dims in self.collect("dimensions"):
-                    values.append(dims.get(param))
-                if len(set(values)) == 1:
-                    dims_same[param] = next(iter(values))
-                else:
-                    dims_diff[param] = values
-            if dims_same:
-                if "panels" not in same:
-                    same["panels"] = {}
-                same["panels"]["dimensions"] = dims_same
-            if dims_diff:
-                if "panels" not in diff:
-                    diff["panels"] = {}
-                diff["panels"]["dimensions"] = dims_diff
-
-        def format_params(params: Dict[str, Any], name: str) -> str:
-            lines = []
-            for param, value in params.items():
-                if isinstance(value, dict):
-                    s_param = format_params(value, param)
-                else:
-                    if isinstance(value, str):
-                        s_value = f"'{value}'"
-                    elif isinstance(value, Sequence):
-                        s_value = ", ".join(
-                            [f"'{v}'" if isinstance(v, str) else str(v) for v in value]
-                        )
-                    else:
-                        s_value = str(value)
-                    s_param = f"{param}: {s_value}"
-                lines.append(s_param)
-            if not lines:
-                return f"{name}: --"
-            else:
-                body = join_multilines(lines, indent=2)
-                return f"{name}:\n{body}"
-
-        same: Dict[str, Any] = {}
-        diff: Dict[str, Any] = {}
-        sort_plot_params(same, diff)
-        sort_panel_params(same, diff)
-        sort_dims_params(same, diff)
-        lines = [
-            f"n: {len(self)}",
-            format_params(same, "same"),
-            format_params(diff, "diff"),
-        ]
-        body = join_multilines(lines, indent=2)
-        return "\n".join([f"{type(self).__name__}[", body, "]"])
+        try:
+            return PlotSetupGroupFormatter(self).repr()
+        # pylint: disable=W0703  # broad-except
+        except Exception as e:
+            return (
+                f"<exception in PlotSetupGroupFormatter(self).repr(): {repr(e)}"
+                f" {pformat(self.dicts())}>"
+            )
 
     def __len__(self) -> int:
         return len(self._setups)
@@ -1023,3 +949,29 @@ class PlotSetupGroup:
     @classmethod
     def merge(cls, setups_lst: Sequence["PlotSetupGroup"]) -> "PlotSetupGroup":
         return cls([setup for setups in setups_lst for setup in setups])
+
+
+class PlotSetupGroupFormatter(PlotPanelSetupGroupFormatter):
+    """Format a human-readable representation of a ``PlotSetupGroup``."""
+
+    def _group_params(self, same: Dict[str, Any], diff: Dict[str, Any]) -> None:
+        self._group_plot_params(same, diff)
+        same_panels: Dict[str, Any] = {}
+        diff_panels: Dict[str, Any] = {}
+        self._group_panel_params(same_panels, diff_panels)
+        self._group_dims_params(same_panels, diff_panels)
+        if same_panels:
+            same["panels"] = same_panels
+        if diff_panels:
+            diff["panels"] = diff_panels
+
+    def _group_plot_params(self, same: Dict[str, Any], diff: Dict[str, Any]) -> None:
+        for param in PlotSetup.get_params():
+            if param == "panels":
+                continue  # Handled by method _group_panel_params
+            try:
+                value = self.obj.collect_equal(param)
+            except UnequalSetupParamValuesError:
+                diff[param] = self.obj.collect(param)
+            else:
+                same[param] = value
