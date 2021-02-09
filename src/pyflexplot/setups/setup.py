@@ -332,10 +332,11 @@ class PlotSetup:
 
         The parameter descriptions are (for now) collected here because they are
         all directly exposed in the setup files without reflecting the internal
-        composition hierarchy ``Setup -> CoreSetup -> Dimensions``. This
-        docstring thus serves as a single point of reference for all parameters.
-        The docstrings of the individual classes, were the parameters should be
-        described as arguments, refer to this docstring to avoid duplication.
+        composition hierarchy ``PlotSetup -> PlotPanelSetup -> Dimensions``.
+        This docstring thus serves as a single point of reference for all
+        parameters. The docstrings of the individual classes, were the
+        parameters should be described as arguments, refer to this docstring to
+        avoid duplication.
 
         Params:
             base_time: Start of the model simulation on which the dispersion
