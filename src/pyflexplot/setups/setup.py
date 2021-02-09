@@ -113,42 +113,21 @@ class PlotSetup:
         assert self.plot_type in choices, self.plot_type
 
         # Check multipanel_param
-        # SR_TODO Consider a generic alternative to the hard-coded list
         multipanel_param_choices = ["ens_variable"]
+        n_panel_choices = [4]
+        n_panels = len(self.panels)
         if self.multipanel_param is None:
-            pass
-        elif self.multipanel_param in multipanel_param_choices:
-            if not (
-                isinstance(getattr(self, self.multipanel_param), Sequence)
-                and not isinstance(getattr(self, self.multipanel_param), str)
-            ):
-                # SR_TMP <  SR_MULTIPANEL
-                # raise ValueError(
-                #     "multipanel_param parameter must be a sequence",
-                #     self.multipanel_param,
-                #     getattr(self, self.multipanel_param),
-                # )
-                # SR_NOTE The exception should be raised when the input is parsed,
-                #         but not afterward when the setup objects for the individual
-                #         fields are created (which contain only one value each of
-                #         the multipanel_param, but still retain plot_type
-                #         "multipanel")..
-                #         This issue illustrates that Setup and Setup should
-                #         be separated again in some fashion!
-                pass  # SR_TMP
-                # SR_TMP >  SR_MULTIPANEL
-            else:
-                # SR_TODO Consider a generic alternative to the hard-coded list
-                n_panels_choices = [4]
-                n_panels = len(getattr(self, self.multipanel_param))
-                if n_panels not in n_panels_choices:
-                    raise NotImplementedError(
-                        "unexpected number of multipanel_param parameter values",
-                        self.multipanel_param,
-                        n_panels,
-                        getattr(self, self.multipanel_param),
-                    )
-        else:
+            if n_panels != 1:
+                raise ValueError(
+                    f"number of panels ({n_panels}) must be 1  for single-panel plots"
+                    "(multipanel_param is None)"
+                )
+        elif n_panels not in n_panel_choices:
+            raise ValueError(
+                f"wrong number of panels ({n_panels}); supported: {n_panel_choices}"
+                f" (multipanel_param '{self.multipanel_param}')"
+            )
+        elif self.multipanel_param not in multipanel_param_choices:
             raise NotImplementedError(
                 f"unknown multipanel_param '{self.multipanel_param}'"
                 f"; choices: {', '.join(multipanel_param_choices)}"
