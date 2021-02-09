@@ -894,60 +894,55 @@ class PlotSetupGroup:
     def dicts(self) -> List[Dict[str, Any]]:
         return [setup.dict() for setup in self]
 
-    # pylint: disable=R0912  # too-many-branches (>12)
-    # pylint: disable=R0915  # too-many-statements
+    # pylint: disable=R0915  # too-many-statements (>50)
     def __repr__(self) -> str:
+        def sort_plot_params(same: Dict[str, Any], diff: Dict[str, Any]) -> None:
+            for param in PlotSetup.get_params():
+                if param == "panels":
+                    continue  # Handled below
+                try:
+                    value = self.collect_equal(param)
+                except UnequalSetupParamValuesError:
+                    diff[param] = self.collect(param)
+                else:
+                    same[param] = value
 
-        same: Dict[str, Any] = {}
-        diff: Dict[str, Any] = {}
+        def sort_panel_params(same: Dict[str, Any], diff: Dict[str, Any]) -> None:
+            panel_same: Dict[str, Any] = {}
+            panel_diff: Dict[str, Any] = {}
+            for param in PlotPanelSetup.get_params():
+                if param == "dimensions":
+                    continue  # Handled below
+                try:
+                    value = self.collect_equal(param)
+                except UnequalSetupParamValuesError:
+                    panel_diff[param] = self.collect(param)
+                else:
+                    panel_same[param] = value
+            if panel_same:
+                same["panels"] = panel_same
+            if panel_diff:
+                diff["panels"] = panel_diff
 
-        # Regular params
-        for param in PlotSetup.get_params():
-            if param == "panels":
-                continue  # Handled below
-            try:
-                value = self.collect_equal(param)
-            except UnequalSetupParamValuesError:
-                diff[param] = self.collect(param)
-            else:
-                same[param] = value
-
-        # Core params
-        core_same = {}
-        core_diff = {}
-        for param in PlotPanelSetup.get_params():
-            if param == "dimensions":
-                continue  # Handled below
-            try:
-                value = self.collect_equal(param)
-            except UnequalSetupParamValuesError:
-                core_diff[param] = self.collect(param)
-            else:
-                core_same[param] = value
-        if core_same:
-            same["panels"] = core_same
-        if core_diff:
-            diff["panels"] = core_diff
-
-        # Dimensions
-        dims_same = {}
-        dims_diff = {}
-        for param in CoreDimensions.get_params():
-            values = []
-            for dims in self.collect("dimensions"):
-                values.append(dims.get(param))
-            if len(set(values)) == 1:
-                dims_same[param] = next(iter(values))
-            else:
-                dims_diff[param] = values
-        if dims_same:
-            if "panels" not in same:
-                same["panels"] = {}
-            same["panels"]["dimensions"] = dims_same
-        if dims_diff:
-            if "panels" not in diff:
-                diff["panels"] = {}
-            diff["panels"]["dimensions"] = dims_diff
+        def sort_dims_params(same: Dict[str, Any], diff: Dict[str, Any]) -> None:
+            dims_same: Dict[str, Any] = {}
+            dims_diff: Dict[str, Any] = {}
+            for param in CoreDimensions.get_params():
+                values = []
+                for dims in self.collect("dimensions"):
+                    values.append(dims.get(param))
+                if len(set(values)) == 1:
+                    dims_same[param] = next(iter(values))
+                else:
+                    dims_diff[param] = values
+            if dims_same:
+                if "panels" not in same:
+                    same["panels"] = {}
+                same["panels"]["dimensions"] = dims_same
+            if dims_diff:
+                if "panels" not in diff:
+                    diff["panels"] = {}
+                diff["panels"]["dimensions"] = dims_diff
 
         def format_params(params: Dict[str, Any], name: str) -> str:
             lines = []
@@ -971,13 +966,17 @@ class PlotSetupGroup:
                 body = join_multilines(lines, indent=2)
                 return f"{name}:\n{body}"
 
+        same: Dict[str, Any] = {}
+        diff: Dict[str, Any] = {}
+        sort_plot_params(same, diff)
+        sort_panel_params(same, diff)
+        sort_dims_params(same, diff)
         lines = [
             f"n: {len(self)}",
             format_params(same, "same"),
             format_params(diff, "diff"),
         ]
         body = join_multilines(lines, indent=2)
-
         return "\n".join([f"{type(self).__name__}[", body, "]"])
 
     def __len__(self) -> int:
