@@ -451,7 +451,10 @@ class PlotSetup:
             for param, value in params.items()
         }
         if panel_params:
-            params["panels"] = PlotPanelSetupGroup.create(panel_params)
+            multipanel_param = params.get("multipanel_param")
+            params["panels"] = PlotPanelSetupGroup.create(
+                panel_params, multipanel_param=multipanel_param
+            )
         if model_params:
             params["model"] = ModelSetup.create(model_params)
         return cls(**params)

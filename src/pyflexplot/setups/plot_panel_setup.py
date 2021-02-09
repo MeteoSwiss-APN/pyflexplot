@@ -78,7 +78,7 @@ class PlotPanelSetup:
 
     # pylint: disable=R0912  # too-many-branches (>12)
     def __post_init__(self) -> None:
-        assert isinstance(self.dimensions, Dimensions)  # SR_DBG
+        assert isinstance(self.dimensions, Dimensions), type(self.dimensions)  # SR_DBG
 
         self._check_types()
 
@@ -287,8 +287,37 @@ class PlotPanelSetupGroup:
         return len(self._panels)
 
     @classmethod
-    def create(cls, params: Mapping[str, Any]) -> "PlotPanelSetupGroup":
-        # SR_TMP <
-        panel = PlotPanelSetup.create(params)
-        return cls([panel])
-        # SR_TMP >
+    def create(
+        cls, params: Mapping[str, Any], multipanel_param: Optional[str] = None
+    ) -> "PlotPanelSetupGroup":
+        """Prepare and create an instance of ``PlotPanelSetupGroup``.
+
+        Args:
+            params: Parameters based on which one or more ``PlotPanelSetup``
+                objects are created, depending on ``multipanel_param``.
+
+            multipanel_param (optional): Parameter in ``params`` based on which
+                multiple ``PlotPanelSetup`` objects are created, one for each
+                value of the respective parameter; if omitted, exactly one
+                object will be created.
+
+        """
+        if multipanel_param is None:
+            return cls([PlotPanelSetup.create(params)])
+        params = dict(params)
+        try:
+            values = params.pop(multipanel_param)
+        except KeyError as e:
+            raise ValueError(
+                f"multipanel_param '{multipanel_param}' not among params {list(params)}"
+            ) from e
+        if not (isinstance(values, Sequence) and not isinstance(values, str)):
+            raise ValueError(
+                f"value ({sfmt(values)}) of multipanel_param '{multipanel_param}'"
+                f" is a {type(values).__name__}, not a sequence"
+            )
+        panel_setups: List[PlotPanelSetup] = []
+        for value in values:
+            params_i: Dict[str, Any] = {**params, multipanel_param: value}
+            panel_setups.append(PlotPanelSetup.create(params_i))
+        return cls(panel_setups)
