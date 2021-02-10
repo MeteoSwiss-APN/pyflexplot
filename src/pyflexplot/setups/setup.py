@@ -45,8 +45,17 @@ from .plot_panel_setup import PlotPanelSetupGroupFormatter
 
 
 # SR_TMP <<< TODO cleaner solution
-def is_dimensions_param(param: str) -> bool:
-    return param in CoreDimensions.get_params()
+def is_model_setup_param(param: str, short_ok: bool = False) -> bool:
+    if param.startswith("model."):
+        param = param[len("model.") :]
+    elif not short_ok:
+        return False
+    return param in ModelSetup.get_params()
+
+
+# SR_TMP <<< TODO cleaner solution
+def is_plot_setup_param(param: str) -> bool:
+    return param in PlotSetup.get_params()
 
 
 # SR_TMP <<< TODO cleaner solution
@@ -55,13 +64,12 @@ def is_plot_panel_setup_param(param: str) -> bool:
 
 
 # SR_TMP <<< TODO cleaner solution
-def is_model_setup_param(param: str) -> bool:
-    return param in ModelSetup.get_params()
-
-
-# SR_TMP <<< TODO cleaner solution
-def is_plot_setup_param(param: str) -> bool:
-    return param in PlotSetup.get_params()
+def is_dimensions_param(param: str, short_ok: bool = False) -> bool:
+    if param.startswith("dimensions."):
+        param = param[len("dimensions.") :]
+    elif not short_ok:
+        return False
+    return param in CoreDimensions.get_params()
 
 
 # SR_TMP <<< TODO cleaner solution
@@ -73,14 +81,10 @@ def get_setup_param_value(setup: "PlotSetup", param: str) -> Any:
         # return getattr(setup.panels, param)
         return setup.panels.collect_equal(param)
         # SR_TMP >
-    elif param.startswith("model."):
-        dim_param = param.split(".", 1)[-1]
-        if is_model_setup_param(dim_param):
-            return getattr(setup.model, dim_param)
-    elif param.startswith("dimensions."):
-        dim_param = param.split(".", 1)[-1]
-        if is_dimensions_param(dim_param):
-            return getattr(setup.panels.collect_equal("dimensions"), dim_param)
+    elif is_model_setup_param(param):
+        return getattr(setup.model, param[len("model.") :])
+    elif is_dimensions_param(param):
+        return setup.panels.collect_equal(param)
     raise ValueError("invalid input setup parameter", param)
 
 
