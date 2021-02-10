@@ -187,12 +187,14 @@ def compress_multival_dicts(
     for dct in dcts:
         if not isinstance(dct, Mapping):
             raise ValueError(
-                f"invalid dcts element of type '{type(dct).__name__}'", dct, dcts
+                f"invalid dcts element of type '{type(dct).__name__}': {dct}"
             )
 
     # SR_TODO Consider adding option to allow differing keys
     if not all(dct.keys() == dcts[0].keys() for dct in dcts):
-        raise ValueError("keys differ between dicts", [dct.keys() for dct in dcts])
+        raise ValueError(
+            f"keys differ between dicts: {[list(dct.keys()) for dct in dcts ]}"
+        )
 
     dct = {
         key: list(val) if isinstance(val, cls_seq) else [copy(val)]
@@ -260,7 +262,7 @@ def decompress_multival_dict(
 
     """
     if not isinstance(depth, int) or depth <= 0:
-        raise ValueError("depth must be a positive integer", depth)
+        raise ValueError(f"depth must be a positive integer: {depth}")
 
     def run_rec(dct, depth, curr_depth=1):
         """Run recursively."""
@@ -413,9 +415,9 @@ def _merge_children(children, tie_breaker):
                 elif val_flat["depth"] == val["depth"]:
                     if tie_breaker is None:
                         raise KeyConflictError(
-                            f"key conflict at depth {val_flat['depth']}", key
+                            f"key conflict at depth {val_flat['depth']}: {key}"
                         )
-                    raise NotImplementedError("tie_breaker is not None", tie_breaker)
+                    raise NotImplementedError(f"tie_breaker is not None: {tie_breaker}")
             flat[key] = val
     return flat
 
@@ -682,7 +684,7 @@ def nested_dict_resolve_double_star_wildcards(dct, criterion=None):
         subdcts = {}
         for key_i, val_i in dct.items():
             if key_i is None:
-                raise Exception("key must not be None", dct)
+                raise Exception(f"key must not be None in {dct}")
             if isinstance(val_i, Mapping):
                 subdcts[key_i] = val_i
         if subdcts:
