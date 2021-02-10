@@ -22,6 +22,7 @@ from typing_extensions import Literal
 
 # First-party
 from srutils.dataclasses import cast_field_value
+from srutils.dict import decompress_multival_dict
 from srutils.iter import resolve_negative_indices
 from srutils.str import join_multilines
 
@@ -170,6 +171,10 @@ class Dimensions:
     def derive(self, params: Mapping[str, Any]) -> "Dimensions":
         """Derive a new ``Dimensions`` object with some changed parameters."""
         return type(self).create({**self.dict(), **params})
+
+    def decompress(self) -> List["Dimensions"]:
+        dicts = decompress_multival_dict(self.dict())
+        return list(map(self.create, dicts))
 
     # pylint: disable=R0912  # too-many-branches
     # pylint: disable=R0913  # too-many-arguments (>5)
