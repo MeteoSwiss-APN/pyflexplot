@@ -12,6 +12,7 @@ from typing import List
 from typing import Mapping
 from typing import MutableMapping
 from typing import Optional
+from typing import overload
 from typing import Sequence
 from typing import Tuple
 from typing import Union
@@ -101,9 +102,19 @@ class Dimensions:
         assert all(isinstance(obj, CoreDimensions) for obj in core)
         self._core: List[CoreDimensions] = list(core)
 
+    @overload
     def get(
-        self, param: str, *, unpack_single: bool = True
+        self, param: str, *, unpack_single: Literal[False] = ...
+    ) -> Tuple[Any, ...]:
+        ...
+
+    @overload
+    def get(
+        self, param: str, *, unpack_single: Literal[True] = ...
     ) -> Optional[Union[Any, Tuple[Any, ...]]]:
+        ...
+
+    def get(self, param, *, unpack_single=True):
         """Gather the value(s) of a parameter in compact form.
 
         The values are ordered, and duplicates and Nones are removed.
