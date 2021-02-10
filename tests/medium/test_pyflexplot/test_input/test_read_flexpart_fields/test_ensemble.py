@@ -49,15 +49,17 @@ class TestReadFieldEnsemble_Single:
         "model": {
             "name": "COSMO-2E",
         },
-        "panels": {
-            "integrate": False,
-            "ens_variable": "mean",
-            "dimensions": {"time": 10, "species_id": 2},
-            "input_variable": "concentration",
-        },
+        "panels": [
+            {
+                "integrate": False,
+                "ens_variable": "mean",
+                "dimensions": {"time": 10, "species_id": 2},
+                "input_variable": "concentration",
+            }
+        ],
     }
 
-    species_id = setup_params_shared["panels"]["dimensions"]["species_id"]
+    species_id = setup_params_shared["panels"][0]["dimensions"]["species_id"]
 
     # Ensemble member ids
     ens_member_ids = (0, 1, 5, 10, 15, 20)
@@ -96,9 +98,11 @@ class TestReadFieldEnsemble_Single:
         )
         # SR_TMP <
         if ens_var in ["probability", "minimum", "maximum", "mean", "median"]:
-            setup_dct["panels"]["ens_variable"] = ens_var
+            assert len(setup_dct["panels"]) == 1
+            setup_dct["panels"][0]["ens_variable"] = ens_var
         else:
-            setup_dct["panels"]["plot_type"] = f"ensemble_{ens_var}"
+            assert len(setup_dct["panels"]) == 1
+            setup_dct["panels"][0]["plot_type"] = f"ensemble_{ens_var}"
         # SR_TMP >
         setups = PlotSetupGroup([PlotSetup.create(setup_dct)])
 
@@ -150,7 +154,7 @@ class TestReadFieldEnsemble_Single:
         self.run(
             datadir,
             var_names_ref=[f"spec{self.species_id:03d}"],
-            setup_params={"panels": {"dimensions": {"level": 1}}},
+            setup_params={"panels": [{"dimensions": {"level": 1}}]},
             ens_var="mean",
             fct_reduce_mem=lambda arr: np.nanmean(arr, axis=0),
             cache_on=cache_on,
@@ -171,14 +175,16 @@ class TestReadFieldEnsemble_Multiple:
         "model": {
             "name": "COSMO-2E",
         },
-        "panels": {
-            "integrate": True,
-            "dimensions": {"species_id": 1, "time": [0, 3, 9]},
-        },
+        "panels": [
+            {
+                "integrate": True,
+                "dimensions": {"species_id": 1, "time": [0, 3, 9]},
+            }
+        ],
     }
 
     # Species ID
-    species_id = shared_setup_params_compressed["panels"]["dimensions"]["species_id"]
+    species_id = shared_setup_params_compressed["panels"][0]["dimensions"]["species_id"]
 
     # Ensemble member ids
     ens_member_ids = (0, 1, 5, 10, 15, 20)
@@ -213,8 +219,10 @@ class TestReadFieldEnsemble_Multiple:
             self.shared_setup_params_compressed, skip=["infile", "panels"]
         ):
             if "panels" not in shared_setup_params:
-                shared_setup_params["panels"] = {}
-            for shared_core in decompress_multival_dict(shared_setup_params["panels"]):
+                shared_setup_params["panels"] = [{}]
+            for shared_core in decompress_multival_dict(
+                shared_setup_params["panels"][0]
+            ):
                 setup_params_i = merge_dicts(
                     shared_setup_params,
                     setup_params,
@@ -226,9 +234,11 @@ class TestReadFieldEnsemble_Multiple:
                 )
                 # SR_TMP <
                 if ens_var in ["probability", "minimum", "maximum", "mean", "median"]:
-                    setup_params_i["panels"]["ens_variable"] = ens_var
+                    assert len(setup_params_i["panels"]) == 1
+                    setup_params_i["panels"][0]["ens_variable"] = ens_var
                 else:
-                    setup_params_i["panels"]["plot_type"] = f"ensemble_{ens_var}"
+                    assert len(setup_params_i["panels"]) == 1
+                    setup_params_i["panels"][0]["plot_type"] = f"ensemble_{ens_var}"
                 # SR_TMP >
                 setup_lst.append(PlotSetup.create(setup_params_i))
         setups = PlotSetupGroup(setup_lst)
@@ -298,13 +308,15 @@ class TestReadFieldEnsemble_Multiple:
 
         setup_params = {
             "infile": datafile_fmt,
-            "panels": {
-                "dimensions": {"level": 1},
-                "input_variable": "concentration",
-            },
+            "panels": [
+                {
+                    "dimensions": {"level": 1},
+                    "input_variable": "concentration",
+                }
+            ],
         }
         if ens_var == "probability":
-            setup_params["panels"]["ens_params"] = {
+            setup_params["panels"][0]["ens_params"] = {
                 "thr": self.ens_prob_thr_concentration
             }
 
@@ -347,11 +359,13 @@ class TestReadFieldEnsemble_Multiple:
             ],
             setup_params={
                 "infile": datafile_fmt,
-                "panels": {
-                    "input_variable": "deposition",
-                    "combine_deposition_types": True,
-                    "dimensions": {"deposition_type": ("dry", "wet")},
-                },
+                "panels": [
+                    {
+                        "input_variable": "deposition",
+                        "combine_deposition_types": True,
+                        "dimensions": {"deposition_type": ("dry", "wet")},
+                    }
+                ],
             },
             ens_var=ens_var,
             cache_on=cache_on,

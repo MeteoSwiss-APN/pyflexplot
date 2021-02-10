@@ -25,17 +25,19 @@ class Test_Concentration(_TestBase):
         "model": {
             "name": "IFS-HRES",
         },
-        "panels": {
-            "input_variable": "concentration",
-            "integrate": False,
-            "lang": "de",
-            "domain": "cloud",
-            "dimensions": {
-                "species_id": 1,
-                "time": 5,
-                "level": 0,
-            },
-        },
+        "panels": [
+            {
+                "input_variable": "concentration",
+                "integrate": False,
+                "lang": "de",
+                "domain": "cloud",
+                "dimensions": {
+                    "species_id": 1,
+                    "time": 5,
+                    "level": 0,
+                },
+            }
+        ],
     }
 
 
@@ -48,17 +50,19 @@ class Test_IntegratedConcentration(_TestBase):
         "model": {
             "name": "IFS-HRES",
         },
-        "panels": {
-            "input_variable": "concentration",
-            "integrate": True,
-            "lang": "en",
-            "domain": "cloud",
-            "dimensions": {
-                "species_id": 1,
-                "time": 10,
-                "level": 0,
-            },
-        },
+        "panels": [
+            {
+                "input_variable": "concentration",
+                "integrate": True,
+                "lang": "en",
+                "domain": "cloud",
+                "dimensions": {
+                    "species_id": 1,
+                    "time": 10,
+                    "level": 0,
+                },
+            }
+        ],
     }
 
 
@@ -71,17 +75,19 @@ class Test_TotalDeposition(_TestBase):
         "model": {
             "name": "IFS-HRES",
         },
-        "panels": {
-            "input_variable": "deposition",
-            "combine_deposition_types": True,
-            "integrate": True,
-            "lang": "de",
-            "domain": "cloud",
-            "dimensions": {
-                "species_id": 1,
-                "time": -1,
-            },
-        },
+        "panels": [
+            {
+                "input_variable": "deposition",
+                "combine_deposition_types": True,
+                "integrate": True,
+                "lang": "de",
+                "domain": "cloud",
+                "dimensions": {
+                    "species_id": 1,
+                    "time": -1,
+                },
+            }
+        ],
     }
 
 
@@ -94,17 +100,19 @@ class Test_TotalDeposition_EmptyField(_TestBase):
         "model": {
             "name": "IFS-HRES",
         },
-        "panels": {
-            "input_variable": "deposition",
-            "combine_deposition_types": True,
-            "integrate": True,
-            "lang": "de",
-            "domain": "cloud",
-            "dimensions": {
-                "species_id": 3,
-                "time": 0,
-            },
-        },
+        "panels": [
+            {
+                "input_variable": "deposition",
+                "combine_deposition_types": True,
+                "integrate": True,
+                "lang": "de",
+                "domain": "cloud",
+                "dimensions": {
+                    "species_id": 3,
+                    "time": 0,
+                },
+            }
+        ],
     }
 
 
@@ -116,19 +124,21 @@ class Test_AffectedArea(_TestBase):
         "model": {
             "name": "IFS-HRES",
         },
-        "panels": {
-            "input_variable": "affected_area",
-            "combine_deposition_types": True,
-            "integrate": True,
-            "lang": "en",
-            "domain": "cloud",
-            "dimensions": {
-                "species_id": 1,
-                "level": 0,
-                "time": -1,
-                "deposition_type": ["dry", "wet"],
-            },
-        },
+        "panels": [
+            {
+                "input_variable": "affected_area",
+                "combine_deposition_types": True,
+                "integrate": True,
+                "lang": "en",
+                "domain": "cloud",
+                "dimensions": {
+                    "species_id": 1,
+                    "level": 0,
+                    "time": -1,
+                    "deposition_type": ["dry", "wet"],
+                },
+            }
+        ],
     }
 
 
@@ -140,15 +150,17 @@ class Test_CloudDepartureTime(_TestBase):
         "model": {
             "name": "IFS-HRES",
         },
-        "panels": {
-            "input_variable": "cloud_departure_time",
-            "integrate": False,
-            "lang": "en",
-            "domain": "cloud",
-            "dimensions": {
-                "species_id": 1,
-                "time": 0,
-                "level": 0,
-            },
-        },
+        "panels": [
+            {
+                "input_variable": "cloud_departure_time",
+                "integrate": False,
+                "lang": "en",
+                "domain": "cloud",
+                "dimensions": {
+                    "species_id": 1,
+                    "time": 0,
+                    "level": 0,
+                },
+            }
+        ],
     }

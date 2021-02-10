@@ -543,7 +543,7 @@ class SpeciesMetaData(_MetaDataBase):
             "cloud_arrival_time",
             "cloud_departure_time",
         ]:
-            alt_setup = setup.derive({"panels": {"input_variable": "concentration"}})
+            alt_setup = setup.derive({"panels": [{"input_variable": "concentration"}]})
             return cls.from_file(fi, alt_setup)
         else:
             assert dimensions.species_id is not None  # mypy
@@ -562,7 +562,7 @@ class SpeciesMetaData(_MetaDataBase):
                 elif input_variable == "deposition":
                     # Deposition field may be missing
                     alt_setup = setup.derive(
-                        {"panels": {"input_variable": "concentration"}}
+                        {"panels": [{"input_variable": "concentration"}]}
                     )
                     return cls.from_file(fi, alt_setup)
                 else:

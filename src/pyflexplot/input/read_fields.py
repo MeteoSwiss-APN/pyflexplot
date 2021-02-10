@@ -285,7 +285,9 @@ class InputFileEnsemble:
             self._get_shape_mem_time(model, raw_dimensions), np.nan, np.float32
         )
         for idx_mem, file_path in enumerate(self.paths):
-            timeless_setups = setups.derive({"panels": {"dimensions": {"time": None}}})
+            timeless_setups = setups.derive(
+                {"panels": [{"dimensions": {"time": None}}]}
+            )
             self._read_data(file_path, idx_mem, timeless_setups)
 
         # Compute single field from all ensemble members
@@ -355,9 +357,8 @@ class InputFileEnsemble:
                 fld_time_lst.append(self._read_fld_over_time(fi, sub_setup))
         if input_variable == "affected_area":
             shapes = [fld.shape for fld in fld_time_lst]
-            # SR_TMP < TODO proper check
-            assert len(set(shapes)) == 1, f"shapes differ: {shapes}"
-            # SR_TMP >
+            if len(set(shapes)) != 1:
+                raise Exception(f"field shapes differ: {shapes}")
             fld_time = (np.array(fld_time_lst) > AFFECTED_AREA_THRESHOLD).any(axis=0)
         else:
             fld_time = merge_fields(fld_time_lst)

@@ -78,11 +78,13 @@ def test_single_section(tmp_path):
         base,
         OPTIONAL_RAW_DEFAULT_PARAMS,
         {
-            "panels": {
-                "input_variable": "deposition",
-                "dimensions": {"level": None},
-                "lang": "de",
-            }
+            "panels": [
+                {
+                    "input_variable": "deposition",
+                    "dimensions": {"level": None},
+                    "lang": "de",
+                }
+            ],
         },
     )
     assert res == sol
@@ -168,31 +170,38 @@ def test_multiple_nested_sections(tmp_path):
         base,
         OPTIONAL_RAW_DEFAULT_PARAMS,
         {
-            "panels": {
-                "input_variable": "deposition",
-                "combine_deposition_types": True,
-                "dimensions": {"level": None, "deposition_type": ("dry", "wet")},
-                "lang": "de",
-            }
+            "panels": [
+                {
+                    "input_variable": "deposition",
+                    "combine_deposition_types": True,
+                    "dimensions": {"level": None, "deposition_type": ("dry", "wet")},
+                    "lang": "de",
+                }
+            ],
         },
+        overwrite_seqs=True,
     )
     sol_specific = [
         {
-            "panels": {
-                "input_variable": "concentration",
-                "combine_deposition_types": False,
-                "dimensions": {"deposition_type": None},
-            }
+            "panels": [
+                {
+                    "input_variable": "concentration",
+                    "combine_deposition_types": False,
+                    "dimensions": {"deposition_type": None},
+                }
+            ],
         },
-        {"panels": {"domain": "ch", "lang": "en"}},
-        {"panels": {"domain": "ch", "lang": "de"}},
-        {"panels": {"domain": "full", "lang": "en"}},
-        {"panels": {"domain": "full", "lang": "de"}},
-        {"panels": {"dimensions": {"deposition_type": "wet"}}},
-        {"panels": {"lang": "en", "dimensions": {"deposition_type": "wet"}}},
-        {"panels": {"lang": "de", "dimensions": {"deposition_type": "wet"}}},
+        {"panels": [{"domain": "ch", "lang": "en"}]},
+        {"panels": [{"domain": "ch", "lang": "de"}]},
+        {"panels": [{"domain": "full", "lang": "en"}]},
+        {"panels": [{"domain": "full", "lang": "de"}]},
+        {"panels": [{"dimensions": {"deposition_type": "wet"}}]},
+        {"panels": [{"lang": "en", "dimensions": {"deposition_type": "wet"}}]},
+        {"panels": [{"lang": "de", "dimensions": {"deposition_type": "wet"}}]},
     ]
-    sol = [merge_dicts(sol_base, sol_spc) for sol_spc in sol_specific]
+    sol = [
+        merge_dicts(sol_base, sol_spc, overwrite_seqs=True) for sol_spc in sol_specific
+    ]
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
     assert setups == sol
 
@@ -244,48 +253,61 @@ def test_multiple_override(tmp_path):
         base,
         OPTIONAL_RAW_DEFAULT_PARAMS,
         {
-            "panels": {
-                "input_variable": "deposition",
-                "combine_deposition_types": True,
-                "lang": "de",
-                "dimensions": {
-                    "level": None,
-                    "deposition_type": ("dry", "wet"),
-                },
-            }
+            "panels": [
+                {
+                    "input_variable": "deposition",
+                    "combine_deposition_types": True,
+                    "lang": "de",
+                    "dimensions": {
+                        "level": None,
+                        "deposition_type": ("dry", "wet"),
+                    },
+                }
+            ],
         },
+        overwrite_seqs=True,
     )
     sol_specific = [
         {
-            "panels": {
-                "input_variable": "concentration",
-                "combine_deposition_types": False,
-                "dimensions": {
-                    "deposition_type": None,
-                },
-            }
+            "panels": [
+                {
+                    "input_variable": "concentration",
+                    "combine_deposition_types": False,
+                    "dimensions": {
+                        "deposition_type": None,
+                    },
+                }
+            ],
         },
         {
-            "panels": {
-                "domain": "ch",
-                "lang": "de",
-            },
+            "panels": [
+                {
+                    "domain": "ch",
+                    "lang": "de",
+                }
+            ],
         },
         {
-            "panels": {
-                "domain": "full",
-                "lang": "de",
-            },
+            "panels": [
+                {
+                    "domain": "full",
+                    "lang": "de",
+                }
+            ],
         },
         {
-            "panels": {
-                "dimensions": {
-                    "deposition_type": "wet",
-                },
-            },
+            "panels": [
+                {
+                    "dimensions": {
+                        "deposition_type": "wet",
+                    },
+                }
+            ],
         },
     ]
-    sol = [merge_dicts(sol_base, sol_spc) for sol_spc in sol_specific]
+    sol = [
+        merge_dicts(sol_base, sol_spc, overwrite_seqs=True) for sol_spc in sol_specific
+    ]
     res = SetupFile(tmp_setup_file(tmp_path, content)).read(override=override)
     assert len(res) == len(sol)
     assert res == sol
@@ -411,34 +433,36 @@ def test_realcase_opr_like(tmp_path):
         """
     dcts_sol = [
         {
-            "panels": {
-                "combine_deposition_types": False,
-                "combine_levels": False,
-                "combine_species": False,
-                "dimensions": {
-                    "deposition_type": None,
-                    "level": 0,
-                    "nageclass": None,
-                    "noutrel": None,
-                    "numpoint": None,
-                    "species_id": None,
-                    "time": None,
-                },
-                "dimensions_default": "all",
-                "domain": "full",
-                "domain_size_lat": None,
-                "domain_size_lon": None,
-                "ens_params": {
-                    "mem_min": None,
-                    "pctl": None,
-                    "thr": None,
-                    "thr_type": "lower",
-                },
-                "ens_variable": "none",
-                "input_variable": "concentration",
-                "integrate": False,
-                "lang": "de",
-            },
+            "panels": [
+                {
+                    "combine_deposition_types": False,
+                    "combine_levels": False,
+                    "combine_species": False,
+                    "dimensions": {
+                        "deposition_type": None,
+                        "level": 0,
+                        "nageclass": None,
+                        "noutrel": None,
+                        "numpoint": None,
+                        "species_id": None,
+                        "time": None,
+                    },
+                    "dimensions_default": "all",
+                    "domain": "full",
+                    "domain_size_lat": None,
+                    "domain_size_lon": None,
+                    "ens_params": {
+                        "mem_min": None,
+                        "pctl": None,
+                        "thr": None,
+                        "thr_type": "lower",
+                    },
+                    "ens_variable": "none",
+                    "input_variable": "concentration",
+                    "integrate": False,
+                    "lang": "de",
+                }
+            ],
             "multipanel_param": None,
             "plot_type": "auto",
             "model": {
@@ -453,34 +477,36 @@ def test_realcase_opr_like(tmp_path):
             "scale_fact": 1.0,
         },
         {
-            "panels": {
-                "combine_deposition_types": False,
-                "combine_levels": False,
-                "combine_species": False,
-                "dimensions": {
-                    "deposition_type": None,
-                    "level": 0,
-                    "nageclass": None,
-                    "noutrel": None,
-                    "numpoint": None,
-                    "species_id": None,
-                    "time": -1,
-                },
-                "dimensions_default": "all",
-                "domain": "full",
-                "domain_size_lat": None,
-                "domain_size_lon": None,
-                "ens_params": {
-                    "mem_min": None,
-                    "pctl": None,
-                    "thr": None,
-                    "thr_type": "lower",
-                },
-                "ens_variable": "none",
-                "input_variable": "concentration",
-                "integrate": True,
-                "lang": "de",
-            },
+            "panels": [
+                {
+                    "combine_deposition_types": False,
+                    "combine_levels": False,
+                    "combine_species": False,
+                    "dimensions": {
+                        "deposition_type": None,
+                        "level": 0,
+                        "nageclass": None,
+                        "noutrel": None,
+                        "numpoint": None,
+                        "species_id": None,
+                        "time": -1,
+                    },
+                    "dimensions_default": "all",
+                    "domain": "full",
+                    "domain_size_lat": None,
+                    "domain_size_lon": None,
+                    "ens_params": {
+                        "mem_min": None,
+                        "pctl": None,
+                        "thr": None,
+                        "thr_type": "lower",
+                    },
+                    "ens_variable": "none",
+                    "input_variable": "concentration",
+                    "integrate": True,
+                    "lang": "de",
+                }
+            ],
             "multipanel_param": None,
             "plot_type": "auto",
             "model": {
@@ -495,34 +521,36 @@ def test_realcase_opr_like(tmp_path):
             "scale_fact": 1.0,
         },
         {
-            "panels": {
-                "combine_deposition_types": True,
-                "combine_levels": False,
-                "combine_species": True,
-                "dimensions": {
-                    "deposition_type": ("dry", "wet"),
-                    "level": None,
-                    "nageclass": None,
-                    "noutrel": None,
-                    "numpoint": None,
-                    "species_id": None,
-                    "time": -1,
-                },
-                "dimensions_default": "all",
-                "domain": "full",
-                "domain_size_lat": None,
-                "domain_size_lon": None,
-                "ens_params": {
-                    "mem_min": None,
-                    "pctl": None,
-                    "thr": None,
-                    "thr_type": "lower",
-                },
-                "ens_variable": "none",
-                "input_variable": "deposition",
-                "integrate": True,
-                "lang": "en",
-            },
+            "panels": [
+                {
+                    "combine_deposition_types": True,
+                    "combine_levels": False,
+                    "combine_species": True,
+                    "dimensions": {
+                        "deposition_type": ("dry", "wet"),
+                        "level": None,
+                        "nageclass": None,
+                        "noutrel": None,
+                        "numpoint": None,
+                        "species_id": None,
+                        "time": -1,
+                    },
+                    "dimensions_default": "all",
+                    "domain": "full",
+                    "domain_size_lat": None,
+                    "domain_size_lon": None,
+                    "ens_params": {
+                        "mem_min": None,
+                        "pctl": None,
+                        "thr": None,
+                        "thr_type": "lower",
+                    },
+                    "ens_variable": "none",
+                    "input_variable": "deposition",
+                    "integrate": True,
+                    "lang": "en",
+                }
+            ],
             "multipanel_param": None,
             "plot_type": "auto",
             "model": {
@@ -537,34 +565,36 @@ def test_realcase_opr_like(tmp_path):
             "scale_fact": 1.0,
         },
         {
-            "panels": {
-                "combine_deposition_types": True,
-                "combine_levels": False,
-                "combine_species": True,
-                "dimensions": {
-                    "deposition_type": ("dry", "wet"),
-                    "level": 0,
-                    "nageclass": None,
-                    "noutrel": None,
-                    "numpoint": None,
-                    "species_id": None,
-                    "time": -1,
-                },
-                "dimensions_default": "all",
-                "domain": "full",
-                "domain_size_lat": None,
-                "domain_size_lon": None,
-                "ens_params": {
-                    "mem_min": None,
-                    "pctl": None,
-                    "thr": None,
-                    "thr_type": "lower",
-                },
-                "ens_variable": "none",
-                "input_variable": "affected_area",
-                "integrate": True,
-                "lang": "en",
-            },
+            "panels": [
+                {
+                    "combine_deposition_types": True,
+                    "combine_levels": False,
+                    "combine_species": True,
+                    "dimensions": {
+                        "deposition_type": ("dry", "wet"),
+                        "level": 0,
+                        "nageclass": None,
+                        "noutrel": None,
+                        "numpoint": None,
+                        "species_id": None,
+                        "time": -1,
+                    },
+                    "dimensions_default": "all",
+                    "domain": "full",
+                    "domain_size_lat": None,
+                    "domain_size_lon": None,
+                    "ens_params": {
+                        "mem_min": None,
+                        "pctl": None,
+                        "thr": None,
+                        "thr_type": "lower",
+                    },
+                    "ens_variable": "none",
+                    "input_variable": "affected_area",
+                    "integrate": True,
+                    "lang": "en",
+                }
+            ],
             "multipanel_param": None,
             "plot_type": "auto",
             "model": {
@@ -615,23 +645,27 @@ def test_wildcard_simple(tmp_path):
         """
     base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
     sol = [
-        merge_dicts(OPTIONAL_RAW_DEFAULT_PARAMS, base, dct)
+        merge_dicts(OPTIONAL_RAW_DEFAULT_PARAMS, base, dct, overwrite_seqs=True)
         for dct in [
-            {"panels": {"input_variable": "concentration", "lang": "de"}},
-            {"panels": {"input_variable": "concentration", "lang": "en"}},
+            {"panels": [{"input_variable": "concentration", "lang": "de"}]},
+            {"panels": [{"input_variable": "concentration", "lang": "en"}]},
             {
-                "panels": {
-                    "input_variable": "deposition",
-                    "dimensions": {"level": None},
-                    "lang": "de",
-                }
+                "panels": [
+                    {
+                        "input_variable": "deposition",
+                        "dimensions": {"level": None},
+                        "lang": "de",
+                    }
+                ],
             },
             {
-                "panels": {
-                    "input_variable": "deposition",
-                    "dimensions": {"level": None},
-                    "lang": "en",
-                }
+                "panels": [
+                    {
+                        "input_variable": "deposition",
+                        "dimensions": {"level": None},
+                        "lang": "en",
+                    }
+                ],
             },
         ]
     ]
@@ -676,16 +710,19 @@ def test_double_wildcard_equal_depth(tmp_path):
             OPTIONAL_RAW_DEFAULT_PARAMS,
             base,
             dct,
-            {"panels": {"domain": domain, "lang": lang}},
+            {"panels": [{"domain": domain, "lang": lang}]},
+            overwrite_seqs=True,
         )
         for dct in [
-            {"panels": {"input_variable": "concentration", "integrate": False}},
+            {"panels": [{"input_variable": "concentration", "integrate": False}]},
             {
-                "panels": {
-                    "input_variable": "deposition",
-                    "dimensions": {"level": None},
-                    "integrate": False,
-                }
+                "panels": [
+                    {
+                        "input_variable": "deposition",
+                        "dimensions": {"level": None},
+                        "integrate": False,
+                    }
+                ],
             },
         ]
         for domain in ["ch", "full"]
@@ -738,12 +775,25 @@ def test_double_wildcard_variable_depth(tmp_path):
             OPTIONAL_RAW_DEFAULT_PARAMS,
             base,
             dct,
-            {"panels": {"domain": domain, "lang": lang}},
+            {"panels": [{"domain": domain, "lang": lang}]},
+            overwrite_seqs=True,
         )
         for dct in [
-            {"panels": {"input_variable": "concentration", "dimensions": {"time": 5}}},
-            {"panels": {"input_variable": "concentration", "dimensions": {"time": 10}}},
-            {"panels": {"input_variable": "deposition", "dimensions": {"level": None}}},
+            {
+                "panels": [
+                    {"input_variable": "concentration", "dimensions": {"time": 5}}
+                ]
+            },
+            {
+                "panels": [
+                    {"input_variable": "concentration", "dimensions": {"time": 10}}
+                ]
+            },
+            {
+                "panels": [
+                    {"input_variable": "deposition", "dimensions": {"level": None}}
+                ]
+            },
         ]
         for domain in ["ch", "full"]
         for lang in ["de", "en"]
@@ -789,12 +839,15 @@ def test_combine_wildcards(tmp_path):
                 "model": {
                     "name": "COSMO-baz",
                 },
-                "panels": {
-                    "input_variable": input_variable,
-                    "ens_variable": ens_variable,
-                    "lang": lang,
-                },
+                "panels": [
+                    {
+                        "input_variable": input_variable,
+                        "ens_variable": ens_variable,
+                        "lang": lang,
+                    }
+                ],
             },
+            overwrite_seqs=True,
         )
         for input_variable in ["concentration", "deposition"]
         for ens_variable in ["mean", "maximum"]
@@ -830,7 +883,8 @@ class Test_IndividualParams_SingleOrMultipleValues:
             merge_dicts(
                 OPTIONAL_RAW_DEFAULT_PARAMS,
                 base,
-                {"panels": {"dimensions": {"species_id": value}}},
+                {"panels": [{"dimensions": {"species_id": value}}]},
+                overwrite_seqs=True,
             )
             for value in [1, (1, 2, 3)]
         ]
@@ -861,7 +915,8 @@ class Test_IndividualParams_SingleOrMultipleValues:
             merge_dicts(
                 OPTIONAL_RAW_DEFAULT_PARAMS,
                 base,
-                {"panels": {"dimensions": {"level": value}}},
+                {"panels": [{"dimensions": {"level": value}}]},
+                overwrite_seqs=True,
             )
             for value in [0, (1, 2)]
         ]
@@ -886,11 +941,14 @@ class Test_IndividualParams_SingleOrMultipleValues:
                 OPTIONAL_RAW_DEFAULT_PARAMS,
                 base,
                 {
-                    "panels": {
-                        "input_variable": "deposition",
-                        "dimensions": {"level": None},
-                    }
+                    "panels": [
+                        {
+                            "input_variable": "deposition",
+                            "dimensions": {"level": None},
+                        }
+                    ],
                 },
+                overwrite_seqs=True,
             )
         ]
         assert setups == sol
@@ -921,12 +979,13 @@ def test_multipanel_param_ens_variable(tmp_path):
     #             "infile": "data_{ens_member:02d}.nc",
     #             "outfile": "ens_stats_multipanel.png",
     #             "model": {"ens_member_id": (1, 2, 3),},
-    #             "panels": {
-    #                 "plot_type": "multipanel",
-    #                 "multipanel_param": "ens_variable",
+    #             "plot_type": "multipanel",
+    #             "multipanel_param": "ens_variable",
+    #             "panels": [{
     #                 "ens_variable": ("minimum", "maximum", "mean", "median"),
-    #             },
+    #             }],
     #         },
+    #         overwrite_seqs=True,
     #     ),
     # ]
     assert len(res) == len(sol)

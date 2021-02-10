@@ -36,40 +36,19 @@ from srutils.format import sfmt
 
 # Local
 from ..utils.exceptions import UnequalSetupParamValuesError
-from .dimensions import CoreDimensions
 from .dimensions import Dimensions
+from .dimensions import is_dimensions_param
+from .model_setup import is_model_setup_param
 from .model_setup import ModelSetup
+from .plot_panel_setup import is_plot_panel_setup_param
 from .plot_panel_setup import PlotPanelSetup
 from .plot_panel_setup import PlotPanelSetupGroup
 from .plot_panel_setup import PlotPanelSetupGroupFormatter
 
 
 # SR_TMP <<< TODO cleaner solution
-def is_model_setup_param(param: str, short_ok: bool = False) -> bool:
-    if param.startswith("model."):
-        param = param[len("model.") :]
-    elif not short_ok:
-        return False
-    return param in ModelSetup.get_params()
-
-
-# SR_TMP <<< TODO cleaner solution
 def is_plot_setup_param(param: str) -> bool:
     return param in PlotSetup.get_params()
-
-
-# SR_TMP <<< TODO cleaner solution
-def is_plot_panel_setup_param(param: str) -> bool:
-    return param in PlotPanelSetup.get_params()
-
-
-# SR_TMP <<< TODO cleaner solution
-def is_dimensions_param(param: str, short_ok: bool = False) -> bool:
-    if param.startswith("dimensions."):
-        param = param[len("dimensions.") :]
-    elif not short_ok:
-        return False
-    return param in CoreDimensions.get_params()
 
 
 # SR_TMP <<< TODO cleaner solution
@@ -82,9 +61,9 @@ def get_setup_param_value(setup: "PlotSetup", param: str) -> Any:
         return setup.panels.collect_equal(param)
         # SR_TMP >
     elif is_model_setup_param(param):
-        return getattr(setup.model, param[len("model.") :])
+        return getattr(setup.model, param.replace("model.", ""))
     elif is_dimensions_param(param):
-        return setup.panels.collect_equal(param)
+        return setup.panels.collect_equal(param.replace("dimensions.", ""))
     raise ValueError("invalid input setup parameter", param)
 
 
@@ -189,19 +168,39 @@ class PlotSetup:
                 setup_lst = [self.derive(sub_params) for sub_params in params]
             return PlotSetupGroup(setup_lst)
         elif isinstance(params, Mapping):
-            dct = merge_dicts(self.dict(), params)
+            dct = merge_dicts(self.dict(), params, overwrite_seqs=True)
             return type(self).create(dct)
         else:
             raise ValueError(
                 f"params must be sequence or mapping, not {type(params).__name__}"
             )
 
+    # SR_TODO Merge with decompress_partially and make arguments kw-only
     def decompress(self, skip: Optional[Collection[str]] = None) -> "PlotSetupGroup":
+        """Create a setup object for each combination of list parameter values.
+
+        Args:
+            skip (optional): Names of parameters to skip; if their values are
+                list of multiple values, those are retained as such.
+
+        """
         return self._decompress(select=None, skip=skip)
 
+    # SR_TODO Merge into decompress and make arguments kw-only
     def decompress_partially(
         self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None
     ) -> "PlotSetupGroup":
+        """Create a setup object for each combination of list parameter values.
+
+        Args:
+            select: Names of parameter to select; all others are skipped;
+                names in both ``select`` and ``skip`` will be skipped.
+
+            skip (optional): Names of parameters to skip; if their values are
+                list of multiple values, those are retained as such; names in
+                both ``select`` and ``skip`` will be skipped.
+
+        """
         return self._decompress(select, skip)
 
     def dict(self, rec: bool = True) -> Dict[str, Any]:
@@ -215,7 +214,7 @@ class PlotSetup:
         return {
             **dc.asdict(self),
             "model": dc.asdict(self.model) if rec else self.model,
-            "panels": self.panels.dict() if rec else self.panels,
+            "panels": self.panels.dicts() if rec else self.panels,
         }
 
     def tuple(self) -> Tuple[Tuple[str, Any], ...]:
@@ -236,10 +235,8 @@ class PlotSetup:
         return len(self.dict())
 
     def __eq__(self, other: Any) -> bool:
-        # SR_DBG <
         if isinstance(other, dc._MISSING_TYPE):
             return False
-        # SR_DBG >
         try:
             other_dict = other.dict()
         except AttributeError:
@@ -255,75 +252,37 @@ class PlotSetup:
     def __repr__(self) -> str:  # type: ignore
         return nested_repr(self)
 
-    # pylint: disable=R0912  # too-many-branches (>12)
-    # pylint: disable=R0914  # too-many-locals
     def _decompress(
         self,
         select: Optional[Collection[str]] = None,
         skip: Optional[Collection[str]] = None,
-    ):
+    ) -> "PlotSetupGroup":
         """Create multiple ``Setup`` objects with one-value parameters only."""
-        select_setup, select_core, select_dimensions = self._group_params(select)
-        skip_setup, skip_core, skip_dimensions = self._group_params(skip)
-        dct = self.dict()
-
-        # SR_TMP < TODO Can this be moved to class Dimensions?!?
-        # Handle deposition type
-        if self.deposition_type_str == "tot":
-            if select is None or "dimensions.deposition_type" in select:
-                if "dimensions.deposition_type" not in (skip or []):
-                    dct["panels"]["dimensions"]["deposition_type"] = ("dry", "wet")
+        # SR_TMP <
+        select = (
+            None
+            if select is None
+            else [
+                param.replace("dimensions.", "")
+                for param in select
+                if is_plot_panel_setup_param(param) or is_dimensions_param(param)
+            ]
+        )
+        skip = (
+            None
+            if skip is None
+            else [
+                param.replace("dimensions.", "")
+                for param in skip
+                if is_plot_panel_setup_param(param) or is_dimensions_param(param)
+            ]
+        )
         # SR_TMP >
-
-        if "input_variable" in (select or []) or "input_variable" not in (skip or []):
-            if dct["panels"]["input_variable"] == "affected_area":
-                dct["panels"]["input_variable"] = ("concentration", "deposition")
-            elif dct["panels"]["input_variable"] in [
-                "cloud_arrival_time",
-                "cloud_departure_time",
-            ]:
-                dct["panels"]["input_variable"] = "concentration"
-
-        # Decompress dict
-        dcts: List[Mapping[str, Any]] = []
-        for dct_i in decompress_multival_dict(
-            dct, select=select_setup, skip=skip_setup
-        ):
-            if "panels" not in dct_i:
-                dcts.append(dct_i)
-                continue
-            for panels_j in decompress_multival_dict(
-                dct_i["panels"], select=select_core, skip=skip_core
-            ):
-                dct_ij: Dict[str, Any] = {**dct_i, "panels": panels_j}
-                if "dimensions" not in panels_j:
-                    dcts.append(dct_i)
-                    continue
-                for dims_k in decompress_multival_dict(
-                    panels_j["dimensions"],
-                    select=select_dimensions,
-                    skip=skip_dimensions,
-                ):
-                    dct_ijk: Dict[str, Any] = {
-                        **dct_ij,
-                        "panels": {**dct_ij["panels"], "dimensions": dims_k},
-                    }
-                    # SR_TMP <
-                    # Handle affected area
-                    if (
-                        dct_ijk["panels"]["input_variable"] == "concentration"
-                        and dct_ijk["panels"]["dimensions"]["deposition_type"]
-                    ):
-                        dct_ijk["panels"]["dimensions"] = {
-                            **dct_ijk["panels"]["dimensions"],
-                            "deposition_type": None,
-                        }
-                        if dct_ijk in dcts:
-                            continue
-                    # SR_TMP >
-                    dcts.append(dct_ijk)
-
-        return PlotSetupGroup([PlotSetup.create(dct) for dct in dcts])
+        setups: List[PlotSetup] = []
+        for panels in self.panels.decompress(select=select, skip=skip):
+            panels_dcts = panels.dicts()
+            setups.append(self.derive({"panels": panels_dcts}))
+        return PlotSetupGroup(setups)
 
     @classmethod
     def create(cls, params: Mapping[str, Any]) -> "PlotSetup":
@@ -481,7 +440,7 @@ class PlotSetup:
         param_choices = sorted(
             [param for param in cls.get_params() if param != "panels"]
             + [param for param in PlotPanelSetup.get_params() if param != "dimensions"]
-            + list(CoreDimensions.get_params())
+            + list(Dimensions.get_params())
         )
         param_choices_fmtd = ", ".join(map(str, param_choices))
         sub_cls_by_name = {"model": ModelSetup, "dimensions": Dimensions}
@@ -585,40 +544,15 @@ class PlotSetup:
             )
         # SR_TMP >
         dcts = [setup.dict() for setup in setups]
-        dct = compress_multival_dicts(dcts, cls_seq=tuple)
-        if isinstance(dct["panels"], Sequence):
-            dct["panels"] = compress_multival_dicts(dct["panels"], cls_seq=tuple)
-        if isinstance(dct["panels"]["dimensions"], Sequence):
-            dct["panels"]["dimensions"] = compress_multival_dicts(
-                dct["panels"]["dimensions"], cls_seq=tuple
+        panels_dcts = [panels_dct for dct in dcts for panels_dct in dct.pop("panels")]
+        comprd_dct = compress_multival_dicts(dcts, cls_seq=tuple)
+        comprd_panels_dct = compress_multival_dicts(panels_dcts, cls_seq=tuple)
+        if isinstance(comprd_panels_dct["dimensions"], Sequence):
+            comprd_panels_dct["dimensions"] = compress_multival_dicts(
+                comprd_panels_dct["dimensions"], cls_seq=tuple
             )
-        return cls.create(dct)
-
-    @staticmethod
-    def _group_params(
-        params: Optional[Collection[str]],
-    ) -> Tuple[Optional[List[str]], Optional[List[str]], Optional[List[str]]]:
-        if params is None:
-            return (None, None, None)
-        params_setup: List[str] = []
-        params_core: List[str] = []
-        params_dimensions: List[str] = []
-        for param in params:
-            if is_plot_setup_param(param) or is_plot_panel_setup_param(param):
-                params_setup.append(param)
-                continue
-            if param.startswith("model."):
-                dims_param = param.split(".", 1)[-1]
-                if is_model_setup_param(dims_param):
-                    params_dimensions.append(dims_param)
-                    continue
-            if param.startswith("dimensions."):
-                dims_param = param.split(".", 1)[-1]
-                if is_dimensions_param(dims_param):
-                    params_dimensions.append(dims_param)
-                    continue
-            raise ValueError("invalid param", param)
-        return (params_setup, params_core, params_dimensions)
+        comprd_dct["panels"] = [comprd_panels_dct]
+        return cls.create(comprd_dct)
 
 
 class PlotSetupGroup:
@@ -680,11 +614,11 @@ class PlotSetupGroup:
         else:
             raise NotImplementedError(f"{type(self).__name__}.compress('{param}')")
 
-    def decompress(self) -> List["PlotSetupGroup"]:
-        return self.decompress_partially(select=None, skip=None)
-
     def derive(self, params: Mapping[str, Any]) -> "PlotSetupGroup":
         return type(self)([setup.derive(params) for setup in self])
+
+    def decompress(self) -> List["PlotSetupGroup"]:
+        return self.decompress_partially(select=None, skip=None)
 
     def decompress_partially(
         self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None
@@ -732,51 +666,34 @@ class PlotSetupGroup:
 
         """
         values: List[Any] = []
-        if is_plot_panel_setup_param(param) or is_plot_setup_param(param):
-            for var_setup in self:
-                if is_plot_panel_setup_param(param):
-                    value = var_setup.panels.collect_equal(param)
-                else:
-                    value = getattr(var_setup, param)
-                if isinstance(value, Collection) and flatten:
-                    for sub_value in value:
-                        if exclude_nones and sub_value is None:
-                            continue
-                        if sub_value not in values:
-                            values.append(sub_value)
-                else:
-                    if exclude_nones and value is None:
-                        continue
-                    if value not in values:
-                        values.append(value)
-        elif param.startswith("model.") or param.startswith("dimensions."):
-            sub_param = param.split(".", 1)[-1]
-            for sub_params in self.collect(param.split(".")[0]):
-                if is_model_setup_param(sub_param):
-                    value = getattr(sub_params, sub_param)
-                    if not flatten:
-                        values.append(value)
-                        continue
-                elif is_dimensions_param(sub_param):
-                    value = sub_params.get(sub_param)
-                else:
-                    raise ValueError(f"invalid param '{param}'")
-                if isinstance(value, Collection) and not isinstance(value, str):
-                    sub_values = value
-                else:
-                    sub_values = [value]
-                for sub_value in sub_values:
+        for var_setup in self:
+            if is_plot_setup_param(param):
+                value = getattr(var_setup, param)
+            elif is_model_setup_param(param):
+                value = getattr(var_setup.model, param.replace("model.", ""))
+            elif is_plot_panel_setup_param(param) or is_dimensions_param(param):
+                value = var_setup.panels.collect(param)
+            else:
+                raise ValueError(f"invalid param '{param}'")
+            if flatten and isinstance(value, Collection) and not isinstance(value, str):
+                for sub_value in value:
                     if exclude_nones and sub_value is None:
                         continue
                     if sub_value not in values:
                         values.append(sub_value)
-        else:
-            raise ValueError(f"invalid param '{param}'")
+            else:
+                if exclude_nones and value is None:
+                    continue
+                if value not in values:
+                    values.append(value)
         return values
 
     def collect_equal(self, param: str) -> Any:
         """Collect the value of a parameter that is shared by all setups."""
-        values = self.collect(param)
+        if is_plot_panel_setup_param(param) or is_dimensions_param(param):
+            values = self.collect(param, flatten=True)
+        else:
+            values = self.collect(param)
         if not values:
             return None
         if not all(value == values[0] for value in values[1:]):
@@ -905,8 +822,9 @@ class PlotSetupGroup:
         # pylint: disable=W0703  # broad-except
         except Exception as e:
             return (
-                f"<exception in PlotSetupGroupFormatter(self).repr(): {repr(e)}"
-                f" {pformat(self.dicts())}>"
+                f"<{type(self).__name__}.__repr__:"
+                f" exception in PlotSetupGroupFormatter(self).repr(): {repr(e)}"
+                f"\n{pformat(self.dicts())}>"
             )
 
     def __len__(self) -> int:
@@ -916,10 +834,8 @@ class PlotSetupGroup:
         return iter(self._setups)
 
     def __eq__(self, other: object) -> bool:
-        # SR_DBG <
         if isinstance(other, dc._MISSING_TYPE):
             return False
-        # SR_DBG >
         try:
             other_dicts = other.dicts()  # type: ignore
         except AttributeError:
@@ -939,7 +855,6 @@ class PlotSetupGroup:
         setup_lst: List[PlotSetup] = []
         for obj in setups:
             if isinstance(obj, PlotSetup):
-                # ? dcts = obj.decompress(["dimensions", "ens_member_id"])
                 raise NotImplementedError("obj is Setup")
             else:
                 skip = ["model", "dimensions"]

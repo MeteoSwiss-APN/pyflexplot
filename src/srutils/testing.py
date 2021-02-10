@@ -164,7 +164,7 @@ def check_is_sub_element(
         "idx_dict": idx_dict,
     }
 
-    def exception(msg: str, info: Dict[str, any]) -> Exception:
+    def exception(msg: str, info: Dict[str, Any]) -> Exception:
         """Build exception that can be raised directly."""
         blocks = [msg]
         for name, obj in info.items():

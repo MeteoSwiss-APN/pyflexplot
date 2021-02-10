@@ -35,11 +35,17 @@ from srutils.str import join_multilines
 from ..utils.exceptions import UnequalSetupParamValuesError
 from .dimensions import CoreDimensions
 from .dimensions import Dimensions
+from .dimensions import is_dimensions_param
 
 # Some plot-specific default values
 ENS_PROBABILITY_DEFAULT_PARAM_THR = 0.0
 ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN = 1
 ENS_CLOUD_TIME_DEFAULT_PARAM_THR = 0.0
+
+
+# SR_TMP <<< TODO cleaner solution
+def is_plot_panel_setup_param(param: str) -> bool:
+    return param in PlotPanelSetup.get_params()
 
 
 @dc.dataclass
@@ -90,7 +96,6 @@ class PlotPanelSetup:
 
     # pylint: disable=R0912  # too-many-branches (>12)
     def __post_init__(self) -> None:
-        assert isinstance(self.dimensions, Dimensions), type(self.dimensions)  # SR_DBG
 
         self._check_types()
 
@@ -144,23 +149,54 @@ class PlotPanelSetup:
         Args:
             select (optional): List of parameter names to select for
                 decompression; all others will be skipped; parameters named in
-                both ``select`` and ``dkip`` will be skipped.
+                both ``select`` and ``skip`` will be skipped.
 
             skip (optional): List of parameter names to skip; if they have list
                 values, those are retained as such; parameters named in both
                 ``skip`` and ``select`` will be skipped.
 
         """
+        # SR_TMP <
+        select_dims = (
+            None
+            if select is None
+            else [param for param in select if is_dimensions_param(param)]
+        )
+        skip_dims = (
+            None
+            if skip is None
+            else [param for param in skip if is_dimensions_param(param)]
+        )
+        # SR_TMP >
         setups: List["PlotPanelSetup"] = []
-        for dims in self.dimensions.decompress(select=select, skip=skip):
+        for dims in self.dimensions.decompress(select=select_dims, skip=skip_dims):
             params = merge_dicts(
                 self.dict(),
                 {"dimensions": dims.dict()},
                 overwrite_seqs=True,
                 overwrite_seq_dicts=True,
             )
-            setup = self.create(params)
-            setups.append(setup)
+            # SR_TMP < Does this logic really belong here? I doubt it...
+            if (
+                select is not None and "input_variable" not in select
+            ) or "input_variable" in (skip or []):
+                params_lst = [params]
+            elif params["input_variable"] == "affected_area":
+                params_lst = [
+                    {**params, "input_variable": "concentration"},
+                    {**params, "input_variable": "deposition"},
+                ]
+            elif params["input_variable"] in [
+                "cloud_arrival_time",
+                "cloud_departure_time",
+            ]:
+                params_lst = [{**params, "input_variable": "concentration"}]
+            else:
+                params_lst = [params]
+            # SR_TMP >
+            for params in params_lst:
+                setup = self.create(params)
+                setups.append(setup)
         return PlotPanelSetupGroup(setups)
 
     @overload
@@ -223,14 +259,17 @@ class PlotPanelSetup:
 
     def _check_types(self) -> None:
         for param, value in self.dict(rec=False).items():
-            if param in ["dimensions", "ens_params"]:
+            error = ValueError(f"param {param} has invalid value {sfmt(value)}")
+            if param == "dimensions":
+                if not isinstance(value, Dimensions):
+                    raise error
+            elif param == "ens_params":
                 continue
-            try:
-                cast_field_value(type(self), param, value)
-            except InvalidParameterValueError as e:
-                raise ValueError(
-                    f"param {param} has invalid value {sfmt(value)}"
-                ) from e
+            else:
+                try:
+                    cast_field_value(type(self), param, value)
+                except InvalidParameterValueError as e:
+                    raise error from e
 
     def _init_defaults(self) -> None:
         """Set some default values depending on other parameters."""
@@ -296,12 +335,49 @@ class PlotPanelSetup:
 class PlotPanelSetupGroup:
     def __init__(self, panels: Sequence[PlotPanelSetup]) -> None:
         """Create an instance of ``PlotPanelSetupGroup``."""
-        # SR_TMP <
-        if len(panels) > 1:
-            raise NotImplementedError("multipanel")
-        # SR_TMP >
         self._panels = panels
 
+    def collect(
+        self, param: str, flatten: bool = False, exclude_nones: bool = False
+    ) -> List[Any]:
+        """Collect all unique values of a parameter for all setups.
+
+        Args:
+            param: Name of parameter.
+
+            flatten (optional): Unpack values that are collection of sub-values.
+
+            exclude_nones (optional): Exclude values -- and, if ``flatten`` is
+                true, also sub-values -- that are None.
+
+        """
+        values: List[Any] = []
+        for setup in self:
+            if is_plot_panel_setup_param(param):
+                value = getattr(setup, param)
+            elif is_dimensions_param(param):
+                value = setup.dimensions.get(param.replace("dimensions.", ""))
+            else:
+                raise ValueError(f"invalid param '{param}'")
+            if exclude_nones and value is None:
+                continue
+            if flatten and isinstance(setup, Collection) and not isinstance(setup, str):
+                for sub_value in value:
+                    if exclude_nones and sub_value is None:
+                        continue
+                    values.append(sub_value)
+            else:
+                values.append(value)
+        return values
+
+    def collect_equal(self, param: str) -> Any:
+        """Collect the value of a parameter that is shared by all setups."""
+        values = self.collect(param)
+        if not values:
+            return None
+        if not all(value == values[0] for value in values[1:]):
+            raise UnequalSetupParamValuesError(param, values)
+        return next(iter(values))
 
     def decompress(
         self,
@@ -314,7 +390,7 @@ class PlotPanelSetupGroup:
         Args:
             select (optional): List of parameter names to select for
                 decompression; all others will be skipped; parameters named in
-                both ``select`` and ``dkip`` will be skipped.
+                both ``select`` and ``skip`` will be skipped.
 
             skip (optional): List of parameter names to skip; if they have list
                 values, those are retained as such; parameters named in both
@@ -328,14 +404,8 @@ class PlotPanelSetupGroup:
             groups_lst.extend(groups_lst_i)
         return groups_lst
 
-    # SR_TMP <<< TODO Eliminate or adapt
-    def dict(self) -> Dict[str, Any]:
-        # SR_TMP <
-        if len(self._panels) > 1:
-            raise NotImplementedError("multipanel")
-        assert len(self) == 1
-        return self._panels[0].dict()
-        # SR_TMP >
+    def dicts(self) -> List[Dict[str, Any]]:
+        return [setup.dict() for setup in self]
 
     def tuple(self) -> Tuple[Tuple[Tuple[str, Any], ...], ...]:
         return tuple(map(PlotPanelSetup.tuple, self))
@@ -352,19 +422,23 @@ class PlotPanelSetupGroup:
         # pylint: disable=W0703  # broad-except
         except Exception as e:
             return (
-                f"<exception in PlotPanelSetupGroupFormatter(self).repr(): {repr(e)}"
-                f" {pformat(self.dict())}>"
+                f"<{type(self).__name__}.__repr__:"
+                f" exception in PlotPanelSetupGroupFormatter(self).repr(): {repr(e)}"
+                f"\n{pformat(self.dicts())}>"
             )
 
     @classmethod
     def create(
-        cls, params: Mapping[str, Any], multipanel_param: Optional[str] = None
+        cls,
+        params: Union[Mapping[str, Any], Sequence[Mapping[str, Any]]],
+        multipanel_param: Optional[str] = None,
     ) -> "PlotPanelSetupGroup":
         """Prepare and create an instance of ``PlotPanelSetupGroup``.
 
         Args:
-            params: Parameters based on which one or more ``PlotPanelSetup``
-                objects are created, depending on ``multipanel_param``.
+            params: One or more parameters dicts based on which one or more
+                ``PlotPanelSetup`` objects are created each, depending on
+                ``multipanel_param``.
 
             multipanel_param (optional): Parameter in ``params`` based on which
                 multiple ``PlotPanelSetup`` objects are created, one for each
@@ -372,6 +446,13 @@ class PlotPanelSetupGroup:
                 object will be created.
 
         """
+        # SR_TMP <
+        if not isinstance(params, Mapping):
+            if len(params) > 1:
+                raise NotImplementedError("multiple params dicts")
+            params = next(iter(params))
+        assert isinstance(params, Mapping)
+        # SR_TMP >
         if multipanel_param is None:
             return cls([PlotPanelSetup.create(params)])
         params = dict(params)
@@ -484,7 +565,7 @@ class PlotPanelSetupGroupFormatter(SetupGroupFormatter):
         dims_diff: Dict[str, Any] = {}
         for param in CoreDimensions.get_params():
             values = []
-            for dims in self.obj.collect("dimensions"):
+            for dims in self.obj.collect("dimensions", flatten=True):
                 values.append(dims.get(param))
             if len(set(values)) == 1:
                 dims_same[param] = next(iter(values))

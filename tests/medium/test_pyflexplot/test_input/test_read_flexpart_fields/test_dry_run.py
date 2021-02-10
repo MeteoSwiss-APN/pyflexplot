@@ -19,9 +19,9 @@ import pytest
 from pyflexplot.input.field import Field
 from pyflexplot.input.field import FieldGroup
 from pyflexplot.input.read_fields import read_fields
-from pyflexplot.setups.setup import is_dimensions_param
-from pyflexplot.setups.setup import is_model_setup_param
-from pyflexplot.setups.setup import is_plot_panel_setup_param
+from pyflexplot.setups.dimensions import is_dimensions_param
+from pyflexplot.setups.model_setup import is_model_setup_param
+from pyflexplot.setups.plot_panel_setup import is_plot_panel_setup_param
 from pyflexplot.setups.setup import is_plot_setup_param
 from pyflexplot.setups.setup import PlotSetup
 from pyflexplot.setups.setup import PlotSetupGroup
@@ -70,29 +70,25 @@ def field_groups_to_setup_dcts(obj, params: Optional[List[str]] = None):
     if params is None:
         return dct_all
     dct_sel = {}
+    panels = {}
     for param in params:
-        # SR_TMP < TODO remove 'dimensions.' from all params if possible
-        if param.startswith("dimensions."):
-            param = param.split(".")[1]
-        # SR_TMP >
         if is_plot_setup_param(param):
             dct_sel[param] = dct_all[param]
         elif is_model_setup_param(param):
+            param = param.replace("model.", "")
             if "model" not in dct_sel:
                 dct_sel["model"] = {}
             dct_sel["model"][param] = dct_all["model"][param]
         elif is_plot_panel_setup_param(param):
-            if "panels" not in dct_sel:
-                dct_sel["panels"] = {}
-            dct_sel["panels"][param] = dct_all["panels"][param]
+            assert len(dct_all["panels"]) == 1
+            panels[param] = dct_all["panels"][0][param]
         elif is_dimensions_param(param):
-            if "panels" not in dct_sel:
-                dct_sel["panels"] = {}
-            if "dimensions" not in dct_sel["panels"]:
-                dct_sel["panels"]["dimensions"] = {}
-            dct_sel["panels"]["dimensions"][param] = dct_all["panels"]["dimensions"][
-                param
-            ]
+            param = param.replace("dimensions.", "")
+            if "dimensions" not in panels:
+                panels["dimensions"] = {}
+            assert len(dct_all["panels"]) == 1
+            panels["dimensions"][param] = dct_all["panels"][0]["dimensions"][param]
+    dct_sel["panels"] = [panels]
     return dct_sel
 
 
@@ -134,126 +130,238 @@ def _test_multiple_setups_core(config, params):
     [
         ConfSingleSetup(  # [conf0]
             setup_dct={
-                "panels": {"dimensions": {"species_id": 1, "level": 0, "time": 0}}
+                "panels": [{"dimensions": {"species_id": 1, "level": 0, "time": 0}}]
             },
-            sol=[[{"panels": {"dimensions": {"species_id": 1, "time": 0}}}]],
+            sol=[[{"panels": [{"dimensions": {"species_id": 1, "time": 0}}]}]],
         ),
         ConfSingleSetup(  # [conf1]
             setup_dct={
-                "panels": {
-                    "dimensions": {"species_id": 1, "level": 0, "time": (0, 3, 6)}
-                }
+                "panels": [
+                    {"dimensions": {"species_id": 1, "level": 0, "time": (0, 3, 6)}}
+                ],
             },
             sol=[
-                [{"panels": {"dimensions": {"species_id": 1, "time": 0}}}],
-                [{"panels": {"dimensions": {"species_id": 1, "time": 3}}}],
-                [{"panels": {"dimensions": {"species_id": 1, "time": 6}}}],
+                [{"panels": [{"dimensions": {"species_id": 1, "time": 0}}]}],
+                [{"panels": [{"dimensions": {"species_id": 1, "time": 3}}]}],
+                [{"panels": [{"dimensions": {"species_id": 1, "time": 6}}]}],
             ],
         ),
         ConfSingleSetup(  # [conf2]
             setup_dct={
-                "panels": {
-                    "dimensions": {"species_id": (1, 2), "level": 0, "time": 0},
-                    "combine_species": True,
-                },
+                "panels": [
+                    {
+                        "dimensions": {"species_id": (1, 2), "level": 0, "time": 0},
+                        "combine_species": True,
+                    }
+                ],
             },
-            sol=[[{"panels": {"dimensions": {"species_id": (1, 2), "time": 0}}}]],
+            sol=[[{"panels": [{"dimensions": {"species_id": (1, 2), "time": 0}}]}]],
         ),
         ConfSingleSetup(  # [conf3]
             setup_dct={
-                "panels": {
-                    "dimensions": {"species_id": (1, 2), "level": 0, "time": (0, 3, 6)},
-                    "combine_species": True,
-                },
+                "panels": [
+                    {
+                        "dimensions": {
+                            "species_id": (1, 2),
+                            "level": 0,
+                            "time": (0, 3, 6),
+                        },
+                        "combine_species": True,
+                    }
+                ],
             },
             sol=[
-                [{"panels": {"dimensions": {"species_id": (1, 2), "time": 0}}}],
-                [{"panels": {"dimensions": {"species_id": (1, 2), "time": 3}}}],
-                [{"panels": {"dimensions": {"species_id": (1, 2), "time": 6}}}],
+                [{"panels": [{"dimensions": {"species_id": (1, 2), "time": 0}}]}],
+                [{"panels": [{"dimensions": {"species_id": (1, 2), "time": 3}}]}],
+                [{"panels": [{"dimensions": {"species_id": (1, 2), "time": 6}}]}],
             ],
         ),
         ConfSingleSetup(  # [conf4]
             setup_dct={
-                "panels": {
-                    "dimensions": {"species_id": (1, 2), "level": 0, "time": 0},
-                    "combine_species": False,
-                },
+                "panels": [
+                    {
+                        "dimensions": {"species_id": (1, 2), "level": 0, "time": 0},
+                        "combine_species": False,
+                    }
+                ],
             },
             sol=[
-                [{"panels": {"dimensions": {"species_id": 1, "time": 0}}}],
-                [{"panels": {"dimensions": {"species_id": 2, "time": 0}}}],
+                [{"panels": [{"dimensions": {"species_id": 1, "time": 0}}]}],
+                [{"panels": [{"dimensions": {"species_id": 2, "time": 0}}]}],
             ],
         ),
         ConfSingleSetup(  # [conf5]
             setup_dct={
-                "panels": {
-                    "dimensions": {"species_id": (1, 2), "level": 0, "time": (0, 3, 6)},
-                    "combine_species": False,
-                },
+                "panels": [
+                    {
+                        "dimensions": {
+                            "species_id": (1, 2),
+                            "level": 0,
+                            "time": (0, 3, 6),
+                        },
+                        "combine_species": False,
+                    }
+                ],
             },
             sol=[
-                [{"panels": {"dimensions": {"species_id": 1, "time": 0}}}],
-                [{"panels": {"dimensions": {"species_id": 1, "time": 3}}}],
-                [{"panels": {"dimensions": {"species_id": 1, "time": 6}}}],
-                [{"panels": {"dimensions": {"species_id": 2, "time": 0}}}],
-                [{"panels": {"dimensions": {"species_id": 2, "time": 3}}}],
-                [{"panels": {"dimensions": {"species_id": 2, "time": 6}}}],
+                [{"panels": [{"dimensions": {"species_id": 1, "time": 0}}]}],
+                [{"panels": [{"dimensions": {"species_id": 1, "time": 3}}]}],
+                [{"panels": [{"dimensions": {"species_id": 1, "time": 6}}]}],
+                [{"panels": [{"dimensions": {"species_id": 2, "time": 0}}]}],
+                [{"panels": [{"dimensions": {"species_id": 2, "time": 3}}]}],
+                [{"panels": [{"dimensions": {"species_id": 2, "time": 6}}]}],
             ],
         ),
         ConfSingleSetup(  # [conf6]
             setup_dct={
-                "panels": {
-                    "dimensions": {"species_id": 1, "level": (0, 1), "time": 0},
-                    "combine_levels": True,
-                },
+                "panels": [
+                    {
+                        "dimensions": {"species_id": 1, "level": (0, 1), "time": 0},
+                        "combine_levels": True,
+                    }
+                ],
             },
             sol=[
                 [
                     {
-                        "panels": {
-                            "dimensions": {"species_id": 1, "level": (0, 1), "time": 0}
-                        }
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "species_id": 1,
+                                    "level": (0, 1),
+                                    "time": 0,
+                                }
+                            }
+                        ],
                     }
                 ]
             ],
         ),
         ConfSingleSetup(  # [conf7]
             setup_dct={
-                "panels": {
-                    "dimensions": {"species_id": 1, "level": (0, 1), "time": 0},
-                    "combine_levels": False,
-                },
+                "panels": [
+                    {
+                        "dimensions": {"species_id": 1, "level": (0, 1), "time": 0},
+                        "combine_levels": False,
+                    }
+                ],
             },
             sol=[
-                [{"panels": {"dimensions": {"species_id": 1, "level": 0, "time": 0}}}],
-                [{"panels": {"dimensions": {"species_id": 1, "level": 1, "time": 0}}}],
+                [
+                    {
+                        "panels": [
+                            {"dimensions": {"species_id": 1, "level": 0, "time": 0}}
+                        ]
+                    }
+                ],
+                [
+                    {
+                        "panels": [
+                            {"dimensions": {"species_id": 1, "level": 1, "time": 0}}
+                        ]
+                    }
+                ],
             ],
         ),
         ConfSingleSetup(  # [conf8]
             setup_dct={
-                "panels": {
-                    "dimensions": {
-                        "species_id": (1, 2),
-                        "level": (0, 1),
-                        "time": (0, 3, 6),
-                    },
-                    "combine_species": False,
-                    "combine_levels": False,
-                },
+                "panels": [
+                    {
+                        "dimensions": {
+                            "species_id": (1, 2),
+                            "level": (0, 1),
+                            "time": (0, 3, 6),
+                        },
+                        "combine_species": False,
+                        "combine_levels": False,
+                    }
+                ],
             },
             sol=[
-                [{"panels": {"dimensions": {"level": 0, "species_id": 1, "time": 0}}}],
-                [{"panels": {"dimensions": {"level": 0, "species_id": 1, "time": 3}}}],
-                [{"panels": {"dimensions": {"level": 0, "species_id": 1, "time": 6}}}],
-                [{"panels": {"dimensions": {"level": 0, "species_id": 2, "time": 0}}}],
-                [{"panels": {"dimensions": {"level": 0, "species_id": 2, "time": 3}}}],
-                [{"panels": {"dimensions": {"level": 0, "species_id": 2, "time": 6}}}],
-                [{"panels": {"dimensions": {"level": 1, "species_id": 1, "time": 0}}}],
-                [{"panels": {"dimensions": {"level": 1, "species_id": 1, "time": 3}}}],
-                [{"panels": {"dimensions": {"level": 1, "species_id": 1, "time": 6}}}],
-                [{"panels": {"dimensions": {"level": 1, "species_id": 2, "time": 0}}}],
-                [{"panels": {"dimensions": {"level": 1, "species_id": 2, "time": 3}}}],
-                [{"panels": {"dimensions": {"level": 1, "species_id": 2, "time": 6}}}],
+                [
+                    {
+                        "panels": [
+                            {"dimensions": {"level": 0, "species_id": 1, "time": 0}}
+                        ]
+                    }
+                ],
+                [
+                    {
+                        "panels": [
+                            {"dimensions": {"level": 0, "species_id": 1, "time": 3}}
+                        ]
+                    }
+                ],
+                [
+                    {
+                        "panels": [
+                            {"dimensions": {"level": 0, "species_id": 1, "time": 6}}
+                        ]
+                    }
+                ],
+                [
+                    {
+                        "panels": [
+                            {"dimensions": {"level": 0, "species_id": 2, "time": 0}}
+                        ]
+                    }
+                ],
+                [
+                    {
+                        "panels": [
+                            {"dimensions": {"level": 0, "species_id": 2, "time": 3}}
+                        ]
+                    }
+                ],
+                [
+                    {
+                        "panels": [
+                            {"dimensions": {"level": 0, "species_id": 2, "time": 6}}
+                        ]
+                    }
+                ],
+                [
+                    {
+                        "panels": [
+                            {"dimensions": {"level": 1, "species_id": 1, "time": 0}}
+                        ]
+                    }
+                ],
+                [
+                    {
+                        "panels": [
+                            {"dimensions": {"level": 1, "species_id": 1, "time": 3}}
+                        ]
+                    }
+                ],
+                [
+                    {
+                        "panels": [
+                            {"dimensions": {"level": 1, "species_id": 1, "time": 6}}
+                        ]
+                    }
+                ],
+                [
+                    {
+                        "panels": [
+                            {"dimensions": {"level": 1, "species_id": 2, "time": 0}}
+                        ]
+                    }
+                ],
+                [
+                    {
+                        "panels": [
+                            {"dimensions": {"level": 1, "species_id": 2, "time": 3}}
+                        ]
+                    }
+                ],
+                [
+                    {
+                        "panels": [
+                            {"dimensions": {"level": 1, "species_id": 2, "time": 6}}
+                        ]
+                    }
+                ],
             ],
         ),
     ],
@@ -268,9 +376,11 @@ def test_single_setup_concentration(datadir: str, config: ConfSingleSetup):
             "model": {
                 "name": "COSMO-1",
             },
-            "panels": {
-                "input_variable": "concentration",
-            },
+            "panels": [
+                {
+                    "input_variable": "concentration",
+                }
+            ],
         },
     )
     _test_single_setup_core(config, params)
@@ -282,166 +392,194 @@ def test_single_setup_concentration(datadir: str, config: ConfSingleSetup):
     [
         ConfSingleSetup(  # [conf0]
             setup_dct={
-                "panels": {
-                    "dimensions": {
-                        "species_id": 1,
-                        "time": 0,
-                        "deposition_type": "dry",
-                    },
-                },
+                "panels": [
+                    {
+                        "dimensions": {
+                            "species_id": 1,
+                            "time": 0,
+                            "deposition_type": "dry",
+                        },
+                    }
+                ],
             },
             sol=[
                 [
                     {
-                        "panels": {
-                            "dimensions": {
-                                "species_id": 1,
-                                "time": 0,
-                                "deposition_type": "dry",
-                            },
-                        },
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "species_id": 1,
+                                    "time": 0,
+                                    "deposition_type": "dry",
+                                },
+                            }
+                        ],
                     },
                 ]
             ],
         ),
         ConfSingleSetup(  # [conf1]
             setup_dct={
-                "panels": {
-                    "combine_deposition_types": False,
-                    "dimensions": {
-                        "species_id": 1,
-                        "time": 0,
-                        "deposition_type": ("dry", "wet"),
-                    },
-                },
+                "panels": [
+                    {
+                        "combine_deposition_types": False,
+                        "dimensions": {
+                            "species_id": 1,
+                            "time": 0,
+                            "deposition_type": ("dry", "wet"),
+                        },
+                    }
+                ],
             },
             sol=[
                 [
                     {
-                        "panels": {
-                            "dimensions": {
-                                "species_id": 1,
-                                "time": 0,
-                                "deposition_type": "dry",
-                            },
-                        },
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "species_id": 1,
+                                    "time": 0,
+                                    "deposition_type": "dry",
+                                },
+                            }
+                        ],
                     },
                 ],
                 [
                     {
-                        "panels": {
-                            "dimensions": {
-                                "species_id": 1,
-                                "time": 0,
-                                "deposition_type": "wet",
-                            },
-                        },
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "species_id": 1,
+                                    "time": 0,
+                                    "deposition_type": "wet",
+                                },
+                            }
+                        ],
                     },
                 ],
             ],
         ),
         ConfSingleSetup(  # [conf2]
             setup_dct={
-                "panels": {
-                    "combine_deposition_types": True,
-                    "dimensions": {
-                        "species_id": 1,
-                        "time": 0,
-                        "deposition_type": ("dry", "wet"),
-                    },
-                },
+                "panels": [
+                    {
+                        "combine_deposition_types": True,
+                        "dimensions": {
+                            "species_id": 1,
+                            "time": 0,
+                            "deposition_type": ("dry", "wet"),
+                        },
+                    }
+                ],
             },
             sol=[
                 [
                     {
-                        "panels": {
-                            "dimensions": {
-                                "species_id": 1,
-                                "time": 0,
-                                "deposition_type": ("dry", "wet"),
-                            },
-                        },
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "species_id": 1,
+                                    "time": 0,
+                                    "deposition_type": ("dry", "wet"),
+                                },
+                            }
+                        ],
                     },
                 ],
             ],
         ),
         ConfSingleSetup(  # [conf3]
             setup_dct={
-                "panels": {
-                    "combine_deposition_types": False,
-                    "combine_species": True,
-                    "dimensions": {
-                        "species_id": (1, 2),
-                        "time": (0, 3, 6),
-                        "deposition_type": ("dry", "wet"),
-                    },
-                },
+                "panels": [
+                    {
+                        "combine_deposition_types": False,
+                        "combine_species": True,
+                        "dimensions": {
+                            "species_id": (1, 2),
+                            "time": (0, 3, 6),
+                            "deposition_type": ("dry", "wet"),
+                        },
+                    }
+                ],
             },
             sol=[
                 [
                     {
-                        "panels": {
-                            "dimensions": {
-                                "species_id": (1, 2),
-                                "time": 0,
-                                "deposition_type": "dry",
-                            },
-                        },
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "species_id": (1, 2),
+                                    "time": 0,
+                                    "deposition_type": "dry",
+                                },
+                            }
+                        ],
                     },
                 ],
                 [
                     {
-                        "panels": {
-                            "dimensions": {
-                                "species_id": (1, 2),
-                                "time": 3,
-                                "deposition_type": "dry",
-                            },
-                        },
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "species_id": (1, 2),
+                                    "time": 3,
+                                    "deposition_type": "dry",
+                                },
+                            }
+                        ],
                     },
                 ],
                 [
                     {
-                        "panels": {
-                            "dimensions": {
-                                "species_id": (1, 2),
-                                "time": 6,
-                                "deposition_type": "dry",
-                            },
-                        },
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "species_id": (1, 2),
+                                    "time": 6,
+                                    "deposition_type": "dry",
+                                },
+                            }
+                        ],
                     },
                 ],
                 [
                     {
-                        "panels": {
-                            "dimensions": {
-                                "species_id": (1, 2),
-                                "time": 0,
-                                "deposition_type": "wet",
-                            },
-                        },
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "species_id": (1, 2),
+                                    "time": 0,
+                                    "deposition_type": "wet",
+                                },
+                            }
+                        ],
                     },
                 ],
                 [
                     {
-                        "panels": {
-                            "dimensions": {
-                                "species_id": (1, 2),
-                                "time": 3,
-                                "deposition_type": "wet",
-                            },
-                        },
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "species_id": (1, 2),
+                                    "time": 3,
+                                    "deposition_type": "wet",
+                                },
+                            }
+                        ],
                     },
                 ],
                 [
                     {
-                        "panels": {
-                            "dimensions": {
-                                "species_id": (1, 2),
-                                "time": 6,
-                                "deposition_type": "wet",
-                            },
-                        },
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "species_id": (1, 2),
+                                    "time": 6,
+                                    "deposition_type": "wet",
+                                },
+                            }
+                        ],
                     },
                 ],
             ],
@@ -458,9 +596,11 @@ def test_single_setup_deposition(datadir: str, config: ConfSingleSetup):
             "model": {
                 "name": "COSMO-1",
             },
-            "panels": {
-                "input_variable": "deposition",
-            },
+            "panels": [
+                {
+                    "input_variable": "deposition",
+                }
+            ],
         },
     )
     _test_single_setup_core(config, params)
@@ -473,88 +613,122 @@ def test_single_setup_deposition(datadir: str, config: ConfSingleSetup):
         ConfMultipleSetups(  # [conf0]
             setup_dct_lst=[
                 {
-                    "panels": {
-                        "input_variable": "concentration",
-                        "dimensions": {"species_id": 1, "level": 0, "time": 0},
-                    },
+                    "panels": [
+                        {
+                            "input_variable": "concentration",
+                            "dimensions": {"species_id": 1, "level": 0, "time": 0},
+                        }
+                    ],
                 },
                 {
-                    "panels": {
-                        "input_variable": "deposition",
-                        "dimensions": {
-                            "species_id": 1,
-                            "time": 0,
-                            "deposition_type": "dry",
-                        },
-                    },
+                    "panels": [
+                        {
+                            "input_variable": "deposition",
+                            "dimensions": {
+                                "species_id": 1,
+                                "time": 0,
+                                "deposition_type": "dry",
+                            },
+                        }
+                    ],
                 },
             ],
             sol=[
-                [{"panels": {"input_variable": "concentration"}}],
-                [{"panels": {"input_variable": "deposition"}}],
+                [{"panels": [{"input_variable": "concentration"}]}],
+                [{"panels": [{"input_variable": "deposition"}]}],
             ],
         ),
         ConfMultipleSetups(  # [conf1]
             setup_dct_lst=[
                 {
-                    "panels": {
-                        "input_variable": "concentration",
-                        "combine_levels": False,
-                        "dimensions": {
-                            "species_id": (1, 2),
-                            "level": (0, 1),
-                            "time": (0, 3),
-                        },
-                        "combine_species": True,
-                    },
+                    "panels": [
+                        {
+                            "input_variable": "concentration",
+                            "combine_levels": False,
+                            "dimensions": {
+                                "species_id": (1, 2),
+                                "level": (0, 1),
+                                "time": (0, 3),
+                            },
+                            "combine_species": True,
+                        }
+                    ],
                 },
                 {
-                    "panels": {
-                        "input_variable": "deposition",
-                        "combine_deposition_types": True,
-                        "combine_species": False,
-                        "dimensions": {
-                            "species_id": (1, 2),
-                            "time": (3, 6),
-                            "deposition_type": ("dry", "wet"),
-                        },
-                    },
+                    "panels": [
+                        {
+                            "input_variable": "deposition",
+                            "combine_deposition_types": True,
+                            "combine_species": False,
+                            "dimensions": {
+                                "species_id": (1, 2),
+                                "time": (3, 6),
+                                "deposition_type": ("dry", "wet"),
+                            },
+                        }
+                    ],
                 },
             ],
             sol=[
-                [merge_dicts(dct, {"panels": {"input_variable": "concentration"}})]
+                [merge_dicts(dct, {"panels": [{"input_variable": "concentration"}]})]
                 for dct in [
                     {
-                        "panels": {
-                            "dimensions": {"level": 0, "species_id": (1, 2), "time": 0}
-                        }
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "level": 0,
+                                    "species_id": (1, 2),
+                                    "time": 0,
+                                }
+                            }
+                        ],
                     },
                     {
-                        "panels": {
-                            "dimensions": {"level": 0, "species_id": (1, 2), "time": 3}
-                        }
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "level": 0,
+                                    "species_id": (1, 2),
+                                    "time": 3,
+                                }
+                            }
+                        ],
                     },
                     {
-                        "panels": {
-                            "dimensions": {"level": 1, "species_id": (1, 2), "time": 0}
-                        }
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "level": 1,
+                                    "species_id": (1, 2),
+                                    "time": 0,
+                                }
+                            }
+                        ],
                     },
                     {
-                        "panels": {
-                            "dimensions": {"level": 1, "species_id": (1, 2), "time": 3}
-                        }
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "level": 1,
+                                    "species_id": (1, 2),
+                                    "time": 3,
+                                }
+                            }
+                        ],
                     },
                 ]
             ]
             + [
                 [
                     {
-                        "panels": {
-                            "input_variable": "deposition",
-                            "dimensions": merge_dicts(
-                                dims, {"deposition_type": ("dry", "wet")}
-                            ),
-                        },
+                        "panels": [
+                            {
+                                "input_variable": "deposition",
+                                "dimensions": merge_dicts(
+                                    dims, {"deposition_type": ("dry", "wet")}
+                                ),
+                            }
+                        ],
                     },
                 ]
                 for dims in [
@@ -568,71 +742,111 @@ def test_single_setup_deposition(datadir: str, config: ConfSingleSetup):
         ConfMultipleSetups(  # [conf2]
             setup_dct_lst=[
                 {
-                    "panels": {
-                        "input_variable": "concentration",
-                        "combine_levels": True,
-                        "combine_species": False,
-                        "dimensions": {
-                            "species_id": (1, 2),
-                            "level": (0, 1),
-                            "time": 0,
-                        },
-                    },
+                    "panels": [
+                        {
+                            "input_variable": "concentration",
+                            "combine_levels": True,
+                            "combine_species": False,
+                            "dimensions": {
+                                "species_id": (1, 2),
+                                "level": (0, 1),
+                                "time": 0,
+                            },
+                        }
+                    ],
                 },
                 {
-                    "panels": {
-                        "input_variable": "concentration",
-                        "combine_levels": False,
-                        "combine_species": True,
-                        "dimensions": {
-                            "species_id": (1, 2),
-                            "level": (0, 1),
-                            "time": (0, 3),
-                        },
-                    },
+                    "panels": [
+                        {
+                            "input_variable": "concentration",
+                            "combine_levels": False,
+                            "combine_species": True,
+                            "dimensions": {
+                                "species_id": (1, 2),
+                                "level": (0, 1),
+                                "time": (0, 3),
+                            },
+                        }
+                    ],
                 },
             ],
             sol=[
                 [
                     {
-                        "panels": {
-                            "dimensions": {"level": (0, 1), "species_id": 1, "time": 0}
-                        }
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "level": (0, 1),
+                                    "species_id": 1,
+                                    "time": 0,
+                                }
+                            }
+                        ],
                     }
                 ],
                 [
                     {
-                        "panels": {
-                            "dimensions": {"level": (0, 1), "species_id": 2, "time": 0}
-                        }
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "level": (0, 1),
+                                    "species_id": 2,
+                                    "time": 0,
+                                }
+                            }
+                        ],
                     }
                 ],
                 [
                     {
-                        "panels": {
-                            "dimensions": {"level": 0, "species_id": (1, 2), "time": 0}
-                        }
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "level": 0,
+                                    "species_id": (1, 2),
+                                    "time": 0,
+                                }
+                            }
+                        ],
                     }
                 ],
                 [
                     {
-                        "panels": {
-                            "dimensions": {"level": 0, "species_id": (1, 2), "time": 3}
-                        }
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "level": 0,
+                                    "species_id": (1, 2),
+                                    "time": 3,
+                                }
+                            }
+                        ],
                     }
                 ],
                 [
                     {
-                        "panels": {
-                            "dimensions": {"level": 1, "species_id": (1, 2), "time": 0}
-                        }
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "level": 1,
+                                    "species_id": (1, 2),
+                                    "time": 0,
+                                }
+                            }
+                        ],
                     }
                 ],
                 [
                     {
-                        "panels": {
-                            "dimensions": {"level": 1, "species_id": (1, 2), "time": 3}
-                        }
+                        "panels": [
+                            {
+                                "dimensions": {
+                                    "level": 1,
+                                    "species_id": (1, 2),
+                                    "time": 3,
+                                }
+                            }
+                        ],
                     }
                 ],
             ],

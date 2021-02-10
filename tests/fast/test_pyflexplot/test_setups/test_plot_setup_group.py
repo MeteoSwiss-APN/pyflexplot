@@ -60,13 +60,15 @@ class Test_FromRawParams:
             {
                 "infile": "foo.nc",
                 "outfile": "foo.png",
-                "panels": {
-                    "input_variable": "concentration",
-                    "combine_species": False,
-                    "dimensions": {
-                        "species_id": (1, 2),
-                    },
-                },
+                "panels": [
+                    {
+                        "input_variable": "concentration",
+                        "combine_species": False,
+                        "dimensions": {
+                            "species_id": (1, 2),
+                        },
+                    }
+                ],
             },
         ]
         check_is_sub_element(sol, res, "solution", "result")
@@ -82,15 +84,17 @@ class Test_SetupGroup_Create:
         return [
             {
                 **base,
-                "panels": {"input_variable": "concentration", "domain": "ch"},
+                "panels": [{"input_variable": "concentration", "domain": "ch"}],
             },
             {
                 **base,
-                "panels": {"input_variable": "deposition", "lang": "de"},
+                "panels": [{"input_variable": "deposition", "lang": "de"}],
             },
             {
                 **base,
-                "panels": {"dimensions": {"nageclass": 1, "noutrel": 5, "numpoint": 3}},
+                "panels": [
+                    {"dimensions": {"nageclass": 1, "noutrel": 5, "numpoint": 3}}
+                ],
             },
         ]
 
@@ -124,10 +128,12 @@ class Test_SetupGroup_Compress:
             "model": {
                 "name": "COSMO-1",
             },
-            "panels": {
-                "input_variable": "concentration",
-                "dimensions": {"level": 0},
-            },
+            "panels": [
+                {
+                    "input_variable": "concentration",
+                    "dimensions": {"level": 0},
+                }
+            ],
         },
         {
             "infile": "foo.nc",
@@ -135,10 +141,12 @@ class Test_SetupGroup_Compress:
             "model": {
                 "name": "COSMO-1",
             },
-            "panels": {
-                "input_variable": "concentration",
-                "dimensions": {"level": 1},
-            },
+            "panels": [
+                {
+                    "input_variable": "concentration",
+                    "dimensions": {"level": 1},
+                }
+            ],
         },
         {
             "infile": "foo.nc",
@@ -146,10 +154,12 @@ class Test_SetupGroup_Compress:
             "model": {
                 "name": "COSMO-1",
             },
-            "panels": {
-                "input_variable": "concentration",
-                "dimensions": {"level": (1, 2)},
-            },
+            "panels": [
+                {
+                    "input_variable": "concentration",
+                    "dimensions": {"level": (1, 2)},
+                }
+            ],
         },
     ]
     setups_lst = [PlotSetup.create(dct) for dct in dcts]
@@ -162,14 +172,14 @@ class Test_SetupGroup_Compress:
     def test_two(self):
         res = PlotSetupGroup(self.setups_lst[:2]).compress().dict()
         sol = PlotSetup.create(self.dcts[0]).derive(
-            {"panels": {"dimensions": {"level": (0, 1)}}}
+            {"panels": [{"dimensions": {"level": (0, 1)}}]}
         )
         assert res == sol
 
     def test_three(self):
         res = PlotSetupGroup(self.setups_lst[:3]).compress().dict()
         sol = PlotSetup.create(self.dcts[0]).derive(
-            {"panels": {"dimensions": {"level": (0, 1, 2)}}}
+            {"panels": [{"dimensions": {"level": (0, 1, 2)}}]}
         )
         assert res == sol
 
@@ -215,10 +225,12 @@ class Test_SetupGroup_Group:
                 "model": {
                     "name": "COSMO-1",
                 },
-                "panels": {
-                    "combine_species": combine_species,
-                    "dimensions": {"species_id": [1, 2], "time": time},
-                },
+                "panels": [
+                    {
+                        "combine_species": combine_species,
+                        "dimensions": {"species_id": [1, 2], "time": time},
+                    }
+                ],
             }
             for outfile in self.outfile_lst
             for combine_species in self.combine_species_lst
@@ -227,22 +239,26 @@ class Test_SetupGroup_Group:
         assert len(base_dcts) == self.n_base
         concentration_dcts = [
             {
-                "panels": {
-                    "input_variable": "concentration",
-                    "combine_levels": combine_levels,
-                    "dimensions": {"level": [0, 1, 2]},
-                },
+                "panels": [
+                    {
+                        "input_variable": "concentration",
+                        "combine_levels": combine_levels,
+                        "dimensions": {"level": [0, 1, 2]},
+                    }
+                ],
             }
             for combine_levels in self.combine_levels_lst
         ]
         assert len(concentration_dcts) == self.n_concentration
         deposition_dcts = [
             {
-                "panels": {
-                    "input_variable": "deposition",
-                    "combine_deposition_types": True,
-                    "dimensions": {"deposition_type": deposition_type},
-                },
+                "panels": [
+                    {
+                        "input_variable": "deposition",
+                        "combine_deposition_types": True,
+                        "dimensions": {"deposition_type": deposition_type},
+                    }
+                ],
             }
             for deposition_type in self.deposition_type_lst
         ]

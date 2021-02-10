@@ -73,18 +73,20 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 "model": {
                     "name": "COSMO-1",
                 },
-                "panels": {
-                    "input_variable": "concentration",
-                    "integrate": False,
-                    "dimensions": {
-                        "level": 1,
-                        "nageclass": 0,
-                        "noutrel": 0,
-                        "numpoint": 0,
-                        "species_id": 2,
-                        "time": 3,
-                    },
-                },
+                "panels": [
+                    {
+                        "input_variable": "concentration",
+                        "integrate": False,
+                        "dimensions": {
+                            "level": 1,
+                            "nageclass": 0,
+                            "noutrel": 0,
+                            "numpoint": 0,
+                            "species_id": 2,
+                            "time": 3,
+                        },
+                    }
+                ],
             },
         ),
         Config(  # [config1]
@@ -95,18 +97,20 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 "model": {
                     "name": "COSMO-1",
                 },
-                "panels": {
-                    "input_variable": "deposition",
-                    "integrate": False,
-                    "dimensions": {
-                        "deposition_type": "dry",
-                        "nageclass": 0,
-                        "noutrel": 0,
-                        "numpoint": 0,
-                        "species_id": 2,
-                        "time": 3,
-                    },
-                },
+                "panels": [
+                    {
+                        "input_variable": "deposition",
+                        "integrate": False,
+                        "dimensions": {
+                            "deposition_type": "dry",
+                            "nageclass": 0,
+                            "noutrel": 0,
+                            "numpoint": 0,
+                            "species_id": 2,
+                            "time": 3,
+                        },
+                    }
+                ],
             },
             scale_fld_ref=1 / 3,
         ),
@@ -118,18 +122,20 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 "model": {
                     "name": "COSMO-1",
                 },
-                "panels": {
-                    "input_variable": "deposition",
-                    "integrate": False,
-                    "dimensions": {
-                        "deposition_type": "wet",
-                        "nageclass": 0,
-                        "noutrel": 0,
-                        "numpoint": 0,
-                        "species_id": 2,
-                        "time": 3,
-                    },
-                },
+                "panels": [
+                    {
+                        "input_variable": "deposition",
+                        "integrate": False,
+                        "dimensions": {
+                            "deposition_type": "wet",
+                            "nageclass": 0,
+                            "noutrel": 0,
+                            "numpoint": 0,
+                            "species_id": 2,
+                            "time": 3,
+                        },
+                    }
+                ],
             },
             scale_fld_ref=1 / 3,
         ),
@@ -141,19 +147,21 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 "model": {
                     "name": "COSMO-1",
                 },
-                "panels": {
-                    "input_variable": "deposition",
-                    "combine_deposition_types": True,
-                    "integrate": False,
-                    "dimensions": {
-                        "deposition_type": ["dry", "wet"],
-                        "nageclass": 0,
-                        "noutrel": 0,
-                        "numpoint": 0,
-                        "species_id": 2,
-                        "time": 3,
-                    },
-                },
+                "panels": [
+                    {
+                        "input_variable": "deposition",
+                        "combine_deposition_types": True,
+                        "integrate": False,
+                        "dimensions": {
+                            "deposition_type": ["dry", "wet"],
+                            "nageclass": 0,
+                            "noutrel": 0,
+                            "numpoint": 0,
+                            "species_id": 2,
+                            "time": 3,
+                        },
+                    }
+                ],
             },
             scale_fld_ref=1 / 3,
         ),
@@ -165,18 +173,20 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 "model": {
                     "name": "COSMO-1",
                 },
-                "panels": {
-                    "input_variable": "concentration",
-                    "integrate": False,
-                    "dimensions": {
-                        "level": 1,
-                        "nageclass": 0,
-                        "noutrel": 0,
-                        "numpoint": 0,
-                        "species_id": 1,
-                        "time": 3,
-                    },
-                },
+                "panels": [
+                    {
+                        "input_variable": "concentration",
+                        "integrate": False,
+                        "dimensions": {
+                            "level": 1,
+                            "nageclass": 0,
+                            "noutrel": 0,
+                            "numpoint": 0,
+                            "species_id": 1,
+                            "time": 3,
+                        },
+                    }
+                ],
             },
         ),
         Config(  # [config5]
@@ -187,19 +197,21 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 "model": {
                     "name": "COSMO-1",
                 },
-                "panels": {
-                    "input_variable": "deposition",
-                    "combine_deposition_types": True,
-                    "integrate": False,
-                    "dimensions": {
-                        "deposition_type": ["dry", "wet"],
-                        "nageclass": 0,
-                        "noutrel": 0,
-                        "numpoint": 0,
-                        "species_id": 1,
-                        "time": 3,
-                    },
-                },
+                "panels": [
+                    {
+                        "input_variable": "deposition",
+                        "combine_deposition_types": True,
+                        "integrate": False,
+                        "dimensions": {
+                            "deposition_type": ["dry", "wet"],
+                            "nageclass": 0,
+                            "noutrel": 0,
+                            "numpoint": 0,
+                            "species_id": 1,
+                            "time": 3,
+                        },
+                    }
+                ],
             },
             scale_fld_ref=1 / 3,
         ),
@@ -211,20 +223,22 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 "model": {
                     "name": "COSMO-1",
                 },
-                "panels": {
-                    "input_variable": "deposition",
-                    "combine_deposition_types": True,
-                    "combine_species": True,
-                    "integrate": False,
-                    "dimensions": {
-                        "deposition_type": ["dry", "wet"],
-                        "nageclass": 0,
-                        "noutrel": 0,
-                        "numpoint": 0,
-                        "species_id": [1, 2],
-                        "time": 3,
-                    },
-                },
+                "panels": [
+                    {
+                        "input_variable": "deposition",
+                        "combine_deposition_types": True,
+                        "combine_species": True,
+                        "integrate": False,
+                        "dimensions": {
+                            "deposition_type": ["dry", "wet"],
+                            "nageclass": 0,
+                            "noutrel": 0,
+                            "numpoint": 0,
+                            "species_id": [1, 2],
+                            "time": 3,
+                        },
+                    }
+                ],
             },
             scale_fld_ref=1 / 3,
         ),
@@ -236,18 +250,20 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 "model": {
                     "name": "IFS-HRES",
                 },
-                "panels": {
-                    "input_variable": "concentration",
-                    "integrate": False,
-                    "dimensions": {
-                        "level": 1,
-                        "nageclass": 0,
-                        "noutrel": 0,
-                        "numpoint": 0,
-                        "species_id": 1,
-                        "time": 10,
-                    },
-                },
+                "panels": [
+                    {
+                        "input_variable": "concentration",
+                        "integrate": False,
+                        "dimensions": {
+                            "level": 1,
+                            "nageclass": 0,
+                            "noutrel": 0,
+                            "numpoint": 0,
+                            "species_id": 1,
+                            "time": 10,
+                        },
+                    }
+                ],
             },
         ),
         Config(  # [config8]
@@ -258,18 +274,20 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 "model": {
                     "name": "COSMO-1E",
                 },
-                "panels": {
-                    "input_variable": "concentration",
-                    "integrate": False,
-                    "dimensions": {
-                        "level": 0,
-                        "nageclass": 0,
-                        "noutrel": 0,
-                        "numpoint": 0,
-                        "species_id": 1,
-                        "time": 10,
-                    },
-                },
+                "panels": [
+                    {
+                        "input_variable": "concentration",
+                        "integrate": False,
+                        "dimensions": {
+                            "level": 0,
+                            "nageclass": 0,
+                            "noutrel": 0,
+                            "numpoint": 0,
+                            "species_id": 1,
+                            "time": 10,
+                        },
+                    }
+                ],
             },
         ),
     ],
@@ -330,18 +348,20 @@ def test_single(datadir, config):  # noqa:F811
                 "model": {
                     "name": "COSMO-1",
                 },
-                "panels": {
-                    "input_variable": "concentration",
-                    "integrate": True,
-                    "dimensions": {
-                        "level": [0, 2],
-                        "nageclass": 0,
-                        "noutrel": 0,
-                        "numpoint": 0,
-                        "species_id": 2,
-                        "time": [0, 3],
-                    },
-                },
+                "panels": [
+                    {
+                        "input_variable": "concentration",
+                        "integrate": True,
+                        "dimensions": {
+                            "level": [0, 2],
+                            "nageclass": 0,
+                            "noutrel": 0,
+                            "numpoint": 0,
+                            "species_id": 2,
+                            "time": [0, 3],
+                        },
+                    }
+                ],
             },
             scale_fld_ref=3.0,
         ),
@@ -353,18 +373,20 @@ def test_single(datadir, config):  # noqa:F811
                 "model": {
                     "name": "COSMO-1",
                 },
-                "panels": {
-                    "input_variable": "concentration",
-                    "integrate": True,
-                    "dimensions": {
-                        "level": [0, 2],
-                        "nageclass": 0,
-                        "noutrel": 0,
-                        "numpoint": 0,
-                        "species_id": 2,
-                        "time": [0, 3],
-                    },
-                },
+                "panels": [
+                    {
+                        "input_variable": "concentration",
+                        "integrate": True,
+                        "dimensions": {
+                            "level": [0, 2],
+                            "nageclass": 0,
+                            "noutrel": 0,
+                            "numpoint": 0,
+                            "species_id": 2,
+                            "time": [0, 3],
+                        },
+                    }
+                ],
             },
             scale_fld_ref=3.0,
         ),
@@ -376,18 +398,20 @@ def test_single(datadir, config):  # noqa:F811
                 "model": {
                     "name": "COSMO-1",
                 },
-                "panels": {
-                    "input_variable": "deposition",
-                    "integrate": True,
-                    "dimensions": {
-                        "deposition_type": "dry",
-                        "nageclass": 0,
-                        "noutrel": 0,
-                        "numpoint": 0,
-                        "species_id": 2,
-                        "time": [0, 3, 9],
-                    },
-                },
+                "panels": [
+                    {
+                        "input_variable": "deposition",
+                        "integrate": True,
+                        "dimensions": {
+                            "deposition_type": "dry",
+                            "nageclass": 0,
+                            "noutrel": 0,
+                            "numpoint": 0,
+                            "species_id": 2,
+                            "time": [0, 3, 9],
+                        },
+                    }
+                ],
             },
         ),
         Config(  # [config3]
@@ -398,18 +422,20 @@ def test_single(datadir, config):  # noqa:F811
                 "model": {
                     "name": "COSMO-1",
                 },
-                "panels": {
-                    "input_variable": "deposition",
-                    "integrate": True,
-                    "dimensions": {
-                        "deposition_type": "wet",
-                        "nageclass": 0,
-                        "noutrel": 0,
-                        "numpoint": 0,
-                        "species_id": 2,
-                        "time": [0, 3, 9],
-                    },
-                },
+                "panels": [
+                    {
+                        "input_variable": "deposition",
+                        "integrate": True,
+                        "dimensions": {
+                            "deposition_type": "wet",
+                            "nageclass": 0,
+                            "noutrel": 0,
+                            "numpoint": 0,
+                            "species_id": 2,
+                            "time": [0, 3, 9],
+                        },
+                    }
+                ],
             },
         ),
         Config(  # [config4]
@@ -420,19 +446,21 @@ def test_single(datadir, config):  # noqa:F811
                 "model": {
                     "name": "COSMO-1",
                 },
-                "panels": {
-                    "input_variable": "deposition",
-                    "combine_deposition_types": True,
-                    "integrate": True,
-                    "dimensions": {
-                        "deposition_type": ["dry", "wet"],
-                        "nageclass": 0,
-                        "noutrel": 0,
-                        "numpoint": 0,
-                        "species_id": 1,
-                        "time": [0, 3, 9],
-                    },
-                },
+                "panels": [
+                    {
+                        "input_variable": "deposition",
+                        "combine_deposition_types": True,
+                        "integrate": True,
+                        "dimensions": {
+                            "deposition_type": ["dry", "wet"],
+                            "nageclass": 0,
+                            "noutrel": 0,
+                            "numpoint": 0,
+                            "species_id": 1,
+                            "time": [0, 3, 9],
+                        },
+                    }
+                ],
             },
         ),
         Config(  # [config5]
@@ -443,20 +471,22 @@ def test_single(datadir, config):  # noqa:F811
                 "model": {
                     "name": "COSMO-1",
                 },
-                "panels": {
-                    "input_variable": "concentration",
-                    "integrate": True,
-                    "dimensions": {
-                        "level": 0,
-                        "nageclass": 0,
-                        "noutrel": 0,
-                        "numpoint": 0,
-                        "species_id": 1,
-                        "time": [0, 3, 9],
-                    },
-                },
+                "panels": [
+                    {
+                        "input_variable": "concentration",
+                        "integrate": True,
+                        "dimensions": {
+                            "level": 0,
+                            "nageclass": 0,
+                            "noutrel": 0,
+                            "numpoint": 0,
+                            "species_id": 1,
+                            "time": [0, 3, 9],
+                        },
+                    }
+                ],
             },
-            derived_setup_params=[{"panels": {"dimensions": {"level": 2}}}],
+            derived_setup_params=[{"panels": [{"dimensions": {"level": 2}}]}],
             scale_fld_ref=3.0,
         ),
         Config(  # [config6]
@@ -467,18 +497,20 @@ def test_single(datadir, config):  # noqa:F811
                 "model": {
                     "name": "COSMO-1",
                 },
-                "panels": {
-                    "input_variable": "deposition",
-                    "integrate": True,
-                    "dimensions": {
-                        "deposition_type": ["wet", "dry"],
-                        "nageclass": 0,
-                        "noutrel": 0,
-                        "numpoint": 0,
-                        "species_id": 1,
-                        "time": [0, 3, 9],
-                    },
-                },
+                "panels": [
+                    {
+                        "input_variable": "deposition",
+                        "integrate": True,
+                        "dimensions": {
+                            "deposition_type": ["wet", "dry"],
+                            "nageclass": 0,
+                            "noutrel": 0,
+                            "numpoint": 0,
+                            "species_id": 1,
+                            "time": [0, 3, 9],
+                        },
+                    }
+                ],
             },
         ),
     ],
@@ -550,18 +582,20 @@ def test_multiple(datadir, config):  # noqa:F811
                 "model": {
                     "name": "COSMO-1",
                 },
-                "panels": {
-                    "input_variable": "concentration",
-                    "integrate": False,
-                    "dimensions": {
-                        "level": 1,
-                        "nageclass": 0,
-                        "noutrel": 0,
-                        "numpoint": 0,
-                        "species_id": 2,
-                        "time": None,
-                    },
-                },
+                "panels": [
+                    {
+                        "input_variable": "concentration",
+                        "integrate": False,
+                        "dimensions": {
+                            "level": 1,
+                            "nageclass": 0,
+                            "noutrel": 0,
+                            "numpoint": 0,
+                            "species_id": 2,
+                            "time": None,
+                        },
+                    }
+                ],
             },
         ),
         Config(
@@ -572,19 +606,21 @@ def test_multiple(datadir, config):  # noqa:F811
                 "model": {
                     "name": "COSMO-1",
                 },
-                "panels": {
-                    "input_variable": "deposition",
-                    "combine_deposition_types": True,
-                    "integrate": False,
-                    "dimensions": {
-                        "deposition_type": ["dry", "wet"],
-                        "nageclass": 0,
-                        "noutrel": 0,
-                        "numpoint": 0,
-                        "species_id": 2,
-                        "time": None,
-                    },
-                },
+                "panels": [
+                    {
+                        "input_variable": "deposition",
+                        "combine_deposition_types": True,
+                        "integrate": False,
+                        "dimensions": {
+                            "deposition_type": ["dry", "wet"],
+                            "nageclass": 0,
+                            "noutrel": 0,
+                            "numpoint": 0,
+                            "species_id": 2,
+                            "time": None,
+                        },
+                    }
+                ],
             },
             scale_fld_ref=1 / 3,
         ),
@@ -620,19 +656,21 @@ def test_missing_deposition_cosmo(datadir):  # noqa:F811
         "model": {
             "name": "COSMO-1E",
         },
-        "panels": {
-            "input_variable": "deposition",
-            "integrate": True,
-            "combine_deposition_types": True,
-            "dimensions": {
-                "deposition_type": ("dry", "wet"),
-                "nageclass": 0,
-                "noutrel": 0,
-                "numpoint": 0,
-                "species_id": 1,
-                "time": 10,
-            },
-        },
+        "panels": [
+            {
+                "input_variable": "deposition",
+                "integrate": True,
+                "combine_deposition_types": True,
+                "dimensions": {
+                    "deposition_type": ("dry", "wet"),
+                    "nageclass": 0,
+                    "noutrel": 0,
+                    "numpoint": 0,
+                    "species_id": 1,
+                    "time": 10,
+                },
+            }
+        ],
     }
     setup = PlotSetup.create(setup_dct)
     datafile = f"{datadir}/{setup_dct['infile']}"
@@ -657,19 +695,21 @@ def test_missing_deposition_ifs(datadir):  # noqa:F811
         "model": {
             "name": "IFS-HRES-EU",
         },
-        "panels": {
-            "input_variable": "deposition",
-            "integrate": True,
-            "combine_deposition_types": True,
-            "dimensions": {
-                "deposition_type": ("dry", "wet"),
-                "nageclass": 0,
-                "noutrel": 0,
-                "numpoint": 0,
-                "species_id": 1,
-                "time": 10,
-            },
-        },
+        "panels": [
+            {
+                "input_variable": "deposition",
+                "integrate": True,
+                "combine_deposition_types": True,
+                "dimensions": {
+                    "deposition_type": ("dry", "wet"),
+                    "nageclass": 0,
+                    "noutrel": 0,
+                    "numpoint": 0,
+                    "species_id": 1,
+                    "time": 10,
+                },
+            }
+        ],
     }
     setup = PlotSetup.create(setup_dct)
     datafile = f"{datadir}/{setup_dct['infile']}"
@@ -694,20 +734,22 @@ def test_affected_area(datadir):  # noqa:F811
         "model": {
             "name": "COSMO-1E",
         },
-        "panels": {
-            "input_variable": "affected_area",
-            "integrate": True,
-            "combine_deposition_types": True,
-            "dimensions": {
-                "deposition_type": ("dry", "wet"),
-                "level": 0,
-                "nageclass": 0,
-                "noutrel": 0,
-                "numpoint": 0,
-                "species_id": 1,
-                "time": -1,
-            },
-        },
+        "panels": [
+            {
+                "input_variable": "affected_area",
+                "integrate": True,
+                "combine_deposition_types": True,
+                "dimensions": {
+                    "deposition_type": ("dry", "wet"),
+                    "level": 0,
+                    "nageclass": 0,
+                    "noutrel": 0,
+                    "numpoint": 0,
+                    "species_id": 1,
+                    "time": -1,
+                },
+            }
+        ],
     }
     setup = PlotSetup.create(setup_dct)
     datafile = f"{datadir}/{setup_dct['infile']}"

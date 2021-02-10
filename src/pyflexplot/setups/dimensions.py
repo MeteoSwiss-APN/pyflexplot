@@ -31,6 +31,11 @@ from srutils.str import join_multilines
 from ..utils.summarize import summarizable
 
 
+# SR_TMP <<< TODO cleaner solution
+def is_dimensions_param(param: str) -> bool:
+    return param.replace("dimensions.", "") in Dimensions.get_params()
+
+
 # SR_TODO Clean up docstring -- where should format key hints go?
 @dataclass
 class CoreDimensions:
@@ -93,8 +98,6 @@ class CoreDimensions:
 # pylint: disable=R0902  # too-many-instance-attributes
 class Dimensions:
     """A collection of Dimensions objects."""
-
-    params: Tuple[str, ...] = tuple(CoreDimensions.get_params())
 
     def __init__(self, core: Optional[Sequence[CoreDimensions]] = None) -> None:
         """Create an instance of ``Dimensions``."""
@@ -191,6 +194,12 @@ class Dimensions:
                 ``skip`` and ``select`` will be skipped.
 
         """
+        for param in select or []:
+            if param not in self.get_params():
+                raise ValueError(f"invalid param in select: {param}")
+        for param in skip or []:
+            if param not in self.get_params():
+                raise ValueError(f"invalid param in skip: {param}")
         dicts = decompress_multival_dict(self.dict(), select=select, skip=skip)
         return list(map(self.create, dicts))
 
@@ -310,10 +319,8 @@ class Dimensions:
         return hash(self.tuple())
 
     def __eq__(self, other) -> bool:
-        # SR_DBG <
         if isinstance(other, dataclasses._MISSING_TYPE):
             return False
-        # SR_DBG >
         try:
             other_dict = other.dict()
         except AttributeError:

@@ -22,12 +22,14 @@ class Test_Setup_Create:
                 "name": "COSMO-1",
                 "ens_member_id": (0, 1, 5, 10, 15, 20),
             },
-            "panels": {
-                "integrate": False,
-                "ens_variable": "mean",
-                "dimensions": {"time": 10, "level": 1},
-                "input_variable": "concentration",
-            },
+            "panels": [
+                {
+                    "integrate": False,
+                    "ens_variable": "mean",
+                    "dimensions": {"time": 10, "level": 1},
+                    "input_variable": "concentration",
+                }
+            ],
         }
         setup = PlotSetup.create(params)
         res = setup.dict()
@@ -36,17 +38,17 @@ class Test_Setup_Create:
     @pytest.mark.parametrize(
         "dct",
         [
-            {"panels": {"input_variable": ["concentration", "deposition"]}},  # [dct0]
-            {"panels": {"ens_variable": ["minimum", "maximum"]}},  # [dct1]
-            {"panels": {"integrate": [True, False]}},  # [dct2]
-            {"panels": {"combine_deposition_types": [True, False]}},  # [dct3]
-            {"panels": {"combine_levels": [True, False]}},  # [dct4]
-            {"panels": {"combine_species": [True, False]}},  # [dct5]
-            {"panels": {"lang": ["en", "de"]}},  # [dct6]
-            {"panels": {"domain": ["full", "ch"]}},  # [dct7]
-            {"panels": {"domain_size_lat": [None, 100]}},  # [dct8]
-            {"panels": {"domain_size_lon": [None, 100]}},  # [dct9]
-            {"panels": {"dimensions_default": ["all", "first"]}},  # [dct10]
+            {"panels": [{"input_variable": ["concentration", "deposition"]}]},  # [dct0]
+            {"panels": [{"ens_variable": ["minimum", "maximum"]}]},  # [dct1]
+            {"panels": [{"integrate": [True, False]}]},  # [dct2]
+            {"panels": [{"combine_deposition_types": [True, False]}]},  # [dct3]
+            {"panels": [{"combine_levels": [True, False]}]},  # [dct4]
+            {"panels": [{"combine_species": [True, False]}]},  # [dct5]
+            {"panels": [{"lang": ["en", "de"]}]},  # [dct6]
+            {"panels": [{"domain": ["full", "ch"]}]},  # [dct7]
+            {"panels": [{"domain_size_lat": [None, 100]}]},  # [dct8]
+            {"panels": [{"domain_size_lon": [None, 100]}]},  # [dct9]
+            {"panels": [{"dimensions_default": ["all", "first"]}]},  # [dct10]
         ],
     )
     def test_multiple_values_fail(self, dct):
@@ -60,17 +62,19 @@ class Test_Setup_Decompress:
     def setup(self):
         return DEFAULT_SETUP.derive(
             {
-                "panels": {
-                    "input_variable": "deposition",
-                    "dimensions": {
-                        "deposition_type": ["dry", "wet"],
-                        "nageclass": (0,),
-                        "noutrel": (0,),
-                        "numpoint": (0,),
-                        "species_id": [1, 2],
-                        "time": [1, 2, 3],
-                    },
-                },
+                "panels": [
+                    {
+                        "input_variable": "deposition",
+                        "dimensions": {
+                            "deposition_type": ["dry", "wet"],
+                            "nageclass": (0,),
+                            "noutrel": (0,),
+                            "numpoint": (0,),
+                            "species_id": [1, 2],
+                            "time": [1, 2, 3],
+                        },
+                    }
+                ],
             },
         )
 
@@ -78,36 +82,6 @@ class Test_Setup_Decompress:
         """Decompress all params."""
         setups = self.setup.decompress()
         assert len(setups) == 12
-        res = {
-            (
-                s.panels.collect_equal("dimensions").deposition_type,
-                s.panels.collect_equal("dimensions").species_id,
-                s.panels.collect_equal("dimensions").time,
-            )
-            for s in setups
-        }
-        sol = {
-            ("dry", 1, 1),
-            ("dry", 1, 2),
-            ("dry", 1, 3),
-            ("dry", 2, 1),
-            ("dry", 2, 2),
-            ("dry", 2, 3),
-            ("wet", 1, 1),
-            ("wet", 1, 2),
-            ("wet", 1, 3),
-            ("wet", 2, 1),
-            ("wet", 2, 2),
-            ("wet", 2, 3),
-        }
-        assert res == sol
-
-    def test_full_with_partially(self):
-        """Decompress all params."""
-        setups = self.setup.decompress_partially(None)
-        assert len(setups) == 12
-        assert isinstance(setups, PlotSetupGroup)
-        assert all(isinstance(setup, PlotSetup) for setup in setups)
         res = {
             (
                 s.panels.collect_equal("dimensions").deposition_type,

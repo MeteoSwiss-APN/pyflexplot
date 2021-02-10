@@ -19,9 +19,9 @@ from srutils.dict import decompress_nested_dict
 from srutils.dict import nested_dict_resolve_wildcards
 
 # Local
-from .setup import is_dimensions_param
-from .setup import is_model_setup_param
-from .setup import is_plot_panel_setup_param
+from .dimensions import is_dimensions_param
+from .model_setup import is_model_setup_param
+from .plot_panel_setup import is_plot_panel_setup_param
 from .setup import PlotSetup
 from .setup import PlotSetupGroup
 
@@ -120,31 +120,28 @@ class SetupFile:
         params_lst = []
         for raw_params_i in raw_params_lst:
             params: Dict[str, Any] = {}
+            panels: Dict[str, Any] = {}
             ens_params: Dict[str, Any] = {}
             for param, value in raw_params_i.items():
                 if param == "model":
                     param = "name"
-                if is_model_setup_param(param):
+                if is_plot_panel_setup_param(param):
+                    panels[param] = value
+                elif is_model_setup_param(param):
                     if "model" not in params:
                         params["model"] = {}
                     params["model"][param] = value
-                elif is_plot_panel_setup_param(param):
-                    if "panels" not in params:
-                        params["panels"] = {}
-                    params["panels"][param] = value
                 elif is_dimensions_param(param):
-                    if "panels" not in params:
-                        params["panels"] = {}
-                    if "dimensions" not in params["panels"]:
-                        params["panels"]["dimensions"] = {}
-                    params["panels"]["dimensions"][param] = value
+                    if "dimensions" not in panels:
+                        panels["dimensions"] = {}
+                    panels["dimensions"][param] = value
                 elif param.startswith("ens_param_"):
-                    ens_params[param.lstrip("ens_param_")] = value
+                    ens_params[param[len("ens_param_") :]] = value
                 else:
                     params[param] = value
             if ens_params:
-                if "panels" not in params:
-                    params["panels"] = {}
-                params["panels"]["ens_params"] = ens_params
+                panels["ens_params"] = ens_params
+            if panels:
+                params["panels"] = [panels]
             params_lst.append(params)
         return params_lst

@@ -22,34 +22,36 @@ MANDATORY_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
 }
 
 OPTIONAL_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
-    "panels": {
-        "combine_deposition_types": False,
-        "combine_levels": False,
-        "combine_species": False,
-        "dimensions_default": "all",
-        "dimensions": {
-            "deposition_type": None,
-            "level": None,
-            "nageclass": None,
-            "noutrel": None,
-            "numpoint": None,
-            "species_id": None,
-            "time": None,
-        },
-        "domain": "full",
-        "domain_size_lat": None,
-        "domain_size_lon": None,
-        "ens_params": {
-            "mem_min": None,
-            "pctl": None,
-            "thr": None,
-            "thr_type": "lower",
-        },
-        "ens_variable": "none",
-        "input_variable": "concentration",
-        "integrate": False,
-        "lang": "en",
-    },
+    "panels": [
+        {
+            "combine_deposition_types": False,
+            "combine_levels": False,
+            "combine_species": False,
+            "dimensions_default": "all",
+            "dimensions": {
+                "deposition_type": None,
+                "level": None,
+                "nageclass": None,
+                "noutrel": None,
+                "numpoint": None,
+                "species_id": None,
+                "time": None,
+            },
+            "domain": "full",
+            "domain_size_lat": None,
+            "domain_size_lon": None,
+            "ens_params": {
+                "mem_min": None,
+                "pctl": None,
+                "thr": None,
+                "thr_type": "lower",
+            },
+            "ens_variable": "none",
+            "input_variable": "concentration",
+            "integrate": False,
+            "lang": "en",
+        }
+    ],
     "model": {
         "base_time": None,
         "ens_member_id": None,
@@ -75,24 +77,28 @@ DEFAULT_PARAMS = merge_dicts(
             [
                 PlotPanelSetup(
                     **merge_dicts(
-                        RAW_DEFAULT_PARAMS["panels"],
+                        RAW_DEFAULT_PARAMS["panels"][0],
                         {
                             "dimensions": Dimensions(
                                 [
                                     CoreDimensions(
-                                        **RAW_DEFAULT_PARAMS["panels"]["dimensions"]
+                                        **RAW_DEFAULT_PARAMS["panels"][0]["dimensions"]
                                     )
                                 ]
                             ),
                             "ens_params": EnsembleParams(
-                                **RAW_DEFAULT_PARAMS["panels"]["ens_params"]
+                                **RAW_DEFAULT_PARAMS["panels"][0]["ens_params"]
                             ),
                         },
+                        overwrite_seqs=True,
+                        overwrite_seq_dicts=True,
                     ),
                 ),
             ],
         ),
     },
+    overwrite_seqs=True,
+    overwrite_seq_dicts=True,
 )
 
 

@@ -24,17 +24,19 @@ class Test_Concentration(_TestBase):
         "model": {
             "name": "COSMO-1",
         },
-        "panels": {
-            "input_variable": "concentration",
-            "integrate": False,
-            "lang": "de",
-            "domain": "full",
-            "dimensions": {
-                "species_id": 1,
-                "time": 5,
-                "level": 0,
-            },
-        },
+        "panels": [
+            {
+                "input_variable": "concentration",
+                "integrate": False,
+                "lang": "de",
+                "domain": "full",
+                "dimensions": {
+                    "species_id": 1,
+                    "time": 5,
+                    "level": 0,
+                },
+            }
+        ],
     }
 
 
@@ -47,17 +49,19 @@ class Test_IntegratedConcentration(_TestBase):
         "model": {
             "name": "COSMO-1",
         },
-        "panels": {
-            "input_variable": "concentration",
-            "integrate": True,
-            "lang": "en",
-            "domain": "ch",
-            "dimensions": {
-                "species_id": 1,
-                "time": 10,
-                "level": 0,
-            },
-        },
+        "panels": [
+            {
+                "input_variable": "concentration",
+                "integrate": True,
+                "lang": "en",
+                "domain": "ch",
+                "dimensions": {
+                    "species_id": 1,
+                    "time": 10,
+                    "level": 0,
+                },
+            }
+        ],
     }
 
 
@@ -70,17 +74,19 @@ class Test_TotalDeposition(_TestBase):
         "model": {
             "name": "COSMO-1",
         },
-        "panels": {
-            "input_variable": "deposition",
-            "combine_deposition_types": True,
-            "integrate": True,
-            "lang": "de",
-            "domain": "full",
-            "dimensions": {
-                "species_id": 1,
-                "time": -1,
-            },
-        },
+        "panels": [
+            {
+                "input_variable": "deposition",
+                "combine_deposition_types": True,
+                "integrate": True,
+                "lang": "de",
+                "domain": "full",
+                "dimensions": {
+                    "species_id": 1,
+                    "time": -1,
+                },
+            }
+        ],
     }
 
 
@@ -92,19 +98,21 @@ class Test_AffectedArea(_TestBase):
             "name": "COSMO-1",
         },
         "outfile": f"{reference}.png",
-        "panels": {
-            "combine_deposition_types": True,
-            "domain": "ch",
-            "input_variable": "affected_area",
-            "integrate": True,
-            "lang": "en",
-            "dimensions": {
-                "deposition_type": ["dry", "wet"],
-                "level": 0,
-                "species_id": 1,
-                "time": -1,
-            },
-        },
+        "panels": [
+            {
+                "combine_deposition_types": True,
+                "domain": "ch",
+                "input_variable": "affected_area",
+                "integrate": True,
+                "lang": "en",
+                "dimensions": {
+                    "deposition_type": ["dry", "wet"],
+                    "level": 0,
+                    "species_id": 1,
+                    "time": -1,
+                },
+            }
+        ],
     }
 
 
@@ -117,17 +125,19 @@ class Test_TotalDeposition_MissingField(_TestBase):
         "model": {
             "name": "COSMO-1",
         },
-        "panels": {
-            "input_variable": "deposition",
-            "combine_deposition_types": True,
-            "integrate": True,
-            "lang": "de",
-            "domain": "full",
-            "dimensions": {
-                "species_id": 1,
-                "time": -1,
-            },
-        },
+        "panels": [
+            {
+                "input_variable": "deposition",
+                "combine_deposition_types": True,
+                "integrate": True,
+                "lang": "de",
+                "domain": "full",
+                "dimensions": {
+                    "species_id": 1,
+                    "time": -1,
+                },
+            }
+        ],
     }
 
 
@@ -139,15 +149,17 @@ class Test_CloudArrivalTime(_TestBase):
         "model": {
             "name": "COSMO-1",
         },
-        "panels": {
-            "input_variable": "cloud_arrival_time",
-            "integrate": False,
-            "lang": "en",
-            "domain": "ch",
-            "dimensions": {
-                "species_id": 1,
-                "time": 0,
-                "level": 0,
-            },
-        },
+        "panels": [
+            {
+                "input_variable": "cloud_arrival_time",
+                "integrate": False,
+                "lang": "en",
+                "domain": "ch",
+                "dimensions": {
+                    "species_id": 1,
+                    "time": 0,
+                    "level": 0,
+                },
+            }
+        ],
     }

@@ -51,11 +51,13 @@ def test_one_setup_one_field(datadir, config):  # noqa:F811
             "name": "COSMO-2E",
             "ens_member_id": config.ens_mem_ids,
         },
-        "panels": {
-            "input_variable": "concentration",
-            "dimensions": {"time": -1, "species_id": 1, "level": 0},
-            "ens_variable": config.ens_var,
-        },
+        "panels": [
+            {
+                "input_variable": "concentration",
+                "dimensions": {"time": -1, "species_id": 1, "level": 0},
+                "ens_variable": config.ens_var,
+            }
+        ],
     }
     setup_dct_lst = [setup_dct]
     setups = PlotSetupGroup.create(setup_dct_lst)

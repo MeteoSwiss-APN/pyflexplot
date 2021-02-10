@@ -15,7 +15,11 @@ from typing import Union
 from srutils.dataclasses import cast_field_value
 
 
-# SR_TODO
+# SR_TMP <<< TODO cleaner solution
+def is_model_setup_param(param: str) -> bool:
+    return param.replace("model.", "") in ModelSetup.get_params()
+
+
 @dc.dataclass
 class ModelSetup:
     name: str = "N/A"

@@ -71,21 +71,21 @@ class Test_WildcardToNone:
     def test_species_id(self):
         params = merge_dicts(
             MANDATORY_RAW_DEFAULT_PARAMS,
-            {"panels": {"dimensions": {"species_id": "*"}}},
+            {"panels": [{"dimensions": {"species_id": "*"}}]},
         )
         setup = PlotSetup.create(params)
         assert setup.panels.collect_equal("dimensions").species_id is None
 
     def test_time(self):
         params = merge_dicts(
-            MANDATORY_RAW_DEFAULT_PARAMS, {"panels": {"dimensions": {"time": "*"}}}
+            MANDATORY_RAW_DEFAULT_PARAMS, {"panels": [{"dimensions": {"time": "*"}}]}
         )
         setup = PlotSetup.create(params)
         assert setup.panels.collect_equal("dimensions").time is None
 
     def test_level(self):
         params = merge_dicts(
-            MANDATORY_RAW_DEFAULT_PARAMS, {"panels": {"dimensions": {"level": "*"}}}
+            MANDATORY_RAW_DEFAULT_PARAMS, {"panels": [{"dimensions": {"level": "*"}}]}
         )
         setup = PlotSetup.create(params)
         assert setup.panels.collect_equal("dimensions").level is None
@@ -94,13 +94,15 @@ class Test_WildcardToNone:
         params = merge_dicts(
             MANDATORY_RAW_DEFAULT_PARAMS,
             {
-                "panels": {
-                    "dimensions": {
-                        "nageclass": "*",
-                        "noutrel": "*",
-                        "numpoint": "*",
-                    },
-                },
+                "panels": [
+                    {
+                        "dimensions": {
+                            "nageclass": "*",
+                            "noutrel": "*",
+                            "numpoint": "*",
+                        },
+                    }
+                ],
             },
         )
         setup = PlotSetup.create(params)
