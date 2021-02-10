@@ -9,6 +9,7 @@ the docstring of the class method ``Setup.create``.
 import dataclasses as dc
 from pprint import pformat
 from typing import Any
+from typing import Collection
 from typing import Dict
 from typing import Iterator
 from typing import List
@@ -23,6 +24,7 @@ from typing import Union
 from typing_extensions import Literal
 
 # First-party
+from pyflexplot.setups.setup import PlotSetupGroupFormatter
 from srutils.dataclasses import cast_field_value
 from srutils.dict import merge_dicts
 from srutils.exceptions import InvalidParameterValueError
@@ -295,7 +297,6 @@ class PlotPanelSetupGroup:
             ) from e
         # SR_TMP >
 
-    def collect_equal(self, param: str) -> Any:
     def decompress(self) -> List["PlotPanelSetupGroup"]:
         """Create a group object for each decompressed setup object."""
         groups_lst: List["PlotPanelSetupGroup"] = []
@@ -325,7 +326,7 @@ class PlotPanelSetupGroup:
 
     def __repr__(self) -> str:
         try:
-            return PlotPanelSetupGroupFormatter(self).repr()
+            return PlotSetupGroupFormatter(self).repr()
         # pylint: disable=W0703  # broad-except
         except Exception as e:
             return (
