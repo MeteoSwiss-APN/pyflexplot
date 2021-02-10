@@ -24,6 +24,7 @@ from typing_extensions import Literal
 
 # First-party
 from srutils.dataclasses import cast_field_value
+from srutils.dict import merge_dicts
 from srutils.exceptions import InvalidParameterValueError
 from srutils.format import nested_repr
 from srutils.format import sfmt
@@ -130,6 +131,19 @@ class PlotPanelSetup:
             return "none"
         else:
             return self.dimensions.deposition_type
+
+    def decompress(self) -> List["PlotPanelSetup"]:
+        setups: List["PlotPanelSetup"] = []
+        for dims in self.dimensions.decompress():
+            params = merge_dicts(
+                self.dict(),
+                {"dimensions": dims.dict()},
+                overwrite_seqs=True,
+                overwrite_seq_dicts=True,
+            )
+            setup = self.create(params)
+            setups.append(setup)
+        return setups
 
     @overload
     def complete_dimensions(

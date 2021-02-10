@@ -5,6 +5,7 @@ from typing import Dict
 
 # First-party
 from pyflexplot.setups.plot_panel_setup import PlotPanelSetup
+from srutils.testing import assert_is_sub_element
 
 
 class Test_CompleteDimensions:
@@ -101,3 +102,38 @@ class Test_CompleteDimensions:
         assert setup.dimensions.nageclass == 0
         assert setup.dimensions.noutrel == 0
         assert setup.dimensions.numpoint == 0
+
+
+class TestDecompress:
+    def test(self):
+        params = {
+            "input_variable": "deposition",
+            "combine_deposition_types": False,
+            "combine_species": False,
+            "dimensions": {
+                "deposition_type": ["dry", "wet"],
+                "nageclass": (0,),
+                "noutrel": (0,),
+                "numpoint": (0,),
+                "species_id": [1, 2],
+                "time": [1, 2, 3],
+            },
+        }
+        setup = PlotPanelSetup.create(params)
+        setups = setup.decompress()
+        dcts = [setup.dict() for setup in setups]
+        sol = [
+            {"dimensions": {"deposition_type": "dry", "species_id": 1, "time": 1}},
+            {"dimensions": {"deposition_type": "dry", "species_id": 1, "time": 2}},
+            {"dimensions": {"deposition_type": "dry", "species_id": 1, "time": 3}},
+            {"dimensions": {"deposition_type": "dry", "species_id": 2, "time": 1}},
+            {"dimensions": {"deposition_type": "dry", "species_id": 2, "time": 2}},
+            {"dimensions": {"deposition_type": "dry", "species_id": 2, "time": 3}},
+            {"dimensions": {"deposition_type": "wet", "species_id": 1, "time": 1}},
+            {"dimensions": {"deposition_type": "wet", "species_id": 1, "time": 2}},
+            {"dimensions": {"deposition_type": "wet", "species_id": 1, "time": 3}},
+            {"dimensions": {"deposition_type": "wet", "species_id": 2, "time": 1}},
+            {"dimensions": {"deposition_type": "wet", "species_id": 2, "time": 2}},
+            {"dimensions": {"deposition_type": "wet", "species_id": 2, "time": 3}},
+        ]
+        assert_is_sub_element(sol, dcts, "solution", "result")
