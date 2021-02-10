@@ -24,7 +24,6 @@ from typing import Union
 from typing_extensions import Literal
 
 # First-party
-from pyflexplot.setups.setup import PlotSetupGroupFormatter
 from srutils.dataclasses import cast_field_value
 from srutils.dict import merge_dicts
 from srutils.exceptions import InvalidParameterValueError
@@ -343,7 +342,7 @@ class PlotPanelSetupGroup:
 
     def __repr__(self) -> str:
         try:
-            return PlotSetupGroupFormatter(self).repr()
+            return PlotPanelSetupGroupFormatter(self).repr()
         # pylint: disable=W0703  # broad-except
         except Exception as e:
             return (
