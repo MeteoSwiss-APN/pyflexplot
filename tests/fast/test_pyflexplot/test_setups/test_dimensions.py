@@ -431,16 +431,17 @@ class Test_Interact:
 
 
 class TestDecompress:
-    def test(self):
-        params = {
-            "deposition_type": ["dry", "wet"],
-            "nageclass": (0,),
-            "noutrel": (0,),
-            "numpoint": (0,),
-            "species_id": [1, 2],
-            "time": [1, 2, 3],
-        }
-        dims = Dimensions.create(params)
+    params = {
+        "deposition_type": ["dry", "wet"],
+        "nageclass": (0,),
+        "noutrel": (0,),
+        "numpoint": (0,),
+        "species_id": [1, 2],
+        "time": [1, 2, 3],
+    }
+
+    def test_full(self):
+        dims = Dimensions.create(self.params)
         dims_lst = dims.decompress()
         dcts = [dims.dict() for dims in dims_lst]
         sol = [
@@ -456,5 +457,41 @@ class TestDecompress:
             {"deposition_type": "wet", "species_id": 2, "time": 1},
             {"deposition_type": "wet", "species_id": 2, "time": 2},
             {"deposition_type": "wet", "species_id": 2, "time": 3},
+        ]
+        assert_is_sub_element(sol, dcts, "solution", "result")
+
+    def test_skip(self):
+        dims = Dimensions.create(self.params)
+        dims_lst = dims.decompress(skip=["deposition_type", "time"])
+        dcts = [dims.dict() for dims in dims_lst]
+        sol = [
+            {"deposition_type": ["dry", "wet"], "species_id": 1, "time": [1, 2, 3]},
+            {"deposition_type": ["dry", "wet"], "species_id": 2, "time": [1, 2, 3]},
+        ]
+        assert_is_sub_element(sol, dcts, "solution", "result")
+
+    def test_select(self):
+        dims = Dimensions.create(self.params)
+        dims_lst = dims.decompress(select=["deposition_type", "time"])
+        dcts = [dims.dict() for dims in dims_lst]
+        sol = [
+            {"deposition_type": "dry", "species_id": [1, 2], "time": 1},
+            {"deposition_type": "dry", "species_id": [1, 2], "time": 2},
+            {"deposition_type": "dry", "species_id": [1, 2], "time": 3},
+            {"deposition_type": "wet", "species_id": [1, 2], "time": 1},
+            {"deposition_type": "wet", "species_id": [1, 2], "time": 2},
+            {"deposition_type": "wet", "species_id": [1, 2], "time": 3},
+        ]
+        assert_is_sub_element(sol, dcts, "solution", "result")
+
+    def test_select_skip(self):
+        dims = Dimensions.create(self.params)
+        dims_lst = dims.decompress(
+            select=["deposition_type", "time"], skip=["time", "species_id"]
+        )
+        dcts = [dims.dict() for dims in dims_lst]
+        sol = [
+            {"deposition_type": "dry", "species_id": [1, 2], "time": [1, 2, 3]},
+            {"deposition_type": "wet", "species_id": [1, 2], "time": [1, 2, 3]},
         ]
         assert_is_sub_element(sol, dcts, "solution", "result")

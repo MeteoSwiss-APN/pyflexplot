@@ -6,6 +6,7 @@ from dataclasses import asdict
 from dataclasses import dataclass
 from typing import Any
 from typing import cast
+from typing import Collection
 from typing import Dict
 from typing import Iterator
 from typing import List
@@ -172,8 +173,25 @@ class Dimensions:
         """Derive a new ``Dimensions`` object with some changed parameters."""
         return type(self).create({**self.dict(), **params})
 
-    def decompress(self) -> List["Dimensions"]:
-        dicts = decompress_multival_dict(self.dict())
+    def decompress(
+        self,
+        *,
+        select: Optional[Collection[str]] = None,
+        skip: Optional[Collection[str]] = None,
+    ) -> List["Dimensions"]:
+        """Create a dimensions object for each combination of list values.
+
+        Args:
+            select (optional): List of parameter names to select for
+                decompression; all others will be skipped; parameters named in
+                both ``select`` and ``dkip`` will be skipped.
+
+            skip (optional): List of parameter names to skip; if they have list
+                values, those are retained as such; parameters named in both
+                ``skip`` and ``select`` will be skipped.
+
+        """
+        dicts = decompress_multival_dict(self.dict(), select=select, skip=skip)
         return list(map(self.create, dicts))
 
     # pylint: disable=R0912  # too-many-branches
