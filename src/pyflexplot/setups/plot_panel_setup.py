@@ -134,9 +134,26 @@ class PlotPanelSetup:
         else:
             return self.dimensions.deposition_type
 
-    def decompress(self) -> List["PlotPanelSetup"]:
+    def decompress(
+        self,
+        *,
+        select: Optional[Collection[str]] = None,
+        skip: Optional[Collection[str]] = None,
+    ) -> List["PlotPanelSetup"]:
+        """Create a setup object for each decompressed dimensions object.
+
+        Args:
+            select (optional): List of parameter names to select for
+                decompression; all others will be skipped; parameters named in
+                both ``select`` and ``dkip`` will be skipped.
+
+            skip (optional): List of parameter names to skip; if they have list
+                values, those are retained as such; parameters named in both
+                ``skip`` and ``select`` will be skipped.
+
+        """
         setups: List["PlotPanelSetup"] = []
-        for dims in self.dimensions.decompress():
+        for dims in self.dimensions.decompress(select=select, skip=skip):
             params = merge_dicts(
                 self.dict(),
                 {"dimensions": dims.dict()},

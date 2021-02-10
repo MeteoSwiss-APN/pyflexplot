@@ -137,3 +137,63 @@ class TestDecompress:
             {"dimensions": {"deposition_type": "wet", "species_id": 2, "time": 3}},
         ]
         assert_is_sub_element(sol, dcts, "solution", "result")
+
+    def test_skip(self):
+        setup = PlotPanelSetup.create(self.params)
+        setups = setup.decompress(skip=["species_id"])
+        dcts = [setup.dict() for setup in setups]
+        sol = [
+            {"dimensions": {"deposition_type": "dry", "species_id": [1, 2], "time": 1}},
+            {"dimensions": {"deposition_type": "dry", "species_id": [1, 2], "time": 2}},
+            {"dimensions": {"deposition_type": "dry", "species_id": [1, 2], "time": 3}},
+            {"dimensions": {"deposition_type": "wet", "species_id": [1, 2], "time": 1}},
+            {"dimensions": {"deposition_type": "wet", "species_id": [1, 2], "time": 2}},
+            {"dimensions": {"deposition_type": "wet", "species_id": [1, 2], "time": 3}},
+        ]
+        assert_is_sub_element(sol, dcts, "solution", "result")
+
+    def test_select(self):
+        setup = PlotPanelSetup.create(self.params)
+        setups = setup.decompress(select=["species_id"])
+        dcts = [setup.dict() for setup in setups]
+        sol = [
+            {
+                "dimensions": {
+                    "deposition_type": ["dry", "wet"],
+                    "species_id": 1,
+                    "time": [1, 2, 3],
+                }
+            },
+            {
+                "dimensions": {
+                    "deposition_type": ["dry", "wet"],
+                    "species_id": 2,
+                    "time": [1, 2, 3],
+                }
+            },
+        ]
+        assert_is_sub_element(sol, dcts, "solution", "result")
+
+    def test_select_skip(self):
+        setup = PlotPanelSetup.create(self.params)
+        setups = setup.decompress(
+            select=["time", "species_id"], skip=["deposition_type", "time"]
+        )
+        dcts = [setup.dict() for setup in setups]
+        sol = [
+            {
+                "dimensions": {
+                    "deposition_type": ["dry", "wet"],
+                    "species_id": 1,
+                    "time": [1, 2, 3],
+                }
+            },
+            {
+                "dimensions": {
+                    "deposition_type": ["dry", "wet"],
+                    "species_id": 2,
+                    "time": [1, 2, 3],
+                }
+            },
+        ]
+        assert_is_sub_element(sol, dcts, "solution", "result")
