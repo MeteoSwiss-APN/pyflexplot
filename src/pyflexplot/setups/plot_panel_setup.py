@@ -302,23 +302,29 @@ class PlotPanelSetupGroup:
         # SR_TMP >
         self._panels = panels
 
-    def collect(self, param: str) -> List[Any]:
-        """Collect all unique values of a parameter for all setups."""
-        # SR_TMP <
-        try:
-            return [self.collect_equal(param)]
-        except Exception as e:
-            raise NotImplementedError(
-                f"{type(self).__name__}.collect for multiple values"
-            ) from e
-        # SR_TMP >
 
-    def decompress(self) -> List["PlotPanelSetupGroup"]:
-        """Create a group object for each decompressed setup object."""
+    def decompress(
+        self,
+        *,
+        select: Optional[Collection[str]] = None,
+        skip: Optional[Collection[str]] = None,
+    ) -> List["PlotPanelSetupGroup"]:
+        """Create a group object for each decompressed setup object.
+
+        Args:
+            select (optional): List of parameter names to select for
+                decompression; all others will be skipped; parameters named in
+                both ``select`` and ``dkip`` will be skipped.
+
+            skip (optional): List of parameter names to skip; if they have list
+                values, those are retained as such; parameters named in both
+                ``skip`` and ``select`` will be skipped.
+
+        """
         groups_lst: List["PlotPanelSetupGroup"] = []
         for setup in self:
-            setups = setup.decompress()
-            groups_lst_i = [type(self)([setup]) for setup in setups]
+            group_i = setup.decompress(select=select, skip=skip)
+            groups_lst_i = [type(self)([setup]) for setup in group_i]
             groups_lst.extend(groups_lst_i)
         return groups_lst
 
