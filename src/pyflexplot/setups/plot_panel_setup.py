@@ -138,7 +138,7 @@ class PlotPanelSetup:
         *,
         select: Optional[Collection[str]] = None,
         skip: Optional[Collection[str]] = None,
-    ) -> List["PlotPanelSetup"]:
+    ) -> "PlotPanelSetupGroup":
         """Create a setup object for each decompressed dimensions object.
 
         Args:
@@ -161,7 +161,7 @@ class PlotPanelSetup:
             )
             setup = self.create(params)
             setups.append(setup)
-        return setups
+        return PlotPanelSetupGroup(setups)
 
     @overload
     def complete_dimensions(

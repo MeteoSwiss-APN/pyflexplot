@@ -105,23 +105,24 @@ class Test_CompleteDimensions:
 
 
 class TestDecompress:
-    def test(self):
-        params = {
-            "input_variable": "deposition",
-            "combine_deposition_types": False,
-            "combine_species": False,
-            "dimensions": {
-                "deposition_type": ["dry", "wet"],
-                "nageclass": (0,),
-                "noutrel": (0,),
-                "numpoint": (0,),
-                "species_id": [1, 2],
-                "time": [1, 2, 3],
-            },
-        }
-        setup = PlotPanelSetup.create(params)
-        setups = setup.decompress()
-        dcts = [setup.dict() for setup in setups]
+    params = {
+        "input_variable": "deposition",
+        "combine_deposition_types": False,
+        "combine_species": False,
+        "dimensions": {
+            "deposition_type": ["dry", "wet"],
+            "nageclass": (0,),
+            "noutrel": (0,),
+            "numpoint": (0,),
+            "species_id": [1, 2],
+            "time": [1, 2, 3],
+        },
+    }
+
+    def test_full(self):
+        setup = PlotPanelSetup.create(self.params)
+        group = setup.decompress()
+        dcts = group.dicts()
         sol = [
             {"dimensions": {"deposition_type": "dry", "species_id": 1, "time": 1}},
             {"dimensions": {"deposition_type": "dry", "species_id": 1, "time": 2}},
@@ -140,8 +141,8 @@ class TestDecompress:
 
     def test_skip(self):
         setup = PlotPanelSetup.create(self.params)
-        setups = setup.decompress(skip=["species_id"])
-        dcts = [setup.dict() for setup in setups]
+        group = setup.decompress(skip=["species_id"])
+        dcts = group.dicts()
         sol = [
             {"dimensions": {"deposition_type": "dry", "species_id": [1, 2], "time": 1}},
             {"dimensions": {"deposition_type": "dry", "species_id": [1, 2], "time": 2}},
@@ -154,8 +155,8 @@ class TestDecompress:
 
     def test_select(self):
         setup = PlotPanelSetup.create(self.params)
-        setups = setup.decompress(select=["species_id"])
-        dcts = [setup.dict() for setup in setups]
+        group = setup.decompress(select=["species_id"])
+        dcts = group.dicts()
         sol = [
             {
                 "dimensions": {
@@ -176,10 +177,10 @@ class TestDecompress:
 
     def test_select_skip(self):
         setup = PlotPanelSetup.create(self.params)
-        setups = setup.decompress(
+        group = setup.decompress(
             select=["time", "species_id"], skip=["deposition_type", "time"]
         )
-        dcts = [setup.dict() for setup in setups]
+        dcts = group.dicts()
         sol = [
             {
                 "dimensions": {
