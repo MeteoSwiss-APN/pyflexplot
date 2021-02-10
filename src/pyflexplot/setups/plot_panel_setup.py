@@ -296,17 +296,14 @@ class PlotPanelSetupGroup:
         # SR_TMP >
 
     def collect_equal(self, param: str) -> Any:
-        """Get a plot panel setup parameter value."""
-        # SR_TMP <
-        if len(self._panels) > 1:
-            raise NotImplementedError("multipanel")
-        assert len(self) == 1
-        panel = self._panels[0]
-        try:
-            return getattr(panel, param)
-        except AttributeError as e:
-            raise e
-        # SR_TMP >
+    def decompress(self) -> List["PlotPanelSetupGroup"]:
+        """Create a group object for each decompressed setup object."""
+        groups_lst: List["PlotPanelSetupGroup"] = []
+        for setup in self:
+            setups = setup.decompress()
+            groups_lst_i = [type(self)([setup]) for setup in setups]
+            groups_lst.extend(groups_lst_i)
+        return groups_lst
 
     # SR_TMP <<< TODO Eliminate or adapt
     def dict(self) -> Dict[str, Any]:
