@@ -76,16 +76,22 @@ def merge_dicts(
 
     """
 
+    def is_sequence(obj: Any) -> bool:
+        """Check that an object is a non-string sequence."""
+        return isinstance(obj, Sequence) and not isinstance(obj, str)
+
     def merge_seqs(*seqs: Sequence[Any]) -> Sequence[Any]:
         if len(seqs) == 1:
             return next(iter(seqs))
-        if not all(isinstance(seq, Sequence) for seq in seqs):
+        if not all(map(is_sequence, seqs)):
             if overwrite_seqs:
                 return seqs[-1]
-            raise TypeError(
-                f"some but not all arguments are sequences: {list(map(type, seqs))}\n"
-                + "\n".join(map(str, seqs))
-            )
+            if not any(map(is_sequence, seqs)):
+                msg = "no arguments are sequences"
+            else:
+                msg = "some but not all arguments are sequences"
+            seq_types_s = ", ".join([type(seq).__name__ for seq in seqs])
+            raise TypeError(f"{msg}: {seq_types_s}\n" + "\n".join(map(str, seqs)))
         cls = type(seqs[0])
         seq_lens = list(map(len, seqs))
         if len(set(seq_lens)) > 1:
@@ -112,7 +118,7 @@ def merge_dicts(
                     f"element #{idx} is a mapping in some but not all sequences:\n"
                     + "\n".join(map(str, elements))
                 )
-            elif any(isinstance(seq[idx], Sequence) for seq in seqs):
+            elif any(map(is_sequence, elements)):
                 merged_seq.append(merge_seqs(*elements))
             else:
                 merged_seq.append(elements[-1])
@@ -130,7 +136,7 @@ def merge_dicts(
                     overwrite_seqs=overwrite_seqs,
                     overwrite_seq_dicts=overwrite_seq_dicts,
                 )
-            elif rec_seqs and isinstance(val, Sequence) and not isinstance(val, str):
+            elif rec_seqs and is_sequence(val):
                 if key not in seq_keys:
                     seq_keys.append(key)
                 merged[key] = None  # placeholder

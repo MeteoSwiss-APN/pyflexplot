@@ -58,9 +58,9 @@ class Cfg:
         Cfg(  # [cfg4]
             dcts=[
                 {0: {"a": [{"b": [[{"c": [1], "d": 4}]]}]}},
-                {0: {"a": [{"b": [[{"c": 1}]]}]}},
+                {0: {"a": [{"b": [[{"c": "1"}]]}]}},
             ],
-            sol={0: {"a": [{"b": [[{"c": 1, "d": 4}]]}]}},
+            sol={0: {"a": [{"b": [[{"c": "1", "d": 4}]]}]}},
             kwargs={"rec_seqs": True, "overwrite_seqs": True},
         ),
         Cfg(  # [cfg5]
@@ -103,7 +103,7 @@ class CfgFail:
                 {"x": [0, [1, 2]], "y": 3, "z": [{2: 4, 3: 6}]},
             ],
             ex=TypeError,
-            ex_msg=r"^some but not all arguments are sequences.*",
+            ex_msg=r"^(some but not all|no) arguments are sequences.*",
             kwargs={"rec_seqs": True, "overwrite_seqs": False},
         ),
         CfgFail(  # [cfg1]
@@ -112,7 +112,7 @@ class CfgFail:
                 {"a": [{"b": [[{"c": 1}]]}]},
             ],
             ex=TypeError,
-            ex_msg=r"^some but not all arguments are sequences.*",
+            ex_msg=r"^(some but not all|no) arguments are sequences.*",
             kwargs={"rec_seqs": True, "overwrite_seqs": False},
         ),
         CfgFail(  # [cfg2]

@@ -82,16 +82,39 @@ def ignored(obj):
     return isinstance(obj, IgnoredElement)
 
 
+def assert_is_sub_element(
+    obj_sub: Any, obj_super: Any, name_sub: str = "sub", name_super: str = "super"
+) -> None:
+    """Check recursively that ``obj_sub`` is a sub-element of ``obj_super``.
+
+    See docstring of ``check_is_sub_element`` for more details on arguments.
+
+    Args:
+        obj_sub: Sub-object of ``obj_super``.
+
+        obj_super: Super-object of ``obj_sub``.
+
+        name_sub (optional): Name of ``obj_sub``.
+
+        name_super (optional): Name of ``obj_super``.
+
+    """
+    try:
+        check_is_sub_element(obj_sub, obj_super, name_sub, name_super)
+    except CheckFailedError as e:
+        raise AssertionError(str(e)) from e
+
+
 # pylint: disable=R0912  # too-many-branches (>12)
 # pylint: disable=R0913  # too-many-arguments
 # pylint: disable=R0914  # too-many-locals
 def check_is_sub_element(
-    obj_sub,
-    obj_super,
-    name_sub="sub",
-    name_super="super",
-    idx_list=None,
-    idx_dict=None,
+    obj_sub: Any,
+    obj_super: Any,
+    name_sub: str = "sub",
+    name_super: str = "super",
+    idx_list: Optional[int] = None,
+    idx_dict: Optional[int] = None,
 ):
     """Check recursively that ``obj_sub`` is a sub-element of ``obj_super``.
 
