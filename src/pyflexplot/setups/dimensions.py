@@ -145,7 +145,7 @@ class Dimensions:
         a tuple is returned regardless of the number of values.
 
         """
-        if param not in self.params:
+        if param not in self.get_params():
             raise ValueError(param)
         values = []
         for core_dimension in self:
@@ -267,7 +267,7 @@ class Dimensions:
         parameter are compacted.
 
         """
-        return {param: self.get(param) for param in self.params}
+        return {param: self.get(param) for param in self.get_params()}
 
     def raw_dict(self) -> Dict[str, Tuple[Any, ...]]:
         """Return a raw dictionary representation.
@@ -275,7 +275,7 @@ class Dimensions:
         The parameter values are unordered, with duplicates and Nones retained.
 
         """
-        return {param: self.get_raw(param) for param in self.params}
+        return {param: self.get_raw(param) for param in self.get_params()}
 
     def copy(self) -> "Dimensions":
         return self.create(self.dict())
@@ -307,7 +307,7 @@ class Dimensions:
             return object.__getattribute__(self, name)
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if name in self.params:
+        if name in self.get_params():
             self.set(name, value)
         else:
             super().__setattr__(name, value)
@@ -317,6 +317,10 @@ class Dimensions:
         lines = [f"{param}={value}" for param, value in self.dict().items()]
         body = join_multilines(lines, indent=2)
         return f"{head}(\n{body}\n)"
+
+    @classmethod
+    def get_params(cls) -> List[str]:
+        return CoreDimensions.get_params()
 
     @classmethod
     def create(cls, params: Union["Dimensions", Mapping[str, Any]]) -> "Dimensions":
