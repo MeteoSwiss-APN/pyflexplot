@@ -21,8 +21,8 @@ import scipy.stats as sp_stats
 from srutils.various import check_array_indices
 
 # Local
-from ..setups.setup import PlotSetup
-from ..setups.setup import PlotSetupGroup
+from ..setups.plot_setup import PlotSetup
+from ..setups.plot_setup import PlotSetupGroup
 from ..utils.logging import log
 from .data import Cloud
 from .data import ensemble_probability

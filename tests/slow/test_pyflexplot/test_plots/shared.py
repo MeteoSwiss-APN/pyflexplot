@@ -17,8 +17,8 @@ from pyflexplot.input.read_fields import read_fields
 from pyflexplot.plots import create_plot
 from pyflexplot.plots import format_out_file_paths
 from pyflexplot.plots import prepare_plot
-from pyflexplot.setups.setup import PlotSetup
-from pyflexplot.setups.setup import PlotSetupGroup
+from pyflexplot.setups.plot_setup import PlotSetup
+from pyflexplot.setups.plot_setup import PlotSetupGroup
 from srutils.testing import assert_nested_equal
 
 # Black is only required to create test reference files, not to run the tests

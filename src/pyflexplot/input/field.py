@@ -22,8 +22,8 @@ from ..plotting.domain import CloudDomain
 from ..plotting.domain import Domain
 from ..plotting.domain import ReleaseSiteDomain
 from ..plotting.proj_bbox import Projections
-from ..setups.setup import PlotSetup
-from ..setups.setup import PlotSetupGroup
+from ..setups.plot_setup import PlotSetup
+from ..setups.plot_setup import PlotSetupGroup
 from ..utils.exceptions import ArrayDimensionError
 from ..utils.exceptions import FieldAllNaNError
 from ..utils.exceptions import InconsistentArrayShapesError

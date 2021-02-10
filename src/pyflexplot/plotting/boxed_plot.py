@@ -17,7 +17,7 @@ from matplotlib.figure import Figure
 # Local
 from ..input.field import Field
 from ..plot_layouts import BoxedPlotLayoutType
-from ..setups.setup import PlotSetup
+from ..setups.plot_setup import PlotSetup
 from ..utils.summarize import summarizable
 from ..utils.typing import ColorType
 from ..utils.typing import FontSizeType

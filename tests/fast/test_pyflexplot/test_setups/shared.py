@@ -10,7 +10,7 @@ from pyflexplot.setups.model_setup import ModelSetup
 from pyflexplot.setups.plot_panel_setup import EnsembleParams
 from pyflexplot.setups.plot_panel_setup import PlotPanelSetup
 from pyflexplot.setups.plot_panel_setup import PlotPanelSetupGroup
-from pyflexplot.setups.setup import PlotSetup
+from pyflexplot.setups.plot_setup import PlotSetup
 from srutils.dict import merge_dicts
 
 MANDATORY_RAW_DEFAULT_PARAMS: Dict[str, Any] = {

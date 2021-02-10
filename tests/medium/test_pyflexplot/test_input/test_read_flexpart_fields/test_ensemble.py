@@ -14,8 +14,8 @@ import pytest
 # First-party
 from pyflexplot.input.data import ensemble_probability
 from pyflexplot.input.read_fields import read_fields
-from pyflexplot.setups.setup import PlotSetup
-from pyflexplot.setups.setup import PlotSetupGroup
+from pyflexplot.setups.plot_setup import PlotSetup
+from pyflexplot.setups.plot_setup import PlotSetupGroup
 from srutils.dict import decompress_multival_dict
 from srutils.dict import merge_dicts
 

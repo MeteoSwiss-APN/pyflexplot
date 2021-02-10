@@ -63,8 +63,8 @@ from .plotting.map_axes import MapAxes
 from .plotting.map_axes import MapAxesConfig
 from .plotting.text_box_axes import TextBoxAxes
 from .setups.model_setup import ModelSetup
-from .setups.setup import PlotSetup
-from .setups.setup import PlotSetupGroup
+from .setups.plot_setup import PlotSetup
+from .setups.plot_setup import PlotSetupGroup
 from .utils.exceptions import FieldAllNaNError
 from .utils.formatting import escape_format_keys
 from .utils.formatting import format_level_ranges

@@ -32,7 +32,7 @@ from srutils.datetime import init_datetime
 from srutils.dict import compress_multival_dicts
 
 # Local
-from ..setups.setup import PlotSetup
+from ..setups.plot_setup import PlotSetup
 from ..words import SYMBOLS
 from .species import get_species
 from .species import Species

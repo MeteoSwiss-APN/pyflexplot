@@ -22,9 +22,9 @@ from pyflexplot.input.read_fields import read_fields
 from pyflexplot.setups.dimensions import is_dimensions_param
 from pyflexplot.setups.model_setup import is_model_setup_param
 from pyflexplot.setups.plot_panel_setup import is_plot_panel_setup_param
-from pyflexplot.setups.setup import is_plot_setup_param
-from pyflexplot.setups.setup import PlotSetup
-from pyflexplot.setups.setup import PlotSetupGroup
+from pyflexplot.setups.plot_setup import is_plot_setup_param
+from pyflexplot.setups.plot_setup import PlotSetup
+from pyflexplot.setups.plot_setup import PlotSetupGroup
 from srutils.dict import merge_dicts
 from srutils.testing import check_is_sub_element
 

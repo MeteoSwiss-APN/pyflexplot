@@ -22,8 +22,8 @@ from srutils.dict import nested_dict_resolve_wildcards
 from .dimensions import is_dimensions_param
 from .model_setup import is_model_setup_param
 from .plot_panel_setup import is_plot_panel_setup_param
-from .setup import PlotSetup
-from .setup import PlotSetupGroup
+from .plot_setup import PlotSetup
+from .plot_setup import PlotSetupGroup
 
 
 class SetupFile:
