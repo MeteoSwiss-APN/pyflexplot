@@ -279,7 +279,7 @@ class PlotSetup:
         )
         # SR_TMP >
         setups: List[PlotSetup] = []
-        for panels in self.panels.decompress(select=select, skip=skip):
+        for panels in self.panels.decompress(internal=False, select=select, skip=skip):
             panels_dcts = panels.dicts()
             setups.append(self.derive({"panels": panels_dcts}))
         return PlotSetupGroup(setups)

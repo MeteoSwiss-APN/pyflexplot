@@ -335,7 +335,7 @@ class PlotPanelSetup:
 class PlotPanelSetupGroup:
     def __init__(self, panels: Sequence[PlotPanelSetup]) -> None:
         """Create an instance of ``PlotPanelSetupGroup``."""
-        self._panels = panels
+        self._panels: List[PlotPanelSetup] = list(panels)
 
     def collect(
         self, param: str, flatten: bool = False, exclude_nones: bool = False
@@ -379,12 +379,33 @@ class PlotPanelSetupGroup:
             raise UnequalSetupParamValuesError(param, values)
         return next(iter(values))
 
+    @overload
     def decompress(
         self,
         *,
-        select: Optional[Collection[str]] = None,
-        skip: Optional[Collection[str]] = None,
+        select: Optional[Collection[str]] = ...,
+        skip: Optional[Collection[str]] = ...,
+        internal: Literal[True] = True,
+    ) -> "PlotPanelSetupGroup":
+        ...
+
+    @overload
+    def decompress(
+        self,
+        *,
+        select: Optional[Collection[str]] = ...,
+        skip: Optional[Collection[str]] = ...,
+        internal: Literal[False],
     ) -> List["PlotPanelSetupGroup"]:
+        ...
+
+    def decompress(
+        self,
+        *,
+        select=None,
+        skip=None,
+        internal=True,
+    ):
         """Create a group object for each decompressed setup object.
 
         Args:
@@ -396,19 +417,31 @@ class PlotPanelSetupGroup:
                 values, those are retained as such; parameters named in both
                 ``skip`` and ``select`` will be skipped.
 
+            internal (optional): Decompress setup group internally and return
+                one group containing the decompressed setup objectss; otherwise,
+                a separate group is returned for each decompressed setup object.
+
         """
-        groups_lst: List["PlotPanelSetupGroup"] = []
-        for setup in self:
-            group_i = setup.decompress(select=select, skip=skip)
-            groups_lst_i = [type(self)([setup]) for setup in group_i]
-            groups_lst.extend(groups_lst_i)
-        return groups_lst
+        sub_setups: List[PlotPanelSetup] = [
+            sub_setup
+            for setup in self
+            for sub_setup in setup.decompress(select=select, skip=skip)
+        ]
+        if internal:
+            return type(self)(sub_setups)
+        return [type(self)([sub_setup]) for sub_setup in sub_setups]
 
     def dicts(self) -> List[Dict[str, Any]]:
         return [setup.dict() for setup in self]
 
     def tuple(self) -> Tuple[Tuple[Tuple[str, Any], ...], ...]:
         return tuple(map(PlotPanelSetup.tuple, self))
+
+    def __eq__(self, other: Any) -> bool:
+        try:
+            return self.dicts() == other.dicts()
+        except AttributeError:
+            return False
 
     def __iter__(self) -> Iterator[PlotPanelSetup]:
         return iter(self._panels)
