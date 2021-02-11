@@ -26,7 +26,7 @@ class Test_Concentration(_TestBase):
         },
         "panels": [
             {
-                "input_variable": "concentration",
+                "plot_variable": "concentration",
                 "integrate": False,
                 "lang": "de",
                 "domain": "full",
@@ -51,7 +51,7 @@ class Test_IntegratedConcentration(_TestBase):
         },
         "panels": [
             {
-                "input_variable": "concentration",
+                "plot_variable": "concentration",
                 "integrate": True,
                 "lang": "en",
                 "domain": "ch",
@@ -76,7 +76,7 @@ class Test_TotalDeposition(_TestBase):
         },
         "panels": [
             {
-                "input_variable": "deposition",
+                "plot_variable": "deposition",
                 "combine_deposition_types": True,
                 "integrate": True,
                 "lang": "de",
@@ -102,7 +102,7 @@ class Test_AffectedArea(_TestBase):
             {
                 "combine_deposition_types": True,
                 "domain": "ch",
-                "input_variable": "affected_area",
+                "plot_variable": "affected_area",
                 "integrate": True,
                 "lang": "en",
                 "dimensions": {
@@ -127,7 +127,7 @@ class Test_TotalDeposition_MissingField(_TestBase):
         },
         "panels": [
             {
-                "input_variable": "deposition",
+                "plot_variable": "deposition",
                 "combine_deposition_types": True,
                 "integrate": True,
                 "lang": "de",
@@ -151,7 +151,7 @@ class Test_CloudArrivalTime(_TestBase):
         },
         "panels": [
             {
-                "input_variable": "cloud_arrival_time",
+                "plot_variable": "cloud_arrival_time",
                 "integrate": False,
                 "lang": "en",
                 "domain": "ch",

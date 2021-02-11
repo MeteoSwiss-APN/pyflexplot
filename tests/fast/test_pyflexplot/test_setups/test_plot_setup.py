@@ -27,7 +27,7 @@ class Test_Setup_Create:
                     "integrate": False,
                     "ens_variable": "mean",
                     "dimensions": {"time": 10, "level": 1},
-                    "input_variable": "concentration",
+                    "plot_variable": "concentration",
                 }
             ],
         }
@@ -38,7 +38,7 @@ class Test_Setup_Create:
     @pytest.mark.parametrize(
         "dct",
         [
-            {"panels": [{"input_variable": ["concentration", "deposition"]}]},  # [dct0]
+            {"panels": [{"plot_variable": ["concentration", "deposition"]}]},  # [dct0]
             {"panels": [{"ens_variable": ["minimum", "maximum"]}]},  # [dct1]
             {"panels": [{"integrate": [True, False]}]},  # [dct2]
             {"panels": [{"combine_deposition_types": [True, False]}]},  # [dct3]
@@ -64,7 +64,7 @@ class Test_Setup_Decompress:
             {
                 "panels": [
                     {
-                        "input_variable": "deposition",
+                        "plot_variable": "deposition",
                         "dimensions": {
                             "deposition_type": ["dry", "wet"],
                             "nageclass": (0,),

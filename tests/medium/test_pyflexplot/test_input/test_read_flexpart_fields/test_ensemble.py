@@ -25,11 +25,11 @@ from .shared import read_flexpart_field
 
 
 def get_var_name_ref(setup, var_names_ref):
-    input_variable = setup.panels.collect_equal("input_variable")
-    if input_variable == "concentration":
+    plot_variable = setup.panels.collect_equal("plot_variable")
+    if plot_variable == "concentration":
         assert len(var_names_ref) == 1
         return next(iter(var_names_ref))
-    elif input_variable == "deposition":
+    elif plot_variable == "deposition":
         for var_name in var_names_ref:
             if (setup.deposition_type_str, var_name[:2]) in [
                 ("dry", "DD"),
@@ -54,7 +54,7 @@ class TestReadFieldEnsemble_Single:
                 "integrate": False,
                 "ens_variable": "mean",
                 "dimensions": {"time": 10, "species_id": 2},
-                "input_variable": "concentration",
+                "plot_variable": "concentration",
             }
         ],
     }
@@ -311,7 +311,7 @@ class TestReadFieldEnsemble_Multiple:
             "panels": [
                 {
                     "dimensions": {"level": 1},
-                    "input_variable": "concentration",
+                    "plot_variable": "concentration",
                 }
             ],
         }
@@ -361,7 +361,7 @@ class TestReadFieldEnsemble_Multiple:
                 "infile": datafile_fmt,
                 "panels": [
                     {
-                        "input_variable": "deposition",
+                        "plot_variable": "deposition",
                         "combine_deposition_types": True,
                         "dimensions": {"deposition_type": ("dry", "wet")},
                     }

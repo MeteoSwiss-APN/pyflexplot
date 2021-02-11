@@ -177,7 +177,7 @@ def group_setups_for_plots(setups: PlotSetupGroup) -> List[PlotSetupGroup]:
     for (
         (
             _,  # ens_member_id,
-            input_variable,
+            plot_variable,
             combine_levels,
             combine_deposition_types,
             combine_species,
@@ -186,29 +186,29 @@ def group_setups_for_plots(setups: PlotSetupGroup) -> List[PlotSetupGroup]:
     ) in setups.group(
         [
             "model.ens_member_id",
-            "input_variable",
+            "plot_variable",
             "combine_levels",
             "combine_deposition_types",
             "combine_species",
         ]
     ).items():
         skip = ["outfile", "dimensions.time", "model.ens_member_id"]
-        if input_variable in [
+        if plot_variable in [
             "concentration",
             "cloud_arrival_time",
             "cloud_departure_time",
         ]:
             if combine_levels:
                 skip.append("dimensions.level")
-        elif input_variable in ["deposition", "affected_area"]:
+        elif plot_variable in ["deposition", "affected_area"]:
             if combine_deposition_types:
                 skip.append("dimensions.deposition_type")
-        if input_variable in [
+        if plot_variable in [
             "affected_area",
             "cloud_arrival_time",
             "cloud_departure_time",
         ]:
-            skip.append("input_variable")
+            skip.append("plot_variable")
         if combine_species:
             skip.append("dimensions.species_id")
         setups_plots = sub_setups.decompress_partially(None, skip=skip)
@@ -277,7 +277,7 @@ class InputFileEnsemble:
         # Create individual setups at each requested time step
         select = ["dimensions.time"]
         skip = ["outfile"]
-        skip.append("input_variable")  # For "affected_area"
+        skip.append("plot_variable")  # For "affected_area"
         self.setups_lst_time = setups.decompress_partially(select, skip=skip)
 
         model = setups.collect_equal("model.name")
@@ -351,11 +351,11 @@ class InputFileEnsemble:
     ) -> np.ndarray:
         """Read field over all time steps for each member."""
         fld_time_lst = []
-        input_variable = timeless_setups.collect_equal("input_variable")
+        plot_variable = timeless_setups.collect_equal("plot_variable")
         for sub_setups in timeless_setups.decompress_partially(None, skip=["outfile"]):
             for sub_setup in sub_setups:
                 fld_time_lst.append(self._read_fld_over_time(fi, sub_setup))
-        if input_variable == "affected_area":
+        if plot_variable == "affected_area":
             shapes = [fld.shape for fld in fld_time_lst]
             if len(set(shapes)) != 1:
                 raise Exception(f"field shapes differ: {shapes}")
@@ -367,10 +367,10 @@ class InputFileEnsemble:
             self.fixer.fix_global_grid(self.lon, fld_time)
         if self.config.add_ts0:
             fld_time = self._add_ts0_to_fld_time(fld_time)
-        if input_variable in ["cloud_arrival_time", "cloud_departure_time"]:
+        if plot_variable in ["cloud_arrival_time", "cloud_departure_time"]:
             ts_hrs = self.get_temp_res_hrs(fi)
             cloud = Cloud(mask=np.array(fld_time) > CLOUD_THRESHOLD, ts=ts_hrs)
-            if input_variable == "cloud_arrival_time":
+            if plot_variable == "cloud_arrival_time":
                 fld_time = cloud.arrival_time()
             else:
                 fld_time = cloud.departure_time()
@@ -381,7 +381,7 @@ class InputFileEnsemble:
         """Collect time-step-specific data meta data."""
         mdata_lst: List[MetaData] = []
         skip = ["outfile"]
-        skip.append("input_variable")  # For "affected_area"
+        skip.append("plot_variable")  # For "affected_area"
         for setups in self.setups_lst_time:
             mdata_i_lst: List[MetaData] = []
             for sub_setups in setups.decompress_partially(None, skip=skip):
@@ -395,9 +395,9 @@ class InputFileEnsemble:
             # Fix some known issues with the NetCDF input data
             if self.fixer:
                 model_name = setups.collect_equal("model.name")
-                input_variable = setups.collect_equal("input_variable")
+                plot_variable = setups.collect_equal("plot_variable")
                 integrate = setups.collect_equal("integrate")
-                self.fixer.fix_meta_data(model_name, input_variable, integrate, mdata_i)
+                self.fixer.fix_meta_data(model_name, plot_variable, integrate, mdata_i)
 
             mdata_lst.append(mdata_i)
         return mdata_lst
@@ -528,7 +528,7 @@ class InputFileEnsemble:
     def _read_fld_over_time(self, fi: nc4.Dataset, setup: PlotSetup) -> np.ndarray:
         """Read a 2D field at all time steps from disk."""
         dimensions = setup.panels.collect_equal("dimensions")
-        input_variable = setup.panels.collect_equal("input_variable")
+        plot_variable = setup.panels.collect_equal("plot_variable")
         integrate = setup.panels.collect_equal("integrate")
 
         # Indices of field along NetCDF dimensions
@@ -548,7 +548,7 @@ class InputFileEnsemble:
         assert dimensions.species_id is not None  # mypy
         var_name = derive_variable_name(
             model=setup.model.name,
-            input_variable=input_variable,
+            plot_variable=plot_variable,
             species_id=dimensions.species_id,
             deposition_type=setup.deposition_type_str,
         )
@@ -611,13 +611,13 @@ class InputFileEnsemble:
         if self.fixer:
             self.fixer.fix_nc_var_fld(fld, setup.model.name, var_ncattrs)
 
-        return self._handle_time_integration(fi, fld, input_variable, integrate)
+        return self._handle_time_integration(fi, fld, plot_variable, integrate)
 
     def _handle_time_integration(
-        self, fi: nc4.Dataset, fld: np.ndarray, input_variable: str, integrate: bool
+        self, fi: nc4.Dataset, fld: np.ndarray, plot_variable: str, integrate: bool
     ) -> np.ndarray:
         """Integrate or desintegrate the field over time."""
-        if input_variable == "concentration":
+        if plot_variable == "concentration":
             if integrate:
                 # Integrate field over time
                 dt_hr = self.get_temp_res_hrs(fi)
@@ -625,7 +625,7 @@ class InputFileEnsemble:
             else:
                 # Field is already instantaneous
                 return fld
-        elif input_variable == "deposition":
+        elif plot_variable == "deposition":
             if integrate:
                 # Field is already time-integrated
                 return fld
@@ -634,7 +634,7 @@ class InputFileEnsemble:
                 dt_hr = self.get_temp_res_hrs(fi)
                 fld[1:] = (fld[1:] - fld[:-1]) / dt_hr
                 return fld
-        raise NotImplementedError("unknown variable", input_variable)
+        raise NotImplementedError("unknown variable", plot_variable)
 
     @staticmethod
     def get_temp_res_hrs(fi: nc4.Dataset) -> float:

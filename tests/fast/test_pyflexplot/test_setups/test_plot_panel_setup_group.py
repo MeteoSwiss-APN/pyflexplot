@@ -7,7 +7,7 @@ from srutils.testing import assert_is_sub_element
 
 class TestDecompress:
     params = {
-        "input_variable": "deposition",
+        "plot_variable": "deposition",
         "combine_deposition_types": False,
         "combine_species": False,
         "dimensions": {
@@ -205,7 +205,7 @@ class TestDecompress:
 
 class TestDecompressExternal:
     params = {
-        "input_variable": "concentration",
+        "plot_variable": "concentration",
         "combine_levels": False,
         "combine_species": False,
         "dimensions": {

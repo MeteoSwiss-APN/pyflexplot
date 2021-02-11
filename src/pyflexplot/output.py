@@ -92,14 +92,14 @@ class FilePathFormatter:
             ens_variable += f"-{setup.panels.collect_equal('ens_params').thr:g}"
 
         # Prepare input variable
-        input_variable = setup.panels.collect_equal("input_variable")
-        if setup.panels.collect_equal("input_variable") == "deposition":
-            input_variable += f"-{setup.deposition_type_str}"
+        plot_variable = setup.panels.collect_equal("plot_variable")
+        if setup.panels.collect_equal("plot_variable") == "deposition":
+            plot_variable += f"-{setup.deposition_type_str}"
             if not setup.panels.collect_equal("integrate"):
-                input_variable += "-instant"
-        elif setup.panels.collect_equal("input_variable") == "concentration":
+                plot_variable += "-instant"
+        elif setup.panels.collect_equal("plot_variable") == "concentration":
             if setup.panels.collect_equal("integrate"):
-                input_variable += "-integr"
+                plot_variable += "-integr"
 
         # Prepare release start
         release_start_fmtd: str = self._format_time_step(
@@ -117,7 +117,7 @@ class FilePathFormatter:
             "base_time": base_time,
             "domain": setup.panels.collect_equal("domain"),
             "ens_variable": ens_variable,
-            "input_variable": input_variable,
+            "plot_variable": plot_variable,
             "lang": setup.panels.collect_equal("lang"),
             "level": setup.panels.collect_equal("dimensions").level,
             "model": setup.model.name,

@@ -47,7 +47,7 @@ OPTIONAL_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
                 "thr_type": "lower",
             },
             "ens_variable": "none",
-            "input_variable": "concentration",
+            "plot_variable": "concentration",
             "integrate": False,
             "lang": "en",
         }

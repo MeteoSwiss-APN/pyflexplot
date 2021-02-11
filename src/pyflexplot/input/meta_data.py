@@ -345,10 +345,10 @@ class VariableMetaData(_MetaDataBase):
     @classmethod
     def from_file(cls, fi: nc4.Dataset, setup: PlotSetup) -> "VariableMetaData":
         dimensions = setup.panels.collect_equal("dimensions")
-        input_variable = setup.panels.collect_equal("input_variable")
-        if input_variable == "affected_area":
+        plot_variable = setup.panels.collect_equal("plot_variable")
+        if plot_variable == "affected_area":
             unit = ""
-        elif input_variable in [
+        elif plot_variable in [
             "cloud_arrival_time",
             "cloud_departure_time",
         ]:
@@ -357,7 +357,7 @@ class VariableMetaData(_MetaDataBase):
             assert dimensions.species_id is not None  # mypy
             var_name = derive_variable_name(
                 model=setup.model.name,
-                input_variable=input_variable,
+                plot_variable=plot_variable,
                 species_id=dimensions.species_id,
                 deposition_type=setup.deposition_type_str,
             )
@@ -536,20 +536,20 @@ class SpeciesMetaData(_MetaDataBase):
     @classmethod
     def from_file(cls, fi: nc4.Dataset, setup: PlotSetup) -> "SpeciesMetaData":
         dimensions = setup.panels.collect_equal("dimensions")
-        input_variable = setup.panels.collect_equal("input_variable")
+        plot_variable = setup.panels.collect_equal("plot_variable")
         name: str
-        if input_variable in [
+        if plot_variable in [
             "affected_area",
             "cloud_arrival_time",
             "cloud_departure_time",
         ]:
-            alt_setup = setup.derive({"panels": [{"input_variable": "concentration"}]})
+            alt_setup = setup.derive({"panels": [{"plot_variable": "concentration"}]})
             return cls.from_file(fi, alt_setup)
         else:
             assert dimensions.species_id is not None  # mypy
             var_name = derive_variable_name(
                 model=setup.model.name,
-                input_variable=input_variable,
+                plot_variable=plot_variable,
                 species_id=dimensions.species_id,
                 deposition_type=setup.deposition_type_str,
             )
@@ -559,10 +559,10 @@ class SpeciesMetaData(_MetaDataBase):
             except (KeyError, AttributeError):
                 if setup.model.name.startswith("IFS"):
                     name = cls._get_species_name_ifs(fi, var_name)
-                elif input_variable == "deposition":
+                elif plot_variable == "deposition":
                     # Deposition field may be missing
                     alt_setup = setup.derive(
-                        {"panels": [{"input_variable": "concentration"}]}
+                        {"panels": [{"plot_variable": "concentration"}]}
                     )
                     return cls.from_file(fi, alt_setup)
                 else:
@@ -793,22 +793,22 @@ class TimeStepMetaDataCollector:
 
 
 def derive_variable_name(
-    model: str, input_variable: str, species_id: int, deposition_type: str
+    model: str, plot_variable: str, species_id: int, deposition_type: str
 ) -> str:
     """Derive the NetCDF variable name given some attributes."""
     cosmo_models = ["COSMO-2", "COSMO-1", "COSMO-2E", "COSMO-1E"]
     ifs_models = ["IFS-HRES", "IFS-HRES-EU"]
-    if input_variable == "concentration":
+    if plot_variable == "concentration":
         if model in cosmo_models:
             return f"spec{species_id:03d}"
         elif model in ifs_models:
             return f"spec{species_id:03d}_mr"
         else:
             raise ValueError("unknown model", model)
-    elif input_variable == "deposition":
+    elif plot_variable == "deposition":
         prefix = {"wet": "WD", "dry": "DD"}[deposition_type]
         return f"{prefix}_spec{species_id:03d}"
-    raise ValueError("unknown variable", input_variable)
+    raise ValueError("unknown variable", plot_variable)
 
 
 def read_dimensions(file_handle: nc4.Dataset, add_ts0: bool = True) -> Dict[str, Any]:

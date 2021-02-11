@@ -32,7 +32,7 @@ class Test_EnsMedian_Concentration(_TestBase):
         "panels": [
             {
                 "ens_variable": "median",
-                "input_variable": "concentration",
+                "plot_variable": "concentration",
                 "integrate": False,
                 "combine_species": True,
                 "lang": "en",
@@ -59,7 +59,7 @@ class Test_EnsMax_IntegratedConcentration(_TestBase):
         "panels": [
             {
                 "ens_variable": "maximum",
-                "input_variable": "concentration",
+                "plot_variable": "concentration",
                 "integrate": True,
                 "lang": "de",
                 "domain": "ch",
@@ -85,7 +85,7 @@ class Test_EnsMean_TotalDeposition(_TestBase):
         "panels": [
             {
                 "ens_variable": "mean",
-                "input_variable": "deposition",
+                "plot_variable": "deposition",
                 "combine_deposition_types": True,
                 "integrate": True,
                 "combine_species": True,
@@ -112,7 +112,7 @@ class Test_EnsProbability_WetDeposition(_TestBase):
         "panels": [
             {
                 "ens_variable": "probability",
-                "input_variable": "deposition",
+                "plot_variable": "deposition",
                 "integrate": True,
                 "lang": "en",
                 "domain": "full",
@@ -138,7 +138,7 @@ class Test_EnsMin_AffectedArea(_TestBase):
         },
         "panels": [
             {
-                "input_variable": "affected_area",
+                "plot_variable": "affected_area",
                 "ens_variable": "minimum",
                 "combine_deposition_types": True,
                 "integrate": True,
@@ -168,7 +168,7 @@ class Test_CloudArrivalTime(_TestBase):
         "panels": [
             {
                 "ens_variable": "ens_cloud_arrival_time",
-                "input_variable": "concentration",
+                "plot_variable": "concentration",
                 "integrate": True,
                 "ens_params": {
                     "mem_min": 3,
@@ -198,7 +198,7 @@ class Test_CloudDepartureTime(_TestBase):
         "panels": [
             {
                 "ens_variable": "ens_cloud_departure_time",
-                "input_variable": "concentration",
+                "plot_variable": "concentration",
                 "integrate": True,
                 "combine_species": True,
                 "combine_levels": True,
@@ -231,7 +231,7 @@ class Test_MultipanelEnsStats_Concentration(_TestBase):
         },
         "panels": [
             {
-                "input_variable": "concentration",
+                "plot_variable": "concentration",
                 "ens_variable": ["minimum", "maximum", "median", "mean"],
                 "plot_type": "multipanel",
                 "multipanel_param": "ens_variable",

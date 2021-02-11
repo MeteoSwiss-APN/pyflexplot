@@ -127,7 +127,7 @@ field_summary = {
             },
             "panels": [
                 {
-                    "input_variable": "cloud_arrival_time",
+                    "plot_variable": "cloud_arrival_time",
                     "ens_variable": "none",
                     "integrate": False,
                     "combine_deposition_types": False,
@@ -432,7 +432,7 @@ plot_summary = {
                     },
                     "panels": [
                         {
-                            "input_variable": "cloud_arrival_time",
+                            "plot_variable": "cloud_arrival_time",
                             "ens_variable": "none",
                             "integrate": False,
                             "combine_deposition_types": False,
@@ -7946,7 +7946,7 @@ plot_summary = {
                 },
                 "panels": [
                     {
-                        "input_variable": "cloud_arrival_time",
+                        "plot_variable": "cloud_arrival_time",
                         "ens_variable": "none",
                         "integrate": False,
                         "combine_deposition_types": False,

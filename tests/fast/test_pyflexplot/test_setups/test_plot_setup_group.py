@@ -50,7 +50,7 @@ class Test_FromRawParams:
         raw_params = {
             "infile": "foo.nc",
             "outfile": "foo.png",
-            "input_variable": "concentration",
+            "plot_variable": "concentration",
             "species_id": [1, 2],
             "combine_species": False,
         }
@@ -62,7 +62,7 @@ class Test_FromRawParams:
                 "outfile": "foo.png",
                 "panels": [
                     {
-                        "input_variable": "concentration",
+                        "plot_variable": "concentration",
                         "combine_species": False,
                         "dimensions": {
                             "species_id": (1, 2),
@@ -84,11 +84,11 @@ class Test_SetupGroup_Create:
         return [
             {
                 **base,
-                "panels": [{"input_variable": "concentration", "domain": "ch"}],
+                "panels": [{"plot_variable": "concentration", "domain": "ch"}],
             },
             {
                 **base,
-                "panels": [{"input_variable": "deposition", "lang": "de"}],
+                "panels": [{"plot_variable": "deposition", "lang": "de"}],
             },
             {
                 **base,
@@ -130,7 +130,7 @@ class Test_SetupGroup_Compress:
             },
             "panels": [
                 {
-                    "input_variable": "concentration",
+                    "plot_variable": "concentration",
                     "dimensions": {"level": 0},
                 }
             ],
@@ -143,7 +143,7 @@ class Test_SetupGroup_Compress:
             },
             "panels": [
                 {
-                    "input_variable": "concentration",
+                    "plot_variable": "concentration",
                     "dimensions": {"level": 1},
                 }
             ],
@@ -156,7 +156,7 @@ class Test_SetupGroup_Compress:
             },
             "panels": [
                 {
-                    "input_variable": "concentration",
+                    "plot_variable": "concentration",
                     "dimensions": {"level": (1, 2)},
                 }
             ],
@@ -241,7 +241,7 @@ class Test_SetupGroup_Group:
             {
                 "panels": [
                     {
-                        "input_variable": "concentration",
+                        "plot_variable": "concentration",
                         "combine_levels": combine_levels,
                         "dimensions": {"level": [0, 1, 2]},
                     }
@@ -254,7 +254,7 @@ class Test_SetupGroup_Group:
             {
                 "panels": [
                     {
-                        "input_variable": "deposition",
+                        "plot_variable": "deposition",
                         "combine_deposition_types": True,
                         "dimensions": {"deposition_type": deposition_type},
                     }

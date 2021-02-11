@@ -27,11 +27,11 @@ from .shared import read_flexpart_field
 
 def get_var_name_ref(setup, var_names_ref):
     dimensions = setup.panels.collect_equal("dimensions")
-    input_variable = setup.panels.collect_equal("input_variable")
-    if input_variable == "concentration":
+    plot_variable = setup.panels.collect_equal("plot_variable")
+    if plot_variable == "concentration":
         assert len(var_names_ref) == 1
         return next(iter(var_names_ref))
-    elif input_variable == "deposition":
+    elif plot_variable == "deposition":
         species_id = dimensions.species_id
         if isinstance(species_id, tuple):
             assert len(species_id) == 1
@@ -75,7 +75,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 },
                 "panels": [
                     {
-                        "input_variable": "concentration",
+                        "plot_variable": "concentration",
                         "integrate": False,
                         "dimensions": {
                             "level": 1,
@@ -99,7 +99,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 },
                 "panels": [
                     {
-                        "input_variable": "deposition",
+                        "plot_variable": "deposition",
                         "integrate": False,
                         "dimensions": {
                             "deposition_type": "dry",
@@ -124,7 +124,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 },
                 "panels": [
                     {
-                        "input_variable": "deposition",
+                        "plot_variable": "deposition",
                         "integrate": False,
                         "dimensions": {
                             "deposition_type": "wet",
@@ -149,7 +149,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 },
                 "panels": [
                     {
-                        "input_variable": "deposition",
+                        "plot_variable": "deposition",
                         "combine_deposition_types": True,
                         "integrate": False,
                         "dimensions": {
@@ -175,7 +175,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 },
                 "panels": [
                     {
-                        "input_variable": "concentration",
+                        "plot_variable": "concentration",
                         "integrate": False,
                         "dimensions": {
                             "level": 1,
@@ -199,7 +199,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 },
                 "panels": [
                     {
-                        "input_variable": "deposition",
+                        "plot_variable": "deposition",
                         "combine_deposition_types": True,
                         "integrate": False,
                         "dimensions": {
@@ -225,7 +225,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 },
                 "panels": [
                     {
-                        "input_variable": "deposition",
+                        "plot_variable": "deposition",
                         "combine_deposition_types": True,
                         "combine_species": True,
                         "integrate": False,
@@ -252,7 +252,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 },
                 "panels": [
                     {
-                        "input_variable": "concentration",
+                        "plot_variable": "concentration",
                         "integrate": False,
                         "dimensions": {
                             "level": 1,
@@ -276,7 +276,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 },
                 "panels": [
                     {
-                        "input_variable": "concentration",
+                        "plot_variable": "concentration",
                         "integrate": False,
                         "dimensions": {
                             "level": 0,
@@ -350,7 +350,7 @@ def test_single(datadir, config):  # noqa:F811
                 },
                 "panels": [
                     {
-                        "input_variable": "concentration",
+                        "plot_variable": "concentration",
                         "integrate": True,
                         "dimensions": {
                             "level": [0, 2],
@@ -375,7 +375,7 @@ def test_single(datadir, config):  # noqa:F811
                 },
                 "panels": [
                     {
-                        "input_variable": "concentration",
+                        "plot_variable": "concentration",
                         "integrate": True,
                         "dimensions": {
                             "level": [0, 2],
@@ -400,7 +400,7 @@ def test_single(datadir, config):  # noqa:F811
                 },
                 "panels": [
                     {
-                        "input_variable": "deposition",
+                        "plot_variable": "deposition",
                         "integrate": True,
                         "dimensions": {
                             "deposition_type": "dry",
@@ -424,7 +424,7 @@ def test_single(datadir, config):  # noqa:F811
                 },
                 "panels": [
                     {
-                        "input_variable": "deposition",
+                        "plot_variable": "deposition",
                         "integrate": True,
                         "dimensions": {
                             "deposition_type": "wet",
@@ -448,7 +448,7 @@ def test_single(datadir, config):  # noqa:F811
                 },
                 "panels": [
                     {
-                        "input_variable": "deposition",
+                        "plot_variable": "deposition",
                         "combine_deposition_types": True,
                         "integrate": True,
                         "dimensions": {
@@ -473,7 +473,7 @@ def test_single(datadir, config):  # noqa:F811
                 },
                 "panels": [
                     {
-                        "input_variable": "concentration",
+                        "plot_variable": "concentration",
                         "integrate": True,
                         "dimensions": {
                             "level": 0,
@@ -499,7 +499,7 @@ def test_single(datadir, config):  # noqa:F811
                 },
                 "panels": [
                     {
-                        "input_variable": "deposition",
+                        "plot_variable": "deposition",
                         "integrate": True,
                         "dimensions": {
                             "deposition_type": ["wet", "dry"],
@@ -584,7 +584,7 @@ def test_multiple(datadir, config):  # noqa:F811
                 },
                 "panels": [
                     {
-                        "input_variable": "concentration",
+                        "plot_variable": "concentration",
                         "integrate": False,
                         "dimensions": {
                             "level": 1,
@@ -608,7 +608,7 @@ def test_multiple(datadir, config):  # noqa:F811
                 },
                 "panels": [
                     {
-                        "input_variable": "deposition",
+                        "plot_variable": "deposition",
                         "combine_deposition_types": True,
                         "integrate": False,
                         "dimensions": {
@@ -658,7 +658,7 @@ def test_missing_deposition_cosmo(datadir):  # noqa:F811
         },
         "panels": [
             {
-                "input_variable": "deposition",
+                "plot_variable": "deposition",
                 "integrate": True,
                 "combine_deposition_types": True,
                 "dimensions": {
@@ -697,7 +697,7 @@ def test_missing_deposition_ifs(datadir):  # noqa:F811
         },
         "panels": [
             {
-                "input_variable": "deposition",
+                "plot_variable": "deposition",
                 "integrate": True,
                 "combine_deposition_types": True,
                 "dimensions": {
@@ -736,7 +736,7 @@ def test_affected_area(datadir):  # noqa:F811
         },
         "panels": [
             {
-                "input_variable": "affected_area",
+                "plot_variable": "affected_area",
                 "integrate": True,
                 "combine_deposition_types": True,
                 "dimensions": {

@@ -211,7 +211,7 @@ class Dimensions:
         self,
         raw_dimensions: Mapping[str, Any],
         species_ids: Sequence[int],
-        input_variable: str,
+        plot_variable: str,
         inplace: bool = False,
         mode: Union[Literal["all"], Literal["first"]] = "all",
     ) -> Optional["Dimensions"]:
@@ -238,7 +238,7 @@ class Dimensions:
             )
 
         if obj.level is None:
-            if input_variable == "concentration":
+            if plot_variable == "concentration":
                 if "level" in raw_dimensions:
                     values = range(raw_dimensions["level"]["size"])
                 elif "height" in raw_dimensions:
@@ -254,7 +254,7 @@ class Dimensions:
                     obj.level = next(iter(values))
 
         if obj.deposition_type is None:
-            if input_variable == "deposition":
+            if plot_variable == "deposition":
                 if mode == "all":
                     obj.deposition_type = ("dry", "wet")
                 elif mode == "first":

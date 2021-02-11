@@ -72,7 +72,7 @@ class PlotPanelSetup:
     """
 
     # Basics
-    input_variable: str = "concentration"
+    plot_variable: str = "concentration"
     ens_variable: str = "none"
 
     # Tweaks
@@ -99,7 +99,7 @@ class PlotPanelSetup:
 
         self._check_types()
 
-        # Check input_variable
+        # Check plot_variable
         choices = [
             "concentration",
             "deposition",
@@ -107,7 +107,7 @@ class PlotPanelSetup:
             "cloud_arrival_time",
             "cloud_departure_time",
         ]
-        assert self.input_variable in choices, self.input_variable
+        assert self.plot_variable in choices, self.plot_variable
 
         # Check ens_variable
         choices = [
@@ -178,19 +178,19 @@ class PlotPanelSetup:
             )
             # SR_TMP < Does this logic really belong here? I doubt it...
             if (
-                select is not None and "input_variable" not in select
-            ) or "input_variable" in (skip or []):
+                select is not None and "plot_variable" not in select
+            ) or "plot_variable" in (skip or []):
                 params_lst = [params]
-            elif params["input_variable"] == "affected_area":
+            elif params["plot_variable"] == "affected_area":
                 params_lst = [
-                    {**params, "input_variable": "concentration"},
-                    {**params, "input_variable": "deposition"},
+                    {**params, "plot_variable": "concentration"},
+                    {**params, "plot_variable": "deposition"},
                 ]
-            elif params["input_variable"] in [
+            elif params["plot_variable"] in [
                 "cloud_arrival_time",
                 "cloud_departure_time",
             ]:
-                params_lst = [{**params, "input_variable": "concentration"}]
+                params_lst = [{**params, "plot_variable": "concentration"}]
             else:
                 params_lst = [params]
             # SR_TMP >
@@ -225,7 +225,7 @@ class PlotPanelSetup:
         obj.dimensions.complete(
             raw_dimensions,
             species_ids,
-            self.input_variable,
+            self.plot_variable,
             mode=obj.dimensions_default,
             inplace=True,
         )

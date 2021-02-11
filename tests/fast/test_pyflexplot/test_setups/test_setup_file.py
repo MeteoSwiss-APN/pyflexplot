@@ -66,7 +66,7 @@ def test_single_section(tmp_path):
         infile = "foo.nc"
         outfile = "bar.png"
         model = "COSMO-baz"
-        input_variable = "deposition"
+        plot_variable = "deposition"
         lang = "de"
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
@@ -80,7 +80,7 @@ def test_single_section(tmp_path):
         {
             "panels": [
                 {
-                    "input_variable": "deposition",
+                    "plot_variable": "deposition",
                     "dimensions": {"level": None},
                     "lang": "de",
                 }
@@ -133,10 +133,10 @@ def test_multiple_nested_sections(tmp_path):
         lang = "de"
 
         [_base.con]
-        input_variable = "concentration"
+        plot_variable = "concentration"
 
         [_base._dep]
-        input_variable = "deposition"
+        plot_variable = "deposition"
         deposition_type = ["dry", "wet"]
         combine_deposition_types = true
 
@@ -172,7 +172,7 @@ def test_multiple_nested_sections(tmp_path):
         {
             "panels": [
                 {
-                    "input_variable": "deposition",
+                    "plot_variable": "deposition",
                     "combine_deposition_types": True,
                     "dimensions": {"level": None, "deposition_type": ("dry", "wet")},
                     "lang": "de",
@@ -185,7 +185,7 @@ def test_multiple_nested_sections(tmp_path):
         {
             "panels": [
                 {
-                    "input_variable": "concentration",
+                    "plot_variable": "concentration",
                     "combine_deposition_types": False,
                     "dimensions": {"deposition_type": None},
                 }
@@ -216,10 +216,10 @@ def test_multiple_override(tmp_path):
         lang = "de"
 
         [_base.con]
-        input_variable = "concentration"
+        plot_variable = "concentration"
 
         [_base._dep]
-        input_variable = "deposition"
+        plot_variable = "deposition"
         deposition_type = ["dry", "wet"]
         combine_deposition_types = true
 
@@ -255,7 +255,7 @@ def test_multiple_override(tmp_path):
         {
             "panels": [
                 {
-                    "input_variable": "deposition",
+                    "plot_variable": "deposition",
                     "combine_deposition_types": True,
                     "lang": "de",
                     "dimensions": {
@@ -271,7 +271,7 @@ def test_multiple_override(tmp_path):
         {
             "panels": [
                 {
-                    "input_variable": "concentration",
+                    "plot_variable": "concentration",
                     "combine_deposition_types": False,
                     "dimensions": {
                         "deposition_type": None,
@@ -381,7 +381,7 @@ def test_realcase_opr_like(tmp_path):
         outfile = "concentration_{species_id}_{domain}_{lang}_{time:02d}.png"
         model = "COSMO-1"
         species_id = "*"
-        input_variable = "concentration"
+        plot_variable = "concentration"
         combine_species = false
         integrate = false
         level = 0
@@ -396,7 +396,7 @@ def test_realcase_opr_like(tmp_path):
         outfile = "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png"
         model = "COSMO-1"
         species_id = "*"
-        input_variable = "concentration"
+        plot_variable = "concentration"
         combine_species = false
         integrate = true
         level = 0
@@ -411,7 +411,7 @@ def test_realcase_opr_like(tmp_path):
         model = "COSMO-1"
         species_id = "*"
         outfile = "tot_deposition_{domain}_{lang}_{time:02d}.png"
-        input_variable = "deposition"
+        plot_variable = "deposition"
         deposition_type = ["dry", "wet"]
         combine_deposition_types = true
         combine_species = true
@@ -424,7 +424,7 @@ def test_realcase_opr_like(tmp_path):
         infile = "data/cosmo1_2019052800.nc"
         level = 0
         species_id = "*"
-        input_variable = "affected_area"
+        plot_variable = "affected_area"
         deposition_type = ["dry", "wet"]
         combine_deposition_types = true
         combine_species = true
@@ -458,7 +458,7 @@ def test_realcase_opr_like(tmp_path):
                         "thr_type": "lower",
                     },
                     "ens_variable": "none",
-                    "input_variable": "concentration",
+                    "plot_variable": "concentration",
                     "integrate": False,
                     "lang": "de",
                 }
@@ -502,7 +502,7 @@ def test_realcase_opr_like(tmp_path):
                         "thr_type": "lower",
                     },
                     "ens_variable": "none",
-                    "input_variable": "concentration",
+                    "plot_variable": "concentration",
                     "integrate": True,
                     "lang": "de",
                 }
@@ -546,7 +546,7 @@ def test_realcase_opr_like(tmp_path):
                         "thr_type": "lower",
                     },
                     "ens_variable": "none",
-                    "input_variable": "deposition",
+                    "plot_variable": "deposition",
                     "integrate": True,
                     "lang": "en",
                 }
@@ -590,7 +590,7 @@ def test_realcase_opr_like(tmp_path):
                         "thr_type": "lower",
                     },
                     "ens_variable": "none",
-                    "input_variable": "affected_area",
+                    "plot_variable": "affected_area",
                     "integrate": True,
                     "lang": "en",
                 }
@@ -631,10 +631,10 @@ def test_wildcard_simple(tmp_path):
         model = "COSMO-baz"
 
         [_base._concentration]
-        input_variable = "concentration"
+        plot_variable = "concentration"
 
         [_base._deposition]
-        input_variable = "deposition"
+        plot_variable = "deposition"
 
         [_base."*".de]
         lang = "de"
@@ -647,12 +647,12 @@ def test_wildcard_simple(tmp_path):
     sol = [
         merge_dicts(OPTIONAL_RAW_DEFAULT_PARAMS, base, dct, overwrite_seqs=True)
         for dct in [
-            {"panels": [{"input_variable": "concentration", "lang": "de"}]},
-            {"panels": [{"input_variable": "concentration", "lang": "en"}]},
+            {"panels": [{"plot_variable": "concentration", "lang": "de"}]},
+            {"panels": [{"plot_variable": "concentration", "lang": "en"}]},
             {
                 "panels": [
                     {
-                        "input_variable": "deposition",
+                        "plot_variable": "deposition",
                         "dimensions": {"level": None},
                         "lang": "de",
                     }
@@ -661,7 +661,7 @@ def test_wildcard_simple(tmp_path):
             {
                 "panels": [
                     {
-                        "input_variable": "deposition",
+                        "plot_variable": "deposition",
                         "dimensions": {"level": None},
                         "lang": "en",
                     }
@@ -682,10 +682,10 @@ def test_double_wildcard_equal_depth(tmp_path):
         model = "COSMO-baz"
 
         [_base."_concentration+"]
-        input_variable = "concentration"
+        plot_variable = "concentration"
 
         [_base."_deposition+"]
-        input_variable = "deposition"
+        plot_variable = "deposition"
 
         ["**"._ch.de]
         domain = "ch"
@@ -714,11 +714,11 @@ def test_double_wildcard_equal_depth(tmp_path):
             overwrite_seqs=True,
         )
         for dct in [
-            {"panels": [{"input_variable": "concentration", "integrate": False}]},
+            {"panels": [{"plot_variable": "concentration", "integrate": False}]},
             {
                 "panels": [
                     {
-                        "input_variable": "deposition",
+                        "plot_variable": "deposition",
                         "dimensions": {"level": None},
                         "integrate": False,
                     }
@@ -741,7 +741,7 @@ def test_double_wildcard_variable_depth(tmp_path):
         model = "COSMO-baz"
 
         [_base."_concentration"]
-        input_variable = "concentration"
+        plot_variable = "concentration"
 
         [_base._concentration."_middle+"]
         time = 5
@@ -750,7 +750,7 @@ def test_double_wildcard_variable_depth(tmp_path):
         time = 10
 
         [_base."_deposition+"]
-        input_variable = "deposition"
+        plot_variable = "deposition"
 
         ["**"._ch.de]
         domain = "ch"
@@ -779,19 +779,15 @@ def test_double_wildcard_variable_depth(tmp_path):
             overwrite_seqs=True,
         )
         for dct in [
+            {"panels": [{"plot_variable": "concentration", "dimensions": {"time": 5}}]},
             {
                 "panels": [
-                    {"input_variable": "concentration", "dimensions": {"time": 5}}
+                    {"plot_variable": "concentration", "dimensions": {"time": 10}}
                 ]
             },
             {
                 "panels": [
-                    {"input_variable": "concentration", "dimensions": {"time": 10}}
-                ]
-            },
-            {
-                "panels": [
-                    {"input_variable": "deposition", "dimensions": {"level": None}}
+                    {"plot_variable": "deposition", "dimensions": {"level": None}}
                 ]
             },
         ]
@@ -810,10 +806,10 @@ def test_combine_wildcards(tmp_path):
         model = "COSMO-baz"
 
         [_base."_concentration"]
-        input_variable = "concentration"
+        plot_variable = "concentration"
 
         [_base."_deposition"]
-        input_variable = "deposition"
+        plot_variable = "deposition"
 
         [_base."*"."_mean+"]
         ens_variable = "mean"
@@ -841,7 +837,7 @@ def test_combine_wildcards(tmp_path):
                 },
                 "panels": [
                     {
-                        "input_variable": input_variable,
+                        "plot_variable": plot_variable,
                         "ens_variable": ens_variable,
                         "lang": lang,
                     }
@@ -849,7 +845,7 @@ def test_combine_wildcards(tmp_path):
             },
             overwrite_seqs=True,
         )
-        for input_variable in ["concentration", "deposition"]
+        for plot_variable in ["concentration", "deposition"]
         for ens_variable in ["mean", "maximum"]
         for lang in ["de", "en"]
     ]
@@ -896,7 +892,7 @@ class Test_IndividualParams_SingleOrMultipleValues:
             infile = "foo.nc"
             outfile = "bar.png"
             model = "COSMO-baz"
-            input_variable = "concentration"
+            plot_variable = "concentration"
 
             [_base.single]
             level = 0
@@ -928,7 +924,7 @@ class Test_IndividualParams_SingleOrMultipleValues:
             infile = "foo.nc"
             outfile = "bar.png"
             model = "COSMO-baz"
-            input_variable = "deposition"
+            plot_variable = "deposition"
             """
         setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
         base = {
@@ -943,7 +939,7 @@ class Test_IndividualParams_SingleOrMultipleValues:
                 {
                     "panels": [
                         {
-                            "input_variable": "deposition",
+                            "plot_variable": "deposition",
                             "dimensions": {"level": None},
                         }
                     ],

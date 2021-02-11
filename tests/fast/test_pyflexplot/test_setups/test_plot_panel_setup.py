@@ -106,7 +106,7 @@ class Test_CompleteDimensions:
 
 class TestDecompress:
     params = {
-        "input_variable": "deposition",
+        "plot_variable": "deposition",
         "combine_deposition_types": False,
         "combine_species": False,
         "dimensions": {

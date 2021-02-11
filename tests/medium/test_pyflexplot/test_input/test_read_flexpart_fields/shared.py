@@ -49,18 +49,18 @@ def read_flexpart_field(path, var_name, setup, *, model, add_ts0):
         fix_flexpart_field(fld, model)
 
         # Handle time integration of data
-        input_variable = setup.panels.collect_equal("input_variable")
+        plot_variable = setup.panels.collect_equal("plot_variable")
         integrate = setup.panels.collect_equal("integrate")
-        if input_variable == "concentration":
+        if plot_variable == "concentration":
             if integrate:
                 # Integrate concentration field over time
                 fld = np.cumsum(fld, axis=0)
-        elif input_variable == "deposition":
+        elif plot_variable == "deposition":
             if not integrate:
                 # De-integrate deposition field over time
                 fld[1:] -= fld[:-1].copy()
         else:
-            raise NotImplementedError(f"variable '{input_variable}'")
+            raise NotImplementedError(f"variable '{plot_variable}'")
         fld = fld[-1]
 
         return fld

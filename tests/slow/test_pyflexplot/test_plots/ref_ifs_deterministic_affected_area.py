@@ -130,7 +130,7 @@ field_summary = {
             },
             "panels": [
                 {
-                    "input_variable": "affected_area",
+                    "plot_variable": "affected_area",
                     "ens_variable": "none",
                     "integrate": True,
                     "combine_deposition_types": True,
@@ -605,7 +605,7 @@ plot_summary = {
                     },
                     "panels": [
                         {
-                            "input_variable": "affected_area",
+                            "plot_variable": "affected_area",
                             "ens_variable": "none",
                             "integrate": True,
                             "combine_deposition_types": True,
@@ -27838,7 +27838,7 @@ plot_summary = {
                 },
                 "panels": [
                     {
-                        "input_variable": "affected_area",
+                        "plot_variable": "affected_area",
                         "ens_variable": "none",
                         "integrate": True,
                         "combine_deposition_types": True,

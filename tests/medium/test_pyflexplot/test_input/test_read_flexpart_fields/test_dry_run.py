@@ -378,7 +378,7 @@ def test_single_setup_concentration(datadir: str, config: ConfSingleSetup):
             },
             "panels": [
                 {
-                    "input_variable": "concentration",
+                    "plot_variable": "concentration",
                 }
             ],
         },
@@ -598,7 +598,7 @@ def test_single_setup_deposition(datadir: str, config: ConfSingleSetup):
             },
             "panels": [
                 {
-                    "input_variable": "deposition",
+                    "plot_variable": "deposition",
                 }
             ],
         },
@@ -615,7 +615,7 @@ def test_single_setup_deposition(datadir: str, config: ConfSingleSetup):
                 {
                     "panels": [
                         {
-                            "input_variable": "concentration",
+                            "plot_variable": "concentration",
                             "dimensions": {"species_id": 1, "level": 0, "time": 0},
                         }
                     ],
@@ -623,7 +623,7 @@ def test_single_setup_deposition(datadir: str, config: ConfSingleSetup):
                 {
                     "panels": [
                         {
-                            "input_variable": "deposition",
+                            "plot_variable": "deposition",
                             "dimensions": {
                                 "species_id": 1,
                                 "time": 0,
@@ -634,8 +634,8 @@ def test_single_setup_deposition(datadir: str, config: ConfSingleSetup):
                 },
             ],
             sol=[
-                [{"panels": [{"input_variable": "concentration"}]}],
-                [{"panels": [{"input_variable": "deposition"}]}],
+                [{"panels": [{"plot_variable": "concentration"}]}],
+                [{"panels": [{"plot_variable": "deposition"}]}],
             ],
         ),
         ConfMultipleSetups(  # [conf1]
@@ -643,7 +643,7 @@ def test_single_setup_deposition(datadir: str, config: ConfSingleSetup):
                 {
                     "panels": [
                         {
-                            "input_variable": "concentration",
+                            "plot_variable": "concentration",
                             "combine_levels": False,
                             "dimensions": {
                                 "species_id": (1, 2),
@@ -657,7 +657,7 @@ def test_single_setup_deposition(datadir: str, config: ConfSingleSetup):
                 {
                     "panels": [
                         {
-                            "input_variable": "deposition",
+                            "plot_variable": "deposition",
                             "combine_deposition_types": True,
                             "combine_species": False,
                             "dimensions": {
@@ -670,7 +670,7 @@ def test_single_setup_deposition(datadir: str, config: ConfSingleSetup):
                 },
             ],
             sol=[
-                [merge_dicts(dct, {"panels": [{"input_variable": "concentration"}]})]
+                [merge_dicts(dct, {"panels": [{"plot_variable": "concentration"}]})]
                 for dct in [
                     {
                         "panels": [
@@ -723,7 +723,7 @@ def test_single_setup_deposition(datadir: str, config: ConfSingleSetup):
                     {
                         "panels": [
                             {
-                                "input_variable": "deposition",
+                                "plot_variable": "deposition",
                                 "dimensions": merge_dicts(
                                     dims, {"deposition_type": ("dry", "wet")}
                                 ),
@@ -744,7 +744,7 @@ def test_single_setup_deposition(datadir: str, config: ConfSingleSetup):
                 {
                     "panels": [
                         {
-                            "input_variable": "concentration",
+                            "plot_variable": "concentration",
                             "combine_levels": True,
                             "combine_species": False,
                             "dimensions": {
@@ -758,7 +758,7 @@ def test_single_setup_deposition(datadir: str, config: ConfSingleSetup):
                 {
                     "panels": [
                         {
-                            "input_variable": "concentration",
+                            "plot_variable": "concentration",
                             "combine_levels": False,
                             "combine_species": True,
                             "dimensions": {
@@ -855,7 +855,7 @@ def test_single_setup_deposition(datadir: str, config: ConfSingleSetup):
 )
 def test_multiple_setups(datadir: str, config: ConfMultipleSetups):
     params = [
-        "input_variable",
+        "plot_variable",
         "dimensions.deposition_type",
         "dimensions.level",
         "dimensions.species_id",

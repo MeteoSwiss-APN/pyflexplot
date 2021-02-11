@@ -125,7 +125,7 @@ field_summary = {
             },
             "panels": [
                 {
-                    "input_variable": "deposition",
+                    "plot_variable": "deposition",
                     "ens_variable": "none",
                     "integrate": True,
                     "combine_deposition_types": True,
@@ -430,7 +430,7 @@ plot_summary = {
                     },
                     "panels": [
                         {
-                            "input_variable": "deposition",
+                            "plot_variable": "deposition",
                             "ens_variable": "none",
                             "integrate": True,
                             "combine_deposition_types": True,
@@ -6202,7 +6202,7 @@ plot_summary = {
                 },
                 "panels": [
                     {
-                        "input_variable": "deposition",
+                        "plot_variable": "deposition",
                         "ens_variable": "none",
                         "integrate": True,
                         "combine_deposition_types": True,

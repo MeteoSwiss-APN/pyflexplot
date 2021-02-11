@@ -53,7 +53,7 @@ def test_one_setup_one_field(datadir, config):  # noqa:F811
         },
         "panels": [
             {
-                "input_variable": "concentration",
+                "plot_variable": "concentration",
                 "dimensions": {"time": -1, "species_id": 1, "level": 0},
                 "ens_variable": config.ens_var,
             }

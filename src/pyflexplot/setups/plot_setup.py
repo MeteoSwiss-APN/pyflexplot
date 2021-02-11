@@ -136,7 +136,7 @@ class PlotSetup:
     def deposition_type_str(self) -> str:
         deposition_type = self.panels.collect_equal("dimensions").deposition_type
         if deposition_type is None:
-            if self.panels.collect_equal("input_variable") in [
+            if self.panels.collect_equal("plot_variable") in [
                 "deposition",
                 "affected_area",
             ]:
@@ -355,7 +355,7 @@ class PlotSetup:
 
             infile: Input file path(s). May contain format keys.
 
-            input_variable: Input variable. Choices: "concentration",
+            plot_variable: Input variable. Choices: "concentration",
                 "deposition".
 
             integrate: Integrate field over time.
@@ -535,12 +535,12 @@ class PlotSetup:
     ) -> "PlotSetup":
         setups = list(setups)
         # SR_TMP <
-        input_variables = [
-            setup.panels.collect_equal("input_variable") for setup in setups
+        plot_variables = [
+            setup.panels.collect_equal("plot_variable") for setup in setups
         ]
-        if len(set(input_variables)) != 1:
+        if len(set(plot_variables)) != 1:
             raise ValueError(
-                f"cannot compress setups: input_variable differs: {input_variables}"
+                f"cannot compress setups: plot_variable differs: {plot_variables}"
             )
         # SR_TMP >
         dcts = [setup.dict() for setup in setups]

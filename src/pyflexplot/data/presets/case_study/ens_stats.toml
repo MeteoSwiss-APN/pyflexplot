@@ -6,14 +6,14 @@ infile = "data/cosmo-2e/grid_conc_xxxx_20190731000000_{ens_member:03d}.nc"
 ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 # ens_member_id = [0, 2, 5, 8, 11, 14, 17, 20]
 model = "COSMO-2E"
-outfile = "case_study/cosmo-2e_{input_variable}_{ens_variable}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
+outfile = "case_study/cosmo-2e_{plot_variable}_{ens_variable}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
 combine_species = true
 # species_id = "*"
 species_id = 1
 combine_deposition_types = true
 
 [_base._concentration]
-input_variable = "concentration"
+plot_variable = "concentration"
 level = 0
 time = "*"
 [_base._concentration._integr]
@@ -24,12 +24,12 @@ time = 11
 level = 0
 time = 0
 [_base._cloud._arrival_time]
-input_variable = "cloud_arrival_time"
+plot_variable = "cloud_arrival_time"
 [_base._cloud._departure_time]
-input_variable = "cloud_departure_time"
+plot_variable = "cloud_departure_time"
 
 [_base._deposition]
-input_variable = "deposition"
+plot_variable = "deposition"
 integrate = true
 time = 11
 [_base._deposition._dry]

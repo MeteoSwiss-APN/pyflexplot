@@ -125,7 +125,7 @@ field_summary = {
             },
             "panels": [
                 {
-                    "input_variable": "concentration",
+                    "plot_variable": "concentration",
                     "ens_variable": "none",
                     "integrate": False,
                     "combine_deposition_types": False,
@@ -430,7 +430,7 @@ plot_summary = {
                     },
                     "panels": [
                         {
-                            "input_variable": "concentration",
+                            "plot_variable": "concentration",
                             "ens_variable": "none",
                             "integrate": False,
                             "combine_deposition_types": False,
@@ -6147,7 +6147,7 @@ plot_summary = {
                 },
                 "panels": [
                     {
-                        "input_variable": "concentration",
+                        "plot_variable": "concentration",
                         "ens_variable": "none",
                         "integrate": False,
                         "combine_deposition_types": False,

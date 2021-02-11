@@ -476,7 +476,7 @@ def create_plot_config(
     time_stats: FieldStats,
     labels: Dict[str, Dict[str, Any]],
 ) -> BoxedPlotConfig:
-    input_variable = setup.panels.collect_equal("input_variable")
+    plot_variable = setup.panels.collect_equal("plot_variable")
     ens_variable = setup.panels.collect_equal("ens_variable")
 
     plot_config_dct: Dict[str, Any] = {
@@ -505,13 +505,13 @@ def create_plot_config(
         "scale": "log",
     }
     legend_config_dct: Dict[str, Any] = {}
-    if input_variable == "concentration":
+    if plot_variable == "concentration":
         levels_config_dct["n"] = 8
-    elif input_variable == "deposition":
+    elif plot_variable == "deposition":
         levels_config_dct["n"] = 9
     if (
         setup.model.simulation_type == "deterministic"
-        and input_variable == "affected_area"
+        and plot_variable == "affected_area"
     ):
         levels_config_dct["extend"] = "none"
         levels_config_dct["levels"] = np.array([0.0, np.inf])
@@ -523,7 +523,7 @@ def create_plot_config(
         legend_config_dct["range_style"] = "up"
         legend_config_dct["ranges_align"] = "right"
         legend_config_dct["rstrip_zeros"] = True
-    elif input_variable in [
+    elif plot_variable in [
         "cloud_arrival_time",
         "cloud_departure_time",
     ] or ens_variable in [
@@ -537,11 +537,11 @@ def create_plot_config(
         # SR_TMP < Adapt to simulation duration (not always 33 h)!
         levels_config_dct["levels"] = [0, 3, 6, 9, 12, 18, 24, 33]
         # SR_TMP >
-        if input_variable == "cloud_arrival_time" or (
+        if plot_variable == "cloud_arrival_time" or (
             ens_variable == "ens_cloud_arrival_time"
         ):
             levels_config_dct["extend"] = "min"
-        elif input_variable == "cloud_departure_time" or (
+        elif plot_variable == "cloud_departure_time" or (
             ens_variable == "ens_cloud_departure_time"
         ):
             levels_config_dct["extend"] = "max"
@@ -566,19 +566,19 @@ def create_plot_config(
     color_over: Optional[str] = None
     if (
         setup.model.simulation_type == "deterministic"
-        and input_variable == "affected_area"
+        and plot_variable == "affected_area"
     ):
         cmap = "mono"
     elif setup.model.simulation_type == "ensemble" and ens_variable == "probability":
         # cmap = truncate_cmap("nipy_spectral_r", 0.275, 0.95)
         cmap = truncate_cmap("terrain_r", 0.075)
-    elif input_variable == "cloud_arrival_time" or (
+    elif plot_variable == "cloud_arrival_time" or (
         ens_variable == "ens_cloud_arrival_time"
     ):
         cmap = "viridis"
         color_under = "slategray"
         color_over = "lightgray"
-    elif input_variable == "cloud_departure_time" or (
+    elif plot_variable == "cloud_departure_time" or (
         ens_variable == "ens_cloud_departure_time"
     ):
         cmap = "viridis_r"
@@ -610,7 +610,7 @@ def create_plot_config(
     # Markers
     markers_config_dct: Dict[str, Any] = {}
     if setup.model.simulation_type == "deterministic":
-        if input_variable in [
+        if plot_variable in [
             "affected_area",
             "cloud_arrival_time",
             "cloud_departure_time",
@@ -669,7 +669,7 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
 
     ens_params = setup.panels.collect_equal("ens_params")
     ens_variable = setup.panels.collect_equal("ens_variable")
-    input_variable = setup.panels.collect_equal("input_variable")
+    plot_variable = setup.panels.collect_equal("plot_variable")
 
     # Format variable name in various ways
     names = format_names_etc(setup, words, mdata)
@@ -713,9 +713,9 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
         f"\t{format_meta_datum(mdata.species.name, join_values=' / ')}",
     )
     labels["data_info"]["lines"].append(
-        f"{words['input_variable'].c}:\t{capitalize(var_name_abbr)}"
+        f"{words['plot_variable'].c}:\t{capitalize(var_name_abbr)}"
     )
-    if input_variable == "concentration":
+    if plot_variable == "concentration":
         labels["data_info"]["lines"].append(
             f"{words['height'].c}:"
             f"\t{escape_format_keys(format_level_label(mdata, words))}"
@@ -759,7 +759,7 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
         "max": words["maximum", "abbr"].s,
         "maximum": words["maximum"].s,
     }
-    if input_variable == "concentration":
+    if plot_variable == "concentration":
         labels["legend"]["tc"] = (
             f"{words['height']}:"
             f" {escape_format_keys(format_level_label(mdata, words))}"
@@ -770,12 +770,12 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
     elif unit == "%":
         title = f"{words['probability']} ({unit})"
     elif (
-        input_variable == "cloud_arrival_time"
+        plot_variable == "cloud_arrival_time"
         or ens_variable == "ens_cloud_arrival_time"
     ):
         title = f"{words['hour', 'pl']} {words['until']} {words['arrival']}"
     elif (
-        input_variable == "cloud_departure_time"
+        plot_variable == "cloud_departure_time"
         or ens_variable == "ens_cloud_departure_time"
     ):
         title = f"{words['hour', 'pl']} {words['until']} {words['departure']}"
@@ -871,7 +871,7 @@ def format_names_etc(
 ) -> Dict[str, str]:
     ens_params = setup.panels.collect_equal("ens_params")
     ens_variable = setup.panels.collect_equal("ens_variable")
-    input_variable = setup.panels.collect_equal("input_variable")
+    plot_variable = setup.panels.collect_equal("plot_variable")
     integrate = setup.panels.collect_equal("integrate")
 
     long_name = ""
@@ -880,7 +880,7 @@ def format_names_etc(
     def format_var_names(
         setup: PlotSetup, words: TranslatedWords
     ) -> Tuple[str, str, str]:
-        if input_variable == "deposition":
+        if plot_variable == "deposition":
             dep_type_word = (
                 "total"
                 if setup.deposition_type_str == "tot"
@@ -889,12 +889,12 @@ def format_names_etc(
             word = f"{dep_type_word}_surface_deposition"
             if not integrate:
                 word = f"incremental_{word}"
-        elif input_variable == "concentration":
+        elif plot_variable == "concentration":
             word = "air_activity_concentration"
             if integrate:
                 word = f"integrated_{word}"
         else:
-            word = input_variable
+            word = plot_variable
         var_name_abbr = words[word, "abbr"].s
         var_name = words[word].s
         var_name_rel = words[word, "of"].s
@@ -916,22 +916,22 @@ def format_names_etc(
     var_name, var_name_abbr, var_name_rel = format_var_names(setup, words)
 
     # Short/long names #1: By variable
-    if input_variable == "concentration":
+    if plot_variable == "concentration":
         if integrate:
             long_name = var_name
             short_name = words["integrated_concentration", "abbr"].s
         else:
             long_name = var_name
             short_name = words["concentration"].s
-    elif input_variable == "deposition":
+    elif plot_variable == "deposition":
         long_name = var_name
         short_name = words["deposition"].s
-    elif input_variable in [
+    elif plot_variable in [
         "affected_area",
         "cloud_arrival_time",
         "cloud_departure_time",
     ]:
-        word = input_variable
+        word = plot_variable
         long_name = words[word].s
         short_name = words[word, "abbr"].s
 
@@ -1135,23 +1135,23 @@ def format_integr_period(
     words: TranslatedWords,
     cap: bool = False,
 ) -> str:
-    input_variable = setup.panels.collect_equal("input_variable")
+    plot_variable = setup.panels.collect_equal("plot_variable")
     integrate = setup.panels.collect_equal("integrate")
     if not integrate:
         operation = words["averaged_over"].s
-    elif input_variable in [
+    elif plot_variable in [
         "concentration",
         "affected_area",
         "cloud_arrival_time",
         "cloud_departure_time",
     ]:
         operation = words["summed_over"].s
-    elif input_variable == "deposition":
+    elif plot_variable == "deposition":
         operation = words["accumulated_over"].s
     else:
         raise NotImplementedError(
             f"operation for {'' if integrate else 'non-'}integrated"
-            f" input variable '{input_variable}'"
+            f" input variable '{plot_variable}'"
         )
     period = now - start
     hours = int(period.total_seconds() / 3600)
