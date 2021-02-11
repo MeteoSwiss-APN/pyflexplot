@@ -143,6 +143,7 @@ field_summary = {
                     "domain_size_lon": None,
                     "dimensions_default": "all",
                     "dimensions": {
+                        "variable": "concentration",
                         "deposition_type": None,
                         "level": 0,
                         "nageclass": 0,
@@ -448,6 +449,7 @@ plot_summary = {
                             "domain_size_lon": None,
                             "dimensions_default": "all",
                             "dimensions": {
+                                "variable": "concentration",
                                 "deposition_type": None,
                                 "level": 0,
                                 "nageclass": 0,
@@ -6165,6 +6167,7 @@ plot_summary = {
                         "domain_size_lon": None,
                         "dimensions_default": "all",
                         "dimensions": {
+                            "variable": "concentration",
                             "deposition_type": None,
                             "level": 0,
                             "nageclass": 0,

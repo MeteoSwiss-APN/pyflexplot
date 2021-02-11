@@ -53,8 +53,14 @@ class CoreDimensions:
     numpoint: Optional[int] = None
     species_id: Optional[int] = None
     time: Optional[int] = None
+    variable: Optional[str] = None
 
     def __post_init__(self) -> None:
+        # Check variable
+        choices = [None, "concentration", "dry_deposition", "wet_deposition"]
+        if self.variable not in choices:
+            raise ValueError(f"variable '{self.variable}' not among {choices}")
+
         # Check deposition_type
         choices = [None, "dry", "wet"]
         if self.deposition_type not in choices:
@@ -194,6 +200,9 @@ class Dimensions:
                 ``skip`` and ``select`` will be skipped.
 
         """
+        # SR_TMP <
+        skip = list(skip or []) + ["variable"]
+        # SR_TMP >
         for param in select or []:
             if param not in self.get_params():
                 raise ValueError(f"invalid param in select: {param}")
@@ -216,6 +225,8 @@ class Dimensions:
         mode: Union[Literal["all"], Literal["first"]] = "all",
     ) -> Optional["Dimensions"]:
         """Complete unconstrained dimensions based on available indices."""
+        _name_ = type(self).__name__
+
         mode_choices = ["all", "first"]
         if mode not in mode_choices:
             raise ValueError(
@@ -223,6 +234,55 @@ class Dimensions:
             )
 
         obj = self if inplace else self.copy()
+
+        if obj.deposition_type is None:
+            if plot_variable == "deposition":
+                if mode == "all":
+                    obj.deposition_type = ("dry", "wet")
+                elif mode == "first":
+                    obj.deposition_type = "dry"
+            # SR_TMP <
+            elif plot_variable == "affected_area":
+                raise NotImplementedError(
+                    f"set {_name_}.deposition_type for plot_variable '{plot_variable}'"
+                )
+            # SR_TMP >
+
+        if obj.variable is None:
+            if plot_variable in [
+                "concentration",
+                "cloud_arrival_time",
+                "cloud_departure_time",
+            ]:
+                obj.variable = "concentration"
+            elif plot_variable == "deposition":
+                if isinstance(obj.deposition_type, str):
+                    obj.variable = f"{obj.deposition_type}_deposition"
+                else:
+                    obj.variable = tuple(
+                        [f"{dt}_deposition" for dt in obj.deposition_type]
+                    )
+            elif plot_variable == "affected_area":
+                if isinstance(obj.deposition_type, str):
+                    obj.variable = (
+                        "concentration",
+                        f"{obj.deposition_type}_deposition",
+                    )
+                else:
+                    obj.variable = tuple(
+                        ["concentration"]
+                        + [f"{dt}_deposition" for dt in obj.deposition_type]
+                    )
+            else:
+                raise NotImplementedError(
+                    f"set {_name_}.variable for plot_variable '{plot_variable}'"
+                )
+
+        if obj.species_id is None:
+            if mode == "all":
+                obj.species_id = tuple(species_ids)
+            elif mode == "first":
+                obj.species_id = next(iter(species_ids))
 
         if obj.time is None:
             values = range(raw_dimensions["time"]["size"])
@@ -252,19 +312,6 @@ class Dimensions:
                     obj.level = tuple(values)
                 elif mode == "first":
                     obj.level = next(iter(values))
-
-        if obj.deposition_type is None:
-            if plot_variable == "deposition":
-                if mode == "all":
-                    obj.deposition_type = ("dry", "wet")
-                elif mode == "first":
-                    obj.deposition_type = "dry"
-
-        if obj.species_id is None:
-            if mode == "all":
-                obj.species_id = tuple(species_ids)
-            elif mode == "first":
-                obj.species_id = next(iter(species_ids))
 
         if obj.nageclass is None:
             if "nageclass" in raw_dimensions:

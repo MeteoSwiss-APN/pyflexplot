@@ -148,6 +148,11 @@ field_summary = {
                     "domain_size_lon": 20.0,
                     "dimensions_default": "all",
                     "dimensions": {
+                        "variable": [
+                            "concentration",
+                            "dry_deposition",
+                            "wet_deposition",
+                        ],
                         "deposition_type": ["dry", "wet"],
                         "level": 0,
                         "nageclass": 0,
@@ -623,6 +628,11 @@ plot_summary = {
                             "domain_size_lon": 20.0,
                             "dimensions_default": "all",
                             "dimensions": {
+                                "variable": [
+                                    "concentration",
+                                    "dry_deposition",
+                                    "wet_deposition",
+                                ],
                                 "deposition_type": ["dry", "wet"],
                                 "level": 0,
                                 "nageclass": 0,
@@ -27856,6 +27866,11 @@ plot_summary = {
                         "domain_size_lon": 20.0,
                         "dimensions_default": "all",
                         "dimensions": {
+                            "variable": [
+                                "concentration",
+                                "dry_deposition",
+                                "wet_deposition",
+                            ],
                             "deposition_type": ["dry", "wet"],
                             "level": 0,
                             "nageclass": 0,

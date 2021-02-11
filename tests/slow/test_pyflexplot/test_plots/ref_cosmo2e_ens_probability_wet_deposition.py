@@ -143,6 +143,7 @@ field_summary = {
                     "domain_size_lon": None,
                     "dimensions_default": "all",
                     "dimensions": {
+                        "variable": "wet_deposition",
                         "deposition_type": "wet",
                         "level": None,
                         "nageclass": 0,
@@ -453,6 +454,7 @@ plot_summary = {
                             "domain_size_lon": None,
                             "dimensions_default": "all",
                             "dimensions": {
+                                "variable": "wet_deposition",
                                 "deposition_type": "wet",
                                 "level": None,
                                 "nageclass": 0,
@@ -6298,6 +6300,7 @@ plot_summary = {
                         "domain_size_lon": None,
                         "dimensions_default": "all",
                         "dimensions": {
+                            "variable": "wet_deposition",
                             "deposition_type": "wet",
                             "level": None,
                             "nageclass": 0,

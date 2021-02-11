@@ -713,7 +713,7 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
         f"\t{format_meta_datum(mdata.species.name, join_values=' / ')}",
     )
     labels["data_info"]["lines"].append(
-        f"{words['plot_variable'].c}:\t{capitalize(var_name_abbr)}"
+        f"{words['input_variable'].c}:\t{capitalize(var_name_abbr)}"
     )
     if plot_variable == "concentration":
         labels["data_info"]["lines"].append(

@@ -36,6 +36,7 @@ OPTIONAL_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
                 "numpoint": None,
                 "species_id": None,
                 "time": None,
+                "variable": None,
             },
             "domain": "full",
             "domain_size_lat": None,
