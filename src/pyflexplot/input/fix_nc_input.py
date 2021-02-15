@@ -72,7 +72,7 @@ class FlexPartDataFixer:
                 "cloud_departure_time",
             ]:
                 new_unit = unit
-            elif plot_variable == "deposition" and unit == "N/A":
+            elif plot_variable.endswith("deposition") and unit == "N/A":
                 new_unit = "Bq m-2"
             # SR_TMP >
             else:
@@ -92,7 +92,7 @@ class FlexPartDataFixer:
                 "cloud_departure_time",
             ]:
                 new_unit = unit
-            elif plot_variable == "deposition" and unit == "N/A":
+            elif plot_variable.endswith("deposition") and unit == "N/A":
                 new_unit = "Bq m-2"
             # SR_TMP >
             else:

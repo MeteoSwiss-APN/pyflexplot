@@ -5,7 +5,6 @@ import warnings
 from typing import Any
 from typing import Dict
 from typing import Iterator
-from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -22,8 +21,9 @@ from ..plotting.domain import CloudDomain
 from ..plotting.domain import Domain
 from ..plotting.domain import ReleaseSiteDomain
 from ..plotting.proj_bbox import Projections
+from ..setups.model_setup import ModelSetup
+from ..setups.plot_panel_setup import PlotPanelSetup
 from ..setups.plot_setup import PlotSetup
-from ..setups.plot_setup import PlotSetupGroup
 from ..utils.exceptions import ArrayDimensionError
 from ..utils.exceptions import FieldAllNaNError
 from ..utils.exceptions import InconsistentArrayShapesError
@@ -64,7 +64,8 @@ def summarize_field(obj: Any) -> Dict[str, Any]:
         },
         "mdata": obj.mdata,
         "time_props": obj.time_props,
-        "var_setups": obj.var_setups,
+        "panel_setup": obj.panel_setup,
+        "model_setup": obj.model_setup,
         "projs": obj.projs,
     }
     return summarize(dct)
@@ -81,9 +82,10 @@ class Field:
         lat: np.ndarray,
         lon: np.ndarray,
         *,
-        var_setups: PlotSetupGroup,
-        time_props: "FieldTimeProperties",
         mdata: MetaData,
+        panel_setup: PlotPanelSetup,
+        model_setup: ModelSetup,
+        time_props: "FieldTimeProperties",
     ) -> None:
         """Create an instance of ``Field``.
 
@@ -96,17 +98,20 @@ class Field:
 
             mdata: Meta data for plot for labels etc.
 
-            time_props: Properties of the field across all time steps.
+            panel_setup: Setup of plot panel in which the field is plotted.
 
-            var_setups: Variables setups.
+            model_setup: Setup of the model.
+
+            time_props: Properties of the field across all time steps.
 
         """
         self.fld: np.ndarray = fld
         self.lat: np.ndarray = lat
         self.lon: np.ndarray = lon
         self.mdata: MetaData = mdata
+        self.panel_setup: PlotPanelSetup = panel_setup
+        self.model_setup: ModelSetup = model_setup
         self.time_props: "FieldTimeProperties" = time_props
-        self.var_setups: PlotSetupGroup = var_setups
         try:
             self.check_consistency()
         except Exception as e:
@@ -147,10 +152,10 @@ class Field:
         """Initialize Domain object (projection and extent)."""
         lat = self.lat
         lon = self.lon
-        model_name = self.var_setups.collect_equal("model.name")
-        domain_type = self.var_setups.collect_equal("domain")
-        domain_size_lat = self.var_setups.collect_equal("domain_size_lat")
-        domain_size_lon = self.var_setups.collect_equal("domain_size_lon")
+        model_name = self.model_setup.name
+        domain_type = self.panel_setup.domain
+        domain_size_lat = self.panel_setup.domain_size_lat
+        domain_size_lon = self.panel_setup.domain_size_lon
         assert self.mdata is not None  # mypy
         release_lat = self.mdata.release.lat
         release_lon = self.mdata.release.lon
@@ -221,7 +226,7 @@ class Field:
             f"lon=array[shape={self.lon.shape}, dtype={self.lon.dtype}],",
             f"mdata={self.mdata},",
             f"time_stats={self.time_props},",
-            f"var_setups={self.var_setups},",
+            f"var_setups={self.panel_setup},",
             f"projs={self.projs},",
         ]
         body = join_multilines(lines, indent=2)
@@ -299,28 +304,29 @@ class FieldGroupAttrs:
         return format_ens_file_path(self.raw_path, self.ens_member_ids)
 
 
+@dc.dataclass
 class FieldGroup:
     """A group of related ``Field`` objects."""
 
-    def __init__(
-        self,
-        fields: Sequence[Field],
-        attrs=Union[FieldGroupAttrs, Dict[str, Any]],
-    ) -> None:
-        """Create an instance of ``FieldGroup``."""
-        if not isinstance(attrs, FieldGroupAttrs):
-            attrs = FieldGroupAttrs(**attrs)
-
-        self.fields: List[Field] = list(fields)
-        self.attrs: FieldGroupAttrs = attrs
-
-        setups = PlotSetupGroup(
-            [setup for field in fields for setup in field.var_setups]
-        )
-        self.shared_setup: PlotSetup = setups.compress()
+    fields: Sequence[Field]
+    plot_setup: PlotSetup
+    attrs: FieldGroupAttrs
 
     def __len__(self) -> int:
         return len(self.fields)
 
     def __iter__(self) -> Iterator[Field]:
         return iter(self.fields)
+
+    @classmethod
+    def create(
+        cls,
+        fields: Sequence[Field],
+        plot_setup: Union[PlotSetup, Dict[str, Any]],
+        attrs: Union[FieldGroupAttrs, Dict[str, Any]],
+    ) -> "FieldGroup":
+        if not isinstance(plot_setup, PlotSetup):
+            plot_setup = PlotSetup.create(plot_setup)
+        if not isinstance(attrs, FieldGroupAttrs):
+            attrs = FieldGroupAttrs(**attrs)
+        return cls(fields, plot_setup, attrs)

@@ -11,7 +11,6 @@ ens_variable = "probability"
 # ens_param_thr = 1e-5
 ens_param_thr = 0
 combine_species = true
-combine_deposition_types = true
 # species_id = "*"
 species_id = 1
 time = -1
@@ -23,18 +22,16 @@ level = 0
 integrate = true
 
 [_base._deposition]
-plot_variable = "deposition"
 integrate = true
 [_base._deposition."_tot+"]
-deposition_type = "*"
+plot_variable = "tot_deposition"
 [_base._deposition."_wet+"]
-deposition_type = "wet"
+plot_variable = "wet_deposition"
 
 [_base."_affected_area+"]
 plot_variable = "affected_area"
 integrate = true
 level = 0
-deposition_type = "*"
 
 # ["**"._full.en]
 # domain = "full"

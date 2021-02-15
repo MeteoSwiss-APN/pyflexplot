@@ -103,6 +103,7 @@ def main(
                 f" read {setup_group.infile}"
             )
         )
+        # Group fields into one group per plot (with possibly multiple outfiles)
         field_groups = read_fields(
             setup_group,
             config={
@@ -115,6 +116,8 @@ def main(
         )
         iter_state.n_field_groups_curr += len(field_groups)
         iter_state.n_field_groups_i = len(field_groups)
+        # Format all outfile paths ahead of parallelized plotting loop to ensure
+        # correct order of derived paths (e.g., "a.pdf", "a.1.pdf", "a.2.pdf")
         out_file_paths_lst: List[List[str]] = [
             format_out_file_paths(
                 field_group,

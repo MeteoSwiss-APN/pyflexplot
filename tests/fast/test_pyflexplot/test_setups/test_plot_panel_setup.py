@@ -106,11 +106,11 @@ class Test_CompleteDimensions:
 
 class TestDecompress:
     params = {
-        "plot_variable": "deposition",
-        "combine_deposition_types": False,
+        "plot_variable": "concentration",
+        "combine_levels": False,
         "combine_species": False,
         "dimensions": {
-            "deposition_type": ["dry", "wet"],
+            "level": [0, 1],
             "nageclass": (0,),
             "noutrel": (0,),
             "numpoint": (0,),
@@ -124,18 +124,18 @@ class TestDecompress:
         group = setup.decompress()
         dcts = group.dicts()
         sol = [
-            {"dimensions": {"deposition_type": "dry", "species_id": 1, "time": 1}},
-            {"dimensions": {"deposition_type": "dry", "species_id": 1, "time": 2}},
-            {"dimensions": {"deposition_type": "dry", "species_id": 1, "time": 3}},
-            {"dimensions": {"deposition_type": "dry", "species_id": 2, "time": 1}},
-            {"dimensions": {"deposition_type": "dry", "species_id": 2, "time": 2}},
-            {"dimensions": {"deposition_type": "dry", "species_id": 2, "time": 3}},
-            {"dimensions": {"deposition_type": "wet", "species_id": 1, "time": 1}},
-            {"dimensions": {"deposition_type": "wet", "species_id": 1, "time": 2}},
-            {"dimensions": {"deposition_type": "wet", "species_id": 1, "time": 3}},
-            {"dimensions": {"deposition_type": "wet", "species_id": 2, "time": 1}},
-            {"dimensions": {"deposition_type": "wet", "species_id": 2, "time": 2}},
-            {"dimensions": {"deposition_type": "wet", "species_id": 2, "time": 3}},
+            {"dimensions": {"level": 0, "species_id": 1, "time": 1}},
+            {"dimensions": {"level": 0, "species_id": 1, "time": 2}},
+            {"dimensions": {"level": 0, "species_id": 1, "time": 3}},
+            {"dimensions": {"level": 0, "species_id": 2, "time": 1}},
+            {"dimensions": {"level": 0, "species_id": 2, "time": 2}},
+            {"dimensions": {"level": 0, "species_id": 2, "time": 3}},
+            {"dimensions": {"level": 1, "species_id": 1, "time": 1}},
+            {"dimensions": {"level": 1, "species_id": 1, "time": 2}},
+            {"dimensions": {"level": 1, "species_id": 1, "time": 3}},
+            {"dimensions": {"level": 1, "species_id": 2, "time": 1}},
+            {"dimensions": {"level": 1, "species_id": 2, "time": 2}},
+            {"dimensions": {"level": 1, "species_id": 2, "time": 3}},
         ]
         assert_is_sub_element(sol, dcts, "solution", "result")
 
@@ -144,12 +144,12 @@ class TestDecompress:
         group = setup.decompress(skip=["species_id"])
         dcts = group.dicts()
         sol = [
-            {"dimensions": {"deposition_type": "dry", "species_id": [1, 2], "time": 1}},
-            {"dimensions": {"deposition_type": "dry", "species_id": [1, 2], "time": 2}},
-            {"dimensions": {"deposition_type": "dry", "species_id": [1, 2], "time": 3}},
-            {"dimensions": {"deposition_type": "wet", "species_id": [1, 2], "time": 1}},
-            {"dimensions": {"deposition_type": "wet", "species_id": [1, 2], "time": 2}},
-            {"dimensions": {"deposition_type": "wet", "species_id": [1, 2], "time": 3}},
+            {"dimensions": {"level": 0, "species_id": [1, 2], "time": 1}},
+            {"dimensions": {"level": 0, "species_id": [1, 2], "time": 2}},
+            {"dimensions": {"level": 0, "species_id": [1, 2], "time": 3}},
+            {"dimensions": {"level": 1, "species_id": [1, 2], "time": 1}},
+            {"dimensions": {"level": 1, "species_id": [1, 2], "time": 2}},
+            {"dimensions": {"level": 1, "species_id": [1, 2], "time": 3}},
         ]
         assert_is_sub_element(sol, dcts, "solution", "result")
 
@@ -158,43 +158,17 @@ class TestDecompress:
         group = setup.decompress(select=["species_id"])
         dcts = group.dicts()
         sol = [
-            {
-                "dimensions": {
-                    "deposition_type": ["dry", "wet"],
-                    "species_id": 1,
-                    "time": [1, 2, 3],
-                }
-            },
-            {
-                "dimensions": {
-                    "deposition_type": ["dry", "wet"],
-                    "species_id": 2,
-                    "time": [1, 2, 3],
-                }
-            },
+            {"dimensions": {"level": [0, 1], "species_id": 1, "time": [1, 2, 3]}},
+            {"dimensions": {"level": [0, 1], "species_id": 2, "time": [1, 2, 3]}},
         ]
         assert_is_sub_element(sol, dcts, "solution", "result")
 
     def test_select_skip(self):
         setup = PlotPanelSetup.create(self.params)
-        group = setup.decompress(
-            select=["time", "species_id"], skip=["deposition_type", "time"]
-        )
+        group = setup.decompress(select=["time", "species_id"], skip=["level", "time"])
         dcts = group.dicts()
         sol = [
-            {
-                "dimensions": {
-                    "deposition_type": ["dry", "wet"],
-                    "species_id": 1,
-                    "time": [1, 2, 3],
-                }
-            },
-            {
-                "dimensions": {
-                    "deposition_type": ["dry", "wet"],
-                    "species_id": 2,
-                    "time": [1, 2, 3],
-                }
-            },
+            {"dimensions": {"level": [0, 1], "species_id": 1, "time": [1, 2, 3]}},
+            {"dimensions": {"level": [0, 1], "species_id": 2, "time": [1, 2, 3]}},
         ]
         assert_is_sub_element(sol, dcts, "solution", "result")

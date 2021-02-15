@@ -189,12 +189,12 @@ def merge_fields(
 
             If a single operator is passed, it is used to sequentially combine
             one field after the other, in the same order as the corresponding
-            specifications (``var_setups``).
+            specifications.
 
             If a list of operators has been passed, then it's length must be
-            one smaller than that of ``var_setups``, such that each
-            operator is used between two subsequent fields (again in the same
-            order as the corresponding specifications).
+            one smaller than that of ``flds`` such that each operator is used
+            between two subsequent fields (again in the same order as the
+            corresponding specifications).
 
     """
     if callable(op):

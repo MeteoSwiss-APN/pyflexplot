@@ -4,8 +4,8 @@
 import dataclasses
 from dataclasses import asdict
 from dataclasses import dataclass
+from pprint import pformat
 from typing import Any
-from typing import cast
 from typing import Collection
 from typing import Dict
 from typing import Iterator
@@ -46,7 +46,6 @@ class CoreDimensions:
 
     """
 
-    deposition_type: Optional[str] = None
     level: Optional[int] = None
     nageclass: Optional[int] = None
     noutrel: Optional[int] = None
@@ -60,13 +59,6 @@ class CoreDimensions:
         choices = [None, "concentration", "dry_deposition", "wet_deposition"]
         if self.variable not in choices:
             raise ValueError(f"variable '{self.variable}' not among {choices}")
-
-        # Check deposition_type
-        choices = [None, "dry", "wet"]
-        if self.deposition_type not in choices:
-            raise ValueError(
-                f"deposition_type '{self.deposition_type}' not among {choices}"
-            )
 
     def dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -184,7 +176,6 @@ class Dimensions:
 
     def decompress(
         self,
-        *,
         select: Optional[Collection[str]] = None,
         skip: Optional[Collection[str]] = None,
     ) -> List["Dimensions"]:
@@ -200,17 +191,14 @@ class Dimensions:
                 ``skip`` and ``select`` will be skipped.
 
         """
-        # SR_TMP <
-        skip = list(skip or []) + ["variable"]
-        # SR_TMP >
         for param in select or []:
             if param not in self.get_params():
                 raise ValueError(f"invalid param in select: {param}")
         for param in skip or []:
             if param not in self.get_params():
                 raise ValueError(f"invalid param in skip: {param}")
-        dicts = decompress_multival_dict(self.dict(), select=select, skip=skip)
-        return list(map(self.create, dicts))
+        dcts = decompress_multival_dict(self.dict(), select=select, skip=skip)
+        return list(map(self.create, dcts))
 
     # pylint: disable=R0912  # too-many-branches
     # pylint: disable=R0913  # too-many-arguments (>5)
@@ -235,44 +223,15 @@ class Dimensions:
 
         obj = self if inplace else self.copy()
 
-        if obj.deposition_type is None:
-            if plot_variable == "deposition":
-                if mode == "all":
-                    obj.deposition_type = ("dry", "wet")
-                elif mode == "first":
-                    obj.deposition_type = "dry"
-            # SR_TMP <
-            elif plot_variable == "affected_area":
-                raise NotImplementedError(
-                    f"set {_name_}.deposition_type for plot_variable '{plot_variable}'"
-                )
-            # SR_TMP >
-
         if obj.variable is None:
-            if plot_variable in [
-                "concentration",
-                "cloud_arrival_time",
-                "cloud_departure_time",
-            ]:
+            if plot_variable in ["concentration", "dry_deposition", "wet_deposition"]:
+                obj.variable = plot_variable
+            elif plot_variable in ["cloud_arrival_time", "cloud_departure_time"]:
                 obj.variable = "concentration"
-            elif plot_variable == "deposition":
-                if isinstance(obj.deposition_type, str):
-                    obj.variable = f"{obj.deposition_type}_deposition"
-                else:
-                    obj.variable = tuple(
-                        [f"{dt}_deposition" for dt in obj.deposition_type]
-                    )
+            elif plot_variable == "tot_deposition":
+                obj.variable = ("dry_deposition", "wet_deposition")
             elif plot_variable == "affected_area":
-                if isinstance(obj.deposition_type, str):
-                    obj.variable = (
-                        "concentration",
-                        f"{obj.deposition_type}_deposition",
-                    )
-                else:
-                    obj.variable = tuple(
-                        ["concentration"]
-                        + [f"{dt}_deposition" for dt in obj.deposition_type]
-                    )
+                obj.variable = ("concentration", "dry_deposition", "wet_deposition")
             else:
                 raise NotImplementedError(
                     f"set {_name_}.variable for plot_variable '{plot_variable}'"
@@ -400,24 +359,47 @@ class Dimensions:
         return CoreDimensions.get_params()
 
     @classmethod
-    def create(cls, params: Union["Dimensions", Mapping[str, Any]]) -> "Dimensions":
+    def create(
+        cls,
+        params: Union["Dimensions", Mapping[str, Any]],
+        *,
+        plot_variable: Optional[str] = None,
+    ) -> "Dimensions":
+        """Prepare parameters and create an instance of ``Dimensions``.
+
+        Args:
+            params: Parameters definint the ``Dimensions`` object.
+
+            plot_variable (optional): Plot variable name from which the
+                ``variable`` parameter is derived; mandatory if "variable" is
+                missing in ``params``; takes precedence over a "variable" entry
+                in ``params``.
+
+        """
+        loc_params: Dict[str, Any]
         if isinstance(params, cls):
-            params = params.dict()
+            loc_params = params.dict()
         else:
-            assert isinstance(params, Mapping)  # mypy
-            params = cast(MutableMapping, params)
-            params = dict(**params)
+            loc_params = dict(params)
+        del params
+        if plot_variable is not None:
+            loc_params["variable"] = cls.derive_variable(plot_variable)
+        elif "variable" not in loc_params:
+            raise ValueError(
+                "add 'variable' to params, or pass plot_variable:"
+                f"\n{pformat(loc_params)}"
+            )
         n_max = 1
-        for param, value in params.items():
+        for param, value in loc_params.items():
             if not isinstance(value, Sequence) or isinstance(value, str):
-                assert isinstance(params, MutableMapping)  # mypy
-                params[param] = [value]
+                assert isinstance(loc_params, MutableMapping)  # mypy
+                loc_params[param] = [value]
             else:
                 n_max = max(n_max, len(value))
         core_dims_lst: List[CoreDimensions] = []
         for idx in range(n_max):
             core_params = {}
-            for param, values in params.items():
+            for param, values in loc_params.items():
                 assert isinstance(values, Sequence)  # mypy
                 try:
                     core_params[param] = values[idx]
@@ -442,3 +424,15 @@ class Dimensions:
     @classmethod
     def merge(cls, objs: Sequence["Dimensions"]) -> "Dimensions":
         return cls([core_setup for obj in objs for core_setup in obj])
+
+    @staticmethod
+    def derive_variable(plot_variable: str) -> Union[str, Tuple[str, ...]]:
+        if plot_variable in ["concentration", "dry_deposition", "wet_deposition"]:
+            return plot_variable
+        elif plot_variable == "tot_deposition":
+            return ("dry_deposition", "wet_deposition")
+        elif plot_variable == "affected_area":
+            return ("concentration", "dry_deposition", "wet_deposition")
+        elif plot_variable in ["cloud_arrival_time", "cloud_departure_time"]:
+            return "concentration"
+        raise ValueError(f"invalid plot_variable '{plot_variable}'")

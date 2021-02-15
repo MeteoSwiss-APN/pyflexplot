@@ -1,4 +1,6 @@
 """Test class ``pyflexplot.setup.Dimensions``."""
+# Third-party
+import pytest
 
 # First-party
 from pyflexplot.setups.dimensions import CoreDimensions
@@ -13,7 +15,6 @@ class Test_CoreDimensions_Init:
         cdims = CoreDimensions()
         res = cdims.dict()
         sol = {
-            "deposition_type": None,
             "level": None,
             "nageclass": None,
             "noutrel": None,
@@ -26,7 +27,6 @@ class Test_CoreDimensions_Init:
 
     def test_all_args(self):
         params = {
-            "deposition_type": "dry",
             "level": 2,
             "nageclass": 0,
             "noutrel": 1,
@@ -49,7 +49,6 @@ class Test_CoreDimensions_Init:
         cdims = CoreDimensions(**params)
         res = cdims.dict()
         sol = {
-            "deposition_type": None,
             "level": None,
             "nageclass": None,
             "noutrel": 1,
@@ -68,7 +67,6 @@ class Test_Init:
         dims = Dimensions()
         res = dims.raw_dict()
         sol = {
-            "deposition_type": (None,),
             "level": (None,),
             "nageclass": (None,),
             "noutrel": (None,),
@@ -81,7 +79,6 @@ class Test_Init:
 
     def test_single_core(self):
         cdims = CoreDimensions(
-            deposition_type="wet",
             level=2,
             nageclass=0,
             noutrel=1,
@@ -93,7 +90,6 @@ class Test_Init:
         dims = Dimensions([cdims])
         res = dims.raw_dict()
         sol = {
-            "deposition_type": ("wet",),
             "level": (2,),
             "nageclass": (0,),
             "noutrel": (1,),
@@ -109,7 +105,6 @@ class Test_Init:
         dims = Dimensions(core)
         res = dims.raw_dict()
         sol = {
-            "deposition_type": (None, None),
             "level": (None, None),
             "nageclass": (None, None),
             "noutrel": (None, None),
@@ -123,9 +118,8 @@ class Test_Init:
     def test_multi_core(self):
         core = [
             CoreDimensions(nageclass=0, time=0, variable="concentration"),
-            CoreDimensions(deposition_type="wet", variable="wet_deposition"),
+            CoreDimensions(variable="wet_deposition"),
             CoreDimensions(
-                deposition_type="dry",
                 level=1,
                 nageclass=3,
                 species_id=0,
@@ -133,7 +127,6 @@ class Test_Init:
                 variable="dry_deposition",
             ),
             CoreDimensions(
-                deposition_type="dry",
                 level=1,
                 nageclass=0,
                 noutrel=1,
@@ -145,7 +138,6 @@ class Test_Init:
         dims = Dimensions(core)
         res = dims.raw_dict()
         sol = {
-            "deposition_type": (None, "wet", "dry", "dry"),
             "level": (None, None, 1, 1),
             "nageclass": (0, None, 3, 0),
             "noutrel": (None, None, None, 1),
@@ -169,7 +161,6 @@ class Test_Dict:
         dims = Dimensions()
         res = dims.dict()
         sol = {
-            "deposition_type": None,
             "level": None,
             "nageclass": None,
             "noutrel": None,
@@ -182,7 +173,6 @@ class Test_Dict:
 
     def test_single_core(self):
         cdims = CoreDimensions(
-            deposition_type="dry",
             level=2,
             nageclass=0,
             noutrel=1,
@@ -194,7 +184,6 @@ class Test_Dict:
         dims = Dimensions([cdims])
         res = dims.dict()
         sol = {
-            "deposition_type": "dry",
             "level": 2,
             "nageclass": 0,
             "noutrel": 1,
@@ -210,7 +199,6 @@ class Test_Dict:
         dims = Dimensions(core)
         res = dims.dict()
         sol = {
-            "deposition_type": None,
             "level": None,
             "nageclass": None,
             "noutrel": None,
@@ -224,9 +212,8 @@ class Test_Dict:
     def test_multi_core(self):
         core = [
             CoreDimensions(nageclass=0, time=0, variable="concentration"),
-            CoreDimensions(deposition_type="wet", variable="wet_deposition"),
+            CoreDimensions(variable="wet_deposition"),
             CoreDimensions(
-                deposition_type="dry",
                 nageclass=3,
                 species_id=0,
                 time=2,
@@ -234,7 +221,6 @@ class Test_Dict:
                 variable="dry_deposition",
             ),
             CoreDimensions(
-                deposition_type="dry",
                 nageclass=0,
                 noutrel=1,
                 species_id=2,
@@ -246,7 +232,6 @@ class Test_Dict:
         dims = Dimensions(core)
         res = dims.dict()
         sol = {
-            "deposition_type": ("dry", "wet"),
             "level": 1,
             "nageclass": (0, 3),
             "noutrel": 1,
@@ -261,24 +246,26 @@ class Test_Dict:
 class Test_Create:
     """Create dimensions objects from a parameter dict."""
 
-    def test_no_args(self):
-        dims = Dimensions.create({})
+    def test_no_args_fail(self):
+        with pytest.raises(ValueError):
+            Dimensions.create({})
+
+    def test_almost_no_args(self):
+        dims = Dimensions.create({}, plot_variable="concentration")
         res = dims.dict()
         sol = {
-            "deposition_type": None,
             "level": None,
             "nageclass": None,
             "noutrel": None,
             "numpoint": None,
             "species_id": None,
             "time": None,
-            "variable": None,
+            "variable": "concentration",
         }
         assert res == sol
 
     def test_single_core(self):
         params = {
-            "deposition_type": "dry",
             "level": 2,
             "nageclass": 0,
             "noutrel": 1,
@@ -294,7 +281,6 @@ class Test_Create:
 
     def test_multi_core(self):
         params = {
-            "deposition_type": ("wet", "dry"),
             "level": 1,
             "nageclass": (0, 3),
             "noutrel": 1,
@@ -316,7 +302,6 @@ class Test_Interact:
     """Access and change parameters, derive new objects, etc."""
 
     params = {
-        "deposition_type": ("dry", "wet", None, "dry"),
         "level": 1,
         "nageclass": (3, None, 0),
         "noutrel": (1, 1),
@@ -339,7 +324,6 @@ class Test_Interact:
 
     def test_get_raw(self):
         dims = self.create_dims()
-        assert dims.get_raw("deposition_type") == ("dry", "wet", None, "dry")
         assert dims.get_raw("level") == (1, None, None, None)
         assert dims.get_raw("nageclass") == (3, None, 0, None)
         assert dims.get_raw("noutrel") == (1, 1, None, None)
@@ -355,7 +339,6 @@ class Test_Interact:
 
     def test_get(self):
         dims = self.create_dims()
-        assert dims.get("deposition_type") == ("dry", "wet")
         assert dims.get("level") == 1
         assert dims.get("nageclass") == (0, 3)
         assert dims.get("noutrel") == 1
@@ -370,7 +353,6 @@ class Test_Interact:
 
     def test_get_property(self):
         dims = self.create_dims()
-        assert dims.deposition_type == dims.get("deposition_type")
         assert dims.level == dims.get("level")
         assert dims.nageclass == dims.get("nageclass")
         assert dims.noutrel == dims.get("noutrel")
@@ -387,7 +369,6 @@ class Test_Interact:
     def test_set_raw(self):
         dims = Dimensions()
         self.assert_is_empty(dims)
-        dims.set("deposition_type", ("dry", "wet", None, "dry"))
         dims.set("level", (1, None, None, None))
         dims.set("nageclass", (3, None, 0, None))
         dims.set("noutrel", (1, 1, None, None))
@@ -405,7 +386,6 @@ class Test_Interact:
     def test_set_compact(self):
         dims = Dimensions()
         self.assert_is_empty(dims)
-        dims.set("deposition_type", ("dry", "wet"))
         dims.set("level", 1)
         dims.set("nageclass", (0, 3))
         dims.set("noutrel", 1)
@@ -420,7 +400,6 @@ class Test_Interact:
     def test_set_property_raw(self):
         dims = Dimensions()
         self.assert_is_empty(dims)
-        dims.deposition_type = ("dry", "wet", None, "dry")
         dims.level = (1, None, None, None)
         dims.nageclass = (3, None, 0, None)
         dims.noutrel = (1, 1, None, None)
@@ -440,7 +419,6 @@ class Test_Interact:
     def test_set_property_compact(self):
         dims = Dimensions()
         self.assert_is_empty(dims)
-        dims.deposition_type = ("dry", "wet")
         dims.level = 1
         dims.nageclass = (0, 3)
         dims.noutrel = 1
@@ -463,14 +441,12 @@ class Test_Interact:
     def test_update_empty_with_partial(self):
         dims = Dimensions()
         self.assert_is_empty(dims)
-        dims.update({"deposition_type": "wet"})
         dims.update({"level": 1})
         dims.update({"nageclass": (3, None, 0)})
         dims.update({"noutrel": (1, 1)})
         dims.update({"variable": "wet_deposition"})
         res = dims.dict()
         sol = {
-            "deposition_type": "wet",
             "level": 1,
             "nageclass": (0, 3),
             "noutrel": 1,
@@ -493,13 +469,11 @@ class Test_Interact:
         derived = dims.derive(
             {
                 "level": 2,
-                "deposition_type": ("dry", "wet"),
                 "variable": ("dry_deposition", "wet_deposition"),
             }
         )
         sol = {
             **dims.dict(),
-            "deposition_type": ("dry", "wet"),
             "level": 2,
             "variable": ("dry_deposition", "wet_deposition"),
         }
@@ -509,12 +483,12 @@ class Test_Interact:
 
 class TestDecompress:
     params = {
-        "deposition_type": ["dry", "wet"],
         "nageclass": (0,),
         "noutrel": (0,),
         "numpoint": (0,),
         "species_id": [1, 2],
         "time": [1, 2, 3],
+        "variable": ["dry_deposition", "wet_deposition"],
     }
 
     def test_full(self):
@@ -522,53 +496,61 @@ class TestDecompress:
         dims_lst = dims.decompress()
         dcts = [dims.dict() for dims in dims_lst]
         sol = [
-            {"deposition_type": "dry", "species_id": 1, "time": 1},
-            {"deposition_type": "dry", "species_id": 1, "time": 2},
-            {"deposition_type": "dry", "species_id": 1, "time": 3},
-            {"deposition_type": "dry", "species_id": 2, "time": 1},
-            {"deposition_type": "dry", "species_id": 2, "time": 2},
-            {"deposition_type": "dry", "species_id": 2, "time": 3},
-            {"deposition_type": "wet", "species_id": 1, "time": 1},
-            {"deposition_type": "wet", "species_id": 1, "time": 2},
-            {"deposition_type": "wet", "species_id": 1, "time": 3},
-            {"deposition_type": "wet", "species_id": 2, "time": 1},
-            {"deposition_type": "wet", "species_id": 2, "time": 2},
-            {"deposition_type": "wet", "species_id": 2, "time": 3},
+            {"species_id": 1, "time": 1, "variable": "dry_deposition"},
+            {"species_id": 1, "time": 1, "variable": "wet_deposition"},
+            {"species_id": 1, "time": 2, "variable": "dry_deposition"},
+            {"species_id": 1, "time": 2, "variable": "wet_deposition"},
+            {"species_id": 1, "time": 3, "variable": "dry_deposition"},
+            {"species_id": 1, "time": 3, "variable": "wet_deposition"},
+            {"species_id": 2, "time": 1, "variable": "dry_deposition"},
+            {"species_id": 2, "time": 1, "variable": "wet_deposition"},
+            {"species_id": 2, "time": 2, "variable": "dry_deposition"},
+            {"species_id": 2, "time": 2, "variable": "wet_deposition"},
+            {"species_id": 2, "time": 3, "variable": "dry_deposition"},
+            {"species_id": 2, "time": 3, "variable": "wet_deposition"},
         ]
         assert_is_sub_element(sol, dcts, "solution", "result")
 
     def test_skip(self):
         dims = Dimensions.create(self.params)
-        dims_lst = dims.decompress(skip=["deposition_type", "time"])
+        dims_lst = dims.decompress(skip=["variable", "time"])
         dcts = [dims.dict() for dims in dims_lst]
         sol = [
-            {"deposition_type": ["dry", "wet"], "species_id": 1, "time": [1, 2, 3]},
-            {"deposition_type": ["dry", "wet"], "species_id": 2, "time": [1, 2, 3]},
+            {
+                "species_id": 1,
+                "time": [1, 2, 3],
+                "variable": ["dry_deposition", "wet_deposition"],
+            },
+            {
+                "species_id": 2,
+                "time": [1, 2, 3],
+                "variable": ["dry_deposition", "wet_deposition"],
+            },
         ]
         assert_is_sub_element(sol, dcts, "solution", "result")
 
     def test_select(self):
         dims = Dimensions.create(self.params)
-        dims_lst = dims.decompress(select=["deposition_type", "time"])
+        dims_lst = dims.decompress(select=["variable", "time"])
         dcts = [dims.dict() for dims in dims_lst]
         sol = [
-            {"deposition_type": "dry", "species_id": [1, 2], "time": 1},
-            {"deposition_type": "dry", "species_id": [1, 2], "time": 2},
-            {"deposition_type": "dry", "species_id": [1, 2], "time": 3},
-            {"deposition_type": "wet", "species_id": [1, 2], "time": 1},
-            {"deposition_type": "wet", "species_id": [1, 2], "time": 2},
-            {"deposition_type": "wet", "species_id": [1, 2], "time": 3},
+            {"species_id": [1, 2], "time": 1, "variable": "dry_deposition"},
+            {"species_id": [1, 2], "time": 1, "variable": "wet_deposition"},
+            {"species_id": [1, 2], "time": 2, "variable": "dry_deposition"},
+            {"species_id": [1, 2], "time": 2, "variable": "wet_deposition"},
+            {"species_id": [1, 2], "time": 3, "variable": "dry_deposition"},
+            {"species_id": [1, 2], "time": 3, "variable": "wet_deposition"},
         ]
         assert_is_sub_element(sol, dcts, "solution", "result")
 
     def test_select_skip(self):
         dims = Dimensions.create(self.params)
         dims_lst = dims.decompress(
-            select=["deposition_type", "time"], skip=["time", "species_id"]
+            select=["variable", "time"], skip=["time", "species_id"]
         )
         dcts = [dims.dict() for dims in dims_lst]
         sol = [
-            {"deposition_type": "dry", "species_id": [1, 2], "time": [1, 2, 3]},
-            {"deposition_type": "wet", "species_id": [1, 2], "time": [1, 2, 3]},
+            {"species_id": [1, 2], "time": [1, 2, 3], "variable": "dry_deposition"},
+            {"species_id": [1, 2], "time": [1, 2, 3], "variable": "wet_deposition"},
         ]
         assert_is_sub_element(sol, dcts, "solution", "result")

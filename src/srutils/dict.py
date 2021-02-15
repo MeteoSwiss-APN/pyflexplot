@@ -62,13 +62,13 @@ def merge_dicts(
 
         rec_seqs (optional): Recurse into sequences to merge dicts therein.
 
-        overwrite_seqs (optional): If ``req_seqs`` is true, and a certain
+        overwrite_seqs (optional): If ``rec_seqs`` is true, and a certain
             element in some but not all the dicts (or other mappings) is a
             sequence, then treat it like all non-mapping-non-sequence elements
             and select the value from the last dict (mapping), instead of
             raising an exception.
 
-        overwrite_seq_dicts (optional): If ``req_seqs`` is true, and the i-th
+        overwrite_seq_dicts (optional): If ``rec_seqs`` is true, and the i-th
             element of a set of sequences that are being merged is a dict (or
             other mapping) in some but not all of them, then treat it like all
             non-mapping elements and overwrite the element with that from the
@@ -231,9 +231,9 @@ def compress_multival_dicts(
 
 def decompress_multival_dict(
     dct: Mapping[str, Any],
-    *,
     select: Optional[Collection[str]] = None,
     skip: Optional[Collection[str]] = None,
+    *,
     depth: int = 1,
     cls_expand: Union[type, Collection[type]] = (list, tuple),
     f_expand: Optional[Callable[[Any], bool]] = None,

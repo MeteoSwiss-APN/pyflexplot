@@ -10,7 +10,6 @@ outfile = "case_study/cosmo-2e_{plot_variable}_{ens_variable}_species-{species_i
 combine_species = true
 # species_id = "*"
 species_id = 1
-combine_deposition_types = true
 
 [_base._concentration]
 plot_variable = "concentration"
@@ -29,15 +28,14 @@ plot_variable = "cloud_arrival_time"
 plot_variable = "cloud_departure_time"
 
 [_base._deposition]
-plot_variable = "deposition"
 integrate = true
 time = 11
 [_base._deposition._dry]
-deposition_type = "dry"
+plot_variable = "dry_deposition"
 [_base._deposition._wet]
-deposition_type = "wet"
+plot_variable = "wet_deposition"
 [_base._deposition._tot]
-deposition_type = ["dry", "wet"]
+plot_variable = "tot_deposition"
 
 [_base._concentration._pctl]
 ens_variable = "percentile"

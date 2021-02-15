@@ -63,8 +63,8 @@ from .plotting.map_axes import MapAxes
 from .plotting.map_axes import MapAxesConfig
 from .plotting.text_box_axes import TextBoxAxes
 from .setups.model_setup import ModelSetup
+from .setups.plot_panel_setup import PlotPanelSetup
 from .setups.plot_setup import PlotSetup
-from .setups.plot_setup import PlotSetupGroup
 from .utils.exceptions import FieldAllNaNError
 from .utils.formatting import escape_format_keys
 from .utils.formatting import format_level_ranges
@@ -79,7 +79,7 @@ from .words import Words
 def format_out_file_paths(
     field_group: FieldGroup, prev_paths: List[str], dest_dir: Optional[str] = None
 ) -> List[str]:
-    setup = field_group.shared_setup
+    plot_setup = field_group.plot_setup
     # SR_TMP <  SR_MULTIPANEL
     if len(field_group) > 1:
         raise NotImplementedError("multipanel plot")
@@ -90,7 +90,9 @@ def format_out_file_paths(
     simulation_mdata = field.mdata.simulation
     # SR_TMP >
     out_file_templates: Sequence[str] = (
-        [setup.outfile] if isinstance(setup.outfile, str) else setup.outfile
+        [plot_setup.outfile]
+        if isinstance(plot_setup.outfile, str)
+        else plot_setup.outfile
     )
     out_file_paths: List[str] = []
     for out_file_template in out_file_templates:
@@ -105,7 +107,7 @@ def format_out_file_paths(
             )
         out_file_path = FilePathFormatter(prev_paths).format(
             out_file_template,
-            setup,
+            plot_setup,
             release_site=release_mdata.raw_site_name,
             release_start=simulation_mdata.start + release_mdata.start_rel,
             time_steps=tuple(simulation_mdata.time_steps),
@@ -123,20 +125,22 @@ def prepare_plot(
     if dry_run:
         return DummyBoxedPlot()
     else:
+        plot_setup = field_group.plot_setup
         # SR_TMP <  SR_MULTIPANEL
         if len(field_group) > 1:
             raise NotImplementedError("multipanel plot")
         field = next(iter(field_group))
         # SR_TMP >  SR_MULTIPANEL
-        setup = field.var_setups.compress()
         time_stats = field.time_props.stats
         mdata = field.mdata
-        labels = create_box_labels(setup, mdata)
+        labels = create_box_labels(plot_setup, mdata)
         plot_config = create_plot_config(
-            setup=setup, time_stats=time_stats, labels=labels
+            setup=plot_setup, time_stats=time_stats, labels=labels
         )
         map_config = create_map_config(
-            field.var_setups, plot_config.layout.aspect_center()
+            field_group.plot_setup,
+            field.panel_setup,
+            plot_config.layout.aspect_center(),
         )
         return BoxedPlot(field, plot_config, map_config)
 
@@ -418,11 +422,13 @@ def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
             )
 
 
-def create_map_config(setups: PlotSetupGroup, aspect: float) -> MapAxesConfig:
-    domain_type = setups.collect_equal("domain")
-    lang = setups.collect_equal("lang")
-    model_name = setups.collect_equal("model.name")
-    scale_fact = setups.collect_equal("scale_fact")
+def create_map_config(
+    plot_setup: PlotSetup, panel_setup: PlotPanelSetup, aspect: float
+) -> MapAxesConfig:
+    model_name = plot_setup.model.name
+    scale_fact = plot_setup.scale_fact
+    domain_type = panel_setup.domain
+    lang = panel_setup.lang
 
     config_dct: Dict[str, Any] = {
         "aspect": aspect,
@@ -507,7 +513,7 @@ def create_plot_config(
     legend_config_dct: Dict[str, Any] = {}
     if plot_variable == "concentration":
         levels_config_dct["n"] = 8
-    elif plot_variable == "deposition":
+    elif plot_variable.endswith("deposition"):
         levels_config_dct["n"] = 9
     if (
         setup.model.simulation_type == "deterministic"
@@ -878,14 +884,15 @@ def format_names_etc(
     short_name = ""
 
     def format_var_names(
-        setup: PlotSetup, words: TranslatedWords
+        plot_variable: str, words: TranslatedWords
     ) -> Tuple[str, str, str]:
-        if plot_variable == "deposition":
-            dep_type_word = (
-                "total"
-                if setup.deposition_type_str == "tot"
-                else setup.deposition_type_str
-            )
+        if plot_variable.endswith("_deposition"):
+            if plot_variable == "tot_deposition":
+                dep_type_word = "total"
+            elif plot_variable == "dry_deposition":
+                dep_type_word = "dry"
+            elif plot_variable == "wet_deposition":
+                dep_type_word = "wet"
             word = f"{dep_type_word}_surface_deposition"
             if not integrate:
                 word = f"incremental_{word}"
@@ -913,7 +920,7 @@ def format_names_etc(
         return format_meta_datum(unit=format_meta_datum(mdata.variable.unit))
 
     unit = _format_unit(setup, words, mdata)
-    var_name, var_name_abbr, var_name_rel = format_var_names(setup, words)
+    var_name, var_name_abbr, var_name_rel = format_var_names(plot_variable, words)
 
     # Short/long names #1: By variable
     if plot_variable == "concentration":
@@ -923,7 +930,7 @@ def format_names_etc(
         else:
             long_name = var_name
             short_name = words["concentration"].s
-    elif plot_variable == "deposition":
+    elif plot_variable.endswith("deposition"):
         long_name = var_name
         short_name = words["deposition"].s
     elif plot_variable in [
@@ -1146,7 +1153,7 @@ def format_integr_period(
         "cloud_departure_time",
     ]:
         operation = words["summed_over"].s
-    elif plot_variable == "deposition":
+    elif plot_variable.endswith("deposition"):
         operation = words["accumulated_over"].s
     else:
         raise NotImplementedError(

@@ -8,9 +8,9 @@ the docstring of the class method ``Setup.create``.
 # Standard library
 import dataclasses as dc
 import re
+from copy import deepcopy
 from pprint import pformat
 from typing import Any
-from typing import cast
 from typing import Collection
 from typing import Dict
 from typing import Iterator
@@ -131,23 +131,152 @@ class PlotSetup:
                 + type(self.panels).__name__
             )
 
-    # SR_TMP <<<
-    @property
-    def deposition_type_str(self) -> str:
-        deposition_type = self.panels.collect_equal("dimensions").deposition_type
-        if deposition_type is None:
-            if self.panels.collect_equal("plot_variable") in [
-                "deposition",
-                "affected_area",
-            ]:
-                return "tot"
-            return "none"
-        elif set(deposition_type) == {"dry", "wet"}:
-            return "tot"
-        elif deposition_type in ["dry", "wet"]:
-            return deposition_type
+    @overload
+    def decompress(
+        self,
+        select: Optional[Collection[str]] = None,
+        skip: Optional[Collection[str]] = None,
+        *,
+        internal: Literal[True] = True,
+    ) -> "PlotSetupGroup":
+        ...
+
+    @overload
+    def decompress(
+        self,
+        select: Optional[Collection[str]] = None,
+        skip: Optional[Collection[str]] = None,
+        *,
+        internal: Literal[False],
+    ) -> List["PlotSetup"]:
+        ...
+
+    # pylint: disable=R0912  # too-many-branches (>12)
+    # pylint: disable=R0914  # too-many-locals (>15)
+    # pylint: disable=R0915  # too-many-statements (>50)
+    def decompress(self, select=None, skip=None, *, internal=True):
+        """Create a setup object for each combination of list parameter values.
+
+        Note that the parameter 'model.ens_member_id' (or 'ens_member_id') can
+        only be expanded if ``internal`` is false. (This is not reflected in
+        the function signature because it would be overly complicated.)
+
+        Args:
+            select: Names of parameter to select; all others are skipped;
+                names in both ``select`` and ``skip`` will be skipped.
+
+            skip (optional): Names of parameters to skip; if their values are
+                list of multiple values, those are retained as such; names in
+                both ``select`` and ``skip`` will be skipped.
+
+            internal (optional): Decompress setup group internally and return
+                one group containing the decompressed setup objectss; otherwise,
+                a separate group is returned for each decompressed setup object.
+
+        """
+        if internal:
+            if (select, skip) == (None, None):
+                raise ValueError(
+                    "cannot fully decompress with internal=True; skip"
+                    " 'model.ens_member_id' or pass internal=False"
+                )
+            selected = select and (
+                "model.ens_member_id" in select or "ens_member_id" in select
+            )
+            skipped = "model.ens_member_id" in (skip or []) or "ens_member_id" in (
+                skip or []
+            )
+            if (not select or selected) and not skipped:
+                raise ValueError(
+                    "cannot decompress 'model.ens_member_id' with internal=True;"
+                    " skip 'model.ens_member_id' or pass internal=False"
+                )
+
+        def group_params(
+            params: Optional[Collection[str]],
+        ) -> Tuple[Optional[List[str]], Optional[List[str]], Optional[List[str]]]:
+            model: Optional[List[str]] = None
+            panel: Optional[List[str]] = None
+            other: Optional[List[str]] = None
+            for param in params or []:
+                if is_model_setup_param(param):
+                    if param.startswith("model."):
+                        param = param.replace("model.", "")
+                    if model is None:
+                        model = []
+                    model.append(param)
+                elif is_plot_panel_setup_param(param) or is_dimensions_param(param):
+                    if param.startswith("dimensions."):
+                        param = param.replace("dimensions.", "")
+                    if panel is None:
+                        panel = []
+                    panel.append(param)
+                else:
+                    if other is None:
+                        other = []
+                    other.append(param)
+            return model, panel, other
+
+        # Group select and skip parameters
+        select_model, select_panel, select_outer = group_params(select)
+        skip_model, skip_panel, skip_outer = group_params(skip)
+        unrestricted = select is None and skip is None
+        decompress_model = (
+            unrestricted or select_model is not None or skip_model is not None
+        )
+        decompress_panel = (
+            unrestricted or select_panel is not None or skip_panel is not None
+        )
+        decompress_outer = (
+            unrestricted or select_outer is not None or skip_outer is not None
+        )
+
+        # PlotSetup.model
+        model_dct = self.dict().pop("model")
+        if not decompress_model:
+            model_dcts = [model_dct]
         else:
-            raise NotImplementedError(deposition_type)
+            model_dcts = decompress_multival_dict(model_dct, select_model, skip_model)
+
+        # PlotSetup.panels
+        panel_dcts: List[Dict[str, Any]]
+        if not decompress_panel:
+            panel_dcts = self.panels.dicts()
+        else:
+            panel_dcts = []
+            for panels in self.panels.decompress(
+                select_panel, skip_panel, internal=False
+            ):
+                panel_dcts.extend(panels.dicts())
+
+        # PlotSetup.*
+        outer_dct = self.dict()
+        if not decompress_outer:
+            outer_dcts = [outer_dct]
+        else:
+            outer_dct.pop("panels")
+            outer_dcts = decompress_multival_dict(outer_dct, select_outer, skip_outer)
+
+        # Merge expanded dicts
+        dcts: List[Dict[str, Any]] = []
+        for outer_dct_i in outer_dcts:
+            for model_dct in model_dcts:
+                for panel_dct in panel_dcts:
+                    dcts.append(
+                        {
+                            **deepcopy(outer_dct_i),
+                            "model": deepcopy(model_dct),
+                            "panels": [deepcopy(panel_dct)],
+                        }
+                    )
+
+        setups: List[PlotSetup] = []
+        for dct in dcts:
+            setups.append(type(self).create(dct))
+
+        if internal:
+            return PlotSetupGroup(setups)
+        return setups
 
     @overload
     def derive(self, params: Mapping[str, Any]) -> "PlotSetup":
@@ -174,34 +303,6 @@ class PlotSetup:
             raise ValueError(
                 f"params must be sequence or mapping, not {type(params).__name__}"
             )
-
-    # SR_TODO Merge with decompress_partially and make arguments kw-only
-    def decompress(self, skip: Optional[Collection[str]] = None) -> "PlotSetupGroup":
-        """Create a setup object for each combination of list parameter values.
-
-        Args:
-            skip (optional): Names of parameters to skip; if their values are
-                list of multiple values, those are retained as such.
-
-        """
-        return self._decompress(select=None, skip=skip)
-
-    # SR_TODO Merge into decompress and make arguments kw-only
-    def decompress_partially(
-        self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None
-    ) -> "PlotSetupGroup":
-        """Create a setup object for each combination of list parameter values.
-
-        Args:
-            select: Names of parameter to select; all others are skipped;
-                names in both ``select`` and ``skip`` will be skipped.
-
-            skip (optional): Names of parameters to skip; if their values are
-                list of multiple values, those are retained as such; names in
-                both ``select`` and ``skip`` will be skipped.
-
-        """
-        return self._decompress(select, skip)
 
     def dict(self, rec: bool = True) -> Dict[str, Any]:
         """Return the parameter names and values as a dict.
@@ -252,38 +353,6 @@ class PlotSetup:
     def __repr__(self) -> str:  # type: ignore
         return nested_repr(self)
 
-    def _decompress(
-        self,
-        select: Optional[Collection[str]] = None,
-        skip: Optional[Collection[str]] = None,
-    ) -> "PlotSetupGroup":
-        """Create multiple ``Setup`` objects with one-value parameters only."""
-        # SR_TMP <
-        select = (
-            None
-            if select is None
-            else [
-                param.replace("dimensions.", "")
-                for param in select
-                if is_plot_panel_setup_param(param) or is_dimensions_param(param)
-            ]
-        )
-        skip = (
-            None
-            if skip is None
-            else [
-                param.replace("dimensions.", "")
-                for param in skip
-                if is_plot_panel_setup_param(param) or is_dimensions_param(param)
-            ]
-        )
-        # SR_TMP >
-        setups: List[PlotSetup] = []
-        for panels in self.panels.decompress(internal=False, select=select, skip=skip):
-            panels_dcts = panels.dicts()
-            setups.append(self.derive({"panels": panels_dcts}))
-        return PlotSetupGroup(setups)
-
     @classmethod
     def create(cls, params: Mapping[str, Any]) -> "PlotSetup":
         """Create an instance of ``Setup``.
@@ -306,19 +375,11 @@ class PlotSetup:
             base_time: Start of the model simulation on which the dispersion
                 simulation is based.
 
-            combine_deposition_types: Sum up dry and wet deposition. Otherwise,
-                each is plotted separately.
-
             combine_levels: Sum up over multiple vertical levels. Otherwise,
                 each is plotted separately.
 
             combine_species: Sum up over all specified species. Otherwise, each
                 is plotted separately.
-
-            deposition_type: Type(s) of deposition. Part of the plot variable
-                name that may be embedded in ``outfile`` with the format key
-                '{variable}'. Choices: "none", "dry", "wet" (the latter may can
-                be combined).
 
             dimensions_default: How to complete unspecified dimensions based
                 on the values available in the input file. Choices: 'all',
@@ -355,9 +416,6 @@ class PlotSetup:
 
             infile: Input file path(s). May contain format keys.
 
-            plot_variable: Input variable. Choices: "concentration",
-                "deposition".
-
             integrate: Integrate field over time.
 
             lang: Language. Use the format key '{lang}' to embed it in
@@ -392,6 +450,10 @@ class PlotSetup:
             plot_type: Plot type. Use the format key '{plot_type}' to embed it
                 in ``outfile``.
 
+            plot_variable: Variable to plot. Choices: "concentration",
+                "tot_deposition", "dry_deposition", "wet_deposition",
+                "affected_area", "cloud_arrival_time", "cloud_departure_time".
+
             species_id: Species id(s). To sum up multiple species, combine their
                 ids with '+'. Use the format key '{species_id}' to embed it in
                 ``outfile``.
@@ -400,9 +462,9 @@ class PlotSetup:
                 to embed one in ``outfile``.
 
         """
-        params = dict(**params)
-        panel_params = params.pop("panels", {})
-        model_params = params.pop("model", {})
+        params = dict(params)
+        panel_params = list(params.pop("panels", []))
+        model_params = dict(params.pop("model", {}))
         params = {
             param: cast_field_value(
                 cls,
@@ -617,17 +679,54 @@ class PlotSetupGroup:
     def derive(self, params: Mapping[str, Any]) -> "PlotSetupGroup":
         return type(self)([setup.derive(params) for setup in self])
 
-    def decompress(self) -> List["PlotSetupGroup"]:
-        return self.decompress_partially(select=None, skip=None)
-
-    def decompress_partially(
-        self, select: Optional[Collection[str]], skip: Optional[Collection[str]] = None
+    @overload
+    def decompress(
+        self,
+        select: Optional[Collection[str]] = ...,
+        skip: Optional[Collection[str]] = ...,
+        *,
+        internal: Literal[False],
     ) -> List["PlotSetupGroup"]:
+        ...
+
+    @overload
+    def decompress(
+        self,
+        select: Optional[Collection[str]] = ...,
+        skip: Optional[Collection[str]] = ...,
+        *,
+        internal: Literal[True] = True,
+    ) -> "PlotSetupGroup":
+        ...
+
+    def decompress(
+        self,
+        select=None,
+        skip=None,
+        *,
+        internal=True,
+    ):
+        """Create a group object for each decompressed setup object.
+
+        Args:
+            select (optional): List of parameter names to select for
+                decompression; all others will be skipped; parameters named in
+                both ``select`` and ``skip`` will be skipped.
+
+            skip (optional): List of parameter names to skip; if they have list
+                values, those are retained as such; parameters named in both
+                ``skip`` and ``select`` will be skipped.
+
+            internal (optional): Decompress setup group internally and return
+                one group containing the decompressed setup objectss; otherwise,
+                a separate group is returned for each decompressed setup object.
+
+        """
         if (select, skip) == (None, None):
             return [setup.decompress() for setup in self]
         sub_setup_lst_lst: List[List[PlotSetup]] = []
         for setup in self:
-            sub_setups = setup.decompress_partially(select, skip)
+            sub_setups = setup.decompress(select, skip)
             if not sub_setup_lst_lst:
                 sub_setup_lst_lst = [[sub_setup] for sub_setup in sub_setups]
             else:
@@ -638,17 +737,15 @@ class PlotSetupGroup:
                 # SR_TMP >
                 for idx, sub_setup in enumerate(sub_setups):
                     sub_setup_lst_lst[idx].append(sub_setup)
+        if internal:
+            return PlotSetupGroup(
+                [
+                    sub_setup
+                    for sub_setup_lst in sub_setup_lst_lst
+                    for sub_setup in sub_setup_lst
+                ]
+            )
         return [PlotSetupGroup(sub_setup_lst) for sub_setup_lst in sub_setup_lst_lst]
-
-    def decompress_twice(
-        self, outer: str, skip: Optional[Collection[str]] = None
-    ) -> List["PlotSetupGroup"]:
-        sub_setups_lst: List[PlotSetupGroup] = []
-        for setup in self:
-            for sub_setup in setup.decompress_partially([outer], skip):
-                sub_sub_setups = sub_setup.decompress(skip)
-                sub_setups_lst.append(sub_sub_setups)
-        return sub_setups_lst
 
     # pylint: disable=R0912  # too-many-branches (>12)
     def collect(
@@ -854,15 +951,9 @@ class PlotSetupGroup:
     ) -> "PlotSetupGroup":
         setup_lst: List[PlotSetup] = []
         for obj in setups:
-            if isinstance(obj, PlotSetup):
-                raise NotImplementedError("obj is Setup")
-            else:
-                skip = ["model", "dimensions"]
-                assert isinstance(obj, dict)  # mypy
-                dcts = decompress_multival_dict(cast(dict, obj), skip=skip)
-            for dct in dcts:
-                setup = PlotSetup.create(dct)
-                setup_lst.append(setup)
+            if not isinstance(obj, PlotSetup):
+                obj = PlotSetup.create(obj)
+            setup_lst.append(obj)
         return cls(setup_lst)
 
     @classmethod

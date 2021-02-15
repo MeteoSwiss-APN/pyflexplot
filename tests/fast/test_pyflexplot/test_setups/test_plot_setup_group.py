@@ -54,7 +54,9 @@ class Test_FromRawParams:
             "species_id": [1, 2],
             "combine_species": False,
         }
-        setups = PlotSetupGroup.create(SetupFile.prepare_raw_params(raw_params))
+        params_lst = SetupFile.prepare_raw_params(raw_params)
+        assert len(params_lst) == 1
+        setups = PlotSetupGroup.create(params_lst)
         res = setups.dicts()
         sol = [
             {
@@ -88,7 +90,7 @@ class Test_SetupGroup_Create:
             },
             {
                 **base,
-                "panels": [{"plot_variable": "deposition", "lang": "de"}],
+                "panels": [{"plot_variable": "tot_deposition", "lang": "de"}],
             },
             {
                 **base,
@@ -199,11 +201,6 @@ class Test_SetupGroup_Group:
     combine_levels_lst = [True, False]
     default_combine_levels = DEFAULT_SETUP.panels.collect_equal("combine_levels")
 
-    deposition_type_lst = ["dry", "wet", ("dry", "wet")]
-    default_deposition_type = DEFAULT_SETUP.panels.collect_equal(
-        "dimensions"
-    ).deposition_type
-
     n_outfile = len(outfile_lst)
     n_combine_species = len(combine_species_lst)
     n_time = len(time_lst)
@@ -212,10 +209,7 @@ class Test_SetupGroup_Group:
     n_combine_levels = len(combine_levels_lst)
     n_concentration = n_combine_levels
 
-    n_deposition_type = len(deposition_type_lst)
-    n_deposition = n_deposition_type
-
-    n_setups = n_base * (n_concentration + n_deposition)
+    n_setups = n_base * n_concentration
 
     def get_setup_dcts(self):
         base_dcts = [
@@ -250,23 +244,10 @@ class Test_SetupGroup_Group:
             for combine_levels in self.combine_levels_lst
         ]
         assert len(concentration_dcts) == self.n_concentration
-        deposition_dcts = [
-            {
-                "panels": [
-                    {
-                        "plot_variable": "deposition",
-                        "combine_deposition_types": True,
-                        "dimensions": {"deposition_type": deposition_type},
-                    }
-                ],
-            }
-            for deposition_type in self.deposition_type_lst
-        ]
-        assert len(deposition_dcts) == self.n_deposition
         return [
             merge_dicts(base_dct, dct)
             for base_dct in base_dcts
-            for dct in concentration_dcts + deposition_dcts
+            for dct in concentration_dcts
         ]
 
     def get_setups(self):
@@ -302,11 +283,6 @@ class Test_SetupGroup_Group:
         assert len(grouped) == self.n_combine_levels
         assert set(grouped) == set(self.combine_levels_lst)
 
-        grouped = setups.group("dimensions.deposition_type")
-        assert len(grouped) == self.n_deposition_type + 1
-        sol = set([self.default_deposition_type] + self.deposition_type_lst)
-        assert set(grouped) == sol
-
     def test_one_seq_regular(self):
         """One regular param, passed as a sequence."""
         setups = self.get_setups()
@@ -331,11 +307,6 @@ class Test_SetupGroup_Group:
         assert len(grouped) == self.n_combine_levels
         assert set(grouped) == set(tuples(self.combine_levels_lst))
 
-        grouped = setups.group(["dimensions.deposition_type"])
-        assert len(grouped) == self.n_deposition_type + 1
-        sol = set(tuples([self.default_deposition_type] + self.deposition_type_lst))
-        assert set(grouped) == sol
-
     def test_two_regular(self):
         """Two regular params."""
         setups = self.get_setups()
@@ -356,75 +327,16 @@ class Test_SetupGroup_Group:
         assert len(grouped) == self.n_outfile * self.n_combine_species
         assert set(grouped) == set(product(self.outfile_lst, self.combine_levels_lst))
 
-        grouped = setups.group(["dimensions.time", "dimensions.deposition_type"])
-        assert len(grouped) == self.n_time * (self.n_deposition_type + 1)
-        sol = set(
-            product(
-                self.time_lst, [self.default_deposition_type] + self.deposition_type_lst
-            )
-        )
-        assert set(grouped) == sol
-
     def test_two_exclusive(self):
         """Two mutually special exclusive params."""
         setups = self.get_setups()
-        grouped = setups.group(["combine_levels", "dimensions.deposition_type"])
-        assert len(grouped) == self.n_combine_levels + self.n_deposition_type
-        sol = set(
-            list(product(self.combine_levels_lst, [self.default_deposition_type]))
-            + list(product([self.default_combine_levels], self.deposition_type_lst))
-        )
-        assert set(grouped) == sol
-
-    def test_three_regular(self):
-        """Three regular params."""
-        setups = self.get_setups()
-
-        grouped = setups.group(["outfile", "combine_species", "dimensions.time"])
-        assert len(grouped) == self.n_outfile * self.n_combine_species * self.n_time
-        sol = set(product(self.outfile_lst, self.combine_species_lst, self.time_lst))
-        assert set(grouped) == sol
-
-    def test_three_special(self):
-        """Three params, among them special params."""
-        setups = self.get_setups()
-
-        grouped = setups.group(["outfile", "dimensions.time", "combine_levels"])
-        assert len(grouped) == self.n_outfile * self.n_time * self.n_combine_levels
-        sol = set(product(self.outfile_lst, self.time_lst, self.combine_species_lst))
-        assert set(grouped) == sol
-
-        grouped = setups.group(
-            ["dimensions.time", "combine_species", "dimensions.deposition_type"]
-        )
-        sol = self.n_time * self.n_combine_species * (self.n_deposition_type + 1)
-        assert len(grouped) == sol
-        sol = set(
-            product(
-                self.time_lst,
-                self.combine_species_lst,
-                [self.default_deposition_type] + self.deposition_type_lst,
-            )
-        )
-        assert set(grouped) == sol
-
-    def test_three_exclusive(self):
-        """Three params, among them mutually exclusive special params."""
-        setups = self.get_setups()
-
-        grouped = setups.group(
-            ["outfile", "dimensions.deposition_type", "combine_levels"]
-        )
-        sol = self.n_outfile * (self.n_combine_levels + self.n_deposition_type)
-        assert len(grouped) == sol
-        exclusive_combos = list(
-            product([self.default_deposition_type], self.combine_levels_lst)
-        ) + list(product(self.deposition_type_lst, [self.default_combine_levels]))
+        grouped = setups.group(["outfile", "combine_levels"])
+        assert len(grouped) == self.n_outfile * self.n_combine_levels
         sol = set(
             [
-                (outfile, combine_levels, deposition_type)
+                (outfile, combine_levels)
                 for outfile in self.outfile_lst
-                for (combine_levels, deposition_type) in exclusive_combos
+                for combine_levels in self.combine_levels_lst
             ]
         )
         assert set(grouped) == sol

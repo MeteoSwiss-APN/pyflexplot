@@ -21,6 +21,10 @@ import scipy.stats as sp_stats
 from srutils.various import check_array_indices
 
 # Local
+from ..setups.dimensions import Dimensions
+from ..setups.model_setup import ModelSetup
+from ..setups.plot_panel_setup import PlotPanelSetup
+from ..setups.plot_panel_setup import PlotPanelSetupGroup
 from ..setups.plot_setup import PlotSetup
 from ..setups.plot_setup import PlotSetupGroup
 from ..utils.logging import log
@@ -30,6 +34,7 @@ from .data import EnsembleCloud
 from .data import merge_fields
 from .field import Field
 from .field import FieldGroup
+from .field import FieldGroupAttrs
 from .field import FieldTimeProperties
 from .fix_nc_input import FlexPartDataFixer
 from .meta_data import derive_variable_name
@@ -93,6 +98,8 @@ def read_fields(
             used outside of tests.
 
     """
+    setup_group = setup_group.copy()
+    model_setup = setup_group.collect_equal("model")
     raw_infile = _override_infile or setup_group.infile
     ens_member_ids = setup_group.ens_member_ids
     infiles = prepare_paths(raw_infile, ens_member_ids)
@@ -102,30 +109,37 @@ def read_fields(
     if not isinstance(config, InputConfig):
         config = InputConfig(**(config or {}))
 
-    files = InputFileEnsemble(infiles, config)
+    files = InputFileEnsemble(infiles, config, model_setup)
 
     first_path = next(iter(files.paths))
     with nc4.Dataset(first_path) as fi:
         raw_dimensions = read_dimensions(fi, add_ts0=config.add_ts0)
         species_ids = read_species_ids(fi)
         time_steps = read_time_steps(fi)
+    if model_setup.base_time is None:
+        model_setup.base_time = int(time_steps[0])
+    for plot_type_setup in setup_group:
+        plot_type_setup.model.base_time = model_setup.base_time
 
+    # SR_TODO Consider moving group_setups_by_plot_type into complete_dimensions
     setup_group = setup_group.complete_dimensions(
         raw_dimensions=raw_dimensions,
         species_ids=species_ids,
     )
-    for setup in setup_group:
-        if setup.model.base_time is None:
-            setup.model.base_time = int(time_steps[0])
 
+    # Limit number of plots
     if only and len(setup_group) > only:
         log(dbg=f"[only:{only}] skip {len(setup_group) - only}/{len(setup_group)}")
         setup_group = PlotSetupGroup(list(setup_group)[:only])
-    setups_for_plots_over_time = group_setups_for_plots(setup_group)
 
+    # Separate setups of different plot types
+    # Each setup may still lead to multiple plots (multiple outfiles/time steps)
+    plot_type_setups = group_setups_by_plot_type(setup_group)
+
+    # Read fields for plots (all time steps for each plot type at once)
     field_groups: List[FieldGroup] = []
-    for setups_for_same_plot_over_time in setups_for_plots_over_time:
-        field_groups_i = files.read_fields_over_time(setups_for_same_plot_over_time)
+    for plot_type_setup in plot_type_setups:
+        field_groups_i = files.read_fields_over_time(plot_type_setup)
         if only and len(field_groups) + len(field_groups_i) > only:
             log(dbg=f"[only:{only}] skip reading remaining fields after {only}")
             field_groups.extend(field_groups_i[: only - len(field_groups)])
@@ -165,7 +179,7 @@ def prepare_paths(path: str, ens_member_ids: Optional[Sequence[int]]) -> List[st
     return paths
 
 
-def group_setups_for_plots(setups: PlotSetupGroup) -> List[PlotSetupGroup]:
+def group_setups_by_plot_type(setups: PlotSetupGroup) -> PlotSetupGroup:
     """Group the setups by plot type and time step.
 
     Return a list of setup groups, each of which defines one plot type
@@ -173,52 +187,24 @@ def group_setups_for_plots(setups: PlotSetupGroup) -> List[PlotSetupGroup]:
     different time steps.
 
     """
-    setups_field_lst: List[PlotSetupGroup] = []
-    for (
-        (
-            _,  # ens_member_id,
-            plot_variable,
-            combine_levels,
-            combine_deposition_types,
-            combine_species,
-        ),
-        sub_setups,
-    ) in setups.group(
-        [
-            "model.ens_member_id",
-            "plot_variable",
-            "combine_levels",
-            "combine_deposition_types",
-            "combine_species",
-        ]
+    setup_lst: List[PlotSetup] = []
+    for (_, plot_variable, combine_levels, combine_species), sub_setups in setups.group(
+        ["model.ens_member_id", "plot_variable", "combine_levels", "combine_species"]
     ).items():
         skip = ["outfile", "dimensions.time", "model.ens_member_id"]
         if plot_variable in [
+            "affected_area",
             "concentration",
             "cloud_arrival_time",
             "cloud_departure_time",
         ]:
             if combine_levels:
                 skip.append("dimensions.level")
-        elif plot_variable in ["deposition", "affected_area"]:
-            if combine_deposition_types:
-                skip.append("dimensions.deposition_type")
-        if plot_variable in [
-            "affected_area",
-            "cloud_arrival_time",
-            "cloud_departure_time",
-        ]:
-            skip.append("plot_variable")
         if combine_species:
             skip.append("dimensions.species_id")
-        setups_plots = sub_setups.decompress_partially(None, skip=skip)
-        # SR_TMP < SR_TODO Adapt for multipanel plots
-        setups_plots = [
-            PlotSetupGroup([setup]) for setups in setups_plots for setup in setups
-        ]
-        # SR_TMP >
-        setups_field_lst.extend(setups_plots)
-    return setups_field_lst
+        for plot_setup in sub_setups.decompress(None, skip=skip):
+            setup_lst.append(plot_setup)
+    return PlotSetupGroup(setup_lst)
 
 
 # pylint: disable=R0902  # too-many-instance-attributes (>7)
@@ -229,6 +215,7 @@ class InputFileEnsemble:
         self,
         paths: Sequence[str],
         config: InputConfig,
+        model_setup: ModelSetup,
     ):
         """Create an instance of ``InputFileEnsemble``.
 
@@ -237,9 +224,12 @@ class InputFileEnsemble:
 
             config: Input configuration.
 
+            model_setup: Model setup.
+
         """
         self.paths: List[str] = list(paths)
         self.config: InputConfig = config
+        self.model_setup: ModelSetup = model_setup
 
         # SR_TMP TODO Fix the cache!!!
         if self.config.cache_on:
@@ -250,15 +240,13 @@ class InputFileEnsemble:
             self.fixer = self.config.cls_fixer(self)
 
         # Declare some attributes
-        self.fld_time_mem: np.ndarray
         self.lat: np.ndarray
         self.lon: np.ndarray
         self.mdata_tss: List[MetaData]
-        self.setups_lst_time: List[PlotSetupGroup]
         self.time: np.ndarray
 
     # pylint: disable=R0914  # too-many-locals
-    def read_fields_over_time(self, setups: PlotSetupGroup) -> List[FieldGroup]:
+    def read_fields_over_time(self, plot_setup: PlotSetup) -> List[FieldGroup]:
         """Read fields for the same plot at multiple time steps.
 
         Return a list of lists of fields, whereby:
@@ -271,90 +259,100 @@ class InputFileEnsemble:
         """
         first_path = next(iter(self.paths))
         with nc4.Dataset(first_path) as fi:
-            raw_dimensions = read_dimensions(fi, add_ts0=self.config.add_ts0)
+            nc_dimensions_dct = read_dimensions(fi, add_ts0=self.config.add_ts0)
             ts_hrs = self.get_temp_res_hrs(fi)
 
-        # Create individual setups at each requested time step
-        select = ["dimensions.time"]
-        skip = ["outfile"]
-        skip.append("plot_variable")  # For "affected_area"
-        self.setups_lst_time = setups.decompress_partially(select, skip=skip)
+        field_lst_by_ts: Dict[int, List[Field]] = {}
+        for panel_setup_i in plot_setup.panels:
 
-        model = setups.collect_equal("model.name")
-        self.fld_time_mem = np.full(
-            self._get_shape_mem_time(model, raw_dimensions), np.nan, np.float32
-        )
-        for idx_mem, file_path in enumerate(self.paths):
-            timeless_setups = setups.derive(
-                {"panels": [{"dimensions": {"time": None}}]}
+            # Create individual setups at each requested time step
+            panel_setups_req_time: PlotPanelSetupGroup = panel_setup_i.decompress(
+                ["dimensions.time"]
             )
-            self._read_data(file_path, idx_mem, timeless_setups)
 
-        # Compute single field from all ensemble members
-        fld_time: np.ndarray = self._reduce_ensemble(setups, ts_hrs)
+            fld_time_mem = np.full(
+                self._get_shape_mem_time(nc_dimensions_dct), np.nan, np.float32
+            )
+            for idx_mem, file_path in enumerate(self.paths):
+                timeless_panel_setup = panel_setup_i.derive(
+                    {"dimensions": {"time": None}}
+                )
 
-        # Compute some statistics across all time steps
-        time_stats = FieldTimeProperties(fld_time)
+                # Read the data from disk
+                n_mem = len(self.paths)
+                log(dbg=f"reading file ({idx_mem + 1}/{n_mem}): {file_path}")
+                with nc4.Dataset(file_path, "r") as fi:
+                    self._read_grid(fi)
 
-        # Create Field objects at requested time steps
+                    # Read meta data at requested time steps
+                    mdata_tss_i = self._collect_meta_data_tss(fi, panel_setups_req_time)
+                    if idx_mem == 0:
+                        self.mdata_tss = mdata_tss_i
+                    elif mdata_tss_i != self.mdata_tss:
+                        raise Exception("meta data differ between members")
+
+                    if not self.config.dry_run:
+                        # Read fields for all members at all time steps
+                        fld_time_i = self._read_member_fields_over_time(
+                            fi, timeless_panel_setup
+                        )
+                    else:
+                        fld_time_i = np.empty(fld_time_mem.shape[1:])
+                    fld_time_mem[idx_mem][:] = fld_time_i[:]
+
+            # Compute single field from all ensemble members
+            fld_time: np.ndarray = self._reduce_ensemble(
+                fld_time_mem, panel_setup_i, ts_hrs
+            )
+
+            # Compute some statistics across all time steps
+            time_stats = FieldTimeProperties(fld_time)
+
+            # Create Field objects at requested time steps
+            for panel_setup_i, mdata_i in zip(panel_setups_req_time, self.mdata_tss):
+                time_idx: int = panel_setup_i.dimensions.time
+                field = Field(
+                    fld=fld_time[time_idx],
+                    lat=self.lat,
+                    lon=self.lon,
+                    mdata=mdata_i,
+                    time_props=time_stats,
+                    panel_setup=panel_setup_i,
+                    model_setup=plot_setup.model,
+                )
+                if time_idx not in field_lst_by_ts:
+                    field_lst_by_ts[time_idx] = []
+                field_lst_by_ts[time_idx].append(field)
+
+        # Create one FieldGroup per plot (possibly with multiple outfiles)
         field_groups: List[FieldGroup] = []
-        for field_setups, mdata in zip(self.setups_lst_time, self.mdata_tss):
-            time_idx = field_setups.collect_equal("dimensions.time")
-            field = Field(
-                fld=fld_time[time_idx],
-                lat=self.lat,
-                lon=self.lon,
-                mdata=mdata,
-                time_props=time_stats,
-                var_setups=field_setups,
+        for time_idx, field_lst_i in field_lst_by_ts.items():
+            # Derive plot setup for given time step
+            panel_params = {"dimensions": {"time": time_idx}}
+            plot_setup_i = plot_setup.derive(
+                {"panels": [panel_params] * len(plot_setup.panels)}
             )
-            # SR_TMP < TODO SR_MULTIPANEL
-            group_fields = [field]
-            # SR_TMP >
-            group_attrs = {
-                "raw_path": setups.infile,
-                "paths": self.paths,
-                "ens_member_ids": setups.ens_member_ids,
-            }
-            field_group = FieldGroup(group_fields, attrs=group_attrs)
+            group_attrs = FieldGroupAttrs(
+                raw_path=plot_setup_i.infile,
+                paths=self.paths,
+                ens_member_ids=plot_setup.model.ens_member_id,
+            )
+            field_group = FieldGroup(
+                field_lst_i, plot_setup=plot_setup_i, attrs=group_attrs
+            )
             field_groups.append(field_group)
-
         return field_groups
 
-    def _read_data(
-        self, file_path: str, idx_mem: int, timeless_setups_mem: PlotSetupGroup
-    ) -> None:
-        n_mem = len(self.paths)
-        model = timeless_setups_mem.collect_equal("model.name")
-
-        # Read the data from disk
-        log(dbg=f"reading file ({idx_mem + 1}/{n_mem}): {file_path}")
-        with nc4.Dataset(file_path, "r") as fi:
-            self._read_grid(fi, model)
-
-            # Read meta data at requested time steps
-            mdata_tss_i = self._collect_meta_data_tss(fi)
-            if idx_mem == 0:
-                self.mdata_tss = mdata_tss_i
-            elif mdata_tss_i != self.mdata_tss:
-                raise Exception("meta data differ between members")
-
-            if not self.config.dry_run:
-                # Read fields for all members at all time steps
-                fld_time_i = self._read_member_fields_over_time(fi, timeless_setups_mem)
-                self.fld_time_mem[idx_mem][:] = fld_time_i[:]
-            else:
-                fld_time_i = np.empty(self.fld_time_mem.shape[1:])
-
     def _read_member_fields_over_time(
-        self, fi: nc4.Dataset, timeless_setups: PlotSetupGroup
+        self, fi: nc4.Dataset, timeless_panel_setup: PlotPanelSetup
     ) -> np.ndarray:
         """Read field over all time steps for each member."""
         fld_time_lst = []
-        plot_variable = timeless_setups.collect_equal("plot_variable")
-        for sub_setups in timeless_setups.decompress_partially(None, skip=["outfile"]):
-            for sub_setup in sub_setups:
-                fld_time_lst.append(self._read_fld_over_time(fi, sub_setup))
+        plot_variable = timeless_panel_setup.plot_variable
+        for dimensions in timeless_panel_setup.dimensions.decompress():
+            fld_time_lst.append(
+                self._read_fld_over_time(fi, dimensions, timeless_panel_setup.integrate)
+            )
         if plot_variable == "affected_area":
             shapes = [fld.shape for fld in fld_time_lst]
             if len(set(shapes)) != 1:
@@ -362,7 +360,7 @@ class InputFileEnsemble:
             fld_time = (np.array(fld_time_lst) > AFFECTED_AREA_THRESHOLD).any(axis=0)
         else:
             fld_time = merge_fields(fld_time_lst)
-        if self.fixer and timeless_setups.collect_equal("model.name") == "IFS-HRES":
+        if self.fixer and self.model_setup.name == "IFS-HRES":
             # Note: IFS-HRES-EU is not global, so doesn't need this fix
             self.fixer.fix_global_grid(self.lon, fld_time)
         if self.config.add_ts0:
@@ -377,36 +375,43 @@ class InputFileEnsemble:
         return fld_time
 
     # pylint: disable=R0914  # too-many-locals
-    def _collect_meta_data_tss(self, fi: nc4.Dataset) -> List[MetaData]:
+    def _collect_meta_data_tss(
+        self,
+        fi: nc4.Dataset,
+        panel_setups_req_time: PlotPanelSetupGroup,
+    ) -> List[MetaData]:
         """Collect time-step-specific data meta data."""
         mdata_lst: List[MetaData] = []
-        skip = ["outfile"]
-        skip.append("plot_variable")  # For "affected_area"
-        for setups in self.setups_lst_time:
+        for panel_setup in panel_setups_req_time:
             mdata_i_lst: List[MetaData] = []
-            for sub_setups in setups.decompress_partially(None, skip=skip):
-                for sub_setup in sub_setups:
-                    mdata_ij: MetaData = MetaData.collect(
-                        fi, sub_setup, add_ts0=self.config.add_ts0
-                    )
-                    mdata_i_lst.append(mdata_ij)
+            for dimensions in panel_setup.dimensions.decompress():
+                mdata_ij: MetaData = MetaData.collect(
+                    fi,
+                    self.model_setup,
+                    dimensions,
+                    plot_variable=panel_setup.plot_variable,
+                    integrate=panel_setup.integrate,
+                    add_ts0=self.config.add_ts0,
+                )
+                mdata_i_lst.append(mdata_ij)
             mdata_i = mdata_i_lst[0].merge_with(mdata_i_lst[1:])
-
-            # Fix some known issues with the NetCDF input data
             if self.fixer:
-                model_name = setups.collect_equal("model.name")
-                plot_variable = setups.collect_equal("plot_variable")
-                integrate = setups.collect_equal("integrate")
-                self.fixer.fix_meta_data(model_name, plot_variable, integrate, mdata_i)
-
+                # Fix some known issues with the NetCDF input data
+                model_name = self.model_setup.name
+                self.fixer.fix_meta_data(
+                    model_name,
+                    panel_setup.plot_variable,
+                    panel_setup.integrate,
+                    mdata_i,
+                )
             mdata_lst.append(mdata_i)
         return mdata_lst
 
     def _get_shape_mem_time(
-        self, model: str, raw_dimensions: Mapping[str, Mapping[str, Any]]
+        self, raw_dimensions: Mapping[str, Mapping[str, Any]]
     ) -> Tuple[int, int, int, int]:
         """Get the shape of an array of fields across members and time steps."""
-        dim_names = self._dim_names(model)
+        dim_names = self._dim_names()
         nlat = raw_dimensions[dim_names["lat"]]["size"]
         nlon = raw_dimensions[dim_names["lon"]]["size"]
         nts = raw_dimensions[dim_names["time"]]["size"]
@@ -415,26 +420,24 @@ class InputFileEnsemble:
         self.lon = np.full((nlon,), np.nan)
         return (n_mem, nts, nlat, nlon)
 
-    def _read_grid(self, fi: nc4.Dataset, model: str) -> None:
+    def _read_grid(self, fi: nc4.Dataset) -> None:
         """Read and prepare grid variables."""
-        dim_names = self._dim_names(model)
+        dim_names = self._dim_names()
         lat = fi.variables[dim_names["lat"]][:]
         lon = fi.variables[dim_names["lon"]][:]
         time = fi.variables[dim_names["time"]][:]
-        time = self._prepare_time(fi, time, model)
+        time = self._prepare_time(fi, time)
         self.lat = lat
         self.lon = lon
         self.time = time
 
-    def _prepare_time(
-        self, fi: nc4.Dataset, time: np.ndarray, model: str
-    ) -> np.ndarray:
+    def _prepare_time(self, fi: nc4.Dataset, time: np.ndarray) -> np.ndarray:
         if self.config.add_ts0:
             dts = time[1] - time[0]
             ts0 = time[0] - dts
             time = np.r_[ts0, time]
         # Convert seconds to hours
-        dim_names = self._dim_names(model)
+        dim_names = self._dim_names()
         time_unit = fi.variables[dim_names["time"]].units
         if time_unit.startswith("seconds since"):
             time = time / 3600.0
@@ -452,15 +455,15 @@ class InputFileEnsemble:
 
     # pylint: disable=R0912  # too-many-branches
     # pylint: disable=R1702  # too-many-nested-blocks (>5)
-    def _reduce_ensemble(self, var_setups: PlotSetupGroup, ts_hrs: float) -> np.ndarray:
+    def _reduce_ensemble(
+        self, fld_time_mem: np.ndarray, panel_setup: PlotPanelSetup, ts_hrs: float
+    ) -> np.ndarray:
         """Reduce the ensemble to a single field (time, lat, lon)."""
-        fld_time_mem = self.fld_time_mem
-
         if len(self.paths) == 1 or self.config.dry_run:
             return fld_time_mem[0]
 
-        ens_params = var_setups.collect_equal("ens_params")
-        ens_variable = var_setups.collect_equal("ens_variable")
+        ens_params = panel_setup.ens_params
+        ens_variable = panel_setup.ens_variable
 
         fld_time: np.ndarray
         if ens_variable == "minimum":
@@ -476,13 +479,20 @@ class InputFileEnsemble:
         elif ens_variable == "med_abs_dev":
             fld_time = sp_stats.median_abs_deviation(fld_time_mem, axis=0)
         elif ens_variable == "percentile":
-            assert ens_params.pctl is not None  # mypy
+            if ens_params.pctl is None:
+                raise Exception("ens_params.pctl is None")
             fld_time = np.percentile(fld_time_mem, ens_params.pctl, axis=0)
         elif ens_variable == "probability":
+            if ens_params.thr is None:
+                raise Exception("ens_params.thr is None")
             fld_time = ensemble_probability(
                 fld_time_mem, ens_params.thr, ens_params.thr_type
             )
         elif ens_variable.startswith("ens_cloud_"):
+            if ens_params.thr is None:
+                raise Exception("ens_params.thr is None")
+            if ens_params.mem_min is None:
+                raise Exception("ens_params.mem_min is None")
             cloud = EnsembleCloud(
                 mask=fld_time_mem > ens_params.thr,
                 mem_min=ens_params.mem_min,
@@ -498,10 +508,9 @@ class InputFileEnsemble:
             raise NotImplementedError("ens_variable", ens_variable)
         return fld_time
 
-    @staticmethod
-    def _dim_names(model: str) -> Dict[str, str]:
+    def _dim_names(self) -> Dict[str, str]:
         """Model-specific dimension names."""
-        if model in ["COSMO-2", "COSMO-1", "COSMO-2E", "COSMO-1E"]:
+        if self.model_setup.name in ["COSMO-2", "COSMO-1", "COSMO-2E", "COSMO-1E"]:
             return {
                 "lat": "rlat",
                 "lon": "rlon",
@@ -511,7 +520,7 @@ class InputFileEnsemble:
                 "noutrel": "noutrel",
                 "numpoint": "numpoint",
             }
-        elif model in ["IFS-HRES", "IFS-HRES-EU"]:
+        elif self.model_setup.name in ["IFS-HRES", "IFS-HRES-EU"]:
             return {
                 "lat": "latitude",
                 "lon": "longitude",
@@ -521,18 +530,17 @@ class InputFileEnsemble:
                 "noutrel": "noutrel",
                 "numpoint": "pointspec",
             }
-        else:
-            raise NotImplementedError("dimension names for model", model)
+        raise NotImplementedError(
+            f"dimension names for model '{self.model_setup.name}'"
+        )
 
     # pylint: disable=R0912,R0914  # too-many-branches, too-many-locals
-    def _read_fld_over_time(self, fi: nc4.Dataset, setup: PlotSetup) -> np.ndarray:
+    def _read_fld_over_time(
+        self, fi: nc4.Dataset, dimensions: Dimensions, integrate: bool
+    ) -> np.ndarray:
         """Read a 2D field at all time steps from disk."""
-        dimensions = setup.panels.collect_equal("dimensions")
-        plot_variable = setup.panels.collect_equal("plot_variable")
-        integrate = setup.panels.collect_equal("integrate")
-
         # Indices of field along NetCDF dimensions
-        dim_names = self._dim_names(setup.model.name)
+        dim_names = self._dim_names()
         dim_idcs_by_name = {
             dim_names["lat"]: slice(None),
             dim_names["lon"]: slice(None),
@@ -546,11 +554,16 @@ class InputFileEnsemble:
 
         # Select variable in file
         assert dimensions.species_id is not None  # mypy
+        # SR_TPM <
+        variable = dimensions.variable
+        if set(variable) == {"dry_deposition", "wet_deposition"}:
+            variable = "dry_deposition"
+        assert isinstance(variable, str)
+        # SR_TPM >
         var_name = derive_variable_name(
-            model=setup.model.name,
-            plot_variable=plot_variable,
+            model=self.model_setup.name,
+            variable=variable,
             species_id=dimensions.species_id,
-            deposition_type=setup.deposition_type_str,
         )
         try:
             nc_var = fi.variables[var_name]
@@ -609,15 +622,15 @@ class InputFileEnsemble:
         # Fix known issues with NetCDF input data
         var_ncattrs = {attr: nc_var.getncattr(attr) for attr in nc_var.ncattrs()}
         if self.fixer:
-            self.fixer.fix_nc_var_fld(fld, setup.model.name, var_ncattrs)
+            self.fixer.fix_nc_var_fld(fld, self.model_setup.name, var_ncattrs)
 
-        return self._handle_time_integration(fi, fld, plot_variable, integrate)
+        return self._handle_time_integration(fi, fld, dimensions.variable, integrate)
 
     def _handle_time_integration(
-        self, fi: nc4.Dataset, fld: np.ndarray, plot_variable: str, integrate: bool
+        self, fi: nc4.Dataset, fld: np.ndarray, variable: str, integrate: bool
     ) -> np.ndarray:
         """Integrate or desintegrate the field over time."""
-        if plot_variable == "concentration":
+        if variable == "concentration":
             if integrate:
                 # Integrate field over time
                 dt_hr = self.get_temp_res_hrs(fi)
@@ -625,7 +638,7 @@ class InputFileEnsemble:
             else:
                 # Field is already instantaneous
                 return fld
-        elif plot_variable == "deposition":
+        elif variable.endswith("_deposition"):
             if integrate:
                 # Field is already time-integrated
                 return fld
@@ -634,7 +647,7 @@ class InputFileEnsemble:
                 dt_hr = self.get_temp_res_hrs(fi)
                 fld[1:] = (fld[1:] - fld[:-1]) / dt_hr
                 return fld
-        raise NotImplementedError("unknown variable", plot_variable)
+        raise NotImplementedError("unknown variable", variable)
 
     @staticmethod
     def get_temp_res_hrs(fi: nc4.Dataset) -> float:

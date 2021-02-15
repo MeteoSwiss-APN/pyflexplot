@@ -17,29 +17,31 @@ import pytest  # type: ignore
 
 # First-party
 from pyflexplot.input.read_fields import read_fields
+from pyflexplot.setups.dimensions import Dimensions
 from pyflexplot.setups.plot_setup import PlotSetup
 from pyflexplot.setups.plot_setup import PlotSetupGroup
 
 # Local
 from .shared import datadir_reduced as datadir  # noqa:F401
+from .shared import decompress_twice
 from .shared import read_flexpart_field
 
 
-def get_var_name_ref(setup, var_names_ref):
-    dimensions = setup.panels.collect_equal("dimensions")
-    plot_variable = setup.panels.collect_equal("plot_variable")
-    if plot_variable == "concentration":
+def get_var_name_ref(dimensions: Dimensions, var_names_ref: str):
+    variable = dimensions.variable
+    assert isinstance(variable, str)
+    if variable == "concentration":
         assert len(var_names_ref) == 1
         return next(iter(var_names_ref))
-    elif plot_variable == "deposition":
+    elif variable.endswith("_deposition"):
         species_id = dimensions.species_id
         if isinstance(species_id, tuple):
             assert len(species_id) == 1
             species_id = next(iter(species_id))
-        var_name = f"{setup.deposition_type_str[0].upper()}D_spec{species_id:03d}"
+        var_name = f"{variable[0].upper()}D_spec{species_id:03d}"
         if var_name in var_names_ref:
             return var_name
-    raise NotImplementedError(f"{setup}")
+    raise NotImplementedError(f"dimensions={dimensions}\nvar_names_ref={var_names_ref}")
 
 
 @dataclass
@@ -99,15 +101,15 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 },
                 "panels": [
                     {
-                        "plot_variable": "deposition",
+                        "plot_variable": "dry_deposition",
                         "integrate": False,
                         "dimensions": {
-                            "deposition_type": "dry",
                             "nageclass": 0,
                             "noutrel": 0,
                             "numpoint": 0,
                             "species_id": 2,
                             "time": 3,
+                            "variable": "dry_deposition",
                         },
                     }
                 ],
@@ -124,15 +126,15 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 },
                 "panels": [
                     {
-                        "plot_variable": "deposition",
+                        "plot_variable": "wet_deposition",
                         "integrate": False,
                         "dimensions": {
-                            "deposition_type": "wet",
                             "nageclass": 0,
                             "noutrel": 0,
                             "numpoint": 0,
                             "species_id": 2,
                             "time": 3,
+                            "variable": "wet_deposition",
                         },
                     }
                 ],
@@ -149,16 +151,15 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 },
                 "panels": [
                     {
-                        "plot_variable": "deposition",
-                        "combine_deposition_types": True,
+                        "plot_variable": "tot_deposition",
                         "integrate": False,
                         "dimensions": {
-                            "deposition_type": ["dry", "wet"],
                             "nageclass": 0,
                             "noutrel": 0,
                             "numpoint": 0,
                             "species_id": 2,
                             "time": 3,
+                            "variable": ["dry_deposition", "wet_deposition"],
                         },
                     }
                 ],
@@ -199,16 +200,15 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 },
                 "panels": [
                     {
-                        "plot_variable": "deposition",
-                        "combine_deposition_types": True,
+                        "plot_variable": "tot_deposition",
                         "integrate": False,
                         "dimensions": {
-                            "deposition_type": ["dry", "wet"],
                             "nageclass": 0,
                             "noutrel": 0,
                             "numpoint": 0,
                             "species_id": 1,
                             "time": 3,
+                            "variable": ["dry_deposition", "wet_deposition"],
                         },
                     }
                 ],
@@ -225,17 +225,16 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
                 },
                 "panels": [
                     {
-                        "plot_variable": "deposition",
-                        "combine_deposition_types": True,
+                        "plot_variable": "tot_deposition",
                         "combine_species": True,
                         "integrate": False,
                         "dimensions": {
-                            "deposition_type": ["dry", "wet"],
                             "nageclass": 0,
                             "noutrel": 0,
                             "numpoint": 0,
                             "species_id": [1, 2],
                             "time": 3,
+                            "variable": ["dry_deposition", "wet_deposition"],
                         },
                     }
                 ],
@@ -307,8 +306,8 @@ def test_single(datadir, config):  # noqa:F811
     fld = next(iter(field_groups[0])).fld
 
     # Initialize individual setup objects
-    var_setups_lst = setups.decompress_twice(
-        "dimensions.time", skip=["model.ens_member_id"]
+    var_setups_lst = decompress_twice(
+        setups, "dimensions.time", skip=["model.ens_member_id"]
     )
     assert len(var_setups_lst) == 1
     var_setups = next(iter(var_setups_lst))
@@ -319,12 +318,15 @@ def test_single(datadir, config):  # noqa:F811
             [
                 read_flexpart_field(
                     datafile,
-                    get_var_name_ref(setup, config.var_names_ref),
-                    setup,
+                    get_var_name_ref(sub_dimensions, config.var_names_ref),
+                    sub_dimensions,
+                    integrate=panel.integrate,
                     model=config.setup_dct["model"]["name"],
                     add_ts0=True,
                 )
                 for setup in var_setups
+                for panel in setup.panels
+                for sub_dimensions in panel.dimensions.decompress()
             ],
             axis=0,
         )
@@ -400,15 +402,15 @@ def test_single(datadir, config):  # noqa:F811
                 },
                 "panels": [
                     {
-                        "plot_variable": "deposition",
+                        "plot_variable": "dry_deposition",
                         "integrate": True,
                         "dimensions": {
-                            "deposition_type": "dry",
                             "nageclass": 0,
                             "noutrel": 0,
                             "numpoint": 0,
                             "species_id": 2,
                             "time": [0, 3, 9],
+                            "variable": "dry_deposition",
                         },
                     }
                 ],
@@ -424,15 +426,15 @@ def test_single(datadir, config):  # noqa:F811
                 },
                 "panels": [
                     {
-                        "plot_variable": "deposition",
+                        "plot_variable": "wet_deposition",
                         "integrate": True,
                         "dimensions": {
-                            "deposition_type": "wet",
                             "nageclass": 0,
                             "noutrel": 0,
                             "numpoint": 0,
                             "species_id": 2,
                             "time": [0, 3, 9],
+                            "variable": "wet_deposition",
                         },
                     }
                 ],
@@ -448,16 +450,15 @@ def test_single(datadir, config):  # noqa:F811
                 },
                 "panels": [
                     {
-                        "plot_variable": "deposition",
-                        "combine_deposition_types": True,
+                        "plot_variable": "tot_deposition",
                         "integrate": True,
                         "dimensions": {
-                            "deposition_type": ["dry", "wet"],
                             "nageclass": 0,
                             "noutrel": 0,
                             "numpoint": 0,
                             "species_id": 1,
                             "time": [0, 3, 9],
+                            "variable": ["dry_deposition", "wet_deposition"],
                         },
                     }
                 ],
@@ -499,15 +500,15 @@ def test_single(datadir, config):  # noqa:F811
                 },
                 "panels": [
                     {
-                        "plot_variable": "deposition",
+                        "plot_variable": "tot_deposition",
                         "integrate": True,
                         "dimensions": {
-                            "deposition_type": ["wet", "dry"],
                             "nageclass": 0,
                             "noutrel": 0,
                             "numpoint": 0,
                             "species_id": 1,
                             "time": [0, 3, 9],
+                            "variable": ["wet_deposition", "dry_deposition"],
                         },
                     }
                 ],
@@ -521,15 +522,15 @@ def test_multiple(datadir, config):  # noqa:F811
     datafile = f"{datadir}/{config.setup_dct['infile']}"
 
     # Create setups
-    setup_lst = list(config.setup.decompress_partially(None))
+    setup_lst = list(config.setup.decompress(internal=False))
     for setup in setup_lst.copy():
         setup_lst.extend(setup.derive(config.derived_setup_params))
     setups = PlotSetupGroup(setup_lst)
 
     # Process field specifications one after another
     var_setups: PlotSetupGroup
-    for var_setups in setups.decompress_twice(
-        "dimensions.time", skip=["model.ens_member_id"]
+    for var_setups in decompress_twice(
+        setups, "dimensions.time", skip=["model.ens_member_id"]
     ):
 
         # Read input fields
@@ -549,20 +550,23 @@ def test_multiple(datadir, config):  # noqa:F811
         # Read reference fields
         fld_ref = None
         for var_setup in var_setups:
-            flds_ref_i = [
-                read_flexpart_field(
-                    datafile,
-                    get_var_name_ref(var_setup, config.var_names_ref),
-                    var_setup,
-                    model=config.setup_dct["model"]["name"],
-                    add_ts0=False,
-                )
-            ]
-            fld_ref_i = np.nansum(flds_ref_i, axis=0)
-            if fld_ref is None:
-                fld_ref = fld_ref_i
-            else:
-                fld_ref += fld_ref_i
+            for panel in var_setup.panels:
+                for dimensions in panel.dimensions.decompress():
+                    flds_ref_i = [
+                        read_flexpart_field(
+                            datafile,
+                            get_var_name_ref(dimensions, config.var_names_ref),
+                            dimensions,
+                            integrate=panel.integrate,
+                            model=config.setup_dct["model"]["name"],
+                            add_ts0=False,
+                        )
+                    ]
+                    fld_ref_i = np.nansum(flds_ref_i, axis=0)
+                    if fld_ref is None:
+                        fld_ref = fld_ref_i
+                    else:
+                        fld_ref += fld_ref_i
         fld_ref *= config.scale_fld_ref
 
         assert fld.shape == fld_ref.shape
@@ -608,16 +612,15 @@ def test_multiple(datadir, config):  # noqa:F811
                 },
                 "panels": [
                     {
-                        "plot_variable": "deposition",
-                        "combine_deposition_types": True,
+                        "plot_variable": "tot_deposition",
                         "integrate": False,
                         "dimensions": {
-                            "deposition_type": ["dry", "wet"],
                             "nageclass": 0,
                             "noutrel": 0,
                             "numpoint": 0,
                             "species_id": 2,
                             "time": None,
+                            "variable": ["dry_deposition", "wet_deposition"],
                         },
                     }
                 ],
@@ -658,16 +661,15 @@ def test_missing_deposition_cosmo(datadir):  # noqa:F811
         },
         "panels": [
             {
-                "plot_variable": "deposition",
+                "plot_variable": "tot_deposition",
                 "integrate": True,
-                "combine_deposition_types": True,
                 "dimensions": {
-                    "deposition_type": ("dry", "wet"),
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
                     "species_id": 1,
                     "time": 10,
+                    "variable": ("dry_deposition", "wet_deposition"),
                 },
             }
         ],
@@ -697,16 +699,15 @@ def test_missing_deposition_ifs(datadir):  # noqa:F811
         },
         "panels": [
             {
-                "plot_variable": "deposition",
+                "plot_variable": "tot_deposition",
                 "integrate": True,
-                "combine_deposition_types": True,
                 "dimensions": {
-                    "deposition_type": ("dry", "wet"),
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
                     "species_id": 1,
                     "time": 10,
+                    "variable": ("dry_deposition", "wet_deposition"),
                 },
             }
         ],
@@ -738,15 +739,14 @@ def test_affected_area(datadir):  # noqa:F811
             {
                 "plot_variable": "affected_area",
                 "integrate": True,
-                "combine_deposition_types": True,
                 "dimensions": {
-                    "deposition_type": ("dry", "wet"),
                     "level": 0,
                     "nageclass": 0,
                     "noutrel": 0,
                     "numpoint": 0,
                     "species_id": 1,
                     "time": -1,
+                    "variable": ("concentration", "dry_deposition", "wet_deposition"),
                 },
             }
         ],

@@ -19,9 +19,7 @@ combine_species = true
 # level = 0
 
 [_base."_total_deposition+"]
-plot_variable = "deposition"
-deposition_type = ["dry", "wet"]
-combine_deposition_types = true
+plot_variable = "tot_deposition"
 integrate = true
 
 # ["**"._full.de]

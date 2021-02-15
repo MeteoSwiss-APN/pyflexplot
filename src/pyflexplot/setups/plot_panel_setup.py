@@ -77,7 +77,6 @@ class PlotPanelSetup:
 
     # Tweaks
     integrate: bool = False
-    combine_deposition_types: bool = False
     combine_levels: bool = False
     combine_species: bool = False
 
@@ -102,7 +101,9 @@ class PlotPanelSetup:
         # Check plot_variable
         choices = [
             "concentration",
-            "deposition",
+            "tot_deposition",
+            "dry_deposition",
+            "wet_deposition",
             "affected_area",
             "cloud_arrival_time",
             "cloud_departure_time",
@@ -130,74 +131,15 @@ class PlotPanelSetup:
                 assert sub_value in choices, sub_value
         self._init_defaults()
 
-    # SR_TMP <<<
-    @property
-    def deposition_type_str(self) -> str:
-        if self.dimensions.deposition_type is None:
-            return "none"
-        else:
-            return self.dimensions.deposition_type
-
-    def decompress(
-        self,
-        *,
-        select: Optional[Collection[str]] = None,
-        skip: Optional[Collection[str]] = None,
-    ) -> "PlotPanelSetupGroup":
-        """Create a setup object for each decompressed dimensions object.
-
-        Args:
-            select (optional): List of parameter names to select for
-                decompression; all others will be skipped; parameters named in
-                both ``select`` and ``skip`` will be skipped.
-
-            skip (optional): List of parameter names to skip; if they have list
-                values, those are retained as such; parameters named in both
-                ``skip`` and ``select`` will be skipped.
-
-        """
-        # SR_TMP <
-        select_dims = (
-            None
-            if select is None
-            else [param for param in select if is_dimensions_param(param)]
-        )
-        skip_dims = (
-            None
-            if skip is None
-            else [param for param in skip if is_dimensions_param(param)]
-        )
-        # SR_TMP >
-        setups: List["PlotPanelSetup"] = []
-        for dims in self.dimensions.decompress(select=select_dims, skip=skip_dims):
-            params = merge_dicts(
-                self.dict(),
-                {"dimensions": dims.dict()},
-                overwrite_seqs=True,
-                overwrite_seq_dicts=True,
+        # Check dimensions.variable
+        variable = Dimensions.derive_variable(self.plot_variable)
+        if self.dimensions.variable is None:
+            self.dimensions = self.dimensions.derive({"variable": variable})
+        if self.dimensions.variable != variable:
+            raise ValueError(
+                f"dimensions.variable value '{self.dimensions.variable}' inconsistent"
+                f" with plot_variable '{self.plot_variable}'; expecting '{variable}'"
             )
-            # SR_TMP < Does this logic really belong here? I doubt it...
-            if (
-                select is not None and "plot_variable" not in select
-            ) or "plot_variable" in (skip or []):
-                params_lst = [params]
-            elif params["plot_variable"] == "affected_area":
-                params_lst = [
-                    {**params, "plot_variable": "concentration"},
-                    {**params, "plot_variable": "deposition"},
-                ]
-            elif params["plot_variable"] in [
-                "cloud_arrival_time",
-                "cloud_departure_time",
-            ]:
-                params_lst = [{**params, "plot_variable": "concentration"}]
-            else:
-                params_lst = [params]
-            # SR_TMP >
-            for params in params_lst:
-                setup = self.create(params)
-                setups.append(setup)
-        return PlotPanelSetupGroup(setups)
 
     @overload
     def complete_dimensions(
@@ -230,6 +172,65 @@ class PlotPanelSetup:
             inplace=True,
         )
         return None if inplace else obj
+
+    def decompress(
+        self,
+        select: Optional[Collection[str]] = None,
+        skip: Optional[Collection[str]] = None,
+    ) -> "PlotPanelSetupGroup":
+        """Create a setup object for each decompressed dimensions object.
+
+        Args:
+            select (optional): List of parameter names to select for
+                decompression; all others will be skipped; parameters named in
+                both ``select`` and ``skip`` will be skipped.
+
+            skip (optional): List of parameter names to skip; if they have list
+                values, those are retained as such; parameters named in both
+                ``skip`` and ``select`` will be skipped.
+
+        """
+        # SR_TMP <
+        select_dims = (
+            None
+            if select is None
+            else [
+                param.replace("dimensions.", "")
+                for param in select
+                if is_dimensions_param(param)
+            ]
+        )
+        skip_dims = (
+            None
+            if skip is None
+            else [
+                param.replace("dimensions.", "")
+                for param in skip
+                if is_dimensions_param(param)
+            ]
+        )
+        if (
+            select_dims
+            and "variable" in select_dims
+            and "variable" not in (skip_dims or [])
+        ):
+            raise ValueError(
+                "cannot decompress Dimensions.variable, because it is derived from"
+                f" {type(self).__name__}.plot_variable; decompress the Dimensions"
+                " object instead which on its own is independent of plot_variable"
+            )
+        skip_dims = list(skip or []) + ["variable"]
+        # SR_TMP >
+        setups: List["PlotPanelSetup"] = []
+        for dims in self.dimensions.decompress(select=select_dims, skip=skip_dims):
+            params = self.dict(rec=False)
+            params["dimensions"] = dims
+            setup = type(self)(**params)
+            setups.append(setup)
+        return PlotPanelSetupGroup(setups)
+
+    def derive(self, params: Dict[str, Any]) -> "PlotPanelSetup":
+        return type(self).create(merge_dicts(self.dict(), params, overwrite_seqs=True))
 
     def dict(self, rec: bool = True) -> Dict[str, Any]:
         """Return the parameter names and values as a dict.
@@ -318,7 +319,14 @@ class PlotPanelSetup:
     @classmethod
     def create(cls, params: Mapping[str, Any]) -> "PlotPanelSetup":
         params = dict(params)
-        params["dimensions"] = Dimensions.create(params.pop("dimensions", {}))
+        dims_params = dict(params.pop("dimensions", {}))
+        try:
+            plot_variable = params["plot_variable"]
+        except KeyError:
+            plot_variable = cls().plot_variable  # default
+        params["dimensions"] = Dimensions.create(
+            dims_params, plot_variable=plot_variable
+        )
         params["ens_params"] = EnsembleParams(**params.pop("ens_params", {}))
         return cls(**params)
 
@@ -382,9 +390,9 @@ class PlotPanelSetupGroup:
     @overload
     def decompress(
         self,
-        *,
         select: Optional[Collection[str]] = ...,
         skip: Optional[Collection[str]] = ...,
+        *,
         internal: Literal[True] = True,
     ) -> "PlotPanelSetupGroup":
         ...
@@ -392,18 +400,18 @@ class PlotPanelSetupGroup:
     @overload
     def decompress(
         self,
-        *,
         select: Optional[Collection[str]] = ...,
         skip: Optional[Collection[str]] = ...,
+        *,
         internal: Literal[False],
     ) -> List["PlotPanelSetupGroup"]:
         ...
 
     def decompress(
         self,
-        *,
         select=None,
         skip=None,
+        *,
         internal=True,
     ):
         """Create a group object for each decompressed setup object.
@@ -484,11 +492,10 @@ class PlotPanelSetupGroup:
             if len(params) > 1:
                 raise NotImplementedError("multiple params dicts")
             params = next(iter(params))
-        assert isinstance(params, Mapping)
         # SR_TMP >
+        params = dict(params)
         if multipanel_param is None:
             return cls([PlotPanelSetup.create(params)])
-        params = dict(params)
         try:
             values = params.pop(multipanel_param)
         except KeyError as e:

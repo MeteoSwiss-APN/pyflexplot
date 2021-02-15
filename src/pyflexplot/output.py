@@ -93,11 +93,10 @@ class FilePathFormatter:
 
         # Prepare input variable
         plot_variable = setup.panels.collect_equal("plot_variable")
-        if setup.panels.collect_equal("plot_variable") == "deposition":
-            plot_variable += f"-{setup.deposition_type_str}"
+        if plot_variable.endswith("deposition"):
             if not setup.panels.collect_equal("integrate"):
                 plot_variable += "-instant"
-        elif setup.panels.collect_equal("plot_variable") == "concentration":
+        elif plot_variable == "concentration":
             if setup.panels.collect_equal("integrate"):
                 plot_variable += "-integr"
 

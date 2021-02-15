@@ -17,15 +17,11 @@ integrate = true
 time = -1
 
 # [_base._tot_deposition]
-# plot_variable = "deposition"
-# deposition_type = ["dry", "wet"]
-# combine_deposition_types = true
+# plot_variable = "tot_deposition"
 # integrate = true
 
 # [_base._affected_area]
 # plot_variable = "affected_area"
-# deposition_type = ["dry", "wet"]
-# combine_deposition_types = true
 # integrate = true
 # level = 0
 # time = -1

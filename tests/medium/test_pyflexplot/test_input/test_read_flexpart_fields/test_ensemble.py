@@ -9,11 +9,11 @@ from typing import Dict
 
 # Third-party
 import numpy as np
-import pytest
 
 # First-party
 from pyflexplot.input.data import ensemble_probability
 from pyflexplot.input.read_fields import read_fields
+from pyflexplot.setups.dimensions import Dimensions
 from pyflexplot.setups.plot_setup import PlotSetup
 from pyflexplot.setups.plot_setup import PlotSetupGroup
 from srutils.dict import decompress_multival_dict
@@ -21,22 +21,24 @@ from srutils.dict import merge_dicts
 
 # Local
 from .shared import datadir_reduced as datadir  # noqa:F401
+from .shared import decompress_twice
 from .shared import read_flexpart_field
 
 
-def get_var_name_ref(setup, var_names_ref):
-    plot_variable = setup.panels.collect_equal("plot_variable")
-    if plot_variable == "concentration":
+def get_var_name_ref(dimensions: Dimensions, var_names_ref: str) -> str:
+    variable = dimensions.variable
+    assert isinstance(variable, str)
+    if variable == "concentration":
         assert len(var_names_ref) == 1
         return next(iter(var_names_ref))
-    elif plot_variable == "deposition":
+    elif variable.endswith("_deposition"):
         for var_name in var_names_ref:
-            if (setup.deposition_type_str, var_name[:2]) in [
+            if (variable[:3], var_name[:2]) in [
                 ("dry", "DD"),
                 ("wet", "WD"),
             ]:
                 return var_name
-    raise NotImplementedError(f"{setup}")
+    raise NotImplementedError(f"dimensions={dimensions}\nvar_names_ref={var_names_ref}")
 
 
 class TestReadFieldEnsemble_Single:
@@ -80,7 +82,6 @@ class TestReadFieldEnsemble_Single:
         setup_params,
         ens_var,
         fct_reduce_mem,
-        cache_on,
     ):
         """Run an individual test."""
         datafile_fmt = self.datafile_fmt(datadir)
@@ -104,26 +105,26 @@ class TestReadFieldEnsemble_Single:
             assert len(setup_dct["panels"]) == 1
             setup_dct["panels"][0]["plot_type"] = f"ensemble_{ens_var}"
         # SR_TMP >
-        setups = PlotSetupGroup([PlotSetup.create(setup_dct)])
+        plot_setups = PlotSetupGroup([PlotSetup.create(setup_dct)])
 
         # Read input fields
-        field_groups = read_fields(setups, {"add_ts0": True, "cache_on": cache_on})
+        field_groups = read_fields(plot_setups, {"add_ts0": True})
         assert len(field_groups) == 1
         assert len(field_groups[0]) == 1
         fld = next(iter(field_groups[0])).fld
 
         # SR_TMP <
-        var_setups_lst = setups.decompress_twice(
-            "dimensions.time", skip=["model.ens_member_id"]
+        plot_setups_lst = decompress_twice(
+            plot_setups, "dimensions.time", skip=["model.ens_member_id"]
         )
-        assert len(var_setups_lst) == 1
-        var_setups = next(iter(var_setups_lst))
-        setups = var_setups.compress().decompress_partially(
-            None, skip=["model.ens_member_id"]
-        )
+        assert len(plot_setups_lst) == 1
+        var_setups = next(iter(plot_setups_lst))
+        plot_setups = var_setups.compress().decompress(skip=["model.ens_member_id"])
         # SR_TMP >
-        assert len(setups) == 1
-        setup = next(iter(setups))
+        assert len(plot_setups) == 1
+        setup = next(iter(plot_setups))
+        assert len(setup.panels) == 1
+        panel_setup = next(iter(setup.panels))
 
         # Read reference fields
         fld_ref = fct_reduce_mem(
@@ -133,7 +134,8 @@ class TestReadFieldEnsemble_Single:
                         read_flexpart_field(
                             self.datafile(ens_member_id, datafile_fmt=datafile_fmt),
                             var_name,
-                            setup,
+                            panel_setup.dimensions,
+                            integrate=panel_setup.integrate,
                             model="COSMO-2",  # SR_TMP
                             add_ts0=True,
                         )
@@ -149,7 +151,7 @@ class TestReadFieldEnsemble_Single:
         assert fld.shape == fld_ref.shape
         np.testing.assert_allclose(fld, fld_ref, equal_nan=True, rtol=1e-6)
 
-    def test_ens_mean_concentration(self, datadir, cache_on=False):  # noqa:F811
+    def test_ens_mean_concentration(self, datadir):  # noqa:F811
         """Read concentration field."""
         self.run(
             datadir,
@@ -157,12 +159,7 @@ class TestReadFieldEnsemble_Single:
             setup_params={"panels": [{"dimensions": {"level": 1}}]},
             ens_var="mean",
             fct_reduce_mem=lambda arr: np.nanmean(arr, axis=0),
-            cache_on=cache_on,
         )
-
-    @pytest.mark.skip("cache is broken")
-    def test_ens_mean_concentration_cached(self, datadir):  # noqa:F811
-        self.test_ens_mean_concentration(datadir, cache_on=True)
 
 
 class TestReadFieldEnsemble_Multiple:
@@ -209,7 +206,6 @@ class TestReadFieldEnsemble_Multiple:
         setup_params,
         ens_var,
         fct_reduce_mem,
-        cache_on,
         scale_fld_ref=1.0,
     ):
         """Run an individual test, reading one field after another."""
@@ -220,61 +216,69 @@ class TestReadFieldEnsemble_Multiple:
         ):
             if "panels" not in shared_setup_params:
                 shared_setup_params["panels"] = [{}]
-            for shared_core in decompress_multival_dict(
-                shared_setup_params["panels"][0]
-            ):
-                setup_params_i = merge_dicts(
-                    shared_setup_params,
-                    setup_params,
-                    {
-                        "model": {
-                            "ens_member_id": self.ens_member_ids,
-                        },
+            setup_params_i = merge_dicts(
+                shared_setup_params,
+                setup_params,
+                {
+                    "model": {
+                        "ens_member_id": self.ens_member_ids,
                     },
-                )
-                # SR_TMP <
-                if ens_var in ["probability", "minimum", "maximum", "mean", "median"]:
-                    assert len(setup_params_i["panels"]) == 1
-                    setup_params_i["panels"][0]["ens_variable"] = ens_var
-                else:
-                    assert len(setup_params_i["panels"]) == 1
-                    setup_params_i["panels"][0]["plot_type"] = f"ensemble_{ens_var}"
-                # SR_TMP >
-                setup_lst.append(PlotSetup.create(setup_params_i))
-        setups = PlotSetupGroup(setup_lst)
+                },
+            )
+            # SR_TMP <
+            if ens_var in [
+                "probability",
+                "minimum",
+                "maximum",
+                "mean",
+                "median",
+            ]:
+                assert len(setup_params_i["panels"]) == 1
+                setup_params_i["panels"][0]["ens_variable"] = ens_var
+            else:
+                assert len(setup_params_i["panels"]) == 1
+                setup_params_i["panels"][0]["plot_type"] = f"ensemble_{ens_var}"
+            # SR_TMP >
+            setup_lst.append(PlotSetup.create(setup_params_i))
+        plot_setup_group = PlotSetupGroup(setup_lst)
 
         # Read input fields
-        field_groups = read_fields(setups, {"add_ts0": False, "cache_on": cache_on})
+        field_groups = read_fields(plot_setup_group, {"add_ts0": False})
         fld_arr = np.array(
             [field.fld for field_group in field_groups for field in field_group]
         )
 
         # Read reference fields
+        assert len(plot_setup_group) == 1
+        plot_setup = next(iter(plot_setup_group))
         fld_ref_lst = []
-        for sub_setups_time in setups.decompress_partially(["dimensions.time"]):
+        for plot_setup_i in plot_setup.decompress(["dimensions.time"]):
             fld_ref_mem_time = []
-            for sub_setups in sub_setups_time.decompress_partially(
-                None, skip=["model.ens_member_id"]
-            ):
-                # SR_TMP <
-                assert len(sub_setups) == 1
-                sub_setup = next(iter(sub_setups))
-                # SR_TMP >
+            for plot_setup_ij in plot_setup_i.decompress(skip=["model.ens_member_id"]):
                 fld_ref_mem_time.append([])
                 flds_mem = []
-                for ens_member_id in self.ens_member_ids:
-                    fld = (
-                        read_flexpart_field(
-                            self.datafile(ens_member_id, datafile_fmt=datafile_fmt),
-                            get_var_name_ref(sub_setup, var_names_ref),
-                            sub_setup,
-                            model="COSMO-2",  # SR_TMP
-                            add_ts0=False,
+                for plot_setup_ijk in plot_setup_ij.decompress(
+                    ["model.ens_member_id"], internal=False
+                ):
+                    ens_member_id = next(iter(plot_setup_ijk.model.ens_member_id))
+                    # SR_TMP <
+                    assert len(plot_setup_ijk.panels) == 1
+                    panel_setup = next(iter(plot_setup_ijk.panels))
+                    # SR_TMP >
+                    for dimensions in panel_setup.dimensions.decompress(["variable"]):
+                        fld = (
+                            read_flexpart_field(
+                                self.datafile(ens_member_id, datafile_fmt=datafile_fmt),
+                                get_var_name_ref(dimensions, var_names_ref),
+                                dimensions,
+                                integrate=panel_setup.integrate,
+                                model="COSMO-2",  # SR_TMP
+                                add_ts0=False,
+                            )
+                            * scale_fld_ref
                         )
-                        * scale_fld_ref
-                    )
-                    flds_mem.append(fld)
-                    fld_ref_mem_time[-1].append(fld)
+                        flds_mem.append(fld)
+                        fld_ref_mem_time[-1].append(fld)
             fld_ref_lst.append(fct_reduce_mem(np.nansum(fld_ref_mem_time, axis=0)))
         fld_arr_ref = np.array(fld_ref_lst)
         assert fld_arr.shape == fld_arr_ref.shape
@@ -292,9 +296,7 @@ class TestReadFieldEnsemble_Multiple:
                 raise error
         np.testing.assert_allclose(fld_arr, fld_arr_ref, equal_nan=True, rtol=1e-6)
 
-    def run_concentration(
-        self, datadir, ens_var, *, cache_on=False, scale_fld_ref=1.0  # noqa:F811
-    ):
+    def run_concentration(self, datadir, ens_var, *, scale_fld_ref=1.0):  # noqa:F811
         """Read ensemble concentration field."""
         datafile_fmt = self.datafile_fmt(datadir)
 
@@ -326,7 +328,6 @@ class TestReadFieldEnsemble_Multiple:
             setup_params=setup_params,
             ens_var=ens_var,
             fct_reduce_mem=fct_reduce_mem,
-            cache_on=cache_on,
             scale_fld_ref=scale_fld_ref,
         )
 
@@ -336,15 +337,7 @@ class TestReadFieldEnsemble_Multiple:
     def test_ens_probability_concentration(self, datadir):  # noqa:F811
         self.run_concentration(datadir, "probability", scale_fld_ref=3.0)
 
-    @pytest.mark.skip("cache is broken")
-    def test_ens_mean_concentration_cached(self, datadir):  # noqa:F811
-        self.run_concentration(datadir, "mean", cache_on=True, scale_fld_ref=3.0)
-
-    @pytest.mark.skip("cache is broken")
-    def test_ens_probability_concentration_cached(self, datadir):  # noqa:F811
-        self.run_concentration(datadir, "probability", cache_on=True, scale_fld_ref=3.0)
-
-    def run_deposition_tot(self, datadir, ens_var, cache_on=False):  # noqa:F811
+    def run_deposition_tot(self, datadir, ens_var):  # noqa:F811
         """Read ensemble total deposition field."""
         datafile_fmt = self.datafile_fmt(datadir)
         fct_reduce_mem = {
@@ -359,16 +352,9 @@ class TestReadFieldEnsemble_Multiple:
             ],
             setup_params={
                 "infile": datafile_fmt,
-                "panels": [
-                    {
-                        "plot_variable": "deposition",
-                        "combine_deposition_types": True,
-                        "dimensions": {"deposition_type": ("dry", "wet")},
-                    }
-                ],
+                "panels": [{"plot_variable": "tot_deposition"}],
             },
             ens_var=ens_var,
-            cache_on=cache_on,
             fct_reduce_mem=fct_reduce_mem,
         )
 
@@ -377,11 +363,3 @@ class TestReadFieldEnsemble_Multiple:
 
     def test_ens_max_deposition_tot(self, datadir):  # noqa:F811
         self.run_deposition_tot(datadir, "maximum")
-
-    @pytest.mark.skip("cache is broken")
-    def test_ens_mean_deposition_tot_cached(self, datadir):  # noqa:F811
-        self.run_deposition_tot(datadir, "mean", cache_on=True)
-
-    @pytest.mark.skip("cache is broken")
-    def test_ens_max_deposition_tot_cached(self, datadir):  # noqa:F811
-        self.run_deposition_tot(datadir, "maximum", cache_on=True)

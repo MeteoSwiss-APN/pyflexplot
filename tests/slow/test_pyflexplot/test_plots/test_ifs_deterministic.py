@@ -77,8 +77,7 @@ class Test_TotalDeposition(_TestBase):
         },
         "panels": [
             {
-                "plot_variable": "deposition",
-                "combine_deposition_types": True,
+                "plot_variable": "tot_deposition",
                 "integrate": True,
                 "lang": "de",
                 "domain": "cloud",
@@ -102,8 +101,7 @@ class Test_TotalDeposition_EmptyField(_TestBase):
         },
         "panels": [
             {
-                "plot_variable": "deposition",
-                "combine_deposition_types": True,
+                "plot_variable": "tot_deposition",
                 "integrate": True,
                 "lang": "de",
                 "domain": "cloud",
@@ -127,7 +125,6 @@ class Test_AffectedArea(_TestBase):
         "panels": [
             {
                 "plot_variable": "affected_area",
-                "combine_deposition_types": True,
                 "integrate": True,
                 "lang": "en",
                 "domain": "cloud",
@@ -135,7 +132,6 @@ class Test_AffectedArea(_TestBase):
                     "species_id": 1,
                     "level": 0,
                     "time": -1,
-                    "deposition_type": ["dry", "wet"],
                 },
             }
         ],

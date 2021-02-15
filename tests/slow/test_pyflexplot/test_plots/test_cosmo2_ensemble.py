@@ -85,8 +85,7 @@ class Test_EnsMean_TotalDeposition(_TestBase):
         "panels": [
             {
                 "ens_variable": "mean",
-                "plot_variable": "deposition",
-                "combine_deposition_types": True,
+                "plot_variable": "tot_deposition",
                 "integrate": True,
                 "combine_species": True,
                 "lang": "en",
@@ -112,12 +111,11 @@ class Test_EnsProbability_WetDeposition(_TestBase):
         "panels": [
             {
                 "ens_variable": "probability",
-                "plot_variable": "deposition",
+                "plot_variable": "wet_deposition",
                 "integrate": True,
                 "lang": "en",
                 "domain": "full",
                 "dimensions": {
-                    "deposition_type": "wet",
                     "species_id": 1,
                     "time": -1,
                 },
@@ -140,7 +138,6 @@ class Test_EnsMin_AffectedArea(_TestBase):
             {
                 "plot_variable": "affected_area",
                 "ens_variable": "minimum",
-                "combine_deposition_types": True,
                 "integrate": True,
                 "combine_species": True,
                 "lang": "de",
@@ -149,7 +146,6 @@ class Test_EnsMin_AffectedArea(_TestBase):
                     "species_id": (1, 2),
                     "time": -1,
                     "level": 0,
-                    "deposition_type": ["dry", "wet"],
                 },
             }
         ],

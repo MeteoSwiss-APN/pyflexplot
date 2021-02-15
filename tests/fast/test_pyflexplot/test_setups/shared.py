@@ -1,5 +1,6 @@
 """Shared resources for setup tests."""
 # Standard library
+from copy import deepcopy
 from typing import Any
 from typing import Dict
 
@@ -24,19 +25,17 @@ MANDATORY_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
 OPTIONAL_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
     "panels": [
         {
-            "combine_deposition_types": False,
             "combine_levels": False,
             "combine_species": False,
             "dimensions_default": "all",
             "dimensions": {
-                "deposition_type": None,
                 "level": None,
                 "nageclass": None,
                 "noutrel": None,
                 "numpoint": None,
                 "species_id": None,
                 "time": None,
-                "variable": None,
+                "variable": "concentration",
             },
             "domain": "full",
             "domain_size_lat": None,
@@ -103,4 +102,6 @@ DEFAULT_PARAMS = merge_dicts(
 )
 
 
+RAW_DEFAULT_PARAMS_PRE = deepcopy(RAW_DEFAULT_PARAMS)
 DEFAULT_SETUP: PlotSetup = PlotSetup.create(RAW_DEFAULT_PARAMS)
+assert RAW_DEFAULT_PARAMS == RAW_DEFAULT_PARAMS_PRE

@@ -15,6 +15,12 @@ from srutils.testing import assert_nested_equal
 # Local
 from .shared import OPTIONAL_RAW_DEFAULT_PARAMS
 
+BASE = {
+    "infile": "foo.nc",
+    "outfile": "bar.png",
+    "model": {"name": "COSMO-baz"},
+}
+
 
 def fmt_val(val):
     if isinstance(val, str):
@@ -42,8 +48,10 @@ def test_single_minimal_section(tmp_path):
         model = "COSMO-baz"
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
-    assert setups == [merge_dicts(base, OPTIONAL_RAW_DEFAULT_PARAMS)]
+    assert len(setups) == 1
+    res = next(iter(setups))
+    sol = merge_dicts(OPTIONAL_RAW_DEFAULT_PARAMS, BASE)
+    assert res == sol
 
 
 def test_single_minimal_renamed_section(tmp_path):
@@ -55,8 +63,7 @@ def test_single_minimal_renamed_section(tmp_path):
         model = "COSMO-baz"
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
-    assert setups == [merge_dicts(base, OPTIONAL_RAW_DEFAULT_PARAMS)]
+    assert setups == [merge_dicts(OPTIONAL_RAW_DEFAULT_PARAMS, BASE)]
 
 
 def test_single_section(tmp_path):
@@ -66,26 +73,29 @@ def test_single_section(tmp_path):
         infile = "foo.nc"
         outfile = "bar.png"
         model = "COSMO-baz"
-        plot_variable = "deposition"
+        plot_variable = "tot_deposition"
         lang = "de"
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
     assert len(setups) == 1
     res = next(iter(setups))
-    base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
-    assert res != merge_dicts(base, OPTIONAL_RAW_DEFAULT_PARAMS)
+    assert res != merge_dicts(OPTIONAL_RAW_DEFAULT_PARAMS, BASE)
     sol = merge_dicts(
-        base,
         OPTIONAL_RAW_DEFAULT_PARAMS,
+        BASE,
         {
             "panels": [
                 {
-                    "plot_variable": "deposition",
-                    "dimensions": {"level": None},
+                    "plot_variable": "tot_deposition",
+                    "dimensions": {
+                        "level": None,
+                        "variable": ("dry_deposition", "wet_deposition"),
+                    },
                     "lang": "de",
                 }
             ],
         },
+        overwrite_seqs=True,
     )
     assert res == sol
 
@@ -104,8 +114,7 @@ def test_multiple_parallel_empty_sections(tmp_path):
         model = "COSMO-baz"
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
-    assert setups == [merge_dicts(base, OPTIONAL_RAW_DEFAULT_PARAMS)] * 2
+    assert setups == [merge_dicts(OPTIONAL_RAW_DEFAULT_PARAMS, BASE)] * 2
 
 
 def test_two_nested_empty_sections(tmp_path):
@@ -119,8 +128,7 @@ def test_two_nested_empty_sections(tmp_path):
         [_base.plot]
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
-    assert setups == [merge_dicts(base, OPTIONAL_RAW_DEFAULT_PARAMS)]
+    assert setups == [merge_dicts(OPTIONAL_RAW_DEFAULT_PARAMS, BASE)]
 
 
 def test_multiple_nested_sections(tmp_path):
@@ -136,9 +144,7 @@ def test_multiple_nested_sections(tmp_path):
         plot_variable = "concentration"
 
         [_base._dep]
-        plot_variable = "deposition"
-        deposition_type = ["dry", "wet"]
-        combine_deposition_types = true
+        plot_variable = "tot_deposition"
 
         [_base._dep._tot._ch.en]
         domain = "ch"
@@ -157,7 +163,7 @@ def test_multiple_nested_sections(tmp_path):
         lang = "de"
 
         [_base._dep.wet]
-        deposition_type = "wet"
+        plot_variable = "wet_deposition"
 
         [_base._dep.wet.en]
         lang = "en"
@@ -165,16 +171,17 @@ def test_multiple_nested_sections(tmp_path):
         [_base._dep.wet.de]
         lang = "de"
         """
-    base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
     sol_base = merge_dicts(
-        base,
         OPTIONAL_RAW_DEFAULT_PARAMS,
+        BASE,
         {
             "panels": [
                 {
-                    "plot_variable": "deposition",
-                    "combine_deposition_types": True,
-                    "dimensions": {"level": None, "deposition_type": ("dry", "wet")},
+                    "plot_variable": "tot_deposition",
+                    "dimensions": {
+                        "level": None,
+                        "variable": ("dry_deposition", "wet_deposition"),
+                    },
                     "lang": "de",
                 }
             ],
@@ -186,8 +193,7 @@ def test_multiple_nested_sections(tmp_path):
             "panels": [
                 {
                     "plot_variable": "concentration",
-                    "combine_deposition_types": False,
-                    "dimensions": {"deposition_type": None},
+                    "dimensions": {"variable": "concentration"},
                 }
             ],
         },
@@ -195,15 +201,40 @@ def test_multiple_nested_sections(tmp_path):
         {"panels": [{"domain": "ch", "lang": "de"}]},
         {"panels": [{"domain": "full", "lang": "en"}]},
         {"panels": [{"domain": "full", "lang": "de"}]},
-        {"panels": [{"dimensions": {"deposition_type": "wet"}}]},
-        {"panels": [{"lang": "en", "dimensions": {"deposition_type": "wet"}}]},
-        {"panels": [{"lang": "de", "dimensions": {"deposition_type": "wet"}}]},
+        {
+            "panels": [
+                {
+                    "plot_variable": "wet_deposition",
+                    "dimensions": {"variable": "wet_deposition"},
+                }
+            ]
+        },
+        {
+            "panels": [
+                {
+                    "plot_variable": "wet_deposition",
+                    "dimensions": {"variable": "wet_deposition"},
+                    "lang": "en",
+                }
+            ]
+        },
+        {
+            "panels": [
+                {
+                    "plot_variable": "wet_deposition",
+                    "dimensions": {"variable": "wet_deposition"},
+                    "lang": "de",
+                }
+            ]
+        },
     ]
-    sol = [
+    sol_lst = [
         merge_dicts(sol_base, sol_spc, overwrite_seqs=True) for sol_spc in sol_specific
     ]
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert setups == sol
+    assert len(setups) == len(sol_lst)
+    for res, sol in zip(setups, sol_lst):
+        assert res == sol
 
 
 def test_multiple_override(tmp_path):
@@ -219,9 +250,7 @@ def test_multiple_override(tmp_path):
         plot_variable = "concentration"
 
         [_base._dep]
-        plot_variable = "deposition"
-        deposition_type = ["dry", "wet"]
-        combine_deposition_types = true
+        plot_variable = "tot_deposition"
 
         [_base._dep._tot._ch.en]
         domain = "ch"
@@ -240,27 +269,25 @@ def test_multiple_override(tmp_path):
         lang = "de"
 
         [_base._dep._wet.en]
-        deposition_type = "wet"
+        plot_variable = "wet_deposition"
         lang = "en"
 
         [_base._dep._wet.de]
-        deposition_type = "wet"
+        plot_variable = "wet_deposition"
         lang = "de"
         """
     override = {"lang": "de"}
-    base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
     sol_base = merge_dicts(
-        base,
         OPTIONAL_RAW_DEFAULT_PARAMS,
+        BASE,
         {
             "panels": [
                 {
-                    "plot_variable": "deposition",
-                    "combine_deposition_types": True,
+                    "plot_variable": "tot_deposition",
                     "lang": "de",
                     "dimensions": {
                         "level": None,
-                        "deposition_type": ("dry", "wet"),
+                        "variable": ("dry_deposition", "wet_deposition"),
                     },
                 }
             ],
@@ -272,37 +299,19 @@ def test_multiple_override(tmp_path):
             "panels": [
                 {
                     "plot_variable": "concentration",
-                    "combine_deposition_types": False,
-                    "dimensions": {
-                        "deposition_type": None,
-                    },
+                    "dimensions": {"variable": "concentration"},
                 }
-            ],
+            ]
         },
+        {"panels": [{"domain": "ch", "lang": "de"}]},
+        {"panels": [{"domain": "full", "lang": "de"}]},
         {
             "panels": [
                 {
-                    "domain": "ch",
-                    "lang": "de",
+                    "plot_variable": "wet_deposition",
+                    "dimensions": {"variable": "wet_deposition"},
                 }
-            ],
-        },
-        {
-            "panels": [
-                {
-                    "domain": "full",
-                    "lang": "de",
-                }
-            ],
-        },
-        {
-            "panels": [
-                {
-                    "dimensions": {
-                        "deposition_type": "wet",
-                    },
-                }
-            ],
+            ]
         },
     ]
     sol = [
@@ -310,7 +319,8 @@ def test_multiple_override(tmp_path):
     ]
     res = SetupFile(tmp_setup_file(tmp_path, content)).read(override=override)
     assert len(res) == len(sol)
-    assert res == sol
+    for res_i, sol_i in zip(res, sol):
+        assert res_i == sol_i
 
 
 def test_semi_realcase(tmp_path):
@@ -411,9 +421,7 @@ def test_realcase_opr_like(tmp_path):
         model = "COSMO-1"
         species_id = "*"
         outfile = "tot_deposition_{domain}_{lang}_{time:02d}.png"
-        plot_variable = "deposition"
-        deposition_type = ["dry", "wet"]
-        combine_deposition_types = true
+        plot_variable = "tot_deposition"
         combine_species = true
         integrate = true
         time = -1
@@ -425,8 +433,6 @@ def test_realcase_opr_like(tmp_path):
         level = 0
         species_id = "*"
         plot_variable = "affected_area"
-        deposition_type = ["dry", "wet"]
-        combine_deposition_types = true
         combine_species = true
         integrate = true
         time = -1
@@ -435,18 +441,16 @@ def test_realcase_opr_like(tmp_path):
         {
             "panels": [
                 {
-                    "combine_deposition_types": False,
                     "combine_levels": False,
                     "combine_species": False,
                     "dimensions": {
-                        "deposition_type": None,
                         "level": 0,
                         "nageclass": None,
                         "noutrel": None,
                         "numpoint": None,
                         "species_id": None,
                         "time": None,
-                        "variable": None,
+                        "variable": "concentration",
                     },
                     "dimensions_default": "all",
                     "domain": "full",
@@ -480,18 +484,16 @@ def test_realcase_opr_like(tmp_path):
         {
             "panels": [
                 {
-                    "combine_deposition_types": False,
                     "combine_levels": False,
                     "combine_species": False,
                     "dimensions": {
-                        "deposition_type": None,
                         "level": 0,
                         "nageclass": None,
                         "noutrel": None,
                         "numpoint": None,
                         "species_id": None,
                         "time": -1,
-                        "variable": None,
+                        "variable": "concentration",
                     },
                     "dimensions_default": "all",
                     "domain": "full",
@@ -525,18 +527,16 @@ def test_realcase_opr_like(tmp_path):
         {
             "panels": [
                 {
-                    "combine_deposition_types": True,
                     "combine_levels": False,
                     "combine_species": True,
                     "dimensions": {
-                        "deposition_type": ("dry", "wet"),
                         "level": None,
                         "nageclass": None,
                         "noutrel": None,
                         "numpoint": None,
                         "species_id": None,
                         "time": -1,
-                        "variable": None,
+                        "variable": ("dry_deposition", "wet_deposition"),
                     },
                     "dimensions_default": "all",
                     "domain": "full",
@@ -549,7 +549,7 @@ def test_realcase_opr_like(tmp_path):
                         "thr_type": "lower",
                     },
                     "ens_variable": "none",
-                    "plot_variable": "deposition",
+                    "plot_variable": "tot_deposition",
                     "integrate": True,
                     "lang": "en",
                 }
@@ -570,18 +570,20 @@ def test_realcase_opr_like(tmp_path):
         {
             "panels": [
                 {
-                    "combine_deposition_types": True,
                     "combine_levels": False,
                     "combine_species": True,
                     "dimensions": {
-                        "deposition_type": ("dry", "wet"),
                         "level": 0,
                         "nageclass": None,
                         "noutrel": None,
                         "numpoint": None,
                         "species_id": None,
                         "time": -1,
-                        "variable": None,
+                        "variable": (
+                            "concentration",
+                            "dry_deposition",
+                            "wet_deposition",
+                        ),
                     },
                     "dimensions_default": "all",
                     "domain": "full",
@@ -638,7 +640,7 @@ def test_wildcard_simple(tmp_path):
         plot_variable = "concentration"
 
         [_base._deposition]
-        plot_variable = "deposition"
+        plot_variable = "tot_deposition"
 
         [_base."*".de]
         lang = "de"
@@ -647,17 +649,35 @@ def test_wildcard_simple(tmp_path):
         lang = "en"
 
         """
-    base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
     sol = [
-        merge_dicts(OPTIONAL_RAW_DEFAULT_PARAMS, base, dct, overwrite_seqs=True)
+        merge_dicts(OPTIONAL_RAW_DEFAULT_PARAMS, BASE, dct, overwrite_seqs=True)
         for dct in [
-            {"panels": [{"plot_variable": "concentration", "lang": "de"}]},
-            {"panels": [{"plot_variable": "concentration", "lang": "en"}]},
             {
                 "panels": [
                     {
-                        "plot_variable": "deposition",
-                        "dimensions": {"level": None},
+                        "plot_variable": "concentration",
+                        "dimensions": {"variable": "concentration"},
+                        "lang": "de",
+                    }
+                ]
+            },
+            {
+                "panels": [
+                    {
+                        "plot_variable": "concentration",
+                        "dimensions": {"variable": "concentration"},
+                        "lang": "en",
+                    }
+                ]
+            },
+            {
+                "panels": [
+                    {
+                        "plot_variable": "tot_deposition",
+                        "dimensions": {
+                            "level": None,
+                            "variable": ("dry_deposition", "wet_deposition"),
+                        },
                         "lang": "de",
                     }
                 ],
@@ -665,8 +685,11 @@ def test_wildcard_simple(tmp_path):
             {
                 "panels": [
                     {
-                        "plot_variable": "deposition",
-                        "dimensions": {"level": None},
+                        "plot_variable": "tot_deposition",
+                        "dimensions": {
+                            "level": None,
+                            "variable": ("dry_deposition", "wet_deposition"),
+                        },
                         "lang": "en",
                     }
                 ],
@@ -689,7 +712,7 @@ def test_double_wildcard_equal_depth(tmp_path):
         plot_variable = "concentration"
 
         [_base."_deposition+"]
-        plot_variable = "deposition"
+        plot_variable = "tot_deposition"
 
         ["**"._ch.de]
         domain = "ch"
@@ -708,11 +731,10 @@ def test_double_wildcard_equal_depth(tmp_path):
         lang = "en"
 
         """
-    base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
-    sol = [
+    sol_lst = [
         merge_dicts(
             OPTIONAL_RAW_DEFAULT_PARAMS,
-            base,
+            BASE,
             dct,
             {"panels": [{"domain": domain, "lang": lang}]},
             overwrite_seqs=True,
@@ -722,8 +744,11 @@ def test_double_wildcard_equal_depth(tmp_path):
             {
                 "panels": [
                     {
-                        "plot_variable": "deposition",
-                        "dimensions": {"level": None},
+                        "plot_variable": "tot_deposition",
+                        "dimensions": {
+                            "level": None,
+                            "variable": ("dry_deposition", "wet_deposition"),
+                        },
                         "integrate": False,
                     }
                 ],
@@ -732,8 +757,10 @@ def test_double_wildcard_equal_depth(tmp_path):
         for domain in ["ch", "full"]
         for lang in ["de", "en"]
     ]
-    setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert setups == sol
+    res_lst = SetupFile(tmp_setup_file(tmp_path, content)).read()
+    assert len(res_lst) == len(sol_lst)
+    for res, sol in zip(res_lst, sol_lst):
+        assert res == sol
 
 
 def test_double_wildcard_variable_depth(tmp_path):
@@ -754,7 +781,7 @@ def test_double_wildcard_variable_depth(tmp_path):
         time = 10
 
         [_base."_deposition+"]
-        plot_variable = "deposition"
+        plot_variable = "tot_deposition"
 
         ["**"._ch.de]
         domain = "ch"
@@ -773,11 +800,10 @@ def test_double_wildcard_variable_depth(tmp_path):
         lang = "en"
 
         """
-    base = {"infile": "foo.nc", "outfile": "bar.png", "model": {"name": "COSMO-baz"}}
-    sol = [
+    sol_lst = [
         merge_dicts(
             OPTIONAL_RAW_DEFAULT_PARAMS,
-            base,
+            BASE,
             dct,
             {"panels": [{"domain": domain, "lang": lang}]},
             overwrite_seqs=True,
@@ -791,15 +817,23 @@ def test_double_wildcard_variable_depth(tmp_path):
             },
             {
                 "panels": [
-                    {"plot_variable": "deposition", "dimensions": {"level": None}}
+                    {
+                        "plot_variable": "tot_deposition",
+                        "dimensions": {
+                            "level": None,
+                            "variable": ("dry_deposition", "wet_deposition"),
+                        },
+                    }
                 ]
             },
         ]
         for domain in ["ch", "full"]
         for lang in ["de", "en"]
     ]
-    res = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert res == sol
+    res_lst = SetupFile(tmp_setup_file(tmp_path, content)).read()
+    assert len(res_lst) == len(sol_lst)
+    for res, sol in zip(res_lst, sol_lst):
+        assert res == sol
 
 
 def test_combine_wildcards(tmp_path):
@@ -813,7 +847,7 @@ def test_combine_wildcards(tmp_path):
         plot_variable = "concentration"
 
         [_base."_deposition"]
-        plot_variable = "deposition"
+        plot_variable = "tot_deposition"
 
         [_base."*"."_mean+"]
         ens_variable = "mean"
@@ -830,7 +864,7 @@ def test_combine_wildcards(tmp_path):
         lang = "en"
 
         """
-    sol = [
+    sol_lst = [
         merge_dicts(
             OPTIONAL_RAW_DEFAULT_PARAMS,
             {
@@ -844,18 +878,26 @@ def test_combine_wildcards(tmp_path):
                         "plot_variable": plot_variable,
                         "ens_variable": ens_variable,
                         "lang": lang,
+                        "dimensions": {
+                            "variable": (
+                                "concentration"
+                                if plot_variable == "concentration"
+                                else ("dry_deposition", "wet_deposition")
+                            ),
+                        },
                     }
                 ],
             },
             overwrite_seqs=True,
         )
-        for plot_variable in ["concentration", "deposition"]
+        for plot_variable in ["concentration", "tot_deposition"]
         for ens_variable in ["mean", "maximum"]
         for lang in ["de", "en"]
     ]
-    res = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert len(res) == len(sol)
-    assert res == sol
+    res_lst = SetupFile(tmp_setup_file(tmp_path, content)).read()
+    assert len(res_lst) == len(sol_lst)
+    for res, sol in zip(res_lst, sol_lst):
+        assert res == sol
 
 
 class Test_IndividualParams_SingleOrMultipleValues:
@@ -874,15 +916,10 @@ class Test_IndividualParams_SingleOrMultipleValues:
 
             """
         res = SetupFile(tmp_setup_file(tmp_path, content)).read()
-        base = {
-            "infile": "foo.nc",
-            "outfile": "bar.png",
-            "model": {"name": "COSMO-baz"},
-        }
         sol = [
             merge_dicts(
                 OPTIONAL_RAW_DEFAULT_PARAMS,
-                base,
+                BASE,
                 {"panels": [{"dimensions": {"species_id": value}}]},
                 overwrite_seqs=True,
             )
@@ -906,15 +943,10 @@ class Test_IndividualParams_SingleOrMultipleValues:
 
             """
         setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-        base = {
-            "infile": "foo.nc",
-            "outfile": "bar.png",
-            "model": {"name": "COSMO-baz"},
-        }
         sol = [
             merge_dicts(
                 OPTIONAL_RAW_DEFAULT_PARAMS,
-                base,
+                BASE,
                 {"panels": [{"dimensions": {"level": value}}]},
                 overwrite_seqs=True,
             )
@@ -928,30 +960,30 @@ class Test_IndividualParams_SingleOrMultipleValues:
             infile = "foo.nc"
             outfile = "bar.png"
             model = "COSMO-baz"
-            plot_variable = "deposition"
+            plot_variable = "tot_deposition"
             """
-        setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-        base = {
-            "infile": "foo.nc",
-            "outfile": "bar.png",
-            "model": {"name": "COSMO-baz"},
-        }
-        sol = [
+        res_lst = SetupFile(tmp_setup_file(tmp_path, content)).read()
+        sol_lst = [
             merge_dicts(
                 OPTIONAL_RAW_DEFAULT_PARAMS,
-                base,
+                BASE,
                 {
                     "panels": [
                         {
-                            "plot_variable": "deposition",
-                            "dimensions": {"level": None},
+                            "plot_variable": "tot_deposition",
+                            "dimensions": {
+                                "level": None,
+                                "variable": ("dry_deposition", "wet_deposition"),
+                            },
                         }
                     ],
                 },
                 overwrite_seqs=True,
             )
         ]
-        assert setups == sol
+        assert len(res_lst) == len(sol_lst)
+        for res, sol in zip(res_lst, sol_lst):
+            assert res == sol
 
 
 @pytest.mark.skip("not quite ready yet")

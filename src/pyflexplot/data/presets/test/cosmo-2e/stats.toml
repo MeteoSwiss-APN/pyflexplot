@@ -10,7 +10,6 @@ model = "COSMO-2E"
 combine_species = true
 # species_id = "*"
 species_id = 1
-combine_deposition_types = true
 
 [_base._concentration]
 plot_variable = "concentration"
@@ -21,21 +20,19 @@ integrate = true
 time = -1
 
 # [_base._deposition]
-# plot_variable = "deposition"
 # integrate = true
 # time = -1
 # [_base._deposition._dry]
-# deposition_type = "dry"
+# plot_variable = "dry_deposition"
 # [_base._deposition._wet]
-# deposition_type = "wet"
+# plot_variable = "wet_deposition"
 # [_base._deposition._tot]
-# deposition_type = ["dry", "wet"]
+# plot_variable = "tot_deposition"
 
 [_base._affected_area]
 plot_variable = "affected_area"
 integrate = true
 level = 0
-deposition_type = ["dry", "wet"]
 time = -1
 
 [_base._concentration._integr._pctl]
