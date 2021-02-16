@@ -26,6 +26,7 @@ from typing_extensions import Literal
 
 # Local
 from .exceptions import KeyConflictError
+from .exceptions import UnexpandableValueError
 
 
 def format_dictlike(obj, multiline=False, indent=1):
@@ -234,10 +235,11 @@ def decompress_multival_dict(
     select: Optional[Collection[str]] = None,
     skip: Optional[Collection[str]] = None,
     *,
-    depth: int = 1,
     cls_expand: Union[type, Collection[type]] = (list, tuple),
+    depth: int = 1,
     f_expand: Optional[Callable[[Any], bool]] = None,
     flatten: bool = False,
+    unexpandable_ok: bool = True,
 ) -> List[Mapping[str, Any]]:
     """Combine dict with some nested list values into object-value dicts.
 
@@ -249,16 +251,22 @@ def decompress_multival_dict(
 
         skip: Names of keys that are not expanded.
 
-        depth: Depth to which nested list values are resolved.
+        cls_expand (optional): One or more types, instances of which will be
+            expanded; overridden by ``f_expand``.
 
-        cls_expand: One or more types, instances of which will be expanded.
-            Overridden by ``f_expand``.
+        depth (optional): Depth to which nested list values are resolved.
 
-        f_expand: Function to evaluate whether an object is expandable. Trivial
-            example (equivalent to ``cls_expand=lst``): ``lambda obj:
-            isinstance(obj, lst)``. Overrides ``cls_expand``.
+        f_expand (optional): Function to evaluate whether an object is
+            expandable; trivial example (equivalent to ``cls_expand=lst``):
+            ``lambda obj: isinstance(obj, lst)``; Overrides ``cls_expand``.
 
-        flatten: Flatten the nested results list.
+        flatten (optional): Flatten the nested results list.
+
+        unexpandable_ok (optional): Whether unexpandable values (those of a type
+            incompatible with ``cls_expand`` or for which ``f_expand``, if
+            given, returns false) of explicitly selected parameters (those in
+            ``select`` and not in ``skip``) are ignored; if not, an
+            ``UnexpandableValueError`` is raised.
 
     """
     if not isinstance(depth, int) or depth <= 0:
@@ -266,7 +274,14 @@ def decompress_multival_dict(
 
     def run_rec(dct, depth, curr_depth=1):
         """Run recursively."""
-        dct_lst = _dict_mult_vals_product(dct, select, skip, cls_expand, f_expand)
+        dct_lst = _dict_mult_vals_product(
+            cls_expand=cls_expand,
+            dct=dct,
+            f_expand=f_expand,
+            select=select,
+            skip=skip,
+            unexpandable_ok=unexpandable_ok,
+        )
         if len(dct_lst) == 1 or curr_depth == depth:
             for _ in range(depth - curr_depth):
                 # Nest further until target depth reached
@@ -295,27 +310,45 @@ def decompress_multival_dict(
     return res
 
 
-def _dict_mult_vals_product(dct, select, skip, cls_expand, f_expand):
-    def select_key(key):
+def _dict_mult_vals_product(
+    *,
+    cls_expand: Union[type, Collection[type]],
+    dct: Mapping[str, Any],
+    f_expand: Optional[Callable[[Any], bool]],
+    select: Optional[Collection[str]],
+    skip: Optional[Collection[str]],
+    unexpandable_ok: bool,
+) -> List[Dict[str, Any]]:
+    def select_key(key: str) -> bool:
+        """Check whether to select a key."""
         if select is None:
             return True
         return key in select
 
-    def skip_key(key):
+    def skip_key(key: str) -> bool:
+        """Check whether to skip a key."""
         if skip is None:
             return False
         return key in skip
 
-    def expand_val(val):
+    def is_expandable(val: Any) -> bool:
         if f_expand is not None:
             return f_expand(val)
         elif isinstance(cls_expand, type):
             return isinstance(val, cls_expand)
         return any(isinstance(val, t) for t in cls_expand)
 
-    keys, vals = [], []
+    keys: List[str] = []
+    vals: List[Any] = []
     for key, val in dct.items():
-        if not select_key(key) or skip_key(key) or not expand_val(val):
+        if (
+            not unexpandable_ok
+            and select_key(key)
+            and not skip_key(key)
+            and not is_expandable(val)
+        ):
+            raise UnexpandableValueError(val)
+        if not select_key(key) or skip_key(key) or not is_expandable(val):
             val = [val]
         keys.append(key)
         vals.append(val)

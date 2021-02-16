@@ -4,6 +4,7 @@ import pytest  # type: ignore
 
 # First-party
 from srutils.dict import decompress_multival_dict
+from srutils.exceptions import UnexpandableValueError
 
 
 def assert_dict_lists_equal(res, sol):
@@ -154,3 +155,45 @@ def test_skip():
         {"a": ["foo", "bar"], "b": 1, "c": 3, "d": 5},
     ]
     assert_dict_lists_equal(res, sol)
+
+
+class Test_UnexpandableOk:
+    dct = {"a": 1, "b": [2, 3], "c": {"d": 4}}
+
+    def test_a_ok(self):
+        try:
+            decompress_multival_dict(self.dct, select="a")
+            decompress_multival_dict(self.dct, select="a", unexpandable_ok=True)
+        except UnexpandableValueError as e:
+            raise AssertionError(f"unexpected exception: {repr(e)}") from e
+
+    def test_a_fail(self):
+        with pytest.raises(UnexpandableValueError):
+            decompress_multival_dict(self.dct, select="a", unexpandable_ok=False)
+
+    def test_b_ok(self):
+        try:
+            decompress_multival_dict(self.dct, select="b")
+            decompress_multival_dict(self.dct, select="b", unexpandable_ok=True)
+            decompress_multival_dict(self.dct, select="b", unexpandable_ok=False)
+        except UnexpandableValueError as e:
+            raise AssertionError(f"unexpected exception: {repr(e)}") from e
+
+    def test_c_ok(self):
+        try:
+            decompress_multival_dict(self.dct, select="c")
+            decompress_multival_dict(self.dct, select="c", unexpandable_ok=True)
+        except UnexpandableValueError as e:
+            raise AssertionError(f"unexpected exception: {repr(e)}") from e
+
+    def test_c_fail(self):
+        with pytest.raises(UnexpandableValueError):
+            decompress_multival_dict(self.dct, select="c", unexpandable_ok=False)
+
+    def test_d_ok(self):
+        try:
+            decompress_multival_dict(self.dct, select="d")
+            decompress_multival_dict(self.dct, select="d", unexpandable_ok=True)
+            decompress_multival_dict(self.dct, select="d", unexpandable_ok=False)
+        except UnexpandableValueError as e:
+            raise AssertionError(f"unexpected exception: {repr(e)}") from e

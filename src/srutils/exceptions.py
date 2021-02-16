@@ -19,6 +19,10 @@ class TypeCastError(Exception):
     """Error casting a value to a type."""
 
 
+class UnexpandableValueError(Exception):
+    """Value is not expandable."""
+
+
 # Derived from other standard exceptions
 
 
