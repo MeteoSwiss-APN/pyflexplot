@@ -24,6 +24,8 @@ from typing_extensions import Literal
 # First-party
 from srutils.dataclasses import cast_field_value
 from srutils.dict import decompress_multival_dict
+from srutils.exceptions import InvalidParameterValueError
+from srutils.format import sfmt
 from srutils.iter import resolve_negative_indices
 from srutils.str import join_multilines
 
@@ -68,7 +70,13 @@ class CoreDimensions:
         for param, value in params.items():
             if value == "*":
                 value = None
-            params[param] = cls.cast(param, value)
+            try:
+                params[param] = cls.cast(param, value)
+            except InvalidParameterValueError as e:
+                raise ValueError(
+                    f"cannot cast value of param '{param}' of type"
+                    f" {type(value).__name__}: {sfmt(value)}"
+                ) from e
         return cls(**params)
 
     # SR_TMP Identical to ModelSetup.cast

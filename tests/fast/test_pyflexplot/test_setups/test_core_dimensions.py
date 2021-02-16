@@ -1,4 +1,7 @@
 """Test class ``pyflexplot.setup.CoreDimensions``."""
+# Third-party
+import pytest
+
 # First-party
 from pyflexplot.setups.dimensions import CoreDimensions
 
@@ -53,3 +56,8 @@ class Test_Init:
             "variable": "concentration",
         }
         assert res == sol
+
+    def test_variable_fail(self):
+        params = {"variable": ("concentration", "dry_deposition", "wet_deposition")}
+        with pytest.raises(ValueError):
+            CoreDimensions(**params)

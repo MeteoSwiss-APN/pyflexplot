@@ -156,6 +156,18 @@ class Test_Create:
         }
         assert res == sol
 
+    def test_variable_ok(self):
+        params = {"variable": ("concentration", "dry_deposition", "wet_deposition")}
+        try:
+            Dimensions.create(params)
+        except ValueError as e:
+            raise AssertionError(f"unexpected exception: {repr(e)}") from e
+
+    def test_variable_fail(self):
+        params = {"variable": ("concentration", ("dry_deposition", "wet_deposition"))}
+        with pytest.raises(ValueError):
+            Dimensions.create(params)
+
 
 class Test_Dict:
     """Represent a ``dimensions`` object as a clean dict."""

@@ -25,8 +25,10 @@ from typing_extensions import Literal
 
 # First-party
 from srutils.dataclasses import cast_field_value
+from srutils.dict import decompress_multival_dict
 from srutils.dict import merge_dicts
 from srutils.exceptions import InvalidParameterValueError
+from srutils.exceptions import UnexpandableValueError
 from srutils.format import nested_repr
 from srutils.format import sfmt
 from srutils.str import join_multilines
@@ -48,6 +50,13 @@ def is_plot_panel_setup_param(param: str) -> bool:
     return param in PlotPanelSetup.get_params()
 
 
+# SR_TMP <<< TODO cleaner solution
+def is_ensemble_params_param(param: str) -> bool:
+    if param.startswith("ens_params."):
+        param = param.replace("ens_params.", "")
+    return param in EnsembleParams.get_params()
+
+
 @dc.dataclass
 class EnsembleParams:
     mem_min: Optional[int] = None
@@ -60,6 +69,24 @@ class EnsembleParams:
 
     def tuple(self) -> Tuple[Tuple[str, Any], ...]:
         return tuple(self.dict().items())
+
+    @classmethod
+    def get_params(cls) -> List[str]:
+        return list(cls.__dataclass_fields__)  # type: ignore  # pylint: disable=E1101
+
+    @classmethod
+    def create(cls, params: Mapping[str, Any]) -> "EnsembleParams":
+        params = dict(params)
+        for name, value in dict(params).items():
+            try:
+                params[name] = cast_field_value(
+                    cls, name, value, bool_mode="intuitive", unpack_str=False
+                )
+            except InvalidParameterValueError as e:
+                raise ValueError(
+                    f"parameter '{name}' has invalid value {sfmt(value)}"
+                ) from e
+        return cls(**params)
 
 
 # pylint: disable=R0902  # too-many-instance-attributes (>7)
@@ -327,7 +354,7 @@ class PlotPanelSetup:
         params["dimensions"] = Dimensions.create(
             dims_params, plot_variable=plot_variable
         )
-        params["ens_params"] = EnsembleParams(**params.pop("ens_params", {}))
+        params["ens_params"] = EnsembleParams.create(params.pop("ens_params", {}))
         return cls(**params)
 
     @classmethod
@@ -471,47 +498,157 @@ class PlotPanelSetupGroup:
     @classmethod
     def create(
         cls,
-        params: Union[Mapping[str, Any], Sequence[Mapping[str, Any]]],
+        params: Union[Sequence[Mapping[str, Any]], Mapping[str, Any]],
         multipanel_param: Optional[str] = None,
     ) -> "PlotPanelSetupGroup":
         """Prepare and create an instance of ``PlotPanelSetupGroup``.
 
         Args:
-            params: One or more parameters dicts based on which one or more
-                ``PlotPanelSetup`` objects are created each, depending on
-                ``multipanel_param``.
+            params: Parameters dict defining one or more ``PlotPanelSetup``
+                objects; if ``multipanel_param`` is given, multiple setup
+                objects are created, otherwise exactly one.
 
-            multipanel_param (optional): Parameter in ``params`` based on which
-                multiple ``PlotPanelSetup`` objects are created, one for each
-                value of the respective parameter; if omitted, exactly one
-                object will be created.
+            multipanel_param (optional): Parameter in ``params`` with multiple
+                (i.e., a sequence of) values; for each individual value, a
+                separate ``PlotPanelSetup`` object is created; if the value of
+                that parameter is not a sequence, an exception is raised; if
+                ``multipanel_param`` is None, exactly one setup object will
+                becreated based on the unmodified ``params`` dict.
 
         """
-        # SR_TMP <
-        if not isinstance(params, Mapping):
-            if len(params) > 1:
-                raise NotImplementedError("multiple params dicts")
-            params = next(iter(params))
-        # SR_TMP >
+        if isinstance(params, Mapping):
+            return cls._create_from_dict(params, multipanel_param)
+        elif isinstance(params, Sequence) and not isinstance(params, str):
+            return cls._create_from_seq(params, multipanel_param)
+        raise ValueError(
+            "params must be a params dict or a sequence thereof, not a "
+            + type(params).__name__
+        )
+
+    @classmethod
+    def _create_from_seq(
+        cls,
+        params: Sequence[Mapping[str, Any]],
+        multipanel_param: Optional[str] = None,
+    ) -> "PlotPanelSetupGroup":
+        def check_consistency(
+            mp_param: Optional[str], params: Sequence[Mapping[str, Any]]
+        ) -> None:
+            def param_missing_error(param: str, params: Mapping[str, Any]) -> Exception:
+                return ValueError(
+                    f"multipanel_param '{param}' not in params dict:\n{pformat(params)}"
+                )
+
+            if mp_param is None:
+                if len(params) != 1:
+                    raise ValueError(
+                        f"must pass exactly one params dict (not {len(params)})"
+                        " if multipanel_param is None"
+                    )
+                return
+
+            for params_i in params:
+                for fct, name in [
+                    (is_ensemble_params_param, "ens_params"),
+                    (is_dimensions_param, "dimensions"),
+                    (is_plot_panel_setup_param, ""),
+                ]:
+                    if not fct(mp_param):
+                        continue
+                    if name and mp_param.startswith(f"{name}."):
+                        mp_param = mp_param.replace(f"{name}.", "")
+                    try:
+                        value = (params_i[name] if name else params_i)[mp_param]
+                    except KeyError as e:
+                        raise param_missing_error(mp_param, params_i) from e
+                    if isinstance(value, Sequence) and not isinstance(value, str):
+                        raise ValueError(
+                            "when passing a list of params dicts, multipanel_param"
+                            " values must not be sequences ('{mp_param}': {value})"
+                        )
+                    break
+                else:
+                    raise ValueError(f"invalid multipanel_param '{mp_param}'")
+
+        check_consistency(multipanel_param, params)
+
+        setups: List[PlotPanelSetup] = []
+        for params_i in params:
+            try:
+                setup = PlotPanelSetup.create(params_i)
+            except ValueError as e:
+                raise ValueError(
+                    "could not create PlotPanelSetup with params dict:"
+                    f"\n{pformat(params_i)}\nmaybe multipanel_param has wrong value"
+                    f" ({sfmt(multipanel_param)})?"
+                ) from e
+            setups.append(setup)
+        return cls(setups)
+
+    @classmethod
+    def _create_from_dict(
+        cls,
+        params: Mapping[str, Any],
+        multipanel_param: Optional[str] = None,
+    ) -> "PlotPanelSetupGroup":
+        def handle_sub_params(
+            mp_param: str, params: Mapping[str, Any], name: str = ""
+        ) -> List[Dict[str, Any]]:
+            if name and mp_param.startswith(f"{name}."):
+                mp_param = mp_param.replace(f"{name}.", "")
+            if not name:
+                sub_params = dict(params)
+            else:
+                try:
+                    sub_params = dict(params[name])
+                except KeyError as e:
+                    raise ValueError(
+                        f"params dict missing '{name}' despite multipanel_param"
+                        f" '{mp_param}':\n" + pformat(params)
+                    ) from e
+            try:
+                sub_params_lst = decompress_multival_dict(
+                    sub_params, select=[mp_param], unexpandable_ok=False
+                )
+            except UnexpandableValueError as e:
+                raise ValueError(
+                    f"multipanel_param '{mp_param}' not expandable in params dict:\n"
+                    + pformat(sub_params)
+                ) from e
+            if name:
+                return [
+                    merge_dicts(params, {name: sub_params}, overwrite_seqs=True)
+                    for sub_params in sub_params_lst
+                ]
+            return [dict(sub_params) for sub_params in sub_params_lst]
+
         params = dict(params)
+        params_lst: List[Dict[str, Any]]
         if multipanel_param is None:
-            return cls([PlotPanelSetup.create(params)])
-        try:
-            values = params.pop(multipanel_param)
-        except KeyError as e:
-            raise ValueError(
-                f"multipanel_param '{multipanel_param}' not among params {list(params)}"
-            ) from e
-        if not (isinstance(values, Sequence) and not isinstance(values, str)):
-            raise ValueError(
-                f"value ({sfmt(values)}) of multipanel_param '{multipanel_param}'"
-                f" is a {type(values).__name__}, not a sequence"
-            )
-        panel_setups: List[PlotPanelSetup] = []
-        for value in values:
-            params_i: Dict[str, Any] = {**params, multipanel_param: value}
-            panel_setups.append(PlotPanelSetup.create(params_i))
-        return cls(panel_setups)
+            params_lst = [params]
+        elif is_ensemble_params_param(multipanel_param):
+            params_lst = handle_sub_params(multipanel_param, params, "ens_params")
+        elif is_dimensions_param(multipanel_param):
+            params_lst = handle_sub_params(multipanel_param, params, "dimensions")
+        elif is_plot_panel_setup_param(multipanel_param):
+            params = dict(params)
+            try:
+                values = params.pop(multipanel_param)
+            except KeyError as e:
+                raise ValueError(
+                    f"multipanel_param '{multipanel_param}' not in params dict: "
+                    + pformat(params)
+                ) from e
+            if not (isinstance(values, Sequence) and not isinstance(values, str)):
+                raise ValueError(
+                    f"value ({sfmt(values)}) of multipanel_param"
+                    f" '{multipanel_param}' is a {type(values).__name__}, not a"
+                    " sequence"
+                )
+            params_lst = [{**params, multipanel_param: value} for value in values]
+        else:
+            raise ValueError(f"invalid multipanel_param '{multipanel_param}'")
+        return cls._create_from_seq(params_lst, multipanel_param)
 
 
 class SetupGroupFormatter:

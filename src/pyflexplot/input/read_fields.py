@@ -309,15 +309,17 @@ class InputFileEnsemble:
             time_stats = FieldTimeProperties(fld_time)
 
             # Create Field objects at requested time steps
-            for panel_setup_i, mdata_i in zip(panel_setups_req_time, self.mdata_tss):
-                time_idx: int = panel_setup_i.dimensions.time
+            for panel_setup_req_time, mdata_req_time in zip(
+                panel_setups_req_time, self.mdata_tss
+            ):
+                time_idx: int = panel_setup_req_time.dimensions.time
                 field = Field(
                     fld=fld_time[time_idx],
                     lat=self.lat,
                     lon=self.lon,
-                    mdata=mdata_i,
+                    mdata=mdata_req_time,
                     time_props=time_stats,
-                    panel_setup=panel_setup_i,
+                    panel_setup=panel_setup_req_time,
                     model_setup=plot_setup.model,
                 )
                 if time_idx not in field_lst_by_ts:

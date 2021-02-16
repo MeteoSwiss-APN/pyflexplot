@@ -1,11 +1,241 @@
 """Tests for ``pyflexplot.setups.plot_panel_setup.PlotPanelSetupGroup``."""
+# Third-party
+import pytest
+
 # First-party
 from pyflexplot.setups.plot_panel_setup import PlotPanelSetup
 from pyflexplot.setups.plot_panel_setup import PlotPanelSetupGroup
+from srutils.dict import merge_dicts
 from srutils.testing import assert_is_sub_element
+from srutils.testing import assert_nested_equal
 
 
-class TestDecompress:
+class Test_Create:
+    class Test_SinglePanel:
+        params = {
+            "plot_variable": "dry_deposition",
+            "dimensions": {
+                "species_id": 1,
+            },
+        }
+
+        def test_params_dict(self):
+            group = PlotPanelSetupGroup.create(self.params)
+            res = group.dicts()
+            sol = [self.params]
+            assert_is_sub_element(
+                name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
+            )
+
+        def test_params_list(self):
+            group = PlotPanelSetupGroup.create([self.params])
+            assert_is_sub_element(
+                name_super="result",
+                obj_super=group.dicts(),
+                name_sub="solution",
+                obj_sub=[self.params],
+            )
+
+        def test_multipanel_fail(self):
+            with pytest.raises(ValueError, match="multipanel_param"):
+                PlotPanelSetupGroup.create(self.params, multipanel_param="species_id")
+
+    class Test_MultiPanel:
+        class Test_EnsParamsParam:
+            params = {
+                "plot_variable": "wet_deposition",
+                "ens_variable": "percentile",
+                "ens_params": {"pctl": (30, 50, 70, 90)},
+            }
+
+            def no_multival_fail(self):
+                with pytest.raises(ValueError, match="multipanel_param"):
+                    PlotPanelSetupGroup.create(self.params)
+                with pytest.raises(ValueError, match="multipanel_param"):
+                    PlotPanelSetupGroup.create([self.params])
+
+            def test_params_dict(self):
+                group = PlotPanelSetupGroup.create(
+                    self.params, multipanel_param="ens_params.pctl"
+                )
+                res = group.dicts()
+                sol = [
+                    {"ens_params": {"pctl": 30}},
+                    {"ens_params": {"pctl": 50}},
+                    {"ens_params": {"pctl": 70}},
+                    {"ens_params": {"pctl": 90}},
+                ]
+                assert_is_sub_element(
+                    name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
+                )
+
+            def test_params_list_vs_dict(self):
+                group_dict = PlotPanelSetupGroup.create(
+                    self.params, multipanel_param="ens_params.pctl"
+                )
+                params_lst = [
+                    merge_dicts(
+                        self.params,
+                        {"ens_params": {"pctl": val}},
+                        overwrite_seqs=True,
+                    )
+                    for val in self.params["ens_params"]["pctl"]
+                ]
+                group_list = PlotPanelSetupGroup.create(
+                    params_lst, multipanel_param="ens_params.pctl"
+                )
+                res = group_list.dicts()
+                sol = group_dict.dicts()
+                assert_nested_equal(res, sol)
+
+        class Test_DimensionsParam:
+            class Test_SpeciesID:
+                params = {
+                    "plot_variable": "tot_deposition",
+                    "dimensions": {
+                        "species_id": (1, 2, 3, 4),
+                        "time": (0, 4, 8, 12),
+                    },
+                }
+
+                def test_params_dict(self):
+                    group = PlotPanelSetupGroup.create(
+                        self.params, multipanel_param="dimensions.species_id"
+                    )
+                    res = group.dicts()
+                    sol = [
+                        {"dimensions": {"species_id": 1, "time": (0, 4, 8, 12)}},
+                        {"dimensions": {"species_id": 2, "time": (0, 4, 8, 12)}},
+                        {"dimensions": {"species_id": 3, "time": (0, 4, 8, 12)}},
+                        {"dimensions": {"species_id": 4, "time": (0, 4, 8, 12)}},
+                    ]
+                    assert_is_sub_element(
+                        name_super="result",
+                        obj_super=res,
+                        name_sub="solution",
+                        obj_sub=sol,
+                    )
+
+                def test_params_list_vs_dict(self):
+                    group_dict = PlotPanelSetupGroup.create(
+                        self.params, multipanel_param="species_id"
+                    )
+                    params_lst = [
+                        merge_dicts(
+                            self.params,
+                            {"dimensions": {"species_id": val}},
+                            overwrite_seqs=True,
+                        )
+                        for val in self.params["dimensions"]["species_id"]
+                    ]
+                    group_list = PlotPanelSetupGroup.create(
+                        params_lst, multipanel_param="dimensions.species_id"
+                    )
+                    res = group_list.dicts()
+                    sol = group_dict.dicts()
+                    assert_nested_equal(res, sol)
+
+            class Test_Time:
+                params = {
+                    "plot_variable": "concentration",
+                    "dimensions": {
+                        "species_id": (1, 2, 3, 4),
+                        "time": (0, 4, 8, 12),
+                    },
+                }
+
+                def test_params_dict_time(self):
+                    group = PlotPanelSetupGroup.create(
+                        self.params, multipanel_param="time"
+                    )
+                    res = group.dicts()
+                    sol = [
+                        {"dimensions": {"species_id": (1, 2, 3, 4), "time": 0}},
+                        {"dimensions": {"species_id": (1, 2, 3, 4), "time": 4}},
+                        {"dimensions": {"species_id": (1, 2, 3, 4), "time": 8}},
+                        {"dimensions": {"species_id": (1, 2, 3, 4), "time": 12}},
+                    ]
+                    assert_is_sub_element(
+                        name_super="result",
+                        obj_super=res,
+                        name_sub="solution",
+                        obj_sub=sol,
+                    )
+
+                def test_params_list_vs_dict(self):
+                    group_dict = PlotPanelSetupGroup.create(
+                        self.params, multipanel_param="dimensions.time"
+                    )
+                    params_lst = [
+                        merge_dicts(
+                            self.params,
+                            {"dimensions": {"time": val}},
+                            overwrite_seqs=True,
+                        )
+                        for val in self.params["dimensions"]["time"]
+                    ]
+                    group_list = PlotPanelSetupGroup.create(
+                        params_lst, multipanel_param="time"
+                    )
+                    res = group_list.dicts()
+                    sol = group_dict.dicts()
+                    assert_nested_equal(res, sol)
+
+        class Test_PanelParam:
+            params = {
+                "plot_variable": (
+                    "concentration",
+                    "tot_deposition",
+                    "dry_deposition",
+                    "wet_deposition",
+                ),
+                "dimensions": {
+                    "species_id": (1, 2, 3, 4),
+                    "time": (0, 4, 8, 12),
+                },
+            }
+
+            def test_no_multival_fail(self):
+                with pytest.raises(ValueError, match="multipanel_param"):
+                    PlotPanelSetupGroup.create(self.params)
+                with pytest.raises(ValueError, match="multipanel_param"):
+                    PlotPanelSetupGroup.create([self.params])
+
+            def test_params_dict(self):
+                group = PlotPanelSetupGroup.create(
+                    self.params, multipanel_param="plot_variable"
+                )
+                res = group.dicts()
+                sol = [
+                    {"plot_variable": "concentration"},
+                    {"plot_variable": "tot_deposition"},
+                    {"plot_variable": "dry_deposition"},
+                    {"plot_variable": "wet_deposition"},
+                ]
+                assert_is_sub_element(
+                    name_super="result",
+                    obj_super=res,
+                    name_sub="solution",
+                    obj_sub=sol,
+                )
+
+            def test_params_list_vs_dict(self):
+                group_dict = PlotPanelSetupGroup.create(
+                    self.params, multipanel_param="plot_variable"
+                )
+                params_lst = [
+                    {**self.params, "plot_variable": val}
+                    for val in self.params["plot_variable"]
+                ]
+                group_list = PlotPanelSetupGroup.create(
+                    params_lst, multipanel_param="plot_variable"
+                )
+                res = group_list.dicts()
+                sol = group_dict.dicts()
+                assert_nested_equal(res, sol)
+
+
+class Test_Decompress:
     params = {
         "plot_variable": "concentration",
         "combine_levels": False,
@@ -22,14 +252,14 @@ class TestDecompress:
 
     def test_internal_vs_default(self):
         """The option ``internal`` is true by default."""
-        group = PlotPanelSetupGroup.create([self.params])
+        group = PlotPanelSetupGroup.create(self.params)
         group_internal = group.decompress(internal=True)
         group_default = group.decompress()
         assert group_internal == group_default
 
     def test_internal_vs_external(self):
         """Check types and content with option ``internal`` true or false."""
-        group = PlotPanelSetupGroup.create([self.params])
+        group = PlotPanelSetupGroup.create(self.params)
         group_internal = group.decompress(internal=True)
         groups_external = group.decompress(internal=False)
         assert isinstance(group_internal, PlotPanelSetupGroup)
@@ -41,7 +271,7 @@ class TestDecompress:
         assert dcts_internal == dcts_external
 
     def test_full(self):
-        group_in = PlotPanelSetupGroup.create([self.params])
+        group_in = PlotPanelSetupGroup.create(self.params)
         group_out = group_in.decompress()
         dcts = group_out.dicts()
         sol = [
@@ -61,7 +291,7 @@ class TestDecompress:
         assert_is_sub_element(sol, dcts, "solution", "result")
 
     def test_full_internal(self):
-        group_in = PlotPanelSetupGroup.create([self.params])
+        group_in = PlotPanelSetupGroup.create(self.params)
         groups_out = group_in.decompress(internal=False)
         assert isinstance(groups_out, list)
         assert all(isinstance(group, PlotPanelSetupGroup) for group in groups_out)
@@ -70,7 +300,7 @@ class TestDecompress:
         assert all(isinstance(setup, PlotPanelSetup) for setup in group_out)
 
     def test_skip(self):
-        group_in = PlotPanelSetupGroup.create([self.params])
+        group_in = PlotPanelSetupGroup.create(self.params)
         group_out = group_in.decompress(skip=["time"])
         dcts = group_out.dicts()
         sol = [
@@ -82,7 +312,7 @@ class TestDecompress:
         assert_is_sub_element(sol, dcts, "solution", "result")
 
     def test_skip_all(self):
-        group_in = PlotPanelSetupGroup.create([self.params])
+        group_in = PlotPanelSetupGroup.create(self.params)
         group_out = group_in.decompress(skip=["level", "species_id", "time"])
         dcts = group_out.dicts()
         sol = [
@@ -97,7 +327,7 @@ class TestDecompress:
         assert_is_sub_element(sol, dcts, "solution", "result")
 
     def test_select(self):
-        group_in = PlotPanelSetupGroup.create([self.params])
+        group_in = PlotPanelSetupGroup.create(self.params)
         group_out = group_in.decompress(select=["level"])
         dcts = group_out.dicts()
         sol = [
@@ -119,7 +349,7 @@ class TestDecompress:
         assert_is_sub_element(sol, dcts, "solution", "result")
 
     def test_select_all(self):
-        group_in = PlotPanelSetupGroup.create([self.params])
+        group_in = PlotPanelSetupGroup.create(self.params)
         group_out = group_in.decompress(select=["level", "species_id", "time"])
         dcts = group_out.dicts()
         sol = [
@@ -139,7 +369,7 @@ class TestDecompress:
         assert_is_sub_element(sol, dcts, "solution", "result")
 
     def test_select_skip(self):
-        group_in = PlotPanelSetupGroup.create([self.params])
+        group_in = PlotPanelSetupGroup.create(self.params)
         group_out = group_in.decompress(
             select=["level", "species_id", "time"], skip=["time"]
         )
@@ -153,7 +383,7 @@ class TestDecompress:
         assert_is_sub_element(sol, dcts, "solution", "result")
 
 
-class TestDecompressExternal:
+class Test_DecompressExternal:
     params = {
         "plot_variable": "concentration",
         "combine_levels": False,
@@ -169,7 +399,7 @@ class TestDecompressExternal:
     }
 
     def test_full(self):
-        group = PlotPanelSetupGroup.create([self.params])
+        group = PlotPanelSetupGroup.create(self.params)
         groups = group.decompress(internal=False)
         dcts = [group.dicts() for group in groups]
         sol = [
@@ -189,7 +419,7 @@ class TestDecompressExternal:
         assert_is_sub_element(sol, dcts, "solution", "result")
 
     def test_skip(self):
-        group = PlotPanelSetupGroup.create([self.params])
+        group = PlotPanelSetupGroup.create(self.params)
         groups = group.decompress(internal=False, skip=["time"])
         dcts = [group.dicts() for group in groups]
         sol = [
@@ -233,7 +463,7 @@ class TestDecompressExternal:
         assert_is_sub_element(sol, dcts, "solution", "result")
 
     def test_skip_all(self):
-        group = PlotPanelSetupGroup.create([self.params])
+        group = PlotPanelSetupGroup.create(self.params)
         groups = group.decompress(internal=False, skip=["level", "species_id", "time"])
         dcts = [group.dicts() for group in groups]
         sol = [
@@ -250,7 +480,7 @@ class TestDecompressExternal:
         assert_is_sub_element(sol, dcts, "solution", "result")
 
     def test_select(self):
-        group = PlotPanelSetupGroup.create([self.params])
+        group = PlotPanelSetupGroup.create(self.params)
         groups = group.decompress(internal=False, select=["level"])
         dcts = [group.dicts() for group in groups]
         sol = [
@@ -276,7 +506,7 @@ class TestDecompressExternal:
         assert_is_sub_element(sol, dcts, "solution", "result")
 
     def test_select_all(self):
-        group = PlotPanelSetupGroup.create([self.params])
+        group = PlotPanelSetupGroup.create(self.params)
         groups = group.decompress(
             internal=False, select=["level", "species_id", "time"]
         )
@@ -298,7 +528,7 @@ class TestDecompressExternal:
         assert_is_sub_element(sol, dcts, "solution", "result")
 
     def test_select_skip(self):
-        group = PlotPanelSetupGroup.create([self.params])
+        group = PlotPanelSetupGroup.create(self.params)
         groups = group.decompress(
             internal=False,
             select=["level", "species_id", "time"],
