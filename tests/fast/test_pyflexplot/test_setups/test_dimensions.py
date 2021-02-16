@@ -8,58 +8,6 @@ from pyflexplot.setups.dimensions import Dimensions
 from srutils.testing import assert_is_sub_element
 
 
-class Test_CoreDimensions_Init:
-    """Initialize ``CoreDimensions`` objects."""
-
-    def test_no_args(self):
-        cdims = CoreDimensions()
-        res = cdims.dict()
-        sol = {
-            "level": None,
-            "nageclass": None,
-            "noutrel": None,
-            "numpoint": None,
-            "species_id": None,
-            "time": None,
-            "variable": None,
-        }
-        assert res == sol
-
-    def test_all_args(self):
-        params = {
-            "level": 2,
-            "nageclass": 0,
-            "noutrel": 1,
-            "numpoint": 3,
-            "species_id": 2,
-            "time": 0,
-            "variable": "dry_deposition",
-        }
-        cdims = CoreDimensions(**params)
-        res = cdims.dict()
-        sol = params
-        assert res == sol
-
-    def test_some_args(self):
-        params = {
-            "noutrel": 1,
-            "species_id": 2,
-            "variable": "concentration",
-        }
-        cdims = CoreDimensions(**params)
-        res = cdims.dict()
-        sol = {
-            "level": None,
-            "nageclass": None,
-            "noutrel": 1,
-            "numpoint": None,
-            "species_id": 2,
-            "time": None,
-            "variable": "concentration",
-        }
-        assert res == sol
-
-
 class Test_Init:
     """Initialize ``Dimensions`` objects with ``CoreDimensions`` objects."""
 
@@ -154,6 +102,61 @@ class Test_Init:
         assert res == sol
 
 
+class Test_Create:
+    """Create dimensions objects from a parameter dict."""
+
+    def test_no_args_fail(self):
+        with pytest.raises(ValueError):
+            Dimensions.create({})
+
+    def test_almost_no_args(self):
+        dims = Dimensions.create({}, plot_variable="concentration")
+        res = dims.dict()
+        sol = {
+            "level": None,
+            "nageclass": None,
+            "noutrel": None,
+            "numpoint": None,
+            "species_id": None,
+            "time": None,
+            "variable": "concentration",
+        }
+        assert res == sol
+
+    def test_single_core(self):
+        params = {
+            "level": 2,
+            "nageclass": 0,
+            "noutrel": 1,
+            "numpoint": 3,
+            "species_id": 2,
+            "time": 0,
+            "variable": "dry_deposition",
+        }
+        dims = Dimensions.create(params)
+        res = dims.dict()
+        sol = params
+        assert res == sol
+
+    def test_multi_core(self):
+        params = {
+            "level": 1,
+            "nageclass": (0, 3),
+            "noutrel": 1,
+            "numpoint": None,
+            "species_id": (0, 2),
+            "time": (2, 1, 0),
+            "variable": ("wet_deposition", "dry_deposition"),
+        }
+        dims = Dimensions.create(params)
+        res = dims.dict()
+        sol = {
+            key: (tuple(sorted(val)) if isinstance(val, tuple) else val)
+            for key, val in params.items()
+        }
+        assert res == sol
+
+
 class Test_Dict:
     """Represent a ``dimensions`` object as a clean dict."""
 
@@ -243,59 +246,79 @@ class Test_Dict:
         assert res == sol
 
 
-class Test_Create:
-    """Create dimensions objects from a parameter dict."""
+class TestDecompress:
+    params = {
+        "nageclass": (0,),
+        "noutrel": (0,),
+        "numpoint": (0,),
+        "species_id": [1, 2],
+        "time": [1, 2, 3],
+        "variable": ["dry_deposition", "wet_deposition"],
+    }
 
-    def test_no_args_fail(self):
-        with pytest.raises(ValueError):
-            Dimensions.create({})
+    def test_full(self):
+        dims = Dimensions.create(self.params)
+        dims_lst = dims.decompress()
+        dcts = [dims.dict() for dims in dims_lst]
+        sol = [
+            {"species_id": 1, "time": 1, "variable": "dry_deposition"},
+            {"species_id": 1, "time": 1, "variable": "wet_deposition"},
+            {"species_id": 1, "time": 2, "variable": "dry_deposition"},
+            {"species_id": 1, "time": 2, "variable": "wet_deposition"},
+            {"species_id": 1, "time": 3, "variable": "dry_deposition"},
+            {"species_id": 1, "time": 3, "variable": "wet_deposition"},
+            {"species_id": 2, "time": 1, "variable": "dry_deposition"},
+            {"species_id": 2, "time": 1, "variable": "wet_deposition"},
+            {"species_id": 2, "time": 2, "variable": "dry_deposition"},
+            {"species_id": 2, "time": 2, "variable": "wet_deposition"},
+            {"species_id": 2, "time": 3, "variable": "dry_deposition"},
+            {"species_id": 2, "time": 3, "variable": "wet_deposition"},
+        ]
+        assert_is_sub_element(sol, dcts, "solution", "result")
 
-    def test_almost_no_args(self):
-        dims = Dimensions.create({}, plot_variable="concentration")
-        res = dims.dict()
-        sol = {
-            "level": None,
-            "nageclass": None,
-            "noutrel": None,
-            "numpoint": None,
-            "species_id": None,
-            "time": None,
-            "variable": "concentration",
-        }
-        assert res == sol
+    def test_skip(self):
+        dims = Dimensions.create(self.params)
+        dims_lst = dims.decompress(skip=["variable", "time"])
+        dcts = [dims.dict() for dims in dims_lst]
+        sol = [
+            {
+                "species_id": 1,
+                "time": [1, 2, 3],
+                "variable": ["dry_deposition", "wet_deposition"],
+            },
+            {
+                "species_id": 2,
+                "time": [1, 2, 3],
+                "variable": ["dry_deposition", "wet_deposition"],
+            },
+        ]
+        assert_is_sub_element(sol, dcts, "solution", "result")
 
-    def test_single_core(self):
-        params = {
-            "level": 2,
-            "nageclass": 0,
-            "noutrel": 1,
-            "numpoint": 3,
-            "species_id": 2,
-            "time": 0,
-            "variable": "dry_deposition",
-        }
-        dims = Dimensions.create(params)
-        res = dims.dict()
-        sol = params
-        assert res == sol
+    def test_select(self):
+        dims = Dimensions.create(self.params)
+        dims_lst = dims.decompress(select=["variable", "time"])
+        dcts = [dims.dict() for dims in dims_lst]
+        sol = [
+            {"species_id": [1, 2], "time": 1, "variable": "dry_deposition"},
+            {"species_id": [1, 2], "time": 1, "variable": "wet_deposition"},
+            {"species_id": [1, 2], "time": 2, "variable": "dry_deposition"},
+            {"species_id": [1, 2], "time": 2, "variable": "wet_deposition"},
+            {"species_id": [1, 2], "time": 3, "variable": "dry_deposition"},
+            {"species_id": [1, 2], "time": 3, "variable": "wet_deposition"},
+        ]
+        assert_is_sub_element(sol, dcts, "solution", "result")
 
-    def test_multi_core(self):
-        params = {
-            "level": 1,
-            "nageclass": (0, 3),
-            "noutrel": 1,
-            "numpoint": None,
-            "species_id": (0, 2),
-            "time": (2, 1, 0),
-            "variable": ("wet_deposition", "dry_deposition"),
-        }
-        dims = Dimensions.create(params)
-        res = dims.dict()
-        sol = {
-            key: (tuple(sorted(val)) if isinstance(val, tuple) else val)
-            for key, val in params.items()
-        }
-        assert res == sol
+    def test_select_skip(self):
+        dims = Dimensions.create(self.params)
+        dims_lst = dims.decompress(
+            select=["variable", "time"], skip=["time", "species_id"]
+        )
+        dcts = [dims.dict() for dims in dims_lst]
+        sol = [
+            {"species_id": [1, 2], "time": [1, 2, 3], "variable": "dry_deposition"},
+            {"species_id": [1, 2], "time": [1, 2, 3], "variable": "wet_deposition"},
+        ]
+        assert_is_sub_element(sol, dcts, "solution", "result")
 
 
 class Test_Interact:
@@ -479,78 +502,3 @@ class Test_Interact:
         }
         res = derived.dict()
         assert res == sol
-
-
-class TestDecompress:
-    params = {
-        "nageclass": (0,),
-        "noutrel": (0,),
-        "numpoint": (0,),
-        "species_id": [1, 2],
-        "time": [1, 2, 3],
-        "variable": ["dry_deposition", "wet_deposition"],
-    }
-
-    def test_full(self):
-        dims = Dimensions.create(self.params)
-        dims_lst = dims.decompress()
-        dcts = [dims.dict() for dims in dims_lst]
-        sol = [
-            {"species_id": 1, "time": 1, "variable": "dry_deposition"},
-            {"species_id": 1, "time": 1, "variable": "wet_deposition"},
-            {"species_id": 1, "time": 2, "variable": "dry_deposition"},
-            {"species_id": 1, "time": 2, "variable": "wet_deposition"},
-            {"species_id": 1, "time": 3, "variable": "dry_deposition"},
-            {"species_id": 1, "time": 3, "variable": "wet_deposition"},
-            {"species_id": 2, "time": 1, "variable": "dry_deposition"},
-            {"species_id": 2, "time": 1, "variable": "wet_deposition"},
-            {"species_id": 2, "time": 2, "variable": "dry_deposition"},
-            {"species_id": 2, "time": 2, "variable": "wet_deposition"},
-            {"species_id": 2, "time": 3, "variable": "dry_deposition"},
-            {"species_id": 2, "time": 3, "variable": "wet_deposition"},
-        ]
-        assert_is_sub_element(sol, dcts, "solution", "result")
-
-    def test_skip(self):
-        dims = Dimensions.create(self.params)
-        dims_lst = dims.decompress(skip=["variable", "time"])
-        dcts = [dims.dict() for dims in dims_lst]
-        sol = [
-            {
-                "species_id": 1,
-                "time": [1, 2, 3],
-                "variable": ["dry_deposition", "wet_deposition"],
-            },
-            {
-                "species_id": 2,
-                "time": [1, 2, 3],
-                "variable": ["dry_deposition", "wet_deposition"],
-            },
-        ]
-        assert_is_sub_element(sol, dcts, "solution", "result")
-
-    def test_select(self):
-        dims = Dimensions.create(self.params)
-        dims_lst = dims.decompress(select=["variable", "time"])
-        dcts = [dims.dict() for dims in dims_lst]
-        sol = [
-            {"species_id": [1, 2], "time": 1, "variable": "dry_deposition"},
-            {"species_id": [1, 2], "time": 1, "variable": "wet_deposition"},
-            {"species_id": [1, 2], "time": 2, "variable": "dry_deposition"},
-            {"species_id": [1, 2], "time": 2, "variable": "wet_deposition"},
-            {"species_id": [1, 2], "time": 3, "variable": "dry_deposition"},
-            {"species_id": [1, 2], "time": 3, "variable": "wet_deposition"},
-        ]
-        assert_is_sub_element(sol, dcts, "solution", "result")
-
-    def test_select_skip(self):
-        dims = Dimensions.create(self.params)
-        dims_lst = dims.decompress(
-            select=["variable", "time"], skip=["time", "species_id"]
-        )
-        dcts = [dims.dict() for dims in dims_lst]
-        sol = [
-            {"species_id": [1, 2], "time": [1, 2, 3], "variable": "dry_deposition"},
-            {"species_id": [1, 2], "time": [1, 2, 3], "variable": "wet_deposition"},
-        ]
-        assert_is_sub_element(sol, dcts, "solution", "result")
