@@ -3,9 +3,21 @@
 from typing import Any
 from typing import Dict
 
+# Third-party
+import pytest
+
 # First-party
 from pyflexplot.setups.plot_panel_setup import PlotPanelSetup
 from srutils.testing import assert_is_sub_element
+
+
+@pytest.mark.skip(
+    "consider raising exception when PlotPanelSetup.create recieves dimensions.variable"
+)
+def test_create_dimensions_variable_fail():
+    params = {"dimensions": {"variable": "concentration"}}
+    with pytest.raises(ValueError, match="variable"):
+        PlotPanelSetup.create(params)
 
 
 class Test_CompleteDimensions:
@@ -104,7 +116,7 @@ class Test_CompleteDimensions:
         assert setup.dimensions.numpoint == 0
 
 
-class TestDecompress:
+class Test_Decompress:
     params = {
         "plot_variable": "concentration",
         "combine_levels": False,
