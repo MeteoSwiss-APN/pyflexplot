@@ -138,6 +138,7 @@ class Test_Create:
             class Test_Time:
                 params = {
                     "plot_variable": "concentration",
+                    "combine_species": True,
                     "dimensions": {
                         "species_id": (1, 2, 3, 4),
                         "time": (0, 4, 8, 12),
@@ -189,6 +190,7 @@ class Test_Create:
                     "dry_deposition",
                     "wet_deposition",
                 ),
+                "combine_species": True,
                 "dimensions": {
                     "species_id": (1, 2, 3, 4),
                     "time": (0, 4, 8, 12),
@@ -235,11 +237,55 @@ class Test_Create:
                 assert_nested_equal(res, sol)
 
 
+class Test_Collect:
+    base = {"infile": "foo.nc", "outfile": "foo.png", "model": {"name": "foo"}}
+    md = lambda *dicts: merge_dicts(*dicts, overwrite_seqs=True)  # noqa
+    params = {
+        "plot_variable": "affected_area",
+        "combine_levels": True,
+        "combine_species": True,
+        "dimensions": {
+            "level": (0, 1),
+            "species_id": (1, 1, 2, 3),
+        },
+    }
+
+    @property
+    def group(self) -> PlotPanelSetupGroup:
+        return PlotPanelSetupGroup.create(
+            self.params, multipanel_param="dimensions.species_id"
+        )
+
+    def test_variable(self):
+        vals = self.group.collect("dimensions.variable")
+        assert vals == [("concentration", "dry_deposition", "wet_deposition")] * 4
+
+    def test_variable_fact_flat(self):
+        vals = self.group.collect("dimensions.variable", flatten=True)
+        assert vals == [("concentration", "dry_deposition", "wet_deposition")] * 4
+
+    def test_variable_flat_unique(self):
+        vals = self.group.collect("dimensions.variable", flatten=True, unique=True)
+        assert vals == [("concentration", "dry_deposition", "wet_deposition")]
+
+    def test_species_id(self):
+        vals = self.group.collect("dimensions.species_id")
+        assert vals == [1, 1, 2, 3]
+
+    def test_species_id_flat(self):
+        vals = self.group.collect("dimensions.species_id", flatten=True)
+        assert vals == [1, 1, 2, 3]
+
+    def test_species_id_flat_unique(self):
+        vals = self.group.collect("dimensions.species_id", flatten=True, unique=True)
+        assert vals == [1, 2, 3]
+
+
 class Test_Decompress:
     params = {
         "plot_variable": "concentration",
-        "combine_levels": False,
-        "combine_species": False,
+        "combine_levels": True,
+        "combine_species": True,
         "dimensions": {
             "level": (0, 1),
             "nageclass": (0,),
@@ -386,8 +432,8 @@ class Test_Decompress:
 class Test_DecompressExternal:
     params = {
         "plot_variable": "concentration",
-        "combine_levels": False,
-        "combine_species": False,
+        "combine_levels": True,
+        "combine_species": True,
         "dimensions": {
             "level": [4, 8],
             "nageclass": (0,),

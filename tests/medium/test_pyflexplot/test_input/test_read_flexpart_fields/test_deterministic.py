@@ -354,6 +354,7 @@ def test_single(datadir, config):  # noqa:F811
                     {
                         "plot_variable": "concentration",
                         "integrate": True,
+                        "combine_levels": True,
                         "dimensions": {
                             "level": [0, 2],
                             "nageclass": 0,
@@ -379,6 +380,7 @@ def test_single(datadir, config):  # noqa:F811
                     {
                         "plot_variable": "concentration",
                         "integrate": True,
+                        "combine_levels": True,
                         "dimensions": {
                             "level": [0, 2],
                             "nageclass": 0,

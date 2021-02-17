@@ -11,13 +11,40 @@ from pyflexplot.setups.plot_panel_setup import PlotPanelSetup
 from srutils.testing import assert_is_sub_element
 
 
-@pytest.mark.skip(
-    "consider raising exception when PlotPanelSetup.create recieves dimensions.variable"
-)
-def test_create_dimensions_variable_fail():
-    params = {"dimensions": {"variable": "concentration"}}
-    with pytest.raises(ValueError, match="variable"):
-        PlotPanelSetup.create(params)
+class Test_Create:
+    def test_combine_levels_ok(self):
+        params = {"combine_levels": True, "dimensions": {"level": (1, 2)}}
+        setup = PlotPanelSetup.create(params)
+        res = setup.dict()
+        assert_is_sub_element(
+            name_sub="solution", obj_sub=params, name_super="result", obj_super=res
+        )
+
+    def test_combine_levels_fail(self):
+        params = {"combine_levels": False, "dimensions": {"level": (1, 2)}}
+        with pytest.raises(ValueError, match="combine_levels"):
+            PlotPanelSetup.create(params)
+
+    def test_combine_species_ok(self):
+        params = {"combine_species": True, "dimensions": {"species_id": (1, 2)}}
+        setup = PlotPanelSetup.create(params)
+        res = setup.dict()
+        assert_is_sub_element(
+            name_sub="solution", obj_sub=params, name_super="result", obj_super=res
+        )
+
+    def test_combine_species_fail(self):
+        params = {"combine_species": False, "dimensions": {"species_id": (1, 2)}}
+        with pytest.raises(ValueError, match="combine_species"):
+            PlotPanelSetup.create(params)
+
+    @pytest.mark.skip(
+        "consider exception when dimensions.variable passed to PlotPanelSetup.create"
+    )
+    def test_dimensions_variable_fail(self):
+        params = {"dimensions": {"variable": "concentration"}}
+        with pytest.raises(ValueError, match="variable"):
+            PlotPanelSetup.create(params)
 
 
 class Test_CompleteDimensions:
@@ -119,8 +146,8 @@ class Test_CompleteDimensions:
 class Test_Decompress:
     params = {
         "plot_variable": "concentration",
-        "combine_levels": False,
-        "combine_species": False,
+        "combine_levels": True,
+        "combine_species": True,
         "dimensions": {
             "level": [0, 1],
             "nageclass": (0,),

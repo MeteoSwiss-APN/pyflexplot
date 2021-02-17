@@ -39,7 +39,7 @@ class SetupFile:
         *,
         override: Optional[Mapping[str, Any]] = None,
         only: Optional[int] = None,
-    ) -> List[PlotSetup]:
+    ) -> PlotSetupGroup:
         """Read the setup from a text file in TOML format."""
         with open(self.path, "r") as f:
             try:
@@ -62,14 +62,12 @@ class SetupFile:
                 raw_params = {**old_raw_params, **override}
                 if raw_params not in raw_params_lst:
                     raw_params_lst.append(raw_params)
-        setups = [
-            PlotSetup.create(params)
-            for params in self.prepare_raw_params(raw_params_lst)
-        ]
+        raw_params_lst = self.prepare_raw_params(raw_params_lst)
+        setups = PlotSetupGroup.create(raw_params_lst)
         if only is not None:
             if only < 0:
                 raise ValueError(f"only must not be negative ({only})")
-            setups = setups[:only]
+            setups = PlotSetupGroup(list(setups)[:only])
         return setups
 
     def write(self, *args, **kwargs) -> None:

@@ -10,16 +10,18 @@ from srutils.testing import check_is_sub_element
 
 # Local
 from .shared import DEFAULT_SETUP
-from .shared import MANDATORY_RAW_DEFAULT_PARAMS
 
 
-class Test_Setup_Create:
+class Test_Create:
+    base_params = {
+        "infile": "dummy.nc",
+        "outfile": "dummy.png",
+        "model": {"name": "COSMO-1"},
+    }
+
     def test_some_dimensions(self):
         params = {
-            "infile": "dummy.nc",
-            "outfile": "dummy.png",
             "model": {
-                "name": "COSMO-1",
                 "ens_member_id": (0, 1, 5, 10, 15, 20),
             },
             "panels": [
@@ -31,6 +33,7 @@ class Test_Setup_Create:
                 }
             ],
         }
+        params = merge_dicts(self.base_params, params, overwrite_seqs=True)
         setup = PlotSetup.create(params)
         res = setup.dict()
         check_is_sub_element(obj_super=res, obj_sub=params)
@@ -53,12 +56,12 @@ class Test_Setup_Create:
         ],
     )
     def test_multiple_values_fail(self, dct):
-        params = merge_dicts(MANDATORY_RAW_DEFAULT_PARAMS, dct)
+        params = merge_dicts(self.base_params, dct)
         with pytest.raises(ValueError):
             PlotSetup.create(params)
 
 
-class Test_Setup_Decompress:
+class Test_Decompress:
     @property
     def setup(self):
         return DEFAULT_SETUP.derive(
@@ -66,6 +69,7 @@ class Test_Setup_Decompress:
                 "panels": [
                     {
                         "plot_variable": "tot_deposition",
+                        "combine_species": True,
                         "dimensions": {
                             "nageclass": (0,),
                             "noutrel": (0,),

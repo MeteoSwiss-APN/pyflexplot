@@ -1,7 +1,6 @@
 """Test module ``pyflexplot.setup.SetupFile``."""
 # Standard library
 from collections.abc import Sequence
-from pprint import pformat
 from textwrap import dedent
 
 # Third-party
@@ -10,10 +9,8 @@ import pytest
 # First-party
 from pyflexplot.setups.setup_file import SetupFile
 from srutils.dict import merge_dicts
+from srutils.testing import assert_is_sub_element
 from srutils.testing import assert_nested_equal
-
-# Local
-from .shared import OPTIONAL_RAW_DEFAULT_PARAMS
 
 BASE = {
     "infile": "foo.nc",
@@ -48,10 +45,11 @@ def test_single_minimal_section(tmp_path):
         model = "COSMO-baz"
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert len(setups) == 1
-    res = next(iter(setups))
-    sol = merge_dicts(OPTIONAL_RAW_DEFAULT_PARAMS, BASE)
-    assert res == sol
+    res = setups.dicts()
+    sol = [BASE]
+    assert_is_sub_element(
+        name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+    )
 
 
 def test_single_minimal_renamed_section(tmp_path):
@@ -63,7 +61,11 @@ def test_single_minimal_renamed_section(tmp_path):
         model = "COSMO-baz"
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert setups == [merge_dicts(OPTIONAL_RAW_DEFAULT_PARAMS, BASE)]
+    res = setups.dicts()
+    sol = [BASE]
+    assert_is_sub_element(
+        name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+    )
 
 
 def test_single_section(tmp_path):
@@ -77,27 +79,28 @@ def test_single_section(tmp_path):
         lang = "de"
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert len(setups) == 1
-    res = next(iter(setups))
-    assert res != merge_dicts(OPTIONAL_RAW_DEFAULT_PARAMS, BASE)
-    sol = merge_dicts(
-        OPTIONAL_RAW_DEFAULT_PARAMS,
-        BASE,
-        {
-            "panels": [
-                {
-                    "plot_variable": "tot_deposition",
-                    "dimensions": {
-                        "level": None,
-                        "variable": ("dry_deposition", "wet_deposition"),
-                    },
-                    "lang": "de",
-                }
-            ],
-        },
-        overwrite_seqs=True,
+    res = setups.dicts()
+    sol = [
+        merge_dicts(
+            BASE,
+            {
+                "panels": [
+                    {
+                        "plot_variable": "tot_deposition",
+                        "dimensions": {
+                            "level": None,
+                            "variable": ("dry_deposition", "wet_deposition"),
+                        },
+                        "lang": "de",
+                    }
+                ],
+            },
+            overwrite_seqs=True,
+        )
+    ]
+    assert_is_sub_element(
+        name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
     )
-    assert res == sol
 
 
 def test_multiple_parallel_empty_sections(tmp_path):
@@ -114,7 +117,11 @@ def test_multiple_parallel_empty_sections(tmp_path):
         model = "COSMO-baz"
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert setups == [merge_dicts(OPTIONAL_RAW_DEFAULT_PARAMS, BASE)] * 2
+    res = setups.dicts()
+    sol = [BASE] * 2
+    assert_is_sub_element(
+        name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+    )
 
 
 def test_two_nested_empty_sections(tmp_path):
@@ -128,7 +135,11 @@ def test_two_nested_empty_sections(tmp_path):
         [_base.plot]
         """
     setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert setups == [merge_dicts(OPTIONAL_RAW_DEFAULT_PARAMS, BASE)]
+    res = setups.dicts()
+    sol = [BASE]
+    assert_is_sub_element(
+        name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+    )
 
 
 def test_multiple_nested_sections(tmp_path):
@@ -172,7 +183,6 @@ def test_multiple_nested_sections(tmp_path):
         lang = "de"
         """
     sol_base = merge_dicts(
-        OPTIONAL_RAW_DEFAULT_PARAMS,
         BASE,
         {
             "panels": [
@@ -228,13 +238,14 @@ def test_multiple_nested_sections(tmp_path):
             ]
         },
     ]
-    sol_lst = [
+    sol = [
         merge_dicts(sol_base, sol_spc, overwrite_seqs=True) for sol_spc in sol_specific
     ]
-    setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert len(setups) == len(sol_lst)
-    for res, sol in zip(setups, sol_lst):
-        assert res == sol
+    group = SetupFile(tmp_setup_file(tmp_path, content)).read()
+    res = group.dicts()
+    assert_is_sub_element(
+        name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+    )
 
 
 def test_multiple_override(tmp_path):
@@ -278,7 +289,6 @@ def test_multiple_override(tmp_path):
         """
     override = {"lang": "de"}
     sol_base = merge_dicts(
-        OPTIONAL_RAW_DEFAULT_PARAMS,
         BASE,
         {
             "panels": [
@@ -317,10 +327,11 @@ def test_multiple_override(tmp_path):
     sol = [
         merge_dicts(sol_base, sol_spc, overwrite_seqs=True) for sol_spc in sol_specific
     ]
-    res = SetupFile(tmp_setup_file(tmp_path, content)).read(override=override)
-    assert len(res) == len(sol)
-    for res_i, sol_i in zip(res, sol):
-        assert res_i == sol_i
+    group = SetupFile(tmp_setup_file(tmp_path, content)).read(override=override)
+    res = group.dicts()
+    assert_is_sub_element(
+        name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+    )
 
 
 def test_semi_realcase(tmp_path):
@@ -437,7 +448,7 @@ def test_realcase_opr_like(tmp_path):
         integrate = true
         time = -1
         """
-    dcts_sol = [
+    sol = [
         {
             "panels": [
                 {
@@ -615,17 +626,9 @@ def test_realcase_opr_like(tmp_path):
             "scale_fact": 1.0,
         },
     ]
-    setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    dcts_res = [setup.dict() for setup in setups]
-    assert len(dcts_res) == len(dcts_sol)
-    assert [d["outfile"] for d in dcts_res] == [d["outfile"] for d in dcts_sol]
-    for dct_res, dct_sol in zip(dcts_res, dcts_sol):
-        try:
-            assert_nested_equal(dct_res, dct_sol, "res", "sol")
-        except AssertionError:
-            raise AssertionError(
-                f"setups differ:\n\n{pformat(dct_res)}\n\n{pformat(dct_sol)}\n"
-            )
+    group = SetupFile(tmp_setup_file(tmp_path, content)).read()
+    res = group.dicts()
+    assert_nested_equal(name1="solution", obj1=sol, name2="result", obj2=res)
 
 
 def test_wildcard_simple(tmp_path):
@@ -650,7 +653,7 @@ def test_wildcard_simple(tmp_path):
 
         """
     sol = [
-        merge_dicts(OPTIONAL_RAW_DEFAULT_PARAMS, BASE, dct, overwrite_seqs=True)
+        merge_dicts(BASE, dct, overwrite_seqs=True)
         for dct in [
             {
                 "panels": [
@@ -696,8 +699,11 @@ def test_wildcard_simple(tmp_path):
             },
         ]
     ]
-    setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert setups == sol
+    group = SetupFile(tmp_setup_file(tmp_path, content)).read()
+    res = group.dicts()
+    assert_is_sub_element(
+        name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+    )
 
 
 def test_double_wildcard_equal_depth(tmp_path):
@@ -731,9 +737,8 @@ def test_double_wildcard_equal_depth(tmp_path):
         lang = "en"
 
         """
-    sol_lst = [
+    sol = [
         merge_dicts(
-            OPTIONAL_RAW_DEFAULT_PARAMS,
             BASE,
             dct,
             {"panels": [{"domain": domain, "lang": lang}]},
@@ -757,10 +762,11 @@ def test_double_wildcard_equal_depth(tmp_path):
         for domain in ["ch", "full"]
         for lang in ["de", "en"]
     ]
-    res_lst = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert len(res_lst) == len(sol_lst)
-    for res, sol in zip(res_lst, sol_lst):
-        assert res == sol
+    group = SetupFile(tmp_setup_file(tmp_path, content)).read()
+    res = group.dicts()
+    assert_is_sub_element(
+        name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+    )
 
 
 def test_double_wildcard_variable_depth(tmp_path):
@@ -800,9 +806,8 @@ def test_double_wildcard_variable_depth(tmp_path):
         lang = "en"
 
         """
-    sol_lst = [
+    sol = [
         merge_dicts(
-            OPTIONAL_RAW_DEFAULT_PARAMS,
             BASE,
             dct,
             {"panels": [{"domain": domain, "lang": lang}]},
@@ -830,10 +835,11 @@ def test_double_wildcard_variable_depth(tmp_path):
         for domain in ["ch", "full"]
         for lang in ["de", "en"]
     ]
-    res_lst = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert len(res_lst) == len(sol_lst)
-    for res, sol in zip(res_lst, sol_lst):
-        assert res == sol
+    group = SetupFile(tmp_setup_file(tmp_path, content)).read()
+    res = group.dicts()
+    assert_is_sub_element(
+        name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+    )
 
 
 def test_combine_wildcards(tmp_path):
@@ -864,9 +870,8 @@ def test_combine_wildcards(tmp_path):
         lang = "en"
 
         """
-    sol_lst = [
+    sol = [
         merge_dicts(
-            OPTIONAL_RAW_DEFAULT_PARAMS,
             {
                 "infile": "foo_{ens_member:02d}.nc",
                 "outfile": f"bar_{ens_variable}_{{lang}}.png",
@@ -894,10 +899,11 @@ def test_combine_wildcards(tmp_path):
         for ens_variable in ["mean", "maximum"]
         for lang in ["de", "en"]
     ]
-    res_lst = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    assert len(res_lst) == len(sol_lst)
-    for res, sol in zip(res_lst, sol_lst):
-        assert res == sol
+    group = SetupFile(tmp_setup_file(tmp_path, content)).read()
+    res = group.dicts()
+    assert_is_sub_element(
+        name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+    )
 
 
 class Test_IndividualParams_SingleOrMultipleValues:
@@ -907,6 +913,7 @@ class Test_IndividualParams_SingleOrMultipleValues:
             infile = "foo.nc"
             outfile = "bar.png"
             model = "COSMO-baz"
+            combine_species = false
 
             [_base.single]
             species_id = 1
@@ -915,17 +922,19 @@ class Test_IndividualParams_SingleOrMultipleValues:
             species_id = [1, 2, 3]
 
             """
-        res = SetupFile(tmp_setup_file(tmp_path, content)).read()
         sol = [
             merge_dicts(
-                OPTIONAL_RAW_DEFAULT_PARAMS,
                 BASE,
                 {"panels": [{"dimensions": {"species_id": value}}]},
                 overwrite_seqs=True,
             )
-            for value in [1, (1, 2, 3)]
+            for value in [1, 1, 2, 3]
         ]
-        assert res == sol
+        group = SetupFile(tmp_setup_file(tmp_path, content)).read()
+        res = group.dicts()
+        assert_is_sub_element(
+            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+        )
 
     def test_level(self, tmp_path):
         content = """\
@@ -942,17 +951,19 @@ class Test_IndividualParams_SingleOrMultipleValues:
             level = [1, 2]
 
             """
-        setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
         sol = [
             merge_dicts(
-                OPTIONAL_RAW_DEFAULT_PARAMS,
                 BASE,
                 {"panels": [{"dimensions": {"level": value}}]},
                 overwrite_seqs=True,
             )
-            for value in [0, (1, 2)]
+            for value in [0, 1, 2]
         ]
-        assert setups == sol
+        group = SetupFile(tmp_setup_file(tmp_path, content)).read()
+        res = group.dicts()
+        assert_is_sub_element(
+            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+        )
 
     def test_level_none(self, tmp_path):
         content = """\
@@ -962,10 +973,8 @@ class Test_IndividualParams_SingleOrMultipleValues:
             model = "COSMO-baz"
             plot_variable = "tot_deposition"
             """
-        res_lst = SetupFile(tmp_setup_file(tmp_path, content)).read()
-        sol_lst = [
+        sol = [
             merge_dicts(
-                OPTIONAL_RAW_DEFAULT_PARAMS,
                 BASE,
                 {
                     "panels": [
@@ -981,9 +990,11 @@ class Test_IndividualParams_SingleOrMultipleValues:
                 overwrite_seqs=True,
             )
         ]
-        assert len(res_lst) == len(sol_lst)
-        for res, sol in zip(res_lst, sol_lst):
-            assert res == sol
+        group = SetupFile(tmp_setup_file(tmp_path, content)).read()
+        res = group.dicts()
+        assert_is_sub_element(
+            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+        )
 
 
 @pytest.mark.skip("not quite ready yet")
@@ -999,8 +1010,6 @@ def test_multipanel_param_ens_variable(tmp_path):
         multipanel_param = "ens_variable"
         ens_variable = ["minimum", "maximum", "mean", "median"]
         """
-    setups = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    res = setups
     # SR_TODO Figure out what the solution here should be
     sol = []
     # sol = [
@@ -1020,5 +1029,8 @@ def test_multipanel_param_ens_variable(tmp_path):
     #         overwrite_seqs=True,
     #     ),
     # ]
-    assert len(res) == len(sol)
-    assert res == sol
+    group = SetupFile(tmp_setup_file(tmp_path, content)).read()
+    res = group.dicts()
+    assert_is_sub_element(
+        name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+    )

@@ -158,6 +158,22 @@ class PlotPanelSetup:
                 assert sub_value in choices, sub_value
         self._init_defaults()
 
+        # Check combine_levels vs. dimensions.level
+        if not self.combine_levels:
+            if isinstance(self.dimensions.level, Collection):
+                raise ValueError(
+                    f"combine_levels=False is inconsistent with multiple levels"
+                    f" (dimensions.level={self.dimensions.level})"
+                )
+
+        # Check combine_species vs. dimensions.species
+        if not self.combine_species:
+            if isinstance(self.dimensions.species_id, Collection):
+                raise ValueError(
+                    f"combine_species=False is inconsistent with multiple species"
+                    f" (dimensions.species_id={self.dimensions.species_id})"
+                )
+
         # Check dimensions.variable
         variable = Dimensions.derive_variable(self.plot_variable)
         if self.dimensions.variable is None:
@@ -255,6 +271,16 @@ class PlotPanelSetup:
             setup = type(self)(**params)
             setups.append(setup)
         return PlotPanelSetupGroup(setups)
+
+    def collect(self, param: str) -> Any:
+        """Collect the value(s) of a parameter."""
+        if is_plot_panel_setup_param(param):
+            value = getattr(self, param)
+        elif is_dimensions_param(param):
+            value = self.dimensions.get(param.replace("dimensions.", ""))
+        else:
+            raise ValueError(f"invalid param '{param}'")
+        return value
 
     def derive(self, params: Dict[str, Any]) -> "PlotPanelSetup":
         return type(self).create(merge_dicts(self.dict(), params, overwrite_seqs=True))
@@ -373,41 +399,44 @@ class PlotPanelSetupGroup:
         self._panels: List[PlotPanelSetup] = list(panels)
 
     def collect(
-        self, param: str, flatten: bool = False, exclude_nones: bool = False
+        self,
+        param: str,
+        *,
+        flatten: bool = False,
+        exclude_nones: bool = False,
+        unique: bool = False,
     ) -> List[Any]:
         """Collect all unique values of a parameter for all setups.
 
         Args:
             param: Name of parameter.
 
-            flatten (optional): Unpack values that are collection of sub-values.
-
             exclude_nones (optional): Exclude values -- and, if ``flatten`` is
                 true, also sub-values -- that are None.
+
+            flatten (optional): Unpack values that are collection of sub-values.
+
+            unique (optional): Return duplicate values only once.
 
         """
         values: List[Any] = []
         for setup in self:
-            if is_plot_panel_setup_param(param):
-                value = getattr(setup, param)
-            elif is_dimensions_param(param):
-                value = setup.dimensions.get(param.replace("dimensions.", ""))
-            else:
-                raise ValueError(f"invalid param '{param}'")
+            value = setup.collect(param)
             if exclude_nones and value is None:
                 continue
             if flatten and isinstance(setup, Collection) and not isinstance(setup, str):
                 for sub_value in value:
                     if exclude_nones and sub_value is None:
                         continue
-                    values.append(sub_value)
-            else:
+                    if not unique or sub_value not in values:
+                        values.append(sub_value)
+            elif not unique or value not in values:
                 values.append(value)
         return values
 
     def collect_equal(self, param: str) -> Any:
         """Collect the value of a parameter that is shared by all setups."""
-        values = self.collect(param)
+        values = self.collect(param, unique=True)
         if not values:
             return None
         if not all(value == values[0] for value in values[1:]):
@@ -564,7 +593,7 @@ class PlotPanelSetupGroup:
                     if isinstance(value, Sequence) and not isinstance(value, str):
                         raise ValueError(
                             "when passing a list of params dicts, multipanel_param"
-                            " values must not be sequences ('{mp_param}': {value})"
+                            f" values must not be sequences ('{mp_param}': {value})"
                         )
                     break
                 else:
@@ -740,9 +769,10 @@ class PlotPanelSetupGroupFormatter(SetupGroupFormatter):
     def _group_dims_params(self, same: Dict[str, Any], diff: Dict[str, Any]) -> None:
         dims_same: Dict[str, Any] = {}
         dims_diff: Dict[str, Any] = {}
+        dimensions = self.obj.collect("dimensions", flatten=True)
         for param in CoreDimensions.get_params():
             values = []
-            for dims in self.obj.collect("dimensions", flatten=True):
+            for dims in dimensions:
                 values.append(dims.get(param))
             if len(set(values)) == 1:
                 dims_same[param] = next(iter(values))

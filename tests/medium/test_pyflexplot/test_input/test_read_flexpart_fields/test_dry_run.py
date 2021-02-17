@@ -23,7 +23,6 @@ from pyflexplot.setups.dimensions import is_dimensions_param
 from pyflexplot.setups.model_setup import is_model_setup_param
 from pyflexplot.setups.plot_panel_setup import is_plot_panel_setup_param
 from pyflexplot.setups.plot_setup import is_plot_setup_param
-from pyflexplot.setups.plot_setup import PlotSetup
 from pyflexplot.setups.plot_setup import PlotSetupGroup
 from srutils.dict import merge_dicts
 from srutils.testing import assert_is_sub_element
@@ -128,14 +127,12 @@ class ConfMultipleSetups:
 
 
 def _test_single_setup_core(config, params):
-    setup = PlotSetup.create(config.setup_dct)
-    setups = PlotSetupGroup([setup])
+    setups = PlotSetupGroup.create(config.setup_dct)
     _test_setups_core(setups, params, config.sol)
 
 
 def _test_multiple_setups_core(config, params):
-    setup_lst = [PlotSetup.create(setup_dct) for setup_dct in config.setup_dct_lst]
-    setups = PlotSetupGroup(setup_lst)
+    setups = PlotSetupGroup(config.setup_dct_lst)
     _test_setups_core(setups, params, config.sol)
 
 
@@ -145,14 +142,26 @@ def _test_multiple_setups_core(config, params):
     [
         ConfSingleSetup(  # [conf0]
             setup_dct={
-                "panels": [{"dimensions": {"species_id": 1, "level": 0, "time": 0}}]
+                "panels": [
+                    {
+                        "dimensions": {"species_id": 1, "level": 0, "time": 0},
+                    }
+                ]
             },
-            sol=[{"panels": [{"dimensions": {"species_id": 1, "time": 0}}]}],
+            sol=[
+                {"panels": [{"dimensions": {"species_id": 1, "time": 0}}]},
+            ],
         ),
         ConfSingleSetup(  # [conf1]
             setup_dct={
                 "panels": [
-                    {"dimensions": {"species_id": 1, "level": 0, "time": (0, 3, 6)}}
+                    {
+                        "dimensions": {
+                            "species_id": 1,
+                            "level": 0,
+                            "time": (0, 3, 6),
+                        }
+                    }
                 ],
             },
             sol=[
@@ -165,23 +174,29 @@ def _test_multiple_setups_core(config, params):
             setup_dct={
                 "panels": [
                     {
-                        "dimensions": {"species_id": (1, 2), "level": 0, "time": 0},
                         "combine_species": True,
+                        "dimensions": {
+                            "species_id": (1, 2),
+                            "level": 0,
+                            "time": 0,
+                        },
                     }
                 ],
             },
-            sol=[{"panels": [{"dimensions": {"species_id": (1, 2), "time": 0}}]}],
+            sol=[
+                {"panels": [{"dimensions": {"species_id": (1, 2), "time": 0}}]},
+            ],
         ),
         ConfSingleSetup(  # [conf3]
             setup_dct={
                 "panels": [
                     {
+                        "combine_species": True,
                         "dimensions": {
                             "species_id": (1, 2),
                             "level": 0,
                             "time": (0, 3, 6),
                         },
-                        "combine_species": True,
                     }
                 ],
             },
@@ -195,8 +210,12 @@ def _test_multiple_setups_core(config, params):
             setup_dct={
                 "panels": [
                     {
-                        "dimensions": {"species_id": (1, 2), "level": 0, "time": 0},
                         "combine_species": False,
+                        "dimensions": {
+                            "species_id": (1, 2),
+                            "level": 0,
+                            "time": 0,
+                        },
                     }
                 ],
             },
@@ -209,12 +228,12 @@ def _test_multiple_setups_core(config, params):
             setup_dct={
                 "panels": [
                     {
+                        "combine_species": False,
                         "dimensions": {
                             "species_id": (1, 2),
                             "level": 0,
                             "time": (0, 3, 6),
                         },
-                        "combine_species": False,
                     }
                 ],
             },
@@ -254,8 +273,12 @@ def _test_multiple_setups_core(config, params):
             setup_dct={
                 "panels": [
                     {
-                        "dimensions": {"species_id": 1, "level": (0, 1), "time": 0},
                         "combine_levels": False,
+                        "dimensions": {
+                            "species_id": 1,
+                            "level": (0, 1),
+                            "time": 0,
+                        },
                     }
                 ],
             },
@@ -268,13 +291,13 @@ def _test_multiple_setups_core(config, params):
             setup_dct={
                 "panels": [
                     {
+                        "combine_levels": False,
+                        "combine_species": False,
                         "dimensions": {
                             "species_id": (1, 2),
                             "level": (0, 1),
                             "time": (0, 3, 6),
                         },
-                        "combine_species": False,
-                        "combine_levels": False,
                     }
                 ],
             },

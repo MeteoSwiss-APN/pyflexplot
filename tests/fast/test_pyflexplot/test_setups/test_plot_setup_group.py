@@ -15,11 +15,10 @@ from pyflexplot.setups.plot_setup import PlotSetup
 from pyflexplot.setups.plot_setup import PlotSetupGroup
 from pyflexplot.setups.setup_file import SetupFile
 from srutils.dict import merge_dicts
-from srutils.testing import check_is_sub_element
+from srutils.testing import assert_is_sub_element
 
 # Local
 from .shared import DEFAULT_SETUP
-from .shared import OPTIONAL_RAW_DEFAULT_PARAMS
 
 
 def tuples(objs: Sequence[Any]) -> List[Tuple[Any]]:
@@ -67,62 +66,202 @@ class Test_FromRawParams:
                         "plot_variable": "concentration",
                         "combine_species": False,
                         "dimensions": {
-                            "species_id": (1, 2),
+                            "species_id": species_id,
                         },
                     }
                 ],
-            },
+            }
+            for species_id in [1, 2]
         ]
-        check_is_sub_element(sol, res, "solution", "result")
+        assert_is_sub_element(
+            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+        )
 
 
-class Test_SetupGroup_Create:
-    def create_partial_dicts(self):
-        base = {
+class Test_Create:
+    class Test_Simple:
+        """Test simple setup dicts which result in one setup object each."""
+
+        panels_lst: List[List[Dict[str, Any]]] = [
+            [{"plot_variable": "concentration", "domain": "ch"}],
+            [{"plot_variable": "tot_deposition", "lang": "de"}],
+            [{"dimensions": {"nageclass": 1, "noutrel": 5, "numpoint": 3}}],
+        ]
+        dicts: List[Dict[str, Any]] = [
+            merge_dicts(
+                {
+                    "infile": "foo.nc",
+                    "outfile": "bar.png",
+                    "model": {"name": "COSMO-baz"},
+                },
+                {"panels": panels},
+                overwrite_seqs=True,
+            )
+            for panels in panels_lst
+        ]
+
+        @property
+        def setup_lst(self):
+            return [PlotSetup.create(dct) for dct in self.dicts]
+
+        @property
+        def setup_group(self):
+            return PlotSetupGroup(self.setup_lst)
+
+        def test_empty_fail(self):
+            with pytest.raises(ValueError):
+                PlotSetupGroup([])
+
+        def test_from_objs(self):
+            group = PlotSetupGroup.create(self.setup_lst)
+            res = group.dicts()
+            sol = self.dicts
+            assert_is_sub_element(
+                name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+            )
+
+        def test_from_dicts(self):
+            group = PlotSetupGroup.create(self.dicts)
+            res = group.dicts()
+            sol = self.dicts
+            assert_is_sub_element(
+                name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+            )
+
+    class Test_Complex:
+        """Test more complex setup dicts resulting in multiple setups each."""
+
+        base_params = {
             "infile": "foo.nc",
             "outfile": "bar.png",
             "model": {"name": "COSMO-baz"},
         }
-        return [
-            {
-                **base,
-                "panels": [{"plot_variable": "concentration", "domain": "ch"}],
-            },
-            {
-                **base,
-                "panels": [{"plot_variable": "tot_deposition", "lang": "de"}],
-            },
-            {
-                **base,
-                "panels": [
-                    {"dimensions": {"nageclass": 1, "noutrel": 5, "numpoint": 3}}
-                ],
-            },
-        ]
 
-    def create_complete_dicts(self):
-        return [
-            merge_dicts(OPTIONAL_RAW_DEFAULT_PARAMS, dct)
-            for dct in self.create_partial_dicts()
-        ]
+        def test_combine_levels_true(self):
+            params = {
+                **self.base_params,
+                "panels": {
+                    "plot_variable": "affected_area",
+                    "combine_levels": True,
+                    "dimensions": {
+                        "level": (0, 1, 2),
+                    },
+                },
+            }
+            group = PlotSetupGroup.create(params)
+            res = group.dicts()
+            sol = [{**params, "panels": [params["panels"]]}]
+            assert_is_sub_element(
+                name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+            )
 
-    def create_setup_lst(self):
-        return [PlotSetup.create(dct) for dct in self.create_partial_dicts()]
+        def test_combine_levels_false(self):
+            params = {
+                **self.base_params,
+                "panels": {
+                    "plot_variable": "affected_area",
+                    "combine_levels": False,
+                    "dimensions": {
+                        "level": (0, 1, 2),
+                    },
+                },
+            }
+            group = PlotSetupGroup.create(params)
+            res = group.dicts()
+            sol = [
+                merge_dicts(
+                    params,
+                    {
+                        "panels": [
+                            merge_dicts(
+                                params["panels"],
+                                {
+                                    "plot_variable": "affected_area",
+                                    "combine_levels": False,
+                                    "dimensions": {
+                                        "level": value,
+                                        "variable": (
+                                            "concentration",
+                                            "dry_deposition",
+                                            "wet_deposition",
+                                        ),
+                                    },
+                                },
+                                overwrite_seqs=True,
+                            )
+                        ]
+                    },
+                    overwrite_seqs=True,
+                )
+                for value in [0, 1, 2]
+            ]
+            assert_is_sub_element(
+                name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+            )
 
-    def create_setup_group(self):
-        return PlotSetupGroup(self.create_setup_lst())
+        def test_combine_species_true(self):
+            params = {
+                **self.base_params,
+                "panels": {
+                    "plot_variable": "tot_deposition",
+                    "combine_species": True,
+                    "dimensions": {
+                        "species_id": (0, 1, 2),
+                    },
+                },
+            }
+            group = PlotSetupGroup.create(params)
+            res = group.dicts()
+            sol = [{**params, "panels": [params["panels"]]}]
+            assert_is_sub_element(
+                name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+            )
 
-    def test_create_empty_setup_group(self):
-        with pytest.raises(ValueError):
-            PlotSetupGroup([])
+        def test_combine_species_false(self):
+            params = {
+                **self.base_params,
+                "panels": {
+                    "plot_variable": "tot_deposition",
+                    "combine_species": False,
+                    "dimensions": {
+                        "species_id": (0, 1, 2),
+                    },
+                },
+            }
+            group = PlotSetupGroup.create(params)
+            res = group.dicts()
+            sol = [
+                merge_dicts(
+                    params,
+                    {
+                        "panels": [
+                            merge_dicts(
+                                params["panels"],
+                                {
+                                    "plot_variable": "tot_deposition",
+                                    "combine_species": False,
+                                    "dimensions": {
+                                        "species_id": value,
+                                        "variable": (
+                                            "dry_deposition",
+                                            "wet_deposition",
+                                        ),
+                                    },
+                                },
+                                overwrite_seqs=True,
+                            )
+                        ]
+                    },
+                    overwrite_seqs=True,
+                )
+                for value in [0, 1, 2]
+            ]
+            assert_is_sub_element(
+                name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+            )
 
-    def test_from_setups(self):
-        partial_dicts = self.create_partial_dicts()
-        setups = PlotSetupGroup.create(partial_dicts)
-        assert len(setups) == len(partial_dicts)
 
-
-class Test_SetupGroup_Compress:
+class Test_Compress:
     dcts: List[Dict[str, Any]] = [
         {
             "infile": "foo.nc",
@@ -133,6 +272,7 @@ class Test_SetupGroup_Compress:
             "panels": [
                 {
                     "plot_variable": "concentration",
+                    "combine_levels": True,
                     "dimensions": {"level": 0},
                 }
             ],
@@ -146,6 +286,7 @@ class Test_SetupGroup_Compress:
             "panels": [
                 {
                     "plot_variable": "concentration",
+                    "combine_levels": True,
                     "dimensions": {"level": 1},
                 }
             ],
@@ -159,6 +300,7 @@ class Test_SetupGroup_Compress:
             "panels": [
                 {
                     "plot_variable": "concentration",
+                    "combine_levels": True,
                     "dimensions": {"level": (1, 2)},
                 }
             ],
@@ -186,7 +328,7 @@ class Test_SetupGroup_Compress:
         assert res == sol
 
 
-class Test_SetupGroup_Group:
+class Test_Group:
     """Group setups by the values of one or more params.
 
     'Regular' params apply to all variables, while 'special' params are
@@ -222,7 +364,10 @@ class Test_SetupGroup_Group:
                 "panels": [
                     {
                         "combine_species": combine_species,
-                        "dimensions": {"species_id": [1, 2], "time": time},
+                        "dimensions": {
+                            "species_id": [1, 2] if combine_species else 1,
+                            "time": time,
+                        },
                     }
                 ],
             }
@@ -237,7 +382,9 @@ class Test_SetupGroup_Group:
                     {
                         "plot_variable": "concentration",
                         "combine_levels": combine_levels,
-                        "dimensions": {"level": [0, 1, 2]},
+                        "dimensions": {
+                            "level": [0, 1, 2] if combine_levels else 0,
+                        },
                     }
                 ],
             }
@@ -340,3 +487,45 @@ class Test_SetupGroup_Group:
             ]
         )
         assert set(grouped) == sol
+
+
+class Test_Collect:
+    base = {"infile": "foo.nc", "outfile": "foo.png", "model": {"name": "foo"}}
+    md = lambda *dicts: merge_dicts(*dicts, overwrite_seqs=True)  # noqa
+    params_lst = [
+        md(base, {"scale_fact": 1, "panels": [{"dimensions": {"species_id": 1}}]}),
+        md(base, {"scale_fact": 2, "panels": [{"dimensions": {"species_id": 1}}]}),
+        md(base, {"scale_fact": 1, "panels": [{"dimensions": {"species_id": 2}}]}),
+        md(base, {"scale_fact": 3, "panels": [{"dimensions": {"species_id": 2}}]}),
+        md(base, {"scale_fact": 1, "panels": [{"dimensions": {"species_id": 3}}]}),
+    ]
+
+    def test_scale_fact(self):
+        group = PlotSetupGroup.create(self.params_lst)
+        vals = group.collect("scale_fact")
+        assert vals == [1, 2, 1, 3, 1]
+
+    def test_scale_fact_flat(self):
+        group = PlotSetupGroup.create(self.params_lst)
+        vals = group.collect("scale_fact", flatten=True)
+        assert vals == [1, 2, 1, 3, 1]
+
+    def test_scale_fact_flat_unique(self):
+        group = PlotSetupGroup.create(self.params_lst)
+        vals = group.collect("scale_fact", flatten=True, unique=True)
+        assert vals == [1, 2, 3]
+
+    def test_species_id(self):
+        group = PlotSetupGroup.create(self.params_lst)
+        vals = group.collect("dimensions.species_id")
+        assert vals == [[1], [1], [2], [2], [3]]
+
+    def test_species_id_flat(self):
+        group = PlotSetupGroup.create(self.params_lst)
+        vals = group.collect("dimensions.species_id", flatten=True)
+        assert vals == [1, 1, 2, 2, 3]
+
+    def test_species_id_flat_unique(self):
+        group = PlotSetupGroup.create(self.params_lst)
+        vals = group.collect("dimensions.species_id", flatten=True, unique=True)
+        assert vals == [1, 2, 3]

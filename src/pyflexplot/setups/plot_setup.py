@@ -131,6 +131,27 @@ class PlotSetup:
                 + type(self.panels).__name__
             )
 
+    def collect(self, param: str, *, unique: bool = False) -> Any:
+        """Collect the value(s) of a parameter.
+
+        Args:
+            param: Name of parameter.
+
+            unique (optional): Return duplicate sub-values only once.
+
+        """
+        if is_plot_setup_param(param):
+            value = getattr(self, param)
+        elif is_model_setup_param(param):
+            if param.startswith("model."):
+                param = param.replace("model.", "")
+            value = getattr(self.model, param)
+        elif is_plot_panel_setup_param(param) or is_dimensions_param(param):
+            value = self.panels.collect(param, unique=unique)
+        else:
+            raise ValueError(f"invalid param '{param}'")
+        return value
+
     @overload
     def decompress(
         self,
@@ -463,20 +484,32 @@ class PlotSetup:
 
         """
         params = dict(params)
-        panel_params = list(params.pop("panels", []))
-        model_params = dict(params.pop("model", {}))
-        params = {
-            param: cast_field_value(
+        panel_params: List[Dict[str, Any]]
+        if "panels" not in params:
+            panel_params = []
+        else:
+            if isinstance(params["panels"], Mapping):
+                panel_params = [dict(params["panels"])]
+            else:
+                panel_params = list(map(dict, params["panels"]))
+            del params["panels"]
+        model_params: Dict[str, Any]
+        if "model" not in params:
+            model_params = {}
+        else:
+            model_params = dict(params.get("model", {}))
+            del params["model"]
+        for name, value in dict(params).items():
+            value = cast_field_value(
                 cls,
-                param,
+                name,
                 value,
                 auto_wrap=True,
                 bool_mode="intuitive",
                 timedelta_unit="hours",
                 unpack_str=False,
             )
-            for param, value in params.items()
-        }
+            params[name] = value
         if panel_params:
             multipanel_param = params.get("multipanel_param")
             params["panels"] = PlotPanelSetupGroup.create(
@@ -749,48 +782,46 @@ class PlotSetupGroup:
 
     # pylint: disable=R0912  # too-many-branches (>12)
     def collect(
-        self, param: str, flatten: bool = False, exclude_nones: bool = False
+        self,
+        param: str,
+        *,
+        exclude_nones: bool = False,
+        flatten: bool = False,
+        unique: bool = False,
     ) -> List[Any]:
-        """Collect all unique values of a parameter for all setups.
+        """Collect all values of a parameter for all setups.
 
         Args:
             param: Name of parameter.
 
-            flatten (optional): Unpack values that are collection of sub-values.
-
             exclude_nones (optional): Exclude values -- and, if ``flatten`` is
                 true, also sub-values -- that are None.
 
+            flatten (optional): Unpack values that are collection of sub-values.
+
+            unique (optional): Return duplicate values only once.
+
         """
         values: List[Any] = []
-        for var_setup in self:
-            if is_plot_setup_param(param):
-                value = getattr(var_setup, param)
-            elif is_model_setup_param(param):
-                value = getattr(var_setup.model, param.replace("model.", ""))
-            elif is_plot_panel_setup_param(param) or is_dimensions_param(param):
-                value = var_setup.panels.collect(param)
-            else:
-                raise ValueError(f"invalid param '{param}'")
+        for setup in self:
+            value = setup.collect(param, unique=unique)
             if flatten and isinstance(value, Collection) and not isinstance(value, str):
                 for sub_value in value:
                     if exclude_nones and sub_value is None:
                         continue
-                    if sub_value not in values:
+                    if not unique or sub_value not in values:
                         values.append(sub_value)
             else:
                 if exclude_nones and value is None:
                     continue
-                if value not in values:
+                if not unique or value not in values:
                     values.append(value)
         return values
 
     def collect_equal(self, param: str) -> Any:
         """Collect the value of a parameter that is shared by all setups."""
-        if is_plot_panel_setup_param(param) or is_dimensions_param(param):
-            values = self.collect(param, flatten=True)
-        else:
-            values = self.collect(param)
+        flatten = is_plot_panel_setup_param(param) or is_dimensions_param(param)
+        values = self.collect(param, unique=True, flatten=flatten)
         if not values:
             return None
         if not all(value == values[0] for value in values[1:]):
@@ -947,13 +978,71 @@ class PlotSetupGroup:
 
     @classmethod
     def create(
-        cls, setups: Collection[Union[PlotSetup, Mapping[str, Any]]]
+        cls,
+        setups: Union[
+            Mapping[str, Any],
+            Collection[Mapping[str, Any]],
+            Collection[PlotSetup],
+        ],
     ) -> "PlotSetupGroup":
+        def prepare_setup_dcts(dct: Mapping[str, Any]) -> List[Dict[str, Any]]:
+            def unpack_dimension(
+                panels_dcts: Sequence[Mapping[str, Any]],
+                flag_name: str,
+                dim_name: str,
+            ) -> List[Dict[str, Any]]:
+                unpacked_panels_dcts: List[Dict[str, Any]] = []
+                for panels_dct in panels_dcts:
+                    if not panels_dct.get(flag_name, False):
+                        try:
+                            value = panels_dct["dimensions"][dim_name]
+                        except KeyError:
+                            pass
+                        else:
+                            if isinstance(value, Sequence):
+                                for sub_value in value:
+                                    unpacked_panels_dcts.append(
+                                        merge_dicts(
+                                            panels_dct,
+                                            {"dimensions": {dim_name: sub_value}},
+                                            overwrite_seqs=True,
+                                        )
+                                    )
+                                continue
+                    unpacked_panels_dcts.append(dict(panels_dct))
+                return unpacked_panels_dcts
+
+            dct = dict(dct)
+            try:
+                panels_obj = dct.pop("panels")
+            except KeyError:
+                return [dct]
+            panels_dcts: List[Dict[str, Any]]
+            if isinstance(panels_obj, Mapping):
+                panels_dcts = [dict(**panels_obj)]
+            elif isinstance(panels_obj, Sequence) and not isinstance(panels_obj, str):
+                panels_dcts = list(map(dict, panels_obj))
+            else:
+                raise TypeError(
+                    f"dct['panels'] has unexpected type {type(panels_obj).__name__}"
+                )
+            panels_dcts = unpack_dimension(panels_dcts, "combine_levels", "level")
+            panels_dcts = unpack_dimension(panels_dcts, "combine_species", "species_id")
+            dcts: List[Dict[str, Any]] = []
+            for panels_dct in panels_dcts:
+                dcts.append({**dct, "panels": panels_dct})
+            return dcts
+
+        if isinstance(setups, Mapping):
+            setups = [setups]
         setup_lst: List[PlotSetup] = []
         for obj in setups:
-            if not isinstance(obj, PlotSetup):
-                obj = PlotSetup.create(obj)
-            setup_lst.append(obj)
+            if isinstance(obj, PlotSetup):
+                setup_lst.append(obj)
+            else:
+                for dct in prepare_setup_dcts(obj):
+                    setup = PlotSetup.create(dct)
+                    setup_lst.append(setup)
         return cls(setup_lst)
 
     @classmethod
