@@ -6,6 +6,7 @@ These tests use ensemble data.
 # Standard library
 from typing import Any
 from typing import Dict
+from typing import List
 
 # Third-party
 import numpy as np
@@ -51,17 +52,15 @@ class TestReadFieldEnsemble_Single:
         "model": {
             "name": "COSMO-2E",
         },
-        "panels": [
-            {
-                "integrate": False,
-                "ens_variable": "mean",
-                "dimensions": {"time": 10, "species_id": 2},
-                "plot_variable": "concentration",
-            }
-        ],
+        "panels": {
+            "integrate": False,
+            "ens_variable": "mean",
+            "dimensions": {"time": 10, "species_id": 2},
+            "plot_variable": "concentration",
+        },
     }
 
-    species_id = setup_params_shared["panels"][0]["dimensions"]["species_id"]
+    species_id = setup_params_shared["panels"]["dimensions"]["species_id"]
 
     # Ensemble member ids
     ens_member_ids = (0, 1, 5, 10, 15, 20)
@@ -99,11 +98,9 @@ class TestReadFieldEnsemble_Single:
         )
         # SR_TMP <
         if ens_var in ["probability", "minimum", "maximum", "mean", "median"]:
-            assert len(setup_dct["panels"]) == 1
-            setup_dct["panels"][0]["ens_variable"] = ens_var
+            setup_dct["panels"]["ens_variable"] = ens_var
         else:
-            assert len(setup_dct["panels"]) == 1
-            setup_dct["panels"][0]["plot_type"] = f"ensemble_{ens_var}"
+            setup_dct["panels"]["plot_type"] = f"ensemble_{ens_var}"
         # SR_TMP >
         plot_setups = PlotSetupGroup([PlotSetup.create(setup_dct)])
 
@@ -156,7 +153,7 @@ class TestReadFieldEnsemble_Single:
         self.run(
             datadir,
             var_names_ref=[f"spec{self.species_id:03d}"],
-            setup_params={"panels": [{"dimensions": {"level": 1}}]},
+            setup_params={"panels": {"dimensions": {"level": 1}}},
             ens_var="mean",
             fct_reduce_mem=lambda arr: np.nanmean(arr, axis=0),
         )
@@ -172,16 +169,14 @@ class TestReadFieldEnsemble_Multiple:
         "model": {
             "name": "COSMO-2E",
         },
-        "panels": [
-            {
-                "integrate": True,
-                "dimensions": {"species_id": 1, "time": [0, 3, 9]},
-            }
-        ],
+        "panels": {
+            "integrate": True,
+            "dimensions": {"species_id": 1, "time": [0, 3, 9]},
+        },
     }
 
     # Species ID
-    species_id = shared_setup_params_compressed["panels"][0]["dimensions"]["species_id"]
+    species_id = shared_setup_params_compressed["panels"]["dimensions"]["species_id"]
 
     # Ensemble member ids
     ens_member_ids = (0, 1, 5, 10, 15, 20)
@@ -210,77 +205,74 @@ class TestReadFieldEnsemble_Multiple:
     ):
         """Run an individual test, reading one field after another."""
         # Create field specifications list
-        setup_lst = []
+        setup_dcts: List[Dict[str, Any]] = []
         for shared_setup_params in decompress_multival_dict(
             self.shared_setup_params_compressed, skip=["infile", "panels"]
         ):
             if "panels" not in shared_setup_params:
-                shared_setup_params["panels"] = [{}]
+                shared_setup_params["panels"] = {}
             setup_params_i = merge_dicts(
                 shared_setup_params,
                 setup_params,
-                {
-                    "model": {
-                        "ens_member_id": self.ens_member_ids,
-                    },
-                },
+                {"model": {"ens_member_id": self.ens_member_ids}},
             )
             # SR_TMP <
-            if ens_var in [
-                "probability",
-                "minimum",
-                "maximum",
-                "mean",
-                "median",
-            ]:
-                assert len(setup_params_i["panels"]) == 1
-                setup_params_i["panels"][0]["ens_variable"] = ens_var
+            if ens_var in ["probability", "minimum", "maximum", "mean", "median"]:
+                setup_params_i["panels"]["ens_variable"] = ens_var
             else:
-                assert len(setup_params_i["panels"]) == 1
-                setup_params_i["panels"][0]["plot_type"] = f"ensemble_{ens_var}"
+                setup_params_i["panels"]["plot_type"] = f"ensemble_{ens_var}"
             # SR_TMP >
-            setup_lst.append(PlotSetup.create(setup_params_i))
-        plot_setup_group = PlotSetupGroup(setup_lst)
+            setup_dcts.append(setup_params_i)
+        plot_setup_group = PlotSetupGroup.create(setup_dcts)
+        time = plot_setup_group.collect_equal("dimensions.time")
 
         # Read input fields
         field_groups = read_fields(plot_setup_group, {"add_ts0": False})
         fld_arr = np.array(
             [field.fld for field_group in field_groups for field in field_group]
         )
+        assert fld_arr.shape[0] == len(time)
 
-        # Read reference fields
-        assert len(plot_setup_group) == 1
-        plot_setup = next(iter(plot_setup_group))
-        fld_ref_lst = []
-        for plot_setup_i in plot_setup.decompress(["dimensions.time"]):
-            fld_ref_mem_time = []
-            for plot_setup_ij in plot_setup_i.decompress(skip=["model.ens_member_id"]):
-                fld_ref_mem_time.append([])
-                flds_mem = []
-                for plot_setup_ijk in plot_setup_ij.decompress(
-                    ["model.ens_member_id"], internal=False
+        def read_fld_ref(plot_setup_group: PlotSetupGroup) -> np.ndarray:
+            assert len(plot_setup_group) == 1
+            plot_setup = next(iter(plot_setup_group))
+            fld_lst: List[np.ndarray] = []
+            for plot_setup_i in plot_setup.decompress(["dimensions.time"]):
+                fld_mem_time: List[List[np.ndarray]] = []
+                for plot_setup_ij in plot_setup_i.decompress(
+                    skip=["model.ens_member_id"]
                 ):
-                    ens_member_id = next(iter(plot_setup_ijk.model.ens_member_id))
-                    # SR_TMP <
-                    assert len(plot_setup_ijk.panels) == 1
-                    panel_setup = next(iter(plot_setup_ijk.panels))
-                    # SR_TMP >
-                    for dimensions in panel_setup.dimensions.decompress(["variable"]):
-                        fld = (
-                            read_flexpart_field(
-                                self.datafile(ens_member_id, datafile_fmt=datafile_fmt),
-                                get_var_name_ref(dimensions, var_names_ref),
-                                dimensions,
-                                integrate=panel_setup.integrate,
-                                model="COSMO-2",  # SR_TMP
-                                add_ts0=False,
+                    fld_mem_time.append([])
+                    for plot_setup_ijk in plot_setup_ij.decompress(
+                        ["model.ens_member_id"], internal=False
+                    ):
+                        assert plot_setup_ijk.model.ens_member_id is not None  # mypy
+                        ens_member_id = next(iter(plot_setup_ijk.model.ens_member_id))
+                        # SR_TMP <
+                        assert len(plot_setup_ijk.panels) == 1
+                        panel_setup = next(iter(plot_setup_ijk.panels))
+                        # SR_TMP >
+                        for dimensions in panel_setup.dimensions.decompress(
+                            ["variable"]
+                        ):
+                            fld = (
+                                read_flexpart_field(
+                                    self.datafile(
+                                        ens_member_id, datafile_fmt=datafile_fmt
+                                    ),
+                                    get_var_name_ref(dimensions, var_names_ref),
+                                    dimensions,
+                                    integrate=panel_setup.integrate,
+                                    model="COSMO-2",  # SR_TMP
+                                    add_ts0=False,
+                                )
+                                * scale_fld_ref  # SR_TODO Why?!?!?
                             )
-                            * scale_fld_ref
-                        )
-                        flds_mem.append(fld)
-                        fld_ref_mem_time[-1].append(fld)
-            fld_ref_lst.append(fct_reduce_mem(np.nansum(fld_ref_mem_time, axis=0)))
-        fld_arr_ref = np.array(fld_ref_lst)
+                            fld_mem_time[-1].append(fld)
+                fld_lst.append(fct_reduce_mem(np.nansum(fld_mem_time, axis=0)))
+            return np.array(fld_lst)
+
+        fld_arr_ref = read_fld_ref(plot_setup_group)
         assert fld_arr.shape == fld_arr_ref.shape
         try:
             assert np.isclose(np.nanmean(fld_arr), np.nanmean(fld_arr_ref))
@@ -299,7 +291,6 @@ class TestReadFieldEnsemble_Multiple:
     def run_concentration(self, datadir, ens_var, *, scale_fld_ref=1.0):  # noqa:F811
         """Read ensemble concentration field."""
         datafile_fmt = self.datafile_fmt(datadir)
-
         fct_reduce_mem = {
             "mean": lambda arr: np.nanmean(arr, axis=0),
             "maximum": lambda arr: np.nanmax(arr, axis=0),
@@ -307,21 +298,17 @@ class TestReadFieldEnsemble_Multiple:
                 lambda arr: ensemble_probability(arr, self.ens_prob_thr_concentration)
             ),
         }[ens_var]
-
         setup_params = {
             "infile": datafile_fmt,
-            "panels": [
-                {
-                    "dimensions": {"level": 1},
-                    "plot_variable": "concentration",
-                }
-            ],
+            "panels": {
+                "dimensions": {"level": 1},
+                "plot_variable": "concentration",
+            },
         }
         if ens_var == "probability":
-            setup_params["panels"][0]["ens_params"] = {
+            setup_params["panels"]["ens_params"] = {
                 "thr": self.ens_prob_thr_concentration
             }
-
         self.run(
             datafile_fmt=datafile_fmt,
             var_names_ref=[f"spec{self.species_id:03d}"],
@@ -330,12 +317,6 @@ class TestReadFieldEnsemble_Multiple:
             fct_reduce_mem=fct_reduce_mem,
             scale_fld_ref=scale_fld_ref,
         )
-
-    def test_ens_mean_concentration(self, datadir):  # noqa:F811
-        self.run_concentration(datadir, "mean", scale_fld_ref=3.0)
-
-    def test_ens_probability_concentration(self, datadir):  # noqa:F811
-        self.run_concentration(datadir, "probability", scale_fld_ref=3.0)
 
     def run_deposition_tot(self, datadir, ens_var):  # noqa:F811
         """Read ensemble total deposition field."""
@@ -352,11 +333,17 @@ class TestReadFieldEnsemble_Multiple:
             ],
             setup_params={
                 "infile": datafile_fmt,
-                "panels": [{"plot_variable": "tot_deposition"}],
+                "panels": {"plot_variable": "tot_deposition"},
             },
             ens_var=ens_var,
             fct_reduce_mem=fct_reduce_mem,
         )
+
+    def test_ens_mean_concentration(self, datadir):  # noqa:F811
+        self.run_concentration(datadir, "mean", scale_fld_ref=3.0)
+
+    def test_ens_probability_concentration(self, datadir):  # noqa:F811
+        self.run_concentration(datadir, "probability", scale_fld_ref=3.0)
 
     def test_ens_mean_deposition_tot(self, datadir):  # noqa:F811
         self.run_deposition_tot(datadir, "mean")
