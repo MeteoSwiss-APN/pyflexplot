@@ -484,12 +484,12 @@ class PlotSetup:
 
         """
         params = dict(params)
-        panel_params: List[Dict[str, Any]]
+        panel_params: Union[Dict[str, Any], List[Dict[str, Any]]]
         if "panels" not in params:
             panel_params = []
         else:
             if isinstance(params["panels"], Mapping):
-                panel_params = [dict(params["panels"])]
+                panel_params = dict(params["panels"])
             else:
                 panel_params = list(map(dict, params["panels"]))
             del params["panels"]

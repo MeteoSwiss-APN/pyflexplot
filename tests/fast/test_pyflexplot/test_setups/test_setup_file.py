@@ -1000,40 +1000,33 @@ class Test_IndividualParams_SingleOrMultipleValues:
         )
 
 
-@pytest.mark.skip("not quite ready yet")
-def test_multipanel_param_ens_variable(tmp_path):
-    """Declare multi-panel plot based on ensemble variables."""
-    content = """\
-        [plot]
-        infile = "foo_{ens_member:02d}.nc"
-        outfile = "bar_ens_stats_multipanel.png"
-        model = "COSMO-baz"
-        ens_member_id = [1, 2, 3]
-        plot_type = "multipanel"
-        multipanel_param = "ens_variable"
-        ens_variable = ["minimum", "maximum", "mean", "median"]
-        """
-    # SR_TODO Figure out what the solution here should be
-    sol = []
-    # sol = [
-    #     merge_dicts(
-    #         DUMMY_PARAMS,
-    #         DEFAULT_PARAMS,
-    #         {
-    #             "infile": "data_{ens_member:02d}.nc",
-    #             "outfile": "ens_stats_multipanel.png",
-    #             "model": {"ens_member_id": (1, 2, 3),},
-    #             "plot_type": "multipanel",
-    #             "multipanel_param": "ens_variable",
-    #             "panels": [{
-    #                 "ens_variable": ("minimum", "maximum", "mean", "median"),
-    #             }],
-    #         },
-    #         overwrite_seqs=True,
-    #     ),
-    # ]
-    group = SetupFile(tmp_setup_file(tmp_path, content)).read()
-    res = group.dicts()
-    assert_is_sub_element(
-        name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
-    )
+class Test_Multipanel:
+    def test_ens_variable(self, tmp_path):
+        """Declare multi-panel plot based on ensemble variables."""
+        content = """\
+            [plot]
+            infile = "foo_{ens_member:02d}.nc"
+            outfile = "bar_ens_stats_multipanel.png"
+            model = "COSMO-2E"
+            ens_member_id = [1, 2, 3]
+            plot_type = "multipanel"
+            multipanel_param = "ens_variable"
+            ens_variable = ["minimum", "maximum", "mean", "median"]
+            """
+        sol = {
+            "model": {"ens_member_id": (1, 2, 3)},
+            "plot_type": "multipanel",
+            "multipanel_param": "ens_variable",
+            "panels": [
+                {"ens_variable": "minimum"},
+                {"ens_variable": "maximum"},
+                {"ens_variable": "mean"},
+                {"ens_variable": "median"},
+            ],
+        }
+        group = SetupFile(tmp_setup_file(tmp_path, content)).read()
+        assert len(group) == 1
+        res = next(iter(group)).dict()
+        assert_is_sub_element(
+            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+        )

@@ -140,6 +140,6 @@ class SetupFile:
             if ens_params:
                 panels["ens_params"] = ens_params
             if panels:
-                params["panels"] = [panels]
+                params["panels"] = panels
             params_lst.append(params)
         return params_lst
