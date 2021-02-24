@@ -3,9 +3,6 @@
 from collections.abc import Sequence
 from textwrap import dedent
 
-# Third-party
-import pytest
-
 # First-party
 from pyflexplot.setups.setup_file import SetupFile
 from srutils.dict import merge_dicts
