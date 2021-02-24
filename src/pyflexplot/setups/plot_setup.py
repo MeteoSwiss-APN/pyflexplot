@@ -312,12 +312,16 @@ class PlotSetup:
     ) -> Union["PlotSetup", "PlotSetupGroup"]:
         """Derive ``Setup`` object(s) with adapted parameters."""
         if isinstance(params, Sequence):
+            params = list(params)
             if not params:
                 setup_lst = [self.copy()]
             else:
                 setup_lst = [self.derive(sub_params) for sub_params in params]
             return PlotSetupGroup(setup_lst)
         elif isinstance(params, Mapping):
+            params = dict(params)
+            if isinstance(params.get("panels"), Mapping):
+                params["panels"] = [params["panels"]]
             dct = merge_dicts(self.dict(), params, overwrite_seqs=True)
             return type(self).create(dct)
         else:

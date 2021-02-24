@@ -36,7 +36,9 @@ class Test_Create:
         params = merge_dicts(self.base_params, params, overwrite_seqs=True)
         setup = PlotSetup.create(params)
         res = setup.dict()
-        check_is_sub_element(obj_super=res, obj_sub=params)
+        check_is_sub_element(
+            name_super="result", obj_super=res, name_sub="solution", obj_sub=params
+        )
 
     @pytest.mark.parametrize(
         "dct",
@@ -59,6 +61,26 @@ class Test_Create:
         params = merge_dicts(self.base_params, dct)
         with pytest.raises(ValueError):
             PlotSetup.create(params)
+
+
+class Test_Derive:
+    def test_panels_list(self):
+        params = {"panels": [{"plot_variable": "tot_deposition"}]}
+        setup = DEFAULT_SETUP.derive(params)
+        sol = params
+        res = setup.dict()
+        check_is_sub_element(
+            name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
+        )
+
+    def test_panels_dict(self):
+        params = {"panels": {"plot_variable": "tot_deposition"}}
+        setup = DEFAULT_SETUP.derive(params)
+        sol = {"panels": [params["panels"]]}
+        res = setup.dict()
+        check_is_sub_element(
+            name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
+        )
 
 
 class Test_Decompress:
