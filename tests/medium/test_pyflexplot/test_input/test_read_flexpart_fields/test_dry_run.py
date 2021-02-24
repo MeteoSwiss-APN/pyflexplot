@@ -132,7 +132,7 @@ def _test_single_setup_core(config, params):
 
 
 def _test_multiple_setups_core(config, params):
-    setups = PlotSetupGroup(config.setup_dct_lst)
+    setups = PlotSetupGroup.create(config.setup_dct_lst)
     _test_setups_core(setups, params, config.sol)
 
 
