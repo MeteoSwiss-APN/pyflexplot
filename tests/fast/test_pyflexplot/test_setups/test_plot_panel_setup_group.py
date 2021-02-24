@@ -626,3 +626,80 @@ class Test_Decompress:
                 ],
             ]
             assert_is_sub_element(sol, dcts, "solution", "result")
+
+    class Test_Multipanel:
+        @property
+        def group(self) -> PlotPanelSetupGroup:
+            params = {
+                "ens_variable": ["minimum", "maximum", "mean", "median"],
+                "dimensions": {"time": [1, 2]},
+            }
+            return PlotPanelSetupGroup.create(params, multipanel_param="ens_variable")
+
+        def test_full_internal(self):
+            group = self.group.decompress(internal=True)
+            assert isinstance(group, PlotPanelSetupGroup)
+            res = group.dicts()
+            sol = [
+                {"ens_variable": "minimum", "dimensions": {"time": 1}},
+                {"ens_variable": "minimum", "dimensions": {"time": 2}},
+                {"ens_variable": "maximum", "dimensions": {"time": 1}},
+                {"ens_variable": "maximum", "dimensions": {"time": 2}},
+                {"ens_variable": "mean", "dimensions": {"time": 1}},
+                {"ens_variable": "mean", "dimensions": {"time": 2}},
+                {"ens_variable": "median", "dimensions": {"time": 1}},
+                {"ens_variable": "median", "dimensions": {"time": 2}},
+            ]
+            assert_is_sub_element(sol, res, "solution", "result")
+
+        def test_skip_internal(self):
+            group = self.group.decompress(skip=["ens_variable"], internal=True)
+            assert isinstance(group, PlotPanelSetupGroup)
+            res = group.dicts()
+            sol = [
+                {"ens_variable": "minimum", "dimensions": {"time": 1}},
+                {"ens_variable": "minimum", "dimensions": {"time": 2}},
+                {"ens_variable": "maximum", "dimensions": {"time": 1}},
+                {"ens_variable": "maximum", "dimensions": {"time": 2}},
+                {"ens_variable": "mean", "dimensions": {"time": 1}},
+                {"ens_variable": "mean", "dimensions": {"time": 2}},
+                {"ens_variable": "median", "dimensions": {"time": 1}},
+                {"ens_variable": "median", "dimensions": {"time": 2}},
+            ]
+            assert_is_sub_element(sol, res, "solution", "result")
+
+        def test_full_external(self):
+            groups = self.group.decompress(internal=False)
+            assert isinstance(groups, list)
+            res = [group.dicts() for group in groups]
+            sol = [
+                [{"ens_variable": "minimum", "dimensions": {"time": 1}}],
+                [{"ens_variable": "minimum", "dimensions": {"time": 2}}],
+                [{"ens_variable": "maximum", "dimensions": {"time": 1}}],
+                [{"ens_variable": "maximum", "dimensions": {"time": 2}}],
+                [{"ens_variable": "mean", "dimensions": {"time": 1}}],
+                [{"ens_variable": "mean", "dimensions": {"time": 2}}],
+                [{"ens_variable": "median", "dimensions": {"time": 1}}],
+                [{"ens_variable": "median", "dimensions": {"time": 2}}],
+            ]
+            assert_is_sub_element(sol, res, "solution", "result")
+
+        def test_skip_external(self):
+            groups = self.group.decompress(skip=["ens_variable"], internal=False)
+            assert isinstance(groups, list)
+            res = [group.dicts() for group in groups]
+            sol = [
+                [
+                    {"ens_variable": "minimum", "dimensions": {"time": 1}},
+                    {"ens_variable": "maximum", "dimensions": {"time": 1}},
+                    {"ens_variable": "mean", "dimensions": {"time": 1}},
+                    {"ens_variable": "median", "dimensions": {"time": 1}},
+                ],
+                [
+                    {"ens_variable": "minimum", "dimensions": {"time": 2}},
+                    {"ens_variable": "maximum", "dimensions": {"time": 2}},
+                    {"ens_variable": "mean", "dimensions": {"time": 2}},
+                    {"ens_variable": "median", "dimensions": {"time": 2}},
+                ],
+            ]
+            assert_is_sub_element(sol, res, "solution", "result")

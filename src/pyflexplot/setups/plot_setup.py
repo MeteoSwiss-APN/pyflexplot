@@ -196,108 +196,81 @@ class PlotSetup:
 
         """
         if internal:
-            if (select, skip) == (None, None):
-                raise ValueError(
-                    "cannot fully decompress with internal=True; skip"
-                    " 'model.ens_member_id' or pass internal=False"
-                )
-            selected = select and (
+            # Check that ens_member_id is not internally decompressed
+            ens_member_id = self.collect("ens_member_id")
+            selected = not select or (
                 "model.ens_member_id" in select or "ens_member_id" in select
             )
             skipped = "model.ens_member_id" in (skip or []) or "ens_member_id" in (
                 skip or []
             )
-            if (not select or selected) and not skipped:
+            if ens_member_id and (not select or selected) and not skipped:
                 raise ValueError(
-                    "cannot decompress 'model.ens_member_id' with internal=True;"
-                    " skip 'model.ens_member_id' or pass internal=False"
+                    f"cannot decompress ensemble setup (ens_member_id={ens_member_id})"
+                    " with internal=True by 'model.ens_member_id'; either skip"
+                    " 'model.ens_member_id' or pass internal=False"
                 )
+
+        if self.plot_type == "multipanel":
+            skip = list(skip or []) + [self.multipanel_param]
 
         def group_params(
             params: Optional[Collection[str]],
-        ) -> Tuple[Optional[List[str]], Optional[List[str]], Optional[List[str]]]:
-            model: Optional[List[str]] = None
-            panel: Optional[List[str]] = None
-            other: Optional[List[str]] = None
-            for param in params or []:
+        ) -> Union[Tuple[None, None, None], Tuple[List[str], List[str], List[str]]]:
+            if params is None:
+                return None, None, None
+            model: List[str] = []
+            panels: List[str] = []
+            other: List[str] = []
+            for param in params:
                 if is_model_setup_param(param):
                     if param.startswith("model."):
                         param = param.replace("model.", "")
-                    if model is None:
-                        model = []
                     model.append(param)
                 elif is_plot_panel_setup_param(param) or is_dimensions_param(param):
                     if param.startswith("dimensions."):
                         param = param.replace("dimensions.", "")
-                    if panel is None:
-                        panel = []
-                    panel.append(param)
+                    panels.append(param)
                 else:
-                    if other is None:
-                        other = []
                     other.append(param)
-            return model, panel, other
+            return model, panels, other
 
         # Group select and skip parameters
-        select_model, select_panel, select_outer = group_params(select)
-        skip_model, skip_panel, skip_outer = group_params(skip)
-        unrestricted = select is None and skip is None
-        decompress_model = (
-            unrestricted or select_model is not None or skip_model is not None
-        )
-        decompress_panel = (
-            unrestricted or select_panel is not None or skip_panel is not None
-        )
-        decompress_outer = (
-            unrestricted or select_outer is not None or skip_outer is not None
-        )
+        select_model, select_panels, select_outer = group_params(select)
+        skip_model, skip_panels, skip_outer = group_params(skip)
 
         # PlotSetup.model
         model_dct = self.dict().pop("model")
-        if not decompress_model:
-            model_dcts = [model_dct]
-        else:
-            model_dcts = decompress_multival_dict(model_dct, select_model, skip_model)
+        model_dcts = decompress_multival_dict(model_dct, select_model, skip_model)
 
         # PlotSetup.panels
-        panel_dcts: List[Dict[str, Any]]
-        if not decompress_panel:
-            panel_dcts = self.panels.dicts()
-        else:
-            panel_dcts = []
-            for panels in self.panels.decompress(
-                select_panel, skip_panel, internal=False
-            ):
-                panel_dcts.extend(panels.dicts())
+        panels_dcts_lst: List[List[Dict[str, Any]]] = []
+        for panels in self.panels.decompress(
+            select_panels, skip_panels, internal=False
+        ):
+            panels_dcts_lst.append(panels.dicts())
 
         # PlotSetup.*
         outer_dct = self.dict()
-        if not decompress_outer:
-            outer_dcts = [outer_dct]
-        else:
-            outer_dct.pop("panels")
-            outer_dcts = decompress_multival_dict(outer_dct, select_outer, skip_outer)
+        outer_dct.pop("panels")
+        outer_dcts = decompress_multival_dict(outer_dct, select_outer, skip_outer)
 
         # Merge expanded dicts
         dcts: List[Dict[str, Any]] = []
         for outer_dct_i in outer_dcts:
             for model_dct in model_dcts:
-                for panel_dct in panel_dcts:
+                for panels_dcts in panels_dcts_lst:
                     dcts.append(
                         {
                             **deepcopy(outer_dct_i),
                             "model": deepcopy(model_dct),
-                            "panels": [deepcopy(panel_dct)],
+                            "panels": deepcopy(panels_dcts),
                         }
                     )
 
-        setups: List[PlotSetup] = []
-        for dct in dcts:
-            setups.append(type(self).create(dct))
-
         if internal:
-            return PlotSetupGroup(setups)
-        return setups
+            return PlotSetupGroup.create(dcts)
+        return list(map(type(self).create, dcts))
 
     @overload
     def derive(self, params: Mapping[str, Any]) -> "PlotSetup":
@@ -323,6 +296,8 @@ class PlotSetup:
             if isinstance(params.get("panels"), Mapping):
                 params["panels"] = [params["panels"]]
             dct = merge_dicts(self.dict(), params, overwrite_seqs=True)
+            if len(dct.get("panels", [])) == 1:
+                dct["panels"] = next(iter(dct["panels"]))
             return type(self).create(dct)
         else:
             raise ValueError(
@@ -488,14 +463,14 @@ class PlotSetup:
 
         """
         params = dict(params)
-        panel_params: Union[Dict[str, Any], List[Dict[str, Any]]]
+        panels_params: Union[Dict[str, Any], List[Dict[str, Any]]]
         if "panels" not in params:
-            panel_params = []
+            panels_params = []
         else:
             if isinstance(params["panels"], Mapping):
-                panel_params = dict(params["panels"])
+                panels_params = dict(params["panels"])
             else:
-                panel_params = list(map(dict, params["panels"]))
+                panels_params = list(map(dict, params["panels"]))
             del params["panels"]
         model_params: Dict[str, Any]
         if "model" not in params:
@@ -514,10 +489,10 @@ class PlotSetup:
                 unpack_str=False,
             )
             params[name] = value
-        if panel_params:
+        if panels_params:
             multipanel_param = params.get("multipanel_param")
             params["panels"] = PlotPanelSetupGroup.create(
-                panel_params, multipanel_param=multipanel_param
+                panels_params, multipanel_param=multipanel_param
             )
         if model_params:
             params["model"] = ModelSetup.create(model_params)
@@ -1035,6 +1010,7 @@ class PlotSetupGroup:
             dcts: List[Dict[str, Any]] = []
             for panels_dct in panels_dcts:
                 dcts.append({**dct, "panels": panels_dct})
+            # breakpoint()
             return dcts
 
         if isinstance(setups, Mapping):
@@ -1044,7 +1020,14 @@ class PlotSetupGroup:
             if isinstance(obj, PlotSetup):
                 setup_lst.append(obj)
             else:
-                for dct in prepare_setup_dcts(obj):
+                # SR_TMP < TODO move logic of prepare_setup_dcts down
+                dcts: Sequence[Mapping[str, Any]]
+                if obj.get("plot_type") == "multipanel":
+                    dcts = [obj]
+                else:
+                    dcts = prepare_setup_dcts(obj)
+                # SR_TMP >
+                for dct in dcts:
                     setup = PlotSetup.create(dct)
                     setup_lst.append(setup)
         return cls(setup_lst)

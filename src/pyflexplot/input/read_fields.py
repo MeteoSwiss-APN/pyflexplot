@@ -182,14 +182,27 @@ def prepare_paths(path: str, ens_member_ids: Optional[Sequence[int]]) -> List[st
 def group_setups_by_plot_type(setups: PlotSetupGroup) -> PlotSetupGroup:
     """Group the setups by plot type and time step.
 
-    Return a list of setup groups, each of which defines one plot type
-    (which may be based on on multiple fields if it has multiple panels) at
-    different time steps.
+    Return a group of setups, each of which defines one plot type (based on
+    multiple fields in case of multiple panels) at different time steps.
 
     """
     setup_lst: List[PlotSetup] = []
-    for (_, plot_variable, combine_levels, combine_species), sub_setups in setups.group(
-        ["model.ens_member_id", "plot_variable", "combine_levels", "combine_species"]
+    for (
+        _,
+        plot_type,
+        multipanel_param,
+        plot_variable,
+        combine_levels,
+        combine_species,
+    ), sub_setups in setups.group(
+        [
+            "model.ens_member_id",
+            "plot_type",
+            "multipanel_param",
+            "plot_variable",
+            "combine_levels",
+            "combine_species",
+        ]
     ).items():
         skip = ["outfile", "dimensions.time", "model.ens_member_id"]
         if plot_variable in [
@@ -202,6 +215,8 @@ def group_setups_by_plot_type(setups: PlotSetupGroup) -> PlotSetupGroup:
                 skip.append("dimensions.level")
         if combine_species:
             skip.append("dimensions.species_id")
+        if plot_type == "multipanel":
+            skip.append(multipanel_param)
         for plot_setup in sub_setups.decompress(None, skip=skip):
             setup_lst.append(plot_setup)
     return PlotSetupGroup(setup_lst)

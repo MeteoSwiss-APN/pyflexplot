@@ -262,7 +262,7 @@ class PlotPanelSetup:
                 f" {type(self).__name__}.plot_variable; decompress the Dimensions"
                 " object instead which on its own is independent of plot_variable"
             )
-        skip_dims = list(skip or []) + ["variable"]
+        skip_dims = list(skip_dims or []) + ["variable"]
         # SR_TMP >
         setups: List["PlotPanelSetup"] = []
         for dims in self.dimensions.decompress(select=select_dims, skip=skip_dims):
@@ -482,18 +482,28 @@ class PlotPanelSetupGroup:
                 ``skip`` and ``select`` will be skipped.
 
             internal (optional): Decompress setup group internally and return
-                one group containing the decompressed setup objectss; otherwise,
+                one group containing the decompressed setup objects; otherwise,
                 a separate group is returned for each decompressed setup object.
 
         """
-        sub_setups: List[PlotPanelSetup] = [
-            sub_setup
-            for setup in self
-            for sub_setup in setup.decompress(select=select, skip=skip)
-        ]
         if internal:
+            sub_setups: List[PlotPanelSetup] = [
+                sub_setup
+                for setup in self
+                for sub_setup in setup.decompress(select=select, skip=skip)
+            ]
             return type(self)(sub_setups)
-        return [type(self)([sub_setup]) for sub_setup in sub_setups]
+        if skip is None:
+            return [
+                type(self)([setup]) for setup in self.decompress(select, internal=True)
+            ]
+        setups_by_idx: Dict[int, List[PlotPanelSetup]] = {}
+        for setup in self:
+            for idx, sub_setup in enumerate(setup.decompress(select=select, skip=skip)):
+                if idx not in setups_by_idx:
+                    setups_by_idx[idx] = []
+                setups_by_idx[idx].append(sub_setup)
+        return [type(self)(setups) for setups in setups_by_idx.values()]
 
     def dicts(self) -> List[Dict[str, Any]]:
         return [setup.dict() for setup in self]
