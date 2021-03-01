@@ -80,18 +80,7 @@ class FilePathFormatter:
             cast(int, setup.model.base_time), setup.outfile_time_format
         )[0]
 
-        # Prepare ens variable
-        ens_variable = setup.panels.collect_equal("ens_variable")
-        if ens_variable == "percentile":
-            ens_variable += f"-{setup.panels.collect_equal('ens_params').pctl:g}"
-        elif ens_variable == "probability":
-            if setup.panels.collect_equal("ens_params").thr_type == "lower":
-                ens_variable += "-gt"
-            elif setup.panels.collect_equal("ens_params").thr_type == "upper":
-                ens_variable += "-lt"
-            ens_variable += f"-{setup.panels.collect_equal('ens_params').thr:g}"
-
-        # Prepare input variable
+        # Prepare plot variable
         plot_variable = setup.panels.collect_equal("plot_variable")
         if plot_variable.endswith("deposition"):
             if not setup.panels.collect_equal("integrate"):
@@ -100,12 +89,36 @@ class FilePathFormatter:
             if setup.panels.collect_equal("integrate"):
                 plot_variable += "-integr"
 
+        def prepare_ens_variable(ens_variable: str) -> str:
+            if ens_variable == "percentile":
+                ens_variable += f"-{setup.panels.collect_equal('ens_params').pctl:g}"
+            elif ens_variable == "probability":
+                if setup.panels.collect_equal("ens_params").thr_type == "lower":
+                    ens_variable += "-gt"
+                elif setup.panels.collect_equal("ens_params").thr_type == "upper":
+                    ens_variable += "-lt"
+                ens_variable += f"-{setup.panels.collect_equal('ens_params').thr:g}"
+            return ens_variable
+
+        # Prepare Prepare ens variable
+        ens_variable: str
+        if setup.plot_type == "multipanel" and setup.multipanel_param == "ens_variable":
+            ens_variable = "_".join(
+                [
+                    prepare_ens_variable(ens_variable_i)
+                    for ens_variable_i in setup.panels.collect("ens_variable")
+                ]
+            )
+        else:
+            ens_variable = setup.panels.collect_equal("ens_variable")
+            ens_variable = prepare_ens_variable(ens_variable)
+
         # Prepare release start
         release_start_fmtd: str = self._format_time_step(
             release_start, setup.outfile_time_format
         )
 
-        # Prepare time steps
+        # time steps
         time_steps_fmtd: List[str] = self._format_time_steps(
             time_steps, setup.outfile_time_format
         )

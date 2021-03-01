@@ -7,6 +7,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 
 # Third-party
@@ -16,6 +17,7 @@ from matplotlib.figure import Figure
 
 # Local
 from ..input.field import Field
+from ..input.field import FieldGroup
 from ..plot_layouts import BoxedPlotLayoutType
 from ..setups.plot_setup import PlotSetup
 from ..utils.summarize import summarizable
@@ -102,18 +104,26 @@ class DummyBoxedPlot:
     """Dummy for dry runs."""
 
 
-@summarizable(attrs=["ax_map", "boxes", "field", "fig", "map_config"])
+@summarizable(attrs=["ax_map", "boxes", "fields", "fig", "map_configs"])
 # pylint: disable=R0902  # too-many-instance-attributes
 class BoxedPlot:
     """A FLEXPART dispersion plot."""
 
     def __init__(
-        self, field: Field, config: BoxedPlotConfig, map_config: MapAxesConfig
+        self,
+        fields: FieldGroup,
+        config: BoxedPlotConfig,
+        map_configs: Sequence[MapAxesConfig],
     ) -> None:
         """Create an instance of ``BoxedPlot``."""
-        self.field = field
+        if len(fields) != len(map_configs):
+            raise ValueError(
+                f"inconsistent numbers of fields ({len(fields)}) and map configs"
+                f" ({len(map_configs)})"
+            )
+        self.fields = fields
         self.config = config
-        self.map_config = map_config
+        self.map_configs = map_configs
         self.boxes: Dict[str, TextBoxAxes] = {}
         self._fig: Optional[Figure] = None
         self.ax_map: MapAxes  # SR_TMP TODO eliminate single centralized Map axes
@@ -139,15 +149,24 @@ class BoxedPlot:
         plt.close(self.fig)
 
     def add_map_plot(self, rect: RectType) -> MapAxes:
-        ax = MapAxes(
-            config=self.map_config,
-            field=self.field,
-            fig=self.fig,
-            rect=rect,
-        )
-        self.ax_map = ax  # SR_TMP
-        self._draw_colors_contours()
-        return ax
+        if len(self.fields) == 1:
+            field = next(iter(self.fields))
+            map_config = next(iter(self.map_configs))
+            ax = MapAxes(
+                config=map_config,
+                field=field,
+                fig=self.fig,
+                rect=rect,
+            )
+            self.ax_map = ax  # SR_TMP
+            self._draw_colors_contours(field)
+            return ax
+        return self._add_multipanel_map_plot(rect)
+
+    def _add_multipanel_map_plot(self, rect: RectType) -> MapAxes:
+        if len(self.fields) != 4:
+            raise NotImplementedError(f"{len(self.fields)} number of panels")
+        raise NotImplementedError("multiple panels")
 
     def add_text_box(
         self,
@@ -167,8 +186,8 @@ class BoxedPlot:
     # SR_TODO Pull out of BoxedPlot class to MapAxes or some MapAxesContent class
     # SR_TODO Replace checks with plot-specific config/setup object
     # pylint: disable=R0912  # too-many-branches
-    def _draw_colors_contours(self) -> None:
-        arr = np.asarray(self.field.fld)
+    def _draw_colors_contours(self, field: Field) -> None:
+        arr = np.asarray(field.fld)
         levels = np.asarray(self.config.levels.levels)
         colors = self.config.colors
         assert colors is not None  # SR_TMP
@@ -189,8 +208,8 @@ class BoxedPlot:
 
         try:
             contours = self.ax_map.ax.contourf(
-                self.field.lon,
-                self.field.lat,
+                field.lon,
+                field.lat,
                 arr,
                 transform=self.ax_map.trans.proj_data,
                 levels=levels,

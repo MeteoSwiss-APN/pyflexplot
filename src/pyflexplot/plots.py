@@ -80,14 +80,15 @@ def format_out_file_paths(
     field_group: FieldGroup, prev_paths: List[str], dest_dir: Optional[str] = None
 ) -> List[str]:
     plot_setup = field_group.plot_setup
-    # SR_TMP <  SR_MULTIPANEL
-    if len(field_group) > 1:
-        raise NotImplementedError("multipanel plot")
-    field = next(iter(field_group))
-    # SR_TMP >  SR_MULTIPANEL
     # SR_TMP <
-    release_mdata = field.mdata.release
-    simulation_mdata = field.mdata.simulation
+    mdata = next(iter(field_group)).mdata
+    for field in field_group:
+        if field.mdata != mdata:
+            raise NotImplementedError(
+                f"meta data differ between fields:\n{field.mdata}\n!=\n{mdata}"
+            )
+    release_mdata = mdata.release
+    simulation_mdata = mdata.simulation
     # SR_TMP >
     out_file_templates: Sequence[str] = (
         [plot_setup.outfile]
@@ -127,22 +128,29 @@ def prepare_plot(
     else:
         plot_setup = field_group.plot_setup
         # SR_TMP <  SR_MULTIPANEL
+        mdata = next(iter(field_group)).mdata
+        for field in field_group:
+            if field.mdata != mdata:
+                raise NotImplementedError(
+                    f"meta data differ between fields:\n{field.mdata}\n!=\n{mdata}"
+                )
         if len(field_group) > 1:
-            raise NotImplementedError("multipanel plot")
-        field = next(iter(field_group))
+            print("warning: using time_props of first panel of multipanel plot")
+        time_stats = next(iter(field_group)).time_props.stats
         # SR_TMP >  SR_MULTIPANEL
-        time_stats = field.time_props.stats
-        mdata = field.mdata
         labels = create_box_labels(plot_setup, mdata)
         plot_config = create_plot_config(
             setup=plot_setup, time_stats=time_stats, labels=labels
         )
-        map_config = create_map_config(
-            field_group.plot_setup,
-            field.panel_setup,
-            plot_config.layout.aspect_center(),
-        )
-        return BoxedPlot(field, plot_config, map_config)
+        map_configs: List[MapAxesConfig] = [
+            create_map_config(
+                field_group.plot_setup,
+                field.panel_setup,
+                plot_config.layout.aspect_center(),
+            )
+            for field in field_group
+        ]
+        return BoxedPlot(field_group, plot_config, map_configs)
 
 
 def create_plot(
@@ -190,7 +198,14 @@ def plot_add_text_boxes(
     def fill_box_2nd_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the secondary title box of the deterministic plot layout."""
         font_size = plot.config.font.sizes.content_large
-        mdata = plot.field.mdata
+        # SR_TMP <
+        mdata = next(iter(plot.fields)).mdata
+        for field in plot.fields:
+            if field.mdata != mdata:
+                raise NotImplementedError(
+                    f"meta data differ between fields:\n{field.mdata}\n!=\n{mdata}"
+                )
+        # SR_TMP >
         box.text(
             capitalize(format_meta_datum(mdata.species.name)),
             loc="tc",
@@ -223,7 +238,18 @@ def plot_add_text_boxes(
     def fill_box_legend(box: TextBoxAxes, plot: BoxedPlot) -> None:
         """Fill the box containing the plot legend."""
         labels = plot.config.labels["legend"]
-        mdata = plot.field.mdata
+        # SR_TMP <
+        mdata = next(iter(plot.fields)).mdata
+        for field in plot.fields:
+            if field.mdata != mdata:
+                raise NotImplementedError(
+                    f"meta data differ between fields:\n{field.mdata}\n!=\n{mdata}"
+                )
+        if len(plot.fields) > 1:
+            print(
+                "warning: plot_add_markers: selecting field of first of multiple panels"
+            )
+        # SR_TMP >
 
         # Box title
         box.text(
@@ -296,7 +322,7 @@ def plot_add_text_boxes(
                 **plot.config.markers.markers["max"],
             )
             box.text(
-                s=format_max_marker_label(labels, plot.field.fld),
+                s=format_max_marker_label(labels, field.fld),
                 loc="tc",
                 dx=dx_marker_label,
                 dy=dy_marker_label_max,
@@ -402,7 +428,17 @@ def plot_add_text_boxes(
 
 def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
     config = plot.config
-    mdata = plot.field.mdata
+    # SR_TMP <
+    mdata = next(iter(plot.fields)).mdata
+    for field in plot.fields:
+        if field.mdata != mdata:
+            raise NotImplementedError(
+                f"meta data differ between fields:\n{field.mdata}\n!=\n{mdata}"
+            )
+    field = next(iter(plot.fields))
+    if len(plot.fields) > 1:
+        print("warning: plot_add_markers: selecting field of first of multiple panels")
+    # SR_TMP >
     if config.markers.mark_release_site:
         assert config.markers.markers is not None  # mypy
         axs_map.add_marker(
@@ -413,7 +449,7 @@ def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
     if config.markers.mark_field_max:
         assert config.markers.markers is not None  # mypy
         try:
-            max_lat, max_lon = plot.field.locate_max()
+            max_lat, max_lon = field.locate_max()
         except FieldAllNaNError:
             warnings.warn("skip maximum marker (all-nan field)")
         else:
@@ -483,7 +519,12 @@ def create_plot_config(
     labels: Dict[str, Dict[str, Any]],
 ) -> BoxedPlotConfig:
     plot_variable = setup.panels.collect_equal("plot_variable")
-    ens_variable = setup.panels.collect_equal("ens_variable")
+    # SR_TMP <
+    if setup.plot_type == "multipanel" and setup.multipanel_param == "ens_variable":
+        ens_variable = "+".join(setup.panels.collect("ens_variable"))
+    else:
+        ens_variable = setup.panels.collect_equal("ens_variable")
+    # SR_TMP >
 
     plot_config_dct: Dict[str, Any] = {
         "fig_size": (12.5 * setup.scale_fact, 8.0 * setup.scale_fact),
@@ -551,9 +592,30 @@ def create_plot_config(
             ens_variable == "ens_cloud_departure_time"
         ):
             levels_config_dct["extend"] = "max"
-    levels_config_dct["levels"] = levels_from_time_stats(
-        setup, time_stats, levels_config_dct
-    )
+    # SR_TMP < TODO proper multipanel support
+    if setup.plot_type == "multipanel":
+        if setup.multipanel_param == "ens_variable":
+            print(
+                "warning: create_plot_config: selecting ens_variable of first of"
+                " multiple panels"
+            )
+            ens_variable = next(iter(setup.panels)).ens_variable
+            levels_config_dct["levels"] = levels_from_time_stats(
+                simulation_type=setup.model.simulation_type,
+                ens_variable=ens_variable,
+                time_stats=time_stats,
+                levels_config_dct=levels_config_dct,
+            )
+        else:
+            raise NotImplementedError(f"multipanel_param='{setup.multipanel_param}'")
+    else:
+        levels_config_dct["levels"] = levels_from_time_stats(
+            simulation_type=setup.model.simulation_type,
+            ens_variable=setup.panels.collect_equal("ens_variable"),
+            time_stats=time_stats,
+            levels_config_dct=levels_config_dct,
+        )
+    # SR_TMP >
     legend_config_dct["labels"] = format_level_ranges(
         levels=levels_config_dct["levels"],
         style=legend_config_dct.get("range_style", "base"),
@@ -674,8 +736,13 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
     words.set_active_lang(setup.panels.collect_equal("lang"))
 
     ens_params = setup.panels.collect_equal("ens_params")
-    ens_variable = setup.panels.collect_equal("ens_variable")
     plot_variable = setup.panels.collect_equal("plot_variable")
+    # SR_TMP <
+    if setup.plot_type == "multipanel" and setup.multipanel_param == "ens_variable":
+        ens_variable = "+".join(setup.panels.collect("ens_variable"))
+    else:
+        ens_variable = setup.panels.collect_equal("ens_variable")
+    # SR_TMP >
 
     # Format variable name in various ways
     names = format_names_etc(setup, words, mdata)
@@ -876,9 +943,14 @@ def format_names_etc(
     setup: PlotSetup, words: TranslatedWords, mdata: MetaData
 ) -> Dict[str, str]:
     ens_params = setup.panels.collect_equal("ens_params")
-    ens_variable = setup.panels.collect_equal("ens_variable")
     plot_variable = setup.panels.collect_equal("plot_variable")
     integrate = setup.panels.collect_equal("integrate")
+    # SR_TMP <
+    if setup.plot_type == "multipanel" and setup.multipanel_param == "ens_variable":
+        ens_variable = "+".join(setup.panels.collect("ens_variable"))
+    else:
+        ens_variable = setup.panels.collect_equal("ens_variable")
+    # SR_TMP >
 
     long_name = ""
     short_name = ""
@@ -980,7 +1052,21 @@ def format_names_etc(
             short_name = words["departure"].s
             ens_var_name = words["ensemble_cloud_departure_time", "abbr"].s
         if ens_var_name == "none":
-            ens_var_name = words[ens_variable].c
+            # SR_TMP <
+            # ens_var_name = words[ens_variable].c
+            if (
+                setup.plot_type == "multipanel"
+                and setup.multipanel_param == "ens_variable"
+            ):
+                ens_var_name = " + ".join(
+                    [
+                        words[ens_variable_i].c
+                        for ens_variable_i in setup.collect("ens_variable")
+                    ]
+                )
+            else:
+                ens_var_name = words[ens_variable].c
+            # SR_TMP >
 
     # SR_TMP <
     if not short_name:
@@ -1249,7 +1335,10 @@ def colors_from_cmap(cmap, n_levels, extend):
 
 
 def levels_from_time_stats(
-    setup: PlotSetup, time_stats: FieldStats, levels_config_dct: Dict[str, Any]
+    simulation_type: str,
+    ens_variable: Optional[str],
+    time_stats: FieldStats,
+    levels_config_dct: Dict[str, Any],
 ) -> np.ndarray:
     def _auto_levels_log10(n_levels: int, val_max: float) -> List[float]:
         if not np.isfinite(val_max):
@@ -1264,10 +1353,8 @@ def levels_from_time_stats(
             log10_max - (n_levels - 1) * log10_d, log10_max + 0.5 * log10_d, log10_d
         )
 
-    if setup.model.simulation_type == "ensemble":
-        if setup.panels.collect_equal("ens_variable").endswith(
-            "probability"
-        ) or setup.panels.collect_equal("ens_variable") in [
+    if simulation_type == "ensemble":
+        if ens_variable.endswith("probability") or ens_variable in [
             "ens_cloud_arrival_time",
             "ens_cloud_departure_time",
         ]:

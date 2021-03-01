@@ -100,16 +100,22 @@ def read_fields(
     """
     setup_group = setup_group.copy()
     model_setup = setup_group.collect_equal("model")
-    raw_infile = _override_infile or setup_group.infile
     ens_member_ids = setup_group.ens_member_ids
-    infiles = prepare_paths(raw_infile, ens_member_ids)
-
-    log(dbg=f"reading fields from {len(infiles)} derived from {raw_infile}")
 
     if not isinstance(config, InputConfig):
         config = InputConfig(**(config or {}))
 
-    files = InputFileEnsemble(infiles, config, model_setup)
+    files = InputFileEnsemble(
+        raw_path=setup_group.infile,
+        config=config,
+        model_setup=model_setup,
+        ens_member_ids=ens_member_ids,
+        override_raw_path=_override_infile,
+    )
+
+    # SR_TMP < TODO improve log message
+    log(dbg=f"reading fields from {files}")
+    # SR_TMP >
 
     first_path = next(iter(files.paths))
     with nc4.Dataset(first_path) as fi:
@@ -148,12 +154,7 @@ def read_fields(
 
     n_plt = len(field_groups)
     n_tot = sum([len(field_group) for field_group in field_groups])
-    log(
-        dbg=(
-            f"done reading {len(infiles)} infiles:"
-            f" read {n_tot} fields for {n_plt} plots"
-        )
-    )
+    log(dbg=(f"done reading infiles: read {n_tot} fields for {n_plt} plots"))
     return field_groups
 
 
@@ -228,23 +229,48 @@ class InputFileEnsemble:
 
     def __init__(
         self,
-        paths: Sequence[str],
+        raw_path: str,
         config: InputConfig,
         model_setup: ModelSetup,
+        ens_member_ids: Optional[Sequence[int]] = None,
+        override_raw_path: Optional[str] = None,
     ):
         """Create an instance of ``InputFileEnsemble``.
 
         Args:
-            paths: File paths (one for deterministic, multiple for ensemble).
+            raw_path: Raw file path, with format key for member ID in case of
+                an ensemble simulation.
 
             config: Input configuration.
 
             model_setup: Model setup.
 
+            ens_member_ids (optional): Ensemble member IDs; required for
+                ensemble simulations, in which case ``raw_path`` must contain
+                a corresponding format key.
+
+            override_raw_path (optional): Raw path from which to derive the
+                paths of the files on disk; if passed, the paths derived from
+                ``raw_path`` are only passed to the returned ``FieldGroup``
+                object as attributes; useful in tests to read files from a
+                temporary directory that should not be stored in the attributes,
+                in which case a simplified, reproducible path can be passed to
+                ``raw_path``, and the actual path to ``override_raw_path``.
+
         """
-        self.paths: List[str] = list(paths)
         self.config: InputConfig = config
         self.model_setup: ModelSetup = model_setup
+
+        self.paths: List[str] = prepare_paths(
+            override_raw_path or raw_path, ens_member_ids
+        )
+        self.public_paths: List[str] = prepare_paths(raw_path, ens_member_ids)
+        if len(self.paths) != len(self.public_paths):
+            raise Exception(
+                f"unequal number of paths ({len(self.paths)}) and public_paths"
+                f" ({len(self.public_paths)}) derived from raw_path '{raw_path}'"
+                f" and override_raw_path '{override_raw_path}'"
+            )
 
         # SR_TMP TODO Fix the cache!!!
         if self.config.cache_on:
@@ -351,7 +377,7 @@ class InputFileEnsemble:
             )
             group_attrs = FieldGroupAttrs(
                 raw_path=plot_setup_i.infile,
-                paths=self.paths,
+                paths=self.public_paths,
                 ens_member_ids=plot_setup.model.ens_member_id,
             )
             field_group = FieldGroup(
