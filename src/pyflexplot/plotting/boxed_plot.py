@@ -158,15 +158,46 @@ class BoxedPlot:
                 fig=self.fig,
                 rect=rect,
             )
+            self._draw_colors_contours(ax, field)
             self.ax_map = ax  # SR_TMP
-            self._draw_colors_contours(field)
             return ax
         return self._add_multipanel_map_plot(rect)
 
     def _add_multipanel_map_plot(self, rect: RectType) -> MapAxes:
         if len(self.fields) != 4:
             raise NotImplementedError(f"{len(self.fields)} number of panels")
-        raise NotImplementedError("multiple panels")
+
+        # SR_TMP <
+        x0, y0, w, h = rect
+        rel_pad = 0.025
+        w_pad = rel_pad * w
+        h_pad = w_pad  # SR_TMP
+        w = 0.5 * w - 0.5 * w_pad
+        h = 0.5 * h - 0.5 * h_pad
+        x1 = x0 + w + w_pad
+        y1 = y0 + h + h_pad
+        rects = [
+            (x0, y1, w, h),
+            (x1, y1, w, h),
+            (x0, y0, w, h),
+            (x1, y0, w, h),
+        ]
+        axs = []
+        for field, map_config, rect in zip(self.fields, self.map_configs, rects):
+            ax = MapAxes(
+                config=map_config,
+                field=field,
+                fig=self.fig,
+                rect=rect,
+            )
+            self._draw_colors_contours(ax, field)
+            axs.append(ax)
+        # SR_TMP <
+        ax = next(iter(axs))
+        # SR_TMP >
+        self.ax_map = ax  # SR_TMP
+        return ax
+        # SR_TMP >
 
     def add_text_box(
         self,
@@ -186,7 +217,7 @@ class BoxedPlot:
     # SR_TODO Pull out of BoxedPlot class to MapAxes or some MapAxesContent class
     # SR_TODO Replace checks with plot-specific config/setup object
     # pylint: disable=R0912  # too-many-branches
-    def _draw_colors_contours(self, field: Field) -> None:
+    def _draw_colors_contours(self, ax_map: MapAxes, field: Field) -> None:
         arr = np.asarray(field.fld)
         levels = np.asarray(self.config.levels.levels)
         colors = self.config.colors
@@ -207,14 +238,14 @@ class BoxedPlot:
         arr = np.where(np.isposinf(arr), np.finfo(np.float32).max, arr)
 
         try:
-            contours = self.ax_map.ax.contourf(
+            contours = ax_map.ax.contourf(
                 field.lon,
                 field.lat,
                 arr,
-                transform=self.ax_map.trans.proj_data,
+                transform=ax_map.trans.proj_data,
                 levels=levels,
                 extend=extend,
-                zorder=self.ax_map.zorder["fld"],
+                zorder=ax_map.zorder["fld"],
                 colors=colors,
             )
         except ValueError as e:

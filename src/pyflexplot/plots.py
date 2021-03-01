@@ -1058,7 +1058,7 @@ def format_names_etc(
                 setup.plot_type == "multipanel"
                 and setup.multipanel_param == "ens_variable"
             ):
-                ens_var_name = " + ".join(
+                ens_var_name = "\n+ ".join(
                     [
                         words[ens_variable_i].c
                         for ens_variable_i in setup.collect("ens_variable")
