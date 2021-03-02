@@ -159,7 +159,7 @@ def read_fields(
 
 def prepare_paths(path: str, ens_member_ids: Optional[Sequence[int]]) -> List[str]:
     """Prepare paths: one for deterministic, multiple for ensemble run."""
-    if re.search(r"{ens_member(:[0-9]+d)?}", path):
+    if re.search(r"{ens_member(:[0-9]+d?)?}", path):
         if not ens_member_ids:
             raise ValueError(
                 "input file path contains ensemble member format key, but no "
