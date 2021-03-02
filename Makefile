@@ -332,9 +332,9 @@ else
 	@echo -e '\nTag annotation:\n\n$(subst ',",$(MSG))\n'
 	@${PREFIX}bumpversion patch --verbose --no-commit --no-tag && echo
 	@${PREFIX}pre-commit run --files $$(git diff --name-only) && git add -u
-	@git commit -m "new version v$$(cat VERSION.txt) (patch bump)"$$'\n\n$(subst ',",$(MSG))' --no-verify && echo
-	@git tag -a v$$(cat VERSION.txt) -m $$'$(subst ',",$(MSG))'
-	@echo -e "\ngit tag -n -l v$$(cat VERSION.txt)" && git tag -n -l v$$(cat VERSION.txt)
+	@git commit -m "new version v$$(cat VERSION) (patch bump)"$$'\n\n$(subst ',",$(MSG))' --no-verify && echo
+	@git tag -a v$$(cat VERSION) -m $$'$(subst ',",$(MSG))'
+	@echo -e "\ngit tag -n -l v$$(cat VERSION)" && git tag -n -l v$$(cat VERSION)
 	@echo -e "\ngit log -n1" && git log -n1
 endif
 # ' (close quote that vim thinks is still open to get the syntax highlighting back in order)
@@ -346,9 +346,9 @@ ifeq ($(MSG), "")
 	@echo -e '\nTag annotation:\n\n$(subst ',",$(MSG))\n'
 	@${PREFIX}bumpversion minor --verbose --no-commit --no-tag && echo
 	@${PREFIX}pre-commit run --files $$(git diff --name-only) && git add -u
-	@git commit -m "new version v$$(cat VERSION.txt) (minor bump)"$$'\n\n$(subst ',",$(MSG))' --no-verify && echo
-	@git tag -a v$$(cat VERSION.txt) -m $$'$(subst ',",$(MSG))'
-	@echo -e "\ngit tag -n -l v$$(cat VERSION.txt)" && git tag -n -l v$$(cat VERSION.txt)
+	@git commit -m "new version v$$(cat VERSION) (minor bump)"$$'\n\n$(subst ',",$(MSG))' --no-verify && echo
+	@git tag -a v$$(cat VERSION) -m $$'$(subst ',",$(MSG))'
+	@echo -e "\ngit tag -n -l v$$(cat VERSION)" && git tag -n -l v$$(cat VERSION)
 	@echo -e "\ngit log -n1" && git log -n1
 else
 endif
@@ -361,9 +361,9 @@ ifeq ($(MSG), "")
 	@echo -e '\nTag annotation:\n\n$(subst ',",$(MSG))\n'
 	@${PREFIX}bumpversion major --verbose --no-commit --no-tag && echo
 	@${PREFIX}pre-commit run --files $$(git diff --name-only) && git add -u
-	@git commit -m "new version v$$(cat VERSION.txt) (major bump)"$$'\n\n$(subst ',",$(MSG))' --no-verify && echo
-	@git tag -a v$$(cat VERSION.txt) -m $$'$(subst ',",$(MSG))'
-	@echo -e "\ngit tag -n -l v$$(cat VERSION.txt)" && git tag -n -l v$$(cat VERSION.txt)
+	@git commit -m "new version v$$(cat VERSION) (major bump)"$$'\n\n$(subst ',",$(MSG))' --no-verify && echo
+	@git tag -a v$$(cat VERSION) -m $$'$(subst ',",$(MSG))'
+	@echo -e "\ngit tag -n -l v$$(cat VERSION)" && git tag -n -l v$$(cat VERSION)
 	@echo -e "\ngit log -n1" && git log -n1
 else
 endif
