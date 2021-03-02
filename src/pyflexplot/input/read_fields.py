@@ -455,8 +455,12 @@ class InputFileEnsemble:
     ) -> Tuple[int, int, int, int]:
         """Get the shape of an array of fields across members and time steps."""
         dim_names = self._dim_names()
-        nlat = raw_dimensions[dim_names["lat"]]["size"]
-        nlon = raw_dimensions[dim_names["lon"]]["size"]
+        if self.config.dry_run:
+            nlat = 1
+            nlon = 1
+        else:
+            nlat = raw_dimensions[dim_names["lat"]]["size"]
+            nlon = raw_dimensions[dim_names["lon"]]["size"]
         nts = raw_dimensions[dim_names["time"]]["size"]
         n_mem = len(self.paths)
         self.lat = np.full((nlat,), np.nan)
@@ -466,8 +470,12 @@ class InputFileEnsemble:
     def _read_grid(self, fi: nc4.Dataset) -> None:
         """Read and prepare grid variables."""
         dim_names = self._dim_names()
-        lat = fi.variables[dim_names["lat"]][:]
-        lon = fi.variables[dim_names["lon"]][:]
+        if self.config.dry_run:
+            lat = np.zeros(1, np.float32)
+            lon = np.zeros(1, np.float32)
+        else:
+            lat = fi.variables[dim_names["lat"]][:]
+            lon = fi.variables[dim_names["lon"]][:]
         time = fi.variables[dim_names["time"]][:]
         time = self._prepare_time(fi, time)
         self.lat = lat
