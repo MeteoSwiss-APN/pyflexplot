@@ -1,0 +1,113 @@
+# PyFlexPlot setup file to create ensemble CCOSMO-1E plots
+
+[_base]
+# Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
+infile = "data/cosmo-1e/grid_conc_TBD_{ens_member:03}.nc"  # no test case
+ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+model = "COSMO-1E"
+lang = "de"
+outfile_time_format = "%Y%m%dT%H%M"
+combine_species = true
+
+[_base._concentration]
+plot_variable = "concentration"
+level = 0
+integrate = false
+time = "*"
+
+[_base._concentration._integr]
+integrate = true
+time = -1
+
+[_base._tot_deposition]
+plot_variable = "tot_deposition"
+integrate = true
+time = -1
+
+[_base._affected_area]
+plot_variable = "affected_area"
+integrate = true
+level = 0
+time = -1
+
+[_base._concentration."_probability+"]
+outfile = "cosmo-1e_probability_{domain}.pdf"
+ens_variable = "probability"
+ens_param_thr = 0
+[_base._concentration._integr."_probability+"]
+outfile = "cosmo-1e_probability_{domain}.pdf"
+ens_variable = "probability"
+ens_param_thr = 0
+[_base._tot_deposition."_probability+"]
+outfile = "cosmo-1e_probability_{domain}.pdf"
+ens_variable = "probability"
+ens_param_thr = 0
+[_base._affected_area."_probability+"]
+outfile = "cosmo-1e_probability_{domain}.pdf"
+ens_variable = "probability"
+ens_param_thr = 0
+
+[_base._concentration._integr."_pctl90+"]
+outfile = "cosmo-1e_percentile_{domain}.pdf"
+ens_variable = "percentile"
+ens_param_pctl = 90
+[_base._tot_deposition."_pctl90+"]
+outfile = "cosmo-1e_percentile_{domain}.pdf"
+ens_variable = "percentile"
+ens_param_pctl = 90
+[_base._affected_area."_pctl90+"]
+outfile = "cosmo-1e_percentile_{domain}.pdf"
+ens_variable = "percentile"
+ens_param_pctl = 90
+
+[_base._concentration._cloud]
+outfile = "cosmo-1e_cloud_timing_{domain}.pdf"
+ens_param_mem_min = 2
+ens_param_thr = 0.0
+time = 0
+[_base._concentration._cloud."_arrival+"]
+ens_variable = "ens_cloud_arrival_time"
+[_base._concentration._cloud."_departure+"]
+ens_variable = "ens_cloud_departure_time"
+
+[_base._concentration._integr."_min+"]
+outfile = "cosmo-1e_cloud_statistics_{domain}.pdf"
+ens_variable = "minimum"
+[_base._tot_deposition."_min+"]
+outfile = "cosmo-1e_cloud_statistics_{domain}.pdf"
+ens_variable = "minimum"
+[_base._affected_area."_min+"]
+outfile = "cosmo-1e_cloud_statistics_{domain}.pdf"
+ens_variable = "minimum"
+[_base._concentration._integr."_max+"]
+outfile = "cosmo-1e_cloud_statistics_{domain}.pdf"
+ens_variable = "maximum"
+[_base._tot_deposition."_max+"]
+outfile = "cosmo-1e_cloud_statistics_{domain}.pdf"
+ens_variable = "maximum"
+[_base._affected_area."_max+"]
+outfile = "cosmo-1e_cloud_statistics_{domain}.pdf"
+ens_variable = "maximum"
+[_base._concentration._integr."_mean+"]
+outfile = "cosmo-1e_cloud_statistics_{domain}.pdf"
+ens_variable = "mean"
+[_base._tot_deposition."_mean+"]
+outfile = "cosmo-1e_cloud_statistics_{domain}.pdf"
+ens_variable = "mean"
+[_base._affected_area."_mean+"]
+outfile = "cosmo-1e_cloud_statistics_{domain}.pdf"
+ens_variable = "mean"
+[_base._concentration._integr."_median+"]
+outfile = "cosmo-1e_cloud_statistics_{domain}.pdf"
+ens_variable = "median"
+[_base._tot_deposition."_median+"]
+outfile = "cosmo-1e_cloud_statistics_{domain}.pdf"
+ens_variable = "median"
+[_base._affected_area."_median+"]
+outfile = "cosmo-1e_cloud_statistics_{domain}.pdf"
+ens_variable = "median"
+
+["**".full]
+domain = "full"
+["**".ch]
+domain = "ch"
