@@ -507,8 +507,8 @@ def create_plot_config(
     elif setup.core.input_variable == "deposition":
         levels_config_dct["n"] = 9
     if (
-        setup.model.simulation_type == "deterministic"
-        and setup.core.input_variable == "affected_area"
+        setup.core.input_variable == "affected_area"
+        and setup.core.ens_variable != "probability"
     ):
         levels_config_dct["extend"] = "none"
         levels_config_dct["levels"] = np.array([0.0, np.inf])
@@ -565,8 +565,8 @@ def create_plot_config(
     color_under: Optional[str] = None
     color_over: Optional[str] = None
     if (
-        setup.model.simulation_type == "deterministic"
-        and setup.core.input_variable == "affected_area"
+        setup.core.input_variable == "affected_area"
+        and setup.core.ens_variable != "probability"
     ):
         cmap = "mono"
     elif (
