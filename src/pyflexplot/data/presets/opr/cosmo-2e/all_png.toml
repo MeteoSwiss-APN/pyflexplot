@@ -1,0 +1,94 @@
+# PyFlexPlot setup file to create ensemble CCOSMO-2E plots
+
+[_base]
+# Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
+infile = "data/cosmo-2e/grid_conc_xxxx_20190731000000_{ens_member:03}.nc"
+ens_member_id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+model = "COSMO-2E"
+lang = "de"
+outfile_time_format = "%Y%m%dT%H%M"
+combine_species = true
+outfile = "cosmo-2e_{ens_variable}_{plot_variable}_{domain}_{lang}_ts-{time_idx:02d}.png"
+
+[_base._concentration]
+plot_variable = "concentration"
+level = 0
+integrate = false
+time = "*"
+
+[_base._concentration._integr]
+integrate = true
+time = -1
+
+[_base._tot_deposition]
+plot_variable = "tot_deposition"
+integrate = true
+time = -1
+
+[_base._affected_area]
+plot_variable = "affected_area"
+integrate = true
+level = 0
+time = -1
+
+[_base._concentration."_probability+"]
+ens_variable = "probability"
+ens_param_thr = 0
+[_base._concentration._integr."_probability+"]
+ens_variable = "probability"
+ens_param_thr = 0
+[_base._tot_deposition."_probability+"]
+ens_variable = "probability"
+ens_param_thr = 0
+[_base._affected_area."_probability+"]
+ens_variable = "probability"
+ens_param_thr = 0
+
+[_base._concentration._integr."_pctl95+"]
+ens_variable = "percentile"
+ens_param_pctl = 95
+[_base._tot_deposition."_pctl95+"]
+ens_variable = "percentile"
+ens_param_pctl = 95
+[_base._affected_area."_pctl95+"]
+ens_variable = "percentile"
+ens_param_pctl = 95
+
+[_base._concentration._cloud]
+ens_param_mem_min = 2
+ens_param_thr = 0.0
+time = 0
+[_base._concentration._cloud."_arrival+"]
+ens_variable = "ens_cloud_arrival_time"
+[_base._concentration._cloud."_departure+"]
+ens_variable = "ens_cloud_departure_time"
+
+[_base._concentration._integr."_min+"]
+ens_variable = "minimum"
+[_base._tot_deposition."_min+"]
+ens_variable = "minimum"
+[_base._affected_area."_min+"]
+ens_variable = "minimum"
+[_base._concentration._integr."_max+"]
+ens_variable = "maximum"
+[_base._tot_deposition."_max+"]
+ens_variable = "maximum"
+[_base._affected_area."_max+"]
+ens_variable = "maximum"
+[_base._concentration._integr."_mean+"]
+ens_variable = "mean"
+[_base._tot_deposition."_mean+"]
+ens_variable = "mean"
+[_base._affected_area."_mean+"]
+ens_variable = "mean"
+[_base._concentration._integr."_median+"]
+ens_variable = "median"
+[_base._tot_deposition."_median+"]
+ens_variable = "median"
+[_base._affected_area."_median+"]
+ens_variable = "median"
+
+["**".full]
+domain = "full"
+["**".ch]
+domain = "ch"
