@@ -453,7 +453,7 @@ class InputFileEnsemble:
         fld_time_mem = self.fld_time_mem
 
         if not self.ens_member_ids or self.config.dry_run:
-            return fld_time_mem[0]
+            return fld_time_mem[0].copy()
 
         ens_param_mem_min = var_setups.collect_equal("ens_param_mem_min")
         ens_param_pctl = var_setups.collect_equal("ens_param_pctl")
