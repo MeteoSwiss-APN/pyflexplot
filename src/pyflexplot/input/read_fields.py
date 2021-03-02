@@ -338,7 +338,7 @@ class InputFileEnsemble:
                             fi, timeless_panel_setup
                         )
                     else:
-                        fld_time_i = np.empty(fld_time_mem.shape[1:])
+                        fld_time_i = np.empty(fld_time_mem.shape[1:], np.float32)
                     fld_time_mem[idx_mem][:] = fld_time_i[:]
 
             # Compute single field from all ensemble members
@@ -511,7 +511,8 @@ class InputFileEnsemble:
     ) -> np.ndarray:
         """Reduce the ensemble to a single field (time, lat, lon)."""
         if len(self.paths) == 1 or self.config.dry_run:
-            return fld_time_mem[0]
+            # Create copy of subarray, otherwise whole array kept in memory
+            return fld_time_mem[0].copy()
 
         ens_params = panel_setup.ens_params
         ens_variable = panel_setup.ens_variable
