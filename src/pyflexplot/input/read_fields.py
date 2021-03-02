@@ -462,7 +462,7 @@ class InputFileEnsemble:
     ) -> np.ndarray:
         """Reduce the ensemble to a single field (time, lat, lon)."""
         if len(self.paths) == 1 or self.config.dry_run:
-            return fld_time_mem[0]
+            return fld_time_mem[0].copy()
 
         ens_params = panel_setup.ens_params
         ens_variable = panel_setup.ens_variable
