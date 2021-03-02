@@ -515,10 +515,7 @@ def create_plot_config(
         levels_config_dct["n"] = 8
     elif plot_variable.endswith("deposition"):
         levels_config_dct["n"] = 9
-    if (
-        setup.model.simulation_type == "deterministic"
-        and plot_variable == "affected_area"
-    ):
+    if plot_variable == "affected_area" and ens_variable != "probability":
         levels_config_dct["extend"] = "none"
         levels_config_dct["levels"] = np.array([0.0, np.inf])
         levels_config_dct["scale"] = "lin"
@@ -570,10 +567,7 @@ def create_plot_config(
     cmap: Union[str, Colormap] = "flexplot"
     color_under: Optional[str] = None
     color_over: Optional[str] = None
-    if (
-        setup.model.simulation_type == "deterministic"
-        and plot_variable == "affected_area"
-    ):
+    if plot_variable == "affected_area" and ens_variable != "probability":
         cmap = "mono"
     elif setup.model.simulation_type == "ensemble" and ens_variable == "probability":
         # cmap = truncate_cmap("nipy_spectral_r", 0.275, 0.95)
