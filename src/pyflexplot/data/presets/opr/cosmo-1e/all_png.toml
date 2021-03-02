@@ -18,7 +18,7 @@ time = "*"
 
 [_base._concentration._integr]
 integrate = true
-time = -1
+time = 0
 
 [_base._tot_deposition]
 plot_variable = "tot_deposition"
