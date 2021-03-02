@@ -779,10 +779,10 @@ def format_ens_file_path(in_file_path, ens_member_ids: Optional[Sequence[int]]) 
     """Format ensemble file paths in condensed form, e.g., 'mem{00..21}.nc'."""
     if ens_member_ids is None:
         return in_file_path
-    pattern = r"(?P<start>.*)(?P<pattern>{ens_member(:(?P<fmt>[0-9]*d))?})(?P<end>.*)"
+    pattern = r"(?P<start>.*)(?P<pattern>{ens_member(:(?P<fmt>[0-9]*d?))?})(?P<end>.*)"
     match = re.match(pattern, in_file_path)
     if not match:
-        raise Exception("file path did not match '{pattern}': {in_file_path}")
+        raise Exception(f"file path did not match '{pattern}': {in_file_path}")
     s_ids = format_range(
         sorted(ens_member_ids), fmt=match.group("fmt"), join_range="..", join_others=","
     )
