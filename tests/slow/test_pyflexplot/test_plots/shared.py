@@ -2,6 +2,7 @@
 # Standard library
 import distutils.dir_util
 import importlib
+import logging
 import os
 import re
 from pathlib import Path
@@ -28,6 +29,8 @@ try:
 except ImportError:
     black = None  # type: ignore
 
+logging.getLogger().setLevel(logging.ERROR)
+
 PACKAGE = "test_plots"
 
 
@@ -35,6 +38,7 @@ PACKAGE = "test_plots"
 def datadir(tmpdir, request):
     """Return path to temporary data directory."""
     data_root = Path(__file__).parents[3] / "data"
+    # data_dir = data_root / "pyflexplot/flexpart/original"
     data_dir = data_root / "pyflexplot/flexpart/reduced"
     if os.path.isdir(data_dir):
         distutils.dir_util.copy_tree(data_dir, str(tmpdir))

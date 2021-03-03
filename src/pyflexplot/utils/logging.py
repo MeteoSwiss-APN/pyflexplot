@@ -38,7 +38,7 @@ def log(
         logging.error(err)
     if wrn is not None:
         wrn = f"warning: {wrn}"
-        logging.error(wrn)
+        logging.warning(wrn)
     level = get_log_level()
     if level <= logging.DEBUG and dbg is not None:
         logging.debug(dbg)
