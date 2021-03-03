@@ -18,6 +18,7 @@ from pyflexplot.plots import create_plot
 from pyflexplot.plots import format_out_file_paths
 from pyflexplot.setups.plot_setup import PlotSetup
 from pyflexplot.setups.plot_setup import PlotSetupGroup
+from pyflexplot.utils.summarize import summarize
 from srutils.testing import assert_nested_equal
 
 # Black is only required to create test reference files, not to run the tests
@@ -108,7 +109,7 @@ class _TestBase:
         assert len(field_group) == 1
         field = next(iter(field_group))
         # SR_TMP >
-        res = field.summarize()
+        res = summarize(field)
         sol = self.get_reference("field_summary")
         try:
             assert_nested_equal(res, sol, "res", "sol", float_close_ok=True)
@@ -117,7 +118,8 @@ class _TestBase:
             raise AssertionError(msg)
 
         plot = self.get_plot(field_group)
-        res = plot.summarize()
+        res = summarize(plot)
+        plot.clean()
         sol = self.get_reference("plot_summary")
         try:
             assert_nested_equal(res, sol, "res", "sol", float_close_ok=True)
@@ -148,8 +150,9 @@ class _TestCreateReference(_TestBase):
         assert len(field_group) == 1
         field = next(iter(field_group))
         # SR_TMP >
-        field_summary = field.summarize()
-        plot_summary = plot.summarize()
+        field_summary = summarize(field)
+        plot_summary = summarize(plot)
+        plot.clean()
 
         module_path_rel = os.path.relpath(__file__, ".")
         cls_name = type(self).__name__
@@ -176,7 +179,7 @@ class _TestCreateReference(_TestBase):
         body = dedent(body)
 
         # Replace non-importable nan/inf objects by np.nan/np.inf
-        body_np = re.sub(r": (-?)\b(nan|inf)\b", r": \1np.\2", body)
+        body_np = re.sub(r"(?<!['\"])(?<!np\.)\b(nan|inf)\b(?!['\"])", r"np.\1", body)
         if body_np != body:
             body = body_np
             head += "# Third-party\nimport numpy as np"

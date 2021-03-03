@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 
 # First-party
 from pyflexplot.plotting.text_box_axes import TextBoxAxes
+from pyflexplot.utils.summarize import summarize
 from srutils.testing import check_is_sub_element
 
 
@@ -15,8 +16,6 @@ class Test_TextBoxAxes_Summarize:
         self.rect_lbwh = [1, 1, 3, 2]
         self.box = TextBoxAxes(self.fig, self.rect_lbwh, name=name, **kwargs)
         return self.box
-
-    kwargs_summarize = {"addl": ["fig"]}
 
     sol_base = {
         "type": "TextBoxAxes",
@@ -40,7 +39,7 @@ class Test_TextBoxAxes_Summarize:
     def test_text_line(self):
         box = self.create_text_box("text_line")
         box.text("lower-left", loc="bl", dx=1.6, dy=0.8)
-        res = box.summarize(**self.kwargs_summarize)
+        res = {**summarize(box), "fig": summarize(box.fig)}
         sol = {
             "name": "text_line",
             **self.sol_base,
@@ -58,12 +57,14 @@ class Test_TextBoxAxes_Summarize:
                 }
             ],
         }
-        check_is_sub_element(obj_super=res, obj_sub=sol)
+        check_is_sub_element(
+            name_super="results", obj_super=res, name_sub="solution", obj_sub=sol
+        )
 
     def test_text_block(self):
         box = self.create_text_box("text_block")
         box.text_block(loc="mc", block=[("foo", "bar"), ("hello", "world")])
-        res = box.summarize(**self.kwargs_summarize)
+        res = {**summarize(box), "fig": summarize(box.fig)}
         sol = {
             **self.sol_base,
             "elements": [
@@ -71,12 +72,14 @@ class Test_TextBoxAxes_Summarize:
                 {"type": "TextBoxElementText", "s": ("hello", "world")},
             ],
         }
-        check_is_sub_element(obj_super=res, obj_sub=sol)
+        check_is_sub_element(
+            name_super="results", obj_super=res, name_sub="solution", obj_sub=sol
+        )
 
     def test_color_rect(self):
         box = self.create_text_box("color_rect")
         box.color_rect("tr", "red", "black")
-        res = box.summarize(**self.kwargs_summarize)
+        res = {**summarize(box), "fig": summarize(box.fig)}
         sol = {
             "name": "color_rect",
             **self.sol_base,
@@ -84,4 +87,6 @@ class Test_TextBoxAxes_Summarize:
                 {"type": "TextBoxElementColorRect", "fc": "red", "ec": "black"}
             ],
         }
-        check_is_sub_element(obj_super=res, obj_sub=sol)
+        check_is_sub_element(
+            name_super="results", obj_super=res, name_sub="solution", obj_sub=sol
+        )

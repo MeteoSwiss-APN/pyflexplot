@@ -33,45 +33,52 @@ from ..utils.summarize import summarize
 from .meta_data import MetaData
 
 
-def summarize_field(obj: Any) -> Dict[str, Any]:
-    dct = {
-        "type": type(obj).__name__,
-        "fld": {
-            "dtype": str(obj.fld.dtype),
-            "shape": obj.fld.shape,
-            "nanmin": np.nanmin(obj.fld),
-            "nanmean": np.nanmean(obj.fld),
-            "nanmedian": np.nanmedian(obj.fld),
-            "nanmax": np.nanmax(obj.fld),
-            "nanmin_nonzero": np.nanmin(np.where(obj.fld == 0, np.nan, obj.fld)),
-            "nanmean_nonzero": np.nanmean(np.where(obj.fld == 0, np.nan, obj.fld)),
-            "nanmedian_nonzero": np.nanmedian(np.where(obj.fld == 0, np.nan, obj.fld)),
-            "nanmax_nonzero": np.nanmax(np.where(obj.fld == 0, np.nan, obj.fld)),
-            "n_nan": np.count_nonzero(np.isnan(obj.fld)),
-            "n_zero": np.count_nonzero(obj.fld == 0),
-        },
-        "lat": {
-            "dtype": str(obj.lat.dtype),
-            "shape": obj.lat.shape,
-            "min": obj.lat.min(),
-            "max": obj.lat.max(),
-        },
-        "lon": {
-            "dtype": str(obj.lon.dtype),
-            "shape": obj.lon.shape,
-            "min": obj.lon.min(),
-            "max": obj.lon.max(),
-        },
-        "mdata": obj.mdata,
-        "time_props": obj.time_props,
-        "panel_setup": obj.panel_setup,
-        "model_setup": obj.model_setup,
-        "projs": obj.projs,
-    }
-    return summarize(dct)
-
-
-@summarizable(summarize=summarize_field)
+@summarizable(
+    summarize=lambda self: summarize(
+        {
+            "type": type(self).__name__,
+            "fld": {
+                "dtype": str(self.fld.dtype),
+                "shape": self.fld.shape,
+                "nanmin": np.nanmin(self.fld),
+                "nanmean": np.nanmean(self.fld),
+                "nanmedian": np.nanmedian(self.fld),
+                "nanmax": np.nanmax(self.fld),
+                "nanmin_nonzero": np.nanmin(np.where(self.fld == 0, np.nan, self.fld)),
+                "nanmean_nonzero": np.nanmean(
+                    np.where(self.fld == 0, np.nan, self.fld)
+                ),
+                "nanmedian_nonzero": np.nanmedian(
+                    np.where(self.fld == 0, np.nan, self.fld)
+                ),
+                "nanmax_nonzero": np.nanmax(np.where(self.fld == 0, np.nan, self.fld)),
+                "n_nan": np.count_nonzero(np.isnan(self.fld)),
+                "n_zero": np.count_nonzero(self.fld == 0),
+            },
+            "lat": {
+                "dtype": str(self.lat.dtype),
+                "shape": self.lat.shape,
+                "min": self.lat.min(),
+                "max": self.lat.max(),
+                "start": self.lat[:10],
+                "end": self.lat[-10:],
+            },
+            "lon": {
+                "dtype": str(self.lon.dtype),
+                "shape": self.lon.shape,
+                "min": self.lon.min(),
+                "max": self.lon.max(),
+                "start": self.lon[:10],
+                "end": self.lon[-10:],
+            },
+            "mdata": self.mdata,
+            "time_props": self.time_props,
+            "panel_setup": self.panel_setup,
+            "model_setup": self.model_setup,
+            "projs": self.projs,
+        }
+    )
+)
 # pylint: disable=R0902  # too-many-instance-attributes
 class Field:
     """FLEXPART field on rotated-pole grid."""
@@ -271,11 +278,9 @@ class FieldStats:
             )
 
 
-@summarizable
+@summarizable(attrs=["stats", "stats_nz"])
 class FieldTimeProperties:
     """Properties of a 2D field over time."""
-
-    summarizable_attrs = ["stats", "stats_nz"]
 
     def __init__(self, arr: np.ndarray) -> None:
         """Create an instance of ``FieldTimeProperties``."""

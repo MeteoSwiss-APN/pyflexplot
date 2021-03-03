@@ -104,14 +104,10 @@ class MapAxesConfig:
         "config",
         "domain",
         "field",
-        "fig",
         "rect",
         "trans",
+        "elements",
     ],
-    post_summarize=lambda self, summary: {
-        **summary,
-        "elements": self.summarized_elements,
-    },
 )
 class MapAxes:
     """Map plot axes for regular lat/lon data."""
@@ -143,8 +139,8 @@ class MapAxes:
 
         self.domain: Domain = self.field.get_domain(self.config.aspect)
 
-        self.elements: List[Tuple[str, Any]] = []
-        self.summarized_elements: List[Dict[str, Any]] = []
+        self.element_handles: List[Tuple[str, Any]] = []
+        self.elements: List[Dict[str, Any]] = []
 
         self._water_color: ColorType = "lightskyblue"
 
@@ -212,8 +208,8 @@ class MapAxes:
             zorder=zorder,
             **kwargs,
         )
-        self.elements.append(handle)
-        self.summarized_elements.append(
+        self.element_handles.append(handle)
+        self.elements.append(
             {
                 "element_type": "marker",
                 "p_lon": p_lon,
@@ -263,8 +259,8 @@ class MapAxes:
         handle = self.ax.annotate(
             s, xy=(p_lon, p_lat), xycoords=transform, zorder=zorder, **kwargs
         )
-        self.elements.append(handle)
-        self.summarized_elements.append(
+        self.element_handles.append(handle)
+        self.elements.append(
             {
                 "element_type": "text",
                 "s": s,

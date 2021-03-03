@@ -4,6 +4,7 @@ import numpy as np
 
 # First-party
 from pyflexplot.input.field import FieldTimeProperties
+from pyflexplot.utils.summarize import summarize
 from srutils.testing import assert_nested_equal
 
 N = np.nan
@@ -51,7 +52,7 @@ class TestFieldTimeProperties:
             "stats_nz": {"type": "FieldStats", **self.stats_nz},
         }
         assert_nested_equal(
-            props.summarize(), summary, "res", "sol", float_close_ok=True
+            summarize(props), summary, "res", "sol", float_close_ok=True
         )
 
     def test_mask(self):

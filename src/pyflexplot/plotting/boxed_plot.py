@@ -1,14 +1,15 @@
 """Boxed plots."""
 # Standard library
 import dataclasses
+import warnings
 from dataclasses import dataclass
 from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Sequence
 from typing import Tuple
+from typing import Union
 
 # Third-party
 import numpy as np
@@ -17,9 +18,9 @@ from matplotlib.figure import Figure
 
 # Local
 from ..input.field import Field
-from ..input.field import FieldGroup
 from ..plot_layouts import BoxedPlotLayoutType
 from ..setups.plot_setup import PlotSetup
+from ..utils.exceptions import FieldAllNaNError
 from ..utils.summarize import summarizable
 from ..utils.typing import ColorType
 from ..utils.typing import FontSizeType
@@ -98,29 +99,18 @@ class BoxedPlotConfig:
     model_info: str = "N/A"
 
 
-@summarizable(attrs=["ax_map", "boxes", "fields", "fig", "map_configs"])
-# pylint: disable=R0902  # too-many-instance-attributes
+@summarizable(attrs=["config", "axes"])
 class BoxedPlot:
     """A FLEXPART dispersion plot."""
 
     def __init__(
         self,
-        fields: FieldGroup,
         config: BoxedPlotConfig,
-        map_configs: Sequence[MapAxesConfig],
     ) -> None:
         """Create an instance of ``BoxedPlot``."""
-        if len(fields) != len(map_configs):
-            raise ValueError(
-                f"inconsistent numbers of fields ({len(fields)}) and map configs"
-                f" ({len(map_configs)})"
-            )
-        self.fields = fields
         self.config = config
-        self.map_configs = map_configs
-        self.boxes: Dict[str, TextBoxAxes] = {}
+        self.axes: Dict[str, Union[MapAxes, TextBoxAxes]] = {}
         self._fig: Optional[Figure] = None
-        self.ax_map: MapAxes  # SR_TMP TODO eliminate single centralized Map axes
 
     @property
     def fig(self) -> Figure:
@@ -137,57 +127,29 @@ class BoxedPlot:
             pad_inches=0.15,
             dpi=90,
         )
-        self.clean()
 
     def clean(self) -> None:
         plt.close(self.fig)
 
-    def add_map_plot(self, rect: RectType) -> MapAxes:
-        def add_map_axes(rect, field, map_config) -> MapAxes:
-            ax = MapAxes(
-                config=map_config,
-                field=field,
-                fig=self.fig,
-                rect=rect,
-            )
-            self._draw_colors_contours(ax, field)
-            self.ax_map = ax  # SR_TMP
-            return ax
-
-        if len(self.fields) == 1:
-            return add_map_axes(
-                rect,
-                field=next(iter(self.fields)),
-                map_config=next(iter(self.map_configs)),
-            )
-        elif len(self.fields) != 4:
-            raise NotImplementedError(f"{len(self.fields)} number of panels")
-        # SR_TMP <
-
-        def derive_sub_rects(
-            rect: RectType,
-        ) -> Tuple[RectType, RectType, RectType, RectType]:
-            x0, y0, w, h = rect
-            rel_pad = 0.025
-            w_pad = rel_pad * w
-            h_pad = w_pad  # SR_TMP
-            w = 0.5 * w - 0.5 * w_pad
-            h = 0.5 * h - 0.5 * h_pad
-            x1 = x0 + w + w_pad
-            y1 = y0 + h + h_pad
-            return ((x0, y1, w, h), (x1, y1, w, h), (x0, y0, w, h), (x1, y0, w, h))
-
-        axs = []
-        for field, map_config, sub_rect in zip(
-            self.fields, self.map_configs, derive_sub_rects(rect)
-        ):
-            axs.append(add_map_axes(sub_rect, field, map_config))
-        # SR_TMP <
-        ax = next(iter(axs))
-        # SR_TMP >
-        self.ax_map = ax  # SR_TMP
+    def add_map_plot(
+        self, name: str, field: Field, map_config: MapAxesConfig, rect: RectType
+    ) -> MapAxes:
+        ax = MapAxes(
+            config=map_config,
+            field=field,
+            fig=self.fig,
+            rect=rect,
+        )
+        assert self.config.colors is not None  # SR_TMP
+        _draw_colors_contours(
+            ax,
+            field,
+            levels_config=self.config.levels,
+            colors=self.config.colors,
+        )
+        _add_markers(ax, field, self.config.markers)
+        self.axes[name] = ax
         return ax
-        # SR_TMP >
 
     def add_text_box(
         self,
@@ -201,49 +163,70 @@ class BoxedPlot:
         box = TextBoxAxes(name=name, rect=rect, fig=self.fig, lw_frame=lw_frame)
         fill(box, self)
         box.draw()
-        self.boxes[name] = box
+        self.axes[name] = box
         return box
 
-    # SR_TODO Pull out of BoxedPlot class to MapAxes or some MapAxesContent class
-    # SR_TODO Replace checks with plot-specific config/setup object
-    # pylint: disable=R0912  # too-many-branches
-    def _draw_colors_contours(self, ax_map: MapAxes, field: Field) -> None:
-        arr = np.asarray(field.fld)
-        levels = np.asarray(self.config.levels.levels)
-        colors = self.config.colors
-        assert colors is not None  # SR_TMP
-        extend = self.config.levels.extend
-        if self.config.levels.scale == "log":
-            with np.errstate(divide="ignore"):
-                arr = np.log10(np.where(arr > 0, arr, np.nan))
-            levels = np.log10(levels)
 
-        if not self.config.levels.include_lower:
-            # Turn levels from lower- to upped-bound inclusive
-            # by infitesimally increasing them
-            levels = levels + np.finfo(np.float32).eps
+# pylint: disable=R0912  # too-many-branches
+def _draw_colors_contours(
+    ax: MapAxes,
+    field: Field,
+    levels_config: ContourLevelsConfig,
+    colors: List[ColorType],
+) -> None:
+    arr = np.asarray(field.fld)
+    levels = np.asarray(levels_config.levels)
+    extend = levels_config.extend
+    if levels_config.scale == "log":
+        with np.errstate(divide="ignore"):
+            arr = np.log10(np.where(arr > 0, arr, np.nan))
+        levels = np.log10(levels)
 
-        # Replace infs (apparently ignored by contourf)
-        arr = np.where(np.isneginf(arr), np.finfo(np.float32).min, arr)
-        arr = np.where(np.isposinf(arr), np.finfo(np.float32).max, arr)
+    if not levels_config.include_lower:
+        # Turn levels from lower- to upped-bound inclusive
+        # by infitesimally increasing them
+        levels = levels + np.finfo(np.float32).eps
 
+    # Replace infs (apparently ignored by contourf)
+    arr = np.where(np.isneginf(arr), np.finfo(np.float32).min, arr)
+    arr = np.where(np.isposinf(arr), np.finfo(np.float32).max, arr)
+
+    try:
+        contours = ax.ax.contourf(
+            field.lon,
+            field.lat,
+            arr,
+            transform=ax.trans.proj_data,
+            levels=levels,
+            extend=extend,
+            zorder=ax.zorder["fld"],
+            colors=colors,
+        )
+    except ValueError as e:
+        if str(e) == "'bboxes' cannot be empty":
+            # Expected error when there are no contours to plot
+            # (Easier to catch error than explicitly detect 'empty' array)
+            return
+        raise e
+    else:
+        for contour in contours.collections:
+            contour.set_rasterized(True)
+
+
+def _add_markers(ax: MapAxes, field: Field, markers_config: MarkersConfig) -> None:
+    mdata = field.mdata
+    if markers_config.mark_release_site:
+        assert markers_config.markers is not None  # mypy
+        ax.add_marker(
+            p_lat=mdata.release.lat,
+            p_lon=mdata.release.lon,
+            **markers_config.markers["site"],
+        )
+    if markers_config.mark_field_max:
+        assert markers_config.markers is not None  # mypy
         try:
-            contours = ax_map.ax.contourf(
-                field.lon,
-                field.lat,
-                arr,
-                transform=ax_map.trans.proj_data,
-                levels=levels,
-                extend=extend,
-                zorder=ax_map.zorder["fld"],
-                colors=colors,
-            )
-        except ValueError as e:
-            if str(e) == "'bboxes' cannot be empty":
-                # Expected error when there are no contours to plot
-                # (Easier to catch error than explicitly detect 'empty' array)
-                return
-            raise e
+            max_lat, max_lon = field.locate_max()
+        except FieldAllNaNError:
+            warnings.warn("skip maximum marker (all-nan field)")
         else:
-            for contour in contours.collections:
-                contour.set_rasterized(True)
+            ax.add_marker(p_lat=max_lat, p_lon=max_lon, **markers_config.markers["max"])

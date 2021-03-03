@@ -16,7 +16,6 @@ until sane design choices emerge from the code mess.
 """
 # Standard library
 import os
-import warnings
 from datetime import datetime
 from datetime import timedelta
 from typing import Any
@@ -43,6 +42,7 @@ from words import Word
 
 # Local
 from . import __version__
+from .input.field import Field
 from .input.field import FieldGroup
 from .input.field import FieldStats
 from .input.meta_data import format_meta_datum
@@ -58,17 +58,16 @@ from .plotting.boxed_plot import ContourLevelsLegendConfig
 from .plotting.boxed_plot import FontConfig
 from .plotting.boxed_plot import FontSizes
 from .plotting.boxed_plot import MarkersConfig
-from .plotting.map_axes import MapAxes
 from .plotting.map_axes import MapAxesConfig
 from .plotting.text_box_axes import TextBoxAxes
 from .setups.model_setup import ModelSetup
 from .setups.plot_panel_setup import PlotPanelSetup
 from .setups.plot_setup import PlotSetup
-from .utils.exceptions import FieldAllNaNError
 from .utils.formatting import escape_format_keys
 from .utils.formatting import format_level_ranges
 from .utils.logging import log
 from .utils.typing import ColorType
+from .utils.typing import RectType
 from .words import SYMBOLS
 from .words import TranslatedWords
 from .words import WORDS
@@ -117,6 +116,7 @@ def format_out_file_paths(
     return out_file_paths
 
 
+# pylint: disable=R0914  # too-many-locals (>15)
 def create_plot(
     field_group: FieldGroup,
     file_paths: Sequence[str],
@@ -148,10 +148,38 @@ def create_plot(
         )
         for field in field_group
     ]
-    plot = BoxedPlot(field_group, plot_config, map_configs)
-    axs_map = plot.add_map_plot(plot.config.layout.rect_center())
-    plot_add_text_boxes(plot, plot.config.layout, show_version)
-    plot_add_markers(plot, axs_map)
+    plot = BoxedPlot(plot_config)
+    # SR_TMP <
+    if len(field_group) == 1:
+        field = next(iter(field_group))
+        map_config = next(iter(map_configs))
+        rect = plot.config.layout.rect_center()
+        plot.add_map_plot("map", field, map_config, rect)
+    elif len(field_group) != 4:
+        raise NotImplementedError(f"{len(field_group)} number of panels")
+
+    # SR_TODO Define sub-rects in layout (new layout type with four panels)
+    def derive_sub_rects(
+        rect: RectType,
+    ) -> Tuple[RectType, RectType, RectType, RectType]:
+        x0, y0, w, h = rect
+        rel_pad = 0.025
+        w_pad = rel_pad * w
+        h_pad = w_pad  # SR_TMP
+        w = 0.5 * w - 0.5 * w_pad
+        h = 0.5 * h - 0.5 * h_pad
+        x1 = x0 + w + w_pad
+        y1 = y0 + h + h_pad
+        return ((x0, y1, w, h), (x1, y1, w, h), (x0, y0, w, h), (x1, y0, w, h))
+
+    sub_rects = derive_sub_rects(plot.config.layout.rect_center())
+    for idx, (field, map_config, sub_rect) in enumerate(
+        zip(field_group, map_configs, sub_rects)
+    ):
+        name = f"map{idx}"
+        plot.add_map_plot(name, field, map_config, sub_rect)
+    # SR_TMP >
+    plot_add_text_boxes(plot, field_group, plot.config.layout, show_version)
     for file_path in file_paths:
         log(dbg=f"creating plot {file_path}")
         if write:
@@ -168,7 +196,10 @@ def create_plot(
 # SR_TMP <<< TODO Clean up nested functions! Eventually introduce class(es) of some kind
 # pylint: disable=R0915  # too-many-statements
 def plot_add_text_boxes(
-    plot: BoxedPlot, layout: BoxedPlotLayoutType, show_version: bool = True
+    plot: BoxedPlot,
+    fields: FieldGroup,
+    layout: BoxedPlotLayoutType,
+    show_version: bool = True,
 ) -> None:
     # pylint: disable=R0915  # too-many-statements
     def fill_box_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
@@ -186,17 +217,10 @@ def plot_add_text_boxes(
                 size=size,
             )
 
-    def fill_box_2nd_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
+    def fill_box_2nd_title(box: TextBoxAxes, plot: BoxedPlot, field: Field) -> None:
         """Fill the secondary title box of the deterministic plot layout."""
         font_size = plot.config.font.sizes.content_large
-        # SR_TMP <
-        mdata = next(iter(plot.fields)).mdata
-        for field in plot.fields:
-            if field.mdata != mdata:
-                raise NotImplementedError(
-                    f"meta data differ between fields:\n{field.mdata}\n!=\n{mdata}"
-                )
-        # SR_TMP >
+        mdata = field.mdata
         box.text(
             capitalize(format_meta_datum(mdata.species.name)),
             loc="tc",
@@ -226,22 +250,10 @@ def plot_add_text_boxes(
     # pylint: disable=R0913  # too-many-arguments
     # pylint: disable=R0914  # too-many-locals
     # pylint: disable=R0915  # too-many-statements
-    def fill_box_legend(box: TextBoxAxes, plot: BoxedPlot) -> None:
+    def fill_box_legend(box: TextBoxAxes, plot: BoxedPlot, field: Field) -> None:
         """Fill the box containing the plot legend."""
         labels = plot.config.labels["legend"]
-        # SR_TMP <
-        mdata = next(iter(plot.fields)).mdata
-        for field in plot.fields:
-            if field.mdata != mdata:
-                raise NotImplementedError(
-                    f"meta data differ between fields:\n{field.mdata}\n!=\n{mdata}"
-                )
-        if len(plot.fields) > 1:
-            print(
-                "warning: plot_add_markers: selecting field of first of multiple panels"
-            )
-        field = next(iter(plot.fields))
-        # SR_TMP >
+        mdata = field.mdata
 
         # Box title
         box.text(
@@ -400,12 +412,28 @@ def plot_add_text_boxes(
             size=plot.config.font.sizes.content_small,
         )
 
+    # SR_TMP <
+    if len(fields) > 1:
+        print(
+            "warning: plot_add_text_boxes: selecting field of first of multiple panels"
+        )
+    field = next(iter(fields))
+    # SR_TMP >
+
     plot.add_text_box("top", layout.rect_top(), fill_box_title)
     if isinstance(layout, BoxedPlotLayoutDeterministic):
-        plot.add_text_box("right_top", layout.rect_right_top(), fill_box_2nd_title)
+        plot.add_text_box(
+            "right_top",
+            layout.rect_right_top(),
+            lambda box, plot: fill_box_2nd_title(box, plot, field),
+        )
     elif isinstance(layout, BoxedPlotLayoutEnsemble):
         plot.add_text_box("right_top", layout.rect_right_top(), fill_box_data_info)
-    plot.add_text_box("right_middle", layout.rect_right_middle(), fill_box_legend)
+    plot.add_text_box(
+        "right_middle",
+        layout.rect_right_middle(),
+        lambda box, plot: fill_box_legend(box, plot, field),
+    )
     plot.add_text_box("right_bottom", layout.rect_right_bottom(), fill_box_release_info)
     plot.add_text_box(
         "bottom_left", layout.rect_bottom_left(), fill_box_bottom_left, frame_on=False
@@ -416,38 +444,6 @@ def plot_add_text_boxes(
         fill_box_bottom_right,
         frame_on=False,
     )
-
-
-def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
-    config = plot.config
-    # SR_TMP <
-    mdata = next(iter(plot.fields)).mdata
-    for field in plot.fields:
-        if field.mdata != mdata:
-            raise NotImplementedError(
-                f"meta data differ between fields:\n{field.mdata}\n!=\n{mdata}"
-            )
-    field = next(iter(plot.fields))
-    if len(plot.fields) > 1:
-        print("warning: plot_add_markers: selecting field of first of multiple panels")
-    # SR_TMP >
-    if config.markers.mark_release_site:
-        assert config.markers.markers is not None  # mypy
-        axs_map.add_marker(
-            p_lat=mdata.release.lat,
-            p_lon=mdata.release.lon,
-            **config.markers.markers["site"],
-        )
-    if config.markers.mark_field_max:
-        assert config.markers.markers is not None  # mypy
-        try:
-            max_lat, max_lon = field.locate_max()
-        except FieldAllNaNError:
-            warnings.warn("skip maximum marker (all-nan field)")
-        else:
-            axs_map.add_marker(
-                p_lat=max_lat, p_lon=max_lon, **config.markers.markers["max"]
-            )
 
 
 def create_map_config(

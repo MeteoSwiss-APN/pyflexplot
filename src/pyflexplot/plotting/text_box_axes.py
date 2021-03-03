@@ -243,13 +243,8 @@ class TextBoxElementHLine(TextBoxElement):
 
 
 @summarizable(
-    attrs=["name", "rect", "lw_frame", "dx_unit", "dy_unit"],
-    post_summarize=lambda self, summary: {
-        **summary,
-        "elements": [e.summarize() for e in self.elements],
-    },
+    attrs_add=["name", "rect", "lw_frame", "dx_unit", "dy_unit", "elements"],
 )
-# SR_TODO Refactor to reduce instance attributes and arguments!
 @dataclass
 # pylint: disable=R0902  # too-many-instance-attributes
 # pylint: disable=R0913  # too-many-arguments

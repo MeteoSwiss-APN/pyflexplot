@@ -38,7 +38,28 @@ class DomainConfig:
     zoom_fact: float = 1.0
 
 
-@summarizable(attrs=["lat", "lon", "config"])
+@summarizable(
+    summarize=lambda self: {
+        "type": type(self).__name__,
+        "lat": {
+            "dtype": str(self.lat.dtype),
+            "shape": self.lat.shape,
+            "min": self.lat.min(),
+            "max": self.lat.max(),
+            "start": self.lat[:10],
+            "end": self.lat[-10:],
+        },
+        "lon": {
+            "dtype": str(self.lon.dtype),
+            "shape": self.lon.shape,
+            "min": self.lon.min(),
+            "max": self.lon.max(),
+            "start": self.lon[:10],
+            "end": self.lon[-10:],
+        },
+        "config": self.config,
+    }
+)
 class Domain:
     """Plot domain."""
 
@@ -346,7 +367,7 @@ class ReleaseSiteDomain(Domain):
         lon: np.ndarray,
         config: Optional[Union[DomainConfig, Dict[str, Any]]] = None,
     ) -> None:
-        """Create an instance of ``CloudDomain``.
+        """Create an instance of ``ReleaseSiteDomain``.
 
         Args:
             lat: 1D latitude array.
