@@ -55,7 +55,6 @@ from .plotting.boxed_plot import BoxedPlot
 from .plotting.boxed_plot import BoxedPlotConfig
 from .plotting.boxed_plot import ContourLevelsConfig
 from .plotting.boxed_plot import ContourLevelsLegendConfig
-from .plotting.boxed_plot import DummyBoxedPlot
 from .plotting.boxed_plot import FontConfig
 from .plotting.boxed_plot import FontSizes
 from .plotting.boxed_plot import MarkersConfig
@@ -118,47 +117,38 @@ def format_out_file_paths(
     return out_file_paths
 
 
-def prepare_plot(
-    field_group: FieldGroup, *, dry_run: bool = False
-) -> Union[BoxedPlot, DummyBoxedPlot]:
-    """Create plots while yielding them with the plot file path one by one."""
-    log(dbg="preparing setups for plot")
-    if dry_run:
-        return DummyBoxedPlot()
-    else:
-        plot_setup = field_group.plot_setup
-        # SR_TMP <  SR_MULTIPANEL
-        mdata = next(iter(field_group)).mdata
-        for field in field_group:
-            if field.mdata != mdata:
-                raise NotImplementedError(
-                    f"meta data differ between fields:\n{field.mdata}\n!=\n{mdata}"
-                )
-        if len(field_group) > 1:
-            print("warning: using time_props of first panel of multipanel plot")
-        time_stats = next(iter(field_group)).time_props.stats
-        # SR_TMP >  SR_MULTIPANEL
-        labels = create_box_labels(plot_setup, mdata)
-        plot_config = create_plot_config(
-            setup=plot_setup, time_stats=time_stats, labels=labels
-        )
-        map_configs: List[MapAxesConfig] = [
-            create_map_config(
-                field_group.plot_setup,
-                field.panel_setup,
-                plot_config.layout.aspect_center(),
-            )
-            for field in field_group
-        ]
-        return BoxedPlot(field_group, plot_config, map_configs)
-
-
 def create_plot(
-    plot: BoxedPlot,
+    field_group: FieldGroup,
     file_paths: Sequence[str],
+    *,
     write: bool = True,
     show_version: bool = True,
-) -> None:
+) -> BoxedPlot:
+    plot_setup = field_group.plot_setup
+    # SR_TMP <  SR_MULTIPANEL
+    mdata = next(iter(field_group)).mdata
+    for field in field_group:
+        if field.mdata != mdata:
+            raise NotImplementedError(
+                f"meta data differ between fields:\n{field.mdata}\n!=\n{mdata}"
+            )
+    if len(field_group) > 1:
+        print("warning: using time_props of first panel of multipanel plot")
+    time_stats = next(iter(field_group)).time_props.stats
+    # SR_TMP >  SR_MULTIPANEL
+    labels = create_box_labels(plot_setup, mdata)
+    plot_config = create_plot_config(
+        setup=plot_setup, time_stats=time_stats, labels=labels
+    )
+    map_configs: List[MapAxesConfig] = [
+        create_map_config(
+            field_group.plot_setup,
+            field.panel_setup,
+            plot_config.layout.aspect_center(),
+        )
+        for field in field_group
+    ]
+    plot = BoxedPlot(field_group, plot_config, map_configs)
     axs_map = plot.add_map_plot(plot.config.layout.rect_center())
     plot_add_text_boxes(plot, plot.config.layout, show_version)
     plot_add_markers(plot, axs_map)
@@ -172,6 +162,7 @@ def create_plot(
             plot.write(file_path)
         log(dbg=f"created plot {file_path}")
     plot.clean()
+    return plot
 
 
 # SR_TMP <<< TODO Clean up nested functions! Eventually introduce class(es) of some kind
@@ -249,6 +240,7 @@ def plot_add_text_boxes(
             print(
                 "warning: plot_add_markers: selecting field of first of multiple panels"
             )
+        field = next(iter(plot.fields))
         # SR_TMP >
 
         # Box title
@@ -1348,6 +1340,7 @@ def levels_from_time_stats(
         )
 
     if simulation_type == "ensemble":
+        assert ens_variable is not None  # mypy
         if ens_variable.endswith("probability") or ens_variable in [
             "ens_cloud_arrival_time",
             "ens_cloud_departure_time",

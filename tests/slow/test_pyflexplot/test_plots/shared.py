@@ -16,7 +16,6 @@ import pytest  # type: ignore
 from pyflexplot.input.read_fields import read_fields
 from pyflexplot.plots import create_plot
 from pyflexplot.plots import format_out_file_paths
-from pyflexplot.plots import prepare_plot
 from pyflexplot.setups.plot_setup import PlotSetup
 from pyflexplot.setups.plot_setup import PlotSetupGroup
 from srutils.testing import assert_nested_equal
@@ -89,8 +88,7 @@ class _TestBase:
     def get_plot(self, field_group):
         outfiles, plots = [], []
         outfiles = format_out_file_paths(field_group, prev_paths=outfiles)
-        plot = prepare_plot(field_group)
-        create_plot(plot, outfiles, write=False, show_version=False)
+        plot = create_plot(field_group, outfiles, write=False, show_version=False)
         plots.append(plot)
         assert len(outfiles) == len(plots) == 1
         plot = next(iter(plots))

@@ -98,12 +98,6 @@ class BoxedPlotConfig:
     model_info: str = "N/A"
 
 
-@summarizable
-@dataclass
-class DummyBoxedPlot:
-    """Dummy for dry runs."""
-
-
 @summarizable(attrs=["ax_map", "boxes", "fields", "fig", "map_configs"])
 # pylint: disable=R0902  # too-many-instance-attributes
 class BoxedPlot:
@@ -149,9 +143,7 @@ class BoxedPlot:
         plt.close(self.fig)
 
     def add_map_plot(self, rect: RectType) -> MapAxes:
-        if len(self.fields) == 1:
-            field = next(iter(self.fields))
-            map_config = next(iter(self.map_configs))
+        def add_map_axes(rect, field, map_config) -> MapAxes:
             ax = MapAxes(
                 config=map_config,
                 field=field,
@@ -161,37 +153,35 @@ class BoxedPlot:
             self._draw_colors_contours(ax, field)
             self.ax_map = ax  # SR_TMP
             return ax
-        return self._add_multipanel_map_plot(rect)
 
-    def _add_multipanel_map_plot(self, rect: RectType) -> MapAxes:
-        if len(self.fields) != 4:
-            raise NotImplementedError(f"{len(self.fields)} number of panels")
-
-        # SR_TMP <
-        x0, y0, w, h = rect
-        rel_pad = 0.025
-        w_pad = rel_pad * w
-        h_pad = w_pad  # SR_TMP
-        w = 0.5 * w - 0.5 * w_pad
-        h = 0.5 * h - 0.5 * h_pad
-        x1 = x0 + w + w_pad
-        y1 = y0 + h + h_pad
-        rects = [
-            (x0, y1, w, h),
-            (x1, y1, w, h),
-            (x0, y0, w, h),
-            (x1, y0, w, h),
-        ]
-        axs = []
-        for field, map_config, rect in zip(self.fields, self.map_configs, rects):
-            ax = MapAxes(
-                config=map_config,
-                field=field,
-                fig=self.fig,
-                rect=rect,
+        if len(self.fields) == 1:
+            return add_map_axes(
+                rect,
+                field=next(iter(self.fields)),
+                map_config=next(iter(self.map_configs)),
             )
-            self._draw_colors_contours(ax, field)
-            axs.append(ax)
+        elif len(self.fields) != 4:
+            raise NotImplementedError(f"{len(self.fields)} number of panels")
+        # SR_TMP <
+
+        def derive_sub_rects(
+            rect: RectType,
+        ) -> Tuple[RectType, RectType, RectType, RectType]:
+            x0, y0, w, h = rect
+            rel_pad = 0.025
+            w_pad = rel_pad * w
+            h_pad = w_pad  # SR_TMP
+            w = 0.5 * w - 0.5 * w_pad
+            h = 0.5 * h - 0.5 * h_pad
+            x1 = x0 + w + w_pad
+            y1 = y0 + h + h_pad
+            return ((x0, y1, w, h), (x1, y1, w, h), (x0, y0, w, h), (x1, y0, w, h))
+
+        axs = []
+        for field, map_config, sub_rect in zip(
+            self.fields, self.map_configs, derive_sub_rects(rect)
+        ):
+            axs.append(add_map_axes(sub_rect, field, map_config))
         # SR_TMP <
         ax = next(iter(axs))
         # SR_TMP >

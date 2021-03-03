@@ -227,12 +227,14 @@ def group_setups_by_plot_type(setups: PlotSetupGroup) -> PlotSetupGroup:
 class InputFileEnsemble:
     """An ensemble (of size one or more) of input files."""
 
+    # pylint: disable=R0913  # too-many-arguments
     def __init__(
         self,
         raw_path: str,
         config: InputConfig,
         model_setup: ModelSetup,
         ens_member_ids: Optional[Sequence[int]] = None,
+        *,
         override_raw_path: Optional[str] = None,
     ):
         """Create an instance of ``InputFileEnsemble``.

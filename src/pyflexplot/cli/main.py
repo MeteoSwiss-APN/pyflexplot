@@ -34,8 +34,6 @@ from ..input.field import FieldGroup
 from ..input.read_fields import read_fields
 from ..plots import create_plot
 from ..plots import format_out_file_paths
-from ..plots import prepare_plot
-from ..plotting.boxed_plot import BoxedPlot
 from ..setups.plot_setup import PlotSetupGroup
 from ..setups.setup_file import SetupFile
 from ..utils.logging import log
@@ -382,7 +380,6 @@ def create_plots(
             f"/{iter_state.n_field_groups_i}] prepare plot"
         )
     )
-    plot = prepare_plot(field_group, dry_run=dry_run)
     n_out = len(out_file_paths)
     iter_state.n_plot_files_curr += n_out
     for ip_out, out_file_path in enumerate(out_file_paths, start=1):
@@ -395,8 +392,7 @@ def create_plots(
             ),
         )
     if not dry_run:
-        assert isinstance(plot, BoxedPlot)  # mypy
-        create_plot(plot, out_file_paths, show_version=show_version)
+        create_plot(field_group, out_file_paths, show_version=show_version)
     for out_file_path in out_file_paths:
         log(dbg=f"done plotting {out_file_path}")
 
