@@ -261,8 +261,9 @@ class CloudDomain(Domain):
                 d_lat = urlat - lllat
                 d_lon = 360.0 - (lllon - urlon)
                 if d_lon < d_lat * aspect:
-                    urlon -= 0.5 * min([d_lat * aspect - d_lon, d_lon_max - d_lon])
-                    lllon += 0.5 * min([d_lat * aspect - d_lon, d_lon_max - d_lon])
+                    dd_lon = min([d_lat * aspect - d_lon, d_lon_max - d_lon])
+                    urlon += 0.5 * dd_lon
+                    lllon -= 0.5 * dd_lon
                 elif d_lat < d_lon / aspect:
                     lllat -= 0.5 * min([d_lon / aspect - d_lat, d_lat_max - d_lat])
                     urlat += 0.5 * min([d_lon / aspect - d_lat, d_lat_max - d_lat])
