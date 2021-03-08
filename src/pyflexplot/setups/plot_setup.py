@@ -593,7 +593,9 @@ class PlotSetup:
         params: Dict[str, Any] = {}
         value: Any
         for param, value in raw_params:
-            if value in ["None", "*"]:
+            if param == "model":
+                param = "name"
+            elif value in ["None", "*"]:
                 value = None
             elif "," in value:
                 value = value.split(",")
