@@ -28,10 +28,12 @@ class RefDistIndConfig:
 
         font_size: Font size of distance label.
 
+        min_w_box: Minimum width of the box.
+
         line_width: Line width of distance indicator.
 
-        pos: Position of reference distance indicator box (corners of the plot).
-            Options: "tl" (top-left), "tr" (top-right), "bl" (bottom-left), "br"
+        pos: Position of reference distance indicator box (corners of the plot);
+            options: "tl" (top-left), "tr" (top-right), "bl" (bottom-left), "br"
             (bottom-right).
 
         unit: Unit of reference distance ``val``.
@@ -40,6 +42,7 @@ class RefDistIndConfig:
 
     dist: int = 100
     font_size: float = 11.0
+    min_w_box: float = 0.075
     line_width: float = 2.0
     pos: str = "bl"
     unit: str = "km"
@@ -165,13 +168,18 @@ class ReferenceDistanceIndicator:
             self.x0_line = self._calc_horiz_dist(self.x1_line, "west", axes_to_geo)
         else:
             raise ValueError(f"invalid x-position '{self.pos_x}'")
-        self.w_box = self.x1_line - self.x0_line + 2 * self.xpad_box
+        w_line = self.x1_line - self.x0_line
+        self.w_box = max(self.config.min_w_box, w_line + 2 * self.xpad_box)
         if self.w_box > 1.0:
             raise TooWideRefDistIndicatorError(str(self.w_box))
         if self.pos_x == "l":
             self.x1_box = self.x0_box + self.w_box
         elif self.pos_x == "r":
             self.x0_box = self.x1_box - self.w_box
+        if self.w_box == self.config.min_w_box:
+            x_box_center = self.x0_box + 0.5 * self.w_box
+            self.x0_line = x_box_center - 0.5 * w_line
+            self.x1_line = x_box_center + 0.5 * w_line
 
     def _calc_horiz_dist(
         self, x0: float, direction: str, axes_to_geo: PointConverterT
