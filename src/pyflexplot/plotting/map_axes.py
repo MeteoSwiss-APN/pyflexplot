@@ -307,7 +307,6 @@ class MapAxes:
             except TooWideRefDistIndicatorError as e:
                 msg = f"error adding reference distance indicator (too wide {e})"
                 log(wrn=msg)
-                print(msg)  # SR_DBG
 
     def _ax_add_grid(self) -> None:
         """Show grid lines on map."""
