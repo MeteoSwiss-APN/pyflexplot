@@ -14,6 +14,7 @@ from matplotlib.axes import Axes
 
 # Local
 from ..utils.exceptions import MaxIterationError
+from ..utils.exceptions import TooWideRefDistIndicatorError
 from ..utils.summarize import summarizable
 
 
@@ -163,7 +164,7 @@ class ReferenceDistanceIndicator:
             raise ValueError(f"invalid x-position '{self.pos_x}'")
         self.w_box = self.x1_line - self.x0_line + 2 * self.xpad_box
         if self.w_box > 1.0:
-            raise Exception(f"ref dist indicator box too wide: {self.w_box} > 1.0")
+            raise TooWideRefDistIndicatorError(str(self.w_box))
         if self.pos_x == "l":
             self.x1_box = self.x0_box + self.w_box
         elif self.pos_x == "r":

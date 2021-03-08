@@ -23,6 +23,8 @@ from matplotlib.text import Text
 
 # Local
 from ..input.field import Field
+from ..utils.exceptions import TooWideRefDistIndicatorError
+from ..utils.logging import log
 from ..utils.summarize import summarizable
 from ..utils.typing import ColorType
 from ..utils.typing import RectType
@@ -295,12 +297,17 @@ class MapAxes:
             self.ref_dist_box = None
         else:
             assert isinstance(self.config.ref_dist_config, RefDistIndConfig)  # mypy
-            self.ref_dist_box = ReferenceDistanceIndicator(
-                ax=self.ax,
-                axes_to_geo=self.trans.axes_to_geo,
-                config=self.config.ref_dist_config,
-                zorder=self.zorder["grid"],
-            )
+            try:
+                self.ref_dist_box = ReferenceDistanceIndicator(
+                    ax=self.ax,
+                    axes_to_geo=self.trans.axes_to_geo,
+                    config=self.config.ref_dist_config,
+                    zorder=self.zorder["grid"],
+                )
+            except TooWideRefDistIndicatorError as e:
+                msg = f"error adding reference distance indicator (too wide {e})"
+                log(wrn=msg)
+                print(msg)  # SR_DBG
 
     def _ax_add_grid(self) -> None:
         """Show grid lines on map."""
