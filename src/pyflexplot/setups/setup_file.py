@@ -24,6 +24,7 @@ from .model_setup import is_model_setup_param
 from .plot_panel_setup import is_plot_panel_setup_param
 from .plot_setup import PlotSetup
 from .plot_setup import PlotSetupGroup
+from .plot_setup import prepare_raw_params
 
 
 class SetupFile:
@@ -62,7 +63,7 @@ class SetupFile:
                 raw_params = {**old_raw_params, **override}
                 if raw_params not in raw_params_lst:
                     raw_params_lst.append(raw_params)
-        raw_params_lst = self.prepare_raw_params(raw_params_lst)
+        raw_params_lst = prepare_raw_params(raw_params_lst)
         setups = PlotSetupGroup.create(raw_params_lst)
         if only is not None:
             if only < 0:
@@ -104,42 +105,3 @@ class SetupFile:
                     setups_by_infiles[key].append(setup)
                     n_setups += 1
         return [PlotSetupGroup(setup_lst) for setup_lst in setups_by_infiles.values()]
-
-    # pylint: disable=R0912  # too-many-branches (>12)
-    @staticmethod
-    def prepare_raw_params(
-        raw_params: Union[Mapping[str, Any], Sequence[Mapping[str, Any]]]
-    ) -> List[Dict[str, Any]]:
-        raw_params_lst: List[Mapping[str, Any]]
-        if isinstance(raw_params, Mapping):
-            raw_params_lst = [raw_params]
-        else:
-            raw_params_lst = list(raw_params)
-        params_lst = []
-        for raw_params_i in raw_params_lst:
-            params: Dict[str, Any] = {}
-            panels: Dict[str, Any] = {}
-            ens_params: Dict[str, Any] = {}
-            for param, value in raw_params_i.items():
-                if param == "model":
-                    param = "name"
-                if is_plot_panel_setup_param(param):
-                    panels[param] = value
-                elif is_model_setup_param(param):
-                    if "model" not in params:
-                        params["model"] = {}
-                    params["model"][param] = value
-                elif is_dimensions_param(param):
-                    if "dimensions" not in panels:
-                        panels["dimensions"] = {}
-                    panels["dimensions"][param] = value
-                elif param.startswith("ens_param_"):
-                    ens_params[param[len("ens_param_") :]] = value
-                else:
-                    params[param] = value
-            if ens_params:
-                panels["ens_params"] = ens_params
-            if panels:
-                params["panels"] = panels
-            params_lst.append(params)
-        return params_lst
