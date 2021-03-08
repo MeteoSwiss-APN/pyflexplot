@@ -31,7 +31,7 @@ description_files = [
 
 metadata = {
     "name": "pyflexplot",
-    "version": "0.14.2",
+    "version": "0.14.3",
     "description": "PyFlexPlot visualizes FLEXPART particle dispersion simulations.",
     "long_description": read_present_files(description_files),
     "author": "Stefan Ruedisuehli",
