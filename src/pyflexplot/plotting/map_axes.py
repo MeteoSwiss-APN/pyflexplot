@@ -299,14 +299,14 @@ class MapAxes:
             assert isinstance(self.config.ref_dist_config, RefDistIndConfig)  # mypy
             try:
                 self.ref_dist_box = ReferenceDistanceIndicator(
-                    ax=self.ax,
-                    axes_to_geo=self.trans.axes_to_geo,
                     config=self.config.ref_dist_config,
-                    zorder=self.zorder["grid"],
+                    axes_to_geo=self.trans.axes_to_geo,
                 )
             except TooWideRefDistIndicatorError as e:
                 msg = f"error adding reference distance indicator (too wide {e})"
                 log(wrn=msg)
+            else:
+                self.ref_dist_box.add_to(self.ax, zorder=self.zorder["grid"])
 
     def _ax_add_grid(self) -> None:
         """Show grid lines on map."""
