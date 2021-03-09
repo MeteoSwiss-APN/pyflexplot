@@ -3,7 +3,9 @@
 import dataclasses as dc
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -211,20 +213,11 @@ class CloudDomain(Domain):
 
         # Longitude
         mask_lon = self.mask.any(axis=0)
-        crossing_dateline = (
-            self.config.periodic_lon
-            and mask_lon[0]
-            and mask_lon[-1]
-            and not mask_lon.all()
-        )
-        if crossing_dateline:
-            idx_lllon = min([np.where(~mask_lon)[0][-1] + 1, self.lon.size - 1])
-            idx_urlon = max([np.where(~mask_lon)[0][0] - 1, 0])
-            lllon = self.lon[idx_lllon]
-            urlon = self.lon[idx_urlon]
-            lllon = min([lllon, lon_max])
-            urlon = max([urlon, lon_min])
-        else:
+        if mask_lon.all():
+            lllon = self.lon.min()
+            urlon = self.lon.max()
+            crossing_dateline = False
+        elif not self.config.periodic_lon:
             if not any(mask_lon):
                 lllon = self.lon.min()
                 urlon = self.lon.max()
@@ -233,26 +226,39 @@ class CloudDomain(Domain):
                 urlon = self.lon[mask_lon].max()
             lllon = max([lllon, lon_min])
             urlon = min([urlon, lon_max])
+            crossing_dateline = False
+        else:
+            gaps = find_gaps(mask_lon, periodic=True)
+            largest_gap = next(iter(sorted(gaps, reverse=True)))
+            _, idx_gap_start, idx_gap_end = largest_gap
+            idx_lllon = idx_gap_end + 1 if idx_gap_end < mask_lon.size - 1 else 0
+            idx_urlon = idx_gap_start - 1 if idx_gap_start > 1 else mask_lon.size - 1
+            lllon = self.lon[idx_lllon]
+            urlon = self.lon[idx_urlon]
+            crossing_dateline = idx_lllon > idx_urlon
 
         # Increase latitudinal size if minimum specified
         if d_lat_min is not None:
             d_lat = urlat - lllat
             if d_lat < d_lat_min:
-                lllat -= 0.5 * min([d_lat_min - d_lat, d_lat_max - d_lat])
-                urlat += 0.5 * min([d_lat_min - d_lat, d_lat_max - d_lat])
+                dd_lat = min([d_lat_min - d_lat, d_lat_max - d_lat])
+                lllat -= 0.5 * dd_lat
+                urlat += 0.5 * dd_lat
 
         # Increase longitudinal size if minimum specified
         if d_lon_min is not None:
             if crossing_dateline:
                 d_lon = lllon - urlon
                 if d_lon < d_lon_min:
-                    lllon += 0.5 * min([d_lon_min - d_lon, d_lon_max - d_lon])
-                    urlon -= 0.5 * min([d_lon_min - d_lon, d_lon_max - d_lon])
+                    dd_lon = min([d_lon_min - d_lon, d_lon_max - d_lon])
+                    lllon += 0.5 * dd_lon
+                    urlon -= 0.5 * dd_lon
             else:
                 d_lon = urlon - lllon
                 if d_lon < d_lon_min:
-                    lllon -= 0.5 * min([d_lon_min - d_lon, d_lon_max - d_lon])
-                    urlon += 0.5 * min([d_lon_min - d_lon, d_lon_max - d_lon])
+                    dd_lon = min([d_lon_min - d_lon, d_lon_max - d_lon])
+                    lllon -= 0.5 * dd_lon
+                    urlon += 0.5 * dd_lon
 
         if self.config.aspect:
             # Adjust self.aspect ratio to avoid distortion
@@ -262,28 +268,33 @@ class CloudDomain(Domain):
                 d_lon = 360.0 - (lllon - urlon)
                 if d_lon < d_lat * aspect:
                     dd_lon = min([d_lat * aspect - d_lon, d_lon_max - d_lon])
-                    urlon += 0.5 * dd_lon
                     lllon -= 0.5 * dd_lon
+                    urlon += 0.5 * dd_lon
                 elif d_lat < d_lon / aspect:
-                    lllat -= 0.5 * min([d_lon / aspect - d_lat, d_lat_max - d_lat])
-                    urlat += 0.5 * min([d_lon / aspect - d_lat, d_lat_max - d_lat])
+                    dd_lat = min([d_lon / aspect - d_lat, d_lat_max - d_lat])
+                    lllat -= 0.5 * dd_lat
+                    urlat += 0.5 * dd_lat
             else:
                 d_lat = urlat - lllat
                 d_lon = urlon - lllon
                 if d_lon < d_lat * aspect:
-                    lllon -= 0.5 * min([d_lat * aspect - d_lon, d_lon_max - d_lon])
-                    urlon += 0.5 * min([d_lat * aspect - d_lon, d_lon_max - d_lon])
+                    dd_lon = min([d_lat * aspect - d_lon, d_lon_max - d_lon])
+                    lllon -= 0.5 * dd_lon
+                    urlon += 0.5 * dd_lon
                 elif d_lat < d_lon / aspect:
-                    lllat -= 0.5 * min([d_lon / aspect - d_lat, d_lat_max - d_lat])
-                    urlat += 0.5 * min([d_lon / aspect - d_lat, d_lat_max - d_lat])
+                    dd_lat = min([d_lon / aspect - d_lat, d_lat_max - d_lat])
+                    lllat -= 0.5 * dd_lat
+                    urlat += 0.5 * dd_lat
 
         # Adjust latitudinal range if necessary
         if urlat > lat_max:
-            urlat -= urlat - lat_max
-            lllat -= urlat - lat_max
+            dd_lat = urlat - lat_max
+            lllat -= dd_lat
+            urlat -= dd_lat
         elif lllat < lat_min:
-            urlat += lat_min - lllat
-            lllat += lat_min - lllat
+            dd_lat = lat_min - lllat
+            urlat += dd_lat
+            lllat += dd_lat
 
         return lllon, urlon, lllat, urlat
 
@@ -347,7 +358,7 @@ class ReleaseSiteDomain(Domain):
         lon: np.ndarray,
         config: Optional[Union[DomainConfig, Dict[str, Any]]] = None,
     ) -> None:
-        """Create an instance of ``CloudDomain``.
+        """Create an instance of ``ReleaseSiteDomain``.
 
         Args:
             lat: 1D latitude array.
@@ -406,3 +417,34 @@ class ReleaseSiteDomain(Domain):
             urlat = self.get_release_lat() + 0.5 * d_lat
             urlon = self.get_release_lon() + 0.5 * d_lon
         return lllon, urlon, lllat, urlat
+
+
+def find_gaps(
+    mask: Union[np.ndarray, Sequence[int]], periodic: bool = True
+) -> List[Tuple[int, int, int]]:
+    """Return a size, start and end of all gaps in a 1D mask."""
+    mask = np.asarray(mask, bool)
+    if not len(mask.shape) == 1:
+        raise ValueError(f"mask1d must have one dimension, not {len(mask.shape)}")
+    starts = []
+    val_prev = mask[-1] if periodic else True
+    for idx, val in enumerate(mask):
+        if val_prev and not val:
+            starts.append(idx)
+        val_prev = val
+    gaps: List[Tuple[int, int, int]] = []
+    for start in starts:
+        idx = start
+        size = 0
+        while not mask[idx]:
+            size += 1
+            if idx < mask.size - 1:
+                idx += 1
+            elif not periodic:
+                idx += 1
+                break
+            else:
+                idx = 0
+        end = (idx if idx > 0 else mask.size) - 1
+        gaps.append((size, start, end))
+    return gaps
