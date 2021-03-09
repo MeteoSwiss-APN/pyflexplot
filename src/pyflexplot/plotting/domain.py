@@ -234,20 +234,11 @@ class CloudDomain(Domain):
 
         # Longitude
         mask_lon = self.mask.any(axis=0)
-        crossing_dateline = (
-            self.config.periodic_lon
-            and mask_lon[0]
-            and mask_lon[-1]
-            and not mask_lon.all()
-        )
-        if crossing_dateline:
-            idx_lllon = min([np.where(~mask_lon)[0][-1] + 1, self.lon.size - 1])
-            idx_urlon = max([np.where(~mask_lon)[0][0] - 1, 0])
-            lllon = self.lon[idx_lllon]
-            urlon = self.lon[idx_urlon]
-            lllon = min([lllon, lon_max])
-            urlon = max([urlon, lon_min])
-        else:
+        if mask_lon.all():
+            lllon = self.lon.min()
+            urlon = self.lon.max()
+            crossing_dateline = False
+        elif not self.config.periodic_lon:
             if not any(mask_lon):
                 lllon = self.lon.min()
                 urlon = self.lon.max()
@@ -256,6 +247,16 @@ class CloudDomain(Domain):
                 urlon = self.lon[mask_lon].max()
             lllon = max([lllon, lon_min])
             urlon = min([urlon, lon_max])
+            crossing_dateline = False
+        else:
+            gaps = find_gaps(mask_lon, periodic=True)
+            largest_gap = next(iter(sorted(gaps, reverse=True)))
+            _, idx_gap_start, idx_gap_end = largest_gap
+            idx_lllon = idx_gap_end + 1 if idx_gap_end < mask_lon.size - 1 else 0
+            idx_urlon = idx_gap_start - 1 if idx_gap_start > 1 else mask_lon.size - 1
+            lllon = self.lon[idx_lllon]
+            urlon = self.lon[idx_urlon]
+            crossing_dateline = idx_lllon > idx_urlon
 
         # Increase latitudinal size if minimum specified
         if d_lat_min is not None:

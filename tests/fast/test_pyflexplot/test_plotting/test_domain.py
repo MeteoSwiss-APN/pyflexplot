@@ -13,33 +13,40 @@ from pyflexplot.plotting.domain import CloudDomain
 from pyflexplot.plotting.domain import find_gaps
 
 
-class Test_CloudDomain:
-    """Test cloud domain."""
+class Test_GlobalCloudDomain:
+    """Test cloud domain on global grid."""
 
-    class Global:
-        """Global domain."""
+    class General:
+        """General cloud that may be comprised of multiple sub-clouds."""
 
         lat = np.arange(-85, 85.1, 10)
         lon = np.arange(-175, 175.1, 10)
 
-        def get_mask(self, lllon, urlon, lllat, urlat):
+        def get_mask(self, bboxes):
             mask = np.zeros([self.lat.size, self.lon.size], np.bool)
-            if lllon < 0:
-                mask[lllat:urlat, lllon:] = True
-                mask[lllat:urlat, :urlon] = True
-            else:
-                mask[lllat:urlat, lllon:urlon] = True
+            for lllon, urlon, lllat, urlat in bboxes:
+                if lllon < 0:
+                    mask[lllat:urlat, lllon:] = True
+                    mask[lllat:urlat, :urlon] = True
+                else:
+                    mask[lllat:urlat, lllon:urlon] = True
             return mask
 
-        def get_domain(self, lllon, urlon, lllat, urlat, **config):
-            mask = self.get_mask(lllon, urlon, lllat, urlat)
+        def get_domain(self, *mask_args, **config):
+            mask = self.get_mask(*mask_args)
             return CloudDomain(self.lat, self.lon, mask=mask, config=config)
 
-        def get_bbox(self, lllon, urlon, lllat, urlat, **config):
-            domain = self.get_domain(lllon, urlon, lllat, urlat, **config)
+        def get_bbox(self, *mask_args, **config):
+            domain = self.get_domain(*mask_args, **config)
             return domain.find_bbox_corners()
 
-    class Test_ZonalNearPole(Global):
+    class Continuous(General):
+        """Continuous cloud."""
+
+        def get_mask(self, lllon, urlon, lllat, urlat):
+            return super().get_mask([(lllon, urlon, lllat, urlat)])
+
+    class Test_ZonalNearPole(Continuous):
         """Zonally extended cloud near a pole."""
 
         def test_north_no_aspect(self):
@@ -68,7 +75,7 @@ class Test_CloudDomain:
             # ddlat = 80 - 20 = 60
             assert bbox == (-25, 55, -85, -5)
 
-    class Test_AcrossDateline(Global):
+    class Test_AcrossDateline(Continuous):
         """Cloud stretching across dateline."""
 
         def test_non_periodic_wrong(self):
@@ -108,6 +115,24 @@ class Test_CloudDomain:
             # ddlon = 90 - 20 = 70
             ddlon2 = 70 / 2
             assert bbox == (175 - ddlon2, -165 + ddlon2, 15, 75)
+
+    class Test_NonContinuousNearDateline(General):
+        """Non-continuous cloud around the dateline."""
+
+        def test_continuous(self):
+            """W/o specified aspect ratio but with periodic zonal boundaries."""
+            bbox = self.get_bbox([(-5, 4, 10, 17)], periodic_lon=True)
+            assert bbox == (135, -145, 15, 75)
+
+        def test_non_continuous_non_period(self):
+            """W/o specified aspect ratio and w/o periodic zonal boundaries."""
+            bbox = self.get_bbox([(30, 33, 10, 17), (1, 4, 10, 17)])
+            assert bbox == (-165, 145, 15, 75)
+
+        def test_non_continuous_periodic(self):
+            """W/o specified aspect ratio but with periodic zonal boundaries."""
+            bbox = self.get_bbox([(31, 33, 10, 17), (1, 4, 10, 17)], periodic_lon=True)
+            assert bbox == (135, -145, 15, 75)
 
 
 @dc.dataclass
