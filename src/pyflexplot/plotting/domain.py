@@ -3,7 +3,9 @@
 import dataclasses as dc
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -435,3 +437,34 @@ class ReleaseSiteDomain(Domain):
             urlat = self.get_release_lat() + 0.5 * d_lat
             urlon = self.get_release_lon() + 0.5 * d_lon
         return lllon, urlon, lllat, urlat
+
+
+def find_gaps(
+    mask: Union[np.ndarray, Sequence[int]], periodic: bool = True
+) -> List[Tuple[int, int, int]]:
+    """Return a size, start and end of all gaps in a 1D mask."""
+    mask = np.asarray(mask, bool)
+    if not len(mask.shape) == 1:
+        raise ValueError(f"mask1d must have one dimension, not {len(mask.shape)}")
+    starts = []
+    val_prev = mask[-1] if periodic else True
+    for idx, val in enumerate(mask):
+        if val_prev and not val:
+            starts.append(idx)
+        val_prev = val
+    gaps: List[Tuple[int, int, int]] = []
+    for start in starts:
+        idx = start
+        size = 0
+        while not mask[idx]:
+            size += 1
+            if idx < mask.size - 1:
+                idx += 1
+            elif not periodic:
+                idx += 1
+                break
+            else:
+                idx = 0
+        end = (idx if idx > 0 else mask.size) - 1
+        gaps.append((size, start, end))
+    return gaps

@@ -1,9 +1,16 @@
 """Tests for module ``pyflexplot.plotting.domain``."""
+# Standard library
+import dataclasses as dc
+from typing import List
+from typing import Tuple
+
 # Third-party
 import numpy as np
+import pytest
 
 # First-party
 from pyflexplot.plotting.domain import CloudDomain
+from pyflexplot.plotting.domain import find_gaps
 
 
 class Test_CloudDomain:
@@ -101,3 +108,56 @@ class Test_CloudDomain:
             # ddlon = 90 - 20 = 70
             ddlon2 = 70 / 2
             assert bbox == (175 - ddlon2, -165 + ddlon2, 15, 75)
+
+
+@dc.dataclass
+class FindGapsConfig:
+    mask: List[int]
+    gaps: List[Tuple[int, int, int]]
+    periodic: bool = True
+
+
+@pytest.mark.parametrize(
+    "cfg",
+    [
+        FindGapsConfig(  # [cfg0]
+            mask=[0, 0, 0, 0],
+            gaps=[],
+        ),
+        FindGapsConfig(  # [cfg1]
+            mask=[0, 0, 0, 0],
+            gaps=[(4, 0, 3)],
+            periodic=False,
+        ),
+        FindGapsConfig(  # [cfg2]
+            mask=[1, 0, 0, 1],
+            gaps=[(2, 1, 2)],
+        ),
+        FindGapsConfig(  # [cfg3]
+            mask=[1, 0, 0, 1],
+            gaps=[(2, 1, 2)],
+            periodic=False,
+        ),
+        FindGapsConfig(  # [cfg4]
+            mask=[0, 1, 1, 0],
+            gaps=[(2, 3, 0)],
+        ),
+        FindGapsConfig(  # [cfg5]
+            mask=[0, 1, 1, 0],
+            gaps=[(1, 0, 0), (1, 3, 3)],
+            periodic=False,
+        ),
+        FindGapsConfig(  # [cfg6]
+            mask=[0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+            gaps=[(1, 3, 3), (3, 5, 7), (4, 9, 0)],
+        ),
+        FindGapsConfig(  # [cfg7]
+            mask=[0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+            gaps=[(1, 0, 0), (1, 3, 3), (3, 5, 7), (3, 9, 11)],
+            periodic=False,
+        ),
+    ],
+)
+def test_find_gaps(cfg):
+    gaps = find_gaps(cfg.mask, periodic=cfg.periodic)
+    assert gaps == cfg.gaps
