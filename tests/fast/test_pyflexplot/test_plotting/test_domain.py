@@ -32,6 +32,35 @@ class Test_CloudDomain:
             domain = self.get_domain(lllon, urlon, lllat, urlat, **config)
             return domain.find_bbox_corners()
 
+    class Test_ZonalNearPole(Global):
+        """Zonally extended cloud near a pole."""
+
+        def test_north_no_aspect(self):
+            """Near north pole, w/o specified aspect ratio."""
+            bbox = self.get_bbox(10, 29, 15, 17)
+            # dlon, dlat = 180, 10; aspect = 18
+            assert bbox == (-75, 105, 65, 75)
+
+        def test_north_aspect(self):
+            """Near north pole, with specified aspect ratio."""
+            bbox = self.get_bbox(10, 29, 16, 18, aspect=2)
+            # dlat = dlon / aspect = 180 / 2 = 90
+            # ddlat = 90 - 10 = 80
+            assert bbox == (-75, 105, -5, 85)
+
+        def test_south_no_aspect(self):
+            """Near south pole, w/o specified aspect ratio."""
+            bbox = self.get_bbox(15, 24, 1, 4)
+            # dlon, dlat = 80, 20; aspect = 4
+            assert bbox == (-25, 55, -75, -55)
+
+        def test_south_aspect(self):
+            """Near south pole, with specified aspect ratio."""
+            bbox = self.get_bbox(15, 24, 1, 4, aspect=1)
+            # dlat = dlon / aspect = 80 / 1 = 80
+            # ddlat = 80 - 20 = 60
+            assert bbox == (-25, 55, -85, -5)
+
     class Test_AcrossDateline(Global):
         """Cloud stretching across dateline."""
 
