@@ -252,6 +252,7 @@ class TestReadFieldEnsemble_Multiple:
                         assert len(plot_setup_ijk.panels) == 1
                         panel_setup = next(iter(plot_setup_ijk.panels))
                         # SR_TMP >
+                        fld_mem_time_i_lst = []
                         for dimensions in panel_setup.dimensions.decompress(
                             ["variable"]
                         ):
@@ -268,7 +269,9 @@ class TestReadFieldEnsemble_Multiple:
                                 )
                                 * scale_fld_ref  # SR_TODO Why?!?!?
                             )
-                            fld_mem_time[-1].append(fld)
+                            fld_mem_time_i_lst.append(fld)
+                        fld_mem_time_i = np.nansum(fld_mem_time_i_lst, axis=0)
+                        fld_mem_time[-1].append(fld_mem_time_i)
                 fld_lst.append(fct_reduce_mem(np.nansum(fld_mem_time, axis=0)))
             return np.array(fld_lst)
 
