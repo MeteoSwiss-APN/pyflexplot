@@ -48,5 +48,9 @@ class NotSummarizableError(Exception):
     """Object could not be summarized."""
 
 
+class TooWideRefDistIndicatorError(Exception):
+    """Reference distance indicator is too wide for the plot."""
+
+
 class UnequalSetupParamValuesError(Exception):
     """Values of a param differs between multiple setups."""

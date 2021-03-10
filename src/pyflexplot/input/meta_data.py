@@ -1,10 +1,4 @@
-"""Meta data.
-
-Note that these meta data should eventually be merged with the raw ones in
-module ``pyflexplot.nc_meta_data`` because the two very different data
-structures serve very similar purposes in parallel.
-
-"""
+"""Meta data."""
 # Standard library
 import re
 import warnings
@@ -38,9 +32,9 @@ from srutils.datetime import init_datetime
 from srutils.dict import compress_multival_dicts
 
 # Local
-from ..setup import Setup
+from ..setups.dimensions import Dimensions
+from ..setups.model_setup import ModelSetup
 from ..words import SYMBOLS
-from .nc_meta_data import derive_variable_name
 from .species import get_species
 from .species import Species
 
@@ -310,14 +304,26 @@ class MetaData:
 
     @classmethod
     def collect(
-        cls, fi: nc4.Dataset, setup: Setup, *, add_ts0: bool = False
+        cls,
+        fi: nc4.Dataset,
+        model_setup: ModelSetup,
+        dimensions: Dimensions,
+        *,
+        plot_variable: str,
+        integrate: bool,
+        add_ts0: bool = True,
     ) -> "MetaData":
         """Collect meta data from file."""
+        assert isinstance(dimensions.variable, str)  # SR_DBG
         return cls(
-            release=ReleaseMetaData.from_file(fi, setup),
-            simulation=SimulationMetaData.from_file(fi, setup, add_ts0),
-            variable=VariableMetaData.from_file(fi, setup),
-            species=SpeciesMetaData.from_file(fi, setup),
+            release=ReleaseMetaData.from_file(fi, dimensions),
+            simulation=SimulationMetaData.from_file(
+                fi, model_setup, dimensions, integrate, add_ts0
+            ),
+            variable=VariableMetaData.from_file(
+                fi, model_setup, dimensions, plot_variable
+            ),
+            species=SpeciesMetaData.from_file(fi, model_setup, dimensions),
         )
 
 
@@ -350,21 +356,26 @@ class VariableMetaData(_MetaDataBase):
     level_unit: str
 
     @classmethod
-    def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "VariableMetaData":
-        if setup.core.input_variable == "affected_area":
+    def from_file(
+        cls,
+        fi: nc4.Dataset,
+        model_setup: ModelSetup,
+        dimensions: Dimensions,
+        plot_variable: str,
+    ) -> "VariableMetaData":
+        if plot_variable == "affected_area":
             unit = ""
-        elif setup.core.input_variable in [
+        elif plot_variable in [
             "cloud_arrival_time",
             "cloud_departure_time",
         ]:
             unit = "h"
         else:
-            assert setup.core.dimensions.species_id is not None  # mypy
+            assert dimensions.species_id is not None  # mypy
             var_name = derive_variable_name(
-                model=setup.model.name,
-                input_variable=setup.core.input_variable,
-                species_id=setup.core.dimensions.species_id,
-                deposition_type=setup.deposition_type_str,
+                model=model_setup.name,
+                variable=dimensions.variable,
+                species_id=dimensions.species_id,
             )
             try:
                 var = fi.variables[var_name]
@@ -373,12 +384,12 @@ class VariableMetaData(_MetaDataBase):
             else:
                 unit = getncattr(var, "units")
         idx: int
-        if setup.core.dimensions.level is None:
+        if dimensions.level is None:
             level_unit = ""
             level_bot = -1.0
             level_top = -1.0
         else:
-            idx = setup.core.dimensions.level
+            idx = dimensions.level
             try:  # SR_TMP IFS
                 var = fi.variables["level"]
             except KeyError:  # SR_TMP IFS
@@ -411,32 +422,43 @@ class SimulationMetaData(_MetaDataBase):
     grid_north_pole_lat: float
     grid_north_pole_lon: float
 
+    # pylint: disable=R0913  # too-many-arguments (>5)
     @classmethod
     def from_file(
-        cls, fi: nc4.Dataset, setup: Setup, add_ts0: bool
+        cls,
+        fi: nc4.Dataset,
+        model_setup: ModelSetup,
+        dimensions: Dimensions,
+        integrate: bool,
+        add_ts0: bool,
     ) -> "SimulationMetaData":
 
         # Start and end timesteps of simulation
-        start = init_datetime(getncattr(fi, "ibdate") + getncattr(fi, "ibtime"))
-        end = init_datetime(getncattr(fi, "iedate") + getncattr(fi, "ietime"))
+        start = init_datetime(
+            str(getncattr(fi, "ibdate")) + str(getncattr(fi, "ibtime"))
+        )
+        end = init_datetime(str(getncattr(fi, "iedate")) + str(getncattr(fi, "ietime")))
+        step = int(getncattr(fi, "loutstep"))
 
         # Formatted time steps
         time_steps: List[int] = datetime_range(
             start=start,
             end=end,
-            step=getncattr(fi, "loutstep"),
+            step=step,
             convert=int,
             fmt="%Y%m%d%H%M",
         )
 
         # Current time step and start time step of current integration period
-        collector = TimeStepMetaDataCollector(fi, setup, add_ts0=add_ts0)
+        collector = TimeStepMetaDataCollector(
+            fi, dimensions, integrate, add_ts0=add_ts0
+        )
         now = collector.now()
         reduction_start = collector.integration_start()
         now_rel: timedelta = collector.now_rel()
         reduction_start_rel = collector.integration_start_rel()
 
-        base_time = init_datetime(cast(int, setup.model.base_time))
+        base_time = init_datetime(cast(int, model_setup.base_time))
         lead_time = now - base_time
 
         # Grid
@@ -486,9 +508,9 @@ class ReleaseMetaData(_MetaDataBase):
     start_rel: timedelta
 
     @classmethod
-    def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "ReleaseMetaData":
+    def from_file(cls, fi: nc4.Dataset, dimensions: Dimensions) -> "ReleaseMetaData":
         """Read information on a release from open file."""
-        raw = RawReleaseMetaData.from_file(fi, setup)
+        raw = RawReleaseMetaData.from_file(fi, dimensions)
         raw_site_name = raw.site
         site_name = (
             raw_site_name.replace("ae", SYMBOLS["ae"].s)
@@ -536,39 +558,36 @@ class SpeciesMetaData(_MetaDataBase):
     washout_exponent: Union[float, Tuple[float, ...]]
 
     @classmethod
-    def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "SpeciesMetaData":
+    def from_file(
+        cls,
+        fi: nc4.Dataset,
+        model_setup: ModelSetup,
+        dimensions: Dimensions,
+    ) -> "SpeciesMetaData":
         name: str
-        if setup.core.input_variable in [
-            "affected_area",
-            "cloud_arrival_time",
-            "cloud_departure_time",
-        ]:
-            alt_setup = setup.derive({"core": {"input_variable": "concentration"}})
-            return cls.from_file(fi, alt_setup)
-        else:
-            assert setup.core.dimensions.species_id is not None  # mypy
-            var_name = derive_variable_name(
-                model=setup.model.name,
-                input_variable=setup.core.input_variable,
-                species_id=setup.core.dimensions.species_id,
-                deposition_type=setup.deposition_type_str,
-            )
-            try:
-                var: nc4.Variable = fi.variables[var_name]
-                name = getncattr(var, "long_name")
-            except (KeyError, AttributeError):
-                if setup.model.name.startswith("IFS"):
-                    name = cls._get_species_name_ifs(fi, var_name)
-                elif setup.core.input_variable == "deposition":
-                    # Deposition field may be missing
-                    alt_setup = setup.derive(
-                        {"core": {"input_variable": "concentration"}}
-                    )
-                    return cls.from_file(fi, alt_setup)
-                else:
-                    name = "N/A"
+        assert dimensions.species_id is not None  # mypy
+        var_name = derive_variable_name(
+            model=model_setup.name,
+            variable=dimensions.variable,
+            species_id=dimensions.species_id,
+        )
+        try:
+            var: nc4.Variable = fi.variables[var_name]
+            name = getncattr(var, "long_name")
+        except (KeyError, AttributeError):
+            if model_setup.name.startswith("IFS"):
+                name = cls._get_species_name_ifs(fi, var_name)
+            elif dimensions.variable.endswith("_deposition"):
+                # Deposition field may be missing
+                return cls.from_file(
+                    fi,
+                    model_setup,
+                    dimensions.derive({"variable": "concentration"}),
+                )
             else:
-                name = name.split("_")[0]
+                name = "N/A"
+        else:
+            name = name.split("_")[0]
         species: Species = get_species(name=name)
         return cls(
             name=species.name,
@@ -640,22 +659,22 @@ class RawReleaseMetaData:
 
     # pylint: disable=R0914  # too-many-locals
     @classmethod
-    def from_file(cls, fi: nc4.Dataset, setup: Setup) -> "RawReleaseMetaData":
+    def from_file(cls, fi: nc4.Dataset, dimensions: Dimensions) -> "RawReleaseMetaData":
         """Read information on a release from open file."""
         # Fetch numpoint
-        assert setup.core.dimensions.numpoint is not None  # mypy
-        idx_point = setup.core.dimensions.numpoint
+        assert dimensions.numpoint is not None  # mypy
+        idx_point = dimensions.numpoint
 
         # Fetch species_id
-        assert setup.core.dimensions.species_id is not None  # mypy
+        assert dimensions.species_id is not None  # mypy
         # SR_TMP <
-        idx_spec = setup.core.dimensions.species_id - 1
+        idx_spec = dimensions.species_id - 1
         assert 0 <= idx_spec < fi.dimensions["numspec"].size
         # SR_TMP >
 
         # Fetch nageclass
-        assert setup.core.dimensions.nageclass is not None  # mypy
-        idx_age = setup.core.dimensions.nageclass
+        assert dimensions.nageclass is not None  # mypy
+        idx_age = dimensions.nageclass
 
         var_name: str = "RELCOM"  # SR_HC TODO un-hardcode
         var = fi.variables[var_name]
@@ -721,10 +740,18 @@ class RawReleaseMetaData:
 class TimeStepMetaDataCollector:
     """Collect time step meta data from file."""
 
-    def __init__(self, fi: nc4.Dataset, setup: Setup, *, add_ts0: bool = False) -> None:
+    def __init__(
+        self,
+        fi: nc4.Dataset,
+        dimensions: Dimensions,
+        integrate: bool,
+        *,
+        add_ts0: bool = True,
+    ) -> None:
         """Create an instance of ``TimeStepMetaDataCollector``."""
         self.fi = fi
-        self.setup = setup
+        self.dimensions = dimensions
+        self.integrate = integrate
         self.add_ts0 = add_ts0
 
     def start(self) -> datetime:
@@ -772,7 +799,7 @@ class TimeStepMetaDataCollector:
 
     def integration_duration(self) -> timedelta:
         """Compute timestep delta of integration period."""
-        if self.setup.core.integrate:
+        if self.integrate:
             return self.now_rel()
         n = self.time_step_idx() + 1
         if n == 0:
@@ -781,8 +808,94 @@ class TimeStepMetaDataCollector:
 
     def time_step_idx(self) -> int:
         """Index of current time step of current field."""
-        # Default to timestep of current field
-        assert self.setup.core.dimensions.time is not None  # mypy
+        assert self.dimensions.time is not None  # mypy
         if self.add_ts0:
-            return self.setup.core.dimensions.time - 1
-        return self.setup.core.dimensions.time
+            return self.dimensions.time - 1
+        return self.dimensions.time
+
+
+def derive_variable_name(model: str, variable: str, species_id: int) -> str:
+    """Derive the NetCDF variable name given some attributes."""
+    cosmo_models = ["COSMO-2", "COSMO-1", "COSMO-2E", "COSMO-1E"]
+    ifs_models = ["IFS-HRES", "IFS-HRES-EU"]
+    if variable == "concentration":
+        if model in cosmo_models:
+            return f"spec{species_id:03d}"
+        elif model in ifs_models:
+            return f"spec{species_id:03d}_mr"
+        else:
+            raise ValueError("unknown model", model)
+    elif variable.endswith("_deposition"):
+        prefix = {"wet": "WD", "dry": "DD"}[variable[:3]]
+        return f"{prefix}_spec{species_id:03d}"
+    raise ValueError(f"unknown variable '{variable}'")
+
+
+def read_dimensions(file_handle: nc4.Dataset, add_ts0: bool = True) -> Dict[str, Any]:
+    """Read dimensions from a NetCDF file.
+
+    Args:
+        file_handle: Open NetCDF file handle.
+
+        add_ts0 (optional): Insert an additional time step 0 in the beginning
+            with empty fields, given that the first data time step may not
+            correspond to the beginning of the simulation, but constitute the
+            sum over the first few hours of the simulation.
+
+    """
+    dimensions: Dict[str, Any] = {}
+    for dim_handle in file_handle.dimensions.values():
+        dimensions[dim_handle.name] = {
+            "name": dim_handle.name,
+            "size": dim_handle.size,
+        }
+
+    if add_ts0:
+        dimensions["time"]["size"] += 1
+
+    return dimensions
+
+
+def read_time_steps(file_handle: nc4.Dataset) -> List[str]:
+    """Derive the formatted time steps from the NetCDF global attributes.
+
+    Args:
+        file_handle: Open NetCDF file handle.
+
+    """
+    attrs_select: List[str] = ["ibdate", "ibtime", "iedate", "ietime", "loutstep"]
+    attrs_try_select: List[str] = []
+    ncattrs: Dict[str, Any] = {}
+    for attr in attrs_select:
+        ncattrs[attr] = file_handle.getncattr(attr)
+    for attr in attrs_try_select:
+        try:
+            ncattrs[attr] = file_handle.getncattr(attr)
+        except AttributeError:
+            continue
+    return datetime_range(
+        start=ncattrs["ibdate"] + ncattrs["ibtime"],
+        end=ncattrs["iedate"] + ncattrs["ietime"],
+        step=ncattrs["loutstep"],
+        convert=str,
+        fmt="%Y%m%d%H%M",
+    )
+
+
+def read_species_ids(file_handle: nc4.Dataset) -> Tuple[int, ...]:
+    """Derive the species ids from the NetCDF variable names.
+
+    Args:
+        file_handle: Open NetCDF file handle.
+
+    """
+    rx = re.compile(r"\A([WD]D_)?spec(?P<species_id>[0-9][0-9][0-9])(_mr)?\Z")
+    species_ids = set()
+    for var_name in file_handle.variables:
+        match = rx.match(var_name)
+        if match:
+            species_id = int(match.group("species_id"))
+            species_ids.add(species_id)
+    if not species_ids:
+        raise Exception("could not identify species ids")
+    return tuple(sorted(species_ids))

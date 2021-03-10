@@ -100,10 +100,10 @@ def datetime_range(start, end, step, *, convert=None, fmt="%Y%m%d%H%M%S"):
         raise ValueError(f"start after end: {start} > {end}")
     if not isinstance(step, timedelta):
         step = timedelta(seconds=int(step))
-    steps: List[datetime] = [start]
-    while steps[-1] < end:
-        steps.append(steps[-1] + step)
+    times: List[datetime] = [start]
+    while times[-1] + step <= end:
+        times.append(times[-1] + step)
     if convert:
-        strs = [step.strftime(fmt) for step in steps]
+        strs = [step.strftime(fmt) for step in times]
         return list(map(convert, strs))
-    return steps
+    return times

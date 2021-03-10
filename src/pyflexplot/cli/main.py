@@ -2,7 +2,6 @@
 # Standard library
 import multiprocessing
 import os
-import re
 import time
 from copy import copy
 from functools import partial
@@ -10,19 +9,24 @@ from os.path import abspath
 from os.path import relpath
 from pathlib import Path
 from typing import Any
+from typing import Collection
 from typing import Dict
 from typing import List
+from typing import Mapping
 from typing import Optional
+from typing import Sequence
+from typing import Union
 
 # Third-party
 import click
-from PyPDF2 import PdfFileReader
-from PyPDF2 import PdfFileWriter
-from PyPDF2.utils import PdfReadError
+from click import Context
 
 # First-party
-from srutils.str import ordinal
-from srutils.str import sfmt
+from srutils.format import ordinal
+from srutils.format import sfmt
+from srutils.paths import PathsOrganizer
+from srutils.pdf import MultiPagePDF
+from srutils.pdf import PdfReadError
 from srutils.str import sorted_paths
 
 # Local
@@ -30,11 +34,9 @@ from ..input.field import FieldGroup
 from ..input.read_fields import read_fields
 from ..plots import create_plot
 from ..plots import format_out_file_paths
-from ..plots import prepare_plot
-from ..plotting.boxed_plot import BoxedPlot
-from ..setup import SetupFile
-from ..setup import SetupGroup
-from ..utils.formatting import format_range
+from ..setups.plot_setup import PlotSetupGroup
+from ..setups.plot_setup import prepare_raw_params
+from ..setups.setup_file import SetupFile
 from ..utils.logging import log
 
 
@@ -43,23 +45,23 @@ from ..utils.logging import log
 # pylint: disable=R0914  # too-many-locals (>15)
 # pylint: disable=R0915  # too-many-statements (>50)
 def main(
-    ctx,
+    ctx: Context,
     *,
-    auto_tmp,
-    cache,
-    dest_dir,
-    dry_run,
-    input_setup_params,
-    merge_pdfs,
-    merge_pdfs_dry,
-    num_procs,
-    only,
-    open_cmd,
-    keep_merged_pdfs,
-    setup_file_paths,
-    show_version,
-    suffixes,
-    tmp_dir,
+    auto_tmp: bool,
+    cache: bool,
+    dest_dir: Optional[str],
+    dry_run: bool,
+    input_setup_params: Mapping[str, Any],
+    merge_pdfs: bool,
+    merge_pdfs_dry: bool,
+    num_procs: int,
+    only: Optional[int],
+    open_cmd: Optional[str],
+    keep_merged_pdfs: bool,
+    setup_file_paths: Sequence[str],
+    show_version: bool,
+    suffixes: Collection[str],
+    tmp_dir: Optional[str],
 ):
     """Create dispersion plot as specified in CONFIG_FILE(S)."""
     if dest_dir is None:
@@ -71,70 +73,21 @@ def main(
             tmp_dir = dest_dir
 
     # Check if temporary directory (if given) already exists
-    if tmp_dir != "." and os.path.exists(tmp_dir):
+    if tmp_dir != "." and Path(tmp_dir).exists():
         log(dbg="using existing temporary directory '{tmp_dir}'")
 
-    # Add preset setup file paths
-    setup_file_paths = list(setup_file_paths)
     preset_setup_file_paths = ctx.obj.get("preset_setup_file_paths", [])
-    log(
-        vbs=(
-            f"prepare setups from {len(preset_setup_file_paths)} preset and"
-            f" {len(setup_file_paths)} input files"
-        )
+    setup_groups = prepare_setups(
+        setup_file_paths, preset_setup_file_paths, input_setup_params, suffixes, only
     )
-    for path in preset_setup_file_paths:
-        if path not in setup_file_paths:
-            setup_file_paths.append(path)
-    if not setup_file_paths:
-        setups = SetupGroup.from_raw_params([input_setup_params])
-    else:
-        setups = SetupFile.read_many(setup_file_paths, override=input_setup_params)
-    setups = setups.compress_partially("outfile")
-
-    if suffixes:
-        setups.override_output_suffixes(suffixes)
-
-    # Group setups by input file(s)
-    log(dbg=f"group {len(setups)} setups by infile")
-    setups_by_infile = setups.group("infile")
-    if only:
-        # Restrict number of setups to ``only``
-        # Note that the number of plots is likely still higher than only because
-        # each setup can define many plots, but it's a first elimination step
-        all_setups_by_infile = copy(setups_by_infile)
-        setups_by_infile = {}
-        n_setups_old = sum([len(setups) for setups in all_setups_by_infile.values()])
-        n_setups_new = 0
-        for infile, setups in all_setups_by_infile.items():
-            if n_setups_new + len(setups) > only:
-                setups = SetupGroup(list(setups)[: only - n_setups_new])
-                setups_by_infile[infile] = setups
-                n_setups_new += len(setups)
-                assert n_setups_new == only
-                break
-            n_setups_new += len(setups)
-            setups_by_infile[infile] = setups
-        n_input_files_old = len(all_setups_by_infile)
-        n_input_files_new = len(setups_by_infile)
-        if n_setups_new < n_setups_old:
-            log(
-                dbg=(
-                    f"[only:{only}] skip {n_setups_old - n_setups_new}/{n_setups_old}"
-                    f" setups and {n_input_files_old - n_input_files_new}"
-                    f"/{n_input_files_old} files"
-                )
-            )
 
     pool = multiprocessing.Pool(processes=num_procs)
 
     # Create plots input file(s) by input file(s)
     log(vbs="read fields and create plots")
     all_out_file_paths: List[str] = []
-    iter_state = SharedIterationState(n_input_files=len(setups_by_infile))
-    for iter_state.i_input_file, (in_file_path, sub_setups) in enumerate(
-        setups_by_infile.items(), start=1
-    ):
+    iter_state = SharedIterationState(n_input_files=len(setup_groups))
+    for iter_state.i_input_file, setup_group in enumerate(setup_groups, start=1):
         if only and iter_state.n_field_groups_curr >= only:
             log(
                 dbg=(
@@ -146,12 +99,12 @@ def main(
         log(
             vbs=(
                 f"[{iter_state.i_input_file + 1}/{iter_state.n_input_files}]"
-                f" read {in_file_path}"
+                f" read {setup_group.infile}"
             )
         )
+        # Group fields into one group per plot (with possibly multiple outfiles)
         field_groups = read_fields(
-            in_file_path,
-            sub_setups,
+            setup_group,
             config={
                 "add_ts0": True,
                 "missing_ok": True,
@@ -162,7 +115,9 @@ def main(
         )
         iter_state.n_field_groups_curr += len(field_groups)
         iter_state.n_field_groups_i = len(field_groups)
-        out_file_paths_lst: List[str] = [
+        # Format all outfile paths ahead of parallelized plotting loop to ensure
+        # correct order of derived paths (e.g., "a.pdf", "a.1.pdf", "a.2.pdf")
+        out_file_paths_lst: List[List[str]] = [
             format_out_file_paths(
                 field_group,
                 prev_paths=all_out_file_paths,
@@ -181,7 +136,7 @@ def main(
         else:
             for args in iter_args:
                 fct(*args)
-        log(dbg=f"done processing {in_file_path}")
+        log(dbg=f"done processing {setup_group.infile}")
         n_input_files_todo = iter_state.n_input_files - iter_state.i_input_file
         if only and iter_state.n_field_groups_curr >= only and n_input_files_todo:
             log(vbs=f"[only:{only}] skip remaining {n_input_files_todo} input files")
@@ -245,6 +200,91 @@ def main(
         open_plots(open_cmd, all_out_file_paths, dry_run)
 
     return 0
+
+
+def prepare_setups(
+    setup_file_paths: Sequence[Union[Path, str]],
+    preset_setup_file_paths: Sequence[Union[Path, str]],
+    input_setup_params: Mapping[str, Any],
+    suffixes: Optional[Union[str, Collection[str]]],
+    only: Optional[int],
+) -> List[PlotSetupGroup]:
+
+    # Extend preset setup file paths
+    setup_file_paths = list(setup_file_paths)
+
+    # Read setups from infile(s) and/or preset(s)
+    setup_groups = read_setup_groups(
+        setup_file_paths, preset_setup_file_paths, input_setup_params
+    )
+
+    if suffixes:
+        # Replace outfile suffixes by one or more; may increase oufile number
+        for setup_group in setup_groups:
+            setup_group.override_output_suffixes(suffixes)
+
+    # Combine setups that only differ in outfile
+    setup_groups = [
+        setup_group.compress_partially("outfile") for setup_group in setup_groups
+    ]
+
+    if only:
+        # Restrict the total number of setup objects in the setup groups
+        # Note that the number of plots is likely still higher than only because
+        # each setup can define many plots, but it's a first elimination step
+        setup_groups = restrict_grouped_setups(setup_groups, only, grouped_by="infile")
+
+    return setup_groups
+
+
+def read_setup_groups(
+    setup_file_paths: Sequence[Union[Path, str]],
+    preset_setup_file_paths: Sequence[Union[Path, str]],
+    input_setup_params: Mapping[str, Any],
+) -> List[PlotSetupGroup]:
+    log(
+        vbs=(
+            f"reading setups from {len(preset_setup_file_paths)} preset and"
+            f" {len(setup_file_paths)} input files"
+        )
+    )
+    setup_file_paths = list(setup_file_paths)
+    for path in preset_setup_file_paths:
+        if path not in setup_file_paths:
+            setup_file_paths.append(path)
+    if not setup_file_paths:
+        return [PlotSetupGroup.create(prepare_raw_params(input_setup_params))]
+    return SetupFile.read_many(setup_file_paths, override=input_setup_params)
+
+
+def restrict_grouped_setups(
+    setup_groups: Sequence[PlotSetupGroup], only: int, *, grouped_by: str = "group"
+) -> List[PlotSetupGroup]:
+    """Restrict total number of ``Setup``s in ``SetupGroup``s."""
+    old_setup_groups = copy(setup_groups)
+    new_setup_groups: List[PlotSetupGroup] = []
+    n_setups_old = sum(map(len, old_setup_groups))
+    n_setups_new = 0
+    for setup_group in old_setup_groups:
+        if n_setups_new + len(setup_group) > only:
+            setup_group = PlotSetupGroup(list(setup_group)[: only - n_setups_new])
+            new_setup_groups.append(setup_group)
+            n_setups_new += len(setup_group)
+            assert n_setups_new == only
+            break
+        n_setups_new += len(setup_group)
+        new_setup_groups.append(setup_group)
+    n_groups_old = len(old_setup_groups)
+    n_groups_new = len(new_setup_groups)
+    if n_setups_new < n_setups_old:
+        log(
+            dbg=(
+                f"[only:{only}] skip {n_setups_old - n_setups_new}/{n_setups_old}"
+                f" setups and {n_groups_old - n_groups_new}"
+                f"/{n_groups_old} {grouped_by}s"
+            )
+        )
+    return new_setup_groups
 
 
 def get_pid() -> int:
@@ -341,7 +381,6 @@ def create_plots(
             f"/{iter_state.n_field_groups_i}] prepare plot"
         )
     )
-    plot = prepare_plot(field_group, dry_run=dry_run)
     n_out = len(out_file_paths)
     iter_state.n_plot_files_curr += n_out
     for ip_out, out_file_path in enumerate(out_file_paths, start=1):
@@ -354,13 +393,11 @@ def create_plots(
             ),
         )
     if not dry_run:
-        assert isinstance(plot, BoxedPlot)  # mypy
-        create_plot(plot, out_file_paths, show_version=show_version)
+        create_plot(field_group, out_file_paths, show_version=show_version)
     for out_file_path in out_file_paths:
         log(dbg=f"done plotting {out_file_path}")
 
 
-# pylint: disable=R0914  # too-many-locals (>15)
 def merge_pdf_plots(
     paths: List[str],
     *,
@@ -376,86 +413,20 @@ def merge_pdf_plots(
         if path.endswith(".pdf"):
             pdf_paths.append(path)
 
-    # Group PDFs by shared base name
-    grouped_pdf_paths: List[List[str]] = []
-    rx_numbered = re.compile(r"\.[0-9]+.pdf$")
-    for path in list(pdf_paths):
-        if path not in pdf_paths:
-            # Already handled
-            continue
-        if rx_numbered.search(path):
-            # Numbered, so not the first
-            continue
-        path_base = re.sub(r"\.pdf$", "", path)
-        pdf_paths.remove(path)
-        grouped_pdf_paths.append([path])
-        rx_related = re.compile(path_base + r"\.[0-9]+\.pdf")
-        for other_path in list(pdf_paths):
-            if rx_related.search(other_path):
-                pdf_paths.remove(other_path)
-                grouped_pdf_paths[-1].append(other_path)
-    grouped_pdf_paths = [
-        sorted_paths(group, dup_sep=".")
-        for group in grouped_pdf_paths
-        if len(group) > 1
-    ]
-
-    def merge_paths(paths: List[str]) -> str:
-        unnumbered = False
-        idcs: List[int] = []
-        rx = re.compile(r"(?P<base>^.*?)(\.(?P<idx>[0-9]+))?.pdf$")
-        base: Optional[str] = None
-        for path in paths:
-            match = rx.match(path)
-            if not match:
-                raise Exception(f"invalid path: {path}")
-            base_i = match.group("base")
-            if base is None:
-                base = base_i
-            elif base_i != base:
-                raise Exception(f"different path bases: {base_i} != {base}")
-            try:
-                idx = int(match.group("idx"))
-            except TypeError:
-                unnumbered = True
-            else:
-                idcs.append(idx)
-        if len(idcs) == 1:
-            s_idcs = str(next(iter(idcs)))
-        else:
-            s_idcs = (
-                f"{{{format_range(sorted(idcs), join_range='..', join_others=',')}}}"
-            )
-        if unnumbered:
-            s_idcs = f"{{,.{s_idcs}}}"
-        return f"{base}{s_idcs}.pdf"
-
-    # Merge PDFs with shared base name
+    paths_organizer = PathsOrganizer(suffix="pdf", dup_sep=".")
+    grouped_pdf_paths = paths_organizer.group_related(pdf_paths)
     merged_pages: List[str] = []
     for group in grouped_pdf_paths:
-        merged = f"{dest_dir}/{relpath(group[0], start=tmp_dir)}"
+        merged = f"{dest_dir}/{relpath(paths_organizer.merge(group), start=tmp_dir)}"
         if keep_merged and abspath(merged) == abspath(group[0]):
             raise Exception(
                 "input and output files are the same file, which is not allowed for"
                 f" remove_merged=T: '{merged}'"
                 + ("" if merged == group[0] else f" == '{merged[0]}'")
             )
-        log(inf=f"{merge_paths(group)} -> {merged}")
+        log(inf=f"{paths_organizer.format_compact(group)} -> {merged}")
         if not dry_run:
-            writer = PdfFileWriter()
-            for path in group:
-                try:
-                    file = PdfFileReader(path)
-                except (ValueError, TypeError, PdfReadError) as e:
-                    # Occur sporadically; likely a file system issue
-                    raise PdfReadError(path) from e
-                page = file.getPage(0)
-                writer.addPage(page)
-            dir_path = os.path.dirname(merged)
-            if dir_path:
-                os.makedirs(dir_path, exist_ok=True)
-            with open(merged, "wb") as fo:
-                writer.write(fo)
+            MultiPagePDF.from_files(group).write(merged)
         for path in group:
             paths.remove(path)
             if abspath(path) != abspath(merged):
@@ -464,7 +435,7 @@ def merge_pdf_plots(
     return merged_pages
 
 
-def open_plots(cmd, file_paths, dry_run):
+def open_plots(cmd: str, file_paths: Collection[str], dry_run: bool) -> None:
     """Open a plot file using a shell command."""
     file_paths = sorted(file_paths)
 

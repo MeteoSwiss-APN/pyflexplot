@@ -26,6 +26,7 @@ from typing_extensions import Literal
 
 # Local
 from .exceptions import KeyConflictError
+from .exceptions import UnexpandableValueError
 
 
 def format_dictlike(obj, multiline=False, indent=1):
@@ -49,14 +50,101 @@ def format_dictlike(obj, multiline=False, indent=1):
     return f"{type(obj).__name__}({s})"
 
 
-def merge_dicts(*dicts: Mapping[Any, Any]) -> Dict[Any, Any]:
-    """Merge multiple dicts recursively."""
+def merge_dicts(
+    *dicts: Mapping[Any, Any],
+    rec_seqs: bool = True,
+    overwrite_seqs: bool = False,
+    overwrite_seq_dicts: bool = False,
+) -> Dict[Any, Any]:
+    """Merge multiple dicts recursively.
+
+    Args:
+        *dicts: Dicts to be merged.
+
+        rec_seqs (optional): Recurse into sequences to merge dicts therein.
+
+        overwrite_seqs (optional): If ``rec_seqs`` is true, and a certain
+            element in some but not all the dicts (or other mappings) is a
+            sequence, then treat it like all non-mapping-non-sequence elements
+            and select the value from the last dict (mapping), instead of
+            raising an exception.
+
+        overwrite_seq_dicts (optional): If ``rec_seqs`` is true, and the i-th
+            element of a set of sequences that are being merged is a dict (or
+            other mapping) in some but not all of them, then treat it like all
+            non-mapping elements and overwrite the element with that from the
+            last sequence, instead of raising an exception.
+
+    """
+
+    def is_sequence(obj: Any) -> bool:
+        """Check that an object is a non-string sequence."""
+        return isinstance(obj, Sequence) and not isinstance(obj, str)
+
+    def merge_seqs(*seqs: Sequence[Any]) -> Sequence[Any]:
+        if len(seqs) == 1:
+            return next(iter(seqs))
+        if not all(map(is_sequence, seqs)):
+            if overwrite_seqs:
+                return seqs[-1]
+            if not any(map(is_sequence, seqs)):
+                msg = "no arguments are sequences"
+            else:
+                msg = "some but not all arguments are sequences"
+            seq_types_s = ", ".join([type(seq).__name__ for seq in seqs])
+            raise TypeError(f"{msg}: {seq_types_s}\n" + "\n".join(map(str, seqs)))
+        cls = type(seqs[0])
+        seq_lens = list(map(len, seqs))
+        if len(set(seq_lens)) > 1:
+            raise ValueError(
+                f"sequences have unequal lengths ({seq_lens}):\n"
+                + "\n".join(map(str, seqs))
+            )
+        seq_len = next(iter(seq_lens))
+        merged_seq: List[Any] = []
+        for idx in range(seq_len):
+            elements = [seq[idx] for seq in seqs]
+            is_map_lst = [isinstance(seq[idx], Mapping) for seq in seqs]
+            if all(is_map_lst):
+                merged_seq.append(
+                    merge_dicts(
+                        *elements,
+                        rec_seqs=True,
+                        overwrite_seqs=overwrite_seqs,
+                        overwrite_seq_dicts=overwrite_seq_dicts,
+                    )
+                )
+            elif any(is_map_lst) and not overwrite_seq_dicts:
+                raise TypeError(
+                    f"element #{idx} is a mapping in some but not all sequences:\n"
+                    + "\n".join(map(str, elements))
+                )
+            elif any(map(is_sequence, elements)):
+                merged_seq.append(merge_seqs(*elements))
+            else:
+                merged_seq.append(elements[-1])
+        return cls(merged_seq)  # type: ignore
+
     merged: Dict[Any, Any] = {}
+    seq_keys: List[str] = []
     for dict_ in dicts:
         for key, val in dict_.items():
             if isinstance(val, Mapping):
-                val = merge_dicts(merged.get(key, {}), val)
+                val = merge_dicts(
+                    merged.get(key, {}),
+                    val,
+                    rec_seqs=rec_seqs,
+                    overwrite_seqs=overwrite_seqs,
+                    overwrite_seq_dicts=overwrite_seq_dicts,
+                )
+            elif rec_seqs and is_sequence(val):
+                if key not in seq_keys:
+                    seq_keys.append(key)
+                merged[key] = None  # placeholder
             merged[key] = val
+    for key in seq_keys:
+        seqs = [dict_[key] for dict_ in dicts if key in dict_]
+        merged[key] = merge_seqs(*seqs)
     return merged
 
 
@@ -100,12 +188,14 @@ def compress_multival_dicts(
     for dct in dcts:
         if not isinstance(dct, Mapping):
             raise ValueError(
-                f"invalid dcts element of type '{type(dct).__name__}'", dct, dcts
+                f"invalid dcts element of type '{type(dct).__name__}': {dct}"
             )
 
     # SR_TODO Consider adding option to allow differing keys
     if not all(dct.keys() == dcts[0].keys() for dct in dcts):
-        raise ValueError("keys differ between dicts", [dct.keys() for dct in dcts])
+        raise ValueError(
+            f"keys differ between dicts: {[list(dct.keys()) for dct in dcts ]}"
+        )
 
     dct = {
         key: list(val) if isinstance(val, cls_seq) else [copy(val)]
@@ -142,13 +232,14 @@ def compress_multival_dicts(
 
 def decompress_multival_dict(
     dct: Mapping[str, Any],
-    *,
     select: Optional[Collection[str]] = None,
     skip: Optional[Collection[str]] = None,
-    depth: int = 1,
+    *,
     cls_expand: Union[type, Collection[type]] = (list, tuple),
+    depth: int = 1,
     f_expand: Optional[Callable[[Any], bool]] = None,
     flatten: bool = False,
+    unexpandable_ok: bool = True,
 ) -> List[Mapping[str, Any]]:
     """Combine dict with some nested list values into object-value dicts.
 
@@ -160,24 +251,37 @@ def decompress_multival_dict(
 
         skip: Names of keys that are not expanded.
 
-        depth: Depth to which nested list values are resolved.
+        cls_expand (optional): One or more types, instances of which will be
+            expanded; overridden by ``f_expand``.
 
-        cls_expand: One or more types, instances of which will be expanded.
-            Overridden by ``f_expand``.
+        depth (optional): Depth to which nested list values are resolved.
 
-        f_expand: Function to evaluate whether an object is expandable. Trivial
-            example (equivalent to ``cls_expand=lst``): ``lambda obj:
-            isinstance(obj, lst)``. Overrides ``cls_expand``.
+        f_expand (optional): Function to evaluate whether an object is
+            expandable; trivial example (equivalent to ``cls_expand=lst``):
+            ``lambda obj: isinstance(obj, lst)``; Overrides ``cls_expand``.
 
-        flatten: Flatten the nested results list.
+        flatten (optional): Flatten the nested results list.
+
+        unexpandable_ok (optional): Whether unexpandable values (those of a type
+            incompatible with ``cls_expand`` or for which ``f_expand``, if
+            given, returns false) of explicitly selected parameters (those in
+            ``select`` and not in ``skip``) are ignored; if not, an
+            ``UnexpandableValueError`` is raised.
 
     """
     if not isinstance(depth, int) or depth <= 0:
-        raise ValueError("depth must be a positive integer", depth)
+        raise ValueError(f"depth must be a positive integer: {depth}")
 
     def run_rec(dct, depth, curr_depth=1):
         """Run recursively."""
-        dct_lst = _dict_mult_vals_product(dct, select, skip, cls_expand, f_expand)
+        dct_lst = _dict_mult_vals_product(
+            cls_expand=cls_expand,
+            dct=dct,
+            f_expand=f_expand,
+            select=select,
+            skip=skip,
+            unexpandable_ok=unexpandable_ok,
+        )
         if len(dct_lst) == 1 or curr_depth == depth:
             for _ in range(depth - curr_depth):
                 # Nest further until target depth reached
@@ -206,27 +310,45 @@ def decompress_multival_dict(
     return res
 
 
-def _dict_mult_vals_product(dct, select, skip, cls_expand, f_expand):
-    def select_key(key):
+def _dict_mult_vals_product(
+    *,
+    cls_expand: Union[type, Collection[type]],
+    dct: Mapping[str, Any],
+    f_expand: Optional[Callable[[Any], bool]],
+    select: Optional[Collection[str]],
+    skip: Optional[Collection[str]],
+    unexpandable_ok: bool,
+) -> List[Dict[str, Any]]:
+    def select_key(key: str) -> bool:
+        """Check whether to select a key."""
         if select is None:
             return True
         return key in select
 
-    def skip_key(key):
+    def skip_key(key: str) -> bool:
+        """Check whether to skip a key."""
         if skip is None:
             return False
         return key in skip
 
-    def expand_val(val):
+    def is_expandable(val: Any) -> bool:
         if f_expand is not None:
             return f_expand(val)
         elif isinstance(cls_expand, type):
             return isinstance(val, cls_expand)
         return any(isinstance(val, t) for t in cls_expand)
 
-    keys, vals = [], []
+    keys: List[str] = []
+    vals: List[Any] = []
     for key, val in dct.items():
-        if not select_key(key) or skip_key(key) or not expand_val(val):
+        if (
+            not unexpandable_ok
+            and select_key(key)
+            and not skip_key(key)
+            and not is_expandable(val)
+        ):
+            raise UnexpandableValueError(val)
+        if not select_key(key) or skip_key(key) or not is_expandable(val):
             val = [val]
         keys.append(key)
         vals.append(val)
@@ -326,9 +448,9 @@ def _merge_children(children, tie_breaker):
                 elif val_flat["depth"] == val["depth"]:
                     if tie_breaker is None:
                         raise KeyConflictError(
-                            f"key conflict at depth {val_flat['depth']}", key
+                            f"key conflict at depth {val_flat['depth']}: {key}"
                         )
-                    raise NotImplementedError("tie_breaker is not None", tie_breaker)
+                    raise NotImplementedError(f"tie_breaker is not None: {tie_breaker}")
             flat[key] = val
     return flat
 
@@ -595,7 +717,7 @@ def nested_dict_resolve_double_star_wildcards(dct, criterion=None):
         subdcts = {}
         for key_i, val_i in dct.items():
             if key_i is None:
-                raise Exception("key must not be None", dct)
+                raise Exception(f"key must not be None in {dct}")
             if isinstance(val_i, Mapping):
                 subdcts[key_i] = val_i
         if subdcts:

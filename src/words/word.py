@@ -1,9 +1,9 @@
 """TranslatedWord."""
 # First-party
-from srutils.str import capitalize
-from srutils.str import check_is_valid_varname
-from srutils.str import titlecase
-from srutils.str import to_varname
+from srutils.exceptions import InvalidVariableNameError
+from srutils.format import capitalize
+from srutils.format import titlecase
+from srutils.varname import VariableName
 
 
 class Word:
@@ -119,19 +119,23 @@ class TranslatedWord:
             ('high_school', 'high school', 'Mittelschule')
 
         """
+        orig_name = name
         self.name = None
         self._translations = {}
 
         self._check_langs(translations)
 
         # Set name of word (valid Python variable name)
-        if name is None:
-            name = next(iter(translations.values()))
-            if isinstance(name, dict):
-                name = next(iter(name.values()))
-            name = to_varname(name).lower()
-        else:
-            check_is_valid_varname(name)
+        try:
+            if name is None:
+                name = next(iter(translations.values()))
+                if isinstance(name, dict):
+                    name = next(iter(name.values()))
+                name = VariableName(name).format(lower=True)
+            else:
+                VariableName.check_valid(name)
+        except InvalidVariableNameError as e:
+            raise ValueError(orig_name) from e
         self.name = name
 
         ctxs = self._collect_contexts(translations)

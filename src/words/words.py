@@ -3,7 +3,7 @@
 from pprint import pformat
 
 # First-party
-from srutils.str import to_varname
+from srutils.varname import VariableName
 
 # Local
 from .exceptions import MissingLanguageError
@@ -77,9 +77,9 @@ class TranslatedWords:
                         f"cannot derive name of {word_langs} from {name} of type "
                         f"{type(name).__name__}: neither a string nor a non-empty dict"
                     ) from e
-            name = to_varname(
-                name, filter_invalid=lambda c: "_" if c in "- " else ""
-            ).lower()
+            name = VariableName(name).format(
+                lower=True, c_filter=lambda c: "_" if c in "- " else ""
+            )
         if not isinstance(name, str):
             raise ValueError(
                 f"argument `name`: expect type str, got {type(name).__name__}"

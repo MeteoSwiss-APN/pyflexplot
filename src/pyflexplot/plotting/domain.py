@@ -40,7 +40,28 @@ class DomainConfig:
     zoom_fact: float = 1.0
 
 
-@summarizable(attrs=["lat", "lon", "config"])
+@summarizable(
+    summarize=lambda self: {
+        "type": type(self).__name__,
+        "lat": {
+            "dtype": str(self.lat.dtype),
+            "shape": self.lat.shape,
+            "min": self.lat.min(),
+            "max": self.lat.max(),
+            "start": self.lat[:10].tolist(),
+            "end": self.lat[-10:].tolist(),
+        },
+        "lon": {
+            "dtype": str(self.lon.dtype),
+            "shape": self.lon.shape,
+            "min": self.lon.min(),
+            "max": self.lon.max(),
+            "start": self.lon[:10].tolist(),
+            "end": self.lon[-10:].tolist(),
+        },
+        "config": self.config,
+    }
+)
 class Domain:
     """Plot domain."""
 

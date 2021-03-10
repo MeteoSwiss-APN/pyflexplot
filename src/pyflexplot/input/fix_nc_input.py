@@ -50,13 +50,13 @@ class FlexPartDataFixer:
     def fix_meta_data(
         self,
         model: str,
-        input_variable: str,
+        plot_variable: str,
         integrate: bool,
         mdata: Union[MetaData, Sequence[MetaData]],
     ) -> None:
         if isinstance(mdata, Sequence):
             for mdata_i in mdata:
-                self.fix_meta_data(model, input_variable, integrate, mdata_i)
+                self.fix_meta_data(model, plot_variable, integrate, mdata_i)
             return
         unit = str(mdata.variable.unit)
         if model in self.cosmo_models:
@@ -66,13 +66,13 @@ class FlexPartDataFixer:
                 # new_unit = "Bq h m-2" if integrate else "Bq m-2"
                 new_unit = "Bq m-2"
             # SR_TMP <
-            elif input_variable in [
+            elif plot_variable in [
                 "affected_area",
                 "cloud_arrival_time",
                 "cloud_departure_time",
             ]:
                 new_unit = unit
-            elif input_variable == "deposition" and unit == "N/A":
+            elif plot_variable.endswith("deposition") and unit == "N/A":
                 new_unit = "Bq m-2"
             # SR_TMP >
             else:
@@ -86,13 +86,13 @@ class FlexPartDataFixer:
                 # new_unit = "Bq h m-2" if integrate else "Bq m-2"
                 new_unit = "Bq m-2"
             # SR_TMP <
-            elif input_variable in [
+            elif plot_variable in [
                 "affected_area",
                 "cloud_arrival_time",
                 "cloud_departure_time",
             ]:
                 new_unit = unit
-            elif input_variable == "deposition" and unit == "N/A":
+            elif plot_variable.endswith("deposition") and unit == "N/A":
                 new_unit = "Bq m-2"
             # SR_TMP >
             else:

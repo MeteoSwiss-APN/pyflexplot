@@ -10,7 +10,7 @@ combine_species = false
 domain = "cloud"
 
 [_base._concentration]
-input_variable = "concentration"
+plot_variable = "concentration"
 level = 0
 
 # [_base._concentration._integr]
@@ -18,15 +18,11 @@ level = 0
 # time = -1
 
 # [_base._tot_deposition]
-# input_variable = "deposition"
-# deposition_type = ["dry", "wet"]
-# combine_deposition_types = true
+# plot_variable = "tot_deposition"
 # integrate = true
 
 # [_base._affected_area]
-# input_variable = "affected_area"
-# deposition_type = ["dry", "wet"]
-# combine_deposition_types = true
+# plot_variable = "affected_area"
 # integrate = true
 # level = 0
 # time = -1

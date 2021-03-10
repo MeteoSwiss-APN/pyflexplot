@@ -1,4 +1,4 @@
-"""Subpackage pyflexplot.input."""
+"""Subpackage ``pyflexplot.input``."""
 # Standard library
 from typing import List
 

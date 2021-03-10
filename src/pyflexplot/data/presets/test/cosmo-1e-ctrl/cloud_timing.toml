@@ -11,12 +11,12 @@ species_id = 1
 level = 0
 # time = 0
 time = "*"
-outfile = "{release_start}_{release_site}_FLEXPART-{model}_{input_variable}_{time_step}.png"
+outfile = "{release_start}_{release_site}_FLEXPART-{model}_{plot_variable}_{time_step}.png"
 
 [_base._cloud."_arrival+"]
-input_variable = "cloud_arrival_time"
+plot_variable = "cloud_arrival_time"
 [_base._cloud."_departure+"]
-input_variable = "cloud_departure_time"
+plot_variable = "cloud_departure_time"
 
 ["**"._de.ch]
 lang = "de"

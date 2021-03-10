@@ -23,6 +23,8 @@ from matplotlib.text import Text
 
 # Local
 from ..input.field import Field
+from ..utils.exceptions import TooWideRefDistIndicatorError
+from ..utils.logging import log
 from ..utils.summarize import summarizable
 from ..utils.typing import ColorType
 from ..utils.typing import RectType
@@ -104,14 +106,10 @@ class MapAxesConfig:
         "config",
         "domain",
         "field",
-        "fig",
         "rect",
         "trans",
+        "elements",
     ],
-    post_summarize=lambda self, summary: {
-        **summary,
-        "elements": self.summarized_elements,
-    },
 )
 class MapAxes:
     """Map plot axes for regular lat/lon data."""
@@ -143,8 +141,8 @@ class MapAxes:
 
         self.domain: Domain = self.field.get_domain(self.config.aspect)
 
-        self.elements: List[Tuple[str, Any]] = []
-        self.summarized_elements: List[Dict[str, Any]] = []
+        self.element_handles: List[Tuple[str, Any]] = []
+        self.elements: List[Dict[str, Any]] = []
 
         self._water_color: ColorType = "lightskyblue"
 
@@ -212,8 +210,8 @@ class MapAxes:
             zorder=zorder,
             **kwargs,
         )
-        self.elements.append(handle)
-        self.summarized_elements.append(
+        self.element_handles.append(handle)
+        self.elements.append(
             {
                 "element_type": "marker",
                 "p_lon": p_lon,
@@ -263,8 +261,8 @@ class MapAxes:
         handle = self.ax.annotate(
             s, xy=(p_lon, p_lat), xycoords=transform, zorder=zorder, **kwargs
         )
-        self.elements.append(handle)
-        self.summarized_elements.append(
+        self.element_handles.append(handle)
+        self.elements.append(
             {
                 "element_type": "text",
                 "s": s,
@@ -299,12 +297,16 @@ class MapAxes:
             self.ref_dist_box = None
         else:
             assert isinstance(self.config.ref_dist_config, RefDistIndConfig)  # mypy
-            self.ref_dist_box = ReferenceDistanceIndicator(
-                ax=self.ax,
-                axes_to_geo=self.trans.axes_to_geo,
-                config=self.config.ref_dist_config,
-                zorder=self.zorder["grid"],
-            )
+            try:
+                self.ref_dist_box = ReferenceDistanceIndicator(
+                    config=self.config.ref_dist_config,
+                    axes_to_geo=self.trans.axes_to_geo,
+                )
+            except TooWideRefDistIndicatorError as e:
+                msg = f"error adding reference distance indicator (too wide {e})"
+                log(wrn=msg)
+            else:
+                self.ref_dist_box.add_to(self.ax, zorder=self.zorder["grid"])
 
     def _ax_add_grid(self) -> None:
         """Show grid lines on map."""
@@ -400,40 +402,23 @@ class MapAxes:
 
     def _ax_add_cities(self, rasterized: bool = False) -> None:
         """Add major cities, incl. all capitals."""
-        # pylint: disable=R0913  # too-many-arguments
-        def is_in_box(
-            x: float, y: float, x0: float, x1: float, y0: float, y1: float
-        ) -> bool:
-            return x0 <= x <= x1 and y0 <= y <= y1
 
         def is_visible(city: Record) -> bool:
             """Check if a point is inside the domain."""
-            p_lon: float = city.geometry.x
-            p_lat: float = city.geometry.y
-
-            # In domain
-            p_lon, p_lat = self.trans.proj_data.transform_point(
-                p_lon, p_lat, self.trans.proj_geo, trap=True
-            )
-            in_domain = is_in_box(
-                p_lon,
-                p_lat,
-                self.field.lon[0],
-                self.field.lon[-1],
-                self.field.lat[0],
-                self.field.lat[-1],
-            )
-
-            # Not behind reference distance indicator box
-            pxa, pya = self.trans.geo_to_axes(p_lon, p_lat)
-            rdb = self.ref_dist_box
-            behind_rdb = (
-                False
-                if rdb is None
-                else is_in_box(pxa, pya, rdb.x0_box, rdb.x1_box, rdb.y0_box, rdb.y1_box)
-            )
-
-            return in_domain and not behind_rdb
+            px_geo: float = city.geometry.x
+            py_geo: float = city.geometry.y
+            px_ax, py_ax = self.trans.geo_to_axes(px_geo, py_geo)
+            in_domain = 0.0 <= px_ax <= 1.0 and 0.0 <= py_ax <= 1.0
+            if not in_domain:
+                return False
+            if self.ref_dist_box is None:
+                behind_ref_dist_box = False
+            else:
+                behind_ref_dist_box = (
+                    self.ref_dist_box.x0_box <= px_ax <= self.ref_dist_box.x1_box
+                    and self.ref_dist_box.y0_box <= py_ax <= self.ref_dist_box.y1_box
+                )
+            return not behind_ref_dist_box
 
         def is_of_interest(city: Record) -> bool:
             """Check if a city fulfils certain importance criteria."""
@@ -461,7 +446,8 @@ class MapAxes:
         plot_domain = mpl.patches.Rectangle(
             xy=(0, 0), width=1.0, height=1.0, transform=self.ax.transAxes
         )
-        for city in cities:
+        cities_by_name = {get_name(city): city for city in cities}
+        for name, city in sorted(cities_by_name.items()):
             lon, lat = city.geometry.x, city.geometry.y
             if is_visible(city) and is_of_interest(city):
                 self.add_marker(
@@ -478,7 +464,7 @@ class MapAxes:
                 text = self.add_text(
                     lon,
                     lat,
-                    get_name(city),
+                    name,
                     va="center",
                     size=9 * self.config.scale_fact,
                     rasterized=rasterized,

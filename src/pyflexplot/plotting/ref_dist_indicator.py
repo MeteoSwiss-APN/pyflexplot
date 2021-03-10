@@ -9,12 +9,13 @@ from typing import Optional
 # Third-party
 import geopy.distance
 import matplotlib as mpl
-from cartopy.crs import Projection  # type: ignore
 from matplotlib.axes import Axes
 
 # Local
 from ..utils.exceptions import MaxIterationError
+from ..utils.exceptions import TooWideRefDistIndicatorError
 from ..utils.summarize import summarizable
+from ..utils.typing import PointConverterT
 
 
 @summarizable
@@ -31,8 +32,8 @@ class RefDistIndConfig:
 
         line_width: Line width of distance indicator.
 
-        pos: Position of reference distance indicator box (corners of the plot).
-            Options: "tl" (top-left), "tr" (top-right), "bl" (bottom-left), "br"
+        pos: Position of reference distance indicator box (corners of the plot);
+            options: "tl" (top-left), "tr" (top-right), "bl" (bottom-left), "br"
             (bottom-right).
 
         unit: Unit of reference distance ``val``.
@@ -59,20 +60,14 @@ class RefDistIndConfig:
 class ReferenceDistanceIndicator:
     """Reference distance indicator on a map plot."""
 
-    def __init__(
-        self, ax: Axes, axes_to_geo: Projection, config: RefDistIndConfig, zorder: int
-    ) -> None:
+    def __init__(self, config: RefDistIndConfig, axes_to_geo: PointConverterT) -> None:
         """Create an instance of ``ReferenceDistanceIndicator``.
 
         Args:
-            ax: Axes.
-
-            axes_to_geo: Projection to convert from axes to geographical
-                coordinates.
-
             config: Configuration.
 
-            zorder: Vertical order in plot.
+            axes_to_geo: Function converting point(s) from axes to geographical
+                coordinates.
 
         """
         self.config: RefDistIndConfig = config
@@ -92,8 +87,6 @@ class ReferenceDistanceIndicator:
         self._calc_box_y_params()
         self._calc_box_x_params(axes_to_geo)
 
-        self._add_to(ax, zorder)
-
     @property
     def x_text(self) -> float:
         return self.x0_box + 0.5 * self.w_box
@@ -101,6 +94,17 @@ class ReferenceDistanceIndicator:
     @property
     def y_text(self) -> float:
         return self.y1_box - self.ypad_box
+
+    def add_to(self, ax: Axes, zorder: int) -> None:
+        """Add the reference distance indicator box to a plot axes.
+
+        Args:
+            ax: Axes.
+
+            zorder: Vertical order in plot.
+
+        """
+        self._add_to(ax, zorder)
 
     def _add_to(self, ax: Axes, zorder: int) -> None:
 
@@ -153,7 +157,7 @@ class ReferenceDistanceIndicator:
             raise ValueError(f"invalid y-position '{self.pos_y}'")
         self.y_line = self.y0_box + self.ypad_box
 
-    def _calc_box_x_params(self, axes_to_geo) -> None:
+    def _calc_box_x_params(self, axes_to_geo: PointConverterT) -> None:
         if self.pos_x == "l":
             self.x0_box = 0.0
             self.x0_line = self.x0_box + self.xpad_box
@@ -167,7 +171,7 @@ class ReferenceDistanceIndicator:
         w_line = self.x1_line - self.x0_line
         self.w_box = max(self.config.min_w_box, w_line + 2 * self.xpad_box)
         if self.w_box > 1.0:
-            raise Exception(f"ref dist indicator box too wide: {self.w_box} > 1.0")
+            raise TooWideRefDistIndicatorError(str(self.w_box))
         if self.pos_x == "l":
             self.x1_box = self.x0_box + self.w_box
         elif self.pos_x == "r":
@@ -178,7 +182,7 @@ class ReferenceDistanceIndicator:
             self.x1_line = x_box_center + 0.5 * w_line
 
     def _calc_horiz_dist(
-        self, x0: float, direction: str, axes_to_geo: Projection
+        self, x0: float, direction: str, axes_to_geo: PointConverterT
     ) -> float:
         calculator = MapDistanceCalculator(axes_to_geo, self.config.unit)
         x1, _, _ = calculator.run(x0, self.y_line, self.config.dist, direction)
@@ -190,23 +194,23 @@ class ReferenceDistanceIndicator:
 class MapDistanceCalculator:
     """Calculate geographic distance along a line on a map plot."""
 
-    def __init__(self, axes_to_geo, unit="km", p=0.001):
+    def __init__(
+        self, axes_to_geo: PointConverterT, unit: str = "km", p: float = 0.001
+    ) -> None:
         """Initialize an instance of MapDistanceCalculator.
 
         Args:
-            axes_to_geo (callable): Function to transform a point
-                (x, y) from axes coordinates to geographic coordinates (x, y
-                may be arrays).
+            axes_to_geo: Function converting point(s) from axes to geographical
+                coordinates.
 
-            unit (str, optional): Unit of ``dist``. Defaults to 'km'.
+            unit (optional): Unit of ``dist``.
 
-            p (float, optional): Required precision as a fraction of ``dist``.
-                Defaults to 0.001.
+            p (optional): Required precision as a fraction of ``dist``.
 
         """
-        self.axes_to_geo = axes_to_geo
-        self.unit = unit
-        self.p = p
+        self.axes_to_geo: PointConverterT = axes_to_geo
+        self.unit: str = unit
+        self.p: float = p
 
         # Declare attributes
         self.dist: Optional[float]

@@ -4,13 +4,13 @@
 # Data source: tsa:/scratch/ruestefa/shared/test/pyflexplot/
 infile = "data/cosmo-2e/grid_conc_xxxx_20190731000000_000.nc"
 model = "COSMO-2E"
-outfile = "case_study/cosmo-2e-ctrl_{input_variable}_{release_site}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
+outfile = "case_study/cosmo-2e-ctrl_{plot_variable}_{release_site}_species-{species_id}_{domain}_{lang}_ts-{time_idx:02d}.png"
 combine_species = true
 # species_id = "*"
 species_id = 1
 
 [_base."_concentration+"]
-input_variable = "concentration"
+plot_variable = "concentration"
 level = 0
 time = "*"
 [_base."_concentration+"."_integr+"]
@@ -21,25 +21,21 @@ time = 11
 level = 0
 time = 0
 [_base._cloud."_arrival_time+"]
-input_variable = "cloud_arrival_time"
+plot_variable = "cloud_arrival_time"
 [_base._cloud."_departure_time+"]
-input_variable = "cloud_departure_time"
+plot_variable = "cloud_departure_time"
 
 [_base._deposition]
-input_variable = "deposition"
-combine_deposition_types = true
 integrate = true
 time = 11
 [_base._deposition."_wet+"]
-deposition_type = "wet"
+plot_variable = "wet_deposition"
 [_base._deposition."_tot+"]
-deposition_type = ["dry", "wet"]
+plot_variable = "tot_deposition"
 
 [_base."_affected_area+"]
-combine_deposition_types = true
-input_variable = "affected_area"
+plot_variable = "affected_area"
 level = 0
-deposition_type = ["dry", "wet"]
 time = 11
 integrate = true
 

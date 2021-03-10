@@ -16,7 +16,6 @@ until sane design choices emerge from the code mess.
 """
 # Standard library
 import os
-import warnings
 from datetime import datetime
 from datetime import timedelta
 from typing import Any
@@ -36,12 +35,14 @@ from matplotlib.colors import Colormap
 
 # First-party
 from srutils.datetime import init_datetime
+from srutils.format import format_numbers_range
 from srutils.geo import Degrees
 from srutils.plotting import truncate_cmap
 from words import Word
 
 # Local
 from . import __version__
+from .input.field import Field
 from .input.field import FieldGroup
 from .input.field import FieldStats
 from .input.meta_data import format_meta_datum
@@ -54,22 +55,19 @@ from .plotting.boxed_plot import BoxedPlot
 from .plotting.boxed_plot import BoxedPlotConfig
 from .plotting.boxed_plot import ContourLevelsConfig
 from .plotting.boxed_plot import ContourLevelsLegendConfig
-from .plotting.boxed_plot import DummyBoxedPlot
 from .plotting.boxed_plot import FontConfig
 from .plotting.boxed_plot import FontSizes
 from .plotting.boxed_plot import MarkersConfig
-from .plotting.map_axes import MapAxes
 from .plotting.map_axes import MapAxesConfig
 from .plotting.text_box_axes import TextBoxAxes
-from .setup import ModelSetup
-from .setup import Setup
-from .setup import SetupGroup
-from .utils.exceptions import FieldAllNaNError
+from .setups.model_setup import ModelSetup
+from .setups.plot_panel_setup import PlotPanelSetup
+from .setups.plot_setup import PlotSetup
 from .utils.formatting import escape_format_keys
 from .utils.formatting import format_level_ranges
-from .utils.formatting import format_range
 from .utils.logging import log
 from .utils.typing import ColorType
+from .utils.typing import RectType
 from .words import SYMBOLS
 from .words import TranslatedWords
 from .words import WORDS
@@ -79,18 +77,21 @@ from .words import Words
 def format_out_file_paths(
     field_group: FieldGroup, prev_paths: List[str], dest_dir: Optional[str] = None
 ) -> List[str]:
-    setup = field_group.shared_setup
-    # SR_TMP <  SR_MULTIPANEL
-    if len(field_group) > 1:
-        raise NotImplementedError("multipanel plot")
-    field = next(iter(field_group))
-    # SR_TMP >  SR_MULTIPANEL
+    plot_setup = field_group.plot_setup
     # SR_TMP <
-    release_mdata = field.mdata.release
-    simulation_mdata = field.mdata.simulation
+    mdata = next(iter(field_group)).mdata
+    for field in field_group:
+        if field.mdata != mdata:
+            raise NotImplementedError(
+                f"meta data differ between fields:\n{field.mdata}\n!=\n{mdata}"
+            )
+    release_mdata = mdata.release
+    simulation_mdata = mdata.simulation
     # SR_TMP >
     out_file_templates: Sequence[str] = (
-        [setup.outfile] if isinstance(setup.outfile, str) else setup.outfile
+        [plot_setup.outfile]
+        if isinstance(plot_setup.outfile, str)
+        else plot_setup.outfile
     )
     out_file_paths: List[str] = []
     for out_file_template in out_file_templates:
@@ -105,7 +106,7 @@ def format_out_file_paths(
             )
         out_file_path = FilePathFormatter(prev_paths).format(
             out_file_template,
-            setup,
+            plot_setup,
             release_site=release_mdata.raw_site_name,
             release_start=simulation_mdata.start + release_mdata.start_rel,
             time_steps=tuple(simulation_mdata.time_steps),
@@ -115,41 +116,71 @@ def format_out_file_paths(
     return out_file_paths
 
 
-def prepare_plot(
-    field_group: FieldGroup, *, dry_run: bool = False
-) -> Union[BoxedPlot, DummyBoxedPlot]:
-    """Create plots while yielding them with the plot file path one by one."""
-    log(dbg="preparing setups for plot")
-    if dry_run:
-        return DummyBoxedPlot()
-    else:
-        # SR_TMP <  SR_MULTIPANEL
-        if len(field_group) > 1:
-            raise NotImplementedError("multipanel plot")
-        field = next(iter(field_group))
-        # SR_TMP >  SR_MULTIPANEL
-        setup = field.var_setups.compress()
-        time_stats = field.time_props.stats
-        mdata = field.mdata
-        labels = create_box_labels(setup, mdata)
-        plot_config = create_plot_config(
-            setup=setup, time_stats=time_stats, labels=labels
-        )
-        map_config = create_map_config(
-            field.var_setups, plot_config.layout.aspect_center()
-        )
-        return BoxedPlot(field, plot_config, map_config)
-
-
+# pylint: disable=R0914  # too-many-locals (>15)
 def create_plot(
-    plot: BoxedPlot,
+    field_group: FieldGroup,
     file_paths: Sequence[str],
+    *,
     write: bool = True,
     show_version: bool = True,
-) -> None:
-    axs_map = plot.add_map_plot(plot.config.layout.rect_center())
-    plot_add_text_boxes(plot, plot.config.layout, show_version)
-    plot_add_markers(plot, axs_map)
+) -> BoxedPlot:
+    plot_setup = field_group.plot_setup
+    # SR_TMP <  SR_MULTIPANEL
+    mdata = next(iter(field_group)).mdata
+    for field in field_group:
+        if field.mdata != mdata:
+            raise NotImplementedError(
+                f"meta data differ between fields:\n{field.mdata}\n!=\n{mdata}"
+            )
+    if len(field_group) > 1:
+        print("warning: using time_props of first panel of multipanel plot")
+    time_stats = next(iter(field_group)).time_props.stats
+    # SR_TMP >  SR_MULTIPANEL
+    labels = create_box_labels(plot_setup, mdata)
+    plot_config = create_plot_config(
+        setup=plot_setup, time_stats=time_stats, labels=labels
+    )
+    map_configs: List[MapAxesConfig] = [
+        create_map_config(
+            field_group.plot_setup,
+            field.panel_setup,
+            plot_config.layout.aspect_center(),
+        )
+        for field in field_group
+    ]
+    plot = BoxedPlot(plot_config)
+    # SR_TMP <
+    if len(field_group) == 1:
+        field = next(iter(field_group))
+        map_config = next(iter(map_configs))
+        rect = plot.config.layout.rect_center()
+        plot.add_map_plot("map", field, map_config, rect)
+    elif len(field_group) != 4:
+        raise NotImplementedError(f"{len(field_group)} number of panels")
+    else:
+        # SR_TODO Define sub-rects in layout (new layout type with four panels)
+        def derive_sub_rects(
+            rect: RectType,
+        ) -> Tuple[RectType, RectType, RectType, RectType]:
+            x0, y0, w, h = rect
+            rel_pad = 0.025
+            w_pad = rel_pad * w
+            h_pad = w_pad  # SR_TMP
+            w = 0.5 * w - 0.5 * w_pad
+            h = 0.5 * h - 0.5 * h_pad
+            x1 = x0 + w + w_pad
+            y1 = y0 + h + h_pad
+            return ((x0, y1, w, h), (x1, y1, w, h), (x0, y0, w, h), (x1, y0, w, h))
+
+        sub_rects = derive_sub_rects(plot.config.layout.rect_center())
+        for idx, (field, map_config, sub_rect) in enumerate(
+            zip(field_group, map_configs, sub_rects)
+        ):
+            name = f"map{idx}"
+            plot.add_map_plot(name, field, map_config, sub_rect)
+    # SR_TMP >
+
+    plot_add_text_boxes(plot, field_group, plot.config.layout, show_version)
     for file_path in file_paths:
         log(dbg=f"creating plot {file_path}")
         if write:
@@ -160,12 +191,16 @@ def create_plot(
             plot.write(file_path)
         log(dbg=f"created plot {file_path}")
     plot.clean()
+    return plot
 
 
 # SR_TMP <<< TODO Clean up nested functions! Eventually introduce class(es) of some kind
 # pylint: disable=R0915  # too-many-statements
 def plot_add_text_boxes(
-    plot: BoxedPlot, layout: BoxedPlotLayoutType, show_version: bool = True
+    plot: BoxedPlot,
+    fields: FieldGroup,
+    layout: BoxedPlotLayoutType,
+    show_version: bool = True,
 ) -> None:
     # pylint: disable=R0915  # too-many-statements
     def fill_box_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
@@ -183,10 +218,10 @@ def plot_add_text_boxes(
                 size=size,
             )
 
-    def fill_box_2nd_title(box: TextBoxAxes, plot: BoxedPlot) -> None:
+    def fill_box_2nd_title(box: TextBoxAxes, plot: BoxedPlot, field: Field) -> None:
         """Fill the secondary title box of the deterministic plot layout."""
         font_size = plot.config.font.sizes.content_large
-        mdata = plot.field.mdata
+        mdata = field.mdata
         box.text(
             capitalize(format_meta_datum(mdata.species.name)),
             loc="tc",
@@ -216,10 +251,10 @@ def plot_add_text_boxes(
     # pylint: disable=R0913  # too-many-arguments
     # pylint: disable=R0914  # too-many-locals
     # pylint: disable=R0915  # too-many-statements
-    def fill_box_legend(box: TextBoxAxes, plot: BoxedPlot) -> None:
+    def fill_box_legend(box: TextBoxAxes, plot: BoxedPlot, field: Field) -> None:
         """Fill the box containing the plot legend."""
         labels = plot.config.labels["legend"]
-        mdata = plot.field.mdata
+        mdata = field.mdata
 
         # Box title
         box.text(
@@ -292,7 +327,7 @@ def plot_add_text_boxes(
                 **plot.config.markers.markers["max"],
             )
             box.text(
-                s=format_max_marker_label(labels, plot.field.fld),
+                s=format_max_marker_label(labels, field.fld),
                 loc="tc",
                 dx=dx_marker_label,
                 dy=dy_marker_label_max,
@@ -378,12 +413,28 @@ def plot_add_text_boxes(
             size=plot.config.font.sizes.content_small,
         )
 
+    # SR_TMP <
+    if len(fields) > 1:
+        print(
+            "warning: plot_add_text_boxes: selecting field of first of multiple panels"
+        )
+    field = next(iter(fields))
+    # SR_TMP >
+
     plot.add_text_box("top", layout.rect_top(), fill_box_title)
     if isinstance(layout, BoxedPlotLayoutDeterministic):
-        plot.add_text_box("right_top", layout.rect_right_top(), fill_box_2nd_title)
+        plot.add_text_box(
+            "right_top",
+            layout.rect_right_top(),
+            lambda box, plot: fill_box_2nd_title(box, plot, field),
+        )
     elif isinstance(layout, BoxedPlotLayoutEnsemble):
         plot.add_text_box("right_top", layout.rect_right_top(), fill_box_data_info)
-    plot.add_text_box("right_middle", layout.rect_right_middle(), fill_box_legend)
+    plot.add_text_box(
+        "right_middle",
+        layout.rect_right_middle(),
+        lambda box, plot: fill_box_legend(box, plot, field),
+    )
     plot.add_text_box("right_bottom", layout.rect_right_bottom(), fill_box_release_info)
     plot.add_text_box(
         "bottom_left", layout.rect_bottom_left(), fill_box_bottom_left, frame_on=False
@@ -396,33 +447,13 @@ def plot_add_text_boxes(
     )
 
 
-def plot_add_markers(plot: BoxedPlot, axs_map: MapAxes) -> None:
-    config = plot.config
-    mdata = plot.field.mdata
-    if config.markers.mark_release_site:
-        assert config.markers.markers is not None  # mypy
-        axs_map.add_marker(
-            p_lat=mdata.release.lat,
-            p_lon=mdata.release.lon,
-            **config.markers.markers["site"],
-        )
-    if config.markers.mark_field_max:
-        assert config.markers.markers is not None  # mypy
-        try:
-            max_lat, max_lon = plot.field.locate_max()
-        except FieldAllNaNError:
-            warnings.warn("skip maximum marker (all-nan field)")
-        else:
-            axs_map.add_marker(
-                p_lat=max_lat, p_lon=max_lon, **config.markers.markers["max"]
-            )
-
-
-def create_map_config(setups: SetupGroup, aspect: float) -> MapAxesConfig:
-    domain_type = setups.collect_equal("domain")
-    lang = setups.collect_equal("lang")
-    model_name = setups.collect_equal("model.name")
-    scale_fact = setups.collect_equal("scale_fact")
+def create_map_config(
+    plot_setup: PlotSetup, panel_setup: PlotPanelSetup, aspect: float
+) -> MapAxesConfig:
+    model_name = plot_setup.model.name
+    scale_fact = plot_setup.scale_fact
+    domain_type = panel_setup.domain
+    lang = panel_setup.lang
 
     config_dct: Dict[str, Any] = {
         "aspect": aspect,
@@ -472,10 +503,18 @@ def create_map_config(setups: SetupGroup, aspect: float) -> MapAxesConfig:
 # pylint: disable=R0912  # too-many-branches
 # pylint: disable=R0914  # too-many-locals (>15)
 def create_plot_config(
-    setup: Setup,
+    setup: PlotSetup,
     time_stats: FieldStats,
     labels: Dict[str, Dict[str, Any]],
 ) -> BoxedPlotConfig:
+    plot_variable = setup.panels.collect_equal("plot_variable")
+    # SR_TMP <
+    if setup.plot_type == "multipanel" and setup.multipanel_param == "ens_variable":
+        ens_variable = "+".join(setup.panels.collect("ens_variable"))
+    else:
+        ens_variable = setup.panels.collect_equal("ens_variable")
+    # SR_TMP >
+
     plot_config_dct: Dict[str, Any] = {
         "fig_size": (12.5 * setup.scale_fact, 8.0 * setup.scale_fact),
     }
@@ -502,31 +541,25 @@ def create_plot_config(
         "scale": "log",
     }
     legend_config_dct: Dict[str, Any] = {}
-    if setup.core.input_variable == "concentration":
+    if plot_variable == "concentration":
         levels_config_dct["n"] = 8
-    elif setup.core.input_variable == "deposition":
+    elif plot_variable.endswith("deposition"):
         levels_config_dct["n"] = 9
-    if (
-        setup.core.input_variable == "affected_area"
-        and setup.core.ens_variable != "probability"
-    ):
+    if plot_variable == "affected_area" and ens_variable != "probability":
         levels_config_dct["extend"] = "none"
         levels_config_dct["levels"] = np.array([0.0, np.inf])
         levels_config_dct["scale"] = "lin"
-    elif (
-        setup.model.simulation_type == "ensemble"
-        and setup.core.ens_variable == "probability"
-    ):
+    elif setup.model.simulation_type == "ensemble" and ens_variable == "probability":
         levels_config_dct["extend"] = "max"
         levels_config_dct["scale"] = "lin"
         levels_config_dct["levels"] = np.arange(5, 95.1, 15)
         legend_config_dct["range_style"] = "up"
         legend_config_dct["ranges_align"] = "right"
         legend_config_dct["rstrip_zeros"] = True
-    elif setup.core.input_variable in [
+    elif plot_variable in [
         "cloud_arrival_time",
         "cloud_departure_time",
-    ] or setup.core.ens_variable in [
+    ] or ens_variable in [
         "ens_cloud_arrival_time",
         "ens_cloud_departure_time",
     ]:
@@ -537,17 +570,38 @@ def create_plot_config(
         # SR_TMP < Adapt to simulation duration (not always 33 h)!
         levels_config_dct["levels"] = [0, 3, 6, 9, 12, 18, 24, 33]
         # SR_TMP >
-        if setup.core.input_variable == "cloud_arrival_time" or (
-            setup.core.ens_variable == "ens_cloud_arrival_time"
+        if plot_variable == "cloud_arrival_time" or (
+            ens_variable == "ens_cloud_arrival_time"
         ):
             levels_config_dct["extend"] = "min"
-        elif setup.core.input_variable == "cloud_departure_time" or (
-            setup.core.ens_variable == "ens_cloud_departure_time"
+        elif plot_variable == "cloud_departure_time" or (
+            ens_variable == "ens_cloud_departure_time"
         ):
             levels_config_dct["extend"] = "max"
-    levels_config_dct["levels"] = levels_from_time_stats(
-        setup, time_stats, levels_config_dct
-    )
+    # SR_TMP < TODO proper multipanel support
+    if setup.plot_type == "multipanel":
+        if setup.multipanel_param == "ens_variable":
+            print(
+                "warning: create_plot_config: selecting ens_variable of first of"
+                " multiple panels"
+            )
+            ens_variable = next(iter(setup.panels)).ens_variable
+            levels_config_dct["levels"] = levels_from_time_stats(
+                simulation_type=setup.model.simulation_type,
+                ens_variable=ens_variable,
+                time_stats=time_stats,
+                levels_config_dct=levels_config_dct,
+            )
+        else:
+            raise NotImplementedError(f"multipanel_param='{setup.multipanel_param}'")
+    else:
+        levels_config_dct["levels"] = levels_from_time_stats(
+            simulation_type=setup.model.simulation_type,
+            ens_variable=setup.panels.collect_equal("ens_variable"),
+            time_stats=time_stats,
+            levels_config_dct=levels_config_dct,
+        )
+    # SR_TMP >
     legend_config_dct["labels"] = format_level_ranges(
         levels=levels_config_dct["levels"],
         style=legend_config_dct.get("range_style", "base"),
@@ -564,25 +618,19 @@ def create_plot_config(
     cmap: Union[str, Colormap] = "flexplot"
     color_under: Optional[str] = None
     color_over: Optional[str] = None
-    if (
-        setup.core.input_variable == "affected_area"
-        and setup.core.ens_variable != "probability"
-    ):
+    if plot_variable == "affected_area" and ens_variable != "probability":
         cmap = "mono"
-    elif (
-        setup.model.simulation_type == "ensemble"
-        and setup.core.ens_variable == "probability"
-    ):
+    elif setup.model.simulation_type == "ensemble" and ens_variable == "probability":
         # cmap = truncate_cmap("nipy_spectral_r", 0.275, 0.95)
         cmap = truncate_cmap("terrain_r", 0.075)
-    elif setup.core.input_variable == "cloud_arrival_time" or (
-        setup.core.ens_variable == "ens_cloud_arrival_time"
+    elif plot_variable == "cloud_arrival_time" or (
+        ens_variable == "ens_cloud_arrival_time"
     ):
         cmap = "viridis"
         color_under = "slategray"
         color_over = "lightgray"
-    elif setup.core.input_variable == "cloud_departure_time" or (
-        setup.core.ens_variable == "ens_cloud_departure_time"
+    elif plot_variable == "cloud_departure_time" or (
+        ens_variable == "ens_cloud_departure_time"
     ):
         cmap = "viridis_r"
         color_under = "lightgray"
@@ -613,7 +661,7 @@ def create_plot_config(
     # Markers
     markers_config_dct: Dict[str, Any] = {}
     if setup.model.simulation_type == "deterministic":
-        if setup.core.input_variable in [
+        if plot_variable in [
             "affected_area",
             "cloud_arrival_time",
             "cloud_departure_time",
@@ -623,7 +671,7 @@ def create_plot_config(
             markers_config_dct["mark_field_max"] = True
     elif setup.model.simulation_type == "ensemble":
         markers_config_dct["mark_field_max"] = False
-        if setup.core.ens_variable in [
+        if ens_variable in [
             "minimum",
             "maximum",
             "median",
@@ -665,10 +713,19 @@ def create_plot_config(
 # pylint: disable=R0912  # too-many-branches
 # pylint: disable=R0914  # too-many-locals
 # pylint: disable=R0915  # too-many-statements
-def create_box_labels(setup: Setup, mdata: MetaData) -> Dict[str, Dict[str, Any]]:
+def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, Any]]:
     words = WORDS
     symbols = SYMBOLS
-    words.set_active_lang(setup.core.lang)
+    words.set_active_lang(setup.panels.collect_equal("lang"))
+
+    ens_params = setup.panels.collect_equal("ens_params")
+    plot_variable = setup.panels.collect_equal("plot_variable")
+    # SR_TMP <
+    if setup.plot_type == "multipanel" and setup.multipanel_param == "ens_variable":
+        ens_variable = "+".join(setup.panels.collect("ens_variable"))
+    else:
+        ens_variable = setup.panels.collect_equal("ens_variable")
+    # SR_TMP >
 
     # Format variable name in various ways
     names = format_names_etc(setup, words, mdata)
@@ -714,30 +771,29 @@ def create_box_labels(setup: Setup, mdata: MetaData) -> Dict[str, Dict[str, Any]
     labels["data_info"]["lines"].append(
         f"{words['input_variable'].c}:\t{capitalize(var_name_abbr)}"
     )
-    if setup.core.input_variable == "concentration":
+    if plot_variable == "concentration":
         labels["data_info"]["lines"].append(
             f"{words['height'].c}:"
             f"\t{escape_format_keys(format_level_label(mdata, words))}"
         )
     if setup.model.simulation_type == "ensemble":
-        if setup.core.ens_variable == "probability":
-            op = {"lower": "gt", "upper": "lt"}[setup.core.ens_param_thr_type]
+        if ens_variable == "probability":
+            op = {"lower": "gt", "upper": "lt"}[ens_params.thr_type]
             labels["data_info"]["lines"].append(
-                f"{words['selection']}:\t{symbols[op]} {setup.core.ens_param_thr}"
+                f"{words['selection']}:\t{symbols[op]} {ens_params.thr}"
                 f" {format_meta_datum(unit=format_meta_datum(mdata.variable.unit))}"
             )
-        elif setup.core.ens_variable in [
+        elif ens_variable in [
             "ens_cloud_arrival_time",
             "ens_cloud_departure_time",
         ]:
             labels["data_info"]["lines"].append(
                 # f"{words['cloud_density']}:\t{words['minimum', 'abbr']}"
                 # f"{words['threshold']}:\t"
-                f"{words['cloud_threshold', 'abbr']}:\t"
-                f" {setup.core.ens_param_thr}"
+                f"{words['cloud_threshold', 'abbr']}:\t {ens_params.thr}"
                 f" {format_meta_datum(unit=format_meta_datum(mdata.variable.unit))}"
             )
-            n_min = setup.core.ens_param_mem_min or 0
+            n_min = ens_params.mem_min or 0
             n_tot = len((setup.model.ens_member_id or []))
             labels["data_info"]["lines"].append(
                 # f"{words['number_of', 'abbr'].c} {words['member', 'pl']}:"
@@ -759,7 +815,7 @@ def create_box_labels(setup: Setup, mdata: MetaData) -> Dict[str, Dict[str, Any]
         "max": words["maximum", "abbr"].s,
         "maximum": words["maximum"].s,
     }
-    if setup.core.input_variable == "concentration":
+    if plot_variable == "concentration":
         labels["legend"]["tc"] = (
             f"{words['height']}:"
             f" {escape_format_keys(format_level_label(mdata, words))}"
@@ -770,13 +826,13 @@ def create_box_labels(setup: Setup, mdata: MetaData) -> Dict[str, Dict[str, Any]
     elif unit == "%":
         title = f"{words['probability']} ({unit})"
     elif (
-        setup.core.input_variable == "cloud_arrival_time"
-        or setup.core.ens_variable == "ens_cloud_arrival_time"
+        plot_variable == "cloud_arrival_time"
+        or ens_variable == "ens_cloud_arrival_time"
     ):
         title = f"{words['hour', 'pl']} {words['until']} {words['arrival']}"
     elif (
-        setup.core.input_variable == "cloud_departure_time"
-        or setup.core.ens_variable == "ens_cloud_departure_time"
+        plot_variable == "cloud_departure_time"
+        or ens_variable == "ens_cloud_departure_time"
     ):
         title = f"{words['hour', 'pl']} {words['until']} {words['departure']}"
     else:
@@ -867,38 +923,51 @@ def create_box_labels(setup: Setup, mdata: MetaData) -> Dict[str, Dict[str, Any]
 # pylint: disable=R0912  # too-many-branches
 # pylint: disable=R0915  # too-many-statements
 def format_names_etc(
-    setup: Setup, words: TranslatedWords, mdata: MetaData
+    setup: PlotSetup, words: TranslatedWords, mdata: MetaData
 ) -> Dict[str, str]:
+    ens_params = setup.panels.collect_equal("ens_params")
+    plot_variable = setup.panels.collect_equal("plot_variable")
+    integrate = setup.panels.collect_equal("integrate")
+    # SR_TMP <
+    if setup.plot_type == "multipanel" and setup.multipanel_param == "ens_variable":
+        ens_variable = "+".join(setup.panels.collect("ens_variable"))
+    else:
+        ens_variable = setup.panels.collect_equal("ens_variable")
+    # SR_TMP >
+
     long_name = ""
     short_name = ""
 
-    def format_var_names(setup: Setup, words: TranslatedWords) -> Tuple[str, str, str]:
-        if setup.core.input_variable == "deposition":
-            dep_type_word = (
-                "total"
-                if setup.deposition_type_str == "tot"
-                else setup.deposition_type_str
-            )
+    def format_var_names(
+        plot_variable: str, words: TranslatedWords
+    ) -> Tuple[str, str, str]:
+        if plot_variable.endswith("_deposition"):
+            if plot_variable == "tot_deposition":
+                dep_type_word = "total"
+            elif plot_variable == "dry_deposition":
+                dep_type_word = "dry"
+            elif plot_variable == "wet_deposition":
+                dep_type_word = "wet"
             word = f"{dep_type_word}_surface_deposition"
-            if not setup.core.integrate:
+            if not integrate:
                 word = f"incremental_{word}"
-        elif setup.core.input_variable == "concentration":
+        elif plot_variable == "concentration":
             word = "air_activity_concentration"
-            if setup.core.integrate:
+            if integrate:
                 word = f"integrated_{word}"
         else:
-            word = setup.core.input_variable
+            word = plot_variable
         var_name_abbr = words[word, "abbr"].s
         var_name = words[word].s
         var_name_rel = words[word, "of"].s
         return var_name, var_name_abbr, var_name_rel
 
     # pylint: disable=W0621  # redefined-outer-name
-    def _format_unit(setup: Setup, words: TranslatedWords, mdata: MetaData) -> str:
+    def _format_unit(setup: PlotSetup, words: TranslatedWords, mdata: MetaData) -> str:
         if setup.model.simulation_type == "ensemble":
-            if setup.core.ens_variable == "probability":
+            if ens_variable == "probability":
                 return "%"
-            elif setup.core.ens_variable in [
+            elif ens_variable in [
                 "ens_cloud_arrival_time",
                 "ens_cloud_departure_time",
             ]:
@@ -906,67 +975,81 @@ def format_names_etc(
         return format_meta_datum(unit=format_meta_datum(mdata.variable.unit))
 
     unit = _format_unit(setup, words, mdata)
-    var_name, var_name_abbr, var_name_rel = format_var_names(setup, words)
+    var_name, var_name_abbr, var_name_rel = format_var_names(plot_variable, words)
 
     # Short/long names #1: By variable
-    if setup.core.input_variable == "concentration":
-        if setup.core.integrate:
+    if plot_variable == "concentration":
+        if integrate:
             long_name = var_name
             short_name = words["integrated_concentration", "abbr"].s
         else:
             long_name = var_name
             short_name = words["concentration"].s
-    elif setup.core.input_variable == "deposition":
+    elif plot_variable.endswith("deposition"):
         long_name = var_name
         short_name = words["deposition"].s
-    elif setup.core.input_variable in [
+    elif plot_variable in [
         "affected_area",
         "cloud_arrival_time",
         "cloud_departure_time",
     ]:
-        word = setup.core.input_variable
+        word = plot_variable
         long_name = words[word].s
         short_name = words[word, "abbr"].s
 
     # Short/long names #2: By ensemble variable type
     ens_var_name = "none"
     if setup.model.simulation_type == "ensemble":
-        if setup.core.ens_variable in [
+        if ens_variable in [
             "minimum",
             "maximum",
             "median",
             "mean",
         ]:
-            long_name = f"{words[f'ensemble_{setup.core.ens_variable}']} {var_name_rel}"
-        elif setup.core.ens_variable == "std_dev":
+            long_name = f"{words[f'ensemble_{ens_variable}']} {var_name_rel}"
+        elif ens_variable == "std_dev":
             ens_var_name = words["standard_deviation"].s
             long_name = f"{words['ensemble_standard_deviation']} {var_name_rel}"
-        elif setup.core.ens_variable == "med_abs_dev":
+        elif ens_variable == "med_abs_dev":
             ens_var_name = words["median_absolute_deviation"].s
             long_name = (
                 f"{words['ensemble_median_absolute_deviation', 'abbr']} {var_name_rel}"
             )
-        elif setup.core.ens_variable == "percentile":
-            assert setup.core.ens_param_pctl is not None  # mypy
-            pctl = setup.core.ens_param_pctl
+        elif ens_variable == "percentile":
+            assert ens_params.pctl is not None  # mypy
+            pctl = ens_params.pctl
             th = {1: "st", 2: "nd", 3: "rd"}.get(pctl, "th")  # type: ignore
             long_name = (
                 f"{pctl:g}{words['th', th]}" f" {words['percentile']} {var_name_rel}"
             )
             ens_var_name = f"{pctl:g}{words['th', th]} {words['percentile']}"
-        elif setup.core.ens_variable == "probability":
+        elif ens_variable == "probability":
             short_name = words["probability"].s
             long_name = f"{words['probability']} {var_name_rel}"
-        elif setup.core.ens_variable == "ens_cloud_arrival_time":
+        elif ens_variable == "ens_cloud_arrival_time":
             long_name = words["ensemble_cloud_arrival_time"].s
             short_name = words["arrival"].s
             ens_var_name = words["ensemble_cloud_departure_time", "abbr"].s
-        elif setup.core.ens_variable == "ens_cloud_departure_time":
+        elif ens_variable == "ens_cloud_departure_time":
             long_name = words["ensemble_cloud_departure_time"].s
             short_name = words["departure"].s
             ens_var_name = words["ensemble_cloud_departure_time", "abbr"].s
         if ens_var_name == "none":
-            ens_var_name = words[setup.core.ens_variable].c
+            # SR_TMP <
+            # ens_var_name = words[ens_variable].c
+            if (
+                setup.plot_type == "multipanel"
+                and setup.multipanel_param == "ens_variable"
+            ):
+                ens_var_name = "\n+ ".join(
+                    [
+                        words[ens_variable_i].c
+                        for ens_variable_i in setup.collect("ens_variable")
+                    ]
+                )
+            else:
+                ens_var_name = words[ens_variable].c
+            # SR_TMP >
 
     # SR_TMP <
     if not short_name:
@@ -1053,7 +1136,7 @@ def format_model_info(model_setup: ModelSetup, words: TranslatedWords) -> str:
         model_info = (
             f"{model_name} {words['ensemble']}"
             f" ({len(ens_member_id or [])} {words['member', 'pl']}:"
-            f" {format_range(ens_member_id or [], fmt='02d')})"
+            f" {format_numbers_range(ens_member_id or [], fmt='02d')})"
         )
     if model_info is None:
         raise NotImplementedError(
@@ -1124,25 +1207,27 @@ def format_vertical_level_range(
 def format_integr_period(
     start: datetime,
     now: datetime,
-    setup: Setup,
+    setup: PlotSetup,
     words: TranslatedWords,
     cap: bool = False,
 ) -> str:
-    if not setup.core.integrate:
+    plot_variable = setup.panels.collect_equal("plot_variable")
+    integrate = setup.panels.collect_equal("integrate")
+    if not integrate:
         operation = words["averaged_over"].s
-    elif setup.core.input_variable in [
+    elif plot_variable in [
         "concentration",
         "affected_area",
         "cloud_arrival_time",
         "cloud_departure_time",
     ]:
         operation = words["summed_over"].s
-    elif setup.core.input_variable == "deposition":
+    elif plot_variable.endswith("deposition"):
         operation = words["accumulated_over"].s
     else:
         raise NotImplementedError(
-            f"operation for {'' if setup.core.integrate else 'non-'}integrated"
-            f" input variable '{setup.core.input_variable}'"
+            f"operation for {'' if integrate else 'non-'}integrated"
+            f" input variable '{plot_variable}'"
         )
     period = now - start
     hours = int(period.total_seconds() / 3600)
@@ -1233,7 +1318,10 @@ def colors_from_cmap(cmap, n_levels, extend):
 
 
 def levels_from_time_stats(
-    setup: Setup, time_stats: FieldStats, levels_config_dct: Dict[str, Any]
+    simulation_type: str,
+    ens_variable: Optional[str],
+    time_stats: FieldStats,
+    levels_config_dct: Dict[str, Any],
 ) -> np.ndarray:
     def _auto_levels_log10(n_levels: int, val_max: float) -> List[float]:
         if not np.isfinite(val_max):
@@ -1248,10 +1336,9 @@ def levels_from_time_stats(
             log10_max - (n_levels - 1) * log10_d, log10_max + 0.5 * log10_d, log10_d
         )
 
-    if setup.model.simulation_type == "ensemble":
-        if setup.core.ens_variable.endswith(
-            "probability"
-        ) or setup.core.ens_variable in [
+    if simulation_type == "ensemble":
+        assert ens_variable is not None  # mypy
+        if ens_variable.endswith("probability") or ens_variable in [
             "ens_cloud_arrival_time",
             "ens_cloud_departure_time",
         ]:

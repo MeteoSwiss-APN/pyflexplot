@@ -15,7 +15,7 @@ from typing import Union
 from srutils.datetime import init_datetime
 
 # Local
-from .setup import Setup
+from .setups.plot_setup import PlotSetup
 from .utils.logging import log
 
 
@@ -31,7 +31,7 @@ class FilePathFormatter:
     def format(
         self,
         template: str,
-        setup: Setup,
+        setup: PlotSetup,
         *,
         release_site: str,
         release_start: datetime,
@@ -69,7 +69,7 @@ class FilePathFormatter:
     def _format_template(
         self,
         template: str,
-        setup: Setup,
+        setup: PlotSetup,
         *,
         release_site: str,
         release_start: datetime,
@@ -80,33 +80,45 @@ class FilePathFormatter:
             cast(int, setup.model.base_time), setup.outfile_time_format
         )[0]
 
-        # Prepare ens variable
-        ens_variable = setup.core.ens_variable
-        if ens_variable == "percentile":
-            ens_variable += f"-{setup.core.ens_param_pctl:g}"
-        elif ens_variable == "probability":
-            if setup.core.ens_param_thr_type == "lower":
-                ens_variable += "-gt"
-            elif setup.core.ens_param_thr_type == "upper":
-                ens_variable += "-lt"
-            ens_variable += f"-{setup.core.ens_param_thr:g}"
+        # Prepare plot variable
+        plot_variable = setup.panels.collect_equal("plot_variable")
+        if plot_variable.endswith("deposition"):
+            if not setup.panels.collect_equal("integrate"):
+                plot_variable += "-instant"
+        elif plot_variable == "concentration":
+            if setup.panels.collect_equal("integrate"):
+                plot_variable += "-integr"
 
-        # Prepare input variable
-        input_variable = setup.core.input_variable
-        if setup.core.input_variable == "deposition":
-            input_variable += f"-{setup.deposition_type_str}"
-            if not setup.core.integrate:
-                input_variable += "-instant"
-        elif setup.core.input_variable == "concentration":
-            if setup.core.integrate:
-                input_variable += "-integr"
+        def prepare_ens_variable(ens_variable: str) -> str:
+            if ens_variable == "percentile":
+                ens_variable += f"-{setup.panels.collect_equal('ens_params').pctl:g}"
+            elif ens_variable == "probability":
+                if setup.panels.collect_equal("ens_params").thr_type == "lower":
+                    ens_variable += "-gt"
+                elif setup.panels.collect_equal("ens_params").thr_type == "upper":
+                    ens_variable += "-lt"
+                ens_variable += f"-{setup.panels.collect_equal('ens_params').thr:g}"
+            return ens_variable
+
+        # Prepare Prepare ens variable
+        ens_variable: str
+        if setup.plot_type == "multipanel" and setup.multipanel_param == "ens_variable":
+            ens_variable = "_".join(
+                [
+                    prepare_ens_variable(ens_variable_i)
+                    for ens_variable_i in setup.panels.collect("ens_variable")
+                ]
+            )
+        else:
+            ens_variable = setup.panels.collect_equal("ens_variable")
+            ens_variable = prepare_ens_variable(ens_variable)
 
         # Prepare release start
         release_start_fmtd: str = self._format_time_step(
             release_start, setup.outfile_time_format
         )
 
-        # Prepare time steps
+        # time steps
         time_steps_fmtd: List[str] = self._format_time_steps(
             time_steps, setup.outfile_time_format
         )
@@ -115,20 +127,20 @@ class FilePathFormatter:
         # Don't use str.format in order to handle multival elements
         kwargs = {
             "base_time": base_time,
-            "domain": setup.core.domain,
+            "domain": setup.panels.collect_equal("domain"),
             "ens_variable": ens_variable,
-            "input_variable": input_variable,
-            "lang": setup.core.lang,
-            "level": setup.core.dimensions.level,
+            "plot_variable": plot_variable,
+            "lang": setup.panels.collect_equal("lang"),
+            "level": setup.panels.collect_equal("dimensions").level,
             "model": setup.model.name,
-            "nageclass": setup.core.dimensions.nageclass,
-            "noutrel": setup.core.dimensions.noutrel,
-            "plot_type": setup.core.plot_type,
+            "nageclass": setup.panels.collect_equal("dimensions").nageclass,
+            "noutrel": setup.panels.collect_equal("dimensions").noutrel,
+            "plot_type": setup.plot_type,
             "release_site": release_site,
             "release_start": release_start_fmtd,
-            "species_id": setup.core.dimensions.species_id,
-            "time_idx": setup.core.dimensions.time,
-            "time_step": time_steps_fmtd[setup.core.dimensions.time],
+            "species_id": setup.panels.collect_equal("dimensions").species_id,
+            "time_idx": setup.panels.collect_equal("dimensions").time,
+            "time_step": time_steps_fmtd[setup.panels.collect_equal("dimensions").time],
         }
         return self._replace_format_keys(template, kwargs)
 

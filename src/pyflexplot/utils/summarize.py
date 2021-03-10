@@ -6,10 +6,8 @@ from typing import Any
 from typing import Callable
 from typing import Collection
 from typing import Dict
-from typing import MutableMapping
 from typing import Optional
 from typing import Sequence
-from typing import Union
 
 # Third-party
 import numpy as np
@@ -33,66 +31,25 @@ def is_attrs_class(cls: Any) -> bool:
     return isinstance(cls, type) and hasattr(cls, "__attrs_attrs__")
 
 
-def summarize(
-    self: Any,
-    addl: Optional[Collection[str]] = None,
-    skip: Optional[Collection[str]] = None,
-) -> Dict[str, Any]:
-    """Summarize an object.
-
-    Default summarize method; see docstring of ``summarizable``.
-
-    Args:
-        self: The class instance to be summarized.
-
-        addl: Additional attributes to be summarized. Added to those specified
-            in ``self.summarizable_attrs``.
-
-        skip: Attributes not to be summarized despite being specified in
-            ``self.summarizable_attrs``.
-
-    Return:
-        Summary dict.
-
-    """
-    return Summarizer().run(self, addl=addl, skip=skip)
-
-
-# pylint: disable=W0613  # unused-argument (self)
-def post_summarize(
-    self: Any, summary: MutableMapping[str, Any]
-) -> MutableMapping[str, Any]:
-    """Post-process the summary of an object.
-
-    Default post_summarize method; see docstring of ``summarizable``.
-
-    Args:
-        self: The class instance to be summarized.
-
-        summary: Summary dict to be modified.
-
-    Return:
-        Modified summary dict.
-
-    """
-    return summary
+def summarize(self: Any) -> Dict[str, Any]:
+    """Summarize an object."""
+    return Summarizer().run(self)
 
 
 # pylint: disable=R0912  # too-many-branches (>12)
 # pylint: disable=W0621  # redefined-outer-name
+# Omit return type ('Callable') to avoid hiding decorated classes from discovery
+# (Method usages of decorated classes no longer detected by vscode)
 def summarizable(
     cls: Optional[Callable] = None,
     *,
     attrs: Optional[Collection[str]] = None,
     attrs_add: Optional[Collection[str]] = None,
     attrs_skip: Optional[Collection[str]] = None,
-    summarize: Callable[[Any], Dict[str, Any]] = summarize,
-    post_summarize: Callable[
-        [Any, MutableMapping[str, Any]], MutableMapping[str, Any]
-    ] = post_summarize,
+    summarize: Optional[Callable[[Any], Dict[str, Any]]] = None,
     auto_collect: bool = True,
     overwrite: bool = False,
-) -> Callable:
+):
     """Decorate a class to make it summarizable.
 
     Args:
@@ -114,10 +71,6 @@ def summarizable(
             the summarized attributes. Replaces``summarize``. Added to ``cls``
             as method ``summarize``.
 
-        post_summarize: Custom function to post-process the summary dict.
-            Replaces ``post_summarize``. Added to ``cls`` as method
-            ``post_summarize``.
-
         auto_collect: Auto-collect attributes of certain types of classes, such
             as data classes and dict-convertible classes, in addition to those
             specified in attrs (if given at all).
@@ -134,109 +87,53 @@ def summarizable(
             attrs_add=attrs_add,
             attrs_skip=attrs_skip,
             summarize=summarize,
-            post_summarize=post_summarize,
             auto_collect=auto_collect,
             overwrite=overwrite,
         )
 
-    try:
-        attrs = list(attrs or [])
-    except TypeError as e:
-        raise ValueError("`attrs` is not iterable", type(attrs), attrs) from e
-
-    if auto_collect:
-        if is_attrs_class(cls):
+    if attrs is not None:
+        attrs = list(attrs)
+    else:
+        if auto_collect and is_attrs_class(cls):
             # Collect attributes defined with ``attr.attrib``
-            attrs = [a.name for a in cls.__attrs_attrs__] + attrs  # type: ignore
-        elif is_dataclass(cls):
+            attrs = [attr.name for attr in cls.__attrs_attrs__]  # type: ignore
+        elif auto_collect and is_dataclass(cls):
             # Collect dataclass fields
-            attrs = list(cls.__dataclass_fields__) + attrs  # type: ignore
-
+            attrs = list(cls.__dataclass_fields__)  # type: ignore
+        else:
+            attrs = []
+    attrs += list(attrs_add or [])
     if attrs_skip:
-        attrs = [a for a in attrs if a not in attrs_skip]
-        if attrs_add:
-            attrs_add = [a for a in attrs_add if a not in attrs_skip]
+        attrs = [name for name in attrs if name not in attrs_skip]
 
-    for name, attr in [
-        ("summarizable_attrs", attrs),
-        ("summarize", summarize),
-        ("post_summarize", post_summarize),
-    ]:
-        if attr:
-            setattr(cls, name, attr)
+    if hasattr(cls, "__summarize__") and "__summarize__" not in cls.__dict__:
+        super_summarize = getattr(cls, "__summarize__")
+    else:
+        super_summarize = None
 
-    if attrs_add:
-        # Don't directly extend cls.summarizable_attrs in order not to add
-        # attributes of a subclass to summarizable_attrs of its superclass
-        setattr(
-            cls,
-            "summarizable_attrs",
-            list(getattr(cls, "summarizable_attrs")) + list(attrs_add),
-        )
+    def __summarize__(self) -> Dict[str, Any]:
+        dct: Dict[str, Any]
+        if summarize is not None:
+            dct = summarize(self)
+        else:
+            if super_summarize is None:
+                dct = {"type": type(self).__name__}
+            else:
+                dct = super_summarize(self)
+        assert attrs is not None  # mypy
+        for name in attrs:
+            dct[name] = getattr(self, name)
+        return dct
+
+    setattr(cls, "__summarize__", __summarize__)
 
     return cls
 
 
 class Summarizer:
-    """Summarize an as a dict.
+    """Summarize an object as a string, list, dict etc."""
 
-    Subclasses must define the property ``summarizable_attrs``, comprising
-    a list of attribute names to be collected.
-
-    If attribute values possess a ``summarize`` method themselves, the output
-    of that is collected. Otherwise, it is attempted to convert the values to
-    common types like dicts or lists. If all attempts fail, the raw value is
-    added to the summary dict.
-
-    """
-
-    def run(
-        self,
-        obj: Any,
-        *,
-        addl: Optional[Collection[str]] = None,
-        skip: Optional[Collection[str]] = None,
-    ) -> Dict[str, Any]:
-        """Summarize specified attributes of ``obj`` as a dict.
-
-        The attributes to be summarized must be specified by name in the
-        attribute ``obj.summarizable_attrs``.
-
-        Args:
-            obj: Object to summarize.
-
-            addl (optional): Additional attributes to be collected.
-
-            skip (optional): Attributes to skip during collection.
-
-        Returns:
-            Dictionary containing the collected attributes and their values.
-
-        """
-        data: Dict[str, Any] = {}
-
-        if skip is None or "type" not in skip:
-            data["type"] = type(obj).__name__
-
-        try:
-            attrs = list(obj.summarizable_attrs)
-        except AttributeError as e:
-            if addl is not None or skip is not None:
-                raise ValueError(
-                    "arguments addl and skip invalid without obj.summarizable_attrs"
-                ) from e
-            return self._summarize(obj)
-
-        if addl is not None:
-            attrs += [a for a in addl if a not in attrs]
-        if skip is not None:
-            attrs = [a for a in attrs if a not in skip]
-        for attr in attrs:
-            data[attr] = self._summarize(getattr(obj, attr))
-        return obj.post_summarize(data)
-
-    def _summarize(self, obj: Any) -> Union[Dict[str, Any], Any]:
-        """Try to summarize the object in various ways."""
+    def run(self, obj: Any) -> Any:
         if isinstance(obj, str):
             return obj
         methods = [
@@ -283,12 +180,10 @@ class Summarizer:
     def _try_summarizable(self, obj: Any) -> Dict[str, Any]:
         """Try to summarize ``obj`` as a summarizable object."""
         try:
-            obj.summarize
+            dct = obj.__summarize__()
         except AttributeError as e:
             raise NotSummarizableError("summarizable", obj) from e
-        else:
-            dct = obj.summarize()
-        return self._summarize(dct)
+        return self.run(dct)
 
     def _try_dict_like(self, obj: Any) -> Dict[Any, Any]:
         """Try to summarize ``obj`` as a dict-like object."""
@@ -306,7 +201,7 @@ class Summarizer:
                     except TypeError:
                         raise NotSummarizableError("dict-like", obj) from e
             items = obj.items()
-        return {self._summarize(key): self._summarize(val) for key, val in items}
+        return {self.run(key): self.run(val) for key, val in items}
 
     def _try_list_like(self, obj: Any) -> Sequence[Any]:
         """Try to summarize ``obj`` as a list-like object."""
@@ -314,7 +209,7 @@ class Summarizer:
             raise NotSummarizableError("list-like", obj)
         data = []
         for item in obj:
-            data.append(self._summarize(item))
+            data.append(self.run(item))
         return data
 
     # pylint: disable=R0201  # no-self-use
