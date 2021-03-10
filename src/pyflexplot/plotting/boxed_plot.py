@@ -18,7 +18,7 @@ from matplotlib.figure import Figure
 
 # Local
 from ..input.field import Field
-from ..plot_layouts import BoxedPlotLayoutType
+from ..plot_layouts import BoxedPlotLayout
 from ..setups.plot_setup import PlotSetup
 from ..utils.exceptions import FieldAllNaNError
 from ..utils.summarize import summarizable
@@ -86,7 +86,7 @@ class MarkersConfig:
 @dataclass
 class BoxedPlotConfig:
     setup: PlotSetup  # SR_TODO consider removing this
-    layout: BoxedPlotLayoutType
+    layout: BoxedPlotLayout
     # ---
     font: FontConfig = FontConfig()
     levels: ContourLevelsConfig = ContourLevelsConfig()

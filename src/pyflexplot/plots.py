@@ -48,9 +48,7 @@ from .input.field import FieldStats
 from .input.meta_data import format_meta_datum
 from .input.meta_data import MetaData
 from .output import FilePathFormatter
-from .plot_layouts import BoxedPlotLayoutDeterministic
-from .plot_layouts import BoxedPlotLayoutEnsemble
-from .plot_layouts import BoxedPlotLayoutType
+from .plot_layouts import BoxedPlotLayout
 from .plotting.boxed_plot import BoxedPlot
 from .plotting.boxed_plot import BoxedPlotConfig
 from .plotting.boxed_plot import ContourLevelsConfig
@@ -144,7 +142,7 @@ def create_plot(
         create_map_config(
             field_group.plot_setup,
             field.panel_setup,
-            plot_config.layout.aspect_center(),
+            plot_config.layout.get_aspect("center"),
         )
         for field in field_group
     ]
@@ -153,7 +151,7 @@ def create_plot(
     if len(field_group) == 1:
         field = next(iter(field_group))
         map_config = next(iter(map_configs))
-        rect = plot.config.layout.rect_center()
+        rect = plot.config.layout.get_rect("center")
         plot.add_map_plot("map", field, map_config, rect)
     elif len(field_group) != 4:
         raise NotImplementedError(f"{len(field_group)} number of panels")
@@ -172,7 +170,7 @@ def create_plot(
             y1 = y0 + h + h_pad
             return ((x0, y1, w, h), (x1, y1, w, h), (x0, y0, w, h), (x1, y0, w, h))
 
-        sub_rects = derive_sub_rects(plot.config.layout.rect_center())
+        sub_rects = derive_sub_rects(plot.config.layout.get_rect("center"))
         for idx, (field, map_config, sub_rect) in enumerate(
             zip(field_group, map_configs, sub_rects)
         ):
@@ -199,7 +197,7 @@ def create_plot(
 def plot_add_text_boxes(
     plot: BoxedPlot,
     fields: FieldGroup,
-    layout: BoxedPlotLayoutType,
+    layout: BoxedPlotLayout,
     show_version: bool = True,
 ) -> None:
     # pylint: disable=R0915  # too-many-statements
@@ -421,27 +419,36 @@ def plot_add_text_boxes(
     field = next(iter(fields))
     # SR_TMP >
 
-    plot.add_text_box("top", layout.rect_top(), fill_box_title)
-    if isinstance(layout, BoxedPlotLayoutDeterministic):
+    plot.add_text_box("top", layout.get_rect("top"), fill_box_title)
+    if layout.name == "post_vintage":
         plot.add_text_box(
             "right_top",
-            layout.rect_right_top(),
+            layout.get_rect("right_top"),
             lambda box, plot: fill_box_2nd_title(box, plot, field),
         )
-    elif isinstance(layout, BoxedPlotLayoutEnsemble):
-        plot.add_text_box("right_top", layout.rect_right_top(), fill_box_data_info)
+    elif layout.name == "post_vintage_ens":
+        plot.add_text_box(
+            "right_top",
+            layout.get_rect("right_top"),
+            fill_box_data_info,
+        )
     plot.add_text_box(
         "right_middle",
-        layout.rect_right_middle(),
+        layout.get_rect("right_middle"),
         lambda box, plot: fill_box_legend(box, plot, field),
     )
-    plot.add_text_box("right_bottom", layout.rect_right_bottom(), fill_box_release_info)
     plot.add_text_box(
-        "bottom_left", layout.rect_bottom_left(), fill_box_bottom_left, frame_on=False
+        "right_bottom", layout.get_rect("right_bottom"), fill_box_release_info
+    )
+    plot.add_text_box(
+        "bottom_left",
+        layout.get_rect("bottom_left"),
+        fill_box_bottom_left,
+        frame_on=False,
     )
     plot.add_text_box(
         "bottom_right",
-        layout.rect_bottom_right(),
+        layout.get_rect("bottom_right"),
         fill_box_bottom_right,
         frame_on=False,
     )
@@ -521,16 +528,7 @@ def create_plot_config(
 
     # Layout
     fig_aspect = np.divide(*plot_config_dct["fig_size"])
-    layout: BoxedPlotLayoutType
-    if setup.model.simulation_type == "deterministic":
-        layout = BoxedPlotLayoutDeterministic(aspect=fig_aspect)
-    elif setup.model.simulation_type == "ensemble":
-        layout = BoxedPlotLayoutEnsemble(aspect=fig_aspect)
-    else:
-        raise NotImplementedError(
-            f"layout for simulation type '{setup.model.simulation_type}'"
-        )
-    plot_config_dct["layout"] = layout
+    plot_config_dct["layout"] = BoxedPlotLayout.create(setup.layout, aspect=fig_aspect)
 
     # Fonts
     font_config = FontConfig(sizes=FontSizes().scale(setup.scale_fact))

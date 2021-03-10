@@ -84,9 +84,10 @@ class PlotSetup:
     infile: str  # = "none"
     outfile: Union[str, Tuple[str, ...]]  # = "none"
     outfile_time_format: str = "%Y%m%d%H%M"
-    scale_fact: float = 1.0
     plot_type: str = "auto"
+    layout: str = "auto"
     multipanel_param: Optional[str] = None
+    scale_fact: float = 1.0
     model: ModelSetup = ModelSetup()
     panels: PlotPanelSetupGroup = PlotPanelSetupGroup([PlotPanelSetup()])
 
@@ -130,6 +131,24 @@ class PlotSetup:
                 "'panels' has wrong type: expected PlotPanelSetupGroup, got "
                 + type(self.panels).__name__
             )
+
+        # Check/set layout
+        layouts = [
+            "auto",
+            "vintage",
+            "post_vintage",
+            "post_vintage_ens",
+        ]
+        if self.layout not in layouts:
+            raise ValueError(
+                f"invalid layout '{self.layout}'; choices: "
+                + ", ".join(map("'{}'".format, layouts))
+            )
+        elif self.layout == "auto":
+            if self.model.simulation_type == "deterministic":
+                self.layout = "post_vintage"
+            elif self.model.simulation_type == "ensemble":
+                self.layout = "post_vintage_ens"
 
     def collect(self, param: str, *, unique: bool = False) -> Any:
         """Collect the value(s) of a parameter.

@@ -23,6 +23,16 @@ MANDATORY_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
 }
 
 OPTIONAL_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
+    "layout": "post_vintage",
+    "multipanel_param": None,
+    "outfile_time_format": "%Y%m%d%H%M",
+    "plot_type": "auto",
+    "scale_fact": 1.0,
+    "model": {
+        "base_time": None,
+        "ens_member_id": None,
+        "simulation_type": "deterministic",
+    },
     "panels": [
         {
             "combine_levels": False,
@@ -52,15 +62,6 @@ OPTIONAL_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
             "lang": "en",
         }
     ],
-    "model": {
-        "base_time": None,
-        "ens_member_id": None,
-        "simulation_type": "deterministic",
-    },
-    "multipanel_param": None,
-    "plot_type": "auto",
-    "outfile_time_format": "%Y%m%d%H%M",
-    "scale_fact": 1.0,
 }
 
 

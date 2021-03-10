@@ -7,7 +7,6 @@ from textwrap import dedent
 from pyflexplot.setups.setup_file import SetupFile
 from srutils.dict import merge_dicts
 from srutils.testing import assert_is_sub_element
-from srutils.testing import assert_nested_equal
 
 BASE = {
     "infile": "foo.nc",
@@ -452,41 +451,21 @@ class Test_RealCase:
                         "combine_species": False,
                         "dimensions": {
                             "level": 0,
-                            "nageclass": None,
-                            "noutrel": None,
-                            "numpoint": None,
-                            "species_id": None,
-                            "time": None,
                             "variable": "concentration",
                         },
                         "dimensions_default": "all",
                         "domain": "full",
-                        "domain_size_lat": None,
-                        "domain_size_lon": None,
-                        "ens_params": {
-                            "mem_min": None,
-                            "pctl": None,
-                            "thr": None,
-                            "thr_type": "lower",
-                        },
-                        "ens_variable": "none",
                         "plot_variable": "concentration",
                         "integrate": False,
                         "lang": "de",
                     }
                 ],
-                "multipanel_param": None,
-                "plot_type": "auto",
                 "model": {
-                    "base_time": None,
-                    "ens_member_id": None,
                     "name": "COSMO-1",
                     "simulation_type": "deterministic",
                 },
                 "infile": "data/cosmo1_2019052800.nc",
                 "outfile": "concentration_{species_id}_{domain}_{lang}_{time:02d}.png",
-                "outfile_time_format": "%Y%m%d%H%M",
-                "scale_fact": 1.0,
             },
             {
                 "panels": [
@@ -495,34 +474,16 @@ class Test_RealCase:
                         "combine_species": False,
                         "dimensions": {
                             "level": 0,
-                            "nageclass": None,
-                            "noutrel": None,
-                            "numpoint": None,
-                            "species_id": None,
                             "time": -1,
                             "variable": "concentration",
                         },
-                        "dimensions_default": "all",
                         "domain": "full",
-                        "domain_size_lat": None,
-                        "domain_size_lon": None,
-                        "ens_params": {
-                            "mem_min": None,
-                            "pctl": None,
-                            "thr": None,
-                            "thr_type": "lower",
-                        },
-                        "ens_variable": "none",
                         "plot_variable": "concentration",
                         "integrate": True,
                         "lang": "de",
                     }
                 ],
-                "multipanel_param": None,
-                "plot_type": "auto",
                 "model": {
-                    "base_time": None,
-                    "ens_member_id": None,
                     "name": "COSMO-1",
                     "simulation_type": "deterministic",
                 },
@@ -530,8 +491,6 @@ class Test_RealCase:
                 "outfile": (
                     "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png"
                 ),
-                "outfile_time_format": "%Y%m%d%H%M",
-                "scale_fact": 1.0,
             },
             {
                 "panels": [
@@ -539,42 +498,22 @@ class Test_RealCase:
                         "combine_levels": False,
                         "combine_species": True,
                         "dimensions": {
-                            "level": None,
-                            "nageclass": None,
-                            "noutrel": None,
-                            "numpoint": None,
-                            "species_id": None,
                             "time": -1,
                             "variable": ("dry_deposition", "wet_deposition"),
                         },
                         "dimensions_default": "all",
                         "domain": "full",
-                        "domain_size_lat": None,
-                        "domain_size_lon": None,
-                        "ens_params": {
-                            "mem_min": None,
-                            "pctl": None,
-                            "thr": None,
-                            "thr_type": "lower",
-                        },
-                        "ens_variable": "none",
                         "plot_variable": "tot_deposition",
                         "integrate": True,
                         "lang": "en",
                     }
                 ],
-                "multipanel_param": None,
-                "plot_type": "auto",
                 "model": {
-                    "base_time": None,
-                    "ens_member_id": None,
                     "name": "COSMO-1",
                     "simulation_type": "deterministic",
                 },
                 "infile": "data/cosmo1_2019052800.nc",
                 "outfile": "tot_deposition_{domain}_{lang}_{time:02d}.png",
-                "outfile_time_format": "%Y%m%d%H%M",
-                "scale_fact": 1.0,
             },
             {
                 "panels": [
@@ -583,10 +522,6 @@ class Test_RealCase:
                         "combine_species": True,
                         "dimensions": {
                             "level": 0,
-                            "nageclass": None,
-                            "noutrel": None,
-                            "numpoint": None,
-                            "species_id": None,
                             "time": -1,
                             "variable": (
                                 "concentration",
@@ -596,37 +531,24 @@ class Test_RealCase:
                         },
                         "dimensions_default": "all",
                         "domain": "full",
-                        "domain_size_lat": None,
-                        "domain_size_lon": None,
-                        "ens_params": {
-                            "mem_min": None,
-                            "pctl": None,
-                            "thr": None,
-                            "thr_type": "lower",
-                        },
-                        "ens_variable": "none",
                         "plot_variable": "affected_area",
                         "integrate": True,
                         "lang": "en",
                     }
                 ],
-                "multipanel_param": None,
-                "plot_type": "auto",
                 "model": {
-                    "base_time": None,
-                    "ens_member_id": None,
                     "name": "COSMO-1",
                     "simulation_type": "deterministic",
                 },
                 "infile": "data/cosmo1_2019052800.nc",
                 "outfile": "affected_area_{domain}_{lang}_{time:02d}.png",
-                "outfile_time_format": "%Y%m%d%H%M",
-                "scale_fact": 1.0,
             },
         ]
         group = SetupFile(tmp_setup_file(tmp_path, content)).read()
         res = group.dicts()
-        assert_nested_equal(name1="solution", obj1=sol, name2="result", obj2=res)
+        assert_is_sub_element(
+            name_sub="solution", obj_sub=sol, name_super="result", obj_super=res
+        )
 
 
 class Test_Wildcards:
