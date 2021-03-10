@@ -4,6 +4,6 @@ from typing import List
 
 __author__ = """Stefan Ruedisuehli"""
 __email__ = "stefan.ruedisuehli@env.ethz.ch"
-__version__ = "0.14.4"
+__version__ = "0.15.0"
 
 __all__: List[str] = []
