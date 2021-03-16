@@ -66,9 +66,9 @@ ens_param_mem_min = 2
 ens_param_thr = 0.0
 time = 0
 [_base._concentration._cloud."_arrival+"]
-ens_variable = "ens_cloud_arrival_time"
+ens_variable = "cloud_arrival_time"
 [_base._concentration._cloud."_departure+"]
-ens_variable = "ens_cloud_departure_time"
+ens_variable = "cloud_departure_time"
 
 [_base._concentration._integr."_min+"]
 outfile = "cosmo-1e_cloud_statistics_{domain}.pdf"

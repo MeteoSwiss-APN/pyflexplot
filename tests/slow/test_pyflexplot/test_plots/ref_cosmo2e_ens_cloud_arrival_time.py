@@ -171,7 +171,7 @@ field_summary = {
     },
     "panel_setup": {
         "plot_variable": "concentration",
-        "ens_variable": "ens_cloud_arrival_time",
+        "ens_variable": "cloud_arrival_time",
         "integrate": True,
         "combine_levels": False,
         "combine_species": False,
@@ -262,7 +262,7 @@ plot_summary = {
             "panels": [
                 {
                     "plot_variable": "concentration",
-                    "ens_variable": "ens_cloud_arrival_time",
+                    "ens_variable": "cloud_arrival_time",
                     "integrate": True,
                     "combine_levels": False,
                     "combine_species": False,
@@ -385,7 +385,7 @@ plot_summary = {
                     "Height:\t0$-$500 m AGL",
                     "Cloud thresh.:\t 1e-06 Bq h m$^{-3}$",
                     "Min. members:\t3$\\,/\\,$6 (50%)",
-                    "Ens. variable:\tens. cloud dep. t.",
+                    "Ens. variable:\tCloud arrival time",
                 ]
             },
             "legend": {
@@ -660,7 +660,7 @@ plot_summary = {
                 },
                 "panel_setup": {
                     "plot_variable": "concentration",
-                    "ens_variable": "ens_cloud_arrival_time",
+                    "ens_variable": "cloud_arrival_time",
                     "integrate": True,
                     "combine_levels": False,
                     "combine_species": False,
@@ -2450,7 +2450,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "ens. cloud dep. t.",
+                    "s": "Cloud arrival time",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

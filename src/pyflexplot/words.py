@@ -61,13 +61,25 @@ WORDS.add(en="based on", de="basierend auf")
 # C
 WORDS.add(en="cloud", de="Wolke")
 WORDS.add(
-    en={"*": "cloud arrival time", "of": "of cloud arrival time"},
-    de={"*": "Wolkenankunftszeit", "of": "der Wolkenankunftszeit"},
+    en={
+        "*": "cloud arrival time",
+        "of": "of cloud arrival time",
+    },
+    de={
+        "*": "Wolkenankunftszeit",
+        "of": "der Wolkenankunftszeit",
+    },
 )
 WORDS.add(en="cloud density", de="Wolkendichte")
 WORDS.add(
-    en={"*": "cloud departure time", "of": "of cloud departure time"},
-    de={"*": "Wolkenabzugszeit", "of": "der Wolkenabzugszeit"},
+    en={
+        "*": "cloud departure time",
+        "of": "of cloud departure time",
+    },
+    de={
+        "*": "Wolkenabzugszeit",
+        "of": "der Wolkenabzugszeit",
+    },
 )
 WORDS.add(en="cloud occurrence probability", de="Wolkenauftretenswahrscheinlichkeit")
 WORDS.add(
@@ -115,12 +127,12 @@ WORDS.add(en={"*": "east", "abbr": "E"}, de={"*": "Ost", "abbr": "O"})
 WORDS.add(en="end", de="Ende")
 WORDS.add(en="ensemble", de="Ensemble")
 WORDS.add(
-    en={"*": "ensemble cloud arrival time", "abbr": "ens. cloud arr. t."},
-    de={"*": "Ensemble-Wolkenankunftszeit", "abbr": "Ens.-Wolkenankunftsz."},
+    en={"*": "ensemble cloud arrival time", "abbr": "ens. cloud arrival time"},
+    de={"*": "Ensemble-Wolkenankunftszeit", "abbr": "Ens.-Wolkenankunftszeit"},
 )
 WORDS.add(
-    en={"*": "ensemble cloud departure time", "abbr": "ens. cloud dep. t."},
-    de={"*": "Ensemble-Wolkenabzugszeit", "abbr": "Ens.-Wolkenabzugsz."},
+    en={"*": "ensemble cloud departure time", "abbr": "ens. cloud departure time"},
+    de={"*": "Wolkenabzugszeit", "abbr": "Ens.-Wolkenabzugszeit"},
 )
 WORDS.add(en="ensemble maximum", de="Ensemble-Maximum")
 WORDS.add(en="ensemble mean", de="Ensemble-Mittel")

@@ -17,10 +17,10 @@ species_id = 1
 level = 0
 
 [_base."_arrival_time+"]
-ens_variable = "ens_cloud_arrival_time"
+ens_variable = "cloud_arrival_time"
 
 [_base."_departure_time+"]
-ens_variable = "ens_cloud_departure_time"
+ens_variable = "cloud_departure_time"
 
 # ["**"._full.en]
 # domain = "full"

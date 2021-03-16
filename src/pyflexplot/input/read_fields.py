@@ -542,7 +542,7 @@ class InputFileEnsemble:
             fld_time = ensemble_probability(
                 fld_time_mem, ens_params.thr, ens_params.thr_type
             )
-        elif ens_variable.startswith("ens_cloud_"):
+        elif ens_variable.startswith("cloud_"):
             if ens_params.thr is None:
                 raise Exception("ens_params.thr is None")
             if ens_params.mem_min is None:
@@ -552,9 +552,9 @@ class InputFileEnsemble:
                 mem_min=ens_params.mem_min,
                 ts=ts_hrs,
             )
-            if ens_variable == "ens_cloud_arrival_time":
+            if ens_variable == "cloud_arrival_time":
                 fld_time = cloud.arrival_time()
-            elif ens_variable == "ens_cloud_departure_time":
+            elif ens_variable == "cloud_departure_time":
                 fld_time = cloud.departure_time()
             else:
                 raise NotImplementedError("ens_variable", ens_variable)

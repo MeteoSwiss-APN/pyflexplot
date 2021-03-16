@@ -171,7 +171,7 @@ field_summary = {
     },
     "panel_setup": {
         "plot_variable": "concentration",
-        "ens_variable": "ens_cloud_departure_time",
+        "ens_variable": "cloud_departure_time",
         "integrate": True,
         "combine_levels": True,
         "combine_species": True,
@@ -262,7 +262,7 @@ plot_summary = {
             "panels": [
                 {
                     "plot_variable": "concentration",
-                    "ens_variable": "ens_cloud_departure_time",
+                    "ens_variable": "cloud_departure_time",
                     "integrate": True,
                     "combine_levels": True,
                     "combine_species": True,
@@ -373,7 +373,7 @@ plot_summary = {
         "fig_size": [12.5, 8.0],
         "labels": {
             "title": {
-                "tl": "Ensemble-Wolkenabzugszeit",
+                "tl": "Wolkenabzugszeit",
                 "bl": 'Aufsummiert $\\mathrm{\\"u}$ber 9:00$\\,$h (seit 2019-07-27 12:00 UTC)',
                 "tr": "2019-07-27 21:00 UTC (Vorhersagezeit +9:00$\\,$h)",
                 "br": "9:00$\\,$h nach Freisetzungsbeginn",
@@ -385,7 +385,7 @@ plot_summary = {
                     'H$\\mathrm{\\"o}$he:\t0$-$10000 m $\\mathrm{{\\"u}}$.G.',
                     "Wolkengrenzw.:\t 1e-09 Bq h m$^{-3}$",
                     "Min. Members:\t2$\\,/\\,$6 (33%)",
-                    "Ens.-Variable:\tEns.-Wolkenabzugsz.",
+                    "Ens.-Variable:\tWolkenabzugszeit",
                 ]
             },
             "legend": {
@@ -660,7 +660,7 @@ plot_summary = {
                 },
                 "panel_setup": {
                     "plot_variable": "concentration",
-                    "ens_variable": "ens_cloud_departure_time",
+                    "ens_variable": "cloud_departure_time",
                     "integrate": True,
                     "combine_levels": True,
                     "combine_species": True,
@@ -1418,7 +1418,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "left",
                     },
-                    "s": "Ensemble-Wolkenabzugszeit",
+                    "s": "Wolkenabzugszeit",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {
@@ -2406,7 +2406,7 @@ plot_summary = {
                         "va": "top",
                         "ha": "right",
                     },
-                    "s": "Ens.-Wolkenabzugsz.",
+                    "s": "Wolkenabzugszeit",
                     "replace_edge_spaces": False,
                     "edge_spaces_replacement_char": "␣",
                     "kwargs": {

@@ -558,8 +558,8 @@ def create_plot_config(
         "cloud_arrival_time",
         "cloud_departure_time",
     ] or ens_variable in [
-        "ens_cloud_arrival_time",
-        "ens_cloud_departure_time",
+        "cloud_arrival_time",
+        "cloud_departure_time",
     ]:
         levels_config_dct["scale"] = "lin"
         legend_config_dct["range_style"] = "int"
@@ -569,11 +569,11 @@ def create_plot_config(
         levels_config_dct["levels"] = [0, 3, 6, 9, 12, 18, 24, 33]
         # SR_TMP >
         if plot_variable == "cloud_arrival_time" or (
-            ens_variable == "ens_cloud_arrival_time"
+            ens_variable == "cloud_arrival_time"
         ):
             levels_config_dct["extend"] = "min"
         elif plot_variable == "cloud_departure_time" or (
-            ens_variable == "ens_cloud_departure_time"
+            ens_variable == "cloud_departure_time"
         ):
             levels_config_dct["extend"] = "max"
     # SR_TMP < TODO proper multipanel support
@@ -622,13 +622,13 @@ def create_plot_config(
         # cmap = truncate_cmap("nipy_spectral_r", 0.275, 0.95)
         cmap = truncate_cmap("terrain_r", 0.075)
     elif plot_variable == "cloud_arrival_time" or (
-        ens_variable == "ens_cloud_arrival_time"
+        ens_variable == "cloud_arrival_time"
     ):
         cmap = "viridis"
         color_under = "slategray"
         color_over = "lightgray"
     elif plot_variable == "cloud_departure_time" or (
-        ens_variable == "ens_cloud_departure_time"
+        ens_variable == "cloud_departure_time"
     ):
         cmap = "viridis_r"
         color_under = "lightgray"
@@ -782,8 +782,8 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
                 f" {format_meta_datum(unit=format_meta_datum(mdata.variable.unit))}"
             )
         elif ens_variable in [
-            "ens_cloud_arrival_time",
-            "ens_cloud_departure_time",
+            "cloud_arrival_time",
+            "cloud_departure_time",
         ]:
             labels["data_info"]["lines"].append(
                 # f"{words['cloud_density']}:\t{words['minimum', 'abbr']}"
@@ -802,7 +802,7 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
                 f"{n_tot} ({n_min/(n_tot or 0.001):.0%})"
             )
         labels["data_info"]["lines"].append(
-            f"{words['ensemble_variable', 'abbr']}:\t{ens_var_name}"
+            f"{words['ensemble_variable', 'abbr']}:\t{capitalize(ens_var_name)}"
         )
 
     # Legend box
@@ -823,14 +823,11 @@ def create_box_labels(setup: PlotSetup, mdata: MetaData) -> Dict[str, Dict[str, 
         title = f"{short_name}"
     elif unit == "%":
         title = f"{words['probability']} ({unit})"
-    elif (
-        plot_variable == "cloud_arrival_time"
-        or ens_variable == "ens_cloud_arrival_time"
-    ):
+    elif plot_variable == "cloud_arrival_time" or ens_variable == "cloud_arrival_time":
         title = f"{words['hour', 'pl']} {words['until']} {words['arrival']}"
     elif (
         plot_variable == "cloud_departure_time"
-        or ens_variable == "ens_cloud_departure_time"
+        or ens_variable == "cloud_departure_time"
     ):
         title = f"{words['hour', 'pl']} {words['until']} {words['departure']}"
     else:
@@ -966,8 +963,8 @@ def format_names_etc(
             if ens_variable == "probability":
                 return "%"
             elif ens_variable in [
-                "ens_cloud_arrival_time",
-                "ens_cloud_departure_time",
+                "cloud_arrival_time",
+                "cloud_departure_time",
             ]:
                 return f"{words['hour', 'pl']}"
         return format_meta_datum(unit=format_meta_datum(mdata.variable.unit))
@@ -1024,14 +1021,14 @@ def format_names_etc(
         elif ens_variable == "probability":
             short_name = words["probability"].s
             long_name = f"{words['probability']} {var_name_rel}"
-        elif ens_variable == "ens_cloud_arrival_time":
+        elif ens_variable == "cloud_arrival_time":
             long_name = words["ensemble_cloud_arrival_time"].s
             short_name = words["arrival"].s
-            ens_var_name = words["ensemble_cloud_departure_time", "abbr"].s
-        elif ens_variable == "ens_cloud_departure_time":
+            ens_var_name = words["cloud_arrival_time", "abbr"].s
+        elif ens_variable == "cloud_departure_time":
             long_name = words["ensemble_cloud_departure_time"].s
             short_name = words["departure"].s
-            ens_var_name = words["ensemble_cloud_departure_time", "abbr"].s
+            ens_var_name = words["cloud_departure_time", "abbr"].s
         if ens_var_name == "none":
             # SR_TMP <
             # ens_var_name = words[ens_variable].c
@@ -1337,8 +1334,8 @@ def levels_from_time_stats(
     if simulation_type == "ensemble":
         assert ens_variable is not None  # mypy
         if ens_variable.endswith("probability") or ens_variable in [
-            "ens_cloud_arrival_time",
-            "ens_cloud_departure_time",
+            "cloud_arrival_time",
+            "cloud_departure_time",
         ]:
             return levels_config_dct["levels"]
     if levels_config_dct.get("n"):

@@ -139,8 +139,8 @@ class PlotPanelSetup:
 
         # Check ens_variable
         choices = [
-            "ens_cloud_arrival_time",
-            "ens_cloud_departure_time",
+            "cloud_arrival_time",
+            "cloud_departure_time",
             "maximum",
             "mean",
             "med_abs_dev",
@@ -338,16 +338,16 @@ class PlotPanelSetup:
         # Init ens_params
         if self.ens_params.mem_min is None:
             if self.ens_variable in [
-                "ens_cloud_arrival_time",
-                "ens_cloud_departure_time",
+                "cloud_arrival_time",
+                "cloud_departure_time",
             ]:
                 self.ens_params.mem_min = ENS_CLOUD_TIME_DEFAULT_PARAM_MEM_MIN
         if self.ens_variable == "percentile":
             assert self.ens_params.pctl is not None
         if self.ens_params.thr is None:
             if self.ens_variable in [
-                "ens_cloud_arrival_time",
-                "ens_cloud_departure_time",
+                "cloud_arrival_time",
+                "cloud_departure_time",
             ]:
                 self.ens_params.thr = ENS_CLOUD_TIME_DEFAULT_PARAM_THR
             elif self.ens_variable == "probability":

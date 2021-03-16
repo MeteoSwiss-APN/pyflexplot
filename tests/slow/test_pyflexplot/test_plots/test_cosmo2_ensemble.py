@@ -163,7 +163,7 @@ class Test_CloudArrivalTime(_TestBase):
         },
         "panels": [
             {
-                "ens_variable": "ens_cloud_arrival_time",
+                "ens_variable": "cloud_arrival_time",
                 "plot_variable": "concentration",
                 "integrate": True,
                 "ens_params": {
@@ -193,7 +193,7 @@ class Test_CloudDepartureTime(_TestBase):
         },
         "panels": [
             {
-                "ens_variable": "ens_cloud_departure_time",
+                "ens_variable": "cloud_departure_time",
                 "plot_variable": "concentration",
                 "integrate": True,
                 "combine_species": True,
