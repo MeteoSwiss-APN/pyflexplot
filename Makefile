@@ -33,7 +33,7 @@ export PREFIX
 
 # Options for all calls to up-do-date pip (i.e., AFTER `pip install -U pip`)
 # Example: `--use-feature=2020-resolver` before the new resolver became the default
-PIP_OPTS = --use-feature=2020-resolver
+PIP_OPTS =
 export PIP_OPTS
 
 #

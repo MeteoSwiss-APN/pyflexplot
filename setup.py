@@ -68,7 +68,7 @@ requirements = [
     "matplotlib",
     "netcdf4",
     "numpy",
-    "pillow>=7.1.0",
+    "pillow>=8.1.1",
     "pypdf2",
     "scipy",
     "toml",
