@@ -31,7 +31,7 @@ description_files = [
 
 metadata = {
     "name": "pyflexplot",
-    "version": "0.15.1",
+    "version": "0.15.2",
     "description": "PyFlexPlot visualizes FLEXPART particle dispersion simulations.",
     "long_description": read_present_files(description_files),
     "author": "Stefan Ruedisuehli",
@@ -68,7 +68,7 @@ requirements = [
     "matplotlib",
     "netcdf4",
     "numpy",
-    "pillow>=7.1.0",
+    "pillow>=8.1.1",
     "pypdf2",
     "scipy",
     "toml",
