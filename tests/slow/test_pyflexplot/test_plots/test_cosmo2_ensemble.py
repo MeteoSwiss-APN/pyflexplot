@@ -25,9 +25,8 @@ class Test_EnsMedian_Concentration(_TestBase):
     setup_dct = {
         "files": {
             "input": INFILE_NAME,
-            # "output": f"{reference}.png",
+            "output": f"{reference}.png",
         },
-        "outfile": f"{reference}.png",
         "model": {
             "name": "COSMO-2E",
             "ens_member_id": ENS_MEMBER_IDS,
@@ -55,9 +54,8 @@ class Test_EnsMax_IntegratedConcentration(_TestBase):
     setup_dct = {
         "files": {
             "input": INFILE_NAME,
-            # "output": f"{reference}.png",
+            "output": f"{reference}.png",
         },
-        "outfile": f"{reference}.png",
         "model": {
             "name": "COSMO-2E",
             "ens_member_id": ENS_MEMBER_IDS,
@@ -84,9 +82,8 @@ class Test_EnsMean_TotalDeposition(_TestBase):
     setup_dct = {
         "files": {
             "input": INFILE_NAME,
-            # "output": f"{reference}.png",
+            "output": f"{reference}.png",
         },
-        "outfile": f"{reference}.png",
         "model": {
             "name": "COSMO-2E",
             "ens_member_id": ENS_MEMBER_IDS,
@@ -113,9 +110,8 @@ class Test_EnsProbability_WetDeposition(_TestBase):
     setup_dct = {
         "files": {
             "input": INFILE_NAME,
-            # "output": f"{reference}.png",
+            "output": f"{reference}.png",
         },
-        "outfile": f"{reference}.png",
         "model": {
             "name": "COSMO-2E",
             "ens_member_id": ENS_MEMBER_IDS,
@@ -142,9 +138,8 @@ class Test_EnsMin_AffectedArea(_TestBase):
     setup_dct = {
         "files": {
             "input": INFILE_NAME,
-            # "output": f"{reference}.png",
+            "output": f"{reference}.png",
         },
-        "outfile": f"{reference}.png",
         "model": {
             "name": "COSMO-2E",
             "ens_member_id": ENS_MEMBER_IDS,
@@ -172,9 +167,8 @@ class Test_CloudArrivalTime(_TestBase):
     setup_dct = {
         "files": {
             "input": INFILE_NAME,
-            # "output": f"{reference}.png",
+            "output": f"{reference}.png",
         },
-        "outfile": f"{reference}.png",
         "model": {
             "name": "COSMO-2E",
             "ens_member_id": ENS_MEMBER_IDS,
@@ -205,9 +199,8 @@ class Test_CloudDepartureTime(_TestBase):
     setup_dct = {
         "files": {
             "input": INFILE_NAME,
-            # "output": f"{reference}.png",
+            "output": f"{reference}.png",
         },
-        "outfile": f"{reference}.png",
         "model": {
             "name": "COSMO-2E",
             "ens_member_id": ENS_MEMBER_IDS,
@@ -242,9 +235,8 @@ class Test_MultipanelEnsStats_Concentration(_TestBase):
     setup_dct = {
         "files": {
             "input": INFILE_NAME,
-            # "output": f"{reference}.png",
+            "output": f"{reference}.png",
         },
-        "outfile": f"{reference}.png",
         "layout": {
             "plot_type": "multipanel",
             "multipanel_param": "ens_variable",

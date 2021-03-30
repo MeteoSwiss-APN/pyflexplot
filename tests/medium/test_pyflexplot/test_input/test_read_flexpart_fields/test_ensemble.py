@@ -49,9 +49,8 @@ class TestReadFieldEnsemble_Single:
     setup_params_shared: Dict[str, Any] = {
         "files": {
             "input": "dummy.nc",
-            # "output": "dummy.png",
+            "output": "dummy.png",
         },
-        "outfile": "dummy.png",
         "model": {
             "name": "COSMO-2E",
         },
@@ -166,9 +165,8 @@ class TestReadFieldEnsemble_Multiple:
     shared_setup_params_compressed: Dict[str, Any] = {
         "files": {
             "input": "dummy.nc",
-            # "output": "dummy.png",
+            "output": "dummy.png",
         },
-        "outfile": "dummy.png",
         "model": {
             "name": "COSMO-2E",
         },

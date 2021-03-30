@@ -16,9 +16,8 @@ class Test_Create:
     base_params = {
         "files": {
             "input": "dummy.nc",
-            # "output": "dummy.png",
+            "output": "dummy.png",
         },
-        "outfile": "dummy.png",
         "model": {"name": "COSMO-1"},
     }
 
@@ -255,19 +254,12 @@ class Test_Decompress:
                 self.setup.decompress(["dimensions.variable"])
 
         def test_files_param(self):
-            # SR_TMP <
-            # setup = self.setup.derive({"files": {"output": ["foo.png", "bar.png"]}})
-            # setups = setup.decompress(["files.output"], internal=False)
-            setup = self.setup.derive({"outfile": ["foo.png", "bar.png"]})
-            setups = setup.decompress(["outfile"], internal=False)
-            # SR_TMP >
+            setup = self.setup.derive({"files": {"output": ["foo.png", "bar.png"]}})
+            setups = setup.decompress(["files.output"], internal=False)
             assert len(setups) == 2
             assert isinstance(setups, list)
             assert all(isinstance(setup, PlotSetup) for setup in setups)
-            # SR_TMP <
-            # res = {setup.files.output for setup in setups}
-            res = tuple(setup.outfile for setup in setups)
-            # SR_TMP >
+            res = tuple(setup.files.output for setup in setups)
             sol = ("foo.png", "bar.png")
             assert res == sol
 

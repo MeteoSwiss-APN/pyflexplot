@@ -21,9 +21,8 @@ class Test_Concentration(_TestBase):
     setup_dct = {
         "files": {
             "input": INFILE_1,
-            # "output": f"{reference}.png",
+            "output": f"{reference}.png",
         },
-        "outfile": f"{reference}.png",
         "model": {
             "name": "COSMO-1",
         },
@@ -48,9 +47,8 @@ class Test_IntegratedConcentration(_TestBase):
     setup_dct = {
         "files": {
             "input": INFILE_1,
-            # "output": f"{reference}.png",
+            "output": f"{reference}.png",
         },
-        "outfile": f"{reference}.png",
         "layout": {
             "plot_type": "auto",
         },
@@ -78,9 +76,8 @@ class Test_TotalDeposition(_TestBase):
     setup_dct = {
         "files": {
             "input": INFILE_1,
-            # "output": f"{reference}.png",
+            "output": f"{reference}.png",
         },
-        "outfile": f"{reference}.png",
         "layout": {
             "plot_type": "auto",
         },
@@ -107,9 +104,8 @@ class Test_AffectedArea(_TestBase):
     setup_dct = {
         "files": {
             "input": INFILE_1,
-            # "output": f"{reference}.png",
+            "output": f"{reference}.png",
         },
-        "outfile": f"{reference}.png",
         "model": {
             "name": "COSMO-1",
         },
@@ -134,9 +130,8 @@ class Test_TotalDeposition_MissingField(_TestBase):
     setup_dct = {
         "files": {
             "input": INFILE_2,
-            # "output": f"{reference}.png",
+            "output": f"{reference}.png",
         },
-        "outfile": f"{reference}.png",
         "layout": {
             "plot_type": "auto",
         },
@@ -163,9 +158,8 @@ class Test_CloudArrivalTime(_TestBase):
     setup_dct = {
         "files": {
             "input": INFILE_1,
-            # "output": f"{reference}.png",
+            "output": f"{reference}.png",
         },
-        "outfile": f"{reference}.png",
         "model": {
             "name": "COSMO-1",
         },

@@ -22,9 +22,8 @@ class Test_Concentration(_TestBase):
     setup_dct = {
         "files": {
             "input": INFILE_1,
-            # "output": f"{reference}.png",
+            "output": f"{reference}.png",
         },
-        "outfile": f"{reference}.png",
         "model": {
             "name": "IFS-HRES",
         },
@@ -49,9 +48,8 @@ class Test_IntegratedConcentration(_TestBase):
     setup_dct = {
         "files": {
             "input": INFILE_1,
-            # "output": f"{reference}.png",
+            "output": f"{reference}.png",
         },
-        "outfile": f"{reference}.png",
         "layout": {
             "plot_type": "auto",
         },
@@ -79,9 +77,8 @@ class Test_TotalDeposition(_TestBase):
     setup_dct = {
         "files": {
             "input": INFILE_1,
-            # "output": f"{reference}.png",
+            "output": f"{reference}.png",
         },
-        "outfile": f"{reference}.png",
         "layout": {
             "plot_type": "auto",
         },
@@ -108,9 +105,8 @@ class Test_TotalDeposition_EmptyField(_TestBase):
     setup_dct = {
         "files": {
             "input": INFILE_2,
-            # "output": f"{reference}.png",
+            "output": f"{reference}.png",
         },
-        "outfile": f"{reference}.png",
         "layout": {
             "plot_type": "auto",
         },
@@ -137,9 +133,8 @@ class Test_AffectedArea(_TestBase):
     setup_dct = {
         "files": {
             "input": INFILE_1,
-            # "output": f"{reference}.png",
+            "output": f"{reference}.png",
         },
-        "outfile": f"{reference}.png",
         "model": {
             "name": "IFS-HRES",
         },
@@ -164,9 +159,8 @@ class Test_CloudDepartureTime(_TestBase):
     setup_dct = {
         "files": {
             "input": INFILE_1,
-            # "output": f"{reference}.png",
+            "output": f"{reference}.png",
         },
-        "outfile": f"{reference}.png",
         "model": {
             "name": "IFS-HRES",
         },

@@ -60,7 +60,7 @@ def get_setup_param_value(setup: "PlotSetup", param: str) -> Any:
     if is_plot_setup_param(param):
         return getattr(setup, param)
     elif is_files_setup_param(param):
-        return getattr(setup.layout, param.replace("files.", ""))
+        return getattr(setup.files, param.replace("files.", ""))
     elif is_layout_setup_param(param):
         return getattr(setup.layout, param.replace("layout.", ""))
     elif is_model_setup_param(param):
@@ -89,7 +89,6 @@ class PlotSetup:
 
     """
 
-    outfile: Union[str, Tuple[str, ...]]
     # SR_TMP < TODO remove default value
     # files: FilesSetup
     files: FilesSetup = dc.field(default_factory=FilesSetup)
@@ -237,9 +236,12 @@ class PlotSetup:
 
         def group_params(
             params: Optional[Collection[str]],
-        ) -> Union[Tuple[None, None, None], Tuple[List[str], List[str], List[str]]]:
+        ) -> Union[
+            Tuple[None, None, None, None, None],
+            Tuple[List[str], List[str], List[str], List[str], List[str]],
+        ]:
             if params is None:
-                return None, None, None
+                return None, None, None, None, None
             files: List[str] = []
             layout: List[str] = []
             model: List[str] = []
@@ -258,11 +260,31 @@ class PlotSetup:
                     panels.append(param)
                 else:
                     other.append(param)
-            return model, panels, other
+            return files, layout, model, panels, other
 
         # Group select and skip parameters
-        select_model, select_panels, select_outer = group_params(select)
-        skip_model, skip_panels, skip_outer = group_params(skip)
+        (
+            select_files,
+            select_layout,
+            select_model,
+            select_panels,
+            select_outer,
+        ) = group_params(select)
+        (
+            skip_files,
+            skip_layout,
+            skip_model,
+            skip_panels,
+            skip_outer,
+        ) = group_params(skip)
+
+        # PlotSetup.files
+        files_dct = self.dict().pop("files")
+        files_dcts = decompress_multival_dict(files_dct, select_files, skip_files)
+
+        # PlotSetup.layout
+        layout_dct = self.dict().pop("layout")
+        layout_dcts = decompress_multival_dict(layout_dct, select_layout, skip_layout)
 
         # PlotSetup.model
         model_dct = self.dict().pop("model")
@@ -285,15 +307,19 @@ class PlotSetup:
         # Merge expanded dicts
         dcts: List[Dict[str, Any]] = []
         for outer_dct_i in outer_dcts:
-            for model_dct in model_dcts:
-                for panels_dcts in panels_dcts_lst:
-                    dcts.append(
-                        {
-                            **deepcopy(outer_dct_i),
-                            "model": deepcopy(model_dct),
-                            "panels": deepcopy(panels_dcts),
-                        }
-                    )
+            for files_dct in files_dcts:
+                for layout_dct in layout_dcts:
+                    for model_dct in model_dcts:
+                        for panels_dcts in panels_dcts_lst:
+                            dcts.append(
+                                {
+                                    **deepcopy(outer_dct_i),
+                                    "files": deepcopy(files_dct),
+                                    "layout": deepcopy(layout_dct),
+                                    "model": deepcopy(model_dct),
+                                    "panels": deepcopy(panels_dcts),
+                                }
+                            )
 
         if internal:
             return PlotSetupGroup.create(dcts)
@@ -677,10 +703,10 @@ class PlotSetupGroup:
         return PlotSetup.compress(self)
 
     def compress_partially(self, param: Optional[str] = None) -> "PlotSetupGroup":
-        if param == "outfile":
+        if param == "files.output":
             grouped_setups: Dict[PlotSetup, List[PlotSetup]] = {}
             for setup in self:
-                key = setup.derive({"outfile": "none"})
+                key = setup.derive({"files": {"output": "none"}})
                 if key not in grouped_setups:
                     grouped_setups[key] = []
                 grouped_setups[key].append(setup)
@@ -688,12 +714,12 @@ class PlotSetupGroup:
             for setup_lst_i in grouped_setups.values():
                 outfiles: List[str] = []
                 for setup in setup_lst_i:
-                    if isinstance(setup.outfile, str):
-                        outfiles.append(setup.outfile)
+                    if isinstance(setup.files.output, str):
+                        outfiles.append(setup.files.output)
                     else:
-                        outfiles.extend(setup.outfile)
+                        outfiles.extend(setup.files.output)
                 new_setup_lst.append(
-                    setup_lst_i[0].derive({"outfile": tuple(outfiles)})
+                    setup_lst_i[0].derive({"files": {"output": tuple(outfiles)}})
                 )
             return PlotSetupGroup(new_setup_lst)
         else:
@@ -906,9 +932,9 @@ class PlotSetupGroup:
         new_setups: List[PlotSetup] = []
         for setup in self:
             old_outfiles: List[str] = (
-                [setup.outfile]
-                if isinstance(setup.outfile, str)
-                else list(setup.outfile)
+                [setup.files.output]
+                if isinstance(setup.files.output, str)
+                else list(setup.files.output)
             )
             new_outfiles: List[str] = []
             for old_outfile in list(old_outfiles):
@@ -920,9 +946,11 @@ class PlotSetupGroup:
                     new_outfiles.append(f"{old_outfile}.{suffix_i}")
             new_setup = setup.derive(
                 {
-                    "outfile": next(iter(new_outfiles))
-                    if len(new_outfiles) == 1
-                    else tuple(new_outfiles)
+                    "files": {
+                        "output": next(iter(new_outfiles))
+                        if len(new_outfiles) == 1
+                        else tuple(new_outfiles)
+                    }
                 }
             )
             new_setups.append(new_setup)
@@ -1092,7 +1120,7 @@ def prepare_raw_params(
             try:
                 param = {
                     "infile": "files.input",
-                    # "outfile": "files.output",
+                    "outfile": "files.output",
                     "model": "model.name",
                     "layout_type": "layout.time",
                 }[param]

@@ -71,9 +71,8 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
             setup_dct={
                 "files": {
                     "input": datafilename1,
-                    # "output": "dummy.png",
+                    "output": "dummy.png",
                 },
-                "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
                 },
@@ -98,9 +97,8 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
             setup_dct={
                 "files": {
                     "input": datafilename1,
-                    # "output": "dummy.png",
+                    "output": "dummy.png",
                 },
-                "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
                 },
@@ -126,9 +124,8 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
             setup_dct={
                 "files": {
                     "input": datafilename1,
-                    # "output": "dummy.png",
+                    "output": "dummy.png",
                 },
-                "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
                 },
@@ -154,9 +151,8 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
             setup_dct={
                 "files": {
                     "input": datafilename1,
-                    # "output": "dummy.png",
+                    "output": "dummy.png",
                 },
-                "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
                 },
@@ -182,9 +178,8 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
             setup_dct={
                 "files": {
                     "input": datafilename2,
-                    # "output": "dummy.png",
+                    "output": "dummy.png",
                 },
-                "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
                 },
@@ -209,9 +204,8 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
             setup_dct={
                 "files": {
                     "input": datafilename2,
-                    # "output": "dummy.png",
+                    "output": "dummy.png",
                 },
-                "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
                 },
@@ -237,9 +231,8 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
             setup_dct={
                 "files": {
                     "input": datafilename1,
-                    # "output": "dummy.png",
+                    "output": "dummy.png",
                 },
-                "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
                 },
@@ -266,9 +259,8 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
             setup_dct={
                 "files": {
                     "input": datafilename3,
-                    # "output": "dummy.png",
+                    "output": "dummy.png",
                 },
-                "outfile": "dummy.png",
                 "model": {
                     "name": "IFS-HRES",
                 },
@@ -293,9 +285,8 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
             setup_dct={
                 "files": {
                     "input": datafilename4,
-                    # "output": "dummy.png",
+                    "output": "dummy.png",
                 },
-                "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1E",
                 },
@@ -373,9 +364,8 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "files": {
                     "input": datafilename1,
-                    # "output": "dummy.png",
+                    "output": "dummy.png",
                 },
-                "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
                 },
@@ -402,9 +392,8 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "files": {
                     "input": datafilename1,
-                    # "output": "dummy.png",
+                    "output": "dummy.png",
                 },
-                "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
                 },
@@ -431,9 +420,8 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "files": {
                     "input": datafilename1,
-                    # "output": "dummy.png",
+                    "output": "dummy.png",
                 },
-                "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
                 },
@@ -458,9 +446,8 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "files": {
                     "input": datafilename1,
-                    # "output": "dummy.png",
+                    "output": "dummy.png",
                 },
-                "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
                 },
@@ -485,9 +472,8 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "files": {
                     "input": datafilename1,
-                    # "output": "dummy.png",
+                    "output": "dummy.png",
                 },
-                "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
                 },
@@ -512,9 +498,8 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "files": {
                     "input": datafilename2,
-                    # "output": "dummy.png",
+                    "output": "dummy.png",
                 },
-                "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
                 },
@@ -541,9 +526,8 @@ def test_single(datadir, config):  # noqa:F811
             setup_dct={
                 "files": {
                     "input": datafilename2,
-                    # "output": "dummy.png",
+                    "output": "dummy.png",
                 },
-                "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
                 },
@@ -632,9 +616,8 @@ def test_multiple(datadir, config):  # noqa:F811
             setup_dct={
                 "files": {
                     "input": datafilename1,
-                    # "output": "dummy.png",
+                    "output": "dummy.png",
                 },
-                "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
                 },
@@ -659,9 +642,8 @@ def test_multiple(datadir, config):  # noqa:F811
             setup_dct={
                 "files": {
                     "input": datafilename1,
-                    # "output": "dummy.png",
+                    "output": "dummy.png",
                 },
-                "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
                 },
@@ -711,9 +693,8 @@ def test_missing_deposition_cosmo(datadir):  # noqa:F811
     setup_dct = {
         "files": {
             "input": datafilename4,
-            # "output": "dummy.png",
+            "output": "dummy.png",
         },
-        "outfile": "dummy.png",
         "model": {
             "name": "COSMO-1E",
         },
@@ -752,9 +733,8 @@ def test_missing_deposition_ifs(datadir):  # noqa:F811
     setup_dct = {
         "files": {
             "input": datafilename5,
-            # "output": "dummy.png",
+            "output": "dummy.png",
         },
-        "outfile": "dummy.png",
         "model": {
             "name": "IFS-HRES-EU",
         },
@@ -793,9 +773,8 @@ def test_affected_area(datadir):  # noqa:F811
     setup_dct = {
         "files": {
             "input": datafilename4,
-            # "output": "dummy.png",
+            "output": "dummy.png",
         },
-        "outfile": "dummy.png",
         "model": {
             "name": "COSMO-1E",
         },

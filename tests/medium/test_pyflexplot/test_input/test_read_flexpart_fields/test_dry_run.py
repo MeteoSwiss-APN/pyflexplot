@@ -337,9 +337,8 @@ def test_single_setup_concentration(datadir: str, config: ConfSingleSetup):
         {
             "files": {
                 "input": f"{datadir}/{datafilename1}",
-                # "output": "foo.png",
+                "output": "foo.png",
             },
-            "outfile": "foo.png",
             "model": {
                 "name": "COSMO-1",
             },
@@ -514,9 +513,8 @@ def test_single_setup_deposition(datadir: str, config: ConfSingleSetup):
         {
             "files": {
                 "input": f"{datadir}/{datafilename1}",
-                # "output": "foo.png",
+                "output": "foo.png",
             },
-            "outfile": "foo.png",
             "model": {"name": "COSMO-1"},
         },
     )
@@ -763,9 +761,8 @@ def test_multiple_setups(datadir: str, config: ConfMultipleSetups):
             {
                 "files": {
                     "input": f"{datadir}/{datafilename1}",
-                    # "output": "foo.png",
+                    "output": "foo.png",
                 },
-                "outfile": "foo.png",
                 "model": {
                     "name": "COSMO-1",
                 },

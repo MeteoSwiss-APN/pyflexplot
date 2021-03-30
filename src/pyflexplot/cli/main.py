@@ -225,7 +225,7 @@ def prepare_setups(
 
     # Combine setups that only differ in outfile
     setup_groups = [
-        setup_group.compress_partially("outfile") for setup_group in setup_groups
+        setup_group.compress_partially("files.output") for setup_group in setup_groups
     ]
 
     if only:

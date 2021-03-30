@@ -87,9 +87,9 @@ def format_out_file_paths(
     simulation_mdata = mdata.simulation
     # SR_TMP >
     out_file_templates: Sequence[str] = (
-        [plot_setup.outfile]
-        if isinstance(plot_setup.outfile, str)
-        else plot_setup.outfile
+        [plot_setup.files.output]
+        if isinstance(plot_setup.files.output, str)
+        else plot_setup.files.output
     )
     out_file_paths: List[str] = []
     for out_file_template in out_file_templates:

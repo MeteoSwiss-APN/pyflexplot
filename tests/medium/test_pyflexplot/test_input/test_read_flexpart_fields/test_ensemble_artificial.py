@@ -47,9 +47,8 @@ def test_one_setup_one_field(datadir, config):  # noqa:F811
     setup_dct = {
         "files": {
             "input": datafile_fmt,
-            # "output": "bar.png",
+            "output": "bar.png",
         },
-        "outfile": "bar.png",
         "model": {
             "name": "COSMO-2E",
             "ens_member_id": config.ens_mem_ids,

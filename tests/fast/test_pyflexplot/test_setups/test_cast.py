@@ -12,9 +12,9 @@ class Test_CastSingle:
         assert PlotSetup.cast("files.input", "foo.nc") == "foo.nc"
 
     def test_outfile(self):
-        assert PlotSetup.cast("outfile", "foo.png") == "foo.png"
-        assert PlotSetup.cast("outfile", ["foo.png"]) == ("foo.png",)
-        res = PlotSetup.cast("outfile", ["foo.png", "bar.png"])
+        assert PlotSetup.cast("files.output", "foo.png") == "foo.png"
+        assert PlotSetup.cast("files.output", ["foo.png"]) == ("foo.png",)
+        res = PlotSetup.cast("files.output", ["foo.png", "bar.png"])
         assert res == ("foo.png", "bar.png")
 
     def test_lang(self):

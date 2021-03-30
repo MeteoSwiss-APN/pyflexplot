@@ -31,9 +31,8 @@ class Test_Copy:
         params = {
             "files": {
                 "input": "foo.nc",
-                # "output": ("foo.png", "bar.pdf"),
+                "output": ("foo.png", "bar.pdf"),
             },
-            "outfile": ("foo.png", "bar.pdf"),
             "model": {"name": "IFS-HRES"},
         }
         setup = PlotSetup.create(params)
@@ -52,9 +51,8 @@ class Test_FromRawParams:
         raw_params = {
             "files": {
                 "input": "foo.nc",
-                # "output": "foo.png",
+                "output": "foo.png",
             },
-            "outfile": "foo.png",
             "plot_variable": "concentration",
             "species_id": [1, 2],
             "combine_species": False,
@@ -67,9 +65,8 @@ class Test_FromRawParams:
             {
                 "files": {
                     "input": "foo.nc",
-                    # "output": "foo.png",
+                    "output": "foo.png",
                 },
-                "outfile": "foo.png",
                 "panels": [
                     {
                         "plot_variable": "concentration",
@@ -101,9 +98,8 @@ class Test_Create:
                 {
                     "files": {
                         "input": "foo.nc",
-                        # "output": "bar.png",
+                        "output": "bar.png",
                     },
-                    "outfile": "bar.png",
                     "model": {"name": "COSMO-baz"},
                 },
                 {"panels": panels},
@@ -146,9 +142,8 @@ class Test_Create:
         base_params = {
             "files": {
                 "input": "foo.nc",
-                # "output": "bar.png",
+                "output": "bar.png",
             },
-            "outfile": "bar.png",
             "model": {"name": "COSMO-baz"},
         }
 
@@ -281,9 +276,8 @@ class Test_Compress:
         {
             "files": {
                 "input": "foo.nc",
-                # "output": "bar.png",
+                "output": "bar.png",
             },
-            "outfile": "bar.png",
             "model": {
                 "name": "COSMO-1",
             },
@@ -298,9 +292,8 @@ class Test_Compress:
         {
             "files": {
                 "input": "foo.nc",
-                # "output": "bar.png",
+                "output": "bar.png",
             },
-            "outfile": "bar.png",
             "model": {
                 "name": "COSMO-1",
             },
@@ -315,9 +308,8 @@ class Test_Compress:
         {
             "files": {
                 "input": "foo.nc",
-                # "output": "bar.png",
+                "output": "bar.png",
             },
-            "outfile": "bar.png",
             "model": {
                 "name": "COSMO-1",
             },
@@ -382,9 +374,8 @@ class Test_Group:
             {
                 "files": {
                     "input": "foo.nc",
-                    # "output": outfile,
+                    "output": outfile,
                 },
-                "outfile": outfile,
                 "model": {
                     "name": "COSMO-1",
                 },
@@ -437,7 +428,7 @@ class Test_Group:
         """One regular param, passed as a string."""
         setups = self.get_setups()
 
-        grouped = setups.group("outfile")
+        grouped = setups.group("files.output")
         assert len(grouped) == self.n_outfile
         assert set(grouped) == set(self.outfile_lst)
 
@@ -461,7 +452,7 @@ class Test_Group:
         """One regular param, passed as a sequence."""
         setups = self.get_setups()
 
-        grouped = setups.group(["outfile"])
+        grouped = setups.group(["files.output"])
         assert len(grouped) == self.n_outfile
         assert set(grouped) == set(tuples(self.outfile_lst))
 
@@ -485,7 +476,7 @@ class Test_Group:
         """Two regular params."""
         setups = self.get_setups()
 
-        grouped = setups.group(["outfile", "combine_species"])
+        grouped = setups.group(["files.output", "combine_species"])
         assert len(grouped) == self.n_outfile * self.n_combine_species
         assert set(grouped) == set(product(self.outfile_lst, self.combine_species_lst))
 
@@ -497,14 +488,14 @@ class Test_Group:
         """Two params, among them special params."""
         setups = self.get_setups()
 
-        grouped = setups.group(["outfile", "combine_levels"])
+        grouped = setups.group(["files.output", "combine_levels"])
         assert len(grouped) == self.n_outfile * self.n_combine_species
         assert set(grouped) == set(product(self.outfile_lst, self.combine_levels_lst))
 
     def test_two_exclusive(self):
         """Two mutually special exclusive params."""
         setups = self.get_setups()
-        grouped = setups.group(["outfile", "combine_levels"])
+        grouped = setups.group(["files.output", "combine_levels"])
         assert len(grouped) == self.n_outfile * self.n_combine_levels
         sol = set(
             [
@@ -520,9 +511,8 @@ class Test_Collect:
     base = {
         "files": {
             "input": "foo.nc",
-            # "output": "foo.png",
+            "output": "foo.png",
         },
-        "outfile": "foo.png",
         "model": {"name": "foo"},
     }
     md = lambda *dicts: merge_dicts(*dicts, overwrite_seqs=True)  # noqa

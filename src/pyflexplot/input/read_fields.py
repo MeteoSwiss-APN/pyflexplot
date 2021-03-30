@@ -205,7 +205,7 @@ def group_setups_by_plot_type(setups: PlotSetupGroup) -> PlotSetupGroup:
             "combine_species",
         ]
     ).items():
-        skip = ["outfile", "dimensions.time", "model.ens_member_id"]
+        skip = ["files.output", "dimensions.time", "model.ens_member_id"]
         if plot_variable in [
             "affected_area",
             "concentration",

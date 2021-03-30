@@ -246,9 +246,9 @@ plot_summary = {
     "config": {
         "type": "BoxedPlotConfig",
         "setup": {
-            "outfile": "ref_cosmo1_deterministic_total_deposition_dummy.png",
             "files": {
                 "input": "flexpart_cosmo-1e-ctrl_2020102105.nc",
+                "output": "ref_cosmo1_deterministic_total_deposition_dummy.png",
                 "outfile_time_format": "%Y%m%d%H%M",
             },
             "layout": {

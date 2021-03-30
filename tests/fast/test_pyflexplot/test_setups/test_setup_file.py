@@ -11,9 +11,8 @@ from srutils.testing import assert_is_sub_element
 BASE = {
     "files": {
         "input": "foo.nc",
-        # "output": "bar.png",
+        "output": "bar.png",
     },
-    "outfile": "bar.png",
     "model": {"name": "COSMO-baz"},
 }
 
@@ -450,9 +449,10 @@ class Test_RealCase:
             {
                 "files": {
                     "input": "data/cosmo1_2019052800.nc",
-                    # "output": "concentration_{species_id}_{domain}_{lang}_{time:02d}.png",
+                    "output": (
+                        "concentration_{species_id}_{domain}_{lang}_{time:02d}.png"
+                    ),
                 },
-                "outfile": "concentration_{species_id}_{domain}_{lang}_{time:02d}.png",
                 "panels": [
                     {
                         "combine_levels": False,
@@ -476,13 +476,10 @@ class Test_RealCase:
             {
                 "files": {
                     "input": "data/cosmo1_2019052800.nc",
-                    # "output": (
-                    #     "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png"
-                    # ),
+                    "output": (
+                        "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png"
+                    ),
                 },
-                "outfile": (
-                    "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png"
-                ),
                 "panels": [
                     {
                         "combine_levels": False,
@@ -506,9 +503,8 @@ class Test_RealCase:
             {
                 "files": {
                     "input": "data/cosmo1_2019052800.nc",
-                    # "output": "tot_deposition_{domain}_{lang}_{time:02d}.png",
+                    "output": "tot_deposition_{domain}_{lang}_{time:02d}.png",
                 },
-                "outfile": "tot_deposition_{domain}_{lang}_{time:02d}.png",
                 "panels": [
                     {
                         "combine_levels": False,
@@ -532,9 +528,8 @@ class Test_RealCase:
             {
                 "files": {
                     "input": "data/cosmo1_2019052800.nc",
-                    # "output": "affected_area_{domain}_{lang}_{time:02d}.png",
+                    "output": "affected_area_{domain}_{lang}_{time:02d}.png",
                 },
-                "outfile": "affected_area_{domain}_{lang}_{time:02d}.png",
                 "panels": [
                     {
                         "combine_levels": False,
@@ -814,9 +809,8 @@ class Test_Wildcards:
                 {
                     "files": {
                         "input": "foo_{ens_member:02d}.nc",
-                        # "output": f"bar_{ens_variable}_{{lang}}.png",
+                        "output": f"bar_{ens_variable}_{{lang}}.png",
                     },
-                    "outfile": f"bar_{ens_variable}_{{lang}}.png",
                     "model": {
                         "name": "COSMO-baz",
                     },
