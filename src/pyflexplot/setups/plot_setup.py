@@ -31,11 +31,11 @@ from srutils.dict import compress_multival_dicts
 from srutils.dict import decompress_multival_dict
 from srutils.dict import merge_dicts
 from srutils.exceptions import InvalidParameterNameError
-from srutils.format import nested_repr
 from srutils.format import sfmt
 
 # Local
 from ..utils.exceptions import UnequalSetupParamValuesError
+from .base_setup import BaseSetup
 from .dimensions import Dimensions
 from .dimensions import is_dimensions_param
 from .files_setup import FilesSetup
@@ -74,7 +74,7 @@ def get_setup_param_value(setup: "PlotSetup", param: str) -> Any:
 
 # SR_TODO Clean up docstring -- where should format key hints go?
 @dc.dataclass
-class PlotSetup:
+class PlotSetup(BaseSetup):
     """Setup of a whole plot.
 
     See docstring of ``Setup.create`` for details on parameters.
@@ -385,14 +385,8 @@ class PlotSetup:
             ]
         )
 
-    def copy(self):
-        return self.create(self.dict())
-
     def __hash__(self) -> int:
         return hash(self.tuple())
-
-    def __len__(self) -> int:
-        return len(self.dict())
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, dc._MISSING_TYPE):
@@ -408,9 +402,6 @@ class PlotSetup:
                 except TypeError:
                     return False
         return self.dict() == other_dict
-
-    def __repr__(self) -> str:  # type: ignore
-        return nested_repr(self)
 
     @classmethod
     def create(cls, params: Mapping[str, Any]) -> "PlotSetup":
@@ -559,10 +550,6 @@ class PlotSetup:
         return cls(**params)
 
     @classmethod
-    def get_params(cls) -> List[str]:
-        return list(cls.__dataclass_fields__)  # type: ignore  # pylint: disable=E1101
-
-    @classmethod
     def as_setup(cls, obj: Union[Mapping[str, Any], "PlotSetup"]) -> "PlotSetup":
         if isinstance(obj, cls):
             return obj
@@ -572,15 +559,7 @@ class PlotSetup:
     def cast(cls, param: str, value: Any) -> Any:
         """Cast a parameter to the appropriate type."""
         if is_plot_setup_param(param):
-            value = cast_field_value(
-                cls,
-                param,
-                value,
-                auto_wrap=True,
-                bool_mode="intuitive",
-                timedelta_unit="hours",
-                unpack_str=False,
-            )
+            value = super().cast(param, value)
         elif is_files_setup_param(param):
             value = FilesSetup.cast(param.replace("files.", ""), value)
         elif is_layout_setup_param(param):
@@ -596,23 +575,6 @@ class PlotSetup:
                 f"{param} ({type(value).__name__}: {value})"
             )
         return value
-
-    # SR_TMP Identical to ModelSetup.cast_many
-    @classmethod
-    def cast_many(
-        cls, params: Union[Collection[Tuple[str, Any]], Mapping[str, Any]]
-    ) -> Dict[str, Any]:
-        if not isinstance(params, Mapping):
-            params_dct: Dict[str, Any] = {}
-            for param, value in params:
-                if param in params_dct:
-                    raise ValueError("duplicate parameter", param)
-                params_dct[param] = value
-            return cls.cast_many(params_dct)
-        params_cast = {}
-        for param, value in params.items():
-            params_cast[param] = cls.cast(param, value)
-        return params_cast
 
     @classmethod
     def prepare_params(cls, raw_params: Sequence[Tuple[str, str]]) -> Dict[str, Any]:
