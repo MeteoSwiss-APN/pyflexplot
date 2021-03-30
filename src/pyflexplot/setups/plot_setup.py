@@ -38,6 +38,8 @@ from srutils.format import sfmt
 from ..utils.exceptions import UnequalSetupParamValuesError
 from .dimensions import Dimensions
 from .dimensions import is_dimensions_param
+from .files_setup import FilesSetup
+from .files_setup import is_files_setup_param
 from .layout_setup import is_layout_setup_param
 from .layout_setup import LayoutSetup
 from .model_setup import is_model_setup_param
@@ -57,6 +59,8 @@ def is_plot_setup_param(param: str) -> bool:
 def get_setup_param_value(setup: "PlotSetup", param: str) -> Any:
     if is_plot_setup_param(param):
         return getattr(setup, param)
+    elif is_files_setup_param(param):
+        return getattr(setup.layout, param.replace("files.", ""))
     elif is_layout_setup_param(param):
         return getattr(setup.layout, param.replace("layout.", ""))
     elif is_model_setup_param(param):
@@ -85,9 +89,12 @@ class PlotSetup:
 
     """
 
-    infile: str  # = "none"
-    outfile: Union[str, Tuple[str, ...]]  # = "none"
-    outfile_time_format: str = "%Y%m%d%H%M"
+    infile: str
+    outfile: Union[str, Tuple[str, ...]]
+    # SR_TMP < TODO remove default value
+    # files: FilesSetup
+    files: FilesSetup = dc.field(default_factory=FilesSetup)
+    # SR_TMP >
     layout: LayoutSetup = dc.field(default_factory=LayoutSetup)
     model: ModelSetup = dc.field(default_factory=ModelSetup)
     panels: PlotPanelSetupGroup = dc.field(
@@ -151,6 +158,8 @@ class PlotSetup:
         """
         if is_plot_setup_param(param):
             value = getattr(self, param)
+        elif is_files_setup_param(param):
+            value = getattr(self.layout, param.replace("files.", ""))
         elif is_layout_setup_param(param):
             value = getattr(self.layout, param.replace("layout.", ""))
         elif is_model_setup_param(param):
@@ -232,12 +241,15 @@ class PlotSetup:
         ) -> Union[Tuple[None, None, None], Tuple[List[str], List[str], List[str]]]:
             if params is None:
                 return None, None, None
+            files: List[str] = []
             layout: List[str] = []
             model: List[str] = []
             panels: List[str] = []
             other: List[str] = []
             for param in params:
-                if is_layout_setup_param(param):
+                if is_files_setup_param(param):
+                    files.append(param.replace("files.", ""))
+                elif is_layout_setup_param(param):
                     layout.append(param.replace("layout.", ""))
                 elif is_model_setup_param(param):
                     model.append(param.replace("model.", ""))
@@ -332,16 +344,26 @@ class PlotSetup:
         # (pylint 2.7.4 does not support dataclasses.field)
         return {
             **dc.asdict(self),
-            "model": dc.asdict(self.model) if rec else self.model,
+            "files": self.files.dict() if rec else self.files,
+            "layout": self.layout.dict() if rec else self.layout,
+            "model": self.model.dict() if rec else self.model,
             "panels": self.panels.dicts() if rec else self.panels,
         }
 
     def tuple(self) -> Tuple[Tuple[str, Any], ...]:
         dct = self.dict(rec=False)
+        files = dct.pop("files")
+        layout = dct.pop("layout")
         model = dct.pop("model")
         panels = dct.pop("panels")
         return tuple(
-            list(dct.items()) + [("model", model.tuple()), ("panels", panels.tuple())]
+            list(dct.items())
+            + [
+                ("files", files.tuple()),
+                ("layout", layout.tuple()),
+                ("model", model.tuple()),
+                ("panels", panels.tuple()),
+            ]
         )
 
     def copy(self):
@@ -481,6 +503,7 @@ class PlotSetup:
 
         """
         params = dict(params)
+        files_params: Dict[str, Any] = dict(params.pop("files", {}))
         layout_params: Dict[str, Any] = dict(params.pop("layout", {}))
         model_params: Dict[str, Any] = dict(params.pop("model", {}))
         panels_params: Union[Dict[str, Any], List[Dict[str, Any]]]
@@ -503,6 +526,8 @@ class PlotSetup:
                 unpack_str=False,
             )
             params[name] = value
+        if files_params:
+            params["files"] = FilesSetup.create(files_params)
         if layout_params:
             params["layout"] = LayoutSetup.create(layout_params)
         if model_params:
@@ -527,57 +552,8 @@ class PlotSetup:
     @classmethod
     def cast(cls, param: str, value: Any) -> Any:
         """Cast a parameter to the appropriate type."""
-        param_choices = sorted(
-            [param for param in cls.get_params() if param != "panels"]
-            + [param for param in PlotPanelSetup.get_params() if param != "dimensions"]
-            + list(Dimensions.get_params())
-        )
-        param_choices_fmtd = ", ".join(map(str, param_choices))
-        sub_cls_by_name = {
-            "layout": LayoutSetup,
-            "model": ModelSetup,
-            "dimensions": Dimensions,
-        }
-        try:
-            sub_cls = sub_cls_by_name[param]
-        except KeyError:
-            pass
-        else:
-            result: Dict[str, Any] = {}
-            for sub_param, sub_value in value.items():
-                try:
-                    # Ignore type to prevent mypy error "has no attribute"
-                    sub_value = sub_cls.cast(sub_param, sub_value)  # type: ignore
-                    # Don't assign directly to result[sub_param] to prevent the
-                    # line from becoming too long, which causes black to disable
-                    # the "type: ignore" by moving it to the wrong line
-                    # Versions: mypy==0.790; black==20.8b1 (2021-01-06)
-                except InvalidParameterNameError as e:
-                    raise InvalidParameterNameError(
-                        f"{sub_param} ({type(sub_value).__name__}: {sub_value})"
-                        f"; choices: {param_choices_fmtd}"
-                    ) from e
-                else:
-                    result[sub_param] = sub_value
-            return result
-        try:
-            if is_dimensions_param(param):
-                return Dimensions.cast(param, value)
-            elif is_layout_setup_param(param):
-                return LayoutSetup.cast(param, value)
-            elif is_model_setup_param(param):
-                return ModelSetup.cast(param, value)
-            elif is_plot_panel_setup_param(param):
-                return cast_field_value(
-                    PlotPanelSetup,
-                    param,
-                    value,
-                    auto_wrap=True,
-                    bool_mode="intuitive",
-                    timedelta_unit="hours",
-                    unpack_str=False,
-                )
-            return cast_field_value(
+        if is_plot_setup_param(param):
+            value = cast_field_value(
                 cls,
                 param,
                 value,
@@ -586,11 +562,21 @@ class PlotSetup:
                 timedelta_unit="hours",
                 unpack_str=False,
             )
-        except InvalidParameterNameError as e:
+        elif is_files_setup_param(param):
+            value = FilesSetup.cast(param.replace("files.", ""), value)
+        elif is_layout_setup_param(param):
+            value = LayoutSetup.cast(param.replace("layout.", ""), value)
+        elif is_model_setup_param(param):
+            value = ModelSetup.cast(param.replace("model.", ""), value)
+        elif is_plot_panel_setup_param(param):
+            value = PlotPanelSetup.cast(param, value)
+        elif is_dimensions_param(param):
+            value = Dimensions.cast(param.replace("dimensions.", ""), value)
+        else:
             raise InvalidParameterNameError(
                 f"{param} ({type(value).__name__}: {value})"
-                f"; choices: {param_choices_fmtd}"
-            ) from e
+            )
+        return value
 
     # SR_TMP Identical to ModelSetup.cast_many
     @classmethod
@@ -1108,7 +1094,11 @@ def prepare_raw_params(
                 param = "model.name"
             elif param == "layout_type":
                 param = "layout.type"
-            if is_layout_setup_param(param):
+            if is_files_setup_param(param):
+                if "files" not in params:
+                    params["files"] = {}
+                params["files"][param.replace("files.", "")] = value
+            elif is_layout_setup_param(param):
                 if "layout" not in params:
                     params["layout"] = {}
                 params["layout"][param.replace("layout.", "")] = value

@@ -96,13 +96,7 @@ class TestReadFieldEnsemble_Single:
                 },
             },
         )
-        # SR_TMP <
-        if ens_var in ["probability", "minimum", "maximum", "mean", "median"]:
-            setup_dct["panels"]["ens_variable"] = ens_var
-        else:
-            raise NotImplementedError()  # SR_DBG
-            setup_dct["panels"]["plot_type"] = f"ensemble_{ens_var}"
-        # SR_TMP >
+        setup_dct["panels"]["ens_variable"] = ens_var
         plot_setups = PlotSetupGroup([PlotSetup.create(setup_dct)])
 
         # Read input fields
@@ -217,13 +211,7 @@ class TestReadFieldEnsemble_Multiple:
                 setup_params,
                 {"model": {"ens_member_id": self.ens_member_ids}},
             )
-            # SR_TMP <
-            if ens_var in ["probability", "minimum", "maximum", "mean", "median"]:
-                setup_params_i["panels"]["ens_variable"] = ens_var
-            else:
-                raise NotImplementedError()  # SR_DBG
-                setup_params_i["panels"]["plot_type"] = f"ensemble_{ens_var}"
-            # SR_TMP >
+            setup_params_i["panels"]["ens_variable"] = ens_var
             setup_dcts.append(setup_params_i)
         plot_setup_group = PlotSetupGroup.create(setup_dcts)
         time = plot_setup_group.collect_equal("dimensions.time")

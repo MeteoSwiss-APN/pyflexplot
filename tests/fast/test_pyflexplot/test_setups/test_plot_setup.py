@@ -19,6 +19,13 @@ class Test_Create:
         "model": {"name": "COSMO-1"},
     }
 
+    def check_hashable(self, setup):
+        """Check some properties of the setup object."""
+        try:
+            hash(setup)
+        except TypeError as e:
+            raise AssertionError(f"setup object is not hashable:\n{setup}") from e
+
     def test_some_dimensions(self):
         params = {
             "model": {
@@ -40,6 +47,7 @@ class Test_Create:
         check_is_sub_element(
             name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
         )
+        self.check_hashable(setup)
 
     @pytest.mark.parametrize(
         "dct",
@@ -85,6 +93,7 @@ class Test_Create:
         check_is_sub_element(
             name_super="result", obj_super=res, name_sub="solution", obj_sub=sol
         )
+        self.check_hashable(setup)
 
 
 class Test_Derive:

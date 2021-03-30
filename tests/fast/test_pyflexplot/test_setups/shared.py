@@ -7,6 +7,7 @@ from typing import Dict
 # First-party
 from pyflexplot.setups.dimensions import CoreDimensions
 from pyflexplot.setups.dimensions import Dimensions
+from pyflexplot.setups.files_setup import FilesSetup
 from pyflexplot.setups.layout_setup import LayoutSetup
 from pyflexplot.setups.model_setup import ModelSetup
 from pyflexplot.setups.plot_panel_setup import EnsembleParams
@@ -24,7 +25,9 @@ MANDATORY_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
 }
 
 OPTIONAL_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
-    "outfile_time_format": "%Y%m%d%H%M",
+    "files": {
+        "outfile_time_format": "%Y%m%d%H%M",
+    },
     "layout": {
         "multipanel_param": None,
         "plot_type": "auto",
@@ -76,6 +79,7 @@ RAW_DEFAULT_PARAMS = merge_dicts(
 DEFAULT_PARAMS = merge_dicts(
     RAW_DEFAULT_PARAMS,
     {
+        "files": FilesSetup(**RAW_DEFAULT_PARAMS["files"]),
         "layout": LayoutSetup(**RAW_DEFAULT_PARAMS["layout"]),
         "model": ModelSetup(**RAW_DEFAULT_PARAMS["model"]),
         "panels": PlotPanelSetupGroup(

@@ -245,7 +245,7 @@ plot_summary = {
         "setup": {
             "infile": "flexpart_ifs_20200317000000.nc",
             "outfile": "ref_ifs_deterministic_concentration.png",
-            "outfile_time_format": "%Y%m%d%H%M",
+            "files": {"outfile_time_format": "%Y%m%d%H%M"},
             "layout": {
                 "plot_type": "auto",
                 "multipanel_param": None,

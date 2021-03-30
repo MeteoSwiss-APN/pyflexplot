@@ -75,7 +75,7 @@ class FilePathFormatter:
     ) -> str:
         # Prepare base time
         base_time = self._format_time_step(
-            cast(int, setup.model.base_time), setup.outfile_time_format
+            cast(int, setup.model.base_time), setup.files.outfile_time_format
         )[0]
 
         # Prepare plot variable
@@ -116,12 +116,12 @@ class FilePathFormatter:
 
         # Prepare release start
         release_start_fmtd: str = self._format_time_step(
-            release_start, setup.outfile_time_format
+            release_start, setup.files.outfile_time_format
         )
 
         # time steps
         time_steps_fmtd: List[str] = self._format_time_steps(
-            time_steps, setup.outfile_time_format
+            time_steps, setup.files.outfile_time_format
         )
 
         # Format the file path

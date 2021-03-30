@@ -20,6 +20,7 @@ from pyflexplot.input.field import Field
 from pyflexplot.input.field import FieldGroup
 from pyflexplot.input.read_fields import read_fields
 from pyflexplot.setups.dimensions import is_dimensions_param
+from pyflexplot.setups.files_setup import is_files_setup_param
 from pyflexplot.setups.layout_setup import is_layout_setup_param
 from pyflexplot.setups.model_setup import is_model_setup_param
 from pyflexplot.setups.plot_panel_setup import is_plot_panel_setup_param
@@ -88,6 +89,11 @@ def field_groups_to_setup_dcts(obj, params=None):
         for param in params:
             if is_plot_setup_param(param):
                 dct_sel[param] = getattr(field_group.plot_setup, param)
+            elif is_files_setup_param(param):
+                if "files" not in dct_sel:
+                    dct_sel["files"] = {}
+                param = param.replace("files.", "")
+                dct_sel["files"][param] = getattr(field_group.plot_setup.files, param)
             elif is_layout_setup_param(param):
                 if "layout" not in dct_sel:
                     dct_sel["layout"] = {}

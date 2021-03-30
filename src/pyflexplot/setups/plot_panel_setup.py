@@ -383,6 +383,18 @@ class PlotPanelSetup:
         return nested_repr(self)
 
     @classmethod
+    def cast(cls, param: str, value: Any) -> Any:
+        return cast_field_value(
+            cls,
+            param,
+            value,
+            auto_wrap=True,
+            bool_mode="intuitive",
+            timedelta_unit="hours",
+            unpack_str=False,
+        )
+
+    @classmethod
     def get_params(cls) -> List[str]:
         return list(cls.__dataclass_fields__)  # type: ignore  # pylint: disable=E1101
 
