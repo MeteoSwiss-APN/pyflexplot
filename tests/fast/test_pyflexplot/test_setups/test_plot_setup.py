@@ -14,7 +14,10 @@ from .shared import DEFAULT_SETUP
 
 class Test_Create:
     base_params = {
-        "infile": "dummy.nc",
+        "files": {
+            "input": "dummy.nc",
+            # "output": "dummy.png",
+        },
         "outfile": "dummy.png",
         "model": {"name": "COSMO-1"},
     }

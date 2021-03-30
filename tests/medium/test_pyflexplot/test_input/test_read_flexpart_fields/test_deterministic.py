@@ -69,7 +69,10 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
         Config(  # [config0]
             var_names_ref=["spec002"],
             setup_dct={
-                "infile": datafilename1,
+                "files": {
+                    "input": datafilename1,
+                    # "output": "dummy.png",
+                },
                 "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
@@ -93,7 +96,10 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
         Config(  # [config1]
             var_names_ref=["DD_spec002"],
             setup_dct={
-                "infile": datafilename1,
+                "files": {
+                    "input": datafilename1,
+                    # "output": "dummy.png",
+                },
                 "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
@@ -118,7 +124,10 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
         Config(  # [config2]
             var_names_ref=["WD_spec002"],
             setup_dct={
-                "infile": datafilename1,
+                "files": {
+                    "input": datafilename1,
+                    # "output": "dummy.png",
+                },
                 "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
@@ -143,7 +152,10 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
         Config(  # [config3]
             var_names_ref=["WD_spec002", "DD_spec002"],
             setup_dct={
-                "infile": datafilename1,
+                "files": {
+                    "input": datafilename1,
+                    # "output": "dummy.png",
+                },
                 "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
@@ -168,7 +180,10 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
         Config(  # [config4]
             var_names_ref=["spec001"],
             setup_dct={
-                "infile": datafilename2,
+                "files": {
+                    "input": datafilename2,
+                    # "output": "dummy.png",
+                },
                 "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
@@ -192,7 +207,10 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
         Config(  # [config5]
             var_names_ref=["WD_spec001", "DD_spec001"],
             setup_dct={
-                "infile": datafilename2,
+                "files": {
+                    "input": datafilename2,
+                    # "output": "dummy.png",
+                },
                 "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
@@ -217,7 +235,10 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
         Config(  # [config6]
             var_names_ref=["DD_spec001", "DD_spec002", "WD_spec001", "WD_spec002"],
             setup_dct={
-                "infile": datafilename1,
+                "files": {
+                    "input": datafilename1,
+                    # "output": "dummy.png",
+                },
                 "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
@@ -243,7 +264,10 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
         Config(  # [config7]
             var_names_ref=["spec001_mr"],
             setup_dct={
-                "infile": datafilename3,
+                "files": {
+                    "input": datafilename3,
+                    # "output": "dummy.png",
+                },
                 "outfile": "dummy.png",
                 "model": {
                     "name": "IFS-HRES",
@@ -267,7 +291,10 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
         Config(  # [config8]
             var_names_ref=["spec001"],
             setup_dct={
-                "infile": datafilename4,
+                "files": {
+                    "input": datafilename4,
+                    # "output": "dummy.png",
+                },
                 "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1E",
@@ -293,7 +320,7 @@ datafilename5 = "flexpart_ifs-hres-eu_1023_20201113120000.nc"
 def test_single(datadir, config):  # noqa:F811
     """Read a single field."""
 
-    datafile = f"{datadir}/{config.setup_dct['infile']}"
+    datafile = f"{datadir}/{config.setup_dct['files']['input']}"
 
     # Initialize field specifications
     setups = PlotSetupGroup([config.setup])
@@ -344,7 +371,10 @@ def test_single(datadir, config):  # noqa:F811
         Config(  # [config0]
             var_names_ref=["spec002"],
             setup_dct={
-                "infile": datafilename1,
+                "files": {
+                    "input": datafilename1,
+                    # "output": "dummy.png",
+                },
                 "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
@@ -370,7 +400,10 @@ def test_single(datadir, config):  # noqa:F811
         Config(  # [config1]
             var_names_ref=["spec002"],
             setup_dct={
-                "infile": datafilename1,
+                "files": {
+                    "input": datafilename1,
+                    # "output": "dummy.png",
+                },
                 "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
@@ -396,7 +429,10 @@ def test_single(datadir, config):  # noqa:F811
         Config(  # [config2]
             var_names_ref=["DD_spec002"],
             setup_dct={
-                "infile": datafilename1,
+                "files": {
+                    "input": datafilename1,
+                    # "output": "dummy.png",
+                },
                 "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
@@ -420,7 +456,10 @@ def test_single(datadir, config):  # noqa:F811
         Config(  # [config3]
             var_names_ref=["WD_spec002"],
             setup_dct={
-                "infile": datafilename1,
+                "files": {
+                    "input": datafilename1,
+                    # "output": "dummy.png",
+                },
                 "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
@@ -444,7 +483,10 @@ def test_single(datadir, config):  # noqa:F811
         Config(  # [config4]
             var_names_ref=["WD_spec001", "DD_spec001"],
             setup_dct={
-                "infile": datafilename1,
+                "files": {
+                    "input": datafilename1,
+                    # "output": "dummy.png",
+                },
                 "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
@@ -468,7 +510,10 @@ def test_single(datadir, config):  # noqa:F811
         Config(  # [config5]
             var_names_ref=["spec001"],
             setup_dct={
-                "infile": datafilename2,
+                "files": {
+                    "input": datafilename2,
+                    # "output": "dummy.png",
+                },
                 "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
@@ -494,7 +539,10 @@ def test_single(datadir, config):  # noqa:F811
         Config(  # [config6]
             var_names_ref=["WD_spec001", "DD_spec001"],
             setup_dct={
-                "infile": datafilename2,
+                "files": {
+                    "input": datafilename2,
+                    # "output": "dummy.png",
+                },
                 "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
@@ -520,7 +568,7 @@ def test_single(datadir, config):  # noqa:F811
 def test_multiple(datadir, config):  # noqa:F811
     """Read multiple fields."""
 
-    datafile = f"{datadir}/{config.setup_dct['infile']}"
+    datafile = f"{datadir}/{config.setup_dct['files']['input']}"
 
     # Create setups
     setup_lst = list(config.setup.decompress(internal=False))
@@ -582,7 +630,10 @@ def test_multiple(datadir, config):  # noqa:F811
         Config(
             var_names_ref=["spec002"],
             setup_dct={
-                "infile": datafilename1,
+                "files": {
+                    "input": datafilename1,
+                    # "output": "dummy.png",
+                },
                 "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
@@ -606,7 +657,10 @@ def test_multiple(datadir, config):  # noqa:F811
         Config(
             var_names_ref=["WD_spec002", "DD_spec002"],
             setup_dct={
-                "infile": datafilename1,
+                "files": {
+                    "input": datafilename1,
+                    # "output": "dummy.png",
+                },
                 "outfile": "dummy.png",
                 "model": {
                     "name": "COSMO-1",
@@ -632,7 +686,7 @@ def test_multiple(datadir, config):  # noqa:F811
 )
 def test_single_add_ts0(datadir, config):
     """Insert an additional time step 0 in the beginning, with empty fields."""
-    datafile = f"{datadir}/{config.setup_dct['infile']}"
+    datafile = f"{datadir}/{config.setup_dct['files']['input']}"
 
     # Initialize field specifications
     setups = PlotSetupGroup([config.setup])
@@ -655,7 +709,10 @@ def test_single_add_ts0(datadir, config):
 def test_missing_deposition_cosmo(datadir):  # noqa:F811
     """Read deposition field from file that does not contain one."""
     setup_dct = {
-        "infile": datafilename4,
+        "files": {
+            "input": datafilename4,
+            # "output": "dummy.png",
+        },
         "outfile": "dummy.png",
         "model": {
             "name": "COSMO-1E",
@@ -676,7 +733,7 @@ def test_missing_deposition_cosmo(datadir):  # noqa:F811
         ],
     }
     setup = PlotSetup.create(setup_dct)
-    datafile = f"{datadir}/{setup_dct['infile']}"
+    datafile = f"{datadir}/{setup_dct['files']['input']}"
 
     # Initialize field specifications
     setups = PlotSetupGroup([setup])
@@ -693,7 +750,10 @@ def test_missing_deposition_cosmo(datadir):  # noqa:F811
 def test_missing_deposition_ifs(datadir):  # noqa:F811
     """Read deposition field from file that does not contain one."""
     setup_dct = {
-        "infile": datafilename5,
+        "files": {
+            "input": datafilename5,
+            # "output": "dummy.png",
+        },
         "outfile": "dummy.png",
         "model": {
             "name": "IFS-HRES-EU",
@@ -714,7 +774,7 @@ def test_missing_deposition_ifs(datadir):  # noqa:F811
         ],
     }
     setup = PlotSetup.create(setup_dct)
-    datafile = f"{datadir}/{setup_dct['infile']}"
+    datafile = f"{datadir}/{setup_dct['files']['input']}"
 
     # Initialize field specifications
     setups = PlotSetupGroup([setup])
@@ -731,7 +791,10 @@ def test_missing_deposition_ifs(datadir):  # noqa:F811
 def test_affected_area(datadir):  # noqa:F811
     """Read affected area field, combining concentration and deposition."""
     setup_dct = {
-        "infile": datafilename4,
+        "files": {
+            "input": datafilename4,
+            # "output": "dummy.png",
+        },
         "outfile": "dummy.png",
         "model": {
             "name": "COSMO-1E",
@@ -753,7 +816,7 @@ def test_affected_area(datadir):  # noqa:F811
         ],
     }
     setup = PlotSetup.create(setup_dct)
-    datafile = f"{datadir}/{setup_dct['infile']}"
+    datafile = f"{datadir}/{setup_dct['files']['input']}"
 
     # Initialize field specifications
     setups = PlotSetupGroup([setup])

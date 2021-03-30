@@ -94,7 +94,7 @@ def read_fields(
 
         only (optional): Restrict the number of fields that are read.
 
-        _override_infile (optional): Override ``setups.infile``; should not be
+        _override_infile (optional): Override ``setups.files.input``; should not be
             used outside of tests.
 
     """
@@ -378,7 +378,7 @@ class InputFileEnsemble:
                 {"panels": [panel_params] * len(plot_setup.panels)}
             )
             group_attrs = FieldGroupAttrs(
-                raw_path=plot_setup_i.infile,
+                raw_path=plot_setup_i.files.input,
                 paths=self.public_paths,
                 ens_member_ids=plot_setup.model.ens_member_id,
             )

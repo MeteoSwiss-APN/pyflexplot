@@ -245,9 +245,11 @@ plot_summary = {
     "config": {
         "type": "BoxedPlotConfig",
         "setup": {
-            "infile": "flexpart_ifs_20200317000000.nc",
             "outfile": "ref_ifs_deterministic_affected_area.png",
-            "files": {"outfile_time_format": "%Y%m%d%H%M"},
+            "files": {
+                "input": "flexpart_ifs_20200317000000.nc",
+                "outfile_time_format": "%Y%m%d%H%M",
+            },
             "layout": {
                 "plot_type": "auto",
                 "multipanel_param": None,

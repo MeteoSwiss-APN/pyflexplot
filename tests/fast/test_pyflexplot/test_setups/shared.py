@@ -17,11 +17,9 @@ from pyflexplot.setups.plot_setup import PlotSetup
 from srutils.dict import merge_dicts
 
 MANDATORY_RAW_DEFAULT_PARAMS: Dict[str, Any] = {
-    "infile": "none",
+    "files": {"input": "none"},
     "outfile": "none",
-    "model": {
-        "name": "none",
-    },
+    "model": {"name": "none"},
 }
 
 OPTIONAL_RAW_DEFAULT_PARAMS: Dict[str, Any] = {

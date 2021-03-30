@@ -232,7 +232,9 @@ def prepare_setups(
         # Restrict the total number of setup objects in the setup groups
         # Note that the number of plots is likely still higher than only because
         # each setup can define many plots, but it's a first elimination step
-        setup_groups = restrict_grouped_setups(setup_groups, only, grouped_by="infile")
+        setup_groups = restrict_grouped_setups(
+            setup_groups, only, grouped_by="files.input"
+        )
 
     return setup_groups
 

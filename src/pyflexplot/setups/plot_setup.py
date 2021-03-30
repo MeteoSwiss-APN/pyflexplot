@@ -89,7 +89,6 @@ class PlotSetup:
 
     """
 
-    infile: str
     outfile: Union[str, Tuple[str, ...]]
     # SR_TMP < TODO remove default value
     # files: FilesSetup
@@ -159,7 +158,7 @@ class PlotSetup:
         if is_plot_setup_param(param):
             value = getattr(self, param)
         elif is_files_setup_param(param):
-            value = getattr(self.layout, param.replace("files.", ""))
+            value = getattr(self.files, param.replace("files.", ""))
         elif is_layout_setup_param(param):
             value = getattr(self.layout, param.replace("layout.", ""))
         elif is_model_setup_param(param):
@@ -661,7 +660,7 @@ class PlotSetupGroup:
         self.infile: str
         self.ens_member_ids: Optional[Tuple[int, ...]]
         for attr, param in [
-            ("infile", "infile"),
+            ("infile", "files.input"),
             ("ens_member_ids", "model.ens_member_id"),
         ]:
             try:
@@ -1090,10 +1089,15 @@ def prepare_raw_params(
         panels: Dict[str, Any] = {}
         ens_params: Dict[str, Any] = {}
         for param, value in raw_params_i.items():
-            if param == "model":
-                param = "model.name"
-            elif param == "layout_type":
-                param = "layout.type"
+            try:
+                param = {
+                    "infile": "files.input",
+                    # "outfile": "files.output",
+                    "model": "model.name",
+                    "layout_type": "layout.time",
+                }[param]
+            except KeyError:
+                pass
             if is_files_setup_param(param):
                 if "files" not in params:
                     params["files"] = {}

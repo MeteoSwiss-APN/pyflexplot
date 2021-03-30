@@ -19,7 +19,10 @@ INFILE_2 = "flexpart_cosmo-1e-ctrl_2020102105.nc"
 class Test_Concentration(_TestBase):
     reference = "ref_cosmo1_deterministic_concentration"
     setup_dct = {
-        "infile": INFILE_1,
+        "files": {
+            "input": INFILE_1,
+            # "output": f"{reference}.png",
+        },
         "outfile": f"{reference}.png",
         "model": {
             "name": "COSMO-1",
@@ -43,7 +46,10 @@ class Test_Concentration(_TestBase):
 class Test_IntegratedConcentration(_TestBase):
     reference = "ref_cosmo1_deterministic_integrated_concentration"
     setup_dct = {
-        "infile": INFILE_1,
+        "files": {
+            "input": INFILE_1,
+            # "output": f"{reference}.png",
+        },
         "outfile": f"{reference}.png",
         "layout": {
             "plot_type": "auto",
@@ -70,7 +76,10 @@ class Test_IntegratedConcentration(_TestBase):
 class Test_TotalDeposition(_TestBase):
     reference = "ref_cosmo1_deterministic_total_deposition"
     setup_dct = {
-        "infile": INFILE_1,
+        "files": {
+            "input": INFILE_1,
+            # "output": f"{reference}.png",
+        },
         "outfile": f"{reference}.png",
         "layout": {
             "plot_type": "auto",
@@ -96,11 +105,14 @@ class Test_TotalDeposition(_TestBase):
 class Test_AffectedArea(_TestBase):
     reference = "ref_cosmo1_deterministic_affected_area"
     setup_dct = {
-        "infile": INFILE_1,
+        "files": {
+            "input": INFILE_1,
+            # "output": f"{reference}.png",
+        },
+        "outfile": f"{reference}.png",
         "model": {
             "name": "COSMO-1",
         },
-        "outfile": f"{reference}.png",
         "panels": [
             {
                 "domain": "ch",
@@ -120,7 +132,10 @@ class Test_AffectedArea(_TestBase):
 class Test_TotalDeposition_MissingField(_TestBase):
     reference = "ref_cosmo1_deterministic_total_deposition_dummy"
     setup_dct = {
-        "infile": INFILE_2,
+        "files": {
+            "input": INFILE_2,
+            # "output": f"{reference}.png",
+        },
         "outfile": f"{reference}.png",
         "layout": {
             "plot_type": "auto",
@@ -146,7 +161,10 @@ class Test_TotalDeposition_MissingField(_TestBase):
 class Test_CloudArrivalTime(_TestBase):
     reference = "ref_cosmo1_deterministic_cloud_arrival_time"
     setup_dct = {
-        "infile": INFILE_1,
+        "files": {
+            "input": INFILE_1,
+            # "output": f"{reference}.png",
+        },
         "outfile": f"{reference}.png",
         "model": {
             "name": "COSMO-1",

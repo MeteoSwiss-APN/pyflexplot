@@ -9,7 +9,10 @@ from srutils.dict import merge_dicts
 from srutils.testing import assert_is_sub_element
 
 BASE = {
-    "infile": "foo.nc",
+    "files": {
+        "input": "foo.nc",
+        # "output": "bar.png",
+    },
     "outfile": "bar.png",
     "model": {"name": "COSMO-baz"},
 }
@@ -445,6 +448,11 @@ class Test_RealCase:
             """
         sol = [
             {
+                "files": {
+                    "input": "data/cosmo1_2019052800.nc",
+                    # "output": "concentration_{species_id}_{domain}_{lang}_{time:02d}.png",
+                },
+                "outfile": "concentration_{species_id}_{domain}_{lang}_{time:02d}.png",
                 "panels": [
                     {
                         "combine_levels": False,
@@ -464,10 +472,17 @@ class Test_RealCase:
                     "name": "COSMO-1",
                     "simulation_type": "deterministic",
                 },
-                "infile": "data/cosmo1_2019052800.nc",
-                "outfile": "concentration_{species_id}_{domain}_{lang}_{time:02d}.png",
             },
             {
+                "files": {
+                    "input": "data/cosmo1_2019052800.nc",
+                    # "output": (
+                    #     "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png"
+                    # ),
+                },
+                "outfile": (
+                    "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png"
+                ),
                 "panels": [
                     {
                         "combine_levels": False,
@@ -487,12 +502,13 @@ class Test_RealCase:
                     "name": "COSMO-1",
                     "simulation_type": "deterministic",
                 },
-                "infile": "data/cosmo1_2019052800.nc",
-                "outfile": (
-                    "integr_concentr_{species_id}_{domain}_{lang}_{time:02d}.png"
-                ),
             },
             {
+                "files": {
+                    "input": "data/cosmo1_2019052800.nc",
+                    # "output": "tot_deposition_{domain}_{lang}_{time:02d}.png",
+                },
+                "outfile": "tot_deposition_{domain}_{lang}_{time:02d}.png",
                 "panels": [
                     {
                         "combine_levels": False,
@@ -512,10 +528,13 @@ class Test_RealCase:
                     "name": "COSMO-1",
                     "simulation_type": "deterministic",
                 },
-                "infile": "data/cosmo1_2019052800.nc",
-                "outfile": "tot_deposition_{domain}_{lang}_{time:02d}.png",
             },
             {
+                "files": {
+                    "input": "data/cosmo1_2019052800.nc",
+                    # "output": "affected_area_{domain}_{lang}_{time:02d}.png",
+                },
+                "outfile": "affected_area_{domain}_{lang}_{time:02d}.png",
                 "panels": [
                     {
                         "combine_levels": False,
@@ -540,8 +559,6 @@ class Test_RealCase:
                     "name": "COSMO-1",
                     "simulation_type": "deterministic",
                 },
-                "infile": "data/cosmo1_2019052800.nc",
-                "outfile": "affected_area_{domain}_{lang}_{time:02d}.png",
             },
         ]
         group = SetupFile(tmp_setup_file(tmp_path, content)).read()
@@ -795,7 +812,10 @@ class Test_Wildcards:
         sol = [
             merge_dicts(
                 {
-                    "infile": "foo_{ens_member:02d}.nc",
+                    "files": {
+                        "input": "foo_{ens_member:02d}.nc",
+                        # "output": f"bar_{ens_variable}_{{lang}}.png",
+                    },
                     "outfile": f"bar_{ens_variable}_{{lang}}.png",
                     "model": {
                         "name": "COSMO-baz",

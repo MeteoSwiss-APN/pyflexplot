@@ -45,7 +45,10 @@ def test_one_setup_one_field(datadir, config):  # noqa:F811
     datafile_fmt = f"{datadir}/flexpart_cosmo-2e_const_{{ens_member:03d}}.nc"
 
     setup_dct = {
-        "infile": datafile_fmt,
+        "files": {
+            "input": datafile_fmt,
+            # "output": "bar.png",
+        },
         "outfile": "bar.png",
         "model": {
             "name": "COSMO-2E",

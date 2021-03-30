@@ -335,7 +335,10 @@ def test_single_setup_concentration(datadir: str, config: ConfSingleSetup):
     config.setup_dct = merge_dicts(
         config.setup_dct,
         {
-            "infile": f"{datadir}/{datafilename1}",
+            "files": {
+                "input": f"{datadir}/{datafilename1}",
+                # "output": "foo.png",
+            },
             "outfile": "foo.png",
             "model": {
                 "name": "COSMO-1",
@@ -509,7 +512,10 @@ def test_single_setup_deposition(datadir: str, config: ConfSingleSetup):
     config.setup_dct = merge_dicts(
         config.setup_dct,
         {
-            "infile": f"{datadir}/{datafilename1}",
+            "files": {
+                "input": f"{datadir}/{datafilename1}",
+                # "output": "foo.png",
+            },
             "outfile": "foo.png",
             "model": {"name": "COSMO-1"},
         },
@@ -755,7 +761,10 @@ def test_multiple_setups(datadir: str, config: ConfMultipleSetups):
     for setup_dct in config.setup_dct_lst:
         setup_dct.update(
             {
-                "infile": f"{datadir}/{datafilename1}",
+                "files": {
+                    "input": f"{datadir}/{datafilename1}",
+                    # "output": "foo.png",
+                },
                 "outfile": "foo.png",
                 "model": {
                     "name": "COSMO-1",

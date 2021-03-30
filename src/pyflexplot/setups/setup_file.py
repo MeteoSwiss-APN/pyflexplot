@@ -95,7 +95,7 @@ class SetupFile:
             for setup in setups:
                 if only is not None and n_setups >= only:
                     break
-                key: KeyT = (setup.infile, setup.model.ens_member_id)
+                key: KeyT = (setup.files.input, setup.model.ens_member_id)
                 if key not in setups_by_infiles:
                     setups_by_infiles[key] = []
                 if setup not in setups_by_infiles[key]:

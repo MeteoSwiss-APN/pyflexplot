@@ -238,7 +238,11 @@ class Test_Create:
 
 
 class Test_Collect:
-    base = {"infile": "foo.nc", "outfile": "foo.png", "model": {"name": "foo"}}
+    base = {
+        "files": {"input": "foo.nc"},
+        "outfile": "foo.png",
+        "model": {"name": "foo"},
+    }
     md = lambda *dicts: merge_dicts(*dicts, overwrite_seqs=True)  # noqa
     params = {
         "plot_variable": "affected_area",

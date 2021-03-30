@@ -244,9 +244,11 @@ plot_summary = {
     "config": {
         "type": "BoxedPlotConfig",
         "setup": {
-            "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
             "outfile": "ref_cosmo2e_ens_probability_wet_deposition.png",
-            "files": {"outfile_time_format": "%Y%m%d%H%M"},
+            "files": {
+                "input": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
+                "outfile_time_format": "%Y%m%d%H%M",
+            },
             "layout": {
                 "plot_type": "auto",
                 "multipanel_param": None,

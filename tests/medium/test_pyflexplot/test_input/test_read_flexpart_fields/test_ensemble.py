@@ -47,7 +47,10 @@ class TestReadFieldEnsemble_Single:
 
     # Setup parameters shared by all tests
     setup_params_shared: Dict[str, Any] = {
-        "infile": "dummy.nc",
+        "files": {
+            "input": "dummy.nc",
+            # "output": "dummy.png",
+        },
         "outfile": "dummy.png",
         "model": {
             "name": "COSMO-2E",
@@ -90,7 +93,9 @@ class TestReadFieldEnsemble_Single:
             self.setup_params_shared,
             setup_params,
             {
-                "infile": datafile_fmt,
+                "files": {
+                    "input": datafile_fmt,
+                },
                 "model": {
                     "ens_member_id": self.ens_member_ids,
                 },
@@ -159,7 +164,10 @@ class TestReadFieldEnsemble_Multiple:
 
     # Setup parameters arguments shared by all tests
     shared_setup_params_compressed: Dict[str, Any] = {
-        "infile": "dummy.nc",
+        "files": {
+            "input": "dummy.nc",
+            # "output": "dummy.png",
+        },
         "outfile": "dummy.png",
         "model": {
             "name": "COSMO-2E",
@@ -202,7 +210,7 @@ class TestReadFieldEnsemble_Multiple:
         # Create field specifications list
         setup_dcts: List[Dict[str, Any]] = []
         for shared_setup_params in decompress_multival_dict(
-            self.shared_setup_params_compressed, skip=["infile", "panels"]
+            self.shared_setup_params_compressed, skip=["files.input", "panels"]
         ):
             if "panels" not in shared_setup_params:
                 shared_setup_params["panels"] = {}
@@ -292,7 +300,9 @@ class TestReadFieldEnsemble_Multiple:
             ),
         }[ens_var]
         setup_params = {
-            "infile": datafile_fmt,
+            "files": {
+                "input": datafile_fmt,
+            },
             "panels": {
                 "dimensions": {"level": 1},
                 "plot_variable": "concentration",
@@ -325,7 +335,9 @@ class TestReadFieldEnsemble_Multiple:
                 f"DD_spec{self.species_id:03d}",
             ],
             setup_params={
-                "infile": datafile_fmt,
+                "files": {
+                    "input": datafile_fmt,
+                },
                 "panels": {"plot_variable": "tot_deposition"},
             },
             ens_var=ens_var,

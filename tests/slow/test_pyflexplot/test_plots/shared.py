@@ -78,7 +78,7 @@ class _TestBase:
         return PlotSetupGroup([setup])
 
     def get_field_group(self, datadir):
-        infile = f"{datadir}/{self.setup_dct['infile']}"
+        infile = f"{datadir}/{self.setup_dct['files']['input']}"
         setups = self.get_setups()
         field_groups = read_fields(
             setups, {"add_ts0": True, "missing_ok": True}, _override_infile=infile

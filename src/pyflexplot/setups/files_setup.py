@@ -22,7 +22,7 @@ def is_files_setup_param(param: str) -> bool:
 # SR_TMP TODO pull common base class out of LayoutSetup, ModelSetup etc.
 @dc.dataclass
 class FilesSetup:
-    # input: str
+    input: str
     # output: Union[str, Tuple[str, ...]]
     # output_time_format: str = "%Y%m%d%H%M"
     outfile_time_format: str = "%Y%m%d%H%M"

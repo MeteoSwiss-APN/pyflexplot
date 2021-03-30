@@ -20,7 +20,10 @@ INFILE_2 = "flexpart_ifs-hres_1018_20200921000000.nc"
 class Test_Concentration(_TestBase):
     reference = "ref_ifs_deterministic_concentration"
     setup_dct = {
-        "infile": INFILE_1,
+        "files": {
+            "input": INFILE_1,
+            # "output": f"{reference}.png",
+        },
         "outfile": f"{reference}.png",
         "model": {
             "name": "IFS-HRES",
@@ -44,7 +47,10 @@ class Test_Concentration(_TestBase):
 class Test_IntegratedConcentration(_TestBase):
     reference = "ref_ifs_deterministic_integrated_concentration"
     setup_dct = {
-        "infile": INFILE_1,
+        "files": {
+            "input": INFILE_1,
+            # "output": f"{reference}.png",
+        },
         "outfile": f"{reference}.png",
         "layout": {
             "plot_type": "auto",
@@ -71,7 +77,10 @@ class Test_IntegratedConcentration(_TestBase):
 class Test_TotalDeposition(_TestBase):
     reference = "ref_ifs_deterministic_total_deposition"
     setup_dct = {
-        "infile": INFILE_1,
+        "files": {
+            "input": INFILE_1,
+            # "output": f"{reference}.png",
+        },
         "outfile": f"{reference}.png",
         "layout": {
             "plot_type": "auto",
@@ -97,7 +106,10 @@ class Test_TotalDeposition(_TestBase):
 class Test_TotalDeposition_EmptyField(_TestBase):
     reference = "ref_ifs_deterministic_total_deposition_empty_field"
     setup_dct = {
-        "infile": INFILE_2,
+        "files": {
+            "input": INFILE_2,
+            # "output": f"{reference}.png",
+        },
         "outfile": f"{reference}.png",
         "layout": {
             "plot_type": "auto",
@@ -123,7 +135,10 @@ class Test_TotalDeposition_EmptyField(_TestBase):
 class Test_AffectedArea(_TestBase):
     reference = "ref_ifs_deterministic_affected_area"
     setup_dct = {
-        "infile": INFILE_1,
+        "files": {
+            "input": INFILE_1,
+            # "output": f"{reference}.png",
+        },
         "outfile": f"{reference}.png",
         "model": {
             "name": "IFS-HRES",
@@ -147,7 +162,10 @@ class Test_AffectedArea(_TestBase):
 class Test_CloudDepartureTime(_TestBase):
     reference = "ref_ifs_deterministic_cloud_departure_time"
     setup_dct = {
-        "infile": INFILE_1,
+        "files": {
+            "input": INFILE_1,
+            # "output": f"{reference}.png",
+        },
         "outfile": f"{reference}.png",
         "model": {
             "name": "IFS-HRES",

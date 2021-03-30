@@ -29,9 +29,12 @@ def tuples(objs: Sequence[Any]) -> List[Tuple[Any]]:
 class Test_Copy:
     def test_preserve_outfiles(self):
         params = {
-            "infile": "foo.nc",
-            "model": {"name": "IFS-HRES"},
+            "files": {
+                "input": "foo.nc",
+                # "output": ("foo.png", "bar.pdf"),
+            },
             "outfile": ("foo.png", "bar.pdf"),
+            "model": {"name": "IFS-HRES"},
         }
         setup = PlotSetup.create(params)
         setups = PlotSetupGroup([setup])
@@ -47,7 +50,10 @@ class Test_FromRawParams:
 
     def test_one_variable(self):
         raw_params = {
-            "infile": "foo.nc",
+            "files": {
+                "input": "foo.nc",
+                # "output": "foo.png",
+            },
             "outfile": "foo.png",
             "plot_variable": "concentration",
             "species_id": [1, 2],
@@ -59,7 +65,10 @@ class Test_FromRawParams:
         res = setups.dicts()
         sol = [
             {
-                "infile": "foo.nc",
+                "files": {
+                    "input": "foo.nc",
+                    # "output": "foo.png",
+                },
                 "outfile": "foo.png",
                 "panels": [
                     {
@@ -90,7 +99,10 @@ class Test_Create:
         dicts: List[Dict[str, Any]] = [
             merge_dicts(
                 {
-                    "infile": "foo.nc",
+                    "files": {
+                        "input": "foo.nc",
+                        # "output": "bar.png",
+                    },
                     "outfile": "bar.png",
                     "model": {"name": "COSMO-baz"},
                 },
@@ -132,7 +144,10 @@ class Test_Create:
         """Test more complex setup dicts resulting in multiple setups each."""
 
         base_params = {
-            "infile": "foo.nc",
+            "files": {
+                "input": "foo.nc",
+                # "output": "bar.png",
+            },
             "outfile": "bar.png",
             "model": {"name": "COSMO-baz"},
         }
@@ -264,7 +279,10 @@ class Test_Create:
 class Test_Compress:
     dcts: List[Dict[str, Any]] = [
         {
-            "infile": "foo.nc",
+            "files": {
+                "input": "foo.nc",
+                # "output": "bar.png",
+            },
             "outfile": "bar.png",
             "model": {
                 "name": "COSMO-1",
@@ -278,7 +296,10 @@ class Test_Compress:
             ],
         },
         {
-            "infile": "foo.nc",
+            "files": {
+                "input": "foo.nc",
+                # "output": "bar.png",
+            },
             "outfile": "bar.png",
             "model": {
                 "name": "COSMO-1",
@@ -292,7 +313,10 @@ class Test_Compress:
             ],
         },
         {
-            "infile": "foo.nc",
+            "files": {
+                "input": "foo.nc",
+                # "output": "bar.png",
+            },
             "outfile": "bar.png",
             "model": {
                 "name": "COSMO-1",
@@ -356,7 +380,10 @@ class Test_Group:
     def get_setup_dcts(self):
         base_dcts = [
             {
-                "infile": "foo.nc",
+                "files": {
+                    "input": "foo.nc",
+                    # "output": outfile,
+                },
                 "outfile": outfile,
                 "model": {
                     "name": "COSMO-1",
@@ -490,7 +517,14 @@ class Test_Group:
 
 
 class Test_Collect:
-    base = {"infile": "foo.nc", "outfile": "foo.png", "model": {"name": "foo"}}
+    base = {
+        "files": {
+            "input": "foo.nc",
+            # "output": "foo.png",
+        },
+        "outfile": "foo.png",
+        "model": {"name": "foo"},
+    }
     md = lambda *dicts: merge_dicts(*dicts, overwrite_seqs=True)  # noqa
     params_lst = [
         md(

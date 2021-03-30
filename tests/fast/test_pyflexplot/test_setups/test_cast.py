@@ -9,7 +9,7 @@ from srutils.exceptions import InvalidParameterValueError
 
 class Test_CastSingle:
     def test_infile(self):
-        assert PlotSetup.cast("infile", "foo.nc") == "foo.nc"
+        assert PlotSetup.cast("files.input", "foo.nc") == "foo.nc"
 
     def test_outfile(self):
         assert PlotSetup.cast("outfile", "foo.png") == "foo.png"
@@ -37,7 +37,7 @@ class Test_CastSingle:
 class Test_CastSequence:
     def test_infile_fail(self):
         with pytest.raises(InvalidParameterValueError):
-            PlotSetup.cast("infile", ["a.nc", "b.nc"])
+            PlotSetup.cast("files.input", ["a.nc", "b.nc"])
 
     def test_lang_fail(self):
         with pytest.raises(InvalidParameterValueError):
@@ -61,13 +61,13 @@ class Test_CastSequence:
 class Test_CastMany:
     def test_dict(self):
         params = {
-            "infile": "foo.nc",
+            "files.input": "foo.nc",
             "dimensions.species_id": ["1", "2"],
             "integrate": "False",
         }
         res = PlotSetup.cast_many(params)
         sol = {
-            "infile": "foo.nc",
+            "files.input": "foo.nc",
             "dimensions.species_id": (1, 2),
             "integrate": False,
         }
@@ -75,7 +75,7 @@ class Test_CastMany:
 
     def test_dict_comma_separated_fail(self):
         params = {
-            "infile": "foo.nc",
+            "files.input": "foo.nc",
             "dimensions.species_id": "1,2",
             "integrate": "False",
         }
@@ -84,9 +84,9 @@ class Test_CastMany:
 
     def test_tuple_duplicates_fail(self):
         params = (
-            ("infile", "foo.nc"),
+            ("files.input", "foo.nc"),
             ("dimensions.species_id", "1"),
-            ("infile", "bar.nc"),
+            ("files.input", "bar.nc"),
         )
         with pytest.raises(ValueError):
             PlotSetup.cast_many(params)
