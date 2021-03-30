@@ -61,9 +61,6 @@ class BaseSetup:
                     return False
         return self.dict() == other_dict
 
-    def __hash__(self: SetupT) -> int:
-        return hash(self.tuple())
-
     def __len__(self: SetupT) -> int:
         return len(self.dict())
 

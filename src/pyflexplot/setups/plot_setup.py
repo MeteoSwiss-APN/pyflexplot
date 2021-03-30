@@ -374,13 +374,12 @@ class PlotSetup(BaseSetup):
             ]
         )
 
-    # SR_TODO Find a way to inherit BaseSetup.__hash__ (prevented by @dataclass)
-    def __hash__(self) -> int:
-        return hash(self.tuple())
-
-    # SR_TODO Find a way to inherit BaseSetup.__eq__ (prevented by @dataclass)
+    # Explicitly inherit to prevent @dataclass from changing it
     def __eq__(self, other: Any) -> bool:
         return super().__eq__(other)
+
+    def __hash__(self) -> int:
+        return hash(self.tuple())
 
     @classmethod
     def create(cls, params: Mapping[str, Any]) -> "PlotSetup":
