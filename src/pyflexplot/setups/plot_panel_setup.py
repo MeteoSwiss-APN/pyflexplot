@@ -35,6 +35,7 @@ from srutils.str import join_multilines
 
 # Local
 from ..utils.exceptions import UnequalSetupParamValuesError
+from .base_setup import BaseSetup
 from .dimensions import CoreDimensions
 from .dimensions import Dimensions
 from .dimensions import is_dimensions_param
@@ -58,35 +59,11 @@ def is_ensemble_params_param(param: str) -> bool:
 
 
 @dc.dataclass
-class EnsembleParams:
+class EnsembleParams(BaseSetup):
     mem_min: Optional[int] = None
     pctl: Optional[float] = None
     thr: Optional[float] = None
     thr_type: str = "lower"
-
-    def dict(self) -> Dict[str, Any]:
-        return dc.asdict(self)
-
-    def tuple(self) -> Tuple[Tuple[str, Any], ...]:
-        return tuple(self.dict().items())
-
-    @classmethod
-    def get_params(cls) -> List[str]:
-        return list(cls.__dataclass_fields__)  # type: ignore  # pylint: disable=E1101
-
-    @classmethod
-    def create(cls, params: Mapping[str, Any]) -> "EnsembleParams":
-        params = dict(params)
-        for name, value in dict(params).items():
-            try:
-                params[name] = cast_field_value(
-                    cls, name, value, bool_mode="intuitive", unpack_str=False
-                )
-            except InvalidParameterValueError as e:
-                raise ValueError(
-                    f"parameter '{name}' has invalid value {sfmt(value)}"
-                ) from e
-        return cls(**params)
 
 
 # pylint: disable=R0902  # too-many-instance-attributes (>7)

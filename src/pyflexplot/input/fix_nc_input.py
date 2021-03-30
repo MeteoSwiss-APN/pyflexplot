@@ -42,7 +42,7 @@ class FlexPartDataFixer:
                 log(wrn=msg)
                 return
         else:
-            raise NotImplementedError("model", model)
+            raise NotImplementedError(f"model '{model}'")
         fld[:] *= fact
         return
 
@@ -100,7 +100,7 @@ class FlexPartDataFixer:
                 log(wrn=msg)
                 return
         else:
-            raise NotImplementedError("model", model)
+            raise NotImplementedError(f"model '{model}'")
         mdata.variable.unit = new_unit
 
     @staticmethod

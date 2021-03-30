@@ -66,10 +66,7 @@ def get_setup_param_value(setup: "PlotSetup", param: str) -> Any:
     elif is_model_setup_param(param):
         return getattr(setup.model, param.replace("model.", ""))
     elif is_plot_panel_setup_param(param):
-        # SR_TMP <
-        # return getattr(setup.panels, param)
         return setup.panels.collect_equal(param)
-        # SR_TMP >
     elif is_dimensions_param(param):
         return setup.panels.collect_equal(param.replace("dimensions.", ""))
     raise ValueError("invalid input setup parameter", param)
@@ -89,10 +86,7 @@ class PlotSetup:
 
     """
 
-    # SR_TMP < TODO remove default value
-    # files: FilesSetup
-    files: FilesSetup = dc.field(default_factory=FilesSetup)
-    # SR_TMP >
+    files: FilesSetup
     layout: LayoutSetup = dc.field(default_factory=LayoutSetup)
     model: ModelSetup = dc.field(default_factory=ModelSetup)
     panels: PlotPanelSetupGroup = dc.field(
