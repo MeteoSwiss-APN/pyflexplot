@@ -251,7 +251,28 @@ class Test_Decompress:
             with pytest.raises(ValueError, match=msg):
                 self.setup.decompress(["dimensions.variable"])
 
-        def test_model(self):
+        def test_files_param(self):
+            # SR_TMP <
+            # setup = self.setup.derive({"files": {"output": ["foo.png", "bar.png"]}})
+            # setups = setup.decompress(["files.output"], internal=False)
+            setup = self.setup.derive({"outfile": ["foo.png", "bar.png"]})
+            setups = setup.decompress(["outfile"], internal=False)
+            # SR_TMP >
+            assert len(setups) == 2
+            assert isinstance(setups, list)
+            assert all(isinstance(setup, PlotSetup) for setup in setups)
+            # SR_TMP <
+            # res = {setup.files.output for setup in setups}
+            res = tuple(setup.outfile for setup in setups)
+            # SR_TMP >
+            sol = ("foo.png", "bar.png")
+            assert res == sol
+
+        # Note: No decompressible layout param
+        # def test_layout_param(self):
+        #     ...
+
+        def test_model_param(self):
             """Decompress model parameters."""
             setup = self.setup.derive({"model": {"ens_member_id": (0, 1, 2)}})
             setups = setup.decompress(["model.ens_member_id"], internal=False)
