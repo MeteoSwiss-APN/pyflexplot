@@ -249,10 +249,10 @@ plot_summary = {
             "infile": "flexpart_cosmo-1_2019093012.nc",
             "outfile": "ref_cosmo1_deterministic_cloud_arrival_time.png",
             "outfile_time_format": "%Y%m%d%H%M",
-            "scale_fact": 1.0,
             "layout": {
                 "plot_type": "auto",
                 "multipanel_param": None,
+                "scale_fact": 1.0,
                 "type": "post_vintage",
             },
             "model": {

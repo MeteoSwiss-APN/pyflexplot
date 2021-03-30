@@ -25,6 +25,7 @@ def is_layout_setup_param(param: str) -> bool:
 class LayoutSetup:
     plot_type: str = "auto"
     multipanel_param: Optional[str] = None
+    scale_fact: float = 1.0
     type: str = "auto"
 
     def __post_init__(self) -> None:

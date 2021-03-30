@@ -247,10 +247,10 @@ plot_summary = {
             "infile": "flexpart_cosmo-2e_2019072712_{ens_member:03d}.nc",
             "outfile": "ref_cosmo2e_ens_probability_wet_deposition.png",
             "outfile_time_format": "%Y%m%d%H%M",
-            "scale_fact": 1.0,
             "layout": {
                 "plot_type": "auto",
                 "multipanel_param": None,
+                "scale_fact": 1.0,
                 "type": "post_vintage_ens",
             },
             "model": {

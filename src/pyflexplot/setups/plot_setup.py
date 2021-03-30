@@ -88,7 +88,6 @@ class PlotSetup:
     infile: str  # = "none"
     outfile: Union[str, Tuple[str, ...]]  # = "none"
     outfile_time_format: str = "%Y%m%d%H%M"
-    scale_fact: float = 1.0
     layout: LayoutSetup = dc.field(default_factory=LayoutSetup)
     model: ModelSetup = dc.field(default_factory=ModelSetup)
     panels: PlotPanelSetupGroup = dc.field(

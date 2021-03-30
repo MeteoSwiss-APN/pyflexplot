@@ -458,7 +458,7 @@ def create_map_config(
     plot_setup: PlotSetup, panel_setup: PlotPanelSetup, aspect: float
 ) -> MapAxesConfig:
     model_name = plot_setup.model.name
-    scale_fact = plot_setup.scale_fact
+    scale_fact = plot_setup.layout.scale_fact
     domain_type = panel_setup.domain
     lang = panel_setup.lang
 
@@ -526,7 +526,7 @@ def create_plot_config(
     # SR_TMP >
 
     plot_config_dct: Dict[str, Any] = {
-        "fig_size": (12.5 * setup.scale_fact, 8.0 * setup.scale_fact),
+        "fig_size": (12.5 * setup.layout.scale_fact, 8.0 * setup.layout.scale_fact),
     }
 
     # Layout
@@ -536,7 +536,7 @@ def create_plot_config(
     )
 
     # Fonts
-    font_config = FontConfig(sizes=FontSizes().scale(setup.scale_fact))
+    font_config = FontConfig(sizes=FontSizes().scale(setup.layout.scale_fact))
 
     # Levels and legend
     levels_config_dct: Dict[str, Any] = {
@@ -694,15 +694,15 @@ def create_plot_config(
     markers["max"] = {
         "marker": "+",
         "color": "black",
-        "markersize": 10 * setup.scale_fact,
-        "markeredgewidth": 1.5 * setup.scale_fact,
+        "markersize": 10 * setup.layout.scale_fact,
+        "markeredgewidth": 1.5 * setup.layout.scale_fact,
     }
     markers["site"] = {
         "marker": "^",
         "markeredgecolor": "red",
         "markerfacecolor": "white",
-        "markersize": 7.5 * setup.scale_fact,
-        "markeredgewidth": 1.5 * setup.scale_fact,
+        "markersize": 7.5 * setup.layout.scale_fact,
+        "markeredgewidth": 1.5 * setup.layout.scale_fact,
     }
     markers_config_dct["markers"] = markers
     markers_config = MarkersConfig(**markers_config_dct)

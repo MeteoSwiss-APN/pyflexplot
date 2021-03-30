@@ -493,26 +493,56 @@ class Test_Collect:
     base = {"infile": "foo.nc", "outfile": "foo.png", "model": {"name": "foo"}}
     md = lambda *dicts: merge_dicts(*dicts, overwrite_seqs=True)  # noqa
     params_lst = [
-        md(base, {"scale_fact": 1, "panels": [{"dimensions": {"species_id": 1}}]}),
-        md(base, {"scale_fact": 2, "panels": [{"dimensions": {"species_id": 1}}]}),
-        md(base, {"scale_fact": 1, "panels": [{"dimensions": {"species_id": 2}}]}),
-        md(base, {"scale_fact": 3, "panels": [{"dimensions": {"species_id": 2}}]}),
-        md(base, {"scale_fact": 1, "panels": [{"dimensions": {"species_id": 3}}]}),
+        md(
+            base,
+            {
+                "layout": {"scale_fact": 1},
+                "panels": [{"dimensions": {"species_id": 1}}],
+            },
+        ),
+        md(
+            base,
+            {
+                "layout": {"scale_fact": 2},
+                "panels": [{"dimensions": {"species_id": 1}}],
+            },
+        ),
+        md(
+            base,
+            {
+                "layout": {"scale_fact": 1},
+                "panels": [{"dimensions": {"species_id": 2}}],
+            },
+        ),
+        md(
+            base,
+            {
+                "layout": {"scale_fact": 3},
+                "panels": [{"dimensions": {"species_id": 2}}],
+            },
+        ),
+        md(
+            base,
+            {
+                "layout": {"scale_fact": 1},
+                "panels": [{"dimensions": {"species_id": 3}}],
+            },
+        ),
     ]
 
     def test_scale_fact(self):
         group = PlotSetupGroup.create(self.params_lst)
-        vals = group.collect("scale_fact")
+        vals = group.collect("layout.scale_fact")
         assert vals == [1, 2, 1, 3, 1]
 
     def test_scale_fact_flat(self):
         group = PlotSetupGroup.create(self.params_lst)
-        vals = group.collect("scale_fact", flatten=True)
+        vals = group.collect("layout.scale_fact", flatten=True)
         assert vals == [1, 2, 1, 3, 1]
 
     def test_scale_fact_flat_unique(self):
         group = PlotSetupGroup.create(self.params_lst)
-        vals = group.collect("scale_fact", flatten=True, unique=True)
+        vals = group.collect("layout.scale_fact", flatten=True, unique=True)
         assert vals == [1, 2, 3]
 
     def test_species_id(self):
