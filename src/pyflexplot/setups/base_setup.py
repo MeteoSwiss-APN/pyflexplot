@@ -13,6 +13,8 @@ from typing import Dict
 from typing import List
 from typing import Mapping
 from typing import Tuple
+from typing import Type
+from typing import TypeVar
 from typing import Union
 
 # First-party
@@ -20,36 +22,56 @@ from srutils.dataclasses import cast_field_value
 from srutils.dict import merge_dicts
 from srutils.format import nested_repr
 
+SetupT = TypeVar("SetupT", bound="BaseSetup")
+
 
 class BaseSetup:
     # pylint: disable=W0613  # unused-argument (args, kwargs)
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self: SetupT, *args: Any, **kwargs: Any) -> None:
         """Cannot create instances of ``BaseSetup``, only its subclasses."""
         self.__dataclass_fields__: Dict[str, Any] = {}
         raise NotImplementedError(f"{type(self).__name__}.__init__")
 
-    def copy(self) -> "BaseSetup":
+    def copy(self: SetupT) -> SetupT:
         return self.create(self.dict())
 
-    def derive(self, params: Dict[str, Any]) -> "BaseSetup":
+    def derive(self: SetupT, params: Dict[str, Any]) -> SetupT:
         return type(self).create(merge_dicts(self.dict(), params, overwrite_seqs=True))
 
-    def dict(self, rec: bool = False) -> Dict[str, Any]:
+    def dict(self: SetupT, rec: bool = False) -> Dict[str, Any]:
         if rec:
             raise NotImplementedError("rec=T")
         return dc.asdict(self)
 
-    def tuple(self) -> Tuple[Tuple[str, Any], ...]:
+    def tuple(self: SetupT) -> Tuple[Tuple[str, Any], ...]:
         return tuple(self.dict().items())
 
-    def __hash__(self) -> int:
+    def __eq__(self: SetupT, other: Any) -> bool:
+        if isinstance(other, dc._MISSING_TYPE):
+            return False
+        try:
+            other_dict = other.dict()
+        except AttributeError:
+            try:
+                other_dict = dict(other)  # type: ignore
+            except TypeError:
+                try:
+                    other_dict = dc.asdict(other)
+                except TypeError:
+                    return False
+        return self.dict() == other_dict
+
+    def __hash__(self: SetupT) -> int:
         return hash(self.tuple())
 
-    def __repr__(self) -> str:  # type: ignore
+    def __len__(self: SetupT) -> int:
+        return len(self.dict())
+
+    def __repr__(self: SetupT) -> str:  # type: ignore
         return nested_repr(self)
 
     @classmethod
-    def cast(cls, param: str, value: Any) -> Any:
+    def cast(cls: Type[SetupT], param: str, value: Any) -> Any:
         return cast_field_value(
             cls,
             param,
@@ -62,7 +84,7 @@ class BaseSetup:
 
     @classmethod
     def cast_many(
-        cls, params: Union[Collection[Tuple[str, Any]], Mapping[str, Any]]
+        cls: Type[SetupT], params: Union[Collection[Tuple[str, Any]], Mapping[str, Any]]
     ) -> Dict[str, Any]:
         if not isinstance(params, Mapping):
             params_dct: Dict[str, Any] = {}
@@ -77,22 +99,26 @@ class BaseSetup:
         return params_cast
 
     @classmethod
-    def create(cls, params: Mapping[str, Any]) -> "BaseSetup":
+    def create(cls: Type[SetupT], params: Mapping[str, Any]) -> SetupT:
         params = cls._create_mod_params_pre_cast(params)
         params = cls.cast_many(params)
         params = cls._create_mod_params_post_cast(params)
         return cls(**params)
 
     @classmethod
-    def get_params(cls) -> List[str]:
+    def get_params(cls: Type[SetupT]) -> List[str]:
         return list(cls.__dataclass_fields__)  # type: ignore  # pylint: disable=E1101
 
     @classmethod
-    def _create_mod_params_pre_cast(cls, params: Mapping[str, Any]) -> Dict[str, Any]:
+    def _create_mod_params_pre_cast(
+        cls: Type[SetupT], params: Mapping[str, Any]
+    ) -> Dict[str, Any]:
         """Modify params in ``create`` before typecasting."""
         return dict(params)
 
     @classmethod
-    def _create_mod_params_post_cast(cls, params: Mapping[str, Any]) -> Dict[str, Any]:
+    def _create_mod_params_post_cast(
+        cls: Type[SetupT], params: Mapping[str, Any]
+    ) -> Dict[str, Any]:
         """Modify params in ``create`` after typecasting."""
         return dict(params)
